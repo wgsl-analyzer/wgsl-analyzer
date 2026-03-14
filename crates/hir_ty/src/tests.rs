@@ -30,6 +30,13 @@ use crate::{
 };
 
 fn infer(wa_fixture: &str) -> String {
+    infer_with_verbosity(wa_fixture, TypeVerbosity::Compact)
+}
+
+fn infer_with_verbosity(
+    wa_fixture: &str,
+    verbosity: TypeVerbosity,
+) -> String {
     let (database, file_id) = TestDatabase::with_single_file(wa_fixture);
     let file_id = HirFileId::from(file_id);
     let root = database.parse_or_resolve(file_id).syntax();
@@ -65,7 +72,7 @@ fn infer(wa_fixture: &str) -> String {
                 node.text_range(),
                 node.text().to_string().replace('\n', " "),
             );
-            let pretty = pretty_type_with_verbosity(&database, *r#type, TypeVerbosity::Compact);
+            let pretty = pretty_type_with_verbosity(&database, *r#type, verbosity);
             writeln!(buffer, "{range:?} '{}': {pretty}", ellipsize(text, 15)).unwrap();
         }
 
@@ -93,9 +100,9 @@ fn infer(wa_fixture: &str) -> String {
                         pretty_type_expectation_with_verbosity(
                             &database,
                             expected.clone(),
-                            TypeVerbosity::Compact
+                            verbosity
                         ),
-                        pretty_type_with_verbosity(&database, *actual, TypeVerbosity::Compact)
+                        pretty_type_with_verbosity(&database, *actual, verbosity)
                     )
                     .unwrap();
                 },
@@ -242,6 +249,18 @@ fn check_infer(
     expect: Expect,
 ) {
     let mut actual = infer(ra_fixture);
+    actual.push('\n');
+    expect.assert_eq(&actual);
+}
+
+/// Like [`check_infer`], but uses [`TypeVerbosity::Full`] to include
+/// address spaces and access modes in reference/pointer types.
+#[expect(clippy::needless_pass_by_value, reason = "Matches expect! macro")]
+fn check_infer_full(
+    ra_fixture: &str,
+    expect: Expect,
+) {
+    let mut actual = infer_with_verbosity(ra_fixture, TypeVerbosity::Full);
     actual.push('\n');
     expect.assert_eq(&actual);
 }

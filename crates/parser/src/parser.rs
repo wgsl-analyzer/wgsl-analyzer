@@ -13,7 +13,11 @@ use logos::Logos as _;
 use rowan::GreenNodeBuilder;
 
 use super::lexer::Token;
-use crate::{Parse, ParseEntryPoint, cst_builder::CstBuilder, lexer::lex};
+use crate::{
+    Parse, ParseEntryPoint,
+    cst_builder::CstBuilder,
+    lexer::{is_reserved_word, lex},
+};
 
 include!(concat!(env!("OUT_DIR"), "/generated.rs"));
 
@@ -108,8 +112,20 @@ impl Cst<'_> {
 
 impl Parser<'_> {
     fn is_func_call(&self) -> bool {
-        matches!(self.peek(1), Token::LPar | Token::Lt | Token::TemplateStart)
-            && self.peek(2) != Token::Lt
+        let mut i = 1;
+        // Skip past path segments: (:: Ident)*
+        // This handles paths like `foo::bar::baz()` where we need to look
+        // past the `::` separators to find the `(` or `<` that indicates a call.
+        while self.peek(i) == Token::DoubleColon {
+            i += 1;
+            if matches!(self.peek(i), Token::Ident | Token::Super) {
+                i += 1;
+            } else {
+                break;
+            }
+        }
+        matches!(self.peek(i), Token::LPar | Token::Lt | Token::TemplateStart)
+            && self.peek(i + 1) != Token::Lt
     }
 }
 
@@ -130,6 +146,14 @@ impl<'source> ParserCallbacks<'source> for Parser<'source> {
         span: Span,
         message: String,
     ) -> Self::Diagnostic {
+        // When the parser expected an identifier but found a reserved word,
+        // emit a more specific diagnostic message.
+        let text = &self.cst.source[span.clone()];
+        let message = if message.contains("expected") && is_reserved_word(text) {
+            format!("'{text}' is a reserved word in WGSL")
+        } else {
+            message
+        };
         Diagnostic {
             message,
             range: to_range(span),
@@ -233,6 +257,68 @@ impl<'source> ParserCallbacks<'source> for Parser<'source> {
         }
     }
 
+    fn create_node_translation_unit(
+        &mut self,
+        node_ref: NodeRef,
+        diags: &mut Vec<Self::Diagnostic>,
+    ) {
+        let mut seen_declaration = false;
+        for child in self.cst.children(node_ref) {
+            match self.cst.get(child) {
+                Node::Rule(rule, end_offset) if usize::from(end_offset) > 0 => match rule {
+                    // Declarations and asserts
+                    Rule::FunctionDeclaration
+                    | Rule::VariableDeclaration
+                    | Rule::ConstDeclaration
+                    | Rule::OverrideDeclaration
+                    | Rule::TypeAliasDeclaration
+                    | Rule::StructDeclaration
+                    | Rule::GlobalLetDeclaration
+                    | Rule::AssertStatement => {
+                        seen_declaration = true;
+                    },
+                    // Directives
+                    Rule::DiagnosticDirective | Rule::EnableDirective | Rule::RequiresDirective => {
+                        if seen_declaration {
+                            diags.push(self.create_diagnostic(
+                                self.cst.span(child),
+                                "directives must come before any declarations".to_owned(),
+                            ));
+                        }
+                    },
+                    _ => {},
+                },
+                _ => {},
+            }
+        }
+    }
+
+    fn create_node_let_declaration(
+        &mut self,
+        node_ref: NodeRef,
+        diags: &mut Vec<Self::Diagnostic>,
+    ) {
+        // Only emit this diagnostic when the parser successfully parsed a name
+        // but did not find an '=' token (i.e. the initializer is missing).
+        // Empty Name nodes (end_offset == 0) are created by error recovery and should be ignored.
+        let has_name = self.cst.children(node_ref).any(|child| {
+            matches!(
+                self.cst.get(child),
+                Node::Rule(Rule::Name, end_offset) if usize::from(end_offset) > 0
+            )
+        });
+        let has_eq = self
+            .cst
+            .children(node_ref)
+            .any(|child| self.cst.match_token(child, Token::Eq).is_some());
+        if has_name && !has_eq {
+            diags.push(self.create_diagnostic(
+                self.cst.span(node_ref),
+                "let declaration requires an initializer expression".to_owned(),
+            ));
+        }
+    }
+
     /// This node exists for better error messages. It also improves the lelwel error recovery quality.
     fn create_node_global_let_declaration(
         &mut self,
@@ -243,5 +329,126 @@ impl<'source> ParserCallbacks<'source> for Parser<'source> {
             self.cst.span(node_ref),
             "global let declarations are not allowed".to_owned(),
         ));
+    }
+
+    /// Validates WGSL operator precedence rules.
+    ///
+    /// WGSL requires parentheses for certain operator combinations:
+    /// - Comparison operators (`<`, `>`, `<=`, `>=`, `==`, `!=`) cannot be chained:
+    ///   `a < b < c` is invalid, `(a < b) < c` is valid.
+    /// - Shift operators (`<<`, `>>`) cannot have binary expression operands.
+    /// - Bitwise operators (`&`, `|`, `^`) cannot be mixed:
+    ///   `a & b | c` is invalid, `a & b & c` is valid.
+    /// - Logical operators (`&&`, `||`) cannot be mixed:
+    ///   `a && b || c` is invalid, `a && b && c` is valid.
+    ///
+    /// See: <https://github.com/gpuweb/gpuweb/issues/1146#issuecomment-714721825>
+    /// See: <https://github.com/wgsl-analyzer/wgsl-analyzer/issues/616>
+    fn create_node_binary_expression(
+        &mut self,
+        node_ref: NodeRef,
+        diags: &mut Vec<Self::Diagnostic>,
+    ) {
+        let Some(op) = self.binary_expression_operator(node_ref) else {
+            return;
+        };
+
+        for child in self.cst.children(node_ref) {
+            // Skip tokens and parenthesized expressions — only check bare binary expressions.
+            if !self.cst.match_rule(child, Rule::BinaryExpression) {
+                continue;
+            }
+
+            let Some(child_op) = self.binary_expression_operator(child) else {
+                continue;
+            };
+
+            match Self::classify_op(op) {
+                // Comparison operators cannot be chained at all.
+                OpClass::Comparison => {
+                    if matches!(Self::classify_op(child_op), OpClass::Comparison) {
+                        diags.push(self.create_diagnostic(
+                            self.cst.span(child),
+                            format!(
+                                "comparison expressions must be parenthesized when used as an operand of another comparison"
+                            ),
+                        ));
+                    }
+                },
+                // Shift operators cannot have any binary expression operands.
+                OpClass::Shift => {
+                    diags.push(self.create_diagnostic(
+                        self.cst.span(child),
+                        format!("shift expressions require parenthesized operands"),
+                    ));
+                },
+                // Bitwise operators can be sequenced with the same operator, but not mixed.
+                OpClass::Bitwise => {
+                    if Self::classify_op(child_op) == OpClass::Bitwise && child_op != op {
+                        diags.push(self.create_diagnostic(
+                            self.cst.span(child),
+                            format!("bitwise expressions of different types must be parenthesized"),
+                        ));
+                    }
+                },
+                // Logical operators can be sequenced with the same operator, but not mixed.
+                OpClass::Logical => {
+                    if Self::classify_op(child_op) == OpClass::Logical && child_op != op {
+                        diags.push(self.create_diagnostic(
+                            self.cst.span(child),
+                            format!("logical expressions of different types must be parenthesized"),
+                        ));
+                    }
+                },
+                OpClass::Other => {},
+            }
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum OpClass {
+    Comparison,
+    Shift,
+    Bitwise,
+    Logical,
+    Other,
+}
+
+impl Parser<'_> {
+    /// Returns the operator token of a binary expression node, if any.
+    fn binary_expression_operator(
+        &self,
+        node_ref: NodeRef,
+    ) -> Option<Token> {
+        for child in self.cst.children(node_ref) {
+            let node = self.cst.get(child);
+            if let Node::Token(token, _) = node {
+                // Skip trivia tokens (whitespace, comments, errors).
+                if matches!(
+                    token,
+                    Token::Blankspace
+                        | Token::LineEndingComment
+                        | Token::BlockComment
+                        | Token::Error
+                ) {
+                    continue;
+                }
+                return Some(token);
+            }
+        }
+        None
+    }
+
+    fn classify_op(token: Token) -> OpClass {
+        match token {
+            Token::Lt | Token::Gt | Token::LtEq | Token::GtEq | Token::Eq2 | Token::ExclEq => {
+                OpClass::Comparison
+            },
+            Token::ShiftLeft | Token::ShiftRight => OpClass::Shift,
+            Token::And | Token::Pipe | Token::Caret => OpClass::Bitwise,
+            Token::And2 | Token::Pipe2 => OpClass::Logical,
+            _ => OpClass::Other,
+        }
     }
 }

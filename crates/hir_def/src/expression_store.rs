@@ -4,7 +4,7 @@ pub mod path;
 use std::ops::Index;
 
 use la_arena::{Arena, ArenaMap};
-use rustc_hash::{FxHashMap, FxHashSet};
+use rustc_hash::FxHashMap;
 use syntax::{ast, pointer::AstPointer};
 
 use crate::{
@@ -25,10 +25,6 @@ pub struct ExpressionStore {
     /// One for the `const foo: vec3<f32>` part and another one for `vec3f(1,2,3);`.
     /// Separating them gives us more fine grained incrementality.
     pub store_source: ExpressionStoreSource,
-
-    // TODO: Get rid of this (move the checks to the syntax tree)
-    // https://github.com/wgsl-analyzer/wgsl-analyzer/issues/616
-    pub parenthesis_expressions: FxHashSet<ExpressionId>,
 }
 
 #[derive(Default, Debug, PartialEq, Eq, Copy, Clone)]
@@ -97,7 +93,6 @@ pub struct ExpressionStoreBuilder {
     exprs: Arena<Expression>,
     types: Arena<TypeSpecifier>,
     store_source: ExpressionStoreSource,
-    parenthesis_expressions: FxHashSet<ExpressionId>,
 
     expression_map: FxHashMap<AstPointer<ast::Expression>, ExpressionId>,
     expression_map_back:
@@ -114,7 +109,6 @@ impl ExpressionStoreBuilder {
             mut exprs,
             mut types,
             store_source,
-            mut parenthesis_expressions,
             mut expression_map,
             mut expression_map_back,
             mut type_map,
@@ -122,7 +116,6 @@ impl ExpressionStoreBuilder {
         } = self;
         exprs.shrink_to_fit();
         types.shrink_to_fit();
-        parenthesis_expressions.shrink_to_fit();
         expression_map.shrink_to_fit();
         expression_map_back.shrink_to_fit();
         type_map.shrink_to_fit();
@@ -132,7 +125,6 @@ impl ExpressionStoreBuilder {
                 exprs,
                 types,
                 store_source,
-                parenthesis_expressions,
             },
             ExpressionSourceMap {
                 expression_map,

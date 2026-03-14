@@ -11,6 +11,7 @@ mod hover;
 pub mod inlay_hints;
 mod markup;
 mod navigation_target;
+pub mod signature_help;
 mod typing;
 mod view_syntax_tree;
 
@@ -70,7 +71,7 @@ pub use crate::{
     // references::ReferenceSearchResult,
     // rename::RenameError,
     // runnables::{Runnable, RunnableKind, TestId, UpdateTest},
-    // signature_help::SignatureHelp,
+    signature_help::SignatureHelp,
     // static_index::{
     //     StaticIndex, StaticIndexedFile, TokenId, TokenStaticData, VendoredLibrariesConfig,
     // },
@@ -288,6 +289,14 @@ impl Analysis {
         self.with_db(|database| {
             ide_completion::completions2(database, config, position, trigger_character)
         })
+    }
+
+    /// Computes signature help at the given position.
+    pub fn signature_help(
+        &self,
+        position: FilePosition,
+    ) -> Cancellable<Option<SignatureHelp>> {
+        self.with_db(|database| signature_help::signature_help(database, position))
     }
 
     pub fn format(

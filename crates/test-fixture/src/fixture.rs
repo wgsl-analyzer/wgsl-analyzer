@@ -72,7 +72,7 @@ pub struct Fixture {
     /// Syntax: `deps:hir-def,ide-assists`.
     pub deps: Vec<String>,
     /// Specifies the edition of this package. This must be used with `package` meta. If
-    /// this is not specified, ([`base_db::input::Edition::CURRENT`]) will be used.
+    /// this is not specified, the current default edition will be used.
     /// This must be used with `package` meta.
     ///
     /// Syntax: `edition:2021`.
@@ -98,7 +98,7 @@ pub struct Fixture {
     /// This is implied if this file belongs to a library source root.
     ///
     /// Use this if you want to test something that checks if a package is a workspace
-    /// member via [`PackageOrigin`](base_db::input::PackageOrigin).
+    /// member via `PackageOrigin`.
     ///
     /// Syntax: `library`.
     pub library: bool,

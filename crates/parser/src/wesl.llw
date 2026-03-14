@@ -14,6 +14,7 @@ token Semi=';' LPar='(' RPar=')' Comma=',' Eq='=' Colon=':' LBrace='{' RBrace='}
       SlashEq='/=' CaretEq='^=' PercentEq='%=' Plus2='++' Minus2='--';
 token Import='import' Package='package' Super='super' As='as' DoubleColon='::';
 token Ident='<identifier>' FloatLiteral='<floating point literal>' IntLiteral='<integer literal>';
+token Reserved='<reserved word>';
 token Blankspace LineEndingComment BlockComment;
 
 skip Blankspace LineEndingComment BlockComment;
@@ -27,16 +28,18 @@ part statement;
 part type_specifier;
 
 // WESL: Import statements
+// import_name accepts both identifiers and reserved words (e.g. `shared`) as valid path segments.
+import_name: Ident | Reserved;
 import_statement: 'import' [import_package_relative | import_super_relative] (import_collection | import_path) ';';
 import_package_relative: 'package' '::';
 import_super_relative: ('super' '::')+;
-import_path: name (
+import_path: import_name (
     '::' (import_collection | import_path)
   | ['as' name] @import_item
 );
 import_collection: '{' import_path (?1 ',' import_path)* [','] '}';
 
-// TODO: validate that directives come before declarations to improve error messages
+// Validated in create_node_translation_unit: directives must come before declarations.
 // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/683
 translation_unit: (global_item | ';')*;
 global_item^: import_statement | global_directive | global_declaration | global_assert;
@@ -98,7 +101,7 @@ template_args^: TemplateStart expression (?1 ',' expression)* [','] TemplateEnd;
 
 // This is pratt parser, with higher elements having a higher binding power
 // Source: https://github.com/0x2a-42/lelwel/tree/main?tab=readme-ov-file#direct-left-recursion
-// TODO: check for invalid expressions, like a < b < c
+// Validated in create_node_binary_expression: invalid operator nesting like a < b < c
 // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/616
 expression:
   expression '[' expression ']' @indexing_expression // §8.5

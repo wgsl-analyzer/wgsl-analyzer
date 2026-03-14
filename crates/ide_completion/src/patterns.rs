@@ -15,9 +15,11 @@ pub(crate) fn determine_location(
 
     if let Some(expression) = ast::FieldExpression::cast(node.clone()) {
         Some(ImmediateLocation::FieldAccess { expression })
-    } else if let Some(expression) = ast::FieldExpression::cast(parent) {
+    } else if let Some(expression) = ast::FieldExpression::cast(parent.clone()) {
         Some(ImmediateLocation::FieldAccess { expression })
-    } else if node.kind() == SyntaxKind::SourceFile {
+    } else if node.kind() == SyntaxKind::Attribute || parent.kind() == SyntaxKind::Attribute {
+        Some(ImmediateLocation::Attribute)
+    } else if node.kind() == SyntaxKind::SourceFile || parent.kind() == SyntaxKind::SourceFile {
         Some(ImmediateLocation::ItemList)
     } else if node.ancestors().find_map(ast::Statement::cast).is_some() {
         Some(ImmediateLocation::InsideStatement)

@@ -1,6 +1,6 @@
 use expect_test::expect;
 
-use crate::tests::check_infer;
+use crate::tests::{check_infer, check_infer_full};
 
 #[test]
 fn type_alias_in_struct() {
@@ -373,6 +373,63 @@ let b = vec4(vec3f(1f), 1f);
 }
 
 #[test]
+fn scalar_constructors() {
+    check_infer(
+        "
+fn foo() {
+    let a = f16(1.0f);
+    let b = f16(1h);
+    let c = i32(true);
+    let d = u32(3i);
+    let e = f32(2u);
+    let f = bool(0i);
+}
+    ",
+        expect![[r#"
+            19..20 'a': f16
+            23..32 'f16(1.0f)': f16
+            27..31 '1.0f': f32
+            42..43 'b': f16
+            46..53 'f16(1h)': f16
+            50..52 '1h': f16
+            63..64 'c': i32
+            67..76 'i32(true)': i32
+            71..75 'true': bool
+            86..87 'd': u32
+            90..97 'u32(3i)': u32
+            94..96 '3i': i32
+            107..108 'e': f32
+            111..118 'f32(2u)': f32
+            115..117 '2u': u32
+            128..129 'f': bool
+            132..140 'bool(0i)': bool
+            137..139 '0i': i32
+        "#]],
+    );
+}
+
+#[test]
+fn array_zero_value_constructor() {
+    check_infer(
+        "
+fn foo() {
+    let a = array<f32, 3>();
+    let b = array<i32, 2>();
+    let c = array<bool, 4>();
+}
+    ",
+        expect![[r#"
+            19..20 'a': array<f32, 3>
+            23..38 'array<f32, 3>()': array<f32, 3>
+            48..49 'b': array<i32, 2>
+            52..67 'array<i32, 2>()': array<i32, 2>
+            77..78 'c': array<bool, 4>
+            81..97 'array<..., 4>()': array<bool, 4>
+        "#]],
+    );
+}
+
+#[test]
 fn texture_storage_2d_template() {
     check_infer(
         "
@@ -380,6 +437,78 @@ var framebuffer : texture_storage_2d<rgba16float, write>;
     ",
         expect![[r#"
             4..15 'framebuffer': ref<texture_storage_2d<rgba16float,write>>
+        "#]],
+    );
+}
+
+#[test]
+fn texture_num_samples() {
+    check_infer(
+        "
+@group(0) @binding(0)
+var t: texture_multisampled_2d<f32>;
+fn main() {
+    let n = textureNumSamples(t);
+}
+    ",
+        expect![[r#"
+            26..27 't': ref<texture_multisampled_2d<f32>>
+            79..80 'n': u32
+            83..103 'textur...les(t)': u32
+            101..102 't': ref<texture_multisampled_2d<f32>>
+        "#]],
+    );
+}
+
+#[test]
+fn field_access_preserves_address_space() {
+    // https://github.com/wgsl-analyzer/wgsl-analyzer/issues/704
+    // Verifies that field access on a storage variable produces a storage reference/pointer,
+    // not a function/private one. Uses Full verbosity to assert the address space explicitly.
+    check_infer_full(
+        "
+struct MyStruct {
+    field: u32
+}
+@group(0) @binding(0)
+var<storage> my_struct: MyStruct;
+fn test() {
+    let p1 = &my_struct.field;
+    let p2: ptr<storage, u32, read> = &my_struct.field;
+}
+    ",
+        expect![[r#"
+            70..79 'my_struct': ref<storage, MyStruct, read>
+            111..113 'p1': ptr<storage, u32, read>
+            116..132 '&my_st....field': ptr<storage, u32, read>
+            117..126 'my_struct': ref<storage, MyStruct, read>
+            117..132 'my_struct.field': ref<storage, u32, read>
+            142..144 'p2': ptr<storage, u32, read>
+            172..188 '&my_st....field': ptr<storage, u32, read>
+            173..182 'my_struct': ref<storage, MyStruct, read>
+            173..188 'my_struct.field': ref<storage, u32, read>
+        "#]],
+    );
+}
+
+#[test]
+fn index_access_preserves_address_space() {
+    // https://github.com/wgsl-analyzer/wgsl-analyzer/issues/704
+    check_infer_full(
+        "
+@group(0) @binding(0)
+var<storage> my_array: array<u32>;
+fn test() {
+    let a1 = &my_array[0];
+}
+    ",
+        expect![[r#"
+            35..43 'my_array': ref<storage, array<u32>, read>
+            77..79 'a1': ptr<storage, u32, read>
+            82..94 '&my_array[0]': ptr<storage, u32, read>
+            83..91 'my_array': ref<storage, array<u32>, read>
+            83..94 'my_array[0]': ref<storage, u32, read>
+            92..93 '0': integer
         "#]],
     );
 }
@@ -449,6 +578,196 @@ fn f() {
             40..48 'i2 >> 0u': u32
             46..48 '0u': u32
             52..55 '0xf': integer
+        "#]],
+    );
+}
+
+#[test]
+fn frexp_builtin() {
+    check_infer(
+        "
+fn main() {
+    let r = frexp(1.0f);
+    let f = r.fract;
+    let e = r.exp;
+}
+",
+        expect![[r#"
+            20..21 'r': __frexp_result_f32
+            24..35 'frexp(1.0f)': __frexp_result_f32
+            30..34 '1.0f': f32
+            45..46 'f': f32
+            49..50 'r': __frexp_result_f32
+            49..56 'r.fract': ref<f32>
+            66..67 'e': i32
+            70..71 'r': __frexp_result_f32
+            70..75 'r.exp': ref<i32>
+        "#]],
+    );
+}
+
+#[test]
+fn frexp_vec_builtin() {
+    check_infer(
+        "
+fn main() {
+    let r = frexp(vec2f(1.0, 2.0));
+    let f = r.fract;
+    let e = r.exp;
+}
+",
+        expect![[r#"
+            20..21 'r': __frexp_result_vec2_f32
+            24..46 'frexp(... 2.0))': __frexp_result_vec2_f32
+            30..45 'vec2f(1.0, 2.0)': vec2<f32>
+            36..39 '1.0': float
+            41..44 '2.0': float
+            56..57 'f': vec2<f32>
+            60..61 'r': __frexp_result_vec2_f32
+            60..67 'r.fract': ref<vec2<f32>>
+            77..78 'e': vec2<i32>
+            81..82 'r': __frexp_result_vec2_f32
+            81..86 'r.exp': ref<vec2<i32>>
+        "#]],
+    );
+}
+
+#[test]
+fn modf_builtin() {
+    check_infer(
+        "
+fn main() {
+    let r = modf(1.5f);
+    let f = r.fract;
+    let w = r.whole;
+}
+",
+        expect![[r#"
+            20..21 'r': __modf_result_f32
+            24..34 'modf(1.5f)': __modf_result_f32
+            29..33 '1.5f': f32
+            44..45 'f': f32
+            48..49 'r': __modf_result_f32
+            48..55 'r.fract': ref<f32>
+            65..66 'w': f32
+            69..70 'r': __modf_result_f32
+            69..76 'r.whole': ref<f32>
+        "#]],
+    );
+}
+
+#[test]
+fn atomic_compare_exchange_weak_builtin() {
+    check_infer(
+        "
+@group(0) @binding(0) var<storage, read_write> buf: atomic<u32>;
+
+fn main() {
+    let r = atomicCompareExchangeWeak(&buf, 1u, 2u);
+    let old = r.old_value;
+    let ex = r.exchanged;
+}
+",
+        expect![[r#"
+            47..50 'buf': ref<atomic<u32>>
+            86..87 'r': __atomic_compare_exchange_result
+            90..129 'atomic...u, 2u)': __atomic_compare_exchange_result
+            116..120 '&buf': ptr<atomic<u32>>
+            117..120 'buf': ref<atomic<u32>>
+            122..124 '1u': u32
+            126..128 '2u': u32
+            139..142 'old': u32
+            145..146 'r': __atomic_compare_exchange_result
+            145..156 'r.old_value': ref<u32>
+            166..168 'ex': bool
+            171..172 'r': __atomic_compare_exchange_result
+            171..182 'r.exchanged': ref<bool>
+        "#]],
+    );
+}
+
+#[test]
+fn bitcast_builtin() {
+    check_infer(
+        "
+fn main() {
+    let a = bitcast<f32>(1u);
+    let b = bitcast<u32>(1.0f);
+    let c = bitcast<i32>(1u);
+    let d = bitcast<vec2<f32>>(vec2<u32>(1u, 2u));
+    let e = bitcast<vec4<i32>>(vec4<f32>(1.0f, 2.0f, 3.0f, 4.0f));
+    let f = bitcast<f32>(1u) + 1.0f;
+    let g = bitcast<u32>(bitcast<f32>(42u));
+}
+    ",
+        expect![[r#"
+            20..21 'a': f32
+            24..40 'bitcas...2>(1u)': f32
+            37..39 '1u': u32
+            50..51 'b': u32
+            54..72 'bitcas...(1.0f)': u32
+            67..71 '1.0f': f32
+            82..83 'c': i32
+            86..102 'bitcas...2>(1u)': i32
+            99..101 '1u': u32
+            112..113 'd': vec2<f32>
+            116..153 'bitcas..., 2u))': vec2<f32>
+            135..152 'vec2<u...u, 2u)': vec2<u32>
+            145..147 '1u': u32
+            149..151 '2u': u32
+            163..164 'e': vec4<i32>
+            167..220 'bitcas...4.0f))': vec4<i32>
+            186..219 'vec4<f... 4.0f)': vec4<f32>
+            196..200 '1.0f': f32
+            202..206 '2.0f': f32
+            208..212 '3.0f': f32
+            214..218 '4.0f': f32
+            230..231 'f': f32
+            234..250 'bitcas...2>(1u)': f32
+            234..257 'bitcas...+ 1.0f': f32
+            247..249 '1u': u32
+            253..257 '1.0f': f32
+            267..268 'g': u32
+            271..302 'bitcas...(42u))': u32
+            284..301 'bitcas...>(42u)': f32
+            297..300 '42u': u32
+        "#]],
+    );
+}
+
+#[test]
+fn subgroup_builtin_without_enable() {
+    // Subgroup builtins should produce a diagnostic when `enable subgroups` is missing.
+    check_infer(
+        "
+fn test() {
+    let a = subgroupAdd(1u);
+}
+    ",
+        expect![[r#"
+            20..21 'a': [error]
+            24..39 'subgroupAdd(1u)': [error]
+            36..38 '1u': u32
+            InferenceDiagnostic { source: Body, kind: WgslError { expression: Idx::<Expression>(1), message: "`subgroupAdd` requires `enable subgroups`" } }
+        "#]],
+    );
+}
+
+#[test]
+fn subgroup_builtin_with_enable() {
+    // Subgroup builtins should work when `enable subgroups` is present.
+    // Note: the actual type resolution goes through wgsl_types which may not
+    // support subgroup builtins yet, so we just verify no extension-gate diagnostic.
+    check_infer(
+        "
+enable subgroups;
+fn test() {
+    let a = subgroupElect();
+}
+    ",
+        expect![[r#"
+            38..39 'a': bool
+            42..57 'subgroupElect()': bool
         "#]],
     );
 }

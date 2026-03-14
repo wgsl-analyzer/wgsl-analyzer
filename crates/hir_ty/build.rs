@@ -10,6 +10,7 @@ use std::{
 #[derive(Default, Debug)]
 struct Builtin {
     overloads: Vec<Overload>,
+    required_extension: Option<String>,
 }
 
 #[derive(Debug)]
@@ -31,7 +32,9 @@ enum Type {
     Vec(VecSize, Box<Self>),
     Matrix(VecSize, VecSize, Box<Self>),
     Texture(TextureType),
-    Sampler { comparison: bool },
+    Sampler {
+        comparison: bool,
+    },
     Bool,
     F16,
     F32,
@@ -42,6 +45,9 @@ enum Type {
     Atomic(Box<Self>),
     Bound(usize),
     StorageTypeOfTexelFormat(usize),
+    /// A synthetic struct returned by builtins like `frexp` and `modf`.
+    /// Fields: (`struct_name`, vec of (`field_name`, `field_type`)).
+    BuiltinStruct(String, Vec<(String, Box<Self>)>),
 }
 
 enum VecSize {
@@ -127,14 +133,31 @@ fn main() -> Result<(), Box<dyn error::Error>> {
     let mut file = File::create(path)?;
 
     let mut builtins: BTreeMap<String, Builtin> = BTreeMap::new();
+    let mut current_extension: Option<String> = None;
 
     let builtins_file = fs::read_to_string("builtins.wgsl.txt")?;
     for line in builtins_file.lines() {
         if line.is_empty() || line.starts_with("//") {
             continue;
         }
+        // Parse [enable X] section headers
+        if let Some(inner) = line
+            .strip_prefix('[')
+            .and_then(|line| line.strip_suffix(']'))
+        {
+            let inner = inner.trim();
+            if let Some(ext) = inner.strip_prefix("enable ") {
+                current_extension = Some(ext.trim().to_owned());
+            } else if inner == "core" {
+                current_extension = None;
+            }
+            continue;
+        }
         let (name, overload) = parse_line(line);
         let builtin = builtins.entry(name.to_owned()).or_default();
+        if builtin.required_extension.is_none() {
+            builtin.required_extension.clone_from(&current_extension);
+        }
         builtin.overloads.push(overload);
     }
 
@@ -214,6 +237,10 @@ impl Builtin {{
 
 fn parse_line(line: &str) -> (&str, Overload) {
     let (name, line) = line.split_once('(').unwrap();
+    // Strip function-level template parameters (e.g. `bitcast<T>` -> `bitcast`).
+    // The generic type variables inside `<...>` are still picked up when
+    // `parse_type` processes the parameters and return type.
+    let name = name.split_once('<').map_or(name, |(head, _)| head);
     let (parameters, line) = line.split_once(')').unwrap();
     let return_type = line.trim_start_matches(" ->").trim();
 
@@ -298,6 +325,7 @@ fn only_char(input: &str) -> char {
     clippy::unimplemented,
     reason = "builtin refactor https://github.com/wgsl-analyzer/wgsl-analyzer/issues/559"
 )]
+#[expect(clippy::too_many_lines, reason = "long but straightforward match")]
 fn parse_type(
     generics: &mut BTreeMap<char, (usize, Generic)>,
     r#type: &str,
@@ -374,6 +402,24 @@ fn parse_type(
             _ => unimplemented!("{}", r#type),
         };
         return Type::Texture(texture_type);
+    }
+
+    // Parse builtin struct types: __name{field1:type1,field2:type2}
+    if let Some(brace_pos) = r#type.find('{') {
+        let name = &r#type[..brace_pos];
+        let fields_str = r#type[brace_pos + 1..].strip_suffix('}').unwrap();
+        let fields = fields_str
+            .split(',')
+            .filter(|field| !field.is_empty())
+            .map(|field| {
+                let (field_name, field_type) = field.split_once(':').unwrap();
+                (
+                    field_name.trim().to_owned(),
+                    Box::new(parse_type(generics, field_type.trim())),
+                )
+            })
+            .collect();
+        return Type::BuiltinStruct(name.to_owned(), fields);
     }
 
     if r#type.len() == 1 {
@@ -478,6 +524,21 @@ fn type_to_rust(r#type: &Type) -> String {
                 "TypeKind::StorageTypeOfTexelFormat(BoundVariable {{ index: {variable} }}).intern(database)"
             )
         },
+        Type::BuiltinStruct(name, fields) => {
+            let fields_code: Vec<String> = fields
+                .iter()
+                .map(|(field_name, field_type)| {
+                    format!(
+                        "(\"{field_name}\".to_owned(), {})",
+                        type_to_rust(field_type)
+                    )
+                })
+                .collect();
+            format!(
+                "TypeKind::BuiltinStruct(crate::ty::BuiltinStruct {{ name: \"{name}\".to_owned(), fields: vec![{}] }}).intern(database)",
+                fields_code.join(", ")
+            )
+        },
     }
 }
 
@@ -548,11 +609,26 @@ impl Builtin {{
         )?;
     }
 
+    let required_ext = match &builtin.required_extension {
+        Some(ext) => {
+            let variant = match ext.as_str() {
+                "subgroups" => "Subgroups",
+                "f16" => "F16",
+                "clip_distances" => "ClipDistances",
+                "dual_source_blending" => "DualSourceBlending",
+                "primitive_index" => "PrimitiveIndex",
+                other => panic!("unknown enable extension: {other}"),
+            };
+            format!("Some(EnableExtension::{variant})")
+        },
+        None => "None".to_owned(),
+    };
+
     write!(
         sink,
         "
         ];
-        Builtin {{ name, overloads }}
+        Builtin {{ name, overloads, required_extension: {required_ext} }}
     }}
 }}
 ",

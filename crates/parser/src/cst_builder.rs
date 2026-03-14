@@ -148,6 +148,7 @@ impl CstBuilder<'_, '_> {
             Rule::UnaryExpression => self.start_node(SyntaxKind::PrefixExpression),
             Rule::VariableDeclaration => self.start_node(SyntaxKind::VariableDeclaration),
             Rule::WhileStatement => self.start_node(SyntaxKind::WhileStatement),
+            Rule::ImportName => self.start_node(SyntaxKind::ImportName),
             Rule::ConstDeclarationSemi
             | Rule::CompoundAssignmentOperator
             | Rule::ExprTemplateList
@@ -300,6 +301,7 @@ impl TryFrom<Token> for SyntaxKind {
             Token::Super => Self::Super,
             Token::As => Self::As,
             Token::DoubleColon => Self::DoubleColon,
+            Token::Reserved => Self::Reserved,
             Token::Ident => Self::Identifier,
             Token::FloatLiteral => Self::FloatLiteral,
             Token::IntLiteral => Self::IntLiteral,

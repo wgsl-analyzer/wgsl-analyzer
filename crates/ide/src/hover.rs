@@ -1,9 +1,16 @@
 use base_db::{FilePosition, FileRange, RangeInfo, SourceDatabase as _};
-use hir::Semantics;
-use hir_def::database::DefDatabase as _;
+use hir::{Definition, HirDatabase as _, Semantics};
+use hir_def::{database::DefDatabase as _, item_tree::Name};
+use hir_ty::{
+    builtins::Builtin,
+    infer::ResolvedCall,
+    ty::pretty::{pretty_fn, pretty_type},
+};
 use ide_db::RootDatabase;
+use std::fmt::Write as _;
+use syntax::{AstNode as _, SyntaxKind, ast};
 
-use crate::{NavigationTarget, markup::Markup};
+use crate::{NavigationTarget, helpers, markup::Markup};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct HoverConfig {
@@ -70,14 +77,228 @@ pub struct HoverGotoTypeData {
 //
 // Shows additional information, like the type of an expression or the documentation for a definition when "focusing" code.
 // Focusing is usually hovering with a mouse, but can also be triggered with a shortcut.
+#[expect(
+    clippy::too_many_lines,
+    reason = "sequential fallback logic for hover resolution"
+)]
 pub(crate) fn hover(
     database: &RootDatabase,
     file_range: FileRange,
     _config: &HoverConfig,
 ) -> Option<RangeInfo<HoverResult>> {
-    let _semantics = &Semantics::new(database);
+    let semantics = &Semantics::new(database);
     let file_id = database.editioned_file_id(file_range.file_id);
-    let _file = database.parse(file_id).tree();
-    // TODO: Implement hovering and https://github.com/wgsl-analyzer/wgsl-analyzer/issues/362
+    let file = database.parse(file_id).tree();
+    let token = file.syntax().token_at_offset(file_range.range.start());
+
+    #[expect(
+        clippy::wildcard_enum_match_arm,
+        reason = "infeasible to list all cases"
+    )]
+    let token = helpers::pick_best_token(token, |token| match token {
+        SyntaxKind::Identifier => 2,
+        kind if kind.is_trivia() => 0,
+        _ => 1,
+    })?;
+
+    let range = token.text_range();
+
+    // Try resolving as a user-defined definition first
+    if let Some(definition) = Definition::from_token(semantics, file_id.into(), &token)
+        && let Some(markup_text) = definition.hover_text(database)
+    {
+        let mut hover_content = String::new();
+
+        // Add doc comments above the code block if present
+        if let Some(doc) = definition.doc_comments(database) {
+            hover_content.push_str(&doc);
+            hover_content.push_str("\n\n---\n\n");
+        }
+
+        write!(hover_content, "```wgsl\n{markup_text}\n```").unwrap();
+
+        return Some(RangeInfo::new(
+            range,
+            HoverResult {
+                markup: Markup::from(hover_content),
+                actions: Vec::new(),
+            },
+        ));
+    }
+
+    // Fall back to expression type hover (e.g., `.x` on a vec3 — swizzle access)
+    if let Some(parent) = token.parent()
+        && let Some(field_expr) = ast::FieldExpression::cast(parent)
+    {
+        let expression = ast::Expression::FieldExpression(field_expr);
+        let container = semantics.find_container(file_id.into(), expression.syntax())?;
+        let analyzer = semantics.analyze(container.as_def_with_body_id()?);
+        if let Some(expression_type) = analyzer.type_of_expression(&expression) {
+            let markup_text = pretty_type(database, expression_type);
+            return Some(RangeInfo::new(
+                range,
+                HoverResult {
+                    markup: Markup::fenced_block(&markup_text),
+                    actions: Vec::new(),
+                },
+            ));
+        }
+    }
+
+    // Check if hovering over an attribute name (e.g., @group, @binding, @vertex)
+    if token.kind() == SyntaxKind::Identifier
+        && let Some(parent) = token.parent()
+        && ast::Attribute::cast(parent).is_some()
+        && let Some(description) = attribute_description(token.text())
+    {
+        return Some(RangeInfo::new(
+            range,
+            HoverResult {
+                markup: Markup::from(description),
+                actions: Vec::new(),
+            },
+        ));
+    }
+
+    // Check if hovering over a builtin type name (e.g., f32, vec3, mat4x4, sampler, texture_2d)
+    if token.kind() == SyntaxKind::Identifier
+        && let Some(description) = builtin_type_description(token.text())
+    {
+        return Some(RangeInfo::new(
+            range,
+            HoverResult {
+                markup: Markup::from(description),
+                actions: Vec::new(),
+            },
+        ));
+    }
+
+    // Fall back to builtin lookup for functions like abs, dot, clamp, etc.
+    if token.kind() == SyntaxKind::Identifier {
+        let name = Name::from(token.text());
+        if let Some(builtin) = Builtin::for_name(database, &name) {
+            // Try to resolve the specific overload if this is a call site
+            if let Some(markup_text) =
+                try_resolve_call_at_token(semantics, file_id.into(), &token, database)
+            {
+                return Some(RangeInfo::new(
+                    range,
+                    HoverResult {
+                        markup: Markup::fenced_block(&markup_text),
+                        actions: Vec::new(),
+                    },
+                ));
+            }
+
+            // Fall back: try exact overload match first (all args present & matching)
+            let arg_types = collect_call_arg_types(semantics, file_id.into(), &token, database);
+            if let Some(overload) = builtin.exact_overload(database, &arg_types) {
+                let function = overload.r#type.lookup(database);
+                let markup_text = pretty_fn(database, &function);
+                return Some(RangeInfo::new(
+                    range,
+                    HoverResult {
+                        markup: Markup::fenced_block(&markup_text),
+                        actions: Vec::new(),
+                    },
+                ));
+            }
+
+            // Otherwise show all matching overloads sorted by relevance
+            let matching = builtin.matching_overloads(database, &arg_types);
+            let mut lines = Vec::new();
+            for (_, overload) in &matching {
+                let function = overload.r#type.lookup(database);
+                lines.push(pretty_fn(database, &function));
+            }
+            if !lines.is_empty() {
+                let markup_text = lines.join("\n");
+                return Some(RangeInfo::new(
+                    range,
+                    HoverResult {
+                        markup: Markup::fenced_block(&markup_text),
+                        actions: Vec::new(),
+                    },
+                ));
+            }
+        }
+    }
+
     None
+}
+
+/// Try to resolve the specific function overload at a call site.
+/// Walks up from the token to find a `FunctionCall` expression, then uses
+/// type inference's `call_resolution` to find the resolved overload.
+fn try_resolve_call_at_token(
+    semantics: &Semantics<'_>,
+    file_id: hir_def::HirFileId,
+    token: &syntax::SyntaxToken,
+    database: &RootDatabase,
+) -> Option<String> {
+    // Walk up ancestors: Identifier -> Path -> IdentExpression -> FunctionCall
+    let func_call = token.parent_ancestors().find_map(ast::FunctionCall::cast)?;
+    let call_expr = ast::Expression::FunctionCall(func_call);
+
+    let container = semantics.find_container(file_id, call_expr.syntax())?;
+    let analyzer = semantics.analyze(container.as_def_with_body_id()?);
+    let expr_id = analyzer.expression_id(&call_expr)?;
+    let resolved = analyzer.infer.call_resolution(expr_id)?;
+
+    match resolved {
+        ResolvedCall::Function(fn_id) => {
+            let function = fn_id.lookup(database);
+            Some(pretty_fn(database, &function))
+        },
+        ResolvedCall::OtherTypeInitializer(_) => None,
+    }
+}
+
+/// Collects the inferred types of already-typed arguments at a builtin call site.
+/// Returns an empty vec if the token is not inside a function call.
+fn collect_call_arg_types(
+    semantics: &Semantics<'_>,
+    file_id: hir_def::HirFileId,
+    token: &syntax::SyntaxToken,
+    database: &RootDatabase,
+) -> Vec<hir_ty::ty::Type> {
+    let Some(func_call) = token.parent_ancestors().find_map(ast::FunctionCall::cast) else {
+        return Vec::new();
+    };
+    let Some(arguments) = func_call.parameters() else {
+        return Vec::new();
+    };
+    let Some(container) = semantics.find_container(file_id, func_call.syntax()) else {
+        return Vec::new();
+    };
+    let Some(definition) = container.as_def_with_body_id() else {
+        return Vec::new();
+    };
+    let analyzer = semantics.analyze(definition);
+    arguments
+        .arguments()
+        .filter_map(|arg| analyzer.type_of_expression(&arg))
+        .collect()
+}
+
+/// Returns a Markdown description for a WGSL attribute name.
+fn attribute_description(name: &str) -> Option<String> {
+    let attribute = ide_db::wgsl_attributes::find_attribute(name)?;
+    Some(format!(
+        "{}\n\n---\n\n```wgsl\n{}\n```\n\n[WGSL Spec]({})",
+        attribute.description,
+        attribute.syntax,
+        attribute.spec_url()
+    ))
+}
+
+/// Returns a Markdown description for a WGSL builtin type name.
+fn builtin_type_description(name: &str) -> Option<String> {
+    let builtin_type = ide_db::wgsl_builtin_types::find_builtin_type(name)?;
+    Some(format!(
+        "{}\n\n---\n\n```wgsl\n{}\n```\n\n[WGSL Spec]({})",
+        builtin_type.description,
+        builtin_type.name,
+        builtin_type.spec_url()
+    ))
 }

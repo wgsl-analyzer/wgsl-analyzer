@@ -1,6 +1,6 @@
 mod builtin;
 mod eval;
-mod unify;
+pub mod unify;
 
 use std::{fmt, ops::Index};
 
@@ -17,7 +17,7 @@ use hir_def::{
         Statement, StatementId, SwitchCaseSelector, UnaryOperator,
     },
     expression_store::{ExpressionStore, ExpressionStoreSource, path::Path},
-    item_tree::Name,
+    item_tree::{EnableExtension, Name},
     resolver::{ResolveKind, Resolver},
     signature::{
         ConstantSignature, FieldId, FunctionSignature, OverrideSignature, VariableSignature,
@@ -39,10 +39,21 @@ use crate::{
         unify::{UnificationTable, unify},
     },
     ty::{
-        ArraySize, ArrayType, AtomicType, MatrixType, Pointer, Reference, ScalarType,
-        TextureDimensionality, TextureKind, TextureType, Type, TypeKind, VecSize, VectorType,
+        ArraySize, ArrayType, AtomicType, BuiltinStruct, MatrixType, Pointer, Reference,
+        ScalarType, TextureDimensionality, TextureKind, TextureType, Type, TypeKind, VecSize,
+        VectorType,
     },
 };
+
+const fn extension_name(ext: EnableExtension) -> &'static str {
+    match ext {
+        EnableExtension::F16 => "f16",
+        EnableExtension::ClipDistances => "clip_distances",
+        EnableExtension::DualSourceBlending => "dual_source_blending",
+        EnableExtension::Subgroups => "subgroups",
+        EnableExtension::PrimitiveIndex => "primitive_index",
+    }
+}
 
 /// Infers the type of a global item.
 /// For `const`s and co, it first uses the specified type,
@@ -439,6 +450,15 @@ impl<'database> InferenceContext<'database> {
     //     self.store = old_store;
     //     result
     // }
+
+    fn is_extension_enabled(
+        &self,
+        extension: EnableExtension,
+    ) -> bool {
+        let file_id = self.owner.file_id(self.database);
+        let item_tree = self.database.item_tree(file_id);
+        item_tree.is_extension_enabled(extension)
+    }
 
     fn set_expression_type(
         &mut self,
@@ -1119,6 +1139,16 @@ impl<'database> InferenceContext<'database> {
                     return self.error_type();
                 }
 
+                // Extract address space and access mode from the parent reference,
+                // so that field access preserves them.
+                // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/704
+                let (address_space, access_mode) =
+                    if let TypeKind::Reference(reference) = expression_type.kind(self.database) {
+                        (reference.address_space, reference.access_mode)
+                    } else {
+                        (AddressSpace::Function, AccessMode::ReadWrite)
+                    };
+
                 match expression_type
                     .kind(self.database)
                     .unref(self.database)
@@ -1138,9 +1168,7 @@ impl<'database> InferenceContext<'database> {
                             );
 
                             let field_type = field_types[field];
-                            // TODO: correct Address Spaces/access mode
-                            // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/650
-                            self.make_ref(field_type, AddressSpace::Private, AccessMode::ReadWrite)
+                            self.make_ref(field_type, address_space, access_mode)
                         } else {
                             self.push_diagnostic(
                                 store.store_source,
@@ -1156,6 +1184,25 @@ impl<'database> InferenceContext<'database> {
                     TypeKind::Vector(vec_type) => {
                         if let Ok(r#type) = self.vec_swizzle(vec_type, name) {
                             r#type
+                        } else {
+                            self.push_diagnostic(
+                                store.store_source,
+                                InferenceDiagnosticKind::NoSuchField {
+                                    expression: *field_expression,
+                                    name: name.clone(),
+                                    r#type: expression_type,
+                                },
+                            );
+                            self.error_type()
+                        }
+                    },
+                    TypeKind::BuiltinStruct(builtin_struct) => {
+                        if let Some((_, field_type)) = builtin_struct
+                            .fields
+                            .iter()
+                            .find(|(field_name, _)| field_name.as_str() == name.as_str())
+                        {
+                            self.make_ref(*field_type, address_space, access_mode)
                         } else {
                             self.push_diagnostic(
                                 store.store_source,
@@ -1207,7 +1254,19 @@ impl<'database> InferenceContext<'database> {
                 // TODO: check that the type of the index expression makes sense. Can't index with a f32, for example.
                 // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/671
                 let left_kind = left_side.kind(self.database);
-                let is_reference = matches!(left_kind, TypeKind::Reference(_));
+
+                // Extract address space and access mode from the parent reference,
+                // so that index access preserves them.
+                // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/704
+                #[expect(
+                    clippy::ref_patterns,
+                    reason = "needed to avoid partial move of left_kind"
+                )]
+                let ref_info = if let TypeKind::Reference(ref reference) = left_kind {
+                    Some((reference.address_space, reference.access_mode))
+                } else {
+                    None
+                };
 
                 let left_inner = left_kind.unref(self.database);
 
@@ -1224,6 +1283,7 @@ impl<'database> InferenceContext<'database> {
                     | TypeKind::Scalar(_)
                     | TypeKind::Atomic(_)
                     | TypeKind::Struct(_)
+                    | TypeKind::BuiltinStruct(_)
                     | TypeKind::Texture(_)
                     | TypeKind::Sampler(_)
                     | TypeKind::Reference(_)
@@ -1241,8 +1301,8 @@ impl<'database> InferenceContext<'database> {
                     },
                 };
 
-                if is_reference {
-                    self.make_ref(r#type, AddressSpace::Private, AccessMode::ReadWrite)
+                if let Some((address_space, access_mode)) = ref_info {
+                    self.make_ref(r#type, address_space, access_mode)
                 } else {
                     r#type
                 }
@@ -1736,6 +1796,25 @@ impl<'database> InferenceContext<'database> {
             return self.error_type();
         };
 
+        // Check if this builtin requires an enable extension
+        if let Some(builtin) = Builtin::for_name(self.database, name)
+            && let Some(required_ext) = builtin.required_extension()
+            && !self.is_extension_enabled(required_ext)
+        {
+            self.push_diagnostic(
+                store.store_source,
+                InferenceDiagnosticKind::WgslError {
+                    expression,
+                    message: format!(
+                        "`{}` requires `enable {}`",
+                        name.as_str(),
+                        extension_name(required_ext),
+                    ),
+                },
+            );
+            return self.error_type();
+        }
+
         let mut converter = WgslTypeConverter::new(self.database);
         let mut template_args = vec![];
         while let Some((template_parameter, _)) = template_parameters.next() {
@@ -1825,6 +1904,10 @@ impl<'database> InferenceContext<'database> {
                 self.call_scalar_constructor(store, scalar_type, expression, r#type, arguments)
             },
             TypeKind::Array(array_type) => {
+                if arguments.is_empty() {
+                    // Zero-value constructor: e.g. array<f32, 3>()
+                    return r#type;
+                }
                 for argument in &arguments {
                     if !argument.is_convertible_to(array_type.inner, self.database) {
                         self.push_diagnostic(
@@ -1917,6 +2000,7 @@ impl<'database> InferenceContext<'database> {
             | TypeKind::Sampler(_)
             | TypeKind::Pointer(_)
             | TypeKind::Atomic(_)
+            | TypeKind::BuiltinStruct(_)
             | TypeKind::StorageTypeOfTexelFormat(_)
             | TypeKind::BoundVariable(_)
             | TypeKind::Reference(_) => {
@@ -2090,6 +2174,7 @@ impl<'database> InferenceContext<'database> {
             | TypeKind::Sampler(_)
             | TypeKind::Pointer(_)
             | TypeKind::Atomic(_)
+            | TypeKind::BuiltinStruct(_)
             | TypeKind::StorageTypeOfTexelFormat(_)
             | TypeKind::BoundVariable(_)
             | TypeKind::Reference(_) => {
@@ -2429,7 +2514,7 @@ impl<'database> TypeLoweringContext<'database> {
         path: &Path,
         template_parameters: &[ExpressionId],
     ) -> Result<Lowered, TypeLoweringError> {
-        let resolved_type = self.resolver.resolve(path);
+        let resolved_type = self.resolver.resolve(self.database, path);
 
         if resolved_type.is_some() {
             self.expect_no_template(template_parameters);
@@ -2567,6 +2652,7 @@ impl<'database> WgslTypeConverter<'database> {
         clippy::wrong_self_convention,
         reason = "naming things is hard and this is probably changing in the future"
     )]
+    #[expect(clippy::too_many_lines, reason = "long but simple match")]
     fn to_wgsl_types(
         &mut self,
         r#type: Type,
@@ -2619,6 +2705,23 @@ impl<'database> WgslTypeConverter<'database> {
                                 // Skip broken struct fields
                                 ty: self.to_wgsl_types(fields[id])?,
                                 // Don't bother reconstructing the correct layout
+                                size: None,
+                                align: None,
+                            })
+                        })
+                        .collect::<Option<Vec<_>>>()?,
+                }))
+            },
+            TypeKind::BuiltinStruct(builtin_struct) => {
+                wgsl_types::Type::Struct(Box::new(wgsl_types::ty::StructType {
+                    name: builtin_struct.name.clone(),
+                    members: builtin_struct
+                        .fields
+                        .iter()
+                        .map(|(name, field_type)| {
+                            Some(wgsl_types::ty::StructMemberType {
+                                name: name.clone(),
+                                ty: self.to_wgsl_types(*field_type)?,
                                 size: None,
                                 align: None,
                             })
@@ -2697,6 +2800,7 @@ impl<'database> WgslTypeConverter<'database> {
         clippy::wrong_self_convention,
         reason = "naming things is hard and this is probably changing in the future"
     )]
+    #[expect(clippy::too_many_lines, reason = "long but simple match")]
     fn from_wgsl_types(
         &self,
         r#type: wgsl_types::Type,
@@ -2721,11 +2825,23 @@ impl<'database> WgslTypeConverter<'database> {
             wgsl_types::Type::F32 => TypeKind::Scalar(ScalarType::F32).intern(self.database),
             wgsl_types::Type::F64 => todo!("naga extension"),
             wgsl_types::Type::Struct(struct_type) => {
-                let struct_id = self
-                    .get_interned_struct(&struct_type.name)
-                    // I think this doesn't hold true when calling `atomicCompareExchangeWeak`
-                    .expect("Only struct types that have been passed in should be returned");
-                TypeKind::Struct(struct_id).intern(self.database)
+                if let Some(struct_id) = self.get_interned_struct(&struct_type.name) {
+                    TypeKind::Struct(struct_id).intern(self.database)
+                } else {
+                    // Synthetic struct from wgsl_types (e.g. frexp, modf, atomicCompareExchangeWeak results)
+                    let fields = struct_type
+                        .members
+                        .iter()
+                        .map(|member| {
+                            (member.name.clone(), self.from_wgsl_types(member.ty.clone()))
+                        })
+                        .collect();
+                    TypeKind::BuiltinStruct(BuiltinStruct {
+                        name: struct_type.name.clone(),
+                        fields,
+                    })
+                    .intern(self.database)
+                }
             },
             wgsl_types::Type::Array(r#type, size) => TypeKind::Array(ArrayType {
                 inner: self.from_wgsl_types(*r#type),
@@ -2940,72 +3056,98 @@ impl<'database> WgslTypeConverter<'database> {
         &self,
         value: TextureType,
     ) -> wgsl_types::ty::TextureType {
-        match (value.kind, value.dimension, value.arrayed) {
-            (TextureKind::Sampled(sampled), TextureDimensionality::D1, false) => {
+        match (
+            value.kind,
+            value.dimension,
+            value.arrayed,
+            value.multisampled,
+        ) {
+            (TextureKind::Sampled(sampled), TextureDimensionality::D1, false, false) => {
                 wgsl_types::ty::TextureType::Sampled1D(self.to_wgsl_sampled(sampled))
             },
-            (TextureKind::Sampled(sampled), TextureDimensionality::D1, true) => {
+            (TextureKind::Sampled(sampled), TextureDimensionality::D1, true, false) => {
                 wgsl_types::ty::TextureType::Sampled1DArray(self.to_wgsl_sampled(sampled))
             },
-            (TextureKind::Sampled(sampled), TextureDimensionality::D2, false) => {
+            (TextureKind::Sampled(sampled), TextureDimensionality::D2, false, false) => {
                 wgsl_types::ty::TextureType::Sampled2D(self.to_wgsl_sampled(sampled))
             },
-            (TextureKind::Sampled(sampled), TextureDimensionality::D2, true) => {
+            (TextureKind::Sampled(sampled), TextureDimensionality::D2, false, true) => {
+                wgsl_types::ty::TextureType::Multisampled2D(self.to_wgsl_sampled(sampled))
+            },
+            (TextureKind::Sampled(sampled), TextureDimensionality::D2, true, false) => {
                 wgsl_types::ty::TextureType::Sampled2DArray(self.to_wgsl_sampled(sampled))
             },
-            (TextureKind::Sampled(sampled), TextureDimensionality::D3, false) => {
+            (TextureKind::Sampled(sampled), TextureDimensionality::D3, false, false) => {
                 wgsl_types::ty::TextureType::Sampled3D(self.to_wgsl_sampled(sampled))
             },
-            (TextureKind::Sampled(sampled), TextureDimensionality::Cube, false) => {
+            (TextureKind::Sampled(sampled), TextureDimensionality::Cube, false, false) => {
                 wgsl_types::ty::TextureType::SampledCube(self.to_wgsl_sampled(sampled))
             },
-            (TextureKind::Sampled(sampled), TextureDimensionality::Cube, true) => {
+            (TextureKind::Sampled(sampled), TextureDimensionality::Cube, true, false) => {
                 wgsl_types::ty::TextureType::SampledCubeArray(self.to_wgsl_sampled(sampled))
             },
-            (TextureKind::Storage(texel_format, access_mode), TextureDimensionality::D1, false) => {
-                wgsl_types::ty::TextureType::Storage1D(
-                    to_wgsl_texel_format(texel_format),
-                    access_mode,
-                )
-            },
-            (TextureKind::Storage(texel_format, access_mode), TextureDimensionality::D1, true) => {
-                wgsl_types::ty::TextureType::Storage1DArray(
-                    to_wgsl_texel_format(texel_format),
-                    access_mode,
-                )
-            },
-            (TextureKind::Storage(texel_format, access_mode), TextureDimensionality::D2, false) => {
-                wgsl_types::ty::TextureType::Storage2D(
-                    to_wgsl_texel_format(texel_format),
-                    access_mode,
-                )
-            },
-            (TextureKind::Storage(texel_format, access_mode), TextureDimensionality::D2, true) => {
-                wgsl_types::ty::TextureType::Storage2DArray(
-                    to_wgsl_texel_format(texel_format),
-                    access_mode,
-                )
-            },
-            (TextureKind::Storage(texel_format, access_mode), TextureDimensionality::D3, false) => {
-                wgsl_types::ty::TextureType::Storage3D(
-                    to_wgsl_texel_format(texel_format),
-                    access_mode,
-                )
-            },
-            (TextureKind::Depth, TextureDimensionality::D2, false) => {
+            (
+                TextureKind::Storage(texel_format, access_mode),
+                TextureDimensionality::D1,
+                false,
+                false,
+            ) => wgsl_types::ty::TextureType::Storage1D(
+                to_wgsl_texel_format(texel_format),
+                access_mode,
+            ),
+            (
+                TextureKind::Storage(texel_format, access_mode),
+                TextureDimensionality::D1,
+                true,
+                false,
+            ) => wgsl_types::ty::TextureType::Storage1DArray(
+                to_wgsl_texel_format(texel_format),
+                access_mode,
+            ),
+            (
+                TextureKind::Storage(texel_format, access_mode),
+                TextureDimensionality::D2,
+                false,
+                false,
+            ) => wgsl_types::ty::TextureType::Storage2D(
+                to_wgsl_texel_format(texel_format),
+                access_mode,
+            ),
+            (
+                TextureKind::Storage(texel_format, access_mode),
+                TextureDimensionality::D2,
+                true,
+                false,
+            ) => wgsl_types::ty::TextureType::Storage2DArray(
+                to_wgsl_texel_format(texel_format),
+                access_mode,
+            ),
+            (
+                TextureKind::Storage(texel_format, access_mode),
+                TextureDimensionality::D3,
+                false,
+                false,
+            ) => wgsl_types::ty::TextureType::Storage3D(
+                to_wgsl_texel_format(texel_format),
+                access_mode,
+            ),
+            (TextureKind::Depth, TextureDimensionality::D2, false, false) => {
                 wgsl_types::ty::TextureType::Depth2D
             },
-            (TextureKind::Depth, TextureDimensionality::D2, true) => {
+            (TextureKind::Depth, TextureDimensionality::D2, false, true) => {
+                wgsl_types::ty::TextureType::DepthMultisampled2D
+            },
+            (TextureKind::Depth, TextureDimensionality::D2, true, false) => {
                 wgsl_types::ty::TextureType::Depth2DArray
             },
-            (TextureKind::Depth, TextureDimensionality::Cube, false) => {
+            (TextureKind::Depth, TextureDimensionality::Cube, false, false) => {
                 wgsl_types::ty::TextureType::DepthCube
             },
-            (TextureKind::Depth, TextureDimensionality::Cube, true) => {
+            (TextureKind::Depth, TextureDimensionality::Cube, true, false) => {
                 wgsl_types::ty::TextureType::DepthCubeArray
             },
-            (TextureKind::External, _, _) => wgsl_types::ty::TextureType::External,
-            (_, _, _) => panic!("invalid texture"),
+            (TextureKind::External, _, _, _) => wgsl_types::ty::TextureType::External,
+            (_, _, _, _) => panic!("invalid texture"),
         }
     }
 
@@ -3040,6 +3182,7 @@ impl<'database> WgslTypeConverter<'database> {
             | TypeKind::Vector(_)
             | TypeKind::Matrix(_)
             | TypeKind::Struct(_)
+            | TypeKind::BuiltinStruct(_)
             | TypeKind::Array(_)
             | TypeKind::Texture(_)
             | TypeKind::Sampler(_)

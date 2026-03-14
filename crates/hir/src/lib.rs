@@ -2,7 +2,7 @@ pub mod definition;
 pub mod diagnostics;
 
 use base_db::{EditionedFileId, FileId};
-use definition::Definition;
+pub use definition::{Definition, doc_comments_from_syntax, format_attributes};
 use diagnostics::{AnyDiagnostic, DiagnosticsConfig};
 use either::Either;
 use hir_def::{
@@ -188,7 +188,7 @@ impl<'database> Semantics<'database> {
             resolver = resolver.push_expression_scope(function, expression_scopes, scope_id);
         }
 
-        let value = resolver.resolve(path)?;
+        let value = resolver.resolve(self.database, path)?;
 
         let definition = match value {
             ResolveKind::Local(binding) => Definition::Local(Local {
@@ -235,7 +235,7 @@ impl<'database> Semantics<'database> {
         Some(import_id)
     }
 
-    fn function_to_def(
+    pub(crate) fn function_to_def(
         &self,
         source: &InFile<ast::FunctionDeclaration>,
     ) -> Option<FunctionId> {
@@ -246,7 +246,7 @@ impl<'database> Semantics<'database> {
         Some(function_id)
     }
 
-    fn global_constant_to_def(
+    pub(crate) fn global_constant_to_def(
         &self,
         source: &InFile<ast::ConstantDeclaration>,
     ) -> Option<GlobalConstantId> {
@@ -257,7 +257,7 @@ impl<'database> Semantics<'database> {
         Some(id)
     }
 
-    fn global_variable_to_def(
+    pub(crate) fn global_variable_to_def(
         &self,
         source: &InFile<ast::VariableDeclaration>,
     ) -> Option<GlobalVariableId> {
@@ -268,7 +268,7 @@ impl<'database> Semantics<'database> {
         Some(id)
     }
 
-    fn global_override_to_def(
+    pub(crate) fn global_override_to_def(
         &self,
         source: &InFile<ast::OverrideDeclaration>,
     ) -> Option<OverrideId> {
@@ -279,7 +279,7 @@ impl<'database> Semantics<'database> {
         Some(id)
     }
 
-    fn global_type_alias_to_def(
+    pub(crate) fn global_type_alias_to_def(
         &self,
         source: &InFile<ast::TypeAliasDeclaration>,
     ) -> Option<TypeAliasId> {
@@ -290,7 +290,7 @@ impl<'database> Semantics<'database> {
         Some(id)
     }
 
-    fn global_struct_to_def(
+    pub(crate) fn global_struct_to_def(
         &self,
         source: &InFile<ast::StructDeclaration>,
     ) -> Option<StructId> {
@@ -439,7 +439,7 @@ impl ChildContainer {
     }
 }
 
-fn module_item_to_def(
+pub fn module_item_to_def(
     database: &dyn HirDatabase,
     file_id: HirFileId,
     module_item: ModuleItem,
@@ -847,12 +847,65 @@ impl Module {
             .collect()
     }
 
+    #[expect(
+        clippy::cognitive_complexity,
+        clippy::too_many_lines,
+        reason = "diagnostic collection requires checking many conditions"
+    )]
     pub fn diagnostics(
         &self,
         database: &dyn HirDatabase,
         config: &DiagnosticsConfig,
         accumulator: &mut Vec<AnyDiagnostic>,
     ) {
+        // Check for identifiers starting with "__" (reserved by the WGSL spec)
+        {
+            let item_tree = database.item_tree(self.file_id);
+            let ast_id_map = database.ast_id_map(self.file_id);
+            let root = database.parse_or_resolve(self.file_id).syntax();
+
+            macro_rules! check_reserved {
+                ($id:expr, $item_tree:expr, $ast_id_map:expr, $root:expr, $accumulator:expr, $file_id:expr) => {{
+                    let data = $item_tree.get(*$id);
+                    if data.name.as_str().starts_with("__") {
+                        let ast_ptr = $ast_id_map.get(data.ast_id);
+                        let node = ast_ptr.to_node(&$root);
+                        if let Some(name_node) = node.name() {
+                            $accumulator.push(AnyDiagnostic::ReservedIdentifier {
+                                file_id: $file_id,
+                                name: data.name.clone(),
+                                range: name_node.syntax().text_range(),
+                            });
+                        }
+                    }
+                }};
+            }
+
+            for item in item_tree.items() {
+                match item {
+                    ModuleItem::Function(id) => {
+                        check_reserved!(id, item_tree, ast_id_map, root, accumulator, self.file_id);
+                    },
+                    ModuleItem::GlobalVariable(id) => {
+                        check_reserved!(id, item_tree, ast_id_map, root, accumulator, self.file_id);
+                    },
+                    ModuleItem::GlobalConstant(id) => {
+                        check_reserved!(id, item_tree, ast_id_map, root, accumulator, self.file_id);
+                    },
+                    ModuleItem::Override(id) => {
+                        check_reserved!(id, item_tree, ast_id_map, root, accumulator, self.file_id);
+                    },
+                    ModuleItem::Struct(id) => {
+                        check_reserved!(id, item_tree, ast_id_map, root, accumulator, self.file_id);
+                    },
+                    ModuleItem::TypeAlias(id) => {
+                        check_reserved!(id, item_tree, ast_id_map, root, accumulator, self.file_id);
+                    },
+                    ModuleItem::ImportStatement(_) | ModuleItem::GlobalAssertStatement(_) => {},
+                }
+            }
+        }
+
         for item in self.items(database) {
             match item {
                 ModuleDef::Function(_function) => {},
@@ -938,19 +991,6 @@ impl Module {
                         }
                     }
                 }
-
-                diagnostics::precedence::collect(database, definition, |diagnostic| {
-                    match diagnostics::any_diag_from_shift(
-                        &diagnostic,
-                        source_map.expression_source_map(),
-                        file,
-                    ) {
-                        Some(diagnostic) => accumulator.push(diagnostic),
-                        None => {
-                            tracing::warn!("could not create diagnostic from {:?}", diagnostic);
-                        },
-                    }
-                });
             }
         }
     }

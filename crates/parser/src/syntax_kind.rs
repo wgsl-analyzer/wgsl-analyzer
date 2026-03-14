@@ -8,7 +8,7 @@ use std::mem;
 )]
 pub enum SyntaxKind {
     SourceFile,
-    /// A name that can be referenced by a [`NameRef`]
+    /// A name that can be referenced by a `NameRef`.
     Name,
     /// a function
     FunctionDeclaration,
@@ -260,6 +260,10 @@ pub enum SyntaxKind {
     ShiftRight,
     TemplateStart,
     TemplateEnd,
+    /// A name segment in an import path that can be an identifier or a reserved word.
+    ImportName,
+    /// A WGSL reserved word (<https://www.w3.org/TR/WGSL/#reserved-words>)
+    Reserved,
     Error,
 }
 
@@ -319,6 +323,7 @@ impl SyntaxKind {
                 | Self::ImportPath
                 | Self::ImportCollection
                 | Self::ImportItem
+                | Self::ImportName
                 | Self::ImportPackageRelative
                 | Self::ImportSuperRelative
         )

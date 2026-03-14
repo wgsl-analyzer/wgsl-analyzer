@@ -2,7 +2,7 @@ use std::ops::Not as _;
 
 use base_db::{FileRange, TextRange, TextSize};
 use ide::{
-    Cancellable, Fold, FoldKind, NavigationTarget,
+    Cancellable, Fold, FoldKind, NavigationTarget, SignatureHelp,
     inlay_hints::{
         InlayFieldsToResolve, InlayHint, InlayHintLabel, InlayHintLabelPart, InlayKind,
         LazyProperty,
@@ -203,6 +203,10 @@ pub(crate) fn completion_items(
 }
 
 #[expect(clippy::too_many_arguments, reason = "TODO")]
+#[expect(
+    clippy::too_many_lines,
+    reason = "LSP protocol conversion with many fields"
+)]
 fn completion_item(
     accumulator: &mut Vec<lsp_types::CompletionItem>,
     config: &Config,
@@ -286,12 +290,12 @@ fn completion_item(
         item.detail.clone()
     };
 
-    // let documentation = if fields_to_resolve.resolve_documentation {
-    //     something_to_resolve |= item.documentation.is_some();
-    //     None
-    // } else {
-    //     item.documentation.clone().map(documentation)
-    // };
+    let documentation = item.documentation.as_ref().map(|doc| {
+        lsp_types::Documentation::MarkupContent(lsp_types::MarkupContent {
+            kind: lsp_types::MarkupKind::Markdown,
+            value: doc.clone(),
+        })
+    });
 
     let mut lsp_item = lsp_types::CompletionItem {
         label: item.label.primary.to_string(),
@@ -303,7 +307,7 @@ fn completion_item(
             .is_empty()
             .not()
             .then_some(additional_text_edits),
-        // documentation,
+        documentation,
         deprecated: item.deprecated.then_some(item.deprecated),
         tags,
         // command,
@@ -702,5 +706,52 @@ pub(crate) fn goto_definition_response(
             .map(|range| location(snap, range))
             .collect::<Cancellable<Vec<_>>>()?;
         Ok(locations.into())
+    }
+}
+
+pub(crate) fn signature_help(help: SignatureHelp) -> lsp_types::SignatureHelp {
+    let signatures = help
+        .signatures
+        .into_iter()
+        .map(|signature| {
+            let parameters = Some(
+                signature
+                    .parameters
+                    .into_iter()
+                    .map(|param| lsp_types::ParameterInformation {
+                        label: lsp_types::ParameterLabel::LabelOffsets([
+                            param.label_start,
+                            param.label_end,
+                        ]),
+                        documentation: None,
+                    })
+                    .collect(),
+            );
+            let signature_doc = signature.documentation.map(|doc| {
+                lsp_types::Documentation::MarkupContent(lsp_types::MarkupContent {
+                    kind: lsp_types::MarkupKind::Markdown,
+                    value: doc,
+                })
+            });
+            lsp_types::SignatureInformation {
+                label: signature.label,
+                documentation: signature_doc,
+                parameters,
+                active_parameter: None,
+            }
+        })
+        .collect();
+
+    lsp_types::SignatureHelp {
+        signatures,
+        #[expect(
+            clippy::cast_possible_truncation,
+            clippy::as_conversions,
+            reason = "active_signature index fits in u32"
+        )]
+        active_signature: help
+            .active_signature
+            .map(|active_signature| active_signature as u32),
+        active_parameter: help.active_parameter,
     }
 }

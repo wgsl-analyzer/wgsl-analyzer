@@ -16,6 +16,7 @@ pub(crate) struct CompletionContext<'database> {
     pub(crate) semantics: Semantics<'database>,
     pub(crate) file_id: HirFileId,
     pub(crate) database: &'database RootDatabase,
+    pub(crate) config: &'database CompletionConfig,
     pub(crate) position: FilePosition,
     pub(crate) token: SyntaxToken,
     pub(crate) file: ast::SourceFile,
@@ -71,6 +72,7 @@ impl<'database> CompletionContext<'database> {
             semantics,
             file_id,
             database,
+            config,
             position,
             token,
             file,
@@ -98,5 +100,9 @@ pub(crate) enum ImmediateLocation {
     ItemList,
     StatementList,
     InsideStatement,
-    FieldAccess { expression: ast::FieldExpression },
+    FieldAccess {
+        expression: ast::FieldExpression,
+    },
+    /// After `@` — completing an attribute name.
+    Attribute,
 }

@@ -25,6 +25,32 @@ use crate::{
     try_default,
 };
 
+pub(crate) fn handle_analyzer_status(
+    snap: GlobalStateSnapshot,
+    parameters: extensions::AnalyzerStatusParameters,
+) -> Result<String> {
+    use std::fmt::Write as _;
+    let mut output = String::new();
+
+    output.push_str("wgsl-analyzer status\n\n");
+
+    writeln!(output, "Workspaces: {}", snap.workspaces.len()).unwrap();
+
+    if let Some(text_document) = parameters.text_document
+        && let Some(file_id) = from_proto::file_id(&snap, &text_document.uri)?
+    {
+        let source_root_id = snap.analysis.source_root_id(file_id)?;
+        #[expect(clippy::use_debug, reason = "debug output for analyzer status")]
+        writeln!(
+            output,
+            "Current file: {file_id:?}, source root: {source_root_id:?}"
+        )
+        .unwrap();
+    }
+
+    Ok(output)
+}
+
 pub(crate) fn handle_goto_definition(
     snap: GlobalStateSnapshot,
     parameters: lsp_types::GotoDefinitionParams,
@@ -37,14 +63,12 @@ pub(crate) fn handle_goto_definition(
     let Some(navigation_info) = snap.analysis.goto_definition(position)? else {
         return Ok(None);
     };
-    let source = FileRange {
-        file_id: position.file_id,
+    let target = FileRange {
+        file_id: navigation_info.file_id,
         range: navigation_info.focus_or_full_range(),
     };
-    let location = to_proto::location(&snap, source)?;
+    let location = to_proto::location(&snap, target)?;
     Ok(Some(GotoDefinitionResponse::Scalar(location)))
-    // let result = to_proto::goto_definition_response(&snap, Some(source), vec![navigation_info])?;
-    // Ok(Some(result))
 }
 
 pub(crate) fn handle_completion(
@@ -88,6 +112,19 @@ pub(crate) fn handle_completion(
         items,
     };
     Ok(Some(completion_list.into()))
+}
+
+pub(crate) fn handle_signature_help(
+    snap: GlobalStateSnapshot,
+    signature_help_params: lsp_types::SignatureHelpParams,
+) -> anyhow::Result<Option<lsp_types::SignatureHelp>> {
+    let _p = tracing::info_span!("handle_signature_help").entered();
+    let position = try_default!(from_proto::file_position(
+        &snap,
+        &signature_help_params.text_document_position_params
+    )?);
+    let help = snap.analysis.signature_help(position)?;
+    Ok(help.map(to_proto::signature_help))
 }
 
 pub(crate) fn handle_folding_range(

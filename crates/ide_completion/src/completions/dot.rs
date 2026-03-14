@@ -1,7 +1,8 @@
 use std::iter;
 
+use hir::HirDatabase as _;
 use hir_def::database::DefDatabase as _;
-use hir_ty::ty::TypeKind;
+use hir_ty::{ty::TypeKind, ty::pretty::pretty_type};
 
 use super::Completions;
 use crate::{
@@ -36,6 +37,10 @@ pub(crate) fn complete_dot(
             struct_completions(accumulator, context, *r#struct);
             Some(())
         },
+        TypeKind::BuiltinStruct(builtin_struct) => {
+            builtin_struct_completions(accumulator, context, builtin_struct);
+            Some(())
+        },
         TypeKind::Error
         | TypeKind::Scalar(_)
         | TypeKind::Atomic(_)
@@ -50,22 +55,42 @@ pub(crate) fn complete_dot(
     }
 }
 
+fn builtin_struct_completions(
+    accumulator: &mut Completions,
+    context: &CompletionContext<'_>,
+    builtin_struct: &hir_ty::ty::BuiltinStruct,
+) {
+    let items = builtin_struct.fields.iter().map(|(name, field_type)| {
+        let mut builder = CompletionItem::new(
+            CompletionItemKind::Field,
+            context.source_range(),
+            name.as_str(),
+        );
+        builder.detail(pretty_type(context.database, *field_type));
+        builder.build(context.database)
+    });
+    accumulator.add_all(items);
+}
+
 fn struct_completions(
     accumulator: &mut Completions,
     context: &CompletionContext<'_>,
-    r#struct: hir_def::database::StructId,
+    struct_id: hir_def::database::StructId,
 ) {
-    let field_completion_item = |name| {
-        CompletionItem::new(CompletionItemKind::Field, context.source_range(), name)
-            .build(context.database)
-    };
+    let struct_data = context.database.struct_data(struct_id).0;
+    let field_types = &context.database.field_types(struct_id).0;
 
-    let r#struct = context.database.struct_data(r#struct).0;
-    let items = r#struct
-        .fields()
-        .iter()
-        .map(|(_, field)| field.name.as_str())
-        .map(field_completion_item);
+    let items = struct_data.fields().iter().map(|(field_id, field)| {
+        let mut builder = CompletionItem::new(
+            CompletionItemKind::Field,
+            context.source_range(),
+            field.name.as_str(),
+        );
+        if let Some(field_type) = field_types.get(field_id) {
+            builder.detail(pretty_type(context.database, *field_type));
+        }
+        builder.build(context.database)
+    });
     accumulator.add_all(items);
 }
 

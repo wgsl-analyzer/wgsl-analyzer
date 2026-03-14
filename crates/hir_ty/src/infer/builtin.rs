@@ -977,6 +977,7 @@ impl TypeLoweringContext<'_> {
                     | TypeKind::Vector(_)
                     | TypeKind::Matrix(_)
                     | TypeKind::Struct(_)
+                    | TypeKind::BuiltinStruct(_)
                     | TypeKind::Array(_)
                     | TypeKind::Texture(_)
                     | TypeKind::Sampler(_)

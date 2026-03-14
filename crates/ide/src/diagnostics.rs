@@ -9,6 +9,7 @@ use hir::{
     HirDatabase, Semantics,
     diagnostics::{AnyDiagnostic, DiagnosticsConfig, NagaVersion},
 };
+use hir_def::item_tree::{ImportStatement, ItemTreeNode as _, ModuleItem};
 use hir_def::{HirFileId, original_file_range};
 use hir_ty::ty::{
     self,
@@ -16,6 +17,7 @@ use hir_ty::ty::{
 };
 use itertools::Itertools as _;
 use rowan::NodeOrToken;
+use rustc_hash::FxHashSet;
 use syntax::AstNode as _;
 use vfs::FileId;
 
@@ -288,13 +290,205 @@ fn emit<Error: NagaError>(
     });
 }
 
+/// Like `emit`, but remaps byte offsets from a combined source back to the main file.
+/// Errors whose locations fall outside the main file's range are silently dropped.
+fn emit_with_offset<Error: NagaError>(
+    error: &Error,
+    file_id: EditionedFileId,
+    full_range: TextRange,
+    main_file_offset: usize,
+    accumulator: &mut Vec<AnyDiagnostic>,
+) {
+    let message = error_message_cause_chain(&error);
+
+    // Remap a byte range from combined source to main file coordinates.
+    // Returns None if the range falls outside the main file.
+    let remap_range = |range: ops::Range<usize>| -> Option<TextRange> {
+        let start = range.start.checked_sub(main_file_offset)?;
+        let end = range.end.checked_sub(main_file_offset)?;
+        Some(TextRange::new(
+            TextSize::from(u32::try_from(start).ok()?),
+            TextSize::from(u32::try_from(end).ok()?),
+        ))
+    };
+
+    // Try to remap the main error location. If it falls outside the main file,
+    // still report it but use the full file range.
+    let location = error
+        .location()
+        .and_then(&remap_range)
+        .unwrap_or(full_range);
+
+    let related: Vec<_> = error
+        .spans()
+        .filter_map(|(span, label)| {
+            let range = remap_range(span?)?;
+            Some((
+                label,
+                FileRange {
+                    range,
+                    file_id: file_id.file_id,
+                },
+            ))
+        })
+        .collect();
+
+    accumulator.push(AnyDiagnostic::NagaValidationError {
+        file_id: file_id.into(),
+        range: location,
+        message,
+        related,
+    });
+}
+
+/// Resolve an import statement to the `FileId` of the imported module file.
+///
+/// Extracts module segments from the import tree and delegates to
+/// `hir_def::resolver::resolve_import_to_file`.
+fn resolve_import_to_file(
+    database: &dyn HirDatabase,
+    anchor_file: FileId,
+    import: &ImportStatement,
+) -> Option<FileId> {
+    let module_segments = hir_def::resolver::import_tree_module_segments(&import.tree);
+    hir_def::resolver::resolve_import_to_file(database, anchor_file, import.kind, &module_segments)
+}
+
+/// Collect all files transitively imported by the given file.
+fn collect_transitive_imports(
+    database: &dyn HirDatabase,
+    root_file: FileId,
+) -> Vec<FileId> {
+    let mut visited = FxHashSet::default();
+    let mut queue = vec![root_file];
+    let mut result = Vec::new();
+
+    while let Some(file_id) = queue.pop() {
+        if !visited.insert(file_id) {
+            continue;
+        }
+
+        let editioned = database.editioned_file_id(file_id);
+        // Only follow imports in WESL files
+        if !editioned.edition.at_least_wesl_0_0_1() {
+            continue;
+        }
+
+        let hir_file = HirFileId::from(editioned);
+        let item_tree = database.item_tree(hir_file);
+
+        for item in item_tree.items() {
+            if let ModuleItem::ImportStatement(import_id) = item {
+                let import = item_tree.get(*import_id);
+                if let Some(imported_file) = resolve_import_to_file(database, file_id, import) {
+                    if !visited.contains(&imported_file) {
+                        queue.push(imported_file);
+                    }
+                    // Only add each file once to the result to avoid duplicate definitions
+                    // when multiple imports reference the same file
+                    if imported_file != root_file && !result.contains(&imported_file) {
+                        result.push(imported_file);
+                    }
+                }
+            }
+        }
+    }
+
+    result
+}
+
+/// A mapping from byte offsets in the combined source to the original file.
+struct SourceMap {
+    /// Each entry: (`start_offset_in_combined`, length, `original_file_id`).
+    segments: Vec<(usize, usize, FileId)>,
+}
+
+impl SourceMap {
+    /// Map a byte offset in the combined source back to (`file_id`, `offset_in_file`).
+    /// Returns None if the offset falls in a gap or outside any segment.
+    fn map_offset(
+        &self,
+        combined_offset: usize,
+    ) -> Option<(FileId, usize)> {
+        for &(start, length, file_id) in &self.segments {
+            if combined_offset >= start && combined_offset < start + length {
+                return Some((file_id, combined_offset - start));
+            }
+        }
+        None
+    }
+}
+
+/// Strip `import` lines from WESL source, replacing them with blank lines
+/// to preserve line numbers within the file.
+fn strip_import_lines(source: &str) -> String {
+    let mut result = String::with_capacity(source.len());
+    for line in source.lines() {
+        let trimmed = line.trim();
+        if !(trimmed.starts_with("import ") || trimmed == "import") {
+            result.push_str(line);
+        }
+        result.push('\n');
+    }
+    // Remove trailing newline if original didn't have one
+    if !source.ends_with('\n') && result.ends_with('\n') {
+        result.pop();
+    }
+    result
+}
+
+/// Build a combined WGSL source from a WESL file and all its transitive imports.
+/// Returns the combined source string, a source map for error remapping,
+/// and the byte range in the combined source that corresponds to the main file.
+fn build_combined_source(
+    database: &dyn HirDatabase,
+    main_file: FileId,
+) -> (String, SourceMap, ops::Range<usize>) {
+    let imported_files = collect_transitive_imports(database, main_file);
+
+    let mut combined = String::new();
+    let mut segments = Vec::new();
+
+    // First, add all imported files (dependencies come before the main file)
+    for &dep_file in &imported_files {
+        let source = database.file_text(dep_file);
+        let stripped = strip_import_lines(&source);
+        let start = combined.len();
+        combined.push_str(&stripped);
+        combined.push('\n');
+        segments.push((start, stripped.len(), dep_file));
+    }
+
+    // Then add the main file
+    let main_source = database.file_text(main_file);
+    let main_stripped = strip_import_lines(&main_source);
+    let main_start = combined.len();
+    let main_len = main_stripped.len();
+    combined.push_str(&main_stripped);
+    segments.push((main_start, main_len, main_file));
+
+    let source_map = SourceMap { segments };
+    (combined, source_map, main_start..main_start + main_len)
+}
+
 fn naga_diagnostics<N: Naga>(
     database: &dyn HirDatabase,
     file_id: EditionedFileId,
     config: &DiagnosticsConfig,
     accumulator: &mut Vec<AnyDiagnostic>,
 ) {
-    let source = database.file_text(file_id.file_id);
+    let is_wesl = file_id.edition.at_least_wesl_0_0_1();
+
+    // For WESL files, build a combined source with all imports resolved.
+    // For WGSL files, just use the file's source directly.
+    let (source, main_file_offset) = if is_wesl {
+        let (combined, _source_map, main_range) = build_combined_source(database, file_id.file_id);
+        (combined, main_range.start)
+    } else {
+        let text = database.file_text(file_id.file_id).to_string();
+        (text, 0)
+    };
+
     let full_range = TextRange::up_to(TextSize::of(source.as_str()));
 
     match N::parse(&source) {
@@ -303,14 +497,22 @@ fn naga_diagnostics<N: Naga>(
                 return;
             }
             if let Err(error) = N::validate(&module) {
-                emit(&error, file_id, full_range, accumulator);
+                if is_wesl {
+                    emit_with_offset(&error, file_id, full_range, main_file_offset, accumulator);
+                } else {
+                    emit(&error, file_id, full_range, accumulator);
+                }
             }
         },
         Err(error) => {
             if !config.naga_parsing_errors {
                 return;
             }
-            emit(&error, file_id, full_range, accumulator);
+            if is_wesl {
+                emit_with_offset(&error, file_id, full_range, main_file_offset, accumulator);
+            } else {
+                emit(&error, file_id, full_range, accumulator);
+            }
         },
     }
 }
@@ -348,6 +550,8 @@ pub fn diagnostics(
             .diagnostics(database, config, &mut diagnostics);
     }
 
+    // For WESL files, naga receives a combined source with imports resolved.
+    // For WGSL files, naga receives the raw source directly.
     if config.naga_parsing_errors || config.naga_validation_errors {
         match &config.naga_version {
             NagaVersion::Naga27 => {
@@ -585,27 +789,6 @@ pub fn diagnostics(
                         frange.range,
                     )
                 },
-                AnyDiagnostic::PrecedenceParensRequired {
-                    expression,
-                    operation,
-                    sequence_permitted,
-                } => {
-                    let source = expression.value.to_node(&root);
-                    let frange = original_file_range(database, file_id, source.syntax());
-                    let symbol = operation.symbol();
-                    let message = if sequence_permitted {
-                        format!(
-                            "{symbol} sequences may only have unary operands.
-More complex operands must be this with parenthesized `()`",
-                        )
-                    } else {
-                        format!(
-                            "{symbol} expressions may only have unary operands.
-More complex operands must be this with parenthesized `()`"
-                        )
-                    };
-                    Diagnostic::new(DiagnosticCode("19"), message, frange.range)
-                },
                 AnyDiagnostic::CyclicType { name, range, .. } => Diagnostic::new(
                     DiagnosticCode("20"),
                     format!("cyclic type {}", name.as_str()),
@@ -644,6 +827,14 @@ More complex operands must be this with parenthesized `()`"
                         frange.range,
                     )
                 },
+                AnyDiagnostic::ReservedIdentifier { name, range, .. } => Diagnostic::new(
+                    DiagnosticCode("24"),
+                    format!(
+                        "identifier '{}' is reserved; identifiers starting with '__' are reserved by the WGSL specification",
+                        name.as_str()
+                    ),
+                    range,
+                ),
             }
         })
         .collect()
@@ -672,7 +863,10 @@ mod tests {
     use itertools::Itertools;
     use std::fmt::Write as _;
 
-    use crate::{diagnostics::Diagnostic, fixture::single_file_db};
+    use crate::{
+        diagnostics::Diagnostic,
+        fixture::{multi_file_db, single_file_db},
+    };
 
     #[expect(clippy::needless_pass_by_value, reason = "Matches expect! macro")]
     #[expect(clippy::use_debug, reason = "useful in tests")]
@@ -734,6 +928,48 @@ mod tests {
     }
 
     #[test]
+    fn no_host_shareable_error_for_undefined_struct() {
+        // https://github.com/wgsl-analyzer/wgsl-analyzer/issues/722
+        // When referencing an undefined struct, we should NOT get a spurious
+        // "not host-shareable" diagnostic — only the "unresolved" error.
+        check_diagnostics(
+            "
+@group(0) @binding(0)
+var<storage> lines: array<LineSegment>;
+",
+            expect![[r#"
+                48..59 Error 14: `LineSegment` not found in scope
+            "#]],
+        );
+    }
+
+    #[test]
+    fn reserved_identifier_double_underscore() {
+        // https://github.com/wgsl-analyzer/wgsl-analyzer/issues/681
+        // Identifiers starting with "__" are reserved by the WGSL spec.
+        check_diagnostics(
+            "
+fn __my_func() {}
+",
+            expect![[r#"
+                3..12 Error 24: identifier '__my_func' is reserved; identifiers starting with '__' are reserved by the WGSL specification
+            "#]],
+        );
+    }
+
+    #[test]
+    fn non_reserved_identifier_single_underscore() {
+        // A single underscore prefix should NOT trigger the reserved identifier diagnostic.
+        check_diagnostics(
+            "
+fn _my_func() {}
+",
+            expect![[r#"
+"#]],
+        );
+    }
+
+    #[test]
     fn incomplete_variable_error() {
         // https://github.com/wgsl-analyzer/wgsl-analyzer/issues/825
         check_diagnostics(
@@ -752,6 +988,131 @@ var<storage
                 26..33 Error 21: unexpected template argument
                 89..92 Error 12: address space is only valid for handle or texture types
             "#]],
+        );
+    }
+
+    #[test]
+    fn subgroup_builtin_requires_enable_diagnostic() {
+        // Using a subgroup builtin without `enable subgroups` should produce a diagnostic.
+        check_diagnostics(
+            "
+fn test() {
+    let a = subgroupAdd(1u);
+}
+",
+            expect![[r#"
+                24..39 Error 22: `subgroupAdd` requires `enable subgroups`
+            "#]],
+        );
+    }
+
+    #[test]
+    fn reserved_word_diagnostic() {
+        // https://github.com/wgsl-analyzer/wgsl-analyzer/issues/624
+        // WGSL reserved words should produce a diagnostic.
+        check_diagnostics(
+            "
+fn test() {
+    let enum = 1u;
+}
+",
+            expect![[r#"
+                20..24 Error 16: 'enum' is a reserved word in WGSL
+            "#]],
+        );
+    }
+
+    /// Check naga diagnostics for a specific file in a multi-file fixture.
+    /// `file_index` is the 0-based index of the file to check (in fixture order).
+    #[expect(clippy::needless_pass_by_value, reason = "Matches expect! macro")]
+    #[expect(clippy::use_debug, reason = "useful in tests")]
+    fn check_naga_diagnostics_multi(
+        source: &str,
+        file_index: usize,
+        expect: Expect,
+    ) {
+        let (analysis, files) = multi_file_db(source);
+        let file_id = files[file_index].file_id;
+        let config = DiagnosticsConfig {
+            enabled: true,
+            type_errors: false,
+            naga_parsing_errors: true,
+            naga_validation_errors: true,
+            ..Default::default()
+        };
+        let diagnostics = analysis.diagnostics(&config, file_id).unwrap();
+        let mut actual = String::new();
+        for Diagnostic {
+            code,
+            message,
+            range,
+            severity,
+            ..
+        } in diagnostics
+        {
+            let severity_text = match severity {
+                crate::diagnostics::Severity::Error => "Error",
+                crate::diagnostics::Severity::WeakWarning => "Warning",
+            };
+            writeln!(
+                actual,
+                "{range:?} {severity_text} {}: {message}",
+                code.as_str()
+            );
+        }
+
+        expect.assert_eq(&actual);
+    }
+
+    #[test]
+    fn cross_file_import_resolves_for_naga() {
+        // The main file imports a function from a sibling file.
+        // Naga should see the imported function and produce no errors.
+        check_naga_diagnostics_multi(
+            r#"
+//- /shared/math.wesl
+fn add_one(x: f32) -> f32 {
+    return x + 1.0;
+}
+
+//- /main.wesl
+import package::shared::math::add_one;
+
+fn main() -> f32 {
+    return add_one(2.0);
+}
+"#,
+            1, // check the main file (index 1)
+            expect![[r#"
+"#]],
+        );
+    }
+
+    #[test]
+    fn cross_file_import_multiple_from_same_file() {
+        // Multiple imports from the same file should not cause duplicate definitions.
+        check_naga_diagnostics_multi(
+            r#"
+//- /shared/helpers.wesl
+fn helper_a(x: f32) -> f32 {
+    return x * 2.0;
+}
+
+fn helper_b(x: f32) -> f32 {
+    return x + 1.0;
+}
+
+//- /main.wesl
+import package::shared::helpers::helper_a;
+import package::shared::helpers::helper_b;
+
+fn main() -> f32 {
+    return helper_a(helper_b(1.0));
+}
+"#,
+            1,
+            expect![[r#"
+"#]],
         );
     }
 }

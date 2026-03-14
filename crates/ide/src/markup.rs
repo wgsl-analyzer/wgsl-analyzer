@@ -38,7 +38,7 @@ impl Markup {
     }
 
     pub fn fenced_block<Displayable: fmt::Display>(contents: Displayable) -> Self {
-        format!("```rust\n{contents}\n```").into()
+        format!("```wgsl\n{contents}\n```").into()
     }
 
     pub fn fenced_block_text<Displayable: fmt::Display>(contents: Displayable) -> Self {

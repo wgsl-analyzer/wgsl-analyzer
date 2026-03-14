@@ -301,6 +301,8 @@ fn parse_unclosed_parentheses() {
 
 #[test]
 fn parse_expression_complex() {
+    // Note: `4 < 5 / 2 == 0` contains chained comparison operators (< then ==),
+    // which WGSL does not allow without parentheses.
     check(
         "1 + 2 == 3 || 4 < 5 / 2 == 0",
         expect![[r#"
@@ -342,7 +344,9 @@ fn parse_expression_complex() {
                       EqualEqual@24..26 "=="
                       Blankspace@26..27 " "
                       Literal@27..28
-                        IntLiteral@27..28 "0""#]],
+                        IntLiteral@27..28 "0"
+
+                error at 14..23: comparison expressions must be parenthesized when used as an operand of another comparison"#]],
     );
 }
 
@@ -915,6 +919,209 @@ fn shift_multiple() {
                 ShiftLeft@11..13 "<<"
                 Blankspace@13..14 " "
                 Literal@14..15
-                  IntLiteral@14..15 "4""#]],
+                  IntLiteral@14..15 "4"
+
+            error at 5..10: shift expressions require parenthesized operands
+            error at 0..10: shift expressions require parenthesized operands"#]],
+    );
+}
+
+#[test]
+fn chained_comparison_is_error() {
+    // `a < b < c` is not valid WGSL — comparisons cannot be chained.
+    check(
+        "a < b < c",
+        expect![[r#"
+            SourceFile@0..9
+              InfixExpression@0..9
+                InfixExpression@0..5
+                  IdentExpression@0..1
+                    Path@0..1
+                      Identifier@0..1 "a"
+                  Blankspace@1..2 " "
+                  LessThan@2..3 "<"
+                  Blankspace@3..4 " "
+                  IdentExpression@4..5
+                    Path@4..5
+                      Identifier@4..5 "b"
+                Blankspace@5..6 " "
+                LessThan@6..7 "<"
+                Blankspace@7..8 " "
+                IdentExpression@8..9
+                  Path@8..9
+                    Identifier@8..9 "c"
+
+            error at 0..5: comparison expressions must be parenthesized when used as an operand of another comparison"#]],
+    );
+}
+
+#[test]
+fn parenthesized_comparison_is_ok() {
+    // `(a < b) < c` is valid — the inner comparison is parenthesized.
+    check(
+        "(a < b) < c",
+        expect![[r#"
+            SourceFile@0..11
+              InfixExpression@0..11
+                ParenthesisExpression@0..7
+                  ParenthesisLeft@0..1 "("
+                  InfixExpression@1..6
+                    IdentExpression@1..2
+                      Path@1..2
+                        Identifier@1..2 "a"
+                    Blankspace@2..3 " "
+                    LessThan@3..4 "<"
+                    Blankspace@4..5 " "
+                    IdentExpression@5..6
+                      Path@5..6
+                        Identifier@5..6 "b"
+                  ParenthesisRight@6..7 ")"
+                Blankspace@7..8 " "
+                LessThan@8..9 "<"
+                Blankspace@9..10 " "
+                IdentExpression@10..11
+                  Path@10..11
+                    Identifier@10..11 "c""#]],
+    );
+}
+
+#[test]
+fn chained_equality_is_error() {
+    // `a == b != c` is not valid WGSL.
+    check(
+        "a == b != c",
+        expect![[r#"
+            SourceFile@0..11
+              InfixExpression@0..11
+                InfixExpression@0..6
+                  IdentExpression@0..1
+                    Path@0..1
+                      Identifier@0..1 "a"
+                  Blankspace@1..2 " "
+                  EqualEqual@2..4 "=="
+                  Blankspace@4..5 " "
+                  IdentExpression@5..6
+                    Path@5..6
+                      Identifier@5..6 "b"
+                Blankspace@6..7 " "
+                NotEqual@7..9 "!="
+                Blankspace@9..10 " "
+                IdentExpression@10..11
+                  Path@10..11
+                    Identifier@10..11 "c"
+
+            error at 0..6: comparison expressions must be parenthesized when used as an operand of another comparison"#]],
+    );
+}
+
+#[test]
+fn mixed_bitwise_is_error() {
+    // `a & b | c` is not valid WGSL — different bitwise operators cannot be mixed.
+    check(
+        "a & b | c",
+        expect![[r#"
+            SourceFile@0..9
+              InfixExpression@0..9
+                InfixExpression@0..5
+                  IdentExpression@0..1
+                    Path@0..1
+                      Identifier@0..1 "a"
+                  Blankspace@1..2 " "
+                  And@2..3 "&"
+                  Blankspace@3..4 " "
+                  IdentExpression@4..5
+                    Path@4..5
+                      Identifier@4..5 "b"
+                Blankspace@5..6 " "
+                Or@6..7 "|"
+                Blankspace@7..8 " "
+                IdentExpression@8..9
+                  Path@8..9
+                    Identifier@8..9 "c"
+
+            error at 0..5: bitwise expressions of different types must be parenthesized"#]],
+    );
+}
+
+#[test]
+fn same_bitwise_is_ok() {
+    // `a & b & c` is valid — same bitwise operator can be sequenced.
+    check(
+        "a & b & c",
+        expect![[r#"
+            SourceFile@0..9
+              InfixExpression@0..9
+                InfixExpression@0..5
+                  IdentExpression@0..1
+                    Path@0..1
+                      Identifier@0..1 "a"
+                  Blankspace@1..2 " "
+                  And@2..3 "&"
+                  Blankspace@3..4 " "
+                  IdentExpression@4..5
+                    Path@4..5
+                      Identifier@4..5 "b"
+                Blankspace@5..6 " "
+                And@6..7 "&"
+                Blankspace@7..8 " "
+                IdentExpression@8..9
+                  Path@8..9
+                    Identifier@8..9 "c""#]],
+    );
+}
+
+#[test]
+fn mixed_logical_is_error() {
+    // `a && b || c` is not valid WGSL — different logical operators cannot be mixed.
+    check(
+        "a && b || c",
+        expect![[r#"
+            SourceFile@0..11
+              InfixExpression@0..11
+                InfixExpression@0..6
+                  IdentExpression@0..1
+                    Path@0..1
+                      Identifier@0..1 "a"
+                  Blankspace@1..2 " "
+                  AndAnd@2..4 "&&"
+                  Blankspace@4..5 " "
+                  IdentExpression@5..6
+                    Path@5..6
+                      Identifier@5..6 "b"
+                Blankspace@6..7 " "
+                OrOr@7..9 "||"
+                Blankspace@9..10 " "
+                IdentExpression@10..11
+                  Path@10..11
+                    Identifier@10..11 "c"
+
+            error at 0..6: logical expressions of different types must be parenthesized"#]],
+    );
+}
+
+#[test]
+fn same_logical_is_ok() {
+    // `a && b && c` is valid — same logical operator can be sequenced.
+    check(
+        "a && b && c",
+        expect![[r#"
+            SourceFile@0..11
+              InfixExpression@0..11
+                InfixExpression@0..6
+                  IdentExpression@0..1
+                    Path@0..1
+                      Identifier@0..1 "a"
+                  Blankspace@1..2 " "
+                  AndAnd@2..4 "&&"
+                  Blankspace@4..5 " "
+                  IdentExpression@5..6
+                    Path@5..6
+                      Identifier@5..6 "b"
+                Blankspace@6..7 " "
+                AndAnd@7..9 "&&"
+                Blankspace@9..10 " "
+                IdentExpression@10..11
+                  Path@10..11
+                    Identifier@10..11 "c""#]],
     );
 }

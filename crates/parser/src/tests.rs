@@ -327,6 +327,79 @@ fn function() {
 }
 
 #[test]
+fn path_function_call() {
+    // https://github.com/wgsl-analyzer/wgsl-analyzer/issues/896
+    check(
+        "fn main() { foo::bar::baz(); }",
+        expect![[r#"
+            SourceFile@0..30
+              FunctionDeclaration@0..30
+                Fn@0..2 "fn"
+                Blankspace@2..3 " "
+                Name@3..7
+                  Identifier@3..7 "main"
+                FunctionParameters@7..9
+                  ParenthesisLeft@7..8 "("
+                  ParenthesisRight@8..9 ")"
+                Blankspace@9..10 " "
+                CompoundStatement@10..30
+                  BraceLeft@10..11 "{"
+                  Blankspace@11..12 " "
+                  FunctionCallStatement@12..28
+                    FunctionCall@12..27
+                      IdentExpression@12..25
+                        Path@12..25
+                          Identifier@12..15 "foo"
+                          DoubleColon@15..17 "::"
+                          Identifier@17..20 "bar"
+                          DoubleColon@20..22 "::"
+                          Identifier@22..25 "baz"
+                      Arguments@25..27
+                        ParenthesisLeft@25..26 "("
+                        ParenthesisRight@26..27 ")"
+                    Semicolon@27..28 ";"
+                  Blankspace@28..29 " "
+                  BraceRight@29..30 "}""#]],
+    );
+}
+
+#[test]
+fn path_assignment() {
+    // https://github.com/wgsl-analyzer/wgsl-analyzer/issues/896
+    check(
+        "fn main() { foo::bar = 3; }",
+        expect![[r#"
+            SourceFile@0..27
+              FunctionDeclaration@0..27
+                Fn@0..2 "fn"
+                Blankspace@2..3 " "
+                Name@3..7
+                  Identifier@3..7 "main"
+                FunctionParameters@7..9
+                  ParenthesisLeft@7..8 "("
+                  ParenthesisRight@8..9 ")"
+                Blankspace@9..10 " "
+                CompoundStatement@10..27
+                  BraceLeft@10..11 "{"
+                  Blankspace@11..12 " "
+                  AssignmentStatement@12..25
+                    IdentExpression@12..20
+                      Path@12..20
+                        Identifier@12..15 "foo"
+                        DoubleColon@15..17 "::"
+                        Identifier@17..20 "bar"
+                    Blankspace@20..21 " "
+                    Equal@21..22 "="
+                    Blankspace@22..23 " "
+                    Literal@23..24
+                      IntLiteral@23..24 "3"
+                    Semicolon@24..25 ";"
+                  Blankspace@25..26 " "
+                  BraceRight@26..27 "}""#]],
+    );
+}
+
+#[test]
 fn variable_declarations() {
     check(
         "fn name() {
@@ -2053,7 +2126,8 @@ fn let_statement_recover_return_no_eq() {
                         BraceRight@41..42 "}"
 
             error at 30..32: invalid syntax, expected one of: ':', '=', ';'
-            error at 41..42: invalid syntax, expected one of: '&', '&&', '@', '^', ':', ',', '.', '==', '!=', '>', '>=', '{', '[', '(', '<', '<=', '-', '%', '|', '||', '+', ']', ')', ';', '<<', '>>', '/', '*', <template end>, <template start>"#]],
+            error at 41..42: invalid syntax, expected one of: '&', '&&', '@', '^', ':', ',', '.', '==', '!=', '>', '>=', '{', '[', '(', '<', '<=', '-', '%', '|', '||', '+', ']', ')', ';', '<<', '>>', '/', '*', <template end>, <template start>
+            error at 24..42: let declaration requires an initializer expression"#]],
     );
 }
 
@@ -2130,7 +2204,8 @@ fn let_statement_recover_return_2() {
                   Blankspace@51..60 "\n        "
                   BraceRight@60..61 "}"
 
-            error at 42..48: invalid syntax, expected one of: ':', '=', ';'"#]],
+            error at 42..48: invalid syntax, expected one of: ':', '=', ';'
+            error at 24..29: let declaration requires an initializer expression"#]],
     );
 }
 
@@ -2204,7 +2279,8 @@ fn let_statement_recover_1() {
                   Blankspace@29..38 "\n        "
                   BraceRight@38..39 "}"
 
-            error at 38..39: invalid syntax, expected one of: ':', '=', ';'"#]],
+            error at 38..39: invalid syntax, expected one of: ':', '=', ';'
+            error at 24..29: let declaration requires an initializer expression"#]],
     );
 }
 
@@ -2268,6 +2344,42 @@ fn let_statement_recover_3() {
                   BraceRight@36..37 "}"
 
             error at 36..37: invalid syntax, expected: <identifier>"#]],
+    );
+}
+
+#[test]
+fn let_statement_missing_initializer() {
+    // https://github.com/wgsl-analyzer/wgsl-analyzer/issues/721
+    // A let declaration with a type but no initializer should produce
+    // a clear "requires an initializer" error.
+    check_statement(
+        "let stack: array<f32, 10>;",
+        expect![[r#"
+            SourceFile@0..26
+              LetDeclaration@0..26
+                Let@0..3 "let"
+                Blankspace@3..4 " "
+                Name@4..9
+                  Identifier@4..9 "stack"
+                Colon@9..10 ":"
+                Blankspace@10..11 " "
+                TypeSpecifier@11..25
+                  Path@11..16
+                    Identifier@11..16 "array"
+                  TemplateList@16..25
+                    TemplateStart@16..17 "<"
+                    IdentExpression@17..20
+                      Path@17..20
+                        Identifier@17..20 "f32"
+                    Comma@20..21 ","
+                    Blankspace@21..22 " "
+                    Literal@22..24
+                      IntLiteral@22..24 "10"
+                    TemplateEnd@24..25 ">"
+                Semicolon@25..26 ";"
+
+            error at 25..26: invalid syntax, expected: '='
+            error at 0..26: let declaration requires an initializer expression"#]],
     );
 }
 
@@ -2481,6 +2593,67 @@ fn requires_directive() {
                 LanguageExtensionName@9..39
                   Identifier@9..39 "packed_4x8_integer_do ..."
                 Semicolon@39..40 ";""#]],
+    );
+}
+
+#[test]
+fn directive_after_declaration() {
+    // https://github.com/wgsl-analyzer/wgsl-analyzer/issues/683
+    // Directives must come before any declarations.
+    check(
+        "const a = 3;
+enable f16;",
+        expect![[r#"
+            SourceFile@0..24
+              ConstantDeclaration@0..12
+                Constant@0..5 "const"
+                Blankspace@5..6 " "
+                Name@6..7
+                  Identifier@6..7 "a"
+                Blankspace@7..8 " "
+                Equal@8..9 "="
+                Blankspace@9..10 " "
+                Literal@10..11
+                  IntLiteral@10..11 "3"
+                Semicolon@11..12 ";"
+              Blankspace@12..13 "\n"
+              EnableDirective@13..24
+                Enable@13..19 "enable"
+                Blankspace@19..20 " "
+                EnableExtensionName@20..23
+                  Identifier@20..23 "f16"
+                Semicolon@23..24 ";"
+
+            error at 13..24: directives must come before any declarations"#]],
+    );
+}
+
+#[test]
+fn directive_before_declaration_ok() {
+    // Directives before declarations should NOT produce an error.
+    check(
+        "enable f16;
+const a = 3;",
+        expect![[r#"
+            SourceFile@0..24
+              EnableDirective@0..11
+                Enable@0..6 "enable"
+                Blankspace@6..7 " "
+                EnableExtensionName@7..10
+                  Identifier@7..10 "f16"
+                Semicolon@10..11 ";"
+              Blankspace@11..12 "\n"
+              ConstantDeclaration@12..24
+                Constant@12..17 "const"
+                Blankspace@17..18 " "
+                Name@18..19
+                  Identifier@18..19 "a"
+                Blankspace@19..20 " "
+                Equal@20..21 "="
+                Blankspace@21..22 " "
+                Literal@22..23
+                  IntLiteral@22..23 "3"
+                Semicolon@23..24 ";""#]],
     );
 }
 

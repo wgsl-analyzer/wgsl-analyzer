@@ -10,8 +10,8 @@ use stdx::never;
 /// `CompletionItem` describes a single completion entity which expands to 1 or more entries in the
 /// editor pop-up.
 ///
-/// It is basically a POD with various properties. To construct a [`CompletionItem`],
-/// use [`Builder::new`] method and the [`Builder`] struct.
+/// It is basically a POD with various properties. To construct a `CompletionItem`,
+/// use `Builder::new` method and the `Builder` struct.
 #[derive(Clone)]
 #[non_exhaustive]
 pub struct CompletionItem {
@@ -45,7 +45,8 @@ pub struct CompletionItem {
 
     /// Additional info to show in the UI pop up.
     pub detail: Option<String>,
-    // pub documentation: Option<Documentation>,
+    /// Documentation (e.g., doc comments) to show in the completion pop-up.
+    pub documentation: Option<String>,
     /// Whether this item is marked as deprecated.
     pub deprecated: bool,
 
@@ -314,8 +315,8 @@ impl CompletionItem {
             label,
             insert_text: None,
             is_snippet: false,
-            // documentation: None,
             detail: None,
+            documentation: None,
             lookup: None,
             kind: kind.into(),
             text_edit: None,
@@ -412,7 +413,7 @@ pub(crate) struct Builder {
     insert_text: Option<String>,
     is_snippet: bool,
     detail: Option<String>,
-    // documentation: Option<Documentation>,
+    documentation: Option<String>,
     lookup: Option<SmolStr>,
     kind: CompletionItemKind,
     text_edit: Option<TextEdit>,
@@ -550,9 +551,9 @@ impl Builder {
             text_edit,
             is_snippet: self.is_snippet,
             kind: self.kind,
-            // documentation: self.documentation,
             lookup,
             detail: self.detail,
+            documentation: self.documentation,
             deprecated: self.deprecated,
             trigger_call_info: self.trigger_call_info,
             relevance: self.relevance,
@@ -610,6 +611,12 @@ impl Builder {
         self.insert_text(snippet)
     }
 
+    /// Mark this completion item as a snippet (uses `${}` tab stop syntax).
+    pub(crate) const fn mark_as_snippet(&mut self) -> &mut Self {
+        self.is_snippet = true;
+        self
+    }
+
     pub(crate) fn text_edit(
         &mut self,
         edit: TextEdit,
@@ -647,21 +654,13 @@ impl Builder {
         self
     }
 
-    // #[allow(unused)]
-    // pub(crate) fn documentation(
-    //     &mut self,
-    //     docs: Documentation,
-    // ) -> &mut Builder {
-    //     self.set_documentation(Some(docs))
-    // }
-
-    // pub(crate) fn set_documentation(
-    //     &mut self,
-    //     docs: Option<Documentation>,
-    // ) -> &mut Builder {
-    //     self.documentation = docs;
-    //     self
-    // }
+    pub(crate) fn set_documentation(
+        &mut self,
+        docs: Option<String>,
+    ) -> &mut Self {
+        self.documentation = docs;
+        self
+    }
 
     pub(crate) const fn set_deprecated(
         &mut self,

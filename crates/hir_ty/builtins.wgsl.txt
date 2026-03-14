@@ -22,10 +22,16 @@ abs(f32) -> f32
 abs(vecN<f32>) -> vecN<f32>
 acos(f32) -> f32
 acos(vecN<f32>) -> vecN<f32>
+acosh(f32) -> f32
+acosh(vecN<f32>) -> vecN<f32>
 asin(f32) -> f32
 asin(vecN<f32>) -> vecN<f32>
+asinh(f32) -> f32
+asinh(vecN<f32>) -> vecN<f32>
 atan(f32) -> f32
 atan(vecN<f32>) -> vecN<f32>
+atanh(f32) -> f32
+atanh(vecN<f32>) -> vecN<f32>
 atan2(f32, f32) -> f32
 atan2(vecN<f32>, vecN<f32>) -> vecN<f32>
 ceil(f32) -> f32
@@ -50,10 +56,14 @@ fma(f32, f32) -> f32
 fma(vecN<f32>, vecN<f32>) -> f32
 fract(f32) -> f32
 fract(vecN<f32>) -> vecN<f32>
-// TODO frexp
+frexp(f32) -> __frexp_result_f32{fract:f32,exp:i32}
+frexp(f16) -> __frexp_result_f16{fract:f16,exp:i32}
+frexp(vecN<f32>) -> __frexp_result_vecN_f32{fract:vecN<f32>,exp:vecN<i32>}
+frexp(vecN<f16>) -> __frexp_result_vecN_f16{fract:vecN<f16>,exp:vecN<i32>}
 inverseSqrt(f32) -> f32
 inverseSqrt(vecN<f32>) -> vecN<f32>
-// TODO ldexp
+ldexp(f32, i32) -> f32
+ldexp(vecN<f32>, vecN<i32>) -> vecN<f32>
 length(f32) -> f32
 length(vecN<f32>) -> f32
 log(f32) -> f32
@@ -67,7 +77,10 @@ max(vecN<f32>, vecN<f32>) -> vecN<f32>
 mix(f32, f32, f32) -> f32
 mix(vecN<f32>, vecN<f32>, vecN<f32>) -> vecN<f32>
 mix(vecN<f32>, vecN<f32>, f32) -> vecN<f32>
-// TODO modf
+modf(f32) -> __modf_result_f32{fract:f32,whole:f32}
+modf(f16) -> __modf_result_f16{fract:f16,whole:f16}
+modf(vecN<f32>) -> __modf_result_vecN_f32{fract:vecN<f32>,whole:vecN<f32>}
+modf(vecN<f16>) -> __modf_result_vecN_f16{fract:vecN<f16>,whole:vecN<f16>}
 normalize(vecN<f32>) -> vecN<f32>
 pow(f32, f32) -> f32
 pow(vecN<f32>, vecN<f32>) -> vecN<f32>
@@ -163,6 +176,8 @@ transpose(matMxN<T>) -> matNxM<T>
 dot(vecN<f32>, vecN<f32>) -> f32
 dot(vecN<i32>, vecN<i32>) -> i32
 dot(vecN<u32>, vecN<u32>) -> u32
+dot4I8Packed(u32, u32) -> i32
+dot4U8Packed(u32, u32) -> u32
 
 // derivative
 dpdx(f32) -> f32
@@ -368,6 +383,9 @@ textureSampleBias(texture_cube<f32>, sampler, vec3<f32>, f32) -> vec4<f32>
 textureSampleBias(texture_cube_array<f32>, sampler, vec3<f32>, i32, f32) -> vec4<f32>
 textureSampleBias(texture_cube_array<f32>, sampler, vec3<f32>, u32, f32) -> vec4<f32>
 
+textureSampleBaseClampToEdge(texture_2d<f32>, sampler, vec2<f32>) -> vec4<f32>
+textureSampleBaseClampToEdge(texture_external, sampler, vec2<f32>) -> vec4<f32>
+
 textureSampleCompare(texture_depth_2d, sampler_comparison, vec2<f32>, f32) -> f32
 textureSampleCompare(texture_depth_2d, sampler_comparison, vec2<f32>, f32, vec2<i32>) -> f32
 textureSampleCompare(texture_depth_2d_array, sampler_comparison, vec2<f32>, i32, f32) -> f32
@@ -455,7 +473,7 @@ atomicAnd(ptr<atomic<T>>, T) -> T
 atomicOr(ptr<atomic<T>>, T) -> T
 atomicXor(ptr<atomic<T>>, T) -> T
 atomicExchange(ptr<atomic<T>>, T) -> T
-// TODO atomicCompareExchangeWeak
+atomicCompareExchangeWeak(ptr<atomic<T>>, T, T) -> __atomic_compare_exchange_result{old_value:T,exchanged:bool}
 
 // data packing
 pack4x8snorm(vec4<f32>) -> u32
@@ -468,10 +486,19 @@ unpack4x8unorm(u32) -> vec4<f32>
 unpack2x16snorm(u32) -> vec2<f32>
 unpack2x16unorm(u32) -> vec2<f32>
 unpack2x16float(u32) -> vec2<f32>
+pack4xI8(vec4<i32>) -> u32
+pack4xU8(vec4<u32>) -> u32
+pack4xI8Clamp(vec4<i32>) -> u32
+unpack4xI8(u32) -> vec4<i32>
+unpack4xU8(u32) -> vec4<u32>
+
+// data reinterpretation
+bitcast<R>(T) -> R
 
 // synchronization
 storageBarrier()
 workgroupBarrier()
+textureBarrier()
 workgroupUniformLoad(ptr<T>) -> T
 
 // TODO: T should only match i32, f32, u32 in a lot of ops
@@ -634,6 +661,7 @@ op_f16_constructor(bool) -> f16
 op_f16_constructor(u32) -> f16
 op_f16_constructor(i32) -> f16
 op_f16_constructor(f32) -> f16
+op_f16_constructor(f16) -> f16
 
 // TODO: Those are unused. Fix that, by merging them into the vector constructors
 op_convert(vecN<u32>) -> vecN<bool>
@@ -658,3 +686,59 @@ op_convert(vecN<u32>) -> vecN<f32>
 
 // op_convert(matNxM<f16>) -> matNxM<f32>
 // op_convert(matNxM<f32>) -> matNxM<f16>
+
+[enable subgroups]
+
+// subgroup built-in functions (§ 17.12)
+subgroupElect() -> bool
+subgroupAll(bool) -> bool
+subgroupAny(bool) -> bool
+subgroupBallot(bool) -> vec4<u32>
+
+subgroupBroadcast(T, u32) -> T
+subgroupBroadcast(vecN<T>, u32) -> vecN<T>
+subgroupBroadcastFirst(T) -> T
+subgroupBroadcastFirst(vecN<T>) -> vecN<T>
+
+subgroupShuffle(T, u32) -> T
+subgroupShuffle(vecN<T>, u32) -> vecN<T>
+subgroupShuffleDown(T, u32) -> T
+subgroupShuffleDown(vecN<T>, u32) -> vecN<T>
+subgroupShuffleUp(T, u32) -> T
+subgroupShuffleUp(vecN<T>, u32) -> vecN<T>
+subgroupShuffleXor(T, u32) -> T
+subgroupShuffleXor(vecN<T>, u32) -> vecN<T>
+
+subgroupAdd(T) -> T
+subgroupAdd(vecN<T>) -> vecN<T>
+subgroupMul(T) -> T
+subgroupMul(vecN<T>) -> vecN<T>
+subgroupAnd(T) -> T
+subgroupAnd(vecN<T>) -> vecN<T>
+subgroupOr(T) -> T
+subgroupOr(vecN<T>) -> vecN<T>
+subgroupXor(T) -> T
+subgroupXor(vecN<T>) -> vecN<T>
+subgroupMin(T) -> T
+subgroupMin(vecN<T>) -> vecN<T>
+subgroupMax(T) -> T
+subgroupMax(vecN<T>) -> vecN<T>
+
+subgroupExclusiveAdd(T) -> T
+subgroupExclusiveAdd(vecN<T>) -> vecN<T>
+subgroupExclusiveMul(T) -> T
+subgroupExclusiveMul(vecN<T>) -> vecN<T>
+subgroupInclusiveAdd(T) -> T
+subgroupInclusiveAdd(vecN<T>) -> vecN<T>
+subgroupInclusiveMul(T) -> T
+subgroupInclusiveMul(vecN<T>) -> vecN<T>
+
+// quad built-in functions (§ 17.13)
+quadBroadcast(T, u32) -> T
+quadBroadcast(vecN<T>, u32) -> vecN<T>
+quadSwapX(T) -> T
+quadSwapX(vecN<T>) -> vecN<T>
+quadSwapY(T) -> T
+quadSwapY(vecN<T>) -> vecN<T>
+quadSwapDiagonal(T) -> T
+quadSwapDiagonal(vecN<T>) -> vecN<T>

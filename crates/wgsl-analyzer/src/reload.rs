@@ -2,7 +2,9 @@ use ide::base_db::input::SourceRoot;
 use paths::AbsPathBuf;
 use stdx::thread::ThreadIntent;
 use tracing::info;
+use vfs::VfsPath;
 use vfs::file_set::FileSetConfig;
+use vfs::loader::{Config as VfsLoaderConfig, Directories, Entry};
 
 use crate::{global_state::GlobalState, lsp, main_loop::Task, operation_queue::Cause};
 
@@ -175,7 +177,10 @@ impl GlobalState {
         let _p = tracing::info_span!("GlobalState::switch_workspaces").entered();
         tracing::info!(%cause, "will switch workspaces");
 
-        let glob_pattern = format!("{}/**/*.{{wgsl,wesl}}", self.config.root_path());
+        let root = self.config.root_path().clone();
+
+        // Register the file watcher with the LSP client for change notifications
+        let glob_pattern = format!("{root}/**/*.{{wgsl,wesl}}");
 
         let registration_options = lsp_types::DidChangeWatchedFilesRegistrationOptions {
             watchers: vec![lsp_types::FileSystemWatcher {
@@ -194,7 +199,30 @@ impl GlobalState {
             },
             |_, _| (),
         );
-        info!("Registered");
+
+        // Configure the VFS loader to scan the workspace for .wgsl and .wesl files.
+        // This is essential for cross-file features like import resolution, go-to-definition,
+        // and naga diagnostics (which concatenate imported files).
+        self.vfs_config_version += 1;
+        self.loader.handle.set_config(VfsLoaderConfig {
+            version: self.vfs_config_version,
+            load: vec![Entry::Directories(Directories {
+                extensions: vec!["wgsl".to_owned(), "wesl".to_owned()],
+                include: vec![root.clone()],
+                exclude: vec![root.join(".git"), root.join("target")],
+            })],
+            watch: vec![0], // Watch the first entry for changes
+        });
+
+        // Set up source root config so all workspace files end up in the same local file set
+        let mut fsc_builder = FileSetConfig::builder();
+        fsc_builder.add_file_set(vec![VfsPath::from(root)]);
+        self.source_root_config = SourceRootConfig {
+            fsc: fsc_builder.build(),
+            local_filesets: vec![0],
+        };
+
+        info!("Registered file watcher and VFS loader");
     }
 }
 

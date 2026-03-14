@@ -75,6 +75,11 @@ impl UnificationTable {
         }
     }
 
+    /// Resolves all bound variables in a type to their unified values.
+    ///
+    /// # Panics
+    ///
+    /// Panics if a bound variable has not been constrained.
     pub fn resolve(
         &self,
         database: &dyn HirDatabase,
@@ -163,6 +168,7 @@ impl UnificationTable {
             | TypeKind::Scalar(_)
             | TypeKind::Atomic(_)
             | TypeKind::Struct(_)
+            | TypeKind::BuiltinStruct(_)
             | TypeKind::Array(_)
             | TypeKind::Texture(_)
             | TypeKind::Sampler(_)
@@ -176,6 +182,10 @@ impl UnificationTable {
 #[expect(
     clippy::too_many_lines,
     reason = "This long match is not easily broken up"
+)]
+#[expect(
+    clippy::result_unit_err,
+    reason = "unification either succeeds or fails with no extra info"
 )]
 pub fn unify(
     database: &dyn HirDatabase,
@@ -209,6 +219,7 @@ pub fn unify(
             | TypeKind::Atomic(_)
             | TypeKind::Matrix(_)
             | TypeKind::Struct(_)
+            | TypeKind::BuiltinStruct(_)
             | TypeKind::Array(_)
             | TypeKind::Texture(_)
             | TypeKind::Sampler(_)
@@ -244,6 +255,7 @@ pub fn unify(
             | TypeKind::Atomic(_)
             | TypeKind::Vector(_)
             | TypeKind::Struct(_)
+            | TypeKind::BuiltinStruct(_)
             | TypeKind::Array(_)
             | TypeKind::Texture(_)
             | TypeKind::Sampler(_)
@@ -264,6 +276,7 @@ pub fn unify(
             | TypeKind::Vector(_)
             | TypeKind::Matrix(_)
             | TypeKind::Struct(_)
+            | TypeKind::BuiltinStruct(_)
             | TypeKind::Array(_)
             | TypeKind::Texture(_)
             | TypeKind::Sampler(_)
@@ -283,6 +296,7 @@ pub fn unify(
             | TypeKind::Vector(_)
             | TypeKind::Matrix(_)
             | TypeKind::Struct(_)
+            | TypeKind::BuiltinStruct(_)
             | TypeKind::Texture(_)
             | TypeKind::Sampler(_)
             | TypeKind::Reference(_)
@@ -301,6 +315,7 @@ pub fn unify(
             | TypeKind::Vector(_)
             | TypeKind::Matrix(_)
             | TypeKind::Struct(_)
+            | TypeKind::BuiltinStruct(_)
             | TypeKind::Array(_)
             | TypeKind::Texture(_)
             | TypeKind::Sampler(_)
@@ -380,6 +395,7 @@ pub fn unify(
             | TypeKind::Vector(_)
             | TypeKind::Matrix(_)
             | TypeKind::Struct(_)
+            | TypeKind::BuiltinStruct(_)
             | TypeKind::Array(_)
             | TypeKind::Texture(_)
             | TypeKind::Sampler(_)
@@ -427,6 +443,7 @@ pub fn unify(
             | TypeKind::Vector(_)
             | TypeKind::Matrix(_)
             | TypeKind::Struct(_)
+            | TypeKind::BuiltinStruct(_)
             | TypeKind::Array(_)
             | TypeKind::Texture(_)
             | TypeKind::Sampler(_)
@@ -438,6 +455,7 @@ pub fn unify(
         TypeKind::Error
         | TypeKind::Scalar(_)
         | TypeKind::Struct(_)
+        | TypeKind::BuiltinStruct(_)
         | TypeKind::Texture(_)
         | TypeKind::Sampler(_)
         | TypeKind::Reference(_) => {

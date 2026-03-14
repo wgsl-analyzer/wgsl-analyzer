@@ -11,7 +11,7 @@ fn simplest_import() {
                 Import@0..6 "import"
                 Blankspace@6..7 " "
                 ImportItem@7..10
-                  Name@7..10
+                  ImportName@7..10
                     Identifier@7..10 "foo"
                 Semicolon@10..11 ";""#]],
     );
@@ -32,7 +32,7 @@ fn super_import() {
                   Super@14..19 "super"
                   DoubleColon@19..21 "::"
                 ImportItem@21..24
-                  Name@21..24
+                  ImportName@21..24
                     Identifier@21..24 "bar"
                 Semicolon@24..25 ";""#]],
     );
@@ -53,7 +53,7 @@ fn package_import() {
                 ImportCollection@16..21
                   BraceLeft@16..17 "{"
                   ImportItem@17..20
-                    Name@17..20
+                    ImportName@17..20
                       Identifier@17..20 "bar"
                   BraceRight@20..21 "}"
                 Semicolon@21..22 ";""#]],
@@ -70,11 +70,11 @@ fn import_alias() {
                 Import@0..6 "import"
                 Blankspace@6..7 " "
                 ImportPath@7..22
-                  Name@7..10
+                  ImportName@7..10
                     Identifier@7..10 "foo"
                   DoubleColon@10..12 "::"
                   ImportItem@12..22
-                    Name@12..15
+                    ImportName@12..15
                       Identifier@12..15 "bar"
                     Blankspace@15..16 " "
                     As@16..18 "as"
@@ -101,7 +101,7 @@ fn illegal_import_aliasing_super() {
                     As@13..15 "as"
                 Blankspace@15..16 " "
                 ImportItem@16..19
-                  Name@16..19
+                  ImportName@16..19
                     Identifier@16..19 "bar"
                 Semicolon@19..20 ";"
 
@@ -123,29 +123,29 @@ fn import_nested_collections() {
                 Import@0..6 "import"
                 Blankspace@6..7 " "
                 ImportPath@7..117
-                  Name@7..15
+                  ImportName@7..15
                     Identifier@7..15 "bevy_pbr"
                   DoubleColon@15..17 "::"
                   ImportCollection@17..117
                     BraceLeft@17..18 "{"
                     Blankspace@18..21 "\n  "
                     ImportPath@21..45
-                      Name@21..31
+                      ImportName@21..31
                         Identifier@21..31 "forward_io"
                       DoubleColon@31..33 "::"
                       ImportItem@33..45
-                        Name@33..45
+                        ImportName@33..45
                           Identifier@33..45 "VertexOutput"
                     Comma@45..46 ","
                     Blankspace@46..49 "\n  "
                     ImportPath@49..98
-                      Name@49..58
+                      ImportName@49..58
                         Identifier@49..58 "pbr_types"
                       DoubleColon@58..60 "::"
                       ImportCollection@60..98
                         BraceLeft@60..61 "{"
                         ImportItem@61..82
-                          Name@61..69
+                          ImportName@61..69
                             Identifier@61..69 "PbrInput"
                           Blankspace@69..70 " "
                           As@70..72 "as"
@@ -155,13 +155,13 @@ fn import_nested_collections() {
                         Comma@82..83 ","
                         Blankspace@83..84 " "
                         ImportItem@84..97
-                          Name@84..97
+                          ImportName@84..97
                             Identifier@84..97 "pbr_input_new"
                         BraceRight@97..98 "}"
                     Comma@98..99 ","
                     Blankspace@99..102 "\n  "
                     ImportItem@102..114
-                      Name@102..114
+                      ImportName@102..114
                         Identifier@102..114 "pbr_bindings"
                     Comma@114..115 ","
                     Blankspace@115..116 "\n"
