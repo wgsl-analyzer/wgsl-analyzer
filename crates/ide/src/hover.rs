@@ -140,6 +140,23 @@ pub(crate) fn hover(
         }
     }
 
+    // Check if hovering over an attribute name (e.g., @group, @binding, @vertex)
+    if token.kind() == SyntaxKind::Identifier {
+        if let Some(parent) = token.parent() {
+            if ast::Attribute::cast(parent).is_some() {
+                if let Some(description) = attribute_description(token.text()) {
+                    return Some(RangeInfo::new(
+                        range,
+                        HoverResult {
+                            markup: Markup::from(description),
+                            actions: Vec::new(),
+                        },
+                    ));
+                }
+            }
+        }
+    }
+
     // Fall back to builtin lookup for functions like abs, dot, clamp, etc.
     if token.kind() == SyntaxKind::Identifier {
         let name = Name::from(token.text());
@@ -250,4 +267,97 @@ fn collect_call_arg_types(
         .arguments()
         .filter_map(|arg| analyzer.type_of_expression(&arg))
         .collect()
+}
+
+
+/// Returns a Markdown description for a WGSL attribute name.
+/// See <https://www.w3.org/TR/WGSL/#attributes>.
+fn attribute_description(name: &str) -> Option<String> {
+    let (syntax, description, spec_anchor) = match name {
+        "align" => (
+            "@align(expression)",
+            "Specifies the byte alignment of a struct member. Must be a power of 2.",
+            "align-attr",
+        ),
+        "binding" => (
+            "@binding(expression)",
+            "Specifies the binding number of a resource variable in a bind group. Used together with `@group`.",
+            "binding-attr",
+        ),
+        "builtin" => (
+            "@builtin(builtin_value)",
+            "Specifies that a function parameter or struct member corresponds to a built-in value (e.g., `position`, `vertex_index`, `front_facing`).",
+            "builtin-attr",
+        ),
+        "compute" => (
+            "@compute",
+            "Declares a function as a compute shader entry point.",
+            "compute-attr",
+        ),
+        "const" => (
+            "@const",
+            "Declares a function as a const-expression function, meaning it can be evaluated at shader creation time.",
+            "const-attr",
+        ),
+        "diagnostic" => (
+            "@diagnostic(severity, rule)",
+            "Controls the severity of a diagnostic rule. Severity can be `error`, `warning`, `info`, or `off`.",
+            "diagnostic-attr",
+        ),
+        "fragment" => (
+            "@fragment",
+            "Declares a function as a fragment shader entry point.",
+            "fragment-attr",
+        ),
+        "group" => (
+            "@group(expression)",
+            "Specifies the bind group index of a resource variable. Used together with `@binding`.",
+            "group-attr",
+        ),
+        "id" => (
+            "@id(expression)",
+            "Specifies a numeric identifier for an `override` declaration, used for pipeline-overridable constants.",
+            "id-attr",
+        ),
+        "interpolate" => (
+            "@interpolate(type, sampling)",
+            "Specifies how user-defined IO is interpolated. Type can be `perspective`, `linear`, or `flat`. Sampling can be `center`, `centroid`, or `sample`.",
+            "interpolate-attr",
+        ),
+        "invariant" => (
+            "@invariant",
+            "Indicates that the value of a `@builtin(position)` output must be invariant across different shader invocations with the same input.",
+            "invariant-attr",
+        ),
+        "location" => (
+            "@location(expression)",
+            "Specifies the location number for user-defined IO (inter-stage variables between vertex and fragment shaders).",
+            "location-attr",
+        ),
+        "must_use" => (
+            "@must_use",
+            "Indicates that the return value of a function must be used by the caller.",
+            "must-use-attr",
+        ),
+        "size" => (
+            "@size(expression)",
+            "Specifies the byte size of a struct member, including any trailing padding.",
+            "size-attr",
+        ),
+        "vertex" => (
+            "@vertex",
+            "Declares a function as a vertex shader entry point.",
+            "vertex-attr",
+        ),
+        "workgroup_size" => (
+            "@workgroup_size(x, y, z)",
+            "Specifies the workgroup dimensions for a compute shader. `y` and `z` default to 1 if omitted.",
+            "workgroup-size-attr",
+        ),
+        _ => return None,
+    };
+
+    Some(format!(
+        "{description}\n\n---\n\n```wgsl\n{syntax}\n```\n\n[WGSL Spec](https://www.w3.org/TR/WGSL/#{spec_anchor})"
+    ))
 }
