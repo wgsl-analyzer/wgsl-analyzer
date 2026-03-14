@@ -157,7 +157,9 @@ impl Definition {
                     hover_global_variable(database, global_var.id)
                 },
                 ModuleDef::GlobalConstant(constant) => hover_global_constant(database, constant.id),
-                ModuleDef::Override(override_declaration) => hover_override(database, override_declaration.id),
+                ModuleDef::Override(override_declaration) => {
+                    hover_override(database, override_declaration.id)
+                },
                 ModuleDef::Struct(struct_def) => {
                     let data = database.struct_data(struct_def.id).0;
                     let field_types = &database.field_types(struct_def.id).0;
@@ -273,7 +275,8 @@ impl Definition {
                     ))
                 },
                 ModuleDef::Override(override_declaration) => {
-                    let infer = database.infer(DefinitionWithBodyId::Override(override_declaration.id));
+                    let infer =
+                        database.infer(DefinitionWithBodyId::Override(override_declaration.id));
                     let data = database.override_data(override_declaration.id).0;
                     Some(format!(
                         "override {}: {}",
@@ -347,7 +350,7 @@ pub fn doc_comments_from_syntax(node: &SyntaxNode) -> Option<String> {
     let mut doc_lines: Vec<String> = Vec::new();
 
     // Walk backwards through preceding siblings (tokens and nodes)
-    for sibling in node.siblings_with_tokens(Direction::Prev).skip(1) { // spellchecker:disable-line
+    for sibling in node.siblings_with_tokens(Direction::Prev).skip(1) {
         if let Some(token) = sibling.as_token() {
             if let Some(comment) = ast::Comment::cast(token.clone())
                 && let Some(doc_text) = comment.doc_comment()

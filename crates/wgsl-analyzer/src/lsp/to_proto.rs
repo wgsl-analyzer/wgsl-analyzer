@@ -749,7 +749,9 @@ pub(crate) fn signature_help(help: SignatureHelp) -> lsp_types::SignatureHelp {
             clippy::as_conversions,
             reason = "active_signature index fits in u32"
         )]
-        active_signature: help.active_signature.map(|active_signature| active_signature as u32),
+        active_signature: help
+            .active_signature
+            .map(|active_signature| active_signature as u32),
         active_parameter: help.active_parameter,
     }
 }

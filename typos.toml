@@ -20,12 +20,16 @@ extend-ignore-re = [
 	"(?Rm)^.*<!--\\s*spellchecker:disable-line\\s*-->$",
 	"(?Rm) .+ ...\"$",
 ]
-extend-ignore-identifiers-re = []
+extend-ignore-identifiers-re = [
+	"textur",
+]
 
 # Match Whole Word - Case Sensitive
 [default.extend-identifiers]
 "err" = "error"
 "idx" = "index"
+# rowan library enum variant
+"Prev" = "Prev"
 
 # Match Inside a Word - Case Insensitive
 [default.extend-words]
