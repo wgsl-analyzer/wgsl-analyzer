@@ -98,7 +98,7 @@ template_args^: TemplateStart expression (?1 ',' expression)* [','] TemplateEnd;
 
 // This is pratt parser, with higher elements having a higher binding power
 // Source: https://github.com/0x2a-42/lelwel/tree/main?tab=readme-ov-file#direct-left-recursion
-// TODO: check for invalid expressions, like a < b < c
+// Validated in create_node_binary_expression: invalid operator nesting like a < b < c
 // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/616
 expression:
   expression '[' expression ']' @indexing_expression // §8.5

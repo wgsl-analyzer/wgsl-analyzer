@@ -585,27 +585,6 @@ pub fn diagnostics(
                         frange.range,
                     )
                 },
-                AnyDiagnostic::PrecedenceParensRequired {
-                    expression,
-                    operation,
-                    sequence_permitted,
-                } => {
-                    let source = expression.value.to_node(&root);
-                    let frange = original_file_range(database, file_id, source.syntax());
-                    let symbol = operation.symbol();
-                    let message = if sequence_permitted {
-                        format!(
-                            "{symbol} sequences may only have unary operands.
-More complex operands must be this with parenthesized `()`",
-                        )
-                    } else {
-                        format!(
-                            "{symbol} expressions may only have unary operands.
-More complex operands must be this with parenthesized `()`"
-                        )
-                    };
-                    Diagnostic::new(DiagnosticCode("19"), message, frange.range)
-                },
                 AnyDiagnostic::CyclicType { name, range, .. } => Diagnostic::new(
                     DiagnosticCode("20"),
                     format!("cyclic type {}", name.as_str()),

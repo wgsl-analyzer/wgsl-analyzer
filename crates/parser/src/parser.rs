@@ -318,4 +318,119 @@ impl<'source> ParserCallbacks<'source> for Parser<'source> {
             "global let declarations are not allowed".to_owned(),
         ));
     }
+
+    /// Validates WGSL operator precedence rules.
+    ///
+    /// WGSL requires parentheses for certain operator combinations:
+    /// - Comparison operators (`<`, `>`, `<=`, `>=`, `==`, `!=`) cannot be chained:
+    ///   `a < b < c` is invalid, `(a < b) < c` is valid.
+    /// - Shift operators (`<<`, `>>`) cannot have binary expression operands.
+    /// - Bitwise operators (`&`, `|`, `^`) cannot be mixed:
+    ///   `a & b | c` is invalid, `a & b & c` is valid.
+    /// - Logical operators (`&&`, `||`) cannot be mixed:
+    ///   `a && b || c` is invalid, `a && b && c` is valid.
+    ///
+    /// See: <https://github.com/gpuweb/gpuweb/issues/1146#issuecomment-714721825>
+    /// See: <https://github.com/wgsl-analyzer/wgsl-analyzer/issues/616>
+    fn create_node_binary_expression(
+        &mut self,
+        node_ref: NodeRef,
+        diags: &mut Vec<Self::Diagnostic>,
+    ) {
+        let Some(op) = self.binary_expression_operator(node_ref) else {
+            return;
+        };
+
+        for child in self.cst.children(node_ref) {
+            // Skip tokens and parenthesized expressions — only check bare binary expressions.
+            if !self.cst.match_rule(child, Rule::BinaryExpression) {
+                continue;
+            }
+
+            let Some(child_op) = self.binary_expression_operator(child) else {
+                continue;
+            };
+
+            match Self::classify_op(op) {
+                // Comparison operators cannot be chained at all.
+                OpClass::Comparison => {
+                    if matches!(Self::classify_op(child_op), OpClass::Comparison) {
+                        diags.push(self.create_diagnostic(
+                            self.cst.span(child),
+                            format!(
+                                "comparison expressions must be parenthesized when used as an operand of another comparison"
+                            ),
+                        ));
+                    }
+                },
+                // Shift operators cannot have any binary expression operands.
+                OpClass::Shift => {
+                    diags.push(self.create_diagnostic(
+                        self.cst.span(child),
+                        format!("shift expressions require parenthesized operands"),
+                    ));
+                },
+                // Bitwise operators can be sequenced with the same operator, but not mixed.
+                OpClass::Bitwise => {
+                    if Self::classify_op(child_op) == OpClass::Bitwise && child_op != op {
+                        diags.push(self.create_diagnostic(
+                            self.cst.span(child),
+                            format!("bitwise expressions of different types must be parenthesized"),
+                        ));
+                    }
+                },
+                // Logical operators can be sequenced with the same operator, but not mixed.
+                OpClass::Logical => {
+                    if Self::classify_op(child_op) == OpClass::Logical && child_op != op {
+                        diags.push(self.create_diagnostic(
+                            self.cst.span(child),
+                            format!("logical expressions of different types must be parenthesized"),
+                        ));
+                    }
+                },
+                OpClass::Other => {},
+            }
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum OpClass {
+    Comparison,
+    Shift,
+    Bitwise,
+    Logical,
+    Other,
+}
+
+impl Parser<'_> {
+    /// Returns the operator token of a binary expression node, if any.
+    fn binary_expression_operator(
+        &self,
+        node_ref: NodeRef,
+    ) -> Option<Token> {
+        for child in self.cst.children(node_ref) {
+            let node = self.cst.get(child);
+            if let Node::Token(token, _) = node {
+                // Skip trivia tokens (whitespace, comments, errors).
+                if matches!(token, Token::Blankspace | Token::LineEndingComment | Token::BlockComment | Token::Error) {
+                    continue;
+                }
+                return Some(token);
+            }
+        }
+        None
+    }
+
+    fn classify_op(token: Token) -> OpClass {
+        match token {
+            Token::Lt | Token::Gt | Token::LtEq | Token::GtEq | Token::Eq2 | Token::ExclEq => {
+                OpClass::Comparison
+            },
+            Token::ShiftLeft | Token::ShiftRight => OpClass::Shift,
+            Token::And | Token::Pipe | Token::Caret => OpClass::Bitwise,
+            Token::And2 | Token::Pipe2 => OpClass::Logical,
+            _ => OpClass::Other,
+        }
+    }
 }

@@ -75,7 +75,6 @@ impl ExprCollector<'_> {
                 let inner = self.collect_expression_opt(expression.inner());
                 // make the paren expression point to the inner expression as well
                 self.store.expression_map.insert(syntax_pointer, inner);
-                self.store.parenthesis_expressions.insert(inner);
                 return inner;
             },
             ast::Expression::FieldExpression(field) => {

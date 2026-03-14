@@ -1,10 +1,8 @@
 pub mod global_variable;
-pub mod precedence;
 
 use base_db::{FileRange, TextRange};
 use hir_def::{
     HirFileId, InFile,
-    expression::BinaryOperation,
     expression_store::{ExpressionSourceMap, ExpressionStoreSource, path::Path},
     item_tree::Name,
 };
@@ -19,7 +17,7 @@ use hir_ty::{
 };
 use syntax::{ast, pointer::AstPointer};
 
-use self::{global_variable::GlobalVariableDiagnostic, precedence::PrecedenceDiagnostic};
+use self::global_variable::GlobalVariableDiagnostic;
 
 #[derive(Clone, Copy, Debug, Default)]
 pub enum NagaVersion {
@@ -118,11 +116,6 @@ pub enum AnyDiagnostic {
         expression: InFile<AstPointer<ast::Expression>>,
         error: TypeLoweringErrorKind,
     },
-    PrecedenceParensRequired {
-        expression: InFile<AstPointer<ast::Expression>>,
-        operation: BinaryOperation,
-        sequence_permitted: bool,
-    },
     NagaValidationError {
         file_id: HirFileId,
         range: TextRange,
@@ -175,7 +168,6 @@ impl AnyDiagnostic {
             | Self::AddressOfNotReference { expression, .. }
             | Self::DerefNotPointer { expression, .. }
             | Self::NoConstructor { expression, .. }
-            | Self::PrecedenceParensRequired { expression, .. }
             | Self::UnexpectedTemplateArgument { expression, .. }
             | Self::WgslError { expression, .. }
             | Self::InvalidIdentExpression { expression, .. }
@@ -402,29 +394,3 @@ pub(crate) fn any_diag_from_global_var(
     }
 }
 
-pub(crate) fn any_diag_from_shift(
-    error: &PrecedenceDiagnostic,
-    source_map: &ExpressionSourceMap,
-    file_id: HirFileId,
-) -> Option<AnyDiagnostic> {
-    match *error {
-        PrecedenceDiagnostic::NeverNested(expression, operation) => {
-            let pointer = source_map.expression_to_source(expression).ok()?.clone();
-            let source = InFile::new(file_id, pointer);
-            Some(AnyDiagnostic::PrecedenceParensRequired {
-                expression: source,
-                operation,
-                sequence_permitted: false,
-            })
-        },
-        PrecedenceDiagnostic::SequencesAllowed(expression, operation) => {
-            let pointer = source_map.expression_to_source(expression).ok()?.clone();
-            let source = InFile::new(file_id, pointer);
-            Some(AnyDiagnostic::PrecedenceParensRequired {
-                expression: source,
-                operation,
-                sequence_permitted: true,
-            })
-        },
-    }
-}

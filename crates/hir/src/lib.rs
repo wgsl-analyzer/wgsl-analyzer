@@ -987,18 +987,6 @@ impl Module {
                     }
                 }
 
-                diagnostics::precedence::collect(database, definition, |diagnostic| {
-                    match diagnostics::any_diag_from_shift(
-                        &diagnostic,
-                        source_map.expression_source_map(),
-                        file,
-                    ) {
-                        Some(diagnostic) => accumulator.push(diagnostic),
-                        None => {
-                            tracing::warn!("could not create diagnostic from {:?}", diagnostic);
-                        },
-                    }
-                });
             }
         }
     }
