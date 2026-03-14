@@ -2,10 +2,7 @@ use std::iter;
 
 use hir::HirDatabase as _;
 use hir_def::database::DefDatabase as _;
-use hir_ty::{
-    ty::TypeKind,
-    ty::pretty::pretty_type,
-};
+use hir_ty::{ty::TypeKind, ty::pretty::pretty_type};
 
 use super::Completions;
 use crate::{
@@ -63,15 +60,15 @@ fn builtin_struct_completions(
     context: &CompletionContext<'_>,
     builtin_struct: &hir_ty::ty::BuiltinStruct,
 ) {
-    let items = builtin_struct
-        .fields
-        .iter()
-        .map(|(name, ty)| {
-            let mut builder =
-                CompletionItem::new(CompletionItemKind::Field, context.source_range(), name.as_str());
-            builder.detail(pretty_type(context.database, *ty));
-            builder.build(context.database)
-        });
+    let items = builtin_struct.fields.iter().map(|(name, ty)| {
+        let mut builder = CompletionItem::new(
+            CompletionItemKind::Field,
+            context.source_range(),
+            name.as_str(),
+        );
+        builder.detail(pretty_type(context.database, *ty));
+        builder.build(context.database)
+    });
     accumulator.add_all(items);
 }
 
@@ -83,17 +80,17 @@ fn struct_completions(
     let struct_data = context.database.struct_data(struct_id).0;
     let field_types = &context.database.field_types(struct_id).0;
 
-    let items = struct_data
-        .fields()
-        .iter()
-        .map(|(field_id, field)| {
-            let mut builder =
-                CompletionItem::new(CompletionItemKind::Field, context.source_range(), field.name.as_str());
-            if let Some(ty) = field_types.get(field_id) {
-                builder.detail(pretty_type(context.database, *ty));
-            }
-            builder.build(context.database)
-        });
+    let items = struct_data.fields().iter().map(|(field_id, field)| {
+        let mut builder = CompletionItem::new(
+            CompletionItemKind::Field,
+            context.source_range(),
+            field.name.as_str(),
+        );
+        if let Some(ty) = field_types.get(field_id) {
+            builder.detail(pretty_type(context.database, *ty));
+        }
+        builder.build(context.database)
+    });
     accumulator.add_all(items);
 }
 

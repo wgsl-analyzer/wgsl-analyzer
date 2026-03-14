@@ -269,7 +269,6 @@ fn collect_call_arg_types(
         .collect()
 }
 
-
 /// Returns a Markdown description for a WGSL attribute name.
 fn attribute_description(name: &str) -> Option<String> {
     let attr = ide_db::wgsl_attributes::find_attribute(name)?;

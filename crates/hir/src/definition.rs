@@ -1,19 +1,21 @@
 use hir_def::{
-    HirFileId, InFile,
+    HasSource as _, HirFileId, InFile,
     database::{DefDatabase as _, DefinitionWithBodyId, Lookup as _},
     expression_store::path::Path,
     item_tree::Name,
     mod_path::ModPath,
     resolver::{ResolveKind, Resolver},
     signature::FieldId,
-    HasSource as _,
 };
 use hir_ty::{
     database::HirDatabase,
     infer::TypeLoweringContext,
     ty::pretty::{pretty_fn, pretty_type},
 };
-use syntax::{AstNode as _, AstToken as _, Direction, HasAttributes as _, HasTemplateParameters as _, SyntaxNode, SyntaxToken, ast, match_ast};
+use syntax::{
+    AstNode as _, AstToken as _, Direction, HasAttributes as _, HasTemplateParameters as _,
+    SyntaxNode, SyntaxToken, ast, match_ast,
+};
 
 use crate::{
     Field, Function, GlobalConstant, GlobalVariable, HasSource as _, Local, ModuleDef, Override,
@@ -89,11 +91,20 @@ impl Definition {
                 let ty = field_types.0.get(field.id.field)?;
                 let struct_data = database.struct_data(field.id.r#struct).0;
                 let field_data = &struct_data.fields()[field.id.field];
-                Some(format!(
+                let mut result = String::new();
+                // Extract attributes from the field's source AST
+                if let Some(source) = field.source(database) {
+                    if let Some(attrs) = format_attributes(&source.value) {
+                        result.push_str(&attrs);
+                        result.push('\n');
+                    }
+                }
+                result.push_str(&format!(
                     "{}: {}",
                     field_data.name.as_str(),
                     pretty_type(database, *ty)
-                ))
+                ));
+                Some(result)
             },
             Self::ModuleDef(module_def) => match module_def {
                 ModuleDef::Function(function) => {
@@ -115,8 +126,23 @@ impl Definition {
                 ModuleDef::Struct(s) => {
                     let data = database.struct_data(s.id).0;
                     let field_types = &database.field_types(s.id).0;
+
+                    // Get the source AST to extract field attributes
+                    let source = s.source(database);
+                    let ast_fields: Vec<_> = source
+                        .as_ref()
+                        .and_then(|src| src.value.body())
+                        .map(|body| body.fields().collect())
+                        .unwrap_or_default();
+
                     let mut result = format!("struct {} {{\n", data.name.as_str());
-                    for (field_id, field_data) in data.fields().iter() {
+                    for (idx, (field_id, field_data)) in data.fields().iter().enumerate() {
+                        // Extract attributes from the corresponding AST member
+                        if let Some(ast_member) = ast_fields.get(idx) {
+                            if let Some(attrs) = format_attributes(ast_member) {
+                                result.push_str(&format!("    {attrs}\n"));
+                            }
+                        }
                         if let Some(ty) = field_types.get(field_id) {
                             result.push_str(&format!(
                                 "    {}: {},\n",

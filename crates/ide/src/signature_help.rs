@@ -1,6 +1,9 @@
 use base_db::{FilePosition, TextSize};
 use hir::{Definition, Function, HirDatabase as _, ModuleDef, Semantics};
-use hir_def::{database::{DefDatabase as _, Lookup as _}, item_tree::Name};
+use hir_def::{
+    database::{DefDatabase as _, Lookup as _},
+    item_tree::Name,
+};
 use hir_ty::{
     builtins::Builtin,
     function::FunctionDetails,
@@ -62,13 +65,11 @@ pub(crate) fn signature_help(
     let mut active_sig = None;
 
     // Try to extract doc comments for the function being called
-    let fn_doc = function_call
-        .ident_expression()
-        .and_then(|ident_expr| {
-            let name_token = ident_expr.syntax().first_token()?;
-            let def = Definition::from_token(&semantics, file_id.into(), &name_token)?;
-            def.doc_comments(database)
-        });
+    let fn_doc = function_call.ident_expression().and_then(|ident_expr| {
+        let name_token = ident_expr.syntax().first_token()?;
+        let def = Definition::from_token(&semantics, file_id.into(), &name_token)?;
+        def.doc_comments(database)
+    });
 
     if let Some(expr_id) = expression_id {
         if let Some(resolved) = analyzed.infer.call_resolution(expr_id) {

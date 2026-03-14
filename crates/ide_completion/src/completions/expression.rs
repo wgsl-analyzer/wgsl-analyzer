@@ -97,8 +97,7 @@ pub(crate) fn complete_names_in_scope(
             // Add function call snippet with parameter placeholders
             if let ScopeDef::ModuleItem(file_id, ModuleItem::Function(id)) = item {
                 if let Some(callable) = &context.config.callable {
-                    let function_id =
-                        context.database.intern_function(Location::new(file_id, id));
+                    let function_id = context.database.intern_function(Location::new(file_id, id));
                     let function_type = context.database.function_type(function_id);
                     let details = function_type.lookup(context.database);
                     let snippet = build_fn_snippet(name.as_str(), &details, callable);
@@ -225,7 +224,6 @@ fn render_detail(
         },
     }
 }
-
 
 /// Extract doc comments from the AST node of a module item.
 fn render_doc_comments(

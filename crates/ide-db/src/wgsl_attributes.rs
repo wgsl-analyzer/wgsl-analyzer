@@ -130,4 +130,3 @@ pub static WGSL_ATTRIBUTES: &[WgslAttribute] = &[
 pub fn find_attribute(name: &str) -> Option<&'static WgslAttribute> {
     WGSL_ATTRIBUTES.iter().find(|attr| attr.name == name)
 }
-
