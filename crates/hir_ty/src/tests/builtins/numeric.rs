@@ -658,20 +658,20 @@ fn foo() {
 }
 ",
         expect![[r#"
-            31..48 'signed...ger_32': i32
-            51..72 'countL...os(1i)': i32
-            69..71 '1i': i32
-            82..101 'unsign...ger_32': u32
-            104..125 'countL...os(1u)': u32
-            122..124 '1u': u32
-            136..157 'signed...32_vec': vec2<i32>
-            160..187 'countL...2(1i))': vec2<i32>
-            178..186 'vec2(1i)': vec2<i32>
-            183..185 '1i': i32
-            197..220 'unsign...32_vec': vec2<u32>
-            223..250 'countL...2(1u))': vec2<u32>
-            241..249 'vec2(1u)': vec2<u32>
-            246..248 '1u': u32
+            19..36 'signed...ger_32': i32
+            39..60 'countL...os(1i)': i32
+            57..59 '1i': i32
+            70..89 'unsign...ger_32': u32
+            92..113 'countL...os(1u)': u32
+            110..112 '1u': u32
+            124..145 'signed...32_vec': vec2<i32>
+            148..175 'countL...2(1i))': vec2<i32>
+            166..174 'vec2(1i)': vec2<i32>
+            171..173 '1i': i32
+            185..208 'unsign...32_vec': vec2<u32>
+            211..238 'countL...2(1u))': vec2<u32>
+            229..237 'vec2(1u)': vec2<u32>
+            234..236 '1u': u32
         "#]],
     );
 }
@@ -690,20 +690,20 @@ fn foo() {
 }
 ",
         expect![[r#"
-            31..48 'signed...ger_32': i32
-            51..67 'countO...ts(1i)': i32
-            64..66 '1i': i32
-            77..96 'unsign...ger_32': u32
-            99..115 'countO...ts(1u)': u32
-            112..114 '1u': u32
-            126..147 'signed...32_vec': vec2<i32>
-            150..172 'countO...2(1i))': vec2<i32>
-            163..171 'vec2(1i)': vec2<i32>
-            168..170 '1i': i32
-            182..205 'unsign...32_vec': vec2<u32>
-            208..230 'countO...2(1u))': vec2<u32>
-            221..229 'vec2(1u)': vec2<u32>
-            226..228 '1u': u32
+            19..36 'signed...ger_32': i32
+            39..55 'countO...ts(1i)': i32
+            52..54 '1i': i32
+            65..84 'unsign...ger_32': u32
+            87..103 'countO...ts(1u)': u32
+            100..102 '1u': u32
+            114..135 'signed...32_vec': vec2<i32>
+            138..160 'countO...2(1i))': vec2<i32>
+            151..159 'vec2(1i)': vec2<i32>
+            156..158 '1i': i32
+            170..193 'unsign...32_vec': vec2<u32>
+            196..218 'countO...2(1u))': vec2<u32>
+            209..217 'vec2(1u)': vec2<u32>
+            214..216 '1u': u32
         "#]],
     );
 }
@@ -722,20 +722,20 @@ fn foo() {
 }
 ",
         expect![[r#"
-            31..48 'signed...ger_32': i32
-            51..73 'countT...os(1i)': i32
-            70..72 '1i': i32
-            83..102 'unsign...ger_32': u32
-            105..127 'countT...os(1u)': u32
-            124..126 '1u': u32
-            138..159 'signed...32_vec': vec2<i32>
-            162..190 'countT...2(1i))': vec2<i32>
-            181..189 'vec2(1i)': vec2<i32>
-            186..188 '1i': i32
-            200..223 'unsign...32_vec': vec2<u32>
-            226..254 'countT...2(1u))': vec2<u32>
-            245..253 'vec2(1u)': vec2<u32>
-            250..252 '1u': u32
+            19..36 'signed...ger_32': i32
+            39..61 'countT...os(1i)': i32
+            58..60 '1i': i32
+            71..90 'unsign...ger_32': u32
+            93..115 'countT...os(1u)': u32
+            112..114 '1u': u32
+            126..147 'signed...32_vec': vec2<i32>
+            150..178 'countT...2(1i))': vec2<i32>
+            169..177 'vec2(1i)': vec2<i32>
+            174..176 '1i': i32
+            188..211 'unsign...32_vec': vec2<u32>
+            214..242 'countT...2(1u))': vec2<u32>
+            233..241 'vec2(1u)': vec2<u32>
+            238..240 '1u': u32
         "#]],
     );
 }
@@ -941,10 +941,10 @@ fn foo() {
 }
 ",
         expect![[r#"
-            31..48 'signed...ger_32': i32
-            51..71 'dot4I8...u, 1u)': i32
-            64..66 '1u': u32
-            68..70 '1u': u32
+            19..36 'signed...ger_32': i32
+            39..59 'dot4I8...u, 1u)': i32
+            52..54 '1u': u32
+            56..58 '1u': u32
         "#]],
     );
 }
@@ -1061,17 +1061,6 @@ fn foo() {
             111..113 '1i': i32
             116..117 '0': integer
             119..120 '0': integer
-            132..149 'signed...ger_32': i32
-            152..172 'extrac... 0, 0)': i32
-            164..165 '1': integer
-            167..168 '0': integer
-            170..171 '0': integer
-            182..203 'signed...32_vec': vec2<i32>
-            206..232 'extrac... 0, 0)': vec2<i32>
-            218..225 'vec2(1)': vec2<integer>
-            223..224 '1': integer
-            227..228 '0': integer
-            230..231 '0': integer
         "#]],
     );
 }
@@ -1419,57 +1408,63 @@ fn foo() {
 }
 ",
         expect![[r#"
-            31..45 'abstract_float': [error]
-            48..58 'frexp(1.0)': [error]
+            31..45 'abstract_float': __frexp_result_abstract
+            48..58 'frexp(1.0)': __frexp_result_abstract
             54..57 '1.0': float
-            68..88 'abstra..._fract': [error]
-            91..105 'abstract_float': [error]
-            121..139 'abstra...at_exp': [error]
-            142..156 'abstract_float': [error]
-            170..178 'float_32': [error]
-            181..192 'frexp(1.0f)': [error]
+            68..88 'abstra..._fract': f32
+            91..105 'abstract_float': __frexp_result_abstract
+            91..111 'abstra....fract': float
+            121..139 'abstra...at_exp': i32
+            142..156 'abstract_float': __frexp_result_abstract
+            142..160 'abstra...at.exp': integer
+            170..178 'float_32': __frexp_result_f32
+            181..192 'frexp(1.0f)': __frexp_result_f32
             187..191 '1.0f': f32
-            202..216 'float_32_fract': [error]
-            219..227 'float_32': [error]
-            243..255 'float_32_exp': [error]
-            258..266 'float_32': [error]
-            280..288 'float_16': [error]
-            291..302 'frexp(1.0h)': [error]
+            202..216 'float_32_fract': f32
+            219..227 'float_32': __frexp_result_f32
+            219..233 'float_32.fract': f32
+            243..255 'float_32_exp': i32
+            258..266 'float_32': __frexp_result_f32
+            258..270 'float_32.exp': i32
+            280..288 'float_16': __frexp_result_f16
+            291..302 'frexp(1.0h)': __frexp_result_f16
             297..301 '1.0h': f16
-            312..326 'float_16_fract': [error]
-            329..337 'float_16': [error]
-            353..365 'float_16_exp': [error]
-            368..376 'float_16': [error]
-            391..409 'abstra...at_vec': [error]
-            412..428 'frexp(...(1.0))': [error]
+            312..326 'float_16_fract': f16
+            329..337 'float_16': __frexp_result_f16
+            329..343 'float_16.fract': f16
+            353..365 'float_16_exp': i32
+            368..376 'float_16': __frexp_result_f16
+            368..380 'float_16.exp': i32
+            391..409 'abstra...at_vec': __frexp_result_vec2_abstract
+            412..428 'frexp(...(1.0))': __frexp_result_vec2_abstract
             418..427 'vec2(1.0)': vec2<float>
             423..426 '1.0': float
-            438..462 'abstra..._fract': [error]
-            465..483 'abstra...at_vec': [error]
-            499..521 'abstra...ec_exp': [error]
-            524..542 'abstra...at_vec': [error]
-            556..568 'float_32_vec': [error]
-            571..588 'frexp(...1.0f))': [error]
+            438..462 'abstra..._fract': vec2<f32>
+            465..483 'abstra...at_vec': __frexp_result_vec2_abstract
+            465..489 'abstra....fract': vec2<float>
+            499..521 'abstra...ec_exp': vec2<i32>
+            524..542 'abstra...at_vec': __frexp_result_vec2_abstract
+            524..546 'abstra...ec.exp': vec2<integer>
+            556..568 'float_32_vec': __frexp_result_vec2_f32
+            571..588 'frexp(...1.0f))': __frexp_result_vec2_f32
             577..587 'vec2(1.0f)': vec2<f32>
             582..586 '1.0f': f32
-            598..616 'float_..._fract': [error]
-            619..631 'float_32_vec': [error]
-            647..663 'float_...ec_exp': [error]
-            666..678 'float_32_vec': [error]
-            692..704 'float_16_vec': [error]
-            707..724 'frexp(...1.0h))': [error]
+            598..616 'float_..._fract': vec2<f32>
+            619..631 'float_32_vec': __frexp_result_vec2_f32
+            619..637 'float_....fract': vec2<f32>
+            647..663 'float_...ec_exp': vec2<i32>
+            666..678 'float_32_vec': __frexp_result_vec2_f32
+            666..682 'float_...ec.exp': vec2<i32>
+            692..704 'float_16_vec': __frexp_result_vec2_f16
+            707..724 'frexp(...1.0h))': __frexp_result_vec2_f16
             713..723 'vec2(1.0h)': vec2<f16>
             718..722 '1.0h': f16
-            734..752 'float_..._fract': [error]
-            755..767 'float_16_vec': [error]
-            783..799 'float_...ec_exp': [error]
-            802..814 'float_16_vec': [error]
-            48..58 'frexp(1.0)': `frexp` not found in scope
-            181..192 'frexp(1.0f)': `frexp` not found in scope
-            291..302 'frexp(1.0h)': `frexp` not found in scope
-            412..428 'frexp(...(1.0))': `frexp` not found in scope
-            571..588 'frexp(...1.0f))': `frexp` not found in scope
-            707..724 'frexp(...1.0h))': `frexp` not found in scope
+            734..752 'float_..._fract': vec2<f16>
+            755..767 'float_16_vec': __frexp_result_vec2_f16
+            755..773 'float_....fract': vec2<f16>
+            783..799 'float_...ec_exp': vec2<i32>
+            802..814 'float_16_vec': __frexp_result_vec2_f16
+            802..818 'float_...ec.exp': vec2<i32>
         "#]],
     );
 }
@@ -1677,7 +1672,6 @@ fn foo() {
     );
 }
 
-
 #[test]
 fn log() {
     check_infer(
@@ -1722,7 +1716,6 @@ fn foo() {
         "#]],
     );
 }
-
 
 #[test]
 fn log2() {
@@ -1769,5 +1762,95 @@ fn foo() {
     );
 }
 
+#[test]
+fn modf() {
+    check_infer(
+        ExtensionsConfig {
+            f16: true,
+            ..Default::default()
+        },
+        "
+enable f16;
+fn foo() {
+    let abstract_float = modf(1.0);
+    let abstract_float_fract = abstract_float.fract;
+    let abstract_float_exp = abstract_float.whole;
+    let float_32 = modf(1.0f);
+    let float_32_fract = float_32.fract;
+    let float_32_exp = float_32.whole;
+    let float_16 = modf(1.0h);
+    let float_16_fract = float_16.fract;
+    let float_16_exp = float_16.whole;
 
-
+    let abstract_float_vec = modf(vec2(1.0));
+    let abstract_float_vec_fract = abstract_float_vec.fract;
+    let abstract_float_vec_exp = abstract_float_vec.whole;
+    let float_32_vec = modf(vec2(1.0f));
+    let float_32_vec_fract = float_32_vec.fract;
+    let float_32_vec_exp = float_32_vec.whole;
+    let float_16_vec = modf(vec2(1.0h));
+    let float_16_vec_fract = float_16_vec.fract;
+    let float_16_vec_exp = float_16_vec.whole;
+}
+",
+        expect![[r#"
+            31..45 'abstract_float': __modf_result_abstract
+            48..57 'modf(1.0)': __modf_result_abstract
+            53..56 '1.0': float
+            67..87 'abstra..._fract': f32
+            90..104 'abstract_float': __modf_result_abstract
+            90..110 'abstra....fract': float
+            120..138 'abstra...at_exp': f32
+            141..155 'abstract_float': __modf_result_abstract
+            141..161 'abstra....whole': float
+            171..179 'float_32': __modf_result_f32
+            182..192 'modf(1.0f)': __modf_result_f32
+            187..191 '1.0f': f32
+            202..216 'float_32_fract': f32
+            219..227 'float_32': __modf_result_f32
+            219..233 'float_32.fract': f32
+            243..255 'float_32_exp': f32
+            258..266 'float_32': __modf_result_f32
+            258..272 'float_32.whole': f32
+            282..290 'float_16': __modf_result_f16
+            293..303 'modf(1.0h)': __modf_result_f16
+            298..302 '1.0h': f16
+            313..327 'float_16_fract': f16
+            330..338 'float_16': __modf_result_f16
+            330..344 'float_16.fract': f16
+            354..366 'float_16_exp': f16
+            369..377 'float_16': __modf_result_f16
+            369..383 'float_16.whole': f16
+            394..412 'abstra...at_vec': __modf_result_vec2_abstract
+            415..430 'modf(vec2(1.0))': __modf_result_vec2_abstract
+            420..429 'vec2(1.0)': vec2<float>
+            425..428 '1.0': float
+            440..464 'abstra..._fract': vec2<f32>
+            467..485 'abstra...at_vec': __modf_result_vec2_abstract
+            467..491 'abstra....fract': vec2<float>
+            501..523 'abstra...ec_exp': vec2<f32>
+            526..544 'abstra...at_vec': __modf_result_vec2_abstract
+            526..550 'abstra....whole': vec2<float>
+            560..572 'float_32_vec': __modf_result_vec2_f32
+            575..591 'modf(v...1.0f))': __modf_result_vec2_f32
+            580..590 'vec2(1.0f)': vec2<f32>
+            585..589 '1.0f': f32
+            601..619 'float_..._fract': vec2<f32>
+            622..634 'float_32_vec': __modf_result_vec2_f32
+            622..640 'float_....fract': vec2<f32>
+            650..666 'float_...ec_exp': vec2<f32>
+            669..681 'float_32_vec': __modf_result_vec2_f32
+            669..687 'float_....whole': vec2<f32>
+            697..709 'float_16_vec': __modf_result_vec2_f16
+            712..728 'modf(v...1.0h))': __modf_result_vec2_f16
+            717..727 'vec2(1.0h)': vec2<f16>
+            722..726 '1.0h': f16
+            738..756 'float_..._fract': vec2<f16>
+            759..771 'float_16_vec': __modf_result_vec2_f16
+            759..777 'float_....fract': vec2<f16>
+            787..803 'float_...ec_exp': vec2<f16>
+            806..818 'float_16_vec': __modf_result_vec2_f16
+            806..824 'float_....whole': vec2<f16>
+        "#]],
+    );
+}

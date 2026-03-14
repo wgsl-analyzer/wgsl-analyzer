@@ -1,3 +1,5 @@
+#![expect(clippy::unimplemented, reason = "build script, best tool for the job")]
+
 use std::{
     collections::BTreeMap,
     env, error, fmt,
@@ -46,6 +48,8 @@ enum Type {
     Atomic(Box<Self>),
     Bound(usize),
     StorageTypeOfTexelFormat(usize),
+    /// `(name, field names and types)`.
+    BuiltinStruct(String, Vec<(String, Box<Self>)>),
 
     // naga extensions
     /// This is from naga's `SHADER_INT64` extension.
@@ -309,10 +313,6 @@ fn only_char(input: &str) -> char {
     value
 }
 
-#[expect(
-    clippy::unimplemented,
-    reason = "builtin refactor https://github.com/wgsl-analyzer/wgsl-analyzer/issues/559"
-)]
 fn parse_type(
     generics: &mut BTreeMap<char, (usize, Generic)>,
     r#type: &str,
@@ -320,37 +320,18 @@ fn parse_type(
     if let Some((r#type, inner)) = parse_generic(r#type) {
         if let Some(size) = r#type.strip_prefix("vec") {
             let size = only_char(size);
-
             let size = parse_vec_size(generics, size);
-            let inner = parse_type(generics, inner);
+            let inner = parse_type(generics, inner.trim());
             return Type::Vec(size, Box::new(inner));
-        } else if let Some(texture) = r#type.strip_prefix("texture_storage_") {
+        } else if let Some(texture_storage) = r#type.strip_prefix("texture_storage_") {
             let (format, mode) = inner.split_once(';').unwrap();
             let format = parse_texel_format(generics, only_char(format));
             let mode = mode.parse().unwrap();
-
-            #[rustfmt::skip]
-            let texture_type = match texture {
-                "1d" => TextureType { dimension: TextureDimensionality::D1, arrayed: false, multisampled: false, kind: TextureKind::Storage(format, mode) },
-                "2d" => TextureType { dimension: TextureDimensionality::D2, arrayed: false, multisampled: false, kind: TextureKind::Storage(format, mode) },
-                "2d_array" => TextureType { dimension: TextureDimensionality::D2, arrayed: true, multisampled: false, kind: TextureKind::Storage(format, mode) },
-                "3d" => TextureType { dimension: TextureDimensionality::D3, arrayed: false, multisampled: false, kind: TextureKind::Storage(format, mode) },
-                _ => unimplemented!("{}", r#type),
-            };
-            return Type::Texture(texture_type);
+            let texture_storage_type = texture_storage_type(format, mode, texture_storage, r#type);
+            return Type::Texture(texture_storage_type);
         } else if let Some(texture) = r#type.strip_prefix("texture_") {
-            let inner = parse_type(generics, inner);
-            #[rustfmt::skip]
-            let texture_type = match texture {
-                "1d" => TextureType { dimension: TextureDimensionality::D1, arrayed: false, multisampled: false, kind: TextureKind::Sampled(Box::new(inner)) },
-                "2d" => TextureType { dimension: TextureDimensionality::D2, arrayed: false, multisampled: false, kind: TextureKind::Sampled(Box::new(inner)) },
-                "2d_array" => TextureType { dimension: TextureDimensionality::D2, arrayed: true, multisampled: false, kind: TextureKind::Sampled(Box::new(inner)) },
-                "3d" => TextureType { dimension: TextureDimensionality::D3, arrayed: false, multisampled: false, kind: TextureKind::Sampled(Box::new(inner)) },
-                "cube" => TextureType { dimension: TextureDimensionality::Cube, arrayed: false, multisampled: false, kind: TextureKind::Sampled(Box::new(inner)) },
-                "cube_array" => TextureType { dimension: TextureDimensionality::Cube, arrayed: true, multisampled: false, kind: TextureKind::Sampled(Box::new(inner)) },
-                "multisampled_2d" => TextureType { dimension: TextureDimensionality::D2, arrayed: false, multisampled: true, kind: TextureKind::Sampled(Box::new(inner)) },
-                _ => unimplemented!("{}", r#type),
-            };
+            let inner = parse_type(generics, inner.trim());
+            let texture_type = texture_type(inner, texture, r#type);
             return Type::Texture(texture_type);
         } else if let Some(size) = r#type.strip_prefix("mat") {
             let mut characters = size.chars();
@@ -358,20 +339,18 @@ fn parse_type(
             assert_eq!(characters.next().unwrap(), 'x');
             let rows = characters.next().unwrap();
             assert!(characters.next().is_none());
-
             let columns = parse_vec_size(generics, columns);
             let rows = parse_vec_size(generics, rows);
-
-            let inner = parse_type(generics, inner);
+            let inner = parse_type(generics, inner.trim());
             return Type::Matrix(columns, rows, Box::new(inner));
         } else if r#type == "array" {
-            let inner = parse_type(generics, inner);
+            let inner = parse_type(generics, inner.trim());
             return Type::RuntimeArray(Box::new(inner));
         } else if r#type == "ptr" {
-            let inner = parse_type(generics, inner);
+            let inner = parse_type(generics, inner.trim());
             return Type::Pointer(Box::new(inner));
         } else if r#type == "atomic" {
-            let inner = parse_type(generics, inner);
+            let inner = parse_type(generics, inner.trim());
             return Type::Atomic(Box::new(inner));
         }
         unimplemented!("{}", r#type);
@@ -389,6 +368,28 @@ fn parse_type(
             _ => unimplemented!("{}", r#type),
         };
         return Type::Texture(texture_type);
+    }
+
+    // Parse builtin struct types.
+    // format: struct __name { field1: type1, field2: type2 }
+    if let Some(struct_pos) = r#type.find("struct ") {
+        let brace_pos = r#type[struct_pos..].find('{').unwrap();
+        let name = &r#type[..brace_pos];
+        let fields_str = r#type[brace_pos + 1..].strip_suffix('}').unwrap();
+        let fields = fields_str
+            .trim()
+            .split(',')
+            .map(str::trim)
+            .filter(|member| !member.is_empty())
+            .map(|member| {
+                let (field_name, field_type) = member.split_once(':').unwrap();
+                (
+                    field_name.trim().to_owned(),
+                    Box::new(parse_type(generics, field_type.trim())),
+                )
+            })
+            .collect();
+        return Type::BuiltinStruct(name.to_owned(), fields);
     }
 
     if r#type.len() == 1 {
@@ -416,6 +417,42 @@ fn parse_type(
         },
         other => unimplemented!("{}", other),
     }
+}
+
+fn texture_type(
+    inner: Type,
+    texture: &str,
+    r#type: &str,
+) -> TextureType {
+    #[rustfmt::skip]
+    let r#type = match texture {
+        "1d" => TextureType { dimension: TextureDimensionality::D1, arrayed: false, multisampled: false, kind: TextureKind::Sampled(Box::new(inner)) },
+        "2d" => TextureType { dimension: TextureDimensionality::D2, arrayed: false, multisampled: false, kind: TextureKind::Sampled(Box::new(inner)) },
+        "2d_array" => TextureType { dimension: TextureDimensionality::D2, arrayed: true, multisampled: false, kind: TextureKind::Sampled(Box::new(inner)) },
+        "3d" => TextureType { dimension: TextureDimensionality::D3, arrayed: false, multisampled: false, kind: TextureKind::Sampled(Box::new(inner)) },
+        "cube" => TextureType { dimension: TextureDimensionality::Cube, arrayed: false, multisampled: false, kind: TextureKind::Sampled(Box::new(inner)) },
+        "cube_array" => TextureType { dimension: TextureDimensionality::Cube, arrayed: true, multisampled: false, kind: TextureKind::Sampled(Box::new(inner)) },
+        "multisampled_2d" => TextureType { dimension: TextureDimensionality::D2, arrayed: false, multisampled: true, kind: TextureKind::Sampled(Box::new(inner)) },
+        _ => unimplemented!("{}", r#type),
+    };
+    r#type
+}
+
+fn texture_storage_type(
+    format: TexelFormat,
+    mode: AccessMode,
+    texture: &str,
+    r#type: &str,
+) -> TextureType {
+    #[rustfmt::skip]
+    let r#type = match texture {
+        "1d" => TextureType { dimension: TextureDimensionality::D1, arrayed: false, multisampled: false, kind: TextureKind::Storage(format, mode) },
+        "2d" => TextureType { dimension: TextureDimensionality::D2, arrayed: false, multisampled: false, kind: TextureKind::Storage(format, mode) },
+        "2d_array" => TextureType { dimension: TextureDimensionality::D2, arrayed: true, multisampled: false, kind: TextureKind::Storage(format, mode) },
+        "3d" => TextureType { dimension: TextureDimensionality::D3, arrayed: false, multisampled: false, kind: TextureKind::Storage(format, mode) },
+        _ => unimplemented!("{}", r#type),
+    };
+    r#type
 }
 
 fn type_to_rust(r#type: &Type) -> String {
@@ -503,6 +540,21 @@ fn type_to_rust(r#type: &Type) -> String {
         Type::StorageTypeOfTexelFormat(variable) => {
             format!(
                 "TypeKind::StorageTypeOfTexelFormat(BoundVariable {{ index: {variable} }}).intern(database)"
+            )
+        },
+        Type::BuiltinStruct(name, fields) => {
+            let fields_code: Vec<String> = fields
+                .iter()
+                .map(|(field_name, field_type)| {
+                    format!(
+                        "(\"{field_name}\".to_owned(), {})",
+                        type_to_rust(field_type)
+                    )
+                })
+                .collect();
+            format!(
+                "TypeKind::BuiltinStruct(crate::ty::BuiltinStruct {{ name: \"{name}\".to_owned(), fields: vec![{}] }}).intern(database)",
+                fields_code.join(", ")
             )
         },
     }

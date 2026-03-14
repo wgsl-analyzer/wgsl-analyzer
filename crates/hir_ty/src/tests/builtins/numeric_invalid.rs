@@ -31,9 +31,9 @@ fn foo() {
             139..164 'determ...1.0h))': [error]
             151..163 'mat3x2(1.0h)': mat3x2<f16>
             158..162 '1.0h': f16
-            [EditionedFileId(Id(1c00))] WgslError { expression: Idx::<Expression>(2), message: "invalid function call signature: `determinant(mat3x2<AbstractFloat>)`" } in Body
-            [EditionedFileId(Id(1c00))] WgslError { expression: Idx::<Expression>(5), message: "invalid function call signature: `determinant(mat3x2<f32>)`" } in Body
-            [EditionedFileId(Id(1c00))] WgslError { expression: Idx::<Expression>(8), message: "invalid function call signature: `determinant(mat3x2<f16>)`" } in Body
+            [EditionedFileId(Id(1c00))] WgslError { expression: Idx::<Expression>(2), message: "`determinant` expects a square matrix argument" } in Body
+            [EditionedFileId(Id(1c00))] WgslError { expression: Idx::<Expression>(5), message: "`determinant` expects a square matrix argument" } in Body
+            [EditionedFileId(Id(1c00))] WgslError { expression: Idx::<Expression>(8), message: "`determinant` expects a square matrix argument" } in Body
         "#]],
     );
 }

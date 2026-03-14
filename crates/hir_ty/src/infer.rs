@@ -40,8 +40,9 @@ use crate::{
         TypeLoweringContext, TypeLoweringError, WgslTypeConverter,
     },
     ty::{
-        ArraySize, ArrayType, AtomicType, MatrixType, Pointer, Reference, ScalarType,
-        TextureDimensionality, TextureKind, TextureType, Type, TypeKind, VecSize, VectorType,
+        ArraySize, ArrayType, AtomicType, BuiltinStruct, MatrixType, Pointer, Reference,
+        ScalarType, TextureDimensionality, TextureKind, TextureType, Type, TypeKind, VecSize,
+        VectorType,
     },
 };
 
@@ -364,7 +365,7 @@ impl<'database> InferenceContext<'database> {
 
     fn push_lowering_diagnostics(
         &mut self,
-        diagnostics: &mut Vec<TypeLoweringError>,
+        mut diagnostics: Vec<TypeLoweringError>,
         store: &ExpressionStore,
     ) {
         for diagnostic in diagnostics.drain(..) {
@@ -426,7 +427,7 @@ impl<'database> InferenceContext<'database> {
             .iter()
             .map(|argument| context.evaluate_template_argument(*argument))
             .collect();
-        self.push_lowering_diagnostics(&mut context.diagnostics, store);
+        self.push_lowering_diagnostics(context.diagnostics, store);
 
         let default_address_space = match store.store_source {
             ExpressionStoreSource::Body => AddressSpace::Function,
@@ -667,7 +668,6 @@ impl<'database> InferenceContext<'database> {
                 binding_id,
                 type_ref,
                 initializer,
-                ..
             } => {
                 let r#type = type_ref.map(|r#type| self.lower_type(r#type, &resolver, body));
                 let r#type = self.infer_initializer(
@@ -916,7 +916,7 @@ impl<'database> InferenceContext<'database> {
         body: &Body,
         resolver: &Resolver,
         type_ref: Option<la_arena::Idx<hir_def::type_specifier::TypeSpecifier>>,
-        initializer: Option<la_arena::Idx<Expression>>,
+        initializer: Option<ExpressionId>,
     ) -> Type {
         let r#type = type_ref.map(|r#type| self.lower_type(r#type, resolver, body));
         let r#type =
@@ -1044,90 +1044,7 @@ impl<'database> InferenceContext<'database> {
             Expression::Field {
                 expression: field_expression,
                 name,
-            } => {
-                let expression_type = self.infer_expression(*field_expression, store);
-                if expression_type.is_err(self.database) {
-                    return self.error_type();
-                }
-
-                match expression_type.kind(self.database) {
-                    TypeKind::Reference(Reference {
-                        address_space,
-                        inner,
-                        access_mode,
-                    })
-                    | TypeKind::Pointer(Pointer {
-                        address_space,
-                        inner,
-                        access_mode,
-                    }) if let TypeKind::Struct(r#struct) = inner.kind(self.database) => {
-                        let r#type = self.infer_struct_field_expression(
-                            expression,
-                            store,
-                            *field_expression,
-                            name,
-                            expression_type,
-                            r#struct,
-                        );
-                        self.make_ref(r#type, address_space, access_mode)
-                    },
-                    TypeKind::Struct(r#struct) => self.infer_struct_field_expression(
-                        expression,
-                        store,
-                        *field_expression,
-                        name,
-                        expression_type,
-                        r#struct,
-                    ),
-                    TypeKind::Reference(Reference {
-                        address_space,
-                        inner,
-                        access_mode,
-                    })
-                    | TypeKind::Pointer(Pointer {
-                        address_space,
-                        inner,
-                        access_mode,
-                    }) if let TypeKind::Vector(vector_type) = inner.kind(self.database) => self
-                        .infer_vec_swizzle_expression(
-                            store,
-                            *field_expression,
-                            name,
-                            expression_type,
-                            &vector_type,
-                            Some((address_space, access_mode)),
-                        ),
-                    TypeKind::Vector(vector_type) => self.infer_vec_swizzle_expression(
-                        store,
-                        *field_expression,
-                        name,
-                        expression_type,
-                        &vector_type,
-                        None,
-                    ),
-                    TypeKind::Error
-                    | TypeKind::Scalar(_)
-                    | TypeKind::Atomic(_)
-                    | TypeKind::Matrix(_)
-                    | TypeKind::Array(_)
-                    | TypeKind::Texture(_)
-                    | TypeKind::Sampler(_)
-                    | TypeKind::Reference(_)
-                    | TypeKind::Pointer(_)
-                    | TypeKind::BoundVariable(_)
-                    | TypeKind::StorageTypeOfTexelFormat(_) => {
-                        self.push_diagnostic(
-                            store.store_source,
-                            InferenceDiagnosticKind::NoSuchField {
-                                expression: *field_expression,
-                                name: name.clone(),
-                                r#type: expression_type,
-                            },
-                        );
-                        self.error_type()
-                    },
-                }
-            },
+            } => self.infer_field_expression(expression, store, *field_expression, name),
             Expression::Call {
                 ident_expression,
                 arguments,
@@ -1213,6 +1130,7 @@ impl<'database> InferenceContext<'database> {
                     TypeKind::Scalar(_)
                     | TypeKind::Atomic(_)
                     | TypeKind::Struct(_)
+                    | TypeKind::BuiltinStruct(_)
                     | TypeKind::Texture(_)
                     | TypeKind::Sampler(_)
                     | TypeKind::Reference(_)
@@ -1260,6 +1178,100 @@ impl<'database> InferenceContext<'database> {
         };
         self.set_expression_type(expression, r#type);
         r#type
+    }
+
+    fn infer_field_expression(
+        &mut self,
+        expression: ExpressionId,
+        store: &ExpressionStore,
+        field_expression: ExpressionId,
+        name: &Name,
+    ) -> Type {
+        let expression_type = self.infer_expression(field_expression, store);
+        if expression_type.is_err(self.database) {
+            return self.error_type();
+        }
+        let (kind, ref_info) = match expression_type.kind(self.database) {
+            TypeKind::Reference(Reference {
+                address_space,
+                inner,
+                access_mode,
+            })
+            | TypeKind::Pointer(Pointer {
+                address_space,
+                inner,
+                access_mode,
+            }) => (
+                inner.kind(self.database),
+                Some((address_space, access_mode)),
+            ),
+            kind @ (TypeKind::Error
+            | TypeKind::Scalar(_)
+            | TypeKind::Atomic(_)
+            | TypeKind::Vector(_)
+            | TypeKind::Matrix(_)
+            | TypeKind::Struct(_)
+            | TypeKind::BuiltinStruct(_)
+            | TypeKind::Array(_)
+            | TypeKind::Texture(_)
+            | TypeKind::Sampler(_)
+            | TypeKind::BoundVariable(_)
+            | TypeKind::StorageTypeOfTexelFormat(_)) => (kind, None),
+        };
+
+        let r#type = match kind {
+            TypeKind::Struct(r#struct) => self.infer_struct_field_expression(
+                expression,
+                store,
+                field_expression,
+                name,
+                expression_type,
+                r#struct,
+            ),
+            TypeKind::BuiltinStruct(builtin_struct) => self.infer_builtin_struct_field_expression(
+                store,
+                field_expression,
+                name,
+                expression_type,
+                builtin_struct,
+            ),
+            TypeKind::Vector(vector_type) => {
+                return self.infer_vec_swizzle_expression(
+                    store,
+                    field_expression,
+                    name,
+                    expression_type,
+                    &vector_type,
+                    ref_info,
+                );
+            },
+            TypeKind::Error
+            | TypeKind::Scalar(_)
+            | TypeKind::Atomic(_)
+            | TypeKind::Matrix(_)
+            | TypeKind::Array(_)
+            | TypeKind::Texture(_)
+            | TypeKind::Sampler(_)
+            | TypeKind::Reference(_)
+            | TypeKind::Pointer(_)
+            | TypeKind::BoundVariable(_)
+            | TypeKind::StorageTypeOfTexelFormat(_) => {
+                self.push_diagnostic(
+                    store.store_source,
+                    InferenceDiagnosticKind::NoSuchField {
+                        expression: field_expression,
+                        name: name.clone(),
+                        r#type: expression_type,
+                    },
+                );
+                return self.error_type();
+            },
+        };
+
+        match ref_info {
+            Some((address_space, access_mode)) => self.make_ref(r#type, address_space, access_mode),
+            None => r#type,
+        }
     }
 
     fn validate_function_call(
@@ -1446,7 +1458,7 @@ impl<'database> InferenceContext<'database> {
             &ident_expression.path,
             &ident_expression.template_parameters,
         );
-        self.push_lowering_diagnostics(&mut context.diagnostics, store);
+        self.push_lowering_diagnostics(context.diagnostics, store);
 
         match lowered {
             Lowered::GlobalConstant(id) => {
@@ -1533,7 +1545,7 @@ impl<'database> InferenceContext<'database> {
     fn infer_vec_swizzle_expression(
         &mut self,
         store: &ExpressionStore,
-        field_expression: la_arena::Idx<Expression>,
+        field_expression: ExpressionId,
         name: &Name,
         expression_type: Type,
         vector_type: &VectorType,
@@ -1588,9 +1600,9 @@ impl<'database> InferenceContext<'database> {
 
     fn infer_struct_field_expression(
         &mut self,
-        expression: la_arena::Idx<Expression>,
+        expression: ExpressionId,
         store: &ExpressionStore,
-        field_expression: la_arena::Idx<Expression>,
+        field_expression: ExpressionId,
         name: &Name,
         expression_type: Type,
         r#struct: StructId,
@@ -1600,6 +1612,33 @@ impl<'database> InferenceContext<'database> {
         if let Some(field) = struct_data.field(name) {
             self.set_field_resolution(expression, FieldId { r#struct, field });
             field_types[field]
+        } else {
+            self.push_diagnostic(
+                store.store_source,
+                InferenceDiagnosticKind::NoSuchField {
+                    expression: field_expression,
+                    name: name.clone(),
+                    r#type: expression_type,
+                },
+            );
+            self.error_type()
+        }
+    }
+
+    fn infer_builtin_struct_field_expression(
+        &mut self,
+        store: &ExpressionStore,
+        field_expression: ExpressionId,
+        name: &Name,
+        expression_type: Type,
+        builtin_struct: BuiltinStruct,
+    ) -> Type {
+        if let Some((_, field_type)) = builtin_struct
+            .fields
+            .into_iter()
+            .find(|(field_name, _)| field_name.as_str() == name.as_str())
+        {
+            field_type
         } else {
             self.push_diagnostic(
                 store.store_source,
@@ -1713,9 +1752,7 @@ impl<'database> InferenceContext<'database> {
             .unwrap_or_else(|| self.resolver.clone());
         let mut context = TypeLoweringContext::new(self.database, &resolver, store);
         let lowered = context.lower(expression, &callee.path, &callee.template_parameters);
-        self.push_lowering_diagnostics(&mut context.diagnostics, store);
-
-        match lowered {
+        let inferred = match lowered {
             Lowered::Type(r#type) => {
                 self.call_templated_type_constructor(store, expression, r#type, arguments)
             },
@@ -1734,7 +1771,6 @@ impl<'database> InferenceContext<'database> {
                     TypeContainer::Expression(expression),
                     &callee.template_parameters,
                 );
-                self.push_lowering_diagnostics(&mut context.diagnostics, store);
                 self.call_builtin_function(store, expression, callee, template_args, &arguments)
             },
             Lowered::Enumerant(_)
@@ -1753,7 +1789,9 @@ impl<'database> InferenceContext<'database> {
                 );
                 self.error_type()
             },
-        }
+        };
+        self.push_lowering_diagnostics(context.diagnostics, store);
+        inferred
     }
 
     fn call_builtin_function(
@@ -1968,6 +2006,7 @@ impl<'database> InferenceContext<'database> {
             | TypeKind::Sampler(_)
             | TypeKind::Pointer(_)
             | TypeKind::Atomic(_)
+            | TypeKind::BuiltinStruct(_)
             | TypeKind::StorageTypeOfTexelFormat(_)
             | TypeKind::BoundVariable(_)
             | TypeKind::Reference(_) => {
@@ -2155,6 +2194,7 @@ impl<'database> InferenceContext<'database> {
             | TypeKind::Sampler(_)
             | TypeKind::Pointer(_)
             | TypeKind::Atomic(_)
+            | TypeKind::BuiltinStruct(_)
             | TypeKind::StorageTypeOfTexelFormat(_)
             | TypeKind::BoundVariable(_)
             | TypeKind::Reference(_) => {
@@ -2289,7 +2329,7 @@ impl<'database> InferenceContext<'database> {
     ) -> Type {
         let mut context = TypeLoweringContext::new(self.database, resolver, store);
         let r#type = context.lower_type(type_ref);
-        self.push_lowering_diagnostics(&mut context.diagnostics, store);
+        self.push_lowering_diagnostics(context.diagnostics, store);
         r#type
     }
 }

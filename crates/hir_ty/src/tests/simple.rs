@@ -44,6 +44,7 @@ fn field_expression_on_error_type() {
             23..33 'Nonsense()': [error]
             43..44 'a': [error]
             47..48 'x': [error]
+            47..57 'x.nonsense': [error]
             23..33 'Nonsense()': `Nonsense` not found in scope
         "#]],
     );

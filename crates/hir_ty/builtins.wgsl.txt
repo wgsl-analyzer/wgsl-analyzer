@@ -221,14 +221,12 @@ fract(e: vecN<AbstractFloat>) -> vecN<AbstractFloat>
 fract(e: vecN<f32>) -> vecN<f32>
 fract(e: vecN<f16>) -> vecN<f16>
 
-frexp(T) -> T
-// frexp(e: AbstractFloat) -> __frexp_result_abstract
-// frexp(e: f32) -> __frexp_result_f32
-// frexp(e: f16) -> __frexp_result_f16
-// frexp(e: vecN<AbstractFloat>) -> __frexp_result_vecN_abstract
-// frexp(e: vecN<f32>) -> __frexp_result_vecN_f32
-// frexp(e: vecN<f16>) -> __frexp_result_vecN_f16
-
+frexp(AbstractFloat) -> struct __frexp_result_abstract { fract: AbstractFloat, exp: AbstractInt }
+frexp(f32) -> struct __frexp_result_f32 { fract: f32, exp: i32 }
+frexp(f16) -> struct __frexp_result_f16 { fract: f16, exp: i32 }
+frexp(vecN<AbstractFloat>) -> struct __frexp_result_vecN_abstract { fract: vecN<AbstractFloat>, exp:vecN<AbstractInt> }
+frexp(vecN<f32>) -> struct __frexp_result_vecN_f32 { fract: vecN<f32>, exp:vecN<i32> }
+frexp(vecN<f16>) -> struct __frexp_result_vecN_f16 { fract: vecN<f16>, exp:vecN<i32> }
 
 insertBits(e: i32, newbits: i32, offset: u32, count: u32) -> i32
 insertBits(e: u32, newbits: u32, offset: u32, count: u32) -> u32
@@ -272,12 +270,21 @@ log2(e: vecN<f16>) -> vecN<f16>
 
 min(f32, f32) -> f32
 min(vecN<f32>, vecN<f32>) -> vecN<f32>
+
 max(f32, f32) -> f32
 max(vecN<f32>, vecN<f32>) -> vecN<f32>
+
 mix(f32, f32, f32) -> f32
 mix(vecN<f32>, vecN<f32>, vecN<f32>) -> vecN<f32>
 mix(vecN<f32>, vecN<f32>, f32) -> vecN<f32>
-// TODO modf
+
+modf(e: AbstractFloat) -> struct __modf_result_abstract { fract: AbstractFloat, whole: AbstractFloat }
+modf(e: f32) -> struct __modf_result_f32 { fract: f32, whole: f32 }
+modf(e: f16) -> struct __modf_result_f16 { fract: f16, whole: f16 }
+modf(e: vecN<AbstractFloat>) -> struct __modf_result_vecN_abstract { fract: vecN<AbstractFloat>, whole: vecN<AbstractFloat> }
+modf(e: vecN<f32>) -> struct __modf_result_vecN_f32 { fract: vecN<f32>, whole: vecN<f32> }
+modf(e: vecN<f16>) -> struct __modf_result_vecN_f16 { fract: vecN<f16>, whole: vecN<f16> }
+
 normalize(vecN<f32>) -> vecN<f32>
 pow(f32, f32) -> f32
 pow(vecN<f32>, vecN<f32>) -> vecN<f32>
@@ -624,7 +631,8 @@ atomicAnd(ptr<atomic<T>>, T) -> T
 atomicOr(ptr<atomic<T>>, T) -> T
 atomicXor(ptr<atomic<T>>, T) -> T
 atomicExchange(ptr<atomic<T>>, T) -> T
-// TODO atomicCompareExchangeWeak
+
+atomicCompareExchangeWeak(atomic_ptr: ptr<atomic<T>>, cmp: T, v: T) -> struct __atomic_compare_exchange_result { old_value: T, exchanged: bool }
 
 // data packing
 pack4x8snorm(vec4<f32>) -> u32

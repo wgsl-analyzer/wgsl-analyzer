@@ -169,6 +169,7 @@ fn complete_variable() {
             function atanh
             function atomicAdd
             function atomicAnd
+            function atomicCompareExchangeWeak
             function atomicExchange
             function atomicLoad
             function atomicMax
@@ -190,6 +191,8 @@ fn complete_variable() {
             function determinant
             function distance
             function dot
+            function dot4I8Packed
+            function dot4U8Packed
             function dpdx
             function dpdxCoarse
             function dpdxFine
@@ -205,6 +208,7 @@ fn complete_variable() {
             function floor
             function fma
             function fract
+            function frexp
             function fwidth
             function fwidthCoarse
             function fwidthFine
@@ -214,12 +218,14 @@ fn complete_variable() {
             function isInf
             function isNan
             function isNormal
+            function ldexp
             function length
             function log
             function log2
             function max
             function min
             function mix
+            function modf
             function normalize
             function pack2x16float
             function pack2x16snorm
@@ -297,6 +303,7 @@ fn complete_keyword() {
             function atanh
             function atomicAdd
             function atomicAnd
+            function atomicCompareExchangeWeak
             function atomicExchange
             function atomicLoad
             function atomicMax
@@ -318,6 +325,8 @@ fn complete_keyword() {
             function determinant
             function distance
             function dot
+            function dot4I8Packed
+            function dot4U8Packed
             function dpdx
             function dpdxCoarse
             function dpdxFine
@@ -333,6 +342,7 @@ fn complete_keyword() {
             function floor
             function fma
             function fract
+            function frexp
             function fwidth
             function fwidthCoarse
             function fwidthFine
@@ -342,12 +352,14 @@ fn complete_keyword() {
             function isInf
             function isNan
             function isNormal
+            function ldexp
             function length
             function log
             function log2
             function max
             function min
             function mix
+            function modf
             function normalize
             function pack2x16float
             function pack2x16snorm
@@ -424,6 +436,7 @@ fn complete_snippet() {
             function atanh
             function atomicAdd
             function atomicAnd
+            function atomicCompareExchangeWeak
             function atomicExchange
             function atomicLoad
             function atomicMax
@@ -445,6 +458,8 @@ fn complete_snippet() {
             function determinant
             function distance
             function dot
+            function dot4I8Packed
+            function dot4U8Packed
             function dpdx
             function dpdxCoarse
             function dpdxFine
@@ -460,6 +475,7 @@ fn complete_snippet() {
             function floor
             function fma
             function fract
+            function frexp
             function fwidth
             function fwidthCoarse
             function fwidthFine
@@ -469,12 +485,14 @@ fn complete_snippet() {
             function isInf
             function isNan
             function isNormal
+            function ldexp
             function length
             function log
             function log2
             function max
             function min
             function mix
+            function modf
             function normalize
             function pack2x16float
             function pack2x16snorm
@@ -552,6 +570,7 @@ fn complete_constant() {
             function atanh
             function atomicAdd
             function atomicAnd
+            function atomicCompareExchangeWeak
             function atomicExchange
             function atomicLoad
             function atomicMax
@@ -573,6 +592,8 @@ fn complete_constant() {
             function determinant
             function distance
             function dot
+            function dot4I8Packed
+            function dot4U8Packed
             function dpdx
             function dpdxCoarse
             function dpdxFine
@@ -588,6 +609,7 @@ fn complete_constant() {
             function floor
             function fma
             function fract
+            function frexp
             function fwidth
             function fwidthCoarse
             function fwidthFine
@@ -597,12 +619,14 @@ fn complete_constant() {
             function isInf
             function isNan
             function isNormal
+            function ldexp
             function length
             function log
             function log2
             function max
             function min
             function mix
+            function modf
             function normalize
             function pack2x16float
             function pack2x16snorm
@@ -680,6 +704,7 @@ fn complete_struct() {
             function atanh
             function atomicAdd
             function atomicAnd
+            function atomicCompareExchangeWeak
             function atomicExchange
             function atomicLoad
             function atomicMax
@@ -701,6 +726,8 @@ fn complete_struct() {
             function determinant
             function distance
             function dot
+            function dot4I8Packed
+            function dot4U8Packed
             function dpdx
             function dpdxCoarse
             function dpdxFine
@@ -716,6 +743,7 @@ fn complete_struct() {
             function floor
             function fma
             function fract
+            function frexp
             function fwidth
             function fwidthCoarse
             function fwidthFine
@@ -725,12 +753,14 @@ fn complete_struct() {
             function isInf
             function isNan
             function isNormal
+            function ldexp
             function length
             function log
             function log2
             function max
             function min
             function mix
+            function modf
             function normalize
             function pack2x16float
             function pack2x16snorm
@@ -810,6 +840,7 @@ fn complete_type_alias() {
             function atanh
             function atomicAdd
             function atomicAnd
+            function atomicCompareExchangeWeak
             function atomicExchange
             function atomicLoad
             function atomicMax
@@ -831,6 +862,8 @@ fn complete_type_alias() {
             function determinant
             function distance
             function dot
+            function dot4I8Packed
+            function dot4U8Packed
             function dpdx
             function dpdxCoarse
             function dpdxFine
@@ -846,6 +879,7 @@ fn complete_type_alias() {
             function floor
             function fma
             function fract
+            function frexp
             function fwidth
             function fwidthCoarse
             function fwidthFine
@@ -855,12 +889,14 @@ fn complete_type_alias() {
             function isInf
             function isNan
             function isNormal
+            function ldexp
             function length
             function log
             function log2
             function max
             function min
             function mix
+            function modf
             function normalize
             function pack2x16float
             function pack2x16snorm

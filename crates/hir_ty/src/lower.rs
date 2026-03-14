@@ -16,8 +16,9 @@ use crate::{
     database::HirDatabase,
     function::ResolvedFunctionId,
     ty::{
-        ArraySize, ArrayType, AtomicType, MatrixType, Pointer, Reference, ScalarType,
-        TextureDimensionality, TextureKind, TextureType, Type, TypeKind, VecSize, VectorType,
+        ArraySize, ArrayType, AtomicType, BuiltinStruct, MatrixType, Pointer, Reference,
+        ScalarType, TextureDimensionality, TextureKind, TextureType, Type, TypeKind, VecSize,
+        VectorType,
     },
 };
 
@@ -394,6 +395,10 @@ impl<'database> WgslTypeConverter<'database> {
         clippy::wrong_self_convention,
         reason = "naming things is hard and this is probably changing in the future"
     )]
+    #[expect(
+        clippy::too_many_lines,
+        reason = "long match, not a good candidate for refactoring"
+    )]
     pub fn to_wgsl_types(
         &mut self,
         r#type: Type,
@@ -442,6 +447,24 @@ impl<'database> WgslTypeConverter<'database> {
                             wgsl_types::ty::StructMemberType {
                                 name: data.name.as_str().to_owned(),
                                 ty: self.to_wgsl_types(fields[id]),
+                                // Don't bother reconstructing the correct layout
+                                size: None,
+                                align: None,
+                            }
+                        })
+                        .collect::<Vec<_>>(),
+                }))
+            },
+            TypeKind::BuiltinStruct(builtin_struct) => {
+                wgsl_types::Type::Struct(Box::new(wgsl_types::ty::StructType {
+                    name: builtin_struct.name,
+                    members: builtin_struct
+                        .fields
+                        .into_iter()
+                        .map(|(name, r#type)| {
+                            wgsl_types::ty::StructMemberType {
+                                name,
+                                ty: self.to_wgsl_types(r#type),
                                 // Don't bother reconstructing the correct layout
                                 size: None,
                                 align: None,
@@ -521,6 +544,10 @@ impl<'database> WgslTypeConverter<'database> {
         clippy::wrong_self_convention,
         reason = "naming things is hard and this is probably changing in the future"
     )]
+    #[expect(
+        clippy::too_many_lines,
+        reason = "long match, bad candidate for refactor"
+    )]
     pub fn from_wgsl_types(
         &self,
         r#type: wgsl_types::Type,
@@ -545,11 +572,21 @@ impl<'database> WgslTypeConverter<'database> {
             wgsl_types::Type::F32 => TypeKind::Scalar(ScalarType::F32).intern(self.database),
             wgsl_types::Type::F64 => todo!("naga extension"),
             wgsl_types::Type::Struct(struct_type) => {
-                let struct_id = self
-                    .get_interned_struct(&struct_type.name)
-                    // I think this doesn't hold true when calling `atomicCompareExchangeWeak`
-                    .expect("Only struct types that have been passed in should be returned");
-                TypeKind::Struct(struct_id).intern(self.database)
+                if let Some(struct_id) = self.get_interned_struct(&struct_type.name) {
+                    TypeKind::Struct(struct_id).intern(self.database)
+                } else {
+                    // fallback, assume that it is a builtin struct
+                    let fields = struct_type
+                        .members
+                        .into_iter()
+                        .map(|member| (member.name, self.from_wgsl_types(member.ty)))
+                        .collect();
+                    TypeKind::BuiltinStruct(BuiltinStruct {
+                        name: struct_type.name,
+                        fields,
+                    })
+                    .intern(self.database)
+                }
             },
             wgsl_types::Type::Array(r#type, size) => TypeKind::Array(ArrayType {
                 inner: self.from_wgsl_types(*r#type),
@@ -865,6 +902,7 @@ impl<'database> WgslTypeConverter<'database> {
             | TypeKind::Vector(_)
             | TypeKind::Matrix(_)
             | TypeKind::Struct(_)
+            | TypeKind::BuiltinStruct(_)
             | TypeKind::Array(_)
             | TypeKind::Texture(_)
             | TypeKind::Sampler(_)

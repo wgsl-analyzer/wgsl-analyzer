@@ -827,7 +827,7 @@ impl Module {
                 ModuleDef::Struct(r#struct) => {
                     let file = r#struct.id.lookup(database).file_id;
                     let (_, signature_map) = database.struct_data(r#struct.id);
-                    let diagnostics = &database.field_types(r#struct.id).1;
+                    let (fields, diagnostics) = &*database.field_types(r#struct.id);
                     for diagnostic in diagnostics {
                         if diagnostic.source != ExpressionStoreSource::Signature {
                             tracing::warn!(

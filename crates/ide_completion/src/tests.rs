@@ -280,6 +280,7 @@ fn no_completions_in_comments() {
             function atanh
             function atomicAdd
             function atomicAnd
+            function atomicCompareExchangeWeak
             function atomicExchange
             function atomicLoad
             function atomicMax
@@ -301,6 +302,8 @@ fn no_completions_in_comments() {
             function determinant
             function distance
             function dot
+            function dot4I8Packed
+            function dot4U8Packed
             function dpdx
             function dpdxCoarse
             function dpdxFine
@@ -316,6 +319,7 @@ fn no_completions_in_comments() {
             function floor
             function fma
             function fract
+            function frexp
             function fwidth
             function fwidthCoarse
             function fwidthFine
@@ -325,12 +329,14 @@ fn no_completions_in_comments() {
             function isInf
             function isNan
             function isNormal
+            function ldexp
             function length
             function log
             function log2
             function max
             function min
             function mix
+            function modf
             function normalize
             function pack2x16float
             function pack2x16snorm
@@ -404,6 +410,7 @@ fn no_completions_in_comments() {
             function atanh
             function atomicAdd
             function atomicAnd
+            function atomicCompareExchangeWeak
             function atomicExchange
             function atomicLoad
             function atomicMax
@@ -425,6 +432,8 @@ fn no_completions_in_comments() {
             function determinant
             function distance
             function dot
+            function dot4I8Packed
+            function dot4U8Packed
             function dpdx
             function dpdxCoarse
             function dpdxFine
@@ -440,6 +449,7 @@ fn no_completions_in_comments() {
             function floor
             function fma
             function fract
+            function frexp
             function fwidth
             function fwidthCoarse
             function fwidthFine
@@ -449,12 +459,14 @@ fn no_completions_in_comments() {
             function isInf
             function isNan
             function isNormal
+            function ldexp
             function length
             function log
             function log2
             function max
             function min
             function mix
+            function modf
             function normalize
             function pack2x16float
             function pack2x16snorm
@@ -527,6 +539,7 @@ fn no_completions_in_comments() {
             function atanh
             function atomicAdd
             function atomicAnd
+            function atomicCompareExchangeWeak
             function atomicExchange
             function atomicLoad
             function atomicMax
@@ -548,6 +561,8 @@ fn no_completions_in_comments() {
             function determinant
             function distance
             function dot
+            function dot4I8Packed
+            function dot4U8Packed
             function dpdx
             function dpdxCoarse
             function dpdxFine
@@ -563,6 +578,7 @@ fn no_completions_in_comments() {
             function floor
             function fma
             function fract
+            function frexp
             function fwidth
             function fwidthCoarse
             function fwidthFine
@@ -572,12 +588,14 @@ fn no_completions_in_comments() {
             function isInf
             function isNan
             function isNormal
+            function ldexp
             function length
             function log
             function log2
             function max
             function min
             function mix
+            function modf
             function normalize
             function pack2x16float
             function pack2x16snorm
