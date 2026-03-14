@@ -60,6 +60,7 @@ impl Type {
             | TypeKind::Atomic(_)
             | TypeKind::Matrix(_)
             | TypeKind::Struct(_)
+            | TypeKind::BuiltinStruct(_)
             | TypeKind::Array(_)
             | TypeKind::Texture(_)
             | TypeKind::Sampler(_)
@@ -93,6 +94,7 @@ impl Type {
             | TypeKind::Vector(_)
             | TypeKind::Matrix(_)
             | TypeKind::Struct(_)
+            | TypeKind::BuiltinStruct(_)
             | TypeKind::Array(_)
             | TypeKind::Texture(_)
             | TypeKind::Sampler(_)
@@ -122,6 +124,16 @@ impl Type {
     }
 }
 
+/// A synthetic struct type returned by builtin functions (e.g. `frexp`, `modf`).
+///
+/// Unlike [`TypeKind::Struct`], this does not reference a user-declared struct.
+/// Instead, it carries field information inline.
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct BuiltinStruct {
+    pub name: String,
+    pub fields: Vec<(String, Type)>,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum TypeKind {
     Error,
@@ -132,6 +144,8 @@ pub enum TypeKind {
     Vector(VectorType),
     Matrix(MatrixType),
     Struct(StructId),
+    /// A synthetic struct returned by builtin functions like `frexp` and `modf`.
+    BuiltinStruct(BuiltinStruct),
     Array(ArrayType),
     Texture(TextureType),
     Sampler(SamplerType),
@@ -167,6 +181,7 @@ impl TypeKind {
             | Self::Vector(_)
             | Self::Matrix(_)
             | Self::Struct(_)
+            | Self::BuiltinStruct(_)
             | Self::Array(_)
             | Self::Texture(_)
             | Self::Sampler(_)
@@ -215,6 +230,7 @@ impl TypeKind {
             | Self::Scalar(_)
             | Self::Atomic(_)
             | Self::Struct(_)
+            | Self::BuiltinStruct(_)
             | Self::Texture(_)
             | Self::Sampler(_)
             | Self::Reference(_)
@@ -233,6 +249,7 @@ impl TypeKind {
             | Self::Vector(_)
             | Self::Matrix(_)
             | Self::Struct(_)
+            | Self::BuiltinStruct(_)
             | Self::Array(_)
             | Self::Texture(_)
             | Self::Sampler(_)
@@ -260,6 +277,7 @@ impl TypeKind {
             | Self::Error
             | Self::Atomic(_)
             | Self::Struct(_)
+            | Self::BuiltinStruct(_)
             | Self::Texture(_)
             | Self::Sampler(_)
             | Self::Reference(_)
@@ -291,6 +309,7 @@ impl TypeKind {
                 | Self::Atomic(_)
                 | Self::Array(_)
                 | Self::Struct(_)
+                | Self::BuiltinStruct(_)
         )
     }
 
@@ -347,6 +366,7 @@ impl TypeKind {
                         | Self::Vector(_)
                         | Self::Matrix(_)
                         | Self::Struct(_)
+                        | Self::BuiltinStruct(_)
                         | Self::Array(_)
                         | Self::Texture(_)
                         | Self::Sampler(_)
@@ -361,6 +381,7 @@ impl TypeKind {
             // cascading diagnostics.
             Self::Error => true,
             Self::Atomic(_)
+            | Self::BuiltinStruct(_)
             | Self::Matrix(_)
             | Self::Array(_)
             | Self::Texture(_)
@@ -390,7 +411,8 @@ impl TypeKind {
             // cascading diagnostics (e.g. when a struct is not yet defined).
             // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/722
             Self::Error => true,
-            Self::Texture(_)
+            Self::BuiltinStruct(_)
+            | Self::Texture(_)
             | Self::Sampler(_)
             | Self::Reference(_)
             | Self::Pointer(_)
@@ -419,6 +441,7 @@ impl TypeKind {
             | Self::Vector(_)
             | Self::Matrix(_)
             | Self::Array(_)
+            | Self::BuiltinStruct(_)
             | Self::Texture(_)
             | Self::Sampler(_)
             | Self::Reference(_)
@@ -452,6 +475,7 @@ impl TypeKind {
             | Self::Scalar(_)
             | Self::Vector(_)
             | Self::Matrix(_)
+            | Self::BuiltinStruct(_)
             | Self::Texture(_)
             | Self::Sampler(_)
             | Self::BoundVariable(_)

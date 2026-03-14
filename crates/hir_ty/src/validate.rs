@@ -163,6 +163,7 @@ pub fn validate_address_space<DiagnosticBuilder: FnMut(AddressSpaceError)>(
                 | TypeKind::Vector(_)
                 | TypeKind::Matrix(_)
                 | TypeKind::Struct(_)
+                | TypeKind::BuiltinStruct(_)
                 | TypeKind::Array(_)
                 | TypeKind::Reference(_)
                 | TypeKind::Pointer(_)

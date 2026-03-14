@@ -266,9 +266,7 @@ impl<'source> ParserCallbacks<'source> for Parser<'source> {
                         seen_declaration = true;
                     },
                     // Directives
-                    Rule::DiagnosticDirective
-                    | Rule::EnableDirective
-                    | Rule::RequiresDirective => {
+                    Rule::DiagnosticDirective | Rule::EnableDirective | Rule::RequiresDirective => {
                         if seen_declaration {
                             diags.push(self.create_diagnostic(
                                 self.cst.span(child),

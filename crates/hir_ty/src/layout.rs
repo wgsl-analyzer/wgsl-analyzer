@@ -153,6 +153,7 @@ impl TypeKind {
             },
             Self::Error
             | Self::Scalar(ScalarType::AbstractFloat | ScalarType::AbstractInt)
+            | Self::BuiltinStruct(_)
             | Self::Vector(_)
             | Self::Texture(_)
             | Self::Sampler(_)
@@ -251,6 +252,7 @@ impl TypeKind {
             },
             Self::Error
             | Self::Scalar(ScalarType::AbstractFloat | ScalarType::AbstractInt)
+            | Self::BuiltinStruct(_)
             | Self::Vector(_)
             | Self::Texture(_)
             | Self::Sampler(_)

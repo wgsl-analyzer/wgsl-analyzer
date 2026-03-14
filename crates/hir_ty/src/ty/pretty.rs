@@ -166,6 +166,9 @@ fn write_type(
             let data = database.struct_data(r#struct).0;
             write!(formatter, "{}", data.name.as_str())
         },
+        TypeKind::BuiltinStruct(builtin_struct) => {
+            write!(formatter, "{}", builtin_struct.name)
+        },
         TypeKind::Array(array_type) => {
             if array_type.binding_array {
                 write!(formatter, "binding_array<")?;

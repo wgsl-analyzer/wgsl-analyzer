@@ -33,10 +33,7 @@ pub(crate) fn handle_analyzer_status(
 
     buf.push_str("wgsl-analyzer status\n\n");
 
-    buf.push_str(&format!(
-        "Workspaces: {}\n",
-        snap.workspaces.len()
-    ));
+    buf.push_str(&format!("Workspaces: {}\n", snap.workspaces.len()));
 
     if let Some(text_document) = parameters.text_document {
         if let Some(file_id) = from_proto::file_id(&snap, &text_document.uri)? {

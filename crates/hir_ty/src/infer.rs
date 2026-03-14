@@ -39,8 +39,9 @@ use crate::{
         unify::{UnificationTable, unify},
     },
     ty::{
-        ArraySize, ArrayType, AtomicType, MatrixType, Pointer, Reference, ScalarType,
-        TextureDimensionality, TextureKind, TextureType, Type, TypeKind, VecSize, VectorType,
+        ArraySize, ArrayType, AtomicType, BuiltinStruct, MatrixType, Pointer, Reference,
+        ScalarType, TextureDimensionality, TextureKind, TextureType, Type, TypeKind, VecSize,
+        VectorType,
     },
 };
 
@@ -1168,6 +1169,27 @@ impl<'database> InferenceContext<'database> {
                             self.error_type()
                         }
                     },
+                    TypeKind::BuiltinStruct(builtin_struct) => {
+                        if let Some((_, field_type)) = builtin_struct
+                            .fields
+                            .iter()
+                            .find(|(field_name, _)| field_name.as_str() == name.as_str())
+                        {
+                            // TODO: correct Address Spaces/access mode
+                            // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/650
+                            self.make_ref(*field_type, AddressSpace::Private, AccessMode::ReadWrite)
+                        } else {
+                            self.push_diagnostic(
+                                store.store_source,
+                                InferenceDiagnosticKind::NoSuchField {
+                                    expression: *field_expression,
+                                    name: name.clone(),
+                                    r#type: expression_type,
+                                },
+                            );
+                            self.error_type()
+                        }
+                    },
                     TypeKind::Error
                     | TypeKind::Scalar(_)
                     | TypeKind::Atomic(_)
@@ -1224,6 +1246,7 @@ impl<'database> InferenceContext<'database> {
                     | TypeKind::Scalar(_)
                     | TypeKind::Atomic(_)
                     | TypeKind::Struct(_)
+                    | TypeKind::BuiltinStruct(_)
                     | TypeKind::Texture(_)
                     | TypeKind::Sampler(_)
                     | TypeKind::Reference(_)
@@ -1917,6 +1940,7 @@ impl<'database> InferenceContext<'database> {
             | TypeKind::Sampler(_)
             | TypeKind::Pointer(_)
             | TypeKind::Atomic(_)
+            | TypeKind::BuiltinStruct(_)
             | TypeKind::StorageTypeOfTexelFormat(_)
             | TypeKind::BoundVariable(_)
             | TypeKind::Reference(_) => {
@@ -2090,6 +2114,7 @@ impl<'database> InferenceContext<'database> {
             | TypeKind::Sampler(_)
             | TypeKind::Pointer(_)
             | TypeKind::Atomic(_)
+            | TypeKind::BuiltinStruct(_)
             | TypeKind::StorageTypeOfTexelFormat(_)
             | TypeKind::BoundVariable(_)
             | TypeKind::Reference(_) => {
@@ -2626,6 +2651,23 @@ impl<'database> WgslTypeConverter<'database> {
                         .collect::<Option<Vec<_>>>()?,
                 }))
             },
+            TypeKind::BuiltinStruct(builtin_struct) => {
+                wgsl_types::Type::Struct(Box::new(wgsl_types::ty::StructType {
+                    name: builtin_struct.name.to_string(),
+                    members: builtin_struct
+                        .fields
+                        .iter()
+                        .map(|(name, ty)| {
+                            Some(wgsl_types::ty::StructMemberType {
+                                name: name.to_string(),
+                                ty: self.to_wgsl_types(*ty)?,
+                                size: None,
+                                align: None,
+                            })
+                        })
+                        .collect::<Option<Vec<_>>>()?,
+                }))
+            },
             TypeKind::Array(ArrayType {
                 inner,
                 binding_array: false,
@@ -2721,11 +2763,23 @@ impl<'database> WgslTypeConverter<'database> {
             wgsl_types::Type::F32 => TypeKind::Scalar(ScalarType::F32).intern(self.database),
             wgsl_types::Type::F64 => todo!("naga extension"),
             wgsl_types::Type::Struct(struct_type) => {
-                let struct_id = self
-                    .get_interned_struct(&struct_type.name)
-                    // I think this doesn't hold true when calling `atomicCompareExchangeWeak`
-                    .expect("Only struct types that have been passed in should be returned");
-                TypeKind::Struct(struct_id).intern(self.database)
+                if let Some(struct_id) = self.get_interned_struct(&struct_type.name) {
+                    TypeKind::Struct(struct_id).intern(self.database)
+                } else {
+                    // Synthetic struct from wgsl_types (e.g. frexp, modf, atomicCompareExchangeWeak results)
+                    let fields = struct_type
+                        .members
+                        .iter()
+                        .map(|member| {
+                            (member.name.clone(), self.from_wgsl_types(member.ty.clone()))
+                        })
+                        .collect();
+                    TypeKind::BuiltinStruct(BuiltinStruct {
+                        name: struct_type.name.clone(),
+                        fields,
+                    })
+                    .intern(self.database)
+                }
             },
             wgsl_types::Type::Array(r#type, size) => TypeKind::Array(ArrayType {
                 inner: self.from_wgsl_types(*r#type),
@@ -3040,6 +3094,7 @@ impl<'database> WgslTypeConverter<'database> {
             | TypeKind::Vector(_)
             | TypeKind::Matrix(_)
             | TypeKind::Struct(_)
+            | TypeKind::BuiltinStruct(_)
             | TypeKind::Array(_)
             | TypeKind::Texture(_)
             | TypeKind::Sampler(_)

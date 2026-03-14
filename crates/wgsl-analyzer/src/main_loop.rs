@@ -766,7 +766,9 @@ impl GlobalState {
                     }
                 },
             )
-            .on::<NO_RETRY, lsp::extensions::AnalyzerStatus>(handlers::request::handle_analyzer_status)
+            .on::<NO_RETRY, lsp::extensions::AnalyzerStatus>(
+                handlers::request::handle_analyzer_status,
+            )
             .on::<NO_RETRY, lsp::extensions::ViewSyntaxTree>(handlers::request::view_syntax_tree)
             .on::<NO_RETRY, lsp::extensions::DebugCommand>(handlers::request::debug_command)
             .on::<NO_RETRY, lsp::extensions::FullSource>(handlers::request::full_source)

@@ -36,6 +36,10 @@ pub(crate) fn complete_dot(
             struct_completions(accumulator, context, *r#struct);
             Some(())
         },
+        TypeKind::BuiltinStruct(builtin_struct) => {
+            builtin_struct_completions(accumulator, context, builtin_struct);
+            Some(())
+        },
         TypeKind::Error
         | TypeKind::Scalar(_)
         | TypeKind::Atomic(_)
@@ -48,6 +52,24 @@ pub(crate) fn complete_dot(
         | TypeKind::BoundVariable(_)
         | TypeKind::StorageTypeOfTexelFormat(_) => None,
     }
+}
+
+fn builtin_struct_completions(
+    accumulator: &mut Completions,
+    context: &CompletionContext<'_>,
+    builtin_struct: &hir_ty::ty::BuiltinStruct,
+) {
+    let field_completion_item = |name| {
+        CompletionItem::new(CompletionItemKind::Field, context.source_range(), name)
+            .build(context.database)
+    };
+
+    let items = builtin_struct
+        .fields
+        .iter()
+        .map(|(name, _)| name.as_str())
+        .map(field_completion_item);
+    accumulator.add_all(items);
 }
 
 fn struct_completions(

@@ -452,3 +452,107 @@ fn f() {
         "#]],
     );
 }
+
+#[test]
+fn frexp_builtin() {
+    check_infer(
+        "
+fn main() {
+    let r = frexp(1.0f);
+    let f = r.fract;
+    let e = r.exp;
+}
+",
+        expect![[r#"
+            20..21 'r': __frexp_result_f32
+            24..35 'frexp(1.0f)': __frexp_result_f32
+            30..34 '1.0f': f32
+            45..46 'f': f32
+            49..50 'r': __frexp_result_f32
+            49..56 'r.fract': ref<f32>
+            66..67 'e': i32
+            70..71 'r': __frexp_result_f32
+            70..75 'r.exp': ref<i32>
+        "#]],
+    );
+}
+
+#[test]
+fn frexp_vec_builtin() {
+    check_infer(
+        "
+fn main() {
+    let r = frexp(vec2f(1.0, 2.0));
+    let f = r.fract;
+    let e = r.exp;
+}
+",
+        expect![[r#"
+            20..21 'r': __frexp_result_vec2_f32
+            24..46 'frexp(... 2.0))': __frexp_result_vec2_f32
+            30..45 'vec2f(1.0, 2.0)': vec2<f32>
+            36..39 '1.0': float
+            41..44 '2.0': float
+            56..57 'f': vec2<f32>
+            60..61 'r': __frexp_result_vec2_f32
+            60..67 'r.fract': ref<vec2<f32>>
+            77..78 'e': vec2<i32>
+            81..82 'r': __frexp_result_vec2_f32
+            81..86 'r.exp': ref<vec2<i32>>
+        "#]],
+    );
+}
+
+#[test]
+fn modf_builtin() {
+    check_infer(
+        "
+fn main() {
+    let r = modf(1.5f);
+    let f = r.fract;
+    let w = r.whole;
+}
+",
+        expect![[r#"
+            20..21 'r': __modf_result_f32
+            24..34 'modf(1.5f)': __modf_result_f32
+            29..33 '1.5f': f32
+            44..45 'f': f32
+            48..49 'r': __modf_result_f32
+            48..55 'r.fract': ref<f32>
+            65..66 'w': f32
+            69..70 'r': __modf_result_f32
+            69..76 'r.whole': ref<f32>
+        "#]],
+    );
+}
+
+#[test]
+fn atomic_compare_exchange_weak_builtin() {
+    check_infer(
+        "
+@group(0) @binding(0) var<storage, read_write> buf: atomic<u32>;
+
+fn main() {
+    let r = atomicCompareExchangeWeak(&buf, 1u, 2u);
+    let old = r.old_value;
+    let ex = r.exchanged;
+}
+",
+        expect![[r#"
+            47..50 'buf': ref<atomic<u32>>
+            86..87 'r': __atomic_compare_exchange_result
+            90..129 'atomic...u, 2u)': __atomic_compare_exchange_result
+            116..120 '&buf': ptr<atomic<u32>>
+            117..120 'buf': ref<atomic<u32>>
+            122..124 '1u': u32
+            126..128 '2u': u32
+            139..142 'old': u32
+            145..146 'r': __atomic_compare_exchange_result
+            145..156 'r.old_value': ref<u32>
+            166..168 'ex': bool
+            171..172 'r': __atomic_compare_exchange_result
+            171..182 'r.exchanged': ref<bool>
+        "#]],
+    );
+}

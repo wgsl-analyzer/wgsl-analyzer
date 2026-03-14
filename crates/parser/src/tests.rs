@@ -399,7 +399,6 @@ fn path_assignment() {
     );
 }
 
-
 #[test]
 fn variable_declarations() {
     check(
@@ -2384,7 +2383,6 @@ fn let_statement_missing_initializer() {
     );
 }
 
-
 #[test]
 fn annotation_with_invalid_statement_recover() {
     check(
@@ -2658,7 +2656,6 @@ const a = 3;",
                 Semicolon@23..24 ";""#]],
     );
 }
-
 
 #[test]
 fn struct_underscore_field_name() {
