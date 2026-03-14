@@ -66,7 +66,7 @@ impl AstIdMap {
     ///
     /// # Panics
     ///
-    /// Panics if `N` cannot be cast to the [`SyntaxKind`].
+    /// Panics if `N` cannot be cast to the `SyntaxKind`.
     #[must_use]
     pub fn get<N: AstNode>(
         &self,

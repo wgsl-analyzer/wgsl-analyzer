@@ -99,7 +99,7 @@ impl std::str::FromStr for Policy {
 ///
 /// This is the core recursive driver. It tracks indentation depth as it
 /// enters and leaves block-like nodes, delegating per-node formatting to
-/// [`format::format_syntax_node`].
+/// `format::format_syntax_node`.
 pub fn format_recursive(
     syntax: &SyntaxNode,
     options: &FormattingOptions,

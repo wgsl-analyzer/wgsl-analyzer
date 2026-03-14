@@ -8,7 +8,7 @@ use std::mem;
 )]
 pub enum SyntaxKind {
     SourceFile,
-    /// A name that can be referenced by a [`NameRef`]
+    /// A name that can be referenced by a `NameRef`.
     Name,
     /// a function
     FunctionDeclaration,
