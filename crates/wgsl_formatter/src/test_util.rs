@@ -82,7 +82,7 @@ pub fn check_tabs<E: ExpectAssertEq>(
 /// Checks that the given source raises parsing diagnostics and is
 /// thus out of scope of having to be formatted correctly.
 ///
-/// Code that is out of scope would just be left untouched by the formatter
+/// Code that is out of scope would just be left untouched by the formatter.
 ///
 /// Even tho these tests only test the behavior of the parser,
 /// they are useful to be included in the formatter unit tests,
@@ -128,8 +128,8 @@ pub fn check_with_options<E: ExpectAssertEq>(
         parse.syntax()
     );
 
-    dbg!(&parse.errors());
-    dbg!(&syntax);
+    // dbg!(&parse.errors());
+    // dbg!(&syntax);
     let formatted = match format_tree(&syntax, options) {
         Ok(formatted) => formatted,
         Err(format_error) => {
@@ -144,7 +144,7 @@ pub fn check_with_options<E: ExpectAssertEq>(
 
     // Check for idempotence
     let syntax = syntax::parse(formatted.trim_start(), edition).tree();
-    dbg!(&syntax);
+    //dbg!(&syntax);
 
     let new_second = format_tree(&syntax, options)
         .expect("Formatting already formatted sources should never fail with an error");
