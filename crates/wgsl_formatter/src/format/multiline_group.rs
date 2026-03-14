@@ -64,7 +64,7 @@ impl<'buffer> MultilineGroup<'buffer> {
         self.buffer.push_signal(Signal::StartNewLineGroup);
 
         // TODO This is a bit of a shortcoming of the PBI api, we would want to write this after the "(", but can't because of the conditions between
-        self.buffer.request_request(Request::Unconditional {
+        self.buffer.request(Request::Unconditional {
             expected: BTreeSet::new(),
             discouraged: BTreeSet::from([
                 RequestItem::Space,
@@ -76,7 +76,7 @@ impl<'buffer> MultilineGroup<'buffer> {
     }
 
     pub fn grouped_newline_or_space(&mut self) {
-        self.buffer.request_request(Request::Conditional {
+        self.buffer.request(Request::Conditional {
             condition: Rc::clone(&self.is_multiple_lines),
             on_true: Box::new(RequestFolder::from(Request::Unconditional {
                 expected: BTreeSet::from([RequestItem::LineBreak]),

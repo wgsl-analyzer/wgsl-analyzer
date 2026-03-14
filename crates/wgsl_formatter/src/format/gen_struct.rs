@@ -125,7 +125,7 @@ fn gen_struct_body(body: &ast::StructBody) -> FormatDocumentResult<PrintItemBuff
         }
     }
 
-    formatted.request_request(Request::Unconditional {
+    formatted.request(Request::Unconditional {
         discouraged: BTreeSet::from([RequestItem::EmptyLine]),
         expected: BTreeSet::from([RequestItem::LineBreak]),
         forced: BTreeSet::new(),

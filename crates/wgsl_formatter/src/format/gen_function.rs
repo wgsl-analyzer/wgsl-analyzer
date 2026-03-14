@@ -138,7 +138,7 @@ pub fn gen_fn_parameters(node: &ast::FunctionParameters) -> FormatDocumentResult
                 // If the parameters is a single line long, every parameter should be prepended with a space,
                 // with a chance for breaking into multiple lines
                 let is_multiline = Rc::clone(&multiline_group.is_multiple_lines);
-                multiline_group.request_request(Request::Conditional {
+                multiline_group.request(Request::Conditional {
                     condition: is_multiline,
                     on_true: Box::new(RequestFolder {
                         folded_request: Some(Request::Unconditional {
@@ -151,7 +151,7 @@ pub fn gen_fn_parameters(node: &ast::FunctionParameters) -> FormatDocumentResult
                 });
 
                 if index != 0 {
-                    multiline_group.request_request(Request::Unconditional {
+                    multiline_group.request(Request::Unconditional {
                         expected: BTreeSet::from([RequestItem::Space]),
                         discouraged: BTreeSet::new(),
                         forced: BTreeSet::new(),

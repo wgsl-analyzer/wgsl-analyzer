@@ -54,13 +54,13 @@ use crate::format::{
 
 pub fn gen_node_no_newlines(node: &SyntaxNode) -> FormatDocumentResult<PrintItemBuffer> {
     let mut formatted = PrintItemBuffer::new();
-    formatted.request_request(Request::Unconditional {
+    formatted.request(Request::Unconditional {
         expected: BTreeSet::new(),
         discouraged: BTreeSet::from([RequestItem::LineBreak]),
         forced: BTreeSet::new(),
     });
     formatted.extend(gen_node(node)?);
-    formatted.request_request(Request::Unconditional {
+    formatted.request(Request::Unconditional {
         expected: BTreeSet::new(),
         discouraged: BTreeSet::from([RequestItem::LineBreak]),
         forced: BTreeSet::new(),
