@@ -10,7 +10,9 @@ use hir_def::{
 use hir_ty::{
     database::HirDatabase,
     infer::TypeLoweringContext,
-    ty::pretty::{TypeVerbosity, pretty_fn, pretty_fn_with_verbosity, pretty_type, pretty_type_with_verbosity},
+    ty::pretty::{
+        TypeVerbosity, pretty_fn, pretty_fn_with_verbosity, pretty_type, pretty_type_with_verbosity,
+    },
 };
 use syntax::{
     AstNode as _, AstToken as _, Direction, HasAttributes as _, HasTemplateParameters as _,
@@ -85,7 +87,6 @@ impl Definition {
             .map(Self::ModuleDef)
     }
 
-
     /// Returns a human-readable hover text for this definition.
     #[must_use]
     pub fn hover_text(
@@ -99,11 +100,16 @@ impl Definition {
                 let (body, _) =
                     database.body_with_source_map(DefinitionWithBodyId::Function(local.parent));
                 let name = &body.bindings[local.binding].name;
-                Some(format!(
-                    "let {}: {}",
-                    name.as_str(),
-                    pretty_type(database, ty)
-                ))
+                let is_param = body.parameters.contains(&local.binding);
+                if is_param {
+                    Some(format!("{}: {}", name.as_str(), pretty_type(database, ty)))
+                } else {
+                    Some(format!(
+                        "let {}: {}",
+                        name.as_str(),
+                        pretty_type(database, ty)
+                    ))
+                }
             },
             Self::Field(field) => {
                 let field_types = database.field_types(field.id.r#struct);
@@ -202,18 +208,30 @@ impl Definition {
             Self::Local(local) => {
                 let infer = database.infer(DefinitionWithBodyId::Function(local.parent));
                 let ty = infer[local.binding];
-                Some(pretty_type_with_verbosity(database, ty, TypeVerbosity::Compact))
+                Some(pretty_type_with_verbosity(
+                    database,
+                    ty,
+                    TypeVerbosity::Compact,
+                ))
             },
             Self::Field(field) => {
                 let field_types = database.field_types(field.id.r#struct);
                 let ty = field_types.0.get(field.id.field)?;
-                Some(pretty_type_with_verbosity(database, *ty, TypeVerbosity::Compact))
+                Some(pretty_type_with_verbosity(
+                    database,
+                    *ty,
+                    TypeVerbosity::Compact,
+                ))
             },
             Self::ModuleDef(module_def) => match module_def {
                 ModuleDef::Function(function) => {
                     let resolved = database.function_type(function.id);
                     let details = resolved.lookup(database);
-                    Some(pretty_fn_with_verbosity(database, &details, TypeVerbosity::Compact))
+                    Some(pretty_fn_with_verbosity(
+                        database,
+                        &details,
+                        TypeVerbosity::Compact,
+                    ))
                 },
                 ModuleDef::GlobalVariable(var) => {
                     let infer = database.infer(DefinitionWithBodyId::GlobalVariable(var.id));
@@ -221,7 +239,11 @@ impl Definition {
                     Some(format!(
                         "var {}: {}",
                         data.name.as_str(),
-                        pretty_type_with_verbosity(database, infer.return_type(), TypeVerbosity::Compact)
+                        pretty_type_with_verbosity(
+                            database,
+                            infer.return_type(),
+                            TypeVerbosity::Compact
+                        )
                     ))
                 },
                 ModuleDef::GlobalConstant(constant) => {
@@ -230,7 +252,11 @@ impl Definition {
                     Some(format!(
                         "const {}: {}",
                         data.name.as_str(),
-                        pretty_type_with_verbosity(database, infer.return_type(), TypeVerbosity::Compact)
+                        pretty_type_with_verbosity(
+                            database,
+                            infer.return_type(),
+                            TypeVerbosity::Compact
+                        )
                     ))
                 },
                 ModuleDef::Override(override_decl) => {
@@ -239,7 +265,11 @@ impl Definition {
                     Some(format!(
                         "override {}: {}",
                         data.name.as_str(),
-                        pretty_type_with_verbosity(database, infer.return_type(), TypeVerbosity::Compact)
+                        pretty_type_with_verbosity(
+                            database,
+                            infer.return_type(),
+                            TypeVerbosity::Compact
+                        )
                     ))
                 },
                 ModuleDef::Struct(s) => {
@@ -254,7 +284,6 @@ impl Definition {
             },
         }
     }
-
 
     /// Returns doc comments (lines starting with `///`) associated with this definition.
     #[must_use]

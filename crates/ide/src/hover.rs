@@ -157,6 +157,19 @@ pub(crate) fn hover(
         }
     }
 
+    // Check if hovering over a builtin type name (e.g., f32, vec3, mat4x4, sampler, texture_2d)
+    if token.kind() == SyntaxKind::Identifier {
+        if let Some(description) = builtin_type_description(token.text()) {
+            return Some(RangeInfo::new(
+                range,
+                HoverResult {
+                    markup: Markup::from(description),
+                    actions: Vec::new(),
+                },
+            ));
+        }
+    }
+
     // Fall back to builtin lookup for functions like abs, dot, clamp, etc.
     if token.kind() == SyntaxKind::Identifier {
         let name = Name::from(token.text());
@@ -277,5 +290,16 @@ fn attribute_description(name: &str) -> Option<String> {
         attr.description,
         attr.syntax,
         attr.spec_url()
+    ))
+}
+
+/// Returns a Markdown description for a WGSL builtin type name.
+fn builtin_type_description(name: &str) -> Option<String> {
+    let ty = ide_db::wgsl_builtin_types::find_builtin_type(name)?;
+    Some(format!(
+        "{}\n\n---\n\n```wgsl\n{}\n```\n\n[WGSL Spec]({})",
+        ty.description,
+        ty.name,
+        ty.spec_url()
     ))
 }

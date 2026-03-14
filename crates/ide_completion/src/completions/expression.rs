@@ -4,10 +4,7 @@ use hir_def::{
     item_tree::{ModuleItem, Name},
     resolver::ScopeDef,
 };
-use hir_ty::{
-    builtins::Builtin,
-    ty::pretty::pretty_fn,
-};
+use hir_ty::{builtins::Builtin, ty::pretty::pretty_fn};
 
 use crate::config::CallableSnippets;
 
@@ -59,8 +56,13 @@ pub(crate) fn complete_names_in_scope(
                     .container
                     .and_then(hir::ChildContainer::as_def_with_body_id)
                     .and_then(|def_with_body| {
-                        if let hir_def::database::DefinitionWithBodyId::Function(func_id) = def_with_body {
-                            Some(Definition::Local(hir::Local { parent: func_id, binding: local }))
+                        if let hir_def::database::DefinitionWithBodyId::Function(func_id) =
+                            def_with_body
+                        {
+                            Some(Definition::Local(hir::Local {
+                                parent: func_id,
+                                binding: local,
+                            }))
                         } else {
                             None
                         }
@@ -70,8 +72,12 @@ pub(crate) fn complete_names_in_scope(
                 },
             };
 
-            let detail = definition.as_ref().and_then(|d| d.detail_text(context.database));
-            let doc = definition.as_ref().and_then(|d| d.doc_comments(context.database));
+            let detail = definition
+                .as_ref()
+                .and_then(|d| d.detail_text(context.database));
+            let doc = definition
+                .as_ref()
+                .and_then(|d| d.doc_comments(context.database));
 
             let mut completion = CompletionItem::new(kind, context.source_range(), name.as_str());
             completion.set_relevance(CompletionRelevance {

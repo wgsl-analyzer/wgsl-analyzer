@@ -7,6 +7,7 @@ use vfs::AnchoredPath;
 pub mod source_change;
 pub mod text_edit;
 pub mod wgsl_attributes;
+pub mod wgsl_builtin_types;
 
 #[salsa::database(
     base_db::SourceDatabaseStorage,
