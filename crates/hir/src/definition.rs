@@ -6,17 +6,18 @@ use hir_def::{
     mod_path::ModPath,
     resolver::{ResolveKind, Resolver},
     signature::FieldId,
+    HasSource as _,
 };
 use hir_ty::{
     database::HirDatabase,
     infer::TypeLoweringContext,
     ty::pretty::{pretty_fn, pretty_type},
 };
-use syntax::{AstNode as _, AstToken as _, Direction, SyntaxNode, SyntaxToken, ast, match_ast};
+use syntax::{AstNode as _, AstToken as _, Direction, HasAttributes as _, HasTemplateParameters as _, SyntaxNode, SyntaxToken, ast, match_ast};
 
 use crate::{
-    Field, Function, GlobalConstant, GlobalVariable, Local, ModuleDef, Override, Semantics, Struct,
-    TypeAlias,
+    Field, Function, GlobalConstant, GlobalVariable, HasSource as _, Local, ModuleDef, Override,
+    Semantics, Struct, TypeAlias,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -98,7 +99,15 @@ impl Definition {
                 ModuleDef::Function(function) => {
                     let resolved = database.function_type(function.id);
                     let details = resolved.lookup(database);
-                    Some(pretty_fn(database, &details))
+                    let mut result = String::new();
+                    if let Some(source) = function.source(database) {
+                        if let Some(attrs) = format_attributes(&source.value) {
+                            result.push_str(&attrs);
+                            result.push('\n');
+                        }
+                    }
+                    result.push_str(&pretty_fn(database, &details));
+                    Some(result)
                 },
                 ModuleDef::GlobalVariable(var) => hover_global_variable(database, var.id),
                 ModuleDef::GlobalConstant(constant) => hover_global_constant(database, constant.id),
@@ -445,6 +454,20 @@ fn resolve_struct_member_field(
     }))
 }
 
+/// Extracts attribute text from an AST node that implements `HasAttributes`.
+/// Returns lines like `@group(0) @binding(0)` from the source.
+fn format_attributes(source: &dyn syntax::HasAttributes) -> Option<String> {
+    let attrs: Vec<String> = source
+        .attributes()
+        .map(|attr| attr.syntax().text().to_string())
+        .collect();
+    if attrs.is_empty() {
+        None
+    } else {
+        Some(attrs.join(" "))
+    }
+}
+
 fn hover_global_variable(
     database: &dyn HirDatabase,
     id: hir_def::database::GlobalVariableId,
@@ -454,16 +477,32 @@ fn hover_global_variable(
     let module_info = database.item_tree(file_id);
     let resolver = Resolver::default().push_module_scope(file_id, module_info);
     let mut type_context = TypeLoweringContext::new(database, &resolver, &data.store);
+
+    // Extract attributes and template params from source AST
+    let source = id.lookup(database).source(database);
+    let attrs_text = format_attributes(&source.value);
+    let template_text = source
+        .value
+        .template_parameters()
+        .map(|tmpl: ast::TemplateList| tmpl.syntax().text().to_string());
+
+    let mut result = String::new();
+    if let Some(attrs) = attrs_text {
+        result.push_str(&attrs);
+        result.push('\n');
+    }
+    result.push_str("var");
+    if let Some(tmpl) = template_text {
+        result.push_str(&tmpl);
+    }
+    result.push(' ');
+    result.push_str(data.name.as_str());
     if let Some(type_ref) = data.r#type {
         let ty = type_context.lower_type(type_ref);
-        Some(format!(
-            "var {}: {}",
-            data.name.as_str(),
-            pretty_type(database, ty)
-        ))
-    } else {
-        Some(format!("var {}", data.name.as_str()))
+        result.push_str(": ");
+        result.push_str(&pretty_type(database, ty));
     }
+    Some(result)
 }
 
 fn hover_global_constant(
@@ -475,16 +514,24 @@ fn hover_global_constant(
     let module_info = database.item_tree(file_id);
     let resolver = Resolver::default().push_module_scope(file_id, module_info);
     let mut type_context = TypeLoweringContext::new(database, &resolver, &data.store);
+
+    // Extract attributes from source AST
+    let source = id.lookup(database).source(database);
+    let attrs_text = format_attributes(&source.value);
+
+    let mut result = String::new();
+    if let Some(attrs) = attrs_text {
+        result.push_str(&attrs);
+        result.push('\n');
+    }
+    result.push_str("const ");
+    result.push_str(data.name.as_str());
     if let Some(type_ref) = data.r#type {
         let ty = type_context.lower_type(type_ref);
-        Some(format!(
-            "const {}: {}",
-            data.name.as_str(),
-            pretty_type(database, ty)
-        ))
-    } else {
-        Some(format!("const {}", data.name.as_str()))
+        result.push_str(": ");
+        result.push_str(&pretty_type(database, ty));
     }
+    Some(result)
 }
 
 fn hover_override(
@@ -496,14 +543,22 @@ fn hover_override(
     let module_info = database.item_tree(file_id);
     let resolver = Resolver::default().push_module_scope(file_id, module_info);
     let mut type_context = TypeLoweringContext::new(database, &resolver, &data.store);
+
+    // Extract attributes from source AST
+    let source = id.lookup(database).source(database);
+    let attrs_text = format_attributes(&source.value);
+
+    let mut result = String::new();
+    if let Some(attrs) = attrs_text {
+        result.push_str(&attrs);
+        result.push('\n');
+    }
+    result.push_str("override ");
+    result.push_str(data.name.as_str());
     if let Some(type_ref) = data.r#type {
         let ty = type_context.lower_type(type_ref);
-        Some(format!(
-            "override {}: {}",
-            data.name.as_str(),
-            pretty_type(database, ty)
-        ))
-    } else {
-        Some(format!("override {}", data.name.as_str()))
+        result.push_str(": ");
+        result.push_str(&pretty_type(database, ty));
     }
+    Some(result)
 }
