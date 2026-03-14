@@ -112,15 +112,35 @@ fn pretty_fn_inner(
     buffer: &mut String,
     verbosity: TypeVerbosity,
 ) -> fmt::Result {
+    pretty_fn_inner_with_offsets(database, function, buffer, verbosity, None)
+}
+
+/// Pretty-print a function signature, optionally recording byte-offset
+/// ranges for each parameter into `param_offsets`.
+///
+/// # Panics
+///
+/// Panics if writing into the internal buffer fails.
+pub fn pretty_fn_inner_with_offsets(
+    database: &dyn HirDatabase,
+    function: &FunctionDetails,
+    buffer: &mut String,
+    verbosity: TypeVerbosity,
+    mut param_offsets: Option<&mut Vec<(u32, u32)>>,
+) -> fmt::Result {
     write!(buffer, "fn {name}(", name = function.name.as_str())?;
     for (index, (param_type, param_name)) in function.parameters_with_names().enumerate() {
         if index != 0 {
             buffer.push_str(", ");
         }
+        let start = buffer.len() as u32;
         if !param_name.is_empty() && !hir_def::item_tree::Name::is_missing(param_name) {
             write!(buffer, "{param_name}: ")?;
         }
         write_type(database, param_type, buffer, verbosity)?;
+        if let Some(ref mut offsets) = param_offsets {
+            offsets.push((start, buffer.len() as u32));
+        }
     }
     write!(buffer, ")")?;
     if let Some(return_type) = function.return_type {

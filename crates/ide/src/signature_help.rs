@@ -5,7 +5,7 @@ use hir_ty::{
     builtins::Builtin,
     function::FunctionDetails,
     infer::ResolvedCall,
-    ty::pretty::pretty_type,
+    ty::pretty::{TypeVerbosity, pretty_fn_inner_with_offsets},
 };
 use ide_db::RootDatabase;
 use syntax::{AstNode, SyntaxKind, SyntaxToken, ast};
@@ -142,31 +142,24 @@ fn build_signature(
     database: &RootDatabase,
     function: &FunctionDetails,
 ) -> SignatureInformation {
-    let mut label = format!("fn {}(", function.name.as_str());
-    let mut parameters = Vec::new();
+    let mut label = String::new();
+    let mut offsets = Vec::new();
+    pretty_fn_inner_with_offsets(
+        database,
+        function,
+        &mut label,
+        TypeVerbosity::default(),
+        Some(&mut offsets),
+    )
+    .unwrap();
 
-    for (idx, (ty, name)) in function.parameters_with_names().enumerate() {
-        if idx > 0 {
-            label.push_str(", ");
-        }
-        let param_start = label.len() as u32;
-        let type_str = pretty_type(database, ty);
-        let param_name = name;
-        label.push_str(param_name);
-        label.push_str(": ");
-        label.push_str(&type_str);
-        let param_end = label.len() as u32;
-        parameters.push(ParameterInformation {
-            label_start: param_start,
-            label_end: param_end,
-        });
-    }
-
-    label.push(')');
-    if let Some(return_type) = function.return_type {
-        label.push_str(" -> ");
-        label.push_str(&pretty_type(database, return_type));
-    }
+    let parameters = offsets
+        .into_iter()
+        .map(|(start, end)| ParameterInformation {
+            label_start: start,
+            label_end: end,
+        })
+        .collect();
 
     SignatureInformation { label, parameters }
 }
