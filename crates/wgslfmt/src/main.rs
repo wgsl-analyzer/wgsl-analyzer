@@ -10,7 +10,6 @@ mod cli;
 use std::{io::Read as _, path::PathBuf, time::Instant};
 
 use anyhow::{Context as _, bail};
-use clap::Parser as _;
 use serde::Serialize;
 use wgsl_formatter::FormattingOptions;
 
@@ -58,7 +57,7 @@ fn main() -> Result<(), anyhow::Error> {
         formatting_options.indent_symbol = " ".repeat(width);
     }
 
-    let json_mode = matches!(cli.output_format, OutputFormat::Json);
+    let json_mode = matches!(cli.output, OutputFormat::Json);
     let total_start = Instant::now();
     let mut check_failed = false;
     let mut results: Vec<FileResult> = Vec::new();

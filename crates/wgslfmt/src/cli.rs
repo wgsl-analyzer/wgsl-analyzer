@@ -1,4 +1,4 @@
-use clap::{Arg, ArgAction, Command, Parser, ValueEnum, arg, builder::PossibleValue, value_parser};
+use clap::{Arg, ArgAction, Command, ValueEnum, arg, builder::PossibleValue, value_parser};
 use std::str::FromStr;
 
 /// Tool to find and fix WGSL/WESL formatting issues.
@@ -11,26 +11,27 @@ pub struct Args {
     pub check: bool,
     pub use_tabs: bool,
     pub indent_width: Option<usize>,
-    pub output_format: OutputFormat,
+    pub output: OutputFormat,
     /// Files, directories, or glob patterns to format.
     /// Pass "-" to read from stdin.
     pub patterns: Vec<String>,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Default)]
 pub enum OutputFormat {
+    #[default]
     Text,
     Json,
 }
 impl ValueEnum for OutputFormat {
-    fn value_variants<'a>() -> &'a [Self] {
-        &[OutputFormat::Text, OutputFormat::Json]
+    fn value_variants<'value>() -> &'value [Self] {
+        &[Self::Text, Self::Json]
     }
 
     fn to_possible_value(&self) -> Option<PossibleValue> {
         Some(match self {
-            OutputFormat::Text => PossibleValue::new("text").help("Print human-readable output"),
-            OutputFormat::Json => PossibleValue::new("json").help("JSON object with all results"),
+            Self::Text => PossibleValue::new("text").help("Print human-readable output"),
+            Self::Json => PossibleValue::new("json").help("JSON object with all results"),
         })
     }
 }
@@ -60,10 +61,14 @@ impl FromStr for OutputFormat {
 }
 
 impl Args {
+    #[expect(
+        clippy::cognitive_complexity,
+        reason = "Argument parsing should be in one place"
+    )]
     fn command() -> Command {
         Command::new("wgslfmt")
             .about("Tool to find and fix WGSL/WESL formatting issues")
-            .version("0.1.0")
+            .version(env!("CARGO_PKG_VERSION"))
             .arg(
                 Arg::new("check")
                     .long("check")
@@ -83,14 +88,14 @@ Exits with 1 and prints a diff if formatting is required.",
             )
             .arg(
                 arg!(
-                    --indent_width <WIDTH>
+                    --indent-width <WIDTH>
                     "Number of spaces per indentation level (default: 4)"
                 )
                 .required(false)
                 .value_parser(value_parser!(usize)),
             )
             .arg(
-                arg!(--output_format <FORMAT>)
+                arg!(--output <FORMAT>)
                     .required(false)
                     .value_parser(value_parser!(OutputFormat))
                     .default_value("text"),
@@ -108,43 +113,23 @@ Pass \"-\" to read from stdin",
             )
     }
 
-    fn from_arg_matches(mut matches: clap::ArgMatches) -> Result<Self, clap::Error> {
-        Ok(Args {
-            check: matches.remove_one::<bool>("check").ok_or_else(|| {
-                clap::Error::raw(
-                    clap::error::ErrorKind::MissingRequiredArgument,
-                    "the following required argument was not provided: check",
-                )
-            })?,
-            use_tabs: matches.remove_one::<bool>("tabs").ok_or_else(|| {
-                clap::Error::raw(
-                    clap::error::ErrorKind::MissingRequiredArgument,
-                    "the following required argument was not provided: tabs",
-                )
-            })?,
-            indent_width: matches.remove_one::<usize>("indent_width"),
-            output_format: matches
-                .remove_one::<OutputFormat>("output_format")
-                .ok_or_else(|| {
-                    clap::Error::raw(
-                        clap::error::ErrorKind::MissingRequiredArgument,
-                        "the following required argument was not provided: output_format",
-                    )
-                })?,
+    fn from_arg_matches(mut matches: clap::ArgMatches) -> Self {
+        Self {
+            check: matches.remove_one::<bool>("check").unwrap_or_default(),
+            use_tabs: matches.remove_one::<bool>("tabs").unwrap_or_default(),
+            indent_width: matches.remove_one::<usize>("indent-width"),
+            output: matches
+                .remove_one::<OutputFormat>("output")
+                .unwrap_or_default(),
             patterns: matches
                 .remove_many::<String>("patterns")
-                .map(|v| v.collect::<Vec<_>>())
-                .unwrap_or_else(Vec::new),
-        })
+                .map(std::iter::Iterator::collect::<Vec<_>>)
+                .unwrap_or_default(),
+        }
     }
 
     pub fn parse() -> Self {
         let matches = Self::command().get_matches();
         Self::from_arg_matches(matches)
-            .map_err(|error| {
-                let mut cmd = Self::command();
-                error.format(&mut cmd)
-            })
-            .unwrap_or_else(|e| e.exit())
     }
 }
