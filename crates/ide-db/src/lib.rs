@@ -6,8 +6,8 @@
 use std::{fmt, panic};
 
 use base_db::{
-    FileId, FileSourceRootInput, FileText, Files, Nonce, RootQueryDb, SourceDatabase, SourceRoot,
-    SourceRootId, SourceRootInput, change::Change,
+    FileId, FileSourceRootInput, FileText, Files, Nonce, RootQueryDb as _, SourceDatabase,
+    SourceRoot, SourceRootId, SourceRootInput, change::Change,
 };
 use hir_def::database::{DefDatabase as _, ExtensionsConfig};
 use line_index::LineIndex;
