@@ -188,7 +188,7 @@ impl<'database> Semantics<'database> {
             resolver = resolver.push_expression_scope(function, expression_scopes, scope_id);
         }
 
-        let value = resolver.resolve(path)?;
+        let value = resolver.resolve(self.database, path)?;
 
         let definition = match value {
             ResolveKind::Local(binding) => Definition::Local(Local {

@@ -26,61 +26,64 @@ pub(crate) fn complete_names_in_scope(
         _ => return None,
     }
 
-    context.resolver.process_all_names(|name, item| {
-        if name == Name::missing() {
-            return;
-        }
-        let kind = match item {
-            ScopeDef::ModuleItem(_, ModuleItem::Function(_)) => CompletionItemKind::Function,
-            ScopeDef::ModuleItem(_, ModuleItem::GlobalVariable(_)) | ScopeDef::Local(_) => {
-                CompletionItemKind::Variable
-            },
-            ScopeDef::ModuleItem(_, ModuleItem::GlobalConstant(_) | ModuleItem::Override(_)) => {
-                CompletionItemKind::Constant
-            },
-            ScopeDef::ModuleItem(_, ModuleItem::Struct(_)) => CompletionItemKind::Struct,
-            ScopeDef::ModuleItem(_, ModuleItem::TypeAlias(_)) => CompletionItemKind::TypeAlias,
-            ScopeDef::ModuleItem(_, ModuleItem::ImportStatement(_)) => {
-                // TODO: Resolve the import statement, and then set the correct CompletionItemKind from there
-                // TODO: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/632
-                CompletionItemKind::Module
-            },
-            ScopeDef::ModuleItem(_, ModuleItem::GlobalAssertStatement(_)) => {
+    context
+        .resolver
+        .process_all_names(context.database, |name, item| {
+            if name == Name::missing() {
                 return;
-            },
-        };
+            }
+            let kind = match item {
+                ScopeDef::ModuleItem(_, ModuleItem::Function(_)) => CompletionItemKind::Function,
+                ScopeDef::ModuleItem(_, ModuleItem::GlobalVariable(_)) | ScopeDef::Local(_) => {
+                    CompletionItemKind::Variable
+                },
+                ScopeDef::ModuleItem(
+                    _,
+                    ModuleItem::GlobalConstant(_) | ModuleItem::Override(_),
+                ) => CompletionItemKind::Constant,
+                ScopeDef::ModuleItem(_, ModuleItem::Struct(_)) => CompletionItemKind::Struct,
+                ScopeDef::ModuleItem(_, ModuleItem::TypeAlias(_)) => CompletionItemKind::TypeAlias,
+                ScopeDef::ModuleItem(_, ModuleItem::ImportStatement(_)) => {
+                    // TODO: Resolve the import statement, and then set the correct CompletionItemKind from there
+                    // TODO: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/632
+                    CompletionItemKind::Module
+                },
+                ScopeDef::ModuleItem(_, ModuleItem::GlobalAssertStatement(_)) => {
+                    return;
+                },
+            };
 
-        let detail = match item {
-            ScopeDef::Local(local) => context
-                .container
-                .and_then(hir::ChildContainer::as_def_with_body_id)
-                .map(|definition| {
-                    let inference = context.database.infer(definition);
-                    inference[local]
-                })
-                .map(|r#type| pretty_type(context.database, r#type)),
-            ScopeDef::ModuleItem(file_id, item) => {
-                let detail = render_detail(context, file_id, item);
-                Some(detail)
-            },
-        };
+            let detail = match item {
+                ScopeDef::Local(local) => context
+                    .container
+                    .and_then(hir::ChildContainer::as_def_with_body_id)
+                    .map(|definition| {
+                        let inference = context.database.infer(definition);
+                        inference[local]
+                    })
+                    .map(|r#type| pretty_type(context.database, r#type)),
+                ScopeDef::ModuleItem(file_id, item) => {
+                    let detail = render_detail(context, file_id, item);
+                    Some(detail)
+                },
+            };
 
-        let mut completion = CompletionItem::new(kind, context.source_range(), name.as_str());
-        completion.set_relevance(CompletionRelevance {
-            exact_name_match: false,
-            type_match: None,
-            is_local: matches!(item, ScopeDef::Local(_)),
-            is_name_already_imported: false,
-            requires_import: false,
-            is_private_editable: false,
-            postfix_match: None,
-            function: None,
-            is_skipping_completion: false,
-            is_builtin: false,
+            let mut completion = CompletionItem::new(kind, context.source_range(), name.as_str());
+            completion.set_relevance(CompletionRelevance {
+                exact_name_match: false,
+                type_match: None,
+                is_local: matches!(item, ScopeDef::Local(_)),
+                is_name_already_imported: false,
+                requires_import: false,
+                is_private_editable: false,
+                postfix_match: None,
+                function: None,
+                is_skipping_completion: false,
+                is_builtin: false,
+            });
+            completion.set_detail(detail);
+            completion.add_to(accumulator, context.database);
         });
-        completion.set_detail(detail);
-        completion.add_to(accumulator, context.database);
-    });
     for name in Builtin::ALL_BUILTINS {
         let mut builder =
             CompletionItem::new(CompletionItemKind::Function, context.source_range(), *name);

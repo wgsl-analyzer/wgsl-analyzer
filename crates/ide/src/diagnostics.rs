@@ -5,13 +5,12 @@ use std::{
     ops::{self, Range},
 };
 
-use base_db::{AnchoredPath, EditionedFileId, FileRange, TextRange, TextSize};
+use base_db::{EditionedFileId, FileRange, TextRange, TextSize};
 use hir::{
     HirDatabase, Semantics,
     diagnostics::{AnyDiagnostic, DiagnosticsConfig, NagaVersion},
 };
 use hir_def::item_tree::{ImportStatement, ItemTreeNode, ModuleItem};
-use hir_def::mod_path::PathKind;
 use hir_def::{HirFileId, original_file_range};
 use hir_ty::ty::{
     self,
@@ -344,66 +343,13 @@ fn emit_with_offset<Error: NagaError>(
 
 /// Resolve an import statement to the FileId of the imported module file.
 ///
-/// WESL import path mapping:
-/// - `import foo::bar;` (Plain) → `./foo.wesl`
-/// - `import super::foo::bar;` (Super(1)) → `../foo.wesl`
-/// - `import super::super::foo;` (Super(2)) → `../../foo.wesl`
-/// - `import package::foo::bar;` (Package) → `foo.wesl` from package root
+/// Delegates to `hir_def::resolver::resolve_import_to_file`.
 fn resolve_import_to_file(
     database: &dyn HirDatabase,
     anchor_file: FileId,
     import: &ImportStatement,
 ) -> Option<FileId> {
-    // The first segment of the import path is the module (file) name.
-    // For `import foo::bar::baz;`, the tree is Path { name: "foo", item: Path { name: "bar", ... } }
-    // We need the first segment name to find the file.
-    let first_segment = import_tree_first_segment(&import.tree)?;
-
-    let relative_path = match import.kind {
-        PathKind::Plain => {
-            // `import foo::bar;` → look for `./foo.wesl`
-            format!("../{first_segment}.wesl")
-        },
-        PathKind::Super(levels) => {
-            // `import super::foo::bar;` → `../foo.wesl` (1 level)
-            // `import super::super::foo;` → `../../foo.wesl` (2 levels)
-            // AnchoredPath is relative to the anchor file's directory,
-            // so super(1) means go up one more level from the file's dir.
-            let mut path = String::new();
-            // One `../` to get out of the anchor file's directory
-            path.push_str("../");
-            for _ in 0..levels {
-                path.push_str("../");
-            }
-            path.push_str(&format!("{first_segment}.wesl"));
-            path
-        },
-        PathKind::Package => {
-            // Package-relative imports need the package root.
-            // For now, we try resolving from the source root.
-            // This is a simplification — proper package root detection
-            // would use wesl.toml location.
-            format!("../{first_segment}.wesl")
-        },
-    };
-
-    let path = AnchoredPath {
-        anchor: anchor_file,
-        path: &relative_path,
-    };
-    database.resolve_path(path)
-}
-
-/// Extract the first segment name from an ImportTree.
-fn import_tree_first_segment(tree: &hir_def::item_tree::ImportTree) -> Option<&str> {
-    match tree {
-        hir_def::item_tree::ImportTree::Path { name, .. } => Some(name.as_str()),
-        hir_def::item_tree::ImportTree::Item { name, .. } => Some(name.as_str()),
-        hir_def::item_tree::ImportTree::Collection { list } => {
-            // For `import {foo, bar};` — this is unusual at the top level
-            list.first().and_then(|t| import_tree_first_segment(t))
-        },
-    }
+    hir_def::resolver::resolve_import_to_file(database, anchor_file, import)
 }
 
 /// Collect all files transitively imported by the given file.

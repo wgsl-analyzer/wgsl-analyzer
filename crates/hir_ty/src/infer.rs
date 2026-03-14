@@ -2512,7 +2512,7 @@ impl<'database> TypeLoweringContext<'database> {
         path: &Path,
         template_parameters: &[ExpressionId],
     ) -> Result<Lowered, TypeLoweringError> {
-        let resolved_type = self.resolver.resolve(path);
+        let resolved_type = self.resolver.resolve(self.database, path);
 
         if resolved_type.is_some() {
             self.expect_no_template(template_parameters);

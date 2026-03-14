@@ -1,6 +1,7 @@
 use std::ops::ControlFlow;
 
 use triomphe::Arc;
+use vfs::AnchoredPath;
 
 use crate::{
     HirFileId, InFile,
@@ -8,12 +9,13 @@ use crate::{
         BindingId,
         scope::{ExprScopes, ScopeId},
     },
-    database::{FunctionId, Location},
+    database::{DefDatabase, FunctionId, Location},
     expression_store::path::Path,
     item_tree::{
-        Function, GlobalConstant, GlobalVariable, ItemTree, ModuleItem, Name, Override, Struct,
-        TypeAlias,
+        Function, GlobalConstant, GlobalVariable, ImportStatement, ImportTree, ItemTree,
+        ModuleItem, Name, Override, Struct, TypeAlias,
     },
+    mod_path::PathKind,
 };
 
 #[derive(Clone)]
@@ -119,9 +121,10 @@ impl Resolver {
     }
 
     /// Calls the passed closure `function` on all names in scope.
-    pub fn process_all_names<Function: FnMut(Name, ScopeDef)>(
+    pub fn process_all_names(
         &self,
-        mut function: Function,
+        database: &dyn DefDatabase,
+        mut function: impl FnMut(Name, ScopeDef),
     ) {
         self.scopes().for_each(|scope| match scope {
             Scope::Module(scope) => {
@@ -156,15 +159,31 @@ impl Resolver {
                         ),
                         ModuleItem::GlobalAssertStatement(_) => {},
                         ModuleItem::ImportStatement(id) => {
-                            // The leaves of the tree are in scope
-                            scope.module_info.get(*id).expand::<(), _>(|flat_import| {
-                                if let Some(name) = flat_import.leaf_name() {
-                                    function(
-                                        name.clone(),
-                                        ScopeDef::ModuleItem(scope.file_id, *item),
-                                    );
+                            let import = scope.module_info.get(*id);
+                            import.expand::<(), _>(|flat_import| {
+                                if let Some(leaf_name) = flat_import.leaf_name() {
+                                    // Try to resolve the import to the actual item in the target file
+                                    if let Some((target_file_id, target_item)) =
+                                        resolve_import_item(
+                                            database,
+                                            scope.file_id,
+                                            import,
+                                            &flat_import,
+                                        )
+                                    {
+                                        function(
+                                            leaf_name.clone(),
+                                            ScopeDef::ModuleItem(target_file_id, target_item),
+                                        );
+                                    } else {
+                                        // Fallback: expose the import itself
+                                        function(
+                                            leaf_name.clone(),
+                                            ScopeDef::ModuleItem(scope.file_id, *item),
+                                        );
+                                    }
                                 }
-                                std::ops::ControlFlow::Continue(())
+                                ControlFlow::Continue(())
                             });
                         },
                     });
@@ -190,16 +209,13 @@ impl Resolver {
     #[must_use]
     pub fn resolve(
         &self,
+        database: &dyn DefDatabase,
         path: &Path,
     ) -> Option<ResolveKind> {
         let mod_path = path.mod_path();
         let leaf_name = match mod_path.kind() {
-            crate::mod_path::PathKind::Plain => {
-                mod_path.as_ident()?
-                // TODO: If the option fails, then we have to import it https://github.com/wgsl-analyzer/wgsl-analyzer/issues/632
-            },
+            crate::mod_path::PathKind::Plain => mod_path.as_ident()?,
             crate::mod_path::PathKind::Super(_) | crate::mod_path::PathKind::Package => {
-                // TODO: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/632
                 return None;
             },
         };
@@ -247,21 +263,26 @@ impl Resolver {
                             .then(|| ResolveKind::Function(InFile::new(scope.file_id, *id)))
                     },
                     ModuleItem::GlobalAssertStatement(_) => None,
-                    ModuleItem::ImportStatement(_id) => None,
-                    // TODO: Support import statements https://github.com/wgsl-analyzer/wgsl-analyzer/issues/632
-                    /*scope
-                    .module_info
-                    .get(*id)
-                    .expand::<ResolveKind>(|flat_import| {
-                        if flat_import.leaf_name() == Some(leaf_name) {
-                            ControlFlow::Break(ResolveKind::Function(InFile::new(
-                                scope.file_id,
-                                *id,
-                            )))
-                        } else {
+                    ModuleItem::ImportStatement(id) => {
+                        let import = scope.module_info.get(*id);
+                        import.expand::<ResolveKind, _>(|flat_import| {
+                            if flat_import.leaf_name() == Some(leaf_name) {
+                                if let Some((target_file_id, target_item)) = resolve_import_item(
+                                    database,
+                                    scope.file_id,
+                                    import,
+                                    &flat_import,
+                                ) {
+                                    if let Some(kind) =
+                                        resolve_kind_from_item(target_file_id, &target_item)
+                                    {
+                                        return ControlFlow::Break(kind);
+                                    }
+                                }
+                            }
                             ControlFlow::Continue(())
-                        }
-                    }),*/
+                        })
+                    },
                 }),
             Scope::Builtin => {
                 // TODO: Match against "name.as_str()" and then point at a "builtin" file
@@ -269,5 +290,123 @@ impl Resolver {
                 None
             },
         })
+    }
+}
+
+/// Convert a `ModuleItem` to a `ResolveKind`.
+fn resolve_kind_from_item(
+    file_id: HirFileId,
+    item: &ModuleItem,
+) -> Option<ResolveKind> {
+    match item {
+        ModuleItem::Function(id) => Some(ResolveKind::Function(InFile::new(file_id, *id))),
+        ModuleItem::Struct(id) => Some(ResolveKind::Struct(InFile::new(file_id, *id))),
+        ModuleItem::TypeAlias(id) => Some(ResolveKind::TypeAlias(InFile::new(file_id, *id))),
+        ModuleItem::GlobalVariable(id) => {
+            Some(ResolveKind::GlobalVariable(Location::new(file_id, *id)))
+        },
+        ModuleItem::GlobalConstant(id) => {
+            Some(ResolveKind::GlobalConstant(Location::new(file_id, *id)))
+        },
+        ModuleItem::Override(id) => Some(ResolveKind::Override(Location::new(file_id, *id))),
+        ModuleItem::GlobalAssertStatement(_) | ModuleItem::ImportStatement(_) => None,
+    }
+}
+
+/// Resolve an import's leaf to the actual item in the target file.
+///
+/// Given an import like `import foo::bar;`, this resolves `foo.wesl` and finds
+/// the item named `bar` in that file's ItemTree.
+fn resolve_import_item(
+    database: &dyn DefDatabase,
+    anchor_file_id: HirFileId,
+    import: &ImportStatement,
+    flat_import: &crate::item_tree::FlatImport,
+) -> Option<(HirFileId, ModuleItem)> {
+    let anchor_file = anchor_file_id.original_file(database).file_id;
+    let target_file = resolve_import_to_file(database, anchor_file, import)?;
+    let target_editioned = database.editioned_file_id(target_file);
+    let target_hir_file = HirFileId::from(target_editioned);
+    let target_tree = database.item_tree(target_hir_file);
+
+    // The leaf name is what we're looking for in the target file.
+    // For `import foo::bar::baz;`, the path segments are [foo, bar, baz].
+    // The first segment is the file name, the rest are nested items.
+    // For now, we look for the last segment (the leaf) in the target file's items.
+    let segments = flat_import.path.segments();
+    // Skip the first segment (file name), look for the remaining path.
+    // For `import foo::bar;` → segments = [foo, bar], we want "bar" in foo.wesl
+    let item_name = if segments.len() >= 2 {
+        &segments[segments.len() - 1]
+    } else {
+        // Single-segment import like `import foo;` — the file itself
+        return None;
+    };
+
+    // Find the matching item in the target file
+    let target_item = target_tree
+        .items()
+        .iter()
+        .find(|target| item_name_matches(target, &target_tree, item_name))?;
+
+    Some((target_hir_file, *target_item))
+}
+
+/// Check if a module item's name matches the given name.
+fn item_name_matches(
+    item: &ModuleItem,
+    tree: &ItemTree,
+    name: &Name,
+) -> bool {
+    match item {
+        ModuleItem::Function(id) => &tree.get(*id).name == name,
+        ModuleItem::Struct(id) => &tree.get(*id).name == name,
+        ModuleItem::TypeAlias(id) => &tree.get(*id).name == name,
+        ModuleItem::GlobalVariable(id) => &tree.get(*id).name == name,
+        ModuleItem::GlobalConstant(id) => &tree.get(*id).name == name,
+        ModuleItem::Override(id) => &tree.get(*id).name == name,
+        ModuleItem::GlobalAssertStatement(_) | ModuleItem::ImportStatement(_) => false,
+    }
+}
+
+/// Resolve an import statement to the FileId of the imported module file.
+pub fn resolve_import_to_file(
+    database: &dyn DefDatabase,
+    anchor_file: base_db::FileId,
+    import: &ImportStatement,
+) -> Option<base_db::FileId> {
+    let first_segment = import_tree_first_segment(&import.tree)?;
+
+    let relative_path = match import.kind {
+        PathKind::Plain => {
+            format!("../{first_segment}.wesl")
+        },
+        PathKind::Super(levels) => {
+            let mut path = String::new();
+            path.push_str("../");
+            for _ in 0..levels {
+                path.push_str("../");
+            }
+            path.push_str(&format!("{first_segment}.wesl"));
+            path
+        },
+        PathKind::Package => {
+            format!("../{first_segment}.wesl")
+        },
+    };
+
+    let path = AnchoredPath {
+        anchor: anchor_file,
+        path: &relative_path,
+    };
+    database.resolve_path(path)
+}
+
+/// Extract the first segment name from an ImportTree.
+fn import_tree_first_segment(tree: &ImportTree) -> Option<&str> {
+    match tree {
+        ImportTree::Path { name, .. } => Some(name.as_str()),
+        ImportTree::Item { name, .. } => Some(name.as_str()),
+        ImportTree::Collection { list } => list.first().and_then(|t| import_tree_first_segment(t)),
     }
 }
