@@ -26,7 +26,7 @@ use crate::format::{
         gen_const_declaration_statement, gen_let_declaration_statement,
         gen_var_declaration_statement,
     },
-    multiline_group::gen_multiline_group,
+    multiline_group::MultilineGroup,
     print_item_buffer::{PrintItemBuffer, SeparationPolicy, request_folder::RequestItem},
     reporting::{FormatDocumentError, FormatDocumentResult},
 };
@@ -277,48 +277,50 @@ fn gen_for_statement(statement: &ast::ForStatement) -> FormatDocumentResult<Prin
     formatted.extend(gen_comments(&comments_after_for));
     formatted.push_sc(sc!("("));
 
-    formatted.extend(gen_multiline_group([
-        gen_comments(&comments_after_open_paren),
-        {
-            let mut formatted = PrintItemBuffer::new();
-            if let Some(item_initializer) = item_initializer {
-                formatted.extend(gen_statement_maybe_semicolon(&item_initializer, false)?);
-            } else {
-                formatted.discourage(RequestItem::Space);
-            }
-            formatted.extend(gen_comments(&comments_after_initializer));
-            formatted.discourage(RequestItem::Space);
-            formatted.push_sc(sc!(";"));
-            formatted.extend(gen_comments(&comments_after_initializer_semicolon));
-            formatted
-        },
-        {
-            let mut formatted = PrintItemBuffer::new();
-            if let Some(item_condition) = item_condition {
-                formatted.extend(gen_expression(&item_condition, false)?);
-            } else {
-                formatted.discourage(RequestItem::Space);
-            }
-            formatted.extend(gen_comments(&comments_after_condition));
-            formatted.discourage(RequestItem::Space);
-            formatted.push_sc(sc!(";"));
-            formatted.extend(gen_comments(&comments_after_condition_semicolon));
-            formatted
-        },
-        {
-            let mut formatted = PrintItemBuffer::new();
-            if let Some(item_continuing) = item_continuing {
-                formatted.extend(gen_statement_maybe_semicolon(&item_continuing, false)?);
-            } else {
-                formatted.discourage(RequestItem::Space);
-            }
-            formatted.extend(gen_comments(&comments_after_continuing));
-            formatted.discourage(RequestItem::Space);
-            formatted
-        },
-    ]));
+    let mut multiline_group = MultilineGroup::new(&mut formatted);
+    multiline_group.start_indent();
 
-    formatted.push_sc(sc!(")"));
+    multiline_group.extend(gen_comments(&comments_after_open_paren));
+
+    multiline_group.grouped_newline_or_space();
+    if let Some(item_initializer) = item_initializer {
+        multiline_group.extend(gen_statement_maybe_semicolon(&item_initializer, false)?);
+    } else {
+        multiline_group.discourage(RequestItem::Space);
+    }
+    multiline_group.extend(gen_comments(&comments_after_initializer));
+    multiline_group.discourage(RequestItem::Space);
+    multiline_group.push_sc(sc!(";"));
+    multiline_group.extend(gen_comments(&comments_after_initializer_semicolon));
+
+    multiline_group.grouped_newline_or_space();
+    if let Some(item_condition) = item_condition {
+        multiline_group.extend(gen_expression(&item_condition, false)?);
+    } else {
+        multiline_group.discourage(RequestItem::Space);
+    }
+    multiline_group.extend(gen_comments(&comments_after_condition));
+    multiline_group.discourage(RequestItem::Space);
+    multiline_group.push_sc(sc!(";"));
+    multiline_group.extend(gen_comments(&comments_after_condition_semicolon));
+
+    multiline_group.grouped_newline_or_space();
+    if let Some(item_continuing) = item_continuing {
+        multiline_group.extend(gen_statement_maybe_semicolon(&item_continuing, false)?);
+    } else {
+        multiline_group.discourage(RequestItem::Space);
+    }
+    multiline_group.extend(gen_comments(&comments_after_continuing));
+    multiline_group.discourage(RequestItem::Space);
+
+    multiline_group.grouped_newline_or_space();
+
+    multiline_group.finish_indent();
+
+    multiline_group.push_sc(sc!(")"));
+
+    multiline_group.end();
+
     formatted.expect(RequestItem::Space);
     formatted.extend(gen_comments(&comments_after_close_paren));
     formatted.extend(gen_compound_statement(&item_body)?);
