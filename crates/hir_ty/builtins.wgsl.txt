@@ -1,8 +1,8 @@
 // logical
-all(vecN<bool>) -> bool 
-all(bool) -> bool 
-any(vecN<bool>) -> bool 
-any(bool) -> bool 
+all(vecN<bool>) -> bool
+all(bool) -> bool
+any(vecN<bool>) -> bool
+any(bool) -> bool
 select(T, T, bool) -> T
 select(vecN<T>, vecN<T>, vecN<bool>) -> vecN<T>
 
