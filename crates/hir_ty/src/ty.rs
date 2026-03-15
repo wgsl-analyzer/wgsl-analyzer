@@ -324,50 +324,6 @@ impl TypeKind {
         )
     }
 
-    pub fn is_io_shareable(
-        &self,
-        database: &dyn HirDatabase,
-    ) -> bool {
-        match self {
-            Self::Scalar(_) => true,
-            Self::Vector(vec) => vec.component_type.kind(database).is_numeric_scalar(),
-            Self::Struct(r#struct) => {
-                database.field_types(*r#struct).0.iter().all(|(_, r#type)| {
-                    match r#type.kind(database) {
-                        Self::Scalar(_) => true,
-                        Self::Vector(vec)
-                            if vec.component_type.kind(database).is_numeric_scalar() =>
-                        {
-                            true
-                        },
-                        Self::Error
-                        | Self::Atomic(_)
-                        | Self::Vector(_)
-                        | Self::Matrix(_)
-                        | Self::Struct(_)
-                        | Self::Array(_)
-                        | Self::Texture(_)
-                        | Self::Sampler(_)
-                        | Self::Reference(_)
-                        | Self::Pointer(_)
-                        | Self::BoundVariable(_)
-                        | Self::StorageTypeOfTexelFormat(_) => false,
-                    }
-                })
-            },
-            Self::Error
-            | Self::Atomic(_)
-            | Self::Matrix(_)
-            | Self::Array(_)
-            | Self::Texture(_)
-            | Self::Sampler(_)
-            | Self::Reference(_)
-            | Self::Pointer(_)
-            | Self::BoundVariable(_)
-            | Self::StorageTypeOfTexelFormat(_) => false,
-        }
-    }
-
     pub fn is_host_shareable(
         &self,
         database: &dyn HirDatabase,
@@ -382,8 +338,10 @@ impl TypeKind {
                 .0
                 .iter()
                 .all(|(_, r#type)| r#type.kind(database).is_host_shareable(database)),
-            Self::Error
-            | Self::Texture(_)
+            // Error types are treated as optimistically compatible to avoid
+            // irrelevant diagnostics (for example, when a struct is not yet defined).
+            Self::Error => true,
+            Self::Texture(_)
             | Self::Sampler(_)
             | Self::Reference(_)
             | Self::Pointer(_)
