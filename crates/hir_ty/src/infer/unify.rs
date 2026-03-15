@@ -75,10 +75,6 @@ impl UnificationTable {
         }
     }
 
-    #[expect(
-        clippy::too_many_lines,
-        reason = "This long match is not easily broken up"
-    )]
     pub fn resolve(
         &self,
         database: &dyn HirDatabase,
@@ -171,7 +167,9 @@ impl UnificationTable {
                 | ScalarType::F16
                 | ScalarType::F32
                 | ScalarType::I32
-                | ScalarType::U32,
+                | ScalarType::U32
+                | ScalarType::I64
+                | ScalarType::U64,
             )
             | TypeKind::Atomic(_)
             | TypeKind::Struct(_)
@@ -180,7 +178,6 @@ impl UnificationTable {
             | TypeKind::Sampler(_)
             | TypeKind::Reference(_)
             | TypeKind::Pointer(_) => r#type,
-            TypeKind::Scalar(ScalarType::I64 | ScalarType::U64) => r#type,
         }
     }
 }

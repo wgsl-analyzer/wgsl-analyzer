@@ -1054,13 +1054,9 @@ impl<'database> InferenceContext<'database> {
                 }
             },
             TypeExpectationInner::IntegerScalar => {
-                if let TypeKind::Scalar(ScalarType::I32 | ScalarType::U32) =
-                    r#type.kind(self.database).unref(self.database).as_ref()
-                {
-                    Ok(())
-                } else if self.database.extensions().shader_int64
-                    && let TypeKind::Scalar(ScalarType::I64 | ScalarType::U64) =
-                        r#type.kind(self.database).unref(self.database).as_ref()
+                if let TypeKind::Scalar(
+                    ScalarType::I32 | ScalarType::U32 | ScalarType::I64 | ScalarType::U64,
+                ) = r#type.kind(self.database).unref(self.database).as_ref()
                 {
                     Ok(())
                 } else {

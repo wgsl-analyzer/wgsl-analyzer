@@ -751,7 +751,7 @@ impl TypeLoweringContext<'_> {
                     )),
                     _,
                 )) if number > 0 && number <= ArraySize::MAX.into() => {
-                    // skips handling array<E, 1L>() or array<E, 99999999999999999999999999>()
+                    // skips handling array<E, 1li64>() or array<E, 99999999999999999999999999>()
                     #[expect(
                         clippy::cast_possible_truncation,
                         clippy::cast_sign_loss,

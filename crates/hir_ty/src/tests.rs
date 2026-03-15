@@ -31,12 +31,12 @@ use crate::{
     },
 };
 
-fn infer(wa_fixture: &str) -> String {
+fn infer(
+    extensions: &ExtensionsConfig,
+    wa_fixture: &str,
+) -> String {
     let (mut database, file_id) = TestDatabase::with_single_file(wa_fixture);
-    database.set_extensions_with_durability(
-        ExtensionsConfig { shader_int64: true },
-        Durability::MEDIUM,
-    );
+    database.set_extensions_with_durability(*extensions, Durability::MEDIUM);
     let file_id = HirFileId::from(file_id);
     let root = database.parse_or_resolve(file_id).syntax();
     let mut buffer = String::new();
@@ -244,10 +244,11 @@ fn ellipsize(
 
 #[expect(clippy::needless_pass_by_value, reason = "Matches expect! macro")]
 fn check_infer(
+    extensions: &ExtensionsConfig,
     wa_fixture: &str,
     expect: Expect,
 ) {
-    let mut actual = infer(wa_fixture);
+    let mut actual = infer(extensions, wa_fixture);
     actual.push('\n');
     expect.assert_eq(&actual);
 }

@@ -1,6 +1,8 @@
 use std::{fmt, panic};
 
 use base_db::{EditionedFileId, FileLoader, FileLoaderDelegate, change::Change, input::SourceRoot};
+use hir_def::database::{DefDatabase, ExtensionsConfig};
+use salsa::Durability;
 use syntax::Edition;
 use triomphe::Arc;
 use vfs::{AnchoredPath, FileId, VfsPath, file_set::FileSet};
@@ -11,9 +13,23 @@ use vfs::{AnchoredPath, FileId, VfsPath, file_set::FileSet};
     hir_def::database::InternDatabaseStorage,
     crate::database::HirDatabaseStorage
 )]
-#[derive(Default)]
 pub(crate) struct TestDatabase {
     storage: salsa::Storage<Self>,
+}
+
+impl Default for TestDatabase {
+    fn default() -> Self {
+        let mut value = Self {
+            storage: Default::default(),
+        };
+        value.set_extensions_with_durability(
+            ExtensionsConfig {
+                shader_int64: false,
+            },
+            Durability::MEDIUM,
+        );
+        value
+    }
 }
 
 impl fmt::Debug for TestDatabase {
