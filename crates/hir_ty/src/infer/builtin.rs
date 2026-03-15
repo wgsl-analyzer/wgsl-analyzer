@@ -19,80 +19,86 @@ use crate::{
 };
 
 impl TypeLoweringContext<'_> {
-    fn is_predeclared_type(name: &Name) -> bool {
-        matches!(
-            name.as_str(),
-            "bool"
-                | "i32"
-                | "u32"
-                | "f32"
-                | "f16"
-                | "array"
-                | "binding_array"
-                | "vec2"
-                | "vec3"
-                | "vec4"
-                | "vec2i"
-                | "vec3i"
-                | "vec4i"
-                | "vec2u"
-                | "vec3u"
-                | "vec4u"
-                | "vec2f"
-                | "vec3f"
-                | "vec4f"
-                | "vec2h"
-                | "vec3h"
-                | "vec4h"
-                | "mat2x2"
-                | "mat2x3"
-                | "mat2x4"
-                | "mat3x2"
-                | "mat3x3"
-                | "mat3x4"
-                | "mat4x2"
-                | "mat4x3"
-                | "mat4x4"
-                | "mat2x2f"
-                | "mat2x3f"
-                | "mat2x4f"
-                | "mat3x2f"
-                | "mat3x3f"
-                | "mat3x4f"
-                | "mat4x2f"
-                | "mat4x3f"
-                | "mat4x4f"
-                | "mat2x2h"
-                | "mat2x3h"
-                | "mat2x4h"
-                | "mat3x2h"
-                | "mat3x3h"
-                | "mat3x4h"
-                | "mat4x2h"
-                | "mat4x3h"
-                | "mat4x4h"
-                | "ptr"
-                | "atomic"
-                | "texture_1d"
-                | "texture_2d"
-                | "texture_2d_array"
-                | "texture_3d"
-                | "texture_cube"
-                | "texture_cube_array"
-                | "texture_multisampled_2d"
-                | "texture_storage_1d"
-                | "texture_storage_2d"
-                | "texture_storage_2d_array"
-                | "texture_storage_3d"
-                | "texture_depth_multisampled_2d"
-                | "texture_external"
-                | "texture_depth_2d"
-                | "texture_depth_2d_array"
-                | "texture_depth_cube"
-                | "texture_depth_cube_array"
-                | "sampler"
-                | "sampler_comparison"
-        )
+    fn is_predeclared_type(
+        &self,
+        name: &Name,
+    ) -> bool {
+        // naga extensions
+        (self.database.extensions().shader_int64 && matches!(name.as_str(), "i64" | "u64"))
+        // base WGSL predeclared types
+            || matches!(
+                name.as_str(),
+                "bool"
+                    | "i32"
+                    | "u32"
+                    | "f32"
+                    | "f16"
+                    | "array"
+                    | "binding_array"
+                    | "vec2"
+                    | "vec3"
+                    | "vec4"
+                    | "vec2i"
+                    | "vec3i"
+                    | "vec4i"
+                    | "vec2u"
+                    | "vec3u"
+                    | "vec4u"
+                    | "vec2f"
+                    | "vec3f"
+                    | "vec4f"
+                    | "vec2h"
+                    | "vec3h"
+                    | "vec4h"
+                    | "mat2x2"
+                    | "mat2x3"
+                    | "mat2x4"
+                    | "mat3x2"
+                    | "mat3x3"
+                    | "mat3x4"
+                    | "mat4x2"
+                    | "mat4x3"
+                    | "mat4x4"
+                    | "mat2x2f"
+                    | "mat2x3f"
+                    | "mat2x4f"
+                    | "mat3x2f"
+                    | "mat3x3f"
+                    | "mat3x4f"
+                    | "mat4x2f"
+                    | "mat4x3f"
+                    | "mat4x4f"
+                    | "mat2x2h"
+                    | "mat2x3h"
+                    | "mat2x4h"
+                    | "mat3x2h"
+                    | "mat3x3h"
+                    | "mat3x4h"
+                    | "mat4x2h"
+                    | "mat4x3h"
+                    | "mat4x4h"
+                    | "ptr"
+                    | "atomic"
+                    | "texture_1d"
+                    | "texture_2d"
+                    | "texture_2d_array"
+                    | "texture_3d"
+                    | "texture_cube"
+                    | "texture_cube_array"
+                    | "texture_multisampled_2d"
+                    | "texture_storage_1d"
+                    | "texture_storage_2d"
+                    | "texture_storage_2d_array"
+                    | "texture_storage_3d"
+                    | "texture_depth_multisampled_2d"
+                    | "texture_external"
+                    | "texture_depth_2d"
+                    | "texture_depth_2d_array"
+                    | "texture_depth_cube"
+                    | "texture_depth_cube_array"
+                    | "sampler"
+                    | "sampler_comparison"
+            )
     }
 
     pub fn lower_predeclared(
@@ -103,7 +109,7 @@ impl TypeLoweringContext<'_> {
     ) -> Result<Lowered, TypeLoweringError> {
         // Lower predeclared types
         if let Some(name) = path.mod_path().as_ident() {
-            if Self::is_predeclared_type(name) {
+            if self.is_predeclared_type(name) {
                 self.lower_predeclared_type(type_container, name, template_parameters)
             } else if crate::builtins::Builtin::ALL_BUILTINS.contains(&name.as_str()) {
                 Ok(Lowered::BuiltinFunction)
@@ -150,6 +156,14 @@ impl TypeLoweringContext<'_> {
             "u32" => {
                 self.expect_no_template(template_parameters);
                 TypeKind::Scalar(ScalarType::U32)
+            },
+            "i64" if self.database.extensions().shader_int64 => {
+                self.expect_no_template(template_parameters);
+                TypeKind::Scalar(ScalarType::I64)
+            },
+            "u64" if self.database.extensions().shader_int64 => {
+                self.expect_no_template(template_parameters);
+                TypeKind::Scalar(ScalarType::U64)
             },
             "f32" => {
                 self.expect_no_template(template_parameters);
@@ -737,7 +751,7 @@ impl TypeLoweringContext<'_> {
                     )),
                     _,
                 )) if number > 0 && number <= ArraySize::MAX.into() => {
-                    // skips handling array<E, 1li64>() or array<E, 99999999999999999999999999>()
+                    // skips handling array<E, 1li>() or array<E, 99999999999999999999999999>()
                     #[expect(
                         clippy::cast_possible_truncation,
                         clippy::cast_sign_loss,
@@ -749,7 +763,7 @@ impl TypeLoweringContext<'_> {
                 Ok((Some(Instance::Literal(LiteralInstance::U64(number))), _))
                     if number > 0 && number <= ArraySize::MAX.into() =>
                 {
-                    // skips handling array<E, 1lu64>() or array<E, 99999999999999999999999999lu64>()
+                    // skips handling array<E, 1uL>() or array<E, 99999999999999999999999999uL>()
                     #[expect(
                         clippy::cast_possible_truncation,
                         clippy::as_conversions,
@@ -936,17 +950,23 @@ impl TypeLoweringContext<'_> {
                 let type_kind = r#type.kind(self.database);
                 if matches!(
                     type_kind,
-                    TypeKind::Scalar(ScalarType::I32 | ScalarType::U32)
+                    TypeKind::Scalar(
+                        ScalarType::I32 | ScalarType::U32 | ScalarType::I64 | ScalarType::U64
+                    )
                 ) {
                     r#type
                 } else {
                     // TODO: improve the error message and support naga atomics
                     // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/677
+                    // Naga supports more types (f32, i64, u64) here
+                    let possible_types = if self.database.extensions().shader_int64 {
+                        "i32 or u32".to_owned()
+                    } else {
+                        "i32, u32, i64, or u64".to_owned()
+                    };
                     self.diagnostics.push(TypeLoweringError {
                         container: TypeContainer::Expression(expression),
-                        kind: TypeLoweringErrorKind::UnexpectedTemplateArgument(
-                            "i32 or u32".to_owned(), // Naga supports more types (f32, i64, u64) here
-                        ),
+                        kind: TypeLoweringErrorKind::UnexpectedTemplateArgument(possible_types),
                     });
                     TypeKind::Error.intern(self.database)
                 }

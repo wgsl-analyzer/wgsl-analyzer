@@ -1,3 +1,4 @@
+pub mod database;
 pub mod definition;
 pub mod diagnostics;
 
@@ -5,6 +6,7 @@ use base_db::{EditionedFileId, FileId};
 use definition::Definition;
 use diagnostics::{AnyDiagnostic, DiagnosticsConfig};
 use either::Either;
+pub use hir_def::database::ExtensionsConfig;
 use hir_def::{
     HasSource as _, HirFileId, InFile,
     body::{BindingId, Body, BodySourceMap},
