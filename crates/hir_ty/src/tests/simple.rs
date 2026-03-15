@@ -452,3 +452,16 @@ fn f() {
         "#]],
     );
 }
+
+#[test]
+fn naga_shader_int64() {
+    check_infer(
+        "
+fn foo(bar: i64, baz: u64) {}
+",
+        expect![[r#"
+            7..10 'bar': i64
+            17..20 'baz': u64
+        "#]],
+    );
+}

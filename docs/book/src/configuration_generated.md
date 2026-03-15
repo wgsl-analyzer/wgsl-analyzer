@@ -29,6 +29,12 @@ Default: `true`
 
 Controls whether to show type errors.
 
+## wgsl-analyzer.extensions.shaderInt64
+
+Default: `true`
+
+Whether to enable u64 and i64 scalar types.
+
 ## wgsl-analyzer.inlayHints.enabled
 
 Default: `true`

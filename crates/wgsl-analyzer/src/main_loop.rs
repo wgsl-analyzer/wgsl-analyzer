@@ -10,11 +10,12 @@ use std::{
 
 use base_db::SourceDatabase as _;
 use crossbeam_channel::{Receiver, select};
+use hir::database::DefDatabase as _;
 // use ide_db::base_db::{SourceDatabase, SourceRootDatabase, VfsPath};
 use lsp_server::{Connection, Notification, Request};
 use lsp_types as lt;
 use lt::notification::Notification as _;
-use salsa::Cancelled;
+use salsa::{Cancelled, Durability};
 use stdx::thread::ThreadIntent;
 use tracing::{Level, error, span};
 use triomphe::Arc;
@@ -298,7 +299,7 @@ impl GlobalState {
             {
                 let open_log_button = tracing::enabled!(tracing::Level::ERROR)
                     &&
-                    // (self.fetch_build_data_error().is_err() || 
+                    // (self.fetch_build_data_error().is_err() ||
                     self.fetch_workspace_error().is_err()
                     // )
                     ;
@@ -889,6 +890,13 @@ impl GlobalState {
         &mut self,
         config: Config,
     ) {
-        let _old_config = std::mem::replace(&mut self.config, Arc::new(config));
+        let _p = tracing::info_span!("GlobalState::update_configuration").entered();
+        let old_config = std::mem::replace(&mut self.config, Arc::new(config));
+
+        if self.analysis_host.raw_database().extensions() != self.config.extensions() {
+            self.analysis_host
+                .raw_database_mut()
+                .set_extensions_with_durability(self.config.extensions(), Durability::MEDIUM);
+        }
     }
 }

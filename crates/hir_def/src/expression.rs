@@ -28,6 +28,9 @@ pub enum BuiltinFloat {
 pub enum BuiltinInt {
     I32,
     U32,
+    // SHADER_INT64
+    I64,
+    U64,
     Abstract,
 }
 
@@ -187,10 +190,14 @@ pub fn parse_literal(literal: ast::LiteralKind) -> Literal {
 }
 
 fn split_int_suffix(number: &str) -> (&str, BuiltinInt) {
-    if number.ends_with('u') {
-        (&number[0..(number.len() - 1)], BuiltinInt::U32)
+    if number.ends_with("lu") {
+        (&number[0..(number.len() - "lu".len())], BuiltinInt::U64)
+    } else if number.ends_with("li") {
+        (&number[0..(number.len() - "li".len())], BuiltinInt::I64)
+    } else if number.ends_with('u') {
+        (&number[0..(number.len() - 'u'.len_utf8())], BuiltinInt::U32)
     } else if number.ends_with('i') {
-        (&number[0..(number.len() - 1)], BuiltinInt::I32)
+        (&number[0..(number.len() - 'i'.len_utf8())], BuiltinInt::I32)
     } else {
         (number, BuiltinInt::Abstract)
     }

@@ -1,7 +1,9 @@
 use std::{fmt, panic};
 
 use base_db::{FileId, FileLoader, FileLoaderDelegate, change::Change};
+use hir_def::database::{DefDatabase as _, ExtensionsConfig};
 use rustc_hash::FxHashMap;
+use salsa::Durability;
 use vfs::AnchoredPath;
 
 pub mod source_change;
@@ -56,7 +58,7 @@ impl RootDatabase {
         // database.set_proc_macros_with_durability(Default::default(), Durability::MEDIUM);
         // database.set_local_roots_with_durability(Default::default(), Durability::MEDIUM);
         // database.set_library_roots_with_durability(Default::default(), Durability::MEDIUM);
-        // database.set_expand_proc_attr_macros_with_durability(false, Durability::HIGH);
+        database.set_extensions_with_durability(ExtensionsConfig::default(), Durability::MEDIUM);
         database.update_base_query_lru_capacities(lru_capacity);
         database
     }
