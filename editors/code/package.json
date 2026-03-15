@@ -479,6 +479,16 @@
 				}
 			},
 			{
+				"title": "Extensions",
+				"properties": {
+					"wgsl-analyzer.extensions.shaderInt64": {
+						"markdownDescription": "Whether to enable u64 and i64 scalar types.",
+						"default": true,
+						"type": "boolean"
+					}
+				}
+			},
+			{
 				"title": "Inlay Hints",
 				"properties": {
 					"wgsl-analyzer.inlayHints.enabled": {
