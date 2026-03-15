@@ -1,8 +1,8 @@
 // logical
-all(vecN<bool>) -> bool 
-all(bool) -> bool 
-any(vecN<bool>) -> bool 
-any(bool) -> bool 
+all(vecN<bool>) -> bool
+all(bool) -> bool
+any(vecN<bool>) -> bool
+any(bool) -> bool
 select(T, T, bool) -> T
 select(vecN<T>, vecN<T>, vecN<bool>) -> vecN<T>
 
@@ -468,6 +468,9 @@ unpack4x8unorm(u32) -> vec4<f32>
 unpack2x16snorm(u32) -> vec2<f32>
 unpack2x16unorm(u32) -> vec2<f32>
 unpack2x16float(u32) -> vec2<f32>
+
+// data reinterpretation
+bitcast(T) -> T
 
 // synchronization
 storageBarrier()

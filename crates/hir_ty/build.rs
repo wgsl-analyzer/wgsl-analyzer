@@ -213,8 +213,12 @@ impl Builtin {{
 }
 
 fn parse_line(line: &str) -> (&str, Overload) {
-    let (name, line) = line.split_once('(').unwrap();
-    let (parameters, line) = line.split_once(')').unwrap();
+    let (name, line) = line
+        .split_once('(')
+        .expect("all builtins are functions, so each line should have parentheses");
+    let (parameters, line) = line
+        .split_once(')')
+        .expect("all builtins are functions, so each line should have parentheses");
     let return_type = line.trim_start_matches(" ->").trim();
 
     let mut generics = BTreeMap::<char, (usize, Generic)>::default();
