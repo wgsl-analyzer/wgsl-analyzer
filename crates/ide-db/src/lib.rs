@@ -133,11 +133,11 @@ impl FileLoader for RootDatabase {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct SnippetCap {
+pub struct SnippetCapability {
     _private: (),
 }
 
-impl SnippetCap {
+impl SnippetCapability {
     #[must_use]
     pub const fn new(allow_snippets: bool) -> Option<Self> {
         if allow_snippets {

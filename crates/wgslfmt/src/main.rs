@@ -5,49 +5,15 @@
     reason = "https://github.com/rust-lang/rust-clippy/issues/15107"
 )]
 
+mod cli;
+
 use std::{io::Read as _, path::PathBuf, time::Instant};
 
 use anyhow::{Context as _, bail};
-use clap::{Parser, ValueEnum};
 use serde::Serialize;
 use wgsl_formatter::FormattingOptions;
 
-/// Tool to find and fix WGSL/WESL formatting issues.
-///
-/// Accepts file paths, directories (recursively finds .wgsl files), and
-/// glob patterns (e.g. "src/**/*.wgsl"). Pass "-" to read from stdin.
-#[derive(Parser)]
-#[command(name = "wgslfmt", version)]
-struct Args {
-    /// Run in 'check' mode. Exits with 0 if input is formatted correctly.
-    /// Exits with 1 and prints a diff if formatting is required.
-    #[arg(long)]
-    check: bool,
-
-    /// Use tabs for indentation (instead of spaces).
-    #[arg(long, conflicts_with = "indent_width")]
-    tabs: bool,
-
-    /// Number of spaces per indentation level (default: 4).
-    #[arg(long, value_name = "N", conflicts_with = "tabs")]
-    indent_width: Option<usize>,
-
-    /// Output format. "text" (default) prints human-readable output.
-    /// "json" emits a single JSON object with all results.
-    #[arg(long, value_enum, default_value_t = OutputFormat::Text)]
-    output_format: OutputFormat,
-
-    /// Files, directories, or glob patterns to format.
-    /// Pass "-" to read from stdin.
-    #[arg(required = true)]
-    patterns: Vec<String>,
-}
-
-#[derive(Clone, Copy, ValueEnum)]
-enum OutputFormat {
-    Text,
-    Json,
-}
+use crate::cli::{Args, OutputFormat};
 
 #[derive(Serialize)]
 struct JsonOutput {
@@ -85,7 +51,7 @@ fn main() -> Result<(), anyhow::Error> {
     }
 
     let mut formatting_options = FormattingOptions::default();
-    if cli.tabs {
+    if cli.use_tabs {
         "\t".clone_into(&mut formatting_options.indent_symbol);
     } else if let Some(width) = cli.indent_width {
         formatting_options.indent_symbol = " ".repeat(width);
