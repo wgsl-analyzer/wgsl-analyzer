@@ -331,16 +331,15 @@ impl TypeKind {
         match self {
             Self::Scalar(scalar) => scalar.is_numeric(),
             Self::Vector(vec) => vec.component_type.kind(database).is_numeric_scalar(),
-            Self::Matrix(_) | Self::Atomic(_) => true,
+            // Error types are treated as optimistically compatible to avoid
+            // irrelevant diagnostics (for example, when a struct is not yet defined).
+            Self::Matrix(_) | Self::Atomic(_) | Self::Error => true,
             Self::Array(array) => array.inner.kind(database).is_host_shareable(database),
             Self::Struct(r#struct) => database
                 .field_types(*r#struct)
                 .0
                 .iter()
                 .all(|(_, r#type)| r#type.kind(database).is_host_shareable(database)),
-            // Error types are treated as optimistically compatible to avoid
-            // irrelevant diagnostics (for example, when a struct is not yet defined).
-            Self::Error => true,
             Self::Texture(_)
             | Self::Sampler(_)
             | Self::Reference(_)
