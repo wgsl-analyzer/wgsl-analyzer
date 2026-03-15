@@ -1,5 +1,6 @@
 #![expect(clippy::use_debug, reason = "tests")]
 
+mod builtins;
 mod simple;
 use std::fmt::Write as _;
 

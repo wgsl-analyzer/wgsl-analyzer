@@ -1,8 +1,8 @@
 // logical
-all(vecN<bool>) -> bool 
-all(bool) -> bool 
-any(vecN<bool>) -> bool 
-any(bool) -> bool 
+all(vecN<bool>) -> bool
+all(bool) -> bool
+any(vecN<bool>) -> bool
+any(bool) -> bool
 select(T, T, bool) -> T
 select(vecN<T>, vecN<T>, vecN<bool>) -> vecN<T>
 
@@ -367,6 +367,9 @@ textureSampleBias(texture_3d<f32>, sampler, vec3<f32>, f32, vec3<i32>) -> vec4<f
 textureSampleBias(texture_cube<f32>, sampler, vec3<f32>, f32) -> vec4<f32>
 textureSampleBias(texture_cube_array<f32>, sampler, vec3<f32>, i32, f32) -> vec4<f32>
 textureSampleBias(texture_cube_array<f32>, sampler, vec3<f32>, u32, f32) -> vec4<f32>
+
+textureSampleBaseClampToEdge(texture_2d<f32>, sampler, vec2<f32>) -> vec4<f32>
+textureSampleBaseClampToEdge(texture_external, sampler, vec2<f32>) -> vec4<f32>
 
 textureSampleCompare(texture_depth_2d, sampler_comparison, vec2<f32>, f32) -> f32
 textureSampleCompare(texture_depth_2d, sampler_comparison, vec2<f32>, f32, vec2<i32>) -> f32
