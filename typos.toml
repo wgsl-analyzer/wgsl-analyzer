@@ -18,8 +18,8 @@ locale = "en-us"
 extend-ignore-re = [
 	"(?Rm)^.*(#|//)\\s*spellchecker:disable-line$",
 	"(?Rm)^.*<!--\\s*spellchecker:disable-line\\s*-->$",
-	"(?Rm) .+ ...\"$", # parser snapshot test data
-	"(?Rm)^\\s+\\d+..\\d+ .*$", # hir-ty snapshot test data
+	"(?Rm) .+ ...\"$",  # parser snapshot test data
+	"(?Rm)^\\s+\\d+..\\d+ .*$",  # hir-ty snapshot test data
 ]
 extend-ignore-identifiers-re = []
 
