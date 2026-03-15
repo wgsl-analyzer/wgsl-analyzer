@@ -1,7 +1,7 @@
 use std::{fmt, panic};
 
 use base_db::{EditionedFileId, FileLoader, FileLoaderDelegate, change::Change, input::SourceRoot};
-use hir_def::database::{DefDatabase, ExtensionsConfig};
+use hir_def::database::{DefDatabase as _, ExtensionsConfig};
 use salsa::Durability;
 use syntax::Edition;
 use triomphe::Arc;
@@ -20,7 +20,7 @@ pub(crate) struct TestDatabase {
 impl Default for TestDatabase {
     fn default() -> Self {
         let mut value = Self {
-            storage: Default::default(),
+            storage: salsa::Storage::default(),
         };
         value.set_extensions_with_durability(
             ExtensionsConfig {
