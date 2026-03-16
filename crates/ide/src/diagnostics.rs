@@ -644,6 +644,11 @@ More complex operands must be this with parenthesized `()`"
                         frange.range,
                     )
                 },
+                AnyDiagnostic::InvalidIdentifier { name, range, .. } => Diagnostic::new(
+                    DiagnosticCode("24"),
+                    format!("'{}' is not a valid name for an identifier", name.as_str()),
+                    range,
+                ),
             }
         })
         .collect()
@@ -730,6 +735,31 @@ mod tests {
             expect![[r#"
                 22..25 Error 2: expected u32, found float
             "#]],
+        );
+    }
+
+    #[test]
+    fn reserved_identifier_double_underscore() {
+        // https://github.com/wgsl-analyzer/wgsl-analyzer/issues/681
+        // Identifiers starting with "__" are reserved by the WGSL spec.
+        check_diagnostics(
+            "
+fn __my_func() {}
+",
+            expect![[r#"
+                3..12 Error 24: '__my_func' is not a valid name for an identifier
+            "#]],
+        );
+    }
+
+    #[test]
+    fn non_reserved_identifier_single_underscore() {
+        // A single underscore prefix should NOT trigger the reserved identifier diagnostic.
+        check_diagnostics(
+            "
+fn _my_func() {}
+",
+            expect![""],
         );
     }
 
