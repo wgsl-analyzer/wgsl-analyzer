@@ -31,6 +31,7 @@ mod reporting;
 
 use dprint_core::formatting::PrintOptions;
 use parser::{Edition, SyntaxNode};
+use rowan::{NodeOrToken, TextRange};
 use syntax::{AstNode as _, ast};
 
 use crate::{
@@ -38,9 +39,37 @@ use crate::{
     format::{
         gen_node::{gen_node, gen_node_no_newlines},
         print_item_buffer::PrintItemBuffer,
-        reporting::FormatDocumentResult,
+        reporting::{FormatDocumentError, FormatDocumentResult},
     },
 };
+
+#[derive(Clone, Debug)]
+pub struct FormattedRange {
+    /// The actual range that the formatted text should replace.
+    pub range: TextRange,
+
+    /// The formatted text.
+    pub formatted: String,
+}
+
+pub fn format_range(
+    file: &SyntaxNode,
+    range: Option<TextRange>,
+    config: &FormattingOptions,
+) -> FormatDocumentResult<FormattedRange> {
+    let node = match range {
+        None => file.syntax().clone(),
+        Some(range) => match file.syntax().covering_element(range) {
+            NodeOrToken::Node(node) => node,
+            NodeOrToken::Token(token) => token.parent().ok_or(FormatDocumentError::MissingNode)?,
+        },
+    };
+
+    format_node(&node, config).map(|formatted| FormattedRange {
+        range: node.text_range(),
+        formatted,
+    })
+}
 
 pub fn format_file(
     input: &str,

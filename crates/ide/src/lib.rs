@@ -297,7 +297,7 @@ impl Analysis {
         config: &FormattingOptions,
         file_id: FileId,
         range: Option<TextRange>,
-    ) -> Cancellable<Option<formatting::FormattedRange>> {
+    ) -> Cancellable<Option<wgsl_formatter::FormattedRange>> {
         self.with_db(|database| formatting::format(database, config, file_id, range))
     }
 

@@ -1,18 +1,18 @@
 use std::collections::BTreeSet;
 
-use parser::SyntaxNode;
+use parser::{SyntaxKind, SyntaxNode};
 use rowan::NodeOrToken;
 use syntax::{
     AstNode as _,
     ast::{
         Arguments, AssertStatement, AssignmentStatement, Attribute, CompoundAssignmentStatement,
-        CompoundStatement, ConstantDeclaration, Expression, FieldExpression, FunctionCall,
-        FunctionDeclaration, FunctionParameters, IdentExpression, IfStatement, ImportStatement,
-        IndexExpression, InfixExpression, LetDeclaration, Literal, OverrideDeclaration, Parameter,
-        ParenthesisExpression, Path, PhonyAssignmentStatement, PrefixExpression, ReturnType,
-        SourceFile, Statement, StructDeclaration, SwitchBody, SwitchBodyCase, SwitchCaseSelector,
-        SwitchCaseSelectors, SwitchDefaultSelector, SwitchStatement, TemplateList,
-        TypeAliasDeclaration, TypeSpecifier, VariableDeclaration,
+        CompoundStatement, ConstantDeclaration, Expression, FieldExpression, ForStatement,
+        FunctionCall, FunctionDeclaration, FunctionParameters, IdentExpression, IfStatement,
+        ImportStatement, IndexExpression, InfixExpression, LetDeclaration, Literal,
+        OverrideDeclaration, Parameter, ParenthesisExpression, Path, PhonyAssignmentStatement,
+        PrefixExpression, ReturnType, SourceFile, Statement, StructDeclaration, SwitchBody,
+        SwitchBodyCase, SwitchCaseSelector, SwitchCaseSelectors, SwitchDefaultSelector,
+        SwitchStatement, TemplateList, TypeAliasDeclaration, TypeSpecifier, VariableDeclaration,
     },
 };
 
@@ -33,7 +33,7 @@ use crate::format::{
     gen_if_statement::gen_if_statement,
     gen_path::gen_path,
     gen_source_file::gen_source_file,
-    gen_statement::{gen_const_assert_statement, gen_statement_maybe_semicolon},
+    gen_statement::{gen_const_assert_statement, gen_for_statement, gen_statement_maybe_semicolon},
     gen_statement_compound::gen_compound_statement,
     gen_statement_import::gen_import_statement,
     gen_struct::gen_struct_declaration,
@@ -82,9 +82,12 @@ pub fn gen_node(node: &SyntaxNode) -> FormatDocumentResult<PrintItemBuffer> {
     // `context` and then invoke needs_semicolon(context);
     fn needs_semicolon(parent_node: Option<SyntaxNode>) -> bool {
         match parent_node {
-            Some(parent_node) => match parent_node.kind() {
-                _ => true,
-            },
+            Some(parent_node) => !matches!(
+                parent_node.kind(),
+                SyntaxKind::ForInitializer
+                    | SyntaxKind::ForCondition
+                    | SyntaxKind::ForContinuingPart
+            ),
             None => false,
         }
     }
@@ -123,6 +126,8 @@ pub fn gen_node(node: &SyntaxNode) -> FormatDocumentResult<PrintItemBuffer> {
         gen_ident_expression(&node)
     } else if let Some(node) = IfStatement::cast(node.clone()) {
         gen_if_statement(&node)
+    } else if let Some(node) = ForStatement::cast(node.clone()) {
+        gen_for_statement(&node)
     } else if let Some(node) = IndexExpression::cast(node.clone()) {
         gen_index_expression(&node)
     } else if let Some(node) = InfixExpression::cast(node.clone()) {
