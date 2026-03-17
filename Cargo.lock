@@ -706,6 +706,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "indoc"
+version = "2.0.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "79cf5c93f93228cf8efb3ba362535fb11199ac548a09ce117c9b1adc3030d706"
+dependencies = [
+ "rustversion",
+]
+
+[[package]]
 name = "intrusive-collections"
 version = "0.10.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1892,6 +1901,7 @@ dependencies = [
  "dprint-core 0.67.4",
  "dprint-core-macros",
  "expect-test",
+ "indoc",
  "itertools 0.14.0",
  "pretty",
  "rowan",

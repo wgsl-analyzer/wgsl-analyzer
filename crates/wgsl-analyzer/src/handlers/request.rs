@@ -222,7 +222,6 @@ pub(crate) fn handle_range_formatting(
     else {
         return Ok(None);
     };
-    let line_index = snap.file_line_index(file_id)?;
 
     let before = snap.analysis.file_text(file_id)?;
 
@@ -234,6 +233,7 @@ pub(crate) fn handle_range_formatting(
     );
 
     let diff = diff::diff(&before, &after);
+    let line_index = snap.file_line_index(file_id)?;
     let edits = to_proto::text_edit_vec(&line_index, diff);
     Ok(Some(edits))
 }

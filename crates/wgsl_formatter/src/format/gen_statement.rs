@@ -223,7 +223,7 @@ fn gen_function_call_statement(
     Ok(formatted)
 }
 
-fn gen_for_statement(statement: &ast::ForStatement) -> FormatDocumentResult<PrintItemBuffer> {
+pub fn gen_for_statement(statement: &ast::ForStatement) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = put_back(statement.syntax().children_with_tokens());
     let item_attributes = parse_many_attributes(&mut syntax)?;

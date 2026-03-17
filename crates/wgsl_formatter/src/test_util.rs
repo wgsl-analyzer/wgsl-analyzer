@@ -7,11 +7,13 @@
 use std::{borrow::ToOwned, ffi::OsString, fmt::Debug, panic, path::Path};
 
 use itertools::Itertools as _;
-use parser::Edition;
+use parser::{Edition, ParseEntryPoint};
+use rowan::{TextLen as _, TextRange};
 
 use crate::{
     FormattingOptions,
     format::{self, format_tree},
+    format_range,
 };
 
 pub trait ExpectAssertEq: Debug {
@@ -282,4 +284,52 @@ pub fn check_comments<E: ExpectAssertEq>(
             }
         }
     }
+}
+
+/// Simulates wgsl-analyzer range formatting.
+///
+/// The source string should contain exactly two #|# markers, that represent the start and end of the selected
+/// range to format. They will be removed from the string, and then that range will be formatted.
+///
+/// Note that the range formatting works on the level of syntax nodes, so the node that will be formatted might
+/// be larger than the range specified by the markers.
+#[expect(clippy::needless_pass_by_value, reason = "intentional API")]
+pub fn check_range<E: ExpectAssertEq>(
+    source: &str,
+    expected: E,
+) {
+    let (raw_text, range_to_format) = {
+        let mut parts = source.split("#|#");
+        let pre = parts
+            .next()
+            .expect("Source must contain exactly two #|# markers");
+        let to_format = parts
+            .next()
+            .expect("Source must contain exactly two #|# markers");
+        let post = parts
+            .next()
+            .expect("Source must contain exactly two #|# markers");
+        assert!(
+            parts.next().is_none(),
+            "Source must contain exactly two #|# markers"
+        );
+        let raw_text = format!("{pre}{to_format}{post}");
+        let range_to_format = TextRange::at(pre.text_len(), to_format.text_len());
+        (raw_text, range_to_format)
+    };
+
+    let parse = parser::parse_entrypoint(&raw_text, ParseEntryPoint::File, Edition::LATEST);
+    assert!(parse.errors().is_empty());
+
+    let formatted = format_range(
+        &parse.syntax(),
+        Some(range_to_format),
+        &FormattingOptions::default(),
+    )
+    .unwrap();
+    let pre_formatted = &raw_text[TextRange::up_to(formatted.range.start())];
+    let post_formatted = &raw_text[TextRange::new(formatted.range.end(), raw_text.text_len())];
+    let formatted_text = format!("{pre_formatted}{}{post_formatted}", formatted.formatted);
+
+    expected.assert_eq(&formatted_text);
 }
