@@ -2,7 +2,7 @@ use expect_test::expect;
 
 use crate::test_util::check;
 
-/// Various tests that all make sure that there is no space before semicolons
+/// Various tests that all make sure that there is no space before semicolons.
 #[test]
 pub fn format_override_declaration_without_assignment_removes_space_before_semicolon() {
     check(
