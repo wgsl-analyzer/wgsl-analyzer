@@ -21,7 +21,6 @@ thiserror = {version = "2.0.17"}
 dissimilar = "1.0.11"
 # anyhow = "1.0.99"
 expect-test = "1.5.1"
-indoc = "2.0.7"
 
 [features]
 # Prefer to crash at strategic places instead of returning errors.

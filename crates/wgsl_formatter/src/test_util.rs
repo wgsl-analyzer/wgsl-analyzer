@@ -333,3 +333,19 @@ pub fn check_range<E: ExpectAssertEq>(
 
     expected.assert_eq(&formatted_text);
 }
+
+#[must_use]
+pub fn strip_leading_indentation(text: &str) -> String {
+    let Some(first_line) = text.lines().find(|line| !line.is_empty()) else {
+        return text.to_owned();
+    };
+    let indentation: String = first_line
+        .chars()
+        .take_while(|character| character.is_whitespace())
+        .join("");
+
+    text.lines()
+        .skip_while(|line| line.is_empty())
+        .map(|line| line.strip_prefix(&indentation).unwrap_or(line))
+        .join("\n")
+}
