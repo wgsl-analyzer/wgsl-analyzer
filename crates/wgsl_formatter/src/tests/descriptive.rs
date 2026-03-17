@@ -53,12 +53,12 @@ fn snapshots() {
             let result = std::panic::catch_unwind(|| {
                 check(&source, expect_file![smoke_test_output_path]);
             });
-            match result {
-                Ok(()) => {},
-                Err(_) => {
-                    panic!("Smoke test failed: {}", smoke_test_source_path.display());
-                },
-            }
+            result.unwrap_or_else(|err| {
+                panic!(
+                    "Smoke test failed: {}\n{err:?}",
+                    smoke_test_source_path.display(),
+                )
+            });
         } else {
             panic!("Expected smoke_test directory to not have subdirectories.")
         }
