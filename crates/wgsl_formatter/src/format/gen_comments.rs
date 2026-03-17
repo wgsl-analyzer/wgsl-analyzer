@@ -1,4 +1,3 @@
-use dprint_core::formatting::Signal;
 use itertools::{Itertools as _, Position};
 use parser::SyntaxKind;
 use rowan::NodeOrToken;
@@ -86,7 +85,7 @@ pub fn gen_comment(item: &Comment) -> PrintItemBuffer {
                 }
             }
 
-            formatted.push_signal(Signal::StartIgnoringIndent);
+            formatted.start_ignoring_indent();
             for (pos, line) in lines {
                 formatted.push_string(line.to_owned());
                 if pos != Position::Only && pos != Position::Last {
@@ -94,7 +93,7 @@ pub fn gen_comment(item: &Comment) -> PrintItemBuffer {
                 }
             }
             formatted.discourage(RequestItem::LineBreak);
-            formatted.push_signal(Signal::FinishIgnoringIndent);
+            formatted.finish_ignoring_indent();
             formatted.expect(RequestItem::Space);
         },
         Comment::LineEnding(content) => {

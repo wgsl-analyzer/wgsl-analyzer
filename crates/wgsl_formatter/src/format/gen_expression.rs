@@ -1,4 +1,3 @@
-use dprint_core::formatting::Signal;
 use dprint_core_macros::sc;
 use itertools::put_back;
 use syntax::{
@@ -102,7 +101,7 @@ pub fn gen_parenthesis_expression(
         formatted.expect(RequestItem::Space);
     } else {
         formatted.push_sc(sc!("("));
-        formatted.push_signal(Signal::StartNewLineGroup);
+        formatted.start_new_line_group();
         formatted.start_indent();
 
         formatted.discourage(RequestItem::Space);
@@ -116,7 +115,7 @@ pub fn gen_parenthesis_expression(
     } else {
         formatted.discourage(RequestItem::Space);
         formatted.finish_indent();
-        formatted.push_signal(Signal::FinishNewLineGroup);
+        formatted.finish_new_line_group();
         formatted.push_sc(sc!(")"));
     }
     Ok(formatted)
