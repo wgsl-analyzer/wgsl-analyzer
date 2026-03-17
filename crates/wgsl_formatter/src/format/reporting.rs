@@ -1,5 +1,3 @@
-use std::fmt::Display;
-
 use parser::{SyntaxKind, SyntaxNode, SyntaxToken};
 use rowan::NodeOrToken;
 

@@ -144,15 +144,6 @@ impl PrintItemBuffer {
         self.items.push_string(string);
     }
 
-    #[deprecated = "Most signals would interact with requests. Use requests instead"]
-    pub fn push_signal(
-        &mut self,
-        signal: Signal,
-    ) {
-        self.apply_end_request();
-        self.items.push_signal(signal);
-    }
-
     pub fn push_sc(
         &mut self,
         sc: &'static dprint_core::formatting::StringContainer,
@@ -201,5 +192,25 @@ impl PrintItemBuffer {
     pub fn finish_indent(&mut self) {
         // We do not apply_end_request, because the indentation can without problem "move" to before the spacing request
         self.items.push_signal(Signal::FinishIndent);
+    }
+
+    pub(crate) fn start_ignoring_indent(&mut self) {
+        self.apply_end_request();
+        self.items.push_signal(Signal::StartIgnoringIndent);
+    }
+
+    pub(crate) fn finish_ignoring_indent(&mut self) {
+        self.apply_end_request();
+        self.items.push_signal(Signal::FinishIgnoringIndent);
+    }
+
+    pub(crate) fn start_new_line_group(&mut self) {
+        self.apply_end_request();
+        self.items.push_signal(Signal::StartNewLineGroup);
+    }
+
+    pub(crate) fn finish_new_line_group(&mut self) {
+        self.apply_end_request();
+        self.items.push_signal(Signal::FinishNewLineGroup);
     }
 }
