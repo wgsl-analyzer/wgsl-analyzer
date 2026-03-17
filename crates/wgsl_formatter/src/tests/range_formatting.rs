@@ -2,18 +2,22 @@ use expect_test::expect;
 use parser::{Edition, ParseEntryPoint};
 use rowan::{TextLen as _, TextRange, TextSize};
 
-use crate::{FormattingOptions, test_util::check_range};
-use indoc::indoc;
+use crate::{
+    FormattingOptions,
+    test_util::{check_range, strip_leading_indentation},
+};
 
 #[test]
 fn format_range_in_for_initializer() {
     check_range(
-        indoc! {"
+        &strip_leading_indentation(
+            "
             fn    main()
             {
                 for(var #|# i      =  #|# 0; i         < 7;  i+=                  1) {}
             }
-        "},
+            ",
+        ),
         expect![[r#"
             fn    main()
             {
@@ -26,12 +30,14 @@ fn format_range_in_for_initializer() {
 #[test]
 fn format_range_in_for_condition() {
     check_range(
-        indoc! {"
+        &strip_leading_indentation(
+            "
             fn    main()
             {
                 for(var i      =  0; i #|#         < #|#7;  i+=                  1) {}
             }
-        "},
+            ",
+        ),
         expect![[r#"
             fn    main()
             {
@@ -42,14 +48,16 @@ fn format_range_in_for_condition() {
 }
 
 #[test]
-fn format_range_in_for_contiuing() {
+fn format_range_in_for_continuing() {
     check_range(
-        indoc! {"
+        &strip_leading_indentation(
+            "
             fn    main()
             {
                 for(var i      =  0; i   < 7;  i+=  #|#      #|#           1) {}
             }
-        "},
+            ",
+        ),
         expect![[r#"
             fn    main()
             {
@@ -62,13 +70,15 @@ fn format_range_in_for_contiuing() {
 #[test]
 fn format_range_in_for_statement() {
     check_range(
-        indoc! {"
+        &strip_leading_indentation(
+            "
             fn          main()
 
             {
                 for(var #|# i      =  0; i < 7;  i #|# +=                  1) {}
             }
-        "},
+            ",
+        ),
         expect![[r#"
             fn          main()
 
