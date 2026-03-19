@@ -734,6 +734,22 @@ mod tests {
     }
 
     #[test]
+    fn no_host_shareable_error_for_undefined_struct() {
+        // https://github.com/wgsl-analyzer/wgsl-analyzer/issues/722
+        // When referencing an undefined struct, we should NOT get a spurious
+        // "not host-shareable" diagnostic — only the "unresolved" error.
+        check_diagnostics(
+            "
+@group(0) @binding(0)
+var<storage> lines: array<LineSegment>;
+",
+            expect![[r#"
+                48..59 Error 14: `LineSegment` not found in scope
+            "#]],
+        );
+    }
+
+    #[test]
     fn incomplete_variable_error() {
         // https://github.com/wgsl-analyzer/wgsl-analyzer/issues/825
         check_diagnostics(
