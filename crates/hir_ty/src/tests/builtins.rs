@@ -1,12 +1,14 @@
 #![expect(non_snake_case, reason = "name based on WGSL builtins")]
 
 use expect_test::expect;
+use hir_def::database::ExtensionsConfig;
 
 use crate::tests::check_infer;
 
 #[test]
 fn textureSampleBaseClampToEdge() {
     check_infer(
+        ExtensionsConfig::default(),
         "
 var x: texture_2d<f32>;
 var y: texture_external;

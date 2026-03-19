@@ -1,7 +1,10 @@
 use std::{fmt, sync::OnceLock};
 
 use base_db::input::SourceRootId;
-use hir::diagnostics::{DiagnosticsConfig, NagaVersion};
+use hir::{
+    ExtensionsConfig,
+    diagnostics::{DiagnosticsConfig, NagaVersion},
+};
 use hir_ty::ty::pretty::TypeVerbosity;
 use ide::{
     HoverConfig, HoverDocFormat, MemoryLayoutHoverRenderKind,
@@ -72,6 +75,9 @@ config_data! {
         diagnostics_nagaVersion: NagaVersionConfig = NagaVersionConfig::default(),
         /// Controls whether to show type errors.
         diagnostics_typeErrors: bool = true,
+
+        /// Whether to enable u64 and i64 scalar types.
+        extensions_shaderInt64: bool = true,
 
         /// Whether to show inlay hints.
         inlayHints_enabled: bool = true,
@@ -527,6 +533,13 @@ impl Config {
             fields_to_resolve: ide::inlay_hints::InlayFieldsToResolve::from_client_capabilities(
                 &client_capability_fields,
             ),
+        }
+    }
+
+    #[must_use]
+    pub fn extensions(&self) -> ExtensionsConfig {
+        ExtensionsConfig {
+            shader_int64: *self.extensions_shaderInt64(),
         }
     }
 

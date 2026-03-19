@@ -1,10 +1,12 @@
 use expect_test::expect;
+use hir_def::database::ExtensionsConfig;
 
 use crate::tests::check_infer;
 
 #[test]
 fn type_alias_in_struct() {
     check_infer(
+        ExtensionsConfig::default(),
         "
         alias Foo = u32;
         struct S { x: Foo }
@@ -30,6 +32,7 @@ fn type_alias_in_struct() {
 #[test]
 fn const_array() {
     check_infer(
+        ExtensionsConfig::default(),
         "
         const a: array<f32, 1> = array(1);
         const b = array(1,2,3);
@@ -50,6 +53,7 @@ fn const_array() {
 #[test]
 fn const_vec() {
     check_infer(
+        ExtensionsConfig::default(),
         "
         const a: vec3<u32> = vec3(1);
         const b = vec2f();
@@ -70,6 +74,7 @@ fn const_vec() {
 #[test]
 fn const_array_of_vec() {
     check_infer(
+        ExtensionsConfig::default(),
         "
         const pos = array(vec2(1.0,  1.0), vec2(1.0, -1.0));
         const pos_explicit = array<vec2f, 1>(vec2(-1.0, -1.0));
@@ -98,6 +103,7 @@ fn const_array_of_vec() {
 #[test]
 fn const_u32_as_array_size() {
     check_infer(
+        ExtensionsConfig::default(),
         "
         const maxLayers = 12u;
         var layers: array<f32, maxLayers>;
@@ -115,6 +121,7 @@ fn const_u32_as_array_size() {
 #[test]
 fn multiply_with_minus_one() {
     check_infer(
+        ExtensionsConfig::default(),
         r#"
     const x: i32 = 1;
     const y = x * -1;
@@ -134,6 +141,7 @@ fn multiply_with_minus_one() {
 #[test]
 fn var_array() {
     check_infer(
+        ExtensionsConfig::default(),
         "
         @group(0) @binding(0) var<storage, read_write> data: array<f32>;
         ",
@@ -146,6 +154,7 @@ fn var_array() {
 #[test]
 fn break_if_bool() {
     check_infer(
+        ExtensionsConfig::default(),
         "
         fn foo() {
             let a = 3;
@@ -165,6 +174,7 @@ fn break_if_bool() {
 #[test]
 fn abstract_number_for_const() {
     check_infer(
+        ExtensionsConfig::default(),
         "
 const some_integer = 1;
 const some_i32: i32 = 1;
@@ -181,6 +191,7 @@ const some_i32: i32 = 1;
 #[test]
 fn assign_abstract_number() {
     check_infer(
+        ExtensionsConfig::default(),
         "
 var i32_from_type : i32 = 3;
 
@@ -209,6 +220,7 @@ var f32_promotion : f32 = 5;
 #[test]
 fn negate_abstract_number() {
     check_infer(
+        ExtensionsConfig::default(),
         "
 const a = -4;
 const b: f32 = -3.5;
@@ -227,6 +239,7 @@ const b: f32 = -3.5;
 #[test]
 fn add_abstract_integers() {
     check_infer(
+        ExtensionsConfig::default(),
         "
 fn main() {
 var u32_expr1 = 6 + 1u;
@@ -251,6 +264,7 @@ var u32_expr2 = 1u + (1 + 2);
 #[test]
 fn add_abstract_floats() {
     check_infer(
+        ExtensionsConfig::default(),
         "
 fn main() {
 let f32_promotion1 = 1.0 + 2 + 3;
@@ -295,6 +309,7 @@ let f32_promotion4 = ((2 + (3 + 1f)) + 4);
 #[test]
 fn call_with_abstract_numbers() {
     check_infer(
+        ExtensionsConfig::default(),
         "
 fn main() {
 let i32_clamp = clamp(1, -5, 5);
@@ -326,6 +341,7 @@ let f32_clamp = clamp(0, 1f, 1);
 #[test]
 fn call_user_defined_with_abstract_numbers() {
     check_infer(
+        ExtensionsConfig::default(),
         "
 fn make_one(x: f32) -> u32 {
   return 1u;
@@ -349,8 +365,8 @@ fn main() {
 
 #[test]
 fn vec_constructors() {
-    //
     check_infer(
+        ExtensionsConfig::default(),
         "
 const a = vec3(1f, 2f, 3f);
 fn main() {
@@ -375,6 +391,7 @@ let b = vec4(vec3f(1f), 1f);
 #[test]
 fn texture_storage_2d_template() {
     check_infer(
+        ExtensionsConfig::default(),
         "
 var framebuffer : texture_storage_2d<rgba16float, write>;
     ",
@@ -387,6 +404,7 @@ var framebuffer : texture_storage_2d<rgba16float, write>;
 #[test]
 fn global_assert_statement_correct() {
     check_infer(
+        ExtensionsConfig::default(),
         "
         const a = 29;
         const_assert 27 < a;
@@ -404,6 +422,7 @@ fn global_assert_statement_correct() {
 #[test]
 fn global_assert_statement_wrong() {
     check_infer(
+        ExtensionsConfig::default(),
         "
         const a = 29;
         const_assert 27 + a;
@@ -422,6 +441,7 @@ fn global_assert_statement_wrong() {
 #[test]
 fn global_var_function_address_space_error() {
     check_infer(
+        ExtensionsConfig::default(),
         "var<function> not_allowed_at_module_level: u32;",
         expect![[r#"
             14..41 'not_al..._level': ref<u32>
@@ -434,6 +454,7 @@ fn global_var_function_address_space_error() {
 fn no_crash_on_hex_int() {
     // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/826
     check_infer(
+        ExtensionsConfig::default(),
         "
 fn f() {
     let i2 = 0u;
@@ -456,6 +477,7 @@ fn f() {
 #[test]
 fn bitcast_builtin() {
     check_infer(
+        ExtensionsConfig::default(),
         "
 fn main() {
     let a = bitcast<f32>(1u);
@@ -498,6 +520,20 @@ fn main() {
             271..302 'bitcas...(42u))': u32
             284..301 'bitcas...>(42u)': f32
             297..300 '42u': u32
+        "#]],
+    );
+}
+
+#[test]
+fn naga_shader_int64() {
+    check_infer(
+        ExtensionsConfig { shader_int64: true },
+        "
+fn foo(bar: i64, baz: u64) {}
+",
+        expect![[r#"
+            7..10 'bar': i64
+            17..20 'baz': u64
         "#]],
     );
 }
