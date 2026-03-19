@@ -853,6 +853,8 @@ impl Module {
         config: &DiagnosticsConfig,
         accumulator: &mut Vec<AnyDiagnostic>,
     ) {
+        validate_identifiers(self.file_id, database, accumulator);
+
         for item in self.items(database) {
             match item {
                 ModuleDef::Function(_function) => {},
@@ -867,10 +869,10 @@ impl Module {
                 ModuleDef::GlobalConstant(_constant) => {},
                 ModuleDef::Override(_constant) => {},
                 ModuleDef::GlobalAssertStatement(_global_assert_statement) => {},
-                ModuleDef::Struct(strukt) => {
-                    let file = strukt.id.lookup(database).file_id;
-                    let (_, signature_map) = database.struct_data(strukt.id);
-                    let diagnostics = &database.field_types(strukt.id).1;
+                ModuleDef::Struct(r#struct) => {
+                    let file = r#struct.id.lookup(database).file_id;
+                    let (_, signature_map) = database.struct_data(r#struct.id);
+                    let diagnostics = &database.field_types(r#struct.id).1;
                     for diagnostic in diagnostics {
                         if diagnostic.source != ExpressionStoreSource::Signature {
                             tracing::warn!(
@@ -916,42 +918,105 @@ impl Module {
                     }
                 },
             }
-            if let Some(definition) = item.as_def_with_body_id() {
-                let file = definition.file_id(database);
-                let (_, signature_map) = database.signature_with_source_map(definition);
-                let (_, source_map) = database.body_with_source_map(definition);
-                if config.type_errors {
-                    let infer = database.infer(definition);
-                    for diagnostic in infer.diagnostics() {
-                        match diagnostics::any_diag_from_infer_diagnostic(
-                            &diagnostic.kind,
-                            match diagnostic.source {
-                                ExpressionStoreSource::Body => source_map.expression_source_map(),
-                                ExpressionStoreSource::Signature => &signature_map,
-                            },
-                            file,
-                        ) {
-                            Some(diagnostic) => accumulator.push(diagnostic),
-                            None => {
-                                tracing::warn!("could not create diagnostic from {:?}", diagnostic);
-                            },
-                        }
-                    }
-                }
-
-                diagnostics::precedence::collect(database, definition, |diagnostic| {
-                    match diagnostics::any_diag_from_shift(
-                        &diagnostic,
-                        source_map.expression_source_map(),
-                        file,
-                    ) {
-                        Some(diagnostic) => accumulator.push(diagnostic),
-                        None => {
-                            tracing::warn!("could not create diagnostic from {:?}", diagnostic);
-                        },
-                    }
-                });
+            if config.type_errors {
+                check_type_errors(database, accumulator, &item);
             }
         }
+    }
+}
+
+#[expect(clippy::doc_paragraphs_missing_punctuation, reason = "clippy bug")]
+/// Check for identifiers starting with "__". These are invalid according the WGSL specification.
+///
+/// See: <https://www.w3.org/TR/WGSL/#identifiers>
+fn validate_identifiers(
+    file_id: HirFileId,
+    database: &dyn HirDatabase,
+    accumulator: &mut Vec<AnyDiagnostic>,
+) {
+    let item_tree = database.item_tree(file_id);
+    let ast_id_map = database.ast_id_map(file_id);
+    let root = database.parse_or_resolve(file_id).syntax();
+
+    macro_rules! validate {
+        ($id:expr, $item_tree:expr, $ast_id_map:expr, $root:expr, $accumulator:expr, $file_id:expr) => {{
+            let data = $item_tree.get(*$id);
+            if data.name.as_str().starts_with("__") {
+                let ast_ptr = $ast_id_map.get(data.ast_id);
+                let node = ast_ptr.to_node(&$root);
+                if let Some(name_node) = node.name() {
+                    $accumulator.push(AnyDiagnostic::InvalidIdentifier {
+                        file_id: $file_id,
+                        name: data.name.clone(),
+                        range: name_node.syntax().text_range(),
+                    });
+                }
+            }
+        }};
+    }
+
+    for item in item_tree.items() {
+        match item {
+            ModuleItem::Function(id) => {
+                validate!(id, item_tree, ast_id_map, root, accumulator, file_id);
+            },
+            ModuleItem::GlobalVariable(id) => {
+                validate!(id, item_tree, ast_id_map, root, accumulator, file_id);
+            },
+            ModuleItem::GlobalConstant(id) => {
+                validate!(id, item_tree, ast_id_map, root, accumulator, file_id);
+            },
+            ModuleItem::Override(id) => {
+                validate!(id, item_tree, ast_id_map, root, accumulator, file_id);
+            },
+            ModuleItem::Struct(id) => {
+                validate!(id, item_tree, ast_id_map, root, accumulator, file_id);
+            },
+            ModuleItem::TypeAlias(id) => {
+                validate!(id, item_tree, ast_id_map, root, accumulator, file_id);
+            },
+            ModuleItem::ImportStatement(_) | ModuleItem::GlobalAssertStatement(_) => {},
+        }
+    }
+}
+
+fn check_type_errors(
+    database: &dyn HirDatabase,
+    accumulator: &mut Vec<AnyDiagnostic>,
+    item: &ModuleDef,
+) {
+    if let Some(definition) = item.as_def_with_body_id() {
+        let file = definition.file_id(database);
+        let (_, signature_map) = database.signature_with_source_map(definition);
+        let (_, source_map) = database.body_with_source_map(definition);
+        let infer = database.infer(definition);
+        for diagnostic in infer.diagnostics() {
+            match diagnostics::any_diag_from_infer_diagnostic(
+                &diagnostic.kind,
+                match diagnostic.source {
+                    ExpressionStoreSource::Body => source_map.expression_source_map(),
+                    ExpressionStoreSource::Signature => &signature_map,
+                },
+                file,
+            ) {
+                Some(diagnostic) => accumulator.push(diagnostic),
+                None => {
+                    tracing::warn!("could not create diagnostic from {:?}", diagnostic);
+                },
+            }
+        }
+
+        diagnostics::precedence::collect(database, definition, |diagnostic| {
+            match diagnostics::any_diag_from_shift(
+                &diagnostic,
+                source_map.expression_source_map(),
+                file,
+            ) {
+                Some(diagnostic) => accumulator.push(diagnostic),
+                None => {
+                    tracing::warn!("could not create diagnostic from {:?}", diagnostic);
+                },
+            }
+        });
     }
 }
