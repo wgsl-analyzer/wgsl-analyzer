@@ -70,7 +70,7 @@ smallvec = { version = "1.15.1", features = [
 smol_str = "0.3.5"
 text-size = "1.1.1"
 tracing = { version = "0.1.44", default-features = false, features = ["std"] }
-tracing-subscriber = { version = "0.3.22", default-features = false, features = [
+tracing-subscriber = { version = "0.3.23", default-features = false, features = [
 	"fmt",
 	"local-time",
 	"registry",
