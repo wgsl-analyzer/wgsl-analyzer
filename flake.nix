@@ -17,7 +17,7 @@
         pkgs = nixpkgs.legacyPackages.${system};
         inherit (pkgs) lib stdenv;
         craneLib = crane.mkLib pkgs;
-        weslFilter = path: _type: builtins.match ".*\.(wgsl|wesl|llw)$" path != null;
+        weslFilter = path: _type: builtins.match ".*\.(wgsl|wesl|llw|wgsl.txt)$" path != null;
         weslOrCargo = path: type:
         (weslFilter path type) || (craneLib.filterCargoSources path type);
 
