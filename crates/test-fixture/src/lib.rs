@@ -6,7 +6,8 @@ use std::{any::TypeId, mem, str::FromStr as _, sync};
 pub use crate::fixture::{Fixture, FixtureWithProjectMeta};
 use base_db::change::Change;
 use base_db::{
-    EditionedFileId, FileId, FilePosition, FileRange, FileSet, SourceDatabase, SourceRoot, VfsPath,
+    FileId, FilePosition, FileRange, FileSet, RawEditionedFileId, SourceDatabase, SourceRoot,
+    VfsPath,
 };
 use edition::Edition;
 use test_utils::{CURSOR_MARKER, ESCAPED_CURSOR_MARKER, RangeOrOffset, extract_range_or_offset};
@@ -19,7 +20,7 @@ pub const WORKSPACE: base_db::SourceRootId = base_db::SourceRootId(0);
 pub trait WithFixture: Default + SourceDatabase + 'static {
     #[must_use]
     #[track_caller]
-    fn with_single_file(wa_fixture: &str) -> (Self, EditionedFileId) {
+    fn with_single_file(wa_fixture: &str) -> (Self, RawEditionedFileId) {
         let mut database = Self::default();
         let fixture = ChangeFixture::parse(wa_fixture);
         fixture.change.apply(&mut database);
@@ -33,7 +34,7 @@ pub trait WithFixture: Default + SourceDatabase + 'static {
 
     #[must_use]
     #[track_caller]
-    fn with_many_files(wa_fixture: &str) -> (Self, Vec<EditionedFileId>) {
+    fn with_many_files(wa_fixture: &str) -> (Self, Vec<RawEditionedFileId>) {
         let mut database = Self::default();
         let fixture = ChangeFixture::parse(wa_fixture);
         fixture.change.apply(&mut database);
@@ -94,7 +95,7 @@ impl<Database: SourceDatabase + Default + 'static> WithFixture for Database {}
 pub struct ChangeFixture {
     pub file_position: Option<(FileId, RangeOrOffset)>,
     pub file_lines: Vec<usize>,
-    pub files: Vec<EditionedFileId>,
+    pub files: Vec<RawEditionedFileId>,
     pub change: Change,
 }
 
@@ -190,10 +191,10 @@ impl ChangeFixture {
             //     default_edition = meta.edition;
             // }
 
-            source_change.change_file(file_id, Some(text.into()));
+            source_change.change_file(file_id, Some(text));
             let path = VfsPath::new_virtual_path(meta.path);
             file_set.insert(file_id, path);
-            files.push(EditionedFileId {
+            files.push(RawEditionedFileId {
                 file_id,
                 edition: meta.edition,
             });

@@ -1,3 +1,4 @@
+use base_db::EditionedFileId;
 use syntax::{
     HasName as _,
     ast::{Directive, Item, SourceFile},
@@ -6,7 +7,6 @@ use triomphe::Arc;
 
 use super::{GlobalConstant, GlobalVariable, Override, Struct, TypeAlias};
 use crate::{
-    HirFileId,
     ast_id::AstIdMap,
     database::DefDatabase,
     item_tree::{
@@ -18,7 +18,7 @@ use crate::{
 
 pub(crate) struct Ctx<'database> {
     database: &'database dyn DefDatabase,
-    file_id: HirFileId,
+    file_id: EditionedFileId,
     source_ast_id_map: Arc<AstIdMap>,
     pub(crate) tree: ItemTree,
     pub(crate) items: Vec<ModuleItem>,
@@ -27,7 +27,7 @@ pub(crate) struct Ctx<'database> {
 impl<'database> Ctx<'database> {
     pub(crate) fn new(
         database: &'database dyn DefDatabase,
-        file_id: HirFileId,
+        file_id: EditionedFileId,
     ) -> Self {
         Self {
             database,

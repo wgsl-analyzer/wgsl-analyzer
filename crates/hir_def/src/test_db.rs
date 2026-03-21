@@ -1,19 +1,20 @@
 use std::{fmt, panic};
 
-use base_db::{EditionedFileId, FileLoader, FileLoaderDelegate, change::Change, input::SourceRoot};
+use base_db::{
+    EditionedFileId, FileSourceRootInput, FileText, SourceDatabase, SourceRootId, SourceRootInput,
+    change::Change, input::SourceRoot,
+};
+use salsa::Durability;
 use syntax::Edition;
 use test_fixture::WithFixture;
 use triomphe::Arc;
 use vfs::{AnchoredPath, FileId, VfsPath, file_set::FileSet};
 
-#[salsa::database(
-    base_db::SourceDatabaseStorage,
-    crate::database::DefDatabaseStorage,
-    crate::database::InternDatabaseStorage
-)]
-#[derive(Default)]
+#[salsa::db]
+#[derive(Clone, Default)]
 pub(crate) struct TestDatabase {
     storage: salsa::Storage<Self>,
+    files: Arc<base_db::Files>,
 }
 
 impl fmt::Debug for TestDatabase {
@@ -27,21 +28,68 @@ impl fmt::Debug for TestDatabase {
 
 impl salsa::Database for TestDatabase {}
 
-impl salsa::ParallelDatabase for TestDatabase {
-    fn snapshot(&self) -> salsa::Snapshot<Self> {
-        salsa::Snapshot::new(Self {
-            storage: self.storage.snapshot(),
-        })
-    }
-}
-
 impl panic::RefUnwindSafe for TestDatabase {}
 
-impl FileLoader for TestDatabase {
-    fn resolve_path(
+#[salsa::db]
+impl SourceDatabase for TestDatabase {
+    fn file_text(
         &self,
-        path: AnchoredPath<'_>,
-    ) -> Option<base_db::FileId> {
-        FileLoaderDelegate(self).resolve_path(path)
+        file_id: base_db::FileId,
+    ) -> FileText {
+        self.files.file_text(file_id)
+    }
+
+    fn set_file_text(
+        &mut self,
+        file_id: base_db::FileId,
+        text: &str,
+    ) {
+        let files = Arc::clone(&self.files);
+        files.set_file_text(self, file_id, text);
+    }
+
+    fn set_file_text_with_durability(
+        &mut self,
+        file_id: base_db::FileId,
+        text: &str,
+        durability: Durability,
+    ) {
+        let files = Arc::clone(&self.files);
+        files.set_file_text_with_durability(self, file_id, text, durability);
+    }
+
+    /// Source root of the file.
+    fn source_root(
+        &self,
+        id: SourceRootId,
+    ) -> SourceRootInput {
+        self.files.source_root(id)
+    }
+
+    fn set_source_root_with_durability(
+        &mut self,
+        source_root_id: SourceRootId,
+        source_root: Arc<SourceRoot>,
+        durability: Durability,
+    ) {
+        let files = Arc::clone(&self.files);
+        files.set_source_root_with_durability(self, source_root_id, source_root, durability);
+    }
+
+    fn file_source_root(
+        &self,
+        id: base_db::FileId,
+    ) -> FileSourceRootInput {
+        self.files.file_source_root(id)
+    }
+
+    fn set_file_source_root_with_durability(
+        &mut self,
+        id: base_db::FileId,
+        source_root_id: SourceRootId,
+        durability: Durability,
+    ) {
+        let files = Arc::clone(&self.files);
+        files.set_file_source_root_with_durability(self, id, source_root_id, durability);
     }
 }

@@ -238,7 +238,7 @@ impl GlobalState {
                         // getting rid of some locking
                         let (text, line_endings) = LineEndings::normalize(text);
                         line_endings_map.insert(file.file_id, line_endings);
-                        Arc::new(text)
+                        text
                     })
                 } else {
                     None

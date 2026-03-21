@@ -1,6 +1,7 @@
 mod lower;
 pub mod scope;
 
+use base_db::Lookup as _;
 use either::Either;
 use la_arena::{Arena, ArenaMap, Idx};
 use rustc_hash::FxHashMap;
@@ -10,7 +11,7 @@ use triomphe::Arc;
 use crate::{
     HasSource as _,
     attributes::Attribute,
-    database::{DefDatabase, DefinitionWithBodyId, Lookup as _},
+    database::{DefDatabase, DefinitionWithBodyId},
     expression::{ExpressionId, Statement, StatementId},
     expression_store::{ExpressionSourceMap, ExpressionStore, SyntheticSyntax},
     item_tree::Name,

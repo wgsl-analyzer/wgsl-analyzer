@@ -324,7 +324,7 @@ pub fn diagnostics(
     config: &DiagnosticsConfig,
     file_id: FileId,
 ) -> Vec<Diagnostic> {
-    let file_id = database.editioned_file_id(file_id);
+    let file_id = EditionedFileId::from_file(database, file_id);
     let parse = database.parse(file_id);
 
     let mut diagnostics = Vec::new();

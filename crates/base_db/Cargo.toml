@@ -11,9 +11,12 @@ license.workspace = true
 doctest = false
 
 [dependencies]
-line-index.workspace = true
+dashmap.workspace = true
+query-group.workspace = true
 rowan.workspace = true
+rustc-hash.workspace = true
 salsa.workspace = true
+salsa-macros.workspace = true
 syntax.workspace = true
 triomphe.workspace = true
 vfs.workspace = true
