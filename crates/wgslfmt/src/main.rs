@@ -71,8 +71,13 @@ fn main() -> Result<(), anyhow::Error> {
                 .indent_symbol
                 .clone_from(&"\t".to_owned());
         }
-        let output = wgsl_formatter::format_file(&input, &formatting_options)
-            .expect("Failed to format input");
+        let output =
+            wgsl_formatter::format_file(&input, &formatting_options).unwrap_or_else(|error| {
+                panic!(
+                    "Failed to format input for file {}\n{error:?}",
+                    file.display(),
+                )
+            });
 
         if arguments.check {
             let same = output == input;
