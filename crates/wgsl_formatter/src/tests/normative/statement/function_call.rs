@@ -87,3 +87,35 @@ pub fn format_function_call_statement_with_comment_has_no_trailing_whitespace() 
         "#]],
     );
 }
+
+#[test]
+fn format_function_call_break_outer_arguments_leave_inner_alone() {
+    check(
+        "
+        fn main() {
+            thingy(
+                aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,
+                thing(1,2),
+            );
+
+            thingy(
+            thing(1,2),
+                aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,
+            );
+        }
+",
+        expect![[r#"
+            fn main() {
+                thingy(
+                    aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,
+                    thing(1,2),
+                );
+
+                thingy(
+                    thing(1, 2),
+                    aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,
+                );
+            }
+        "#]],
+    );
+}

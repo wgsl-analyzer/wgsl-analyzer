@@ -101,7 +101,7 @@ pub fn format_comment_in_function_call_statement() {
 }
 
 #[test]
-fn format_function_call() {
+fn format_function_call_simple() {
     check(
         "fn main() {
     min  (  x,y );
