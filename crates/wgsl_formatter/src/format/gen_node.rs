@@ -60,12 +60,14 @@ pub fn gen_node_no_newlines(node: &SyntaxNode) -> FormatDocumentResult<PrintItem
         expected: BTreeSet::new(),
         discouraged: BTreeSet::from([RequestItem::LineBreak]),
         forced: BTreeSet::new(),
+        suggest_linebreak: false,
     });
     formatted.extend(gen_node(node)?);
     formatted.request(Request::Unconditional {
         expected: BTreeSet::new(),
         discouraged: BTreeSet::from([RequestItem::LineBreak]),
         forced: BTreeSet::new(),
+        suggest_linebreak: false,
     });
     Ok(formatted)
 }

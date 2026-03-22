@@ -16,7 +16,10 @@ use crate::format::{
     gen_expression::gen_expression,
     gen_path::gen_path,
     multiline_group::MultilineGroup,
-    print_item_buffer::PrintItemBuffer,
+    print_item_buffer::{
+        PrintItemBuffer,
+        request_folder::{Request, RequestItem},
+    },
     reporting::FormatDocumentResult,
 };
 
@@ -98,6 +101,8 @@ pub fn gen_template_list(
 
         multiline_group.grouped_newline_or_space();
     }
+
+    multiline_group.request(Request::discourage(RequestItem::Space));
 
     multiline_group.finish_indent();
 

@@ -51,6 +51,7 @@ pub fn gen_if_statement(statement: &ast::IfStatement) -> FormatDocumentResult<Pr
             expected: BTreeSet::from([RequestItem::Space]),
             discouraged: BTreeSet::from([RequestItem::LineBreak]),
             forced: BTreeSet::new(),
+            suggest_linebreak: false,
         });
         formatted.extend(gen_if_statement_else_if_clause(&else_if_clause)?);
         formatted.extend(gen_comments(&comments_after_else_if_clause));
@@ -60,6 +61,7 @@ pub fn gen_if_statement(statement: &ast::IfStatement) -> FormatDocumentResult<Pr
             expected: BTreeSet::from([RequestItem::Space]),
             discouraged: BTreeSet::from([RequestItem::LineBreak]),
             forced: BTreeSet::new(),
+            suggest_linebreak: false,
         });
         formatted.extend(gen_if_statement_else_clause(&item_else_clause)?);
     }

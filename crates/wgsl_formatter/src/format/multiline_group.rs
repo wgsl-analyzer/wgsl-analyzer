@@ -64,6 +64,7 @@ impl<'buffer> MultilineGroup<'buffer> {
         self.buffer.start_new_line_group();
 
         // TODO This is a bit of a shortcoming of the PBI api, we would want to write this after the "(", but can't because of the conditions between
+        // TODO This does not belong into multilinegroup
         self.buffer.request(Request::Unconditional {
             expected: BTreeSet::new(),
             discouraged: BTreeSet::from([
@@ -72,6 +73,7 @@ impl<'buffer> MultilineGroup<'buffer> {
                 RequestItem::EmptyLine,
             ]),
             forced: BTreeSet::new(),
+            suggest_linebreak: false,
         });
     }
 
@@ -82,11 +84,31 @@ impl<'buffer> MultilineGroup<'buffer> {
                 expected: BTreeSet::from([RequestItem::LineBreak]),
                 discouraged: BTreeSet::new(),
                 forced: BTreeSet::new(),
+                suggest_linebreak: false,
             })),
             on_false: Box::new(RequestFolder::from(Request::Unconditional {
                 expected: BTreeSet::from([RequestItem::Space]),
                 discouraged: BTreeSet::new(),
                 forced: BTreeSet::new(),
+                suggest_linebreak: true,
+            })),
+        });
+    }
+
+    pub fn grouped_possible_newline(&mut self) {
+        self.buffer.request(Request::Conditional {
+            condition: Rc::clone(&self.is_multiple_lines),
+            on_true: Box::new(RequestFolder::from(Request::Unconditional {
+                expected: BTreeSet::from([RequestItem::LineBreak]),
+                discouraged: BTreeSet::new(),
+                forced: BTreeSet::new(),
+                suggest_linebreak: false,
+            })),
+            on_false: Box::new(RequestFolder::from(Request::Unconditional {
+                expected: BTreeSet::new(),
+                discouraged: BTreeSet::new(),
+                forced: BTreeSet::new(),
+                suggest_linebreak: true,
             })),
         });
     }

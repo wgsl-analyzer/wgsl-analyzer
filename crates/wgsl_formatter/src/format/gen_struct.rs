@@ -128,6 +128,7 @@ fn gen_struct_body(body: &ast::StructBody) -> FormatDocumentResult<PrintItemBuff
         discouraged: BTreeSet::from([RequestItem::EmptyLine]),
         expected: BTreeSet::from([RequestItem::LineBreak]),
         forced: BTreeSet::new(),
+        suggest_linebreak: false,
     });
 
     formatted.finish_indent();
