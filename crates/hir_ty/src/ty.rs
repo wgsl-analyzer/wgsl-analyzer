@@ -6,8 +6,8 @@ use std::{
     str::FromStr,
 };
 
+use base_db::impl_intern_key;
 use hir_def::{database::StructId, type_ref::VecDimensionality};
-use salsa::InternKey;
 use wgsl_types::{
     syntax::{AccessMode, AddressSpace},
     ty::SamplerType,
@@ -15,20 +15,7 @@ use wgsl_types::{
 
 use crate::database::HirDatabase;
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Copy)]
-pub struct Type {
-    id: salsa::InternId,
-}
-
-impl InternKey for Type {
-    fn from_intern_id(v: salsa::InternId) -> Self {
-        Self { id: v }
-    }
-
-    fn as_intern_id(&self) -> salsa::InternId {
-        self.id
-    }
-}
+impl_intern_key!(Type, TypeKind);
 
 impl Type {
     pub fn kind(

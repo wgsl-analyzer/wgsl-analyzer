@@ -4,13 +4,14 @@ mod unify;
 
 use std::{fmt, ops::Index};
 
+use base_db::Lookup as _;
 use either::Either;
 use hir_def::{
     HasSource as _,
     body::{BindingId, Body},
     database::{
-        DefinitionWithBodyId, GlobalConstantId, GlobalVariableId, Lookup as _, ModuleDefinitionId,
-        OverrideId, StructId,
+        DefinitionWithBodyId, GlobalConstantId, GlobalVariableId, ModuleDefinitionId, OverrideId,
+        StructId,
     },
     expression::{
         ArithmeticOperation, BinaryOperation, ComparisonOperation, Expression, ExpressionId,
@@ -92,14 +93,12 @@ pub fn infer_query(
     Arc::new(context.resolve_all())
 }
 
-#[expect(clippy::trivially_copy_pass_by_ref, reason = "must match salsa")]
 pub fn infer_cycle_result(
     database: &dyn HirDatabase,
-    _cycle: &[String],
-    definition: &DefinitionWithBodyId,
+    definition: DefinitionWithBodyId,
 ) -> Arc<InferenceResult> {
     let mut inference_result = InferenceResult::new(database);
-    let (name, range) = get_name_and_range(database, ModuleDefinitionId::from(*definition));
+    let (name, range) = get_name_and_range(database, ModuleDefinitionId::from(definition));
 
     inference_result.diagnostics.push(InferenceDiagnostic {
         source: ExpressionStoreSource::Body,
@@ -132,15 +131,13 @@ pub fn infer_signature_query(
     }
 }
 
-#[expect(clippy::trivially_copy_pass_by_ref, reason = "must match salsa")]
 #[expect(clippy::unnecessary_wraps, reason = "must match salsa")]
 pub fn infer_signature_cycle_result(
     database: &dyn HirDatabase,
-    _cycle: &[String],
-    definition: &ModuleDefinitionId,
+    definition: ModuleDefinitionId,
 ) -> Option<Arc<InferenceResult>> {
     let mut inference_result = InferenceResult::new(database);
-    let (name, range) = get_name_and_range(database, *definition);
+    let (name, range) = get_name_and_range(database, definition);
     inference_result.diagnostics.push(InferenceDiagnostic {
         source: ExpressionStoreSource::Signature,
         kind: InferenceDiagnosticKind::CyclicType { name, range },

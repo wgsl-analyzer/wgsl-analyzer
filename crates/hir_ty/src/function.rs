@@ -1,5 +1,5 @@
+use base_db::impl_intern_key;
 use hir_def::item_tree::Name;
-use triomphe::Arc;
 
 use crate::{database::HirDatabase, ty::Type};
 
@@ -26,24 +26,13 @@ impl FunctionDetails {
     }
 }
 
-#[derive(Debug, Hash, PartialEq, Eq, Clone, Copy)]
-pub struct ResolvedFunctionId(salsa::InternId);
-
-impl salsa::InternKey for ResolvedFunctionId {
-    fn from_intern_id(v: salsa::InternId) -> Self {
-        Self(v)
-    }
-
-    fn as_intern_id(&self) -> salsa::InternId {
-        self.0
-    }
-}
+impl_intern_key!(ResolvedFunctionId, FunctionDetails);
 
 impl ResolvedFunctionId {
     pub fn lookup(
         self,
         database: &dyn HirDatabase,
-    ) -> Arc<FunctionDetails> {
+    ) -> FunctionDetails {
         database.lookup_intern_resolved_function(self)
     }
 }
@@ -53,6 +42,6 @@ impl FunctionDetails {
         self,
         database: &dyn HirDatabase,
     ) -> ResolvedFunctionId {
-        database.intern_resolved_function(Arc::new(self))
+        database.intern_resolved_function(self)
     }
 }

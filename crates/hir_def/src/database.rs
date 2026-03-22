@@ -319,7 +319,7 @@ impl DefinitionWithBodyId {
 }
 
 /// All module items.
-#[derive(PartialEq, Eq, Hash, Debug, Clone, Copy)]
+#[derive(PartialEq, Eq, Hash, Debug, Clone, Copy, salsa_macros::Supertype)]
 pub enum ModuleDefinitionId {
     Function(FunctionId),
     GlobalVariable(GlobalVariableId),
