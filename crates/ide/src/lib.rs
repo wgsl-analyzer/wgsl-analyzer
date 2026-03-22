@@ -17,16 +17,17 @@ mod view_syntax_tree;
 use std::panic;
 
 use base_db::{
-    FilePosition, FileRange, RangeInfo, SourceDatabase as _, TextRange, change::Change,
-    input::SourceRootId,
+    EditionedFileId, FilePosition, FileRange, RangeInfo, RootQueryDb as _, SourceDatabase as _,
+    TextRange, change::Change, input::SourceRootId,
 };
 use diagnostics::Diagnostic;
 use hir::diagnostics::DiagnosticsConfig;
 use hir_def::database::DefDatabase as _;
 use ide_completion::{CompletionConfig, item::CompletionItem};
+use ide_db::LineIndexDatabase as _;
 pub use line_index::{LineCol, LineIndex};
 use rustc_hash::FxHashMap;
-use salsa::{Cancelled, ParallelDatabase as _};
+use salsa::Cancelled;
 use syntax::{Parse, SyntaxNode};
 use triomphe::Arc;
 use vfs::FileId;
@@ -122,7 +123,7 @@ impl AnalysisHost {
     /// semantic information.
     pub fn analysis(&self) -> Analysis {
         Analysis {
-            database: self.database.snapshot(),
+            database: self.database.clone(),
         }
     }
 
@@ -151,7 +152,7 @@ impl Default for AnalysisHost {
 }
 
 pub struct Analysis {
-    database: salsa::Snapshot<RootDatabase>,
+    database: RootDatabase,
 }
 
 impl Analysis {
@@ -171,7 +172,7 @@ impl Analysis {
         &self,
         file_id: FileId,
     ) -> Cancellable<SourceRootId> {
-        self.with_db(|database| database.file_source_root(file_id))
+        self.with_db(|database| database.file_source_root(file_id).source_root_id(database))
     }
 
     /// Computes the set of parser level diagnostics for the given file.
@@ -207,8 +208,8 @@ impl Analysis {
     pub fn file_text(
         &self,
         file_id: FileId,
-    ) -> Cancellable<Arc<String>> {
-        self.with_db(|database| database.file_text(file_id))
+    ) -> Cancellable<Arc<str>> {
+        self.with_db(|database| database.file_text(file_id).text(database).clone())
     }
 
     /// Returns the full source code with imports resolved.
@@ -216,7 +217,7 @@ impl Analysis {
         &self,
         file_id: FileId,
     ) -> Cancellable<Result<String, ()>> {
-        self.with_db(|database| Ok(database.file_text(file_id).to_string()))
+        self.with_db(|database| Ok(database.file_text(file_id).text(database).to_string()))
     }
 
     /// Gets the syntax tree of the file.
@@ -224,7 +225,7 @@ impl Analysis {
         &self,
         file_id: FileId,
     ) -> Cancellable<Parse> {
-        self.with_db(|database| database.parse(database.editioned_file_id(file_id)))
+        self.with_db(|database| database.parse(EditionedFileId::from_file(database, file_id)))
     }
 
     pub fn line_index(
@@ -258,7 +259,9 @@ impl Analysis {
     ) -> Cancellable<Vec<Fold>> {
         self.with_db(|database| {
             folding_ranges::folding_ranges(
-                &database.parse(database.editioned_file_id(file_id)).tree(),
+                &database
+                    .parse(EditionedFileId::from_file(database, file_id))
+                    .tree(),
             )
         })
     }

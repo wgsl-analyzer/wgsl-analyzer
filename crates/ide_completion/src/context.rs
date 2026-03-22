@@ -1,7 +1,7 @@
-use base_db::{FilePosition, TextRange};
+use base_db::{EditionedFileId, FilePosition, TextRange};
 use either::Either;
 use hir::{ChildContainer, Semantics};
-use hir_def::{HirFileId, database::DefDatabase as _, resolver::Resolver};
+use hir_def::{database::DefDatabase as _, resolver::Resolver};
 use ide_db::RootDatabase;
 use rowan::NodeOrToken;
 use syntax::{AstNode as _, Direction, SyntaxKind, SyntaxToken, ast};
@@ -14,7 +14,7 @@ type ExprOrStatement = Either<ast::Expression, ast::Statement>;
 /// exactly is the cursor, syntax-wise.
 pub(crate) struct CompletionContext<'database> {
     pub(crate) semantics: Semantics<'database>,
-    pub(crate) file_id: HirFileId,
+    pub(crate) file_id: EditionedFileId,
     pub(crate) database: &'database RootDatabase,
     pub(crate) position: FilePosition,
     pub(crate) token: SyntaxToken,
@@ -31,14 +31,12 @@ impl<'database> CompletionContext<'database> {
         config: &'database CompletionConfig,
     ) -> Option<Self> {
         let semantics = Semantics::new(database);
-        let file_id = database.editioned_file_id(file_id);
+        let file_id = EditionedFileId::from_file(database, file_id);
         let file = semantics.parse(file_id);
         let token = file
             .syntax()
             .token_at_offset(position.offset)
             .left_biased()?;
-
-        let file_id = HirFileId::from(file_id);
 
         let container = token
             .parent()

@@ -76,7 +76,6 @@ name = "base-db"
 version = "0.0.0"
 dependencies = [
  "dashmap",
- "line-index",
  "query-group-macro",
  "rowan",
  "rustc-hash 2.1.1",
@@ -727,11 +726,14 @@ version = "0.0.0"
 dependencies = [
  "base-db",
  "hir-def",
- "hir-ty",
  "itertools",
+ "line-index",
+ "query-group-macro",
  "rowan",
  "rustc-hash 2.1.1",
  "salsa",
+ "salsa-macros",
+ "triomphe",
  "vfs",
 ]
 

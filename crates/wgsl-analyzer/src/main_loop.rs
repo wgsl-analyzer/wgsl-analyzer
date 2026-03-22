@@ -604,13 +604,13 @@ impl GlobalState {
                 //     (excluded == vfs::FileExcluded::No).then_some(file_id)
                 // })
                 .filter(|&file_id| {
-                    let source_root = database.file_source_root(file_id.0);
+                    let source_root = database.file_source_root(file_id.0).source_root_id(database);
                     // Only publish diagnostics for files in the workspace, not from crates.io deps
                     // or the sysroot.
                     // While theoretically these should never have errors, we have quite a few false
                     // positives particularly in the stdlib, and those diagnostics would stay around
                     // forever if we emitted them here.
-                    !database.source_root(source_root).is_library()
+                    !database.source_root(source_root).source_root(database).is_library()
                 })
                 .map(|file_id| {
                     file_id.0

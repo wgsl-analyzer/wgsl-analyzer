@@ -267,13 +267,6 @@ pub trait RootQueryDb: SourceDatabase + salsa::Database {
         &self,
         key: EditionedFileId,
     ) -> Parse;
-
-    #[salsa::invoke(line_index)]
-    #[salsa::lru(128)]
-    fn line_index(
-        &self,
-        key: EditionedFileId,
-    ) -> Arc<LineIndex>;
 }
 
 #[salsa::db]
@@ -341,12 +334,4 @@ fn parse(
     let RawEditionedFileId { file_id, edition } = file_id.unpack(database);
     let source = database.file_text(file_id).text(database);
     syntax::parse(source, edition)
-}
-
-fn line_index(
-    database: &dyn RootQueryDb,
-    file_id: EditionedFileId,
-) -> Arc<LineIndex> {
-    let text = database.file_text(file_id.file_id(database)).text(database);
-    Arc::new(LineIndex::new(&text))
 }
