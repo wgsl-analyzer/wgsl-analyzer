@@ -49,6 +49,7 @@ pub fn gen_line_spacing(line_spacing: &LineSpacing) -> FormatDocumentResult<Prin
                 expected: BTreeSet::from([RequestItem::EmptyLine]),
                 discouraged: BTreeSet::new(),
                 forced: BTreeSet::new(),
+                suggest_linebreak: false,
             });
         },
         LineSpacing::LineBreak => {
@@ -57,6 +58,7 @@ pub fn gen_line_spacing(line_spacing: &LineSpacing) -> FormatDocumentResult<Prin
                 expected: BTreeSet::from([RequestItem::LineBreak]),
                 discouraged: BTreeSet::new(),
                 forced: BTreeSet::new(),
+                suggest_linebreak: false,
             });
         },
     }

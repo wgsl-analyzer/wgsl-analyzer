@@ -95,6 +95,7 @@ pub fn gen_source_file(node: &ast::SourceFile) -> FormatDocumentResult<PrintItem
             RequestItem::Space,
         ]),
         forced: BTreeSet::new(),
+        suggest_linebreak: false,
     });
 
     for item in items {
@@ -117,6 +118,7 @@ pub fn gen_source_file(node: &ast::SourceFile) -> FormatDocumentResult<PrintItem
         forced: BTreeSet::new(),
         discouraged: BTreeSet::from([RequestItem::EmptyLine]),
         expected: BTreeSet::from([RequestItem::LineBreak]),
+        suggest_linebreak: false,
     });
 
     Ok(formatted)

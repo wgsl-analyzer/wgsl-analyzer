@@ -4,10 +4,12 @@ use dprint_core::formatting::{
     Condition, ConditionProperties, ConditionResolver, PrintItems, Signal,
 };
 
+/// A possible kind of whitespace that can be requested and, through RequestFolder, be merged together if multiple requests are issued.
+///
+/// The Ord instance of this is used to determine which whitespace should be used, when multiple requests are issued.
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug, PartialOrd, Ord)]
 pub enum RequestItem {
     Space = 1,
-    SpaceOrNewline = 2,
     LineBreak = 3,
     EmptyLine = 4,
 }
@@ -32,6 +34,9 @@ pub enum Request {
         expected: BTreeSet<RequestItem>,
         discouraged: BTreeSet<RequestItem>,
         forced: BTreeSet<RequestItem>,
+
+        // TODO think the exact theory of this through
+        suggest_linebreak: bool,
     },
     Conditional {
         condition: ConditionResolver,
@@ -47,6 +52,7 @@ impl Request {
             expected: BTreeSet::from([item]),
             discouraged: BTreeSet::new(),
             forced: BTreeSet::new(),
+            suggest_linebreak: false,
         }
     }
 
@@ -55,6 +61,7 @@ impl Request {
             expected: BTreeSet::new(),
             discouraged: BTreeSet::from([item]),
             forced: BTreeSet::new(),
+            suggest_linebreak: false,
         }
     }
 
@@ -63,6 +70,29 @@ impl Request {
             expected: BTreeSet::new(),
             discouraged: BTreeSet::new(),
             forced: BTreeSet::from([item]),
+            suggest_linebreak: false,
+        }
+    }
+
+    pub fn or_newline(self) -> Self {
+        //TODO Redesign requests once again
+        match self {
+            Request::Unconditional {
+                expected,
+                discouraged,
+                forced,
+                suggest_linebreak: _,
+            } => Self::Unconditional {
+                expected,
+                discouraged,
+                forced,
+                suggest_linebreak: true,
+            },
+            Request::Conditional {
+                condition,
+                on_true,
+                on_false,
+            } => todo!(),
         }
     }
 
@@ -77,11 +107,13 @@ impl Request {
                     expected: exp_left,
                     discouraged: disc_left,
                     forced: forced_left,
+                    suggest_linebreak: left_potential_newline,
                 },
                 Self::Unconditional {
                     expected: exp_right,
                     discouraged: disc_right,
                     forced: forced_right,
+                    suggest_linebreak: right_potential_newline,
                 },
             ) => {
                 let mut combined_exp = exp_left;
@@ -97,6 +129,7 @@ impl Request {
                     expected: combined_exp,
                     discouraged: combined_disc,
                     forced: combined_forced,
+                    suggest_linebreak: left_potential_newline || right_potential_newline,
                 }
             },
 
@@ -189,13 +222,15 @@ impl RequestFolder {
         fn apply_item(
             item: RequestItem,
             target: &mut PrintItems,
+            suggest_newline: bool,
         ) {
             match item {
                 RequestItem::Space => {
-                    target.push_space();
-                },
-                RequestItem::SpaceOrNewline => {
-                    target.push_signal(Signal::SpaceOrNewLine);
+                    if suggest_newline {
+                        target.push_signal(Signal::SpaceOrNewLine);
+                    } else {
+                        target.push_signal(Signal::SpaceIfNotTrailing);
+                    }
                 },
                 RequestItem::LineBreak => {
                     target.push_signal(Signal::NewLine);
@@ -213,6 +248,7 @@ impl RequestFolder {
                     expected,
                     discouraged,
                     forced,
+                    suggest_linebreak,
                 } => {
                     let candidates = expected
                         .difference(&discouraged)
@@ -220,8 +256,12 @@ impl RequestFolder {
                         .collect::<BTreeSet<_>>();
                     let candidates = candidates.union(&forced).collect::<BTreeSet<_>>();
 
+                    //TODO if newlines are discouraged, clear suggest_linebreak
+
                     if let Some(chosen) = candidates.last() {
-                        apply_item(**chosen, target);
+                        apply_item(**chosen, target, suggest_linebreak);
+                    } else if suggest_linebreak {
+                        target.push_signal(Signal::PossibleNewLine);
                     }
                 },
                 Request::Conditional {

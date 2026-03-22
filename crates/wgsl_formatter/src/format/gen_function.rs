@@ -137,26 +137,7 @@ pub fn gen_fn_parameters(node: &ast::FunctionParameters) -> FormatDocumentResult
                 // If the parameters are multiple lines long, every parameter should be on a new line
                 // If the parameters is a single line long, every parameter should be prepended with a space,
                 // with a chance for breaking into multiple lines
-                let is_multiline = Rc::clone(&multiline_group.is_multiple_lines);
-                multiline_group.request(Request::Conditional {
-                    condition: is_multiline,
-                    on_true: Box::new(RequestFolder {
-                        folded_request: Some(Request::Unconditional {
-                            expected: BTreeSet::from_iter([RequestItem::LineBreak]),
-                            discouraged: BTreeSet::new(),
-                            forced: BTreeSet::new(),
-                        }),
-                    }),
-                    on_false: Box::new(RequestFolder::default()),
-                });
-
-                if index != 0 {
-                    multiline_group.request(Request::Unconditional {
-                        expected: BTreeSet::from([RequestItem::Space]),
-                        discouraged: BTreeSet::new(),
-                        forced: BTreeSet::new(),
-                    });
-                }
+                multiline_group.grouped_newline_or_space();
 
                 multiline_group.extend(gen_fn_parameter(&parameter)?);
                 if index == last_parameter_index {
@@ -183,7 +164,8 @@ pub fn gen_fn_parameters(node: &ast::FunctionParameters) -> FormatDocumentResult
         }
     }
 
-    multiline_group.grouped_newline_or_space();
+    multiline_group.request(Request::discourage(RequestItem::Space));
+    multiline_group.grouped_possible_newline();
     multiline_group.finish_indent();
 
     multiline_group.push_sc(sc!(")"));
