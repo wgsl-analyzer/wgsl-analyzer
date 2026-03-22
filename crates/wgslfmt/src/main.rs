@@ -11,7 +11,7 @@ use std::{io::Read as _, path::PathBuf, time::Instant};
 
 use anyhow::{Context as _, bail};
 use serde::Serialize;
-use wgsl_formatter::FormattingOptions;
+use wgsl_formatter::{FormatStringError, FormattingOptions};
 
 use crate::cli::{Args, OutputFormat};
 
@@ -28,8 +28,6 @@ struct FileResult {
     file: String,
     changed: bool,
     duration_ms: u128,
-    #[serde(skip_serializing_if = "Vec::is_empty")]
-    parse_errors: Vec<ParseError>,
     #[serde(skip_serializing_if = "Option::is_none")]
     diff: Option<String>,
 }
@@ -63,17 +61,26 @@ fn main() -> Result<(), anyhow::Error> {
     let mut results: Vec<FileResult> = Vec::new();
 
     for file in &files {
-        let result = format_file(file, &formatting_options, json_mode, cli.check)?;
+        match format_file(file, &formatting_options, json_mode, cli.check) {
+            Ok(result) => {
+                if !json_mode {
+                    emit_text_result(file, &result, cli.check);
+                }
 
-        if !json_mode {
-            emit_text_result(file, &result, cli.check);
+                if result.changed {
+                    check_failed = true;
+                }
+
+                results.push(result);
+            },
+            Err(error) => {
+                check_failed = true;
+                eprintln!(
+                    "[error] {}: Formatting failed with errors: {error}",
+                    file.display(),
+                );
+            },
         }
-
-        if result.changed {
-            check_failed = true;
-        }
-
-        results.push(result);
     }
 
     let total_elapsed = total_start.elapsed();
@@ -173,7 +180,24 @@ fn format_file(
     };
 
     let file_start = Instant::now();
-    let output = wgsl_formatter::format_file(&input, options).expect("TODO"); //TODO (MonaMayrhofer)
+
+    if !parse_errors.is_empty() {
+        return Err(anyhow::anyhow!(
+            "Parse errors encountered, formatting aborted!"
+        ));
+    }
+
+    let output = match wgsl_formatter::format_tree(&parse.tree(), options) {
+        Ok(output) => output,
+        Err(error) => {
+            // TODO We panic for now until this is a bit more touched up
+            panic!(
+                "[error] {label}: encountered an error while formatting. This is a bug, please report it. {error}",
+            );
+            return Err(anyhow::anyhow!(format!("{error:?}")));
+        },
+    };
+
     let elapsed = file_start.elapsed();
     let changed = output != input;
 
@@ -203,7 +227,6 @@ fn format_file(
         file: label,
         changed,
         duration_ms: elapsed.as_millis(),
-        parse_errors,
         diff,
     })
 }

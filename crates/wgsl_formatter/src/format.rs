@@ -92,7 +92,7 @@ pub fn format_file(
     format_tree(&file, options).map_err(|error| FormatStringError::FormatDocumentError { error })
 }
 
-pub(crate) fn format_tree(
+pub fn format_tree(
     syntax: &ast::SourceFile,
     options: &FormattingOptions,
 ) -> FormatDocumentResult<String> {

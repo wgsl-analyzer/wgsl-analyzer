@@ -14,7 +14,7 @@ pub struct FormattingMdDocTests;
 use rowan::{GreenNode, GreenToken, NodeOrToken, WalkEvent};
 use syntax::{AstNode, HasName, SyntaxElement, SyntaxKind, SyntaxNode, SyntaxToken, ast};
 
-pub use format::{FormattedRange, format_file, format_range};
+pub use format::{FormatStringError, FormattedRange, format_file, format_range, format_tree};
 
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
