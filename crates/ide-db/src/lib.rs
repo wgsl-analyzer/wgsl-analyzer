@@ -1,6 +1,6 @@
 use std::{fmt, panic};
 
-use base_db::{FileId, FileLoader, FileLoaderDelegate, change::Change};
+use base_db::{FileId, change::Change};
 use hir_def::database::{DefDatabase as _, ExtensionsConfig};
 use rustc_hash::FxHashMap;
 use salsa::Durability;

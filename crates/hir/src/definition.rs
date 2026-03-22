@@ -1,6 +1,6 @@
+use base_db::EditionedFileId;
 use hir_def::{
-    HirFileId, expression_store::path::Path, item_tree::Name, mod_path::ModPath,
-    resolver::ResolveKind,
+    expression_store::path::Path, item_tree::Name, mod_path::ModPath, resolver::ResolveKind,
 };
 use syntax::{AstNode as _, SyntaxNode, SyntaxToken, ast, match_ast};
 
@@ -17,7 +17,7 @@ impl Definition {
     #[must_use]
     pub fn from_token(
         semantics: &Semantics<'_>,
-        file_id: HirFileId,
+        file_id: EditionedFileId,
         token: &SyntaxToken,
     ) -> Option<Self> {
         let parent = token.parent()?;
@@ -26,7 +26,7 @@ impl Definition {
 
     pub fn from_node(
         semantics: &Semantics<'_>,
-        file_id: HirFileId,
+        file_id: EditionedFileId,
         node: &SyntaxNode,
     ) -> Option<Self> {
         match_ast! {
@@ -48,7 +48,7 @@ impl Definition {
 
 fn resolve_path(
     semantics: &Semantics<'_>,
-    file_id: HirFileId,
+    file_id: EditionedFileId,
     path: &ast::Path,
 ) -> Option<Definition> {
     let parent = path.syntax().parent()?;
@@ -96,7 +96,7 @@ fn resolve_path(
 
 fn resolve_field(
     semantics: &Semantics<'_>,
-    file_id: HirFileId,
+    file_id: EditionedFileId,
     field_expression: ast::FieldExpression,
 ) -> Option<Definition> {
     let definition = semantics.find_container(file_id, field_expression.syntax())?;
