@@ -86,9 +86,7 @@ pub fn format_for_statement_long_components() {
         expect![[r#"
             fn main() {
                 for(
-                    let a = 1 + 1 + 1 + 1 + alculate_something_really_long(
-                            172832782,
-                        );
+                    let a = 1 + 1 + 1 + 1 + alculate_something_really_long(172832782);
                     compute_some_value(a % 12847248 * 1827348 + 182748) < A_LONG_CONSTANT;
                     a = increment_but_fancy(a)
                 ) {}
@@ -117,9 +115,7 @@ pub fn format_for_statement_super_long_components() {
                     compute_some_value_that_has_a_long_name_from(
                         a % 12847248 * 1827348 + 182748,
                     ) < AN_INCONVENIENTLY_LONG_CONSTANT_DECLARED_SOMEWHERE_ELSE;
-                    a = increment_but_in_a_very_fancy_manner(
-                        a,
-                    )
+                    a = increment_but_in_a_very_fancy_manner(a)
                 ) {}
             }
         "#]],

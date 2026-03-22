@@ -73,3 +73,17 @@ fn format_template_elaborated_function_call_statement() {
         "#]],
     );
 }
+
+#[test]
+pub fn format_function_call_statement_with_comment_has_no_trailing_whitespace() {
+    check(
+        "fn main() {
+        bla(12, bar() /* a */    );
+        }",
+        expect![[r#"
+            fn main() {
+                bla(12, bar() /* a */);
+            }
+        "#]],
+    );
+}
