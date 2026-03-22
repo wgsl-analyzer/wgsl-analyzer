@@ -1,6 +1,6 @@
 use expect_test::expect;
 
-use crate::test_util::{check, check_comments};
+use crate::test_util::{assert_out_of_scope, check, check_comments};
 
 //TODO(MonaMayrhofer) For now these tests just check for something so that attributes are handled and
 // the formatter doesn't crash. More thought should be put into how exactly they shall be formatted
@@ -319,5 +319,16 @@ pub fn format_attrs_on_while_statement() {
                 while true {}
             }
         "#]],
+    );
+}
+
+#[test]
+pub fn format_attrs_on_input_statement() {
+    assert_out_of_scope(
+        "
+        @if(THING)
+        import the::thing;
+        ",
+        "This should be supported as soon as the parser supports it.",
     );
 }

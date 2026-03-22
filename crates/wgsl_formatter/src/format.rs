@@ -32,7 +32,7 @@ mod reporting;
 use dprint_core::formatting::PrintOptions;
 use parser::{Edition, SyntaxNode};
 use rowan::{NodeOrToken, TextRange};
-use syntax::{AstNode as _, ast};
+use syntax::{AstNode as _, Parse, ast};
 
 use crate::{
     FormattingOptions,
@@ -50,6 +50,12 @@ pub struct FormattedRange {
 
     /// The formatted text.
     pub formatted: String,
+}
+
+#[derive(Debug)]
+pub enum FormatStringError {
+    FormatDocumentError { error: FormatDocumentError },
+    ParserErrors { parse: Parse },
 }
 
 pub fn format_range(
@@ -74,11 +80,16 @@ pub fn format_range(
 pub fn format_file(
     input: &str,
     options: &FormattingOptions,
-) -> FormatDocumentResult<String> {
+) -> Result<String, FormatStringError> {
     let parse = syntax::parse(input, Edition::LATEST);
     //TODO Return error if the syntax could not parse.
+
+    if !parse.errors().is_empty() {
+        return Err(FormatStringError::ParserErrors { parse });
+    }
+
     let file = parse.tree();
-    format_tree(&file, options)
+    format_tree(&file, options).map_err(|error| FormatStringError::FormatDocumentError { error })
 }
 
 pub(crate) fn format_tree(
