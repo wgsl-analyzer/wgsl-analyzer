@@ -6,6 +6,7 @@ use dprint_core::formatting::{
     ConditionResolver, ConditionResolverContext, LineNumber, condition_helpers,
 };
 
+use itertools::{Itertools as _, Position};
 pub use line_spacing::*;
 
 use crate::format::{print_item_buffer::PrintItemBuffer, reporting::FormatDocumentResult};
@@ -21,12 +22,11 @@ use super::print_item_buffer::request_folder::RequestItem;
 pub fn todo_verbatim_wesl(source: &parser::SyntaxNode) -> FormatDocumentResult<PrintItemBuffer> {
     let mut items = PrintItemBuffer::default();
 
-    for line in source.to_string().split_inclusive('\n') {
-        if line.ends_with('\n') {
-            items.push_string(line[0..(line.len() - 1)].to_owned());
+    for (pos, line) in source.to_string().lines().with_position() {
+        items.push_string(line.to_owned());
+        if pos != Position::Last && pos != Position::Only {
             items.force(RequestItem::LineBreak);
         }
-        items.push_string(line.to_owned());
     }
     Ok(items)
 }
