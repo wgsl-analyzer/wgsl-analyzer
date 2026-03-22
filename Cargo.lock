@@ -33,6 +33,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "683d7910e743518b0e34f1186f92494becacb047c7b6bf616c96772180fef923"
 
 [[package]]
+name = "anstyle"
+version = "1.0.14"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "940b3a0ca603d1eade50a4846a2afffd5ef57a9feac2c0e2ec2e14f9ead76000"
+
+[[package]]
 name = "anyhow"
 version = "1.0.102"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -177,6 +183,31 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "613afe47fcd5fac7ccf1db93babcb082c5994d996f20b8b159f2ad1658eb5724"
 
 [[package]]
+name = "clap"
+version = "4.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b193af5b67834b676abd72466a96c1024e6a6ad978a1f484bd90b85c94041351"
+dependencies = [
+ "clap_builder",
+]
+
+[[package]]
+name = "clap_builder"
+version = "4.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "714a53001bf66416adb0e2ef5ac857140e7dc3a0c48fb28b2f10762fc4b5069f"
+dependencies = [
+ "anstyle",
+ "clap_lex",
+]
+
+[[package]]
+name = "clap_lex"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c8d4a3bb8b1e0c1050499d1815f5ab16d04f0959b233085fb31653fbfc9d98f9"
+
+[[package]]
 name = "codespan-reporting"
 version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -286,7 +317,7 @@ dependencies = [
  "anyhow",
  "bumpalo",
  "hashbrown 0.15.5",
- "indexmap 2.12.1",
+ "indexmap 2.13.0",
  "rustc-hash 2.1.1",
  "serde",
  "serde_json",
@@ -406,6 +437,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e629b9b98ef3dd8afe6ca2bd0f89306cec16d43d907889945bc5d6687f2f13c7"
 
 [[package]]
+name = "glob"
+version = "0.3.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0cc23270f6e1808e30a928bdc84dea0b9b4136a8bc82338574f23baf47bbd280"
+
+[[package]]
 name = "half"
 version = "2.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -499,6 +536,7 @@ dependencies = [
  "smallvec",
  "smol_str",
  "syntax",
+ "test-fixture",
  "triomphe",
  "vfs",
 ]
@@ -517,6 +555,7 @@ dependencies = [
  "salsa",
  "smallvec",
  "syntax",
+ "test-fixture",
  "triomphe",
  "vfs",
  "wgsl-types",
@@ -639,6 +678,7 @@ dependencies = [
  "smallvec",
  "smol_str",
  "syntax",
+ "test-fixture",
  "test-utils",
  "tracing",
  "triomphe",
@@ -713,9 +753,9 @@ dependencies = [
 
 [[package]]
 name = "indexmap"
-version = "2.12.1"
+version = "2.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0ad4bb2b565bca0645f4d68c5c9af97fba094e9791da685bf83cb5f3ce74acf2"
+checksum = "7714e70437a7dc3ac8eb7e6f8df75fd8eb422675fc7678aff7364301092b1017"
 dependencies = [
  "equivalent",
  "hashbrown 0.16.1",
@@ -827,16 +867,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "lexopt"
-version = "0.3.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9fa0e2a1fcbe2f6be6c42e342259976206b383122fc152e872795338b5a3f3a7"
-
-[[package]]
 name = "libc"
-version = "0.2.182"
+version = "0.2.183"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6800badb6cb2082ffd7b6a67e6125bb39f18782f793520caee8cb8846be06112"
+checksum = "b5b646652bf6661599e1da8901b3b9522896f01e736bad5f723fe7a3a27f899d"
 
 [[package]]
 name = "libm"
@@ -985,7 +1019,7 @@ dependencies = [
  "half",
  "hashbrown 0.16.1",
  "hexf-parse",
- "indexmap 2.12.1",
+ "indexmap 2.13.0",
  "libm",
  "log",
  "num-traits",
@@ -1010,7 +1044,7 @@ dependencies = [
  "half",
  "hashbrown 0.16.1",
  "hexf-parse",
- "indexmap 2.12.1",
+ "indexmap 2.13.0",
  "libm",
  "log",
  "num-traits",
@@ -1034,7 +1068,7 @@ dependencies = [
  "half",
  "hashbrown 0.16.1",
  "hexf-parse",
- "indexmap 2.12.1",
+ "indexmap 2.13.0",
  "libm",
  "log",
  "num-traits",
@@ -1476,7 +1510,7 @@ version = "1.0.149"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "83fc039473c5595ace860d8c4fafa220ff474b3fc6bfdb4293327f1a37e94d86"
 dependencies = [
- "indexmap 2.12.1",
+ "indexmap 2.13.0",
  "itoa",
  "memchr",
  "serde",
@@ -1619,6 +1653,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "06794f8f6c5c898b3275aebefa6b8a1cb24cd2c6c79397ab15774837a0bc5755"
 dependencies = [
  "winapi-util",
+]
+
+[[package]]
+name = "test-fixture"
+version = "0.0.0"
+dependencies = [
+ "base-db",
+ "edition",
+ "indexmap 2.13.0",
+ "rustc-hash 2.1.1",
+ "stdx 0.0.0",
+ "test-utils",
+ "triomphe",
 ]
 
 [[package]]
@@ -1786,9 +1833,9 @@ dependencies = [
 
 [[package]]
 name = "tracing-subscriber"
-version = "0.3.22"
+version = "0.3.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2f30143827ddab0d256fd843b7a66d164e9f271cfa0dde49142c5ca0ca291f1e"
+checksum = "cb7f578e5945fb242538965c2d0b04418d38ec25c79d160cd279bf0731c8d319"
 dependencies = [
  "sharded-slab",
  "thread_local",
@@ -1858,28 +1905,12 @@ source = "git+https://github.com/rust-lang/rust-analyzer?rev=a31e10a2fdc585e9d7e
 dependencies = [
  "crossbeam-channel",
  "fst",
- "indexmap 2.12.1",
+ "indexmap 2.13.0",
  "nohash-hasher",
  "paths",
  "rustc-hash 2.1.1",
  "stdx 0.0.0 (git+https://github.com/rust-lang/rust-analyzer?rev=a31e10a2fdc585e9d7ea0857cacfd322dd478070)",
  "tracing",
-]
-
-[[package]]
-name = "vfs-notify"
-version = "0.0.0"
-dependencies = [
- "camino",
- "crossbeam-channel",
- "notify",
- "paths",
- "rayon",
- "rustc-hash 2.1.1",
- "stdx 0.0.0",
- "tracing",
- "vfs",
- "walkdir",
 ]
 
 [[package]]
@@ -1994,7 +2025,7 @@ dependencies = [
  "tracing-subscriber",
  "triomphe",
  "vfs",
- "vfs-notify 0.0.0 (git+https://github.com/rust-lang/rust-analyzer?rev=a31e10a2fdc585e9d7ea0857cacfd322dd478070)",
+ "vfs-notify",
  "wgsl-formatter",
  "windows-sys 0.61.2",
  "xflags",
@@ -2018,8 +2049,9 @@ dependencies = [
 
 [[package]]
 name = "wgsl-types"
-version = "0.2.0"
-source = "git+https://github.com/wgsl-tooling-wg/wesl-rs#7fb4343435671d0966f7084b466aa5bce086ef7c"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7aed068ca1dc8fb182f574c9f2ace45ec988c71ba050f6dd334883fe3b8a88e2"
 dependencies = [
  "half",
  "itertools",
@@ -2031,8 +2063,13 @@ name = "wgslfmt"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "lexopt",
+ "clap",
+ "glob",
+ "line-index",
  "prettydiff",
+ "serde",
+ "serde_json",
+ "syntax",
  "wgsl-formatter",
 ]
 
@@ -2390,7 +2427,7 @@ checksum = "6e499faf5c6b97a0d086f4a8733de6d47aee2252b8127962439d8d4311a73f72"
 dependencies = [
  "crc32fast",
  "flate2",
- "indexmap 2.12.1",
+ "indexmap 2.13.0",
  "memchr",
  "time",
  "typed-path",

@@ -160,7 +160,17 @@ impl UnificationTable {
                 storage_type_of_texel_format(database, format)
             },
             TypeKind::Error
-            | TypeKind::Scalar(_)
+            | TypeKind::Scalar(
+                ScalarType::AbstractFloat
+                | ScalarType::AbstractInt
+                | ScalarType::Bool
+                | ScalarType::F16
+                | ScalarType::F32
+                | ScalarType::I32
+                | ScalarType::U32
+                | ScalarType::I64
+                | ScalarType::U64,
+            )
             | TypeKind::Atomic(_)
             | TypeKind::Struct(_)
             | TypeKind::Array(_)

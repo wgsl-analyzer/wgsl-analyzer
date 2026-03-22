@@ -308,6 +308,62 @@ impl SyntaxKind {
     }
 
     #[must_use]
+    pub const fn is_directive(self) -> bool {
+        matches!(
+            self,
+            Self::SourceFile
+                | Self::EnableDirective
+                | Self::RequiresDirective
+                | Self::Attribute
+                | Self::ImportStatement
+                | Self::ImportPath
+                | Self::ImportCollection
+                | Self::ImportItem
+                | Self::ImportPackageRelative
+                | Self::ImportSuperRelative
+        )
+    }
+
+    #[must_use]
+    pub const fn is_declaration(self) -> bool {
+        matches!(
+            self,
+            Self::FunctionDeclaration
+                | Self::Parameter
+                | Self::ReturnType
+                | Self::StructDeclaration
+                | Self::StructMember
+                | Self::VariableDeclaration
+                | Self::LetDeclaration
+                | Self::ConstantDeclaration
+                | Self::OverrideDeclaration
+                | Self::TypeAliasDeclaration
+        )
+    }
+
+    #[must_use]
+    pub const fn is_statement(self) -> bool {
+        matches!(
+            self,
+            Self::IfStatement
+                | Self::WhileStatement
+                | Self::SwitchStatement
+                | Self::LoopStatement
+                | Self::ContinuingStatement
+                | Self::BreakIfStatement
+                | Self::SwitchBodyCase
+                | Self::ForStatement
+                | Self::CompoundStatement
+                | Self::AssignmentStatement
+                | Self::CompoundAssignmentStatement
+                | Self::IncrementDecrementStatement
+                | Self::ReturnStatement
+                | Self::PhonyAssignmentStatement
+                | Self::AssertStatement
+        )
+    }
+
+    #[must_use]
     #[expect(clippy::as_conversions, reason = "repr(u16)")]
     pub const fn as_u16(self) -> u16 {
         self as u16

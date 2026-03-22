@@ -10,11 +10,12 @@ use std::{
 
 use base_db::SourceDatabase as _;
 use crossbeam_channel::{Receiver, select};
+use hir::database::DefDatabase as _;
 // use ide_db::base_db::{SourceDatabase, SourceRootDatabase, VfsPath};
 use lsp_server::{Connection, Notification, Request};
 use lsp_types as lt;
 use lt::notification::Notification as _;
-use salsa::Cancelled;
+use salsa::{Cancelled, Durability};
 use stdx::thread::ThreadIntent;
 use tracing::{Level, error, span};
 use triomphe::Arc;
@@ -249,17 +250,17 @@ impl GlobalState {
             lt::DocumentFilter {
                 language: None,
                 scheme: None,
-                pattern: Some("**/*.rs".into()),
+                pattern: Some("**/*.wgsl".into()),
             },
             lt::DocumentFilter {
                 language: None,
                 scheme: None,
-                pattern: Some("**/Cargo.toml".into()),
+                pattern: Some("**/*.wesl".into()),
             },
             lt::DocumentFilter {
                 language: None,
                 scheme: None,
-                pattern: Some("**/Cargo.lock".into()),
+                pattern: Some("**/wesl.toml".into()),
             },
         ];
         selectors.extend(additional_filters);
@@ -892,6 +893,13 @@ impl GlobalState {
         &mut self,
         config: Config,
     ) {
-        let _old_config = std::mem::replace(&mut self.config, Arc::new(config));
+        let _p = tracing::info_span!("GlobalState::update_configuration").entered();
+        let old_config = std::mem::replace(&mut self.config, Arc::new(config));
+
+        if self.analysis_host.raw_database().extensions() != self.config.extensions() {
+            self.analysis_host
+                .raw_database_mut()
+                .set_extensions_with_durability(self.config.extensions(), Durability::MEDIUM);
+        }
     }
 }

@@ -35,10 +35,10 @@ type Checks =
 
 #[derive(Debug, Default, Clone)]
 pub(crate) struct DiagnosticCollection {
-    // FIXME: should be IntMap<FileId, Vec<ra_id::Diagnostic>>
+    // FIXME: should be FxHashMap<FileId, Vec<wa_id::Diagnostic>>
     pub(crate) native_syntax: IntMap<FileId, (DiagnosticsGeneration, Vec<lsp_types::Diagnostic>)>,
     pub(crate) native_semantic: IntMap<FileId, (DiagnosticsGeneration, Vec<lsp_types::Diagnostic>)>,
-    // FIXME: should be Vec<flycheck::Diagnostic>
+    // FIXME: should be Vec<WorkspaceFlycheckDiagnostic>
     pub(crate) check: Checks,
     pub(crate) check_fixes: CheckFixes,
     changes: IntSet<FileId>,

@@ -1,13 +1,17 @@
 use std::time::Instant;
 
-use base_db::change::Change;
+use base_db::change::Change as BaseDbChange;
 use crossbeam_channel::{Receiver, Sender, unbounded};
 use ide::{Analysis, AnalysisHost, Cancellable};
 use lsp_types::Url;
 use parking_lot::{MappedRwLockReadGuard, RwLock, RwLockReadGuard};
 use rustc_hash::FxHashMap;
 use triomphe::Arc;
-use vfs::{AbsPathBuf, FileId, VfsPath};
+use vfs::{
+    AbsPathBuf, Change as VfsChange, FileExcluded, FileId, Vfs, VfsPath,
+    loader::{Handle, Message},
+};
+use vfs_notify::NotifyHandle;
 
 use crate::{
     config::{Config, ConfigErrors},
@@ -59,8 +63,8 @@ pub(crate) struct GlobalState {
     pub(crate) last_reported_status: crate::lsp::extensions::ServerStatusParameters,
 
     // VFS
-    pub(crate) loader: HandleReceiver<Box<dyn vfs::loader::Handle>, Receiver<vfs::loader::Message>>,
-    pub(crate) vfs: Arc<RwLock<(vfs::Vfs, FxHashMap<FileId, LineEndings>)>>,
+    pub(crate) loader: HandleReceiver<Box<dyn Handle>, Receiver<Message>>,
+    pub(crate) vfs: Arc<RwLock<(Vfs, FxHashMap<FileId, LineEndings>)>>,
     pub(crate) vfs_config_version: u32,
     pub(crate) vfs_progress_config_version: u32,
     pub(crate) vfs_done: bool,
@@ -108,7 +112,7 @@ pub(crate) struct GlobalStateSnapshot {
     // pub(crate) check_fixes: CheckFixes,
     in_memory_documents: InMemoryDocuments,
     // pub(crate) semantic_tokens_cache: Arc<Mutex<FxHashMap<Url, SemanticTokens>>>,
-    vfs: Arc<RwLock<(vfs::Vfs, FxHashMap<FileId, LineEndings>)>>,
+    vfs: Arc<RwLock<(Vfs, FxHashMap<FileId, LineEndings>)>>,
     pub(crate) workspaces: Arc<[ProjectWorkspace]>,
     // used to signal semantic highlighting to fall back to syntax based highlighting until
     // proc-macros have been loaded
@@ -124,10 +128,10 @@ impl GlobalState {
         config: Config,
     ) -> Self {
         let loader = {
-            let (sender, receiver) = unbounded::<vfs::loader::Message>();
-            let handle: vfs_notify::NotifyHandle = vfs::loader::Handle::spawn(sender);
+            let (sender, receiver) = unbounded::<Message>();
+            let handle: NotifyHandle = Handle::spawn(sender);
             #[expect(clippy::as_conversions, reason = "tested to be valid")]
-            let handle = Box::new(handle) as Box<dyn vfs::loader::Handle>;
+            let handle = Box::new(handle) as Box<dyn Handle>;
             HandleReceiver { handle, receiver }
         };
 
@@ -147,7 +151,7 @@ impl GlobalState {
             TaskQueue { sender, receiver }
         };
 
-        let mut analysis_host = AnalysisHost::new(None);
+        let analysis_host = AnalysisHost::new(None);
         // if let Some(capacities) = config.lru_query_capacities_config() {
         //     analysis_host.update_lru_capacities(capacities);
         // }
@@ -168,7 +172,7 @@ impl GlobalState {
                 message: None,
             },
             loader,
-            vfs: Arc::new(RwLock::new((vfs::Vfs::default(), FxHashMap::default()))),
+            vfs: Arc::new(RwLock::new((Vfs::default(), FxHashMap::default()))),
             vfs_config_version: 0,
             // semantic_tokens_cache: Arc::new(Default::default()),
             vfs_progress_config_version: 0,
@@ -219,14 +223,14 @@ impl GlobalState {
 
     pub(crate) fn process_changes(&mut self) -> bool {
         let change = {
-            let mut change = Change::new();
+            let mut change = BaseDbChange::new();
             let (vfs, line_endings_map) = &mut *self.vfs.write();
             let changed_files = vfs.take_changes();
             if changed_files.is_empty() {
                 return false;
             }
             for file in changed_files.into_values() {
-                let text = if let vfs::Change::Create(vector, _) | vfs::Change::Modify(vector, _) =
+                let text = if let VfsChange::Create(vector, _) | VfsChange::Modify(vector, _) =
                     file.change
                 {
                     String::from_utf8(vector).ok().map(|text| {
@@ -239,8 +243,7 @@ impl GlobalState {
                 } else {
                     None
                 };
-                let path = vfs.file_path(file.file_id);
-                change.change_file(file.file_id, text, path.clone());
+                change.change_file(file.file_id, text);
             }
 
             let roots = self.source_root_config.partition(vfs);
@@ -382,7 +385,7 @@ impl GlobalState {
 }
 
 impl GlobalStateSnapshot {
-    fn vfs_read(&self) -> MappedRwLockReadGuard<'_, vfs::Vfs> {
+    fn vfs_read(&self) -> MappedRwLockReadGuard<'_, Vfs> {
         RwLockReadGuard::map(self.vfs.read(), |(vfs, _)| vfs)
     }
 
@@ -428,7 +431,7 @@ impl GlobalStateSnapshot {
 }
 
 pub(crate) fn file_id_to_url(
-    vfs: &vfs::Vfs,
+    vfs: &Vfs,
     id: FileId,
 ) -> Url {
     let path = vfs.file_path(id);
@@ -438,7 +441,7 @@ pub(crate) fn file_id_to_url(
 
 /// Returns `None` if the file was excluded.
 pub(crate) fn url_to_file_id(
-    vfs: &vfs::Vfs,
+    vfs: &Vfs,
     url: &Url,
 ) -> anyhow::Result<Option<FileId>> {
     let path = from_proto::vfs_path(url)?;
@@ -447,14 +450,14 @@ pub(crate) fn url_to_file_id(
 
 /// Returns `None` if the file was excluded.
 pub(crate) fn vfs_path_to_file_id(
-    vfs: &vfs::Vfs,
+    vfs: &Vfs,
     vfs_path: &VfsPath,
 ) -> anyhow::Result<Option<FileId>> {
     let (file_id, excluded) = vfs
         .file_id(vfs_path)
         .ok_or_else(|| anyhow::format_err!("file not found: {vfs_path}"))?;
     match excluded {
-        vfs::FileExcluded::Yes => Ok(None),
-        vfs::FileExcluded::No => Ok(Some(file_id)),
+        FileExcluded::Yes => Ok(None),
+        FileExcluded::No => Ok(Some(file_id)),
     }
 }

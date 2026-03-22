@@ -28,8 +28,17 @@ use crate::{
     },
 };
 
+#[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+pub struct ExtensionsConfig {
+    pub shader_int64: bool,
+}
+
 #[salsa::query_group(DefDatabaseStorage)]
 pub trait DefDatabase: InternDatabase + SourceDatabase {
+    /// Which language extensions are enabled.
+    #[salsa::input]
+    fn extensions(&self) -> ExtensionsConfig;
+
     fn parse_or_resolve(
         &self,
         key: HirFileId,
@@ -39,16 +48,6 @@ pub trait DefDatabase: InternDatabase + SourceDatabase {
         &self,
         key: FileId,
     ) -> EditionedFileId;
-
-    fn get_path(
-        &self,
-        key: HirFileId,
-    ) -> VfsPath;
-
-    fn get_file_id(
-        &self,
-        key: VfsPath,
-    ) -> Result<FileId, ()>;
 
     fn ast_id_map(
         &self,
@@ -165,23 +164,6 @@ fn signature_with_source_map(
     }
 }
 
-fn get_path(
-    database: &dyn DefDatabase,
-    file_id: HirFileId,
-) -> VfsPath {
-    match file_id.0 {
-        HirFileIdRepr::FileId(file_id) => database.file_path(file_id.file_id),
-    }
-}
-
-#[expect(clippy::unnecessary_wraps, reason = "Needed for salsa")]
-fn get_file_id(
-    database: &dyn DefDatabase,
-    path: VfsPath,
-) -> Result<FileId, ()> {
-    Ok(database.file_id(path))
-}
-
 fn parse_or_resolve(
     database: &dyn DefDatabase,
     file_id: HirFileId,
@@ -195,18 +177,21 @@ fn editioned_file_id(
     database: &dyn DefDatabase,
     file_id: FileId,
 ) -> EditionedFileId {
-    let edition =
-        if let Some((_, Some(extension))) = database.file_path(file_id).name_and_extension() {
-            if extension.eq_ignore_ascii_case("wesl") {
-                Edition::LATEST
-            } else if extension.eq_ignore_ascii_case("wgsl") {
-                Edition::Wgsl
-            } else {
-                Edition::CURRENT
-            }
+    let source_root = database.source_root(database.file_source_root(file_id));
+    let edition = if let Some((_, Some(extension))) = source_root
+        .path_for_file(file_id)
+        .and_then(|file| file.name_and_extension())
+    {
+        if extension.eq_ignore_ascii_case("wesl") {
+            Edition::LATEST
+        } else if extension.eq_ignore_ascii_case("wgsl") {
+            Edition::Wgsl
         } else {
             Edition::CURRENT
-        };
+        }
+    } else {
+        Edition::CURRENT
+    };
 
     EditionedFileId { file_id, edition }
 }

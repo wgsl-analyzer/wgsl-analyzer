@@ -1,0 +1,19 @@
+[package]
+name = "test-fixture"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+description = "Test fixtures for wgsl-analyzer."
+license.workspace = true
+
+[dependencies]
+base-db.workspace = true
+edition.workspace = true
+indexmap.workspace = true
+rustc-hash.workspace = true
+stdx.workspace = true
+test-utils.workspace = true
+triomphe.workspace = true
+
+[lints]
+workspace = true

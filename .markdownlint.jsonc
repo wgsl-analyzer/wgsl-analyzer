@@ -118,6 +118,7 @@
 			// Add proper nouns here
 			"mdBook",
 			"rust-analyzer",
+			"rust-lang",
 			"wgsl-formatter",
 			"wgsl-analyzer",
 			"Rust",

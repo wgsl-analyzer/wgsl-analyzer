@@ -1,7 +1,10 @@
 use std::{fmt, sync::OnceLock};
 
 use base_db::input::SourceRootId;
-use hir::diagnostics::{DiagnosticsConfig, NagaVersion};
+use hir::{
+    ExtensionsConfig,
+    diagnostics::{DiagnosticsConfig, NagaVersion},
+};
 use hir_ty::ty::pretty::TypeVerbosity;
 use ide::{
     HoverConfig, HoverDocFormat, MemoryLayoutHoverRenderKind,
@@ -17,18 +20,33 @@ use triomphe::Arc;
 use vfs::AbsPathBuf;
 use wgsl_formatter::FormattingOptions;
 
-// use ide::{
-//     AssistConfig, CallHierarchyConfig, CallableSnippets, CompletionConfig,
-//     CompletionFieldsToResolve, DiagnosticsConfig, ExprFillDefaultMode, GenericParameterHints,
-//     HighlightConfig, HighlightRelatedConfig, HoverConfig, HoverDocFormat, InlayFieldsToResolve,
-//     InlayHintsConfig, JoinLinesConfig, MemoryLayoutHoverConfig, MemoryLayoutHoverRenderKind,
-//     Snippet, SnippetScope, SourceRootId,
-// };
-// use ide_db::{
-//     imports::insert_use::{ImportGranularity, InsertUseConfig, PrefixKind},
-//     SnippetCap,
-// };
 use crate::lsp::capabilities::ClientCapabilities;
+use ide::{
+    // AssistConfig,
+    // CallHierarchyConfig,
+    // CallableSnippets,
+    // CompletionConfig,
+    // CompletionFieldsToResolve,
+    // DiagnosticsConfig,
+    // ExprFillDefaultMode,
+    // GenericParameterHints,
+    // HighlightConfig,
+    // HighlightRelatedConfig,
+    // HoverConfig,
+    // HoverDocFormat,
+    InlayFieldsToResolve,
+    InlayHintsConfig,
+    // JoinLinesConfig,
+    MemoryLayoutHoverConfig,
+    //  MemoryLayoutHoverRenderKind,
+    // Snippet,
+    // SnippetScope,
+    // SourceRootId,
+};
+use ide_db::{
+    SnippetCapability,
+    // imports::insert_use::{ImportGranularity, InsertUseConfig, PrefixKind},
+};
 
 // Defines the server-side configuration of the wgsl-analyzer. We generate *parts* of VS Code's
 // `package.json` config from this. Run `cargo test` to re-generate that file.
@@ -58,6 +76,9 @@ config_data! {
         diagnostics_nagaVersion: NagaVersionConfig = NagaVersionConfig::default(),
         /// Controls whether to show type errors.
         diagnostics_typeErrors: bool = true,
+
+        /// Whether to enable u64 and i64 scalar types.
+        extensions_shaderInt64: bool = true,
 
         /// Whether to show inlay hints.
         inlayHints_enabled: bool = true,
@@ -137,6 +158,7 @@ pub struct Config {
     workspace_roots: Vec<AbsPathBuf>,
     capabilities: ClientCapabilities,
     root_path: AbsPathBuf,
+    // TODO: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/921
     // snippets: Vec<Snippet>,
     client_info: Option<ClientInfo>,
     diagnostics_enable: bool,
@@ -194,40 +216,6 @@ pub struct DiscoverWorkspaceConfig {
     pub command: Vec<String>,
     pub progress_label: String,
     pub files_to_watch: Vec<String>,
-}
-
-#[derive(Clone, Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct InlayHintsConfig {
-    pub render_colons: bool,
-    pub enabled: bool,
-    pub type_hints: bool,
-    pub parameter_hints: bool,
-    pub struct_layout_hints: bool,
-    pub type_verbosity: InlayHintsTypeVerbosity,
-}
-
-impl Default for InlayHintsConfig {
-    fn default() -> Self {
-        Self {
-            render_colons: true,
-            enabled: true,
-            type_hints: true,
-            parameter_hints: true,
-            struct_layout_hints: false,
-            type_verbosity: InlayHintsTypeVerbosity::default(),
-        }
-    }
-}
-
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct InlayFieldsToResolve {
-    pub resolve_text_edits: bool,
-    pub resolve_hint_tooltip: bool,
-    pub resolve_label_tooltip: bool,
-    pub resolve_label_location: bool,
-    pub resolve_label_command: bool,
 }
 
 #[derive(Clone, Debug, Default)]
@@ -442,28 +430,40 @@ impl Config {
     ) -> CompletionConfig {
         let client_capability_fields = self.completion_resolve_support_properties();
         CompletionConfig {
-            enable_postfix_completions: false,
-            enable_imports_on_the_fly: false,
-            enable_self_on_the_fly: false,
-            enable_auto_iter: false,
-            enable_auto_await: false,
-            enable_private_editable: false,
-            enable_term_search: false,
-            term_search_fuel: 400,
-            full_function_signatures: false,
-            callable: None,
-            add_semicolon_to_unit: false,
-            // pub snippet_cap: Option<SnippetCap>,
-            // pub insert_use: InsertUseConfig,
-            prefer_no_std: false,
-            prefer_prelude: false,
-            prefer_absolute: false,
-            // pub snippets: Vec<Snippet>,
+            // TODO: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/913
+            // enable_postfix_completions: false,
+            // TODO: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/914
+            // enable_imports_on_the_fly: false,
+            // enable_private_editable: false,
+            // TODO: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/915
+            // enable_term_search: false,
+            // TODO: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/915
+            // term_search_fuel: 400,
+            // TODO: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/916
+            // full_function_signatures: false,
+            // TODO: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/917
+            // callable: None,
+            // TODO: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/920
+            // snippet_capability: SnippetCapability::new(self.completion_snippet()),
+            // TODO: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/914
+            // insert_use: InsertUseConfig,
+            // TODO: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/922
+            // prefer_prelude: false,
+            // snippets: Vec<Snippet>,
+            // TODO: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/919
             limit: None,
             fields_to_resolve: CompletionFieldsToResolve::from_client_capabilities(
                 &client_capability_fields,
             ),
-            exclude_flyimport: <_>::default(),
+            // rust-analyzer did this due to a bug. If there are problems with completions on Helix or Neovim, look into this more.
+            // https://github.com/rust-lang/rust-analyzer/issues/18547#issuecomment-2523527080
+            // fields_to_resolve: if self.client_is_neovim() {
+            //     CompletionFieldsToResolve::empty()
+            // } else {
+            //     CompletionFieldsToResolve::from_client_capabilities(&client_capability_fields)
+            // },
+            // TODO: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/914
+            // exclude_flyimport: Vec::default(),
         }
     }
 
@@ -528,6 +528,13 @@ impl Config {
             fields_to_resolve: ide::inlay_hints::InlayFieldsToResolve::from_client_capabilities(
                 &client_capability_fields,
             ),
+        }
+    }
+
+    #[must_use]
+    pub fn extensions(&self) -> ExtensionsConfig {
+        ExtensionsConfig {
+            shader_int64: *self.extensions_shaderInt64(),
         }
     }
 

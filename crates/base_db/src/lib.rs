@@ -5,13 +5,12 @@ pub mod change;
 pub mod input;
 
 mod util_types;
-use input::{SourceRoot, SourceRootId};
+pub use input::{SourceRoot, SourceRootId};
 use line_index::LineIndex;
 use syntax::{Edition, Parse};
 use triomphe::Arc;
 pub use util_types::*;
-pub use vfs::FileId;
-use vfs::{AnchoredPath, VfsPath};
+pub use vfs::{AnchoredPath, AnchoredPathBuf, FileId, VfsPath, file_set::FileSet};
 
 pub trait FileLoader {
     fn resolve_path(
@@ -27,18 +26,6 @@ pub trait SourceDatabase: FileLoader {
         &self,
         file_id: FileId,
     ) -> Arc<String>;
-
-    #[salsa::input]
-    fn file_path(
-        &self,
-        file_id: FileId,
-    ) -> VfsPath;
-
-    #[salsa::input]
-    fn file_id(
-        &self,
-        path: VfsPath,
-    ) -> FileId;
 
     /// Path to a file, relative to the root of its source root.
     /// Source root of the file.

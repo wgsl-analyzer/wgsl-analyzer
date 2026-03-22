@@ -180,8 +180,8 @@ where
     for element in first.syntax().siblings_with_tokens(Direction::Next) {
         let node = match element {
             NodeOrToken::Token(token) => {
-                if let Some(ws) = ast::Whitespace::cast(token)
-                    && !ws.spans_multiple_lines()
+                if let Some(whitespace) = ast::Whitespace::cast(token)
+                    && !whitespace.spans_multiple_lines()
                 {
                     // Ignore whitespace without blank lines
                     continue;
@@ -237,8 +237,8 @@ fn contiguous_range_for_comment(
     for element in first.syntax().siblings_with_tokens(Direction::Next) {
         match element {
             NodeOrToken::Token(token) => {
-                if let Some(ws) = ast::Whitespace::cast(token.clone())
-                    && !ws.spans_multiple_lines()
+                if let Some(whitespace) = ast::Whitespace::cast(token.clone())
+                    && !whitespace.spans_multiple_lines()
                 {
                     // Ignore whitespace without blank lines
                     continue;
@@ -294,7 +294,7 @@ mod tests {
             "The amount of folds is different than the expected amount"
         );
 
-        for (fold, (range, attr)) in folds.iter().zip(ranges.into_iter()) {
+        for (fold, (range, attr)) in folds.iter().zip(ranges) {
             assert_eq!(
                 fold.range.start(),
                 range.start(),

@@ -516,10 +516,13 @@ ast_node! {
     TemplateList:
     left_angle_token: Option<SyntaxToken TemplateStart>;
     parameters: AstChildren<Expression>;
-    t_angle_token: Option<SyntaxToken TemplateEnd>;
+    right_angle_token: Option<SyntaxToken TemplateEnd>;
 }
 
-ast_node!(InfixExpression);
+ast_node! {
+    InfixExpression
+}
+
 ast_token_enum! {
     enum BinaryOperatorKind {
         EqualEqual,
@@ -681,7 +684,10 @@ pub enum IncrementDecrement {
     Decrement,
 }
 
-ast_node!(IncrementDecrementStatement);
+ast_node! {
+    IncrementDecrementStatement
+}
+
 impl IncrementDecrementStatement {
     #[must_use]
     pub fn expression(&self) -> Option<Expression> {
@@ -723,7 +729,9 @@ ast_token_enum! {
     }
 }
 
-ast_node!(CompoundAssignmentStatement);
+ast_node! {
+    CompoundAssignmentStatement
+}
 
 impl CompoundAssignmentStatement {
     #[must_use]
@@ -803,6 +811,8 @@ ast_node! {
 
 ast_node! {
     SwitchBody:
+    left_brace_token: Option<SyntaxToken BraceLeft>;
+    right_brace_token: Option<SyntaxToken BraceRight>;
     cases: AstChildren<SwitchBodyCase>;
 }
 
@@ -879,9 +889,17 @@ ast_node! {
     expression: Option<Expression>;
 }
 
-ast_node!(BreakStatement);
-ast_node!(ContinueStatement);
-ast_node!(DiscardStatement);
+ast_node! {
+    BreakStatement
+}
+
+ast_node! {
+    ContinueStatement
+}
+
+ast_node! {
+    DiscardStatement
+}
 
 ast_node! {
     ForStatement:

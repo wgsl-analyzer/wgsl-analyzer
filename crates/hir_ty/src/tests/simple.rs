@@ -1,10 +1,12 @@
 use expect_test::expect;
+use hir_def::database::ExtensionsConfig;
 
 use crate::tests::check_infer;
 
 #[test]
 fn type_alias_in_struct() {
     check_infer(
+        ExtensionsConfig::default(),
         "
         alias Foo = u32;
         struct S { x: Foo }
@@ -14,83 +16,86 @@ fn type_alias_in_struct() {
             let b = a.x + 10u;
         }
         ",
-        expect![["
-            90..91 'a': S
-            94..98 'S(5)': S
-            96..97 '5': integer
-            116..117 'b': u32
-            120..121 'a': S
-            120..123 'a.x': ref<u32>
-            120..129 'a.x + 10u': u32
-            126..129 '10u': u32
-        "]],
+        expect![[r#"
+            57..58 'a': S
+            61..65 'S(5)': S
+            63..64 '5': integer
+            75..76 'b': u32
+            79..80 'a': S
+            79..82 'a.x': ref<u32>
+            79..88 'a.x + 10u': u32
+            85..88 '10u': u32
+        "#]],
     );
 }
 
 #[test]
 fn const_array() {
     check_infer(
+        ExtensionsConfig::default(),
         "
         const a: array<f32, 1> = array(1);
         const b = array(1,2,3);
         ",
-        expect![["
-            15..16 'a': array<f32, 1>
-            34..42 'array(1)': array<integer, 1>
-            40..41 '1': integer
-            58..59 'b': array<integer, 3>
-            62..74 'array(1,2,3)': array<integer, 3>
-            68..69 '1': integer
-            70..71 '2': integer
-            72..73 '3': integer
-        "]],
+        expect![[r#"
+            6..7 'a': array<f32, 1>
+            25..33 'array(1)': array<integer, 1>
+            31..32 '1': integer
+            41..42 'b': array<integer, 3>
+            45..57 'array(1,2,3)': array<integer, 3>
+            51..52 '1': integer
+            53..54 '2': integer
+            55..56 '3': integer
+        "#]],
     );
 }
 
 #[test]
 fn const_vec() {
     check_infer(
+        ExtensionsConfig::default(),
         "
         const a: vec3<u32> = vec3(1);
         const b = vec2f();
         const c = vec2();
         ",
-        expect![["
-            15..16 'a': vec3<u32>
-            30..37 'vec3(1)': vec3<integer>
-            35..36 '1': integer
-            53..54 'b': vec2<f32>
-            57..64 'vec2f()': vec2<f32>
-            80..81 'c': vec2<integer>
-            84..90 'vec2()': vec2<integer>
-        "]],
+        expect![[r#"
+            6..7 'a': vec3<u32>
+            21..28 'vec3(1)': vec3<integer>
+            26..27 '1': integer
+            36..37 'b': vec2<f32>
+            40..47 'vec2f()': vec2<f32>
+            55..56 'c': vec2<integer>
+            59..65 'vec2()': vec2<integer>
+        "#]],
     );
 }
 
 #[test]
 fn const_array_of_vec() {
     check_infer(
+        ExtensionsConfig::default(),
         "
         const pos = array(vec2(1.0,  1.0), vec2(1.0, -1.0));
         const pos_explicit = array<vec2f, 1>(vec2(-1.0, -1.0));
         ",
         expect![[r#"
-            15..18 'pos': array<vec2<float>, 2>
-            21..60 'array(...-1.0))': array<vec2<float>, 2>
-            27..42 'vec2(1.0,  1.0)': vec2<float>
-            32..35 '1.0': float
-            38..41 '1.0': float
-            44..59 'vec2(1.0, -1.0)': vec2<float>
-            49..52 '1.0': float
-            54..58 '-1.0': float
-            55..58 '1.0': float
-            76..88 'pos_explicit': array<vec2<f32>, 1>
-            91..124 'array<...-1.0))': array<vec2<f32>, 1>
-            107..123 'vec2(-... -1.0)': vec2<float>
-            112..116 '-1.0': float
-            113..116 '1.0': float
-            118..122 '-1.0': float
-            119..122 '1.0': float
+            6..9 'pos': array<vec2<float>, 2>
+            12..51 'array(...-1.0))': array<vec2<float>, 2>
+            18..33 'vec2(1.0,  1.0)': vec2<float>
+            23..26 '1.0': float
+            29..32 '1.0': float
+            35..50 'vec2(1.0, -1.0)': vec2<float>
+            40..43 '1.0': float
+            45..49 '-1.0': float
+            46..49 '1.0': float
+            59..71 'pos_explicit': array<vec2<f32>, 1>
+            74..107 'array<...-1.0))': array<vec2<f32>, 1>
+            90..106 'vec2(-... -1.0)': vec2<float>
+            95..99 '-1.0': float
+            96..99 '1.0': float
+            101..105 '-1.0': float
+            102..105 '1.0': float
         "#]],
     );
 }
@@ -98,14 +103,15 @@ fn const_array_of_vec() {
 #[test]
 fn const_u32_as_array_size() {
     check_infer(
+        ExtensionsConfig::default(),
         "
         const maxLayers = 12u;
         var layers: array<f32, maxLayers>;
         ",
         expect![[r#"
-            15..24 'maxLayers': u32
-            27..30 '12u': u32
-            44..50 'layers': ref<[error]>
+            6..15 'maxLayers': u32
+            18..21 '12u': u32
+            27..33 'layers': ref<[error]>
             InferenceDiagnostic { source: Signature, kind: InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(1)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } } }
             InferenceDiagnostic { source: Signature, kind: InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(1)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } } }
         "#]],
@@ -115,18 +121,19 @@ fn const_u32_as_array_size() {
 #[test]
 fn multiply_with_minus_one() {
     check_infer(
+        ExtensionsConfig::default(),
         r#"
     const x: i32 = 1;
     const y = x * -1;
         "#,
         expect![[r#"
-            11..12 'x': i32
-            20..21 '1': integer
-            33..34 'y': i32
-            37..38 'x': i32
-            37..43 'x * -1': i32
-            41..43 '-1': integer
-            42..43 '1': integer
+            6..7 'x': i32
+            15..16 '1': integer
+            24..25 'y': i32
+            28..29 'x': i32
+            28..34 'x * -1': i32
+            32..34 '-1': integer
+            33..34 '1': integer
         "#]],
     );
 }
@@ -134,53 +141,57 @@ fn multiply_with_minus_one() {
 #[test]
 fn var_array() {
     check_infer(
+        ExtensionsConfig::default(),
         "
         @group(0) @binding(0) var<storage, read_write> data: array<f32>;
         ",
-        expect![["
-            56..60 'data': ref<array<f32>>
-        "]],
+        expect![[r#"
+            47..51 'data': ref<array<f32>>
+        "#]],
     );
 }
 
 #[test]
 fn break_if_bool() {
     check_infer(
+        ExtensionsConfig::default(),
         "
         fn foo() {
             let a = 3;
             loop { continuing { break if a > 2; } }
         }
         ",
-        expect![["
-            36..37 'a': i32
-            40..41 '3': integer
-            84..85 'a': i32
-            84..89 'a > 2': bool
-            88..89 '2': integer
-        "]],
+        expect![[r#"
+            19..20 'a': i32
+            23..24 '3': integer
+            59..60 'a': i32
+            59..64 'a > 2': bool
+            63..64 '2': integer
+        "#]],
     );
 }
 
 #[test]
 fn abstract_number_for_const() {
     check_infer(
+        ExtensionsConfig::default(),
         "
 const some_integer = 1;
 const some_i32: i32 = 1;
         ",
-        expect![["
-            7..19 'some_integer': integer
-            22..23 '1': integer
-            31..39 'some_i32': i32
-            47..48 '1': integer
-        "]],
+        expect![[r#"
+            6..18 'some_integer': integer
+            21..22 '1': integer
+            30..38 'some_i32': i32
+            46..47 '1': integer
+        "#]],
     );
 }
 
 #[test]
 fn assign_abstract_number() {
     check_infer(
+        ExtensionsConfig::default(),
         "
 var i32_from_type : i32 = 3;
 
@@ -191,35 +202,36 @@ var i32_from_type : i32 = 3;
 var f32_promotion : f32 = 5;
 }
         ",
-        expect![["
-            5..18 'i32_from_type': ref<i32>
-            27..28 '3': integer
-            47..55 'some_i32': i32
-            58..59 '2': integer
-            65..73 'some_u32': u32
-            81..82 '2': integer
-            88..101 'i32_from_type': ref<i32>
-            110..111 '3': integer
-            117..130 'f32_promotion': ref<f32>
-            139..140 '5': integer
-        "]],
+        expect![[r#"
+            4..17 'i32_from_type': ref<i32>
+            26..27 '3': integer
+            46..54 'some_i32': i32
+            57..58 '2': integer
+            64..72 'some_u32': u32
+            80..81 '2': integer
+            87..100 'i32_from_type': ref<i32>
+            109..110 '3': integer
+            116..129 'f32_promotion': ref<f32>
+            138..139 '5': integer
+        "#]],
     );
 }
 
 #[test]
 fn negate_abstract_number() {
     check_infer(
+        ExtensionsConfig::default(),
         "
 const a = -4;
 const b: f32 = -3.5;
         ",
         expect![[r#"
-            7..8 'a': integer
-            11..13 '-4': integer
-            12..13 '4': integer
-            21..22 'b': f32
-            30..34 '-3.5': float
-            31..34 '3.5': float
+            6..7 'a': integer
+            10..12 '-4': integer
+            11..12 '4': integer
+            20..21 'b': f32
+            29..33 '-3.5': float
+            30..33 '3.5': float
         "#]],
     );
 }
@@ -227,30 +239,32 @@ const b: f32 = -3.5;
 #[test]
 fn add_abstract_integers() {
     check_infer(
+        ExtensionsConfig::default(),
         "
 fn main() {
 var u32_expr1 = 6 + 1u;
 var u32_expr2 = 1u + (1 + 2);
 }
     ",
-        expect![["
-            17..26 'u32_expr1': ref<u32>
-            29..30 '6': integer
-            29..35 '6 + 1u': u32
-            33..35 '1u': u32
-            41..50 'u32_expr2': ref<u32>
-            53..55 '1u': u32
-            53..65 '1u + (1 + 2)': u32
-            59..60 '1': integer
-            59..64 '1 + 2': integer
-            63..64 '2': integer
-        "]],
+        expect![[r#"
+            16..25 'u32_expr1': ref<u32>
+            28..29 '6': integer
+            28..34 '6 + 1u': u32
+            32..34 '1u': u32
+            40..49 'u32_expr2': ref<u32>
+            52..54 '1u': u32
+            52..64 '1u + (1 + 2)': u32
+            58..59 '1': integer
+            58..63 '1 + 2': integer
+            62..63 '2': integer
+        "#]],
     );
 }
 
 #[test]
 fn add_abstract_floats() {
     check_infer(
+        ExtensionsConfig::default(),
         "
 fn main() {
 let f32_promotion1 = 1.0 + 2 + 3;
@@ -259,42 +273,43 @@ let f32_promotion3 = 1f + ((2 + 3) + 4);
 let f32_promotion4 = ((2 + (3 + 1f)) + 4);
 }
     ",
-        expect![["
-            17..31 'f32_promotion1': f32
-            34..37 '1.0': float
-            34..41 '1.0 + 2': float
-            34..45 '1.0 + 2 + 3': float
-            40..41 '2': integer
-            44..45 '3': integer
-            51..65 'f32_promotion2': f32
-            68..69 '2': integer
-            68..75 '2 + 1.0': float
-            68..79 '2 + 1.0 + 3': float
-            72..75 '1.0': float
-            78..79 '3': integer
-            85..99 'f32_promotion3': f32
-            102..104 '1f': f32
-            102..120 '1f + (...) + 4)': f32
-            108..119 '(2 + 3) + 4': integer
-            109..110 '2': integer
-            109..114 '2 + 3': integer
-            113..114 '3': integer
-            118..119 '4': integer
-            126..140 'f32_promotion4': f32
-            144..162 '(2 + (...)) + 4': f32
-            145..146 '2': integer
-            145..157 '2 + (3 + 1f)': f32
-            150..151 '3': integer
-            150..156 '3 + 1f': f32
-            154..156 '1f': f32
-            161..162 '4': integer
-        "]],
+        expect![[r#"
+            16..30 'f32_promotion1': f32
+            33..36 '1.0': float
+            33..40 '1.0 + 2': float
+            33..44 '1.0 + 2 + 3': float
+            39..40 '2': integer
+            43..44 '3': integer
+            50..64 'f32_promotion2': f32
+            67..68 '2': integer
+            67..74 '2 + 1.0': float
+            67..78 '2 + 1.0 + 3': float
+            71..74 '1.0': float
+            77..78 '3': integer
+            84..98 'f32_promotion3': f32
+            101..103 '1f': f32
+            101..119 '1f + (...) + 4)': f32
+            107..118 '(2 + 3) + 4': integer
+            108..109 '2': integer
+            108..113 '2 + 3': integer
+            112..113 '3': integer
+            117..118 '4': integer
+            125..139 'f32_promotion4': f32
+            143..161 '(2 + (...)) + 4': f32
+            144..145 '2': integer
+            144..156 '2 + (3 + 1f)': f32
+            149..150 '3': integer
+            149..155 '3 + 1f': f32
+            153..155 '1f': f32
+            160..161 '4': integer
+        "#]],
     );
 }
 
 #[test]
 fn call_with_abstract_numbers() {
     check_infer(
+        ExtensionsConfig::default(),
         "
 fn main() {
 let i32_clamp = clamp(1, -5, 5);
@@ -303,22 +318,22 @@ let f32_clamp = clamp(0, 1f, 1);
 }
     ",
         expect![[r#"
-            17..26 'i32_clamp': i32
-            29..44 'clamp(1, -5, 5)': integer
-            35..36 '1': integer
-            38..40 '-5': integer
-            39..40 '5': integer
-            42..43 '5': integer
-            50..59 'u32_clamp': u32
-            62..77 'clamp(5, 0, 1u)': u32
-            68..69 '5': integer
-            71..72 '0': integer
-            74..76 '1u': u32
-            83..92 'f32_clamp': f32
-            95..110 'clamp(0, 1f, 1)': f32
-            101..102 '0': integer
-            104..106 '1f': f32
-            108..109 '1': integer
+            16..25 'i32_clamp': i32
+            28..43 'clamp(1, -5, 5)': integer
+            34..35 '1': integer
+            37..39 '-5': integer
+            38..39 '5': integer
+            41..42 '5': integer
+            49..58 'u32_clamp': u32
+            61..76 'clamp(5, 0, 1u)': u32
+            67..68 '5': integer
+            70..71 '0': integer
+            73..75 '1u': u32
+            82..91 'f32_clamp': f32
+            94..109 'clamp(0, 1f, 1)': f32
+            100..101 '0': integer
+            103..105 '1f': f32
+            107..108 '1': integer
         "#]],
     );
 }
@@ -326,6 +341,7 @@ let f32_clamp = clamp(0, 1f, 1);
 #[test]
 fn call_user_defined_with_abstract_numbers() {
     check_infer(
+        ExtensionsConfig::default(),
         "
 fn make_one(x: f32) -> u32 {
   return 1u;
@@ -338,48 +354,49 @@ fn main() {
 
 ",
         expect![[r#"
-            13..14 'x': f32
-            39..41 '1u': u32
-            66..67 'a': u32
-            70..85 'make_one(0.333)': u32
-            79..84 '0.333': float
+            12..13 'x': f32
+            38..40 '1u': u32
+            65..66 'a': u32
+            69..84 'make_one(0.333)': u32
+            78..83 '0.333': float
         "#]],
     );
 }
 
 #[test]
 fn vec_constructors() {
-    //
     check_infer(
+        ExtensionsConfig::default(),
         "
 const a = vec3(1f, 2f, 3f);
 fn main() {
 let b = vec4(vec3f(1f), 1f);
 }
     ",
-        expect![["
-            7..8 'a': vec3<f32>
-            11..27 'vec3(1...f, 3f)': vec3<f32>
-            16..18 '1f': f32
-            20..22 '2f': f32
-            24..26 '3f': f32
-            45..46 'b': vec4<f32>
-            49..68 'vec4(v...), 1f)': vec4<f32>
-            54..63 'vec3f(1f)': vec3<f32>
-            60..62 '1f': f32
-            65..67 '1f': f32
-        "]],
+        expect![[r#"
+            6..7 'a': vec3<f32>
+            10..26 'vec3(1...f, 3f)': vec3<f32>
+            15..17 '1f': f32
+            19..21 '2f': f32
+            23..25 '3f': f32
+            44..45 'b': vec4<f32>
+            48..67 'vec4(v...), 1f)': vec4<f32>
+            53..62 'vec3f(1f)': vec3<f32>
+            59..61 '1f': f32
+            64..66 '1f': f32
+        "#]],
     );
 }
 
 #[test]
 fn texture_storage_2d_template() {
     check_infer(
+        ExtensionsConfig::default(),
         "
 var framebuffer : texture_storage_2d<rgba16float, write>;
     ",
         expect![[r#"
-            5..16 'framebuffer': ref<texture_storage_2d<rgba16float,write>>
+            4..15 'framebuffer': ref<texture_storage_2d<rgba16float,write>>
         "#]],
     );
 }
@@ -387,16 +404,17 @@ var framebuffer : texture_storage_2d<rgba16float, write>;
 #[test]
 fn global_assert_statement_correct() {
     check_infer(
+        ExtensionsConfig::default(),
         "
         const a = 29;
         const_assert 27 < a;
     ",
         expect![[r#"
-            15..16 'a': integer
-            19..21 '29': integer
-            44..46 '27': integer
-            44..50 '27 < a': bool
-            49..50 'a': integer
+            6..7 'a': integer
+            10..12 '29': integer
+            27..29 '27': integer
+            27..33 '27 < a': bool
+            32..33 'a': integer
         "#]],
     );
 }
@@ -404,17 +422,18 @@ fn global_assert_statement_correct() {
 #[test]
 fn global_assert_statement_wrong() {
     check_infer(
+        ExtensionsConfig::default(),
         "
         const a = 29;
         const_assert 27 + a;
     ",
         expect![[r#"
-            15..16 'a': integer
-            19..21 '29': integer
-            44..46 '27': integer
-            44..50 '27 + a': integer
-            49..50 'a': integer
-            44..50 '27 + a': expected bool but got integer
+            6..7 'a': integer
+            10..12 '29': integer
+            27..29 '27': integer
+            27..33 '27 + a': integer
+            32..33 'a': integer
+            27..33 '27 + a': expected bool but got integer
         "#]],
     );
 }
@@ -422,6 +441,7 @@ fn global_assert_statement_wrong() {
 #[test]
 fn global_var_function_address_space_error() {
     check_infer(
+        ExtensionsConfig::default(),
         "var<function> not_allowed_at_module_level: u32;",
         expect![[r#"
             14..41 'not_al..._level': ref<u32>
@@ -434,6 +454,7 @@ fn global_var_function_address_space_error() {
 fn no_crash_on_hex_int() {
     // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/826
     check_infer(
+        ExtensionsConfig::default(),
         "
 fn f() {
     let i2 = 0u;
@@ -441,14 +462,78 @@ fn f() {
 }
 ",
         expect![[r#"
-            18..20 'i2': u32
-            23..25 '0u': u32
-            35..37 'p0': u32
-            40..56 '(i2 >>... & 0xf': u32
-            41..43 'i2': u32
-            41..49 'i2 >> 0u': u32
-            47..49 '0u': u32
-            53..56 '0xf': integer
+            17..19 'i2': u32
+            22..24 '0u': u32
+            34..36 'p0': u32
+            39..55 '(i2 >>... & 0xf': u32
+            40..42 'i2': u32
+            40..48 'i2 >> 0u': u32
+            46..48 '0u': u32
+            52..55 '0xf': integer
+        "#]],
+    );
+}
+
+#[test]
+fn bitcast_builtin() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+fn main() {
+    let a = bitcast<f32>(1u);
+    let b = bitcast<u32>(1.0f);
+    let c = bitcast<i32>(1u);
+    let d = bitcast<vec2<f32>>(vec2<u32>(1u, 2u));
+    let e = bitcast<vec4<i32>>(vec4<f32>(1.0f, 2.0f, 3.0f, 4.0f));
+    let f = bitcast<f32>(1u) + 1.0f;
+    let g = bitcast<u32>(bitcast<f32>(42u));
+}
+    ",
+        expect![[r#"
+            20..21 'a': f32
+            24..40 'bitcas...2>(1u)': f32
+            37..39 '1u': u32
+            50..51 'b': u32
+            54..72 'bitcas...(1.0f)': u32
+            67..71 '1.0f': f32
+            82..83 'c': i32
+            86..102 'bitcas...2>(1u)': i32
+            99..101 '1u': u32
+            112..113 'd': vec2<f32>
+            116..153 'bitcas..., 2u))': vec2<f32>
+            135..152 'vec2<u...u, 2u)': vec2<u32>
+            145..147 '1u': u32
+            149..151 '2u': u32
+            163..164 'e': vec4<i32>
+            167..220 'bitcas...4.0f))': vec4<i32>
+            186..219 'vec4<f... 4.0f)': vec4<f32>
+            196..200 '1.0f': f32
+            202..206 '2.0f': f32
+            208..212 '3.0f': f32
+            214..218 '4.0f': f32
+            230..231 'f': f32
+            234..250 'bitcas...2>(1u)': f32
+            234..257 'bitcas...+ 1.0f': f32
+            247..249 '1u': u32
+            253..257 '1.0f': f32
+            267..268 'g': u32
+            271..302 'bitcas...(42u))': u32
+            284..301 'bitcas...>(42u)': f32
+            297..300 '42u': u32
+        "#]],
+    );
+}
+
+#[test]
+fn naga_shader_int64() {
+    check_infer(
+        ExtensionsConfig { shader_int64: true },
+        "
+fn foo(bar: i64, baz: u64) {}
+",
+        expect![[r#"
+            7..10 'bar': i64
+            17..20 'baz': u64
         "#]],
     );
 }

@@ -1,9 +1,11 @@
 use std::{fmt, panic};
 
-use base_db::{EditionedFileId, FileLoader, FileLoaderDelegate, change::Change};
+use base_db::{EditionedFileId, FileLoader, FileLoaderDelegate, change::Change, input::SourceRoot};
+use hir_def::database::{DefDatabase as _, ExtensionsConfig};
+use salsa::Durability;
 use syntax::Edition;
 use triomphe::Arc;
-use vfs::{AnchoredPath, FileId, VfsPath};
+use vfs::{AnchoredPath, FileId, VfsPath, file_set::FileSet};
 
 #[salsa::database(
     base_db::SourceDatabaseStorage,
@@ -11,9 +13,23 @@ use vfs::{AnchoredPath, FileId, VfsPath};
     hir_def::database::InternDatabaseStorage,
     crate::database::HirDatabaseStorage
 )]
-#[derive(Default)]
 pub(crate) struct TestDatabase {
     storage: salsa::Storage<Self>,
+}
+
+impl Default for TestDatabase {
+    fn default() -> Self {
+        let mut value = Self {
+            storage: salsa::Storage::default(),
+        };
+        value.set_extensions_with_durability(
+            ExtensionsConfig {
+                shader_int64: false,
+            },
+            Durability::MEDIUM,
+        );
+        value
+    }
 }
 
 impl fmt::Debug for TestDatabase {
@@ -44,33 +60,4 @@ impl FileLoader for TestDatabase {
     ) -> Option<base_db::FileId> {
         FileLoaderDelegate(self).resolve_path(path)
     }
-}
-
-impl TestDatabase {
-    pub fn apply_change(
-        &mut self,
-        change: Change,
-    ) {
-        change.apply(self);
-    }
-}
-
-pub(crate) fn single_file_db(source: &str) -> (TestDatabase, EditionedFileId) {
-    let mut database = TestDatabase::default();
-    let mut change = Change::new();
-    let file_id = FileId::from_raw(0);
-    change.change_file(
-        file_id,
-        Some(Arc::new(source.to_owned())),
-        VfsPath::new_virtual_path("/".into()),
-    );
-    database.apply_change(change);
-
-    (
-        database,
-        EditionedFileId {
-            file_id,
-            edition: Edition::LATEST,
-        },
-    )
 }

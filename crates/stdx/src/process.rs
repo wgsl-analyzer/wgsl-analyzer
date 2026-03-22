@@ -269,7 +269,7 @@ mod implementation {
         }
 
         /// # Safety
-        /// TODO
+        /// TODO.
         unsafe fn read(&mut self) -> io::Result<()> {
             // SAFETY: TODO
             let dst = unsafe { slice_to_end(self.dst) };
@@ -313,7 +313,7 @@ mod implementation {
     }
 
     /// # Safety
-    /// Seems safe enough
+    /// Seems safe enough.
     unsafe fn slice_to_end(vector: &mut Vec<u8>) -> &mut [u8] {
         if vector.capacity() == 0 {
             vector.reserve(16);
