@@ -37,9 +37,7 @@ fn fn_sig_args_nine(
     c: bool,
     d: mat3x3,
     e: f32,
-    f: vec3<
-        f32,
-    >,
+    f: vec3<f32>,
     g: bool,
     h: bool,
     i: bool,
@@ -50,9 +48,7 @@ fn fn_sig_args_ten(
     c: bool,
     d: mat3x3,
     e: f32,
-    f: vec3<
-        f32,
-    >,
+    f: vec3<f32>,
     g: bool,
     h: bool,
     i: bool,
@@ -64,9 +60,7 @@ fn fn_sig_args_eleven(
     c: bool,
     d: mat3x3,
     e: f32,
-    f: vec3<
-        f32,
-    >,
+    f: vec3<f32>,
     g: bool,
     h: bool,
     i: bool,

@@ -128,3 +128,21 @@ fn format_fn_header_with_linecomment_after_last_parameter() {
 }
 
 // TODO Tests for how function parameters are broken up onto multiple lines
+
+#[test]
+pub fn format_type_next_to_long_parameter_does_not_get_broken_into_multiple_lines() {
+    check(
+        "
+        fn a(
+        a: texture_2d<f32>,
+        bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb: f32
+        ) {}
+        ",
+        expect![[r#"
+            fn a(
+                a: texture_2d<f32>,
+                bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb: f32,
+            ) {}
+        "#]],
+    );
+}
