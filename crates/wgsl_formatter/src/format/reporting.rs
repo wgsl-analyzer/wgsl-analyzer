@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use parser::{SyntaxKind, SyntaxNode, SyntaxToken};
 use rowan::NodeOrToken;
 
@@ -13,6 +15,27 @@ pub enum FormatDocumentError {
         expected: Option<SyntaxKind>,
     },
     MissingNode,
+}
+
+impl Display for FormatDocumentError {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+    ) -> std::fmt::Result {
+        match self {
+            Self::UnexpectedNodeOrToken { received } => {
+                write!(f, "Unexpected node or token: {received:?}")
+            },
+            Self::UnsupportedNodeOrToken { received } => write!(
+                f,
+                "Node/Token found at an unsupported location: {received:?}",
+            ),
+            Self::MissingTokens { expected } => {
+                write!(f, "Expected to find a token {expected:?} but found none")
+            },
+            Self::MissingNode => write!(f, "Expected to find a node but found none"),
+        }
+    }
 }
 
 pub type FormatDocumentResult<T> = Result<T, FormatDocumentError>;
