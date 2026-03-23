@@ -95,6 +95,7 @@ pub fn infer_query(
 
 pub fn infer_cycle_result(
     database: &dyn HirDatabase,
+    _: salsa::Id,
     definition: DefinitionWithBodyId,
 ) -> Arc<InferenceResult> {
     let mut inference_result = InferenceResult::new(database);
@@ -134,6 +135,7 @@ pub fn infer_signature_query(
 #[expect(clippy::unnecessary_wraps, reason = "must match salsa")]
 pub fn infer_signature_cycle_result(
     database: &dyn HirDatabase,
+    _: salsa::Id,
     definition: ModuleDefinitionId,
 ) -> Option<Arc<InferenceResult>> {
     let mut inference_result = InferenceResult::new(database);

@@ -8,7 +8,12 @@ pub mod input;
 
 mod editioned_file_id;
 mod util_types;
-use std::{cell::RefCell, hash::BuildHasherDefault, panic, sync::Once};
+use std::{
+    cell::RefCell,
+    hash::BuildHasherDefault,
+    panic,
+    sync::{Once, atomic::AtomicUsize},
+};
 
 pub use crate::editioned_file_id::{EditionedFileId, RawEditionedFileId};
 use dashmap::{DashMap, Entry};
@@ -328,6 +333,27 @@ pub trait SourceDatabase: salsa::Database {
         let source_root = self.source_root(source_root.source_root_id(self));
         source_root.source_root(self).resolve_path(path)
     }
+
+    fn nonce_and_revision(&self) -> (Nonce, salsa::Revision);
+}
+
+static NEXT_NONCE: AtomicUsize = AtomicUsize::new(0);
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct Nonce(usize);
+
+impl Default for Nonce {
+    #[inline]
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl Nonce {
+    #[inline]
+    pub fn new() -> Self {
+        Self(NEXT_NONCE.fetch_add(1, std::sync::atomic::Ordering::SeqCst))
+    }
 }
 
 fn parse(
@@ -350,7 +376,7 @@ impl Drop for DbPanicContext {
 }
 
 impl DbPanicContext {
-    pub fn enter(frame: String) -> DbPanicContext {
+    pub fn enter(frame: String) -> Self {
         #[expect(clippy::print_stderr, reason = "already panicking anyway")]
         fn set_hook() {
             let default_hook = panic::take_hook();
@@ -374,13 +400,13 @@ impl DbPanicContext {
         SET_HOOK.call_once(set_hook);
 
         Self::with_ctx(|ctx| ctx.push(frame));
-        DbPanicContext
+        Self
     }
 
-    fn with_ctx(f: impl FnOnce(&mut Vec<String>)) {
+    fn with_ctx(function: impl FnOnce(&mut Vec<String>)) {
         thread_local! {
             static CTX: RefCell<Vec<String>> = const { RefCell::new(Vec::new()) };
         }
-        CTX.with(|ctx| f(&mut ctx.borrow_mut()));
+        CTX.with(|ctx| function(&mut ctx.borrow_mut()));
     }
 }

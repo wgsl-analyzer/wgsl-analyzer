@@ -1,11 +1,12 @@
 use std::time::Instant;
 
-use base_db::change::Change as BaseDbChange;
+use base_db::{SourceDatabase as _, change::Change as BaseDbChange};
 use crossbeam_channel::{Receiver, Sender, unbounded};
 use ide::{Analysis, AnalysisHost, Cancellable};
 use lsp_types::Url;
 use parking_lot::{MappedRwLockReadGuard, RwLock, RwLockReadGuard};
 use rustc_hash::FxHashMap;
+use salsa::Revision;
 use triomphe::Arc;
 use vfs::{
     AbsPathBuf, Change as VfsChange, FileExcluded, FileId, Vfs, VfsPath,
@@ -22,7 +23,7 @@ use crate::{
     main_loop::Task,
     operation_queue::{Cause, OperationQueue},
     reload::{ProjectWorkspace, SourceRootConfig},
-    task_pool::{TaskPool, TaskQueue},
+    task_pool::{DeferredTaskQueue, TaskPool},
 };
 
 pub(crate) struct FetchWorkspaceRequest {
@@ -102,7 +103,9 @@ pub(crate) struct GlobalState {
     /// For certain features, such as [`GlobalState::handle_discover_message`],
     /// this queue should run only *after* [`GlobalState::process_changes`] has
     /// been called.
-    pub(crate) deferred_task_queue: TaskQueue,
+    pub(crate) deferred_task_queue: DeferredTaskQueue,
+
+    pub(crate) last_gc_revision: Revision,
 }
 
 /// An immutable snapshot of the world's state at a point in time.
@@ -148,7 +151,7 @@ impl GlobalState {
 
         let task_queue = {
             let (sender, receiver) = unbounded();
-            TaskQueue { sender, receiver }
+            DeferredTaskQueue { sender, receiver }
         };
 
         let analysis_host = AnalysisHost::new(None);
@@ -159,6 +162,7 @@ impl GlobalState {
         // let (test_run_sender, test_run_receiver) = unbounded();
 
         // let (discover_sender, discover_receiver) = unbounded();
+        let last_gc_revision = analysis_host.raw_database().nonce_and_revision().1;
 
         let mut this = Self {
             sender,
@@ -215,6 +219,7 @@ impl GlobalState {
             discover_workspace_queue: OperationQueue::default(),
 
             deferred_task_queue: task_queue,
+            last_gc_revision,
         };
         // Apply any required database inputs from the config.
         this.update_configuration(config);
@@ -381,6 +386,12 @@ impl GlobalState {
                 drop(sender.send(notification.into()));
             }
         });
+    }
+}
+
+impl Drop for GlobalState {
+    fn drop(&mut self) {
+        self.analysis_host.trigger_cancellation();
     }
 }
 

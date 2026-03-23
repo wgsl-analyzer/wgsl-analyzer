@@ -6,13 +6,13 @@
 use std::{fmt, panic};
 
 use base_db::{
-    FileId, FileSourceRootInput, FileText, Files, SourceDatabase, SourceRoot, SourceRootId,
+    FileId, FileSourceRootInput, FileText, Files, Nonce, SourceDatabase, SourceRoot, SourceRootId,
     SourceRootInput, change::Change,
 };
 use hir_def::database::{DefDatabase as _, ExtensionsConfig};
 use line_index::LineIndex;
 use rustc_hash::FxHashMap;
-use salsa::Durability;
+use salsa::{Database as _, Durability};
 use triomphe::Arc;
 
 pub mod source_change;
@@ -25,6 +25,7 @@ pub struct RootDatabase {
     storage: salsa::Storage<Self>,
     files: Arc<Files>,
     // crates_map: Arc<CratesMap>,
+    nonce: Nonce,
 }
 
 impl panic::RefUnwindSafe for RootDatabase {}
@@ -36,6 +37,7 @@ impl Clone for RootDatabase {
         Self {
             storage: self.storage.clone(),
             files: self.files.clone(),
+            nonce: Nonce::new(),
         }
     }
 }
@@ -111,6 +113,12 @@ impl SourceDatabase for RootDatabase {
         let files = Arc::clone(&self.files);
         files.set_file_source_root_with_durability(self, id, source_root_id, durability);
     }
+    fn nonce_and_revision(&self) -> (Nonce, salsa::Revision) {
+        (
+            self.nonce,
+            salsa::plumbing::ZalsaDatabase::zalsa(self).current_revision(),
+        )
+    }
 }
 
 impl RootDatabase {
@@ -120,6 +128,7 @@ impl RootDatabase {
             storage: salsa::Storage::default(),
             files: Arc::default(),
             // crates_map: Default::default(),
+            nonce: Nonce::new(),
         };
         // This needs to be here otherwise `CrateGraphBuilder` will panic.
         // database.set_all_crates(Arc::new(Box::new([])));
@@ -188,6 +197,7 @@ impl RootDatabase {
         &mut self,
         change: Change,
     ) {
+        self.trigger_cancellation();
         change.apply(self);
     }
 }

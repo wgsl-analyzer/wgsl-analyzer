@@ -76,7 +76,7 @@ pub fn main_loop(
 enum Event {
     Lsp(lsp_server::Message),
     Task(Task),
-    QueuedTask(QueuedTask),
+    QueuedTask(DeferredTask),
     Vfs(vfs::loader::Message),
     // Flycheck(FlycheckMessage),
     // TestResult(CargoTestMessage),
@@ -100,7 +100,7 @@ impl fmt::Display for Event {
 
 #[derive(Debug)]
 #[expect(clippy::enum_variant_names, reason = "Not relevant")]
-pub(crate) enum QueuedTask {
+pub(crate) enum DeferredTask {
     CheckIfIndexed(lt::Url),
 }
 
@@ -359,6 +359,15 @@ impl GlobalState {
         .map(Some)
     }
 
+    fn trigger_garbage_collection(&mut self) {
+        if cfg!(test) {
+            // Slow tests run the main loop in multiple threads, but GC isn't thread safe.
+            return;
+        }
+
+        self.analysis_host.trigger_garbage_collection();
+    }
+
     #[expect(clippy::cognitive_complexity, reason = "deprecated lint")]
     #[expect(clippy::too_many_lines, reason = "TODO")]
     fn handle_event(
@@ -370,10 +379,10 @@ impl GlobalState {
 
         let event_debug_message = format!("{event:?}");
         tracing::debug!(?loop_start, ?event, "handle_event");
-        if tracing::enabled!(tracing::Level::INFO) {
-            let task_queue_len = self.task_pool.handle.length();
+        if tracing::enabled!(tracing::Level::TRACE) {
+            let task_queue_len = self.task_pool.handle.len();
             if task_queue_len > 0 {
-                tracing::info!("task queue len: {}", task_queue_len);
+                tracing::trace!("task queue len: {task_queue_len}");
             }
         }
 
@@ -502,6 +511,16 @@ impl GlobalState {
             }
             if project_or_mem_docs_changed && self.config.test_explorer() {
                 // self.update_tests();
+            }
+
+            let current_revision = self.analysis_host.raw_database().nonce_and_revision().1;
+            // no work is currently being done, now we can block a bit and clean up our garbage
+            if self.task_pool.handle.is_empty()
+                && self.fmt_pool.handle.is_empty()
+                && current_revision != self.last_gc_revision
+            {
+                self.trigger_garbage_collection();
+                self.last_gc_revision = current_revision;
             }
         }
 
@@ -847,10 +866,10 @@ impl GlobalState {
     #[expect(clippy::needless_pass_by_ref_mut, reason = "wip")]
     fn handle_queued_task(
         &mut self,
-        task: QueuedTask,
+        task: DeferredTask,
     ) {
         match task {
-            QueuedTask::CheckIfIndexed(uri) => {},
+            DeferredTask::CheckIfIndexed(uri) => {},
         }
     }
 

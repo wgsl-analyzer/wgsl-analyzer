@@ -27,7 +27,7 @@ use ide_completion::{CompletionConfig, item::CompletionItem};
 use ide_db::LineIndexDatabase as _;
 pub use line_index::{LineCol, LineIndex};
 use rustc_hash::FxHashMap;
-use salsa::Cancelled;
+use salsa::{Cancelled, Database as _};
 use syntax::{Parse, SyntaxNode};
 use triomphe::Arc;
 use vfs::FileId;
@@ -134,6 +134,14 @@ impl AnalysisHost {
         change: Change,
     ) {
         self.database.apply_change(change);
+    }
+
+    pub fn trigger_cancellation(&mut self) {
+        self.database.trigger_cancellation();
+    }
+
+    pub fn trigger_garbage_collection(&mut self) {
+        self.database.trigger_lru_eviction();
     }
 
     pub const fn raw_database(&self) -> &RootDatabase {

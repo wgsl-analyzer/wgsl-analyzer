@@ -1,8 +1,8 @@
 use std::{fmt, panic};
 
 use base_db::{
-    EditionedFileId, FileSourceRootInput, FileText, SourceDatabase, SourceRootId, SourceRootInput,
-    change::Change, input::SourceRoot,
+    EditionedFileId, FileSourceRootInput, FileText, Nonce, SourceDatabase, SourceRootId,
+    SourceRootInput, change::Change, input::SourceRoot,
 };
 use salsa::Durability;
 use syntax::Edition;
@@ -15,6 +15,7 @@ use vfs::{AnchoredPath, FileId, VfsPath, file_set::FileSet};
 pub(crate) struct TestDatabase {
     storage: salsa::Storage<Self>,
     files: Arc<base_db::Files>,
+    nonce: Nonce,
 }
 
 impl fmt::Debug for TestDatabase {
@@ -91,5 +92,12 @@ impl SourceDatabase for TestDatabase {
     ) {
         let files = Arc::clone(&self.files);
         files.set_file_source_root_with_durability(self, id, source_root_id, durability);
+    }
+
+    fn nonce_and_revision(&self) -> (Nonce, salsa::Revision) {
+        (
+            self.nonce,
+            salsa::plumbing::ZalsaDatabase::zalsa(self).current_revision(),
+        )
     }
 }
