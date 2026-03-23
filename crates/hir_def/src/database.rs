@@ -1,3 +1,11 @@
+#![expect(
+    clippy::drop_non_drop,
+    reason = "Clippy has a false positive for the query_group macro, see: https://github.com/rust-lang/rust-clippy/issues/16753"
+)]
+#![expect(
+    clippy::trailing_empty_array,
+    reason = "Clippy has a false positive for the query_group macro, see: https://github.com/rust-lang/rust-clippy/issues/16754"
+)]
 use std::fmt::{self, Debug};
 
 use crate::{
