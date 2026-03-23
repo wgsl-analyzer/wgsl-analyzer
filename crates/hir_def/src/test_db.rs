@@ -10,7 +10,7 @@ use test_fixture::WithFixture;
 use triomphe::Arc;
 use vfs::{AnchoredPath, FileId, VfsPath, file_set::FileSet};
 
-#[salsa::db]
+#[salsa_macros::db]
 #[derive(Clone, Default)]
 pub(crate) struct TestDatabase {
     storage: salsa::Storage<Self>,
@@ -30,7 +30,7 @@ impl salsa::Database for TestDatabase {}
 
 impl panic::RefUnwindSafe for TestDatabase {}
 
-#[salsa::db]
+#[salsa_macros::db]
 impl SourceDatabase for TestDatabase {
     fn file_text(
         &self,

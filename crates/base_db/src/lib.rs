@@ -25,7 +25,7 @@ pub use vfs::{AnchoredPath, AnchoredPathBuf, FileId, VfsPath, file_set::FileSet}
 #[macro_export]
 macro_rules! impl_intern_key {
     ($id:ident, $loc:ty) => {
-        #[salsa_macros::interned(no_lifetime)]
+        #[salsa_macros::interned(no_lifetime, revisions = usize::MAX)]
         #[derive(PartialOrd, Ord)]
         pub struct $id {
             pub loc: $loc,
@@ -38,7 +38,7 @@ macro_rules! impl_intern_key {
                 f: &mut ::std::fmt::Formatter<'_>,
             ) -> ::std::fmt::Result {
                 f.debug_tuple(stringify!($id))
-                    .field(&format_args!("{:04x}", self.0.as_u32()))
+                    .field(&format_args!("{:04x}", self.0.index()))
                     .finish()
             }
         }
@@ -243,19 +243,19 @@ impl Files {
     }
 }
 
-#[salsa::input(debug)]
+#[salsa_macros::input(debug)]
 pub struct FileText {
     #[returns(ref)]
     pub text: Arc<str>,
     pub file_id: vfs::FileId,
 }
 
-#[salsa::input(debug)]
+#[salsa_macros::input(debug)]
 pub struct FileSourceRootInput {
     pub source_root_id: SourceRootId,
 }
 
-#[salsa::input(debug)]
+#[salsa_macros::input(debug)]
 pub struct SourceRootInput {
     pub source_root: Arc<SourceRoot>,
 }
@@ -272,7 +272,7 @@ pub trait RootQueryDb: SourceDatabase + salsa::Database {
     ) -> Parse;
 }
 
-#[salsa::db]
+#[salsa_macros::db]
 pub trait SourceDatabase: salsa::Database {
     /// Text of the file.
     fn file_text(

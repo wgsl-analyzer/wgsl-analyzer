@@ -18,7 +18,7 @@ use triomphe::Arc;
 pub mod source_change;
 pub mod text_edit;
 
-#[salsa::db]
+#[salsa_macros::db]
 pub struct RootDatabase {
     // FIXME: Revisit this commit now that we migrated to the new salsa, given we store arcs in this
     // database directly now
@@ -49,7 +49,7 @@ impl fmt::Debug for RootDatabase {
     }
 }
 
-#[salsa::db]
+#[salsa_macros::db]
 impl SourceDatabase for RootDatabase {
     fn file_text(
         &self,

@@ -16,7 +16,7 @@ pub struct RawEditionedFileId {
     pub edition: Edition,
 }
 
-#[salsa::interned(debug, constructor = from_span_file_id, no_lifetime)]
+#[salsa_macros::interned(debug, constructor = from_span_file_id, no_lifetime, revisions = usize::MAX)]
 #[derive(PartialOrd, Ord)]
 pub struct EditionedFileId {
     field: RawEditionedFileId,
