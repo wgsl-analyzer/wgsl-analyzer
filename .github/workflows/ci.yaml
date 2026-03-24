@@ -13,6 +13,7 @@ env:
   CARGO_TERM_COLOR: always
   CARGO_INCREMENTAL: 0
   CARGO_NET_RETRY: 10
+  CARGO_PROFILE_TEST_DEBUG: 0
   CI: 1
   RUST_BACKTRACE: short
   RUSTUP_MAX_RETRIES: 10
@@ -95,12 +96,12 @@ jobs:
       #   run: cargo codegen --check
 
       - name: Test
-        run: cargo nextest run --no-fail-fast --hide-progress-bar --status-level fail
+        run: cargo nextest run --no-fail-fast --hide-progress-bar --status-level fail --locked
 
       - name: Clippy
         # Because macos runners are the fastest
         if: matrix.os == 'macos-latest'
-        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+        run: cargo clippy --workspace --all-targets --all-features --locked -- -D warnings
 
   rustfmt:
     runs-on: ubuntu-latest
@@ -172,9 +173,9 @@ jobs:
   #     # - name: Cache Dependencies
   #     #   uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
 
-  #     - run: cargo check --target=${{ matrix.target }} --all-targets -p ide
+  #     - run: cargo check --target=${{ matrix.target }} --all-targets -p ide --locked
   #       if: ${{ matrix.ide-only }}
-  #     - run: cargo check --target=${{ matrix.target }} --all-targets
+  #     - run: cargo check --target=${{ matrix.target }} --all-targets --locked
   #       if: ${{ !matrix.ide-only }}
 
   # Check wgslfmt_dprint builds for wasm32 target
@@ -195,7 +196,7 @@ jobs:
           target: wasm32-unknown-unknown
 
       - name: Check wgslfmt_dprint for wasm32
-        run: cargo check -p dprint_plugin_wgslfmt --target wasm32-unknown-unknown
+        run: cargo check -p dprint_plugin_wgslfmt --target wasm32-unknown-unknown --locked
 
   markdown:
     runs-on: ubuntu-latest
@@ -276,15 +277,13 @@ jobs:
           toolchain: beta
 
       - name: Build documentation
-        run: cargo doc --workspace --all-features --no-deps --document-private-items --keep-going
+        run: cargo doc --workspace --all-features --no-deps --document-private-items --keep-going --locked
         env:
-          CARGO_INCREMENTAL: 0
           RUSTFLAGS: -C debuginfo=0 -D warnings
 
       - name: Documentation tests
-        run: cargo test --workspace --doc
+        run: cargo test --workspace --doc --locked
         env:
-          CARGO_INCREMENTAL: 0
           RUSTFLAGS: -C debuginfo=0 -D warnings
 
       - name: Install cargo-binstall
@@ -294,7 +293,7 @@ jobs:
         run: cargo binstall --no-confirm cargo-deadlinks
 
       - name: Checks dead links
-        run: cargo deadlinks --dir target/doc
+        run: cargo deadlinks --dir target/doc --locked
         continue-on-error: true
 
   check-unused-dependencies:
