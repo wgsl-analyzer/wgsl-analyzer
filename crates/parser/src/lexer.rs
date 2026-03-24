@@ -314,7 +314,6 @@ mod tests {
     use std::fmt::Write as _;
 
     use expect_test::expect;
-    use logos::Logos as _;
 
     use super::{lex, Token};
 
