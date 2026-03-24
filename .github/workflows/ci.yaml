@@ -43,7 +43,7 @@ jobs:
 
       # TODO: Get rid of this unmaintained action
       - name: Filter by paths
-        uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36 # v3.0.2
+        uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d # v4.0.1
         id: filter
         with:
           filters: |
@@ -74,7 +74,7 @@ jobs:
 
       # https://github.com/actions-rust-lang/setup-rust-toolchain/blob/main/rust.json
       - name: Install Rust Problem Matcher
-        if: matrix.os == 'macos-latest'
+        if: matrix.os == 'ubuntu-latest'
         run: echo "::add-matcher::.github/rust.json"
 
       # - name: Cache Dependencies
@@ -98,8 +98,8 @@ jobs:
         run: cargo nextest run --no-fail-fast --hide-progress-bar --status-level fail
 
       - name: Clippy
-        # Because macos runners are the fastest
-        if: matrix.os == 'macos-latest'
+        # Because Linux runners are the fastest
+        if: matrix.os == 'ubuntu-latest'
         run: cargo clippy --workspace --all-targets --all-features -- -D warnings
 
   rustfmt:

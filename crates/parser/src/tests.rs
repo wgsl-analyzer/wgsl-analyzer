@@ -867,6 +867,67 @@ fn parse_statement_variable_declaration() {
 }
 
 #[test]
+fn parse_statement_variable_declaration_shader_in64() {
+    check(
+        "fn foo() {
+            let x: u64 = 3lu;
+            let x: i64 = 3li;
+        }
+        ",
+        expect![[r#"
+            SourceFile@0..89
+              FunctionDeclaration@0..80
+                Fn@0..2 "fn"
+                Blankspace@2..3 " "
+                Name@3..6
+                  Identifier@3..6 "foo"
+                FunctionParameters@6..8
+                  ParenthesisLeft@6..7 "("
+                  ParenthesisRight@7..8 ")"
+                Blankspace@8..9 " "
+                CompoundStatement@9..80
+                  BraceLeft@9..10 "{"
+                  Blankspace@10..23 "\n            "
+                  LetDeclaration@23..40
+                    Let@23..26 "let"
+                    Blankspace@26..27 " "
+                    Name@27..28
+                      Identifier@27..28 "x"
+                    Colon@28..29 ":"
+                    Blankspace@29..30 " "
+                    TypeSpecifier@30..33
+                      Path@30..33
+                        Identifier@30..33 "u64"
+                    Blankspace@33..34 " "
+                    Equal@34..35 "="
+                    Blankspace@35..36 " "
+                    Literal@36..39
+                      IntLiteral@36..39 "3lu"
+                    Semicolon@39..40 ";"
+                  Blankspace@40..53 "\n            "
+                  LetDeclaration@53..70
+                    Let@53..56 "let"
+                    Blankspace@56..57 " "
+                    Name@57..58
+                      Identifier@57..58 "x"
+                    Colon@58..59 ":"
+                    Blankspace@59..60 " "
+                    TypeSpecifier@60..63
+                      Path@60..63
+                        Identifier@60..63 "i64"
+                    Blankspace@63..64 " "
+                    Equal@64..65 "="
+                    Blankspace@65..66 " "
+                    Literal@66..69
+                      IntLiteral@66..69 "3li"
+                    Semicolon@69..70 ";"
+                  Blankspace@70..79 "\n        "
+                  BraceRight@79..80 "}"
+              Blankspace@80..89 "\n        ""#]],
+    );
+}
+
+#[test]
 fn parse_not_statement() {
     check_statement(
         "   let a = 3;",

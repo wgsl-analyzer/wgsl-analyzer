@@ -13,7 +13,7 @@ serde = { workspace = true, optional = true }
 syntax.workspace = true
 
 [dev-dependencies]
-dissimilar = "1.0.10"
+dissimilar = "1.0.11"
 # anyhow = "1.0.99"
 expect-test = "1.5.1"
 

@@ -8,26 +8,6 @@
 	"version": "0.2.0",
 	"configurations": [
 		{
-			// Used for testing the extension with the installed LSP server.
-			"name": "Run Installed Extension",
-			"type": "extensionHost",
-			"request": "launch",
-			"runtimeExecutable": "${execPath}",
-			"args": [
-				// "--user-data-dir=${workspaceFolder}/target/code",
-				"--disable-extensions",
-				"--extensionDevelopmentPath=${workspaceFolder}/editors/code",
-				"--log wgsl-analyzer.wgsl-analyzer:debug"
-			],
-			"outFiles": [
-				"${workspaceFolder}/editors/code/out/**/*.js"
-			],
-			"preLaunchTask": "Build Extension",
-			"skipFiles": [
-				"<node_internals>/**/*.js"
-			]
-		},
-		{
 			// Used for testing the extension with a local build of the LSP server (in `target/debug`).
 			"name": "Run Extension (Debug Build)",
 			"type": "extensionHost",
@@ -71,6 +51,26 @@
 			"env": {
 				"__WA_LSP_SERVER_DEBUG": "${workspaceFolder}/target/release/wgsl-analyzer"
 			}
+		},
+		{
+			// Used for testing the extension with the installed LSP server.
+			"name": "Run Installed Extension",
+			"type": "extensionHost",
+			"request": "launch",
+			"runtimeExecutable": "${execPath}",
+			"args": [
+				// "--user-data-dir=${workspaceFolder}/target/code",
+				"--disable-extensions",
+				"--extensionDevelopmentPath=${workspaceFolder}/editors/code",
+				"--log wgsl-analyzer.wgsl-analyzer:debug"
+			],
+			"outFiles": [
+				"${workspaceFolder}/editors/code/out/**/*.js"
+			],
+			"preLaunchTask": "Build Extension",
+			"skipFiles": [
+				"<node_internals>/**/*.js"
+			]
 		},
 		{
 			// Used for testing the extension with a local build of the LSP server (in `target/release`)
