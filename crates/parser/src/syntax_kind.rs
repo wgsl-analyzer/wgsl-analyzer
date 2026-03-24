@@ -190,9 +190,9 @@ pub enum SyntaxKind {
     #[regex(r"0[xX][0-9a-fA-F]+\.[0-9a-fA-F]*([pP][+-]?[0-9]+[fh]?)?")]
     #[regex(r"0[xX][0-9a-fA-F]+[pP][+-]?[0-9]+[fh]?")]
     FloatLiteral,
-    #[regex(r"0[iu]?")]
-    #[regex(r"[1-9][0-9]*[iu]?")]
-    #[regex(r"0[xX][0-9a-fA-F]+[iu]?")]
+    #[regex(r"0(i|u|li|lu)?")]
+    #[regex(r"[1-9][0-9]*(i|u|li|lu)?")]
+    #[regex(r"0[xX][0-9a-fA-F]+(i|u|li|lu)?")]
     IntLiteral,
     StringLiteral,
     Alias,
