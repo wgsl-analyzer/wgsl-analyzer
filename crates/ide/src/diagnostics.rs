@@ -644,6 +644,11 @@ More complex operands must be this with parenthesized `()`"
                         frange.range,
                     )
                 },
+                AnyDiagnostic::InvalidIdentifier { name, range, .. } => Diagnostic::new(
+                    DiagnosticCode("24"),
+                    format!("'{}' is not a valid name for an identifier", name.as_str()),
+                    range,
+                ),
             }
         })
         .collect()
@@ -734,6 +739,47 @@ mod tests {
     }
 
     #[test]
+    fn no_host_shareable_error_for_undefined_struct() {
+        // https://github.com/wgsl-analyzer/wgsl-analyzer/issues/722
+        // When referencing an undefined struct, we should NOT get a spurious
+        // "not host-shareable" diagnostic — only the "unresolved" error.
+        check_diagnostics(
+            "
+@group(0) @binding(0)
+var<storage> lines: array<LineSegment>;
+",
+            expect![[r#"
+                48..59 Error 14: `LineSegment` not found in scope
+            "#]],
+        );
+    }
+
+    #[test]
+    fn reserved_identifier_double_underscore() {
+        // https://github.com/wgsl-analyzer/wgsl-analyzer/issues/681
+        // Identifiers starting with "__" are reserved by the WGSL spec.
+        check_diagnostics(
+            "
+fn __my_func() {}
+",
+            expect![[r#"
+                3..12 Error 24: '__my_func' is not a valid name for an identifier
+            "#]],
+        );
+    }
+
+    #[test]
+    fn non_reserved_identifier_single_underscore() {
+        // A single underscore prefix should NOT trigger the reserved identifier diagnostic.
+        check_diagnostics(
+            "
+fn _my_func() {}
+",
+            expect![""],
+        );
+    }
+
+    #[test]
     fn incomplete_variable_error() {
         // https://github.com/wgsl-analyzer/wgsl-analyzer/issues/825
         check_diagnostics(
@@ -752,6 +798,17 @@ var<storage
                 26..33 Error 21: unexpected template argument
                 89..92 Error 12: address space is only valid for handle or texture types
             "#]],
+        );
+    }
+
+    #[test]
+    fn invalid_bitcast() {
+        // TODO: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/908
+        check_diagnostics(
+            "
+fn foo() { let bar: f32 = bitcast<f32>(vec4u(1, 2, 3, 4)); }
+",
+            expect![""],
         );
     }
 

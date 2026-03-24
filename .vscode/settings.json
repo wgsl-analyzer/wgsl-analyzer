@@ -16,6 +16,9 @@
 	"[typescript]": {
 		"editor.defaultFormatter": "biomejs.biome"
 	},
+	"[toml]": {
+		"editor.defaultFormatter": "tombi-toml.tombi"
+	},
 	"biome.configurationPath": "editors/code/biome.jsonc",
 	"biome.suggestInstallingGlobally": true,
 	"editor.codeActionsOnSave": {

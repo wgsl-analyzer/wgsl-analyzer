@@ -32,7 +32,7 @@
 		}
 	},
 	"engines": {
-		"vscode": "^1.109.0",
+		"vscode": "^1.110.0",
 		"npm": "^11.2.0"
 	},
 	"enabledApiProposals": [],
@@ -63,15 +63,15 @@
 		"vscode-languageclient": "^9.0.1"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "^2.4.6",
+		"@biomejs/biome": "^2.4.7",
 		"@tsconfig/node-ts": "^23.6.4",
 		"@tsconfig/node22": "^22.0.5",
 		"@tsconfig/strictest": "^2.0.8",
-		"@types/node": "^25.4.0",
-		"@types/vscode": "^1.109.0",
+		"@types/node": "^25.5.0",
+		"@types/vscode": "^1.110.0",
 		"@vscode/test-electron": "^2.5.2",
 		"@vscode/vsce": "^3.7.1",
-		"esbuild": "^0.27.3",
+		"esbuild": "^0.27.4",
 		"ovsx": "^0.10.9",
 		"tslib": "^2.8.1",
 		"typescript": "^5.9.3"
@@ -473,6 +473,16 @@
 				"properties": {
 					"wgsl-analyzer.diagnostics.typeErrors": {
 						"markdownDescription": "Controls whether to show type errors.",
+						"default": true,
+						"type": "boolean"
+					}
+				}
+			},
+			{
+				"title": "Extensions",
+				"properties": {
+					"wgsl-analyzer.extensions.shaderInt64": {
+						"markdownDescription": "Whether to enable u64 and i64 scalar types.",
 						"default": true,
 						"type": "boolean"
 					}

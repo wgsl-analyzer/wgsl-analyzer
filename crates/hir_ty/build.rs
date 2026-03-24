@@ -31,7 +31,9 @@ enum Type {
     Vec(VecSize, Box<Self>),
     Matrix(VecSize, VecSize, Box<Self>),
     Texture(TextureType),
-    Sampler { comparison: bool },
+    Sampler {
+        comparison: bool,
+    },
     Bool,
     F16,
     F32,
@@ -42,6 +44,12 @@ enum Type {
     Atomic(Box<Self>),
     Bound(usize),
     StorageTypeOfTexelFormat(usize),
+
+    // naga extensions
+    /// This is from naga's `SHADER_INT64` extension.
+    I64,
+    /// This is from naga's `SHADER_INT64` extension.
+    U64,
 }
 
 enum VecSize {
@@ -213,8 +221,12 @@ impl Builtin {{
 }
 
 fn parse_line(line: &str) -> (&str, Overload) {
-    let (name, line) = line.split_once('(').unwrap();
-    let (parameters, line) = line.split_once(')').unwrap();
+    let (name, line) = line
+        .split_once('(')
+        .expect("all builtins are functions, so each line should have parentheses");
+    let (parameters, line) = line
+        .split_once(')')
+        .expect("all builtins are functions, so each line should have parentheses");
     let return_type = line.trim_start_matches(" ->").trim();
 
     let mut generics = BTreeMap::<char, (usize, Generic)>::default();
@@ -389,6 +401,8 @@ fn parse_type(
         "f32" => Type::F32,
         "i32" => Type::I32,
         "u32" => Type::U32,
+        "i64" => Type::I64,
+        "u64" => Type::U64,
         "sampler" => Type::Sampler { comparison: false },
         "sampler_comparison" => Type::Sampler { comparison: true },
         "F::StorageType" => {
@@ -411,7 +425,7 @@ fn type_to_rust(r#type: &Type) -> String {
             type_to_rust(inner)
         ),
 
-        Type::Bool | Type::F32 | Type::I32 | Type::U32 | Type::F16 => {
+        Type::Bool | Type::F32 | Type::I32 | Type::U32 | Type::F16 | Type::U64 | Type::I64 => {
             format!("TypeKind::Scalar(ScalarType::{type:?}).intern(database)")
         },
         Type::Bound(index) => {

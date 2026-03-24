@@ -28,8 +28,17 @@ use crate::{
     },
 };
 
+#[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+pub struct ExtensionsConfig {
+    pub shader_int64: bool,
+}
+
 #[salsa::query_group(DefDatabaseStorage)]
 pub trait DefDatabase: InternDatabase + SourceDatabase {
+    /// Which language extensions are enabled.
+    #[salsa::input]
+    fn extensions(&self) -> ExtensionsConfig;
+
     fn parse_or_resolve(
         &self,
         key: HirFileId,
