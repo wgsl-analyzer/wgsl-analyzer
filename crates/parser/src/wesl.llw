@@ -12,7 +12,7 @@ token Semicolon=';' ParenthesisLeft='(' ParenthesisRight=')' Comma=',' Equal='='
       Tilde='~' Plus='+' EqualEqual='==' Or='|' AndAnd='&&' ForwardSlash='/' Xor='^' OrOr='||' NotEqual='!='
       Modulo='%' Underscore='_' AndEqual='&=' TimesEqual='*=' PlusEqual='+=' OrEqual='|=' MinusEqual='-='
       DivisionEqual='/=' XorEqual='^=' ModuloEqual='%=' PlusPlus='++' MinusMinus='--';
-token Import='import' Package='package' Super='super' As='as' DoubleColon='::';
+token Import='import' Package='package' Super='super' As='as' ColonColon='::';
 token Identifier='<identifier>' FloatLiteral='<floating point literal>' IntLiteral='<integer literal>';
 token Blankspace LineEndingComment BlockComment;
 

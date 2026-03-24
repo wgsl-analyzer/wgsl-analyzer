@@ -297,7 +297,6 @@ pub enum SyntaxKind {
     Package,
     Super,
     As,
-    DoubleColon,
 
     #[token("+=")]
     PlusEqual,

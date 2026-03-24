@@ -745,7 +745,7 @@ var<storage, read> a: array<f32>;
 var<storage
 ",
             expect![[r#"
-                92..93 Error 16: invalid syntax, expected one of: '@', ',', '=', <identifier>, '{', '}', ')', ';', <template start>
+                92..93 Error 16: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
                 101..101 Error 16: invalid syntax, expected one of: ':', '=', ';'
                 22..25 Error 12: address space is only valid for handle or texture types
                 26..33 Error 21: unexpected template argument
