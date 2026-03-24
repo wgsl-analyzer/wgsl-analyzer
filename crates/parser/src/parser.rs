@@ -13,7 +13,7 @@ use logos::Logos as _;
 use rowan::GreenNodeBuilder;
 
 use super::lexer::Token;
-use crate::{cst_builder::CstBuilder, lexer::lex, Parse, ParseEntryPoint};
+use crate::{Parse, ParseEntryPoint, cst_builder::CstBuilder, lexer::lex};
 
 include!(concat!(env!("OUT_DIR"), "/generated.rs"));
 

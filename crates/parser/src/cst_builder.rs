@@ -1,9 +1,9 @@
 use rowan::{GreenNode, GreenNodeBuilder};
 
 use crate::{
+    SyntaxKind,
     lexer::Token,
     parser::{Cst, CstIndex, Node, NodeRef, Rule},
-    SyntaxKind,
 };
 
 pub struct CstBuilder<'source, 'cache> {

@@ -1,7 +1,7 @@
 use std::ops::Range;
 
 use super::parser::{Diagnostic, Span};
-use crate::{parser::to_range, SyntaxKind};
+use crate::{SyntaxKind, parser::to_range};
 
 pub(crate) type Token = SyntaxKind;
 
@@ -315,7 +315,7 @@ mod tests {
 
     use expect_test::expect;
 
-    use super::{lex, Token};
+    use super::{Token, lex};
 
     #[expect(clippy::needless_pass_by_value, reason = "intended API")]
     fn check_lex(
@@ -406,7 +406,9 @@ mod tests {
         // Expect: Identifier (a), [, Identifier (a), [, IntLiteral (0), ], ]
         check_lex(
             "a[a[0]]",
-            expect!["[Identifier, BracketLeft, Identifier, BracketLeft, IntLiteral, BracketRight, BracketRight]"],
+            expect![
+                "[Identifier, BracketLeft, Identifier, BracketLeft, IntLiteral, BracketRight, BracketRight]"
+            ],
         );
     }
 
