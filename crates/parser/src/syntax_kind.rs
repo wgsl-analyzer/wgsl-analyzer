@@ -6,6 +6,10 @@ use std::mem;
     clippy::doc_paragraphs_missing_punctuation,
     reason = "not relevant here"
 )]
+#[expect(
+    clippy::upper_case_acronyms,
+    reason = "Lelwel generated code emits Token::EOF"
+)]
 pub enum SyntaxKind {
     SourceFile,
     /// A name that can be referenced by a [`NameRef`]
