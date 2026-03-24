@@ -13,7 +13,7 @@ use logos::Logos as _;
 use rowan::GreenNodeBuilder;
 
 use super::lexer::Token;
-use crate::{Parse, ParseEntryPoint, cst_builder::CstBuilder, lexer::lex};
+use crate::{cst_builder::CstBuilder, lexer::lex, Parse, ParseEntryPoint};
 
 include!(concat!(env!("OUT_DIR"), "/generated.rs"));
 
@@ -108,8 +108,10 @@ impl Cst<'_> {
 
 impl Parser<'_> {
     fn is_func_call(&self) -> bool {
-        matches!(self.peek(1), Token::LPar | Token::Lt | Token::TemplateStart)
-            && self.peek(2) != Token::Lt
+        matches!(
+            self.peek(1),
+            Token::ParenthesisLeft | Token::LessThan | Token::TemplateStart
+        ) && self.peek(2) != Token::LessThan
     }
 }
 
@@ -150,19 +152,19 @@ impl<'source> ParserCallbacks<'source> for Parser<'source> {
     }
 
     fn predicate_import_collection_1(&self) -> bool {
-        self.peek(1) != Token::RBrace
+        self.peek(1) != Token::BraceRight
     }
 
     fn predicate_global_directive_1(&self) -> bool {
-        self.peek(1) != Token::Semi
+        self.peek(1) != Token::Semicolon
     }
 
     fn predicate_function_parameters_1(&self) -> bool {
-        self.peek(1) != Token::RPar
+        self.peek(1) != Token::ParenthesisRight
     }
 
     fn predicate_struct_body_1(&self) -> bool {
-        self.peek(1) != Token::RBrace
+        self.peek(1) != Token::BraceRight
     }
 
     fn predicate_template_args_1(&self) -> bool {
@@ -170,11 +172,11 @@ impl<'source> ParserCallbacks<'source> for Parser<'source> {
     }
 
     fn predicate_argument_expression_list_1(&self) -> bool {
-        self.peek(1) != Token::RPar
+        self.peek(1) != Token::ParenthesisRight
     }
 
     fn predicate_argument_expression_list_expr_1(&self) -> bool {
-        self.peek(1) != Token::RPar
+        self.peek(1) != Token::ParenthesisRight
     }
 
     fn predicate_statement_1(&self) -> bool {
@@ -198,7 +200,10 @@ impl<'source> ParserCallbacks<'source> for Parser<'source> {
     }
 
     fn predicate_case_selectors_1(&self) -> bool {
-        !matches!(self.peek(1), Token::At | Token::Colon | Token::LBrace)
+        !matches!(
+            self.peek(1),
+            Token::AttributeOperator | Token::Colon | Token::BraceLeft
+        )
     }
 
     fn assertion_function_parameters_1(&self) -> Option<Self::Diagnostic> {

@@ -1,6 +1,6 @@
 use std::mem;
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, PartialOrd, Ord)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, PartialOrd, Ord, logos::Logos)]
 #[repr(u16)]
 #[expect(
     clippy::doc_paragraphs_missing_punctuation,
@@ -168,12 +168,31 @@ pub enum SyntaxKind {
     ImportCollection,
 
     // Tokens
+    /// Source: <https://www.w3.org/TR/WGSL/#blankspace-and-line-breaks>
+    #[regex("[\x20\x09\x0A-\x0D\u{0085}\u{200E}\u{200F}\u{2028}\u{2029}]+")]
     Blankspace,
+    #[token("//", crate::lexer::lex_line_ending_comment)]
     LineEndingComment,
+    #[token("/*", crate::lexer::lex_block_comment)]
     BlockComment,
 
     Identifier,
+    #[regex(r"0[fh]")]
+    #[regex(r"[1-9][0-9]*[fh]")]
+    // We need priorities because some cases (for example, 1.2) would match both
+    #[regex(r"[0-9]*\.[0-9]+([eE][+-]?[0-9]+)?[fh]?", priority = 5)]
+    #[regex(r"[0-9]+\.[0-9]*([eE][+-]?[0-9]+)?[fh]?")]
+    #[regex(r"[0-9]+[eE][+-]?[0-9]+[fh]?")]
+    #[regex(
+        r"0[xX][0-9a-fA-F]*\.[0-9a-fA-F]+([pP][+-]?[0-9]+[fh]?)?",
+        priority = 9
+    )]
+    #[regex(r"0[xX][0-9a-fA-F]+\.[0-9a-fA-F]*([pP][+-]?[0-9]+[fh]?)?")]
+    #[regex(r"0[xX][0-9a-fA-F]+[pP][+-]?[0-9]+[fh]?")]
     FloatLiteral,
+    #[regex(r"0[iu]?")]
+    #[regex(r"[1-9][0-9]*[iu]?")]
+    #[regex(r"0[xX][0-9a-fA-F]+[iu]?")]
     IntLiteral,
     StringLiteral,
     Alias,
@@ -204,40 +223,74 @@ pub enum SyntaxKind {
     Var,
     While,
     // syntactic tokens
+    #[token("&")]
     And,
+    #[token("&&")]
     AndAnd,
+    #[token("->")]
     Arrow,
+    #[token("@")]
     AttributeOperator,
+    #[token("/")]
     ForwardSlash,
+    #[token("!")]
     Bang,
+    #[token("[")]
     BracketLeft,
+    #[token("]")]
     BracketRight,
+    #[token("{")]
     BraceLeft,
+    #[token("}")]
     BraceRight,
+    #[token(":")]
     Colon,
+    #[token("::")]
     ColonColon,
+    #[token(",")]
     Comma,
+    #[token("=")]
     Equal,
+    #[token("==")]
     EqualEqual,
+    #[token("!=")]
     NotEqual,
+    #[token(">")]
     GreaterThan,
     GreaterThanEqual,
+    #[token("<")]
     LessThan,
+    #[token("<=")]
     LessThanEqual,
+    #[token("%")]
     Modulo,
+    #[token("-")]
     Minus,
+    #[token("--")]
     MinusMinus,
+    #[token(".")]
     Period,
+    #[token("+")]
     Plus,
+    #[token("++")]
     PlusPlus,
+    #[token("|")]
     Or,
+    #[token("||")]
     OrOr,
+    #[token("(")]
     ParenthesisLeft,
+    #[token(")")]
     ParenthesisRight,
+    #[token(";")]
     Semicolon,
+    #[token("*")]
     Star,
+    #[token("~")]
     Tilde,
+    #[token("_")]
     Underscore,
+    #[token("^")]
     Xor,
 
     Import,
@@ -246,20 +299,38 @@ pub enum SyntaxKind {
     As,
     DoubleColon,
 
+    #[token("+=")]
     PlusEqual,
+    #[token("-=")]
     MinusEqual,
+    #[token("*=")]
     TimesEqual,
+    #[token("/=")]
     DivisionEqual,
+    #[token("%=")]
     ModuloEqual,
+    #[token("&=")]
     AndEqual,
+    #[token("|=")]
     OrEqual,
+    #[token("^=")]
     XorEqual,
     ShiftRightEqual,
+    #[token("<<=")]
     ShiftLeftEqual,
+    #[token("<<")]
     ShiftLeft,
     ShiftRight,
     TemplateStart,
     TemplateEnd,
+
+    // Only used internally by the parser
+    EOF,
+    EOFAttribute,
+    EOFExpression,
+    EOFStatement,
+    EOFTypeSpecifier,
+
     Error,
 }
 
