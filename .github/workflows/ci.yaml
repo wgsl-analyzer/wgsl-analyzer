@@ -74,7 +74,7 @@ jobs:
 
       # https://github.com/actions-rust-lang/setup-rust-toolchain/blob/main/rust.json
       - name: Install Rust Problem Matcher
-        if: matrix.os == 'macos-latest'
+        if: matrix.os == 'ubuntu-latest'
         run: echo "::add-matcher::.github/rust.json"
 
       # - name: Cache Dependencies
@@ -98,8 +98,8 @@ jobs:
         run: cargo nextest run --no-fail-fast --hide-progress-bar --status-level fail
 
       - name: Clippy
-        # Because macos runners are the fastest
-        if: matrix.os == 'macos-latest'
+        # Because Linux runners are the fastest
+        if: matrix.os == 'ubuntu-latest'
         run: cargo clippy --workspace --all-targets --all-features -- -D warnings
 
   rustfmt:
