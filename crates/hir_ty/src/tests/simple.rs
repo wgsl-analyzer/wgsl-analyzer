@@ -452,3 +452,126 @@ fn f() {
         "#]],
     );
 }
+
+#[test]
+fn array_index_is_integer() {
+    check_infer(
+        "
+        const index = 1u;
+        const arr = array<i32>(1, 2, 3);
+        const a = arr[index];
+        ",
+        expect![[r#"
+            6..11 'index': u32
+            14..16 '1u': u32
+            24..27 'arr': array<i32>
+            30..49 'array<... 2, 3)': array<i32>
+            41..42 '1': integer
+            44..45 '2': integer
+            47..48 '3': integer
+            57..58 'a': i32
+            61..64 'arr': array<i32>
+            61..71 'arr[index]': i32
+            65..70 'index': u32
+        "#]],
+    );
+}
+
+#[test]
+fn array_index_is_abstract_int() {
+    check_infer(
+        "
+        const index = 1;
+        const arr = array<i32>(1, 2, 3);
+        const a = arr[index];
+        ",
+        expect![[r#"
+            6..11 'index': integer
+            14..15 '1': integer
+            23..26 'arr': array<i32>
+            29..48 'array<... 2, 3)': array<i32>
+            40..41 '1': integer
+            43..44 '2': integer
+            46..47 '3': integer
+            56..57 'a': i32
+            60..63 'arr': array<i32>
+            60..70 'arr[index]': i32
+            64..69 'index': integer
+        "#]],
+    );
+}
+
+#[test]
+fn array_index_is_not_f32() {
+    check_infer(
+        "
+        const index = 12.0f;
+        const arr = array<i32>(1, 2, 3);
+        const a = arr[index];
+        ",
+        expect![[r#"
+            6..11 'index': f32
+            14..19 '12.0f': f32
+            27..30 'arr': array<i32>
+            33..52 'array<... 2, 3)': array<i32>
+            44..45 '1': integer
+            47..48 '2': integer
+            50..51 '3': integer
+            60..61 'a': i32
+            64..67 'arr': array<i32>
+            64..74 'arr[index]': i32
+            68..73 'index': f32
+            64..74 'arr[index]': expected i32 or u32 but got f32
+        "#]],
+    );
+}
+
+#[test]
+fn array_index_is_not_abstract_float() {
+    check_infer(
+        "
+        const index = 1.0;
+        const arr = array<i32>(1, 2, 3);
+        const a = arr[index];
+        ",
+        expect![[r#"
+            6..11 'index': float
+            14..17 '1.0': float
+            25..28 'arr': array<i32>
+            31..50 'array<... 2, 3)': array<i32>
+            42..43 '1': integer
+            45..46 '2': integer
+            48..49 '3': integer
+            58..59 'a': i32
+            62..65 'arr': array<i32>
+            62..72 'arr[index]': i32
+            66..71 'index': float
+            62..72 'arr[index]': expected i32 or u32 but got float
+        "#]],
+    );
+}
+
+#[test]
+fn array_index_is_not_bool() {
+    check_infer(
+        "
+        const index = true;
+        const arr = array<i32>(1, 2, 3);
+        const a = arr[index];
+        ",
+        expect![[r#"
+            6..11 'index': bool
+            14..18 'true': bool
+            26..29 'arr': array<i32>
+            32..51 'array<... 2, 3)': array<i32>
+            43..44 '1': integer
+            46..47 '2': integer
+            49..50 '3': integer
+            59..60 'a': i32
+            63..66 'arr': array<i32>
+            63..73 'arr[index]': i32
+            67..72 'index': bool
+            63..73 'arr[index]': expected i32 or u32 but got bool
+        "#]],
+    );
+}
