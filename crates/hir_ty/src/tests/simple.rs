@@ -555,23 +555,68 @@ fn array_index_is_not_f32() {
     check_infer(
         ExtensionsConfig::default(),
         "
-        const index = 12.0f;
+        const index = 1.0f;
         const arr = array<i32>(1, 2, 3);
         const a = arr[index];
         ",
         expect![[r#"
             6..11 'index': f32
-            14..19 '12.0f': f32
-            27..30 'arr': array<i32>
-            33..52 'array<... 2, 3)': array<i32>
-            44..45 '1': integer
-            47..48 '2': integer
-            50..51 '3': integer
-            60..61 'a': i32
-            64..67 'arr': array<i32>
-            64..74 'arr[index]': i32
-            68..73 'index': f32
-            64..74 'arr[index]': expected i32 or u32 but got f32
+            14..18 '1.0f': f32
+            26..29 'arr': array<i32>
+            32..51 'array<... 2, 3)': array<i32>
+            43..44 '1': integer
+            46..47 '2': integer
+            49..50 '3': integer
+            59..60 'a': i32
+            63..66 'arr': array<i32>
+            63..73 'arr[index]': i32
+            67..72 'index': f32
+            63..73 'arr[index]': expected i32 or u32 but got f32
+        "#]],
+    );
+}
+
+#[test]
+fn array_index_is_ref_i32() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        fn test(arr: array<i32>) {
+            var index = 1i;
+            const a = arr[index];
+        }
+        ",
+        expect![[r#"
+            8..11 'arr': array<i32>
+            35..40 'index': ref<i32>
+            43..45 '1i': i32
+            57..58 'a': i32
+            61..64 'arr': array<i32>
+            61..71 'arr[index]': i32
+            65..70 'index': ref<i32>
+        "#]],
+    );
+}
+
+#[test]
+fn array_index_is_not_ref_f32() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        fn test(arr: array<i32>) {
+            var index = 1.0f;
+            const a = arr[index];
+        }
+        ",
+        expect![[r#"
+            8..11 'arr': array<i32>
+            35..40 'index': ref<f32>
+            43..47 '1.0f': f32
+            59..60 'a': i32
+            63..66 'arr': array<i32>
+            63..73 'arr[index]': i32
+            67..72 'index': ref<f32>
+            63..73 'arr[index]': expected i32 or u32 but got f32
         "#]],
     );
 }

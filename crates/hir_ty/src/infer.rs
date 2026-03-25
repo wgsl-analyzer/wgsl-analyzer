@@ -1226,7 +1226,7 @@ impl<'database> InferenceContext<'database> {
                         InferenceDiagnosticKind::TypeMismatch {
                             expression,
                             expected: TypeExpectation::Type(TypeExpectationInner::IntegerIndex),
-                            actual: index_expression,
+                            actual: index_expression.unref(self.database),
                         },
                     );
                 }
