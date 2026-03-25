@@ -1208,10 +1208,9 @@ impl<'database> InferenceContext<'database> {
                 let left_inner = left_kind.unref(self.database);
 
                 let index_expression = self.infer_expression(*index, store);
-                if self
-                    .expect_type_inner(index_expression, &TypeExpectationInner::IntegerScalar)
-                    .is_err()
-                {
+                let index_kind = index_expression.kind(self.database);
+                let index_inner = index_kind.unref(self.database);
+                if !index_inner.is_index() {
                     self.push_diagnostic(
                         store.store_source,
                         InferenceDiagnosticKind::TypeMismatch {

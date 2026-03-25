@@ -231,6 +231,25 @@ impl TypeKind {
     }
 
     #[must_use]
+    pub const fn is_index(&self) -> bool {
+        match self {
+            Self::Scalar(scalar) => scalar.is_index(),
+            Self::Error
+            | Self::Atomic(_)
+            | Self::Vector(_)
+            | Self::Matrix(_)
+            | Self::Struct(_)
+            | Self::Array(_)
+            | Self::Texture(_)
+            | Self::Sampler(_)
+            | Self::Reference(_)
+            | Self::Pointer(_)
+            | Self::BoundVariable(_)
+            | Self::StorageTypeOfTexelFormat(_) => false,
+        }
+    }
+
+    #[must_use]
     pub fn is_abstract(
         &self,
         database: &dyn HirDatabase,
@@ -534,6 +553,19 @@ impl ScalarType {
     /// [`i32`]: <https://www.w3.org/TR/WGSL/#i32>
     /// [`u32`]: <https://www.w3.org/TR/WGSL/#u32>
     pub const fn is_integer(self) -> bool {
+        matches!(self, Self::AbstractInt | Self::I32 | Self::U32)
+    }
+
+    #[must_use]
+    #[expect(clippy::doc_paragraphs_missing_punctuation, reason = "false positive")]
+    /// The collection index types are [`AbstractInt`], [`i32`], and [`u32`].
+    ///
+    /// Reference: <https://www.w3.org/TR/WGSL/#vector-single-component>
+    ///
+    /// [`AbstractInt`]: <https://www.w3.org/TR/WGSL/#abstractint>
+    /// [`i32`]: <https://www.w3.org/TR/WGSL/#i32>
+    /// [`u32`]: <https://www.w3.org/TR/WGSL/#u32>
+    pub const fn is_index(self) -> bool {
         matches!(self, Self::AbstractInt | Self::I32 | Self::U32)
     }
 }
