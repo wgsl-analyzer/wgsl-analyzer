@@ -475,6 +475,7 @@ fn f() {
 }
 
 #[test]
+
 fn array_index_is_i32() {
     check_infer(
         ExtensionsConfig::default(),
