@@ -176,6 +176,27 @@ impl TypeKind {
         }
     }
 
+    pub fn unpointer(
+        &self,
+        database: &dyn HirDatabase,
+    ) -> Cow<'_, Self> {
+        match self {
+            Self::Pointer(pointer) => Cow::Owned(pointer.inner.kind(database)),
+            Self::Error
+            | Self::Scalar(_)
+            | Self::Atomic(_)
+            | Self::Vector(_)
+            | Self::Matrix(_)
+            | Self::Struct(_)
+            | Self::Array(_)
+            | Self::Texture(_)
+            | Self::Sampler(_)
+            | Self::Reference(_)
+            | Self::BoundVariable(_)
+            | Self::StorageTypeOfTexelFormat(_) => Cow::Borrowed(self),
+        }
+    }
+
     pub fn concretize(
         &self,
         database: &dyn HirDatabase,
