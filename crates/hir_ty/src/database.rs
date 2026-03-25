@@ -1,20 +1,10 @@
 //! The home of `HirDatabase`, which is the Salsa database containing all the
 //! type inference-related queries.
 
-use std::fmt;
-
-use hir_def::{
-    HirFileId, InFile,
-    database::{
-        DefDatabase, DefinitionWithBodyId, FunctionId, Lookup as _, ModuleDefinitionId, StructId,
-        TypeAliasId,
-    },
-    resolver::Resolver,
-    signature::{FieldId, LocalFieldId},
-};
-use la_arena::ArenaMap;
-use triomphe::Arc;
-use wgsl_types::syntax::AddressSpace;
+#![expect(
+    clippy::trailing_empty_array,
+    reason = "Clippy has a false positive for the query_group macro, see: https://github.com/rust-lang/rust-clippy/issues/16754"
+)]
 
 use crate::{
     builtins::{Builtin, BuiltinId},
@@ -25,18 +15,32 @@ use crate::{
     },
     ty::{Type, TypeKind},
 };
+use base_db::{EditionedFileId, Lookup as _};
+use hir_def::{
+    InFile,
+    database::{
+        DefDatabase, DefinitionWithBodyId, FunctionId, ModuleDefinitionId, StructId, TypeAliasId,
+    },
+    resolver::Resolver,
+    signature::{FieldId, LocalFieldId},
+};
+use la_arena::ArenaMap;
+use salsa::plumbing::AsId as _;
+use std::fmt;
+use triomphe::Arc;
+use wgsl_types::syntax::AddressSpace;
 
-#[salsa::query_group(HirDatabaseStorage)]
+#[query_group::query_group]
 pub trait HirDatabase: DefDatabase + fmt::Debug {
     #[salsa::invoke(crate::infer::infer_query)]
-    #[salsa::cycle(crate::infer::infer_cycle_result)]
+    #[salsa::cycle(cycle_result = crate::infer::infer_cycle_result)]
     fn infer(
         &self,
         key: DefinitionWithBodyId,
     ) -> Arc<InferenceResult>;
 
     #[salsa::invoke(crate::infer::infer_signature_query)]
-    #[salsa::cycle(crate::infer::infer_signature_cycle_result)]
+    #[salsa::cycle(cycle_result = crate::infer::infer_signature_cycle_result)]
     fn infer_signature(
         &self,
         key: ModuleDefinitionId,
@@ -57,7 +61,7 @@ pub trait HirDatabase: DefDatabase + fmt::Debug {
     fn struct_is_used_in_uniform(
         &self,
         key: StructId,
-        file_id: HirFileId,
+        file_id: EditionedFileId,
     ) -> bool;
 
     #[salsa::interned]
@@ -75,7 +79,7 @@ pub trait HirDatabase: DefDatabase + fmt::Debug {
     #[salsa::interned]
     fn intern_resolved_function(
         &self,
-        builtin: Arc<FunctionDetails>,
+        builtin: FunctionDetails,
     ) -> ResolvedFunctionId;
 }
 
@@ -177,7 +181,7 @@ fn function_type(
 fn struct_is_used_in_uniform(
     database: &dyn HirDatabase,
     r#struct: StructId,
-    file_id: HirFileId,
+    file_id: EditionedFileId,
 ) -> bool {
     let module_info = database.item_tree(file_id);
     module_info.items().iter().any(|item| match *item {

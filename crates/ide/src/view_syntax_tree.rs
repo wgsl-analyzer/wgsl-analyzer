@@ -1,6 +1,6 @@
-use base_db::{SourceDatabase as _, TextRange};
+use base_db::{EditionedFileId, RootQueryDb as _, SourceDatabase as _, TextRange};
 use hir_def::database::DefDatabase as _;
-use ide_db::RootDatabase;
+use ide_db::{LineIndexDatabase as _, RootDatabase};
 use line_index::{LineCol, LineIndex};
 use rowan::{NodeOrToken, TextSize, WalkEvent};
 use std::fmt::Write as _;
@@ -20,9 +20,9 @@ pub(crate) fn view_syntax_tree(
     database: &RootDatabase,
     file_id: FileId,
 ) -> String {
-    let file_id = database.editioned_file_id(file_id);
+    let file_id = EditionedFileId::from_file(database, file_id);
     let syntax_node = database.parse(file_id).syntax();
-    let line_index = database.line_index(file_id.file_id);
+    let line_index = database.line_index(file_id.file_id(database));
 
     let ctx = SyntaxTreeCtx {
         line_index,

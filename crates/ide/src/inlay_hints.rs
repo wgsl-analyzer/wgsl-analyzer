@@ -317,7 +317,7 @@ pub(crate) fn inlay_hints(
     config: &InlayHintsConfig,
 ) -> Vec<InlayHint> {
     let semantics = Semantics::new(database);
-    let file_id = database.editioned_file_id(file_id);
+    let file_id = EditionedFileId::from_file(database, file_id);
     let file = semantics.parse(file_id);
 
     let mut hints = Vec::new();
@@ -355,17 +355,17 @@ fn get_struct_layout_hints(
 ) -> Option<()> {
     let display_kind = config.struct_layout_hints?;
 
-    let module_info = semantics.database.item_tree(file_id.into());
+    let module_info = semantics.database.item_tree(file_id);
 
     for r#struct in module_info.structs() {
         let r#struct = semantics
             .database
-            .intern_struct(InFile::new(file_id.into(), r#struct));
+            .intern_struct(InFile::new(file_id, r#struct));
         let fields = semantics.database.field_types(r#struct);
 
         let address_space = if semantics
             .database
-            .struct_is_used_in_uniform(r#struct, file_id.into())
+            .struct_is_used_in_uniform(r#struct, file_id)
         {
             LayoutAddressSpace::Uniform
         } else {
@@ -493,7 +493,7 @@ fn declaration_type_hints(
     if r#type.is_some() {
         return None;
     }
-    let container = semantics.find_container(file_id.into(), node)?;
+    let container = semantics.find_container(file_id, node)?;
     let r#type = semantics
         .analyze(container.as_def_with_body_id()?)
         .type_of_binding(binding)?;
@@ -529,7 +529,7 @@ fn function_hints(
     expression: &AstExpression,
     parameter_expressions: AstChildren<AstExpression>,
 ) -> Option<()> {
-    let container = semantics.find_container(file_id.into(), node)?;
+    let container = semantics.find_container(file_id, node)?;
     let analyzed = semantics.analyze(container.as_def_with_body_id()?);
     let expression = analyzed.expression_id(expression)?;
     let resolved = analyzed.infer.call_resolution(expression)?;

@@ -6,14 +6,14 @@ use triomphe::Arc;
 use vfs::{FileId, VfsPath};
 
 use crate::{
-    SourceDatabase,
+    RootQueryDb,
     input::{SourceRoot, SourceRootId},
 };
 
 #[derive(Default)]
 pub struct Change {
     pub roots: Option<Vec<SourceRoot>>,
-    pub files_changed: Vec<(FileId, Option<Arc<String>>)>,
+    pub files_changed: Vec<(FileId, Option<String>)>,
 }
 
 impl Change {
@@ -32,7 +32,7 @@ impl Change {
     pub fn change_file(
         &mut self,
         file_id: FileId,
-        new_text: Option<Arc<String>>,
+        new_text: Option<String>,
     ) {
         self.files_changed.push((file_id, new_text));
     }
@@ -44,7 +44,7 @@ impl Change {
     /// Panics if the number of source roots exceeds `u32::MAX`, as `SourceRootId` holds a `u32`.
     pub fn apply(
         self,
-        database: &mut dyn SourceDatabase,
+        database: &mut dyn RootQueryDb,
     ) {
         if let Some(roots) = self.roots {
             for (root_id, root) in roots.into_iter().enumerate() {
@@ -59,12 +59,12 @@ impl Change {
 
         for (file_id, text) in self.files_changed {
             let source_root_id = database.file_source_root(file_id);
-            let source_root = database.source_root(source_root_id);
+            let source_root = database.source_root(source_root_id.source_root_id(database));
 
-            let durability = file_text_durability(&source_root);
+            let durability = file_text_durability(&source_root.source_root(database));
             // XXX: can't actually remove the file, just reset the text
             let text = text.unwrap_or_default();
-            database.set_file_text_with_durability(file_id, text, durability);
+            database.set_file_text_with_durability(file_id, &text, durability);
         }
     }
 }

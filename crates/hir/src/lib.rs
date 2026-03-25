@@ -2,17 +2,17 @@ pub mod database;
 pub mod definition;
 pub mod diagnostics;
 
-use base_db::{EditionedFileId, FileId};
+use base_db::{EditionedFileId, FileId, Lookup as _};
 use definition::Definition;
 use diagnostics::{AnyDiagnostic, DiagnosticsConfig};
 use either::Either;
 pub use hir_def::database::ExtensionsConfig;
 use hir_def::{
-    HasSource as _, HirFileId, InFile,
+    HasSource as _, InFile,
     body::{BindingId, Body, BodySourceMap},
     database::{
         DefDatabase, DefinitionWithBodyId, FunctionId, GlobalAssertStatementId, GlobalConstantId,
-        GlobalVariableId, ImportId, Location, Lookup as _, OverrideId, StructId, TypeAliasId,
+        GlobalVariableId, ImportId, Location, OverrideId, StructId, TypeAliasId,
     },
     expression::{ExpressionId, StatementId},
     expression_store::{ExpressionStoreSource, path::Path},
@@ -65,7 +65,7 @@ impl<'database> Semantics<'database> {
     #[must_use]
     pub fn find_container(
         &self,
-        file_id: HirFileId,
+        file_id: EditionedFileId,
         source: &SyntaxNode,
     ) -> Option<ChildContainer> {
         source
@@ -146,7 +146,7 @@ impl<'database> Semantics<'database> {
     #[must_use]
     pub fn resolver(
         &self,
-        file_id: HirFileId,
+        file_id: EditionedFileId,
         source: &SyntaxNode,
     ) -> Resolver {
         if let Some(definition) = self.find_container(file_id, source) {
@@ -159,13 +159,11 @@ impl<'database> Semantics<'database> {
 
     #[must_use]
     #[expect(clippy::unused_self, reason = "intentional API")]
-    pub fn module(
+    pub const fn module(
         self,
         file_id: EditionedFileId,
     ) -> Module {
-        Module {
-            file_id: file_id.into(),
-        }
+        Module { file_id }
     }
 
     fn resolve_path_in_container(
@@ -396,7 +394,7 @@ impl ChildContainer {
     pub fn file_id(
         self,
         database: &dyn DefDatabase,
-    ) -> HirFileId {
+    ) -> EditionedFileId {
         match self {
             Self::DefinitionWithBodyId(id) => id.file_id(database),
             Self::ImportId(id) => id.lookup(database).file_id,
@@ -443,7 +441,7 @@ impl ChildContainer {
 
 fn module_item_to_def(
     database: &dyn HirDatabase,
-    file_id: HirFileId,
+    file_id: EditionedFileId,
     module_item: ModuleItem,
 ) -> SmallVec<[ModuleDef; 1]> {
     let definition = match module_item {
@@ -833,7 +831,7 @@ impl ModuleDef {
 }
 
 pub struct Module {
-    file_id: HirFileId,
+    file_id: EditionedFileId,
 }
 
 impl Module {
@@ -932,7 +930,7 @@ impl Module {
 ///
 /// See: <https://www.w3.org/TR/WGSL/#identifiers>
 fn validate_identifiers(
-    file_id: HirFileId,
+    file_id: EditionedFileId,
     database: &dyn HirDatabase,
     accumulator: &mut Vec<AnyDiagnostic>,
 ) {

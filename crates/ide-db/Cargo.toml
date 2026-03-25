@@ -7,17 +7,23 @@ description = "IDE Database of wgsl-analyzer"
 repository.workspace = true
 license.workspace = true
 
+[package.metadata.cargo-shear]
+ignored = ["salsa-macros"]  # the query_group macro expansion uses this
+
 [lib]
 doctest = false
 
 [dependencies]
 base-db.workspace = true
 hir-def.workspace = true
-hir-ty.workspace = true
 itertools.workspace = true
+line-index.workspace = true
+query-group.workspace = true
 rowan.workspace = true
 rustc-hash.workspace = true
 salsa.workspace = true
+salsa-macros.workspace = true
+triomphe.workspace = true
 vfs.workspace = true
 
 [lints]

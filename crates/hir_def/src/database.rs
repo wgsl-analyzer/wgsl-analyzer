@@ -1,22 +1,19 @@
-use std::{
-    fmt::{self, Debug},
-    hash,
-    marker::PhantomData,
-};
-
-use base_db::{EditionedFileId, FileId, SourceDatabase};
-use salsa::InternKey;
-use syntax::{Edition, Parse, ast};
-use triomphe::Arc;
-use vfs::VfsPath;
+#![expect(
+    clippy::drop_non_drop,
+    reason = "Clippy has a false positive for the query_group macro, see: https://github.com/rust-lang/rust-clippy/issues/16753"
+)]
+#![expect(
+    clippy::trailing_empty_array,
+    reason = "Clippy has a false positive for the query_group macro, see: https://github.com/rust-lang/rust-clippy/issues/16754"
+)]
+use std::fmt::{self, Debug};
 
 use crate::{
-    FileAstId, HirFileId, InFile,
+    FileAstId, InFile,
     ast_id::AstIdMap,
     attributes::{AttributeDefId, AttributesWithOwner},
     body::{Body, BodySourceMap, scope::ExprScopes},
     expression_store::{ExpressionSourceMap, ExpressionStore},
-    hir_file_id::HirFileIdRepr,
     item_tree::{
         Directive, Function, GlobalAssertStatement, GlobalConstant, GlobalVariable,
         ImportStatement, ItemTree, ModuleItemId, Override, Struct, TypeAlias,
@@ -27,13 +24,20 @@ use crate::{
         StructSignature, TypeAliasSignature, VariableSignature,
     },
 };
+use base_db::{
+    EditionedFileId, Lookup as _, RootQueryDb, SourceDatabase, impl_intern_key, impl_intern_lookup,
+};
+use salsa::plumbing::AsId as _;
+use syntax::{Parse, ast};
+use triomphe::Arc;
+use vfs::VfsPath;
 
 #[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ExtensionsConfig {
     pub shader_int64: bool,
 }
 
-#[salsa::query_group(DefDatabaseStorage)]
+#[query_group::query_group(DefDatabaseStorage)]
 pub trait DefDatabase: InternDatabase + SourceDatabase {
     /// Which language extensions are enabled.
     #[salsa::input]
@@ -41,23 +45,18 @@ pub trait DefDatabase: InternDatabase + SourceDatabase {
 
     fn parse_or_resolve(
         &self,
-        key: HirFileId,
+        key: EditionedFileId,
     ) -> Parse;
-
-    fn editioned_file_id(
-        &self,
-        key: FileId,
-    ) -> EditionedFileId;
 
     fn ast_id_map(
         &self,
-        key: HirFileId,
+        key: EditionedFileId,
     ) -> Arc<AstIdMap>;
 
     #[salsa::invoke(ItemTree::query)]
     fn item_tree(
         &self,
-        key: HirFileId,
+        key: EditionedFileId,
     ) -> Arc<ItemTree>;
 
     #[salsa::invoke(Body::body_with_source_map_query)]
@@ -166,47 +165,22 @@ fn signature_with_source_map(
 
 fn parse_or_resolve(
     database: &dyn DefDatabase,
-    file_id: HirFileId,
+    file_id: EditionedFileId,
 ) -> Parse {
-    match file_id.0 {
-        HirFileIdRepr::FileId(file_id) => database.parse(file_id),
-    }
-}
-
-fn editioned_file_id(
-    database: &dyn DefDatabase,
-    file_id: FileId,
-) -> EditionedFileId {
-    let source_root = database.source_root(database.file_source_root(file_id));
-    let edition = if let Some((_, Some(extension))) = source_root
-        .path_for_file(file_id)
-        .and_then(|file| file.name_and_extension())
-    {
-        if extension.eq_ignore_ascii_case("wesl") {
-            Edition::LATEST
-        } else if extension.eq_ignore_ascii_case("wgsl") {
-            Edition::Wgsl
-        } else {
-            Edition::CURRENT
-        }
-    } else {
-        Edition::CURRENT
-    };
-
-    EditionedFileId { file_id, edition }
+    database.parse(file_id)
 }
 
 fn ast_id_map(
     database: &dyn DefDatabase,
-    file_id: HirFileId,
+    file_id: EditionedFileId,
 ) -> Arc<AstIdMap> {
     let parsed = database.parse_or_resolve(file_id);
     let map = AstIdMap::from_source(&parsed.tree());
     Arc::new(map)
 }
 
-#[salsa::query_group(InternDatabaseStorage)]
-pub trait InternDatabase: SourceDatabase {
+#[query_group::query_group(InternDatabaseStorage)]
+pub trait InternDatabase: RootQueryDb {
     #[salsa::interned]
     fn intern_import(
         &self,
@@ -256,113 +230,70 @@ pub trait InternDatabase: SourceDatabase {
 
 pub type Location<T> = InFile<ModuleItemId<T>>;
 
-pub struct Interned<T>(salsa::InternId, PhantomData<T>);
-
-impl<T> hash::Hash for Interned<T> {
-    fn hash<H: hash::Hasher>(
-        &self,
-        state: &mut H,
-    ) {
-        self.0.hash(state);
-    }
-}
-
-impl<T> PartialEq for Interned<T> {
-    fn eq(
-        &self,
-        other: &Self,
-    ) -> bool {
-        self.0 == other.0
-    }
-}
-
-impl<T> Eq for Interned<T> {}
-
-impl<T> Clone for Interned<T> {
-    fn clone(&self) -> Self {
-        *self
-    }
-}
-
-impl<T> Copy for Interned<T> {}
-
-impl<T> fmt::Debug for Interned<T> {
-    fn fmt(
-        &self,
-        formatter: &mut fmt::Formatter<'_>,
-    ) -> fmt::Result {
-        formatter.debug_tuple("Interned").field(&self.0).finish()
-    }
-}
-
-impl<T> InternKey for Interned<T> {
-    fn from_intern_id(v: salsa::InternId) -> Self {
-        Self(v, PhantomData)
-    }
-
-    fn as_intern_id(&self) -> salsa::InternId {
-        self.0
-    }
-}
-
-macro_rules! intern_id {
-    ($id:ident, $loc:ty, $lookup:ident) => {
-        #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
-        pub struct $id(salsa::InternId);
-        impl InternKey for $id {
-            fn from_intern_id(v: salsa::InternId) -> Self {
-                $id(v)
-            }
-
-            fn as_intern_id(&self) -> salsa::InternId {
-                self.0
-            }
-        }
-
-        impl Lookup for $id {
-            type Data = $loc;
-
-            fn lookup(
-                &self,
-                database: &dyn DefDatabase,
-            ) -> $loc {
-                database.$lookup(*self)
-            }
-        }
+macro_rules! impl_intern {
+    ($id:ident, $loc:ty, $intern:ident, $lookup:ident) => {
+        impl_intern_key!($id, $loc);
+        impl_intern_lookup!(DefDatabase, $id, $loc, $intern, $lookup);
     };
 }
 
-pub trait Lookup: Sized {
-    type Data;
-    fn lookup(
-        &self,
-        database: &dyn DefDatabase,
-    ) -> Self::Data;
-}
-intern_id!(ImportId, Location<ImportStatement>, lookup_intern_import);
-intern_id!(DirectiveId, Location<Directive>, lookup_intern_directive);
-intern_id!(FunctionId, Location<Function>, lookup_intern_function);
-intern_id!(
+impl_intern!(
+    ImportId,
+    Location<ImportStatement>,
+    intern_import,
+    lookup_intern_import
+);
+impl_intern!(
+    DirectiveId,
+    Location<Directive>,
+    intern_directive,
+    lookup_intern_directive
+);
+impl_intern!(
+    FunctionId,
+    Location<Function>,
+    intern_function,
+    lookup_intern_function
+);
+impl_intern!(
     GlobalVariableId,
     Location<GlobalVariable>,
+    intern_global_variable,
     lookup_intern_global_variable
 );
-intern_id!(
+impl_intern!(
     GlobalConstantId,
     Location<GlobalConstant>,
+    intern_global_constant,
     lookup_intern_global_constant
 );
-intern_id!(OverrideId, Location<Override>, lookup_intern_override);
-intern_id!(StructId, Location<Struct>, lookup_intern_struct);
-intern_id!(TypeAliasId, Location<TypeAlias>, lookup_intern_type_alias);
-intern_id!(
+impl_intern!(
+    OverrideId,
+    Location<Override>,
+    intern_override,
+    lookup_intern_override
+);
+impl_intern!(
+    StructId,
+    Location<Struct>,
+    intern_struct,
+    lookup_intern_struct
+);
+impl_intern!(
+    TypeAliasId,
+    Location<TypeAlias>,
+    intern_type_alias,
+    lookup_intern_type_alias
+);
+impl_intern!(
     GlobalAssertStatementId,
     Location<GlobalAssertStatement>,
+    intern_global_assert_statement,
     lookup_intern_global_assert_statement
 );
 
 /// Module items with a body.
-#[derive(PartialEq, Eq, Hash, Debug, Clone, Copy)]
+#[derive(PartialEq, Eq, Hash, Debug, Clone, Copy, salsa_macros::Supertype)]
 pub enum DefinitionWithBodyId {
     Function(FunctionId),
     GlobalVariable(GlobalVariableId),
@@ -375,7 +306,7 @@ impl DefinitionWithBodyId {
     pub fn file_id(
         self,
         database: &dyn DefDatabase,
-    ) -> HirFileId {
+    ) -> EditionedFileId {
         match self {
             Self::Function(id) => id.lookup(database).file_id,
             Self::GlobalVariable(id) => id.lookup(database).file_id,
@@ -396,7 +327,7 @@ impl DefinitionWithBodyId {
 }
 
 /// All module items.
-#[derive(PartialEq, Eq, Hash, Debug, Clone, Copy)]
+#[derive(PartialEq, Eq, Hash, Debug, Clone, Copy, salsa_macros::Supertype)]
 pub enum ModuleDefinitionId {
     Function(FunctionId),
     GlobalVariable(GlobalVariableId),
@@ -411,7 +342,7 @@ impl ModuleDefinitionId {
     pub fn file_id(
         self,
         database: &dyn DefDatabase,
-    ) -> HirFileId {
+    ) -> EditionedFileId {
         match self {
             Self::Function(id) => id.lookup(database).file_id,
             Self::GlobalVariable(id) => id.lookup(database).file_id,

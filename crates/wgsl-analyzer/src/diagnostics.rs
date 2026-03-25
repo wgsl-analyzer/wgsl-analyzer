@@ -4,6 +4,7 @@
 
 use std::mem;
 
+use base_db::DbPanicContext;
 use cargo_metadata::PackageId;
 type FileId = vfs::FileId;
 use ide::diagnostics::{Diagnostic, Severity};
@@ -251,7 +252,7 @@ pub(crate) fn fetch_native_diagnostics(
     kind: NativeDiagnosticsFetchKind,
 ) -> Vec<(FileId, Vec<lsp_types::Diagnostic>)> {
     let _p = tracing::info_span!("fetch_native_diagnostics").entered();
-    let _context = stdx::panic_context::enter("fetch_native_diagnostics".to_owned());
+    let _context = DbPanicContext::enter("fetch_native_diagnostics".to_owned());
 
     subscriptions[slice]
         .iter()

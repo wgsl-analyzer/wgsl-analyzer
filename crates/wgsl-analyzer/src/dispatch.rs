@@ -2,6 +2,7 @@
 
 use std::{fmt, panic, thread};
 
+use base_db::DbPanicContext;
 use fmt::Debug;
 use lsp_server::{ExtractError, Response, ResponseError};
 use salsa::Cancelled;
@@ -65,7 +66,7 @@ impl<'global_state> RequestDispatcher<'global_state> {
                 .entered();
         tracing::debug!(?parameters);
         let result = {
-            let _pctx = stdx::panic_context::enter(panic_context);
+            let _pctx = DbPanicContext::enter(panic_context);
             function(self.global_state, parameters)
         };
         if let Ok(response) = result_to_response::<R>(request.id, result) {
@@ -95,7 +96,7 @@ impl<'global_state> RequestDispatcher<'global_state> {
         let global_state_snapshot = self.global_state.snapshot();
 
         let result = panic::catch_unwind(move || {
-            let _pctx = stdx::panic_context::enter(panic_context);
+            let _pctx = DbPanicContext::enter(panic_context);
             function(global_state_snapshot, parameters)
         });
 
@@ -220,7 +221,7 @@ impl<'global_state> RequestDispatcher<'global_state> {
         }
         .spawn(intent, move || {
             let result = panic::catch_unwind(move || {
-                let _pctx = stdx::panic_context::enter(panic_context);
+                let _pctx = DbPanicContext::enter(panic_context);
                 function(world, parameters)
             });
             match thread_result_to_response::<R>(request.id.clone(), result) {
@@ -283,14 +284,12 @@ impl<'global_state> RequestDispatcher<'global_state> {
 
 #[derive(Debug)]
 enum HandlerCancelledError {
-    PropagatedPanic,
     Inner(Cancelled),
 }
 
 impl std::error::Error for HandlerCancelledError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
-            Self::PropagatedPanic => None,
             Self::Inner(cancelled) => Some(cancelled),
         }
     }

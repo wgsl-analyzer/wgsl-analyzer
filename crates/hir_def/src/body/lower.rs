@@ -1,9 +1,9 @@
+use base_db::EditionedFileId;
 use either::Either;
 use syntax::{HasName as _, HasTemplateParameters as _, ast, pointer::AstPointer};
 
 use super::{Binding, BindingId, Body, BodySourceMap, SyntheticSyntax};
 use crate::{
-    HirFileId,
     database::DefDatabase,
     expression::{ExpressionId, Statement, StatementId, SwitchCaseSelector},
     expression_store::{ExpressionStoreSource, lower::ExprCollector},
@@ -12,7 +12,7 @@ use crate::{
 
 pub(super) fn lower_function_body(
     database: &dyn DefDatabase,
-    file_id: HirFileId,
+    file_id: EditionedFileId,
     param_list: Option<ast::FunctionParameters>,
     body: Option<ast::CompoundStatement>,
 ) -> (Body, BodySourceMap) {
@@ -21,7 +21,7 @@ pub(super) fn lower_function_body(
 
 pub(super) fn lower_global_variable_declaration(
     database: &dyn DefDatabase,
-    file_id: HirFileId,
+    file_id: EditionedFileId,
     declaration: &ast::VariableDeclaration,
 ) -> (Body, BodySourceMap) {
     Collector::new(database, file_id).collect_global_variable_declaration(declaration)
@@ -29,7 +29,7 @@ pub(super) fn lower_global_variable_declaration(
 
 pub(super) fn lower_global_constant_declaration(
     database: &dyn DefDatabase,
-    file_id: HirFileId,
+    file_id: EditionedFileId,
     declaration: &ast::ConstantDeclaration,
 ) -> (Body, BodySourceMap) {
     Collector::new(database, file_id).collect_global_constant_declaration(declaration)
@@ -37,7 +37,7 @@ pub(super) fn lower_global_constant_declaration(
 
 pub(super) fn lower_global_assert_statement(
     database: &dyn DefDatabase,
-    file_id: HirFileId,
+    file_id: EditionedFileId,
     declaration: &ast::AssertStatement,
 ) -> (Body, BodySourceMap) {
     Collector::new(database, file_id).collect_global_assert_statement(declaration)
@@ -45,7 +45,7 @@ pub(super) fn lower_global_assert_statement(
 
 pub(super) fn lower_override_declaration(
     database: &dyn DefDatabase,
-    file_id: HirFileId,
+    file_id: EditionedFileId,
     declaration: &ast::OverrideDeclaration,
 ) -> (Body, BodySourceMap) {
     Collector::new(database, file_id).collect_override_declaration(declaration)
@@ -56,13 +56,13 @@ struct Collector<'database> {
     database: &'database dyn DefDatabase,
     body: Body,
     source_map: BodySourceMap,
-    file_id: HirFileId,
+    file_id: EditionedFileId,
 }
 
 impl Collector<'_> {
     fn new(
         database: &dyn DefDatabase,
-        file_id: HirFileId,
+        file_id: EditionedFileId,
     ) -> Collector<'_> {
         Collector {
             expressions: ExprCollector::new(database, ExpressionStoreSource::Body),

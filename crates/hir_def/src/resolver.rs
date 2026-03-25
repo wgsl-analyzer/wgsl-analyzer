@@ -1,9 +1,10 @@
 use std::ops::ControlFlow;
 
+use base_db::EditionedFileId;
 use triomphe::Arc;
 
 use crate::{
-    HirFileId, InFile,
+    InFile,
     body::{
         BindingId,
         scope::{ExprScopes, ScopeId},
@@ -29,7 +30,7 @@ pub enum Scope {
 #[derive(Clone)]
 pub struct ModuleScope {
     module_info: Arc<ItemTree>,
-    file_id: HirFileId,
+    file_id: EditionedFileId,
 }
 
 #[derive(Clone)]
@@ -52,7 +53,7 @@ pub enum ResolveKind {
 
 pub enum ScopeDef {
     Local(BindingId),
-    ModuleItem(HirFileId, ModuleItem),
+    ModuleItem(EditionedFileId, ModuleItem),
 }
 
 #[derive(Clone)]
@@ -81,7 +82,7 @@ impl Resolver {
     #[must_use]
     pub fn push_module_scope(
         mut self,
-        file_id: HirFileId,
+        file_id: EditionedFileId,
         item_tree: Arc<ItemTree>,
     ) -> Self {
         self.scopes.push(Scope::Module(ModuleScope {

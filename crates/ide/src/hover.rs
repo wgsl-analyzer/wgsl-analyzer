@@ -1,4 +1,6 @@
-use base_db::{FilePosition, FileRange, RangeInfo, SourceDatabase as _};
+use base_db::{
+    EditionedFileId, FilePosition, FileRange, RangeInfo, RootQueryDb as _, SourceDatabase as _,
+};
 use hir::Semantics;
 use hir_def::database::DefDatabase as _;
 use ide_db::RootDatabase;
@@ -76,7 +78,7 @@ pub(crate) fn hover(
     _config: &HoverConfig,
 ) -> Option<RangeInfo<HoverResult>> {
     let _semantics = &Semantics::new(database);
-    let file_id = database.editioned_file_id(file_range.file_id);
+    let file_id = EditionedFileId::from_file(database, file_range.file_id);
     let _file = database.parse(file_id).tree();
     // TODO: Implement hovering and https://github.com/wgsl-analyzer/wgsl-analyzer/issues/362
     None
