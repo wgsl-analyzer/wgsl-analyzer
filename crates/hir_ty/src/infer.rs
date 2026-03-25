@@ -1062,6 +1062,16 @@ impl<'database> InferenceContext<'database> {
                     Err(())
                 }
             },
+            TypeExpectationInner::IntegerIndex => {
+                if let TypeKind::Scalar(
+                    ScalarType::I32 | ScalarType::U32 | ScalarType::AbstractInt,
+                ) = r#type.kind(self.database).unref(self.database).as_ref()
+                {
+                    Ok(())
+                } else {
+                    Err(())
+                }
+            },
         }
     }
 
@@ -1203,13 +1213,23 @@ impl<'database> InferenceContext<'database> {
             },
             Expression::Index { left_side, index } => {
                 let left_side = self.infer_expression(*left_side, store);
-                let _index_expression = self.infer_expression(*index, store);
-                // TODO: check that the type of the index expression makes sense. Can't index with a f32, for example.
-                // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/671
                 let left_kind = left_side.kind(self.database);
                 let is_reference = matches!(left_kind, TypeKind::Reference(_));
-
                 let left_inner = left_kind.unref(self.database);
+
+                let index_expression = self.infer_expression(*index, store);
+                let index_kind = index_expression.kind(self.database);
+                let index_inner = index_kind.unref(self.database);
+                if !index_inner.is_index() {
+                    self.push_diagnostic(
+                        store.store_source,
+                        InferenceDiagnosticKind::TypeMismatch {
+                            expression,
+                            expected: TypeExpectation::Type(TypeExpectationInner::IntegerIndex),
+                            actual: index_expression.unref(self.database),
+                        },
+                    );
+                }
 
                 let r#type = match &*left_inner {
                     TypeKind::Vector(vec) => vec.component_type,
@@ -2185,6 +2205,7 @@ impl<'database> InferenceContext<'database> {
 pub enum TypeExpectationInner {
     Exact(Type),
     IntegerScalar,
+    IntegerIndex,
 }
 
 #[derive(PartialEq, Eq, Debug, Clone)]
