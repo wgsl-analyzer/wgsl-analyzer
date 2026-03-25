@@ -1203,13 +1203,24 @@ impl<'database> InferenceContext<'database> {
             },
             Expression::Index { left_side, index } => {
                 let left_side = self.infer_expression(*left_side, store);
-                let _index_expression = self.infer_expression(*index, store);
-                // TODO: check that the type of the index expression makes sense. Can't index with a f32, for example.
-                // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/671
                 let left_kind = left_side.kind(self.database);
                 let is_reference = matches!(left_kind, TypeKind::Reference(_));
-
                 let left_inner = left_kind.unref(self.database);
+
+                let index_expression = self.infer_expression(*index, store);
+                if self
+                    .expect_type_inner(index_expression, &TypeExpectationInner::IntegerScalar)
+                    .is_err()
+                {
+                    self.push_diagnostic(
+                        store.store_source,
+                        InferenceDiagnosticKind::TypeMismatch {
+                            expression,
+                            expected: TypeExpectation::Type(TypeExpectationInner::IntegerScalar),
+                            actual: index_expression,
+                        },
+                    );
+                };
 
                 let r#type = match &*left_inner {
                     TypeKind::Vector(vec) => vec.component_type,
