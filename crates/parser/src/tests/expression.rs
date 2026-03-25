@@ -198,7 +198,7 @@ fn do_not_parse_operator_if_getting_rhs_failed() {
                     IntLiteral@1..2 "1"
                   Plus@2..3 "+"
 
-            error at 3..3: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '(', '-', 'package', '*', 'super', '~', 'true'"#]],
+            error at 3..3: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '-', 'package', '(', '*', 'super', '~', 'true'"#]],
     );
 }
 

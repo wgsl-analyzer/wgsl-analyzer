@@ -622,7 +622,7 @@ fn parse_type_empty_template() {
                   TemplateStart@4..5 "<"
                   TemplateEnd@5..6 ">"
 
-            error at 5..6: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '(', '-', 'package', '*', 'super', '~', 'true'"#]],
+            error at 5..6: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '-', 'package', '(', '*', 'super', '~', 'true'"#]],
     );
 }
 
@@ -640,7 +640,7 @@ fn parse_type_template_comma_recover() {
                   Comma@5..6 ","
                   TemplateEnd@6..7 ">"
 
-            error at 5..6: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '(', '-', 'package', '*', 'super', '~', 'true'"#]],
+            error at 5..6: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '-', 'package', '(', '*', 'super', '~', 'true'"#]],
     );
 }
 
@@ -785,8 +785,8 @@ fn parse_let_statement_recover() {
                   Blankspace@78..87 "\n        "
                   BraceRight@87..88 "}"
 
-            error at 50..53: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '(', '-', 'package', '*', 'super', '~', 'true'
-            error at 70..76: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '(', '-', 'package', '*', 'super', '~', 'true'
+            error at 50..53: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '-', 'package', '(', '*', 'super', '~', 'true'
+            error at 70..76: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '-', 'package', '(', '*', 'super', '~', 'true'
             error at 87..88: invalid syntax, expected: ';'"#]],
     );
 }
@@ -842,7 +842,7 @@ fn parse_recover_covers_whole_file() {
                   Blankspace@43..44 "\n"
                   BraceRight@44..45 "}"
 
-            error at 31..34: invalid syntax, expected one of: '&', '&&', '&=', '@', '^', '^=', ':', ',', '.', '::', '=', '==', '!=', '>', '>=', <identifier>, '{', '[', '(', '<', '<=', '-', '--', '-=', '%', '%=', '|', '||', '|=', '+', '++', '+=', '}', ']', ')', ';', '<<', '<<=', '>>', '>>=', '/', '/=', '*', '*=', <template end>, <template start>"#]],
+            error at 31..34: invalid syntax, expected one of: '&', '&&', '&=', '@', '{', '}', '[', ']', ':', '::', ',', '/=', '=', '==', '/', '>', '>=', <identifier>, '<', '<=', '-', '-=', '--', '%', '%=', '!=', '|', '|=', '||', '(', ')', '.', '+', '+=', '++', ';', '<<', '<<=', '>>', '>>=', '*', <template end>, <template start>, '*=', '^', '^='"#]],
     );
 }
 
@@ -1082,7 +1082,7 @@ fn parse_if_recover_paren() {
                     Blankspace@28..37 "\n        "
                     BraceRight@37..38 "}"
 
-            error at 4..5: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '(', '-', 'package', '*', 'super', '~', 'true'"#]],
+            error at 4..5: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '-', 'package', '(', '*', 'super', '~', 'true'"#]],
     );
 }
 
@@ -1149,7 +1149,7 @@ fn parse_if_recover_empty() {
                     Blankspace@25..34 "\n        "
                     BraceRight@34..35 "}"
 
-            error at 3..4: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '(', '-', 'package', '*', 'super', '~', 'true'"#]],
+            error at 3..4: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '-', 'package', '(', '*', 'super', '~', 'true'"#]],
     );
 }
 
@@ -1241,7 +1241,7 @@ fn parse_if_recovery_1() {
                     BraceLeft@22..23 "{"
                     BraceRight@23..24 "}"
 
-            error at 22..23: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '(', '-', 'package', '*', 'super', '~', 'true'"#]],
+            error at 22..23: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '-', 'package', '(', '*', 'super', '~', 'true'"#]],
     );
 }
 
@@ -1751,7 +1751,7 @@ fn parse_statement_assignment_invalid() {
                     Semicolon@12..13 ";"
                   BraceRight@13..14 "}"
 
-            error at 7..8: invalid syntax, expected one of: '&', '@', 'break', 'const', 'const_assert', 'continue', 'discard', 'for', <identifier>, 'if', '{', '(', 'let', 'loop', 'package', '}', 'return', ';', '*', 'super', 'switch', '_', 'var', 'while'"#]],
+            error at 7..8: invalid syntax, expected one of: '&', '@', '{', '}', 'break', 'const', 'const_assert', 'continue', 'discard', 'for', <identifier>, 'if', 'let', 'loop', 'package', '(', 'return', ';', '*', 'super', 'switch', '_', 'var', 'while'"#]],
     );
 }
 
@@ -1790,7 +1790,7 @@ fn parse_statement_recover() {
                 Blankspace@26..27 " "
                 BraceRight@27..28 "}"
 
-            error at 12..13: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '(', '-', 'package', '*', 'super', '~', 'true'
+            error at 12..13: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '-', 'package', '(', '*', 'super', '~', 'true'
             error at 25..26: invalid syntax, expected: ';'"#]],
     );
 }
@@ -1816,7 +1816,7 @@ fn parse_missing_lhs_recover() {
                     IntLiteral@9..10 "1"
                 Semicolon@10..11 ";"
 
-            error at 8..9: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '(', '-', 'package', '*', 'super', '~', 'true'"#]],
+            error at 8..9: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '-', 'package', '(', '*', 'super', '~', 'true'"#]],
     );
 }
 
@@ -1829,7 +1829,7 @@ fn var_recover_elided_name() {
               VariableDeclaration@0..3
                 Var@0..3 "var"
 
-            error at 3..3: invalid syntax, expected one of: '@', ',', '=', <identifier>, '{', '}', ')', ';', <template start>"#]],
+            error at 3..3: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>"#]],
     );
 }
 
@@ -2114,7 +2114,7 @@ fn let_statement_recover_return_no_eq() {
                         BraceRight@41..42 "}"
 
             error at 30..32: invalid syntax, expected one of: ':', '=', ';'
-            error at 41..42: invalid syntax, expected one of: '&', '&&', '@', '^', ':', ',', '.', '==', '!=', '>', '>=', '{', '[', '(', '<', '<=', '-', '%', '|', '||', '+', ']', ')', ';', '<<', '>>', '/', '*', <template end>, <template start>"#]],
+            error at 41..42: invalid syntax, expected one of: '&', '&&', '@', '{', '[', ']', ':', ',', '==', '/', '>', '>=', '<', '<=', '-', '%', '!=', '|', '||', '(', ')', '.', '+', ';', '<<', '>>', '*', <template end>, <template start>, '^'"#]],
     );
 }
 
@@ -2233,7 +2233,7 @@ fn let_statement_recover_return_3() {
                   Blankspace@53..62 "\n        "
                   BraceRight@62..63 "}"
 
-            error at 44..50: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '(', '-', 'package', '*', 'super', '~', 'true'"#]],
+            error at 44..50: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '-', 'package', '(', '*', 'super', '~', 'true'"#]],
     );
 }
 
@@ -2299,7 +2299,7 @@ fn let_statement_recover_2() {
                   Blankspace@31..40 "\n        "
                   BraceRight@40..41 "}"
 
-            error at 40..41: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '(', '-', 'package', '*', 'super', '~', 'true'"#]],
+            error at 40..41: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '-', 'package', '(', '*', 'super', '~', 'true'"#]],
     );
 }
 
@@ -2656,7 +2656,7 @@ struct Test {
               Blankspace@46..47 "\n"
 
             error at 31..32: invalid syntax, expected ','
-            error at 43..44: invalid syntax, expected one of: '@', ',', <identifier>, '}', ';'"#]],
+            error at 43..44: invalid syntax, expected one of: '@', '}', ',', <identifier>, ';'"#]],
     );
 }
 
@@ -2907,7 +2907,7 @@ fn type_alias_declaration_recover() {
                     Identifier@32..35 "u32"
                 Semicolon@35..36 ";"
 
-            error at 18..23: invalid syntax, expected one of: '&', '&&', '&=', '@', '^', '^=', ':', ',', '.', '::', '=', '==', '!=', '>', '>=', <identifier>, '{', '[', '(', '<', '<=', '-', '--', '-=', '%', '%=', '|', '||', '|=', '+', '++', '+=', '}', ']', ')', ';', '<<', '<<=', '>>', '>>=', '/', '/=', '*', '*=', <template end>, <template start>"#]],
+            error at 18..23: invalid syntax, expected one of: '&', '&&', '&=', '@', '{', '}', '[', ']', ':', '::', ',', '/=', '=', '==', '/', '>', '>=', <identifier>, '<', '<=', '-', '-=', '--', '%', '%=', '!=', '|', '|=', '||', '(', ')', '.', '+', '+=', '++', ';', '<<', '<<=', '>>', '>>=', '*', <template end>, <template start>, '*=', '^', '^='"#]],
     );
 }
 
@@ -3022,7 +3022,7 @@ fn empty_return_statement_no_semi() {
                       BraceRight@22..23 "}"
               Blankspace@23..24 " "
 
-            error at 22..23: invalid syntax, expected one of: '&', '&&', '@', '^', ':', ',', '.', '==', '!=', '>', '>=', '{', '[', '(', '<', '<=', '-', '%', '|', '||', '+', ']', ')', ';', '<<', '>>', '/', '*', <template end>, <template start>"#]],
+            error at 22..23: invalid syntax, expected one of: '&', '&&', '@', '{', '[', ']', ':', ',', '==', '/', '>', '>=', '<', '<=', '-', '%', '!=', '|', '||', '(', ')', '.', '+', ';', '<<', '>>', '*', <template end>, <template start>, '^'"#]],
     );
 }
 
@@ -3175,7 +3175,7 @@ switch i {
                   BraceRight@19..20 "}"
               Blankspace@20..29 "\n        "
 
-            error at 19..20: invalid syntax, expected one of: '&', 'default', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '(', '-', 'package', '*', 'super', '~', 'true'"#]],
+            error at 19..20: invalid syntax, expected one of: '&', '!', 'default', 'false', <floating point literal>, <identifier>, <integer literal>, '-', 'package', '(', '*', 'super', '~', 'true'"#]],
     );
 }
 
@@ -3210,7 +3210,7 @@ switch i {
                   BraceRight@21..22 "}"
               Blankspace@22..31 "\n        "
 
-            error at 21..22: invalid syntax, expected one of: '@', ':', ',', '{'"#]],
+            error at 21..22: invalid syntax, expected one of: '@', '{', ':', ','"#]],
     );
 }
 
@@ -3327,7 +3327,7 @@ let x = 3;
                 BraceRight@40..41 "}"
               Blankspace@41..50 "\n        "
 
-            error at 27..28: invalid syntax, expected one of: '&', 'default', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '(', '-', 'package', '*', 'super', '~', 'true'"#]],
+            error at 27..28: invalid syntax, expected one of: '&', '!', 'default', 'false', <floating point literal>, <identifier>, <integer literal>, '-', 'package', '(', '*', 'super', '~', 'true'"#]],
     );
 }
 
@@ -3421,7 +3421,7 @@ fn attribute_only_recover() {
                   AttributeOperator@0..1 "@"
                   Identifier@1..9 "fragment"
 
-            error at 9..9: invalid syntax, expected one of: '@', 'fn', 'for', <identifier>, 'if', '{', '(', 'let', 'loop', 'override', 'package', 'super', 'switch', 'var', 'while'"#]],
+            error at 9..9: invalid syntax, expected one of: '@', '{', 'fn', 'for', <identifier>, 'if', 'let', 'loop', 'override', 'package', '(', 'super', 'switch', 'var', 'while'"#]],
     );
 }
 

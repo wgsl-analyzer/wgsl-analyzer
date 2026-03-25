@@ -1,217 +1,15 @@
 use std::ops::Range;
 
 use super::parser::{Diagnostic, Span};
-use crate::parser::to_range;
+use crate::{SyntaxKind, parser::to_range};
 
-#[expect(
-    clippy::upper_case_acronyms,
-    reason = "Lelwel generated code emits Token::EOF"
-)]
-#[expect(clippy::doc_paragraphs_missing_punctuation, reason = "false positive")]
-#[derive(logos::Logos, Debug, Copy, Clone, Eq, PartialEq, Hash, PartialOrd, Ord)]
-#[repr(u16)]
-pub enum Token {
-    EOF,
-    EOFAttribute,
-    EOFExpression,
-    EOFStatement,
-    EOFTypeSpecifier,
-    /// `enable`
-    Enable,
-    /// `requires`
-    Requires,
-    /// `fn`
-    Fn,
-    /// `alias`
-    Alias,
-    /// `struct`
-    Struct,
-    /// `var`
-    Var,
-    /// `const_assert`
-    ConstAssert,
-    /// `if`
-    If,
-    /// `for`
-    For,
-    /// `else`
-    Else,
-    /// `loop`
-    Loop,
-    /// `break`
-    Break,
-    /// `while`
-    While,
-    /// `return`
-    Return,
-    /// `switch`
-    Switch,
-    /// `discard`
-    Discard,
-    /// `continuing`
-    Continuing,
-    /// `const`
-    Const,
-    /// `case`
-    Case,
-    /// `default`
-    Default,
-    /// `override`
-    Override,
-    /// `continue`
-    Continue,
-    /// `let`
-    Let,
-    /// `true`
-    True,
-    /// `false`
-    False,
-    /// `diagnostic`
-    Diagnostic,
-    #[token(";")]
-    Semi,
-    #[token("(")]
-    LPar,
-    #[token(")")]
-    RPar,
-    #[token(",")]
-    Comma,
-    #[token("=")]
-    Eq,
-    #[token(":")]
-    Colon,
-    #[token("{")]
-    LBrace,
-    #[token("}")]
-    RBrace,
-    #[token("->")]
-    Arrow,
-    #[token("<")]
-    Lt,
-    /// > A template parameter is an expression,
-    /// > and therefore does not start with
-    /// > either a '<' (U+003C) or a '=' (U+003D) code point.
-    ///
-    /// Source <https://www.w3.org/TR/WGSL/#template-list-discovery>
-    #[token("<=")]
-    LtEq,
-    #[token("<<")]
-    ShiftLeft,
-    #[token("<<=")]
-    ShiftLeftEq,
-    #[token(">")]
-    Gt,
-    /// Ambiguous with shift right assign
-    GtEq,
-    /// Ambiguous: Can happen in a template `a<b<c>>`
-    ShiftRight,
-    /// Ambiguous: Can happen in a template `a<b> >= 2`
-    ShiftRightEq,
-    TemplateStart,
-    TemplateEnd,
-    #[token(".")]
-    Dot,
-    #[token("@")]
-    At,
-    #[token("[")]
-    LBrak,
-    #[token("]")]
-    RBrak,
-    #[token("&")]
-    And,
-    #[token("!")]
-    Excl,
-    #[token("*")]
-    Star,
-    #[token("-")]
-    Minus,
-    #[token("~")]
-    Tilde,
-    #[token("+")]
-    Plus,
-    #[token("==")]
-    Eq2,
-    #[token("|")]
-    Pipe,
-    #[token("&&")]
-    And2,
-    #[token("/")]
-    Slash,
-    #[token("^")]
-    Caret,
-    #[token("||")]
-    Pipe2,
-    #[token("!=")]
-    ExclEq,
-    #[token("%")]
-    Percent,
-    #[token("_")]
-    Underscore,
-    #[token("&=")]
-    AndEq,
-    #[token("*=")]
-    StarEq,
-    #[token("+=")]
-    PlusEq,
-    #[token("|=")]
-    PipeEq,
-    #[token("-=")]
-    MinusEq,
-    #[token("/=")]
-    SlashEq,
-    #[token("^=")]
-    CaretEq,
-    #[token("%=")]
-    PercentEq,
-    #[token("++")]
-    Plus2,
-    #[token("--")]
-    Minus2,
-    /// `import`
-    Import,
-    /// `package`
-    Package,
-    /// `super`
-    Super,
-    /// `as`
-    As,
-    #[token("::")]
-    DoubleColon,
-    /// WGSL identifiers, parsing it ourselves
-    Ident,
-    #[regex(r"0[fh]")]
-    #[regex(r"[1-9][0-9]*[fh]")]
-    // We need priorities because some cases (for example, 1.2) would match both
-    #[regex(r"[0-9]*\.[0-9]+([eE][+-]?[0-9]+)?[fh]?", priority = 5)]
-    #[regex(r"[0-9]+\.[0-9]*([eE][+-]?[0-9]+)?[fh]?")]
-    #[regex(r"[0-9]+[eE][+-]?[0-9]+[fh]?")]
-    #[regex(
-        r"0[xX][0-9a-fA-F]*\.[0-9a-fA-F]+([pP][+-]?[0-9]+[fh]?)?",
-        priority = 9
-    )]
-    #[regex(r"0[xX][0-9a-fA-F]+\.[0-9a-fA-F]*([pP][+-]?[0-9]+[fh]?)?")]
-    #[regex(r"0[xX][0-9a-fA-F]+[pP][+-]?[0-9]+[fh]?")]
-    FloatLiteral,
-    #[regex(r"0(i|u|li|lu)?")]
-    #[regex(r"[1-9][0-9]*(i|u|li|lu)?")]
-    #[regex(r"0[xX][0-9a-fA-F]+(i|u|li|lu)?")]
-    IntLiteral,
-    /// Source: <https://www.w3.org/TR/WGSL/#blankspace-and-line-breaks>
-    #[regex("[\x20\x09\x0A-\x0D\u{0085}\u{200E}\u{200F}\u{2028}\u{2029}]+")]
-    Blankspace,
-    #[token("//", lex_line_ending_comment)]
-    LineEndingComment,
-    #[token("/*", lex_block_comment)]
-    BlockComment,
-
-    Error,
-}
+pub(crate) type Token = SyntaxKind;
 
 /// A line-ending comment is a kind of comment consisting of the two code points `//` (U+002F followed by U+002F)
 /// and the code points that follow, up until but not including:
 /// - the next line break, or
 /// - the end of the program.
-fn lex_line_ending_comment(lexer: &mut logos::Lexer<'_, Token>) {
+pub(crate) fn lex_line_ending_comment(lexer: &mut logos::Lexer<'_, SyntaxKind>) {
     let remainder = lexer.remainder();
 
     // see blankspace and line breaks: https://www.w3.org/TR/WGSL/#blankspace-and-line-breaks
@@ -237,7 +35,7 @@ fn is_line_ending_comment_end(character: char) -> bool {
     .contains(&character)
 }
 
-fn lex_block_comment(lexer: &mut logos::Lexer<'_, Token>) -> Option<()> {
+pub(crate) fn lex_block_comment(lexer: &mut logos::Lexer<'_, SyntaxKind>) -> Option<()> {
     let mut depth = 1;
     let slice = lexer.remainder();
     let mut index = 0;
@@ -307,7 +105,7 @@ impl Iterator for WgslLexer<'_, '_> {
                     "alias" => Token::Alias,
                     "struct" => Token::Struct,
                     "var" => Token::Var,
-                    "const_assert" => Token::ConstAssert,
+                    "const_assert" => Token::ConstantAssert,
                     "if" => Token::If,
                     "for" => Token::For,
                     "else" => Token::Else,
@@ -318,7 +116,7 @@ impl Iterator for WgslLexer<'_, '_> {
                     "switch" => Token::Switch,
                     "discard" => Token::Discard,
                     "continuing" => Token::Continuing,
-                    "const" => Token::Const,
+                    "const" => Token::Constant,
                     "case" => Token::Case,
                     "default" => Token::Default,
                     "override" => Token::Override,
@@ -333,7 +131,7 @@ impl Iterator for WgslLexer<'_, '_> {
                     "super" => Token::Super,
                     "as" => Token::As,
 
-                    _ => Token::Ident,
+                    _ => Token::Identifier,
                 };
 
                 return Some((token_type, token_start..token_end));
@@ -351,7 +149,7 @@ impl Iterator for WgslLexer<'_, '_> {
                             self.inner.bump(next_char.len_utf8());
                         }
 
-                        return Some((Token::Ident, token_start..self.inner.span().end));
+                        return Some((Token::Identifier, token_start..self.inner.span().end));
                     },
                     _ => {
                         return Some((Token::Underscore, token_start..self.inner.span().end));
@@ -402,7 +200,7 @@ fn collect_with_templates(
         tokens.push(token);
         spans.push(span);
         match token {
-            Token::Ident | Token::Var => {
+            Token::Identifier | Token::Var => {
                 // Skip to next non-whitespace token
                 while let Some((
                     Token::Blankspace | Token::LineEndingComment | Token::BlockComment,
@@ -414,7 +212,7 @@ fn collect_with_templates(
                     spans.push(next_span);
                 }
 
-                if let Some((Token::Lt, _)) = tokens_iter.peek() {
+                if let Some((Token::LessThan, _)) = tokens_iter.peek() {
                     let (next_token, next_span) = tokens_iter.next().unwrap();
                     tokens.push(next_token);
                     spans.push(next_span);
@@ -422,7 +220,7 @@ fn collect_with_templates(
                     pending.push((tokens.len() - 1, nesting_depth));
                 }
             },
-            Token::Gt => {
+            Token::GreaterThan => {
                 if let Some((start_token, _)) = pending.pop_if(|(_, depth)| *depth == nesting_depth)
                 {
                     // We found templates!
@@ -432,24 +230,24 @@ fn collect_with_templates(
                     // Patch up >>, >>=, >>==, >=, >==
                     // Precondition: pending.last().depth != nesting_depth
                     match tokens_iter.peek() {
-                        Some((Token::Gt, span)) => {
+                        Some((Token::GreaterThan, span)) => {
                             // Might be a `>>`
                             *tokens.last_mut().unwrap() = Token::ShiftRight;
                             spans[tokens.len() - 1].end = span.end;
                             tokens_iter.next();
                             match tokens_iter.peek() {
-                                Some((Token::Eq, span)) => {
+                                Some((Token::Equal, span)) => {
                                     // Is a >>=
-                                    *tokens.last_mut().unwrap() = Token::ShiftRightEq;
+                                    *tokens.last_mut().unwrap() = Token::ShiftRightEqual;
                                     spans[tokens.len() - 1].end = span.end;
                                     tokens_iter.next();
                                 },
-                                Some((Token::Eq2, span)) => {
+                                Some((Token::EqualEqual, span)) => {
                                     // Is a >>= =
-                                    *tokens.last_mut().unwrap() = Token::ShiftRightEq;
+                                    *tokens.last_mut().unwrap() = Token::ShiftRightEqual;
                                     let middle = span.start + 1;
                                     spans[tokens.len() - 1].end = middle;
-                                    tokens.push(Token::Eq);
+                                    tokens.push(Token::Equal);
                                     spans.push(middle..span.end);
                                     nesting_depth = 0;
                                     pending.clear();
@@ -458,18 +256,18 @@ fn collect_with_templates(
                                 _ => {},
                             }
                         },
-                        Some((Token::Eq, span)) => {
+                        Some((Token::Equal, span)) => {
                             // Is a >=
-                            *tokens.last_mut().unwrap() = Token::GtEq;
+                            *tokens.last_mut().unwrap() = Token::GreaterThanEqual;
                             spans[tokens.len() - 1].end = span.end;
                             tokens_iter.next();
                         },
-                        Some((Token::Eq2, span)) => {
+                        Some((Token::EqualEqual, span)) => {
                             // Is a >= =
-                            *tokens.last_mut().unwrap() = Token::GtEq;
+                            *tokens.last_mut().unwrap() = Token::GreaterThanEqual;
                             let middle = span.start + 1;
                             spans[tokens.len() - 1].end = middle;
-                            tokens.push(Token::Eq);
+                            tokens.push(Token::Equal);
                             spans.push(middle..span.end);
                             nesting_depth = 0;
                             pending.clear();
@@ -479,10 +277,10 @@ fn collect_with_templates(
                     }
                 }
             },
-            Token::LPar | Token::LBrak => {
+            Token::ParenthesisLeft | Token::BracketLeft => {
                 nesting_depth += 1;
             },
-            Token::RPar | Token::RBrak => {
+            Token::ParenthesisRight | Token::BracketRight => {
                 // Pop Pending stack until its top entry has depth < NestingDepth.
                 while pending
                     .pop_if(|(_, depth)| *depth >= nesting_depth)
@@ -490,13 +288,13 @@ fn collect_with_templates(
                 {}
                 nesting_depth = (nesting_depth - 1).max(0);
             },
-            Token::Eq | Token::Semi | Token::LBrace | Token::Colon => {
+            Token::Equal | Token::Semicolon | Token::BraceLeft | Token::Colon => {
                 // These tokens do not appear in expressions,
                 // so they aren't in a template
                 nesting_depth = 0;
                 pending.clear();
             },
-            Token::And2 | Token::Pipe2 => {
+            Token::AndAnd | Token::OrOr => {
                 while pending
                     .pop_if(|(_, depth)| *depth >= nesting_depth)
                     .is_some()
@@ -516,7 +314,6 @@ mod tests {
     use std::fmt::Write as _;
 
     use expect_test::expect;
-    use logos::Logos as _;
 
     use super::{Token, lex};
 
@@ -583,7 +380,7 @@ mod tests {
     fn lex_comment() {
         check_lex(
             "// test asdf\nnot_comment",
-            expect![["[LineEndingComment, Blankspace, Ident]"]],
+            expect![["[LineEndingComment, Blankspace, Identifier]"]],
         );
     }
 
@@ -595,11 +392,11 @@ mod tests {
                 Blankspace@0..2
                 LineEndingComment@2..4
                 Blankspace@4..6
-                Ident@6..17
+                Identifier@6..17
                 Blankspace@17..19
                 LineEndingComment@19..24
                 Blankspace@24..26
-                Ident@26..27
+                Identifier@26..27
             "]],
         );
     }
@@ -609,7 +406,9 @@ mod tests {
         // Expect: Identifier (a), [, Identifier (a), [, IntLiteral (0), ], ]
         check_lex(
             "a[a[0]]",
-            expect!["[Ident, LBrak, Ident, LBrak, IntLiteral, RBrak, RBrak]"],
+            expect![
+                "[Identifier, BracketLeft, Identifier, BracketLeft, IntLiteral, BracketRight, BracketRight]"
+            ],
         );
     }
 
@@ -618,20 +417,20 @@ mod tests {
         check_lex_spanned(
             "foo<X>",
             expect![["
-            Ident@0..3
+            Identifier@0..3
             TemplateStart@3..4
-            Ident@4..5
+            Identifier@4..5
             TemplateEnd@5..6
         "]],
         );
         check_lex_spanned(
             "foo<X<Y>>",
             expect![["
-                Ident@0..3
+                Identifier@0..3
                 TemplateStart@3..4
-                Ident@4..5
+                Identifier@4..5
                 TemplateStart@5..6
-                Ident@6..7
+                Identifier@6..7
                 TemplateEnd@7..8
                 TemplateEnd@8..9
             "]],
@@ -639,13 +438,13 @@ mod tests {
         check_lex_spanned(
             "foo<X<Y<Z>>>",
             expect![["
-                Ident@0..3
+                Identifier@0..3
                 TemplateStart@3..4
-                Ident@4..5
+                Identifier@4..5
                 TemplateStart@5..6
-                Ident@6..7
+                Identifier@6..7
                 TemplateStart@7..8
-                Ident@8..9
+                Identifier@8..9
                 TemplateEnd@9..10
                 TemplateEnd@10..11
                 TemplateEnd@11..12
@@ -659,63 +458,63 @@ mod tests {
         check_lex_spanned(
             "foo<i32,select(2,3,a>b)>",
             expect![["
-                Ident@0..3
+                Identifier@0..3
                 TemplateStart@3..4
-                Ident@4..7
+                Identifier@4..7
                 Comma@7..8
-                Ident@8..14
-                LPar@14..15
+                Identifier@8..14
+                ParenthesisLeft@14..15
                 IntLiteral@15..16
                 Comma@16..17
                 IntLiteral@17..18
                 Comma@18..19
-                Ident@19..20
-                Gt@20..21
-                Ident@21..22
-                RPar@22..23
+                Identifier@19..20
+                GreaterThan@20..21
+                Identifier@21..22
+                ParenthesisRight@22..23
                 TemplateEnd@23..24
             "]],
         );
         check_lex_spanned(
             "foo<(B>=C)>a",
             expect![["
-                Ident@0..3
+                Identifier@0..3
                 TemplateStart@3..4
-                LPar@4..5
-                Ident@5..6
-                GtEq@6..8
-                Ident@8..9
-                RPar@9..10
+                ParenthesisLeft@4..5
+                Identifier@5..6
+                GreaterThanEqual@6..8
+                Identifier@8..9
+                ParenthesisRight@9..10
                 TemplateEnd@10..11
-                Ident@11..12
+                Identifier@11..12
             "]],
         );
         check_lex_spanned(
             "foo<(B!=C)>a",
             expect![["
-                Ident@0..3
+                Identifier@0..3
                 TemplateStart@3..4
-                LPar@4..5
-                Ident@5..6
-                ExclEq@6..8
-                Ident@8..9
-                RPar@9..10
+                ParenthesisLeft@4..5
+                Identifier@5..6
+                NotEqual@6..8
+                Identifier@8..9
+                ParenthesisRight@9..10
                 TemplateEnd@10..11
-                Ident@11..12
+                Identifier@11..12
             "]],
         );
         check_lex_spanned(
             "foo<(B==C)>a",
             expect![["
-                Ident@0..3
+                Identifier@0..3
                 TemplateStart@3..4
-                LPar@4..5
-                Ident@5..6
-                Eq2@6..8
-                Ident@8..9
-                RPar@9..10
+                ParenthesisLeft@4..5
+                Identifier@5..6
+                EqualEqual@6..8
+                Identifier@8..9
+                ParenthesisRight@9..10
                 TemplateEnd@10..11
-                Ident@11..12
+                Identifier@11..12
             "]],
         );
     }
@@ -725,31 +524,31 @@ mod tests {
         check_lex_spanned(
             "foo<d]>",
             expect![["
-                Ident@0..3
-                Lt@3..4
-                Ident@4..5
-                RBrak@5..6
-                Gt@6..7
+                Identifier@0..3
+                LessThan@3..4
+                Identifier@4..5
+                BracketRight@5..6
+                GreaterThan@6..7
             "]],
         );
         check_lex_spanned(
             "foo",
             expect![["
-            Ident@0..3
+            Identifier@0..3
         "]],
         );
         check_lex_spanned(
             "foo<b || c>d",
             expect![["
-            Ident@0..3
-            Lt@3..4
-            Ident@4..5
+            Identifier@0..3
+            LessThan@3..4
+            Identifier@4..5
             Blankspace@5..6
-            Pipe2@6..8
+            OrOr@6..8
             Blankspace@8..9
-            Ident@9..10
-            Gt@10..11
-            Ident@11..12
+            Identifier@9..10
+            GreaterThan@10..11
+            Identifier@11..12
         "]],
         );
     }
@@ -759,22 +558,22 @@ mod tests {
         check_lex_spanned(
             "foo<B<<C>",
             expect![["
-                Ident@0..3
+                Identifier@0..3
                 TemplateStart@3..4
-                Ident@4..5
+                Identifier@4..5
                 ShiftLeft@5..7
-                Ident@7..8
+                Identifier@7..8
                 TemplateEnd@8..9
             "]],
         );
         check_lex_spanned(
             "foo<B<=C>",
             expect![["
-            Ident@0..3
+            Identifier@0..3
             TemplateStart@3..4
-            Ident@4..5
-            LtEq@5..7
-            Ident@7..8
+            Identifier@4..5
+            LessThanEqual@5..7
+            Identifier@7..8
             TemplateEnd@8..9
         "]],
         );
@@ -782,7 +581,7 @@ mod tests {
         check_lex_spanned(
             "foo<>",
             expect![["
-            Ident@0..3
+            Identifier@0..3
             TemplateStart@3..4
             TemplateEnd@4..5
         "]],
@@ -794,37 +593,37 @@ mod tests {
         check_lex_spanned(
             "A<B>>C",
             expect![["
-                Ident@0..1
+                Identifier@0..1
                 TemplateStart@1..2
-                Ident@2..3
+                Identifier@2..3
                 TemplateEnd@3..4
-                Gt@4..5
-                Ident@5..6
+                GreaterThan@4..5
+                Identifier@5..6
             "]],
         );
         check_lex_spanned(
             "A<B>==C",
             expect![["
-                Ident@0..1
+                Identifier@0..1
                 TemplateStart@1..2
-                Ident@2..3
+                Identifier@2..3
                 TemplateEnd@3..4
-                Eq2@4..6
-                Ident@6..7
+                EqualEqual@4..6
+                Identifier@6..7
             "]],
         );
         check_lex_spanned(
             "C<A<B>=C>",
             expect![["
-                Ident@0..1
-                Lt@1..2
-                Ident@2..3
+                Identifier@0..1
+                LessThan@1..2
+                Identifier@2..3
                 TemplateStart@3..4
-                Ident@4..5
+                Identifier@4..5
                 TemplateEnd@5..6
-                Eq@6..7
-                Ident@7..8
-                Gt@8..9
+                Equal@6..7
+                Identifier@7..8
+                GreaterThan@8..9
             "]],
         );
     }
@@ -834,16 +633,16 @@ mod tests {
         check_lex_spanned(
             "bitcast<vec4<u32>>(x)",
             expect![["
-                Ident@0..7
+                Identifier@0..7
                 TemplateStart@7..8
-                Ident@8..12
+                Identifier@8..12
                 TemplateStart@12..13
-                Ident@13..16
+                Identifier@13..16
                 TemplateEnd@16..17
                 TemplateEnd@17..18
-                LPar@18..19
-                Ident@19..20
-                RPar@20..21
+                ParenthesisLeft@18..19
+                Identifier@19..20
+                ParenthesisRight@20..21
             "]],
         );
     }
@@ -855,14 +654,14 @@ mod tests {
             expect![["
                 Var@0..3
                 TemplateStart@3..4
-                Ident@4..12
+                Identifier@4..12
                 TemplateEnd@12..13
                 Blankspace@13..14
-                Ident@14..15
+                Identifier@14..15
                 Colon@15..16
                 Blankspace@16..17
-                Ident@17..20
-                Semi@20..21
+                Identifier@17..20
+                Semicolon@20..21
             "]],
         );
     }
@@ -877,20 +676,20 @@ mod tests {
             expect![[r#"
                 Override@0..8
                 Blankspace@8..9
-                Ident@9..10
+                Identifier@9..10
                 Colon@10..11
                 Blankspace@11..12
-                Ident@12..17
+                Identifier@12..17
                 TemplateStart@17..18
                 Blankspace@18..35
-                Ident@35..38
+                Identifier@35..38
                 Comma@38..39
                 Blankspace@39..56
                 IntLiteral@56..57
                 Comma@57..58
                 Blankspace@58..71
                 TemplateEnd@71..72
-                Semi@72..73
+                Semicolon@72..73
             "#]],
         );
     }
@@ -900,7 +699,7 @@ mod tests {
         check_lex_spanned(
             "foo /* bar /* // */ baz */",
             expect![["
-                Ident@0..3
+                Identifier@0..3
                 Blankspace@3..4
                 BlockComment@4..26
             "]],
@@ -912,7 +711,7 @@ mod tests {
         check_lex_spanned(
             "foo /*",
             expect![["
-                Ident@0..3
+                Identifier@0..3
                 Blankspace@3..4
                 Error@4..6
                 Error: unexpected tokens@4..6
