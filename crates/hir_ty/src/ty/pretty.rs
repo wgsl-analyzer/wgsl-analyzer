@@ -63,6 +63,9 @@ fn write_type_expectation_inner(
                 write!(buffer, " or i64 or u64")?;
             }
         },
+        TypeExpectationInner::IntegerIndex => {
+            write!(buffer, "i32 or u32")?;
+        },
     }
     Ok(())
 }

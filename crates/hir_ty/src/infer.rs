@@ -1062,6 +1062,16 @@ impl<'database> InferenceContext<'database> {
                     Err(())
                 }
             },
+            TypeExpectationInner::IntegerIndex => {
+                if let TypeKind::Scalar(
+                    ScalarType::I32 | ScalarType::U32 | ScalarType::AbstractInt,
+                ) = r#type.kind(self.database).unref(self.database).as_ref()
+                {
+                    Ok(())
+                } else {
+                    Err(())
+                }
+            },
         }
     }
 
@@ -1215,11 +1225,11 @@ impl<'database> InferenceContext<'database> {
                         store.store_source,
                         InferenceDiagnosticKind::TypeMismatch {
                             expression,
-                            expected: TypeExpectation::Type(TypeExpectationInner::IntegerScalar),
+                            expected: TypeExpectation::Type(TypeExpectationInner::IntegerIndex),
                             actual: index_expression,
                         },
                     );
-                };
+                }
 
                 let r#type = match &*left_inner {
                     TypeKind::Vector(vec) => vec.component_type,
@@ -2195,6 +2205,7 @@ impl<'database> InferenceContext<'database> {
 pub enum TypeExpectationInner {
     Exact(Type),
     IntegerScalar,
+    IntegerIndex,
 }
 
 #[derive(PartialEq, Eq, Debug, Clone)]
