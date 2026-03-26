@@ -52,13 +52,13 @@ The VS Code extension can either be built as a platform-specific extension which
 
 **1. Install node modules:**
 
-`npm --prefix editors/code install`
+`pnpm --dir editors/code install`
 
 **2. Package extension:** (choose one)
 
 Platform independent extension:
 
-`npm --prefix editors/code run package`
+`pnpm --dir editors/code run package`
 
 Platform-specific extension:
 
@@ -72,10 +72,10 @@ cp target/release/wgsl-analyzer editors/code/server/wgsl-analyzer
 Next, run:
 
 ```bash
-npm --prefix editors/code run package -- --target <target> -o wgsl-analyzer-<target>.vsix
+pnpm --dir editors/code run package --target <target> -o wgsl-analyzer-<target>.vsix
 ```
 
-Example: `npm --prefix editors/code run package -- --target linux-x64 -o wgsl-analyzer-linux-x64.vsix`
+Example: `pnpm --dir editors/code run package --target linux-x64 -o wgsl-analyzer-linux-x64.vsix`
 
 where the target is one of the targets listed as [platform-specific extension targets](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#platformspecific-extensions).
 
