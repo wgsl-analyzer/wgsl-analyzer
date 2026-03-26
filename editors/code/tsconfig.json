@@ -5,7 +5,6 @@
 		"@tsconfig/node-ts/tsconfig.json"
 	],
 	"compilerOptions": {
-		"esModuleInterop": false,
 		"module": "NodeNext",
 		"moduleResolution": "nodenext",
 		"target": "ES2024",
