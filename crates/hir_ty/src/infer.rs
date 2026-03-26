@@ -1999,9 +1999,7 @@ impl<'database> InferenceContext<'database> {
                 self.call_scalar_constructor(store, scalar_type, expression, r#type, arguments)
             },
             TypeKind::Array(array_type) => {
-                // what is an "expected expression"?
-                let Some((expected_expression, mut expected_type)) = arguments.first().copied()
-                else {
+                let Some((_, mut first_argument_type)) = arguments.first().copied() else {
                     self.push_diagnostic(
                         store.store_source,
                         InferenceDiagnosticKind::FunctionCallArgCountMismatch {
@@ -2013,19 +2011,20 @@ impl<'database> InferenceContext<'database> {
                     return self.error_type();
                 };
 
+                // all of the following arguments must be the same type as the first argument
                 for (argument_expression, argument_type) in &arguments[1..] {
-                    if argument_type.is_convertible_to(expected_type, self.database) {
+                    if argument_type.is_convertible_to(first_argument_type, self.database) {
                         // Everything is as intended
-                    } else if expected_type.is_convertible_to(*argument_type, self.database) {
+                    } else if first_argument_type.is_convertible_to(*argument_type, self.database) {
                         // Narrowing the expected type
-                        expected_type = *argument_type;
+                        first_argument_type = *argument_type;
                     } else {
                         self.push_diagnostic(
                             store.store_source,
                             InferenceDiagnosticKind::TypeMismatch {
                                 expression: *argument_expression,
                                 expected: TypeExpectation::Type(TypeExpectationInner::Exact(
-                                    expected_type,
+                                    first_argument_type,
                                 )),
                                 actual: *argument_type,
                             },
@@ -2034,7 +2033,7 @@ impl<'database> InferenceContext<'database> {
                 }
                 if let Ok(validated_length) = u32::try_from(arguments.len()) {
                     TypeKind::Array(ArrayType {
-                        inner: expected_type,
+                        inner: first_argument_type,
                         binding_array: array_type.binding_array,
                         size: ArraySize::Constant(validated_length),
                     })
@@ -2050,7 +2049,7 @@ impl<'database> InferenceContext<'database> {
                         },
                     );
                     TypeKind::Array(ArrayType {
-                        inner: expected_type,
+                        inner: first_argument_type,
                         binding_array: array_type.binding_array,
                         size: ArraySize::Constant(ArraySize::MAX),
                     })
