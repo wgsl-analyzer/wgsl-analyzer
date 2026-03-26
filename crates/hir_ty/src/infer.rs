@@ -1796,7 +1796,7 @@ impl<'database> InferenceContext<'database> {
 
         let converted_arguments: Option<Vec<_>> = arguments
             .iter()
-            .map(|r#type| converter.to_wgsl_types(r#type.1))
+            .map(|(_, r#type)| converter.to_wgsl_types(*r#type))
             .collect();
 
         let Some(converted_arguments) = converted_arguments else {
