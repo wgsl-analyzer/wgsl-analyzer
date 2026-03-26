@@ -337,45 +337,50 @@ jobs:
       - name: Install Node.js
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
-          node-version: 22
+          node-version: 24
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
+        with:
+          package_json_file: ./editors/code/package.json
 
       - name: Install xvfb
         if: matrix.os == 'ubuntu-latest'
         run: sudo apt-get install -y xvfb
 
       - name: Build
-        run: npm ci
+        run: pnpm install --frozen-lockfile
         working-directory: ./editors/code
 
-      #    - run: npm audit || { sleep 10 && npm audit; } || { sleep 30 && npm audit; }
+      #    - run: pnpm audit || { sleep 10 && pnpm audit; } || { sleep 30 && pnpm audit; }
       #      if: runner.os == 'Linux'
       #      working-directory: ./editors/code
 
       # If this steps fails, your code's type integrity might be wrong at some places at TypeScript level.
       - name: Typecheck
-        run: npm run typecheck
+        run: pnpm run typecheck
         working-directory: ./editors/code
 
       - name: Run biome checks
-        run: npm run ci
+        run: pnpm run ci
         working-directory: ./editors/code
 
       - name: Run VS Code tests (Linux)
         if: matrix.os == 'ubuntu-latest'
         env:
           VSCODE_CLI: 1
-        run: xvfb-run npm test
+        run: xvfb-run pnpm test
         working-directory: ./editors/code
 
       - name: Run VS Code tests (Windows)
         if: matrix.os == 'windows-latest'
         env:
           VSCODE_CLI: 1
-        run: npm test
+        run: pnpm test
         working-directory: ./editors/code
 
       - name: Package
-        run: npm run package --scripts-prepend-node-path
+        run: pnpm run package
         working-directory: ./editors/code
 
   conclusion:

@@ -15,6 +15,6 @@ container and take various inputs to orchestrate the release from the build.
 
 More comments can be found in `main.js`.
 
-Testing this is really hard. If you want to try though run `npm install` and
+Testing this is really hard. If you want to try though run `pnpm install` and
 then `node main.js`. You'll have to configure a bunch of env vars though to get
 anything reasonably working.

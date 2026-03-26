@@ -117,15 +117,15 @@ This is primarily useful for performance optimizations, or for bug minimization.
 
 ### TypeScript Tests
 
-If you change files under `editors/code` and would like to run the tests and linter, install npm and run:
+If you change files under `editors/code` and would like to run the tests and linter, install pnpm and run:
 
 ```bash
 cd editors/code
-npm ci
-npm run ci
+pnpm install --frozen-lockfile
+pnpm run ci
 ```
 
-Run `npm run` to see all available scripts.
+Run `pnpm run` to see all available scripts.
 
 ### How to
 
