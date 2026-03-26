@@ -138,8 +138,8 @@ fn struct_constructor_incorrect_types() {
             77..80 '1.0': float
             82..85 '2.0': float
             87..90 '3.0': float
-            63..92 'S(1.0f... 3.0))': expected u32 but got f32
-            63..92 'S(1.0f... 3.0))': expected array<f32, 3> but got vec3<f32>
+            65..69 '1.0f': expected u32 but got f32
+            71..91 'vec3f(..., 3.0)': expected array<f32, 3> but got vec3<f32>
         "#]],
     );
 }
@@ -686,7 +686,7 @@ fn array_index_is_not_f32() {
             63..66 'arr': array<i32>
             63..73 'arr[index]': i32
             67..72 'index': f32
-            63..73 'arr[index]': expected i32 or u32 but got f32
+            67..72 'index': expected i32 or u32 but got f32
         "#]],
     );
 }
@@ -731,7 +731,7 @@ fn array_index_is_not_ref_f32() {
             63..66 'arr': array<i32>
             63..73 'arr[index]': i32
             67..72 'index': ref<f32>
-            63..73 'arr[index]': expected i32 or u32 but got f32
+            67..72 'index': expected i32 or u32 but got f32
         "#]],
     );
 }
@@ -757,7 +757,7 @@ fn array_index_is_not_abstract_float() {
             62..65 'arr': array<i32>
             62..72 'arr[index]': i32
             66..71 'index': float
-            62..72 'arr[index]': expected i32 or u32 but got float
+            66..71 'index': expected i32 or u32 but got float
         "#]],
     );
 }
@@ -783,7 +783,7 @@ fn array_index_is_not_bool() {
             63..66 'arr': array<i32>
             63..73 'arr[index]': i32
             67..72 'index': bool
-            63..73 'arr[index]': expected i32 or u32 but got bool
+            67..72 'index': expected i32 or u32 but got bool
         "#]],
     );
 }
@@ -834,7 +834,7 @@ fn vec_index_is_not_f32() {
             68..71 'vec': vec3<f32>
             68..78 'vec[index]': f32
             72..77 'index': f32
-            68..78 'vec[index]': expected i32 or u32 but got f32
+            72..77 'index': expected i32 or u32 but got f32
         "#]],
     );
 }
@@ -891,7 +891,7 @@ fn mat_index_i_is_not_f32() {
             75..88 'mat[index][0]': f32
             79..84 'index': f32
             86..87 '0': integer
-            75..85 'mat[index]': expected i32 or u32 but got f32
+            79..84 'index': expected i32 or u32 but got f32
         "#]],
     );
 }
@@ -920,7 +920,7 @@ fn mat_index_j_is_not_f32() {
             75..88 'mat[0][index]': f32
             79..80 '0': integer
             82..87 'index': f32
-            75..88 'mat[0][index]': expected i32 or u32 but got f32
+            82..87 'index': expected i32 or u32 but got f32
         "#]],
     );
 }

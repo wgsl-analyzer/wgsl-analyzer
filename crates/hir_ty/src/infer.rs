@@ -1207,7 +1207,12 @@ impl<'database> InferenceContext<'database> {
             } => {
                 let arguments: Vec<_> = arguments
                     .iter()
-                    .map(|&argument| self.infer_expression(argument, store).unref(self.database))
+                    .map(|&argument| {
+                        (
+                            argument,
+                            self.infer_expression(argument, store).unref(self.database),
+                        )
+                    })
                     .collect();
                 self.infer_call(expression, ident_expression, arguments, store)
             },
@@ -1217,16 +1222,16 @@ impl<'database> InferenceContext<'database> {
                 let is_reference = matches!(left_kind, TypeKind::Reference(_));
                 let left_inner = left_kind.unref(self.database);
 
-                let index_expression = self.infer_expression(*index, store);
-                let index_kind = index_expression.kind(self.database);
+                let index_type = self.infer_expression(*index, store);
+                let index_kind = index_type.kind(self.database);
                 let index_inner = index_kind.unref(self.database);
                 if !index_inner.is_index() {
                     self.push_diagnostic(
                         store.store_source,
                         InferenceDiagnosticKind::TypeMismatch {
-                            expression,
+                            expression: *index,
                             expected: TypeExpectation::Type(TypeExpectationInner::IntegerIndex),
-                            actual: index_expression.unref(self.database),
+                            actual: index_type.unref(self.database),
                         },
                     );
                 }
@@ -1299,19 +1304,21 @@ impl<'database> InferenceContext<'database> {
     fn validate_function_call(
         &mut self,
         function: &FunctionDetails,
-        arguments: &[Type],
+        arguments: &[(ExpressionId, Type)],
         store: &ExpressionStore,
         callee: ExpressionId,
         expression: ExpressionId,
     ) -> Type {
         if function.parameters.len() == arguments.len() {
-            for (expected, actual) in function.parameters().zip(arguments.iter().copied()) {
-                if !actual.is_convertible_to(expected, self.database) {
+            for (expected, (actual_expression, actual_type)) in
+                function.parameters().zip(arguments.iter().copied())
+            {
+                if !actual_type.is_convertible_to(expected, self.database) {
                     self.push_diagnostic(
                         store.store_source,
                         InferenceDiagnosticKind::TypeMismatch {
-                            expression,
-                            actual,
+                            expression: actual_expression,
+                            actual: actual_type,
                             expected: TypeExpectation::Type(TypeExpectationInner::Exact(expected)),
                         },
                     );
@@ -1387,7 +1394,7 @@ impl<'database> InferenceContext<'database> {
             store,
             expression,
             builtin,
-            &[argument_type],
+            &[(expression, argument_type)],
             Some(operator.symbol()),
         )
     }
@@ -1451,7 +1458,7 @@ impl<'database> InferenceContext<'database> {
             store,
             expression,
             builtin,
-            &[left_type, rhs_type],
+            &[(left_side, left_type), (right_side, rhs_type)],
             Some(operation.symbol()),
         )
     }
@@ -1601,7 +1608,7 @@ impl<'database> InferenceContext<'database> {
         store: &ExpressionStore,
         expression: ExpressionId,
         builtin_id: BuiltinId,
-        arguments: &[Type],
+        arguments: &[(ExpressionId, Type)],
         name: Option<&'static str>,
     ) -> Type {
         self.call_builtin_inner(store, expression, builtin_id, arguments, name)
@@ -1612,7 +1619,7 @@ impl<'database> InferenceContext<'database> {
         store: &ExpressionStore,
         expression: ExpressionId,
         builtin_id: BuiltinId,
-        arguments: &[Type],
+        arguments: &[(ExpressionId, Type)],
         name: Option<&'static str>,
     ) -> Type {
         if let Ok((return_type, overload_id)) = self.try_call_builtin(builtin_id, arguments) {
@@ -1629,7 +1636,11 @@ impl<'database> InferenceContext<'database> {
                     expression,
                     builtin: builtin_id,
                     name,
-                    parameters: arguments.to_vec(),
+                    parameters: arguments
+                        .iter()
+                        .copied()
+                        .map(|(_, r#type)| r#type)
+                        .collect(),
                 },
             );
             self.error_type()
@@ -1639,7 +1650,7 @@ impl<'database> InferenceContext<'database> {
     fn try_call_builtin(
         &self,
         builtin_id: BuiltinId,
-        arguments: &[Type],
+        arguments: &[(ExpressionId, Type)],
     ) -> Result<(Type, BuiltinOverloadId), ()> {
         let builtin = builtin_id.lookup(self.database);
         for (overload_id, overload) in builtin.overloads() {
@@ -1656,7 +1667,7 @@ impl<'database> InferenceContext<'database> {
     fn call_builtin_overload(
         &self,
         signature: &BuiltinOverload,
-        arguments: &[Type],
+        arguments: &[(ExpressionId, Type)],
     ) -> Result<(Type, u32), ()> {
         let function_type = signature.r#type.lookup(self.database);
 
@@ -1667,7 +1678,7 @@ impl<'database> InferenceContext<'database> {
         let conversion_rank = 0;
         let mut unification_table = UnificationTable::default();
         for (expected, &found) in function_type.parameters().zip(arguments.iter()) {
-            unify(self.database, &mut unification_table, expected, found)?;
+            unify(self.database, &mut unification_table, expected, found.1)?;
         }
 
         let return_type = function_type
@@ -1684,7 +1695,7 @@ impl<'database> InferenceContext<'database> {
         &mut self,
         expression: ExpressionId,
         callee: &IdentExpression,
-        arguments: Vec<Type>,
+        arguments: Vec<(ExpressionId, Type)>,
         store: &ExpressionStore,
     ) -> Type {
         let resolver = self
@@ -1745,7 +1756,7 @@ impl<'database> InferenceContext<'database> {
         expression: ExpressionId,
         callee: &IdentExpression,
         mut template_parameters: TemplateParameters,
-        arguments: &[Type],
+        arguments: &[(ExpressionId, Type)],
     ) -> Type {
         let Some(name) = callee.path.mod_path().as_ident() else {
             self.push_diagnostic(
@@ -1785,7 +1796,7 @@ impl<'database> InferenceContext<'database> {
 
         let converted_arguments: Option<Vec<_>> = arguments
             .iter()
-            .map(|r#type| converter.to_wgsl_types(*r#type))
+            .map(|(_, r#type)| converter.to_wgsl_types(*r#type))
             .collect();
 
         let Some(converted_arguments) = converted_arguments else {
@@ -1825,7 +1836,7 @@ impl<'database> InferenceContext<'database> {
         store: &ExpressionStore,
         expression: ExpressionId,
         r#type: Type,
-        arguments: Vec<Type>,
+        arguments: Vec<(ExpressionId, Type)>,
     ) -> Type {
         fn size_to_dimension(size: VecSize) -> VecDimensionality {
             match size {
@@ -1847,16 +1858,16 @@ impl<'database> InferenceContext<'database> {
                 self.call_scalar_constructor(store, scalar_type, expression, r#type, arguments)
             },
             TypeKind::Array(array_type) => {
-                for argument in &arguments {
-                    if !argument.is_convertible_to(array_type.inner, self.database) {
+                for (argument_expression, argument_type) in &arguments {
+                    if !argument_type.is_convertible_to(array_type.inner, self.database) {
                         self.push_diagnostic(
                             store.store_source,
                             InferenceDiagnosticKind::TypeMismatch {
-                                expression,
+                                expression: *argument_expression,
                                 expected: TypeExpectation::Type(TypeExpectationInner::Exact(
                                     array_type.inner,
                                 )),
-                                actual: *argument,
+                                actual: *argument_type,
                             },
                         );
                     }
@@ -1897,7 +1908,7 @@ impl<'database> InferenceContext<'database> {
                             expression,
                             builtins: construction_builtin_id,
                             r#type,
-                            parameters: arguments,
+                            parameters: arguments.into_iter().map(|(_, r#type)| r#type).collect(),
                         },
                     );
                     self.error_type()
@@ -1922,7 +1933,7 @@ impl<'database> InferenceContext<'database> {
                             expression,
                             builtins: construction_builtin_id,
                             r#type,
-                            parameters: arguments,
+                            parameters: arguments.into_iter().map(|(_, r#type)| r#type).collect(),
                         },
                     );
                     self.error_type()
@@ -1960,7 +1971,7 @@ impl<'database> InferenceContext<'database> {
         store: &ExpressionStore,
         expression: ExpressionId,
         r#type: Type,
-        arguments: Vec<Type>,
+        arguments: Vec<(ExpressionId, Type)>,
     ) -> Type {
         fn size_to_dimension(size: VecSize) -> VecDimensionality {
             #[expect(
@@ -1982,7 +1993,7 @@ impl<'database> InferenceContext<'database> {
                 self.call_scalar_constructor(store, scalar_type, expression, r#type, arguments)
             },
             TypeKind::Array(array_type) => {
-                let Some(mut expected_type) = arguments.first().copied() else {
+                let Some((_, mut first_argument_type)) = arguments.first().copied() else {
                     self.push_diagnostic(
                         store.store_source,
                         InferenceDiagnosticKind::FunctionCallArgCountMismatch {
@@ -1994,19 +2005,20 @@ impl<'database> InferenceContext<'database> {
                     return self.error_type();
                 };
 
-                for argument_type in &arguments[1..] {
-                    if argument_type.is_convertible_to(expected_type, self.database) {
+                // all of the following arguments must be the same type as the first argument
+                for (argument_expression, argument_type) in &arguments[1..] {
+                    if argument_type.is_convertible_to(first_argument_type, self.database) {
                         // Everything is as intended
-                    } else if expected_type.is_convertible_to(*argument_type, self.database) {
+                    } else if first_argument_type.is_convertible_to(*argument_type, self.database) {
                         // Narrowing the expected type
-                        expected_type = *argument_type;
+                        first_argument_type = *argument_type;
                     } else {
                         self.push_diagnostic(
                             store.store_source,
                             InferenceDiagnosticKind::TypeMismatch {
-                                expression,
+                                expression: *argument_expression,
                                 expected: TypeExpectation::Type(TypeExpectationInner::Exact(
-                                    expected_type,
+                                    first_argument_type,
                                 )),
                                 actual: *argument_type,
                             },
@@ -2015,7 +2027,7 @@ impl<'database> InferenceContext<'database> {
                 }
                 if let Ok(validated_length) = u32::try_from(arguments.len()) {
                     TypeKind::Array(ArrayType {
-                        inner: expected_type,
+                        inner: first_argument_type,
                         binding_array: array_type.binding_array,
                         size: ArraySize::Constant(validated_length),
                     })
@@ -2031,7 +2043,7 @@ impl<'database> InferenceContext<'database> {
                         },
                     );
                     TypeKind::Array(ArrayType {
-                        inner: expected_type,
+                        inner: first_argument_type,
                         binding_array: array_type.binding_array,
                         size: ArraySize::Constant(ArraySize::MAX),
                     })
@@ -2061,7 +2073,7 @@ impl<'database> InferenceContext<'database> {
                             expression,
                             builtins: construction_builtin_id,
                             r#type,
-                            parameters: arguments,
+                            parameters: arguments.into_iter().map(|(_, r#type)| r#type).collect(),
                         },
                     );
                     self.error_type()
@@ -2094,7 +2106,7 @@ impl<'database> InferenceContext<'database> {
                             expression,
                             builtins: construction_builtin_id,
                             r#type,
-                            parameters: arguments,
+                            parameters: arguments.into_iter().map(|(_, r#type)| r#type).collect(),
                         },
                     );
                     self.error_type()
@@ -2127,7 +2139,7 @@ impl<'database> InferenceContext<'database> {
         scalar_type: ScalarType,
         expression: ExpressionId,
         r#type: Type,
-        arguments: Vec<Type>,
+        arguments: Vec<(ExpressionId, Type)>,
     ) -> Type {
         if arguments.is_empty() {
             // Permit the zero value
@@ -2177,7 +2189,7 @@ impl<'database> InferenceContext<'database> {
                     expression,
                     builtins: construction_builtin_id,
                     r#type,
-                    parameters: arguments,
+                    parameters: arguments.into_iter().map(|(_, r#type)| r#type).collect(),
                 },
             );
             self.error_type()
@@ -2190,7 +2202,7 @@ impl<'database> InferenceContext<'database> {
         struct_id: StructId,
         expression: ExpressionId,
         r#type: Type,
-        arguments: &[Type],
+        arguments: &[(ExpressionId, Type)],
     ) -> Type {
         // https://www.w3.org/TR/WGSL/#zero-value-builtin-function
         if arguments.is_empty() {
@@ -2212,14 +2224,16 @@ impl<'database> InferenceContext<'database> {
 
         let field_types = &self.database.field_types(struct_id).0;
         let mut has_errors = false;
-        for (field_type, argument) in field_types.iter().zip(arguments.iter()) {
-            if !argument.is_convertible_to(*field_type.1, self.database) {
+        for ((field_data, field_type), (argument_expression, argument_type)) in
+            field_types.iter().zip(arguments.iter())
+        {
+            if !argument_type.is_convertible_to(*field_type, self.database) {
                 self.push_diagnostic(
                     store.store_source,
                     InferenceDiagnosticKind::TypeMismatch {
-                        expression,
-                        expected: TypeExpectation::from_type(*field_type.1),
-                        actual: *argument,
+                        expression: *argument_expression,
+                        expected: TypeExpectation::from_type(*field_type),
+                        actual: *argument_type,
                     },
                 );
                 has_errors = true;
