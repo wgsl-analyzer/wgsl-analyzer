@@ -1908,10 +1908,7 @@ impl<'database> InferenceContext<'database> {
                             expression,
                             builtins: construction_builtin_id,
                             r#type,
-                            parameters: arguments
-                                .into_iter()
-                                .map(|(_, r#type)| r#type)
-                                .collect(),
+                            parameters: arguments.into_iter().map(|(_, r#type)| r#type).collect(),
                         },
                     );
                     self.error_type()
@@ -1936,10 +1933,7 @@ impl<'database> InferenceContext<'database> {
                             expression,
                             builtins: construction_builtin_id,
                             r#type,
-                            parameters: arguments
-                                .into_iter()
-                                .map(|(_, r#type)| r#type)
-                                .collect(),
+                            parameters: arguments.into_iter().map(|(_, r#type)| r#type).collect(),
                         },
                     );
                     self.error_type()
@@ -2079,10 +2073,7 @@ impl<'database> InferenceContext<'database> {
                             expression,
                             builtins: construction_builtin_id,
                             r#type,
-                            parameters: arguments
-                                .into_iter()
-                                .map(|(_, r#type)| r#type)
-                                .collect(),
+                            parameters: arguments.into_iter().map(|(_, r#type)| r#type).collect(),
                         },
                     );
                     self.error_type()
@@ -2115,10 +2106,7 @@ impl<'database> InferenceContext<'database> {
                             expression,
                             builtins: construction_builtin_id,
                             r#type,
-                            parameters: arguments
-                                .into_iter()
-                                .map(|(_, r#type)| r#type)
-                                .collect(),
+                            parameters: arguments.into_iter().map(|(_, r#type)| r#type).collect(),
                         },
                     );
                     self.error_type()
@@ -2201,10 +2189,7 @@ impl<'database> InferenceContext<'database> {
                     expression,
                     builtins: construction_builtin_id,
                     r#type,
-                    parameters: arguments
-                        .into_iter()
-                        .map(|(_, r#type)| r#type)
-                        .collect(),
+                    parameters: arguments.into_iter().map(|(_, r#type)| r#type).collect(),
                 },
             );
             self.error_type()
