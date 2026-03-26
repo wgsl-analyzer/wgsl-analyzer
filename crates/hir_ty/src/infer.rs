@@ -2203,7 +2203,7 @@ impl<'database> InferenceContext<'database> {
                     r#type,
                     parameters: arguments
                         .into_iter()
-                        .map(|(expression, r#type)| r#type)
+                        .map(|(_, r#type)| r#type)
                         .collect(),
                 },
             );
