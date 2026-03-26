@@ -1639,7 +1639,7 @@ impl<'database> InferenceContext<'database> {
                     parameters: arguments
                         .iter()
                         .copied()
-                        .map(|(expression, r#type)| r#type)
+                        .map(|(_, r#type)| r#type)
                         .collect(),
                 },
             );
