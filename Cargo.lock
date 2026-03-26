@@ -56,7 +56,7 @@ dependencies = [
  "rowan",
  "rustc-hash 2.1.1",
  "salsa",
- "salsa-macros",
+ "salsa-macros 0.26.0",
  "syntax",
  "triomphe",
  "vfs",
@@ -514,7 +514,7 @@ dependencies = [
  "rowan",
  "rustc-hash 2.1.1",
  "salsa",
- "salsa-macros",
+ "salsa-macros 0.26.0",
  "smallvec",
  "smol_str",
  "syntax",
@@ -536,7 +536,7 @@ dependencies = [
  "query-group-macro",
  "rustc-hash 2.1.1",
  "salsa",
- "salsa-macros",
+ "salsa-macros 0.26.0",
  "smallvec",
  "syntax",
  "test-fixture",
@@ -696,7 +696,7 @@ dependencies = [
  "rowan",
  "rustc-hash 2.1.1",
  "salsa",
- "salsa-macros",
+ "salsa-macros 0.26.0",
  "triomphe",
  "vfs",
 ]
@@ -1392,7 +1392,7 @@ dependencies = [
  "rayon",
  "rustc-hash 2.1.1",
  "salsa-macro-rules",
- "salsa-macros",
+ "salsa-macros 0.25.2",
  "smallvec",
  "thin-vec",
  "tracing",
@@ -1409,6 +1409,18 @@ name = "salsa-macros"
 version = "0.25.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3d844c1aa34946da46af683b5c27ec1088a3d9d84a2b837a108223fd830220e1"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+ "synstructure",
+]
+
+[[package]]
+name = "salsa-macros"
+version = "0.26.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d16d4d8b66451b9c75ddf740b7fc8399bc7b8ba33e854a5d7526d18708f67b05"
 dependencies = [
  "proc-macro2",
  "quote",
