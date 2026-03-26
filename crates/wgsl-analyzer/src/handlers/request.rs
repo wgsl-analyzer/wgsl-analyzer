@@ -242,7 +242,7 @@ pub(crate) fn handle_document_diagnostics(
         return Ok(empty_diagnostic_report());
     }
 
-    let items = publish_diagnostics(&snap, &config, file_id).unwrap();
+    let items = publish_diagnostics(&snap, &config, file_id)?;
 
     Ok(lsp_types::DocumentDiagnosticReportResult::Report(
         lsp_types::DocumentDiagnosticReport::Full(lsp_types::RelatedFullDocumentDiagnosticReport {
