@@ -2192,6 +2192,7 @@ impl<'database> InferenceContext<'database> {
         r#type: Type,
         arguments: &[Type],
     ) -> Type {
+        // https://www.w3.org/TR/WGSL/#zero-value-builtin-function
         if arguments.is_empty() {
             return r#type;
         }
