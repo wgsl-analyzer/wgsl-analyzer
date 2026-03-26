@@ -1928,10 +1928,8 @@ impl<'database> InferenceContext<'database> {
                     self.error_type()
                 }
             },
-            TypeKind::Struct(_) => {
-                // TODO: Implement checking field types
-                // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/674
-                r#type
+            TypeKind::Struct(struct_id) => {
+                self.validate_struct_constructor(store, struct_id, expression, r#type, &arguments)
             },
 
             // Never constructible
@@ -2102,10 +2100,8 @@ impl<'database> InferenceContext<'database> {
                     self.error_type()
                 }
             },
-            TypeKind::Struct(_) => {
-                // TODO: Implement checking fields' types
-                // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/674
-                r#type
+            TypeKind::Struct(struct_id) => {
+                self.validate_struct_constructor(store, struct_id, expression, r#type, &arguments)
             },
             // Never constructible
             TypeKind::Texture(_)
@@ -2185,6 +2181,55 @@ impl<'database> InferenceContext<'database> {
                 },
             );
             self.error_type()
+        }
+    }
+
+    fn validate_struct_constructor(
+        &mut self,
+        store: &ExpressionStore,
+        struct_id: StructId,
+        expression: ExpressionId,
+        r#type: Type,
+        arguments: &[Type],
+    ) -> Type {
+        // https://www.w3.org/TR/WGSL/#zero-value-builtin-function
+        if arguments.is_empty() {
+            return r#type;
+        }
+
+        let signature = self.database.struct_data(struct_id).0;
+        if arguments.len() != signature.fields.len() {
+            self.push_diagnostic(
+                store.store_source,
+                InferenceDiagnosticKind::FunctionCallArgCountMismatch {
+                    expression,
+                    n_expected: signature.fields.len(),
+                    n_actual: arguments.len(),
+                },
+            );
+            return self.error_type();
+        }
+
+        let field_types = &self.database.field_types(struct_id).0;
+        let mut has_errors = false;
+        for (field_type, argument) in field_types.iter().zip(arguments.iter()) {
+            if !argument.is_convertible_to(*field_type.1, self.database) {
+                self.push_diagnostic(
+                    store.store_source,
+                    InferenceDiagnosticKind::TypeMismatch {
+                        expression,
+                        expected: TypeExpectation::from_type(*field_type.1),
+                        actual: *argument,
+                    },
+                );
+                has_errors = true;
+            }
+        }
+
+        if has_errors {
+            self.error_type()
+        } else {
+            r#type
         }
     }
 

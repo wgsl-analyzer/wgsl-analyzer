@@ -30,6 +30,121 @@ fn type_alias_in_struct() {
 }
 
 #[test]
+fn struct_constructor_is_empty() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        struct S { u: u32, a: array<f32, 3> };
+
+        fn foo() {
+            let s = S();
+        }
+        ",
+        expect![[r#"
+            59..60 's': S
+            63..66 'S()': S
+        "#]],
+    );
+}
+
+#[test]
+fn struct_constructor_is_correct() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        struct S { u: u32, a: array<f32, 3> };
+
+        fn foo() {
+            let s = S(1u, array<f32, 3>(1.0, 2.0, 3.0));
+        }
+        ",
+        expect![[r#"
+            59..60 's': S
+            63..98 'S(1u, ... 3.0))': S
+            65..67 '1u': u32
+            69..97 'array<..., 3.0)': array<f32, 3>
+            83..86 '1.0': float
+            88..91 '2.0': float
+            93..96 '3.0': float
+        "#]],
+    );
+}
+
+#[test]
+fn struct_constructor_unrefs() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        struct S { u: u32, a: array<f32, 3> };
+
+        fn foo() {
+            var u = 1u;
+            var a = array<f32, 3>(1.0, 2.0, 3.0);
+            let s = S(u, a);
+        }
+        ",
+        expect![[r#"
+            59..60 'u': ref<u32>
+            63..65 '1u': u32
+            75..76 'a': ref<array<f32, 3>>
+            79..107 'array<..., 3.0)': array<f32, 3>
+            93..96 '1.0': float
+            98..101 '2.0': float
+            103..106 '3.0': float
+            117..118 's': S
+            121..128 'S(u, a)': S
+            123..124 'u': ref<u32>
+            126..127 'a': ref<array<f32, 3>>
+        "#]],
+    );
+}
+
+#[test]
+fn struct_constructor_not_enough_args() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        struct S { u: u32, a: array<f32, 3> };
+
+        fn foo() {
+            let s = S(1u);
+        }
+        ",
+        expect![[r#"
+            59..60 's': [error]
+            63..68 'S(1u)': [error]
+            65..67 '1u': u32
+            InferenceDiagnostic { source: Body, kind: FunctionCallArgCountMismatch { expression: Idx::<Expression>(1), n_expected: 2, n_actual: 1 } }
+        "#]],
+    );
+}
+
+#[test]
+fn struct_constructor_incorrect_types() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        struct S { u: u32, a: array<f32, 3> };
+
+        fn foo() {
+            let s = S(1.0f, vec3f(1.0, 2.0, 3.0));
+        }
+        ",
+        expect![[r#"
+            59..60 's': [error]
+            63..92 'S(1.0f... 3.0))': [error]
+            65..69 '1.0f': f32
+            71..91 'vec3f(..., 3.0)': vec3<f32>
+            77..80 '1.0': float
+            82..85 '2.0': float
+            87..90 '3.0': float
+            63..92 'S(1.0f... 3.0))': expected u32 but got f32
+            63..92 'S(1.0f... 3.0))': expected array<f32, 3> but got vec3<f32>
+        "#]],
+    );
+}
+
+#[test]
 fn const_array() {
     check_infer(
         ExtensionsConfig::default(),
