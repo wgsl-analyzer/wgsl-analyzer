@@ -100,7 +100,7 @@ fn struct_constructor_unrefs() {
 }
 
 #[test]
-fn struct_constructor_not_engough_args() {
+fn struct_constructor_not_enough_args() {
     check_infer(
         ExtensionsConfig::default(),
         "
