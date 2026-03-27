@@ -17,7 +17,7 @@ fn format_fn_header_inline_comments_1() {
             fn /*aaa*/ main /*bbb*/ (/*ccc*/ a: /*ddd*/ /*eee*/ b /*fff*/) /*ggg*/ -> /*hhh*/ f32 /*iii*/ {} /*jjj*/
         "#]],
         &FormattingOptions {
-            width: 10000,
+            max_line_width: 10000,
             ..Default::default()
         },
         Edition::LATEST,
@@ -36,7 +36,7 @@ fn format_fn_multiline_header_inline_comments_1() {
             ) /*ggg*/ -> /*hhh*/ f32 /*iii*/ {} /*jjj*/
         "#]],
         &FormattingOptions {
-            width: 50,
+            max_line_width: 50,
             ..Default::default()
         },
         Edition::LATEST,

@@ -11,7 +11,7 @@ use std::{io::Read as _, path::PathBuf, time::Instant};
 
 use anyhow::{Context as _, bail};
 use serde::Serialize;
-use wgsl_formatter::{FormatStringError, FormattingOptions};
+use wgsl_formatter::{FormatStringError, FormattingOptions, IndentStyle};
 
 use crate::cli::{Args, OutputFormat};
 
@@ -48,11 +48,16 @@ fn main() -> Result<(), anyhow::Error> {
         bail!("no .wgsl/.wesl files found matching the given patterns");
     }
 
-    let mut formatting_options = FormattingOptions::default();
-    if cli.use_tabs {
-        "\t".clone_into(&mut formatting_options.indent_symbol);
-    } else if let Some(width) = cli.indent_width {
-        formatting_options.indent_symbol = " ".repeat(width);
+    let mut formatting_options = FormattingOptions {
+        indent_style: if cli.use_tabs {
+            IndentStyle::Tabs
+        } else {
+            IndentStyle::Spaces
+        },
+        ..Default::default()
+    };
+    if let Some(width) = cli.indent_width {
+        formatting_options.indent_width = width;
     }
 
     let json_mode = matches!(cli.output_format, OutputFormat::Json);

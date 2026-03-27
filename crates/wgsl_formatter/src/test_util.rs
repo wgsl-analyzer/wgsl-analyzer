@@ -11,7 +11,7 @@ use parser::{Edition, ParseEntryPoint};
 use rowan::{TextLen as _, TextRange};
 
 use crate::{
-    FormattingOptions,
+    FormattingOptions, IndentStyle,
     format::{self, format_tree},
     format_range,
 };
@@ -69,13 +69,14 @@ pub fn check<E: ExpectAssertEq>(
     )
 }
 
+// TODO(MonaMayrhofer) Phase this api out, and find a proper replacement, or retire tab tests completely
 #[expect(clippy::needless_pass_by_value, reason = "intentional API")]
 pub fn check_tabs<E: ExpectAssertEq>(
     before: &str,
     after: E,
 ) {
     let options = FormattingOptions {
-        indent_symbol: "\t".to_owned(),
+        indent_style: IndentStyle::Tabs,
         ..Default::default()
     };
     check_with_options(before, &after, &options, Edition::LATEST);

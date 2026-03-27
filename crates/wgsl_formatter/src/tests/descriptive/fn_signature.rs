@@ -72,7 +72,7 @@ fn format_fn_header_comma_multiline_wide() {
             ) -> f32 {}
             "]],
         &crate::FormattingOptions {
-            width: 26, //Just shy of what the fn would be laid out as on a single line
+            max_line_width: 26, //Just shy of what the fn would be laid out as on a single line
             ..Default::default()
         },
         Edition::LATEST,
@@ -90,7 +90,7 @@ fn format_fn_header_comma_multiline_narrow() {
             ) -> f32 {}
             "]],
         &crate::FormattingOptions {
-            width: 4, //Just shy of what the fn would be laid out as on a single line
+            max_line_width: 4, //Just shy of what the fn would be laid out as on a single line
             ..Default::default()
         },
         Edition::LATEST,
