@@ -92,6 +92,27 @@ pub fn format_function_call_statement_with_comment_has_no_trailing_whitespace() 
 }
 
 #[test]
+fn format_long_function_call_without_arguments_does_not_break_within_parens() {
+    check_with_options(
+        "fn main() {
+            //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
+            long_name_function_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa();
+        }",
+        &expect![[r#"
+            fn main() {
+                //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
+                long_name_function_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa();
+            }
+        "#]],
+        &FormattingOptions {
+            width: 80,
+            ..Default::default()
+        },
+        parser::Edition::LATEST,
+    );
+}
+
+#[test]
 pub fn format_long_function_call_linewidth_within_inner_break_outer_arguments_leave_inner_alone() {
     // Please note that the amount of "aaaa" in this test is carefully chosen to play with the line lengths.
     // This the amount of aaa is such that, breaking the inner argument would satisfy the line width requirement.
