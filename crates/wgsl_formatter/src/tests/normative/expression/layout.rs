@@ -73,6 +73,28 @@ pub fn format_comment_position_in_multiline_expression() {
     );
 }
 
+#[test]
+pub fn format_infix_expr_very_long_break_outer_first() {
+    check(
+        "fn main() {
+        //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
+        let aaaaaaaaaaaaa = 1 + 1 + long_function(aaaaaaaaaaa, bbbbbbbbbbb, ccccccccccccc, dddddddddddddd);
+        }",
+        expect![[r#"
+            fn main() {
+                //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
+                let aaaaaaaaaaaaa = 1 + 1
+                    + long_function(
+                        aaaaaaaaaaa,
+                        bbbbbbbbbbb,
+                        ccccccccccccc,
+                        dddddddddddddd,
+                    );
+            }
+        "#]],
+    );
+}
+
 //TODO Tests for layout of field expressions
 //TODO Tests for layout of function call expressions
 //TODO Tests for layout of index expressions
