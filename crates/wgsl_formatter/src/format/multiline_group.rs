@@ -60,8 +60,8 @@ impl<'buffer> MultilineGroup<'buffer> {
             },
         );
         self.start_reeval = Some(start_nl_condition.create_reevaluation());
-        self.buffer.push_condition(start_nl_condition);
         self.buffer.start_new_line_group();
+        self.buffer.push_condition(start_nl_condition);
 
         // TODO This is a bit of a shortcoming of the PBI api, we would want to write this after the "(", but can't because of the conditions between
         // TODO This does not belong into multilinegroup
@@ -140,11 +140,12 @@ impl<'buffer> MultilineGroup<'buffer> {
     }
 
     pub fn end(&mut self) {
-        self.buffer.finish_new_line_group();
         self.buffer.push_info(self.end_ln);
-        if let Some(start_reeval) = self.start_reeval {
-            self.buffer.push_reevaluation(start_reeval);
-        }
+        let start_reeval = self
+            .start_reeval
+            .expect("start_ident should have been called and set start_reeval.");
+        self.buffer.push_reevaluation(start_reeval);
+        self.buffer.finish_new_line_group();
     }
 }
 
