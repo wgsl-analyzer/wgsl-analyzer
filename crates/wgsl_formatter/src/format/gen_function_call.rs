@@ -72,34 +72,38 @@ pub fn gen_function_call_arguments(
 
     multiline_group.push_sc(sc!("("));
 
-    multiline_group.start_indent();
+    // TODO(MonaMayrhofer) Maybe this (and type-templates) should have a similar architecture to the function signature
+    // where comments are items
+    if !item_parameters.is_empty() || !item_comments_after_open_paren.is_empty() {
+        multiline_group.start_indent();
 
-    multiline_group.extend(gen_comments(&item_comments_after_open_paren));
+        multiline_group.extend(gen_comments(&item_comments_after_open_paren));
 
-    for (pos, (item_expression, item_comments_after_param, item_comments_after_comma)) in
-        item_parameters.into_iter().with_position()
-    {
-        multiline_group.extend(gen_expression(&item_expression, false)?);
-        if pos == Position::Last || pos == Position::Only {
-            multiline_group.extend_if_multi_line({
-                let mut pi = PrintItems::default();
-                pi.push_sc(sc!(","));
-                pi
-            });
-        } else {
-            multiline_group.push_sc(sc!(","));
+        for (pos, (item_expression, item_comments_after_param, item_comments_after_comma)) in
+            item_parameters.into_iter().with_position()
+        {
+            multiline_group.extend(gen_expression(&item_expression, false)?);
+            if pos == Position::Last || pos == Position::Only {
+                multiline_group.extend_if_multi_line({
+                    let mut pi = PrintItems::default();
+                    pi.push_sc(sc!(","));
+                    pi
+                });
+            } else {
+                multiline_group.push_sc(sc!(","));
+            }
+
+            //The comma should be immediately after the parameter, we move the comment back
+            multiline_group.extend(gen_comments(&item_comments_after_param));
+            multiline_group.extend(gen_comments(&item_comments_after_comma));
+
+            multiline_group.grouped_newline_or_space();
         }
 
-        //The comma should be immediately after the parameter, we move the comment back
-        multiline_group.extend(gen_comments(&item_comments_after_param));
-        multiline_group.extend(gen_comments(&item_comments_after_comma));
+        multiline_group.request(Request::discourage(RequestItem::Space));
 
-        multiline_group.grouped_newline_or_space();
+        multiline_group.finish_indent();
     }
-
-    multiline_group.request(Request::discourage(RequestItem::Space));
-
-    multiline_group.finish_indent();
 
     multiline_group.push_sc(sc!(")"));
 

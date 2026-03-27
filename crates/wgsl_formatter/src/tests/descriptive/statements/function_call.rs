@@ -40,8 +40,7 @@ pub fn format_insanely_long_function_call_statement() {
         }",
         expect![[r#"
             fn main() {
-                foo_efek_felkj_soiu_flejk_lkjef_aoieu_flkejfalk_lkjeifou_flj_lkjsieuf_flkj_Ljklllefjief(
-                );
+                foo_efek_felkj_soiu_flejk_lkjef_aoieu_flkejfalk_lkjeifou_flj_lkjsieuf_flkj_Ljklllefjief();
             }
         "#]],
     );
