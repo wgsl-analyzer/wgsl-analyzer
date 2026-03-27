@@ -88,8 +88,8 @@ fn format_comments_within_assignment_statement() {
                 // 0
                 a // 1
                 = // 2
-                b // 3
-                ; // 4
+                    b // 3
+                    ; // 4
             }
         "#]],
     );
@@ -105,7 +105,7 @@ fn format_comments_within_complex_assignment_statement() {
             fn main() {
                 /* 0 */
                 a /* 1 */ = /* 2 */ b /* 3 */
-                + /* 4 */ get /* 5 */ (/* 6 */ 17 /* 7 */) /* 8 */; /* 9 */
+                    + /* 4 */ get /* 5 */ (/* 6 */ 17 /* 7 */) /* 8 */; /* 9 */
             }
         "#]],
         expect![[r#"
@@ -113,14 +113,14 @@ fn format_comments_within_complex_assignment_statement() {
                 // 0
                 a // 1
                 = // 2
-                b // 3
-                + // 4
-                get // 5
-                (
-                    // 6
-                    17, // 7
-                ) // 8
-                ; // 9
+                    b // 3
+                    + // 4
+                    get // 5
+                    (
+                        // 6
+                        17, // 7
+                    ) // 8
+                    ; // 9
             }
         "#]],
     );

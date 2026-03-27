@@ -133,10 +133,10 @@ pub fn format_compound_assignment_long_rhs_long_lhs() {
         expect![[r#"
             fn main() {
                 aaaaaaaaaaaaaaaaaaaaa.bbbbbbbbbbbbbbbbbbb.cccccccccccccccccc.ddddddddddddddddddd <<= foooooooooooooooo(
-                    baaaaaaaaaaaaaaar(
-                        111111111111111111111 + 8228282828282882828282828828282,
-                    ),
-                );
+                        baaaaaaaaaaaaaaar(
+                            111111111111111111111 + 8228282828282882828282828828282,
+                        ),
+                    );
             }
         "#]],
     );
@@ -159,8 +159,8 @@ pub fn format_comments_in_compound_assignment_statement_simple() {
                 // 0
                 a // 1
                 <<= // 2
-                b // 3
-                ; // 4
+                    b // 3
+                    ; // 4
             }
         "#]],
     );

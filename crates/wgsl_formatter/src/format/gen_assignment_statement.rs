@@ -45,6 +45,7 @@ pub fn gen_assignment_statement(
     formatted.expect(RequestItem::Space);
     formatted.push_sc(sc!("="));
     formatted.expect(RequestItem::Space);
+    formatted.start_indent();
     formatted.extend(gen_comments(&item_comments_after_equal));
     formatted.extend(gen_expression(&item_value, true)?);
     formatted.extend(gen_comments(&item_comments_after_value));
@@ -52,6 +53,7 @@ pub fn gen_assignment_statement(
         formatted.discourage(RequestItem::Space);
         formatted.push_sc(sc!(";"));
     }
+    formatted.finish_indent();
     Ok(formatted)
 }
 
@@ -83,6 +85,7 @@ pub fn gen_phony_assignment_statement(
     formatted.expect(RequestItem::Space);
     formatted.push_sc(sc!("="));
     formatted.expect(RequestItem::Space);
+    formatted.start_indent();
     formatted.extend(gen_comments(&item_comments_after_equal));
     formatted.extend(gen_expression(&item_value, true)?);
     formatted.extend(gen_comments(&item_comments_after_value));
@@ -90,6 +93,7 @@ pub fn gen_phony_assignment_statement(
         formatted.discourage(RequestItem::Space);
         formatted.push_sc(sc!(";"));
     }
+    formatted.finish_indent();
     Ok(formatted)
 }
 
@@ -138,7 +142,7 @@ pub fn gen_compound_assignment_statement(
     formatted.expect(RequestItem::Space);
     formatted.push_sc(operator_sc);
     formatted.expect(RequestItem::Space);
-
+    formatted.start_indent();
     formatted.extend(gen_comments(&item_comments_after_equal));
     formatted.extend(gen_expression(&item_value, true)?);
     formatted.extend(gen_comments(&item_comments_after_value));
@@ -146,5 +150,6 @@ pub fn gen_compound_assignment_statement(
         formatted.discourage(RequestItem::Space);
         formatted.push_sc(sc!(";"));
     }
+    formatted.finish_indent();
     Ok(formatted)
 }
