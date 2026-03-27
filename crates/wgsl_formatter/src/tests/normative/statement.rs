@@ -1,6 +1,7 @@
 mod assert;
 mod assignment;
 mod break_if;
+mod compound_assignment;
 mod compound_layout;
 mod const_declaration;
 mod r#continue;
