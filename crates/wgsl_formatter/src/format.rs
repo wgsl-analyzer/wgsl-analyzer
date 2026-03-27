@@ -35,7 +35,7 @@ use rowan::{NodeOrToken, TextRange};
 use syntax::{AstNode as _, Parse, ast};
 
 use crate::{
-    FormattingOptions,
+    FormattingOptions, IndentStyle,
     format::{
         gen_node::{gen_node, gen_node_no_newlines},
         print_item_buffer::PrintItemBuffer,
@@ -135,11 +135,10 @@ where
             },
         },
         PrintOptions {
-            //TODO Populate these from options
-            max_width: options.width,
-            indent_width: 4,
-            use_tabs: false,
-            new_line_text: "\n",
+            max_width: options.max_line_width,
+            indent_width: options.indent_width,
+            use_tabs: options.indent_style == IndentStyle::Tabs,
+            new_line_text: options.line_break_style.text(),
         },
     );
 

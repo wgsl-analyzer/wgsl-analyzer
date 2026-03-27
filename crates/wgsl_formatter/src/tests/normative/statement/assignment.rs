@@ -35,7 +35,7 @@ fn format_long_assignment_statement_gets_indented_correctly() {
             }
         "#]],
         &FormattingOptions {
-            width: 80,
+            max_line_width: 80,
             ..Default::default()
         },
         parser::Edition::LATEST

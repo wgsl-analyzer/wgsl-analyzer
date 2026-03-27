@@ -64,7 +64,7 @@ pub fn format_long_type_alias_linewidth_within_inner_break_outer_arguments_leave
             >;
         "#]],
         &FormattingOptions {
-            width: 80,
+            max_line_width: 80,
             ..Default::default()
         },
         parser::Edition::LATEST,
@@ -89,7 +89,7 @@ pub fn format_long_type_alias_linewidth_outside_inner_break_outer_arguments_leav
             >;
         "#]],
         &FormattingOptions {
-            width: 80,
+            max_line_width: 80,
             ..Default::default()
         },
         parser::Edition::LATEST

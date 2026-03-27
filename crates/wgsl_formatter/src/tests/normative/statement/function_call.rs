@@ -105,7 +105,7 @@ fn format_long_function_call_without_arguments_does_not_break_within_parens() {
             }
         "#]],
         &FormattingOptions {
-            width: 80,
+            max_line_width: 80,
             ..Default::default()
         },
         parser::Edition::LATEST,
@@ -135,7 +135,7 @@ pub fn format_long_function_call_linewidth_within_inner_break_outer_arguments_le
             }
         "#]],
         &FormattingOptions {
-            width: 80,
+            max_line_width: 80,
             ..Default::default()
         },
         parser::Edition::LATEST,
@@ -164,7 +164,7 @@ pub fn format_long_type_alias_linewidth_outside_inner_break_outer_arguments_leav
             }
         "#]],
         &FormattingOptions {
-            width: 80,
+            max_line_width: 80,
             ..Default::default()
         },
         parser::Edition::LATEST

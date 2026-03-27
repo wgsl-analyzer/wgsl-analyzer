@@ -210,7 +210,7 @@ pub fn format_expr_function_call_with_sensible_comments() {
             }
         "]],
         &FormattingOptions {
-            width: 10000,
+            max_line_width: 10000,
             ..Default::default()
         },
         Edition::LATEST,
