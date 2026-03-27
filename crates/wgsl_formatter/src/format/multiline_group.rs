@@ -19,6 +19,13 @@ use crate::format::{
 
 use super::print_item_buffer::request_folder::RequestItem;
 
+// TODO Possibly enforce the rules through a typestate pattern or implement debug panics
+/// Helper to generate a number of items that are either within a single line all on separate lines.
+///
+/// To use this helper (and to keep the api small), a few rules do need to be manually followed.
+///
+/// The [`MultilineGroup::end`] method needs to be called before it is dropped.
+///
 pub struct MultilineGroup<'buffer> {
     buffer: &'buffer mut PrintItemBuffer,
     pub(crate) is_multiple_lines: ConditionResolver,
@@ -32,6 +39,7 @@ impl<'buffer> MultilineGroup<'buffer> {
         let end_ln = LineNumber::new("end");
         let is_multiple_lines = create_is_multiple_lines_resolver(start_ln, end_ln);
 
+        formatted.start_new_line_group();
         formatted.push_info(start_ln);
         formatted.push_anchor(LineNumberAnchor::new(end_ln));
 
@@ -60,7 +68,6 @@ impl<'buffer> MultilineGroup<'buffer> {
             },
         );
         self.start_reeval = Some(start_nl_condition.create_reevaluation());
-        self.buffer.start_new_line_group();
         self.buffer.push_condition(start_nl_condition);
 
         // TODO This is a bit of a shortcoming of the PBI api, we would want to write this after the "(", but can't because of the conditions between
@@ -141,10 +148,11 @@ impl<'buffer> MultilineGroup<'buffer> {
 
     pub fn end(&mut self) {
         self.buffer.push_info(self.end_ln);
-        let start_reeval = self
-            .start_reeval
-            .expect("start_ident should have been called and set start_reeval.");
-        self.buffer.push_reevaluation(start_reeval);
+
+        // It is legal to call end without calling start_ident or finish_indent
+        if let Some(start_reeval) = self.start_reeval {
+            self.buffer.push_reevaluation(start_reeval);
+        }
         self.buffer.finish_new_line_group();
     }
 }
