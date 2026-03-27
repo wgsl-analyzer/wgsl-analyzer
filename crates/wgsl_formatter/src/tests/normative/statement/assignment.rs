@@ -52,7 +52,7 @@ fn format_long_phony_statement_gets_indented_correctly() {
         &expect![[r#"
             fn main() {
                 //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
-                a = long_name_function_aaaaaaaaaa()
+                _ = long_name_function_aaaaaaaaaa()
                     + long_name_function_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa();
             }
         "#]],
