@@ -2,7 +2,82 @@ use expect_test::expect;
 
 use crate::test_util::{assert_out_of_scope, check, check_comments};
 
-//TODO(MonaMayrhofer) For now these tests just check for something so that attributes are handled and
+#[test]
+pub fn format_attribute_offset_size_align_are_grouped() {
+    // @align @size @offset should not be on the same line as the field,
+    // but on the line beforehand (on the same line, but on separate lines to other fields)
+    //
+    // They are on separate lines to be consistent if all 3 are given, and if all 3 are given, putting
+    // them on the same line as the field would threaten to get pretty long, make git diffs weird and
+    // pose questions about which attribute group should be privileged enough to share the line with the field.
+    check(
+        "struct VertexOutput {
+            @align(7)
+            @size(9)
+            @offset(28)
+            a: u32,
+            @align(7)
+            @location(1)
+            @size(9)
+            @offset(28)
+            b: u32,
+        }",
+        expect![[r#"
+            struct VertexOutput {
+                @offset(28) @align(7) @size(9)
+                a: u32,
+                @location(1)
+                @offset(28) @align(7) @size(9)
+                b: u32,
+            }
+        "#]],
+    );
+}
+
+#[test]
+pub fn format_attribute_group_binding_are_grouped() {
+    // @group @binding should be on the line before the binding,
+    // sharing the same line, but on separate lines to other fields
+    check(
+        "
+        @diagnostic(off)
+        @binding(1)
+        @group(0)
+        var<storage> a: b;
+        ",
+        expect![[r#"
+@diagnostic(off)
+@group(1) @binding(0)
+var<storage> a: b;
+        "#]],
+    );
+}
+
+#[test]
+pub fn format_attribute_workgroup_size_compute() {
+    // @compute @workgroup_size should be on the line before the fn,
+    // sharing the same line, but on separate lines to other fields
+    //
+    // They should be ordered @compute @workgroup_size
+    check(
+        "
+        @workgroup_size(1,1,1)
+        @compute
+        fn main() {
+        if (d < 0.5) @diagnostic(off,derivative_uniformity) {
+            return textureSample(t,s,vec2(0,0));
+          }
+        }
+        ",
+        expect![[r#"
+            @workgroup_size(1, 1, 1)
+            @compute
+            fn main() {}
+        "#]],
+    );
+}
+
+//TODO(MonaMayrhofer) For now these tests below just check for something so that attributes are handled and
 // the formatter doesn't crash. More thought should be put into how exactly they shall be formatted
 
 #[test]
