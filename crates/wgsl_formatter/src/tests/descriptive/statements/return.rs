@@ -66,8 +66,8 @@ pub fn format_comment_in_return_statement_with_simple_expr() {
             fn main() {
                 // 0
                 return // 1
-                1 // 2
-                ; // 3
+                    1 // 2
+                    ; // 3
             }
         "#]],
     );
@@ -89,7 +89,7 @@ pub fn format_comment_in_return_statement_without_expr() {
             fn main() {
                 // 0
                 return // 1
-                ; // 2
+                    ; // 2
             }
         "#]],
     );

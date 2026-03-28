@@ -342,6 +342,7 @@ fn gen_return_statement(
     // ==== Format ====
     let mut formatted = PrintItemBuffer::new();
     formatted.push_sc(sc!("return"));
+    formatted.start_indent();
     formatted.extend(gen_comments(&comments_after_return));
     if let Some(item_expression) = item_expression {
         formatted.expect(RequestItem::Space);
@@ -353,6 +354,7 @@ fn gen_return_statement(
     if include_semicolon {
         formatted.push_sc(sc!(";"));
     }
+    formatted.finish_indent();
     Ok(formatted)
 }
 
