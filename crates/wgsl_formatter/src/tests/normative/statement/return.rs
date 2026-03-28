@@ -34,7 +34,7 @@ fn format_long_return_statement_gets_indented_correctly() {
             fn main() {
                 //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
                 return aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-                + bbbbbbbbbbbbbbbbbbbbbb;
+                    + bbbbbbbbbbbbbbbbbbbbbb;
             }
         "#]],
         &FormattingOptions {
