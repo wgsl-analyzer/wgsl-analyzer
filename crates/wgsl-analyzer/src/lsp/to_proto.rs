@@ -7,6 +7,7 @@ use ide::{
         InlayFieldsToResolve, InlayHint, InlayHintLabel, InlayHintLabelPart, InlayKind,
         LazyProperty,
     },
+    signature_help::SignatureHelpResult,
 };
 use ide_completion::{
     CompletionFieldsToResolve,
@@ -703,5 +704,45 @@ pub(crate) fn goto_definition_response(
             .map(|range| location(snap, range))
             .collect::<Cancellable<Vec<_>>>()?;
         Ok(locations.into())
+    }
+}
+
+pub(crate) fn signature_help(help: SignatureHelpResult) -> lsp_types::SignatureHelp {
+    let signatures = help
+        .signatures
+        .into_iter()
+        .map(|signature| {
+            let parameters = Some(
+                signature
+                    .parameters
+                    .into_iter()
+                    .map(|param| lsp_types::ParameterInformation {
+                        label: lsp_types::ParameterLabel::LabelOffsets([
+                            u32::from(param.range.start()),
+                            u32::from(param.range.end()),
+                        ]),
+                        documentation: None,
+                    })
+                    .collect(),
+            );
+            let signature_doc = signature.documentation.map(|doc| {
+                lsp_types::Documentation::MarkupContent(lsp_types::MarkupContent {
+                    kind: lsp_types::MarkupKind::Markdown,
+                    value: doc,
+                })
+            });
+            lsp_types::SignatureInformation {
+                label: signature.label,
+                documentation: signature_doc,
+                parameters,
+                active_parameter: None,
+            }
+        })
+        .collect();
+
+    lsp_types::SignatureHelp {
+        signatures,
+        active_signature: help.active_signature,
+        active_parameter: help.active_parameter,
     }
 }

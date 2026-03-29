@@ -11,6 +11,7 @@ mod hover;
 pub mod inlay_hints;
 mod markup;
 mod navigation_target;
+pub mod signature_help;
 mod typing;
 mod view_syntax_tree;
 
@@ -32,6 +33,7 @@ use syntax::{Parse, SyntaxNode};
 use triomphe::Arc;
 use vfs::FileId;
 
+use crate::signature_help::SignatureHelpResult;
 pub use crate::{
     // annotations::{Annotation, AnnotationConfig, AnnotationKind, AnnotationLocation},
     // call_hierarchy::{CallHierarchyConfig, CallItem},
@@ -64,10 +66,7 @@ pub use crate::{
     //     PackageInformation, SymbolInformationKind,
     // },
     // move_item::Direction,
-    navigation_target::{
-        NavigationTarget,
-        // TryToNavigationTarget, UpmappingResult
-    },
+    navigation_target::NavigationTarget,
     // references::ReferenceSearchResult,
     // rename::RenameError,
     // runnables::{Runnable, RunnableKind, TestId, UpdateTest},
@@ -316,6 +315,13 @@ impl Analysis {
         range: FileRange,
     ) -> Cancellable<Option<RangeInfo<HoverResult>>> {
         self.with_db(|database| hover::hover(database, range, config))
+    }
+
+    pub fn signature_help(
+        &self,
+        position: FilePosition,
+    ) -> Cancellable<Option<SignatureHelpResult>> {
+        self.with_db(|database| signature_help::signature_help(database, position))
     }
 
     /// # Panics

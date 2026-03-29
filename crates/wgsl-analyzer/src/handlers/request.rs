@@ -171,6 +171,23 @@ pub(crate) fn handle_hover(
     Ok(Some(hover))
 }
 
+pub(crate) fn handle_signature_help(
+    snap: GlobalStateSnapshot,
+    parameters: lsp_types::SignatureHelpParams,
+) -> Result<Option<lsp_types::SignatureHelp>> {
+    let _p = tracing::info_span!("handle_signature_help").entered();
+    let position = try_default!(from_proto::file_position(
+        &snap,
+        &parameters.text_document_position_params
+    )?);
+
+    let Some(signature_help_result) = snap.analysis.signature_help(position)? else {
+        return Ok(None);
+    };
+
+    Ok(Some(to_proto::signature_help(signature_help_result)))
+}
+
 #[expect(
     clippy::unnecessary_wraps,
     reason = "handlers should have a specific signature"
