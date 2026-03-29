@@ -1,8 +1,6 @@
 use base_db::{EditionedFileId, FilePosition, TextSize};
-use hir::{Function, HirDatabase as _, ModuleDef, Semantics, definition::Definition};
-use hir_def::{database::DefDatabase as _, item_tree::Name};
+use hir::Semantics;
 use hir_ty::{
-    builtins::Builtin,
     function::FunctionDetails,
     infer::ResolvedCall,
     ty::pretty::{TypeVerbosity, pretty_fn_inner_with_offsets},
@@ -31,6 +29,7 @@ pub struct SignatureInformation {
 #[derive(Debug, Clone)]
 pub struct ParameterInformation {
     pub range: TextRange,
+    pub label: String,
 }
 
 pub(crate) fn signature_help(
@@ -46,8 +45,7 @@ pub(crate) fn signature_help(
     let token = syntax.token_at_offset(position.offset).left_biased()?;
 
     // Walk up to find the enclosing Arguments node
-    let (function_call, arguments_node, active_parameter) =
-        find_enclosing_call(&token, position.offset)?;
+    let (function_call, _, active_parameter) = find_enclosing_call(&token, position.offset)?;
 
     // Try to resolve the function call via type inference
     let container = semantics.find_container(file_id, function_call.syntax())?;
@@ -129,7 +127,7 @@ fn build_signature(
 
     let parameters = offsets
         .into_iter()
-        .map(|range| ParameterInformation { range })
+        .map(|(range, label)| ParameterInformation { range, label })
         .collect();
 
     SignatureInformation {

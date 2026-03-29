@@ -185,7 +185,7 @@ pub(crate) fn handle_signature_help(
         return Ok(None);
     };
 
-    Ok(Some(to_proto::signature_help(signature_help_result)))
+    Ok(Some(to_proto::signature_help(&snap, signature_help_result)))
 }
 
 #[expect(

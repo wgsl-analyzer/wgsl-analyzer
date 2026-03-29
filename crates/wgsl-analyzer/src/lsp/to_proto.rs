@@ -707,7 +707,10 @@ pub(crate) fn goto_definition_response(
     }
 }
 
-pub(crate) fn signature_help(help: SignatureHelpResult) -> lsp_types::SignatureHelp {
+pub(crate) fn signature_help(
+    snap: &GlobalStateSnapshot,
+    help: SignatureHelpResult,
+) -> lsp_types::SignatureHelp {
     let signatures = help
         .signatures
         .into_iter()
@@ -716,12 +719,20 @@ pub(crate) fn signature_help(help: SignatureHelpResult) -> lsp_types::SignatureH
                 signature
                     .parameters
                     .into_iter()
-                    .map(|param| lsp_types::ParameterInformation {
-                        label: lsp_types::ParameterLabel::LabelOffsets([
-                            u32::from(param.range.start()),
-                            u32::from(param.range.end()),
-                        ]),
-                        documentation: None,
+                    .map(|param| {
+                        let label = if snap.config.signature_help_label_offsets() {
+                            lsp_types::ParameterLabel::LabelOffsets([
+                                u32::from(param.range.start()),
+                                u32::from(param.range.end()),
+                            ])
+                        } else {
+                            lsp_types::ParameterLabel::Simple(param.label)
+                        };
+
+                        lsp_types::ParameterInformation {
+                            label,
+                            documentation: None,
+                        }
                     })
                     .collect(),
             );
