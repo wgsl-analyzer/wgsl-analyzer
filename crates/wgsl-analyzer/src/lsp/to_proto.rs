@@ -786,14 +786,14 @@ mod tests {
     use base_db::FilePosition;
     use expect_test::{Expect, expect};
     use ide::Analysis;
-    use lsp_types::ParameterInformation;
+    use lsp_types::{ParameterInformation, ParameterLabel};
     use test_utils::extract_offset;
     use triomphe::Arc;
 
     use super::*;
 
     #[test]
-    fn calling_function_with_ignored_code_in_signature() {
+    fn signature_help_no_label_offsets() {
         // TODO: add signature help documentation to this test
         let text = r#"
 fn foo() {
@@ -830,6 +830,47 @@ fn bar(x: u32, y: bool) -> f32 { 0.0f }
                     label: lsp_types::ParameterLabel::Simple("y: bool".to_string()),
                     // TODO: add signature help documentation to this test
                     documentation: None,
+                }
+            ])
+        );
+    }
+
+    #[test]
+    fn signature_help_with_label_offsets() {
+        // TODO: add signature help documentation to this test
+        let text = r#"
+fn foo() {
+    bar($0);
+}
+fn bar(x: u32, y: bool) -> f32 { 0.0f }
+"#;
+
+        let (offset, text) = extract_offset(text);
+        let (analysis, file_id) = Analysis::from_single_file(text);
+        let help = signature_help(
+            analysis
+                .signature_help(FilePosition { file_id, offset })
+                .unwrap()
+                .unwrap(),
+            // TODO: add config
+            // CallInfoConfig {
+            //     parameters_only: false,
+            //     documentation: true,
+            // },
+            true,
+        );
+        let found = &help.signatures[help.active_signature.unwrap() as usize];
+        assert_eq!(found.label, "fn bar(x: u32, y: bool) -> f32");
+        assert_eq!(
+            found.parameters,
+            Some(vec![
+                ParameterInformation {
+                    label: ParameterLabel::LabelOffsets([7, 13]),
+                    documentation: None
+                },
+                ParameterInformation {
+                    label: ParameterLabel::LabelOffsets([15, 22]),
+                    documentation: None
                 }
             ])
         );
