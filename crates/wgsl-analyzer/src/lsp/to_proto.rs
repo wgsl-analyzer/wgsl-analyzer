@@ -816,18 +816,19 @@ fn bar(x: u32, y: bool) -> f32 { 0.0f }
             // },
             false,
         );
+        #[expect(clippy::as_conversions, reason = "usize >= u32")]
         let found = &help.signatures[help.active_signature.unwrap() as usize];
         assert_eq!(found.label, "fn bar(x: u32, y: bool) -> f32");
         assert_eq!(
             found.parameters,
             Some(vec![
                 ParameterInformation {
-                    label: lsp_types::ParameterLabel::Simple("x: u32".to_string()),
+                    label: lsp_types::ParameterLabel::Simple("x: u32".to_owned()),
                     // TODO: add signature help documentation to this test
                     documentation: None,
                 },
                 ParameterInformation {
-                    label: lsp_types::ParameterLabel::Simple("y: bool".to_string()),
+                    label: lsp_types::ParameterLabel::Simple("y: bool".to_owned()),
                     // TODO: add signature help documentation to this test
                     documentation: None,
                 }
@@ -859,6 +860,7 @@ fn bar(x: u32, y: bool) -> f32 { 0.0f }
             // },
             true,
         );
+        #[expect(clippy::as_conversions, reason = "usize >= u32")]
         let found = &help.signatures[help.active_signature.unwrap() as usize];
         assert_eq!(found.label, "fn bar(x: u32, y: bool) -> f32");
         assert_eq!(
