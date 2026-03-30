@@ -142,7 +142,13 @@ pub fn server_capabilities(config: &Config) -> ServerCapabilities {
             },
         )),
         inline_completion_provider: None, // Not relevant
-        signature_help_provider: None, // TODO https://github.com/wgsl-analyzer/wgsl-analyzer/issues/341
+        signature_help_provider: Some(lsp_types::SignatureHelpOptions {
+            trigger_characters: Some(vec!["(".to_owned(), ",".to_owned()]),
+            retrigger_characters: None,
+            work_done_progress_options: WorkDoneProgressOptions {
+                work_done_progress: None,
+            },
+        }),
     }
 }
 
