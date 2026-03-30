@@ -90,7 +90,7 @@ jobs:
           package_json_file: ./editors/code/package.json
 
       - name: Install stable Rust toolchain
-        uses: dtolnay/rust-toolchain@efa25f7f19611383d5b0ccf2d1c8914531636bf9
+        uses: dtolnay/rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9
         with:
           toolchain: stable
           components: ${{ matrix.pgo && 'llvm-tools' || '' }}
@@ -202,7 +202,7 @@ jobs:
           persist-credentials: false
 
       - name: Install stable Rust toolchain
-        uses: dtolnay/rust-toolchain@efa25f7f19611383d5b0ccf2d1c8914531636bf9
+        uses: dtolnay/rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9
         with:
           toolchain: stable
           target: wasm32-unknown-unknown
