@@ -124,11 +124,7 @@ pub(crate) fn signature_help(
         .map(|function_type| function_type.lookup(database))
         .filter_map(|function| {
             let length: u32 = function.parameters.len().try_into().unwrap();
-            if active_parameter.is_none() || active_parameter.is_some_and(|index| index < length) {
-                Some(build_signature(database, &function, None))
-            } else {
-                None
-            }
+            (active_parameter.is_none() || active_parameter.is_some_and(|index| index < length)).then(|| build_signature(database, &function, None))
         })
         .collect();
     let mut active_signature = None;
@@ -154,7 +150,7 @@ fn find_enclosing_call(
             // The parent of Arguments should be a FunctionCall
             // add support for builtins
             let function_call = ast::FunctionCall::cast(ancestor.parent()?)?;
-            if let None = arguments.arguments().next() {
+            if arguments.arguments().next().is_none() {
                 return Some((function_call, arguments, None));
             }
 
