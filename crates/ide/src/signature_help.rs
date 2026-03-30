@@ -10,29 +10,76 @@ use rowan::TextRange;
 use syntax::{AstNode as _, SyntaxKind, SyntaxToken, ast};
 
 /// Signature help information for a function call.
-#[derive(Debug, Clone)]
+/// This must store a vec because WGSL has function overloading.
+#[derive(Debug)]
 pub struct SignatureHelp {
-    // TODO: add documentation
-    // https://github.com/wgsl-analyzer/wgsl-analyzer/issues/971
-    // pub doc: Option<Documentation<'static>>,
-    pub signatures: Vec<SignatureInformation>,
+    pub signatures: Vec<OverloadSignatureHelp>,
     pub active_signature: Option<u32>,
     pub active_parameter: Option<u32>,
 }
 
-/// Information about a single function signature.
-#[derive(Debug, Clone)]
-pub struct SignatureInformation {
-    pub label: String,
+/// Contains information about an item signature as seen from a use site.
+///
+/// This includes the "active parameter", which is the parameter whose value is currently being
+/// edited.
+#[expect(
+    clippy::partial_pub_fields,
+    reason = "not worth refactoring at the moment"
+)]
+#[derive(Debug)]
+pub struct OverloadSignatureHelp {
     pub documentation: Option<String>,
-    pub parameters: Vec<ParameterInformation>,
+    pub signature: String,
+    pub active_parameter: Option<usize>,
+    parameters: Vec<TextRange>,
 }
 
-/// Information about a single parameter.
-#[derive(Debug, Clone)]
-pub struct ParameterInformation {
-    pub range: TextRange,
-    pub label: String,
+impl OverloadSignatureHelp {
+    pub fn parameter_labels(&self) -> impl Iterator<Item = &str> + '_ {
+        self.parameters
+            .iter()
+            .map(move |&text_range| &self.signature[text_range])
+    }
+
+    #[must_use]
+    pub fn parameter_ranges(&self) -> &[TextRange] {
+        &self.parameters
+    }
+
+    fn push_call_parameter(
+        &mut self,
+        parameter: &str,
+    ) {
+        self.push_parameter("(", parameter);
+    }
+
+    fn push_generic_param(
+        &mut self,
+        parameter: &str,
+    ) {
+        self.push_parameter("<", parameter);
+    }
+
+    fn push_record_field(
+        &mut self,
+        parameter: &str,
+    ) {
+        self.push_parameter("{ ", parameter);
+    }
+
+    fn push_parameter(
+        &mut self,
+        opening_delimiter: &str,
+        parameter: &str,
+    ) {
+        if !self.signature.ends_with(opening_delimiter) {
+            self.signature.push_str(", ");
+        }
+        let start = TextSize::of(&self.signature);
+        self.signature.push_str(parameter);
+        let end = TextSize::of(&self.signature);
+        self.parameters.push(TextRange::new(start, end));
+    }
 }
 
 pub(crate) fn signature_help(
@@ -67,6 +114,8 @@ pub(crate) fn signature_help(
         match resolved {
             ResolvedCall::Function(func_id) => {
                 let function = func_id.lookup(database);
+                // TODO: add documentation
+                // https://github.com/wgsl-analyzer/wgsl-analyzer/issues/971
                 signatures.push(build_signature(database, &function, None));
                 active_signature = Some(0);
             },
@@ -118,26 +167,22 @@ fn build_signature(
     database: &RootDatabase,
     function: &FunctionDetails,
     documentation: Option<&str>,
-) -> SignatureInformation {
-    let mut label = String::new();
-    let mut offsets = Vec::new();
+) -> OverloadSignatureHelp {
+    let mut signature = String::new();
+    let mut parameters = Vec::new();
     pretty_fn_inner_with_offsets(
         database,
         function,
-        &mut label,
+        &mut signature,
         TypeVerbosity::default(),
-        Some(&mut offsets),
+        Some(&mut parameters),
     )
     .unwrap();
 
-    let parameters = offsets
-        .into_iter()
-        .map(|(range, label)| ParameterInformation { range, label })
-        .collect();
-
-    SignatureInformation {
-        label,
+    OverloadSignatureHelp {
         documentation: documentation.map(String::from),
+        signature,
+        active_parameter: None,
         parameters,
     }
 }

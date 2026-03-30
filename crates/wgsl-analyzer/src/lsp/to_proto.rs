@@ -715,38 +715,60 @@ pub(crate) fn signature_help(
     let signatures = help
         .signatures
         .into_iter()
-        .map(|signature| {
-            let parameters = Some(
-                signature
-                    .parameters
-                    .into_iter()
-                    .map(|param| {
-                        let label = if label_offsets {
-                            lsp_types::ParameterLabel::LabelOffsets([
-                                u32::from(param.range.start()),
-                                u32::from(param.range.end()),
-                            ])
-                        } else {
-                            lsp_types::ParameterLabel::Simple(param.label)
-                        };
-
-                        lsp_types::ParameterInformation {
-                            label,
-                            documentation: None,
-                        }
+        .map(|call_info| {
+            let parameters = if label_offsets {
+                call_info
+                    .parameter_ranges()
+                    .iter()
+                    .map(|text_range| {
+                        let start = call_info.signature[..text_range.start().into()]
+                            .chars()
+                            .map(char::len_utf16)
+                            .sum::<usize>();
+                        #[expect(
+                            clippy::as_conversions,
+                            clippy::cast_possible_truncation,
+                            reason = "a text offset does not exceed u32 in practice"
+                        )]
+                        let start = start as u32;
+                        let offset = call_info.signature
+                            [text_range.start().into()..text_range.end().into()]
+                            .chars()
+                            .map(char::len_utf16)
+                            .sum::<usize>();
+                        #[expect(
+                            clippy::as_conversions,
+                            clippy::cast_possible_truncation,
+                            reason = "a text offset does not exceed u32 in practice"
+                        )]
+                        let offset = offset as u32;
+                        let end = start + offset;
+                        [start, end]
                     })
-                    .collect(),
-            );
-            let signature_doc = signature.documentation.map(|doc| {
+                    .map(|label_offsets| lsp_types::ParameterInformation {
+                        label: lsp_types::ParameterLabel::LabelOffsets(label_offsets),
+                        documentation: None,
+                    })
+                    .collect::<Vec<_>>()
+            } else {
+                call_info
+                    .parameter_labels()
+                    .map(|label| lsp_types::ParameterInformation {
+                        label: lsp_types::ParameterLabel::Simple(label.to_owned()),
+                        documentation: None,
+                    })
+                    .collect::<Vec<_>>()
+            };
+            let signature_doc = call_info.documentation.map(|doc| {
                 lsp_types::Documentation::MarkupContent(lsp_types::MarkupContent {
                     kind: lsp_types::MarkupKind::Markdown,
                     value: doc,
                 })
             });
             lsp_types::SignatureInformation {
-                label: signature.label,
+                label: call_info.signature,
                 documentation: signature_doc,
-                parameters,
+                parameters: Some(parameters),
                 active_parameter: None,
             }
         })

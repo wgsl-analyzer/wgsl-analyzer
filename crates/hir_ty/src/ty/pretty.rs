@@ -135,15 +135,13 @@ pub fn pretty_fn_inner_with_offsets(
     function: &FunctionDetails,
     buffer: &mut String,
     verbosity: TypeVerbosity,
-    mut param_offsets: Option<&mut Vec<(TextRange, String)>>,
+    mut param_offsets: Option<&mut Vec<TextRange>>,
 ) -> fmt::Result {
     write!(buffer, "fn {name}(", name = function.name.as_str())?;
     for (index, (param_type, param_name)) in function.parameters_with_names().enumerate() {
         if index != 0 {
             buffer.push_str(", ");
         }
-
-        let mut param_label = String::new();
 
         #[expect(
             clippy::cast_possible_truncation,
@@ -153,10 +151,8 @@ pub fn pretty_fn_inner_with_offsets(
         let start = buffer.len() as u32;
         if !param_name.is_empty() && !hir_def::item_tree::Name::is_missing(param_name) {
             write!(buffer, "{param_name}: ")?;
-            write!(&mut param_label, "{param_name}: ")?;
         }
         write_type(database, param_type, buffer, verbosity)?;
-        write_type(database, param_type, &mut param_label, verbosity)?;
 
         if let Some(ref mut offsets) = param_offsets {
             #[expect(
@@ -165,7 +161,7 @@ pub fn pretty_fn_inner_with_offsets(
                 reason = "buffer length will not exceed u32::MAX in practice"
             )]
             let range = TextRange::new(TextSize::from(start), TextSize::from(buffer.len() as u32));
-            offsets.push((range, param_label));
+            offsets.push(range);
         }
     }
     write!(buffer, ")")?;
