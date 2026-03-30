@@ -859,7 +859,7 @@ fn bar() -> f32 { 0.0f }
                         active_parameter: None,
                     }
                 ],
-                active_parameter: Some(1),
+                active_parameter: Some(2),
                 active_signature: None,
             }
         );
