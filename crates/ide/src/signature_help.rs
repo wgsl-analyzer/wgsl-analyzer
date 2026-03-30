@@ -119,24 +119,16 @@ pub(crate) fn signature_help(
 
     let mut signatures: Vec<_> = overloads
         .into_iter()
-        .filter_map(|id| {
-            let function_id = database.intern_function(Location::new(file_id, id));
-            let function_type = database.function_type(function_id);
-            if active_parameter
-                <= function_type
-                    .lookup(database)
-                    .parameters
-                    .len()
-                    .try_into()
-                    .unwrap()
-            {
-                return Some(build_signature(
-                    database,
-                    &function_type.lookup(database),
-                    None,
-                ));
+        .map(|id| database.intern_function(Location::new(file_id, id)))
+        .map(|function_id| database.function_type(function_id))
+        .map(|function_type| function_type.lookup(database))
+        .filter_map(|function| {
+            let length: u32 = function.parameters.len().try_into().unwrap();
+            if active_parameter.is_none() || active_parameter.is_some_and(|index| index < length) {
+                Some(build_signature(database, &function, None))
+            } else {
+                None
             }
-            return None;
         })
         .collect();
     let mut active_signature = None;
@@ -148,26 +140,26 @@ pub(crate) fn signature_help(
     Some(SignatureHelp {
         signatures,
         active_signature,
-        active_parameter: Some(active_parameter),
+        active_parameter,
     })
 }
 
 fn find_enclosing_call(
     token: &SyntaxToken,
     offset: TextSize,
-) -> Option<(ast::FunctionCall, ast::Arguments, u32)> {
+) -> Option<(ast::FunctionCall, ast::Arguments, Option<u32>)> {
     // Walk up ancestors to find an Arguments node
     for ancestor in token.parent_ancestors() {
         if let Some(arguments) = ast::Arguments::cast(ancestor.clone()) {
             // The parent of Arguments should be a FunctionCall
             // add support for builtins
             let function_call = ast::FunctionCall::cast(ancestor.parent()?)?;
-            if offset == arguments.syntax().text_range().start() + '('.text_len() {
-                return Some((function_call, arguments, 0));
+            if let None = arguments.arguments().next() {
+                return Some((function_call, arguments, None));
             }
 
             // Count commas before the cursor to determine active parameter
-            let mut parameter_index: u32 = 1;
+            let mut parameter_index: u32 = 0;
             for child in arguments.syntax().children_with_tokens() {
                 if child.text_range().start() >= offset {
                     break;
@@ -177,7 +169,7 @@ fn find_enclosing_call(
                 }
             }
 
-            return Some((function_call, arguments, parameter_index));
+            return Some((function_call, arguments, Some(parameter_index)));
         }
     }
     None
@@ -232,7 +224,7 @@ fn bar(x: u32, y: bool) -> f32 { 0.0f }
         let syntax = source_file.syntax();
         let token = syntax.token_at_offset(offset).left_biased().unwrap();
         let result = find_enclosing_call(&token, offset).unwrap();
-        assert_eq!(result.2, 0);
+        assert_eq!(result.2, None);
     }
 
     #[test]
@@ -252,7 +244,7 @@ fn bar(x: u32, y: bool) -> f32 { 0.0f }
         let syntax = source_file.syntax();
         let token = syntax.token_at_offset(offset).left_biased().unwrap();
         let result = find_enclosing_call(&token, offset).unwrap();
-        assert_eq!(result.2, 1);
+        assert_eq!(result.2, Some(0));
     }
 
     #[test]
@@ -272,6 +264,6 @@ fn bar(x: u32, y: bool) -> f32 { 0.0f }
         let syntax = source_file.syntax();
         let token = syntax.token_at_offset(offset).left_biased().unwrap();
         let result = find_enclosing_call(&token, offset).unwrap();
-        assert_eq!(result.2, 2);
+        assert_eq!(result.2, Some(1));
     }
 }
