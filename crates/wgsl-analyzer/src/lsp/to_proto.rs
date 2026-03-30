@@ -7,7 +7,7 @@ use ide::{
         InlayFieldsToResolve, InlayHint, InlayHintLabel, InlayHintLabelPart, InlayKind,
         LazyProperty,
     },
-    signature_help::SignatureHelpResult,
+    signature_help::SignatureHelp,
 };
 use ide_completion::{
     CompletionFieldsToResolve,
@@ -708,8 +708,9 @@ pub(crate) fn goto_definition_response(
 }
 
 pub(crate) fn signature_help(
-    snap: &GlobalStateSnapshot,
-    help: SignatureHelpResult,
+    help: SignatureHelp,
+    // config: CallInfoConfig,
+    label_offsets: bool,
 ) -> lsp_types::SignatureHelp {
     let signatures = help
         .signatures
@@ -720,7 +721,7 @@ pub(crate) fn signature_help(
                     .parameters
                     .into_iter()
                     .map(|param| {
-                        let label = if snap.config.signature_help_label_offsets() {
+                        let label = if label_offsets {
                             lsp_types::ParameterLabel::LabelOffsets([
                                 u32::from(param.range.start()),
                                 u32::from(param.range.end()),
@@ -755,5 +756,60 @@ pub(crate) fn signature_help(
         signatures,
         active_signature: help.active_signature,
         active_parameter: help.active_parameter,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use base_db::FilePosition;
+    use expect_test::{Expect, expect};
+    use ide::Analysis;
+    use lsp_types::ParameterInformation;
+    use test_utils::extract_offset;
+    use triomphe::Arc;
+
+    use super::*;
+
+    #[test]
+    fn calling_function_with_ignored_code_in_signature() {
+        // TODO: add signature help documentation to this test
+        let text = r#"
+fn foo() {
+    bar($0);
+}
+fn bar(x: u32, y: bool) {}
+"#;
+
+        let (offset, text) = extract_offset(text);
+        let (analysis, file_id) = Analysis::from_single_file(text);
+        let help = signature_help(
+            analysis
+                .signature_help(FilePosition { file_id, offset })
+                .unwrap()
+                .unwrap(),
+            // TODO: add config
+            // CallInfoConfig {
+            //     parameters_only: false,
+            //     documentation: true,
+            // },
+            false,
+        );
+        let found = &help.signatures[help.active_signature.unwrap() as usize];
+        assert_eq!(found.label, "fn bar(x: u32, y: bool)");
+        assert_eq!(
+            found.parameters,
+            Some(vec![
+                ParameterInformation {
+                    label: lsp_types::ParameterLabel::Simple("x: u32".to_string()),
+                    // TODO: add signature help documentation to this test
+                    documentation: None,
+                },
+                ParameterInformation {
+                    label: lsp_types::ParameterLabel::Simple("y: bool".to_string()),
+                    // TODO: add signature help documentation to this test
+                    documentation: None,
+                }
+            ])
+        );
     }
 }

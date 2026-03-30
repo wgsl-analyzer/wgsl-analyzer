@@ -184,8 +184,14 @@ pub(crate) fn handle_signature_help(
     let Some(signature_help_result) = snap.analysis.signature_help(position)? else {
         return Ok(None);
     };
-
-    Ok(Some(to_proto::signature_help(&snap, signature_help_result)))
+    // TODO: add call info configuration for level of signature help detail and whether to show documentation
+    // https://github.com/wgsl-analyzer/wgsl-analyzer/issues/972
+    // let config = snap.config.call_info();
+    Ok(Some(to_proto::signature_help(
+        signature_help_result,
+        // config,
+        snap.config.signature_help_label_offsets(),
+    )))
 }
 
 #[expect(

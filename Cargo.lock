@@ -1931,6 +1931,7 @@ dependencies = [
  "cargo_metadata",
  "crossbeam-channel",
  "dissimilar",
+ "expect-test",
  "hir",
  "hir-ty",
  "ide",

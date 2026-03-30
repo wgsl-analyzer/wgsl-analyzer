@@ -11,7 +11,10 @@ use syntax::{AstNode as _, SyntaxKind, SyntaxToken, ast};
 
 /// Signature help information for a function call.
 #[derive(Debug, Clone)]
-pub struct SignatureHelpResult {
+pub struct SignatureHelp {
+    // TODO: add documentation
+    // https://github.com/wgsl-analyzer/wgsl-analyzer/issues/971
+    // pub doc: Option<Documentation<'static>>,
     pub signatures: Vec<SignatureInformation>,
     pub active_signature: Option<u32>,
     pub active_parameter: Option<u32>,
@@ -35,7 +38,7 @@ pub struct ParameterInformation {
 pub(crate) fn signature_help(
     database: &RootDatabase,
     position: FilePosition,
-) -> Option<SignatureHelpResult> {
+) -> Option<SignatureHelp> {
     let semantics = Semantics::new(database);
     let file_id = EditionedFileId::from_file(database, position.file_id);
     let source_file = semantics.parse(file_id);
@@ -67,6 +70,8 @@ pub(crate) fn signature_help(
                 signatures.push(build_signature(database, &function, None));
                 active_signature = Some(0);
             },
+            // TODO: implement signature help for other kinds of calls
+            // https://github.com/wgsl-analyzer/wgsl-analyzer/issues/970
             ResolvedCall::OtherTypeInitializer(_) => return None,
         }
     }
@@ -75,7 +80,7 @@ pub(crate) fn signature_help(
         return None;
     }
 
-    Some(SignatureHelpResult {
+    Some(SignatureHelp {
         signatures,
         active_signature,
         active_parameter: Some(active_parameter),

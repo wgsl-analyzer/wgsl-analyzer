@@ -18,8 +18,8 @@ mod view_syntax_tree;
 use std::panic;
 
 use base_db::{
-    EditionedFileId, FilePosition, FileRange, RangeInfo, RootQueryDb as _, SourceDatabase as _,
-    TextRange, change::Change, input::SourceRootId,
+    EditionedFileId, FilePosition, FileRange, FileSet, RangeInfo, RootQueryDb as _,
+    SourceDatabase as _, SourceRoot, TextRange, change::Change, input::SourceRootId,
 };
 use diagnostics::Diagnostic;
 use hir::diagnostics::DiagnosticsConfig;
@@ -29,11 +29,11 @@ use ide_db::LineIndexDatabase as _;
 pub use line_index::{LineCol, LineIndex};
 use rustc_hash::FxHashMap;
 use salsa::{Cancelled, Database as _};
-use syntax::{Parse, SyntaxNode};
+use syntax::{Edition, Parse, SyntaxNode};
 use triomphe::Arc;
-use vfs::FileId;
+use vfs::{AbsPathBuf, FileId, VfsPath};
 
-use crate::signature_help::SignatureHelpResult;
+use crate::signature_help::SignatureHelp;
 pub use crate::{
     // annotations::{Annotation, AnnotationConfig, AnnotationKind, AnnotationLocation},
     // call_hierarchy::{CallHierarchyConfig, CallItem},
@@ -85,7 +85,38 @@ pub type Cancellable<T> = Result<T, Cancelled>;
 
 /// `base_db` is normally also needed in places where `ide_db` is used, so this re-export is for convenience.
 pub use base_db;
-pub use ide_db::RootDatabase;
+pub use ide_db::{
+    // Severity,
+    // SymbolKind,
+    // assists::ExprFillDefaultMode,
+    // base_db::{
+    //     Crate,
+    //     CrateGraphBuilder,
+    //     FileChange,
+    //     SourceRoot,
+    //     SourceRootId
+    // },
+    // documentation::Documentation,
+    // label::Label,
+    // line_index::{
+    //     LineCol,
+    //     LineIndex
+    // },
+    // prime_caches::ParallelPrimeCachesProgress,
+    // search::{
+    //     ReferenceCategory,
+    //     SearchScope
+    // },,
+    // FileId,
+    // FilePosition,
+    // FileRange,
+    RootDatabase,
+    // symbol_index::Query,
+    text_edit::{
+        // Indel,
+        TextEdit,
+    },
+};
 
 #[derive(Debug)]
 pub struct AnalysisHost {
@@ -163,6 +194,26 @@ pub struct Analysis {
 }
 
 impl Analysis {
+    // Creates an analysis instance for a single file, without any external
+    // dependencies, stdlib support or ability to apply changes. See
+    // `AnalysisHost` for creating a fully-featured analysis.
+    pub fn from_single_file(text: String) -> (Analysis, FileId) {
+        let mut host = AnalysisHost::default();
+        let file_id = FileId::from_raw(0);
+        let mut file_set = FileSet::default();
+        file_set.insert(
+            file_id,
+            VfsPath::new_virtual_path("/shader.wesl".to_owned()),
+        );
+        let source_root = SourceRoot::new_local(file_set);
+        let mut change = Change::default();
+        change.set_roots(vec![source_root]);
+        // Default to enable test for single file.
+        change.change_file(file_id, Some(text));
+        host.apply_change(change);
+        (host.analysis(), file_id)
+    }
+
     pub const SUPPORTED_TRIGGER_CHARS: &[char] = typing::TRIGGER_CHARS;
 
     pub fn with_db<Function, T>(
@@ -320,7 +371,7 @@ impl Analysis {
     pub fn signature_help(
         &self,
         position: FilePosition,
-    ) -> Cancellable<Option<SignatureHelpResult>> {
+    ) -> Cancellable<Option<SignatureHelp>> {
         self.with_db(|database| signature_help::signature_help(database, position))
     }
 
