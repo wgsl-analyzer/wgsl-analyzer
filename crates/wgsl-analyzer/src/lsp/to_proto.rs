@@ -777,7 +777,7 @@ mod tests {
 fn foo() {
     bar($0);
 }
-fn bar(x: u32, y: bool) {}
+fn bar(x: u32, y: bool) -> f32 { 0.0f }
 "#;
 
         let (offset, text) = extract_offset(text);
@@ -795,7 +795,7 @@ fn bar(x: u32, y: bool) {}
             false,
         );
         let found = &help.signatures[help.active_signature.unwrap() as usize];
-        assert_eq!(found.label, "fn bar(x: u32, y: bool)");
+        assert_eq!(found.label, "fn bar(x: u32, y: bool) -> f32");
         assert_eq!(
             found.parameters,
             Some(vec![
