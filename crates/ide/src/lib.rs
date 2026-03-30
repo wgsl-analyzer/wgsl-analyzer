@@ -193,6 +193,12 @@ pub struct Analysis {
     database: RootDatabase,
 }
 
+// As a general design guideline, `Analysis` API are intended to be independent
+// from the language server protocol. That is, when exposing some functionality
+// we should think in terms of "what API makes most sense" and not in terms of
+// "what types LSP uses". Although currently LSP is the only consumer of the
+// API, the API should in theory be usable as a library, or via a different
+// protocol.
 impl Analysis {
     /// Creates an analysis instance for a single file, without any external
     /// dependencies or ability to apply changes.
@@ -209,7 +215,6 @@ impl Analysis {
         let source_root = SourceRoot::new_local(file_set);
         let mut change = Change::default();
         change.set_roots(vec![source_root]);
-        // Default to enable test for single file.
         change.change_file(file_id, Some(text));
         host.apply_change(change);
         (host.analysis(), file_id)
