@@ -197,7 +197,7 @@ impl Analysis {
     // Creates an analysis instance for a single file, without any external
     // dependencies, stdlib support or ability to apply changes. See
     // `AnalysisHost` for creating a fully-featured analysis.
-    #[must_use] 
+    #[must_use]
     pub fn from_single_file(text: String) -> (Self, FileId) {
         let mut host = AnalysisHost::default();
         let file_id = FileId::from_raw(0);
