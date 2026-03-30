@@ -171,6 +171,29 @@ pub(crate) fn handle_hover(
     Ok(Some(hover))
 }
 
+pub(crate) fn handle_signature_help(
+    snap: GlobalStateSnapshot,
+    parameters: lsp_types::SignatureHelpParams,
+) -> Result<Option<lsp_types::SignatureHelp>> {
+    let _p = tracing::info_span!("handle_signature_help").entered();
+    let position = try_default!(from_proto::file_position(
+        &snap,
+        &parameters.text_document_position_params
+    )?);
+
+    let Some(signature_help_result) = snap.analysis.signature_help(position)? else {
+        return Ok(None);
+    };
+    // TODO: add call info configuration for level of signature help detail and whether to show documentation
+    // https://github.com/wgsl-analyzer/wgsl-analyzer/issues/972
+    // let config = snap.config.call_info();
+    Ok(Some(to_proto::signature_help(
+        signature_help_result,
+        // config,
+        snap.config.signature_help_label_offsets(),
+    )))
+}
+
 #[expect(
     clippy::unnecessary_wraps,
     reason = "handlers should have a specific signature"
