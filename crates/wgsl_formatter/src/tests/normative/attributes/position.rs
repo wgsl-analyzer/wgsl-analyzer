@@ -40,13 +40,13 @@ pub fn format_attribute_group_binding_are_grouped() {
     // sharing the same line, but on separate lines to other fields
     check(
         "
-        @diagnostic(off)
+        @blaa(off)
         @binding(1)
         @group(0)
         var<storage> a: b;
         ",
         expect![[r#"
-@diagnostic(off)
+@blaa(off)
 @group(1) @binding(0)
 var<storage> a: b;
         "#]],
@@ -64,7 +64,7 @@ pub fn format_attribute_workgroup_size_compute() {
         @workgroup_size(1,1,1)
         @compute
         fn main() {
-        if (d < 0.5) @diagnostic(off,derivative_uniformity) {
+        if (d < 0.5) @blaa(off,derivative_uniformity) {
             return textureSample(t,s,vec2(0,0));
           }
         }
@@ -73,6 +73,57 @@ pub fn format_attribute_workgroup_size_compute() {
             @workgroup_size(1, 1, 1)
             @compute
             fn main() {}
+        "#]],
+    );
+}
+
+#[test]
+pub fn format_attribute_const_is_inline_with_function() {
+    // Following the WGSL spec, we keep @const inlined with the function
+    check(
+        "
+        @bla()
+        @const
+        @blo()
+        fn thing() {}
+        ",
+        expect![[r#"
+            @bla()
+            @blo()
+            @const fn thing() {}
+        "#]],
+    );
+}
+
+#[test]
+pub fn format_attribute_must_use_is_inline_with_function() {
+    // Following the WGSL spec, we keep @must_use inlined with the function
+    check(
+        "
+        @bla()
+        @must_use
+        @blo()
+        fn thing() {}
+        ",
+        expect![[r#"
+            @bla()
+            @blo()
+            @must_use fn thing() {}
+        "#]],
+    );
+}
+
+#[test]
+pub fn format_attribute_const_must_use_order() {
+    // Following the WGSL spec, we order @const before @must_use
+    check(
+        "
+        @must_use
+        @const
+        fn thing() {}
+        ",
+        expect![[r#"
+            @const @must_use fn thing() {}
         "#]],
     );
 }
