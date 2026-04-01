@@ -82,13 +82,10 @@ impl CstBuilder<'_, '_> {
                 self.start_node(SyntaxKind::IncrementDecrementStatement);
             },
             Rule::DefaultCaseSelector => self.start_node(SyntaxKind::SwitchDefaultSelector),
-            Rule::DiagnosticAttr
-            | Rule::DiagnosticControl
-            | Rule::DiagnosticDirective
-            | Rule::DiagnosticRuleName => {
-                // TODO: Parse diagnostic controls https://github.com/wgsl-analyzer/wgsl-analyzer/issues/613
-                self.start_node(SyntaxKind::Error);
-            },
+            Rule::DiagnosticAttr => self.start_node(SyntaxKind::DiagnosticAttribute),
+            Rule::DiagnosticControl => self.start_node(SyntaxKind::DiagnosticControl),
+            Rule::DiagnosticDirective => self.start_node(SyntaxKind::Diagnostic),
+            Rule::DiagnosticRuleName => self.start_node(SyntaxKind::DiagnosticRuleName),
             Rule::DiscardStatement => self.start_node(SyntaxKind::DiscardStatement),
             Rule::ElseClause => self.start_node(SyntaxKind::ElseClause),
             Rule::ElseIfClause => self.start_node(SyntaxKind::ElseIfClause),
@@ -131,10 +128,7 @@ impl CstBuilder<'_, '_> {
             Rule::LanguageExtensionName => self.start_node(SyntaxKind::LanguageExtensionName),
             Rule::ReturnStatement => self.start_node(SyntaxKind::ReturnStatement),
             Rule::ReturnType => self.start_node(SyntaxKind::ReturnType),
-            Rule::SeverityControlName => {
-                // TODO: Parse severity controls https://github.com/wgsl-analyzer/wgsl-analyzer/issues/613
-                self.start_node(SyntaxKind::Error);
-            },
+            Rule::SeverityControlName => self.start_node(SyntaxKind::SeverityControlName),
             Rule::SimpleAssignmentStatement => self.start_node(SyntaxKind::AssignmentStatement),
             Rule::StructBody => self.start_node(SyntaxKind::StructBody),
             Rule::StructDeclaration => self.start_node(SyntaxKind::StructDeclaration),

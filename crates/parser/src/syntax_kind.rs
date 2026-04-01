@@ -208,7 +208,12 @@ pub enum SyntaxKind {
     Continue,
     Continuing,
     Default,
+    // This is a keyword. It could be part of the global directive or an attribute.
     Diagnostic,
+    DiagnosticControl,
+    DiagnosticAttribute,
+    DiagnosticRuleName,
+    SeverityControlName,
     Discard,
     Else,
     Enable,
