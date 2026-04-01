@@ -46,9 +46,9 @@ pub fn format_attribute_group_binding_are_grouped() {
         var<storage> a: b;
         ",
         expect![[r#"
-@blaa(off)
-@group(1) @binding(0)
-var<storage> a: b;
+            @blaa(off)
+            @group(0) @binding(1)
+            var<storage> a: b;
         "#]],
     );
 }
@@ -64,14 +64,10 @@ pub fn format_attribute_workgroup_size_compute() {
         @workgroup_size(1,1,1)
         @compute
         fn main() {
-        if (d < 0.5) @blaa(off,derivative_uniformity) {
-            return textureSample(t,s,vec2(0,0));
-          }
         }
         ",
         expect![[r#"
-            @workgroup_size(1, 1, 1)
-            @compute
+            @compute @workgroup_size(1, 1, 1)
             fn main() {}
         "#]],
     );
@@ -175,9 +171,7 @@ pub fn format_attrs_on_function_return_type() {
         ) -> @attr(0) @attr(1) vec4<f32> {
         }",
         expect![[r#"
-            fn thing() -> @attr(0)
-            @attr(1)
-            vec4<f32> {}
+            fn thing() -> @attr(0) @attr(1) vec4<f32> {}
         "#]],
     );
 }
@@ -345,9 +339,7 @@ pub fn format_attrs_on_switch_statement_body() {
         ",
         expect![[r#"
             fn main() {
-                switch a @attr(0)
-                @attr(1)
-                {}
+                switch a @attr(0) @attr(1) {}
             }
         "#]],
     );

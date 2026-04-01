@@ -13,7 +13,7 @@ use crate::format::{
         parse_end, parse_many_comments_and_blankspace, parse_node, parse_node_optional,
         parse_token, parse_token_optional,
     },
-    gen_attributes::{gen_attributes, parse_many_attributes},
+    gen_attributes::{AttributeLayout, gen_attributes, parse_many_attributes},
     gen_comments::{Comment, gen_comment, gen_comments, parse_comment_optional},
     gen_types::gen_type_specifier,
     helpers::{LineSpacing, gen_line_spacing, parse_line_spacing},
@@ -157,7 +157,7 @@ fn gen_struct_member(member: &ast::StructMember) -> FormatDocumentResult<PrintIt
     // === Format ===
     let mut formatted = PrintItemBuffer::new();
 
-    formatted.extend(gen_attributes(&attributes)?);
+    formatted.extend(gen_attributes(&attributes, AttributeLayout::Multiline)?);
     formatted.extend(gen_comments(&item_comments_after_attributes));
     formatted.push_string(item_name.text().to_string());
     formatted.push_sc(sc!(":"));

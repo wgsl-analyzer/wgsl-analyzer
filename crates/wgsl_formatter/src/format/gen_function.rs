@@ -27,6 +27,8 @@ use crate::format::{
     reporting::FormatDocumentResult,
 };
 
+use super::gen_attributes::AttributeLayout;
+
 pub fn gen_function_declaration(
     node: &ast::FunctionDeclaration
 ) -> FormatDocumentResult<PrintItemBuffer> {
@@ -47,7 +49,10 @@ pub fn gen_function_declaration(
     let mut formatted = PrintItemBuffer::new();
 
     // Fn
-    formatted.extend(gen_attributes(&item_attributes)?);
+    formatted.extend(gen_attributes(
+        &item_attributes,
+        AttributeLayout::Multiline,
+    )?);
     formatted.push_sc(sc!("fn"));
     formatted.expect(RequestItem::Space);
     formatted.extend(gen_comments(&item_comments_after_fn));
@@ -190,7 +195,10 @@ pub fn gen_fn_parameter(syntax: &ast::Parameter) -> FormatDocumentResult<PrintIt
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
 
-    formatted.extend(gen_attributes(&item_attributes)?);
+    formatted.extend(gen_attributes(
+        &item_attributes,
+        AttributeLayout::Multiline,
+    )?);
     formatted.push_string(item_name.text().to_string());
     formatted.push_sc(sc!(":"));
     formatted.expect(RequestItem::Space);
@@ -218,7 +226,7 @@ pub fn gen_fn_return_type(syntax: &ast::ReturnType) -> FormatDocumentResult<Prin
     formatted.push_sc(sc!("->"));
     formatted.expect(RequestItem::Space);
     formatted.extend(gen_comments(&item_comments_after_arrow));
-    formatted.extend(gen_attributes(&item_attributes)?);
+    formatted.extend(gen_attributes(&item_attributes, AttributeLayout::Inline)?);
     formatted.extend(gen_type_specifier(&item_type_specifier)?);
     Ok(formatted)
 }
