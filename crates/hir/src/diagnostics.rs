@@ -1,9 +1,9 @@
 pub mod global_variable;
 pub mod precedence;
 
-use base_db::{FileRange, TextRange};
+use base_db::{EditionedFileId, FileRange, TextRange};
 use hir_def::{
-    HirFileId, InFile,
+    InFile,
     expression::BinaryOperation,
     expression_store::{ExpressionSourceMap, ExpressionStoreSource, path::Path},
     item_tree::Name,
@@ -55,7 +55,7 @@ pub enum AnyDiagnostic {
     ParseError {
         message: String,
         range: TextRange,
-        file_id: HirFileId,
+        file_id: EditionedFileId,
     },
 
     AssignmentNotAReference {
@@ -124,7 +124,7 @@ pub enum AnyDiagnostic {
         sequence_permitted: bool,
     },
     NagaValidationError {
-        file_id: HirFileId,
+        file_id: EditionedFileId,
         range: TextRange,
         message: String,
         related: Vec<(String, FileRange)>,
@@ -136,7 +136,7 @@ pub enum AnyDiagnostic {
         parameters: Vec<Type>,
     },
     CyclicType {
-        file_id: HirFileId,
+        file_id: EditionedFileId,
         name: Name,
         range: TextRange,
     },
@@ -148,7 +148,7 @@ pub enum AnyDiagnostic {
         message: String,
     },
     InvalidIdentifier {
-        file_id: HirFileId,
+        file_id: EditionedFileId,
         name: Name,
         range: TextRange,
     },
@@ -162,7 +162,7 @@ pub enum AnyDiagnostic {
 
 impl AnyDiagnostic {
     #[must_use]
-    pub const fn file_id(&self) -> HirFileId {
+    pub const fn file_id(&self) -> EditionedFileId {
         match self {
             Self::AssignmentNotAReference { left_side, .. } => left_side.file_id,
             Self::TypeMismatch { expression, .. }
@@ -196,7 +196,7 @@ impl AnyDiagnostic {
 pub(crate) fn any_diag_from_infer_diagnostic(
     infer_diagnostic: &InferenceDiagnosticKind,
     source_map: &ExpressionSourceMap,
-    file_id: HirFileId,
+    file_id: EditionedFileId,
 ) -> Option<AnyDiagnostic> {
     Some(match infer_diagnostic {
         InferenceDiagnosticKind::AssignmentNotAReference { left_side, actual } => {
@@ -405,7 +405,7 @@ pub(crate) fn any_diag_from_global_var(
 pub(crate) fn any_diag_from_shift(
     error: &PrecedenceDiagnostic,
     source_map: &ExpressionSourceMap,
-    file_id: HirFileId,
+    file_id: EditionedFileId,
 ) -> Option<AnyDiagnostic> {
     match *error {
         PrecedenceDiagnostic::NeverNested(expression, operation) => {

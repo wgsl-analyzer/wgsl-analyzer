@@ -1,3 +1,4 @@
+use base_db::impl_intern_key;
 use hir_def::item_tree::Name;
 use wgsl_types::{
     syntax::{AccessMode, AddressSpace},
@@ -13,17 +14,7 @@ use crate::{
     },
 };
 
-#[derive(Debug, Hash, PartialEq, Eq, Clone, Copy)]
-pub struct BuiltinId(salsa::InternId);
-impl salsa::InternKey for BuiltinId {
-    fn from_intern_id(v: salsa::InternId) -> Self {
-        Self(v)
-    }
-
-    fn as_intern_id(&self) -> salsa::InternId {
-        self.0
-    }
-}
+impl_intern_key!(BuiltinId, Builtin);
 
 impl BuiltinId {
     pub fn lookup(

@@ -15,7 +15,7 @@ use itertools::Itertools as _;
 use rustc_hash::FxHashMap;
 use semver::Version;
 use serde::{Deserialize, Serialize};
-use stdx::format_to_accumulator;
+use stdx::format_to_acc;
 use triomphe::Arc;
 use vfs::AbsPathBuf;
 use wgsl_formatter::FormattingOptions;
@@ -1189,12 +1189,12 @@ fn manual(fields: &[SchemaField]) -> String {
             let name = format!("wgsl-analyzer.{id}");
             let doc = doc_comment_to_string(documentation);
             if default.contains('\n') {
-                format_to_accumulator!(
+                format_to_acc!(
                     accumulator,
                     "## {name} \n\nDefault:\n```json\n{default}\n```\n\n{doc}\n"
                 )
             } else {
-                format_to_accumulator!(accumulator, "## {name}\n\nDefault: `{default}`\n\n{doc}\n")
+                format_to_acc!(accumulator, "## {name}\n\nDefault: `{default}`\n\n{doc}\n")
             }
         },
     )
@@ -1204,7 +1204,7 @@ fn doc_comment_to_string(doc: &[&str]) -> String {
     doc.iter()
         .map(|iterator| iterator.strip_prefix(' ').unwrap_or(iterator))
         .fold(String::new(), |mut out, line| {
-            format_to_accumulator!(out, "{line}\n")
+            format_to_acc!(out, "{line}\n")
         })
 }
 

@@ -30,6 +30,121 @@ fn type_alias_in_struct() {
 }
 
 #[test]
+fn struct_constructor_is_empty() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        struct S { u: u32, a: array<f32, 3> };
+
+        fn foo() {
+            let s = S();
+        }
+        ",
+        expect![[r#"
+            59..60 's': S
+            63..66 'S()': S
+        "#]],
+    );
+}
+
+#[test]
+fn struct_constructor_is_correct() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        struct S { u: u32, a: array<f32, 3> };
+
+        fn foo() {
+            let s = S(1u, array<f32, 3>(1.0, 2.0, 3.0));
+        }
+        ",
+        expect![[r#"
+            59..60 's': S
+            63..98 'S(1u, ... 3.0))': S
+            65..67 '1u': u32
+            69..97 'array<..., 3.0)': array<f32, 3>
+            83..86 '1.0': float
+            88..91 '2.0': float
+            93..96 '3.0': float
+        "#]],
+    );
+}
+
+#[test]
+fn struct_constructor_unrefs() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        struct S { u: u32, a: array<f32, 3> };
+
+        fn foo() {
+            var u = 1u;
+            var a = array<f32, 3>(1.0, 2.0, 3.0);
+            let s = S(u, a);
+        }
+        ",
+        expect![[r#"
+            59..60 'u': ref<u32>
+            63..65 '1u': u32
+            75..76 'a': ref<array<f32, 3>>
+            79..107 'array<..., 3.0)': array<f32, 3>
+            93..96 '1.0': float
+            98..101 '2.0': float
+            103..106 '3.0': float
+            117..118 's': S
+            121..128 'S(u, a)': S
+            123..124 'u': ref<u32>
+            126..127 'a': ref<array<f32, 3>>
+        "#]],
+    );
+}
+
+#[test]
+fn struct_constructor_not_enough_args() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        struct S { u: u32, a: array<f32, 3> };
+
+        fn foo() {
+            let s = S(1u);
+        }
+        ",
+        expect![[r#"
+            59..60 's': [error]
+            63..68 'S(1u)': [error]
+            65..67 '1u': u32
+            InferenceDiagnostic { source: Body, kind: FunctionCallArgCountMismatch { expression: Idx::<Expression>(1), n_expected: 2, n_actual: 1 } }
+        "#]],
+    );
+}
+
+#[test]
+fn struct_constructor_incorrect_types() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        struct S { u: u32, a: array<f32, 3> };
+
+        fn foo() {
+            let s = S(1.0f, vec3f(1.0, 2.0, 3.0));
+        }
+        ",
+        expect![[r#"
+            59..60 's': [error]
+            63..92 'S(1.0f... 3.0))': [error]
+            65..69 '1.0f': f32
+            71..91 'vec3f(..., 3.0)': vec3<f32>
+            77..80 '1.0': float
+            82..85 '2.0': float
+            87..90 '3.0': float
+            65..69 '1.0f': expected u32 but got f32
+            71..91 'vec3f(..., 3.0)': expected array<f32, 3> but got vec3<f32>
+        "#]],
+    );
+}
+
+#[test]
 fn const_array() {
     check_infer(
         ExtensionsConfig::default(),
@@ -470,6 +585,342 @@ fn f() {
             40..48 'i2 >> 0u': u32
             46..48 '0u': u32
             52..55 '0xf': integer
+        "#]],
+    );
+}
+
+#[test]
+
+fn array_index_is_i32() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        const index = 1i;
+        const arr = array<i32>(1, 2, 3);
+        const a = arr[index];
+        ",
+        expect![[r#"
+            6..11 'index': i32
+            14..16 '1i': i32
+            24..27 'arr': array<i32>
+            30..49 'array<... 2, 3)': array<i32>
+            41..42 '1': integer
+            44..45 '2': integer
+            47..48 '3': integer
+            57..58 'a': i32
+            61..64 'arr': array<i32>
+            61..71 'arr[index]': i32
+            65..70 'index': i32
+        "#]],
+    );
+}
+
+#[test]
+fn array_index_is_u32() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        const index = 1u;
+        const arr = array<i32>(1, 2, 3);
+        const a = arr[index];
+        ",
+        expect![[r#"
+            6..11 'index': u32
+            14..16 '1u': u32
+            24..27 'arr': array<i32>
+            30..49 'array<... 2, 3)': array<i32>
+            41..42 '1': integer
+            44..45 '2': integer
+            47..48 '3': integer
+            57..58 'a': i32
+            61..64 'arr': array<i32>
+            61..71 'arr[index]': i32
+            65..70 'index': u32
+        "#]],
+    );
+}
+
+#[test]
+fn array_index_is_abstract_int() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        const index = 1;
+        const arr = array<i32>(1, 2, 3);
+        const a = arr[index];
+        ",
+        expect![[r#"
+            6..11 'index': integer
+            14..15 '1': integer
+            23..26 'arr': array<i32>
+            29..48 'array<... 2, 3)': array<i32>
+            40..41 '1': integer
+            43..44 '2': integer
+            46..47 '3': integer
+            56..57 'a': i32
+            60..63 'arr': array<i32>
+            60..70 'arr[index]': i32
+            64..69 'index': integer
+        "#]],
+    );
+}
+
+#[test]
+fn array_index_is_not_f32() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        const index = 1.0f;
+        const arr = array<i32>(1, 2, 3);
+        const a = arr[index];
+        ",
+        expect![[r#"
+            6..11 'index': f32
+            14..18 '1.0f': f32
+            26..29 'arr': array<i32>
+            32..51 'array<... 2, 3)': array<i32>
+            43..44 '1': integer
+            46..47 '2': integer
+            49..50 '3': integer
+            59..60 'a': i32
+            63..66 'arr': array<i32>
+            63..73 'arr[index]': i32
+            67..72 'index': f32
+            67..72 'index': expected i32 or u32 but got f32
+        "#]],
+    );
+}
+
+#[test]
+fn array_index_is_ref_i32() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        fn test(arr: array<i32>) {
+            var index = 1i;
+            const a = arr[index];
+        }
+        ",
+        expect![[r#"
+            8..11 'arr': array<i32>
+            35..40 'index': ref<i32>
+            43..45 '1i': i32
+            57..58 'a': i32
+            61..64 'arr': array<i32>
+            61..71 'arr[index]': i32
+            65..70 'index': ref<i32>
+        "#]],
+    );
+}
+
+#[test]
+fn array_index_is_not_ref_f32() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        fn test(arr: array<i32>) {
+            var index = 1.0f;
+            const a = arr[index];
+        }
+        ",
+        expect![[r#"
+            8..11 'arr': array<i32>
+            35..40 'index': ref<f32>
+            43..47 '1.0f': f32
+            59..60 'a': i32
+            63..66 'arr': array<i32>
+            63..73 'arr[index]': i32
+            67..72 'index': ref<f32>
+            67..72 'index': expected i32 or u32 but got f32
+        "#]],
+    );
+}
+
+#[test]
+fn array_index_is_not_abstract_float() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        const index = 1.0;
+        const arr = array<i32>(1, 2, 3);
+        const a = arr[index];
+        ",
+        expect![[r#"
+            6..11 'index': float
+            14..17 '1.0': float
+            25..28 'arr': array<i32>
+            31..50 'array<... 2, 3)': array<i32>
+            42..43 '1': integer
+            45..46 '2': integer
+            48..49 '3': integer
+            58..59 'a': i32
+            62..65 'arr': array<i32>
+            62..72 'arr[index]': i32
+            66..71 'index': float
+            66..71 'index': expected i32 or u32 but got float
+        "#]],
+    );
+}
+
+#[test]
+fn array_index_is_not_bool() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        const index = true;
+        const arr = array<i32>(1, 2, 3);
+        const a = arr[index];
+        ",
+        expect![[r#"
+            6..11 'index': bool
+            14..18 'true': bool
+            26..29 'arr': array<i32>
+            32..51 'array<... 2, 3)': array<i32>
+            43..44 '1': integer
+            46..47 '2': integer
+            49..50 '3': integer
+            59..60 'a': i32
+            63..66 'arr': array<i32>
+            63..73 'arr[index]': i32
+            67..72 'index': bool
+            67..72 'index': expected i32 or u32 but got bool
+        "#]],
+    );
+}
+
+#[test]
+fn vec_index_is_int() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        const index = 1i;
+        const vec = vec3<f32>(1.0, 2.0, 3.0);
+        const a = vec[index];
+        ",
+        expect![[r#"
+            6..11 'index': i32
+            14..16 '1i': i32
+            24..27 'vec': vec3<f32>
+            30..54 'vec3<f..., 3.0)': vec3<f32>
+            40..43 '1.0': float
+            45..48 '2.0': float
+            50..53 '3.0': float
+            62..63 'a': f32
+            66..69 'vec': vec3<f32>
+            66..76 'vec[index]': f32
+            70..75 'index': i32
+        "#]],
+    );
+}
+
+#[test]
+fn vec_index_is_not_f32() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        const index = 1.0f;
+        const vec = vec3<f32>(1.0, 2.0, 3.0);
+        const a = vec[index];
+        ",
+        expect![[r#"
+            6..11 'index': f32
+            14..18 '1.0f': f32
+            26..29 'vec': vec3<f32>
+            32..56 'vec3<f..., 3.0)': vec3<f32>
+            42..45 '1.0': float
+            47..50 '2.0': float
+            52..55 '3.0': float
+            64..65 'a': f32
+            68..71 'vec': vec3<f32>
+            68..78 'vec[index]': f32
+            72..77 'index': f32
+            72..77 'index': expected i32 or u32 but got f32
+        "#]],
+    );
+}
+
+#[test]
+fn mat_index_is_int() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        const index = 1i;
+        const mat = mat2x2<f32>(1.0, 2.0, 3.0, 4.0);
+        const a = mat[index][0];
+        ",
+        expect![[r#"
+            6..11 'index': i32
+            14..16 '1i': i32
+            24..27 'mat': mat2x2<f32>
+            30..61 'mat2x2..., 4.0)': mat2x2<f32>
+            42..45 '1.0': float
+            47..50 '2.0': float
+            52..55 '3.0': float
+            57..60 '4.0': float
+            69..70 'a': f32
+            73..76 'mat': mat2x2<f32>
+            73..83 'mat[index]': vec2<f32>
+            73..86 'mat[index][0]': f32
+            77..82 'index': i32
+            84..85 '0': integer
+        "#]],
+    );
+}
+
+#[test]
+fn mat_index_i_is_not_f32() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        const index = 1.0f;
+        const mat = mat2x2<f32>(1.0, 2.0, 3.0, 4.0);
+        const a = mat[index][0];
+        ",
+        expect![[r#"
+            6..11 'index': f32
+            14..18 '1.0f': f32
+            26..29 'mat': mat2x2<f32>
+            32..63 'mat2x2..., 4.0)': mat2x2<f32>
+            44..47 '1.0': float
+            49..52 '2.0': float
+            54..57 '3.0': float
+            59..62 '4.0': float
+            71..72 'a': f32
+            75..78 'mat': mat2x2<f32>
+            75..85 'mat[index]': vec2<f32>
+            75..88 'mat[index][0]': f32
+            79..84 'index': f32
+            86..87 '0': integer
+            79..84 'index': expected i32 or u32 but got f32
+        "#]],
+    );
+}
+
+#[test]
+fn mat_index_j_is_not_f32() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        const index = 1.0f;
+        const mat = mat2x2<f32>(1.0, 2.0, 3.0, 4.0);
+        const a = mat[0][index];
+        ",
+        expect![[r#"
+            6..11 'index': f32
+            14..18 '1.0f': f32
+            26..29 'mat': mat2x2<f32>
+            32..63 'mat2x2..., 4.0)': mat2x2<f32>
+            44..47 '1.0': float
+            49..52 '2.0': float
+            54..57 '3.0': float
+            59..62 '4.0': float
+            71..72 'a': f32
+            75..78 'mat': mat2x2<f32>
+            75..81 'mat[0]': vec2<f32>
+            75..88 'mat[0][index]': f32
+            79..80 '0': integer
+            82..87 'index': f32
+            82..87 'index': expected i32 or u32 but got f32
         "#]],
     );
 }

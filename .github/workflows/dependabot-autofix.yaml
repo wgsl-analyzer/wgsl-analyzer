@@ -14,6 +14,8 @@ env:
   CARGO_TERM_COLOR: always
   CARGO_INCREMENTAL: 0
   CARGO_NET_RETRY: 10
+  CARGO_PROFILE_TEST_DEBUG: 0
+  CARGO_PROFILE_DEV_DEBUG: 0
   RUST_BACKTRACE: short
   RUSTUP_MAX_RETRIES: 10
   RUSTFLAGS: -D warnings
@@ -35,7 +37,12 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
-          node-version: 22
+          node-version: 24
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
+        with:
+          package_json_file: ./editors/code/package.json
 
       - name: Read current @types/vscode version
         id: types-version
@@ -47,9 +54,9 @@ jobs:
 
       - name: Update engines.vscode
         run: |
-          npx --yes json -I -f ./editors/code/package.json -e "this.engines = this.engines || {}; this.engines.vscode = '^${STEPS_TYPES_VERSION_OUTPUTS_VERSION}'"
-          npm --prefix editors/code ci
-          npm --prefix editors/code run format
+          pnpm dlx json -I -f ./editors/code/package.json -e "this.engines = this.engines || {}; this.engines.vscode = '^${STEPS_TYPES_VERSION_OUTPUTS_VERSION}'"
+          pnpm --dir editors/code install --frozen-lockfile
+          pnpm --dir editors/code run format
         env:
           STEPS_TYPES_VERSION_OUTPUTS_VERSION: ${{ steps.types-version.outputs.version }}
 

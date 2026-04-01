@@ -1,5 +1,6 @@
 use std::fmt::{self, Write as _};
 
+use base_db::{TextRange, TextSize};
 use wgsl_types::ty::SamplerType;
 
 use super::{Type, TypeKind};
@@ -63,6 +64,9 @@ fn write_type_expectation_inner(
                 write!(buffer, " or i64 or u64")?;
             }
         },
+        TypeExpectationInner::IntegerIndex => {
+            write!(buffer, "i32 or u32")?;
+        },
     }
     Ok(())
 }
@@ -117,12 +121,48 @@ fn pretty_fn_inner(
     buffer: &mut String,
     verbosity: TypeVerbosity,
 ) -> fmt::Result {
-    write!(buffer, "fn(")?;
-    for (index, parameter) in function.parameters().enumerate() {
+    pretty_fn_inner_with_offsets(database, function, buffer, verbosity, None)
+}
+
+/// Pretty-print a function signature, optionally recording byte-offset
+/// ranges for each parameter into `param_offsets`.
+///
+/// # Panics
+///
+/// Panics if writing into the internal buffer fails.
+pub fn pretty_fn_inner_with_offsets(
+    database: &dyn HirDatabase,
+    function: &FunctionDetails,
+    buffer: &mut String,
+    verbosity: TypeVerbosity,
+    mut param_offsets: Option<&mut Vec<TextRange>>,
+) -> fmt::Result {
+    write!(buffer, "fn {name}(", name = function.name.as_str())?;
+    for (index, (param_type, param_name)) in function.parameters_with_names().enumerate() {
         if index != 0 {
             buffer.push_str(", ");
         }
-        write_type(database, parameter, buffer, verbosity)?;
+
+        #[expect(
+            clippy::cast_possible_truncation,
+            clippy::as_conversions,
+            reason = "buffer length will not exceed u32::MAX in practice"
+        )]
+        let start = buffer.len() as u32;
+        if !param_name.is_empty() && !hir_def::item_tree::Name::is_missing(param_name) {
+            write!(buffer, "{param_name}: ")?;
+        }
+        write_type(database, param_type, buffer, verbosity)?;
+
+        if let Some(ref mut offsets) = param_offsets {
+            #[expect(
+                clippy::cast_possible_truncation,
+                clippy::as_conversions,
+                reason = "buffer length will not exceed u32::MAX in practice"
+            )]
+            let range = TextRange::new(TextSize::from(start), TextSize::from(buffer.len() as u32));
+            offsets.push(range);
+        }
     }
     write!(buffer, ")")?;
     if let Some(return_type) = function.return_type {

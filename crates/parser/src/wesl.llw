@@ -1,19 +1,19 @@
 // Based on https://www.w3.org/TR/WGSL with some modifications.
 
 token Enable='enable' Requires='requires' Fn='fn' Alias='alias' Struct='struct' Var='var'
-      ConstAssert='const_assert' If='if' For='for' Else='else' Loop='loop' Break='break'
+      ConstantAssert='const_assert' If='if' For='for' Else='else' Loop='loop' Break='break'
       While='while' Return='return' Switch='switch' Discard='discard' Continuing='continuing'
-      Const='const' Case='case' Default='default' Override='override' Continue='continue'
+      Constant='const' Case='case' Default='default' Override='override' Continue='continue'
       Let='let' True='true' False='false' Diagnostic='diagnostic';
-token Semi=';' LPar='(' RPar=')' Comma=',' Eq='=' Colon=':' LBrace='{' RBrace='}' Arrow='->'
-      Lt='<' LtEq = '<=' ShiftLeft = '<<' ShiftLeftEq = '<<=' TemplateStart = '<template start>'
-      Gt='>' GtEq = '>=' ShiftRight = '>>' ShiftRightEq = '>>=' TemplateEnd = '<template end>'
-      Dot='.' At='@' LBrak='[' RBrak=']' And='&' Excl='!' Star='*' Minus='-'
-      Tilde='~' Plus='+' Eq2='==' Pipe='|' And2='&&' Slash='/' Caret='^' Pipe2='||' ExclEq='!='
-      Percent='%' Underscore='_' AndEq='&=' StarEq='*=' PlusEq='+=' PipeEq='|=' MinusEq='-='
-      SlashEq='/=' CaretEq='^=' PercentEq='%=' Plus2='++' Minus2='--';
-token Import='import' Package='package' Super='super' As='as' DoubleColon='::';
-token Ident='<identifier>' FloatLiteral='<floating point literal>' IntLiteral='<integer literal>';
+token Semicolon=';' ParenthesisLeft='(' ParenthesisRight=')' Comma=',' Equal='=' Colon=':' BraceLeft='{' BraceRight='}' Arrow='->'
+      LessThan='<' LessThanEqual = '<=' ShiftLeft = '<<' ShiftLeftEqual = '<<=' TemplateStart = '<template start>'
+      GreaterThan='>' GreaterThanEqual = '>=' ShiftRight = '>>' ShiftRightEqual = '>>=' TemplateEnd = '<template end>'
+      Period='.' AttributeOperator='@' BracketLeft='[' BracketRight=']' And='&' Bang='!' Star='*' Minus='-'
+      Tilde='~' Plus='+' EqualEqual='==' Or='|' AndAnd='&&' ForwardSlash='/' Xor='^' OrOr='||' NotEqual='!='
+      Modulo='%' Underscore='_' AndEqual='&=' TimesEqual='*=' PlusEqual='+=' OrEqual='|=' MinusEqual='-='
+      DivisionEqual='/=' XorEqual='^=' ModuloEqual='%=' PlusPlus='++' MinusMinus='--';
+token Import='import' Package='package' Super='super' As='as' ColonColon='::';
+token Identifier='<identifier>' FloatLiteral='<floating point literal>' IntLiteral='<integer literal>';
 token Blankspace LineEndingComment BlockComment;
 
 skip Blankspace LineEndingComment BlockComment;
@@ -48,10 +48,10 @@ global_directive:
 | 'requires' language_extension_name (?1 ',' language_extension_name)* [','] ';' @requires_directive // §4.1.2
 ;
 diagnostic_control: '(' severity_control_name ',' diagnostic_rule_name [','] ')';
-severity_control_name: Ident;
-diagnostic_rule_name: Ident ['.' Ident];
-enable_extension_name: Ident;
-language_extension_name: Ident;
+severity_control_name: Identifier;
+diagnostic_rule_name: Identifier ['.' Identifier];
+enable_extension_name: Identifier;
+language_extension_name: Identifier;
 
 global_declaration:
   attribute* @function_declaration (
@@ -75,7 +75,7 @@ struct_member: attribute* name ':' type_specifier;
 attribute:
   '@' (
     'diagnostic' diagnostic_control @diagnostic_attr
-  | Ident [argument_expression_list]
+  | Identifier [argument_expression_list]
     // TODO: interpolate is special
     // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/614
     // builtin is special
@@ -83,9 +83,9 @@ attribute:
 ;
 typed_ident^: name (':' type_specifier | ());
 // declares an identifier
-name: Ident;
+name: Identifier;
 // wesl identifier
-path: [import_package_relative | import_super_relative] Ident ('::' Ident)*;
+path: [import_package_relative | import_super_relative] Identifier ('::' Identifier)*;
 
 // Used in places where it's guaranteed to be a type
 type_specifier: path template_list;
@@ -102,7 +102,7 @@ template_args^: TemplateStart expression (?1 ',' expression)* [','] TemplateEnd;
 // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/616
 expression:
   expression '[' expression ']' @indexing_expression // §8.5
-| expression '.' (Ident @field_expression) // §8.5, but cannot distinguish swizzles and fields from syntax
+| expression '.' (Identifier @field_expression) // §8.5, but cannot distinguish swizzles and fields from syntax
 | ('-' | '!' | '~' | '*' | '&') expression @unary_expression // §8.6, §8.7, §8.9, §8.13, §8.14
 | expression ('*' | '/' | '%') expression @binary_expression // §8.7
 | expression ('+' | '-') expression @binary_expression // §8.7
@@ -227,7 +227,7 @@ compound_assignment_operator^:
 ;
 lhs_expression:
   lhs_expression '[' expression ']' @indexing_expression // §8.5
-| lhs_expression '.' (Ident @field_expression) // §8.5
+| lhs_expression '.' (Identifier @field_expression) // §8.5
 | '*' lhs_expression @unary_expression // §8.14
 | '&' lhs_expression @unary_expression // §8.13
 | '(' lhs_expression ')' @paren_expression // §8.4

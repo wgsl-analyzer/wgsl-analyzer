@@ -13,15 +13,18 @@ env:
   CARGO_TERM_COLOR: always
   CARGO_INCREMENTAL: 0
   CARGO_NET_RETRY: 10
+  CARGO_PROFILE_TEST_DEBUG: 0
+  CARGO_PROFILE_DEV_DEBUG: 0
   CI: 1
   RUST_BACKTRACE: short
   RUSTUP_MAX_RETRIES: 10
   RUSTFLAGS: -D warnings
+  # If nightly is breaking CI, modify this variable to target a specific nightly version.
   NIGHTLY_TOOLCHAIN: nightly
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  group: ${{github.workflow}}-${{github.ref}}
+  cancel-in-progress: ${{github.event_name == 'pull_request'}}
 
 defaults:
   run:
@@ -43,7 +46,7 @@ jobs:
 
       # TODO: Get rid of this unmaintained action
       - name: Filter by paths
-        uses: dorny/paths-filter@de90cc6fb38fc0963ad72b210f1f284cd68cea36 # v3.0.2
+        uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d # v4.0.1
         id: filter
         with:
           filters: |
@@ -66,15 +69,31 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha }}
           persist-credentials: false
 
+      - name: Restore cache
+        uses: actions/cache/restore@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+        with:
+          # key won't match, will rely on restore-keys
+          key: ${{ runner.os }}-stable-${{ hashFiles('**/Cargo.toml') }}-
+          # See .github/workflows/update-caches.yaml for how keys are generated
+          restore-keys: |
+            ${{ runner.os }}-stable-${{ hashFiles('**/Cargo.toml') }}-
+            ${{ runner.os }}-stable-
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+
       - name: Install stable Rust toolchain
-        uses: dtolnay/rust-toolchain@efa25f7f19611383d5b0ccf2d1c8914531636bf9
+        uses: dtolnay/rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9
         with:
           toolchain: stable
           components: clippy
 
       # https://github.com/actions-rust-lang/setup-rust-toolchain/blob/main/rust.json
       - name: Install Rust Problem Matcher
-        if: matrix.os == 'macos-latest'
+        if: matrix.os == 'ubuntu-latest'
         run: echo "::add-matcher::.github/rust.json"
 
       # - name: Cache Dependencies
@@ -98,8 +117,8 @@ jobs:
         run: cargo nextest run --no-fail-fast --hide-progress-bar --status-level fail
 
       - name: Clippy
-        # Because macos runners are the fastest
-        if: matrix.os == 'macos-latest'
+        # Because Linux runners are the fastest
+        if: matrix.os == 'ubuntu-latest'
         run: cargo clippy --workspace --all-targets --all-features -- -D warnings
 
   rustfmt:
@@ -129,53 +148,27 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Restore cache
+        uses: actions/cache/restore@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+        with:
+          # key won't match, will rely on restore-keys
+          key: ${{ runner.os }}-${{ env.NIGHTLY_TOOLCHAIN }}--${{ hashFiles('**/Cargo.toml') }}-
+          # See .github/workflows/update-caches.yml for how keys are generated
+          restore-keys: |
+            ${{ runner.os }}-${{ env.NIGHTLY_TOOLCHAIN }}--${{ hashFiles('**/Cargo.toml') }}-
+            ${{ runner.os }}-${{ env.NIGHTLY_TOOLCHAIN }}--
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+
       - name: Install Rust toolchain
         run: |
           rustup update --no-self-update nightly
           rustup default nightly
           rustup component add miri
-
-      # - name: Cache Dependencies
-      #   uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
-
-      # TODO: See https://github.com/wgsl-analyzer/wgsl-analyzer/issues/361
-      # - run: cargo miri test -p intern
-
-  # Weird targets to catch non-portable code
-  # rust-cross:
-  #   name: Rust Cross
-  #   runs-on: ubuntu-latest
-
-  #   strategy:
-  #     matrix:
-  #       target:
-  #         [
-  #           powerpc-unknown-linux-gnu,
-  #           x86_64-unknown-linux-musl,
-  #           wasm32-unknown-unknown,
-  #         ]
-  #       include:
-  #         # The wgsl-analyzer binary is not expected to compile on WASM, but the IDE
-  #         # crate should
-  #         - target: wasm32-unknown-unknown
-  #           ide-only: true
-
-  #   steps:
-  #     - name: Checkout repository
-  #       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-
-  #     - name: Install Rust toolchain
-  #       run: |
-  #         rustup update --no-self-update stable
-  #         rustup target add ${{ matrix.target }}
-
-  #     # - name: Cache Dependencies
-  #     #   uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
-
-  #     - run: cargo check --target=${{ matrix.target }} --all-targets -p ide
-  #       if: ${{ matrix.ide-only }}
-  #     - run: cargo check --target=${{ matrix.target }} --all-targets
-  #       if: ${{ !matrix.ide-only }}
 
   # Check wgslfmt_dprint builds for wasm32 target
   wgslfmt-dprint-wasm:
@@ -189,7 +182,7 @@ jobs:
           persist-credentials: false
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@efa25f7f19611383d5b0ccf2d1c8914531636bf9
+        uses: dtolnay/rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9
         with:
           toolchain: stable
           target: wasm32-unknown-unknown
@@ -271,7 +264,7 @@ jobs:
           persist-credentials: false
 
       - name: Install beta Rust toolchain
-        uses: dtolnay/rust-toolchain@efa25f7f19611383d5b0ccf2d1c8914531636bf9
+        uses: dtolnay/rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9
         with:
           toolchain: beta
 
@@ -337,45 +330,50 @@ jobs:
       - name: Install Node.js
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
-          node-version: 22
+          node-version: 24
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
+        with:
+          package_json_file: ./editors/code/package.json
 
       - name: Install xvfb
         if: matrix.os == 'ubuntu-latest'
         run: sudo apt-get install -y xvfb
 
       - name: Build
-        run: npm ci
+        run: pnpm install --frozen-lockfile
         working-directory: ./editors/code
 
-      #    - run: npm audit || { sleep 10 && npm audit; } || { sleep 30 && npm audit; }
+      #    - run: pnpm audit || { sleep 10 && pnpm audit; } || { sleep 30 && pnpm audit; }
       #      if: runner.os == 'Linux'
       #      working-directory: ./editors/code
 
       # If this steps fails, your code's type integrity might be wrong at some places at TypeScript level.
       - name: Typecheck
-        run: npm run typecheck
+        run: pnpm run typecheck
         working-directory: ./editors/code
 
       - name: Run biome checks
-        run: npm run ci
+        run: pnpm run ci
         working-directory: ./editors/code
 
       - name: Run VS Code tests (Linux)
         if: matrix.os == 'ubuntu-latest'
         env:
           VSCODE_CLI: 1
-        run: xvfb-run npm test
+        run: xvfb-run pnpm test
         working-directory: ./editors/code
 
       - name: Run VS Code tests (Windows)
         if: matrix.os == 'windows-latest'
         env:
           VSCODE_CLI: 1
-        run: npm test
+        run: pnpm test
         working-directory: ./editors/code
 
       - name: Package
-        run: npm run package --scripts-prepend-node-path
+        run: pnpm run package
         working-directory: ./editors/code
 
   conclusion:

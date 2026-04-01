@@ -1,4 +1,4 @@
-use base_db::{FileId, SourceDatabase as _, TextRange};
+use base_db::{EditionedFileId, FileId, RootQueryDb as _, SourceDatabase as _, TextRange};
 use hir_def::database::DefDatabase as _;
 use rowan::NodeOrToken;
 use syntax::{AstNode as _, SyntaxNode, ast};
@@ -16,7 +16,7 @@ pub(crate) fn format(
     file_id: FileId,
     range: Option<TextRange>,
 ) -> Option<FormattedRange> {
-    let file_id = database.editioned_file_id(file_id);
+    let file_id = EditionedFileId::from_file(database, file_id);
     let parsed = database.parse(file_id);
 
     // Refuse to format documents with syntax errors

@@ -1,3 +1,4 @@
+use base_db::EditionedFileId;
 use hir::HirDatabase as _;
 use hir_def::{
     database::{DefDatabase as _, DefinitionWithBodyId, InternDatabase as _, Location},
@@ -99,7 +100,7 @@ pub(crate) fn complete_names_in_scope(
 
 fn render_detail(
     context: &CompletionContext<'_>,
-    file_id: hir_def::HirFileId,
+    file_id: EditionedFileId,
     item: ModuleItem,
 ) -> String {
     match item {

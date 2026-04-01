@@ -4,13 +4,13 @@ mod builtins;
 mod simple;
 use std::fmt::Write as _;
 
+use base_db::{EditionedFileId, Lookup as _};
 use expect_test::Expect;
 use hir_def::{
-    HasSource as _, HirFileId,
+    HasSource as _,
     body::{Body, BodySourceMap},
     database::{
         DefDatabase as _, DefinitionWithBodyId, ExtensionsConfig, InternDatabase as _, Location,
-        Lookup as _,
     },
     expression_store::SyntheticSyntax,
     item_tree::ModuleItem,
@@ -38,7 +38,7 @@ fn infer(
 ) -> String {
     let (mut database, file_id) = TestDatabase::with_single_file(wa_fixture);
     database.set_extensions_with_durability(extensions, Durability::MEDIUM);
-    let file_id = HirFileId::from(file_id);
+    let file_id = EditionedFileId::new(&database, file_id.file_id, file_id.edition);
     let root = database.parse_or_resolve(file_id).syntax();
     let mut buffer = String::new();
     let mut infer_def = |inference_result: Arc<InferenceResult>,
@@ -183,7 +183,7 @@ fn text_size(
 
 fn module_definitions(
     db: &TestDatabase,
-    file_id: HirFileId,
+    file_id: EditionedFileId,
     item_tree: &Arc<hir_def::item_tree::ItemTree>,
 ) -> Vec<DefinitionWithBodyId> {
     item_tree

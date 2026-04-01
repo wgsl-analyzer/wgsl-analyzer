@@ -4,7 +4,6 @@ pub mod body;
 pub mod database;
 pub mod expression;
 pub mod expression_store;
-pub mod hir_file_id;
 pub mod item_tree;
 pub mod mod_path;
 pub mod resolver;
@@ -16,10 +15,8 @@ mod tests;
 pub mod type_ref;
 pub mod type_specifier;
 pub use ast_id::*;
-use base_db::{FileRange, TextRange};
+use base_db::{EditionedFileId, FileRange, TextRange};
 use database::DefDatabase;
-pub use hir_file_id::HirFileId;
-use hir_file_id::HirFileIdRepr;
 use item_tree::{ItemTreeNode, ModuleItemId};
 use rowan::NodeOrToken;
 use syntax::{AstNode, SyntaxNode, SyntaxToken};
@@ -27,13 +24,13 @@ use syntax::{AstNode, SyntaxNode, SyntaxToken};
 /// `InFile<T>` stores a value of `T` inside a particular file/syntax tree.
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
 pub struct InFile<T> {
-    pub file_id: HirFileId,
+    pub file_id: EditionedFileId,
     pub value: T,
 }
 
 impl<T> InFile<T> {
     pub const fn new(
-        file_id: HirFileId,
+        file_id: EditionedFileId,
         value: T,
     ) -> Self {
         Self { file_id, value }
@@ -112,15 +109,13 @@ impl<N: HasTextRange, T: HasTextRange> HasTextRange for NodeOrToken<N, T> {
 }
 
 pub fn original_file_range<T: HasTextRange>(
-    _database: &dyn DefDatabase,
-    file_id: HirFileId,
+    database: &dyn DefDatabase,
+    file_id: EditionedFileId,
     value: &T,
 ) -> FileRange {
-    match file_id.0 {
-        HirFileIdRepr::FileId(file_id) => FileRange {
-            file_id: file_id.file_id,
-            range: value.text_range(),
-        },
+    FileRange {
+        file_id: file_id.file_id(database),
+        range: value.text_range(),
     }
 }
 

@@ -31,9 +31,12 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
-      - uses: dtolnay/rust-toolchain@efa25f7f19611383d5b0ccf2d1c8914531636bf9
+
+      - name: Install stable Rust toolchain
+        uses: dtolnay/rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9
         with:
           toolchain: stable
+
       - name: Expose Env
         id: env
         run: |
@@ -41,54 +44,12 @@ jobs:
 
   build-caches:
     name: Build Caches
-    needs: ["env"]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        include:
-          - os: ubuntu-latest
-            toolchain: stable
-            target: ""
-          - os: macos-latest
-            toolchain: stable
-            target: ""
-          - os: windows-latest
-            toolchain: stable
-            target: ""
-          - os: ubuntu-latest
-            toolchain: ${{ needs.env.outputs.NIGHTLY_TOOLCHAIN }}
-            target: ""
-          - os: macos-latest
-            toolchain: ${{ needs.env.outputs.NIGHTLY_TOOLCHAIN }}
-            target: ""
-          - os: ubuntu-latest
-            toolchain: ${{ needs.env.outputs.NIGHTLY_TOOLCHAIN }}
-            target: wasm32-unknown-unknown
-          - os: ubuntu-latest
-            toolchain: stable
-            target: wasm32-unknown-unknown
-          - os: ubuntu-latest
-            toolchain: stable
-            target: x86_64-unknown-none
-          - os: ubuntu-latest
-            toolchain: stable
-            target: thumbv6m-none-eabi
-          - os: ubuntu-latest
-            toolchain: stable
-            target: aarch64-linux-android
-          - os: macos-14
-            toolchain: stable
-            target: aarch64-apple-ios-sim
+        os: [ubuntu-latest, windows-latest, macos-latest]
 
     steps:
-      # prepare the date - used to rebuild the cache daily to update the cache
-      # for Rust nightly, even if no change on dependencies
-      - name: Get the current date
-        id: get-date
-        run: |
-          echo "date=$(/bin/date -u "+%Y%m%d")" >> $GITHUB_OUTPUT
-        shell: bash
-
       - name: Checkout the main branch
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -96,12 +57,11 @@ jobs:
           ref: "main"
           persist-credentials: false
 
-      - name: Set up Rust
+      - name: Install stable Rust toolchain
         id: rust
-        uses: dtolnay/rust-toolchain@efa25f7f19611383d5b0ccf2d1c8914531636bf9
+        uses: dtolnay/rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9
         with:
-          toolchain: ${{ matrix.toolchain }}
-          target: ${{ matrix.target }}
+          toolchain: stable
 
       # prepare the lockfile - to have a complete image of the dependencies on the current platform
       - name: Create lock file
@@ -109,7 +69,7 @@ jobs:
 
       # Fetch the cache using the complete key - to avoid rebuilding the cache if nothing changed
       - name: Restore cache
-        uses: actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+        uses: actions/cache/restore@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
         id: cache
         with:
           path: |
@@ -118,21 +78,22 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ runner.os }}-${{ matrix.toolchain }}-${{ matrix.target }}-${{ hashFiles('**/Cargo.toml') }}-${{ hashFiles('Cargo.lock') }}-${{ steps.get-date.outputs.date }}
+          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-${{ hashFiles('Cargo.lock') }}
+          lookup-only: true
 
-      # Build wgsl-analyzer for the dev profile, used by check, doc, ...
+      # Build for the dev profile, used by check, doc, ...
       - name: Build dev cache
         if: steps.cache.outputs.cache-hit != 'true'
-        run: cargo build --profile dev
+        run: cargo build --profile dev --package wgsl-analyzer
 
-      # Build wgsl-analyzer for the test profile, used by test
+      # Build for the test profile, used by test
       - name: Build test cache
         if: steps.cache.outputs.cache-hit != 'true'
-        run: cargo build --profile test
+        run: cargo build --profile test --package wgsl-analyzer
 
       - name: Save cache
         if: steps.cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+        uses: actions/cache/save@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
         with:
           path: |
             ~/.cargo/bin/
@@ -140,4 +101,4 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ runner.os }}-${{ matrix.toolchain }}-${{ matrix.target }}-${{ hashFiles('**/Cargo.toml') }}-${{ hashFiles('Cargo.lock') }}-${{ steps.get-date.outputs.date }}
+          key: ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-${{ hashFiles('Cargo.lock') }}

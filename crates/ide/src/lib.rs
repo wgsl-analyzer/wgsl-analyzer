@@ -11,27 +11,30 @@ mod hover;
 pub mod inlay_hints;
 mod markup;
 mod navigation_target;
+pub mod signature_help;
 mod typing;
 mod view_syntax_tree;
 
 use std::panic;
 
 use base_db::{
-    FilePosition, FileRange, RangeInfo, SourceDatabase as _, TextRange, change::Change,
-    input::SourceRootId,
+    EditionedFileId, FilePosition, FileRange, FileSet, RangeInfo, RootQueryDb as _,
+    SourceDatabase as _, SourceRoot, TextRange, change::Change, input::SourceRootId,
 };
 use diagnostics::Diagnostic;
 use hir::diagnostics::DiagnosticsConfig;
 use hir_def::database::DefDatabase as _;
 use ide_completion::{CompletionConfig, item::CompletionItem};
+use ide_db::LineIndexDatabase as _;
 pub use line_index::{LineCol, LineIndex};
 use rustc_hash::FxHashMap;
-use salsa::{Cancelled, ParallelDatabase as _};
-use syntax::{Parse, SyntaxNode};
+use salsa::{Cancelled, Database as _};
+use syntax::{Edition, Parse, SyntaxNode};
 use triomphe::Arc;
-use vfs::FileId;
+use vfs::{AbsPathBuf, FileId, VfsPath};
 use wgsl_formatter::FormattingOptions;
 
+use crate::signature_help::SignatureHelp;
 pub use crate::{
     // annotations::{Annotation, AnnotationConfig, AnnotationKind, AnnotationLocation},
     // call_hierarchy::{CallHierarchyConfig, CallItem},
@@ -64,10 +67,7 @@ pub use crate::{
     //     PackageInformation, SymbolInformationKind,
     // },
     // move_item::Direction,
-    navigation_target::{
-        NavigationTarget,
-        // TryToNavigationTarget, UpmappingResult
-    },
+    navigation_target::NavigationTarget,
     // references::ReferenceSearchResult,
     // rename::RenameError,
     // runnables::{Runnable, RunnableKind, TestId, UpdateTest},
@@ -86,7 +86,38 @@ pub type Cancellable<T> = Result<T, Cancelled>;
 
 /// `base_db` is normally also needed in places where `ide_db` is used, so this re-export is for convenience.
 pub use base_db;
-pub use ide_db::RootDatabase;
+pub use ide_db::{
+    // Severity,
+    // SymbolKind,
+    // assists::ExprFillDefaultMode,
+    // base_db::{
+    //     Crate,
+    //     CrateGraphBuilder,
+    //     FileChange,
+    //     SourceRoot,
+    //     SourceRootId
+    // },
+    // documentation::Documentation,
+    // label::Label,
+    // line_index::{
+    //     LineCol,
+    //     LineIndex
+    // },
+    // prime_caches::ParallelPrimeCachesProgress,
+    // search::{
+    //     ReferenceCategory,
+    //     SearchScope
+    // },,
+    // FileId,
+    // FilePosition,
+    // FileRange,
+    RootDatabase,
+    // symbol_index::Query,
+    text_edit::{
+        // Indel,
+        TextEdit,
+    },
+};
 
 #[derive(Debug)]
 pub struct AnalysisHost {
@@ -123,7 +154,7 @@ impl AnalysisHost {
     /// semantic information.
     pub fn analysis(&self) -> Analysis {
         Analysis {
-            database: self.database.snapshot(),
+            database: self.database.clone(),
         }
     }
 
@@ -134,6 +165,14 @@ impl AnalysisHost {
         change: Change,
     ) {
         self.database.apply_change(change);
+    }
+
+    pub fn trigger_cancellation(&mut self) {
+        self.database.trigger_cancellation();
+    }
+
+    pub fn trigger_garbage_collection(&mut self) {
+        self.database.trigger_lru_eviction();
     }
 
     pub const fn raw_database(&self) -> &RootDatabase {
@@ -152,10 +191,36 @@ impl Default for AnalysisHost {
 }
 
 pub struct Analysis {
-    database: salsa::Snapshot<RootDatabase>,
+    database: RootDatabase,
 }
 
+// As a general design guideline, `Analysis` API are intended to be independent
+// from the language server protocol. That is, when exposing some functionality
+// we should think in terms of "what API makes most sense" and not in terms of
+// "what types LSP uses". Although currently LSP is the only consumer of the
+// API, the API should in theory be usable as a library, or via a different
+// protocol.
 impl Analysis {
+    /// Creates an analysis instance for a single file, without any external
+    /// dependencies or ability to apply changes.
+    /// See [`AnalysisHost`] for creating a fully-featured analysis.
+    #[must_use]
+    pub fn from_single_file(text: String) -> (Self, FileId) {
+        let mut host = AnalysisHost::default();
+        let file_id = FileId::from_raw(0);
+        let mut file_set = FileSet::default();
+        file_set.insert(
+            file_id,
+            VfsPath::new_virtual_path("/shader.wesl".to_owned()),
+        );
+        let source_root = SourceRoot::new_local(file_set);
+        let mut change = Change::default();
+        change.set_roots(vec![source_root]);
+        change.change_file(file_id, Some(text));
+        host.apply_change(change);
+        (host.analysis(), file_id)
+    }
+
     pub const SUPPORTED_TRIGGER_CHARS: &[char] = typing::TRIGGER_CHARS;
 
     pub fn with_db<Function, T>(
@@ -172,7 +237,7 @@ impl Analysis {
         &self,
         file_id: FileId,
     ) -> Cancellable<SourceRootId> {
-        self.with_db(|database| database.file_source_root(file_id))
+        self.with_db(|database| database.file_source_root(file_id).source_root_id(database))
     }
 
     /// Computes the set of parser level diagnostics for the given file.
@@ -208,8 +273,8 @@ impl Analysis {
     pub fn file_text(
         &self,
         file_id: FileId,
-    ) -> Cancellable<Arc<String>> {
-        self.with_db(|database| database.file_text(file_id))
+    ) -> Cancellable<Arc<str>> {
+        self.with_db(|database| database.file_text(file_id).text(database).clone())
     }
 
     /// Returns the full source code with imports resolved.
@@ -217,7 +282,7 @@ impl Analysis {
         &self,
         file_id: FileId,
     ) -> Cancellable<Result<String, ()>> {
-        self.with_db(|database| Ok(database.file_text(file_id).to_string()))
+        self.with_db(|database| Ok(database.file_text(file_id).text(database).to_string()))
     }
 
     /// Gets the syntax tree of the file.
@@ -225,7 +290,7 @@ impl Analysis {
         &self,
         file_id: FileId,
     ) -> Cancellable<Parse> {
-        self.with_db(|database| database.parse(database.editioned_file_id(file_id)))
+        self.with_db(|database| database.parse(EditionedFileId::from_file(database, file_id)))
     }
 
     pub fn line_index(
@@ -259,7 +324,9 @@ impl Analysis {
     ) -> Cancellable<Vec<Fold>> {
         self.with_db(|database| {
             folding_ranges::folding_ranges(
-                &database.parse(database.editioned_file_id(file_id)).tree(),
+                &database
+                    .parse(EditionedFileId::from_file(database, file_id))
+                    .tree(),
             )
         })
     }
@@ -307,6 +374,13 @@ impl Analysis {
         range: FileRange,
     ) -> Cancellable<Option<RangeInfo<HoverResult>>> {
         self.with_db(|database| hover::hover(database, range, config))
+    }
+
+    pub fn signature_help(
+        &self,
+        position: FilePosition,
+    ) -> Cancellable<Option<SignatureHelp>> {
+        self.with_db(|database| signature_help::signature_help(database, position))
     }
 
     /// # Panics

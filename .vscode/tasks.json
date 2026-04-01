@@ -6,9 +6,11 @@
 		{
 			"label": "Build Extension in Background",
 			"group": "build",
-			"type": "npm",
-			"script": "watch",
-			"path": "editors/code/",
+			"type": "shell",
+			"command": "pnpm run watch",
+			"options": {
+				"cwd": "${workspaceFolder}/editors/code/"
+			},
 			"problemMatcher": {
 				"base": "$tsc-watch",
 				"fileLocation": [
@@ -21,9 +23,11 @@
 		{
 			"label": "Build Extension",
 			"group": "build",
-			"type": "npm",
-			"script": "build",
-			"path": "editors/code/",
+			"type": "shell",
+			"command": "pnpm run build",
+			"options": {
+				"cwd": "${workspaceFolder}/editors/code/"
+			},
 			"problemMatcher": {
 				"base": "$tsc",
 				"fileLocation": [
@@ -50,9 +54,11 @@
 			"label": "Pretest",
 			"group": "build",
 			"isBackground": false,
-			"type": "npm",
-			"script": "pretest",
-			"path": "editors/code/",
+			"type": "shell",
+			"command": "pnpm run pretest",
+			"options": {
+				"cwd": "${workspaceFolder}/editors/code/"
+			},
 			"problemMatcher": {
 				"base": "$tsc",
 				"fileLocation": [

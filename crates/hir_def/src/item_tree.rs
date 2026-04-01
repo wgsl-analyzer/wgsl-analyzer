@@ -5,13 +5,13 @@ pub mod pretty;
 
 use std::{hash, marker::PhantomData, ops::ControlFlow};
 
+use base_db::EditionedFileId;
 use la_arena::{Arena, Idx};
 use smol_str::SmolStr;
 use syntax::{AstNode, TokenText, ast};
 use triomphe::Arc;
 
 use crate::{
-    HirFileId,
     ast_id::FileAstId,
     database::DefDatabase,
     mod_path::{ModPath, PathKind},
@@ -209,7 +209,7 @@ pub struct ItemTree {
 impl ItemTree {
     pub fn query(
         database: &dyn DefDatabase,
-        file_id: HirFileId,
+        file_id: EditionedFileId,
     ) -> Arc<Self> {
         let source = database.parse_or_resolve(file_id).tree();
 
@@ -363,7 +363,7 @@ mod_items! {
 
 pub fn find_item<M: ItemTreeNode>(
     database: &dyn DefDatabase,
-    file_id: HirFileId,
+    file_id: EditionedFileId,
     source: &M::Source,
 ) -> Option<ModuleItemId<M>> {
     let item_tree = database.item_tree(file_id);

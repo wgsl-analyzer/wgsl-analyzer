@@ -13,7 +13,7 @@
 
   ```bash
   cd editors/code
-  npm ci
+  pnpm install --frozen-lockfile
   ```
 
 ## Common knowledge

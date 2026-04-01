@@ -9,6 +9,16 @@ permissions: {}
 
 env:
   CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: 0
+  CARGO_NET_RETRY: 10
+  CARGO_PROFILE_TEST_DEBUG: 0
+  CARGO_PROFILE_DEV_DEBUG: 0
+  CI: 1
+  RUST_BACKTRACE: short
+  RUSTUP_MAX_RETRIES: 10
+  RUSTFLAGS: -D warnings
+  # If nightly is breaking CI, modify this variable to target a specific nightly version.
+  NIGHTLY_TOOLCHAIN: nightly
 
 jobs:
   test:
@@ -24,7 +34,7 @@ jobs:
           persist-credentials: false
 
       - name: Install Rust beta toolchain
-        uses: dtolnay/rust-toolchain@efa25f7f19611383d5b0ccf2d1c8914531636bf9
+        uses: dtolnay/rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9
         with:
           toolchain: beta
 
@@ -44,7 +54,7 @@ jobs:
           persist-credentials: false
 
       - name: Install Rust beta toolchain
-        uses: dtolnay/rust-toolchain@efa25f7f19611383d5b0ccf2d1c8914531636bf9
+        uses: dtolnay/rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9
         with:
           toolchain: beta
           components: rustfmt, clippy
@@ -66,7 +76,7 @@ jobs:
           persist-credentials: false
 
       - name: Cache
-        uses: actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+        uses: actions/cache/restore@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
         with:
           path: |
             ~/.cargo/bin/
@@ -77,7 +87,7 @@ jobs:
           key: ${{ runner.os }}-check-doc-${{ hashFiles('**/Cargo.toml') }}
 
       - name: Install Rust beta toolchain
-        uses: dtolnay/rust-toolchain@efa25f7f19611383d5b0ccf2d1c8914531636bf9
+        uses: dtolnay/rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9
         with:
           toolchain: beta
 
@@ -99,7 +109,7 @@ jobs:
           persist-credentials: false
 
       - name: Install beta Rust toolchain
-        uses: dtolnay/rust-toolchain@efa25f7f19611383d5b0ccf2d1c8914531636bf9
+        uses: dtolnay/rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9
         with:
           toolchain: beta
 

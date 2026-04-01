@@ -244,7 +244,7 @@ pub(crate) fn indent_before(
 pub(crate) fn remove_whitespace_around_double_colon(syntax: &SyntaxNode) {
     for child in syntax.children_with_tokens() {
         if let rowan::NodeOrToken::Token(token) = &child
-            && token.kind() == SyntaxKind::DoubleColon
+            && token.kind() == SyntaxKind::ColonColon
         {
             let preceding = token.prev_token(); // spellchecker:disable-line
             if let Some(preceding) = preceding {

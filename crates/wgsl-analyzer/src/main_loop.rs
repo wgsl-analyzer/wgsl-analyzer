@@ -76,7 +76,7 @@ pub fn main_loop(
 enum Event {
     Lsp(lsp_server::Message),
     Task(Task),
-    QueuedTask(QueuedTask),
+    QueuedTask(DeferredTask),
     Vfs(vfs::loader::Message),
     // Flycheck(FlycheckMessage),
     // TestResult(CargoTestMessage),
@@ -100,7 +100,7 @@ impl fmt::Display for Event {
 
 #[derive(Debug)]
 #[expect(clippy::enum_variant_names, reason = "Not relevant")]
-pub(crate) enum QueuedTask {
+pub(crate) enum DeferredTask {
     CheckIfIndexed(lt::Url),
 }
 
@@ -359,6 +359,15 @@ impl GlobalState {
         .map(Some)
     }
 
+    fn trigger_garbage_collection(&mut self) {
+        if cfg!(test) {
+            // Slow tests run the main loop in multiple threads, but GC isn't thread safe.
+            return;
+        }
+
+        self.analysis_host.trigger_garbage_collection();
+    }
+
     #[expect(clippy::cognitive_complexity, reason = "deprecated lint")]
     #[expect(clippy::too_many_lines, reason = "TODO")]
     fn handle_event(
@@ -370,10 +379,10 @@ impl GlobalState {
 
         let event_debug_message = format!("{event:?}");
         tracing::debug!(?loop_start, ?event, "handle_event");
-        if tracing::enabled!(tracing::Level::INFO) {
-            let task_queue_len = self.task_pool.handle.length();
+        if tracing::enabled!(tracing::Level::TRACE) {
+            let task_queue_len = self.task_pool.handle.len();
             if task_queue_len > 0 {
-                tracing::info!("task queue len: {}", task_queue_len);
+                tracing::trace!("task queue len: {task_queue_len}");
             }
         }
 
@@ -503,6 +512,16 @@ impl GlobalState {
             if project_or_mem_docs_changed && self.config.test_explorer() {
                 // self.update_tests();
             }
+
+            let current_revision = self.analysis_host.raw_database().nonce_and_revision().1;
+            // no work is currently being done, now we can block a bit and clean up our garbage
+            if self.task_pool.handle.is_empty()
+                && self.fmt_pool.handle.is_empty()
+                && current_revision != self.last_gc_revision
+            {
+                self.trigger_garbage_collection();
+                self.last_gc_revision = current_revision;
+            }
         }
 
         if let Some(diagnostic_changes) = self.diagnostics.take_changes() {
@@ -604,13 +623,13 @@ impl GlobalState {
                 //     (excluded == vfs::FileExcluded::No).then_some(file_id)
                 // })
                 .filter(|&file_id| {
-                    let source_root = database.file_source_root(file_id.0);
+                    let source_root = database.file_source_root(file_id.0).source_root_id(database);
                     // Only publish diagnostics for files in the workspace, not from crates.io deps
                     // or the sysroot.
                     // While theoretically these should never have errors, we have quite a few false
                     // positives particularly in the stdlib, and those diagnostics would stay around
                     // forever if we emitted them here.
-                    !database.source_root(source_root).is_library()
+                    !database.source_root(source_root).source_root(database).is_library()
                 })
                 .map(|file_id| {
                     file_id.0
@@ -773,6 +792,9 @@ impl GlobalState {
             .on::<NO_RETRY, lsp::extensions::ViewSyntaxTree>(handlers::request::view_syntax_tree)
             .on::<NO_RETRY, lsp::extensions::DebugCommand>(handlers::request::debug_command)
             .on::<NO_RETRY, lsp::extensions::FullSource>(handlers::request::full_source)
+            .on::<NO_RETRY, lt::request::SignatureHelpRequest>(
+                handlers::request::handle_signature_help,
+            )
             .finish();
     }
 
@@ -850,10 +872,10 @@ impl GlobalState {
     #[expect(clippy::needless_pass_by_ref_mut, reason = "wip")]
     fn handle_queued_task(
         &mut self,
-        task: QueuedTask,
+        task: DeferredTask,
     ) {
         match task {
-            QueuedTask::CheckIfIndexed(uri) => {},
+            DeferredTask::CheckIfIndexed(uri) => {},
         }
     }
 

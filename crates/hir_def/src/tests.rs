@@ -1,3 +1,4 @@
+use base_db::EditionedFileId;
 use expect_test::{Expect, expect};
 use test_fixture::WithFixture as _;
 use triomphe::Arc;
@@ -11,7 +12,11 @@ fn check_item_tree(
 ) {
     let (database, file_id) = TestDatabase::with_single_file(source);
 
-    let module_info = database.item_tree(file_id.into());
+    let module_info = database.item_tree(EditionedFileId::new(
+        &database,
+        file_id.file_id,
+        file_id.edition,
+    ));
     expect.assert_eq(&crate::item_tree::pretty::pretty_print_item_tree(
         &module_info,
     ));

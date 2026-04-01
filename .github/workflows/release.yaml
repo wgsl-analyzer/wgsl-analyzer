@@ -12,8 +12,11 @@ on:
 permissions: {}
 
 env:
-  CARGO_INCREMENTAL: "0"
-  CARGO_NET_RETRY: "10"
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: 0
+  CARGO_NET_RETRY: 10
+  CARGO_PROFILE_TEST_DEBUG: 0
+  CARGO_PROFILE_DEV_DEBUG: 0
   RUSTFLAGS: -D warnings
   RUSTUP_MAX_RETRIES: "10"
   FETCH_DEPTH: "0" # pull in the tags for the version string
@@ -81,11 +84,16 @@ jobs:
       - name: Install Node.js
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
         with:
-          node-version: 22
+          node-version: 24
           package-manager-cache: false
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
+        with:
+          package_json_file: ./editors/code/package.json
+
       - name: Install stable Rust toolchain
-        uses: dtolnay/rust-toolchain@efa25f7f19611383d5b0ccf2d1c8914531636bf9
+        uses: dtolnay/rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9
         with:
           toolchain: stable
           components: ${{ matrix.pgo && 'llvm-tools' || '' }}
@@ -107,28 +115,28 @@ jobs:
         if: ${{ matrix.zig_target }}
         run: WA_TARGET=${{ matrix.zig_target}} cargo xtask dist --client-patch-version ${{ github.run_number }} --zig # ${{ matrix.pgo && format('--pgo {0}', matrix.pgo) || ''}}
 
-      - run: npm ci
+      - run: pnpm install --frozen-lockfile
         working-directory: editors/code
 
       - name: Package Extension (release)
         if: github.ref == 'refs/heads/release' && matrix.code-target
-        run: npx vsce package -o "../../dist/wgsl-analyzer-${{ matrix.code-target }}.vsix" --target ${{ matrix.code-target }}
+        run: pnpm run package -o "../../dist/wgsl-analyzer-${{ matrix.code-target }}.vsix" --target ${{ matrix.code-target }}
         working-directory: editors/code
 
       - name: Package Extension (nightly)
         if: github.ref != 'refs/heads/release' && matrix.code-target
-        run: npx vsce package -o "../../dist/wgsl-analyzer-${{ matrix.code-target }}.vsix" --target ${{ matrix.code-target }} --pre-release
+        run: pnpm run package -o "../../dist/wgsl-analyzer-${{ matrix.code-target }}.vsix" --target ${{ matrix.code-target }} --pre-release
         working-directory: editors/code
 
       - if: matrix.target == 'x86_64-unknown-linux-gnu'
         run: rm -rf editors/code/server
 
       - if: matrix.target == 'x86_64-unknown-linux-gnu' && github.ref == 'refs/heads/release'
-        run: npx vsce package -o ../../dist/wgsl-analyzer-no-server.vsix
+        run: pnpm run package -o ../../dist/wgsl-analyzer-no-server.vsix
         working-directory: editors/code
 
       - if: matrix.target == 'x86_64-unknown-linux-gnu' && github.ref != 'refs/heads/release'
-        run: npx vsce package -o ../../dist/wgsl-analyzer-no-server.vsix --pre-release
+        run: pnpm run package -o ../../dist/wgsl-analyzer-no-server.vsix --pre-release
         working-directory: editors/code
 
       - name: Upload artifacts
@@ -152,7 +160,7 @@ jobs:
 
     steps:
       - name: Install dependencies
-        run: apk add --no-cache git clang lld musl-dev nodejs npm
+        run: apk add --no-cache git clang lld musl-dev nodejs pnpm
 
       - name: Checkout repository
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -163,17 +171,17 @@ jobs:
       - name: Dist
         run: cargo xtask dist --client-patch-version ${{ github.run_number }}
 
-      - run: npm ci
+      - run: pnpm install --frozen-lockfile
         working-directory: editors/code
 
       - name: Package Extension (release)
         if: github.ref == 'refs/heads/release'
-        run: npx vsce package -o "../../dist/wgsl-analyzer-alpine-x64.vsix" --target alpine-x64
+        run: pnpm run package -o "../../dist/wgsl-analyzer-alpine-x64.vsix" --target alpine-x64 --no-dependencies
         working-directory: editors/code
 
       - name: Package Extension (nightly)
         if: github.ref != 'refs/heads/release'
-        run: npx vsce package -o "../../dist/wgsl-analyzer-alpine-x64.vsix" --target alpine-x64 --pre-release
+        run: pnpm run package -o "../../dist/wgsl-analyzer-alpine-x64.vsix" --target alpine-x64 --pre-release --no-dependencies
         working-directory: editors/code
 
       - run: rm -rf editors/code/server
@@ -197,7 +205,7 @@ jobs:
           persist-credentials: false
 
       - name: Install stable Rust toolchain
-        uses: dtolnay/rust-toolchain@efa25f7f19611383d5b0ccf2d1c8914531636bf9
+        uses: dtolnay/rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9
         with:
           toolchain: stable
           target: wasm32-unknown-unknown
@@ -224,23 +232,28 @@ jobs:
       contents: write
     needs: ["dist", "dist-x86_64-unknown-linux-musl", "dist-dprint-plugin"]
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: ${{ env.FETCH_DEPTH }}
+          persist-credentials: false
+
       - name: Install Node.js
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
         with:
-          node-version: 22
+          node-version: 24
           package-manager-cache: false
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
+        with:
+          package_json_file: ./editors/code/package.json
 
       - run: echo "TAG=$(date --iso -u)" >> $GITHUB_ENV
         if: github.ref == 'refs/heads/release'
       - run: echo "TAG=nightly" >> $GITHUB_ENV
         if: github.ref != 'refs/heads/release'
       - run: 'echo "TAG: $TAG"'
-
-      - name: Checkout repository
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          fetch-depth: ${{ env.FETCH_DEPTH }}
-          persist-credentials: false
 
       - name: Set HEAD_SHA
         run: |
@@ -313,28 +326,28 @@ jobs:
 
       - run: rm dist/wgsl-analyzer-no-server.vsix
 
-      - run: npm ci
+      - run: pnpm install --frozen-lockfile
         working-directory: ./editors/code
 
       - name: Publish Extension (Code Marketplace, release)
         if: github.ref == 'refs/heads/release' && github.repository == 'wgsl-analyzer/wgsl-analyzer'
         working-directory: ./editors/code
         # token from https://dev.azure.com/wgsl-analyzer/
-        run: npx vsce publish --pat ${{ secrets.VSCE_PAT }} --packagePath ../../dist/wgsl-analyzer-*.vsix
+        run: pnpm exec vsce publish --pat ${{ secrets.VSCE_PAT }} --packagePath ../../dist/wgsl-analyzer-*.vsix --no-dependencies
 
       - name: Publish Extension (OpenVSX, release)
         if: github.ref == 'refs/heads/release' && github.repository == 'wgsl-analyzer/wgsl-analyzer'
         working-directory: ./editors/code
-        run: npx ovsx publish --pat ${{ secrets.OVSX_PAT }} --packagePath ../../dist/wgsl-analyzer-*.vsix
+        run: pnpm exec ovsx publish --pat ${{ secrets.OVSX_PAT }} --packagePath ../../dist/wgsl-analyzer-*.vsix --no-dependencies
         timeout-minutes: 2
 
       - name: Publish Extension (Code Marketplace, nightly)
         if: github.ref != 'refs/heads/release' && github.repository == 'wgsl-analyzer/wgsl-analyzer'
         working-directory: ./editors/code
-        run: npx vsce publish --pat ${{ secrets.VSCE_PAT }} --packagePath ../../dist/wgsl-analyzer-*.vsix --pre-release
+        run: pnpm exec vsce publish --pat ${{ secrets.VSCE_PAT }} --packagePath ../../dist/wgsl-analyzer-*.vsix --pre-release --no-dependencies
 
       - name: Publish Extension (OpenVSX, nightly)
         if: github.ref != 'refs/heads/release' && github.repository == 'wgsl-analyzer/wgsl-analyzer'
         working-directory: ./editors/code
-        run: npx ovsx publish --pat ${{ secrets.OVSX_PAT }} --packagePath ../../dist/wgsl-analyzer-*.vsix
+        run: pnpm exec ovsx publish --pat ${{ secrets.OVSX_PAT }} --packagePath ../../dist/wgsl-analyzer-*.vsix --no-dependencies
         timeout-minutes: 2

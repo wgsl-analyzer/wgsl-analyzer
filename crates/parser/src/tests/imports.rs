@@ -28,9 +28,9 @@ fn super_import() {
                 Blankspace@6..7 " "
                 ImportSuperRelative@7..21
                   Super@7..12 "super"
-                  DoubleColon@12..14 "::"
+                  ColonColon@12..14 "::"
                   Super@14..19 "super"
-                  DoubleColon@19..21 "::"
+                  ColonColon@19..21 "::"
                 ImportItem@21..24
                   Name@21..24
                     Identifier@21..24 "bar"
@@ -49,7 +49,7 @@ fn package_import() {
                 Blankspace@6..7 " "
                 ImportPackageRelative@7..16
                   Package@7..14 "package"
-                  DoubleColon@14..16 "::"
+                  ColonColon@14..16 "::"
                 ImportCollection@16..21
                   BraceLeft@16..17 "{"
                   ImportItem@17..20
@@ -72,7 +72,7 @@ fn import_alias() {
                 ImportPath@7..22
                   Name@7..10
                     Identifier@7..10 "foo"
-                  DoubleColon@10..12 "::"
+                  ColonColon@10..12 "::"
                   ImportItem@12..22
                     Name@12..15
                       Identifier@12..15 "bar"
@@ -125,14 +125,14 @@ fn import_nested_collections() {
                 ImportPath@7..117
                   Name@7..15
                     Identifier@7..15 "bevy_pbr"
-                  DoubleColon@15..17 "::"
+                  ColonColon@15..17 "::"
                   ImportCollection@17..117
                     BraceLeft@17..18 "{"
                     Blankspace@18..21 "\n  "
                     ImportPath@21..45
                       Name@21..31
                         Identifier@21..31 "forward_io"
-                      DoubleColon@31..33 "::"
+                      ColonColon@31..33 "::"
                       ImportItem@33..45
                         Name@33..45
                           Identifier@33..45 "VertexOutput"
@@ -141,7 +141,7 @@ fn import_nested_collections() {
                     ImportPath@49..98
                       Name@49..58
                         Identifier@49..58 "pbr_types"
-                      DoubleColon@58..60 "::"
+                      ColonColon@58..60 "::"
                       ImportCollection@60..98
                         BraceLeft@60..61 "{"
                         ImportItem@61..82

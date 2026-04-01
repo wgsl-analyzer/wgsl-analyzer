@@ -58,11 +58,11 @@ git clone https://github.com/wgsl-analyzer/wgsl-analyzer.git && cd wgsl-analyzer
 cargo xtask install
 ```
 
-You will need [Cargo], [Node.js] (matching a supported version of VS Code) and [npm] for this.
+You will need [Cargo], [Node.js] (matching a supported version of VS Code) and [pnpm] for this.
 
 [Cargo]: <https://doc.rust-lang.org/cargo/getting-started/installation.html>
 [Node.js]: <https://nodejs.org/>
-[npm]: <https://www.npmjs.com/get-npm>
+[pnpm]: <https://pnpm.io/installation>
 
 Note that installing via `xtask install` does not work for VS Code Remote.
 Instead, you will need to install the `.vsix` manually.

@@ -7,6 +7,7 @@ use ide::{
         InlayFieldsToResolve, InlayHint, InlayHintLabel, InlayHintLabelPart, InlayKind,
         LazyProperty,
     },
+    signature_help::SignatureHelp,
 };
 use ide_completion::{
     CompletionFieldsToResolve,
@@ -703,5 +704,207 @@ pub(crate) fn goto_definition_response(
             .map(|range| location(snap, range))
             .collect::<Cancellable<Vec<_>>>()?;
         Ok(locations.into())
+    }
+}
+
+pub(crate) fn signature_help(
+    help: SignatureHelp,
+    // config: CallInfoConfig,
+    label_offsets: bool,
+    active: Option<u32>,
+) -> lsp_types::SignatureHelp {
+    let signatures = help
+        .signatures
+        .into_iter()
+        .map(|call_info| {
+            let parameters = if label_offsets {
+                call_info
+                    .parameter_ranges()
+                    .iter()
+                    .map(|text_range| {
+                        let start = call_info.signature[..text_range.start().into()]
+                            .chars()
+                            .map(char::len_utf16)
+                            .sum::<usize>();
+                        #[expect(
+                            clippy::as_conversions,
+                            clippy::cast_possible_truncation,
+                            reason = "a text offset does not exceed u32 in practice"
+                        )]
+                        let start = start as u32;
+                        let offset = call_info.signature
+                            [text_range.start().into()..text_range.end().into()]
+                            .chars()
+                            .map(char::len_utf16)
+                            .sum::<usize>();
+                        #[expect(
+                            clippy::as_conversions,
+                            clippy::cast_possible_truncation,
+                            reason = "a text offset does not exceed u32 in practice"
+                        )]
+                        let offset = offset as u32;
+                        let end = start + offset;
+                        [start, end]
+                    })
+                    .map(|label_offsets| lsp_types::ParameterInformation {
+                        label: lsp_types::ParameterLabel::LabelOffsets(label_offsets),
+                        documentation: None,
+                    })
+                    .collect::<Vec<_>>()
+            } else {
+                call_info
+                    .parameter_labels()
+                    .map(|label| lsp_types::ParameterInformation {
+                        label: lsp_types::ParameterLabel::Simple(label.to_owned()),
+                        documentation: None,
+                    })
+                    .collect::<Vec<_>>()
+            };
+            let signature_doc = call_info.documentation.map(|doc| {
+                lsp_types::Documentation::MarkupContent(lsp_types::MarkupContent {
+                    kind: lsp_types::MarkupKind::Markdown,
+                    value: doc,
+                })
+            });
+            lsp_types::SignatureInformation {
+                label: call_info.signature,
+                documentation: signature_doc,
+                parameters: Some(parameters),
+                active_parameter: None,
+            }
+        })
+        .collect();
+    lsp_types::SignatureHelp {
+        signatures,
+        active_signature: active,
+        active_parameter: help.active_parameter, // should this be limited by `signatures[active].parameters.len()`?
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use base_db::FilePosition;
+    use expect_test::{Expect, expect};
+    use ide::Analysis;
+    use lsp_types::{ParameterInformation, ParameterLabel};
+    use test_utils::extract_offset;
+    use triomphe::Arc;
+
+    use super::*;
+
+    #[test]
+    fn signature_help_no_label_offsets() {
+        // TODO: add signature help documentation to this test
+        let text = r#"
+fn foo() {
+    bar(2, $0);
+}
+fn bar(x: u32, y: bool, z: bool) -> f32 { 0.0f }
+fn bar(x: u32, y: bool) -> f32 { 0.0f }
+fn bar() -> f32 { 0.0f }
+"#;
+
+        let (offset, text) = extract_offset(text);
+        let (analysis, file_id) = Analysis::from_single_file(text);
+        let help = signature_help(
+            analysis
+                .signature_help(FilePosition { file_id, offset })
+                .unwrap()
+                .unwrap(),
+            // TODO: add config
+            // CallInfoConfig {
+            //     parameters_only: false,
+            //     documentation: true,
+            // },
+            false,
+            None,
+        );
+        #[expect(clippy::as_conversions, reason = "usize >= u32")]
+        assert_eq!(
+            help,
+            lsp_types::SignatureHelp {
+                signatures: vec![
+                    lsp_types::SignatureInformation {
+                        label: "fn bar(x: u32, y: bool, z: bool) -> f32".to_owned(),
+                        documentation: None,
+                        parameters: Some(vec![
+                            ParameterInformation {
+                                label: ParameterLabel::Simple("x: u32".to_owned()),
+                                documentation: None,
+                            },
+                            ParameterInformation {
+                                label: ParameterLabel::Simple("y: bool".to_owned()),
+                                documentation: None,
+                            },
+                            ParameterInformation {
+                                label: ParameterLabel::Simple("z: bool".to_owned()),
+                                documentation: None,
+                            }
+                        ]),
+                        active_parameter: None,
+                    },
+                    lsp_types::SignatureInformation {
+                        label: "fn bar(x: u32, y: bool) -> f32".to_owned(),
+                        documentation: None,
+                        parameters: Some(vec![
+                            ParameterInformation {
+                                label: ParameterLabel::Simple("x: u32".to_owned()),
+                                documentation: None,
+                            },
+                            ParameterInformation {
+                                label: ParameterLabel::Simple("y: bool".to_owned()),
+                                documentation: None,
+                            },
+                        ]),
+                        active_parameter: None,
+                    }
+                ],
+                active_parameter: Some(1),
+                active_signature: None,
+            }
+        );
+    }
+
+    #[test]
+    fn signature_help_with_label_offsets() {
+        // TODO: add signature help documentation to this test
+        let text = r#"
+fn foo() {
+    bar($0);
+}
+fn bar(x: u32, y: bool) -> f32 { 0.0f }
+"#;
+
+        let (offset, text) = extract_offset(text);
+        let (analysis, file_id) = Analysis::from_single_file(text);
+        let help = signature_help(
+            analysis
+                .signature_help(FilePosition { file_id, offset })
+                .unwrap()
+                .unwrap(),
+            // TODO: add config
+            // CallInfoConfig {
+            //     parameters_only: false,
+            //     documentation: true,
+            // },
+            true,
+            None,
+        );
+        #[expect(clippy::as_conversions, reason = "usize >= u32")]
+        let found = &help.signatures[help.active_signature.unwrap_or_default() as usize];
+        assert_eq!(found.label, "fn bar(x: u32, y: bool) -> f32");
+        assert_eq!(
+            found.parameters,
+            Some(vec![
+                ParameterInformation {
+                    label: ParameterLabel::LabelOffsets([7, 13]),
+                    documentation: None
+                },
+                ParameterInformation {
+                    label: ParameterLabel::LabelOffsets([15, 22]),
+                    documentation: None
+                }
+            ])
+        );
     }
 }

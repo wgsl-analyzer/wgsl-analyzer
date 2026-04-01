@@ -9,7 +9,7 @@ use hir::{
     HirDatabase, Semantics,
     diagnostics::{AnyDiagnostic, DiagnosticsConfig, NagaVersion},
 };
-use hir_def::{HirFileId, original_file_range};
+use hir_def::original_file_range;
 use hir_ty::ty::{
     self,
     pretty::{pretty_fn, pretty_type},
@@ -249,6 +249,7 @@ impl NagaError for nagamain::WithSpan<nagamain::valid::ValidationError> {
 }
 
 fn emit<Error: NagaError>(
+    database: &dyn HirDatabase,
     error: &Error,
     file_id: EditionedFileId,
     full_range: TextRange,
@@ -274,14 +275,14 @@ fn emit<Error: NagaError>(
                 message,
                 FileRange {
                     range,
-                    file_id: file_id.file_id,
+                    file_id: file_id.file_id(database),
                 },
             )
         })
         .collect();
 
     accumulator.push(AnyDiagnostic::NagaValidationError {
-        file_id: file_id.into(),
+        file_id,
         range: location,
         message,
         related,
@@ -294,23 +295,23 @@ fn naga_diagnostics<N: Naga>(
     config: &DiagnosticsConfig,
     accumulator: &mut Vec<AnyDiagnostic>,
 ) {
-    let source = database.file_text(file_id.file_id);
-    let full_range = TextRange::up_to(TextSize::of(source.as_str()));
+    let source: &str = database.file_text(file_id.file_id(database)).text(database);
+    let full_range = TextRange::up_to(TextSize::of(source));
 
-    match N::parse(&source) {
+    match N::parse(source) {
         Ok(module) => {
             if !config.naga_validation_errors {
                 return;
             }
             if let Err(error) = N::validate(&module) {
-                emit(&error, file_id, full_range, accumulator);
+                emit(database, &error, file_id, full_range, accumulator);
             }
         },
         Err(error) => {
             if !config.naga_parsing_errors {
                 return;
             }
-            emit(&error, file_id, full_range, accumulator);
+            emit(database, &error, file_id, full_range, accumulator);
         },
     }
 }
@@ -324,7 +325,7 @@ pub fn diagnostics(
     config: &DiagnosticsConfig,
     file_id: FileId,
 ) -> Vec<Diagnostic> {
-    let file_id = database.editioned_file_id(file_id);
+    let file_id = EditionedFileId::from_file(database, file_id);
     let parse = database.parse(file_id);
 
     let mut diagnostics = Vec::new();
@@ -336,7 +337,7 @@ pub fn diagnostics(
             .map(|error| AnyDiagnostic::ParseError {
                 message: error.message.clone(),
                 range: error.range,
-                file_id: file_id.into(),
+                file_id,
             }),
     );
 
@@ -791,7 +792,7 @@ var<storage, read> a: array<f32>;
 var<storage
 ",
             expect![[r#"
-                92..93 Error 16: invalid syntax, expected one of: '@', ',', '=', <identifier>, '{', '}', ')', ';', <template start>
+                92..93 Error 16: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
                 101..101 Error 16: invalid syntax, expected one of: ':', '=', ';'
                 22..25 Error 12: address space is only valid for handle or texture types
                 26..33 Error 21: unexpected template argument

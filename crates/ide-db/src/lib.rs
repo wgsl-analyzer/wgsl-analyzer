@@ -1,29 +1,46 @@
+#![expect(
+    clippy::trailing_empty_array,
+    reason = "Clippy has a false positive for the query_group macro, see: https://github.com/rust-lang/rust-clippy/issues/16754"
+)]
+
 use std::{fmt, panic};
 
-use base_db::{FileId, FileLoader, FileLoaderDelegate, change::Change};
+use base_db::{
+    FileId, FileSourceRootInput, FileText, Files, Nonce, SourceDatabase, SourceRoot, SourceRootId,
+    SourceRootInput, change::Change,
+};
 use hir_def::database::{DefDatabase as _, ExtensionsConfig};
+use line_index::LineIndex;
 use rustc_hash::FxHashMap;
-use salsa::Durability;
-use vfs::AnchoredPath;
+use salsa::{Database as _, Durability};
+use triomphe::Arc;
 
 pub mod source_change;
 pub mod text_edit;
 
-#[salsa::database(
-    base_db::SourceDatabaseStorage,
-    hir_def::database::DefDatabaseStorage,
-    hir_def::database::InternDatabaseStorage,
-    hir_ty::database::HirDatabaseStorage
-)]
+#[salsa_macros::db]
 pub struct RootDatabase {
     // FIXME: Revisit this commit now that we migrated to the new salsa, given we store arcs in this
     // database directly now
     storage: salsa::Storage<Self>,
-    // files: Arc<Files>,
+    files: Arc<Files>,
     // crates_map: Arc<CratesMap>,
+    nonce: Nonce,
 }
 
 impl panic::RefUnwindSafe for RootDatabase {}
+
+impl salsa::Database for RootDatabase {}
+
+impl Clone for RootDatabase {
+    fn clone(&self) -> Self {
+        Self {
+            storage: self.storage.clone(),
+            files: self.files.clone(),
+            nonce: Nonce::new(),
+        }
+    }
+}
 
 impl fmt::Debug for RootDatabase {
     fn fmt(
@@ -34,13 +51,73 @@ impl fmt::Debug for RootDatabase {
     }
 }
 
-impl salsa::Database for RootDatabase {}
+#[salsa_macros::db]
+impl SourceDatabase for RootDatabase {
+    fn file_text(
+        &self,
+        file_id: vfs::FileId,
+    ) -> FileText {
+        self.files.file_text(file_id)
+    }
 
-impl salsa::ParallelDatabase for RootDatabase {
-    fn snapshot(&self) -> salsa::Snapshot<Self> {
-        salsa::Snapshot::new(Self {
-            storage: self.storage.snapshot(),
-        })
+    fn set_file_text(
+        &mut self,
+        file_id: vfs::FileId,
+        text: &str,
+    ) {
+        let files = Arc::clone(&self.files);
+        files.set_file_text(self, file_id, text);
+    }
+
+    fn set_file_text_with_durability(
+        &mut self,
+        file_id: vfs::FileId,
+        text: &str,
+        durability: Durability,
+    ) {
+        let files = Arc::clone(&self.files);
+        files.set_file_text_with_durability(self, file_id, text, durability);
+    }
+
+    /// Source root of the file.
+    fn source_root(
+        &self,
+        id: SourceRootId,
+    ) -> SourceRootInput {
+        self.files.source_root(id)
+    }
+
+    fn set_source_root_with_durability(
+        &mut self,
+        source_root_id: SourceRootId,
+        source_root: Arc<SourceRoot>,
+        durability: Durability,
+    ) {
+        let files = Arc::clone(&self.files);
+        files.set_source_root_with_durability(self, source_root_id, source_root, durability);
+    }
+
+    fn file_source_root(
+        &self,
+        id: vfs::FileId,
+    ) -> FileSourceRootInput {
+        self.files.file_source_root(id)
+    }
+
+    fn set_file_source_root_with_durability(
+        &mut self,
+        id: vfs::FileId,
+        source_root_id: SourceRootId,
+        durability: Durability,
+    ) {
+        let files = Arc::clone(&self.files);
+        files.set_file_source_root_with_durability(self, id, source_root_id, durability);
+    }
+    fn nonce_and_revision(&self) -> (Nonce, salsa::Revision) {
+        (
+            self.nonce,
+            salsa::plumbing::ZalsaDatabase::zalsa(self).current_revision(),
+        )
     }
 }
 
@@ -49,8 +126,9 @@ impl RootDatabase {
     pub fn new(lru_capacity: Option<u16>) -> Self {
         let mut database = Self {
             storage: salsa::Storage::default(),
-            // files: Default::default(),
+            files: Arc::default(),
             // crates_map: Default::default(),
+            nonce: Nonce::new(),
         };
         // This needs to be here otherwise `CrateGraphBuilder` will panic.
         // database.set_all_crates(Arc::new(Box::new([])));
@@ -119,16 +197,8 @@ impl RootDatabase {
         &mut self,
         change: Change,
     ) {
+        self.trigger_cancellation();
         change.apply(self);
-    }
-}
-
-impl FileLoader for RootDatabase {
-    fn resolve_path(
-        &self,
-        path: AnchoredPath<'_>,
-    ) -> Option<FileId> {
-        FileLoaderDelegate(self).resolve_path(path)
     }
 }
 
@@ -146,4 +216,21 @@ impl SnippetCapability {
             None
         }
     }
+}
+
+#[query_group::query_group]
+pub trait LineIndexDatabase: base_db::RootQueryDb {
+    #[salsa::invoke_interned(line_index)]
+    fn line_index(
+        &self,
+        file_id: FileId,
+    ) -> Arc<LineIndex>;
+}
+
+fn line_index(
+    database: &dyn LineIndexDatabase,
+    file_id: FileId,
+) -> Arc<LineIndex> {
+    let text = database.file_text(file_id).text(database);
+    Arc::new(LineIndex::new(text))
 }

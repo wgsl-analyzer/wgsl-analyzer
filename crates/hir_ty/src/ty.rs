@@ -6,8 +6,8 @@ use std::{
     str::FromStr,
 };
 
+use base_db::impl_intern_key;
 use hir_def::{database::StructId, type_ref::VecDimensionality};
-use salsa::InternKey;
 use wgsl_types::{
     syntax::{AccessMode, AddressSpace},
     ty::SamplerType,
@@ -15,20 +15,7 @@ use wgsl_types::{
 
 use crate::database::HirDatabase;
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Copy)]
-pub struct Type {
-    id: salsa::InternId,
-}
-
-impl InternKey for Type {
-    fn from_intern_id(v: salsa::InternId) -> Self {
-        Self { id: v }
-    }
-
-    fn as_intern_id(&self) -> salsa::InternId {
-        self.id
-    }
-}
+impl_intern_key!(Type, TypeKind);
 
 impl Type {
     pub fn kind(
@@ -228,6 +215,25 @@ impl TypeKind {
     pub const fn is_numeric_scalar(&self) -> bool {
         match self {
             Self::Scalar(scalar) => scalar.is_numeric(),
+            Self::Error
+            | Self::Atomic(_)
+            | Self::Vector(_)
+            | Self::Matrix(_)
+            | Self::Struct(_)
+            | Self::Array(_)
+            | Self::Texture(_)
+            | Self::Sampler(_)
+            | Self::Reference(_)
+            | Self::Pointer(_)
+            | Self::BoundVariable(_)
+            | Self::StorageTypeOfTexelFormat(_) => false,
+        }
+    }
+
+    #[must_use]
+    pub const fn is_index(&self) -> bool {
+        match self {
+            Self::Scalar(scalar) => scalar.is_index(),
             Self::Error
             | Self::Atomic(_)
             | Self::Vector(_)
@@ -547,6 +553,19 @@ impl ScalarType {
     /// [`i32`]: <https://www.w3.org/TR/WGSL/#i32>
     /// [`u32`]: <https://www.w3.org/TR/WGSL/#u32>
     pub const fn is_integer(self) -> bool {
+        matches!(self, Self::AbstractInt | Self::I32 | Self::U32)
+    }
+
+    #[must_use]
+    #[expect(clippy::doc_paragraphs_missing_punctuation, reason = "false positive")]
+    /// The collection index types are [`AbstractInt`], [`i32`], and [`u32`].
+    ///
+    /// Reference: <https://www.w3.org/TR/WGSL/#vector-single-component>
+    ///
+    /// [`AbstractInt`]: <https://www.w3.org/TR/WGSL/#abstractint>
+    /// [`i32`]: <https://www.w3.org/TR/WGSL/#i32>
+    /// [`u32`]: <https://www.w3.org/TR/WGSL/#u32>
+    pub const fn is_index(self) -> bool {
         matches!(self, Self::AbstractInt | Self::I32 | Self::U32)
     }
 }

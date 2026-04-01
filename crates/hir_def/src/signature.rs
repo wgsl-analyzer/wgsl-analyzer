@@ -1,3 +1,4 @@
+use base_db::Lookup as _;
 use la_arena::{Arena, Idx};
 use triomphe::Arc;
 
@@ -5,7 +6,7 @@ use crate::{
     HasSource as _,
     database::{
         DefDatabase, FunctionId, GlobalAssertStatementId, GlobalConstantId, GlobalVariableId,
-        Lookup as _, OverrideId, StructId, TypeAliasId,
+        OverrideId, StructId, TypeAliasId,
     },
     expression::ExpressionId,
     expression_store::{

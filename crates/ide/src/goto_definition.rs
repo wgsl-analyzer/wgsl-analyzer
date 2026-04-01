@@ -1,4 +1,4 @@
-use base_db::{FilePosition, SourceDatabase as _};
+use base_db::{EditionedFileId, FilePosition, RootQueryDb as _, SourceDatabase as _};
 use hir::{HasSource as _, Local, Semantics, definition::Definition};
 use hir_def::{InFile, database::DefDatabase as _};
 use ide_db::RootDatabase;
@@ -11,7 +11,7 @@ pub(crate) fn goto_definition(
     file_position: FilePosition,
 ) -> Option<NavigationTarget> {
     let semantics = &Semantics::new(database);
-    let file_id = database.editioned_file_id(file_position.file_id);
+    let file_id = EditionedFileId::from_file(database, file_position.file_id);
     let file = database.parse(file_id).tree();
     let token = file.syntax().token_at_offset(file_position.offset);
 
@@ -25,8 +25,8 @@ pub(crate) fn goto_definition(
         _ => 1,
     })?;
 
-    let definition = Definition::from_token(semantics, file_id.into(), &token)?;
-    InFile::new(file_id.into(), definition).try_to_navigation_target(database)
+    let definition = Definition::from_token(semantics, file_id, &token)?;
+    InFile::new(file_id, definition).try_to_navigation_target(database)
 }
 
 pub(crate) trait ToNavigationTarget {

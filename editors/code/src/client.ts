@@ -1,4 +1,4 @@
-import * as anser from "anser";
+import anser from "anser";
 import { sep as pathSeparator } from "path";
 import * as vscode from "vscode";
 import { WorkspaceEdit } from "vscode";

@@ -7,8 +7,11 @@ on:
 permissions: {}
 
 env:
+  CARGO_TERM_COLOR: always
   CARGO_INCREMENTAL: 0
   CARGO_NET_RETRY: 10
+  CARGO_PROFILE_TEST_DEBUG: 0
+  CARGO_PROFILE_DEV_DEBUG: 0
   RUSTFLAGS: -D warnings -W unreachable-pub
   RUSTUP_MAX_RETRIES: 10
 
@@ -30,7 +33,7 @@ jobs:
           persist-credentials: false
 
       - name: Cache cargo
-        uses: actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+        uses: actions/cache/restore@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
         with:
           path: |
             ~/.cargo/bin/
@@ -43,7 +46,7 @@ jobs:
         run: cargo xtask metrics build
 
       - name: Cache target
-        uses: actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+        uses: actions/cache/restore@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
         with:
           path: target/
           key: ${{ runner.os }}-target-${{ github.sha }}
@@ -76,7 +79,7 @@ jobs:
           persist-credentials: false
 
       - name: Restore target cache
-        uses: actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+        uses: actions/cache/restore@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
         with:
           path: target/
           key: ${{ runner.os }}-target-${{ github.sha }}
