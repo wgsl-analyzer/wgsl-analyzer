@@ -14,7 +14,7 @@ use crate::format::{
     gen_assignment_statement::{
         gen_assignment_statement, gen_compound_assignment_statement, gen_phony_assignment_statement,
     },
-    gen_attributes::{gen_attributes, parse_many_attributes},
+    gen_attributes::{AttributeLayout, gen_attributes, parse_many_attributes},
     gen_comments::gen_comments,
     gen_expression::gen_expression,
     gen_function_call::gen_function_call,
@@ -271,7 +271,10 @@ pub fn gen_for_statement(statement: &ast::ForStatement) -> FormatDocumentResult<
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::new();
-    formatted.extend(gen_attributes(&item_attributes)?);
+    formatted.extend(gen_attributes(
+        &item_attributes,
+        AttributeLayout::Multiline,
+    )?);
     formatted.push_sc(sc!("for"));
     formatted.extend(gen_comments(&comments_after_for));
     formatted.push_sc(sc!("("));
@@ -435,7 +438,10 @@ fn gen_loop_statement(statement: &ast::LoopStatement) -> FormatDocumentResult<Pr
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::new();
-    formatted.extend(gen_attributes(&item_attributes)?);
+    formatted.extend(gen_attributes(
+        &item_attributes,
+        AttributeLayout::Multiline,
+    )?);
     formatted.push_sc(sc!("loop"));
     formatted.extend(gen_comments(&comments_after_loop));
     formatted.expect(RequestItem::Space);
@@ -479,7 +485,10 @@ fn gen_while_statement(statement: &ast::WhileStatement) -> FormatDocumentResult<
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::new();
-    formatted.extend(gen_attributes(&item_attributes)?);
+    formatted.extend(gen_attributes(
+        &item_attributes,
+        AttributeLayout::Multiline,
+    )?);
     formatted.push_sc(sc!("while"));
     formatted.extend(gen_comments(&comments_after_while));
     formatted.expect(RequestItem::Space);

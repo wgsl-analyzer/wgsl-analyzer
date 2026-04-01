@@ -22,6 +22,8 @@ use crate::format::{
     reporting::FormatDocumentError,
 };
 
+use super::gen_attributes::AttributeLayout;
+
 pub fn gen_switch_statement(
     statement: &SwitchStatement
 ) -> Result<PrintItemBuffer, FormatDocumentError> {
@@ -38,7 +40,10 @@ pub fn gen_switch_statement(
     // ==== Format ====
     let mut formatted = PrintItemBuffer::new();
 
-    formatted.extend(gen_attributes(&item_attributes)?);
+    formatted.extend(gen_attributes(
+        &item_attributes,
+        AttributeLayout::Multiline,
+    )?);
     formatted.push_sc(sc!("switch"));
     formatted.extend(gen_comments(&item_comments_after_switch));
     formatted.expect(RequestItem::Space); // We trim out the parens, so we expect a space
@@ -69,7 +74,7 @@ pub fn gen_switch_body(statement: &SwitchBody) -> Result<PrintItemBuffer, Format
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::new();
-    formatted.extend(gen_attributes(&item_attributes)?);
+    formatted.extend(gen_attributes(&item_attributes, AttributeLayout::Inline)?);
     formatted.push_sc(sc!("{"));
     formatted.start_indent();
     formatted.extend(gen_comments(&item_comments_after_brace_left));

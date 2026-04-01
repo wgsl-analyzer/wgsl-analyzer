@@ -1,3 +1,5 @@
+use std::string::String;
+
 use dprint_core_macros::sc;
 use itertools::put_back;
 use parser::SyntaxKind;
@@ -18,8 +20,12 @@ use crate::format::{
 
 use super::print_item_buffer::request_folder::RequestItem;
 
+pub struct ParsedAttribute {
+    attribute: ast::Attribute,
+    comments_after_attribute: Vec<Comment>,
+}
 pub struct ParsedAttributes {
-    attributes: Vec<(ast::Attribute, Vec<Comment>)>,
+    attributes: Vec<ParsedAttribute>,
 }
 
 pub fn parse_many_attributes(syntax: &mut SyntaxIter) -> FormatDocumentResult<ParsedAttributes> {
@@ -33,21 +39,108 @@ pub fn parse_many_attributes(syntax: &mut SyntaxIter) -> FormatDocumentResult<Pa
         };
         let item_comments_after_attribute = parse_many_comments_and_blankspace(syntax)?;
 
-        attributes.push((item_attribute, item_comments_after_attribute));
+        attributes.push(ParsedAttribute {
+            attribute: item_attribute,
+            comments_after_attribute: item_comments_after_attribute,
+        });
     }
     Ok(ParsedAttributes { attributes })
 }
 
-//TODO Properly handle the comments, instead of just passing "syntaxtoken", which seems very untyped...
-pub fn gen_attributes(attributes: &ParsedAttributes) -> FormatDocumentResult<PrintItemBuffer> {
-    let mut formatted = PrintItemBuffer::new();
+pub enum AttributeLayout {
+    Inline,
+    Multiline,
+}
 
-    //TODO Sort and order attributes
-    for (attribute, comments_after_attribute) in &attributes.attributes {
-        formatted.extend(gen_attribute(attribute)?);
-        formatted.extend(gen_comments(comments_after_attribute));
-        formatted.expect(RequestItem::LineBreak);
+pub fn gen_attributes(
+    attributes: &ParsedAttributes,
+    layout: AttributeLayout,
+) -> FormatDocumentResult<PrintItemBuffer> {
+    // If we don't have any attributes, we early exit to avoid all the bureaucracy with newlines
+    if attributes.attributes.is_empty() {
+        return Ok(PrintItemBuffer::new());
     }
+
+    // ==== Sort and Group the Attributes ====
+    let mut ungrouped_attributes = Vec::new();
+    let mut attribute_group_pre_fn_inlined = Vec::new();
+    let mut attribute_group_offset_align_size = Vec::new();
+    let mut attribute_group_binding_group = Vec::new();
+    let mut attribute_group_compute_workgroup = Vec::new();
+
+    for attribute in &attributes.attributes {
+        let name = attribute
+            .attribute
+            .ident_token()
+            .map(|identifier| identifier.text().to_owned());
+        let name = name.as_deref();
+        match name {
+            Some("offset") => attribute_group_offset_align_size.push((0, attribute)),
+            Some("align") => attribute_group_offset_align_size.push((1, attribute)),
+            Some("size") => attribute_group_offset_align_size.push((2, attribute)),
+
+            Some("const") => attribute_group_pre_fn_inlined.push((0, attribute)),
+            Some("must_use") => attribute_group_pre_fn_inlined.push((1, attribute)),
+
+            Some("group") => attribute_group_binding_group.push((0, attribute)),
+            Some("binding") => attribute_group_binding_group.push((1, attribute)),
+
+            Some("compute") => attribute_group_compute_workgroup.push((0, attribute)),
+            Some("workgroup_size") => attribute_group_compute_workgroup.push((1, attribute)),
+
+            Some(name) => ungrouped_attributes.push((name.to_owned(), attribute)),
+            None => ungrouped_attributes.push((String::new(), attribute)),
+        }
+    }
+
+    fn gen_attribute_group<T: Ord>(
+        mut attributes: Vec<(T, &ParsedAttribute)>,
+        separator: RequestItem,
+    ) -> FormatDocumentResult<PrintItemBuffer> {
+        attributes.sort_by(|(order_a, _), (order_b, _)| order_a.cmp(order_b));
+
+        let mut formatted = PrintItemBuffer::new();
+        // Ungrouped attributes go first
+        for ParsedAttribute {
+            attribute,
+            comments_after_attribute,
+        } in attributes.iter().map(|(_, a)| a)
+        {
+            formatted.extend(gen_attribute(attribute)?);
+            formatted.extend(gen_comments(comments_after_attribute));
+            formatted.expect(separator);
+        }
+        Ok(formatted)
+    }
+
+    let group_separator = match layout {
+        AttributeLayout::Inline => RequestItem::Space,
+        AttributeLayout::Multiline => RequestItem::LineBreak,
+    };
+
+    let mut formatted = PrintItemBuffer::new();
+    // Ungrouped attributes go first
+    formatted.extend(gen_attribute_group(ungrouped_attributes, group_separator)?);
+    formatted.extend(gen_attribute_group(
+        attribute_group_binding_group,
+        RequestItem::Space,
+    )?);
+    formatted.expect(group_separator);
+    formatted.extend(gen_attribute_group(
+        attribute_group_offset_align_size,
+        RequestItem::Space,
+    )?);
+    formatted.expect(group_separator);
+    formatted.extend(gen_attribute_group(
+        attribute_group_compute_workgroup,
+        RequestItem::Space,
+    )?);
+    formatted.expect(group_separator);
+    formatted.extend(gen_attribute_group(
+        attribute_group_pre_fn_inlined,
+        RequestItem::Space,
+    )?);
+    // No final line break, these should be inline with the fn
 
     Ok(formatted)
 }

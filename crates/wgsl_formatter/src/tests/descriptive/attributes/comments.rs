@@ -69,9 +69,9 @@ pub fn format_comments_in_attrs_on_function_return_type() {
         ) ## -> ## @attr(0) ## @attr(1) ## vec4<f32> ## {
         }",
         expect![[r#"
-            fn thing() /* 0 */ -> /* 1 */ @attr(0) /* 2 */
-            @attr(1) /* 3 */
-            vec4<f32> /* 4 */ {}
+            fn thing() /* 0 */ -> /* 1 */ @attr(0) /* 2 */ @attr(1) /* 3 */ vec4<
+                f32,
+            > /* 4 */ {}
         "#]],
         expect![[r#"
             fn thing() // 0
@@ -277,9 +277,7 @@ pub fn format_comments_in_attrs_on_switch_statement_and_body() {
                 /* 0 */
                 @attr(0) /* 1 */
                 @attr(1) /* 2 */
-                switch a /* 3 */ @attr(0) /* 4 */
-                @attr(1) /* 5 */
-                { /* 6 */ }
+                switch a /* 3 */ @attr(0) /* 4 */ @attr(1) /* 5 */ { /* 6 */ }
             }
         "#]],
         expect![[r#"

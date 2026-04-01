@@ -16,6 +16,8 @@ use crate::format::{
     reporting::FormatDocumentResult,
 };
 
+use super::gen_attributes::AttributeLayout;
+
 enum CompoundStatementItem {
     Statement(ast::Statement),
     Comment(Comment),
@@ -55,7 +57,10 @@ pub fn gen_compound_statement(
     // ==== Format ====
     let mut formatted = PrintItemBuffer::new();
 
-    formatted.extend(gen_attributes(&item_attributes)?);
+    formatted.extend(gen_attributes(
+        &item_attributes,
+        AttributeLayout::Multiline,
+    )?);
     formatted.push_sc(sc!("{"));
 
     if !body_empty {

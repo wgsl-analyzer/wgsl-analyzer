@@ -20,6 +20,8 @@ use crate::format::{
     reporting::FormatDocumentResult,
 };
 
+use super::gen_attributes::AttributeLayout;
+
 pub fn gen_const_declaration_statement(
     statement: &ast::ConstantDeclaration,
     include_semicolon: bool,
@@ -139,7 +141,10 @@ fn gen_var_let_const_override_statement(
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::new();
-    formatted.extend(gen_attributes(&item_attributes)?);
+    formatted.extend(gen_attributes(
+        &item_attributes,
+        AttributeLayout::Multiline,
+    )?);
     formatted.push_sc(kind.sc());
     formatted.start_indent();
 
