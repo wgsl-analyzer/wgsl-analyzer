@@ -16,9 +16,8 @@ use crate::format::{
     gen_comments::{Comment, gen_comments},
     gen_diagnostic::gen_diagnostic_control,
     gen_function_call::gen_function_call_arguments,
-    helpers::todo_verbatim_wesl,
     print_item_buffer::PrintItemBuffer,
-    reporting::{FormatDocumentError, FormatDocumentResult},
+    reporting::FormatDocumentResult,
 };
 
 use super::print_item_buffer::request_folder::RequestItem;
@@ -133,7 +132,7 @@ pub fn gen_attributes(
         for ParsedAttribute {
             attribute,
             comments_after_attribute,
-        } in attributes.iter().map(|(_, a)| a)
+        } in attributes.iter().map(|(_, attribute)| attribute)
         {
             formatted.extend(gen_kinded_attribute(attribute)?);
             formatted.extend(gen_comments(comments_after_attribute));

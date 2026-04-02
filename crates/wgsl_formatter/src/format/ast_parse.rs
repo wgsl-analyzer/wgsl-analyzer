@@ -30,7 +30,6 @@ pub fn parse_token(
     .expect_if_prefer_crash()
 }
 
-#[expect(unused, reason = "TODO")]
 pub fn parse_node_by_kind(
     syntax: &mut SyntaxIter,
     expected: SyntaxKind,

@@ -21,7 +21,7 @@ use crate::format::{
     gen_assignment_statement::{
         gen_assignment_statement, gen_compound_assignment_statement, gen_phony_assignment_statement,
     },
-    gen_attributes::{gen_attribute, gen_diagnostic_attribute, gen_kinded_attribute},
+    gen_attributes::{gen_attribute, gen_diagnostic_attribute},
     gen_directive::{gen_diagnostic_directive, gen_enable_directive, gen_requires_directive},
     gen_expression::{
         gen_expression, gen_field_expression, gen_ident_expression, gen_index_expression,
@@ -77,6 +77,10 @@ pub fn gen_node_no_newlines(node: &SyntaxNode) -> FormatDocumentResult<PrintItem
 #[expect(
     clippy::cognitive_complexity,
     reason = "It doesn't make sense to break this else_if into multiple functions"
+)]
+#[expect(
+    clippy::too_many_lines,
+    reason = "It does not make sense to split this up"
 )]
 pub fn gen_node(node: &SyntaxNode) -> FormatDocumentResult<PrintItemBuffer> {
     // TODO These clones are all unnecessary.
