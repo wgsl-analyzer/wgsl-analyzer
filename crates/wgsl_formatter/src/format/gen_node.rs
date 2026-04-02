@@ -6,9 +6,9 @@ use syntax::{
     AstNode as _,
     ast::{
         Arguments, AssertStatement, AssignmentStatement, Attribute, CompoundAssignmentStatement,
-        CompoundStatement, ConstantDeclaration, Expression, FieldExpression, ForStatement,
-        FunctionCall, FunctionDeclaration, FunctionParameters, IdentExpression, IfStatement,
-        ImportStatement, IndexExpression, InfixExpression, LetDeclaration, Literal,
+        CompoundStatement, ConstantDeclaration, DiagnosticAttribute, Expression, FieldExpression,
+        ForStatement, FunctionCall, FunctionDeclaration, FunctionParameters, IdentExpression,
+        IfStatement, ImportStatement, IndexExpression, InfixExpression, LetDeclaration, Literal,
         OverrideDeclaration, Parameter, ParenthesisExpression, Path, PhonyAssignmentStatement,
         PrefixExpression, ReturnType, SourceFile, Statement, StructDeclaration, SwitchBody,
         SwitchBodyCase, SwitchCaseSelector, SwitchCaseSelectors, SwitchDefaultSelector,
@@ -20,7 +20,7 @@ use crate::format::{
     gen_assignment_statement::{
         gen_assignment_statement, gen_compound_assignment_statement, gen_phony_assignment_statement,
     },
-    gen_attributes::gen_attribute,
+    gen_attributes::{gen_attribute, gen_diagnostic_attribute, gen_kinded_attribute},
     gen_expression::{
         gen_expression, gen_field_expression, gen_ident_expression, gen_index_expression,
         gen_infix_expression, gen_literal_expression, gen_parenthesis_expression,
@@ -102,6 +102,8 @@ pub fn gen_node(node: &SyntaxNode) -> FormatDocumentResult<PrintItemBuffer> {
         gen_assignment_statement(&node, needs_semicolon(node.syntax().parent()))
     } else if let Some(node) = Attribute::cast(node.clone()) {
         gen_attribute(&node)
+    } else if let Some(node) = DiagnosticAttribute::cast(node.clone()) {
+        gen_diagnostic_attribute(&node)
     } else if let Some(node) = CompoundAssignmentStatement::cast(node.clone()) {
         gen_compound_assignment_statement(&node, needs_semicolon(node.syntax().parent()))
     } else if let Some(node) = AssertStatement::cast(node.clone()) {

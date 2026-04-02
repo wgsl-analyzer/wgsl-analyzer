@@ -11,6 +11,7 @@ mod print_item_buffer;
 pub mod gen_assignment_statement;
 mod gen_attributes;
 mod gen_comments;
+mod gen_diagnostic;
 mod gen_expression;
 mod gen_function;
 mod gen_function_call;
