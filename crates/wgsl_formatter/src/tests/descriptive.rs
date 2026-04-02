@@ -13,6 +13,7 @@ mod struct_def;
 mod types;
 
 mod bevy_reference;
+mod directives;
 mod expressions;
 mod statements;
 

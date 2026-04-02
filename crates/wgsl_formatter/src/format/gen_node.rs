@@ -6,13 +6,14 @@ use syntax::{
     AstNode as _,
     ast::{
         Arguments, AssertStatement, AssignmentStatement, Attribute, CompoundAssignmentStatement,
-        CompoundStatement, ConstantDeclaration, DiagnosticAttribute, Expression, FieldExpression,
-        ForStatement, FunctionCall, FunctionDeclaration, FunctionParameters, IdentExpression,
-        IfStatement, ImportStatement, IndexExpression, InfixExpression, LetDeclaration, Literal,
-        OverrideDeclaration, Parameter, ParenthesisExpression, Path, PhonyAssignmentStatement,
-        PrefixExpression, ReturnType, SourceFile, Statement, StructDeclaration, SwitchBody,
-        SwitchBodyCase, SwitchCaseSelector, SwitchCaseSelectors, SwitchDefaultSelector,
-        SwitchStatement, TemplateList, TypeAliasDeclaration, TypeSpecifier, VariableDeclaration,
+        CompoundStatement, ConstantDeclaration, DiagnosticAttribute, EnableDirective, Expression,
+        FieldExpression, ForStatement, FunctionCall, FunctionDeclaration, FunctionParameters,
+        IdentExpression, IfStatement, ImportStatement, IndexExpression, InfixExpression,
+        LetDeclaration, Literal, OverrideDeclaration, Parameter, ParenthesisExpression, Path,
+        PhonyAssignmentStatement, PrefixExpression, RequiresDirective, ReturnType, SourceFile,
+        Statement, StructDeclaration, SwitchBody, SwitchBodyCase, SwitchCaseSelector,
+        SwitchCaseSelectors, SwitchDefaultSelector, SwitchStatement, TemplateList,
+        TypeAliasDeclaration, TypeSpecifier, VariableDeclaration,
     },
 };
 
@@ -21,6 +22,7 @@ use crate::format::{
         gen_assignment_statement, gen_compound_assignment_statement, gen_phony_assignment_statement,
     },
     gen_attributes::{gen_attribute, gen_diagnostic_attribute, gen_kinded_attribute},
+    gen_directive::{gen_enable_directive, gen_requires_directive},
     gen_expression::{
         gen_expression, gen_field_expression, gen_ident_expression, gen_index_expression,
         gen_infix_expression, gen_literal_expression, gen_parenthesis_expression,
@@ -176,6 +178,10 @@ pub fn gen_node(node: &SyntaxNode) -> FormatDocumentResult<PrintItemBuffer> {
         gen_var_declaration_statement(&node, needs_semicolon(node.syntax().parent()))
     } else if let Some(node) = ImportStatement::cast(node.clone()) {
         gen_import_statement(&node)
+    } else if let Some(node) = EnableDirective::cast(node.clone()) {
+        gen_enable_directive(&node)
+    } else if let Some(node) = RequiresDirective::cast(node.clone()) {
+        gen_requires_directive(&node)
     } else {
         Err(FormatDocumentError::UnsupportedNodeOrToken {
             received: NodeOrToken::Node(node.clone()),

@@ -48,6 +48,17 @@ pub fn parse_node_by_kind(
     .expect_if_prefer_crash()
 }
 
+pub fn parse_any_node_optional(syntax: &mut SyntaxIter) -> Option<SyntaxNode> {
+    match syntax.next() {
+        Some(NodeOrToken::Node(child)) => Some(child),
+        Some(other) => {
+            syntax.put_back(other);
+            None
+        },
+        None => None,
+    }
+}
+
 pub fn parse_node_by_kind_optional(
     syntax: &mut SyntaxIter,
     expected: SyntaxKind,
