@@ -104,15 +104,15 @@ fn format_comments_in_struct_def_members_with_attributes() {
     check_comments(
         "
         ## struct ## Test ##
-        { ##  @location ## ( ## 0 ## ) ## @attribute ## ( ## 1 ## ) ## x ## : ## i32 ## , ## a ## : ## i32 ## , ## b ## : ## f32 ## ,
+        { ##  @attribute ## ( ## 0 ## ) ## @location ## ( ## 1 ## ) ## x ## : ## i32 ## , ## a ## : ## i32 ## , ## b ## : ## f32 ## ,
 
                 }",
         expect![[r#"
             /* 0 */
             struct /* 1 */ Test /* 2 */ {
                 /* 3 */
-                @location /* 4 */ (/* 5 */ 0 /* 6 */) /* 7 */
-                @attribute /* 8 */ (/* 9 */ 1 /* 10 */) /* 11 */
+                @attribute /* 4 */ (/* 5 */ 0 /* 6 */) /* 7 */
+                @location /* 8 */ (/* 9 */ 1 /* 10 */) /* 11 */
                 x: /* 12 */ /* 13 */ i32, /* 14 */ /* 15 */
                 a: /* 16 */ /* 17 */ i32, /* 18 */ /* 19 */
                 b: /* 20 */ /* 21 */ f32, /* 22 */
@@ -124,16 +124,16 @@ fn format_comments_in_struct_def_members_with_attributes() {
             Test // 2
             {
                 // 3
-                @attribute // 8
-                (
-                    // 9
-                    1, // 10
-                ) // 11
-                @location // 4
+                @attribute // 4
                 (
                     // 5
                     0, // 6
                 ) // 7
+                @location // 8
+                (
+                    // 9
+                    1, // 10
+                ) // 11
                 x: // 12
                 // 13
                 i32, // 14
