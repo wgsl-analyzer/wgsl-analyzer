@@ -1,24 +1,16 @@
 use std::collections::BTreeSet;
 
 use itertools::put_back;
-use parser::SyntaxKind;
+use parser::{SyntaxKind, SyntaxNode};
 use syntax::{
     AstNode as _,
-    ast::{self, Item},
+    ast::{self},
 };
 
 use crate::format::{
-    ast_parse::{parse_end, parse_node_optional, parse_token_optional},
+    ast_parse::{parse_any_node_optional, parse_end, parse_token_optional},
     gen_comments::{Comment, gen_comment, parse_comment_optional},
-    gen_function::gen_function_declaration,
-    gen_statement::gen_const_assert_statement,
-    gen_statement_import::gen_import_statement,
-    gen_struct::gen_struct_declaration,
-    gen_type_alias_declaration::gen_type_alias_declaration,
-    gen_var_let_const_override_statement::{
-        gen_const_declaration_statement, gen_override_declaration_statement,
-        gen_var_declaration_statement,
-    },
+    gen_node::gen_node,
     helpers::{LineSpacing, gen_line_spacing, parse_line_spacing},
     print_item_buffer::{
         PrintItemBuffer,
@@ -27,34 +19,9 @@ use crate::format::{
     reporting::FormatDocumentResult,
 };
 
-fn gen_item(node: &Item) -> FormatDocumentResult<PrintItemBuffer> {
-    match node {
-        Item::FunctionDeclaration(function_declaration) => {
-            gen_function_declaration(function_declaration)
-        },
-        Item::StructDeclaration(struct_declaration) => gen_struct_declaration(struct_declaration),
-        Item::VariableDeclaration(variable_declaration) => {
-            gen_var_declaration_statement(variable_declaration, true)
-        },
-        Item::ConstantDeclaration(constant_declaration) => {
-            gen_const_declaration_statement(constant_declaration, true)
-        },
-        Item::OverrideDeclaration(override_declaration) => {
-            gen_override_declaration_statement(override_declaration, true)
-        },
-        Item::TypeAliasDeclaration(type_alias_declaration) => {
-            gen_type_alias_declaration(type_alias_declaration, true)
-        },
-        Item::AssertStatement(assert_statement) => {
-            gen_const_assert_statement(assert_statement, true)
-        },
-        Item::ImportStatement(import_statement) => gen_import_statement(import_statement),
-    }
-}
-
 pub fn gen_source_file(node: &ast::SourceFile) -> FormatDocumentResult<PrintItemBuffer> {
     enum SourceFileItem {
-        Item(Item),
+        Other(SyntaxNode),
         Comment(Comment),
         LineSpacing(LineSpacing),
     }
@@ -73,10 +40,12 @@ pub fn gen_source_file(node: &ast::SourceFile) -> FormatDocumentResult<PrintItem
             // If its not a line_spacing blankspace, then we simply discard it
         } else if let Some(_statement) = parse_token_optional(&mut syntax, SyntaxKind::Semicolon) {
             // Top level semicolons, like after struct defs
-        } else if let Some(item) = parse_node_optional::<Item>(&mut syntax) {
-            items.push(SourceFileItem::Item(item));
         } else if let Some(comment) = parse_comment_optional(&mut syntax) {
             items.push(SourceFileItem::Comment(comment));
+        } else if let Some(item) = parse_any_node_optional(&mut syntax) {
+            // Any other node. We do not care what exact node it is, because that will be handled by gen_node later
+            // The formatter should format items that are in wrong places, its the job of the parser to check correctness
+            items.push(SourceFileItem::Other(item));
         } else {
             break;
         }
@@ -100,10 +69,10 @@ pub fn gen_source_file(node: &ast::SourceFile) -> FormatDocumentResult<PrintItem
 
     for item in items {
         match item {
-            SourceFileItem::Item(item) => {
+            SourceFileItem::Other(item) => {
                 // Every item should start on a new line.
                 formatted.expect(RequestItem::LineBreak);
-                formatted.extend(gen_item(&item)?);
+                formatted.extend(gen_node(&item)?);
             },
             SourceFileItem::Comment(comment) => {
                 formatted.extend(gen_comment(&comment));
