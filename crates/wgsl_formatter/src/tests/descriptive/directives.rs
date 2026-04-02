@@ -3,17 +3,14 @@ use expect_test::expect;
 use crate::test_util::{assert_out_of_scope, check, check_comments};
 
 #[test]
-pub fn format_diagnostic_simple_1() {
+pub fn format_diagnostic_simple_12() {
     check(
         "
        diagnostic
        (off, something);
        ",
         expect![[r#"
-            @bla
-            @blu
-            @diagnostic(off, something)
-            fn main() {}
+            diagnostic(off, something);
         "#]],
     );
 }
@@ -26,10 +23,22 @@ pub fn format_diagnostic_with_dot_simple_1() {
        (off, something.something);
        ",
         expect![[r#"
-            @bla
-            @blu
-            @diagnostic(off, something)
-            fn main() {}
+            diagnostic(off, something.something);
+        "#]],
+    );
+}
+
+#[test]
+pub fn format_diagnostic_with_dot_and_newline() {
+    check(
+        "
+       diagnostic
+       (off, something
+       .
+       something);
+       ",
+        expect![[r#"
+            diagnostic(off, something.something);
         "#]],
     );
 }
@@ -37,9 +46,23 @@ pub fn format_diagnostic_with_dot_simple_1() {
 #[test]
 pub fn format_comments_in_diagnostic_1() {
     check_comments(
-        "## diagnostic ## ( ## off ## , ## something ## ) ## ; ##",
-        expect![""],
-        expect![""],
+        "## diagnostic ## ( ## off ## , ## something ## . ## something ## ) ## ; ##",
+        expect![[r#"
+            /* 0 */
+            diagnostic /* 1 */ ( /* 2 */ off /* 3 */ , /* 4 */ something /* 5 */ . /* 6 */ something /* 7 */ ) /* 8 */ ; /* 9 */
+        "#]],
+        expect![[r#"
+            // 0
+            diagnostic // 1
+            ( // 2
+            off // 3
+            , // 4
+            something // 5
+            . // 6
+            something // 7
+            ) // 8
+            ; // 9
+        "#]],
     );
 }
 

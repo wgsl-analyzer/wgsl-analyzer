@@ -194,7 +194,7 @@ pub fn gen_diagnostic_attribute(
 
     parse_token(&mut syntax, SyntaxKind::AttributeOperator)?;
     let item_comments_after_operator = parse_many_comments_and_blankspace(&mut syntax)?;
-    let item_identifier = parse_token(&mut syntax, parser::SyntaxKind::Diagnostic)?;
+    parse_token(&mut syntax, parser::SyntaxKind::Diagnostic)?;
     let item_comments_after_identifier = parse_many_comments_and_blankspace(&mut syntax)?;
     let item_control = parse_node::<DiagnosticControl>(&mut syntax)?;
     parse_end(&mut syntax)?;
@@ -202,7 +202,7 @@ pub fn gen_diagnostic_attribute(
     let mut formatted = PrintItemBuffer::new();
     formatted.push_sc(sc!("@"));
     formatted.extend(gen_comments(&item_comments_after_operator));
-    formatted.push_string(item_identifier.to_string());
+    formatted.push_sc(sc!("diagnostic"));
     formatted.extend(gen_comments(&item_comments_after_identifier));
     formatted.extend(gen_diagnostic_control(&item_control)?);
     Ok(formatted)
