@@ -118,7 +118,7 @@ expression:
 | literal @literal
 ;
 
-ident_or_function^: 
+ident_or_function^:
 ident_expression [argument_expression_list_expr >function_call];
 // §8.3
 literal^:
@@ -136,9 +136,9 @@ statement:
     // NOTE: The WGSL spec (§9.4.1) requires `if_clause (else_if_clause)* [else_clause]`,
     // i.e. at most one trailing else and no else-if after else. We accept the more
     // permissive form here so the parser produces a valid AST for malformed input
-    // (e.g. `} else { } else if (...) { }`), enabling the formatter and IDE features
-    // to operate on it. A parser-level diagnostic in `create_node_if_statement`
-    // reports the error.
+    // (e.g. `if { } else { } else if (...) { }`), enabling the formatter and IDE
+    // features to operate on it.
+    // A parser-level diagnostic in `create_node_if_statement` reports the error.
     if_clause (?1 else_if_clause | else_clause)* @if_statement // §9.4.1
   | 'switch' expression switch_body @switch_statement // §9.4.2
   | 'loop' loop_compound_statement @loop_statement // §9.4.3
@@ -153,7 +153,7 @@ statement:
 | let_declaration_semi @let_declaration
 | const_declaration_semi @const_declaration
 // we need to choose a statement type as the default, so we choose simple_assignment_statement
-| lhs_expression @simple_assignment_statement ( 
+| lhs_expression @simple_assignment_statement (
     '=' expression @simple_assignment_statement // §9.2.1
   | compound_assignment_operator expression @compound_assignment_statement // §9.2.3
   | '++' @increment_statement // §9.3
@@ -173,8 +173,8 @@ continuing_compound_statement: attribute* '{' (?1 statement)* [break_if_statemen
 break_if_statement: 'break' 'if' expression ';'; // §9.4.7
 for_init:
   ?1 function_call
-| variable_declaration 
-| let_declaration 
+| variable_declaration
+| let_declaration
 | const_declaration
 | variable_updating
 ;

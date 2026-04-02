@@ -3583,3 +3583,81 @@ fn struct_recover_semicolon_instead_of_comma() {
             error at 21..22: invalid syntax, expected ','"#]],
     );
 }
+
+#[test]
+fn diagnostic_attribute() {
+    check(
+        "
+        @diagnostic(off, bla)
+        fn main() {}
+        ",
+        expect![[r#"
+            SourceFile@0..60
+              Blankspace@0..9 "\n        "
+              FunctionDeclaration@9..51
+                DiagnosticAttribute@9..30
+                  AttributeOperator@9..10 "@"
+                  Diagnostic@10..20 "diagnostic"
+                  DiagnosticControl@20..30
+                    ParenthesisLeft@20..21 "("
+                    SeverityControlName@21..24
+                      Identifier@21..24 "off"
+                    Comma@24..25 ","
+                    Blankspace@25..26 " "
+                    DiagnosticRuleName@26..29
+                      Identifier@26..29 "bla"
+                    ParenthesisRight@29..30 ")"
+                Blankspace@30..39 "\n        "
+                Fn@39..41 "fn"
+                Blankspace@41..42 " "
+                Name@42..46
+                  Identifier@42..46 "main"
+                FunctionParameters@46..48
+                  ParenthesisLeft@46..47 "("
+                  ParenthesisRight@47..48 ")"
+                Blankspace@48..49 " "
+                CompoundStatement@49..51
+                  BraceLeft@49..50 "{"
+                  BraceRight@50..51 "}"
+              Blankspace@51..60 "\n        ""#]],
+    );
+}
+
+#[test]
+fn diagnostic_directive() {
+    check(
+        "
+        diagnostic(off, bla);
+        fn main() {}
+        ",
+        expect![[r#"
+            SourceFile@0..60
+              Blankspace@0..9 "\n        "
+              Diagnostic@9..30
+                Diagnostic@9..19 "diagnostic"
+                DiagnosticControl@19..29
+                  ParenthesisLeft@19..20 "("
+                  SeverityControlName@20..23
+                    Identifier@20..23 "off"
+                  Comma@23..24 ","
+                  Blankspace@24..25 " "
+                  DiagnosticRuleName@25..28
+                    Identifier@25..28 "bla"
+                  ParenthesisRight@28..29 ")"
+                Semicolon@29..30 ";"
+              Blankspace@30..39 "\n        "
+              FunctionDeclaration@39..51
+                Fn@39..41 "fn"
+                Blankspace@41..42 " "
+                Name@42..46
+                  Identifier@42..46 "main"
+                FunctionParameters@46..48
+                  ParenthesisLeft@46..47 "("
+                  ParenthesisRight@47..48 ")"
+                Blankspace@48..49 " "
+                CompoundStatement@49..51
+                  BraceLeft@49..50 "{"
+                  BraceRight@50..51 "}"
+              Blankspace@51..60 "\n        ""#]],
+    );
+}

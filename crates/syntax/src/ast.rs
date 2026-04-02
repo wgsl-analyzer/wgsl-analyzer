@@ -642,6 +642,23 @@ ast_node! {
 }
 
 ast_node! {
+    Diagnostic:
+    ident_token: Option<SyntaxToken Identifier>;
+    parameters: Option<Arguments>;
+}
+
+ast_node! {
+    DiagnosticControl:
+    severity_control_name: Option<SyntaxToken SeverityControlName>;
+    diagnostic_rule_name: Option<SyntaxToken DiagnosticRuleName>;
+}
+
+ast_node! {
+    DiagnosticAttribute:
+    parameters: Option<DiagnosticControl>;
+}
+
+ast_node! {
     CompoundStatement:
     left_brace_token: Option<SyntaxToken BraceLeft>;
     right_brace_token: Option<SyntaxToken BraceRight>;
