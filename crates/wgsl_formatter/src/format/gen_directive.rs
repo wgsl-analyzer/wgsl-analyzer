@@ -1,9 +1,9 @@
-use dprint_core::formatting::PrintItems;
 use dprint_core_macros::sc;
 use itertools::put_back;
+use parser::SyntaxKind;
 use syntax::{
-    AstNode,
-    ast::{self, SyntaxKind},
+    AstNode as _,
+    ast::{self, DiagnosticControl},
 };
 
 use crate::format::{
@@ -11,7 +11,8 @@ use crate::format::{
         parse_end, parse_many_comments_and_blankspace, parse_node, parse_node_optional,
         parse_token, parse_token_optional,
     },
-    gen_comments::{Comment, gen_comment, parse_comment_optional},
+    gen_comments::{Comment, gen_comment, gen_comments, parse_comment_optional},
+    gen_diagnostic::gen_diagnostic_control,
     multiline_group::MultilineGroup,
     print_item_buffer::{
         PrintItemBuffer,
@@ -171,6 +172,21 @@ pub fn gen_requires_directive(
     Ok(formatted)
 }
 
-// pub fn gen_diagnostic_directive(node: &ast::EnableDirective) -> FormatDocumentResult<PrintItemBuffer> {
+pub fn gen_diagnostic_directive(node: &ast::Diagnostic) -> FormatDocumentResult<PrintItemBuffer> {
+    let mut syntax = put_back(node.syntax().children_with_tokens());
 
-// }
+    parse_token(&mut syntax, SyntaxKind::Diagnostic)?;
+    let item_comments_after_identifier = parse_many_comments_and_blankspace(&mut syntax)?;
+    let item_control = parse_node::<DiagnosticControl>(&mut syntax)?;
+    let item_comments_after_control = parse_many_comments_and_blankspace(&mut syntax)?;
+    parse_token(&mut syntax, SyntaxKind::Semicolon)?;
+    parse_end(&mut syntax)?;
+
+    let mut formatted = PrintItemBuffer::new();
+    formatted.push_sc(sc!("diagnostic"));
+    formatted.extend(gen_comments(&item_comments_after_identifier));
+    formatted.extend(gen_diagnostic_control(&item_control)?);
+    formatted.extend(gen_comments(&item_comments_after_control));
+    formatted.push_sc(sc!(";"));
+    Ok(formatted)
+}
