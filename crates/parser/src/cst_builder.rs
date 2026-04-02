@@ -84,7 +84,7 @@ impl CstBuilder<'_, '_> {
             Rule::DefaultCaseSelector => self.start_node(SyntaxKind::SwitchDefaultSelector),
             Rule::DiagnosticAttr => self.start_node(SyntaxKind::DiagnosticAttribute),
             Rule::DiagnosticControl => self.start_node(SyntaxKind::DiagnosticControl),
-            Rule::DiagnosticDirective => self.start_node(SyntaxKind::Diagnostic),
+            Rule::DiagnosticDirective => self.start_node(SyntaxKind::DiagnosticDirective),
             Rule::DiagnosticRuleName => self.start_node(SyntaxKind::DiagnosticRuleName),
             Rule::DiscardStatement => self.start_node(SyntaxKind::DiscardStatement),
             Rule::ElseClause => self.start_node(SyntaxKind::ElseClause),

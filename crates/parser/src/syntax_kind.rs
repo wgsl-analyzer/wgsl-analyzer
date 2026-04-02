@@ -212,6 +212,7 @@ pub enum SyntaxKind {
     Diagnostic,
     DiagnosticControl,
     DiagnosticAttribute,
+    DiagnosticDirective,
     DiagnosticRuleName,
     SeverityControlName,
     Discard,
@@ -393,6 +394,7 @@ impl SyntaxKind {
             Self::SourceFile
                 | Self::EnableDirective
                 | Self::RequiresDirective
+                | Self::DiagnosticDirective
                 | Self::Attribute
                 | Self::ImportStatement
                 | Self::ImportPath

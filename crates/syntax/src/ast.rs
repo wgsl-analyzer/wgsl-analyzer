@@ -644,7 +644,6 @@ ast_node! {
 ast_node! {
     Diagnostic:
     ident_token: Option<SyntaxToken Identifier>;
-    parameters: Option<Arguments>;
 }
 
 ast_node! {
@@ -654,7 +653,14 @@ ast_node! {
 }
 
 ast_node! {
+    DiagnosticDirective:
+    diagnostic_token: Option<Diagnostic>;
+    parameters: Option<DiagnosticControl>;
+}
+
+ast_node! {
     DiagnosticAttribute:
+    diagnostic_token: Option<Diagnostic>;
     parameters: Option<DiagnosticControl>;
 }
 
