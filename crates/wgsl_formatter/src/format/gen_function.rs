@@ -1,4 +1,4 @@
-use std::{collections::BTreeSet, rc::Rc};
+use std::rc::Rc;
 
 use dprint_core::formatting::{PrintItems, conditions};
 use dprint_core_macros::sc;
@@ -22,7 +22,7 @@ use crate::format::{
     multiline_group::MultilineGroup,
     print_item_buffer::{
         PrintItemBuffer,
-        request_folder::{Request, RequestFolder, RequestItem},
+        request_folder::{Request, RequestItem},
     },
     reporting::FormatDocumentResult,
 };

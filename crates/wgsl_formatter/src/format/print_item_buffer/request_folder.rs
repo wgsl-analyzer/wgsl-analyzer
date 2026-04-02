@@ -4,7 +4,7 @@ use dprint_core::formatting::{
     Condition, ConditionProperties, ConditionResolver, PrintItems, Signal,
 };
 
-/// A possible kind of whitespace that can be requested and, through RequestFolder, be merged together if multiple requests are issued.
+/// A possible kind of whitespace that can be requested and, through [`RequestFolder`], be merged together if multiple requests are issued.
 ///
 /// The Ord instance of this is used to determine which whitespace should be used, when multiple requests are issued.
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug, PartialOrd, Ord)]
@@ -77,7 +77,7 @@ impl Request {
     pub fn or_newline(self) -> Self {
         //TODO Redesign requests once again
         match self {
-            Request::Unconditional {
+            Self::Unconditional {
                 expected,
                 discouraged,
                 forced,
@@ -88,11 +88,7 @@ impl Request {
                 forced,
                 suggest_linebreak: true,
             },
-            Request::Conditional {
-                condition,
-                on_true,
-                on_false,
-            } => todo!(),
+            Self::Conditional { .. } => todo!(),
         }
     }
 

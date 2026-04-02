@@ -5,7 +5,7 @@ use syntax::{AstNode as _, ast};
 
 use crate::format::{
     ast_parse::{
-        parse_end, parse_many_comments_and_blankspace, parse_node, parse_node_by_kind, parse_token,
+        parse_end, parse_many_comments_and_blankspace, parse_node_by_kind, parse_token,
         parse_token_optional,
     },
     gen_comments::gen_comments,
