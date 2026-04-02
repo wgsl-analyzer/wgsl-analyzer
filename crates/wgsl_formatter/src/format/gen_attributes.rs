@@ -5,27 +5,46 @@ use itertools::put_back;
 use parser::SyntaxKind;
 use syntax::{
     AstNode as _,
-    ast::{self, Arguments},
+    ast::{self, Arguments, DiagnosticControl},
 };
 
 use crate::format::{
     ast_parse::{
-        SyntaxIter, parse_end, parse_many_comments_and_blankspace, parse_node_optional, parse_token,
+        SyntaxIter, parse_end, parse_many_comments_and_blankspace, parse_node, parse_node_optional,
+        parse_token,
     },
     gen_comments::{Comment, gen_comments},
+    gen_diagnostic::gen_diagnostic_control,
     gen_function_call::gen_function_call_arguments,
+    helpers::todo_verbatim_wesl,
     print_item_buffer::PrintItemBuffer,
-    reporting::FormatDocumentResult,
+    reporting::{FormatDocumentError, FormatDocumentResult},
 };
 
 use super::print_item_buffer::request_folder::RequestItem;
 
+pub enum KindedAttribute {
+    Attribute(ast::Attribute),
+    Diagnostic(ast::DiagnosticAttribute),
+}
+
 pub struct ParsedAttribute {
-    attribute: ast::Attribute,
+    attribute: KindedAttribute,
     comments_after_attribute: Vec<Comment>,
 }
 pub struct ParsedAttributes {
     attributes: Vec<ParsedAttribute>,
+}
+
+#[expect(clippy::manual_map, reason = "Looks nicer this way")]
+fn parse_kinded_attribute_optional(syntax: &mut SyntaxIter) -> Option<KindedAttribute> {
+    if let Some(item_attribute) = parse_node_optional::<ast::Attribute>(syntax) {
+        Some(KindedAttribute::Attribute(item_attribute))
+    } else if let Some(item_diagnostic) = parse_node_optional::<ast::DiagnosticAttribute>(syntax) {
+        Some(KindedAttribute::Diagnostic(item_diagnostic))
+    } else {
+        None
+    }
 }
 
 pub fn parse_many_attributes(syntax: &mut SyntaxIter) -> FormatDocumentResult<ParsedAttributes> {
@@ -34,7 +53,7 @@ pub fn parse_many_attributes(syntax: &mut SyntaxIter) -> FormatDocumentResult<Pa
     // Also this is very similar to parse_many_comments_and_blankspace
     let mut attributes = Vec::new();
     loop {
-        let Some(item_attribute) = parse_node_optional::<ast::Attribute>(syntax) else {
+        let Some(item_attribute) = parse_kinded_attribute_optional(syntax) else {
             break;
         };
         let item_comments_after_attribute = parse_many_comments_and_blankspace(syntax)?;
@@ -47,6 +66,7 @@ pub fn parse_many_attributes(syntax: &mut SyntaxIter) -> FormatDocumentResult<Pa
     Ok(ParsedAttributes { attributes })
 }
 
+#[derive(Clone, Copy, Debug)]
 pub enum AttributeLayout {
     Inline,
     Multiline,
@@ -63,33 +83,42 @@ pub fn gen_attributes(
 
     // ==== Sort and Group the Attributes ====
     let mut ungrouped_attributes = Vec::new();
+    let mut attribute_group_diagnostics = Vec::new();
     let mut attribute_group_pre_fn_inlined = Vec::new();
     let mut attribute_group_offset_align_size = Vec::new();
     let mut attribute_group_binding_group = Vec::new();
     let mut attribute_group_compute_workgroup = Vec::new();
 
     for attribute in &attributes.attributes {
-        let name = attribute
-            .attribute
-            .ident_token()
-            .map(|identifier| identifier.text().to_owned());
-        let name = name.as_deref();
-        match name {
-            Some("offset") => attribute_group_offset_align_size.push((0, attribute)),
-            Some("align") => attribute_group_offset_align_size.push((1, attribute)),
-            Some("size") => attribute_group_offset_align_size.push((2, attribute)),
+        match &attribute.attribute {
+            KindedAttribute::Diagnostic(_) => {
+                attribute_group_diagnostics.push((0, attribute));
+            },
+            KindedAttribute::Attribute(attrib) => {
+                let name = attrib
+                    .ident_token()
+                    .map(|identifier| identifier.text().to_owned());
+                let name = name.as_deref();
+                match name {
+                    Some("offset") => attribute_group_offset_align_size.push((0, attribute)),
+                    Some("align") => attribute_group_offset_align_size.push((1, attribute)),
+                    Some("size") => attribute_group_offset_align_size.push((2, attribute)),
 
-            Some("const") => attribute_group_pre_fn_inlined.push((0, attribute)),
-            Some("must_use") => attribute_group_pre_fn_inlined.push((1, attribute)),
+                    Some("const") => attribute_group_pre_fn_inlined.push((0, attribute)),
+                    Some("must_use") => attribute_group_pre_fn_inlined.push((1, attribute)),
 
-            Some("group") => attribute_group_binding_group.push((0, attribute)),
-            Some("binding") => attribute_group_binding_group.push((1, attribute)),
+                    Some("group") => attribute_group_binding_group.push((0, attribute)),
+                    Some("binding") => attribute_group_binding_group.push((1, attribute)),
 
-            Some("compute") => attribute_group_compute_workgroup.push((0, attribute)),
-            Some("workgroup_size") => attribute_group_compute_workgroup.push((1, attribute)),
+                    Some("compute") => attribute_group_compute_workgroup.push((0, attribute)),
+                    Some("workgroup_size") => {
+                        attribute_group_compute_workgroup.push((1, attribute));
+                    },
 
-            Some(name) => ungrouped_attributes.push((name.to_owned(), attribute)),
-            None => ungrouped_attributes.push((String::new(), attribute)),
+                    Some(name) => ungrouped_attributes.push((name.to_owned(), attribute)),
+                    None => ungrouped_attributes.push((String::new(), attribute)),
+                }
+            },
         }
     }
 
@@ -106,7 +135,7 @@ pub fn gen_attributes(
             comments_after_attribute,
         } in attributes.iter().map(|(_, a)| a)
         {
-            formatted.extend(gen_attribute(attribute)?);
+            formatted.extend(gen_kinded_attribute(attribute)?);
             formatted.extend(gen_comments(comments_after_attribute));
             formatted.expect(separator);
         }
@@ -137,6 +166,11 @@ pub fn gen_attributes(
     )?);
     formatted.expect(group_separator);
     formatted.extend(gen_attribute_group(
+        attribute_group_diagnostics,
+        RequestItem::Space,
+    )?);
+    formatted.expect(group_separator);
+    formatted.extend(gen_attribute_group(
         attribute_group_pre_fn_inlined,
         RequestItem::Space,
     )?);
@@ -145,6 +179,34 @@ pub fn gen_attributes(
     Ok(formatted)
 }
 
+pub fn gen_kinded_attribute(attribute: &KindedAttribute) -> FormatDocumentResult<PrintItemBuffer> {
+    match attribute {
+        KindedAttribute::Attribute(attribute) => gen_attribute(attribute),
+        KindedAttribute::Diagnostic(diagnostic_attribute) => {
+            gen_diagnostic_attribute(diagnostic_attribute)
+        },
+    }
+}
+pub fn gen_diagnostic_attribute(
+    attribute: &ast::DiagnosticAttribute
+) -> FormatDocumentResult<PrintItemBuffer> {
+    let mut syntax = put_back(attribute.syntax().children_with_tokens());
+
+    parse_token(&mut syntax, SyntaxKind::AttributeOperator)?;
+    let item_comments_after_operator = parse_many_comments_and_blankspace(&mut syntax)?;
+    let item_identifier = parse_token(&mut syntax, parser::SyntaxKind::Diagnostic)?;
+    let item_comments_after_identifier = parse_many_comments_and_blankspace(&mut syntax)?;
+    let item_control = parse_node::<DiagnosticControl>(&mut syntax)?;
+    parse_end(&mut syntax)?;
+
+    let mut formatted = PrintItemBuffer::new();
+    formatted.push_sc(sc!("@"));
+    formatted.extend(gen_comments(&item_comments_after_operator));
+    formatted.push_string(item_identifier.to_string());
+    formatted.extend(gen_comments(&item_comments_after_identifier));
+    formatted.extend(gen_diagnostic_control(&item_control)?);
+    Ok(formatted)
+}
 pub fn gen_attribute(attribute: &ast::Attribute) -> FormatDocumentResult<PrintItemBuffer> {
     let mut syntax = put_back(attribute.syntax().children_with_tokens());
 

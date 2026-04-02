@@ -156,3 +156,47 @@ pub fn format_comments_in_attr_with_text_arguments() {
         "#]],
     );
 }
+
+#[test]
+pub fn format_diagnostic_attr_simple_1() {
+    check(
+        "
+       @bla
+       @
+       diagnostic
+       (off, something)
+       @blu
+       fn main() {}
+       ",
+        expect![[r#"
+            @bla
+            @blu
+            @diagnostic(off, something)
+            fn main() {}
+        "#]],
+    );
+}
+
+#[test]
+pub fn format_comments_in_diagnostic_attr_simple_1() {
+    check_comments(
+        "## @ ## diagnostic ## ( ## off ## , ## something ## ) ## fn ## main() {}",
+        expect![[r#"
+            /* 0 */
+            @ /* 1 */ diagnostic /* 2 */ ( /* 3 */ off /* 4 */ , /* 5 */ something /* 6 */ ) /* 7 */
+            fn /* 8 */ main() {}
+        "#]],
+        expect![[r#"
+            // 0
+            @ // 1
+            diagnostic // 2
+            ( // 3
+            off // 4
+            , // 5
+            something // 6
+            ) // 7
+            fn // 8
+            main() {}
+        "#]],
+    );
+}
