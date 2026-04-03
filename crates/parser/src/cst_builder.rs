@@ -224,10 +224,10 @@ impl CstBuilder<'_, '_> {
             return; // Ignore
         }
         let token_span = self.cst.get_span(index);
-        // assert_eq!(
-        //     token_span.start, self.token_start_index,
-        //     "Parser must produce contiguous tokens"
-        // );
+        assert_eq!(
+            token_span.start, self.token_start_index,
+            "Parser must produce contiguous tokens"
+        );
         self.token_start_index = token_span.end;
 
         let text = &self.cst.get_text(index);
