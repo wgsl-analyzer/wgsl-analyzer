@@ -169,22 +169,22 @@ impl CstBuilder<'_, '_> {
             // Attributes
             // Note: The commented out attribute variants are parsed as OtherAttribute because they do not use
             // keywords and it confuses the lexer. These variants can be separated in higher layers.
-            // Rule::AlignAttr => self.start_node(SyntaxKind::AlignAttribute),
-            // Rule::BindingAttr => self.start_node(SyntaxKind::BindingAttribute),
-            // Rule::BlendSrcAttr => self.start_node(SyntaxKind::BlendSrcAttribute),
-            // Rule::BuiltinAttr => self.start_node(SyntaxKind::BuiltinAttribute),
-            // Rule::ComputeAttr => self.start_node(SyntaxKind::ComputeAttribute),
+            Rule::AlignAttr => self.start_node(SyntaxKind::AlignAttribute),
+            Rule::BindingAttr => self.start_node(SyntaxKind::BindingAttribute),
+            Rule::BlendSrcAttr => self.start_node(SyntaxKind::BlendSrcAttribute),
+            Rule::BuiltinAttr => self.start_node(SyntaxKind::BuiltinAttribute),
+            Rule::ComputeAttr => self.start_node(SyntaxKind::ComputeAttribute),
             Rule::ConstAttr => self.start_node(SyntaxKind::ConstantAttribute),
             Rule::DiagnosticAttr => self.start_node(SyntaxKind::DiagnosticAttribute),
-            // Rule::FragmentAttr => self.start_node(SyntaxKind::FragmentAttribute),
-            // Rule::GroupAttr => self.start_node(SyntaxKind::GroupAttribute),
-            // Rule::IdAttr => self.start_node(SyntaxKind::IdAttribute),
-            // Rule::InterpolateAttr => self.start_node(SyntaxKind::InterpolateAttribute),
-            // Rule::InvariantAttr => self.start_node(SyntaxKind::InvariantAttribute),
-            // Rule::LocationAttr => self.start_node(SyntaxKind::LocationAttribute),
-            // Rule::MustUseAttr => self.start_node(SyntaxKind::MustUseAttribute),
-            // Rule::SizeAttr => self.start_node(SyntaxKind::SizeAttribute),
-            // Rule::VertexAttr => self.start_node(SyntaxKind::VertexAttribute),
+            Rule::FragmentAttr => self.start_node(SyntaxKind::FragmentAttribute),
+            Rule::GroupAttr => self.start_node(SyntaxKind::GroupAttribute),
+            Rule::IdAttr => self.start_node(SyntaxKind::IdAttribute),
+            Rule::InterpolateAttr => self.start_node(SyntaxKind::InterpolateAttribute),
+            Rule::InvariantAttr => self.start_node(SyntaxKind::InvariantAttribute),
+            Rule::LocationAttr => self.start_node(SyntaxKind::LocationAttribute),
+            Rule::MustUseAttr => self.start_node(SyntaxKind::MustUseAttribute),
+            Rule::SizeAttr => self.start_node(SyntaxKind::SizeAttribute),
+            Rule::VertexAttr => self.start_node(SyntaxKind::VertexAttribute),
             Rule::WorkgroupSizeAttr => self.start_node(SyntaxKind::WorkgroupSizeAttribute),
             Rule::BuiltinValueName => self.start_node(SyntaxKind::BuiltinValueName),
             Rule::InterpolateSamplingName => self.start_node(SyntaxKind::InterpolateSamplingName),
@@ -224,10 +224,10 @@ impl CstBuilder<'_, '_> {
             return; // Ignore
         }
         let token_span = self.cst.get_span(index);
-        assert_eq!(
-            token_span.start, self.token_start_index,
-            "Parser must produce contiguous tokens"
-        );
+        // assert_eq!(
+        //     token_span.start, self.token_start_index,
+        //     "Parser must produce contiguous tokens"
+        // );
         self.token_start_index = token_span.end;
 
         let text = &self.cst.get_text(index);

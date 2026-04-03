@@ -1,5 +1,7 @@
 use std::mem;
 
+use crate::lexer::LexerExtras;
+
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash, PartialOrd, Ord, logos::Logos)]
 #[repr(u16)]
 #[expect(
@@ -10,6 +12,7 @@ use std::mem;
     clippy::upper_case_acronyms,
     reason = "Lelwel generated code emits Token::EOF"
 )]
+#[logos(extras = LexerExtras)]
 pub enum SyntaxKind {
     /// Hope that you never get one of these!
     #[doc(hidden)]
@@ -214,10 +217,10 @@ pub enum SyntaxKind {
     // This is a keyword. It could be part of the global directive or an attribute.
     Diagnostic,
     DiagnosticControl,
-    DiagnosticAttribute,
     DiagnosticDirective,
     DiagnosticRuleName,
     SeverityControlName,
+    DiagnosticAttribute,
     OtherAttribute,
     AlignAttribute,
     BindingAttribute,
@@ -285,7 +288,7 @@ pub enum SyntaxKind {
     AndAnd,
     #[token("->")]
     Arrow,
-    #[token("@")]
+    #[token("@", |lex| { lex.extras.after_at = true; })]
     AttributeOperator,
     #[token("/")]
     ForwardSlash,

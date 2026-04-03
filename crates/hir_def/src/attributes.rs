@@ -56,9 +56,9 @@ impl AttributeList {
                     .name()
                     .map_or_else(Name::missing, |attribute| Name::from(attribute.text())),
                 parameters: match attribute {
-                    ast::Attribute::ConstantAttribute(constant_attribute) => Vec::new(),
-                    ast::Attribute::DiagnosticAttribute(diagnostic_attribute) => Vec::new(), // these controls are not expressions
-                    ast::Attribute::OtherAttribute(other_attribute) => other_attribute
+                    ast::Attribute::ConstantAttribute(inner) => Vec::new(),
+                    ast::Attribute::DiagnosticAttribute(inner) => Vec::new(), // these controls are not expressions
+                    ast::Attribute::OtherAttribute(inner) => inner
                         .parameters()
                         .map(|parameter| {
                             parameter
@@ -67,6 +67,101 @@ impl AttributeList {
                         })
                         .map_or_else(|| Either::Left(iter::empty()), Either::Right)
                         .collect(),
+                    ast::Attribute::AlignAttribute(inner) => inner
+                        .parameters()
+                        .map(|parameter| {
+                            parameter
+                                .arguments()
+                                .map(|expression| collector.collect_expression(expression))
+                        })
+                        .map_or_else(|| Either::Left(iter::empty()), Either::Right)
+                        .collect(),
+                    ast::Attribute::BindingAttribute(inner) => inner
+                        .parameters()
+                        .map(|parameter| {
+                            parameter
+                                .arguments()
+                                .map(|expression| collector.collect_expression(expression))
+                        })
+                        .map_or_else(|| Either::Left(iter::empty()), Either::Right)
+                        .collect(),
+                    ast::Attribute::BlendSrcAttribute(inner) => inner
+                        .parameters()
+                        .map(|parameter| {
+                            parameter
+                                .arguments()
+                                .map(|expression| collector.collect_expression(expression))
+                        })
+                        .map_or_else(|| Either::Left(iter::empty()), Either::Right)
+                        .collect(),
+                    ast::Attribute::BuiltinAttribute(inner) => inner
+                        .parameters()
+                        .map(|parameter| {
+                            parameter
+                                .arguments()
+                                .map(|expression| collector.collect_expression(expression))
+                        })
+                        .map_or_else(|| Either::Left(iter::empty()), Either::Right)
+                        .collect(),
+                    ast::Attribute::GroupAttribute(inner) => inner
+                        .parameters()
+                        .map(|parameter| {
+                            parameter
+                                .arguments()
+                                .map(|expression| collector.collect_expression(expression))
+                        })
+                        .map_or_else(|| Either::Left(iter::empty()), Either::Right)
+                        .collect(),
+                    ast::Attribute::IdAttribute(inner) => inner
+                        .parameters()
+                        .map(|parameter| {
+                            parameter
+                                .arguments()
+                                .map(|expression| collector.collect_expression(expression))
+                        })
+                        .map_or_else(|| Either::Left(iter::empty()), Either::Right)
+                        .collect(),
+                    ast::Attribute::InterpolateAttribute(inner) => Vec::new(), // these arguments are not expressions
+                    ast::Attribute::InvariantAttribute(inner) => inner
+                        .parameters()
+                        .map(|parameter| {
+                            parameter
+                                .arguments()
+                                .map(|expression| collector.collect_expression(expression))
+                        })
+                        .map_or_else(|| Either::Left(iter::empty()), Either::Right)
+                        .collect(),
+                    ast::Attribute::LocationAttribute(inner) => inner
+                        .parameters()
+                        .map(|parameter| {
+                            parameter
+                                .arguments()
+                                .map(|expression| collector.collect_expression(expression))
+                        })
+                        .map_or_else(|| Either::Left(iter::empty()), Either::Right)
+                        .collect(),
+                    ast::Attribute::MustUseAttribute(inner) => Vec::new(),
+                    ast::Attribute::SizeAttribute(inner) => inner
+                        .parameters()
+                        .map(|parameter| {
+                            parameter
+                                .arguments()
+                                .map(|expression| collector.collect_expression(expression))
+                        })
+                        .map_or_else(|| Either::Left(iter::empty()), Either::Right)
+                        .collect(),
+                    ast::Attribute::WorkgroupSizeAttribute(inner) => inner
+                        .parameters()
+                        .map(|parameter| {
+                            parameter
+                                .arguments()
+                                .map(|expression| collector.collect_expression(expression))
+                        })
+                        .map_or_else(|| Either::Left(iter::empty()), Either::Right)
+                        .collect(),
+                    ast::Attribute::VertexAttribute(inner) => Vec::new(),
+                    ast::Attribute::FragmentAttribute(inner) => Vec::new(),
+                    ast::Attribute::ComputeAttribute(inner) => Vec::new(),
                 },
             })
             .collect();
