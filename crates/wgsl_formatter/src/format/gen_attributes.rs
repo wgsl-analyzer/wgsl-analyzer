@@ -67,15 +67,17 @@ pub fn gen_attributes(
     // ==== Sort and Group the Attributes ====
     let mut ungrouped_attributes = Vec::new();
     let mut attribute_group_diagnostics = Vec::new();
-    let mut attribute_group_pre_fn_inlined = Vec::new();
     let mut attribute_group_offset_align_size = Vec::new();
     let mut attribute_group_binding_group = Vec::new();
     let mut attribute_group_compute_workgroup = Vec::new();
 
+    // Attributes that are inline with the target (like @const fn main()...)
+    let mut attribute_group_inlined_with_target = Vec::new();
+
     for attribute in &attributes.attributes {
         match &attribute.attribute {
             Attribute::ConstantAttribute(_) => {
-                attribute_group_pre_fn_inlined.push((0, attribute));
+                attribute_group_inlined_with_target.push((0, attribute));
             },
             Attribute::DiagnosticAttribute(_) => {
                 attribute_group_diagnostics.push((0, attribute));
@@ -88,7 +90,7 @@ pub fn gen_attributes(
                     Some("align") => attribute_group_offset_align_size.push((1, attribute)),
                     Some("size") => attribute_group_offset_align_size.push((2, attribute)),
 
-                    Some("must_use") => attribute_group_pre_fn_inlined.push((1, attribute)),
+                    Some("must_use") => attribute_group_inlined_with_target.push((1, attribute)),
 
                     Some("group") => attribute_group_binding_group.push((0, attribute)),
                     Some("binding") => attribute_group_binding_group.push((1, attribute)),
@@ -154,7 +156,7 @@ pub fn gen_attributes(
     )?);
     formatted.expect(group_separator);
     formatted.extend(gen_attribute_group(
-        attribute_group_pre_fn_inlined,
+        attribute_group_inlined_with_target,
         RequestItem::Space,
     )?);
     // No final line break, these should be inline with the fn

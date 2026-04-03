@@ -3,7 +3,7 @@ use expect_test::expect;
 use crate::test_util::{assert_out_of_scope, check, check_comments};
 
 #[test]
-pub fn format_diagnostic_simple_12() {
+pub fn format_diagnostic_simple_1() {
     check(
         "
        diagnostic
