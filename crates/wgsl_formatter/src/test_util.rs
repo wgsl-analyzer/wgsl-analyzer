@@ -132,7 +132,7 @@ pub fn check_with_options<E: ExpectAssertEq>(
     );
 
     // dbg!(&parse.errors());
-    // dbg!(&syntax);
+    dbg!(&syntax);
     let formatted = match format_tree(&syntax, options) {
         Ok(formatted) => formatted,
         Err(format_error) => {

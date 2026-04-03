@@ -22,28 +22,12 @@ use crate::format::{
 
 use super::print_item_buffer::request_folder::RequestItem;
 
-pub enum KindedAttribute {
-    Attribute(ast::Attribute),
-    Diagnostic(ast::DiagnosticAttribute),
-}
-
 pub struct ParsedAttribute {
-    attribute: KindedAttribute,
+    attribute: ast::Attribute,
     comments_after_attribute: Vec<Comment>,
 }
 pub struct ParsedAttributes {
     attributes: Vec<ParsedAttribute>,
-}
-
-#[expect(clippy::manual_map, reason = "Looks nicer this way")]
-fn parse_kinded_attribute_optional(syntax: &mut SyntaxIter) -> Option<KindedAttribute> {
-    if let Some(item_attribute) = parse_node_optional::<ast::Attribute>(syntax) {
-        Some(KindedAttribute::Attribute(item_attribute))
-    } else if let Some(item_diagnostic) = parse_node_optional::<ast::DiagnosticAttribute>(syntax) {
-        Some(KindedAttribute::Diagnostic(item_diagnostic))
-    } else {
-        None
-    }
 }
 
 pub fn parse_many_attributes(syntax: &mut SyntaxIter) -> FormatDocumentResult<ParsedAttributes> {
@@ -52,7 +36,7 @@ pub fn parse_many_attributes(syntax: &mut SyntaxIter) -> FormatDocumentResult<Pa
     // Also this is very similar to parse_many_comments_and_blankspace
     let mut attributes = Vec::new();
     loop {
-        let Some(item_attribute) = parse_kinded_attribute_optional(syntax) else {
+        let Some(item_attribute) = parse_node_optional::<ast::Attribute>(syntax) else {
             break;
         };
         let item_comments_after_attribute = parse_many_comments_and_blankspace(syntax)?;
@@ -90,13 +74,12 @@ pub fn gen_attributes(
 
     for attribute in &attributes.attributes {
         match &attribute.attribute {
-            KindedAttribute::Diagnostic(_) => {
+            ast::Attribute::ConstantAttribute(_) => {},
+            ast::Attribute::DiagnosticAttribute(_) => {
                 attribute_group_diagnostics.push((0, attribute));
             },
-            KindedAttribute::Attribute(attrib) => {
-                let name = attrib
-                    .ident_token()
-                    .map(|identifier| identifier.text().to_owned());
+            ast::Attribute::OtherAttribute(attrib) => {
+                let name = attrib.name().map(|identifier| identifier.text().to_owned());
                 let name = name.as_deref();
                 match name {
                     Some("offset") => attribute_group_offset_align_size.push((0, attribute)),
@@ -134,7 +117,7 @@ pub fn gen_attributes(
             comments_after_attribute,
         } in attributes.iter().map(|(_, attribute)| attribute)
         {
-            formatted.extend(gen_kinded_attribute(attribute)?);
+            formatted.extend(gen_attribute(attribute)?);
             formatted.extend(gen_comments(comments_after_attribute));
             formatted.expect(separator);
         }
@@ -178,12 +161,13 @@ pub fn gen_attributes(
     Ok(formatted)
 }
 
-pub fn gen_kinded_attribute(attribute: &KindedAttribute) -> FormatDocumentResult<PrintItemBuffer> {
+pub fn gen_attribute(attribute: &ast::Attribute) -> FormatDocumentResult<PrintItemBuffer> {
     match attribute {
-        KindedAttribute::Attribute(attribute) => gen_attribute(attribute),
-        KindedAttribute::Diagnostic(diagnostic_attribute) => {
+        ast::Attribute::ConstantAttribute(constant_attribute) => todo!(),
+        ast::Attribute::DiagnosticAttribute(diagnostic_attribute) => {
             gen_diagnostic_attribute(diagnostic_attribute)
         },
+        ast::Attribute::OtherAttribute(other_attribute) => gen_other_attribute(other_attribute),
     }
 }
 pub fn gen_diagnostic_attribute(
@@ -206,7 +190,10 @@ pub fn gen_diagnostic_attribute(
     formatted.extend(gen_diagnostic_control(&item_control)?);
     Ok(formatted)
 }
-pub fn gen_attribute(attribute: &ast::Attribute) -> FormatDocumentResult<PrintItemBuffer> {
+
+pub fn gen_other_attribute(
+    attribute: &ast::OtherAttribute
+) -> FormatDocumentResult<PrintItemBuffer> {
     let mut syntax = put_back(attribute.syntax().children_with_tokens());
 
     parse_token(&mut syntax, SyntaxKind::AttributeOperator)?;
