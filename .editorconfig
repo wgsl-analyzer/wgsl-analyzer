@@ -27,3 +27,6 @@ spaces_around_brackets = both
 indent_style = tab
 
 [*.{wgsl,wesl}]
+
+[*.llw]
+indent_style = tab

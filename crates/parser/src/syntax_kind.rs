@@ -11,6 +11,9 @@ use std::mem;
     reason = "Lelwel generated code emits Token::EOF"
 )]
 pub enum SyntaxKind {
+    /// Hope that you never get one of these!
+    #[doc(hidden)]
+    TOMBSTONE,
     SourceFile,
     /// A name that can be referenced by a [`NameRef`]
     Name,
@@ -203,7 +206,7 @@ pub enum SyntaxKind {
     Break,
     Case,
     /// <https://www.w3.org/TR/WGSL/#syntax_kw-const>
-    Constant,
+    Const,
     ConstantAssert,
     Continue,
     Continuing,
@@ -212,8 +215,52 @@ pub enum SyntaxKind {
     Diagnostic,
     DiagnosticControl,
     DiagnosticAttribute,
+    DiagnosticDirective,
     DiagnosticRuleName,
     SeverityControlName,
+    OtherAttribute,
+    AlignAttribute,
+    BindingAttribute,
+    BlendSrcAttribute,
+    BuiltinAttribute,
+    ConstantAttribute,
+    GroupAttribute,
+    IdAttribute,
+    InterpolateAttribute,
+    InvariantAttribute,
+    LocationAttribute,
+    MustUseAttribute,
+    SizeAttribute,
+    WorkgroupSizeAttribute,
+    VertexAttribute,
+    FragmentAttribute,
+    ComputeAttribute,
+    Align,
+    Builtin,
+    Binding,
+    BlendSrc,
+    Group,
+    Id,
+    Interpolate,
+    Invariant,
+    Location,
+    MustUse,
+    Size,
+    WorkgroupSize,
+    Vertex,
+    Fragment,
+    Compute,
+    Perspective,
+    Linear,
+    Flat,
+    Center,
+    Centroid,
+    Sample,
+    First,
+    Either,
+    BuiltinValueName,
+    InterpolateSamplingName,
+    InterpolateTypeName,
     Discard,
     Else,
     Enable,
@@ -333,10 +380,15 @@ pub enum SyntaxKind {
     TemplateEnd,
 
     // Only used internally by the parser
+    #[doc(hidden)]
     EOF,
+    #[doc(hidden)]
     EOFAttribute,
+    #[doc(hidden)]
     EOFExpression,
+    #[doc(hidden)]
     EOFStatement,
+    #[doc(hidden)]
     EOFTypeSpecifier,
 
     Error,
@@ -393,6 +445,7 @@ impl SyntaxKind {
             Self::SourceFile
                 | Self::EnableDirective
                 | Self::RequiresDirective
+                | Self::DiagnosticDirective
                 | Self::Attribute
                 | Self::ImportStatement
                 | Self::ImportPath
