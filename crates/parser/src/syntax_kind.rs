@@ -288,7 +288,7 @@ pub enum SyntaxKind {
     AndAnd,
     #[token("->")]
     Arrow,
-    #[token("@", |lex| { lex.extras.after_at = true; })]
+    #[token("@", |lexer| { lexer.extras.after_at = true; })]
     AttributeOperator,
     #[token("/")]
     ForwardSlash,

@@ -84,6 +84,11 @@ struct WgslLexer<'source, 'diagnostics> {
 impl Iterator for WgslLexer<'_, '_> {
     type Item = (Token, Span);
 
+    #[expect(
+        clippy::too_many_lines,
+        clippy::cognitive_complexity,
+        reason = "match arms with control flow, hard to refactor"
+    )]
     fn next(&mut self) -> Option<Self::Item> {
         // Parse WGSL identifiers.
         // Avoiding Logos here for compile time reasons.

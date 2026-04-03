@@ -4571,7 +4571,7 @@ fn parse_interpolate_linear_either_error() {
     );
 }
 
-/// Unknown interpolation type
+/// Unknown interpolation type.
 #[test]
 fn parse_interpolate_unknown_type_error() {
     check(
@@ -4613,7 +4613,7 @@ fn parse_interpolate_unknown_type_error() {
     );
 }
 
-/// Unknown sampling with unknown type
+/// Unknown sampling with unknown type.
 #[test]
 fn parse_interpolate_unknown_type_and_sampling_error() {
     check(
@@ -4658,7 +4658,7 @@ fn parse_interpolate_unknown_type_and_sampling_error() {
     );
 }
 
-/// Missing type argument entirely
+/// Missing type argument entirely.
 #[test]
 fn parse_interpolate_empty_error() {
     check(
@@ -4698,7 +4698,7 @@ fn parse_interpolate_empty_error() {
     );
 }
 
-/// Missing closing paren
+/// Missing closing parenthesis.
 #[test]
 fn parse_interpolate_unclosed_error() {
     check(
@@ -4739,7 +4739,7 @@ fn parse_interpolate_unclosed_error() {
     );
 }
 
-/// tests context handling for no parentheses attribute
+/// Tests context handling for no parentheses attribute.
 #[test]
 fn parse_fragment_shader() {
     check(
