@@ -57,7 +57,7 @@ pub fn gen_struct_declaration(
     Ok(formatted)
 }
 
-fn gen_struct_body(body: &ast::StructBody) -> FormatDocumentResult<PrintItemBuffer> {
+pub fn gen_struct_body(body: &ast::StructBody) -> FormatDocumentResult<PrintItemBuffer> {
     enum StructBodyItem {
         StructMember(ast::StructMember),
         LineSpacing(LineSpacing),
@@ -141,7 +141,7 @@ fn gen_struct_body(body: &ast::StructBody) -> FormatDocumentResult<PrintItemBuff
     Ok(formatted)
 }
 
-fn gen_struct_member(member: &ast::StructMember) -> FormatDocumentResult<PrintItemBuffer> {
+pub fn gen_struct_member(member: &ast::StructMember) -> FormatDocumentResult<PrintItemBuffer> {
     // === Parse ===
     let mut syntax = put_back(member.syntax().children_with_tokens());
 

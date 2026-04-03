@@ -151,7 +151,7 @@ pub fn gen_statement_maybe_semicolon(
     }
 }
 
-fn gen_increment_decrement_statement(
+pub fn gen_increment_decrement_statement(
     increment_decrement_statement: &ast::IncrementDecrementStatement,
     include_semicolon: bool,
 ) -> Result<PrintItemBuffer, FormatDocumentError> {
@@ -202,7 +202,7 @@ fn gen_increment_decrement_statement(
     Ok(formatted)
 }
 
-fn gen_function_call_statement(
+pub fn gen_function_call_statement(
     function_call_statement: &ast::FunctionCallStatement,
     include_semicolon: bool,
 ) -> Result<PrintItemBuffer, FormatDocumentError> {
@@ -329,7 +329,7 @@ pub fn gen_for_statement(statement: &ast::ForStatement) -> FormatDocumentResult<
     Ok(formatted)
 }
 
-fn gen_return_statement(
+pub fn gen_return_statement(
     statement: &ast::ReturnStatement,
     include_semicolon: bool,
 ) -> FormatDocumentResult<PrintItemBuffer> {
@@ -361,7 +361,7 @@ fn gen_return_statement(
     Ok(formatted)
 }
 
-fn gen_break_if_statement(
+pub fn gen_break_if_statement(
     statement: &ast::BreakIfStatement,
     include_semicolon: bool,
 ) -> FormatDocumentResult<PrintItemBuffer> {
@@ -427,7 +427,7 @@ pub fn gen_const_assert_statement(
     Ok(formatted)
 }
 
-fn gen_loop_statement(statement: &ast::LoopStatement) -> FormatDocumentResult<PrintItemBuffer> {
+pub fn gen_loop_statement(statement: &ast::LoopStatement) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = put_back(statement.syntax().children_with_tokens());
     let item_attributes = parse_many_attributes(&mut syntax)?;
@@ -451,7 +451,7 @@ fn gen_loop_statement(statement: &ast::LoopStatement) -> FormatDocumentResult<Pr
     Ok(formatted)
 }
 
-fn gen_continuing_statement(
+pub fn gen_continuing_statement(
     statement: &ast::ContinuingStatement
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
@@ -472,7 +472,9 @@ fn gen_continuing_statement(
     Ok(formatted)
 }
 
-fn gen_while_statement(statement: &ast::WhileStatement) -> FormatDocumentResult<PrintItemBuffer> {
+pub fn gen_while_statement(
+    statement: &ast::WhileStatement
+) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = put_back(statement.syntax().children_with_tokens());
     let item_attributes = parse_many_attributes(&mut syntax)?;
