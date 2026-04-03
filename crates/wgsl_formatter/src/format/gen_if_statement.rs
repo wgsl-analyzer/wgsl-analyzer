@@ -69,7 +69,7 @@ pub fn gen_if_statement(statement: &ast::IfStatement) -> FormatDocumentResult<Pr
     Ok(formatted)
 }
 
-fn gen_if_statement_if_clause(statement: &IfClause) -> FormatDocumentResult<PrintItemBuffer> {
+pub fn gen_if_statement_if_clause(statement: &IfClause) -> FormatDocumentResult<PrintItemBuffer> {
     // NOTE: When editing this function, ensure that gen_if_statement_else_clause and gen_if_statement_else_if_clause
     // reflect the changes as well.
     // This is not very DRY, but abstraction here would introduce more complexity and probably be a leaky abstraction.
@@ -95,7 +95,9 @@ fn gen_if_statement_if_clause(statement: &IfClause) -> FormatDocumentResult<Prin
     Ok(formatted)
 }
 
-fn gen_if_statement_else_clause(statement: &ElseClause) -> FormatDocumentResult<PrintItemBuffer> {
+pub fn gen_if_statement_else_clause(
+    statement: &ElseClause
+) -> FormatDocumentResult<PrintItemBuffer> {
     // NOTE: When editing this function, ensure that gen_if_statement_if_clause and gen_if_statement_else_if_clause
     // reflect the changes as well.
     // This is not very DRY, but abstraction here would introduce more complexity and probably be a leaky abstraction.
@@ -116,7 +118,7 @@ fn gen_if_statement_else_clause(statement: &ElseClause) -> FormatDocumentResult<
     Ok(formatted)
 }
 
-fn gen_if_statement_else_if_clause(
+pub fn gen_if_statement_else_if_clause(
     statement: &ElseIfClause
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // NOTE: When editing this function, ensure that gen_if_statement_if_clause and gen_if_statement_else_clause
