@@ -82,7 +82,6 @@ impl CstBuilder<'_, '_> {
                 self.start_node(SyntaxKind::IncrementDecrementStatement);
             },
             Rule::DefaultCaseSelector => self.start_node(SyntaxKind::SwitchDefaultSelector),
-            Rule::DiagnosticAttr => self.start_node(SyntaxKind::DiagnosticAttribute),
             Rule::DiagnosticControl => self.start_node(SyntaxKind::DiagnosticControl),
             Rule::DiagnosticDirective => self.start_node(SyntaxKind::DiagnosticDirective),
             Rule::DiagnosticRuleName => self.start_node(SyntaxKind::DiagnosticRuleName),
@@ -166,6 +165,31 @@ impl CstBuilder<'_, '_> {
             // This is reachable when an attribute is parsed, but no statement variant applies
             #[expect(clippy::match_same_arms, reason = "Reasons might be different")]
             Rule::Statement => self.start_node(SyntaxKind::Error),
+
+            // Attributes
+            // Note: The commented out attribute variants are parsed as OtherAttribute because they do not use
+            // keywords and it confuses the lexer. These variants can be separated in higher layers.
+            // Rule::AlignAttr => self.start_node(SyntaxKind::AlignAttribute),
+            // Rule::BindingAttr => self.start_node(SyntaxKind::BindingAttribute),
+            // Rule::BlendSrcAttr => self.start_node(SyntaxKind::BlendSrcAttribute),
+            // Rule::BuiltinAttr => self.start_node(SyntaxKind::BuiltinAttribute),
+            // Rule::ComputeAttr => self.start_node(SyntaxKind::ComputeAttribute),
+            Rule::ConstAttr => self.start_node(SyntaxKind::ConstantAttribute),
+            Rule::DiagnosticAttr => self.start_node(SyntaxKind::DiagnosticAttribute),
+            // Rule::FragmentAttr => self.start_node(SyntaxKind::FragmentAttribute),
+            // Rule::GroupAttr => self.start_node(SyntaxKind::GroupAttribute),
+            // Rule::IdAttr => self.start_node(SyntaxKind::IdAttribute),
+            // Rule::InterpolateAttr => self.start_node(SyntaxKind::InterpolateAttribute),
+            // Rule::InvariantAttr => self.start_node(SyntaxKind::InvariantAttribute),
+            // Rule::LocationAttr => self.start_node(SyntaxKind::LocationAttribute),
+            // Rule::MustUseAttr => self.start_node(SyntaxKind::MustUseAttribute),
+            // Rule::SizeAttr => self.start_node(SyntaxKind::SizeAttribute),
+            // Rule::VertexAttr => self.start_node(SyntaxKind::VertexAttribute),
+            Rule::WorkgroupSizeAttr => self.start_node(SyntaxKind::WorkgroupSizeAttribute),
+            Rule::BuiltinValueName => self.start_node(SyntaxKind::BuiltinValueName),
+            Rule::InterpolateSamplingName => self.start_node(SyntaxKind::InterpolateSamplingName),
+            Rule::InterpolateTypeName => self.start_node(SyntaxKind::InterpolateTypeName),
+            Rule::OtherAttr => self.start_node(SyntaxKind::OtherAttribute),
         }
     }
 
