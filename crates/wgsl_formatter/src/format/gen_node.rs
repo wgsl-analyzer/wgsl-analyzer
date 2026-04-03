@@ -8,7 +8,7 @@ use crate::format::{
         gen_assignment_statement, gen_compound_assignment_statement, gen_phony_assignment_statement,
     },
     gen_attributes::{gen_attribute, gen_diagnostic_attribute},
-    gen_diagnostic::{gen_diagnostic_control, gen_diagnostic_rule_name},
+    gen_diagnostic::{gen_diagnostic_control, gen_diagnostic_rule_name, gen_severity_control_name},
     gen_directive::{
         gen_diagnostic_directive, gen_enable_directive, gen_enable_extension_name,
         gen_language_extension_name, gen_requires_directive,
@@ -163,9 +163,11 @@ pub fn gen_node(node: &SyntaxNode) -> FormatDocumentResult<PrintItemBuffer> {
              SyntaxKind::DiagnosticControl(node) => gen_diagnostic_control(&node),
              SyntaxKind::DiagnosticAttribute(node) => gen_diagnostic_attribute(&node),
              SyntaxKind::DiagnosticDirective(node) => gen_diagnostic_directive(&node),
+             SyntaxKind::DiagnosticRuleName(node) => gen_diagnostic_rule_name(&node),
+             SyntaxKind::SeverityControlName(node) => gen_severity_control_name(&node),
 
              -
-             // TODO?
+             // TODO(MonaMayrhofer) all of these
              SyntaxKind::Name |
              SyntaxKind::BreakStatement |
              SyntaxKind::ContinueStatement |
@@ -181,8 +183,6 @@ pub fn gen_node(node: &SyntaxNode) -> FormatDocumentResult<PrintItemBuffer> {
              SyntaxKind::ImportCollection |
              SyntaxKind::LineEndingComment |
              SyntaxKind::BlockComment |
-             SyntaxKind::DiagnosticRuleName |
-             SyntaxKind::SeverityControlName |
              SyntaxKind::OtherAttribute |
              SyntaxKind::AlignAttribute |
              SyntaxKind::BindingAttribute |
