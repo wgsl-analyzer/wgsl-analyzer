@@ -53,17 +53,21 @@ impl AttributeList {
             .attributes()
             .map(|attribute| Attribute {
                 name: attribute
-                    .ident_token()
+                    .name()
                     .map_or_else(Name::missing, |attribute| Name::from(attribute.text())),
-                parameters: attribute
-                    .parameters()
-                    .map(|parameter| {
-                        parameter
-                            .arguments()
-                            .map(|expression| collector.collect_expression(expression))
-                    })
-                    .map_or_else(|| Either::Left(iter::empty()), Either::Right)
-                    .collect(),
+                parameters: match attribute {
+                    ast::Attribute::ConstantAttribute(constant_attribute) => Vec::new(),
+                    ast::Attribute::DiagnosticAttribute(diagnostic_attribute) => Vec::new(), // these controls are not expressions
+                    ast::Attribute::OtherAttribute(other_attribute) => other_attribute
+                        .parameters()
+                        .map(|parameter| {
+                            parameter
+                                .arguments()
+                                .map(|expression| collector.collect_expression(expression))
+                        })
+                        .map_or_else(|| Either::Left(iter::empty()), Either::Right)
+                        .collect(),
+                },
             })
             .collect();
         let (store, source_map) = collector.finish();
@@ -110,26 +114,6 @@ impl AttributesWithOwner {
             AttributeDefId::Struct(id) => {
                 AttributeList::from_src(database, &id.lookup(database).source(database).value)
             },
-            // AttributeDefId::Field(id) => {
-            //     let location = id.r#struct.lookup(database).source(database);
-            //     let struct_declaration: ast::StructDeclaration = location.value;
-            //     let mut fields = struct_declaration.body().map_or_else(
-            //         || Either::Left(iter::empty::<ast::StructMember>()),
-            //         |body| Either::Right(body.fields()),
-            //     );
-
-            //     let strukt_data = database.struct_data(id.r#struct).0;
-            //     let field_name = strukt_data.fields[id.field].name.as_str();
-
-            //     // this is ugly but rust-analyzer is more complicated and this should work for now
-            //     let attributes = fields.find_map(|field| {
-            //         let name = field.name()?;
-            //         (name.text().as_str() == field_name).then_some(field)
-            //     });
-            //     attributes.map_or_else(AttributeList::empty, |field| {
-            //         AttributeList::from_src(database, &field)
-            //     })
-            // },
             AttributeDefId::Function(id) => {
                 AttributeList::from_src(database, &id.lookup(database).source(database).value)
             },

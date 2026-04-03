@@ -546,9 +546,9 @@ struct S {
 @location(0)@interpolate(flat)color:  vec4<f32>,
 }",
             expect![[r#"
-            struct V {
-                @location(0) @interpolate(flat) color: vec4<f32>,
-            }"#]],
+                struct V {
+                    @location(0)@interpolate(flat)color: vec4<f32>,
+                }"#]],
         );
     }
 

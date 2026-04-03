@@ -338,7 +338,7 @@ impl HasAttributes for LetDeclaration {}
 
 ast_node! {
     ConstantDeclaration:
-    constant_token: Option<SyntaxToken Constant>;
+    constant_token: Option<SyntaxToken Const>;
     colon: Option<SyntaxToken Colon>;
     r#type: Option<TypeSpecifier>;
     equal_token: Option<SyntaxToken Equal>;
@@ -635,32 +635,138 @@ impl IndexExpression {
     }
 }
 
+ast_enum! {
+    enum Attribute {
+        // AlignAttribute,
+        // BindingAttribute,
+        // BlendSrcAttribute,
+        // BuiltinAttribute,
+        ConstantAttribute,
+        DiagnosticAttribute,
+        // GroupAttribute,
+        // IdAttribute,
+        // InterpolateAttribute,
+        // InvariantAttribute,
+        // LocationAttribute,
+        // MustUseAttribute,
+        // SizeAttribute,
+        // WorkgroupSizeAttribute,
+        // VertexAttribute,
+        // FragmentAttribute,
+        // ComputeAttribute,
+        OtherAttribute,
+    }
+}
+
+impl Attribute {
+    #[must_use]
+    pub fn name(&self) -> Option<SyntaxToken> {
+        match self {
+            Self::OtherAttribute(inner) => inner.name(),
+            Self::ConstantAttribute(inner) => inner.const_token(),
+            Self::DiagnosticAttribute(inner) => inner.diagnostic_token(),
+        }
+    }
+}
+
 ast_node! {
-    Attribute:
-    ident_token: Option<SyntaxToken Identifier>;
+    OtherAttribute:
+    name: Option<SyntaxToken Identifier>;
     parameters: Option<Arguments>;
 }
 
 ast_node! {
-    Diagnostic:
-    ident_token: Option<SyntaxToken Identifier>;
+    AlignAttribute
 }
 
 ast_node! {
-    DiagnosticControl:
-    severity_control_name: Option<SyntaxToken SeverityControlName>;
-    diagnostic_rule_name: Option<SyntaxToken DiagnosticRuleName>;
+    BindingAttribute
 }
 
 ast_node! {
-    DiagnosticDirective:
-    diagnostic_token: Option<Diagnostic>;
-    parameters: Option<DiagnosticControl>;
+    BlendSrcAttribute
+}
+
+ast_node! {
+    BuiltinAttribute
+}
+
+ast_node! {
+    ConstantAttribute:
+    const_token: Option<SyntaxToken Const>;
 }
 
 ast_node! {
     DiagnosticAttribute:
-    diagnostic_token: Option<Diagnostic>;
+    diagnostic_token: Option<SyntaxToken Diagnostic>;
+    parameters: Option<DiagnosticControl>;
+}
+
+ast_node! {
+    GroupAttribute
+}
+
+ast_node! {
+    IdAttribute
+}
+
+ast_node! {
+    InterpolateAttribute
+}
+
+ast_node! {
+    InvariantAttribute
+}
+
+ast_node! {
+    LocationAttribute
+}
+
+ast_node! {
+    MustUseAttribute
+}
+
+ast_node! {
+    SizeAttribute
+}
+
+ast_node! {
+    WorkgroupSizeAttribute
+}
+
+ast_node! {
+    VertexAttribute
+}
+
+ast_node! {
+    FragmentAttribute
+}
+
+ast_node! {
+    ComputeAttribute
+}
+
+ast_node! {
+    DiagnosticControl:
+    severity_control_name: Option<SeverityControlName>;
+    diagnostic_rule_name: Option<DiagnosticRuleName>;
+}
+
+ast_node! {
+    SeverityControlName:
+    ident_token: Option<SyntaxToken Identifier>;
+    text: TokenText<'_>;
+}
+
+ast_node! {
+    DiagnosticRuleName:
+    ident_token: Option<SyntaxToken Identifier>;
+    text: TokenText<'_>;
+}
+
+ast_node! {
+    DiagnosticDirective:
+    diagnostic_token: Option<SyntaxToken Diagnostic>;
     parameters: Option<DiagnosticControl>;
 }
 

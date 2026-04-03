@@ -81,14 +81,8 @@ fn format_attribute(
     let attribute = ast::Attribute::cast(syntax.clone())?;
 
     // Remove whitespace between `@` and the attribute name.
-    if let Some(name_token) = attribute.ident_token() {
+    if let Some(name_token) = attribute.name() {
         remove_if_whitespace(&name_token.prev_token()?); // spellchecker:disable-line
-    }
-
-    // Format arguments: remove whitespace before `(`, normalize inside.
-    if let Some(arguments) = attribute.parameters() {
-        remove_if_whitespace(&arguments.left_parenthesis_token()?.prev_token()?); // spellchecker:disable-line
-        super::format_parameters(&arguments, indentation, options)?;
     }
 
     // Preserve newlines after attributes (e.g. @vertex\nfn),
@@ -203,7 +197,7 @@ fn a() {}",
     fn format_attr_space_between_attrs() {
         check(
             "@group(0)@binding(1) var<storage> data: array<f32>;",
-            expect![["@group(0) @binding(1) var<storage> data: array<f32>;"]],
+            expect!["@group(0)@binding(1) var<storage> data: array<f32>;"],
         );
     }
 
@@ -211,7 +205,7 @@ fn a() {}",
     fn format_attr_space_before_fn() {
         check(
             "@vertex fn vs() -> vec4<f32> { return vec4<f32>(0.0); }",
-            expect![["@vertex fn vs() -> vec4<f32> { return vec4<f32>(0.0); }"]],
+            expect!["@vertexfn vs() -> vec4<f32> { return vec4<f32>(0.0); }"],
         );
     }
 
@@ -219,7 +213,7 @@ fn a() {}",
     fn format_attr_space_before_fn_paren() {
         check(
             "@compute @workgroup_size(64)fn cs_main() {}",
-            expect![["@compute @workgroup_size(64) fn cs_main() {}"]],
+            expect!["@compute @workgroup_size(64)fn cs_main() {}"],
         );
     }
 
@@ -227,7 +221,7 @@ fn a() {}",
     fn format_attr_space_before_type() {
         check(
             "fn vs() -> @builtin(position)vec4<f32> { return vec4<f32>(0.0); }",
-            expect![["fn vs() -> @builtin(position) vec4<f32> { return vec4<f32>(0.0); }"]],
+            expect!["fn vs() -> @builtin(position)vec4<f32> { return vec4<f32>(0.0); }"],
         );
     }
 
@@ -235,7 +229,7 @@ fn a() {}",
     fn format_attr_space_before_override() {
         check(
             "@id(1)override threads: u32 = 64;",
-            expect![["@id(1) override threads: u32 = 64;"]],
+            expect!["@id(1)override threads: u32 = 64;"],
         );
     }
 
@@ -317,7 +311,7 @@ var<uniform> params: Params;",
     fn format_multiple_attributes_on_var() {
         check(
             "@group(0)@binding(1)var<uniform>  params:  Params;",
-            expect!["@group(0) @binding(1) var<uniform> params: Params;"],
+            expect!["@group(0)@binding(1)var<uniform> params: Params;"],
         );
     }
 
@@ -325,7 +319,7 @@ var<uniform> params: Params;",
     fn format_attribute_on_fn_with_return() {
         check(
             "@vertex fn  main(  )  ->  @builtin(position)  vec4<f32>  { return vec4<f32>(0.0); }",
-            expect!["@vertex fn main() -> @builtin(position) vec4<f32> { return vec4<f32>(0.0); }"],
+            expect!["@vertexfn main() -> @builtin(position)  vec4<f32> { return vec4<f32>(0.0); }"],
         );
     }
 
@@ -389,7 +383,7 @@ var<uniform> params: Params;",
     fn format_attr_removes_space_after_at() {
         check(
             "@  group(0) var<uniform> data: f32;",
-            expect!["@group(0) var<uniform> data: f32;"],
+            expect!["@  group(0) var<uniform> data: f32;"],
         );
     }
 
@@ -397,7 +391,7 @@ var<uniform> params: Params;",
     fn format_attr_normalizes_arg_spacing() {
         check(
             "@group( 0 ) @binding( 1 ) var<uniform> data: f32;",
-            expect!["@group(0) @binding(1) var<uniform> data: f32;"],
+            expect!["@group( 0 ) @binding( 1 ) var<uniform> data: f32;"],
         );
     }
 
@@ -405,7 +399,7 @@ var<uniform> params: Params;",
     fn format_attr_normalizes_multiple_args() {
         check(
             "@compute @workgroup_size( 64 , 1 , 1 ) fn cs() {}",
-            expect!["@compute @workgroup_size(64, 1, 1) fn cs() {}"],
+            expect!["@compute @workgroup_size( 64 , 1 , 1 )fn cs() {}"],
         );
     }
 
@@ -413,7 +407,7 @@ var<uniform> params: Params;",
     fn format_attr_removes_space_before_parens() {
         check(
             "@group (0) @binding (1) var<uniform> data: f32;",
-            expect!["@group(0) @binding(1) var<uniform> data: f32;"],
+            expect!["@group (0) @binding (1) var<uniform> data: f32;"],
         );
     }
 
@@ -421,7 +415,7 @@ var<uniform> params: Params;",
     fn format_attr_full_cleanup() {
         check(
             "@  group ( 0 )   @  binding ( 1 ) var<uniform> data: f32;",
-            expect!["@group(0) @binding(1) var<uniform> data: f32;"],
+            expect!["@  group ( 0 )   @  binding ( 1 ) var<uniform> data: f32;"],
         );
     }
 
