@@ -1,9 +1,11 @@
 #![cfg_attr(not(test), allow(unused))]
 #![expect(clippy::too_many_lines, reason = "snapshot test data")]
 
+mod attributes;
 mod diagnostic;
 mod expression;
 mod imports;
+mod keywords;
 
 use expect_test::{Expect, expect};
 
