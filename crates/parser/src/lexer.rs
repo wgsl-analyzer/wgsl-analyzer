@@ -194,7 +194,6 @@ impl Iterator for WgslLexer<'_, '_> {
                 }
             },
             Some(')') => {
-                self.inner.extras.after_at = false;
                 self.inner.extras.after_interpolate = false;
             },
             _ => (), // Not an ident
