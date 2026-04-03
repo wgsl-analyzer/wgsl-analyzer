@@ -10,8 +10,8 @@ use crate::format::{
     gen_attributes::{gen_attribute, gen_diagnostic_attribute},
     gen_diagnostic::{gen_diagnostic_control, gen_diagnostic_rule_name},
     gen_directive::{
-        gen_enable_directive, gen_enable_extension_name, gen_language_extension_name,
-        gen_requires_directive,
+        gen_diagnostic_directive, gen_enable_directive, gen_enable_extension_name,
+        gen_language_extension_name, gen_requires_directive,
     },
     gen_expression::{
         gen_field_expression, gen_ident_expression, gen_index_expression, gen_infix_expression,
@@ -162,6 +162,7 @@ pub fn gen_node(node: &SyntaxNode) -> FormatDocumentResult<PrintItemBuffer> {
              SyntaxKind::ImportStatement(node) => gen_import_statement(&node),
              SyntaxKind::DiagnosticControl(node) => gen_diagnostic_control(&node),
              SyntaxKind::DiagnosticAttribute(node) => gen_diagnostic_attribute(&node),
+             SyntaxKind::DiagnosticDirective(node) => gen_diagnostic_directive(&node),
 
              -
              // TODO?
@@ -182,6 +183,23 @@ pub fn gen_node(node: &SyntaxNode) -> FormatDocumentResult<PrintItemBuffer> {
              SyntaxKind::BlockComment |
              SyntaxKind::DiagnosticRuleName |
              SyntaxKind::SeverityControlName |
+             SyntaxKind::OtherAttribute |
+             SyntaxKind::AlignAttribute |
+             SyntaxKind::BindingAttribute |
+             SyntaxKind::BlendSrcAttribute |
+             SyntaxKind::BuiltinAttribute |
+             SyntaxKind::ConstantAttribute |
+             SyntaxKind::GroupAttribute |
+             SyntaxKind::IdAttribute |
+             SyntaxKind::InterpolateAttribute |
+             SyntaxKind::InvariantAttribute |
+             SyntaxKind::LocationAttribute |
+             SyntaxKind::MustUseAttribute |
+             SyntaxKind::SizeAttribute |
+             SyntaxKind::WorkgroupSizeAttribute |
+             SyntaxKind::VertexAttribute |
+             SyntaxKind::FragmentAttribute |
+             SyntaxKind::ComputeAttribute |
              // Tokens
              SyntaxKind::Blankspace |
              SyntaxKind::Identifier |
@@ -191,13 +209,39 @@ pub fn gen_node(node: &SyntaxNode) -> FormatDocumentResult<PrintItemBuffer> {
              SyntaxKind::Alias |
              SyntaxKind::Break |
              SyntaxKind::Case |
-             SyntaxKind::Constant |
+             SyntaxKind::Const |
              SyntaxKind::ConstantAssert |
              SyntaxKind::Continue |
              SyntaxKind::Continuing |
              SyntaxKind::Default |
              SyntaxKind::Diagnostic |
              SyntaxKind::Discard |
+             SyntaxKind::Align |
+             SyntaxKind::Builtin |
+             SyntaxKind::Binding |
+             SyntaxKind::BlendSrc |
+             SyntaxKind::Group |
+             SyntaxKind::Id |
+             SyntaxKind::Interpolate |
+             SyntaxKind::Invariant |
+             SyntaxKind::Location |
+             SyntaxKind::MustUse |
+             SyntaxKind::Size |
+             SyntaxKind::WorkgroupSize |
+             SyntaxKind::Vertex |
+             SyntaxKind::Fragment |
+             SyntaxKind::Compute |
+             SyntaxKind::Perspective |
+             SyntaxKind::Linear |
+             SyntaxKind::Flat |
+             SyntaxKind::Center |
+             SyntaxKind::Centroid |
+             SyntaxKind::Sample |
+             SyntaxKind::First |
+             SyntaxKind::Either |
+             SyntaxKind::BuiltinValueName |
+             SyntaxKind::InterpolateSamplingName |
+             SyntaxKind::InterpolateTypeName |
              SyntaxKind::Else |
              SyntaxKind::Enable |
              SyntaxKind::False |
@@ -272,6 +316,7 @@ pub fn gen_node(node: &SyntaxNode) -> FormatDocumentResult<PrintItemBuffer> {
              SyntaxKind::EOFExpression |
              SyntaxKind::EOFStatement |
              SyntaxKind::EOFTypeSpecifier |
+             SyntaxKind::TOMBSTONE |
              SyntaxKind::Error => {
                  todo!("gen_node not implemented for {:?}", node.kind())
              }

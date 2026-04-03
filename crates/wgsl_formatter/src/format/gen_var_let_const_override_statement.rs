@@ -70,7 +70,7 @@ impl BindingKind {
         match self {
             Self::Var => SyntaxKind::Var,
             Self::Let => SyntaxKind::Let,
-            Self::Const => SyntaxKind::Constant,
+            Self::Const => SyntaxKind::Const,
             Self::Override => SyntaxKind::Override,
         }
     }

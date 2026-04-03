@@ -172,7 +172,9 @@ pub fn gen_requires_directive(
     Ok(formatted)
 }
 
-pub fn gen_diagnostic_directive(node: &ast::Diagnostic) -> FormatDocumentResult<PrintItemBuffer> {
+pub fn gen_diagnostic_directive(
+    node: &ast::DiagnosticDirective
+) -> FormatDocumentResult<PrintItemBuffer> {
     let mut syntax = put_back(node.syntax().children_with_tokens());
 
     parse_token(&mut syntax, SyntaxKind::Diagnostic)?;
