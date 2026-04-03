@@ -7,7 +7,7 @@ mod syntax_kind;
 
 use std::fmt::{self, Debug, Write as _};
 
-pub use edition::Edition;
+pub use edition::{Edition, ExtensionsConfig};
 pub use parser::{Diagnostic, parse_entrypoint};
 use rowan::GreenNode;
 
@@ -95,12 +95,6 @@ pub enum ParseEntryPoint {
     Statement,
     Type,
     Attribute,
-}
-
-// TODO: Remove this function, it is only used by wgsl_formatter
-#[must_use]
-pub fn parse_file(input: &str) -> Parse {
-    parse_entrypoint(input, ParseEntryPoint::File, Edition::Wgsl)
 }
 
 #[cfg(test)]

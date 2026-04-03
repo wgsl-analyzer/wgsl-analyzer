@@ -1,10 +1,7 @@
 use std::{fmt, sync::OnceLock};
 
-use base_db::input::SourceRootId;
-use hir::{
-    ExtensionsConfig,
-    diagnostics::{DiagnosticsConfig, NagaVersion},
-};
+use base_db::{ExtensionsConfig, input::SourceRootId};
+use hir::diagnostics::{DiagnosticsConfig, NagaVersion};
 use hir_ty::ty::pretty::TypeVerbosity;
 use ide::{
     HoverConfig, HoverDocFormat, MemoryLayoutHoverRenderKind,
@@ -76,6 +73,7 @@ config_data! {
         /// Controls whether to show type errors.
         diagnostics_typeErrors: bool = true,
 
+        // TODO: remove this, this is not config
         /// Whether to enable u64 and i64 scalar types.
         extensions_shaderInt64: bool = true,
 
@@ -557,6 +555,7 @@ impl Config {
     pub fn extensions(&self) -> ExtensionsConfig {
         ExtensionsConfig {
             shader_int64: *self.extensions_shaderInt64(),
+            ..Default::default()
         }
     }
 

@@ -25,7 +25,7 @@ use triomphe::Arc;
 pub use util_types::*;
 pub use vfs::{AnchoredPath, AnchoredPathBuf, FileId, VfsPath, file_set::FileSet};
 
-pub use crate::editioned_file_id::{EditionedFileId, RawEditionedFileId};
+pub use crate::editioned_file_id::{EditionedFileId, ExtensionsConfig, RawEditionedFileId};
 use crate::input::{Dependency, PackageData, PackageId, PackageName};
 
 #[macro_export]

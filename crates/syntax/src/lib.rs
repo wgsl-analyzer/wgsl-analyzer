@@ -8,7 +8,7 @@ use std::{marker::PhantomData, ops::Deref};
 
 use either::Either;
 pub use parser::{
-    Diagnostic, Edition, ParseEntryPoint, SyntaxElement, SyntaxKind, SyntaxNode,
+    Diagnostic, Edition, ExtensionsConfig, ParseEntryPoint, SyntaxElement, SyntaxKind, SyntaxNode,
     SyntaxNodeChildren, SyntaxToken,
 };
 pub use rowan::Direction;

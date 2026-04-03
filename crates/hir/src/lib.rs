@@ -8,7 +8,6 @@ use base_db::{EditionedFileId, FileId, Lookup as _};
 use definition::Definition;
 use diagnostics::{AnyDiagnostic, DiagnosticsConfig};
 use either::Either;
-pub use hir_def::database::ExtensionsConfig;
 use hir_def::{
     HasSource as _, InFile,
     body::{BindingId, Body, BodySourceMap},
