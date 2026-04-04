@@ -84,7 +84,6 @@ impl fmt::Display for Edition {
     }
 }
 
-// TODO: replace with `naga::valid::Capabilities`?
 #[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ExtensionsConfig {
     pub shader_int64: bool,

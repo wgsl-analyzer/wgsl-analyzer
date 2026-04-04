@@ -252,16 +252,7 @@ impl<'source> ParserCallbacks<'source> for Parser<'source> {
         node_ref: NodeRef,
         diagnostics: &mut Vec<Self::Diagnostic>,
     ) {
-        let mut matched = None;
-        for item in self.cst.children(node_ref) {
-            let Some(found) = self.cst.match_token(item, SyntaxKind::Identifier) else {
-                continue;
-            };
-            matched = Some(found);
-        }
-        let Some((text, _)) = matched else {
-            return;
-        };
+        let text = &self.cst.source()[self.cst.span(node_ref)];
         match text {
             "SHADER_INT64" => self.context.extensions.shader_int64 = true,
             "EARLY_DEPTH_TEST" => self.context.extensions.early_depth_test = true,
