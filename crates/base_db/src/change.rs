@@ -35,7 +35,7 @@ impl fmt::Debug for Change {
         if !self.files_changed.is_empty() {
             debug.field("files_changed", &self.files_changed.len());
         }
-        if self.packages_changed.is_empty() {
+        if !self.packages_changed.is_empty() {
             debug.field("packages_changed", &self.packages_changed);
         }
         debug.finish()
