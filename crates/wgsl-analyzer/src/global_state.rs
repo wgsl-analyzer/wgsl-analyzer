@@ -289,7 +289,7 @@ impl GlobalState {
         change: &mut BaseDbChange,
     ) {
         let (vfs, _) = &*self.vfs.read();
-        let mut packages = &mut *self.packages.write();
+        let packages = &mut *self.packages.write();
         for (path, modified) in modified_local_packages {
             match modified {
                 PackageChange::Set => self.request_project_discover(
