@@ -5,8 +5,6 @@
 
 use std::ops::Not as _;
 
-use anyhow::Context as _;
-use base_db::input::PackageOrigin;
 use itertools::Itertools as _;
 use lsp_types::{
     CancelParams, DidChangeConfigurationParams, DidChangeTextDocumentParams,
@@ -68,11 +66,11 @@ pub(crate) fn handle_did_open_text_document(
         tracing::error!("duplicate DidOpenTextDocument: {}", path);
     }
 
-    let file_id = {
-        let mut vfs = state.vfs.write();
-        vfs.0.set_file_contents(path.clone(), Some(text_bytes));
-        vfs.0.file_id(&path)
-    };
+    state
+        .vfs
+        .write()
+        .0
+        .set_file_contents(path.clone(), Some(text_bytes));
 
     if let Some(file_path) = path.as_path() {
         state.request_project_discover(

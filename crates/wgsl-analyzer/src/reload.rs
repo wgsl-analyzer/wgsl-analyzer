@@ -2,7 +2,7 @@ use hir::database::DefDatabase as _;
 use ide::base_db::input::SourceRoot;
 use lsp_types::FileSystemWatcher;
 use paths::AbsPathBuf;
-use project_model::{PackageRoot, WeslPackage};
+use project_model::PackageRoot;
 use salsa::Durability;
 use stdx::thread::ThreadIntent;
 use tracing::info;
@@ -91,6 +91,8 @@ impl GlobalState {
         discover: DiscoverArgument,
         cause: &Cause,
     ) {
+        info!(%cause, "will discover project");
+
         // Don't try to analyze the projects when opening a stray file.
         // Libraries are handled by the fact that they are reachable
         // from one of the discovered projects in the current workspace.

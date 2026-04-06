@@ -95,7 +95,7 @@ impl fmt::Display for Event {
             // Self::Flycheck(_) => write!(formatter, "Event::Flycheck"),
             Self::QueuedTask(_) => write!(formatter, "Event::QueuedTask"),
             // Event::TestResult(_) => write!(formatter, "Event::TestResult"),
-            Self::LoadPackage(_) => write!(formatter, "Event::DiscoverProject"),
+            Self::LoadPackage(_) => write!(formatter, "Event::LoadPackage"),
         }
     }
 }

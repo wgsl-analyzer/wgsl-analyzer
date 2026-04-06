@@ -19,12 +19,10 @@ mod wesl_package;
 mod wesl_toml;
 use anyhow::{bail, format_err};
 use base_db::input::PackageOrigin;
-use indexmap::IndexMap;
 pub use manifest_path::ManifestPath;
 pub use package_graph::{PackageChange, PackageGraph, PackageKey};
 use paths::{AbsPath, AbsPathBuf};
-use rustc_hash::{FxHashSet, FxHasher};
-use std::{fmt, fs, hash::BuildHasherDefault, io};
+use std::{fmt, fs};
 pub use wesl_package::{PackageDependency, WeslPackage, WeslPackageRoot};
 pub use wesl_toml::{WeslDependency, WeslToml};
 

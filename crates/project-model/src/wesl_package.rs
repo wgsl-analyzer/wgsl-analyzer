@@ -1,9 +1,7 @@
+use crate::{PackageKey, PackageRoot, manifest_path::ManifestPath};
 use base_db::input::PackageOrigin;
 use edition::Edition;
-use paths::{AbsPath, AbsPathBuf};
-use triomphe::Arc;
-
-use crate::{PackageKey, PackageRoot, manifest_path::ManifestPath};
+use paths::AbsPathBuf;
 
 /// Information associated with a wesl package.
 #[derive(Debug, Clone, Eq, PartialEq)]

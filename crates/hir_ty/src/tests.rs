@@ -22,7 +22,7 @@ use triomphe::Arc;
 
 use crate::{
     database::HirDatabase as _,
-    infer::{InferenceDiagnostic, InferenceDiagnosticKind, InferenceResult},
+    infer::{InferenceDiagnosticKind, InferenceResult},
     test_db::TestDatabase,
     ty::{
         Type,

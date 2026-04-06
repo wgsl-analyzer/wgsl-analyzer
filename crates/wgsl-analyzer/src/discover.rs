@@ -1,17 +1,12 @@
 //! Infrastructure for lazy project discovery and loading. Currently only support wesl.toml discovery.
-use std::{path::Path, str::FromStr as _};
+use std::str::FromStr as _;
 
 use anyhow::bail;
 use base_db::input::PackageOrigin;
 use crossbeam_channel::Sender;
 use edition::Edition;
-use paths::{AbsPathBuf, Utf8Path, Utf8PathBuf};
-use project_model::{
-    ManifestPath, PackageKey, ProjectManifest, WeslPackage, WeslPackageRoot, WeslToml,
-};
-use rustc_hash::FxHashMap;
-use serde::{Deserialize, Serialize};
-use tracing::{info_span, span::EnteredSpan};
+use paths::AbsPathBuf;
+use project_model::{ProjectManifest, WeslPackage, WeslPackageRoot, WeslToml};
 
 /// A longer running task to load a package.
 pub(crate) struct LoadPackageTask {
@@ -58,10 +53,19 @@ impl LoadPackageTask {
     /// Run the [`LoadPackageTask`] and report progress, if any.
     pub(crate) fn run(&self) {
         if let Err(error) = self.try_run() {
-            self.sender.send(LoadPackageMessage::Error {
+            self.send(LoadPackageMessage::Error {
                 error: error.to_string(),
                 source: None,
             });
+        }
+    }
+
+    fn send(
+        &self,
+        message: LoadPackageMessage,
+    ) {
+        if let Err(error) = self.sender.send(message) {
+            tracing::warn!("load package task failed to send {}", error);
         }
     }
 
@@ -87,7 +91,7 @@ impl LoadPackageTask {
             ProjectManifest::ProjectJson(manifest_path) => bail!("project json not supported"),
         };
 
-        self.sender.send(LoadPackageMessage::Finished { project });
+        self.send(LoadPackageMessage::Finished { project });
         Ok(())
     }
 

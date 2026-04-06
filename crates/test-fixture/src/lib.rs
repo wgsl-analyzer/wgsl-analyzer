@@ -97,6 +97,7 @@ const SOURCE_ROOT_PREFIX: &str = "/";
 impl ChangeFixture {
     /// # Panics
     /// Panics if an invalid fixture is passed to it. This function is used only in tests.
+    #[expect(clippy::too_many_lines, reason = "keeping it similar to rust-analyzer")]
     #[must_use]
     pub fn parse(wa_fixture: &str) -> Self {
         let FixtureWithProjectMeta { fixture } = FixtureWithProjectMeta::parse(wa_fixture);

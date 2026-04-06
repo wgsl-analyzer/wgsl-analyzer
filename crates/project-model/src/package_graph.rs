@@ -1,15 +1,10 @@
-use std::hash::BuildHasherDefault;
-
-use base_db::input::PackageId;
-use edition::Edition;
-use indexmap::IndexMap;
-use paths::AbsPathBuf;
-use rustc_hash::{FxHashMap, FxHashSet, FxHasher};
-use triomphe::Arc;
-
 use crate::{
     manifest_path::ManifestPath, package_interner::PackageInterner, wesl_package::WeslPackage,
 };
+use base_db::input::PackageId;
+use indexmap::IndexMap;
+use rustc_hash::{FxHashMap, FxHashSet, FxHasher};
+use std::hash::BuildHasherDefault;
 
 /// An "opaque" and stable identifier for a package.
 ///
@@ -148,7 +143,8 @@ impl PackageGraph {
             .map(|(id, _)| *id)
             .collect();
         while let Some(id) = stack.pop() {
-            if seen.insert(id) {
+            let is_new = seen.insert(id);
+            if !is_new {
                 continue;
             }
 

@@ -3,21 +3,19 @@ use std::time::Instant;
 use base_db::{
     SourceDatabase as _,
     change::Change as BaseDbChange,
-    input::{Dependency, PackageData, PackageName, PackageOrigin},
+    input::{Dependency, PackageData, PackageName},
 };
 use crossbeam_channel::{Receiver, Sender, unbounded};
 use ide::{Analysis, AnalysisHost, Cancellable};
 use lsp_types::Url;
-use parking_lot::{MappedRwLockReadGuard, RwLock, RwLockReadGuard};
-use project_model::{
-    ManifestPath, PackageChange, PackageGraph, PackageKey, WeslPackage, WeslPackageRoot,
-};
+use parking_lot::{MappedRwLockReadGuard, RwLock, RwLockReadGuard, RwLockWriteGuard};
+use project_model::{ManifestPath, PackageChange, PackageGraph, PackageKey, WeslPackageRoot};
 use rustc_hash::FxHashMap;
 use salsa::Revision;
 use tracing::Level;
 use triomphe::Arc;
 use vfs::{
-    AbsPathBuf, Change as VfsChange, FileExcluded, FileId, Vfs, VfsPath,
+    Change as VfsChange, FileExcluded, FileId, Vfs, VfsPath,
     loader::{Handle, Message},
 };
 use vfs_notify::NotifyHandle;
@@ -224,7 +222,9 @@ impl GlobalState {
 
         let mut change = BaseDbChange::new();
         // VFS changes
-        let (vfs, line_endings_map) = &mut *self.vfs.write();
+        let mut guard = self.vfs.write();
+        let (vfs, line_endings_map) = &mut *guard;
+
         let changed_files = vfs.take_changes();
 
         // A file was added or deleted
@@ -270,8 +270,25 @@ impl GlobalState {
             let roots = self.source_root_config.partition(vfs);
             change.set_roots(roots);
         }
-        // Package graph changes
+        std::mem::drop(guard);
 
+        // Package graph changes
+        self.process_package_changes(modified_local_packages, &mut change);
+
+        if change.is_empty() {
+            false
+        } else {
+            self.analysis_host.apply_change(change);
+            true
+        }
+    }
+
+    fn process_package_changes(
+        &self,
+        modified_local_packages: FxHashMap<ManifestPath, PackageChange>,
+        change: &mut BaseDbChange,
+    ) {
+        let (vfs, _) = &*self.vfs.read();
         let mut packages = &mut *self.packages.write();
         for (path, modified) in modified_local_packages {
             match modified {
@@ -342,13 +359,6 @@ impl GlobalState {
                 })
             });
             change.change_package(id, package_data);
-        }
-
-        if change.is_empty() {
-            false
-        } else {
-            self.analysis_host.apply_change(change);
-            true
         }
     }
 

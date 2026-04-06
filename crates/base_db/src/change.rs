@@ -2,13 +2,10 @@
 //! state. Changes are transactional.
 
 use rustc_hash::FxHashMap;
-use salsa::{Durability, Id, Setter as _};
-use std::{
-    collections::{VecDeque, hash_map::Entry},
-    fmt,
-};
+use salsa::{Durability, Setter as _};
+use std::fmt;
 use triomphe::Arc;
-use vfs::{FileId, VfsPath};
+use vfs::FileId;
 
 use crate::{
     Package, RootQueryDb,

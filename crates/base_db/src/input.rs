@@ -188,18 +188,18 @@ pub enum PackageOrigin {
 
 impl PackageOrigin {
     #[must_use]
-    pub const fn is_local(self) -> bool {
-        matches!(self, Self::Local { .. })
+    pub fn is_local(self) -> bool {
+        self == Self::Local
     }
 
     #[must_use]
-    pub const fn is_lib(self) -> bool {
-        matches!(self, Self::Library { .. })
+    pub fn is_lib(self) -> bool {
+        self == Self::Library
     }
 
     #[must_use]
-    pub const fn is_lang(self) -> bool {
-        matches!(self, Self::Language { .. })
+    pub fn is_lang(self) -> bool {
+        self == Self::Language
     }
 }
 
