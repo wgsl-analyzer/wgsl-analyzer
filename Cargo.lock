@@ -1270,18 +1270,11 @@ dependencies = [
  "anyhow",
  "base-db",
  "edition",
- "expect-test",
  "indexmap",
- "itertools",
  "paths",
  "rustc-hash 2.1.2",
- "semver",
  "serde",
- "serde_json",
- "stdx",
  "toml",
- "tracing",
- "triomphe",
 ]
 
 [[package]]
