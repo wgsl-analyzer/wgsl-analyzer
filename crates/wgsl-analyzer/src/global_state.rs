@@ -303,7 +303,20 @@ impl GlobalState {
                     if let Some(package_id) =
                         packages.package_id(&PackageKey::from_manifest_path(path))
                     {
-                        packages.remove(package_id);
+                        if let Some(removed_package) = packages.remove(package_id) {
+                            tracing::trace!(
+                                "removed {} from the package graph",
+                                removed_package
+                                    .display_name
+                                    .unwrap_or_else(|| "<no package name>".to_owned())
+                            );
+                        } else {
+                            // this should be unreachable due to the first check
+                            tracing::trace!(
+                                "unable to remove package with id {} from the package graph",
+                                package_id.index()
+                            );
+                        }
                     }
                 },
             }

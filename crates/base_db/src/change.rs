@@ -368,17 +368,18 @@ mod tests {
     };
     use edition::Edition;
     use expect_test::expect;
-    use std::fmt::Write;
+    use std::fmt::Write as _;
     use triomphe::Arc;
     use vfs::{AbsPathBuf, file_set::FileSet};
 
+    #[expect(clippy::needless_pass_by_value, reason = "matches expect! macro")]
     fn check(
         packages: &[(PackageId, PackageData)],
         expect: expect_test::Expect,
     ) {
         let (sorted, errors) = PackageGraph {
             ids: packages.iter().map(|(id, _)| *id).collect(),
-            packages: packages.into_iter().cloned().collect(),
+            packages: packages.iter().cloned().collect(),
         }
         .to_topological_order();
         let mut actual = sorted
@@ -386,7 +387,7 @@ mod tests {
             .map(|id| id.index().to_string())
             .collect::<Vec<String>>()
             .join(", ");
-        writeln!(&mut actual, "");
+        writeln!(&mut actual);
         for error in errors {
             writeln!(&mut actual, "{error}");
         }

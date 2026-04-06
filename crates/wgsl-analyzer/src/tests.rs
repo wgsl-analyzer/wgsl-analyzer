@@ -2,7 +2,7 @@
 
 use base_db::input::PackageOrigin;
 use expect_test::{Expect, expect};
-use itertools::Itertools;
+use itertools::Itertools as _;
 use project_model::{ManifestPath, ProjectManifest, WeslPackage, WeslPackageRoot};
 use std::fmt::{self, Write as _};
 use test_utils::project_root;
@@ -23,13 +23,14 @@ fn print_path(
     path: &AbsPathBuf,
     base: &AbsPathBuf,
 ) -> String {
-    let relative_path = path.strip_prefix(&base).unwrap().as_utf8_path();
+    let relative_path = path.strip_prefix(base).unwrap().as_utf8_path();
     relative_path
         .components()
         .map(|component| component.as_str())
         .join("/")
 }
 
+#[expect(clippy::needless_pass_by_value, reason = "matches expect! macro")]
 fn check_load_project(
     manifest: &str,
     origin: PackageOrigin,
@@ -47,12 +48,12 @@ fn check_load_project(
     std::mem::drop(task);
 
     // Either a finished or an error message should happen
-    for message in load_package_receiver.iter() {
+    for message in &load_package_receiver {
         match message {
             LoadPackageMessage::Finished { project } => {
                 let project_name = match project.display_name {
                     Some(name) => format!("Project {name}"),
-                    None => "Unnamed project".to_string(),
+                    None => "Unnamed project".to_owned(),
                 };
                 writeln!(
                     actual,
@@ -80,6 +81,7 @@ fn check_load_project(
     expect.assert_eq(&actual);
 }
 
+#[expect(clippy::needless_pass_by_value, reason = "matches expect! macro")]
 fn check_load_project_files(
     manifest: &str,
     origin: PackageOrigin,
@@ -137,7 +139,7 @@ fn check_load_project_files(
 }
 
 #[test]
-fn test_simple_wesl() {
+fn simple_wesl() {
     check_load_project(
         "simple_wesl/wesl.toml",
         PackageOrigin::Local,
@@ -161,7 +163,7 @@ fn test_simple_wesl() {
 }
 
 #[test]
-fn test_flat_wesl() {
+fn flat_wesl() {
     check_load_project(
         "flat_wesl/wesl.toml",
         PackageOrigin::Local,

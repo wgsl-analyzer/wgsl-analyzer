@@ -83,15 +83,14 @@ impl PackageGraph {
         self.packages.insert(package_id, data);
     }
 
+    /// Removes a package from the graph, returning the [`WeslPackage`] corresponding
+    /// to the `id` if the `id` was previously in the [`PackageGraph`].
     pub fn remove(
         &mut self,
         id: PackageId,
-    ) -> Result<(), ()> {
+    ) -> Option<WeslPackage> {
         self.changes.insert(id, PackageChange::Delete);
-        match self.packages.remove(&id) {
-            Some(_) => Ok(()),
-            None => Err(()),
-        }
+        self.packages.remove(&id)
     }
 
     #[must_use]

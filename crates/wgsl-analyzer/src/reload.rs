@@ -41,7 +41,7 @@ impl GlobalState {
         let _p = tracing::info_span!("GlobalState::update_configuration").entered();
         let old_config = std::mem::replace(&mut self.config, Arc::new(config));
 
-        if self.analysis_host.raw_database().extensions() != self.config.extensions() {
+        if self.config.extensions() != old_config.extensions() {
             self.analysis_host
                 .raw_database_mut()
                 .set_extensions_with_durability(self.config.extensions(), Durability::MEDIUM);
