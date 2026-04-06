@@ -60,8 +60,9 @@ impl str::FromStr for Edition {
     type Err = ParseEditionError;
 
     fn from_str(string: &str) -> Result<Self, Self::Err> {
+        // https://github.com/wgsl-tooling-wg/wesl-rs/tree/main/crates/wesl/src/wesl_toml.rs#L78
         match string {
-            "wgsl" => Ok(Self::Wgsl),
+            "WGSL" => Ok(Self::Wgsl),
             "2026_pre" => Ok(Self::Wesl2025Unstable),
             _ => Err(ParseEditionError {
                 invalid_input: string.to_owned(),
