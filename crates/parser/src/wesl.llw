@@ -1,19 +1,128 @@
 // Based on https://www.w3.org/TR/WGSL with some modifications.
 
-token Enable='enable' Requires='requires' Fn='fn' Alias='alias' Struct='struct' Var='var'
-      ConstantAssert='const_assert' If='if' For='for' Else='else' Loop='loop' Break='break'
-      While='while' Return='return' Switch='switch' Discard='discard' Continuing='continuing'
-      Constant='const' Case='case' Default='default' Override='override' Continue='continue'
-      Let='let' True='true' False='false' Diagnostic='diagnostic';
-token Semicolon=';' ParenthesisLeft='(' ParenthesisRight=')' Comma=',' Equal='=' Colon=':' BraceLeft='{' BraceRight='}' Arrow='->'
-      LessThan='<' LessThanEqual = '<=' ShiftLeft = '<<' ShiftLeftEqual = '<<=' TemplateStart = '<template start>'
-      GreaterThan='>' GreaterThanEqual = '>=' ShiftRight = '>>' ShiftRightEqual = '>>=' TemplateEnd = '<template end>'
-      Period='.' AttributeOperator='@' BracketLeft='[' BracketRight=']' And='&' Bang='!' Star='*' Minus='-'
-      Tilde='~' Plus='+' EqualEqual='==' Or='|' AndAnd='&&' ForwardSlash='/' Xor='^' OrOr='||' NotEqual='!='
-      Modulo='%' Underscore='_' AndEqual='&=' TimesEqual='*=' PlusEqual='+=' OrEqual='|=' MinusEqual='-='
-      DivisionEqual='/=' XorEqual='^=' ModuloEqual='%=' PlusPlus='++' MinusMinus='--';
-token Import='import' Package='package' Super='super' As='as' ColonColon='::';
-token Identifier='<identifier>' FloatLiteral='<floating point literal>' IntLiteral='<integer literal>';
+token
+	Enable='enable'
+	Requires='requires'
+	Fn='fn'
+	Alias='alias'
+	Struct='struct'
+	Var='var'
+	ConstantAssert='const_assert'
+	If='if'
+	For='for'
+	Else='else'
+	Loop='loop'
+	Break='break'
+	While='while'
+	Return='return'
+	Switch='switch'
+	Discard='discard'
+	Continuing='continuing'
+	Const='const'
+	Case='case'
+	Default='default'
+	Override='override'
+	Continue='continue'
+	Let='let'
+	True='true'
+	False='false'
+	Diagnostic='diagnostic'
+	Align='align'
+	Builtin='builtin'
+	Binding='binding'
+	BlendSrc='blend_src'
+	Group='group'
+	Id='id'
+	Interpolate='interpolate'
+	Invariant='invariant'
+	Location='location'
+	MustUse='must_use'
+	Size='size'
+	WorkgroupSize='workgroup_size'
+	Vertex='vertex'
+	Fragment='fragment'
+	Compute='compute'
+;
+
+token
+	Semicolon=';'
+	ParenthesisLeft='('
+	ParenthesisRight=')'
+	Comma=','
+	Equal='='
+	Colon=':'
+	BraceLeft='{'
+	BraceRight='}'
+	Arrow='->'
+	LessThan='<'
+	LessThanEqual = '<='
+	ShiftLeft = '<<'
+	ShiftLeftEqual = '<<='
+	TemplateStart = '<template start>'
+	GreaterThan='>'
+	GreaterThanEqual = '>='
+	ShiftRight = '>>'
+	ShiftRightEqual = '>>='
+	TemplateEnd = '<template end>'
+	Period='.'
+	AttributeOperator='@'
+	BracketLeft='['
+	BracketRight=']'
+	And='&'
+	Bang='!'
+	Star='*'
+	Minus='-'
+	Tilde='~'
+	Plus='+'
+	EqualEqual='=='
+	Or='|'
+	AndAnd='&&'
+	ForwardSlash='/'
+	Xor='^'
+	OrOr='||'
+	NotEqual='!='
+	Modulo='%'
+	Underscore='_'
+	AndEqual='&='
+	TimesEqual='*='
+	PlusEqual='+='
+	OrEqual='|='
+	MinusEqual='-='
+	DivisionEqual='/='
+	XorEqual='^='
+	ModuloEqual='%='
+	PlusPlus='++'
+	MinusMinus='--'
+;
+
+token
+	Import='import'
+	Package='package'
+	Super='super'
+	As='as'
+	ColonColon='::'
+;
+
+token
+	Identifier='<identifier>'
+	FloatLiteral='<floating point literal>'
+	IntLiteral='<integer literal>'
+;
+
+token
+	Perspective='perspective'
+	Linear='linear'
+	Flat='flat'
+;
+
+token
+	Center='center'
+	Centroid='centroid'
+	Sample='sample'
+	First='first'
+	Either='either'
+;
+
 token Blankspace LineEndingComment BlockComment;
 
 skip Blankspace LineEndingComment BlockComment;
@@ -31,9 +140,10 @@ import_statement: 'import' [import_package_relative | import_super_relative] (im
 import_package_relative: 'package' '::';
 import_super_relative: ('super' '::')+;
 import_path: name (
-    '::' (import_collection | import_path)
-  | ['as' name] @import_item
+	'::' (import_collection | import_path)
+	| ['as' name] @import_item
 );
+
 import_collection: '{' import_path (?1 ',' import_path)* [','] '}';
 
 // TODO: validate that directives come before declarations to improve error messages
@@ -43,10 +153,11 @@ global_item^: import_statement | global_directive | global_declaration | global_
 
 global_assert: 'const_assert' expression ';' @assert_statement; // §10
 global_directive:
-  'diagnostic' diagnostic_control ';' @diagnostic_directive // §4.2
-| 'enable' enable_extension_name (?1 ',' enable_extension_name)* [','] ';' @enable_directive // §4.1.1
-| 'requires' language_extension_name (?1 ',' language_extension_name)* [','] ';' @requires_directive // §4.1.2
+	'diagnostic' diagnostic_control ';' @diagnostic_directive // §4.2
+	| 'enable' enable_extension_name (?1 ',' enable_extension_name)* [','] ';' @enable_directive // §4.1.1
+	| 'requires' language_extension_name (?1 ',' language_extension_name)* [','] ';' @requires_directive // §4.1.2
 ;
+
 diagnostic_control: '(' severity_control_name ',' diagnostic_rule_name [','] ')';
 severity_control_name: Identifier;
 diagnostic_rule_name: Identifier ['.' Identifier];
@@ -54,43 +165,87 @@ enable_extension_name: Identifier;
 language_extension_name: Identifier;
 
 global_declaration:
-  attribute* @function_declaration (
-    'fn' name function_parameters [return_type] compound_statement @function_declaration
-  | variable_declaration_semi @variable_declaration
-  | override_declaration_semi @override_declaration
-  | let_declaration_semi @global_let_declaration
-  )
-| const_declaration_semi @const_declaration
-| 'alias' name '=' type_specifier ';' @type_alias_declaration
-| 'struct' name struct_body @struct_declaration
+	attribute* @function_declaration (
+		'fn' name function_parameters [return_type] compound_statement @function_declaration
+		| variable_declaration_semi @variable_declaration
+		| override_declaration_semi @override_declaration
+		| let_declaration_semi @global_let_declaration
+	)
+	| const_declaration_semi @const_declaration
+	| 'alias' name '=' type_specifier ';' @type_alias_declaration
+	| 'struct' name struct_body @struct_declaration
 ;
+
 // Manual error recovery for missing commas between parameters
 function_parameters: '(' [parameter (?1 (',' | !1) parameter)* [',']] ')';
 parameter: attribute* name ':' type_specifier;
 return_type: '->' attribute* type_specifier;
+
 // Manual error recovery branches for structs
 struct_body: '{' & struct_member (?1 (','| ';'!1 | !1) struct_member)* [','] '}';
 struct_member: attribute* name ':' type_specifier;
 
+// all attributes that do not use keywords have to be parsed generically and separated later
 attribute:
-  '@' (
-    'diagnostic' diagnostic_control @diagnostic_attr
-  | Identifier [argument_expression_list]
-    // TODO: interpolate is special
-    // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/614
-    // builtin is special
-  )
+	'@' (
+			'align' '(' expression [','] ')' @align_attr
+			| 'binding' '(' expression [','] ')' @binding_attr
+			| 'blend_src' '(' expression [','] ')' @blend_src_attr
+			| 'builtin' '(' builtin_value_name [','] ')' @builtin_attr
+			| 'const' @const_attr
+			| 'diagnostic' diagnostic_control @diagnostic_attr
+			| 'group' '(' expression [','] ')' @group_attr
+			| 'id' '(' expression [','] ')' @id_attr
+			| 'interpolate' '(' interpolate_type_name [ ',' ] [ interpolate_sampling_name [ ',' ] ] ')' @interpolate_attr
+			| 'invariant' @invariant_attr
+			| 'location' '(' expression [','] ')' @location_attr
+			| 'must_use' @must_use_attr
+			| 'size' '(' expression [','] ')'@size_attr
+			| workgroup_size_attr
+			| 'vertex' @vertex_attr
+			| 'fragment' @fragment_attr
+			| 'compute' @compute_attr
+			| Identifier [ argument_expression_list ] @other_attr
+	)
 ;
+
+builtin_value_name: Identifier;
+
+interpolate_type_name:
+	'perspective'
+	| 'linear'
+	| 'flat'
+;
+
+interpolate_sampling_name:
+	'center'
+	| 'centroid'
+	| 'sample'
+	| 'first'
+	| 'either'
+;
+
+workgroup_size_attr:
+	'workgroup_size' '(' expression
+		[ ',' expression
+			[ ',' expression
+				[ ',' ]
+			]
+		]
+	')' ;
+
 typed_ident^: name (':' type_specifier | ());
+
 // declares an identifier
 name: Identifier;
+
 // wesl identifier
 path: [import_package_relative | import_super_relative] Identifier ('::' Identifier)*;
 
 // Used in places where it's guaranteed to be a type
 type_specifier: path template_list;
 // Used in places where it might be a type.
-// Note that types can appear in expression, like in `array<  array<f32,1>  ,1>`
+// Note that types can appear in expression, like in `array<array<f32, 1>, 1>`
 ident_expression: path expr_template_list;
 template_list^: [template_args >];
 expr_template_list^: [template_args >template_list];
@@ -101,83 +256,90 @@ template_args^: TemplateStart expression (?1 ',' expression)* [','] TemplateEnd;
 // TODO: check for invalid expressions, like a < b < c
 // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/616
 expression:
-  expression '[' expression ']' @indexing_expression // §8.5
-| expression '.' (Identifier @field_expression) // §8.5, but cannot distinguish swizzles and fields from syntax
-| ('-' | '!' | '~' | '*' | '&') expression @unary_expression // §8.6, §8.7, §8.9, §8.13, §8.14
-| expression ('*' | '/' | '%') expression @binary_expression // §8.7
-| expression ('+' | '-') expression @binary_expression // §8.7
-| expression ('<<' | '>>') expression @binary_expression // §8.9
-| expression ('<' | '>' | '<=' | '>=' | '==' | '!=') expression @binary_expression // §8.8
-| expression '&' expression @binary_expression // §8.9
-| expression '^' expression @binary_expression // §8.9
-| expression '|' expression @binary_expression // §8.9
-| expression '&&' expression @binary_expression // §8.6
-| expression '||' expression @binary_expression // §8.6
-| ident_or_function ^ // §8.10, §8.11
-| '(' expression ')' @paren_expression // §8.4
-| literal @literal
-;
+	expression '[' expression ']' @indexing_expression // §8.5
+	| expression '.' (Identifier @field_expression) // §8.5, but cannot distinguish swizzles and fields from syntax
+	| ('-' | '!' | '~' | '*' | '&') expression @unary_expression // §8.6, §8.7, §8.9, §8.13, §8.14
+	| expression ('*' | '/' | '%') expression @binary_expression // §8.7
+	| expression ('+' | '-') expression @binary_expression // §8.7
+	| expression ('<<' | '>>') expression @binary_expression // §8.9
+	| expression ('<' | '>' | '<=' | '>=' | '==' | '!=') expression @binary_expression // §8.8
+	| expression '&' expression @binary_expression // §8.9
+	| expression '^' expression @binary_expression // §8.9
+	| expression '|' expression @binary_expression // §8.9
+	| expression '&&' expression @binary_expression // §8.6
+	| expression '||' expression @binary_expression // §8.6
+	| ident_or_function ^ // §8.10, §8.11
+	| '(' expression ')' @paren_expression // §8.4
+	| literal @literal;
 
-ident_or_function^: 
-ident_expression [argument_expression_list_expr >function_call];
+ident_or_function^:
+	ident_expression [argument_expression_list_expr >function_call];
+
 // §8.3
 literal^:
-  IntLiteral
-| FloatLiteral
-| 'true'
-| 'false'
+	IntLiteral
+	| FloatLiteral
+	| 'true'
+	| 'false'
 ;
+
 argument_expression_list: '(' [expression (?1 ',' expression)* [',']] ')' @arguments;
 // extra rule for better error handling
 argument_expression_list_expr: '(' [expression (?1 ',' expression)* [',']] ')' @arguments;
 
 statement:
-  attribute* (
-    // NOTE: The WGSL spec (§9.4.1) requires `if_clause (else_if_clause)* [else_clause]`,
-    // i.e. at most one trailing else and no else-if after else. We accept the more
-    // permissive form here so the parser produces a valid AST for malformed input
-    // (e.g. `} else { } else if (...) { }`), enabling the formatter and IDE features
-    // to operate on it. A parser-level diagnostic in `create_node_if_statement`
-    // reports the error.
-    if_clause (?1 else_if_clause | else_clause)* @if_statement // §9.4.1
-  | 'switch' expression switch_body @switch_statement // §9.4.2
-  | 'loop' loop_compound_statement @loop_statement // §9.4.3
-  | 'for' '(' [for_init] ';' [for_condition] ';' [for_update] ')' compound_statement @for_statement // §9.4.4
-  | 'while' expression compound_statement @while_statement // §9.4.5
-  // TODO: check if using & here makes it recover better https://github.com/0x2a-42/lelwel/issues/34
-  // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/684
-  | '{' statement* '}' @compound_statement // §9.1
-  )
-| ?2 function_call ';' @function_call_statement // §9.5
-| variable_declaration_semi @variable_declaration
-| let_declaration_semi @let_declaration
-| const_declaration_semi @const_declaration
-// we need to choose a statement type as the default, so we choose simple_assignment_statement
-| lhs_expression @simple_assignment_statement ( 
-    '=' expression @simple_assignment_statement // §9.2.1
-  | compound_assignment_operator expression @compound_assignment_statement // §9.2.3
-  | '++' @increment_statement // §9.3
-  | '--' @decrement_statement // §9.3
-  ) ';'
-| '_' '=' expression ';' @phony_assignment_statement // §9.2.2
-| 'const_assert' expression ';' @assert_statement // §10.1
-| 'break' ';' @break_statement // §9.4.6
-| 'continue' ';' @continue_statement // §9.4.8
-| ';' @empty_statement
-| 'discard' ';' @discard_statement // §9.4.11
-| 'return' [expression] ';' @return_statement // §9.4.10
-;
+	attribute* (
+		// NOTE: The WGSL spec (§9.4.1) requires `if_clause (else_if_clause)* [else_clause]`,
+		// i.e. at most one trailing else and no else-if after else. We accept the more
+		// permissive form here so the parser produces a valid AST for malformed input
+		// (e.g. `if { } else { } else if (...) { }`), enabling the formatter and IDE
+		// features to operate on it.
+		// A parser-level diagnostic in `create_node_if_statement` reports the error.
+		if_clause (?1 else_if_clause | else_clause)* @if_statement // §9.4.1
+	| 'switch' expression switch_body @switch_statement // §9.4.2
+	| 'loop' loop_compound_statement @loop_statement // §9.4.3
+	| 'for' '(' [for_init] ';' [for_condition] ';' [for_update] ')' compound_statement @for_statement // §9.4.4
+	| 'while' expression compound_statement @while_statement // §9.4.5
+	// TODO: check if using & here makes it recover better https://github.com/0x2a-42/lelwel/issues/34
+	// See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/684
+	| '{' statement* '}' @compound_statement // §9.1
+	)
+	| ?2 function_call ';' @function_call_statement // §9.5
+	| variable_declaration_semi @variable_declaration
+	| let_declaration_semi @let_declaration
+	| const_declaration_semi @const_declaration
+	// we need to choose a statement type as the default, so we choose simple_assignment_statement
+	| lhs_expression @simple_assignment_statement (
+		'=' expression @simple_assignment_statement // §9.2.1
+		| compound_assignment_operator expression @compound_assignment_statement // §9.2.3
+		| '++' @increment_statement // §9.3
+		| '--' @decrement_statement // §9.3
+	) ';'
+	| '_' '=' expression ';' @phony_assignment_statement // §9.2.2
+	| 'const_assert' expression ';' @assert_statement // §10.1
+	| 'break' ';' @break_statement // §9.4.6
+	| 'continue' ';' @continue_statement // §9.4.8
+	| ';' @empty_statement
+	| 'discard' ';' @discard_statement // §9.4.11
+	| 'return' [expression] ';' @return_statement // §9.4.10
+	;
+
 loop_compound_statement: attribute* '{' statement* [continuing_statement] '}' @compound_statement;
+
 continuing_statement: 'continuing' continuing_compound_statement; // §9.4.9
+
 continuing_compound_statement: attribute* '{' (?1 statement)* [break_if_statement] '}' @compound_statement;
+
 break_if_statement: 'break' 'if' expression ';'; // §9.4.7
+
 for_init:
-  ?1 function_call
-| variable_declaration 
-| let_declaration 
-| const_declaration
-| variable_updating
-;
+	?1 function_call
+	| variable_declaration
+	| let_declaration
+	| const_declaration
+	| variable_updating
+	;
+
 for_condition: expression;
 for_update: ?1 function_call | variable_updating;
 if_clause: 'if' expression compound_statement;
@@ -205,31 +367,33 @@ override_declaration_semi^: 'override' typed_ident ['=' expression] ';';
 
 // duplicated so it can be used in `for` statement without semicolon
 variable_updating:
-  lhs_expression @simple_assignment_statement (
-    '=' expression @simple_assignment_statement // §9.2.1
-  | compound_assignment_operator expression @compound_assignment_statement // §9.2.3
-  | '++' @increment_statement // §9.3
-  | '--' @decrement_statement // §9.3
-  )
-| '_' '=' expression @phony_assignment_statement // §9.2.2
-;
+	lhs_expression @simple_assignment_statement (
+		'=' expression @simple_assignment_statement // §9.2.1
+		| compound_assignment_operator expression @compound_assignment_statement // §9.2.3
+		| '++' @increment_statement // §9.3
+		| '--' @decrement_statement // §9.3
+		)
+	| '_' '=' expression @phony_assignment_statement // §9.2.2
+	;
+
 compound_assignment_operator^:
-  '<<='
-| '>>='
-| '%='
-| '&='
-| '*='
-| '+='
-| '-='
-| '/='
-| '^='
-| '|='
-;
+	'<<='
+	| '>>='
+	| '%='
+	| '&='
+	| '*='
+	| '+='
+	| '-='
+	| '/='
+	| '^='
+	| '|='
+	;
+
 lhs_expression:
-  lhs_expression '[' expression ']' @indexing_expression // §8.5
-| lhs_expression '.' (Identifier @field_expression) // §8.5
-| '*' lhs_expression @unary_expression // §8.14
-| '&' lhs_expression @unary_expression // §8.13
-| '(' lhs_expression ')' @paren_expression // §8.4
-| path @ident_expression
-;
+	lhs_expression '[' expression ']' @indexing_expression // §8.5
+	| lhs_expression '.' (Identifier @field_expression) // §8.5
+	| '*' lhs_expression @unary_expression // §8.14
+	| '&' lhs_expression @unary_expression // §8.13
+	| '(' lhs_expression ')' @paren_expression // §8.4
+	| path @ident_expression
+	;

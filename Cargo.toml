@@ -60,7 +60,7 @@ libc = "0.2.183"
 dashmap = { version = "6.1.0" }
 nohash-hasher = "0.2.0"
 rowan = "0.16.1"
-rustc-hash = "2.1.1"
+rustc-hash = "2.1.2"
 salsa = { version = "0.25.2", default-features = true, features = [
 	"macros",
 	"rayon",

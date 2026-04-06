@@ -1,7 +1,11 @@
 #![cfg_attr(not(test), allow(unused))]
+#![expect(clippy::too_many_lines, reason = "snapshot test data")]
 
+mod attributes;
+mod diagnostic;
 mod expression;
 mod imports;
+mod keywords;
 
 use expect_test::{Expect, expect};
 
@@ -50,7 +54,7 @@ fn can_parse_array_declaration() {
             SourceFile@0..87
               Blankspace@0..9 "\n        "
               ConstantDeclaration@9..36
-                Constant@9..14 "const"
+                Const@9..14 "const"
                 Blankspace@14..15 " "
                 Name@15..18
                   Identifier@15..18 "dim"
@@ -121,7 +125,7 @@ fn cannot_parse_bad_array_declaration() {
             SourceFile@0..86
               Blankspace@0..9 "\n        "
               ConstantDeclaration@9..36
-                Constant@9..14 "const"
+                Const@9..14 "const"
                 Blankspace@14..15 " "
                 Name@15..18
                   Identifier@15..18 "dim"
@@ -219,7 +223,7 @@ fn parse_comments() {
             SourceFile@0..289
               Blankspace@0..9 "\n        "
               ConstantDeclaration@9..25
-                Constant@9..14 "const"
+                Const@9..14 "const"
                 Blankspace@14..15 " "
                 Name@15..18
                   Identifier@15..18 "foo"
@@ -233,7 +237,7 @@ fn parse_comments() {
               LineEndingComment@26..57 "// This is line-endin ..."
               Blankspace@57..66 "\n        "
               ConstantDeclaration@66..82
-                Constant@66..71 "const"
+                Const@66..71 "const"
                 Blankspace@71..72 " "
                 Name@72..75
                   Identifier@72..75 "bar"
@@ -2002,34 +2006,31 @@ fn attribute_list_modern() {
         "@location(0)",
         expect![[r#"
             SourceFile@0..12
-              Attribute@0..12
+              LocationAttribute@0..12
                 AttributeOperator@0..1 "@"
-                Identifier@1..9 "location"
-                Arguments@9..12
-                  ParenthesisLeft@9..10 "("
-                  Literal@10..11
-                    IntLiteral@10..11 "0"
-                  ParenthesisRight@11..12 ")""#]],
+                Location@1..9 "location"
+                ParenthesisLeft@9..10 "("
+                Literal@10..11
+                  IntLiteral@10..11 "0"
+                ParenthesisRight@11..12 ")""#]],
     );
     check_attribute(
         "@interpolate(flat)",
         expect![[r#"
             SourceFile@0..18
-              Attribute@0..18
+              InterpolateAttribute@0..18
                 AttributeOperator@0..1 "@"
-                Identifier@1..12 "interpolate"
-                Arguments@12..18
-                  ParenthesisLeft@12..13 "("
-                  IdentExpression@13..17
-                    Path@13..17
-                      Identifier@13..17 "flat"
-                  ParenthesisRight@17..18 ")""#]],
+                Interpolate@1..12 "interpolate"
+                ParenthesisLeft@12..13 "("
+                InterpolateTypeName@13..17
+                  Flat@13..17 "flat"
+                ParenthesisRight@17..18 ")""#]],
     );
     check_attribute(
         "@attr(1, 2, 0.0, ident)",
         expect![[r#"
             SourceFile@0..23
-              Attribute@0..23
+              OtherAttribute@0..23
                 AttributeOperator@0..1 "@"
                 Identifier@1..5 "attr"
                 Arguments@5..23
@@ -2412,9 +2413,9 @@ fn annotation_with_invalid_statement_recover() {
                 Blankspace@101..102 "\n"
                 BraceRight@102..103 "}"
 
-            error at 16..18: invalid syntax, expected one of: 'diagnostic', <identifier>
+            error at 16..18: invalid syntax, expected one of: 'align', 'binding', 'blend_src', 'builtin', 'compute', 'const', 'diagnostic', 'fragment', 'group', 'id', <identifier>, 'interpolate', 'invariant', 'location', 'must_use', 'size', 'vertex', 'workgroup_size'
             error at 38..41: invalid syntax, expected one of: '@', '{'
-            error at 72..76: invalid syntax, expected one of: 'diagnostic', <identifier>
+            error at 72..76: invalid syntax, expected one of: 'align', 'binding', 'blend_src', 'builtin', 'compute', 'const', 'diagnostic', 'fragment', 'group', 'id', <identifier>, 'interpolate', 'invariant', 'location', 'must_use', 'size', 'vertex', 'workgroup_size'
             error at 81..99: global let declarations are not allowed
             error at 100..101: invalid syntax, expected one of: 'alias', '@', 'const', 'const_assert', 'diagnostic', <end of file>, 'enable', 'fn', 'import', 'let', 'override', 'requires', ';', 'struct', 'var'"#]],
     );
@@ -2842,7 +2843,7 @@ fn global_constant_declaration() {
         expect![[r#"
             SourceFile@0..19
               ConstantDeclaration@0..19
-                Constant@0..5 "const"
+                Const@0..5 "const"
                 Blankspace@5..6 " "
                 Name@6..14
                   Identifier@6..14 "constant"
@@ -3417,11 +3418,11 @@ fn attribute_only_recover() {
         expect![[r#"
             SourceFile@0..9
               FunctionDeclaration@0..9
-                Attribute@0..9
+                FragmentAttribute@0..9
                   AttributeOperator@0..1 "@"
-                  Identifier@1..9 "fragment"
+                  Fragment@1..9 "fragment"
 
-            error at 9..9: invalid syntax, expected one of: '@', '{', 'fn', 'for', <identifier>, 'if', 'let', 'loop', 'override', 'package', '(', 'super', 'switch', 'var', 'while'"#]],
+            error at 9..9: invalid syntax, expected one of: '@', 'fn', 'let', 'override', 'var'"#]],
     );
 }
 
@@ -3432,7 +3433,7 @@ fn expression_in_template() {
         expect![[r#"
             SourceFile@0..33
               ConstantDeclaration@0..33
-                Constant@0..5 "const"
+                Const@0..5 "const"
                 Blankspace@5..6 " "
                 Name@6..10
                   Identifier@6..10 "data"

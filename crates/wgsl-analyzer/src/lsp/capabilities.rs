@@ -429,6 +429,18 @@ impl ClientCapabilities {
         .unwrap_or_default()
     }
 
+    pub fn signature_help_context_support(&self) -> bool {
+        (|| -> _ {
+            self.0
+                .text_document
+                .as_ref()?
+                .signature_help
+                .as_ref()?
+                .context_support
+        })()
+        .unwrap_or_default()
+    }
+
     pub fn text_document_diagnostic(&self) -> bool {
         (|| -> _ { self.0.text_document.as_ref()?.diagnostic.as_ref() })().is_some()
     }

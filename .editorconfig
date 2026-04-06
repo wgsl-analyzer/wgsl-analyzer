@@ -24,5 +24,9 @@ quote_type = single
 spaces_around_brackets = both
 
 [*.{json,jsonc}]
+indent_style = tab
 
 [*.{wgsl,wesl}]
+
+[*.llw]
+indent_style = tab

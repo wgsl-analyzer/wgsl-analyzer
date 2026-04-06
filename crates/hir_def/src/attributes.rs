@@ -53,17 +53,9 @@ impl AttributeList {
             .attributes()
             .map(|attribute| Attribute {
                 name: attribute
-                    .ident_token()
+                    .name()
                     .map_or_else(Name::missing, |attribute| Name::from(attribute.text())),
-                parameters: attribute
-                    .parameters()
-                    .map(|parameter| {
-                        parameter
-                            .arguments()
-                            .map(|expression| collector.collect_expression(expression))
-                    })
-                    .map_or_else(|| Either::Left(iter::empty()), Either::Right)
-                    .collect(),
+                parameters: get_attribute_parameters(&mut collector, attribute),
             })
             .collect();
         let (store, source_map) = collector.finish();
@@ -84,6 +76,77 @@ impl AttributeList {
             },
             ExpressionSourceMap::default(),
         )
+    }
+}
+
+#[expect(clippy::min_ident_chars, reason = "function.tar.gz")]
+fn get_attribute_parameters(
+    collector: &mut ExprCollector<'_>,
+    attribute: ast::Attribute,
+) -> Vec<la_arena::Idx<crate::expression::Expression>> {
+    match attribute {
+        ast::Attribute::ConstantAttribute(inner) => Vec::new(),
+        ast::Attribute::DiagnosticAttribute(inner) => Vec::new(), // these controls are not expressions
+        ast::Attribute::OtherAttribute(inner) => inner
+            .parameters()
+            .map(|p| p.arguments().map(|e| collector.collect_expression(e)))
+            .map_or_else(|| Either::Left(iter::empty()), Either::Right)
+            .collect(),
+        ast::Attribute::AlignAttribute(inner) => inner
+            .parameters()
+            .map(|p| p.arguments().map(|e| collector.collect_expression(e)))
+            .map_or_else(|| Either::Left(iter::empty()), Either::Right)
+            .collect(),
+        ast::Attribute::BindingAttribute(inner) => inner
+            .parameters()
+            .map(|p| p.arguments().map(|e| collector.collect_expression(e)))
+            .map_or_else(|| Either::Left(iter::empty()), Either::Right)
+            .collect(),
+        ast::Attribute::BlendSrcAttribute(inner) => inner
+            .parameters()
+            .map(|p| p.arguments().map(|e| collector.collect_expression(e)))
+            .map_or_else(|| Either::Left(iter::empty()), Either::Right)
+            .collect(),
+        ast::Attribute::BuiltinAttribute(inner) => inner
+            .parameters()
+            .map(|p| p.arguments().map(|e| collector.collect_expression(e)))
+            .map_or_else(|| Either::Left(iter::empty()), Either::Right)
+            .collect(),
+        ast::Attribute::GroupAttribute(inner) => inner
+            .parameters()
+            .map(|p| p.arguments().map(|e| collector.collect_expression(e)))
+            .map_or_else(|| Either::Left(iter::empty()), Either::Right)
+            .collect(),
+        ast::Attribute::IdAttribute(inner) => inner
+            .parameters()
+            .map(|p| p.arguments().map(|e| collector.collect_expression(e)))
+            .map_or_else(|| Either::Left(iter::empty()), Either::Right)
+            .collect(),
+        ast::Attribute::InterpolateAttribute(inner) => Vec::new(), // these arguments are not expressions
+        ast::Attribute::InvariantAttribute(inner) => inner
+            .parameters()
+            .map(|p| p.arguments().map(|e| collector.collect_expression(e)))
+            .map_or_else(|| Either::Left(iter::empty()), Either::Right)
+            .collect(),
+        ast::Attribute::LocationAttribute(inner) => inner
+            .parameters()
+            .map(|p| p.arguments().map(|e| collector.collect_expression(e)))
+            .map_or_else(|| Either::Left(iter::empty()), Either::Right)
+            .collect(),
+        ast::Attribute::MustUseAttribute(inner) => Vec::new(),
+        ast::Attribute::SizeAttribute(inner) => inner
+            .parameters()
+            .map(|p| p.arguments().map(|e| collector.collect_expression(e)))
+            .map_or_else(|| Either::Left(iter::empty()), Either::Right)
+            .collect(),
+        ast::Attribute::WorkgroupSizeAttribute(inner) => inner
+            .parameters()
+            .map(|p| p.arguments().map(|e| collector.collect_expression(e)))
+            .map_or_else(|| Either::Left(iter::empty()), Either::Right)
+            .collect(),
+        ast::Attribute::VertexAttribute(inner) => Vec::new(),
+        ast::Attribute::FragmentAttribute(inner) => Vec::new(),
+        ast::Attribute::ComputeAttribute(inner) => Vec::new(),
     }
 }
 
@@ -110,26 +173,6 @@ impl AttributesWithOwner {
             AttributeDefId::Struct(id) => {
                 AttributeList::from_src(database, &id.lookup(database).source(database).value)
             },
-            // AttributeDefId::Field(id) => {
-            //     let location = id.r#struct.lookup(database).source(database);
-            //     let struct_declaration: ast::StructDeclaration = location.value;
-            //     let mut fields = struct_declaration.body().map_or_else(
-            //         || Either::Left(iter::empty::<ast::StructMember>()),
-            //         |body| Either::Right(body.fields()),
-            //     );
-
-            //     let strukt_data = database.struct_data(id.r#struct).0;
-            //     let field_name = strukt_data.fields[id.field].name.as_str();
-
-            //     // this is ugly but rust-analyzer is more complicated and this should work for now
-            //     let attributes = fields.find_map(|field| {
-            //         let name = field.name()?;
-            //         (name.text().as_str() == field_name).then_some(field)
-            //     });
-            //     attributes.map_or_else(AttributeList::empty, |field| {
-            //         AttributeList::from_src(database, &field)
-            //     })
-            // },
             AttributeDefId::Function(id) => {
                 AttributeList::from_src(database, &id.lookup(database).source(database).value)
             },

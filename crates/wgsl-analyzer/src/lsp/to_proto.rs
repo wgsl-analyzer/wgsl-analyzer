@@ -711,6 +711,7 @@ pub(crate) fn signature_help(
     help: SignatureHelp,
     // config: CallInfoConfig,
     label_offsets: bool,
+    active: Option<u32>,
 ) -> lsp_types::SignatureHelp {
     let signatures = help
         .signatures
@@ -773,11 +774,10 @@ pub(crate) fn signature_help(
             }
         })
         .collect();
-
     lsp_types::SignatureHelp {
         signatures,
-        active_signature: help.active_signature,
-        active_parameter: help.active_parameter,
+        active_signature: active,
+        active_parameter: help.active_parameter, // should this be limited by `signatures[active].parameters.len()`?
     }
 }
 
@@ -797,9 +797,11 @@ mod tests {
         // TODO: add signature help documentation to this test
         let text = r#"
 fn foo() {
-    bar($0);
+    bar(2, $0);
 }
+fn bar(x: u32, y: bool, z: bool) -> f32 { 0.0f }
 fn bar(x: u32, y: bool) -> f32 { 0.0f }
+fn bar() -> f32 { 0.0f }
 "#;
 
         let (offset, text) = extract_offset(text);
@@ -815,24 +817,51 @@ fn bar(x: u32, y: bool) -> f32 { 0.0f }
             //     documentation: true,
             // },
             false,
+            None,
         );
         #[expect(clippy::as_conversions, reason = "usize >= u32")]
-        let found = &help.signatures[help.active_signature.unwrap() as usize];
-        assert_eq!(found.label, "fn bar(x: u32, y: bool) -> f32");
         assert_eq!(
-            found.parameters,
-            Some(vec![
-                ParameterInformation {
-                    label: lsp_types::ParameterLabel::Simple("x: u32".to_owned()),
-                    // TODO: add signature help documentation to this test
-                    documentation: None,
-                },
-                ParameterInformation {
-                    label: lsp_types::ParameterLabel::Simple("y: bool".to_owned()),
-                    // TODO: add signature help documentation to this test
-                    documentation: None,
-                }
-            ])
+            help,
+            lsp_types::SignatureHelp {
+                signatures: vec![
+                    lsp_types::SignatureInformation {
+                        label: "fn bar(x: u32, y: bool, z: bool) -> f32".to_owned(),
+                        documentation: None,
+                        parameters: Some(vec![
+                            ParameterInformation {
+                                label: ParameterLabel::Simple("x: u32".to_owned()),
+                                documentation: None,
+                            },
+                            ParameterInformation {
+                                label: ParameterLabel::Simple("y: bool".to_owned()),
+                                documentation: None,
+                            },
+                            ParameterInformation {
+                                label: ParameterLabel::Simple("z: bool".to_owned()),
+                                documentation: None,
+                            }
+                        ]),
+                        active_parameter: None,
+                    },
+                    lsp_types::SignatureInformation {
+                        label: "fn bar(x: u32, y: bool) -> f32".to_owned(),
+                        documentation: None,
+                        parameters: Some(vec![
+                            ParameterInformation {
+                                label: ParameterLabel::Simple("x: u32".to_owned()),
+                                documentation: None,
+                            },
+                            ParameterInformation {
+                                label: ParameterLabel::Simple("y: bool".to_owned()),
+                                documentation: None,
+                            },
+                        ]),
+                        active_parameter: None,
+                    }
+                ],
+                active_parameter: Some(1),
+                active_signature: None,
+            }
         );
     }
 
@@ -859,9 +888,10 @@ fn bar(x: u32, y: bool) -> f32 { 0.0f }
             //     documentation: true,
             // },
             true,
+            None,
         );
         #[expect(clippy::as_conversions, reason = "usize >= u32")]
-        let found = &help.signatures[help.active_signature.unwrap() as usize];
+        let found = &help.signatures[help.active_signature.unwrap_or_default() as usize];
         assert_eq!(found.label, "fn bar(x: u32, y: bool) -> f32");
         assert_eq!(
             found.parameters,

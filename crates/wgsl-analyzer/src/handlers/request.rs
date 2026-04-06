@@ -180,6 +180,16 @@ pub(crate) fn handle_signature_help(
         &snap,
         &parameters.text_document_position_params
     )?);
+    let active_signature = if snap.config.capabilities().signature_help_context_support() {
+        parameters
+            .context
+            .expect("we checked that it is supported")
+            .active_signature_help
+            .map(|active_signature_help| active_signature_help.active_signature)
+    } else {
+        None
+    }
+    .flatten();
 
     let Some(signature_help_result) = snap.analysis.signature_help(position)? else {
         return Ok(None);
@@ -191,6 +201,7 @@ pub(crate) fn handle_signature_help(
         signature_help_result,
         // config,
         snap.config.signature_help_label_offsets(),
+        active_signature,
     )))
 }
 

@@ -5,6 +5,12 @@ use crate::{SyntaxKind, parser::to_range};
 
 pub(crate) type Token = SyntaxKind;
 
+#[derive(Default, Clone)]
+pub struct LexerExtras {
+    pub after_at: bool,
+    pub after_interpolate: bool,
+}
+
 /// A line-ending comment is a kind of comment consisting of the two code points `//` (U+002F followed by U+002F)
 /// and the code points that follow, up until but not including:
 /// - the next line break, or
@@ -78,6 +84,11 @@ struct WgslLexer<'source, 'diagnostics> {
 impl Iterator for WgslLexer<'_, '_> {
     type Item = (Token, Span);
 
+    #[expect(
+        clippy::too_many_lines,
+        clippy::cognitive_complexity,
+        reason = "match arms with control flow, hard to refactor"
+    )]
     fn next(&mut self) -> Option<Self::Item> {
         // Parse WGSL identifiers.
         // Avoiding Logos here for compile time reasons.
@@ -99,41 +110,72 @@ impl Iterator for WgslLexer<'_, '_> {
                 // Check for all keywords
                 let token_end = self.inner.span().end;
                 let token_type = match &self.inner.source()[token_start..token_end] {
-                    "enable" => Token::Enable,
-                    "requires" => Token::Requires,
-                    "fn" => Token::Fn,
                     "alias" => Token::Alias,
-                    "struct" => Token::Struct,
-                    "var" => Token::Var,
-                    "const_assert" => Token::ConstantAssert,
-                    "if" => Token::If,
-                    "for" => Token::For,
-                    "else" => Token::Else,
-                    "loop" => Token::Loop,
                     "break" => Token::Break,
-                    "while" => Token::While,
-                    "return" => Token::Return,
-                    "switch" => Token::Switch,
-                    "discard" => Token::Discard,
-                    "continuing" => Token::Continuing,
-                    "const" => Token::Constant,
                     "case" => Token::Case,
-                    "default" => Token::Default,
-                    "override" => Token::Override,
+                    "const_assert" => Token::ConstantAssert,
+                    "const" => Token::Const,
                     "continue" => Token::Continue,
-                    "let" => Token::Let,
-                    "true" => Token::True,
-                    "false" => Token::False,
+                    "continuing" => Token::Continuing,
+                    "default" => Token::Default,
                     "diagnostic" => Token::Diagnostic,
+                    "discard" => Token::Discard,
+                    "else" => Token::Else,
+                    "enable" => Token::Enable,
+                    "false" => Token::False,
+                    "fn" => Token::Fn,
+                    "for" => Token::For,
+                    "if" => Token::If,
+                    "let" => Token::Let,
+                    "loop" => Token::Loop,
+                    "override" => Token::Override,
+                    "requires" => Token::Requires,
+                    "return" => Token::Return,
+                    "struct" => Token::Struct,
+                    "switch" => Token::Switch,
+                    "true" => Token::True,
+                    "var" => Token::Var,
+                    "while" => Token::While,
 
+                    // These WGSL reserved words are keywords in WESL
                     "import" => Token::Import,
                     "package" => Token::Package,
                     "super" => Token::Super,
                     "as" => Token::As,
 
+                    // Context-dependent attribute keywords
+                    "align" if self.inner.extras.after_at => Token::Align,
+                    "binding" if self.inner.extras.after_at => Token::Binding,
+                    "blend_src" if self.inner.extras.after_at => Token::BlendSrc,
+                    "builtin" if self.inner.extras.after_at => Token::Builtin,
+                    "group" if self.inner.extras.after_at => Token::Group,
+                    "id" if self.inner.extras.after_at => Token::Id,
+                    "interpolate" if self.inner.extras.after_at => {
+                        self.inner.extras.after_interpolate = true;
+                        Token::Interpolate
+                    },
+                    "invariant" if self.inner.extras.after_at => Token::Invariant,
+                    "location" if self.inner.extras.after_at => Token::Location,
+                    "must_use" if self.inner.extras.after_at => Token::MustUse,
+                    "size" if self.inner.extras.after_at => Token::Size,
+                    "workgroup_size" if self.inner.extras.after_at => Token::WorkgroupSize,
+                    "vertex" if self.inner.extras.after_at => Token::Vertex,
+                    "fragment" if self.inner.extras.after_at => Token::Fragment,
+                    "compute" if self.inner.extras.after_at => Token::Compute,
+
+                    // Context-dependent attribute arguments
+                    "flat" if self.inner.extras.after_interpolate => Token::Flat,
+                    "linear" if self.inner.extras.after_interpolate => Token::Linear,
+                    "perspective" if self.inner.extras.after_interpolate => Token::Perspective,
+                    "center" if self.inner.extras.after_interpolate => Token::Center,
+                    "centroid" if self.inner.extras.after_interpolate => Token::Centroid,
+                    "sample" if self.inner.extras.after_interpolate => Token::Sample,
+                    "first" if self.inner.extras.after_interpolate => Token::First,
+                    "either" if self.inner.extras.after_interpolate => Token::Either,
+
                     _ => Token::Identifier,
                 };
-
+                self.inner.extras.after_at = false;
                 return Some((token_type, token_start..token_end));
             },
             Some('_') => {
@@ -155,6 +197,9 @@ impl Iterator for WgslLexer<'_, '_> {
                         return Some((Token::Underscore, token_start..self.inner.span().end));
                     },
                 }
+            },
+            Some(')') => {
+                self.inner.extras.after_interpolate = false;
             },
             _ => (), // Not an ident
         }

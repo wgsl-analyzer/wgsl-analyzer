@@ -338,7 +338,7 @@ impl HasAttributes for LetDeclaration {}
 
 ast_node! {
     ConstantDeclaration:
-    constant_token: Option<SyntaxToken Constant>;
+    constant_token: Option<SyntaxToken Const>;
     colon: Option<SyntaxToken Colon>;
     r#type: Option<TypeSpecifier>;
     equal_token: Option<SyntaxToken Equal>;
@@ -635,10 +635,189 @@ impl IndexExpression {
     }
 }
 
+ast_enum! {
+    enum Attribute {
+        AlignAttribute,
+        BindingAttribute,
+        BlendSrcAttribute,
+        BuiltinAttribute,
+        ConstantAttribute,
+        DiagnosticAttribute,
+        GroupAttribute,
+        IdAttribute,
+        InterpolateAttribute,
+        InvariantAttribute,
+        LocationAttribute,
+        MustUseAttribute,
+        SizeAttribute,
+        WorkgroupSizeAttribute,
+        VertexAttribute,
+        FragmentAttribute,
+        ComputeAttribute,
+        OtherAttribute,
+    }
+}
+
+impl Attribute {
+    #[must_use]
+    pub fn name(&self) -> Option<SyntaxToken> {
+        match self {
+            Self::AlignAttribute(inner) => inner.name(),
+            Self::BindingAttribute(inner) => inner.name(),
+            Self::BlendSrcAttribute(inner) => inner.name(),
+            Self::BuiltinAttribute(inner) => inner.name(),
+            Self::ConstantAttribute(inner) => inner.name(),
+            Self::DiagnosticAttribute(inner) => inner.name(),
+            Self::GroupAttribute(inner) => inner.name(),
+            Self::IdAttribute(inner) => inner.name(),
+            Self::InterpolateAttribute(inner) => inner.name(),
+            Self::InvariantAttribute(inner) => inner.name(),
+            Self::LocationAttribute(inner) => inner.name(),
+            Self::MustUseAttribute(inner) => inner.name(),
+            Self::SizeAttribute(inner) => inner.name(),
+            Self::WorkgroupSizeAttribute(inner) => inner.name(),
+            Self::VertexAttribute(inner) => inner.name(),
+            Self::FragmentAttribute(inner) => inner.name(),
+            Self::ComputeAttribute(inner) => inner.name(),
+            Self::OtherAttribute(inner) => inner.name(),
+        }
+    }
+}
+
 ast_node! {
-    Attribute:
-    ident_token: Option<SyntaxToken Identifier>;
+    OtherAttribute:
+    name: Option<SyntaxToken Identifier>;
     parameters: Option<Arguments>;
+}
+
+ast_node! {
+    AlignAttribute:
+    name: Option<SyntaxToken Align>;
+    parameters: Option<Arguments>;
+}
+
+ast_node! {
+    BindingAttribute:
+    name: Option<SyntaxToken Binding>;
+    parameters: Option<Arguments>;
+}
+
+ast_node! {
+    BlendSrcAttribute:
+    name: Option<SyntaxToken BlendSrc>;
+    parameters: Option<Arguments>;
+}
+
+ast_node! {
+    BuiltinAttribute:
+    name: Option<SyntaxToken Builtin>;
+    parameters: Option<Arguments>;
+}
+
+ast_node! {
+    ConstantAttribute:
+    name: Option<SyntaxToken Const>;
+}
+
+ast_node! {
+    DiagnosticAttribute:
+    name: Option<SyntaxToken Diagnostic>;
+    parameters: Option<DiagnosticControl>;
+}
+
+ast_node! {
+    GroupAttribute:
+    name: Option<SyntaxToken Group>;
+    parameters: Option<Arguments>;
+}
+
+ast_node! {
+    IdAttribute:
+    name: Option<SyntaxToken Id>;
+    parameters: Option<Arguments>;
+}
+
+ast_node! {
+    InterpolateAttribute:
+    name: Option<SyntaxToken Interpolate>;
+    interpolate_type_name: Option<InterpolateTypeName>;
+    interpolate_sampling_name: Option<InterpolateSamplingName>;
+}
+
+ast_node! {
+    InterpolateTypeName
+}
+
+ast_node! {
+    InterpolateSamplingName
+}
+
+ast_node! {
+    InvariantAttribute:
+    name: Option<SyntaxToken Group>;
+    parameters: Option<Arguments>;
+}
+
+ast_node! {
+    LocationAttribute:
+    name: Option<SyntaxToken Group>;
+    parameters: Option<Arguments>;
+}
+
+ast_node! {
+    MustUseAttribute:
+    name: Option<SyntaxToken MustUse>;
+}
+
+ast_node! {
+    SizeAttribute:
+    name: Option<SyntaxToken Group>;
+    parameters: Option<Arguments>;
+}
+
+ast_node! {
+    WorkgroupSizeAttribute:
+    name: Option<SyntaxToken WorkgroupSize>;
+    parameters: Option<Arguments>;
+}
+
+ast_node! {
+    VertexAttribute:
+    name: Option<SyntaxToken Vertex>;
+}
+
+ast_node! {
+    FragmentAttribute:
+    name: Option<SyntaxToken Fragment>;
+}
+
+ast_node! {
+    ComputeAttribute:
+    name: Option<SyntaxToken Compute>;
+}
+
+ast_node! {
+    DiagnosticControl:
+    severity_control_name: Option<SeverityControlName>;
+    diagnostic_rule_name: Option<DiagnosticRuleName>;
+}
+
+ast_node! {
+    SeverityControlName:
+    ident_token: Option<SyntaxToken Identifier>;
+    text: TokenText<'_>;
+}
+
+ast_node! {
+    DiagnosticRuleName:
+    ident_token: Option<SyntaxToken Identifier>;
+    text: TokenText<'_>;
+}
+
+ast_node! {
+    DiagnosticDirective:
+    diagnostic_token: Option<SyntaxToken Diagnostic>;
+    parameters: Option<DiagnosticControl>;
 }
 
 ast_node! {

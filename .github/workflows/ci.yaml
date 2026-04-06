@@ -149,7 +149,7 @@ jobs:
           persist-credentials: false
 
       - name: Restore cache
-        uses: actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+        uses: actions/cache/restore@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
         with:
           # key won't match, will rely on restore-keys
           key: ${{ runner.os }}-${{ env.NIGHTLY_TOOLCHAIN }}--${{ hashFiles('**/Cargo.toml') }}-
@@ -200,7 +200,7 @@ jobs:
           persist-credentials: false
 
       - name: markdownlint
-        uses: DavidAnson/markdownlint-cli2-action@07035fd053f7be764496c0f8d8f9f41f98305101 # v22.0.0
+        uses: DavidAnson/markdownlint-cli2-action@ce4853d43830c74c1753b39f3cf40f71c2031eb9 # v23.0.0
         with:
           config: .markdownlint.jsonc
           globs: "**/*.md"
@@ -281,7 +281,7 @@ jobs:
           RUSTFLAGS: -C debuginfo=0 -D warnings
 
       - name: Install cargo-binstall
-        uses: cargo-bins/cargo-binstall@1800853f2578f8c34492ec76154caef8e163fbca # v1.17.7
+        uses: cargo-bins/cargo-binstall@0b24824336e2b3800b0f89d9e08b2c08bfa3dcdd # v1.17.9
 
       - name: Install cargo-shear
         run: cargo binstall --no-confirm cargo-deadlinks
@@ -302,7 +302,7 @@ jobs:
           persist-credentials: false
 
       - name: Install cargo-binstall
-        uses: cargo-bins/cargo-binstall@1800853f2578f8c34492ec76154caef8e163fbca # v1.17.7
+        uses: cargo-bins/cargo-binstall@0b24824336e2b3800b0f89d9e08b2c08bfa3dcdd # v1.17.9
 
       - name: Install cargo-shear
         run: cargo binstall --no-confirm cargo-shear
