@@ -132,15 +132,15 @@ fn apply_package_graph(
 
         let package = match old_packages.remove(&package_id) {
             Some(old_package) => {
-                if old_package.data(database).as_ref() != &new_package {
+                if old_package.data(database) != &new_package {
                     old_package
                         .set_data(database)
                         .with_durability(durability)
-                        .to(Arc::new(new_package));
+                        .to(new_package);
                 }
                 old_package
             },
-            None => Package::builder(Arc::new(new_package), package_id)
+            None => Package::builder(new_package, package_id)
                 .durability(durability)
                 .new(database),
         };
@@ -149,14 +149,14 @@ fn apply_package_graph(
 
     for (_, remaining_package) in old_packages {
         let package_data = remaining_package.data(database);
-        let dummy_package = Arc::new(PackageData {
+        let dummy_package = PackageData {
             root_file_id: package_data.root_file_id,
             edition: package_data.edition,
             display_name: None,
             dependencies: Vec::new(),
             cyclic_dependencies: Vec::new(),
             origin: package_data.origin,
-        });
+        };
         // Salsa does not have a removal API yet, see: https://github.com/salsa-rs/salsa/issues/37
         remaining_package.set_data(database).to(dummy_package);
     }

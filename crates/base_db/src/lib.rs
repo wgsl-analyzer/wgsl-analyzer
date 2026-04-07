@@ -264,7 +264,7 @@ pub struct SourceRootInput {
 #[salsa_macros::input(debug)]
 pub struct Package {
     #[returns(ref)]
-    pub data: Arc<PackageData>,
+    pub data: PackageData,
     pub package_id: PackageId,
 }
 

@@ -43,8 +43,7 @@ impl GlobalState {
 
         if self.config.extensions() != old_config.extensions() {
             self.analysis_host
-                .raw_database_mut()
-                .set_extensions_with_durability(self.config.extensions(), Durability::MEDIUM);
+                .update_extensions(self.config.extensions());
         }
     }
 

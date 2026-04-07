@@ -2115,7 +2115,8 @@ fn let_statement_recover_return_no_eq() {
                         BraceRight@41..42 "}"
 
             error at 30..32: invalid syntax, expected one of: ':', '=', ';'
-            error at 41..42: invalid syntax, expected one of: '&', '&&', '@', '{', '[', ']', ':', ',', '==', '/', '>', '>=', '<', '<=', '-', '%', '!=', '|', '||', '(', ')', '.', '+', ';', '<<', '>>', '*', <template end>, <template start>, '^'"#]],
+            error at 41..42: invalid syntax, expected one of: '&', '&&', '@', '{', '[', ']', ':', ',', '==', '/', '>', '>=', '<', '<=', '-', '%', '!=', '|', '||', '(', ')', '.', '+', ';', '<<', '>>', '*', <template end>, <template start>, '^'
+            error at 42..42: invalid syntax, expected one of: '&', '&&', '@', '{', '[', ']', ':', ',', '==', '/', '>', '>=', '<', '<=', '-', '%', '!=', '|', '||', '(', ')', '.', '+', ';', '<<', '>>', '*', <template end>, '^'"#]],
     );
 }
 
@@ -3023,7 +3024,8 @@ fn empty_return_statement_no_semi() {
                       BraceRight@22..23 "}"
               Blankspace@23..24 " "
 
-            error at 22..23: invalid syntax, expected one of: '&', '&&', '@', '{', '[', ']', ':', ',', '==', '/', '>', '>=', '<', '<=', '-', '%', '!=', '|', '||', '(', ')', '.', '+', ';', '<<', '>>', '*', <template end>, <template start>, '^'"#]],
+            error at 22..23: invalid syntax, expected one of: '&', '&&', '@', '{', '[', ']', ':', ',', '==', '/', '>', '>=', '<', '<=', '-', '%', '!=', '|', '||', '(', ')', '.', '+', ';', '<<', '>>', '*', <template end>, <template start>, '^'
+            error at 24..24: invalid syntax, expected one of: '&', '&&', '@', '{', '[', ']', ':', ',', '==', '/', '>', '>=', '<', '<=', '-', '%', '!=', '|', '||', '(', ')', '.', '+', ';', '<<', '>>', '*', <template end>, '^'"#]],
     );
 }
 

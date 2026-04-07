@@ -22,13 +22,13 @@ use base_db::{
     SourceDatabase as _, SourceRoot, TextRange, change::Change, input::SourceRootId,
 };
 use diagnostics::Diagnostic;
-use hir::diagnostics::DiagnosticsConfig;
+use hir::{ExtensionsConfig, diagnostics::DiagnosticsConfig};
 use hir_def::database::DefDatabase as _;
 use ide_completion::{CompletionConfig, item::CompletionItem};
 use ide_db::LineIndexDatabase as _;
 pub use line_index::{LineCol, LineIndex};
 use rustc_hash::FxHashMap;
-use salsa::{Cancelled, Database as _};
+use salsa::{Cancelled, Database as _, Durability};
 use syntax::{Edition, Parse, SyntaxNode};
 use triomphe::Arc;
 use vfs::{AbsPathBuf, FileId, VfsPath};
@@ -147,6 +147,14 @@ impl AnalysisHost {
         lru_capacities: &FxHashMap<Box<str>, u16>,
     ) {
         self.database.update_lru_capacities(lru_capacities);
+    }
+
+    pub fn update_extensions(
+        &mut self,
+        extensions: ExtensionsConfig,
+    ) {
+        self.database
+            .set_extensions_with_durability(extensions, Durability::MEDIUM);
     }
 
     /// Returns a snapshot of the current state, which you can query for
