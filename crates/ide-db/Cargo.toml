@@ -20,9 +20,9 @@ rowan.workspace = true
 rustc-hash.workspace = true
 salsa.workspace = true
 salsa-macros.workspace = true
+tracing.workspace = true
 triomphe.workspace = true
 vfs.workspace = true
-tracing.workspace = true
 
 [lints]
 workspace = true
