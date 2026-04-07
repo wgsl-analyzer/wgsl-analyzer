@@ -113,16 +113,16 @@
 				"title": "Memory Usage (Clears Database)",
 				"category": "wgsl-analyzer (debug command)"
 			},
-            {
-                "command": "wgsl-analyzer.viewPackageGraph",
-                "title": "View Package Graph",
-                "category": "wgsl-analyzer"
-            },
-            {
-                "command": "wgsl-analyzer.viewFullPackageGraph",
-                "title": "View Package Graph (Full)",
-                "category": "wgsl-analyzer"
-            },
+			{
+				"command": "wgsl-analyzer.viewPackageGraph",
+				"title": "View Package Graph",
+				"category": "wgsl-analyzer"
+			},
+			{
+				"command": "wgsl-analyzer.viewFullPackageGraph",
+				"title": "View Package Graph (Full)",
+				"category": "wgsl-analyzer"
+			},
 			{
 				"command": "wgsl-analyzer.matchingBrace",
 				"title": "Find matching brace",
