@@ -206,6 +206,16 @@ rust-2021-compatibility = { level = "deny", priority = -1 }
 rust-2024-compatibility = { level = "deny", priority = -1 }
 unused = { level = "allow", priority = 1 }
 
+[workspace.lints.cargo]
+complexity = "warn"
+correctness = "deny"
+nursery = "warn"
+pedantic = "warn"
+perf = "warn"
+restriction = "warn"
+style = "warn"
+suspicious = "warn"
+
 [profile.dev]
 debug = 1
 

@@ -130,7 +130,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Install Rust toolchain
+      - name: Install Rust nightly toolchain
         run: |
           rustup update --no-self-update stable
           rustup default stable
@@ -169,6 +169,43 @@ jobs:
           rustup update --no-self-update nightly
           rustup default nightly
           rustup component add miri
+
+      # TODO: See https://github.com/wgsl-analyzer/wgsl-analyzer/issues/361
+      # - name: Run Miri
+      #   run: cargo miri test -p intern
+
+  cargo-lints:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Restore cache
+        uses: actions/cache/restore@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+        with:
+          # key won't match, will rely on restore-keys
+          key: ${{ runner.os }}-${{ env.NIGHTLY_TOOLCHAIN }}--${{ hashFiles('**/Cargo.toml') }}-
+          # See .github/workflows/update-caches.yml for how keys are generated
+          restore-keys: |
+            ${{ runner.os }}-${{ env.NIGHTLY_TOOLCHAIN }}--${{ hashFiles('**/Cargo.toml') }}-
+            ${{ runner.os }}-${{ env.NIGHTLY_TOOLCHAIN }}--
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+
+      - name: Install Rust nightly toolchain
+        run: |
+          rustup update --no-self-update nightly
+          rustup default nightly
+
+      - name: Run cargo-lint
+        run: cargo check -Zcargo-lints
 
   # Check wgslfmt_dprint builds for wasm32 target
   wgslfmt-dprint-wasm:
