@@ -13,6 +13,7 @@ mod markup;
 mod navigation_target;
 pub mod signature_help;
 mod typing;
+mod view_package_graph;
 mod view_syntax_tree;
 
 use std::panic;
@@ -298,6 +299,14 @@ impl Analysis {
         file_id: FileId,
     ) -> Cancellable<Parse> {
         self.with_db(|database| database.parse(EditionedFileId::from_file(database, file_id)))
+    }
+
+    /// Renders the package graph to GraphViz "dot" syntax.
+    pub fn view_package_graph(
+        &self,
+        full: bool,
+    ) -> Cancellable<Result<String, String>> {
+        self.with_db(|database| view_package_graph::view_package_graph(database, full))
     }
 
     pub fn line_index(

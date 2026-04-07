@@ -5,13 +5,14 @@
 
 use std::{fmt, panic};
 
+pub use base_db;
 use base_db::{
     FileId, FileSourceRootInput, FileText, Files, Nonce, RootQueryDb as _, SourceDatabase,
     SourceRoot, SourceRootId, SourceRootInput, change::Change,
 };
 use hir_def::database::{DefDatabase as _, ExtensionsConfig};
 use line_index::LineIndex;
-use rustc_hash::FxHashMap;
+pub use rustc_hash::{FxHashMap, FxHashSet, FxHasher};
 use salsa::{Database as _, Durability};
 use triomphe::Arc;
 
@@ -198,7 +199,9 @@ impl RootDatabase {
         &mut self,
         change: Change,
     ) {
+        let _p = tracing::info_span!("RootDatabase::apply_change").entered();
         self.trigger_cancellation();
+        tracing::trace!("apply_change {:?}", change);
         change.apply(self);
     }
 }

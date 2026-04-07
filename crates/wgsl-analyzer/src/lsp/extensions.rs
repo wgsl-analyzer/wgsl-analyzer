@@ -185,7 +185,7 @@ pub struct AnalyzerStatusParameters {
 
 #[derive(Deserialize, Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
-pub struct CrateInfoResult {
+pub struct PackageInfoResult {
     pub name: Option<String>,
     pub version: Option<String>,
     pub path: Url,
@@ -206,7 +206,7 @@ pub struct FetchDependencyListParameters;
 #[derive(Deserialize, Serialize, Debug, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct FetchDependencyListResult {
-    pub crates: Vec<CrateInfoResult>,
+    pub packages: Vec<PackageInfoResult>,
 }
 
 pub enum MemoryUsage {}
@@ -282,18 +282,17 @@ impl Request for ViewFileText {
 
 #[derive(Deserialize, Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
-pub struct ViewCrateGraphParameters {
-    /// Include *all* crates, not just crates in the workspace.
+pub struct ViewPackageGraphParameters {
+    /// Include *all* packages, not just packages in the workspace.
     pub full: bool,
 }
 
-pub enum ViewCrateGraph {}
+pub enum ViewPackageGraph {}
 
-impl Request for ViewCrateGraph {
-    type Params = ViewCrateGraphParameters;
+impl Request for ViewPackageGraph {
+    type Params = ViewPackageGraphParameters;
     type Result = String;
-
-    const METHOD: &'static str = "wgsl-analyzer/viewCrateGraph";
+    const METHOD: &'static str = "wgsl-analyzer/viewPackageGraph";
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -426,29 +425,6 @@ impl Notification for ChangeTestState {
     type Params = ChangeTestStateParameters;
 
     const METHOD: &'static str = "experimental/changeTestState";
-}
-
-pub enum ExpandMacro {}
-
-impl Request for ExpandMacro {
-    type Params = ExpandMacroParameters;
-    type Result = Option<ExpandedMacro>;
-
-    const METHOD: &'static str = "wgsl-analyzer/expandMacro";
-}
-
-#[derive(Deserialize, Serialize, Debug)]
-#[serde(rename_all = "camelCase")]
-pub struct ExpandMacroParameters {
-    pub text_document: TextDocumentIdentifier,
-    pub position: Position,
-}
-
-#[derive(Deserialize, Serialize, Debug)]
-#[serde(rename_all = "camelCase")]
-pub struct ExpandedMacro {
-    pub name: String,
-    pub expansion: String,
 }
 
 pub enum ViewRecursiveMemoryLayout {}

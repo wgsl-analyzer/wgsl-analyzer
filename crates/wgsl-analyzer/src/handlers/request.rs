@@ -19,11 +19,23 @@ use crate::{
     global_state::GlobalStateSnapshot,
     lsp::{
         self,
-        extensions::{self, PositionOrRange},
+        extensions::{self, PositionOrRange, ViewPackageGraphParameters},
         from_proto, to_proto,
     },
     try_default,
 };
+
+pub(crate) fn handle_view_package_graph(
+    snap: GlobalStateSnapshot,
+    parameters: ViewPackageGraphParameters,
+) -> anyhow::Result<String> {
+    let _p = tracing::info_span!("handle_view_package_graph").entered();
+    let dot = snap
+        .analysis
+        .view_package_graph(parameters.full)?
+        .map_err(anyhow::Error::msg)?;
+    Ok(dot)
+}
 
 pub(crate) fn handle_goto_definition(
     snap: GlobalStateSnapshot,

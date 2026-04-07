@@ -21,7 +21,9 @@ salsa-macros.workspace = true
 syntax.workspace = true
 triomphe.workspace = true
 vfs.workspace = true
-
+la-arena.workspace = true
+# remove this when refactoring to PackageCraphBuilder
+tracing.workspace = true
 [dev-dependencies]
 expect-test.workspace = true
 

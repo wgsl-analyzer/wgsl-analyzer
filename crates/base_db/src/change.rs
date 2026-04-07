@@ -3,13 +3,14 @@
 
 use std::fmt;
 
+use la_arena::Idx;
 use rustc_hash::FxHashMap;
 use salsa::{Durability, Setter as _};
 use triomphe::Arc;
 use vfs::FileId;
 
 use crate::{
-    Package, RootQueryDb,
+    Package, PackageDisplayName, RootQueryDb,
     input::{Dependency, PackageData, PackageId, PackageOrigin, SourceRoot, SourceRootId},
 };
 
@@ -107,7 +108,6 @@ impl Change {
         let mut package_graph = PackageGraph::new(&*database);
         package_graph.update(self.packages_changed);
         let (sorted_packages, errors) = package_graph.to_topological_order();
-        package_graph.remove_cycles(&errors);
 
         // TODO: Report the errors?
 
@@ -155,7 +155,6 @@ fn apply_package_graph(
             edition: package_data.edition,
             display_name: None,
             dependencies: Vec::new(),
-            cyclic_dependencies: Vec::new(),
             origin: package_data.origin,
         };
         // Salsa does not have a removal API yet, see: https://github.com/salsa-rs/salsa/issues/37
@@ -206,9 +205,6 @@ impl PackageGraph {
             .map(|package| {
                 let mut package_data = PackageData::clone(package.data(database));
                 // Ensure that we view everything as a potential dependency
-                package_data
-                    .dependencies
-                    .append(&mut package_data.cyclic_dependencies);
                 let id = package.package_id(database);
                 (id, (id, package_data))
             })
@@ -227,25 +223,6 @@ impl PackageGraph {
             } else {
                 self.packages.remove(&package_id);
             }
-        }
-    }
-
-    fn remove_cycles(
-        &mut self,
-        errors: &[CyclicDependenciesError],
-    ) {
-        for error in errors {
-            let package_data = self.packages.get_mut(&error.to().package_id).unwrap();
-            let previous_length = package_data.dependencies.len();
-            package_data
-                .dependencies
-                .retain_mut(|dependency| dependency != error.from());
-            package_data.cyclic_dependencies.push(error.from().clone());
-            assert_eq!(
-                previous_length - 1,
-                package_data.dependencies.len(),
-                "Expected to have removed exactly one cyclic dependency."
-            );
         }
     }
 
@@ -288,7 +265,12 @@ impl PackageGraph {
                     visited.insert(current, CycleState::Finished);
                     path.push(cycle_dependency);
                 }
-                errors.push(CyclicDependenciesError { path });
+                errors.push(CyclicDependenciesError {
+                    path: path
+                        .iter()
+                        .map(|path| (path.package_id, Some(path.name.clone().into())))
+                        .collect(),
+                });
             },
             Some(CycleState::Unvisited) => {
                 visited.insert(source, CycleState::Visited);
@@ -317,15 +299,15 @@ impl PackageGraph {
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct CyclicDependenciesError {
-    path: Vec<Dependency>,
+    path: Vec<(PackageId, Option<PackageDisplayName>)>,
 }
 
 impl CyclicDependenciesError {
-    fn from(&self) -> &Dependency {
+    fn from(&self) -> &(PackageId, Option<PackageDisplayName>) {
         self.path.first().unwrap()
     }
 
-    fn to(&self) -> &Dependency {
+    fn to(&self) -> &(PackageId, Option<PackageDisplayName>) {
         self.path.last().unwrap()
     }
 }
@@ -335,21 +317,23 @@ impl fmt::Display for CyclicDependenciesError {
         &self,
         f: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
-        let render = |Dependency { package_id, name }: &Dependency| {
-            format!("Package {name}({})", package_id.index())
+        let render = |(id, name): &(PackageId, Option<PackageDisplayName>)| match name {
+            Some(it) => format!("{it}({id:?})"),
+            None => format!("{id:?}"),
         };
         let path = self
             .path
             .iter()
-            .chain(std::iter::once(self.from()))
+            .rev()
             .map(render)
             .collect::<Vec<String>>()
             .join(" -> ");
         write!(
             f,
-            "Cyclic dependency from {} to {}. Path: {path}",
+            "cyclic deps: {} -> {}, alternative path: {}",
             render(self.from()),
-            render(self.to())
+            render(self.to()),
+            path
         )
     }
 }
@@ -410,7 +394,6 @@ mod tests {
                 edition: Edition::LATEST,
                 display_name: None,
                 dependencies,
-                cyclic_dependencies: Vec::new(),
                 origin: PackageOrigin::Local,
             },
         )

@@ -218,8 +218,6 @@ pub struct PackageData {
     /// A common example is the test package which is included but only actually is active when
     /// declared in source via `extern package test`.
     pub dependencies: Vec<Dependency>,
-    /// Dependencies that would cause a cycle.
-    pub cyclic_dependencies: Vec<Dependency>,
     pub origin: PackageOrigin,
 }
 
