@@ -301,11 +301,11 @@ impl Analysis {
         self.with_db(|database| database.parse(EditionedFileId::from_file(database, file_id)))
     }
 
-    /// Renders the package graph to GraphViz "dot" syntax.
+    /// Renders the package graph to `GraphViz` "dot" syntax.
     pub fn view_package_graph(
         &self,
         full: bool,
-    ) -> Cancellable<Result<String, String>> {
+    ) -> Cancellable<String> {
         self.with_db(|database| view_package_graph::view_package_graph(database, full))
     }
 

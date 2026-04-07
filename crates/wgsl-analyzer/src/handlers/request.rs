@@ -30,10 +30,7 @@ pub(crate) fn handle_view_package_graph(
     parameters: ViewPackageGraphParameters,
 ) -> anyhow::Result<String> {
     let _p = tracing::info_span!("handle_view_package_graph").entered();
-    let dot = snap
-        .analysis
-        .view_package_graph(parameters.full)?
-        .map_err(anyhow::Error::msg)?;
+    let dot = snap.analysis.view_package_graph(parameters.full)?;
     Ok(dot)
 }
 

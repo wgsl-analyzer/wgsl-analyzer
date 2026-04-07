@@ -334,10 +334,9 @@ impl fmt::Display for CyclicDependenciesError {
             .join(" -> ");
         write!(
             formatter,
-            "Cyclic dependency: {} -> {}, alternative path: {}",
+            "Cyclic dependency: {} -> {}, alternative path: {alternative_path}",
             render(self.from()),
-            render(self.to()),
-            alternative_path
+            render(self.to())
         )
     }
 }

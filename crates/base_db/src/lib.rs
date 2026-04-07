@@ -291,6 +291,7 @@ pub struct ExtraPackageData {
     pub display_name: Option<PackageDisplayName>,
 }
 
+#[expect(clippy::struct_field_names, reason = "no better idea")]
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct PackageDisplayName {
     // The name we use to display various paths (with `_`).
@@ -300,19 +301,21 @@ pub struct PackageDisplayName {
 }
 
 impl PackageDisplayName {
-    pub fn canonical_name(&self) -> &String {
+    #[must_use]
+    pub const fn canonical_name(&self) -> &String {
         &self.canonical_name
     }
 
-    pub fn package_name(&self) -> &PackageName {
+    #[must_use]
+    pub const fn package_name(&self) -> &PackageName {
         &self.package_name
     }
 }
 
 impl From<PackageName> for PackageDisplayName {
-    fn from(package_name: PackageName) -> PackageDisplayName {
+    fn from(package_name: PackageName) -> Self {
         let canonical_name = package_name.to_string();
-        PackageDisplayName {
+        Self {
             package_name,
             canonical_name,
         }
@@ -337,11 +340,12 @@ impl ops::Deref for PackageDisplayName {
 }
 
 impl PackageDisplayName {
-    pub fn from_canonical_name(canonical_name: &str) -> PackageDisplayName {
+    #[must_use]
+    pub fn from_canonical_name(canonical_name: &str) -> Self {
         let package_name = PackageName::normalize_dashes(canonical_name);
-        PackageDisplayName {
+        Self {
             package_name,
-            canonical_name: canonical_name.to_string(),
+            canonical_name: canonical_name.to_owned(),
         }
     }
 }
@@ -493,9 +497,9 @@ struct AllPackages {
     packages: std::sync::Arc<[Package]>,
 }
 
-pub fn set_all_packages_with_durability(
+pub fn set_all_packages_with_durability<Packages: IntoIterator<Item = Package>>(
     database: &mut dyn salsa::Database,
-    packages: impl IntoIterator<Item = Package>,
+    packages: Packages,
     durability: Durability,
 ) {
     AllPackages::try_get(database)
@@ -509,7 +513,7 @@ pub fn set_all_packages_with_durability(
 ///
 /// **Warning**: do not use this query in `hir-*` crates! It kills incrementality across crate metadata modifications.
 pub fn all_packages(database: &dyn salsa::Database) -> std::sync::Arc<[Package]> {
-    AllPackages::try_get(database).map_or(std::sync::Arc::default(), |all_packages| {
+    AllPackages::try_get(database).map_or_else(std::sync::Arc::default, |all_packages| {
         all_packages.packages(database)
     })
 }

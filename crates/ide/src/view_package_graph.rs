@@ -4,10 +4,10 @@ use ide_db::base_db::all_packages;
 use ide_db::base_db::salsa::plumbing::AsId;
 use ide_db::{
     FxHashMap, RootDatabase,
-    base_db::{ExtraPackageData, Package, SourceDatabase},
+    base_db::{ExtraPackageData, Package, SourceDatabase as _},
 };
 
-/// Feature: View Package Graph
+/// # Feature: View Package Graph
 ///
 /// Renders the currently loaded package graph as an SVG graphic.
 /// Requires the `dot` tool, which is part of graphviz, to be installed.
@@ -20,13 +20,13 @@ use ide_db::{
 pub(crate) fn view_package_graph(
     database: &RootDatabase,
     full: bool,
-) -> Result<String, String> {
+) -> String {
     let all_packages = all_packages(database);
     let packages_to_render: FxHashMap<PackageId, (&PackageData, &())> = all_packages
         .iter()
         .copied()
         .map(|package| (package.package_id(database), (package.data(database), &())))
-        .filter(|(_, (package_data, _))| {
+        .filter(|(_, (package_data, ()))| {
             if full {
                 true
             } else {
@@ -45,24 +45,24 @@ pub(crate) fn view_package_graph(
 
     let mut dot = Vec::new();
     dot::render(&graph, &mut dot).unwrap();
-    Ok(String::from_utf8(dot).unwrap())
+    String::from_utf8(dot).unwrap()
 }
 
 struct DotPackageGraph<'db> {
     packages_to_render: FxHashMap<PackageId, (&'db PackageData, &'db ())>,
 }
 
-type Edge<'a> = (PackageId, &'a Dependency);
+type Edge<'edge> = (PackageId, &'edge Dependency);
 
-impl<'a> dot::GraphWalk<'a, PackageId, Edge<'a>> for DotPackageGraph<'_> {
-    fn nodes(&'a self) -> dot::Nodes<'a, PackageId> {
+impl<'edge> dot::GraphWalk<'edge, PackageId, Edge<'edge>> for DotPackageGraph<'_> {
+    fn nodes(&'edge self) -> dot::Nodes<'edge, PackageId> {
         self.packages_to_render.keys().copied().collect()
     }
 
-    fn edges(&'a self) -> dot::Edges<'a, Edge<'a>> {
+    fn edges(&'edge self) -> dot::Edges<'edge, Edge<'edge>> {
         self.packages_to_render
             .iter()
-            .flat_map(|(package, (package_data, _))| {
+            .flat_map(|(package, (package_data, ()))| {
                 package_data
                     .dependencies
                     .iter()
@@ -75,45 +75,44 @@ impl<'a> dot::GraphWalk<'a, PackageId, Edge<'a>> for DotPackageGraph<'_> {
     }
 
     fn source(
-        &'a self,
-        edge: &Edge<'a>,
+        &'edge self,
+        edge: &Edge<'edge>,
     ) -> PackageId {
         edge.0
     }
 
     fn target(
-        &'a self,
-        edge: &Edge<'a>,
+        &'edge self,
+        edge: &Edge<'edge>,
     ) -> PackageId {
         edge.1.package_id
     }
 }
 
-impl<'a> dot::Labeller<'a, PackageId, Edge<'a>> for DotPackageGraph<'_> // spellchecker:disable-line
-{
-    fn graph_id(&'a self) -> Id<'a> {
+impl<'edge> dot::Labeller<'edge, PackageId, Edge<'edge>> for DotPackageGraph<'_> {
+    fn graph_id(&'edge self) -> Id<'edge> {
         Id::new("wgsl_analyzer_package_graph").unwrap()
     }
 
     fn node_id(
-        &'a self,
+        &'edge self,
         n: &PackageId,
-    ) -> Id<'a> {
+    ) -> Id<'edge> {
         let id = n.index();
         Id::new(format!("_{id:?}")).unwrap()
     }
 
     fn node_shape(
-        &'a self,
+        &'edge self,
         _node: &PackageId,
-    ) -> Option<LabelText<'a>> {
+    ) -> Option<LabelText<'edge>> {
         Some(LabelText::LabelStr("box".into()))
     }
 
     fn node_label(
-        &'a self,
+        &'edge self,
         n: &PackageId,
-    ) -> LabelText<'a> {
+    ) -> LabelText<'edge> {
         let name = self.packages_to_render[n]
             .0
             .display_name
