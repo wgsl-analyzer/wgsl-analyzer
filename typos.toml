@@ -65,6 +65,7 @@ extend-ignore-identifiers-re = []
 "how's" = "how is"
 # "params" = "parameters"
 # "req" = "request"
+"labeller" = "labeller"
 "res" = "result"
 # "args" = "arguments"
 "sig" = "signature"
