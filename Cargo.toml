@@ -85,6 +85,16 @@ indexmap = { version = "2.14.0" }
 # 1.0 is a feature band that indicates no IDNA support
 idna_adapter = "~1.0.0"
 
+[workspace.lints.cargo]
+complexity = "warn"
+correctness = "deny"
+nursery = "warn"
+pedantic = "warn"
+perf = "warn"
+restriction = "warn"
+style = "warn"
+suspicious = "warn"
+
 # tombi: format.rules.table-keys-order.disabled = true
 [workspace.lints.clippy]
 cargo = { level = "warn", priority = -2 }

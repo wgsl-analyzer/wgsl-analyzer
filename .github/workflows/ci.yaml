@@ -185,6 +185,43 @@ jobs:
       # - name: Run Miri
       #   run: cargo miri test
 
+      # TODO: See https://github.com/wgsl-analyzer/wgsl-analyzer/issues/361
+      # - name: Run Miri
+      #   run: cargo miri test -p intern
+
+  cargo-lints:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Restore cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          # key won't match, will rely on restore-keys
+          key: ${{ runner.os }}-stable-${{ hashFiles('**/Cargo.toml') }}-
+          # See .github/workflows/update-caches.yaml for how keys are generated
+          restore-keys: |
+            ${{ runner.os }}-stable-${{ hashFiles('**/Cargo.toml') }}-
+            ${{ runner.os }}-stable-
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@2c7215f132e9ebf062739d9130488b56d53c060c
+        with:
+          toolchain: nightly
+
+      - name: Run cargo-lint
+        run: cargo check -Zcargo-lints
+
   # Check wgslfmt_dprint builds for wasm32 target
   wgslfmt-dprint-wasm:
     name: Check wgslfmt_dprint WASM build
