@@ -21,7 +21,6 @@ salsa.workspace = true
 salsa-macros.workspace = true
 syntax.workspace = true
 # remove this when refactoring to PackageCraphBuilder
-tracing.workspace = true
 triomphe.workspace = true
 vfs.workspace = true
 
