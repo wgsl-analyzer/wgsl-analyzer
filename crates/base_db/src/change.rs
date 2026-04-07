@@ -315,13 +315,17 @@ impl CyclicDependenciesError {
 impl fmt::Display for CyclicDependenciesError {
     fn fmt(
         &self,
-        f: &mut fmt::Formatter<'_>,
+        formatter: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
         let render = |(id, name): &(PackageId, Option<PackageDisplayName>)| match name {
-            Some(it) => format!("{it}({id:?})"),
-            None => format!("{id:?}"),
+            Some(package_name) => format!(
+                "(Name: {}, PackageId: {})",
+                package_name.canonical_name,
+                id.index()
+            ),
+            None => format!("(Name: {}, PackageId: {})", "<none>", id.index()),
         };
-        let path = self
+        let alternative_path = self
             .path
             .iter()
             .rev()
@@ -329,11 +333,11 @@ impl fmt::Display for CyclicDependenciesError {
             .collect::<Vec<String>>()
             .join(" -> ");
         write!(
-            f,
-            "cyclic deps: {} -> {}, alternative path: {}",
+            formatter,
+            "Cyclic dependency: {} -> {}, alternative path: {}",
             render(self.from()),
             render(self.to()),
-            path
+            alternative_path
         )
     }
 }
@@ -449,7 +453,7 @@ mod tests {
             ],
             expect![[r#"
                 2, 1, 0
-                Cyclic dependency from Package 1(1) to Package 0(0). Path: Package 1(1) -> Package 2(2) -> Package 0(0) -> Package 1(1)
+                Cyclic dependency: (Name: 1, PackageId: 1) -> (Name: 0, PackageId: 0), alternative path: (Name: 0, PackageId: 0) -> (Name: 2, PackageId: 2) -> (Name: 1, PackageId: 1)
             "#]],
         );
     }
@@ -469,7 +473,7 @@ mod tests {
             ],
             expect![[r#"
                 5, 2
-                Cyclic dependency from Package 5(5) to Package 2(2). Path: Package 5(5) -> Package 2(2) -> Package 5(5)
+                Cyclic dependency: (Name: 5, PackageId: 5) -> (Name: 2, PackageId: 2), alternative path: (Name: 2, PackageId: 2) -> (Name: 5, PackageId: 5)
             "#]],
         );
     }
@@ -480,7 +484,7 @@ mod tests {
             &[new_package(2, vec![dependency(2)]), new_package(5, vec![])],
             expect![[r#"
                 2, 5
-                Cyclic dependency from Package 2(2) to Package 2(2). Path: Package 2(2) -> Package 2(2)
+                Cyclic dependency: (Name: 2, PackageId: 2) -> (Name: 2, PackageId: 2), alternative path: (Name: 2, PackageId: 2)
             "#]],
         );
         check(
@@ -490,7 +494,7 @@ mod tests {
             ],
             expect![[r#"
                 2, 5
-                Cyclic dependency from Package 2(2) to Package 2(2). Path: Package 2(2) -> Package 2(2)
+                Cyclic dependency: (Name: 2, PackageId: 2) -> (Name: 2, PackageId: 2), alternative path: (Name: 2, PackageId: 2)
             "#]],
         );
     }
