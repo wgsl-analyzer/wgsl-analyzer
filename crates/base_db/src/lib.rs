@@ -1,8 +1,3 @@
-#![expect(
-    clippy::trailing_empty_array,
-    reason = "Clippy has a false positive for the query_group macro, see: https://github.com/rust-lang/rust-clippy/issues/16754"
-)]
-
 pub mod change;
 pub mod input;
 
@@ -16,6 +11,7 @@ use std::{
 };
 
 pub use crate::editioned_file_id::{EditionedFileId, RawEditionedFileId};
+use crate::input::{PackageData, PackageId};
 use dashmap::{DashMap, Entry};
 pub use input::{SourceRoot, SourceRootId};
 use rustc_hash::FxHasher;
@@ -265,6 +261,13 @@ pub struct SourceRootInput {
     pub source_root: Arc<SourceRoot>,
 }
 
+#[salsa_macros::input(debug)]
+pub struct Package {
+    #[returns(ref)]
+    pub data: PackageData,
+    pub package_id: PackageId,
+}
+
 /// Database which stores all significant input facts: source code and project
 /// model. Everything else in rust-analyzer is derived from these queries.
 #[query_group::query_group]
@@ -275,6 +278,12 @@ pub trait RootQueryDb: SourceDatabase + salsa::Database {
         &self,
         key: EditionedFileId,
     ) -> Parse;
+
+    /// Returns the packages in topological order.
+    ///
+    /// **Warning**: do not use this query in `hir-*` packages! It kills incrementality across crate metadata modifications.
+    #[salsa::input]
+    fn all_packages(&self) -> Arc<Box<[Package]>>;
 }
 
 #[salsa_macros::db]
@@ -323,16 +332,6 @@ pub trait SourceDatabase: salsa::Database {
         source_root: Arc<SourceRoot>,
         durability: Durability,
     );
-
-    fn resolve_path(
-        &self,
-        path: AnchoredPath<'_>,
-    ) -> Option<FileId> {
-        // FIXME: this *somehow* should be platform agnostic...
-        let source_root = self.file_source_root(path.anchor);
-        let source_root = self.source_root(source_root.source_root_id(self));
-        source_root.source_root(self).resolve_path(path)
-    }
 
     fn nonce_and_revision(&self) -> (Nonce, salsa::Revision);
 }

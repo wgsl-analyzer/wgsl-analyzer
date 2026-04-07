@@ -211,13 +211,6 @@ fn run_server() -> anyhow::Result<()> {
         return Err(error.into());
     }
 
-    if config.discover_workspace_config().is_none()
-    // && !config.has_linked_projects()
-    // && config.detached_files().is_empty()
-    {
-        config.rediscover_workspaces();
-    }
-
     // If the io_threads have an error, there's usually an error on the main
     // loop too because the channels are closed. Ensure we report both errors.
     match (

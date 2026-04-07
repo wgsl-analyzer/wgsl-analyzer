@@ -7,9 +7,6 @@ description = "The type system for wgsl-analyzer."
 repository.workspace = true
 license.workspace = true
 
-[package.metadata.cargo-shear]
-ignored = ["salsa-macros"]  # the query_group macro expansion uses this
-
 [lib]
 doctest = false
 

@@ -1886,408 +1886,357 @@ fn reserved_words_do_parse() {
 fn keywords_do_not_parse() {
     check(
         "
-        var alias = 0;
-        var break = 0;
-        var case = 0;
-        var const = 0;
-        var const_assert = 0;
-        var continue = 0;
-        var continuing = 0;
-        var default = 0;
-        var diagnostic = 0;
-        var discard = 0;
-        var else = 0;
-        var enable = 0;
-        var false = 0;
-        var fn = 0;
-        var for = 0;
-        var if = 0;
-        var let = 0;
-        var loop = 0;
-        var override = 0;
-        var requires = 0;
-        var return = 0;
-        var struct = 0;
-        var switch = 0;
-        var true = 0;
-        var var = 0;
-        var while = 0;
+        var alias=0;
+        var break=0;
+        var case=0;
+        var const=0;
+        var const_assert=0;
+        var continue=0;
+        var continuing=0;
+        var default=0;
+        var diagnostic=0;
+        var discard=0;
+        var else=0;
+        var enable=0;
+        var false=0;
+        var fn=0;
+        var for=0;
+        var if=0;
+        var let=0;
+        var loop=0;
+        var override=0;
+        var requires=0;
+        var return=0;
+        var struct=0;
+        var switch=0;
+        var true=0;
+        var var=0;
+        var while=0;
         ",
         expect![[r#"
-            SourceFile@0..625
+            SourceFile@0..573
               Blankspace@0..9 "\n        "
               VariableDeclaration@9..13
                 Var@9..12 "var"
                 Blankspace@12..13 " "
-              TypeAliasDeclaration@13..23
+              TypeAliasDeclaration@13..21
                 Alias@13..18 "alias"
-                Blankspace@18..19 " "
-                Equal@19..20 "="
-                Blankspace@20..21 " "
-                TypeSpecifier@21..22
-                  Path@21..22
-                    Error@21..22
-                      IntLiteral@21..22 "0"
-                Semicolon@22..23 ";"
-              Blankspace@23..32 "\n        "
-              VariableDeclaration@32..46
-                Var@32..35 "var"
-                Blankspace@35..36 " "
-                Error@36..41
-                  Break@36..41 "break"
-                Blankspace@41..42 " "
-                Equal@42..43 "="
-                Blankspace@43..44 " "
-                Literal@44..45
-                  IntLiteral@44..45 "0"
-                Semicolon@45..46 ";"
-              Blankspace@46..55 "\n        "
-              VariableDeclaration@55..68
-                Var@55..58 "var"
-                Blankspace@58..59 " "
-                Error@59..63
-                  Case@59..63 "case"
-                Blankspace@63..64 " "
-                Equal@64..65 "="
-                Blankspace@65..66 " "
-                Literal@66..67
-                  IntLiteral@66..67 "0"
-                Semicolon@67..68 ";"
-              Blankspace@68..77 "\n        "
-              VariableDeclaration@77..81
-                Var@77..80 "var"
-                Blankspace@80..81 " "
-              ConstantDeclaration@81..91
-                Const@81..86 "const"
-                Blankspace@86..87 " "
-                Equal@87..88 "="
-                Blankspace@88..89 " "
-                Literal@89..90
-                  IntLiteral@89..90 "0"
-                Semicolon@90..91 ";"
-              Blankspace@91..100 "\n        "
-              VariableDeclaration@100..104
-                Var@100..103 "var"
-                Blankspace@103..104 " "
-              AssertStatement@104..116
-                ConstantAssert@104..116 "const_assert"
-              Blankspace@116..117 " "
-              Error@117..120
-                Equal@117..118 "="
-                Blankspace@118..119 " "
-                IntLiteral@119..120 "0"
-              Semicolon@120..121 ";"
-              Blankspace@121..130 "\n        "
-              VariableDeclaration@130..147
-                Var@130..133 "var"
-                Blankspace@133..134 " "
-                Error@134..142
-                  Continue@134..142 "continue"
-                Blankspace@142..143 " "
-                Equal@143..144 "="
-                Blankspace@144..145 " "
-                Literal@145..146
-                  IntLiteral@145..146 "0"
-                Semicolon@146..147 ";"
-              Blankspace@147..156 "\n        "
-              VariableDeclaration@156..175
-                Var@156..159 "var"
-                Blankspace@159..160 " "
-                Error@160..170
-                  Continuing@160..170 "continuing"
-                Blankspace@170..171 " "
-                Equal@171..172 "="
-                Blankspace@172..173 " "
-                Literal@173..174
-                  IntLiteral@173..174 "0"
-                Semicolon@174..175 ";"
-              Blankspace@175..184 "\n        "
-              VariableDeclaration@184..200
-                Var@184..187 "var"
-                Blankspace@187..188 " "
-                Error@188..195
-                  Default@188..195 "default"
-                Blankspace@195..196 " "
-                Equal@196..197 "="
-                Blankspace@197..198 " "
-                Literal@198..199
-                  IntLiteral@198..199 "0"
-                Semicolon@199..200 ";"
-              Blankspace@200..209 "\n        "
-              VariableDeclaration@209..213
-                Var@209..212 "var"
-                Blankspace@212..213 " "
-              DiagnosticDirective@213..228
-                Diagnostic@213..223 "diagnostic"
-                Blankspace@223..224 " "
-                DiagnosticControl@224..227
-                  DiagnosticRuleName@224..227
-                    Error@224..227
-                      Equal@224..225 "="
-                      Blankspace@225..226 " "
-                      IntLiteral@226..227 "0"
-                Semicolon@227..228 ";"
-              Blankspace@228..237 "\n        "
-              VariableDeclaration@237..253
-                Var@237..240 "var"
-                Blankspace@240..241 " "
-                Error@241..248
-                  Discard@241..248 "discard"
-                Blankspace@248..249 " "
-                Equal@249..250 "="
-                Blankspace@250..251 " "
+                Equal@18..19 "="
+                TypeSpecifier@19..20
+                  Path@19..20
+                    Error@19..20
+                      IntLiteral@19..20 "0"
+                Semicolon@20..21 ";"
+              Blankspace@21..30 "\n        "
+              VariableDeclaration@30..42
+                Var@30..33 "var"
+                Blankspace@33..34 " "
+                Error@34..39
+                  Break@34..39 "break"
+                Equal@39..40 "="
+                Literal@40..41
+                  IntLiteral@40..41 "0"
+                Semicolon@41..42 ";"
+              Blankspace@42..51 "\n        "
+              VariableDeclaration@51..62
+                Var@51..54 "var"
+                Blankspace@54..55 " "
+                Error@55..59
+                  Case@55..59 "case"
+                Equal@59..60 "="
+                Literal@60..61
+                  IntLiteral@60..61 "0"
+                Semicolon@61..62 ";"
+              Blankspace@62..71 "\n        "
+              VariableDeclaration@71..75
+                Var@71..74 "var"
+                Blankspace@74..75 " "
+              ConstantDeclaration@75..83
+                Const@75..80 "const"
+                Equal@80..81 "="
+                Literal@81..82
+                  IntLiteral@81..82 "0"
+                Semicolon@82..83 ";"
+              Blankspace@83..92 "\n        "
+              VariableDeclaration@92..96
+                Var@92..95 "var"
+                Blankspace@95..96 " "
+              AssertStatement@96..108
+                ConstantAssert@96..108 "const_assert"
+              Error@108..110
+                Equal@108..109 "="
+                IntLiteral@109..110 "0"
+              Semicolon@110..111 ";"
+              Blankspace@111..120 "\n        "
+              VariableDeclaration@120..135
+                Var@120..123 "var"
+                Blankspace@123..124 " "
+                Error@124..132
+                  Continue@124..132 "continue"
+                Equal@132..133 "="
+                Literal@133..134
+                  IntLiteral@133..134 "0"
+                Semicolon@134..135 ";"
+              Blankspace@135..144 "\n        "
+              VariableDeclaration@144..161
+                Var@144..147 "var"
+                Blankspace@147..148 " "
+                Error@148..158
+                  Continuing@148..158 "continuing"
+                Equal@158..159 "="
+                Literal@159..160
+                  IntLiteral@159..160 "0"
+                Semicolon@160..161 ";"
+              Blankspace@161..170 "\n        "
+              VariableDeclaration@170..184
+                Var@170..173 "var"
+                Blankspace@173..174 " "
+                Error@174..181
+                  Default@174..181 "default"
+                Equal@181..182 "="
+                Literal@182..183
+                  IntLiteral@182..183 "0"
+                Semicolon@183..184 ";"
+              Blankspace@184..193 "\n        "
+              VariableDeclaration@193..197
+                Var@193..196 "var"
+                Blankspace@196..197 " "
+              DiagnosticDirective@197..210
+                Diagnostic@197..207 "diagnostic"
+                DiagnosticControl@207..209
+                  DiagnosticRuleName@207..209
+                    Error@207..209
+                      Equal@207..208 "="
+                      IntLiteral@208..209 "0"
+                Semicolon@209..210 ";"
+              Blankspace@210..219 "\n        "
+              VariableDeclaration@219..233
+                Var@219..222 "var"
+                Blankspace@222..223 " "
+                Error@223..230
+                  Discard@223..230 "discard"
+                Equal@230..231 "="
+                Literal@231..232
+                  IntLiteral@231..232 "0"
+                Semicolon@232..233 ";"
+              Blankspace@233..242 "\n        "
+              VariableDeclaration@242..253
+                Var@242..245 "var"
+                Blankspace@245..246 " "
+                Error@246..250
+                  Else@246..250 "else"
+                Equal@250..251 "="
                 Literal@251..252
                   IntLiteral@251..252 "0"
                 Semicolon@252..253 ";"
               Blankspace@253..262 "\n        "
-              VariableDeclaration@262..275
+              VariableDeclaration@262..266
                 Var@262..265 "var"
                 Blankspace@265..266 " "
-                Error@266..270
-                  Else@266..270 "else"
-                Blankspace@270..271 " "
-                Equal@271..272 "="
-                Blankspace@272..273 " "
-                Literal@273..274
+              EnableDirective@266..275
+                Enable@266..272 "enable"
+                Error@272..274
+                  Equal@272..273 "="
                   IntLiteral@273..274 "0"
                 Semicolon@274..275 ";"
               Blankspace@275..284 "\n        "
-              VariableDeclaration@284..288
+              VariableDeclaration@284..296
                 Var@284..287 "var"
                 Blankspace@287..288 " "
-              EnableDirective@288..299
-                Enable@288..294 "enable"
-                Blankspace@294..295 " "
-                Error@295..298
-                  Equal@295..296 "="
-                  Blankspace@296..297 " "
-                  IntLiteral@297..298 "0"
-                Semicolon@298..299 ";"
-              Blankspace@299..308 "\n        "
-              VariableDeclaration@308..322
-                Var@308..311 "var"
-                Blankspace@311..312 " "
-                Error@312..317
-                  False@312..317 "false"
-                Blankspace@317..318 " "
-                Equal@318..319 "="
-                Blankspace@319..320 " "
-                Literal@320..321
-                  IntLiteral@320..321 "0"
-                Semicolon@321..322 ";"
-              Blankspace@322..331 "\n        "
-              VariableDeclaration@331..335
-                Var@331..334 "var"
-                Blankspace@334..335 " "
-              FunctionDeclaration@335..341
-                Fn@335..337 "fn"
-                Blankspace@337..338 " "
-                FunctionParameters@338..341
-                  Error@338..341
-                    Equal@338..339 "="
-                    Blankspace@339..340 " "
-                    IntLiteral@340..341 "0"
-              Semicolon@341..342 ";"
-              Blankspace@342..351 "\n        "
-              VariableDeclaration@351..363
-                Var@351..354 "var"
-                Blankspace@354..355 " "
-                Error@355..358
-                  For@355..358 "for"
-                Blankspace@358..359 " "
-                Equal@359..360 "="
-                Blankspace@360..361 " "
-                Literal@361..362
-                  IntLiteral@361..362 "0"
-                Semicolon@362..363 ";"
-              Blankspace@363..372 "\n        "
-              VariableDeclaration@372..383
-                Var@372..375 "var"
-                Blankspace@375..376 " "
-                Error@376..378
-                  If@376..378 "if"
-                Blankspace@378..379 " "
-                Equal@379..380 "="
-                Blankspace@380..381 " "
-                Literal@381..382
-                  IntLiteral@381..382 "0"
-                Semicolon@382..383 ";"
-              Blankspace@383..392 "\n        "
-              VariableDeclaration@392..396
-                Var@392..395 "var"
-                Blankspace@395..396 " "
-              Error@396..404
-                Let@396..399 "let"
-                Blankspace@399..400 " "
-                Equal@400..401 "="
-                Blankspace@401..402 " "
-                Literal@402..403
-                  IntLiteral@402..403 "0"
-                Semicolon@403..404 ";"
-              Blankspace@404..413 "\n        "
-              VariableDeclaration@413..426
-                Var@413..416 "var"
-                Blankspace@416..417 " "
-                Error@417..421
-                  Loop@417..421 "loop"
-                Blankspace@421..422 " "
-                Equal@422..423 "="
-                Blankspace@423..424 " "
-                Literal@424..425
-                  IntLiteral@424..425 "0"
-                Semicolon@425..426 ";"
-              Blankspace@426..435 "\n        "
-              VariableDeclaration@435..439
-                Var@435..438 "var"
-                Blankspace@438..439 " "
-              OverrideDeclaration@439..452
-                Override@439..447 "override"
-                Blankspace@447..448 " "
-                Equal@448..449 "="
-                Blankspace@449..450 " "
-                Literal@450..451
-                  IntLiteral@450..451 "0"
-                Semicolon@451..452 ";"
-              Blankspace@452..461 "\n        "
-              VariableDeclaration@461..465
-                Var@461..464 "var"
-                Blankspace@464..465 " "
-              RequiresDirective@465..478
-                Requires@465..473 "requires"
-                Blankspace@473..474 " "
-                Error@474..477
-                  Equal@474..475 "="
-                  Blankspace@475..476 " "
-                  IntLiteral@476..477 "0"
-                Semicolon@477..478 ";"
-              Blankspace@478..487 "\n        "
-              VariableDeclaration@487..502
-                Var@487..490 "var"
-                Blankspace@490..491 " "
-                Error@491..497
-                  Return@491..497 "return"
-                Blankspace@497..498 " "
-                Equal@498..499 "="
-                Blankspace@499..500 " "
-                Literal@500..501
-                  IntLiteral@500..501 "0"
-                Semicolon@501..502 ";"
-              Blankspace@502..511 "\n        "
-              VariableDeclaration@511..515
-                Var@511..514 "var"
-                Blankspace@514..515 " "
-              StructDeclaration@515..522
-                Struct@515..521 "struct"
-                Blankspace@521..522 " "
-              Error@522..525
-                Equal@522..523 "="
-                Blankspace@523..524 " "
-                IntLiteral@524..525 "0"
-              Semicolon@525..526 ";"
-              Blankspace@526..535 "\n        "
-              VariableDeclaration@535..550
-                Var@535..538 "var"
-                Blankspace@538..539 " "
-                Error@539..545
-                  Switch@539..545 "switch"
-                Blankspace@545..546 " "
-                Equal@546..547 "="
-                Blankspace@547..548 " "
-                Literal@548..549
-                  IntLiteral@548..549 "0"
-                Semicolon@549..550 ";"
-              Blankspace@550..559 "\n        "
-              VariableDeclaration@559..572
-                Var@559..562 "var"
-                Blankspace@562..563 " "
-                Error@563..567
-                  True@563..567 "true"
-                Blankspace@567..568 " "
-                Equal@568..569 "="
-                Blankspace@569..570 " "
-                Literal@570..571
-                  IntLiteral@570..571 "0"
-                Semicolon@571..572 ";"
-              Blankspace@572..581 "\n        "
-              VariableDeclaration@581..585
-                Var@581..584 "var"
-                Blankspace@584..585 " "
-              VariableDeclaration@585..593
-                Var@585..588 "var"
-                Blankspace@588..589 " "
-                Equal@589..590 "="
-                Blankspace@590..591 " "
-                Literal@591..592
-                  IntLiteral@591..592 "0"
-                Semicolon@592..593 ";"
-              Blankspace@593..602 "\n        "
-              VariableDeclaration@602..616
-                Var@602..605 "var"
-                Blankspace@605..606 " "
-                Error@606..611
-                  While@606..611 "while"
-                Blankspace@611..612 " "
-                Equal@612..613 "="
-                Blankspace@613..614 " "
-                Literal@614..615
-                  IntLiteral@614..615 "0"
-                Semicolon@615..616 ";"
-              Blankspace@616..625 "\n        "
+                Error@288..293
+                  False@288..293 "false"
+                Equal@293..294 "="
+                Literal@294..295
+                  IntLiteral@294..295 "0"
+                Semicolon@295..296 ";"
+              Blankspace@296..305 "\n        "
+              VariableDeclaration@305..309
+                Var@305..308 "var"
+                Blankspace@308..309 " "
+              FunctionDeclaration@309..313
+                Fn@309..311 "fn"
+                FunctionParameters@311..313
+                  Error@311..313
+                    Equal@311..312 "="
+                    IntLiteral@312..313 "0"
+              Semicolon@313..314 ";"
+              Blankspace@314..323 "\n        "
+              VariableDeclaration@323..333
+                Var@323..326 "var"
+                Blankspace@326..327 " "
+                Error@327..330
+                  For@327..330 "for"
+                Equal@330..331 "="
+                Literal@331..332
+                  IntLiteral@331..332 "0"
+                Semicolon@332..333 ";"
+              Blankspace@333..342 "\n        "
+              VariableDeclaration@342..351
+                Var@342..345 "var"
+                Blankspace@345..346 " "
+                Error@346..348
+                  If@346..348 "if"
+                Equal@348..349 "="
+                Literal@349..350
+                  IntLiteral@349..350 "0"
+                Semicolon@350..351 ";"
+              Blankspace@351..360 "\n        "
+              VariableDeclaration@360..364
+                Var@360..363 "var"
+                Blankspace@363..364 " "
+              Error@364..370
+                Let@364..367 "let"
+                Equal@367..368 "="
+                Literal@368..369
+                  IntLiteral@368..369 "0"
+                Semicolon@369..370 ";"
+              Blankspace@370..379 "\n        "
+              VariableDeclaration@379..390
+                Var@379..382 "var"
+                Blankspace@382..383 " "
+                Error@383..387
+                  Loop@383..387 "loop"
+                Equal@387..388 "="
+                Literal@388..389
+                  IntLiteral@388..389 "0"
+                Semicolon@389..390 ";"
+              Blankspace@390..399 "\n        "
+              VariableDeclaration@399..403
+                Var@399..402 "var"
+                Blankspace@402..403 " "
+              OverrideDeclaration@403..414
+                Override@403..411 "override"
+                Equal@411..412 "="
+                Literal@412..413
+                  IntLiteral@412..413 "0"
+                Semicolon@413..414 ";"
+              Blankspace@414..423 "\n        "
+              VariableDeclaration@423..427
+                Var@423..426 "var"
+                Blankspace@426..427 " "
+              RequiresDirective@427..438
+                Requires@427..435 "requires"
+                Error@435..437
+                  Equal@435..436 "="
+                  IntLiteral@436..437 "0"
+                Semicolon@437..438 ";"
+              Blankspace@438..447 "\n        "
+              VariableDeclaration@447..460
+                Var@447..450 "var"
+                Blankspace@450..451 " "
+                Error@451..457
+                  Return@451..457 "return"
+                Equal@457..458 "="
+                Literal@458..459
+                  IntLiteral@458..459 "0"
+                Semicolon@459..460 ";"
+              Blankspace@460..469 "\n        "
+              VariableDeclaration@469..473
+                Var@469..472 "var"
+                Blankspace@472..473 " "
+              StructDeclaration@473..479
+                Struct@473..479 "struct"
+              Error@479..481
+                Equal@479..480 "="
+                IntLiteral@480..481 "0"
+              Semicolon@481..482 ";"
+              Blankspace@482..491 "\n        "
+              VariableDeclaration@491..504
+                Var@491..494 "var"
+                Blankspace@494..495 " "
+                Error@495..501
+                  Switch@495..501 "switch"
+                Equal@501..502 "="
+                Literal@502..503
+                  IntLiteral@502..503 "0"
+                Semicolon@503..504 ";"
+              Blankspace@504..513 "\n        "
+              VariableDeclaration@513..524
+                Var@513..516 "var"
+                Blankspace@516..517 " "
+                Error@517..521
+                  True@517..521 "true"
+                Equal@521..522 "="
+                Literal@522..523
+                  IntLiteral@522..523 "0"
+                Semicolon@523..524 ";"
+              Blankspace@524..533 "\n        "
+              VariableDeclaration@533..537
+                Var@533..536 "var"
+                Blankspace@536..537 " "
+              VariableDeclaration@537..543
+                Var@537..540 "var"
+                Equal@540..541 "="
+                Literal@541..542
+                  IntLiteral@541..542 "0"
+                Semicolon@542..543 ";"
+              Blankspace@543..552 "\n        "
+              VariableDeclaration@552..564
+                Var@552..555 "var"
+                Blankspace@555..556 " "
+                Error@556..561
+                  While@556..561 "while"
+                Equal@561..562 "="
+                Literal@562..563
+                  IntLiteral@562..563 "0"
+                Semicolon@563..564 ";"
+              Blankspace@564..573 "\n        "
 
             error at 13..18: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
-            error at 19..20: invalid syntax, expected: <identifier>
-            error at 21..22: invalid syntax, expected one of: <identifier>, 'package', 'super'
-            error at 36..41: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
-            error at 42..43: invalid syntax, expected: <identifier>
-            error at 59..63: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
-            error at 64..65: invalid syntax, expected: <identifier>
-            error at 81..86: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
-            error at 87..88: invalid syntax, expected: <identifier>
-            error at 104..116: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
-            error at 117..118: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '-', 'package', '(', '*', 'super', '~', 'true'
-            error at 134..142: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
-            error at 143..144: invalid syntax, expected: <identifier>
-            error at 160..170: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
-            error at 171..172: invalid syntax, expected: <identifier>
-            error at 188..195: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
-            error at 196..197: invalid syntax, expected: <identifier>
-            error at 213..223: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
-            error at 224..225: invalid syntax, expected: '('
-            error at 241..248: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
-            error at 249..250: invalid syntax, expected: <identifier>
-            error at 266..270: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
-            error at 271..272: invalid syntax, expected: <identifier>
-            error at 288..294: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
-            error at 295..296: invalid syntax, expected: <identifier>
-            error at 312..317: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
-            error at 318..319: invalid syntax, expected: <identifier>
-            error at 335..337: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
-            error at 338..339: invalid syntax, expected: <identifier>
-            error at 341..342: invalid syntax, expected one of: '@', '{'
-            error at 355..358: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
-            error at 359..360: invalid syntax, expected: <identifier>
-            error at 376..378: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
-            error at 379..380: invalid syntax, expected: <identifier>
-            error at 396..399: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
-            error at 400..401: invalid syntax, expected: <identifier>
-            error at 396..404: global let declarations are not allowed
-            error at 417..421: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
-            error at 422..423: invalid syntax, expected: <identifier>
-            error at 439..447: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
-            error at 448..449: invalid syntax, expected: <identifier>
-            error at 465..473: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
-            error at 474..475: invalid syntax, expected: <identifier>
-            error at 491..497: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
-            error at 498..499: invalid syntax, expected: <identifier>
-            error at 515..521: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
-            error at 522..523: invalid syntax, expected: <identifier>
-            error at 539..545: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
-            error at 546..547: invalid syntax, expected: <identifier>
-            error at 563..567: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
-            error at 568..569: invalid syntax, expected: <identifier>
-            error at 585..588: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
-            error at 589..590: invalid syntax, expected: <identifier>
-            error at 606..611: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
-            error at 612..613: invalid syntax, expected: <identifier>"#]],
+            error at 18..19: invalid syntax, expected: <identifier>
+            error at 19..20: invalid syntax, expected one of: <identifier>, 'package', 'super'
+            error at 34..39: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
+            error at 39..40: invalid syntax, expected: <identifier>
+            error at 55..59: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
+            error at 59..60: invalid syntax, expected: <identifier>
+            error at 75..80: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
+            error at 80..81: invalid syntax, expected: <identifier>
+            error at 96..108: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
+            error at 108..109: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '-', 'package', '(', '*', 'super', '~', 'true'
+            error at 124..132: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
+            error at 132..133: invalid syntax, expected: <identifier>
+            error at 148..158: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
+            error at 158..159: invalid syntax, expected: <identifier>
+            error at 174..181: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
+            error at 181..182: invalid syntax, expected: <identifier>
+            error at 197..207: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
+            error at 207..208: invalid syntax, expected: '('
+            error at 209..210: invalid syntax, expected one of: ',', ')'
+            error at 223..230: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
+            error at 230..231: invalid syntax, expected: <identifier>
+            error at 246..250: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
+            error at 250..251: invalid syntax, expected: <identifier>
+            error at 266..272: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
+            error at 272..273: invalid syntax, expected: <identifier>
+            error at 288..293: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
+            error at 293..294: invalid syntax, expected: <identifier>
+            error at 309..311: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
+            error at 311..312: invalid syntax, expected: <identifier>
+            error at 313..314: invalid syntax, expected one of: '->', '@', '{'
+            error at 327..330: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
+            error at 330..331: invalid syntax, expected: <identifier>
+            error at 346..348: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
+            error at 348..349: invalid syntax, expected: <identifier>
+            error at 364..367: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
+            error at 367..368: invalid syntax, expected: <identifier>
+            error at 364..370: global let declarations are not allowed
+            error at 383..387: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
+            error at 387..388: invalid syntax, expected: <identifier>
+            error at 403..411: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
+            error at 411..412: invalid syntax, expected: <identifier>
+            error at 427..435: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
+            error at 435..436: invalid syntax, expected: <identifier>
+            error at 451..457: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
+            error at 457..458: invalid syntax, expected: <identifier>
+            error at 473..479: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
+            error at 479..480: invalid syntax, expected: <identifier>
+            error at 495..501: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
+            error at 501..502: invalid syntax, expected: <identifier>
+            error at 517..521: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
+            error at 521..522: invalid syntax, expected: <identifier>
+            error at 537..540: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
+            error at 540..541: invalid syntax, expected: <identifier>
+            error at 556..561: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
+            error at 561..562: invalid syntax, expected: <identifier>"#]],
     );
 }
