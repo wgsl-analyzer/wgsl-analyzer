@@ -55,6 +55,7 @@ disallowed-names = [
 	"auth",  # authentication
 	"btn",  # button
 	"buf",  # buffer
+	"caps", # capabilities
 	"char",  # character
 	"col",  # column
 	"ctrl",  # control

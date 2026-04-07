@@ -89,7 +89,8 @@ impl<'a> dot::GraphWalk<'a, PackageId, Edge<'a>> for DotPackageGraph<'_> {
     }
 }
 
-impl<'a> dot::Labeller<'a, PackageId, Edge<'a>> for DotPackageGraph<'_> {
+impl<'a> dot::Labeller<'a, PackageId, Edge<'a>> for DotPackageGraph<'_> // spellchecker:disable-line
+{
     fn graph_id(&'a self) -> Id<'a> {
         Id::new("wgsl_analyzer_package_graph").unwrap()
     }
