@@ -6,15 +6,8 @@
     reason = "Clippy has a false positive for the query_group macro, see: https://github.com/rust-lang/rust-clippy/issues/16754"
 )]
 
-use crate::{
-    builtins::{Builtin, BuiltinId},
-    function::{FunctionDetails, ResolvedFunctionId},
-    infer::{
-        InferenceDiagnostic, InferenceDiagnosticKind, InferenceResult, TypeLoweringContext,
-        TypeLoweringError,
-    },
-    ty::{Type, TypeKind},
-};
+use std::fmt;
+
 use base_db::{EditionedFileId, Lookup as _};
 use hir_def::{
     InFile,
@@ -26,9 +19,18 @@ use hir_def::{
 };
 use la_arena::ArenaMap;
 use salsa::plumbing::AsId as _;
-use std::fmt;
 use triomphe::Arc;
 use wgsl_types::syntax::AddressSpace;
+
+use crate::{
+    builtins::{Builtin, BuiltinId},
+    function::{FunctionDetails, ResolvedFunctionId},
+    infer::{
+        InferenceDiagnostic, InferenceDiagnosticKind, InferenceResult, TypeLoweringContext,
+        TypeLoweringError,
+    },
+    ty::{Type, TypeKind},
+};
 
 #[query_group::query_group]
 pub trait HirDatabase: DefDatabase + fmt::Debug {

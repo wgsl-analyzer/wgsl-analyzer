@@ -3,10 +3,12 @@ use syntax::{
     AstNode as _, HasTemplateParameters as _, SyntaxKind, SyntaxNode, ast, ast::SyntaxToken,
 };
 
-use crate::FormattingOptions;
-use crate::util::{
-    remove_if_whitespace, remove_token, remove_whitespace_around_double_colon,
-    set_whitespace_single_after, set_whitespace_single_before, whitespace_to_single_around,
+use crate::{
+    FormattingOptions,
+    util::{
+        remove_if_whitespace, remove_token, remove_whitespace_around_double_colon,
+        set_whitespace_single_after, set_whitespace_single_before, whitespace_to_single_around,
+    },
 };
 
 /// Formats expression nodes: identifiers, function calls, infix/prefix

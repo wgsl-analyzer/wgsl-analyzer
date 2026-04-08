@@ -1,5 +1,6 @@
-use clap::{Arg, ArgAction, Command, ValueEnum, arg, builder::PossibleValue, value_parser};
 use std::str::FromStr;
+
+use clap::{Arg, ArgAction, Command, ValueEnum, arg, builder::PossibleValue, value_parser};
 
 /// Tool to find and fix WGSL/WESL formatting issues.
 ///

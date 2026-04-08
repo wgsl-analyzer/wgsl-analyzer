@@ -9,6 +9,7 @@ impl Path {
     pub const fn mod_path(&self) -> &ModPath {
         &self.0
     }
+
     #[must_use]
     pub fn missing() -> Self {
         Self::from(Name::missing())

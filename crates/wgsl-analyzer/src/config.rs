@@ -10,16 +10,6 @@ use ide::{
     HoverConfig, HoverDocFormat, MemoryLayoutHoverRenderKind,
     inlay_hints::{self, StructLayoutHints},
 };
-use ide_completion::{CompletionConfig, CompletionFieldsToResolve};
-use itertools::Itertools as _;
-use rustc_hash::FxHashMap;
-use semver::Version;
-use serde::{Deserialize, Serialize};
-use stdx::format_to_acc;
-use triomphe::Arc;
-use vfs::{AbsPath, AbsPathBuf};
-
-use crate::lsp::capabilities::ClientCapabilities;
 use ide::{
     // AssistConfig,
     // CallHierarchyConfig,
@@ -42,10 +32,20 @@ use ide::{
     // SnippetScope,
     // SourceRootId,
 };
+use ide_completion::{CompletionConfig, CompletionFieldsToResolve};
 use ide_db::{
     SnippetCapability,
     // imports::insert_use::{ImportGranularity, InsertUseConfig, PrefixKind},
 };
+use itertools::Itertools as _;
+use rustc_hash::FxHashMap;
+use semver::Version;
+use serde::{Deserialize, Serialize};
+use stdx::format_to_acc;
+use triomphe::Arc;
+use vfs::{AbsPath, AbsPathBuf};
+
+use crate::lsp::capabilities::ClientCapabilities;
 
 // Defines the server-side configuration of the wgsl-analyzer. We generate *parts* of VS Code's
 // `package.json` config from this. Run `cargo test` to re-generate that file.

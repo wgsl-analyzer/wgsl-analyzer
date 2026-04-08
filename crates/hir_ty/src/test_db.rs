@@ -111,6 +111,7 @@ impl SourceDatabase for TestDatabase {
         let files = Arc::clone(&self.files);
         files.set_file_source_root_with_durability(self, id, source_root_id, durability);
     }
+
     fn nonce_and_revision(&self) -> (Nonce, salsa::Revision) {
         (
             self.nonce,

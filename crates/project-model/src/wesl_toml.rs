@@ -1,5 +1,6 @@
-use serde::Deserialize;
 use std::collections::BTreeMap;
+
+use serde::Deserialize;
 
 #[derive(Deserialize)]
 pub struct WeslToml {

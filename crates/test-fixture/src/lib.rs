@@ -3,16 +3,17 @@ mod fixture;
 
 use std::{any::TypeId, mem, str::FromStr as _, sync};
 
-pub use crate::fixture::{Fixture, FixtureWithProjectMeta};
-use base_db::change::Change;
-use base_db::input::{Dependency, PackageData, PackageId, PackageName, PackageOrigin};
 use base_db::{
     FileId, FilePosition, FileRange, FileSet, RawEditionedFileId, SourceDatabase, SourceRoot,
     VfsPath,
+    change::Change,
+    input::{Dependency, PackageData, PackageId, PackageName, PackageOrigin},
 };
 use edition::Edition;
 use test_utils::{CURSOR_MARKER, ESCAPED_CURSOR_MARKER, RangeOrOffset, extract_range_or_offset};
 use triomphe::Arc;
+
+pub use crate::fixture::{Fixture, FixtureWithProjectMeta};
 
 type FxIndexMap<K, V> =
     indexmap::IndexMap<K, V, std::hash::BuildHasherDefault<rustc_hash::FxHasher>>;

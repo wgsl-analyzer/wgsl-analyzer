@@ -1,10 +1,12 @@
 use syntax::{AstNode as _, SyntaxKind, SyntaxNode, ast, ast::SyntaxToken};
 
-use crate::FormattingOptions;
-use crate::util::{
-    create_whitespace, is_whitespace_with_newline, n_newlines_in_whitespace, remove_if_whitespace,
-    remove_whitespace_around_double_colon, set_whitespace_before, set_whitespace_single_after,
-    set_whitespace_single_before,
+use crate::{
+    FormattingOptions,
+    util::{
+        create_whitespace, is_whitespace_with_newline, n_newlines_in_whitespace,
+        remove_if_whitespace, remove_whitespace_around_double_colon, set_whitespace_before,
+        set_whitespace_single_after, set_whitespace_single_before,
+    },
 };
 
 /// Formats directive and top-level nodes: source file, `enable`, `requires`,

@@ -939,7 +939,14 @@ fn validate_identifiers(
     let root = database.parse_or_resolve(file_id).syntax();
 
     macro_rules! validate {
-        ($id:expr, $item_tree:expr, $ast_id_map:expr, $root:expr, $accumulator:expr, $file_id:expr) => {{
+        (
+            $id:expr,
+            $item_tree:expr,
+            $ast_id_map:expr,
+            $root:expr,
+            $accumulator:expr,
+            $file_id:expr
+        ) => {{
             let data = $item_tree.get(*$id);
             if data.name.as_str().starts_with("__") {
                 let ast_ptr = $ast_id_map.get(data.ast_id);

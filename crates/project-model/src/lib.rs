@@ -17,12 +17,13 @@ mod package_graph;
 mod package_interner;
 mod wesl_package;
 mod wesl_toml;
+use std::{fmt, fs};
+
 use anyhow::{bail, format_err};
 use base_db::input::PackageOrigin;
 pub use manifest_path::ManifestPath;
 pub use package_graph::{PackageChange, PackageGraph, PackageKey};
 use paths::{AbsPath, AbsPathBuf};
-use std::{fmt, fs};
 pub use wesl_package::{PackageDependency, WeslPackage, WeslPackageRoot};
 pub use wesl_toml::{WeslDependency, WeslToml};
 

@@ -1,5 +1,6 @@
-use crate::tests::check;
 use expect_test::expect;
+
+use crate::tests::check;
 
 #[test]
 fn reserved_words_do_parse() {

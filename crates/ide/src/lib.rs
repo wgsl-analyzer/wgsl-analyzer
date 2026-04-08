@@ -208,6 +208,8 @@ pub struct Analysis {
 // API, the API should in theory be usable as a library, or via a different
 // protocol.
 impl Analysis {
+    pub const SUPPORTED_TRIGGER_CHARS: &[char] = typing::TRIGGER_CHARS;
+
     /// Creates an analysis instance for a single file, without any external
     /// dependencies or ability to apply changes.
     /// See [`AnalysisHost`] for creating a fully-featured analysis.
@@ -227,8 +229,6 @@ impl Analysis {
         host.apply_change(change);
         (host.analysis(), file_id)
     }
-
-    pub const SUPPORTED_TRIGGER_CHARS: &[char] = typing::TRIGGER_CHARS;
 
     pub fn with_db<Function, T>(
         &self,

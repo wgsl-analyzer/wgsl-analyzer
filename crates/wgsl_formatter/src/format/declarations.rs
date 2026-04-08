@@ -3,12 +3,14 @@ use syntax::{
     ast::SyntaxToken,
 };
 
-use crate::FormattingOptions;
-use crate::util::{
-    create_whitespace, indent_after, indent_before, is_whitespace_with_newline,
-    remove_if_whitespace, remove_token, set_whitespace_after, set_whitespace_before,
-    set_whitespace_single_after, set_whitespace_single_before, trim_whitespace_before_to_newline,
-    whitespace_to_single_around,
+use crate::{
+    FormattingOptions,
+    util::{
+        create_whitespace, indent_after, indent_before, is_whitespace_with_newline,
+        remove_if_whitespace, remove_token, set_whitespace_after, set_whitespace_before,
+        set_whitespace_single_after, set_whitespace_single_before,
+        trim_whitespace_before_to_newline, whitespace_to_single_around,
+    },
 };
 
 /// Formats declaration nodes: functions, structs, variables, let/const/override

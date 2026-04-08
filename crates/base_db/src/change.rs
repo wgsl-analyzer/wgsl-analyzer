@@ -1,9 +1,10 @@
 //! Defines a unit of change that can be applied to the database to get the next
 //! state. Changes are transactional.
 
+use std::fmt;
+
 use rustc_hash::FxHashMap;
 use salsa::{Durability, Setter as _};
-use std::fmt;
 use triomphe::Arc;
 use vfs::FileId;
 
@@ -323,6 +324,7 @@ impl CyclicDependenciesError {
     fn from(&self) -> &Dependency {
         self.path.first().unwrap()
     }
+
     fn to(&self) -> &Dependency {
         self.path.last().unwrap()
     }
@@ -361,16 +363,18 @@ pub(crate) enum CycleState {
 
 #[cfg(test)]
 mod tests {
+    use std::fmt::Write as _;
+
+    use edition::Edition;
+    use expect_test::expect;
+    use triomphe::Arc;
+    use vfs::{AbsPathBuf, file_set::FileSet};
+
     use super::{CyclicDependenciesError, FileId, PackageGraph};
     use crate::{
         SourceRoot,
         input::{Dependency, PackageData, PackageId, PackageName, PackageOrigin},
     };
-    use edition::Edition;
-    use expect_test::expect;
-    use std::fmt::Write as _;
-    use triomphe::Arc;
-    use vfs::{AbsPathBuf, file_set::FileSet};
 
     #[expect(clippy::needless_pass_by_value, reason = "matches expect! macro")]
     fn check(

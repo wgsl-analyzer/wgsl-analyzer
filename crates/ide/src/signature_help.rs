@@ -200,9 +200,8 @@ fn build_signature(
 mod tests {
     use test_utils::extract_offset;
 
-    use crate::Analysis;
-
     use super::*;
+    use crate::Analysis;
 
     #[test]
     fn find_enclosing_call_works_0() {
