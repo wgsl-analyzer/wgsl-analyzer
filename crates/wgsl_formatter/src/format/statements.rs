@@ -1,10 +1,12 @@
 use syntax::{AstNode as _, SyntaxKind, SyntaxNode, ast, ast::SyntaxToken};
 
-use crate::FormattingOptions;
-use crate::util::{
-    create_whitespace, has_newline_between, indent_before, is_whitespace_with_newline,
-    remove_if_whitespace, remove_token, replace_token_with, set_whitespace_single_after,
-    set_whitespace_single_before, whitespace_to_single_around,
+use crate::{
+    FormattingOptions,
+    util::{
+        create_whitespace, has_newline_between, indent_before, is_whitespace_with_newline,
+        remove_if_whitespace, remove_token, replace_token_with, set_whitespace_single_after,
+        set_whitespace_single_before, whitespace_to_single_around,
+    },
 };
 
 /// Formats statement nodes: control flow (`if`, `for`, `while`, `switch`,

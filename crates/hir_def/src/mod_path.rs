@@ -5,12 +5,13 @@ use std::{
     iter,
 };
 
-use crate::{database::DefDatabase, item_tree::Name};
 use smallvec::SmallVec;
 use syntax::{
     AstNode,
     ast::{self, ImportRelative},
 };
+
+use crate::{database::DefDatabase, item_tree::Name};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ModPath {
@@ -30,6 +31,7 @@ pub enum PathKind {
 
 impl PathKind {
     pub const SELF: Self = Self::Super(0);
+
     #[must_use]
     pub fn from_src(relative: Option<ast::ImportRelative>) -> Self {
         match relative {

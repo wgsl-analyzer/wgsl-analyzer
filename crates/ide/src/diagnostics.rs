@@ -144,6 +144,7 @@ impl NagaError for naga27::front::wgsl::ParseError {
                 .map(|(span, label)| (span.to_range(), label.to_owned())),
         )
     }
+
     fn location(&self) -> Option<Range<usize>> {
         let (span, _) = self.labels().next()?;
         span.to_range()
@@ -157,6 +158,7 @@ impl NagaError for naga27::WithSpan<naga27::valid::ValidationError> {
                 .map(move |(span, label)| (span.to_range(), label.clone())),
         )
     }
+
     fn location(&self) -> Option<Range<usize>> {
         self.spans().next().and_then(|(span, _)| span.to_range())
     }
@@ -187,6 +189,7 @@ impl NagaError for naga28::front::wgsl::ParseError {
                 .map(|(span, label)| (span.to_range(), label.to_owned())),
         )
     }
+
     fn location(&self) -> Option<Range<usize>> {
         let (span, _) = self.labels().next()?;
         span.to_range()
@@ -200,6 +203,7 @@ impl NagaError for naga28::WithSpan<naga28::valid::ValidationError> {
                 .map(move |(span, label)| (span.to_range(), label.clone())),
         )
     }
+
     fn location(&self) -> Option<Range<usize>> {
         self.spans().next().and_then(|(span, _)| span.to_range())
     }
@@ -230,6 +234,7 @@ impl NagaError for nagamain::front::wgsl::ParseError {
                 .map(|(span, label)| (span.to_range(), label.to_owned())),
         )
     }
+
     fn location(&self) -> Option<Range<usize>> {
         let (span, _) = self.labels().next()?;
         span.to_range()
@@ -243,6 +248,7 @@ impl NagaError for nagamain::WithSpan<nagamain::valid::ValidationError> {
                 .map(move |(span, label)| (span.to_range(), label.clone())),
         )
     }
+
     fn location(&self) -> Option<Range<usize>> {
         self.spans().next().and_then(|(span, _)| span.to_range())
     }
@@ -673,10 +679,11 @@ fn error_message_cause_chain(error: &dyn error::Error) -> String {
 
 #[cfg(test)]
 mod tests {
+    use std::fmt::Write as _;
+
     use expect_test::{Expect, expect};
     use hir::diagnostics::DiagnosticsConfig;
     use itertools::Itertools;
-    use std::fmt::Write as _;
 
     use crate::{diagnostics::Diagnostic, fixture::single_file_db};
 

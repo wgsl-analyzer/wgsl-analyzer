@@ -1,10 +1,11 @@
 #![expect(clippy::use_debug, reason = "tests")]
 
+use std::fmt::{self, Write as _};
+
 use base_db::input::PackageOrigin;
 use expect_test::{Expect, expect};
 use itertools::Itertools as _;
 use project_model::{ManifestPath, ProjectManifest, WeslPackage, WeslPackageRoot};
-use std::fmt::{self, Write as _};
 use test_utils::project_root;
 use vfs::AbsPathBuf;
 

@@ -1,10 +1,12 @@
-use crate::{
-    manifest_path::ManifestPath, package_interner::PackageInterner, wesl_package::WeslPackage,
-};
+use std::hash::BuildHasherDefault;
+
 use base_db::input::PackageId;
 use indexmap::IndexMap;
 use rustc_hash::{FxHashMap, FxHashSet, FxHasher};
-use std::hash::BuildHasherDefault;
+
+use crate::{
+    manifest_path::ManifestPath, package_interner::PackageInterner, wesl_package::WeslPackage,
+};
 
 /// An "opaque" and stable identifier for a package.
 ///
@@ -18,6 +20,7 @@ impl PackageKey {
     pub fn from_package(package: &WeslPackage) -> Self {
         Self(package.manifest.clone())
     }
+
     #[must_use]
     pub const fn from_manifest_path(path: ManifestPath) -> Self {
         Self(path)

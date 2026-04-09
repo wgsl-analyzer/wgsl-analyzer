@@ -22,11 +22,6 @@ use tracing::{Level, error, span};
 use triomphe::Arc;
 use vfs::{FileId, VfsPath, loader::LoadingProgress};
 
-use crate::handlers::notification::{
-    handle_cancel, handle_did_change_configuration, handle_did_change_text_document,
-    handle_did_change_watched_files, handle_did_close_text_document, handle_did_open_text_document,
-    handle_did_save_text_document,
-};
 use crate::{
     Result,
     config::Config,
@@ -34,7 +29,15 @@ use crate::{
     discover::{DiscoverArgument, LoadPackageMessage, LoadPackageTask},
     dispatch::{NotificationDispatcher, RequestDispatcher},
     global_state::{GlobalState, file_id_to_url},
-    handlers::{self, notification::handle_did_change_workspace_folders},
+    handlers::{
+        self,
+        notification::{
+            handle_cancel, handle_did_change_configuration, handle_did_change_text_document,
+            handle_did_change_watched_files, handle_did_change_workspace_folders,
+            handle_did_close_text_document, handle_did_open_text_document,
+            handle_did_save_text_document,
+        },
+    },
     lsp::{
         self, from_proto,
         utilities::{Progress, notification_is},

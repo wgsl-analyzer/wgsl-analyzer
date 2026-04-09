@@ -1,6 +1,7 @@
 //! See [`ManifestPath`].
-use paths::{AbsPath, AbsPathBuf, Utf8Path};
 use std::{borrow::Borrow, fmt, ops};
+
+use paths::{AbsPath, AbsPathBuf, Utf8Path};
 
 /// More or less [`AbsPathBuf`] with non-None parent.
 ///

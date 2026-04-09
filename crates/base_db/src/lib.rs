@@ -10,8 +10,6 @@ use std::{
     sync::{Once, atomic::AtomicUsize},
 };
 
-pub use crate::editioned_file_id::{EditionedFileId, RawEditionedFileId};
-use crate::input::{PackageData, PackageId};
 use dashmap::{DashMap, Entry};
 pub use input::{SourceRoot, SourceRootId};
 use rustc_hash::FxHasher;
@@ -22,6 +20,9 @@ use syntax::Parse;
 use triomphe::Arc;
 pub use util_types::*;
 pub use vfs::{AnchoredPath, AnchoredPathBuf, FileId, VfsPath, file_set::FileSet};
+
+pub use crate::editioned_file_id::{EditionedFileId, RawEditionedFileId};
+use crate::input::{PackageData, PackageId};
 
 #[macro_export]
 macro_rules! impl_intern_key {
@@ -62,8 +63,8 @@ macro_rules! impl_intern_lookup {
         }
 
         impl base_db::Lookup for $id {
-            type Database = dyn $db;
             type Data = $loc;
+            type Database = dyn $db;
 
             fn lookup(
                 &self,

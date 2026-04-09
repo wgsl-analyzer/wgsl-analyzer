@@ -6,8 +6,9 @@
 //! actual IO. See `vfs` and `project_model` in the `wgsl-analyzer` package for how
 //! actual IO is done and lowered to input.
 
-use edition::Edition;
 use std::{fmt, ops};
+
+use edition::Edition;
 use vfs::{AnchoredPath, FileId, VfsPath, file_set::FileSet};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]

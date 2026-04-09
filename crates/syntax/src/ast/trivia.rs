@@ -10,9 +10,11 @@ impl AstToken for Comment {
     fn can_cast(kind: SyntaxKind) -> bool {
         kind == SyntaxKind::LineEndingComment || kind == SyntaxKind::BlockComment
     }
+
     fn cast(syntax: SyntaxToken) -> Option<Self> {
         Self::can_cast(syntax.kind()).then(|| Self { syntax })
     }
+
     fn syntax(&self) -> &SyntaxToken {
         &self.syntax
     }
@@ -215,9 +217,11 @@ impl AstToken for Whitespace {
     fn can_cast(kind: SyntaxKind) -> bool {
         kind == SyntaxKind::Blankspace
     }
+
     fn cast(syntax: SyntaxToken) -> Option<Self> {
         Self::can_cast(syntax.kind()).then(|| Self { syntax })
     }
+
     fn syntax(&self) -> &SyntaxToken {
         &self.syntax
     }
