@@ -96,7 +96,7 @@ impl Round {
         self.plot = format!("y_pred = {a:.3} + {b:.3} * x\n\nx     y     y_pred\n");
 
         let mut se = 0.0;
-        let mut max_error = 0f64;
+        let mut max_error = 0_f64;
         for (x, y) in xy {
             let y_pred = b.mul_add(x, a);
             se += (y - y_pred).powi(2);
