@@ -37,6 +37,9 @@
 	},
 	"packageManager": "pnpm@10.32.0",
 	"enabledApiProposals": [],
+	"extensionKind": [
+		"workspace"
+	],
 	"scripts": {
 		"build-base": "esbuild ./src/main.ts --bundle --outfile=out/main.js --external:vscode --format=cjs --platform=node --target=node22",
 		"build": "pnpm run build-base --sourcemap",
