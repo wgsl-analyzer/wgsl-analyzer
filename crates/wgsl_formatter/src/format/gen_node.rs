@@ -28,6 +28,10 @@ use crate::format::{
         gen_if_statement, gen_if_statement_else_clause, gen_if_statement_else_if_clause,
         gen_if_statement_if_clause,
     },
+    gen_import::{
+        gen_import_collection, gen_import_item, gen_import_package_relative, gen_import_path,
+        gen_import_super_relative,
+    },
     gen_path::gen_path,
     gen_source_file::gen_source_file,
     gen_statement::{
@@ -170,6 +174,11 @@ pub fn gen_node(node: &SyntaxNode) -> FormatDocumentResult<PrintItemBuffer> {
              SyntaxKind::SeverityControlName(node) => gen_severity_control_name(&node),
              SyntaxKind::InterpolateSamplingName(node) => gen_interpolate_sampling_name(&node),
              SyntaxKind::InterpolateTypeName(node) => gen_interpolate_type_name(&node),
+             SyntaxKind::ImportPackageRelative(node) => gen_import_package_relative(&node),
+             SyntaxKind::ImportSuperRelative(node) => gen_import_super_relative(&node),
+             SyntaxKind::ImportItem(node) => gen_import_item(&node),
+             SyntaxKind::ImportPath(node) => gen_import_path(&node),
+             SyntaxKind::ImportCollection(node) => gen_import_collection(&node),
 
             -
              // TODO(MonaMayrhofer) all of these
@@ -181,11 +190,6 @@ pub fn gen_node(node: &SyntaxNode) -> FormatDocumentResult<PrintItemBuffer> {
              SyntaxKind::ForInitializer |
              SyntaxKind::ForCondition |
              SyntaxKind::ForContinuingPart |
-             SyntaxKind::ImportPackageRelative |
-             SyntaxKind::ImportSuperRelative |
-             SyntaxKind::ImportItem |
-             SyntaxKind::ImportPath |
-             SyntaxKind::ImportCollection |
              SyntaxKind::LineEndingComment |
              SyntaxKind::BlockComment |
              SyntaxKind::OtherAttribute |
