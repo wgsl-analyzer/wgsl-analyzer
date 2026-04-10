@@ -693,25 +693,29 @@ ast_node! {
 ast_node! {
     AlignAttribute:
     name: Option<SyntaxToken Align>;
-    parameters: Option<Arguments>;
+    parameter: Option<Expression>;
 }
 
 ast_node! {
     BindingAttribute:
     name: Option<SyntaxToken Binding>;
-    parameters: Option<Arguments>;
+    parameter: Option<Expression>;
 }
 
 ast_node! {
     BlendSrcAttribute:
     name: Option<SyntaxToken BlendSrc>;
-    parameters: Option<Arguments>;
+    parameter: Option<Expression>;
 }
 
 ast_node! {
     BuiltinAttribute:
     name: Option<SyntaxToken Builtin>;
-    parameters: Option<Arguments>;
+    value_name: Option<BuiltinValueName>;
+}
+
+ast_node! {
+    BuiltinValueName
 }
 
 ast_node! {
@@ -728,13 +732,13 @@ ast_node! {
 ast_node! {
     GroupAttribute:
     name: Option<SyntaxToken Group>;
-    parameters: Option<Arguments>;
+    parameter: Option<Expression>;
 }
 
 ast_node! {
     IdAttribute:
     name: Option<SyntaxToken Id>;
-    parameters: Option<Arguments>;
+    parameter: Option<Expression>;
 }
 
 ast_node! {
@@ -755,13 +759,12 @@ ast_node! {
 ast_node! {
     InvariantAttribute:
     name: Option<SyntaxToken Group>;
-    parameters: Option<Arguments>;
 }
 
 ast_node! {
     LocationAttribute:
     name: Option<SyntaxToken Group>;
-    parameters: Option<Arguments>;
+    parameter: Option<Expression>;
 }
 
 ast_node! {
@@ -772,13 +775,13 @@ ast_node! {
 ast_node! {
     SizeAttribute:
     name: Option<SyntaxToken Group>;
-    parameters: Option<Arguments>;
+    parameter: Option<Expression>;
 }
 
 ast_node! {
     WorkgroupSizeAttribute:
     name: Option<SyntaxToken WorkgroupSize>;
-    parameters: Option<Arguments>;
+    parameters: AstChildren<Expression>;
 }
 
 ast_node! {

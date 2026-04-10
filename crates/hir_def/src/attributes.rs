@@ -93,56 +93,47 @@ fn get_attribute_parameters(
             .map_or_else(|| Either::Left(iter::empty()), Either::Right)
             .collect(),
         ast::Attribute::AlignAttribute(inner) => inner
-            .parameters()
-            .map(|p| p.arguments().map(|e| collector.collect_expression(e)))
-            .map_or_else(|| Either::Left(iter::empty()), Either::Right)
+            .parameter()
+            .into_iter()
+            .map(|e| collector.collect_expression(e))
             .collect(),
         ast::Attribute::BindingAttribute(inner) => inner
-            .parameters()
-            .map(|p| p.arguments().map(|e| collector.collect_expression(e)))
-            .map_or_else(|| Either::Left(iter::empty()), Either::Right)
+            .parameter()
+            .into_iter()
+            .map(|e| collector.collect_expression(e))
             .collect(),
         ast::Attribute::BlendSrcAttribute(inner) => inner
-            .parameters()
-            .map(|p| p.arguments().map(|e| collector.collect_expression(e)))
-            .map_or_else(|| Either::Left(iter::empty()), Either::Right)
+            .parameter()
+            .into_iter()
+            .map(|e| collector.collect_expression(e))
             .collect(),
-        ast::Attribute::BuiltinAttribute(inner) => inner
-            .parameters()
-            .map(|p| p.arguments().map(|e| collector.collect_expression(e)))
-            .map_or_else(|| Either::Left(iter::empty()), Either::Right)
-            .collect(),
+        ast::Attribute::BuiltinAttribute(inner) => Vec::new(), // these arguments are not expressions
         ast::Attribute::GroupAttribute(inner) => inner
-            .parameters()
-            .map(|p| p.arguments().map(|e| collector.collect_expression(e)))
-            .map_or_else(|| Either::Left(iter::empty()), Either::Right)
+            .parameter()
+            .into_iter()
+            .map(|e| collector.collect_expression(e))
             .collect(),
         ast::Attribute::IdAttribute(inner) => inner
-            .parameters()
-            .map(|p| p.arguments().map(|e| collector.collect_expression(e)))
-            .map_or_else(|| Either::Left(iter::empty()), Either::Right)
+            .parameter()
+            .into_iter()
+            .map(|e| collector.collect_expression(e))
             .collect(),
         ast::Attribute::InterpolateAttribute(inner) => Vec::new(), // these arguments are not expressions
-        ast::Attribute::InvariantAttribute(inner) => inner
-            .parameters()
-            .map(|p| p.arguments().map(|e| collector.collect_expression(e)))
-            .map_or_else(|| Either::Left(iter::empty()), Either::Right)
-            .collect(),
+        ast::Attribute::InvariantAttribute(inner) => Vec::new(),   // has no arguments
         ast::Attribute::LocationAttribute(inner) => inner
-            .parameters()
-            .map(|p| p.arguments().map(|e| collector.collect_expression(e)))
-            .map_or_else(|| Either::Left(iter::empty()), Either::Right)
+            .parameter()
+            .into_iter()
+            .map(|e| collector.collect_expression(e))
             .collect(),
         ast::Attribute::MustUseAttribute(inner) => Vec::new(),
         ast::Attribute::SizeAttribute(inner) => inner
-            .parameters()
-            .map(|p| p.arguments().map(|e| collector.collect_expression(e)))
-            .map_or_else(|| Either::Left(iter::empty()), Either::Right)
+            .parameter()
+            .into_iter()
+            .map(|e| collector.collect_expression(e))
             .collect(),
         ast::Attribute::WorkgroupSizeAttribute(inner) => inner
             .parameters()
-            .map(|p| p.arguments().map(|e| collector.collect_expression(e)))
-            .map_or_else(|| Either::Left(iter::empty()), Either::Right)
+            .map(|e| collector.collect_expression(e))
             .collect(),
         ast::Attribute::VertexAttribute(inner) => Vec::new(),
         ast::Attribute::FragmentAttribute(inner) => Vec::new(),
