@@ -17,6 +17,7 @@ mod gen_expression;
 mod gen_function;
 mod gen_function_call;
 mod gen_if_statement;
+pub mod gen_import;
 mod gen_node;
 mod gen_path;
 mod gen_source_file;
