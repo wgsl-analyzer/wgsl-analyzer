@@ -1,7 +1,8 @@
+use std::hash::Hash;
+
 use base_db::{FileId, FileRange, TextRange};
 use rowan::{NodeOrToken, TextSize};
 use rustc_hash::FxHashSet;
-use std::hash::Hash;
 use syntax::{
     AstNode, AstToken as _, Direction,
     SyntaxKind::{self, *},

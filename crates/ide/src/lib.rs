@@ -22,13 +22,13 @@ use base_db::{
     SourceDatabase as _, SourceRoot, TextRange, change::Change, input::SourceRootId,
 };
 use diagnostics::Diagnostic;
-use hir::diagnostics::DiagnosticsConfig;
+use hir::{ExtensionsConfig, diagnostics::DiagnosticsConfig};
 use hir_def::database::DefDatabase as _;
 use ide_completion::{CompletionConfig, item::CompletionItem};
 use ide_db::LineIndexDatabase as _;
 pub use line_index::{LineCol, LineIndex};
 use rustc_hash::FxHashMap;
-use salsa::{Cancelled, Database as _};
+use salsa::{Cancelled, Database as _, Durability};
 use syntax::{Edition, Parse, SyntaxNode};
 use triomphe::Arc;
 use vfs::{AbsPathBuf, FileId, VfsPath};
@@ -150,6 +150,14 @@ impl AnalysisHost {
         self.database.update_lru_capacities(lru_capacities);
     }
 
+    pub fn update_extensions(
+        &mut self,
+        extensions: ExtensionsConfig,
+    ) {
+        self.database
+            .set_extensions_with_durability(extensions, Durability::MEDIUM);
+    }
+
     /// Returns a snapshot of the current state, which you can query for
     /// semantic information.
     pub fn analysis(&self) -> Analysis {
@@ -201,6 +209,8 @@ pub struct Analysis {
 // API, the API should in theory be usable as a library, or via a different
 // protocol.
 impl Analysis {
+    pub const SUPPORTED_TRIGGER_CHARS: &[char] = typing::TRIGGER_CHARS;
+
     /// Creates an analysis instance for a single file, without any external
     /// dependencies or ability to apply changes.
     /// See [`AnalysisHost`] for creating a fully-featured analysis.
@@ -220,8 +230,6 @@ impl Analysis {
         host.apply_change(change);
         (host.analysis(), file_id)
     }
-
-    pub const SUPPORTED_TRIGGER_CHARS: &[char] = typing::TRIGGER_CHARS;
 
     pub fn with_db<Function, T>(
         &self,

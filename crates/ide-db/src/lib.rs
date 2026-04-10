@@ -6,8 +6,8 @@
 use std::{fmt, panic};
 
 use base_db::{
-    FileId, FileSourceRootInput, FileText, Files, Nonce, SourceDatabase, SourceRoot, SourceRootId,
-    SourceRootInput, change::Change,
+    FileId, FileSourceRootInput, FileText, Files, Nonce, RootQueryDb as _, SourceDatabase,
+    SourceRoot, SourceRootId, SourceRootInput, change::Change,
 };
 use hir_def::database::{DefDatabase as _, ExtensionsConfig};
 use line_index::LineIndex;
@@ -113,6 +113,7 @@ impl SourceDatabase for RootDatabase {
         let files = Arc::clone(&self.files);
         files.set_file_source_root_with_durability(self, id, source_root_id, durability);
     }
+
     fn nonce_and_revision(&self) -> (Nonce, salsa::Revision) {
         (
             self.nonce,
@@ -130,8 +131,8 @@ impl RootDatabase {
             // crates_map: Default::default(),
             nonce: Nonce::new(),
         };
-        // This needs to be here otherwise `CrateGraphBuilder` will panic.
-        // database.set_all_crates(Arc::new(Box::new([])));
+        // This needs to be here otherwise the first `Change` will panic.
+        database.set_all_packages(Arc::new(Box::new([])));
         // CrateGraphBuilder::default().set_in_db(&mut database);
         // database.set_proc_macros_with_durability(Default::default(), Durability::MEDIUM);
         // database.set_local_roots_with_durability(Default::default(), Durability::MEDIUM);

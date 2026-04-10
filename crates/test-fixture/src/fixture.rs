@@ -60,12 +60,8 @@ pub struct Fixture {
     pub path: String,
     /// Defines a new package and make this file its root module.
     ///
-    /// Version and repository URL of the package can optionally be specified; if
-    /// either one is specified, the other must also be specified.
-    ///
     /// Syntax:
     /// - `package:my_awesome_lib`
-    /// - `package:my_awesome_lib@0.0.1,https://example.com/repo.git`
     pub package: Option<String>,
     /// Specifies dependencies of this package. This must be used with `package` meta.
     ///
@@ -78,20 +74,6 @@ pub struct Fixture {
     /// Syntax: `edition:2021`.
     pub edition: Option<String>,
 
-    /// Introduces a new [source root](base_db::input::SourceRoot). This file **and
-    /// the following files** will belong the new source root. This must be used
-    /// with `package` meta.
-    ///
-    /// Use this if you want to test something that uses `SourceRoot::is_library()`
-    /// to check editability.
-    ///
-    /// Note that files before the first fixture with `new_source_root` meta will
-    /// belong to an implicitly defined local source root.
-    ///
-    /// Syntax:
-    /// - `new_source_root:library`
-    /// - `new_source_root:local`
-    pub introduce_new_source_root: Option<String>,
     /// Explicitly declares this package as a library outside current workspace. This
     /// must be used with `package` meta.
     ///
@@ -169,7 +151,7 @@ impl FixtureWithProjectMeta {
         Self { fixture: result }
     }
 
-    //- /lib.rs package:foo deps:bar,baz
+    //- /lib.wgsl package:foo deps:bar,baz
     fn parse_meta_line(
         meta: &str,
         line: usize,
@@ -189,7 +171,6 @@ impl FixtureWithProjectMeta {
         let mut package = None;
         let mut deps = Vec::new();
         let mut edition = None;
-        let mut introduce_new_source_root = None;
         let mut library = false;
         for component in components {
             if component == "library" {
@@ -205,7 +186,6 @@ impl FixtureWithProjectMeta {
                 "deps" => deps = value.split(',').map(ToOwned::to_owned).collect(),
 
                 "edition" => edition = Some(value.to_owned()),
-                "new_source_root" => introduce_new_source_root = Some(value.to_owned()),
                 _ => panic!("bad component: {component:?}"),
             }
         }
@@ -215,7 +195,6 @@ impl FixtureWithProjectMeta {
             package,
             deps,
             edition,
-            introduce_new_source_root,
             library,
             text: String::new(),
             line,
@@ -234,11 +213,11 @@ mod tests {
     fn parse_fixture_checks_further_indented_metadata() {
         FixtureWithProjectMeta::parse(
             r"
-        //- /lib.rs
+        //- /lib.wgsl
           mod bar;
 
           fn foo() {}
-          //- /bar.rs
+          //- /bar.wgsl
           pub fn baz() {}
           ",
         );
@@ -248,7 +227,7 @@ mod tests {
     fn parse_fixture_gets_full_meta() {
         let FixtureWithProjectMeta { fixture: parsed } = FixtureWithProjectMeta::parse(
             r#"
-//- /lib.rs package:foo deps:bar,baz
+//- /lib.wgsl package:foo deps:bar,baz
 const a = 3;
 "#,
         );
@@ -259,6 +238,6 @@ const a = 3;
         assert_eq!("const a = 3;\n", meta.text);
 
         assert_eq!("foo", meta.package.as_ref().unwrap());
-        assert_eq!("/lib.rs", meta.path);
+        assert_eq!("/lib.wgsl", meta.path);
     }
 }

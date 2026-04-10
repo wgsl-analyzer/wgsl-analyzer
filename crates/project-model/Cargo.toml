@@ -1,0 +1,30 @@
+[package]
+name = "project-model"
+version = "0.0.0"
+edition.workspace = true
+rust-version.workspace = true
+description = "A representation for a WESL project for wgsl-analyzer."
+repository.workspace = true
+license.workspace = true
+
+[lib]
+doctest = false
+
+[dependencies]
+anyhow.workspace = true
+base-db.workspace = true
+edition.workspace = true
+indexmap.workspace = true
+paths = { workspace = true, features = ["serde1"] }
+rustc-hash.workspace = true
+serde.workspace = true
+toml = { version = "1.1.2", default-features = false, features = [
+	"parse",
+	"serde",
+	"std"
+] }
+
+[dev-dependencies]
+
+[lints]
+workspace = true

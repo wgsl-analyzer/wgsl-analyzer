@@ -1,21 +1,34 @@
 use std::{fmt, panic};
 
 use base_db::{
-    EditionedFileId, FileSourceRootInput, FileText, Nonce, SourceDatabase, SourceRootId,
-    SourceRootInput, change::Change, input::SourceRoot,
+    EditionedFileId, FileSourceRootInput, FileText, Nonce, RootQueryDb as _, SourceDatabase,
+    SourceRootId, SourceRootInput, change::Change, input::SourceRoot,
 };
-use salsa::Durability;
+use salsa::{Durability, Storage};
 use syntax::Edition;
 use test_fixture::WithFixture;
 use triomphe::Arc;
 use vfs::{AnchoredPath, FileId, VfsPath, file_set::FileSet};
 
 #[salsa_macros::db]
-#[derive(Clone, Default)]
+#[derive(Clone)]
 pub(crate) struct TestDatabase {
     storage: salsa::Storage<Self>,
     files: Arc<base_db::Files>,
     nonce: Nonce,
+}
+
+impl Default for TestDatabase {
+    fn default() -> Self {
+        let mut database = Self {
+            storage: Storage::default(),
+            files: Arc::default(),
+            nonce: Nonce::default(),
+        };
+        // This needs to be here otherwise the first `Change` will panic.
+        database.set_all_packages(Arc::new(Box::new([])));
+        database
+    }
 }
 
 impl fmt::Debug for TestDatabase {

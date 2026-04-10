@@ -637,23 +637,23 @@ impl IndexExpression {
 
 ast_enum! {
     enum Attribute {
-        // AlignAttribute,
-        // BindingAttribute,
-        // BlendSrcAttribute,
-        // BuiltinAttribute,
+        AlignAttribute,
+        BindingAttribute,
+        BlendSrcAttribute,
+        BuiltinAttribute,
         ConstantAttribute,
         DiagnosticAttribute,
-        // GroupAttribute,
-        // IdAttribute,
-        // InterpolateAttribute,
-        // InvariantAttribute,
-        // LocationAttribute,
-        // MustUseAttribute,
-        // SizeAttribute,
-        // WorkgroupSizeAttribute,
-        // VertexAttribute,
-        // FragmentAttribute,
-        // ComputeAttribute,
+        GroupAttribute,
+        IdAttribute,
+        InterpolateAttribute,
+        InvariantAttribute,
+        LocationAttribute,
+        MustUseAttribute,
+        SizeAttribute,
+        WorkgroupSizeAttribute,
+        VertexAttribute,
+        FragmentAttribute,
+        ComputeAttribute,
         OtherAttribute,
     }
 }
@@ -662,9 +662,24 @@ impl Attribute {
     #[must_use]
     pub fn name(&self) -> Option<SyntaxToken> {
         match self {
+            Self::AlignAttribute(inner) => inner.name(),
+            Self::BindingAttribute(inner) => inner.name(),
+            Self::BlendSrcAttribute(inner) => inner.name(),
+            Self::BuiltinAttribute(inner) => inner.name(),
+            Self::ConstantAttribute(inner) => inner.name(),
+            Self::DiagnosticAttribute(inner) => inner.name(),
+            Self::GroupAttribute(inner) => inner.name(),
+            Self::IdAttribute(inner) => inner.name(),
+            Self::InterpolateAttribute(inner) => inner.name(),
+            Self::InvariantAttribute(inner) => inner.name(),
+            Self::LocationAttribute(inner) => inner.name(),
+            Self::MustUseAttribute(inner) => inner.name(),
+            Self::SizeAttribute(inner) => inner.name(),
+            Self::WorkgroupSizeAttribute(inner) => inner.name(),
+            Self::VertexAttribute(inner) => inner.name(),
+            Self::FragmentAttribute(inner) => inner.name(),
+            Self::ComputeAttribute(inner) => inner.name(),
             Self::OtherAttribute(inner) => inner.name(),
-            Self::ConstantAttribute(inner) => inner.const_token(),
-            Self::DiagnosticAttribute(inner) => inner.diagnostic_token(),
         }
     }
 }
@@ -676,74 +691,112 @@ ast_node! {
 }
 
 ast_node! {
-    AlignAttribute
+    AlignAttribute:
+    name: Option<SyntaxToken Align>;
+    parameter: Option<Expression>;
 }
 
 ast_node! {
-    BindingAttribute
+    BindingAttribute:
+    name: Option<SyntaxToken Binding>;
+    parameter: Option<Expression>;
 }
 
 ast_node! {
-    BlendSrcAttribute
+    BlendSrcAttribute:
+    name: Option<SyntaxToken BlendSrc>;
+    parameter: Option<Expression>;
 }
 
 ast_node! {
-    BuiltinAttribute
+    BuiltinAttribute:
+    name: Option<SyntaxToken Builtin>;
+    value_name: Option<BuiltinValueName>;
+}
+
+ast_node! {
+    BuiltinValueName
 }
 
 ast_node! {
     ConstantAttribute:
-    const_token: Option<SyntaxToken Const>;
+    name: Option<SyntaxToken Const>;
 }
 
 ast_node! {
     DiagnosticAttribute:
-    diagnostic_token: Option<SyntaxToken Diagnostic>;
+    name: Option<SyntaxToken Diagnostic>;
     parameters: Option<DiagnosticControl>;
 }
 
 ast_node! {
-    GroupAttribute
+    GroupAttribute:
+    name: Option<SyntaxToken Group>;
+    parameter: Option<Expression>;
 }
 
 ast_node! {
-    IdAttribute
+    IdAttribute:
+    name: Option<SyntaxToken Id>;
+    parameter: Option<Expression>;
 }
 
 ast_node! {
-    InterpolateAttribute
+    InterpolateAttribute:
+    name: Option<SyntaxToken Interpolate>;
+    interpolate_type_name: Option<InterpolateTypeName>;
+    interpolate_sampling_name: Option<InterpolateSamplingName>;
 }
 
 ast_node! {
-    InvariantAttribute
+    InterpolateTypeName
 }
 
 ast_node! {
-    LocationAttribute
+    InterpolateSamplingName
 }
 
 ast_node! {
-    MustUseAttribute
+    InvariantAttribute:
+    name: Option<SyntaxToken Group>;
 }
 
 ast_node! {
-    SizeAttribute
+    LocationAttribute:
+    name: Option<SyntaxToken Group>;
+    parameter: Option<Expression>;
 }
 
 ast_node! {
-    WorkgroupSizeAttribute
+    MustUseAttribute:
+    name: Option<SyntaxToken MustUse>;
 }
 
 ast_node! {
-    VertexAttribute
+    SizeAttribute:
+    name: Option<SyntaxToken Group>;
+    parameter: Option<Expression>;
 }
 
 ast_node! {
-    FragmentAttribute
+    WorkgroupSizeAttribute:
+    name: Option<SyntaxToken WorkgroupSize>;
+    parameters: AstChildren<Expression>;
 }
 
 ast_node! {
-    ComputeAttribute
+    VertexAttribute:
+    name: Option<SyntaxToken Vertex>;
+}
+
+ast_node! {
+    FragmentAttribute:
+    name: Option<SyntaxToken Fragment>;
+}
+
+ast_node! {
+    ComputeAttribute:
+    name: Option<SyntaxToken Compute>;
 }
 
 ast_node! {

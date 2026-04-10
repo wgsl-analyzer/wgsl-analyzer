@@ -4,8 +4,7 @@
 
 use std::mem;
 
-use base_db::DbPanicContext;
-use cargo_metadata::PackageId;
+use base_db::{DbPanicContext, input::PackageId};
 type FileId = vfs::FileId;
 use ide::diagnostics::{Diagnostic, Severity};
 use itertools::Itertools as _;

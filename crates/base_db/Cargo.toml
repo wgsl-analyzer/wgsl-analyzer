@@ -12,6 +12,7 @@ doctest = false
 
 [dependencies]
 dashmap.workspace = true
+edition.workspace = true
 query-group.workspace = true
 rowan.workspace = true
 rustc-hash.workspace = true
@@ -20,6 +21,9 @@ salsa-macros.workspace = true
 syntax.workspace = true
 triomphe.workspace = true
 vfs.workspace = true
+
+[dev-dependencies]
+expect-test.workspace = true
 
 [lints]
 workspace = true

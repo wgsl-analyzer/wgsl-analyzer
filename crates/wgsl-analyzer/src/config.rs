@@ -10,17 +10,8 @@ use ide::{
     HoverConfig, HoverDocFormat, MemoryLayoutHoverRenderKind,
     inlay_hints::{self, StructLayoutHints},
 };
-use ide_completion::{CompletionConfig, CompletionFieldsToResolve};
-use itertools::Itertools as _;
-use rustc_hash::FxHashMap;
-use semver::Version;
-use serde::{Deserialize, Serialize};
-use stdx::format_to_acc;
-use triomphe::Arc;
-use vfs::AbsPathBuf;
 use wgsl_formatter::FormattingOptions;
 
-use crate::lsp::capabilities::ClientCapabilities;
 use ide::{
     // AssistConfig,
     // CallHierarchyConfig,
@@ -43,10 +34,20 @@ use ide::{
     // SnippetScope,
     // SourceRootId,
 };
+use ide_completion::{CompletionConfig, CompletionFieldsToResolve};
 use ide_db::{
     SnippetCapability,
     // imports::insert_use::{ImportGranularity, InsertUseConfig, PrefixKind},
 };
+use itertools::Itertools as _;
+use rustc_hash::FxHashMap;
+use semver::Version;
+use serde::{Deserialize, Serialize};
+use stdx::format_to_acc;
+use triomphe::Arc;
+use vfs::{AbsPath, AbsPathBuf};
+
+use crate::lsp::capabilities::ClientCapabilities;
 
 // Defines the server-side configuration of the wgsl-analyzer. We generate *parts* of VS Code's
 // `package.json` config from this. Run `cargo test` to re-generate that file.
@@ -157,6 +158,7 @@ pub struct Config {
     /// The workspace roots as registered by the LSP client.
     workspace_roots: Vec<AbsPathBuf>,
     capabilities: ClientCapabilities,
+    /// The LSP root path, deprecated in favor of `workspace_roots`.
     root_path: AbsPathBuf,
     // TODO: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/921
     // snippets: Vec<Snippet>,
@@ -272,8 +274,6 @@ impl Config {
 
         Self {
             workspace_roots,
-            // discovered_projects_from_filesystem: Vec::new(),
-            // discovered_projects_from_command: Vec::new(),
             capabilities: ClientCapabilities::new(caps),
             // snippets: Default::default(),
             root_path,
@@ -296,18 +296,30 @@ impl Config {
         }
     }
 
-    #[expect(
-        clippy::unused_self,
-        clippy::needless_pass_by_ref_mut,
-        reason = "TODO: See https://github.com/wgsl-analyzer/wgsl-analyzer/issues/26"
-    )]
-    pub const fn rediscover_workspaces(&mut self) {
-        // let discovered = vec![];
-        // tracing::info!("discovered projects: {:?}", discovered);
-        // if discovered.is_empty() {
-        //     tracing::error!("failed to find any projects in {:?}", &self.workspace_roots);
-        // }
-        // self.discovered_projects_from_filesystem = discovered;
+    pub fn remove_workspace(
+        &mut self,
+        path: &AbsPathBuf,
+    ) {
+        if let Some(position) = self.workspace_roots.iter().position(|root| root == path) {
+            self.workspace_roots.remove(position);
+        }
+    }
+
+    pub fn add_workspaces<Workspaces: Iterator<Item = AbsPathBuf>>(
+        &mut self,
+        paths: Workspaces,
+    ) {
+        self.workspace_roots.extend(paths);
+    }
+
+    #[must_use]
+    pub fn is_in_workspace(
+        &self,
+        path: &AbsPath,
+    ) -> bool {
+        self.workspace_roots
+            .iter()
+            .any(|root| path.starts_with(root))
     }
 
     #[must_use]
@@ -395,6 +407,12 @@ impl Config {
         (config, errors, should_update)
     }
 
+    #[must_use]
+    pub fn workspace_roots(&self) -> &[AbsPathBuf] {
+        &self.workspace_roots
+    }
+
+    /// The LSP root path, deprecated in favor of `workspace_roots`.
     #[must_use]
     pub const fn root_path(&self) -> &AbsPathBuf {
         &self.root_path

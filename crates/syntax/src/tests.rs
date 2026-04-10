@@ -188,7 +188,7 @@ fn const_attribute() {
     match parsed.tree().items().next().unwrap() {
         Item::FunctionDeclaration(func) => match func.attributes().next().unwrap() {
             ast::Attribute::ConstantAttribute(constant_attribute) => {
-                assert_eq!(constant_attribute.const_token().unwrap().text(), "const");
+                assert_eq!(constant_attribute.name().unwrap().text(), "const");
             },
             _ => panic!("wrong attribute"),
         },

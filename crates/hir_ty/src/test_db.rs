@@ -1,8 +1,8 @@
 use std::{fmt, panic};
 
 use base_db::{
-    EditionedFileId, FileSourceRootInput, FileText, Nonce, SourceDatabase, SourceRootId,
-    SourceRootInput, change::Change, input::SourceRoot,
+    EditionedFileId, FileSourceRootInput, FileText, Nonce, RootQueryDb as _, SourceDatabase,
+    SourceRootId, SourceRootInput, change::Change, input::SourceRoot,
 };
 use hir_def::database::{DefDatabase as _, ExtensionsConfig};
 use salsa::Durability;
@@ -30,6 +30,8 @@ impl Default for TestDatabase {
             },
             Durability::MEDIUM,
         );
+        // This needs to be here otherwise the first `Change` will panic.
+        value.set_all_packages(Arc::new(Box::new([])));
         value
     }
 }
@@ -109,6 +111,7 @@ impl SourceDatabase for TestDatabase {
         let files = Arc::clone(&self.files);
         files.set_file_source_root_with_durability(self, id, source_root_id, durability);
     }
+
     fn nonce_and_revision(&self) -> (Nonce, salsa::Revision) {
         (
             self.nonce,

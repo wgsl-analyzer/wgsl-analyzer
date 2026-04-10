@@ -8,6 +8,14 @@
 )]
 use std::fmt::{self, Debug};
 
+use base_db::{
+    EditionedFileId, Lookup as _, RootQueryDb, SourceDatabase, impl_intern_key, impl_intern_lookup,
+};
+use salsa::plumbing::AsId as _;
+use syntax::{Parse, ast};
+use triomphe::Arc;
+use vfs::VfsPath;
+
 use crate::{
     FileAstId, InFile,
     ast_id::AstIdMap,
@@ -24,13 +32,6 @@ use crate::{
         StructSignature, TypeAliasSignature, VariableSignature,
     },
 };
-use base_db::{
-    EditionedFileId, Lookup as _, RootQueryDb, SourceDatabase, impl_intern_key, impl_intern_lookup,
-};
-use salsa::plumbing::AsId as _;
-use syntax::{Parse, ast};
-use triomphe::Arc;
-use vfs::VfsPath;
 
 #[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ExtensionsConfig {

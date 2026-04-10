@@ -119,8 +119,9 @@ impl std::str::FromStr for Policy {
 
 #[cfg(test)]
 mod policy_tests {
-    use super::*;
     use std::str::FromStr as _;
+
+    use super::*;
     #[test]
     fn policy_from_str_valid_values() {
         assert!(matches!(Policy::from_str("ignore"), Ok(Policy::Ignore)));

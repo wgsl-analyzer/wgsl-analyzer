@@ -186,40 +186,30 @@ struct_body: '{' & struct_member (?1 (','| ';'!1 | !1) struct_member)* [','] '}'
 struct_member: attribute* name ':' type_specifier;
 
 // all attributes that do not use keywords have to be parsed generically and separated later
-// attribute:
-// 	'@' (
-// 			'align' '(' expression [','] ')' @align_attr
-// 			| 'binding' '(' expression [','] ')' @binding_attr
-// 			| 'blend_src' '(' expression [','] ')' @blend_src_attr
-// 			| 'builtin' '(' builtin_value_name [','] ')' @builtin_attr
-// 			| 'const' @const_attr
-// 			| 'diagnostic' diagnostic_control @diagnostic_attr
-// 			| 'group' '(' expression [','] ')' @group_attr
-// 			| 'id' '(' expression [','] ')' @id_attr
-// 			| interpolate_attr
-// 			| 'invariant' @invariant_attr
-// 			| 'location' '(' expression [','] ')' @location_attr
-// 			| 'must_use' @must_use_attr
-// 			| 'size' '(' expression [','] ')'@size_attr
-// 			| workgroup_size_attr
-// 			| 'vertex' @vertex_attr
-// 			| 'fragment' @fragment_attr
-// 			| 'compute' @compute_attr
-// 			| Identifier [ argument_expression_list ] @other_attr
-// 	)
-// ;
 attribute:
 	'@' (
-			'const' @const_attr
+			'align' '(' expression [','] ')' @align_attr
+			| 'binding' '(' expression [','] ')' @binding_attr
+			| 'blend_src' '(' expression [','] ')' @blend_src_attr
+			| 'builtin' '(' builtin_value_name [','] ')' @builtin_attr
+			| 'const' @const_attr
 			| 'diagnostic' diagnostic_control @diagnostic_attr
+			| 'group' '(' expression [','] ')' @group_attr
+			| 'id' '(' expression [','] ')' @id_attr
+			| 'interpolate' '(' interpolate_type_name [ ',' ] [ interpolate_sampling_name [ ',' ] ] ')' @interpolate_attr
+			| 'invariant' @invariant_attr
+			| 'location' '(' expression [','] ')' @location_attr
+			| 'must_use' @must_use_attr
+			| 'size' '(' expression [','] ')'@size_attr
+			| workgroup_size_attr @workgroup_size_attr
+			| 'vertex' @vertex_attr
+			| 'fragment' @fragment_attr
+			| 'compute' @compute_attr
 			| Identifier [ argument_expression_list ] @other_attr
 	)
 ;
 
 builtin_value_name: Identifier;
-
-// interpolate_attr:
-//	'interpolate' '(' interpolate_type_name [ ',' ] [ interpolate_sampling_name [ ',' ] ] ')';
 
 interpolate_type_name:
 	'perspective'
@@ -235,7 +225,7 @@ interpolate_sampling_name:
 	| 'either'
 ;
 
-workgroup_size_attr:
+workgroup_size_attr^:
 	'workgroup_size' '(' expression
 		[ ',' expression
 			[ ',' expression

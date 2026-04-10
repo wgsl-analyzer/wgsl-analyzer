@@ -1,4 +1,3 @@
-use crate::config::resolve_config;
 use anyhow::Result;
 use dprint_core::{
     configuration::{ConfigKeyMap, GlobalConfiguration},
@@ -9,6 +8,8 @@ use dprint_core::{
     },
 };
 use wgsl_formatter::{FormattingOptions, format_file};
+
+use crate::config::resolve_config;
 
 mod config;
 
