@@ -211,8 +211,7 @@ fn format_struct_definition_removes_trailing_semicolon() {
         ",
         expect![[r#"
             struct VertexInput {
-                @builtin(vertex_index)
-                vertexIndex: u32,
+                @builtin(vertex_index) vertexIndex: u32,
             }
         "#]],
     );

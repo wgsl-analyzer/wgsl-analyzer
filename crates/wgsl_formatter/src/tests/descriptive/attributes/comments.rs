@@ -424,3 +424,29 @@ pub fn format_comments_in_attrs_on_while_statement() {
         "#]],
     );
 }
+
+#[test]
+pub fn format_comments_in_interpolate_attr() {
+    check_comments(
+        "
+        ## @ ## interpolate ## ( ## flat ## , ## either ## ) ##
+        override a: usize = 0;
+        ",
+        expect![[r#"
+            /* 0 */
+            @ /* 1 */ interpolate /* 2 */ ( /* 3 */ flat /* 4 */ , /* 5 */ either /* 6 */ ) /* 7 */
+            override a: usize = 0;
+        "#]],
+        expect![[r#"
+            // 0
+            @ // 1
+            interpolate // 2
+            ( // 3
+            flat // 4
+            , // 5
+            either // 6
+            ) // 7
+            override a: usize = 0;
+        "#]],
+    );
+}

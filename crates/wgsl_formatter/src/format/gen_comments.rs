@@ -11,6 +11,7 @@ use crate::format::{
 use super::print_item_buffer::request_folder::RequestItem;
 
 // We don't have a Comment SyntaxNode in the AST yet, so we use a custom enum and parser function
+#[derive(Clone, Debug)]
 pub enum Comment {
     Block(String),
     LineEnding(String),

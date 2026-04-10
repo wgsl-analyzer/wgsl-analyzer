@@ -450,3 +450,40 @@ pub fn format_attrs_on_input_statement() {
         "This should be supported as soon as the parser supports it.",
     );
 }
+#[test]
+pub fn format_all_attribute_order() {
+    check(
+        "
+        @const
+        @align(1)
+        @binding(1)
+        @blend_src(1)
+        @builtin(position)
+        @group(1)
+        @id(1)
+        @interpolate(flat)
+        @invariant
+        @location(0)
+        @must_use
+        @size(1)
+        @workgroup_size(1,2,3)
+        @vertex
+        @fragment
+        @compute
+        fn a() {}
+        ",
+        expect![[r#"
+            @blend_src(1)
+            @id(1)
+            @interpolate(flat)
+            @invariant
+            @location(0)
+            @align(1) @size(1)
+            @group(1) @binding(1)
+            @compute @workgroup_size(1, 2, 3)
+            @fragment
+            @vertex
+            @const @must_use @builtin(position) fn a() {}
+        "#]],
+    );
+}

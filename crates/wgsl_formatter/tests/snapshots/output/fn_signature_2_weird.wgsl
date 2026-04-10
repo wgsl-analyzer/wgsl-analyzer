@@ -21,6 +21,5 @@ fn fn_sig_attributes(
     thing: vec3f,
     @location(3)
     thing: vec3f,
-    @builtin(position)
-    thing: vec3f,
+    @builtin(position) thing: vec3f,
 ) -> @location(0) vec3f {}

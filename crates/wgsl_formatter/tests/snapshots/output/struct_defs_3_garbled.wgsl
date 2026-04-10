@@ -13,6 +13,5 @@ struct StructAttributes {
     field: vec3f,
     @location(1)
     field2: vec3<f32>,
-    @builtin(thing)
-    field3: array<i32, 10>,
+    @builtin(thing) field3: array<i32, 10>,
 }
