@@ -1650,14 +1650,13 @@ fn parse_all_attributes() {
                   AttributeOperator@709..710 "@"
                   Compute@710..717 "compute"
                 Blankspace@717..726 "\n        "
-                Attribute@726..744
+                WorkgroupSizeAttribute@726..744
                   AttributeOperator@726..727 "@"
-                  WorkgroupSizeAttribute@727..744
-                    WorkgroupSize@727..741 "workgroup_size"
-                    ParenthesisLeft@741..742 "("
-                    Literal@742..743
-                      IntLiteral@742..743 "1"
-                    ParenthesisRight@743..744 ")"
+                  WorkgroupSize@727..741 "workgroup_size"
+                  ParenthesisLeft@741..742 "("
+                  Literal@742..743
+                    IntLiteral@742..743 "1"
+                  ParenthesisRight@743..744 ")"
                 Blankspace@744..753 "\n        "
                 Fn@753..755 "fn"
                 Blankspace@755..756 " "
