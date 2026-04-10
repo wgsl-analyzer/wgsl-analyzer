@@ -6,7 +6,7 @@ use syntax::{AstNode as _, ast};
 
 use crate::format::{
     ast_parse::{
-        parse_end, parse_many_comments_and_blankspace, parse_node, parse_node_optional,
+        SyntaxIter, parse_end, parse_many_comments_and_blankspace, parse_node, parse_node_optional,
         parse_token, parse_token_optional,
     },
     gen_comments::gen_comments,
@@ -42,18 +42,30 @@ pub fn gen_function_call_arguments(
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = put_back(arguments.syntax().children_with_tokens());
-    parse_token(&mut syntax, SyntaxKind::ParenthesisLeft)?;
-    let item_comments_after_open_paren = parse_many_comments_and_blankspace(&mut syntax)?;
+    let formatted = gen_function_call_like_comma_separated_values(&mut syntax)?;
+    parse_end(&mut syntax)?;
+    Ok(formatted)
+}
+
+pub fn gen_function_call_like_comma_separated_values(
+    syntax: &mut SyntaxIter
+) -> FormatDocumentResult<PrintItemBuffer> {
+    // ==== Parse ====
+    // TODO(MonaMayrhofer) Mehhh this logic is misgeneralized i need to do it properly...
+    if parse_token_optional(syntax, SyntaxKind::ParenthesisLeft).is_none() {
+        return Ok(PrintItemBuffer::new());
+    }
+    let item_comments_after_open_paren = parse_many_comments_and_blankspace(syntax)?;
 
     let mut item_parameters = Vec::new();
     loop {
-        let Some(item_param) = parse_node_optional::<ast::Expression>(&mut syntax) else {
+        let Some(item_param) = parse_node_optional::<ast::Expression>(syntax) else {
             break;
         };
-        let item_comments_after_param = parse_many_comments_and_blankspace(&mut syntax)?;
+        let item_comments_after_param = parse_many_comments_and_blankspace(syntax)?;
 
-        parse_token_optional(&mut syntax, SyntaxKind::Comma);
-        let item_comments_after_comma = parse_many_comments_and_blankspace(&mut syntax)?;
+        parse_token_optional(syntax, SyntaxKind::Comma);
+        let item_comments_after_comma = parse_many_comments_and_blankspace(syntax)?;
 
         item_parameters.push((
             item_param,
@@ -62,8 +74,7 @@ pub fn gen_function_call_arguments(
         ));
     }
 
-    parse_token(&mut syntax, SyntaxKind::ParenthesisRight)?;
-    parse_end(&mut syntax)?;
+    parse_token(syntax, SyntaxKind::ParenthesisRight)?;
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::new();

@@ -7,7 +7,10 @@ use crate::format::{
     gen_assignment_statement::{
         gen_assignment_statement, gen_compound_assignment_statement, gen_phony_assignment_statement,
     },
-    gen_attributes::{gen_attribute, gen_diagnostic_attribute},
+    gen_attributes::{
+        gen_attribute, gen_diagnostic_attribute, gen_interpolate_sampling_name,
+        gen_interpolate_type_name,
+    },
     gen_diagnostic::{gen_diagnostic_control, gen_diagnostic_rule_name, gen_severity_control_name},
     gen_directive::{
         gen_diagnostic_directive, gen_enable_directive, gen_enable_extension_name,
@@ -165,8 +168,10 @@ pub fn gen_node(node: &SyntaxNode) -> FormatDocumentResult<PrintItemBuffer> {
              SyntaxKind::DiagnosticDirective(node) => gen_diagnostic_directive(&node),
              SyntaxKind::DiagnosticRuleName(node) => gen_diagnostic_rule_name(&node),
              SyntaxKind::SeverityControlName(node) => gen_severity_control_name(&node),
+             SyntaxKind::InterpolateSamplingName(node) => gen_interpolate_sampling_name(&node),
+             SyntaxKind::InterpolateTypeName(node) => gen_interpolate_type_name(&node),
 
-             -
+            -
              // TODO(MonaMayrhofer) all of these
              SyntaxKind::Name |
              SyntaxKind::BreakStatement |
@@ -200,6 +205,7 @@ pub fn gen_node(node: &SyntaxNode) -> FormatDocumentResult<PrintItemBuffer> {
              SyntaxKind::VertexAttribute |
              SyntaxKind::FragmentAttribute |
              SyntaxKind::ComputeAttribute |
+             SyntaxKind::BuiltinValueName |
              // Tokens
              SyntaxKind::Blankspace |
              SyntaxKind::Identifier |
@@ -239,9 +245,6 @@ pub fn gen_node(node: &SyntaxNode) -> FormatDocumentResult<PrintItemBuffer> {
              SyntaxKind::Sample |
              SyntaxKind::First |
              SyntaxKind::Either |
-             SyntaxKind::BuiltinValueName |
-             SyntaxKind::InterpolateSamplingName |
-             SyntaxKind::InterpolateTypeName |
              SyntaxKind::Else |
              SyntaxKind::Enable |
              SyntaxKind::False |

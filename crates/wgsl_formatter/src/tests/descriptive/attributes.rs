@@ -62,7 +62,7 @@ pub fn format_attr_with_text_arguments() {
     check(
         "
         @
-        builtin
+        thingy
         (
         magic,
         thing
@@ -70,7 +70,7 @@ pub fn format_attr_with_text_arguments() {
         fn main() {}
         ",
         expect![[r#"
-            @builtin(magic, thing)
+            @thingy(magic, thing)
             fn main() {}
         "#]],
     );
@@ -134,17 +134,17 @@ pub fn format_comments_in_attr_with_multiple_arguments() {
 pub fn format_comments_in_attr_with_text_arguments() {
     check_comments(
         "
-        ## @ ## builtin ## ( ## magic ## , ## thing ## ) ## fn ## main() {}
+        ## @ ## thingy ## ( ## magic ## , ## thing ## ) ## fn ## main() {}
         ",
         expect![[r#"
             /* 0 */
-            @ /* 1 */ builtin /* 2 */ (/* 3 */ magic, /* 4 */ /* 5 */ thing /* 6 */) /* 7 */
+            @ /* 1 */ thingy /* 2 */ (/* 3 */ magic, /* 4 */ /* 5 */ thing /* 6 */) /* 7 */
             fn /* 8 */ main() {}
         "#]],
         expect![[r#"
             // 0
             @ // 1
-            builtin // 2
+            thingy // 2
             (
                 // 3
                 magic, // 4
