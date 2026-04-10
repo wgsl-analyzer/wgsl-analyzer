@@ -201,7 +201,7 @@ attribute:
 			| 'location' '(' expression [','] ')' @location_attr
 			| 'must_use' @must_use_attr
 			| 'size' '(' expression [','] ')'@size_attr
-			| workgroup_size_attr
+			| workgroup_size_attr @workgroup_size_attr
 			| 'vertex' @vertex_attr
 			| 'fragment' @fragment_attr
 			| 'compute' @compute_attr
@@ -225,7 +225,7 @@ interpolate_sampling_name:
 	| 'either'
 ;
 
-workgroup_size_attr:
+workgroup_size_attr^:
 	'workgroup_size' '(' expression
 		[ ',' expression
 			[ ',' expression
