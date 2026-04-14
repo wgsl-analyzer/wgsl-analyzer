@@ -352,9 +352,9 @@ pub fn gen_return_statement(
         formatted.extend(gen_expression(&item_expression, true)?);
     }
     formatted.extend(gen_comments(&comments_after_expression));
-    formatted.discourage(RequestItem::Space);
 
     if include_semicolon {
+        formatted.discourage(RequestItem::Space);
         formatted.push_sc(sc!(";"));
     }
     formatted.finish_indent();
