@@ -30,7 +30,7 @@ use crate::format::{
     },
     gen_import::{
         gen_import_collection, gen_import_item, gen_import_package_relative, gen_import_path,
-        gen_import_super_relative,
+        gen_import_statement, gen_import_super_relative,
     },
     gen_path::gen_path,
     gen_source_file::gen_source_file,
@@ -40,7 +40,6 @@ use crate::format::{
         gen_loop_statement, gen_return_statement, gen_while_statement,
     },
     gen_statement_compound::gen_compound_statement,
-    gen_statement_import::gen_import_statement,
     gen_struct::{gen_struct_body, gen_struct_declaration, gen_struct_member},
     gen_switch_statement::{
         gen_switch_body, gen_switch_body_case, gen_switch_case_default_selector,
@@ -166,7 +165,7 @@ pub fn gen_node(node: &SyntaxNode) -> FormatDocumentResult<PrintItemBuffer> {
              SyntaxKind::EnableExtensionName(node) => gen_enable_extension_name(&node),
              SyntaxKind::RequiresDirective(node) => gen_requires_directive(&node),
              SyntaxKind::LanguageExtensionName(node) => gen_language_extension_name(&node),
-             SyntaxKind::ImportStatement(node) => gen_import_statement(&node),
+             SyntaxKind::ImportStatement(node) => gen_import_statement(&node, needs_semicolon(node.syntax().parent())),
              SyntaxKind::DiagnosticControl(node) => gen_diagnostic_control(&node),
              SyntaxKind::DiagnosticAttribute(node) => gen_diagnostic_attribute(&node),
              SyntaxKind::DiagnosticDirective(node) => gen_diagnostic_directive(&node),
