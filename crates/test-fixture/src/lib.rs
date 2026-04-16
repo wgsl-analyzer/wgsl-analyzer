@@ -151,7 +151,6 @@ impl ChangeFixture {
                     edition: meta.edition,
                     display_name: Some(krate.clone()),
                     dependencies: Vec::new(),
-                    cyclic_dependencies: Vec::new(),
                     origin,
                 };
                 let package_id = PackageId::from_raw(u32::try_from(roots.len()).unwrap());
@@ -177,7 +176,6 @@ impl ChangeFixture {
                     edition: meta.edition,
                     display_name: Some("wa_test_fixture".into()),
                     dependencies: Vec::new(),
-                    cyclic_dependencies: Vec::new(),
                     origin: PackageOrigin::Local,
                 };
                 roots.push((FileSet::default(), default_package));

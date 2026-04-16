@@ -46,8 +46,8 @@ export const runFlycheck = new lc.NotificationType<{
 export const viewSyntaxTree = new lc.RequestType<ViewSyntaxTreeParameters, string, void>(
 	"wgsl-analyzer/viewSyntaxTree",
 );
-export const viewCrateGraph = new lc.RequestType<ViewCrateGraphParameters, string, void>(
-	"wgsl-analyzer/viewCrateGraph",
+export const viewPackageGraph = new lc.RequestType<ViewPackageGraphParameters, string, void>(
+	"wgsl-analyzer/viewPackageGraph",
 );
 export const viewFileText = new lc.RequestType<lc.TextDocumentIdentifier, string, void>(
 	"wgsl-analyzer/viewFileText",
@@ -122,21 +122,21 @@ export const fetchDependencyList = new lc.RequestType<
 	void
 >("wgsl-analyzer/fetchDependencyList");
 
-export interface FetchDependencyGraphParameters {}
+export interface FetchPackageGraphParameters {}
 
-export interface FetchDependencyGraphResult {
-	crates: {
+export interface FetchPackageGraphResult {
+	packages: {
 		name: string;
 		version: string;
 		path: string;
 	}[];
 }
 
-export const fetchDependencyGraph = new lc.RequestType<
-	FetchDependencyGraphParameters,
-	FetchDependencyGraphResult,
+export const fetchPackageGraph = new lc.RequestType<
+	FetchPackageGraphParameters,
+	FetchPackageGraphResult,
 	void
->("wgsl-analyzer/fetchDependencyGraph");
+>("wgsl-analyzer/fetchPackageGraph");
 export type TestInfo = { runnable: Runnable };
 export type SyntaxTreeParameters = {
 	textDocument: lc.TextDocumentIdentifier;
@@ -145,7 +145,7 @@ export type SyntaxTreeParameters = {
 export type ViewSyntaxTreeParameters = {
 	textDocument: lc.TextDocumentIdentifier;
 };
-export type ViewCrateGraphParameters = { full: boolean };
+export type ViewPackageGraphParameters = { full: boolean };
 export type ViewItemTreeParameters = {
 	textDocument: lc.TextDocumentIdentifier;
 };
@@ -168,8 +168,8 @@ export const onEnter = new lc.RequestType<lc.TextDocumentPositionParams, lc.Text
 	"experimental/onEnter",
 );
 
-export const openCargoToml = new lc.RequestType<OpenWeslTomlParameters, lc.Location, void>(
-	"experimental/openCargoToml",
+export const openWeslToml = new lc.RequestType<OpenWeslTomlParameters, lc.Location, void>(
+	"experimental/openWeslToml",
 );
 
 export interface DocsUrls {

@@ -231,7 +231,7 @@ As a special case of the previous rule, do not hide control flow inside function
 
 ```rust
 // GOOD
-if cond {
+if condition {
     foo();
 }
 
@@ -243,7 +243,7 @@ fn foo() {
 bar();
 
 fn bar() {
-    if !cond {
+    if !condition {
         return;
     }
     ...
@@ -989,13 +989,13 @@ Mostly avoid `bool::then` and `Option::filter`.
 
 ```rust
 // GOOD
-if !x.cond() {
+if !x.condition() {
     return None;
 }
 Some(x)
 
 // BAD
-Some(x).filter(|it| it.cond())
+Some(x).filter(|item| item.condition())
 ```
 
 This rule is more "soft" then others, and boils down mostly to taste.
@@ -1015,13 +1015,13 @@ When ascribing types, avoid `_`
 
 ```rust
 // GOOD
-let mutable: Vec<T> = old.into_iter().map(|it| builder.make_mut(it)).collect();
+let mutable: Vec<T> = old.into_iter().map(|item| builder.make_mut(item)).collect();
 
 // BAD
-let mutable: Vec<_> = old.into_iter().map(|it| builder.make_mut(it)).collect();
+let mutable: Vec<_> = old.into_iter().map(|item| builder.make_mut(item)).collect();
 
 // BAD
-let mutable = old.into_iter().map(|it| builder.make_mut(it)).collect::<Vec<_>>();
+let mutable = old.into_iter().map(|item| builder.make_mut(item)).collect::<Vec<_>>();
 ```
 
 **Rationale:** consistency, readability.

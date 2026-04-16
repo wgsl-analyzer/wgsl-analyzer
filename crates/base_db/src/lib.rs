@@ -3,10 +3,12 @@ pub mod input;
 
 mod editioned_file_id;
 mod util_types;
+
 use std::{
     cell::RefCell,
-    hash::BuildHasherDefault,
-    panic,
+    fmt,
+    hash::{self, BuildHasherDefault},
+    ops, panic,
     sync::{Once, atomic::AtomicUsize},
 };
 
@@ -16,13 +18,13 @@ use rustc_hash::FxHasher;
 pub use salsa;
 use salsa::{Durability, Setter as _};
 pub use salsa_macros;
-use syntax::Parse;
+use syntax::{Parse, ast::Name};
 use triomphe::Arc;
 pub use util_types::*;
 pub use vfs::{AnchoredPath, AnchoredPathBuf, FileId, VfsPath, file_set::FileSet};
 
 pub use crate::editioned_file_id::{EditionedFileId, RawEditionedFileId};
-use crate::input::{PackageData, PackageId};
+use crate::input::{Dependency, PackageData, PackageId, PackageName};
 
 #[macro_export]
 macro_rules! impl_intern_key {
@@ -266,7 +268,86 @@ pub struct SourceRootInput {
 pub struct Package {
     #[returns(ref)]
     pub data: PackageData,
+    // TODO: separate display name and version into extra_data
+    // https://github.com/wgsl-analyzer/wgsl-analyzer/issues/999
+    // /// Package data that is not needed for analysis.
+    // ///
+    // /// This is split into a separate field to increase incrementality.
+    // #[returns(ref)]
+    // pub extra_data: ExtraPackageData,
     pub package_id: PackageId,
+}
+
+/// Package data unrelated to analysis.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ExtraPackageData {
+    pub version: Option<String>,
+    /// A name used in the package's project declaration: for Cargo projects,
+    /// its `[package].name` can be different for other project types or even
+    /// absent (a dummy package for the code snippet, for example).
+    ///
+    /// For purposes of analysis, packages are anonymous (only names in
+    /// `Dependency` matters). This name should only be used for UI.
+    pub display_name: Option<PackageDisplayName>,
+}
+
+#[expect(clippy::struct_field_names, reason = "no better idea")]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct PackageDisplayName {
+    // The name we use to display various paths (with `_`).
+    package_name: PackageName,
+    // The name as specified in, for example, wesl.toml (with `-`).
+    canonical_name: String,
+}
+
+impl PackageDisplayName {
+    #[must_use]
+    pub const fn canonical_name(&self) -> &String {
+        &self.canonical_name
+    }
+
+    #[must_use]
+    pub const fn package_name(&self) -> &PackageName {
+        &self.package_name
+    }
+}
+
+impl From<PackageName> for PackageDisplayName {
+    fn from(package_name: PackageName) -> Self {
+        let canonical_name = package_name.to_string();
+        Self {
+            package_name,
+            canonical_name,
+        }
+    }
+}
+
+impl fmt::Display for PackageDisplayName {
+    fn fmt(
+        &self,
+        f: &mut fmt::Formatter<'_>,
+    ) -> fmt::Result {
+        self.package_name.fmt(f)
+    }
+}
+
+impl ops::Deref for PackageDisplayName {
+    type Target = String;
+
+    fn deref(&self) -> &String {
+        &self.package_name
+    }
+}
+
+impl PackageDisplayName {
+    #[must_use]
+    pub fn from_canonical_name(canonical_name: &str) -> Self {
+        let package_name = PackageName::normalize_dashes(canonical_name);
+        Self {
+            package_name,
+            canonical_name: canonical_name.to_owned(),
+        }
+    }
 }
 
 /// Database which stores all significant input facts: source code and project
@@ -409,4 +490,30 @@ impl DbPanicContext {
         }
         CTX.with(|ctx| function(&mut ctx.borrow_mut()));
     }
+}
+
+#[salsa::input(singleton, debug)]
+struct AllPackages {
+    packages: std::sync::Arc<[Package]>,
+}
+
+pub fn set_all_packages_with_durability<Packages: IntoIterator<Item = Package>>(
+    database: &mut dyn salsa::Database,
+    packages: Packages,
+    durability: Durability,
+) {
+    AllPackages::try_get(database)
+        .unwrap_or_else(|| AllPackages::new(database, std::sync::Arc::default()))
+        .set_packages(database)
+        .with_durability(durability)
+        .to(packages.into_iter().collect());
+}
+
+/// Returns the packages in topological order.
+///
+/// **Warning**: do not use this query in `hir-*` crates! It kills incrementality across crate metadata modifications.
+pub fn all_packages(database: &dyn salsa::Database) -> std::sync::Arc<[Package]> {
+    AllPackages::try_get(database).map_or_else(std::sync::Arc::default, |all_packages| {
+        all_packages.packages(database)
+    })
 }

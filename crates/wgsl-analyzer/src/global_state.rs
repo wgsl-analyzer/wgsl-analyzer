@@ -369,7 +369,6 @@ impl GlobalState {
                     edition: package.edition,
                     display_name: package.display_name.clone(),
                     dependencies,
-                    cyclic_dependencies: Vec::new(),
                     origin: package.origin,
                 })
             });

@@ -468,13 +468,13 @@ export function viewItemTree(ctx: CtxInit): Cmd {
 	};
 }
 
-function crateGraph(ctx: CtxInit, full: boolean): Cmd {
+function packageGraph(ctx: CtxInit, full: boolean): Cmd {
 	return async () => {
 		const nodeModulesPath = vscode.Uri.file(path.join(ctx.extensionPath, "node_modules"));
 
 		const panel = vscode.window.createWebviewPanel(
-			"wgsl-analyzer.crate-graph",
-			"wgsl-analyzer crate graph",
+			"wgsl-analyzer.package-graph",
+			"wgsl-analyzer package graph",
 			vscode.ViewColumn.Two,
 			{
 				enableScripts: true,
@@ -486,7 +486,7 @@ function crateGraph(ctx: CtxInit, full: boolean): Cmd {
 			full: full,
 		};
 		const client = ctx.client;
-		const dot = await client.sendRequest(wa.viewCrateGraph, parameters);
+		const dot = await client.sendRequest(wa.viewPackageGraph, parameters);
 		const uri = panel.webview.asWebviewUri(nodeModulesPath);
 
 		const html = `
@@ -536,12 +536,12 @@ function crateGraph(ctx: CtxInit, full: boolean): Cmd {
 	};
 }
 
-export function viewCrateGraph(ctx: CtxInit): Cmd {
-	return crateGraph(ctx, false);
+export function viewPackageGraph(ctx: CtxInit): Cmd {
+	return packageGraph(ctx, false);
 }
 
-export function viewFullDependencyGraph(ctx: CtxInit): Cmd {
-	return crateGraph(ctx, true);
+export function viewFullPackageGraph(ctx: CtxInit): Cmd {
+	return packageGraph(ctx, true);
 }
 
 export function reloadWorkspace(ctx: CtxInit): Cmd {

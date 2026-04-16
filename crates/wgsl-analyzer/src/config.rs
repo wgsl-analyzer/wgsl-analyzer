@@ -267,7 +267,7 @@ impl Config {
     #[must_use]
     pub fn new(
         root_path: AbsPathBuf,
-        caps: lsp_types::ClientCapabilities,
+        capabilities: lsp_types::ClientCapabilities,
         workspace_roots: Vec<AbsPathBuf>,
         client_info: Option<lsp_types::ClientInfo>,
     ) -> Self {
@@ -275,7 +275,7 @@ impl Config {
 
         Self {
             workspace_roots,
-            capabilities: ClientCapabilities::new(caps),
+            capabilities: ClientCapabilities::new(capabilities),
             // snippets: Default::default(),
             root_path,
             client_info: client_info.map(|client_info| ClientInfo {

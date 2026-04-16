@@ -958,6 +958,9 @@ impl GlobalState {
             .on::<NO_RETRY, lsp::extensions::ViewSyntaxTree>(handlers::request::view_syntax_tree)
             .on::<NO_RETRY, lsp::extensions::DebugCommand>(handlers::request::debug_command)
             .on::<NO_RETRY, lsp::extensions::FullSource>(handlers::request::full_source)
+            .on::<RETRY, lsp::extensions::ViewPackageGraph>(
+                handlers::request::handle_view_package_graph,
+            )
             .on::<NO_RETRY, lt::request::SignatureHelpRequest>(
                 handlers::request::handle_signature_help,
             )

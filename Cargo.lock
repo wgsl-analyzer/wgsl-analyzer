@@ -54,6 +54,7 @@ dependencies = [
  "dashmap",
  "edition",
  "expect-test",
+ "la-arena",
  "query-group-macro",
  "rowan",
  "rustc-hash 2.1.2",
@@ -298,6 +299,12 @@ name = "dissimilar"
 version = "1.0.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "aeda16ab4059c5fd2a83f2b9c9e9c981327b18aa8e3b313f7e6563799d4f093e"
+
+[[package]]
+name = "dot"
+version = "0.1.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a74b6c4d4a1cff5f454164363c16b72fa12463ca6b31f4b5f2035a65fa3d5906"
 
 [[package]]
 name = "dprint-core"
@@ -626,6 +633,7 @@ name = "ide"
 version = "0.0.0"
 dependencies = [
  "base-db",
+ "dot",
  "expect-test",
  "hir",
  "hir-def",
@@ -683,6 +691,7 @@ dependencies = [
  "rustc-hash 2.1.2",
  "salsa",
  "salsa-macros",
+ "tracing",
  "triomphe",
  "vfs",
 ]

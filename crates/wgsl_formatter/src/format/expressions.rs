@@ -131,7 +131,7 @@ fn format_field_expression(syntax: &SyntaxNode) -> Option<()> {
     Some(())
 }
 
-/// Formats prefix expressions: `- y` → `-y`, `! cond` → `!cond`, etc.
+/// Formats prefix expressions: `- y` → `-y`, `! condition` → `!condition`, etc.
 fn format_prefix_expression(syntax: &SyntaxNode) -> Option<()> {
     let prefix = ast::PrefixExpression::cast(syntax.clone())?;
     let first = prefix.syntax().first_token()?;
