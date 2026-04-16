@@ -215,7 +215,7 @@ impl Files {
         id: vfs::FileId,
     ) -> FileSourceRootInput {
         let Some(file_source_root) = self.file_source_roots.get(&id) else {
-            panic!("Unable to get `FileSourceRootInput` with `vfs::FileId` ({id:?}); this is a bug",)
+            panic!("unable to get `FileSourceRootInput` with `vfs::FileId` ({id:?}); this is a bug")
         };
         *file_source_root
     }
