@@ -32,7 +32,7 @@
 		}
 	},
 	"engines": {
-		"vscode": "^1.110.0",
+		"vscode": "^1.115.0",
 		"pnpm": "^10.32.0"
 	},
 	"packageManager": "pnpm@10.32.0",
