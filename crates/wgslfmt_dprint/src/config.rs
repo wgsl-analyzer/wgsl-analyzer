@@ -1,7 +1,7 @@
 use dprint_core::{
     configuration::{
-        ConfigKeyMap, ConfigurationDiagnostic, GlobalConfiguration, get_nullable_value,
-        get_unknown_property_diagnostics,
+        ConfigKeyMap, ConfigurationDiagnostic, GlobalConfiguration, NewLineKind,
+        get_nullable_value, get_unknown_property_diagnostics,
     },
     plugins::{FileMatchingInfo, PluginResolveConfigurationResult},
 };
@@ -15,20 +15,31 @@ pub(crate) fn resolve_config(
 
     let mut options = FormattingOptions::default();
 
-    if let Some(trailing_commas) =
-        get_nullable_value::<Policy>(&mut config, "trailingCommas", &mut diagnostics)
-    {
-        options.trailing_commas = trailing_commas;
-    }
+    // if let Some(trailing_commas) =
+    //     get_nullable_value::<Policy>(&mut config, "trailingCommas", &mut diagnostics)
+    // {
+    //     options.trailing_commas = trailing_commas;
+    // }
 
-    if let Some(indent_symbol) =
-        get_nullable_value::<String>(&mut config, "indentSymbol", &mut diagnostics)
-    {
-        options.indent_symbol = indent_symbol;
-    } else if global_config.use_tabs == Some(true) {
-        options.indent_symbol = "\t".into();
-    } else if let Some(indent_width) = global_config.indent_width {
-        options.indent_symbol = " ".repeat(indent_width.into());
+    // We follow
+    // https://github.com/dprint/dprint-plugin-typescript/blob/main/src/configuration/resolve_config.rs
+    // for the naming of similar options
+
+    if let Some(max_line_width) = get_nullable_value(&mut config, "lineWidth", &mut diagnostics) {
+        options.max_line_width = max_line_width;
+    }
+    if let Some(indent_width) = get_nullable_value(&mut config, "indentWidth", &mut diagnostics) {
+        options.indent_width = indent_width;
+    }
+    if let Some(use_tabs) = get_nullable_value(&mut config, "useTabs", &mut diagnostics) {
+        options.indent_style = if use_tabs {
+            wgsl_formatter::IndentStyle::Tabs
+        } else {
+            wgsl_formatter::IndentStyle::Spaces
+        };
+    }
+    if let Some(new_line_kind) = get_nullable_value(&mut config, "newLineKind", &mut diagnostics) {
+        options.line_break_style = new_line_kind;
     }
 
     diagnostics.extend(get_unknown_property_diagnostics(config));

@@ -65,6 +65,7 @@ paths.workspace = true
 camino.workspace = true
 base-db.workspace = true
 line-index.workspace = true
+wgsl-formatter.workspace = true
 edition.workspace = true
 
 [dev-dependencies]

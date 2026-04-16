@@ -1,0 +1,204 @@
+#![cfg(test)]
+
+use expect_test::expect;
+use parser::Edition;
+
+use crate::{
+    FormattingOptions,
+    test_util::{assert_out_of_scope, check, check_comments, check_with_options},
+};
+
+#[test]
+fn format_fn_header_with_parameters_1() {
+    check(
+        "fn        main         (           a    :    b )  -> f32   {}",
+        expect![["
+            fn main(a: b) -> f32 {}
+        "]],
+    );
+}
+
+#[test]
+fn format_fn_header_with_parameters_2() {
+    check(
+        "fn  main ( a :  b,  c : d )  -> f32   {}",
+        expect![["
+            fn main(a: b, c: d) -> f32 {}
+            "]],
+    );
+}
+
+#[test]
+fn format_fn_header_no_return_1() {
+    check(
+        "fn  main ( a :  b )    {}",
+        expect![["
+            fn main(a: b) {}
+        "]],
+    );
+}
+
+#[test]
+fn format_fn_header_long_name() {
+    check(
+        "fn  this_is_a_very_long_name_who_knows_when_it_will_end_because_it_just_goes_on_and_on_and_on( a :  b,c:d )  -> f32   {}",
+        expect![["
+            fn this_is_a_very_long_name_who_knows_when_it_will_end_because_it_just_goes_on_and_on_and_on(
+                a: b,
+                c: d,
+            ) -> f32 {}
+            "]],
+    );
+}
+
+#[test]
+fn format_fn_header_comma_oneline() {
+    check(
+        "fn main(a: b , c: d ,)  -> f32   {}",
+        expect![["
+            fn main(a: b, c: d) -> f32 {}
+            "]],
+    );
+}
+
+#[test]
+fn format_fn_header_comma_multiline_wide() {
+    check_with_options(
+        "fn main(a: b , c: d ,)  -> f32   {}",
+        &expect![["
+            fn main(
+                a: b,
+                c: d,
+            ) -> f32 {}
+            "]],
+        &crate::FormattingOptions {
+            max_line_width: 26, //Just shy of what the fn would be laid out as on a single line
+            ..Default::default()
+        },
+        Edition::LATEST,
+    );
+}
+
+#[test]
+fn format_fn_header_comma_multiline_narrow() {
+    check_with_options(
+        "fn main(a: b , c: d ,)  -> f32   {}",
+        &expect![["
+            fn main(
+                a: b,
+                c: d,
+            ) -> f32 {}
+            "]],
+        &crate::FormattingOptions {
+            max_line_width: 4, //Just shy of what the fn would be laid out as on a single line
+            ..Default::default()
+        },
+        Edition::LATEST,
+    );
+}
+
+#[test]
+fn format_fn_header_no_ws() {
+    check(
+        "fn main(a:b)->f32{}",
+        expect![["
+            fn main(a: b) -> f32 {}
+        "]],
+    );
+}
+
+#[test]
+fn format_fn_newline_1() {
+    check(
+        "fn main(
+    a:b
+)->f32{}",
+        expect![["
+            fn main(a: b) -> f32 {}
+            "]],
+    );
+}
+
+#[test]
+fn format_fn_newline_2() {
+    check(
+        "fn main(
+    a:b, c:d)->f32{}",
+        expect![["
+            fn main(a: b, c: d) -> f32 {}
+            "]],
+    );
+}
+
+#[test]
+fn format_fn_newline_3() {
+    check(
+        "fn main(
+    a:b,
+    c:d
+)->f32{}",
+        expect![["
+            fn main(a: b, c: d) -> f32 {}
+            "]],
+    );
+}
+
+#[test]
+fn format_multiple_fns() {
+    check(
+        "
+ fn  main( a:  b )  -> f32   {}
+  fn  main( a:  b )  -> f32   {}
+",
+        expect![["
+                fn main(a: b) -> f32 {}
+                fn main(a: b) -> f32 {}
+            "]],
+    );
+}
+
+#[test]
+fn format_fn_header_incomplete() {
+    assert_out_of_scope("fn  main ( a ", "We don't try to guess missing code.");
+}
+
+#[test]
+fn format_comments_in_fn_signature() {
+    check_comments(
+        "
+        ## fn ## main ## ( ## a ## : ## b ## , ## c ## : ## d ## ) ## -> ## f32 ## { ## } ##
+        ",
+        expect![[r#"
+            /* 0 */
+            fn /* 1 */ main /* 2 */ (
+                /* 3 */
+                a: /* 4 */ /* 5 */ b, /* 6 */ /* 7 */
+                c: /* 8 */ /* 9 */ d, /* 10 */
+            ) /* 11 */ -> /* 12 */ f32 /* 13 */ {
+                /* 14 */
+            }
+            /* 15 */
+        "#]],
+        expect![[r#"
+            // 0
+            fn // 1
+            main // 2
+            (
+                // 3
+                a: // 4
+                // 5
+                b, // 6
+                // 7
+                c: // 8
+                // 9
+                d, // 10
+            ) // 11
+            -> // 12
+            f32 // 13
+            {
+                // 14
+            }
+            // 15
+        "#]],
+    );
+}

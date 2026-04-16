@@ -3,7 +3,7 @@
     reason = "handlers should have a specific signature"
 )]
 
-use base_db::{FilePosition, FileRange, TextRange};
+use base_db::{FilePosition, FileRange, TextLen as _, TextRange};
 use hir::diagnostics::DiagnosticsConfig;
 use ide::{Cancellable, HoverAction, HoverGotoTypeData, diagnostics::Severity};
 use lsp_types::{
@@ -114,15 +114,61 @@ pub(crate) fn handle_formatting(
     let Some(file_id) = from_proto::file_id(&snap, &parameters.text_document.uri)? else {
         return Ok(None);
     };
-    let Some(node) = snap.analysis.format(file_id, None)? else {
+    let source_root = snap.analysis.source_root_id(file_id).ok();
+    let formatting_config = &snap.config.wgslfmt(source_root);
+
+    let Some(after) = snap.analysis.format(formatting_config, file_id, None)? else {
         return Ok(None);
     };
     let line_index = snap.file_line_index(file_id)?;
 
     let before = snap.analysis.file_text(file_id)?;
-    let after = node.to_string();
+
+    let diff = diff::diff(&before, &after.formatted);
+    let edits = to_proto::text_edit_vec(&line_index, diff);
+    Ok(Some(edits))
+}
+
+pub(crate) fn handle_range_formatting(
+    snap: GlobalStateSnapshot,
+    parameters: lsp_types::DocumentRangeFormattingParams,
+) -> Result<Option<Vec<lsp_types::TextEdit>>> {
+    let Some(file_id) = from_proto::file_id(&snap, &parameters.text_document.uri)? else {
+        return Ok(None);
+    };
+    let source_root = snap.analysis.source_root_id(file_id).ok();
+    let formatting_config = &snap.config.wgslfmt(source_root);
+
+    let document_uri = &parameters.text_document.uri;
+    let FileRange { file_id, range } = try_default!(from_proto::file_range(
+        &snap,
+        &TextDocumentIdentifier::new(document_uri.to_owned()),
+        parameters.range,
+    )?);
+    let line_index = snap.file_line_index(file_id)?;
+    let range = TextRange::new(
+        range.start().min(line_index.index.len()),
+        range.end().min(line_index.index.len()),
+    );
+
+    let Some(formatted_range) = snap
+        .analysis
+        .format(formatting_config, file_id, Some(range))?
+    else {
+        return Ok(None);
+    };
+
+    let before = snap.analysis.file_text(file_id)?;
+
+    let range_before = TextRange::up_to(formatted_range.range.start());
+    let range_after = TextRange::new(formatted_range.range.end(), before.text_len());
+    let after: String = format!(
+        "{}{}{}",
+        &before[range_before], formatted_range.formatted, &before[range_after]
+    );
 
     let diff = diff::diff(&before, &after);
+    let line_index = snap.file_line_index(file_id)?;
     let edits = to_proto::text_edit_vec(&line_index, diff);
     Ok(Some(edits))
 }

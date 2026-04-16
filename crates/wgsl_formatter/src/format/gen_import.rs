@@ -1,0 +1,309 @@
+use dprint_core_macros::sc;
+use itertools::{Itertools, Position, put_back};
+use parser::SyntaxKind;
+use syntax::{
+    AstNode as _,
+    ast::{self, ImportCollection, ImportItem, ImportPath, ImportTree},
+};
+
+use crate::format::{
+    ast_parse::{
+        parse_end, parse_many_comments_and_blankspace, parse_node, parse_node_optional,
+        parse_token, parse_token_optional,
+    },
+    gen_comments::{Comment, gen_comment, gen_comments, parse_comment_optional},
+    gen_name::gen_name,
+    gen_path::gen_path,
+    helpers::todo_verbatim_wesl,
+    multiline_group::MultilineGroup,
+    print_item_buffer::{PrintItemBuffer, request_folder::RequestItem},
+    reporting::FormatDocumentResult,
+};
+
+pub fn gen_import_package_relative(
+    node: &ast::ImportPackageRelative
+) -> FormatDocumentResult<PrintItemBuffer> {
+    // ==== Parse ====
+    let mut syntax = put_back(node.syntax().children_with_tokens());
+    parse_token(&mut syntax, ast::SyntaxKind::Package)?;
+    parse_token(&mut syntax, ast::SyntaxKind::ColonColon)?;
+    parse_end(&mut syntax)?;
+
+    // ==== Format ====
+    let mut formatted = PrintItemBuffer::new();
+    formatted.push_sc(sc!("package"));
+    formatted.push_sc(sc!("::"));
+    Ok(formatted)
+}
+pub fn gen_import_super_relative(
+    node: &ast::ImportSuperRelative
+) -> FormatDocumentResult<PrintItemBuffer> {
+    // ==== Parse ====
+    let mut syntax = put_back(node.syntax().children_with_tokens());
+
+    enum SuperRelativeItem {
+        Super,
+        Comment(Comment),
+    }
+
+    let mut items = Vec::new();
+
+    #[expect(clippy::redundant_pattern_matching, reason = "Looks neater")]
+    loop {
+        if let Some(_) = parse_token_optional(&mut syntax, SyntaxKind::Super) {
+            items.push(SuperRelativeItem::Super);
+        } else if let Some(_) = parse_token_optional(&mut syntax, SyntaxKind::Blankspace) {
+            // We ignore blankspace
+        } else if let Some(comment) = parse_comment_optional(&mut syntax) {
+            items.push(SuperRelativeItem::Comment(comment));
+        } else {
+            break;
+        }
+        parse_token_optional(&mut syntax, ast::SyntaxKind::ColonColon);
+    }
+
+    parse_end(&mut syntax)?;
+
+    // ==== Format ====
+    let mut formatted = PrintItemBuffer::new();
+
+    for item in items {
+        match item {
+            SuperRelativeItem::Super => {
+                formatted.push_sc(sc!("super"));
+                formatted.push_sc(sc!("::"));
+            },
+            SuperRelativeItem::Comment(comment) => {
+                formatted.extend(gen_comment(&comment));
+            },
+        }
+    }
+    Ok(formatted)
+}
+pub fn gen_import_item(node: &ast::ImportItem) -> FormatDocumentResult<PrintItemBuffer> {
+    // ==== Parse ====
+    let mut syntax = put_back(node.syntax().children_with_tokens());
+    let item_name = parse_node::<ast::Name>(&mut syntax)?;
+    let item_comments_after_name = parse_many_comments_and_blankspace(&mut syntax)?;
+    let item_alias = if parse_token_optional(&mut syntax, SyntaxKind::As).is_some() {
+        let item_comments_after_as = parse_many_comments_and_blankspace(&mut syntax)?;
+        let item_name = parse_node::<ast::Name>(&mut syntax)?;
+        Some((item_comments_after_as, item_name))
+    } else {
+        None
+    };
+    parse_end(&mut syntax)?;
+
+    // ==== Format ====
+    let mut formatted = PrintItemBuffer::new();
+    formatted.extend(gen_name(&item_name)?);
+    formatted.extend(gen_comments(&item_comments_after_name));
+    if let Some((item_comments_after_as, item_alias)) = item_alias {
+        formatted.expect(RequestItem::Space);
+        formatted.push_sc(sc!("as"));
+        formatted.expect(RequestItem::Space);
+        formatted.extend(gen_comments(&item_comments_after_as));
+        formatted.extend(gen_name(&item_alias)?);
+    }
+    Ok(formatted)
+}
+pub fn gen_import_path(node: &ast::ImportPath) -> FormatDocumentResult<PrintItemBuffer> {
+    // ==== Parse ====
+    let mut syntax = put_back(node.syntax().children_with_tokens());
+    let item_name = parse_node::<ast::Name>(&mut syntax)?;
+    parse_token(&mut syntax, SyntaxKind::ColonColon)?;
+    let item_path_rest = parse_node_optional::<ImportPath>(&mut syntax);
+    let item_collection_rest = parse_node_optional::<ImportCollection>(&mut syntax);
+    let item_item = parse_node_optional::<ImportItem>(&mut syntax);
+    parse_end(&mut syntax)?;
+
+    // ==== Format ====
+    let mut formatted = PrintItemBuffer::new();
+    formatted.extend(gen_name(&item_name)?);
+    formatted.push_sc(sc!("::"));
+    if let Some(path) = item_path_rest {
+        formatted.extend(gen_import_path(&path)?);
+    }
+    if let Some(collection) = item_collection_rest {
+        formatted.extend(gen_import_collection(&collection)?);
+    }
+    if let Some(item) = item_item {
+        formatted.extend(gen_import_item(&item)?);
+    }
+    Ok(formatted)
+}
+
+pub struct CmpImportTree<'a>(&'a ImportTree);
+impl<'a> PartialEq for CmpImportTree<'a> {
+    fn eq(
+        &self,
+        other: &Self,
+    ) -> bool {
+        self.cmp(other) == std::cmp::Ordering::Equal
+    }
+}
+impl<'a> Eq for CmpImportTree<'a> {}
+impl<'a> PartialOrd for CmpImportTree<'a> {
+    fn partial_cmp(
+        &self,
+        other: &Self,
+    ) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(&other))
+    }
+}
+impl<'a> Ord for CmpImportTree<'a> {
+    fn cmp(
+        &self,
+        other: &Self,
+    ) -> std::cmp::Ordering {
+        let a = self;
+        let b = other;
+
+        match (a.0, b.0) {
+            (ImportTree::ImportItem(a), ImportTree::ImportItem(b)) => {
+                let a = a.name().and_then(|it| it.ident_token());
+                let b = b.name().and_then(|it| it.ident_token());
+                let a = a.as_ref().map(|it| it.text());
+                let b = b.as_ref().map(|it| it.text());
+                a.cmp(&b)
+            },
+            (ImportTree::ImportPath(a_path), ImportTree::ImportPath(b_path)) => {
+                let a = a_path.name().and_then(|it| it.ident_token());
+                let b = b_path.name().and_then(|it| it.ident_token());
+                let a = a.as_ref().map(|it| it.text());
+                let b = b.as_ref().map(|it| it.text());
+                match a.cmp(&b) {
+                    std::cmp::Ordering::Equal => {
+                        let a = a_path.item();
+                        let a = a.as_ref().map(CmpImportTree);
+                        let b = b_path.item();
+                        let b = b.as_ref().map(CmpImportTree);
+                        a.cmp(&b)
+                    },
+                    order => order,
+                }
+            },
+
+            (ImportTree::ImportCollection(_), ImportTree::ImportCollection(_)) => {
+                todo!()
+            },
+
+            (ImportTree::ImportItem(_), _) => std::cmp::Ordering::Less,
+            (_, ImportTree::ImportItem(_)) => std::cmp::Ordering::Greater,
+            (ImportTree::ImportCollection(import_collection), _) => std::cmp::Ordering::Greater,
+            (_, ImportTree::ImportCollection(import_collection)) => std::cmp::Ordering::Less,
+        }
+    }
+}
+
+pub fn gen_import_collection(
+    node: &ast::ImportCollection
+) -> FormatDocumentResult<PrintItemBuffer> {
+    // ==== Parse ====
+    let mut syntax = put_back(node.syntax().children_with_tokens());
+
+    let mut items = Vec::new();
+
+    parse_token(&mut syntax, SyntaxKind::BraceLeft)?;
+
+    loop {
+        let before = parse_many_comments_and_blankspace(&mut syntax)?;
+        // This also allows ImportCollection directly inside ImportCollection, but
+        // its no problems to be more general. It does make the code simpler.
+        if let Some(item) = parse_node_optional::<ImportTree>(&mut syntax) {
+            let after = parse_many_comments_and_blankspace(&mut syntax)?;
+            items.push((before, Some(item), after));
+        }
+
+        if parse_token_optional(&mut syntax, SyntaxKind::Comma).is_none() {
+            break;
+        }
+    }
+
+    parse_token(&mut syntax, SyntaxKind::BraceRight)?;
+
+    parse_end(&mut syntax)?;
+
+    // TODO(MonaMayrhofer) unsure about the performance of this... also this currently includes comments in the sorting...
+    items.sort_by(|(_, a, _), (_, b, _)| {
+        let a = a.as_ref().map(CmpImportTree);
+        let b = b.as_ref().map(CmpImportTree);
+        a.cmp(&b)
+    });
+
+    // ==== Format ====
+    let mut formatted = PrintItemBuffer::new();
+
+    formatted.push_sc(sc!("{"));
+
+    for (position, (before, item, after)) in items.iter().with_position() {
+        formatted.extend(gen_comments(before));
+        if let Some(item) = item {
+            match item {
+                ImportTree::ImportPath(path) => formatted.extend(gen_import_path(path)?),
+                ImportTree::ImportItem(item) => formatted.extend(gen_import_item(item)?),
+                // This case will never happen but it makes the code simpler to just use ImportTree here
+                ImportTree::ImportCollection(collection) => {
+                    formatted.extend(gen_import_collection(collection)?);
+                },
+            }
+        }
+        formatted.extend(gen_comments(after));
+        formatted.discourage(RequestItem::Space);
+
+        if position != Position::Last && position != Position::Only {
+            formatted.push_sc(sc!(","));
+            formatted.expect(RequestItem::Space);
+        }
+    }
+
+    formatted.push_sc(sc!("}"));
+
+    Ok(formatted)
+}
+
+pub fn gen_import_statement(
+    node: &ast::ImportStatement,
+    include_semicolon: bool,
+) -> FormatDocumentResult<PrintItemBuffer> {
+    // ==== Parse ====
+    let mut syntax = put_back(node.syntax().children_with_tokens());
+    parse_token(&mut syntax, ast::SyntaxKind::Import)?;
+    let item_comments_after_import = parse_many_comments_and_blankspace(&mut syntax);
+
+    let item_package_relative = parse_node_optional::<ast::ImportPackageRelative>(&mut syntax);
+    let item_super_relative = parse_node_optional::<ast::ImportSuperRelative>(&mut syntax);
+    let item_path = parse_node_optional::<ast::ImportPath>(&mut syntax);
+    let item_collection = parse_node_optional::<ast::ImportCollection>(&mut syntax);
+    let item_item = parse_node_optional::<ast::ImportItem>(&mut syntax);
+    parse_token(&mut syntax, ast::SyntaxKind::Semicolon)?;
+    parse_end(&mut syntax)?;
+
+    // ==== Format ====
+    let mut formatted = PrintItemBuffer::new();
+    formatted.push_sc(sc!("import"));
+    formatted.expect(RequestItem::Space);
+
+    if let Some(package_relative) = item_package_relative {
+        formatted.extend(gen_import_package_relative(&package_relative)?);
+    }
+    if let Some(super_relative) = item_super_relative {
+        formatted.extend(gen_import_super_relative(&super_relative)?);
+    }
+    if let Some(path) = item_path {
+        formatted.extend(gen_import_path(&path)?);
+    }
+    if let Some(collection) = item_collection {
+        formatted.extend(gen_import_collection(&collection)?);
+    }
+    if let Some(item) = item_item {
+        formatted.extend(gen_import_item(&item)?);
+    }
+
+    if include_semicolon {
+        formatted.discourage(RequestItem::Space);
+        formatted.push_sc(sc!(";"));
+    }
+
+    Ok(formatted)
+}

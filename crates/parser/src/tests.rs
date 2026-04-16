@@ -6,6 +6,7 @@ mod diagnostic;
 mod expression;
 mod imports;
 mod keywords;
+mod statement;
 
 use expect_test::{Expect, expect};
 

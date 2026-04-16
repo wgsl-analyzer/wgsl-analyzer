@@ -11,7 +11,7 @@ pub struct Args {
     /// Exits with 1 and prints a diff if formatting is required.
     pub check: bool,
     pub use_tabs: bool,
-    pub indent_width: Option<usize>,
+    pub indent_width: Option<u8>,
     pub output_format: OutputFormat,
     /// Files, directories, or glob patterns to format.
     /// Pass "-" to read from stdin.
@@ -117,7 +117,7 @@ Pass \"-\" to read from stdin",
         Self {
             check: matches.remove_one::<bool>("check").unwrap_or_default(),
             use_tabs: matches.remove_one::<bool>("tabs").unwrap_or_default(),
-            indent_width: matches.remove_one::<usize>("indent-width"),
+            indent_width: matches.remove_one::<u8>("indent-width"),
             output_format: matches
                 .remove_one::<OutputFormat>("output-format")
                 .unwrap_or_default(),

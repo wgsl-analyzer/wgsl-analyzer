@@ -7,7 +7,7 @@ use dprint_core::{
         SyncPluginHandler,
     },
 };
-use wgsl_formatter::{FormattingOptions, format_str};
+use wgsl_formatter::{FormattingOptions, format_file};
 
 use crate::config::resolve_config;
 
@@ -62,9 +62,12 @@ impl SyncPluginHandler<FormattingOptions> for WgslPluginHandler {
     ) -> FormatResult {
         let config = request.config;
 
-        let formatted = format_str(std::str::from_utf8(&request.file_bytes)?, config);
+        // TODO(MonaMayrhofer) Better error handling here
+        let formatted = format_file(std::str::from_utf8(&request.file_bytes)?, config);
 
-        Ok(Some(formatted.into_bytes()))
+        formatted
+            .map(|formatted| Some(formatted.into_bytes()))
+            .map_err(|error| anyhow::anyhow!("Formatter encountered an error. This is a bug in the formatter. Feel free to report this. {error:?}"))
     }
 }
 
