@@ -10,7 +10,6 @@ license.workspace = true
 [lib]
 
 [dependencies]
-cfg-if = "1.0.4"
 jemalloc-ctl = { package = "tikv-jemalloc-ctl", version = "0.6.0", features = [
 	"stats",
 ], optional = true }
