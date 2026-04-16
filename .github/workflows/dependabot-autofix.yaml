@@ -71,6 +71,6 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add .
           git commit -m "chore: align engines.vscode with types/vscode@${STEPS_TYPES_VERSION_OUTPUTS_VERSION}"
-          git push origin HEAD:${GITHUB_HEAD_REF}
+          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} HEAD:${GITHUB_HEAD_REF}
         env:
           STEPS_TYPES_VERSION_OUTPUTS_VERSION: ${{ steps.types-version.outputs.version }}
