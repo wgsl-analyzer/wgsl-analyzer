@@ -144,7 +144,6 @@ standard-macro-braces = [
 	{ name = "ast_enum", brace = "{" },
 	{ name = "ast_node", brace = "{" },
 	{ name = "ast_token_enum", brace = "{" },
-	{ name = "cfg_if", brace = "{" },
 	{ name = "cfg", brace = "(" },
 	{ name = "concat", brace = "(" },
 	{ name = "count_tts", brace = "(" },

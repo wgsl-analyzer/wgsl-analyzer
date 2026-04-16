@@ -750,26 +750,18 @@ impl TypeLoweringContext<'_> {
                         LiteralInstance::AbstractInt(number) | LiteralInstance::I64(number),
                     )),
                     _,
-                )) if number > 0 && number <= ArraySize::MAX.into() => {
+                )) if let Ok(validated) = u32::try_from(number)
+                    && validated > 0 =>
+                {
                     // skips handling array<E, 1li>() or array<E, 99999999999999999999999999>()
-                    #[expect(
-                        clippy::cast_possible_truncation,
-                        clippy::cast_sign_loss,
-                        clippy::as_conversions,
-                        reason = "this is checked, could refactor into `if let Ok(validated) = u32::try_from(number)` once that is stable"
-                    )]
-                    ArraySize::Constant(number as u32)
+                    ArraySize::Constant(validated)
                 },
                 Ok((Some(Instance::Literal(LiteralInstance::U64(number))), _))
-                    if number > 0 && number <= ArraySize::MAX.into() =>
+                    if let Ok(validated) = u32::try_from(number)
+                        && validated > 0 =>
                 {
                     // skips handling array<E, 1uL>() or array<E, 99999999999999999999999999uL>()
-                    #[expect(
-                        clippy::cast_possible_truncation,
-                        clippy::as_conversions,
-                        reason = "this is checked, could refactor into `if let Ok(validated) = u32::try_from(number)` once that is stable"
-                    )]
-                    ArraySize::Constant(number as u32)
+                    ArraySize::Constant(validated)
                 },
                 Ok((_, expression)) => {
                     let error = TypeLoweringError {
@@ -876,19 +868,15 @@ impl TypeLoweringContext<'_> {
             },
         };
         let inner = match template_parameters.next_as_type() {
-            Ok((inner, expression)) => {
-                let type_kind = inner.kind(self.database);
-                if type_kind.is_storable() {
-                    inner
-                } else {
-                    self.diagnostics.push(TypeLoweringError {
-                        container: TypeContainer::Expression(expression),
-                        kind: TypeLoweringErrorKind::UnexpectedTemplateArgument(
-                            "a storable type".to_owned(),
-                        ),
-                    });
-                    TypeKind::Error.intern(self.database)
-                }
+            Ok((inner, expression)) if inner.kind(self.database).is_storable() => inner,
+            Ok((_, expression)) => {
+                self.diagnostics.push(TypeLoweringError {
+                    container: TypeContainer::Expression(expression),
+                    kind: TypeLoweringErrorKind::UnexpectedTemplateArgument(
+                        "a storable type".to_owned(),
+                    ),
+                });
+                TypeKind::Error.intern(self.database)
             },
             Err(error) => {
                 self.diagnostics.push(error);
