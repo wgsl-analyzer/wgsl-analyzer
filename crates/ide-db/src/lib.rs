@@ -8,7 +8,7 @@ use std::{fmt, panic};
 pub use base_db;
 use base_db::{
     FileId, FileSourceRootInput, FileText, Files, Nonce, RootQueryDb as _, SourceDatabase,
-    SourceRoot, SourceRootId, SourceRootInput, change::Change,
+    SourceRoot, SourceRootId, SourceRootInput, change::Change, set_all_packages_with_durability,
 };
 use hir_def::database::{DefDatabase as _, ExtensionsConfig};
 use line_index::LineIndex;
@@ -133,7 +133,7 @@ impl RootDatabase {
             nonce: Nonce::new(),
         };
         // This needs to be here otherwise the first `Change` will panic.
-        database.set_all_packages(Arc::new(Box::new([])));
+        set_all_packages_with_durability(&mut database, [], Durability::HIGH);
         // CrateGraphBuilder::default().set_in_db(&mut database);
         // database.set_proc_macros_with_durability(Default::default(), Durability::MEDIUM);
         // database.set_local_roots_with_durability(Default::default(), Durability::MEDIUM);

@@ -217,6 +217,10 @@ pub struct PackageData {
     /// Note that this may contain more dependencies than the package actually uses.
     /// A common example is the test package which is included but only actually is active when
     /// declared in source via `extern package test`.
+    ///
+    /// Dependencies can be cyclic, although wgsl-analyzer will log a warning for that.
+    /// Having an accurate package graph is important and code has to account for possible cycles
+    /// to avoid infinite loops.
     pub dependencies: Vec<Dependency>,
     pub origin: PackageOrigin,
 }

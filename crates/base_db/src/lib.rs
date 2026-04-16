@@ -360,12 +360,6 @@ pub trait RootQueryDb: SourceDatabase + salsa::Database {
         &self,
         key: EditionedFileId,
     ) -> Parse;
-
-    /// Returns the packages in topological order.
-    ///
-    /// **Warning**: do not use this query in `hir-*` packages! It kills incrementality across crate metadata modifications.
-    #[salsa::input]
-    fn all_packages(&self) -> Arc<Box<[Package]>>;
 }
 
 #[salsa_macros::db]
