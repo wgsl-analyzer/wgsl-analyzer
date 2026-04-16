@@ -40,7 +40,7 @@ thread_local! {
 /// }
 /// $ set -x CPUPROFILE_FREQUENCY 1000
 /// $ nix-shell --run 'cargo test --release --package wgsl-analyzer --lib -- benchmarks::benchmark_integrated_highlighting --exact --nocapture'
-/// $ pprof -svg target/release/deps/rust_analyzer-8739592dc93d63cb crates/wgsl-analyzer/out.profile > profile.svg
+/// $ pprof -svg target/release/deps/wgsl_analyzer-8739592dc93d63cb crates/wgsl-analyzer/out.profile > profile.svg
 /// ```
 ///
 /// See this diff for how to profile completions:

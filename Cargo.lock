@@ -54,6 +54,7 @@ dependencies = [
  "dashmap",
  "edition",
  "expect-test",
+ "la-arena",
  "query-group-macro",
  "rowan",
  "rustc-hash 2.1.2",
@@ -298,6 +299,12 @@ name = "dissimilar"
 version = "1.0.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "aeda16ab4059c5fd2a83f2b9c9e9c981327b18aa8e3b313f7e6563799d4f093e"
+
+[[package]]
+name = "dot"
+version = "0.1.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a74b6c4d4a1cff5f454164363c16b72fa12463ca6b31f4b5f2035a65fa3d5906"
 
 [[package]]
 name = "dprint-core"
@@ -626,6 +633,7 @@ name = "ide"
 version = "0.0.0"
 dependencies = [
  "base-db",
+ "dot",
  "expect-test",
  "hir",
  "hir-def",
@@ -683,6 +691,7 @@ dependencies = [
  "rustc-hash 2.1.2",
  "salsa",
  "salsa-macros",
+ "tracing",
  "triomphe",
  "vfs",
 ]
@@ -1257,7 +1266,6 @@ dependencies = [
 name = "profile"
 version = "0.0.0"
 dependencies = [
- "cfg-if",
  "libc",
  "perf-event",
  "tikv-jemalloc-ctl",
@@ -1635,9 +1643,9 @@ checksum = "f18aa187839b2bdb1ad2fa35ead8c4c2976b64e4363c386d45ac0f7ee85c9233"
 
 [[package]]
 name = "thin-vec"
-version = "0.2.14"
+version = "0.2.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "144f754d318415ac792f9d69fc87abbbfc043ce2ef041c60f16ad828f638717d"
+checksum = "259cdf8ed4e4aca6f1e9d011e10bd53f524a2d0637d7b28450f6c64ac298c4c6"
 
 [[package]]
 name = "thiserror"

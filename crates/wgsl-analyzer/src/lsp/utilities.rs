@@ -121,7 +121,7 @@ impl GlobalState {
     /// the user experience. Part of that is that we deliberately hide panics
     /// from the user.
     ///
-    /// We do however want to pester rust-analyzer developers with panics and
+    /// We do however want to pester wgsl-analyzer developers with panics and
     /// other "you really gotta fix that" messages. The current strategy is to
     /// be noisy for "from source" builds or when profiling is enabled.
     ///

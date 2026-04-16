@@ -156,8 +156,8 @@ pub fn server_capabilities(config: &Config) -> ServerCapabilities {
 pub struct ClientCapabilities(lsp_types::ClientCapabilities);
 
 impl ClientCapabilities {
-    pub const fn new(caps: lsp_types::ClientCapabilities) -> Self {
-        Self(caps)
+    pub const fn new(capabilities: lsp_types::ClientCapabilities) -> Self {
+        Self(capabilities)
     }
 
     fn completions_resolve_provider(&self) -> bool {
@@ -295,9 +295,9 @@ impl ClientCapabilities {
     }
 
     pub fn did_save_text_document_dynamic_registration(&self) -> bool {
-        let caps = (|| -> _ { self.0.text_document.as_ref()?.synchronization.clone() })()
+        let capabilities = (|| -> _ { self.0.text_document.as_ref()?.synchronization.clone() })()
             .unwrap_or_default();
-        caps.did_save == Some(true) && caps.dynamic_registration == Some(true)
+        capabilities.did_save == Some(true) && capabilities.dynamic_registration == Some(true)
     }
 
     pub fn did_change_watched_files_dynamic_registration(&self) -> bool {
@@ -560,7 +560,7 @@ impl ClientCapabilities {
             .text_document
             .as_ref()
             .and_then(|text| text.inlay_hint.as_ref())
-            .and_then(|inlay_hint_caps| inlay_hint_caps.resolve_support.as_ref())
+            .and_then(|inlay_hint_capabilities| inlay_hint_capabilities.resolve_support.as_ref())
             .map(|inlay_resolve| inlay_resolve.properties.iter())
             .into_iter()
             .flatten()
@@ -573,8 +573,10 @@ impl ClientCapabilities {
             .text_document
             .as_ref()
             .and_then(|text| text.completion.as_ref())
-            .and_then(|completion_caps| completion_caps.completion_item.as_ref())
-            .and_then(|completion_item_caps| completion_item_caps.resolve_support.as_ref())
+            .and_then(|completion_capabilities| completion_capabilities.completion_item.as_ref())
+            .and_then(|completion_item_capabilities| {
+                completion_item_capabilities.resolve_support.as_ref()
+            })
             .map(|resolve_support| resolve_support.properties.iter())
             .into_iter()
             .flatten()

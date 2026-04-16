@@ -13,12 +13,14 @@ doctest = false
 [dependencies]
 dashmap.workspace = true
 edition.workspace = true
+la-arena.workspace = true
 query-group.workspace = true
 rowan.workspace = true
 rustc-hash.workspace = true
 salsa.workspace = true
 salsa-macros.workspace = true
 syntax.workspace = true
+# remove this when refactoring to PackageCraphBuilder
 triomphe.workspace = true
 vfs.workspace = true
 
