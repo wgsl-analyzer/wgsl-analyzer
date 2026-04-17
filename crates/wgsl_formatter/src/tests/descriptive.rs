@@ -15,6 +15,7 @@ mod types;
 mod bevy_reference;
 mod directives;
 mod expressions;
+mod import;
 mod statements;
 
 #[test]
