@@ -137,6 +137,7 @@ pub fn gen_import_path(node: &ast::ImportPath) -> FormatDocumentResult<PrintItem
     let mut formatted = PrintItemBuffer::new();
 
     formatted.extend(gen_name(&item_name)?);
+    formatted.extend(gen_comments(&item_comments_after_name));
     formatted.start_indent();
     formatted.start_new_line_group();
     formatted.request(Request::Unconditional {
@@ -149,6 +150,8 @@ pub fn gen_import_path(node: &ast::ImportPath) -> FormatDocumentResult<PrintItem
     formatted.finish_new_line_group();
     formatted.finish_indent();
 
+    formatted.extend(gen_comments(&item_comments_after_colon));
+
     if let Some(path) = item_path_rest {
         formatted.extend(gen_import_path(&path)?);
     }
@@ -158,6 +161,9 @@ pub fn gen_import_path(node: &ast::ImportPath) -> FormatDocumentResult<PrintItem
     if let Some(item) = item_item {
         formatted.extend(gen_import_item(&item)?);
     }
+
+    formatted.extend(gen_comments(&item_comments_after_rest));
+
     Ok(formatted)
 }
 
@@ -310,13 +316,15 @@ pub fn gen_import_statement(
     // ==== Parse ====
     let mut syntax = put_back(node.syntax().children_with_tokens());
     parse_token(&mut syntax, ast::SyntaxKind::Import)?;
-    let item_comments_after_import = parse_many_comments_and_blankspace(&mut syntax);
-
+    let item_comments_after_import = parse_many_comments_and_blankspace(&mut syntax)?;
     let item_package_relative = parse_node_optional::<ast::ImportPackageRelative>(&mut syntax);
     let item_super_relative = parse_node_optional::<ast::ImportSuperRelative>(&mut syntax);
     let item_path = parse_node_optional::<ast::ImportPath>(&mut syntax);
     let item_collection = parse_node_optional::<ast::ImportCollection>(&mut syntax);
     let item_item = parse_node_optional::<ast::ImportItem>(&mut syntax);
+
+    let item_comments_after_importee = parse_many_comments_and_blankspace(&mut syntax)?;
+
     parse_token(&mut syntax, ast::SyntaxKind::Semicolon)?;
     parse_end(&mut syntax)?;
 
@@ -324,6 +332,7 @@ pub fn gen_import_statement(
     let mut formatted = PrintItemBuffer::new();
     formatted.push_sc(sc!("import"));
     formatted.expect(RequestItem::Space);
+    formatted.extend(gen_comments(&item_comments_after_import));
 
     if let Some(package_relative) = item_package_relative {
         formatted.extend(gen_import_package_relative(&package_relative)?);
@@ -340,6 +349,8 @@ pub fn gen_import_statement(
     if let Some(item) = item_item {
         formatted.extend(gen_import_item(&item)?);
     }
+
+    formatted.extend(gen_comments(&item_comments_after_importee));
 
     if include_semicolon {
         formatted.discourage(RequestItem::Space);
