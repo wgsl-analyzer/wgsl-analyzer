@@ -27,6 +27,7 @@ mod gen_statement_break;
 pub mod gen_statement_compound;
 mod gen_statement_continue;
 mod gen_statement_discard;
+mod gen_statement_for;
 mod gen_struct;
 pub mod gen_switch_statement;
 mod gen_type_alias_declaration;

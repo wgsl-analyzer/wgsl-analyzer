@@ -3,13 +3,13 @@ use itertools::put_back;
 use parser::SyntaxKind;
 use syntax::{
     AstNode as _,
-    ast::{self, CompoundStatement, Expression, FunctionCall, IncrementDecrement, Statement},
+    ast::{self, CompoundStatement, Expression, FunctionCall, IncrementDecrement},
 };
 
 use crate::format::{
     ast_parse::{
-        parse_end, parse_many_comments_and_blankspace, parse_node, parse_node_by_kind_optional,
-        parse_node_optional, parse_token, parse_token_optional,
+        parse_end, parse_many_comments_and_blankspace, parse_node, parse_node_optional,
+        parse_token, parse_token_optional,
     },
     gen_assignment_statement::{
         gen_assignment_statement, gen_compound_assignment_statement, gen_phony_assignment_statement,
@@ -23,12 +23,12 @@ use crate::format::{
     gen_statement_compound::gen_compound_statement,
     gen_statement_continue::gen_continue_statement,
     gen_statement_discard::gen_discard_statement,
+    gen_statement_for::gen_for_statement,
     gen_switch_statement::gen_switch_statement,
     gen_var_let_const_override_statement::{
         gen_const_declaration_statement, gen_let_declaration_statement,
         gen_var_declaration_statement,
     },
-    multiline_group::MultilineGroup,
     print_item_buffer::{PrintItemBuffer, request_folder::RequestItem},
     reporting::{FormatDocumentError, FormatDocumentResult},
 };
@@ -171,112 +171,6 @@ pub fn gen_function_call_statement(
     if include_semicolon {
         formatted.push_sc(sc!(";"));
     }
-    Ok(formatted)
-}
-
-pub fn gen_for_statement(statement: &ast::ForStatement) -> FormatDocumentResult<PrintItemBuffer> {
-    // ==== Parse ====
-    let mut syntax = put_back(statement.syntax().children_with_tokens());
-    let item_attributes = parse_many_attributes(&mut syntax)?;
-    parse_token(&mut syntax, SyntaxKind::For)?;
-    let comments_after_for = parse_many_comments_and_blankspace(&mut syntax)?;
-    parse_token(&mut syntax, SyntaxKind::ParenthesisLeft)?;
-    let comments_after_open_paren = parse_many_comments_and_blankspace(&mut syntax)?;
-    let item_initializer = parse_node_by_kind_optional(&mut syntax, SyntaxKind::ForInitializer)
-        .map(|item_initializer_container| {
-            let mut sub_syntax =
-                put_back(item_initializer_container.syntax().children_with_tokens());
-            let item_initializer = parse_node::<Statement>(&mut sub_syntax)?;
-            parse_end(&mut sub_syntax)?;
-            Ok(item_initializer)
-        })
-        .transpose()?;
-    let comments_after_initializer = parse_many_comments_and_blankspace(&mut syntax)?;
-    parse_token(&mut syntax, SyntaxKind::Semicolon)?;
-    let comments_after_initializer_semicolon = parse_many_comments_and_blankspace(&mut syntax)?;
-    let item_condition = parse_node_by_kind_optional(&mut syntax, SyntaxKind::ForCondition)
-        .map(|item_condition_container| {
-            let mut sub_syntax = put_back(item_condition_container.syntax().children_with_tokens());
-            let item_condition = parse_node::<Expression>(&mut sub_syntax)?;
-            parse_end(&mut sub_syntax)?;
-            Ok(item_condition)
-        })
-        .transpose()?;
-    let comments_after_condition = parse_many_comments_and_blankspace(&mut syntax)?;
-    parse_token(&mut syntax, SyntaxKind::Semicolon)?;
-    let comments_after_condition_semicolon = parse_many_comments_and_blankspace(&mut syntax)?;
-    let item_continuing = parse_node_by_kind_optional(&mut syntax, SyntaxKind::ForContinuingPart)
-        .map(|item_continuing_container| {
-            let mut sub_syntax =
-                put_back(item_continuing_container.syntax().children_with_tokens());
-            let item_continuing = parse_node::<Statement>(&mut sub_syntax)?;
-            parse_end(&mut sub_syntax)?;
-            Ok(item_continuing)
-        })
-        .transpose()?;
-    let comments_after_continuing = parse_many_comments_and_blankspace(&mut syntax)?;
-    parse_token(&mut syntax, SyntaxKind::ParenthesisRight)?;
-    let comments_after_close_paren = parse_many_comments_and_blankspace(&mut syntax)?;
-    let item_body = parse_node::<CompoundStatement>(&mut syntax)?;
-    parse_end(&mut syntax)?;
-
-    // ==== Format ====
-    let mut formatted = PrintItemBuffer::new();
-    formatted.extend(gen_attributes(
-        &item_attributes,
-        AttributeLayout::Multiline,
-    )?);
-    formatted.push_sc(sc!("for"));
-    formatted.extend(gen_comments(&comments_after_for));
-    formatted.push_sc(sc!("("));
-
-    let mut multiline_group = MultilineGroup::new(&mut formatted);
-    multiline_group.start_indent();
-
-    multiline_group.extend(gen_comments(&comments_after_open_paren));
-
-    multiline_group.grouped_newline_or_space();
-    if let Some(item_initializer) = item_initializer {
-        multiline_group.extend(gen_statement_maybe_semicolon(&item_initializer, false)?);
-    } else {
-        multiline_group.discourage(RequestItem::Space);
-    }
-    multiline_group.extend(gen_comments(&comments_after_initializer));
-    multiline_group.discourage(RequestItem::Space);
-    multiline_group.push_sc(sc!(";"));
-    multiline_group.extend(gen_comments(&comments_after_initializer_semicolon));
-
-    multiline_group.grouped_newline_or_space();
-    if let Some(item_condition) = item_condition {
-        multiline_group.extend(gen_expression(&item_condition, false)?);
-    } else {
-        multiline_group.discourage(RequestItem::Space);
-    }
-    multiline_group.extend(gen_comments(&comments_after_condition));
-    multiline_group.discourage(RequestItem::Space);
-    multiline_group.push_sc(sc!(";"));
-    multiline_group.extend(gen_comments(&comments_after_condition_semicolon));
-
-    multiline_group.grouped_newline_or_space();
-    if let Some(item_continuing) = item_continuing {
-        multiline_group.extend(gen_statement_maybe_semicolon(&item_continuing, false)?);
-    } else {
-        multiline_group.discourage(RequestItem::Space);
-    }
-    multiline_group.extend(gen_comments(&comments_after_continuing));
-    multiline_group.discourage(RequestItem::Space);
-
-    multiline_group.grouped_newline_or_space();
-
-    multiline_group.finish_indent();
-
-    multiline_group.push_sc(sc!(")"));
-
-    multiline_group.end();
-
-    formatted.expect(RequestItem::Space);
-    formatted.extend(gen_comments(&comments_after_close_paren));
-    formatted.extend(gen_compound_statement(&item_body)?);
     Ok(formatted)
 }
 

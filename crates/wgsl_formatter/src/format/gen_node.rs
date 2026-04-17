@@ -16,6 +16,7 @@ use crate::format::{
         gen_other_attribute, gen_size_attribute, gen_vertex_attribute,
         gen_workgroup_size_attribute,
     },
+    gen_comments::{gen_comment, parse_comment_optional},
     gen_diagnostic::{gen_diagnostic_control, gen_diagnostic_rule_name, gen_severity_control_name},
     gen_directive::{
         gen_diagnostic_directive, gen_enable_directive, gen_enable_extension_name,
@@ -42,13 +43,17 @@ use crate::format::{
     gen_source_file::gen_source_file,
     gen_statement::{
         gen_break_if_statement, gen_const_assert_statement, gen_continuing_statement,
-        gen_for_statement, gen_function_call_statement, gen_increment_decrement_statement,
-        gen_loop_statement, gen_return_statement, gen_while_statement,
+        gen_function_call_statement, gen_increment_decrement_statement, gen_loop_statement,
+        gen_return_statement, gen_while_statement,
     },
     gen_statement_break::gen_break_statement,
     gen_statement_compound::gen_compound_statement,
     gen_statement_continue::gen_continue_statement,
     gen_statement_discard::gen_discard_statement,
+    gen_statement_for::{
+        gen_for_statement, gen_for_statement_condition, gen_for_statement_continuing_part,
+        gen_for_statement_initializer,
+    },
     gen_struct::{gen_struct_body, gen_struct_declaration, gen_struct_member},
     gen_switch_statement::{
         gen_switch_body, gen_switch_body_case, gen_switch_case_default_selector,
@@ -89,12 +94,18 @@ macro_rules! match_ast_exhaustive {
     (match $node:ident {
         $( SyntaxKind::$ast:ident($name:ident) => $result:expr, )*
         -
+        $( SyntaxKind::$special_ast:ident($special_name:ident as SyntaxNode) => $special_result:expr, )*
+        -
         SyntaxKind::$ignored_first:ident $( | SyntaxKind::$ignored:ident)* => $ignored_result:expr
     }) => {{
         match $node.kind() {
             $(syntax::ast::SyntaxKind::$ast => {
                 let $name = syntax::ast::$ast::cast($node.clone()).unwrap();
                 $result
+            },)*
+            $(syntax::ast::SyntaxKind::$special_ast => {
+                let $special_name = $node.clone();
+                $special_result
             },)*
             syntax::ast::SyntaxKind::$ignored_first $(| syntax::ast::SyntaxKind::$ignored)*  => $ignored_result
         }
@@ -211,11 +222,15 @@ pub fn gen_node(node: &SyntaxNode) -> FormatDocumentResult<PrintItemBuffer> {
              SyntaxKind::DiscardStatement(node) => gen_discard_statement(&node, needs_semicolon(node.syntax().parent())),
 
              -
+
+             SyntaxKind::ForInitializer(node as SyntaxNode) => gen_for_statement_initializer(&node),
+             SyntaxKind::ForCondition(node as SyntaxNode) => gen_for_statement_condition(&node),
+             SyntaxKind::ForContinuingPart(node as SyntaxNode) => gen_for_statement_continuing_part(&node),
+
+             -
+
              // TODO(MonaMayrhofer) all of these
              SyntaxKind::EmptyStatement |
-             SyntaxKind::ForInitializer |
-             SyntaxKind::ForCondition |
-             SyntaxKind::ForContinuingPart |
              SyntaxKind::LineEndingComment |
              SyntaxKind::BlockComment |
              // Tokens
