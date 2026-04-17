@@ -209,9 +209,13 @@ pub fn format_import_collection_long_items_prefer_break_in_collection() {
         //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
         import aaaaaaaaaaaa::{aaaaaaaaaaaa::bbbbbbbbbbbbbbb::ccccccccccccc::ddddddddddddddd, eeeeeeeee, ffffffff::gggggggggggg};
         ",
-        &expect![["
-            fn main() {}
-        "]],
+        &expect![[r#"
+            //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
+            import aaaaaaaaaaaa::{
+                eeeeeeeee, aaaaaaaaaaaa::bbbbbbbbbbbbbbb::ccccccccccccc::ddddddddddddddd,
+                ffffffff::gggggggggggg
+            };
+        "#]],
         &FormattingOptions {
             max_line_width: 80,
             ..Default::default()
@@ -226,9 +230,11 @@ pub fn format_import_path_single_simple_long_items() {
         //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
         import aaaaaaaaaaaa::bbbbbbbbbbbbbbbbb::cccccccccccc::ddddddddddddd::eeeeeeeeeeee::fffffffffffff::gggggggggg;
         ",
-        &expect![["
-            fn main() {}
-        "]],
+        &expect![[r#"
+            //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
+            import aaaaaaaaaaaa::bbbbbbbbbbbbbbbbb::cccccccccccc::ddddddddddddd
+                ::eeeeeeeeeeee::fffffffffffff::gggggggggg;
+        "#]],
         &FormattingOptions {
             max_line_width: 80,
             ..Default::default()
