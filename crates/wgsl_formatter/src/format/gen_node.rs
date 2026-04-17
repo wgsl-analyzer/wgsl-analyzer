@@ -45,7 +45,10 @@ use crate::format::{
         gen_for_statement, gen_function_call_statement, gen_increment_decrement_statement,
         gen_loop_statement, gen_return_statement, gen_while_statement,
     },
+    gen_statement_break::gen_break_statement,
     gen_statement_compound::gen_compound_statement,
+    gen_statement_continue::gen_continue_statement,
+    gen_statement_discard::gen_discard_statement,
     gen_struct::{gen_struct_body, gen_struct_declaration, gen_struct_member},
     gen_switch_statement::{
         gen_switch_body, gen_switch_body_case, gen_switch_case_default_selector,
@@ -203,12 +206,12 @@ pub fn gen_node(node: &SyntaxNode) -> FormatDocumentResult<PrintItemBuffer> {
              SyntaxKind::FragmentAttribute(node) => gen_fragment_attribute(&node),
              SyntaxKind::ComputeAttribute(node) => gen_compute_attribute(&node),
              SyntaxKind::BuiltinValueName(node) => gen_builtin_value_name(&node),
+             SyntaxKind::BreakStatement(node) => gen_break_statement(&node, needs_semicolon(node.syntax().parent())),
+             SyntaxKind::ContinueStatement(node) => gen_continue_statement(&node, needs_semicolon(node.syntax().parent())),
+             SyntaxKind::DiscardStatement(node) => gen_discard_statement(&node, needs_semicolon(node.syntax().parent())),
 
-            -
+             -
              // TODO(MonaMayrhofer) all of these
-             SyntaxKind::BreakStatement |
-             SyntaxKind::ContinueStatement |
-             SyntaxKind::DiscardStatement |
              SyntaxKind::EmptyStatement |
              SyntaxKind::ForInitializer |
              SyntaxKind::ForCondition |
