@@ -1,3 +1,5 @@
+use std::collections::BTreeSet;
+
 use dprint_core_macros::sc;
 use itertools::{Itertools, Position, put_back};
 use parser::SyntaxKind;
@@ -16,7 +18,10 @@ use crate::format::{
     gen_path::gen_path,
     helpers::todo_verbatim_wesl,
     multiline_group::MultilineGroup,
-    print_item_buffer::{PrintItemBuffer, request_folder::RequestItem},
+    print_item_buffer::{
+        PrintItemBuffer,
+        request_folder::{Request, RequestItem},
+    },
     reporting::FormatDocumentResult,
 };
 
@@ -120,16 +125,32 @@ pub fn gen_import_path(node: &ast::ImportPath) -> FormatDocumentResult<PrintItem
     // ==== Parse ====
     let mut syntax = put_back(node.syntax().children_with_tokens());
     let item_name = parse_node::<ast::Name>(&mut syntax)?;
+    let item_comments_after_name = parse_many_comments_and_blankspace(&mut syntax)?;
     parse_token(&mut syntax, SyntaxKind::ColonColon)?;
+    let item_comments_after_colon = parse_many_comments_and_blankspace(&mut syntax)?;
     let item_path_rest = parse_node_optional::<ImportPath>(&mut syntax);
     let item_collection_rest = parse_node_optional::<ImportCollection>(&mut syntax);
     let item_item = parse_node_optional::<ImportItem>(&mut syntax);
+    let item_comments_after_rest = parse_many_comments_and_blankspace(&mut syntax)?;
+
     parse_end(&mut syntax)?;
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::new();
+
     formatted.extend(gen_name(&item_name)?);
+    formatted.start_indent();
+    formatted.start_new_line_group();
+    formatted.request(Request::Unconditional {
+        expected: BTreeSet::new(),
+        discouraged: BTreeSet::new(),
+        forced: BTreeSet::new(),
+        suggest_linebreak: true,
+    });
     formatted.push_sc(sc!("::"));
+    formatted.finish_new_line_group();
+    formatted.finish_indent();
+
     if let Some(path) = item_path_rest {
         formatted.extend(gen_import_path(&path)?);
     }
@@ -243,30 +264,43 @@ pub fn gen_import_collection(
     // ==== Format ====
     let mut formatted = PrintItemBuffer::new();
 
-    formatted.push_sc(sc!("{"));
+    let mut group = MultilineGroup::new(&mut formatted);
+    group.push_sc(sc!("{"));
+
+    group.start_indent();
 
     for (position, (before, item, after)) in items.iter().with_position() {
-        formatted.extend(gen_comments(before));
+        group.extend(gen_comments(before));
         if let Some(item) = item {
             match item {
-                ImportTree::ImportPath(path) => formatted.extend(gen_import_path(path)?),
-                ImportTree::ImportItem(item) => formatted.extend(gen_import_item(item)?),
+                ImportTree::ImportPath(path) => group.extend(gen_import_path(path)?),
+                ImportTree::ImportItem(item) => group.extend(gen_import_item(item)?),
                 // This case will never happen but it makes the code simpler to just use ImportTree here
                 ImportTree::ImportCollection(collection) => {
-                    formatted.extend(gen_import_collection(collection)?);
+                    group.extend(gen_import_collection(collection)?);
                 },
             }
         }
-        formatted.extend(gen_comments(after));
-        formatted.discourage(RequestItem::Space);
+        group.extend(gen_comments(after));
+        group.discourage(RequestItem::Space);
 
         if position != Position::Last && position != Position::Only {
-            formatted.push_sc(sc!(","));
-            formatted.expect(RequestItem::Space);
+            group.push_sc(sc!(","));
+            group.request(Request::Unconditional {
+                expected: BTreeSet::from([RequestItem::Space]),
+                discouraged: BTreeSet::new(),
+                forced: BTreeSet::new(),
+                suggest_linebreak: true,
+            });
         }
     }
 
-    formatted.push_sc(sc!("}"));
+    group.finish_indent();
+    group.grouped_possible_newline();
+
+    group.push_sc(sc!("}"));
+
+    group.end();
 
     Ok(formatted)
 }
