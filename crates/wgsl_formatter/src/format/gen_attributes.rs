@@ -101,7 +101,7 @@ pub fn gen_attributes(
     let mut attribute_group_inlined_with_target = Vec::new();
 
     for attribute in &attributes.attributes {
-        use AttributeCategorization::*;
+        use AttributeCategorization::{Grouped, Inline, Ungrouped};
         let cat = match &attribute.attribute {
             Attribute::DiagnosticAttribute(_) => Grouped(AttributeGroup::Diagnostics, 0),
             Attribute::SizeAttribute(_) => Grouped(AttributeGroup::OffsetAlignSize, 2),
@@ -176,7 +176,7 @@ pub fn gen_attributes(
 
     // The grouped attributes in order
     // (They are ordered by the AttributeGroup enum's discriminator, because of the BTreeMap)
-    for (_, attribute) in grouped_attributes.into_iter() {
+    for (_, attribute) in grouped_attributes {
         formatted.extend(gen_attribute_group(attribute, RequestItem::Space)?);
         formatted.expect(group_separator);
     }

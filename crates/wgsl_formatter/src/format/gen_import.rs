@@ -1,7 +1,7 @@
 use std::collections::BTreeSet;
 
 use dprint_core_macros::sc;
-use itertools::{Itertools, Position, put_back};
+use itertools::{Itertools as _, Position, put_back};
 use parser::SyntaxKind;
 use syntax::{
     AstNode as _,
@@ -15,8 +15,6 @@ use crate::format::{
     },
     gen_comments::{Comment, gen_comment, gen_comments, parse_comment_optional},
     gen_name::gen_name,
-    gen_path::gen_path,
-    helpers::todo_verbatim_wesl,
     multiline_group::MultilineGroup,
     print_item_buffer::{
         PrintItemBuffer,
