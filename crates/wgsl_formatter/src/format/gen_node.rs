@@ -8,8 +8,13 @@ use crate::format::{
         gen_assignment_statement, gen_compound_assignment_statement, gen_phony_assignment_statement,
     },
     gen_attributes::{
-        gen_attribute, gen_diagnostic_attribute, gen_interpolate_sampling_name,
-        gen_interpolate_type_name,
+        gen_align_attribute, gen_attribute, gen_binding_attribute, gen_blend_src_attribute,
+        gen_builtin_attribute, gen_builtin_value_name, gen_compute_attribute, gen_const_attribute,
+        gen_diagnostic_attribute, gen_fragment_attribute, gen_group_attribute, gen_id_attribute,
+        gen_interpolate_attribute, gen_interpolate_sampling_name, gen_interpolate_type_name,
+        gen_invariant_attribute, gen_location_attribute, gen_must_use_attribute,
+        gen_other_attribute, gen_size_attribute, gen_vertex_attribute,
+        gen_workgroup_size_attribute,
     },
     gen_diagnostic::{gen_diagnostic_control, gen_diagnostic_rule_name, gen_severity_control_name},
     gen_directive::{
@@ -32,6 +37,7 @@ use crate::format::{
         gen_import_collection, gen_import_item, gen_import_package_relative, gen_import_path,
         gen_import_statement, gen_import_super_relative,
     },
+    gen_name::gen_name,
     gen_path::gen_path,
     gen_source_file::gen_source_file,
     gen_statement::{
@@ -178,10 +184,28 @@ pub fn gen_node(node: &SyntaxNode) -> FormatDocumentResult<PrintItemBuffer> {
              SyntaxKind::ImportItem(node) => gen_import_item(&node),
              SyntaxKind::ImportPath(node) => gen_import_path(&node),
              SyntaxKind::ImportCollection(node) => gen_import_collection(&node),
+             SyntaxKind::Name(node) => gen_name(&node),
+             SyntaxKind::OtherAttribute(node) => gen_other_attribute(&node),
+             SyntaxKind::AlignAttribute(node) => gen_align_attribute(&node),
+             SyntaxKind::BindingAttribute(node) => gen_binding_attribute(&node),
+             SyntaxKind::BlendSrcAttribute(node) => gen_blend_src_attribute(&node),
+             SyntaxKind::BuiltinAttribute(node) => gen_builtin_attribute(&node),
+             SyntaxKind::ConstantAttribute(node) => gen_const_attribute(&node),
+             SyntaxKind::GroupAttribute(node) => gen_group_attribute(&node),
+             SyntaxKind::IdAttribute(node) => gen_id_attribute(&node),
+             SyntaxKind::InterpolateAttribute(node) => gen_interpolate_attribute(&node),
+             SyntaxKind::InvariantAttribute(node) => gen_invariant_attribute(&node),
+             SyntaxKind::LocationAttribute(node) => gen_location_attribute(&node),
+             SyntaxKind::MustUseAttribute(node) => gen_must_use_attribute(&node),
+             SyntaxKind::SizeAttribute(node) => gen_size_attribute(&node),
+             SyntaxKind::WorkgroupSizeAttribute(node) => gen_workgroup_size_attribute(&node),
+             SyntaxKind::VertexAttribute(node) => gen_vertex_attribute(&node),
+             SyntaxKind::FragmentAttribute(node) => gen_fragment_attribute(&node),
+             SyntaxKind::ComputeAttribute(node) => gen_compute_attribute(&node),
+             SyntaxKind::BuiltinValueName(node) => gen_builtin_value_name(&node),
 
             -
              // TODO(MonaMayrhofer) all of these
-             SyntaxKind::Name |
              SyntaxKind::BreakStatement |
              SyntaxKind::ContinueStatement |
              SyntaxKind::DiscardStatement |
@@ -191,24 +215,6 @@ pub fn gen_node(node: &SyntaxNode) -> FormatDocumentResult<PrintItemBuffer> {
              SyntaxKind::ForContinuingPart |
              SyntaxKind::LineEndingComment |
              SyntaxKind::BlockComment |
-             SyntaxKind::OtherAttribute |
-             SyntaxKind::AlignAttribute |
-             SyntaxKind::BindingAttribute |
-             SyntaxKind::BlendSrcAttribute |
-             SyntaxKind::BuiltinAttribute |
-             SyntaxKind::ConstantAttribute |
-             SyntaxKind::GroupAttribute |
-             SyntaxKind::IdAttribute |
-             SyntaxKind::InterpolateAttribute |
-             SyntaxKind::InvariantAttribute |
-             SyntaxKind::LocationAttribute |
-             SyntaxKind::MustUseAttribute |
-             SyntaxKind::SizeAttribute |
-             SyntaxKind::WorkgroupSizeAttribute |
-             SyntaxKind::VertexAttribute |
-             SyntaxKind::FragmentAttribute |
-             SyntaxKind::ComputeAttribute |
-             SyntaxKind::BuiltinValueName |
              // Tokens
              SyntaxKind::Blankspace |
              SyntaxKind::Identifier |

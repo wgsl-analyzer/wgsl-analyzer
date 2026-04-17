@@ -20,6 +20,15 @@ use crate::format::{
     reporting::FormatDocumentResult,
 };
 
+// TODO(MonaMayrhofer) Collapse imports
+// import bevy:a;
+// import bevy:b;
+// import bevy:{a,b};
+//
+// This is best done using a ParsedImports struct with a parse_imports() function (similar to how comments are handled)
+// then a ParsedImports::simplify that collapses them.
+// Vec<Comment> are either attached to after import items (or a the end of an import collection {a, b, /*hi*/})
+
 pub fn gen_import_package_relative(
     node: &ast::ImportPackageRelative
 ) -> FormatDocumentResult<PrintItemBuffer> {
