@@ -52,7 +52,7 @@ impl EditionedFileId {
         ) -> Option<Box<[Diagnostic]>> {
             let parse = file_id.parse(database);
             let errors = parse.errors();
-            match &*errors {
+            match errors {
                 [] => None,
                 [..] => Some(errors.into()),
             }
