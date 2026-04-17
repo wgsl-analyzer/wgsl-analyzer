@@ -3,6 +3,7 @@ use std::collections::BTreeSet;
 use dprint_core_macros::sc;
 use itertools::{Itertools as _, Position, put_back};
 use parser::SyntaxKind;
+use rowan::SyntaxToken;
 use syntax::{
     AstNode as _,
     ast::{self, ImportCollection, ImportItem, ImportPath, ImportTree},
@@ -167,8 +168,8 @@ pub fn gen_import_path(node: &ast::ImportPath) -> FormatDocumentResult<PrintItem
     Ok(formatted)
 }
 
-pub struct CmpImportTree<'a>(&'a ImportTree);
-impl<'a> PartialEq for CmpImportTree<'a> {
+pub struct CmpImportTree<'tree>(pub &'tree ImportTree);
+impl PartialEq for CmpImportTree<'_> {
     fn eq(
         &self,
         other: &Self,
@@ -176,16 +177,17 @@ impl<'a> PartialEq for CmpImportTree<'a> {
         self.cmp(other) == std::cmp::Ordering::Equal
     }
 }
-impl<'a> Eq for CmpImportTree<'a> {}
-impl<'a> PartialOrd for CmpImportTree<'a> {
+impl Eq for CmpImportTree<'_> {}
+impl PartialOrd for CmpImportTree<'_> {
     fn partial_cmp(
         &self,
         other: &Self,
     ) -> Option<std::cmp::Ordering> {
-        Some(self.cmp(&other))
+        Some(self.cmp(other))
     }
 }
-impl<'a> Ord for CmpImportTree<'a> {
+impl Ord for CmpImportTree<'_> {
+    #[expect(clippy::min_ident_chars, reason = "Readable enough, keep it short")]
     fn cmp(
         &self,
         other: &Self,
@@ -195,17 +197,17 @@ impl<'a> Ord for CmpImportTree<'a> {
 
         match (a.0, b.0) {
             (ImportTree::ImportItem(a), ImportTree::ImportItem(b)) => {
-                let a = a.name().and_then(|it| it.ident_token());
-                let b = b.name().and_then(|it| it.ident_token());
-                let a = a.as_ref().map(|it| it.text());
-                let b = b.as_ref().map(|it| it.text());
+                let a = a.name().and_then(|name| name.ident_token());
+                let b = b.name().and_then(|name| name.ident_token());
+                let a = a.as_ref().map(SyntaxToken::text);
+                let b = b.as_ref().map(SyntaxToken::text);
                 a.cmp(&b)
             },
             (ImportTree::ImportPath(a_path), ImportTree::ImportPath(b_path)) => {
-                let a = a_path.name().and_then(|it| it.ident_token());
-                let b = b_path.name().and_then(|it| it.ident_token());
-                let a = a.as_ref().map(|it| it.text());
-                let b = b.as_ref().map(|it| it.text());
+                let a = a_path.name().and_then(|name| name.ident_token());
+                let b = b_path.name().and_then(|name| name.ident_token());
+                let a = a.as_ref().map(SyntaxToken::text);
+                let b = b.as_ref().map(SyntaxToken::text);
                 match a.cmp(&b) {
                     std::cmp::Ordering::Equal => {
                         let a = a_path.item();
@@ -214,7 +216,7 @@ impl<'a> Ord for CmpImportTree<'a> {
                         let b = b.as_ref().map(CmpImportTree);
                         a.cmp(&b)
                     },
-                    order => order,
+                    order @ (std::cmp::Ordering::Less | std::cmp::Ordering::Greater) => order,
                 }
             },
 
@@ -223,9 +225,10 @@ impl<'a> Ord for CmpImportTree<'a> {
             },
 
             (ImportTree::ImportItem(_), _) => std::cmp::Ordering::Less,
+            #[expect(clippy::match_same_arms, reason = "Order of matches is important")]
             (_, ImportTree::ImportItem(_)) => std::cmp::Ordering::Greater,
-            (ImportTree::ImportCollection(import_collection), _) => std::cmp::Ordering::Greater,
-            (_, ImportTree::ImportCollection(import_collection)) => std::cmp::Ordering::Less,
+            (ImportTree::ImportCollection(_), _) => std::cmp::Ordering::Greater,
+            (_, ImportTree::ImportCollection(_)) => std::cmp::Ordering::Less,
         }
     }
 }
@@ -259,10 +262,10 @@ pub fn gen_import_collection(
     parse_end(&mut syntax)?;
 
     // TODO(MonaMayrhofer) unsure about the performance of this... also this currently includes comments in the sorting...
-    items.sort_by(|(_, a, _), (_, b, _)| {
-        let a = a.as_ref().map(CmpImportTree);
-        let b = b.as_ref().map(CmpImportTree);
-        a.cmp(&b)
+    items.sort_by(|(_, tree_a, _), (_, tree_b, _)| {
+        let tree_a = tree_a.as_ref().map(CmpImportTree);
+        let tree_b = tree_b.as_ref().map(CmpImportTree);
+        tree_a.cmp(&tree_b)
     });
 
     // ==== Format ====
