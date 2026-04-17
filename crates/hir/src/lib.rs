@@ -50,7 +50,7 @@ impl<'database> Semantics<'database> {
         &self,
         file_id: EditionedFileId,
     ) -> ast::SourceFile {
-        self.database.parse(file_id).tree()
+        file_id.parse(self.database).tree()
     }
 
     #[must_use]

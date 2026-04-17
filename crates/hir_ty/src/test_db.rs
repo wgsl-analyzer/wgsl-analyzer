@@ -1,8 +1,8 @@
 use std::{fmt, panic};
 
 use base_db::{
-    EditionedFileId, FileSourceRootInput, FileText, Nonce, RootQueryDb as _, SourceDatabase,
-    SourceRootId, SourceRootInput, change::Change, input::SourceRoot,
+    EditionedFileId, FileSourceRootInput, FileText, Nonce, SourceDatabase, SourceRootId,
+    SourceRootInput, change::Change, input::SourceRoot, set_all_packages_with_durability,
 };
 use hir_def::database::{DefDatabase as _, ExtensionsConfig};
 use salsa::Durability;
@@ -31,7 +31,7 @@ impl Default for TestDatabase {
             Durability::MEDIUM,
         );
         // This needs to be here otherwise the first `Change` will panic.
-        value.set_all_packages(Arc::new(Box::new([])));
+        set_all_packages_with_durability(&mut value, [], Durability::LOW);
         value
     }
 }

@@ -1,8 +1,8 @@
 use std::{fmt, panic};
 
 use base_db::{
-    EditionedFileId, FileSourceRootInput, FileText, Nonce, RootQueryDb as _, SourceDatabase,
-    SourceRootId, SourceRootInput, change::Change, input::SourceRoot,
+    EditionedFileId, FileSourceRootInput, FileText, Nonce, SourceDatabase, SourceRootId,
+    SourceRootInput, change::Change, input::SourceRoot, set_all_packages_with_durability,
 };
 use salsa::{Durability, Storage};
 use syntax::Edition;
@@ -26,7 +26,7 @@ impl Default for TestDatabase {
             nonce: Nonce::default(),
         };
         // This needs to be here otherwise the first `Change` will panic.
-        database.set_all_packages(Arc::new(Box::new([])));
+        set_all_packages_with_durability(&mut database, [], Durability::LOW);
         database
     }
 }

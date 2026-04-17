@@ -10,8 +10,9 @@ use triomphe::Arc;
 use vfs::FileId;
 
 use crate::{
-    Package, PackageDisplayName, RootQueryDb,
+    Package, PackageDisplayName, SourceDatabase, all_packages,
     input::{Dependency, PackageData, PackageId, PackageOrigin, SourceRoot, SourceRootId},
+    set_all_packages_with_durability,
 };
 
 /// Encapsulate a bunch of raw `.set` calls on the database.
@@ -82,7 +83,7 @@ impl Change {
     /// Panics if the number of source roots exceeds `u32::MAX`, as `SourceRootId` holds a `u32`.
     pub fn apply(
         self,
-        database: &mut dyn RootQueryDb,
+        database: &mut dyn SourceDatabase,
     ) {
         if let Some(roots) = self.roots {
             for (root, root_id) in roots.into_iter().zip(0_u32..) {
@@ -116,12 +117,11 @@ impl Change {
 }
 
 fn apply_package_graph(
-    database: &mut dyn RootQueryDb,
+    database: &mut dyn SourceDatabase,
     mut package_graph: PackageGraph,
     sorted_packages: Vec<PackageId>,
 ) {
-    let mut old_packages: FxHashMap<PackageId, Package> = database
-        .all_packages()
+    let mut old_packages: FxHashMap<PackageId, Package> = all_packages(database)
         .iter()
         .map(|package| (package.package_id(database), *package))
         .collect();
@@ -160,8 +160,7 @@ fn apply_package_graph(
         // Salsa does not have a removal API yet, see: https://github.com/salsa-rs/salsa/issues/37
         remaining_package.set_data(database).to(dummy_package);
     }
-
-    database.set_all_packages(Arc::new(all_packages.into_boxed_slice()));
+    set_all_packages_with_durability(database, all_packages, Durability::MEDIUM);
 }
 
 #[must_use]
@@ -198,9 +197,8 @@ struct PackageGraph {
 }
 
 impl PackageGraph {
-    pub fn new(database: &dyn RootQueryDb) -> Self {
-        let (ids, packages): (Vec<_>, FxHashMap<_, _>) = database
-            .all_packages()
+    pub fn new(database: &dyn SourceDatabase) -> Self {
+        let (ids, packages): (Vec<_>, FxHashMap<_, _>) = all_packages(database)
             .iter()
             .map(|package| {
                 let mut package_data = PackageData::clone(package.data(database));

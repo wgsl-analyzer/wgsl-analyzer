@@ -1,4 +1,4 @@
-use base_db::{EditionedFileId, FileId, RootQueryDb as _, SourceDatabase as _, TextRange};
+use base_db::{EditionedFileId, FileId, SourceDatabase as _, TextRange};
 use hir_def::database::DefDatabase as _;
 use rowan::NodeOrToken;
 use syntax::{AstNode as _, SyntaxNode, ast};
@@ -12,7 +12,7 @@ pub(crate) fn format(
     range: Option<TextRange>,
 ) -> Option<SyntaxNode> {
     let file_id = EditionedFileId::from_file(database, file_id);
-    let file = database.parse(file_id).tree();
+    let file = file_id.parse(database).tree();
 
     let node = match range {
         None => file.syntax().clone_for_update(),

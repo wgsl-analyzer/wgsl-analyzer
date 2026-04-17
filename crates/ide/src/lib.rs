@@ -19,8 +19,8 @@ mod view_syntax_tree;
 use std::panic;
 
 use base_db::{
-    EditionedFileId, FilePosition, FileRange, FileSet, RangeInfo, RootQueryDb as _,
-    SourceDatabase as _, SourceRoot, TextRange, change::Change, input::SourceRootId,
+    EditionedFileId, FilePosition, FileRange, FileSet, RangeInfo, SourceDatabase as _, SourceRoot,
+    TextRange, change::Change, input::SourceRootId,
 };
 use diagnostics::Diagnostic;
 use hir::{ExtensionsConfig, diagnostics::DiagnosticsConfig};
@@ -298,7 +298,7 @@ impl Analysis {
         &self,
         file_id: FileId,
     ) -> Cancellable<Parse> {
-        self.with_db(|database| database.parse(EditionedFileId::from_file(database, file_id)))
+        self.with_db(|database| EditionedFileId::from_file(database, file_id).parse(database))
     }
 
     /// Renders the package graph to `GraphViz` "dot" syntax.
@@ -340,8 +340,8 @@ impl Analysis {
     ) -> Cancellable<Vec<Fold>> {
         self.with_db(|database| {
             folding_ranges::folding_ranges(
-                &database
-                    .parse(EditionedFileId::from_file(database, file_id))
+                &EditionedFileId::from_file(database, file_id)
+                    .parse(database)
                     .tree(),
             )
         })
