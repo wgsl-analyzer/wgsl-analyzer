@@ -218,7 +218,7 @@ fn format_chunks(chunks: Vec<dissimilar::Chunk<'_>>) -> String {
 ///
 /// For line comments, `##` gets replaced with line comments of an increasing number.
 /// `## a ## b` would become:
-/// ```
+/// ```compile_fail
 /// // 0
 /// a // 1
 /// b
@@ -226,7 +226,7 @@ fn format_chunks(chunks: Vec<dissimilar::Chunk<'_>>) -> String {
 ///
 /// For block comments, `##` gets replaced with block comments of an increasing number.
 /// `## a ## b` would become:
-/// ```
+/// ```compile_fail
 /// /* 0 */ a /* 1 */ b
 /// ```
 pub fn check_comments<E: ExpectAssertEq>(
