@@ -19,7 +19,10 @@ use crate::format::{
     gen_expression::gen_expression,
     gen_function_call::gen_function_call,
     gen_if_statement::gen_if_statement,
+    gen_statement_break::gen_break_statement,
     gen_statement_compound::gen_compound_statement,
+    gen_statement_continue::gen_continue_statement,
+    gen_statement_discard::gen_discard_statement,
     gen_switch_statement::gen_switch_statement,
     gen_var_let_const_override_statement::{
         gen_const_declaration_statement, gen_let_declaration_statement,
@@ -82,65 +85,13 @@ pub fn gen_statement_maybe_semicolon(
             gen_return_statement(return_statement, include_semicolon)
         },
         ast::Statement::BreakStatement(break_statement) => {
-            // ==== Parse ====
-            // We still parse through the break syntax even tho there is no information for
-            // the formatter to get out of it. This exists to ensure we don't accidentally delete
-            // user's code should future changes to wgsl allow more complex break statements.
-            let mut syntax = put_back(break_statement.syntax().children_with_tokens());
-            parse_token(&mut syntax, SyntaxKind::Break)?;
-            parse_token_optional(&mut syntax, SyntaxKind::Semicolon);
-            parse_end(&mut syntax)?;
-
-            // ==== Format ====
-            let mut formatted = PrintItemBuffer::new();
-            formatted.push_sc(sc!("break"));
-            if include_semicolon {
-                formatted.push_sc(sc!(";"));
-            }
-            formatted.expect(RequestItem::LineBreak);
-            Ok(formatted)
+            gen_break_statement(break_statement, include_semicolon)
         },
         ast::Statement::ContinueStatement(continue_statement) => {
-            // ==== Parse ====
-            // We still parse through the discard syntax even tho there is no information for
-            // the formatter to get out of it. This exists to ensure we don't accidentally delete
-            // user's code should future changes to wgsl allow more complex continue statements.
-            let mut syntax = put_back(continue_statement.syntax().children_with_tokens());
-            parse_token(&mut syntax, SyntaxKind::Continue)?;
-            let comments_after_continue = parse_many_comments_and_blankspace(&mut syntax)?;
-            parse_token_optional(&mut syntax, SyntaxKind::Semicolon);
-            parse_end(&mut syntax)?;
-
-            // ==== Format ====
-            let mut formatted = PrintItemBuffer::new();
-            formatted.push_sc(sc!("continue"));
-            if include_semicolon {
-                formatted.push_sc(sc!(";"));
-            }
-            formatted.expect(RequestItem::LineBreak);
-            formatted.extend(gen_comments(&comments_after_continue));
-            Ok(formatted)
+            gen_continue_statement(continue_statement, include_semicolon)
         },
         ast::Statement::DiscardStatement(discard) => {
-            // ==== Parse ====
-            // We still parse through the discard syntax even tho there is no information for
-            // the formatter to get out of it. This exists to ensure we don't accidentally delete
-            // user's code should future changes to wgsl allow more complex discard statements.
-            let mut syntax = put_back(discard.syntax().children_with_tokens());
-            parse_token(&mut syntax, SyntaxKind::Discard)?;
-            let comments_after_discard = parse_many_comments_and_blankspace(&mut syntax)?;
-            parse_token_optional(&mut syntax, SyntaxKind::Semicolon);
-            parse_end(&mut syntax)?;
-
-            // ==== Format ====
-            let mut formatted = PrintItemBuffer::new();
-            formatted.push_sc(sc!("discard"));
-            if include_semicolon {
-                formatted.push_sc(sc!(";"));
-            }
-            formatted.expect(RequestItem::LineBreak);
-            formatted.extend(gen_comments(&comments_after_discard));
-            Ok(formatted)
+            gen_discard_statement(discard, include_semicolon)
         },
         ast::Statement::AssertStatement(assert_statement) => {
             gen_const_assert_statement(assert_statement, include_semicolon)
