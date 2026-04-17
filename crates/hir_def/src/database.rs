@@ -8,9 +8,7 @@
 )]
 use std::fmt::{self, Debug};
 
-use base_db::{
-    EditionedFileId, Lookup as _, RootQueryDb, SourceDatabase, impl_intern_key, impl_intern_lookup,
-};
+use base_db::{EditionedFileId, Lookup as _, SourceDatabase, impl_intern_key, impl_intern_lookup};
 use salsa::plumbing::AsId as _;
 use syntax::{Parse, ast};
 use triomphe::Arc;
@@ -168,7 +166,7 @@ fn parse_or_resolve(
     database: &dyn DefDatabase,
     file_id: EditionedFileId,
 ) -> Parse {
-    database.parse(file_id)
+    file_id.parse(database)
 }
 
 fn ast_id_map(
@@ -181,7 +179,7 @@ fn ast_id_map(
 }
 
 #[query_group::query_group(InternDatabaseStorage)]
-pub trait InternDatabase: RootQueryDb {
+pub trait InternDatabase: SourceDatabase {
     #[salsa::interned]
     fn intern_import(
         &self,

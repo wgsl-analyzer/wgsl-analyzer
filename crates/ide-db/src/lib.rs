@@ -7,8 +7,8 @@ use std::{fmt, panic};
 
 pub use base_db;
 use base_db::{
-    FileId, FileSourceRootInput, FileText, Files, Nonce, RootQueryDb as _, SourceDatabase,
-    SourceRoot, SourceRootId, SourceRootInput, change::Change, set_all_packages_with_durability,
+    FileId, FileSourceRootInput, FileText, Files, Nonce, SourceDatabase, SourceRoot, SourceRootId,
+    SourceRootInput, change::Change, set_all_packages_with_durability,
 };
 use hir_def::database::{DefDatabase as _, ExtensionsConfig};
 use line_index::LineIndex;
@@ -223,7 +223,7 @@ impl SnippetCapability {
 }
 
 #[query_group::query_group]
-pub trait LineIndexDatabase: base_db::RootQueryDb {
+pub trait LineIndexDatabase: base_db::SourceDatabase {
     #[salsa::invoke_interned(line_index)]
     fn line_index(
         &self,

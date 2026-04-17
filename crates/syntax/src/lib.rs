@@ -50,6 +50,13 @@ impl Parse {
     pub fn tree(&self) -> ast::SourceFile {
         ast::SourceFile::cast(self.syntax()).unwrap()
     }
+
+    pub fn ok(self) -> Result<ast::SourceFile, Vec<Diagnostic>> {
+        match self.errors() {
+            errors if !errors.is_empty() => Err(errors.to_vec()),
+            _ => Ok(self.tree()),
+        }
+    }
 }
 
 #[must_use]

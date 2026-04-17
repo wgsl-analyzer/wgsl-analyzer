@@ -10,7 +10,7 @@ use triomphe::Arc;
 use vfs::FileId;
 
 use crate::{
-    Package, PackageDisplayName, RootQueryDb, all_packages,
+    Package, PackageDisplayName, SourceDatabase, all_packages,
     input::{Dependency, PackageData, PackageId, PackageOrigin, SourceRoot, SourceRootId},
     set_all_packages_with_durability,
 };
@@ -83,7 +83,7 @@ impl Change {
     /// Panics if the number of source roots exceeds `u32::MAX`, as `SourceRootId` holds a `u32`.
     pub fn apply(
         self,
-        database: &mut dyn RootQueryDb,
+        database: &mut dyn SourceDatabase,
     ) {
         if let Some(roots) = self.roots {
             for (root, root_id) in roots.into_iter().zip(0_u32..) {
@@ -117,7 +117,7 @@ impl Change {
 }
 
 fn apply_package_graph(
-    database: &mut dyn RootQueryDb,
+    database: &mut dyn SourceDatabase,
     mut package_graph: PackageGraph,
     sorted_packages: Vec<PackageId>,
 ) {
@@ -197,7 +197,7 @@ struct PackageGraph {
 }
 
 impl PackageGraph {
-    pub fn new(database: &dyn RootQueryDb) -> Self {
+    pub fn new(database: &dyn SourceDatabase) -> Self {
         let (ids, packages): (Vec<_>, FxHashMap<_, _>) = all_packages(database)
             .iter()
             .map(|package| {

@@ -21,21 +21,10 @@ pub struct ParserContext {
     edition: Edition,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Diagnostic {
     pub message: String,
     pub range: rowan::TextRange,
-}
-
-impl fmt::Debug for Diagnostic {
-    fn fmt(
-        &self,
-        f: &mut fmt::Formatter<'_>,
-    ) -> fmt::Result {
-        f.debug_struct("Diagnostic")
-            .field("message", &self.message)
-            .field("range", &self.range)
-            .finish()
-    }
 }
 
 impl fmt::Display for Diagnostic {

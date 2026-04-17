@@ -2,7 +2,7 @@
 //! is interned (so queries can take it) and stores only the underlying `span::EditionedFileId`.
 
 use salsa::Database;
-use syntax::Edition;
+use syntax::{Diagnostic, Edition, ast};
 use vfs::FileId;
 
 use crate::SourceDatabase;
@@ -20,6 +20,45 @@ pub struct RawEditionedFileId {
 #[derive(PartialOrd, Ord)]
 pub struct EditionedFileId {
     field: RawEditionedFileId,
+}
+
+impl EditionedFileId {
+    pub fn parse(
+        self,
+        database: &dyn SourceDatabase,
+    ) -> syntax::Parse {
+        #[salsa::tracked(lru = 128)]
+        pub fn parse(
+            database: &dyn SourceDatabase,
+            file_id: EditionedFileId,
+        ) -> syntax::Parse {
+            let _p = tracing::info_span!("parse", ?file_id).entered();
+            let (file_id, edition) = (file_id.file_id(database), file_id.edition(database));
+            let text = database.file_text(file_id).text(database);
+            syntax::parse(text, edition)
+        }
+        parse(database, self)
+    }
+
+    // firewall query
+    pub fn parse_errors(
+        self,
+        database: &dyn SourceDatabase,
+    ) -> Option<&[Diagnostic]> {
+        #[salsa::tracked(returns(as_deref))]
+        pub fn parse_errors(
+            database: &dyn SourceDatabase,
+            file_id: EditionedFileId,
+        ) -> Option<Box<[Diagnostic]>> {
+            let parse = file_id.parse(database);
+            let errors = parse.errors();
+            match &*errors {
+                [] => None,
+                [..] => Some(errors.into()),
+            }
+        }
+        parse_errors(database, self)
+    }
 }
 
 impl EditionedFileId {

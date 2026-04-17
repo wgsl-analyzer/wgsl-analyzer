@@ -55,12 +55,12 @@ dependencies = [
  "edition",
  "expect-test",
  "la-arena",
- "query-group-macro",
  "rowan",
  "rustc-hash 2.1.2",
  "salsa",
  "salsa-macros",
  "syntax",
+ "tracing",
  "triomphe",
  "vfs",
 ]

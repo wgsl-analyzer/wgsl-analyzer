@@ -9,21 +9,10 @@ pub use edition::Edition;
 pub use parser::{Diagnostic, parse_entrypoint};
 use rowan::GreenNode;
 
+#[derive(Debug)]
 pub struct Parse {
     green_node: GreenNode,
     errors: Vec<Diagnostic>,
-}
-impl fmt::Debug for Parse {
-    fn fmt(
-        &self,
-        formatter: &mut fmt::Formatter<'_>,
-    ) -> fmt::Result {
-        formatter
-            .debug_struct("Parse")
-            .field("green_node", &self.green_node)
-            .field("errors", &self.errors)
-            .finish()
-    }
 }
 
 impl PartialEq for Parse {

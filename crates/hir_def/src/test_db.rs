@@ -1,9 +1,8 @@
 use std::{fmt, panic};
 
 use base_db::{
-    EditionedFileId, FileSourceRootInput, FileText, Nonce, RootQueryDb as _, SourceDatabase,
-    SourceRootId, SourceRootInput, change::Change, input::SourceRoot,
-    set_all_packages_with_durability,
+    EditionedFileId, FileSourceRootInput, FileText, Nonce, SourceDatabase, SourceRootId,
+    SourceRootInput, change::Change, input::SourceRoot, set_all_packages_with_durability,
 };
 use salsa::{Durability, Storage};
 use syntax::Edition;

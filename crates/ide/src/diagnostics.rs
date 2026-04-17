@@ -332,7 +332,7 @@ pub fn diagnostics(
     file_id: FileId,
 ) -> Vec<Diagnostic> {
     let file_id = EditionedFileId::from_file(database, file_id);
-    let parse = database.parse(file_id);
+    let parse = file_id.parse(database);
 
     let mut diagnostics = Vec::new();
 

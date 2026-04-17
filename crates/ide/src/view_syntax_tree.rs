@@ -1,6 +1,6 @@
 use std::fmt::Write as _;
 
-use base_db::{EditionedFileId, RootQueryDb as _, SourceDatabase as _, TextRange};
+use base_db::{EditionedFileId, TextRange};
 use hir_def::database::DefDatabase as _;
 use ide_db::{LineIndexDatabase as _, RootDatabase};
 use line_index::{LineCol, LineIndex};
@@ -21,7 +21,7 @@ pub(crate) fn view_syntax_tree(
     file_id: FileId,
 ) -> String {
     let file_id = EditionedFileId::from_file(database, file_id);
-    let syntax_node = database.parse(file_id).syntax();
+    let syntax_node = file_id.parse(database).syntax();
     let line_index = database.line_index(file_id.file_id(database));
 
     let ctx = SyntaxTreeCtx {

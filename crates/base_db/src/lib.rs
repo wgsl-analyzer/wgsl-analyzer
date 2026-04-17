@@ -350,18 +350,6 @@ impl PackageDisplayName {
     }
 }
 
-/// Database which stores all significant input facts: source code and project
-/// model. Everything else in rust-analyzer is derived from these queries.
-#[query_group::query_group]
-pub trait RootQueryDb: SourceDatabase + salsa::Database {
-    #[salsa::invoke(parse)]
-    #[salsa::lru(128)]
-    fn parse(
-        &self,
-        key: EditionedFileId,
-    ) -> Parse;
-}
-
 #[salsa_macros::db]
 pub trait SourceDatabase: salsa::Database {
     /// Text of the file.
@@ -432,7 +420,7 @@ impl Nonce {
 }
 
 fn parse(
-    database: &dyn RootQueryDb,
+    database: &dyn SourceDatabase,
     file_id: EditionedFileId,
 ) -> Parse {
     let RawEditionedFileId { file_id, edition } = file_id.unpack(database);
