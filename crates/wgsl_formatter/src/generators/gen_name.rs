@@ -1,7 +1,7 @@
 use itertools::put_back;
 use syntax::{AstNode as _, ast};
 
-use crate::generators::{
+use crate::{
     ast_parse::{parse_end, parse_token},
     print_item_buffer::PrintItemBuffer,
     reporting::FormatDocumentResult,

@@ -6,15 +6,17 @@ use syntax::{
     ast::{self, CompoundStatement, Expression, Statement},
 };
 
-use crate::generators::{
+use crate::{
     ast_parse::{parse_end, parse_node, parse_node_by_kind_optional, parse_token},
-    expressions::gen_expression,
-    gen_attributes::{AttributeLayout, gen_attributes, parse_many_attributes},
-    gen_comments::{gen_comments, parse_many_comments_and_blankspace},
+    generators::{
+        expressions::gen_expression,
+        gen_attributes::{AttributeLayout, gen_attributes, parse_many_attributes},
+        gen_comments::{gen_comments, parse_many_comments_and_blankspace},
+        statements::{compound_statement::gen_compound_statement, gen_statement_maybe_semicolon},
+    },
     multiline_group::MultilineGroup,
     print_item_buffer::{PrintItemBuffer, request_folder::RequestItem},
     reporting::FormatDocumentResult,
-    statements::{compound_statement::gen_compound_statement, gen_statement_maybe_semicolon},
 };
 
 pub fn gen_for_statement(statement: &ast::ForStatement) -> FormatDocumentResult<PrintItemBuffer> {

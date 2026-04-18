@@ -6,10 +6,12 @@ use syntax::{
     ast::{self, Expression, IncrementDecrement},
 };
 
-use crate::generators::{
+use crate::{
     ast_parse::{parse_end, parse_node, parse_token, parse_token_optional},
-    expressions::gen_expression,
-    gen_comments::{gen_comments, parse_many_comments_and_blankspace},
+    generators::{
+        expressions::gen_expression,
+        gen_comments::{gen_comments, parse_many_comments_and_blankspace},
+    },
     print_item_buffer::{PrintItemBuffer, request_folder::RequestItem},
     reporting::FormatDocumentError,
 };

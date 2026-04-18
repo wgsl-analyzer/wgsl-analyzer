@@ -7,10 +7,12 @@ use syntax::{
     ast::{self},
 };
 
-use crate::generators::{
+use crate::{
     ast_parse::{parse_any_node_optional, parse_end, parse_token_optional},
-    gen_comments::{Comment, gen_comment, parse_comment_optional},
-    gen_node::gen_node,
+    generators::{
+        gen_comments::{Comment, gen_comment, parse_comment_optional},
+        gen_node::gen_node,
+    },
     helpers::{LineSpacing, gen_line_spacing, parse_line_spacing},
     print_item_buffer::{
         PrintItemBuffer,

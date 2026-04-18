@@ -1,16 +1,18 @@
 use syntax::ast;
 
-use crate::generators::{
-    expressions::{
-        field_expression::gen_field_expression, ident_expression::gen_ident_expression,
-        index_expression::gen_index_expression, infix_expression::gen_infix_expression,
-        literal_expression::gen_literal_expression,
-        parenthesis_expression::gen_parenthesis_expression,
-        prefix_expression::gen_prefix_expression,
+use crate::{
+    generators::{
+        expressions::{
+            field_expression::gen_field_expression, ident_expression::gen_ident_expression,
+            index_expression::gen_index_expression, infix_expression::gen_infix_expression,
+            literal_expression::gen_literal_expression,
+            parenthesis_expression::gen_parenthesis_expression,
+            prefix_expression::gen_prefix_expression,
+        },
+        statements::function_call_statement::gen_function_call,
     },
     print_item_buffer::PrintItemBuffer,
     reporting::FormatDocumentResult,
-    statements::function_call_statement::gen_function_call,
 };
 
 pub mod field_expression;

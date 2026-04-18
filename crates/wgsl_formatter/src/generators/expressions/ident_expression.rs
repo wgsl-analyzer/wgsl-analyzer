@@ -4,11 +4,13 @@ use syntax::{
     ast::{self, TemplateList},
 };
 
-use crate::generators::{
+use crate::{
     ast_parse::{parse_end, parse_node, parse_node_optional},
-    gen_comments::{gen_comments, parse_many_comments_and_blankspace},
-    gen_path::gen_path,
-    gen_types::gen_template_list,
+    generators::{
+        gen_comments::{gen_comments, parse_many_comments_and_blankspace},
+        gen_path::gen_path,
+        gen_types::gen_template_list,
+    },
     print_item_buffer::PrintItemBuffer,
     reporting::FormatDocumentResult,
 };

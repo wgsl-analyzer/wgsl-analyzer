@@ -1,15 +1,14 @@
-mod line_spacing;
-
 use std::rc::Rc;
 
 use dprint_core::formatting::{
     ConditionResolver, ConditionResolverContext, LineNumber, condition_helpers,
 };
+mod line_spacing;
 
 use itertools::{Itertools as _, Position};
 pub use line_spacing::*;
 
-use crate::generators::{print_item_buffer::PrintItemBuffer, reporting::FormatDocumentResult};
+use crate::{print_item_buffer::PrintItemBuffer, reporting::FormatDocumentResult};
 
 use super::print_item_buffer::request_folder::RequestItem;
 

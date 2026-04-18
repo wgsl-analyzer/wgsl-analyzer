@@ -5,9 +5,9 @@ use itertools::put_back;
 use parser::SyntaxKind;
 use syntax::{AstNode as _, ast};
 
-use crate::generators::{
+use crate::{
     ast_parse::{parse_end, parse_token_optional},
-    gen_comments::{Comment, gen_comment, parse_comment_optional},
+    generators::gen_comments::{Comment, gen_comment, parse_comment_optional},
     print_item_buffer::{PrintItemBuffer, request_folder::Request},
     reporting::FormatDocumentResult,
 };
