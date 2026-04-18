@@ -8,15 +8,13 @@ use syntax::{
 
 use crate::format::{
     ast_parse::{parse_end, parse_node_optional, parse_token, parse_token_optional},
-    gen_attributes::{gen_attributes, parse_many_attributes},
+    gen_attributes::{AttributeLayout, gen_attributes, parse_many_attributes},
     gen_comments::{Comment, gen_comment, parse_comment_optional},
-    gen_statement::gen_statement_maybe_semicolon,
     helpers::{LineSpacing, gen_line_spacing, parse_line_spacing},
     print_item_buffer::{PrintItemBuffer, request_folder::RequestItem},
     reporting::FormatDocumentResult,
+    statements::gen_statement::gen_statement_maybe_semicolon,
 };
-
-use super::gen_attributes::AttributeLayout;
 
 enum CompoundStatementItem {
     Statement(ast::Statement),

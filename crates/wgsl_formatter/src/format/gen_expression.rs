@@ -8,12 +8,12 @@ use syntax::{
 use crate::format::{
     ast_parse::{parse_end, parse_node, parse_node_optional, parse_token, parse_token_any},
     gen_comments::{gen_comments, parse_many_comments_and_blankspace},
-    gen_function_call::gen_function_call,
     gen_path::gen_path,
     gen_types::gen_template_list,
     multiline_group::MultilineGroup,
     print_item_buffer::{PrintItemBuffer, request_folder::Request},
     reporting::FormatDocumentResult,
+    statements::gen_function_call::gen_function_call,
 };
 
 use super::print_item_buffer::request_folder::RequestItem;

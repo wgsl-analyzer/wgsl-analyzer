@@ -8,33 +8,23 @@ mod ast_parse;
 mod helpers;
 mod print_item_buffer;
 
-pub mod gen_assignment_statement;
 mod gen_attributes;
 mod gen_comments;
 mod gen_diagnostic;
 mod gen_directive;
 mod gen_expression;
 mod gen_function;
-mod gen_function_call;
-mod gen_if_statement;
-pub mod gen_import;
+
 mod gen_name;
 mod gen_node;
 mod gen_path;
 mod gen_source_file;
-mod gen_statement;
-mod gen_statement_break;
-pub mod gen_statement_compound;
-mod gen_statement_continue;
-mod gen_statement_discard;
-mod gen_statement_for;
 mod gen_struct;
-pub mod gen_switch_statement;
 mod gen_type_alias_declaration;
 mod gen_types;
-mod gen_var_let_const_override_statement;
 pub mod multiline_group;
 mod reporting;
+mod statements;
 
 use dprint_core::formatting::PrintOptions;
 use parser::{Edition, SyntaxNode};

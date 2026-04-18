@@ -8,26 +8,29 @@ use syntax::{
 
 use crate::format::{
     ast_parse::{parse_end, parse_node, parse_node_optional, parse_token, parse_token_optional},
-    gen_assignment_statement::{
-        gen_assignment_statement, gen_compound_assignment_statement, gen_phony_assignment_statement,
-    },
     gen_attributes::{AttributeLayout, gen_attributes, parse_many_attributes},
     gen_comments::{gen_comments, parse_many_comments_and_blankspace},
     gen_expression::gen_expression,
-    gen_function_call::gen_function_call,
-    gen_if_statement::gen_if_statement,
-    gen_statement_break::gen_break_statement,
-    gen_statement_compound::gen_compound_statement,
-    gen_statement_continue::gen_continue_statement,
-    gen_statement_discard::gen_discard_statement,
-    gen_statement_for::gen_for_statement,
-    gen_switch_statement::gen_switch_statement,
-    gen_var_let_const_override_statement::{
-        gen_const_declaration_statement, gen_let_declaration_statement,
-        gen_var_declaration_statement,
-    },
     print_item_buffer::{PrintItemBuffer, request_folder::RequestItem},
     reporting::{FormatDocumentError, FormatDocumentResult},
+    statements::{
+        gen_assignment::{
+            gen_assignment_statement, gen_compound_assignment_statement,
+            gen_phony_assignment_statement,
+        },
+        gen_break::gen_break_statement,
+        gen_compound::gen_compound_statement,
+        gen_continue::gen_continue_statement,
+        gen_discard::gen_discard_statement,
+        gen_for::gen_for_statement,
+        gen_function_call::gen_function_call,
+        gen_if::gen_if_statement,
+        gen_switch::gen_switch_statement,
+        gen_var_let_const_override::{
+            gen_const_declaration_statement, gen_let_declaration_statement,
+            gen_var_declaration_statement,
+        },
+    },
 };
 
 pub fn gen_statement_maybe_semicolon(
