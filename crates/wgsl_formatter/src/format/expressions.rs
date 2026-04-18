@@ -2,23 +2,24 @@ use syntax::ast;
 
 use crate::format::{
     expressions::{
-        gen_field::gen_field_expression, gen_ident::gen_ident_expression,
-        gen_index::gen_index_expression, gen_infix::gen_infix_expression,
-        gen_literal::gen_literal_expression, gen_parenthesis::gen_parenthesis_expression,
-        gen_prefix::gen_prefix_expression,
+        field_expression::gen_field_expression, ident_expression::gen_ident_expression,
+        index_expression::gen_index_expression, infix_expression::gen_infix_expression,
+        literal_expression::gen_literal_expression,
+        parenthesis_expression::gen_parenthesis_expression,
+        prefix_expression::gen_prefix_expression,
     },
     print_item_buffer::PrintItemBuffer,
     reporting::FormatDocumentResult,
     statements::gen_function_call::gen_function_call,
 };
 
-pub mod gen_field;
-pub mod gen_ident;
-pub mod gen_index;
-pub mod gen_infix;
-pub mod gen_literal;
-pub mod gen_parenthesis;
-pub mod gen_prefix;
+pub mod field_expression;
+pub mod ident_expression;
+pub mod index_expression;
+pub mod infix_expression;
+pub mod literal_expression;
+pub mod parenthesis_expression;
+pub mod prefix_expression;
 
 pub fn gen_expression(
     expression: &ast::Expression,
