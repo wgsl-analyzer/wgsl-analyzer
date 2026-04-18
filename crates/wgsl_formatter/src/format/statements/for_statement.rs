@@ -14,7 +14,7 @@ use crate::format::{
     multiline_group::MultilineGroup,
     print_item_buffer::{PrintItemBuffer, request_folder::RequestItem},
     reporting::FormatDocumentResult,
-    statements::{gen_compound::gen_compound_statement, gen_statement_maybe_semicolon},
+    statements::{compound_statement::gen_compound_statement, gen_statement_maybe_semicolon},
 };
 
 pub fn gen_for_statement(statement: &ast::ForStatement) -> FormatDocumentResult<PrintItemBuffer> {

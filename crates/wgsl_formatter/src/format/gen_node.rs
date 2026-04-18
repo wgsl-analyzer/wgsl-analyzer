@@ -40,44 +40,44 @@ use crate::format::{
     },
     reporting::FormatDocumentResult,
     statements::{
-        gen_assignment::{
+        assignment_statement::{
             gen_assignment_statement, gen_compound_assignment_statement,
             gen_phony_assignment_statement,
         },
-        gen_break::gen_break_statement,
-        gen_break_if::gen_break_if_statement,
-        gen_compound::gen_compound_statement,
-        gen_const_assert::gen_const_assert_statement,
-        gen_continue::gen_continue_statement,
-        gen_continuing::gen_continuing_statement,
-        gen_discard::gen_discard_statement,
-        gen_for::{
+        break_if_statement::gen_break_if_statement,
+        break_statement::gen_break_statement,
+        compound_statement::gen_compound_statement,
+        const_assert_statement::gen_const_assert_statement,
+        continue_statement::gen_continue_statement,
+        continuing_statement::gen_continuing_statement,
+        discard_statement::gen_discard_statement,
+        for_statement::{
             gen_for_statement, gen_for_statement_condition, gen_for_statement_continuing_part,
             gen_for_statement_initializer,
         },
-        gen_function_call::{
+        function_call_statement::{
             gen_function_call, gen_function_call_arguments, gen_function_call_statement,
         },
-        gen_if::{
+        if_statement::{
             gen_if_statement, gen_if_statement_else_clause, gen_if_statement_else_if_clause,
             gen_if_statement_if_clause,
         },
-        gen_import::{
+        import_statement::{
             gen_import_collection, gen_import_item, gen_import_package_relative, gen_import_path,
             gen_import_statement, gen_import_super_relative,
         },
-        gen_increment_decrement::gen_increment_decrement_statement,
-        gen_loop::gen_loop_statement,
-        gen_return::gen_return_statement,
-        gen_switch::{
+        increment_decrement_statement::gen_increment_decrement_statement,
+        loop_statement::gen_loop_statement,
+        return_statement::gen_return_statement,
+        switch_statement::{
             gen_switch_body, gen_switch_body_case, gen_switch_case_default_selector,
             gen_switch_case_selectors, gen_switch_statement,
         },
-        gen_var_let_const_override::{
+        var_let_const_override_statement::{
             gen_const_declaration_statement, gen_let_declaration_statement,
             gen_override_declaration_statement, gen_var_declaration_statement,
         },
-        gen_while::gen_while_statement,
+        while_statement::gen_while_statement,
     },
 };
 

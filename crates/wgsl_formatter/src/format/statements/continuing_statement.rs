@@ -8,30 +8,26 @@ use syntax::{
 
 use crate::format::{
     ast_parse::{parse_end, parse_node, parse_token},
-    gen_attributes::{AttributeLayout, gen_attributes, parse_many_attributes},
     gen_comments::{gen_comments, parse_many_comments_and_blankspace},
     print_item_buffer::{PrintItemBuffer, request_folder::RequestItem},
     reporting::FormatDocumentResult,
-    statements::gen_compound::gen_compound_statement,
+    statements::compound_statement::gen_compound_statement,
 };
 
-pub fn gen_loop_statement(statement: &ast::LoopStatement) -> FormatDocumentResult<PrintItemBuffer> {
+pub fn gen_continuing_statement(
+    statement: &ast::ContinuingStatement
+) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = put_back(statement.syntax().children_with_tokens());
-    let item_attributes = parse_many_attributes(&mut syntax)?;
-    parse_token(&mut syntax, SyntaxKind::Loop)?;
-    let comments_after_loop = parse_many_comments_and_blankspace(&mut syntax)?;
+    parse_token(&mut syntax, SyntaxKind::Continuing)?;
+    let comments_after_continuing = parse_many_comments_and_blankspace(&mut syntax)?;
     let item_body = parse_node::<CompoundStatement>(&mut syntax)?;
     parse_end(&mut syntax)?;
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::new();
-    formatted.extend(gen_attributes(
-        &item_attributes,
-        AttributeLayout::Multiline,
-    )?);
-    formatted.push_sc(sc!("loop"));
-    formatted.extend(gen_comments(&comments_after_loop));
+    formatted.push_sc(sc!("continuing"));
+    formatted.extend(gen_comments(&comments_after_continuing));
     formatted.expect(RequestItem::Space);
     formatted.extend(gen_compound_statement(&item_body)?);
     formatted.expect(RequestItem::LineBreak);

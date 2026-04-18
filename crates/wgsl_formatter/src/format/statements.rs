@@ -4,51 +4,50 @@ use crate::format::{
     print_item_buffer::PrintItemBuffer,
     reporting::FormatDocumentError,
     statements::{
-        gen_assignment::{
+        assignment_statement::{
             gen_assignment_statement, gen_compound_assignment_statement,
             gen_phony_assignment_statement,
         },
-        gen_break::gen_break_statement,
-        gen_break_if::gen_break_if_statement,
-        gen_compound::gen_compound_statement,
-        gen_const_assert::gen_const_assert_statement,
-        gen_continue::gen_continue_statement,
-        gen_continuing::gen_continuing_statement,
-        gen_discard::gen_discard_statement,
-        gen_for::gen_for_statement,
-        gen_function_call::gen_function_call_statement,
-        gen_if::gen_if_statement,
-        gen_increment_decrement::gen_increment_decrement_statement,
-        gen_loop::gen_loop_statement,
-        gen_return::gen_return_statement,
-        gen_switch::gen_switch_statement,
-        gen_var_let_const_override::{
+        break_if_statement::gen_break_if_statement,
+        break_statement::gen_break_statement,
+        compound_statement::gen_compound_statement,
+        const_assert_statement::gen_const_assert_statement,
+        continue_statement::gen_continue_statement,
+        continuing_statement::gen_continuing_statement,
+        discard_statement::gen_discard_statement,
+        for_statement::gen_for_statement,
+        function_call_statement::gen_function_call_statement,
+        if_statement::gen_if_statement,
+        increment_decrement_statement::gen_increment_decrement_statement,
+        loop_statement::gen_loop_statement,
+        return_statement::gen_return_statement,
+        switch_statement::gen_switch_statement,
+        var_let_const_override_statement::{
             gen_const_declaration_statement, gen_let_declaration_statement,
             gen_var_declaration_statement,
         },
-        gen_while::gen_while_statement,
+        while_statement::gen_while_statement,
     },
 };
 
-pub mod gen_assignment;
-pub mod gen_break;
-pub mod gen_break_if;
-pub mod gen_compound;
-pub mod gen_const_assert;
-pub mod gen_continue;
-pub mod gen_continuing;
-pub mod gen_discard;
-pub mod gen_for;
-pub mod gen_function_call;
-pub mod gen_if;
-pub mod gen_import;
-pub mod gen_increment_decrement;
-pub mod gen_loop;
-pub mod gen_return;
-pub mod gen_statement;
-pub mod gen_switch;
-pub mod gen_var_let_const_override;
-pub mod gen_while;
+pub mod assignment_statement;
+pub mod break_if_statement;
+pub mod break_statement;
+pub mod compound_statement;
+pub mod const_assert_statement;
+pub mod continue_statement;
+pub mod continuing_statement;
+pub mod discard_statement;
+pub mod for_statement;
+pub mod function_call_statement;
+pub mod if_statement;
+pub mod import_statement;
+pub mod increment_decrement_statement;
+pub mod loop_statement;
+pub mod return_statement;
+pub mod switch_statement;
+pub mod var_let_const_override_statement;
+pub mod while_statement;
 
 pub fn gen_statement_maybe_semicolon(
     item: &ast::Statement,
