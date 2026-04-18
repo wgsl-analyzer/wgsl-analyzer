@@ -1,4 +1,4 @@
-mod format;
+mod generators;
 #[cfg(test)]
 mod tests;
 
@@ -17,7 +17,7 @@ use dprint_core::configuration::{NewLineKind, ParseConfigurationError};
 use rowan::{GreenNode, GreenToken, NodeOrToken, WalkEvent};
 use syntax::{AstNode, HasName, SyntaxElement, SyntaxKind, SyntaxNode, SyntaxToken, ast};
 
-pub use format::{FormatStringError, FormattedRange, format_file, format_range, format_tree};
+pub use generators::{FormatStringError, FormattedRange, format_file, format_range, format_tree};
 
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
