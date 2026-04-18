@@ -66,3 +66,4 @@ extend-ignore-identifiers-re = []
 # "lit" = "literal"
 # "ident" = "identifier"
 # "ty" = "type"
+"sep" = "separator"

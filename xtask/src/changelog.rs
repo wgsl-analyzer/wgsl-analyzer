@@ -1,30 +1,24 @@
-use std::process::Command;
 use std::thread;
 use std::time::Duration;
 use std::{collections::HashSet, path::Path};
 
-use anyhow::{Context, Result};
+use anyhow::{Context as _, Result};
 use regex::Regex;
 use reqwest::StatusCode;
 use reqwest::blocking::{Client, Response};
 use serde::Deserialize;
-use xshell::Shell;
+use xshell::{Shell, cmd};
 
 use crate::{flags::Changelog, project_root};
 
 impl Changelog {
-    #[expect(clippy::unused_self, reason = "better API")]
-    #[expect(
-        clippy::unnecessary_wraps,
-        reason = "command handlers have a specific signature"
-    )]
     pub(crate) fn run(
         &self,
         shell: &Shell,
     ) -> anyhow::Result<()> {
         let token = std::env::var("GITHUB_TOKEN").ok();
 
-        let commits = git_log_commits(self.since.as_deref())?;
+        let commits = git_log_commits(shell, self.since.as_deref())?;
         eprintln!("Found {} commits referencing a PR", commits.len());
 
         let client = build_client(token.as_deref())?;
@@ -36,7 +30,7 @@ impl Changelog {
             let skip = pr
                 .labels
                 .iter()
-                .find(|l| l.name == CHORE_LABEL || l.name == DEPENDENCIES_LABEL);
+                .find(|label| label.name == CHORE_LABEL || label.name == DEPENDENCIES_LABEL);
 
             match skip {
                 None => {
@@ -88,14 +82,16 @@ struct Commit {
 
 /// Run `git log` and return every commit that contains a `(#NNN)` PR
 /// reference, stopping (exclusive) at `since_hash` when provided.
-fn git_log_commits(since_hash: Option<&str>) -> Result<Vec<Commit>> {
-    let sep = "\x1f"; // ASCII Unit Separator – safe in commit messages
-    let format = format!("{sep}%H%n%h %s%n%nAuthor: %an <%ae>%nDate:   %ad%n%n    %b%n");
+fn git_log_commits(
+    shell: &Shell,
+    since_hash: Option<&str>,
+) -> Result<Vec<Commit>> {
+    let separator = "\x1f"; // ASCII Unit Separator - safe in commit messages
+    let format = format!("{separator}%H%n%h %s%n%nAuthor: %an <%ae>%nDate:   %ad%n%n    %b%n");
 
-    let output = Command::new("git")
-        .args(["log", &format!("--pretty=format:{format}")])
+    let output = cmd!(shell, "git log --pretty=format:{format}")
         .output()
-        .context("running git log")?;
+        .context("git log failed")?;
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
@@ -113,11 +109,11 @@ fn parse_commits(
     since_hash: Option<&str>,
 ) -> Result<Vec<Commit>> {
     let pull_request_re = Regex::new(r"\(#(\d+)\)").unwrap();
-    let sep = '\x1f';
+    let separator = '\x1f';
 
     let mut commits = Vec::new();
 
-    for chunk in raw.split(sep) {
+    for chunk in raw.split(separator) {
         let chunk = chunk.trim();
         if chunk.is_empty() {
             continue;
@@ -125,23 +121,19 @@ fn parse_commits(
 
         let (hash_line, log) = chunk
             .split_once('\n')
-            .context("malformed commit chunk – no newline after hash")?;
+            .context("malformed commit chunk - no newline after hash")?;
 
         let hash = hash_line.trim().to_owned();
-        let log = log.trim_end().to_owned();
 
         // Honor --since: stop when we reach the boundary commit (exclusive).
-        if let Some(prefix) = since_hash {
-            if hash.starts_with(prefix) {
-                eprintln!(
-                    "Reached --since commit {}, stopping.",
-                    &hash[..8.min(hash.len())]
-                );
-                break;
-            }
+        if let Some(prefix) = since_hash
+            && hash.starts_with(prefix)
+        {
+            break;
         }
 
         // Only keep commits that reference a PR.
+        let log = log.trim_end().to_owned();
         let subject = log.lines().next().unwrap_or("");
         if let Some(capabilities) = pull_request_re.captures(subject) {
             let pr_number: u64 = capabilities[1].parse().context("parsing PR number")?;
@@ -167,7 +159,7 @@ fn fetch_pr_with_retry(
 ) -> Result<PullRequest> {
     let url = format!("https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/pulls/{pr_number}");
 
-    let mut attempt = 0u32;
+    let mut attempt = 0_u32;
 
     loop {
         let response = client
@@ -179,7 +171,7 @@ fn fetch_pr_with_retry(
 
         match status {
             // Success.
-            s if s.is_success() => {
+            status_code if status_code.is_success() => {
                 return response
                     .json::<PullRequest>()
                     .context("deserialising GitHub PR response");
@@ -198,20 +190,18 @@ fn fetch_pr_with_retry(
 
                 thread::sleep(Duration::from_secs(wait));
                 attempt += 1;
-                continue;
             },
 
             // Transient server error — also worth retrying.
-            s if s.is_server_error() && attempt < MAX_RETRIES => {
+            status_code if status_code.is_server_error() && attempt < MAX_RETRIES => {
                 let wait = backoff_secs(attempt);
                 eprintln!(
-                    "Server error {s} on PR #{pr_number}. \
+                    "Server error {status_code} on PR #{pr_number}. \
                      Attempt {}/{MAX_RETRIES}. Waiting {wait}s…",
                     attempt + 1,
                 );
                 thread::sleep(Duration::from_secs(wait));
                 attempt += 1;
-                continue;
             },
 
             // Anything else, or retries exhausted.
@@ -232,13 +222,13 @@ fn retry_after_secs(response: &Response) -> Option<u64> {
     response
         .headers()
         .get("Retry-After")
-        .and_then(|v| v.to_str().ok())
-        .and_then(|s| s.parse::<u64>().ok())
+        .and_then(|value| value.to_str().ok())
+        .and_then(|value| value.parse::<u64>().ok())
 }
 
 /// Exponential backoff: 2s, 4s, 8s, 16s, 32s, 64s …
-fn backoff_secs(attempt: u32) -> u64 {
-    BACKOFF_BASE_SECS * 2u64.pow(attempt)
+const fn backoff_secs(attempt: u32) -> u64 {
+    BACKOFF_BASE_SECS * 2_u64.pow(attempt)
 }
 
 fn build_client(token: Option<&str>) -> Result<Client> {
