@@ -5,14 +5,7 @@ use syntax::AstNode as _;
 
 use crate::{
     generators::{
-        expressions::{
-            field_expression::gen_field_expression, ident_expression::gen_ident_expression,
-            index_expression::gen_index_expression, infix_expression::gen_infix_expression,
-            literal_expression::gen_literal_expression,
-            parenthesis_expression::gen_parenthesis_expression,
-            prefix_expression::gen_prefix_expression,
-        },
-        gen_attributes::{
+        attributes::{
             gen_align_attribute, gen_attribute, gen_binding_attribute, gen_blend_src_attribute,
             gen_builtin_attribute, gen_builtin_value_name, gen_compute_attribute,
             gen_const_attribute, gen_diagnostic_attribute, gen_fragment_attribute,
@@ -21,22 +14,26 @@ use crate::{
             gen_location_attribute, gen_must_use_attribute, gen_other_attribute,
             gen_size_attribute, gen_vertex_attribute, gen_workgroup_size_attribute,
         },
-        gen_diagnostic::{
+        diagnostic_directive::{
             gen_diagnostic_control, gen_diagnostic_rule_name, gen_severity_control_name,
         },
-        gen_directive::{
+        directives::{
             gen_diagnostic_directive, gen_enable_directive, gen_enable_extension_name,
             gen_language_extension_name, gen_requires_directive,
         },
-        gen_function::{
+        expressions::{
+            field_expression::gen_field_expression, ident_expression::gen_ident_expression,
+            index_expression::gen_index_expression, infix_expression::gen_infix_expression,
+            literal_expression::gen_literal_expression,
+            parenthesis_expression::gen_parenthesis_expression,
+            prefix_expression::gen_prefix_expression,
+        },
+        function_declaration::{
             gen_fn_parameter, gen_fn_parameters, gen_fn_return_type, gen_function_declaration,
         },
-        gen_name::gen_name,
-        gen_path::gen_path,
-        gen_source_file::gen_source_file,
-        gen_struct::{gen_struct_body, gen_struct_declaration, gen_struct_member},
-        gen_type_alias_declaration::gen_type_alias_declaration,
-        gen_types::{gen_template_list, gen_type_specifier},
+        name::gen_name,
+        path::gen_path,
+        source_file::gen_source_file,
         statements::{
             assignment_statement::{
                 gen_assignment_statement, gen_compound_assignment_statement,
@@ -77,6 +74,9 @@ use crate::{
             },
             while_statement::gen_while_statement,
         },
+        struct_declaration::{gen_struct_body, gen_struct_declaration, gen_struct_member},
+        type_alias_declaration::gen_type_alias_declaration,
+        types::{gen_template_list, gen_type_specifier},
     },
     print_item_buffer::{
         PrintItemBuffer,

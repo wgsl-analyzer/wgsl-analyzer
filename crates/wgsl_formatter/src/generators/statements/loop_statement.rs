@@ -9,8 +9,8 @@ use syntax::{
 use crate::{
     ast_parse::{parse_end, parse_node, parse_token},
     generators::{
-        gen_attributes::{AttributeLayout, gen_attributes, parse_many_attributes},
-        gen_comments::{gen_comments, parse_many_comments_and_blankspace},
+        attributes::{AttributeLayout, gen_attributes, parse_many_attributes},
+        comments::{gen_comments, parse_many_comments_and_blankspace},
         statements::compound_statement::gen_compound_statement,
     },
     print_item_buffer::{PrintItemBuffer, request_folder::RequestItem},

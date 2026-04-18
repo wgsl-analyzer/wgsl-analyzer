@@ -9,8 +9,8 @@ use syntax::{
 use crate::{
     ast_parse::{parse_end, parse_node_optional, parse_token, parse_token_optional},
     generators::{
-        gen_attributes::{AttributeLayout, gen_attributes, parse_many_attributes},
-        gen_comments::{Comment, gen_comment, parse_comment_optional},
+        attributes::{AttributeLayout, gen_attributes, parse_many_attributes},
+        comments::{Comment, gen_comment, parse_comment_optional},
         statements::gen_statement_maybe_semicolon,
     },
     helpers::{LineSpacing, gen_line_spacing, parse_line_spacing},

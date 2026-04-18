@@ -7,9 +7,9 @@ use syntax::{
 use crate::{
     ast_parse::{parse_end, parse_node, parse_node_optional},
     generators::{
-        gen_comments::{gen_comments, parse_many_comments_and_blankspace},
-        gen_path::gen_path,
-        gen_types::gen_template_list,
+        comments::{gen_comments, parse_many_comments_and_blankspace},
+        path::gen_path,
+        types::gen_template_list,
     },
     print_item_buffer::PrintItemBuffer,
     reporting::FormatDocumentResult,

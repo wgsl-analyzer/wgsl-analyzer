@@ -12,8 +12,8 @@ use crate::{
         SyntaxIter, parse_end, parse_node, parse_node_optional, parse_token, parse_token_optional,
     },
     generators::{
+        comments::{gen_comments, parse_many_comments_and_blankspace},
         expressions::{gen_expression, ident_expression::gen_ident_expression},
-        gen_comments::{gen_comments, parse_many_comments_and_blankspace},
     },
     multiline_group::MultilineGroup,
     print_item_buffer::{
