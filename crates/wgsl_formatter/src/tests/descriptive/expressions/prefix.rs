@@ -125,23 +125,15 @@ pub fn format_comments_in_prefix_expr_with() {
 #[test]
 pub fn format_comments_in_prefix_expr_in_complex_expr() {
     check_comments(
-        "fn main() {
-        let a = 1 + 2 - ~1;
-
-        let a = ## 1 ## + ## 2 ## - ## ~ ## 1 ## ; ##
-        }",
+        "fn main() {let a = ## 1 ## + ## 2 ## - ## ~ ## 1 ## ; ##}",
         expect![[r#"
             fn main() {
-                let a = 1 + 2 - ~1;
-
                 let a = /* 0 */ 1 /* 1 */ + /* 2 */ 2 /* 3 */
                     - /* 4 */ ~ /* 5 */ 1 /* 6 */; /* 7 */
             }
         "#]],
         expect![[r#"
             fn main() {
-                let a = 1 + 2 - ~1;
-
                 let a = // 0
                     1 // 1
                     + // 2

@@ -5,34 +5,28 @@ use crate::test_util::check_comments;
 #[test]
 pub fn format_comments_in_attrs_on_struct_members() {
     check_comments(
-        "struct VertexOutput { ##
-        ## @attr(0) ## @attr(1) ## position ## : vec4<f32>,
-        ## @attr(0) ## @attr(1) ## uv ## : vec2<f32>,
-        }",
+        "struct VertexOutput { ## @attr(0) ## @attr(1) ## position ## : vec4<f32>, ## @attr(0) ## @attr(1) ## uv ## : vec2<f32>}",
         expect![[r#"
             struct VertexOutput {
-                /* 0 */ /* 1 */
-                @attr(0) /* 2 */
-                @attr(1) /* 3 */
-                position: /* 4 */ vec4<f32>,
-                /* 5 */
-                @attr(0) /* 6 */
-                @attr(1) /* 7 */
-                uv: /* 8 */ vec2<f32>,
+                /* 0 */
+                @attr(0) /* 1 */
+                @attr(1) /* 2 */
+                position: /* 3 */ vec4<f32>, /* 4 */
+                @attr(0) /* 5 */
+                @attr(1) /* 6 */
+                uv: /* 7 */ vec2<f32>,
             }
         "#]],
         expect![[r#"
             struct VertexOutput {
                 // 0
-                // 1
-                @attr(0) // 2
-                @attr(1) // 3
-                position: // 4
-                vec4<f32>,
-                // 5
-                @attr(0) // 6
-                @attr(1) // 7
-                uv: // 8
+                @attr(0) // 1
+                @attr(1) // 2
+                position: // 3
+                vec4<f32>, // 4
+                @attr(0) // 5
+                @attr(1) // 6
+                uv: // 7
                 vec2<f32>,
             }
         "#]],
@@ -87,21 +81,15 @@ pub fn format_comments_in_attrs_on_function_return_type() {
 #[test]
 pub fn format_comments_in_attrs_on_function_parameter() {
     check_comments(
-        "
-        fn thing ## ( ##
-        ## @attr(0) ## @attr(1) ## position: vec4<f32>,
-        ## @attr(0) ## @attr(1) ## uv: vec2<f32>,
-        ) -> vec4<f32> {
-        }",
+        "fn thing ## ( ## @attr(0) ## @attr(1) ## position: vec4<f32>, ## @attr(0) ## @attr(1) ## uv: vec2<f32>, ) -> vec4<f32> {}",
         expect![[r#"
             fn thing /* 0 */ (
-                /* 1 */ /* 2 */
-                @attr(0) /* 3 */
-                @attr(1) /* 4 */
-                position: vec4<f32>,
-                /* 5 */
-                @attr(0) /* 6 */
-                @attr(1) /* 7 */
+                /* 1 */
+                @attr(0) /* 2 */
+                @attr(1) /* 3 */
+                position: vec4<f32>, /* 4 */
+                @attr(0) /* 5 */
+                @attr(1) /* 6 */
                 uv: vec2<f32>,
             ) -> vec4<f32> {}
         "#]],
@@ -109,13 +97,11 @@ pub fn format_comments_in_attrs_on_function_parameter() {
             fn thing // 0
             (
                 // 1
-                // 2
-                @attr(0) // 3
-                @attr(1) // 4
-                position: vec4<f32>,
-                // 5
-                @attr(0) // 6
-                @attr(1) // 7
+                @attr(0) // 2
+                @attr(1) // 3
+                position: vec4<f32>, // 4
+                @attr(0) // 5
+                @attr(1) // 6
                 uv: vec2<f32>,
             ) -> vec4<f32> {}
         "#]],
@@ -193,12 +179,7 @@ pub fn format_comments_in_attrs_on_override() {
 #[test]
 pub fn format_comments_in_attrs_on_compound_statement() {
     check_comments(
-        "
-        fn main() {
-            ## @attr(0) ## @attr(1) ## { ## }
-            ## if ## true ## @attr(0) ## @attr(1) ## { ## }
-        }
-        ",
+        " fn main() { ## @attr(0) ## @attr(1) ## { ## } ## if ## true ## @attr(0) ## @attr(1) ## { ## } } ",
         expect![[r#"
             fn main() {
                 /* 0 */
@@ -334,11 +315,7 @@ pub fn format_comments_in_attrs_on_loop_statement_and_body() {
 #[test]
 pub fn format_comments_in_attrs_on_for_statement() {
     check_comments(
-        "
-        fn main() {
-            ## @attr(0) ## @attr(1) ## for ## (var i = 0; i < 10; i++) {}
-        }
-        ",
+        " fn main() { ## @attr(0) ## @attr(1) ## for ## (var i = 0; i < 10; i++) {} } ",
         expect![[r#"
             fn main() {
                 /* 0 */

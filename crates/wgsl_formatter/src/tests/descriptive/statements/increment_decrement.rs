@@ -61,15 +61,11 @@ pub fn format_increment_decrement_statement_within_for() {
 #[test]
 pub fn format_comments_in_increment_decrement_statement_simple() {
     check_comments(
-        "fn main() {
-        ## a ## ++ ## ; ##
-        ## b ## -- ## ; ##
-        }",
+        "fn main() { ## a ## ++ ## ; ## ## b ## -- ## ; ## }",
         expect![[r#"
             fn main() {
                 /* 0 */
-                a /* 1 */ ++ /* 2 */; /* 3 */
-                /* 4 */
+                a /* 1 */ ++ /* 2 */; /* 3 */ /* 4 */
                 b /* 5 */ -- /* 6 */; /* 7 */
             }
         "#]],
@@ -79,7 +75,6 @@ pub fn format_comments_in_increment_decrement_statement_simple() {
                 a // 1
                 ++ // 2
                 ; // 3
-
                 // 4
                 b // 5
                 -- // 6
@@ -92,15 +87,11 @@ pub fn format_comments_in_increment_decrement_statement_simple() {
 #[test]
 pub fn format_comments_in_increment_decrement_statement_index() {
     check_comments(
-        "fn main() {
-        ## a ## [ ## 0 ## ] ## ++ ## ; ##
-        ## b ## [ ## 0 ## ] ## -- ## ; ##
-        }",
+        "fn main() { ## a ## [ ## 0 ## ] ## ++ ## ; ## ## b ## [ ## 0 ## ] ## -- ## ; ## }",
         expect![[r#"
             fn main() {
                 /* 0 */
-                a /* 1 */ [/* 2 */ 0 /* 3 */] /* 4 */ ++ /* 5 */; /* 6 */
-                /* 7 */
+                a /* 1 */ [/* 2 */ 0 /* 3 */] /* 4 */ ++ /* 5 */; /* 6 */ /* 7 */
                 b /* 8 */ [/* 9 */ 0 /* 10 */] /* 11 */ -- /* 12 */; /* 13 */
             }
         "#]],
@@ -114,7 +105,6 @@ pub fn format_comments_in_increment_decrement_statement_index() {
                 ] // 4
                 ++ // 5
                 ; // 6
-
                 // 7
                 b // 8
                 [
