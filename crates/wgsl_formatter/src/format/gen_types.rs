@@ -9,8 +9,8 @@ use syntax::{
 
 use crate::format::{
     ast_parse::{parse_end, parse_node, parse_node_optional, parse_token, parse_token_optional},
+    expressions::gen_expression::gen_expression,
     gen_comments::{gen_comments, parse_many_comments_and_blankspace},
-    gen_expression::gen_expression,
     gen_path::gen_path,
     multiline_group::MultilineGroup,
     print_item_buffer::{

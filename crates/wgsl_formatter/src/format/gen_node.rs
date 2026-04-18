@@ -4,6 +4,12 @@ use parser::{SyntaxKind, SyntaxNode};
 use syntax::AstNode as _;
 
 use crate::format::{
+    expressions::{
+        gen_field::gen_field_expression, gen_ident::gen_ident_expression,
+        gen_index::gen_index_expression, gen_infix::gen_infix_expression,
+        gen_literal::gen_literal_expression, gen_parenthesis::gen_parenthesis_expression,
+        gen_prefix::gen_prefix_expression,
+    },
     gen_attributes::{
         gen_align_attribute, gen_attribute, gen_binding_attribute, gen_blend_src_attribute,
         gen_builtin_attribute, gen_builtin_value_name, gen_compute_attribute, gen_const_attribute,
@@ -17,10 +23,6 @@ use crate::format::{
     gen_directive::{
         gen_diagnostic_directive, gen_enable_directive, gen_enable_extension_name,
         gen_language_extension_name, gen_requires_directive,
-    },
-    gen_expression::{
-        gen_field_expression, gen_ident_expression, gen_index_expression, gen_infix_expression,
-        gen_literal_expression, gen_parenthesis_expression, gen_prefix_expression,
     },
     gen_function::{
         gen_fn_parameter, gen_fn_parameters, gen_fn_return_type, gen_function_declaration,
