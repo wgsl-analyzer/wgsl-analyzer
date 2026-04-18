@@ -4,9 +4,6 @@ use parser::{SyntaxKind, SyntaxNode};
 use syntax::AstNode as _;
 
 use crate::format::{
-    gen_assignment_statement::{
-        gen_assignment_statement, gen_compound_assignment_statement, gen_phony_assignment_statement,
-    },
     gen_attributes::{
         gen_align_attribute, gen_attribute, gen_binding_attribute, gen_blend_src_attribute,
         gen_builtin_attribute, gen_builtin_value_name, gen_compute_attribute, gen_const_attribute,
@@ -16,7 +13,6 @@ use crate::format::{
         gen_other_attribute, gen_size_attribute, gen_vertex_attribute,
         gen_workgroup_size_attribute,
     },
-    gen_comments::{gen_comment, parse_comment_optional},
     gen_diagnostic::{gen_diagnostic_control, gen_diagnostic_rule_name, gen_severity_control_name},
     gen_directive::{
         gen_diagnostic_directive, gen_enable_directive, gen_enable_extension_name,
@@ -29,47 +25,50 @@ use crate::format::{
     gen_function::{
         gen_fn_parameter, gen_fn_parameters, gen_fn_return_type, gen_function_declaration,
     },
-    gen_function_call::{gen_function_call, gen_function_call_arguments},
-    gen_if_statement::{
-        gen_if_statement, gen_if_statement_else_clause, gen_if_statement_else_if_clause,
-        gen_if_statement_if_clause,
-    },
-    gen_import::{
-        gen_import_collection, gen_import_item, gen_import_package_relative, gen_import_path,
-        gen_import_statement, gen_import_super_relative,
-    },
     gen_name::gen_name,
     gen_path::gen_path,
     gen_source_file::gen_source_file,
-    gen_statement::{
-        gen_break_if_statement, gen_const_assert_statement, gen_continuing_statement,
-        gen_function_call_statement, gen_increment_decrement_statement, gen_loop_statement,
-        gen_return_statement, gen_while_statement,
-    },
-    gen_statement_break::gen_break_statement,
-    gen_statement_compound::gen_compound_statement,
-    gen_statement_continue::gen_continue_statement,
-    gen_statement_discard::gen_discard_statement,
-    gen_statement_for::{
-        gen_for_statement, gen_for_statement_condition, gen_for_statement_continuing_part,
-        gen_for_statement_initializer,
-    },
     gen_struct::{gen_struct_body, gen_struct_declaration, gen_struct_member},
-    gen_switch_statement::{
-        gen_switch_body, gen_switch_body_case, gen_switch_case_default_selector,
-        gen_switch_case_selectors, gen_switch_statement,
-    },
     gen_type_alias_declaration::gen_type_alias_declaration,
     gen_types::{gen_template_list, gen_type_specifier},
-    gen_var_let_const_override_statement::{
-        gen_const_declaration_statement, gen_let_declaration_statement,
-        gen_override_declaration_statement, gen_var_declaration_statement,
-    },
     print_item_buffer::{
         PrintItemBuffer,
         request_folder::{Request, RequestItem},
     },
     reporting::FormatDocumentResult,
+    statements::gen_assignment::{
+        gen_assignment_statement, gen_compound_assignment_statement, gen_phony_assignment_statement,
+    },
+    statements::gen_break::gen_break_statement,
+    statements::gen_compound::gen_compound_statement,
+    statements::gen_continue::gen_continue_statement,
+    statements::gen_discard::gen_discard_statement,
+    statements::gen_for::{
+        gen_for_statement, gen_for_statement_condition, gen_for_statement_continuing_part,
+        gen_for_statement_initializer,
+    },
+    statements::gen_function_call::{gen_function_call, gen_function_call_arguments},
+    statements::gen_if::{
+        gen_if_statement, gen_if_statement_else_clause, gen_if_statement_else_if_clause,
+        gen_if_statement_if_clause,
+    },
+    statements::gen_import::{
+        gen_import_collection, gen_import_item, gen_import_package_relative, gen_import_path,
+        gen_import_statement, gen_import_super_relative,
+    },
+    statements::gen_statement::{
+        gen_break_if_statement, gen_const_assert_statement, gen_continuing_statement,
+        gen_function_call_statement, gen_increment_decrement_statement, gen_loop_statement,
+        gen_return_statement, gen_while_statement,
+    },
+    statements::gen_switch::{
+        gen_switch_body, gen_switch_body_case, gen_switch_case_default_selector,
+        gen_switch_case_selectors, gen_switch_statement,
+    },
+    statements::gen_var_let_const_override::{
+        gen_const_declaration_statement, gen_let_declaration_statement,
+        gen_override_declaration_statement, gen_var_declaration_statement,
+    },
 };
 
 pub fn gen_node_no_newlines(node: &SyntaxNode) -> FormatDocumentResult<PrintItemBuffer> {

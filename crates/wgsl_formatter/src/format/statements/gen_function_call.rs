@@ -2,7 +2,10 @@ use dprint_core::formatting::PrintItems;
 use dprint_core_macros::sc;
 use itertools::{Itertools as _, Position, put_back};
 use parser::SyntaxKind;
-use syntax::{AstNode as _, ast};
+use syntax::{
+    AstNode as _,
+    ast::{self, FunctionCall},
+};
 
 use crate::format::{
     ast_parse::{
@@ -15,7 +18,7 @@ use crate::format::{
         PrintItemBuffer,
         request_folder::{Request, RequestItem},
     },
-    reporting::FormatDocumentResult,
+    reporting::{FormatDocumentError, FormatDocumentResult},
 };
 
 pub fn gen_function_call(
@@ -119,5 +122,26 @@ pub fn gen_function_call_like_comma_separated_values(
 
     multiline_group.end();
 
+    Ok(formatted)
+}
+
+pub fn gen_function_call_statement(
+    function_call_statement: &ast::FunctionCallStatement,
+    include_semicolon: bool,
+) -> Result<PrintItemBuffer, FormatDocumentError> {
+    // ==== Parse ====
+    let mut syntax = put_back(function_call_statement.syntax().children_with_tokens());
+    let function_call = parse_node::<FunctionCall>(&mut syntax)?;
+    let comments_after_function_call = parse_many_comments_and_blankspace(&mut syntax)?;
+    parse_token_optional(&mut syntax, SyntaxKind::Semicolon);
+    parse_end(&mut syntax)?;
+
+    // ==== Format ====
+    let mut formatted = PrintItemBuffer::new();
+    formatted.extend(gen_function_call(&function_call)?);
+    formatted.extend(gen_comments(&comments_after_function_call));
+    if include_semicolon {
+        formatted.push_sc(sc!(";"));
+    }
     Ok(formatted)
 }

@@ -13,12 +13,12 @@ use crate::format::{
     gen_attributes::{AttributeLayout, gen_attributes, parse_many_attributes},
     gen_comments::{gen_comments, parse_many_comments_and_blankspace},
     gen_expression::gen_expression,
-    gen_statement_compound::gen_compound_statement,
     print_item_buffer::{
         PrintItemBuffer,
         request_folder::{Request, RequestItem},
     },
     reporting::FormatDocumentResult,
+    statements::gen_compound::gen_compound_statement,
 };
 
 pub fn gen_if_statement(statement: &ast::IfStatement) -> FormatDocumentResult<PrintItemBuffer> {

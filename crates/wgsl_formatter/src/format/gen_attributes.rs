@@ -19,11 +19,11 @@ use crate::format::{
     },
     gen_comments::{Comment, gen_comments, parse_many_comments_and_blankspace},
     gen_diagnostic::gen_diagnostic_control,
-    gen_function_call::{
-        gen_function_call_arguments, gen_function_call_like_comma_separated_values,
-    },
     print_item_buffer::PrintItemBuffer,
     reporting::FormatDocumentResult,
+    statements::gen_function_call::{
+        gen_function_call_arguments, gen_function_call_like_comma_separated_values,
+    },
 };
 
 use super::print_item_buffer::request_folder::RequestItem;

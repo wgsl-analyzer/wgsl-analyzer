@@ -16,7 +16,6 @@ use crate::format::{
         Comment, gen_comment, gen_comments, parse_comment_optional,
         parse_many_comments_and_blankspace,
     },
-    gen_statement_compound::gen_compound_statement,
     gen_types::gen_type_specifier,
     helpers::{LineSpacing, gen_line_spacing, parse_line_spacing},
     multiline_group::MultilineGroup,
@@ -25,6 +24,7 @@ use crate::format::{
         request_folder::{Request, RequestItem},
     },
     reporting::FormatDocumentResult,
+    statements::gen_compound::gen_compound_statement,
 };
 
 use super::gen_attributes::AttributeLayout;
