@@ -24,7 +24,7 @@ use crate::format::{
         request_folder::{Request, RequestItem},
     },
     reporting::FormatDocumentResult,
-    statements::gen_compound::gen_compound_statement,
+    statements::compound_statement::gen_compound_statement,
 };
 
 use super::gen_attributes::AttributeLayout;

@@ -16,7 +16,7 @@ use crate::format::{
     gen_comments::{Comment, gen_comments, parse_many_comments_and_blankspace},
     print_item_buffer::{PrintItemBuffer, request_folder::RequestItem},
     reporting::FormatDocumentError,
-    statements::gen_compound::gen_compound_statement,
+    statements::compound_statement::gen_compound_statement,
 };
 
 pub fn gen_switch_statement(

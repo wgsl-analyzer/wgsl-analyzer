@@ -21,7 +21,7 @@ use crate::format::{
     gen_diagnostic::gen_diagnostic_control,
     print_item_buffer::PrintItemBuffer,
     reporting::FormatDocumentResult,
-    statements::gen_function_call::{
+    statements::function_call_statement::{
         gen_function_call_arguments, gen_function_call_like_comma_separated_values,
     },
 };

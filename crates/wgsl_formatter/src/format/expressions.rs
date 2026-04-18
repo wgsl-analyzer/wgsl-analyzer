@@ -10,7 +10,7 @@ use crate::format::{
     },
     print_item_buffer::PrintItemBuffer,
     reporting::FormatDocumentResult,
-    statements::gen_function_call::gen_function_call,
+    statements::function_call_statement::gen_function_call,
 };
 
 pub mod field_expression;
