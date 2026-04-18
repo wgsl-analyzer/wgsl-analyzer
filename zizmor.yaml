@@ -3,6 +3,8 @@ rules:
     disable: true
   secrets-outside-env:
     disable: true
+  use-trusted-publishing:
+    disable: true
   dangerous-triggers:
     ignore:
       - welcome.yaml # Necessary to leave the welcome comment on PRs from forks
