@@ -3,17 +3,15 @@ use itertools::put_back;
 use parser::SyntaxKind;
 use syntax::{
     AstNode as _,
-    ast::{self, CompoundStatement, Expression, IncrementDecrement},
+    ast::{self, Expression},
 };
 
 use crate::format::{
-    ast_parse::{parse_end, parse_node, parse_token, parse_token_optional},
-    gen_attributes::{AttributeLayout, gen_attributes, parse_many_attributes},
+    ast_parse::{parse_end, parse_node, parse_token},
+    expressions::gen_expression::gen_expression,
     gen_comments::{gen_comments, parse_many_comments_and_blankspace},
-    gen_expression::gen_expression,
     print_item_buffer::{PrintItemBuffer, request_folder::RequestItem},
-    reporting::{FormatDocumentError, FormatDocumentResult},
-    statements::gen_compound::gen_compound_statement,
+    reporting::FormatDocumentResult,
 };
 
 pub fn gen_const_assert_statement(

@@ -12,9 +12,9 @@ mod gen_attributes;
 mod gen_comments;
 mod gen_diagnostic;
 mod gen_directive;
-mod gen_expression;
 mod gen_function;
 
+pub mod expressions;
 mod gen_name;
 mod gen_node;
 mod gen_path;

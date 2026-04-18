@@ -11,8 +11,8 @@ use crate::format::{
     ast_parse::{
         SyntaxIter, parse_end, parse_node, parse_node_optional, parse_token, parse_token_optional,
     },
+    expressions::{gen_expression::gen_expression, gen_ident::gen_ident_expression},
     gen_comments::{gen_comments, parse_many_comments_and_blankspace},
-    gen_expression::{gen_expression, gen_ident_expression},
     multiline_group::MultilineGroup,
     print_item_buffer::{
         PrintItemBuffer,
@@ -33,6 +33,7 @@ pub fn gen_function_call(
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::new();
+    // TODO(MonaMayrhofer) Are we guaranteed to have an ident_expression here? i dont think soo....
     formatted.extend(gen_ident_expression(&item_identifier)?);
     formatted.extend(gen_comments(&item_comments_after_identifier));
     formatted.extend(gen_function_call_arguments(&item_arguments)?);
