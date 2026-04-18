@@ -4,10 +4,12 @@ use syntax::{
     ast::{self},
 };
 
-use crate::generators::{
+use crate::{
     ast_parse::{parse_end, parse_node, parse_token_any},
-    expressions::gen_expression,
-    gen_comments::{gen_comments, parse_many_comments_and_blankspace},
+    generators::{
+        expressions::gen_expression,
+        gen_comments::{gen_comments, parse_many_comments_and_blankspace},
+    },
     print_item_buffer::PrintItemBuffer,
     reporting::FormatDocumentResult,
 };

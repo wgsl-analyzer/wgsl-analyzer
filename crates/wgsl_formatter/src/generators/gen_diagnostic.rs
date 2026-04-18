@@ -3,14 +3,12 @@ use itertools::put_back;
 use parser::SyntaxKind;
 use syntax::{AstNode as _, ast};
 
-use crate::generators::{
+use crate::{
     ast_parse::{parse_end, parse_node, parse_token, parse_token_optional},
-    gen_comments::{gen_comments, parse_many_comments_and_blankspace},
-    print_item_buffer::PrintItemBuffer,
+    generators::gen_comments::{gen_comments, parse_many_comments_and_blankspace},
+    print_item_buffer::{PrintItemBuffer, request_folder::RequestItem},
     reporting::FormatDocumentResult,
 };
-
-use super::print_item_buffer::request_folder::RequestItem;
 
 pub fn gen_diagnostic_control(
     node: &ast::DiagnosticControl

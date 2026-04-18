@@ -4,6 +4,11 @@ mod tests;
 
 //This cannot be gated, as we depend on it in doctests and the doctests are
 // run against the public api.
+pub mod ast_parse;
+pub mod helpers;
+pub mod multiline_group;
+pub mod print_item_buffer;
+pub mod reporting;
 pub mod test_util;
 
 //Include the Formatting documentation, so that code blocks are run as doctests.

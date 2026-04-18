@@ -8,9 +8,7 @@ use parser::{SyntaxElementChildren, SyntaxKind, SyntaxNode, SyntaxToken};
 use rowan::NodeOrToken;
 use syntax::{AstNode, AstToken};
 
-use crate::generators::reporting::{
-    FormatDocumentError, FormatDocumentResult, UnwrapIfPreferCrash as _,
-};
+use crate::reporting::{FormatDocumentError, FormatDocumentResult, UnwrapIfPreferCrash as _};
 
 pub type SyntaxIter = PutBack<SyntaxElementChildren>;
 pub fn parse_token(

@@ -7,12 +7,14 @@ use syntax::{
     ast::{self, FunctionCall},
 };
 
-use crate::generators::{
+use crate::{
     ast_parse::{
         SyntaxIter, parse_end, parse_node, parse_node_optional, parse_token, parse_token_optional,
     },
-    expressions::{gen_expression, ident_expression::gen_ident_expression},
-    gen_comments::{gen_comments, parse_many_comments_and_blankspace},
+    generators::{
+        expressions::{gen_expression, ident_expression::gen_ident_expression},
+        gen_comments::{gen_comments, parse_many_comments_and_blankspace},
+    },
     multiline_group::MultilineGroup,
     print_item_buffer::{
         PrintItemBuffer,

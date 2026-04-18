@@ -2,7 +2,7 @@ use std::collections::BTreeSet;
 
 use rowan::NodeOrToken;
 
-use crate::generators::{
+use crate::{
     ast_parse::{SyntaxIter, parse_token_optional},
     print_item_buffer::{
         PrintItemBuffer,

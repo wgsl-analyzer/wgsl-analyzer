@@ -1,34 +1,30 @@
 use syntax::ast;
 
-use crate::generators::{
-    print_item_buffer::PrintItemBuffer,
-    reporting::FormatDocumentError,
-    statements::{
-        assignment_statement::{
-            gen_assignment_statement, gen_compound_assignment_statement,
-            gen_phony_assignment_statement,
-        },
-        break_if_statement::gen_break_if_statement,
-        break_statement::gen_break_statement,
-        compound_statement::gen_compound_statement,
-        const_assert_statement::gen_const_assert_statement,
-        continue_statement::gen_continue_statement,
-        continuing_statement::gen_continuing_statement,
-        discard_statement::gen_discard_statement,
-        for_statement::gen_for_statement,
-        function_call_statement::gen_function_call_statement,
-        if_statement::gen_if_statement,
-        increment_decrement_statement::gen_increment_decrement_statement,
-        loop_statement::gen_loop_statement,
-        return_statement::gen_return_statement,
-        switch_statement::gen_switch_statement,
-        var_let_const_override_statement::{
-            gen_const_declaration_statement, gen_let_declaration_statement,
-            gen_var_declaration_statement,
-        },
-        while_statement::gen_while_statement,
+use crate::generators::statements::{
+    assignment_statement::{
+        gen_assignment_statement, gen_compound_assignment_statement, gen_phony_assignment_statement,
     },
+    break_if_statement::gen_break_if_statement,
+    break_statement::gen_break_statement,
+    compound_statement::gen_compound_statement,
+    const_assert_statement::gen_const_assert_statement,
+    continue_statement::gen_continue_statement,
+    continuing_statement::gen_continuing_statement,
+    discard_statement::gen_discard_statement,
+    for_statement::gen_for_statement,
+    function_call_statement::gen_function_call_statement,
+    if_statement::gen_if_statement,
+    increment_decrement_statement::gen_increment_decrement_statement,
+    loop_statement::gen_loop_statement,
+    return_statement::gen_return_statement,
+    switch_statement::gen_switch_statement,
+    var_let_const_override_statement::{
+        gen_const_declaration_statement, gen_let_declaration_statement,
+        gen_var_declaration_statement,
+    },
+    while_statement::gen_while_statement,
 };
+use crate::{print_item_buffer::PrintItemBuffer, reporting::FormatDocumentError};
 
 pub mod assignment_statement;
 pub mod break_if_statement;

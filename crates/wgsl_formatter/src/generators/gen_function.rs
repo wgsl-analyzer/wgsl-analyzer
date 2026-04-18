@@ -9,14 +9,17 @@ use syntax::{
     ast::{self},
 };
 
-use crate::generators::{
+use crate::{
     ast_parse::{parse_end, parse_node, parse_node_optional, parse_token, parse_token_optional},
-    gen_attributes::{gen_attributes, parse_many_attributes},
-    gen_comments::{
-        Comment, gen_comment, gen_comments, parse_comment_optional,
-        parse_many_comments_and_blankspace,
+    generators::{
+        gen_attributes::{gen_attributes, parse_many_attributes},
+        gen_comments::{
+            Comment, gen_comment, gen_comments, parse_comment_optional,
+            parse_many_comments_and_blankspace,
+        },
+        gen_types::gen_type_specifier,
+        statements::compound_statement::gen_compound_statement,
     },
-    gen_types::gen_type_specifier,
     helpers::{LineSpacing, gen_line_spacing, parse_line_spacing},
     multiline_group::MultilineGroup,
     print_item_buffer::{
@@ -24,7 +27,6 @@ use crate::generators::{
         request_folder::{Request, RequestItem},
     },
     reporting::FormatDocumentResult,
-    statements::compound_statement::gen_compound_statement,
 };
 
 use super::gen_attributes::AttributeLayout;

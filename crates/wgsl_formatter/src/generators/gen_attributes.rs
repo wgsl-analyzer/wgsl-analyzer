@@ -12,21 +12,21 @@ use syntax::{
     },
 };
 
-use crate::generators::{
+use crate::{
     ast_parse::{
         SyntaxIter, parse_end, parse_node, parse_node_optional, parse_token, parse_token_any,
         parse_token_optional,
     },
-    gen_comments::{Comment, gen_comments, parse_many_comments_and_blankspace},
-    gen_diagnostic::gen_diagnostic_control,
-    print_item_buffer::PrintItemBuffer,
-    reporting::FormatDocumentResult,
-    statements::function_call_statement::{
-        gen_function_call_arguments, gen_function_call_like_comma_separated_values,
+    generators::{
+        gen_comments::{Comment, gen_comments, parse_many_comments_and_blankspace},
+        gen_diagnostic::gen_diagnostic_control,
+        statements::function_call_statement::{
+            gen_function_call_arguments, gen_function_call_like_comma_separated_values,
+        },
     },
+    print_item_buffer::{PrintItemBuffer, request_folder::RequestItem},
+    reporting::FormatDocumentResult,
 };
-
-use super::print_item_buffer::request_folder::RequestItem;
 
 pub use standard_attributes::*;
 
@@ -390,7 +390,7 @@ mod standard_attributes {
     use parser::SyntaxKind;
     use syntax::{AstNode as _, ast};
 
-    use crate::generators::{print_item_buffer::PrintItemBuffer, reporting::FormatDocumentResult};
+    use crate::{print_item_buffer::PrintItemBuffer, reporting::FormatDocumentResult};
 
 
     pub fn gen_align_attribute(attribute: &ast::AlignAttribute) -> FormatDocumentResult<PrintItemBuffer>                   { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::Align, sc!("align")) }

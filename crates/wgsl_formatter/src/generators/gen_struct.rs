@@ -8,20 +8,25 @@ use syntax::{
     ast::{self},
 };
 
-use crate::generators::{
+use crate::{
     ast_parse::{parse_end, parse_node, parse_node_optional, parse_token, parse_token_optional},
-    gen_attributes::{AttributeLayout, gen_attributes, parse_many_attributes},
-    gen_comments::{
-        Comment, gen_comment, gen_comments, parse_comment_optional,
-        parse_many_comments_and_blankspace,
-    },
-    gen_types::gen_type_specifier,
-    helpers::{LineSpacing, gen_line_spacing, parse_line_spacing},
+    helpers::{LineSpacing, gen_line_spacing},
     print_item_buffer::{
         PrintItemBuffer,
         request_folder::{Request, RequestItem},
     },
     reporting::FormatDocumentResult,
+};
+use crate::{
+    generators::{
+        gen_attributes::{AttributeLayout, gen_attributes, parse_many_attributes},
+        gen_comments::{
+            Comment, gen_comment, gen_comments, parse_comment_optional,
+            parse_many_comments_and_blankspace,
+        },
+        gen_types::gen_type_specifier,
+    },
+    helpers::parse_line_spacing,
 };
 
 pub fn gen_struct_declaration(

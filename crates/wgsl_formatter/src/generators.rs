@@ -4,10 +4,6 @@
 // "unused std::result::Result that must be used"
 #![warn(unused)]
 
-mod ast_parse;
-mod helpers;
-mod print_item_buffer;
-
 mod gen_attributes;
 mod gen_comments;
 mod gen_diagnostic;
@@ -22,8 +18,6 @@ mod gen_source_file;
 mod gen_struct;
 mod gen_type_alias_declaration;
 mod gen_types;
-pub mod multiline_group;
-mod reporting;
 mod statements;
 
 use dprint_core::formatting::PrintOptions;
@@ -33,11 +27,9 @@ use syntax::{AstNode as _, Parse, ast};
 
 use crate::{
     FormattingOptions, IndentStyle,
-    generators::{
-        gen_node::{gen_node, gen_node_no_newlines},
-        print_item_buffer::PrintItemBuffer,
-        reporting::{FormatDocumentError, FormatDocumentResult},
-    },
+    generators::gen_node::{gen_node, gen_node_no_newlines},
+    print_item_buffer::PrintItemBuffer,
+    reporting::{FormatDocumentError, FormatDocumentResult},
 };
 
 #[derive(Clone, Debug)]

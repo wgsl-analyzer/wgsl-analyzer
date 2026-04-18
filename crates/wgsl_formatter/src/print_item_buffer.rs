@@ -2,7 +2,7 @@ pub mod request_folder;
 
 use dprint_core::formatting::{Anchor, Info, PrintItems, Signal};
 
-use crate::generators::print_item_buffer::request_folder::{Request, RequestFolder, RequestItem};
+use crate::print_item_buffer::request_folder::{Request, RequestFolder, RequestItem};
 
 // The motivating example for this is, that there is no obvious way to encode the following rules cleanly into "vanilla" PrintItems
 // 1. There should not be a space between the name of a function and the opening parenthesis "fn main("

@@ -2,13 +2,11 @@ use itertools::{Itertools as _, Position};
 use parser::SyntaxKind;
 use rowan::NodeOrToken;
 
-use crate::generators::{
+use crate::{
     ast_parse::{SyntaxIter, parse_token_optional},
-    print_item_buffer::PrintItemBuffer,
+    print_item_buffer::{PrintItemBuffer, request_folder::RequestItem},
     reporting::FormatDocumentResult,
 };
-
-use super::print_item_buffer::request_folder::RequestItem;
 
 // We don't have a Comment SyntaxNode in the AST yet, so we use a custom enum and parser function
 #[derive(Clone, Debug)]

@@ -9,7 +9,7 @@ use dprint_core::formatting::{
     conditions,
 };
 
-use crate::generators::{
+use crate::{
     helpers::create_is_multiple_lines_resolver,
     print_item_buffer::{
         PrintItemBuffer,
