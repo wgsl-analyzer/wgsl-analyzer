@@ -2335,6 +2335,40 @@ fn let_statement_recover_3() {
 }
 
 #[test]
+fn let_statement_missing_initializer() {
+    // A let declaration with a type but no initializer should produce
+    // a clear "requires an initializer" error.
+    check_statement(
+        "let stack: array<f32, 10>;",
+        expect![[r#"
+            SourceFile@0..26
+              LetDeclaration@0..26
+                Let@0..3 "let"
+                Blankspace@3..4 " "
+                Name@4..9
+                  Identifier@4..9 "stack"
+                Colon@9..10 ":"
+                Blankspace@10..11 " "
+                TypeSpecifier@11..25
+                  Path@11..16
+                    Identifier@11..16 "array"
+                  TemplateList@16..25
+                    TemplateStart@16..17 "<"
+                    IdentExpression@17..20
+                      Path@17..20
+                        Identifier@17..20 "f32"
+                    Comma@20..21 ","
+                    Blankspace@21..22 " "
+                    Literal@22..24
+                      IntLiteral@22..24 "10"
+                    TemplateEnd@24..25 ">"
+                Semicolon@25..26 ";"
+
+            error at 25..26: let declaration requires initializer"#]],
+    );
+}
+
+#[test]
 fn annotation_with_invalid_statement_recover() {
     check(
         "fn foo() {
