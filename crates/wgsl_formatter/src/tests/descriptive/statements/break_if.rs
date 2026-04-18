@@ -106,15 +106,7 @@ pub fn format_loop_continuing_break_if_statement_complex_expression() {
 #[test]
 pub fn format_comments_in_loop_continuing_break_if_statement() {
     check_comments(
-        "fn main() {
-        ## loop ## {
-        ## continuing
-        ## {
-        ## break ## if ## false ## ; ##
-        ## }
-        ## }
-        ##
-        }",
+        "fn main() { ## loop ## { ## continuing ## { ## break ## if ## false ## ; ## } ## } ## }",
         expect![[r#"
             fn main() {
                 /* 0 */
@@ -123,11 +115,10 @@ pub fn format_comments_in_loop_continuing_break_if_statement() {
                     continuing /* 3 */ {
                         /* 4 */
                         break /* 5 */ if /* 6 */ false /* 7 */; /* 8 */
-                        /* 9 */
                     }
-                    /* 10 */
+                    /* 9 */
                 }
-                /* 11 */
+                /* 10 */
             }
         "#]],
         expect![[r#"
@@ -143,12 +134,10 @@ pub fn format_comments_in_loop_continuing_break_if_statement() {
                         if // 6
                             false // 7
                             ; // 8
-
-                        // 9
                     }
-                    // 10
+                    // 9
                 }
-                // 11
+                // 10
             }
         "#]],
     );
@@ -157,15 +146,7 @@ pub fn format_comments_in_loop_continuing_break_if_statement() {
 #[test]
 pub fn format_comments_in_loop_continuing_break_if_with_needless_parens_statement() {
     check_comments(
-        "fn main() {
-        ## loop ## {
-        ## continuing
-        ## {
-        ## break ## if ## ( ## false ## ) ## ; ##
-        ## }
-        ## }
-        ##
-        }",
+        "fn main() { ## loop ## { ## continuing ## { ## break ## if ## ( ## false ## ) ## ; ## ## } ## } ## }",
         expect![[r#"
             fn main() {
                 /* 0 */
@@ -173,8 +154,7 @@ pub fn format_comments_in_loop_continuing_break_if_with_needless_parens_statemen
                     /* 2 */
                     continuing /* 3 */ {
                         /* 4 */
-                        break /* 5 */ if /* 6 */ /* 7 */ false /* 8 */ /* 9 */; /* 10 */
-                        /* 11 */
+                        break /* 5 */ if /* 6 */ /* 7 */ false /* 8 */ /* 9 */; /* 10 */ /* 11 */
                     }
                     /* 12 */
                 }
@@ -196,7 +176,6 @@ pub fn format_comments_in_loop_continuing_break_if_with_needless_parens_statemen
                             false // 8
                             // 9
                             ; // 10
-
                         // 11
                     }
                     // 12

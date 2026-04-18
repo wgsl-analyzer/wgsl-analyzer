@@ -234,7 +234,7 @@ pub fn check_comments<E: ExpectAssertEq>(
     after_block: E,
     after_line: E,
 ) {
-    // TODO(MonaMayrhofer) Consider enforcing the one-line rule by preprocessing before to remove newlines
+    let before = before.lines().join("");
     {
         let mut comment_index = 0;
         let commented: String = itertools::Itertools::intersperse_with(
