@@ -261,7 +261,6 @@ pub fn gen_import_collection(
 
     parse_end(&mut syntax)?;
 
-    // TODO(MonaMayrhofer) unsure about the performance of this... also this currently includes comments in the sorting...
     items.sort_by(|(_, tree_a, _), (_, tree_b, _)| {
         let tree_a = tree_a.as_ref().map(CmpImportTree);
         let tree_b = tree_b.as_ref().map(CmpImportTree);

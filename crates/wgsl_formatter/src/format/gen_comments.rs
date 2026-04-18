@@ -71,7 +71,6 @@ pub fn gen_comments(comments: &[Comment]) -> PrintItemBuffer {
     formatted
 }
 
-// TODO(MonaMayrhofer) Search for all usages of gen_comment(s) and see if they use the more modern parse_comment to parse them
 pub fn gen_comment(item: &Comment) -> PrintItemBuffer {
     let mut formatted = PrintItemBuffer::new();
     match item {
