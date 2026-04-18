@@ -18,11 +18,6 @@ pub mod print_item_buffer;
 pub mod reporting;
 pub mod test_util;
 
-//Include the Formatting documentation, so that code blocks are run as doctests.
-#[doc = include_str!("../Formatting.md")]
-#[cfg(doctest)]
-pub struct FormattingMdDocTests;
-
 use std::str::FromStr;
 
 use dprint_core::configuration::{NewLineKind, ParseConfigurationError};
