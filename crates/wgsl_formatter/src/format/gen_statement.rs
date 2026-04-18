@@ -7,15 +7,12 @@ use syntax::{
 };
 
 use crate::format::{
-    ast_parse::{
-        parse_end, parse_many_comments_and_blankspace, parse_node, parse_node_optional,
-        parse_token, parse_token_optional,
-    },
+    ast_parse::{parse_end, parse_node, parse_node_optional, parse_token, parse_token_optional},
     gen_assignment_statement::{
         gen_assignment_statement, gen_compound_assignment_statement, gen_phony_assignment_statement,
     },
     gen_attributes::{AttributeLayout, gen_attributes, parse_many_attributes},
-    gen_comments::gen_comments,
+    gen_comments::{gen_comments, parse_many_comments_and_blankspace},
     gen_expression::gen_expression,
     gen_function_call::gen_function_call,
     gen_if_statement::gen_if_statement,

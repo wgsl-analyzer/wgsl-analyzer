@@ -6,8 +6,8 @@ use syntax::{
 };
 
 use crate::format::{
-    ast_parse::{parse_end, parse_many_comments_and_blankspace, parse_node, parse_token},
-    gen_comments::gen_comments,
+    ast_parse::{parse_end, parse_node, parse_token},
+    gen_comments::{gen_comments, parse_many_comments_and_blankspace},
     gen_types::gen_type_specifier,
     print_item_buffer::{PrintItemBuffer, request_folder::RequestItem},
     reporting::FormatDocumentError,

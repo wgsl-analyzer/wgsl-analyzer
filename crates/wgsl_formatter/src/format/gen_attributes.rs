@@ -14,10 +14,10 @@ use syntax::{
 
 use crate::format::{
     ast_parse::{
-        SyntaxIter, parse_end, parse_many_comments_and_blankspace, parse_node, parse_node_optional,
-        parse_token, parse_token_any, parse_token_optional,
+        SyntaxIter, parse_end, parse_node, parse_node_optional, parse_token, parse_token_any,
+        parse_token_optional,
     },
-    gen_comments::{Comment, gen_comments},
+    gen_comments::{Comment, gen_comments, parse_many_comments_and_blankspace},
     gen_diagnostic::gen_diagnostic_control,
     gen_function_call::{
         gen_function_call_arguments, gen_function_call_like_comma_separated_values,

@@ -4,11 +4,8 @@ use parser::SyntaxKind;
 use syntax::{AstNode as _, ast};
 
 use crate::format::{
-    ast_parse::{
-        parse_end, parse_many_comments_and_blankspace, parse_node, parse_token,
-        parse_token_optional,
-    },
-    gen_comments::gen_comments,
+    ast_parse::{parse_end, parse_node, parse_token, parse_token_optional},
+    gen_comments::{gen_comments, parse_many_comments_and_blankspace},
     print_item_buffer::PrintItemBuffer,
     reporting::FormatDocumentResult,
 };

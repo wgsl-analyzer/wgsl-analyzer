@@ -10,11 +10,11 @@ use syntax::{
 };
 
 use crate::format::{
-    ast_parse::{
-        parse_end, parse_many_comments_and_blankspace, parse_node, parse_node_optional,
-        parse_token, parse_token_optional,
+    ast_parse::{parse_end, parse_node, parse_node_optional, parse_token, parse_token_optional},
+    gen_comments::{
+        Comment, gen_comment, gen_comments, parse_comment_optional,
+        parse_many_comments_and_blankspace,
     },
-    gen_comments::{Comment, gen_comment, gen_comments, parse_comment_optional},
     gen_name::gen_name,
     multiline_group::MultilineGroup,
     print_item_buffer::{

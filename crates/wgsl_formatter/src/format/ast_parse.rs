@@ -123,7 +123,6 @@ pub fn parse_end_optional(syntax: &mut SyntaxIter) -> Option<()> {
 pub fn parse_node_optional<T: AstNode>(syntax: &mut SyntaxIter) -> Option<T> {
     match syntax.next() {
         Some(NodeOrToken::Node(child)) => {
-            //TODO This clone wouldn't be needed if T::cast returned the item on a failure
             if let Some(child) = T::cast(child.clone()) {
                 Some(child)
             } else {
@@ -179,6 +178,3 @@ pub fn parse_ast_token<T: AstToken>(syntax: &mut SyntaxIter) -> FormatDocumentRe
     }
     .expect_if_prefer_crash()
 }
-
-// TODO (MonaMayrhofer) Update inputs to remove this
-pub use super::gen_comments::parse_many_comments_and_blankspace;
