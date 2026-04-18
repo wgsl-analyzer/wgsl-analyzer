@@ -11,9 +11,8 @@ use parser::{Edition, ParseEntryPoint};
 use rowan::{TextLen as _, TextRange};
 
 use crate::{
-    FormattingOptions, IndentStyle,
-    format::{self, format_tree},
-    format_range,
+    FormattingOptions, IndentStyle, format_range,
+    generators::{self, format_tree},
 };
 
 pub trait ExpectAssertEq: Debug {
