@@ -84,6 +84,11 @@ xflags::xflags! {
         }
 
         cmd tidy {}
+
+        /// Creates a changelog since the commit `since`.
+        cmd changelog {
+            optional since: String
+        }
     }
 }
 
@@ -97,6 +102,7 @@ pub struct Xtask {
 
 #[derive(Debug)]
 pub enum XtaskCmd {
+    Changelog(Changelog),
     Install(Install),
     FuzzTests(FuzzTests),
     Release(Release),
@@ -105,6 +111,11 @@ pub enum XtaskCmd {
     Bb(Bb),
     Codegen(Codegen),
     Tidy(Tidy),
+}
+
+#[derive(Debug)]
+pub struct Changelog {
+    pub since: Option<String>,
 }
 
 #[derive(Debug)]
