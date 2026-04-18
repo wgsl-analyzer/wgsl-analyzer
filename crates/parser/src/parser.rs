@@ -238,4 +238,34 @@ impl<'source> ParserCallbacks<'source> for Parser<'source> {
             "global let declarations are not allowed".to_owned(),
         ));
     }
+
+    /// Called when semantic assertion `!1` in rule `let_declaration` is visited.
+    fn assertion_let_declaration_1(&self) -> Option<Self::Diagnostic> {
+        (self.peek(0) == Token::Semicolon).then(|| {
+            self.create_diagnostic(
+                self.span(),
+                "let declaration requires initializer".to_owned(),
+            )
+        })
+    }
+
+    /// Called when semantic assertion `!1` in rule `let_declaration_semi` is visited.
+    fn assertion_let_declaration_semi_1(&self) -> Option<Self::Diagnostic> {
+        (self.peek(0) == Token::Semicolon).then(|| {
+            self.create_diagnostic(
+                self.span(),
+                "let declaration requires initializer".to_owned(),
+            )
+        })
+    }
+
+    /// Called when semantic assertion `!1` in rule `const_declaration_semi` is visited.
+    fn assertion_const_declaration_semi_1(&self) -> Option<Self::Diagnostic> {
+        (self.peek(0) == Token::Semicolon).then(|| {
+            self.create_diagnostic(
+                self.span(),
+                "const declaration requires initializer".to_owned(),
+            )
+        })
+    }
 }
