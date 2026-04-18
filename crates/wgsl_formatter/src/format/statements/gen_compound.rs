@@ -13,7 +13,7 @@ use crate::format::{
     helpers::{LineSpacing, gen_line_spacing, parse_line_spacing},
     print_item_buffer::{PrintItemBuffer, request_folder::RequestItem},
     reporting::FormatDocumentResult,
-    statements::gen_statement::gen_statement_maybe_semicolon,
+    statements::gen_statement_maybe_semicolon,
 };
 
 enum CompoundStatementItem {

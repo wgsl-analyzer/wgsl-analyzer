@@ -8,15 +8,13 @@ use syntax::{
 
 use crate::format::{
     ast_parse::{parse_end, parse_node, parse_node_by_kind_optional, parse_token},
-    expressions::gen_expression::gen_expression,
+    expressions::gen_expression,
     gen_attributes::{AttributeLayout, gen_attributes, parse_many_attributes},
     gen_comments::{gen_comments, parse_many_comments_and_blankspace},
     multiline_group::MultilineGroup,
     print_item_buffer::{PrintItemBuffer, request_folder::RequestItem},
     reporting::FormatDocumentResult,
-    statements::{
-        gen_compound::gen_compound_statement, gen_statement::gen_statement_maybe_semicolon,
-    },
+    statements::{gen_compound::gen_compound_statement, gen_statement_maybe_semicolon},
 };
 
 pub fn gen_for_statement(statement: &ast::ForStatement) -> FormatDocumentResult<PrintItemBuffer> {
