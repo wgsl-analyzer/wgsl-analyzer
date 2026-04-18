@@ -2,7 +2,7 @@ name: Dependabot Auto-fix
 
 on:
   pull_request:
-    types: [opened, synchronize]
+    types: [ opened, synchronize ]
     branches:
       - main
 
@@ -19,6 +19,7 @@ env:
   RUST_BACKTRACE: short
   RUSTUP_MAX_RETRIES: 10
   RUSTFLAGS: -D warnings
+  PNPM_VERSION: "10.33.0"
 
 jobs:
   engines-vscode:
@@ -43,6 +44,7 @@ jobs:
         uses: pnpm/action-setup@08c4be7e2e672a47d11bd04269e27e5f3e8529cb # v6.0.0
         with:
           package_json_file: ./editors/code/package.json
+          version: ${{ env.PNPM_VERSION }}
 
       - name: Read current @types/vscode version
         id: types-version

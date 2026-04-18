@@ -124,11 +124,11 @@ fn format_struct_member(syntax: &SyntaxNode) -> Option<()> {
     let item = ast::StructMember::cast(syntax.clone())?;
     super::format_colon(item.colon_token().as_ref());
     if let Some(last) = item.syntax().last_token() {
-        let mut tok = last.next_token()?;
-        while tok.kind().is_whitespace() {
-            let next = tok.next_token()?;
-            remove_token(&tok);
-            tok = next;
+        let mut token = last.next_token()?;
+        while token.kind().is_whitespace() {
+            let next = token.next_token()?;
+            remove_token(&token);
+            token = next;
         }
     }
     Some(())
