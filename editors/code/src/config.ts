@@ -488,7 +488,7 @@ function computeVscodeVar(varName: string): string | null {
 		// https://github.com/microsoft/vscode/blob/29eb316bb9f154b7870eb5204ec7f2e7cf649bec/src/vs/server/node/remoteTerminalChannel.ts#L56
 		execPath: () => process.env["VSCODE_EXEC_PATH"] ?? process.execPath,
 
-		pathSeparator: () => path.sep,
+		pathSeparator: () => path.sep, // spellchecker:disable-line
 	};
 
 	if (varName in supportedVariables) {

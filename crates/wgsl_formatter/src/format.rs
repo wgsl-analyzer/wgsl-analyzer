@@ -66,8 +66,8 @@ pub(crate) fn format_syntax_node(
             SyntaxKind::SourceFile | SyntaxKind::CompoundStatement | SyntaxKind::SwitchBody
         ) && let Some(start) = syntax.first_token()
         {
-            let mut tok = start.prev_token(); // spellchecker:disable-line
-            while let Some(current) = tok {
+            let mut token = start.prev_token(); // spellchecker:disable-line
+            while let Some(current) = token {
                 if !current.kind().is_trivia() {
                     break;
                 }
@@ -78,7 +78,7 @@ pub(crate) fn format_syntax_node(
                     let clamped = clamp_newlines(text, 2);
                     replace_token_with(&current, create_whitespace(&clamped));
                 }
-                tok = current.prev_token(); // spellchecker:disable-line
+                token = current.prev_token(); // spellchecker:disable-line
             }
         }
     }
@@ -188,17 +188,17 @@ pub(super) fn format_param_list<T: AstNode>(
             Some(NodeOrToken::Token(token)) => Some(token),
             None => None,
         };
-        while let Some(tok) = &token_after_parameter {
-            let kind = tok.kind();
+        while let Some(token) = &token_after_parameter {
+            let kind = token.kind();
             if kind.is_whitespace() {
-                let next = tok.next_token();
-                remove_token(tok);
+                let next = token.next_token();
+                remove_token(token);
                 token_after_parameter = next;
             } else if matches!(
                 kind,
                 SyntaxKind::BlockComment | SyntaxKind::LineEndingComment
             ) {
-                token_after_parameter = tok.next_token();
+                token_after_parameter = token.next_token();
             } else {
                 break;
             }

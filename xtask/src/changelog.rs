@@ -38,11 +38,8 @@ impl Changelog {
                 },
                 Some(reason) => {
                     eprintln!(
-                        "Skipping commit {} (PR #{} \"{}\" is labelled {})",
-                        &commit.hash[..8.min(commit.hash.len())],
-                        pr.number,
-                        pr.title,
-                        reason.name,
+                        r#"Skipping #{} "{}" with label {}"#,
+                        pr.number, pr.title, reason.name,
                     );
                 },
             }
@@ -68,16 +65,15 @@ struct Label {
 
 #[derive(Debug, Deserialize)]
 struct PullRequest {
-    number: u64,
+    number: u16,
     title: String,
     labels: Vec<Label>,
 }
 
 #[derive(Debug)]
-struct Commit {
-    hash: String,
+struct Change {
     log: String,
-    pr_number: u64,
+    pr_number: u16,
 }
 
 /// Run `git log` and return every commit that contains a `(#NNN)` PR
@@ -85,11 +81,15 @@ struct Commit {
 fn git_log_commits(
     shell: &Shell,
     since_hash: Option<&str>,
-) -> Result<Vec<Commit>> {
+) -> Result<Vec<Change>> {
     let separator = "\x1f"; // ASCII Unit Separator - safe in commit messages
-    let format = format!("{separator}%H%n%h %s%n%nAuthor: %an <%ae>%nDate:   %ad%n%n    %b%n");
+    let since = if let Some(since_hash) = since_hash {
+        format!("^{since_hash}")
+    } else {
+        String::new()
+    };
 
-    let output = cmd!(shell, "git log --pretty=format:{format}")
+    let output = cmd!(shell, "git log HEAD {since} --pretty=format:'- %s'")
         .output()
         .context("git log failed")?;
 
@@ -97,54 +97,32 @@ fn git_log_commits(
         let stderr = String::from_utf8_lossy(&output.stderr);
         anyhow::bail!("git log failed: {stderr}");
     }
-
     let stdout = String::from_utf8_lossy(&output.stdout).into_owned();
-    parse_commits(&stdout, since_hash)
+    parse_commits(&stdout)
 }
 
-/// Split raw `git log` output into [`Commit`] values, stopping before any
-/// commit whose full hash starts with `since_hash`.
-fn parse_commits(
-    raw: &str,
-    since_hash: Option<&str>,
-) -> Result<Vec<Commit>> {
+/// Split raw `git log` output into [`Commit`] values.
+fn parse_commits(raw: &str) -> Result<Vec<Change>> {
     let pull_request_re = Regex::new(r"\(#(\d+)\)").unwrap();
-    let separator = '\x1f';
-
     let mut commits = Vec::new();
-
-    for chunk in raw.split(separator) {
-        let chunk = chunk.trim();
-        if chunk.is_empty() {
+    let pr_link_regex = Regex::new(r"\(#(\d+)\)").unwrap();
+    let log = pr_link_regex.replace_all(&raw, |captures: &regex::Captures<'_>| {
+        let number = &captures[1];
+        format!("[(#{number})](https://github.com/{REPO_OWNER}/{REPO_NAME}/pull/{number})")
+    });
+    for line in log.lines() {
+        let line = line.trim().to_string();
+        if line.is_empty() {
             continue;
         }
-
-        let (hash_line, log) = chunk
-            .split_once('\n')
-            .context("malformed commit chunk - no newline after hash")?;
-
-        let hash = hash_line.trim().to_owned();
-
-        // Honor --since: stop when we reach the boundary commit (exclusive).
-        if let Some(prefix) = since_hash
-            && hash.starts_with(prefix)
-        {
-            break;
-        }
-
-        // Only keep commits that reference a PR.
-        let log = log.trim_end().to_owned();
-        let subject = log.lines().next().unwrap_or("");
-        if let Some(capabilities) = pull_request_re.captures(subject) {
-            let pr_number: u64 = capabilities[1].parse().context("parsing PR number")?;
-            commits.push(Commit {
-                hash,
-                log,
+        if let Some(capabilities) = pull_request_re.captures(&line) {
+            let pr_number: u16 = capabilities[1].parse().context("parsing PR number")?;
+            commits.push(Change {
+                log: line,
                 pr_number,
             });
         }
     }
-
     Ok(commits)
 }
 
@@ -155,7 +133,7 @@ fn parse_commits(
 /// doubles on each attempt starting from [`BACKOFF_BASE_SECS`] seconds.
 fn fetch_pr_with_retry(
     client: &Client,
-    pr_number: u64,
+    pr_number: u16,
 ) -> Result<PullRequest> {
     let url = format!("https://api.github.com/repos/{REPO_OWNER}/{REPO_NAME}/pulls/{pr_number}");
 
@@ -246,10 +224,10 @@ fn build_client(token: Option<&str>) -> Result<Client> {
             .unwrap(),
     );
 
-    if let Some(tok) = token {
+    if let Some(token) = token {
         headers.insert(
             reqwest::header::AUTHORIZATION,
-            format!("Bearer {tok}").parse().unwrap(),
+            format!("Bearer {token}").parse().unwrap(),
         );
     }
 

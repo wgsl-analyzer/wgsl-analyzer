@@ -67,3 +67,5 @@ extend-ignore-identifiers-re = []
 # "ident" = "identifier"
 # "ty" = "type"
 "sep" = "separator"
+"tok" = "token"
+# "expr" = "expression" # rust macro keyword
