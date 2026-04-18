@@ -9,11 +9,9 @@ use syntax::{
 };
 
 use crate::format::{
-    ast_parse::{
-        parse_end, parse_many_comments_and_blankspace, parse_node, parse_node_optional, parse_token,
-    },
+    ast_parse::{parse_end, parse_node, parse_node_optional, parse_token},
     gen_attributes::{AttributeLayout, gen_attributes, parse_many_attributes},
-    gen_comments::gen_comments,
+    gen_comments::{gen_comments, parse_many_comments_and_blankspace},
     gen_expression::gen_expression,
     gen_statement_compound::gen_compound_statement,
     print_item_buffer::{
