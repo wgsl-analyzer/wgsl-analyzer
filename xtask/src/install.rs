@@ -140,7 +140,7 @@ fn install_client(
     if !installed_extensions.contains("wgsl-analyzer") {
         bail!(
             "Could not install the Visual Studio Code extension. \
-            Please make sure you have Node.js 24 and pnpm 10.32.0 (see https://github.com/wgsl-analyzer/wgsl-analyzer/tree/main/editors/code/package.json#L36) together with the latest version of VS Code installed and try again. \
+            Please make sure you have Node.js 24 and pnpm 10.33.0 (see https://github.com/wgsl-analyzer/wgsl-analyzer/tree/main/editors/code/package.json#L36) together with the latest version of VS Code installed and try again. \
             Note that installing via xtask install does not work for VS Code Remote, instead you will need to install the .vsix manually."
         );
     }

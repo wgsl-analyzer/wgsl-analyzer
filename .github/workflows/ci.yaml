@@ -21,6 +21,7 @@ env:
   RUSTFLAGS: -D warnings
   # If nightly is breaking CI, modify this variable to target a specific nightly version.
   NIGHTLY_TOOLCHAIN: nightly
+  PNPM_VERSION: "10.33.0"
 
 concurrency:
   group: ${{github.workflow}}-${{github.ref}}
@@ -60,7 +61,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ ubuntu-latest, windows-latest, macos-latest ]
 
     steps:
       - name: Check out repository
@@ -151,7 +152,8 @@ jobs:
         uses: actions/cache/restore@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
         with:
           # key won't match, will rely on restore-keys
-          key: ${{ runner.os }}-${{ env.NIGHTLY_TOOLCHAIN }}--${{ hashFiles('**/Cargo.toml') }}-
+          key: ${{ runner.os }}-${{ env.NIGHTLY_TOOLCHAIN }}--${{
+            hashFiles('**/Cargo.toml') }}-
           # See .github/workflows/update-caches.yml for how keys are generated
           restore-keys: |
             ${{ runner.os }}-${{ env.NIGHTLY_TOOLCHAIN }}--${{ hashFiles('**/Cargo.toml') }}-
@@ -266,7 +268,8 @@ jobs:
           toolchain: beta
 
       - name: Build documentation
-        run: cargo doc --workspace --all-features --no-deps --document-private-items --keep-going
+        run: cargo doc --workspace --all-features --no-deps --document-private-items
+          --keep-going
         env:
           CARGO_INCREMENTAL: 0
           RUSTFLAGS: -C debuginfo=0 -D warnings
@@ -313,7 +316,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [ ubuntu-latest, windows-latest ]
 
     runs-on: ${{ matrix.os }}
 
@@ -332,6 +335,7 @@ jobs:
         uses: pnpm/action-setup@08c4be7e2e672a47d11bd04269e27e5f3e8529cb # v6.0.0
         with:
           package_json_file: ./editors/code/package.json
+          version: ${{ env.PNPM_VERSION }}
 
       - name: Install xvfb
         if: matrix.os == 'ubuntu-latest'
@@ -373,7 +377,8 @@ jobs:
         working-directory: ./editors/code
 
   conclusion:
-    needs: [
+    needs:
+      [
         rust,
         # rust-cross,
         markdown,
