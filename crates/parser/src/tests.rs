@@ -2393,7 +2393,7 @@ fn annotation_with_invalid_statement_recover() {
                   BraceLeft@9..10 "{"
                   Blankspace@10..15 "\n    "
                   IfStatement@15..38
-                    Attribute@15..16
+                    OtherAttribute@15..16
                       AttributeOperator@15..16 "@"
                     IfClause@16..38
                       If@16..18 "if"
@@ -2425,7 +2425,7 @@ fn annotation_with_invalid_statement_recover() {
                     Semicolon@65..66 ";"
                   Blankspace@66..71 "\n    "
                   Error@71..72
-                    Attribute@71..72
+                    OtherAttribute@71..72
                       AttributeOperator@71..72 "@"
               Error@72..76
                 Else@72..76 "else"

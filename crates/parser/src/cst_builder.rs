@@ -60,7 +60,6 @@ impl CstBuilder<'_, '_> {
                 panic!("should be arguments instead")
             },
             Rule::AssertStatement => self.start_node(SyntaxKind::AssertStatement),
-            Rule::Attribute => self.start_node(SyntaxKind::Attribute),
             Rule::BinaryExpression => self.start_node(SyntaxKind::InfixExpression),
             Rule::Literal => self.start_node(SyntaxKind::Literal),
             Rule::BreakIfStatement => self.start_node(SyntaxKind::BreakIfStatement),
@@ -159,7 +158,8 @@ impl CstBuilder<'_, '_> {
             | Rule::GlobalDeclaration
             | Rule::GlobalDirective
             | Rule::LhsExpression
-            | Rule::VariableUpdating => {
+            | Rule::VariableUpdating
+            | Rule::Attribute => {
                 panic!("{rule:?} should always be a more specific node")
             },
             // This is reachable when an attribute is parsed, but no statement variant applies
