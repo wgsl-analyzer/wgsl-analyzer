@@ -112,7 +112,7 @@ fn parse_commits(
     raw: &str,
     since_hash: Option<&str>,
 ) -> Result<Vec<Commit>> {
-    let pr_re = Regex::new(r"\(#(\d+)\)").unwrap();
+    let pull_request_re = Regex::new(r"\(#(\d+)\)").unwrap();
     let sep = '\x1f';
 
     let mut commits = Vec::new();
@@ -130,7 +130,7 @@ fn parse_commits(
         let hash = hash_line.trim().to_owned();
         let log = log.trim_end().to_owned();
 
-        // Honour --since: stop when we reach the boundary commit (exclusive).
+        // Honor --since: stop when we reach the boundary commit (exclusive).
         if let Some(prefix) = since_hash {
             if hash.starts_with(prefix) {
                 eprintln!(
@@ -143,8 +143,8 @@ fn parse_commits(
 
         // Only keep commits that reference a PR.
         let subject = log.lines().next().unwrap_or("");
-        if let Some(caps) = pr_re.captures(subject) {
-            let pr_number: u64 = caps[1].parse().context("parsing PR number")?;
+        if let Some(capabilities) = pull_request_re.captures(subject) {
+            let pr_number: u64 = capabilities[1].parse().context("parsing PR number")?;
             commits.push(Commit {
                 hash,
                 log,
@@ -240,10 +240,6 @@ fn retry_after_secs(response: &Response) -> Option<u64> {
 fn backoff_secs(attempt: u32) -> u64 {
     BACKOFF_BASE_SECS * 2u64.pow(attempt)
 }
-
-// ---------------------------------------------------------------------------
-// HTTP client
-// ---------------------------------------------------------------------------
 
 fn build_client(token: Option<&str>) -> Result<Client> {
     let mut headers = reqwest::header::HeaderMap::new();

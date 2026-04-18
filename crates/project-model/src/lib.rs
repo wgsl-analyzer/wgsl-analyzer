@@ -57,14 +57,16 @@ impl ProjectManifest {
         path: &AbsPath,
         search_parents: bool,
     ) -> Option<Self> {
-        if let Some(project_json) = find_in_parent_dirs(path, "wesl-project.json", search_parents) {
+        if let Some(project_json) =
+            find_in_parent_directories(path, "wesl-project.json", search_parents)
+        {
             return Some(Self::ProjectJson(project_json));
         }
-        if let Some(wesl_toml) = find_in_parent_dirs(path, "wesl.toml", search_parents) {
+        if let Some(wesl_toml) = find_in_parent_directories(path, "wesl.toml", search_parents) {
             return Some(Self::WeslToml(wesl_toml));
         }
         return None;
-        fn find_in_parent_dirs(
+        fn find_in_parent_directories(
             path: &AbsPath,
             target_file_name: &str,
             search_parents: bool,
