@@ -1,35 +1,32 @@
-use dprint_core_macros::sc;
-use itertools::put_back;
-use parser::SyntaxKind;
-use syntax::{
-    AstNode as _,
-    ast::{self, CompoundStatement, Expression, FunctionCall, IncrementDecrement},
-};
+use syntax::ast;
 
 use crate::format::{
-    ast_parse::{parse_end, parse_node, parse_node_optional, parse_token, parse_token_optional},
-    gen_attributes::{AttributeLayout, gen_attributes, parse_many_attributes},
-    gen_comments::{gen_comments, parse_many_comments_and_blankspace},
-    gen_expression::gen_expression,
-    print_item_buffer::{PrintItemBuffer, request_folder::RequestItem},
-    reporting::{FormatDocumentError, FormatDocumentResult},
+    print_item_buffer::PrintItemBuffer,
+    reporting::FormatDocumentError,
     statements::{
         gen_assignment::{
             gen_assignment_statement, gen_compound_assignment_statement,
             gen_phony_assignment_statement,
         },
         gen_break::gen_break_statement,
+        gen_break_if::gen_break_if_statement,
         gen_compound::gen_compound_statement,
+        gen_const_assert::gen_const_assert_statement,
         gen_continue::gen_continue_statement,
+        gen_continuing::gen_continuing_statement,
         gen_discard::gen_discard_statement,
         gen_for::gen_for_statement,
-        gen_function_call::gen_function_call,
+        gen_function_call::gen_function_call_statement,
         gen_if::gen_if_statement,
+        gen_increment_decrement::gen_increment_decrement_statement,
+        gen_loop::gen_loop_statement,
+        gen_return::gen_return_statement,
         gen_switch::gen_switch_statement,
         gen_var_let_const_override::{
             gen_const_declaration_statement, gen_let_declaration_statement,
             gen_var_declaration_statement,
         },
+        gen_while::gen_while_statement,
     },
 };
 
@@ -100,250 +97,4 @@ pub fn gen_statement_maybe_semicolon(
             gen_break_if_statement(break_if_statement, include_semicolon)
         },
     }
-}
-
-pub fn gen_increment_decrement_statement(
-    increment_decrement_statement: &ast::IncrementDecrementStatement,
-    include_semicolon: bool,
-) -> Result<PrintItemBuffer, FormatDocumentError> {
-    // NOTE!! - When changing this function, make sure to also update gen_phony_assignment_statement.
-    // This is non-dry code, but when inevitably at some point there will be some differences between
-    // the two, this should clearly communicate that they should be split up and not
-    // continue to be one function with a whole lot of parameters and ifs.
-
-    // ==== Parse ====
-    let mut syntax = put_back(
-        increment_decrement_statement
-            .syntax()
-            .children_with_tokens(),
-    );
-
-    let item_ident = parse_node::<Expression>(&mut syntax)?;
-    let item_comments_after_ident = parse_many_comments_and_blankspace(&mut syntax)?;
-    let inc_dec = if parse_token_optional(&mut syntax, SyntaxKind::PlusPlus).is_some() {
-        IncrementDecrement::Increment
-    } else {
-        parse_token(&mut syntax, SyntaxKind::MinusMinus)?;
-        IncrementDecrement::Decrement
-    };
-    let item_comments_after_inc_dec = parse_many_comments_and_blankspace(&mut syntax)?;
-    parse_token_optional(&mut syntax, SyntaxKind::Semicolon);
-    parse_end(&mut syntax)?;
-
-    // ==== Format ====
-    let mut formatted = PrintItemBuffer::new();
-    formatted.extend(gen_expression(&item_ident, true)?);
-    formatted.extend(gen_comments(&item_comments_after_ident));
-
-    match inc_dec {
-        IncrementDecrement::Increment => {
-            formatted.push_sc(sc!("++"));
-        },
-        IncrementDecrement::Decrement => {
-            formatted.push_sc(sc!("--"));
-        },
-    }
-
-    formatted.extend(gen_comments(&item_comments_after_inc_dec));
-
-    if include_semicolon {
-        formatted.discourage(RequestItem::Space);
-        formatted.push_sc(sc!(";"));
-    }
-    Ok(formatted)
-}
-
-pub fn gen_function_call_statement(
-    function_call_statement: &ast::FunctionCallStatement,
-    include_semicolon: bool,
-) -> Result<PrintItemBuffer, FormatDocumentError> {
-    // ==== Parse ====
-    let mut syntax = put_back(function_call_statement.syntax().children_with_tokens());
-    let function_call = parse_node::<FunctionCall>(&mut syntax)?;
-    let comments_after_function_call = parse_many_comments_and_blankspace(&mut syntax)?;
-    parse_token_optional(&mut syntax, SyntaxKind::Semicolon);
-    parse_end(&mut syntax)?;
-
-    // ==== Format ====
-    let mut formatted = PrintItemBuffer::new();
-    formatted.extend(gen_function_call(&function_call)?);
-    formatted.extend(gen_comments(&comments_after_function_call));
-    if include_semicolon {
-        formatted.push_sc(sc!(";"));
-    }
-    Ok(formatted)
-}
-
-pub fn gen_return_statement(
-    statement: &ast::ReturnStatement,
-    include_semicolon: bool,
-) -> FormatDocumentResult<PrintItemBuffer> {
-    // ==== Parse ====
-    let mut syntax = put_back(statement.syntax().children_with_tokens());
-    parse_token(&mut syntax, SyntaxKind::Return)?;
-    let comments_after_return = parse_many_comments_and_blankspace(&mut syntax)?;
-    let item_expression = parse_node_optional::<Expression>(&mut syntax);
-    let comments_after_expression = parse_many_comments_and_blankspace(&mut syntax)?;
-    parse_token_optional(&mut syntax, SyntaxKind::Semicolon);
-    parse_end(&mut syntax)?;
-
-    // ==== Format ====
-    let mut formatted = PrintItemBuffer::new();
-    formatted.push_sc(sc!("return"));
-    formatted.start_indent();
-    formatted.extend(gen_comments(&comments_after_return));
-    if let Some(item_expression) = item_expression {
-        formatted.expect(RequestItem::Space);
-        formatted.extend(gen_expression(&item_expression, true)?);
-    }
-    formatted.extend(gen_comments(&comments_after_expression));
-
-    if include_semicolon {
-        formatted.discourage(RequestItem::Space);
-        formatted.push_sc(sc!(";"));
-    }
-    formatted.finish_indent();
-    Ok(formatted)
-}
-
-pub fn gen_break_if_statement(
-    statement: &ast::BreakIfStatement,
-    include_semicolon: bool,
-) -> FormatDocumentResult<PrintItemBuffer> {
-    // ==== Parse ====
-    let mut syntax = put_back(statement.syntax().children_with_tokens());
-    parse_token(&mut syntax, SyntaxKind::Break)?;
-    let comments_after_break = parse_many_comments_and_blankspace(&mut syntax)?;
-    parse_token(&mut syntax, SyntaxKind::If)?;
-    let comments_after_if = parse_many_comments_and_blankspace(&mut syntax)?;
-    let item_condition = parse_node::<Expression>(&mut syntax)?;
-    let comments_after_condition = parse_many_comments_and_blankspace(&mut syntax)?;
-    parse_token_optional(&mut syntax, SyntaxKind::Semicolon);
-    parse_end(&mut syntax)?;
-
-    // ==== Format ====
-    let mut formatted = PrintItemBuffer::new();
-    formatted.push_sc(sc!("break"));
-    formatted.expect(RequestItem::Space);
-    formatted.extend(gen_comments(&comments_after_break));
-    formatted.push_sc(sc!("if"));
-    formatted.start_indent();
-    formatted.expect(RequestItem::Space);
-    formatted.extend(gen_comments(&comments_after_if));
-    formatted.extend(gen_expression(&item_condition, true)?);
-    formatted.extend(gen_comments(&comments_after_condition));
-    formatted.discourage(RequestItem::Space);
-    if include_semicolon {
-        formatted.push_sc(sc!(";"));
-    }
-    formatted.finish_indent();
-
-    Ok(formatted)
-}
-
-pub fn gen_const_assert_statement(
-    statement: &ast::AssertStatement,
-    include_semicolon: bool,
-) -> FormatDocumentResult<PrintItemBuffer> {
-    // ==== Parse ====
-    let mut syntax = put_back(statement.syntax().children_with_tokens());
-    parse_token(&mut syntax, SyntaxKind::ConstantAssert)?;
-    let comments_after_const_assert = parse_many_comments_and_blankspace(&mut syntax)?;
-    let item_condition = parse_node::<Expression>(&mut syntax)?;
-    let comments_after_condition = parse_many_comments_and_blankspace(&mut syntax)?;
-    parse_token(&mut syntax, SyntaxKind::Semicolon)?;
-    parse_end(&mut syntax)?;
-
-    // ==== Format ====
-    let mut formatted = PrintItemBuffer::new();
-
-    formatted.push_sc(sc!("const_assert"));
-    formatted.start_indent();
-    formatted.expect(RequestItem::Space);
-    formatted.extend(gen_comments(&comments_after_const_assert));
-    formatted.extend(gen_expression(&item_condition, true)?);
-    formatted.extend(gen_comments(&comments_after_condition));
-    if include_semicolon {
-        formatted.discourage(RequestItem::Space);
-        formatted.push_sc(sc!(";"));
-    }
-    formatted.finish_indent();
-
-    Ok(formatted)
-}
-
-pub fn gen_loop_statement(statement: &ast::LoopStatement) -> FormatDocumentResult<PrintItemBuffer> {
-    // ==== Parse ====
-    let mut syntax = put_back(statement.syntax().children_with_tokens());
-    let item_attributes = parse_many_attributes(&mut syntax)?;
-    parse_token(&mut syntax, SyntaxKind::Loop)?;
-    let comments_after_loop = parse_many_comments_and_blankspace(&mut syntax)?;
-    let item_body = parse_node::<CompoundStatement>(&mut syntax)?;
-    parse_end(&mut syntax)?;
-
-    // ==== Format ====
-    let mut formatted = PrintItemBuffer::new();
-    formatted.extend(gen_attributes(
-        &item_attributes,
-        AttributeLayout::Multiline,
-    )?);
-    formatted.push_sc(sc!("loop"));
-    formatted.extend(gen_comments(&comments_after_loop));
-    formatted.expect(RequestItem::Space);
-    formatted.extend(gen_compound_statement(&item_body)?);
-    formatted.expect(RequestItem::LineBreak);
-
-    Ok(formatted)
-}
-
-pub fn gen_continuing_statement(
-    statement: &ast::ContinuingStatement
-) -> FormatDocumentResult<PrintItemBuffer> {
-    // ==== Parse ====
-    let mut syntax = put_back(statement.syntax().children_with_tokens());
-    parse_token(&mut syntax, SyntaxKind::Continuing)?;
-    let comments_after_continuing = parse_many_comments_and_blankspace(&mut syntax)?;
-    let item_body = parse_node::<CompoundStatement>(&mut syntax)?;
-    parse_end(&mut syntax)?;
-
-    // ==== Format ====
-    let mut formatted = PrintItemBuffer::new();
-    formatted.push_sc(sc!("continuing"));
-    formatted.extend(gen_comments(&comments_after_continuing));
-    formatted.expect(RequestItem::Space);
-    formatted.extend(gen_compound_statement(&item_body)?);
-    formatted.expect(RequestItem::LineBreak);
-
-    Ok(formatted)
-}
-
-pub fn gen_while_statement(
-    statement: &ast::WhileStatement
-) -> FormatDocumentResult<PrintItemBuffer> {
-    // ==== Parse ====
-    let mut syntax = put_back(statement.syntax().children_with_tokens());
-    let item_attributes = parse_many_attributes(&mut syntax)?;
-    parse_token(&mut syntax, SyntaxKind::While)?;
-    let comments_after_while = parse_many_comments_and_blankspace(&mut syntax)?;
-    let item_condition = parse_node::<Expression>(&mut syntax)?;
-    let comments_after_condition = parse_many_comments_and_blankspace(&mut syntax)?;
-    let item_body = parse_node::<CompoundStatement>(&mut syntax)?;
-    parse_end(&mut syntax)?;
-
-    // ==== Format ====
-    let mut formatted = PrintItemBuffer::new();
-    formatted.extend(gen_attributes(
-        &item_attributes,
-        AttributeLayout::Multiline,
-    )?);
-    formatted.push_sc(sc!("while"));
-    formatted.extend(gen_comments(&comments_after_while));
-    formatted.expect(RequestItem::Space);
-    formatted.extend(gen_expression(&item_condition, true)?);
-    formatted.expect(RequestItem::Space);
-    formatted.extend(gen_comments(&comments_after_condition));
-    formatted.extend(gen_compound_statement(&item_body)?);
-    formatted.expect(RequestItem::LineBreak);
-
-    Ok(formatted)
 }
