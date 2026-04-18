@@ -4,16 +4,13 @@
     clippy::missing_panics_doc,
     reason = "we want to be able to use assert!"
 )]
-use std::{borrow::ToOwned, ffi::OsString, fmt::Debug, panic, path::Path};
+use std::{borrow::ToOwned, fmt::Debug, panic};
 
 use itertools::Itertools as _;
 use parser::{Edition, ParseEntryPoint};
 use rowan::{TextLen as _, TextRange};
 
-use crate::{
-    FormattingOptions, IndentStyle, format_range,
-    generators::{self, format_tree},
-};
+use crate::{FormattingOptions, IndentStyle, format::format_tree, format_range};
 
 pub trait ExpectAssertEq: Debug {
     fn assert_eq(

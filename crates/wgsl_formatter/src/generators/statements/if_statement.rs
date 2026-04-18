@@ -11,9 +11,9 @@ use syntax::{
 use crate::{
     ast_parse::{parse_end, parse_node, parse_node_optional, parse_token},
     generators::{
+        attributes::{AttributeLayout, gen_attributes, parse_many_attributes},
+        comments::{gen_comments, parse_many_comments_and_blankspace},
         expressions::gen_expression,
-        gen_attributes::{AttributeLayout, gen_attributes, parse_many_attributes},
-        gen_comments::{gen_comments, parse_many_comments_and_blankspace},
         statements::compound_statement::gen_compound_statement,
     },
     print_item_buffer::{

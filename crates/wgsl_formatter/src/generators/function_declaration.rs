@@ -12,13 +12,13 @@ use syntax::{
 use crate::{
     ast_parse::{parse_end, parse_node, parse_node_optional, parse_token, parse_token_optional},
     generators::{
-        gen_attributes::{gen_attributes, parse_many_attributes},
-        gen_comments::{
+        attributes::{gen_attributes, parse_many_attributes},
+        comments::{
             Comment, gen_comment, gen_comments, parse_comment_optional,
             parse_many_comments_and_blankspace,
         },
-        gen_types::gen_type_specifier,
         statements::compound_statement::gen_compound_statement,
+        types::gen_type_specifier,
     },
     helpers::{LineSpacing, gen_line_spacing, parse_line_spacing},
     multiline_group::MultilineGroup,
@@ -29,7 +29,7 @@ use crate::{
     reporting::FormatDocumentResult,
 };
 
-use super::gen_attributes::AttributeLayout;
+use super::attributes::AttributeLayout;
 
 pub fn gen_function_declaration(
     node: &ast::FunctionDeclaration

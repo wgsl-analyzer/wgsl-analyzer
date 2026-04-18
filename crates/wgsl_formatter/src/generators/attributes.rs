@@ -18,8 +18,8 @@ use crate::{
         parse_token_optional,
     },
     generators::{
-        gen_comments::{Comment, gen_comments, parse_many_comments_and_blankspace},
-        gen_diagnostic::gen_diagnostic_control,
+        comments::{Comment, gen_comments, parse_many_comments_and_blankspace},
+        diagnostic_directive::gen_diagnostic_control,
         statements::function_call_statement::{
             gen_function_call_arguments, gen_function_call_like_comma_separated_values,
         },

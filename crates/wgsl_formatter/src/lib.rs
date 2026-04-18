@@ -1,3 +1,9 @@
+// We re-enable a warn lint within the formatter because it is very easy to parse an item within a gen_*-function and
+// then forget to print it to the PrintItemBuffer.
+// Also it is very easy to forget a "?" after a parse_*-function, that would be caught by
+// "unused std::result::Result that must be used"
+#![warn(unused)]
+
 mod generators;
 #[cfg(test)]
 mod tests;
@@ -5,6 +11,7 @@ mod tests;
 //This cannot be gated, as we depend on it in doctests and the doctests are
 // run against the public api.
 pub mod ast_parse;
+pub mod format;
 pub mod helpers;
 pub mod multiline_group;
 pub mod print_item_buffer;
@@ -22,7 +29,7 @@ use dprint_core::configuration::{NewLineKind, ParseConfigurationError};
 use rowan::{GreenNode, GreenToken, NodeOrToken, WalkEvent};
 use syntax::{AstNode, HasName, SyntaxElement, SyntaxKind, SyntaxNode, SyntaxToken, ast};
 
-pub use generators::{FormatStringError, FormattedRange, format_file, format_range, format_tree};
+pub use format::{FormatStringError, FormattedRange, format_file, format_range, format_tree};
 
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]

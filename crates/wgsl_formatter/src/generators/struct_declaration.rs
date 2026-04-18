@@ -19,12 +19,12 @@ use crate::{
 };
 use crate::{
     generators::{
-        gen_attributes::{AttributeLayout, gen_attributes, parse_many_attributes},
-        gen_comments::{
+        attributes::{AttributeLayout, gen_attributes, parse_many_attributes},
+        comments::{
             Comment, gen_comment, gen_comments, parse_comment_optional,
             parse_many_comments_and_blankspace,
         },
-        gen_types::gen_type_specifier,
+        types::gen_type_specifier,
     },
     helpers::parse_line_spacing,
 };

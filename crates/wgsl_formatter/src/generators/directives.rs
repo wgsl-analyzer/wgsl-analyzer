@@ -9,11 +9,11 @@ use syntax::{
 use crate::{
     ast_parse::{parse_end, parse_node, parse_node_optional, parse_token, parse_token_optional},
     generators::{
-        gen_comments::{
+        comments::{
             Comment, gen_comment, gen_comments, parse_comment_optional,
             parse_many_comments_and_blankspace,
         },
-        gen_diagnostic::gen_diagnostic_control,
+        diagnostic_directive::gen_diagnostic_control,
     },
     multiline_group::MultilineGroup,
     print_item_buffer::{
