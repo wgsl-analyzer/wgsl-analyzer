@@ -32,7 +32,7 @@ extend-ignore-identifiers-re = []
 [default.extend-words]
 "jod" = "jod"
 "anser" = "anser"
-"typ" = "typ" # lsp_types
+"typ" = "typ"  # lsp_types
 # "perf" = "performance"
 # "params" = "parameters"
 "req" = "request"
@@ -42,7 +42,7 @@ extend-ignore-identifiers-re = []
 # "args" = "arguments"
 "sig" = "signature"
 # "dir" = "directory" # std
-"dirs" = "directories" # Used by dependencies
+"dirs" = "directories"  # Used by dependencies
 "resp" = "response"
 "msg" = "message"
 "nav" = "navigation"

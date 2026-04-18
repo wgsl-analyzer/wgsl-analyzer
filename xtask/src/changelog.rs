@@ -3,7 +3,6 @@ use std::time::Duration;
 use std::{collections::HashSet, path::Path};
 
 use anyhow::{Context as _, Result};
-use regex::Regex;
 use reqwest::StatusCode;
 use reqwest::blocking::{Client, Response};
 use serde::Deserialize;
@@ -91,7 +90,7 @@ fn git_log_commits(
 
     let output = cmd!(shell, "git log HEAD {since} --pretty=format:'- %s'")
         .output()
-        .context("git log failed")?;
+        .context("running git log")?;
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
@@ -103,26 +102,36 @@ fn git_log_commits(
 
 /// Split raw `git log` output into [`Commit`] values.
 fn parse_commits(raw: &str) -> Result<Vec<Change>> {
-    let pull_request_re = Regex::new(r"\(#(\d+)\)").unwrap();
     let mut commits = Vec::new();
-    let pr_link_regex = Regex::new(r"\(#(\d+)\)").unwrap();
-    let log = pr_link_regex.replace_all(&raw, |captures: &regex::Captures<'_>| {
-        let number = &captures[1];
-        format!("[(#{number})](https://github.com/{REPO_OWNER}/{REPO_NAME}/pull/{number})")
-    });
-    for line in log.lines() {
-        let line = line.trim().to_string();
+
+    for line in raw.lines() {
+        let line = line.trim();
         if line.is_empty() {
             continue;
         }
-        if let Some(capabilities) = pull_request_re.captures(&line) {
-            let pr_number: u16 = capabilities[1].parse().context("parsing PR number")?;
-            commits.push(Change {
-                log: line,
-                pr_number,
-            });
+
+        // Find the `(#NNN)`.
+        const OPENER: &str = "(#";
+        if let Some(pr_start) = line.rfind(OPENER)
+            && let Some(pr_end) = line.rfind(')')
+            && let pr_str = &line[pr_start + OPENER.len()..pr_end]
+            && (pr_str.chars().all(|c| c.is_ascii_digit()) || pr_str.is_empty())
+        {
+            let pr_number: u16 = pr_str.parse().context("parsing PR number")?;
+
+            // Replace `(#NNN)` with a Markdown link in-place.
+            let link = format!(
+                "[(#{pr_number})](https://github.com/{REPO_OWNER}/{REPO_NAME}/pull/{pr_number})"
+            );
+            let log = format!("{}{}", &line[..pr_start], link);
+
+            commits.push(Change { log, pr_number });
+        } else {
+            eprintln!("no PR for change {}", line);
+            continue;
         }
     }
+
     Ok(commits)
 }
 
