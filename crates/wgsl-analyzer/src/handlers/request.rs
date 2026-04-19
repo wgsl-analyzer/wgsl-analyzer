@@ -246,17 +246,6 @@ pub(crate) fn view_syntax_tree(
     Ok(string)
 }
 
-pub(crate) fn debug_command(
-    snap: GlobalStateSnapshot,
-    parameters: extensions::DebugCommandParameters,
-) -> Result<()> {
-    let Some(position) = from_proto::file_position(&snap, &parameters.position)? else {
-        return Ok(());
-    };
-    snap.analysis.debug_command(position)?;
-    Ok(())
-}
-
 // This is the “empty” fallback if the VFS lookup fails.
 // It returns an “Unchanged” report with the same `previousResultId` the client sent.
 pub(crate) fn empty_diagnostic_report() -> lsp_types::DocumentDiagnosticReportResult {

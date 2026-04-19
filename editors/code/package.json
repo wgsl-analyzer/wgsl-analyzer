@@ -89,11 +89,6 @@
 	"contributes": {
 		"commands": [
 			{
-				"command": "wgsl-analyzer.debugCommand",
-				"title": "Debug command",
-				"category": "wgsl-analyzer"
-			},
-			{
 				"command": "wgsl-analyzer.fullSource",
 				"title": "Show full source",
 				"category": "wgsl-analyzer"
@@ -170,7 +165,7 @@
 			},
 			{
 				"command": "wgsl-analyzer.serverVersion",
-				"title": "Show RA Version",
+				"title": "Show wgsl-analyzer Version",
 				"category": "wgsl-analyzer"
 			},
 			{

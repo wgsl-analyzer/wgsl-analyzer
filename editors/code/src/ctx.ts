@@ -6,10 +6,7 @@ import { bootstrap } from "./bootstrap";
 import { createClient } from "./client";
 import {
 	Config,
-	DiagnosticsConfig,
-	InlayHintsConfig,
 	prepareVSCodeConfig,
-	TraceConfig,
 } from "./config";
 import type { ServerStatusParameters } from "./lsp_ext";
 import * as wa from "./lsp_ext";
@@ -17,7 +14,6 @@ import type { WgslAnalyzerExtensionApi } from "./main";
 import { PersistentState } from "./persistent_state";
 import { type SyntaxElement, SyntaxTreeProvider } from "./syntax_tree_provider";
 import {
-	expectNotUndefined,
 	isWeslDocument,
 	isWeslEditor,
 	LazyOutputChannel,
@@ -57,29 +53,6 @@ export type CommandFactory = {
 export type CtxInit = Ctx & {
 	readonly client: lc.LanguageClient;
 };
-
-interface WgslAnalyzerConfiguration {
-	trace: TraceConfig;
-	diagnostics: DiagnosticsConfig;
-	inlayHints: InlayHintsConfig;
-}
-
-function lspOptions(config: Config): WgslAnalyzerConfiguration {
-	const start = process.hrtime();
-	const elapsed = process.hrtime(start);
-	const millis = elapsed[0] * 1000 + elapsed[1] / 1_000_000;
-	if (millis > 1000) {
-		vscode.window.showWarningMessage(
-			`wgsl-analyzer: Took ${millis.toFixed(0)}ms to resolve imports.`,
-		);
-	}
-
-	return {
-		diagnostics: expectNotUndefined(config.diagnostics, "diagnostics was undefined"),
-		trace: expectNotUndefined(config.trace, "trace was undefined"),
-		inlayHints: expectNotUndefined(config.inlayHints, "inlayHints was undefined"),
-	};
-}
 
 export class Ctx implements WgslAnalyzerExtensionApi {
 	readonly statusBar: vscode.StatusBarItem;
@@ -286,16 +259,6 @@ export class Ctx implements WgslAnalyzerExtensionApi {
 			return;
 		}
 		await client.start();
-		this.subscriptions.push(
-			client.onRequest(wa.requestConfiguration, (_, __) => {
-				const options = lspOptions(this.config);
-				return options;
-			}),
-			client.onRequest(wa.importTextDocument, (parameters, __) => {
-				vscode.workspace.openTextDocument(parameters.uri);
-				return;
-			}),
-		);
 		this.updateCommands();
 		if (this.config.showSyntaxTree) {
 			this.prepareSyntaxTreeView(client);
@@ -318,10 +281,10 @@ export class Ctx implements WgslAnalyzerExtensionApi {
 			}
 		});
 
-		vscode.workspace.onDidChangeTextDocument(async (e) => {
+		vscode.workspace.onDidChangeTextDocument(async (event) => {
 			if (
-				vscode.window.activeTextEditor?.document !== e.document
-				|| e.contentChanges.length === 0
+				vscode.window.activeTextEditor?.document !== event.document
+				|| event.contentChanges.length === 0
 			) {
 				return;
 			}
@@ -331,12 +294,12 @@ export class Ctx implements WgslAnalyzerExtensionApi {
 			}
 		});
 
-		vscode.window.onDidChangeTextEditorSelection(async (e) => {
-			if (!this.syntaxTreeView?.visible || !isWeslEditor(e.textEditor)) {
+		vscode.window.onDidChangeTextEditorSelection(async (event) => {
+			if (!this.syntaxTreeView?.visible || !isWeslEditor(event.textEditor)) {
 				return;
 			}
 
-			const selection = e.selections[0];
+			const selection = event.selections[0];
 			if (selection === undefined) {
 				return;
 			}
@@ -347,8 +310,8 @@ export class Ctx implements WgslAnalyzerExtensionApi {
 			}
 		});
 
-		this._syntaxTreeView.onDidChangeVisibility(async (e) => {
-			if (e.visible) {
+		this._syntaxTreeView.onDidChangeVisibility(async (event) => {
+			if (event.visible) {
 				await this.syntaxTreeProvider?.refresh();
 			}
 		});
