@@ -110,24 +110,22 @@ pub struct ViewSyntaxTreeParameters {
     pub text_document: TextDocumentIdentifier,
 }
 
-// change this to ViewWgsl (used when writing WESL)
-pub enum ViewHir {}
+pub enum ViewWgsl {}
 
-impl Request for ViewHir {
+impl Request for ViewWgsl {
     type Params = lsp_types::TextDocumentPositionParams;
     type Result = String;
 
-    const METHOD: &'static str = "wgsl-analyzer/viewHir";
+    const METHOD: &'static str = "wgsl-analyzer/viewWgsl";
 }
 
-// change this to ViewSpirV
-pub enum ViewMir {}
+pub enum ViewSpirv {}
 
-impl Request for ViewMir {
+impl Request for ViewSpirv {
     type Params = lsp_types::TextDocumentPositionParams;
     type Result = String;
 
-    const METHOD: &'static str = "wgsl-analyzer/viewMir";
+    const METHOD: &'static str = "wgsl-analyzer/viewSpirv";
 }
 
 pub enum InterpretFunction {}
