@@ -1,3 +1,5 @@
+//! Formatter for WGSL code.
+
 #![expect(clippy::print_stderr, reason = "CLI program")]
 #![expect(clippy::print_stdout, reason = "CLI program")]
 #![allow(

@@ -1,3 +1,5 @@
+//! Basic database traits.
+
 pub mod change;
 pub mod input;
 
@@ -111,7 +113,7 @@ impl Files {
     /// Contents of a file.
     ///
     /// # Panics
-    /// If called with a file id that has not been added by the [`Change`]s.
+    /// If called with a file id that has not been added by the [`change::Change`]s.
     #[must_use]
     pub fn file_text(
         &self,
@@ -169,7 +171,7 @@ impl Files {
     /// Source root of the file.
     ///
     /// # Panics
-    /// If the source root has not been set. This can only happen if there were some incorrect [`Change`]s.
+    /// If the source root has not been set. This can only happen if there were some incorrect [`change::Change`]s.
     #[must_use]
     pub fn source_root(
         &self,
@@ -210,7 +212,7 @@ impl Files {
     /// Gets the source root for a file.
     ///
     /// # Panics
-    /// If the source root has not been set. This can only happen if there were some incorrect [`Change`]s.
+    /// If the source root has not been set. This can only happen if there were some incorrect [`change::Change`]s.
     #[must_use]
     pub fn file_source_root(
         &self,

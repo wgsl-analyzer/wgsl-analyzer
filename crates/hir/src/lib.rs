@@ -1,3 +1,5 @@
+//! A high-level object-oriented access to code.
+
 pub mod database;
 pub mod definition;
 pub mod diagnostics;

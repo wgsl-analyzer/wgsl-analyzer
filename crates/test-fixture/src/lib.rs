@@ -137,10 +137,10 @@ impl ChangeFixture {
             }
 
             assert!(meta.path.starts_with(SOURCE_ROOT_PREFIX));
-            if !meta.deps.is_empty() {
+            if !meta.dependencies.is_empty() {
                 assert!(
                     meta.package.is_some(),
-                    "can't specify deps without naming the crate"
+                    "cannot specify dependencies without naming the crate"
                 );
             }
 
@@ -161,7 +161,7 @@ impl ChangeFixture {
                     previous.is_none(),
                     "multiple crates with same name: {crate_name}"
                 );
-                for dep in meta.deps {
+                for dep in meta.dependencies {
                     let dep = PackageName::normalize_dashes(&dep);
                     package_dependencies.push((crate_name.clone(), dep));
                 }
@@ -231,20 +231,20 @@ enum SourceRootKind {
 struct FileMeta {
     path: String,
     package: Option<(String, PackageOrigin)>,
-    deps: Vec<String>,
+    dependencies: Vec<String>,
     edition: Edition,
 }
 
 impl FileMeta {
     fn from_fixture(fixture: Fixture) -> Self {
-        let deps = fixture.deps;
+        let dependencies = fixture.dependencies;
 
         Self {
             path: fixture.path,
             package: fixture
                 .package
                 .map(|package_name| parse_package(package_name, fixture.library)),
-            deps,
+            dependencies,
             edition: fixture.edition.map_or(Edition::CURRENT, |version| {
                 Edition::from_str(&version).unwrap()
             }),

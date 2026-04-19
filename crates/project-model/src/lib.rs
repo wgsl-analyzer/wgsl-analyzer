@@ -1,17 +1,18 @@
 //! In `wgsl-analyzer`, we maintain a strict separation between pure abstract
 //! semantic project model and a concrete model of a particular build system.
 //!
-//! Pure model is represented by the [`base_db::PackageGraph`] from another package.
+//! Pure model is represented by the [`PackageGraph`] from another package.
 //!
 //! In this crate, we are concerned with "real world" project models.
 //!
 //! Specifically, here we have a representation for a `wesl-rs` project
-//! ([`WeslWorkspace`]) and for manually specified layout ([`ProjectJson`]).
+//! ([`WeslToml`]) and for manually specified layout ([`ProjectManifest::ProjectJson`]).
 //!
 //! Roughly, the things we do here are:
 //!
-//! * Project discovery (where's the relevant wesl.toml for the current dir).
-//! * Lowering of concrete model to a [`base_db::PackageGraph`]
+//! * Project discovery (where is the relevant `wesl.toml` for the current directory?)
+//! * Lowering of concrete model to a [`PackageGraph`]
+
 mod manifest_path;
 mod package_graph;
 mod package_interner;

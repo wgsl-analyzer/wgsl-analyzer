@@ -7,11 +7,11 @@ use smallvec::SmallVec;
 use smol_str::{SmolStr, format_smolstr};
 use stdx::never;
 
-/// `CompletionItem` describes a single completion entity which expands to 1 or more entries in the
+/// [`CompletionItem`] describes a single completion entity which expands to 1 or more entries in the
 /// editor pop-up.
 ///
 /// It is basically a POD with various properties. To construct a [`CompletionItem`],
-/// use [`Builder::new`] method and the [`Builder`] struct.
+/// use [`Builder::build`] method and the [`Builder`] struct.
 #[derive(Clone)]
 #[non_exhaustive]
 pub struct CompletionItem {
