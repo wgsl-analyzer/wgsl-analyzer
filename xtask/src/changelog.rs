@@ -18,9 +18,11 @@ impl Changelog {
             let labels = fetch_labels_with_retry(shell, commit.pr_number)
                 .with_context(|| format!("fetching PR #{}", commit.pr_number))?;
 
-            let skip = labels
-                .iter()
-                .find(|name| name.as_str() == CHORE_LABEL || name.as_str() == DEPENDENCIES_LABEL);
+            let skip = labels.iter().find(|name| {
+                name.as_str() == CHORE_LABEL
+                    || name.as_str() == DEPENDENCIES_LABEL
+                    || name.as_str() == DOCUMENTATION_LABEL
+            });
 
             match skip {
                 None => {
@@ -42,6 +44,7 @@ const REPO_OWNER: &str = "wgsl-analyzer";
 const REPO_NAME: &str = "wgsl-analyzer";
 const CHORE_LABEL: &str = "C-Chore";
 const DEPENDENCIES_LABEL: &str = "C-Dependencies";
+const DOCUMENTATION_LABEL: &str = "C-Documentation";
 
 /// Maximum number of attempts before giving up on a single API call.
 const MAX_RETRIES: u32 = 6;
