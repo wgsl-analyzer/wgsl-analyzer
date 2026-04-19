@@ -2201,6 +2201,7 @@ fn keywords_do_not_parse() {
             error at 174..181: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
             error at 181..182: invalid syntax, expected: <identifier>
             error at 197..207: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
+            error at 197..207: directives must come before other items
             error at 207..208: invalid syntax, expected: '('
             error at 209..210: invalid syntax, expected one of: ',', ')'
             error at 223..230: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
@@ -2208,6 +2209,7 @@ fn keywords_do_not_parse() {
             error at 246..250: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
             error at 250..251: invalid syntax, expected: <identifier>
             error at 266..272: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
+            error at 266..272: directives must come before other items
             error at 272..273: invalid syntax, expected: <identifier>
             error at 288..293: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
             error at 293..294: invalid syntax, expected: <identifier>
@@ -2226,6 +2228,7 @@ fn keywords_do_not_parse() {
             error at 403..411: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
             error at 411..412: invalid syntax, expected: <identifier>
             error at 427..435: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
+            error at 427..435: directives must come before other items
             error at 435..436: invalid syntax, expected: <identifier>
             error at 451..457: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
             error at 457..458: invalid syntax, expected: <identifier>
