@@ -24,8 +24,9 @@ use self::{global_variable::GlobalVariableDiagnostic, precedence::PrecedenceDiag
 #[derive(Clone, Copy, Debug, Default)]
 pub enum NagaVersion {
     Naga27,
-    #[default]
     Naga28,
+    #[default]
+    Naga29,
     NagaMain,
 }
 

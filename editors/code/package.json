@@ -461,17 +461,19 @@
 				"properties": {
 					"wgsl-analyzer.diagnostics.nagaVersion": {
 						"markdownDescription": "Naga version used for validation.",
-						"default": "0.28",
+						"default": "0.29",
 						"type": "string",
 						"enum": [
 							"0.27",
 							"0.28",
+							"0.29",
 							"main"
 						],
 						"enumDescriptions": [
-							"Naga version 27",
-							"Naga version 28",
-							"Version of Naga on main (most recent stable version)"
+							"Naga v27",
+							"Naga v28",
+							"Naga v29",
+							"Version of Naga on main"
 						]
 					}
 				}
