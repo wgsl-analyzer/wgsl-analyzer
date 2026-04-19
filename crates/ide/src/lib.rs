@@ -1,3 +1,5 @@
+//! Core data structure representing IDE state.
+
 #[cfg(test)]
 mod fixture;
 

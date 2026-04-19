@@ -1,3 +1,5 @@
+//! Concrete syntax tree definitions.
+
 pub mod algorithms;
 pub mod ast;
 pub mod pointer;

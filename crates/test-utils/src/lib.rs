@@ -269,7 +269,7 @@ pub fn add_cursor(
 ///
 /// Multiline string values are supported:
 ///
-/// ```
+/// ```text
 /// // ^^^ first line
 /// //   | second line
 /// ```
@@ -279,7 +279,7 @@ pub fn add_cursor(
 /// annotation. In those cases the annotation can be explicitly ended with the
 /// `$` character.
 ///
-/// ```
+/// ```text
 /// // ^^^ trailing-ws-wanted  $
 /// ```
 ///

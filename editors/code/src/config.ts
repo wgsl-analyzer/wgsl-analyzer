@@ -372,19 +372,19 @@ export function substituteVariablesInEnv(env: Env): Env {
 	const definedEnvKeys = new Set(Object.keys(env).map((key) => `env:${key}`));
 	const envWithDeps = Object.fromEntries(
 		Object.entries(env).map(([key, value]) => {
-			const deps = new Set<string>();
+			const dependencies = new Set<string>();
 			const depRe = new RegExp(/\$\{(?<depName>.+?)\}/g);
 			let match = undefined;
 			while ((match = depRe.exec(value))) {
 				const depName = unwrapUndefinable(match.groups?.["depName"]);
-				deps.add(depName);
+				dependencies.add(depName);
 				// `depName` at this point can have a form of `expression` or
 				// `prefix:expr`
 				if (!definedEnvKeys.has(depName)) {
 					missingDeps.add(depName);
 				}
 			}
-			return [`env:${key}`, { deps: [...deps], value }];
+			return [`env:${key}`, { dependencies: [...dependencies], value }];
 		}),
 	);
 
@@ -398,7 +398,7 @@ export function substituteVariablesInEnv(env: Env): Env {
 				const envName = unwrapUndefinable(body);
 				envWithDeps[dep] = {
 					value: process.env[envName] ?? "",
-					deps: [],
+					dependencies: [],
 				};
 				resolved.add(dep);
 			} else {
@@ -406,14 +406,14 @@ export function substituteVariablesInEnv(env: Env): Env {
 				// leave values as is, but still mark them as resolved
 				envWithDeps[dep] = {
 					value: "${" + dep + "}",
-					deps: [],
+					dependencies: [],
 				};
 				resolved.add(dep);
 			}
 		} else {
 			envWithDeps[dep] = {
 				value: computeVscodeVar(dep) || "${" + dep + "}",
-				deps: [],
+				dependencies: [],
 			};
 		}
 	}
@@ -424,7 +424,7 @@ export function substituteVariablesInEnv(env: Env): Env {
 		leftToResolveSize = toResolve.size;
 		for (const key of toResolve) {
 			const item = unwrapUndefinable(envWithDeps[key]);
-			if (item.deps.every((dep) => resolved.has(dep))) {
+			if (item.dependencies.every((dep) => resolved.has(dep))) {
 				item.value = item.value.replace(/\$\{(?<depName>.+?)\}/g, (_wholeMatch, depName) => {
 					const item = unwrapUndefinable(envWithDeps[depName]);
 					return item.value;

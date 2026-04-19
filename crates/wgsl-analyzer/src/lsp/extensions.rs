@@ -950,7 +950,7 @@ pub enum WorkspaceSymbolSearchKind {
 /// the server to format parts of the document during typing.
 ///
 /// This is almost same as [`lsp_types::request::OnTypeFormatting`], but the
-/// result has [`SnippetTextEdit`] in it instead of [`TextEdit`].
+/// result has [`SnippetTextEdit`] in it instead of [`lsp_types::TextEdit`].
 #[derive(Debug)]
 pub enum OnTypeFormatting {}
 

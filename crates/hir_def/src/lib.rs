@@ -1,3 +1,5 @@
+//! RPC API.
+
 mod ast_id;
 pub mod attributes;
 pub mod body;

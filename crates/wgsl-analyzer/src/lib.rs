@@ -1,3 +1,5 @@
+//! The language server executable.
+
 pub mod cli;
 pub mod config;
 mod diagnostics;
