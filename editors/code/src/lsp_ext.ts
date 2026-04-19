@@ -305,19 +305,12 @@ export type RecursiveMemoryLayout = {
 	nodes: RecursiveMemoryLayoutNode[];
 };
 
-export const debugCommand = new lc.RequestType<DebugCommand, string, void>(
-	"wgsl-analyzer/debugCommand",
-);
-
 export interface FullSourceParameters {
 	textDocument: lc.TextDocumentIdentifier;
 }
+
 export const fullSource = new lc.RequestType<FullSourceParameters, string, void>(
 	"wgsl-analyzer/fullSource",
-);
-
-export const requestConfiguration = new lc.RequestType<void, unknown, void>(
-	"wgsl-analyzer/requestConfiguration",
 );
 
 export interface InlayHintsParameters {
@@ -327,14 +320,3 @@ export interface InlayHintsParameters {
 export const inlayHints = new lc.RequestType<InlayHintsParameters, InlayHint[], void>(
 	"experimental/inlayHints",
 );
-
-export interface ImportTextDocumentParameters {
-	uri: lc.DocumentUri;
-}
-export const importTextDocument = new lc.RequestType<ImportTextDocumentParameters, unknown, void>(
-	"wgsl-analyzer/importTextDocument",
-);
-export interface DebugCommand {
-	textDocument: lc.TextDocumentIdentifier;
-	position: lc.Position;
-}

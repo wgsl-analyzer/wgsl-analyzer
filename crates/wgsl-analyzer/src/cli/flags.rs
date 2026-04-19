@@ -66,7 +66,7 @@ xflags::xflags! {
         //     /// Only analyze items matching this path.
         //     optional -o, --only path: String
         //     /// Also analyze all dependencies.
-        //     optional --with-deps
+        //     optional --with-dependencies
         //     /// Don't load sysroot crates (`std`, `core` & friends).
         //     optional --no-sysroot
         //     /// Don't set #[cfg(test)].
@@ -201,7 +201,7 @@ pub struct AnalysisStats {
     pub parallel: bool,
     pub source_stats: bool,
     pub only: Option<String>,
-    pub with_deps: bool,
+    pub with_dependencies: bool,
     pub no_test: bool,
     pub skip_lowering: bool,
     pub skip_inference: bool,

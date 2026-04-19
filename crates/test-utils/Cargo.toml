@@ -11,7 +11,7 @@ license.workspace = true
 doctest = false
 
 [dependencies]
-# Avoid adding deps here, this crate is widely used in tests it should compile fast!
+# Avoid adding dependencies here. This crate is widely used in tests it should compile fast!
 dissimilar.workspace = true
 paths.workspace = true
 profile.workspace = true

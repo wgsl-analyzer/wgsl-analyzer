@@ -14,6 +14,7 @@
 
 mod flags;
 
+mod changelog;
 mod codegen;
 mod dist;
 mod install;
@@ -35,6 +36,7 @@ fn main() -> anyhow::Result<()> {
     shell.change_dir(project_root());
 
     match flags.subcommand {
+        flags::XtaskCmd::Changelog(command) => command.run(shell),
         flags::XtaskCmd::Install(command) => command.run(shell),
         flags::XtaskCmd::FuzzTests(_) => run_fuzzer(shell),
         flags::XtaskCmd::Release(command) => command.run(shell),

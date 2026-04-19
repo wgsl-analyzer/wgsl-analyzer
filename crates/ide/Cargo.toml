@@ -25,7 +25,7 @@ salsa.workspace = true
 smallvec.workspace = true
 smol_str.workspace = true
 triomphe.workspace = true
-# local deps
+# local dependencies
 ide-completion.workspace = true
 ide-db.workspace = true
 syntax.workspace = true

@@ -86,6 +86,7 @@ disallowed-names = [
 	"res",  # result
 	"resp",  # response
 	"sel",  # selection
+	"sep",  # separator
 	"sema",  # semantics
 	"sh",  # shell
 	"sig",  # sign

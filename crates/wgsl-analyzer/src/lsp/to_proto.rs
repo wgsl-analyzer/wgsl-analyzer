@@ -17,7 +17,7 @@ use ide_db::text_edit::{InsertDelete, TextEdit};
 use itertools::Itertools as _;
 use paths::{AbsPath, Utf8Component, Utf8Prefix};
 use rustc_hash::FxHasher;
-use semver::VersionReq;
+use semver::VersionReq; // spellchecker:disable-line
 use serde_json::to_value;
 use vfs::FileId;
 
@@ -500,12 +500,8 @@ pub(crate) fn inlay_hint(
         .and_then(|property| match property {
             LazyProperty::Computed(text_edit) => Some(text_edit),
             LazyProperty::Lazy => {
-                something_to_resolve |= snap
-                    .config
-                    .visual_studio_code_version()
-                    .is_none_or(|version| VersionReq::parse(">=1.86.0").unwrap().matches(version))
-                    && resolve_range_and_hash.is_some()
-                    && fields_to_resolve.resolve_text_edits;
+                something_to_resolve |=
+                    resolve_range_and_hash.is_some() && fields_to_resolve.resolve_text_edits;
                 None
             },
         })

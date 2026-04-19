@@ -1,5 +1,5 @@
 import anser from "anser";
-import { sep as pathSeparator } from "path";
+import { sep as pathSeparator } from "path"; // spellchecker:disable-line
 import * as vscode from "vscode";
 import { WorkspaceEdit } from "vscode";
 import * as Is from "vscode-languageclient/lib/common/utils/is";

@@ -79,7 +79,7 @@ fn format_infix_expression(syntax: &SyntaxNode) -> Option<()> {
     // Before operator: preserve newlines, normalize spaces
     let has_newline_before = operator
         .prev_token() // spellchecker:disable-line
-        .is_some_and(|tok| tok.kind().is_whitespace() && tok.text().contains('\n'));
+        .is_some_and(|token| token.kind().is_whitespace() && token.text().contains('\n'));
     if !has_newline_before {
         set_whitespace_single_before(&operator);
     }
@@ -87,7 +87,7 @@ fn format_infix_expression(syntax: &SyntaxNode) -> Option<()> {
     // After operator: preserve newlines, normalize spaces
     let has_newline_after = operator
         .next_token()
-        .is_some_and(|tok| tok.kind().is_whitespace() && tok.text().contains('\n'));
+        .is_some_and(|token| token.kind().is_whitespace() && token.text().contains('\n'));
     if !has_newline_after {
         set_whitespace_single_after(&operator);
     }
@@ -100,16 +100,16 @@ fn format_infix_expression(syntax: &SyntaxNode) -> Option<()> {
     reason = "only bracket tokens need formatting"
 )]
 fn format_index_expression(syntax: &SyntaxNode) -> Option<()> {
-    let index_expr = ast::IndexExpression::cast(syntax.clone())?;
-    for child in index_expr.syntax().children_with_tokens() {
-        if let Some(tok) = child.as_token() {
-            match tok.kind() {
+    let index_expression = ast::IndexExpression::cast(syntax.clone())?;
+    for child in index_expression.syntax().children_with_tokens() {
+        if let Some(token) = child.as_token() {
+            match token.kind() {
                 SyntaxKind::BracketLeft => {
-                    remove_if_whitespace(&tok.prev_token()?); // spellchecker:disable-line
-                    remove_if_whitespace(&tok.next_token()?);
+                    remove_if_whitespace(&token.prev_token()?); // spellchecker:disable-line
+                    remove_if_whitespace(&token.next_token()?);
                 },
                 SyntaxKind::BracketRight => {
-                    remove_if_whitespace(&tok.prev_token()?); // spellchecker:disable-line
+                    remove_if_whitespace(&token.prev_token()?); // spellchecker:disable-line
                 },
                 _ => {},
             }
@@ -121,11 +121,11 @@ fn format_index_expression(syntax: &SyntaxNode) -> Option<()> {
 /// Formats field expressions: `v . x` → `v.x`.
 fn format_field_expression(syntax: &SyntaxNode) -> Option<()> {
     for child in syntax.children_with_tokens() {
-        if let Some(tok) = child.as_token()
-            && tok.kind() == SyntaxKind::Period
+        if let Some(token) = child.as_token()
+            && token.kind() == SyntaxKind::Period
         {
-            remove_if_whitespace(&tok.prev_token()?); // spellchecker:disable-line
-            remove_if_whitespace(&tok.next_token()?);
+            remove_if_whitespace(&token.prev_token()?); // spellchecker:disable-line
+            remove_if_whitespace(&token.next_token()?);
         }
     }
     Some(())

@@ -23,6 +23,7 @@ env:
   MACOSX_DEPLOYMENT_TARGET: "13.0"
   ZIG_VERSION: "0.13.0"
   ZIGBUILD_VERSION: "0.19.8"
+  PNPM_VERSION: "10.33.0"
 
 jobs:
   dist:
@@ -81,16 +82,22 @@ jobs:
           fetch-depth: ${{ env.FETCH_DEPTH }}
           persist-credentials: false
 
-      - name: Install Node.js
-        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
-        with:
-          node-version: 24
-          package-manager-cache: false
-
       - name: Install pnpm
         uses: pnpm/action-setup@08c4be7e2e672a47d11bd04269e27e5f3e8529cb # v6.0.0
         with:
           package_json_file: ./editors/code/package.json
+          version: ${{ env.PNPM_VERSION }}
+          cache: false
+
+      - name: Install Node.js
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        with:
+          node-version: 24
+          cache: ''
+          package-manager-cache: false
+
+      - name: Upgrade pnpm
+        run: npm install --global pnpm@${PNPM_VERSION}
 
       - name: Install stable Rust toolchain
         uses: dtolnay/rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9
@@ -238,16 +245,19 @@ jobs:
           fetch-depth: ${{ env.FETCH_DEPTH }}
           persist-credentials: false
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@08c4be7e2e672a47d11bd04269e27e5f3e8529cb # v6.0.0
+        with:
+          package_json_file: ./editors/code/package.json
+          version: ${{ env.PNPM_VERSION }}
+          cache: false
+
       - name: Install Node.js
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
         with:
           node-version: 24
           package-manager-cache: false
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@08c4be7e2e672a47d11bd04269e27e5f3e8529cb # v6.0.0
-        with:
-          package_json_file: ./editors/code/package.json
+          cache: ''
 
       - run: echo "TAG=$(date --iso -u)" >> $GITHUB_ENV
         if: github.ref == 'refs/heads/release'

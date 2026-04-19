@@ -204,15 +204,15 @@ pub(crate) fn has_newline_between(
     start: &SyntaxToken,
     end: &SyntaxToken,
 ) -> bool {
-    let mut tok = start.next_token();
-    while let Some(token) = tok {
+    let mut next_token = start.next_token();
+    while let Some(token) = next_token {
         if token == *end {
             break;
         }
         if token.text().contains('\n') {
             return true;
         }
-        tok = token.next_token();
+        next_token = token.next_token();
     }
     false
 }

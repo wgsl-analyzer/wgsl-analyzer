@@ -1,3 +1,5 @@
+//! Parser for WGSL code, supporting language extensions such as naga and WESL.
+
 mod cst_builder;
 mod lexer;
 mod parser;

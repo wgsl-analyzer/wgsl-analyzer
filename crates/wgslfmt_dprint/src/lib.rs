@@ -1,3 +1,5 @@
+//! [dprint](https://dprint.dev/) plugin for formatting WGSL code.
+
 use anyhow::Result;
 use dprint_core::{
     configuration::{ConfigKeyMap, GlobalConfiguration},

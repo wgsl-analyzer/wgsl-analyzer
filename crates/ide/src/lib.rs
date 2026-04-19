@@ -1,7 +1,8 @@
+//! Core data structure representing IDE state.
+
 #[cfg(test)]
 mod fixture;
 
-mod debug_command;
 pub mod diagnostics;
 mod folding_ranges;
 mod formatting;
@@ -396,16 +397,5 @@ impl Analysis {
         position: FilePosition,
     ) -> Cancellable<Option<SignatureHelp>> {
         self.with_db(|database| signature_help::signature_help(database, position))
-    }
-
-    /// # Panics
-    ///
-    /// Panics if the command was cancelled.
-    pub fn debug_command(
-        &self,
-        file_position: FilePosition,
-    ) -> Cancellable<()> {
-        self.with_db(|database| debug_command::debug_command(database, file_position))?;
-        Ok(())
     }
 }

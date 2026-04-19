@@ -38,7 +38,7 @@
 //!
 //! ```ignore
 //! r#"
-//! //- /main.wgsl package:a deps:b
+//! //- /main.wgsl package:a dependencies:b
 //! fn main() {
 //!     b::foo();
 //! }
@@ -65,10 +65,10 @@ pub struct Fixture {
     pub package: Option<String>,
     /// Specifies dependencies of this package. This must be used with `package` meta.
     ///
-    /// Syntax: `deps:hir-def,ide-assists`.
-    pub deps: Vec<String>,
+    /// Syntax: `dependencies:my-package,my-other-package`.
+    pub dependencies: Vec<String>,
     /// Specifies the edition of this package. This must be used with `package` meta. If
-    /// this is not specified, ([`base_db::input::Edition::CURRENT`]) will be used.
+    /// this is not specified, the current default edition will be used.
     /// This must be used with `package` meta.
     ///
     /// Syntax: `edition:2021`.
@@ -80,7 +80,7 @@ pub struct Fixture {
     /// This is implied if this file belongs to a library source root.
     ///
     /// Use this if you want to test something that checks if a package is a workspace
-    /// member via [`PackageOrigin`](base_db::input::PackageOrigin).
+    /// member via [`base_db::input::PackageOrigin`].
     ///
     /// Syntax: `library`.
     pub library: bool,
@@ -151,7 +151,7 @@ impl FixtureWithProjectMeta {
         Self { fixture: result }
     }
 
-    //- /lib.wgsl package:foo deps:bar,baz
+    //- /lib.wgsl package:foo dependencies:bar,baz
     fn parse_meta_line(
         meta: &str,
         line: usize,
@@ -169,7 +169,7 @@ impl FixtureWithProjectMeta {
         );
 
         let mut package = None;
-        let mut deps = Vec::new();
+        let mut dependencies = Vec::new();
         let mut edition = None;
         let mut library = false;
         for component in components {
@@ -183,7 +183,7 @@ impl FixtureWithProjectMeta {
                 .unwrap_or_else(|| panic!("invalid meta line: {meta:?}"));
             match key {
                 "package" => package = Some(value.to_owned()),
-                "deps" => deps = value.split(',').map(ToOwned::to_owned).collect(),
+                "dependencies" => dependencies = value.split(',').map(ToOwned::to_owned).collect(),
 
                 "edition" => edition = Some(value.to_owned()),
                 _ => panic!("bad component: {component:?}"),
@@ -193,7 +193,7 @@ impl FixtureWithProjectMeta {
         Fixture {
             path,
             package,
-            deps,
+            dependencies,
             edition,
             library,
             text: String::new(),
@@ -227,7 +227,7 @@ mod tests {
     fn parse_fixture_gets_full_meta() {
         let FixtureWithProjectMeta { fixture: parsed } = FixtureWithProjectMeta::parse(
             r#"
-//- /lib.wgsl package:foo deps:bar,baz
+//- /lib.wgsl package:foo dependencies:bar,baz
 const a = 3;
 "#,
         );
