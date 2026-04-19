@@ -255,7 +255,6 @@ fn parse_hex_float(hex: &str) -> f64 {
     (whole + frac) * f64::exp2(exponent as f64)
 }
 
-
 impl Expression {
     pub fn walk_child_expressions<Function: FnMut(ExpressionId)>(
         &self,
@@ -299,7 +298,6 @@ impl Expression {
         }
     }
 }
-
 
 #[cfg(test)]
 mod hex_float_tests {
