@@ -39,7 +39,7 @@ jobs:
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
           node-version: 24
-          cache: true
+          cache: pnpm
           cache-dependency-path: ./editors/code/pnpm-lock.yaml
 
       - name: Install pnpm
@@ -48,7 +48,7 @@ jobs:
           package_json_file: ./editors/code/package.json
           cache_dependency_path: ./editors/code/pnpm-lock.yaml
           version: ${{ env.PNPM_VERSION }}
-          cache: true
+          cache: pnpm
 
       - name: Upgrade pnpm
         run: npm install --global pnpm@${{ env.PNPM_VERSION }}

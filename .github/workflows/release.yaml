@@ -85,7 +85,7 @@ jobs:
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
           node-version: 24
-          cache: false
+          cache: ''
           package-manager-cache: false
 
       - name: Install pnpm
@@ -249,7 +249,7 @@ jobs:
         with:
           node-version: 24
           package-manager-cache: false
-          cache: false
+          cache: ''
 
       - name: Install pnpm
         uses: pnpm/action-setup@08c4be7e2e672a47d11bd04269e27e5f3e8529cb # v6.0.0
