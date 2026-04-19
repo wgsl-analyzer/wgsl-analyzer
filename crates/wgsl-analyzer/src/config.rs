@@ -981,10 +981,11 @@ fn field_props(
         },
         "NagaVersionConfig" => set! {
             "type": "string",
-            "enum": ["0.27", "0.28", "main"],
+            "enum": ["0.27", "0.28", "0.29", "main"],
             "enumDescriptions": [
                 "Naga version 27",
                 "Naga version 28",
+                "Naga version 29",
                 "Version of Naga on main (most recent stable version)"
             ],
         },

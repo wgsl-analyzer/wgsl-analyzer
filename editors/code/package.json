@@ -470,10 +470,10 @@
 							"main"
 						],
 						"enumDescriptions": [
-							"Naga v27",
-							"Naga v28",
-							"Naga v29",
-							"Version of Naga on main"
+							"Naga version 27",
+							"Naga version 28",
+							"Naga version 29",
+							"Version of Naga on main (most recent stable version)"
 						]
 					}
 				}
