@@ -2,11 +2,12 @@
 
 use std::{error, fmt, str};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(u8)]
 #[non_exhaustive]
 pub enum Edition {
     // The syntax context stuff needs the discriminants to start from 0 and be consecutive.
+    #[default]
     Wgsl = 0,
     Wesl2025Unstable,
 }
@@ -80,5 +81,32 @@ impl fmt::Display for Edition {
             Self::Wgsl => "WGSL",
             Self::Wesl2025Unstable => "WESL 2025 (Unstable)",
         })
+    }
+}
+
+#[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+pub struct ExtensionsConfig {
+    pub shader_int64: bool,
+    pub early_depth_test: bool,
+    pub f16: bool,
+    pub clip_distances: bool,
+    pub dual_source_blending: bool,
+}
+
+impl ExtensionsConfig {
+    #[must_use]
+    pub fn none() -> Self {
+        Self::default()
+    }
+
+    #[must_use]
+    pub const fn all() -> Self {
+        Self {
+            shader_int64: true,
+            early_depth_test: true,
+            f16: true,
+            clip_distances: true,
+            dual_source_blending: true,
+        }
     }
 }

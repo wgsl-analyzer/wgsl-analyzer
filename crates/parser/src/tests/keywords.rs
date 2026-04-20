@@ -2209,6 +2209,7 @@ fn keywords_do_not_parse() {
             error at 250..251: invalid syntax, expected: <identifier>
             error at 266..272: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
             error at 272..273: invalid syntax, expected: <identifier>
+            error at 272..272: unknown extension 
             error at 288..293: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
             error at 293..294: invalid syntax, expected: <identifier>
             error at 309..311: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>

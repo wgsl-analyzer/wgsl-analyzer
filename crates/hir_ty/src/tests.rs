@@ -9,14 +9,12 @@ use expect_test::Expect;
 use hir_def::{
     HasSource as _,
     body::{Body, BodySourceMap},
-    database::{
-        DefDatabase as _, DefinitionWithBodyId, ExtensionsConfig, InternDatabase as _, Location,
-    },
+    database::{DefDatabase as _, DefinitionWithBodyId, InternDatabase as _, Location},
     expression_store::SyntheticSyntax,
     item_tree::ModuleItem,
 };
 use salsa::Durability;
-use syntax::{AstNode as _, SyntaxNode};
+use syntax::{AstNode as _, ExtensionsConfig, SyntaxNode};
 use test_fixture::WithFixture as _;
 use triomphe::Arc;
 
