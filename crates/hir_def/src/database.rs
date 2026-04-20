@@ -10,7 +10,7 @@ use std::fmt::{self, Debug};
 
 use base_db::{EditionedFileId, Lookup as _, SourceDatabase, impl_intern_key, impl_intern_lookup};
 use salsa::plumbing::AsId as _;
-use syntax::{Parse, ast};
+use syntax::{ExtensionsConfig, Parse, ast};
 use triomphe::Arc;
 use vfs::VfsPath;
 
@@ -30,11 +30,6 @@ use crate::{
         StructSignature, TypeAliasSignature, VariableSignature,
     },
 };
-
-#[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct ExtensionsConfig {
-    pub shader_int64: bool,
-}
 
 #[query_group::query_group(DefDatabaseStorage)]
 pub trait DefDatabase: InternDatabase + SourceDatabase {

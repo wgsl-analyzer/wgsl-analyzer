@@ -42,6 +42,7 @@ token
 	Vertex='vertex'
 	Fragment='fragment'
 	Compute='compute'
+	EarlyDepthTest='early_depth_test'
 ;
 
 token
@@ -121,6 +122,13 @@ token
 	Sample='sample'
 	First='first'
 	Either='either'
+;
+
+token
+	Force='force'
+	GreaterEqual='greater_equal'
+	LessEqual='less_equal'
+	Unchanged='unchanged'
 ;
 
 token Blankspace LineEndingComment BlockComment;
@@ -205,8 +213,17 @@ attribute:
 			| 'vertex' @vertex_attr
 			| 'fragment' @fragment_attr
 			| 'compute' @compute_attr
+			| 'early_depth_test' '(' early_depth_test_mode ')' @early_depth_test_attr
 			| Identifier [ argument_expression_list ] @other_attr
 	)
+;
+
+// https://docs.rs/wgpu/latest/wgpu/struct.Features.html#associatedconstant.SHADER_EARLY_DEPTH_TEST
+early_depth_test_mode:
+	'force'
+	| 'greater_equal'
+	| 'less_equal'
+	| 'unchanged'
 ;
 
 builtin_value_name: Identifier;

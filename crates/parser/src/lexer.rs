@@ -9,6 +9,9 @@ pub(crate) type Token = SyntaxKind;
 pub struct LexerExtras {
     pub after_at: bool,
     pub after_interpolate: bool,
+    pub after_early_depth_test: bool,
+    pub edition: edition::Edition,
+    pub extensions: edition::ExtensionsConfig,
 }
 
 /// A line-ending comment is a kind of comment consisting of the two code points `//` (U+002F followed by U+002F)
@@ -173,6 +176,18 @@ impl Iterator for WgslLexer<'_, '_> {
                     "first" if self.inner.extras.after_interpolate => Token::First,
                     "either" if self.inner.extras.after_interpolate => Token::Either,
 
+                    // naga extensions
+                    "early_depth_test" if self.inner.extras.after_at => {
+                        self.inner.extras.after_early_depth_test = true;
+                        Token::EarlyDepthTest
+                    },
+                    "less_equal" if self.inner.extras.after_early_depth_test => Token::LessEqual,
+                    "greater_equal" if self.inner.extras.after_early_depth_test => {
+                        Token::GreaterEqual
+                    },
+                    "force" if self.inner.extras.after_early_depth_test => Token::Force,
+                    "unchanged" if self.inner.extras.after_early_depth_test => Token::Unchanged,
+
                     _ => Token::Identifier,
                 };
                 self.inner.extras.after_at = false;
@@ -200,6 +215,7 @@ impl Iterator for WgslLexer<'_, '_> {
             },
             Some(')') => {
                 self.inner.extras.after_interpolate = false;
+                self.inner.extras.after_early_depth_test = false;
             },
             _ => (), // Not an ident
         }

@@ -1,5 +1,5 @@
 use expect_test::expect;
-use hir_def::database::ExtensionsConfig;
+use syntax::ExtensionsConfig;
 
 use crate::tests::check_infer;
 
@@ -978,7 +978,10 @@ fn main() {
 #[test]
 fn naga_shader_int64() {
     check_infer(
-        ExtensionsConfig { shader_int64: true },
+        ExtensionsConfig {
+            shader_int64: true,
+            ..Default::default()
+        },
         "
 fn foo(bar: i64, baz: u64) {}
 ",

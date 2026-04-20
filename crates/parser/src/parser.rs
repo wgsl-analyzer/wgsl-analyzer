@@ -8,17 +8,18 @@
 )]
 use std::fmt;
 
-use edition::Edition;
+use edition::{Edition, ExtensionsConfig};
 use logos::Logos as _;
 use rowan::GreenNodeBuilder;
 
 use super::lexer::Token;
-use crate::{Parse, ParseEntryPoint, cst_builder::CstBuilder, lexer::lex};
+use crate::{Parse, ParseEntryPoint, SyntaxKind, cst_builder::CstBuilder, lexer::lex};
 
 include!(concat!(env!("OUT_DIR"), "/generated.rs"));
 
 pub struct ParserContext {
     edition: Edition,
+    extensions: ExtensionsConfig,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -55,7 +56,14 @@ pub fn parse_entrypoint(
     edition: Edition,
 ) -> Parse {
     let mut diagnostics = Vec::new();
-    let parser = Parser::new_with_context(input, &mut diagnostics, ParserContext { edition });
+    let parser = Parser::new_with_context(
+        input,
+        &mut diagnostics,
+        ParserContext {
+            edition,
+            extensions: ExtensionsConfig::default(),
+        },
+    );
     let parsed = match entrypoint {
         ParseEntryPoint::File => parser.parse(&mut diagnostics),
         ParseEntryPoint::Expression => parser.parse_expression(&mut diagnostics),
@@ -111,9 +119,9 @@ impl<'source> ParserCallbacks<'source> for Parser<'source> {
     fn create_tokens(
         _context: &mut Self::Context,
         source: &'source str,
-        diags: &mut Vec<Self::Diagnostic>,
+        diagnostics: &mut Vec<Self::Diagnostic>,
     ) -> (Vec<Token>, Vec<Span>) {
-        lex(source, diags)
+        lex(source, diagnostics)
     }
 
     fn create_diagnostic(
@@ -130,10 +138,10 @@ impl<'source> ParserCallbacks<'source> for Parser<'source> {
     fn create_node_import_statement(
         &mut self,
         node_ref: NodeRef,
-        diags: &mut Vec<Self::Diagnostic>,
+        diagnostics: &mut Vec<Self::Diagnostic>,
     ) {
         if !self.context.edition.at_least_wesl_0_0_1() {
-            diags.push(self.create_diagnostic(
+            diagnostics.push(self.create_diagnostic(
                 self.cst.span(node_ref),
                 "import statements are not allowed in WGSL mode".to_owned(),
             ));
@@ -206,20 +214,20 @@ impl<'source> ParserCallbacks<'source> for Parser<'source> {
     fn create_node_if_statement(
         &mut self,
         node_ref: NodeRef,
-        diags: &mut Vec<Self::Diagnostic>,
+        diagnostics: &mut Vec<Self::Diagnostic>,
     ) {
         let mut seen_else = false;
         for child in self.cst.children(node_ref) {
             if self.cst.match_rule(child, Rule::ElseClause) {
                 if seen_else {
-                    diags.push(self.create_diagnostic(
+                    diagnostics.push(self.create_diagnostic(
                         self.cst.span(child),
                         "multiple 'else' clauses are not allowed".to_owned(),
                     ));
                 }
                 seen_else = true;
             } else if self.cst.match_rule(child, Rule::ElseIfClause) && seen_else {
-                diags.push(self.create_diagnostic(
+                diagnostics.push(self.create_diagnostic(
                     self.cst.span(child),
                     "'else if' after 'else' is not allowed".to_owned(),
                 ));
@@ -231,12 +239,46 @@ impl<'source> ParserCallbacks<'source> for Parser<'source> {
     fn create_node_global_let_declaration(
         &mut self,
         node_ref: NodeRef,
-        diags: &mut Vec<Self::Diagnostic>,
+        diagnostics: &mut Vec<Self::Diagnostic>,
     ) {
-        diags.push(self.create_diagnostic(
+        diagnostics.push(self.create_diagnostic(
             self.cst.span(node_ref),
             "global let declarations are not allowed".to_owned(),
         ));
+    }
+
+    fn create_node_enable_extension_name(
+        &mut self,
+        node_ref: NodeRef,
+        diagnostics: &mut Vec<Self::Diagnostic>,
+    ) {
+        let text = &self.cst.source()[self.cst.span(node_ref)];
+        match text {
+            "SHADER_INT64" => self.context.extensions.shader_int64 = true,
+            "EARLY_DEPTH_TEST" => self.context.extensions.early_depth_test = true,
+            "f16" => self.context.extensions.f16 = true,
+            "clip_distances" => self.context.extensions.clip_distances = true,
+            "dual_source_blending" => self.context.extensions.dual_source_blending = true,
+            _ => {
+                diagnostics.push(self.create_diagnostic(
+                    self.cst.span(node_ref),
+                    format!("unknown extension {text}"),
+                ));
+            },
+        }
+    }
+
+    fn create_node_early_depth_test_attr(
+        &mut self,
+        node_ref: NodeRef,
+        diagnostics: &mut Vec<Self::Diagnostic>,
+    ) {
+        if !self.context.extensions.early_depth_test {
+            diagnostics.push(self.create_diagnostic(
+                self.cst.span(node_ref),
+                "the extension EARLY_DEPTH_TEST is not enabled".to_owned(),
+            ));
+        }
     }
 
     /// Called when semantic assertion `!1` in rule `let_declaration` is visited.

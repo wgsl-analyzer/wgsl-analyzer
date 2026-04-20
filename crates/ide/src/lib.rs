@@ -24,14 +24,14 @@ use base_db::{
     TextRange, change::Change, input::SourceRootId,
 };
 use diagnostics::Diagnostic;
-use hir::{ExtensionsConfig, diagnostics::DiagnosticsConfig};
+use hir::diagnostics::DiagnosticsConfig;
 use hir_def::database::DefDatabase as _;
 use ide_completion::{CompletionConfig, item::CompletionItem};
 use ide_db::LineIndexDatabase as _;
 pub use line_index::{LineCol, LineIndex};
 use rustc_hash::FxHashMap;
 use salsa::{Cancelled, Database as _, Durability};
-use syntax::{Edition, Parse, SyntaxNode};
+use syntax::{Edition, ExtensionsConfig, Parse, SyntaxNode};
 use triomphe::Arc;
 use vfs::{AbsPathBuf, FileId, VfsPath};
 
