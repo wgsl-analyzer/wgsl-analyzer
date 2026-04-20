@@ -75,7 +75,7 @@
 		"@vscode/test-electron": "^2.5.2",
 		"@vscode/vsce": "^3.7.1",
 		"esbuild": "^0.28.0",
-		"ovsx": "^0.10.10",
+		"ovsx": "^0.10.11",
 		"tslib": "^2.8.1",
 		"typescript": "^6.0.2"
 	},
