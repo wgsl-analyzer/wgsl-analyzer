@@ -96,7 +96,12 @@ pub fn gen_comment(item: &Comment) -> PrintItemBuffer {
         },
         Comment::LineEnding(content) => {
             formatted.expect(RequestItem::Space);
-            // TODO There should never be newlinees in a line ending comment...Right?
+            // Line ending comments may not contain newlines - otherwise push_string will
+            // run into a debug_assert down the line where its a lot harder to debug.
+            debug_assert!(
+                content.lines().count() == 1,
+                "line ending comment may not contain newlines."
+            );
             formatted.push_string(content.clone());
             formatted.force(RequestItem::LineBreak);
         },
