@@ -90,7 +90,7 @@ tracing-subscriber = { version = "0.3.23", default-features = false, features = 
 ] }
 triomphe = { version = "0.1.15", default-features = false, features = ["std"] }
 wgsl-types = { version = "0.3.2", features = ["naga-ext"] }
-indexmap = { version = "2.13.0" }
+indexmap = { version = "2.14.0" }
 
 # tombi: format.rules.table-keys-order.disabled = true
 [workspace.lints.clippy]
