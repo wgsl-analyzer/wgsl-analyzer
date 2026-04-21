@@ -124,9 +124,6 @@ pub fn format_attribute_const_must_use_order() {
     );
 }
 
-//TODO(MonaMayrhofer) For now these tests below just check for something so that attributes are handled and
-// the formatter doesn't crash. More thought should be put into how exactly they shall be formatted
-
 #[test]
 pub fn format_attrs_on_struct_members() {
     check(
