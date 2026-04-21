@@ -58,10 +58,7 @@ pub fn format_comments_in_attrs_on_functions() {
 #[test]
 pub fn format_comments_in_attrs_on_function_return_type() {
     check_comments(
-        "
-        fn thing(
-        ) ## -> ## @attr(0) ## @attr(1) ## vec4<f32> ## {
-        }",
+        "fn thing() ## -> ## @attr(0) ## @attr(1) ## vec4<f32> ## {}",
         expect![[r#"
             fn thing() /* 0 */ -> /* 1 */ @attr(0) /* 2 */ @attr(1) /* 3 */ vec4<
                 f32,
@@ -111,13 +108,9 @@ pub fn format_comments_in_attrs_on_function_parameter() {
 #[test]
 pub fn format_comments_in_attrs_on_function_body() {
     check_comments(
-        "
-        fn thing() -> ## vec4<f32> ## @attr(0) ## @attr(1) ## { ##
-        }",
+        "fn thing() -> ## vec4<f32> ## @attr(0) ## @attr(1) ## { ## }",
         expect![[r#"
-            fn thing() -> /* 0 */ vec4<f32> /* 1 */ @attr(0) /* 2 */
-            @attr(1) /* 3 */
-            {
+            fn thing() -> /* 0 */ vec4<f32> /* 1 */ @attr(0) /* 2 */ @attr(1) /* 3 */ {
                 /* 4 */
             }
         "#]],

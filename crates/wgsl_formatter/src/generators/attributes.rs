@@ -1,4 +1,7 @@
-use std::{collections::BTreeMap, string::String};
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    string::String,
+};
 
 use dprint_core::formatting::StringContainer;
 use dprint_core_macros::sc;
@@ -24,7 +27,10 @@ use crate::{
             gen_function_call_arguments, gen_function_call_like_comma_separated_values,
         },
     },
-    print_item_buffer::{PrintItemBuffer, request_folder::RequestItem},
+    print_item_buffer::{
+        PrintItemBuffer,
+        request_folder::{Request, RequestItem},
+    },
     reporting::FormatDocumentResult,
 };
 
@@ -147,7 +153,7 @@ pub fn gen_attributes(
 
     fn gen_attribute_group<T: Ord>(
         mut attributes: Vec<(T, &ParsedAttribute)>,
-        separator: RequestItem,
+        separator: Request,
     ) -> FormatDocumentResult<PrintItemBuffer> {
         attributes.sort_by(|(order_a, _), (order_b, _)| order_a.cmp(order_b));
 
@@ -158,34 +164,57 @@ pub fn gen_attributes(
             comments_after_attribute,
         } in attributes.iter().map(|(_, attribute)| attribute)
         {
+            formatted.finish_new_line_group();
             formatted.extend(gen_attribute(attribute)?);
+            formatted.start_new_line_group();
             formatted.extend(gen_comments(comments_after_attribute));
-            formatted.expect(separator);
+            formatted.request(separator.clone());
         }
         Ok(formatted)
     }
 
+    // TODO Move this into a Request::expect() or something api
+    let expect_space_or_linebreak = Request::Unconditional {
+        expected: BTreeSet::from([RequestItem::Space]),
+        discouraged: BTreeSet::new(),
+        forced: BTreeSet::new(),
+        suggest_linebreak: true,
+    };
+
     let group_separator = match layout {
-        AttributeLayout::Inline => RequestItem::Space,
-        AttributeLayout::Multiline => RequestItem::LineBreak,
+        AttributeLayout::Inline => expect_space_or_linebreak.clone(),
+        AttributeLayout::Multiline => Request::Unconditional {
+            expected: BTreeSet::from([RequestItem::LineBreak]),
+            discouraged: BTreeSet::new(),
+            forced: BTreeSet::new(),
+            suggest_linebreak: false,
+        },
     };
 
     let mut formatted = PrintItemBuffer::new();
+    formatted.start_new_line_group();
     // Ungrouped attributes go first
-    formatted.extend(gen_attribute_group(ungrouped_attributes, group_separator)?);
+    formatted.extend(gen_attribute_group(
+        ungrouped_attributes,
+        group_separator.clone(),
+    )?);
 
     // The grouped attributes in order
     // (They are ordered by the AttributeGroup enum's discriminator, because of the BTreeMap)
     for (_, attribute) in grouped_attributes {
-        formatted.extend(gen_attribute_group(attribute, RequestItem::Space)?);
-        formatted.expect(group_separator);
+        formatted.extend(gen_attribute_group(
+            attribute,
+            expect_space_or_linebreak.clone(),
+        )?);
+        formatted.request(group_separator.clone());
     }
     // Then attributes that should be inline with the target
     formatted.extend(gen_attribute_group(
         attribute_group_inlined_with_target,
-        RequestItem::Space,
+        expect_space_or_linebreak.clone(),
     )?);
     // No final line break, these should be inline with the target
+    formatted.finish_new_line_group();
 
     Ok(formatted)
 }

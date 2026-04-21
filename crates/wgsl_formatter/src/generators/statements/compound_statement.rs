@@ -27,6 +27,17 @@ enum CompoundStatementItem {
 pub fn gen_compound_statement(
     syntax: &ast::CompoundStatement
 ) -> FormatDocumentResult<PrintItemBuffer> {
+    // ==== Context ====
+    let starting_attribute_layout = if let Some(parent) = syntax.syntax().parent() {
+        if parent.kind() == SyntaxKind::FunctionDeclaration {
+            AttributeLayout::Inline
+        } else {
+            AttributeLayout::Multiline
+        }
+    } else {
+        AttributeLayout::Multiline
+    };
+
     // ==== Parse ====
 
     let mut syntax = put_back(syntax.syntax().children_with_tokens());
@@ -57,10 +68,7 @@ pub fn gen_compound_statement(
     // ==== Format ====
     let mut formatted = PrintItemBuffer::new();
 
-    formatted.extend(gen_attributes(
-        &item_attributes,
-        AttributeLayout::Multiline,
-    )?);
+    formatted.extend(gen_attributes(&item_attributes, starting_attribute_layout)?);
     formatted.push_sc(sc!("{"));
 
     if !body_empty {

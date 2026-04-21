@@ -199,16 +199,30 @@ pub fn format_attrs_on_function_parameter() {
 }
 
 #[test]
-pub fn format_attrs_on_function_body() {
-    //TODO (MonaMayrhofer) This attribute spacing is ugly.
+pub fn format_attrs_on_function_body_singleline() {
     check(
         "
-        fn thing() -> vec4<f32> @attr(0) @attr(1) {
+        //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
+        fn thing() -> vec4<f32> @attr(0) @attr(1) @diagnostic(bla, off) {
         }",
         expect![[r#"
-            fn thing() -> vec4<f32> @attr(0)
-            @attr(1)
-            {}
+            //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
+            fn thing() -> vec4<f32> @attr(0) @attr(1) @diagnostic(bla, off) {}
+        "#]],
+    );
+}
+
+#[test]
+pub fn format_attrs_on_function_body_multiline() {
+    check(
+        "
+        //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
+        fn thing() -> vec4<f32> @aaaaaaaa(3) @bbbbbbb(1) @ccccccccccccc(4,3) @dddddddddd(28) @eeeeeeeeeeee(11,11,11) {
+        }",
+        expect![[r#"
+            //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
+            fn thing() -> vec4<f32> @aaaaaaaa(3) @bbbbbbb(1) @ccccccccccccc(4, 3)
+            @dddddddddd(28) @eeeeeeeeeeee(11, 11, 11) {}
         "#]],
     );
 }
