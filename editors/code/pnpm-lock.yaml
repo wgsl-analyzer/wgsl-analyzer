@@ -55,8 +55,8 @@ importers:
         specifier: ^2.5.2
         version: 2.5.2
       '@vscode/vsce':
-        specifier: ^3.8.0
-        version: 3.8.0
+        specifier: ^3.9.0
+        version: 3.9.0
       esbuild:
         specifier: ^0.28.0
         version: 0.28.0
@@ -610,8 +610,8 @@ packages:
   '@vscode/vsce-sign@2.0.9':
     resolution: {integrity: sha512-8IvaRvtFyzUnGGl3f5+1Cnor3LqaUWvhaUjAYO8Y39OUYlOf3cRd+dowuQYLpZcP3uwSG+mURwjEBOSq4SOJ0g==}
 
-  '@vscode/vsce@3.8.0':
-    resolution: {integrity: sha512-dFLXkYPG6j1IBp6b1ammHNfRoY2dk93kBtve0Hp4SiTOE2HKeNel15doJ1aea6mrr23Wz9uwkw24EJti2eMRPA==}
+  '@vscode/vsce@3.9.0':
+    resolution: {integrity: sha512-Dfql2kgPHpTKS+G4wTqYBKzK1KqX2gMxTC9dpnYge+aIZL+thh1Z6GXs4zOtNwo7DCPmS7BCfaHUAmNLxKiXkw==}
     engines: {node: '>= 20'}
     hasBin: true
 
@@ -2408,7 +2408,7 @@ snapshots:
       '@vscode/vsce-sign-win32-arm64': 2.0.6
       '@vscode/vsce-sign-win32-x64': 2.0.6
 
-  '@vscode/vsce@3.8.0':
+  '@vscode/vsce@3.9.0':
     dependencies:
       '@azure/identity': 4.13.1
       '@secretlint/node': 10.2.2
@@ -3373,7 +3373,7 @@ snapshots:
 
   ovsx@0.10.11:
     dependencies:
-      '@vscode/vsce': 3.8.0
+      '@vscode/vsce': 3.9.0
       commander: 6.2.1
       follow-redirects: 1.16.0
       is-ci: 2.0.0
