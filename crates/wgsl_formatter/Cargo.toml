@@ -21,6 +21,8 @@ thiserror = {version = "2.0.17"}
 # anyhow = "1.0.99"
 expect-test = "1.5.1"
 dissimilar = "1.0.10"
+criterion = "0.8.2"
+sha2 = "0.11.0"
 
 [lints]
 workspace = true
@@ -32,3 +34,7 @@ workspace = true
 # RUST_BACKTRACE=1 cargo test -p wgsl-formatter tests::snapshots::[YOUR TEST] --features prefer-immediate-crash
 prefer-immediate-crash = []
 serde = ["dep:serde"]
+
+[[bench]]
+name = "large_file"
+harness = false
