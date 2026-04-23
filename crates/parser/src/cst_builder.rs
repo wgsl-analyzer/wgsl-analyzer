@@ -190,6 +190,9 @@ impl CstBuilder<'_, '_> {
             Rule::InterpolateSamplingName => self.start_node(SyntaxKind::InterpolateSamplingName),
             Rule::InterpolateTypeName => self.start_node(SyntaxKind::InterpolateTypeName),
             Rule::OtherAttr => self.start_node(SyntaxKind::OtherAttribute),
+            // naga
+            Rule::EarlyDepthTestAttr => self.start_node(SyntaxKind::EarlyDepthTestAttribute),
+            Rule::EarlyDepthTestMode => self.start_node(SyntaxKind::EarlyDepthTestMode),
         }
     }
 

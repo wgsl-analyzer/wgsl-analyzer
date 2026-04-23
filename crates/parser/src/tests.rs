@@ -6,6 +6,7 @@ mod diagnostic;
 mod expression;
 mod imports;
 mod keywords;
+mod naga;
 
 use expect_test::{Expect, expect};
 
@@ -2115,8 +2116,7 @@ fn let_statement_recover_return_no_eq() {
                         BraceRight@41..42 "}"
 
             error at 30..32: invalid syntax, expected one of: ':', '=', ';'
-            error at 41..42: invalid syntax, expected one of: '&', '&&', '@', '{', '[', ']', ':', ',', '==', '/', '>', '>=', '<', '<=', '-', '%', '!=', '|', '||', '(', ')', '.', '+', ';', '<<', '>>', '*', <template end>, <template start>, '^'
-            error at 42..42: invalid syntax, expected one of: '&', '&&', '@', '{', '[', ']', ':', ',', '==', '/', '>', '>=', '<', '<=', '-', '%', '!=', '|', '||', '(', ')', '.', '+', ';', '<<', '>>', '*', <template end>, '^'"#]],
+            error at 41..42: invalid syntax, expected one of: '&', '&&', '@', '{', '[', ']', ':', ',', '==', '/', '>', '>=', '<', '<=', '-', '%', '!=', '|', '||', '(', ')', '.', '+', ';', '<<', '>>', '*', <template end>, <template start>, '^'"#]],
     );
 }
 
@@ -2448,9 +2448,9 @@ fn annotation_with_invalid_statement_recover() {
                 Blankspace@101..102 "\n"
                 BraceRight@102..103 "}"
 
-            error at 16..18: invalid syntax, expected one of: 'align', 'binding', 'blend_src', 'builtin', 'compute', 'const', 'diagnostic', 'fragment', 'group', 'id', <identifier>, 'interpolate', 'invariant', 'location', 'must_use', 'size', 'vertex', 'workgroup_size'
+            error at 16..18: invalid syntax, expected one of: 'align', 'binding', 'blend_src', 'builtin', 'compute', 'const', 'diagnostic', 'early_depth_test', 'fragment', 'group', 'id', <identifier>, 'interpolate', 'invariant', 'location', 'must_use', 'size', 'vertex', 'workgroup_size'
             error at 38..41: invalid syntax, expected one of: '@', '{'
-            error at 72..76: invalid syntax, expected one of: 'align', 'binding', 'blend_src', 'builtin', 'compute', 'const', 'diagnostic', 'fragment', 'group', 'id', <identifier>, 'interpolate', 'invariant', 'location', 'must_use', 'size', 'vertex', 'workgroup_size'
+            error at 72..76: invalid syntax, expected one of: 'align', 'binding', 'blend_src', 'builtin', 'compute', 'const', 'diagnostic', 'early_depth_test', 'fragment', 'group', 'id', <identifier>, 'interpolate', 'invariant', 'location', 'must_use', 'size', 'vertex', 'workgroup_size'
             error at 81..99: global let declarations are not allowed
             error at 100..101: invalid syntax, expected one of: 'alias', '@', 'const', 'const_assert', 'diagnostic', <end of file>, 'enable', 'fn', 'import', 'let', 'override', 'requires', ';', 'struct', 'var'"#]],
     );
@@ -2912,8 +2912,7 @@ fn test()
               Blankspace@29..30 "\n"
 
             error at 14..15: invalid syntax, expected one of: '@', <identifier>
-            error at 27..28: invalid syntax, expected one of: '->', '@', '{'
-            error at 28..29: invalid syntax, expected one of: '@', '{'"#]],
+            error at 27..28: invalid syntax, expected one of: '->', '@', '{'"#]],
     );
 }
 
@@ -3124,8 +3123,7 @@ fn empty_return_statement_no_semi() {
                       BraceRight@22..23 "}"
               Blankspace@23..24 " "
 
-            error at 22..23: invalid syntax, expected one of: '&', '&&', '@', '{', '[', ']', ':', ',', '==', '/', '>', '>=', '<', '<=', '-', '%', '!=', '|', '||', '(', ')', '.', '+', ';', '<<', '>>', '*', <template end>, <template start>, '^'
-            error at 24..24: invalid syntax, expected one of: '&', '&&', '@', '{', '[', ']', ':', ',', '==', '/', '>', '>=', '<', '<=', '-', '%', '!=', '|', '||', '(', ')', '.', '+', ';', '<<', '>>', '*', <template end>, '^'"#]],
+            error at 22..23: invalid syntax, expected one of: '&', '&&', '@', '{', '[', ']', ':', ',', '==', '/', '>', '>=', '<', '<=', '-', '%', '!=', '|', '||', '(', ')', '.', '+', ';', '<<', '>>', '*', <template end>, <template start>, '^'"#]],
     );
 }
 

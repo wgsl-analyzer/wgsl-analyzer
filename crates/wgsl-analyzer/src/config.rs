@@ -1,10 +1,7 @@
 use std::{fmt, sync::OnceLock};
 
-use base_db::input::SourceRootId;
-use hir::{
-    ExtensionsConfig,
-    diagnostics::{DiagnosticsConfig, NagaVersion},
-};
+use base_db::{ExtensionsConfig, input::SourceRootId};
+use hir::diagnostics::{DiagnosticsConfig, NagaVersion};
 use hir_ty::ty::pretty::TypeVerbosity;
 use ide::{
     HoverConfig, HoverDocFormat, MemoryLayoutHoverRenderKind,
@@ -76,6 +73,7 @@ config_data! {
         /// Controls whether to show type errors.
         diagnostics_typeErrors: bool = true,
 
+        // TODO: remove this, this is not config
         /// Whether to enable u64 and i64 scalar types.
         extensions_shaderInt64: bool = true,
 
@@ -113,8 +111,10 @@ pub enum NagaVersionConfig {
     #[serde(rename = "0.27")]
     Naga27,
     #[serde(rename = "0.28")]
-    #[default]
     Naga28,
+    #[default]
+    #[serde(rename = "0.29")]
+    Naga29,
     #[serde(rename = "main")]
     NagaMain,
 }
@@ -557,6 +557,7 @@ impl Config {
     pub fn extensions(&self) -> ExtensionsConfig {
         ExtensionsConfig {
             shader_int64: *self.extensions_shaderInt64(),
+            ..Default::default()
         }
     }
 
@@ -600,6 +601,7 @@ impl Config {
             naga_version: match self.diagnostics_nagaVersion() {
                 NagaVersionConfig::Naga27 => NagaVersion::Naga27,
                 NagaVersionConfig::Naga28 => NagaVersion::Naga28,
+                NagaVersionConfig::Naga29 => NagaVersion::Naga29,
                 NagaVersionConfig::NagaMain => NagaVersion::NagaMain,
             },
         }
@@ -978,10 +980,11 @@ fn field_props(
         },
         "NagaVersionConfig" => set! {
             "type": "string",
-            "enum": ["0.27", "0.28", "main"],
+            "enum": ["0.27", "0.28", "0.29", "main"],
             "enumDescriptions": [
                 "Naga version 27",
                 "Naga version 28",
+                "Naga version 29",
                 "Version of Naga on main (most recent stable version)"
             ],
         },

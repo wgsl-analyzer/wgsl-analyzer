@@ -1,7 +1,7 @@
 #![expect(non_snake_case, reason = "name based on WGSL builtins")]
 
 use expect_test::expect;
-use hir_def::database::ExtensionsConfig;
+use syntax::ExtensionsConfig;
 
 use crate::tests::check_infer;
 
