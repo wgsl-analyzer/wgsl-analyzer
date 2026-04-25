@@ -1,6 +1,9 @@
 use hir::database::DefDatabase as _;
 use ide::base_db::input::SourceRoot;
-use lsp_types::FileSystemWatcher;
+use lsp_types::{
+    BaseUri, DidChangeWatchedFilesRegistrationOptions, FileSystemWatcher, GlobPattern,
+    Registration, RegistrationParams, RegistrationRequest, RelativePattern, Uri,
+};
 use paths::AbsPathBuf;
 use project_model::PackageRoot;
 use salsa::Durability;
@@ -141,14 +144,14 @@ impl GlobalState {
                 .did_change_watched_files_relative_pattern_support(),
         );
 
-        let registration_options = lsp_types::DidChangeWatchedFilesRegistrationOptions { watchers };
-        let registration = lsp_types::Registration {
+        let registration_options = DidChangeWatchedFilesRegistrationOptions { watchers };
+        let registration = Registration {
             id: "workspace/didChangeWatchedFiles".to_owned(),
             method: "workspace/didChangeWatchedFiles".to_owned(),
             register_options: Some(serde_json::to_value(registration_options).unwrap()),
         };
-        self.send_request::<lsp_types::request::RegisterCapability>(
-            lsp_types::RegistrationParams {
+        self.send_request::<RegistrationRequest>(
+            RegistrationParams {
                 registrations: vec![registration],
             },
             |_, _| (),
@@ -221,11 +224,9 @@ fn to_file_system_watchers(
                         Some((parent, file_name))
                     }))
             })
-            .map(|(base, pat)| lsp_types::FileSystemWatcher {
-                glob_pattern: lsp_types::GlobPattern::Relative(lsp_types::RelativePattern {
-                    base_uri: lsp_types::OneOf::Right(
-                        lsp_types::Url::from_file_path(base).unwrap(),
-                    ),
+            .map(|(base, pat)| FileSystemWatcher {
+                glob_pattern: GlobPattern::RelativePattern(RelativePattern {
+                    base_uri: BaseUri::Uri(lsp_types::Uri::from_file_path(base).unwrap()),
                     pattern: pat.to_owned(),
                 }),
                 kind: None,
@@ -252,8 +253,8 @@ fn to_file_system_watchers(
                             .map(std::string::ToString::to_string),
                     )
             })
-            .map(|glob_pattern| lsp_types::FileSystemWatcher {
-                glob_pattern: lsp_types::GlobPattern::String(glob_pattern),
+            .map(|glob_pattern| FileSystemWatcher {
+                glob_pattern: GlobPattern::Pattern(glob_pattern),
                 kind: None,
             })
             .collect()

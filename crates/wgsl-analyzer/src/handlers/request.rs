@@ -7,9 +7,12 @@ use base_db::{FilePosition, FileRange, TextRange};
 use hir::diagnostics::DiagnosticsConfig;
 use ide::{Cancellable, HoverAction, HoverGotoTypeData, diagnostics::Severity};
 use lsp_types::{
-    DiagnosticRelatedInformation, DiagnosticTag, FoldingRange, FoldingRangeParams,
-    GotoDefinitionResponse, HoverContents, InlayHint, InlayHintParams, MarkupContent, MarkupKind,
-    Range, TextDocumentIdentifier,
+    CompletionList, CompletionParams, CompletionResponse, Contents, Definition, DefinitionParams,
+    DefinitionResponse, Diagnostic, DiagnosticRelatedInformation, DiagnosticSeverity,
+    DiagnosticTag, DocumentDiagnosticParams, DocumentDiagnosticReport, DocumentFormattingParams,
+    FoldingRange, FoldingRangeParams, FullDocumentDiagnosticReport, Hover, InlayHint,
+    InlayHintParams, MarkupContent, MarkupKind, Range, RelatedFullDocumentDiagnosticReport,
+    SignatureHelp, SignatureHelpParams, TextDocumentIdentifier, TextEdit,
 };
 use vfs::FileId;
 
@@ -36,8 +39,8 @@ pub(crate) fn handle_view_package_graph(
 
 pub(crate) fn handle_goto_definition(
     snap: GlobalStateSnapshot,
-    parameters: lsp_types::GotoDefinitionParams,
-) -> anyhow::Result<Option<lsp_types::GotoDefinitionResponse>> {
+    parameters: DefinitionParams,
+) -> anyhow::Result<Option<DefinitionResponse>> {
     let _p = tracing::info_span!("handle_goto_definition").entered();
     let position = try_default!(from_proto::file_position(
         &snap,
@@ -51,21 +54,26 @@ pub(crate) fn handle_goto_definition(
         range: navigation_info.focus_or_full_range(),
     };
     let location = to_proto::location(&snap, source)?;
-    Ok(Some(GotoDefinitionResponse::Scalar(location)))
+    Ok(Some(DefinitionResponse::Definition(Definition::Location(
+        location,
+    ))))
     // let result = to_proto::goto_definition_response(&snap, Some(source), vec![navigation_info])?;
     // Ok(Some(result))
 }
 
 pub(crate) fn handle_completion(
     snap: GlobalStateSnapshot,
-    lsp_types::CompletionParams {
-        text_document_position,
+    CompletionParams {
+        text_document_position_params,
         context,
         ..
-    }: lsp_types::CompletionParams,
-) -> anyhow::Result<Option<lsp_types::CompletionResponse>> {
+    }: CompletionParams,
+) -> anyhow::Result<Option<CompletionResponse>> {
     let _p = tracing::info_span!("handle_completion").entered();
-    let mut position = try_default!(from_proto::file_position(&snap, &text_document_position)?);
+    let mut position = try_default!(from_proto::file_position(
+        &snap,
+        &text_document_position_params
+    )?);
     let line_index = snap.file_line_index(position.file_id)?;
     let completion_trigger_character = context
         .and_then(|context| context.trigger_character)
@@ -87,14 +95,16 @@ pub(crate) fn handle_completion(
         completion_config.fields_to_resolve,
         &line_index,
         snap.file_version(position.file_id),
-        &text_document_position,
+        &text_document_position_params,
         completion_trigger_character,
         items,
     );
 
-    let completion_list = lsp_types::CompletionList {
+    let completion_list = CompletionList {
         is_incomplete: true,
         items,
+        item_defaults: None,
+        apply_kind: None,
     };
     Ok(Some(completion_list.into()))
 }
@@ -118,8 +128,8 @@ pub(crate) fn handle_folding_range(
 
 pub(crate) fn handle_formatting(
     snap: GlobalStateSnapshot,
-    parameters: lsp_types::DocumentFormattingParams,
-) -> Result<Option<Vec<lsp_types::TextEdit>>> {
+    parameters: DocumentFormattingParams,
+) -> Result<Option<Vec<TextEdit>>> {
     let Some(file_id) = from_proto::file_id(&snap, &parameters.text_document.uri)? else {
         return Ok(None);
     };
@@ -160,8 +170,8 @@ pub(crate) fn handle_hover(
     let range = to_proto::range(&line_index, info.range);
     let markup_kind = hover.format;
     let hover = lsp::extensions::HoverResult {
-        hover: lsp_types::Hover {
-            contents: HoverContents::Markup(MarkupContent {
+        hover: Hover {
+            contents: Contents::MarkupContent(MarkupContent {
                 kind: match markup_kind {
                     ide::HoverDocFormat::Markdown => MarkupKind::Markdown,
                     ide::HoverDocFormat::PlainText => MarkupKind::PlainText,
@@ -182,8 +192,8 @@ pub(crate) fn handle_hover(
 
 pub(crate) fn handle_signature_help(
     snap: GlobalStateSnapshot,
-    parameters: lsp_types::SignatureHelpParams,
-) -> Result<Option<lsp_types::SignatureHelp>> {
+    parameters: SignatureHelpParams,
+) -> Result<Option<SignatureHelp>> {
     let _p = tracing::info_span!("handle_signature_help").entered();
     let position = try_default!(from_proto::file_position(
         &snap,
@@ -248,22 +258,22 @@ pub(crate) fn view_syntax_tree(
 
 // This is the “empty” fallback if the VFS lookup fails.
 // It returns an “Unchanged” report with the same `previousResultId` the client sent.
-pub(crate) fn empty_diagnostic_report() -> lsp_types::DocumentDiagnosticReportResult {
-    lsp_types::DocumentDiagnosticReportResult::Report(lsp_types::DocumentDiagnosticReport::Full(
-        lsp_types::RelatedFullDocumentDiagnosticReport {
+pub(crate) fn empty_diagnostic_report() -> DocumentDiagnosticReport {
+    DocumentDiagnosticReport::RelatedFullDocumentDiagnosticReport(
+        RelatedFullDocumentDiagnosticReport {
             related_documents: None,
-            full_document_diagnostic_report: lsp_types::FullDocumentDiagnosticReport {
+            full_document_diagnostic_report: FullDocumentDiagnosticReport {
                 result_id: Some("wgsl-analyzer".to_owned()),
                 items: vec![],
             },
         },
-    ))
+    )
 }
 
 pub(crate) fn handle_document_diagnostics(
     snap: GlobalStateSnapshot,
-    parameters: lsp_types::DocumentDiagnosticParams,
-) -> anyhow::Result<lsp_types::DocumentDiagnosticReportResult> {
+    parameters: DocumentDiagnosticParams,
+) -> anyhow::Result<DocumentDiagnosticReport> {
     let Some(file_id) = from_proto::file_id(&snap, &parameters.text_document.uri)? else {
         return Ok(empty_diagnostic_report());
     };
@@ -276,19 +286,21 @@ pub(crate) fn handle_document_diagnostics(
 
     let items = publish_diagnostics(&snap, &config, file_id)?;
 
-    Ok(lsp_types::DocumentDiagnosticReportResult::Report(
-        lsp_types::DocumentDiagnosticReport::Full(lsp_types::RelatedFullDocumentDiagnosticReport {
-            related_documents: None,
-            full_document_diagnostic_report: lsp_types::FullDocumentDiagnosticReport {
-                result_id: Some(
-                    parameters
-                        .previous_result_id
-                        .unwrap_or_else(|| "wgsl-analyzer".to_owned()),
-                ),
-                items,
+    Ok(
+        DocumentDiagnosticReport::RelatedFullDocumentDiagnosticReport(
+            RelatedFullDocumentDiagnosticReport {
+                related_documents: None,
+                full_document_diagnostic_report: FullDocumentDiagnosticReport {
+                    result_id: Some(
+                        parameters
+                            .previous_result_id
+                            .unwrap_or_else(|| "wgsl-analyzer".to_owned()),
+                    ),
+                    items,
+                },
             },
-        }),
-    ))
+        ),
+    )
 }
 
 pub(crate) fn handle_inlay_hints(
@@ -330,7 +342,7 @@ pub(crate) fn publish_diagnostics(
     snapshot: &GlobalStateSnapshot,
     config: &DiagnosticsConfig,
     file_id: FileId,
-) -> Result<Vec<lsp_types::Diagnostic>> {
+) -> Result<Vec<Diagnostic>> {
     let line_index = snapshot.file_line_index(file_id)?;
     let diagnostics = snapshot.analysis.diagnostics(config, file_id)?;
 
@@ -345,10 +357,10 @@ pub(crate) fn publish_diagnostics(
         .collect()
 }
 
-const fn diagnostic_severity(severity: Severity) -> lsp_types::DiagnosticSeverity {
+const fn diagnostic_severity(severity: Severity) -> DiagnosticSeverity {
     match severity {
-        Severity::Error => lsp_types::DiagnosticSeverity::ERROR,
-        Severity::WeakWarning => lsp_types::DiagnosticSeverity::HINT,
+        Severity::Error => DiagnosticSeverity::Error,
+        Severity::WeakWarning => DiagnosticSeverity::Hint,
     }
 }
 

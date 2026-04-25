@@ -7,7 +7,11 @@ use base_db::{
 };
 use crossbeam_channel::{Receiver, Sender, unbounded};
 use ide::{Analysis, AnalysisHost, Cancellable};
-use lsp_types::Url;
+use lsp_server::{Notification as ServerNotification, Request as ServerRequest};
+use lsp_types::{
+    Diagnostic, Notification as LspNotification, PublishDiagnosticsNotification,
+    PublishDiagnosticsParams, Request as LspRequest, Uri,
+};
 use parking_lot::{MappedRwLockReadGuard, RwLock, RwLockReadGuard, RwLockWriteGuard};
 use project_model::{ManifestPath, PackageChange, PackageGraph, PackageKey, WeslPackageRoot};
 use rustc_hash::FxHashMap;
@@ -389,7 +393,7 @@ impl GlobalState {
         }
     }
 
-    pub(crate) fn send_request<R: lsp_types::request::Request>(
+    pub(crate) fn send_request<R: LspRequest>(
         &mut self,
         parameters: R::Params,
         handler: RequestHandler,
@@ -397,7 +401,7 @@ impl GlobalState {
         let request =
             self.request_queue
                 .outgoing
-                .register(R::METHOD.to_owned(), parameters, handler);
+                .register(R::METHOD.to_string(), parameters, handler);
         self.send(request.into());
     }
 
@@ -413,17 +417,17 @@ impl GlobalState {
         handler(self, response);
     }
 
-    pub(crate) fn send_notification<N: lsp_types::notification::Notification>(
+    pub(crate) fn send_notification<N: LspNotification>(
         &self,
         parameters: N::Params,
     ) {
-        let notification = lsp_server::Notification::new(N::METHOD.to_owned(), parameters);
+        let notification = ServerNotification::new(N::METHOD.to_string(), parameters);
         self.send(notification.into());
     }
 
     pub(crate) fn register_request(
         &mut self,
-        request: &lsp_server::Request,
+        request: &ServerRequest,
         request_received: Instant,
     ) {
         self.request_queue.incoming.register(
@@ -460,7 +464,7 @@ impl GlobalState {
 
     pub(crate) fn is_completed(
         &self,
-        request: &lsp_server::Request,
+        request: &ServerRequest,
     ) -> bool {
         self.request_queue.incoming.is_completed(&request.id)
     }
@@ -474,45 +478,51 @@ impl GlobalState {
 
     pub(crate) fn publish_diagnostics(
         &self,
-        uri: Url,
+        uri: Uri,
         version: Option<i32>,
-        mut diagnostics: Vec<lsp_types::Diagnostic>,
+        mut diagnostics: Vec<Diagnostic>,
     ) {
         // We put this on a separate thread to avoid blocking the main thread with serialization work
-        self.task_pool.handle.spawn_with_sender(stdx::thread::ThreadIntent::Worker, {
-            let sender = self.sender.clone();
-            move |_| {
-                // VS Code assumes diagnostic messages to be non-empty strings, so we need to patch
-                // empty diagnostics. Neither the docs of VS Code nor the LSP spec say whether
-                // diagnostic messages are actually allowed to be empty or not and patching this
-                // in the VS Code client does not work as the assertion happens in the protocol
-                // conversion. So this hack is here to stay, and will be considered a hack
-                // until the LSP decides to state that empty messages are allowed.
+        self.task_pool
+            .handle
+            .spawn_with_sender(stdx::thread::ThreadIntent::Worker, {
+                let sender = self.sender.clone();
+                move |_| {
+                    // VS Code assumes diagnostic messages to be non-empty strings, so we need to patch
+                    // empty diagnostics. Neither the docs of VS Code nor the LSP spec say whether
+                    // diagnostic messages are actually allowed to be empty or not and patching this
+                    // in the VS Code client does not work as the assertion happens in the protocol
+                    // conversion. So this hack is here to stay, and will be considered a hack
+                    // until the LSP decides to state that empty messages are allowed.
 
-                // See https://github.com/rust-lang/rust-analyzer/issues/11404
-                // See https://github.com/rust-lang/rust-analyzer/issues/13130
-                let patch_empty = |message: &mut String| {
-                    if message.is_empty() {
-                        " ".clone_into(message);
-                    }
-                };
+                    // See https://github.com/rust-lang/rust-analyzer/issues/11404
+                    // See https://github.com/rust-lang/rust-analyzer/issues/13130
+                    let patch_empty = |message: &mut String| {
+                        if message.is_empty() {
+                            " ".clone_into(message);
+                        }
+                    };
 
-                for diagnostic in &mut diagnostics {
-                    patch_empty(&mut diagnostic.message);
-                    if let Some(dri) = &mut diagnostic.related_information {
-                        for dri in dri {
-                            patch_empty(&mut dri.message);
+                    for diagnostic in &mut diagnostics {
+                        patch_empty(&mut diagnostic.message);
+                        if let Some(dri) = &mut diagnostic.related_information {
+                            for dri in dri {
+                                patch_empty(&mut dri.message);
+                            }
                         }
                     }
-                }
 
-                let notification = lsp_server::Notification::new(
-                    <lsp_types::notification::PublishDiagnostics as lsp_types::notification::Notification>::METHOD.to_owned(),
-                    lsp_types::PublishDiagnosticsParams { uri, diagnostics, version },
-                );
-                drop(sender.send(notification.into()));
-            }
-        });
+                    let notification = lsp_server::Notification::new(
+                        PublishDiagnosticsNotification::METHOD.to_string(),
+                        PublishDiagnosticsParams {
+                            uri,
+                            diagnostics,
+                            version,
+                        },
+                    );
+                    drop(sender.send(notification.into()));
+                }
+            });
     }
 }
 
@@ -530,7 +540,7 @@ impl GlobalStateSnapshot {
     /// Returns `None` if the file was excluded.
     pub(crate) fn url_to_file_id(
         &self,
-        url: &Url,
+        url: &Uri,
     ) -> anyhow::Result<Option<FileId>> {
         url_to_file_id(&self.vfs_read(), url)
     }
@@ -538,7 +548,7 @@ impl GlobalStateSnapshot {
     pub(crate) fn file_id_to_url(
         &self,
         id: FileId,
-    ) -> Url {
+    ) -> Uri {
         file_id_to_url(&self.vfs.read().0, id)
     }
 
@@ -571,7 +581,7 @@ impl GlobalStateSnapshot {
 pub(crate) fn file_id_to_url(
     vfs: &Vfs,
     id: FileId,
-) -> Url {
+) -> Uri {
     let path = vfs.file_path(id);
     let path = path.as_path().unwrap();
     to_proto::url_from_abs_path(path)
@@ -580,7 +590,7 @@ pub(crate) fn file_id_to_url(
 /// Returns `None` if the file was excluded.
 pub(crate) fn url_to_file_id(
     vfs: &Vfs,
-    url: &Url,
+    url: &Uri,
 ) -> anyhow::Result<Option<FileId>> {
     let path = from_proto::vfs_path(url)?;
     vfs_path_to_file_id(vfs, &path)

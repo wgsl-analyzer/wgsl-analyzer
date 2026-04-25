@@ -19,12 +19,14 @@ mod version;
 
 pub type Result<T, E = anyhow::Error> = std::result::Result<T, E>;
 
+use std::fmt;
+
 use serde::de::DeserializeOwned;
 
 pub use crate::{lsp::capabilities::server_capabilities, main_loop::main_loop, version::version};
 
-pub fn from_json<T: DeserializeOwned>(
-    what: &'static str,
+pub fn from_json<T: DeserializeOwned, Displayable: fmt::Display>(
+    what: Displayable,
     json: &serde_json::Value,
 ) -> Result<T> {
     serde_json::from_value(json.clone())
@@ -70,6 +72,7 @@ macro_rules! try_default_ {
         }
     };
 }
+
 pub(crate) use try_default_ as try_default;
 
 mod handlers {

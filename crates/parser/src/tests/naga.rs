@@ -1,5 +1,6 @@
-use crate::tests::check;
 use expect_test::expect;
+
+use crate::tests::check;
 
 #[test]
 fn extension_not_enabled() {
