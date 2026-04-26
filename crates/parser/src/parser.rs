@@ -19,6 +19,7 @@ include!(concat!(env!("OUT_DIR"), "/generated.rs"));
 
 pub struct ParserContext {
     edition: Edition,
+    after_declarations: bool,
     extensions: ExtensionsConfig,
 }
 
@@ -61,6 +62,7 @@ pub fn parse_entrypoint(
         &mut diagnostics,
         ParserContext {
             edition,
+            after_declarations: false,
             extensions: ExtensionsConfig::default(),
         },
     );
@@ -309,5 +311,26 @@ impl<'source> ParserCallbacks<'source> for Parser<'source> {
                 "const declaration requires initializer".to_owned(),
             )
         })
+    }
+
+    /// Called when semantic action `#2` in rule `global_item` is visited.
+    fn action_global_item_2(
+        &mut self,
+        diags: &mut Vec<Self::Diagnostic>,
+    ) {
+        self.context.after_declarations = true;
+    }
+
+    /// Called when semantic action `#1` in rule `global_item` is visited.
+    fn action_global_item_1(
+        &mut self,
+        diags: &mut Vec<Self::Diagnostic>,
+    ) {
+        if self.context.after_declarations {
+            diags.push(self.create_diagnostic(
+                self.span(),
+                "directives must come before other items".to_owned(),
+            ));
+        }
     }
 }

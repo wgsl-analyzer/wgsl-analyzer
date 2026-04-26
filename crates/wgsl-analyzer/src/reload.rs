@@ -1,3 +1,5 @@
+use std::mem;
+
 use hir::database::DefDatabase as _;
 use ide::base_db::input::SourceRoot;
 use lsp_types::FileSystemWatcher;
@@ -39,7 +41,7 @@ impl GlobalState {
         config: Config,
     ) {
         let _p = tracing::info_span!("GlobalState::update_configuration").entered();
-        let old_config = std::mem::replace(&mut self.config, Arc::new(config));
+        let old_config = mem::replace(&mut self.config, Arc::new(config));
 
         if self.config.extensions() != old_config.extensions() {
             self.analysis_host

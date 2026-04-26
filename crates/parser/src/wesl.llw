@@ -154,10 +154,8 @@ import_path: name (
 
 import_collection: '{' import_path (?1 ',' import_path)* [','] '}';
 
-// TODO: validate that directives come before declarations to improve error messages
-// See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/683
 translation_unit: (global_item | ';')*;
-global_item^: import_statement | global_directive | global_declaration | global_assert;
+global_item^: #2 import_statement | #1 global_directive | #2 global_declaration | #2 global_assert;
 
 global_assert: 'const_assert' expression ';' @assert_statement; // §10
 global_directive:

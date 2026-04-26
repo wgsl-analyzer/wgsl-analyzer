@@ -2582,6 +2582,72 @@ fn requires_directive() {
 }
 
 #[test]
+fn directive_after_declaration() {
+    check(
+        "
+        const a = 3;
+        enable f16;
+        ",
+        expect![[r#"
+            SourceFile@0..50
+              Blankspace@0..9 "\n        "
+              ConstantDeclaration@9..21
+                Const@9..14 "const"
+                Blankspace@14..15 " "
+                Name@15..16
+                  Identifier@15..16 "a"
+                Blankspace@16..17 " "
+                Equal@17..18 "="
+                Blankspace@18..19 " "
+                Literal@19..20
+                  IntLiteral@19..20 "3"
+                Semicolon@20..21 ";"
+              Blankspace@21..30 "\n        "
+              EnableDirective@30..41
+                Enable@30..36 "enable"
+                Blankspace@36..37 " "
+                EnableExtensionName@37..40
+                  Identifier@37..40 "f16"
+                Semicolon@40..41 ";"
+              Blankspace@41..50 "\n        "
+
+            error at 30..36: directives must come before other items"#]],
+    );
+}
+
+#[test]
+fn directive_before_declaration_ok() {
+    check(
+        "
+        enable f16;
+        const a = 3;
+        ",
+        expect![[r#"
+            SourceFile@0..50
+              Blankspace@0..9 "\n        "
+              EnableDirective@9..20
+                Enable@9..15 "enable"
+                Blankspace@15..16 " "
+                EnableExtensionName@16..19
+                  Identifier@16..19 "f16"
+                Semicolon@19..20 ";"
+              Blankspace@20..29 "\n        "
+              ConstantDeclaration@29..41
+                Const@29..34 "const"
+                Blankspace@34..35 " "
+                Name@35..36
+                  Identifier@35..36 "a"
+                Blankspace@36..37 " "
+                Equal@37..38 "="
+                Blankspace@38..39 " "
+                Literal@39..40
+                  IntLiteral@39..40 "3"
+                Semicolon@40..41 ";"
+              Blankspace@41..50 "\n        ""#]],
+    );
+}
+
+#[test]
 fn struct_underscore_field_name() {
     check(
         "
