@@ -32,7 +32,7 @@ pub fn gen_infix_expression(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::new();
+    let mut formatted = PrintItemBuffer::default();
     formatted.extend(gen_expression(&item_left, false)?);
     formatted.extend(gen_comments(&item_comment_after_left));
     formatted.request(Request::expect(RequestItem::Space).or_newline());

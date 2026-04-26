@@ -34,7 +34,7 @@ pub fn gen_function_call(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::new();
+    let mut formatted = PrintItemBuffer::default();
     // TODO(MonaMayrhofer) Are we guaranteed to have an ident_expression here? i dont think soo....
     formatted.extend(gen_ident_expression(&item_identifier)?);
     formatted.extend(gen_comments(&item_comments_after_identifier));
@@ -58,7 +58,7 @@ pub fn gen_function_call_like_comma_separated_values(
     // ==== Parse ====
     // TODO(MonaMayrhofer) Mehhh this logic is misgeneralized i need to do it properly...
     if parse_token_optional(syntax, SyntaxKind::ParenthesisLeft).is_none() {
-        return Ok(PrintItemBuffer::new());
+        return Ok(PrintItemBuffer::default());
     }
     let item_comments_after_open_paren = parse_many_comments_and_blankspace(syntax)?;
 
@@ -82,7 +82,7 @@ pub fn gen_function_call_like_comma_separated_values(
     parse_token(syntax, SyntaxKind::ParenthesisRight)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::new();
+    let mut formatted = PrintItemBuffer::default();
 
     let mut multiline_group = MultilineGroup::new(&mut formatted);
 
@@ -140,7 +140,7 @@ pub fn gen_function_call_statement(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::new();
+    let mut formatted = PrintItemBuffer::default();
     formatted.extend(gen_function_call(&function_call)?);
     formatted.extend(gen_comments(&comments_after_function_call));
     if include_semicolon {

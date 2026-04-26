@@ -27,7 +27,7 @@ pub fn gen_loop_statement(statement: &ast::LoopStatement) -> FormatDocumentResul
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::new();
+    let mut formatted = PrintItemBuffer::default();
     formatted.extend(gen_attributes(
         &item_attributes,
         AttributeLayout::Multiline,

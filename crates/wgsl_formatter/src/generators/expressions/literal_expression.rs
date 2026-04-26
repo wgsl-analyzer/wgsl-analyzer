@@ -12,7 +12,7 @@ pub fn gen_literal_expression(
     literal_expression: &ast::Literal
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::new();
+    let mut formatted = PrintItemBuffer::default();
     formatted.push_string(literal_expression.syntax().to_string());
     Ok(formatted)
 }

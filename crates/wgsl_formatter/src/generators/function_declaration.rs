@@ -48,7 +48,7 @@ pub fn gen_function_declaration(
     let item_body = parse_node::<ast::CompoundStatement>(&mut syntax)?;
     parse_end(&mut syntax)?;
 
-    let mut formatted = PrintItemBuffer::new();
+    let mut formatted = PrintItemBuffer::default();
 
     // Fn
     formatted.extend(gen_attributes(
@@ -126,7 +126,7 @@ pub fn gen_fn_parameters(node: &ast::FunctionParameters) -> FormatDocumentResult
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::new();
+    let mut formatted = PrintItemBuffer::default();
 
     let mut multiline_group = MultilineGroup::new(&mut formatted);
 

@@ -26,7 +26,7 @@ pub fn gen_diagnostic_control(
     parse_token(&mut syntax, SyntaxKind::ParenthesisRight)?;
     parse_end(&mut syntax)?;
 
-    let mut formatted = PrintItemBuffer::new();
+    let mut formatted = PrintItemBuffer::default();
     formatted.push_sc(sc!("("));
     formatted.extend(gen_comments(&item_comments_after_open));
     formatted.extend(gen_severity_control_name(&item_control_name)?);
@@ -47,7 +47,7 @@ pub fn gen_severity_control_name(
     let item_identifier = parse_token(&mut syntax, SyntaxKind::Identifier)?;
     parse_end(&mut syntax)?;
 
-    let mut formatted = PrintItemBuffer::new();
+    let mut formatted = PrintItemBuffer::default();
     formatted.push_string(item_identifier.text().to_owned());
     Ok(formatted)
 }
@@ -66,7 +66,7 @@ pub fn gen_diagnostic_rule_name(
     let item_comments_after_second = parse_many_comments_and_blankspace(&mut syntax)?;
     parse_end(&mut syntax)?;
 
-    let mut formatted = PrintItemBuffer::new();
+    let mut formatted = PrintItemBuffer::default();
     formatted.push_string(item_control_first.text().to_owned());
     formatted.extend(gen_comments(&item_comments_after_first));
     if item_control_second.is_some() {

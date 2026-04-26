@@ -41,7 +41,7 @@ pub fn gen_struct_declaration(
     parse_end(&mut syntax)?;
 
     // === Format ===
-    let mut formatted = PrintItemBuffer::new();
+    let mut formatted = PrintItemBuffer::default();
 
     // Struct
     formatted.push_sc(sc!("struct"));
@@ -96,7 +96,7 @@ pub fn gen_struct_body(body: &ast::StructBody) -> FormatDocumentResult<PrintItem
 
     // === Format ===
     let is_empty = item_members.is_empty();
-    let mut formatted = PrintItemBuffer::new();
+    let mut formatted = PrintItemBuffer::default();
 
     formatted.push_sc(sc!("{"));
     formatted.start_indent();
@@ -158,7 +158,7 @@ pub fn gen_struct_member(member: &ast::StructMember) -> FormatDocumentResult<Pri
     parse_end(&mut syntax)?;
 
     // === Format ===
-    let mut formatted = PrintItemBuffer::new();
+    let mut formatted = PrintItemBuffer::default();
 
     formatted.extend(gen_attributes(&attributes, AttributeLayout::Multiline)?);
     formatted.extend(gen_comments(&item_comments_after_attributes));

@@ -36,7 +36,7 @@ pub fn gen_type_specifier(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::new();
+    let mut formatted = PrintItemBuffer::default();
     formatted.extend(gen_path(&item_path)?);
     formatted.extend(gen_comments(&comments_after_ident));
     if let Some(template) = item_template {
@@ -70,7 +70,7 @@ pub fn gen_template_list(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::new();
+    let mut formatted = PrintItemBuffer::default();
 
     let mut multiline_group = MultilineGroup::new(&mut formatted);
 

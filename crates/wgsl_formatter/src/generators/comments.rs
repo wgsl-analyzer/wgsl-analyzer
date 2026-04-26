@@ -62,7 +62,7 @@ pub fn parse_many_comments_and_blankspace(
 }
 
 pub fn gen_comments(comments: &[Comment]) -> PrintItemBuffer {
-    let mut formatted = PrintItemBuffer::new();
+    let mut formatted = PrintItemBuffer::default();
     for item in comments {
         formatted.extend(gen_comment(item));
     }
@@ -70,7 +70,7 @@ pub fn gen_comments(comments: &[Comment]) -> PrintItemBuffer {
 }
 
 pub fn gen_comment(item: &Comment) -> PrintItemBuffer {
-    let mut formatted = PrintItemBuffer::new();
+    let mut formatted = PrintItemBuffer::default();
     match item {
         Comment::Block(content) => {
             formatted.expect(RequestItem::Space);

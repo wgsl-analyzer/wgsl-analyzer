@@ -25,7 +25,7 @@ pub fn gen_continue_statement(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::new();
+    let mut formatted = PrintItemBuffer::default();
     formatted.push_sc(sc!("continue"));
     if include_semicolon {
         formatted.push_sc(sc!(";"));

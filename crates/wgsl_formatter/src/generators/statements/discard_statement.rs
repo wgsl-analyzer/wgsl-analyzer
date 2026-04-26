@@ -25,7 +25,7 @@ pub fn gen_discard_statement(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::new();
+    let mut formatted = PrintItemBuffer::default();
     formatted.push_sc(sc!("discard"));
     if include_semicolon {
         formatted.push_sc(sc!(";"));

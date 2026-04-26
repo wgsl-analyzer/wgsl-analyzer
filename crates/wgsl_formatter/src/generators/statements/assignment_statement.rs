@@ -38,7 +38,7 @@ pub fn gen_assignment_statement(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::new();
+    let mut formatted = PrintItemBuffer::default();
     formatted.extend(gen_expression(&item_target, true)?);
     formatted.extend(gen_comments(&item_comments_after_target));
     formatted.expect(RequestItem::Space);
@@ -78,7 +78,7 @@ pub fn gen_phony_assignment_statement(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::new();
+    let mut formatted = PrintItemBuffer::default();
     formatted.push_sc(sc!("_"));
     formatted.extend(gen_comments(&item_comments_after_target));
     formatted.expect(RequestItem::Space);
@@ -122,7 +122,7 @@ pub fn gen_compound_assignment_statement(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::new();
+    let mut formatted = PrintItemBuffer::default();
     formatted.extend(gen_expression(&item_target, true)?);
     formatted.extend(gen_comments(&item_comments_after_target));
 

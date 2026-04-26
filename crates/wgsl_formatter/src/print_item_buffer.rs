@@ -52,10 +52,6 @@ pub struct PrintItemBuffer {
 }
 
 impl PrintItemBuffer {
-    pub fn new() -> Self {
-        Self::default()
-    }
-
     pub fn request_folder(
         &mut self,
         incoming_request: RequestFolder,

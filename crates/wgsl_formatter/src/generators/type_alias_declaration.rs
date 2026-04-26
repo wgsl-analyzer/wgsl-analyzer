@@ -33,7 +33,7 @@ pub fn gen_type_alias_declaration(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::new();
+    let mut formatted = PrintItemBuffer::default();
     formatted.push_sc(sc!("alias"));
     formatted.expect(RequestItem::Space);
     formatted.extend(gen_comments(&item_comments_after_alias));

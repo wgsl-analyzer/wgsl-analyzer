@@ -66,7 +66,7 @@ pub fn gen_compound_statement(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::new();
+    let mut formatted = PrintItemBuffer::default();
 
     formatted.extend(gen_attributes(&item_attributes, starting_attribute_layout)?);
     formatted.push_sc(sc!("{"));

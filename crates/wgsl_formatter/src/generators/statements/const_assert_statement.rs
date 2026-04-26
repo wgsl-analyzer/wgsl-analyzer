@@ -30,7 +30,7 @@ pub fn gen_const_assert_statement(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::new();
+    let mut formatted = PrintItemBuffer::default();
 
     formatted.push_sc(sc!("const_assert"));
     formatted.start_indent();

@@ -35,7 +35,7 @@ pub fn gen_switch_statement(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::new();
+    let mut formatted = PrintItemBuffer::default();
 
     formatted.extend(gen_attributes(
         &item_attributes,
@@ -70,7 +70,7 @@ pub fn gen_switch_body(statement: &SwitchBody) -> Result<PrintItemBuffer, Format
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::new();
+    let mut formatted = PrintItemBuffer::default();
     formatted.extend(gen_attributes(&item_attributes, AttributeLayout::Inline)?);
     formatted.push_sc(sc!("{"));
     formatted.start_indent();
@@ -133,7 +133,7 @@ pub fn gen_switch_body_case(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::new();
+    let mut formatted = PrintItemBuffer::default();
 
     match kind {
         SwitchBodyCaseKind::Default => {
@@ -203,7 +203,7 @@ pub fn gen_switch_case_selectors(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::new();
+    let mut formatted = PrintItemBuffer::default();
     for (position, (selector, item_comments_after_selector, item_comments_after_comma)) in
         selectors.into_iter().with_position()
     {
@@ -241,7 +241,7 @@ pub fn gen_switch_case_default_selector(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::new();
+    let mut formatted = PrintItemBuffer::default();
     formatted.push_sc(sc!("default"));
     Ok(formatted)
 }

@@ -43,7 +43,7 @@ pub fn gen_for_statement(statement: &ast::ForStatement) -> FormatDocumentResult<
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::new();
+    let mut formatted = PrintItemBuffer::default();
     formatted.extend(gen_attributes(
         &item_attributes,
         AttributeLayout::Multiline,

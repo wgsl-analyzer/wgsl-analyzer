@@ -40,7 +40,7 @@ pub fn gen_path(path: &ast::Path) -> FormatDocumentResult<PrintItemBuffer> {
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::new();
+    let mut formatted = PrintItemBuffer::default();
 
     for item in items {
         match item {
