@@ -980,6 +980,9 @@ impl GlobalState {
                 handlers::request::view_syntax_tree,
             )
             .on::<NO_RETRY, lsp::extensions::FullSourceRequest>(handlers::request::full_source)
+            .on::<RETRY, lsp::extensions::AnalyzerStatusRequest>(
+                handlers::request::handle_analyzer_status,
+            )
             .on::<RETRY, lsp::extensions::ViewPackageGraphRequest>(
                 handlers::request::handle_view_package_graph,
             )

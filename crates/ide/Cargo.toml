@@ -33,6 +33,7 @@ syntax.workspace = true
 # span.workspace = true
 vfs.workspace = true
 wgsl-formatter.workspace = true
+stdx.workspace = true
 # ide should depend only on the top-level `hir` package. if you need
 # something from some `hir-xxx` subpackage, reexport the API via `hir`.
 # todo: remove this dependency by re-exporting the API via `hir`

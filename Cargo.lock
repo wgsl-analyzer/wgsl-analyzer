@@ -692,6 +692,7 @@ dependencies = [
  "salsa",
  "smallvec",
  "smol_str",
+ "stdx",
  "syntax",
  "test-fixture",
  "test-utils",
