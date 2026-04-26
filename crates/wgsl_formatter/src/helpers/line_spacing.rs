@@ -1,5 +1,3 @@
-use std::collections::BTreeSet;
-
 use rowan::NodeOrToken;
 
 use crate::{

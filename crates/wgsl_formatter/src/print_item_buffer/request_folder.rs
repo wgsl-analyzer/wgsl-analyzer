@@ -11,24 +11,24 @@ pub enum RequestItem {
 }
 
 impl RequestItem {
-    /// Converts the RequestItem to its index in the Bitmaps that store expected, discouraged, and forced requests.
+    /// Converts the [`RequestItem`] to its index in the Bitmaps that store expected, discouraged, and forced requests.
     /// If multiple request items are requested at a stage (e.g expect space & line break), the request item with
     /// the highest index is used.
     #[must_use]
     pub const fn to_index(self) -> u8 {
         match self {
-            RequestItem::Space => 0,
-            RequestItem::LineBreak => 1,
-            RequestItem::EmptyLine => 2,
+            Self::Space => 0,
+            Self::LineBreak => 1,
+            Self::EmptyLine => 2,
         }
     }
 
     #[must_use]
     pub const fn from_index(index: u8) -> Option<Self> {
         match index {
-            0 => Some(RequestItem::Space),
-            1 => Some(RequestItem::LineBreak),
-            2 => Some(RequestItem::EmptyLine),
+            0 => Some(Self::Space),
+            1 => Some(Self::LineBreak),
+            2 => Some(Self::EmptyLine),
             _ => None,
         }
     }
@@ -66,6 +66,12 @@ impl RequestItemMap {
             return None;
         }
         let log = self.0.ilog2();
+
+        #[expect(
+            clippy::cast_possible_truncation,
+            reason = "ilog2 of u8 can never exceed u8"
+        )]
+        #[expect(clippy::as_conversions, reason = "keep it const")]
         RequestItem::from_index(log as u8)
     }
     #[must_use]
@@ -109,7 +115,8 @@ pub enum Request {
 }
 
 impl Request {
-    pub fn empty() -> Self {
+    #[must_use]
+    pub const fn empty() -> Self {
         Self::Unconditional {
             expected: RequestItemMap::empty(),
             discouraged: RequestItemMap::empty(),
@@ -118,7 +125,8 @@ impl Request {
         }
     }
 
-    pub fn expect(item: RequestItem) -> Self {
+    #[must_use]
+    pub const fn expect(item: RequestItem) -> Self {
         Self::Unconditional {
             expected: RequestItemMap::from(item),
             discouraged: RequestItemMap::empty(),
@@ -127,7 +135,8 @@ impl Request {
         }
     }
 
-    pub fn discourage(item: RequestItem) -> Self {
+    #[must_use]
+    pub const fn discourage(item: RequestItem) -> Self {
         Self::Unconditional {
             expected: RequestItemMap::empty(),
             discouraged: RequestItemMap::from(item),
@@ -136,7 +145,8 @@ impl Request {
         }
     }
 
-    pub fn force(item: RequestItem) -> Self {
+    #[must_use]
+    pub const fn force(item: RequestItem) -> Self {
         Self::Unconditional {
             expected: RequestItemMap::empty(),
             discouraged: RequestItemMap::empty(),
@@ -145,6 +155,7 @@ impl Request {
         }
     }
 
+    #[must_use]
     pub fn or_newline(self) -> Self {
         //TODO Redesign requests once again
         match self {
@@ -159,11 +170,26 @@ impl Request {
                 forced,
                 suggest_linebreak: true,
             },
-            Self::Conditional { .. } => todo!(),
+            Self::Conditional {
+                condition,
+                mut on_false,
+                mut on_true,
+            } => Self::Conditional {
+                condition,
+                on_true: {
+                    on_true.push_left(Self::empty().or_newline());
+                    on_true
+                },
+                on_false: {
+                    on_false.push_left(Self::empty().or_newline());
+                    on_false
+                },
+            },
         }
     }
 
     // ==== Request Logic ====
+    #[must_use]
     pub fn combine(
         left: Self,
         right: Self,

@@ -107,7 +107,6 @@ pub fn parse_end(syntax: &mut SyntaxIter) -> FormatDocumentResult<()> {
     .expect_if_prefer_crash()
 }
 
-#[expect(unused, reason = "TODO")]
 pub fn parse_end_optional(syntax: &mut SyntaxIter) -> Option<()> {
     match syntax.next() {
         None => Some(()),

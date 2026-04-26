@@ -30,6 +30,7 @@ pub fn todo_verbatim_wesl(source: &parser::SyntaxNode) -> FormatDocumentResult<P
     Ok(items)
 }
 
+#[must_use]
 pub fn create_is_multiple_lines_resolver(
     start_ln: LineNumber,
     end_ln: LineNumber,
