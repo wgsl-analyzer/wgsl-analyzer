@@ -1,0 +1,17 @@
+{
+	"scripts": {
+		"build-base": "pnpm --dir editors/code run build-base",
+		"build": "pnpm --dir editors/code run build",
+		"check": "pnpm --dir editors/code run check",
+		"ci": "pnpm --dir editors/code run ci",
+		"format:check": "pnpm --dir editors/code run format:check",
+		"format": "pnpm --dir editors/code run format",
+		"fix": "pnpm --dir editors/code run fix",
+		"lint": "pnpm --dir editors/code run lint",
+		"package": "pnpm --dir editors/code run package",
+		"pretest": "pnpm --dir editors/code run pretest",
+		"test": "pnpm --dir editors/code run test",
+		"typecheck": "pnpm --dir editors/code run typecheck",
+		"watch": "pnpm --dir editors/code run watch"
+	}
+}
