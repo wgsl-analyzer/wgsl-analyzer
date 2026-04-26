@@ -1,7 +1,4 @@
-use std::{
-    collections::{BTreeMap, BTreeSet},
-    string::String,
-};
+use std::{collections::BTreeMap, string::String};
 
 use dprint_core::formatting::StringContainer;
 use dprint_core_macros::sc;
@@ -29,7 +26,7 @@ use crate::{
     },
     print_item_buffer::{
         PrintItemBuffer,
-        request_folder::{Request, RequestItem, RequestItemMap},
+        request_folder::{Request, RequestItem},
     },
     reporting::FormatDocumentResult,
 };
@@ -153,7 +150,7 @@ pub fn gen_attributes(
 
     fn gen_attribute_group<T: Ord>(
         mut attributes: Vec<(T, &ParsedAttribute)>,
-        separator: Request,
+        separator: &Request,
     ) -> FormatDocumentResult<PrintItemBuffer> {
         attributes.sort_by(|(order_a, _), (order_b, _)| order_a.cmp(order_b));
 
@@ -184,24 +181,18 @@ pub fn gen_attributes(
     let mut formatted = PrintItemBuffer::new();
     formatted.start_new_line_group();
     // Ungrouped attributes go first
-    formatted.extend(gen_attribute_group(
-        ungrouped_attributes,
-        group_separator.clone(),
-    )?);
+    formatted.extend(gen_attribute_group(ungrouped_attributes, &group_separator)?);
 
     // The grouped attributes in order
     // (They are ordered by the AttributeGroup enum's discriminator, because of the BTreeMap)
     for (_, attribute) in grouped_attributes {
-        formatted.extend(gen_attribute_group(
-            attribute,
-            expect_space_or_linebreak.clone(),
-        )?);
+        formatted.extend(gen_attribute_group(attribute, &expect_space_or_linebreak)?);
         formatted.request(group_separator.clone());
     }
     // Then attributes that should be inline with the target
     formatted.extend(gen_attribute_group(
         attribute_group_inlined_with_target,
-        expect_space_or_linebreak.clone(),
+        &expect_space_or_linebreak,
     )?);
     // No final line break, these should be inline with the target
     formatted.finish_new_line_group();

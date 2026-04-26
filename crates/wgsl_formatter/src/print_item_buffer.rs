@@ -99,6 +99,7 @@ impl PrintItemBuffer {
         });
     }
 
+    #[must_use]
     pub fn finish(mut self) -> PrintItems {
         let mut pi = PrintItems::default();
         self.start_request.resolve(&mut pi);

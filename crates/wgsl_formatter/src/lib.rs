@@ -20,9 +20,7 @@ pub mod test_util;
 
 use std::str::FromStr;
 
-use dprint_core::configuration::{NewLineKind, ParseConfigurationError};
-use rowan::{GreenNode, GreenToken, NodeOrToken, WalkEvent};
-use syntax::{AstNode, HasName, SyntaxElement, SyntaxKind, SyntaxNode, SyntaxToken, ast};
+use dprint_core::configuration::ParseConfigurationError;
 
 pub use format::{FormatStringError, FormattedRange, format_file, format_range, format_tree};
 
