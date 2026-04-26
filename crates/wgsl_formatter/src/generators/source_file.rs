@@ -1,5 +1,3 @@
-use std::collections::BTreeSet;
-
 use itertools::put_back;
 use parser::{SyntaxKind, SyntaxNode};
 use syntax::{
@@ -16,7 +14,7 @@ use crate::{
     helpers::{LineSpacing, gen_line_spacing, parse_line_spacing},
     print_item_buffer::{
         PrintItemBuffer,
-        request_folder::{Request, RequestItem},
+        request_folder::{Request, RequestItem, RequestItemMap},
     },
     reporting::FormatDocumentResult,
 };
@@ -59,13 +57,12 @@ pub fn gen_source_file(node: &ast::SourceFile) -> FormatDocumentResult<PrintItem
 
     let mut formatted = PrintItemBuffer::new();
     formatted.request(Request::Unconditional {
-        expected: BTreeSet::new(),
-        discouraged: BTreeSet::from([
-            RequestItem::EmptyLine,
-            RequestItem::LineBreak,
-            RequestItem::Space,
-        ]),
-        forced: BTreeSet::new(),
+        expected: RequestItemMap::empty(),
+        discouraged: RequestItemMap::empty()
+            .extended_by(RequestItem::EmptyLine)
+            .extended_by(RequestItem::LineBreak)
+            .extended_by(RequestItem::Space),
+        forced: RequestItemMap::empty(),
         suggest_linebreak: false,
     });
 
@@ -86,9 +83,9 @@ pub fn gen_source_file(node: &ast::SourceFile) -> FormatDocumentResult<PrintItem
     }
 
     formatted.request(Request::Unconditional {
-        forced: BTreeSet::new(),
-        discouraged: BTreeSet::from([RequestItem::EmptyLine]),
-        expected: BTreeSet::from([RequestItem::LineBreak]),
+        forced: RequestItemMap::empty(),
+        discouraged: RequestItemMap::from(RequestItem::EmptyLine),
+        expected: RequestItemMap::from(RequestItem::LineBreak),
         suggest_linebreak: false,
     });
 

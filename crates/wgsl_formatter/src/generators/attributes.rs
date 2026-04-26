@@ -29,7 +29,7 @@ use crate::{
     },
     print_item_buffer::{
         PrintItemBuffer,
-        request_folder::{Request, RequestItem},
+        request_folder::{Request, RequestItem, RequestItemMap},
     },
     reporting::FormatDocumentResult,
 };
@@ -174,21 +174,11 @@ pub fn gen_attributes(
     }
 
     // TODO Move this into a Request::expect() or something api
-    let expect_space_or_linebreak = Request::Unconditional {
-        expected: BTreeSet::from([RequestItem::Space]),
-        discouraged: BTreeSet::new(),
-        forced: BTreeSet::new(),
-        suggest_linebreak: true,
-    };
+    let expect_space_or_linebreak = Request::expect(RequestItem::Space).or_newline();
 
     let group_separator = match layout {
         AttributeLayout::Inline => expect_space_or_linebreak.clone(),
-        AttributeLayout::Multiline => Request::Unconditional {
-            expected: BTreeSet::from([RequestItem::LineBreak]),
-            discouraged: BTreeSet::new(),
-            forced: BTreeSet::new(),
-            suggest_linebreak: false,
-        },
+        AttributeLayout::Multiline => Request::expect(RequestItem::LineBreak),
     };
 
     let mut formatted = PrintItemBuffer::new();

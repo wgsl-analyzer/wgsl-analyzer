@@ -1,5 +1,3 @@
-use std::collections::BTreeSet;
-
 use dprint_core_macros::sc;
 use itertools::put_back;
 use parser::SyntaxKind;
@@ -13,7 +11,7 @@ use crate::{
     helpers::{LineSpacing, gen_line_spacing},
     print_item_buffer::{
         PrintItemBuffer,
-        request_folder::{Request, RequestItem},
+        request_folder::{Request, RequestItem, RequestItemMap},
     },
     reporting::FormatDocumentResult,
 };
@@ -130,9 +128,9 @@ pub fn gen_struct_body(body: &ast::StructBody) -> FormatDocumentResult<PrintItem
     }
 
     formatted.request(Request::Unconditional {
-        discouraged: BTreeSet::from([RequestItem::EmptyLine]),
-        expected: BTreeSet::from([RequestItem::LineBreak]),
-        forced: BTreeSet::new(),
+        discouraged: RequestItemMap::from(RequestItem::EmptyLine),
+        expected: RequestItemMap::from(RequestItem::LineBreak),
+        forced: RequestItemMap::empty(),
         suggest_linebreak: false,
     });
 

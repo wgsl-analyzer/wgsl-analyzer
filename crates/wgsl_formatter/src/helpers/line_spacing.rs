@@ -45,21 +45,11 @@ pub fn gen_line_spacing(line_spacing: &LineSpacing) -> FormatDocumentResult<Prin
     match line_spacing {
         LineSpacing::EmptyLine => {
             //There was an empty line in the source
-            formatted.request(Request::Unconditional {
-                expected: BTreeSet::from([RequestItem::EmptyLine]),
-                discouraged: BTreeSet::new(),
-                forced: BTreeSet::new(),
-                suggest_linebreak: false,
-            });
+            formatted.request(Request::expect(RequestItem::EmptyLine));
         },
         LineSpacing::LineBreak => {
             //There was a newline in the source
-            formatted.request(Request::Unconditional {
-                expected: BTreeSet::from([RequestItem::LineBreak]),
-                discouraged: BTreeSet::new(),
-                forced: BTreeSet::new(),
-                suggest_linebreak: false,
-            });
+            formatted.request(Request::expect(RequestItem::LineBreak));
         },
     }
     Ok(formatted)

@@ -1,5 +1,3 @@
-use std::collections::BTreeSet;
-
 use dprint_core_macros::sc;
 use itertools::put_back;
 use parser::SyntaxKind;
@@ -18,7 +16,7 @@ use crate::{
     },
     print_item_buffer::{
         PrintItemBuffer,
-        request_folder::{Request, RequestItem},
+        request_folder::{Request, RequestItem, RequestItemMap},
     },
     reporting::FormatDocumentResult,
 };
@@ -48,9 +46,9 @@ pub fn gen_if_statement(statement: &ast::IfStatement) -> FormatDocumentResult<Pr
     formatted.extend(gen_comments(&comments_after_if_clause));
     for (else_if_clause, comments_after_else_if_clause) in else_if_clauses {
         formatted.request(Request::Unconditional {
-            expected: BTreeSet::from([RequestItem::Space]),
-            discouraged: BTreeSet::from([RequestItem::LineBreak]),
-            forced: BTreeSet::new(),
+            expected: RequestItemMap::from(RequestItem::Space),
+            discouraged: RequestItemMap::from(RequestItem::LineBreak),
+            forced: RequestItemMap::empty(),
             suggest_linebreak: false,
         });
         formatted.extend(gen_if_statement_else_if_clause(&else_if_clause)?);
@@ -58,9 +56,9 @@ pub fn gen_if_statement(statement: &ast::IfStatement) -> FormatDocumentResult<Pr
     }
     if let Some(item_else_clause) = item_else_clause {
         formatted.request(Request::Unconditional {
-            expected: BTreeSet::from([RequestItem::Space]),
-            discouraged: BTreeSet::from([RequestItem::LineBreak]),
-            forced: BTreeSet::new(),
+            expected: RequestItemMap::from(RequestItem::Space),
+            discouraged: RequestItemMap::from(RequestItem::LineBreak),
+            forced: RequestItemMap::empty(),
             suggest_linebreak: false,
         });
         formatted.extend(gen_if_statement_else_clause(&item_else_clause)?);
