@@ -40,7 +40,7 @@ pub fn gen_if_statement(statement: &ast::IfStatement) -> FormatDocumentResult<Pr
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::new();
+    let mut formatted = PrintItemBuffer::default();
     formatted.extend(gen_attributes(&attributes, AttributeLayout::Multiline)?);
     formatted.extend(gen_if_statement_if_clause(&item_if_clause)?);
     formatted.extend(gen_comments(&comments_after_if_clause));
@@ -82,7 +82,7 @@ pub fn gen_if_statement_if_clause(statement: &IfClause) -> FormatDocumentResult<
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::new();
+    let mut formatted = PrintItemBuffer::default();
     formatted.push_sc(sc!("if"));
     formatted.expect(RequestItem::Space);
     formatted.extend(gen_comments(&comments_after_if));
@@ -108,7 +108,7 @@ pub fn gen_if_statement_else_clause(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::new();
+    let mut formatted = PrintItemBuffer::default();
     formatted.push_sc(sc!("else"));
     formatted.expect(RequestItem::Space);
     formatted.extend(gen_comments(&comments_after_clause_token));
@@ -135,7 +135,7 @@ pub fn gen_if_statement_else_if_clause(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::new();
+    let mut formatted = PrintItemBuffer::default();
     formatted.push_sc(sc!("else"));
     formatted.expect(RequestItem::Space);
     formatted.extend(gen_comments(&comments_after_else));

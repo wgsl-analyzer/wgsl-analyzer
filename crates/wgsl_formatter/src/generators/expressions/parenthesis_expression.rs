@@ -29,7 +29,7 @@ pub fn gen_parenthesis_expression(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::new();
+    let mut formatted = PrintItemBuffer::default();
     if remove_parentheses {
         formatted.expect(RequestItem::Space);
     } else {

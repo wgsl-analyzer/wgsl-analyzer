@@ -45,7 +45,7 @@ pub fn gen_increment_decrement_statement(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::new();
+    let mut formatted = PrintItemBuffer::default();
     formatted.extend(gen_expression(&item_ident, true)?);
     formatted.extend(gen_comments(&item_comments_after_ident));
 

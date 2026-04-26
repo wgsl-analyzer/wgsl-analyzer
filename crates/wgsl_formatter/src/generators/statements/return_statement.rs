@@ -30,7 +30,7 @@ pub fn gen_return_statement(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::new();
+    let mut formatted = PrintItemBuffer::default();
     formatted.push_sc(sc!("return"));
     formatted.start_indent();
     formatted.extend(gen_comments(&comments_after_return));

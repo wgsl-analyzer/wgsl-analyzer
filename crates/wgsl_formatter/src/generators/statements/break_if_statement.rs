@@ -32,7 +32,7 @@ pub fn gen_break_if_statement(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::new();
+    let mut formatted = PrintItemBuffer::default();
     formatted.push_sc(sc!("break"));
     formatted.expect(RequestItem::Space);
     formatted.extend(gen_comments(&comments_after_break));

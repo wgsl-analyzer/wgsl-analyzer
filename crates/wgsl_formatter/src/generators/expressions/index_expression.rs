@@ -31,7 +31,7 @@ pub fn gen_index_expression(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::new();
+    let mut formatted = PrintItemBuffer::default();
 
     formatted.extend(gen_expression(&item_array_expr, false)?);
     formatted.extend(gen_comments(&comments_after_ident_expr));

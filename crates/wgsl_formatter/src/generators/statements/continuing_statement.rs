@@ -27,7 +27,7 @@ pub fn gen_continuing_statement(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::new();
+    let mut formatted = PrintItemBuffer::default();
     formatted.push_sc(sc!("continuing"));
     formatted.extend(gen_comments(&comments_after_continuing));
     formatted.expect(RequestItem::Space);

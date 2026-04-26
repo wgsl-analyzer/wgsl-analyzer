@@ -30,7 +30,7 @@ pub fn gen_enable_extension_name(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::new();
+    let mut formatted = PrintItemBuffer::default();
     formatted.push_string(identifier.text().to_owned());
     Ok(formatted)
 }
@@ -65,7 +65,7 @@ pub fn gen_enable_directive(node: &ast::EnableDirective) -> FormatDocumentResult
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::new();
+    let mut formatted = PrintItemBuffer::default();
     formatted.push_sc(sc!("enable"));
     formatted.expect(RequestItem::Space);
 
@@ -105,7 +105,7 @@ pub fn gen_language_extension_name(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::new();
+    let mut formatted = PrintItemBuffer::default();
     formatted.push_string(identifier.text().to_owned());
     Ok(formatted)
 }
@@ -142,7 +142,7 @@ pub fn gen_requires_directive(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::new();
+    let mut formatted = PrintItemBuffer::default();
     formatted.push_sc(sc!("requires"));
     formatted.expect(RequestItem::Space);
 
@@ -186,7 +186,7 @@ pub fn gen_diagnostic_directive(
     parse_token(&mut syntax, SyntaxKind::Semicolon)?;
     parse_end(&mut syntax)?;
 
-    let mut formatted = PrintItemBuffer::new();
+    let mut formatted = PrintItemBuffer::default();
     formatted.push_sc(sc!("diagnostic"));
     formatted.extend(gen_comments(&item_comments_after_identifier));
     formatted.extend(gen_diagnostic_control(&item_control)?);

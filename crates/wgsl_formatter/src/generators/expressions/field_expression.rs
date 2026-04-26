@@ -28,7 +28,7 @@ pub fn gen_field_expression(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::new();
+    let mut formatted = PrintItemBuffer::default();
     formatted.extend(gen_expression(&item_struct_expr, false)?);
     formatted.extend(gen_comments(&comments_after_ident_expr));
     formatted.push_sc(sc!("."));

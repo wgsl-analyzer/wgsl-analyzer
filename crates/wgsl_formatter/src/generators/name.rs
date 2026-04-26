@@ -13,7 +13,7 @@ pub fn gen_name(name: &ast::Name) -> FormatDocumentResult<PrintItemBuffer> {
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::new();
+    let mut formatted = PrintItemBuffer::default();
     formatted.push_string(identifier.text().to_owned());
     Ok(formatted)
 }

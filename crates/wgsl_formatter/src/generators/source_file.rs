@@ -55,7 +55,7 @@ pub fn gen_source_file(node: &ast::SourceFile) -> FormatDocumentResult<PrintItem
 
     // ==== Format ====
 
-    let mut formatted = PrintItemBuffer::new();
+    let mut formatted = PrintItemBuffer::default();
     formatted.request(Request::Unconditional {
         expected: RequestItemMap::empty(),
         discouraged: RequestItemMap::empty()

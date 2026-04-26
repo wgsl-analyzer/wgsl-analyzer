@@ -96,7 +96,7 @@ where
                 //TODO maybe we should instead output the whole source verbatim
                 // so that if many things go wrong and this value does somehow
                 // reach the user's file, it doesn't just delete it all.
-                let mut items = PrintItemBuffer::new();
+                let mut items = PrintItemBuffer::default();
                 items.push_string("ERROR".into());
                 items.finish()
             },

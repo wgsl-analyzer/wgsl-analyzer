@@ -39,7 +39,7 @@ pub fn parse_line_spacing(syntax: &mut SyntaxIter) -> Option<LineSpacing> {
     reason = "Keep the API homogeneous with all gen_* functions"
 )]
 pub fn gen_line_spacing(line_spacing: &LineSpacing) -> FormatDocumentResult<PrintItemBuffer> {
-    let mut formatted = PrintItemBuffer::new();
+    let mut formatted = PrintItemBuffer::default();
     match line_spacing {
         LineSpacing::EmptyLine => {
             //There was an empty line in the source

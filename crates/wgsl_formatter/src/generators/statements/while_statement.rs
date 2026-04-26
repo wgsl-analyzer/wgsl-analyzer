@@ -32,7 +32,7 @@ pub fn gen_while_statement(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::new();
+    let mut formatted = PrintItemBuffer::default();
     formatted.extend(gen_attributes(
         &item_attributes,
         AttributeLayout::Multiline,

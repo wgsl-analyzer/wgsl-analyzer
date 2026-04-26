@@ -137,7 +137,7 @@ fn gen_var_let_const_override_statement(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::new();
+    let mut formatted = PrintItemBuffer::default();
     formatted.extend(gen_attributes(
         &item_attributes,
         AttributeLayout::Multiline,

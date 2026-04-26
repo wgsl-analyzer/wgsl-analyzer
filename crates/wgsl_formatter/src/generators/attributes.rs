@@ -73,7 +73,7 @@ pub fn gen_attributes(
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // If we don't have any attributes, we early exit to avoid all the bureaucracy with newlines
     if attributes.attributes.is_empty() {
-        return Ok(PrintItemBuffer::new());
+        return Ok(PrintItemBuffer::default());
     }
 
     #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -154,7 +154,7 @@ pub fn gen_attributes(
     ) -> FormatDocumentResult<PrintItemBuffer> {
         attributes.sort_by(|(order_a, _), (order_b, _)| order_a.cmp(order_b));
 
-        let mut formatted = PrintItemBuffer::new();
+        let mut formatted = PrintItemBuffer::default();
         // Ungrouped attributes go first
         for ParsedAttribute {
             attribute,
@@ -178,7 +178,7 @@ pub fn gen_attributes(
         AttributeLayout::Multiline => Request::expect(RequestItem::LineBreak),
     };
 
-    let mut formatted = PrintItemBuffer::new();
+    let mut formatted = PrintItemBuffer::default();
     formatted.start_new_line_group();
     // Ungrouped attributes go first
     formatted.extend(gen_attribute_group(ungrouped_attributes, &group_separator)?);
@@ -246,7 +246,7 @@ pub fn gen_diagnostic_attribute(
     let item_control = parse_node::<DiagnosticControl>(&mut syntax)?;
     parse_end(&mut syntax)?;
 
-    let mut formatted = PrintItemBuffer::new();
+    let mut formatted = PrintItemBuffer::default();
     formatted.push_sc(sc!("@"));
     formatted.extend(gen_comments(&item_comments_after_operator));
     formatted.push_sc(sc!("diagnostic"));
@@ -262,7 +262,7 @@ pub fn gen_interpolate_type_name(
     let content = parse_token_any(&mut syntax)?;
     parse_end(&mut syntax)?;
 
-    let mut formatted = PrintItemBuffer::new();
+    let mut formatted = PrintItemBuffer::default();
     formatted.push_string(content.text().to_owned());
     Ok(formatted)
 }
@@ -273,7 +273,7 @@ pub fn gen_interpolate_sampling_name(
     let content = parse_token_any(&mut syntax)?;
     parse_end(&mut syntax)?;
 
-    let mut formatted = PrintItemBuffer::new();
+    let mut formatted = PrintItemBuffer::default();
     formatted.push_string(content.text().to_owned());
     Ok(formatted)
 }
@@ -308,7 +308,7 @@ pub fn gen_interpolate_attribute(
     parse_token(&mut syntax, parser::SyntaxKind::ParenthesisRight)?;
     parse_end(&mut syntax)?;
 
-    let mut formatted = PrintItemBuffer::new();
+    let mut formatted = PrintItemBuffer::default();
     formatted.push_sc(sc!("@"));
     formatted.extend(gen_comments(&item_comments_after_operator));
     formatted.push_sc(sc!("interpolate"));
@@ -337,7 +337,7 @@ pub fn gen_builtin_value_name(
     let content = parse_token_any(&mut syntax)?;
     parse_end(&mut syntax)?;
 
-    let mut formatted = PrintItemBuffer::new();
+    let mut formatted = PrintItemBuffer::default();
     formatted.push_string(content.text().to_owned());
     Ok(formatted)
 }
@@ -358,7 +358,7 @@ pub fn gen_builtin_attribute(
     parse_token(&mut syntax, parser::SyntaxKind::ParenthesisRight)?;
     parse_end(&mut syntax)?;
 
-    let mut formatted = PrintItemBuffer::new();
+    let mut formatted = PrintItemBuffer::default();
     formatted.push_sc(sc!("@"));
     formatted.extend(gen_comments(&item_comments_after_operator));
     formatted.push_sc(sc!("builtin"));
@@ -383,7 +383,7 @@ pub fn gen_other_attribute(
     let item_arguments = parse_node_optional::<Arguments>(&mut syntax);
     parse_end(&mut syntax)?;
 
-    let mut formatted = PrintItemBuffer::new();
+    let mut formatted = PrintItemBuffer::default();
     formatted.push_sc(sc!("@"));
     formatted.extend(gen_comments(&item_comments_after_operator));
     formatted.push_string(item_identifier.to_string());
@@ -435,7 +435,7 @@ fn gen_attr_standard_with_args(
     let item_arguments = gen_function_call_like_comma_separated_values(&mut syntax)?;
     parse_end(&mut syntax)?;
 
-    let mut formatted = PrintItemBuffer::new();
+    let mut formatted = PrintItemBuffer::default();
     formatted.push_sc(sc!("@"));
     formatted.extend(gen_comments(&item_comments_after_operator));
     formatted.push_sc(attribute_name);

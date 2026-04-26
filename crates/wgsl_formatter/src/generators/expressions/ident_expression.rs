@@ -26,7 +26,7 @@ pub fn gen_ident_expression(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::new();
+    let mut formatted = PrintItemBuffer::default();
     formatted.extend(gen_path(&item_path)?);
     formatted.extend(gen_comments(&item_comments_after_name_reference));
     if let Some(item_template) = item_template {

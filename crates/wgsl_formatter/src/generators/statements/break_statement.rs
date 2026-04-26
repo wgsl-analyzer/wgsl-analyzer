@@ -25,7 +25,7 @@ pub fn gen_break_statement(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::new();
+    let mut formatted = PrintItemBuffer::default();
     formatted.push_sc(sc!("break"));
     if include_semicolon {
         formatted.push_sc(sc!(";"));

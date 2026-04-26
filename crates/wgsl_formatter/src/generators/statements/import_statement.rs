@@ -43,7 +43,7 @@ pub fn gen_import_package_relative(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::new();
+    let mut formatted = PrintItemBuffer::default();
     formatted.push_sc(sc!("package"));
     formatted.push_sc(sc!("::"));
     Ok(formatted)
@@ -78,7 +78,7 @@ pub fn gen_import_super_relative(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::new();
+    let mut formatted = PrintItemBuffer::default();
 
     for item in items {
         match item {
@@ -108,7 +108,7 @@ pub fn gen_import_item(node: &ast::ImportItem) -> FormatDocumentResult<PrintItem
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::new();
+    let mut formatted = PrintItemBuffer::default();
     formatted.extend(gen_name(&item_name)?);
     formatted.extend(gen_comments(&item_comments_after_name));
     if let Some((item_comments_after_as, item_alias)) = item_alias {
@@ -135,7 +135,7 @@ pub fn gen_import_path(node: &ast::ImportPath) -> FormatDocumentResult<PrintItem
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::new();
+    let mut formatted = PrintItemBuffer::default();
 
     formatted.extend(gen_name(&item_name)?);
     formatted.extend(gen_comments(&item_comments_after_name));
@@ -263,7 +263,7 @@ pub fn gen_import_collection(
     });
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::new();
+    let mut formatted = PrintItemBuffer::default();
 
     let mut group = MultilineGroup::new(&mut formatted);
     group.push_sc(sc!("{"));
@@ -321,7 +321,7 @@ pub fn gen_import_statement(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::new();
+    let mut formatted = PrintItemBuffer::default();
     formatted.push_sc(sc!("import"));
     formatted.expect(RequestItem::Space);
     formatted.extend(gen_comments(&item_comments_after_import));
