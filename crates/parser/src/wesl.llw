@@ -193,7 +193,7 @@ struct_member: attribute* name ':' type_specifier;
 
 // all attributes that do not use keywords have to be parsed generically and separated later
 attribute:
-	'@' (
+	'@' @other_attr (
 			'align' '(' expression [','] ')' @align_attr
 			| 'binding' '(' expression [','] ')' @binding_attr
 			| 'blend_src' '(' expression [','] ')' @blend_src_attr
