@@ -97,8 +97,15 @@ jobs:
           version: ${{ env.PNPM_VERSION }}
           cache: false
 
-      - name: Upgrade pnpm
+      - name: Install pnpm (Windows)
+        if: runner.os == 'Windows'
+        run: npm install --global pnpm@$env:PNPM_VERSION
+        shell: pwsh
+
+      - name: Install pnpm (Unix)
+        if: runner.os != 'Windows'
         run: npm install --global pnpm@${PNPM_VERSION}
+        shell: bash
 
       - name: Install stable Rust toolchain
         uses: dtolnay/rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9
