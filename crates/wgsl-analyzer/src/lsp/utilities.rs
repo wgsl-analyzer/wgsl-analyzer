@@ -1,8 +1,15 @@
 //! Utilities for LSP-related boilerplate code.
-use std::{error::Error, ops::Range};
+use std::{error::Error, mem, ops::Range};
 
-use lsp_server::Notification;
-use lsp_types::request::Request as _;
+use lsp_server::{ErrorCode, Notification as ServerNotification, Response};
+use lsp_types::{
+    CompletionItem, CompletionItemTextEdit, MessageActionItem, MessageType,
+    Notification as LspNotification, ProgressNotification, ProgressParams, ProgressToken,
+    Request as _, ShowMessageNotification, ShowMessageParams, ShowMessageRequest,
+    ShowMessageRequestParams, TextDocumentContentChangeEvent, TextEdit, WorkDoneProgressBegin,
+    WorkDoneProgressCreateParams, WorkDoneProgressCreateRequest, WorkDoneProgressEnd,
+    WorkDoneProgressReport,
+};
 use triomphe::Arc;
 
 use crate::{
@@ -19,15 +26,13 @@ pub(crate) fn is_cancelled(error: &(dyn Error + 'static)) -> bool {
 #[expect(clippy::as_conversions, reason = "valid according to JSON RPC")]
 pub(crate) const fn invalid_params_error(message: String) -> LspError {
     LspError {
-        code: lsp_server::ErrorCode::InvalidParams as i32,
+        code: ErrorCode::InvalidParams as i32,
         message,
     }
 }
 
-pub(crate) fn notification_is<N: lsp_types::notification::Notification>(
-    notification: &Notification
-) -> bool {
-    notification.method == N::METHOD
+pub(crate) fn notification_is<N: LspNotification>(notification: &ServerNotification) -> bool {
+    notification.method.as_str() == N::METHOD.as_str()
 }
 
 #[derive(Debug, Eq, PartialEq)]
@@ -51,22 +56,21 @@ impl Progress {
 impl GlobalState {
     pub(crate) fn show_message(
         &mut self,
-        r#type: lsp_types::MessageType,
+        kind: MessageType,
         message: String,
         show_open_log_button: bool,
     ) {
         if self.config.open_server_logs() && show_open_log_button {
-            self.send_request::<lsp_types::request::ShowMessageRequest>(
-                lsp_types::ShowMessageRequestParams {
-                    typ: r#type,
+            self.send_request::<ShowMessageRequest>(
+                ShowMessageRequestParams {
+                    kind,
                     message,
-                    actions: Some(vec![lsp_types::MessageActionItem {
+                    actions: Some(vec![MessageActionItem {
                         title: "Open server logs".to_owned(),
-                        properties: <_>::default(),
                     }]),
                 },
                 |this, response| {
-                    let lsp_server::Response {
+                    let Response {
                         error: None,
                         result: Some(result),
                         ..
@@ -74,21 +78,16 @@ impl GlobalState {
                     else {
                         return;
                     };
-                    if let Ok(Some(_item)) = crate::from_json::<
-                        <lsp_types::request::ShowMessageRequest as lsp_types::request::Request>::Result
-                    >(
-                        lsp_types::request::ShowMessageRequest::METHOD, &result) {
-                        this.send_notification::<super::extensions::OpenServerLogs>(());
+                    if let Ok(Some(_item)) = crate::from_json::<Option<MessageActionItem>, _>(
+                        ShowMessageRequest::METHOD.as_str(),
+                        &result,
+                    ) {
+                        this.send_notification::<super::extensions::OpenServerLogsNotification>(());
                     }
                 },
             );
         } else {
-            self.send_notification::<lsp_types::notification::ShowMessage>(
-                lsp_types::ShowMessageParams {
-                    typ: r#type,
-                    message,
-                },
-            );
+            self.send_notification::<ShowMessageNotification>(ShowMessageParams { kind, message });
         }
     }
 
@@ -102,18 +101,16 @@ impl GlobalState {
         if let Some(additional_info) = additional_info {
             tracing::error!("{message}:\n{additional_info}");
             self.show_message(
-                lsp_types::MessageType::ERROR,
+                MessageType::Error,
                 message,
                 tracing::enabled!(tracing::Level::ERROR),
             );
         } else {
             tracing::error!("{message}");
-            self.send_notification::<lsp_types::notification::ShowMessage>(
-                lsp_types::ShowMessageParams {
-                    typ: lsp_types::MessageType::ERROR,
-                    message,
-                },
-            );
+            self.send_notification::<ShowMessageNotification>(ShowMessageParams {
+                kind: MessageType::Error,
+                message,
+            });
         }
     }
 
@@ -158,62 +155,80 @@ impl GlobalState {
             (fraction * 100.0) as u32
         });
         let cancellable = Some(cancel_token.is_some());
-        let token = lsp_types::ProgressToken::String(
-            cancel_token.unwrap_or_else(|| format!("wgslAnalyzer/{title}")),
-        );
+        let token =
+            ProgressToken::String(cancel_token.unwrap_or_else(|| format!("wgslAnalyzer/{title}")));
         tracing::debug!(?token, ?state, "report_progress {message:?}");
-        let work_done_progress = match state {
+        match state {
             Progress::Begin => {
-                self.send_request::<lsp_types::request::WorkDoneProgressCreate>(
-                    lsp_types::WorkDoneProgressCreateParams {
+                self.send_request::<WorkDoneProgressCreateRequest>(
+                    WorkDoneProgressCreateParams {
                         token: token.clone(),
                     },
                     |_, _| (),
                 );
 
-                lsp_types::WorkDoneProgress::Begin(lsp_types::WorkDoneProgressBegin {
-                    title: title.into(),
-                    cancellable,
-                    message,
-                    percentage,
-                })
+                self.send_notification::<ProgressNotification>(ProgressParams {
+                    token,
+                    value: serde_json::to_value(WorkDoneProgressBegin {
+                        title: title.into(),
+                        cancellable,
+                        message,
+                        percentage,
+                    })
+                    .unwrap(),
+                });
             },
             Progress::Report => {
-                lsp_types::WorkDoneProgress::Report(lsp_types::WorkDoneProgressReport {
-                    cancellable,
-                    message,
-                    percentage,
-                })
+                self.send_notification::<ProgressNotification>(ProgressParams {
+                    token,
+                    value: serde_json::to_value(WorkDoneProgressReport {
+                        cancellable,
+                        message,
+                        percentage,
+                    })
+                    .unwrap(),
+                });
             },
             Progress::End => {
-                lsp_types::WorkDoneProgress::End(lsp_types::WorkDoneProgressEnd { message })
+                self.send_notification::<ProgressNotification>(ProgressParams {
+                    token,
+                    value: serde_json::to_value(WorkDoneProgressEnd { message }).unwrap(),
+                });
             },
-        };
-        self.send_notification::<lsp_types::notification::Progress>(lsp_types::ProgressParams {
-            token,
-            value: lsp_types::ProgressParamsValue::WorkDone(work_done_progress),
-        });
+        }
     }
 }
 
 pub(crate) fn apply_document_changes(
     encoding: PositionEncoding,
     file_contents: &str,
-    mut content_changes: Vec<lsp_types::TextDocumentContentChangeEvent>,
+    mut content_changes: Vec<TextDocumentContentChangeEvent>,
 ) -> String {
     // If at least one of the changes is a full document change, use the last
     // of them as the starting point and ignore all previous changes.
-    let (mut text, content_changes) = match content_changes
-        .iter()
-        .rposition(|change| change.range.is_none())
-    {
-        Some(index) => {
-            let text = std::mem::take(&mut content_changes[index].text);
-            (text, &content_changes[index + 1..])
+    let (mut text, r_partial_changes);
+    match content_changes
+        .iter_mut()
+        .rev()
+        .try_fold(Vec::new(), |mut accumulator, change| match change {
+            TextDocumentContentChangeEvent::TextDocumentContentChangePartial(partial) => {
+                accumulator.push(partial);
+                Ok(accumulator)
+            },
+            TextDocumentContentChangeEvent::TextDocumentContentChangeWholeDocument(whole) => {
+                Err((whole, accumulator))
+            },
+        }) {
+        Err((whole_document, reversed_partial_changes)) => {
+            text = mem::take(&mut whole_document.text);
+            r_partial_changes = reversed_partial_changes;
         },
-        None => (file_contents.to_owned(), (&*content_changes)),
-    };
-    if content_changes.is_empty() {
+        Ok(partials) => {
+            text = file_contents.to_owned();
+            r_partial_changes = partials;
+        },
+    }
+    if r_partial_changes.is_empty() {
         return text;
     }
 
@@ -227,20 +242,17 @@ pub(crate) fn apply_document_changes(
 
     // The changes we got must be applied sequentially, but can cross lines so we
     // have to keep our line index updated.
-    // Some clients (for example, VS Code) sort the ranges in reverse.
-    // As an optimization, we remember the last valid line in the index and only rebuild it if needed.
+    // Some clients (e.g. Code) sort the ranges in reverse. As an optimization, we
+    // remember the last valid line in the index and only rebuild it if needed.
     // The VFS will normalize the end of lines to `\n`.
     let mut index_valid = !0_u32;
-    for change in content_changes {
-        // The None case can't happen as we have handled it above already
-        if let Some(range) = change.range {
-            if index_valid <= range.end.line {
-                *Arc::make_mut(&mut line_index.index) = ide::LineIndex::new(&text);
-            }
-            index_valid = range.start.line;
-            if let Ok(range) = from_proto::text_range(&line_index, range) {
-                text.replace_range(Range::<usize>::from(range), &change.text);
-            }
+    for change in r_partial_changes.iter().rev() {
+        if index_valid <= change.range.end.line {
+            *Arc::make_mut(&mut line_index.index) = ide::LineIndex::new(&text);
+        }
+        index_valid = change.range.start.line;
+        if let Ok(range) = from_proto::text_range(&line_index, change.range) {
+            text.replace_range(Range::<usize>::from(range), &change.text);
         }
     }
     text
@@ -249,15 +261,15 @@ pub(crate) fn apply_document_changes(
 /// Checks that the edits inside the completion and the additional edits do not overlap.
 /// LSP explicitly forbids the additional edits to overlap both with the main edit and themselves.
 pub(crate) fn all_edits_are_disjoint(
-    completion: &lsp_types::CompletionItem,
-    additional_edits: &[lsp_types::TextEdit],
+    completion: &CompletionItem,
+    additional_edits: &[TextEdit],
 ) -> bool {
     let mut edit_ranges = Vec::new();
     match completion.text_edit.as_ref() {
-        Some(lsp_types::CompletionTextEdit::Edit(edit)) => {
+        Some(CompletionItemTextEdit::TextEdit(edit)) => {
             edit_ranges.push(edit.range);
         },
-        Some(lsp_types::CompletionTextEdit::InsertAndReplace(edit)) => {
+        Some(CompletionItemTextEdit::InsertReplaceEdit(edit)) => {
             let replace = edit.replace;
             let insert = edit.insert;
             if replace.start != insert.start

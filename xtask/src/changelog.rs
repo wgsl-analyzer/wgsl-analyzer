@@ -1,5 +1,4 @@
-use std::thread;
-use std::time::Duration;
+use std::{thread, time::Duration};
 
 use anyhow::{Context as _, Result};
 use xshell::{Shell, cmd};

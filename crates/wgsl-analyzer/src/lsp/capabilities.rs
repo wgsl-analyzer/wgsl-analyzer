@@ -1,15 +1,16 @@
 use ide_completion::CompletionFieldsToResolve;
 use line_index::WideEncoding;
 use lsp_types::{
-    CodeActionKind, CodeActionOptions, CodeActionProviderCapability, CompletionOptions,
-    CompletionOptionsCompletionItem, DocumentOnTypeFormattingOptions, FileOperationFilter,
-    FileOperationPattern, FileOperationPatternKind, FileOperationRegistrationOptions,
-    FoldingRangeProviderCapability, HoverProviderCapability, InlayHintOptions,
-    InlayHintServerCapabilities, OneOf, PositionEncodingKind, SaveOptions,
-    SelectionRangeProviderCapability, ServerCapabilities, TextDocumentSyncCapability,
-    TextDocumentSyncKind, TextDocumentSyncOptions, WorkDoneProgressOptions,
-    WorkspaceFileOperationsServerCapabilities, WorkspaceFoldersServerCapabilities,
-    WorkspaceServerCapabilities,
+    ChangeNotifications, ClientCapabilities as LspClientCapabilities, CodeActionKind,
+    CodeActionOptions, CodeActionProvider, CompletionOptions, DefinitionProvider,
+    DiagnosticOptions, DiagnosticProvider, DocumentFormattingProvider,
+    DocumentOnTypeFormattingOptions, DocumentRangeFormattingProvider, FileOperationFilter,
+    FileOperationOptions, FileOperationPattern, FileOperationPatternKind,
+    FileOperationRegistrationOptions, FoldingRangeProvider, HoverProvider, InlayHintOptions,
+    InlayHintProvider, MarkupKind, PositionEncodingKind, ResourceOperationKind, Save, SaveOptions,
+    SelectionRangeProvider, ServerCapabilities, ServerCompletionItemOptions, SignatureHelpOptions,
+    TextDocumentSync, TextDocumentSyncKind, TextDocumentSyncOptions, WorkDoneProgressOptions,
+    WorkspaceFoldersServerCapabilities, WorkspaceOptions,
 };
 use rustc_hash::FxHashSet;
 
@@ -33,18 +34,20 @@ pub fn server_capabilities(config: &Config) -> ServerCapabilities {
                 _ => None,
             },
         },
-        text_document_sync: Some(TextDocumentSyncCapability::Options(
-            TextDocumentSyncOptions {
-                open_close: Some(true),
-                change: Some(TextDocumentSyncKind::INCREMENTAL),
-                will_save: None,
-                will_save_wait_until: None,
-                save: Some(SaveOptions::default().into()),
-            },
-        )),
-        hover_provider: Some(HoverProviderCapability::Simple(true)),
+        text_document_sync: Some(TextDocumentSync::Options(TextDocumentSyncOptions {
+            open_close: Some(true),
+            change: Some(TextDocumentSyncKind::Incremental),
+            will_save: None,
+            will_save_wait_until: None,
+            save: Some(Save::SaveOptions(SaveOptions { include_text: None })),
+        })),
+        hover_provider: Some(HoverProvider::Bool(true)),
         completion_provider: Some(CompletionOptions {
-            completion_item: None,
+            completion_item: Some(ServerCompletionItemOptions {
+                label_details_support: Some(
+                    config.capabilities().completion_label_details_support(),
+                ),
+            }),
             resolve_provider: None,
             trigger_characters: Some(vec![".".to_owned()]),
             all_commit_characters: None,
@@ -53,7 +56,7 @@ pub fn server_capabilities(config: &Config) -> ServerCapabilities {
             },
         }),
         declaration_provider: None, // TODO https://github.com/wgsl-analyzer/wgsl-analyzer/issues/339
-        definition_provider: Some(OneOf::Left(true)),
+        definition_provider: Some(DefinitionProvider::Bool(true)),
         type_definition_provider: None, // TODO https://github.com/wgsl-analyzer/wgsl-analyzer/issues/340
         implementation_provider: None,  // WGSL does not have "implementations"
         references_provider: None, // TODO https://github.com/wgsl-analyzer/wgsl-analyzer/issues/347
@@ -62,14 +65,14 @@ pub fn server_capabilities(config: &Config) -> ServerCapabilities {
         workspace_symbol_provider: None, // TODO https://github.com/wgsl-analyzer/wgsl-analyzer/issues/350
         code_action_provider: None, // TODO https://github.com/wgsl-analyzer/wgsl-analyzer/issues/351
         code_lens_provider: None, // TODO https://github.com/wgsl-analyzer/wgsl-analyzer/issues/352
-        document_formatting_provider: Some(OneOf::Left(true)),
+        document_formatting_provider: Some(DocumentFormattingProvider::Bool(true)),
         document_range_formatting_provider: match config.wgslfmt(None) {
             WgslfmtConfig::Wgslfmt {
                 enable_range_formatting: true,
                 ..
-            } => Some(OneOf::Left(true)),
+            } => Some(DocumentRangeFormattingProvider::Bool(true)),
             WgslfmtConfig::CustomCommand { .. } | WgslfmtConfig::Wgslfmt { .. } => {
-                Some(OneOf::Left(false))
+                Some(DocumentRangeFormattingProvider::Bool(false))
             },
         },
         document_on_type_formatting_provider: Some({
@@ -79,19 +82,19 @@ pub fn server_capabilities(config: &Config) -> ServerCapabilities {
                 more_trigger_character: Some(characters.map(ToString::to_string).collect()),
             }
         }),
-        selection_range_provider: Some(SelectionRangeProviderCapability::Simple(true)),
-        folding_range_provider: Some(FoldingRangeProviderCapability::Simple(true)),
+        selection_range_provider: Some(SelectionRangeProvider::Bool(true)),
+        folding_range_provider: Some(FoldingRangeProvider::Bool(true)),
         rename_provider: None, // TODO https://github.com/wgsl-analyzer/wgsl-analyzer/issues/346
         linked_editing_range_provider: None, // Not relevant
         document_link_provider: None, // Not relevant
         color_provider: None,  // Not relevant
         execute_command_provider: None, // Not relevant
-        workspace: Some(WorkspaceServerCapabilities {
+        workspace: Some(WorkspaceOptions {
             workspace_folders: Some(WorkspaceFoldersServerCapabilities {
                 supported: Some(true),
-                change_notifications: Some(OneOf::Left(true)),
+                change_notifications: Some(ChangeNotifications::Bool(true)),
             }),
-            file_operations: Some(WorkspaceFileOperationsServerCapabilities {
+            file_operations: Some(FileOperationOptions {
                 did_create: None,
                 will_create: None,
                 did_rename: None,
@@ -118,45 +121,46 @@ pub fn server_capabilities(config: &Config) -> ServerCapabilities {
                 did_delete: None,
                 will_delete: None,
             }),
+            text_document_content: None,
         }),
         call_hierarchy_provider: None, // TODO https://github.com/wgsl-analyzer/wgsl-analyzer/issues/343
         semantic_tokens_provider: None, // TODO https://github.com/wgsl-analyzer/wgsl-analyzer/issues/342
         moniker_provider: None,         // Not relevant
-        inlay_hint_provider: Some(OneOf::Right(InlayHintServerCapabilities::Options(
-            InlayHintOptions {
-                work_done_progress_options: WorkDoneProgressOptions::default(),
-                resolve_provider: Some(config.capabilities().inlay_hints_resolve_provider()),
+        inlay_hint_provider: Some(InlayHintProvider::InlayHintOptions(InlayHintOptions {
+            work_done_progress_options: WorkDoneProgressOptions {
+                work_done_progress: None,
             },
-        ))),
+            resolve_provider: Some(config.capabilities().inlay_hints_resolve_provider()),
+        })),
         inline_value_provider: None, // Not relevant
         experimental: None, // TODO https://github.com/wgsl-analyzer/wgsl-analyzer/issues/344
-        diagnostic_provider: Some(lsp_types::DiagnosticServerCapabilities::Options(
-            lsp_types::DiagnosticOptions {
-                identifier: Some("wgsl-analyzer".to_owned()),
-                inter_file_dependencies: true,
-                // FIXME
-                workspace_diagnostics: false,
-                work_done_progress_options: WorkDoneProgressOptions {
-                    work_done_progress: None,
-                },
+        diagnostic_provider: Some(DiagnosticProvider::DiagnosticOptions(DiagnosticOptions {
+            identifier: Some("wgsl-analyzer".to_owned()),
+            inter_file_dependencies: true,
+            // FIXME
+            workspace_diagnostics: false,
+            work_done_progress_options: WorkDoneProgressOptions {
+                work_done_progress: None,
             },
-        )),
+        })),
         inline_completion_provider: None, // Not relevant
-        signature_help_provider: Some(lsp_types::SignatureHelpOptions {
+        signature_help_provider: Some(SignatureHelpOptions {
             trigger_characters: Some(vec!["(".to_owned(), ",".to_owned()]),
             retrigger_characters: None,
             work_done_progress_options: WorkDoneProgressOptions {
                 work_done_progress: None,
             },
         }),
+        notebook_document_sync: None,
+        type_hierarchy_provider: None,
     }
 }
 
-#[derive(Debug, PartialEq, Clone, Default)]
-pub struct ClientCapabilities(lsp_types::ClientCapabilities);
+#[derive(Debug, PartialEq, Eq, Clone, Default)]
+pub struct ClientCapabilities(LspClientCapabilities);
 
 impl ClientCapabilities {
-    pub const fn new(capabilities: lsp_types::ClientCapabilities) -> Self {
+    pub const fn new(capabilities: LspClientCapabilities) -> Self {
         Self(capabilities)
     }
 
@@ -222,33 +226,34 @@ impl ClientCapabilities {
         })() == Some(true)
     }
 
-    fn completion_item(&self) -> CompletionOptionsCompletionItem {
-        CompletionOptionsCompletionItem {
-            label_details_support: Some(self.completion_label_details_support()),
-        }
-    }
-
-    fn code_action_capabilities(&self) -> CodeActionProviderCapability {
+    fn code_action_capabilities(&self) -> CodeActionProvider {
         self.0
             .text_document
             .as_ref()
-            .and_then(|capabilities| capabilities.code_action.as_ref())
-            .and_then(|capabilities| capabilities.code_action_literal_support.as_ref())
-            .map_or(CodeActionProviderCapability::Simple(true), |_| {
-                CodeActionProviderCapability::Options(CodeActionOptions {
+            .and_then(|text_document_capabilities| text_document_capabilities.code_action.as_ref())
+            .and_then(|code_action_capabilities| {
+                code_action_capabilities
+                    .code_action_literal_support
+                    .as_ref()
+            })
+            .map_or(CodeActionProvider::Bool(true), |_| {
+                CodeActionProvider::CodeActionOptions(CodeActionOptions {
                     // Advertise support for all built-in CodeActionKinds.
                     // Ideally we would base this off of the client capabilities
                     // but the client is supposed to fall back gracefully for unknown values.
                     code_action_kinds: Some(vec![
-                        CodeActionKind::EMPTY,
-                        CodeActionKind::QUICKFIX,
-                        CodeActionKind::REFACTOR,
-                        CodeActionKind::REFACTOR_EXTRACT,
-                        CodeActionKind::REFACTOR_INLINE,
-                        CodeActionKind::REFACTOR_REWRITE,
+                        CodeActionKind::Empty,
+                        CodeActionKind::QuickFix,
+                        CodeActionKind::Refactor,
+                        CodeActionKind::Refactor,
+                        CodeActionKind::Refactor,
+                        CodeActionKind::RefactorRewrite,
                     ]),
                     resolve_provider: Some(true),
-                    work_done_progress_options: WorkDoneProgressOptions::default(),
+                    work_done_progress_options: WorkDoneProgressOptions {
+                        work_done_progress: None,
+                    },
+                    documentation: None,
                 })
             })
     }
@@ -270,9 +275,7 @@ impl ClientCapabilities {
         PositionEncoding::Wide(WideEncoding::Utf16)
     }
 
-    pub fn workspace_edit_resource_operations(
-        &self
-    ) -> Option<&[lsp_types::ResourceOperationKind]> {
+    pub fn workspace_edit_resource_operations(&self) -> Option<&[ResourceOperationKind]> {
         self.0
             .workspace
             .as_ref()?
@@ -295,8 +298,8 @@ impl ClientCapabilities {
     }
 
     pub fn did_save_text_document_dynamic_registration(&self) -> bool {
-        let capabilities = (|| -> _ { self.0.text_document.as_ref()?.synchronization.clone() })()
-            .unwrap_or_default();
+        let capabilities =
+            (|| -> _ { self.0.text_document.as_ref()?.synchronization })().unwrap_or_default();
         capabilities.did_save == Some(true) && capabilities.dynamic_registration == Some(true)
     }
 
@@ -548,7 +551,7 @@ impl ClientCapabilities {
             self.0
                 .workspace
                 .as_ref()?
-                .diagnostic
+                .diagnostics
                 .as_ref()?
                 .refresh_support
         })()
@@ -598,7 +601,7 @@ impl ClientCapabilities {
             )
         })()
         .unwrap_or_default()
-        .contains(&lsp_types::MarkupKind::Markdown)
+        .contains(&MarkupKind::Markdown)
     }
 
     pub fn insert_replace_support(&self) -> bool {

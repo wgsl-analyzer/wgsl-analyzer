@@ -2,19 +2,32 @@ use std::ops::Not as _;
 
 use base_db::{FileRange, TextRange, TextSize};
 use ide::{
-    Cancellable, Fold, FoldKind, NavigationTarget,
+    Cancellable, Fold, FoldKind, InlayHintLabel, NavigationTarget,
     inlay_hints::{
-        InlayFieldsToResolve, InlayHint, InlayHintLabel, InlayHintLabelPart, InlayKind,
-        LazyProperty,
+        InlayFieldsToResolve, InlayHint as IdeInlayHint,
+        InlayHintLabelPart as IdeInlayHintLabelPart, InlayKind, LazyProperty,
     },
-    signature_help::SignatureHelp,
+    signature_help::SignatureHelp as IdeSignatureHelp,
 };
 use ide_completion::{
     CompletionFieldsToResolve,
-    item::{CompletionItem, CompletionItemKind, CompletionRelevance},
+    item::{
+        CompletionItem as IdeCompletionItem, CompletionItemKind as IdeCompletionItemKind,
+        CompletionRelevance,
+    },
 };
-use ide_db::text_edit::{InsertDelete, TextEdit};
+use ide_db::text_edit::{InsertDelete, TextEdit as IdeTextEdit};
 use itertools::Itertools as _;
+use lsp_types::{
+    ActiveParameter, CompletionItem as LspCompletionItem,
+    CompletionItemKind as LspCompletionItemKind, CompletionItemLabelDetails, CompletionItemTag,
+    CompletionItemTextEdit, Definition, DefinitionResponse, Documentation, FoldingRange,
+    FoldingRangeKind, InlayHint as LspInlayHint, InlayHintKind,
+    InlayHintLabelPart as LspInlayHintLabelPart, InsertReplaceEdit, InsertTextFormat, Label,
+    Location, LocationLink, MarkupContent, MarkupKind, ParameterInformation,
+    ParameterInformationLabel, Position, Range, SignatureHelp as LspSignatureHelp,
+    SignatureInformation, TextDocumentPositionParams, TextEdit as LspTextEdit, Tooltip, Uri,
+};
 use paths::{AbsPath, Utf8Component, Utf8Prefix};
 use rustc_hash::FxHasher;
 use semver::VersionReq; // spellchecker:disable-line
@@ -33,11 +46,11 @@ pub(crate) fn folding_range(
     line_index: &LineIndex,
     line_folding_only: bool,
     fold: &Fold,
-) -> lsp_types::FoldingRange {
+) -> FoldingRange {
     let kind = match fold.kind {
-        FoldKind::Comment => Some(lsp_types::FoldingRangeKind::Comment),
-        FoldKind::Imports => Some(lsp_types::FoldingRangeKind::Imports),
-        FoldKind::Region => Some(lsp_types::FoldingRangeKind::Region),
+        FoldKind::Comment => Some(FoldingRangeKind::Comment),
+        FoldKind::Imports => Some(FoldingRangeKind::Imports),
+        FoldKind::Region => Some(FoldingRangeKind::Region),
         FoldKind::Block
         | FoldKind::ArgList
         | FoldKind::Constants
@@ -66,7 +79,7 @@ pub(crate) fn folding_range(
             range.end.line
         };
 
-        lsp_types::FoldingRange {
+        FoldingRange {
             start_line: range.start.line,
             start_character: None,
             end_line,
@@ -75,7 +88,7 @@ pub(crate) fn folding_range(
             collapsed_text: None,
         }
     } else {
-        lsp_types::FoldingRange {
+        FoldingRange {
             start_line: range.start.line,
             start_character: Some(range.start.character),
             end_line: range.end.line,
@@ -86,12 +99,12 @@ pub(crate) fn folding_range(
     }
 }
 
-/// Returns a `Url` object from a given path, will lowercase drive letters if present.
+/// Returns a [`Uri`] object from a given path, will lowercase drive letters if present.
 /// This will only happen when processing windows paths.
 ///
-/// When processing non-windows path, this is essentially the same as `Url::from_file_path`.
-pub(crate) fn url_from_abs_path(path: &AbsPath) -> lsp_types::Url {
-    let url = lsp_types::Url::from_file_path(path).unwrap();
+/// When processing non-windows path, this is essentially the same as [`Uri::from_file_path`].
+pub(crate) fn url_from_abs_path(path: &AbsPath) -> lsp_types::Uri {
+    let url = lsp_types::Uri::from_file_path(path).unwrap();
     match path.components().next() {
         Some(Utf8Component::Prefix(prefix))
             if matches!(
@@ -118,28 +131,28 @@ pub(crate) fn url_from_abs_path(path: &AbsPath) -> lsp_types::Url {
     // string in place.
     let mut url: String = url.into();
     url[driver_letter_range].make_ascii_lowercase();
-    lsp_types::Url::parse(&url).unwrap()
+    lsp_types::Uri::parse(&url).unwrap()
 }
 
 pub(crate) fn range(
     line_index: &LineIndex,
     range: TextRange,
-) -> lsp_types::Range {
+) -> Range {
     let start = position(line_index, range.start());
     let end = position(line_index, range.end());
-    lsp_types::Range::new(start, end)
+    Range::new(start, end)
 }
 
 pub(crate) fn position(
     line_index: &LineIndex,
     offset: TextSize,
-) -> lsp_types::Position {
+) -> Position {
     let line_column = line_index.index.line_col(offset);
     match line_index.encoding {
-        PositionEncoding::Utf8 => lsp_types::Position::new(line_column.line, line_column.col),
+        PositionEncoding::Utf8 => Position::new(line_column.line, line_column.col),
         PositionEncoding::Wide(encoding) => {
             let line_col = line_index.index.to_wide(encoding, line_column).unwrap();
-            lsp_types::Position::new(line_col.line, line_col.col)
+            Position::new(line_col.line, line_col.col)
         },
     }
 }
@@ -147,18 +160,18 @@ pub(crate) fn position(
 pub(crate) fn url(
     snap: &GlobalStateSnapshot,
     file_id: FileId,
-) -> lsp_types::Url {
+) -> Uri {
     snap.file_id_to_url(file_id)
 }
 
 pub(crate) fn location(
     snap: &GlobalStateSnapshot,
     frange: FileRange,
-) -> Cancellable<lsp_types::Location> {
+) -> Cancellable<Location> {
     let url = url(snap, frange.file_id);
     let line_index = snap.file_line_index(frange.file_id)?;
     let range = range(&line_index, frange.range);
-    let location = lsp_types::Location::new(url, range);
+    let location = Location::new(url, range);
     Ok(location)
 }
 
@@ -167,10 +180,10 @@ pub(crate) fn completion_items(
     fields_to_resolve: CompletionFieldsToResolve,
     line_index: &LineIndex,
     version: Option<i32>,
-    tdpp: &lsp_types::TextDocumentPositionParams,
+    tdpp: &TextDocumentPositionParams,
     completion_trigger_character: Option<char>,
-    mut items: Vec<CompletionItem>,
-) -> Vec<lsp_types::CompletionItem> {
+    mut items: Vec<IdeCompletionItem>,
+) -> Vec<LspCompletionItem> {
     if config.completion_hide_deprecated() {
         items.retain(|item| !item.deprecated);
     }
@@ -205,15 +218,15 @@ pub(crate) fn completion_items(
 
 #[expect(clippy::too_many_arguments, reason = "TODO")]
 fn completion_item(
-    accumulator: &mut Vec<lsp_types::CompletionItem>,
+    accumulator: &mut Vec<LspCompletionItem>,
     config: &Config,
     fields_to_resolve: CompletionFieldsToResolve,
     line_index: &LineIndex,
     version: Option<i32>,
-    tdpp: &lsp_types::TextDocumentPositionParams,
+    tdpp: &TextDocumentPositionParams,
     max_relevance: u32,
     completion_trigger_character: Option<char>,
-    item: &CompletionItem,
+    item: &IdeCompletionItem,
 ) {
     let insert_replace_support = config.insert_replace_support().then_some(tdpp.position);
     // let ref_match = item.ref_match();
@@ -259,15 +272,12 @@ fn completion_item(
         Some(text_edit.unwrap())
     };
 
-    let insert_text_format = item
-        .is_snippet
-        .then_some(lsp_types::InsertTextFormat::SNIPPET);
+    let insert_text_format = item.is_snippet.then_some(InsertTextFormat::Snippet);
     let tags = if fields_to_resolve.resolve_tags {
         something_to_resolve |= item.deprecated;
         None
     } else {
-        item.deprecated
-            .then(|| vec![lsp_types::CompletionItemTag::DEPRECATED])
+        item.deprecated.then(|| vec![CompletionItemTag::Deprecated])
     };
     // let command = if item.trigger_call_info && config.client_commands().trigger_parameter_hints {
     //     if fields_to_resolve.resolve_command {
@@ -294,7 +304,7 @@ fn completion_item(
     //     item.documentation.clone().map(documentation)
     // };
 
-    let mut lsp_item = lsp_types::CompletionItem {
+    let mut lsp_item = LspCompletionItem {
         label: item.label.primary.to_string(),
         detail,
         filter_text,
@@ -305,6 +315,7 @@ fn completion_item(
             .not()
             .then_some(additional_text_edits),
         // documentation,
+        #[expect(deprecated, reason = "we do give tags")]
         deprecated: item.deprecated.then_some(item.deprecated),
         tags,
         // command,
@@ -318,7 +329,7 @@ fn completion_item(
         if fields_to_resolve.resolve_label_details {
             something_to_resolve |= has_label_details;
         } else if has_label_details {
-            lsp_item.label_details = Some(lsp_types::CompletionItemLabelDetails {
+            lsp_item.label_details = Some(CompletionItemLabelDetails {
                 detail: item.label.detail_left.clone(),
                 description: item.label.detail_right.clone(),
             });
@@ -370,7 +381,7 @@ fn completion_item(
     // };
 
     // if let Some((label, indel, relevance)) = ref_match {
-    //     let mut lsp_item_with_ref = lsp_types::CompletionItem {
+    //     let mut lsp_item_with_ref = CompletionItem {
     //         label,
     //         data: ref_resolve_data,
     //         ..lsp_item.clone()
@@ -387,7 +398,7 @@ fn completion_item(
     accumulator.push(lsp_item);
 
     fn set_score(
-        result: &mut lsp_types::CompletionItem,
+        result: &mut LspCompletionItem,
         max_relevance: u32,
         relevance: CompletionRelevance,
     ) {
@@ -406,18 +417,18 @@ fn completion_item(
 }
 
 pub(crate) const fn completion_item_kind(
-    completion_item_kind: CompletionItemKind
-) -> lsp_types::CompletionItemKind {
+    completion_item_kind: IdeCompletionItemKind
+) -> LspCompletionItemKind {
     match completion_item_kind {
-        CompletionItemKind::Field => lsp_types::CompletionItemKind::FIELD,
-        CompletionItemKind::Function => lsp_types::CompletionItemKind::FUNCTION,
-        CompletionItemKind::Variable => lsp_types::CompletionItemKind::VARIABLE,
-        CompletionItemKind::Keyword => lsp_types::CompletionItemKind::KEYWORD,
-        CompletionItemKind::Snippet => lsp_types::CompletionItemKind::SNIPPET,
-        CompletionItemKind::Constant => lsp_types::CompletionItemKind::CONSTANT,
-        CompletionItemKind::Module => lsp_types::CompletionItemKind::MODULE,
-        CompletionItemKind::TypeAlias | CompletionItemKind::Struct => {
-            lsp_types::CompletionItemKind::STRUCT
+        IdeCompletionItemKind::Field => LspCompletionItemKind::Field,
+        IdeCompletionItemKind::Function => LspCompletionItemKind::Function,
+        IdeCompletionItemKind::Variable => LspCompletionItemKind::Variable,
+        IdeCompletionItemKind::Keyword => LspCompletionItemKind::Keyword,
+        IdeCompletionItemKind::Snippet => LspCompletionItemKind::Snippet,
+        IdeCompletionItemKind::Constant => LspCompletionItemKind::Constant,
+        IdeCompletionItemKind::Module => LspCompletionItemKind::Module,
+        IdeCompletionItemKind::TypeAlias | IdeCompletionItemKind::Struct => {
+            LspCompletionItemKind::Struct
         },
     }
 }
@@ -425,19 +436,19 @@ pub(crate) const fn completion_item_kind(
 pub(crate) fn text_edit(
     line_index: &LineIndex,
     indel: InsertDelete,
-) -> lsp_types::TextEdit {
+) -> LspTextEdit {
     let range = range(line_index, indel.delete);
     let new_text = match line_index.endings {
         LineEndings::Unix => indel.insert,
         LineEndings::Dos => indel.insert.replace('\n', "\r\n"),
     };
-    lsp_types::TextEdit { range, new_text }
+    LspTextEdit { range, new_text }
 }
 
 pub(crate) fn text_edit_vec(
     line_index: &LineIndex,
-    text_edit: TextEdit,
-) -> Vec<lsp_types::TextEdit> {
+    text_edit: IdeTextEdit,
+) -> Vec<LspTextEdit> {
     text_edit
         .into_iter()
         .map(|indel| self::text_edit(line_index, indel))
@@ -446,14 +457,14 @@ pub(crate) fn text_edit_vec(
 
 pub(crate) fn completion_text_edit(
     line_index: &LineIndex,
-    insert_replace_support: Option<lsp_types::Position>,
+    insert_replace_support: Option<Position>,
     indel: InsertDelete,
-) -> lsp_types::CompletionTextEdit {
+) -> CompletionItemTextEdit {
     let text_edit = text_edit(line_index, indel);
     match insert_replace_support {
-        Some(cursor_pos) => lsp_types::InsertReplaceEdit {
+        Some(cursor_pos) => InsertReplaceEdit {
             new_text: text_edit.new_text,
-            insert: lsp_types::Range {
+            insert: Range {
                 start: text_edit.range.start,
                 end: cursor_pos,
             },
@@ -469,9 +480,9 @@ pub(crate) fn inlay_hint(
     fields_to_resolve: InlayFieldsToResolve,
     line_index: &LineIndex,
     file_id: FileId,
-    mut inlay_hint: InlayHint,
-) -> Cancellable<lsp_types::InlayHint> {
-    let hint_needs_resolve = |hint: &InlayHint| -> Option<TextRange> {
+    mut inlay_hint: IdeInlayHint,
+) -> Cancellable<LspInlayHint> {
+    let hint_needs_resolve = |hint: &IdeInlayHint| -> Option<TextRange> {
         hint.resolve_parent.filter(|_| {
             hint.text_edit.as_ref().is_some_and(LazyProperty::is_lazy)
                 || hint.label.parts.iter().any(|part| {
@@ -527,7 +538,7 @@ pub(crate) fn inlay_hint(
         _ => None,
     };
 
-    Ok(lsp_types::InlayHint {
+    Ok(LspInlayHint {
         position: match inlay_hint.position {
             ide::InlayHintPosition::Before => position(line_index, inlay_hint.range.start()),
             ide::InlayHintPosition::After => position(line_index, inlay_hint.range.end()),
@@ -535,8 +546,8 @@ pub(crate) fn inlay_hint(
         padding_left: Some(inlay_hint.pad_left),
         padding_right: Some(inlay_hint.pad_right),
         kind: match inlay_hint.kind {
-            InlayKind::Parameter => Some(lsp_types::InlayHintKind::PARAMETER),
-            InlayKind::Type => Some(lsp_types::InlayHintKind::TYPE),
+            InlayKind::Parameter => Some(InlayHintKind::Parameter),
+            InlayKind::Type => Some(InlayHintKind::Type),
             InlayKind::StructLayout => None,
         },
         text_edits,
@@ -552,18 +563,15 @@ fn inlay_hint_label(
     something_to_resolve: &mut bool,
     needs_resolve: bool,
     mut label: InlayHintLabel,
-) -> Cancellable<(
-    lsp_types::InlayHintLabel,
-    Option<lsp_types::InlayHintTooltip>,
-)> {
+) -> Cancellable<(Label, Option<Tooltip>)> {
     let (label, tooltip) = if let [
-        InlayHintLabelPart {
+        IdeInlayHintLabelPart {
             linked_location: None,
             ..
         },
     ] = &*label.parts
     {
-        let InlayHintLabelPart { text, tooltip, .. } = label.parts.pop().unwrap();
+        let IdeInlayHintLabelPart { text, tooltip, .. } = label.parts.pop().unwrap();
         let tooltip = tooltip.and_then(|inlay_tooltip| match inlay_tooltip {
             LazyProperty::Computed(inlay_tooltip) => Some(inlay_tooltip),
             LazyProperty::Lazy => {
@@ -572,18 +580,16 @@ fn inlay_hint_label(
             },
         });
         let hint_tooltip = match tooltip {
-            Some(ide::InlayTooltip::String(string)) => {
-                Some(lsp_types::InlayHintTooltip::String(string))
-            },
-            Some(ide::InlayTooltip::Markdown(string)) => Some(
-                lsp_types::InlayHintTooltip::MarkupContent(lsp_types::MarkupContent {
-                    kind: lsp_types::MarkupKind::Markdown,
+            Some(ide::InlayTooltip::String(string)) => Some(Tooltip::String(string)),
+            Some(ide::InlayTooltip::Markdown(string)) => {
+                Some(Tooltip::MarkupContent(MarkupContent {
+                    kind: MarkupKind::Markdown,
                     value: string,
-                }),
-            ),
+                }))
+            },
             None => None,
         };
-        (lsp_types::InlayHintLabel::String(text), hint_tooltip)
+        (Label::String(text), hint_tooltip)
     } else {
         let parts = label
             .parts
@@ -597,16 +603,12 @@ fn inlay_hint_label(
                     },
                 });
                 let tooltip = match tooltip {
-                    Some(ide::InlayTooltip::String(string)) => {
-                        Some(lsp_types::InlayHintLabelPartTooltip::String(string))
-                    },
+                    Some(ide::InlayTooltip::String(string)) => Some(Tooltip::String(string)),
                     Some(ide::InlayTooltip::Markdown(source)) => {
-                        Some(lsp_types::InlayHintLabelPartTooltip::MarkupContent(
-                            lsp_types::MarkupContent {
-                                kind: lsp_types::MarkupKind::Markdown,
-                                value: source,
-                            },
-                        ))
+                        Some(Tooltip::MarkupContent(MarkupContent {
+                            kind: MarkupKind::Markdown,
+                            value: source,
+                        }))
                     },
                     None => None,
                 };
@@ -621,7 +623,7 @@ fn inlay_hint_label(
                     })
                     .map(|range| location(snap, range))
                     .transpose()?;
-                Ok(lsp_types::InlayHintLabelPart {
+                Ok(LspInlayHintLabelPart {
                     value: part.text,
                     tooltip,
                     location,
@@ -629,7 +631,7 @@ fn inlay_hint_label(
                 })
             })
             .collect::<Cancellable<_>>()?;
-        (lsp_types::InlayHintLabel::LabelParts(parts), None)
+        (Label::InlayHintLabelPartList(parts), None)
     };
     Ok((label, tooltip))
 }
@@ -638,7 +640,7 @@ pub(crate) fn location_link(
     snap: &GlobalStateSnapshot,
     source: Option<FileRange>,
     target: &NavigationTarget,
-) -> Cancellable<lsp_types::LocationLink> {
+) -> Cancellable<LocationLink> {
     let origin_selection_range = match source {
         Some(source) => {
             let line_index = snap.file_line_index(source.file_id)?;
@@ -648,7 +650,7 @@ pub(crate) fn location_link(
         None => None,
     };
     let (target_uri, target_range, target_selection_range) = location_info(snap, target)?;
-    let result = lsp_types::LocationLink {
+    let result = LocationLink {
         origin_selection_range,
         target_uri,
         target_range,
@@ -660,7 +662,7 @@ pub(crate) fn location_link(
 fn location_info(
     snap: &GlobalStateSnapshot,
     target: &NavigationTarget,
-) -> Cancellable<(lsp_types::Url, lsp_types::Range, lsp_types::Range)> {
+) -> Cancellable<(Uri, Range, Range)> {
     let line_index = snap.file_line_index(target.file_id)?;
 
     let target_uri = url(snap, target.file_id);
@@ -675,7 +677,7 @@ pub(crate) fn goto_definition_response(
     snap: &GlobalStateSnapshot,
     source: Option<FileRange>,
     targets: Vec<NavigationTarget>,
-) -> Cancellable<lsp_types::GotoDefinitionResponse> {
+) -> Cancellable<DefinitionResponse> {
     if snap.config.location_link() {
         let links = targets
             .into_iter()
@@ -699,16 +701,18 @@ pub(crate) fn goto_definition_response(
             .unique()
             .map(|range| location(snap, range))
             .collect::<Cancellable<Vec<_>>>()?;
-        Ok(locations.into())
+        Ok(DefinitionResponse::Definition(Definition::LocationList(
+            locations,
+        )))
     }
 }
 
 pub(crate) fn signature_help(
-    help: SignatureHelp,
+    help: IdeSignatureHelp,
     // config: CallInfoConfig,
     label_offsets: bool,
     active: Option<u32>,
-) -> lsp_types::SignatureHelp {
+) -> LspSignatureHelp {
     let signatures = help
         .signatures
         .into_iter()
@@ -740,29 +744,29 @@ pub(crate) fn signature_help(
                         )]
                         let offset = offset as u32;
                         let end = start + offset;
-                        [start, end]
+                        (start, end)
                     })
-                    .map(|label_offsets| lsp_types::ParameterInformation {
-                        label: lsp_types::ParameterLabel::LabelOffsets(label_offsets),
+                    .map(|label_offsets| ParameterInformation {
+                        label: ParameterInformationLabel::Tuple(label_offsets),
                         documentation: None,
                     })
                     .collect::<Vec<_>>()
             } else {
                 call_info
                     .parameter_labels()
-                    .map(|label| lsp_types::ParameterInformation {
-                        label: lsp_types::ParameterLabel::Simple(label.to_owned()),
+                    .map(|label| ParameterInformation {
+                        label: ParameterInformationLabel::String(label.to_owned()),
                         documentation: None,
                     })
                     .collect::<Vec<_>>()
             };
             let signature_doc = call_info.documentation.map(|doc| {
-                lsp_types::Documentation::MarkupContent(lsp_types::MarkupContent {
-                    kind: lsp_types::MarkupKind::Markdown,
+                Documentation::MarkupContent(MarkupContent {
+                    kind: MarkupKind::Markdown,
                     value: doc,
                 })
             });
-            lsp_types::SignatureInformation {
+            SignatureInformation {
                 label: call_info.signature,
                 documentation: signature_doc,
                 parameters: Some(parameters),
@@ -770,19 +774,20 @@ pub(crate) fn signature_help(
             }
         })
         .collect();
-    lsp_types::SignatureHelp {
+    LspSignatureHelp {
         signatures,
         active_signature: active,
-        active_parameter: help.active_parameter, // should this be limited by `signatures[active].parameters.len()`?
+        active_parameter: help.active_parameter.map(ActiveParameter::Int), // should this be limited by `signatures[active].parameters.len()`?
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use ParameterInformation;
+    use ParameterInformationLabel;
     use base_db::FilePosition;
     use expect_test::{Expect, expect};
     use ide::Analysis;
-    use lsp_types::{ParameterInformation, ParameterLabel};
     use test_utils::extract_offset;
     use triomphe::Arc;
 
@@ -818,44 +823,44 @@ fn bar() -> f32 { 0.0f }
         #[expect(clippy::as_conversions, reason = "usize >= u32")]
         assert_eq!(
             help,
-            lsp_types::SignatureHelp {
+            LspSignatureHelp {
                 signatures: vec![
-                    lsp_types::SignatureInformation {
+                    SignatureInformation {
                         label: "fn bar(x: u32, y: bool, z: bool) -> f32".to_owned(),
                         documentation: None,
                         parameters: Some(vec![
                             ParameterInformation {
-                                label: ParameterLabel::Simple("x: u32".to_owned()),
+                                label: ParameterInformationLabel::String("x: u32".to_owned()),
                                 documentation: None,
                             },
                             ParameterInformation {
-                                label: ParameterLabel::Simple("y: bool".to_owned()),
+                                label: ParameterInformationLabel::String("y: bool".to_owned()),
                                 documentation: None,
                             },
                             ParameterInformation {
-                                label: ParameterLabel::Simple("z: bool".to_owned()),
+                                label: ParameterInformationLabel::String("z: bool".to_owned()),
                                 documentation: None,
                             }
                         ]),
                         active_parameter: None,
                     },
-                    lsp_types::SignatureInformation {
+                    SignatureInformation {
                         label: "fn bar(x: u32, y: bool) -> f32".to_owned(),
                         documentation: None,
                         parameters: Some(vec![
                             ParameterInformation {
-                                label: ParameterLabel::Simple("x: u32".to_owned()),
+                                label: ParameterInformationLabel::String("x: u32".to_owned()),
                                 documentation: None,
                             },
                             ParameterInformation {
-                                label: ParameterLabel::Simple("y: bool".to_owned()),
+                                label: ParameterInformationLabel::String("y: bool".to_owned()),
                                 documentation: None,
                             },
                         ]),
                         active_parameter: None,
                     }
                 ],
-                active_parameter: Some(1),
+                active_parameter: Some(ActiveParameter::Int(1)),
                 active_signature: None,
             }
         );
@@ -893,11 +898,11 @@ fn bar(x: u32, y: bool) -> f32 { 0.0f }
             found.parameters,
             Some(vec![
                 ParameterInformation {
-                    label: ParameterLabel::LabelOffsets([7, 13]),
+                    label: ParameterInformationLabel::Tuple((7, 13)),
                     documentation: None
                 },
                 ParameterInformation {
-                    label: ParameterLabel::LabelOffsets([15, 22]),
+                    label: ParameterInformationLabel::Tuple((15, 22)),
                     documentation: None
                 }
             ])

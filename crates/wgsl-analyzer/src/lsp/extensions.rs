@@ -10,24 +10,29 @@
 
 #![expect(clippy::disallowed_types, reason = "serde compatibility")]
 
-use std::ops;
+use std::{borrow::Cow, ops};
 
 use camino::Utf8PathBuf;
 use lsp_types::{
-    CodeActionKind, DocumentOnTypeFormattingParams, PartialResultParams, Position, Range,
-    TextDocumentIdentifier, TextDocumentPositionParams, Url, WorkDoneProgressParams,
-    notification::Notification, request::Request,
+    ChangeAnnotation, ChangeAnnotationIdentifier, CodeActionKind, CodeActionParams, Command,
+    DefinitionResponse, DocumentOnTypeFormattingParams, Hover, HoverRequest as LspHoverRequest,
+    ImplementationParams, InsertTextFormat, LocationLink, LspNotificationMethod, LspRequestMethod,
+    MessageDirection, Notification, OptionalVersionedTextDocumentIdentifier, PartialResultParams,
+    Position, Range, Request, ResourceOperation, TextDocumentIdentifier,
+    TextDocumentPositionParams, TextEdit, Uri, WorkDoneProgressParams, WorkspaceEdit,
+    WorkspaceSymbolResponse,
 };
 use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
 
-pub enum FullSource {}
+pub enum FullSourceRequest {}
 
-impl Request for FullSource {
+impl Request for FullSourceRequest {
     type Params = FullSourceParameters;
     type Result = String;
 
-    const METHOD: &'static str = "wgsl-analyzer/fullSource";
+    const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
+    const METHOD: LspRequestMethod = LspRequestMethod::new("wgsl-analyzer/fullSource");
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -36,13 +41,14 @@ pub struct FullSourceParameters {
     pub text_document: TextDocumentIdentifier,
 }
 
-pub enum AnalyzerStatus {}
+pub enum AnalyzerStatusRequest {}
 
-impl Request for AnalyzerStatus {
+impl Request for AnalyzerStatusRequest {
     type Params = AnalyzerStatusParameters;
     type Result = String;
 
-    const METHOD: &'static str = "wgsl-analyzer/analyzerStatus";
+    const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
+    const METHOD: LspRequestMethod = LspRequestMethod::new("wgsl-analyzer/analyzerStatus");
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -56,15 +62,17 @@ pub struct AnalyzerStatusParameters {
 pub struct PackageInfoResult {
     pub name: Option<String>,
     pub version: Option<String>,
-    pub path: Url,
+    pub path: Uri,
 }
-pub enum FetchDependencyList {}
 
-impl Request for FetchDependencyList {
+pub enum FetchDependencyListRequest {}
+
+impl Request for FetchDependencyListRequest {
     type Params = FetchDependencyListParameters;
     type Result = FetchDependencyListResult;
 
-    const METHOD: &'static str = "wgsl-analyzer/fetchDependencyList";
+    const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
+    const METHOD: LspRequestMethod = LspRequestMethod::new("wgsl-analyzer/fetchDependencyList");
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -77,31 +85,34 @@ pub struct FetchDependencyListResult {
     pub packages: Vec<PackageInfoResult>,
 }
 
-pub enum MemoryUsage {}
+pub enum MemoryUsageRequest {}
 
-impl Request for MemoryUsage {
+impl Request for MemoryUsageRequest {
     type Params = ();
     type Result = String;
 
-    const METHOD: &'static str = "wgsl-analyzer/memoryUsage";
+    const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
+    const METHOD: LspRequestMethod = LspRequestMethod::new("wgsl-analyzer/memoryUsage");
 }
 
-pub enum ReloadWorkspace {}
+pub enum ReloadWorkspaceRequest {}
 
-impl Request for ReloadWorkspace {
+impl Request for ReloadWorkspaceRequest {
     type Params = ();
     type Result = ();
 
-    const METHOD: &'static str = "wgsl-analyzer/reloadWorkspace";
+    const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
+    const METHOD: LspRequestMethod = LspRequestMethod::new("wgsl-analyzer/reloadWorkspace");
 }
 
-pub enum ViewSyntaxTree {}
+pub enum ViewSyntaxTreeRequest {}
 
-impl Request for ViewSyntaxTree {
+impl Request for ViewSyntaxTreeRequest {
     type Params = ViewSyntaxTreeParameters;
     type Result = String;
 
-    const METHOD: &'static str = "wgsl-analyzer/viewSyntaxTree";
+    const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
+    const METHOD: LspRequestMethod = LspRequestMethod::new("wgsl-analyzer/viewSyntaxTree");
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -110,40 +121,44 @@ pub struct ViewSyntaxTreeParameters {
     pub text_document: TextDocumentIdentifier,
 }
 
-pub enum ViewWgsl {}
+pub enum ViewWgslRequest {}
 
-impl Request for ViewWgsl {
-    type Params = lsp_types::TextDocumentPositionParams;
+impl Request for ViewWgslRequest {
+    type Params = TextDocumentPositionParams;
     type Result = String;
 
-    const METHOD: &'static str = "wgsl-analyzer/viewWgsl";
+    const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
+    const METHOD: LspRequestMethod = LspRequestMethod::new("wgsl-analyzer/viewWgsl");
 }
 
-pub enum ViewSpirv {}
+pub enum ViewSpirvRequest {}
 
-impl Request for ViewSpirv {
-    type Params = lsp_types::TextDocumentPositionParams;
+impl Request for ViewSpirvRequest {
+    type Params = TextDocumentPositionParams;
     type Result = String;
 
-    const METHOD: &'static str = "wgsl-analyzer/viewSpirv";
+    const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
+    const METHOD: LspRequestMethod = LspRequestMethod::new("wgsl-analyzer/viewSpirv");
 }
 
-pub enum InterpretFunction {}
+pub enum InterpretFunctionRequest {}
 
-impl Request for InterpretFunction {
-    type Params = lsp_types::TextDocumentPositionParams;
+impl Request for InterpretFunctionRequest {
+    type Params = TextDocumentPositionParams;
     type Result = String;
 
-    const METHOD: &'static str = "wgsl-analyzer/interpretFunction";
+    const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
+    const METHOD: LspRequestMethod = LspRequestMethod::new("wgsl-analyzer/interpretFunction");
 }
 
-pub enum ViewFileText {}
+pub enum ViewFileTextRequest {}
 
-impl Request for ViewFileText {
-    type Params = lsp_types::TextDocumentIdentifier;
+impl Request for ViewFileTextRequest {
+    type Params = TextDocumentIdentifier;
     type Result = String;
 
-    const METHOD: &'static str = "wgsl-analyzer/viewFileText";
+    const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
+    const METHOD: LspRequestMethod = LspRequestMethod::new("wgsl-analyzer/viewFileText");
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -153,12 +168,14 @@ pub struct ViewPackageGraphParameters {
     pub full: bool,
 }
 
-pub enum ViewPackageGraph {}
+pub enum ViewPackageGraphRequest {}
 
-impl Request for ViewPackageGraph {
+impl Request for ViewPackageGraphRequest {
     type Params = ViewPackageGraphParameters;
     type Result = String;
-    const METHOD: &'static str = "wgsl-analyzer/viewPackageGraph";
+
+    const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
+    const METHOD: LspRequestMethod = LspRequestMethod::new("wgsl-analyzer/viewPackageGraph");
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -167,13 +184,14 @@ pub struct ViewItemTreeParameters {
     pub text_document: TextDocumentIdentifier,
 }
 
-pub enum ViewItemTree {}
+pub enum ViewItemTreeRequest {}
 
-impl Request for ViewItemTree {
+impl Request for ViewItemTreeRequest {
     type Params = ViewItemTreeParameters;
     type Result = String;
 
-    const METHOD: &'static str = "wgsl-analyzer/viewItemTree";
+    const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
+    const METHOD: LspRequestMethod = LspRequestMethod::new("wgsl-analyzer/viewItemTree");
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -211,21 +229,24 @@ pub struct DiscoverTestResults {
     pub scope_file: Option<Vec<TextDocumentIdentifier>>,
 }
 
-pub enum DiscoverTest {}
+pub enum DiscoverTestRequest {}
 
-impl Request for DiscoverTest {
+impl Request for DiscoverTestRequest {
     type Params = DiscoverTestParameters;
     type Result = DiscoverTestResults;
 
-    const METHOD: &'static str = "experimental/discoverTest";
+    const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
+    const METHOD: LspRequestMethod = LspRequestMethod::new("experimental/discoverTest");
 }
 
-pub enum DiscoveredTests {}
+pub enum DiscoveredTestsNotification {}
 
-impl Notification for DiscoveredTests {
+impl Notification for DiscoveredTestsNotification {
     type Params = DiscoverTestResults;
 
-    const METHOD: &'static str = "experimental/discoveredTests";
+    const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
+    const METHOD: LspNotificationMethod =
+        LspNotificationMethod::new("experimental/discoveredTests");
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -235,37 +256,42 @@ pub struct RunTestParameters {
     pub exclude: Option<Vec<String>>,
 }
 
-pub enum RunTest {}
+pub enum RunTestRequest {}
 
-impl Request for RunTest {
+impl Request for RunTestRequest {
     type Params = RunTestParameters;
     type Result = ();
 
-    const METHOD: &'static str = "experimental/runTest";
+    const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
+    const METHOD: LspRequestMethod = LspRequestMethod::new("experimental/runTest");
 }
 
-pub enum EndRunTest {}
+pub enum EndRunTestNotification {}
 
-impl Notification for EndRunTest {
+impl Notification for EndRunTestNotification {
     type Params = ();
 
-    const METHOD: &'static str = "experimental/endRunTest";
+    const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
+    const METHOD: LspNotificationMethod = LspNotificationMethod::new("experimental/endRunTest");
 }
 
-pub enum AppendOutputToRunTest {}
+pub enum AppendOutputToRunTestNotification {}
 
-impl Notification for AppendOutputToRunTest {
+impl Notification for AppendOutputToRunTestNotification {
     type Params = String;
 
-    const METHOD: &'static str = "experimental/appendOutputToRunTest";
+    const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
+    const METHOD: LspNotificationMethod =
+        LspNotificationMethod::new("experimental/appendOutputToRunTest");
 }
 
-pub enum AbortRunTest {}
+pub enum AbortRunTestNotification {}
 
-impl Notification for AbortRunTest {
+impl Notification for AbortRunTestNotification {
     type Params = ();
 
-    const METHOD: &'static str = "experimental/abortRunTest";
+    const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
+    const METHOD: LspNotificationMethod = LspNotificationMethod::new("experimental/abortRunTest");
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -285,21 +311,25 @@ pub struct ChangeTestStateParameters {
     pub state: TestState,
 }
 
-pub enum ChangeTestState {}
+pub enum ChangeTestStateNotification {}
 
-impl Notification for ChangeTestState {
+impl Notification for ChangeTestStateNotification {
     type Params = ChangeTestStateParameters;
 
-    const METHOD: &'static str = "experimental/changeTestState";
+    const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
+    const METHOD: LspNotificationMethod =
+        LspNotificationMethod::new("experimental/changeTestState");
 }
 
-pub enum ViewRecursiveMemoryLayout {}
+pub enum ViewRecursiveMemoryLayoutRequest {}
 
-impl Request for ViewRecursiveMemoryLayout {
-    type Params = lsp_types::TextDocumentPositionParams;
+impl Request for ViewRecursiveMemoryLayoutRequest {
+    type Params = TextDocumentPositionParams;
     type Result = Option<RecursiveMemoryLayout>;
 
-    const METHOD: &'static str = "wgsl-analyzer/viewRecursiveMemoryLayout";
+    const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
+    const METHOD: LspRequestMethod =
+        LspRequestMethod::new("wgsl-analyzer/viewRecursiveMemoryLayout");
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -321,36 +351,42 @@ pub struct MemoryLayoutNode {
     pub children_length: u64,
 }
 
-pub enum CancelFlycheck {}
+pub enum CancelFlycheckNotification {}
 
-impl Notification for CancelFlycheck {
+impl Notification for CancelFlycheckNotification {
     type Params = ();
 
-    const METHOD: &'static str = "wgsl-analyzer/cancelFlycheck";
+    const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
+    const METHOD: LspNotificationMethod =
+        LspNotificationMethod::new("wgsl-analyzer/cancelFlycheck");
 }
 
-pub enum RunFlycheck {}
+pub enum RunFlycheckNotification {}
 
-impl Notification for RunFlycheck {
+impl Notification for RunFlycheckNotification {
     type Params = RunFlycheckParameters;
 
-    const METHOD: &'static str = "wgsl-analyzer/runFlycheck";
+    const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
+    const METHOD: LspNotificationMethod = LspNotificationMethod::new("wgsl-analyzer/runFlycheck");
 }
 
-pub enum ClearFlycheck {}
+pub enum ClearFlycheckNotification {}
 
-impl Notification for ClearFlycheck {
+impl Notification for ClearFlycheckNotification {
     type Params = ();
 
-    const METHOD: &'static str = "wgsl-analyzer/clearFlycheck";
+    const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
+    const METHOD: LspNotificationMethod = LspNotificationMethod::new("wgsl-analyzer/clearFlycheck");
 }
 
-pub enum OpenServerLogs {}
+pub enum OpenServerLogsNotification {}
 
-impl Notification for OpenServerLogs {
+impl Notification for OpenServerLogsNotification {
     type Params = ();
 
-    const METHOD: &'static str = "wgsl-analyzer/openServerLogs";
+    const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
+    const METHOD: LspNotificationMethod =
+        LspNotificationMethod::new("wgsl-analyzer/openServerLogs");
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -359,13 +395,14 @@ pub struct RunFlycheckParameters {
     pub text_document: Option<TextDocumentIdentifier>,
 }
 
-pub enum MatchingBrace {}
+pub enum MatchingBraceRequest {}
 
-impl Request for MatchingBrace {
+impl Request for MatchingBraceRequest {
     type Params = MatchingBraceParameters;
     type Result = Vec<Position>;
 
-    const METHOD: &'static str = "experimental/matchingBrace";
+    const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
+    const METHOD: LspRequestMethod = LspRequestMethod::new("experimental/matchingBrace");
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -375,22 +412,24 @@ pub struct MatchingBraceParameters {
     pub positions: Vec<Position>,
 }
 
-pub enum ParentModule {}
+pub enum ParentModuleRequest {}
 
-impl Request for ParentModule {
-    type Params = lsp_types::TextDocumentPositionParams;
-    type Result = Option<lsp_types::GotoDefinitionResponse>;
+impl Request for ParentModuleRequest {
+    type Params = TextDocumentPositionParams;
+    type Result = Option<DefinitionResponse>;
 
-    const METHOD: &'static str = "experimental/parentModule";
+    const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
+    const METHOD: LspRequestMethod = LspRequestMethod::new("experimental/parentModule");
 }
 
-pub enum JoinLines {}
+pub enum JoinLinesRequest {}
 
-impl Request for JoinLines {
+impl Request for JoinLinesRequest {
     type Params = JoinLinesParameters;
-    type Result = Vec<lsp_types::TextEdit>;
+    type Result = Vec<TextEdit>;
 
-    const METHOD: &'static str = "experimental/joinLines";
+    const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
+    const METHOD: LspRequestMethod = LspRequestMethod::new("experimental/joinLines");
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -400,22 +439,24 @@ pub struct JoinLinesParameters {
     pub ranges: Vec<Range>,
 }
 
-pub enum OnEnter {}
+pub enum OnEnterRequest {}
 
-impl Request for OnEnter {
-    type Params = lsp_types::TextDocumentPositionParams;
+impl Request for OnEnterRequest {
+    type Params = TextDocumentPositionParams;
     type Result = Option<Vec<SnippetTextEdit>>;
 
-    const METHOD: &'static str = "experimental/onEnter";
+    const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
+    const METHOD: LspRequestMethod = LspRequestMethod::new("experimental/onEnter");
 }
 
-pub enum Runnables {}
+pub enum RunnablesRequest {}
 
-impl Request for Runnables {
+impl Request for RunnablesRequest {
     type Params = RunnablesParameters;
     type Result = Vec<Runnable>;
 
-    const METHOD: &'static str = "experimental/runnables";
+    const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
+    const METHOD: LspRequestMethod = LspRequestMethod::new("experimental/runnables");
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -430,7 +471,7 @@ pub struct RunnablesParameters {
 pub struct Runnable {
     pub label: String,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub location: Option<lsp_types::LocationLink>,
+    pub location: Option<LocationLink>,
     pub kind: RunnableKind,
     pub arguments: RunnableArguments,
 }
@@ -477,13 +518,14 @@ pub struct ShellRunnableArguments {
     pub arguments: Vec<String>,
 }
 
-pub enum RelatedTests {}
+pub enum RelatedTestsRequest {}
 
-impl Request for RelatedTests {
-    type Params = lsp_types::TextDocumentPositionParams;
+impl Request for RelatedTestsRequest {
+    type Params = TextDocumentPositionParams;
     type Result = Vec<TestInfo>;
 
-    const METHOD: &'static str = "wgsl-analyzer/relatedTests";
+    const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
+    const METHOD: LspRequestMethod = LspRequestMethod::new("wgsl-analyzer/relatedTests");
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -491,13 +533,14 @@ pub struct TestInfo {
     pub runnable: Runnable,
 }
 
-pub enum Ssr {}
+pub enum SsrRequest {}
 
-impl Request for Ssr {
+impl Request for SsrRequest {
     type Params = SsrParameters;
-    type Result = lsp_types::WorkspaceEdit;
+    type Result = WorkspaceEdit;
 
-    const METHOD: &'static str = "experimental/ssr";
+    const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
+    const METHOD: LspRequestMethod = LspRequestMethod::new("experimental/ssr");
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -509,10 +552,10 @@ pub struct SsrParameters {
     /// File position where SSR was invoked. Paths in `query` will be resolved relative to this
     /// position.
     #[serde(flatten)]
-    pub position: lsp_types::TextDocumentPositionParams,
+    pub position: TextDocumentPositionParams,
 
     /// Current selections. Search/replace will be restricted to these if non-empty.
-    pub selections: Vec<lsp_types::Range>,
+    pub selections: Vec<Range>,
 }
 
 pub enum ServerStatusNotification {}
@@ -520,7 +563,8 @@ pub enum ServerStatusNotification {}
 impl Notification for ServerStatusNotification {
     type Params = ServerStatusParameters;
 
-    const METHOD: &'static str = "experimental/serverStatus";
+    const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
+    const METHOD: LspNotificationMethod = LspNotificationMethod::new("experimental/serverStatus");
 }
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone)]
@@ -555,10 +599,11 @@ impl ops::BitOrAssign for Health {
 pub enum CodeActionRequest {}
 
 impl Request for CodeActionRequest {
-    type Params = lsp_types::CodeActionParams;
+    type Params = CodeActionParams;
     type Result = Option<Vec<CodeAction>>;
 
-    const METHOD: &'static str = "textDocument/codeAction";
+    const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
+    const METHOD: LspRequestMethod = LspRequestMethod::new("textDocument/codeAction");
 }
 
 pub enum CodeActionResolveRequest {}
@@ -567,10 +612,11 @@ impl Request for CodeActionResolveRequest {
     type Params = CodeAction;
     type Result = CodeAction;
 
-    const METHOD: &'static str = "codeAction/resolve";
+    const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
+    const METHOD: LspRequestMethod = LspRequestMethod::new("codeAction/resolve");
 }
 
-#[derive(Debug, PartialEq, Clone, Default, Deserialize, Serialize)]
+#[derive(Debug, PartialEq, Eq, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CodeAction {
     pub title: String,
@@ -579,7 +625,7 @@ pub struct CodeAction {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub kind: Option<CodeActionKind>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub command: Option<lsp_types::Command>,
+    pub command: Option<Command>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub edit: Option<SnippetWorkspaceEdit>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -592,7 +638,7 @@ pub struct CodeAction {
 #[derive(Debug, Eq, PartialEq, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CodeActionData {
-    pub code_action_parameters: lsp_types::CodeActionParams,
+    pub code_action_parameters: CodeActionParams,
     pub id: String,
     pub version: Option<i32>,
 }
@@ -601,29 +647,25 @@ pub struct CodeActionData {
 #[serde(rename_all = "camelCase")]
 pub struct SnippetWorkspaceEdit {
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub changes: Option<FxHashMap<lsp_types::Url, Vec<lsp_types::TextEdit>>>,
+    pub changes: Option<FxHashMap<Uri, Vec<TextEdit>>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub document_changes: Option<Vec<SnippetDocumentChangeOperation>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub change_annotations: Option<
-        std::collections::HashMap<
-            lsp_types::ChangeAnnotationIdentifier,
-            lsp_types::ChangeAnnotation,
-        >,
-    >,
+    pub change_annotations:
+        Option<std::collections::HashMap<ChangeAnnotationIdentifier, ChangeAnnotation>>,
 }
 
 #[derive(Debug, Eq, PartialEq, Clone, Deserialize, Serialize)]
 #[serde(untagged, rename_all = "lowercase")]
 pub enum SnippetDocumentChangeOperation {
-    Op(lsp_types::ResourceOp),
+    Op(ResourceOperation),
     Edit(SnippetTextDocumentEdit),
 }
 
 #[derive(Debug, Eq, PartialEq, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SnippetTextDocumentEdit {
-    pub text_document: lsp_types::OptionalVersionedTextDocumentIdentifier,
+    pub text_document: OptionalVersionedTextDocumentIdentifier,
     pub edits: Vec<SnippetTextEdit>,
 }
 
@@ -633,10 +675,10 @@ pub struct SnippetTextEdit {
     pub range: Range,
     pub new_text: String,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub insert_text_format: Option<lsp_types::InsertTextFormat>,
+    pub insert_text_format: Option<InsertTextFormat>,
     /// The annotation id, if this is an annotated.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub annotation_id: Option<lsp_types::ChangeAnnotationIdentifier>,
+    pub annotation_id: Option<ChangeAnnotationIdentifier>,
 }
 
 pub enum HoverRequest {}
@@ -645,7 +687,8 @@ impl Request for HoverRequest {
     type Params = HoverParameters;
     type Result = Option<HoverResult>;
 
-    const METHOD: &'static str = lsp_types::request::HoverRequest::METHOD;
+    const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
+    const METHOD: LspRequestMethod = LspHoverRequest::METHOD;
 }
 
 #[derive(Debug, Eq, PartialEq, Clone, Deserialize, Serialize)]
@@ -661,19 +704,19 @@ pub struct HoverParameters {
 #[derive(Debug, Eq, PartialEq, Clone, Deserialize, Serialize)]
 #[serde(untagged)]
 pub enum PositionOrRange {
-    Position(lsp_types::Position),
-    Range(lsp_types::Range),
+    Position(Position),
+    Range(Range),
 }
 
-#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
+#[derive(Debug, PartialEq, Eq, Clone, Deserialize, Serialize)]
 pub struct HoverResult {
     #[serde(flatten)]
-    pub hover: lsp_types::Hover,
+    pub hover: Hover,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub actions: Vec<CommandLinkGroup>,
 }
 
-#[derive(Debug, PartialEq, Clone, Default, Deserialize, Serialize)]
+#[derive(Debug, PartialEq, Eq, Clone, Default, Deserialize, Serialize)]
 pub struct CommandLinkGroup {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub title: Option<String>,
@@ -681,27 +724,28 @@ pub struct CommandLinkGroup {
 }
 
 // LSP v3.15 Command does not have a `tooltip` field, vscode supports one.
-#[derive(Debug, PartialEq, Clone, Default, Deserialize, Serialize)]
+#[derive(Debug, PartialEq, Eq, Clone, Default, Deserialize, Serialize)]
 pub struct CommandLink {
     #[serde(flatten)]
-    pub command: lsp_types::Command,
+    pub command: Command,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tooltip: Option<String>,
 }
 
-pub enum ExternalDocs {}
+pub enum ExternalDocsRequest {}
 
-impl Request for ExternalDocs {
-    type Params = lsp_types::TextDocumentPositionParams;
+impl Request for ExternalDocsRequest {
+    type Params = TextDocumentPositionParams;
     type Result = ExternalDocsResponse;
 
-    const METHOD: &'static str = "experimental/externalDocs";
+    const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
+    const METHOD: LspRequestMethod = LspRequestMethod::new("experimental/externalDocs");
 }
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize, Clone)]
 #[serde(untagged)]
 pub enum ExternalDocsResponse {
-    Simple(Option<lsp_types::Url>),
+    Simple(Option<Uri>),
     WithLocal(ExternalDocsPair),
 }
 
@@ -714,17 +758,18 @@ impl Default for ExternalDocsResponse {
 #[derive(Debug, Default, PartialEq, Eq, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct ExternalDocsPair {
-    pub web: Option<lsp_types::Url>,
-    pub local: Option<lsp_types::Url>,
+    pub web: Option<Uri>,
+    pub local: Option<Uri>,
 }
 
-pub enum OpenCargoToml {}
+pub enum OpenCargoTomlRequest {}
 
-impl Request for OpenCargoToml {
+impl Request for OpenCargoTomlRequest {
     type Params = OpenCargoTomlParameters;
-    type Result = Option<lsp_types::GotoDefinitionResponse>;
+    type Result = Option<DefinitionResponse>;
 
-    const METHOD: &'static str = "experimental/openCargoToml";
+    const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
+    const METHOD: LspRequestMethod = LspRequestMethod::new("experimental/openCargoToml");
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -744,17 +789,18 @@ pub struct CodeLensResolveData {
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum CodeLensResolveDataKind {
-    Impls(lsp_types::request::GotoImplementationParams),
-    References(lsp_types::TextDocumentPositionParams),
+    Impls(ImplementationParams),
+    References(TextDocumentPositionParams),
 }
 
-pub enum MoveItem {}
+pub enum MoveItemRequest {}
 
-impl Request for MoveItem {
+impl Request for MoveItemRequest {
     type Params = MoveItemParameters;
     type Result = Vec<SnippetTextEdit>;
 
-    const METHOD: &'static str = "experimental/moveItem";
+    const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
+    const METHOD: LspRequestMethod = LspRequestMethod::new("experimental/moveItem");
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -772,13 +818,14 @@ pub enum MoveItemDirection {
 }
 
 #[derive(Debug)]
-pub enum WorkspaceSymbol {}
+pub enum WorkspaceSymbolRequest {}
 
-impl Request for WorkspaceSymbol {
+impl Request for WorkspaceSymbolRequest {
     type Params = WorkspaceSymbolParameters;
-    type Result = Option<lsp_types::WorkspaceSymbolResponse>;
+    type Result = Option<WorkspaceSymbolResponse>;
 
-    const METHOD: &'static str = "workspace/symbol";
+    const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
+    const METHOD: LspRequestMethod = LspRequestMethod::new("workspace/symbol");
 }
 
 #[derive(Debug, Eq, PartialEq, Clone, Default, Deserialize, Serialize)]
@@ -815,21 +862,22 @@ pub enum WorkspaceSymbolSearchKind {
 /// The document on type formatting request is sent from the client to
 /// the server to format parts of the document during typing.
 ///
-/// This is almost same as [`lsp_types::request::OnTypeFormatting`], but the
-/// result has [`SnippetTextEdit`] in it instead of [`lsp_types::TextEdit`].
+/// This is almost same as [`lsp_types::DocumentOnTypeFormattingRequest`], but the
+/// result has [`SnippetTextEdit`] in it instead of [`TextEdit`].
 #[derive(Debug)]
-pub enum OnTypeFormatting {}
+pub enum OnTypeFormattingRequest {}
 
-impl Request for OnTypeFormatting {
+impl Request for OnTypeFormattingRequest {
     type Params = DocumentOnTypeFormattingParams;
     type Result = Option<Vec<SnippetTextEdit>>;
 
-    const METHOD: &'static str = "textDocument/onTypeFormatting";
+    const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
+    const METHOD: LspRequestMethod = LspRequestMethod::new("textDocument/onTypeFormatting");
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct CompletionResolveData {
-    pub position: lsp_types::TextDocumentPositionParams,
+    pub position: TextDocumentPositionParams,
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
     pub imports: Vec<CompletionImport>,
     #[serde(skip_serializing_if = "Option::is_none", default)]
@@ -846,7 +894,7 @@ pub struct InlayHintResolveData {
     pub file_id: u32,
     // This is a string instead of a u64 as javascript can't represent u64 fully
     pub hash: String,
-    pub resolve_range: lsp_types::Range,
+    pub resolve_range: Range,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub version: Option<i32>,
 }

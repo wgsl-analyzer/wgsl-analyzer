@@ -3,13 +3,15 @@
     reason = "handlers must have a specific signature"
 )]
 
-use std::ops::Not as _;
+use std::{ops::Not as _, str::FromStr as _};
 
 use itertools::Itertools as _;
+use lsp_server::{RequestId, Response};
 use lsp_types::{
-    CancelParams, DidChangeConfigurationParams, DidChangeTextDocumentParams,
-    DidChangeWatchedFilesParams, DidChangeWorkspaceFoldersParams, DidCloseTextDocumentParams,
-    DidOpenTextDocumentParams, DidSaveTextDocumentParams,
+    CancelParams, ConfigurationItem, ConfigurationParams, ConfigurationRequest,
+    DidChangeConfigurationParams, DidChangeTextDocumentParams, DidChangeWatchedFilesParams,
+    DidChangeWorkspaceFoldersParams, DidCloseTextDocumentParams, DidOpenTextDocumentParams,
+    DidSaveTextDocumentParams, Id,
 };
 use paths::Utf8PathBuf;
 use tracing::error;
@@ -29,9 +31,9 @@ pub(crate) fn handle_cancel(
     state: &mut GlobalState,
     parameters: CancelParams,
 ) -> anyhow::Result<()> {
-    let id: lsp_server::RequestId = match parameters.id {
-        lsp_types::NumberOrString::Number(id) => id.into(),
-        lsp_types::NumberOrString::String(id) => id.into(),
+    let id: RequestId = match parameters.id {
+        Id::Int(id) => id.into(),
+        Id::String(id) => id.into(),
     };
     state.cancel(id);
     Ok(())
@@ -90,7 +92,7 @@ pub(crate) fn handle_did_change_text_document(
 ) -> anyhow::Result<()> {
     let _p = tracing::info_span!("handle_did_change_text_document").entered();
 
-    if let Ok(path) = from_proto::vfs_path(&parameters.text_document.uri) {
+    if let Ok(path) = from_proto::vfs_path(&parameters.text_document.text_document_identifier.uri) {
         let Some(DocumentData { version, data }) = state.in_memory_documents.get_mut(&path) else {
             tracing::error!(?path, "unexpected DidChangeTextDocument");
             return Ok(());
@@ -191,16 +193,16 @@ pub(crate) fn handle_did_change_configuration(
 ) -> anyhow::Result<()> {
     // As stated in https://github.com/microsoft/language-server-protocol/issues/676,
     // this notification's parameters should be ignored and the actual config queried separately.
-    state.send_request::<lsp_types::request::WorkspaceConfiguration>(
-        lsp_types::ConfigurationParams {
-            items: vec![lsp_types::ConfigurationItem {
+    state.send_request::<ConfigurationRequest>(
+        ConfigurationParams {
+            items: vec![ConfigurationItem {
                 scope_uri: None,
                 section: Some("wgsl-analyzer".to_owned()),
             }],
         },
         |this, response| {
             tracing::debug!("config update response: '{:?}", response);
-            let lsp_server::Response { error, result, .. } = response;
+            let Response { error, result, .. } = response;
 
             match (error, result) {
                 (Some(error), _) => {
@@ -248,7 +250,7 @@ pub(crate) fn handle_did_change_workspace_folders(
         config.remove_workspace(&path);
     }
 
-    let added: Vec<_> = parameters
+    let added: Vec<AbsPathBuf> = parameters
         .event
         .added
         .into_iter()
@@ -259,6 +261,13 @@ pub(crate) fn handle_did_change_workspace_folders(
     config.add_workspaces(added.iter().cloned());
 
     state.refresh_packages();
+
+    // if !config.has_linked_projects() && config.detached_files().is_empty() {
+    //     config.rediscover_workspaces();
+
+    //     let request = FetchWorkspaceRequest { path: None, force_crate_graph_reload: false };
+    //     state.fetch_workspaces_queue.request_op("client workspaces changed".to_owned(), request);
+    // }
 
     for workspace_root in added {
         state.request_project_discover(

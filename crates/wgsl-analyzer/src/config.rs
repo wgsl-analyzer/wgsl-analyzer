@@ -30,11 +30,9 @@ use ide::{
     // SourceRootId,
 };
 use ide_completion::{CompletionConfig, CompletionFieldsToResolve};
-use ide_db::{
-    SnippetCapability,
-    // imports::insert_use::{ImportGranularity, InsertUseConfig, PrefixKind},
-};
+use ide_db::SnippetCapability;
 use itertools::Itertools as _;
+use lsp_types::{ClientCapabilities as LspClientCapabilities, ClientInfo};
 use rustc_hash::FxHashMap;
 use semver::Version;
 use serde::{Deserialize, Serialize};
@@ -145,12 +143,6 @@ pub enum TraceServer {
     Verbose,
 }
 
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq)]
-struct ClientInfo {
-    name: String,
-    version: Option<Version>,
-}
-
 #[derive(Clone, Debug)]
 pub struct Config {
     /// The workspace roots as registered by the LSP client.
@@ -165,7 +157,7 @@ pub struct Config {
 
     default: &'static DefaultConfigData,
     /// Config node that obtains its initial value during the server initialization and
-    /// by receiving a `lsp_types::notification::DidChangeConfiguration`.
+    /// by receiving a [`lsp_types::DidChangeConfigurationNotification`].
     client: (FullConfigInput, ConfigErrors),
 
     /// Config node whose values apply to **every** wgsl project.
@@ -267,9 +259,9 @@ impl Config {
     #[must_use]
     pub fn new(
         root_path: AbsPathBuf,
-        capabilities: lsp_types::ClientCapabilities,
+        capabilities: LspClientCapabilities,
         workspace_roots: Vec<AbsPathBuf>,
-        client_info: Option<lsp_types::ClientInfo>,
+        client_info: Option<ClientInfo>,
     ) -> Self {
         static DEFAULT_CONFIG_DATA: OnceLock<&'static DefaultConfigData> = OnceLock::new();
 
@@ -278,14 +270,7 @@ impl Config {
             capabilities: ClientCapabilities::new(capabilities),
             // snippets: Default::default(),
             root_path,
-            client_info: client_info.map(|client_info| ClientInfo {
-                name: client_info.name,
-                version: client_info
-                    .version
-                    .as_deref()
-                    .map(Version::parse)
-                    .and_then(Result::ok),
-            }),
+            client_info,
             diagnostics_enable: true,
             default: DEFAULT_CONFIG_DATA.get_or_init(|| Box::leak(Box::default())),
             client: (FullConfigInput::default(), ConfigErrors(vec![])),
@@ -615,31 +600,6 @@ impl Config {
     )]
     pub fn typing_trigger_chars(&self) -> Option<String> {
         Some("=.".to_owned())
-    }
-
-    // VSCode is our reference implementation, so we allow ourselves to work around issues by
-    // special casing certain versions
-    #[must_use]
-    pub fn visual_studio_code_version(&self) -> Option<&Version> {
-        let client_info = self
-            .client_info
-            .as_ref()
-            .filter(|client_info| client_info.name.starts_with("Visual Studio Code"))?;
-        client_info.version.as_ref()
-    }
-
-    #[must_use]
-    pub fn client_is_helix(&self) -> bool {
-        self.client_info
-            .as_ref()
-            .is_some_and(|client_info| client_info.name == "helix")
-    }
-
-    #[must_use]
-    pub fn client_is_neovim(&self) -> bool {
-        self.client_info
-            .as_ref()
-            .is_some_and(|client_info| client_info.name == "Neovim")
     }
 }
 

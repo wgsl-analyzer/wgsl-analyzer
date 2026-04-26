@@ -4,7 +4,11 @@ use std::{fmt, panic, thread};
 
 use base_db::DbPanicContext;
 use fmt::Debug;
-use lsp_server::{ExtractError, Response, ResponseError};
+use lsp_server::{
+    ErrorCode, ExtractError, Notification as ServerNotification, Request as ServerRequest,
+    RequestId, Response, ResponseError,
+};
+use lsp_types::{Notification as LspNotification, Request as LspRequest};
 use salsa::Cancelled;
 use serde::{Serialize, de::DeserializeOwned};
 use stdx::thread::ThreadIntent;
@@ -31,13 +35,13 @@ use crate::{
 /// Read-only requests are wrapped into `catch_unwind` -- they do not modify the
 /// state, so it is OK to recover from their failures.
 pub(crate) struct RequestDispatcher<'state> {
-    pub(crate) request: Option<lsp_server::Request>,
+    pub(crate) request: Option<ServerRequest>,
     pub(crate) global_state: &'state mut GlobalState,
 }
 
 impl<'global_state> RequestDispatcher<'global_state> {
     pub(crate) const fn new(
-        request: Option<lsp_server::Request>,
+        request: Option<ServerRequest>,
         global_state: &'global_state mut GlobalState,
     ) -> Self {
         Self {
@@ -54,7 +58,7 @@ impl<'global_state> RequestDispatcher<'global_state> {
         function: fn(&mut GlobalState, R::Params) -> anyhow::Result<R::Result>,
     ) -> &mut Self
     where
-        R: lsp_types::request::Request,
+        R: LspRequest,
         R::Params: DeserializeOwned + panic::UnwindSafe + fmt::Debug,
         R::Result: Serialize,
     {
@@ -82,7 +86,7 @@ impl<'global_state> RequestDispatcher<'global_state> {
         function: fn(GlobalStateSnapshot, R::Params) -> anyhow::Result<R::Result>,
     ) -> &mut Self
     where
-        R: lsp_types::request::Request,
+        R: LspRequest,
         R::Params: DeserializeOwned + panic::UnwindSafe + fmt::Debug,
         R::Result: Serialize,
     {
@@ -114,18 +118,18 @@ impl<'global_state> RequestDispatcher<'global_state> {
         function: fn(GlobalStateSnapshot, Request::Params) -> anyhow::Result<Request::Result>,
     ) -> &mut Self
     where
-        Request: lsp_types::request::Request<
+        Request: LspRequest<
                 Params: DeserializeOwned + panic::UnwindSafe + Send + fmt::Debug,
                 Result: Serialize + Default,
             > + 'static,
     {
         if !self.global_state.vfs_done {
-            if let Some(lsp_server::Request { id, .. }) = self
+            if let Some(ServerRequest { id, .. }) = self
                 .request
-                .take_if(|request| request.method == Request::METHOD)
+                .take_if(|request| request.method.as_str() == Request::METHOD.as_str())
             {
                 self.global_state
-                    .respond(lsp_server::Response::new_ok(id, Request::Result::default()));
+                    .respond(Response::new_ok(id, Request::Result::default()));
             }
             return self;
         }
@@ -145,17 +149,17 @@ impl<'global_state> RequestDispatcher<'global_state> {
         on_cancelled: fn() -> ResponseError,
     ) -> &mut Self
     where
-        R: lsp_types::request::Request<
+        R: LspRequest<
                 Params: DeserializeOwned + panic::UnwindSafe + Send + fmt::Debug,
                 Result: Serialize,
             > + 'static,
     {
         if !self.global_state.vfs_done {
-            if let Some(lsp_server::Request { id, .. }) =
-                self.request.take_if(|request| request.method == R::METHOD)
+            if let Some(ServerRequest { id, .. }) = self
+                .request
+                .take_if(|request| request.method.as_str() == R::METHOD.as_str())
             {
-                self.global_state
-                    .respond(lsp_server::Response::new_ok(id, default()));
+                self.global_state.respond(Response::new_ok(id, default()));
             }
             return self;
         }
@@ -170,7 +174,7 @@ impl<'global_state> RequestDispatcher<'global_state> {
         function: fn(GlobalStateSnapshot, R::Params) -> anyhow::Result<R::Result>,
     ) -> &mut Self
     where
-        R: lsp_types::request::Request + 'static,
+        R: LspRequest + 'static,
         R::Params: DeserializeOwned + panic::UnwindSafe + Send + fmt::Debug,
         R::Result: Serialize,
     {
@@ -185,9 +189,9 @@ impl<'global_state> RequestDispatcher<'global_state> {
         if let Some(request) = self.request.take() {
             tracing::error!("Unknown request: {:?}", request);
             #[expect(clippy::as_conversions, reason = "valid according to JSON RPC")]
-            let response = lsp_server::Response::new_err(
+            let response = Response::new_err(
                 request.id,
-                lsp_server::ErrorCode::MethodNotFound as i32,
+                ErrorCode::MethodNotFound as i32,
                 "unknown request".to_owned(),
             );
             self.global_state.respond(response);
@@ -201,7 +205,7 @@ impl<'global_state> RequestDispatcher<'global_state> {
         on_cancelled: fn() -> ResponseError,
     ) -> &mut Self
     where
-        R: lsp_types::request::Request + 'static,
+        R: LspRequest + 'static,
         R::Params: DeserializeOwned + panic::UnwindSafe + Send + fmt::Debug,
         R::Result: Serialize,
     {
@@ -241,15 +245,15 @@ impl<'global_state> RequestDispatcher<'global_state> {
         self
     }
 
-    fn parse<R>(&mut self) -> Option<(lsp_server::Request, R::Params, String)>
+    fn parse<R>(&mut self) -> Option<(ServerRequest, R::Params, String)>
     where
-        R: lsp_types::request::Request,
+        R: LspRequest,
         R::Params: DeserializeOwned + fmt::Debug,
     {
         let request = self
             .request
-            .take_if(|request| request.method == R::METHOD)?;
-        let result = crate::from_json(R::METHOD, &request.params);
+            .take_if(|request| request.method.as_str() == R::METHOD.as_str())?;
+        let result = crate::from_json(R::METHOD.as_str(), &request.params);
         match result {
             Ok(parameters) => {
                 let panic_context = format!(
@@ -261,9 +265,9 @@ impl<'global_state> RequestDispatcher<'global_state> {
             },
             Err(error) => {
                 #[expect(clippy::as_conversions, reason = "valid according to JSON RPC")]
-                let response = lsp_server::Response::new_err(
+                let response = Response::new_err(
                     request.id,
-                    lsp_server::ErrorCode::InvalidParams as i32,
+                    ErrorCode::InvalidParams as i32,
                     error.to_string(),
                 );
                 self.global_state.respond(response);
@@ -275,7 +279,7 @@ impl<'global_state> RequestDispatcher<'global_state> {
     fn content_modified_error() -> ResponseError {
         #[expect(clippy::as_conversions, reason = "valid according to JSON RPC")]
         ResponseError {
-            code: lsp_server::ErrorCode::ContentModified as i32,
+            code: ErrorCode::ContentModified as i32,
             message: "content modified".to_owned(),
             data: None,
         }
@@ -305,11 +309,11 @@ impl fmt::Display for HandlerCancelledError {
 }
 
 fn thread_result_to_response<R>(
-    id: lsp_server::RequestId,
+    id: RequestId,
     result: thread::Result<anyhow::Result<R::Result>>,
-) -> Result<lsp_server::Response, HandlerCancelledError>
+) -> Result<Response, HandlerCancelledError>
 where
-    R: lsp_types::request::Request,
+    R: LspRequest,
     R::Params: DeserializeOwned,
     R::Result: Serialize,
 {
@@ -328,9 +332,9 @@ where
                 message.push_str(panic_message);
             }
             #[expect(clippy::as_conversions, reason = "valid according to JSON RPC")]
-            Ok(lsp_server::Response::new_err(
+            Ok(Response::new_err(
                 id,
-                lsp_server::ErrorCode::InternalError as i32,
+                ErrorCode::InternalError as i32,
                 message,
             ))
         },
@@ -338,26 +342,24 @@ where
 }
 
 fn result_to_response<R>(
-    id: lsp_server::RequestId,
+    id: RequestId,
     result: anyhow::Result<R::Result>,
-) -> Result<lsp_server::Response, HandlerCancelledError>
+) -> Result<Response, HandlerCancelledError>
 where
-    R: lsp_types::request::Request,
+    R: LspRequest,
     R::Params: DeserializeOwned,
     R::Result: Serialize,
 {
     let result = match result {
-        Ok(response) => lsp_server::Response::new_ok(id, &response),
+        Ok(response) => Response::new_ok(id, &response),
         Err(error) => match error.downcast::<LspError>() {
-            Ok(lsp_error) => lsp_server::Response::new_err(id, lsp_error.code, lsp_error.message),
+            Ok(lsp_error) => Response::new_err(id, lsp_error.code, lsp_error.message),
             Err(error) => match error.downcast::<Cancelled>() {
                 Ok(cancelled) => return Err(HandlerCancelledError::Inner(cancelled)),
                 #[expect(clippy::as_conversions, reason = "valid according to JSON RPC")]
-                Err(error) => lsp_server::Response::new_err(
-                    id,
-                    lsp_server::ErrorCode::InternalError as i32,
-                    error.to_string(),
-                ),
+                Err(error) => {
+                    Response::new_err(id, ErrorCode::InternalError as i32, error.to_string())
+                },
             },
         },
     };
@@ -365,7 +367,7 @@ where
 }
 
 pub(crate) struct NotificationDispatcher<'global_state> {
-    pub(crate) notification: Option<lsp_server::Notification>,
+    pub(crate) notification: Option<ServerNotification>,
     pub(crate) global_state: &'global_state mut GlobalState,
 }
 
@@ -375,13 +377,13 @@ impl NotificationDispatcher<'_> {
         function: fn(&mut GlobalState, N::Params) -> Result<()>,
     ) -> &mut Self
     where
-        N: lsp_types::notification::Notification + 'static,
+        N: LspNotification + 'static,
         N::Params: DeserializeOwned + Send + 'static,
     {
         let Some(notification) = self.notification.take() else {
             return self;
         };
-        let parameters = match notification.extract::<N::Params>(N::METHOD) {
+        let parameters = match notification.extract::<N::Params>(N::METHOD.as_str()) {
             Ok(notification) => notification,
             Err(ExtractError::JsonError { method, error }) => {
                 panic!("Invalid request\nMethod: {method}\n error: {error}")
