@@ -388,7 +388,8 @@ pub enum SyntaxKind {
     ShiftRight,
     TemplateStart,
     TemplateEnd,
-
+    /// A WGSL reserved word (<https://www.w3.org/TR/WGSL/#reserved-words>)
+    Reserved,
     // Only used internally by the parser
     #[doc(hidden)]
     EOF,

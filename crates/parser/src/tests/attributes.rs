@@ -996,7 +996,7 @@ fn parse_interpolate_linear_either_error() {
 fn parse_interpolate_unknown_type_error() {
     check(
         "
-        @interpolate(smooth)
+        @interpolate(value1)
         var<private> x: f32;
         ",
         expect![[r#"
@@ -1008,7 +1008,7 @@ fn parse_interpolate_unknown_type_error() {
                   Interpolate@10..21 "interpolate"
                   ParenthesisLeft@21..22 "("
                 Error@22..29
-                  Identifier@22..28 "smooth"
+                  Identifier@22..28 "value1"
                   ParenthesisRight@28..29 ")"
                 Blankspace@29..38 "\n        "
                 Var@38..41 "var"
@@ -1038,7 +1038,7 @@ fn parse_interpolate_unknown_type_error() {
 fn parse_interpolate_unknown_type_and_sampling_error() {
     check(
         "
-        @interpolate(smooth, fast)
+        @interpolate(value0, fast)
         var<private> x: f32;
         ",
         expect![[r#"
@@ -1050,7 +1050,7 @@ fn parse_interpolate_unknown_type_and_sampling_error() {
                   Interpolate@10..21 "interpolate"
                   ParenthesisLeft@21..22 "("
                 Error@22..35
-                  Identifier@22..28 "smooth"
+                  Identifier@22..28 "value0"
                   Comma@28..29 ","
                   Blankspace@29..30 " "
                   Identifier@30..34 "fast"
