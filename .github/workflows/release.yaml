@@ -89,11 +89,8 @@ jobs:
           cache-dependency-path: ''
           package-manager-cache: false
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@08c4be7e2e672a47d11bd04269e27e5f3e8529cb # v6.0.0
-        with:
-          package_json_file: ./editors/code/package.json
-          cache: false
+      - name: Enable Corepack
+        run: corepack enable
 
       - name: Install stable Rust toolchain
         uses: dtolnay/rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9
@@ -249,11 +246,8 @@ jobs:
           cache-dependency-path: ''
           package-manager-cache: false
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@08c4be7e2e672a47d11bd04269e27e5f3e8529cb # v6.0.0
-        with:
-          package_json_file: ./editors/code/package.json
-          cache: false
+      - name: Enable Corepack
+        run: corepack enable
 
       - run: echo "TAG=$(date --iso -u)" >> $GITHUB_ENV
         if: github.ref == 'refs/heads/release'
