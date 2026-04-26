@@ -37,15 +37,15 @@ export function fetchWorkspace(): Workspace {
 }
 
 export type CommandFactory = {
-	enabled: (ctx: CtxInit) => Cmd;
-	disabled?: (ctx: Ctx) => Cmd;
+	enabled: (context: InitializedContext) => Cmd;
+	disabled?: (context: Context) => Cmd;
 };
 
-export type CtxInit = Ctx & {
+export type InitializedContext = Context & {
 	readonly client: lc.LanguageClient;
 };
 
-export class Ctx implements WgslAnalyzerExtensionApi {
+export class Context implements WgslAnalyzerExtensionApi {
 	readonly statusBar: vscode.StatusBarItem;
 	readonly config: Config;
 	readonly workspace: Workspace;
@@ -257,7 +257,7 @@ export class Ctx implements WgslAnalyzerExtensionApi {
 	}
 
 	private prepareSyntaxTreeView(client: lc.LanguageClient) {
-		const ctxInit: CtxInit = Object.assign({}, this, { client });
+		const ctxInit: InitializedContext = Object.assign({}, this, { client });
 		this._syntaxTreeProvider = new SyntaxTreeProvider(ctxInit);
 		this._syntaxTreeView = vscode.window.createTreeView("weslSyntaxTree", {
 			treeDataProvider: this._syntaxTreeProvider,
@@ -309,7 +309,7 @@ export class Ctx implements WgslAnalyzerExtensionApi {
 	}
 
 	async restart() {
-		// FIXME: We should re-use the client, that is ctx.deactivate() if none of the configs have changed
+		// FIXME: We should re-use the client, that is context.deactivate() if none of the configs have changed
 		await this.stopAndDispose();
 		await this.start();
 	}
@@ -366,7 +366,7 @@ export class Ctx implements WgslAnalyzerExtensionApi {
 		this.commandDisposables = [];
 
 		const clientRunning = (!forceDisable && this._client?.isRunning()) ?? false;
-		const isClientRunning = function (_ctx: Ctx): _ctx is CtxInit {
+		const isClientRunning = function (_ctx: Context): _ctx is InitializedContext {
 			return clientRunning;
 		};
 

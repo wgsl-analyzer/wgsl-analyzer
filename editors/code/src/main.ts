@@ -2,7 +2,7 @@ import * as assert from "node:assert";
 import * as vscode from "vscode";
 import * as lc from "vscode-languageclient/node";
 import * as commands from "./commands";
-import { type CommandFactory, Ctx, fetchWorkspace } from "./ctx";
+import { type CommandFactory, Context, fetchWorkspace } from "./context";
 import * as diagnostics from "./diagnostics";
 import { setContextValue } from "./utilities";
 
@@ -22,7 +22,7 @@ export async function activate(
 ): Promise<WgslAnalyzerExtensionApi> {
 	checkConflictingExtensions();
 
-	const ctx = new Ctx(context, createCommands(), fetchWorkspace());
+	const ctx = new Context(context, createCommands(), fetchWorkspace());
 
 	// VS Code does not show a notification when an extension fails to activate
 	// so we do it ourselves.
@@ -37,17 +37,17 @@ export async function activate(
 	return api;
 }
 
-async function activateServer(ctx: Ctx): Promise<WgslAnalyzerExtensionApi> {
-	const diagnosticProvider = new diagnostics.TextDocumentProvider(ctx);
-	ctx.pushExtCleanup(
+async function activateServer(context: Context): Promise<WgslAnalyzerExtensionApi> {
+	const diagnosticProvider = new diagnostics.TextDocumentProvider(context);
+	context.pushExtCleanup(
 		vscode.workspace.registerTextDocumentContentProvider(
 			diagnostics.URI_SCHEME,
 			diagnosticProvider,
 		),
 	);
 
-	const decorationProvider = new diagnostics.AnsiDecorationProvider(ctx);
-	ctx.pushExtCleanup(decorationProvider);
+	const decorationProvider = new diagnostics.AnsiDecorationProvider(context);
+	context.pushExtCleanup(decorationProvider);
 
 	async function decorateVisibleEditors(document: vscode.TextDocument) {
 		for (const editor of vscode.window.visibleTextEditors) {
@@ -62,9 +62,9 @@ async function activateServer(ctx: Ctx): Promise<WgslAnalyzerExtensionApi> {
 			await decorateVisibleEditors(event.document);
 		},
 		null,
-		ctx.subscriptions,
+		context.subscriptions,
 	);
-	vscode.workspace.onDidOpenTextDocument(decorateVisibleEditors, null, ctx.subscriptions);
+	vscode.workspace.onDidOpenTextDocument(decorateVisibleEditors, null, context.subscriptions);
 	vscode.window.onDidChangeActiveTextEditor(
 		async (editor) => {
 			if (editor) {
@@ -73,7 +73,7 @@ async function activateServer(ctx: Ctx): Promise<WgslAnalyzerExtensionApi> {
 			}
 		},
 		null,
-		ctx.subscriptions,
+		context.subscriptions,
 	);
 	vscode.window.onDidChangeVisibleTextEditors(
 		async (visibleEditors) => {
@@ -83,33 +83,33 @@ async function activateServer(ctx: Ctx): Promise<WgslAnalyzerExtensionApi> {
 			}
 		},
 		null,
-		ctx.subscriptions,
+		context.subscriptions,
 	);
 
 	vscode.workspace.onDidChangeWorkspaceFolders(
-		async (_) => ctx.onWorkspaceFolderChanges(),
+		async (_) => context.onWorkspaceFolderChanges(),
 		null,
-		ctx.subscriptions,
+		context.subscriptions,
 	);
 	vscode.workspace.onDidChangeConfiguration(
 		async (_) => {
-			await ctx.client?.sendNotification(lc.DidChangeConfigurationNotification.type, {
+			await context.client?.sendNotification(lc.DidChangeConfigurationNotification.type, {
 				settings: "",
 			});
 		},
 		null,
-		ctx.subscriptions,
+		context.subscriptions,
 	);
 
-	if (ctx.config.initializeStopped) {
-		ctx.setServerStatus({
+	if (context.config.initializeStopped) {
+		context.setServerStatus({
 			health: "stopped",
 		});
 	} else {
-		await ctx.start();
+		await context.start();
 	}
 
-	return ctx;
+	return context;
 }
 
 function createCommands(): Record<string, CommandFactory> {
@@ -119,26 +119,26 @@ function createCommands(): Record<string, CommandFactory> {
 			disabled: (_) => () => vscode.commands.executeCommand("default:type", { text: "\n" }),
 		},
 		restartServer: {
-			enabled: (ctx) => async () => {
-				await ctx.restart();
+			enabled: (context) => async () => {
+				await context.restart();
 			},
-			disabled: (ctx) => async () => {
-				await ctx.start();
+			disabled: (context) => async () => {
+				await context.start();
 			},
 		},
 		startServer: {
-			enabled: (ctx) => async () => {
-				await ctx.start();
+			enabled: (context) => async () => {
+				await context.start();
 			},
-			disabled: (ctx) => async () => {
-				await ctx.start();
+			disabled: (context) => async () => {
+				await context.start();
 			},
 		},
 		stopServer: {
-			enabled: (ctx) => async () => {
-				// FIXME: We should re-use the client, that is ctx.deactivate() if none of the configs have changed
-				await ctx.stopAndDispose();
-				ctx.setServerStatus({
+			enabled: (context) => async () => {
+				// FIXME: We should re-use the client, that is context.deactivate() if none of the configs have changed
+				await context.stopAndDispose();
+				context.setServerStatus({
 					health: "stopped",
 				});
 			},

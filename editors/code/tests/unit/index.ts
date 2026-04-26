@@ -57,12 +57,12 @@ class Suite {
 }
 
 export class Context {
-	public async suite(name: string, fn: (ctx: Suite) => void): Promise<void> {
-		const ctx = new Suite();
-		fn(ctx);
+	public async suite(name: string, fn: (context: Suite) => void): Promise<void> {
+		const context = new Suite();
+		fn(context);
 		try {
 			ok(`⌛︎ ${name}`);
-			await ctx.run();
+			await context.run();
 			ok(`✔ ${name}`);
 		} catch (exception) {
 			assert.ok(exception instanceof Error);

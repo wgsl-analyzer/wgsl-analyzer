@@ -2,8 +2,8 @@ import * as assert from "assert";
 import { substituteVariablesInEnv } from "../../src/config";
 import type { Context } from ".";
 
-export async function getTests(ctx: Context) {
-	await ctx.suite("Server Env Settings", (suite) => {
+export async function getTests(context: Context) {
+	await context.suite("Server Env Settings", (suite) => {
 		suite.addSyncTest("Replacing Env Variables", () => {
 			const envJson = {
 				USING_MY_VAR: "${env:MY_VAR} test ${env:MY_VAR}",

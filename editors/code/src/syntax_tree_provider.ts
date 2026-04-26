@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 
-import type { CtxInit } from "./ctx";
+import type { InitializedContext } from "./context";
 
 import * as wa from "./lsp_ext";
 import { isWeslEditor, setContextValue } from "./utilities";
@@ -12,12 +12,12 @@ export class SyntaxTreeProvider implements vscode.TreeDataProvider<SyntaxElement
 	readonly onDidChangeTreeData: vscode.Event<SyntaxElement | undefined> =
 		this._onDidChangeTreeData.event;
 
-	ctx: CtxInit;
+	context: InitializedContext;
 	root: SyntaxNode | undefined;
 	hideWhitespace: boolean = false;
 
-	constructor(ctx: CtxInit) {
-		this.ctx = ctx;
+	constructor(context: InitializedContext) {
+		this.context = context;
 	}
 
 	getTreeItem(element: SyntaxElement): vscode.TreeItem {
@@ -75,7 +75,7 @@ export class SyntaxTreeProvider implements vscode.TreeDataProvider<SyntaxElement
 				textDocument: { uri: editor.document.uri.toString() },
 				range: null,
 			};
-			const fileText = await this.ctx.client.sendRequest(wa.viewSyntaxTree, parameters);
+			const fileText = await this.context.client.sendRequest(wa.viewSyntaxTree, parameters);
 
 			this.root = JSON.parse(fileText, (_key, value: RawElement): SyntaxElement => {
 				if (value.type !== "Node" && value.type !== "Token") {

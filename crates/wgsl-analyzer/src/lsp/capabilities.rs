@@ -75,6 +75,7 @@ pub fn server_capabilities(config: &Config) -> ServerCapabilities {
                 Some(DocumentRangeFormattingProvider::Bool(false))
             },
         },
+        // TODO https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1095
         document_on_type_formatting_provider: Some({
             let mut characters = ide::Analysis::SUPPORTED_TRIGGER_CHARS.iter();
             DocumentOnTypeFormattingOptions {
