@@ -8,6 +8,7 @@ mod imports;
 mod keywords;
 mod naga;
 
+use edition::Edition;
 use expect_test::{Expect, expect};
 
 use crate::ParseEntryPoint;
@@ -17,7 +18,7 @@ fn check(
     input: &str,
     expected_tree: Expect,
 ) {
-    crate::check_entrypoint(input, ParseEntryPoint::File, &expected_tree);
+    crate::check_entrypoint(input, ParseEntryPoint::File, &expected_tree, Edition::Wgsl);
 }
 
 #[expect(clippy::needless_pass_by_value, reason = "intended API")]
@@ -25,7 +26,7 @@ fn check_type(
     input: &str,
     expected_tree: Expect,
 ) {
-    crate::check_entrypoint(input, ParseEntryPoint::Type, &expected_tree);
+    crate::check_entrypoint(input, ParseEntryPoint::Type, &expected_tree, Edition::Wgsl);
 }
 
 #[expect(clippy::needless_pass_by_value, reason = "intended API")]
@@ -33,7 +34,12 @@ fn check_statement(
     statement: &str,
     expected_tree: Expect,
 ) {
-    crate::check_entrypoint(statement, ParseEntryPoint::Statement, &expected_tree);
+    crate::check_entrypoint(
+        statement,
+        ParseEntryPoint::Statement,
+        &expected_tree,
+        Edition::Wgsl,
+    );
 }
 
 #[expect(clippy::needless_pass_by_value, reason = "intended API")]
@@ -41,7 +47,58 @@ fn check_attribute(
     statement: &str,
     expected_tree: Expect,
 ) {
-    crate::check_entrypoint(statement, ParseEntryPoint::Attribute, &expected_tree);
+    crate::check_entrypoint(
+        statement,
+        ParseEntryPoint::Attribute,
+        &expected_tree,
+        Edition::Wgsl,
+    );
+}
+
+#[expect(clippy::needless_pass_by_value, reason = "intended API")]
+fn check_with_edition(
+    edition: Edition,
+    input: &str,
+    expected_tree: Expect,
+) {
+    crate::check_entrypoint(input, ParseEntryPoint::File, &expected_tree, edition);
+}
+
+#[expect(clippy::needless_pass_by_value, reason = "intended API")]
+fn check_type_with_edition_with_edition(
+    edition: Edition,
+    input: &str,
+    expected_tree: Expect,
+) {
+    crate::check_entrypoint(input, ParseEntryPoint::Type, &expected_tree, edition);
+}
+
+#[expect(clippy::needless_pass_by_value, reason = "intended API")]
+fn check_statement_with_edition(
+    edition: Edition,
+    statement: &str,
+    expected_tree: Expect,
+) {
+    crate::check_entrypoint(
+        statement,
+        ParseEntryPoint::Statement,
+        &expected_tree,
+        edition,
+    );
+}
+
+#[expect(clippy::needless_pass_by_value, reason = "intended API")]
+fn check_attribute_with_edition(
+    edition: Edition,
+    statement: &str,
+    expected_tree: Expect,
+) {
+    crate::check_entrypoint(
+        statement,
+        ParseEntryPoint::Attribute,
+        &expected_tree,
+        edition,
+    );
 }
 
 #[test]

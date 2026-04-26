@@ -119,11 +119,11 @@ impl<'source> ParserCallbacks<'source> for Parser<'source> {
     type Diagnostic = Diagnostic;
 
     fn create_tokens(
-        _context: &mut Self::Context,
+        context: &mut Self::Context,
         source: &'source str,
         diagnostics: &mut Vec<Self::Diagnostic>,
     ) -> (Vec<Token>, Vec<Span>) {
-        lex(source, diagnostics)
+        lex(source, context.edition, diagnostics)
     }
 
     fn create_diagnostic(
@@ -311,6 +311,24 @@ impl<'source> ParserCallbacks<'source> for Parser<'source> {
                 "const declaration requires initializer".to_owned(),
             )
         })
+    }
+
+    fn create_node_path(
+        &mut self,
+        node_ref: NodeRef,
+        diags: &mut Vec<Self::Diagnostic>,
+    ) {
+    }
+
+    /// Called when semantic assertion `!1` in rule `path` is visited.
+    fn assertion_path_1(&self) -> Option<Self::Diagnostic> {
+        if self.context.edition == Edition::Wgsl {
+            return Some(self.create_diagnostic(
+                self.span(),
+                "switch to WESL to use qualified paths".to_owned(),
+            ));
+        }
+        None
     }
 
     /// Called when semantic action `#2` in rule `global_item` is visited.

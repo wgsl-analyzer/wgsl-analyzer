@@ -255,7 +255,7 @@ typed_ident^: name (':' type_specifier | ());
 name: Identifier;
 
 // wesl identifier
-path: [import_package_relative | import_super_relative] Identifier ('::' Identifier)*;
+path: [import_package_relative | import_super_relative] Identifier ('::' !1 Identifier)*;
 
 // Used in places where it's guaranteed to be a type
 type_specifier: path template_list;

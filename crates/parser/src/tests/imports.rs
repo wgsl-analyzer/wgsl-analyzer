@@ -1,10 +1,58 @@
 use expect_test::expect;
 
-use crate::tests::check;
+use crate::tests::{check, check_with_edition};
+
+#[test]
+fn simplest_import_fail() {
+    check(
+        "import foo;",
+        expect![[r#"
+            SourceFile@0..11
+              Error@0..10
+                Reserved@0..6 "import"
+                Blankspace@6..7 " "
+                Identifier@7..10 "foo"
+              Semicolon@10..11 ";"
+
+            error at 0..6: 'import' is a reserved word in WGSL
+            error at 0..6: switch to WESL to use `import`
+            error at 0..6: invalid syntax, expected one of: 'alias', '@', 'const', 'const_assert', 'diagnostic', <end of file>, 'enable', 'fn', 'import', 'let', 'override', 'requires', ';', 'struct', 'var'"#]],
+    );
+}
+
+#[test]
+fn qualified_path_fail() {
+    check(
+        "const x: some_package::Type = 0;",
+        expect![[r#"
+            SourceFile@0..32
+              ConstantDeclaration@0..32
+                Const@0..5 "const"
+                Blankspace@5..6 " "
+                Name@6..7
+                  Identifier@6..7 "x"
+                Colon@7..8 ":"
+                Blankspace@8..9 " "
+                TypeSpecifier@9..27
+                  Path@9..27
+                    Identifier@9..21 "some_package"
+                    ColonColon@21..23 "::"
+                    Identifier@23..27 "Type"
+                Blankspace@27..28 " "
+                Equal@28..29 "="
+                Blankspace@29..30 " "
+                Literal@30..31
+                  IntLiteral@30..31 "0"
+                Semicolon@31..32 ";"
+
+            error at 23..27: switch to WESL to use qualified paths"#]],
+    );
+}
 
 #[test]
 fn simplest_import() {
-    check(
+    check_with_edition(
+        edition::Edition::Wesl2025Unstable,
         "import foo;",
         expect![[r#"
             SourceFile@0..11
@@ -20,7 +68,8 @@ fn simplest_import() {
 
 #[test]
 fn super_import() {
-    check(
+    check_with_edition(
+        edition::Edition::Wesl2025Unstable,
         "import super::super::bar;",
         expect![[r#"
             SourceFile@0..25
@@ -41,7 +90,8 @@ fn super_import() {
 
 #[test]
 fn package_import() {
-    check(
+    check_with_edition(
+        edition::Edition::Wesl2025Unstable,
         "import package::{bar};",
         expect![[r#"
             SourceFile@0..22
@@ -63,7 +113,8 @@ fn package_import() {
 
 #[test]
 fn import_alias() {
-    check(
+    check_with_edition(
+        edition::Edition::Wesl2025Unstable,
         "import foo::bar as bar;",
         expect![[r#"
             SourceFile@0..23
@@ -88,7 +139,8 @@ fn import_alias() {
 
 #[test]
 fn illegal_import_aliasing_super() {
-    check(
+    check_with_edition(
+        edition::Edition::Wesl2025Unstable,
         "import super as bar;",
         expect![[r#"
             SourceFile@0..20
@@ -112,7 +164,8 @@ fn illegal_import_aliasing_super() {
 
 #[test]
 fn import_nested_collections() {
-    check(
+    check_with_edition(
+        edition::Edition::Wesl2025Unstable,
         "import bevy_pbr::{
   forward_io::VertexOutput,
   pbr_types::{PbrInput as PbrOutput, pbr_input_new},

@@ -102,10 +102,11 @@ fn check_entrypoint(
     input: &str,
     entry_point: ParseEntryPoint,
     expected_tree: &expect_test::Expect,
+    edition: Edition,
 ) {
     use rowan::TextSize;
 
-    let parse = crate::parser::parse_entrypoint(input, entry_point, Edition::LATEST);
+    let parse = crate::parser::parse_entrypoint(input, entry_point, edition);
     assert_eq!(parse.syntax().text_range().start(), TextSize::new(0));
     assert_eq!(
         parse.syntax().text_range().end(),
