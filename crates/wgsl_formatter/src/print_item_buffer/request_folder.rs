@@ -1,17 +1,80 @@
-use std::collections::BTreeSet;
-
 use dprint_core::formatting::{
     Condition, ConditionProperties, ConditionResolver, PrintItems, Signal,
 };
 
 /// A possible kind of whitespace that can be requested and, through [`RequestFolder`], be merged together if multiple requests are issued.
-///
-/// The Ord instance of this is used to determine which whitespace should be used, when multiple requests are issued.
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug, PartialOrd, Ord)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum RequestItem {
-    Space = 1,
-    LineBreak = 3,
-    EmptyLine = 4,
+    Space,
+    LineBreak,
+    EmptyLine,
+}
+
+impl RequestItem {
+    /// Converts the RequestItem to its index in the Bitmaps that store expected, discouraged, and forced requests.
+    /// If multiple request items are requested at a stage (e.g expect space & line break), the request item with
+    /// the highest index is used.
+    #[must_use]
+    pub const fn to_index(self) -> u8 {
+        match self {
+            RequestItem::Space => 0,
+            RequestItem::LineBreak => 1,
+            RequestItem::EmptyLine => 2,
+        }
+    }
+
+    #[must_use]
+    pub const fn from_index(index: u8) -> Option<Self> {
+        match index {
+            0 => Some(RequestItem::Space),
+            1 => Some(RequestItem::LineBreak),
+            2 => Some(RequestItem::EmptyLine),
+            _ => None,
+        }
+    }
+}
+
+#[derive(Clone)]
+pub struct RequestItemMap(u8);
+
+impl RequestItemMap {
+    #[must_use]
+    pub const fn empty() -> Self {
+        Self(0)
+    }
+    #[must_use]
+    pub const fn from(item: RequestItem) -> Self {
+        Self(1 << item.to_index())
+    }
+    #[must_use]
+    pub const fn union(
+        &self,
+        other: &Self,
+    ) -> Self {
+        Self(self.0 | other.0)
+    }
+    #[must_use]
+    pub const fn difference(
+        &self,
+        other: &Self,
+    ) -> Self {
+        Self(self.0 & !(other.0))
+    }
+    #[must_use]
+    pub const fn highest_index(&self) -> Option<RequestItem> {
+        if self.0 == 0 {
+            return None;
+        }
+        let log = self.0.ilog2();
+        RequestItem::from_index(log as u8)
+    }
+    #[must_use]
+    pub const fn extended_by(
+        self,
+        other: RequestItem,
+    ) -> Self {
+        self.union(&Self::from(other))
+    }
 }
 
 // #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
@@ -31,9 +94,9 @@ pub enum RequestItem {
 pub enum Request {
     Unconditional {
         // TODO use bitmaps instead of sets here
-        expected: BTreeSet<RequestItem>,
-        discouraged: BTreeSet<RequestItem>,
-        forced: BTreeSet<RequestItem>,
+        expected: RequestItemMap,
+        discouraged: RequestItemMap,
+        forced: RequestItemMap,
 
         // TODO think the exact theory of this through
         suggest_linebreak: bool,
@@ -46,30 +109,38 @@ pub enum Request {
 }
 
 impl Request {
-    // ==== Helper methods to create a request ====
+    pub fn empty() -> Self {
+        Self::Unconditional {
+            expected: RequestItemMap::empty(),
+            discouraged: RequestItemMap::empty(),
+            forced: RequestItemMap::empty(),
+            suggest_linebreak: false,
+        }
+    }
+
     pub fn expect(item: RequestItem) -> Self {
         Self::Unconditional {
-            expected: BTreeSet::from([item]),
-            discouraged: BTreeSet::new(),
-            forced: BTreeSet::new(),
+            expected: RequestItemMap::from(item),
+            discouraged: RequestItemMap::empty(),
+            forced: RequestItemMap::empty(),
             suggest_linebreak: false,
         }
     }
 
     pub fn discourage(item: RequestItem) -> Self {
         Self::Unconditional {
-            expected: BTreeSet::new(),
-            discouraged: BTreeSet::from([item]),
-            forced: BTreeSet::new(),
+            expected: RequestItemMap::empty(),
+            discouraged: RequestItemMap::from(item),
+            forced: RequestItemMap::empty(),
             suggest_linebreak: false,
         }
     }
 
     pub fn force(item: RequestItem) -> Self {
         Self::Unconditional {
-            expected: BTreeSet::new(),
-            discouraged: BTreeSet::new(),
-            forced: BTreeSet::from([item]),
+            expected: RequestItemMap::empty(),
+            discouraged: RequestItemMap::empty(),
+            forced: RequestItemMap::from(item),
             suggest_linebreak: false,
         }
     }
@@ -112,14 +183,11 @@ impl Request {
                     suggest_linebreak: right_potential_newline,
                 },
             ) => {
-                let mut combined_exp = exp_left;
-                combined_exp.extend(exp_right.iter());
+                let combined_exp = exp_left.union(&exp_right);
 
-                let mut combined_disc = disc_left;
-                combined_disc.extend(disc_right.iter());
+                let combined_disc = disc_left.union(&disc_right);
 
-                let mut combined_forced = forced_left;
-                combined_forced.extend(forced_right.iter());
+                let combined_forced = forced_left.union(&forced_right);
 
                 Self::Unconditional {
                     expected: combined_exp,
@@ -246,16 +314,13 @@ impl RequestFolder {
                     forced,
                     suggest_linebreak,
                 } => {
-                    let candidates = expected
-                        .difference(&discouraged)
-                        .copied()
-                        .collect::<BTreeSet<_>>();
-                    let candidates = candidates.union(&forced).collect::<BTreeSet<_>>();
+                    let candidates = expected.difference(&discouraged);
+                    let candidates = candidates.union(&forced);
 
                     //TODO if newlines are discouraged, clear suggest_linebreak
 
-                    if let Some(chosen) = candidates.last() {
-                        apply_item(**chosen, target, suggest_linebreak);
+                    if let Some(chosen) = candidates.highest_index() {
+                        apply_item(chosen, target, suggest_linebreak);
                     } else if suggest_linebreak {
                         target.push_signal(Signal::PossibleNewLine);
                     }

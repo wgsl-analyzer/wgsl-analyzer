@@ -1,5 +1,3 @@
-use std::collections::BTreeSet;
-
 use dprint_core_macros::sc;
 use itertools::{Itertools as _, Position, put_back};
 use parser::SyntaxKind;
@@ -143,12 +141,7 @@ pub fn gen_import_path(node: &ast::ImportPath) -> FormatDocumentResult<PrintItem
     formatted.extend(gen_comments(&item_comments_after_name));
     formatted.start_indent();
     formatted.start_new_line_group();
-    formatted.request(Request::Unconditional {
-        expected: BTreeSet::new(),
-        discouraged: BTreeSet::new(),
-        forced: BTreeSet::new(),
-        suggest_linebreak: true,
-    });
+    formatted.request(Request::empty().or_newline());
     formatted.push_sc(sc!("::"));
     formatted.finish_new_line_group();
     formatted.finish_indent();
@@ -294,12 +287,7 @@ pub fn gen_import_collection(
 
         if position != Position::Last && position != Position::Only {
             group.push_sc(sc!(","));
-            group.request(Request::Unconditional {
-                expected: BTreeSet::from([RequestItem::Space]),
-                discouraged: BTreeSet::new(),
-                forced: BTreeSet::new(),
-                suggest_linebreak: true,
-            });
+            group.request(Request::expect(RequestItem::Space).or_newline());
         }
     }
 

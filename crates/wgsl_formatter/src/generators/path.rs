@@ -1,5 +1,3 @@
-use std::collections::BTreeSet;
-
 use dprint_core_macros::sc;
 use itertools::put_back;
 use parser::SyntaxKind;
@@ -55,12 +53,7 @@ pub fn gen_path(path: &ast::Path) -> FormatDocumentResult<PrintItemBuffer> {
             PathItem::ColonColon => {
                 formatted.start_indent();
                 formatted.start_new_line_group();
-                formatted.request(Request::Unconditional {
-                    expected: BTreeSet::new(),
-                    discouraged: BTreeSet::new(),
-                    forced: BTreeSet::new(),
-                    suggest_linebreak: true,
-                });
+                formatted.request(Request::empty().or_newline());
                 formatted.push_sc(sc!("::"));
                 formatted.finish_new_line_group();
                 formatted.finish_indent();

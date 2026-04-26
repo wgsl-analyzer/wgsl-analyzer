@@ -1,5 +1,3 @@
-use std::collections::BTreeSet;
-
 use parser::{SyntaxKind, SyntaxNode};
 use syntax::AstNode as _;
 
@@ -87,19 +85,9 @@ use crate::{
 
 pub fn gen_node_no_newlines(node: &SyntaxNode) -> FormatDocumentResult<PrintItemBuffer> {
     let mut formatted = PrintItemBuffer::new();
-    formatted.request(Request::Unconditional {
-        expected: BTreeSet::new(),
-        discouraged: BTreeSet::from([RequestItem::LineBreak]),
-        forced: BTreeSet::new(),
-        suggest_linebreak: false,
-    });
+    formatted.request(Request::discourage(RequestItem::EmptyLine));
     formatted.extend(gen_node(node)?);
-    formatted.request(Request::Unconditional {
-        expected: BTreeSet::new(),
-        discouraged: BTreeSet::from([RequestItem::LineBreak]),
-        forced: BTreeSet::new(),
-        suggest_linebreak: false,
-    });
+    formatted.request(Request::discourage(RequestItem::LineBreak));
     Ok(formatted)
 }
 
