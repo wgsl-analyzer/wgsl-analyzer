@@ -8,7 +8,7 @@ import {
 	window,
 } from "vscode";
 
-import type { Ctx } from "./ctx";
+import type { Context } from "./context";
 
 import { unwrapUndefinable } from "./utilities";
 
@@ -17,7 +17,7 @@ export const URI_SCHEME = "wgsl-analyzer-diagnostics-view";
 export class TextDocumentProvider implements vscode.TextDocumentContentProvider {
 	private _onDidChange = new vscode.EventEmitter<vscode.Uri>();
 
-	public constructor(private readonly ctx: Ctx) {}
+	public constructor(private readonly context: Context) {}
 
 	get onDidChange(): vscode.Event<vscode.Uri> {
 		return this._onDidChange.event;
@@ -34,13 +34,13 @@ export class TextDocumentProvider implements vscode.TextDocumentContentProvider 
 	}
 
 	provideTextDocumentContent(uri: vscode.Uri): string {
-		const contents = getRenderedDiagnostic(this.ctx, uri);
+		const contents = getRenderedDiagnostic(this.context, uri);
 		return anser.ansiToText(contents);
 	}
 }
 
-function getRenderedDiagnostic(ctx: Ctx, uri: vscode.Uri): string {
-	const diagnostics = ctx.client?.diagnostics?.get(vscode.Uri.parse(uri.fragment, true));
+function getRenderedDiagnostic(context: Context, uri: vscode.Uri): string {
+	const diagnostics = context.client?.diagnostics?.get(vscode.Uri.parse(uri.fragment, true));
 	if (!diagnostics) {
 		return "Unable to find original diagnostic";
 	}
@@ -69,7 +69,7 @@ interface AnserStyle {
 export class AnsiDecorationProvider implements vscode.Disposable {
 	private _decorationTypes = new Map<AnserStyle, TextEditorDecorationType>();
 
-	public constructor(private readonly ctx: Ctx) {}
+	public constructor(private readonly context: Context) {}
 
 	dispose(): void {
 		for (const decorationType of this._decorationTypes.values()) {
@@ -91,7 +91,7 @@ export class AnsiDecorationProvider implements vscode.Disposable {
 	}
 
 	private _getDecorations(uri: vscode.Uri): ProviderResult<[TextEditorDecorationType, Range[]][]> {
-		const stringContents = getRenderedDiagnostic(this.ctx, uri);
+		const stringContents = getRenderedDiagnostic(this.context, uri);
 		const lines = stringContents.split("\n");
 
 		const result = new Map<TextEditorDecorationType, Range[]>();

@@ -3,7 +3,7 @@ import * as vscode from "vscode";
 import * as lc from "vscode-languageclient";
 import type { LanguageClient } from "vscode-languageclient/node";
 import { HOVER_REFERENCE_COMMAND } from "./client";
-import type { Cmd, Ctx, CtxInit } from "./ctx";
+import type { Cmd, Context, InitializedContext } from "./context";
 import * as wa from "./lsp_ext";
 import {
 	applySnippetTextEdits,
@@ -13,17 +13,17 @@ import {
 import type { SyntaxElement } from "./syntax_tree_provider";
 import { isWeslDocument, isWeslEditor, log, sleep, unwrapUndefinable } from "./utilities";
 
-export function analyzerStatus(ctx: CtxInit): Cmd {
+export function analyzerStatus(context: InitializedContext): Cmd {
 	const tdcp = new (class implements vscode.TextDocumentContentProvider {
 		readonly uri = vscode.Uri.parse("wgsl-analyzer-status://status", true);
 		readonly eventEmitter = new vscode.EventEmitter<vscode.Uri>();
 
 		async provideTextDocumentContent(_uri: vscode.Uri): Promise<string> {
 			if (!vscode.window.activeTextEditor) return "";
-			const client = ctx.client;
+			const client = context.client;
 
 			const parameters: wa.AnalyzerStatusParameters = {};
-			const doc = ctx.activeWeslEditor?.document;
+			const doc = context.activeWeslEditor?.document;
 			if (doc != null) {
 				parameters.textDocument = client.code2ProtocolConverter.asTextDocumentIdentifier(doc);
 			}
@@ -35,7 +35,7 @@ export function analyzerStatus(ctx: CtxInit): Cmd {
 		}
 	})();
 
-	ctx.pushExtCleanup(
+	context.pushExtCleanup(
 		vscode.workspace.registerTextDocumentContentProvider("wgsl-analyzer-status", tdcp),
 	);
 
@@ -49,7 +49,7 @@ export function analyzerStatus(ctx: CtxInit): Cmd {
 	};
 }
 
-export function memoryUsage(ctx: CtxInit): Cmd {
+export function memoryUsage(context: InitializedContext): Cmd {
 	const tdcp = new (class implements vscode.TextDocumentContentProvider {
 		readonly uri = vscode.Uri.parse("wgsl-analyzer-memory://memory", true);
 		readonly eventEmitter = new vscode.EventEmitter<vscode.Uri>();
@@ -59,7 +59,7 @@ export function memoryUsage(ctx: CtxInit): Cmd {
 				return "";
 			}
 
-			return ctx.client.sendRequest(wa.memoryUsage).then((memory: string) => {
+			return context.client.sendRequest(wa.memoryUsage).then((memory: string) => {
 				return "Per-query memory usage:\n" + memory + "\n(note: database has been cleared)";
 			});
 		}
@@ -69,7 +69,7 @@ export function memoryUsage(ctx: CtxInit): Cmd {
 		}
 	})();
 
-	ctx.pushExtCleanup(
+	context.pushExtCleanup(
 		vscode.workspace.registerTextDocumentContentProvider("wgsl-analyzer-memory", tdcp),
 	);
 
@@ -80,7 +80,7 @@ export function memoryUsage(ctx: CtxInit): Cmd {
 	};
 }
 
-export function triggerParameterHints(_: CtxInit): Cmd {
+export function triggerParameterHints(_: InitializedContext): Cmd {
 	return async () => {
 		const parameterHintsEnabled = vscode.workspace
 			.getConfiguration("editor")
@@ -92,24 +92,24 @@ export function triggerParameterHints(_: CtxInit): Cmd {
 	};
 }
 
-export function rename(_: CtxInit): Cmd {
+export function rename(_: InitializedContext): Cmd {
 	return async () => {
 		await vscode.commands.executeCommand("editor.action.rename");
 	};
 }
 
-export function openLogs(ctx: CtxInit): Cmd {
+export function openLogs(context: InitializedContext): Cmd {
 	return () => {
-		ctx.client.outputChannel.show();
+		context.client.outputChannel.show();
 	};
 }
 
-export function matchingBrace(ctx: CtxInit): Cmd {
+export function matchingBrace(context: InitializedContext): Cmd {
 	return async () => {
-		const editor = ctx.activeWeslEditor;
+		const editor = context.activeWeslEditor;
 		if (!editor) return;
 
-		const client = ctx.client;
+		const client = context.client;
 
 		const response = await client.sendRequest(wa.matchingBrace, {
 			textDocument: client.code2ProtocolConverter.asTextDocumentIdentifier(editor.document),
@@ -125,12 +125,12 @@ export function matchingBrace(ctx: CtxInit): Cmd {
 	};
 }
 
-export function joinLines(ctx: CtxInit): Cmd {
+export function joinLines(context: InitializedContext): Cmd {
 	return async () => {
-		const editor = ctx.activeWeslEditor;
+		const editor = context.activeWeslEditor;
 		if (!editor) return;
 
-		const client = ctx.client;
+		const client = context.client;
 
 		const items: lc.TextEdit[] = await client.sendRequest(wa.joinLines, {
 			ranges: editor.selections.map((it) => client.code2ProtocolConverter.asRange(it)),
@@ -145,19 +145,19 @@ export function joinLines(ctx: CtxInit): Cmd {
 	};
 }
 
-export function moveItemUp(ctx: CtxInit): Cmd {
-	return moveItem(ctx, "Up");
+export function moveItemUp(context: InitializedContext): Cmd {
+	return moveItem(context, "Up");
 }
 
-export function moveItemDown(ctx: CtxInit): Cmd {
-	return moveItem(ctx, "Down");
+export function moveItemDown(context: InitializedContext): Cmd {
+	return moveItem(context, "Down");
 }
 
-export function moveItem(ctx: CtxInit, direction: wa.Direction): Cmd {
+export function moveItem(context: InitializedContext, direction: wa.Direction): Cmd {
 	return async () => {
-		const editor = ctx.activeWeslEditor;
+		const editor = context.activeWeslEditor;
 		if (!editor) return;
-		const client = ctx.client;
+		const client = context.client;
 
 		const lcEdits = await client.sendRequest(wa.moveItem, {
 			range: client.code2ProtocolConverter.asRange(editor.selection),
@@ -174,13 +174,13 @@ export function moveItem(ctx: CtxInit, direction: wa.Direction): Cmd {
 	};
 }
 
-export function onEnter(ctx: CtxInit): Cmd {
+export function onEnter(context: InitializedContext): Cmd {
 	async function handleKeypress() {
-		const editor = ctx.activeWeslEditor;
+		const editor = context.activeWeslEditor;
 
 		if (!editor) return false;
 
-		const client = ctx.client;
+		const client = context.client;
 		const lcEdits = await client
 			.sendRequest(wa.onEnter, {
 				textDocument: client.code2ProtocolConverter.asTextDocumentIdentifier(editor.document),
@@ -253,28 +253,28 @@ export function syntaxTreeCopy(): Cmd {
 	};
 }
 
-export function syntaxTreeHideWhitespace(ctx: CtxInit): Cmd {
+export function syntaxTreeHideWhitespace(context: InitializedContext): Cmd {
 	return async () => {
-		if (ctx.syntaxTreeProvider !== undefined) {
-			await ctx.syntaxTreeProvider.toggleWhitespace();
+		if (context.syntaxTreeProvider !== undefined) {
+			await context.syntaxTreeProvider.toggleWhitespace();
 		}
 	};
 }
 
-export function syntaxTreeShowWhitespace(ctx: CtxInit): Cmd {
+export function syntaxTreeShowWhitespace(context: InitializedContext): Cmd {
 	return async () => {
-		if (ctx.syntaxTreeProvider !== undefined) {
-			await ctx.syntaxTreeProvider.toggleWhitespace();
+		if (context.syntaxTreeProvider !== undefined) {
+			await context.syntaxTreeProvider.toggleWhitespace();
 		}
 	};
 }
 
-export function ssr(ctx: CtxInit): Cmd {
+export function ssr(context: InitializedContext): Cmd {
 	return async () => {
 		const editor = vscode.window.activeTextEditor;
 		if (!editor) return;
 
-		const client = ctx.client;
+		const client = context.client;
 
 		const position = editor.selection.active;
 		const selections = editor.selections;
@@ -324,19 +324,19 @@ export function ssr(ctx: CtxInit): Cmd {
 	};
 }
 
-export function serverVersion(ctx: CtxInit): Cmd {
+export function serverVersion(context: InitializedContext): Cmd {
 	return () => {
-		if (!ctx.serverPath) {
+		if (!context.serverPath) {
 			void vscode.window.showWarningMessage(`wgsl-analyzer server is not running`);
 			return;
 		}
 		void vscode.window.showInformationMessage(
-			`wgsl-analyzer version: ${ctx.serverVersion} [${ctx.serverPath}]`,
+			`wgsl-analyzer version: ${context.serverVersion} [${context.serverPath}]`,
 		);
 	};
 }
 
-export function viewFileText(ctx: CtxInit): Cmd {
+export function viewFileText(context: InitializedContext): Cmd {
 	const tdcp = new (class implements vscode.TextDocumentContentProvider {
 		readonly uri = vscode.Uri.parse("wgsl-analyzer-file-text://viewFileText/file.rs", true);
 		readonly eventEmitter = new vscode.EventEmitter<vscode.Uri>();
@@ -345,12 +345,12 @@ export function viewFileText(ctx: CtxInit): Cmd {
 			vscode.workspace.onDidChangeTextDocument(
 				this.onDidChangeTextDocument,
 				this,
-				ctx.subscriptions,
+				context.subscriptions,
 			);
 			vscode.window.onDidChangeActiveTextEditor(
 				this.onDidChangeActiveTextEditor,
 				this,
-				ctx.subscriptions,
+				context.subscriptions,
 			);
 		}
 
@@ -371,11 +371,11 @@ export function viewFileText(ctx: CtxInit): Cmd {
 		}
 
 		provideTextDocumentContent(_uri: vscode.Uri, ct: vscode.CancellationToken): Promise<string> {
-			const weslEditor = ctx.activeWeslEditor;
+			const weslEditor = context.activeWeslEditor;
 			if (!weslEditor) {
 				return Promise.resolve("");
 			}
-			const client = ctx.client;
+			const client = context.client;
 
 			const parameters = client.code2ProtocolConverter.asTextDocumentIdentifier(
 				weslEditor.document,
@@ -388,7 +388,7 @@ export function viewFileText(ctx: CtxInit): Cmd {
 		}
 	})();
 
-	ctx.pushExtCleanup(
+	context.pushExtCleanup(
 		vscode.workspace.registerTextDocumentContentProvider("wgsl-analyzer-file-text", tdcp),
 	);
 
@@ -402,7 +402,7 @@ export function viewFileText(ctx: CtxInit): Cmd {
 	};
 }
 
-export function viewItemTree(ctx: CtxInit): Cmd {
+export function viewItemTree(context: InitializedContext): Cmd {
 	const tdcp = new (class implements vscode.TextDocumentContentProvider {
 		readonly uri = vscode.Uri.parse("wgsl-analyzer-item-tree://viewItemTree/itemtree.rs", true);
 		readonly eventEmitter = new vscode.EventEmitter<vscode.Uri>();
@@ -411,12 +411,12 @@ export function viewItemTree(ctx: CtxInit): Cmd {
 			vscode.workspace.onDidChangeTextDocument(
 				this.onDidChangeTextDocument,
 				this,
-				ctx.subscriptions,
+				context.subscriptions,
 			);
 			vscode.window.onDidChangeActiveTextEditor(
 				this.onDidChangeActiveTextEditor,
 				this,
-				ctx.subscriptions,
+				context.subscriptions,
 			);
 		}
 
@@ -437,11 +437,11 @@ export function viewItemTree(ctx: CtxInit): Cmd {
 		}
 
 		provideTextDocumentContent(_uri: vscode.Uri, ct: vscode.CancellationToken): Promise<string> {
-			const weslEditor = ctx.activeWeslEditor;
+			const weslEditor = context.activeWeslEditor;
 			if (!weslEditor) {
 				return Promise.resolve("");
 			}
-			const client = ctx.client;
+			const client = context.client;
 
 			const parameters = {
 				textDocument: client.code2ProtocolConverter.asTextDocumentIdentifier(weslEditor.document),
@@ -454,7 +454,7 @@ export function viewItemTree(ctx: CtxInit): Cmd {
 		}
 	})();
 
-	ctx.pushExtCleanup(
+	context.pushExtCleanup(
 		vscode.workspace.registerTextDocumentContentProvider("wgsl-analyzer-item-tree", tdcp),
 	);
 
@@ -468,9 +468,9 @@ export function viewItemTree(ctx: CtxInit): Cmd {
 	};
 }
 
-function packageGraph(ctx: CtxInit, full: boolean): Cmd {
+function packageGraph(context: InitializedContext, full: boolean): Cmd {
 	return async () => {
-		const nodeModulesPath = vscode.Uri.file(path.join(ctx.extensionPath, "node_modules"));
+		const nodeModulesPath = vscode.Uri.file(path.join(context.extensionPath, "node_modules"));
 
 		const panel = vscode.window.createWebviewPanel(
 			"wgsl-analyzer.package-graph",
@@ -485,7 +485,7 @@ function packageGraph(ctx: CtxInit, full: boolean): Cmd {
 		const parameters = {
 			full: full,
 		};
-		const client = ctx.client;
+		const client = context.client;
 		const dot = await client.sendRequest(wa.viewPackageGraph, parameters);
 		const uri = panel.webview.asWebviewUri(nodeModulesPath);
 
@@ -536,16 +536,16 @@ function packageGraph(ctx: CtxInit, full: boolean): Cmd {
 	};
 }
 
-export function viewPackageGraph(ctx: CtxInit): Cmd {
-	return packageGraph(ctx, false);
+export function viewPackageGraph(context: InitializedContext): Cmd {
+	return packageGraph(context, false);
 }
 
-export function viewFullPackageGraph(ctx: CtxInit): Cmd {
-	return packageGraph(ctx, true);
+export function viewFullPackageGraph(context: InitializedContext): Cmd {
+	return packageGraph(context, true);
 }
 
-export function reloadWorkspace(ctx: CtxInit): Cmd {
-	return async () => ctx.client.sendRequest(wa.reloadWorkspace);
+export function reloadWorkspace(context: InitializedContext): Cmd {
+	return async () => context.client.sendRequest(wa.reloadWorkspace);
 }
 
 async function showReferencesImpl(
@@ -564,13 +564,13 @@ async function showReferencesImpl(
 	}
 }
 
-export function showReferences(ctx: CtxInit): Cmd {
+export function showReferences(context: InitializedContext): Cmd {
 	return async (uri: string, position: lc.Position, locations: lc.Location[]) => {
-		await showReferencesImpl(ctx.client, uri, position, locations);
+		await showReferencesImpl(context.client, uri, position, locations);
 	};
 }
 
-export function applyActionGroup(_ctx: CtxInit): Cmd {
+export function applyActionGroup(_ctx: InitializedContext): Cmd {
 	return async (actions: { label: string; args: lc.CodeAction }[]) => {
 		const selectedAction = await vscode.window.showQuickPick(actions);
 		if (!selectedAction) return;
@@ -578,9 +578,9 @@ export function applyActionGroup(_ctx: CtxInit): Cmd {
 	};
 }
 
-export function gotoLocation(ctx: CtxInit): Cmd {
+export function gotoLocation(context: InitializedContext): Cmd {
 	return async (locationLink: lc.LocationLink) => {
-		const client = ctx.client;
+		const client = context.client;
 		const uri = client.protocol2CodeConverter.asUri(locationLink.targetUri);
 		let range = client.protocol2CodeConverter.asRange(locationLink.targetSelectionRange);
 		// collapse the range to a cursor position
@@ -590,13 +590,13 @@ export function gotoLocation(ctx: CtxInit): Cmd {
 	};
 }
 
-export function openDocs(ctx: CtxInit): Cmd {
+export function openDocs(context: InitializedContext): Cmd {
 	return async () => {
 		const editor = vscode.window.activeTextEditor;
 		if (!editor) {
 			return;
 		}
-		const client = ctx.client;
+		const client = context.client;
 
 		const position = editor.selection.active;
 		const textDocument = { uri: editor.document.uri.toString() };
@@ -628,13 +628,13 @@ export function openDocs(ctx: CtxInit): Cmd {
 	};
 }
 
-export function openExternalDocs(ctx: CtxInit): Cmd {
+export function openExternalDocs(context: InitializedContext): Cmd {
 	return async () => {
 		const editor = vscode.window.activeTextEditor;
 		if (!editor) {
 			return;
 		}
-		const client = ctx.client;
+		const client = context.client;
 
 		const position = editor.selection.active;
 		const textDocument = { uri: editor.document.uri.toString() };
@@ -656,31 +656,31 @@ export function openExternalDocs(ctx: CtxInit): Cmd {
 	};
 }
 
-export function cancelFlycheck(ctx: CtxInit): Cmd {
+export function cancelFlycheck(context: InitializedContext): Cmd {
 	return async () => {
-		await ctx.client.sendNotification(wa.cancelFlycheck);
+		await context.client.sendNotification(wa.cancelFlycheck);
 	};
 }
 
-export function clearFlycheck(ctx: CtxInit): Cmd {
+export function clearFlycheck(context: InitializedContext): Cmd {
 	return async () => {
-		await ctx.client.sendNotification(wa.clearFlycheck);
+		await context.client.sendNotification(wa.clearFlycheck);
 	};
 }
 
-export function runFlycheck(ctx: CtxInit): Cmd {
+export function runFlycheck(context: InitializedContext): Cmd {
 	return async () => {
-		const editor = ctx.activeWeslEditor;
-		const client = ctx.client;
+		const editor = context.activeWeslEditor;
+		const client = context.client;
 		const parameters = editor ? { uri: editor.document.uri.toString() } : null;
 
 		await client.sendNotification(wa.runFlycheck, { textDocument: parameters });
 	};
 }
 
-export function resolveCodeAction(ctx: CtxInit): Cmd {
+export function resolveCodeAction(context: InitializedContext): Cmd {
 	return async (parameters: lc.CodeAction) => {
-		const client = ctx.client;
+		const client = context.client;
 		parameters.command = undefined;
 		const item = await client.sendRequest(lc.CodeActionResolveRequest.type, parameters);
 		if (!item?.edit) {
@@ -699,7 +699,7 @@ export function resolveCodeAction(ctx: CtxInit): Cmd {
 		// replace all text edits so that we can convert snippet text edits into `vscode.SnippetTextEdit`s
 		// FIXME: this is a workaround until vscode-languageclient supports doing the SnippeTextEdit conversion itself
 		// also need to carry the snippetTextDocumentEdits separately, since we cannot retrieve them again using WorkspaceEdit.entries
-		const [workspaceTextEdit, snippetTextDocumentEdits] = asWorkspaceSnippetEdit(ctx, itemEdit);
+		const [workspaceTextEdit, snippetTextDocumentEdits] = asWorkspaceSnippetEdit(context, itemEdit);
 		await applySnippetWorkspaceEdit(workspaceTextEdit, snippetTextDocumentEdits);
 		if (item.command != null) {
 			await vscode.commands.executeCommand(item.command.command, item.command.arguments);
@@ -708,10 +708,10 @@ export function resolveCodeAction(ctx: CtxInit): Cmd {
 }
 
 function asWorkspaceSnippetEdit(
-	ctx: CtxInit,
+	context: InitializedContext,
 	item: lc.WorkspaceEdit,
 ): [vscode.WorkspaceEdit, SnippetTextDocumentEdit[]] {
-	const client = ctx.client;
+	const client = context.client;
 
 	// partially borrowed from https://github.com/microsoft/vscode-languageserver-node/blob/295aaa393fda8ecce110c38880a00466b9320e63/client/src/common/protocolConverter.ts#L1060-L1101
 	const result = new vscode.WorkspaceEdit();
@@ -754,13 +754,13 @@ function asWorkspaceSnippetEdit(
 	}
 }
 
-export function applySnippetWorkspaceEditCommand(_ctx: CtxInit): Cmd {
+export function applySnippetWorkspaceEditCommand(_ctx: InitializedContext): Cmd {
 	return async (edit: vscode.WorkspaceEdit) => {
 		await applySnippetWorkspaceEdit(edit, edit.entries());
 	};
 }
 
-export function hoverRefCommandProxy(_: Ctx): Cmd {
+export function hoverRefCommandProxy(_: Context): Cmd {
 	return async (index: number) => {
 		const link = HOVER_REFERENCE_COMMAND[index];
 		if (link) {
@@ -770,11 +770,11 @@ export function hoverRefCommandProxy(_: Ctx): Cmd {
 	};
 }
 
-export function viewMemoryLayout(ctx: CtxInit): Cmd {
+export function viewMemoryLayout(context: InitializedContext): Cmd {
 	return async () => {
 		const editor = vscode.window.activeTextEditor;
 		if (!editor) return;
-		const client = ctx.client;
+		const client = context.client;
 
 		const position = editor.selection.active;
 		const expanded = await client.sendRequest(wa.viewRecursiveMemoryLayout, {
@@ -1044,31 +1044,31 @@ locate()
 </script>
 </html>`;
 
-		ctx.pushExtCleanup(document);
+		context.pushExtCleanup(document);
 	};
 }
 
-export function toggleCheckOnSave(ctx: Ctx): Cmd {
+export function toggleCheckOnSave(context: Context): Cmd {
 	return async () => {
-		await ctx.config.toggleCheckOnSave();
-		ctx.refreshServerStatus();
+		await context.config.toggleCheckOnSave();
+		context.refreshServerStatus();
 	};
 }
 
-export function toggleLSPLogs(ctx: Ctx): Cmd {
+export function toggleLSPLogs(context: Context): Cmd {
 	return async () => {
 		const config = vscode.workspace.getConfiguration("wgsl-analyzer");
 		const targetValue =
 			config.get<string | undefined>("trace.server") === "verbose" ? undefined : "verbose";
 
 		await config.update("trace.server", targetValue, vscode.ConfigurationTarget.Workspace);
-		if (targetValue && ctx.client && ctx.client.traceOutputChannel) {
-			ctx.client.traceOutputChannel.show();
+		if (targetValue && context.client && context.client.traceOutputChannel) {
+			context.client.traceOutputChannel.show();
 		}
 	};
 }
 
-export function openWalkthrough(_: Ctx): Cmd {
+export function openWalkthrough(_: Context): Cmd {
 	return async () => {
 		await vscode.commands.executeCommand(
 			"workbench.action.openWalkthrough",
