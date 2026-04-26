@@ -8,9 +8,10 @@
 use std::{fmt, panic};
 
 pub use base_db;
+pub use base_db::FileId;
 use base_db::{
-    ExtensionsConfig, FileId, FileSourceRootInput, FileText, Files, Nonce, SourceDatabase,
-    SourceRoot, SourceRootId, SourceRootInput, change::Change, set_all_packages_with_durability,
+    ExtensionsConfig, FileSourceRootInput, FileText, Files, Nonce, SourceDatabase, SourceRoot,
+    SourceRootId, SourceRootInput, change::Change, set_all_packages_with_durability,
 };
 use hir_def::database::DefDatabase as _;
 use line_index::LineIndex;

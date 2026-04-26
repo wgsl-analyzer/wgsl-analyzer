@@ -1,5 +1,6 @@
 #![expect(
     clippy::needless_pass_by_value,
+    clippy::unnecessary_wraps,
     reason = "handlers should have a specific signature"
 )]
 
@@ -11,7 +12,8 @@ use lsp_types::{
     GotoDefinitionResponse, HoverContents, InlayHint, InlayHintParams, MarkupContent, MarkupKind,
     Range, TextDocumentIdentifier,
 };
-use vfs::FileId;
+use stdx::format_to;
+use vfs::{AbsPath, FileId};
 
 use crate::{
     Result,
@@ -32,6 +34,40 @@ pub(crate) fn handle_view_package_graph(
     let _p = tracing::info_span!("handle_view_package_graph").entered();
     let dot = snap.analysis.view_package_graph(parameters.full)?;
     Ok(dot)
+}
+
+pub(crate) fn handle_analyzer_status(
+    snap: GlobalStateSnapshot,
+    parameters: lsp::extensions::AnalyzerStatusParameters,
+) -> anyhow::Result<String> {
+    let _p = tracing::info_span!("handle_analyzer_status").entered();
+
+    let mut buffer = String::new();
+
+    let mut file_id = None;
+    if let Some(tdi) = parameters.text_document {
+        match from_proto::file_id(&snap, &tdi.uri) {
+            Ok(Some(found_file_id)) => file_id = Some(found_file_id),
+            Ok(None) => {},
+            Err(_) => format_to!(buffer, "file {} not found in vfs", tdi.uri),
+        }
+    }
+
+    buffer.push_str("\nAnalysis:\n");
+    buffer.push_str(
+        &snap
+            .analysis
+            .status(file_id)
+            .unwrap_or_else(|_| "Analysis retrieval was cancelled".to_owned()),
+    );
+
+    buffer.push_str("\nVersion: \n");
+    format_to!(buffer, "{}", crate::version());
+
+    buffer.push_str("\nConfiguration: \n");
+    format_to!(buffer, "{:#?}", snap.config);
+
+    Ok(buffer)
 }
 
 pub(crate) fn handle_goto_definition(

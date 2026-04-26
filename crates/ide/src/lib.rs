@@ -13,6 +13,7 @@ pub mod inlay_hints;
 mod markup;
 mod navigation_target;
 pub mod signature_help;
+mod status;
 mod typing;
 mod view_package_graph;
 mod view_syntax_tree;
@@ -240,6 +241,14 @@ impl Analysis {
         Function: FnOnce(&RootDatabase) -> T + panic::UnwindSafe,
     {
         Cancelled::catch(|| function(&self.database))
+    }
+
+    /// Debug info about the current state of the analysis.
+    pub fn status(
+        &self,
+        file_id: Option<FileId>,
+    ) -> Cancellable<String> {
+        self.with_db(|database| status::status(database, file_id))
     }
 
     pub fn source_root_id(
