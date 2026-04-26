@@ -324,6 +324,14 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Install Node.js
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: ./editors/code/pnpm-lock.yaml
+          package-manager-cache: true
+
       - name: Install pnpm
         uses: pnpm/action-setup@08c4be7e2e672a47d11bd04269e27e5f3e8529cb # v6.0.0
         with:
@@ -331,13 +339,6 @@ jobs:
           cache_dependency_path: ./editors/code/pnpm-lock.yaml
           version: ${{ env.PNPM_VERSION }}
           cache: true
-
-      - name: Install Node.js
-        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
-        with:
-          node-version: 24
-          cache: pnpm
-          cache-dependency-path: ./editors/code/pnpm-lock.yaml
 
       - name: Upgrade pnpm
         run: npm install --global pnpm@${{ env.PNPM_VERSION }}
