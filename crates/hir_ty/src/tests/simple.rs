@@ -839,6 +839,64 @@ fn vec_index_is_not_f32() {
     );
 }
 
+// this is wrong
+// https://github.com/wgsl-analyzer/wgsl-analyzer/issues/650
+#[test]
+fn vec_access_is_not_ref() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        const vec = vec2u(0, 1).x;
+        ",
+        expect![[r#"
+            6..9 'vec': u32
+            12..23 'vec2u(0, 1)': vec2<u32>
+            12..25 'vec2u(0, 1).x': ref<u32>
+            18..19 '0': integer
+            21..22 '1': integer
+        "#]],
+    );
+}
+
+// this is wrong
+// https://github.com/wgsl-analyzer/wgsl-analyzer/issues/650
+#[test]
+fn vec_swizzle_is_not_ref() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        const vec = vec3<f32>(1.0, 2.0, 3.0);
+        vec.xy = v.yx;
+        ",
+        expect![[r#"
+            6..9 'vec': vec3<f32>
+            12..36 'vec3<f..., 3.0)': vec3<f32>
+            22..25 '1.0': float
+            27..30 '2.0': float
+            32..35 '3.0': float
+        "#]],
+    );
+}
+
+// this is wrong
+// https://github.com/wgsl-analyzer/wgsl-analyzer/issues/650
+#[test]
+fn struct_access_is_not_ref() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        struct S { x: f32 }
+        const vec = S (1.0).x;
+        ",
+        expect![[r#"
+            26..29 'vec': f32
+            32..39 'S (1.0)': S
+            32..41 'S (1.0).x': ref<f32>
+            35..38 '1.0': float
+        "#]],
+    );
+}
+
 #[test]
 fn mat_index_is_int() {
     check_infer(
