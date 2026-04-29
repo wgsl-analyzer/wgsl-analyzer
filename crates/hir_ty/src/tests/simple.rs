@@ -897,6 +897,37 @@ fn struct_access_is_not_ref() {
     );
 }
 
+// this is wrong
+// https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1006
+#[test]
+fn array_ptr_is_not_valid() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        var<private> foo : array<f32,3>;
+        var<private> bar : vec3f;
+        fn foo1() {
+            let a = &foo[2]; // foo[2] should have the type ref<f32>
+            let b = &bar[2]; // bar[2] should have the type f32
+        }
+        ",
+        expect![[r#"
+            13..16 'foo': ref<array<f32, 3>>
+            46..49 'bar': ref<vec3<f32>>
+            79..80 'a': ptr<f32>
+            83..90 '&foo[2]': ptr<f32>
+            84..87 'foo': ref<array<f32, 3>>
+            84..90 'foo[2]': ref<f32>
+            88..89 '2': integer
+            140..141 'b': ptr<f32>
+            144..151 '&bar[2]': ptr<f32>
+            145..148 'bar': ref<vec3<f32>>
+            145..151 'bar[2]': ref<f32>
+            149..150 '2': integer
+        "#]],
+    );
+}
+
 #[test]
 fn mat_index_is_int() {
     check_infer(
