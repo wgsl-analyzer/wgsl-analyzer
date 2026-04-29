@@ -839,6 +839,95 @@ fn vec_index_is_not_f32() {
     );
 }
 
+// this is wrong
+// https://github.com/wgsl-analyzer/wgsl-analyzer/issues/650
+#[test]
+fn vec_access_is_not_ref() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        const vec = vec2u(0, 1).x;
+        ",
+        expect![[r#"
+            6..9 'vec': u32
+            12..23 'vec2u(0, 1)': vec2<u32>
+            12..25 'vec2u(0, 1).x': ref<u32>
+            18..19 '0': integer
+            21..22 '1': integer
+        "#]],
+    );
+}
+
+// this is wrong
+// https://github.com/wgsl-analyzer/wgsl-analyzer/issues/650
+#[test]
+fn vec_swizzle_is_not_ref() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        const vec = vec3<f32>(1.0, 2.0, 3.0);
+        vec.xy = v.yx;
+        ",
+        expect![[r#"
+            6..9 'vec': vec3<f32>
+            12..36 'vec3<f..., 3.0)': vec3<f32>
+            22..25 '1.0': float
+            27..30 '2.0': float
+            32..35 '3.0': float
+        "#]],
+    );
+}
+
+// this is wrong
+// https://github.com/wgsl-analyzer/wgsl-analyzer/issues/650
+#[test]
+fn struct_access_is_not_ref() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        struct S { x: f32 }
+        const vec = S (1.0).x;
+        ",
+        expect![[r#"
+            26..29 'vec': f32
+            32..39 'S (1.0)': S
+            32..41 'S (1.0).x': ref<f32>
+            35..38 '1.0': float
+        "#]],
+    );
+}
+
+// this is wrong
+// https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1006
+#[test]
+fn array_ptr_is_not_valid() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        var<private> foo : array<f32,3>;
+        var<private> bar : vec3f;
+        fn foo1() {
+            let a = &foo[2]; // foo[2] should have the type ref<f32>
+            let b = &bar[2]; // bar[2] should have the type f32
+        }
+        ",
+        expect![[r#"
+            13..16 'foo': ref<array<f32, 3>>
+            46..49 'bar': ref<vec3<f32>>
+            79..80 'a': ptr<f32>
+            83..90 '&foo[2]': ptr<f32>
+            84..87 'foo': ref<array<f32, 3>>
+            84..90 'foo[2]': ref<f32>
+            88..89 '2': integer
+            140..141 'b': ptr<f32>
+            144..151 '&bar[2]': ptr<f32>
+            145..148 'bar': ref<vec3<f32>>
+            145..151 'bar[2]': ref<f32>
+            149..150 '2': integer
+        "#]],
+    );
+}
+
 #[test]
 fn mat_index_is_int() {
     check_infer(
