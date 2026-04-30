@@ -163,3 +163,37 @@ pub fn format_prefix_expr_no_space_after_prefix() {
         "#]],
     );
 }
+
+#[test]
+pub fn format_paren_expr_with_break_inside() {
+    check(
+        "fn main() {
+        let a = 1+(1 + // Hi
+        2);
+        }",
+        expect![[r#"
+            fn main() {
+                let a = 1 + (1 + // Hi
+                        2);
+            }
+        "#]],
+    );
+}
+
+#[test]
+pub fn format_index_expr_with_break_inside() {
+    check(
+        "fn main() {
+        let a = a[1 + // Hi
+        2];
+        }",
+        expect![[r#"
+            fn main() {
+                let a = a[
+                        1 + // Hi
+                        2
+                    ];
+            }
+        "#]],
+    );
+}
