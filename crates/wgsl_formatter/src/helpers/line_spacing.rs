@@ -17,10 +17,8 @@ pub enum LineSpacing {
 pub fn parse_line_spacing(syntax: &mut SyntaxIter) -> Option<LineSpacing> {
     let blankspace = parse_token_optional(syntax, parser::SyntaxKind::Blankspace)?;
 
-    //TODO(MonaMayrhofer) Think a bit more about different types of newlines (\c\n etc.)
-    //TODO(MonaMayrhofer) child.to_string() here surely is wasteful - there must be a better way.
     let newlines = blankspace
-        .to_string()
+        .text()
         .chars()
         .filter(|item| *item == '\n')
         .count();
