@@ -2,8 +2,6 @@ use expect_test::expect;
 
 use crate::test_util::check;
 
-// TODO(MonaMayrhofer) Rename this file to top-level items
-
 #[test]
 fn spacing_between_fn_headers_1() {
     check(

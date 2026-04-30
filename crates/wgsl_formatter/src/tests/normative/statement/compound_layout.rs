@@ -367,5 +367,3 @@ fn format_compound_statement_keep_comment_on_same_line() {
         "#]],
     );
 }
-
-//TODO Tests for more layout of statements within compound statement
