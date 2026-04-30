@@ -1,10 +1,6 @@
 use expect_test::expect;
-use parser::Edition;
 
-use crate::{
-    FormattingOptions,
-    test_util::{check, check_with_options},
-};
+use crate::test_util::check;
 
 #[test]
 fn format_comment_indent_1() {

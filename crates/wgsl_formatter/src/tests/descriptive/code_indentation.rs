@@ -1,6 +1,6 @@
 use expect_test::expect;
 
-use crate::test_util::{check, check_tabs};
+use crate::test_util::check;
 
 #[test]
 fn format_statement_indent_simple() {

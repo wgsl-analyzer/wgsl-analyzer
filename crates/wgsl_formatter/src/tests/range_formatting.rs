@@ -1,11 +1,6 @@
 use expect_test::expect;
-use parser::{Edition, ParseEntryPoint};
-use rowan::{TextLen as _, TextRange, TextSize};
 
-use crate::{
-    FormattingOptions,
-    test_util::{check_range, strip_leading_indentation},
-};
+use crate::test_util::{check_range, strip_leading_indentation};
 
 #[test]
 fn format_range_in_for_initializer() {
