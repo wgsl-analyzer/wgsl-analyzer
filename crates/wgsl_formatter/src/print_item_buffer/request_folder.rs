@@ -81,6 +81,14 @@ impl RequestItemMap {
     ) -> Self {
         self.union(&Self::from(other))
     }
+
+    #[must_use]
+    pub const fn contains(
+        self,
+        item: RequestItem,
+    ) -> bool {
+        self.0 & (1 << item.to_index()) != 0
+    }
 }
 
 // #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
@@ -343,7 +351,9 @@ impl RequestFolder {
                     let candidates = expected.difference(&discouraged);
                     let candidates = candidates.union(&forced);
 
-                    //TODO if newlines are discouraged, clear suggest_linebreak
+                    // if newlines are discouraged, clear suggest_linebreak
+                    let suggest_linebreak =
+                        suggest_linebreak && !discouraged.contains(RequestItem::LineBreak);
 
                     if let Some(chosen) = candidates.highest_index() {
                         apply_item(chosen, target, suggest_linebreak);
