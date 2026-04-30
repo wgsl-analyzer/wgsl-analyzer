@@ -107,8 +107,7 @@ pub fn format_for_statement_super_long_components() {
         expect![[r#"
             fn main() {
                 for(
-                    let a = 1 + 1 + 1 + 1 + 1 + 1
-                        + calculate_something_really_long(
+                    let a = 1 + 1 + 1 + 1 + 1 + 1 + calculate_something_really_long(
                             172832782,
                             1827387428,
                             3487348342,

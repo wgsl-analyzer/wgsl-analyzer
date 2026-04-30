@@ -57,7 +57,6 @@ impl<'buffer> MultilineGroup<'buffer> {
             {
                 let mut pi = PrintItems::default();
                 pi.push_signal(Signal::NewLine);
-                pi.push_signal(Signal::StartIndent);
                 pi
             },
             {
@@ -68,9 +67,12 @@ impl<'buffer> MultilineGroup<'buffer> {
         );
         self.start_reeval = Some(start_nl_condition.create_reevaluation());
         self.buffer.push_condition(start_nl_condition);
+        self.buffer.start_indent();
 
-        // TODO This is a bit of a shortcoming of the PBI api, we would want to write this after the "(", but can't because of the conditions between
-        // TODO This does not belong into multilinegroup
+        // This is a bit of a shortcoming of the PBI api, this does not really belong into multilinegroup,
+        // and would better be located directly after a "(" token (or whatever was used to open the multilinegroup)
+        // However because pushing the start_nl_condition and the indent will reset any request - it best fits here for now,
+        // until we can move the start_nl_condition to also use the RequestFolder api
         self.buffer.request(Request::Unconditional {
             expected: RequestItemMap::empty(),
             discouraged: RequestItemMap::empty()
@@ -112,18 +114,8 @@ impl<'buffer> MultilineGroup<'buffer> {
     }
 
     pub fn finish_indent(&mut self) {
-        // No trailing spaces
         self.buffer.discourage(RequestItem::Space);
-
-        self.buffer.push_condition(conditions::if_true(
-            "paramMultilineEndIndent",
-            Rc::clone(&self.is_multiple_lines),
-            {
-                let mut pi = PrintItems::default();
-                pi.push_signal(Signal::FinishIndent);
-                pi
-            },
-        ));
+        self.buffer.finish_indent();
     }
 
     pub fn end(&mut self) {
