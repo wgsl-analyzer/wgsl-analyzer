@@ -11,7 +11,7 @@ use crate::{
         comments::{gen_comments, parse_many_comments_and_blankspace},
         expressions::gen_expression,
     },
-    print_item_buffer::PrintItemBuffer,
+    print_item_buffer::{PrintItemBuffer, request_folder::Request},
     reporting::FormatDocumentResult,
 };
 
@@ -31,8 +31,11 @@ pub fn gen_field_expression(
     let mut formatted = PrintItemBuffer::default();
     formatted.extend(gen_expression(&item_struct_expr, false)?);
     formatted.extend(gen_comments(&comments_after_ident_expr));
+    formatted.start_indent();
+    formatted.request(Request::empty().or_newline());
     formatted.push_sc(sc!("."));
     formatted.extend(gen_comments(&comments_after_period));
     formatted.push_string(item_target_ident.text().to_owned());
+    formatted.finish_indent();
     Ok(formatted)
 }

@@ -119,6 +119,7 @@ pub fn format_compound_assignment_to_field() {
 pub fn format_compound_assignment_long_rhs_long_lhs() {
     check(
         "fn main() {
+        //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
         aaaaaaaaaaaaaaaaaaaaa
         .bbbbbbbbbbbbbbbbbbb
         .cccccccccccccccccc
@@ -132,7 +133,9 @@ pub fn format_compound_assignment_long_rhs_long_lhs() {
         }",
         expect![[r#"
             fn main() {
-                aaaaaaaaaaaaaaaaaaaaa.bbbbbbbbbbbbbbbbbbb.cccccccccccccccccc.ddddddddddddddddddd <<= foooooooooooooooo(
+                //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
+                aaaaaaaaaaaaaaaaaaaaa.bbbbbbbbbbbbbbbbbbb.cccccccccccccccccc
+                    .ddddddddddddddddddd <<= foooooooooooooooo(
                         baaaaaaaaaaaaaaar(
                             111111111111111111111 + 8228282828282882828282828828282,
                         ),

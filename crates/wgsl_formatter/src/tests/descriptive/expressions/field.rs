@@ -110,8 +110,8 @@ pub fn format_comments_in_field_expr() {
             fn main() {
                 let a = // 0
                     foo // 1
-                    . // 2
-                    bar // 3
+                        . // 2
+                        bar // 3
                     ; // 4
             }
         "#]],
@@ -126,17 +126,18 @@ pub fn format_comments_in_nested_field_expr() {
         }",
         expect![[r#"
             fn main() {
-                let a = /* 0 */ foo /* 1 */ . /* 2 */ bar /* 3 */ . /* 4 */ baz /* 5 */; /* 6 */
+                let a = /* 0 */ foo /* 1 */ . /* 2 */ bar /* 3 */
+                        . /* 4 */ baz /* 5 */; /* 6 */
             }
         "#]],
         expect![[r#"
             fn main() {
                 let a = // 0
                     foo // 1
-                    . // 2
-                    bar // 3
-                    . // 4
-                    baz // 5
+                        . // 2
+                        bar // 3
+                        . // 4
+                        baz // 5
                     ; // 6
             }
         "#]],
