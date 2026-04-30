@@ -112,8 +112,54 @@ pub fn format_field_expr_deeply_nested() {
     );
 }
 
-//TODO Tests for layout of field expressions
-//TODO Tests for layout of function call expressions
-//TODO Tests for layout of index expressions
-//TODO Tests for layout of paren expressions
-//TODO Tests for layout of prefix expressions
+#[test]
+pub fn format_index_expr_chained_breaks_in_the_middle() {
+    check(
+        "fn main() {
+        //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
+        let a = aaaaaaaaa[bbbbbbbbbbbbbbb][cccccccccccc][ddddddddddddd][eeeeeeeeeeeee][ffffffffffffff];
+        }",
+        expect![[r#"
+            fn main() {
+                //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
+                let a = aaaaaaaaa[bbbbbbbbbbbbbbb][cccccccccccc][ddddddddddddd][
+                        eeeeeeeeeeeee
+                    ][ffffffffffffff];
+            }
+        "#]],
+    );
+}
+
+#[test]
+pub fn format_index_expr_nested_breaks_outside_in() {
+    check(
+        "fn main() {
+        //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
+        let a = aaaaaaaaa[bbbbbbbbbbbbbbb[cccccccccccc[dddddddddddd[eeeeeeeeeeeeeee[ffffffffffffff]]]]];
+        }",
+        expect![[r#"
+            fn main() {
+                //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
+                let a = aaaaaaaaa[
+                        bbbbbbbbbbbbbbb[
+                            cccccccccccc[dddddddddddd[eeeeeeeeeeeeeee[ffffffffffffff]]]
+                        ]
+                    ];
+            }
+        "#]],
+    );
+}
+
+#[test]
+pub fn format_prefix_expr_no_space_after_prefix() {
+    check(
+        "fn main() {
+        let a = - aaaa;
+        }",
+        expect![[r#"
+            fn main() {
+                let a = -aaaa;
+            }
+        "#]],
+    );
+}
