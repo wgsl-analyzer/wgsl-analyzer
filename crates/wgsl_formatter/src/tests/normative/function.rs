@@ -18,7 +18,7 @@ pub fn format_fn_body_collapses_empty_body() {
 
 /// This is debatable. For now it seems like a sane way to do it this way, and it causes less edge cases.
 #[test]
-pub fn format_fn_body_puts_block_comment_on_seperate_line() {
+pub fn format_fn_body_puts_block_comment_on_separate_line() {
     check(
         "fn main() {/* Hello */}",
         expect![["
@@ -127,7 +127,29 @@ fn format_fn_header_with_linecomment_after_last_parameter() {
     );
 }
 
-// TODO Tests for how function parameters are broken up onto multiple lines
+#[test]
+fn format_fn_header_parameter_with_long_type_and_name() {
+    check(
+        "
+        //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
+        fn main(
+            a: u32,
+            aaaaaaaaaaaaaaaaaaaa: looooooooooooooooooooooooooooooooooooooooooooooooong<parameter>,
+            b: u32,
+        ) {}
+        ",
+        expect![[r#"
+            //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
+            fn main(
+                a: u32,
+                aaaaaaaaaaaaaaaaaaaa: looooooooooooooooooooooooooooooooooooooooooooooooong<
+                    parameter,
+                >,
+                b: u32,
+            ) {}
+        "#]],
+    );
+}
 
 #[test]
 pub fn format_type_next_to_long_parameter_does_not_get_broken_into_multiple_lines() {
