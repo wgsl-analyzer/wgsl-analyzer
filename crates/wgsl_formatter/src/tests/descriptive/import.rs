@@ -53,7 +53,6 @@ pub fn format_comments_in_import_collection() {
                 d // 11
                 as // 12
                 e // 13
-
             } // 14
             ;
         "#]],
