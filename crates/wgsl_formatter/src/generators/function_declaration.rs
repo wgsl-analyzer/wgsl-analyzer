@@ -148,17 +148,11 @@ pub fn gen_fn_parameters(node: &ast::FunctionParameters) -> FormatDocumentResult
 
                 multiline_group.extend(gen_fn_parameter(&parameter)?);
                 if index == last_parameter_index {
-                    let is_multiline = Rc::clone(&multiline_group.is_multiple_lines);
-                    //TODO use extend_if_multi_line
-                    multiline_group.push_condition(conditions::if_true(
-                        "paramTrailingComma",
-                        is_multiline,
-                        {
-                            let mut pi = PrintItems::default();
-                            pi.push_sc(sc!(","));
-                            pi
-                        },
-                    ));
+                    multiline_group.extend_if_multi_line({
+                        let mut pi = PrintItems::default();
+                        pi.push_sc(sc!(","));
+                        pi
+                    });
                 } else {
                     multiline_group.push_sc(sc!(","));
                 }
