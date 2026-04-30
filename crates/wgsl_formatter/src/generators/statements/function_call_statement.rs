@@ -35,7 +35,7 @@ pub fn gen_function_call(
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
-    // TODO(MonaMayrhofer) Are we guaranteed to have an ident_expression here? i dont think soo....
+    // Function call "name" is always an ident_expression
     formatted.extend(gen_ident_expression(&item_identifier)?);
     formatted.extend(gen_comments(&item_comments_after_identifier));
     formatted.extend(gen_function_call_arguments(&item_arguments)?);
