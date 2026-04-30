@@ -170,7 +170,6 @@ pub fn gen_attributes(
         Ok(formatted)
     }
 
-    // TODO Move this into a Request::expect() or something api
     let expect_space_or_linebreak = Request::expect(RequestItem::Space).or_newline();
 
     let group_separator = match layout {
