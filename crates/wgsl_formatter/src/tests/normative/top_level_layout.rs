@@ -1,6 +1,6 @@
 use expect_test::expect;
 
-use crate::test_util::{check, check_comments, check_tabs};
+use crate::test_util::check;
 
 // TODO(MonaMayrhofer) Rename this file to top-level items
 

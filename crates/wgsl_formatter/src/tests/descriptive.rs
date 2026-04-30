@@ -2,7 +2,7 @@ use std::{ffi::OsString, path::Path};
 
 use expect_test::{expect, expect_file};
 
-use crate::test_util::{check, check_tabs};
+use crate::test_util::check;
 
 mod attributes;
 mod code_indentation;

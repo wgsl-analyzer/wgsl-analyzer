@@ -1,6 +1,4 @@
-use std::rc::Rc;
-
-use dprint_core::formatting::{PrintItems, conditions};
+use dprint_core::formatting::PrintItems;
 use dprint_core_macros::sc;
 use itertools::put_back;
 use parser::SyntaxKind;

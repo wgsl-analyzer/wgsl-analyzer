@@ -1,6 +1,6 @@
 use expect_test::expect;
 
-use crate::test_util::{assert_out_of_scope, check, check_comments};
+use crate::test_util::{check, check_comments};
 
 #[test]
 pub fn format_compound_assignment_simple_1() {

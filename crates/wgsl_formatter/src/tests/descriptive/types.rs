@@ -1,6 +1,6 @@
 use expect_test::expect;
 
-use crate::test_util::{check, check_comments};
+use crate::test_util::check;
 
 #[test]
 pub fn format_type_simple() {

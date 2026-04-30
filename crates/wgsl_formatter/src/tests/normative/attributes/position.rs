@@ -1,6 +1,6 @@
 use expect_test::expect;
 
-use crate::test_util::{assert_out_of_scope, check, check_comments};
+use crate::test_util::{assert_out_of_scope, check};
 
 #[test]
 pub fn format_attribute_offset_size_align_are_grouped() {

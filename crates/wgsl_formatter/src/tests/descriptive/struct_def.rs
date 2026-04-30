@@ -1,4 +1,4 @@
-use crate::test_util::{assert_out_of_scope, check, check_comments, check_tabs};
+use crate::test_util::{check, check_comments};
 use expect_test::expect;
 
 #[test]

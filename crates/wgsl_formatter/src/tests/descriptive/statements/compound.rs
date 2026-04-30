@@ -1,6 +1,6 @@
 use expect_test::expect;
 
-use crate::test_util::{check, check_comments};
+use crate::test_util::check_comments;
 
 #[test]
 fn format_comments_in_compound_statement() {
