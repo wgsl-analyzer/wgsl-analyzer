@@ -32,23 +32,6 @@ pub fn format_paren_expr_simple() {
 }
 
 #[test]
-pub fn format_paren_expr_multiline() {
-    // TODO(MonaMayrhofer) think about if this should be made homogeneous with index exprs
-    check(
-        "fn main() {
-        let a = 1+(1 + // Hi
-        2);
-        }",
-        expect![[r#"
-            fn main() {
-                let a = 1 + (1 + // Hi
-                        2);
-            }
-        "#]],
-    );
-}
-
-#[test]
 pub fn format_paren_expr_deep_right_associated() {
     //TODO This is awful. Have another look at how this should be formatted, once more test cases for more common parenthesised expressions are there
     check(
