@@ -40,7 +40,6 @@ pub fn format_if_else_statement_empty_gets_collapsed() {
 
 #[test]
 pub fn format_if_else_statement_empty_if_nonempy_else() {
-    // TODO This warrants discussion
     check(
         "fn main() {
         if
