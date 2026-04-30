@@ -107,7 +107,6 @@ impl RequestItemMap {
 #[derive(Clone)]
 pub enum Request {
     Unconditional {
-        // TODO use bitmaps instead of sets here
         expected: RequestItemMap,
         discouraged: RequestItemMap,
         forced: RequestItemMap,
