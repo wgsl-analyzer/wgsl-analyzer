@@ -49,7 +49,6 @@ pub fn format_file(
     options: &FormattingOptions,
 ) -> Result<String, FormatStringError> {
     let parse = syntax::parse(input, Edition::LATEST);
-    //TODO Return error if the syntax could not parse.
 
     if !parse.errors().is_empty() {
         return Err(FormatStringError::ParserErrors { parse });
