@@ -67,6 +67,49 @@ pub enum AttributeLayout {
     Multiline,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+// The order of the variants determines the order of the attribute groups in the output
+enum AttributeGroup {
+    Diagnostics,
+    BlendSrc,
+    Id,
+    Interpolate,
+    Invariant,
+    Location,
+    OffsetAlignSize,
+    BindingGroup,
+    ComputeWorkgroup,
+    Fragment,
+    Vertex,
+}
+enum AttributeCategorization {
+    Ungrouped(String),
+    Grouped(AttributeGroup, usize),
+    Inline(usize),
+}
+
+fn gen_attribute_group<T: Ord>(
+    mut attributes: Vec<(T, &ParsedAttribute)>,
+    separator: &Request,
+) -> FormatDocumentResult<PrintItemBuffer> {
+    attributes.sort_by(|(order_a, _), (order_b, _)| order_a.cmp(order_b));
+
+    let mut formatted = PrintItemBuffer::default();
+    // Ungrouped attributes go first
+    for ParsedAttribute {
+        attribute,
+        comments_after_attribute,
+    } in attributes.iter().map(|(_, attribute)| attribute)
+    {
+        formatted.finish_new_line_group();
+        formatted.extend(gen_attribute(attribute)?);
+        formatted.start_new_line_group();
+        formatted.extend(gen_comments(comments_after_attribute));
+        formatted.request(separator.clone());
+    }
+    Ok(formatted)
+}
+
 pub fn gen_attributes(
     attributes: &ParsedAttributes,
     layout: AttributeLayout,
@@ -74,27 +117,6 @@ pub fn gen_attributes(
     // If we don't have any attributes, we early exit to avoid all the bureaucracy with newlines
     if attributes.attributes.is_empty() {
         return Ok(PrintItemBuffer::default());
-    }
-
-    #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
-    // The order of the variants determines the order of the attribute groups in the output
-    enum AttributeGroup {
-        Diagnostics,
-        BlendSrc,
-        Id,
-        Interpolate,
-        Invariant,
-        Location,
-        OffsetAlignSize,
-        BindingGroup,
-        ComputeWorkgroup,
-        Fragment,
-        Vertex,
-    }
-    enum AttributeCategorization {
-        Ungrouped(String),
-        Grouped(AttributeGroup, usize),
-        Inline(usize),
     }
 
     // ==== Sort and Group the Attributes ====
@@ -146,28 +168,6 @@ pub fn gen_attributes(
                 .push((order, attribute)),
             Inline(order) => attribute_group_inlined_with_target.push((order, attribute)),
         }
-    }
-
-    fn gen_attribute_group<T: Ord>(
-        mut attributes: Vec<(T, &ParsedAttribute)>,
-        separator: &Request,
-    ) -> FormatDocumentResult<PrintItemBuffer> {
-        attributes.sort_by(|(order_a, _), (order_b, _)| order_a.cmp(order_b));
-
-        let mut formatted = PrintItemBuffer::default();
-        // Ungrouped attributes go first
-        for ParsedAttribute {
-            attribute,
-            comments_after_attribute,
-        } in attributes.iter().map(|(_, attribute)| attribute)
-        {
-            formatted.finish_new_line_group();
-            formatted.extend(gen_attribute(attribute)?);
-            formatted.start_new_line_group();
-            formatted.extend(gen_comments(comments_after_attribute));
-            formatted.request(separator.clone());
-        }
-        Ok(formatted)
     }
 
     let expect_space_or_linebreak = Request::expect(RequestItem::Space).or_newline();
