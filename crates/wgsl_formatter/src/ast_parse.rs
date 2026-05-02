@@ -1,8 +1,6 @@
 //! A minimal parser toolbox used by the formatter
 //! to parse the AST into a structure usable for the formatter itself.
 
-//TODO Make ***_optional functions into parser-combinator like things
-
 use itertools::PutBack;
 use parser::{SyntaxElementChildren, SyntaxKind, SyntaxNode, SyntaxToken};
 use rowan::NodeOrToken;
