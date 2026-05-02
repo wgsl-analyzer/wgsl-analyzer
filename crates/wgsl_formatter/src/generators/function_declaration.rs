@@ -137,8 +137,6 @@ pub fn gen_fn_parameters(node: &ast::FunctionParameters) -> FormatDocumentResult
     for (index, item) in items.into_iter().enumerate() {
         match item {
             GenFnParameterItem::Parameter(parameter) => {
-                // TODO Polish Newline api to make this prettier
-
                 // If the parameters are multiple lines long, every parameter should be on a new line
                 // If the parameters is a single line long, every parameter should be prepended with a space,
                 // with a chance for breaking into multiple lines
