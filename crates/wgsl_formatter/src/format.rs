@@ -91,7 +91,7 @@ where
                 // b) We can't call gen_source_file outside of the closure because
                 //    dprint requires the gen_items to be allocated using a thread local
                 //    allocator that only exists within the closure.
-                let _none = error.insert(gen_error);
+                error = Some(gen_error);
                 PrintItems::new()
             },
         },
