@@ -1,4 +1,4 @@
-use dprint_core::formatting::PrintOptions;
+use dprint_core::formatting::{PrintItems, PrintOptions};
 use parser::{Edition, SyntaxNode};
 use rowan::{NodeOrToken, TextRange};
 use syntax::{AstNode as _, Parse, ast};
@@ -81,7 +81,8 @@ where
 {
     let mut error = None;
 
-    let formatted = dprint_core::formatting::format(
+    // This will contain the actual formatted, but only if output if error is None
+    let formatted_if_ok = dprint_core::formatting::format(
         || match format() {
             Ok(items) => items.finish(),
             Err(gen_error) => {
@@ -91,13 +92,7 @@ where
                 //    dprint requires the gen_items to be allocated using a thread local
                 //    allocator that only exists within the closure.
                 let _none = error.insert(gen_error);
-
-                //TODO maybe we should instead output the whole source verbatim
-                // so that if many things go wrong and this value does somehow
-                // reach the user's file, it doesn't just delete it all.
-                let mut items = PrintItemBuffer::default();
-                items.push_string("ERROR".into());
-                items.finish()
+                PrintItems::new()
             },
         },
         PrintOptions {
@@ -110,6 +105,6 @@ where
 
     match error {
         Some(error) => Err(error),
-        None => Ok(formatted),
+        None => Ok(formatted_if_ok),
     }
 }
