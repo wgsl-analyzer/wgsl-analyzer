@@ -1,4 +1,4 @@
-use base_db::{ExtraPackageData, Package, input::PackageData};
+use base_db::{ExtraPackageData, Package, file_package, input::PackageData};
 use ide_db::RootDatabase;
 use itertools::Itertools as _;
 use stdx::format_to;
@@ -32,12 +32,10 @@ pub(crate) fn status(
     // format_to!(buf, "{} block def maps\n", collect_query_count(BlockDefMapQuery.in_db(db)));
 
     if let Some(file_id) = file_id {
-        format_to!(buffer, "\nCrates for file {}:\n", file_id.index());
-        let packages: Vec<Package> = Vec::new(); // TODO: populate this
-        if packages.is_empty() {
-            format_to!(buffer, "Does not belong to any package");
-        }
-        for package_id in packages {
+        format_to!(buffer, "\nPackage for file {}:\n", file_id.index());
+        let package: Option<Package> = file_package(database, file_id);
+
+        if let Some(package_id) = package {
             let PackageData {
                 root_file_id,
                 display_name,
@@ -74,6 +72,8 @@ pub(crate) fn status(
                 .map(|dep| format!("{}={:?}", dep.name, dep.package_id))
                 .format(", ");
             format_to!(buffer, "    Dependencies: {}\n", deps);
+        } else {
+            format_to!(buffer, "Does not belong to any package");
         }
     }
 
