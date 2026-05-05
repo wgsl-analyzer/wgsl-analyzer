@@ -67,6 +67,10 @@ base-db.workspace = true
 line-index.workspace = true
 edition.workspace = true
 
+# idna_adapter does not use semantic versioning
+# 1.0 is a feature band that indicates no IDNA support
+idna_adapter = "=1.0.0"
+
 [dev-dependencies]
 expect-test.workspace = true
 # xshell = "0.2.7"
