@@ -8,6 +8,7 @@ pub mod expression;
 pub mod expression_store;
 pub mod item_tree;
 pub mod mod_path;
+pub mod name_resolution;
 pub mod resolver;
 pub mod signature;
 #[cfg(test)]
@@ -22,6 +23,10 @@ use database::DefDatabase;
 use item_tree::{ItemTreeNode, ModuleItemId};
 use rowan::NodeOrToken;
 use syntax::{AstNode, SyntaxNode, SyntaxToken, pointer::AstPointer};
+
+pub type FxIndexSet<T> = indexmap::IndexSet<T, rustc_hash::FxBuildHasher>;
+pub type FxIndexMap<K, V> =
+    indexmap::IndexMap<K, V, std::hash::BuildHasherDefault<rustc_hash::FxHasher>>;
 
 /// `InFile<T>` stores a value of `T` inside a particular file/syntax tree.
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]

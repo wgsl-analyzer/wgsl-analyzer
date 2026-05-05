@@ -14,19 +14,18 @@ use std::{
     sync::{Once, atomic::AtomicUsize},
 };
 
+use crate::input::{Dependency, PackageData, PackageId, PackageName};
 use dashmap::{DashMap, Entry};
-pub use input::{SourceRoot, SourceRootId};
 use rustc_hash::FxHasher;
-pub use salsa;
 use salsa::{Durability, Setter as _};
-pub use salsa_macros;
-use syntax::{Parse, ast::Name};
 use triomphe::Arc;
-pub use util_types::*;
-pub use vfs::{AnchoredPath, AnchoredPathBuf, FileId, VfsPath, file_set::FileSet};
 
 pub use crate::editioned_file_id::{EditionedFileId, ExtensionsConfig, RawEditionedFileId};
-use crate::input::{Dependency, PackageData, PackageId, PackageName};
+pub use input::{SourceRoot, SourceRootId};
+pub use salsa;
+pub use salsa_macros;
+pub use util_types::*;
+pub use vfs::{AnchoredPath, AnchoredPathBuf, FileId, VfsPath, file_set::FileSet};
 
 #[macro_export]
 macro_rules! impl_intern_key {

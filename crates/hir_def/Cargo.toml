@@ -13,6 +13,7 @@ doctest = false
 [dependencies]
 base-db.workspace = true
 either.workspace = true
+indexmap.workspace = true
 la-arena.workspace = true
 query-group.workspace = true
 rowan.workspace = true

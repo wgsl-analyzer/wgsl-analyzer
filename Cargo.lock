@@ -549,6 +549,7 @@ dependencies = [
  "base-db",
  "either",
  "expect-test",
+ "indexmap",
  "la-arena",
  "query-group-macro",
  "rowan",
