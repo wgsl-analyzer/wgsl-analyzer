@@ -983,6 +983,9 @@ impl GlobalState {
             .on::<RETRY, lsp::extensions::AnalyzerStatusRequest>(
                 handlers::request::handle_analyzer_status,
             )
+            .on::<RETRY, lsp::extensions::ViewModuleGraphRequest>(
+                handlers::request::handle_view_module_graph,
+            )
             .on::<RETRY, lsp::extensions::ViewPackageGraphRequest>(
                 handlers::request::handle_view_package_graph,
             )

@@ -489,7 +489,40 @@ function packageGraph(context: InitializedContext, full: boolean): Cmd {
 		const dot = await client.sendRequest(wa.viewPackageGraph, parameters);
 		const uri = panel.webview.asWebviewUri(nodeModulesPath);
 
-		const html = `
+		panel.webview.html = renderGraph(dot, uri);
+	};
+}
+
+function moduleGraph(context: InitializedContext): Cmd {
+	return async () => {
+		const weslEditor = context.activeWeslEditor;
+		if (!weslEditor) {
+			return;
+		}
+
+		const nodeModulesPath = vscode.Uri.file(path.join(context.extensionPath, "node_modules"));
+
+		const panel = vscode.window.createWebviewPanel(
+			"wgsl-analyzer.module-graph",
+			"wgsl-analyzer module graph",
+			vscode.ViewColumn.Two,
+			{
+				enableScripts: true,
+				retainContextWhenHidden: true,
+				localResourceRoots: [nodeModulesPath],
+			},
+		);
+		const client = context.client;
+		const parameters = { textDocument: client.code2ProtocolConverter.asTextDocumentIdentifier(weslEditor.document) };
+		const dot = await client.sendRequest(wa.viewModuleGraph, parameters);
+		const uri = panel.webview.asWebviewUri(nodeModulesPath);
+
+		panel.webview.html = renderGraph(dot, uri);
+	};
+}
+
+function renderGraph(dot: string, nodeModulesUri: vscode.Uri) {
+	return `
             <!DOCTYPE html>
             <meta charset="utf-8">
             <head>
@@ -507,9 +540,9 @@ function packageGraph(context: InitializedContext, full: boolean): Cmd {
                 </style>
             </head>
             <body>
-                <script type="text/javascript" src="${uri}/d3/dist/d3.min.js"></script>
-                <script type="text/javascript" src="${uri}/@hpcc-js/wasm/dist/graphviz.umd.js"></script>
-                <script type="text/javascript" src="${uri}/d3-graphviz/build/d3-graphviz.min.js"></script>
+                <script type="text/javascript" src="${nodeModulesUri}/d3/dist/d3.min.js"></script>
+                <script type="text/javascript" src="${nodeModulesUri}/@hpcc-js/wasm/dist/graphviz.umd.js"></script>
+                <script type="text/javascript" src="${nodeModulesUri}/d3-graphviz/build/d3-graphviz.min.js"></script>
                 <div id="graph"></div>
                 <script>
                     let dot = \`${dot}\`;
@@ -531,9 +564,10 @@ function packageGraph(context: InitializedContext, full: boolean): Cmd {
                 </script>
             </body>
             `;
+}
 
-		panel.webview.html = html;
-	};
+export function viewModuleGraph(context: InitializedContext): Cmd {
+	return moduleGraph(context);
 }
 
 export function viewPackageGraph(context: InitializedContext): Cmd {

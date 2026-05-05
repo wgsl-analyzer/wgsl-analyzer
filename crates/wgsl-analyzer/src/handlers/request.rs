@@ -24,11 +24,23 @@ use crate::{
     global_state::GlobalStateSnapshot,
     lsp::{
         self,
-        extensions::{self, PositionOrRange, ViewPackageGraphParameters},
+        extensions::{
+            self, PositionOrRange, ViewModuleGraphParameters, ViewPackageGraphParameters,
+        },
         from_proto, to_proto,
     },
     try_default,
 };
+
+pub(crate) fn handle_view_module_graph(
+    snap: GlobalStateSnapshot,
+    parameters: ViewModuleGraphParameters,
+) -> anyhow::Result<String> {
+    let _p = tracing::info_span!("handle_view_module_graph").entered();
+    let file_id = try_default!(from_proto::file_id(&snap, &parameters.text_document.uri)?);
+    let dot = snap.analysis.view_module_graph(file_id)?;
+    Ok(dot)
+}
 
 pub(crate) fn handle_view_package_graph(
     snap: GlobalStateSnapshot,

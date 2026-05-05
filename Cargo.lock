@@ -54,7 +54,6 @@ dependencies = [
  "dashmap",
  "edition",
  "expect-test",
- "la-arena",
  "rowan",
  "rustc-hash 2.1.2",
  "salsa",

@@ -155,6 +155,7 @@ function createCommands(): Record<string, CommandFactory> {
 		joinLines: { enabled: commands.joinLines },
 		viewFileText: { enabled: commands.viewFileText },
 		viewItemTree: { enabled: commands.viewItemTree },
+		viewModuleGraph: { enabled: commands.viewModuleGraph },
 		viewPackageGraph: { enabled: commands.viewPackageGraph },
 		viewFullPackageGraph: { enabled: commands.viewFullPackageGraph },
 		openDocs: { enabled: commands.openDocs },
