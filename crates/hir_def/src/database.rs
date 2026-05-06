@@ -319,7 +319,7 @@ impl DefinitionWithBodyId {
     ) -> Resolver {
         let file_id = self.file_id(database);
         let module_info = database.item_tree(file_id);
-        Resolver::default().push_module_scope(file_id, module_info)
+        Resolver::new(file_id, module_info)
     }
 }
 
@@ -357,7 +357,7 @@ impl ModuleDefinitionId {
     ) -> Resolver {
         let file_id = self.file_id(database);
         let module_info = database.item_tree(file_id);
-        Resolver::default().push_module_scope(file_id, module_info)
+        Resolver::new(file_id, module_info)
     }
 }
 

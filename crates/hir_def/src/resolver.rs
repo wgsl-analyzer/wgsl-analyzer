@@ -64,34 +64,27 @@ pub struct Resolver {
     scopes: Vec<Scope>,
 }
 
-impl Default for Resolver {
-    fn default() -> Self {
+impl Resolver {
+    #[must_use]
+    pub fn new(
+        file_id: EditionedFileId,
+        module_info: Arc<ItemTree>,
+    ) -> Self {
+        let module_scope = ModuleScope {
+            module_info,
+            file_id,
+        };
         Self {
-            scopes: vec![Scope::Builtin],
+            scopes: vec![Scope::Builtin, Scope::Module(module_scope)],
         }
     }
-}
 
-impl Resolver {
     #[must_use]
     pub fn push_scope(
         mut self,
         scope: Scope,
     ) -> Self {
         self.scopes.push(scope);
-        self
-    }
-
-    #[must_use]
-    pub fn push_module_scope(
-        mut self,
-        file_id: EditionedFileId,
-        item_tree: Arc<ItemTree>,
-    ) -> Self {
-        self.scopes.push(Scope::Module(ModuleScope {
-            module_info: item_tree,
-            file_id,
-        }));
         self
     }
 
