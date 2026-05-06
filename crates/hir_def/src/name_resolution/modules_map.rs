@@ -2,10 +2,11 @@ use base_db::{
     EditionedFileId, InternedSourceRootId, Package, SourceDatabase, SourceRoot, file_package,
 };
 use rustc_hash::FxHashMap;
+use std::fmt::Write as _;
 use syntax::Edition;
 use vfs::FileId;
 
-use crate::{FxIndexMap, item_tree::Name};
+use crate::{FxIndexMap, database::DefDatabase, item_tree::Name};
 
 /// Used for
 /// - `import foo::|` autocompletions. When I'm typing `foo::|` then I need to know what valid names come next.
@@ -32,10 +33,9 @@ use crate::{FxIndexMap, item_tree::Name};
 /// Also hmm basically no part of the language server does path lookups.
 /// There's a bit in r-a that deals with moving and renaming files.
 ///
-#[salsa_macros::tracked]
-pub struct ModulesMap<'db> {
-    #[tracked]
-    #[returns(ref)]
+#[derive(Debug, PartialEq, Eq, Clone)]
+pub struct ModulesMap {
+    pub root: FileId,
     pub modules: FxIndexMap<FileId, ModuleData>,
 }
 
@@ -72,17 +72,17 @@ pub fn module_data<'db>(
 ) -> Option<ModuleData> {
     let raw_file_id = file_id.file_id(database);
     let package = file_package(database, raw_file_id)?;
-    let modules = package_modules_map(database, package);
+    let modules = modules_map_query(database, package);
 
     // TODO: Is cloned the right thing to use here?
-    modules.modules(database).get(&raw_file_id).cloned()
+    modules.modules.get(&raw_file_id).cloned()
 }
 
-#[salsa_macros::tracked]
-pub fn package_modules_map(
+#[salsa_macros::tracked(returns(ref))]
+pub fn modules_map_query(
     database: &dyn SourceDatabase,
     package: Package,
-) -> ModulesMap<'_> {
+) -> ModulesMap {
     let package_data = package.data(database);
     let source_root = database
         .source_root(
@@ -104,7 +104,10 @@ pub fn package_modules_map(
         add_file(&mut modules, file_id, &source_root);
     }
 
-    ModulesMap::new(database, modules)
+    ModulesMap {
+        root: package_data.root_file_id,
+        modules,
+    }
 }
 
 fn add_file(
@@ -144,4 +147,29 @@ fn get_parent_path(path: &vfs::VfsPath) -> Option<vfs::VfsPath> {
     let file_name = format!("{name}.wesl");
     parent_path.pop();
     parent_path.join(&file_name)
+}
+
+impl ModulesMap {
+    #[must_use]
+    pub fn dump(&self) -> String {
+        let mut buffer = String::new();
+        go(&mut buffer, self, "package", self.root);
+        return buffer;
+
+        fn go(
+            buffer: &mut String,
+            modules: &ModulesMap,
+            path: &str,
+            module: FileId,
+        ) {
+            writeln!(buffer, "{path}");
+
+            let mut children: Vec<_> = modules.modules[&module].children.iter().collect();
+            children.sort_by(|(name_a, _), (name_b, _)| Ord::cmp(name_a, name_b));
+            for (name, child) in children {
+                let path = format!("{path}::{}", name.as_str());
+                go(buffer, modules, &path, *child);
+            }
+        }
+    }
 }

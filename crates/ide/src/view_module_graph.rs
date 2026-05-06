@@ -4,7 +4,7 @@ use base_db::{EditionedFileId, file_package};
 use dot::{Id, LabelText};
 use hir_def::{
     FxIndexMap,
-    name_resolution::{ModuleData, package_modules_map},
+    name_resolution::{ModuleData, modules_map_query},
 };
 use ide_db::{
     FxHashMap, RootDatabase,
@@ -30,7 +30,7 @@ pub(crate) fn view_module_graph(
     // TODO: This only renders the children. It should render an edge for each import and inline usage of another module.
     let package = file_package(database, file_id);
     let modules_to_render = if let Some(package) = package {
-        Cow::Borrowed(package_modules_map(database, package).modules(database))
+        Cow::Borrowed(&modules_map_query(database, package).modules)
     } else {
         let mut modules_to_render = FxIndexMap::default();
         modules_to_render.insert(
