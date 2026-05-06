@@ -2,6 +2,7 @@ use base_db::{
     EditionedFileId, InternedSourceRootId, Package, SourceDatabase, SourceRoot, file_package,
 };
 use rustc_hash::FxHashMap;
+use syntax::Edition;
 use vfs::FileId;
 
 use crate::{FxIndexMap, item_tree::Name};
@@ -52,6 +53,17 @@ pub struct ModuleData {
     pub children: FxIndexMap<Name, FileId>,
 }
 
+impl ModuleData {
+    fn new(origin: EditionedFileId) -> Self {
+        Self {
+            name: None,
+            origin,
+            parent: None,
+            children: FxIndexMap::default(),
+        }
+    }
+}
+
 // TODO: Look into the incrementality of this
 #[salsa_macros::tracked(returns(ref))]
 pub fn module_data<'db>(
@@ -67,10 +79,10 @@ pub fn module_data<'db>(
 }
 
 #[salsa_macros::tracked]
-pub fn package_modules_map<'db>(
-    database: &'db dyn SourceDatabase,
+pub fn package_modules_map(
+    database: &dyn SourceDatabase,
     package: Package,
-) -> ModulesMap<'db> {
+) -> ModulesMap<'_> {
     let package_data = package.data(database);
     let source_root = database
         .source_root(
@@ -80,17 +92,14 @@ pub fn package_modules_map<'db>(
         )
         .source_root(database);
 
-    let mut modules = FxIndexMap::from_iter(source_root.iter().map(|file_id| {
-        (
-            file_id,
-            ModuleData {
-                name: None,
-                origin: EditionedFileId::new(database, file_id, package_data.edition),
-                parent: None,
-                children: FxIndexMap::default(),
-            },
-        )
-    }));
+    let mut modules: FxIndexMap<_, _> = source_root
+        .iter()
+        .map(|file_id| {
+            let origin = EditionedFileId::new(database, file_id, package_data.edition);
+            (file_id, ModuleData::new(origin))
+        })
+        .collect();
+
     for file_id in source_root.iter() {
         add_file(&mut modules, file_id, &source_root);
     }
@@ -105,8 +114,6 @@ fn add_file(
 ) -> Option<()> {
     let path = source_root.path_for_file(file_id)?;
     let (name, extension) = path.name_and_extension()?;
-    // TODO: in another place we're doing extension.eq_ignore_ascii_case("wesl")
-    // Though I think we are assuming case sensitivity in other parts of the code???
     if !matches!(extension, Some("wesl" | "wgsl")) {
         return None;
     }
@@ -126,7 +133,7 @@ fn add_file(
     Some(())
 }
 
-/// Goes from a path like `foo/bar.wesl` to `foo.wesl`
+/// Goes from a path like `foo/bar.wesl` to `foo.wesl`.
 fn get_parent_path(path: &vfs::VfsPath) -> Option<vfs::VfsPath> {
     let mut parent_path = path.parent()?;
     let (name, extension) = parent_path.name_and_extension()?;

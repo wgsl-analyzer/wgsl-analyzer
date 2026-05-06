@@ -79,20 +79,12 @@ impl EditionedFileId {
         let source_root = database
             .source_root(database.file_source_root(file_id).source_root_id(database))
             .source_root(database);
-        let edition = if let Some((_, Some(extension))) = source_root
+        let edition = source_root
             .path_for_file(file_id)
             .and_then(|file| file.name_and_extension())
-        {
-            if extension.eq_ignore_ascii_case("wesl") {
-                Edition::LATEST
-            } else if extension.eq_ignore_ascii_case("wgsl") {
-                Edition::Wgsl
-            } else {
-                Edition::CURRENT
-            }
-        } else {
-            Edition::CURRENT
-        };
+            .and_then(|(_, extension)| extension)
+            .and_then(Edition::from_file_extension)
+            .unwrap_or(Edition::CURRENT);
 
         Self::new(database, file_id, edition)
     }

@@ -29,21 +29,20 @@ pub(crate) fn view_module_graph(
 ) -> String {
     // TODO: This only renders the children. It should render an edge for each import and inline usage of another module.
     let package = file_package(database, file_id);
-    let modules_to_render = match package {
-        Some(package) => Cow::Borrowed(package_modules_map(database, package).modules(database)),
-        None => {
-            let mut modules_to_render = FxIndexMap::default();
-            modules_to_render.insert(
-                file_id,
-                ModuleData {
-                    name: None,
-                    origin: EditionedFileId::from_file(database, file_id),
-                    parent: None,
-                    children: FxIndexMap::default(),
-                },
-            );
-            Cow::Owned(modules_to_render)
-        },
+    let modules_to_render = if let Some(package) = package {
+        Cow::Borrowed(package_modules_map(database, package).modules(database))
+    } else {
+        let mut modules_to_render = FxIndexMap::default();
+        modules_to_render.insert(
+            file_id,
+            ModuleData {
+                name: None,
+                origin: EditionedFileId::from_file(database, file_id),
+                parent: None,
+                children: FxIndexMap::default(),
+            },
+        );
+        Cow::Owned(modules_to_render)
     };
 
     let graph = DotModuleGraph { modules_to_render };

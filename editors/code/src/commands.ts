@@ -513,7 +513,9 @@ function moduleGraph(context: InitializedContext): Cmd {
 			},
 		);
 		const client = context.client;
-		const parameters = { textDocument: client.code2ProtocolConverter.asTextDocumentIdentifier(weslEditor.document) };
+		const parameters = {
+			textDocument: client.code2ProtocolConverter.asTextDocumentIdentifier(weslEditor.document),
+		};
 		const dot = await client.sendRequest(wa.viewModuleGraph, parameters);
 		const uri = panel.webview.asWebviewUri(nodeModulesPath);
 
