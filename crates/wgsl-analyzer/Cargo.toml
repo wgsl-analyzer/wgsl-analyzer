@@ -66,6 +66,7 @@ camino.workspace = true
 base-db.workspace = true
 line-index.workspace = true
 edition.workspace = true
+idna_adapter.workspace = true
 
 [dev-dependencies]
 expect-test.workspace = true

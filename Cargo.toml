@@ -92,6 +92,10 @@ triomphe = { version = "0.1.15", default-features = false, features = ["std"] }
 wgsl-types = { version = "0.3.2", features = ["naga-ext"] }
 indexmap = { version = "2.14.0" }
 
+# idna_adapter does not use semantic versioning
+# 1.0 is a feature band that indicates no IDNA support
+idna_adapter = "~1.0.0"
+
 # tombi: format.rules.table-keys-order.disabled = true
 [workspace.lints.clippy]
 cargo = { level = "warn", priority = -2 }
@@ -218,6 +222,10 @@ private_doc_tests = "warn"
 private_intra_doc_links = "allow"
 redundant_explicit_links = "warn"
 unescaped_backticks = "warn"
+
+[workspace.metadata.cargo-shear]
+# this transitive dependency is pinned because it does not use semantic versioning
+ignored = ["idna_adapter"]
 
 [profile.dev]
 debug = 1
