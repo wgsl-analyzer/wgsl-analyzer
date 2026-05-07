@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@hpcc-js/wasm':
-        specifier: ^2.33.2
-        version: 2.33.2
+        specifier: ^2.33.4
+        version: 2.33.4
       anser:
         specifier: ^2.3.5
         version: 2.3.5
@@ -352,8 +352,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@hpcc-js/wasm@2.33.2':
-    resolution: {integrity: sha512-ECZp/GrQW4lEv2ATdMJOY1jz6ypK9c1deTfrHGa60ywxualRFNX2tnCWTd0CwtlWvgYAXHRBErPSZEnq36cxuQ==}
+  '@hpcc-js/wasm@2.33.4':
+    resolution: {integrity: sha512-9VDU7JP5/pHQk5/a67YPTxocCVujMnUr1Wb1xfy2i61HfQ8PArv8IL/P+oIpFgXEadV7WSmEjVQK26ImEF8W6Q==}
     hasBin: true
 
   '@isaacs/cliui@9.0.0':
@@ -2134,7 +2134,7 @@ snapshots:
   '@esbuild/win32-x64@0.28.0':
     optional: true
 
-  '@hpcc-js/wasm@2.33.2':
+  '@hpcc-js/wasm@2.33.4':
     dependencies:
       yargs: 18.0.0
 
@@ -2684,7 +2684,7 @@ snapshots:
 
   d3-graphviz@5.6.0(d3-selection@3.0.0):
     dependencies:
-      '@hpcc-js/wasm': 2.33.2
+      '@hpcc-js/wasm': 2.33.4
       d3-dispatch: 3.0.1
       d3-format: 3.1.2
       d3-interpolate: 3.0.1
