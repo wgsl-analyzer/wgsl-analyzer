@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@hpcc-js/wasm':
-        specifier: ^2.33.2
-        version: 2.33.2
+        specifier: ^2.33.5
+        version: 2.33.5
       anser:
         specifier: ^2.3.5
         version: 2.3.5
@@ -352,8 +352,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@hpcc-js/wasm@2.33.2':
-    resolution: {integrity: sha512-ECZp/GrQW4lEv2ATdMJOY1jz6ypK9c1deTfrHGa60ywxualRFNX2tnCWTd0CwtlWvgYAXHRBErPSZEnq36cxuQ==}
+  '@hpcc-js/wasm@2.33.5':
+    resolution: {integrity: sha512-GTMkSsxWxTJIwL+Vm3N7gzyV1butjU45d1lS2D0SIq+CpLhImG+u3LcRoG3NW8jWWtSBNUyXn5x/jJU+R0NGGw==}
     hasBin: true
 
   '@isaacs/cliui@9.0.0':
@@ -1106,8 +1106,8 @@ packages:
     resolution: {integrity: sha512-DyFP3BM/3YHTQOCUL/w0OZHR0lpKeGrxotcHWcqNEdnltqFwXVfhEBQ94eIo34AfQpo0rGki4cyIiftY06h2Fg==}
     engines: {node: 6.* || 8.* || >= 10.*}
 
-  get-east-asian-width@1.5.0:
-    resolution: {integrity: sha512-CQ+bEO+Tva/qlmw24dCejulK5pMzVnUOFOijVogd3KQs07HnRIgp8TGipvCCRT06xeYEbpbgwaCxglFyiuIcmA==}
+  get-east-asian-width@1.6.0:
+    resolution: {integrity: sha512-QRbvDIbx6YklUe6RxeTeleMR0yv3cYH6PsPZHcnVn7xv7zO1BHN8r0XETu8n6Ye3Q+ahtSarc3WgtNWmehIBfA==}
     engines: {node: '>=18'}
 
   get-intrinsic@1.3.0:
@@ -2134,7 +2134,7 @@ snapshots:
   '@esbuild/win32-x64@0.28.0':
     optional: true
 
-  '@hpcc-js/wasm@2.33.2':
+  '@hpcc-js/wasm@2.33.5':
     dependencies:
       yargs: 18.0.0
 
@@ -2684,7 +2684,7 @@ snapshots:
 
   d3-graphviz@5.6.0(d3-selection@3.0.0):
     dependencies:
-      '@hpcc-js/wasm': 2.33.2
+      '@hpcc-js/wasm': 2.33.5
       d3-dispatch: 3.0.1
       d3-format: 3.1.2
       d3-interpolate: 3.0.1
@@ -2982,7 +2982,7 @@ snapshots:
 
   get-caller-file@2.0.5: {}
 
-  get-east-asian-width@1.5.0: {}
+  get-east-asian-width@1.6.0: {}
 
   get-intrinsic@1.3.0:
     dependencies:
@@ -3632,7 +3632,7 @@ snapshots:
   string-width@7.2.0:
     dependencies:
       emoji-regex: 10.6.0
-      get-east-asian-width: 1.5.0
+      get-east-asian-width: 1.6.0
       strip-ansi: 7.2.0
 
   string_decoder@1.1.1:
