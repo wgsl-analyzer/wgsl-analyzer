@@ -1,25 +1,24 @@
 use std::{error::Error, str::FromStr};
 
-use clap::{Arg, ArgAction, Command, ValueEnum, builder::PossibleValue, value_parser};
+use clap::{Arg, ArgAction, ArgGroup, Command, ValueEnum, builder::PossibleValue, value_parser};
 
-/// Tool to find and fix WGSL/WESL formatting issues.
-///
-/// Accepts file paths, directories (recursively finds .wgsl files), and
-/// glob patterns (e.g. "src/**/*.wgsl"). Pass "-" to read from stdin.
 #[derive(Clone, Debug)]
 pub struct Args {
-    /// Run in 'check' mode. Exits with 0 if input is formatted correctly.
-    /// Exits with 1 and prints a diff if formatting is required.
-    pub check: bool,
-    /// Whether to overwrite the files with the formatted output
-    pub overwrite: bool,
-    pub stdout_format: OutputMode,
-    /// Files, directories, or glob patterns to format.
-    /// Pass "-" to read from stdin.
-    pub patterns: Vec<String>,
+    /// The mode (check or write) to run in.
+    pub mode: WgslFmtMode,
+
+    /// The format to use for stdout output.
+    pub stdout_format: OutputFormat,
+
+    /// Whether to include diffs in the stdout output - works for all `mode`s and all `stdout_format`s.
+    pub print_diff: bool,
 
     /// Overrides for the formatting configuration.
     pub config_overrides: Vec<ConfigOverride>,
+
+    /// Files, directories, or glob patterns to format.
+    /// Pass "-" to read from stdin.
+    pub patterns: Vec<String>,
 }
 
 #[derive(Clone, Debug)]
@@ -41,48 +40,17 @@ fn parse_config_override(
 }
 
 #[derive(Clone, Copy, Debug, Default)]
-pub enum OutputMode {
+pub enum WgslFmtMode {
+    Check,
+    #[default]
+    Write,
+}
+
+#[derive(Clone, Copy, Debug, Default)]
+pub enum OutputFormat {
     Json,
     #[default]
     Text,
-}
-impl ValueEnum for OutputMode {
-    fn value_variants<'value>() -> &'value [Self] {
-        &[Self::Json, Self::Text]
-    }
-
-    fn to_possible_value(&self) -> Option<PossibleValue> {
-        Some(match self {
-            Self::Json => PossibleValue::new("json").help("Format all stdout output as JSON"),
-            Self::Text => {
-                PossibleValue::new("text").help("Format all stdout output as human-readable text")
-            },
-        })
-    }
-}
-
-impl std::fmt::Display for OutputMode {
-    fn fmt(
-        &self,
-        f: &mut std::fmt::Formatter<'_>,
-    ) -> std::fmt::Result {
-        self.to_possible_value()
-            .expect("no values are skipped")
-            .get_name()
-            .fmt(f)
-    }
-}
-
-impl FromStr for OutputMode {
-    type Err = ();
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "json" => Ok(Self::Json),
-            "text" => Ok(Self::Text),
-            _ => Err(()),
-        }
-    }
 }
 
 impl Args {
@@ -90,6 +58,8 @@ impl Args {
         Command::new("wgslfmt")
             .about("Tool to find and fix WGSL/WESL formatting issues")
             .version(env!("CARGO_PKG_VERSION"))
+
+            // Mode setters
             .arg(
                 Arg::new("check")
                     .long("check")
@@ -97,22 +67,24 @@ impl Args {
                     .long_help(
                         "Run in 'check' mode.
 Exits with 0 if input is formatted correctly.
-Exits with 1 and prints a diff if formatting is required.",
+Exits with 1 if formatting is required.",
                     )
                     .action(ArgAction::SetTrue),
             )
+
+            // Output Format Setters
             .arg(
-                Arg::new("output-mode")
-                    .long("output-mode")
-                    .value_name("MODE")
-                    .value_parser(value_parser!(OutputMode)),
+                Arg::new("json")
+                    .long("json")
+                    .help("Format stdio output as JSON")
+                    .action(ArgAction::SetTrue),
             )
+
             .arg(
-                Arg::new("overwrite")
-                    .long("overwrite")
-                    .default_value("true")
-                    .value_name("true|false")
-                    .value_parser(value_parser!(bool)),
+                Arg::new("print-diff")
+                    .long("print-diff")
+                    .help("Include diffs in the stdio output")
+                    .action(ArgAction::SetTrue),
             )
             .arg(
                 Arg::new("config")
@@ -145,18 +117,30 @@ Pass \"-\" to read from stdin",
     }
 
     fn from_arg_matches(mut matches: clap::ArgMatches) -> Self {
+        let mode = if matches.remove_one::<bool>("check").unwrap_or_default() {
+            WgslFmtMode::Check
+        } else {
+            WgslFmtMode::Write
+        };
+
+        let stdout_format = if matches.remove_one::<bool>("json").unwrap_or_default() {
+            OutputFormat::Json
+        } else {
+            OutputFormat::Text
+        };
+
         Self {
-            check: matches.remove_one::<bool>("check").unwrap_or_default(),
-            overwrite: matches.remove_one::<bool>("overwrite").unwrap_or_default(),
-            stdout_format: matches
-                .remove_one::<OutputMode>("output-mode")
-                .unwrap_or_default(),
-            patterns: matches
-                .remove_many::<String>("patterns")
-                .map(std::iter::Iterator::collect::<Vec<_>>)
+            mode,
+            stdout_format,
+            print_diff: matches
+                .remove_one::<bool>("print-diff")
                 .unwrap_or_default(),
             config_overrides: matches
                 .remove_many::<ConfigOverride>("config")
+                .map(std::iter::Iterator::collect::<Vec<_>>)
+                .unwrap_or_default(),
+            patterns: matches
+                .remove_many::<String>("patterns")
                 .map(std::iter::Iterator::collect::<Vec<_>>)
                 .unwrap_or_default(),
         }

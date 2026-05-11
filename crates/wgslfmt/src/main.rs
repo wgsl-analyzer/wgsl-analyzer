@@ -1,42 +1,24 @@
-#![expect(clippy::print_stderr, reason = "CLI program")]
-#![expect(clippy::print_stdout, reason = "CLI program")]
 
 mod cli;
 pub mod options;
+mod patterns;
+mod summary;
 
 use std::{
-    io::Read as _,
-    path::PathBuf,
-    process::exit,
-    task::Context,
-    time::{Duration, Instant},
+    fmt::Display, io::Read as _, path::PathBuf, process::exit, task::Context, time::{Duration, Instant}
 };
 
 use anyhow::{Context as _, bail};
 use prettydiff::text::ContextConfig;
 use serde::Serialize;
+use summary::WriteSummary;
 use wgsl_formatter::{FormatStringError, FormattingOptions, IndentStyle};
 
 use crate::{
-    cli::{Args, ConfigOverride, OutputMode},
-    options::WgslFmtOptions,
+    cli::{Args, ConfigOverride, OutputFormat, WgslFmtMode},
+    options::{WgslFmtOptions, collect_options},
+    patterns::resolve_patterns,
 };
-
-struct JsonOutput {
-    files: Vec<FileResult>,
-    total_files: usize,
-    files_changed: usize,
-    total_duration_ms: u128,
-}
-
-// #[derive(Serialize)]
-// struct FileResult {
-//     file: String,
-//     changed: bool,
-//     duration_ms: u128,
-//     #[serde(skip_serializing_if = "Option::is_none")]
-//     diff: Option<String>,
-// }
 
 #[derive(Debug)]
 struct FileResult {
@@ -49,7 +31,7 @@ struct FileResult {
 enum FileStatus {
     Unchanged,
     Errors,
-    Changed {},
+    Changed { source: String, formatted: String },
 }
 
 #[derive(Serialize)]
@@ -59,8 +41,11 @@ struct ParseError {
     message: String,
 }
 
+
 fn main() -> Result<(), anyhow::Error> {
     let cli = Args::parse();
+
+    let wgslfmt_options = collect_options(cli.config_overrides)?;
 
     let files = resolve_patterns(&cli.patterns)?;
 
@@ -68,71 +53,85 @@ fn main() -> Result<(), anyhow::Error> {
         bail!("no .wgsl/.wesl files found matching the given patterns");
     }
 
-    let wgslfmt_options = collect_options(cli.config_overrides)?;
+    let formatted_files = files
+        .into_iter()
+        .map(read_file)
+        .map(|(file, source)| format_file(file, source, &wgslfmt_options));
 
-    let mut results = Vec::new();
 
-    for file in &files {
-        let start = Instant::now();
-        let source = {
-            let mut source = String::new();
-            file.read()?.read_to_string(&mut source)?;
-            source
-        };
-
-        let options = wgslfmt_options.to_formatting_options();
-
-        let result = wgsl_formatter::format_file(&source, &options);
-
-        let Ok(formatted) = result else {
-            results.push(FileResult {
-                file: file.clone(),
-                duration: Instant::now().duration_since(start),
-                status: FileStatus::Errors,
-            });
-            continue;
-        };
-
-        if formatted == source {
-            results.push(FileResult {
-                file: file.clone(),
-                duration: Instant::now().duration_since(start),
-                status: FileStatus::Unchanged,
-            });
-        } else {
-            if cli.overwrite {
-                file.write()?.write_all(formatted.as_bytes())?;
-            }
-
-            results.push(FileResult {
-                file: file.clone(),
-                duration: Instant::now().duration_since(start),
-                status: FileStatus::Changed {},
-            });
-        }
+    match cli.mode {
+        WgslFmtMode::Check => check_file_results(formatted_files),
+        WgslFmtMode::Write => write_file_results(formatted_files, cli.stdout_format, cli.print_diff),
     }
 
-    dbg!(results);
     exit(0);
 }
 
-fn collect_options(config_overrides: Vec<ConfigOverride>) -> anyhow::Result<WgslFmtOptions> {
-    // Here we would instead parse a wgslfmt.toml into a serde_json::Value
-    let mut formatting_options = serde_json::Map::default();
+fn read_file(file: FormattingSource) -> (FormattingSource, String) {
+    let text = {
+        let mut text = String::new();
+        file.read().unwrap().read_to_string(&mut text).unwrap();
+        text
+    };
+    (file, text)
+}
 
-    // Patch the formatting options with the CLI options
-    for config_override in config_overrides {
-        let value = serde_json::from_str::<serde_json::Value>(&config_override.value)
-            .unwrap_or(serde_json::Value::String(config_override.value));
-        formatting_options.insert(config_override.key, value);
+fn format_file(
+    file: FormattingSource,
+    source: String,
+    wgslfmt_options: &WgslFmtOptions,
+) -> FileResult {
+    let start = Instant::now();
+    let options = wgslfmt_options.to_formatting_options();
+
+    let result = wgsl_formatter::format_file(&source, &options);
+
+    match result {
+        Ok(formatted) => {
+            if formatted == source {
+                FileResult {
+                    file,
+                    duration: Instant::now().duration_since(start),
+                    status: FileStatus::Unchanged,
+                }
+            } else {
+                FileResult {
+                    file,
+                    duration: Instant::now().duration_since(start),
+                    status: FileStatus::Changed { formatted, source },
+                }
+            }
+        },
+        Err(error) => FileResult {
+            file,
+            duration: Instant::now().duration_since(start),
+            status: FileStatus::Errors,
+        },
     }
+}
 
-    // Parse the merged options
-    let formatting_options =
-        serde_json::from_value::<WgslFmtOptions>(serde_json::Value::Object(formatting_options))
-            .context("Could not parse the merged wgslfmt options")?;
+fn check_file_results(results: impl Iterator<Item = FileResult>) {
+    let mut has_errors = false;
+    for result in results {
+        if matches!(result.status, FileStatus::Errors) {
+            has_errors = true;
+        }
+    }
+    if has_errors {
+        exit(1);
+    }
+}
 
-    Ok(formatting_options)
+fn write_file_results(results: impl Iterator<Item = FileResult>, output: OutputFormat, print_diff: bool) {
+    let mut summary = WriteSummary::begin(output, print_diff);
+    for result in results {
+        if let FileStatus::Changed { source, formatted } = &result.status {
+            let mut writer = result.file.write().unwrap();
+            writer.write_all(formatted.as_bytes()).unwrap();
+        }
+        summary.submit(&result);
+    }
+    summary.finish();
 }
 
 #[derive(Debug, Clone)]
@@ -156,57 +155,11 @@ impl FormattingSource {
     }
 }
 
-/// Resolves a list of patterns into concrete file paths.
-///
-/// Each pattern is interpreted as:
-/// - `"-"` → stdin
-/// - A directory path → recursively walk for `.wgsl` files
-/// - A glob pattern (contains `*`, `?`, or `[`) → expand via glob
-/// - Otherwise → a literal file path
-fn resolve_patterns(patterns: &[String]) -> Result<Vec<FormattingSource>, anyhow::Error> {
-    let mut files = Vec::new();
-    for pattern in patterns {
-        if pattern == "-" {
-            files.push(FormattingSource::Stdin);
-        } else if PathBuf::from(pattern).is_dir() {
-            collect_wgsl_files(&PathBuf::from(pattern), &mut files)?;
-        } else if pattern.contains('*') || pattern.contains('?') || pattern.contains('[') {
-            let paths =
-                glob::glob(pattern).with_context(|| format!("invalid glob pattern: {pattern}"))?;
-            for entry in paths {
-                let path =
-                    entry.with_context(|| format!("error reading glob match for: {pattern}"))?;
-                if path.is_dir() {
-                    collect_wgsl_files(&path, &mut files)?;
-                } else {
-                    files.push(FormattingSource::File(path));
-                }
-            }
-        } else {
-            files.push(FormattingSource::File(PathBuf::from(pattern)));
+impl Display for FormattingSource {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            FormattingSource::File(path_buf) => write!(f, "{}", path_buf.display()),
+            FormattingSource::Stdin => write!(f, "Stdin"),
         }
     }
-    Ok(files)
-}
-
-/// Recursively collects all `.wgsl` and `.wesl` files under `directory`.
-fn collect_wgsl_files(
-    directory: &PathBuf,
-    out: &mut Vec<FormattingSource>,
-) -> Result<(), anyhow::Error> {
-    for entry in std::fs::read_dir(directory)
-        .with_context(|| format!("failed to read directory: {}", directory.display()))?
-    {
-        let entry = entry?;
-        let path = entry.path();
-        if path.is_dir() {
-            collect_wgsl_files(&path, out)?;
-        } else if path
-            .extension()
-            .is_some_and(|ext| ext == "wgsl" || ext == "wesl")
-        {
-            out.push(FormattingSource::File(path));
-        }
-    }
-    Ok(())
 }
