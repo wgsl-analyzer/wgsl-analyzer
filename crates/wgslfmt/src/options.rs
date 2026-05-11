@@ -1,5 +1,8 @@
 //! The interface to a wgslfmt.toml file.
+use anyhow::Context as _;
 use serde::{Deserialize, Serialize};
+
+use crate::cli::ConfigOverride;
 
 // We do not expose the wgsl_formatter::FormattingOptions directly, because we will want
 // to provide stronger stability guarantees for the wgslfmt.toml, than
@@ -76,4 +79,23 @@ impl WgslFmtOptions {
             },
         }
     }
+}
+
+pub fn collect_options(config_overrides: Vec<ConfigOverride>) -> anyhow::Result<WgslFmtOptions> {
+    // Here we would instead parse a wgslfmt.toml into a serde_json::Value
+    let mut formatting_options = serde_json::Map::default();
+
+    // Patch the formatting options with the CLI options
+    for config_override in config_overrides {
+        let value = serde_json::from_str::<serde_json::Value>(&config_override.value)
+            .unwrap_or(serde_json::Value::String(config_override.value));
+        formatting_options.insert(config_override.key, value);
+    }
+
+    // Parse the merged options
+    let formatting_options =
+        serde_json::from_value::<WgslFmtOptions>(serde_json::Value::Object(formatting_options))
+            .context("Could not parse the merged wgslfmt options")?;
+
+    Ok(formatting_options)
 }
