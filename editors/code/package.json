@@ -74,7 +74,7 @@
 		"@tsconfig/node-ts": "^23.6.4",
 		"@tsconfig/node22": "^22.0.5",
 		"@tsconfig/strictest": "^2.0.8",
-		"@types/node": "^25.6.0",
+		"@types/node": "^25.8.0",
 		"@types/vscode": "^1.116.0",
 		"@vscode/test-electron": "^2.5.2",
 		"@vscode/vsce": "^3.9.1",
