@@ -1,5 +1,7 @@
 {
 	"scripts": {
+		"update": "pnpm --dir editors/code update --save --latest",
+		"install": "pnpm --dir editors/code install",
 		"build-base": "pnpm --dir editors/code run build-base",
 		"build": "pnpm --dir editors/code run build",
 		"check": "pnpm --dir editors/code run check",
