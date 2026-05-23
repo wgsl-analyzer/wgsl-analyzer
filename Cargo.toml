@@ -34,11 +34,32 @@ wgsl-formatter = { path = "./crates/wgsl_formatter", version = "0.0.0" }
 edition = { path = "./crates/edition", version = "0.0.0" }
 #
 # rust-analyzer crates
-stdx = { git = "https://github.com/rust-lang/rust-analyzer", rev = "b42b63f390a4dab14e6efa34a70e67f5b087cc62", version = "0.0.0" }
-vfs-notify = { git = "https://github.com/rust-lang/rust-analyzer", rev = "b42b63f390a4dab14e6efa34a70e67f5b087cc62", version = "0.0.0" }
-vfs = { git = "https://github.com/rust-lang/rust-analyzer", rev = "b42b63f390a4dab14e6efa34a70e67f5b087cc62", version = "0.0.0" }
-paths = { git = "https://github.com/rust-lang/rust-analyzer", rev = "b42b63f390a4dab14e6efa34a70e67f5b087cc62", version = "0.0.0" }
-query-group = { package = "query-group-macro", git = "https://github.com/rust-lang/rust-analyzer", rev = "b42b63f390a4dab14e6efa34a70e67f5b087cc62", version = "0.0.0" }
+stdx = {
+	git = "https://github.com/rust-lang/rust-analyzer",
+	rev = "b42b63f390a4dab14e6efa34a70e67f5b087cc62",
+	version = "0.0.0"
+}
+vfs-notify = {
+	git = "https://github.com/rust-lang/rust-analyzer",
+	rev = "b42b63f390a4dab14e6efa34a70e67f5b087cc62",
+	version = "0.0.0"
+}
+vfs = {
+	git = "https://github.com/rust-lang/rust-analyzer",
+	rev = "b42b63f390a4dab14e6efa34a70e67f5b087cc62",
+	version = "0.0.0"
+}
+paths = {
+	git = "https://github.com/rust-lang/rust-analyzer",
+	rev = "b42b63f390a4dab14e6efa34a70e67f5b087cc62",
+	version = "0.0.0"
+}
+query-group = {
+	package = "query-group-macro",
+	git = "https://github.com/rust-lang/rust-analyzer",
+	rev = "b42b63f390a4dab14e6efa34a70e67f5b087cc62",
+	version = "0.0.0"
+}
 #
 # crates from rust-analyzer that are published separately
 line-index = "0.1.2"
@@ -63,31 +84,42 @@ dashmap = { version = "6.1.0" }
 nohash-hasher = "0.2.0"
 rowan = "0.16.1"
 rustc-hash = "2.1.2"
-salsa = { version = "0.25.2", default-features = true, features = [
-	"macros",
-	"rayon",
-	"salsa_unstable",
-] }
+salsa = {
+	version = "0.25.2",
+	default-features = true,
+	features = [
+		"macros",
+		"rayon",
+		"salsa_unstable",
+	]
+}
 salsa-macros = "0.25.2"
 semver = "1.0.27"
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.149"
-smallvec = { version = "1.15.1", features = [
-	"const_generics",
-	"const_new",
-	"union",
-] }
+smallvec = {
+	version = "1.15.1",
+	features = [
+		"const_generics",
+		"const_new",
+		"union",
+	]
+}
 smol_str = "0.3.5"
 text-size = "1.1.1"
 tracing = { version = "0.1.44", default-features = false, features = ["std"] }
-tracing-subscriber = { version = "0.3.23", default-features = false, features = [
-	"fmt",
-	"local-time",
-	"registry",
-	"std",
-	"time",
-	"tracing-log",
-] }
+tracing-subscriber = {
+	version = "0.3.23",
+	default-features = false,
+	features = [
+		"fmt",
+		"local-time",
+		"registry",
+		"std",
+		"time",
+		"tracing-log",
+	]
+}
 triomphe = { version = "0.1.15", default-features = false, features = ["std"] }
 wgsl-types = { version = "0.3.2", features = ["naga-ext"] }
 indexmap = { version = "2.14.0" }
