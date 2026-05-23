@@ -103,7 +103,7 @@ jobs:
       #       ./crates/proc-macro-srv/proc-macro-test/imp -> target
 
       - name: Install nextest
-        uses: taiki-e/install-action@b651345a718c8f44efa2460560b3dbf29cbd7ee1 # v2.75.26
+        uses: taiki-e/install-action@184183c2401be73c3bf42c2e61268aa5855379c1 # v2.78.1
         with:
           tool: nextest
 
@@ -240,7 +240,7 @@ jobs:
           persist-credentials: false
 
       - name: Check for typos
-        uses: crate-ci/typos@7c572958218557a3272c2d6719629443b5cc26fd # v1.45.2
+        uses: crate-ci/typos@5374cbf686e897b15713110e233094e2874de7ef # v1.46.1
 
       - name: Typos info
         if: failure()
