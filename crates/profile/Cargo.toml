@@ -10,9 +10,14 @@ license.workspace = true
 [lib]
 
 [dependencies]
-jemalloc-ctl = { package = "tikv-jemalloc-ctl", version = "0.6.0", features = [
-	"stats",
-], optional = true }
+jemalloc-ctl = {
+	package = "tikv-jemalloc-ctl",
+	version = "0.6.0",
+	features = [
+		"stats",
+	],
+	optional = true
+}
 
 [target.'cfg(all(target_os = "linux", not(target_env = "ohos")))'.dependencies]
 perf-event = "=0.4.9"
@@ -21,10 +26,13 @@ perf-event = "=0.4.9"
 libc.workspace = true
 
 [target.'cfg(windows)'.dependencies]
-windows-sys = { version = "0.61", features = [
-	"Win32_System_ProcessStatus",
-	"Win32_System_Threading",
-] }
+windows-sys = {
+	version = "0.61",
+	features = [
+		"Win32_System_ProcessStatus",
+		"Win32_System_Threading",
+	]
+}
 
 [features]
 cpu_profiler = []
