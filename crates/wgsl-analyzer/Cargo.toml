@@ -77,10 +77,13 @@ test-utils.workspace = true
 # syntax-bridge.workspace = true
 
 [target.'cfg(windows)'.dependencies]
-windows-sys = { version = "0.61", features = [
-	"Win32_System_Diagnostics_Debug",
-	"Win32_System_Threading",
-] }
+windows-sys = {
+	version = "0.61",
+	features = [
+		"Win32_System_Diagnostics_Debug",
+		"Win32_System_Threading",
+	]
+}
 
 [features]
 force-always-assert = ["stdx/force-always-assert"]
