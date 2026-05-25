@@ -80,7 +80,7 @@ either = "1.15.0"
 expect-test = "1.5.1"
 itertools = "0.14.0"
 libc = "0.2.185"
-dashmap = { version = "6.1.0" }
+dashmap = { version = "6.2.1" }
 nohash-hasher = "0.2.0"
 rowan = "0.16.1"
 rustc-hash = "2.1.2"
