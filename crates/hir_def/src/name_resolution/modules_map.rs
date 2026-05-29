@@ -8,31 +8,10 @@ use vfs::FileId;
 
 use crate::{FxIndexMap, database::DefDatabase, item_tree::Name};
 
-/// Used for
-/// - `import foo::|` autocompletions. When I'm typing `foo::|` then I need to know what valid names come next.
-/// - Open symbol by name. `all_symbols() => for each crate: crate_symbols() => for each file (ignore visibility): file_symbols()`
-/// - Unit test discovery. `unit_tests() => for each file (ignore visibility): file_unit_tests()`
-/// - Check all files. `check_all() => for each file (ignore visibility): check()`
+/// A map of all modules and their children in a package.
 ///
-///
-/// Ruff has this kind of info as well <https://github.com/astral-sh/ruff/blob/b409cbeea655e402152d9c0d2057e180d3b660b8/crates/ty_python_semantic/src/semantic_model.rs#L187>
-/// Ruff does read children: https://github.com/astral-sh/ruff/blob/b409cbeea655e402152d9c0d2057e180d3b660b8/crates/ty_module_resolver/src/module.rs#L123
-/// `#[salsa::tracked] all_submodule_names_for_package(db, module: Module<'db>) -> Option<Vec<Module<'db>>>` is what they got
-///
-/// Ruff does it tree shaped https://github.com/astral-sh/ruff/blob/a88b2f619c3065de00c75f44903e4d74c37b7796/crates/ty_module_resolver/src/list.rs#L12
-/// for all_symbols, import completions (via the list_modules function),
-///
-/// We can do `import foo::bar;` and `import super::bar;` with the current API. We'd just call `SourceRoot.resolve_path` at the right time. Hmm
-///
-///  Any query that depends on `fn all_files()` will be re-executed whenever any file is added or removed.
-/// How do I get salsa to memoize just the right bit? Like
-/// - source root changes => need to recompute the entire "tree" structure
-/// - children(file_id) -> Vec<FileId> needs to be one of those tracked functions. It should see that the result hasn't changed and thus skippy skip the rest
-/// The only way of beating all that would be by making the Change itself touch the relevant bits. Then the parents and children would be inputs and we'd do set_whatever.
-///
-/// Also hmm basically no part of the language server does path lookups.
-/// There's a bit in r-a that deals with moving and renaming files.
-///
+/// Used for name resolution.
+/// Can also be used to iterate over all modules in a package to discover all symbols or all unit tests.
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct ModulesMap {
     pub root: FileId,

@@ -71,7 +71,7 @@ impl<T> InFile<T> {
         &self,
         database: &dyn database::DefDatabase,
     ) -> SyntaxNode {
-        database.parse_or_resolve(self.file_id).syntax()
+        self.file_id.parse(database).syntax()
     }
 }
 
@@ -133,10 +133,7 @@ pub trait HasSource {
         database: &dyn DefDatabase,
     ) -> InFile<Self::Value> {
         let InFile { file_id, value } = self.ast_ptr(database);
-        InFile::new(
-            file_id,
-            value.to_node(&database.parse_or_resolve(file_id).syntax()),
-        )
+        InFile::new(file_id, value.to_node(&file_id.parse(database).syntax()))
     }
     fn ast_ptr(
         &self,

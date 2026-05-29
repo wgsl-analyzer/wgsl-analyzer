@@ -599,7 +599,7 @@ impl HasSource for Local {
             .map_err(drop)
             .ok()?;
 
-        let root = database.parse_or_resolve(file_id).syntax();
+        let root = file_id.parse(database).syntax();
         Some(InFile::new(file_id, binding.to_node(&root)))
     }
 }
@@ -913,7 +913,7 @@ fn validate_identifiers(
 ) {
     let item_tree = database.item_tree(file_id);
     let ast_id_map = database.ast_id_map(file_id);
-    let root = database.parse_or_resolve(file_id).syntax();
+    let root = file_id.parse(database).syntax();
 
     macro_rules! validate {
         (

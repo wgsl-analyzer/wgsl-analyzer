@@ -6,7 +6,7 @@ use syntax::{Diagnostic, ast};
 pub use syntax::{Edition, ExtensionsConfig};
 use vfs::FileId;
 
-use crate::SourceDatabase;
+use crate::{SourceDatabase, file_package};
 
 /// File together with an edition.
 /// Simpler than Rust-Analyzer, because we do not macros.
@@ -76,6 +76,10 @@ impl EditionedFileId {
         database: &dyn SourceDatabase,
         file_id: FileId,
     ) -> Self {
+        if let Some(package) = file_package(database, file_id) {
+            return Self::new(database, file_id, package.data(database).edition);
+        }
+
         let source_root = database
             .source_root(database.file_source_root(file_id).source_root_id(database))
             .source_root(database);

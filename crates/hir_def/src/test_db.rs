@@ -12,7 +12,6 @@ use triomphe::Arc;
 use vfs::{AnchoredPath, FileId, VfsPath, file_set::FileSet};
 
 #[salsa_macros::db]
-#[derive(Clone)]
 pub(crate) struct TestDatabase {
     storage: salsa::Storage<Self>,
     files: Arc<base_db::Files>,
@@ -32,12 +31,22 @@ impl Default for TestDatabase {
     }
 }
 
+impl Clone for TestDatabase {
+    fn clone(&self) -> Self {
+        Self {
+            storage: self.storage.clone(),
+            files: self.files.clone(),
+            nonce: Nonce::new(),
+        }
+    }
+}
+
 impl fmt::Debug for TestDatabase {
     fn fmt(
         &self,
         f: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
-        f.debug_struct("TestDB").finish()
+        f.debug_struct("TestDatabase").finish()
     }
 }
 
@@ -122,7 +131,7 @@ impl TestDatabase {
         all_packages
             .iter()
             .copied()
-            .find(|package| package.data(self).display_name.as_deref() == Some("ra_test_fixture"))
+            .find(|package| package.data(self).display_name.as_deref() == Some("wa_test_fixture"))
             .unwrap_or(*all_packages.last().unwrap())
     }
 }

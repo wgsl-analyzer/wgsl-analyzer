@@ -1,6 +1,7 @@
 #![expect(clippy::use_debug, reason = "tests")]
 
 mod builtins;
+mod incremental;
 mod simple;
 use std::fmt::Write as _;
 
@@ -9,7 +10,9 @@ use expect_test::Expect;
 use hir_def::{
     HasSource as _,
     body::{Body, BodySourceMap},
-    database::{DefDatabase as _, DefinitionWithBodyId, InternDatabase as _, Location},
+    database::{
+        DefDatabase as _, DefinitionWithBodyId, InternDatabase as _, Location, ModuleDefinitionId,
+    },
     expression_store::SyntheticSyntax,
     item_tree::ModuleItemId,
 };
@@ -37,7 +40,7 @@ fn infer(
     let (mut database, file_id) = TestDatabase::with_single_file(wa_fixture);
     database.set_extensions_with_durability(extensions, Durability::MEDIUM);
     let file_id = EditionedFileId::new(&database, file_id.file_id, file_id.edition);
-    let root = database.parse_or_resolve(file_id).syntax();
+    let root = file_id.parse(&database).syntax();
     let mut buffer = String::new();
     let mut infer_def = |inference_result: Arc<InferenceResult>,
                          _body: Arc<Body>,
@@ -127,7 +130,10 @@ fn infer(
     let module_info = database.item_tree(file_id);
     let mut definitions = module_definitions(&database, file_id, &module_info);
     definitions.sort_by_key(|definition| text_size(*definition, &database));
-    for definition in definitions {
+    for definition in definitions
+        .into_iter()
+        .filter_map(ModuleDefinitionId::with_body)
+    {
         let (body, source_map) = database.body_with_source_map(definition);
         let infer = database.infer(definition);
         infer_def(infer, body, source_map);
@@ -137,39 +143,53 @@ fn infer(
 }
 
 fn text_size(
-    definition: DefinitionWithBodyId,
+    definition: ModuleDefinitionId,
     database: &TestDatabase,
 ) -> base_db::TextSize {
     match definition {
-        DefinitionWithBodyId::Function(item) => item
+        ModuleDefinitionId::Function(item) => item
             .lookup(database)
             .source(database)
             .value
             .syntax()
             .text_range()
             .start(),
-        DefinitionWithBodyId::GlobalConstant(item) => item
+        ModuleDefinitionId::GlobalConstant(item) => item
             .lookup(database)
             .source(database)
             .value
             .syntax()
             .text_range()
             .start(),
-        DefinitionWithBodyId::GlobalVariable(item) => item
+        ModuleDefinitionId::GlobalVariable(item) => item
             .lookup(database)
             .source(database)
             .value
             .syntax()
             .text_range()
             .start(),
-        DefinitionWithBodyId::Override(item) => item
+        ModuleDefinitionId::Override(item) => item
             .lookup(database)
             .source(database)
             .value
             .syntax()
             .text_range()
             .start(),
-        DefinitionWithBodyId::GlobalAssertStatement(item) => item
+        ModuleDefinitionId::GlobalAssertStatement(item) => item
+            .lookup(database)
+            .source(database)
+            .value
+            .syntax()
+            .text_range()
+            .start(),
+        ModuleDefinitionId::Struct(item) => item
+            .lookup(database)
+            .source(database)
+            .value
+            .syntax()
+            .text_range()
+            .start(),
+        ModuleDefinitionId::TypeAlias(item) => item
             .lookup(database)
             .source(database)
             .value
@@ -182,33 +202,37 @@ fn text_size(
 fn module_definitions(
     database: &TestDatabase,
     file_id: EditionedFileId,
-    item_tree: &Arc<hir_def::item_tree::ItemTree>,
-) -> Vec<DefinitionWithBodyId> {
+    item_tree: &hir_def::item_tree::ItemTree,
+) -> Vec<ModuleDefinitionId> {
     item_tree
         .top_level_items()
         .iter()
-        .filter_map(|item| {
+        .flat_map(|item| {
             Some(match item {
                 ModuleItemId::Function(id) => {
-                    DefinitionWithBodyId::Function(Location::new(file_id, *id).intern(database))
+                    ModuleDefinitionId::Function(Location::new(file_id, *id).intern(database))
                 },
-                ModuleItemId::GlobalVariable(id) => DefinitionWithBodyId::GlobalVariable(
-                    Location::new(file_id, *id).intern(database),
-                ),
-                ModuleItemId::GlobalConstant(id) => DefinitionWithBodyId::GlobalConstant(
-                    Location::new(file_id, *id).intern(database),
-                ),
+                ModuleItemId::GlobalVariable(id) => {
+                    ModuleDefinitionId::GlobalVariable(Location::new(file_id, *id).intern(database))
+                },
+                ModuleItemId::GlobalConstant(id) => {
+                    ModuleDefinitionId::GlobalConstant(Location::new(file_id, *id).intern(database))
+                },
                 ModuleItemId::Override(id) => {
-                    DefinitionWithBodyId::Override(Location::new(file_id, *id).intern(database))
+                    ModuleDefinitionId::Override(Location::new(file_id, *id).intern(database))
                 },
                 ModuleItemId::GlobalAssertStatement(id) => {
-                    DefinitionWithBodyId::GlobalAssertStatement(
+                    ModuleDefinitionId::GlobalAssertStatement(
                         Location::new(file_id, *id).intern(database),
                     )
                 },
-                ModuleItemId::TypeAlias(_)
-                | ModuleItemId::Struct(_)
-                | ModuleItemId::ImportStatement(_) => return None,
+                ModuleItemId::TypeAlias(id) => {
+                    ModuleDefinitionId::TypeAlias(Location::new(file_id, *id).intern(database))
+                },
+                ModuleItemId::Struct(id) => {
+                    ModuleDefinitionId::Struct(Location::new(file_id, *id).intern(database))
+                },
+                ModuleItemId::ImportStatement(id) => return None,
             })
         })
         .collect()
