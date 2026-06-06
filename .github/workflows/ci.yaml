@@ -103,7 +103,7 @@ jobs:
       #       ./crates/proc-macro-srv/proc-macro-test/imp -> target
 
       - name: Install nextest
-        uses: taiki-e/install-action@184183c2401be73c3bf42c2e61268aa5855379c1 # v2.78.1
+        uses: taiki-e/install-action@873c7452cadb7c034694a1282227095d93fbdf92 # v2.79.14
         with:
           tool: nextest
 
@@ -198,7 +198,7 @@ jobs:
           persist-credentials: false
 
       - name: markdownlint
-        uses: DavidAnson/markdownlint-cli2-action@6b51ade7a9e4a75a7ad929842dd298a3804ebe8b # v23.1.0
+        uses: DavidAnson/markdownlint-cli2-action@ded1f9488f68a970bc66ea5619e13e9b52e601cd # v23.2.0
         with:
           config: .markdownlint.jsonc
           globs: "**/*.md"
@@ -240,7 +240,7 @@ jobs:
           persist-credentials: false
 
       - name: Check for typos
-        uses: crate-ci/typos@5374cbf686e897b15713110e233094e2874de7ef # v1.46.1
+        uses: crate-ci/typos@f8a58b6b53f2279f71eb605f03a4ae4d10608f45 # v1.47.0
 
       - name: Typos info
         if: failure()
@@ -339,38 +339,38 @@ jobs:
         run: sudo apt-get install -y xvfb
 
       - name: Build
-        run: pnpm install --frozen-lockfile
+        run: corepack pnpm install --frozen-lockfile
         working-directory: ./editors/code
 
-      #    - run: pnpm audit || { sleep 10 && pnpm audit; } || { sleep 30 && pnpm audit; }
+      #    - run: corepack pnpm audit || { sleep 10 && corepack pnpm audit; } || { sleep 30 && corepack pnpm audit; }
       #      if: runner.os == 'Linux'
       #      working-directory: ./editors/code
 
       # If this steps fails, your code's type integrity might be wrong at some places at TypeScript level.
       - name: Typecheck
-        run: pnpm run typecheck
+        run: corepack pnpm run typecheck
         working-directory: ./editors/code
 
       - name: Run biome checks
-        run: pnpm run ci
+        run: corepack pnpm run ci
         working-directory: ./editors/code
 
       - name: Run VS Code tests (Linux)
         if: matrix.os == 'ubuntu-latest'
         env:
           VSCODE_CLI: 1
-        run: xvfb-run pnpm test
+        run: xvfb-run corepack pnpm test
         working-directory: ./editors/code
 
       - name: Run VS Code tests (Windows)
         if: matrix.os == 'windows-latest'
         env:
           VSCODE_CLI: 1
-        run: pnpm test
+        run: corepack pnpm test
         working-directory: ./editors/code
 
       - name: Package
-        run: pnpm run package
+        run: corepack pnpm run package
         working-directory: ./editors/code
 
   conclusion:

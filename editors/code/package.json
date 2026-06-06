@@ -36,10 +36,10 @@
 		"node": "^24.15.0"
 	},
 	"devEngines": {
-		"pnpm": "^11.2.2"
+		"pnpm": "^11.5.2"
 	},
 	"engineStrict": true,
-	"packageManager": "pnpm@11.2.2+sha512.36e6621fad506178936455e70247b8808ef4ec25797a9f437a93281a020484e2607f6a469a22e982987c3dbb8866e3071514ab10a4a1749e06edcd1ec118436f",
+	"packageManager": "pnpm@11.5.2+sha512.71c631e382066efc25625d5cf029075de07b61b37f6e27350fbd84b1bda5864c8c1967adc280776b45c30a715c0359a3be08fef42d5bb09e2b99029979692916",
 	"enabledApiProposals": [],
 	"extensionKind": [
 		"workspace"
@@ -79,7 +79,7 @@
 		"@vscode/test-electron": "^2.5.2",
 		"@vscode/vsce": "^3.9.1",
 		"esbuild": "^0.28.0",
-		"ovsx": "^0.10.12",
+		"ovsx": "^1.0.0",
 		"tslib": "^2.8.1",
 		"typescript": "^6.0.3"
 	},
