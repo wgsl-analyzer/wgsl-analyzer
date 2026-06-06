@@ -9,7 +9,7 @@ exclude = []
 
 [workspace.package]
 edition = "2024"
-rust-version = "1.95"
+rust-version = "1.96"
 repository = "https://github.com/wgsl-analyzer/wgsl-analyzer"
 license = "MIT OR Apache-2.0"
 
