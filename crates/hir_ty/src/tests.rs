@@ -4,7 +4,7 @@ mod builtins;
 mod simple;
 use std::fmt::Write as _;
 
-use base_db::{EditionedFileId, Intern, Lookup as _};
+use base_db::{EditionedFileId, Intern as _, Lookup as _};
 use expect_test::Expect;
 use hir_def::{
     HasSource as _,
