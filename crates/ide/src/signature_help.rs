@@ -2,7 +2,7 @@ use base_db::{EditionedFileId, FilePosition, TextSize};
 use hir::{HirDatabase as _, Semantics, database::DefDatabase};
 use hir_def::{
     database::{InternDatabase as _, Location},
-    item_tree::ModuleItem,
+    item_tree::ModuleItemId,
     resolver::ScopeDef,
 };
 use hir_ty::{
@@ -110,7 +110,7 @@ pub(crate) fn signature_help(
         .resolver(file_id, syntax)
         .process_all_names(|name, scope_def| {
             if name.as_str().to_owned().contains(&text.to_string())
-                && let ScopeDef::ModuleItem(file_id, ModuleItem::Function(module_item_id)) =
+                && let ScopeDef::ModuleItem(file_id, ModuleItemId::Function(module_item_id)) =
                     scope_def
             {
                 overloads.push(module_item_id);
