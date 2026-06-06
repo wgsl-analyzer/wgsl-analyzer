@@ -127,3 +127,18 @@ impl<N: AstNode> fmt::Debug for FileAstId<N> {
             .finish()
     }
 }
+
+impl<N: AstNode> FileAstId<N> {
+    // Can't make this a From implementation because of coherence
+    #[inline]
+    #[must_use]
+    pub fn upcast<M: AstNode>(self) -> FileAstId<M>
+    where
+        N: Into<M>,
+    {
+        FileAstId {
+            id: self.id,
+            _marker: PhantomData,
+        }
+    }
+}

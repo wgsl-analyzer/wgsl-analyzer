@@ -4,14 +4,14 @@ mod builtins;
 mod simple;
 use std::fmt::Write as _;
 
-use base_db::{EditionedFileId, Lookup as _};
+use base_db::{EditionedFileId, Intern, Lookup as _};
 use expect_test::Expect;
 use hir_def::{
     HasSource as _,
     body::{Body, BodySourceMap},
     database::{DefDatabase as _, DefinitionWithBodyId, InternDatabase as _, Location},
     expression_store::SyntheticSyntax,
-    item_tree::ModuleItem,
+    item_tree::ModuleItemId,
 };
 use salsa::Durability;
 use syntax::{AstNode as _, ExtensionsConfig, SyntaxNode};
@@ -180,40 +180,35 @@ fn text_size(
 }
 
 fn module_definitions(
-    db: &TestDatabase,
+    database: &TestDatabase,
     file_id: EditionedFileId,
     item_tree: &Arc<hir_def::item_tree::ItemTree>,
 ) -> Vec<DefinitionWithBodyId> {
     item_tree
-        .items()
+        .top_level_items()
         .iter()
         .filter_map(|item| {
             Some(match item {
-                ModuleItem::Function(id) => {
-                    let loc = Location::new(file_id, *id);
-                    DefinitionWithBodyId::Function(db.intern_function(loc))
+                ModuleItemId::Function(id) => {
+                    DefinitionWithBodyId::Function(Location::new(file_id, *id).intern(database))
                 },
-                ModuleItem::GlobalVariable(id) => {
-                    let loc = Location::new(file_id, *id);
-                    DefinitionWithBodyId::GlobalVariable(db.intern_global_variable(loc))
+                ModuleItemId::GlobalVariable(id) => DefinitionWithBodyId::GlobalVariable(
+                    Location::new(file_id, *id).intern(database),
+                ),
+                ModuleItemId::GlobalConstant(id) => DefinitionWithBodyId::GlobalConstant(
+                    Location::new(file_id, *id).intern(database),
+                ),
+                ModuleItemId::Override(id) => {
+                    DefinitionWithBodyId::Override(Location::new(file_id, *id).intern(database))
                 },
-                ModuleItem::GlobalConstant(id) => {
-                    let loc = Location::new(file_id, *id);
-                    DefinitionWithBodyId::GlobalConstant(db.intern_global_constant(loc))
-                },
-                ModuleItem::Override(id) => {
-                    let loc = Location::new(file_id, *id);
-                    DefinitionWithBodyId::Override(db.intern_override(loc))
-                },
-                ModuleItem::GlobalAssertStatement(id) => {
-                    let loc = Location::new(file_id, *id);
+                ModuleItemId::GlobalAssertStatement(id) => {
                     DefinitionWithBodyId::GlobalAssertStatement(
-                        db.intern_global_assert_statement(loc),
+                        Location::new(file_id, *id).intern(database),
                     )
                 },
-                ModuleItem::TypeAlias(_)
-                | ModuleItem::Struct(_)
-                | ModuleItem::ImportStatement(_) => return None,
+                ModuleItemId::TypeAlias(_)
+                | ModuleItemId::Struct(_)
+                | ModuleItemId::ImportStatement(_) => return None,
             })
         })
         .collect()
