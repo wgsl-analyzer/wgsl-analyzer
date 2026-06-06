@@ -55,9 +55,9 @@ jobs:
 
       - name: Update engines.vscode
         run: |
-          pnpm dlx json -I -f ./editors/code/package.json -e "this.engines = this.engines || {}; this.engines.vscode = '^${STEPS_TYPES_VERSION_OUTPUTS_VERSION}'"
-          pnpm --dir editors/code install --frozen-lockfile
-          pnpm --dir editors/code run format
+          corepack pnpm dlx json -I -f ./editors/code/package.json -e "this.engines = this.engines || {}; this.engines.vscode = '^${STEPS_TYPES_VERSION_OUTPUTS_VERSION}'"
+          corepack pnpm --dir editors/code install --frozen-lockfile
+          corepack pnpm --dir editors/code run format
         env:
           STEPS_TYPES_VERSION_OUTPUTS_VERSION: ${{ steps.types-version.outputs.version }}
 
