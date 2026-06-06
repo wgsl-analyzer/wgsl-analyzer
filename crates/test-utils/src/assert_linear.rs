@@ -85,7 +85,7 @@ impl Round {
             let mut num = 0.0;
             let mut denom = 0.0;
             for (x, y) in xy.clone() {
-                num += (x - mean_x) * (y - mean_y);
+                num = (x - mean_x).mul_add(y - mean_y, num);
                 denom += (x - mean_x).powi(2);
             }
             num / denom
