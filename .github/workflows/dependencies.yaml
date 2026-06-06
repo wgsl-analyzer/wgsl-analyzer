@@ -42,3 +42,5 @@ jobs:
 
       - name: Run cargo-deny
         uses: EmbarkStudios/cargo-deny-action@a531616d8ce3b9177443e48a1159bc945a099823 # v2.0.19
+        with:
+          rust-version: "1.96.0"
