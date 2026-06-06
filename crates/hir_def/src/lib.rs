@@ -21,7 +21,7 @@ use base_db::{EditionedFileId, FileRange, TextRange};
 use database::DefDatabase;
 use item_tree::{ItemTreeNode, ModuleItemId};
 use rowan::NodeOrToken;
-use syntax::{AstNode, SyntaxNode, SyntaxToken};
+use syntax::{AstNode, SyntaxNode, SyntaxToken, pointer::AstPointer};
 
 /// `InFile<T>` stores a value of `T` inside a particular file/syntax tree.
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
@@ -122,28 +122,31 @@ pub fn original_file_range<T: HasTextRange>(
 }
 
 pub trait HasSource {
-    type Value;
+    type Value: AstNode;
     fn source(
         &self,
         database: &dyn DefDatabase,
-    ) -> InFile<Self::Value>;
+    ) -> InFile<Self::Value> {
+        let InFile { file_id, value } = self.ast_ptr(database);
+        InFile::new(
+            file_id,
+            value.to_node(&database.parse_or_resolve(file_id).syntax()),
+        )
+    }
+    fn ast_ptr(
+        &self,
+        database: &dyn DefDatabase,
+    ) -> InFile<AstPointer<Self::Value>>;
 }
 
-impl<N: ItemTreeNode> HasSource for InFile<ModuleItemId<N>> {
-    type Value = N::Source;
+impl<Node: AstNode> HasSource for InFile<FileAstId<Node>> {
+    type Value = Node;
 
-    fn source(
+    fn ast_ptr(
         &self,
         database: &dyn DefDatabase,
-    ) -> InFile<N::Source> {
-        let item_tree = database.item_tree(self.file_id);
+    ) -> InFile<AstPointer<Self::Value>> {
         let ast_id_map = database.ast_id_map(self.file_id);
-        let root = database.parse_or_resolve(self.file_id);
-        let node = N::lookup(&item_tree, self.value.index);
-
-        InFile::new(
-            self.file_id,
-            ast_id_map.get(node.ast_id()).to_node(&root.syntax()),
-        )
+        InFile::new(self.file_id, ast_id_map.get(self.value))
     }
 }
