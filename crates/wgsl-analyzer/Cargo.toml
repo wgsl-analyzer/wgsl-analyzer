@@ -44,7 +44,7 @@ triomphe.workspace = true
 # toml = "0.8.8"
 nohash-hasher.workspace = true
 semver.workspace = true
-memchr = "2.8.0"
+memchr = "2.8.1"
 # process-wrap = { version = "8.2.0", features = ["std"] }
 # cfg.workspace = true
 hir-ty.workspace = true
