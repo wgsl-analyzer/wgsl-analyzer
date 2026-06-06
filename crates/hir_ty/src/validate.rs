@@ -172,8 +172,8 @@ pub fn validate_address_space<DiagnosticBuilder: FnMut(AddressSpaceError)>(
                 },
             }
         },
-        AddressSpace::PushConstant => {
-            // TODO: validate push constants
+        AddressSpace::Immediate => {
+            // TODO: validate immediates
             // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/682
         },
     }
