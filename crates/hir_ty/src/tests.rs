@@ -207,7 +207,7 @@ fn module_definitions(
     item_tree
         .top_level_items()
         .iter()
-        .flat_map(|item| {
+        .filter_map(|item| {
             Some(match item {
                 ModuleItemId::Function(id) => {
                     ModuleDefinitionId::Function(Location::new(file_id, *id).intern(database))

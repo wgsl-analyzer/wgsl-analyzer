@@ -1,10 +1,11 @@
-use base_db::{EditionedFileId, SourceDatabase};
+use base_db::{EditionedFileId, SourceDatabase as _};
 use expect_test::{Expect, expect};
-use hir_def::database::{DefDatabase, DefinitionWithBodyId, ModuleDefinitionId};
-use test_fixture::WithFixture;
+use hir_def::database::{DefDatabase as _, DefinitionWithBodyId, ModuleDefinitionId};
+use test_fixture::WithFixture as _;
 
 use crate::{
-    database::HirDatabase, infer::InferenceResult, test_db::TestDatabase, tests::module_definitions,
+    database::HirDatabase as _, infer::InferenceResult, test_db::TestDatabase,
+    tests::module_definitions,
 };
 
 #[test]
@@ -81,7 +82,9 @@ fn foo() {
 }
 
 #[test]
-#[should_panic] // TODO: This is a bug, the test should pass.
+#[should_panic(
+    expected = "we need to improve our incrementality, see: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1178"
+)]
 fn typing_inside_a_function_should_not_invalidate_types_in_another() {
     let (mut database, position) = TestDatabase::with_position(
         "
@@ -184,20 +187,21 @@ fn baz() -> i32 {
 
 /// Executes a function and checks if the most important events happened exactly n times.
 /// Also checks the full list of events, which may change as the implementation changes.
+#[expect(clippy::needless_pass_by_value, reason = "matches expect! macro")]
 fn execute_assert_events(
     database: &TestDatabase,
-    f: impl FnOnce(),
+    callback: impl FnOnce(),
     required: &[(&str, usize)],
     expect: Expect,
 ) {
-    let (executed, events) = database.log_executed(f);
+    let (executed, events) = database.log_executed(callback);
     expect.assert_debug_eq(&executed);
     for (event, count) in required {
-        let n = executed.iter().filter(|it| it.contains(event)).count();
+        let actual_count = executed.iter().filter(|it| it.contains(event)).count();
         assert_eq!(
-            n,
+            actual_count,
             *count,
-            "Expected {event} to be executed {count} times, but only got {n}:\n \
+            "Expected {event} to be executed {count} times, but only got {actual_count}:\n \
              Executed: {executed:#?}\n \
              Event log: {events:#?}",
             events = events

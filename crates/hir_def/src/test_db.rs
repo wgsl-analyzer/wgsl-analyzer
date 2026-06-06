@@ -132,6 +132,6 @@ impl TestDatabase {
             .iter()
             .copied()
             .find(|package| package.data(self).display_name.as_deref() == Some("wa_test_fixture"))
-            .unwrap_or(*all_packages.last().unwrap())
+            .unwrap_or_else(|| *all_packages.last().unwrap())
     }
 }

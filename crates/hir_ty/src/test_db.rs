@@ -5,7 +5,7 @@ use base_db::{
     SourceRootInput, change::Change, input::SourceRoot, set_all_packages_with_durability,
 };
 use hir_def::database::DefDatabase as _;
-use salsa::Durability;
+use salsa::{Database as _, Durability};
 use syntax::{Edition, ExtensionsConfig};
 use triomphe::Arc;
 use vfs::{AnchoredPath, FileId, VfsPath, file_set::FileSet};
@@ -139,26 +139,25 @@ impl SourceDatabase for TestDatabase {
 impl TestDatabase {
     pub(crate) fn log(
         &self,
-        f: impl FnOnce(),
+        callback: impl FnOnce(),
     ) -> Vec<salsa::Event> {
         *self.events.lock().unwrap() = Some(Vec::new());
-        f();
+        callback();
         self.events.lock().unwrap().take().unwrap()
     }
 
     pub(crate) fn log_executed(
         &self,
-        f: impl FnOnce(),
+        callback: impl FnOnce(),
     ) -> (Vec<String>, Vec<salsa::Event>) {
-        let events = self.log(f);
+        let events = self.log(callback);
         let executed = events
             .iter()
-            .filter_map(|e| match e.kind {
+            .filter_map(|event| match event.kind {
                 // This is pretty horrible, but `Debug` is the only way to inspect
                 // QueryDescriptor at the moment.
                 salsa::EventKind::WillExecute { database_key } => {
-                    let ingredient = (self as &dyn salsa::Database)
-                        .ingredient_debug_name(database_key.ingredient_index());
+                    let ingredient = self.ingredient_debug_name(database_key.ingredient_index());
                     Some(ingredient.to_string())
                 },
                 _ => None,

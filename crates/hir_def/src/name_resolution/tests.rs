@@ -9,6 +9,7 @@ fn render_modules_map(wa_fixture: &str) -> String {
     modules_map_query(&database, package).dump()
 }
 
+#[expect(clippy::needless_pass_by_value, reason = "matches expect! macro")]
 fn check(
     wa_fixture: &str,
     expect: Expect,
