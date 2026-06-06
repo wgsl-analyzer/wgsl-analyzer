@@ -1,7 +1,9 @@
 mod lower;
 
 #[cfg(test)]
-pub mod pretty;
+mod pretty;
+#[cfg(test)]
+mod tests;
 
 use std::{hash, marker::PhantomData, ops::ControlFlow};
 
@@ -16,7 +18,7 @@ use triomphe::Arc;
 
 use crate::{
     ast_id::FileAstId,
-    database::DefDatabase,
+    database::{DefDatabase, ModuleDefinitionId},
     mod_path::{ModPath, PathKind},
 };
 
@@ -74,12 +76,12 @@ pub struct ImportStatement {
 
 impl ImportStatement {
     /// Expands the `UseTree` into individually imported `FlatImport`s.
-    pub fn expand<T, Callback: FnMut(FlatImport) -> ControlFlow<T>>(
+    pub fn expand<Callback: FnMut(FlatImport)>(
         &self,
         mut callback: Callback,
-    ) -> Option<T> {
+    ) {
         self.tree
-            .expand_impl(ModPath::from_kind(self.kind), &mut callback)
+            .expand_impl(ModPath::from_kind(self.kind), &mut callback);
     }
 }
 
@@ -118,31 +120,27 @@ pub enum ImportTree {
 }
 
 impl ImportTree {
-    fn expand_impl<T>(
+    fn expand_impl<Callback: FnMut(FlatImport)>(
         &self,
         mut prefix: ModPath,
-        callback: &mut impl FnMut(FlatImport) -> ControlFlow<T>,
-    ) -> Option<T> {
+        callback: &mut Callback,
+    ) {
         match self {
             Self::Path { name, item } => {
                 prefix.push_segment(name.clone());
-                item.expand_impl(prefix, callback)
+                item.expand_impl(prefix, callback);
             },
             Self::Item { name, alias } => {
                 prefix.push_segment(name.clone());
                 callback(FlatImport {
                     path: prefix,
                     alias: alias.clone(),
-                })
-                .break_value()
+                });
             },
             Self::Collection { list } => {
                 for tree in list {
-                    if let Some(value) = tree.expand_impl(prefix.clone(), callback) {
-                        return Some(value);
-                    }
+                    tree.expand_impl(prefix.clone(), callback);
                 }
-                None
             },
         }
     }

@@ -72,8 +72,8 @@ fn resolve_path(
         let resolver = semantics.resolver(file_id, r#type.syntax());
 
         match resolver.resolve(
-            &Path(ModPath::from_src(&r#type.path()?)),
             semantics.database,
+            &Path(ModPath::from_src(&r#type.path()?)),
         )? {
             ResolveKind::Struct(id) => {
                 Some(Definition::ModuleDef(ModuleDef::Struct(Struct { id })))
@@ -84,7 +84,8 @@ fn resolve_path(
                 })))
             },
             // Type specifiers always represent types
-            ResolveKind::Function(_)
+            ResolveKind::Module(_)
+            | ResolveKind::Function(_)
             | ResolveKind::GlobalConstant(_)
             | ResolveKind::GlobalVariable(_)
             | ResolveKind::Override(_)

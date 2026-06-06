@@ -74,6 +74,13 @@ impl ModPath {
         self.kind
     }
 
+    pub fn set_kind(
+        &mut self,
+        kind: PathKind,
+    ) {
+        self.kind = kind;
+    }
+
     #[must_use]
     pub fn segments(&self) -> &[Name] {
         &self.segments
@@ -118,11 +125,6 @@ impl ModPath {
             .iter()
             .map(|segment| segment.as_str().len())
             .fold(base, core::ops::Add::add)
-    }
-
-    #[must_use]
-    pub fn is_ident(&self) -> bool {
-        self.as_ident().is_some()
     }
 
     #[must_use]
@@ -189,7 +191,7 @@ fn display_fmt_path(
                 add_segment("super")?;
             }
         },
-        PathKind::Package => add_segment("crate")?,
+        PathKind::Package => add_segment("package")?,
     }
     for segment in &path.segments {
         if !first_segment {

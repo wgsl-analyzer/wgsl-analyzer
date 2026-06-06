@@ -27,7 +27,7 @@ fn write_pretty_module_item(
         ModuleItemId::ImportStatement(id) => {
             let import_statement = &module[id];
             print_ast_id(buffer, id);
-            _ = write!(buffer, "import");
+            _ = write!(buffer, "import ");
             write_pretty_relative_import(import_statement.kind, buffer);
             write_pretty_import_tree(&import_statement.tree, buffer);
             _ = write!(buffer, ";");
@@ -80,7 +80,7 @@ fn write_pretty_relative_import(
                 _ = write!(buffer, "self::");
             } else {
                 for _ in 0..count {
-                    _ = write!(buffer, "self::");
+                    _ = write!(buffer, "super::");
                 }
             }
         },
@@ -113,6 +113,7 @@ fn write_pretty_import_tree(
             _ = write!(buffer, "{{");
             for item in list {
                 write_pretty_import_tree(item, buffer);
+                buffer.push_str(", ");
             }
             _ = write!(buffer, "}}");
         },

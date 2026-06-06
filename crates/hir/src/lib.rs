@@ -17,6 +17,7 @@ use hir_def::{
     },
     expression::{ExpressionId, StatementId},
     expression_store::{ExpressionStoreSource, path::Path},
+    item_scope::ItemScope,
     item_tree::{self, ItemTree, ModuleItemId, Name},
     resolver::{ResolveKind, Resolver},
     signature::{FieldId, ParameterId},
@@ -153,7 +154,7 @@ impl<'database> Semantics<'database> {
         if let Some(definition) = self.find_container(file_id, source) {
             definition.resolver(self.database)
         } else {
-            let module_info = self.database.item_tree(file_id);
+            let module_info = ItemScope::of(self.database, file_id);
             Resolver::new(file_id, module_info)
         }
     }
@@ -189,9 +190,12 @@ impl<'database> Semantics<'database> {
             resolver = resolver.push_expression_scope(function, expression_scopes, scope_id);
         }
 
-        let value = resolver.resolve(path, self.database)?;
+        let value = resolver.resolve(self.database, path)?;
 
         let definition = match value {
+            ResolveKind::Module(module_id) => {
+                Definition::ModuleDef(ModuleDef::Module(Module { file_id: module_id }))
+            },
             ResolveKind::Local(binding) => Definition::Local(Local {
                 parent: resolver.body_owner()?,
                 binding,
@@ -400,7 +404,7 @@ impl ChildContainer {
             | Self::GlobalAssertStatementId(_)
             | Self::TypeAliasId(_) => {
                 let file_id = self.file_id(database);
-                let module_info = database.item_tree(file_id);
+                let module_info = ItemScope::of(database, file_id);
                 Resolver::new(file_id, module_info)
             },
         }
@@ -774,8 +778,10 @@ impl HasSource for Field {
     }
 }
 
+/// The defs which can be visible in the module.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ModuleDef {
+    Module(Module),
     Function(Function),
     GlobalVariable(GlobalVariable),
     GlobalConstant(GlobalConstant),
@@ -802,13 +808,26 @@ impl ModuleDef {
             Self::GlobalAssertStatement(global_assert_statement) => Some(
                 DefinitionWithBodyId::GlobalAssertStatement(global_assert_statement.id),
             ),
-            Self::Struct(_) | Self::TypeAlias(_) => None,
+            Self::Module(_) | Self::Struct(_) | Self::TypeAlias(_) => None,
         }
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Copy)]
 pub struct Module {
-    file_id: EditionedFileId,
+    pub file_id: EditionedFileId,
+}
+
+impl HasSource for Module {
+    type Ast = ast::SourceFile;
+
+    fn source(
+        self,
+        database: &dyn DefDatabase,
+    ) -> Option<InFile<Self::Ast>> {
+        let source_file = self.file_id.parse(database).tree();
+        Some(InFile::new(self.file_id, source_file))
+    }
 }
 
 impl Module {
@@ -834,7 +853,7 @@ impl Module {
 
         for item in self.items(database) {
             match item {
-                ModuleDef::Function(_function) => {},
+                ModuleDef::Module(_) | ModuleDef::Function(_) => {},
                 ModuleDef::GlobalVariable(variable) => {
                     diagnostics::global_variable::collect(database, variable.id, |error| {
                         if let Some(source) = variable.source(database) {

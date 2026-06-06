@@ -31,11 +31,12 @@ pub(crate) fn view_module_graph(
         Cow::Borrowed(&modules_map_query(database, package).modules)
     } else {
         let mut modules_to_render = FxIndexMap::default();
+        let origin = EditionedFileId::from_file(database, file_id);
         modules_to_render.insert(
-            file_id,
+            origin,
             ModuleData {
                 name: Some(Name::from("[standalone file]")),
-                origin: EditionedFileId::from_file(database, file_id),
+                origin,
                 parent: None,
                 children: FxIndexMap::default(),
             },
@@ -43,7 +44,10 @@ pub(crate) fn view_module_graph(
         Cow::Owned(modules_to_render)
     };
 
-    let graph = DotModuleGraph { modules_to_render };
+    let graph = DotModuleGraph {
+        database,
+        modules_to_render,
+    };
 
     let mut dot = Vec::new();
     dot::render(&graph, &mut dot).unwrap();
@@ -51,13 +55,14 @@ pub(crate) fn view_module_graph(
 }
 
 struct DotModuleGraph<'db> {
-    modules_to_render: Cow<'db, FxIndexMap<FileId, ModuleData>>,
+    database: &'db RootDatabase,
+    modules_to_render: Cow<'db, FxIndexMap<EditionedFileId, ModuleData>>,
 }
 
-type Edge<'edge> = (FileId, FileId);
+type Edge<'edge> = (EditionedFileId, EditionedFileId);
 
-impl<'edge> dot::GraphWalk<'edge, FileId, Edge<'edge>> for DotModuleGraph<'_> {
-    fn nodes(&'edge self) -> dot::Nodes<'edge, FileId> {
+impl<'edge> dot::GraphWalk<'edge, EditionedFileId, Edge<'edge>> for DotModuleGraph<'_> {
+    fn nodes(&'edge self) -> dot::Nodes<'edge, EditionedFileId> {
         let modules: FxIndexMap<_, _> = self
             .modules_to_render
             .clone()
@@ -80,9 +85,8 @@ impl<'edge> dot::GraphWalk<'edge, FileId, Edge<'edge>> for DotModuleGraph<'_> {
                 module_data
                     .children
                     .values()
-                    .copied()
-                    .filter(|dependency| self.modules_to_render.contains_key(dependency))
-                    .map(move |dependency| (*package, dependency))
+                    .filter(|&dependency| self.modules_to_render.contains_key(dependency))
+                    .map(move |dependency| (*package, *dependency))
             })
             .collect()
     }
@@ -90,41 +94,41 @@ impl<'edge> dot::GraphWalk<'edge, FileId, Edge<'edge>> for DotModuleGraph<'_> {
     fn source(
         &'edge self,
         edge: &Edge<'edge>,
-    ) -> FileId {
+    ) -> EditionedFileId {
         edge.0
     }
 
     fn target(
         &'edge self,
         edge: &Edge<'edge>,
-    ) -> FileId {
+    ) -> EditionedFileId {
         edge.1
     }
 }
 
-impl<'edge> dot::Labeller<'edge, FileId, Edge<'edge>> for DotModuleGraph<'_> {
+impl<'edge> dot::Labeller<'edge, EditionedFileId, Edge<'edge>> for DotModuleGraph<'_> {
     fn graph_id(&'edge self) -> Id<'edge> {
         Id::new("wgsl_analyzer_module_graph").unwrap()
     }
 
     fn node_id(
         &'edge self,
-        n: &FileId,
+        n: &EditionedFileId,
     ) -> Id<'edge> {
-        let id = n.index();
+        let id = n.unpack(self.database);
         Id::new(format!("_{id:?}")).unwrap()
     }
 
     fn node_shape(
         &'edge self,
-        _node: &FileId,
+        _node: &EditionedFileId,
     ) -> Option<LabelText<'edge>> {
         Some(LabelText::LabelStr("box".into()))
     }
 
     fn node_label(
         &'edge self,
-        n: &FileId,
+        n: &EditionedFileId,
     ) -> LabelText<'edge> {
         let name = self.modules_to_render[n]
             .name

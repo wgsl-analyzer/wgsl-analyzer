@@ -1,8 +1,9 @@
 use base_db::{EditionedFileId, Package, SourceDatabase, SourceRoot, file_package};
 use std::fmt::Write as _;
+use syntax::Edition;
 use vfs::FileId;
 
-use crate::{FxIndexMap, item_tree::Name};
+use crate::{FxIndexMap, database::DefDatabase, item_scope::ItemScope, item_tree::Name};
 
 /// A map of all modules and their children in a package.
 ///
@@ -10,9 +11,9 @@ use crate::{FxIndexMap, item_tree::Name};
 /// Can also be used to iterate over all modules in a package to discover all symbols or all unit tests.
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct ModulesMap {
-    pub root: FileId,
+    pub root: EditionedFileId,
     /// All reachable modules in the project.
-    pub modules: FxIndexMap<FileId, ModuleData>,
+    pub modules: FxIndexMap<EditionedFileId, ModuleData>,
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -20,13 +21,13 @@ pub struct ModuleData {
     /// What is the name of this module, when looking at the absolute module path.
     /// Is empty when it is the root module.
     pub name: Option<Name>,
-    /// Where does this module come from?
+    /// The file of the module.
     pub origin: EditionedFileId,
     /// Declared visibility of this module.
     // pub visibility: Visibility,
     /// Parent module in the same [`ModulesMap`].
-    pub parent: Option<FileId>,
-    pub children: FxIndexMap<Name, FileId>,
+    pub parent: Option<EditionedFileId>,
+    pub children: FxIndexMap<Name, EditionedFileId>,
 }
 
 impl ModuleData {
@@ -40,18 +41,23 @@ impl ModuleData {
     }
 }
 
-// TODO: Look into the incrementality of this
-#[salsa_macros::tracked(returns(ref))]
-pub fn module_data<'db>(
-    database: &'db dyn SourceDatabase,
-    file_id: EditionedFileId,
-) -> Option<ModuleData> {
-    let raw_file_id = file_id.file_id(database);
-    let package = file_package(database, raw_file_id)?;
-    let modules = modules_map_query(database, package);
+#[salsa::tracked]
+impl ModuleData {
+    #[salsa::tracked(returns(ref))]
+    // TODO: Look into the incrementality of this
+    /// Returns the parent and children of the module.
+    /// Will return `None` for modules that are not a part of any package.
+    pub fn of(
+        database: &dyn SourceDatabase,
+        file_id: EditionedFileId,
+    ) -> Option<ModuleData> {
+        let raw_file_id = file_id.file_id(database);
+        let package = file_package(database, raw_file_id)?;
+        let modules = modules_map_query(database, package);
 
-    // TODO: Is cloned the right thing to use here?
-    modules.modules.get(&raw_file_id).cloned()
+        // TODO: Is cloned the right thing to use here?
+        modules.modules.get(&file_id).cloned()
+    }
 }
 
 #[salsa_macros::tracked(returns(ref))]
@@ -68,24 +74,22 @@ pub fn modules_map_query(
         )
         .source_root(database);
 
+    let root = EditionedFileId::new(database, package_data.root_file_id, package_data.edition);
+
     let modules: FxIndexMap<_, _> = source_root
         .iter()
         .map(|file_id| {
-            let origin = EditionedFileId::new(database, file_id, package_data.edition);
-            (file_id, ModuleData::new(origin))
+            let file_id = EditionedFileId::new(database, file_id, package_data.edition);
+            (file_id, ModuleData::new(file_id))
         })
         .collect();
 
-    let mut modules_map = ModulesMap {
-        root: package_data.root_file_id,
-        modules,
-    };
-
+    let mut modules_map = ModulesMap { root, modules };
     for file_id in source_root.iter() {
-        modules_map.add_file(file_id, &source_root);
+        modules_map.add_file(database, file_id, package_data.edition, &source_root);
     }
     // Clear the name of the root module, since we only want names that can be used in shader code
-    modules_map.modules[&modules_map.root].name = None;
+    modules_map.modules[&root].name = None;
 
     modules_map.keep_reachable();
 
@@ -95,26 +99,32 @@ pub fn modules_map_query(
 impl ModulesMap {
     fn add_file(
         &mut self,
-        file_id: FileId,
+        database: &dyn SourceDatabase,
+        raw_file_id: FileId,
+        edition: Edition,
         source_root: &SourceRoot,
     ) -> Option<()> {
-        let path = source_root.path_for_file(file_id)?;
+        let path = source_root.path_for_file(raw_file_id)?;
         let (name, extension) = path.name_and_extension()?;
         if !matches!(extension, Some("wesl" | "wgsl")) {
             return None;
         }
         let name = Name::from(name);
+
+        let file_id = EditionedFileId::new(database, raw_file_id, edition);
         self.modules[&file_id].name = Some(name.clone());
 
         // TODO: This cannot account for the case where a module is missing. After all, missing modules do not have a file id.
         // > File not found: We assume an empty module as the current module, and continue with that.
         // > https://github.com/wgsl-tooling-wg/wesl-spec/blob/main/Imports.md#import-resolution-algorithm
         if let Some(parent_id) = source_root.file_for_path(&get_parent_path(path)?) {
+            let parent_id = EditionedFileId::new(database, *parent_id, edition);
             // .wesl files will shadow .wgsl files
-            let is_slot_empty = !self.modules[parent_id].children.contains_key(&name);
+            let parent_module = &mut self.modules[&parent_id];
+            let is_slot_empty = !parent_module.children.contains_key(&name);
             if extension == Some("wesl") || is_slot_empty {
-                self.modules[&file_id].parent = Some(*parent_id);
-                self.modules[parent_id].children.insert(name, file_id);
+                parent_module.children.insert(name, file_id);
+                self.modules[&file_id].parent = Some(parent_id);
             }
         }
         Some(())
@@ -122,9 +132,9 @@ impl ModulesMap {
 
     fn keep_reachable(&mut self) {
         fn keep_children(
-            root: FileId,
-            old_modules: &mut FxIndexMap<FileId, ModuleData>,
-            new_modules: &mut FxIndexMap<FileId, ModuleData>,
+            root: EditionedFileId,
+            old_modules: &mut FxIndexMap<EditionedFileId, ModuleData>,
+            new_modules: &mut FxIndexMap<EditionedFileId, ModuleData>,
         ) {
             let module = old_modules.swap_remove(&root).unwrap();
             for child_id in module.children.values() {
@@ -141,15 +151,11 @@ impl ModulesMap {
 
     #[must_use]
     pub fn dump(&self) -> String {
-        let mut buffer = String::new();
-        go(&mut buffer, self, "package", self.root);
-        return buffer;
-
         fn go(
             buffer: &mut String,
             modules: &ModulesMap,
             path: &str,
-            module: FileId,
+            module: EditionedFileId,
         ) {
             _ = writeln!(buffer, "{path}");
 
@@ -160,6 +166,38 @@ impl ModulesMap {
                 go(buffer, modules, &path, *child);
             }
         }
+
+        let mut buffer = String::new();
+        go(&mut buffer, self, "package", self.root);
+        return buffer;
+    }
+
+    #[must_use]
+    pub fn dump_with_items(
+        &self,
+        database: &dyn DefDatabase,
+    ) -> String {
+        fn go(
+            buffer: &mut String,
+            modules: &ModulesMap,
+            path: &str,
+            module: EditionedFileId,
+            database: &dyn DefDatabase,
+        ) {
+            _ = writeln!(buffer, "{path}");
+            ItemScope::of(database, module).dump(buffer);
+
+            let mut children: Vec<_> = modules.modules[&module].children.iter().collect();
+            children.sort_by(|(name_a, _), (name_b, _)| Ord::cmp(name_a, name_b));
+            for (name, child) in children {
+                let path = format!("{path}::{}", name.as_str());
+                go(buffer, modules, &path, *child, database);
+            }
+        }
+
+        let mut buffer = String::new();
+        go(&mut buffer, self, "package", self.root, database);
+        return buffer;
     }
 }
 

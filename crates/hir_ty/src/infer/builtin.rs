@@ -101,14 +101,15 @@ impl TypeLoweringContext<'_> {
             )
     }
 
-    pub fn lower_predeclared(
+    pub fn try_lower_predeclared(
         &mut self,
         type_container: TypeContainer,
         path: &Path,
         template_parameters: &[ExpressionId],
     ) -> Result<Lowered, TypeLoweringError> {
         // Lower predeclared types
-        if let Some(name) = path.mod_path().as_ident() {
+        if path.mod_path().segments().len() == 1 {
+            let name = &path.mod_path().segments()[0];
             if self.is_predeclared_type(name) {
                 self.lower_predeclared_type(type_container, name, template_parameters)
             } else if crate::builtins::Builtin::ALL_BUILTINS.contains(&name.as_str()) {
@@ -124,11 +125,10 @@ impl TypeLoweringContext<'_> {
                 Ok(Lowered::Type(TypeKind::Error.intern(self.database)))
             }
         } else {
-            self.diagnostics.push(TypeLoweringError {
+            Err(TypeLoweringError {
                 container: type_container,
                 kind: TypeLoweringErrorKind::UnresolvedPath(path.clone()),
-            });
-            Ok(Lowered::Type(TypeKind::Error.intern(self.database)))
+            })
         }
     }
 

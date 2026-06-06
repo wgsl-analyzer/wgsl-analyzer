@@ -85,6 +85,7 @@ impl LoadPackageTask {
                     origin: self.origin,
                     // TODO: Load the wesl_toml.dependencies, see https://github.com/wgsl-analyzer/wgsl-analyzer/issues/976
                     dependencies: Vec::new(),
+                    // TODO: What should happen if the user writes `edition = "WGSL"`?
                     edition: Edition::from_str(&wesl_toml.edition)?,
                 }
             },

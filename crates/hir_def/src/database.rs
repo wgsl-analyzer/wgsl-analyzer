@@ -20,6 +20,7 @@ use crate::{
     attributes::{AttributeDefId, AttributesWithOwner},
     body::{Body, BodySourceMap, scope::ExprScopes},
     expression_store::{ExpressionSourceMap, ExpressionStore},
+    item_scope::ItemScope,
     item_tree::{
         Directive, Function, GlobalAssertStatement, GlobalConstant, GlobalVariable,
         ImportStatement, ItemTree, ModuleItemId, Override, Struct, TypeAlias,
@@ -306,14 +307,18 @@ impl DefinitionWithBodyId {
         database: &dyn DefDatabase,
     ) -> Resolver {
         let file_id = self.file_id(database);
-        let module_info = database.item_tree(file_id);
+        let module_info = ItemScope::of(database, file_id);
         Resolver::new(file_id, module_info)
     }
 }
 
-/// The definitions which can be visible in the module.
+/// The definitions which are visible in the module.
+///
+/// Includes other modules, since they can be visible when they are imported.
+/// Does not include import statements, since its the items of the import statement that are visible.
 #[derive(PartialEq, Eq, Hash, Debug, Clone, Copy, salsa_macros::Supertype)]
 pub enum ModuleDefinitionId {
+    Module(EditionedFileId),
     Function(FunctionId),
     GlobalVariable(GlobalVariableId),
     GlobalConstant(GlobalConstantId),
@@ -329,6 +334,7 @@ impl ModuleDefinitionId {
         database: &dyn DefDatabase,
     ) -> EditionedFileId {
         match self {
+            Self::Module(id) => id,
             Self::Function(id) => id.lookup(database).file_id,
             Self::GlobalVariable(id) => id.lookup(database).file_id,
             Self::GlobalConstant(id) => id.lookup(database).file_id,
@@ -344,7 +350,7 @@ impl ModuleDefinitionId {
         database: &dyn DefDatabase,
     ) -> Resolver {
         let file_id = self.file_id(database);
-        let module_info = database.item_tree(file_id);
+        let module_info = ItemScope::of(database, file_id);
         Resolver::new(file_id, module_info)
     }
 
@@ -358,7 +364,7 @@ impl ModuleDefinitionId {
                 Some(DefinitionWithBodyId::GlobalAssertStatement(id))
             },
             Self::Override(id) => Some(DefinitionWithBodyId::Override(id)),
-            Self::Struct(_) | Self::TypeAlias(_) => None,
+            Self::Module(_) | Self::Struct(_) | Self::TypeAlias(_) => None,
         }
     }
 }

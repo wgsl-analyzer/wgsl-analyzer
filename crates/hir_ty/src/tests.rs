@@ -129,7 +129,7 @@ fn infer(
     };
     let module_info = database.item_tree(file_id);
     let mut definitions = module_definitions(&database, file_id, &module_info);
-    definitions.sort_by_key(|definition| text_size(*definition, &database));
+    definitions.sort_by_key(|definition| text_range_start(*definition, &database));
     for definition in definitions
         .into_iter()
         .filter_map(ModuleDefinitionId::with_body)
@@ -142,11 +142,12 @@ fn infer(
     buffer
 }
 
-fn text_size(
+fn text_range_start(
     definition: ModuleDefinitionId,
     database: &TestDatabase,
 ) -> base_db::TextSize {
     match definition {
+        ModuleDefinitionId::Module(_) => base_db::TextSize::new(0),
         ModuleDefinitionId::Function(item) => item
             .lookup(database)
             .source(database)

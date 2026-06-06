@@ -1,7 +1,7 @@
 use base_db::{EditionedFileId, FilePosition, TextRange};
 use either::Either;
 use hir::{ChildContainer, Semantics};
-use hir_def::{database::DefDatabase as _, resolver::Resolver};
+use hir_def::{database::DefDatabase as _, item_scope::ItemScope, resolver::Resolver};
 use ide_db::RootDatabase;
 use rowan::NodeOrToken;
 use syntax::{AstNode as _, Direction, SyntaxKind, SyntaxToken, ast};
@@ -45,7 +45,7 @@ impl<'database> CompletionContext<'database> {
         let completion_location =
             determine_location(&semantics, file.syntax(), position.offset, &token);
 
-        let module_info = database.item_tree(file_id);
+        let module_info = ItemScope::of(database, file_id);
         let mut resolver = Resolver::new(file_id, module_info);
 
         let nearest_scope = token

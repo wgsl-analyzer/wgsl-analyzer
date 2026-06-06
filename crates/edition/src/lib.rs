@@ -73,8 +73,9 @@ impl str::FromStr for Edition {
     fn from_str(string: &str) -> Result<Self, Self::Err> {
         // https://github.com/wgsl-tooling-wg/wesl-rs/tree/main/crates/wesl/src/wesl_toml.rs#L78
         match string {
-            "WGSL" => Ok(Self::Wgsl),
             "2026_pre" => Ok(Self::Wesl2025Unstable),
+            // "WGSL" is not an edition that can be selected.
+            // Therefore it is not included here.
             _ => Err(ParseEditionError {
                 invalid_input: string.to_owned(),
             }),

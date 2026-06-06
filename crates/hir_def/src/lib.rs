@@ -6,6 +6,7 @@ pub mod body;
 pub mod database;
 pub mod expression;
 pub mod expression_store;
+pub mod item_scope;
 pub mod item_tree;
 pub mod mod_path;
 pub mod name_resolution;
@@ -13,8 +14,6 @@ pub mod resolver;
 pub mod signature;
 #[cfg(test)]
 mod test_db;
-#[cfg(test)]
-mod tests;
 pub mod type_ref;
 pub mod type_specifier;
 pub use ast_id::*;

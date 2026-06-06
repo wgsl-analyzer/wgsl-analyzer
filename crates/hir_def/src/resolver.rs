@@ -10,14 +10,17 @@ use crate::{
         scope::{ExprScopes, ScopeId},
     },
     database::{
-        self, DefDatabase, FunctionId, GlobalConstantId, GlobalVariableId, Location, OverrideId,
-        StructId, TypeAliasId,
+        self, DefDatabase, FunctionId, GlobalConstantId, GlobalVariableId, Location,
+        ModuleDefinitionId, OverrideId, StructId, TypeAliasId,
     },
     expression_store::path::Path,
+    item_scope::ItemScope,
     item_tree::{
         Function, GlobalConstant, GlobalVariable, ItemTree, ModuleItemId, Name, Override, Struct,
         TypeAlias,
     },
+    mod_path::{ModPath, PathKind},
+    name_resolution::ModuleData,
 };
 
 #[derive(Clone)]
@@ -32,7 +35,7 @@ pub enum Scope {
 
 #[derive(Clone)]
 pub struct ModuleScope {
-    module_info: Arc<ItemTree>,
+    module_info: Arc<ItemScope>,
     file_id: EditionedFileId,
 }
 
@@ -52,15 +55,17 @@ pub enum ResolveKind {
     GlobalConstant(GlobalConstantId),
     Override(OverrideId),
     Function(FunctionId),
+    Module(EditionedFileId),
 }
 
 pub enum ScopeDef {
     Local(BindingId),
-    ModuleItem(EditionedFileId, ModuleItemId),
+    ModuleDefinition(ModuleDefinitionId),
 }
 
 #[derive(Clone)]
 pub struct Resolver {
+    file_id: EditionedFileId,
     scopes: Vec<Scope>,
 }
 
@@ -68,13 +73,14 @@ impl Resolver {
     #[must_use]
     pub fn new(
         file_id: EditionedFileId,
-        module_info: Arc<ItemTree>,
+        module_info: Arc<ItemScope>,
     ) -> Self {
         let module_scope = ModuleScope {
             module_info,
             file_id,
         };
         Self {
+            file_id,
             scopes: vec![Scope::Builtin, Scope::Module(module_scope)],
         }
     }
@@ -116,55 +122,16 @@ impl Resolver {
     }
 
     /// Calls the passed closure `function` on all names in scope.
-    pub fn process_all_names<Function: FnMut(Name, ScopeDef)>(
+    pub fn process_all_names<Function: FnMut(&Name, ScopeDef)>(
         &self,
-        mut function: Function,
+        database: &dyn DefDatabase,
+        mut callback: Function,
     ) {
         self.scopes().for_each(|scope| match scope {
             Scope::Module(scope) => {
-                scope
-                    .module_info
-                    .top_level_items()
-                    .iter()
-                    .for_each(|item| match item {
-                        ModuleItemId::Function(id) => function(
-                            scope.module_info[*id].name.clone(),
-                            ScopeDef::ModuleItem(scope.file_id, *item),
-                        ),
-                        ModuleItemId::GlobalVariable(id) => function(
-                            scope.module_info[*id].name.clone(),
-                            ScopeDef::ModuleItem(scope.file_id, *item),
-                        ),
-                        ModuleItemId::GlobalConstant(id) => function(
-                            scope.module_info[*id].name.clone(),
-                            ScopeDef::ModuleItem(scope.file_id, *item),
-                        ),
-                        ModuleItemId::Override(id) => function(
-                            scope.module_info[*id].name.clone(),
-                            ScopeDef::ModuleItem(scope.file_id, *item),
-                        ),
-                        ModuleItemId::Struct(id) => function(
-                            scope.module_info[*id].name.clone(),
-                            ScopeDef::ModuleItem(scope.file_id, *item),
-                        ),
-                        ModuleItemId::TypeAlias(id) => function(
-                            scope.module_info[*id].name.clone(),
-                            ScopeDef::ModuleItem(scope.file_id, *item),
-                        ),
-                        ModuleItemId::GlobalAssertStatement(_) => {},
-                        ModuleItemId::ImportStatement(id) => {
-                            // The leaves of the tree are in scope
-                            scope.module_info[*id].expand::<(), _>(|flat_import| {
-                                if let Some(name) = flat_import.leaf_name() {
-                                    function(
-                                        name.clone(),
-                                        ScopeDef::ModuleItem(scope.file_id, *item),
-                                    );
-                                }
-                                std::ops::ControlFlow::Continue(())
-                            });
-                        },
-                    });
+                scope.module_info.items.iter().for_each(|(name, item)| {
+                    callback(name, ScopeDef::ModuleDefinition(item.definition))
+                });
             },
             Scope::Expression(expression_scope) => {
                 expression_scope
@@ -173,7 +140,7 @@ impl Resolver {
                     .for_each(|id| {
                         let data = &expression_scope.expression_scopes[id];
                         data.entries.iter().for_each(|entry| {
-                            function(entry.name.clone(), ScopeDef::Local(entry.binding));
+                            callback(&entry.name, ScopeDef::Local(entry.binding));
                         });
                     });
             },
@@ -184,105 +151,105 @@ impl Resolver {
         });
     }
 
+    /// Resolve an *inline* path. Import statements are already resolved.
+    /// Corresponds to `resolve_path_in_type_ns` in rust-analyzer.
     #[must_use]
     pub fn resolve(
         &self,
-        path: &Path,
         database: &dyn DefDatabase,
+        path: &Path,
     ) -> Option<ResolveKind> {
-        let mod_path = path.mod_path();
-        let leaf_name = match mod_path.kind() {
-            crate::mod_path::PathKind::Plain => {
-                mod_path.as_ident()?
-                // TODO: If the option fails, then we have to import it https://github.com/wgsl-analyzer/wgsl-analyzer/issues/632
+        let mut path = path.mod_path().clone();
+        match path.kind() {
+            PathKind::Plain => {
+                if path.is_empty() {
+                    return None;
+                }
             },
-            crate::mod_path::PathKind::Super(_) | crate::mod_path::PathKind::Package => {
-                // TODO: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/632
-                return None;
+            PathKind::Super(levels) => {
+                let mut file_id = self.file_id;
+                for _ in 0..levels {
+                    let module_data = ModuleData::of(database, file_id).as_ref()?;
+                    if let Some(parent) = module_data.parent {
+                        file_id = parent;
+                    } else {
+                        return None;
+                    }
+                }
+                if path.is_empty() {
+                    return Some(ResolveKind::Module(file_id));
+                }
+                // Continue resolution with the remaining path
+                path.set_kind(PathKind::Plain);
+                return Resolver::new(file_id, ItemScope::of(database, file_id))
+                    .resolve(database, &Path(path));
+            },
+            PathKind::Package => {
+                let package_data =
+                    base_db::file_package(database, self.file_id.file_id(database))?.data(database);
+                let file_id =
+                    EditionedFileId::new(database, package_data.root_file_id, package_data.edition);
+                if path.is_empty() {
+                    return Some(ResolveKind::Module(file_id));
+                }
+                // Continue resolution with the remaining path
+                path.set_kind(PathKind::Plain);
+                return Resolver::new(file_id, ItemScope::of(database, file_id))
+                    .resolve(database, &Path(path));
             },
         };
+        assert_eq!(
+            path.kind(),
+            PathKind::Plain,
+            "Only plain paths should exist here"
+        );
+
+        let name_start = path.pop_segment()?;
 
         self.scopes().find_map(|scope| match scope {
             Scope::Expression(scope) => {
                 let entry = scope
                     .expression_scopes
-                    .resolve_name_in_scope(scope.scope_id, leaf_name)?;
+                    .resolve_name_in_scope(scope.scope_id, &name_start)?;
+
+                if !path.is_empty() {
+                    // TODO: Report an error!
+                    return None;
+                }
+
                 Some(ResolveKind::Local(entry.binding))
             },
             Scope::Module(scope) => {
-                scope
-                    .module_info
-                    .top_level_items()
-                    .iter()
-                    .find_map(|item| match item {
-                        ModuleItemId::Struct(id) => {
-                            let r#struct = &scope.module_info[*id];
-                            (&r#struct.name == leaf_name).then(|| {
-                                ResolveKind::Struct(
-                                    InFile::new(scope.file_id, *id).intern(database),
-                                )
-                            })
-                        },
-                        ModuleItemId::TypeAlias(id) => {
-                            let type_alias = &scope.module_info[*id];
-                            (&type_alias.name == leaf_name).then(|| {
-                                ResolveKind::TypeAlias(
-                                    InFile::new(scope.file_id, *id).intern(database),
-                                )
-                            })
-                        },
-                        ModuleItemId::GlobalVariable(id) => {
-                            let variable = &scope.module_info[*id];
-                            (&variable.name == leaf_name).then(|| {
-                                ResolveKind::GlobalVariable(
-                                    Location::new(scope.file_id, *id).intern(database),
-                                )
-                            })
-                        },
-                        ModuleItemId::GlobalConstant(id) => {
-                            let constant = &scope.module_info[*id];
-                            (&constant.name == leaf_name).then(|| {
-                                ResolveKind::GlobalConstant(
-                                    Location::new(scope.file_id, *id).intern(database),
-                                )
-                            })
-                        },
-                        ModuleItemId::Override(id) => {
-                            let r#override = &scope.module_info[*id];
-                            (&r#override.name == leaf_name).then(|| {
-                                ResolveKind::Override(
-                                    Location::new(scope.file_id, *id).intern(database),
-                                )
-                            })
-                        },
-                        ModuleItemId::Function(id) => {
-                            let function = &scope.module_info[*id];
-                            (&function.name == leaf_name).then(|| {
-                                ResolveKind::Function(
-                                    InFile::new(scope.file_id, *id).intern(database),
-                                )
-                            })
-                        },
-                        ModuleItemId::GlobalAssertStatement(_) => None,
-                        ModuleItemId::ImportStatement(_id) => None,
-                        // TODO: Support import statements https://github.com/wgsl-analyzer/wgsl-analyzer/issues/632
-                        /*scope
-                        .module_info
-                        .get(*id)
-                        .expand::<ResolveKind>(|flat_import| {
-                            if flat_import.leaf_name() == Some(leaf_name) {
-                                ControlFlow::Break(ResolveKind::Function(InFile::new(
-                                    scope.file_id,
-                                    *id,
-                                )))
-                            } else {
-                                ControlFlow::Continue(())
-                            }
-                        }),*/
-                    })
+                let item = scope.module_info.items.get(&name_start)?;
+                let resolved = match item.definition {
+                    ModuleDefinitionId::Module(file_id) => {
+                        if !path.is_empty() {
+                            return Resolver::new(file_id, ItemScope::of(database, file_id))
+                                .resolve(database, &Path(path.clone()));
+                        } else {
+                            ResolveKind::Module(file_id)
+                        }
+                    },
+                    ModuleDefinitionId::Function(id) => ResolveKind::Function(id),
+                    ModuleDefinitionId::GlobalVariable(id) => ResolveKind::GlobalVariable(id),
+                    ModuleDefinitionId::GlobalConstant(id) => ResolveKind::GlobalConstant(id),
+                    ModuleDefinitionId::GlobalAssertStatement(_) => {
+                        panic!("Item resolution should never return an assert statement")
+                    },
+                    ModuleDefinitionId::Override(id) => ResolveKind::Override(id),
+                    ModuleDefinitionId::Struct(id) => ResolveKind::Struct(id),
+                    ModuleDefinitionId::TypeAlias(id) => ResolveKind::TypeAlias(id),
+                };
+
+                if !path.is_empty() {
+                    // TODO: Report an error!
+                    return None;
+                }
+
+                Some(resolved)
             },
             Scope::Builtin => {
-                // TODO: Match against "name.as_str()" and then point at a "builtin" file
+                // TODO: Match against the first name segment and then point at a "builtin" file
                 // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/559
                 None
             },

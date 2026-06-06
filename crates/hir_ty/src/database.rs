@@ -14,6 +14,7 @@ use hir_def::{
     database::{
         DefDatabase, DefinitionWithBodyId, FunctionId, ModuleDefinitionId, StructId, TypeAliasId,
     },
+    item_scope::ItemScope,
     resolver::Resolver,
     signature::{FieldId, LocalFieldId},
 };
@@ -98,7 +99,7 @@ fn field_types(
     let data = database.struct_data(r#struct).0;
 
     let file_id = r#struct.lookup(database).file_id;
-    let module_info = database.item_tree(file_id);
+    let module_info = ItemScope::of(database, file_id);
     let resolver = Resolver::new(file_id, module_info);
 
     let mut type_context = TypeLoweringContext::new(database, &resolver, &data.store);
@@ -130,7 +131,7 @@ fn type_alias_type(
     let data = database.type_alias_data(type_alias).0;
 
     let file_id = type_alias.lookup(database).file_id;
-    let module_info = database.item_tree(file_id);
+    let module_info = ItemScope::of(database, file_id);
     let resolver = Resolver::new(file_id, module_info);
 
     let mut type_context = TypeLoweringContext::new(database, &resolver, &data.store);
@@ -154,7 +155,7 @@ fn function_type(
     let data = database.function_data(function).0;
 
     let file_id = function.lookup(database).file_id;
-    let module_info = database.item_tree(file_id);
+    let module_info = ItemScope::of(database, file_id);
     let resolver = Resolver::new(file_id, module_info);
 
     let mut type_context = TypeLoweringContext::new(database, &resolver, &data.store);

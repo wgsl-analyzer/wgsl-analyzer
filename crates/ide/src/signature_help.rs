@@ -1,7 +1,7 @@
 use base_db::{EditionedFileId, FilePosition, TextSize};
 use hir::{HirDatabase as _, Semantics, database::DefDatabase};
 use hir_def::{
-    database::{InternDatabase as _, Location},
+    database::{InternDatabase as _, Location, ModuleDefinitionId},
     item_tree::ModuleItemId,
     resolver::ScopeDef,
 };
@@ -108,9 +108,9 @@ pub(crate) fn signature_help(
     let mut overloads = Vec::new();
     semantics
         .resolver(file_id, syntax)
-        .process_all_names(|name, scope_def| {
+        .process_all_names(database, |name, scope_def| {
             if name.as_str().to_owned().contains(&text.to_string())
-                && let ScopeDef::ModuleItem(file_id, ModuleItemId::Function(module_item_id)) =
+                && let ScopeDef::ModuleDefinition(ModuleDefinitionId::Function(module_item_id)) =
                     scope_def
             {
                 overloads.push(module_item_id);
@@ -119,7 +119,6 @@ pub(crate) fn signature_help(
 
     let mut signatures: Vec<_> = overloads
         .into_iter()
-        .map(|id| database.intern_function(Location::new(file_id, id)))
         .map(|function_id| database.function_type(function_id))
         .map(|function_type| function_type.lookup(database))
         .filter_map(|function| {
