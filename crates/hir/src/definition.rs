@@ -71,13 +71,14 @@ fn resolve_path(
     } else if let Some(r#type) = ast::TypeSpecifier::cast(parent) {
         let resolver = semantics.resolver(file_id, r#type.syntax());
 
-        match resolver.resolve(&Path(ModPath::from_src(&r#type.path()?)))? {
-            ResolveKind::Struct(location) => {
-                let id = semantics.database.intern_struct(location);
+        match resolver.resolve(
+            &Path(ModPath::from_src(&r#type.path()?)),
+            semantics.database,
+        )? {
+            ResolveKind::Struct(id) => {
                 Some(Definition::ModuleDef(ModuleDef::Struct(Struct { id })))
             },
-            ResolveKind::TypeAlias(location) => {
-                let id = semantics.database.intern_type_alias(location);
+            ResolveKind::TypeAlias(id) => {
                 Some(Definition::ModuleDef(ModuleDef::TypeAlias(TypeAlias {
                     id,
                 })))
