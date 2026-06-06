@@ -160,7 +160,17 @@ impl TestDatabase {
                     let ingredient = self.ingredient_debug_name(database_key.ingredient_index());
                     Some(ingredient.to_string())
                 },
-                _ => None,
+                salsa::EventKind::DidValidateMemoizedValue { .. }
+                | salsa::EventKind::WillBlockOn { .. }
+                | salsa::EventKind::WillIterateCycle { .. }
+                | salsa::EventKind::WillCheckCancellation
+                | salsa::EventKind::DidSetCancellationFlag
+                | salsa::EventKind::WillDiscardStaleOutput { .. }
+                | salsa::EventKind::DidDiscard { .. }
+                | salsa::EventKind::DidDiscardAccumulated { .. }
+                | salsa::EventKind::DidInternValue { .. }
+                | salsa::EventKind::DidReuseInternedValue { .. }
+                | salsa::EventKind::DidValidateInternedValue { .. } => None,
             })
             .collect();
         (executed, events)
