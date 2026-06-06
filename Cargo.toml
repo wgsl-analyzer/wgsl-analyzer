@@ -9,7 +9,7 @@ exclude = []
 
 [workspace.package]
 edition = "2024"
-rust-version = "1.95"
+rust-version = "1.96"
 repository = "https://github.com/wgsl-analyzer/wgsl-analyzer"
 license = "MIT OR Apache-2.0"
 
@@ -76,7 +76,7 @@ dot = "0.1.4"
 glob = "0.3"
 crossbeam-channel = "0.5.15"
 dissimilar = "1.0.11"
-either = "1.15.0"
+either = "1.16.0"
 expect-test = "1.5.1"
 itertools = "0.14.0"
 libc = "0.2.185"
@@ -96,7 +96,7 @@ salsa = {
 salsa-macros = "0.25.2"
 semver = "1.0.27"
 serde = { version = "1.0.228", features = ["derive"] }
-serde_json = "1.0.149"
+serde_json = "1.0.150"
 smallvec = {
 	version = "1.15.1",
 	features = [

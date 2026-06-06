@@ -186,26 +186,30 @@ fn struct_is_used_in_uniform(
     file_id: EditionedFileId,
 ) -> bool {
     let module_info = database.item_tree(file_id);
-    module_info.items().iter().any(|item| match *item {
-        hir_def::item_tree::ModuleItem::GlobalVariable(declaration) => {
-            let declaration = database.intern_global_variable(InFile::new(file_id, declaration));
-            let inference = database.infer(DefinitionWithBodyId::GlobalVariable(declaration));
-            let type_kind = inference.return_type().kind(database);
+    module_info
+        .top_level_items()
+        .iter()
+        .any(|item| match *item {
+            hir_def::item_tree::ModuleItemId::GlobalVariable(declaration) => {
+                let declaration =
+                    database.intern_global_variable(InFile::new(file_id, declaration));
+                let inference = database.infer(DefinitionWithBodyId::GlobalVariable(declaration));
+                let type_kind = inference.return_type().kind(database);
 
-            if let TypeKind::Reference(crate::ty::Reference { address_space, .. }) = type_kind
-                && !matches!(address_space, AddressSpace::Uniform)
-            {
-                return false;
-            }
+                if let TypeKind::Reference(crate::ty::Reference { address_space, .. }) = type_kind
+                    && !matches!(address_space, AddressSpace::Uniform)
+                {
+                    return false;
+                }
 
-            inference.return_type().contains_struct(database, r#struct)
-        },
-        hir_def::item_tree::ModuleItem::Function(_)
-        | hir_def::item_tree::ModuleItem::Struct(_)
-        | hir_def::item_tree::ModuleItem::GlobalConstant(_)
-        | hir_def::item_tree::ModuleItem::Override(_)
-        | hir_def::item_tree::ModuleItem::GlobalAssertStatement(_)
-        | hir_def::item_tree::ModuleItem::TypeAlias(_)
-        | hir_def::item_tree::ModuleItem::ImportStatement(_) => false,
-    })
+                inference.return_type().contains_struct(database, r#struct)
+            },
+            hir_def::item_tree::ModuleItemId::Function(_)
+            | hir_def::item_tree::ModuleItemId::Struct(_)
+            | hir_def::item_tree::ModuleItemId::GlobalConstant(_)
+            | hir_def::item_tree::ModuleItemId::Override(_)
+            | hir_def::item_tree::ModuleItemId::GlobalAssertStatement(_)
+            | hir_def::item_tree::ModuleItemId::TypeAlias(_)
+            | hir_def::item_tree::ModuleItemId::ImportStatement(_) => false,
+        })
 }
