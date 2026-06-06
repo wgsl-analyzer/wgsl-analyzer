@@ -4,7 +4,7 @@ pub mod database;
 pub mod definition;
 pub mod diagnostics;
 
-use base_db::{EditionedFileId, FileId, Lookup as _};
+use base_db::{EditionedFileId, FileId, Intern as _, Lookup as _};
 use definition::Definition;
 use diagnostics::{AnyDiagnostic, DiagnosticsConfig};
 use either::Either;
@@ -17,7 +17,7 @@ use hir_def::{
     },
     expression::{ExpressionId, StatementId},
     expression_store::{ExpressionStoreSource, path::Path},
-    item_tree::{self, ItemTree, ModuleItem, Name},
+    item_tree::{self, ItemTree, ModuleItemId, Name},
     resolver::{ResolveKind, Resolver},
     signature::{FieldId, ParameterId},
 };
@@ -189,35 +189,27 @@ impl<'database> Semantics<'database> {
             resolver = resolver.push_expression_scope(function, expression_scopes, scope_id);
         }
 
-        let value = resolver.resolve(path)?;
+        let value = resolver.resolve(path, self.database)?;
 
         let definition = match value {
             ResolveKind::Local(binding) => Definition::Local(Local {
                 parent: resolver.body_owner()?,
                 binding,
             }),
-            ResolveKind::GlobalVariable(location) => {
-                let id = self.database.intern_global_variable(location);
+            ResolveKind::GlobalVariable(id) => {
                 Definition::ModuleDef(ModuleDef::GlobalVariable(GlobalVariable { id }))
             },
-            ResolveKind::GlobalConstant(location) => {
-                let id = self.database.intern_global_constant(location);
+            ResolveKind::GlobalConstant(id) => {
                 Definition::ModuleDef(ModuleDef::GlobalConstant(GlobalConstant { id }))
             },
-            ResolveKind::Override(location) => {
-                let id = self.database.intern_override(location);
+            ResolveKind::Override(id) => {
                 Definition::ModuleDef(ModuleDef::Override(Override { id }))
             },
-            ResolveKind::Struct(location) => {
-                let id = self.database.intern_struct(location);
-                Definition::ModuleDef(ModuleDef::Struct(Struct { id }))
-            },
-            ResolveKind::TypeAlias(location) => {
-                let id = self.database.intern_type_alias(location);
+            ResolveKind::Struct(id) => Definition::ModuleDef(ModuleDef::Struct(Struct { id })),
+            ResolveKind::TypeAlias(id) => {
                 Definition::ModuleDef(ModuleDef::TypeAlias(TypeAlias { id }))
             },
-            ResolveKind::Function(location) => {
-                let id = self.database.intern_function(location);
+            ResolveKind::Function(id) => {
                 Definition::ModuleDef(ModuleDef::Function(Function { id }))
             },
         };
@@ -229,88 +221,72 @@ impl<'database> Semantics<'database> {
         &self,
         source: &InFile<ast::ImportStatement>,
     ) -> Option<ImportId> {
-        let import = item_tree::find_item(self.database, source.file_id, &source.value)?;
-        let import_id = self
-            .database
-            .intern_import(Location::new(source.file_id, import));
-        Some(import_id)
+        let ast_id_map = self.database.ast_id_map(source.file_id);
+        let id = ast_id_map.try_ast_id(&source.value)?;
+        Some(Location::new(source.file_id, id).intern(self.database))
     }
 
     fn function_to_def(
         &self,
         source: &InFile<ast::FunctionDeclaration>,
     ) -> Option<FunctionId> {
-        let function = item_tree::find_item(self.database, source.file_id, &source.value)?;
-        let function_id = self
-            .database
-            .intern_function(Location::new(source.file_id, function));
-        Some(function_id)
+        let ast_id_map = self.database.ast_id_map(source.file_id);
+        let id = ast_id_map.try_ast_id(&source.value)?;
+        Some(Location::new(source.file_id, id).intern(self.database))
     }
 
     fn global_constant_to_def(
         &self,
         source: &InFile<ast::ConstantDeclaration>,
     ) -> Option<GlobalConstantId> {
-        let global_constant = item_tree::find_item(self.database, source.file_id, &source.value)?;
-        let id = self
-            .database
-            .intern_global_constant(Location::new(source.file_id, global_constant));
-        Some(id)
+        let ast_id_map = self.database.ast_id_map(source.file_id);
+        let id = ast_id_map.try_ast_id(&source.value)?;
+        Some(Location::new(source.file_id, id).intern(self.database))
     }
 
     fn global_variable_to_def(
         &self,
         source: &InFile<ast::VariableDeclaration>,
     ) -> Option<GlobalVariableId> {
-        let global_variable = item_tree::find_item(self.database, source.file_id, &source.value)?;
-        let id = self
-            .database
-            .intern_global_variable(Location::new(source.file_id, global_variable));
-        Some(id)
+        let ast_id_map = self.database.ast_id_map(source.file_id);
+        let id = ast_id_map.try_ast_id(&source.value)?;
+        Some(Location::new(source.file_id, id).intern(self.database))
     }
 
     fn global_override_to_def(
         &self,
         source: &InFile<ast::OverrideDeclaration>,
     ) -> Option<OverrideId> {
-        let item = item_tree::find_item(self.database, source.file_id, &source.value)?;
-        let id = self
-            .database
-            .intern_override(Location::new(source.file_id, item));
-        Some(id)
+        let ast_id_map = self.database.ast_id_map(source.file_id);
+        let id = ast_id_map.try_ast_id(&source.value)?;
+        Some(Location::new(source.file_id, id).intern(self.database))
     }
 
     fn global_type_alias_to_def(
         &self,
         source: &InFile<ast::TypeAliasDeclaration>,
     ) -> Option<TypeAliasId> {
-        let item = item_tree::find_item(self.database, source.file_id, &source.value)?;
-        let id = self
-            .database
-            .intern_type_alias(Location::new(source.file_id, item));
-        Some(id)
+        let ast_id_map = self.database.ast_id_map(source.file_id);
+        let id = ast_id_map.try_ast_id(&source.value)?;
+        Some(Location::new(source.file_id, id).intern(self.database))
     }
 
     fn global_struct_to_def(
         &self,
         source: &InFile<ast::StructDeclaration>,
     ) -> Option<StructId> {
-        let item = item_tree::find_item(self.database, source.file_id, &source.value)?;
-        let id = self
-            .database
-            .intern_struct(Location::new(source.file_id, item));
-        Some(id)
+        let ast_id_map = self.database.ast_id_map(source.file_id);
+        let id = ast_id_map.try_ast_id(&source.value)?;
+        Some(Location::new(source.file_id, id).intern(self.database))
     }
 
     fn global_assert_statement_to_def(
         &self,
         source: &InFile<ast::AssertStatement>,
     ) -> Option<GlobalAssertStatementId> {
-        let item = item_tree::find_item(self.database, source.file_id, &source.value)?;
-        let id = self
-            .database
-            .intern_global_assert_statement(Location::new(source.file_id, item));
-        Some(id)
+        let ast_id_map = self.database.ast_id_map(source.file_id);
+        let id = ast_id_map.try_ast_id(&source.value)?;
+        Some(Location::new(source.file_id, id).intern(self.database))
     }
 }
 
@@ -443,45 +419,45 @@ impl ChildContainer {
 fn module_item_to_def(
     database: &dyn HirDatabase,
     file_id: EditionedFileId,
-    module_item: ModuleItem,
+    module_item: ModuleItemId,
 ) -> SmallVec<[ModuleDef; 1]> {
     let definition = match module_item {
-        ModuleItem::Function(function) => {
+        ModuleItemId::Function(function) => {
             let location = Location::new(file_id, function);
             let id = database.intern_function(location);
             ModuleDef::Function(Function { id })
         },
-        ModuleItem::Struct(r#struct) => {
+        ModuleItemId::Struct(r#struct) => {
             let location = Location::new(file_id, r#struct);
             let id = database.intern_struct(location);
             ModuleDef::Struct(Struct { id })
         },
-        ModuleItem::GlobalVariable(variable) => {
+        ModuleItemId::GlobalVariable(variable) => {
             let location = Location::new(file_id, variable);
             let id = database.intern_global_variable(location);
             ModuleDef::GlobalVariable(GlobalVariable { id })
         },
-        ModuleItem::GlobalConstant(constant) => {
+        ModuleItemId::GlobalConstant(constant) => {
             let location = Location::new(file_id, constant);
             let id = database.intern_global_constant(location);
             ModuleDef::GlobalConstant(GlobalConstant { id })
         },
-        ModuleItem::Override(constant) => {
+        ModuleItemId::Override(constant) => {
             let location = Location::new(file_id, constant);
             let id = database.intern_override(location);
             ModuleDef::Override(Override { id })
         },
-        ModuleItem::TypeAlias(type_alias) => {
+        ModuleItemId::TypeAlias(type_alias) => {
             let location = Location::new(file_id, type_alias);
             let id = database.intern_type_alias(location);
             ModuleDef::TypeAlias(TypeAlias { id })
         },
-        ModuleItem::GlobalAssertStatement(global_assert_statement) => {
+        ModuleItemId::GlobalAssertStatement(global_assert_statement) => {
             let location = Location::new(file_id, global_assert_statement);
             let id = database.intern_global_assert_statement(location);
             ModuleDef::GlobalAssertStatement(GlobalAssertStatement { id })
         },
-        ModuleItem::ImportStatement(_) => return smallvec::SmallVec::new(),
+        ModuleItemId::ImportStatement(_) => return smallvec::SmallVec::new(),
     };
     smallvec::smallvec![definition]
 }
@@ -842,7 +818,7 @@ impl Module {
     ) -> Vec<ModuleDef> {
         let item_tree = database.item_tree(self.file_id);
         item_tree
-            .items()
+            .top_level_items()
             .iter()
             .flat_map(|item| module_item_to_def(database, self.file_id, *item))
             .collect()
@@ -948,9 +924,9 @@ fn validate_identifiers(
             $accumulator:expr,
             $file_id:expr
         ) => {{
-            let data = $item_tree.get(*$id);
+            let data = &$item_tree[*$id];
             if data.name.as_str().starts_with("__") {
-                let ast_ptr = $ast_id_map.get(data.ast_id);
+                let ast_ptr = $ast_id_map.get(*$id);
                 let node = ast_ptr.to_node(&$root);
                 if let Some(name_node) = node.name() {
                     $accumulator.push(AnyDiagnostic::InvalidIdentifier {
@@ -963,27 +939,27 @@ fn validate_identifiers(
         }};
     }
 
-    for item in item_tree.items() {
+    for item in item_tree.top_level_items() {
         match item {
-            ModuleItem::Function(id) => {
+            ModuleItemId::Function(id) => {
                 validate!(id, item_tree, ast_id_map, root, accumulator, file_id);
             },
-            ModuleItem::GlobalVariable(id) => {
+            ModuleItemId::GlobalVariable(id) => {
                 validate!(id, item_tree, ast_id_map, root, accumulator, file_id);
             },
-            ModuleItem::GlobalConstant(id) => {
+            ModuleItemId::GlobalConstant(id) => {
                 validate!(id, item_tree, ast_id_map, root, accumulator, file_id);
             },
-            ModuleItem::Override(id) => {
+            ModuleItemId::Override(id) => {
                 validate!(id, item_tree, ast_id_map, root, accumulator, file_id);
             },
-            ModuleItem::Struct(id) => {
+            ModuleItemId::Struct(id) => {
                 validate!(id, item_tree, ast_id_map, root, accumulator, file_id);
             },
-            ModuleItem::TypeAlias(id) => {
+            ModuleItemId::TypeAlias(id) => {
                 validate!(id, item_tree, ast_id_map, root, accumulator, file_id);
             },
-            ModuleItem::ImportStatement(_) | ModuleItem::GlobalAssertStatement(_) => {},
+            ModuleItemId::ImportStatement(_) | ModuleItemId::GlobalAssertStatement(_) => {},
         }
     }
 }
