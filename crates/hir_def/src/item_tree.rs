@@ -6,9 +6,12 @@ pub mod pretty;
 use std::{hash, marker::PhantomData, ops::ControlFlow};
 
 use base_db::EditionedFileId;
-use la_arena::{Arena, Idx};
+use rustc_hash::FxHashMap;
 use smol_str::SmolStr;
-use syntax::{AstNode, TokenText, ast};
+use syntax::{
+    AstNode, TokenText,
+    ast::{self, StructDeclaration},
+};
 use triomphe::Arc;
 
 use crate::{
@@ -67,7 +70,6 @@ impl From<&'_ str> for Name {
 pub struct ImportStatement {
     pub kind: PathKind,
     pub tree: ImportTree,
-    pub ast_id: FileAstId<ast::ImportStatement>,
 }
 
 impl ImportStatement {
@@ -147,63 +149,47 @@ impl ImportTree {
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
-pub struct Directive {
-    pub ast_id: FileAstId<ast::Directive>,
-}
+pub struct Directive;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Function {
     pub name: Name,
-    pub ast_id: FileAstId<ast::FunctionDeclaration>,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct GlobalVariable {
     pub name: Name,
-    pub ast_id: FileAstId<ast::VariableDeclaration>,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct GlobalConstant {
     pub name: Name,
-    pub ast_id: FileAstId<ast::ConstantDeclaration>,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Override {
     pub name: Name,
-    pub ast_id: FileAstId<ast::OverrideDeclaration>,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct TypeAlias {
     pub name: Name,
-    pub ast_id: FileAstId<ast::TypeAliasDeclaration>,
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
-pub struct GlobalAssertStatement {
-    pub ast_id: FileAstId<ast::AssertStatement>,
-}
+pub struct GlobalAssertStatement;
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Struct {
     pub name: Name,
-    pub ast_id: FileAstId<ast::StructDeclaration>,
 }
 
 #[derive(Debug, Default, Eq, PartialEq)]
 pub struct ItemTree {
-    top_level: Vec<ModuleItem>,
-    imports: Arena<ImportStatement>,
-    functions: Arena<Function>,
-    global_variables: Arena<GlobalVariable>,
-    global_constants: Arena<GlobalConstant>,
-    overrides: Arena<Override>,
-    type_aliases: Arena<TypeAlias>,
-    structs: Arena<Struct>,
-    directives: Arena<Directive>,
-    global_assert_statements: Arena<GlobalAssertStatement>,
+    top_level: Vec<ModuleItemId>,
+
+    big_data: FxHashMap<FileAstId<ast::Item>, BigModItem>,
+    small_data: FxHashMap<FileAstId<ast::Item>, SmallModItem>,
 }
 
 impl ItemTree {
@@ -214,167 +200,119 @@ impl ItemTree {
         let source = database.parse_or_resolve(file_id).tree();
 
         let lower_ctx = lower::Ctx::new(database, file_id);
-        let tree = lower_ctx.lower_source_file(&source);
-
+        let mut tree = lower_ctx.lower_source_file(&source);
+        tree.shrink_to_fit();
         Arc::new(tree)
     }
 
     #[must_use]
-    pub fn items(&self) -> &[ModuleItem] {
+    pub fn top_level_items(&self) -> &[ModuleItemId] {
         &self.top_level
     }
 
-    pub fn structs(&self) -> impl Iterator<Item = ModuleItemId<Struct>> + '_ {
+    pub fn structs(&self) -> impl Iterator<Item = FileAstId<StructDeclaration>> + '_ {
         self.top_level.iter().filter_map(|item| match item {
-            ModuleItem::Struct(r#struct) => Some(*r#struct),
-            ModuleItem::ImportStatement(_)
-            | ModuleItem::Function(_)
-            | ModuleItem::GlobalVariable(_)
-            | ModuleItem::GlobalConstant(_)
-            | ModuleItem::Override(_)
-            | ModuleItem::GlobalAssertStatement(_)
-            | ModuleItem::TypeAlias(_) => None,
+            ModuleItemId::Struct(r#struct) => Some(*r#struct),
+            ModuleItemId::ImportStatement(_)
+            | ModuleItemId::Function(_)
+            | ModuleItemId::GlobalVariable(_)
+            | ModuleItemId::GlobalConstant(_)
+            | ModuleItemId::Override(_)
+            | ModuleItemId::GlobalAssertStatement(_)
+            | ModuleItemId::TypeAlias(_) => None,
         })
     }
 
-    #[must_use]
-    pub fn get<M: ItemTreeNode>(
-        &self,
-        id: ModuleItemId<M>,
-    ) -> &M {
-        M::lookup(self, id.index)
+    fn shrink_to_fit(&mut self) {
+        let Self {
+            top_level: _,
+            big_data,
+            small_data,
+        } = self;
+        big_data.shrink_to_fit();
+        small_data.shrink_to_fit();
     }
 }
 
-#[derive(PartialEq, Eq, Debug)]
-pub struct ModuleItemId<N> {
-    pub(crate) index: Idx<N>,
-    _marker: PhantomData<N>,
+#[derive(Debug, Clone, Eq, PartialEq)]
+enum SmallModItem {
+    Function(Function),
+    GlobalVariable(GlobalVariable),
+    GlobalConstant(GlobalConstant),
+    Override(Override),
+    TypeAlias(TypeAlias),
+    Struct(Struct),
+    Directive(Directive),
+    GlobalAssertStatement(GlobalAssertStatement),
 }
 
-impl<N> From<Idx<N>> for ModuleItemId<N> {
-    fn from(index: Idx<N>) -> Self {
-        Self {
-            index,
-            _marker: PhantomData,
-        }
-    }
+#[expect(
+    clippy::enum_variant_names,
+    reason = "Match Rust-Analyzer, we might get more big module items in the future"
+)]
+#[derive(Debug, Clone, Eq, PartialEq)]
+enum BigModItem {
+    ImportStatement(ImportStatement),
 }
-
-// If we automatically derive this trait, ModuleItemId<N> where N does not implement Hash cannot compile
-impl<N> hash::Hash for ModuleItemId<N> {
-    fn hash<H: hash::Hasher>(
-        &self,
-        state: &mut H,
-    ) {
-        self.index.hash(state);
-    }
-}
-
-impl<N> Clone for ModuleItemId<N> {
-    fn clone(&self) -> Self {
-        Self {
-            index: self.index,
-            _marker: PhantomData,
-        }
-    }
-}
-
-impl<N: ItemTreeNode> Copy for ModuleItemId<N> {}
 
 pub trait ItemTreeNode: Clone {
     type Source: AstNode + Into<ast::Item>;
-
-    fn ast_id(&self) -> FileAstId<Self::Source>;
-
-    /// Looks up an instance of `Self` in an item tree.
-    fn lookup(
-        data: &ItemTree,
-        index: Idx<Self>,
-    ) -> &Self;
-
-    /// Downcasts a `ModItem` to a `FileItemTreeId` specific to this type.
-    fn id_from_mod_item(mod_item: ModuleItem) -> Option<ModuleItemId<Self>>;
-
-    /// Upcasts a `FileItemTreeId` to a generic `ModuleItem`.
-    fn id_to_mod_item(id: ModuleItemId<Self>) -> ModuleItem;
 }
 
+#[expect(type_alias_bounds, reason = "TODO:")]
+pub(crate) type ItemTreeAstId<T: ItemTreeNode> = FileAstId<T::Source>;
+
 macro_rules! mod_items {
-    ( $( $r#type:ident in $fld:ident $(-> $ast:ty)? ),+ $(,)? ) => {
+    ( $( $r#type:ident in $fld:ident -> $ast:ty ),+ $(,)? ) => {
         #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
-        pub enum ModuleItem {
-            $($r#type(ModuleItemId<$r#type>),)+
+        pub enum ModuleItemId {
+            $($r#type(FileAstId<$ast>),)+
         }
 
-        $(impl From<ModuleItemId<$r#type>> for ModuleItem {
-            fn from(id: ModuleItemId<$r#type>) -> ModuleItem {
-                ModuleItem::$r#type(id)
+        impl ModuleItemId {
+            pub(crate) fn ast_id(self) -> FileAstId<ast::Item> {
+                match self {
+                    $(ModuleItemId::$r#type(it) => it.upcast()),+
+                }
+            }
+        }
+
+        $(impl From<FileAstId<$ast>> for ModuleItemId {
+            fn from(id: FileAstId<$ast>) -> ModuleItemId {
+                ModuleItemId::$r#type(id)
             }
         })+
 
-        $(impl core::ops::Index<la_arena::Idx<$r#type>> for ItemTree {
-            type Output = $r#type;
-
-            fn index(&self, index: la_arena::Idx<$r#type>) -> &Self::Output {
-                &self.$fld[index]
-            }
-        })*
-
         $(
-        $(impl ItemTreeNode for $r#type {
+            impl ItemTreeNode for $r#type {
                 type Source = $ast;
+            }
 
-                fn ast_id(&self) -> FileAstId<Self::Source> {
-                    self.ast_id
-                }
+            impl std::ops::Index<FileAstId<$ast>> for ItemTree {
+                type Output = $r#type;
 
-                fn lookup(data: &ItemTree, index: Idx<Self>) -> &Self {
-                    &data.$fld[index]
-                }
-
-                #[allow(clippy::allow_attributes, unreachable_patterns, reason = "macros should not leak lints")]
-                fn id_from_mod_item(mod_item: ModuleItem) -> Option<ModuleItemId<Self>> {
-                    match mod_item {
-                        ModuleItem::$r#type(id) => Some(id),
-                        _ => None,
+                #[expect(unused_imports, reason = "Either a BigModItem or a SmallModItem will be used here.")]
+                fn index(&self, index: FileAstId<$ast>) -> &Self::Output {
+                    use BigModItem::*;
+                    use SmallModItem::*;
+                    match &self.$fld[&index.upcast()] {
+                        $r#type(item) => item,
+                        _ => panic!("expected item of type `{}` at index `{:?}`", stringify!($r#type), index),
                     }
                 }
-
-                fn id_to_mod_item(id: ModuleItemId<Self>) -> ModuleItem {
-                    ModuleItem::$r#type(id)
-                }
             }
+
         )+
-        )*
     };
 }
 
 mod_items! {
-    ImportStatement in imports -> ast::ImportStatement,
-    Function in functions -> ast::FunctionDeclaration,
-    Struct in structs -> ast::StructDeclaration,
-    GlobalVariable in global_variables -> ast::VariableDeclaration,
-    GlobalConstant in global_constants -> ast::ConstantDeclaration,
-    Override in overrides -> ast::OverrideDeclaration,
-    TypeAlias in type_aliases -> ast::TypeAliasDeclaration,
-    GlobalAssertStatement in global_assert_statements -> ast::AssertStatement,
-}
-
-pub fn find_item<M: ItemTreeNode>(
-    database: &dyn DefDatabase,
-    file_id: EditionedFileId,
-    source: &M::Source,
-) -> Option<ModuleItemId<M>> {
-    let item_tree = database.item_tree(file_id);
-    item_tree.items().iter().find_map(|&item| {
-        let id = M::id_from_mod_item(item)?;
-        let data = M::lookup(&item_tree, id.index);
-        let def_map = database.ast_id_map(file_id);
-
-        let source_ast_id = def_map.try_ast_id(source)?;
-        let item_ast_id = M::ast_id(data);
-
-        (source_ast_id == item_ast_id).then_some(id)
-    })
+    ImportStatement in big_data -> ast::ImportStatement,
+    Function in small_data -> ast::FunctionDeclaration,
+    Struct in small_data -> ast::StructDeclaration,
+    GlobalVariable in small_data -> ast::VariableDeclaration,
+    GlobalConstant in small_data -> ast::ConstantDeclaration,
+    Override in small_data -> ast::OverrideDeclaration,
+    TypeAlias in small_data -> ast::TypeAliasDeclaration,
+    GlobalAssertStatement in small_data -> ast::AssertStatement,
 }

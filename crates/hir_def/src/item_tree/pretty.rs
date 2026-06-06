@@ -4,14 +4,14 @@ use std::fmt::Write as _;
 
 use crate::{
     FileAstId,
-    item_tree::{ImportTree, ItemTree, ModuleItem},
+    item_tree::{ImportTree, ItemTree, ModuleItemId},
     mod_path::PathKind,
 };
 
 #[must_use]
 pub fn pretty_print_item_tree(module: &ItemTree) -> String {
     let mut buffer = String::new();
-    for &item in module.items() {
+    for &item in module.top_level_items() {
         write_pretty_module_item(item, module, &mut buffer);
         buffer.push('\n');
     }
@@ -19,52 +19,52 @@ pub fn pretty_print_item_tree(module: &ItemTree) -> String {
 }
 
 fn write_pretty_module_item(
-    item: ModuleItem,
+    item: ModuleItemId,
     module: &ItemTree,
     buffer: &mut String,
 ) {
     match item {
-        ModuleItem::ImportStatement(id) => {
-            let import_statement = &module[id.index];
-            print_ast_id(buffer, import_statement.ast_id);
+        ModuleItemId::ImportStatement(id) => {
+            let import_statement = &module[id];
+            print_ast_id(buffer, id);
             _ = write!(buffer, "import");
             write_pretty_relative_import(import_statement.kind, buffer);
             write_pretty_import_tree(&import_statement.tree, buffer);
             _ = write!(buffer, ";");
         },
-        ModuleItem::Function(id) => {
-            let function = &module[id.index];
-            print_ast_id(buffer, function.ast_id);
+        ModuleItemId::Function(id) => {
+            let function = &module[id];
+            print_ast_id(buffer, id);
             _ = write!(buffer, "fn {};", function.name.0);
         },
-        ModuleItem::Struct(id) => {
-            let r#struct = &module[id.index];
-            print_ast_id(buffer, r#struct.ast_id);
+        ModuleItemId::Struct(id) => {
+            let r#struct = &module[id];
+            print_ast_id(buffer, id);
             _ = write!(buffer, "struct {} {{ ... }}", r#struct.name.0);
         },
-        ModuleItem::GlobalVariable(id) => {
-            let variable = &module[id.index];
-            print_ast_id(buffer, variable.ast_id);
+        ModuleItemId::GlobalVariable(id) => {
+            let variable = &module[id];
+            print_ast_id(buffer, id);
             _ = write!(buffer, "var {} = _;", &variable.name.0);
         },
-        ModuleItem::GlobalConstant(id) => {
-            let constant = &module[id.index];
-            print_ast_id(buffer, constant.ast_id);
+        ModuleItemId::GlobalConstant(id) => {
+            let constant = &module[id];
+            print_ast_id(buffer, id);
             _ = write!(buffer, "const {} = _;", &constant.name.0);
         },
-        ModuleItem::Override(id) => {
-            let override_declaration = &module[id.index];
-            print_ast_id(buffer, override_declaration.ast_id);
+        ModuleItemId::Override(id) => {
+            let override_declaration = &module[id];
+            print_ast_id(buffer, id);
             _ = write!(buffer, "override {} = _;", &override_declaration.name.0);
         },
-        ModuleItem::TypeAlias(id) => {
-            let type_alias = &module[id.index];
-            print_ast_id(buffer, type_alias.ast_id);
+        ModuleItemId::TypeAlias(id) => {
+            let type_alias = &module[id];
+            print_ast_id(buffer, id);
             _ = write!(buffer, "alias {} = _;", &type_alias.name.0);
         },
-        ModuleItem::GlobalAssertStatement(id) => {
-            let const_assert = &module[id.index];
-            print_ast_id(buffer, const_assert.ast_id);
+        ModuleItemId::GlobalAssertStatement(id) => {
+            let const_assert = &module[id];
+            print_ast_id(buffer, id);
             _ = write!(buffer, "const_assert _;");
         },
     }

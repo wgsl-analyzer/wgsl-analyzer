@@ -2523,39 +2523,25 @@ impl<'database> TypeLoweringContext<'database> {
         path: &Path,
         template_parameters: &[ExpressionId],
     ) -> Result<Lowered, TypeLoweringError> {
-        let resolved_type = self.resolver.resolve(path);
+        let resolved_type = self.resolver.resolve(path, self.database);
 
         if resolved_type.is_some() {
             self.expect_no_template(template_parameters);
         }
 
         match resolved_type {
-            Some(ResolveKind::TypeAlias(location)) => {
-                let id = self.database.intern_type_alias(location);
+            Some(ResolveKind::TypeAlias(id)) => {
                 Ok(Lowered::Type(self.database.type_alias_type(id).0))
             },
-            Some(ResolveKind::Struct(location)) => {
-                let id = self.database.intern_struct(location);
-                Ok(Lowered::Type(
-                    self.database.intern_type(TypeKind::Struct(id)),
-                ))
-            },
-            Some(ResolveKind::Function(location)) => {
-                let id = self.database.intern_function(location);
+            Some(ResolveKind::Struct(id)) => Ok(Lowered::Type(
+                self.database.intern_type(TypeKind::Struct(id)),
+            )),
+            Some(ResolveKind::Function(id)) => {
                 Ok(Lowered::Function(self.database.function_type(id)))
             },
-            Some(ResolveKind::GlobalConstant(location)) => {
-                let id = self.database.intern_global_constant(location);
-                Ok(Lowered::GlobalConstant(id))
-            },
-            Some(ResolveKind::GlobalVariable(location)) => {
-                let id = self.database.intern_global_variable(location);
-                Ok(Lowered::GlobalVariable(id))
-            },
-            Some(ResolveKind::Override(location)) => {
-                let id = self.database.intern_override(location);
-                Ok(Lowered::Override(id))
-            },
+            Some(ResolveKind::GlobalConstant(id)) => Ok(Lowered::GlobalConstant(id)),
+            Some(ResolveKind::GlobalVariable(id)) => Ok(Lowered::GlobalVariable(id)),
+            Some(ResolveKind::Override(id)) => Ok(Lowered::Override(id)),
             Some(ResolveKind::Local(local)) => Ok(Lowered::Local(local)),
             None => self.lower_predeclared(type_container, path, template_parameters),
         }
