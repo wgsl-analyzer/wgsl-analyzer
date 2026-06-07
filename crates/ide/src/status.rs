@@ -21,7 +21,6 @@ pub(crate) fn status(
 
     // format_to!(buf, "{}\n", collect_query(CompressedFileTextQuery.in_db(db)));
     // format_to!(buf, "{}\n", collect_query(ParseQuery.in_db(db)));
-    // format_to!(buf, "{}\n", collect_query(ParseMacroExpansionQuery.in_db(db)));
     // format_to!(buf, "{}\n", collect_query(LibrarySymbolsQuery.in_db(db)));
     // format_to!(buf, "{}\n", collect_query(ModuleSymbolsQuery.in_db(db)));
     // format_to!(buf, "{} in total\n", memory_usage());

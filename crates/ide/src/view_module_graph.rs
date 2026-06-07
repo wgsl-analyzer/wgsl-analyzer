@@ -57,7 +57,19 @@ type Edge<'edge> = (FileId, FileId);
 
 impl<'edge> dot::GraphWalk<'edge, FileId, Edge<'edge>> for DotModuleGraph<'_> {
     fn nodes(&'edge self) -> dot::Nodes<'edge, FileId> {
-        self.modules_to_render.keys().copied().collect()
+        let modules: FxIndexMap<_, _> = self
+            .modules_to_render
+            .clone()
+            .into_owned()
+            .sorted_by(|file_a, module_a, file_b, module_b| {
+                if let Some(name) = &module_a.name {
+                    module_a.name.cmp(&module_b.name)
+                } else {
+                    file_a.cmp(file_b)
+                }
+            })
+            .collect();
+        modules.keys().copied().collect()
     }
 
     fn edges(&'edge self) -> dot::Edges<'edge, Edge<'edge>> {
