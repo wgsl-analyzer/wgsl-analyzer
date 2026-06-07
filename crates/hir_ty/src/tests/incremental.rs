@@ -82,9 +82,11 @@ fn foo() {
 }
 
 #[test]
-#[should_panic(
-    expected = "we need to improve our incrementality, see: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1178"
+#[expect(
+    clippy::should_panic_without_expect,
+    reason = "we need to improve our incrementality, see: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1178"
 )]
+#[should_panic]
 fn typing_inside_a_function_should_not_invalidate_types_in_another() {
     let (mut database, position) = TestDatabase::with_position(
         "

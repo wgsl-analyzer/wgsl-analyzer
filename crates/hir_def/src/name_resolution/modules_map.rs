@@ -1,12 +1,8 @@
-use base_db::{
-    EditionedFileId, InternedSourceRootId, Package, SourceDatabase, SourceRoot, file_package,
-};
-use rustc_hash::FxHashMap;
+use base_db::{EditionedFileId, Package, SourceDatabase, SourceRoot, file_package};
 use std::fmt::Write as _;
-use syntax::Edition;
 use vfs::FileId;
 
-use crate::{FxIndexMap, database::DefDatabase, item_tree::Name};
+use crate::{FxIndexMap, item_tree::Name};
 
 /// A map of all modules and their children in a package.
 ///
@@ -15,6 +11,7 @@ use crate::{FxIndexMap, database::DefDatabase, item_tree::Name};
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct ModulesMap {
     pub root: FileId,
+    /// All modules in the project, including unreachable modules.
     pub modules: FxIndexMap<FileId, ModuleData>,
 }
 
@@ -141,7 +138,7 @@ impl ModulesMap {
             path: &str,
             module: FileId,
         ) {
-            writeln!(buffer, "{path}");
+            _ = writeln!(buffer, "{path}");
 
             let mut children: Vec<_> = modules.modules[&module].children.iter().collect();
             children.sort_by(|(name_a, _), (name_b, _)| Ord::cmp(name_a, name_b));

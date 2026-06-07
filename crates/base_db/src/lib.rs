@@ -14,7 +14,7 @@ use std::{
     sync::{Once, atomic::AtomicUsize},
 };
 
-use crate::input::{Dependency, PackageData, PackageId, PackageName};
+use crate::input::{PackageData, PackageId, PackageName};
 use dashmap::{DashMap, Entry};
 use rustc_hash::FxHasher;
 use salsa::{Durability, Setter as _};
@@ -288,7 +288,7 @@ pub struct ExtraPackageData {
     /// absent (a dummy package for the code snippet, for example).
     ///
     /// For purposes of analysis, packages are anonymous (only names in
-    /// `Dependency` matters). This name should only be used for UI.
+    /// [`crate::input::Dependency`] matters). This name should only be used for UI.
     pub display_name: Option<PackageDisplayName>,
 }
 

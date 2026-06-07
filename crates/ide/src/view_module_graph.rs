@@ -6,10 +6,7 @@ use hir_def::{
     FxIndexMap,
     name_resolution::{ModuleData, modules_map_query},
 };
-use ide_db::{
-    FxHashMap, RootDatabase,
-    base_db::{SourceDatabase as _, salsa::plumbing::AsId},
-};
+use ide_db::RootDatabase;
 use vfs::FileId;
 
 /// # Feature: View Module Graph
@@ -94,7 +91,7 @@ impl<'edge> dot::GraphWalk<'edge, FileId, Edge<'edge>> for DotModuleGraph<'_> {
 
 impl<'edge> dot::Labeller<'edge, FileId, Edge<'edge>> for DotModuleGraph<'_> {
     fn graph_id(&'edge self) -> Id<'edge> {
-        Id::new("wgsl_analyzer_package_graph").unwrap()
+        Id::new("wgsl_analyzer_module_graph").unwrap()
     }
 
     fn node_id(

@@ -210,7 +210,7 @@ pub struct PackageData {
     pub root_file_id: FileId,
     pub edition: Edition,
     /// A name used for UI. For purposes of analysis, packages are anonymous.
-    /// (only names in `Dependency` matters).
+    /// (only names in [`Dependency`] matters).
     pub display_name: Option<String>,
     /// The dependencies of this package.
     ///

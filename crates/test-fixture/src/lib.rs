@@ -10,7 +10,6 @@ use base_db::{
     input::{Dependency, PackageData, PackageId, PackageName, PackageOrigin},
 };
 use edition::Edition;
-use rustc_hash::FxHashMap;
 use test_utils::{CURSOR_MARKER, ESCAPED_CURSOR_MARKER, RangeOrOffset, extract_range_or_offset};
 use triomphe::Arc;
 
@@ -185,6 +184,10 @@ impl ChangeFixture {
                 let previous = packages.insert(
                     PackageName::new("wa_test_fixture").unwrap(),
                     (package_id, default_package),
+                );
+                assert!(
+                    previous.is_none(),
+                    "multiple crates with same name: wa_test_fixture"
                 );
             }
             roots.last_mut().unwrap().0.insert(file_id, path);
