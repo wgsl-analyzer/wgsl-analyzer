@@ -918,6 +918,14 @@ impl Module {
                 check_type_errors(database, accumulator, &item);
             }
         }
+
+        for diagnostic in &ItemScope::of(database, self.file_id).diagnostics {
+            accumulator.push(diagnostics::any_diag_from_def_diagnostic(
+                database,
+                &diagnostic,
+                self.file_id,
+            ));
+        }
     }
 }
 

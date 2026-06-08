@@ -2,7 +2,11 @@ use base_db::EditionedFileId;
 use syntax::{ast, pointer::AstPointer};
 use vfs::FileId;
 
-use crate::{InFile, database::Location, item_tree::Name};
+use crate::{
+    InFile,
+    database::{Location, ModuleDefinitionId},
+    item_tree::Name,
+};
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct DefDiagnostic {
@@ -19,20 +23,18 @@ pub enum DefDiagnosticKind {
     TooManySupers {
         id: Location<ast::ImportStatement>,
     },
-    UnresolvedModule {
-        id: Location<ast::ImportStatement>,
-        name: Name,
-    },
+    /// Cannot resolve an import statement, because the current file is not a part of a package.
     DetachedFile {
         id: Location<ast::ImportStatement>,
     },
-    EmptyImportStatement {
-        id: Location<ast::ImportStatement>,
+    NameConflict {
+        item: Location<ast::Item>,
+        previous: Name,
     },
 }
 
 impl DefDiagnostic {
-    pub(super) const fn unresolved_import(
+    pub(crate) const fn unresolved_import(
         container: EditionedFileId,
         id: Location<ast::ImportStatement>,
         name: Name,
@@ -43,7 +45,7 @@ impl DefDiagnostic {
         }
     }
 
-    pub(super) const fn super_escaping_root(
+    pub(crate) const fn super_escaping_root(
         container: EditionedFileId,
         id: Location<ast::ImportStatement>,
     ) -> Self {
@@ -53,18 +55,7 @@ impl DefDiagnostic {
         }
     }
 
-    pub(super) const fn unresolved_module(
-        container: EditionedFileId,
-        id: Location<ast::ImportStatement>,
-        name: Name,
-    ) -> Self {
-        Self {
-            in_module: container,
-            kind: DefDiagnosticKind::UnresolvedModule { id, name },
-        }
-    }
-
-    pub(super) const fn detached_file(
+    pub(crate) const fn detached_file(
         container: EditionedFileId,
         id: Location<ast::ImportStatement>,
     ) -> Self {
@@ -73,13 +64,14 @@ impl DefDiagnostic {
             kind: DefDiagnosticKind::DetachedFile { id },
         }
     }
-    pub(super) const fn empty_import_statement(
+    pub(crate) const fn name_conflict(
         container: EditionedFileId,
-        id: Location<ast::ImportStatement>,
+        item: Location<ast::Item>,
+        previous: Name,
     ) -> Self {
         Self {
             in_module: container,
-            kind: DefDiagnosticKind::EmptyImportStatement { id },
+            kind: DefDiagnosticKind::NameConflict { item, previous },
         }
     }
 }

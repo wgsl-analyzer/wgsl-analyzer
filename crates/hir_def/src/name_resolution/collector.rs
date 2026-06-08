@@ -39,7 +39,7 @@ impl ModCollector<'_> {
         item_tree: &ItemTree,
     ) {
         for item in item_tree.top_level_items() {
-            match *item {
+            let (name, definition) = match *item {
                 ModuleItemId::ImportStatement(id) => {
                     let location = Location::new(self.file_id, id);
                     let import_id = location.intern(self.database);
@@ -51,7 +51,7 @@ impl ModCollector<'_> {
                                 // - PathKind::Super => Don't need to add `super` to the scope, it is already a keyword
                                 // - PathKind::Package => Don't need to add `package` to the scope, it is already a keyword
                                 if let Some(name) = flat_import.leaf_name() {
-                                    self.item_scope.push_item(
+                                    let previous = self.item_scope.push_item(
                                         name.clone(),
                                         ModuleItem {
                                             definition,
@@ -59,6 +59,16 @@ impl ModCollector<'_> {
                                             import: Some(import_id),
                                         },
                                     );
+
+                                    if let Some(previous) = previous {
+                                        self.item_scope.push_diagnostic(
+                                            DefDiagnostic::name_conflict(
+                                                self.file_id,
+                                                Location::new(self.file_id, id.upcast()),
+                                                name.clone(),
+                                            ),
+                                        );
+                                    }
                                 }
                             },
                             Err(diagnostic) => {
@@ -66,86 +76,63 @@ impl ModCollector<'_> {
                             },
                         }
                     });
+                    continue;
                 },
-                ModuleItemId::Function(id) => {
-                    let definition: ModuleDefinitionId = ModuleDefinitionId::Function(
+                ModuleItemId::Function(id) => (
+                    &item_tree[id].name,
+                    ModuleDefinitionId::Function(
                         Location::new(self.file_id, id).intern(self.database),
-                    );
-                    self.item_scope.push_item(
-                        item_tree[id].name.clone(),
-                        ModuleItem {
-                            definition,
-                            visibility: (),
-                            import: None,
-                        },
-                    );
-                },
-                ModuleItemId::Struct(id) => {
-                    let definition = ModuleDefinitionId::Struct(
+                    ),
+                ),
+                ModuleItemId::Struct(id) => (
+                    &item_tree[id].name,
+                    ModuleDefinitionId::Struct(
                         Location::new(self.file_id, id).intern(self.database),
-                    );
-                    self.item_scope.push_item(
-                        item_tree[id].name.clone(),
-                        ModuleItem {
-                            definition,
-                            visibility: (),
-                            import: None,
-                        },
-                    );
-                },
-                ModuleItemId::GlobalVariable(id) => {
-                    let definition = ModuleDefinitionId::GlobalVariable(
+                    ),
+                ),
+                ModuleItemId::GlobalVariable(id) => (
+                    &item_tree[id].name,
+                    ModuleDefinitionId::GlobalVariable(
                         Location::new(self.file_id, id).intern(self.database),
-                    );
-                    self.item_scope.push_item(
-                        item_tree[id].name.clone(),
-                        ModuleItem {
-                            definition,
-                            visibility: (),
-                            import: None,
-                        },
-                    );
-                },
-                ModuleItemId::GlobalConstant(id) => {
-                    let definition = ModuleDefinitionId::GlobalConstant(
+                    ),
+                ),
+                ModuleItemId::GlobalConstant(id) => (
+                    &item_tree[id].name,
+                    ModuleDefinitionId::GlobalConstant(
                         Location::new(self.file_id, id).intern(self.database),
-                    );
-                    self.item_scope.push_item(
-                        item_tree[id].name.clone(),
-                        ModuleItem {
-                            definition,
-                            visibility: (),
-                            import: None,
-                        },
-                    );
-                },
-                ModuleItemId::Override(id) => {
-                    let definition = ModuleDefinitionId::Override(
+                    ),
+                ),
+                ModuleItemId::Override(id) => (
+                    &item_tree[id].name,
+                    ModuleDefinitionId::Override(
                         Location::new(self.file_id, id).intern(self.database),
-                    );
-                    self.item_scope.push_item(
-                        item_tree[id].name.clone(),
-                        ModuleItem {
-                            definition,
-                            visibility: (),
-                            import: None,
-                        },
-                    );
-                },
-                ModuleItemId::TypeAlias(id) => {
-                    let definition = ModuleDefinitionId::TypeAlias(
+                    ),
+                ),
+                ModuleItemId::TypeAlias(id) => (
+                    &item_tree[id].name,
+                    ModuleDefinitionId::TypeAlias(
                         Location::new(self.file_id, id).intern(self.database),
-                    );
-                    self.item_scope.push_item(
-                        item_tree[id].name.clone(),
-                        ModuleItem {
-                            definition,
-                            visibility: (),
-                            import: None,
-                        },
-                    );
+                    ),
+                ),
+                ModuleItemId::GlobalAssertStatement(_) => continue,
+            };
+
+            let previous = self.item_scope.push_item(
+                name.clone(),
+                ModuleItem {
+                    definition,
+                    visibility: (),
+                    import: None,
                 },
-                ModuleItemId::GlobalAssertStatement(_) => (),
+            );
+
+            if let Some(previous) = previous {
+                self.item_scope
+                    .push_diagnostic(DefDiagnostic::name_conflict(
+                        self.file_id,
+                        Location::new(self.file_id, item.ast_id()),
+                        name.clone(),
+                    ));
             }
         }
     }
@@ -164,11 +151,16 @@ impl ModCollector<'_> {
     ) -> Result<ModuleDefinitionId, DefDiagnostic> {
         file_id = match import.path.kind() {
             PathKind::Plain => {
-                let first_segment = import
-                    .path
-                    .segments()
-                    .first()
-                    .ok_or(DefDiagnostic::empty_import_statement(file_id, location))?;
+                let first_segment =
+                    import
+                        .path
+                        .segments()
+                        .first()
+                        .ok_or(DefDiagnostic::unresolved_import(
+                            file_id,
+                            location,
+                            Name::missing(),
+                        ))?;
                 // Local names can shadow an import
                 if let Some(resolved_def) = self.resolve_in_module(file_id, first_segment) {
                     if import.path.segments().len() > 1 {
@@ -182,7 +174,7 @@ impl ModCollector<'_> {
                     return Ok(resolved_def);
                 } else {
                     // TODO: importing libraries is not yet implemented. See https://github.com/wgsl-analyzer/wgsl-analyzer/issues/632
-                    return Err(DefDiagnostic::unresolved_module(
+                    return Err(DefDiagnostic::unresolved_import(
                         file_id,
                         location,
                         first_segment.clone(),
@@ -234,7 +226,7 @@ impl ModCollector<'_> {
             if let Some(child_module) = module_data.children.get(segment) {
                 file_id = *child_module;
             } else {
-                return Err(DefDiagnostic::unresolved_module(
+                return Err(DefDiagnostic::unresolved_import(
                     file_id,
                     location,
                     segment.clone(),

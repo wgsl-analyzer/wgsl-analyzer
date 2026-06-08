@@ -3,13 +3,15 @@ pub mod precedence;
 
 use base_db::{EditionedFileId, FileRange, TextRange};
 use hir_def::{
-    InFile,
+    AstIdMap, HasSource, InFile,
     expression::BinaryOperation,
     expression_store::{ExpressionSourceMap, ExpressionStoreSource, path::Path},
     item_tree::Name,
+    name_resolution::{DefDiagnostic, DefDiagnosticKind},
 };
 use hir_ty::{
     builtins::BuiltinId,
+    database::HirDatabase,
     infer::{
         InferenceDiagnostic, InferenceDiagnosticKind, LoweredKind, TypeExpectation,
         TypeLoweringError, TypeLoweringErrorKind,
@@ -59,6 +61,23 @@ pub enum AnyDiagnostic {
         file_id: EditionedFileId,
     },
 
+    // Module system errors
+    UnresolvedImport {
+        id: InFile<AstPointer<ast::ImportStatement>>,
+        name: Name,
+    },
+    TooManySupers {
+        id: InFile<AstPointer<ast::ImportStatement>>,
+    },
+    DetachedFile {
+        id: InFile<AstPointer<ast::ImportStatement>>,
+    },
+    NameConflict {
+        item: InFile<AstPointer<ast::Item>>,
+        name: Name,
+    },
+
+    // Type checking errors
     AssignmentNotAReference {
         left_side: InFile<AstPointer<ast::Expression>>,
         actual: Type,
@@ -189,6 +208,10 @@ impl AnyDiagnostic {
             | Self::ParseError { file_id, .. }
             | Self::CyclicType { file_id, .. }
             | Self::InvalidIdentifier { file_id, .. } => *file_id,
+            Self::UnresolvedImport { id, .. }
+            | Self::TooManySupers { id }
+            | Self::DetachedFile { id } => id.file_id,
+            Self::NameConflict { item, .. } => item.file_id,
         }
     }
 }
@@ -387,6 +410,30 @@ pub(crate) fn any_diag_from_infer_diagnostic(
             }
         },
     })
+}
+
+#[expect(clippy::too_many_lines, reason = "long but simple match")]
+pub(crate) fn any_diag_from_def_diagnostic(
+    database: &dyn HirDatabase,
+    def_diagnostic: &DefDiagnostic,
+    file_id: EditionedFileId,
+) -> AnyDiagnostic {
+    match &def_diagnostic.kind {
+        DefDiagnosticKind::UnresolvedImport { id, name } => AnyDiagnostic::UnresolvedImport {
+            id: id.ast_ptr(database),
+            name: name.clone(),
+        },
+        DefDiagnosticKind::TooManySupers { id } => AnyDiagnostic::TooManySupers {
+            id: id.ast_ptr(database),
+        },
+        DefDiagnosticKind::DetachedFile { id } => AnyDiagnostic::DetachedFile {
+            id: id.ast_ptr(database),
+        },
+        DefDiagnosticKind::NameConflict { item, previous } => AnyDiagnostic::NameConflict {
+            item: item.ast_ptr(database),
+            name: previous.clone(),
+        },
+    }
 }
 
 pub(crate) fn any_diag_from_global_var(

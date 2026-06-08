@@ -12,15 +12,6 @@ impl Path {
 
     #[must_use]
     pub fn missing() -> Self {
-        Self::from(Name::missing())
-    }
-}
-
-impl From<Name> for Path {
-    fn from(name: Name) -> Self {
-        Self(ModPath::from_segments(
-            crate::mod_path::PathKind::Plain,
-            std::iter::once(name),
-        ))
+        Self(ModPath::from(Name::missing()))
     }
 }
