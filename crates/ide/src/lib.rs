@@ -377,7 +377,7 @@ impl Analysis {
     pub fn goto_definition(
         &self,
         file_position: FilePosition,
-    ) -> Cancellable<Option<NavigationTarget>> {
+    ) -> Cancellable<Option<RangeInfo<NavigationTarget>>> {
         self.with_db(|database| goto_definition::goto_definition(database, file_position))
     }
 

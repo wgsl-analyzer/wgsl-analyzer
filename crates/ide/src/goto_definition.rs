@@ -1,4 +1,4 @@
-use base_db::{EditionedFileId, FilePosition, SourceDatabase as _};
+use base_db::{EditionedFileId, FilePosition, RangeInfo, SourceDatabase as _};
 use hir::{HasSource as _, Local, Semantics, definition::Definition};
 use hir_def::{InFile, database::DefDatabase as _};
 use ide_db::RootDatabase;
@@ -9,7 +9,7 @@ use crate::{NavigationTarget, helpers};
 pub(crate) fn goto_definition(
     database: &RootDatabase,
     file_position: FilePosition,
-) -> Option<NavigationTarget> {
+) -> Option<RangeInfo<NavigationTarget>> {
     let semantics = &Semantics::new(database);
     let file_id = EditionedFileId::from_file(database, file_position.file_id);
     let file = file_id.parse(database).tree();
@@ -26,7 +26,10 @@ pub(crate) fn goto_definition(
     })?;
 
     let definition = Definition::from_token(semantics, file_id, &token)?;
-    InFile::new(file_id, definition).try_to_navigation_target(database)
+    Some(RangeInfo::new(
+        token.text_range(),
+        definition.try_to_navigation_target(database)?,
+    ))
 }
 
 pub(crate) trait ToNavigationTarget {
@@ -43,12 +46,12 @@ pub trait TryToNavigationTarget {
     ) -> Option<NavigationTarget>;
 }
 
-impl TryToNavigationTarget for InFile<Local> {
+impl TryToNavigationTarget for Local {
     fn try_to_navigation_target(
         &self,
         database: &RootDatabase,
     ) -> Option<NavigationTarget> {
-        let binding = self.value.source(database)?;
+        let binding = self.source(database)?;
 
         let file_range = binding.original_file_range(database);
         // let name: SmolStr = binding.value.name()?.text().into();
@@ -57,15 +60,13 @@ impl TryToNavigationTarget for InFile<Local> {
     }
 }
 
-impl TryToNavigationTarget for InFile<Definition> {
+impl TryToNavigationTarget for Definition {
     fn try_to_navigation_target(
         &self,
         database: &RootDatabase,
     ) -> Option<NavigationTarget> {
-        let navigation = match &self.value {
-            Definition::Local(local) => {
-                InFile::new(self.file_id, *local).try_to_navigation_target(database)?
-            },
+        let navigation = match self {
+            Definition::Local(local) => local.try_to_navigation_target(database)?,
             Definition::ModuleDef(definition) => match definition {
                 hir::ModuleDef::Module(module_id) => {
                     let declaration = module_id.source(database)?;
