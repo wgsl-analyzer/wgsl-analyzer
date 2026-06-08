@@ -24,7 +24,7 @@ pub struct ModuleData {
     pub origin: EditionedFileId,
     /// Declared visibility of this module.
     // pub visibility: Visibility,
-    /// Parent module in the same `DefMap`.
+    /// Parent module in the same [`ModulesMap`].
     pub parent: Option<FileId>,
     pub children: FxIndexMap<Name, FileId>,
 }
@@ -68,7 +68,7 @@ pub fn modules_map_query(
         )
         .source_root(database);
 
-    let mut modules: FxIndexMap<_, _> = source_root
+    let modules: FxIndexMap<_, _> = source_root
         .iter()
         .map(|file_id| {
             let origin = EditionedFileId::new(database, file_id, package_data.edition);
@@ -76,56 +76,67 @@ pub fn modules_map_query(
         })
         .collect();
 
-    for file_id in source_root.iter() {
-        add_file(&mut modules, file_id, &source_root);
-    }
-
-    ModulesMap {
+    let mut modules_map = ModulesMap {
         root: package_data.root_file_id,
         modules,
-    }
-}
+    };
 
-fn add_file(
-    modules: &mut FxIndexMap<FileId, ModuleData>,
-    file_id: FileId,
-    source_root: &SourceRoot,
-) -> Option<()> {
-    let path = source_root.path_for_file(file_id)?;
-    let (name, extension) = path.name_and_extension()?;
-    if !matches!(extension, Some("wesl" | "wgsl")) {
-        return None;
+    for file_id in source_root.iter() {
+        modules_map.add_file(file_id, &source_root);
     }
-    let name = Name::from(name);
 
-    let file_node = &mut modules[&file_id];
-    file_node.name = Some(name.clone());
+    modules_map.keep_reachable();
 
-    // TODO: This cannot account for the case where a module is missing. After all, missing modules do not have a file id.
-    // > File not found: We assume an empty module as the current module, and continue with that.
-    // > https://github.com/wgsl-tooling-wg/wesl-spec/blob/main/Imports.md#import-resolution-algorithm
-    let parent_path = get_parent_path(path)?;
-    if let Some(parent_id) = source_root.file_for_path(&parent_path) {
-        file_node.parent = Some(*parent_id);
-        modules[parent_id].children.insert(name, file_id);
-    }
-    Some(())
-}
-
-/// Goes from a path like `foo/bar.wesl` to `foo.wesl`.
-fn get_parent_path(path: &vfs::VfsPath) -> Option<vfs::VfsPath> {
-    let mut parent_path = path.parent()?;
-    let (name, extension) = parent_path.name_and_extension()?;
-    if extension.is_some() {
-        return None;
-    }
-    // Only wesl files can have child modules
-    let file_name = format!("{name}.wesl");
-    parent_path.pop();
-    parent_path.join(&file_name)
+    modules_map
 }
 
 impl ModulesMap {
+    fn add_file(
+        &mut self,
+        file_id: FileId,
+        source_root: &SourceRoot,
+    ) -> Option<()> {
+        let path = source_root.path_for_file(file_id)?;
+        let (name, extension) = path.name_and_extension()?;
+        if !matches!(extension, Some("wesl" | "wgsl")) {
+            return None;
+        }
+        let name = Name::from(name);
+        self.modules[&file_id].name = Some(name.clone());
+
+        // TODO: This cannot account for the case where a module is missing. After all, missing modules do not have a file id.
+        // > File not found: We assume an empty module as the current module, and continue with that.
+        // > https://github.com/wgsl-tooling-wg/wesl-spec/blob/main/Imports.md#import-resolution-algorithm
+        if let Some(parent_id) = source_root.file_for_path(&get_parent_path(path)?) {
+            // .wesl files will shadow .wgsl files
+            let is_slot_empty = self.modules[parent_id].children.contains_key(&name);
+            if extension == Some("wesl") || is_slot_empty {
+                self.modules[&file_id].parent = Some(*parent_id);
+                self.modules[parent_id].children.insert(name, file_id);
+            }
+        }
+        Some(())
+    }
+
+    fn keep_reachable(&mut self) {
+        fn keep_children(
+            root: FileId,
+            old_modules: &mut FxIndexMap<FileId, ModuleData>,
+            new_modules: &mut FxIndexMap<FileId, ModuleData>,
+        ) {
+            let module = old_modules.swap_remove(&root).unwrap();
+            for child_id in module.children.values() {
+                keep_children(*child_id, old_modules, new_modules);
+            }
+            new_modules.insert(root, module);
+        }
+        let mut new_modules = FxIndexMap::default();
+        keep_children(self.root, &mut self.modules, &mut new_modules);
+
+        self.modules = new_modules;
+        self.modules.shrink_to_fit();
+    }
+
     #[must_use]
     pub fn dump(&self) -> String {
         let mut buffer = String::new();
@@ -148,4 +159,17 @@ impl ModulesMap {
             }
         }
     }
+}
+
+/// Goes from a path like `foo/bar.wesl` to `foo.wesl`.
+fn get_parent_path(path: &vfs::VfsPath) -> Option<vfs::VfsPath> {
+    let mut parent_path = path.parent()?;
+    let (name, extension) = parent_path.name_and_extension()?;
+    if extension.is_some() {
+        return None;
+    }
+    // Only wesl files can have child modules
+    let file_name = format!("{name}.wesl");
+    parent_path.pop();
+    parent_path.join(&file_name)
 }

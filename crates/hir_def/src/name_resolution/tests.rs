@@ -38,3 +38,40 @@ fn g() {}
         "#]],
     );
 }
+
+#[test]
+fn module_map_ignores_unreachable() {
+    check(
+        r#"
+//- /shaders.wesl
+
+//- /shaders/foo.wesl
+
+//- /shaders/bar/unreachable.wesl
+
+//- /shaders/foo/bar.wesl
+"#,
+        expect![[r#"
+            package
+            package::foo
+            package::foo::bar
+        "#]],
+    );
+}
+
+#[test]
+fn module_map_wesl_shadows_wgsl() {
+    check(
+        r#"
+//- /shaders.wesl
+
+//- /shaders/foo.wesl
+
+//- /shaders/foo.wgsl
+"#,
+        expect![[r#"
+            package
+            package::foo
+        "#]],
+    );
+}
