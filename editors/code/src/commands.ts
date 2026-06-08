@@ -11,7 +11,7 @@ import {
 	type SnippetTextDocumentEdit,
 } from "./snippets";
 import type { SyntaxElement } from "./syntax_tree_provider";
-import { isWeslDocument, isWeslEditor, log, sleep, unwrapUndefinable } from "./utilities";
+import { isWeslDocument, isWeslEditor, isWeslTomlDocument, log, sleep, unwrapUndefinable } from "./utilities";
 
 export function analyzerStatus(context: InitializedContext): Cmd {
 	const tdcp = new (class implements vscode.TextDocumentContentProvider {
@@ -495,10 +495,9 @@ function packageGraph(context: InitializedContext, full: boolean): Cmd {
 
 function moduleGraph(context: InitializedContext): Cmd {
 	return async () => {
-		const weslEditor = context.activeWeslEditor;
-		if (!weslEditor) {
-			return;
-		}
+		const editor = vscode.window.activeTextEditor;
+		if (!editor) return;
+		if (!(isWeslDocument(editor.document) || isWeslTomlDocument(editor.document))) return;
 
 		const nodeModulesPath = vscode.Uri.file(path.join(context.extensionPath, "node_modules"));
 
@@ -514,7 +513,7 @@ function moduleGraph(context: InitializedContext): Cmd {
 		);
 		const client = context.client;
 		const parameters = {
-			textDocument: client.code2ProtocolConverter.asTextDocumentIdentifier(weslEditor.document),
+			textDocument: client.code2ProtocolConverter.asTextDocumentIdentifier(editor.document),
 		};
 		const dot = await client.sendRequest(wa.viewModuleGraph, parameters);
 		const uri = panel.webview.asWebviewUri(nodeModulesPath);
