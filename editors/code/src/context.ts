@@ -10,7 +10,14 @@ import * as wa from "./lsp_ext";
 import type { WgslAnalyzerExtensionApi } from "./main";
 import { PersistentState } from "./persistent_state";
 import { type SyntaxElement, SyntaxTreeProvider } from "./syntax_tree_provider";
-import { isWeslDocument, isWeslEditor, isWeslTomlEditor, LazyOutputChannel, log, type WeslEditor } from "./utilities";
+import {
+	isWeslDocument,
+	isWeslEditor,
+	isWeslTomlEditor,
+	LazyOutputChannel,
+	log,
+	type WeslEditor,
+} from "./utilities";
 
 // We only support local folders, not eg. Live Share (`vlsl:` scheme), so do not activate if
 // only those are in use. We use "Empty" to represent these scenarios.

@@ -11,7 +11,14 @@ import {
 	type SnippetTextDocumentEdit,
 } from "./snippets";
 import type { SyntaxElement } from "./syntax_tree_provider";
-import { isWeslDocument, isWeslEditor, isWeslTomlDocument, log, sleep, unwrapUndefinable } from "./utilities";
+import {
+	isWeslDocument,
+	isWeslEditor,
+	isWeslTomlDocument,
+	log,
+	sleep,
+	unwrapUndefinable,
+} from "./utilities";
 
 export function analyzerStatus(context: InitializedContext): Cmd {
 	const tdcp = new (class implements vscode.TextDocumentContentProvider {
