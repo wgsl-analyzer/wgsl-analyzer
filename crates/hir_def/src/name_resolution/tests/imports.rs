@@ -47,6 +47,52 @@ fn module_map_ignores_unreachable() {
 }
 
 #[test]
+fn module_map_package_wesl() {
+    check_modules(
+        r#"
+//- /package.wesl
+
+//- /bar.wesl
+
+//- /foo.wesl
+
+//- /foo/bar.wesl
+"#,
+        expect![[r#"
+            package
+            package::bar
+            package::foo
+            package::foo::bar
+        "#]],
+    );
+}
+
+#[test]
+fn module_map_deep_package_wesl() {
+    check_modules(
+        r#"
+//- /shaders/package.wesl package:my_package
+
+//- /shaders.wesl
+
+//- /unrelated.wesl
+
+//- /shaders/foo.wesl
+
+//- /shaders/bar.wesl
+
+//- /shaders/foo/baz.wesl
+"#,
+        expect![[r#"
+            package
+            package::bar
+            package::foo
+            package::foo::baz
+        "#]],
+    );
+}
+
+#[test]
 fn module_map_wesl_shadows_wgsl() {
     check(
         r#"

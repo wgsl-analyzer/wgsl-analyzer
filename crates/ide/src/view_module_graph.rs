@@ -115,8 +115,8 @@ impl<'edge> dot::Labeller<'edge, EditionedFileId, Edge<'edge>> for DotModuleGrap
         &'edge self,
         n: &EditionedFileId,
     ) -> Id<'edge> {
-        let id = n.unpack(self.database);
-        Id::new(format!("_{id:?}")).unwrap()
+        let id = n.file_id(self.database);
+        Id::new(format!("_{}", id.index())).unwrap()
     }
 
     fn node_shape(
@@ -133,7 +133,7 @@ impl<'edge> dot::Labeller<'edge, EditionedFileId, Edge<'edge>> for DotModuleGrap
         let name = self.modules_to_render[n]
             .name
             .as_ref()
-            .map_or("package", |name| name.as_str());
+            .map_or("[package]", |name| name.as_str());
         LabelText::LabelStr(name.into())
     }
 }
