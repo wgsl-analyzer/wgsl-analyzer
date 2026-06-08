@@ -84,6 +84,8 @@ pub fn modules_map_query(
     for file_id in source_root.iter() {
         modules_map.add_file(file_id, &source_root);
     }
+    // Clear the name of the root module, since we only want names that can be used in shader code
+    modules_map.modules[&modules_map.root].name = None;
 
     modules_map.keep_reachable();
 

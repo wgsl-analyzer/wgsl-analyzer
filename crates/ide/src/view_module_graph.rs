@@ -4,6 +4,7 @@ use base_db::{EditionedFileId, file_package};
 use dot::{Id, LabelText};
 use hir_def::{
     FxIndexMap,
+    item_tree::Name,
     name_resolution::{ModuleData, modules_map_query},
 };
 use ide_db::RootDatabase;
@@ -30,10 +31,10 @@ pub(crate) fn view_module_graph(
         Cow::Borrowed(&modules_map_query(database, package).modules)
     } else {
         let mut modules_to_render = FxIndexMap::default();
-        modules_to_render.insert(
+        let file_name = modules_to_render.insert(
             file_id,
             ModuleData {
-                name: None,
+                name: Some(Name::from("[standalone file]")),
                 origin: EditionedFileId::from_file(database, file_id),
                 parent: None,
                 children: FxIndexMap::default(),
@@ -128,7 +129,7 @@ impl<'edge> dot::Labeller<'edge, FileId, Edge<'edge>> for DotModuleGraph<'_> {
         let name = self.modules_to_render[n]
             .name
             .as_ref()
-            .map_or("(unnamed module)", |name| name.as_str());
+            .map_or("package", |name| name.as_str());
         LabelText::LabelStr(name.into())
     }
 }
