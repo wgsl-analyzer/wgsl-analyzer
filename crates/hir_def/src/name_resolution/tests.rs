@@ -41,6 +41,9 @@ fn g() {}
 
 #[test]
 fn module_map_ignores_unreachable() {
+    // The current implementation ignores files that do not have a corresponding parent
+    // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1182
+
     check(
         r#"
 //- /shaders.wesl

@@ -11,7 +11,7 @@ use crate::{FxIndexMap, item_tree::Name};
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct ModulesMap {
     pub root: FileId,
-    /// All modules in the project, including unreachable modules.
+    /// All reachable modules in the project.
     pub modules: FxIndexMap<FileId, ModuleData>,
 }
 
@@ -111,7 +111,7 @@ impl ModulesMap {
         // > https://github.com/wgsl-tooling-wg/wesl-spec/blob/main/Imports.md#import-resolution-algorithm
         if let Some(parent_id) = source_root.file_for_path(&get_parent_path(path)?) {
             // .wesl files will shadow .wgsl files
-            let is_slot_empty = self.modules[parent_id].children.contains_key(&name);
+            let is_slot_empty = !self.modules[parent_id].children.contains_key(&name);
             if extension == Some("wesl") || is_slot_empty {
                 self.modules[&file_id].parent = Some(*parent_id);
                 self.modules[parent_id].children.insert(name, file_id);

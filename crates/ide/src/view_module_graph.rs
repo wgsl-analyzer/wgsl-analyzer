@@ -31,7 +31,7 @@ pub(crate) fn view_module_graph(
         Cow::Borrowed(&modules_map_query(database, package).modules)
     } else {
         let mut modules_to_render = FxIndexMap::default();
-        let file_name = modules_to_render.insert(
+        modules_to_render.insert(
             file_id,
             ModuleData {
                 name: Some(Name::from("[standalone file]")),

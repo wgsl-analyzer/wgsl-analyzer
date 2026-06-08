@@ -358,7 +358,7 @@ export class Context implements WgslAnalyzerExtensionApi {
 		return editor && isWeslEditor(editor) ? editor : undefined;
 	}
 
-	get activeWeslTomlEditor(): WeslEditor | undefined {
+	get activeWeslTomlEditor(): vscode.TextEditor | undefined {
 		const editor = vscode.window.activeTextEditor;
 		return editor && isWeslTomlEditor(editor) ? editor : undefined;
 	}
