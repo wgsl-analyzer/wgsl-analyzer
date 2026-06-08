@@ -175,7 +175,7 @@ These crates also define various intermediate representations of the core.
 
 `ItemTree` condenses a single `SyntaxTree` into a "summary" data structure, which is stable over modifications to function bodies.
 
-`ModuleMap` contains the module tree of a package and stores module scopes.
+`ModuleMap` contains the module tree of a package. `ModuleData` incrementally keeps track of the children of a given module.
 
 `Body` stores information about expressions.
 
