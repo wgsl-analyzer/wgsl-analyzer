@@ -113,6 +113,11 @@
 				"category": "wgsl-analyzer (debug command)"
 			},
 			{
+				"command": "wgsl-analyzer.viewModuleGraph",
+				"title": "View Module Graph",
+				"category": "wgsl-analyzer"
+			},
+			{
 				"command": "wgsl-analyzer.viewPackageGraph",
 				"title": "View Package Graph",
 				"category": "wgsl-analyzer"

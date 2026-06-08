@@ -1,8 +1,9 @@
 use std::{fmt, panic};
 
 use base_db::{
-    EditionedFileId, FileSourceRootInput, FileText, Nonce, SourceDatabase, SourceRootId,
-    SourceRootInput, change::Change, input::SourceRoot, set_all_packages_with_durability,
+    EditionedFileId, FileSourceRootInput, FileText, Nonce, Package, SourceDatabase, SourceRootId,
+    SourceRootInput, all_packages, change::Change, input::SourceRoot,
+    set_all_packages_with_durability,
 };
 use salsa::{Durability, Storage};
 use syntax::Edition;
@@ -11,7 +12,6 @@ use triomphe::Arc;
 use vfs::{AnchoredPath, FileId, VfsPath, file_set::FileSet};
 
 #[salsa_macros::db]
-#[derive(Clone)]
 pub(crate) struct TestDatabase {
     storage: salsa::Storage<Self>,
     files: Arc<base_db::Files>,
@@ -31,12 +31,22 @@ impl Default for TestDatabase {
     }
 }
 
+impl Clone for TestDatabase {
+    fn clone(&self) -> Self {
+        Self {
+            storage: self.storage.clone(),
+            files: self.files.clone(),
+            nonce: Nonce::new(),
+        }
+    }
+}
+
 impl fmt::Debug for TestDatabase {
     fn fmt(
         &self,
         f: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
-        f.debug_struct("TestDB").finish()
+        f.debug_struct("TestDatabase").finish()
     }
 }
 
@@ -112,5 +122,16 @@ impl SourceDatabase for TestDatabase {
             self.nonce,
             salsa::plumbing::ZalsaDatabase::zalsa(self).current_revision(),
         )
+    }
+}
+
+impl TestDatabase {
+    pub(crate) fn fetch_test_package(&self) -> Package {
+        let all_packages = all_packages(self);
+        all_packages
+            .iter()
+            .copied()
+            .find(|package| package.data(self).display_name.as_deref() == Some("wa_test_fixture"))
+            .unwrap_or_else(|| *all_packages.last().unwrap())
     }
 }

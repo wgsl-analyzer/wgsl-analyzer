@@ -37,11 +37,6 @@ pub trait DefDatabase: InternDatabase + SourceDatabase {
     #[salsa::input]
     fn extensions(&self) -> ExtensionsConfig;
 
-    fn parse_or_resolve(
-        &self,
-        key: EditionedFileId,
-    ) -> Parse;
-
     fn ast_id_map(
         &self,
         key: EditionedFileId,
@@ -157,18 +152,11 @@ fn signature_with_source_map(
     }
 }
 
-fn parse_or_resolve(
-    database: &dyn DefDatabase,
-    file_id: EditionedFileId,
-) -> Parse {
-    file_id.parse(database)
-}
-
 fn ast_id_map(
     database: &dyn DefDatabase,
     file_id: EditionedFileId,
 ) -> Arc<AstIdMap> {
-    let parsed = database.parse_or_resolve(file_id);
+    let parsed = file_id.parse(database);
     let map = AstIdMap::from_source(&parsed.tree());
     Arc::new(map)
 }
@@ -319,11 +307,11 @@ impl DefinitionWithBodyId {
     ) -> Resolver {
         let file_id = self.file_id(database);
         let module_info = database.item_tree(file_id);
-        Resolver::default().push_module_scope(file_id, module_info)
+        Resolver::new(file_id, module_info)
     }
 }
 
-/// All module items.
+/// The definitions which can be visible in the module.
 #[derive(PartialEq, Eq, Hash, Debug, Clone, Copy, salsa_macros::Supertype)]
 pub enum ModuleDefinitionId {
     Function(FunctionId),
@@ -357,7 +345,21 @@ impl ModuleDefinitionId {
     ) -> Resolver {
         let file_id = self.file_id(database);
         let module_info = database.item_tree(file_id);
-        Resolver::default().push_module_scope(file_id, module_info)
+        Resolver::new(file_id, module_info)
+    }
+
+    #[must_use]
+    pub const fn with_body(self) -> Option<DefinitionWithBodyId> {
+        match self {
+            Self::Function(id) => Some(DefinitionWithBodyId::Function(id)),
+            Self::GlobalVariable(id) => Some(DefinitionWithBodyId::GlobalVariable(id)),
+            Self::GlobalConstant(id) => Some(DefinitionWithBodyId::GlobalConstant(id)),
+            Self::GlobalAssertStatement(id) => {
+                Some(DefinitionWithBodyId::GlobalAssertStatement(id))
+            },
+            Self::Override(id) => Some(DefinitionWithBodyId::Override(id)),
+            Self::Struct(_) | Self::TypeAlias(_) => None,
+        }
     }
 }
 

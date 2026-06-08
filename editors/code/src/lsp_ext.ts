@@ -46,6 +46,9 @@ export const runFlycheck = new lc.NotificationType<{
 export const viewSyntaxTree = new lc.RequestType<ViewSyntaxTreeParameters, string, void>(
 	"wgsl-analyzer/viewSyntaxTree",
 );
+export const viewModuleGraph = new lc.RequestType<ViewModuleGraphParameters, string, void>(
+	"wgsl-analyzer/viewModuleGraph",
+);
 export const viewPackageGraph = new lc.RequestType<ViewPackageGraphParameters, string, void>(
 	"wgsl-analyzer/viewPackageGraph",
 );
@@ -122,6 +125,21 @@ export const fetchDependencyList = new lc.RequestType<
 	void
 >("wgsl-analyzer/fetchDependencyList");
 
+export interface FetchModuleGraphParameters {}
+
+export interface FetchModuleGraphResult {
+	modules: {
+		name: string;
+		path: string;
+	}[];
+}
+
+export const fetchModuleGraph = new lc.RequestType<
+	FetchModuleGraphParameters,
+	FetchModuleGraphResult,
+	void
+>("wgsl-analyzer/fetchModuleGraph");
+
 export interface FetchPackageGraphParameters {}
 
 export interface FetchPackageGraphResult {
@@ -143,6 +161,9 @@ export type SyntaxTreeParameters = {
 	range: lc.Range | null;
 };
 export type ViewSyntaxTreeParameters = {
+	textDocument: lc.TextDocumentIdentifier;
+};
+export type ViewModuleGraphParameters = {
 	textDocument: lc.TextDocumentIdentifier;
 };
 export type ViewPackageGraphParameters = { full: boolean };

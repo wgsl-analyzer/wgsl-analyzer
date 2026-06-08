@@ -197,7 +197,7 @@ impl ItemTree {
         database: &dyn DefDatabase,
         file_id: EditionedFileId,
     ) -> Arc<Self> {
-        let source = database.parse_or_resolve(file_id).tree();
+        let source = file_id.parse(database).tree();
 
         let lower_ctx = lower::Ctx::new(database, file_id);
         let mut tree = lower_ctx.lower_source_file(&source);

@@ -15,6 +15,7 @@ mod navigation_target;
 pub mod signature_help;
 mod status;
 mod typing;
+mod view_module_graph;
 mod view_package_graph;
 mod view_syntax_tree;
 
@@ -309,6 +310,14 @@ impl Analysis {
         file_id: FileId,
     ) -> Cancellable<Parse> {
         self.with_db(|database| EditionedFileId::from_file(database, file_id).parse(database))
+    }
+
+    /// Renders the module graph to `GraphViz` "dot" syntax.
+    pub fn view_module_graph(
+        &self,
+        file_id: FileId,
+    ) -> Cancellable<String> {
+        self.with_db(|database| view_module_graph::view_module_graph(database, file_id))
     }
 
     /// Renders the package graph to `GraphViz` "dot" syntax.

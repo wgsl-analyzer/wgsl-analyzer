@@ -39,6 +39,16 @@ impl Edition {
     pub fn iter() -> impl Iterator<Item = Self> {
         [Self::Wgsl, Self::Wesl2025Unstable].iter().copied()
     }
+
+    /// Guesses the edition based on the file extension.
+    #[must_use]
+    pub fn from_file_extension(extension: &str) -> Option<Self> {
+        match extension {
+            "wesl" => Some(Self::LATEST),
+            "wgsl" => Some(Self::Wgsl),
+            _ => None,
+        }
+    }
 }
 
 #[derive(Debug)]

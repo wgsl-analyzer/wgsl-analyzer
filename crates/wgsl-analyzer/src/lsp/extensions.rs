@@ -168,6 +168,22 @@ pub struct ViewPackageGraphParameters {
     pub full: bool,
 }
 
+#[derive(Deserialize, Serialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct ViewModuleGraphParameters {
+    pub text_document: TextDocumentIdentifier,
+}
+
+pub enum ViewModuleGraphRequest {}
+
+impl Request for ViewModuleGraphRequest {
+    type Params = ViewModuleGraphParameters;
+    type Result = String;
+
+    const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
+    const METHOD: LspRequestMethod = LspRequestMethod::new("wgsl-analyzer/viewModuleGraph");
+}
+
 pub enum ViewPackageGraphRequest {}
 
 impl Request for ViewPackageGraphRequest {

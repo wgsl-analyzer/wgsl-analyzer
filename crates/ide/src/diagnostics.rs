@@ -250,7 +250,7 @@ pub fn diagnostics(
         .into_iter()
         .map(|diagnostic| {
             let file_id = diagnostic.file_id();
-            let root = database.parse_or_resolve(file_id).syntax();
+            let root = file_id.parse(database).syntax();
             match diagnostic {
                 AnyDiagnostic::AssignmentNotAReference { left_side, actual } => {
                     let source = left_side.value.to_node(&root);

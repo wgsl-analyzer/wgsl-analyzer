@@ -14,19 +14,18 @@ use std::{
     sync::{Once, atomic::AtomicUsize},
 };
 
+use crate::input::{PackageData, PackageId, PackageName};
 use dashmap::{DashMap, Entry};
-pub use input::{SourceRoot, SourceRootId};
 use rustc_hash::FxHasher;
-pub use salsa;
 use salsa::{Durability, Setter as _};
-pub use salsa_macros;
-use syntax::{Parse, ast::Name};
 use triomphe::Arc;
-pub use util_types::*;
-pub use vfs::{AnchoredPath, AnchoredPathBuf, FileId, VfsPath, file_set::FileSet};
 
 pub use crate::editioned_file_id::{EditionedFileId, ExtensionsConfig, RawEditionedFileId};
-use crate::input::{Dependency, PackageData, PackageId, PackageName};
+pub use input::{SourceRoot, SourceRootId};
+pub use salsa;
+pub use salsa_macros;
+pub use util_types::*;
+pub use vfs::{AnchoredPath, AnchoredPathBuf, FileId, VfsPath, file_set::FileSet};
 
 #[macro_export]
 macro_rules! impl_intern_key {
@@ -289,7 +288,7 @@ pub struct ExtraPackageData {
     /// absent (a dummy package for the code snippet, for example).
     ///
     /// For purposes of analysis, packages are anonymous (only names in
-    /// `Dependency` matters). This name should only be used for UI.
+    /// [`crate::input::Dependency`] matters). This name should only be used for UI.
     pub display_name: Option<PackageDisplayName>,
 }
 
@@ -421,15 +420,6 @@ impl Nonce {
     }
 }
 
-fn parse(
-    database: &dyn SourceDatabase,
-    file_id: EditionedFileId,
-) -> Parse {
-    let RawEditionedFileId { file_id, edition } = file_id.unpack(database);
-    let source = database.file_text(file_id).text(database);
-    syntax::parse(source, edition)
-}
-
 #[must_use]
 #[non_exhaustive]
 pub struct DbPanicContext;
@@ -500,4 +490,44 @@ pub fn all_packages(database: &dyn salsa::Database) -> std::sync::Arc<[Package]>
     AllPackages::try_get(database).map_or_else(std::sync::Arc::default, |all_packages| {
         all_packages.packages(database)
     })
+}
+
+/// I believe this exists because each file has a different `FileSourceRootInput`.
+/// So Salsa cannot reuse computations that are driven by a `FileSourceRootInput`.
+/// TODO: Rust-Analyzer will remove this when the vfs gets rewritten.
+#[doc(hidden)]
+#[salsa::interned]
+pub struct InternedSourceRootId {
+    pub id: SourceRootId,
+}
+
+#[salsa::tracked]
+pub fn source_root_package<'db>(
+    database: &'db dyn SourceDatabase,
+    id: InternedSourceRootId<'db>,
+) -> Option<Package> {
+    let packages = AllPackages::get(database).packages(database);
+    let id = id.id(database);
+
+    packages.iter().copied().find(|package| {
+        let root_file = package.data(database).root_file_id;
+        database
+            .file_source_root(root_file)
+            .source_root_id(database)
+            == id
+    })
+}
+
+/// Returns the package for a given file, if the file is a part of one.
+pub fn file_package(
+    database: &dyn SourceDatabase,
+    file_id: vfs::FileId,
+) -> Option<Package> {
+    let _p = tracing::info_span!("file_package").entered();
+
+    let source_root = database.file_source_root(file_id);
+    source_root_package(
+        database,
+        InternedSourceRootId::new(database, source_root.source_root_id(database)),
+    )
 }

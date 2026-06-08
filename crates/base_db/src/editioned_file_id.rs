@@ -6,7 +6,7 @@ use syntax::{Diagnostic, ast};
 pub use syntax::{Edition, ExtensionsConfig};
 use vfs::FileId;
 
-use crate::SourceDatabase;
+use crate::{SourceDatabase, file_package};
 
 /// File together with an edition.
 /// Simpler than Rust-Analyzer, because we do not macros.
@@ -76,23 +76,19 @@ impl EditionedFileId {
         database: &dyn SourceDatabase,
         file_id: FileId,
     ) -> Self {
+        if let Some(package) = file_package(database, file_id) {
+            return Self::new(database, file_id, package.data(database).edition);
+        }
+
         let source_root = database
             .source_root(database.file_source_root(file_id).source_root_id(database))
             .source_root(database);
-        let edition = if let Some((_, Some(extension))) = source_root
+        let edition = source_root
             .path_for_file(file_id)
             .and_then(|file| file.name_and_extension())
-        {
-            if extension.eq_ignore_ascii_case("wesl") {
-                Edition::LATEST
-            } else if extension.eq_ignore_ascii_case("wgsl") {
-                Edition::Wgsl
-            } else {
-                Edition::CURRENT
-            }
-        } else {
-            Edition::CURRENT
-        };
+            .and_then(|(_, extension)| extension)
+            .and_then(Edition::from_file_extension)
+            .unwrap_or(Edition::CURRENT);
 
         Self::new(database, file_id, edition)
     }

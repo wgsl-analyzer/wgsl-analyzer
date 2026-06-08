@@ -110,7 +110,7 @@ impl ChangeFixture {
         let mut package_dependencies = Vec::new();
 
         let mut file_id = FileId::from_raw(0);
-        let mut roots: Vec<(FileSet, PackageData)> = Vec::new();
+        let mut roots: Vec<(FileSet, PackageOrigin)> = Vec::new();
 
         let mut file_position = None;
 
@@ -153,10 +153,10 @@ impl ChangeFixture {
                     dependencies: Vec::new(),
                     origin,
                 };
-                let package_id = PackageId::from_raw(u32::try_from(roots.len()).unwrap());
-                roots.push((FileSet::default(), package));
+                roots.push((FileSet::default(), origin));
 
-                let previous = packages.insert(crate_name.clone(), package_id);
+                let package_id = PackageId::from_raw(u32::try_from(packages.len()).unwrap());
+                let previous = packages.insert(crate_name.clone(), (package_id, package));
                 assert!(
                     previous.is_none(),
                     "multiple crates with same name: {crate_name}"
@@ -178,7 +178,17 @@ impl ChangeFixture {
                     dependencies: Vec::new(),
                     origin: PackageOrigin::Local,
                 };
-                roots.push((FileSet::default(), default_package));
+                roots.push((FileSet::default(), PackageOrigin::Local));
+
+                let package_id = PackageId::from_raw(u32::try_from(packages.len()).unwrap());
+                let previous = packages.insert(
+                    PackageName::new("wa_test_fixture").unwrap(),
+                    (package_id, default_package),
+                );
+                assert!(
+                    previous.is_none(),
+                    "multiple crates with same name: wa_test_fixture"
+                );
             }
             roots.last_mut().unwrap().0.insert(file_id, path);
             files.push(RawEditionedFileId {
@@ -189,21 +199,22 @@ impl ChangeFixture {
         }
 
         for (from, to) in package_dependencies {
-            let from_id = packages[&from];
-            let to_id = packages[&to];
-            roots[from_id.to_raw_usize()]
-                .1
-                .dependencies
-                .push(Dependency {
-                    name: to.clone(),
-                    package_id: to_id,
-                });
+            let (to_id, _) = packages[&to];
+            let (_, from_data) = &mut packages[&from];
+            from_data.dependencies.push(Dependency {
+                name: to.clone(),
+                package_id: to_id,
+            });
+        }
+
+        for (package_id, package_data) in packages.into_values() {
+            source_change.change_package(package_id, Some(package_data));
         }
 
         source_change.set_roots(
             roots
                 .into_iter()
-                .map(|(file_set, package)| match package.origin {
+                .map(|(file_set, origin)| match origin {
                     PackageOrigin::Local => SourceRoot::new_local(file_set),
                     PackageOrigin::Library | PackageOrigin::Language => {
                         SourceRoot::new_library(file_set)

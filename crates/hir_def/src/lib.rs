@@ -8,6 +8,7 @@ pub mod expression;
 pub mod expression_store;
 pub mod item_tree;
 pub mod mod_path;
+pub mod name_resolution;
 pub mod resolver;
 pub mod signature;
 #[cfg(test)]
@@ -22,6 +23,10 @@ use database::DefDatabase;
 use item_tree::{ItemTreeNode, ModuleItemId};
 use rowan::NodeOrToken;
 use syntax::{AstNode, SyntaxNode, SyntaxToken, pointer::AstPointer};
+
+pub type FxIndexSet<T> = indexmap::IndexSet<T, rustc_hash::FxBuildHasher>;
+pub type FxIndexMap<K, V> =
+    indexmap::IndexMap<K, V, std::hash::BuildHasherDefault<rustc_hash::FxHasher>>;
 
 /// `InFile<T>` stores a value of `T` inside a particular file/syntax tree.
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
@@ -66,7 +71,7 @@ impl<T> InFile<T> {
         &self,
         database: &dyn database::DefDatabase,
     ) -> SyntaxNode {
-        database.parse_or_resolve(self.file_id).syntax()
+        self.file_id.parse(database).syntax()
     }
 }
 
@@ -128,10 +133,7 @@ pub trait HasSource {
         database: &dyn DefDatabase,
     ) -> InFile<Self::Value> {
         let InFile { file_id, value } = self.ast_ptr(database);
-        InFile::new(
-            file_id,
-            value.to_node(&database.parse_or_resolve(file_id).syntax()),
-        )
+        InFile::new(file_id, value.to_node(&file_id.parse(database).syntax()))
     }
     fn ast_ptr(
         &self,
