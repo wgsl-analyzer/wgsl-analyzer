@@ -36,7 +36,7 @@ impl ItemScope {
 }
 
 impl ItemScope {
-    /// Pushes an item and returns the old value if there is one
+    /// Pushes an item and returns the old value if there is one.
     #[must_use]
     pub(crate) fn push_item(
         &mut self,
@@ -85,7 +85,7 @@ impl ItemScope {
             } else {
                 ""
             };
-            writeln!(buffer, "- {} {}{description}", r#type, name.as_str());
+            writeln!(buffer, "- {type} {}{description}", name.as_str());
         }
     }
 

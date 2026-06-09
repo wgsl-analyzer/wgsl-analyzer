@@ -1,4 +1,4 @@
-use base_db::{EditionedFileId, Intern, file_package};
+use base_db::{EditionedFileId, Intern as _, file_package};
 use syntax::ast;
 use vfs::FileId;
 
@@ -142,7 +142,6 @@ impl ModCollector<'_> {
     /// To avoid cycle handling, we only look at the modules and the item trees.
     /// With that, we can follow an import statement, including re-exports, to the very end.
     /// Re-exported items will cause redundant resolutions.
-    #[must_use]
     pub(super) fn resolve_import(
         &self,
         mut file_id: EditionedFileId,
@@ -151,16 +150,9 @@ impl ModCollector<'_> {
     ) -> Result<ModuleDefinitionId, DefDiagnostic> {
         file_id = match import.path.kind() {
             PathKind::Plain => {
-                let first_segment =
-                    import
-                        .path
-                        .segments()
-                        .first()
-                        .ok_or(DefDiagnostic::unresolved_import(
-                            file_id,
-                            location,
-                            Name::missing(),
-                        ))?;
+                let first_segment = import.path.segments().first().ok_or_else(|| {
+                    DefDiagnostic::unresolved_import(file_id, location, Name::missing())
+                })?;
                 // Local names can shadow an import
                 if let Some(resolved_def) = self.resolve_in_module(file_id, first_segment) {
                     if import.path.segments().len() > 1 {
@@ -172,19 +164,18 @@ impl ModCollector<'_> {
                         ));
                     }
                     return Ok(resolved_def);
-                } else {
-                    // TODO: importing libraries is not yet implemented. See https://github.com/wgsl-analyzer/wgsl-analyzer/issues/632
-                    return Err(DefDiagnostic::unresolved_import(
-                        file_id,
-                        location,
-                        first_segment.clone(),
-                    ));
                 }
+                // TODO: importing libraries is not yet implemented. See https://github.com/wgsl-analyzer/wgsl-analyzer/issues/632
+                return Err(DefDiagnostic::unresolved_import(
+                    file_id,
+                    location,
+                    first_segment.clone(),
+                ));
             },
             PathKind::Super(levels) => {
                 for _ in 0..levels {
                     let module_data = ModuleData::of(self.database, file_id)
-                        .ok_or(DefDiagnostic::detached_file(file_id, location))?;
+                        .ok_or_else(|| DefDiagnostic::detached_file(file_id, location))?;
                     if let Some(parent) = module_data.parent {
                         file_id = parent;
                     } else {
@@ -195,7 +186,7 @@ impl ModCollector<'_> {
             },
             PathKind::Package => {
                 let package_data = file_package(self.database, file_id.file_id(self.database))
-                    .ok_or(DefDiagnostic::detached_file(file_id, location))?
+                    .ok_or_else(|| DefDiagnostic::detached_file(file_id, location))?
                     .data(self.database);
                 EditionedFileId::new(
                     self.database,
@@ -220,7 +211,7 @@ impl ModCollector<'_> {
             }
             // Otherwise go to the child file
             let module_data = ModuleData::of(self.database, file_id)
-                .ok_or(DefDiagnostic::detached_file(file_id, location))?;
+                .ok_or_else(|| DefDiagnostic::detached_file(file_id, location))?;
             if let Some(child_module) = module_data.children.get(segment) {
                 file_id = *child_module;
             } else {

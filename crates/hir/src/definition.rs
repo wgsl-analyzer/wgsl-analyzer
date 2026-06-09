@@ -50,29 +50,25 @@ impl Definition {
             }
         }
     }
+}
 
-    fn from_resolve_kind(value: ResolveKind) -> Self {
+impl From<ResolveKind> for Definition {
+    fn from(value: ResolveKind) -> Self {
         match value {
             ResolveKind::Module(module_id) => {
-                Definition::ModuleDef(ModuleDef::Module(Module { file_id: module_id }))
+                Self::ModuleDef(ModuleDef::Module(Module { file_id: module_id }))
             },
-            ResolveKind::Local(binding, parent) => Definition::Local(Local { parent, binding }),
+            ResolveKind::Local(binding, parent) => Self::Local(Local { parent, binding }),
             ResolveKind::GlobalVariable(id) => {
-                Definition::ModuleDef(ModuleDef::GlobalVariable(GlobalVariable { id }))
+                Self::ModuleDef(ModuleDef::GlobalVariable(GlobalVariable { id }))
             },
             ResolveKind::GlobalConstant(id) => {
-                Definition::ModuleDef(ModuleDef::GlobalConstant(GlobalConstant { id }))
+                Self::ModuleDef(ModuleDef::GlobalConstant(GlobalConstant { id }))
             },
-            ResolveKind::Override(id) => {
-                Definition::ModuleDef(ModuleDef::Override(Override { id }))
-            },
-            ResolveKind::Struct(id) => Definition::ModuleDef(ModuleDef::Struct(Struct { id })),
-            ResolveKind::TypeAlias(id) => {
-                Definition::ModuleDef(ModuleDef::TypeAlias(TypeAlias { id }))
-            },
-            ResolveKind::Function(id) => {
-                Definition::ModuleDef(ModuleDef::Function(Function { id }))
-            },
+            ResolveKind::Override(id) => Self::ModuleDef(ModuleDef::Override(Override { id })),
+            ResolveKind::Struct(id) => Self::ModuleDef(ModuleDef::Struct(Struct { id })),
+            ResolveKind::TypeAlias(id) => Self::ModuleDef(ModuleDef::TypeAlias(TypeAlias { id })),
+            ResolveKind::Function(id) => Self::ModuleDef(ModuleDef::Function(Function { id })),
         }
     }
 }
@@ -88,10 +84,10 @@ fn resolve_path(
     {
         let resolver = semantics.resolver(file_id, path.syntax());
         resolver
-            .resolve(semantics.database, &Path(ModPath::from_src(&path)))
+            .resolve(semantics.database, &Path(ModPath::from_src(path)))
             .ok()
-            .map(Definition::from_resolve_kind)
-    } else if let Some(expression) = ast::FieldExpression::cast(parent.clone()) {
+            .map(Definition::from)
+    } else if let Some(expression) = ast::FieldExpression::cast(parent) {
         resolve_field(semantics, file_id, expression)
     } else {
         None

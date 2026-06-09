@@ -171,7 +171,7 @@ impl Resolver {
             },
             Scope::Module(scope) => {
                 scope.module_info.items.iter().for_each(|(name, item)| {
-                    callback(name, ScopeDef::ModuleDefinition(item.definition))
+                    callback(name, ScopeDef::ModuleDefinition(item.definition));
                 });
             },
             Scope::SubModules(scope) => {
@@ -179,7 +179,7 @@ impl Resolver {
                     callback(
                         name,
                         ScopeDef::ModuleDefinition(ModuleDefinitionId::Module(*item)),
-                    )
+                    );
                 });
             },
             Scope::Builtin => {
@@ -191,7 +191,6 @@ impl Resolver {
 
     /// Resolve an *inline* path. Import statements are already resolved.
     /// Corresponds to `resolve_path_in_type_ns` in rust-analyzer.
-    #[must_use]
     pub fn resolve(
         &self,
         database: &dyn DefDatabase,
@@ -203,23 +202,18 @@ impl Resolver {
             PathKind::Super(levels) => {
                 let mut file_id = self.file_id;
                 for level in 0..levels {
-                    let module_data =
-                        ModuleData::of(database, file_id).ok_or_else(|| ResolutionDiagnostic {
+                    let parent = ModuleData::of(database, file_id)
+                        .and_then(|module_data| module_data.parent)
+                        .ok_or_else(|| ResolutionDiagnostic {
                             failed_segment: usize::from(level),
                         })?;
-                    if let Some(parent) = module_data.parent {
-                        file_id = parent;
-                    } else {
-                        return Err(ResolutionDiagnostic {
-                            failed_segment: usize::from(level),
-                        });
-                    }
+                    file_id = parent;
                 }
                 if path.is_empty() {
                     Ok(ResolveKind::Module(file_id))
                 } else {
                     // Continue resolution with the remaining path
-                    Resolver::new_for_submodules(
+                    Self::new_for_submodules(
                         file_id,
                         ItemScope::of(database, file_id),
                         ModuleData::of(database, file_id),
@@ -233,7 +227,7 @@ impl Resolver {
             },
             PathKind::Package => {
                 let package_data = base_db::file_package(database, self.file_id.file_id(database))
-                    .ok_or_else(|| ResolutionDiagnostic { failed_segment: 0 })?
+                    .ok_or(ResolutionDiagnostic { failed_segment: 0 })?
                     .data(database);
                 let file_id =
                     EditionedFileId::new(database, package_data.root_file_id, package_data.edition);
@@ -241,7 +235,7 @@ impl Resolver {
                     Ok(ResolveKind::Module(file_id))
                 } else {
                     // Continue resolution with the remaining path
-                    return Resolver::new_for_submodules(
+                    Self::new_for_submodules(
                         file_id,
                         ItemScope::of(database, file_id),
                         ModuleData::of(database, file_id),
@@ -250,7 +244,7 @@ impl Resolver {
                     .map_err(|mut diagnostic| {
                         diagnostic.failed_segment += 1;
                         diagnostic
-                    });
+                    })
                 }
             },
         }
@@ -263,7 +257,7 @@ impl Resolver {
     ) -> Result<ResolveKind, ResolutionDiagnostic> {
         let name_start = segments
             .first()
-            .ok_or_else(|| ResolutionDiagnostic { failed_segment: 0 })?;
+            .ok_or(ResolutionDiagnostic { failed_segment: 0 })?;
         let is_path_done = segments.len() == 1;
 
         for scope in self.scopes() {
@@ -278,9 +272,8 @@ impl Resolver {
 
                     if is_path_done {
                         return Ok(ResolveKind::Local(entry.binding, scope.owner));
-                    } else {
-                        return Err(ResolutionDiagnostic { failed_segment: 1 });
                     }
+                    return Err(ResolutionDiagnostic { failed_segment: 1 });
                 },
                 Scope::Module(scope) => {
                     let Some(item) = scope.module_info.items.get(name_start) else {
@@ -291,7 +284,7 @@ impl Resolver {
                             if is_path_done {
                                 ResolveKind::Module(file_id)
                             } else {
-                                return Resolver::new_for_submodules(
+                                return Self::new_for_submodules(
                                     file_id,
                                     ItemScope::of(database, file_id),
                                     ModuleData::of(database, file_id),
@@ -316,9 +309,8 @@ impl Resolver {
 
                     if is_path_done {
                         return Ok(resolved);
-                    } else {
-                        return Err(ResolutionDiagnostic { failed_segment: 1 });
                     }
+                    return Err(ResolutionDiagnostic { failed_segment: 1 });
                 },
                 Scope::SubModules(scope) => {
                     let Some(file_id) = scope.module_info.children.get(name_start) else {
@@ -326,33 +318,31 @@ impl Resolver {
                     };
                     if is_path_done {
                         return Ok(ResolveKind::Module(*file_id));
-                    } else {
-                        return Resolver::new_for_submodules(
-                            *file_id,
-                            ItemScope::of(database, *file_id),
-                            ModuleData::of(database, *file_id),
-                        )
-                        .resolve_plain(database, &segments[1..])
-                        .map_err(|mut diagnostic| {
-                            diagnostic.failed_segment += 1;
-                            diagnostic
-                        });
                     }
+                    return Self::new_for_submodules(
+                        *file_id,
+                        ItemScope::of(database, *file_id),
+                        ModuleData::of(database, *file_id),
+                    )
+                    .resolve_plain(database, &segments[1..])
+                    .map_err(|mut diagnostic| {
+                        diagnostic.failed_segment += 1;
+                        diagnostic
+                    });
                 },
                 Scope::Builtin => {
                     // TODO: Match against the first name segment and then point at a "builtin" file
                     // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/559
-                    continue;
                 },
             }
         }
 
-        return Err(ResolutionDiagnostic { failed_segment: 0 });
+        Err(ResolutionDiagnostic { failed_segment: 0 })
     }
 }
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct ResolutionDiagnostic {
-    /// The index of the last segment where resolution failed
+    /// The index of the last segment where resolution failed.
     pub failed_segment: usize,
 }

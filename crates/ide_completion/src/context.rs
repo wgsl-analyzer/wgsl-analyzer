@@ -1,6 +1,6 @@
 use base_db::{EditionedFileId, FilePosition, TextRange};
 use either::Either;
-use hir::{ChildContainer, Semantics};
+use hir::{ChildContainer, Semantics, nearest_scope};
 use hir_def::{database::DefDatabase as _, item_scope::ItemScope, resolver::Resolver};
 use ide_db::RootDatabase;
 use syntax::{AstNode as _, Direction, SyntaxKind, SyntaxToken, ast};
@@ -45,9 +45,7 @@ impl<'database> CompletionContext<'database> {
         let module_info = ItemScope::of(database, file_id);
         let mut resolver = Resolver::new(file_id, module_info);
 
-        let nearest_scope = token
-            .parent()
-            .and_then(|node| semantics.nearest_scope(&node));
+        let nearest_scope = token.parent().and_then(|node| nearest_scope(&node));
 
         if let Some(scope) = nearest_scope
             && let Some(definition) = container

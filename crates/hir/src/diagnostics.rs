@@ -3,7 +3,7 @@ pub mod precedence;
 
 use base_db::{EditionedFileId, FileRange, TextRange};
 use hir_def::{
-    AstIdMap, HasSource, InFile,
+    AstIdMap, HasSource as _, InFile,
     expression::BinaryOperation,
     expression_store::{ExpressionSourceMap, ExpressionStoreSource, path::Path},
     item_tree::Name,
@@ -412,7 +412,6 @@ pub(crate) fn any_diag_from_infer_diagnostic(
     })
 }
 
-#[expect(clippy::too_many_lines, reason = "long but simple match")]
 pub(crate) fn any_diag_from_def_diagnostic(
     database: &dyn HirDatabase,
     def_diagnostic: &DefDiagnostic,

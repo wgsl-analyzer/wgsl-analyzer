@@ -148,20 +148,6 @@ impl<'database> Semantics<'database> {
     }
 
     #[must_use]
-    pub fn nearest_scope(
-        &self,
-        node: &SyntaxNode,
-    ) -> Option<ExprOrStatement> {
-        node
-            .siblings(syntax::Direction::Prev) // spellchecker:disable-line
-            .find_map(|sib| if ExprOrStatement::can_cast(sib.kind())  {
-                    ExprOrStatement::cast(sib)
-                } else {None}
-            )
-            .or_else(|| node.ancestors().find_map(ExprOrStatement::cast))
-    }
-
-    #[must_use]
     pub fn resolver(
         &self,
         file_id: EditionedFileId,
@@ -172,7 +158,7 @@ impl<'database> Semantics<'database> {
                 ChildContainer::DefinitionWithBodyId(
                     id @ DefinitionWithBodyId::Function(function_id),
                 ) => {
-                    if let Some(nearest_scope) = self.nearest_scope(source) {
+                    if let Some(nearest_scope) = nearest_scope(source) {
                         self.analyze(id).resolver_for(nearest_scope)
                     } else {
                         id.resolver(self.database)
@@ -278,6 +264,17 @@ impl<'database> Semantics<'database> {
         let id = ast_id_map.try_ast_id(&source.value)?;
         Some(Location::new(source.file_id, id).intern(self.database))
     }
+}
+
+#[must_use]
+pub fn nearest_scope(node: &SyntaxNode) -> Option<ExprOrStatement> {
+    node
+            .siblings(syntax::Direction::Prev) // spellchecker:disable-line
+            .find_map(|sib| if ExprOrStatement::can_cast(sib.kind())  {
+                    ExprOrStatement::cast(sib)
+                } else {None}
+            )
+            .or_else(|| node.ancestors().find_map(ExprOrStatement::cast))
 }
 
 fn is_node_in_body(
@@ -797,7 +794,7 @@ impl HasSource for Module {
 
 impl Module {
     pub fn items(
-        &self,
+        self,
         database: &dyn HirDatabase,
     ) -> Vec<ModuleDef> {
         let item_tree = database.item_tree(self.file_id);
@@ -809,7 +806,7 @@ impl Module {
     }
 
     pub fn diagnostics(
-        &self,
+        self,
         database: &dyn HirDatabase,
         config: &DiagnosticsConfig,
         accumulator: &mut Vec<AnyDiagnostic>,
@@ -887,7 +884,7 @@ impl Module {
         for diagnostic in &ItemScope::of(database, self.file_id).diagnostics {
             accumulator.push(diagnostics::any_diag_from_def_diagnostic(
                 database,
-                &diagnostic,
+                diagnostic,
                 self.file_id,
             ));
         }

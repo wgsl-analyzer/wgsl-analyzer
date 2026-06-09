@@ -49,12 +49,12 @@ impl ModuleData {
     /// Returns the parent and children of the module.
     /// Will return `None` for modules that are not a part of any package.
     pub fn of(
-        database: &dyn SourceDatabase,
+        db: &dyn SourceDatabase,
         file_id: EditionedFileId,
     ) -> Option<Arc<ModuleData>> {
-        let raw_file_id = file_id.file_id(database);
-        let package = file_package(database, raw_file_id)?;
-        let modules = modules_map_query(database, package);
+        let raw_file_id = file_id.file_id(db);
+        let package = file_package(db, raw_file_id)?;
+        let modules = modules_map_query(db, package);
 
         modules.modules.get(&file_id).cloned()
     }
@@ -99,7 +99,7 @@ impl<'db> ModulesMapBuilder<'db> {
         root: EditionedFileId,
         source_root: &'db SourceRoot,
     ) -> Self {
-        let edition: Edition = root.edition(database);
+        let edition = root.edition(database);
         let modules: FxIndexMap<_, _> = source_root
             .iter()
             .map(|file_id| {
@@ -115,11 +115,11 @@ impl<'db> ModulesMapBuilder<'db> {
             .map(|_| root_file_id);
 
         Self {
-            database,
             root,
             edition,
             modules,
             source_root,
+            database,
             package_wesl,
         }
     }
@@ -213,7 +213,7 @@ impl ModulesMap {
 
         let mut buffer = String::new();
         go(&mut buffer, self, "package", self.root);
-        return buffer;
+        buffer
     }
 
     #[must_use]
@@ -241,7 +241,7 @@ impl ModulesMap {
 
         let mut buffer = String::new();
         go(&mut buffer, self, "package", self.root, database);
-        return buffer;
+        buffer
     }
 }
 

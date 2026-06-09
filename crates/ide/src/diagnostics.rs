@@ -547,7 +547,7 @@ More complex operands must be this with parenthesized `()`"
                     let frange = original_file_range(database, id.file_id, source.syntax());
                     Diagnostic::new(
                         DiagnosticCode("26"),
-                        format!("too many leading `super` keywords"),
+                        "too many leading `super` keywords".to_owned(),
                         frange.range,
                     )
                 },
@@ -556,7 +556,7 @@ More complex operands must be this with parenthesized `()`"
                     let frange = original_file_range(database, id.file_id, source.syntax());
                     Diagnostic::new(
                         DiagnosticCode("27"),
-                        format!("file is detached. Include it with a wesl.toml"),
+                        "file is detached. Include it with a wesl.toml".to_owned(),
                         frange.range,
                     )
                 },

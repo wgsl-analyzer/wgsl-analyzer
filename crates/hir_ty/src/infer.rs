@@ -159,9 +159,7 @@ fn get_name_and_range(
             let full_range = TextRange::empty(TextSize::new(0));
 
             let name = module_data
-                .as_ref()
-                .map(|module| module.name.clone().unwrap_or_else(|| Name::from("package")))
-                .unwrap_or_else(|| Name::missing());
+                .as_ref().map_or_else(Name::missing, |module| module.name.clone().unwrap_or_else(|| Name::from("package")));
             (name, full_range)
         },
         ModuleDefinitionId::Function(id) => (
@@ -2398,7 +2396,7 @@ impl fmt::Display for TypeLoweringErrorKind {
             } => {
                 if *failed_segment == 0 {
                     let name = path.mod_path().display_iter().next().unwrap_or_default();
-                    write!(formatter, "`{}` not found in scope", name)
+                    write!(formatter, "`{name}` not found in scope")
                 } else {
                     let mut segments = path.mod_path().display_iter().skip(*failed_segment - 1);
                     let previous_name = segments.next().unwrap_or_default();

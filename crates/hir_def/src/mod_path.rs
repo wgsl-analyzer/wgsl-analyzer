@@ -74,7 +74,7 @@ impl ModPath {
         self.kind
     }
 
-    pub fn set_kind(
+    pub const fn set_kind(
         &mut self,
         kind: PathKind,
     ) {
@@ -173,7 +173,7 @@ impl fmt::Display for ModPath {
             return Ok(());
         };
         f.write_str(first_segment)?;
-        while let Some(segment) = segments.next() {
+        for segment in segments {
             f.write_str("::")?;
             f.write_str(segment)?;
         }
@@ -202,17 +202,17 @@ impl<'path> Iterator for ModPathDisplayIter<'path> {
                 self.segment_index += 1;
                 Some(name.as_str())
             },
+            PathKind::Super(0) => {
+                self.kind = PathKind::Plain;
+                Some("self")
+            },
+            PathKind::Super(1) => {
+                self.kind = PathKind::Plain;
+                Some("super")
+            },
             PathKind::Super(level) => {
-                if level == 0 {
-                    self.kind = PathKind::Plain;
-                    Some("self")
-                } else if level == 1 {
-                    self.kind = PathKind::Plain;
-                    Some("super")
-                } else {
-                    self.kind = PathKind::Super(level - 1);
-                    Some("super")
-                }
+                self.kind = PathKind::Super(level - 1);
+                Some("super")
             },
             PathKind::Package => {
                 self.kind = PathKind::Plain;
