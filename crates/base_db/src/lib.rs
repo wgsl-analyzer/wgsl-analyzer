@@ -458,7 +458,10 @@ impl DbPanicContext {
         Self
     }
 
-    fn with_ctx(function: impl FnOnce(&mut Vec<String>)) {
+    fn with_ctx<Function>(function: Function)
+    where
+        Function: FnOnce(&mut Vec<String>),
+    {
         thread_local! {
             static CTX: RefCell<Vec<String>> = const { RefCell::new(Vec::new()) };
         }
@@ -471,11 +474,13 @@ struct AllPackages {
     packages: std::sync::Arc<[Package]>,
 }
 
-pub fn set_all_packages_with_durability<Packages: IntoIterator<Item = Package>>(
+pub fn set_all_packages_with_durability<Packages>(
     database: &mut dyn salsa::Database,
     packages: Packages,
     durability: Durability,
-) {
+) where
+    Packages: IntoIterator<Item = Package>,
+{
     AllPackages::try_get(database)
         .unwrap_or_else(|| AllPackages::new(database, std::sync::Arc::default()))
         .set_packages(database)

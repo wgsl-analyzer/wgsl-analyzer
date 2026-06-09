@@ -32,10 +32,13 @@ impl AstIdMap {
     /// # Panics
     ///
     /// Panics if the item is not found in the map.
-    pub fn ast_id<N: AstNode>(
+    pub fn ast_id<Node>(
         &self,
-        item: &N,
-    ) -> FileAstId<N> {
+        item: &Node,
+    ) -> FileAstId<Node>
+    where
+        Node: AstNode,
+    {
         self.try_ast_id(item).unwrap_or_else(|| {
             panic!(
                 "Cannot find {:?} in AstIdMap:\n{:?}",
@@ -49,10 +52,13 @@ impl AstIdMap {
     }
 
     /// Returns an `AstId` for the given item.
-    pub fn try_ast_id<N: AstNode>(
+    pub fn try_ast_id<Node>(
         &self,
-        item: &N,
-    ) -> Option<FileAstId<N>> {
+        item: &Node,
+    ) -> Option<FileAstId<Node>>
+    where
+        Node: AstNode,
+    {
         let pointer = SyntaxNodePointer::new(item.syntax());
         let (id, _) = self.arena.iter().find(|(_id, node)| **node == pointer)?;
 
@@ -68,11 +74,14 @@ impl AstIdMap {
     ///
     /// Panics if `N` cannot be cast to the [`syntax::SyntaxKind`].
     #[must_use]
-    pub fn get<N: AstNode>(
+    pub fn get<Node>(
         &self,
-        id: FileAstId<N>,
-    ) -> AstPointer<N> {
-        self.arena[id.id].clone().cast::<N>().unwrap()
+        id: FileAstId<Node>,
+    ) -> AstPointer<Node>
+    where
+        Node: AstNode,
+    {
+        self.arena[id.id].clone().cast::<Node>().unwrap()
     }
 
     fn alloc(
@@ -84,12 +93,12 @@ impl AstIdMap {
 }
 
 /// `AstId` points to an AST node in a specific file.
-pub struct FileAstId<N: AstNode> {
+pub struct FileAstId<Node: AstNode> {
     id: Idx<SyntaxNodePointer>,
-    _marker: PhantomData<fn() -> N>,
+    _marker: PhantomData<fn() -> Node>,
 }
 
-impl<N: AstNode> PartialEq for FileAstId<N> {
+impl<Node: AstNode> PartialEq for FileAstId<Node> {
     fn eq(
         &self,
         other: &Self,
@@ -98,25 +107,27 @@ impl<N: AstNode> PartialEq for FileAstId<N> {
     }
 }
 
-impl<N: AstNode> Eq for FileAstId<N> {}
-impl<N: AstNode> std::hash::Hash for FileAstId<N> {
-    fn hash<H: std::hash::Hasher>(
+impl<Node: AstNode> Eq for FileAstId<Node> {}
+impl<Node: AstNode> std::hash::Hash for FileAstId<Node> {
+    fn hash<Hasher>(
         &self,
-        state: &mut H,
-    ) {
+        state: &mut Hasher,
+    ) where
+        Hasher: std::hash::Hasher,
+    {
         self.id.hash(state);
     }
 }
 
-impl<N: AstNode> Clone for FileAstId<N> {
+impl<Node: AstNode> Clone for FileAstId<Node> {
     fn clone(&self) -> Self {
         *self
     }
 }
 
-impl<N: AstNode> Copy for FileAstId<N> {}
+impl<Node: AstNode> Copy for FileAstId<Node> {}
 
-impl<N: AstNode> fmt::Debug for FileAstId<N> {
+impl<Node: AstNode> fmt::Debug for FileAstId<Node> {
     fn fmt(
         &self,
         formatter: &mut fmt::Formatter<'_>,
@@ -128,13 +139,14 @@ impl<N: AstNode> fmt::Debug for FileAstId<N> {
     }
 }
 
-impl<N: AstNode> FileAstId<N> {
+impl<SourceNode: AstNode> FileAstId<SourceNode> {
     // Can't make this a From implementation because of coherence
     #[inline]
     #[must_use]
-    pub fn upcast<M: AstNode>(self) -> FileAstId<M>
+    pub fn upcast<TargetNode>(self) -> FileAstId<TargetNode>
     where
-        N: Into<M>,
+        SourceNode: Into<TargetNode>,
+        TargetNode: AstNode,
     {
         FileAstId {
             id: self.id,

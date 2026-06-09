@@ -86,10 +86,12 @@ impl<T> LazyProperty<T> {
 }
 
 impl hash::Hash for InlayHint {
-    fn hash<H: hash::Hasher>(
+    fn hash<Hasher>(
         &self,
-        state: &mut H,
-    ) {
+        state: &mut Hasher,
+    ) where
+        Hasher: hash::Hasher,
+    {
         self.range.hash(state);
         self.position.hash(state);
         self.pad_left.hash(state);
@@ -129,11 +131,14 @@ pub struct InlayHintLabel {
 }
 
 impl InlayHintLabel {
-    pub fn simple<Stringy: Into<String>>(
+    pub fn simple<Stringy>(
         stringy: Stringy,
         tooltip: Option<LazyProperty<InlayTooltip>>,
         linked_location: Option<LazyProperty<FileRange>>,
-    ) -> Self {
+    ) -> Self
+    where
+        Stringy: Into<String>,
+    {
         Self {
             parts: smallvec![InlayHintLabelPart {
                 text: stringy.into(),
@@ -267,10 +272,12 @@ pub struct InlayHintLabelPart {
 }
 
 impl hash::Hash for InlayHintLabelPart {
-    fn hash<H: hash::Hasher>(
+    fn hash<Hasher>(
         &self,
-        state: &mut H,
-    ) {
+        state: &mut Hasher,
+    ) where
+        Hasher: hash::Hasher,
+    {
         self.text.hash(state);
         self.linked_location.is_some().hash(state);
         self.tooltip.is_some().hash(state);

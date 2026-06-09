@@ -48,8 +48,8 @@ fn foo() {
 
     let new_text = "
 fn foo() {
-    let a = 1 
-    + 
+    let a = 1
+    +
     1;
 }";
 
@@ -190,12 +190,14 @@ fn baz() -> i32 {
 /// Executes a function and checks if the most important events happened exactly n times.
 /// Also checks the full list of events, which may change as the implementation changes.
 #[expect(clippy::needless_pass_by_value, reason = "matches expect! macro")]
-fn execute_assert_events(
+fn execute_assert_events<Callback>(
     database: &TestDatabase,
-    callback: impl FnOnce(),
+    callback: Callback,
     required: &[(&str, usize)],
     expect: Expect,
-) {
+) where
+    Callback: FnOnce(),
+{
     let (executed, events) = database.log_executed(callback);
     expect.assert_debug_eq(&executed);
     for (event, count) in required {

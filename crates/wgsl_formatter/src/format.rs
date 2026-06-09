@@ -155,14 +155,17 @@ pub(super) fn format_parameters(
 ///
 /// Normalizes whitespace between items, inserts missing commas, and applies
 /// the trailing-comma policy on the last item.
-pub(super) fn format_param_list<T: AstNode>(
+pub(super) fn format_param_list<T>(
     parameters: syntax::AstChildren<T>,
     count: usize,
     has_newline: bool,
     n_indentations: usize,
     trailing_comma_policy: crate::Policy,
     indent_symbol: &str,
-) -> Option<()> {
+) -> Option<()>
+where
+    T: AstNode,
+{
     let mut first = true;
     for (index, parameter) in parameters.enumerate() {
         let last = index == count - 1;

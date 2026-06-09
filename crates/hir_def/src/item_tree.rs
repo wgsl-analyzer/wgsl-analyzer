@@ -74,10 +74,13 @@ pub struct ImportStatement {
 
 impl ImportStatement {
     /// Expands the `UseTree` into individually imported `FlatImport`s.
-    pub fn expand<T, Callback: FnMut(FlatImport) -> ControlFlow<T>>(
+    pub fn expand<T, Callback>(
         &self,
         mut callback: Callback,
-    ) -> Option<T> {
+    ) -> Option<T>
+    where
+        Callback: FnMut(FlatImport) -> ControlFlow<T>,
+    {
         self.tree
             .expand_impl(ModPath::from_kind(self.kind), &mut callback)
     }
@@ -118,11 +121,14 @@ pub enum ImportTree {
 }
 
 impl ImportTree {
-    fn expand_impl<T>(
+    fn expand_impl<T, Function>(
         &self,
         mut prefix: ModPath,
-        callback: &mut impl FnMut(FlatImport) -> ControlFlow<T>,
-    ) -> Option<T> {
+        callback: &mut Function,
+    ) -> Option<T>
+    where
+        Function: FnMut(FlatImport) -> ControlFlow<T>,
+    {
         match self {
             Self::Path { name, item } => {
                 prefix.push_segment(name.clone());

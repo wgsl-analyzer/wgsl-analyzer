@@ -31,8 +31,11 @@ pub(crate) const fn invalid_params_error(message: String) -> LspError {
     }
 }
 
-pub(crate) fn notification_is<N: LspNotification>(notification: &ServerNotification) -> bool {
-    notification.method.as_str() == N::METHOD.as_str()
+pub(crate) fn notification_is<Notification>(notification: &ServerNotification) -> bool
+where
+    Notification: LspNotification,
+{
+    notification.method.as_str() == Notification::METHOD.as_str()
 }
 
 #[derive(Debug, Eq, PartialEq)]

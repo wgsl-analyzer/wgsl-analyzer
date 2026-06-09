@@ -45,22 +45,22 @@ fn write_pretty_module_item(
         ModuleItemId::GlobalVariable(id) => {
             let variable = &module[id];
             print_ast_id(buffer, id);
-            _ = write!(buffer, "var {} = _;", &variable.name.0);
+            _ = write!(buffer, "var {} = _;", variable.name.0);
         },
         ModuleItemId::GlobalConstant(id) => {
             let constant = &module[id];
             print_ast_id(buffer, id);
-            _ = write!(buffer, "const {} = _;", &constant.name.0);
+            _ = write!(buffer, "const {} = _;", constant.name.0);
         },
         ModuleItemId::Override(id) => {
             let override_declaration = &module[id];
             print_ast_id(buffer, id);
-            _ = write!(buffer, "override {} = _;", &override_declaration.name.0);
+            _ = write!(buffer, "override {} = _;", override_declaration.name.0);
         },
         ModuleItemId::TypeAlias(id) => {
             let type_alias = &module[id];
             print_ast_id(buffer, id);
-            _ = write!(buffer, "alias {} = _;", &type_alias.name.0);
+            _ = write!(buffer, "alias {} = _;", type_alias.name.0);
         },
         ModuleItemId::GlobalAssertStatement(id) => {
             let const_assert = &module[id];
@@ -119,10 +119,12 @@ fn write_pretty_import_tree(
     }
 }
 
-fn print_ast_id<T: syntax::AstNode>(
+fn print_ast_id<Node>(
     buffer: &mut String,
-    ast_id: FileAstId<T>,
-) {
+    ast_id: FileAstId<Node>,
+) where
+    Node: syntax::AstNode,
+{
     writeln!(buffer, "// {ast_id:?}").unwrap();
 }
 

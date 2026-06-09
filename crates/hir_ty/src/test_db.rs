@@ -137,19 +137,25 @@ impl SourceDatabase for TestDatabase {
 }
 
 impl TestDatabase {
-    pub(crate) fn log(
+    pub(crate) fn log<Callback>(
         &self,
-        callback: impl FnOnce(),
-    ) -> Vec<salsa::Event> {
+        callback: Callback,
+    ) -> Vec<salsa::Event>
+    where
+        Callback: FnOnce(),
+    {
         *self.events.lock().unwrap() = Some(Vec::new());
         callback();
         self.events.lock().unwrap().take().unwrap()
     }
 
-    pub(crate) fn log_executed(
+    pub(crate) fn log_executed<Callback>(
         &self,
-        callback: impl FnOnce(),
-    ) -> (Vec<String>, Vec<salsa::Event>) {
+        callback: Callback,
+    ) -> (Vec<String>, Vec<salsa::Event>)
+    where
+        Callback: FnOnce(),
+    {
         let events = self.log(callback);
         let executed = events
             .iter()
