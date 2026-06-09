@@ -316,7 +316,7 @@ impl Analysis {
     pub fn view_module_graph(
         &self,
         file_id: FileId,
-    ) -> Cancellable<String> {
+    ) -> Cancellable<Option<String>> {
         self.with_db(|database| view_module_graph::view_module_graph(database, file_id))
     }
 

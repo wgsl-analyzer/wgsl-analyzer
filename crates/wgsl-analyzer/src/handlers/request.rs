@@ -35,7 +35,7 @@ use crate::{
 pub(crate) fn handle_view_module_graph(
     snap: GlobalStateSnapshot,
     parameters: ViewModuleGraphParameters,
-) -> anyhow::Result<String> {
+) -> anyhow::Result<Option<String>> {
     let _p = tracing::info_span!("handle_view_module_graph").entered();
     let file_id = try_default!(from_proto::file_id(&snap, &parameters.text_document.uri)?);
     let dot = snap.analysis.view_module_graph(file_id)?;

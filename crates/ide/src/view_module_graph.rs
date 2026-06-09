@@ -8,6 +8,7 @@ use hir_def::{
     name_resolution::{ModuleData, modules_map_query},
 };
 use ide_db::RootDatabase;
+use triomphe::Arc;
 use vfs::FileId;
 
 /// # Feature: View Module Graph
@@ -24,26 +25,10 @@ use vfs::FileId;
 pub(crate) fn view_module_graph(
     database: &RootDatabase,
     file_id: FileId,
-) -> String {
+) -> Option<String> {
     // TODO: This only renders the children. It should render an edge for each import and inline usage of another module.
-    let package = file_package(database, file_id);
-    let modules_to_render = if let Some(package) = package {
-        Cow::Borrowed(&modules_map_query(database, package).modules)
-    } else {
-        let mut modules_to_render = FxIndexMap::default();
-        let origin = EditionedFileId::from_file(database, file_id);
-        modules_to_render.insert(
-            origin,
-            ModuleData {
-                name: Some(Name::from("[standalone file]")),
-                origin,
-                parent: None,
-                children: FxIndexMap::default(),
-            },
-        );
-        Cow::Owned(modules_to_render)
-    };
-
+    let package = file_package(database, file_id)?;
+    let modules_to_render = &modules_map_query(database, package).modules;
     let graph = DotModuleGraph {
         database,
         modules_to_render,
@@ -51,12 +36,12 @@ pub(crate) fn view_module_graph(
 
     let mut dot = Vec::new();
     dot::render(&graph, &mut dot).unwrap();
-    String::from_utf8(dot).unwrap()
+    Some(String::from_utf8(dot).unwrap())
 }
 
 struct DotModuleGraph<'db> {
     database: &'db RootDatabase,
-    modules_to_render: Cow<'db, FxIndexMap<EditionedFileId, ModuleData>>,
+    modules_to_render: &'db FxIndexMap<EditionedFileId, Arc<ModuleData>>,
 }
 
 type Edge<'edge> = (EditionedFileId, EditionedFileId);
@@ -66,7 +51,6 @@ impl<'edge> dot::GraphWalk<'edge, EditionedFileId, Edge<'edge>> for DotModuleGra
         let modules: FxIndexMap<_, _> = self
             .modules_to_render
             .clone()
-            .into_owned()
             .sorted_by(|file_a, module_a, file_b, module_b| {
                 if let Some(name) = &module_a.name {
                     module_a.name.cmp(&module_b.name)
