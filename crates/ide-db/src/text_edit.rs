@@ -145,7 +145,7 @@ impl TextEdit {
             insert_delete.apply(text);
         }
 
-        debug_assert!(TextSize::of(&*text) == total_len);
+        debug_assert_eq!(TextSize::of(&*text), total_len);
     }
 
     pub fn union(

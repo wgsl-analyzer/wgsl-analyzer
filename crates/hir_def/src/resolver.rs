@@ -116,10 +116,12 @@ impl Resolver {
     }
 
     /// Calls the passed closure `function` on all names in scope.
-    pub fn process_all_names<Function: FnMut(Name, ScopeDef)>(
+    pub fn process_all_names<Function>(
         &self,
         mut function: Function,
-    ) {
+    ) where
+        Function: FnMut(Name, ScopeDef),
+    {
         self.scopes().for_each(|scope| match scope {
             Scope::Module(scope) => {
                 scope

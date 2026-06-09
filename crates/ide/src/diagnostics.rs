@@ -128,13 +128,15 @@ use naga27::Naga27;
 use naga28::Naga28;
 use naga29::Naga29;
 
-fn emit<Error: NagaError>(
+fn emit<Error>(
     database: &dyn HirDatabase,
     error: &Error,
     file_id: EditionedFileId,
     full_range: TextRange,
     accumulator: &mut Vec<AnyDiagnostic>,
-) {
+) where
+    Error: NagaError,
+{
     let message = error_message_cause_chain(&error);
     let original_range = |range: ops::Range<usize>| {
         TextRange::new(
@@ -169,21 +171,23 @@ fn emit<Error: NagaError>(
     });
 }
 
-fn naga_diagnostics<N: Naga>(
+fn naga_diagnostics<Naga>(
     database: &dyn HirDatabase,
     file_id: EditionedFileId,
     config: &DiagnosticsConfig,
     accumulator: &mut Vec<AnyDiagnostic>,
-) {
+) where
+    Naga: self::Naga,
+{
     let source: &str = database.file_text(file_id.file_id(database)).text(database);
     let full_range = TextRange::up_to(TextSize::of(source));
 
-    match N::parse(source) {
+    match Naga::parse(source) {
         Ok(module) => {
             if !config.naga_validation_errors {
                 return;
             }
-            if let Err(error) = N::validate(&module) {
+            if let Err(error) = Naga::validate(&module) {
                 emit(database, &error, file_id, full_range, accumulator);
             }
         },

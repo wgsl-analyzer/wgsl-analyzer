@@ -10,11 +10,13 @@ pub enum PrecedenceDiagnostic {
     SequencesAllowed(ExpressionId, BinaryOperation),
 }
 
-pub fn collect<Function: FnMut(PrecedenceDiagnostic)>(
+pub fn collect<Function>(
     database: &dyn HirDatabase,
     body: DefinitionWithBodyId,
     mut diagnostic_builder: Function,
-) {
+) where
+    Function: FnMut(PrecedenceDiagnostic),
+{
     let (body, _) = database.body_with_source_map(body);
 
     for (_, expression) in body.store.exprs.iter() {

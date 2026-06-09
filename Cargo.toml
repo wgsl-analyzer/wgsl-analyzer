@@ -206,6 +206,8 @@ needless_raw_strings = "allow"
 needless_raw_string_hashes = "allow"
 # not useful
 shadow_same = "allow"
+# do not care
+inline_modules = "allow"
 # TODOs
 missing_docs_in_private_items = "allow"
 module_name_repetitions = "allow"

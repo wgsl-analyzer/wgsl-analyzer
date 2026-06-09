@@ -255,7 +255,7 @@ fn completion_item(
                 text_edit = Some(if indel.delete == source_range {
                     self::completion_text_edit(line_index, insert_replace_support, indel.clone())
                 } else {
-                    assert!(source_range.end() == indel.delete.end());
+                    assert_eq!(source_range.end(), indel.delete.end());
                     let range1 = TextRange::new(indel.delete.start(), source_range.start());
                     let range2 = source_range;
                     let indel1 = InsertDelete::delete(range1);

@@ -142,28 +142,33 @@ impl<'global_state> RequestDispatcher<'global_state> {
 
     /// Dispatches a non-latency-sensitive request onto the thread pool. When the VFS is marked not
     /// ready this will return a `default` constructed [`R::Result`].
-    pub(crate) fn on_with_vfs_default<R>(
+    pub(crate) fn on_with_vfs_default<Request, GetDefault>(
         &mut self,
-        function: fn(GlobalStateSnapshot, R::Params) -> anyhow::Result<R::Result>,
-        default: impl FnOnce() -> R::Result,
+        function: fn(GlobalStateSnapshot, Request::Params) -> anyhow::Result<Request::Result>,
+        default: GetDefault,
         on_cancelled: fn() -> ResponseError,
     ) -> &mut Self
     where
-        R: LspRequest<
+        Request: LspRequest<
                 Params: DeserializeOwned + panic::UnwindSafe + Send + fmt::Debug,
                 Result: Serialize,
             > + 'static,
+        GetDefault: FnOnce() -> Request::Result,
     {
         if !self.global_state.vfs_done {
             if let Some(ServerRequest { id, .. }) = self
                 .request
-                .take_if(|request| request.method.as_str() == R::METHOD.as_str())
+                .take_if(|request| request.method.as_str() == Request::METHOD.as_str())
             {
                 self.global_state.respond(Response::new_ok(id, default()));
             }
             return self;
         }
-        self.on_with_thread_intent::<false, false, R>(ThreadIntent::Worker, function, on_cancelled)
+        self.on_with_thread_intent::<false, false, Request>(
+            ThreadIntent::Worker,
+            function,
+            on_cancelled,
+        )
     }
 
     /// Formatting requests should never block on waiting a for task thread to open up, editors will wait
@@ -372,29 +377,30 @@ pub(crate) struct NotificationDispatcher<'global_state> {
 }
 
 impl NotificationDispatcher<'_> {
-    pub(crate) fn on_sync_mut<N>(
+    pub(crate) fn on_sync_mut<Notification>(
         &mut self,
-        function: fn(&mut GlobalState, N::Params) -> Result<()>,
+        function: fn(&mut GlobalState, Notification::Params) -> Result<()>,
     ) -> &mut Self
     where
-        N: LspNotification + 'static,
-        N::Params: DeserializeOwned + Send + 'static,
+        Notification: LspNotification + 'static,
+        Notification::Params: DeserializeOwned + Send + 'static,
     {
         let Some(notification) = self.notification.take() else {
             return self;
         };
-        let parameters = match notification.extract::<N::Params>(N::METHOD.as_str()) {
-            Ok(notification) => notification,
-            Err(ExtractError::JsonError { method, error }) => {
-                panic!("Invalid request\nMethod: {method}\n error: {error}")
-            },
-            Err(ExtractError::MethodMismatch(notification)) => {
-                self.notification = Some(notification);
-                return self;
-            },
-        };
+        let parameters =
+            match notification.extract::<Notification::Params>(Notification::METHOD.as_str()) {
+                Ok(notification) => notification,
+                Err(ExtractError::JsonError { method, error }) => {
+                    panic!("Invalid request\nMethod: {method}\n error: {error}")
+                },
+                Err(ExtractError::MethodMismatch(notification)) => {
+                    self.notification = Some(notification);
+                    return self;
+                },
+            };
         if let Err(error) = function(self.global_state, parameters) {
-            tracing::error!(handler = %N::METHOD, error = %error, "notification handler failed");
+            tracing::error!(handler = %Notification::METHOD, error = %error, "notification handler failed");
         }
         self
     }

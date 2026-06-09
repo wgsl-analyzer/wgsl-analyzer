@@ -393,15 +393,17 @@ impl GlobalState {
         }
     }
 
-    pub(crate) fn send_request<R: LspRequest>(
+    pub(crate) fn send_request<Request>(
         &mut self,
-        parameters: R::Params,
+        parameters: Request::Params,
         handler: RequestHandler,
-    ) {
+    ) where
+        Request: LspRequest,
+    {
         let request =
             self.request_queue
                 .outgoing
-                .register(R::METHOD.to_string(), parameters, handler);
+                .register(Request::METHOD.to_string(), parameters, handler);
         self.send(request.into());
     }
 
@@ -417,11 +419,13 @@ impl GlobalState {
         handler(self, response);
     }
 
-    pub(crate) fn send_notification<N: LspNotification>(
+    pub(crate) fn send_notification<Notification>(
         &self,
-        parameters: N::Params,
-    ) {
-        let notification = ServerNotification::new(N::METHOD.to_string(), parameters);
+        parameters: Notification::Params,
+    ) where
+        Notification: LspNotification,
+    {
+        let notification = ServerNotification::new(Notification::METHOD.to_string(), parameters);
         self.send(notification.into());
     }
 

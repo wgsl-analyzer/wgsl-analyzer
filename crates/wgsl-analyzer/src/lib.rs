@@ -25,10 +25,14 @@ use serde::de::DeserializeOwned;
 
 pub use crate::{lsp::capabilities::server_capabilities, main_loop::main_loop, version::version};
 
-pub fn from_json<T: DeserializeOwned, Displayable: fmt::Display>(
+pub fn from_json<T, Displayable>(
     what: Displayable,
     json: &serde_json::Value,
-) -> Result<T> {
+) -> Result<T>
+where
+    T: DeserializeOwned,
+    Displayable: fmt::Display,
+{
     serde_json::from_value(json.clone())
         .map_err(|error| anyhow::anyhow!("Failed to deserialize {what}: {error}; {json}"))
 }
