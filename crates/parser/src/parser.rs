@@ -107,10 +107,22 @@ impl Cst<'_> {
 
 impl Parser<'_> {
     fn is_func_call(&self) -> bool {
+        // Skip past paths like `foo::bar::baz()`
+        let mut i = 1;
+        while self.peek(i) == Token::ColonColon {
+            i += 1;
+            if matches!(self.peek(i), Token::Identifier | Token::Super) {
+                i += 1;
+            } else {
+                break;
+            }
+        }
+
+        // Find the `(` or `<` of a function call
         matches!(
-            self.peek(1),
+            self.peek(i),
             Token::ParenthesisLeft | Token::LessThan | Token::TemplateStart
-        ) && self.peek(2) != Token::LessThan
+        ) && self.peek(i + 1) != Token::LessThan
     }
 }
 
