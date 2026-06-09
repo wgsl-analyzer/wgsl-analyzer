@@ -184,7 +184,6 @@ impl ModCollector<'_> {
             PathKind::Super(levels) => {
                 for _ in 0..levels {
                     let module_data = ModuleData::of(self.database, file_id)
-                        .as_ref()
                         .ok_or(DefDiagnostic::detached_file(file_id, location))?;
                     if let Some(parent) = module_data.parent {
                         file_id = parent;
@@ -221,7 +220,6 @@ impl ModCollector<'_> {
             }
             // Otherwise go to the child file
             let module_data = ModuleData::of(self.database, file_id)
-                .as_ref()
                 .ok_or(DefDiagnostic::detached_file(file_id, location))?;
             if let Some(child_module) = module_data.children.get(segment) {
                 file_id = *child_module;

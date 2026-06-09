@@ -1,6 +1,7 @@
 use base_db::{EditionedFileId, Package, SourceDatabase, SourceRoot, file_package};
 use std::fmt::Write as _;
 use syntax::Edition;
+use triomphe::Arc;
 use vfs::FileId;
 
 use crate::{FxIndexMap, database::DefDatabase, item_scope::ItemScope, item_tree::Name};
@@ -13,7 +14,7 @@ use crate::{FxIndexMap, database::DefDatabase, item_scope::ItemScope, item_tree:
 pub struct ModulesMap {
     pub root: EditionedFileId,
     /// All reachable modules in the project.
-    pub modules: FxIndexMap<EditionedFileId, ModuleData>,
+    pub modules: FxIndexMap<EditionedFileId, Arc<ModuleData>>,
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -43,19 +44,18 @@ impl ModuleData {
 
 #[salsa::tracked]
 impl ModuleData {
-    #[salsa::tracked(returns(ref))]
+    #[salsa::tracked]
     // TODO: Look into the incrementality of this
     /// Returns the parent and children of the module.
     /// Will return `None` for modules that are not a part of any package.
     pub fn of(
         database: &dyn SourceDatabase,
         file_id: EditionedFileId,
-    ) -> Option<ModuleData> {
+    ) -> Option<Arc<ModuleData>> {
         let raw_file_id = file_id.file_id(database);
         let package = file_package(database, raw_file_id)?;
         let modules = modules_map_query(database, package);
 
-        // TODO: Is cloned the right thing to use here?
         modules.modules.get(&file_id).cloned()
     }
 }
@@ -76,71 +76,83 @@ pub fn modules_map_query(
 
     let root = EditionedFileId::new(database, package_data.root_file_id, package_data.edition);
 
-    // package.wesl at the root gets special treatment. It assumes that the children are adjacent to it.
-    let package_wesl = source_root
-        .path_for_file(package_data.root_file_id)
-        .filter(|path| path.name_and_extension() == Some(("package", Some("wesl"))))
-        .map(|_| package_data.root_file_id);
-
-    let modules: FxIndexMap<_, _> = source_root
-        .iter()
-        .map(|file_id| {
-            let file_id = EditionedFileId::new(database, file_id, package_data.edition);
-            (file_id, ModuleData::new(file_id))
-        })
-        .collect();
-
-    let mut modules_map = ModulesMap { root, modules };
+    let mut builder = ModulesMapBuilder::new(database, root, &source_root);
     for file_id in source_root.iter() {
-        modules_map.add_file(
-            database,
-            file_id,
-            package_data.edition,
-            &source_root,
-            package_wesl,
-        );
+        builder.add_file(file_id);
     }
-    // Clear the name of the root module, since we only want names that can be used in shader code
-    modules_map.modules[&root].name = None;
-
-    modules_map.keep_reachable();
-
-    modules_map
+    builder.build()
 }
 
-impl ModulesMap {
+struct ModulesMapBuilder<'db> {
+    root: EditionedFileId,
+    edition: Edition,
+    modules: FxIndexMap<EditionedFileId, ModuleData>,
+    source_root: &'db SourceRoot,
+    database: &'db dyn SourceDatabase,
+    /// package.wesl at the root gets special treatment. It assumes that the children are adjacent to it.
+    package_wesl: Option<FileId>,
+}
+
+impl<'db> ModulesMapBuilder<'db> {
+    fn new(
+        database: &'db dyn SourceDatabase,
+        root: EditionedFileId,
+        source_root: &'db SourceRoot,
+    ) -> Self {
+        let edition: Edition = root.edition(database);
+        let modules: FxIndexMap<_, _> = source_root
+            .iter()
+            .map(|file_id| {
+                let file_id = EditionedFileId::new(database, file_id, edition);
+                (file_id, ModuleData::new(file_id))
+            })
+            .collect();
+
+        let root_file_id = root.file_id(database);
+        let package_wesl = source_root
+            .path_for_file(root_file_id)
+            .filter(|path| path.name_and_extension() == Some(("package", Some("wesl"))))
+            .map(|_| root_file_id);
+
+        Self {
+            database,
+            root,
+            edition,
+            modules,
+            source_root,
+            package_wesl,
+        }
+    }
+
     fn add_file(
         &mut self,
-        database: &dyn SourceDatabase,
         raw_file_id: FileId,
-        edition: Edition,
-        source_root: &SourceRoot,
-        package_wesl: Option<FileId>,
     ) -> Option<()> {
-        if Some(raw_file_id) == package_wesl {
+        if Some(raw_file_id) == self.package_wesl {
             return Some(());
         }
 
-        let path = source_root.path_for_file(raw_file_id)?;
+        let path = self.source_root.path_for_file(raw_file_id)?;
         let (name, extension) = path.name_and_extension()?;
         if !matches!(extension, Some("wesl" | "wgsl")) {
             return None;
         }
         let name = Name::from(name);
 
-        let file_id = EditionedFileId::new(database, raw_file_id, edition);
+        let file_id = EditionedFileId::new(self.database, raw_file_id, self.edition);
         self.modules[&file_id].name = Some(name.clone());
 
         // TODO: This cannot account for the case where a module is missing. After all, missing modules do not have a file id.
         // > File not found: We assume an empty module as the current module, and continue with that.
         // > https://github.com/wgsl-tooling-wg/wesl-spec/blob/main/Imports.md#import-resolution-algorithm
 
-        let parent = package_wesl
-            .filter(|id| get_package_parent(path, source_root) == Some(*id))
-            .or_else(|| get_parent(path, source_root));
+        let parent = self
+            .package_wesl
+            .filter(|id| get_package_parent(path, self.source_root) == Some(*id))
+            .or_else(|| get_parent(path, self.source_root));
 
         if let Some(parent_id) = parent {
-            let parent_id = EditionedFileId::new(database, parent_id, edition);
+            let parent_id = EditionedFileId::new(self.database, parent_id, self.edition);
             // .wesl files will shadow .wgsl files
             let parent_module = &mut self.modules[&parent_id];
             let is_slot_empty = !parent_module.children.contains_key(&name);
@@ -152,25 +164,35 @@ impl ModulesMap {
         Some(())
     }
 
-    fn keep_reachable(&mut self) {
-        fn keep_children(
+    fn build(mut self) -> ModulesMap {
+        // Clear the name of the root module, since we only want names that can be used in shader code
+        self.modules[&self.root].name = None;
+
+        fn insert_reachable(
             root: EditionedFileId,
             old_modules: &mut FxIndexMap<EditionedFileId, ModuleData>,
-            new_modules: &mut FxIndexMap<EditionedFileId, ModuleData>,
+            new_modules: &mut FxIndexMap<EditionedFileId, Arc<ModuleData>>,
         ) {
             let module = old_modules.swap_remove(&root).unwrap();
             for child_id in module.children.values() {
-                keep_children(*child_id, old_modules, new_modules);
+                insert_reachable(*child_id, old_modules, new_modules);
             }
-            new_modules.insert(root, module);
+            new_modules.insert(root, Arc::new(module));
         }
         let mut new_modules = FxIndexMap::default();
-        keep_children(self.root, &mut self.modules, &mut new_modules);
+        new_modules.reserve_exact(self.modules.len());
+        insert_reachable(self.root, &mut self.modules, &mut new_modules);
 
-        self.modules = new_modules;
-        self.modules.shrink_to_fit();
+        new_modules.shrink_to_fit();
+
+        ModulesMap {
+            root: self.root,
+            modules: new_modules,
+        }
     }
+}
 
+impl ModulesMap {
     #[must_use]
     pub fn dump(&self) -> String {
         fn go(

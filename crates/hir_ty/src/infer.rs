@@ -2358,7 +2358,10 @@ pub struct TypeLoweringError {
 #[derive(PartialEq, Eq, Debug, Clone)]
 pub enum TypeLoweringErrorKind {
     UnresolvedName(Name),
-    UnresolvedPath(Path),
+    UnresolvedPath {
+        path: Path,
+        failed_segment: usize,
+    },
     UnexpectedTemplateArgument(String),
     UnexpectedModule(Path),
     MissingTemplateArgument(String),
@@ -2389,8 +2392,19 @@ impl fmt::Display for TypeLoweringErrorKind {
             Self::UnresolvedName(name) => {
                 write!(formatter, "`{}` not found in scope", name.as_str())
             },
-            Self::UnresolvedPath(path) => {
-                write!(formatter, "`{}` not found in scope", path.mod_path())
+            Self::UnresolvedPath {
+                path,
+                failed_segment,
+            } => {
+                if *failed_segment == 0 {
+                    let name = path.mod_path().display_iter().next().unwrap_or_default();
+                    write!(formatter, "`{}` not found in scope", name)
+                } else {
+                    let mut segments = path.mod_path().display_iter().skip(*failed_segment - 1);
+                    let previous_name = segments.next().unwrap_or_default();
+                    let name = segments.next().unwrap_or_default();
+                    write!(formatter, "`{name}` not found in `{previous_name}`")
+                }
             },
             Self::WgslError(error) => {
                 write!(formatter, "{error}")
@@ -2544,29 +2558,40 @@ impl<'database> TypeLoweringContext<'database> {
     ) -> Result<Lowered, TypeLoweringError> {
         let resolved_type = self.resolver.resolve(self.database, path);
 
-        if resolved_type.is_some() {
+        if resolved_type.is_ok() {
             self.expect_no_template(template_parameters);
         }
 
         match resolved_type {
-            Some(ResolveKind::Module(module_id)) => Err(TypeLoweringError {
+            Ok(ResolveKind::Module(module_id)) => Err(TypeLoweringError {
                 container: type_container,
                 kind: TypeLoweringErrorKind::UnexpectedModule(path.clone()),
             }),
-            Some(ResolveKind::TypeAlias(id)) => {
+            Ok(ResolveKind::TypeAlias(id)) => {
                 Ok(Lowered::Type(self.database.type_alias_type(id).0))
             },
-            Some(ResolveKind::Struct(id)) => Ok(Lowered::Type(
+            Ok(ResolveKind::Struct(id)) => Ok(Lowered::Type(
                 self.database.intern_type(TypeKind::Struct(id)),
             )),
-            Some(ResolveKind::Function(id)) => {
-                Ok(Lowered::Function(self.database.function_type(id)))
-            },
-            Some(ResolveKind::GlobalConstant(id)) => Ok(Lowered::GlobalConstant(id)),
-            Some(ResolveKind::GlobalVariable(id)) => Ok(Lowered::GlobalVariable(id)),
-            Some(ResolveKind::Override(id)) => Ok(Lowered::Override(id)),
-            Some(ResolveKind::Local(local)) => Ok(Lowered::Local(local)),
-            None => self.try_lower_predeclared(type_container, path, template_parameters),
+            Ok(ResolveKind::Function(id)) => Ok(Lowered::Function(self.database.function_type(id))),
+            Ok(ResolveKind::GlobalConstant(id)) => Ok(Lowered::GlobalConstant(id)),
+            Ok(ResolveKind::GlobalVariable(id)) => Ok(Lowered::GlobalVariable(id)),
+            Ok(ResolveKind::Override(id)) => Ok(Lowered::Override(id)),
+            Ok(ResolveKind::Local(local)) => Ok(Lowered::Local(local)),
+            Err(diagnostic) => path
+                .mod_path()
+                .segments()
+                .first()
+                .and_then(|predeclared_name| {
+                    self.lower_if_predeclared(type_container, predeclared_name, template_parameters)
+                })
+                .ok_or_else(|| TypeLoweringError {
+                    container: type_container,
+                    kind: TypeLoweringErrorKind::UnresolvedPath {
+                        path: path.clone(),
+                        failed_segment: diagnostic.failed_segment,
+                    },
+                }),
         }
     }
 
