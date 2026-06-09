@@ -800,9 +800,7 @@ mod tests {
 fn foo() {
     bar(2, $0);
 }
-fn bar(x: u32, y: bool, z: bool) -> f32 { 0.0f }
-fn bar(x: u32, y: bool) -> f32 { 0.0f }
-fn bar() -> f32 { 0.0f }
+fn bar(x: u32, y: bool) -> f32 { return 0; }
 "#;
 
         let (offset, text) = extract_offset(text);
@@ -824,42 +822,21 @@ fn bar() -> f32 { 0.0f }
         assert_eq!(
             help,
             LspSignatureHelp {
-                signatures: vec![
-                    SignatureInformation {
-                        label: "fn bar(x: u32, y: bool, z: bool) -> f32".to_owned(),
-                        documentation: None,
-                        parameters: Some(vec![
-                            ParameterInformation {
-                                label: ParameterInformationLabel::String("x: u32".to_owned()),
-                                documentation: None,
-                            },
-                            ParameterInformation {
-                                label: ParameterInformationLabel::String("y: bool".to_owned()),
-                                documentation: None,
-                            },
-                            ParameterInformation {
-                                label: ParameterInformationLabel::String("z: bool".to_owned()),
-                                documentation: None,
-                            }
-                        ]),
-                        active_parameter: None,
-                    },
-                    SignatureInformation {
-                        label: "fn bar(x: u32, y: bool) -> f32".to_owned(),
-                        documentation: None,
-                        parameters: Some(vec![
-                            ParameterInformation {
-                                label: ParameterInformationLabel::String("x: u32".to_owned()),
-                                documentation: None,
-                            },
-                            ParameterInformation {
-                                label: ParameterInformationLabel::String("y: bool".to_owned()),
-                                documentation: None,
-                            },
-                        ]),
-                        active_parameter: None,
-                    }
-                ],
+                signatures: vec![SignatureInformation {
+                    label: "fn bar(x: u32, y: bool) -> f32".to_owned(),
+                    documentation: None,
+                    parameters: Some(vec![
+                        ParameterInformation {
+                            label: ParameterInformationLabel::String("x: u32".to_owned()),
+                            documentation: None,
+                        },
+                        ParameterInformation {
+                            label: ParameterInformationLabel::String("y: bool".to_owned()),
+                            documentation: None,
+                        },
+                    ]),
+                    active_parameter: None,
+                }],
                 active_parameter: Some(ActiveParameter::Int(1)),
                 active_signature: None,
             }

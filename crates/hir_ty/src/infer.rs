@@ -2577,7 +2577,7 @@ impl<'database> TypeLoweringContext<'database> {
             Ok(ResolveKind::GlobalConstant(id)) => Ok(Lowered::GlobalConstant(id)),
             Ok(ResolveKind::GlobalVariable(id)) => Ok(Lowered::GlobalVariable(id)),
             Ok(ResolveKind::Override(id)) => Ok(Lowered::Override(id)),
-            Ok(ResolveKind::Local(local)) => Ok(Lowered::Local(local)),
+            Ok(ResolveKind::Local(local, _)) => Ok(Lowered::Local(local)),
             Err(diagnostic) => path
                 .mod_path()
                 .segments()

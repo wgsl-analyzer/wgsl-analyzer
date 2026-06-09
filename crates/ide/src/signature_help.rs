@@ -2,8 +2,10 @@ use base_db::{EditionedFileId, FilePosition, TextSize};
 use hir::{HirDatabase as _, Semantics, database::DefDatabase};
 use hir_def::{
     database::{InternDatabase as _, Location, ModuleDefinitionId},
+    expression_store::path::Path,
     item_tree::ModuleItemId,
-    resolver::ScopeDef,
+    mod_path::ModPath,
+    resolver::{ResolveKind, ScopeDef},
 };
 use hir_ty::{
     function::FunctionDetails,
@@ -103,20 +105,19 @@ pub(crate) fn signature_help(
     // Walk up to find the enclosing Arguments node
     let (function_call, _, active_parameter) = find_enclosing_call(&token, position.offset)?;
 
-    // Try to resolve the function call via type inference
-    let text = function_call.ident_expression()?.syntax().text();
-    let mut overloads = Vec::new();
-    semantics
+    let resolved = semantics
         .resolver(file_id, syntax)
-        .process_all_names(database, |name, scope_def| {
-            if name.as_str().to_owned().contains(&text.to_string())
-                && let ScopeDef::ModuleDefinition(ModuleDefinitionId::Function(module_item_id)) =
-                    scope_def
-            {
-                overloads.push(module_item_id);
-            }
-        });
-
+        .resolve(
+            database,
+            &Path(ModPath::from_src(
+                &function_call.ident_expression()?.path()?,
+            )),
+        )
+        .ok()?;
+    let ResolveKind::Function(function_id) = resolved else {
+        return None;
+    };
+    let overloads = vec![function_id];
     let mut signatures: Vec<_> = overloads
         .into_iter()
         .map(|function_id| database.function_type(function_id))

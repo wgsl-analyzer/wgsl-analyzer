@@ -26,7 +26,7 @@ pub use hir_ty::database::HirDatabase;
 use hir_ty::{infer::InferenceResult, ty::Type};
 use smallvec::SmallVec;
 use stdx::impl_from;
-use syntax::{AstNode as _, HasName as _, SyntaxNode, ast, pointer::AstPointer};
+use syntax::{AstNode as _, HasName as _, SyntaxNode, SyntaxToken, ast, pointer::AstPointer};
 use triomphe::Arc;
 
 pub trait HasSource {
@@ -36,6 +36,8 @@ pub trait HasSource {
         database: &dyn DefDatabase,
     ) -> Option<InFile<Self::Ast>>;
 }
+
+type ExprOrStatement = Either<ast::Expression, ast::Statement>;
 
 /// Nice API on top of the layers below.
 pub struct Semantics<'database> {
@@ -146,13 +148,50 @@ impl<'database> Semantics<'database> {
     }
 
     #[must_use]
+    pub fn nearest_scope(
+        &self,
+        node: &SyntaxNode,
+    ) -> Option<ExprOrStatement> {
+        node
+            .siblings(syntax::Direction::Prev) // spellchecker:disable-line
+            .find_map(|sib| if ExprOrStatement::can_cast(sib.kind())  {
+                    ExprOrStatement::cast(sib)
+                } else {None}
+            )
+            .or_else(|| node.ancestors().find_map(ExprOrStatement::cast))
+    }
+
+    #[must_use]
     pub fn resolver(
         &self,
         file_id: EditionedFileId,
         source: &SyntaxNode,
     ) -> Resolver {
         if let Some(definition) = self.find_container(file_id, source) {
-            definition.resolver(self.database)
+            match definition {
+                ChildContainer::DefinitionWithBodyId(
+                    id @ DefinitionWithBodyId::Function(function_id),
+                ) => {
+                    if let Some(nearest_scope) = self.nearest_scope(source) {
+                        self.analyze(id).resolver_for(nearest_scope)
+                    } else {
+                        id.resolver(self.database)
+                    }
+                },
+                ChildContainer::DefinitionWithBodyId(id) => id.resolver(self.database),
+                ChildContainer::ImportId(_)
+                | ChildContainer::FunctionId(_)
+                | ChildContainer::GlobalVariableId(_)
+                | ChildContainer::GlobalConstantId(_)
+                | ChildContainer::OverrideId(_)
+                | ChildContainer::StructId(_)
+                | ChildContainer::GlobalAssertStatementId(_)
+                | ChildContainer::TypeAliasId(_) => {
+                    let file_id = definition.file_id(self.database);
+                    let module_info = ItemScope::of(self.database, file_id);
+                    Resolver::new(file_id, module_info)
+                },
+            }
         } else {
             let module_info = ItemScope::of(self.database, file_id);
             Resolver::new(file_id, module_info)
@@ -166,59 +205,6 @@ impl<'database> Semantics<'database> {
         file_id: EditionedFileId,
     ) -> Module {
         Module { file_id }
-    }
-
-    fn resolve_path_in_container(
-        &self,
-        container: ChildContainer,
-        expression: &ast::Expression,
-        path: &Path,
-    ) -> Option<Definition> {
-        let mut resolver = container.resolver(self.database);
-
-        if let ChildContainer::DefinitionWithBodyId(DefinitionWithBodyId::Function(function)) =
-            container
-        {
-            let (_, source_map) = self
-                .database
-                .body_with_source_map(DefinitionWithBodyId::Function(function));
-            let expression_id = source_map.lookup_expression(&AstPointer::new(expression))?;
-            let expression_scopes = self
-                .database
-                .expression_scopes(DefinitionWithBodyId::Function(function));
-            let scope_id = expression_scopes.scope_for_expression(expression_id)?;
-            resolver = resolver.push_expression_scope(function, expression_scopes, scope_id);
-        }
-
-        let value = resolver.resolve(self.database, path).ok()?;
-
-        let definition = match value {
-            ResolveKind::Module(module_id) => {
-                Definition::ModuleDef(ModuleDef::Module(Module { file_id: module_id }))
-            },
-            ResolveKind::Local(binding) => Definition::Local(Local {
-                parent: resolver.body_owner()?,
-                binding,
-            }),
-            ResolveKind::GlobalVariable(id) => {
-                Definition::ModuleDef(ModuleDef::GlobalVariable(GlobalVariable { id }))
-            },
-            ResolveKind::GlobalConstant(id) => {
-                Definition::ModuleDef(ModuleDef::GlobalConstant(GlobalConstant { id }))
-            },
-            ResolveKind::Override(id) => {
-                Definition::ModuleDef(ModuleDef::Override(Override { id }))
-            },
-            ResolveKind::Struct(id) => Definition::ModuleDef(ModuleDef::Struct(Struct { id })),
-            ResolveKind::TypeAlias(id) => {
-                Definition::ModuleDef(ModuleDef::TypeAlias(TypeAlias { id }))
-            },
-            ResolveKind::Function(id) => {
-                Definition::ModuleDef(ModuleDef::Function(Function { id }))
-            },
-        };
-
-        Some(definition)
     }
 
     fn import_to_def(
@@ -389,27 +375,6 @@ impl ChildContainer {
         }
     }
 
-    pub fn resolver(
-        self,
-        database: &dyn HirDatabase,
-    ) -> Resolver {
-        match self {
-            Self::DefinitionWithBodyId(id) => id.resolver(database),
-            Self::ImportId(_)
-            | Self::FunctionId(_)
-            | Self::GlobalVariableId(_)
-            | Self::GlobalConstantId(_)
-            | Self::OverrideId(_)
-            | Self::StructId(_)
-            | Self::GlobalAssertStatementId(_)
-            | Self::TypeAliasId(_) => {
-                let file_id = self.file_id(database);
-                let module_info = ItemScope::of(database, file_id);
-                Resolver::new(file_id, module_info)
-            },
-        }
-    }
-
     #[must_use]
     pub const fn as_def_with_body_id(self) -> Option<DefinitionWithBodyId> {
         if let Self::DefinitionWithBodyId(id) = self {
@@ -522,7 +487,7 @@ impl<'database> SourceAnalyzer<'database> {
     #[must_use]
     pub fn resolver_for(
         &self,
-        scope: Either<ast::Expression, ast::Statement>,
+        scope: ExprOrStatement,
     ) -> Resolver {
         let mut resolver = self.owner.resolver(self.database);
 

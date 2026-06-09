@@ -56,7 +56,7 @@ pub struct SubModulesScope {
 
 #[derive(Debug)]
 pub enum ResolveKind {
-    Local(BindingId),
+    Local(BindingId, FunctionId),
     Struct(StructId),
     TypeAlias(TypeAliasId),
     GlobalVariable(GlobalVariableId),
@@ -277,7 +277,7 @@ impl Resolver {
                     };
 
                     if is_path_done {
-                        return Ok(ResolveKind::Local(entry.binding));
+                        return Ok(ResolveKind::Local(entry.binding, scope.owner));
                     } else {
                         return Err(ResolutionDiagnostic { failed_segment: 1 });
                     }

@@ -687,7 +687,7 @@ var<storage> lines: array<LineSegment>;
 fn __my_func() {}
 ",
             expect![[r#"
-                3..12 Error 24: '__my_func' is not a valid name for an identifier
+                3..12 Error 24: `__my_func` is not a valid name for an identifier
             "#]],
         );
     }
