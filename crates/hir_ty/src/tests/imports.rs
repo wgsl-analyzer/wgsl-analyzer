@@ -79,8 +79,10 @@ fn cannot_import_imported_item() {
         ",
         expect![[r#"
             ---
-            6..7 'b': integer
-            10..25 'package::foo::A': integer
+            6..7 'b': [error]
+            10..25 'package::foo::A': [error]
+            InferenceDiagnostic { source: Body, kind: InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(0)), kind: UnresolvedPath { path: Path(ModPath { kind: Package, segments: [Name("foo"), Name("A")] }), failed_segment: 2 } } } }
+            InferenceDiagnostic { source: Body, kind: ExpectedLoweredKind { expression: Idx::<Expression>(0), expected: Variable, actual: Type, path: Path(ModPath { kind: Package, segments: [Name("foo"), Name("A")] }) } }
             ---
             ---
             6..7 'A': integer

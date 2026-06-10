@@ -16,6 +16,7 @@ pub mod signature;
 mod test_db;
 pub mod type_ref;
 pub mod type_specifier;
+pub mod visibility;
 pub use ast_id::*;
 use base_db::{EditionedFileId, FileRange, TextRange};
 use database::DefDatabase;

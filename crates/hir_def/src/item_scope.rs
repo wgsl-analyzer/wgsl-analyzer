@@ -2,6 +2,7 @@ use crate::{
     database::{DefDatabase, ImportId, ModuleDefinitionId},
     item_tree::Name,
     name_resolution::{DefDiagnostic, collect_module},
+    visibility::Visibility,
 };
 use base_db::EditionedFileId;
 use rustc_hash::FxHashMap;
@@ -11,7 +12,7 @@ use triomphe::Arc;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct ModuleItem {
     pub definition: ModuleDefinitionId,
-    pub visibility: (),
+    pub visibility: Visibility,
     pub import: Option<ImportId>,
 }
 

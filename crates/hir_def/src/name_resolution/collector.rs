@@ -7,6 +7,7 @@ use crate::{
     item_tree::{FlatImport, ItemTree, ModuleItemId, Name},
     mod_path::PathKind,
     name_resolution::{ModuleData, diagnostics::DefDiagnostic},
+    visibility::Visibility,
 };
 
 pub fn collect_module(
@@ -54,7 +55,7 @@ impl ModCollector<'_> {
                                         name.clone(),
                                         ModuleItem {
                                             definition,
-                                            visibility: (),
+                                            visibility: Visibility::File,
                                             import: Some(import_id),
                                         },
                                     );
@@ -120,7 +121,7 @@ impl ModCollector<'_> {
                 name.clone(),
                 ModuleItem {
                     definition,
-                    visibility: (),
+                    visibility: Visibility::Public,
                     import: None,
                 },
             );

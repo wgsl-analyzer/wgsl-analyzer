@@ -15,6 +15,7 @@ use crate::{
     item_tree::Name,
     mod_path::PathKind,
     name_resolution::ModuleData,
+    visibility::Visibility,
 };
 
 #[derive(Clone)]
@@ -267,6 +268,13 @@ fn resolve_submodules(
         let item_scope = ItemScope::of(database, file_id);
         // Check in current module
         if let Some(item) = item_scope.items.get(segment) {
+            if item.visibility == Visibility::File {
+                // Unsure what to do when importing from self, see https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1192
+                return Err(ResolutionDiagnostic {
+                    failed_segment: index,
+                });
+            }
+
             let resolved = ResolveKind::try_from(item.definition)
                 .expect("Item scope may only contain items that can be resolved");
 
