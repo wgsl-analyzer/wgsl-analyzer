@@ -5,7 +5,7 @@ mod pretty;
 #[cfg(test)]
 mod tests;
 
-use std::{hash, marker::PhantomData, ops::ControlFlow};
+use std::{hash, marker::PhantomData};
 
 use base_db::EditionedFileId;
 use rustc_hash::FxHashMap;

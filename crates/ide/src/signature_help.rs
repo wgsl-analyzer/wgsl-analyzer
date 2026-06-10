@@ -1,16 +1,9 @@
 use base_db::{EditionedFileId, FilePosition, TextSize};
-use hir::{HirDatabase as _, Semantics, database::DefDatabase};
-use hir_def::{
-    database::{InternDatabase as _, Location, ModuleDefinitionId},
-    expression_store::path::Path,
-    item_tree::ModuleItemId,
-    mod_path::ModPath,
-    resolver::{ResolveKind, ScopeDef},
-};
+use hir::{HirDatabase as _, Semantics};
+use hir_def::{expression_store::path::Path, mod_path::ModPath, resolver::ResolveKind};
 use hir_ty::{
     function::FunctionDetails,
-    infer::ResolvedCall,
-    ty::pretty::{TypeVerbosity, pretty_fn_inner_with_offsets, pretty_fn_with_verbosity},
+    ty::pretty::{TypeVerbosity, pretty_fn_inner_with_offsets},
 };
 use ide_db::RootDatabase;
 use rowan::{TextLen, TextRange};

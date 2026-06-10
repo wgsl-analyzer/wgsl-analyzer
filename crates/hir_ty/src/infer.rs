@@ -19,6 +19,7 @@ use hir_def::{
     },
     expression_store::{ExpressionStore, ExpressionStoreSource, path::Path},
     item_tree::Name,
+    mod_path::PathKind,
     name_resolution::ModuleData,
     resolver::{ResolveKind, Resolver},
     signature::{
@@ -2577,7 +2578,7 @@ impl<'database> TypeLoweringContext<'database> {
             Ok(ResolveKind::GlobalVariable(id)) => Ok(Lowered::GlobalVariable(id)),
             Ok(ResolveKind::Override(id)) => Ok(Lowered::Override(id)),
             Ok(ResolveKind::Local(local, _)) => Ok(Lowered::Local(local)),
-            Err(diagnostic) => path
+            Err(diagnostic) if path.mod_path().kind() == PathKind::Plain => path
                 .mod_path()
                 .segments()
                 .first()
@@ -2591,6 +2592,13 @@ impl<'database> TypeLoweringContext<'database> {
                         failed_segment: diagnostic.failed_segment,
                     },
                 }),
+            Err(diagnostic) => Err(TypeLoweringError {
+                container: type_container,
+                kind: TypeLoweringErrorKind::UnresolvedPath {
+                    path: path.clone(),
+                    failed_segment: diagnostic.failed_segment,
+                },
+            }),
         }
     }
 
