@@ -1,6 +1,6 @@
 use expect_test::expect;
 
-use crate::tests::{check, check_with_edition};
+use crate::tests::{check, check_statement_with_edition, check_with_edition};
 
 #[test]
 fn simplest_import_fail() {
@@ -294,5 +294,52 @@ fn path_assignment() {
                     Semicolon@24..25 ";"
                   Blankspace@25..26 " "
                   BraceRight@26..27 "}""#]],
+    );
+}
+
+#[test]
+fn path_with_super_or_package() {
+    check_statement_with_edition(
+        edition::Edition::Wesl2025Unstable,
+        "package::foo::bar();",
+        expect![[r#"
+            SourceFile@0..20
+              FunctionCallStatement@0..20
+                FunctionCall@0..19
+                  IdentExpression@0..17
+                    Path@0..17
+                      ImportPackageRelative@0..9
+                        Package@0..7 "package"
+                        ColonColon@7..9 "::"
+                      Identifier@9..12 "foo"
+                      ColonColon@12..14 "::"
+                      Identifier@14..17 "bar"
+                  Arguments@17..19
+                    ParenthesisLeft@17..18 "("
+                    ParenthesisRight@18..19 ")"
+                Semicolon@19..20 ";""#]],
+    );
+
+    check_statement_with_edition(
+        edition::Edition::Wesl2025Unstable,
+        "super::foo::utils::barValue();",
+        expect![[r#"
+            SourceFile@0..30
+              FunctionCallStatement@0..30
+                FunctionCall@0..29
+                  IdentExpression@0..27
+                    Path@0..27
+                      ImportSuperRelative@0..7
+                        Super@0..5 "super"
+                        ColonColon@5..7 "::"
+                      Identifier@7..10 "foo"
+                      ColonColon@10..12 "::"
+                      Identifier@12..17 "utils"
+                      ColonColon@17..19 "::"
+                      Identifier@19..27 "barValue"
+                  Arguments@27..29
+                    ParenthesisLeft@27..28 "("
+                    ParenthesisRight@28..29 ")"
+                Semicolon@29..30 ";""#]],
     );
 }
