@@ -28,10 +28,10 @@ pub struct ItemScope {
 impl ItemScope {
     #[salsa::tracked]
     pub fn of(
-        database: &dyn DefDatabase,
+        db: &dyn DefDatabase,
         file_id: EditionedFileId,
     ) -> Arc<ItemScope> {
-        Arc::new(collect_module(database, file_id))
+        Arc::new(collect_module(db, file_id))
     }
 }
 
