@@ -1,12 +1,7 @@
 use base_db::EditionedFileId;
-use syntax::{ast, pointer::AstPointer};
-use vfs::FileId;
+use syntax::ast;
 
-use crate::{
-    InFile,
-    database::{Location, ModuleDefinitionId},
-    item_tree::Name,
-};
+use crate::{database::Location, item_tree::Name};
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct DefDiagnostic {

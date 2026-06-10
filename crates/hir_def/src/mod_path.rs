@@ -1,17 +1,11 @@
 //! A lowering for `import`-paths (more generally, paths without angle-bracketed segments).
 
-use std::{
-    fmt::{self, Display as _},
-    iter, range,
-};
+use std::{fmt, iter};
 
 use smallvec::SmallVec;
-use syntax::{
-    AstNode,
-    ast::{self, ImportRelative},
-};
+use syntax::ast::{self, ImportRelative};
 
-use crate::{database::DefDatabase, item_tree::Name};
+use crate::item_tree::Name;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ModPath {

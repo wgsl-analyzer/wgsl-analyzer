@@ -1,10 +1,7 @@
-use std::borrow::Cow;
-
 use base_db::{EditionedFileId, file_package};
 use dot::{Id, LabelText};
 use hir_def::{
     FxIndexMap,
-    item_tree::Name,
     name_resolution::{ModuleData, modules_map_query},
 };
 use ide_db::RootDatabase;

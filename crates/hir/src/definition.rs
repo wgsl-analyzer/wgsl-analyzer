@@ -1,10 +1,5 @@
 use base_db::EditionedFileId;
-use hir_def::{
-    expression_store::path::Path,
-    item_tree::Name,
-    mod_path::ModPath,
-    resolver::{ResolveKind, Resolver},
-};
+use hir_def::{expression_store::path::Path, mod_path::ModPath, resolver::ResolveKind};
 use syntax::{AstNode as _, SyntaxNode, SyntaxToken, ast, match_ast};
 
 use crate::{

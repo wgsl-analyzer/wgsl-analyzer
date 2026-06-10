@@ -1,9 +1,8 @@
 use base_db::{EditionedFileId, FilePosition, TextRange};
-use either::Either;
 use hir::{ChildContainer, Semantics, nearest_scope};
-use hir_def::{database::DefDatabase as _, item_scope::ItemScope, resolver::Resolver};
+use hir_def::{item_scope::ItemScope, resolver::Resolver};
 use ide_db::RootDatabase;
-use syntax::{AstNode as _, Direction, SyntaxKind, SyntaxToken, ast};
+use syntax::{AstNode as _, SyntaxKind, SyntaxToken, ast};
 
 use crate::{config::CompletionConfig, patterns::determine_location};
 

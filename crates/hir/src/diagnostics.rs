@@ -3,9 +3,9 @@ pub mod precedence;
 
 use base_db::{EditionedFileId, FileRange, TextRange};
 use hir_def::{
-    AstIdMap, HasSource as _, InFile,
+    HasSource as _, InFile,
     expression::BinaryOperation,
-    expression_store::{ExpressionSourceMap, ExpressionStoreSource, path::Path},
+    expression_store::{ExpressionSourceMap, path::Path},
     item_tree::Name,
     name_resolution::{DefDiagnostic, DefDiagnosticKind},
 };
@@ -13,8 +13,8 @@ use hir_ty::{
     builtins::BuiltinId,
     database::HirDatabase,
     infer::{
-        InferenceDiagnostic, InferenceDiagnosticKind, LoweredKind, TypeExpectation,
-        TypeLoweringError, TypeLoweringErrorKind,
+        InferenceDiagnosticKind, LoweredKind, TypeExpectation, TypeLoweringError,
+        TypeLoweringErrorKind,
     },
     ty::Type,
     validate::AddressSpaceError,

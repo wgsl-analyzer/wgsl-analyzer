@@ -6,7 +6,7 @@
     clippy::trailing_empty_array,
     reason = "Clippy has a false positive for the query_group macro, see: https://github.com/rust-lang/rust-clippy/issues/16754"
 )]
-use std::fmt::{self, Debug};
+use std::fmt::Debug;
 
 use base_db::{EditionedFileId, Lookup as _, SourceDatabase, impl_intern_key, impl_intern_lookup};
 use salsa::plumbing::AsId as _;

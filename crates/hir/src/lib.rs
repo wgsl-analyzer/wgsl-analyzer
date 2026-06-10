@@ -4,8 +4,7 @@ pub mod database;
 pub mod definition;
 pub mod diagnostics;
 
-use base_db::{EditionedFileId, FileId, Intern as _, Lookup as _};
-use definition::Definition;
+use base_db::{EditionedFileId, Intern as _, Lookup as _};
 use diagnostics::{AnyDiagnostic, DiagnosticsConfig};
 use either::Either;
 use hir_def::{

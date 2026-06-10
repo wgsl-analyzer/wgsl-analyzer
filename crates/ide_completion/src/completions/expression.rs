@@ -1,10 +1,7 @@
-use base_db::EditionedFileId;
 use hir::HirDatabase as _;
 use hir_def::{
-    database::{
-        DefDatabase as _, DefinitionWithBodyId, InternDatabase as _, Location, ModuleDefinitionId,
-    },
-    item_tree::{ModuleItemId, Name},
+    database::{DefinitionWithBodyId, ModuleDefinitionId},
+    item_tree::Name,
     resolver::ScopeDef,
 };
 use hir_ty::{

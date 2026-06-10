@@ -19,7 +19,6 @@ pub mod type_specifier;
 pub use ast_id::*;
 use base_db::{EditionedFileId, FileRange, TextRange};
 use database::DefDatabase;
-use item_tree::{ItemTreeNode, ModuleItemId};
 use rowan::NodeOrToken;
 use syntax::{AstNode, SyntaxNode, SyntaxToken, pointer::AstPointer};
 

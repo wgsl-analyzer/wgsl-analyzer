@@ -1,25 +1,19 @@
-use std::ops::ControlFlow;
-
-use base_db::{EditionedFileId, Intern as _};
+use base_db::EditionedFileId;
 use triomphe::Arc;
 
 use crate::{
-    InFile,
     body::{
         BindingId,
         scope::{ExprScopes, ScopeId},
     },
     database::{
-        self, DefDatabase, FunctionId, GlobalConstantId, GlobalVariableId, Location,
-        ModuleDefinitionId, OverrideId, StructId, TypeAliasId,
+        DefDatabase, FunctionId, GlobalConstantId, GlobalVariableId, ModuleDefinitionId,
+        OverrideId, StructId, TypeAliasId,
     },
     expression_store::path::Path,
     item_scope::ItemScope,
-    item_tree::{
-        Function, GlobalConstant, GlobalVariable, ItemTree, ModuleItemId, Name, Override, Struct,
-        TypeAlias,
-    },
-    mod_path::{ModPath, PathKind},
+    item_tree::Name,
+    mod_path::PathKind,
     name_resolution::ModuleData,
 };
 

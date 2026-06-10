@@ -1,13 +1,12 @@
 use base_db::{EditionedFileId, Intern as _, file_package};
 use syntax::ast;
-use vfs::FileId;
 
 use crate::{
     database::{DefDatabase, Location, ModuleDefinitionId},
     item_scope::{ItemScope, ModuleItem},
     item_tree::{FlatImport, ItemTree, ModuleItemId, Name},
     mod_path::PathKind,
-    name_resolution::{self, ModuleData, diagnostics::DefDiagnostic, modules_map_query},
+    name_resolution::{ModuleData, diagnostics::DefDiagnostic},
 };
 
 pub fn collect_module(
