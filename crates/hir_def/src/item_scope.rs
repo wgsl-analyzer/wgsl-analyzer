@@ -1,7 +1,7 @@
 use crate::{
     database::{DefDatabase, ImportId, ModuleDefinitionId},
     item_tree::Name,
-    name_resolution::{DefDiagnostic, collect_module},
+    name_resolution::{DefDiagnostic, DefDiagnosticKind, collect_module},
     visibility::Visibility,
 };
 use base_db::EditionedFileId;
@@ -87,6 +87,20 @@ impl ItemScope {
                 ""
             };
             writeln!(buffer, "- {type} {}{description}", name.as_str());
+        }
+
+        for diagnostic in &self.diagnostics {
+            buffer.push_str("error: ");
+            match &diagnostic.kind {
+                DefDiagnosticKind::UnresolvedImport { name, .. } => {
+                    writeln!(buffer, "unresolved import for {}", name.as_str())
+                },
+                DefDiagnosticKind::TooManySupers { .. } => writeln!(buffer, "too many supers"),
+                DefDiagnosticKind::DetachedFile { .. } => writeln!(buffer, "detached filed"),
+                DefDiagnosticKind::NameConflict { previous, .. } => {
+                    writeln!(buffer, "name conflict for {}", previous.as_str())
+                },
+            };
         }
     }
 

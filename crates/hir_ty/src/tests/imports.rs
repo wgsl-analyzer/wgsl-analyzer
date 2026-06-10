@@ -34,6 +34,116 @@ fn import_statement_simple() {
 }
 
 #[test]
+fn inline_import_simple() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        //- /package.wesl edition:2026_pre
+        const bar = true;
+        fn main() {
+            let a = package::foo::bar;
+        }
+
+        //- /foo.wesl
+        const bar = 4;
+        ",
+        expect![[r#"
+            ---
+            6..9 'bar': bool
+            12..16 'true': bool
+            38..39 'a': i32
+            42..59 'packag...o::bar': integer
+            ---
+            6..9 'bar': integer
+            12..13 '4': integer
+        "#]],
+    );
+}
+
+#[test]
+fn import_super() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        //- /package.wesl edition:2026_pre
+        const foo = 4;
+
+        //- /module_a.wesl
+        const bar = 4;
+
+        //- /module_a/utils.wesl
+        import super::bar as superBar;
+        fn utility() {
+            let a = super::bar;
+            let b = super::super::foo;
+            let c = superBar;
+        }
+        ",
+        expect![[r#"
+            ---
+            6..9 'foo': integer
+            12..13 '4': integer
+            ---
+            6..9 'bar': integer
+            12..13 '4': integer
+            ---
+            54..55 'a': i32
+            58..68 'super::bar': integer
+            78..79 'b': i32
+            82..99 'super:...r::foo': integer
+            109..110 'c': i32
+            113..121 'superBar': integer
+        "#]],
+    );
+}
+
+#[test]
+fn import_statement_cycle_allowed() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        //- /package.wesl edition:2026_pre
+        import package::foo::bar;
+        const output = bar;
+
+        //- /foo.wesl
+        import package::output;
+        const bar = 3;
+        ",
+        expect![[r#"
+            ---
+            32..38 'output': integer
+            41..44 'bar': integer
+            ---
+            30..33 'bar': integer
+            36..37 '3': integer
+        "#]],
+    );
+}
+
+#[test]
+fn import_statement_cycle_error() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        //- /package.wesl edition:2026_pre
+        import package::foo::bar;
+        const output = bar;
+
+        //- /foo.wesl
+        import package::output;
+        const bar = output;
+        ",
+        expect![[r#"
+            ---
+            InferenceDiagnostic { source: Body, kind: CyclicType { name: Name("output"), range: 26..45 } }
+            ---
+            InferenceDiagnostic { source: Body, kind: CyclicType { name: Name("bar"), range: 24..43 } }
+        "#]],
+    );
+}
+
+#[test]
 fn import_statement_inline() {
     check_infer(
         ExtensionsConfig::default(),
@@ -236,6 +346,77 @@ fn import_statement_local_uses_and_shadows() {
             ---
             6..9 'bar': integer
             12..13 '3': integer
+        "#]],
+    );
+}
+
+#[test]
+fn import_statement_shadows_submodule() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        //- /package.wesl edition:2026_pre
+        import package::foo::bar;
+        const output = bar;
+
+        //- /foo.wesl
+        const bar = 3;
+
+        //- /foo.bar.wesl
+        const shadowed = 3;
+        ",
+        expect![[r#"
+            ---
+            32..38 'output': integer
+            41..44 'bar': integer
+            ---
+            6..9 'bar': integer
+            12..13 '3': integer
+            ---
+            6..14 'shadowed': integer
+            17..18 '3': integer
+        "#]],
+    );
+}
+
+#[test]
+fn import_statement_shadows_predeclared() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        //- /package.wesl edition:2026_pre
+        import package::foo::{bar as vec2f, vec3f};
+        const output: vec3f = vec2f;
+
+        //- /foo.wesl
+        const bar = 3;
+        alias vec3f = u32;
+        ",
+        expect![[r#"
+            ---
+            50..56 'output': u32
+            66..71 'vec2f': integer
+            ---
+            6..9 'bar': integer
+            12..13 '3': integer
+        "#]],
+    );
+}
+
+#[test]
+fn import_escapes_root() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        //- /foo.wesl edition:2026_pre
+        const_assert(super::super::MyType(3) == true);
+        ",
+        expect![[r#"
+            13..36 'super:...ype(3)': [error]
+            13..44 'super:...= true': [error]
+            34..35 '3': integer
+            40..44 'true': bool
+            InferenceDiagnostic { source: Body, kind: InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(1)), kind: UnresolvedPath { path: Path(ModPath { kind: Super(2), segments: [Name("MyType")] }), failed_segment: 0 } } } }
         "#]],
     );
 }

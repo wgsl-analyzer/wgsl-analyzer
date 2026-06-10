@@ -146,3 +146,43 @@ fn Foo() {}
         "#]],
     );
 }
+
+#[test]
+fn import_escapes_root() {
+    check(
+        r#"
+//- /package.wesl edition:2026_pre
+import super::foo;
+
+//- /bar.wesl
+import super::super::bar;
+"#,
+        expect![[r#"
+            package
+            error: too many supers
+            package::bar
+            error: too many supers
+        "#]],
+    );
+}
+
+#[test]
+fn import_name_conflict() {
+    check(
+        r#"
+//- /package.wesl edition:2026_pre
+import package::bar::foo;
+const foo = 3;
+
+//- /bar.wesl
+const foo = 5;
+"#,
+        expect![[r#"
+            package
+            - const foo
+            error: name conflict for foo
+            package::bar
+            - const foo
+        "#]],
+    );
+}
