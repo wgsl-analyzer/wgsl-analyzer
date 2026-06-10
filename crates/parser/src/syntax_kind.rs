@@ -177,6 +177,15 @@ pub enum SyntaxKind {
     /// A list of imports `{foo, bar, baz}`
     ImportCollection,
 
+    // WESL
+    /// @if
+    IfAttr,
+    /// @elif
+    ElifAttr,
+    /// @else
+    ElseAttr,
+    Elif,
+
     // Tokens
     /// Source: <https://www.w3.org/TR/WGSL/#blankspace-and-line-breaks>
     #[regex("[\x20\x09\x0A-\x0D\u{0085}\u{200E}\u{200F}\u{2028}\u{2029}]+")]

@@ -159,7 +159,9 @@ impl CstBuilder<'_, '_> {
             | Rule::GlobalDirective
             | Rule::LhsExpression
             | Rule::VariableUpdating
-            | Rule::Attribute => {
+            | Rule::Attribute
+            | Rule::AttributeInner
+            | Rule::TranslateTimeAttribute => {
                 panic!("{rule:?} should always be a more specific node")
             },
             // This is reachable when an attribute is parsed, but no statement variant applies
@@ -193,6 +195,10 @@ impl CstBuilder<'_, '_> {
             // naga
             Rule::EarlyDepthTestAttr => self.start_node(SyntaxKind::EarlyDepthTestAttribute),
             Rule::EarlyDepthTestMode => self.start_node(SyntaxKind::EarlyDepthTestMode),
+            // WESL
+            Rule::IfAttr => self.start_node(SyntaxKind::IfAttr),
+            Rule::ElifAttr => self.start_node(SyntaxKind::ElifAttr),
+            Rule::ElseAttr => self.start_node(SyntaxKind::ElseAttr),
         }
     }
 

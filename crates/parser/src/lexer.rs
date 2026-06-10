@@ -77,7 +77,7 @@ fn is_keyword_in_wesl(word: &str) -> bool {
         is_reserved_word(word),
         "this is meant to be called with a reserved word"
     );
-    matches!(word, "import" | "package" | "super" | "as")
+    matches!(word, "import" | "package" | "super" | "as" | "elif")
 }
 
 /// Returns `true` if the given word is a WGSL reserved word.
@@ -315,6 +315,7 @@ impl Iterator for WgslLexer<'_, '_> {
                     "package" if self.edition.at_least_wesl_0_0_1() => Token::Package,
                     "super" if self.edition.at_least_wesl_0_0_1() => Token::Super,
                     "as" if self.edition.at_least_wesl_0_0_1() => Token::As,
+                    "elif" if self.edition.at_least_wesl_0_0_1() => Token::Elif,
 
                     // Context-dependent attribute keywords
                     "align" if self.inner.extras.after_at => Token::Align,
