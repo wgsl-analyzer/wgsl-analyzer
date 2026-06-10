@@ -49,10 +49,13 @@ impl<T> InFile<T> {
         InFile::new(self.file_id, value)
     }
 
-    pub fn map<Function: FnOnce(T) -> U, U>(
+    pub fn map<Function, U>(
         self,
         function: Function,
-    ) -> InFile<U> {
+    ) -> InFile<U>
+    where
+        Function: FnOnce(T) -> U,
+    {
         InFile::new(self.file_id, function(self.value))
     }
 
@@ -73,7 +76,7 @@ impl<T> InFile<T> {
     }
 }
 
-impl<N: AstNode> InFile<N> {
+impl<Node: AstNode> InFile<Node> {
     pub fn original_file_range(
         &self,
         database: &dyn DefDatabase,
@@ -113,11 +116,14 @@ impl<N: HasTextRange, T: HasTextRange> HasTextRange for NodeOrToken<N, T> {
     }
 }
 
-pub fn original_file_range<T: HasTextRange>(
+pub fn original_file_range<T>(
     database: &dyn DefDatabase,
     file_id: EditionedFileId,
     value: &T,
-) -> FileRange {
+) -> FileRange
+where
+    T: HasTextRange,
+{
     FileRange {
         file_id: file_id.file_id(database),
         range: value.text_range(),

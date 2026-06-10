@@ -65,14 +65,16 @@ impl fmt::Display for AddressSpaceError {
 
 #[expect(clippy::cognitive_complexity, reason = "TODO")]
 #[expect(clippy::too_many_lines, reason = "TODO")]
-pub fn validate_address_space<DiagnosticBuilder: FnMut(AddressSpaceError)>(
+pub fn validate_address_space<DiagnosticBuilder>(
     address_space: AddressSpace,
     access_mode: AccessMode,
     scope: Scope,
     r#type: &TypeKind,
     database: &dyn HirDatabase,
     mut diagnostic_builder: DiagnosticBuilder,
-) {
+) where
+    DiagnosticBuilder: FnMut(AddressSpaceError),
+{
     // We only care about the inner type here
     let r#type = r#type.unref(database);
     match address_space {

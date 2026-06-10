@@ -45,10 +45,13 @@ impl ModPath {
         convert_path(path)
     }
 
-    pub fn from_segments<Segments: IntoIterator<Item = Name>>(
+    pub fn from_segments<Segments>(
         kind: PathKind,
         segments: Segments,
-    ) -> Self {
+    ) -> Self
+    where
+        Segments: IntoIterator<Item = Name>,
+    {
         let mut segments: SmallVec<_> = segments.into_iter().collect();
         segments.shrink_to_fit();
         Self { kind, segments }
@@ -149,10 +152,12 @@ impl ModPath {
 }
 
 impl Extend<Name> for ModPath {
-    fn extend<T: IntoIterator<Item = Name>>(
+    fn extend<T>(
         &mut self,
         iter: T,
-    ) {
+    ) where
+        T: IntoIterator<Item = Name>,
+    {
         self.segments.extend(iter);
     }
 }

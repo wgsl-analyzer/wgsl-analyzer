@@ -236,10 +236,12 @@ impl GlobalState {
         ))
     }
 
-    fn register_did_save_capability(
+    fn register_did_save_capability<Patterns>(
         &mut self,
-        additional_patterns: impl Iterator<Item = String>,
-    ) {
+        additional_patterns: Patterns,
+    ) where
+        Patterns: Iterator<Item = String>,
+    {
         let additional_filters = additional_patterns.map(|pattern| {
             DocumentFilter::TextDocumentFilter(TextDocumentFilter::Pattern(
                 TextDocumentFilterPattern {
@@ -960,7 +962,7 @@ impl GlobalState {
             .on::<NO_RETRY, lsp::extensions::HoverRequest>(handlers::request::handle_hover)
             .on::<NO_RETRY, ShutdownRequest>(handlers::request::handle_shutdown)
             .on::<NO_RETRY, InlayHintRequest>(handlers::request::handle_inlay_hints)
-            .on_with_vfs_default::<DocumentDiagnosticRequest>(
+            .on_with_vfs_default::<DocumentDiagnosticRequest, _>(
                 handlers::request::handle_document_diagnostics,
                 handlers::request::empty_diagnostic_report,
                 || lsp_server::ResponseError {

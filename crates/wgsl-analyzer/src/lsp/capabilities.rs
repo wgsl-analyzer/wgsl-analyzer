@@ -187,10 +187,13 @@ impl ClientCapabilities {
         || -> _ { self.0.experimental.as_ref()?.get(index)?.as_bool() }().unwrap_or_default()
     }
 
-    fn experimental<T: serde::de::DeserializeOwned>(
+    fn experimental<T>(
         &self,
         index: &'static str,
-    ) -> Option<T> {
+    ) -> Option<T>
+    where
+        T: serde::de::DeserializeOwned,
+    {
         serde_json::from_value(self.0.experimental.as_ref()?.get(index)?.clone()).ok()
     }
 

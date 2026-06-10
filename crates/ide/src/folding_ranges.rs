@@ -166,12 +166,12 @@ const fn fold_kind(kind: SyntaxKind) -> Option<FoldKind> {
     }
 }
 
-fn contiguous_range_for_item_group<N>(
-    first: &N,
+fn contiguous_range_for_item_group<Node>(
+    first: &Node,
     visited: &mut FxHashSet<SyntaxNode>,
 ) -> Option<TextRange>
 where
-    N: AstNode + Clone,
+    Node: AstNode + Clone,
 {
     if !visited.insert(first.syntax().clone()) {
         return None;
@@ -200,7 +200,7 @@ where
             },
         };
 
-        if let Some(next) = N::cast(node) {
+        if let Some(next) = Node::cast(node) {
             // Rust-Analyzer has a check for equal visibility here
             // WGSL does not yet have a notion of visibility, so that check doesn't exist
             visited.insert(next.syntax().clone());

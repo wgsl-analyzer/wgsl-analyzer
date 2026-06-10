@@ -158,8 +158,9 @@ fn get_name_and_range(
             let module_data = ModuleData::of(database, file_id);
             let full_range = TextRange::empty(TextSize::new(0));
 
-            let name = module_data
-                .as_ref().map_or_else(Name::missing, |module| module.name.clone().unwrap_or_else(|| Name::from("package")));
+            let name = module_data.as_ref().map_or_else(Name::missing, |module| {
+                module.name.clone().unwrap_or_else(|| Name::from("package"))
+            });
             (name, full_range)
         },
         ModuleDefinitionId::Function(id) => (
