@@ -142,7 +142,7 @@ impl ModCollector<'_> {
     /// To avoid cycle handling, we only look at the modules and the item trees.
     /// With that, we can follow an import statement, including re-exports, to the very end.
     /// Re-exported items will cause redundant resolutions.
-    pub(super) fn resolve_import(
+    fn resolve_import(
         &self,
         mut file_id: EditionedFileId,
         location: Location<ast::ImportStatement>,

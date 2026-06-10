@@ -29,8 +29,6 @@ pub enum Scope {
     Expression(ExpressionScope),
     /// The items inside a module.
     Module(ModuleScope),
-    /// Children of a module.
-    SubModules(SubModulesScope),
     /// Predeclared WGSL items.
     Builtin,
 }
@@ -48,12 +46,6 @@ pub struct ModuleScope {
     file_id: EditionedFileId,
 }
 
-#[derive(Clone)]
-pub struct SubModulesScope {
-    module_info: Arc<ModuleData>,
-    file_id: EditionedFileId,
-}
-
 #[derive(Debug)]
 pub enum ResolveKind {
     Local(BindingId, FunctionId),
@@ -64,6 +56,23 @@ pub enum ResolveKind {
     Override(OverrideId),
     Function(FunctionId),
     Module(EditionedFileId),
+}
+
+impl TryFrom<ModuleDefinitionId> for ResolveKind {
+    type Error = ();
+
+    fn try_from(value: ModuleDefinitionId) -> Result<Self, ()> {
+        Ok(match value {
+            ModuleDefinitionId::Module(id) => Self::Module(id),
+            ModuleDefinitionId::Function(id) => Self::Function(id),
+            ModuleDefinitionId::GlobalVariable(id) => Self::GlobalVariable(id),
+            ModuleDefinitionId::GlobalConstant(id) => Self::GlobalConstant(id),
+            ModuleDefinitionId::GlobalAssertStatement(_) => return Err(()),
+            ModuleDefinitionId::Override(id) => Self::Override(id),
+            ModuleDefinitionId::Struct(id) => Self::Struct(id),
+            ModuleDefinitionId::TypeAlias(id) => Self::TypeAlias(id),
+        })
+    }
 }
 
 pub enum ScopeDef {
@@ -91,28 +100,6 @@ impl Resolver {
             file_id,
             scopes: vec![Scope::Builtin, Scope::Module(module_scope)],
         }
-    }
-
-    #[must_use]
-    pub(crate) fn new_for_submodules(
-        file_id: EditionedFileId,
-        item_scope: Arc<ItemScope>,
-        module_data: Option<Arc<ModuleData>>,
-    ) -> Self {
-        let module_scope = ModuleScope {
-            module_info: item_scope,
-            file_id,
-        };
-        let scopes = if let Some(module_info) = module_data {
-            let sub_modules = SubModulesScope {
-                module_info,
-                file_id,
-            };
-            vec![Scope::SubModules(sub_modules), Scope::Module(module_scope)]
-        } else {
-            vec![Scope::Module(module_scope)]
-        };
-        Self { file_id, scopes }
     }
 
     #[must_use]
@@ -147,14 +134,13 @@ impl Resolver {
     pub fn body_owner(&self) -> Option<FunctionId> {
         self.scopes().find_map(|scope| match scope {
             Scope::Expression(scope) => Some(scope.owner),
-            Scope::Module(_) | Scope::SubModules(_) | Scope::Builtin => None,
+            Scope::Module(_) | Scope::Builtin => None,
         })
     }
 
     /// Calls the passed closure `function` on all names in scope.
     pub fn process_all_names<Function: FnMut(&Name, ScopeDef)>(
         &self,
-        database: &dyn DefDatabase,
         mut callback: Function,
     ) {
         self.scopes().for_each(|scope| match scope {
@@ -172,14 +158,6 @@ impl Resolver {
             Scope::Module(scope) => {
                 scope.module_info.items.iter().for_each(|(name, item)| {
                     callback(name, ScopeDef::ModuleDefinition(item.definition));
-                });
-            },
-            Scope::SubModules(scope) => {
-                scope.module_info.children.iter().for_each(|(name, item)| {
-                    callback(
-                        name,
-                        ScopeDef::ModuleDefinition(ModuleDefinitionId::Module(*item)),
-                    );
                 });
             },
             Scope::Builtin => {
@@ -212,17 +190,12 @@ impl Resolver {
                 if path.is_empty() {
                     Ok(ResolveKind::Module(file_id))
                 } else {
-                    // Continue resolution with the remaining path
-                    Self::new_for_submodules(
-                        file_id,
-                        ItemScope::of(database, file_id),
-                        ModuleData::of(database, file_id),
+                    resolve_submodules(database, file_id, path.segments()).map_err(
+                        |mut diagnostic| {
+                            diagnostic.failed_segment += usize::from(levels);
+                            diagnostic
+                        },
                     )
-                    .resolve_plain(database, path.segments())
-                    .map_err(|mut diagnostic| {
-                        diagnostic.failed_segment += usize::from(levels);
-                        diagnostic
-                    })
                 }
             },
             PathKind::Package => {
@@ -234,17 +207,12 @@ impl Resolver {
                 if path.is_empty() {
                     Ok(ResolveKind::Module(file_id))
                 } else {
-                    // Continue resolution with the remaining path
-                    Self::new_for_submodules(
-                        file_id,
-                        ItemScope::of(database, file_id),
-                        ModuleData::of(database, file_id),
+                    resolve_submodules(database, file_id, path.segments()).map_err(
+                        |mut diagnostic| {
+                            diagnostic.failed_segment += 1;
+                            diagnostic
+                        },
                     )
-                    .resolve_plain(database, path.segments())
-                    .map_err(|mut diagnostic| {
-                        diagnostic.failed_segment += 1;
-                        diagnostic
-                    })
                 }
             },
         }
@@ -260,85 +228,83 @@ impl Resolver {
             .ok_or(ResolutionDiagnostic { failed_segment: 0 })?;
         let is_path_done = segments.len() == 1;
 
-        for scope in self.scopes() {
-            match scope {
-                Scope::Expression(scope) => {
-                    let Some(entry) = scope
-                        .expression_scopes
-                        .resolve_name_in_scope(scope.scope_id, name_start)
-                    else {
-                        continue;
-                    };
+        let Some(resolved) = self.scopes().find_map(|scope| match scope {
+            Scope::Expression(scope) => {
+                let entry = scope
+                    .expression_scopes
+                    .resolve_name_in_scope(scope.scope_id, name_start)?;
+                Some(ResolveKind::Local(entry.binding, scope.owner))
+            },
+            Scope::Module(scope) => {
+                let item = scope.module_info.items.get(name_start)?;
+                ResolveKind::try_from(item.definition).ok()
+            },
+            Scope::Builtin => {
+                // TODO: Match against the first name segment and then point at a "builtin" file
+                // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/559
+                None
+            },
+        }) else {
+            return Err(ResolutionDiagnostic { failed_segment: 0 });
+        };
 
-                    if is_path_done {
-                        return Ok(ResolveKind::Local(entry.binding, scope.owner));
-                    }
-                    return Err(ResolutionDiagnostic { failed_segment: 1 });
-                },
-                Scope::Module(scope) => {
-                    let Some(item) = scope.module_info.items.get(name_start) else {
-                        continue;
-                    };
-                    let resolved = match item.definition {
-                        ModuleDefinitionId::Module(file_id) => {
-                            if is_path_done {
-                                ResolveKind::Module(file_id)
-                            } else {
-                                return Self::new_for_submodules(
-                                    file_id,
-                                    ItemScope::of(database, file_id),
-                                    ModuleData::of(database, file_id),
-                                )
-                                .resolve_plain(database, &segments[1..])
-                                .map_err(|mut diagnostic| {
-                                    diagnostic.failed_segment += 1;
-                                    diagnostic
-                                });
-                            }
-                        },
-                        ModuleDefinitionId::Function(id) => ResolveKind::Function(id),
-                        ModuleDefinitionId::GlobalVariable(id) => ResolveKind::GlobalVariable(id),
-                        ModuleDefinitionId::GlobalConstant(id) => ResolveKind::GlobalConstant(id),
-                        ModuleDefinitionId::GlobalAssertStatement(_) => {
-                            panic!("Item resolution should never return an assert statement")
-                        },
-                        ModuleDefinitionId::Override(id) => ResolveKind::Override(id),
-                        ModuleDefinitionId::Struct(id) => ResolveKind::Struct(id),
-                        ModuleDefinitionId::TypeAlias(id) => ResolveKind::TypeAlias(id),
-                    };
+        if is_path_done {
+            return Ok(resolved);
+        }
 
-                    if is_path_done {
-                        return Ok(resolved);
-                    }
-                    return Err(ResolutionDiagnostic { failed_segment: 1 });
-                },
-                Scope::SubModules(scope) => {
-                    let Some(file_id) = scope.module_info.children.get(name_start) else {
-                        continue;
-                    };
-                    if is_path_done {
-                        return Ok(ResolveKind::Module(*file_id));
-                    }
-                    return Self::new_for_submodules(
-                        *file_id,
-                        ItemScope::of(database, *file_id),
-                        ModuleData::of(database, *file_id),
-                    )
-                    .resolve_plain(database, &segments[1..])
-                    .map_err(|mut diagnostic| {
-                        diagnostic.failed_segment += 1;
-                        diagnostic
-                    });
-                },
-                Scope::Builtin => {
-                    // TODO: Match against the first name segment and then point at a "builtin" file
-                    // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/559
-                },
+        if let ResolveKind::Module(child) = resolved {
+            resolve_submodules(database, child, &segments[1..]).map_err(|mut diagnostic| {
+                diagnostic.failed_segment += 1;
+                diagnostic
+            })
+        } else {
+            Err(ResolutionDiagnostic { failed_segment: 0 })
+        }
+    }
+}
+
+fn resolve_submodules(
+    database: &dyn DefDatabase,
+    mut file_id: EditionedFileId,
+    segments: &[Name],
+) -> Result<ResolveKind, ResolutionDiagnostic> {
+    for (index, segment) in segments.iter().enumerate() {
+        let is_path_done = index == segments.len() - 1;
+        let item_scope = ItemScope::of(database, file_id);
+        // Check in current module
+        if let Some(item) = item_scope.items.get(segment) {
+            let resolved = ResolveKind::try_from(item.definition)
+                .expect("Item scope may only contain items that can be resolved");
+
+            if is_path_done {
+                return Ok(resolved);
+            }
+            if let ResolveKind::Module(child) = resolved {
+                file_id = child;
+            } else {
+                // Not at the last segment
+                return Err(ResolutionDiagnostic {
+                    failed_segment: index + 1,
+                });
             }
         }
 
-        Err(ResolutionDiagnostic { failed_segment: 0 })
+        // Otherwise go to the child file
+        if let Some(child) = ModuleData::of(database, file_id)
+            .and_then(|module_data| module_data.children.get(segment).copied())
+        {
+            if is_path_done {
+                return Ok(ResolveKind::Module(child));
+            }
+            file_id = child;
+        } else {
+            return Err(ResolutionDiagnostic {
+                failed_segment: index,
+            });
+        }
     }
+
+    Err(ResolutionDiagnostic { failed_segment: 0 })
 }
 
 #[derive(Debug, PartialEq, Eq)]

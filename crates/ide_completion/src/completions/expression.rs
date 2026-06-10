@@ -29,66 +29,60 @@ pub(crate) fn complete_names_in_scope(
         _ => return None,
     }
 
-    context
-        .resolver
-        .process_all_names(context.database, |name, item| {
-            if name == &Name::missing() {
+    context.resolver.process_all_names(|name, item| {
+        if name == &Name::missing() {
+            return;
+        }
+        let kind = match item {
+            ScopeDef::ModuleDefinition(ModuleDefinitionId::Module(_)) => CompletionItemKind::Module,
+            ScopeDef::ModuleDefinition(ModuleDefinitionId::Function(_)) => {
+                CompletionItemKind::Function
+            },
+            ScopeDef::ModuleDefinition(ModuleDefinitionId::GlobalVariable(_))
+            | ScopeDef::Local(_) => CompletionItemKind::Variable,
+            ScopeDef::ModuleDefinition(
+                ModuleDefinitionId::GlobalConstant(_) | ModuleDefinitionId::Override(_),
+            ) => CompletionItemKind::Constant,
+            ScopeDef::ModuleDefinition(ModuleDefinitionId::Struct(_)) => CompletionItemKind::Struct,
+            ScopeDef::ModuleDefinition(ModuleDefinitionId::TypeAlias(_)) => {
+                CompletionItemKind::TypeAlias
+            },
+            ScopeDef::ModuleDefinition(ModuleDefinitionId::GlobalAssertStatement(_)) => {
                 return;
-            }
-            let kind = match item {
-                ScopeDef::ModuleDefinition(ModuleDefinitionId::Module(_)) => {
-                    CompletionItemKind::Module
-                },
-                ScopeDef::ModuleDefinition(ModuleDefinitionId::Function(_)) => {
-                    CompletionItemKind::Function
-                },
-                ScopeDef::ModuleDefinition(ModuleDefinitionId::GlobalVariable(_))
-                | ScopeDef::Local(_) => CompletionItemKind::Variable,
-                ScopeDef::ModuleDefinition(
-                    ModuleDefinitionId::GlobalConstant(_) | ModuleDefinitionId::Override(_),
-                ) => CompletionItemKind::Constant,
-                ScopeDef::ModuleDefinition(ModuleDefinitionId::Struct(_)) => {
-                    CompletionItemKind::Struct
-                },
-                ScopeDef::ModuleDefinition(ModuleDefinitionId::TypeAlias(_)) => {
-                    CompletionItemKind::TypeAlias
-                },
-                ScopeDef::ModuleDefinition(ModuleDefinitionId::GlobalAssertStatement(_)) => {
-                    return;
-                },
-            };
+            },
+        };
 
-            let detail = match item {
-                ScopeDef::Local(local) => context
-                    .container
-                    .and_then(hir::ChildContainer::as_def_with_body_id)
-                    .map(|definition| {
-                        let inference = context.database.infer(definition);
-                        inference[local]
-                    })
-                    .map(|r#type| pretty_type(context.database, r#type)),
-                ScopeDef::ModuleDefinition(item) => {
-                    let detail = render_detail(context, name, item);
-                    Some(detail)
-                },
-            };
+        let detail = match item {
+            ScopeDef::Local(local) => context
+                .container
+                .and_then(hir::ChildContainer::as_def_with_body_id)
+                .map(|definition| {
+                    let inference = context.database.infer(definition);
+                    inference[local]
+                })
+                .map(|r#type| pretty_type(context.database, r#type)),
+            ScopeDef::ModuleDefinition(item) => {
+                let detail = render_detail(context, name, item);
+                Some(detail)
+            },
+        };
 
-            let mut completion = CompletionItem::new(kind, context.source_range(), name.as_str());
-            completion.set_relevance(CompletionRelevance {
-                exact_name_match: false,
-                type_match: None,
-                is_local: matches!(item, ScopeDef::Local(_)),
-                is_name_already_imported: false,
-                requires_import: false,
-                is_private_editable: false,
-                postfix_match: None,
-                function: None,
-                is_skipping_completion: false,
-                is_builtin: false,
-            });
-            completion.set_detail(detail);
-            completion.add_to(accumulator, context.database);
+        let mut completion = CompletionItem::new(kind, context.source_range(), name.as_str());
+        completion.set_relevance(CompletionRelevance {
+            exact_name_match: false,
+            type_match: None,
+            is_local: matches!(item, ScopeDef::Local(_)),
+            is_name_already_imported: false,
+            requires_import: false,
+            is_private_editable: false,
+            postfix_match: None,
+            function: None,
+            is_skipping_completion: false,
+            is_builtin: false,
         });
+        completion.set_detail(detail);
+        completion.add_to(accumulator, context.database);
+    });
     accumulator.add_all(Builtin::ALL_BUILTINS.iter().map(|name| {
         let mut builder =
             CompletionItem::new(CompletionItemKind::Function, context.source_range(), *name);
