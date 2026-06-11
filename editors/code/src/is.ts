@@ -23,7 +23,7 @@ export function array<T>(value: any): value is T[] {
 }
 
 export function stringArray(value: any): value is string[] {
-	return array(value) && (<any[]>value).every((elem) => string(elem));
+	return array(value) && (<any[]>value).every(element => string(element));
 }
 
 export function typedArray<T>(value: any, check: (value: any) => boolean): value is T[] {
