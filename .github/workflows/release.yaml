@@ -93,6 +93,7 @@ jobs:
         run: |
           corepack enable
           corepack prepare --activate
+        working-directory: ./editors/code
 
       - name: Install stable Rust toolchain
         uses: dtolnay/rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9
@@ -252,6 +253,7 @@ jobs:
         run: |
           corepack enable
           corepack prepare --activate
+        working-directory: ./editors/code
 
       - run: echo "TAG=$(date --iso -u)" >> $GITHUB_ENV
         if: github.ref == 'refs/heads/release'

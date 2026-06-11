@@ -43,6 +43,7 @@ jobs:
         run: |
           corepack enable
           corepack prepare --activate
+        working-directory: ./editors/code
 
       - name: Set up pnpm cache
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
