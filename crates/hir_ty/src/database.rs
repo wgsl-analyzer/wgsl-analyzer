@@ -27,7 +27,8 @@ use crate::{
     builtins::{Builtin, BuiltinId},
     diagnostics::{InferenceDiagnostic, InferenceDiagnosticKind},
     function::{FunctionDetails, ResolvedFunctionId},
-    infer::{InferenceResult, TypeLoweringContext, TypeLoweringError},
+    infer::InferenceResult,
+    lower::{TypeLoweringContext, TypeLoweringError},
     ty::{Type, TypeKind},
 };
 

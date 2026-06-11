@@ -6,7 +6,8 @@ use hir_def::{
 
 use crate::{
     builtins::BuiltinId,
-    infer::{LoweredKind, TypeExpectation, TypeLoweringError},
+    infer::TypeExpectation,
+    lower::{LoweredKind, TypeLoweringError},
     ty::Type,
 };
 
