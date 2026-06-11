@@ -28,8 +28,6 @@ use paths::{AbsPath, AbsPathBuf};
 pub use wesl_package::{PackageDependency, WeslPackage, WeslPackageRoot};
 pub use wesl_toml::{WeslDependency, WeslToml};
 
-use crate::package_interner::PackageInterner;
-
 /// Points at a relevant manifest file on disk.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Ord, PartialOrd)]
 pub enum ProjectManifest {

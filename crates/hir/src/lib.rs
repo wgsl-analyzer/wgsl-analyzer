@@ -4,8 +4,7 @@ pub mod database;
 pub mod definition;
 pub mod diagnostics;
 
-use base_db::{EditionedFileId, FileId, Intern as _, Lookup as _};
-use definition::Definition;
+use base_db::{EditionedFileId, Intern as _, Lookup as _};
 use diagnostics::{AnyDiagnostic, DiagnosticsConfig};
 use either::Either;
 use hir_def::{
@@ -17,6 +16,7 @@ use hir_def::{
     },
     expression::{ExpressionId, StatementId},
     expression_store::{ExpressionStoreSource, path::Path},
+    item_scope::ItemScope,
     item_tree::{self, ItemTree, ModuleItemId, Name},
     resolver::{ResolveKind, Resolver},
     signature::{FieldId, ParameterId},
@@ -35,6 +35,8 @@ pub trait HasSource {
         database: &dyn DefDatabase,
     ) -> Option<InFile<Self::Ast>>;
 }
+
+type ExprOrStatement = Either<ast::Expression, ast::Statement>;
 
 /// Nice API on top of the layers below.
 pub struct Semantics<'database> {
@@ -151,9 +153,32 @@ impl<'database> Semantics<'database> {
         source: &SyntaxNode,
     ) -> Resolver {
         if let Some(definition) = self.find_container(file_id, source) {
-            definition.resolver(self.database)
+            match definition {
+                ChildContainer::DefinitionWithBodyId(
+                    id @ DefinitionWithBodyId::Function(function_id),
+                ) => {
+                    if let Some(nearest_scope) = nearest_scope(source) {
+                        self.analyze(id).resolver_for(nearest_scope)
+                    } else {
+                        id.resolver(self.database)
+                    }
+                },
+                ChildContainer::DefinitionWithBodyId(id) => id.resolver(self.database),
+                ChildContainer::ImportId(_)
+                | ChildContainer::FunctionId(_)
+                | ChildContainer::GlobalVariableId(_)
+                | ChildContainer::GlobalConstantId(_)
+                | ChildContainer::OverrideId(_)
+                | ChildContainer::StructId(_)
+                | ChildContainer::GlobalAssertStatementId(_)
+                | ChildContainer::TypeAliasId(_) => {
+                    let file_id = definition.file_id(self.database);
+                    let module_info = ItemScope::of(self.database, file_id);
+                    Resolver::new(file_id, module_info)
+                },
+            }
         } else {
-            let module_info = self.database.item_tree(file_id);
+            let module_info = ItemScope::of(self.database, file_id);
             Resolver::new(file_id, module_info)
         }
     }
@@ -165,56 +190,6 @@ impl<'database> Semantics<'database> {
         file_id: EditionedFileId,
     ) -> Module {
         Module { file_id }
-    }
-
-    fn resolve_path_in_container(
-        &self,
-        container: ChildContainer,
-        expression: &ast::Expression,
-        path: &Path,
-    ) -> Option<Definition> {
-        let mut resolver = container.resolver(self.database);
-
-        if let ChildContainer::DefinitionWithBodyId(DefinitionWithBodyId::Function(function)) =
-            container
-        {
-            let (_, source_map) = self
-                .database
-                .body_with_source_map(DefinitionWithBodyId::Function(function));
-            let expression_id = source_map.lookup_expression(&AstPointer::new(expression))?;
-            let expression_scopes = self
-                .database
-                .expression_scopes(DefinitionWithBodyId::Function(function));
-            let scope_id = expression_scopes.scope_for_expression(expression_id)?;
-            resolver = resolver.push_expression_scope(function, expression_scopes, scope_id);
-        }
-
-        let value = resolver.resolve(path, self.database)?;
-
-        let definition = match value {
-            ResolveKind::Local(binding) => Definition::Local(Local {
-                parent: resolver.body_owner()?,
-                binding,
-            }),
-            ResolveKind::GlobalVariable(id) => {
-                Definition::ModuleDef(ModuleDef::GlobalVariable(GlobalVariable { id }))
-            },
-            ResolveKind::GlobalConstant(id) => {
-                Definition::ModuleDef(ModuleDef::GlobalConstant(GlobalConstant { id }))
-            },
-            ResolveKind::Override(id) => {
-                Definition::ModuleDef(ModuleDef::Override(Override { id }))
-            },
-            ResolveKind::Struct(id) => Definition::ModuleDef(ModuleDef::Struct(Struct { id })),
-            ResolveKind::TypeAlias(id) => {
-                Definition::ModuleDef(ModuleDef::TypeAlias(TypeAlias { id }))
-            },
-            ResolveKind::Function(id) => {
-                Definition::ModuleDef(ModuleDef::Function(Function { id }))
-            },
-        };
-
-        Some(definition)
     }
 
     fn import_to_def(
@@ -288,6 +263,17 @@ impl<'database> Semantics<'database> {
         let id = ast_id_map.try_ast_id(&source.value)?;
         Some(Location::new(source.file_id, id).intern(self.database))
     }
+}
+
+#[must_use]
+pub fn nearest_scope(node: &SyntaxNode) -> Option<ExprOrStatement> {
+    node
+            .siblings(syntax::Direction::Prev) // spellchecker:disable-line
+            .find_map(|sib| if ExprOrStatement::can_cast(sib.kind())  {
+                    ExprOrStatement::cast(sib)
+                } else {None}
+            )
+            .or_else(|| node.ancestors().find_map(ExprOrStatement::cast))
 }
 
 fn is_node_in_body(
@@ -385,27 +371,6 @@ impl ChildContainer {
         }
     }
 
-    pub fn resolver(
-        self,
-        database: &dyn HirDatabase,
-    ) -> Resolver {
-        match self {
-            Self::DefinitionWithBodyId(id) => id.resolver(database),
-            Self::ImportId(_)
-            | Self::FunctionId(_)
-            | Self::GlobalVariableId(_)
-            | Self::GlobalConstantId(_)
-            | Self::OverrideId(_)
-            | Self::StructId(_)
-            | Self::GlobalAssertStatementId(_)
-            | Self::TypeAliasId(_) => {
-                let file_id = self.file_id(database);
-                let module_info = database.item_tree(file_id);
-                Resolver::new(file_id, module_info)
-            },
-        }
-    }
-
     #[must_use]
     pub const fn as_def_with_body_id(self) -> Option<DefinitionWithBodyId> {
         if let Self::DefinitionWithBodyId(id) = self {
@@ -466,7 +431,7 @@ pub struct SourceAnalyzer<'database> {
     pub database: &'database dyn HirDatabase,
     pub body: Arc<Body>,
     pub body_source_map: Arc<BodySourceMap>,
-    pub infer: Arc<InferenceResult>,
+    pub infer: &'database InferenceResult,
     pub owner: DefinitionWithBodyId,
 }
 
@@ -476,7 +441,7 @@ impl<'database> SourceAnalyzer<'database> {
         definition: DefinitionWithBodyId,
     ) -> Self {
         let (body, body_source_map) = database.body_with_source_map(definition);
-        let infer = database.infer(definition);
+        let infer = InferenceResult::of(database, definition);
         Self {
             database,
             body,
@@ -518,7 +483,7 @@ impl<'database> SourceAnalyzer<'database> {
     #[must_use]
     pub fn resolver_for(
         &self,
-        scope: Either<ast::Expression, ast::Statement>,
+        scope: ExprOrStatement,
     ) -> Resolver {
         let mut resolver = self.owner.resolver(self.database);
 
@@ -774,8 +739,10 @@ impl HasSource for Field {
     }
 }
 
+/// The defs which can be visible in the module.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ModuleDef {
+    Module(Module),
     Function(Function),
     GlobalVariable(GlobalVariable),
     GlobalConstant(GlobalConstant),
@@ -802,18 +769,31 @@ impl ModuleDef {
             Self::GlobalAssertStatement(global_assert_statement) => Some(
                 DefinitionWithBodyId::GlobalAssertStatement(global_assert_statement.id),
             ),
-            Self::Struct(_) | Self::TypeAlias(_) => None,
+            Self::Module(_) | Self::Struct(_) | Self::TypeAlias(_) => None,
         }
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Copy)]
 pub struct Module {
-    file_id: EditionedFileId,
+    pub file_id: EditionedFileId,
+}
+
+impl HasSource for Module {
+    type Ast = ast::SourceFile;
+
+    fn source(
+        self,
+        database: &dyn DefDatabase,
+    ) -> Option<InFile<Self::Ast>> {
+        let source_file = self.file_id.parse(database).tree();
+        Some(InFile::new(self.file_id, source_file))
+    }
 }
 
 impl Module {
     pub fn items(
-        &self,
+        self,
         database: &dyn HirDatabase,
     ) -> Vec<ModuleDef> {
         let item_tree = database.item_tree(self.file_id);
@@ -825,7 +805,7 @@ impl Module {
     }
 
     pub fn diagnostics(
-        &self,
+        self,
         database: &dyn HirDatabase,
         config: &DiagnosticsConfig,
         accumulator: &mut Vec<AnyDiagnostic>,
@@ -834,7 +814,7 @@ impl Module {
 
         for item in self.items(database) {
             match item {
-                ModuleDef::Function(_function) => {},
+                ModuleDef::Module(_) | ModuleDef::Function(_) => {},
                 ModuleDef::GlobalVariable(variable) => {
                     diagnostics::global_variable::collect(database, variable.id, |error| {
                         if let Some(source) = variable.source(database) {
@@ -898,6 +878,14 @@ impl Module {
             if config.type_errors {
                 check_type_errors(database, accumulator, &item);
             }
+        }
+
+        for diagnostic in &ItemScope::of(database, self.file_id).diagnostics {
+            accumulator.push(diagnostics::any_diag_from_def_diagnostic(
+                database,
+                diagnostic,
+                self.file_id,
+            ));
         }
     }
 }
@@ -973,7 +961,7 @@ fn check_type_errors(
         let file = definition.file_id(database);
         let (_, signature_map) = database.signature_with_source_map(definition);
         let (_, source_map) = database.body_with_source_map(definition);
-        let infer = database.infer(definition);
+        let infer = InferenceResult::of(database, definition);
         for diagnostic in infer.diagnostics() {
             match diagnostics::any_diag_from_infer_diagnostic(
                 &diagnostic.kind,

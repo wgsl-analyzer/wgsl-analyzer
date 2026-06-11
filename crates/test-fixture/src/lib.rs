@@ -4,8 +4,8 @@ mod fixture;
 use std::{any::TypeId, mem, str::FromStr as _, sync};
 
 use base_db::{
-    FileId, FilePosition, FileRange, FileSet, RawEditionedFileId, SourceDatabase, SourceRoot,
-    VfsPath,
+    EditionedFileId, FileId, FilePosition, FileRange, FileSet, RawEditionedFileId, SourceDatabase,
+    SourceRoot, VfsPath,
     change::Change,
     input::{Dependency, PackageData, PackageId, PackageName, PackageOrigin},
 };
@@ -22,7 +22,7 @@ pub const WORKSPACE: base_db::SourceRootId = base_db::SourceRootId(0);
 pub trait WithFixture: Default + SourceDatabase + 'static {
     #[must_use]
     #[track_caller]
-    fn with_single_file(wa_fixture: &str) -> (Self, RawEditionedFileId) {
+    fn with_single_file(wa_fixture: &str) -> (Self, EditionedFileId) {
         let mut database = Self::default();
         let fixture = ChangeFixture::parse(wa_fixture);
         fixture.change.apply(&mut database);
@@ -31,17 +31,23 @@ pub trait WithFixture: Default + SourceDatabase + 'static {
             1,
             "Multiple files found in the fixture"
         );
-        (database, fixture.files[0])
+        let file_id = EditionedFileId::from_file(&database, fixture.files[0]);
+        (database, file_id)
     }
 
     #[must_use]
     #[track_caller]
-    fn with_many_files(wa_fixture: &str) -> (Self, Vec<RawEditionedFileId>) {
+    fn with_many_files(wa_fixture: &str) -> (Self, Vec<EditionedFileId>) {
         let mut database = Self::default();
         let fixture = ChangeFixture::parse(wa_fixture);
         fixture.change.apply(&mut database);
         assert!(fixture.file_position.is_none());
-        (database, fixture.files)
+        let files = fixture
+            .files
+            .iter()
+            .map(|file_id| EditionedFileId::from_file(&database, *file_id))
+            .collect();
+        (database, files)
     }
 
     #[must_use]
@@ -89,7 +95,7 @@ impl<Database: SourceDatabase + Default + 'static> WithFixture for Database {}
 pub struct ChangeFixture {
     pub file_position: Option<(FileId, RangeOrOffset)>,
     pub file_lines: Vec<usize>,
-    pub files: Vec<RawEditionedFileId>,
+    pub files: Vec<FileId>,
     pub change: Change,
 }
 
@@ -191,10 +197,8 @@ impl ChangeFixture {
                 );
             }
             roots.last_mut().unwrap().0.insert(file_id, path);
-            files.push(RawEditionedFileId {
-                file_id,
-                edition: meta.edition,
-            });
+            // We use raw file IDs here and then let the packages determine the editions.
+            files.push(file_id);
             file_id = FileId::from_raw(file_id.index() + 1);
         }
 

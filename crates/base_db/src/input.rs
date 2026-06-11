@@ -61,8 +61,8 @@ impl SourceRoot {
     pub fn file_for_path(
         &self,
         path: &VfsPath,
-    ) -> Option<&FileId> {
-        self.file_set.file_for_path(path)
+    ) -> Option<FileId> {
+        self.file_set.file_for_path(path).copied()
     }
 
     #[must_use]

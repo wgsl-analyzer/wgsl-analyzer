@@ -26,18 +26,20 @@ fn foo() {
             let definitions = module_definitions(&database, file_id, &module_info);
             for definition in definitions {
                 if let ModuleDefinitionId::Function(id) = definition {
-                    let inference_results = database.infer(DefinitionWithBodyId::Function(id));
+                    let inference_results =
+                        InferenceResult::of(&database, DefinitionWithBodyId::Function(id));
                     assert!(inference_results.diagnostics().is_empty());
                 }
             }
         },
-        &[("infer", 1)],
+        &[("InferenceResult::of", 1)],
         expect_test::expect![[r#"
             [
                 "item_tree_shim",
                 "parse",
                 "ast_id_map_shim",
-                "infer_shim",
+                "InferenceResult::of_",
+                "ItemScope::of_",
                 "body_shim",
                 "body_with_source_map_shim",
                 "function_data_shim",
@@ -62,12 +64,13 @@ fn foo() {
             let definitions = module_definitions(&database, file_id, &module_info);
             for definition in definitions {
                 if let ModuleDefinitionId::Function(id) = definition {
-                    let inference_results = database.infer(DefinitionWithBodyId::Function(id));
+                    let inference_results =
+                        InferenceResult::of(&database, DefinitionWithBodyId::Function(id));
                     assert!(inference_results.diagnostics().is_empty());
                 }
             }
         },
-        &[("infer", 0)],
+        &[("InferenceResult::of", 0)],
         expect_test::expect![[r#"
             [
                 "parse",
@@ -109,28 +112,30 @@ fn baz() -> i32 {
             let definitions = module_definitions(&database, file_id, &module_info);
             for definition in definitions {
                 if let ModuleDefinitionId::Function(id) = definition {
-                    let inference_results = database.infer(DefinitionWithBodyId::Function(id));
+                    let inference_results =
+                        InferenceResult::of(&database, DefinitionWithBodyId::Function(id));
                     assert!(inference_results.diagnostics().is_empty());
                 }
             }
         },
-        &[("infer", 3)],
+        &[("InferenceResult::of", 3)],
         expect_test::expect![[r#"
             [
                 "item_tree_shim",
                 "parse",
                 "ast_id_map_shim",
-                "infer_shim",
+                "InferenceResult::of_",
+                "ItemScope::of_",
                 "body_shim",
                 "body_with_source_map_shim",
                 "function_data_shim",
                 "expression_scopes_shim",
-                "infer_shim",
+                "InferenceResult::of_",
                 "body_shim",
                 "body_with_source_map_shim",
                 "function_data_shim",
                 "expression_scopes_shim",
-                "infer_shim",
+                "InferenceResult::of_",
                 "body_shim",
                 "body_with_source_map_shim",
                 "function_data_shim",
@@ -159,12 +164,13 @@ fn baz() -> i32 {
             let definitions = module_definitions(&database, file_id, &module_info);
             for definition in definitions {
                 if let ModuleDefinitionId::Function(id) = definition {
-                    let inference_results = database.infer(DefinitionWithBodyId::Function(id));
+                    let inference_results =
+                        InferenceResult::of(&database, DefinitionWithBodyId::Function(id));
                     assert!(inference_results.diagnostics().is_empty());
                 }
             }
         },
-        &[("infer", 0)],
+        &[("InferenceResult::of", 0)],
         expect_test::expect![[r#"
             [
                 "parse",
@@ -173,15 +179,15 @@ fn baz() -> i32 {
                 "body_with_source_map_shim",
                 "body_shim",
                 "function_data_shim",
-                "infer_shim",
+                "InferenceResult::of_",
                 "body_with_source_map_shim",
                 "body_shim",
                 "function_data_shim",
-                "infer_shim",
+                "InferenceResult::of_",
                 "body_with_source_map_shim",
                 "body_shim",
                 "function_data_shim",
-                "infer_shim",
+                "InferenceResult::of_",
             ]
         "#]],
     );

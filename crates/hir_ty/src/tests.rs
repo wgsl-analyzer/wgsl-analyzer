@@ -1,6 +1,7 @@
 #![expect(clippy::use_debug, reason = "tests")]
 
 mod builtins;
+mod imports;
 mod incremental;
 mod simple;
 use std::fmt::Write as _;
@@ -23,7 +24,8 @@ use triomphe::Arc;
 
 use crate::{
     database::HirDatabase as _,
-    infer::{InferenceDiagnosticKind, InferenceResult},
+    diagnostics::InferenceDiagnosticKind,
+    infer::InferenceResult,
     test_db::TestDatabase,
     ty::{
         Type,
@@ -37,12 +39,29 @@ fn infer(
     extensions: ExtensionsConfig,
     wa_fixture: &str,
 ) -> String {
-    let (mut database, file_id) = TestDatabase::with_single_file(wa_fixture);
+    let (mut database, files) = TestDatabase::with_many_files(wa_fixture);
     database.set_extensions_with_durability(extensions, Durability::MEDIUM);
-    let file_id = EditionedFileId::new(&database, file_id.file_id, file_id.edition);
-    let root = file_id.parse(&database).syntax();
     let mut buffer = String::new();
-    let mut infer_def = |inference_result: Arc<InferenceResult>,
+
+    if files.len() == 1 {
+        infer_file(&database, &mut buffer, files[0]);
+    } else {
+        for file_id in files {
+            buffer.push_str("---\n");
+            infer_file(&database, &mut buffer, file_id);
+        }
+    }
+    buffer.truncate(buffer.trim_end().len());
+    buffer
+}
+
+fn infer_file(
+    database: &TestDatabase,
+    buffer: &mut String,
+    file_id: EditionedFileId,
+) {
+    let root = file_id.parse(database).syntax();
+    let mut infer_def = |inference_result: &InferenceResult,
                          _body: Arc<Body>,
                          body_source_map: Arc<BodySourceMap>| {
         let mut types: Vec<(SyntaxNode, &Type)> = Vec::new();
@@ -73,7 +92,7 @@ fn infer(
                 node.text_range(),
                 node.text().to_string().replace('\n', " "),
             );
-            let pretty = pretty_type_with_verbosity(&database, *r#type, TypeVerbosity::Compact);
+            let pretty = pretty_type_with_verbosity(database, *r#type, TypeVerbosity::Compact);
             writeln!(buffer, "{range:?} '{}': {pretty}", ellipsize(text, 15)).unwrap();
         }
 
@@ -99,11 +118,11 @@ fn infer(
                         "{range:?} '{}': expected {} but got {}",
                         ellipsize(text, 15),
                         pretty_type_expectation_with_verbosity(
-                            &database,
+                            database,
                             expected.clone(),
                             TypeVerbosity::Compact
                         ),
-                        pretty_type_with_verbosity(&database, *actual, TypeVerbosity::Compact)
+                        pretty_type_with_verbosity(database, *actual, TypeVerbosity::Compact)
                     )
                     .unwrap();
                 },
@@ -128,25 +147,24 @@ fn infer(
         }
     };
     let module_info = database.item_tree(file_id);
-    let mut definitions = module_definitions(&database, file_id, &module_info);
-    definitions.sort_by_key(|definition| text_size(*definition, &database));
+    let mut definitions = module_definitions(database, file_id, &module_info);
+    definitions.sort_by_key(|definition| text_range_start(*definition, database));
     for definition in definitions
         .into_iter()
         .filter_map(ModuleDefinitionId::with_body)
     {
         let (body, source_map) = database.body_with_source_map(definition);
-        let infer = database.infer(definition);
+        let infer = InferenceResult::of(database, definition);
         infer_def(infer, body, source_map);
     }
-    buffer.truncate(buffer.trim_end().len());
-    buffer
 }
 
-fn text_size(
+fn text_range_start(
     definition: ModuleDefinitionId,
     database: &TestDatabase,
 ) -> base_db::TextSize {
     match definition {
+        ModuleDefinitionId::Module(_) => base_db::TextSize::new(0),
         ModuleDefinitionId::Function(item) => item
             .lookup(database)
             .source(database)
