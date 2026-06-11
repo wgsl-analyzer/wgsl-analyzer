@@ -10,8 +10,7 @@ license.workspace = true
 [lib]
 
 [dependencies]
-camino = { workspace = true }
-home = "0.5.12"
+camino.workspace = true
 
 [lints]
 workspace = true
