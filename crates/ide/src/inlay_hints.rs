@@ -6,8 +6,8 @@ use hir::{Field, HasSource as _, Semantics};
 use hir_def::{InFile, database::DefDatabase as _, item_tree::Name, signature::FieldId};
 use hir_ty::{
     function::FunctionDetails,
-    infer::ResolvedCall,
     layout::{FieldLayout, LayoutAddressSpace},
+    lower::ResolvedCall,
     ty::pretty::{TypeVerbosity, pretty_type_with_verbosity},
 };
 use ide_db::text_edit::TextEdit;

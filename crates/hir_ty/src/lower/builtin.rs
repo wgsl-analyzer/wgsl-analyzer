@@ -8,9 +8,9 @@ use wgsl_types::{
 };
 
 use crate::{
-    infer::{
+    lower::{
         Lowered, TypeContainer, TypeLoweringContext, TypeLoweringError, TypeLoweringErrorKind,
-        eval::TemplateParameters, from_wgsl_texel_format,
+        from_wgsl_texel_format, generics::TemplateParameters,
     },
     ty::{
         ArraySize, ArrayType, AtomicType, MatrixType, Pointer, ScalarType, TextureDimensionality,
