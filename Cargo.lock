@@ -602,12 +602,9 @@ dependencies = [
  "hir-ty",
  "ide-completion",
  "ide-db",
+ "ide-diagnostics",
  "itertools",
  "line-index",
- "naga 27.0.3",
- "naga 28.0.0",
- "naga 29.0.0",
- "naga 29.0.3",
  "rowan",
  "rustc-hash 2.1.2",
  "salsa",
@@ -655,6 +652,28 @@ dependencies = [
  "salsa-macros",
  "tracing",
  "triomphe",
+ "vfs",
+]
+
+[[package]]
+name = "ide-diagnostics"
+version = "0.0.0"
+dependencies = [
+ "base-db",
+ "expect-test",
+ "hir",
+ "hir-def",
+ "hir-ty",
+ "ide-db",
+ "itertools",
+ "naga 27.0.3",
+ "naga 28.0.0",
+ "naga 29.0.0",
+ "naga 29.0.3",
+ "paths",
+ "rowan",
+ "syntax",
+ "test-fixture",
  "vfs",
 ]
 
@@ -1924,6 +1943,7 @@ dependencies = [
  "ide",
  "ide-completion",
  "ide-db",
+ "ide-diagnostics",
  "idna_adapter",
  "itertools",
  "line-index",

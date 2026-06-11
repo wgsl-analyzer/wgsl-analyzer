@@ -23,13 +23,13 @@ impl NagaError for naga29::front::wgsl::ParseError {
     fn spans(&self) -> Box<dyn Iterator<Item = (Option<Range<usize>>, String)> + '_> {
         Box::new(
             self.labels()
-                .map(|(span, label)| (span.to_range(), label.to_owned())),
+                .map(|(span, label)| (to_range(span), label.to_owned())),
         )
     }
 
     fn location(&self) -> Option<Range<usize>> {
         let (span, _) = self.labels().next()?;
-        span.to_range()
+        to_range(span)
     }
 }
 
@@ -37,11 +37,15 @@ impl NagaError for naga29::WithSpan<naga29::valid::ValidationError> {
     fn spans(&self) -> Box<dyn Iterator<Item = (Option<Range<usize>>, String)> + '_> {
         Box::new(
             self.spans()
-                .map(move |(span, label)| (span.to_range(), label.clone())),
+                .map(move |(span, label)| (to_range(*span), label.clone())),
         )
     }
 
     fn location(&self) -> Option<Range<usize>> {
-        self.spans().next().and_then(|(span, _)| span.to_range())
+        self.spans().next().and_then(|(span, _)| to_range(*span))
     }
+}
+
+fn to_range(span: naga29::Span) -> Option<Range<usize>> {
+    span.to_range().map( Range::from)
 }
