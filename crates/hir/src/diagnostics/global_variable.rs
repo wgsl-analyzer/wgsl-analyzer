@@ -1,6 +1,7 @@
 use hir_def::database::{DefinitionWithBodyId, GlobalVariableId};
 use hir_ty::{
     database::HirDatabase,
+    infer::InferenceResult,
     ty::{ArrayType, Reference, TypeKind},
     validate::AddressSpaceError,
 };
@@ -17,7 +18,7 @@ pub fn collect<Function>(
 ) where
     Function: FnMut(GlobalVariableDiagnostic),
 {
-    let inference = database.infer(DefinitionWithBodyId::GlobalVariable(variable));
+    let inference = InferenceResult::of(database, DefinitionWithBodyId::GlobalVariable(variable));
     let type_kind = inference.return_type().kind(database);
 
     if let TypeKind::Reference(Reference {

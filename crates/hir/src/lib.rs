@@ -431,7 +431,7 @@ pub struct SourceAnalyzer<'database> {
     pub database: &'database dyn HirDatabase,
     pub body: Arc<Body>,
     pub body_source_map: Arc<BodySourceMap>,
-    pub infer: Arc<InferenceResult>,
+    pub infer: &'database InferenceResult,
     pub owner: DefinitionWithBodyId,
 }
 
@@ -441,7 +441,7 @@ impl<'database> SourceAnalyzer<'database> {
         definition: DefinitionWithBodyId,
     ) -> Self {
         let (body, body_source_map) = database.body_with_source_map(definition);
-        let infer = database.infer(definition);
+        let infer = InferenceResult::of(database, definition);
         Self {
             database,
             body,
@@ -961,7 +961,7 @@ fn check_type_errors(
         let file = definition.file_id(database);
         let (_, signature_map) = database.signature_with_source_map(definition);
         let (_, source_map) = database.body_with_source_map(definition);
-        let infer = database.infer(definition);
+        let infer = InferenceResult::of(database, definition);
         for diagnostic in infer.diagnostics() {
             match diagnostics::any_diag_from_infer_diagnostic(
                 &diagnostic.kind,

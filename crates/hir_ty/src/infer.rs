@@ -36,6 +36,7 @@ use wgsl_types::syntax::{AccessMode, AddressSpace, Enumerant};
 use crate::{
     builtins::{Builtin, BuiltinId, BuiltinOverload, BuiltinOverloadId},
     database::HirDatabase,
+    diagnostics::{InferenceDiagnostic, InferenceDiagnosticKind},
     function::{FunctionDetails, ResolvedFunctionId},
     infer::{
         eval::{TemplateParameter, TemplateParameters},
@@ -47,13 +48,24 @@ use crate::{
     },
 };
 
-/// Infers the type of a global item.
-/// For `const`s and co, it first uses the specified type,
-/// and then uses the body (expression) to infer the return type.
-pub fn infer_query(
+#[salsa::tracked]
+impl InferenceResult {
+    /// Infers the type of a global item.
+    /// For `const`s and co, it first uses the specified type,
+    /// and then uses the body (expression) to infer the return type.
+    #[salsa::tracked(returns(ref), cycle_result = infer_cycle_result)]
+    pub fn of(
+        db: &dyn HirDatabase,
+        definition: DefinitionWithBodyId,
+    ) -> Self {
+        infer_query(db, definition)
+    }
+}
+
+fn infer_query(
     database: &dyn HirDatabase,
     definition: DefinitionWithBodyId,
-) -> Arc<InferenceResult> {
+) -> InferenceResult {
     let resolver = definition.resolver(database);
     let body = database.body(definition);
     let mut context = InferenceContext::new(database, definition.into(), resolver);
@@ -92,14 +104,14 @@ pub fn infer_query(
         },
     }
 
-    Arc::new(context.resolve_all())
+    context.resolve_all()
 }
 
-pub fn infer_cycle_result(
+fn infer_cycle_result(
     database: &dyn HirDatabase,
     _: salsa::Id,
     definition: DefinitionWithBodyId,
-) -> Arc<InferenceResult> {
+) -> InferenceResult {
     let mut inference_result = InferenceResult::new(database);
     let (name, range) = get_name_and_range(database, ModuleDefinitionId::from(definition));
 
@@ -108,46 +120,7 @@ pub fn infer_cycle_result(
         kind: InferenceDiagnosticKind::CyclicType { name, range },
     });
 
-    Arc::new(inference_result)
-}
-
-/// Infers the type of a global item's signature.
-///
-/// The [`InferenceResult`] will contain [`ExpressionId`]s from the signature expression store.
-/// The return type is purposefully left as the error type.
-/// For example, for `const a = 3` it depends on the initializer, which we do not access here.
-pub fn infer_signature_query(
-    database: &dyn HirDatabase,
-    definition: ModuleDefinitionId,
-) -> Option<Arc<InferenceResult>> {
-    let resolver = definition.resolver(database);
-    let context = InferenceContext::new(database, definition, resolver);
-    // TODO: Match the definition and deal with the generic types in the signature.
-    // Those can contain expressions, which need to land in the inference results.
-    // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/657
-
-    let result = context.resolve_all();
-    if result.is_empty() {
-        None
-    } else {
-        Some(Arc::new(result))
-    }
-}
-
-#[expect(clippy::unnecessary_wraps, reason = "must match salsa")]
-pub fn infer_signature_cycle_result(
-    database: &dyn HirDatabase,
-    _: salsa::Id,
-    definition: ModuleDefinitionId,
-) -> Option<Arc<InferenceResult>> {
-    let mut inference_result = InferenceResult::new(database);
-    let (name, range) = get_name_and_range(database, definition);
-    inference_result.diagnostics.push(InferenceDiagnostic {
-        source: ExpressionStoreSource::Signature,
-        kind: InferenceDiagnosticKind::CyclicType { name, range },
-    });
-
-    Some(Arc::new(inference_result))
+    inference_result
 }
 
 fn get_name_and_range(
@@ -214,87 +187,6 @@ fn get_name_and_range(
                 .range,
         ),
     }
-}
-
-#[derive(PartialEq, Eq, Debug)]
-pub struct InferenceDiagnostic {
-    pub source: ExpressionStoreSource,
-    pub kind: InferenceDiagnosticKind,
-}
-
-#[derive(PartialEq, Eq, Debug)]
-pub enum InferenceDiagnosticKind {
-    AssignmentNotAReference {
-        left_side: ExpressionId,
-        actual: Type,
-    },
-    TypeMismatch {
-        expression: ExpressionId,
-        expected: TypeExpectation,
-        actual: Type,
-    },
-    NoSuchField {
-        expression: ExpressionId,
-        name: Name,
-        r#type: Type,
-    },
-    ArrayAccessInvalidType {
-        expression: ExpressionId,
-        r#type: Type,
-    },
-    UnresolvedName {
-        expression: ExpressionId,
-        name: Name,
-    },
-    InvalidConstructionType {
-        expression: ExpressionId,
-        r#type: Type,
-    },
-    FunctionCallArgCountMismatch {
-        expression: ExpressionId,
-        n_expected: usize,
-        n_actual: usize,
-    },
-    NoBuiltinOverload {
-        expression: ExpressionId,
-        builtin: BuiltinId,
-        name: Option<&'static str>,
-        parameters: Vec<Type>,
-    },
-    NoConstructor {
-        expression: ExpressionId,
-        builtins: BuiltinId,
-        r#type: Type,
-        parameters: Vec<Type>,
-    },
-    AddressOfNotReference {
-        expression: ExpressionId,
-        actual: Type,
-    },
-    DerefNotAPointer {
-        expression: ExpressionId,
-        actual: Type,
-    },
-    InvalidType {
-        error: TypeLoweringError,
-    },
-    CyclicType {
-        name: Name,
-        range: base_db::TextRange,
-    },
-    UnexpectedTemplateArgument {
-        expression: ExpressionId,
-    },
-    WgslError {
-        expression: ExpressionId,
-        message: String,
-    },
-    ExpectedLoweredKind {
-        expression: ExpressionId,
-        expected: LoweredKind,
-        actual: LoweredKind,
-        path: Path,
-    },
 }
 
 #[derive(PartialEq, Eq, Debug, Clone, Copy)]
@@ -1495,19 +1387,15 @@ impl<'database> InferenceContext<'database> {
 
         match lowered {
             Lowered::GlobalConstant(id) => {
-                self.database
-                    .infer(DefinitionWithBodyId::GlobalConstant(id))
+                InferenceResult::of(self.database, DefinitionWithBodyId::GlobalConstant(id))
                     .return_type
             },
             Lowered::GlobalVariable(id) => {
-                self.database
-                    .infer(DefinitionWithBodyId::GlobalVariable(id))
+                InferenceResult::of(self.database, DefinitionWithBodyId::GlobalVariable(id))
                     .return_type
             },
             Lowered::Override(id) => {
-                self.database
-                    .infer(DefinitionWithBodyId::Override(id))
-                    .return_type
+                InferenceResult::of(self.database, DefinitionWithBodyId::Override(id)).return_type
             },
             Lowered::Local(id) => self.result.type_of_binding[id],
             Lowered::Type(_)

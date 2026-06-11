@@ -12,10 +12,8 @@ use hir_def::{
 use hir_ty::{
     builtins::BuiltinId,
     database::HirDatabase,
-    infer::{
-        InferenceDiagnosticKind, LoweredKind, TypeExpectation, TypeLoweringError,
-        TypeLoweringErrorKind,
-    },
+    diagnostics::InferenceDiagnosticKind,
+    infer::{LoweredKind, TypeExpectation, TypeLoweringError, TypeLoweringErrorKind},
     ty::Type,
     validate::AddressSpaceError,
 };
