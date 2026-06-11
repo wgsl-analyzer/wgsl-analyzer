@@ -9,6 +9,7 @@ pub mod layout;
 pub mod ty;
 pub mod validate;
 
+pub mod diagnostics;
 #[cfg(test)]
 mod test_db;
 #[cfg(test)]

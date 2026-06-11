@@ -26,7 +26,8 @@ fn foo() {
             let definitions = module_definitions(&database, file_id, &module_info);
             for definition in definitions {
                 if let ModuleDefinitionId::Function(id) = definition {
-                    let inference_results = database.infer(DefinitionWithBodyId::Function(id));
+                    let inference_results =
+                        InferenceResult::of(&database, DefinitionWithBodyId::Function(id));
                     assert!(inference_results.diagnostics().is_empty());
                 }
             }
@@ -63,7 +64,8 @@ fn foo() {
             let definitions = module_definitions(&database, file_id, &module_info);
             for definition in definitions {
                 if let ModuleDefinitionId::Function(id) = definition {
-                    let inference_results = database.infer(DefinitionWithBodyId::Function(id));
+                    let inference_results =
+                        InferenceResult::of(&database, DefinitionWithBodyId::Function(id));
                     assert!(inference_results.diagnostics().is_empty());
                 }
             }
@@ -110,7 +112,8 @@ fn baz() -> i32 {
             let definitions = module_definitions(&database, file_id, &module_info);
             for definition in definitions {
                 if let ModuleDefinitionId::Function(id) = definition {
-                    let inference_results = database.infer(DefinitionWithBodyId::Function(id));
+                    let inference_results =
+                        InferenceResult::of(&database, DefinitionWithBodyId::Function(id));
                     assert!(inference_results.diagnostics().is_empty());
                 }
             }
@@ -161,7 +164,8 @@ fn baz() -> i32 {
             let definitions = module_definitions(&database, file_id, &module_info);
             for definition in definitions {
                 if let ModuleDefinitionId::Function(id) = definition {
-                    let inference_results = database.infer(DefinitionWithBodyId::Function(id));
+                    let inference_results =
+                        InferenceResult::of(&database, DefinitionWithBodyId::Function(id));
                     assert!(inference_results.diagnostics().is_empty());
                 }
             }

@@ -25,30 +25,14 @@ use wgsl_types::syntax::AddressSpace;
 
 use crate::{
     builtins::{Builtin, BuiltinId},
+    diagnostics::{InferenceDiagnostic, InferenceDiagnosticKind},
     function::{FunctionDetails, ResolvedFunctionId},
-    infer::{
-        InferenceDiagnostic, InferenceDiagnosticKind, InferenceResult, TypeLoweringContext,
-        TypeLoweringError,
-    },
+    infer::{InferenceResult, TypeLoweringContext, TypeLoweringError},
     ty::{Type, TypeKind},
 };
 
 #[query_group::query_group]
 pub trait HirDatabase: DefDatabase + fmt::Debug {
-    #[salsa::invoke(crate::infer::infer_query)]
-    #[salsa::cycle(cycle_result = crate::infer::infer_cycle_result)]
-    fn infer(
-        &self,
-        key: DefinitionWithBodyId,
-    ) -> Arc<InferenceResult>;
-
-    #[salsa::invoke(crate::infer::infer_signature_query)]
-    #[salsa::cycle(cycle_result = crate::infer::infer_signature_cycle_result)]
-    fn infer_signature(
-        &self,
-        key: ModuleDefinitionId,
-    ) -> Option<Arc<InferenceResult>>;
-
     fn field_types(
         &self,
         key: StructId,
@@ -194,7 +178,10 @@ fn struct_is_used_in_uniform(
             hir_def::item_tree::ModuleItemId::GlobalVariable(declaration) => {
                 let declaration =
                     database.intern_global_variable(InFile::new(file_id, declaration));
-                let inference = database.infer(DefinitionWithBodyId::GlobalVariable(declaration));
+                let inference = InferenceResult::of(
+                    database,
+                    DefinitionWithBodyId::GlobalVariable(declaration),
+                );
                 let type_kind = inference.return_type().kind(database);
 
                 if let TypeKind::Reference(crate::ty::Reference { address_space, .. }) = type_kind

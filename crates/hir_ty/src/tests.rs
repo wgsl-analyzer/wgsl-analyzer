@@ -24,7 +24,8 @@ use triomphe::Arc;
 
 use crate::{
     database::HirDatabase as _,
-    infer::{InferenceDiagnosticKind, InferenceResult},
+    diagnostics::InferenceDiagnosticKind,
+    infer::InferenceResult,
     test_db::TestDatabase,
     ty::{
         Type,
@@ -60,7 +61,7 @@ fn infer_file(
     file_id: EditionedFileId,
 ) {
     let root = file_id.parse(database).syntax();
-    let mut infer_def = |inference_result: Arc<InferenceResult>,
+    let mut infer_def = |inference_result: &InferenceResult,
                          _body: Arc<Body>,
                          body_source_map: Arc<BodySourceMap>| {
         let mut types: Vec<(SyntaxNode, &Type)> = Vec::new();
@@ -153,7 +154,7 @@ fn infer_file(
         .filter_map(ModuleDefinitionId::with_body)
     {
         let (body, source_map) = database.body_with_source_map(definition);
-        let infer = database.infer(definition);
+        let infer = InferenceResult::of(database, definition);
         infer_def(infer, body, source_map);
     }
 }
