@@ -90,7 +90,9 @@ jobs:
           package-manager-cache: false
 
       - name: Enable Corepack
-        run: corepack enable
+        run: |
+          corepack enable
+          corepack prepare --activate
 
       - name: Install stable Rust toolchain
         uses: dtolnay/rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9
@@ -115,28 +117,28 @@ jobs:
         if: ${{ matrix.zig_target }}
         run: WA_TARGET=${{ matrix.zig_target}} cargo xtask dist --client-patch-version ${{ github.run_number }} --zig # ${{ matrix.pgo && format('--pgo {0}', matrix.pgo) || ''}}
 
-      - run: corepack pnpm install --frozen-lockfile
+      - run: pnpm install --frozen-lockfile
         working-directory: editors/code
 
       - name: Package Extension (release)
         if: github.ref == 'refs/heads/release' && matrix.code-target
-        run: corepack pnpm run package -o "../../dist/wgsl-analyzer-${{ matrix.code-target }}.vsix" --target ${{ matrix.code-target }}
+        run: pnpm run package -o "../../dist/wgsl-analyzer-${{ matrix.code-target }}.vsix" --target ${{ matrix.code-target }}
         working-directory: editors/code
 
       - name: Package Extension (nightly)
         if: github.ref != 'refs/heads/release' && matrix.code-target
-        run: corepack pnpm run package -o "../../dist/wgsl-analyzer-${{ matrix.code-target }}.vsix" --target ${{ matrix.code-target }} --pre-release
+        run: pnpm run package -o "../../dist/wgsl-analyzer-${{ matrix.code-target }}.vsix" --target ${{ matrix.code-target }} --pre-release
         working-directory: editors/code
 
       - if: matrix.target == 'x86_64-unknown-linux-gnu'
         run: rm -rf editors/code/server
 
       - if: matrix.target == 'x86_64-unknown-linux-gnu' && github.ref == 'refs/heads/release'
-        run: corepack pnpm run package -o ../../dist/wgsl-analyzer-no-server.vsix
+        run: pnpm run package -o ../../dist/wgsl-analyzer-no-server.vsix
         working-directory: editors/code
 
       - if: matrix.target == 'x86_64-unknown-linux-gnu' && github.ref != 'refs/heads/release'
-        run: corepack pnpm run package -o ../../dist/wgsl-analyzer-no-server.vsix --pre-release
+        run: pnpm run package -o ../../dist/wgsl-analyzer-no-server.vsix --pre-release
         working-directory: editors/code
 
       - name: Upload artifacts
@@ -171,17 +173,17 @@ jobs:
       - name: Dist
         run: cargo xtask dist --client-patch-version ${{ github.run_number }}
 
-      - run: corepack pnpm install --frozen-lockfile
+      - run: pnpm install --frozen-lockfile
         working-directory: editors/code
 
       - name: Package Extension (release)
         if: github.ref == 'refs/heads/release'
-        run: corepack pnpm run package -o "../../dist/wgsl-analyzer-alpine-x64.vsix" --target alpine-x64 --no-dependencies
+        run: pnpm run package -o "../../dist/wgsl-analyzer-alpine-x64.vsix" --target alpine-x64 --no-dependencies
         working-directory: editors/code
 
       - name: Package Extension (nightly)
         if: github.ref != 'refs/heads/release'
-        run: corepack pnpm run package -o "../../dist/wgsl-analyzer-alpine-x64.vsix" --target alpine-x64 --pre-release --no-dependencies
+        run: pnpm run package -o "../../dist/wgsl-analyzer-alpine-x64.vsix" --target alpine-x64 --pre-release --no-dependencies
         working-directory: editors/code
 
       - run: rm -rf editors/code/server
@@ -247,7 +249,9 @@ jobs:
           package-manager-cache: false
 
       - name: Enable Corepack
-        run: corepack enable
+        run: |
+          corepack enable
+          corepack prepare --activate
 
       - run: echo "TAG=$(date --iso -u)" >> $GITHUB_ENV
         if: github.ref == 'refs/heads/release'
@@ -326,28 +330,28 @@ jobs:
 
       - run: rm dist/wgsl-analyzer-no-server.vsix
 
-      - run: corepack pnpm install --frozen-lockfile
+      - run: pnpm install --frozen-lockfile
         working-directory: ./editors/code
 
       - name: Publish Extension (Code Marketplace, release)
         if: github.ref == 'refs/heads/release' && github.repository == 'wgsl-analyzer/wgsl-analyzer'
         working-directory: ./editors/code
         # token from https://dev.azure.com/wgsl-analyzer/
-        run: corepack pnpm exec vsce publish --pat ${{ secrets.VSCE_PAT }} --packagePath ../../dist/wgsl-analyzer-*.vsix --no-dependencies
+        run: pnpm exec vsce publish --pat ${{ secrets.VSCE_PAT }} --packagePath ../../dist/wgsl-analyzer-*.vsix --no-dependencies
 
       - name: Publish Extension (OpenVSX, release)
         if: github.ref == 'refs/heads/release' && github.repository == 'wgsl-analyzer/wgsl-analyzer'
         working-directory: ./editors/code
-        run: corepack pnpm exec ovsx publish --pat ${{ secrets.OVSX_PAT }} --packagePath ../../dist/wgsl-analyzer-*.vsix --no-dependencies
+        run: pnpm exec ovsx publish --pat ${{ secrets.OVSX_PAT }} --packagePath ../../dist/wgsl-analyzer-*.vsix --no-dependencies
         timeout-minutes: 2
 
       - name: Publish Extension (Code Marketplace, nightly)
         if: github.ref != 'refs/heads/release' && github.repository == 'wgsl-analyzer/wgsl-analyzer'
         working-directory: ./editors/code
-        run: corepack pnpm exec vsce publish --pat ${{ secrets.VSCE_PAT }} --packagePath ../../dist/wgsl-analyzer-*.vsix --pre-release --no-dependencies
+        run: pnpm exec vsce publish --pat ${{ secrets.VSCE_PAT }} --packagePath ../../dist/wgsl-analyzer-*.vsix --pre-release --no-dependencies
 
       - name: Publish Extension (OpenVSX, nightly)
         if: github.ref != 'refs/heads/release' && github.repository == 'wgsl-analyzer/wgsl-analyzer'
         working-directory: ./editors/code
-        run: corepack pnpm exec ovsx publish --pat ${{ secrets.OVSX_PAT }} --packagePath ../../dist/wgsl-analyzer-*.vsix --no-dependencies
+        run: pnpm exec ovsx publish --pat ${{ secrets.OVSX_PAT }} --packagePath ../../dist/wgsl-analyzer-*.vsix --no-dependencies
         timeout-minutes: 2
