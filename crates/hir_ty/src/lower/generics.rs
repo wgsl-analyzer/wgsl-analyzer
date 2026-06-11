@@ -24,6 +24,7 @@ pub struct TemplateParameters {
 }
 
 impl TemplateParameters {
+    #[must_use]
     pub fn new(
         container: TypeContainer,
         inner: VecDeque<(TemplateParameter, ExpressionId)>,
@@ -36,16 +37,18 @@ impl TemplateParameters {
         }
     }
 
+    #[must_use]
     pub fn has_next(&self) -> bool {
         !self.inner.is_empty()
     }
 
-    pub fn next(&mut self) -> Option<(TemplateParameter, ExpressionId)> {
+    #[must_use]
+    pub fn take_next(&mut self) -> Option<(TemplateParameter, ExpressionId)> {
         self.inner.pop_front()
     }
 
     pub fn next_as_type(&mut self) -> Result<(Type, ExpressionId), TypeLoweringError> {
-        match self.next() {
+        match self.take_next() {
             Some((TemplateParameter::Type(r#type), id)) => Ok((r#type, id)),
             Some((_, id)) => Err(TypeLoweringError {
                 container: TypeContainer::Expression(id),
@@ -61,7 +64,7 @@ impl TemplateParameters {
     pub fn next_as_instance(
         &mut self
     ) -> Result<(Option<Instance>, ExpressionId), TypeLoweringError> {
-        match self.next() {
+        match self.take_next() {
             Some((TemplateParameter::Instance(instance), id)) => Ok((instance, id)),
             Some((_, id)) => Err(TypeLoweringError {
                 container: TypeContainer::Expression(id),
@@ -75,7 +78,7 @@ impl TemplateParameters {
     }
 
     pub fn next_as_enumerant(&mut self) -> Result<(Enumerant, ExpressionId), TypeLoweringError> {
-        match self.next() {
+        match self.take_next() {
             Some((TemplateParameter::Enumerant(enumerant), id)) => Ok((enumerant, id)),
             Some((_, id)) => Err(TypeLoweringError {
                 container: TypeContainer::Expression(id),
@@ -92,6 +95,7 @@ impl TemplateParameters {
         self.length
     }
 
+    #[must_use]
     pub const fn container(&self) -> &TypeContainer {
         &self.container
     }
