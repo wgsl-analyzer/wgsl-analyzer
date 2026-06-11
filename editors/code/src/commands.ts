@@ -503,8 +503,12 @@ function packageGraph(context: InitializedContext, full: boolean): Cmd {
 function moduleGraph(context: InitializedContext): Cmd {
 	return async () => {
 		const editor = vscode.window.activeTextEditor;
-		if (!editor) return;
-		if (!(isWeslDocument(editor.document) || isWeslTomlDocument(editor.document))) return;
+		if (!editor) {
+			return;
+		}
+		if (!(isWeslDocument(editor.document) || isWeslTomlDocument(editor.document))) {
+			return;
+		}
 
 		const nodeModulesPath = vscode.Uri.file(path.join(context.extensionPath, "node_modules"));
 
