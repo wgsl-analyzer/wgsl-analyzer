@@ -22,37 +22,6 @@ use syntax::{ast, pointer::AstPointer};
 
 use self::{global_variable::GlobalVariableDiagnostic, precedence::PrecedenceDiagnostic};
 
-#[derive(Clone, Copy, Debug, Default)]
-pub enum NagaVersion {
-    Naga27,
-    Naga28,
-    #[default]
-    Naga29,
-    NagaMain,
-}
-
-#[derive(Clone, Debug)]
-pub struct DiagnosticsConfig {
-    /// Whether native diagnostics are enabled.
-    pub enabled: bool,
-    pub type_errors: bool,
-    pub naga_parsing_errors: bool,
-    pub naga_validation_errors: bool,
-    pub naga_version: NagaVersion,
-}
-
-impl Default for DiagnosticsConfig {
-    fn default() -> Self {
-        Self {
-            enabled: true,
-            type_errors: true,
-            naga_parsing_errors: true,
-            naga_validation_errors: true,
-            naga_version: NagaVersion::default(),
-        }
-    }
-}
-
 pub enum AnyDiagnostic {
     ParseError {
         message: String,

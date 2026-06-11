@@ -1,23 +1,58 @@
-use std::{
-    error,
-    fmt::Display,
-    ops::{self, Range},
-};
+mod naga;
+#[cfg(test)]
+mod tests;
 
-use base_db::{EditionedFileId, FileRange, TextRange, TextSize};
-use hir::{
-    HirDatabase, Semantics,
-    diagnostics::{AnyDiagnostic, DiagnosticsConfig, NagaVersion},
-};
+use std::{error, fmt::Display};
+
+use base_db::{EditionedFileId, FileRange, TextRange};
+use hir::{HirDatabase, Semantics, diagnostics::AnyDiagnostic};
 use hir_def::original_file_range;
 use hir_ty::ty::{
     self,
     pretty::{pretty_fn, pretty_type},
 };
 use itertools::Itertools as _;
+use paths::AbsPathBuf;
 use rowan::NodeOrToken;
 use syntax::{AstNode as _, Edition};
 use vfs::FileId;
+
+use crate::naga::{Naga27, Naga28, Naga29, NagaMain, naga_diagnostics};
+
+#[derive(Clone, Copy, Debug, Default)]
+pub enum NagaVersion {
+    Naga27,
+    Naga28,
+    #[default]
+    Naga29,
+    NagaMain,
+}
+
+#[derive(Clone, Debug)]
+pub struct DiagnosticsConfig {
+    /// Whether native diagnostics are enabled.
+    pub enabled: bool,
+    pub semantic_enabled: bool,
+    pub naga_parsing_enabled: bool,
+    pub naga_validation_enabled: bool,
+    pub naga_version: NagaVersion,
+    pub tint_enabled: bool,
+    pub tint_path: Option<AbsPathBuf>,
+}
+
+impl Default for DiagnosticsConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            semantic_enabled: true,
+            naga_parsing_enabled: true,
+            naga_validation_enabled: true,
+            naga_version: NagaVersion::default(),
+            tint_enabled: false,
+            tint_path: None,
+        }
+    }
+}
 
 pub struct Diagnostic {
     pub code: DiagnosticCode,
@@ -105,101 +140,6 @@ impl Diagnostic {
     }
 }
 
-trait Naga {
-    type Module;
-    type ParseError: NagaError;
-    type ValidationError: NagaError;
-
-    fn parse(source: &str) -> Result<Self::Module, Self::ParseError>;
-    fn validate(module: &Self::Module) -> Result<(), Self::ValidationError>;
-}
-
-trait NagaError: error::Error {
-    fn spans(&self) -> Box<dyn Iterator<Item = (Option<Range<usize>>, String)> + '_>;
-    fn location(&self) -> Option<Range<usize>>;
-}
-mod naga27;
-mod naga28;
-mod naga29;
-mod naga_main;
-
-use naga_main::NagaMain;
-use naga27::Naga27;
-use naga28::Naga28;
-use naga29::Naga29;
-
-fn emit<Error>(
-    database: &dyn HirDatabase,
-    error: &Error,
-    file_id: EditionedFileId,
-    full_range: TextRange,
-    accumulator: &mut Vec<AnyDiagnostic>,
-) where
-    Error: NagaError,
-{
-    let message = error_message_cause_chain(&error);
-    let original_range = |range: ops::Range<usize>| {
-        TextRange::new(
-            TextSize::from(u32::try_from(range.start).expect("indexes are small numbers")),
-            TextSize::from(u32::try_from(range.end).expect("indexes are small numbers")),
-        )
-    };
-    let location = error.location().map_or(full_range, original_range);
-
-    let spans = error.spans().filter_map(|(span, label)| {
-        let range = original_range(span?);
-        Some((range, label))
-    });
-
-    let related: Vec<_> = spans
-        .map(|(range, message)| {
-            (
-                message,
-                FileRange {
-                    range,
-                    file_id: file_id.file_id(database),
-                },
-            )
-        })
-        .collect();
-
-    accumulator.push(AnyDiagnostic::NagaValidationError {
-        file_id,
-        range: location,
-        message,
-        related,
-    });
-}
-
-fn naga_diagnostics<Naga>(
-    database: &dyn HirDatabase,
-    file_id: EditionedFileId,
-    config: &DiagnosticsConfig,
-    accumulator: &mut Vec<AnyDiagnostic>,
-) where
-    Naga: self::Naga,
-{
-    let source: &str = database.file_text(file_id.file_id(database)).text(database);
-    let full_range = TextRange::up_to(TextSize::of(source));
-
-    match Naga::parse(source) {
-        Ok(module) => {
-            if !config.naga_validation_errors {
-                return;
-            }
-            if let Err(error) = Naga::validate(&module) {
-                emit(database, &error, file_id, full_range, accumulator);
-            }
-        },
-        Err(error) => {
-            if !config.naga_parsing_errors {
-                return;
-            }
-            emit(database, &error, file_id, full_range, accumulator);
-        },
-    }
-}
-
 /// # Panics
 ///
 /// Panics if the file is not found in the database.
@@ -227,14 +167,14 @@ pub fn diagnostics(
 
     let semantics = Semantics::new(database);
 
-    if config.type_errors {
+    if config.semantic_enabled {
         semantics
             .module(file_id)
-            .diagnostics(database, config, &mut diagnostics);
+            .semantic_diagnostics(database, &mut diagnostics);
     }
 
     let edition = file_id.edition(database);
-    if edition == Edition::Wgsl && (config.naga_parsing_errors || config.naga_validation_errors) {
+    if edition == Edition::Wgsl && (config.naga_parsing_enabled || config.naga_validation_enabled) {
         match &config.naga_version {
             NagaVersion::Naga27 => {
                 naga_diagnostics::<Naga27>(database, file_id, config, &mut diagnostics);

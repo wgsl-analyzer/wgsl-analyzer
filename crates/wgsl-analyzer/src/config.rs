@@ -1,7 +1,6 @@
 use std::{fmt, sync::OnceLock};
 
 use base_db::{ExtensionsConfig, input::SourceRootId};
-use hir::diagnostics::{DiagnosticsConfig, NagaVersion};
 use hir_ty::ty::pretty::TypeVerbosity;
 use ide::{
     HoverConfig, HoverDocFormat, MemoryLayoutHoverRenderKind,
@@ -31,10 +30,11 @@ use ide::{
 };
 use ide_completion::{CompletionConfig, CompletionFieldsToResolve};
 use ide_db::SnippetCapability;
+use ide_diagnostics::{DiagnosticsConfig, NagaVersion};
 use itertools::Itertools as _;
 use lsp_types::{ClientCapabilities as LspClientCapabilities, ClientInfo};
+use paths::Utf8PathBuf;
 use rustc_hash::FxHashMap;
-use semver::Version;
 use serde::{Deserialize, Serialize};
 use stdx::format_to_acc;
 use triomphe::Arc;
@@ -62,18 +62,23 @@ config_data! {
         /// Use `0` to let the server choose automatically based on the machine.
         cachePriming_numThreads: NumThreads = NumThreads::default(),
 
-        /// Controls whether to show naga's parsing errors.
-        diagnostics_nagaParsingErrors: bool = true,
-        /// Controls whether to show naga's validation errors.
-        diagnostics_nagaValidationErrors: bool = true,
-        /// Naga version used for validation.
-        diagnostics_nagaVersion: NagaVersionConfig = NagaVersionConfig::default(),
         /// Controls whether to show type errors.
-        diagnostics_typeErrors: bool = true,
+        diagnostics_semanticErrors: bool = true,
 
         // TODO: remove this, this is not config
         /// Whether to enable u64 and i64 scalar types.
         extensions_shaderInt64: bool = true,
+
+        /// Controls whether to show naga's parsing errors.
+        externalDiagnostics_nagaParsingErrors: bool = true,
+        /// Controls whether to show naga's validation errors.
+        externalDiagnostics_nagaValidationErrors: bool = true,
+        /// Naga version used for validation.
+        externalDiagnostics_nagaVersion: NagaVersionConfig = NagaVersionConfig::default(),
+        /// Controls whether to show Tint shader compiler's messages.
+        externalDiagnostics_tintErrors: bool = false,
+        /// The path to the tint binary.
+        externalDiagnostics_tintPath: Option<Utf8PathBuf> = None,
 
         /// Whether to show inlay hints.
         inlayHints_enabled: bool = true,
@@ -580,17 +585,23 @@ impl Config {
         &self,
         source_root: Option<SourceRootId>,
     ) -> DiagnosticsConfig {
+        let tint_path = self.externalDiagnostics_tintPath().clone().map(|path| {
+            AbsPathBuf::try_from(path).unwrap_or_else(|path| self.root_path.join(path))
+        });
+
         DiagnosticsConfig {
             enabled: true,
-            type_errors: *self.diagnostics_typeErrors(),
-            naga_parsing_errors: *self.diagnostics_nagaParsingErrors(),
-            naga_validation_errors: *self.diagnostics_nagaValidationErrors(),
-            naga_version: match self.diagnostics_nagaVersion() {
+            semantic_enabled: *self.diagnostics_semanticErrors(),
+            naga_parsing_enabled: *self.externalDiagnostics_nagaParsingErrors(),
+            naga_validation_enabled: *self.externalDiagnostics_nagaValidationErrors(),
+            naga_version: match self.externalDiagnostics_nagaVersion() {
                 NagaVersionConfig::Naga27 => NagaVersion::Naga27,
                 NagaVersionConfig::Naga28 => NagaVersion::Naga28,
                 NagaVersionConfig::Naga29 => NagaVersion::Naga29,
                 NagaVersionConfig::NagaMain => NagaVersion::NagaMain,
             },
+            tint_enabled: *self.externalDiagnostics_tintErrors(),
+            tint_path,
         }
     }
 
@@ -907,6 +918,9 @@ fn field_props(
             "type": ["null", "integer"],
             "minimum": 0,
             "maximum": 0xFFFF,
+        },
+        "Option<String>" | "Option<Utf8PathBuf>" => set! {
+            "type": ["null", "string"],
         },
         "Option<bool>" => set! {
             "type": ["null", "boolean"],

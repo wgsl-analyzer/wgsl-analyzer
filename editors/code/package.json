@@ -448,7 +448,27 @@
 			{
 				"title": "Diagnostics",
 				"properties": {
-					"wgsl-analyzer.diagnostics.nagaParsingErrors": {
+					"wgsl-analyzer.diagnostics.semanticErrors": {
+						"markdownDescription": "Controls whether to show type errors.",
+						"default": true,
+						"type": "boolean"
+					}
+				}
+			},
+			{
+				"title": "Extensions",
+				"properties": {
+					"wgsl-analyzer.extensions.shaderInt64": {
+						"markdownDescription": "Whether to enable u64 and i64 scalar types.",
+						"default": true,
+						"type": "boolean"
+					}
+				}
+			},
+			{
+				"title": "External Diagnostics",
+				"properties": {
+					"wgsl-analyzer.externalDiagnostics.nagaParsingErrors": {
 						"markdownDescription": "Controls whether to show naga's parsing errors.",
 						"default": true,
 						"type": "boolean"
@@ -456,9 +476,9 @@
 				}
 			},
 			{
-				"title": "Diagnostics",
+				"title": "External Diagnostics",
 				"properties": {
-					"wgsl-analyzer.diagnostics.nagaValidationErrors": {
+					"wgsl-analyzer.externalDiagnostics.nagaValidationErrors": {
 						"markdownDescription": "Controls whether to show naga's validation errors.",
 						"default": true,
 						"type": "boolean"
@@ -466,9 +486,9 @@
 				}
 			},
 			{
-				"title": "Diagnostics",
+				"title": "External Diagnostics",
 				"properties": {
-					"wgsl-analyzer.diagnostics.nagaVersion": {
+					"wgsl-analyzer.externalDiagnostics.nagaVersion": {
 						"markdownDescription": "Naga version used for validation.",
 						"default": "0.29",
 						"type": "string",
@@ -488,22 +508,25 @@
 				}
 			},
 			{
-				"title": "Diagnostics",
+				"title": "External Diagnostics",
 				"properties": {
-					"wgsl-analyzer.diagnostics.typeErrors": {
-						"markdownDescription": "Controls whether to show type errors.",
-						"default": true,
+					"wgsl-analyzer.externalDiagnostics.tintErrors": {
+						"markdownDescription": "Controls whether to show Tint shader compiler's messages.",
+						"default": false,
 						"type": "boolean"
 					}
 				}
 			},
 			{
-				"title": "Extensions",
+				"title": "External Diagnostics",
 				"properties": {
-					"wgsl-analyzer.extensions.shaderInt64": {
-						"markdownDescription": "Whether to enable u64 and i64 scalar types.",
-						"default": true,
-						"type": "boolean"
+					"wgsl-analyzer.externalDiagnostics.tintPath": {
+						"markdownDescription": "The path to the tint binary.",
+						"default": null,
+						"type": [
+							"null",
+							"string"
+						]
 					}
 				}
 			},
