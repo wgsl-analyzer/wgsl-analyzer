@@ -133,11 +133,13 @@ impl Resolver {
         })
     }
 
-    /// Calls the passed closure `function` on all names in scope.
-    pub fn process_all_names<Function: FnMut(&Name, ScopeDef)>(
+    /// Calls the passed closure `callback` on all names in scope.
+    pub fn process_all_names<Callback>(
         &self,
-        mut callback: Function,
-    ) {
+        mut callback: Callback,
+    ) where
+        Callback: FnMut(&Name, ScopeDef),
+    {
         self.scopes().for_each(|scope| match scope {
             Scope::Expression(expression_scope) => {
                 expression_scope

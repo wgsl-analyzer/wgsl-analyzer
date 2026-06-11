@@ -1647,7 +1647,7 @@ impl<'database> InferenceContext<'database> {
 
         let mut converter = WgslTypeConverter::new(self.database);
         let mut template_args = vec![];
-        while let Some((template_parameter, _)) = template_parameters.next() {
+        while let Some((template_parameter, _)) = template_parameters.take_next() {
             if let Some(template_parameter) =
                 converter.template_parameter_to_wgsl_types(template_parameter)
             {

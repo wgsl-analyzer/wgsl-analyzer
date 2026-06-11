@@ -32,13 +32,13 @@ fn foo() {
                 }
             }
         },
-        &[("infer", 1)],
+        &[("InferenceResult::of", 1)],
         expect_test::expect![[r#"
             [
                 "item_tree_shim",
                 "parse",
                 "ast_id_map_shim",
-                "infer_shim",
+                "InferenceResult::of_",
                 "ItemScope::of_",
                 "body_shim",
                 "body_with_source_map_shim",
@@ -70,7 +70,7 @@ fn foo() {
                 }
             }
         },
-        &[("infer", 0)],
+        &[("InferenceResult::of", 0)],
         expect_test::expect![[r#"
             [
                 "parse",
@@ -118,24 +118,24 @@ fn baz() -> i32 {
                 }
             }
         },
-        &[("infer", 3)],
+        &[("InferenceResult::of", 3)],
         expect_test::expect![[r#"
             [
                 "item_tree_shim",
                 "parse",
                 "ast_id_map_shim",
-                "infer_shim",
+                "InferenceResult::of_",
                 "ItemScope::of_",
                 "body_shim",
                 "body_with_source_map_shim",
                 "function_data_shim",
                 "expression_scopes_shim",
-                "infer_shim",
+                "InferenceResult::of_",
                 "body_shim",
                 "body_with_source_map_shim",
                 "function_data_shim",
                 "expression_scopes_shim",
-                "infer_shim",
+                "InferenceResult::of_",
                 "body_shim",
                 "body_with_source_map_shim",
                 "function_data_shim",
@@ -170,7 +170,7 @@ fn baz() -> i32 {
                 }
             }
         },
-        &[("infer", 0)],
+        &[("InferenceResult::of", 0)],
         expect_test::expect![[r#"
             [
                 "parse",
@@ -179,15 +179,15 @@ fn baz() -> i32 {
                 "body_with_source_map_shim",
                 "body_shim",
                 "function_data_shim",
-                "infer_shim",
+                "InferenceResult::of_",
                 "body_with_source_map_shim",
                 "body_shim",
                 "function_data_shim",
-                "infer_shim",
+                "InferenceResult::of_",
                 "body_with_source_map_shim",
                 "body_shim",
                 "function_data_shim",
-                "infer_shim",
+                "InferenceResult::of_",
             ]
         "#]],
     );
