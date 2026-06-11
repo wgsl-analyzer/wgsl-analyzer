@@ -117,6 +117,12 @@ pub enum AnyDiagnostic {
         message: String,
         related: Vec<(String, FileRange)>,
     },
+    TintValidationError {
+        file_id: EditionedFileId,
+        range: TextRange,
+        message: String,
+        severity: Severity,
+    },
     NoConstructor {
         expression: InFile<AstPointer<ast::Expression>>,
         builtins: BuiltinId,
@@ -148,6 +154,14 @@ pub enum AnyDiagnostic {
     },
 }
 
+#[derive(Clone, Copy)]
+pub enum Severity {
+    Error,
+    Warning,
+    Information,
+    Hint,
+}
+
 impl AnyDiagnostic {
     #[must_use]
     pub const fn file_id(&self) -> EditionedFileId {
@@ -173,6 +187,7 @@ impl AnyDiagnostic {
             },
             Self::InvalidTypeSpecifier { type_specifier, .. } => type_specifier.file_id,
             Self::NagaValidationError { file_id, .. }
+            | Self::TintValidationError { file_id, .. }
             | Self::ParseError { file_id, .. }
             | Self::CyclicType { file_id, .. }
             | Self::InvalidIdentifier { file_id, .. } => *file_id,

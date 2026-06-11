@@ -1,23 +1,31 @@
 mod naga;
 #[cfg(test)]
 mod tests;
+mod tint;
 
 use std::fmt::Display;
 
 use base_db::{EditionedFileId, FileRange, TextRange};
-use hir::{HirDatabase, Semantics, diagnostics::AnyDiagnostic};
+use hir::{
+    HirDatabase, Semantics,
+    diagnostics::{AnyDiagnostic, Severity},
+};
 use hir_def::original_file_range;
 use hir_ty::ty::{
     self,
     pretty::{pretty_fn, pretty_type},
 };
+use ide_db::RootDatabase;
 use itertools::Itertools as _;
 use paths::AbsPathBuf;
 use rowan::NodeOrToken;
 use syntax::AstNode as _;
 use vfs::FileId;
 
-use crate::naga::{Naga27, Naga28, Naga29, NagaMain, naga_diagnostics};
+use crate::{
+    naga::{Naga27, Naga28, Naga29, NagaMain, naga_diagnostics},
+    tint::tint_diagnostics,
+};
 
 #[derive(Clone, Copy, Debug, Default)]
 pub enum NagaVersion {
@@ -69,6 +77,7 @@ pub enum DiagnosticSource {
     #[default]
     WgslAnalyzer,
     Naga,
+    Tint,
     WeslRs,
 }
 
@@ -80,6 +89,7 @@ impl Display for DiagnosticSource {
         match self {
             Self::WgslAnalyzer => write!(f, "wgsl-analyzer"),
             Self::Naga => write!(f, "naga"),
+            Self::Tint => write!(f, "tint"),
             Self::WeslRs => write!(f, "wesl-rs"),
         }
     }
@@ -97,12 +107,6 @@ impl DiagnosticCode {
     pub const fn as_str(&self) -> &'static str {
         self.0
     }
-}
-
-#[derive(Clone, Copy)]
-pub enum Severity {
-    Error,
-    WeakWarning,
 }
 
 impl Diagnostic {
@@ -145,7 +149,7 @@ impl Diagnostic {
 /// Panics if the file is not found in the database.
 #[expect(clippy::too_many_lines, reason = "TODO")]
 pub fn diagnostics(
-    database: &dyn HirDatabase,
+    database: &RootDatabase,
     config: &DiagnosticsConfig,
     file_id: FileId,
 ) -> Vec<Diagnostic> {
@@ -188,6 +192,10 @@ pub fn diagnostics(
                 naga_diagnostics::<NagaMain>(database, file_id, config, &mut diagnostics);
             },
         }
+    }
+
+    if config.tint_enabled {
+        tint_diagnostics(database, file_id, config, &mut diagnostics);
     }
 
     diagnostics
@@ -376,6 +384,17 @@ pub fn diagnostics(
                     let mut message = Diagnostic::new(DiagnosticCode("15"), message, range);
                     message.related = related;
                     message.source = DiagnosticSource::Naga;
+                    message
+                },
+                AnyDiagnostic::TintValidationError {
+                    file_id,
+                    range,
+                    message,
+                    severity,
+                } => {
+                    let mut message = Diagnostic::new(DiagnosticCode("15"), message, range);
+                    message.severity = severity;
+                    message.source = DiagnosticSource::Tint;
                     message
                 },
                 AnyDiagnostic::ParseError { message, range, .. } => {
