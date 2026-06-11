@@ -33,7 +33,9 @@ fn check_diagnostics(
     {
         let severity_text = match severity {
             Severity::Error => "Error",
-            Severity::WeakWarning => "Warning",
+            Severity::Warning => "Warning",
+            Severity::Information => "Information",
+            Severity::Hint => "Hint",
         };
         writeln!(
             actual,

@@ -582,15 +582,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "home"
-version = "0.5.12"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cc627f471c528ff0c4a49e1d5e60450c8f6461dd6d10ba9dcd3a61d3dff7728d"
-dependencies = [
- "windows-sys 0.61.2",
-]
-
-[[package]]
 name = "ide"
 version = "0.0.0"
 dependencies = [
@@ -666,14 +657,18 @@ dependencies = [
  "hir-ty",
  "ide-db",
  "itertools",
+ "line-index",
  "naga 27.0.3",
  "naga 28.0.0",
  "naga 29.0.0",
  "naga 29.0.3",
  "paths",
  "rowan",
+ "serde",
+ "serde_json",
  "syntax",
  "test-fixture",
+ "toolchain",
  "vfs",
 ]
 
@@ -1584,7 +1579,6 @@ dependencies = [
  "rustc-hash 2.1.2",
  "stdx",
  "test-utils",
- "triomphe",
 ]
 
 [[package]]
@@ -1738,7 +1732,6 @@ name = "toolchain"
 version = "0.0.0"
 dependencies = [
  "camino",
- "home",
 ]
 
 [[package]]

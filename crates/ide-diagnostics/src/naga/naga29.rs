@@ -47,5 +47,5 @@ impl NagaError for naga29::WithSpan<naga29::valid::ValidationError> {
 }
 
 fn to_range(span: naga29::Span) -> Option<Range<usize>> {
-    span.to_range().map( Range::from)
+    span.to_range().map(Range::from)
 }

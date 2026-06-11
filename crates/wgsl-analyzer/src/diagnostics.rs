@@ -6,7 +6,8 @@ use std::{mem, ops};
 
 use base_db::{DbPanicContext, input::PackageId};
 type FileId = vfs::FileId;
-use ide_diagnostics::{Diagnostic as IdeDiagnostic, Severity};
+use hir::diagnostics::Severity;
+use ide_diagnostics::Diagnostic as IdeDiagnostic;
 use itertools::Itertools as _;
 use lsp_types::{
     Code, Diagnostic as LspDiagnostic, DiagnosticRelatedInformation, DiagnosticSeverity,
@@ -321,6 +322,8 @@ pub(crate) fn convert_related_information(
 const fn diagnostic_severity(severity: Severity) -> DiagnosticSeverity {
     match severity {
         Severity::Error => DiagnosticSeverity::Error,
-        Severity::WeakWarning => DiagnosticSeverity::Hint,
+        Severity::Warning => DiagnosticSeverity::Warning,
+        Severity::Information => DiagnosticSeverity::Information,
+        Severity::Hint => DiagnosticSeverity::Hint,
     }
 }
