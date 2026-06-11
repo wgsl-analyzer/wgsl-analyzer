@@ -47,13 +47,13 @@ jobs:
             target: x86_64-unknown-linux-gnu
             # Use a container with glibc 2.28
             # Zig is not used because it does not work with PGO
-            container: quay.io/pypa/manylinux_2_28_x86_64:sha256:dee559b640ecd6c8a3dacf8c7cad3ea339c7d1f505c52efdc57891f17f2c931b
+            container: quay.io/pypa/manylinux_2_28_x86_64@sha256:c1eab7504661beb3b1381336a2d7a5b86d91f9b6486e6b1b653f53fdb183ce2f
             code-target: linux-x64
             pgo: bevyengine/bevy@v0.16.1
 
           - os: ubuntu-24.04-arm
             target: aarch64-unknown-linux-gnu
-            container: quay.io/pypa/manylinux_2_28_aarch64:sha256:dee559b640ecd6c8a3dacf8c7cad3ea339c7d1f505c52efdc57891f17f2c931b
+            container: quay.io/pypa/manylinux_2_28_aarch64@sha256:79ef9ac575740a16d374c036e150a2817f2d5e7dd09f3aef91707055f4b929c9
             code-target: linux-arm64
             pgo: bevyengine/bevy@v0.16.1
 
@@ -357,3 +357,42 @@ jobs:
         working-directory: ./editors/code
         run: pnpm exec ovsx publish --pat ${{ secrets.OVSX_PAT }} --packagePath ../../dist/wgsl-analyzer-*.vsix --no-dependencies
         timeout-minutes: 2
+
+  notify-failure:
+    name: notify failure
+    runs-on: ubuntu-latest
+    needs: ["dist", "dist-x86_64-unknown-linux-musl", "dist-dprint-plugin", "publish"]
+    permissions:
+      issues: write
+    if: |
+      always() &&
+      contains(needs.*.result, 'failure') &&
+      (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/release')
+    steps:
+      - name: Create or update failure issue
+        run: |
+          previous_issue_number=$(gh issue list \
+            --search "$TITLE in:title" \
+            --json number \
+            --jq '.[0].number')
+          if [[ -n $previous_issue_number ]]; then
+            gh issue comment "$previous_issue_number" \
+              --body "Release workflow still failing: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          else
+            gh issue create \
+              --title "$TITLE" \
+              --label "$LABELS" \
+              --body "$BODY"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          TITLE: Release workflow failed on `${{ github.ref_name }}`
+          LABELS: "C-Bug,S-Needs-Triage"
+          BODY: |
+            ## Release workflow failed
+
+            [The offending run.](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
+            **Branch:** `${{ github.ref_name }}`
+            **Triggered by:** `${{ github.event_name }}`
