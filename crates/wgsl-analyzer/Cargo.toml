@@ -50,6 +50,7 @@ memchr = "2.8.1"
 hir-ty.workspace = true
 hir.workspace = true
 ide-db.workspace = true
+ide-diagnostics.workspace = true
 # intern.workspace = true
 # This should only be used in CLI
 # ide-ssr.workspace = true

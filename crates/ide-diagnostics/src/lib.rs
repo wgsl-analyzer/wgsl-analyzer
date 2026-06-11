@@ -1,23 +1,58 @@
-use std::{
-    error,
-    fmt::Display,
-    ops::{self, Range},
-};
+mod naga;
+#[cfg(test)]
+mod tests;
 
-use base_db::{EditionedFileId, FileRange, TextRange, TextSize};
-use hir::{
-    HirDatabase, Semantics,
-    diagnostics::{AnyDiagnostic, DiagnosticsConfig, NagaVersion},
-};
+use std::fmt::Display;
+
+use base_db::{EditionedFileId, FileRange, TextRange};
+use hir::{HirDatabase, Semantics, diagnostics::AnyDiagnostic};
 use hir_def::original_file_range;
 use hir_ty::ty::{
     self,
     pretty::{pretty_fn, pretty_type},
 };
 use itertools::Itertools as _;
+use paths::AbsPathBuf;
 use rowan::NodeOrToken;
 use syntax::AstNode as _;
 use vfs::FileId;
+
+use crate::naga::{Naga27, Naga28, Naga29, NagaMain, naga_diagnostics};
+
+#[derive(Clone, Copy, Debug, Default)]
+pub enum NagaVersion {
+    Naga27,
+    Naga28,
+    #[default]
+    Naga29,
+    NagaMain,
+}
+
+#[derive(Clone, Debug)]
+pub struct DiagnosticsConfig {
+    /// Whether native diagnostics are enabled.
+    pub enabled: bool,
+    pub semantic_enabled: bool,
+    pub naga_parsing_enabled: bool,
+    pub naga_validation_enabled: bool,
+    pub naga_version: NagaVersion,
+    pub tint_enabled: bool,
+    pub tint_path: Option<AbsPathBuf>,
+}
+
+impl Default for DiagnosticsConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            semantic_enabled: true,
+            naga_parsing_enabled: true,
+            naga_validation_enabled: true,
+            naga_version: NagaVersion::default(),
+            tint_enabled: false,
+            tint_path: None,
+        }
+    }
+}
 
 pub struct Diagnostic {
     pub code: DiagnosticCode,
@@ -105,101 +140,6 @@ impl Diagnostic {
     }
 }
 
-trait Naga {
-    type Module;
-    type ParseError: NagaError;
-    type ValidationError: NagaError;
-
-    fn parse(source: &str) -> Result<Self::Module, Self::ParseError>;
-    fn validate(module: &Self::Module) -> Result<(), Self::ValidationError>;
-}
-
-trait NagaError: error::Error {
-    fn spans(&self) -> Box<dyn Iterator<Item = (Option<Range<usize>>, String)> + '_>;
-    fn location(&self) -> Option<Range<usize>>;
-}
-mod naga27;
-mod naga28;
-mod naga29;
-mod naga_main;
-
-use naga_main::NagaMain;
-use naga27::Naga27;
-use naga28::Naga28;
-use naga29::Naga29;
-
-fn emit<Error>(
-    database: &dyn HirDatabase,
-    error: &Error,
-    file_id: EditionedFileId,
-    full_range: TextRange,
-    accumulator: &mut Vec<AnyDiagnostic>,
-) where
-    Error: NagaError,
-{
-    let message = error_message_cause_chain(&error);
-    let original_range = |range: ops::Range<usize>| {
-        TextRange::new(
-            TextSize::from(u32::try_from(range.start).expect("indexes are small numbers")),
-            TextSize::from(u32::try_from(range.end).expect("indexes are small numbers")),
-        )
-    };
-    let location = error.location().map_or(full_range, original_range);
-
-    let spans = error.spans().filter_map(|(span, label)| {
-        let range = original_range(span?);
-        Some((range, label))
-    });
-
-    let related: Vec<_> = spans
-        .map(|(range, message)| {
-            (
-                message,
-                FileRange {
-                    range,
-                    file_id: file_id.file_id(database),
-                },
-            )
-        })
-        .collect();
-
-    accumulator.push(AnyDiagnostic::NagaValidationError {
-        file_id,
-        range: location,
-        message,
-        related,
-    });
-}
-
-fn naga_diagnostics<Naga>(
-    database: &dyn HirDatabase,
-    file_id: EditionedFileId,
-    config: &DiagnosticsConfig,
-    accumulator: &mut Vec<AnyDiagnostic>,
-) where
-    Naga: self::Naga,
-{
-    let source: &str = database.file_text(file_id.file_id(database)).text(database);
-    let full_range = TextRange::up_to(TextSize::of(source));
-
-    match Naga::parse(source) {
-        Ok(module) => {
-            if !config.naga_validation_errors {
-                return;
-            }
-            if let Err(error) = Naga::validate(&module) {
-                emit(database, &error, file_id, full_range, accumulator);
-            }
-        },
-        Err(error) => {
-            if !config.naga_parsing_errors {
-                return;
-            }
-            emit(database, &error, file_id, full_range, accumulator);
-        },
-    }
-}
-
 /// # Panics
 ///
 /// Panics if the file is not found in the database.
@@ -227,13 +167,13 @@ pub fn diagnostics(
 
     let semantics = Semantics::new(database);
 
-    if config.type_errors {
+    if config.semantic_enabled {
         semantics
             .module(file_id)
-            .diagnostics(database, config, &mut diagnostics);
+            .semantic_diagnostics(database, &mut diagnostics);
     }
 
-    if config.naga_parsing_errors || config.naga_validation_errors {
+    if config.naga_parsing_enabled || config.naga_validation_enabled {
         match &config.naga_version {
             NagaVersion::Naga27 => {
                 naga_diagnostics::<Naga27>(database, file_id, config, &mut diagnostics);
@@ -579,196 +519,4 @@ More complex operands must be this with parenthesized `()`"
             }
         })
         .collect()
-}
-
-fn error_message_cause_chain(error: &dyn error::Error) -> String {
-    let mut message = error.to_string();
-
-    let mut error = error.source();
-    if error.is_some() {
-        message.push_str(": ");
-    }
-
-    while let Some(source) = error {
-        message.push_str(&source.to_string());
-        error = source.source();
-    }
-
-    message
-}
-
-#[cfg(test)]
-mod tests {
-    use std::fmt::Write as _;
-
-    use expect_test::{Expect, expect};
-    use hir::diagnostics::DiagnosticsConfig;
-    use itertools::Itertools;
-
-    use crate::{diagnostics::Diagnostic, fixture::single_file_db};
-
-    #[expect(clippy::needless_pass_by_value, reason = "Matches expect! macro")]
-    #[expect(clippy::use_debug, reason = "useful in tests")]
-    fn check_diagnostics(
-        source: &str,
-        expect: Expect,
-    ) {
-        let (analysis, file_id) = single_file_db(source);
-        let config = DiagnosticsConfig {
-            enabled: true,
-            type_errors: true,
-            naga_parsing_errors: false,
-            naga_validation_errors: false,
-            ..Default::default()
-        };
-        let diagnostics = analysis.diagnostics(&config, file_id).unwrap();
-        let mut actual = String::new();
-        for Diagnostic {
-            code,
-            message,
-            range,
-            severity,
-            ..
-        } in diagnostics
-        {
-            let severity_text = match severity {
-                crate::diagnostics::Severity::Error => "Error",
-                crate::diagnostics::Severity::WeakWarning => "Warning",
-            };
-            writeln!(
-                actual,
-                "{range:?} {severity_text} {}: {message}",
-                code.as_str()
-            );
-        }
-
-        expect.assert_eq(&actual);
-    }
-
-    #[test]
-    fn global_var_function_address_space_error() {
-        check_diagnostics(
-            "var<function> not_allowed_at_module_level: u32;",
-            expect![[r#"
-                0..3 Error 12: address space is only valid in function-scope
-                4..12 Error 21: unexpected template argument
-            "#]],
-        );
-    }
-
-    #[test]
-    fn invalid_body() {
-        check_diagnostics(
-            "fn f() { let x: u32 = 1.0; }",
-            expect![[r#"
-                22..25 Error 2: expected u32, found float
-            "#]],
-        );
-    }
-
-    #[test]
-    fn no_host_shareable_error_for_undefined_struct() {
-        // https://github.com/wgsl-analyzer/wgsl-analyzer/issues/722
-        // When referencing an undefined struct, we should NOT get a spurious
-        // "not host-shareable" diagnostic — only the "unresolved" error.
-        check_diagnostics(
-            "
-@group(0) @binding(0)
-var<storage> lines: array<LineSegment>;
-",
-            expect![[r#"
-                48..59 Error 14: `LineSegment` not found in scope
-            "#]],
-        );
-    }
-
-    #[test]
-    fn reserved_identifier_double_underscore() {
-        // https://github.com/wgsl-analyzer/wgsl-analyzer/issues/681
-        // Identifiers starting with "__" are reserved by the WGSL spec.
-        check_diagnostics(
-            "
-fn __my_func() {}
-",
-            expect![[r#"
-                3..12 Error 24: `__my_func` is not a valid name for an identifier
-            "#]],
-        );
-    }
-
-    #[test]
-    fn non_reserved_identifier_single_underscore() {
-        // A single underscore prefix should NOT trigger the reserved identifier diagnostic.
-        check_diagnostics(
-            "
-fn _my_func() {}
-",
-            expect![""],
-        );
-    }
-
-    #[test]
-    fn incomplete_variable_error() {
-        // https://github.com/wgsl-analyzer/wgsl-analyzer/issues/825
-        check_diagnostics(
-            "
-@group(0) @binding(0)
-var<storage, read> a: array<f32>;
-
-@group(0) @binding(1) // line 4
-var<storage
-",
-            expect![[r#"
-                92..93 Error 16: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
-                101..101 Error 16: invalid syntax, expected one of: ':', '=', ';'
-                22..25 Error 12: address space is only valid for handle or texture types
-                26..33 Error 21: unexpected template argument
-                26..33 Error 21: unexpected template argument
-                89..92 Error 12: address space is only valid for handle or texture types
-            "#]],
-        );
-    }
-
-    #[test]
-    fn reserved_word_diagnostic() {
-        // WGSL reserved words should produce a diagnostic.
-        check_diagnostics(
-            "
-fn test() {
-    let enum = 1u;
-}
-",
-            expect![[r#"
-                20..24 Error 16: 'enum' is a reserved word in WGSL
-                20..24 Error 16: invalid syntax, expected: <identifier>
-            "#]],
-        );
-    }
-
-    #[test]
-    fn invalid_bitcast() {
-        // TODO: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/908
-        check_diagnostics(
-            "
-fn foo() { let bar: f32 = bitcast<f32>(vec4u(1, 2, 3, 4)); }
-",
-            expect![""],
-        );
-    }
-
-    #[test]
-    fn invalid_identifier_underscore() {
-        // An identifier must not be _ (a single underscore, U+005F).
-        // https://www.w3.org/TR/WGSL/#identifiers
-        check_diagnostics(
-            "
-fn _() {}
-fn foo() { let _ = 1; }
-",
-            expect![[r#"
-                3..4 Error 16: invalid syntax, expected: <identifier>
-                25..26 Error 16: invalid syntax, expected: <identifier>
-            "#]],
-        );
-    }
 }

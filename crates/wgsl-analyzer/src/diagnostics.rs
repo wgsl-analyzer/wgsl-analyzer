@@ -6,7 +6,7 @@ use std::{mem, ops};
 
 use base_db::{DbPanicContext, input::PackageId};
 type FileId = vfs::FileId;
-use ide::diagnostics::{Diagnostic as IdeDiagnostic, Severity};
+use ide_diagnostics::{Diagnostic as IdeDiagnostic, Severity};
 use itertools::Itertools as _;
 use lsp_types::{
     Code, Diagnostic as LspDiagnostic, DiagnosticRelatedInformation, DiagnosticSeverity,

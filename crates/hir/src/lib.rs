@@ -5,7 +5,7 @@ pub mod definition;
 pub mod diagnostics;
 
 use base_db::{EditionedFileId, Intern as _, Lookup as _};
-use diagnostics::{AnyDiagnostic, DiagnosticsConfig};
+use diagnostics::AnyDiagnostic;
 use either::Either;
 use hir_def::{
     HasSource as _, InFile,
@@ -804,10 +804,9 @@ impl Module {
             .collect()
     }
 
-    pub fn diagnostics(
+    pub fn semantic_diagnostics(
         self,
         database: &dyn HirDatabase,
-        config: &DiagnosticsConfig,
         accumulator: &mut Vec<AnyDiagnostic>,
     ) {
         validate_identifiers(self.file_id, database, accumulator);
@@ -875,9 +874,7 @@ impl Module {
                     }
                 },
             }
-            if config.type_errors {
-                check_type_errors(database, accumulator, &item);
-            }
+            check_type_errors(database, accumulator, &item);
         }
 
         for diagnostic in &ItemScope::of(database, self.file_id).diagnostics {
