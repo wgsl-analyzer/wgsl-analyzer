@@ -396,6 +396,7 @@ jobs:
   conclusion:
     needs:
       [
+        no-ai-commits,
         rust,
         # rust-cross,
         markdown,
