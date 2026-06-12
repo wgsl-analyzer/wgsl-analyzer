@@ -1,0 +1,188 @@
+use expect_test::expect;
+
+use crate::name_resolution::tests::{check, check_modules};
+
+#[test]
+fn crate_modules_map_smoke_test() {
+    check_modules(
+        r#"
+//- /shaders.wesl edition:2026_pre
+use package::foo::bar::g;
+
+//- /shaders/foo.wesl
+fn f() {}
+
+//- /shaders/foo/bar.wesl
+fn g() {}
+"#,
+        expect![[r#"
+            package
+            package::foo
+            package::foo::bar
+        "#]],
+    );
+}
+
+#[test]
+fn module_map_ignores_unreachable() {
+    // The current implementation ignores files that do not have a corresponding parent
+    // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1182
+
+    check_modules(
+        r#"
+//- /shaders.wesl
+
+//- /shaders/foo.wesl
+
+//- /shaders/bar/unreachable.wesl
+
+//- /shaders/foo/bar.wesl
+"#,
+        expect![[r#"
+            package
+            package::foo
+            package::foo::bar
+        "#]],
+    );
+}
+
+#[test]
+fn module_map_package_wesl() {
+    check_modules(
+        r#"
+//- /package.wesl
+
+//- /bar.wesl
+
+//- /foo.wesl
+
+//- /foo/bar.wesl
+"#,
+        expect![[r#"
+            package
+            package::bar
+            package::foo
+            package::foo::bar
+        "#]],
+    );
+}
+
+#[test]
+fn module_map_deep_package_wesl() {
+    check_modules(
+        r#"
+//- /shaders/package.wesl package:my_package
+
+//- /shaders.wesl
+
+//- /unrelated.wesl
+
+//- /shaders/foo.wesl
+
+//- /shaders/bar.wesl
+
+//- /shaders/foo/baz.wesl
+"#,
+        expect![[r#"
+            package
+            package::bar
+            package::foo
+            package::foo::baz
+        "#]],
+    );
+}
+
+#[test]
+fn module_map_wesl_shadows_wgsl() {
+    check(
+        r#"
+//- /shaders.wesl
+
+//- /shaders/foo.wesl
+const A = 3;
+
+//- /shaders/foo.wgsl
+const WGSL = 5;
+
+
+//- /shaders/bar.wgsl
+const WGSL = 3;
+
+//- /shaders/bar.wesl
+const A = 5;
+"#,
+        expect![[r#"
+            package
+            package::bar
+            - const A
+            package::foo
+            - const A
+        "#]],
+    );
+}
+
+#[test]
+fn import_as_test() {
+    check(
+        r#"
+//- /shaders.wesl edition:2026_pre
+const Foo = 32;
+
+//- /shaders/bar.wesl
+import package::Foo as MyFoo;
+const Bar = package::Foo + MyFoo;
+
+//- /shaders/foo.wesl
+fn Foo() {}
+"#,
+        expect![[r#"
+            package
+            - const Foo
+            package::bar
+            - const Bar
+            - const MyFoo (import)
+            package::foo
+            - fn Foo
+        "#]],
+    );
+}
+
+#[test]
+fn import_escapes_root() {
+    check(
+        r#"
+//- /package.wesl edition:2026_pre
+import super::foo;
+
+//- /bar.wesl
+import super::super::bar;
+"#,
+        expect![[r#"
+            package
+            error: too many supers
+            package::bar
+            error: too many supers
+        "#]],
+    );
+}
+
+#[test]
+fn import_name_conflict() {
+    check(
+        r#"
+//- /package.wesl edition:2026_pre
+import package::bar::foo;
+const foo = 3;
+
+//- /bar.wesl
+const foo = 5;
+"#,
+        expect![[r#"
+            package
+            - const foo
+            error: name conflict for foo
+            package::bar
+            - const foo
+        "#]],
+    );
+}

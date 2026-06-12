@@ -534,9 +534,48 @@ More complex operands must be this with parenthesized `()`"
                 },
                 AnyDiagnostic::InvalidIdentifier { name, range, .. } => Diagnostic::new(
                     DiagnosticCode("24"),
-                    format!("'{}' is not a valid name for an identifier", name.as_str()),
+                    format!("`{}` is not a valid name for an identifier", name.as_str()),
                     range,
                 ),
+                AnyDiagnostic::UnresolvedImport { id, name } => {
+                    let source = id.value.to_node(&root);
+                    let frange = original_file_range(database, id.file_id, source.syntax());
+                    Diagnostic::new(
+                        DiagnosticCode("25"),
+                        format!("unresolved import `{}`", name.as_str()),
+                        frange.range,
+                    )
+                },
+                AnyDiagnostic::TooManySupers { id } => {
+                    let source = id.value.to_node(&root);
+                    let frange = original_file_range(database, id.file_id, source.syntax());
+                    Diagnostic::new(
+                        DiagnosticCode("26"),
+                        "too many leading `super` keywords".to_owned(),
+                        frange.range,
+                    )
+                },
+                AnyDiagnostic::DetachedFile { id } => {
+                    let source = id.value.to_node(&root);
+                    let frange = original_file_range(database, id.file_id, source.syntax());
+                    Diagnostic::new(
+                        DiagnosticCode("27"),
+                        "file is detached. Include it with a wesl.toml".to_owned(),
+                        frange.range,
+                    )
+                },
+                AnyDiagnostic::NameConflict {
+                    item,
+                    name: previous,
+                } => {
+                    let source = item.value.to_node(&root);
+                    let frange = original_file_range(database, item.file_id, source.syntax());
+                    Diagnostic::new(
+                        DiagnosticCode("28"),
+                        format!("Duplicate identifier `{}`", previous.as_str()),
+                        frange.range,
+                    )
+                },
             }
         })
         .collect()
@@ -652,7 +691,7 @@ var<storage> lines: array<LineSegment>;
 fn __my_func() {}
 ",
             expect![[r#"
-                3..12 Error 24: '__my_func' is not a valid name for an identifier
+                3..12 Error 24: `__my_func` is not a valid name for an identifier
             "#]],
         );
     }

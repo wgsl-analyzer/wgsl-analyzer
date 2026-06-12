@@ -46,7 +46,7 @@ export const runFlycheck = new lc.NotificationType<{
 export const viewSyntaxTree = new lc.RequestType<ViewSyntaxTreeParameters, string, void>(
 	"wgsl-analyzer/viewSyntaxTree",
 );
-export const viewModuleGraph = new lc.RequestType<ViewModuleGraphParameters, string, void>(
+export const viewModuleGraph = new lc.RequestType<ViewModuleGraphParameters, string | null, void>(
 	"wgsl-analyzer/viewModuleGraph",
 );
 export const viewPackageGraph = new lc.RequestType<ViewPackageGraphParameters, string, void>(

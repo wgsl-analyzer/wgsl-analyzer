@@ -1,7 +1,26 @@
+mod imports;
+mod item_scopes;
+
+use base_db::EditionedFileId;
 use expect_test::{Expect, expect};
 use test_fixture::WithFixture as _;
 
-use crate::{name_resolution::modules_map_query, test_db::TestDatabase};
+use crate::{item_scope::ItemScope, name_resolution::modules_map_query, test_db::TestDatabase};
+
+fn render_modules_map_with_items(wa_fixture: &str) -> String {
+    let database = TestDatabase::with_files(wa_fixture);
+    let package = database.fetch_test_package();
+    modules_map_query(&database, package).dump_with_items(&database)
+}
+
+#[expect(clippy::needless_pass_by_value, reason = "matches expect! macro")]
+fn check(
+    wa_fixture: &str,
+    expect: Expect,
+) {
+    let actual = render_modules_map_with_items(wa_fixture);
+    expect.assert_eq(&actual);
+}
 
 fn render_modules_map(wa_fixture: &str) -> String {
     let database = TestDatabase::with_files(wa_fixture);
@@ -10,7 +29,7 @@ fn render_modules_map(wa_fixture: &str) -> String {
 }
 
 #[expect(clippy::needless_pass_by_value, reason = "matches expect! macro")]
-fn check(
+fn check_modules(
     wa_fixture: &str,
     expect: Expect,
 ) {
@@ -18,63 +37,25 @@ fn check(
     expect.assert_eq(&actual);
 }
 
-#[test]
-fn crate_modules_map_smoke_test() {
-    check(
-        r#"
-//- /shaders.wesl
-use package::foo::bar::g;
+fn render_item_scope(wa_fixture: &str) -> String {
+    let database = TestDatabase::with_files(wa_fixture);
+    let package = database.fetch_test_package();
+    let package_data = package.data(&database);
 
-//- /shaders/foo.wesl
-fn f() {}
-
-//- /shaders/foo/bar.wesl
-fn g() {}
-"#,
-        expect![[r#"
-            package
-            package::foo
-            package::foo::bar
-        "#]],
-    );
+    let mut output = String::new();
+    ItemScope::of(
+        &database,
+        EditionedFileId::new(&database, package_data.root_file_id, package_data.edition),
+    )
+    .dump(&mut output);
+    output
 }
 
-#[test]
-fn module_map_ignores_unreachable() {
-    // The current implementation ignores files that do not have a corresponding parent
-    // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1182
-
-    check(
-        r#"
-//- /shaders.wesl
-
-//- /shaders/foo.wesl
-
-//- /shaders/bar/unreachable.wesl
-
-//- /shaders/foo/bar.wesl
-"#,
-        expect![[r#"
-            package
-            package::foo
-            package::foo::bar
-        "#]],
-    );
-}
-
-#[test]
-fn module_map_wesl_shadows_wgsl() {
-    check(
-        r#"
-//- /shaders.wesl
-
-//- /shaders/foo.wesl
-
-//- /shaders/foo.wgsl
-"#,
-        expect![[r#"
-            package
-            package::foo
-        "#]],
-    );
+#[expect(clippy::needless_pass_by_value, reason = "matches expect! macro")]
+fn check_item_scope(
+    wa_fixture: &str,
+    expect: Expect,
+) {
+    let actual = render_item_scope(wa_fixture);
+    expect.assert_eq(&actual);
 }

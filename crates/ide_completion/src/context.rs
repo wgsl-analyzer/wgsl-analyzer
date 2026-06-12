@@ -1,14 +1,10 @@
 use base_db::{EditionedFileId, FilePosition, TextRange};
-use either::Either;
-use hir::{ChildContainer, Semantics};
-use hir_def::{database::DefDatabase as _, resolver::Resolver};
+use hir::{ChildContainer, Semantics, nearest_scope};
+use hir_def::{item_scope::ItemScope, resolver::Resolver};
 use ide_db::RootDatabase;
-use rowan::NodeOrToken;
-use syntax::{AstNode as _, Direction, SyntaxKind, SyntaxToken, ast};
+use syntax::{AstNode as _, SyntaxKind, SyntaxToken, ast};
 
 use crate::{config::CompletionConfig, patterns::determine_location};
-
-type ExprOrStatement = Either<ast::Expression, ast::Statement>;
 
 /// `CompletionContext` is created early during completion to figure out, where
 /// exactly is the cursor, syntax-wise.
@@ -45,18 +41,10 @@ impl<'database> CompletionContext<'database> {
         let completion_location =
             determine_location(&semantics, file.syntax(), position.offset, &token);
 
-        let module_info = database.item_tree(file_id);
+        let module_info = ItemScope::of(database, file_id);
         let mut resolver = Resolver::new(file_id, module_info);
 
-        let nearest_scope = token
-            .siblings_with_tokens(Direction::Prev) // spellchecker:disable-line
-            .find_map(|sib| match sib {
-                NodeOrToken::Node(node) if ExprOrStatement::can_cast(node.kind()) => {
-                    ExprOrStatement::cast(node)
-                },
-                NodeOrToken::Node(_) | NodeOrToken::Token(_) => None,
-            })
-            .or_else(|| token.parent_ancestors().find_map(ExprOrStatement::cast));
+        let nearest_scope = token.parent().and_then(|node| nearest_scope(&node));
 
         if let Some(scope) = nearest_scope
             && let Some(definition) = container

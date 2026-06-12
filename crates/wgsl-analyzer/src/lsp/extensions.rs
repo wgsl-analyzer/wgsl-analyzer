@@ -178,7 +178,7 @@ pub enum ViewModuleGraphRequest {}
 
 impl Request for ViewModuleGraphRequest {
     type Params = ViewModuleGraphParameters;
-    type Result = String;
+    type Result = Option<String>;
 
     const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
     const METHOD: LspRequestMethod = LspRequestMethod::new("wgsl-analyzer/viewModuleGraph");

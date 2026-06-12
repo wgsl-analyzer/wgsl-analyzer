@@ -6,6 +6,7 @@ pub mod body;
 pub mod database;
 pub mod expression;
 pub mod expression_store;
+pub mod item_scope;
 pub mod item_tree;
 pub mod mod_path;
 pub mod name_resolution;
@@ -13,14 +14,12 @@ pub mod resolver;
 pub mod signature;
 #[cfg(test)]
 mod test_db;
-#[cfg(test)]
-mod tests;
 pub mod type_ref;
 pub mod type_specifier;
+pub mod visibility;
 pub use ast_id::*;
 use base_db::{EditionedFileId, FileRange, TextRange};
 use database::DefDatabase;
-use item_tree::{ItemTreeNode, ModuleItemId};
 use rowan::NodeOrToken;
 use syntax::{AstNode, SyntaxNode, SyntaxToken, pointer::AstPointer};
 

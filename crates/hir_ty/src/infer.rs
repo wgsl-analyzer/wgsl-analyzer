@@ -4,7 +4,7 @@ mod unify;
 
 use std::{fmt, ops::Index};
 
-use base_db::Lookup as _;
+use base_db::{Lookup as _, TextRange, TextSize};
 use either::Either;
 use hir_def::{
     HasSource as _,
@@ -19,6 +19,8 @@ use hir_def::{
     },
     expression_store::{ExpressionStore, ExpressionStoreSource, path::Path},
     item_tree::Name,
+    mod_path::PathKind,
+    name_resolution::ModuleData,
     resolver::{ResolveKind, Resolver},
     signature::{
         ConstantSignature, FieldId, FunctionSignature, OverrideSignature, VariableSignature,
@@ -153,6 +155,15 @@ fn get_name_and_range(
     definition: ModuleDefinitionId,
 ) -> (Name, base_db::TextRange) {
     match definition {
+        ModuleDefinitionId::Module(file_id) => {
+            let module_data = ModuleData::of(database, file_id);
+            let full_range = TextRange::empty(TextSize::new(0));
+
+            let name = module_data.as_ref().map_or_else(Name::missing, |module| {
+                module.name.clone().unwrap_or_else(|| Name::from("package"))
+            });
+            (name, full_range)
+        },
         ModuleDefinitionId::Function(id) => (
             database.function_data(id).0.name.clone(),
             id.lookup(database)
@@ -1476,7 +1487,7 @@ impl<'database> InferenceContext<'database> {
             store,
         );
         let lowered = context.lower(
-            TypeContainer::Expression(expression),
+            expression,
             &ident_expression.path,
             &ident_expression.template_parameters,
         );
@@ -1702,11 +1713,7 @@ impl<'database> InferenceContext<'database> {
             .resolver_for_expression(expression)
             .unwrap_or_else(|| self.resolver.clone());
         let mut context = TypeLoweringContext::new(self.database, &resolver, store);
-        let lowered = context.lower(
-            TypeContainer::Expression(expression),
-            &callee.path,
-            &callee.template_parameters,
-        );
+        let lowered = context.lower(expression, &callee.path, &callee.template_parameters);
         self.push_lowering_diagnostics(&mut context.diagnostics, store);
 
         match lowered {
@@ -2351,8 +2358,12 @@ pub struct TypeLoweringError {
 #[derive(PartialEq, Eq, Debug, Clone)]
 pub enum TypeLoweringErrorKind {
     UnresolvedName(Name),
-    UnresolvedPath(Path),
+    UnresolvedPath {
+        path: Path,
+        failed_segment: usize,
+    },
     UnexpectedTemplateArgument(String),
+    UnexpectedModule(Path),
     MissingTemplateArgument(String),
     MissingTemplate,
     WrongNumberOfTemplateArguments {
@@ -2381,8 +2392,19 @@ impl fmt::Display for TypeLoweringErrorKind {
             Self::UnresolvedName(name) => {
                 write!(formatter, "`{}` not found in scope", name.as_str())
             },
-            Self::UnresolvedPath(path) => {
-                write!(formatter, "`{}` not found in scope", path.mod_path())
+            Self::UnresolvedPath {
+                path,
+                failed_segment,
+            } => {
+                if *failed_segment == 0 {
+                    let name = path.mod_path().display_iter().next().unwrap_or_default();
+                    write!(formatter, "`{name}` not found in scope")
+                } else {
+                    let mut segments = path.mod_path().display_iter().skip(*failed_segment - 1);
+                    let previous_name = segments.next().unwrap_or_default();
+                    let name = segments.next().unwrap_or_default();
+                    write!(formatter, "`{name}` not found in `{previous_name}`")
+                }
             },
             Self::WgslError(error) => {
                 write!(formatter, "{error}")
@@ -2391,6 +2413,13 @@ impl fmt::Display for TypeLoweringErrorKind {
                 write!(
                     formatter,
                     "unexpected template argument, expected {expected}"
+                )
+            },
+            Self::UnexpectedModule(path) => {
+                write!(
+                    formatter,
+                    "`{}` is a module, not a type or expression",
+                    path.mod_path()
                 )
             },
             Self::MissingTemplateArgument(expected) => {
@@ -2503,11 +2532,15 @@ impl<'database> TypeLoweringContext<'database> {
 
     pub fn lower(
         &mut self,
-        type_container: TypeContainer,
+        expression: ExpressionId,
         path: &Path,
         template_parameters: &[ExpressionId],
     ) -> Lowered {
-        match self.try_lower(type_container, path, template_parameters) {
+        match self.try_lower(
+            TypeContainer::Expression(expression),
+            path,
+            template_parameters,
+        ) {
             Ok(lowered) => lowered,
             Err(error) => {
                 self.diagnostics.push(error);
@@ -2523,27 +2556,49 @@ impl<'database> TypeLoweringContext<'database> {
         path: &Path,
         template_parameters: &[ExpressionId],
     ) -> Result<Lowered, TypeLoweringError> {
-        let resolved_type = self.resolver.resolve(path, self.database);
+        let resolved_type = self.resolver.resolve(self.database, path);
 
-        if resolved_type.is_some() {
+        if resolved_type.is_ok() {
             self.expect_no_template(template_parameters);
         }
 
         match resolved_type {
-            Some(ResolveKind::TypeAlias(id)) => {
+            Ok(ResolveKind::Module(module_id)) => Err(TypeLoweringError {
+                container: type_container,
+                kind: TypeLoweringErrorKind::UnexpectedModule(path.clone()),
+            }),
+            Ok(ResolveKind::TypeAlias(id)) => {
                 Ok(Lowered::Type(self.database.type_alias_type(id).0))
             },
-            Some(ResolveKind::Struct(id)) => Ok(Lowered::Type(
+            Ok(ResolveKind::Struct(id)) => Ok(Lowered::Type(
                 self.database.intern_type(TypeKind::Struct(id)),
             )),
-            Some(ResolveKind::Function(id)) => {
-                Ok(Lowered::Function(self.database.function_type(id)))
-            },
-            Some(ResolveKind::GlobalConstant(id)) => Ok(Lowered::GlobalConstant(id)),
-            Some(ResolveKind::GlobalVariable(id)) => Ok(Lowered::GlobalVariable(id)),
-            Some(ResolveKind::Override(id)) => Ok(Lowered::Override(id)),
-            Some(ResolveKind::Local(local)) => Ok(Lowered::Local(local)),
-            None => self.lower_predeclared(type_container, path, template_parameters),
+            Ok(ResolveKind::Function(id)) => Ok(Lowered::Function(self.database.function_type(id))),
+            Ok(ResolveKind::GlobalConstant(id)) => Ok(Lowered::GlobalConstant(id)),
+            Ok(ResolveKind::GlobalVariable(id)) => Ok(Lowered::GlobalVariable(id)),
+            Ok(ResolveKind::Override(id)) => Ok(Lowered::Override(id)),
+            Ok(ResolveKind::Local(local, _)) => Ok(Lowered::Local(local)),
+            Err(diagnostic) if path.mod_path().kind() == PathKind::Plain => path
+                .mod_path()
+                .segments()
+                .first()
+                .and_then(|predeclared_name| {
+                    self.lower_if_predeclared(type_container, predeclared_name, template_parameters)
+                })
+                .ok_or_else(|| TypeLoweringError {
+                    container: type_container,
+                    kind: TypeLoweringErrorKind::UnresolvedPath {
+                        path: path.clone(),
+                        failed_segment: diagnostic.failed_segment,
+                    },
+                }),
+            Err(diagnostic) => Err(TypeLoweringError {
+                container: type_container,
+                kind: TypeLoweringErrorKind::UnresolvedPath {
+                    path: path.clone(),
+                    failed_segment: diagnostic.failed_segment,
+                },
+            }),
         }
     }
 

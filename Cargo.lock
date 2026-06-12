@@ -631,13 +631,11 @@ name = "ide-completion"
 version = "0.0.0"
 dependencies = [
  "base-db",
- "either",
  "hir",
  "hir-def",
  "hir-ty",
  "ide-db",
  "itertools",
- "rowan",
  "rustc-hash 2.1.2",
  "smallvec",
  "smol_str",
