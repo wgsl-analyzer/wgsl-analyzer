@@ -53,6 +53,18 @@ jobs:
             typescript:
               - 'editors/code/**'
 
+  no-ai-commits:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Detect slop
+        uses: Jondolf/ai-commit-check@888ad1ef25e2e79ddf5fbdaf0247b90b373eea55 # v1.0.0
+
   rust:
     name: Rust
     runs-on: ${{ matrix.os }}
@@ -385,6 +397,7 @@ jobs:
   conclusion:
     needs:
       [
+        no-ai-commits,
         rust,
         # rust-cross,
         markdown,
