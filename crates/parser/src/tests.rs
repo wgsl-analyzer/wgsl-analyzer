@@ -2,6 +2,7 @@
 #![expect(clippy::too_many_lines, reason = "snapshot test data")]
 
 mod attributes;
+mod conditional;
 mod diagnostic;
 mod expression;
 mod imports;

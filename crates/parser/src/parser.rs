@@ -351,4 +351,39 @@ impl<'source> ParserCallbacks<'source> for Parser<'source> {
             ));
         }
     }
+
+    // TODO not working
+    fn create_node_if_attr(
+        &mut self,
+        node_ref: NodeRef,
+        diagnostics: &mut Vec<Self::Diagnostic>,
+    ) {
+        if !self
+            .cst
+            .children(node_ref)
+            .any(|child| self.cst.match_rule(child, Rule::Arguments))
+        {
+            diagnostics.push(self.create_diagnostic(
+                self.cst.span(node_ref),
+                format!("missing argument list: `(condition)`"),
+            ));
+        }
+    }
+
+    fn create_node_elif_attr(
+        &mut self,
+        node_ref: NodeRef,
+        diagnostics: &mut Vec<Self::Diagnostic>,
+    ) {
+        if !self
+            .cst
+            .children(node_ref)
+            .any(|child| self.cst.match_rule(child, Rule::Arguments))
+        {
+            diagnostics.push(self.create_diagnostic(
+                self.cst.span(node_ref),
+                format!("missing argument list: `(condition)`"),
+            ));
+        }
+    }
 }
