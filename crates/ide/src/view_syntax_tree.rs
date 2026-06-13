@@ -1,11 +1,10 @@
 use std::fmt::Write as _;
 
 use base_db::{EditionedFileId, TextRange};
-use hir_def::database::DefDatabase as _;
 use ide_db::{LineIndexDatabase as _, RootDatabase};
 use line_index::{LineCol, LineIndex};
 use rowan::{NodeOrToken, TextSize, WalkEvent};
-use syntax::{SyntaxNode, SyntaxToken, ast};
+use syntax::SyntaxNode;
 use triomphe::Arc;
 use vfs::FileId;
 
