@@ -314,14 +314,14 @@ checksum = "a74b6c4d4a1cff5f454164363c16b72fa12463ca6b31f4b5f2035a65fa3d5906"
 
 [[package]]
 name = "dprint-core"
-version = "0.67.4"
+version = "0.68.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2c1d827947704a9495f705d6aeed270fa21a67f825f22902c28f38dc3af7a9ae"
+checksum = "8698cce2d4defd77683dd360c67351643523c4f87ad177b6574978d0f05e4836"
 dependencies = [
- "anyhow",
  "indexmap",
  "serde",
  "serde_json",
+ "thiserror",
 ]
 
 [[package]]
