@@ -76,7 +76,7 @@
 		"@tsconfig/strictest": "^2.0.8",
 		"@types/node": "^25.9.2",
 		"@types/vscode": "^1.120.0",
-		"@vscode/test-electron": "^2.5.2",
+		"@vscode/test-electron": "^3.0.0",
 		"@vscode/vsce": "^3.9.2",
 		"esbuild": "^0.28.1",
 		"ovsx": "^1.0.0",
