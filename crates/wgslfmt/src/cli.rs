@@ -51,6 +51,7 @@ pub enum OutputFormat {
     Json,
     #[default]
     Text,
+    Silent,
 }
 
 impl Args {
@@ -76,7 +77,13 @@ Exits with 1 if formatting is required.",
             .arg(
                 Arg::new("json")
                     .long("json")
-                    .help("Format stdio output as JSON")
+                    .help("Format status outputs as JSON")
+                    .action(ArgAction::SetTrue),
+            )
+            .arg(
+                Arg::new("silent")
+                    .long("silent")
+                    .help("Do not output any status outputs")
                     .action(ArgAction::SetTrue),
             )
 
@@ -123,7 +130,11 @@ Pass \"-\" to read from stdin",
             WgslFmtMode::Write
         };
 
-        let stdout_format = if matches.remove_one::<bool>("json").unwrap_or_default() {
+        let stdout_format =
+            if matches.remove_one::<bool>("silent").unwrap_or_default() {
+            OutputFormat::Silent
+                }else
+            if matches.remove_one::<bool>("json").unwrap_or_default() {
             OutputFormat::Json
         } else {
             OutputFormat::Text

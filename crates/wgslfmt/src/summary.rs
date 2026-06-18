@@ -30,12 +30,54 @@ pub trait Summary {
     );
 }
 
+pub struct SilentSummary;
+impl Summary for SilentSummary {
+    fn begin(&mut self) {}
+
+    fn end(&mut self) {}
+
+    fn start_files(&mut self) {}
+
+    fn file_result_written(
+        &mut self,
+        file_result: &FileResult,
+    ) {
+    }
+
+    fn file_result_checked(
+        &mut self,
+        file_result: &FileResult,
+    ) {
+    }
+
+    fn end_files(&mut self) {}
+
+    fn write_summary(
+        &mut self,
+        formatted_files: usize,
+        unchanged_files: usize,
+        errored_files: usize,
+    ) {
+    }
+
+    fn check_summary(
+        &mut self,
+        failed_files: usize,
+        passed_files: usize,
+        errored_files: usize,
+    ) {
+    }
+}
+
 pub struct TextSummary {
-    pub print_diff: bool
+    pub print_diff: bool,
 }
 
 impl TextSummary {
-    fn print_diff(&self, result: &FileResult) {
+    fn print_diff(
+        &self,
+        result: &FileResult,
+    ) {
         if let FileStatus::Changed { source, formatted } = &result.status {
             // We re-output the path of the file, to avoid confusion
             // about whether diff comes before or after the filename when the
@@ -50,7 +92,16 @@ impl TextSummary {
             println!("Diff of {}:", result.file);
 
             let diff = prettydiff::diff_lines(source, formatted);
-            println!("{}", diff.format_with_context(Some(prettydiff::text::ContextConfig { context_size: 5, ..Default::default()}), true));
+            println!(
+                "{}",
+                diff.format_with_context(
+                    Some(prettydiff::text::ContextConfig {
+                        context_size: 5,
+                        ..Default::default()
+                    }),
+                    true
+                )
+            );
         }
     }
 }
@@ -104,7 +155,9 @@ impl Summary for TextSummary {
         unchanged_files: usize,
         errored_files: usize,
     ) {
-        println!("Formatted: {formatted_files}, Errors: {errored_files}, Unchanged: {unchanged_files}");
+        println!(
+            "Formatted: {formatted_files}, Errors: {errored_files}, Unchanged: {unchanged_files}"
+        );
     }
 
     fn check_summary(
