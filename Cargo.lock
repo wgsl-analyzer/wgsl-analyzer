@@ -328,7 +328,6 @@ dependencies = [
 name = "dprint_plugin_wgslfmt"
 version = "0.0.0"
 dependencies = [
- "anyhow",
  "dprint-core",
  "serde",
  "serde_json",
