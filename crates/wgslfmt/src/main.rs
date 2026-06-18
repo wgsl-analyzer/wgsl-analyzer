@@ -38,13 +38,6 @@ enum FileStatus {
     Changed { source: String, formatted: String },
 }
 
-#[derive(Serialize)]
-struct ParseError {
-    line: u32,
-    col: u32,
-    message: String,
-}
-
 fn main() -> Result<(), anyhow::Error> {
     let cli = Args::parse();
 
