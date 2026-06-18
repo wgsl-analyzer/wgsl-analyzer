@@ -1,17 +1,21 @@
-
 mod cli;
 pub mod options;
 mod patterns;
 mod summary;
 
 use std::{
-    fmt::Display, io::Read as _, path::PathBuf, process::exit, task::Context, time::{Duration, Instant}
+    fmt::Display,
+    io::Read as _,
+    path::PathBuf,
+    process::exit,
+    task::Context,
+    time::{Duration, Instant},
 };
 
 use anyhow::{Context as _, bail};
 use prettydiff::text::ContextConfig;
 use serde::Serialize;
-use summary::WriteSummary;
+use summary::{JsonSummary, Summary, TextSummary};
 use wgsl_formatter::{FormatStringError, FormattingOptions, IndentStyle};
 
 use crate::{
@@ -41,7 +45,6 @@ struct ParseError {
     message: String,
 }
 
-
 fn main() -> Result<(), anyhow::Error> {
     let cli = Args::parse();
 
@@ -58,13 +61,33 @@ fn main() -> Result<(), anyhow::Error> {
         .map(read_file)
         .map(|(file, source)| format_file(file, source, &wgslfmt_options));
 
-
-    match cli.mode {
-        WgslFmtMode::Check => check_file_results(formatted_files),
-        WgslFmtMode::Write => write_file_results(formatted_files, cli.stdout_format, cli.print_diff),
+    match &cli.stdout_format {
+        OutputFormat::Json => {
+            process(cli.mode, formatted_files, JsonSummary::default());
+        },
+        OutputFormat::Text => {
+            process(
+                cli.mode,
+                formatted_files,
+                TextSummary {
+                    print_diff: cli.print_diff,
+                },
+            );
+        },
     }
 
     exit(0);
+}
+
+fn process<S: Summary>(
+    mode: WgslFmtMode,
+    formatted_files: impl Iterator<Item = FileResult>,
+    s: S,
+) {
+    match mode {
+        WgslFmtMode::Check => check_file_results(formatted_files, s),
+        WgslFmtMode::Write => write_file_results(formatted_files, s),
+    }
 }
 
 fn read_file(file: FormattingSource) -> (FormattingSource, String) {
@@ -110,28 +133,70 @@ fn format_file(
     }
 }
 
-fn check_file_results(results: impl Iterator<Item = FileResult>) {
-    let mut has_errors = false;
+fn check_file_results<S: Summary>(
+    results: impl Iterator<Item = FileResult>,
+    mut summary: S,
+) {
+    let mut passed_count = 0;
+    let mut failed_count = 0;
+    let mut errored_count = 0;
+
+    summary.start_files();
     for result in results {
-        if matches!(result.status, FileStatus::Errors) {
-            has_errors = true;
+        match &result.status {
+            FileStatus::Unchanged => {
+                passed_count += 1;
+            },
+            FileStatus::Errors => {
+                errored_count += 1;
+            },
+            FileStatus::Changed { source, formatted } => {
+                failed_count += 1;
+            },
         }
+        summary.file_result_checked(&result);
     }
-    if has_errors {
+    summary.end_files();
+
+    summary.check_summary(failed_count, passed_count, errored_count);
+    summary.end();
+
+    if failed_count > 0 || errored_count > 0 {
         exit(1);
     }
 }
 
-fn write_file_results(results: impl Iterator<Item = FileResult>, output: OutputFormat, print_diff: bool) {
-    let mut summary = WriteSummary::begin(output, print_diff);
+fn write_file_results<S: Summary>(
+    results: impl Iterator<Item = FileResult>,
+    mut summary: S,
+) {
+    summary.begin();
+
+    let mut formatted_count = 0;
+    let mut unchanged_count = 0;
+    let mut errored_count = 0;
+
+    summary.start_files();
     for result in results {
-        if let FileStatus::Changed { source, formatted } = &result.status {
-            let mut writer = result.file.write().unwrap();
-            writer.write_all(formatted.as_bytes()).unwrap();
+        match &result.status {
+            FileStatus::Unchanged => {
+                unchanged_count += 1;
+            },
+            FileStatus::Errors => {
+                errored_count += 1;
+            },
+            FileStatus::Changed { source, formatted } => {
+                formatted_count += 1;
+                let mut writer = result.file.write().unwrap();
+                writer.write_all(formatted.as_bytes()).unwrap();
+            },
         }
-        summary.submit(&result);
+        summary.file_result_written(&result);
     }
-    summary.finish();
+    summary.end_files();
+
+    summary.write_summary(formatted_count, unchanged_count, errored_count);
+    summary.end();
 }
 
 #[derive(Debug, Clone)]
@@ -156,7 +221,10 @@ impl FormattingSource {
 }
 
 impl Display for FormattingSource {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+    ) -> std::fmt::Result {
         match self {
             FormattingSource::File(path_buf) => write!(f, "{}", path_buf.display()),
             FormattingSource::Stdin => write!(f, "Stdin"),
