@@ -15,7 +15,7 @@ use std::{
 use anyhow::{Context as _, bail};
 use prettydiff::text::ContextConfig;
 use serde::Serialize;
-use summary::{JsonSummary, Summary, TextSummary};
+use summary::{JsonSummary, SilentSummary, Summary, TextSummary};
 use wgsl_formatter::{FormatStringError, FormattingOptions, IndentStyle};
 
 use crate::{
@@ -74,20 +74,10 @@ fn main() -> Result<(), anyhow::Error> {
                 },
             );
         },
+        OutputFormat::Silent => process(cli.mode, formatted_files, SilentSummary),
     }
 
     exit(0);
-}
-
-fn process<S: Summary>(
-    mode: WgslFmtMode,
-    formatted_files: impl Iterator<Item = FileResult>,
-    s: S,
-) {
-    match mode {
-        WgslFmtMode::Check => check_file_results(formatted_files, s),
-        WgslFmtMode::Write => write_file_results(formatted_files, s),
-    }
 }
 
 fn read_file(file: FormattingSource) -> (FormattingSource, String) {
@@ -133,10 +123,23 @@ fn format_file(
     }
 }
 
+
+fn process<S: Summary>(
+    mode: WgslFmtMode,
+    formatted_files: impl Iterator<Item = FileResult>,
+    s: S,
+) {
+    match mode {
+        WgslFmtMode::Check => check_file_results(formatted_files, s),
+        WgslFmtMode::Write => write_file_results(formatted_files, s),
+    }
+}
+
 fn check_file_results<S: Summary>(
     results: impl Iterator<Item = FileResult>,
     mut summary: S,
 ) {
+    summary.begin();
     let mut passed_count = 0;
     let mut failed_count = 0;
     let mut errored_count = 0;
