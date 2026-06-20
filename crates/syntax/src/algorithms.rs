@@ -60,7 +60,7 @@ pub fn skip_trivia_token(
     while token.kind().is_trivia() {
         token = match direction {
             Direction::Next => token.next_token()?,
-            Direction::Prev => token.prev_token()?, // spellchecker:disable-line
+            Direction::Prev => token.prev_token()?,
         }
     }
     Some(token)
@@ -75,7 +75,7 @@ pub fn skip_whitespace_token(
     while token.kind() == SyntaxKind::Blankspace {
         token = match direction {
             Direction::Next => token.next_token()?,
-            Direction::Prev => token.prev_token()?, // spellchecker:disable-line
+            Direction::Prev => token.prev_token()?,
         }
     }
     Some(token)

@@ -267,13 +267,15 @@ impl<'database> Semantics<'database> {
 
 #[must_use]
 pub fn nearest_scope(node: &SyntaxNode) -> Option<ExprOrStatement> {
-    node
-            .siblings(syntax::Direction::Prev) // spellchecker:disable-line
-            .find_map(|sib| if ExprOrStatement::can_cast(sib.kind())  {
-                    ExprOrStatement::cast(sib)
-                } else {None}
-            )
-            .or_else(|| node.ancestors().find_map(ExprOrStatement::cast))
+    node.siblings(syntax::Direction::Prev)
+        .find_map(|sib| {
+            if ExprOrStatement::can_cast(sib.kind()) {
+                ExprOrStatement::cast(sib)
+            } else {
+                None
+            }
+        })
+        .or_else(|| node.ancestors().find_map(ExprOrStatement::cast))
 }
 
 fn is_node_in_body(

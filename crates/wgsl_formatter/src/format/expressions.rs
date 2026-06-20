@@ -78,7 +78,7 @@ fn format_infix_expression(syntax: &SyntaxNode) -> Option<()> {
 
     // Before operator: preserve newlines, normalize spaces
     let has_newline_before = operator
-        .prev_token() // spellchecker:disable-line
+        .prev_token()
         .is_some_and(|token| token.kind().is_whitespace() && token.text().contains('\n'));
     if !has_newline_before {
         set_whitespace_single_before(&operator);
@@ -105,11 +105,11 @@ fn format_index_expression(syntax: &SyntaxNode) -> Option<()> {
         if let Some(token) = child.as_token() {
             match token.kind() {
                 SyntaxKind::BracketLeft => {
-                    remove_if_whitespace(&token.prev_token()?); // spellchecker:disable-line
+                    remove_if_whitespace(&token.prev_token()?);
                     remove_if_whitespace(&token.next_token()?);
                 },
                 SyntaxKind::BracketRight => {
-                    remove_if_whitespace(&token.prev_token()?); // spellchecker:disable-line
+                    remove_if_whitespace(&token.prev_token()?);
                 },
                 _ => {},
             }
@@ -124,7 +124,7 @@ fn format_field_expression(syntax: &SyntaxNode) -> Option<()> {
         if let Some(token) = child.as_token()
             && token.kind() == SyntaxKind::Period
         {
-            remove_if_whitespace(&token.prev_token()?); // spellchecker:disable-line
+            remove_if_whitespace(&token.prev_token()?);
             remove_if_whitespace(&token.next_token()?);
         }
     }
@@ -151,7 +151,7 @@ fn format_parenthesis_expression(syntax: &SyntaxNode) -> Option<()> {
     remove_if_whitespace(
         &parenthesis_expression
             .right_parenthesis_token()?
-            .prev_token()?, // spellchecker:disable-line
+            .prev_token()?,
     );
 
     if parenthesis_expression

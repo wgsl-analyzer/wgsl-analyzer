@@ -46,7 +46,7 @@ fn format_if_statement(syntax: &SyntaxNode) -> Option<()> {
         let else_token = else_block.else_token()?;
         // Preserve newlines before `else` (author chose `}\n    else`).
         let has_newline = else_token
-            .prev_token() // spellchecker:disable-line
+            .prev_token()
             .is_some_and(|token| token.kind().is_whitespace() && token.text().contains('\n'));
         if has_newline {
             set_whitespace_single_after(&else_token);
@@ -59,7 +59,7 @@ fn format_if_statement(syntax: &SyntaxNode) -> Option<()> {
         let else_token = else_if_block.else_token()?;
         // Preserve newlines before `else if` (author chose `}\n    else if`).
         let has_newline = else_token
-            .prev_token() // spellchecker:disable-line
+            .prev_token()
             .is_some_and(|token| token.kind().is_whitespace() && token.text().contains('\n'));
         if has_newline {
             set_whitespace_single_after(&else_token);
@@ -146,7 +146,7 @@ fn format_switch_body_case(syntax: &SyntaxNode) -> Option<()> {
         if let Some(token) = token.as_token()
             && token.kind() == SyntaxKind::Colon
         {
-            remove_if_whitespace(&token.prev_token()?); // spellchecker:disable-line
+            remove_if_whitespace(&token.prev_token()?);
             break;
         }
     }
@@ -155,7 +155,7 @@ fn format_switch_body_case(syntax: &SyntaxNode) -> Option<()> {
             if let Some(token) = token.as_token()
                 && token.kind() == SyntaxKind::Comma
             {
-                remove_if_whitespace(&token.prev_token()?); // spellchecker:disable-line
+                remove_if_whitespace(&token.prev_token()?);
                 set_whitespace_single_after(token);
             }
         }
@@ -177,13 +177,13 @@ fn format_for_statement(syntax: &SyntaxNode) -> Option<()> {
             .initializer()?
             .syntax()
             .first_token()?
-            .prev_token()?, // spellchecker:disable-line
+            .prev_token()?,
     );
     for child in for_statement.syntax().children_with_tokens() {
         if let Some(token) = child.as_token()
             && token.kind() == SyntaxKind::Semicolon
         {
-            remove_if_whitespace(&token.prev_token()?); // spellchecker:disable-line
+            remove_if_whitespace(&token.prev_token()?);
         }
     }
     set_whitespace_single_before(&for_statement.condition()?.syntax().first_token()?);
@@ -235,7 +235,7 @@ fn format_compound_statement(
             .and_then(|first_statement| first_statement.syntax().first_token())
         {
             let on_same_line = first_token
-                .prev_token() // spellchecker:disable-line
+                .prev_token()
                 .is_none_or(|token| !token.text().contains('\n'));
             if on_same_line {
                 indent_before(&first_token, indentation, options);
@@ -292,7 +292,7 @@ fn format_increment_decrement_statement(syntax: &SyntaxNode) -> Option<()> {
         if let Some(token) = token.as_token()
             && matches!(token.kind(), SyntaxKind::PlusPlus | SyntaxKind::MinusMinus)
         {
-            remove_if_whitespace(&token.prev_token()?); // spellchecker:disable-line
+            remove_if_whitespace(&token.prev_token()?);
             break;
         }
     }
@@ -346,7 +346,7 @@ fn fix_comment_indentation(
             }
             // Only fix comments that start on their own line (preceded by
             // whitespace containing a newline).
-            if let Some(preceding) = token.prev_token() // spellchecker:disable-line
+            if let Some(preceding) = token.prev_token()
                 && preceding.kind().is_whitespace()
                 && preceding.text().contains('\n')
             {

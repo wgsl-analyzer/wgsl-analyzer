@@ -60,7 +60,6 @@ extend-ignore-identifiers-re = []
 "stmt" = "statement"
 # "alloc" = "allocate"
 # "expr" = "expression"
-"prev" = "previous"
 "sel" = "selection"
 # "col" = "column"
 # "lit" = "literal"

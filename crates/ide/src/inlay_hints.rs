@@ -392,11 +392,9 @@ fn get_struct_layout_hints(
                 let source = field.source(semantics.database)?.value;
 
                 // this is only necessary, because the field syntax nodes include the whitespace to the next line...
-                let actual_last_token = iter::successors(
-                    source.syntax().last_token(),
-                    rowan::SyntaxToken::prev_token, // spellchecker:disable-line
-                )
-                .find(|token| !token.kind().is_trivia())?;
+                let actual_last_token =
+                    iter::successors(source.syntax().last_token(), rowan::SyntaxToken::prev_token)
+                        .find(|token| !token.kind().is_trivia())?;
                 let range = TextRange::new(
                     source.syntax().text_range().start(),
                     actual_last_token.text_range().end(),

@@ -38,7 +38,7 @@ pub(crate) fn format_syntax_node(
         ) {
             let start = syntax.first_token()?;
 
-            let n_newlines = n_newlines_in_whitespace(&start.prev_token()?) // spellchecker:disable-line
+            let n_newlines = n_newlines_in_whitespace(&start.prev_token()?)
                 .unwrap_or(0)
                 .min(2);
 
@@ -66,7 +66,7 @@ pub(crate) fn format_syntax_node(
             SyntaxKind::SourceFile | SyntaxKind::CompoundStatement | SyntaxKind::SwitchBody
         ) && let Some(start) = syntax.first_token()
         {
-            let mut token = start.prev_token(); // spellchecker:disable-line
+            let mut token = start.prev_token();
             while let Some(current) = token {
                 if !current.kind().is_trivia() {
                     break;
@@ -78,7 +78,7 @@ pub(crate) fn format_syntax_node(
                     let clamped = clamp_newlines(text, 2);
                     replace_token_with(&current, create_whitespace(&clamped));
                 }
-                token = current.prev_token(); // spellchecker:disable-line
+                token = current.prev_token();
             }
         }
     }
@@ -87,7 +87,7 @@ pub(crate) fn format_syntax_node(
     if let Some(last) = syntax.last_token()
         && last.kind() == SyntaxKind::Semicolon
     {
-        remove_if_whitespace(&last.prev_token()?); // spellchecker:disable-line
+        remove_if_whitespace(&last.prev_token()?);
     }
 
     // Dispatch to the appropriate handler based on node type.
@@ -108,7 +108,7 @@ pub(crate) fn format_syntax_node(
 /// Format a colon token: remove whitespace before, single space after.
 pub(super) fn format_colon(colon: Option<&SyntaxToken>) {
     if let Some(colon) = colon {
-        let preceding = colon.prev_token(); // spellchecker:disable-line
+        let preceding = colon.prev_token();
         if let Some(preceding) = preceding {
             remove_if_whitespace(&preceding);
         }
@@ -119,10 +119,10 @@ pub(super) fn format_colon(colon: Option<&SyntaxToken>) {
 /// Remove whitespace around template angle brackets: `foo < T >` → `foo<T>`.
 pub(super) fn format_template_angles(tmpl: &ast::TemplateList) -> Option<()> {
     let left_angle = tmpl.left_angle_token()?;
-    remove_if_whitespace(&left_angle.prev_token()?); // spellchecker:disable-line
+    remove_if_whitespace(&left_angle.prev_token()?);
     remove_if_whitespace(&left_angle.next_token()?);
     let right_angle = tmpl.right_angle_token()?;
-    remove_if_whitespace(&right_angle.prev_token()?); // spellchecker:disable-line
+    remove_if_whitespace(&right_angle.prev_token()?);
     Some(())
 }
 
@@ -146,7 +146,7 @@ pub(super) fn format_parameters(
     if has_newline {
         indent_before(&param_list.right_parenthesis_token()?, indentation, options);
     } else {
-        remove_if_whitespace(&param_list.right_parenthesis_token()?.prev_token()?); // spellchecker:disable-line
+        remove_if_whitespace(&param_list.right_parenthesis_token()?.prev_token()?);
     }
     Some(())
 }
@@ -172,7 +172,7 @@ where
 
         let first_token = parameter.syntax().first_token()?;
         let previous_had_newline = first_token
-            .prev_token() // spellchecker:disable-line
+            .prev_token()
             .is_some_and(|token| token.kind().is_whitespace() && token.text().contains('\n'));
 
         let whitespace = match (first, previous_had_newline) {
