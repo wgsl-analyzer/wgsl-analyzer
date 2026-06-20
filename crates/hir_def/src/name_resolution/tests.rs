@@ -43,11 +43,7 @@ fn render_item_scope(wa_fixture: &str) -> String {
     let package_data = package.data(&database);
 
     let mut output = String::new();
-    ItemScope::of(
-        &database,
-        EditionedFileId::new(&database, package_data.root_file_id, package_data.edition),
-    )
-    .dump(&mut output);
+    ItemScope::of(&database, package_data.root_file(&database)).dump(&mut output);
     output
 }
 

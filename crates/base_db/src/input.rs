@@ -9,7 +9,10 @@
 use std::{fmt, ops};
 
 use edition::Edition;
+use salsa::Database;
 use vfs::{AnchoredPath, FileId, VfsPath, file_set::FileSet};
+
+use crate::EditionedFileId;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct SourceRootId(pub u32);
@@ -223,6 +226,15 @@ pub struct PackageData {
     /// to avoid infinite loops.
     pub dependencies: Vec<Dependency>,
     pub origin: PackageOrigin,
+}
+
+impl PackageData {
+    pub fn root_file(
+        &self,
+        database: &dyn Database,
+    ) -> EditionedFileId {
+        EditionedFileId::new_unchecked(database, self.root_file_id, self.edition)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]

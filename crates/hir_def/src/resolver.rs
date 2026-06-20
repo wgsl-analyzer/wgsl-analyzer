@@ -197,10 +197,9 @@ impl Resolver {
                 let package_data = base_db::file_package(database, self.file_id.file_id(database))
                     .ok_or(ResolutionDiagnostic { failed_segment: 0 })?
                     .data(database);
-                let file_id =
-                    EditionedFileId::new(database, package_data.root_file_id, package_data.edition);
+                let file_id = package_data.root_file(database);
                 if path.is_empty() {
-                    Ok(ResolveKind::Module(file_id))
+                    Ok(ResolveKind::Module(package_data.root_file(database)))
                 } else {
                     resolve_submodules(database, file_id, path.segments()).map_err(
                         |mut diagnostic| {

@@ -188,11 +188,7 @@ impl ModCollector<'_> {
                 let package_data = file_package(self.database, file_id.file_id(self.database))
                     .ok_or_else(|| DefDiagnostic::detached_file(file_id, location))?
                     .data(self.database);
-                EditionedFileId::new(
-                    self.database,
-                    package_data.root_file_id,
-                    package_data.edition,
-                )
+                package_data.root_file(self.database)
             },
         };
 
