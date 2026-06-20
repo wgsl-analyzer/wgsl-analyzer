@@ -16,7 +16,7 @@ use hir_ty::ty::{
 };
 use itertools::Itertools as _;
 use rowan::NodeOrToken;
-use syntax::AstNode as _;
+use syntax::{AstNode as _, Edition};
 use vfs::FileId;
 
 pub struct Diagnostic {
@@ -233,7 +233,8 @@ pub fn diagnostics(
             .diagnostics(database, config, &mut diagnostics);
     }
 
-    if config.naga_parsing_errors || config.naga_validation_errors {
+    let edition = file_id.edition(database);
+    if edition == Edition::Wgsl && (config.naga_parsing_errors || config.naga_validation_errors) {
         match &config.naga_version {
             NagaVersion::Naga27 => {
                 naga_diagnostics::<Naga27>(database, file_id, config, &mut diagnostics);
