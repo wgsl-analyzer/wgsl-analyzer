@@ -69,13 +69,14 @@ fn check_load_project(
                 writeln!(actual, "root: {}", print_path(&root, &test_directory));
                 writeln!(actual, "dependencies:");
                 for dependency in project.dependencies {
-                    writeln!(actual, "- {}", dependency.name);
+                    writeln!(actual, "- {}", dependency.name());
                 }
             },
             LoadPackageMessage::Error { error, source } => {
                 writeln!(actual, "{error} - {source:?}");
             },
-            LoadPackageMessage::Progress { message } => (),
+            LoadPackageMessage::Dependency { .. } => (),
+            LoadPackageMessage::Progress { .. } => (),
         }
     }
 
@@ -103,7 +104,9 @@ fn check_load_project_files(
         .iter()
         .filter_map(|message| match message {
             LoadPackageMessage::Finished { project } => Some(project),
-            LoadPackageMessage::Error { .. } | LoadPackageMessage::Progress { .. } => None,
+            LoadPackageMessage::Error { .. }
+            | LoadPackageMessage::Dependency { .. }
+            | LoadPackageMessage::Progress { .. } => None,
         })
         .exactly_one()
         .unwrap();

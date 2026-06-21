@@ -1,4 +1,4 @@
-use base_db::input::PackageOrigin;
+use base_db::input::{PackageName, PackageOrigin};
 use edition::Edition;
 use paths::AbsPathBuf;
 
@@ -56,7 +56,33 @@ impl WeslPackage {
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
-pub struct PackageDependency {
-    pub pkg: PackageKey,
-    pub name: String,
+pub enum PackageDependency {
+    Path {
+        name: PackageName,
+        path: ManifestPath,
+    },
+    Library {
+        name: PackageName,
+        package: String,
+    },
+}
+
+impl PackageDependency {
+    pub fn package_key(&self) -> PackageKey {
+        match self {
+            PackageDependency::Path { path, .. } => PackageKey::from_manifest_path(path.clone()),
+            PackageDependency::Library { name, package } => {
+                todo!(
+                    "Library dependencies are not yet supported, see https://github.com/wgsl-analyzer/wgsl-analyzer/issues/976"
+                )
+            },
+        }
+    }
+
+    pub fn name(&self) -> &PackageName {
+        match self {
+            PackageDependency::Path { name, path } => name,
+            PackageDependency::Library { name, package } => name,
+        }
+    }
 }
