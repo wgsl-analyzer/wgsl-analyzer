@@ -42,7 +42,7 @@ fn format_source_file(syntax: &SyntaxNode) {
         let Some(first) = child.first_token() else {
             continue;
         };
-        let preceding = first.prev_token(); // spellchecker:disable-line
+        let preceding = first.prev_token();
         let Some(preceding) = preceding else {
             continue;
         };
@@ -84,7 +84,7 @@ fn format_attribute(
 
     // Remove whitespace between `@` and the attribute name.
     if let Some(name_token) = attribute.name() {
-        remove_if_whitespace(&name_token.prev_token()?); // spellchecker:disable-line
+        remove_if_whitespace(&name_token.prev_token()?);
     }
 
     // Preserve newlines after attributes (e.g. @vertex\nfn),
@@ -135,12 +135,12 @@ fn format_import_collection(syntax: &SyntaxNode) -> Option<()> {
             rowan::NodeOrToken::Token(token) if token.kind() == SyntaxKind::BraceRight => {
                 if !is_multiline {
                     // Single-line: remove space before `}`.
-                    remove_if_whitespace(&token.prev_token()?); // spellchecker:disable-line
+                    remove_if_whitespace(&token.prev_token()?);
                 }
             },
             rowan::NodeOrToken::Token(token) if token.kind() == SyntaxKind::Comma => {
                 // Remove space before comma.
-                remove_if_whitespace(&token.prev_token()?); // spellchecker:disable-line
+                remove_if_whitespace(&token.prev_token()?);
                 // Ensure single space after comma (single-line only).
                 if !is_multiline {
                     set_whitespace_single_after(token);

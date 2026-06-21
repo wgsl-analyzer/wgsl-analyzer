@@ -512,6 +512,14 @@ function moduleGraph(context: InitializedContext): Cmd {
 
 		const nodeModulesPath = vscode.Uri.file(path.join(context.extensionPath, "node_modules"));
 
+		const client = context.client;
+		const parameters = {
+			textDocument: client.code2ProtocolConverter.asTextDocumentIdentifier(editor.document),
+		};
+		const dot = await client.sendRequest(wa.viewModuleGraph, parameters);
+		if (dot == null) {
+			return;
+		}
 		const panel = vscode.window.createWebviewPanel(
 			"wgsl-analyzer.module-graph",
 			"wgsl-analyzer module graph",
@@ -522,13 +530,7 @@ function moduleGraph(context: InitializedContext): Cmd {
 				localResourceRoots: [nodeModulesPath],
 			},
 		);
-		const client = context.client;
-		const parameters = {
-			textDocument: client.code2ProtocolConverter.asTextDocumentIdentifier(editor.document),
-		};
-		const dot = await client.sendRequest(wa.viewModuleGraph, parameters);
 		const uri = panel.webview.asWebviewUri(nodeModulesPath);
-
 		panel.webview.html = renderGraph(dot, uri);
 	};
 }

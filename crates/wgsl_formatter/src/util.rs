@@ -11,7 +11,7 @@ use crate::FormattingOptions;
 /// Trims trailing spaces from the whitespace token preceding `before`,
 /// preserving any newlines. E.g. `"\n  fn"` → `"\nfn"`.
 pub(crate) fn trim_whitespace_before_to_newline(before: &SyntaxToken) -> Option<()> {
-    let maybe_whitespace = before.prev_token()?; // spellchecker:disable-line
+    let maybe_whitespace = before.prev_token()?;
     if maybe_whitespace.kind().is_whitespace() {
         let index = maybe_whitespace.index();
 
@@ -152,7 +152,7 @@ pub(crate) fn set_whitespace_before(
     before: &SyntaxToken,
     to: SyntaxToken,
 ) -> Option<()> {
-    let maybe_whitespace = before.prev_token()?; // spellchecker:disable-line
+    let maybe_whitespace = before.prev_token()?;
     if maybe_whitespace.kind().is_whitespace() {
         replace_token_with(&maybe_whitespace, to);
     } else {
@@ -246,7 +246,7 @@ pub(crate) fn remove_whitespace_around_double_colon(syntax: &SyntaxNode) {
         if let rowan::NodeOrToken::Token(token) = &child
             && token.kind() == SyntaxKind::ColonColon
         {
-            let preceding = token.prev_token(); // spellchecker:disable-line
+            let preceding = token.prev_token();
             if let Some(preceding) = preceding {
                 remove_if_whitespace(&preceding);
             }

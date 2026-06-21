@@ -1,10 +1,11 @@
 use base_db::EditionedFileId;
-use hir_def::{
-    expression_store::path::Path, item_tree::Name, mod_path::ModPath, resolver::ResolveKind,
-};
+use hir_def::{expression_store::path::Path, mod_path::ModPath, resolver::ResolveKind};
 use syntax::{AstNode as _, SyntaxNode, SyntaxToken, ast, match_ast};
 
-use crate::{Field, Local, ModuleDef, Semantics, Struct, TypeAlias};
+use crate::{
+    Field, Function, GlobalConstant, GlobalVariable, Local, Module, ModuleDef, Override, Semantics,
+    Struct, TypeAlias,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Definition {
@@ -46,6 +47,27 @@ impl Definition {
     }
 }
 
+impl From<ResolveKind> for Definition {
+    fn from(value: ResolveKind) -> Self {
+        match value {
+            ResolveKind::Module(module_id) => {
+                Self::ModuleDef(ModuleDef::Module(Module { file_id: module_id }))
+            },
+            ResolveKind::Local(binding, parent) => Self::Local(Local { parent, binding }),
+            ResolveKind::GlobalVariable(id) => {
+                Self::ModuleDef(ModuleDef::GlobalVariable(GlobalVariable { id }))
+            },
+            ResolveKind::GlobalConstant(id) => {
+                Self::ModuleDef(ModuleDef::GlobalConstant(GlobalConstant { id }))
+            },
+            ResolveKind::Override(id) => Self::ModuleDef(ModuleDef::Override(Override { id })),
+            ResolveKind::Struct(id) => Self::ModuleDef(ModuleDef::Struct(Struct { id })),
+            ResolveKind::TypeAlias(id) => Self::ModuleDef(ModuleDef::TypeAlias(TypeAlias { id })),
+            ResolveKind::Function(id) => Self::ModuleDef(ModuleDef::Function(Function { id })),
+        }
+    }
+}
+
 fn resolve_path(
     semantics: &Semantics<'_>,
     file_id: EditionedFileId,
@@ -53,43 +75,15 @@ fn resolve_path(
 ) -> Option<Definition> {
     let parent = path.syntax().parent()?;
 
-    if let Some(expression) = ast::IdentExpression::cast(parent.clone()) {
-        let path = Path(ModPath::from_src(path));
-        let definition = semantics.find_container(file_id, expression.syntax())?;
-        let expression_node =
-            if let Some(function_call) = ast::FunctionCall::cast(expression.syntax().parent()?) {
-                ast::Expression::cast(function_call.syntax().clone())?
-            } else {
-                ast::Expression::cast(expression.syntax().clone())?
-            };
-        let definition =
-            semantics.resolve_path_in_container(definition, &expression_node, &path)?;
-
-        Some(definition)
-    } else if let Some(expression) = ast::FieldExpression::cast(parent.clone()) {
+    if ast::IdentExpression::can_cast(parent.kind()) || ast::TypeSpecifier::can_cast(parent.kind())
+    {
+        let resolver = semantics.resolver(file_id, path.syntax());
+        resolver
+            .resolve(semantics.database, &Path(ModPath::from_src(path)))
+            .ok()
+            .map(Definition::from)
+    } else if let Some(expression) = ast::FieldExpression::cast(parent) {
         resolve_field(semantics, file_id, expression)
-    } else if let Some(r#type) = ast::TypeSpecifier::cast(parent) {
-        let resolver = semantics.resolver(file_id, r#type.syntax());
-
-        match resolver.resolve(
-            &Path(ModPath::from_src(&r#type.path()?)),
-            semantics.database,
-        )? {
-            ResolveKind::Struct(id) => {
-                Some(Definition::ModuleDef(ModuleDef::Struct(Struct { id })))
-            },
-            ResolveKind::TypeAlias(id) => {
-                Some(Definition::ModuleDef(ModuleDef::TypeAlias(TypeAlias {
-                    id,
-                })))
-            },
-            // Type specifiers always represent types
-            ResolveKind::Function(_)
-            | ResolveKind::GlobalConstant(_)
-            | ResolveKind::GlobalVariable(_)
-            | ResolveKind::Override(_)
-            | ResolveKind::Local(_) => None,
-        }
     } else {
         None
     }

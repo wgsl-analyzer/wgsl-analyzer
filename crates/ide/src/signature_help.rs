@@ -1,14 +1,9 @@
 use base_db::{EditionedFileId, FilePosition, TextSize};
-use hir::{HirDatabase as _, Semantics, database::DefDatabase};
-use hir_def::{
-    database::{InternDatabase as _, Location},
-    item_tree::ModuleItemId,
-    resolver::ScopeDef,
-};
+use hir::{HirDatabase as _, Semantics};
+use hir_def::{expression_store::path::Path, mod_path::ModPath, resolver::ResolveKind};
 use hir_ty::{
     function::FunctionDetails,
-    infer::ResolvedCall,
-    ty::pretty::{TypeVerbosity, pretty_fn_inner_with_offsets, pretty_fn_with_verbosity},
+    ty::pretty::{TypeVerbosity, pretty_fn_inner_with_offsets},
 };
 use ide_db::RootDatabase;
 use rowan::{TextLen, TextRange};
@@ -103,23 +98,21 @@ pub(crate) fn signature_help(
     // Walk up to find the enclosing Arguments node
     let (function_call, _, active_parameter) = find_enclosing_call(&token, position.offset)?;
 
-    // Try to resolve the function call via type inference
-    let text = function_call.ident_expression()?.syntax().text();
-    let mut overloads = Vec::new();
-    semantics
+    let resolved = semantics
         .resolver(file_id, syntax)
-        .process_all_names(|name, scope_def| {
-            if name.as_str().to_owned().contains(&text.to_string())
-                && let ScopeDef::ModuleItem(file_id, ModuleItemId::Function(module_item_id)) =
-                    scope_def
-            {
-                overloads.push(module_item_id);
-            }
-        });
-
+        .resolve(
+            database,
+            &Path(ModPath::from_src(
+                &function_call.ident_expression()?.path()?,
+            )),
+        )
+        .ok()?;
+    let ResolveKind::Function(function_id) = resolved else {
+        return None;
+    };
+    let overloads = vec![function_id];
     let mut signatures: Vec<_> = overloads
         .into_iter()
-        .map(|id| database.intern_function(Location::new(file_id, id)))
         .map(|function_id| database.function_type(function_id))
         .map(|function_type| function_type.lookup(database))
         .filter_map(|function| {

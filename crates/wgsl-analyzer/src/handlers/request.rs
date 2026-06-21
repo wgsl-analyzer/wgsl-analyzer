@@ -35,7 +35,7 @@ use crate::{
 pub(crate) fn handle_view_module_graph(
     snap: GlobalStateSnapshot,
     parameters: ViewModuleGraphParameters,
-) -> anyhow::Result<String> {
+) -> anyhow::Result<Option<String>> {
     let _p = tracing::info_span!("handle_view_module_graph").entered();
     let file_id = try_default!(from_proto::file_id(&snap, &parameters.text_document.uri)?);
     let dot = snap.analysis.view_module_graph(file_id)?;
@@ -99,14 +99,11 @@ pub(crate) fn handle_goto_definition(
     };
     let source = FileRange {
         file_id: position.file_id,
-        range: navigation_info.focus_or_full_range(),
+        range: navigation_info.range,
     };
-    let location = to_proto::location(&snap, source)?;
-    Ok(Some(DefinitionResponse::Definition(Definition::Location(
-        location,
-    ))))
-    // let result = to_proto::goto_definition_response(&snap, Some(source), vec![navigation_info])?;
-    // Ok(Some(result))
+    let result =
+        to_proto::goto_definition_response(&snap, Some(source), vec![navigation_info.info])?;
+    Ok(Some(result))
 }
 
 pub(crate) fn handle_completion(

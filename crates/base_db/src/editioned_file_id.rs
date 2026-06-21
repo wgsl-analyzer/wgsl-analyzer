@@ -6,7 +6,7 @@ use syntax::{Diagnostic, ast};
 pub use syntax::{Edition, ExtensionsConfig};
 use vfs::FileId;
 
-use crate::{SourceDatabase, file_package};
+use crate::{SourceDatabase, SourceRoot, file_package};
 
 /// File together with an edition.
 /// Simpler than Rust-Analyzer, because we do not macros.
@@ -63,8 +63,9 @@ impl EditionedFileId {
 }
 
 impl EditionedFileId {
+    /// Warning: Prefer [`from_file`] to get the correct edition for WGSL and WESL files.
     #[inline]
-    pub fn new(
+    pub fn new_unchecked(
         database: &dyn Database,
         file_id: FileId,
         edition: Edition,
@@ -76,21 +77,48 @@ impl EditionedFileId {
         database: &dyn SourceDatabase,
         file_id: FileId,
     ) -> Self {
-        if let Some(package) = file_package(database, file_id) {
-            return Self::new(database, file_id, package.data(database).edition);
-        }
-
         let source_root = database
             .source_root(database.file_source_root(file_id).source_root_id(database))
             .source_root(database);
-        let edition = source_root
+        Self::from_file_in_source_root(database, file_id, &source_root)
+    }
+
+    pub fn from_file_in_source_root(
+        database: &dyn SourceDatabase,
+        file_id: FileId,
+        source_root: &SourceRoot,
+    ) -> Self {
+        let Some((_, extension)) = source_root
             .path_for_file(file_id)
             .and_then(|file| file.name_and_extension())
-            .and_then(|(_, extension)| extension)
-            .and_then(Edition::from_file_extension)
-            .unwrap_or(Edition::CURRENT);
+        else {
+            tracing::error!("All files need to have a source root.");
+            return Self::new_unchecked(database, file_id, Edition::DEFAULT);
+        };
 
-        Self::new(database, file_id, edition)
+        match extension {
+            Some("wgsl") => Self::new_unchecked(database, file_id, Edition::DEFAULT),
+            Some("wesl") => {
+                if let Some(package) = file_package(database, file_id) {
+                    Self::new_unchecked(database, file_id, package.data(database).edition)
+                } else {
+                    // Assume latest WESL for standalone files
+                    Self::new_unchecked(database, file_id, Edition::LATEST)
+                }
+            },
+            Some(other) => {
+                tracing::error!(
+                    "All files in the source root must be WGSL or WESL files, {other} is not a valid file extension."
+                );
+                Self::new_unchecked(database, file_id, Edition::DEFAULT)
+            },
+            None => {
+                tracing::error!(
+                    "All files in the source root must be WGSL or WESL files, file is missing an extension."
+                );
+                Self::new_unchecked(database, file_id, Edition::DEFAULT)
+            },
+        }
     }
 
     #[inline]
