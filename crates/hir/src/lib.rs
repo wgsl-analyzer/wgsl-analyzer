@@ -561,11 +561,7 @@ impl HasSource for Local {
         let file_id = self.parent.lookup(database).file_id;
         let (_, source_map) =
             database.body_with_source_map(DefinitionWithBodyId::Function(self.parent));
-        let binding = source_map
-            .binding_to_source(self.binding)
-            .map_err(drop)
-            .ok()?;
-
+        let binding = source_map.binding_to_source(self.binding).ok()?;
         let root = file_id.parse(database).syntax();
         Some(InFile::new(file_id, binding.to_node(&root)))
     }
