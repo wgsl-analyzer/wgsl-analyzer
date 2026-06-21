@@ -1,10 +1,10 @@
-use base_db::{file_package, EditionedFileId, Package, SourceDatabase, SourceRoot};
+use base_db::{EditionedFileId, Package, SourceDatabase, SourceRoot, file_package};
 use std::fmt::Write as _;
 use syntax::Edition;
 use triomphe::Arc;
 use vfs::FileId;
 
-use crate::{database::DefDatabase, item_scope::ItemScope, item_tree::Name, FxIndexMap};
+use crate::{FxIndexMap, database::DefDatabase, item_scope::ItemScope, item_tree::Name};
 
 /// A map of all modules and their children in a package.
 ///
@@ -48,7 +48,10 @@ impl ModuleData {
     // TODO: Look into the incrementality of this
     /// Returns the parent and children of the module.
     /// Will return `None` for modules that are not a part of any package.
-    pub fn of(db: &dyn SourceDatabase, file_id: EditionedFileId) -> Option<Arc<ModuleData>> {
+    pub fn of(
+        db: &dyn SourceDatabase,
+        file_id: EditionedFileId,
+    ) -> Option<Arc<ModuleData>> {
         let raw_file_id = file_id.file_id(db);
         let package = file_package(db, raw_file_id)?;
         let modules = modules_map_query(db, package);
@@ -58,7 +61,10 @@ impl ModuleData {
 }
 
 #[salsa_macros::tracked(returns(ref))]
-pub fn modules_map_query(database: &dyn SourceDatabase, package: Package) -> ModulesMap {
+pub fn modules_map_query(
+    database: &dyn SourceDatabase,
+    package: Package,
+) -> ModulesMap {
     let package_data = package.data(database);
     let source_root = database
         .source_root(
@@ -118,7 +124,10 @@ impl<'db> ModulesMapBuilder<'db> {
         }
     }
 
-    fn add_file(&mut self, raw_file_id: FileId) -> Option<()> {
+    fn add_file(
+        &mut self,
+        raw_file_id: FileId,
+    ) -> Option<()> {
         if Some(raw_file_id) == self.package_wesl {
             return Some(());
         }
@@ -188,7 +197,12 @@ impl<'db> ModulesMapBuilder<'db> {
 impl ModulesMap {
     #[must_use]
     pub fn dump(&self) -> String {
-        fn go(buffer: &mut String, modules: &ModulesMap, path: &str, module: EditionedFileId) {
+        fn go(
+            buffer: &mut String,
+            modules: &ModulesMap,
+            path: &str,
+            module: EditionedFileId,
+        ) {
             _ = writeln!(buffer, "{path}");
 
             let mut children: Vec<_> = modules.modules[&module].children.iter().collect();
@@ -205,7 +219,10 @@ impl ModulesMap {
     }
 
     #[must_use]
-    pub fn dump_with_items(&self, database: &dyn DefDatabase) -> String {
+    pub fn dump_with_items(
+        &self,
+        database: &dyn DefDatabase,
+    ) -> String {
         fn go(
             buffer: &mut String,
             modules: &ModulesMap,
