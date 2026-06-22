@@ -28,7 +28,6 @@ use hir_def::{
 };
 use la_arena::ArenaMap;
 use rustc_hash::FxHashMap;
-use triomphe::Arc;
 use wgsl_types::syntax::{AccessMode, AddressSpace, Enumerant};
 
 use crate::{

@@ -4,7 +4,7 @@ mod builtins;
 mod imports;
 mod incremental;
 mod simple;
-use std::fmt::Write as _;
+use std::{fmt::Write as _, ops::ControlFlow};
 
 use base_db::{EditionedFileId, Intern as _, Lookup as _};
 use expect_test::Expect;
@@ -14,7 +14,7 @@ use hir_def::{
     database::{
         DefDatabase as _, DefinitionWithBodyId, InternDatabase as _, Location, ModuleDefinitionId,
     },
-    expression_store::SyntheticSyntax,
+    expression_store::{ExpressionSourceMap, ExpressionStoreSource, SyntheticSyntax},
     item_tree::ModuleItemId,
 };
 use salsa::Durability;
@@ -24,7 +24,7 @@ use triomphe::Arc;
 
 use crate::{
     database::HirDatabase as _,
-    diagnostics::InferenceDiagnosticKind,
+    diagnostics::{self, InferenceDiagnostic, InferenceDiagnosticKind},
     infer::InferenceResult,
     test_db::TestDatabase,
     ty::{
@@ -44,31 +44,94 @@ fn infer(
     let mut buffer = String::new();
 
     if files.len() == 1 {
-        infer_file(&database, &mut buffer, files[0]);
+        InferPrinter::new(&database, files[0]).infer_file(&mut buffer);
     } else {
         for file_id in files {
             buffer.push_str("---\n");
-            infer_file(&database, &mut buffer, file_id);
+            InferPrinter::new(&database, file_id).infer_file(&mut buffer);
         }
     }
     buffer.truncate(buffer.trim_end().len());
     buffer
 }
 
-fn infer_file(
-    database: &TestDatabase,
-    buffer: &mut String,
+struct InferPrinter<'db> {
+    database: &'db TestDatabase,
     file_id: EditionedFileId,
-) {
-    let root = file_id.parse(database).syntax();
-    let mut infer_def = |inference_result: &InferenceResult,
-                         _body: Arc<Body>,
-                         body_source_map: Arc<BodySourceMap>| {
+    root: SyntaxNode,
+}
+
+impl<'db> InferPrinter<'db> {
+    fn new(
+        database: &'db TestDatabase,
+        file_id: EditionedFileId,
+    ) -> Self {
+        let root = file_id.parse(database).syntax();
+        Self {
+            database,
+            file_id,
+            root,
+        }
+    }
+
+    fn infer_file(
+        &self,
+        buffer: &mut String,
+    ) {
+        let module_info = self.database.item_tree(self.file_id);
+        let mut definitions = module_definitions(self.database, self.file_id, &module_info);
+        definitions.sort_by_key(|definition| text_range_start(*definition, self.database));
+        for definition in definitions {
+            match definition {
+                ModuleDefinitionId::Function(id) => {
+                    self.infer_with_body(DefinitionWithBodyId::Function(id), buffer)
+                },
+                ModuleDefinitionId::GlobalVariable(id) => {
+                    self.infer_with_body(DefinitionWithBodyId::GlobalVariable(id), buffer)
+                },
+                ModuleDefinitionId::GlobalConstant(id) => {
+                    self.infer_with_body(DefinitionWithBodyId::GlobalConstant(id), buffer)
+                },
+                ModuleDefinitionId::GlobalAssertStatement(id) => {
+                    self.infer_with_body(DefinitionWithBodyId::GlobalAssertStatement(id), buffer)
+                },
+                ModuleDefinitionId::Override(id) => {
+                    self.infer_with_body(DefinitionWithBodyId::Override(id), buffer)
+                },
+                ModuleDefinitionId::Module(_) => (),
+                ModuleDefinitionId::Struct(id) => {
+                    let (_, signature_map) = self.database.struct_data(id);
+                    let (_, diagnostics) = &*self.database.field_types(id);
+
+                    for diagnostic in diagnostics {
+                        self.print_diagnostic(diagnostic, &signature_map, buffer)
+                    }
+                },
+                ModuleDefinitionId::TypeAlias(id) => {
+                    let (_, signature_map) = self.database.type_alias_data(id);
+                    let (_, diagnostics) = &*self.database.type_alias_type(id);
+                    for diagnostic in diagnostics {
+                        self.print_diagnostic(diagnostic, &signature_map, buffer)
+                    }
+                },
+            }
+        }
+    }
+
+    fn infer_with_body(
+        &self,
+        definition: DefinitionWithBodyId,
+        buffer: &mut String,
+    ) {
+        let (_, signature_map) = self.database.signature_with_source_map(definition);
+        let (_, body_source_map) = self.database.body_with_source_map(definition);
+        let inference_result = InferenceResult::of(self.database, definition);
+
         let mut types: Vec<(SyntaxNode, &Type)> = Vec::new();
 
         for (binding, r#type) in inference_result.type_of_binding.iter() {
             let node = match body_source_map.binding_to_source(binding) {
-                Ok(sp) => sp.to_node(&root).syntax().clone(),
+                Ok(sp) => sp.to_node(&self.root).syntax().clone(),
                 Err(SyntheticSyntax) => continue,
             };
             types.push((node.clone(), r#type));
@@ -76,7 +139,7 @@ fn infer_file(
 
         for (expr, r#type) in inference_result.type_of_expression.iter() {
             let node = match body_source_map.expression_to_source(expr) {
-                Ok(sp) => sp.to_node(&root).syntax().clone(),
+                Ok(sp) => sp.to_node(&self.root).syntax().clone(),
                 Err(SyntheticSyntax) => continue,
             };
             types.push((node.clone(), r#type));
@@ -87,75 +150,85 @@ fn infer_file(
             let range = node.text_range();
             (range.start(), range.end())
         });
+
         for (node, r#type) in types {
-            let (range, text) = (
-                node.text_range(),
-                node.text().to_string().replace('\n', " "),
-            );
-            let pretty = pretty_type_with_verbosity(database, *r#type, TypeVerbosity::Compact);
-            writeln!(buffer, "{range:?} '{}': {pretty}", ellipsize(text, 15)).unwrap();
+            self.print_type(node, *r#type, buffer);
         }
 
-        // It'd be nicer if the diagnostics were sorted with the types.
-        // But this is good enough for unit tests
         for diagnostic in inference_result.diagnostics() {
-            match &diagnostic.kind {
-                InferenceDiagnosticKind::TypeMismatch {
-                    expression,
-                    expected,
-                    actual,
-                } => {
-                    let node = match body_source_map.expression_to_source(*expression) {
-                        Ok(sp) => sp.to_node(&root).syntax().clone(),
-                        Err(SyntheticSyntax) => continue,
-                    };
-                    let (range, text) = (
-                        node.text_range(),
-                        node.text().to_string().replace('\n', " "),
-                    );
-                    writeln!(
-                        buffer,
-                        "{range:?} '{}': expected {} but got {}",
-                        ellipsize(text, 15),
-                        pretty_type_expectation_with_verbosity(
-                            database,
-                            expected.clone(),
-                            TypeVerbosity::Compact
-                        ),
-                        pretty_type_with_verbosity(database, *actual, TypeVerbosity::Compact)
-                    )
-                    .unwrap();
-                },
-                InferenceDiagnosticKind::AssignmentNotAReference { .. }
-                | InferenceDiagnosticKind::NoSuchField { .. }
-                | InferenceDiagnosticKind::ArrayAccessInvalidType { .. }
-                | InferenceDiagnosticKind::UnresolvedName { .. }
-                | InferenceDiagnosticKind::InvalidConstructionType { .. }
-                | InferenceDiagnosticKind::FunctionCallArgCountMismatch { .. }
-                | InferenceDiagnosticKind::NoBuiltinOverload { .. }
-                | InferenceDiagnosticKind::NoConstructor { .. }
-                | InferenceDiagnosticKind::AddressOfNotReference { .. }
-                | InferenceDiagnosticKind::DerefNotAPointer { .. }
-                | InferenceDiagnosticKind::InvalidType { .. }
-                | InferenceDiagnosticKind::CyclicType { .. }
-                | InferenceDiagnosticKind::UnexpectedTemplateArgument { .. }
-                | InferenceDiagnosticKind::WgslError { .. }
-                | InferenceDiagnosticKind::ExpectedLoweredKind { .. } => {
-                    writeln!(buffer, "{diagnostic:?}").unwrap();
-                },
-            }
+            let source_map = match diagnostic.source {
+                ExpressionStoreSource::Body => body_source_map.expression_source_map(),
+                ExpressionStoreSource::Signature => &signature_map,
+            };
+            self.print_diagnostic(diagnostic, source_map, buffer)
         }
-    };
-    let module_info = database.item_tree(file_id);
-    let mut definitions = module_definitions(database, file_id, &module_info);
-    definitions.sort_by_key(|definition| text_range_start(*definition, database));
-    for definition in definitions
-        .into_iter()
-        .filter_map(ModuleDefinitionId::with_body)
-    {
-        let (body, source_map) = database.body_with_source_map(definition);
-        let infer = InferenceResult::of(database, definition);
-        infer_def(infer, body, source_map);
+    }
+
+    fn print_type(
+        &self,
+        node: SyntaxNode,
+        r#type: Type,
+        buffer: &mut String,
+    ) {
+        let (range, text) = (
+            node.text_range(),
+            node.text().to_string().replace('\n', " "),
+        );
+        let pretty = pretty_type_with_verbosity(self.database, r#type, TypeVerbosity::Compact);
+        writeln!(buffer, "{range:?} '{}': {pretty}", ellipsize(text, 15)).unwrap();
+    }
+
+    fn print_diagnostic(
+        &self,
+        diagnostic: &InferenceDiagnostic,
+        source_map: &ExpressionSourceMap,
+        buffer: &mut String,
+    ) {
+        match &diagnostic.kind {
+            InferenceDiagnosticKind::TypeMismatch {
+                expression,
+                expected,
+                actual,
+            } => {
+                let node = match source_map.expression_to_source(*expression) {
+                    Ok(sp) => sp.to_node(&self.root).syntax().clone(),
+                    Err(SyntheticSyntax) => return,
+                };
+                let (range, text) = (
+                    node.text_range(),
+                    node.text().to_string().replace('\n', " "),
+                );
+                writeln!(
+                    buffer,
+                    "{range:?} '{}': expected {} but got {}",
+                    ellipsize(text, 15),
+                    pretty_type_expectation_with_verbosity(
+                        self.database,
+                        expected.clone(),
+                        TypeVerbosity::Compact
+                    ),
+                    pretty_type_with_verbosity(self.database, *actual, TypeVerbosity::Compact)
+                )
+                .unwrap();
+            },
+            InferenceDiagnosticKind::AssignmentNotAReference { .. }
+            | InferenceDiagnosticKind::NoSuchField { .. }
+            | InferenceDiagnosticKind::ArrayAccessInvalidType { .. }
+            | InferenceDiagnosticKind::UnresolvedName { .. }
+            | InferenceDiagnosticKind::InvalidConstructionType { .. }
+            | InferenceDiagnosticKind::FunctionCallArgCountMismatch { .. }
+            | InferenceDiagnosticKind::NoBuiltinOverload { .. }
+            | InferenceDiagnosticKind::NoConstructor { .. }
+            | InferenceDiagnosticKind::AddressOfNotReference { .. }
+            | InferenceDiagnosticKind::DerefNotAPointer { .. }
+            | InferenceDiagnosticKind::InvalidType { .. }
+            | InferenceDiagnosticKind::CyclicType { .. }
+            | InferenceDiagnosticKind::UnexpectedTemplateArgument { .. }
+            | InferenceDiagnosticKind::WgslError { .. }
+            | InferenceDiagnosticKind::ExpectedLoweredKind { .. } => {
+                writeln!(buffer, "{diagnostic:?}").unwrap();
+            },
+        }
     }
 }
 
