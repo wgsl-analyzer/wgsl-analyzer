@@ -307,7 +307,7 @@ fn resolve_submodules(
         }
     }
 
-    Err(ResolutionDiagnostic { failed_segment: 0 })
+    Err(ResolutionDiagnostic { failed_segment: 1 })
 }
 
 #[derive(Debug, PartialEq, Eq)]

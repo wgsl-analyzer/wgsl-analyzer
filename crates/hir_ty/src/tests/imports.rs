@@ -420,3 +420,46 @@ fn import_escapes_root() {
         "#]],
     );
 }
+
+#[test]
+fn import_nonexistent_module() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        //- /foo.wesl edition:2026_pre
+        struct Bar {
+            a: not_a_module::foo,
+        }
+        const a = Bar(2);
+        ",
+        expect![[r#"
+            InferenceDiagnostic { source: Signature, kind: InvalidType { error: TypeLoweringError { container: TypeSpecifier(Idx::<TypeSpecifier>(0)), kind: UnresolvedPath { path: Path(ModPath { kind: Plain, segments: [Name("not_a_module"), Name("foo")] }), failed_segment: 0 } } } }
+            47..48 'a': [error]
+            51..57 'Bar(2)': [error]
+            55..56 '2': integer
+            55..56 '2': expected [error] but got integer
+        "#]],
+    );
+}
+
+#[test]
+fn invalid_import_starting_with_item() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        //- /foo.wesl edition:2026_pre
+        const bar = 5;
+
+        // The error should point at `nya`. `bar` itself is valid.
+        const fails = bar::nya;
+        ",
+        expect![[r#"
+            6..9 'bar': integer
+            12..13 '5': integer
+            81..86 'fails': [error]
+            89..97 'bar::nya': [error]
+            InferenceDiagnostic { source: Body, kind: InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(0)), kind: UnresolvedPath { path: Path(ModPath { kind: Plain, segments: [Name("bar"), Name("nya")] }), failed_segment: 0 } } } }
+            InferenceDiagnostic { source: Body, kind: ExpectedLoweredKind { expression: Idx::<Expression>(0), expected: Variable, actual: Type, path: Path(ModPath { kind: Plain, segments: [Name("bar"), Name("nya")] }) } }
+        "#]],
+    );
+}
