@@ -226,7 +226,7 @@ impl<'db> InferPrinter<'db> {
             | InferenceDiagnosticKind::UnexpectedTemplateArgument { .. }
             | InferenceDiagnosticKind::WgslError { .. }
             | InferenceDiagnosticKind::ExpectedLoweredKind { .. } => {
-                writeln!(buffer, "{diagnostic:?}").unwrap();
+                writeln!(buffer, "{:?} in {:?}", diagnostic.kind, diagnostic.source).unwrap();
             },
         }
     }
