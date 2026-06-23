@@ -12,10 +12,9 @@ use hir_def::{
 use hir_ty::{
     builtins::BuiltinId,
     database::HirDatabase,
-    infer::{
-        InferenceDiagnosticKind, LoweredKind, TypeExpectation, TypeLoweringError,
-        TypeLoweringErrorKind,
-    },
+    diagnostics::InferenceDiagnosticKind,
+    infer::TypeExpectation,
+    lower::{LoweredKind, TypeContainer, TypeLoweringError, TypeLoweringErrorKind},
     ty::Type,
     validate::AddressSpaceError,
 };
@@ -352,7 +351,7 @@ pub(crate) fn any_diag_from_infer_diagnostic(
         InferenceDiagnosticKind::InvalidType {
             error: TypeLoweringError { container, kind },
         } => match container {
-            hir_ty::infer::TypeContainer::Expression(expression) => {
+            TypeContainer::Expression(expression) => {
                 let pointer = source_map.expression_to_source(*expression).ok()?.clone();
                 let source = InFile::new(file_id, pointer);
 
@@ -361,7 +360,7 @@ pub(crate) fn any_diag_from_infer_diagnostic(
                     error: kind.clone(),
                 }
             },
-            hir_ty::infer::TypeContainer::TypeSpecifier(type_specifier) => {
+            TypeContainer::TypeSpecifier(type_specifier) => {
                 let pointer = source_map
                     .type_specifier_to_source(*type_specifier)
                     .ok()?

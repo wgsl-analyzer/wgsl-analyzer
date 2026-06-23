@@ -6,6 +6,7 @@ use hir_def::{
 };
 use hir_ty::{
     builtins::Builtin,
+    infer::InferenceResult,
     ty::pretty::{
         TypeVerbosity, pretty_fn_with_verbosity, pretty_type, pretty_type_with_verbosity,
     },
@@ -54,7 +55,7 @@ pub(crate) fn complete_names_in_scope(
                 .container
                 .and_then(hir::ChildContainer::as_def_with_body_id)
                 .map(|definition| {
-                    let inference = context.database.infer(definition);
+                    let inference = InferenceResult::of(context.database, definition);
                     inference[local]
                 })
                 .map(|r#type| pretty_type(context.database, r#type)),
@@ -119,7 +120,8 @@ fn render_detail(
             format!("struct {}", name.as_str())
         },
         ModuleDefinitionId::GlobalVariable(id) => {
-            let variable_type = database.infer(DefinitionWithBodyId::GlobalVariable(id));
+            let variable_type =
+                InferenceResult::of(database, DefinitionWithBodyId::GlobalVariable(id));
             format!(
                 "var {}: {}",
                 name.as_str(),
@@ -131,7 +133,8 @@ fn render_detail(
             )
         },
         ModuleDefinitionId::GlobalConstant(id) => {
-            let constant_type = database.infer(DefinitionWithBodyId::GlobalConstant(id));
+            let constant_type =
+                InferenceResult::of(database, DefinitionWithBodyId::GlobalConstant(id));
             format!(
                 "const {}: {}",
                 name.as_str(),
@@ -143,7 +146,7 @@ fn render_detail(
             )
         },
         ModuleDefinitionId::Override(id) => {
-            let override_type = database.infer(DefinitionWithBodyId::Override(id));
+            let override_type = InferenceResult::of(database, DefinitionWithBodyId::Override(id));
             format!(
                 "override {}: {}",
                 name.as_str(),

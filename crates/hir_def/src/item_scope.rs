@@ -96,7 +96,7 @@ impl ItemScope {
                     writeln!(buffer, "unresolved import for {}", name.as_str())
                 },
                 DefDiagnosticKind::TooManySupers { .. } => writeln!(buffer, "too many supers"),
-                DefDiagnosticKind::DetachedFile { .. } => writeln!(buffer, "detached filed"),
+                DefDiagnosticKind::DetachedFile { .. } => writeln!(buffer, "detached file"),
                 DefDiagnosticKind::NameConflict { previous, .. } => {
                     writeln!(buffer, "name conflict for {}", previous.as_str())
                 },
