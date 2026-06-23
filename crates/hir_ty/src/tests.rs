@@ -84,19 +84,19 @@ impl<'db> InferPrinter<'db> {
         for definition in definitions {
             match definition {
                 ModuleDefinitionId::Function(id) => {
-                    self.infer_with_body(DefinitionWithBodyId::Function(id), buffer)
+                    self.infer_with_body(DefinitionWithBodyId::Function(id), buffer);
                 },
                 ModuleDefinitionId::GlobalVariable(id) => {
-                    self.infer_with_body(DefinitionWithBodyId::GlobalVariable(id), buffer)
+                    self.infer_with_body(DefinitionWithBodyId::GlobalVariable(id), buffer);
                 },
                 ModuleDefinitionId::GlobalConstant(id) => {
-                    self.infer_with_body(DefinitionWithBodyId::GlobalConstant(id), buffer)
+                    self.infer_with_body(DefinitionWithBodyId::GlobalConstant(id), buffer);
                 },
                 ModuleDefinitionId::GlobalAssertStatement(id) => {
-                    self.infer_with_body(DefinitionWithBodyId::GlobalAssertStatement(id), buffer)
+                    self.infer_with_body(DefinitionWithBodyId::GlobalAssertStatement(id), buffer);
                 },
                 ModuleDefinitionId::Override(id) => {
-                    self.infer_with_body(DefinitionWithBodyId::Override(id), buffer)
+                    self.infer_with_body(DefinitionWithBodyId::Override(id), buffer);
                 },
                 ModuleDefinitionId::Module(_) => (),
                 ModuleDefinitionId::Struct(id) => {
@@ -104,14 +104,14 @@ impl<'db> InferPrinter<'db> {
                     let (_, diagnostics) = &*self.database.field_types(id);
 
                     for diagnostic in diagnostics {
-                        self.print_diagnostic(diagnostic, &signature_map, buffer)
+                        self.print_diagnostic(diagnostic, &signature_map, buffer);
                     }
                 },
                 ModuleDefinitionId::TypeAlias(id) => {
                     let (_, signature_map) = self.database.type_alias_data(id);
                     let (_, diagnostics) = &*self.database.type_alias_type(id);
                     for diagnostic in diagnostics {
-                        self.print_diagnostic(diagnostic, &signature_map, buffer)
+                        self.print_diagnostic(diagnostic, &signature_map, buffer);
                     }
                 },
             }
@@ -152,7 +152,7 @@ impl<'db> InferPrinter<'db> {
         });
 
         for (node, r#type) in types {
-            self.print_type(node, *r#type, buffer);
+            self.print_type(&node, *r#type, buffer);
         }
 
         for diagnostic in inference_result.diagnostics() {
@@ -160,13 +160,13 @@ impl<'db> InferPrinter<'db> {
                 ExpressionStoreSource::Body => body_source_map.expression_source_map(),
                 ExpressionStoreSource::Signature => &signature_map,
             };
-            self.print_diagnostic(diagnostic, source_map, buffer)
+            self.print_diagnostic(diagnostic, source_map, buffer);
         }
     }
 
     fn print_type(
         &self,
-        node: SyntaxNode,
+        node: &SyntaxNode,
         r#type: Type,
         buffer: &mut String,
     ) {
