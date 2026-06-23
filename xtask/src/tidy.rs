@@ -156,7 +156,6 @@ mod tests {
     use super::*;
 
     #[test]
-    #[ignore = "not implemented yet"]
     fn test() {
         Tidy {}.run(&Shell::new().unwrap()).unwrap();
     }
