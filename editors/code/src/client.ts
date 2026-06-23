@@ -9,7 +9,7 @@ import { type Config, prepareVSCodeConfig } from "./config";
 import * as diagnostics from "./diagnostics";
 import { WaLanguageClient } from "./lang_client";
 import * as wa from "./lsp_ext";
-import { assert, unwrapUndefinable } from "./utilities";
+import { assert } from "./utilities";
 
 export function createClient(
 	traceOutputChannel: vscode.OutputChannel,
