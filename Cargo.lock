@@ -567,7 +567,7 @@ dependencies = [
  "either",
  "expect-test",
  "hir-def",
- "itertools",
+ "itertools 0.15.0",
  "la-arena",
  "query-group-macro",
  "rustc-hash 2.1.2",
@@ -602,7 +602,7 @@ dependencies = [
  "hir-ty",
  "ide-completion",
  "ide-db",
- "itertools",
+ "itertools 0.15.0",
  "line-index",
  "naga 27.0.3",
  "naga 28.0.0",
@@ -631,7 +631,7 @@ dependencies = [
  "hir-def",
  "hir-ty",
  "ide-db",
- "itertools",
+ "itertools 0.15.0",
  "rustc-hash 2.1.2",
  "smallvec",
  "smol_str",
@@ -646,7 +646,7 @@ version = "0.0.0"
 dependencies = [
  "base-db",
  "hir-def",
- "itertools",
+ "itertools 0.15.0",
  "line-index",
  "query-group-macro",
  "rowan",
@@ -730,6 +730,15 @@ name = "itertools"
 version = "0.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2b192c782037fadd9cfa75548310488aabdbf3d2da73885b31bd0abd03351285"
+dependencies = [
+ "either",
+]
+
+[[package]]
+name = "itertools"
+version = "0.15.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8b4baf93f58d4425749ca49a51c50ebab072c5df6994d08fed93541c331481dc"
 dependencies = [
  "either",
 ]
@@ -1504,7 +1513,7 @@ source = "git+https://github.com/rust-lang/rust-analyzer?rev=b42b63f390a4dab14e6
 dependencies = [
  "crossbeam-channel",
  "crossbeam-utils",
- "itertools",
+ "itertools 0.14.0",
  "jod-thread",
  "libc",
  "miow",
@@ -1539,7 +1548,7 @@ name = "syntax"
 version = "0.0.0"
 dependencies = [
  "either",
- "itertools",
+ "itertools 0.15.0",
  "parser",
  "rowan",
  "smol_str",
@@ -1925,7 +1934,7 @@ dependencies = [
  "ide-completion",
  "ide-db",
  "idna_adapter",
- "itertools",
+ "itertools 0.15.0",
  "line-index",
  "lsp-server",
  "memchr",
@@ -1968,7 +1977,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d3cf8623d173060d5a9e1465b89954ea42f3ac21af2f533c7975d003f8d82b98"
 dependencies = [
  "half",
- "itertools",
+ "itertools 0.14.0",
  "num-traits",
 ]
 
