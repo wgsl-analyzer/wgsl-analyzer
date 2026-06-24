@@ -5,29 +5,41 @@ Default: `"physical"`
 Number of worker threads used to warm caches when a project opens.
 Use `0` to let the server choose automatically based on the machine.
 
-## wgsl-analyzer.diagnostics.nagaParsingErrors
+## wgsl-analyzer.diagnostics.external.naga.parsing
 
 Default: `true`
 
-Controls whether to show naga's parsing errors.
+Whether to show diagnostics from naga about parsing.
 
-## wgsl-analyzer.diagnostics.nagaValidationErrors
+## wgsl-analyzer.diagnostics.external.naga.validation.errors
 
 Default: `true`
 
-Controls whether to show naga's validation errors.
+Whether to show diagnostics from naga about validation.
 
-## wgsl-analyzer.diagnostics.nagaVersion
+## wgsl-analyzer.diagnostics.external.naga.version
 
 Default: `"0.29"`
 
 Naga version used for validation.
 
-## wgsl-analyzer.diagnostics.typeErrors
+## wgsl-analyzer.diagnostics.external.tintErrors
+
+Default: `false`
+
+Whether to show Tint shader compiler's messages.
+
+## wgsl-analyzer.diagnostics.external.tintPath
+
+Default: `null`
+
+The path to the tint binary.
+
+## wgsl-analyzer.diagnostics.semanticErrors
 
 Default: `true`
 
-Controls whether to show type errors.
+Whether to show diagnostics about the code semantics.
 
 ## wgsl-analyzer.extensions.shaderInt64
 

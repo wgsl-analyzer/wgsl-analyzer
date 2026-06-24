@@ -448,8 +448,8 @@
 			{
 				"title": "Diagnostics",
 				"properties": {
-					"wgsl-analyzer.diagnostics.nagaParsingErrors": {
-						"markdownDescription": "Controls whether to show naga's parsing errors.",
+					"wgsl-analyzer.diagnostics.external.naga.parsing": {
+						"markdownDescription": "Whether to show diagnostics from naga about parsing.",
 						"default": true,
 						"type": "boolean"
 					}
@@ -458,8 +458,8 @@
 			{
 				"title": "Diagnostics",
 				"properties": {
-					"wgsl-analyzer.diagnostics.nagaValidationErrors": {
-						"markdownDescription": "Controls whether to show naga's validation errors.",
+					"wgsl-analyzer.diagnostics.external.naga.validation.errors": {
+						"markdownDescription": "Whether to show diagnostics from naga about validation.",
 						"default": true,
 						"type": "boolean"
 					}
@@ -468,7 +468,7 @@
 			{
 				"title": "Diagnostics",
 				"properties": {
-					"wgsl-analyzer.diagnostics.nagaVersion": {
+					"wgsl-analyzer.diagnostics.external.naga.version": {
 						"markdownDescription": "Naga version used for validation.",
 						"default": "0.29",
 						"type": "string",
@@ -490,8 +490,31 @@
 			{
 				"title": "Diagnostics",
 				"properties": {
-					"wgsl-analyzer.diagnostics.typeErrors": {
-						"markdownDescription": "Controls whether to show type errors.",
+					"wgsl-analyzer.diagnostics.external.tintErrors": {
+						"markdownDescription": "Whether to show Tint shader compiler's messages.",
+						"default": false,
+						"type": "boolean"
+					}
+				}
+			},
+			{
+				"title": "Diagnostics",
+				"properties": {
+					"wgsl-analyzer.diagnostics.external.tintPath": {
+						"markdownDescription": "The path to the tint binary.",
+						"default": null,
+						"type": [
+							"null",
+							"string"
+						]
+					}
+				}
+			},
+			{
+				"title": "Diagnostics",
+				"properties": {
+					"wgsl-analyzer.diagnostics.semanticErrors": {
+						"markdownDescription": "Whether to show diagnostics about the code semantics.",
 						"default": true,
 						"type": "boolean"
 					}

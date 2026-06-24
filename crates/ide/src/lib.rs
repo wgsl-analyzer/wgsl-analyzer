@@ -3,7 +3,6 @@
 #[cfg(test)]
 mod fixture;
 
-pub mod diagnostics;
 mod folding_ranges;
 mod formatting;
 mod goto_definition;
@@ -25,17 +24,16 @@ use base_db::{
     EditionedFileId, FilePosition, FileRange, FileSet, RangeInfo, SourceDatabase as _, SourceRoot,
     TextRange, change::Change, input::SourceRootId,
 };
-use diagnostics::Diagnostic;
-use hir::diagnostics::DiagnosticsConfig;
 use hir_def::database::DefDatabase as _;
 use ide_completion::{CompletionConfig, item::CompletionItem};
 use ide_db::LineIndexDatabase as _;
+use ide_diagnostics::{Diagnostic, DiagnosticsConfig};
 pub use line_index::{LineCol, LineIndex};
 use rustc_hash::FxHashMap;
 use salsa::{Cancelled, Database as _, Durability};
-use syntax::{Edition, ExtensionsConfig, Parse, SyntaxNode};
+use syntax::{ExtensionsConfig, Parse, SyntaxNode};
 use triomphe::Arc;
-use vfs::{AbsPathBuf, FileId, VfsPath};
+use vfs::{FileId, VfsPath};
 
 use crate::signature_help::SignatureHelp;
 pub use crate::{
@@ -371,7 +369,7 @@ impl Analysis {
         config: &DiagnosticsConfig,
         file_id: FileId,
     ) -> Cancellable<Vec<Diagnostic>> {
-        self.with_db(|database| diagnostics::diagnostics(database, config, file_id))
+        self.with_db(|database| ide_diagnostics::diagnostics(database, config, file_id))
     }
 
     pub fn goto_definition(

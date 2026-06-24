@@ -22,37 +22,6 @@ use syntax::{ast, pointer::AstPointer};
 
 use self::{global_variable::GlobalVariableDiagnostic, precedence::PrecedenceDiagnostic};
 
-#[derive(Clone, Copy, Debug, Default)]
-pub enum NagaVersion {
-    Naga27,
-    Naga28,
-    #[default]
-    Naga29,
-    NagaMain,
-}
-
-#[derive(Clone, Debug)]
-pub struct DiagnosticsConfig {
-    /// Whether native diagnostics are enabled.
-    pub enabled: bool,
-    pub type_errors: bool,
-    pub naga_parsing_errors: bool,
-    pub naga_validation_errors: bool,
-    pub naga_version: NagaVersion,
-}
-
-impl Default for DiagnosticsConfig {
-    fn default() -> Self {
-        Self {
-            enabled: true,
-            type_errors: true,
-            naga_parsing_errors: true,
-            naga_validation_errors: true,
-            naga_version: NagaVersion::default(),
-        }
-    }
-}
-
 pub enum AnyDiagnostic {
     ParseError {
         message: String,
@@ -148,6 +117,12 @@ pub enum AnyDiagnostic {
         message: String,
         related: Vec<(String, FileRange)>,
     },
+    TintValidationError {
+        file_id: EditionedFileId,
+        range: TextRange,
+        message: String,
+        severity: Severity,
+    },
     NoConstructor {
         expression: InFile<AstPointer<ast::Expression>>,
         builtins: BuiltinId,
@@ -179,6 +154,14 @@ pub enum AnyDiagnostic {
     },
 }
 
+#[derive(Clone, Copy)]
+pub enum Severity {
+    Error,
+    Warning,
+    Information,
+    Hint,
+}
+
 impl AnyDiagnostic {
     #[must_use]
     pub const fn file_id(&self) -> EditionedFileId {
@@ -204,6 +187,7 @@ impl AnyDiagnostic {
             },
             Self::InvalidTypeSpecifier { type_specifier, .. } => type_specifier.file_id,
             Self::NagaValidationError { file_id, .. }
+            | Self::TintValidationError { file_id, .. }
             | Self::ParseError { file_id, .. }
             | Self::CyclicType { file_id, .. }
             | Self::InvalidIdentifier { file_id, .. } => *file_id,

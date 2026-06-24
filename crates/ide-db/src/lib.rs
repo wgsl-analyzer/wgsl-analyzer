@@ -55,6 +55,12 @@ impl fmt::Debug for RootDatabase {
     }
 }
 
+impl Default for RootDatabase {
+    fn default() -> Self {
+        Self::new(None)
+    }
+}
+
 #[salsa_macros::db]
 impl SourceDatabase for RootDatabase {
     fn file_text(
