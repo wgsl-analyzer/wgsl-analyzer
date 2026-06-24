@@ -196,7 +196,10 @@ pub fn diagnostics(
     }
 
     if edition == Edition::Wgsl && config.tint_enabled {
-        tint_diagnostics(database, file_id, config, &mut diagnostics);
+        // TODO: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/998
+        // Clean this up by turning external tool integrations into flycheck.
+        // This "." is a hack to avoid adding a working_dir to the interface of ide-diagnostics.
+        tint_diagnostics(database, file_id, config, ".", &mut diagnostics);
     }
 
     diagnostics
