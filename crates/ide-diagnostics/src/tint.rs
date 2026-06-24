@@ -1,7 +1,7 @@
 use std::{
     fmt::Display,
     io::Write as _,
-    path::PathBuf,
+    path::{Path, PathBuf},
     process::{Command, Stdio},
     range::Range,
 };
@@ -10,29 +10,46 @@ use base_db::{EditionedFileId, SourceDatabase as _};
 use hir::diagnostics::{AnyDiagnostic, Severity};
 use ide_db::{FxHashMap, LineIndexDatabase as _, RootDatabase};
 use line_index::{LineCol, LineIndex};
+use paths::Utf8PathBuf;
 use rowan::{TextRange, TextSize};
 use serde::Deserialize;
-use vfs::AbsPathBuf;
+use vfs::{AbsPath, AbsPathBuf};
 
 use crate::DiagnosticsConfig;
 
-pub(crate) fn tint_diagnostics(
+pub(crate) fn tint_diagnostics<Pathy>(
     database: &RootDatabase,
     file_id: EditionedFileId,
     config: &DiagnosticsConfig,
+    working_directory: Pathy,
     accumulator: &mut Vec<AnyDiagnostic>,
-) {
+) where
+    Pathy: AsRef<Path>,
+{
     let raw_file_id = file_id.file_id(database);
     let source: &str = database.file_text(raw_file_id).text(database);
     let full_range = TextRange::up_to(TextSize::of(source));
     let line_index = database.line_index(raw_file_id);
+    let execute_tint = || {
+        let mut child = command(config.tint_path.as_deref(), working_directory)
+            .spawn()
+            .map_err(TintCommandError::Io)?;
+        let mut stdin = child.stdin.take().unwrap();
+        let output = std::thread::scope(move |scope| {
+            scope.spawn(move || {
+                stdin.write_all(source.as_bytes()).unwrap();
+            });
+            child.wait_with_output().map_err(TintCommandError::Io)
+        })?;
 
-    let tint_results = TintCommand {
-        tint_path: config.tint_path.clone(),
-    }
-    .execute(source);
-
-    let diagnostics = match tint_results {
+        // Tint seems to terminate with exit code 1 and output nothing when the program is correct
+        if output.status.success() || output.stderr.is_empty() {
+            Ok(Vec::new())
+        } else {
+            parse(&output.stderr)
+        }
+    };
+    let diagnostics = match execute_tint() {
         Ok(diagnostics) => diagnostics,
         Err(error) => {
             accumulator.push(AnyDiagnostic::TintValidationError {
@@ -62,51 +79,29 @@ pub(crate) fn tint_diagnostics(
     }
 }
 
-#[derive(Debug, Clone)]
-pub struct TintCommand {
-    pub tint_path: Option<AbsPathBuf>,
-}
-
-impl TintCommand {
-    fn command(&self) -> Command {
-        let path = self
-            .tint_path
-            .as_ref()
-            .map_or_else(|| PathBuf::from("tint"), PathBuf::from);
-        let mut cmd = toolchain::command(path, ".", &FxHashMap::default());
-        cmd.args([
-            "--parse-only",
-            "--input-format",
-            "wgsl",
-            "--diagnostics-format",
-            "json",
-        ]);
-        cmd.stdin(Stdio::piped());
-        cmd.stdout(Stdio::null());
-        cmd.stderr(Stdio::piped());
-        cmd
-    }
-
-    pub fn execute(
-        &self,
-        source: &str,
-    ) -> Result<Vec<TintDiagnostic>, TintCommandError> {
-        let mut child = self.command().spawn().map_err(TintCommandError::Io)?;
-        let mut stdin = child.stdin.take().unwrap();
-        let output = std::thread::scope(move |scope| {
-            scope.spawn(move || {
-                stdin.write_all(source.as_bytes()).unwrap();
-            });
-            child.wait_with_output().map_err(TintCommandError::Io)
-        })?;
-
-        // Tint seems to terminate with exit code 1 and output nothing when the program is correct
-        if output.status.success() || output.stderr.len() == 0 {
-            Ok(Vec::new())
-        } else {
-            parse(&output.stderr)
-        }
-    }
+fn command<Pathy>(
+    path: Option<&AbsPath>,
+    working_directory: Pathy,
+) -> Command
+where
+    Pathy: AsRef<Path>,
+{
+    let path = path
+        .as_ref()
+        .map_or_else(|| PathBuf::from("tint"), PathBuf::from);
+    let mut cmd = toolchain::command(path, ".", &FxHashMap::default());
+    cmd.current_dir(working_directory);
+    cmd.args([
+        "--parse-only",
+        "--input-format",
+        "wgsl",
+        "--diagnostics-format",
+        "json",
+    ]);
+    cmd.stdin(Stdio::piped());
+    cmd.stdout(Stdio::null());
+    cmd.stderr(Stdio::piped());
+    cmd
 }
 
 fn parse(data: &[u8]) -> Result<Vec<TintDiagnostic>, TintCommandError> {
