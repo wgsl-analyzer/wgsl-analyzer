@@ -1,4 +1,4 @@
-use base_db::EditionedFileId;
+use base_db::{EditionedFileId, file_package};
 use triomphe::Arc;
 
 use crate::{
@@ -184,32 +184,20 @@ impl Resolver {
                         })?;
                     file_id = parent;
                 }
-                if path.is_empty() {
-                    Ok(ResolveKind::Module(file_id))
-                } else {
-                    resolve_submodules(database, file_id, path.segments()).map_err(
-                        |mut diagnostic| {
-                            diagnostic.failed_segment += usize::from(levels);
-                            diagnostic
-                        },
-                    )
-                }
+                resolve_submodules(database, file_id, path.segments()).map_err(|mut diagnostic| {
+                    diagnostic.failed_segment += usize::from(levels);
+                    diagnostic
+                })
             },
             PathKind::Package => {
                 let package_data = base_db::file_package(database, self.file_id.file_id(database))
                     .ok_or(ResolutionDiagnostic { failed_segment: 0 })?
                     .data(database);
                 let file_id = package_data.root_file(database);
-                if path.is_empty() {
-                    Ok(ResolveKind::Module(package_data.root_file(database)))
-                } else {
-                    resolve_submodules(database, file_id, path.segments()).map_err(
-                        |mut diagnostic| {
-                            diagnostic.failed_segment += 1;
-                            diagnostic
-                        },
-                    )
-                }
+                resolve_submodules(database, file_id, path.segments()).map_err(|mut diagnostic| {
+                    diagnostic.failed_segment += 1;
+                    diagnostic
+                })
             },
         }
     }
@@ -232,8 +220,22 @@ impl Resolver {
                 Some(ResolveKind::Local(entry.binding, scope.owner))
             },
             Scope::Module(scope) => {
-                let item = scope.module_info.items.get(name_start)?;
-                ResolveKind::try_from(item.definition).ok()
+                if let Some(item) = scope.module_info.items.get(name_start) {
+                    ResolveKind::try_from(item.definition).ok()
+                } else {
+                    let package_data =
+                        file_package(database, self.file_id.file_id(database))?.data(database);
+                    let resolved_dependency = package_data
+                        .dependencies
+                        .iter()
+                        .find(|dep| dep.name.as_str() == name_start.as_str())?;
+                    Some(ResolveKind::Module(
+                        resolved_dependency
+                            .package(database)
+                            .data(database)
+                            .root_file(database),
+                    ))
+                }
             },
             Scope::Builtin => {
                 // TODO: Match against the first name segment and then point at a "builtin" file
@@ -296,9 +298,6 @@ fn resolve_submodules(
         if let Some(child) = ModuleData::of(database, file_id)
             .and_then(|module_data| module_data.children.get(segment).copied())
         {
-            if is_path_done {
-                return Ok(ResolveKind::Module(child));
-            }
             file_id = child;
         } else {
             return Err(ResolutionDiagnostic {
@@ -307,7 +306,8 @@ fn resolve_submodules(
         }
     }
 
-    Err(ResolutionDiagnostic { failed_segment: 1 })
+    // We got to the end of the resolution
+    return Ok(ResolveKind::Module(file_id));
 }
 
 #[derive(Debug, PartialEq, Eq)]

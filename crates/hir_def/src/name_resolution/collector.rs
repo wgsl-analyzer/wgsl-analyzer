@@ -148,29 +148,48 @@ impl ModCollector<'_> {
         location: Location<ast::ImportStatement>,
         import: &FlatImport,
     ) -> Result<ModuleDefinitionId, DefDiagnostic> {
-        file_id = match import.path.kind() {
+        match import.path.kind() {
             PathKind::Plain => {
-                let first_segment = import.path.segments().first().ok_or_else(|| {
+                let name_start = import.path.segments().first().ok_or_else(|| {
                     DefDiagnostic::unresolved_import(file_id, location, Name::missing())
                 })?;
                 // Local names can shadow an import
-                if let Some(resolved_def) = self.resolve_in_module(file_id, first_segment) {
+                if let Some(resolved_def) = self.resolve_in_module(file_id, name_start) {
                     if import.path.segments().len() > 1 {
                         // Not at the last segment
                         return Err(DefDiagnostic::unresolved_import(
                             file_id,
                             location,
-                            first_segment.clone(),
+                            name_start.clone(),
                         ));
                     }
                     return Ok(resolved_def);
                 }
-                // TODO: importing libraries is not yet implemented. See https://github.com/wgsl-analyzer/wgsl-analyzer/issues/632
-                return Err(DefDiagnostic::unresolved_import(
-                    file_id,
-                    location,
-                    first_segment.clone(),
-                ));
+
+                let package_data = file_package(self.database, file_id.file_id(self.database))
+                    .ok_or_else(|| DefDiagnostic::detached_file(file_id, location))?
+                    .data(self.database);
+
+                if let Some(resolved_dependency) = package_data
+                    .dependencies
+                    .iter()
+                    .find(|dep| dep.name.as_str() == name_start.as_str())
+                {
+                    let dependency_package = resolved_dependency.package(self.database);
+                    self.resolve_submodules(
+                        dependency_package
+                            .data(self.database)
+                            .root_file(self.database),
+                        location,
+                        &import.path.segments()[1..],
+                    )
+                } else {
+                    return Err(DefDiagnostic::unresolved_import(
+                        file_id,
+                        location,
+                        name_start.clone(),
+                    ));
+                }
             },
             PathKind::Super(levels) => {
                 for _ in 0..levels {
@@ -182,20 +201,34 @@ impl ModCollector<'_> {
                         return Err(DefDiagnostic::super_escaping_root(file_id, location));
                     }
                 }
-                file_id
+                self.resolve_submodules(file_id, location, import.path.segments())
             },
             PathKind::Package => {
                 let package_data = file_package(self.database, file_id.file_id(self.database))
                     .ok_or_else(|| DefDiagnostic::detached_file(file_id, location))?
                     .data(self.database);
-                package_data.root_file(self.database)
+                let file_id = package_data.root_file(self.database);
+                self.resolve_submodules(file_id, location, import.path.segments())
             },
-        };
+        }
+    }
 
-        for (index, segment) in import.path.segments().iter().enumerate() {
+    fn resolve_submodules(
+        &self,
+        mut file_id: EditionedFileId,
+        location: Location<ast::ImportStatement>,
+        segments: &[Name],
+    ) -> Result<ModuleDefinitionId, DefDiagnostic> {
+        for (index, segment) in segments.iter().enumerate() {
+            let is_path_done = index == segments.len() - 1;
             // Check in current module
             if let Some(resolved_def) = self.resolve_in_module(file_id, segment) {
-                if index < import.path.segments().len() - 1 {
+                if is_path_done {
+                    return Ok(resolved_def);
+                }
+                if let ModuleDefinitionId::Module(child) = resolved_def {
+                    file_id = child;
+                } else {
                     // Not at the last segment
                     return Err(DefDiagnostic::unresolved_import(
                         file_id,
@@ -203,8 +236,8 @@ impl ModCollector<'_> {
                         segment.clone(),
                     ));
                 }
-                return Ok(resolved_def);
             }
+
             // Otherwise go to the child file
             let module_data = ModuleData::of(self.database, file_id)
                 .ok_or_else(|| DefDiagnostic::detached_file(file_id, location))?;
@@ -218,6 +251,7 @@ impl ModCollector<'_> {
                 ));
             }
         }
+
         // We got to the end of the resolution
         Ok(ModuleDefinitionId::Module(file_id))
     }

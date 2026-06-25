@@ -536,3 +536,24 @@ pub fn file_package(
         InternedSourceRootId::new(database, source_root.source_root_id(database)),
     )
 }
+
+/// This construction is used for incremental package lookups.
+#[doc(hidden)]
+#[salsa::interned]
+pub(crate) struct InternedPackageId {
+    pub id: PackageId,
+}
+
+#[salsa::tracked]
+pub(crate) fn package_by_id<'db>(
+    database: &'db dyn SourceDatabase,
+    id: InternedPackageId<'db>,
+) -> Package {
+    let packages = AllPackages::get(database).packages(database);
+    let id = id.id(database);
+
+    *packages
+        .iter()
+        .find(|package| package.package_id(database) == id)
+        .unwrap()
+}
