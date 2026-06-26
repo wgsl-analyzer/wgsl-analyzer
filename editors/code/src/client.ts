@@ -9,7 +9,7 @@ import { type Config, prepareVSCodeConfig } from "./config";
 import * as diagnostics from "./diagnostics";
 import { WaLanguageClient } from "./lang_client";
 import * as wa from "./lsp_ext";
-import { assert, unwrapUndefinable } from "./utilities";
+import { assert } from "./utilities";
 
 export function createClient(
 	traceOutputChannel: vscode.OutputChannel,
@@ -179,11 +179,17 @@ export function createClient(
 				context: await client.code2ProtocolConverter.asCodeActionContext(context, token),
 			};
 			const callback = async (
-				values: (lc.Command | lc.CodeAction)[] | null,
+				values: (lc.Command | lc.CodeAction | object)[] | null,
 			): Promise<(vscode.Command | vscode.CodeAction)[] | undefined> => {
 				if (values === null) return undefined;
 				const result: (vscode.CodeAction | vscode.Command)[] = [];
-				const groups = new Map<string, { index: number; items: vscode.CodeAction[] }>();
+				const groups = new Map<
+					string,
+					{
+						primary: vscode.CodeAction;
+						items: { label: string; arguments: lc.CodeAction }[];
+					}
+				>();
 				for (const item of values) {
 					// In our case we expect to get code edits only from diagnostics
 					if (lc.CodeAction.is(item)) {
@@ -192,65 +198,55 @@ export function createClient(
 						result.push(action);
 						continue;
 					}
-					assert(
-						isCodeActionWithoutEditsAndCommands(item),
-						"We do not expect edits or commands here",
-					);
-					const kind = client.protocol2CodeConverter.asCodeActionKind(
-						// biome-ignore lint/suspicious/noExplicitAny: Signature comes from upstream
-						(item as any).kind,
-					);
-					const action = new vscode.CodeAction(item.title, kind);
-					// biome-ignore lint/suspicious/noExplicitAny: Signature comes from upstream
-					const group = (item as any).group;
-					action.command = {
-						command: "wgsl-analyzer.resolveCodeAction",
-						title: item.title,
-						arguments: [item],
-					};
+					assertIsCodeActionWithoutEditsAndCommands(item);
+					const kind = client.protocol2CodeConverter.asCodeActionKind(item.kind);
+					const group = item.group;
 
-					// Set a dummy edit, so that VS Code doesn't try to resolve this.
-					action.edit = new WorkspaceEdit();
+					const mkAction = () => {
+						const action = new vscode.CodeAction(item.title, kind);
+						action.command = {
+							command: "rust-analyzer.resolveCodeAction",
+							title: item.title,
+							arguments: [item],
+						};
+						// Set a dummy edit, so that VS Code doesn't try to resolve this.
+						action.edit = new WorkspaceEdit();
+						return action;
+					};
 
 					if (group) {
 						let entry = groups.get(group);
 						if (!entry) {
-							entry = { index: result.length, items: [] };
+							entry = { primary: mkAction(), items: [] };
 							groups.set(group, entry);
-							result.push(action);
+						} else {
+							entry.items.push({
+								label: item.title,
+								arguments: item,
+							});
 						}
-						entry.items.push(action);
 					} else {
-						result.push(action);
+						result.push(mkAction());
 					}
 				}
-				for (const [group, { index, items }] of groups) {
-					if (items.length === 1) {
-						const item = unwrapUndefinable(items[0]);
-						result[index] = item;
-					} else {
-						const action = new vscode.CodeAction(group);
-						const item = unwrapUndefinable(items[0]);
-						action.kind = item.kind;
-						action.command = {
-							command: "wgsl-analyzer.applyActionGroup",
+				for (const [group, { items, primary }] of groups) {
+					// This group contains more than one item, so rewrite it to be a group action
+					if (items.length !== 0) {
+						const args = [
+							{
+								label: primary.title,
+								arguments: primary.command!.arguments![0],
+							},
+							...items,
+						];
+						primary.title = group;
+						primary.command = {
+							command: "rust-analyzer.applyActionGroup",
 							title: "",
-							arguments: [
-								items.map((item) => {
-									return {
-										label: item.title,
-										// biome-ignore lint/style/noNonNullAssertion: TODO
-										args: item.command!.arguments![0],
-									};
-								}),
-							],
+							arguments: [args],
 						};
-
-						// Set a dummy edit, so that VS Code doesn't try to resolve this.
-						action.edit = new WorkspaceEdit();
-
-						result[index] = action;
 					}
+					result.push(primary);
 				}
 				return result;
 			};
@@ -367,16 +363,22 @@ class OverrideFeatures implements lc.StaticFeature {
 	}
 }
 
-// biome-ignore lint/suspicious/noExplicitAny: Signature comes from upstream
-function isCodeActionWithoutEditsAndCommands(value: any): boolean {
-	const candidate: lc.CodeAction = value;
-	return (
+function assertIsCodeActionWithoutEditsAndCommands(
+	// biome-ignore lint/suspicious/noExplicitAny: This is a validation function and doing better here is complex
+	candidate: any,
+): asserts candidate is lc.CodeAction & {
+	group?: string;
+} {
+	assert(
 		candidate
-		&& Is.string(candidate.title)
-		&& (candidate.diagnostics === void 0 || Is.typedArray(candidate.diagnostics, lc.Diagnostic.is))
-		&& (candidate.kind === void 0 || Is.string(candidate.kind))
-		&& candidate.edit === void 0
-		&& candidate.command === void 0
+			&& Is.string(candidate.title)
+			&& (candidate.diagnostics === undefined
+				|| Is.typedArray(candidate.diagnostics, lc.Diagnostic.is))
+			&& (candidate.group === undefined || Is.string(candidate.group))
+			&& (candidate.kind === undefined || Is.string(candidate.kind))
+			&& candidate.edit === undefined
+			&& candidate.command === undefined,
+		`Expected a CodeAction without edits or commands, got: ${JSON.stringify(candidate)}`,
 	);
 }
 

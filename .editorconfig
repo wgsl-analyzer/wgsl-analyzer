@@ -12,6 +12,9 @@ trim_trailing_whitespace = true
 
 [*.rs]
 
+[*.ts]
+indent_style = tab
+
 [*.toml]
 indent_style = tab
 
