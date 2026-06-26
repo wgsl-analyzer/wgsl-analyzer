@@ -277,7 +277,15 @@ impl GlobalState {
         }
         std::mem::drop(guard);
 
-        self.process_package_changes(modified_local_packages, &mut change);
+        if !modified_local_packages.is_empty() {
+            self.process_local_package_changes(modified_local_packages);
+        }
+        if self.is_quiescent() {
+            // Delay switching until
+            // - the package graph is fully loaded
+            // - and the root file is loaded
+            self.process_package_changes(&mut change);
+        }
 
         if change.is_empty() {
             false
@@ -287,12 +295,10 @@ impl GlobalState {
         }
     }
 
-    fn process_package_changes(
+    fn process_local_package_changes(
         &self,
         modified_local_packages: FxHashMap<ManifestPath, PackageChange>,
-        change: &mut BaseDbChange,
     ) {
-        let (vfs, _) = &*self.vfs.read();
         let packages = &mut *self.packages.write();
         for (path, modified) in modified_local_packages {
             match modified {
@@ -325,13 +331,14 @@ impl GlobalState {
                 },
             }
         }
+    }
 
-        if !self.is_quiescent() {
-            // No need to update the Salsa side while we're still loading
-            // TODO: This should just be an optimization, but it is load bearing. Without this, the `vfs.file_id` for the root file fails.
-            return;
-        }
-
+    fn process_package_changes(
+        &mut self,
+        change: &mut BaseDbChange,
+    ) {
+        let mut packages = self.packages.write();
+        let vfs = &self.vfs.read().0;
         let changed_packages = packages.take_changes();
         for (id, package_change) in changed_packages {
             let package_data = packages.get(id).and_then(|package| {
