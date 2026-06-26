@@ -364,7 +364,7 @@ class OverrideFeatures implements lc.StaticFeature {
 }
 
 function assertIsCodeActionWithoutEditsAndCommands(
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	// biome-ignore lint/suspicious/noExplicitAny: This is a validation function and doing better here is complex
 	candidate: any,
 ): asserts candidate is lc.CodeAction & {
 	group?: string;
