@@ -101,10 +101,10 @@ impl<'db> ModulesMapBuilder<'db> {
         let edition = root.edition(database);
         let modules: FxIndexMap<_, _> = source_root
             .iter()
-            .map(|file_id| {
-                let file_id =
-                    EditionedFileId::from_file_in_source_root(database, file_id, source_root);
-                (file_id, ModuleData::new(file_id))
+            .filter_map(|file_id| {
+                let (_, extension) = source_root.path_for_file(file_id)?.name_and_extension()?;
+                let file_id = EditionedFileId::try_with_extension(database, file_id, extension?)?;
+                Some((file_id, ModuleData::new(file_id)))
             })
             .collect();
 
@@ -134,13 +134,9 @@ impl<'db> ModulesMapBuilder<'db> {
 
         let path = self.source_root.path_for_file(raw_file_id)?;
         let (name, extension) = path.name_and_extension()?;
-        if !matches!(extension, Some("wesl" | "wgsl")) {
-            return None;
-        }
         let name = Name::from(name);
 
-        let file_id =
-            EditionedFileId::from_file_in_source_root(self.database, raw_file_id, self.source_root);
+        let file_id = EditionedFileId::try_with_extension(self.database, raw_file_id, extension?)?;
         self.modules[&file_id].name = Some(name.clone());
 
         // TODO: This cannot account for the case where a module is missing. After all, missing modules do not have a file id.
