@@ -9,20 +9,20 @@ import type { Env } from "./utilities";
 import { expectNotUndefined, log, unwrapUndefinable } from "./utilities";
 
 export type RunnableEnvCfgItem = {
-    mask?: string;
-    env: { [key: string]: { toString(): string } | null };
-    platform?: string | string[];
+	mask?: string;
+	env: { [key: string]: { toString(): string } | null };
+	platform?: string | string[];
 };
 
 export type ConfigurationTree = { [key: string]: ConfigurationValue };
 export type ConfigurationValue =
-    | undefined
-    | null
-    | boolean
-    | number
-    | string
-    | ConfigurationValue[]
-    | ConfigurationTree;
+	| undefined
+	| null
+	| boolean
+	| number
+	| string
+	| ConfigurationValue[]
+	| ConfigurationTree;
 
 type ShowStatusBar = "always" | "never" | { documentSelector: vscode.DocumentSelector };
 
