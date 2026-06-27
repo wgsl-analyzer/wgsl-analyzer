@@ -463,3 +463,32 @@ fn invalid_import_starting_with_item() {
         "#]],
     );
 }
+
+#[test]
+fn import_with_dependencies() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        //- /package.wesl package:my_shaders edition:2026_pre dependencies:nested
+        import nested;
+        const a = nested::myValue;
+        
+        //- /foo.wesl
+        const a = nested::myValue;
+
+        //- /nested_shaders/package.wesl package:nested edition:2026_pre
+        const myValue = 3;
+        ",
+        expect![[r#"
+            ---
+            21..22 'a': integer
+            25..40 'nested::myValue': integer
+            ---
+            6..7 'a': integer
+            10..25 'nested::myValue': integer
+            ---
+            6..13 'myValue': integer
+            16..17 '3': integer
+        "#]],
+    );
+}

@@ -1,0 +1,6 @@
+edition = "2026_pre"
+root = "./package.wesl"
+
+[dependencies]
+simple_wesl = { path = "../simple_wesl" }
+nested = { path = "./nested" }

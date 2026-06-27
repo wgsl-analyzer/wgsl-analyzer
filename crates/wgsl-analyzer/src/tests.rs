@@ -148,7 +148,7 @@ fn simple_wesl() {
         "simple_wesl/wesl.toml",
         PackageOrigin::Local,
         expect![[r#"
-            Unnamed project at simple_wesl/wesl.toml
+            Project simple_wesl at simple_wesl/wesl.toml
             edition: WESL 2025 (Unstable)
             root: simple_wesl/shaders
             dependencies:
@@ -172,7 +172,7 @@ fn flat_wesl() {
         "flat_wesl/wesl.toml",
         PackageOrigin::Local,
         expect![[r#"
-            Unnamed project at flat_wesl/wesl.toml
+            Project flat_wesl at flat_wesl/wesl.toml
             edition: WESL 2025 (Unstable)
             root: flat_wesl/package.wesl
             dependencies:
@@ -186,6 +186,32 @@ fn flat_wesl() {
             extensions: wgsl, wesl, toml
             include: flat_wesl
             file: flat_wesl/wesl.toml
+        "#]],
+    );
+}
+
+#[test]
+fn wesl_with_dependencies() {
+    check_load_project(
+        "wesl_with_dependencies/wesl.toml",
+        PackageOrigin::Local,
+        expect![[r#"
+            Project wesl_with_dependencies at wesl_with_dependencies/wesl.toml
+            edition: WESL 2025 (Unstable)
+            root: wesl_with_dependencies/package.wesl
+            dependencies:
+            - nested
+            - simple_wesl
+        "#]],
+    );
+
+    check_load_project_files(
+        "wesl_with_dependencies/wesl.toml",
+        PackageOrigin::Local,
+        expect![[r#"
+            extensions: wgsl, wesl, toml
+            include: wesl_with_dependencies
+            file: wesl_with_dependencies/wesl.toml
         "#]],
     );
 }
