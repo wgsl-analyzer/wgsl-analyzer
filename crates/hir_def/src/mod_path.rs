@@ -2,10 +2,102 @@
 
 use std::{fmt, iter};
 
+use base_db::{EditionedFileId, Package};
+use camino::Utf8Component;
 use smallvec::SmallVec;
 use syntax::ast::{self, ImportRelative};
 
-use crate::item_tree::Name;
+use crate::{database::DefDatabase, item_tree::Name};
+
+#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct AbsoluteModPath(ModPath);
+
+impl AbsoluteModPath {
+    pub fn new_root() -> Self {
+        Self(ModPath::from_kind(PathKind::Package))
+    }
+
+    pub fn from_segments(segments: &[Name]) -> Self {
+        AbsoluteModPath(ModPath::from_segments(
+            PathKind::Package,
+            segments.into_iter().cloned(),
+        ))
+    }
+
+    /// Returns the absolute `package::` path for a given file.
+    ///
+    /// Returns none if there is no valid path.
+    pub fn for_file(
+        database: &dyn DefDatabase,
+        package: Package,
+        file_id: EditionedFileId,
+    ) -> Option<Self> {
+        let source_root = package.data(database).source_root(database);
+        let path = source_root.path_for_file(file_id.file_id(database))?;
+        let relative_path = path.strip_prefix(&package.data(database).root)?;
+        let segments: SmallVec<[Name; 1]> = relative_path
+            .as_utf8_path()
+            .with_extension("")
+            .components()
+            .filter_map(|component| match component {
+                Utf8Component::Prefix(_)
+                | Utf8Component::RootDir
+                | Utf8Component::ParentDir
+                | Utf8Component::CurDir => None,
+                Utf8Component::Normal(name) => Some(Name::from(name)),
+            })
+            .collect();
+
+        // package.wesl special case
+        if segments.len() == 1 && segments[0].as_str() == "package" {
+            return Some(Self::new_root());
+        }
+
+        Some(Self(ModPath::from_segments(PathKind::Package, segments)))
+    }
+
+    #[must_use]
+    pub fn segments(&self) -> &[Name] {
+        self.0.segments()
+    }
+
+    pub fn push_segment(
+        &mut self,
+        segment: Name,
+    ) {
+        self.0.push_segment(segment);
+    }
+
+    pub fn pop_segment(&mut self) -> Option<Name> {
+        self.0.pop_segment()
+    }
+}
+
+impl From<AbsoluteModPath> for ModPath {
+    fn from(value: AbsoluteModPath) -> Self {
+        value.0
+    }
+}
+
+impl fmt::Debug for AbsoluteModPath {
+    fn fmt(
+        &self,
+        f: &mut fmt::Formatter<'_>,
+    ) -> fmt::Result {
+        f.debug_tuple("AbsoluteModPath")
+            .field(&self.0.to_string())
+            .finish()
+    }
+}
+
+impl fmt::Display for AbsoluteModPath {
+    fn fmt(
+        &self,
+        f: &mut fmt::Formatter<'_>,
+    ) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
 
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ModPath {

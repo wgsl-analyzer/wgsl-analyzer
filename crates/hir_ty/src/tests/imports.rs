@@ -191,7 +191,7 @@ fn cannot_import_imported_item() {
             ---
             6..7 'b': [error]
             10..25 'package::foo::A': [error]
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(0)), kind: UnresolvedPath { path: Path(ModPath("package::foo::A")), failed_segment: 2 } } } in Body
+            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(0)), kind: Resolution(PrivateItem { name: Name("A"), visibility: File }) } } in Body
             ExpectedLoweredKind { expression: Idx::<Expression>(0), expected: Variable, actual: Type, path: Path(ModPath("package::foo::A")) } in Body
             ---
             ---
@@ -265,26 +265,29 @@ fn import_statement_self_shadowing() {
 }
 
 #[test]
-fn import_statement_self_shadowing_error() {
+fn import_statement_package_and_local_same_name() {
     check_infer(
         ExtensionsConfig::default(),
         "
         //- /package.wesl edition:2026_pre
-        import package::foo::bar; // this should fail, because
-        const foo = bar;          // package::foo resolves to this constant
+        import package::foo;
+        const foo = 3;
+        const bar = foo + foo::a;
 
         //- /foo.wesl
-        const bar = 3;
+        const a: u32 = 6;
         ",
         expect![[r#"
             ---
-            61..64 'foo': [error]
-            67..70 'bar': [error]
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(0)), kind: UnresolvedPath { path: Path(ModPath("bar")), failed_segment: 0 } } } in Body
-            ExpectedLoweredKind { expression: Idx::<Expression>(0), expected: Variable, actual: Type, path: Path(ModPath("bar")) } in Body
+            27..30 'foo': integer
+            33..34 '3': integer
+            42..45 'bar': u32
+            48..51 'foo': integer
+            48..60 'foo + foo::a': u32
+            54..60 'foo::a': u32
             ---
-            6..9 'bar': integer
-            12..13 '3': integer
+            6..7 'a': u32
+            15..16 '6': integer
         "#]],
     );
 }
@@ -416,7 +419,7 @@ fn import_escapes_root() {
             13..44 'super:...= true': [error]
             34..35 '3': integer
             40..44 'true': bool
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(1)), kind: UnresolvedPath { path: Path(ModPath("super::super::MyType")), failed_segment: 0 } } } in Body
+            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(1)), kind: Resolution(TooManySupers) } } in Body
         "#]],
     );
 }
@@ -433,7 +436,7 @@ fn import_nonexistent_module() {
         const a = Bar(2);
         ",
         expect![[r#"
-            InvalidType { error: TypeLoweringError { container: TypeSpecifier(Idx::<TypeSpecifier>(0)), kind: UnresolvedPath { path: Path(ModPath("not_a_module::foo")), failed_segment: 0 } } } in Signature
+            InvalidType { error: TypeLoweringError { container: TypeSpecifier(Idx::<TypeSpecifier>(0)), kind: Resolution(UnresolvedPackage { name: Name("not_a_module") }) } } in Signature
             47..48 'a': [error]
             51..57 'Bar(2)': [error]
             55..56 '2': integer
@@ -458,14 +461,36 @@ fn invalid_import_starting_with_item() {
             12..13 '5': integer
             81..86 'fails': [error]
             89..97 'bar::nya': [error]
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(0)), kind: UnresolvedPath { path: Path(ModPath("bar::nya")), failed_segment: 0 } } } in Body
+            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(0)), kind: Resolution(UnresolvedPackage { name: Name("bar") }) } } in Body
             ExpectedLoweredKind { expression: Idx::<Expression>(0), expected: Variable, actual: Type, path: Path(ModPath("bar::nya")) } in Body
         "#]],
     );
 }
 
 #[test]
-fn import_with_dependencies() {
+fn import_with_basic_dependency() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        //- /bar/package.wesl package:bar edition:2026_pre
+        const myValue = 3;
+
+        //- /foo/package.wesl package:foo edition:2026_pre dependencies:bar
+        const a = bar::myValue;
+        ",
+        expect![[r#"
+            ---
+            6..13 'myValue': integer
+            16..17 '3': integer
+            ---
+            6..7 'a': integer
+            10..22 'bar::myValue': integer
+        "#]],
+    );
+}
+
+#[test]
+fn import_with_nested_dependency() {
     check_infer(
         ExtensionsConfig::default(),
         "

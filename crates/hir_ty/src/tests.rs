@@ -100,7 +100,6 @@ impl<'db> InferPrinter<'db> {
                 ModuleDefinitionId::Override(id) => {
                     self.infer_with_body(DefinitionWithBodyId::Override(id), buffer);
                 },
-                ModuleDefinitionId::Module(_) => (),
                 ModuleDefinitionId::Struct(id) => {
                     let (_, signature_map) = self.database.struct_data(id);
                     let (_, diagnostics) = &*self.database.field_types(id);
@@ -296,7 +295,6 @@ fn text_range_start(
     database: &TestDatabase,
 ) -> base_db::TextSize {
     match definition {
-        ModuleDefinitionId::Module(_) => base_db::TextSize::new(0),
         ModuleDefinitionId::Function(item) => item
             .lookup(database)
             .source(database)

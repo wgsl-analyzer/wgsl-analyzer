@@ -1,7 +1,7 @@
 //! Infrastructure for lazy project discovery and loading. Currently only support wesl.toml discovery.
 use std::str::FromStr as _;
 
-use anyhow::{Context as _, bail};
+use anyhow::{bail, Context as _};
 use base_db::input::{PackageName, PackageOrigin};
 use crossbeam_channel::Sender;
 use edition::Edition;
@@ -67,10 +67,7 @@ impl LoadPackageTask {
         }
     }
 
-    fn send(
-        &self,
-        message: LoadPackageMessage,
-    ) {
+    fn send(&self, message: LoadPackageMessage) {
         if let Err(error) = self.sender.send(message) {
             tracing::warn!("load package task failed to send {}", error);
         }
@@ -85,6 +82,13 @@ impl LoadPackageTask {
                     format!("unable to parse contents of manifest '{manifest_path}'")
                 })?;
                 let root = manifest_path.parent().join(&wesl_toml.root);
+                if std::fs::metadata(&root)?.is_file() {
+                    return Err(std::io::Error::new(
+                        std::io::ErrorKind::InvalidInput,
+                        "wesl.toml root must point at a folder",
+                    )
+                    .into());
+                }
 
                 let dependencies = wesl_toml
                     .dependencies
@@ -106,10 +110,10 @@ impl LoadPackageTask {
                                 )
                                 .map_err(|_path| DependencyError::InvalidPath(name.clone()))?;
                                 PackageDependency::Path { name, path }
-                            },
+                            }
                             (Some(path), Some(package)) => {
                                 return Err(DependencyError::Ambiguous(name));
-                            },
+                            }
                         })
                     })
                     .collect::<Result<Vec<_>, DependencyError>>()?;
@@ -124,11 +128,11 @@ impl LoadPackageTask {
                                     self.sender.clone(),
                                 ),
                             });
-                        },
+                        }
                         PackageDependency::Library { name, package } => {
                             // TODO: Loading libraries is not yet implemented, see https://github.com/wgsl-analyzer/wgsl-analyzer/issues/976
                             tracing::warn!("Loading libraries is not supported yet");
-                        },
+                        }
                     }
                 }
 
@@ -138,16 +142,12 @@ impl LoadPackageTask {
                 WeslPackage {
                     manifest: manifest_path.clone(),
                     display_name: manifest_path.parent().file_name().map(str::to_owned),
-                    root: if metadata.is_file() {
-                        WeslPackageRoot::File(root)
-                    } else {
-                        WeslPackageRoot::Folder(root)
-                    },
+                    root,
                     origin: self.origin,
                     dependencies,
                     edition,
                 }
-            },
+            }
             ProjectManifest::ProjectJson(manifest_path) => bail!("project json not supported"),
         };
 
@@ -177,10 +177,7 @@ pub enum DependencyError {
     InvalidPath(PackageName),
 }
 impl std::fmt::Display for DependencyError {
-    fn fmt(
-        &self,
-        f: &mut std::fmt::Formatter<'_>,
-    ) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Ambiguous(name) => write!(
                 f,

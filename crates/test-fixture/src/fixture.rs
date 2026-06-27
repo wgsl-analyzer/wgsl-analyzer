@@ -60,6 +60,9 @@ pub struct Fixture {
     /// Syntax:
     /// - `package:my_awesome_lib`
     pub package: Option<String>,
+    /// Syntax:
+    /// - `package_root:/shaders`
+    pub package_root: Option<String>,
     /// Specifies dependencies of this package. This must be used with `package` meta.
     ///
     /// Syntax: `dependencies:my-package,my-other-package`.
@@ -166,6 +169,7 @@ impl FixtureWithProjectMeta {
         );
 
         let mut package = None;
+        let mut package_root = None;
         let mut dependencies = Vec::new();
         let mut edition = None;
         let mut library = false;
@@ -180,6 +184,13 @@ impl FixtureWithProjectMeta {
                 .unwrap_or_else(|| panic!("invalid meta line: {meta:?}"));
             match key {
                 "package" => package = Some(value.to_owned()),
+                "package_root" => {
+                    assert!(
+                        value.starts_with('/'),
+                        "package root path does not start with `/`: {value:?}"
+                    );
+                    package_root = Some(value.to_owned());
+                },
                 "dependencies" => dependencies = value.split(',').map(ToOwned::to_owned).collect(),
 
                 "edition" => edition = Some(value.to_owned()),
@@ -190,6 +201,7 @@ impl FixtureWithProjectMeta {
         Fixture {
             path,
             package,
+            package_root,
             dependencies,
             edition,
             library,

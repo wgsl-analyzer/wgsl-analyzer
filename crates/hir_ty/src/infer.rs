@@ -18,7 +18,6 @@ use hir_def::{
     expression_store::{ExpressionStore, ExpressionStoreSource, path::Path},
     item_tree::Name,
     mod_path::PathKind,
-    name_resolution::ModuleData,
     resolver::{ResolveKind, Resolver},
     signature::{
         ConstantSignature, FieldId, FunctionSignature, OverrideSignature, VariableSignature,
@@ -127,15 +126,6 @@ fn get_name_and_range(
     definition: ModuleDefinitionId,
 ) -> (Name, base_db::TextRange) {
     match definition {
-        ModuleDefinitionId::Module(file_id) => {
-            let module_data = ModuleData::of(database, file_id);
-            let full_range = TextRange::empty(TextSize::new(0));
-
-            let name = module_data.as_ref().map_or_else(Name::missing, |module| {
-                module.name.clone().unwrap_or_else(|| Name::from("package"))
-            });
-            (name, full_range)
-        },
         ModuleDefinitionId::Function(id) => (
             database.function_data(id).0.name.clone(),
             id.lookup(database)

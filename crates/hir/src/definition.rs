@@ -50,9 +50,6 @@ impl Definition {
 impl From<ResolveKind> for Definition {
     fn from(value: ResolveKind) -> Self {
         match value {
-            ResolveKind::Module(module_id) => {
-                Self::ModuleDef(ModuleDef::Module(Module { file_id: module_id }))
-            },
             ResolveKind::Local(binding, parent) => Self::Local(Local { parent, binding }),
             ResolveKind::GlobalVariable(id) => {
                 Self::ModuleDef(ModuleDef::GlobalVariable(GlobalVariable { id }))

@@ -68,12 +68,6 @@ impl TryToNavigationTarget for Definition {
         let navigation = match self {
             Self::Local(local) => local.try_to_navigation_target(database)?,
             Self::ModuleDef(definition) => match definition {
-                hir::ModuleDef::Module(module_id) => {
-                    let declaration = module_id.source(database)?;
-                    let frange = declaration.original_file_range(database);
-
-                    NavigationTarget::from_syntax(frange.file_id, frange.range, None)
-                },
                 hir::ModuleDef::Function(function) => {
                     let declaration = function.source(database)?;
 

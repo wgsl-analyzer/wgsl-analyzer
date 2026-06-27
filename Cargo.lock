@@ -533,9 +533,11 @@ name = "hir-def"
 version = "0.0.0"
 dependencies = [
  "base-db",
+ "camino",
  "either",
  "expect-test",
  "indexmap",
+ "itertools 0.15.0",
  "la-arena",
  "query-group-macro",
  "rowan",

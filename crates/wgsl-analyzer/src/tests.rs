@@ -62,11 +62,11 @@ fn check_load_project(
                     print_path(&project.manifest.into(), &test_directory)
                 );
                 writeln!(actual, "edition: {}", project.edition);
-                let root = match project.root {
-                    WeslPackageRoot::File(path) | WeslPackageRoot::Folder(path) => path,
-                };
-
-                writeln!(actual, "root: {}", print_path(&root, &test_directory));
+                writeln!(
+                    actual,
+                    "root: {}",
+                    print_path(&project.root, &test_directory)
+                );
                 writeln!(actual, "dependencies:");
                 for dependency in project.dependencies {
                     writeln!(actual, "- {}", dependency.name());
@@ -173,7 +173,7 @@ fn flat_wesl() {
         expect![[r#"
             Project flat_wesl at flat_wesl/wesl.toml
             edition: WESL 2025 (Unstable)
-            root: flat_wesl/package.wesl
+            root: flat_wesl
             dependencies:
         "#]],
     );
@@ -197,7 +197,7 @@ fn wesl_with_dependencies() {
         expect![[r#"
             Project wesl_with_dependencies at wesl_with_dependencies/wesl.toml
             edition: WESL 2025 (Unstable)
-            root: wesl_with_dependencies/package.wesl
+            root: wesl_with_dependencies
             dependencies:
             - nested
             - simple_wesl

@@ -515,9 +515,9 @@ pub fn source_root_package<'db>(
     let id = id.id(database);
 
     packages.iter().copied().find(|package| {
-        let root_file = package.data(database).root_file_id;
+        let manifest_file = package.data(database).manifest_file_id;
         database
-            .file_source_root(root_file)
+            .file_source_root(manifest_file)
             .source_root_id(database)
             == id
     })

@@ -1,12 +1,17 @@
-use base_db::{EditionedFileId, Intern as _, file_package};
+use base_db::{EditionedFileId, Intern as _, Package, file_package, input::PackageData};
+use itertools::Itertools as _;
 use syntax::ast;
+use vfs::VfsPath;
 
 use crate::{
     database::{DefDatabase, Location, ModuleDefinitionId},
-    item_scope::{ItemScope, ModuleItem},
-    item_tree::{FlatImport, ItemTree, ModuleItemId, Name},
-    mod_path::PathKind,
-    name_resolution::{ModuleData, diagnostics::DefDiagnostic},
+    item_scope::{ItemScope, ModuleImportPath, ModuleItem},
+    item_tree::{FlatImport, ImportStatement, ItemTree, ModuleItemId, Name},
+    mod_path::{AbsoluteModPath, ModPath, PathKind},
+    name_resolution::{
+        diagnostics::{self, DefDiagnostic},
+        resolve_module,
+    },
     visibility::Visibility,
 };
 
@@ -26,7 +31,13 @@ pub fn collect_module(
     collector.item_scope
 }
 
-/// Walks a single module, populating defs and imports.
+/// Walks over the defs and imports of a single module.
+///
+/// This is a precomputation step to speed up name resolution.
+/// It saves us the effort of repeatedly going over all import
+/// statements during normal name resolution.
+/// It also eagerly verifies that names, including imported ones,
+/// do not clash.
 pub(super) struct ModCollector<'db> {
     database: &'db dyn DefDatabase,
     file_id: EditionedFileId,
@@ -42,40 +53,7 @@ impl ModCollector<'_> {
             let (name, definition) = match *item {
                 ModuleItemId::ImportStatement(id) => {
                     let location = Location::new(self.file_id, id);
-                    let import_id = location.intern(self.database);
-                    item_tree[id].expand(|flat_import| {
-                        match self.resolve_import(self.file_id, location, &flat_import) {
-                            Ok(definition) => {
-                                // If we do not have a leaf name, there are a few possible cases
-                                // - PathKind::Plain => Must have a leaf name, otherwise the path is completely empty
-                                // - PathKind::Super => Don't need to add `super` to the scope, it is already a keyword
-                                // - PathKind::Package => Don't need to add `package` to the scope, it is already a keyword
-                                if let Some(name) = flat_import.leaf_name() {
-                                    let previous = self.item_scope.push_item(
-                                        name.clone(),
-                                        ModuleItem {
-                                            definition,
-                                            visibility: Visibility::File,
-                                            import: Some(import_id),
-                                        },
-                                    );
-
-                                    if let Some(previous) = previous {
-                                        self.item_scope.push_diagnostic(
-                                            DefDiagnostic::name_conflict(
-                                                self.file_id,
-                                                Location::new(self.file_id, id.upcast()),
-                                                name.clone(),
-                                            ),
-                                        );
-                                    }
-                                }
-                            },
-                            Err(diagnostic) => {
-                                self.item_scope.push_diagnostic(diagnostic);
-                            },
-                        }
-                    });
+                    self.collect_import_statement(&item_tree[id], location, *item);
                     continue;
                 },
                 ModuleItemId::Function(id) => (
@@ -117,146 +95,182 @@ impl ModCollector<'_> {
                 ModuleItemId::GlobalAssertStatement(_) => continue,
             };
 
-            let previous = self.item_scope.push_item(
-                name.clone(),
+            self.push_item(
+                name,
                 ModuleItem {
                     definition,
                     visibility: Visibility::Public,
                     import: None,
                 },
+                *item,
+            );
+        }
+    }
+
+    fn collect_import_statement(
+        &mut self,
+        import_statement: &ImportStatement,
+        location: Location<ast::ImportStatement>,
+        item_id: ModuleItemId,
+    ) {
+        let import_id = location.intern(self.database);
+        import_statement.expand(|flat_import| {
+            let Some(name) = flat_import.leaf_name().cloned() else {
+                // If we do not have a leaf name, there are a few possible cases
+                // - PathKind::Plain => Must have a leaf name, otherwise the path is completely empty
+                // - PathKind::Super => Don't need to add `super` to the scope, it is already a keyword
+                // - PathKind::Package => Don't need to add `package` to the scope, it is already a keyword
+                self.item_scope
+                    .push_diagnostic(DefDiagnostic::unnamed_import(self.file_id, location));
+                return;
+            };
+            let (package, path) = match self.absolutize_import(location, &flat_import) {
+                Ok(value) => value,
+                Err(diagnostic) => {
+                    self.item_scope.push_diagnostic(diagnostic);
+                    return;
+                },
+            };
+            self.push_import_path(
+                &name,
+                ModuleImportPath {
+                    package,
+                    path: path.clone(),
+                    import: import_id,
+                },
+                item_id,
             );
 
-            if let Some(previous) = previous {
-                self.item_scope
-                    .push_diagnostic(DefDiagnostic::name_conflict(
-                        self.file_id,
-                        Location::new(self.file_id, item.ast_id()),
-                        name.clone(),
-                    ));
+            if let Some(definition) = self.resolve_import(package, path, location) {
+                self.push_item(
+                    &name,
+                    ModuleItem {
+                        definition,
+                        visibility: Visibility::File,
+                        import: Some(import_id),
+                    },
+                    item_id,
+                );
             }
+        });
+    }
+
+    fn push_item(
+        &mut self,
+        name: &Name,
+        item: ModuleItem,
+        item_id: ModuleItemId,
+    ) {
+        let previous = self.item_scope.push_item(name.clone(), item);
+
+        if let Some(previous) = previous {
+            self.item_scope
+                .push_diagnostic(DefDiagnostic::name_conflict(
+                    self.file_id,
+                    Location::new(self.file_id, item_id.ast_id()),
+                    name.clone(),
+                ));
         }
     }
 
-    /// Resolve a part of an import statement.
-    ///
-    /// To avoid cycle handling, we only look at the modules and the item trees.
-    /// With that, we can follow an import statement, including re-exports, to the very end.
-    /// Re-exported items will cause redundant resolutions.
-    fn resolve_import(
+    fn push_import_path(
+        &mut self,
+        name: &Name,
+        path: ModuleImportPath,
+        item_id: ModuleItemId,
+    ) {
+        let previous = self.item_scope.push_import_path(name.clone(), path);
+
+        if let Some(previous) = previous {
+            self.item_scope
+                .push_diagnostic(DefDiagnostic::name_conflict(
+                    self.file_id,
+                    Location::new(self.file_id, item_id.ast_id()),
+                    name.clone(),
+                ));
+        }
+    }
+
+    fn absolutize_import(
         &self,
-        mut file_id: EditionedFileId,
         location: Location<ast::ImportStatement>,
         import: &FlatImport,
-    ) -> Result<ModuleDefinitionId, DefDiagnostic> {
+    ) -> Result<(Package, AbsoluteModPath), DefDiagnostic> {
+        let package = file_package(self.database, self.file_id.file_id(self.database))
+            .ok_or_else(|| DefDiagnostic::detached_file(self.file_id, location))?;
+
         match import.path.kind() {
             PathKind::Plain => {
-                let name_start = import.path.segments().first().ok_or_else(|| {
-                    DefDiagnostic::unresolved_import(file_id, location, Name::missing())
-                })?;
-                // Local names can shadow an import
-                if let Some(resolved_def) = self.resolve_in_module(file_id, name_start) {
-                    if import.path.segments().len() > 1 {
-                        // Not at the last segment
-                        return Err(DefDiagnostic::unresolved_import(
-                            file_id,
-                            location,
-                            name_start.clone(),
-                        ));
-                    }
-                    return Ok(resolved_def);
-                }
+                let dependency_name = import
+                    .path
+                    .segments()
+                    .first()
+                    .ok_or_else(|| DefDiagnostic::unnamed_import(self.file_id, location))?;
 
-                let package_data = file_package(self.database, file_id.file_id(self.database))
-                    .ok_or_else(|| DefDiagnostic::detached_file(file_id, location))?
-                    .data(self.database);
-
-                if let Some(resolved_dependency) = package_data
+                let resolved_dependency = package
+                    .data(self.database)
                     .dependencies
                     .iter()
-                    .find(|dep| dep.name.as_str() == name_start.as_str())
-                {
-                    let dependency_package = resolved_dependency.package(self.database);
-                    self.resolve_submodules(
-                        dependency_package
-                            .data(self.database)
-                            .root_file(self.database),
-                        location,
-                        &import.path.segments()[1..],
-                    )
-                } else {
-                    Err(DefDiagnostic::unresolved_import(
-                        file_id,
-                        location,
-                        name_start.clone(),
-                    ))
-                }
+                    .find(|dep| dep.name.as_str() == dependency_name.as_str())
+                    .ok_or_else(|| {
+                        DefDiagnostic::unresolved_package(
+                            self.file_id,
+                            location,
+                            dependency_name.clone(),
+                        )
+                    })?;
+
+                let dependency_package = resolved_dependency.package(self.database);
+                Ok((
+                    dependency_package,
+                    AbsoluteModPath::from_segments(&import.path.segments()[1..]),
+                ))
             },
             PathKind::Super(levels) => {
+                let mut mod_path = AbsoluteModPath::for_file(self.database, package, self.file_id)
+                    .ok_or_else(|| {
+                        // TODO: That's the wrong error kind
+                        DefDiagnostic::detached_file(self.file_id, location)
+                    })?;
+
                 for _ in 0..levels {
-                    let module_data = ModuleData::of(self.database, file_id)
-                        .ok_or_else(|| DefDiagnostic::detached_file(file_id, location))?;
-                    if let Some(parent) = module_data.parent {
-                        file_id = parent;
-                    } else {
-                        return Err(DefDiagnostic::super_escaping_root(file_id, location));
+                    if mod_path.pop_segment().is_none() {
+                        return Err(DefDiagnostic::super_escaping_root(self.file_id, location));
                     }
                 }
-                self.resolve_submodules(file_id, location, import.path.segments())
+
+                for segment in import.path.segments() {
+                    mod_path.push_segment(segment.clone());
+                }
+
+                Ok((package, AbsoluteModPath::from_segments(mod_path.segments())))
             },
-            PathKind::Package => {
-                let package_data = file_package(self.database, file_id.file_id(self.database))
-                    .ok_or_else(|| DefDiagnostic::detached_file(file_id, location))?
-                    .data(self.database);
-                let file_id = package_data.root_file(self.database);
-                self.resolve_submodules(file_id, location, import.path.segments())
-            },
+            PathKind::Package => Ok((
+                package,
+                AbsoluteModPath::from_segments(import.path.segments()),
+            )),
         }
     }
 
-    fn resolve_submodules(
+    /// Given a path `foo::bar`, we need to check for `foo/bar.wesl` and for item `bar` in `foo.wesl`.
+    fn resolve_import(
         &self,
-        mut file_id: EditionedFileId,
+        package: Package,
+        path: AbsoluteModPath,
         location: Location<ast::ImportStatement>,
-        segments: &[Name],
-    ) -> Result<ModuleDefinitionId, DefDiagnostic> {
-        for (index, segment) in segments.iter().enumerate() {
-            let is_path_done = index == segments.len() - 1;
-            // Check in current module
-            if let Some(resolved_def) = self.resolve_in_module(file_id, segment) {
-                if is_path_done {
-                    return Ok(resolved_def);
-                }
-                if let ModuleDefinitionId::Module(child) = resolved_def {
-                    file_id = child;
-                } else {
-                    // Not at the last segment
-                    return Err(DefDiagnostic::unresolved_import(
-                        file_id,
-                        location,
-                        segment.clone(),
-                    ));
-                }
-            }
+    ) -> Option<ModuleDefinitionId> {
+        // TODO: Check if there's a file OR a folder that corresponds to this
+        let module = resolve_module(self.database, package, path.segments());
 
-            // Otherwise go to the child file
-            let module_data = ModuleData::of(self.database, file_id)
-                .ok_or_else(|| DefDiagnostic::detached_file(file_id, location))?;
-            if let Some(child_module) = module_data.children.get(segment) {
-                file_id = *child_module;
-            } else {
-                return Err(DefDiagnostic::unresolved_import(
-                    file_id,
-                    location,
-                    segment.clone(),
-                ));
-            }
-        }
+        let [head_segments @ .., last_segment] = path.segments() else {
+            return None;
+        };
 
-        // We got to the end of the resolution
-        Ok(ModuleDefinitionId::Module(file_id))
+        resolve_module(self.database, package, head_segments)
+            .and_then(|module| self.resolve_item(module, last_segment))
     }
 
-    fn resolve_in_module(
+    fn resolve_item(
         &self,
         file_id: EditionedFileId,
         name: &Name,

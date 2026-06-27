@@ -62,7 +62,6 @@ impl<'db> LayoutPrinter<'db> {
                 | ModuleDefinitionId::GlobalConstant(_)
                 | ModuleDefinitionId::GlobalAssertStatement(_)
                 | ModuleDefinitionId::Override(_)
-                | ModuleDefinitionId::Module(_)
                 | ModuleDefinitionId::TypeAlias(_) => (),
                 ModuleDefinitionId::Struct(id) => {
                     let (signature, _) = self.database.struct_data(id);

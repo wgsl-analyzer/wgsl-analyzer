@@ -12,9 +12,10 @@ doctest = false
 
 [dependencies]
 base-db.workspace = true
-# cov-mark.workspace = true
+camino.workspace = true
 either.workspace = true
 indexmap.workspace = true
+itertools.workspace = true
 la-arena.workspace = true
 query-group.workspace = true
 rowan.workspace = true

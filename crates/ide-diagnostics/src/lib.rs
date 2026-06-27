@@ -515,12 +515,30 @@ pub fn diagnostics(
                     format!("`{}` is not a valid name for an identifier", name.as_str()),
                     range,
                 ),
-                AnyDiagnostic::UnresolvedImport { id, name } => {
+                AnyDiagnostic::UnnamedImport { id } => {
                     let source = id.value.to_node(&root);
                     let frange = original_file_range(database, id.file_id, source.syntax());
                     Diagnostic::new(
                         DiagnosticCode("25"),
-                        format!("unresolved import `{}`", name.as_str()),
+                        "import without a name".to_owned(),
+                        frange.range,
+                    )
+                },
+                AnyDiagnostic::UnresolvedPackage { id, name } => {
+                    let source = id.value.to_node(&root);
+                    let frange = original_file_range(database, id.file_id, source.syntax());
+                    Diagnostic::new(
+                        DiagnosticCode("26"),
+                        format!("could not find package `{}`", name.as_str()),
+                        frange.range,
+                    )
+                },
+                AnyDiagnostic::UnresolvedImport { id } => {
+                    let source = id.value.to_node(&root);
+                    let frange = original_file_range(database, id.file_id, source.syntax());
+                    Diagnostic::new(
+                        DiagnosticCode("27"),
+                        "could not resolve import".to_owned(),
                         frange.range,
                     )
                 },
@@ -528,7 +546,16 @@ pub fn diagnostics(
                     let source = id.value.to_node(&root);
                     let frange = original_file_range(database, id.file_id, source.syntax());
                     Diagnostic::new(
-                        DiagnosticCode("26"),
+                        DiagnosticCode("28"),
+                        "too many leading `super` keywords".to_owned(),
+                        frange.range,
+                    )
+                },
+                AnyDiagnostic::TooManySupers { id } => {
+                    let source = id.value.to_node(&root);
+                    let frange = original_file_range(database, id.file_id, source.syntax());
+                    Diagnostic::new(
+                        DiagnosticCode("29"),
                         "too many leading `super` keywords".to_owned(),
                         frange.range,
                     )
@@ -537,7 +564,7 @@ pub fn diagnostics(
                     let source = id.value.to_node(&root);
                     let frange = original_file_range(database, id.file_id, source.syntax());
                     Diagnostic::new(
-                        DiagnosticCode("27"),
+                        DiagnosticCode("30"),
                         "file is detached. Include it with a wesl.toml".to_owned(),
                         frange.range,
                     )
@@ -549,7 +576,7 @@ pub fn diagnostics(
                     let source = item.value.to_node(&root);
                     let frange = original_file_range(database, item.file_id, source.syntax());
                     Diagnostic::new(
-                        DiagnosticCode("28"),
+                        DiagnosticCode("31"),
                         format!("Duplicate identifier `{}`", previous.as_str()),
                         frange.range,
                     )
@@ -559,7 +586,7 @@ pub fn diagnostics(
                     let r#type = ty::pretty::pretty_type(database, actual);
                     let frange = original_file_range(database, expression.file_id, source.syntax());
                     Diagnostic::new(
-                        DiagnosticCode("29"),
+                        DiagnosticCode("32"),
                         format!("store type must be storable, found {type}"),
                         frange.range,
                     )
@@ -569,7 +596,7 @@ pub fn diagnostics(
                     let r#type = ty::pretty::pretty_type(database, actual);
                     let frange = original_file_range(database, expression.file_id, source.syntax());
                     Diagnostic::new(
-                        DiagnosticCode("30"),
+                        DiagnosticCode("33"),
                         format!("unexpected return value of type `{type}` in function with no return type"),
                         frange.range,
                     )

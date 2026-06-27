@@ -44,7 +44,7 @@ fn field_expression_on_error_type() {
             23..33 'Nonsense()': [error]
             43..44 'a': [error]
             47..48 'x': [error]
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(0)), kind: UnresolvedPath { path: Path(ModPath("Nonsense")), failed_segment: 0 } } } in Body
+            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(0)), kind: Resolution(UnresolvedName { name: Name("Nonsense") }) } } in Body
         "#]],
     );
 }
@@ -66,7 +66,7 @@ fn index_expression_on_error_type() {
             47..48 'x': [error]
             47..51 'x[0]': [error]
             49..50 '0': integer
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(0)), kind: UnresolvedPath { path: Path(ModPath("Nonsense")), failed_segment: 0 } } } in Body
+            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(0)), kind: Resolution(UnresolvedName { name: Name("Nonsense") }) } } in Body
             ArrayAccessInvalidType { expression: Idx::<Expression>(3), type: Type(2400) } in Body
         "#]],
     );
@@ -890,7 +890,6 @@ fn const_u32_as_array_size() {
             6..15 'maxLayers': u32
             18..21 '12u': u32
             27..33 'layers': ref<handle, [error], read>
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(1)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } } in Signature
             InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(1)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } } in Signature
         "#]],
     );

@@ -36,7 +36,8 @@ pub(crate) fn status(
 
         if let Some(package_id) = package {
             let PackageData {
-                root_file_id,
+                manifest_file_id,
+                root,
                 display_name,
                 edition,
                 dependencies,
@@ -54,11 +55,7 @@ pub(crate) fn status(
                     None => format!("{package_id:?}"),
                 }
             );
-            format_to!(
-                buffer,
-                "    Root module file id: {}\n",
-                root_file_id.index()
-            );
+            format_to!(buffer, "    Root path: {}\n", root);
             format_to!(buffer, "    Edition: {}\n", edition);
             // format_to!(
             //     buffer,

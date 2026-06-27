@@ -30,9 +30,15 @@ pub enum AnyDiagnostic {
     },
 
     // Module system errors
-    UnresolvedImport {
+    UnnamedImport {
+        id: InFile<AstPointer<ast::ImportStatement>>,
+    },
+    UnresolvedPackage {
         id: InFile<AstPointer<ast::ImportStatement>>,
         name: Name,
+    },
+    UnresolvedImport {
+        id: InFile<AstPointer<ast::ImportStatement>>,
     },
     TooManySupers {
         id: InFile<AstPointer<ast::ImportStatement>>,
@@ -201,7 +207,9 @@ impl AnyDiagnostic {
             | Self::ParseError { file_id, .. }
             | Self::CyclicType { file_id, .. }
             | Self::InvalidIdentifier { file_id, .. } => *file_id,
-            Self::UnresolvedImport { id, .. }
+            Self::UnnamedImport { id, .. }
+            | Self::UnresolvedPackage { id, .. }
+            | Self::UnresolvedImport { id, .. }
             | Self::TooManySupers { id }
             | Self::DetachedFile { id } => id.file_id,
             Self::NameConflict { item, .. } => item.file_id,
@@ -427,9 +435,15 @@ pub(crate) fn any_diag_from_def_diagnostic(
     file_id: EditionedFileId,
 ) -> AnyDiagnostic {
     match &def_diagnostic.kind {
-        DefDiagnosticKind::UnresolvedImport { id, name } => AnyDiagnostic::UnresolvedImport {
+        DefDiagnosticKind::UnnamedImport { id } => AnyDiagnostic::UnnamedImport {
+            id: id.ast_ptr(database),
+        },
+        DefDiagnosticKind::UnresolvedPackage { id, name } => AnyDiagnostic::UnresolvedPackage {
             id: id.ast_ptr(database),
             name: name.clone(),
+        },
+        DefDiagnosticKind::UnresolvedImport { id } => AnyDiagnostic::UnresolvedImport {
+            id: id.ast_ptr(database),
         },
         DefDiagnosticKind::TooManySupers { id } => AnyDiagnostic::TooManySupers {
             id: id.ast_ptr(database),

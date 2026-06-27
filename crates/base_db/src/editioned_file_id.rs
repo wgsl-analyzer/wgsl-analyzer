@@ -77,29 +77,30 @@ impl EditionedFileId {
         database: &dyn SourceDatabase,
         file_id: FileId,
     ) -> Self {
+        Self::try_from_file(database, file_id).unwrap_or_else(|error| {
+            tracing::error!("{error}");
+            return Self::new_unchecked(database, file_id, Edition::DEFAULT);
+        })
+    }
+
+    pub fn try_from_file(
+        database: &dyn SourceDatabase,
+        file_id: FileId,
+    ) -> Result<Self, InvalidFileError> {
         let source_root = database
             .source_root(database.file_source_root(file_id).source_root_id(database))
             .source_root(database);
 
-        let Some((_, extension)) = source_root
+        let extension = source_root
             .path_for_file(file_id)
-            .and_then(|file| file.name_and_extension())
-        else {
-            tracing::error!("All files need to have a source root.");
-            return Self::new_unchecked(database, file_id, Edition::DEFAULT);
-        };
+            .ok_or(InvalidFileError::MissingPath)?
+            .name_and_extension()
+            .ok_or(InvalidFileError::MissingName)?
+            .1
+            .ok_or(InvalidFileError::MissingExtension)?;
 
-        let Some(extension) = extension else {
-            tracing::error!("File is missing an extension.");
-            return Self::new_unchecked(database, file_id, Edition::DEFAULT);
-        };
-
-        Self::try_with_extension(database, file_id, extension).unwrap_or_else(|| {
-            tracing::error!(
-                "File must be a WGSL or WESL file, {extension} is not a valid file extension."
-            );
-            Self::new_unchecked(database, file_id, Edition::DEFAULT)
-        })
+        Self::try_with_extension(database, file_id, extension)
+            .ok_or_else(|| InvalidFileError::InvalidExtension(extension.to_owned()))
     }
 
     pub fn try_with_extension(
@@ -147,5 +148,29 @@ impl EditionedFileId {
         database: &dyn Database,
     ) -> RawEditionedFileId {
         self.field(database)
+    }
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub enum InvalidFileError {
+    MissingPath,
+    MissingName,
+    MissingExtension,
+    InvalidExtension(String),
+}
+
+impl std::fmt::Display for InvalidFileError {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+    ) -> std::fmt::Result {
+        match self {
+            Self::MissingPath => write!(f, "File is missing a path."),
+            Self::MissingName => write!(f, "File is missing a name."),
+            Self::MissingExtension => write!(f, "File is missing an extension."),
+            Self::InvalidExtension(extension) => {
+                write!(f, "File extension {extension} is invalid.")
+            },
+        }
     }
 }

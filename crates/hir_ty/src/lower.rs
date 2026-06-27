@@ -7,7 +7,7 @@ use hir_def::{
     expression_store::{ExpressionStore, path::Path},
     item_tree::Name,
     mod_path::PathKind,
-    resolver::{ResolveKind, Resolver},
+    resolver::{ResolutionDiagnostic, ResolveKind, Resolver},
     type_specifier::TypeSpecifierId,
 };
 use wgsl_types::syntax::Enumerant;
@@ -37,7 +37,7 @@ pub struct TypeLoweringContext<'database> {
     pub(crate) diagnostics: Vec<TypeLoweringError>,
 }
 
-#[derive(PartialEq, Eq, Debug, Clone)]
+#[derive(PartialEq, Eq, Debug)]
 pub struct TypeLoweringError {
     pub container: TypeContainer,
     pub kind: TypeLoweringErrorKind,
@@ -45,11 +45,7 @@ pub struct TypeLoweringError {
 
 #[derive(PartialEq, Eq, Debug, Clone)]
 pub enum TypeLoweringErrorKind {
-    UnresolvedName(Name),
-    UnresolvedPath {
-        path: Path,
-        failed_segment: usize,
-    },
+    Resolution(ResolutionDiagnostic),
     UnexpectedTemplateArgument(String),
     UnexpectedModule(Path),
     MissingTemplateArgument(String),
@@ -77,22 +73,29 @@ impl fmt::Display for TypeLoweringErrorKind {
         formatter: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
         match self {
-            Self::UnresolvedName(name) => {
+            Self::Resolution(ResolutionDiagnostic::UnresolvedName { name }) => {
                 write!(formatter, "`{}` not found in scope", name.as_str())
             },
-            Self::UnresolvedPath {
-                path,
-                failed_segment,
-            } => {
-                if *failed_segment == 0 {
-                    let name = path.mod_path().display_iter().next().unwrap_or_default();
-                    write!(formatter, "`{name}` not found in scope")
-                } else {
-                    let mut segments = path.mod_path().display_iter().skip(*failed_segment - 1);
-                    let previous_name = segments.next().unwrap_or_default();
-                    let name = segments.next().unwrap_or_default();
-                    write!(formatter, "`{name}` not found in `{previous_name}`")
-                }
+            Self::Resolution(ResolutionDiagnostic::UnresolvedFile { .. }) => {
+                write!(formatter, "could not find file")
+            },
+            Self::Resolution(ResolutionDiagnostic::DetachedFile) => {
+                write!(formatter, "current file is detached")
+            },
+            Self::Resolution(ResolutionDiagnostic::MissingName) => {
+                write!(formatter, "path is missing a name")
+            },
+            Self::Resolution(ResolutionDiagnostic::PrivateItem { name, .. }) => {
+                write!(formatter, "`{}` is private", name.as_str())
+            },
+            Self::Resolution(ResolutionDiagnostic::TooManySupers) => {
+                write!(formatter, "too many `super::`s")
+            },
+            Self::Resolution(ResolutionDiagnostic::UnresolvedItem { name, .. }) => {
+                write!(formatter, "`{}` not found in other file", name.as_str())
+            },
+            Self::Resolution(ResolutionDiagnostic::UnresolvedPackage { name }) => {
+                write!(formatter, "package `{}` not found", name.as_str())
             },
             Self::WgslError(error) => {
                 write!(formatter, "{error}")
@@ -269,10 +272,6 @@ impl<'database> TypeLoweringContext<'database> {
         }
 
         match resolved_type {
-            Ok(ResolveKind::Module(module_id)) => Err(TypeLoweringError {
-                container: type_container,
-                kind: TypeLoweringErrorKind::UnexpectedModule(path.clone()),
-            }),
             Ok(ResolveKind::TypeAlias(id)) => {
                 Ok(Lowered::Type(self.database.type_alias_type(id).0))
             },
@@ -284,26 +283,19 @@ impl<'database> TypeLoweringContext<'database> {
             Ok(ResolveKind::GlobalVariable(id)) => Ok(Lowered::GlobalVariable(id)),
             Ok(ResolveKind::Override(id)) => Ok(Lowered::Override(id)),
             Ok(ResolveKind::Local(local, _)) => Ok(Lowered::Local(local)),
-            Err(diagnostic) if path.mod_path().kind() == PathKind::Plain => path
-                .mod_path()
-                .segments()
-                .first()
-                .and_then(|predeclared_name| {
-                    self.lower_if_predeclared(type_container, predeclared_name, template_parameters)
-                })
-                .ok_or_else(|| TypeLoweringError {
-                    container: type_container,
-                    kind: TypeLoweringErrorKind::UnresolvedPath {
-                        path: path.clone(),
-                        failed_segment: diagnostic.failed_segment,
-                    },
-                }),
+            Err(diagnostic)
+                if path.mod_path().kind() == PathKind::Plain && path.mod_path().len() == 1 =>
+            {
+                let predeclared_name = &path.mod_path().segments()[0];
+                self.lower_if_predeclared(type_container, predeclared_name, template_parameters)
+                    .ok_or_else(|| TypeLoweringError {
+                        container: type_container,
+                        kind: TypeLoweringErrorKind::Resolution(diagnostic),
+                    })
+            },
             Err(diagnostic) => Err(TypeLoweringError {
                 container: type_container,
-                kind: TypeLoweringErrorKind::UnresolvedPath {
-                    path: path.clone(),
-                    failed_segment: diagnostic.failed_segment,
-                },
+                kind: TypeLoweringErrorKind::Resolution(diagnostic),
             }),
         }
     }
