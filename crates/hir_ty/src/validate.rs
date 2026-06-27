@@ -163,11 +163,10 @@ pub fn validate_address_space<DiagnosticBuilder>(
             match r#type.as_ref() {
                 TypeKind::Sampler(_)
                 | TypeKind::Texture(_)
-                // | TypeKind::Array(ArrayType {
-                //     binding_array: true,
-                //     ..
-                // })
-                => {},
+                | TypeKind::Array(ArrayType {
+                    binding_array: true,
+                    ..
+                }) => {},
                 TypeKind::Error
                 | TypeKind::Scalar(_)
                 | TypeKind::Atomic(_)

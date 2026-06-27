@@ -779,9 +779,7 @@ fn foo() { let _ = 1; }
             "
     @group(0) @binding(0) var textures: binding_array<texture_2d<f32>>;
     ",
-            expect![[r#"
-                22..25 Error 12: address space is only valid for handle or texture types
-            "#]],
+            expect![""],
         );
     }
 }
