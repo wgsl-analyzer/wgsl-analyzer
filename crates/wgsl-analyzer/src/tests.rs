@@ -75,8 +75,7 @@ fn check_load_project(
             LoadPackageMessage::Error { error, source } => {
                 writeln!(actual, "{error} - {source:?}");
             },
-            LoadPackageMessage::Dependency { .. } => (),
-            LoadPackageMessage::Progress { .. } => (),
+            LoadPackageMessage::Dependency { .. } | LoadPackageMessage::Progress { .. } => (),
         }
     }
 

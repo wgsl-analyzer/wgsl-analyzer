@@ -52,8 +52,8 @@ impl LoadPackageTask {
 
     pub(crate) fn package_key(&self) -> PackageKey {
         PackageKey::from_manifest_path(match &self.manifest {
-            ProjectManifest::ProjectJson(manifest_path) => manifest_path.clone(),
-            ProjectManifest::WeslToml(manifest_path) => manifest_path.clone(),
+            ProjectManifest::ProjectJson(manifest_path)
+            | ProjectManifest::WeslToml(manifest_path) => manifest_path.clone(),
         })
     }
 
@@ -100,7 +100,7 @@ impl LoadPackageTask {
                                 let path = ManifestPath::try_from(
                                     manifest_path.parent().join(path).join("wesl.toml"),
                                 )
-                                .map_err(|_| DependencyError::InvalidPath(name.clone()))?;
+                                .map_err(|_path| DependencyError::InvalidPath(name.clone()))?;
                                 PackageDependency::Path { name, path }
                             },
                             (Some(path), Some(package)) => {
@@ -114,12 +114,12 @@ impl LoadPackageTask {
                     match dependency {
                         PackageDependency::Path { name, path } => {
                             self.send(LoadPackageMessage::Dependency {
-                                task: LoadPackageTask::new(
+                                task: Self::new(
                                     ProjectManifest::WeslToml(path.clone()),
                                     PackageOrigin::Local,
                                     self.sender.clone(),
                                 ),
-                            })
+                            });
                         },
                         PackageDependency::Library { name, package } => {
                             // TODO: Loading libraries is not yet implemented, see https://github.com/wgsl-analyzer/wgsl-analyzer/issues/976
@@ -130,7 +130,7 @@ impl LoadPackageTask {
 
                 WeslPackage {
                     manifest: manifest_path.clone(),
-                    display_name: manifest_path.parent().file_name().map(str::to_string),
+                    display_name: manifest_path.parent().file_name().map(str::to_owned),
                     root: if std::fs::metadata(&root)?.is_file() {
                         WeslPackageRoot::File(root)
                     } else {
@@ -175,14 +175,14 @@ impl std::fmt::Display for DependencyError {
         f: &mut std::fmt::Formatter<'_>,
     ) -> std::fmt::Result {
         match self {
-            DependencyError::Ambiguous(name) => write!(
+            Self::Ambiguous(name) => write!(
                 f,
                 "Package {name} is both a path dependency and a library dependency. Choose one, not both."
             ),
-            DependencyError::InvalidName(name) => {
+            Self::InvalidName(name) => {
                 write!(f, "Package {name} is an invalid WESL name.")
             },
-            DependencyError::InvalidPath(name) => write!(f, "Package {name} has an invalid path."),
+            Self::InvalidPath(name) => write!(f, "Package {name} has an invalid path."),
         }
     }
 }

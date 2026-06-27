@@ -68,21 +68,25 @@ pub enum PackageDependency {
 }
 
 impl PackageDependency {
+    #[must_use]
     pub fn package_key(&self) -> PackageKey {
+        #[expect(
+            clippy::todo,
+            reason = "See https://github.com/wgsl-analyzer/wgsl-analyzer/issues/976"
+        )]
         match self {
-            PackageDependency::Path { path, .. } => PackageKey::from_manifest_path(path.clone()),
-            PackageDependency::Library { name, package } => {
-                todo!(
-                    "Library dependencies are not yet supported, see https://github.com/wgsl-analyzer/wgsl-analyzer/issues/976"
-                )
+            Self::Path { path, .. } => PackageKey::from_manifest_path(path.clone()),
+            Self::Library { name, package } => {
+                todo!("Library dependencies are still unsupported")
             },
         }
     }
 
-    pub fn name(&self) -> &PackageName {
+    #[must_use]
+    pub const fn name(&self) -> &PackageName {
         match self {
-            PackageDependency::Path { name, path } => name,
-            PackageDependency::Library { name, package } => name,
+            Self::Path { name, path } => name,
+            Self::Library { name, package } => name,
         }
     }
 }

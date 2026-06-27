@@ -184,11 +184,11 @@ impl ModCollector<'_> {
                         &import.path.segments()[1..],
                     )
                 } else {
-                    return Err(DefDiagnostic::unresolved_import(
+                    Err(DefDiagnostic::unresolved_import(
                         file_id,
                         location,
                         name_start.clone(),
-                    ));
+                    ))
                 }
             },
             PathKind::Super(levels) => {

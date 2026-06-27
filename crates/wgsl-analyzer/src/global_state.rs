@@ -334,7 +334,7 @@ impl GlobalState {
     }
 
     fn process_package_changes(
-        &mut self,
+        &self,
         change: &mut BaseDbChange,
     ) {
         let mut packages = self.packages.write();
@@ -389,6 +389,7 @@ impl GlobalState {
             });
             change.change_package(id, package_data);
         }
+        std::mem::drop(packages);
     }
 
     pub(crate) fn snapshot(&self) -> GlobalStateSnapshot {

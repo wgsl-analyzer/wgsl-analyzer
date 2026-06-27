@@ -307,7 +307,7 @@ fn resolve_submodules(
     }
 
     // We got to the end of the resolution
-    return Ok(ResolveKind::Module(file_id));
+    Ok(ResolveKind::Module(file_id))
 }
 
 #[derive(Debug, PartialEq, Eq)]
