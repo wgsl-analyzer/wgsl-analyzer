@@ -687,13 +687,24 @@
 				"injectTo": [
 					"source.js",
 					"source.ts",
+					"source.jsx",
+					"source.tsx",
+					"source.svelte",
+					"source.vue",
+					"source.astro",
 					"source.rust"
 				],
 				"scopeName": "source.comment-string.wgsl",
 				"path": "./syntaxes/inline-wgsl.tmLanguage.json",
 				"embeddedLanguages": {
 					"meta.embedded.block.wgsl": "wgsl"
-				}
+				},
+				"unbalancedBracketScopes": [
+					"keyword.operator.arrow.skinny.wgsl",
+					"keyword.operator.comparison.wgsl",
+					"keyword.operator.logical.wgsl",
+					"keyword.operator.assignment.wgsl"
+				]
 			},
 			{
 				"scopeName": "markdown.wgsl.codeblock",
@@ -715,13 +726,24 @@
 				"injectTo": [
 					"source.js",
 					"source.ts",
+					"source.jsx",
+					"source.tsx",
+					"source.svelte",
+					"source.vue",
+					"source.astro",
 					"source.rust"
 				],
 				"scopeName": "source.comment-string.wesl",
 				"path": "./syntaxes/inline-wesl.tmLanguage.json",
 				"embeddedLanguages": {
 					"meta.embedded.block.wesl": "wesl"
-				}
+				},
+				"unbalancedBracketScopes": [
+					"keyword.operator.arrow.skinny.wgsl",
+					"keyword.operator.comparison.wgsl",
+					"keyword.operator.logical.wgsl",
+					"keyword.operator.assignment.wgsl"
+				]
 			},
 			{
 				"scopeName": "markdown.wesl.codeblock",

@@ -1,11 +1,12 @@
 {
 	"scopeName": "source.comment-string.wgsl",
-	"fileTypes": ["js", "ts", "rs"],
+	"fileTypes": ["js", "ts", "jsx", "tsx", "svelte", "vue", "astro", "rs"],
 	"injectionSelector": "L:source -comment -string",
 	"patterns": [
 		{
 			"comment": "JavaScript multi-line strings",
 			"begin": "(\\s?/\\*\\s?(?i:wgsl)\\s?\\*/\\s*)(`)",
+			"contentName": "meta.embedded.block.wgsl",
 			"beginCaptures": {
 				"1": { "name": "entity.name.function.tagged-template.ts" },
 				"2": { "name": "string.template.ts, punctuation.definition.string.template.begin.ts" }
@@ -22,6 +23,7 @@
 		{
 			"comment": "Rust multi-line raw/byte strings",
 			"begin": "(\\s?/\\*\\s?(?i:wgsl)\\s?\\*/\\s*)(b?r?)(#*)(\")",
+			"contentName": "meta.embedded.block.wgsl",
 			"beginCaptures": {
 				"1": { "name": "entity.name.function.rust" },
 				"2": { "name": "string.quoted.byte.raw.rust" },
@@ -38,6 +40,7 @@
 		{
 			"comment": "Standard strings",
 			"begin": "(\\s?/\\*\\s?(?i:wgsl)\\s?\\*/\\s*)(\")",
+			"contentName": "meta.embedded.block.wgsl",
 			"beginCaptures": { "1": { "name": "entity.name.function" } },
 			"end": "(\")",
 			"patterns": [{ "include": "source.wgsl" }]
