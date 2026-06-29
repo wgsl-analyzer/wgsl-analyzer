@@ -71,11 +71,13 @@
 				{
 					"comment": "function/method calls with best effort generics",
 					"name": "meta.function.wgsl",
-					"begin": "([_$[:alpha:]][_$[:alnum:]]*)\\s*(<[^|&()]+>)?(\\()",
+					"begin": "([_$[:alpha:]][_$[:alnum:]]*)\\s*(?:(<)([^|&()]+)(>))?(\\()",
 					"beginCaptures": {
 						"1": { "name": "entity.name.function.wgsl" },
-						"2": { "patterns": [{ "include": "#function_arguments" }] },
-						"3": { "name": "punctuation.brackets.round.wgsl" }
+						"2": { "name": "punctuation.brackets.angle.wgsl" },
+						"3": { "patterns": [{ "include": "#function_arguments" }] },
+						"4": { "name": "punctuation.brackets.angle.wgsl" },
+						"5": { "name": "punctuation.brackets.round.wgsl" }
 					},
 					"end": "\\)",
 					"endCaptures": { "0": { "name": "punctuation.brackets.round.wgsl" } },
@@ -114,10 +116,25 @@
 		},
 		"types": {
 			"patterns": [
+				{ "include": "#template_types" },
 				{ "include": "#plain_types" },
 				{ "include": "#memory_views" },
 				{ "include": "#texture_and_sampler_types" }
 			]
+		},
+		"template_types": {
+			"comment": "types with template arguments",
+			"name": "meta.type.template.wgsl",
+			"begin": "\\b(array|atomic|ptr|vec[2-4]|mat[2-4]x[2-4]|texture_storage_(?:1d|2d|2d_array|3d))\\s*(<)",
+			"beginCaptures": {
+				"1": { "name": "storage.type.wgsl" },
+				"2": { "name": "punctuation.brackets.angle.wgsl" }
+			},
+			"end": ">",
+			"endCaptures": {
+				"0": { "name": "punctuation.brackets.angle.wgsl" }
+			},
+			"patterns": [{ "include": "#function_arguments" }]
 		},
 		"plain_types": {
 			"comment": "types: https://www.w3.org/TR/WGSL/#types",
@@ -263,11 +280,6 @@
 					"comment": "square brackets",
 					"name": "punctuation.brackets.square.wgsl",
 					"match": "[\\[\\]]"
-				},
-				{
-					"comment": "angle brackets",
-					"name": "punctuation.brackets.angle.wgsl",
-					"match": "(?<!=)[<>]"
 				}
 			]
 		},
@@ -321,7 +333,7 @@
 				{
 					"comment": "comparison operators",
 					"name": "keyword.operator.comparison.wgsl",
-					"match": "(=(=)?(?!>)|!=|<=|(?<!=)>=)"
+					"match": "(==|!=|<=|>=|<|>)"
 				},
 				{
 					"comment": "math operators",
