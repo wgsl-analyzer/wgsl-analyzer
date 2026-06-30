@@ -39,16 +39,7 @@ stdx = {
 	rev = "b42b63f390a4dab14e6efa34a70e67f5b087cc62",
 	version = "0.0.0"
 }
-vfs-notify = {
-	git = "https://github.com/rust-lang/rust-analyzer",
-	rev = "b42b63f390a4dab14e6efa34a70e67f5b087cc62",
-	version = "0.0.0"
-}
-vfs = {
-	git = "https://github.com/rust-lang/rust-analyzer",
-	rev = "b42b63f390a4dab14e6efa34a70e67f5b087cc62",
-	version = "0.0.0"
-}
+vfs = { path = "./crates/vfs", version = "0.0.0" }
 paths = {
 	git = "https://github.com/rust-lang/rust-analyzer",
 	rev = "b42b63f390a4dab14e6efa34a70e67f5b087cc62",

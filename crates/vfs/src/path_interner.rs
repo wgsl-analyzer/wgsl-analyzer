@@ -18,18 +18,23 @@ impl PathInterner {
     /// Get the id corresponding to `path`.
     ///
     /// If `path` does not exists in `self`, returns [`None`].
-    pub(crate) fn get(&self, path: &VfsPath) -> Option<FileId> {
-        self.map.get_index_of(path).map(|i| FileId(i as u32))
+    pub(crate) fn get(
+        &self,
+        path: &VfsPath,
+    ) -> Option<FileId> {
+        self.map.get_index_of(path).map(FileId::from_raw_usize)
     }
 
     /// Insert `path` in `self`.
     ///
     /// - If `path` already exists in `self`, returns its associated id;
     /// - Else, returns a newly allocated id.
-    pub(crate) fn intern(&mut self, path: VfsPath) -> FileId {
+    pub(crate) fn intern(
+        &mut self,
+        path: VfsPath,
+    ) -> FileId {
         let (id, _added) = self.map.insert_full(path);
-        assert!(id < FileId::MAX as usize);
-        FileId(id as u32)
+        FileId::from_raw_usize(id)
     }
 
     /// Returns the path corresponding to `id`.
@@ -37,7 +42,10 @@ impl PathInterner {
     /// # Panics
     ///
     /// Panics if `id` does not exists in `self`.
-    pub(crate) fn lookup(&self, id: FileId) -> &VfsPath {
-        self.map.get_index(id.0 as usize).unwrap()
+    pub(crate) fn lookup(
+        &self,
+        id: FileId,
+    ) -> &VfsPath {
+        self.map.get_index(id.index_usize()).unwrap()
     }
 }

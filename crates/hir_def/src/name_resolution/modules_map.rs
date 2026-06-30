@@ -149,12 +149,11 @@ impl<'db> ModulesMapBuilder<'db> {
 
         let parent = self
             .package_wesl
-            .as_ref()
-            .filter(|id| get_package_parent(path, self.source_root) == Some(id))
+            .filter(|id| get_package_parent(path, self.source_root) == Some(*id))
             .or_else(|| get_parent(path, self.source_root));
 
         if let Some(parent_id) = parent {
-            let parent_id = EditionedFileId::new_unchecked(self.database, *parent_id, self.edition);
+            let parent_id = EditionedFileId::new_unchecked(self.database, parent_id, self.edition);
             // .wesl files will shadow .wgsl files
             let parent_module = &mut self.modules[&parent_id];
             let is_slot_empty = !parent_module.children.contains_key(&name);
@@ -248,10 +247,10 @@ impl ModulesMap {
 }
 
 /// Goes from a path like `foo/bar.wesl` to `foo.wesl`.
-fn get_parent<'source_root>(
+fn get_parent(
     path: &vfs::VfsPath,
-    source_root: &'source_root SourceRoot,
-) -> Option<&'source_root FileId> {
+    source_root: &SourceRoot,
+) -> Option<FileId> {
     let mut parent_path = path.parent()?;
     let (name, extension) = parent_path.name_and_extension()?;
     if extension.is_some() {
@@ -264,10 +263,10 @@ fn get_parent<'source_root>(
 }
 
 /// Goes from a path like `foo.wesl` to `package.wesl`.
-fn get_package_parent<'source_root>(
+fn get_package_parent(
     path: &vfs::VfsPath,
-    source_root: &'source_root SourceRoot,
-) -> Option<&'source_root FileId> {
+    source_root: &SourceRoot,
+) -> Option<FileId> {
     let mut parent_path = path.parent()?;
     source_root.file_for_path(&parent_path.join("package.wesl")?)
 }

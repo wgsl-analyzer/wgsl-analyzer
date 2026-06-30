@@ -59,7 +59,7 @@ use rustc_hash::FxHasher;
 use stdx::hash_once;
 use tracing::{Level, span};
 
-/// Handle to a file in [`Vfs`]
+/// Handle to a file in [`Vfs`].
 ///
 /// Most functions in rust-analyzer use this when they need to refer to a file.
 #[derive(Copy, Clone, Debug, Ord, PartialOrd, Eq, PartialEq, Hash)]
@@ -69,19 +69,40 @@ pub struct FileId(u32);
 impl FileId {
     const MAX: u32 = 0x7fff_ffff;
 
+    /// Creates a new file id.
+    ///
+    /// # Panics
+    /// Panics for file ids with a value larger than [`FileId::MAX`].
     #[inline]
-    pub const fn from_raw(raw: u32) -> FileId {
+    #[must_use]
+    pub const fn from_raw(raw: u32) -> Self {
         assert!(raw <= Self::MAX);
-        FileId(raw)
+        Self(raw)
+    }
+
+    /// Creates a new file id.
+    ///
+    /// # Panics
+    /// Panics for file ids with a value larger than [`FileId::MAX`].
+    #[inline]
+    #[must_use]
+    pub fn from_raw_usize(raw: usize) -> Self {
+        Self::from_raw(u32::try_from(raw).unwrap())
     }
 
     #[inline]
+    #[must_use]
     pub const fn index(self) -> u32 {
         self.0
     }
+
+    #[inline]
+    fn index_usize(self) -> usize {
+        usize::try_from(self.0).unwrap()
+    }
 }
 
-/// safe because `FileId` is a newtype of `u32`
+/// safe because `FileId` is a newtype of `u32`.
 impl nohash_hasher::IsEnabled for FileId {}
 
 /// Storage for all file changes and the file id to path mapping.
@@ -94,7 +115,7 @@ pub struct Vfs {
     changes: IndexMap<FileId, ChangedFile, BuildHasherDefault<FxHasher>>,
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, PartialOrd)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd)]
 pub enum FileState {
     /// The file exists with the given content hash.
     Exists(u64),
@@ -108,35 +129,40 @@ pub enum FileState {
 /// Changed file in the [`Vfs`].
 #[derive(Debug)]
 pub struct ChangedFile {
-    /// Id of the changed file
+    /// Id of the changed file.
     pub file_id: FileId,
-    /// Kind of change
+    /// Kind of change.
     pub change: Change,
 }
 
 impl ChangedFile {
     /// Returns `true` if the change is not [`Delete`](ChangeKind::Delete).
-    pub fn exists(&self) -> bool {
+    #[must_use]
+    pub const fn exists(&self) -> bool {
         !matches!(self.change, Change::Delete)
     }
 
     /// Returns `true` if the change is [`Create`](ChangeKind::Create) or
     /// [`Delete`](Change::Delete).
-    pub fn is_created_or_deleted(&self) -> bool {
+    #[must_use]
+    pub const fn is_created_or_deleted(&self) -> bool {
         matches!(self.change, Change::Create(_, _) | Change::Delete)
     }
 
     /// Returns `true` if the change is [`Create`](ChangeKind::Create).
-    pub fn is_created(&self) -> bool {
+    #[must_use]
+    pub const fn is_created(&self) -> bool {
         matches!(self.change, Change::Create(_, _))
     }
 
     /// Returns `true` if the change is [`Modify`](ChangeKind::Modify).
-    pub fn is_modified(&self) -> bool {
+    #[must_use]
+    pub const fn is_modified(&self) -> bool {
         matches!(self.change, Change::Modify(_, _))
     }
 
-    pub fn kind(&self) -> ChangeKind {
+    #[must_use]
+    pub const fn kind(&self) -> ChangeKind {
         match self.change {
             Change::Create(_, _) => ChangeKind::Create,
             Change::Modify(_, _) => ChangeKind::Modify,
@@ -148,22 +174,22 @@ impl ChangedFile {
 /// Kind of [file change](ChangedFile).
 #[derive(Eq, PartialEq, Debug)]
 pub enum Change {
-    /// The file was (re-)created
+    /// The file was (re-)created.
     Create(Vec<u8>, u64),
-    /// The file was modified
+    /// The file was modified.
     Modify(Vec<u8>, u64),
-    /// The file was deleted
+    /// The file was deleted.
     Delete,
 }
 
 /// Kind of [file change](ChangedFile).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ChangeKind {
-    /// The file was (re-)created
+    /// The file was (re-)created.
     Create,
-    /// The file was modified
+    /// The file was modified.
     Modify,
-    /// The file was deleted
+    /// The file was deleted.
     Delete,
 }
 
@@ -175,7 +201,11 @@ pub enum FileExcluded {
 
 impl Vfs {
     /// Id of the given path if it exists in the `Vfs` and is not deleted.
-    pub fn file_id(&self, path: &VfsPath) -> Option<(FileId, FileExcluded)> {
+    #[must_use]
+    pub fn file_id(
+        &self,
+        path: &VfsPath,
+    ) -> Option<(FileId, FileExcluded)> {
         let file_id = self.interner.get(path)?;
         let file_state = self.get(file_id);
         match file_state {
@@ -190,7 +220,11 @@ impl Vfs {
     /// # Panics
     ///
     /// Panics if the id is not present in the `Vfs`.
-    pub fn file_path(&self, file_id: FileId) -> &VfsPath {
+    #[must_use]
+    pub fn file_path(
+        &self,
+        file_id: FileId,
+    ) -> &VfsPath {
         self.interner.lookup(file_id)
     }
 
@@ -199,7 +233,7 @@ impl Vfs {
     /// This will skip deleted files.
     pub fn iter(&self) -> impl Iterator<Item = (FileId, &VfsPath)> + '_ {
         (0..self.data.len())
-            .map(|it| FileId(it as u32))
+            .map(FileId::from_raw_usize)
             .filter(move |&file_id| matches!(self.get(file_id), FileState::Exists(_)))
             .map(move |file_id| {
                 let path = self.interner.lookup(file_id);
@@ -213,7 +247,11 @@ impl Vfs {
     ///
     /// If the path does not currently exists in the `Vfs`, allocates a new
     /// [`FileId`] for it.
-    pub fn set_file_contents(&mut self, path: VfsPath, contents: Option<Vec<u8>>) -> bool {
+    pub fn set_file_contents(
+        &mut self,
+        path: VfsPath,
+        contents: Option<Vec<u8>>,
+    ) -> bool {
         let _p = span!(Level::INFO, "Vfs::set_file_contents").entered();
         let file_id = self.alloc_file_id(path);
         let state: FileState = self.get(file_id);
@@ -222,7 +260,7 @@ impl Vfs {
             (FileState::Deleted, Some(v)) => {
                 let hash = hash_once::<FxHasher>(&*v);
                 Change::Create(v, hash)
-            }
+            },
             (FileState::Exists(_), None) => Change::Delete,
             (FileState::Exists(hash), Some(v)) => {
                 let new_hash = hash_once::<FxHasher>(&*v);
@@ -230,12 +268,12 @@ impl Vfs {
                     return false;
                 }
                 Change::Modify(v, new_hash)
-            }
+            },
             (FileState::Excluded, _) => return false,
         };
 
         let mut set_data = |change_kind| {
-            self.data[file_id.0 as usize] = match change_kind {
+            self.data[file_id.index_usize()] = match change_kind {
                 &Change::Create(_, hash) | &Change::Modify(_, hash) => FileState::Exists(hash),
                 Change::Delete => FileState::Deleted,
             };
@@ -245,37 +283,37 @@ impl Vfs {
         match self.changes.entry(file_id) {
             // two changes to the same file in one cycle, merge them appropriately
             Entry::Occupied(mut o) => {
-                use Change::*;
+                use Change::{Create, Delete, Modify};
 
                 match (&mut o.get_mut().change, changed_file.change) {
                     // newer `Delete` wins
                     (change, Delete) => *change = Delete,
                     // merge `Create` with `Create` or `Modify`
-                    (Create(prev, old_hash), Create(new, new_hash) | Modify(new, new_hash)) => {
-                        *prev = new;
+                    (Create(previous, old_hash), Create(new, new_hash) | Modify(new, new_hash)) => {
+                        *previous = new;
                         *old_hash = new_hash;
-                    }
+                    },
                     // collapse identical `Modify`es
-                    (Modify(prev, old_hash), Modify(new, new_hash)) => {
-                        *prev = new;
+                    (Modify(previous, old_hash), Modify(new, new_hash)) => {
+                        *previous = new;
                         *old_hash = new_hash;
-                    }
+                    },
                     // equivalent to `Modify`
                     (change @ Delete, Create(new, new_hash)) => {
                         *change = Modify(new, new_hash);
-                    }
+                    },
                     // shouldn't occur, but collapse into `Create`
                     (change @ Delete, Modify(new, new_hash)) => {
                         stdx::never!();
                         *change = Create(new, new_hash);
-                    }
+                    },
                     // shouldn't occur, but keep the Create
-                    (prev @ Modify(_, _), new @ Create(_, _)) => *prev = new,
+                    (previous @ Modify(_, _), new @ Create(_, _)) => *previous = new,
                 }
                 set_data(&o.get().change);
-            }
+            },
             Entry::Vacant(v) => set_data(&v.insert(changed_file).change),
-        };
+        }
 
         true
     }
@@ -285,8 +323,12 @@ impl Vfs {
         mem::take(&mut self.changes)
     }
 
-    /// Provides a panic-less way to verify file_id validity.
-    pub fn exists(&self, file_id: FileId) -> bool {
+    /// Provides a panic-less way to verify `file_id` validity.
+    #[must_use]
+    pub fn exists(
+        &self,
+        file_id: FileId,
+    ) -> bool {
         matches!(self.get(file_id), FileState::Exists(_))
     }
 
@@ -297,11 +339,14 @@ impl Vfs {
     /// - Else, returns `path`'s id.
     ///
     /// Does not record a change.
-    fn alloc_file_id(&mut self, path: VfsPath) -> FileId {
+    fn alloc_file_id(
+        &mut self,
+        path: VfsPath,
+    ) -> FileId {
         let file_id = self.interner.intern(path);
-        let idx = file_id.0 as usize;
-        let len = self.data.len().max(idx + 1);
-        self.data.resize(len, FileState::Deleted);
+        let index = file_id.index_usize();
+        let length = self.data.len().max(index + 1);
+        self.data.resize(length, FileState::Deleted);
         file_id
     }
 
@@ -310,20 +355,31 @@ impl Vfs {
     /// # Panics
     ///
     /// Panics if no file is associated to that id.
-    fn get(&self, file_id: FileId) -> FileState {
-        self.data[file_id.0 as usize]
+    fn get(
+        &self,
+        file_id: FileId,
+    ) -> FileState {
+        self.data[file_id.index_usize()]
     }
 
     /// We cannot ignore excluded files, because this will lead to errors when the client
     /// requests semantic information for them, so we instead mark them specially.
-    pub fn insert_excluded_file(&mut self, path: VfsPath) {
+    pub fn insert_excluded_file(
+        &mut self,
+        path: VfsPath,
+    ) {
         let file_id = self.alloc_file_id(path);
-        self.data[file_id.0 as usize] = FileState::Excluded;
+        self.data[file_id.index_usize()] = FileState::Excluded;
     }
 }
 
 impl fmt::Debug for Vfs {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Vfs").field("n_files", &self.data.len()).finish()
+    fn fmt(
+        &self,
+        f: &mut fmt::Formatter<'_>,
+    ) -> fmt::Result {
+        f.debug_struct("Vfs")
+            .field("n_files", &self.data.len())
+            .finish()
     }
 }

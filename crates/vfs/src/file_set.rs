@@ -4,7 +4,7 @@
 //! the default `FileSet`.
 use std::fmt;
 
-use fst::{IntoStreamer, Streamer};
+use fst::{IntoStreamer as _, Streamer as _};
 use indexmap::IndexMap;
 use rustc_hash::{FxBuildHasher, FxHashMap};
 
@@ -27,7 +27,10 @@ impl FileSet {
     ///
     /// If either `path`'s [`anchor`](AnchoredPath::anchor) or the resolved path is not in
     /// the set, returns [`None`].
-    pub fn resolve_path(&self, path: AnchoredPath<'_>) -> Option<FileId> {
+    pub fn resolve_path(
+        &self,
+        path: AnchoredPath<'_>,
+    ) -> Option<FileId> {
         let mut base = self.paths[&path.anchor].clone();
         base.pop();
         let path = base.join(path.path)?;
@@ -35,20 +38,30 @@ impl FileSet {
     }
 
     /// Get the id corresponding to `path` if it exists in the set.
-    pub fn file_for_path(&self, path: &VfsPath) -> Option<&FileId> {
-        self.files.get(path)
+    pub fn file_for_path(
+        &self,
+        path: &VfsPath,
+    ) -> Option<FileId> {
+        self.files.get(path).copied()
     }
 
     /// Get the path corresponding to `file` if it exists in the set.
-    pub fn path_for_file(&self, file: &FileId) -> Option<&VfsPath> {
-        self.paths.get(file)
+    pub fn path_for_file(
+        &self,
+        file: FileId,
+    ) -> Option<&VfsPath> {
+        self.paths.get(&file)
     }
 
     /// Insert the `file_id, path` pair into the set.
     ///
     /// # Note
     /// Multiple [`FileId`] can be mapped to the same [`VfsPath`], and vice-versa.
-    pub fn insert(&mut self, file_id: FileId, path: VfsPath) {
+    pub fn insert(
+        &mut self,
+        file_id: FileId,
+        path: VfsPath,
+    ) {
         self.files.insert(path.clone(), file_id);
         self.paths.insert(file_id, path);
     }
@@ -60,8 +73,13 @@ impl FileSet {
 }
 
 impl fmt::Debug for FileSet {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("FileSet").field("n_files", &self.files.len()).finish()
+    fn fmt(
+        &self,
+        f: &mut fmt::Formatter<'_>,
+    ) -> fmt::Result {
+        f.debug_struct("FileSet")
+            .field("n_files", &self.files.len())
+            .finish()
     }
 }
 
@@ -108,14 +126,17 @@ impl FileSetConfig {
     /// Partition `vfs` into `FileSet`s.
     ///
     /// Creates a new [`FileSet`] for every set of prefixes in `self`.
-    pub fn partition(&self, vfs: &Vfs) -> Vec<FileSet> {
+    pub fn partition(
+        &self,
+        vfs: &Vfs,
+    ) -> Vec<FileSet> {
         let mut scratch_space = Vec::new();
-        let mut res = vec![FileSet::default(); self.len()];
+        let mut result = vec![FileSet::default(); self.len()];
         for (file_id, path) in vfs.iter() {
             let root = self.classify(path, &mut scratch_space);
-            res[root].insert(file_id, path.clone());
+            result[root].insert(file_id, path.clone());
         }
-        res
+        result
     }
 
     /// Number of sets that `self` can partition a [`Vfs`] into.
@@ -131,7 +152,11 @@ impl FileSetConfig {
     /// Returns the set index for the given `path`.
     ///
     /// `scratch_space` is used as a buffer and will be entirely replaced.
-    fn classify(&self, path: &VfsPath, scratch_space: &mut Vec<u8>) -> usize {
+    fn classify(
+        &self,
+        path: &VfsPath,
+        scratch_space: &mut Vec<u8>,
+    ) -> usize {
         // `path` is a file, but r-a only cares about the containing directory. We don't
         // want `/foo/bar_baz.rs` to be attributed to source root directory `/foo/bar`.
         let path = path.parent().unwrap_or_else(|| path.clone());
@@ -161,7 +186,10 @@ impl FileSetConfigBuilder {
     }
 
     /// Add a new set of paths prefixes.
-    pub fn add_file_set(&mut self, roots: Vec<VfsPath>) {
+    pub fn add_file_set(
+        &mut self,
+        roots: Vec<VfsPath>,
+    ) {
         self.roots.push(roots);
     }
 
@@ -204,14 +232,28 @@ impl fst::Automaton for PrefixOf<'_> {
     fn start(&self) -> usize {
         0
     }
-    fn is_match(&self, &state: &usize) -> bool {
+    fn is_match(
+        &self,
+        &state: &usize,
+    ) -> bool {
         state != !0
     }
-    fn can_match(&self, &state: &usize) -> bool {
+    fn can_match(
+        &self,
+        &state: &usize,
+    ) -> bool {
         state != !0
     }
-    fn accept(&self, &state: &usize, byte: u8) -> usize {
-        if self.prefix_of.get(state) == Some(&byte) { state + 1 } else { !0 }
+    fn accept(
+        &self,
+        &state: &usize,
+        byte: u8,
+    ) -> usize {
+        if self.prefix_of.get(state) == Some(&byte) {
+            state + 1
+        } else {
+            !0
+        }
     }
 }
 
