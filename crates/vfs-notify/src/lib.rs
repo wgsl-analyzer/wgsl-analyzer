@@ -1,5 +1,5 @@
 //! An implementation of `loader::Handle`, based on `walkdir`.
-
+#![expect(clippy::disallowed_names, reason = "vfs-notify is vendored in")]
 use std::{
     fs,
     path::{Component, Path},
@@ -31,8 +31,9 @@ impl loader::Handle for NotifyHandle {
         let actor = NotifyActor::new(sender);
         let (sender, receiver) = unbounded::<Message>();
         let thread = stdx::thread::Builder::new(stdx::thread::ThreadIntent::Worker, "VfsLoader")
-            .spawn(move || actor.run(receiver))
+            .spawn(move || actor.run(&receiver))
             .expect("failed to spawn thread");
+
         Self {
             sender,
             _thread: thread,
@@ -72,7 +73,7 @@ impl NotifyActor {
 
     fn run(
         mut self,
-        inbox: Receiver<Message>,
+        inbox: &Receiver<Message>,
     ) {
         while let Ok(message) = inbox.recv() {
             tracing::debug!(?message, "vfs-notify message");

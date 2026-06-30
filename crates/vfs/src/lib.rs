@@ -38,6 +38,11 @@
 //! [`Handle`]: loader::Handle
 //! [`Entries`]: loader::Entry
 
+#![expect(clippy::disallowed_names, reason = "vfs is vendored in")]
+#![expect(clippy::min_ident_chars, reason = "vfs is vendored in")]
+#![expect(clippy::as_conversions, reason = "vfs is vendored in")]
+#![expect(clippy::cast_possible_truncation, reason = "vfs is vendored in")]
+
 mod anchored_path;
 pub mod file_set;
 pub mod loader;

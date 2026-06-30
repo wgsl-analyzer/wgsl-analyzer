@@ -1,5 +1,5 @@
 //! Dynamically compatible interface for file reading.
-//! We rely on client side watching instead of making the vfs loader watch files
+//! We rely on client side watching instead of making the vfs loader watch files.
 use std::fmt;
 
 use paths::{AbsPath, AbsPathBuf};
