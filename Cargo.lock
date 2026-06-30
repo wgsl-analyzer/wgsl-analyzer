@@ -61,7 +61,7 @@ dependencies = [
  "syntax",
  "tracing",
  "triomphe",
- "vfs",
+ "vfs 0.0.0 (git+https://github.com/rust-lang/rust-analyzer?rev=b42b63f390a4dab14e6efa34a70e67f5b087cc62)",
 ]
 
 [[package]]
@@ -556,7 +556,7 @@ dependencies = [
  "syntax",
  "test-fixture",
  "triomphe",
- "vfs",
+ "vfs 0.0.0 (git+https://github.com/rust-lang/rust-analyzer?rev=b42b63f390a4dab14e6efa34a70e67f5b087cc62)",
 ]
 
 [[package]]
@@ -577,7 +577,7 @@ dependencies = [
  "syntax",
  "test-fixture",
  "triomphe",
- "vfs",
+ "vfs 0.0.0 (git+https://github.com/rust-lang/rust-analyzer?rev=b42b63f390a4dab14e6efa34a70e67f5b087cc62)",
  "wgsl-types",
 ]
 
@@ -618,7 +618,7 @@ dependencies = [
  "test-fixture",
  "test-utils",
  "triomphe",
- "vfs",
+ "vfs 0.0.0 (git+https://github.com/rust-lang/rust-analyzer?rev=b42b63f390a4dab14e6efa34a70e67f5b087cc62)",
  "wgsl-formatter",
 ]
 
@@ -655,7 +655,7 @@ dependencies = [
  "salsa-macros",
  "tracing",
  "triomphe",
- "vfs",
+ "vfs 0.0.0 (git+https://github.com/rust-lang/rust-analyzer?rev=b42b63f390a4dab14e6efa34a70e67f5b087cc62)",
 ]
 
 [[package]]
@@ -1827,6 +1827,20 @@ checksum = "ba73ea9cf16a25df0c8caa16c51acb937d5712a8429db78a3ee29d5dcacd3a65"
 [[package]]
 name = "vfs"
 version = "0.0.0"
+dependencies = [
+ "crossbeam-channel",
+ "fst",
+ "indexmap",
+ "nohash-hasher",
+ "paths",
+ "rustc-hash 2.1.2",
+ "stdx",
+ "tracing",
+]
+
+[[package]]
+name = "vfs"
+version = "0.0.0"
 source = "git+https://github.com/rust-lang/rust-analyzer?rev=b42b63f390a4dab14e6efa34a70e67f5b087cc62#b42b63f390a4dab14e6efa34a70e67f5b087cc62"
 dependencies = [
  "crossbeam-channel",
@@ -1851,7 +1865,7 @@ dependencies = [
  "rustc-hash 2.1.2",
  "stdx",
  "tracing",
- "vfs",
+ "vfs 0.0.0 (git+https://github.com/rust-lang/rust-analyzer?rev=b42b63f390a4dab14e6efa34a70e67f5b087cc62)",
  "walkdir",
 ]
 
@@ -1953,7 +1967,7 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "triomphe",
- "vfs",
+ "vfs 0.0.0 (git+https://github.com/rust-lang/rust-analyzer?rev=b42b63f390a4dab14e6efa34a70e67f5b087cc62)",
  "vfs-notify",
  "windows-sys 0.61.2",
  "xflags",
