@@ -22,7 +22,8 @@ impl VfsPath {
     /// Panics if `path` does not start with `'/'`.
     #[must_use]
     pub fn new_virtual_path(path: String) -> Self {
-        assert!(path.starts_with('/'));
+        assert!(path.starts_with('/') || path.is_empty());
+        assert!(!path.ends_with('/'));
         Self(VfsPathRepr::VirtualPath(VirtualPath(path)))
     }
 
