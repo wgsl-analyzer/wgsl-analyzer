@@ -27,13 +27,13 @@ enum Message {
 }
 
 impl loader::Handle for NotifyHandle {
-    fn spawn(sender: loader::Sender) -> NotifyHandle {
+    fn spawn(sender: loader::Sender) -> Self {
         let actor = NotifyActor::new(sender);
         let (sender, receiver) = unbounded::<Message>();
         let thread = stdx::thread::Builder::new(stdx::thread::ThreadIntent::Worker, "VfsLoader")
             .spawn(move || actor.run(receiver))
             .expect("failed to spawn thread");
-        NotifyHandle {
+        Self {
             sender,
             _thread: thread,
         }
@@ -66,8 +66,8 @@ struct NotifyActor {
 }
 
 impl NotifyActor {
-    fn new(sender: loader::Sender) -> NotifyActor {
-        NotifyActor { sender }
+    const fn new(sender: loader::Sender) -> Self {
+        Self { sender }
     }
 
     fn run(
@@ -164,7 +164,7 @@ impl NotifyActor {
                                 && (root == path || directories.include.iter().all(|it| it != path))
                         });
 
-                    let files = walkdir.filter_map(|it| it.ok()).filter_map(|entry| {
+                    let files = walkdir.filter_map(Result::ok).filter_map(|entry| {
                         let depth = entry.depth();
                         let is_dir = entry.file_type().is_dir();
                         let is_file = entry.file_type().is_file();
@@ -222,7 +222,7 @@ fn path_might_be_cyclic(path: &Path) -> bool {
     // If the symlink is of the form "../..", it's a parent symlink.
     let is_relative_parent = destination
         .components()
-        .all(|c| matches!(c, Component::CurDir | Component::ParentDir));
+        .all(|component| matches!(component, Component::CurDir | Component::ParentDir));
 
     is_relative_parent || path.starts_with(destination)
 }

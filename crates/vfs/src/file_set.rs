@@ -19,14 +19,21 @@ pub struct FileSet {
 
 impl FileSet {
     /// Returns the number of stored paths.
+    #[must_use]
     pub fn len(&self) -> usize {
         self.files.len()
+    }
+
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.files.is_empty()
     }
 
     /// Get the id of the file corresponding to `path`.
     ///
     /// If either `path`'s [`anchor`](AnchoredPath::anchor) or the resolved path is not in
     /// the set, returns [`None`].
+    #[must_use]
     pub fn resolve_path(
         &self,
         path: AnchoredPath<'_>,
@@ -38,6 +45,7 @@ impl FileSet {
     }
 
     /// Get the id corresponding to `path` if it exists in the set.
+    #[must_use]
     pub fn file_for_path(
         &self,
         path: &VfsPath,
@@ -46,6 +54,7 @@ impl FileSet {
     }
 
     /// Get the path corresponding to `file` if it exists in the set.
+    #[must_use]
     pub fn path_for_file(
         &self,
         file: FileId,
@@ -79,7 +88,7 @@ impl fmt::Debug for FileSet {
     ) -> fmt::Result {
         f.debug_struct("FileSet")
             .field("n_files", &self.files.len())
-            .finish()
+            .finish_non_exhaustive()
     }
 }
 
@@ -113,12 +122,13 @@ pub struct FileSetConfig {
 
 impl Default for FileSetConfig {
     fn default() -> Self {
-        FileSetConfig::builder().build()
+        Self::builder().build()
     }
 }
 
 impl FileSetConfig {
     /// Returns a builder for `FileSetConfig`.
+    #[must_use]
     pub fn builder() -> FileSetConfigBuilder {
         FileSetConfigBuilder::default()
     }
@@ -126,6 +136,7 @@ impl FileSetConfig {
     /// Partition `vfs` into `FileSet`s.
     ///
     /// Creates a new [`FileSet`] for every set of prefixes in `self`.
+    #[must_use]
     pub fn partition(
         &self,
         vfs: &Vfs,
@@ -140,11 +151,12 @@ impl FileSetConfig {
     }
 
     /// Number of sets that `self` can partition a [`Vfs`] into.
-    fn len(&self) -> usize {
+    const fn len(&self) -> usize {
         self.n_file_sets
     }
 
     /// Get the lexicographically ordered vector of the underlying map.
+    #[must_use]
     pub fn roots(&self) -> Vec<(Vec<u8>, u64)> {
         self.map.stream().into_byte_vec()
     }
@@ -181,8 +193,14 @@ pub struct FileSetConfigBuilder {
 
 impl FileSetConfigBuilder {
     /// Returns the number of sets currently held.
-    pub fn len(&self) -> usize {
+    #[must_use]
+    pub const fn len(&self) -> usize {
         self.roots.len()
+    }
+
+    #[must_use]
+    pub const fn is_empty(&self) -> bool {
+        self.roots.is_empty()
     }
 
     /// Add a new set of paths prefixes.
@@ -194,15 +212,16 @@ impl FileSetConfigBuilder {
     }
 
     /// Build the `FileSetConfig`.
+    #[must_use]
     pub fn build(self) -> FileSetConfig {
         let n_file_sets = self.roots.len() + 1;
         let map = {
             let mut entries = Vec::new();
-            for (i, paths) in self.roots.into_iter().enumerate() {
-                for p in paths {
-                    let mut buf = Vec::new();
-                    p.encode(&mut buf);
-                    entries.push((buf, i as u64));
+            for (index, paths) in self.roots.into_iter().enumerate() {
+                for path in paths {
+                    let mut buffer = Vec::new();
+                    path.encode(&mut buffer);
+                    entries.push((buffer, index as u64));
                 }
             }
             entries.sort();
@@ -213,16 +232,16 @@ impl FileSetConfigBuilder {
     }
 }
 
-/// Implements [`fst::Automaton`]
+/// Implements [`fst::Automaton`].
 ///
 /// It will match if `prefix_of` is a prefix of the given data.
-struct PrefixOf<'a> {
-    prefix_of: &'a [u8],
+struct PrefixOf<'data> {
+    prefix_of: &'data [u8],
 }
 
-impl<'a> PrefixOf<'a> {
+impl<'data> PrefixOf<'data> {
     /// Creates a new `PrefixOf` from the given slice.
-    fn new(prefix_of: &'a [u8]) -> Self {
+    const fn new(prefix_of: &'data [u8]) -> Self {
         Self { prefix_of }
     }
 }

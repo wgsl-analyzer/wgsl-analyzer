@@ -106,13 +106,14 @@ impl Entry {
     /// Returns `true` if `path` is included in `self`.
     ///
     /// See [`Directories::contains_file`].
+    #[must_use]
     pub fn contains_file(
         &self,
         path: &AbsPath,
     ) -> bool {
         match self {
-            Entry::Files(files) => files.iter().any(|it| it == path),
-            Entry::Directories(directories) => directories.contains_file(path),
+            Self::Files(files) => files.iter().any(|file| file == path),
+            Self::Directories(directories) => directories.contains_file(path),
         }
     }
 
@@ -120,26 +121,32 @@ impl Entry {
     ///
     /// - If `self` is `Entry::Files`, returns `false`
     /// - Else, see [`Directories::contains_dir`].
+    #[must_use]
     pub fn contains_dir(
         &self,
         path: &AbsPath,
     ) -> bool {
         match self {
-            Entry::Files(_) => false,
-            Entry::Directories(directories) => directories.contains_dir(path),
+            Self::Files(_) => false,
+            Self::Directories(directories) => directories.contains_dir(path),
         }
     }
 }
 
 impl Directories {
     /// Returns `true` if `path` is included in `self`.
+    #[must_use]
     pub fn contains_file(
         &self,
         path: &AbsPath,
     ) -> bool {
         // First, check the file extension...
         let ext = path.extension().unwrap_or_default();
-        if self.extensions.iter().all(|it| it.as_str() != ext) {
+        if self
+            .extensions
+            .iter()
+            .all(|extension| extension.as_str() != ext)
+        {
             return false;
         }
 
@@ -151,6 +158,7 @@ impl Directories {
     ///
     /// Since `path` is supposed to be a directory, this will not take extension
     /// into account.
+    #[must_use]
     pub fn contains_dir(
         &self,
         path: &AbsPath,
@@ -172,15 +180,14 @@ impl Directories {
         for incl in &self.include {
             if path.starts_with(incl) {
                 include = Some(match include {
-                    Some(prev) if prev.starts_with(incl) => prev,
+                    Some(previous) if previous.starts_with(incl) => previous,
                     _ => incl,
                 });
             }
         }
 
-        let include = match include {
-            Some(it) => it,
-            None => return false,
+        let Some(include) = include else {
+            return false;
         };
 
         !self

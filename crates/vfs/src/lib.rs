@@ -254,9 +254,9 @@ impl Vfs {
     ) -> bool {
         let _p = span!(Level::INFO, "Vfs::set_file_contents").entered();
         let file_id = self.alloc_file_id(path);
-        let state: FileState = self.get(file_id);
+        let state = self.get(file_id);
         let change = match (state, contents) {
-            (FileState::Deleted, None) => return false,
+            (FileState::Excluded, _) | (FileState::Deleted, None) => return false,
             (FileState::Deleted, Some(v)) => {
                 let hash = hash_once::<FxHasher>(&*v);
                 Change::Create(v, hash)
@@ -269,7 +269,6 @@ impl Vfs {
                 }
                 Change::Modify(v, new_hash)
             },
-            (FileState::Excluded, _) => return false,
         };
 
         let mut set_data = |change_kind| {
@@ -380,6 +379,6 @@ impl fmt::Debug for Vfs {
     ) -> fmt::Result {
         f.debug_struct("Vfs")
             .field("n_files", &self.data.len())
-            .finish()
+            .finish_non_exhaustive()
     }
 }

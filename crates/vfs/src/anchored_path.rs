@@ -41,9 +41,9 @@ pub struct AnchoredPathBuf {
 ///
 /// Borrowed version of [`AnchoredPathBuf`].
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub struct AnchoredPath<'a> {
+pub struct AnchoredPath<'path> {
     /// File that this path is relative to.
     pub anchor: FileId,
     /// Path relative to `anchor`'s containing directory.
-    pub path: &'a str,
+    pub path: &'path str,
 }

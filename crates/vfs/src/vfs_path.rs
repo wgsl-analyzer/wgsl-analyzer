@@ -15,11 +15,12 @@ pub struct VfsPath(VfsPathRepr);
 impl VfsPath {
     /// Creates an "in-memory" path from `/`-separated string.
     ///
-    /// This is most useful for testing, to avoid windows/linux differences
+    /// This is most useful for testing, to avoid windows/linux differences.
     ///
     /// # Panics
     ///
     /// Panics if `path` does not start with `'/'`.
+    #[must_use]
     pub fn new_virtual_path(path: String) -> Self {
         assert!(path.starts_with('/'));
         Self(VfsPathRepr::VirtualPath(VirtualPath(path)))
@@ -27,11 +28,13 @@ impl VfsPath {
 
     /// Create a path from string. Input should be a string representation of
     /// an absolute path inside filesystem.
+    #[must_use]
     pub fn new_real_path(path: String) -> Self {
         Self::from(AbsPathBuf::assert(path.into()))
     }
 
     /// Returns the `AbsPath` representation of `self` if `self` is on the file system.
+    #[must_use]
     pub fn as_path(&self) -> Option<&AbsPath> {
         match &self.0 {
             VfsPathRepr::PathBuf(it) => Some(it.as_path()),
@@ -39,6 +42,7 @@ impl VfsPath {
         }
     }
 
+    #[must_use]
     pub fn into_abs_path(self) -> Option<AbsPathBuf> {
         match self.0 {
             VfsPathRepr::PathBuf(it) => Some(it),
@@ -47,6 +51,7 @@ impl VfsPath {
     }
 
     /// Creates a new `VfsPath` with `path` adjoined to `self`.
+    #[must_use]
     pub fn join(
         &self,
         path: &str,
@@ -86,9 +91,10 @@ impl VfsPath {
     }
 
     /// Returns `true` if `other` is a prefix of `self`.
+    #[must_use]
     pub fn starts_with(
         &self,
-        other: &VfsPath,
+        other: &Self,
     ) -> bool {
         match (&self.0, &other.0) {
             (VfsPathRepr::PathBuf(lhs), VfsPathRepr::PathBuf(rhs)) => lhs.starts_with(rhs),
@@ -97,6 +103,7 @@ impl VfsPath {
         }
     }
 
+    #[must_use]
     pub fn strip_prefix(
         &self,
         other: &Self,
@@ -114,7 +121,7 @@ impl VfsPath {
     #[must_use]
     pub fn parent(&self) -> Option<Self> {
         let mut parent = self.clone();
-        if parent.pop() { Some(parent) } else { None }
+        parent.pop().then_some(parent)
     }
 
     /// Returns `self`'s base name and file extension.
@@ -319,8 +326,8 @@ enum VfsPathRepr {
 }
 
 impl From<AbsPathBuf> for VfsPath {
-    fn from(v: AbsPathBuf) -> Self {
-        Self(VfsPathRepr::PathBuf(v.normalize()))
+    fn from(value: AbsPathBuf) -> Self {
+        Self(VfsPathRepr::PathBuf(value.normalize()))
     }
 }
 
@@ -419,9 +426,8 @@ impl VirtualPath {
     /// assert_eq!(path.0, "");
     /// ```
     fn pop(&mut self) -> bool {
-        let pos = match self.0.rfind('/') {
-            Some(pos) => pos,
-            None => return false,
+        let Some(pos) = self.0.rfind('/') else {
+            return false;
         };
         self.0 = self.0[..pos].to_string();
         true
