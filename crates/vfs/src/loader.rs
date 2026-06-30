@@ -1,4 +1,5 @@
-//! Dynamically compatible interface for file watching and reading.
+//! Dynamically compatible interface for file reading.
+//! We rely on client side watching instead of making the vfs loader watch files
 use std::fmt;
 
 use paths::{AbsPath, AbsPathBuf};
@@ -37,10 +38,6 @@ pub struct Config {
     pub version: u32,
     /// Set of initially loaded files.
     pub load: Vec<Entry>,
-    /// Index of watched entries in `load`.
-    ///
-    /// If a path in a watched entry is modified,the [`Handle`] should notify it.
-    pub watch: Vec<usize>,
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
@@ -78,7 +75,7 @@ pub enum Message {
 /// Type that will receive [`Messages`](Message) from a [`Handle`].
 pub type Sender = crossbeam_channel::Sender<Message>;
 
-/// Interface for reading and watching files.
+/// Interface for reading files.
 pub trait Handle: fmt::Debug {
     /// Spawn a new handle with the given `sender`.
     fn spawn(sender: Sender) -> Self

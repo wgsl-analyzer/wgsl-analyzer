@@ -164,8 +164,6 @@ impl GlobalState {
         self.vfs_config_version += 1;
         self.loader.handle.set_config(vfs::loader::Config {
             load,
-            // We rely on client side watching instead of making the vfs loader watch files
-            watch: Vec::new(),
             version: self.vfs_config_version,
         });
 

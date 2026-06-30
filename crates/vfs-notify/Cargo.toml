@@ -13,7 +13,6 @@ doctest = false
 
 [dependencies]
 crossbeam-channel.workspace = true
-notify = "8.2.0"
 rayon = "1.10.0"
 tracing.workspace = true
 walkdir = "2.5.0"
