@@ -1,5 +1,19 @@
 # Editor Features
 
+## Folding regions
+
+You can use folding regions with comment syntax such as:
+
+```wgsl
+// region: Setup
+// ...
+// endregion
+
+// #region Update
+// ...
+// #endregion
+```
+
 ## VS Code
 
 ### Color configurations
@@ -49,7 +63,7 @@ This also works for Markdown fenced code blocks:
 We do not expect the WGSL string within the Rust string within this literal
 Markdown document to have WGSL syntax highlighting.
 -->
-<!-- 
+<!--
 ### Semantic style customizations
 
 You can customize the look of different semantic elements in the source code.

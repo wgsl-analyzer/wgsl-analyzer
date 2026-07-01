@@ -11,8 +11,16 @@ use syntax::{
     match_ast,
 };
 
-const REGION_START: &str = "// region:";
-const REGION_END: &str = "// endregion";
+const REGION_STARTS: &[&str] = &["// region:", "//#region", "// #region"];
+const REGION_ENDS: &[&str] = &["// endregion", "//#endregion", "// #endregion"];
+
+fn is_region_start(text: &str) -> bool {
+    REGION_STARTS.iter().any(|marker| text.starts_with(marker))
+}
+
+fn is_region_end(text: &str) -> bool {
+    REGION_ENDS.iter().any(|marker| text.starts_with(marker))
+}
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum FoldKind {
@@ -98,9 +106,9 @@ pub(crate) fn folding_ranges(file: &SourceFile) -> Vec<Fold> {
                         continue;
                     }
                     let text = comment.text().trim_start();
-                    if text.starts_with(REGION_START) {
+                    if is_region_start(text) {
                         region_starts.push(comment.syntax().text_range().start());
-                    } else if text.starts_with(REGION_END) {
+                    } else if is_region_end(text) {
                         if let Some(region) = region_starts.pop() {
                             result.push(Fold {
                                 range: TextRange::new(region, comment.syntax().text_range().end()),
@@ -249,7 +257,7 @@ fn contiguous_range_for_comment(
                 {
                     let text = comment.text().trim_start();
                     // regions are not real comments
-                    if !(text.starts_with(REGION_START) || text.starts_with(REGION_END)) {
+                    if !(is_region_start(text) || is_region_end(text)) {
                         visited.insert(comment.clone());
                         last = comment;
                         continue;
