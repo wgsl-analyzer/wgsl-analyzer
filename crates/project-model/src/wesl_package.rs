@@ -1,4 +1,4 @@
-use base_db::input::PackageOrigin;
+use base_db::input::{PackageName, PackageOrigin};
 use edition::Edition;
 use paths::AbsPathBuf;
 
@@ -56,7 +56,37 @@ impl WeslPackage {
 }
 
 #[derive(Debug, Clone, Eq, PartialEq)]
-pub struct PackageDependency {
-    pub pkg: PackageKey,
-    pub name: String,
+pub enum PackageDependency {
+    Path {
+        name: PackageName,
+        path: ManifestPath,
+    },
+    Library {
+        name: PackageName,
+        package: String,
+    },
+}
+
+impl PackageDependency {
+    #[must_use]
+    pub fn package_key(&self) -> PackageKey {
+        #[expect(
+            clippy::todo,
+            reason = "See https://github.com/wgsl-analyzer/wgsl-analyzer/issues/976"
+        )]
+        match self {
+            Self::Path { path, .. } => PackageKey::from_manifest_path(path.clone()),
+            Self::Library { name, package } => {
+                todo!("Library dependencies are still unsupported")
+            },
+        }
+    }
+
+    #[must_use]
+    pub const fn name(&self) -> &PackageName {
+        match self {
+            Self::Path { name, path } => name,
+            Self::Library { name, package } => name,
+        }
+    }
 }

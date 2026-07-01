@@ -81,7 +81,6 @@ pub(crate) struct GlobalState {
     pub(crate) vfs_span: Option<tracing::span::EnteredSpan>,
     pub(crate) wants_to_switch: Option<Cause>,
 
-    // pub(crate) vfs_config_version: u32,
     pub(crate) analysis_host: AnalysisHost,
     pub(crate) diagnostics: DiagnosticCollection,
     pub(crate) in_memory_documents: InMemoryDocuments,
@@ -278,8 +277,15 @@ impl GlobalState {
         }
         std::mem::drop(guard);
 
-        // Package graph changes
-        self.process_package_changes(modified_local_packages, &mut change);
+        if !modified_local_packages.is_empty() {
+            self.process_local_package_changes(modified_local_packages);
+        }
+        if self.is_quiescent() {
+            // Delay switching until
+            // - the package graph is fully loaded
+            // - and the root file is loaded
+            self.process_package_changes(&mut change);
+        }
 
         if change.is_empty() {
             false
@@ -289,12 +295,10 @@ impl GlobalState {
         }
     }
 
-    fn process_package_changes(
+    fn process_local_package_changes(
         &self,
         modified_local_packages: FxHashMap<ManifestPath, PackageChange>,
-        change: &mut BaseDbChange,
     ) {
-        let (vfs, _) = &*self.vfs.read();
         let packages = &mut *self.packages.write();
         for (path, modified) in modified_local_packages {
             match modified {
@@ -327,7 +331,14 @@ impl GlobalState {
                 },
             }
         }
+    }
 
+    fn process_package_changes(
+        &self,
+        change: &mut BaseDbChange,
+    ) {
+        let mut packages = self.packages.write();
+        let vfs = &self.vfs.read().0;
         let changed_packages = packages.take_changes();
         for (id, package_change) in changed_packages {
             let package_data = packages.get(id).and_then(|package| {
@@ -356,15 +367,15 @@ impl GlobalState {
                     .iter()
                     .filter_map(|dependency| {
                         // TODO: Properly report the errors
-                        let Some(package_id) = packages.package_id(&dependency.pkg) else {
-                            tracing::error!("Could not find dependency {}", &dependency.name);
+                        let Some(package_id) = packages.package_id(&dependency.package_key())
+                        else {
+                            tracing::error!("Could not find dependency {}", dependency.name());
                             return None;
                         };
-                        let Ok(name) = PackageName::new(&dependency.name) else {
-                            tracing::error!("Invalid dependency name {}", &dependency.name);
-                            return None;
-                        };
-                        Some(Dependency { package_id, name })
+                        Some(Dependency {
+                            package_id,
+                            name: dependency.name().clone(),
+                        })
                     })
                     .collect();
 
@@ -378,6 +389,7 @@ impl GlobalState {
             });
             change.change_package(id, package_data);
         }
+        std::mem::drop(packages);
     }
 
     pub(crate) fn snapshot(&self) -> GlobalStateSnapshot {

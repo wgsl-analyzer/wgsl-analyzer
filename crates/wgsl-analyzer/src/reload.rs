@@ -1,5 +1,6 @@
 use std::mem;
 
+use base_db::input::PackageOrigin;
 use hir::database::DefDatabase as _;
 use ide::base_db::input::SourceRoot;
 use lsp_types::{
@@ -15,7 +16,11 @@ use triomphe::Arc;
 use vfs::{VfsPath, file_set::FileSetConfig};
 
 use crate::{
-    config::Config, discover::DiscoverArgument, global_state::GlobalState, lsp, main_loop::Task,
+    config::Config,
+    discover::{DiscoverArgument, LoadPackageTask},
+    global_state::GlobalState,
+    lsp,
+    main_loop::Task,
     operation_queue::Cause,
 };
 
@@ -95,8 +100,6 @@ impl GlobalState {
         discover: DiscoverArgument,
         cause: &Cause,
     ) {
-        info!(%cause, "will discover project");
-
         // Don't try to analyze the projects when opening a stray file.
         // Libraries are handled by the fact that they are reachable
         // from one of the discovered projects in the current workspace.
@@ -113,10 +116,42 @@ impl GlobalState {
             });
     }
 
+    pub fn load_package(
+        &mut self,
+        load_task: LoadPackageTask,
+    ) {
+        if self
+            .packages
+            .read()
+            .package_id(&load_task.package_key())
+            .is_some()
+        {
+            return;
+        }
+
+        if self.load_package_jobs_active == 0 {
+            self.report_progress(
+                "Project loading",
+                &lsp::utilities::Progress::Begin,
+                None,
+                None,
+                None,
+            );
+        }
+        self.load_package_jobs_active += 1;
+        self.load_package_tasks.push_mut(load_task).run();
+    }
+
     /// Cleans up the discovered packages.
     pub(crate) fn refresh_packages(&self) {
         let mut packages = self.packages.write();
-        packages.retain(|_, project| self.config.is_in_workspace(&project.manifest));
+        packages.retain(|_, project| {
+            if project.origin == PackageOrigin::Local {
+                self.config.is_in_workspace(&project.manifest)
+            } else {
+                true
+            }
+        });
         packages.retain_referenced();
 
         let workspace_roots = self.config.workspace_roots();
