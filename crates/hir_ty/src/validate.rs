@@ -4,7 +4,10 @@ use itertools::Itertools as _;
 use smallvec::{SmallVec, smallvec};
 use wgsl_types::syntax::{AccessMode, AddressSpace};
 
-use crate::{database::HirDatabase, ty::TypeKind};
+use crate::{
+    database::HirDatabase,
+    ty::{ArrayType, TypeKind},
+};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Scope {
@@ -158,7 +161,12 @@ pub fn validate_address_space<DiagnosticBuilder>(
                 ]));
             }
             match r#type.as_ref() {
-                TypeKind::Sampler(_) | TypeKind::Texture(_) => {},
+                TypeKind::Sampler(_)
+                | TypeKind::Texture(_)
+                | TypeKind::Array(ArrayType {
+                    binding_array: true,
+                    ..
+                }) => {},
                 TypeKind::Error
                 | TypeKind::Scalar(_)
                 | TypeKind::Atomic(_)

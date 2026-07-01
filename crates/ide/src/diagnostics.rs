@@ -772,4 +772,14 @@ fn foo() { let _ = 1; }
             "#]],
         );
     }
+
+    #[test]
+    fn binding_array_validates() {
+        check_diagnostics(
+            "
+    @group(0) @binding(0) var textures: binding_array<texture_2d<f32>>;
+    ",
+            expect![""],
+        );
+    }
 }
