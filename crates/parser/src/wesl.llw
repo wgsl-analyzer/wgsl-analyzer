@@ -131,6 +131,10 @@ token
 	Unchanged='unchanged'
 ;
 
+token
+	Elif='elif'
+;
+
 token Blankspace LineEndingComment BlockComment;
 
 skip Blankspace LineEndingComment BlockComment;
@@ -171,7 +175,7 @@ enable_extension_name: Identifier;
 language_extension_name: Identifier;
 
 global_declaration:
-	attribute* @function_declaration (
+	translate_time_attribute* @function_declaration (
 		'fn' name function_parameters [return_type] compound_statement @function_declaration
 		| variable_declaration_semi @variable_declaration
 		| override_declaration_semi @override_declaration
@@ -184,7 +188,7 @@ global_declaration:
 
 // Manual error recovery for missing commas between parameters
 function_parameters: '(' [parameter (?1 (',' | !1) parameter)* [',']] ')';
-parameter: attribute* name ':' type_specifier;
+parameter: translate_time_attribute* name ':' type_specifier;
 return_type: '->' attribute* type_specifier;
 
 // Manual error recovery branches for structs
@@ -192,29 +196,32 @@ struct_body: '{' & struct_member (?1 (','| ';'!1 | !1) struct_member)* [','] '}'
 struct_member: attribute* name ':' type_specifier;
 
 // all attributes that do not use keywords have to be parsed generically and separated later
-attribute:
-	'@' @other_attr (
-			'align' '(' expression [','] ')' @align_attr
-			| 'binding' '(' expression [','] ')' @binding_attr
-			| 'blend_src' '(' expression [','] ')' @blend_src_attr
-			| 'builtin' '(' builtin_value_name [','] ')' @builtin_attr
-			| 'const' @const_attr
-			| 'diagnostic' diagnostic_control @diagnostic_attr
-			| 'group' '(' expression [','] ')' @group_attr
-			| 'id' '(' expression [','] ')' @id_attr
-			| 'interpolate' '(' interpolate_type_name [ ',' ] [ interpolate_sampling_name [ ',' ] ] ')' @interpolate_attr
-			| 'invariant' @invariant_attr
-			| 'location' '(' expression [','] ')' @location_attr
-			| 'must_use' @must_use_attr
-			| 'size' '(' expression [','] ')'@size_attr
-			| workgroup_size_attr @workgroup_size_attr
-			| 'vertex' @vertex_attr
-			| 'fragment' @fragment_attr
-			| 'compute' @compute_attr
-			| 'early_depth_test' '(' early_depth_test_mode ')' @early_depth_test_attr
-			| Identifier [ argument_expression_list ] @other_attr
+attribute: '@' attribute_inner;
+
+attribute_inner:
+	@other_attr (
+		'align' '(' expression [','] ')' @align_attr
+		| 'binding' '(' expression [','] ')' @binding_attr
+		| 'blend_src' '(' expression [','] ')' @blend_src_attr
+		| 'builtin' '(' builtin_value_name [','] ')' @builtin_attr
+		| 'const' @const_attr
+		| 'diagnostic' diagnostic_control @diagnostic_attr
+		| 'group' '(' expression [','] ')' @group_attr
+		| 'id' '(' expression [','] ')' @id_attr
+		| 'interpolate' '(' interpolate_type_name [ ',' ] [ interpolate_sampling_name [ ',' ] ] ')' @interpolate_attr
+		| 'invariant' @invariant_attr
+		| 'location' '(' expression [','] ')' @location_attr
+		| 'must_use' @must_use_attr
+		| 'size' '(' expression [','] ')'@size_attr
+		| workgroup_size_attr @workgroup_size_attr
+		| 'vertex' @vertex_attr
+		| 'fragment' @fragment_attr
+		| 'compute' @compute_attr
+		| 'early_depth_test' '(' early_depth_test_mode ')' @early_depth_test_attr
+		| Identifier [ argument_expression_list ] @other_attr
 	)
 ;
+
 
 // https://docs.rs/wgpu/latest/wgpu/struct.Features.html#associatedconstant.SHADER_EARLY_DEPTH_TEST
 early_depth_test_mode:
@@ -303,7 +310,7 @@ argument_expression_list: '(' [expression (?1 ',' expression)* [',']] ')' @argum
 argument_expression_list_expr: '(' [expression (?1 ',' expression)* [',']] ')' @arguments;
 
 statement:
-	attribute* (
+	translate_time_attribute* (
 		// NOTE: The WGSL spec (§9.4.1) requires `if_clause (else_if_clause)* [else_clause]`,
 		// i.e. at most one trailing else and no else-if after else. We accept the more
 		// permissive form here so the parser produces a valid AST for malformed input
@@ -402,7 +409,7 @@ compound_assignment_operator^:
 	| '/='
 	| '^='
 	| '|='
-	;
+;
 
 lhs_expression:
 	lhs_expression '[' expression ']' @indexing_expression // §8.5
@@ -411,4 +418,13 @@ lhs_expression:
 	| '&' lhs_expression @unary_expression // §8.13
 	| '(' lhs_expression ')' @paren_expression // §8.4
 	| path @ident_expression
-	;
+;
+
+translate_time_attribute:
+	'@' @other_attr (
+		'if' argument_expression_list @if_attr
+		| 'elif' argument_expression_list @elif_attr
+		| 'else' @else_attr
+		| attribute_inner
+	)
+;
