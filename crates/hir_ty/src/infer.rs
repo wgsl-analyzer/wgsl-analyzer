@@ -1062,8 +1062,8 @@ impl<'database> InferenceContext<'database> {
                         let field_types = &self.database.field_types(r#struct).0;
                         if let Some(field) = struct_data.field(name) {
                             self.set_field_resolution(expression, FieldId { r#struct, field });
-                            let field_type = field_types[field];
-                            field_type
+                            
+                            field_types[field]
                         } else {
                             self.push_diagnostic(
                                 store.store_source,
@@ -1591,9 +1591,8 @@ impl<'database> InferenceContext<'database> {
                     && name.as_str().len() == 1
                 {
                     return Ok(self.make_ref(r#type, address_space, access_mode));
-                } else {
-                    return Ok(r#type);
                 }
+                return Ok(r#type);
             }
         }
         Err(())
