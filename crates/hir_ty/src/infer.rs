@@ -1134,8 +1134,6 @@ impl<'database> InferenceContext<'database> {
             Expression::Index { left_side, index } => {
                 let left_side = self.infer_expression(*left_side, store);
                 let left_kind = left_side.kind(self.database);
-                let left_inner = left_kind.unref(self.database);
-
                 let index_type = self.infer_expression(*index, store);
                 let index_kind = index_type.kind(self.database);
                 let index_inner = index_kind.unref(self.database);
@@ -1149,14 +1147,37 @@ impl<'database> InferenceContext<'database> {
                         },
                     );
                 }
-
-                let r#type = match &*left_inner {
+                match left_kind {
+                    TypeKind::Reference(reference)
+                        if let TypeKind::Vector(vec) = reference.inner.kind(self.database) =>
+                    {
+                        self.make_ref(
+                            vec.component_type,
+                            reference.address_space,
+                            reference.access_mode,
+                        )
+                    },
                     TypeKind::Vector(vec) => vec.component_type,
+                    TypeKind::Reference(reference)
+                        if let TypeKind::Matrix(matrix_type) =
+                            reference.inner.kind(self.database) =>
+                    {
+                        self.make_ref(
+                            matrix_type.inner,
+                            reference.address_space,
+                            reference.access_mode,
+                        )
+                    },
                     TypeKind::Matrix(matrix_type) => {
                         self.database.intern_type(TypeKind::Vector(VectorType {
                             size: matrix_type.rows,
                             component_type: matrix_type.inner,
                         }))
+                    },
+                    TypeKind::Reference(reference)
+                        if let TypeKind::Array(array) = reference.inner.kind(self.database) =>
+                    {
+                        self.make_ref(array.inner, reference.address_space, reference.access_mode)
                     },
                     TypeKind::Array(array) => array.inner,
                     TypeKind::Error
@@ -1178,12 +1199,6 @@ impl<'database> InferenceContext<'database> {
                         );
                         self.error_type()
                     },
-                };
-
-                if let TypeKind::Reference(reference) = left_kind {
-                    self.make_ref(r#type, reference.address_space, reference.access_mode)
-                } else {
-                    r#type
                 }
             },
             Expression::Literal(literal) => {
