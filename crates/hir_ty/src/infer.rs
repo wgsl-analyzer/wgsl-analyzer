@@ -1062,7 +1062,7 @@ impl<'database> InferenceContext<'database> {
                         let field_types = &self.database.field_types(r#struct).0;
                         if let Some(field) = struct_data.field(name) {
                             self.set_field_resolution(expression, FieldId { r#struct, field });
-                            
+
                             field_types[field]
                         } else {
                             self.push_diagnostic(
