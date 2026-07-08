@@ -217,12 +217,53 @@ impl<'db> InferPrinter<'db> {
             | InferenceDiagnosticKind::AddressOfNotReference { .. }
             | InferenceDiagnosticKind::AddressOfNotReference { .. }
             | InferenceDiagnosticKind::DerefNotAPointer { .. }
-            | InferenceDiagnosticKind::InvalidType { .. }
             | InferenceDiagnosticKind::CyclicType { .. }
             | InferenceDiagnosticKind::UnexpectedTemplateArgument { .. }
             | InferenceDiagnosticKind::WgslError { .. }
             | InferenceDiagnosticKind::ExpectedLoweredKind { .. } => {
                 writeln!(buffer, "{:?} in {:?}", diagnostic.kind, diagnostic.source).unwrap();
+            },
+            InferenceDiagnosticKind::InvalidType {
+                error: crate::lower::TypeLoweringError { container, kind },
+            } => match container {
+                crate::lower::TypeContainer::Expression(expression) => match kind {
+                    crate::lower::TypeLoweringErrorKind::UnexpectedTemplateArgument {
+                        expected,
+                    } => {
+                        let node = match source_map.expression_to_source(*expression) {
+                            Ok(sp) => sp.to_node(&self.root).syntax().clone(),
+                            Err(SyntheticSyntax) => return,
+                        };
+                        let (range, text) = (
+                            node.parent().unwrap().text_range(),
+                            node.parent().unwrap().text().to_string().replace('\n', " "),
+                        );
+                        writeln!(
+                            buffer,
+                            "{range:?} '{}': unexpected template argument, expected: {}",
+                            ellipsize(text, 15),
+                            expected,
+                        )
+                        .unwrap();
+                    },
+                    crate::lower::TypeLoweringErrorKind::UnresolvedName(_)
+                    | crate::lower::TypeLoweringErrorKind::UnresolvedPath { .. }
+                    | crate::lower::TypeLoweringErrorKind::UnexpectedModule(_)
+                    | crate::lower::TypeLoweringErrorKind::MissingTemplateArgument(_)
+                    | crate::lower::TypeLoweringErrorKind::MissingTemplate
+                    | crate::lower::TypeLoweringErrorKind::WrongNumberOfTemplateArguments {
+                        ..
+                    }
+                    | crate::lower::TypeLoweringErrorKind::ExpectedType(_)
+                    | crate::lower::TypeLoweringErrorKind::ExpectedFunctionToBeCalled(_)
+                    | crate::lower::TypeLoweringErrorKind::WgslError(_) => {
+                        writeln!(buffer, "{:?} in {:?}", diagnostic.kind, diagnostic.source)
+                            .unwrap()
+                    },
+                },
+                crate::lower::TypeContainer::TypeSpecifier(index) => {
+                    writeln!(buffer, "{:?} in {:?}", diagnostic.kind, diagnostic.source).unwrap()
+                },
             },
             InferenceDiagnosticKind::NoSuchField {
                 expression,

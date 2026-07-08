@@ -52,7 +52,9 @@ impl TemplateParameters {
             Some((TemplateParameter::Type(r#type), id)) => Ok((r#type, id)),
             Some((_, id)) => Err(TypeLoweringError {
                 container: TypeContainer::Expression(id),
-                kind: TypeLoweringErrorKind::UnexpectedTemplateArgument("a type".to_owned()),
+                kind: TypeLoweringErrorKind::UnexpectedTemplateArgument {
+                    expected: "a type".to_owned(),
+                },
             }),
             None => Err(TypeLoweringError {
                 container: self.container,
@@ -68,7 +70,9 @@ impl TemplateParameters {
             Some((TemplateParameter::Instance(instance), id)) => Ok((instance, id)),
             Some((_, id)) => Err(TypeLoweringError {
                 container: TypeContainer::Expression(id),
-                kind: TypeLoweringErrorKind::UnexpectedTemplateArgument("an instance".to_owned()),
+                kind: TypeLoweringErrorKind::UnexpectedTemplateArgument {
+                    expected: "an instance".to_owned(),
+                },
             }),
             None => Err(TypeLoweringError {
                 container: self.container,
@@ -82,7 +86,9 @@ impl TemplateParameters {
             Some((TemplateParameter::Enumerant(enumerant), id)) => Ok((enumerant, id)),
             Some((_, id)) => Err(TypeLoweringError {
                 container: TypeContainer::Expression(id),
-                kind: TypeLoweringErrorKind::UnexpectedTemplateArgument("an enum".to_owned()),
+                kind: TypeLoweringErrorKind::UnexpectedTemplateArgument {
+                    expected: "an enum".to_owned(),
+                },
             }),
             None => Err(TypeLoweringError {
                 container: self.container,
