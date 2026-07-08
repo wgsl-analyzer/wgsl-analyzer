@@ -143,6 +143,25 @@ fn vec_x_is_ref() {
 }
 
 #[test]
+fn vec_field_is_not_ref() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        fn foo() {
+            let not_ref = vec2(1, 2).x;
+        }
+        ",
+        expect![[r#"
+            19..26 'not_ref': i32
+            29..39 'vec2(1, 2)': vec2<integer>
+            29..41 'vec2(1, 2).x': integer
+            34..35 '1': integer
+            37..38 '2': integer
+        "#]],
+    );
+}
+
+#[test]
 /// https://www.w3.org/TR/WGSL/#example-5aaac12b
 fn component_reference_from_a_composite_reference() {
     check_infer(
