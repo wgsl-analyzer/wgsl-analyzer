@@ -249,17 +249,19 @@ fn no_such_field_on_vec_ref() {
         ExtensionsConfig::default(),
         "
         fn foo() {
-            let v = vec2(0, 0);
+            var v = vec2(0, 0);
             let xyz = v.xyz;
         }
         ",
         expect![[r#"
-            19..22 'xyz': [error]
-            25..35 'vec2(0, 0)': vec2<integer>
-            25..39 'vec2(0, 0).xyz': [error]
-            30..31 '0': integer
-            33..34 '0': integer
-            NoSuchField { expression: Idx::<Expression>(2), name: Name("xyz"), type: Type(2405) } in Body
+            19..20 'v': ref<function, vec2<i32>, read_write>
+            23..33 'vec2(0, 0)': vec2<integer>
+            28..29 '0': integer
+            31..32 '0': integer
+            43..46 'xyz': [error]
+            49..50 'v': ref<function, vec2<i32>, read_write>
+            49..54 'v.xyz': [error]
+            NoSuchField { expression: Idx::<Expression>(3), name: Name("xyz"), type: Type(2408) } in Body
         "#]],
     );
 }
