@@ -34,7 +34,7 @@ jobs:
           persist-credentials: false
 
       - name: Install Rust beta toolchain
-        uses: dtolnay/rust-toolchain@67ef31d5b988238dd797d409d6f9574278e20537
+        uses: dtolnay/rust-toolchain@fa04a1451ff1842e2626ccb99004d0195b455a88
         with:
           toolchain: beta
 
@@ -54,7 +54,7 @@ jobs:
           persist-credentials: false
 
       - name: Install Rust beta toolchain
-        uses: dtolnay/rust-toolchain@67ef31d5b988238dd797d409d6f9574278e20537
+        uses: dtolnay/rust-toolchain@fa04a1451ff1842e2626ccb99004d0195b455a88
         with:
           toolchain: beta
           components: rustfmt, clippy
@@ -76,7 +76,7 @@ jobs:
           persist-credentials: false
 
       - name: Cache
-        uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             ~/.cargo/bin/
@@ -87,7 +87,7 @@ jobs:
           key: ${{ runner.os }}-check-doc-${{ hashFiles('**/Cargo.toml') }}
 
       - name: Install Rust beta toolchain
-        uses: dtolnay/rust-toolchain@67ef31d5b988238dd797d409d6f9574278e20537
+        uses: dtolnay/rust-toolchain@fa04a1451ff1842e2626ccb99004d0195b455a88
         with:
           toolchain: beta
 
@@ -109,7 +109,7 @@ jobs:
           persist-credentials: false
 
       - name: Install beta Rust toolchain
-        uses: dtolnay/rust-toolchain@67ef31d5b988238dd797d409d6f9574278e20537
+        uses: dtolnay/rust-toolchain@fa04a1451ff1842e2626ccb99004d0195b455a88
         with:
           toolchain: beta
 
