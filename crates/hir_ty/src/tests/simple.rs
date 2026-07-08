@@ -22,9 +22,70 @@ fn type_alias_in_struct() {
             63..64 '5': integer
             75..76 'b': u32
             79..80 'a': S
-            79..82 'a.x': ref<u32>
+            79..82 'a.x': ref<private, u32, read_write>
             79..88 'a.x + 10u': u32
             85..88 '10u': u32
+        "#]],
+    );
+}
+
+#[test]
+fn automatic_ptr_dereference() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        struct MyData {
+            alpha: f32,
+            beta: f32,
+        }
+
+        @group(0) @binding(1)
+        var<storage, read_write> mybuff: array<MyData>;
+
+        fn my_op(index: u32) {
+            mybuff[index].alpha = 1.0;
+            let data = &mybuff[index];
+            data.alpha = 1.0;
+        }
+        ",
+        expect![[r#"
+            97..103 'mybuff': ref<storage, array<MyData>, read_write>
+            130..135 'index': u32
+            148..154 'mybuff': ref<storage, array<MyData>, read_write>
+            148..161 'mybuff[index]': ref<private, MyData, read_write>
+            148..167 'mybuff....alpha': ref<private, f32, read_write>
+            155..160 'index': u32
+            170..173 '1.0': float
+            183..187 'data': ptr<private, MyData, read_write>
+            190..204 '&mybuff[index]': ptr<private, MyData, read_write>
+            191..197 'mybuff': ref<storage, array<MyData>, read_write>
+            191..204 'mybuff[index]': ref<private, MyData, read_write>
+            198..203 'index': u32
+            210..214 'data': ptr<private, MyData, read_write>
+            210..220 'data.alpha': [error]
+            223..226 '1.0': float
+            NoSuchField { expression: Idx::<Expression>(9), name: Name("alpha"), type: Type(2c09) } in Body
+            AssignmentNotAReference { left_side: Idx::<Expression>(10), actual: Type(2c01) } in Body
+        "#]],
+    );
+}
+#[test]
+fn ptr_deref_is_ref() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        var v = vec2(1, 2);
+        var p = &v;
+        p.x = 2;
+        ",
+        expect![[r#"
+            4..5 'v': ref<handle, vec2<i32>, read>
+            8..18 'vec2(1, 2)': vec2<integer>
+            13..14 '1': integer
+            16..17 '2': integer
+            24..25 'p': ref<handle, ptr<handle, vec2<i32>, read>, read>
+            28..30 '&v': ptr<handle, vec2<i32>, read>
+            29..30 'v': ref<handle, vec2<i32>, read>
         "#]],
     );
 }
@@ -84,17 +145,17 @@ fn struct_constructor_unrefs() {
         }
         ",
         expect![[r#"
-            59..60 'u': ref<u32>
+            59..60 'u': ref<function, u32, read_write>
             63..65 '1u': u32
-            75..76 'a': ref<array<f32, 3>>
+            75..76 'a': ref<function, array<f32, 3>, read_write>
             79..107 'array<..., 3.0)': array<f32, 3>
             93..96 '1.0': float
             98..101 '2.0': float
             103..106 '3.0': float
             117..118 's': S
             121..128 'S(u, a)': S
-            123..124 'u': ref<u32>
-            126..127 'a': ref<array<f32, 3>>
+            123..124 'u': ref<function, u32, read_write>
+            126..127 'a': ref<function, array<f32, 3>, read_write>
         "#]],
     );
 }
@@ -226,7 +287,7 @@ fn const_u32_as_array_size() {
         expect![[r#"
             6..15 'maxLayers': u32
             18..21 '12u': u32
-            27..33 'layers': ref<[error]>
+            27..33 'layers': ref<handle, [error], read>
             InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(1)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } } in Signature
             InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(1)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } } in Signature
         "#]],
@@ -261,7 +322,7 @@ fn var_array() {
         @group(0) @binding(0) var<storage, read_write> data: array<f32>;
         ",
         expect![[r#"
-            47..51 'data': ref<array<f32>>
+            47..51 'data': ref<storage, array<f32>, read_write>
         "#]],
     );
 }
@@ -318,15 +379,15 @@ var f32_promotion : f32 = 5;
 }
         ",
         expect![[r#"
-            4..17 'i32_from_type': ref<i32>
+            4..17 'i32_from_type': ref<handle, i32, read>
             26..27 '3': integer
             46..54 'some_i32': i32
             57..58 '2': integer
             64..72 'some_u32': u32
             80..81 '2': integer
-            87..100 'i32_from_type': ref<i32>
+            87..100 'i32_from_type': ref<function, i32, read_write>
             109..110 '3': integer
-            116..129 'f32_promotion': ref<f32>
+            116..129 'f32_promotion': ref<function, f32, read_write>
             138..139 '5': integer
         "#]],
     );
@@ -362,11 +423,11 @@ var u32_expr2 = 1u + (1 + 2);
 }
     ",
         expect![[r#"
-            16..25 'u32_expr1': ref<u32>
+            16..25 'u32_expr1': ref<function, u32, read_write>
             28..29 '6': integer
             28..34 '6 + 1u': u32
             32..34 '1u': u32
-            40..49 'u32_expr2': ref<u32>
+            40..49 'u32_expr2': ref<function, u32, read_write>
             52..54 '1u': u32
             52..64 '1u + (1 + 2)': u32
             58..59 '1': integer
@@ -511,7 +572,7 @@ fn texture_storage_2d_template() {
 var framebuffer : texture_storage_2d<rgba16float, write>;
     ",
         expect![[r#"
-            4..15 'framebuffer': ref<texture_storage_2d<rgba16float,write>>
+            4..15 'framebuffer': ref<handle, texture_storage_2d<rgba16float,write>, read>
         "#]],
     );
 }
@@ -559,7 +620,7 @@ fn global_var_function_address_space_error() {
         ExtensionsConfig::default(),
         "var<function> not_allowed_at_module_level: u32;",
         expect![[r#"
-            14..41 'not_al..._level': ref<u32>
+            14..41 'not_al..._level': ref<function, u32, read_write>
             UnexpectedTemplateArgument { expression: Idx::<Expression>(0) } in Signature
         "#]],
     );
@@ -703,12 +764,12 @@ fn array_index_is_ref_i32() {
         ",
         expect![[r#"
             8..11 'arr': array<i32>
-            35..40 'index': ref<i32>
+            35..40 'index': ref<function, i32, read_write>
             43..45 '1i': i32
             57..58 'a': i32
             61..64 'arr': array<i32>
             61..71 'arr[index]': i32
-            65..70 'index': ref<i32>
+            65..70 'index': ref<function, i32, read_write>
         "#]],
     );
 }
@@ -725,12 +786,12 @@ fn array_index_is_not_ref_f32() {
         ",
         expect![[r#"
             8..11 'arr': array<i32>
-            35..40 'index': ref<f32>
+            35..40 'index': ref<function, f32, read_write>
             43..47 '1.0f': f32
             59..60 'a': i32
             63..66 'arr': array<i32>
             63..73 'arr[index]': i32
-            67..72 'index': ref<f32>
+            67..72 'index': ref<function, f32, read_write>
             67..72 'index': expected i32 or u32 but got f32
         "#]],
     );

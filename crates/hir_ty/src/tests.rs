@@ -174,7 +174,7 @@ impl<'db> InferPrinter<'db> {
             node.text_range(),
             node.text().to_string().replace('\n', " "),
         );
-        let pretty = pretty_type_with_verbosity(self.database, r#type, TypeVerbosity::Compact);
+        let pretty = pretty_type_with_verbosity(self.database, r#type, TypeVerbosity::Full);
         writeln!(buffer, "{range:?} '{}': {pretty}", ellipsize(text, 15)).unwrap();
     }
 
@@ -205,9 +205,9 @@ impl<'db> InferPrinter<'db> {
                     pretty_type_expectation_with_verbosity(
                         self.database,
                         expected.clone(),
-                        TypeVerbosity::Compact
+                        TypeVerbosity::Full
                     ),
-                    pretty_type_with_verbosity(self.database, *actual, TypeVerbosity::Compact)
+                    pretty_type_with_verbosity(self.database, *actual, TypeVerbosity::Full)
                 )
                 .unwrap();
             },
