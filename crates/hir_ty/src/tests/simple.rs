@@ -181,6 +181,161 @@ fn struct_field_is_not_ref() {
 }
 
 #[test]
+fn no_such_field_on_struct_ref() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        struct Bar { baz: u32 }
+        fn foo() {
+            let bar = Bar(0)
+            let xx = bar.bazzzzz;
+        }
+        ",
+        expect![[r#"
+            43..46 'bar': Bar
+            49..55 'Bar(0)': Bar
+            53..54 '0': integer
+            64..66 'xx': [error]
+            69..72 'bar': Bar
+            69..80 'bar.bazzzzz': [error]
+            NoSuchField { expression: Idx::<Expression>(2), name: Name("bazzzzz"), type: Type(2803) } in Body
+        "#]],
+    );
+}
+
+#[test]
+fn no_such_field_on_struct() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        struct Bar { baz: u32 }
+        fn foo() {
+            let xx = Bar(0).bazzzzz;
+        }
+        ",
+        expect![[r#"
+            43..45 'xx': [error]
+            48..54 'Bar(0)': Bar
+            48..62 'Bar(0).bazzzzz': [error]
+            52..53 '0': integer
+            NoSuchField { expression: Idx::<Expression>(1), name: Name("bazzzzz"), type: Type(2803) } in Body
+        "#]],
+    );
+}
+
+#[test]
+fn no_such_field_on_vec() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        fn foo() {
+            let xyz = vec2(0, 0).xyz;
+        }
+        ",
+        expect![[r#"
+            19..22 'xyz': [error]
+            25..35 'vec2(0, 0)': vec2<integer>
+            25..39 'vec2(0, 0).xyz': [error]
+            30..31 '0': integer
+            33..34 '0': integer
+            NoSuchField { expression: Idx::<Expression>(2), name: Name("xyz"), type: Type(2405) } in Body
+        "#]],
+    );
+}
+
+#[test]
+fn no_such_field_on_vec_ref() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        fn foo() {
+            let v = vec2(0, 0);
+            let xyz = v.xyz;
+        }
+        ",
+        expect![[r#"
+            19..22 'xyz': [error]
+            25..35 'vec2(0, 0)': vec2<integer>
+            25..39 'vec2(0, 0).xyz': [error]
+            30..31 '0': integer
+            33..34 '0': integer
+            NoSuchField { expression: Idx::<Expression>(2), name: Name("xyz"), type: Type(2405) } in Body
+        "#]],
+    );
+}
+
+#[test]
+fn no_such_field_on_vec_ptr() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        fn foo() {
+            var v = vec2(0, 0);
+            let v_ptr = &v;
+            let xyz = v_ptr.xyz;
+        }
+        ",
+        expect![[r#"
+            19..20 'v': ref<function, vec2<i32>, read_write>
+            23..33 'vec2(0, 0)': vec2<integer>
+            28..29 '0': integer
+            31..32 '0': integer
+            43..48 'v_ptr': ptr<function, vec2<i32>, read_write>
+            51..53 '&v': ptr<function, vec2<i32>, read_write>
+            52..53 'v': ref<function, vec2<i32>, read_write>
+            63..66 'xyz': [error]
+            69..74 'v_ptr': ptr<function, vec2<i32>, read_write>
+            69..78 'v_ptr.xyz': [error]
+            NoSuchField { expression: Idx::<Expression>(5), name: Name("xyz"), type: Type(2409) } in Body
+        "#]],
+    );
+}
+
+#[test]
+fn zero_swizzle_vec() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        fn foo() {
+            let v = vec2(0, 0);
+            let x = v.;
+        }
+        ",
+        expect![[r#"
+            19..20 'v': vec2<i32>
+            23..33 'vec2(0, 0)': vec2<integer>
+            28..29 '0': integer
+            31..32 '0': integer
+            43..44 'x': [error]
+            47..48 'v': vec2<i32>
+            47..49 'v.': [error]
+            NoSuchField { expression: Idx::<Expression>(3), name: Name("[missing name]"), type: Type(2407) } in Body
+        "#]],
+    );
+}
+
+#[test]
+fn address_of_not_reference() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        fn foo() {
+            let x = 1;
+            let x_ptr = &x;
+        }
+        ",
+        expect![[r#"
+            19..20 'x': i32
+            23..24 '1': integer
+            34..39 'x_ptr': [error]
+            42..44 '&x': [error]
+            43..44 'x': i32
+            AddressOfNotReference { expression: Idx::<Expression>(1), actual: Type(2402) } in Body
+        "#]],
+    );
+}
+
+#[test]
 /// https://www.w3.org/TR/WGSL/#example-5aaac12b
 fn component_reference_from_a_composite_reference() {
     check_infer(
