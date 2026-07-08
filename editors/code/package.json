@@ -710,7 +710,8 @@
 				"scopeName": "markdown.wgsl.codeblock",
 				"path": "./syntaxes/inline-wgsl.markdown.tmLanguage.json",
 				"injectTo": [
-					"text.html.markdown"
+					"text.html.markdown",
+					"source.mdx"
 				],
 				"embeddedLanguages": {
 					"meta.embedded.block.wgsl": "wgsl"
@@ -749,7 +750,8 @@
 				"scopeName": "markdown.wesl.codeblock",
 				"path": "./syntaxes/inline-wesl.markdown.tmLanguage.json",
 				"injectTo": [
-					"text.html.markdown"
+					"text.html.markdown",
+					"source.mdx"
 				],
 				"embeddedLanguages": {
 					"meta.embedded.block.wesl": "wesl"
