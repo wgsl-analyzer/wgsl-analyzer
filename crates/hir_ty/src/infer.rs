@@ -902,9 +902,7 @@ impl<'database> InferenceContext<'database> {
             },
             (Some(r#type), None) => r#type,
             (None, Some(initializer)) => {
-                let r#type = self
-                    .infer_expression(initializer, store)
-                    .unref(self.database);
+                let r#type = self.infer_expression(initializer, store);
                 if abstract_handling == AbstractHandling::Concretize {
                     r#type.concretize(self.database)
                 } else {
@@ -1012,28 +1010,60 @@ impl<'database> InferenceContext<'database> {
                     return self.error_type();
                 }
 
-                match expression_type
-                    .kind(self.database)
-                    .unref(self.database)
-                    .as_ref()
-                {
-                    TypeKind::Struct(r#struct) => {
-                        let struct_data = self.database.struct_data(*r#struct).0;
-                        let field_types = &self.database.field_types(*r#struct).0;
-
+                match expression_type.kind(self.database) {
+                    TypeKind::Reference(reference)
+                        if let TypeKind::Struct(r#struct) = reference.inner.kind(self.database) =>
+                    {
+                        let struct_data = self.database.struct_data(r#struct).0;
+                        let field_types = &self.database.field_types(r#struct).0;
                         if let Some(field) = struct_data.field(name) {
-                            self.set_field_resolution(
-                                expression,
-                                FieldId {
-                                    r#struct: *r#struct,
-                                    field,
+                            self.set_field_resolution(expression, FieldId { r#struct, field });
+                            let field_type = field_types[field];
+                            self.make_ref(
+                                field_type,
+                                reference.address_space,
+                                reference.access_mode,
+                            )
+                        } else {
+                            self.push_diagnostic(
+                                store.store_source,
+                                InferenceDiagnosticKind::NoSuchField {
+                                    expression: *field_expression,
+                                    name: name.clone(),
+                                    r#type: expression_type,
                                 },
                             );
-
+                            self.error_type()
+                        }
+                    },
+                    TypeKind::Struct(r#struct) => {
+                        let struct_data = self.database.struct_data(r#struct).0;
+                        let field_types = &self.database.field_types(r#struct).0;
+                        if let Some(field) = struct_data.field(name) {
+                            self.set_field_resolution(expression, FieldId { r#struct, field });
                             let field_type = field_types[field];
-                            // TODO: correct Address Spaces/access mode
-                            // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/650
-                            self.make_ref(field_type, AddressSpace::Private, AccessMode::ReadWrite)
+                            field_type
+                        } else {
+                            self.push_diagnostic(
+                                store.store_source,
+                                InferenceDiagnosticKind::NoSuchField {
+                                    expression: *field_expression,
+                                    name: name.clone(),
+                                    r#type: expression_type,
+                                },
+                            );
+                            self.error_type()
+                        }
+                    },
+                    TypeKind::Reference(reference)
+                        if let TypeKind::Vector(vec_type) = reference.inner.kind(self.database) =>
+                    {
+                        if let Ok(r#type) = self.infer_vec_swizzle(
+                            &vec_type,
+                            Some((reference.address_space, reference.access_mode)),
+                            name,
+                        ) {
+                            r#type
                         } else {
                             self.push_diagnostic(
                                 store.store_source,
@@ -1047,7 +1077,7 @@ impl<'database> InferenceContext<'database> {
                         }
                     },
                     TypeKind::Vector(vec_type) => {
-                        if let Ok(r#type) = self.vec_swizzle(vec_type, name) {
+                        if let Ok(r#type) = self.infer_vec_swizzle(&vec_type, None, name) {
                             r#type
                         } else {
                             self.push_diagnostic(
@@ -1093,7 +1123,9 @@ impl<'database> InferenceContext<'database> {
                     .map(|&argument| {
                         (
                             argument,
-                            self.infer_expression(argument, store).unref(self.database),
+                            self.infer_expression(argument, store)
+                            // https://www.w3.org/TR/WGSL/#load-rule
+                            .unref(self.database),
                         )
                     })
                     .collect();
@@ -1178,9 +1210,7 @@ impl<'database> InferenceContext<'database> {
                 self.infer_ident_expression(expression, ident_expression, store)
             },
         };
-
         self.set_expression_type(expression, r#type);
-
         r#type
     }
 
@@ -1290,10 +1320,8 @@ impl<'database> InferenceContext<'database> {
         operation: BinaryOperation,
         store: &ExpressionStore,
     ) -> Type {
-        let left_type = self.infer_expression(left_side, store).unref(self.database);
-        let rhs_type = self
-            .infer_expression(right_side, store)
-            .unref(self.database);
+        let left_type = self.infer_expression(left_side, store);
+        let rhs_type = self.infer_expression(right_side, store);
 
         if left_type.is_err(self.database) || rhs_type.is_err(self.database) {
             return self.error_type();
@@ -1447,9 +1475,10 @@ impl<'database> InferenceContext<'database> {
         }
     }
 
-    fn vec_swizzle(
+    fn infer_vec_swizzle(
         &self,
         vector_type: &VectorType,
+        is_ref: Option<(AddressSpace, AccessMode)>,
         name: &Name,
     ) -> Result<Type, ()> {
         const SWIZZLES: [[char; 4]; 2] = [['x', 'y', 'z', 'w'], ['r', 'g', 'b', 'a']];
@@ -1471,14 +1500,16 @@ impl<'database> InferenceContext<'database> {
                     vector_type.component_type,
                     u8::try_from(name.as_str().len()).unwrap(),
                 );
-                // TODO: check correctness
-                // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/650
-                let result_type =
-                    self.make_ref(r#type, AddressSpace::Function, AccessMode::ReadWrite);
-                return Ok(result_type);
+                if let Some((address_space, access_mode)) = is_ref
+                // proposal to remove this length check: https://github.com/gpuweb/gpuweb/pull/5268
+                    && name.as_str().len() == 1
+                {
+                    return Ok(self.make_ref(r#type, address_space, access_mode));
+                } else {
+                    return Ok(r#type);
+                }
             }
         }
-
         Err(())
     }
 

@@ -22,9 +22,34 @@ fn type_alias_in_struct() {
             63..64 '5': integer
             75..76 'b': u32
             79..80 'a': S
-            79..82 'a.x': ref<private, u32, read_write>
+            79..82 'a.x': u32
             79..88 'a.x + 10u': u32
             85..88 '10u': u32
+        "#]],
+    );
+}
+
+#[test]
+fn ident_expression_infers_ref() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        struct Bar { baz: u32 }
+
+        fn foo() {
+            var in_memory = Bar(5);
+            let value = in_memory.baz + 10u;
+        }
+        ",
+        expect![[r#"
+            44..53 'in_memory': ref<function, Bar, read_write>
+            56..62 'Bar(5)': Bar
+            60..61 '5': integer
+            72..77 'value': u32
+            80..89 'in_memory': ref<function, Bar, read_write>
+            80..93 'in_memory.baz': ref<function, u32, read_write>
+            80..99 'in_mem... + 10u': u32
+            96..99 '10u': u32
         "#]],
     );
 }
