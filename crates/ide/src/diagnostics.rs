@@ -657,6 +657,16 @@ mod tests {
     }
 
     #[test]
+    fn store_type_must_be_storable() {
+        check_diagnostics(
+            "fn foo() { var x = 1; var y = &x; }",
+            expect![[r#"
+                30..32 Error 29: store type must be storable, found ptr<i32>
+            "#]],
+        );
+    }
+
+    #[test]
     fn global_var_function_address_space_error() {
         check_diagnostics(
             "var<function> not_allowed_at_module_level: u32;",

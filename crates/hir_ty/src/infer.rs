@@ -635,12 +635,14 @@ impl<'database> InferenceContext<'database> {
                     r#type,
                     AbstractHandling::Concretize,
                 );
-                if !r#type.kind(self.database).is_storable() {
+                if let Some(initializer_expression) = initializer
+                    && !r#type.kind(self.database).is_storable()
+                {
                     self.push_diagnostic(
                         body.store_source,
                         InferenceDiagnosticKind::StoreTypeMustBeStorable {
                             actual: r#type,
-                            expression: initializer.unwrap(),
+                            expression: *initializer_expression,
                         },
                     );
                 }
