@@ -1214,7 +1214,10 @@ impl<'database> InferenceContext<'database> {
                             reference.inner.kind(self.database) =>
                     {
                         self.make_ref(
-                            matrix_type.inner,
+                            self.database.intern_type(TypeKind::Vector(VectorType {
+                                size: matrix_type.rows,
+                                component_type: matrix_type.inner,
+                            })),
                             reference.address_space,
                             reference.access_mode,
                         )
@@ -1224,7 +1227,10 @@ impl<'database> InferenceContext<'database> {
                             pointer.inner.kind(self.database) =>
                     {
                         self.make_ref(
-                            matrix_type.inner,
+                            self.database.intern_type(TypeKind::Vector(VectorType {
+                                size: matrix_type.rows,
+                                component_type: matrix_type.inner,
+                            })),
                             pointer.address_space,
                             pointer.access_mode,
                         )
