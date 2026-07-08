@@ -1134,7 +1134,6 @@ impl<'database> InferenceContext<'database> {
             Expression::Index { left_side, index } => {
                 let left_side = self.infer_expression(*left_side, store);
                 let left_kind = left_side.kind(self.database);
-                let is_reference = matches!(left_kind, TypeKind::Reference(_));
                 let left_inner = left_kind.unref(self.database);
 
                 let index_type = self.infer_expression(*index, store);
@@ -1181,8 +1180,8 @@ impl<'database> InferenceContext<'database> {
                     },
                 };
 
-                if is_reference {
-                    self.make_ref(r#type, AddressSpace::Private, AccessMode::ReadWrite)
+                if let TypeKind::Reference(reference) = left_kind {
+                    self.make_ref(r#type, reference.address_space, reference.access_mode)
                 } else {
                     r#type
                 }

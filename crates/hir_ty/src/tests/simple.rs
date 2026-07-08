@@ -77,16 +77,16 @@ fn automatic_ptr_dereference() {
             97..103 'mybuff': ref<storage, array<MyData>, read_write>
             130..135 'index': u32
             148..154 'mybuff': ref<storage, array<MyData>, read_write>
-            148..161 'mybuff[index]': ref<private, MyData, read_write>
-            148..167 'mybuff....alpha': ref<private, f32, read_write>
+            148..161 'mybuff[index]': ref<storage, MyData, read_write>
+            148..167 'mybuff....alpha': ref<storage, f32, read_write>
             155..160 'index': u32
             170..173 '1.0': float
-            183..187 'data': ptr<private, MyData, read_write>
-            190..204 '&mybuff[index]': ptr<private, MyData, read_write>
+            183..187 'data': ptr<storage, MyData, read_write>
+            190..204 '&mybuff[index]': ptr<storage, MyData, read_write>
             191..197 'mybuff': ref<storage, array<MyData>, read_write>
-            191..204 'mybuff[index]': ref<private, MyData, read_write>
+            191..204 'mybuff[index]': ref<storage, MyData, read_write>
             198..203 'index': u32
-            210..214 'data': ptr<private, MyData, read_write>
+            210..214 'data': ptr<storage, MyData, read_write>
             210..220 'data.alpha': [error]
             223..226 '1.0': float
             NoSuchField { expression: Idx::<Expression>(9), name: Name("alpha"), type: Type(2c09) } in Body
