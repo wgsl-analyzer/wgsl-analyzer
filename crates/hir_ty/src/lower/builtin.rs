@@ -885,7 +885,7 @@ impl TypeLoweringContext<'_> {
             match template_parameters.next_as_enumerant() {
                 // uniform address space requires the read access mode
                 Ok((
-                    Enumerant::AccessMode(AccessMode::ReadWrite | AccessMode::ReadWrite),
+                    Enumerant::AccessMode(AccessMode::ReadWrite | AccessMode::Write),
                     expression,
                 )) if address_space == AddressSpace::Uniform => {
                     self.diagnostics.push(TypeLoweringError {
@@ -902,7 +902,7 @@ impl TypeLoweringContext<'_> {
                     let error = TypeLoweringError {
                         container: TypeContainer::Expression(expression),
                         kind: TypeLoweringErrorKind::UnexpectedTemplateArgument {
-                            expected: "on of: (read, read_write, write)".to_owned(),
+                            expected: "one of: (read, read_write, write)".to_owned(),
                         },
                     };
                     self.diagnostics.push(error.clone());

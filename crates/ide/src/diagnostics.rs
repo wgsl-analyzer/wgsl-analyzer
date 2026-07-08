@@ -6,8 +6,8 @@ use std::{
 
 use base_db::{EditionedFileId, FileRange, TextRange, TextSize};
 use hir::{
-    HirDatabase, Semantics,
     diagnostics::{AnyDiagnostic, DiagnosticsConfig, NagaVersion},
+    HirDatabase, Semantics,
 };
 use hir_def::original_file_range;
 use hir_ty::ty::{
@@ -38,10 +38,7 @@ pub enum DiagnosticSource {
 }
 
 impl Display for DiagnosticSource {
-    fn fmt(
-        &self,
-        f: &mut std::fmt::Formatter<'_>,
-    ) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::WgslAnalyzer => write!(f, "wgsl-analyzer"),
             Self::Naga => write!(f, "naga"),
@@ -72,11 +69,7 @@ pub enum Severity {
 
 impl Diagnostic {
     #[must_use]
-    pub const fn new(
-        code: DiagnosticCode,
-        message: String,
-        range: TextRange,
-    ) -> Self {
+    pub const fn new(code: DiagnosticCode, message: String, range: TextRange) -> Self {
         Self {
             code,
             message,
@@ -89,10 +82,7 @@ impl Diagnostic {
     }
 
     #[must_use]
-    pub fn with_severity(
-        self,
-        severity: Severity,
-    ) -> Self {
+    pub fn with_severity(self, severity: Severity) -> Self {
         Self { severity, ..self }
     }
 
@@ -123,10 +113,10 @@ mod naga28;
 mod naga29;
 mod naga_main;
 
-use naga_main::NagaMain;
 use naga27::Naga27;
 use naga28::Naga28;
 use naga29::Naga29;
+use naga_main::NagaMain;
 
 fn emit<Error>(
     database: &dyn HirDatabase,
@@ -190,13 +180,13 @@ fn naga_diagnostics<Naga>(
             if let Err(error) = Naga::validate(&module) {
                 emit(database, &error, file_id, full_range, accumulator);
             }
-        },
+        }
         Err(error) => {
             if !config.naga_parsing_errors {
                 return;
             }
             emit(database, &error, file_id, full_range, accumulator);
-        },
+        }
     }
 }
 
@@ -238,16 +228,16 @@ pub fn diagnostics(
         match &config.naga_version {
             NagaVersion::Naga27 => {
                 naga_diagnostics::<Naga27>(database, file_id, config, &mut diagnostics);
-            },
+            }
             NagaVersion::Naga28 => {
                 naga_diagnostics::<Naga28>(database, file_id, config, &mut diagnostics);
-            },
+            }
             NagaVersion::Naga29 => {
                 naga_diagnostics::<Naga29>(database, file_id, config, &mut diagnostics);
-            },
+            }
             NagaVersion::NagaMain => {
                 naga_diagnostics::<NagaMain>(database, file_id, config, &mut diagnostics);
-            },
+            }
         }
     }
 
@@ -620,7 +610,7 @@ fn error_message_cause_chain(error: &dyn error::Error) -> String {
 mod tests {
     use std::fmt::Write as _;
 
-    use expect_test::{Expect, expect};
+    use expect_test::{expect, Expect};
     use hir::diagnostics::DiagnosticsConfig;
     use itertools::Itertools;
 
@@ -628,10 +618,7 @@ mod tests {
 
     #[expect(clippy::needless_pass_by_value, reason = "Matches expect! macro")]
     #[expect(clippy::use_debug, reason = "useful in tests")]
-    fn check_diagnostics(
-        source: &str,
-        expect: Expect,
-    ) {
+    fn check_diagnostics(source: &str, expect: Expect) {
         let (analysis, file_id) = single_file_db(source);
         let config = DiagnosticsConfig {
             enabled: true,
@@ -922,6 +909,183 @@ fn foo() { let _ = 1; }
     @group(0) @binding(0) var textures: binding_array<texture_2d<f32>>;
     ",
             expect![""],
+        );
+    }
+
+    #[test]
+    fn vector_template_type_kind() {
+        check_diagnostics(
+            "
+            const foo = vec2<vec2<f32>>();
+            ",
+            expect![[r#"
+                17..26 Error 14: unexpected template argument, expected a scalar
+            "#]],
+        );
+    }
+
+    #[test]
+    fn matrix_template_type_kind() {
+        check_diagnostics(
+            "
+            const foo = mat2x2<vec2<f32>>();
+            ",
+            expect![[r#"
+                19..28 Error 14: unexpected template argument, expected one of: f32 or f16
+            "#]],
+        );
+    }
+
+    #[test]
+    fn pointer_template_address_space() {
+        check_diagnostics(
+            "
+            fn foo(bar: ptr<read, i32, read>) { }
+            ",
+            expect![[r#"
+                16..20 Error 14: unexpected template argument, expected an address space
+                16..20 Error 14: unexpected template argument, expected an address space
+            "#]],
+        );
+    }
+
+    #[test]
+    fn pointer_template_store_type() {
+        check_diagnostics(
+            "
+            fn foo(bar: ptr<function, ptr<function, i32, read>, read>) { }
+            ",
+            expect![[r#"
+                26..50 Error 14: unexpected template argument, expected a storable type
+            "#]],
+        );
+    }
+
+    #[test]
+    fn pointer_template_uniform() {
+        check_diagnostics(
+            "
+            fn foo1(bar: ptr<uniform, i32, read_write>) { }
+            fn foo2(bar: ptr<uniform, i32, write>) { }
+            ",
+            expect![[r#"
+                31..41 Error 14: unexpected template argument, expected `read` access mode for uniforms
+                79..84 Error 14: unexpected template argument, expected `read` access mode for uniforms
+            "#]],
+        );
+    }
+
+    #[test]
+    fn pointer_template_access_mode() {
+        check_diagnostics(
+            "
+            fn foo(bar: ptr<function, i32, function>) { }
+            ",
+            expect![[r#"
+                31..39 Error 14: unexpected template argument, expected one of: (read, read_write, write)
+                31..39 Error 14: unexpected template argument, expected one of: (read, read_write, write)
+            "#]],
+        );
+    }
+
+    #[test]
+    fn atomic_template_concrete_integer_scalar() {
+        check_diagnostics(
+            "
+            fn foo(bar: atomic<vec2<f32>>) { }
+            ",
+            expect![[r#"
+                19..28 Error 14: unexpected template argument, expected i32, u32, i64, or u64
+            "#]],
+        );
+    }
+
+    #[test]
+    fn texture_sampled_template_type() {
+        check_diagnostics(
+            "
+            fn foo(bar: texture_multisampled_2d<bool>) { }
+            ",
+            expect![[r#"
+                36..40 Error 14: unexpected template argument, expected i32 or u32 or f32
+                36..40 Error 14: unexpected template argument, expected i32 or u32 or f32
+            "#]],
+        );
+    }
+
+    #[test]
+    fn storage_texture_template_type_texel_format() {
+        check_diagnostics(
+            "
+            fn foo(bar: texture_storage_3d<read>) { }
+            ",
+            expect![[r#"
+                31..35 Error 14: unexpected template argument, expected a texel format (`rgba8unorm`, `rgba8snorm`, ...)
+                31..35 Error 14: unexpected template argument, expected a texel format (`rgba8unorm`, `rgba8snorm`, ...)
+            "#]],
+        );
+    }
+
+    #[test]
+    fn storage_texture_template_type_access_mode() {
+        check_diagnostics(
+            "
+            fn foo(bar: texture_storage_3d<rgba8unorm, rgba8unorm>) { }
+            ",
+            expect![[r#"
+                43..53 Error 14: unexpected template argument, expected one of: read, write, read_write
+                43..53 Error 14: unexpected template argument, expected one of: read, write, read_write
+            "#]],
+        );
+    }
+
+    #[test]
+    fn type_expectation() {
+        check_diagnostics(
+            "
+            fn foo(bar: atomic<1>) { }
+            ",
+            expect![[r#"
+                19..20 Error 14: unexpected template argument, expected a type
+            "#]],
+        );
+    }
+
+    #[test]
+    fn instance_expectation() {
+        check_diagnostics(
+            "
+            fn foo(bar: array<i32, i32>) { }
+            ",
+            expect![[r#"
+                23..26 Error 14: unexpected template argument, expected an instance
+                23..26 Error 14: unexpected template argument, expected an instance
+            "#]],
+        );
+    }
+
+    #[test]
+    fn enum_expectation() {
+        check_diagnostics(
+            "
+            fn foo(bar: ptr<1, i32, read>) { }
+            ",
+            expect![[r#"
+                16..17 Error 14: unexpected template argument, expected an enum
+                16..17 Error 14: unexpected template argument, expected an enum
+            "#]],
+        );
+    }
+
+    #[test]
+    fn no_template_expectation() {
+        check_diagnostics(
+            "
+            fn foo(bar: i32<bool>) { }
+            ",
+            expect![[r#"
+                16..20 Error 14: unexpected template argument, expected nothing
+            "#]],
         );
     }
 }
