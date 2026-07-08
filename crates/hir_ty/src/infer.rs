@@ -635,6 +635,18 @@ impl<'database> InferenceContext<'database> {
                     r#type,
                     AbstractHandling::Concretize,
                 );
+                if let Some(initializer_expression) = initializer
+                    && !r#type.kind(self.database).is_storable()
+                    && !r#type.kind(self.database).is_error()
+                {
+                    self.push_diagnostic(
+                        body.store_source,
+                        InferenceDiagnosticKind::StoreTypeMustBeStorable {
+                            actual: r#type,
+                            expression: *initializer_expression,
+                        },
+                    );
+                }
 
                 let (address_space, access_mode) =
                     self.infer_variable_template(template_parameters, body);
@@ -902,9 +914,7 @@ impl<'database> InferenceContext<'database> {
             },
             (Some(r#type), None) => r#type,
             (None, Some(initializer)) => {
-                let r#type = self
-                    .infer_expression(initializer, store)
-                    .unref(self.database);
+                let r#type = self.infer_expression(initializer, store);
                 if abstract_handling == AbstractHandling::Concretize {
                     r#type.concretize(self.database)
                 } else {
@@ -1012,55 +1022,61 @@ impl<'database> InferenceContext<'database> {
                     return self.error_type();
                 }
 
-                match expression_type
-                    .kind(self.database)
-                    .unref(self.database)
-                    .as_ref()
-                {
-                    TypeKind::Struct(r#struct) => {
-                        let struct_data = self.database.struct_data(*r#struct).0;
-                        let field_types = &self.database.field_types(*r#struct).0;
-
-                        if let Some(field) = struct_data.field(name) {
-                            self.set_field_resolution(
-                                expression,
-                                FieldId {
-                                    r#struct: *r#struct,
-                                    field,
-                                },
-                            );
-
-                            let field_type = field_types[field];
-                            // TODO: correct Address Spaces/access mode
-                            // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/650
-                            self.make_ref(field_type, AddressSpace::Private, AccessMode::ReadWrite)
-                        } else {
-                            self.push_diagnostic(
-                                store.store_source,
-                                InferenceDiagnosticKind::NoSuchField {
-                                    expression: *field_expression,
-                                    name: name.clone(),
-                                    r#type: expression_type,
-                                },
-                            );
-                            self.error_type()
-                        }
+                match expression_type.kind(self.database) {
+                    TypeKind::Reference(Reference {
+                        address_space,
+                        inner,
+                        access_mode,
+                    })
+                    | TypeKind::Pointer(Pointer {
+                        address_space,
+                        inner,
+                        access_mode,
+                    }) if let TypeKind::Struct(r#struct) = inner.kind(self.database) => {
+                        let r#type = self.infer_struct_field_expression(
+                            expression,
+                            store,
+                            *field_expression,
+                            name,
+                            expression_type,
+                            r#struct,
+                        );
+                        self.make_ref(r#type, address_space, access_mode)
                     },
-                    TypeKind::Vector(vec_type) => {
-                        if let Ok(r#type) = self.vec_swizzle(vec_type, name) {
-                            r#type
-                        } else {
-                            self.push_diagnostic(
-                                store.store_source,
-                                InferenceDiagnosticKind::NoSuchField {
-                                    expression: *field_expression,
-                                    name: name.clone(),
-                                    r#type: expression_type,
-                                },
-                            );
-                            self.error_type()
-                        }
-                    },
+                    TypeKind::Struct(r#struct) => self.infer_struct_field_expression(
+                        expression,
+                        store,
+                        *field_expression,
+                        name,
+                        expression_type,
+                        r#struct,
+                    ),
+                    TypeKind::Reference(Reference {
+                        address_space,
+                        inner,
+                        access_mode,
+                    })
+                    | TypeKind::Pointer(Pointer {
+                        address_space,
+                        inner,
+                        access_mode,
+                    }) if let TypeKind::Vector(vector_type) = inner.kind(self.database) => self
+                        .infer_vec_swizzle_expression(
+                            store,
+                            *field_expression,
+                            name,
+                            expression_type,
+                            &vector_type,
+                            Some((address_space, access_mode)),
+                        ),
+                    TypeKind::Vector(vector_type) => self.infer_vec_swizzle_expression(
+                        store,
+                        *field_expression,
+                        name,
+                        expression_type,
+                        &vector_type,
+                        None,
+                    ),
                     TypeKind::Error
                     | TypeKind::Scalar(_)
                     | TypeKind::Atomic(_)
@@ -1093,7 +1109,9 @@ impl<'database> InferenceContext<'database> {
                     .map(|&argument| {
                         (
                             argument,
-                            self.infer_expression(argument, store).unref(self.database),
+                            self.infer_expression(argument, store)
+                            // https://www.w3.org/TR/WGSL/#load-rule
+                            .unref(self.database),
                         )
                     })
                     .collect();
@@ -1102,9 +1120,6 @@ impl<'database> InferenceContext<'database> {
             Expression::Index { left_side, index } => {
                 let left_side = self.infer_expression(*left_side, store);
                 let left_kind = left_side.kind(self.database);
-                let is_reference = matches!(left_kind, TypeKind::Reference(_));
-                let left_inner = left_kind.unref(self.database);
-
                 let index_type = self.infer_expression(*index, store);
                 let index_kind = index_type.kind(self.database);
                 let index_inner = index_kind.unref(self.database);
@@ -1118,14 +1133,55 @@ impl<'database> InferenceContext<'database> {
                         },
                     );
                 }
-
-                let r#type = match &*left_inner {
+                match left_kind {
+                    TypeKind::Reference(Reference {
+                        address_space,
+                        inner,
+                        access_mode,
+                    })
+                    | TypeKind::Pointer(Pointer {
+                        address_space,
+                        inner,
+                        access_mode,
+                    }) if let TypeKind::Vector(vec) = inner.kind(self.database) => {
+                        self.make_ref(vec.component_type, address_space, access_mode)
+                    },
                     TypeKind::Vector(vec) => vec.component_type,
+                    TypeKind::Reference(Reference {
+                        address_space,
+                        inner,
+                        access_mode,
+                    })
+                    | TypeKind::Pointer(Pointer {
+                        address_space,
+                        inner,
+                        access_mode,
+                    }) if let TypeKind::Matrix(matrix_type) = inner.kind(self.database) => self
+                        .make_ref(
+                            self.database.intern_type(TypeKind::Vector(VectorType {
+                                size: matrix_type.rows,
+                                component_type: matrix_type.inner,
+                            })),
+                            address_space,
+                            access_mode,
+                        ),
                     TypeKind::Matrix(matrix_type) => {
                         self.database.intern_type(TypeKind::Vector(VectorType {
                             size: matrix_type.rows,
                             component_type: matrix_type.inner,
                         }))
+                    },
+                    TypeKind::Reference(Reference {
+                        address_space,
+                        inner,
+                        access_mode,
+                    })
+                    | TypeKind::Pointer(Pointer {
+                        address_space,
+                        inner,
+                        access_mode,
+                    }) if let TypeKind::Array(array) = inner.kind(self.database) => {
+                        self.make_ref(array.inner, address_space, access_mode)
                     },
                     TypeKind::Array(array) => array.inner,
                     TypeKind::Error
@@ -1147,12 +1203,6 @@ impl<'database> InferenceContext<'database> {
                         );
                         self.error_type()
                     },
-                };
-
-                if is_reference {
-                    self.make_ref(r#type, AddressSpace::Private, AccessMode::ReadWrite)
-                } else {
-                    r#type
                 }
             },
             Expression::Literal(literal) => {
@@ -1178,9 +1228,7 @@ impl<'database> InferenceContext<'database> {
                 self.infer_ident_expression(expression, ident_expression, store)
             },
         };
-
         self.set_expression_type(expression, r#type);
-
         r#type
     }
 
@@ -1290,10 +1338,8 @@ impl<'database> InferenceContext<'database> {
         operation: BinaryOperation,
         store: &ExpressionStore,
     ) -> Type {
-        let left_type = self.infer_expression(left_side, store).unref(self.database);
-        let rhs_type = self
-            .infer_expression(right_side, store)
-            .unref(self.database);
+        let left_type = self.infer_expression(left_side, store);
+        let rhs_type = self.infer_expression(right_side, store);
 
         if left_type.is_err(self.database) || rhs_type.is_err(self.database) {
             return self.error_type();
@@ -1447,17 +1493,29 @@ impl<'database> InferenceContext<'database> {
         }
     }
 
-    fn vec_swizzle(
-        &self,
-        vector_type: &VectorType,
+    fn infer_vec_swizzle_expression(
+        &mut self,
+        store: &ExpressionStore,
+        field_expression: la_arena::Idx<Expression>,
         name: &Name,
-    ) -> Result<Type, ()> {
+        expression_type: Type,
+        vector_type: &VectorType,
+        is_ref: Option<(AddressSpace, AccessMode)>,
+    ) -> Type {
         const SWIZZLES: [[char; 4]; 2] = [['x', 'y', 'z', 'w'], ['r', 'g', 'b', 'a']];
         let max_size = 4;
         let max_swizzle_index = vector_type.size.as_u8();
 
         if name.as_str().len() > max_size {
-            return Err(());
+            self.push_diagnostic(
+                store.store_source,
+                InferenceDiagnosticKind::NoSuchField {
+                    expression: field_expression,
+                    name: name.clone(),
+                    r#type: expression_type,
+                },
+            );
+            return self.error_type();
         }
 
         for swizzle in &SWIZZLES {
@@ -1471,15 +1529,51 @@ impl<'database> InferenceContext<'database> {
                     vector_type.component_type,
                     u8::try_from(name.as_str().len()).unwrap(),
                 );
-                // TODO: check correctness
-                // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/650
-                let result_type =
-                    self.make_ref(r#type, AddressSpace::Function, AccessMode::ReadWrite);
-                return Ok(result_type);
+                if let Some((address_space, access_mode)) = is_ref
+                // proposal to remove this length check: https://github.com/gpuweb/gpuweb/pull/5268
+                    && name.as_str().len() == 1
+                {
+                    return self.make_ref(r#type, address_space, access_mode);
+                }
+                return r#type;
             }
         }
+        self.push_diagnostic(
+            store.store_source,
+            InferenceDiagnosticKind::NoSuchField {
+                expression: field_expression,
+                name: name.clone(),
+                r#type: expression_type,
+            },
+        );
+        self.error_type()
+    }
 
-        Err(())
+    fn infer_struct_field_expression(
+        &mut self,
+        expression: la_arena::Idx<Expression>,
+        store: &ExpressionStore,
+        field_expression: la_arena::Idx<Expression>,
+        name: &Name,
+        expression_type: Type,
+        r#struct: StructId,
+    ) -> Type {
+        let struct_data = self.database.struct_data(r#struct).0;
+        let field_types = &self.database.field_types(r#struct).0;
+        if let Some(field) = struct_data.field(name) {
+            self.set_field_resolution(expression, FieldId { r#struct, field });
+            field_types[field]
+        } else {
+            self.push_diagnostic(
+                store.store_source,
+                InferenceDiagnosticKind::NoSuchField {
+                    expression: field_expression,
+                    name: name.clone(),
+                    r#type: expression_type,
+                },
+            );
+            self.error_type()
+        }
     }
 
     fn call_builtin(
