@@ -1035,7 +1035,7 @@ impl<'database> InferenceContext<'database> {
                         let r#type = self.infer_struct_field_expression(
                             expression,
                             store,
-                            field_expression,
+                            *field_expression,
                             name,
                             expression_type,
                             r#struct,
@@ -1045,7 +1045,7 @@ impl<'database> InferenceContext<'database> {
                     TypeKind::Struct(r#struct) => self.infer_struct_field_expression(
                         expression,
                         store,
-                        field_expression,
+                        *field_expression,
                         name,
                         expression_type,
                         r#struct,
@@ -1059,21 +1059,21 @@ impl<'database> InferenceContext<'database> {
                         address_space,
                         inner,
                         access_mode,
-                    }) if let TypeKind::Vector(vec_type) = inner.kind(self.database) => self
+                    }) if let TypeKind::Vector(vector_type) = inner.kind(self.database) => self
                         .infer_vec_swizzle_expression(
                             store,
-                            field_expression,
+                            *field_expression,
                             name,
                             expression_type,
-                            vec_type,
+                            &vector_type,
                             Some((address_space, access_mode)),
                         ),
-                    TypeKind::Vector(vec_type) => self.infer_vec_swizzle_expression(
+                    TypeKind::Vector(vector_type) => self.infer_vec_swizzle_expression(
                         store,
-                        field_expression,
+                        *field_expression,
                         name,
                         expression_type,
-                        vec_type,
+                        &vector_type,
                         None,
                     ),
                     TypeKind::Error
@@ -1495,10 +1495,10 @@ impl<'database> InferenceContext<'database> {
     fn infer_vec_swizzle_expression(
         &mut self,
         store: &ExpressionStore,
-        field_expression: &la_arena::Idx<Expression>,
+        field_expression: la_arena::Idx<Expression>,
         name: &Name,
         expression_type: Type,
-        vector_type: VectorType,
+        vector_type: &VectorType,
         is_ref: Option<(AddressSpace, AccessMode)>,
     ) -> Type {
         const SWIZZLES: [[char; 4]; 2] = [['x', 'y', 'z', 'w'], ['r', 'g', 'b', 'a']];
@@ -1509,7 +1509,7 @@ impl<'database> InferenceContext<'database> {
             self.push_diagnostic(
                 store.store_source,
                 InferenceDiagnosticKind::NoSuchField {
-                    expression: *field_expression,
+                    expression: field_expression,
                     name: name.clone(),
                     r#type: expression_type,
                 },
@@ -1540,7 +1540,7 @@ impl<'database> InferenceContext<'database> {
         self.push_diagnostic(
             store.store_source,
             InferenceDiagnosticKind::NoSuchField {
-                expression: *field_expression,
+                expression: field_expression,
                 name: name.clone(),
                 r#type: expression_type,
             },
@@ -1552,7 +1552,7 @@ impl<'database> InferenceContext<'database> {
         &mut self,
         expression: la_arena::Idx<Expression>,
         store: &ExpressionStore,
-        field_expression: &la_arena::Idx<Expression>,
+        field_expression: la_arena::Idx<Expression>,
         name: &Name,
         expression_type: Type,
         r#struct: StructId,
@@ -1566,7 +1566,7 @@ impl<'database> InferenceContext<'database> {
             self.push_diagnostic(
                 store.store_source,
                 InferenceDiagnosticKind::NoSuchField {
-                    expression: *field_expression,
+                    expression: field_expression,
                     name: name.clone(),
                     r#type: expression_type,
                 },
