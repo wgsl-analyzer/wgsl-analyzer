@@ -92,6 +92,7 @@ fn automatic_ptr_dereference() {
         "#]],
     );
 }
+
 #[test]
 fn ptr_deref_is_ref() {
     check_infer(
@@ -114,6 +115,53 @@ fn ptr_deref_is_ref() {
             55..56 'p': ptr<function, vec2<i32>, read_write>
             55..58 'p.x': ref<function, i32, read_write>
             61..62 '2': integer
+        "#]],
+    );
+}
+
+#[test]
+fn vec_x_is_ref() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        fn foo() {
+            var v = vec2(1, 2);
+            v.x = v.y;
+        }
+        ",
+        expect![[r#"
+            19..20 'v': ref<function, vec2<i32>, read_write>
+            23..33 'vec2(1, 2)': vec2<integer>
+            28..29 '1': integer
+            31..32 '2': integer
+            39..40 'v': ref<function, vec2<i32>, read_write>
+            39..42 'v.x': ref<function, i32, read_write>
+            45..46 'v': ref<function, vec2<i32>, read_write>
+            45..48 'v.y': ref<function, i32, read_write>
+        "#]],
+    );
+}
+
+#[test]
+fn vec_xy_is_not_ref() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        fn foo() {
+            var v = vec2(1, 2);
+            v.xy = v.yx;
+        }
+        ",
+        expect![[r#"
+            19..20 'v': ref<function, vec2<i32>, read_write>
+            23..33 'vec2(1, 2)': vec2<integer>
+            28..29 '1': integer
+            31..32 '2': integer
+            39..40 'v': ref<function, vec2<i32>, read_write>
+            39..43 'v.xy': vec2<i32>
+            46..47 'v': ref<function, vec2<i32>, read_write>
+            46..50 'v.yx': vec2<i32>
+            AssignmentNotAReference { left_side: Idx::<Expression>(4), actual: Type(2407) } in Body
         "#]],
     );
 }
