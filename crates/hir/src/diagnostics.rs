@@ -122,7 +122,7 @@ pub enum AnyDiagnostic {
         expression: InFile<AstPointer<ast::Expression>>,
         actual: Type,
     },
-    DerefNotPointer {
+    DerefNotAPointer {
         expression: InFile<AstPointer<ast::Expression>>,
         actual: Type,
     },
@@ -197,7 +197,7 @@ impl AnyDiagnostic {
             | Self::NoBuiltinOverload { expression, .. }
             | Self::StoreTypeMustBeStorable { expression, .. }
             | Self::AddressOfNotReference { expression, .. }
-            | Self::DerefNotPointer { expression, .. }
+            | Self::DerefNotAPointer { expression, .. }
             | Self::NoConstructor { expression, .. }
             | Self::PrecedenceParensRequired { expression, .. }
             | Self::UnexpectedTemplateArgument { expression, .. }
@@ -348,7 +348,7 @@ pub(crate) fn any_diag_from_infer_diagnostic(
             let pointer = source_map.expression_to_source(*expression).ok()?.clone();
             let source = InFile::new(file_id, pointer);
 
-            AnyDiagnostic::DerefNotPointer {
+            AnyDiagnostic::DerefNotAPointer {
                 expression: source,
                 actual: *actual,
             }

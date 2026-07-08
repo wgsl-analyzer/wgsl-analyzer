@@ -1678,3 +1678,54 @@ fn foo(bar: i64, baz: u64) {}
         "#]],
     );
 }
+
+#[test]
+fn no_builtin_overload() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        var x = 1f + mat2x2f();
+        ",
+        expect![[r#"
+            4..5 'x': ref<handle, [error], read>
+            8..10 '1f': f32
+            8..22 '1f + mat2x2f()': [error]
+            13..22 'mat2x2f()': mat2x2<f32>
+            NoBuiltinOverload { expression: Idx::<Expression>(2), builtin: BuiltinId(2c00), name: Some("+"), parameters: [Type(2401), Type(2402)] } in Body
+        "#]],
+    );
+}
+
+#[test]
+fn deref_not_a_pointer() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        var x = *1f;
+        ",
+        expect![[r#"
+            4..5 'x': ref<handle, [error], read>
+            8..11 '*1f': [error]
+            9..11 '1f': f32
+            DerefNotAPointer { expression: Idx::<Expression>(0), actual: Type(2401) } in Body
+        "#]],
+    );
+}
+
+#[test]
+fn no_constructor() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        var x = vec2f(1, 2, 3);
+        ",
+        expect![[r#"
+            4..5 'x': ref<handle, [error], read>
+            8..22 'vec2f(1, 2, 3)': [error]
+            14..15 '1': integer
+            17..18 '2': integer
+            20..21 '3': integer
+            NoConstructor { expression: Idx::<Expression>(3), builtins: BuiltinId(2c00), type: Type(2403), parameters: [Type(2401), Type(2401), Type(2401)] } in Body
+        "#]],
+    );
+}

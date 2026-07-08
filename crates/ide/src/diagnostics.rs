@@ -381,7 +381,7 @@ pub fn diagnostics(
                         frange.range,
                     )
                 },
-                AnyDiagnostic::DerefNotPointer { expression, actual } => {
+                AnyDiagnostic::DerefNotAPointer { expression, actual } => {
                     let source = expression.value.to_node(&root);
                     let r#type = ty::pretty::pretty_type(database, actual);
                     let frange = original_file_range(database, expression.file_id, source.syntax());
