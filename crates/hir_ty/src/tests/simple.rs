@@ -162,6 +162,25 @@ fn vec_field_is_not_ref() {
 }
 
 #[test]
+fn struct_field_is_not_ref() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        struct Bar { baz: u32 }
+        fn foo() {
+            let not_ref = Bar(0).baz;
+        }
+        ",
+        expect![[r#"
+            43..50 'not_ref': u32
+            53..59 'Bar(0)': Bar
+            53..63 'Bar(0).baz': u32
+            57..58 '0': integer
+        "#]],
+    );
+}
+
+#[test]
 /// https://www.w3.org/TR/WGSL/#example-5aaac12b
 fn component_reference_from_a_composite_reference() {
     check_infer(
