@@ -763,7 +763,7 @@ impl TypeLoweringContext<'_> {
                     let error = TypeLoweringError {
                         container: TypeContainer::Expression(expression),
                         kind: TypeLoweringErrorKind::UnexpectedTemplateArgument {
-                            expected: "a `u32` or a `i32` greater than `0`".to_owned(),
+                            expected: "a `u32` or an `i32` greater than `0`".to_owned(),
                             // actual:
                         },
                     };

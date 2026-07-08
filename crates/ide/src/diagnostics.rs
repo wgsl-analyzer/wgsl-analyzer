@@ -803,8 +803,8 @@ fn __my_func() {}
             }
             ",
             expect![[r#"
-                76..87 Error 14: unexpected template argument, expected a `u32` or a `i32` greater than `0`
-                76..87 Error 14: unexpected template argument, expected a `u32` or a `i32` greater than `0`
+                76..87 Error 14: unexpected template argument, expected a `u32` or an `i32` greater than `0`
+                76..87 Error 14: unexpected template argument, expected a `u32` or an `i32` greater than `0`
             "#]],
         );
     }
@@ -819,8 +819,8 @@ fn __my_func() {}
             ",
             expect![[r#"
                 11..17 Error 4: cannot index into type [error]
-                41..49 Error 14: unexpected template argument, expected a `u32` or a `i32` greater than `0`
-                41..49 Error 14: unexpected template argument, expected a `u32` or a `i32` greater than `0`
+                41..49 Error 14: unexpected template argument, expected a `u32` or an `i32` greater than `0`
+                41..49 Error 14: unexpected template argument, expected a `u32` or an `i32` greater than `0`
             "#]],
         );
     }

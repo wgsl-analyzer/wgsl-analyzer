@@ -890,8 +890,8 @@ fn const_u32_as_array_size() {
             6..15 'maxLayers': u32
             18..21 '12u': u32
             27..33 'layers': ref<handle, [error], read>
-            40..56 '<f32, ...ayers>': unexpected template argument, expected: a `u32` or a `i32` greater than `0`
-            40..56 '<f32, ...ayers>': unexpected template argument, expected: a `u32` or a `i32` greater than `0`
+            40..56 '<f32, ...ayers>': unexpected template argument, expected: a `u32` or an `i32` greater than `0`
+            40..56 '<f32, ...ayers>': unexpected template argument, expected: a `u32` or an `i32` greater than `0`
         "#]],
     );
 }
@@ -1876,8 +1876,8 @@ fn array_template_const_expressions() {
             34..45 'local_const': integer
             48..49 '2': integer
             59..63 'arr2': ref<function, [error], read_write>
-            70..88 '<f32, ...const>': unexpected template argument, expected: a `u32` or a `i32` greater than `0`
-            70..88 '<f32, ...const>': unexpected template argument, expected: a `u32` or a `i32` greater than `0`
+            70..88 '<f32, ...const>': unexpected template argument, expected: a `u32` or an `i32` greater than `0`
+            70..88 '<f32, ...const>': unexpected template argument, expected: a `u32` or an `i32` greater than `0`
         "#]],
     );
 }
@@ -1901,8 +1901,8 @@ fn array_template_const_expressions_hoisting() {
             53..64 'array(1, 2)': array<integer, 2>
             59..60 '1': integer
             62..63 '2': integer
-            35..50 '<u32, abs(-c2)>': unexpected template argument, expected: a `u32` or a `i32` greater than `0`
-            35..50 '<u32, abs(-c2)>': unexpected template argument, expected: a `u32` or a `i32` greater than `0`
+            35..50 '<u32, abs(-c2)>': unexpected template argument, expected: a `u32` or an `i32` greater than `0`
+            35..50 '<u32, abs(-c2)>': unexpected template argument, expected: a `u32` or an `i32` greater than `0`
             72..74 'c2': integer
             77..78 '2': integer
         "#]],
