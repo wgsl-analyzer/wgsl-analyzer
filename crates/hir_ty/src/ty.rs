@@ -163,32 +163,6 @@ impl TypeKind {
         }
     }
 
-    // Dereferencing a pointer returns a reference.
-    pub fn dereference(
-        &self,
-        database: &dyn HirDatabase,
-    ) -> Cow<'_, Self> {
-        match self {
-            Self::Pointer(reference) => Cow::Owned(Self::Reference(Reference {
-                address_space: reference.address_space,
-                inner: reference.inner,
-                access_mode: reference.access_mode,
-            })),
-            Self::Error
-            | Self::Scalar(_)
-            | Self::Atomic(_)
-            | Self::Vector(_)
-            | Self::Matrix(_)
-            | Self::Struct(_)
-            | Self::Array(_)
-            | Self::Texture(_)
-            | Self::Sampler(_)
-            | Self::Reference(_)
-            | Self::BoundVariable(_)
-            | Self::StorageTypeOfTexelFormat(_) => Cow::Borrowed(self),
-        }
-    }
-
     /// Abstract types will be mapped to the corresponding default concrete type.
     pub fn concretize(
         &self,
