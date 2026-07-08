@@ -163,6 +163,7 @@ impl TypeKind {
         }
     }
 
+    /// Abstract types will be mapped to the corresponding default concrete type.
     pub fn concretize(
         &self,
         database: &dyn HirDatabase,
