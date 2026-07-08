@@ -794,6 +794,52 @@ fn __my_func() {}
     }
 
     #[test]
+    fn array_template_const_expressions() {
+        check_diagnostics(
+            "
+            fn test_local_const() {
+                const local_const = 2;
+                var arr2: array<f32, local_const>;
+            }
+            ",
+            expect![[r#"
+                76..87 Error 14: unexpected template argument, expected a `u32` or a `i32` greater than `0`
+                76..87 Error 14: unexpected template argument, expected a `u32` or a `i32` greater than `0`
+            "#]],
+        );
+    }
+
+    #[test]
+    fn array_template_const_expressions_hoisting() {
+        check_diagnostics(
+            "
+            const c1 = arr[0];
+            const arr: array<u32, abs(-c2)> = array(1, 2);
+            const c2 = 2;
+            ",
+            expect![[r#"
+                11..17 Error 4: cannot index into type [error]
+                41..49 Error 14: unexpected template argument, expected a `u32` or a `i32` greater than `0`
+                41..49 Error 14: unexpected template argument, expected a `u32` or a `i32` greater than `0`
+            "#]],
+        );
+    }
+
+    #[test]
+    fn array_template_const_expressions_cyclic() {
+        check_diagnostics(
+            "
+            const a = b;
+            const b = a;
+            ",
+            expect![[r#"
+                0..12 Error 20: cyclic type a
+                13..25 Error 20: cyclic type b
+            "#]],
+        );
+    }
+
+    #[test]
     fn non_reserved_identifier_single_underscore() {
         // A single underscore prefix should NOT trigger the reserved identifier diagnostic.
         check_diagnostics(
