@@ -1,7 +1,7 @@
 {
 	"scopeName": "markdown.wgsl.codeblock",
-	"fileTypes": ["md"],
-	"injectionSelector": "L:text.html.markdown",
+	"fileTypes": ["md", "mdx"],
+	"injectionSelector": "L:text.html.markdown, L:source.mdx",
 	"patterns": [{ "include": "#fenced_code_block_wgsl" }],
 	"repository": {
 		"fenced_code_block_wgsl": {
