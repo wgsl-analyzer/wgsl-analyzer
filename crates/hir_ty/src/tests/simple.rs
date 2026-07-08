@@ -429,8 +429,8 @@ fn address_of_not_reference() {
 }
 
 #[test]
-/// https://www.w3.org/TR/WGSL/#example-5aaac12b
 fn component_reference_from_a_composite_reference() {
+    // From example in spec: <https://www.w3.org/TR/WGSL/#example-5aaac12b>
     check_infer(
         ExtensionsConfig::default(),
         "

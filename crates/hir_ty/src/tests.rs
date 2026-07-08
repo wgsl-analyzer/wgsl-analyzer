@@ -246,7 +246,7 @@ impl<'db> InferPrinter<'db> {
                     "{range:?} '{}': no such field `{}` on type `{}`",
                     ellipsize(text, 15),
                     name.as_str(),
-                    pretty_type_with_verbosity(self.database, r#type.clone(), TypeVerbosity::Full),
+                    pretty_type_with_verbosity(self.database, *r#type, TypeVerbosity::Full),
                 )
                 .unwrap();
             },
@@ -263,7 +263,7 @@ impl<'db> InferPrinter<'db> {
                     buffer,
                     "{range:?} '{}': expected storable type but got `{}`",
                     ellipsize(text, 15),
-                    pretty_type_with_verbosity(self.database, actual.clone(), TypeVerbosity::Full),
+                    pretty_type_with_verbosity(self.database, *actual, TypeVerbosity::Full),
                 )
                 .unwrap();
             },
