@@ -238,9 +238,9 @@ fn no_such_field_on_struct_ref() {
             43..46 'bar': ref<function, Bar, read_write>
             49..55 'Bar(0)': Bar
             53..54 '0': integer
-            65..67 'xx': [error]
+            65..67 'xx': ref<function, [error], read_write>
             70..73 'bar': ref<function, Bar, read_write>
-            70..81 'bar.bazzzzz': [error]
+            70..81 'bar.bazzzzz': ref<function, [error], read_write>
             70..81 'bar.bazzzzz': no such field `bazzzzz` on type `ref<function, Bar, read_write>`
         "#]],
     );
@@ -265,9 +265,9 @@ fn no_such_field_on_struct_ptr() {
             65..72 'bar_ptr': ptr<function, Bar, read_write>
             75..79 '&bar': ptr<function, Bar, read_write>
             76..79 'bar': ref<function, Bar, read_write>
-            89..90 'x': [error]
+            89..90 'x': ref<function, [error], read_write>
             93..100 'bar_ptr': ptr<function, Bar, read_write>
-            93..106 'bar_ptr.bazzz': [error]
+            93..106 'bar_ptr.bazzz': ref<function, [error], read_write>
             93..106 'bar_ptr.bazzz': no such field `bazzz` on type `ptr<function, Bar, read_write>`
         "#]],
     );
