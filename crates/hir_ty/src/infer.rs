@@ -635,6 +635,15 @@ impl<'database> InferenceContext<'database> {
                     r#type,
                     AbstractHandling::Concretize,
                 );
+                if !r#type.kind(self.database).is_storable() {
+                    self.push_diagnostic(
+                        body.store_source,
+                        InferenceDiagnosticKind::StoreTypeMustBeStorable {
+                            actual: r#type,
+                            expression: initializer.unwrap(),
+                        },
+                    );
+                }
 
                 let (address_space, access_mode) =
                     self.infer_variable_template(template_parameters, body);

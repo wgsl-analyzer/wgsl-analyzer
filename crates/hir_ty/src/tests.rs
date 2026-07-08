@@ -220,6 +220,7 @@ impl<'db> InferPrinter<'db> {
             | InferenceDiagnosticKind::NoBuiltinOverload { .. }
             | InferenceDiagnosticKind::NoConstructor { .. }
             | InferenceDiagnosticKind::AddressOfNotReference { .. }
+            | InferenceDiagnosticKind::AddressOfNotReference { .. }
             | InferenceDiagnosticKind::DerefNotAPointer { .. }
             | InferenceDiagnosticKind::InvalidType { .. }
             | InferenceDiagnosticKind::CyclicType { .. }
@@ -227,6 +228,23 @@ impl<'db> InferPrinter<'db> {
             | InferenceDiagnosticKind::WgslError { .. }
             | InferenceDiagnosticKind::ExpectedLoweredKind { .. } => {
                 writeln!(buffer, "{:?} in {:?}", diagnostic.kind, diagnostic.source).unwrap();
+            },
+            InferenceDiagnosticKind::StoreTypeMustBeStorable { actual, expression } => {
+                let node = match source_map.expression_to_source(*expression) {
+                    Ok(sp) => sp.to_node(&self.root).syntax().clone(),
+                    Err(SyntheticSyntax) => return,
+                };
+                let (range, text) = (
+                    node.text_range(),
+                    node.text().to_string().replace('\n', " "),
+                );
+                writeln!(
+                    buffer,
+                    "{range:?} '{}': expected storable type but got `{}`",
+                    ellipsize(text, 15),
+                    pretty_type_with_verbosity(self.database, actual.clone(), TypeVerbosity::Full),
+                )
+                .unwrap();
             },
         }
     }

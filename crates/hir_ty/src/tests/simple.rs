@@ -230,7 +230,7 @@ fn no_such_field_on_struct_ref() {
         "
         struct Bar { baz: u32 }
         fn foo() {
-            var bar = Bar(0)
+            var bar = Bar(0);
             let xx = bar.bazzzzz;
         }
         ",
@@ -238,10 +238,54 @@ fn no_such_field_on_struct_ref() {
             43..46 'bar': ref<function, Bar, read_write>
             49..55 'Bar(0)': Bar
             53..54 '0': integer
-            64..66 'xx': [error]
-            69..72 'bar': ref<function, Bar, read_write>
-            69..80 'bar.bazzzzz': [error]
+            65..67 'xx': [error]
+            70..73 'bar': ref<function, Bar, read_write>
+            70..81 'bar.bazzzzz': [error]
             NoSuchField { expression: Idx::<Expression>(2), name: Name("bazzzzz"), type: Type(2804) } in Body
+        "#]],
+    );
+}
+
+#[test]
+fn no_such_field_on_struct_ptr() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        struct Bar { baz: u32 }
+        fn foo() {
+            var bar = Bar(0);
+            var bar_ptr = &bar;
+        }
+        ",
+        expect![[r#"
+            43..46 'bar': ref<function, Bar, read_write>
+            49..55 'Bar(0)': Bar
+            53..54 '0': integer
+            65..72 'bar_ptr': ref<function, ptr<function, Bar, read_write>, read_write>
+            75..79 '&bar': ptr<function, Bar, read_write>
+            76..79 'bar': ref<function, Bar, read_write>
+            store type must be storable, but received `ptr<function, Bar, read_write>`
+        "#]],
+    );
+}
+
+#[test]
+fn store_type_must_be_storable() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        fn foo() {
+            var bar = 1;
+            var bar_ptr = &bar;
+        }
+        ",
+        expect![[r#"
+            19..22 'bar': ref<function, i32, read_write>
+            25..26 '1': integer
+            36..43 'bar_ptr': ref<function, ptr<function, i32, read_write>, read_write>
+            46..50 '&bar': ptr<function, i32, read_write>
+            47..50 'bar': ref<function, i32, read_write>
+            46..50 '&bar': expected storable type but got `ptr<function, i32, read_write>`
         "#]],
     );
 }

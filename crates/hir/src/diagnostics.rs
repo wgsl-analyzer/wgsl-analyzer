@@ -118,6 +118,10 @@ pub enum AnyDiagnostic {
         expression: InFile<AstPointer<ast::Expression>>,
         actual: Type,
     },
+    StoreTypeMustBeStorable {
+        expression: InFile<AstPointer<ast::Expression>>,
+        actual: Type,
+    },
     DerefNotPointer {
         expression: InFile<AstPointer<ast::Expression>>,
         actual: Type,
@@ -191,6 +195,7 @@ impl AnyDiagnostic {
             | Self::InvalidConstructionType { expression, .. }
             | Self::FunctionCallArgCountMismatch { expression, .. }
             | Self::NoBuiltinOverload { expression, .. }
+            | Self::StoreTypeMustBeStorable { expression, .. }
             | Self::AddressOfNotReference { expression, .. }
             | Self::DerefNotPointer { expression, .. }
             | Self::NoConstructor { expression, .. }
@@ -405,6 +410,14 @@ pub(crate) fn any_diag_from_infer_diagnostic(
                 expression: source,
                 path: path.clone(),
                 expected: *expected,
+                actual: *actual,
+            }
+        },
+        InferenceDiagnosticKind::StoreTypeMustBeStorable { actual, expression } => {
+            let pointer = source_map.expression_to_source(*expression).ok()?.clone();
+            let source = InFile::new(file_id, pointer);
+            AnyDiagnostic::StoreTypeMustBeStorable {
+                expression: source,
                 actual: *actual,
             }
         },

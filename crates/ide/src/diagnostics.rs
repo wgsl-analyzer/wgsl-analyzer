@@ -577,6 +577,16 @@ More complex operands must be this with parenthesized `()`"
                         frange.range,
                     )
                 },
+                AnyDiagnostic::StoreTypeMustBeStorable { expression, actual } => {
+                    let source = expression.value.to_node(&root);
+                    let r#type = ty::pretty::pretty_type(database, actual);
+                    let frange = original_file_range(database, expression.file_id, source.syntax());
+                    Diagnostic::new(
+                        DiagnosticCode("29"),
+                        format!("store type must be storable, found {type}"),
+                        frange.range,
+                    )
+                },
             }
         })
         .collect()

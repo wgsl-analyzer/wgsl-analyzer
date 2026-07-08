@@ -70,6 +70,10 @@ pub enum InferenceDiagnosticKind {
         expression: ExpressionId,
         actual: Type,
     },
+    StoreTypeMustBeStorable {
+        expression: ExpressionId,
+        actual: Type,
+    },
     InvalidType {
         error: TypeLoweringError,
     },
