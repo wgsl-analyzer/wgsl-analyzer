@@ -254,17 +254,21 @@ fn no_such_field_on_struct_ptr() {
         struct Bar { baz: u32 }
         fn foo() {
             var bar = Bar(0);
-            var bar_ptr = &bar;
+            let bar_ptr = &bar;
+            let x = bar_ptr.bazzz;
         }
         ",
         expect![[r#"
             43..46 'bar': ref<function, Bar, read_write>
             49..55 'Bar(0)': Bar
             53..54 '0': integer
-            65..72 'bar_ptr': ref<function, ptr<function, Bar, read_write>, read_write>
+            65..72 'bar_ptr': ptr<function, Bar, read_write>
             75..79 '&bar': ptr<function, Bar, read_write>
             76..79 'bar': ref<function, Bar, read_write>
-            store type must be storable, but received `ptr<function, Bar, read_write>`
+            89..90 'x': [error]
+            93..100 'bar_ptr': ptr<function, Bar, read_write>
+            93..106 'bar_ptr.bazzz': [error]
+            NoSuchField { expression: Idx::<Expression>(4), name: Name("bazzz"), type: Type(2805) } in Body
         "#]],
     );
 }
