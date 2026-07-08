@@ -212,7 +212,6 @@ impl<'db> InferPrinter<'db> {
                 .unwrap();
             },
             InferenceDiagnosticKind::AssignmentNotAReference { .. }
-            | InferenceDiagnosticKind::NoSuchField { .. }
             | InferenceDiagnosticKind::ArrayAccessInvalidType { .. }
             | InferenceDiagnosticKind::UnresolvedName { .. }
             | InferenceDiagnosticKind::InvalidConstructionType { .. }
@@ -228,6 +227,28 @@ impl<'db> InferPrinter<'db> {
             | InferenceDiagnosticKind::WgslError { .. }
             | InferenceDiagnosticKind::ExpectedLoweredKind { .. } => {
                 writeln!(buffer, "{:?} in {:?}", diagnostic.kind, diagnostic.source).unwrap();
+            },
+            InferenceDiagnosticKind::NoSuchField {
+                expression,
+                name,
+                r#type,
+            } => {
+                let node = match source_map.expression_to_source(*expression) {
+                    Ok(sp) => sp.to_node(&self.root).syntax().clone(),
+                    Err(SyntheticSyntax) => return,
+                };
+                let (range, text) = (
+                    node.parent().unwrap().text_range(),
+                    node.parent().unwrap().text().to_string().replace('\n', " "),
+                );
+                writeln!(
+                    buffer,
+                    "{range:?} '{}': no such field `{}` on type `{}`",
+                    ellipsize(text, 15),
+                    name.as_str(),
+                    pretty_type_with_verbosity(self.database, r#type.clone(), TypeVerbosity::Full),
+                )
+                .unwrap();
             },
             InferenceDiagnosticKind::StoreTypeMustBeStorable { actual, expression } => {
                 let node = match source_map.expression_to_source(*expression) {

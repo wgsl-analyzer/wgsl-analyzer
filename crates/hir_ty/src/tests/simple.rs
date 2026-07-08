@@ -241,7 +241,7 @@ fn no_such_field_on_struct_ref() {
             65..67 'xx': [error]
             70..73 'bar': ref<function, Bar, read_write>
             70..81 'bar.bazzzzz': [error]
-            NoSuchField { expression: Idx::<Expression>(2), name: Name("bazzzzz"), type: Type(2804) } in Body
+            70..81 'bar.bazzzzz': no such field `bazzzzz` on type `ref<function, Bar, read_write>`
         "#]],
     );
 }
@@ -268,7 +268,7 @@ fn no_such_field_on_struct_ptr() {
             89..90 'x': [error]
             93..100 'bar_ptr': ptr<function, Bar, read_write>
             93..106 'bar_ptr.bazzz': [error]
-            NoSuchField { expression: Idx::<Expression>(4), name: Name("bazzz"), type: Type(2805) } in Body
+            93..106 'bar_ptr.bazzz': no such field `bazzz` on type `ptr<function, Bar, read_write>`
         "#]],
     );
 }
@@ -309,7 +309,7 @@ fn no_such_field_on_struct() {
             48..54 'Bar(0)': Bar
             48..62 'Bar(0).bazzzzz': [error]
             52..53 '0': integer
-            NoSuchField { expression: Idx::<Expression>(1), name: Name("bazzzzz"), type: Type(2803) } in Body
+            48..62 'Bar(0).bazzzzz': no such field `bazzzzz` on type `Bar`
         "#]],
     );
 }
@@ -329,7 +329,7 @@ fn no_such_field_on_vec() {
             25..39 'vec2(0, 0).xyz': [error]
             30..31 '0': integer
             33..34 '0': integer
-            NoSuchField { expression: Idx::<Expression>(2), name: Name("xyz"), type: Type(2405) } in Body
+            25..39 'vec2(0, 0).xyz': no such field `xyz` on type `vec2<integer>`
         "#]],
     );
 }
@@ -352,7 +352,7 @@ fn no_such_field_on_vec_ref() {
             43..46 'xyz': [error]
             49..50 'v': ref<function, vec2<i32>, read_write>
             49..54 'v.xyz': [error]
-            NoSuchField { expression: Idx::<Expression>(3), name: Name("xyz"), type: Type(2408) } in Body
+            49..54 'v.xyz': no such field `xyz` on type `ref<function, vec2<i32>, read_write>`
         "#]],
     );
 }
@@ -379,7 +379,7 @@ fn no_such_field_on_vec_ptr() {
             63..66 'xyz': [error]
             69..74 'v_ptr': ptr<function, vec2<i32>, read_write>
             69..78 'v_ptr.xyz': [error]
-            NoSuchField { expression: Idx::<Expression>(5), name: Name("xyz"), type: Type(2409) } in Body
+            69..78 'v_ptr.xyz': no such field `xyz` on type `ptr<function, vec2<i32>, read_write>`
         "#]],
     );
 }
@@ -402,7 +402,7 @@ fn zero_swizzle_vec() {
             43..44 'x': [error]
             47..48 'v': vec2<i32>
             47..49 'v.': [error]
-            NoSuchField { expression: Idx::<Expression>(3), name: Name("[missing name]"), type: Type(2407) } in Body
+            47..49 'v.': no such field `[missing name]` on type `vec2<i32>`
         "#]],
     );
 }
