@@ -1036,6 +1036,27 @@ impl<'database> InferenceContext<'database> {
                             self.error_type()
                         }
                     },
+                    TypeKind::Pointer(pointer)
+                        if let TypeKind::Struct(r#struct) = pointer.inner.kind(self.database) =>
+                    {
+                        let struct_data = self.database.struct_data(r#struct).0;
+                        let field_types = &self.database.field_types(r#struct).0;
+                        if let Some(field) = struct_data.field(name) {
+                            self.set_field_resolution(expression, FieldId { r#struct, field });
+                            let field_type = field_types[field];
+                            self.make_ref(field_type, pointer.address_space, pointer.access_mode)
+                        } else {
+                            self.push_diagnostic(
+                                store.store_source,
+                                InferenceDiagnosticKind::NoSuchField {
+                                    expression: *field_expression,
+                                    name: name.clone(),
+                                    r#type: expression_type,
+                                },
+                            );
+                            self.error_type()
+                        }
+                    },
                     TypeKind::Struct(r#struct) => {
                         let struct_data = self.database.struct_data(r#struct).0;
                         let field_types = &self.database.field_types(r#struct).0;
@@ -1061,6 +1082,27 @@ impl<'database> InferenceContext<'database> {
                         if let Ok(r#type) = self.infer_vec_swizzle(
                             &vec_type,
                             Some((reference.address_space, reference.access_mode)),
+                            name,
+                        ) {
+                            r#type
+                        } else {
+                            self.push_diagnostic(
+                                store.store_source,
+                                InferenceDiagnosticKind::NoSuchField {
+                                    expression: *field_expression,
+                                    name: name.clone(),
+                                    r#type: expression_type,
+                                },
+                            );
+                            self.error_type()
+                        }
+                    },
+                    TypeKind::Pointer(pointer)
+                        if let TypeKind::Vector(vec_type) = pointer.inner.kind(self.database) =>
+                    {
+                        if let Ok(r#type) = self.infer_vec_swizzle(
+                            &vec_type,
+                            Some((pointer.address_space, pointer.access_mode)),
                             name,
                         ) {
                             r#type
@@ -1157,6 +1199,15 @@ impl<'database> InferenceContext<'database> {
                             reference.access_mode,
                         )
                     },
+                    TypeKind::Pointer(pointer)
+                        if let TypeKind::Vector(vec) = pointer.inner.kind(self.database) =>
+                    {
+                        self.make_ref(
+                            vec.component_type,
+                            pointer.address_space,
+                            pointer.access_mode,
+                        )
+                    },
                     TypeKind::Vector(vec) => vec.component_type,
                     TypeKind::Reference(reference)
                         if let TypeKind::Matrix(matrix_type) =
@@ -1166,6 +1217,16 @@ impl<'database> InferenceContext<'database> {
                             matrix_type.inner,
                             reference.address_space,
                             reference.access_mode,
+                        )
+                    },
+                    TypeKind::Pointer(pointer)
+                        if let TypeKind::Matrix(matrix_type) =
+                            pointer.inner.kind(self.database) =>
+                    {
+                        self.make_ref(
+                            matrix_type.inner,
+                            pointer.address_space,
+                            pointer.access_mode,
                         )
                     },
                     TypeKind::Matrix(matrix_type) => {
@@ -1178,6 +1239,11 @@ impl<'database> InferenceContext<'database> {
                         if let TypeKind::Array(array) = reference.inner.kind(self.database) =>
                     {
                         self.make_ref(array.inner, reference.address_space, reference.access_mode)
+                    },
+                    TypeKind::Pointer(pointer)
+                        if let TypeKind::Array(array) = pointer.inner.kind(self.database) =>
+                    {
+                        self.make_ref(array.inner, pointer.address_space, pointer.access_mode)
                     },
                     TypeKind::Array(array) => array.inner,
                     TypeKind::Error

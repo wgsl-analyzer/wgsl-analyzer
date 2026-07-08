@@ -87,10 +87,8 @@ fn automatic_ptr_dereference() {
             191..204 'mybuff[index]': ref<storage, MyData, read_write>
             198..203 'index': u32
             210..214 'data': ptr<storage, MyData, read_write>
-            210..220 'data.alpha': [error]
+            210..220 'data.alpha': ref<storage, f32, read_write>
             223..226 '1.0': float
-            NoSuchField { expression: Idx::<Expression>(9), name: Name("alpha"), type: Type(2c09) } in Body
-            AssignmentNotAReference { left_side: Idx::<Expression>(10), actual: Type(2c01) } in Body
         "#]],
     );
 }
@@ -99,18 +97,23 @@ fn ptr_deref_is_ref() {
     check_infer(
         ExtensionsConfig::default(),
         "
-        var v = vec2(1, 2);
-        var p = &v;
-        p.x = 2;
+        fn foo() {
+            var v = vec2(1, 2);
+            let p = &v;
+            p.x = 2;
+        }
         ",
         expect![[r#"
-            4..5 'v': ref<handle, vec2<i32>, read>
-            8..18 'vec2(1, 2)': vec2<integer>
-            13..14 '1': integer
-            16..17 '2': integer
-            24..25 'p': ref<handle, ptr<handle, vec2<i32>, read>, read>
-            28..30 '&v': ptr<handle, vec2<i32>, read>
-            29..30 'v': ref<handle, vec2<i32>, read>
+            19..20 'v': ref<function, vec2<i32>, read_write>
+            23..33 'vec2(1, 2)': vec2<integer>
+            28..29 '1': integer
+            31..32 '2': integer
+            43..44 'p': ptr<function, vec2<i32>, read_write>
+            47..49 '&v': ptr<function, vec2<i32>, read_write>
+            48..49 'v': ref<function, vec2<i32>, read_write>
+            55..56 'p': ptr<function, vec2<i32>, read_write>
+            55..58 'p.x': ref<function, i32, read_write>
+            61..62 '2': integer
         "#]],
     );
 }
