@@ -1440,6 +1440,30 @@ fn mat_index_is_int() {
 }
 
 #[test]
+fn concretize_matrix() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        fn foo() {
+            let x = bar(mat2x2(0, 0, 0, 0));
+        }
+        fn bar(baz: mat2x2<f32>) -> u32 { return 0; }
+        ",
+        expect![[r#"
+            19..20 'x': u32
+            23..46 'bar(ma...0, 0))': u32
+            27..45 'mat2x2... 0, 0)': mat2x2<integer>
+            34..35 '0': integer
+            37..38 '0': integer
+            40..41 '0': integer
+            43..44 '0': integer
+            57..60 'baz': mat2x2<f32>
+            91..92 '0': integer
+        "#]],
+    );
+}
+
+#[test]
 fn mat_index_i_is_not_f32() {
     check_infer(
         ExtensionsConfig::default(),
