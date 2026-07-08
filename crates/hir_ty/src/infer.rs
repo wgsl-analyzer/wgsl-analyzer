@@ -637,6 +637,7 @@ impl<'database> InferenceContext<'database> {
                 );
                 if let Some(initializer_expression) = initializer
                     && !r#type.kind(self.database).is_storable()
+                    && !r#type.kind(self.database).is_error()
                 {
                     self.push_diagnostic(
                         body.store_source,
