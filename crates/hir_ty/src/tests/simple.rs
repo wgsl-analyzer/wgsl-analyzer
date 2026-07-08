@@ -30,6 +30,26 @@ fn type_alias_in_struct() {
 }
 
 #[test]
+fn field_expression_on_error_type() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        fn foo() {
+            let x = Nonsense();
+            let a = x.nonsense;
+        }
+        ",
+        expect![[r#"
+            19..20 'x': [error]
+            23..33 'Nonsense()': [error]
+            43..44 'a': [error]
+            47..48 'x': [error]
+            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(0)), kind: UnresolvedPath { path: Path(ModPath("Nonsense")), failed_segment: 0 } } } in Body
+        "#]],
+    );
+}
+
+#[test]
 fn ident_expression_infers_ref() {
     check_infer(
         ExtensionsConfig::default(),
