@@ -207,18 +207,18 @@ fn no_such_field_on_struct_ref() {
         "
         struct Bar { baz: u32 }
         fn foo() {
-            let bar = Bar(0)
+            var bar = Bar(0)
             let xx = bar.bazzzzz;
         }
         ",
         expect![[r#"
-            43..46 'bar': Bar
+            43..46 'bar': ref<function, Bar, read_write>
             49..55 'Bar(0)': Bar
             53..54 '0': integer
             64..66 'xx': [error]
-            69..72 'bar': Bar
+            69..72 'bar': ref<function, Bar, read_write>
             69..80 'bar.bazzzzz': [error]
-            NoSuchField { expression: Idx::<Expression>(2), name: Name("bazzzzz"), type: Type(2803) } in Body
+            NoSuchField { expression: Idx::<Expression>(2), name: Name("bazzzzz"), type: Type(2804) } in Body
         "#]],
     );
 }
