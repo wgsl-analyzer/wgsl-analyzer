@@ -1040,7 +1040,7 @@ fn foo() { let _ = 1; }
     }
 
     #[test]
-    fn type_expectation() {
+    fn type_expectation1() {
         check_diagnostics(
             "
             fn foo(bar: atomic<1>) { }
@@ -1052,7 +1052,20 @@ fn foo() { let _ = 1; }
     }
 
     #[test]
-    fn instance_expectation() {
+    fn type_expectation2() {
+        check_diagnostics(
+            "
+            fn foo(bar: atomic) { }
+            ",
+            expect![[r#"
+                12..18 Error 13: expected 1 template arguments, but got 0
+                12..18 Error 13: missing template argument, expected a type
+            "#]],
+        );
+    }
+
+    #[test]
+    fn instance_expectation1() {
         check_diagnostics(
             "
             fn foo(bar: array<i32, i32>) { }
@@ -1060,6 +1073,18 @@ fn foo() { let _ = 1; }
             expect![[r#"
                 23..26 Error 14: unexpected template argument, expected an instance
                 23..26 Error 14: unexpected template argument, expected an instance
+            "#]],
+        );
+    }
+
+    #[test]
+    fn instance_expectation2() {
+        check_diagnostics(
+            "
+            fn foo(bar: array) { }
+            ",
+            expect![[r#"
+                12..17 Error 13: missing template arguments
             "#]],
         );
     }

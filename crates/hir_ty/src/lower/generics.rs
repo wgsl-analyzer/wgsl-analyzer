@@ -74,6 +74,7 @@ impl TemplateParameters {
                     expected: "an instance".to_owned(),
                 },
             }),
+            // this is currently unreachable because the only callsite is array_template which can assume dynamic size
             None => Err(TypeLoweringError {
                 container: self.container,
                 kind: TypeLoweringErrorKind::MissingTemplateArgument("an instance".to_owned()),
