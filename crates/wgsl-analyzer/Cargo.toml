@@ -76,7 +76,7 @@ test-utils.workspace = true
 # test-fixture.workspace = true
 # syntax-bridge.workspace = true
 
-[target.'cfg(windows)'.dependencies]
+[target."cfg(windows)".dependencies]
 windows-sys = {
 	version = "0.61",
 	features = [

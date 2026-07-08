@@ -25,7 +25,7 @@ perf-event = "=0.4.9"
 [target.'cfg(all(target_os = "linux", target_env = "gnu"))'.dependencies]
 libc.workspace = true
 
-[target.'cfg(windows)'.dependencies]
+[target."cfg(windows)".dependencies]
 windows-sys = {
 	version = "0.61",
 	features = [
