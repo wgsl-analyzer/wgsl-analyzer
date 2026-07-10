@@ -62,9 +62,7 @@ pub fn gen_function_call_arguments(
 
     multiline_group.push_sc(sc!("("));
 
-    // TODO(MonaMayrhofer) Maybe this (and type-templates) should have a similar architecture to the function signature
-    // where comments are items
-    if !item_parameters.is_empty() || !item_comments_after_open_paren.is_empty() {
+    if !item_parameters.is_blank || !item_comments_after_open_paren.is_empty() {
         multiline_group.start_indent();
 
         multiline_group.extend(gen_comments(&item_comments_after_open_paren));
@@ -77,7 +75,7 @@ pub fn gen_function_call_arguments(
         )?;
 
         multiline_group.request(Request::discourage(RequestItem::Space));
-
+        multiline_group.grouped_possible_newline();
         multiline_group.finish_indent();
     }
 

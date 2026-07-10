@@ -70,7 +70,8 @@ pub fn format_comment_in_function_call_statement() {
             fn main() {
                 /* 0 */
                 bla /* 1 */ (
-                    /* 2 */ 12, /* 3 */ /* 4 */
+                    /* 2 */
+                    12, /* 3 */ /* 4 */
                     bar /* 5 */ (/* 6 */), /* 7 */ /* 8 */
                     1 /* 9 */ + /* 10 */ vubble, /* 11 */
                 ) /* 12 */ ; /* 13 */

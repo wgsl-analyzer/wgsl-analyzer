@@ -169,7 +169,8 @@ pub fn format_comments_in_expr_function_call() {
         expect![[r#"
             fn main() {
                 let a = /* 0 */ foo /* 1 */ (
-                        /* 2 */ 3, /* 3 */ /* 4 */
+                        /* 2 */
+                        3, /* 3 */ /* 4 */
                         2, /* 5 */
                     ) /* 6 */; /* 7 */
             }

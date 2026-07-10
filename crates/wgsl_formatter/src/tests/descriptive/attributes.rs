@@ -106,7 +106,8 @@ pub fn format_comments_in_attr_with_multiple_arguments() {
         expect![[r#"
             /* 0 */
             @ /* 1 */ attr /* 2 */ (
-                /* 3 */ 0, /* 4 */ /* 5 */
+                /* 3 */
+                0, /* 4 */ /* 5 */
                 0, /* 6 */ /* 7 */
                 0, /* 8 */
             ) /* 9 */
@@ -197,6 +198,26 @@ pub fn format_comments_in_diagnostic_attr_simple_1() {
             ) // 7
             fn // 8
             main() {}
+        "#]],
+    );
+}
+
+
+#[test]
+pub fn format_forced_linebreak_in_attribute_arguments() {
+    check(
+        "
+        @foo(12, // Force break
+        foo, 1 + vubble)
+        override a: usize = 0;
+        ",
+        expect![[r#"
+            @foo(
+                12, // Force break
+                foo,
+                1 + vubble,
+            )
+            override a: usize = 0;
         "#]],
     );
 }
