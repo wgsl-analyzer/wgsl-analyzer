@@ -27,7 +27,9 @@ pub fn gen_prefix_expression(
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
-    formatted.push_string(item_operator.to_string()); //TODO I don't like to-stringing the operator here, would be better to match on it... we would need a parse_token(any_of(...)) kind of thing.
+    //I don't like to-stringing the operator here, would be better to special case on it,
+    //In a benchmark on my machine however, removing this push_string() did not make any measurable impact - so it's fine.
+    formatted.push_string(item_operator.to_string());
     formatted.extend(gen_comments(&item_comment_after_operator));
     formatted.extend(gen_expression(&item_expr, false)?);
     formatted.extend(gen_comments(&item_comment_after_expr));

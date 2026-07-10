@@ -24,7 +24,7 @@ use crate::{
     reporting::FormatDocumentResult,
 };
 
-// TODO(MonaMayrhofer) Collapse imports
+// TODO(MonaMayrhofer,post-1.0) Collapse imports
 // import bevy:a;
 // import bevy:b;
 // import bevy:{a,b};

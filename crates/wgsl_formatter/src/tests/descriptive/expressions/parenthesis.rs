@@ -33,7 +33,7 @@ pub fn format_paren_expr_simple() {
 
 #[test]
 pub fn format_paren_expr_deep_right_associated() {
-    //TODO This is awful. Have another look at how this should be formatted, once more test cases for more common parenthesised expressions are there
+    //TODO(MonaMayrhofer,discuss) This is awful. Have another look at how this should be formatted, once more test cases for more common parenthesised expressions are there
     check(
         "fn main() {
         let a = 1+ (1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+1)))))))))))))))))))));
@@ -70,7 +70,7 @@ pub fn format_paren_expr_deep_right_associated() {
 
 #[test]
 pub fn format_paren_expr_deep_left_associated() {
-    //TODO This is beyond awful. Have another look at how this should be formatted, once more test cases for more common parenthesised expressions are there
+    //TODO(MonaMayrhofer,discuss) This is beyond awful. Have another look at how this should be formatted, once more test cases for more common parenthesised expressions are there
     check(
         "fn main() {
         let a = 1+ ((((((((((((((((((((((((((((1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1);

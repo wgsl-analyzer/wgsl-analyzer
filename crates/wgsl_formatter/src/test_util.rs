@@ -65,7 +65,7 @@ pub fn check<E: ExpectAssertEq>(
     )
 }
 
-// TODO(MonaMayrhofer) Phase this api out, and find a proper replacement, or retire tab tests completely
+// TODO(MonaMayrhofer,discuss) Phase this api out, and find a proper replacement, or retire tab tests completely
 #[expect(clippy::needless_pass_by_value, reason = "intentional API")]
 pub fn check_tabs<E: ExpectAssertEq>(
     before: &str,
