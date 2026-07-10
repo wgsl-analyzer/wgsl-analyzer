@@ -124,8 +124,6 @@ impl std::str::FromStr for Policy {
 
 #[cfg(test)]
 mod policy_tests {
-    use std::str::FromStr as _;
-
     use super::*;
     #[test]
     fn policy_from_str_valid_values() {

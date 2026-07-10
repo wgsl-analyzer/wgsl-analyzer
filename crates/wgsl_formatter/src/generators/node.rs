@@ -11,20 +11,29 @@ use crate::{
             gen_interpolate_sampling_name, gen_interpolate_type_name, gen_invariant_attribute,
             gen_location_attribute, gen_must_use_attribute, gen_other_attribute,
             gen_size_attribute, gen_vertex_attribute, gen_workgroup_size_attribute,
-        }, comments::{Comment, gen_comment, gen_comments}, diagnostic_directive::{
+        },
+        comments::{Comment, gen_comment},
+        diagnostic_directive::{
             gen_diagnostic_control, gen_diagnostic_rule_name, gen_severity_control_name,
-        }, directives::{
+        },
+        directives::{
             gen_diagnostic_directive, gen_enable_directive, gen_enable_extension_name,
             gen_language_extension_name, gen_requires_directive,
-        }, expressions::{
+        },
+        expressions::{
             field_expression::gen_field_expression, ident_expression::gen_ident_expression,
             index_expression::gen_index_expression, infix_expression::gen_infix_expression,
             literal_expression::gen_literal_expression,
             parenthesis_expression::gen_parenthesis_expression,
             prefix_expression::gen_prefix_expression,
-        }, function_declaration::{
+        },
+        function_declaration::{
             gen_fn_parameter, gen_fn_parameters, gen_fn_return_type, gen_function_declaration,
-        }, name::gen_name, path::gen_path, source_file::gen_source_file, statements::{
+        },
+        name::gen_name,
+        path::gen_path,
+        source_file::gen_source_file,
+        statements::{
             assignment_statement::{
                 gen_assignment_statement, gen_compound_assignment_statement,
                 gen_phony_assignment_statement,
@@ -63,11 +72,16 @@ use crate::{
                 gen_override_declaration_statement, gen_var_declaration_statement,
             },
             while_statement::gen_while_statement,
-        }, struct_declaration::{gen_struct_body, gen_struct_declaration, gen_struct_member}, type_alias_declaration::gen_type_alias_declaration, types::{gen_template_list, gen_type_specifier},
-    }, print_item_buffer::{
+        },
+        struct_declaration::{gen_struct_body, gen_struct_declaration, gen_struct_member},
+        type_alias_declaration::gen_type_alias_declaration,
+        types::{gen_template_list, gen_type_specifier},
+    },
+    print_item_buffer::{
         PrintItemBuffer,
         spacing_request::{Request, RequestItem},
-    }, reporting::FormatDocumentResult,
+    },
+    reporting::FormatDocumentResult,
 };
 
 pub fn gen_node_no_newlines(node: &SyntaxNode) -> FormatDocumentResult<PrintItemBuffer> {
