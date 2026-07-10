@@ -458,7 +458,7 @@ fn gen_attr_standard_with_args(
         let mut multiline_group = MultilineGroup::new(&mut formatted);
         multiline_group.push_sc(sc!("("));
 
-        if !item_arguments.is_empty() || !item_comments_after_open_paren.is_empty() {
+        if !item_arguments.is_blank || !item_comments_after_open_paren.is_empty() {
             multiline_group.start_indent();
             multiline_group.extend(gen_comments(&item_comments_after_open_paren));
 
@@ -470,6 +470,7 @@ fn gen_attr_standard_with_args(
             )?;
 
             multiline_group.request(Request::discourage(RequestItem::Space));
+            multiline_group.grouped_possible_newline();
             multiline_group.finish_indent();
         }
 

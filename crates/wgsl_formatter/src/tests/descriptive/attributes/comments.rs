@@ -1,6 +1,6 @@
 use expect_test::expect;
 
-use crate::test_util::check_comments;
+use crate::test_util::{check, check_comments};
 
 #[test]
 pub fn format_comments_in_attrs_on_struct_members() {
@@ -420,3 +420,50 @@ pub fn format_comments_in_interpolate_attr() {
         "#]],
     );
 }
+
+#[test]
+pub fn format_comments_in_attr_with_many_parameters() {
+    check_comments(
+        "
+        ## @ ## foo ## ( ## 1 ## , ## 2 ## , ## 3 ## , ## 4 ## , ## 5 ## , ## 6 ## , ## 7 ) ##
+        override a: usize = 0;
+        ",
+        expect![[r#"
+            /* 0 */
+            @ /* 1 */ foo /* 2 */ (
+                /* 3 */
+                1, /* 4 */ /* 5 */
+                2, /* 6 */ /* 7 */
+                3, /* 8 */ /* 9 */
+                4, /* 10 */ /* 11 */
+                5, /* 12 */ /* 13 */
+                6, /* 14 */ /* 15 */
+                7,
+            ) /* 16 */
+            override a: usize = 0;
+        "#]],
+        expect![[r#"
+            // 0
+            @ // 1
+            foo // 2
+            (
+                // 3
+                1, // 4
+                // 5
+                2, // 6
+                // 7
+                3, // 8
+                // 9
+                4, // 10
+                // 11
+                5, // 12
+                // 13
+                6, // 14
+                // 15
+                7,
+            ) // 16
+            override a: usize = 0;
+        "#]],
+    );
+}
+
