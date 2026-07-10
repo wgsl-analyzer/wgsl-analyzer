@@ -16,7 +16,7 @@ use crate::{
     },
     print_item_buffer::{
         PrintItemBuffer,
-        spacing_request::{Request, RequestItem, RequestItemMap},
+        spacing_request::{Request, RequestItem, RequestItemSet},
     },
     reporting::FormatDocumentResult,
 };
@@ -46,9 +46,9 @@ pub fn gen_if_statement(statement: &ast::IfStatement) -> FormatDocumentResult<Pr
     formatted.extend(gen_comments(&comments_after_if_clause));
     for (else_if_clause, comments_after_else_if_clause) in else_if_clauses {
         formatted.request(Request::Unconditional {
-            expected: RequestItemMap::from(RequestItem::Space),
-            discouraged: RequestItemMap::from(RequestItem::LineBreak),
-            forced: RequestItemMap::empty(),
+            expected: RequestItemSet::from(RequestItem::Space),
+            discouraged: RequestItemSet::from(RequestItem::LineBreak),
+            forced: RequestItemSet::empty(),
             suggest_linebreak: false,
         });
         formatted.extend(gen_if_statement_else_if_clause(&else_if_clause)?);
@@ -56,9 +56,9 @@ pub fn gen_if_statement(statement: &ast::IfStatement) -> FormatDocumentResult<Pr
     }
     if let Some(item_else_clause) = item_else_clause {
         formatted.request(Request::Unconditional {
-            expected: RequestItemMap::from(RequestItem::Space),
-            discouraged: RequestItemMap::from(RequestItem::LineBreak),
-            forced: RequestItemMap::empty(),
+            expected: RequestItemSet::from(RequestItem::Space),
+            discouraged: RequestItemSet::from(RequestItem::LineBreak),
+            forced: RequestItemSet::empty(),
             suggest_linebreak: false,
         });
         formatted.extend(gen_if_statement_else_clause(&item_else_clause)?);

@@ -11,7 +11,7 @@ pub enum RequestItem {
 }
 
 impl RequestItem {
-    /// Converts the [`RequestItem`] to its index in the Bitmaps that store expected, discouraged, and forced requests.
+    /// Converts the [`RequestItem`] to its index in the RequestItemSets that store expected, discouraged, and forced requests.
     /// If multiple request items are requested at a stage (e.g expect space & line break), the request item with
     /// the highest index is used.
     #[must_use]
@@ -34,10 +34,11 @@ impl RequestItem {
     }
 }
 
+/// A Set holding RequestItems, implemented via a bitmap
 #[derive(Clone)]
-pub struct RequestItemMap(u8);
+pub struct RequestItemSet(u8);
 
-impl RequestItemMap {
+impl RequestItemSet {
     #[must_use]
     pub const fn empty() -> Self {
         Self(0)
@@ -91,12 +92,21 @@ impl RequestItemMap {
     }
 }
 
+/// A structure that marks whether a particular [`RequestItem`] is expected, discouraged or forced - unconditionally or under some condition.
+///
+/// An "expected" [`RequestItem will be put into the output, unless it is "discouraged".
+/// A "forced" [`RequestItem`] will be put into the output, regardless of if it is "discouraged".
+/// If multiple [`RequestItem`] would be elegible to be put into the output,
+/// only the "biggest" one (the one that subsumes all the other ones) is actually put into the output.
+///
+/// Optionally a request can also "suggest" a newline, which means that if a space or nothing at all would be put into the output,
+/// and a newline is not "discouraged" at this point, then either a [`SpaceOrNewline`] or a [`PossibleNewline`] is output.
 #[derive(Clone)]
 pub enum Request {
     Unconditional {
-        expected: RequestItemMap,
-        discouraged: RequestItemMap,
-        forced: RequestItemMap,
+        expected: RequestItemSet,
+        discouraged: RequestItemSet,
+        forced: RequestItemSet,
 
         // Biggest Expected Item:
         //  - Nothing: Ok
@@ -137,9 +147,9 @@ impl Request {
     #[must_use]
     pub const fn empty() -> Self {
         Self::Unconditional {
-            expected: RequestItemMap::empty(),
-            discouraged: RequestItemMap::empty(),
-            forced: RequestItemMap::empty(),
+            expected: RequestItemSet::empty(),
+            discouraged: RequestItemSet::empty(),
+            forced: RequestItemSet::empty(),
             suggest_linebreak: false,
         }
     }
@@ -147,9 +157,9 @@ impl Request {
     #[must_use]
     pub const fn expect(item: RequestItem) -> Self {
         Self::Unconditional {
-            expected: RequestItemMap::from(item),
-            discouraged: RequestItemMap::empty(),
-            forced: RequestItemMap::empty(),
+            expected: RequestItemSet::from(item),
+            discouraged: RequestItemSet::empty(),
+            forced: RequestItemSet::empty(),
             suggest_linebreak: false,
         }
     }
@@ -157,9 +167,9 @@ impl Request {
     #[must_use]
     pub const fn discourage(item: RequestItem) -> Self {
         Self::Unconditional {
-            expected: RequestItemMap::empty(),
-            discouraged: RequestItemMap::from(item),
-            forced: RequestItemMap::empty(),
+            expected: RequestItemSet::empty(),
+            discouraged: RequestItemSet::from(item),
+            forced: RequestItemSet::empty(),
             suggest_linebreak: false,
         }
     }
@@ -167,9 +177,9 @@ impl Request {
     #[must_use]
     pub const fn force(item: RequestItem) -> Self {
         Self::Unconditional {
-            expected: RequestItemMap::empty(),
-            discouraged: RequestItemMap::empty(),
-            forced: RequestItemMap::from(item),
+            expected: RequestItemSet::empty(),
+            discouraged: RequestItemSet::empty(),
+            forced: RequestItemSet::from(item),
             suggest_linebreak: false,
         }
     }
@@ -292,6 +302,7 @@ impl Request {
         }
     }
 
+    /// Evaluate this [`Request`] and append its output to the given [`PrintItems`]
     pub fn resolve(
         self,
         target: &mut PrintItems,
