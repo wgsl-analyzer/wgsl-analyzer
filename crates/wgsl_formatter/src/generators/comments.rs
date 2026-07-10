@@ -48,6 +48,12 @@ pub fn parse_comment_optional(syntax: &mut SyntaxIter) -> Option<Comment> {
 pub fn parse_many_comments_and_blankspace(
     syntax: &mut SyntaxIter
 ) -> FormatDocumentResult<Vec<Comment>> {
+    Ok(infallible_parse_many_comments_and_blankspace(syntax))
+}
+
+pub fn infallible_parse_many_comments_and_blankspace(
+    syntax: &mut SyntaxIter
+) -> Vec<Comment> {
     let mut comments = Vec::new();
     loop {
         if let Some(comment) = parse_comment_optional(syntax) {
@@ -58,8 +64,9 @@ pub fn parse_many_comments_and_blankspace(
             break;
         }
     }
-    Ok(comments)
+    comments
 }
+
 
 pub fn gen_comments(comments: &[Comment]) -> PrintItemBuffer {
     let mut formatted = PrintItemBuffer::default();
