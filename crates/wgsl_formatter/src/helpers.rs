@@ -4,6 +4,7 @@ use dprint_core::formatting::{
     ConditionResolver, ConditionResolverContext, LineNumber, condition_helpers,
 };
 mod line_spacing;
+pub mod separated_items;
 
 use itertools::{Itertools as _, Position};
 pub use line_spacing::*;
