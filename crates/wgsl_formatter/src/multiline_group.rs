@@ -12,11 +12,11 @@ use crate::{
     helpers::create_is_multiple_lines_resolver,
     print_item_buffer::{
         PrintItemBuffer,
-        request_folder::{Request, RequestFolder, RequestItemMap},
+        spacing_request::{Request, RequestItemMap},
     },
 };
 
-use super::print_item_buffer::request_folder::RequestItem;
+use super::print_item_buffer::spacing_request::RequestItem;
 
 // TODO(MonaMayrhofer,Discuss) Possibly enforce the rules through a typestate pattern or implement debug panics
 /// Helper to generate a number of items that are either within a single line all on separate lines.

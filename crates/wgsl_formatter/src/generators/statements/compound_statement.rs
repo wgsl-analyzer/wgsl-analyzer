@@ -14,7 +14,7 @@ use crate::{
         statements::gen_statement_maybe_semicolon,
     },
     helpers::{LineSpacing, gen_line_spacing, parse_line_spacing},
-    print_item_buffer::{PrintItemBuffer, request_folder::RequestItem},
+    print_item_buffer::{PrintItemBuffer, spacing_request::RequestItem},
     reporting::FormatDocumentResult,
 };
 

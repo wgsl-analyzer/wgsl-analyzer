@@ -15,7 +15,7 @@ use crate::{
         statements::{compound_statement::gen_compound_statement, gen_statement_maybe_semicolon},
     },
     multiline_group::MultilineGroup,
-    print_item_buffer::{PrintItemBuffer, request_folder::RequestItem},
+    print_item_buffer::{PrintItemBuffer, spacing_request::RequestItem},
     reporting::FormatDocumentResult,
 };
 
