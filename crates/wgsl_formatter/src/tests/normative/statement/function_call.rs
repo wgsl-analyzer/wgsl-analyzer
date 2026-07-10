@@ -94,6 +94,27 @@ pub fn format_function_call_statement_with_comment_has_no_trailing_whitespace() 
 }
 
 #[test]
+pub fn format_function_call_multiline_arguments_always_start_on_a_new_line() {
+    // If arguments to a function are broken into several lines, they should all start at the same horizontal offset (and not have comments *before* them)
+    check(
+        "fn main() {
+        bla(/*beb*/12, 13//fe
+, 15);
+        }",
+        expect![[r#"
+            fn main() {
+                bla(
+                    /*beb*/
+                    12,
+                    13, //fe
+                    15,
+                );
+            }
+        "#]],
+    );
+}
+
+#[test]
 fn format_long_function_call_without_arguments_does_not_break_within_parens() {
     check_with_options(
         "fn main() {

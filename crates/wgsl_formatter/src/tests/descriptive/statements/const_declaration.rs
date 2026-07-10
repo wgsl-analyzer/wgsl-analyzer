@@ -140,7 +140,8 @@ pub fn format_const_declaration_with_comments_in_complex_type() {
             fn main() {
                 /* 0 */
                 const /* 1 */ a /* 2 */: /* 3 */ array /* 4 */ <
-                        /* 5 */ u32, /* 6 */ /* 7 */
+                        /* 5 */
+                        u32, /* 6 */ /* 7 */
                         28, /* 8 */
                     > /* 9 */ = /* 10 */ 1 /* 11 */; /* 12 */
             }

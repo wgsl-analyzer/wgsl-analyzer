@@ -46,6 +46,26 @@ pub fn format_type_nested_multiline_template_gets_broken_into_multiple_lines() {
 }
 
 #[test]
+pub fn format_type_multiline_arguments_always_start_on_a_new_line() {
+    // If arguments to a type are broken into several lines, they should all start at the same horizontal offset (and not have comments *before* them)
+    check(
+        "
+        alias Test =
+        array</*hmm*/27 //force newline
+,18>
+        ;
+        ",
+        expect![[r#"
+            alias Test = array<
+                /*hmm*/
+                27, //force newline
+                18,
+            >;
+        "#]],
+    );
+}
+
+#[test]
 pub fn format_long_type_alias_linewidth_within_inner_break_outer_arguments_leave_inner_alone() {
     // Please note that the amount of "aaaa" in this test is carefully chosen to play with the line lengths.
     // This the amount of aaa is such that, breaking the inner argument would satisfy the line width requirement.
