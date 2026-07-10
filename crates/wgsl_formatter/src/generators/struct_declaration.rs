@@ -101,8 +101,6 @@ pub fn gen_struct_body(body: &ast::StructBody) -> FormatDocumentResult<PrintItem
     formatted.push_sc(sc!("{"));
     formatted.start_indent();
 
-    //TODO This should be handled by gen_comments, and probably
-    // take into account whether the comment was on the same line as the opening brace
     if !item_comments_after_open_paren.is_empty() {
         formatted.expect(RequestItem::LineBreak);
         formatted.extend(gen_comments(&item_comments_after_open_paren));

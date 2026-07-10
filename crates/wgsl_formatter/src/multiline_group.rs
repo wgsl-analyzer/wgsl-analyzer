@@ -18,7 +18,7 @@ use crate::{
 
 use super::print_item_buffer::request_folder::RequestItem;
 
-// TODO Possibly enforce the rules through a typestate pattern or implement debug panics
+// TODO(MonaMayrhofer,Discuss) Possibly enforce the rules through a typestate pattern or implement debug panics
 /// Helper to generate a number of items that are either within a single line all on separate lines.
 ///
 /// To use this helper (and to keep the api small), a few rules do need to be manually followed.
