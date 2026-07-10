@@ -2,7 +2,7 @@ pub mod request_folder;
 
 use dprint_core::formatting::{Anchor, Info, PrintItems, Signal};
 
-use crate::print_item_buffer::request_folder::{Request, RequestFolder, RequestItem};
+use crate::print_item_buffer::request_folder::{Request, RequestItem};
 
 // The motivating example for this is, that there is no obvious way to encode the following rules cleanly into "vanilla" PrintItems
 // 1. There should not be a space between the name of a function and the opening parenthesis "fn main("
@@ -46,24 +46,12 @@ use crate::print_item_buffer::request_folder::{Request, RequestFolder, RequestIt
 ///
 #[derive(Default)]
 pub struct PrintItemBuffer {
-    pub start_request: RequestFolder,
+    pub start_request: Request,
     pub items: PrintItems,
-    pub end_request: RequestFolder,
+    pub end_request: Request,
 }
 
 impl PrintItemBuffer {
-    pub fn request_folder(
-        &mut self,
-        incoming_request: RequestFolder,
-    ) {
-        let request_tracker = if self.items.is_empty() {
-            &mut self.start_request
-        } else {
-            &mut self.end_request
-        };
-        request_tracker.append(incoming_request);
-    }
-
     // ==== Request Helpers ====
     pub fn discourage(
         &mut self,
@@ -90,9 +78,13 @@ impl PrintItemBuffer {
         &mut self,
         incoming_request: Request,
     ) {
-        self.request_folder(RequestFolder {
-            folded_request: Some(incoming_request),
-        });
+        let request_tracker = if self.items.is_empty() {
+            &mut self.start_request
+        } else {
+            &mut self.end_request
+        };
+
+        *request_tracker = Request::combine(std::mem::take(request_tracker), incoming_request);
     }
 
     #[must_use]
@@ -105,7 +97,7 @@ impl PrintItemBuffer {
     }
 
     fn apply_end_request(&mut self) {
-        self.end_request.resolve(&mut self.items);
+        std::mem::take(&mut self.end_request).resolve(&mut self.items);
     }
 
     // ==== Helper Methods ====
@@ -115,7 +107,7 @@ impl PrintItemBuffer {
         other: Self,
     ) {
         // Merge the incoming start_request
-        self.request_folder(other.start_request);
+        self.request(other.start_request);
 
         // If there are incoming items, apply the current end request and add the items
         if !other.items.is_empty() {
@@ -124,7 +116,7 @@ impl PrintItemBuffer {
         }
 
         // Merge the incoming end_request
-        self.request_folder(other.end_request);
+        self.request(other.end_request);
     }
 
     pub fn push_string(

@@ -127,6 +127,12 @@ pub enum Request {
     },
 }
 
+impl Default for Request {
+    fn default() -> Self {
+        Self::empty()
+    }
+}
+
 impl Request {
     #[must_use]
     pub const fn empty() -> Self {
@@ -365,36 +371,4 @@ impl Request {
 #[derive(Default, Clone)]
 pub struct RequestFolder {
     pub folded_request: Option<Request>,
-}
-
-impl RequestFolder {
-    pub fn append(
-        &mut self,
-        mut other: Self,
-    ) {
-        if let Some(new_request) = other.folded_request.take() {
-            if let Some(old_request) = self.folded_request.take() {
-                self.folded_request = Some(Request::combine(old_request, new_request));
-            } else {
-                self.folded_request = Some(new_request);
-            }
-        }
-    }
-
-    pub fn resolve(
-        &mut self,
-        target: &mut PrintItems,
-    ) {
-        if let Some(request) = self.folded_request.take() {
-            request.clone().resolve(target);
-        }
-    }
-}
-
-impl From<Request> for RequestFolder {
-    fn from(value: Request) -> Self {
-        Self {
-            folded_request: Some(value),
-        }
-    }
 }
