@@ -18,11 +18,6 @@ use crate::{
     reporting::FormatDocumentResult,
 };
 
-enum CompoundStatementItem {
-    Statement(ast::Statement),
-    Comment(Comment),
-    LineSpacing(LineSpacing),
-}
 
 pub fn gen_compound_statement(
     syntax: &ast::CompoundStatement
@@ -44,8 +39,13 @@ pub fn gen_compound_statement(
     let item_attributes = parse_many_attributes(&mut syntax)?;
     parse_token(&mut syntax, SyntaxKind::BraceLeft)?;
 
+    enum CompoundStatementItem {
+        Statement(ast::Statement),
+        Comment(Comment),
+        LineSpacing(LineSpacing),
+    }
     let mut lines = Vec::new();
-    let mut body_empty = true; //TODO (MonaMayrhofer) This annoys me, brittle, easy to forget
+    let mut body_empty = true; //TODO (MonaMayrhofer,outdated=I see no way to properly refactor this without needlessly looping twice) This annoys me, brittle, easy to forget
 
     loop {
         if let Some(spacing) = parse_line_spacing(&mut syntax) {

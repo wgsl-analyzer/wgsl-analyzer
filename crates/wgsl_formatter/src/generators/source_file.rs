@@ -31,7 +31,7 @@ pub fn gen_source_file(node: &ast::SourceFile) -> FormatDocumentResult<PrintItem
     let mut syntax = put_back(node.syntax().children_with_tokens());
 
     let mut items = Vec::new();
-    // TODO(MonaMayrhofer) This is basically duplicated code from compound statement, and the user would
+    // TODO(MonaMayrhofer,outdated=I see no proper way to abstract this - additionally i don't think its much harder to maintain this way) This is basically duplicated code from compound statement, and the user would
     // expect them to behave similarly so they should be combined.
     loop {
         if let Some(spacing) = parse_line_spacing(&mut syntax) {
