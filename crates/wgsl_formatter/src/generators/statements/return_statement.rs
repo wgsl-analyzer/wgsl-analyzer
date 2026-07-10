@@ -12,7 +12,7 @@ use crate::{
         comments::{gen_comments, parse_many_comments_and_blankspace},
         expressions::gen_expression,
     },
-    print_item_buffer::{PrintItemBuffer, request_folder::RequestItem},
+    print_item_buffer::{PrintItemBuffer, spacing_request::RequestItem},
     reporting::FormatDocumentResult,
 };
 

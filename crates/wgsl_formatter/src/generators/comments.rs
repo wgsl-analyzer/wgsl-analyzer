@@ -4,7 +4,7 @@ use rowan::NodeOrToken;
 
 use crate::{
     ast_parse::{SyntaxIter, parse_token_optional},
-    print_item_buffer::{PrintItemBuffer, request_folder::RequestItem},
+    print_item_buffer::{PrintItemBuffer, spacing_request::RequestItem},
     reporting::FormatDocumentResult,
 };
 

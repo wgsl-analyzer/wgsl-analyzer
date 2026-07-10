@@ -364,11 +364,3 @@ impl Request {
         }
     }
 }
-
-//TODO This whole api is still a little bit clunky
-//TODO Make sure push_left is really needed, because so far RequestFolder merging is commutative, lets see if its still commutative after im done
-/// A structure to fold multiple requests into a single one.
-#[derive(Default, Clone)]
-pub struct RequestFolder {
-    pub folded_request: Option<Request>,
-}

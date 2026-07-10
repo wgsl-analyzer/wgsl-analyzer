@@ -1,8 +1,8 @@
-pub mod request_folder;
+pub mod spacing_request;
 
 use dprint_core::formatting::{Anchor, Info, PrintItems, Signal};
 
-use crate::print_item_buffer::request_folder::{Request, RequestItem};
+use crate::print_item_buffer::spacing_request::{Request, RequestItem};
 
 // The motivating example for this is, that there is no obvious way to encode the following rules cleanly into "vanilla" PrintItems
 // 1. There should not be a space between the name of a function and the opening parenthesis "fn main("
@@ -88,7 +88,7 @@ impl PrintItemBuffer {
     }
 
     #[must_use]
-    pub fn finish(mut self) -> PrintItems {
+    pub fn finish(self) -> PrintItems {
         let mut pi = PrintItems::default();
         self.start_request.resolve(&mut pi);
         pi.extend(self.items);

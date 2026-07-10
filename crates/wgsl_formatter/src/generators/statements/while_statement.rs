@@ -14,7 +14,7 @@ use crate::{
         expressions::gen_expression,
         statements::compound_statement::gen_compound_statement,
     },
-    print_item_buffer::{PrintItemBuffer, request_folder::RequestItem},
+    print_item_buffer::{PrintItemBuffer, spacing_request::RequestItem},
     reporting::FormatDocumentResult,
 };
 

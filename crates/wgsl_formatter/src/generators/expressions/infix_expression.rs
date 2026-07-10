@@ -12,7 +12,7 @@ use crate::{
     },
     print_item_buffer::{
         PrintItemBuffer,
-        request_folder::{Request, RequestItem},
+        spacing_request::{Request, RequestItem},
     },
     reporting::FormatDocumentResult,
 };

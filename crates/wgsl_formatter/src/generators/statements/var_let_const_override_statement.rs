@@ -15,7 +15,7 @@ use crate::{
         expressions::gen_expression,
         types::{gen_template_list, gen_type_specifier},
     },
-    print_item_buffer::{PrintItemBuffer, request_folder::RequestItem},
+    print_item_buffer::{PrintItemBuffer, spacing_request::RequestItem},
     reporting::FormatDocumentResult,
 };
 

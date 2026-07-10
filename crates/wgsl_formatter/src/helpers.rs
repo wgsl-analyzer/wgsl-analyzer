@@ -10,7 +10,7 @@ pub use line_spacing::*;
 
 use crate::{print_item_buffer::PrintItemBuffer, reporting::FormatDocumentResult};
 
-use super::print_item_buffer::request_folder::RequestItem;
+use super::print_item_buffer::spacing_request::RequestItem;
 
 /// In cases where the formatter is not yet complete we simply output source verbatim.
 #[deprecated]

@@ -6,7 +6,7 @@ use syntax::{AstNode as _, ast};
 use crate::{
     ast_parse::{parse_end, parse_token_optional},
     generators::comments::{Comment, gen_comment, parse_comment_optional},
-    print_item_buffer::{PrintItemBuffer, request_folder::Request},
+    print_item_buffer::{PrintItemBuffer, spacing_request::Request},
     reporting::FormatDocumentResult,
 };
 
