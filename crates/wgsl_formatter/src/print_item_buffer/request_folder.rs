@@ -91,19 +91,6 @@ impl RequestItemMap {
     }
 }
 
-// #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
-// pub enum RequestPolicy {
-//     Forced,
-//     Discouraged,
-//     Expected,
-// }
-
-// #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
-// pub struct RequestSubject {
-//     item: RequestItem,
-//     policy: RequestPolicy,
-// }
-
 #[derive(Clone)]
 pub enum Request {
     Unconditional {

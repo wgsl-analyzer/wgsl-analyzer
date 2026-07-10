@@ -47,14 +47,6 @@ pub mod while_statement;
 
 pub fn gen_statement_maybe_semicolon(
     item: &ast::Statement,
-    // TODO Consider absorbing semicolon handling into PrintItemBuffer,
-    // passing around random flags is bad, as it leads to spaghetti code and if
-    // one gen_* function forgets that it would need the flag, that will lead to weird
-    // corner cases bugs. Things like
-    // PrintItemBuffer::request_semicolon() and PrintItemBuffer::forbid_semicolon()
-    // would be much better. But there are many design questions if the PIB has to handle
-    // more than just spaces, and i don't know about all the use cases until the formatter is
-    // done.
     include_semicolon: bool,
 ) -> Result<PrintItemBuffer, FormatDocumentError> {
     match item {
