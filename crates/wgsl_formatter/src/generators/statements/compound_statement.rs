@@ -44,7 +44,7 @@ pub fn gen_compound_statement(
         LineSpacing(LineSpacing),
     }
     let mut lines = Vec::new();
-    let mut body_empty = true; //TODO (MonaMayrhofer,outdated=I see no way to properly refactor this without needlessly looping twice) This annoys me, brittle, easy to forget
+    let mut body_empty = true;
 
     loop {
         if let Some(spacing) = parse_line_spacing(&mut syntax) {

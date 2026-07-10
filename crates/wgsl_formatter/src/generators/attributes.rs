@@ -45,9 +45,6 @@ pub struct ParsedAttributes {
 }
 
 pub fn parse_many_attributes(syntax: &mut SyntaxIter) -> FormatDocumentResult<ParsedAttributes> {
-    // TODO(MonaMayrhofer,outdated=None of the alternative i have tried felt right. These things look similar, but are fundamentally different in behavior) Think about whether this is the correct way to abstract this.
-    // Maybe there should even a "many with comments" combinator, to also deduplicate code from fn parameters/struct members
-    // Also this is very similar to parse_many_comments_and_blankspace
     let mut attributes = Vec::new();
     loop {
         let Some(item_attribute) = parse_node_optional::<Attribute>(syntax) else {
@@ -292,7 +289,6 @@ pub fn gen_interpolate_attribute(
     let interpolate_type_name = parse_node::<InterpolateTypeName>(&mut syntax)?;
     let item_comments_after_itn = parse_many_comments_and_blankspace(&mut syntax)?;
 
-    // TODO(MonaMayrhofer,outdated=Its fine, not worth the effort) i am not really proud of this code, there must be a cleaner way
     let sampling = if parse_token_optional(&mut syntax, SyntaxKind::Comma).is_some() {
         let item_comments_after_comma = parse_many_comments_and_blankspace(&mut syntax)?;
         let interpolate_sampling_name = parse_node::<InterpolateSamplingName>(&mut syntax)?;
