@@ -11,7 +11,7 @@ use crate::{
     helpers::{LineSpacing, gen_line_spacing},
     print_item_buffer::{
         PrintItemBuffer,
-        spacing_request::{Request, RequestItem, RequestItemMap},
+        spacing_request::{Request, RequestItem, RequestItemSet},
     },
     reporting::FormatDocumentResult,
 };
@@ -126,9 +126,9 @@ pub fn gen_struct_body(body: &ast::StructBody) -> FormatDocumentResult<PrintItem
     }
 
     formatted.request(Request::Unconditional {
-        discouraged: RequestItemMap::from(RequestItem::EmptyLine),
-        expected: RequestItemMap::from(RequestItem::LineBreak),
-        forced: RequestItemMap::empty(),
+        discouraged: RequestItemSet::from(RequestItem::EmptyLine),
+        expected: RequestItemSet::from(RequestItem::LineBreak),
+        forced: RequestItemSet::empty(),
         suggest_linebreak: false,
     });
 

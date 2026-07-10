@@ -12,7 +12,7 @@ use crate::{
     helpers::create_is_multiple_lines_resolver,
     print_item_buffer::{
         PrintItemBuffer,
-        spacing_request::{Request, RequestItemMap},
+        spacing_request::{Request, RequestItemSet},
     },
 };
 
@@ -74,12 +74,12 @@ impl<'buffer> MultilineGroup<'buffer> {
         // However because pushing the start_nl_condition and the indent will reset any request - it best fits here for now,
         // until we can move the start_nl_condition to also use the RequestFolder api
         self.buffer.request(Request::Unconditional {
-            expected: RequestItemMap::empty(),
-            discouraged: RequestItemMap::empty()
+            expected: RequestItemSet::empty(),
+            discouraged: RequestItemSet::empty()
                 .extended_by(RequestItem::Space)
                 .extended_by(RequestItem::LineBreak)
                 .extended_by(RequestItem::EmptyLine),
-            forced: RequestItemMap::empty(),
+            forced: RequestItemSet::empty(),
             suggest_linebreak: false,
         });
     }
