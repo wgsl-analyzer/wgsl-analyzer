@@ -114,3 +114,33 @@ pub enum Policy {
     /// Insert the element if absent.
     Insert,
 }
+
+impl std::str::FromStr for Policy {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "ignore" => Ok(Self::Ignore),
+            "insert" => Ok(Self::Insert),
+            "remove" => Ok(Self::Remove),
+            _ => Err(format!("invalid policy: {s}")),
+        }
+    }
+}
+
+#[cfg(test)]
+mod policy_tests {
+    use super::*;
+    #[test]
+    fn policy_from_str_valid_values() {
+        assert!(matches!(Policy::from_str("ignore"), Ok(Policy::Ignore)));
+        assert!(matches!(Policy::from_str("insert"), Ok(Policy::Insert)));
+        assert!(matches!(Policy::from_str("remove"), Ok(Policy::Remove)));
+    }
+    #[test]
+    fn policy_from_str_invalid_value() {
+        let result = Policy::from_str("invalid_value");
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), "invalid policy: invalid_value");
+    }
+}

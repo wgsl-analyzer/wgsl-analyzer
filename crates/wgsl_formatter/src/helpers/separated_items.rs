@@ -1,7 +1,13 @@
 use dprint_core::formatting::{PrintItems, StringContainer};
 use itertools::{Itertools as _, Position};
 
-use crate::{ast_parse::SyntaxIter, generators::comments::{Comment, gen_comments, infallible_parse_many_comments_and_blankspace}, multiline_group::MultilineGroup, print_item_buffer::PrintItemBuffer, reporting::FormatDocumentResult};
+use crate::{
+    ast_parse::SyntaxIter,
+    generators::comments::{Comment, gen_comments, infallible_parse_many_comments_and_blankspace},
+    multiline_group::MultilineGroup,
+    print_item_buffer::PrintItemBuffer,
+    reporting::FormatDocumentResult,
+};
 
 pub type SeparatedItems<T> = Vec<SeparatedItem<T>>;
 

@@ -1,6 +1,5 @@
-use dprint_core::formatting::{PrintItems, StringContainer};
 use dprint_core_macros::sc;
-use itertools::{Itertools as _, Position, put_back};
+use itertools::put_back;
 use parser::SyntaxKind;
 use syntax::{
     AstNode as _,
@@ -8,15 +7,18 @@ use syntax::{
 };
 
 use crate::{
-    ast_parse::{
-        SyntaxIter, parse_end, parse_node, parse_node_optional, parse_token, parse_token_optional,
-    }, generators::{
-        comments::{Comment, gen_comments, parse_many_comments_and_blankspace},
+    ast_parse::{parse_end, parse_node, parse_node_optional, parse_token, parse_token_optional},
+    generators::{
+        comments::{gen_comments, parse_many_comments_and_blankspace},
         expressions::{gen_expression, ident_expression::gen_ident_expression},
-    }, helpers::separated_items::{format_separated_items, parse_separated_items}, multiline_group::MultilineGroup, print_item_buffer::{
+    },
+    helpers::separated_items::{format_separated_items, parse_separated_items},
+    multiline_group::MultilineGroup,
+    print_item_buffer::{
         PrintItemBuffer,
         spacing_request::{Request, RequestItem},
-    }, reporting::{FormatDocumentError, FormatDocumentResult},
+    },
+    reporting::{FormatDocumentError, FormatDocumentResult},
 };
 
 pub fn gen_function_call(
@@ -45,10 +47,11 @@ pub fn gen_function_call_arguments(
     let mut syntax = put_back(arguments.syntax().children_with_tokens());
     parse_token(&mut syntax, SyntaxKind::ParenthesisLeft)?;
     let item_comments_after_open_paren = parse_many_comments_and_blankspace(&mut syntax)?;
-    let item_parameters =
-        parse_separated_items(&mut syntax, parse_node_optional::<ast::Expression>, |syntax| {
-            parse_token_optional(syntax, SyntaxKind::Comma)
-        });
+    let item_parameters = parse_separated_items(
+        &mut syntax,
+        parse_node_optional::<ast::Expression>,
+        |syntax| parse_token_optional(syntax, SyntaxKind::Comma),
+    );
     parse_token(&mut syntax, SyntaxKind::ParenthesisRight)?;
     parse_end(&mut syntax)?;
 
@@ -66,7 +69,12 @@ pub fn gen_function_call_arguments(
 
         multiline_group.extend(gen_comments(&item_comments_after_open_paren));
 
-        format_separated_items(&mut multiline_group, item_parameters, |item| gen_expression(item, false), sc!(","))?;
+        format_separated_items(
+            &mut multiline_group,
+            item_parameters,
+            |item| gen_expression(item, false),
+            sc!(","),
+        )?;
 
         multiline_group.request(Request::discourage(RequestItem::Space));
 

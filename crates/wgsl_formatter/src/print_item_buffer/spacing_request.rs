@@ -223,7 +223,6 @@ impl Request {
         right: Self,
     ) -> Self {
         match (left, right) {
-
             // COMMUTATIVITY: union is commutative, || is commutative
             (
                 Self::Unconditional {

@@ -51,9 +51,7 @@ pub fn parse_many_comments_and_blankspace(
     Ok(infallible_parse_many_comments_and_blankspace(syntax))
 }
 
-pub fn infallible_parse_many_comments_and_blankspace(
-    syntax: &mut SyntaxIter
-) -> Vec<Comment> {
+pub fn infallible_parse_many_comments_and_blankspace(syntax: &mut SyntaxIter) -> Vec<Comment> {
     let mut comments = Vec::new();
     loop {
         if let Some(comment) = parse_comment_optional(syntax) {
@@ -66,7 +64,6 @@ pub fn infallible_parse_many_comments_and_blankspace(
     }
     comments
 }
-
 
 pub fn gen_comments(comments: &[Comment]) -> PrintItemBuffer {
     let mut formatted = PrintItemBuffer::default();

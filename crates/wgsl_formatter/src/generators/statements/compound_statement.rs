@@ -18,7 +18,6 @@ use crate::{
     reporting::FormatDocumentResult,
 };
 
-
 pub fn gen_compound_statement(
     syntax: &ast::CompoundStatement
 ) -> FormatDocumentResult<PrintItemBuffer> {

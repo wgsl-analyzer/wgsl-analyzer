@@ -88,9 +88,7 @@ impl<'buffer> MultilineGroup<'buffer> {
         self.buffer.request(Request::Conditional {
             condition: Rc::clone(&self.is_multiple_lines),
             on_true: Box::new(Request::expect(RequestItem::LineBreak)),
-            on_false: Box::new(
-                Request::expect(RequestItem::Space).or_newline(),
-            ),
+            on_false: Box::new(Request::expect(RequestItem::Space).or_newline()),
         });
     }
 
