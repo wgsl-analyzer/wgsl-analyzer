@@ -98,13 +98,32 @@ pub enum Request {
         discouraged: RequestItemMap,
         forced: RequestItemMap,
 
-        // TODO think the exact theory of this through
+        // Biggest Expected Item:
+        //  - Nothing: Ok
+        //  - Space: Ok
+        //  - Newline: Clear suggest_linebreak
+        //  - EmptyLine: Clear suggest_linebreak
+        //
+        // Biggest Discouraged Item:
+        //  - Nothing: Ok
+        //  - Space: Ok
+        //  - Newline: Clear suggest_linebreak
+        //  - EmptyLine: Clear suggest_linebreak
+        //
+        // Biggest Forced Item:
+        //  - Nothing: Ok
+        //  - Space: Ok
+        //  - Newline: Clear suggest_linebreak
+        //  - EmptyLine: Clear suggest_linebreak
+        //
+        // If suggest_linebreak persists through expected, discouraged, forced
+        // Then it is turned into either a SpaceOrNewline or PossibleNewLine
         suggest_linebreak: bool,
     },
     Conditional {
         condition: ConditionResolver,
-        on_true: Box<RequestFolder>,
-        on_false: Box<RequestFolder>,
+        on_true: Box<Request>,
+        on_false: Box<Request>,
     },
 }
 
@@ -151,7 +170,7 @@ impl Request {
 
     #[must_use]
     pub fn or_newline(self) -> Self {
-        //TODO Redesign requests once again
+        //TODO(MonaMayrhofer,unclear) Redesign requests once again
         match self {
             Self::Unconditional {
                 expected,
@@ -166,23 +185,22 @@ impl Request {
             },
             Self::Conditional {
                 condition,
-                mut on_false,
-                mut on_true,
+                on_false,
+                on_true,
             } => Self::Conditional {
                 condition,
-                on_true: {
-                    on_true.push_left(Self::empty().or_newline());
-                    on_true
-                },
-                on_false: {
-                    on_false.push_left(Self::empty().or_newline());
-                    on_false
-                },
+                on_true: Box::new(on_true.or_newline()),
+                on_false: Box::new(on_false.or_newline()),
             },
         }
     }
 
     // ==== Request Logic ====
+    /// Create a request that is the combination of left and right.
+    ///
+    /// This is commutative with respect to the outcome, so order of left and right does not matter.
+    /// However - when using Conditional Requests, order of left and right will determine how the conditions are combined
+    /// (but in practice that should not have any implications)
     #[must_use]
     pub fn combine(
         left: Self,
@@ -209,6 +227,7 @@ impl Request {
 
                 let combined_forced = forced_left.union(&forced_right);
 
+                // COMMUTATIVITY: union is commutative, || is commutative
                 Self::Unconditional {
                     expected: combined_exp,
                     discouraged: combined_disc,
@@ -221,86 +240,31 @@ impl Request {
                 request_left,
                 Self::Conditional {
                     condition,
-                    mut on_true,
-                    mut on_false,
-                },
-            ) => {
-                on_true.push_left(request_left.clone());
-                on_false.push_left(request_left);
-
-                Self::Conditional {
-                    condition,
                     on_true,
                     on_false,
-                }
+                },
+            ) => Self::Conditional {
+                condition,
+                on_true: Box::new(Request::combine(request_left.clone(), *on_true)),
+                on_false: Box::new(Request::combine(request_left, *on_false)),
             },
             (
                 Self::Conditional {
                     condition,
-                    mut on_true,
-                    mut on_false,
-                },
-                request_right,
-            ) => {
-                on_true.push_left(request_right.clone());
-                on_false.push_left(request_right);
-
-                Self::Conditional {
-                    condition,
                     on_true,
                     on_false,
-                }
+                },
+                request_right,
+            ) => Self::Conditional {
+                condition,
+                on_true: Box::new(Request::combine(*on_true, request_right.clone())),
+                on_false: Box::new(Request::combine(*on_false, request_right)),
             },
-        }
-    }
-}
-
-//TODO This whole api is still a little bit clunky
-//TODO Make sure push_left is really needed, because so far RequestFolder merging is commutative, lets see if its still commutative after im done
-/// A structure to fold multiple requests into a single one.
-#[derive(Default, Clone)]
-pub struct RequestFolder {
-    pub folded_request: Option<Request>,
-}
-
-impl RequestFolder {
-    pub fn push_left(
-        &mut self,
-        request: Request,
-    ) {
-        if let Some(old_request) = self.folded_request.take() {
-            self.folded_request = Some(Request::combine(old_request, request));
-        } else {
-            self.folded_request = Some(request);
-        }
-    }
-
-    // pub fn push_right(
-    //     &mut self,
-    //     request: Request,
-    // ) {
-    //     if let Some(old_request) = self.folded_request.take() {
-    //         self.folded_request = Some(Request::combine(request, old_request));
-    //     } else {
-    //         self.folded_request = Some(request);
-    //     }
-    // }
-
-    pub fn append(
-        &mut self,
-        mut other: Self,
-    ) {
-        if let Some(new_request) = other.folded_request.take() {
-            if let Some(old_request) = self.folded_request.take() {
-                self.folded_request = Some(Request::combine(old_request, new_request));
-            } else {
-                self.folded_request = Some(new_request);
-            }
         }
     }
 
     pub fn resolve(
-        &mut self,
+        self,
         target: &mut PrintItems,
     ) {
         fn apply_item(
@@ -326,50 +290,91 @@ impl RequestFolder {
             }
         }
 
-        if let Some(request) = self.folded_request.take() {
-            match request {
-                Request::Unconditional {
-                    expected,
-                    discouraged,
-                    forced,
-                    suggest_linebreak,
-                } => {
-                    let candidates = expected.difference(&discouraged);
-                    let candidates = candidates.union(&forced);
+        match self {
+            Request::Unconditional {
+                expected,
+                discouraged,
+                forced,
+                suggest_linebreak,
+            } => {
+                let candidates = expected.difference(&discouraged);
+                let candidates = candidates.union(&forced);
 
-                    // if newlines are discouraged, clear suggest_linebreak
-                    let suggest_linebreak =
-                        suggest_linebreak && !discouraged.contains(RequestItem::LineBreak);
+                // if newlines are discouraged, clear suggest_linebreak
+                let suggest_linebreak =
+                    suggest_linebreak && !discouraged.contains(RequestItem::LineBreak);
 
-                    if let Some(chosen) = candidates.highest_index() {
-                        apply_item(chosen, target, suggest_linebreak);
-                    } else if suggest_linebreak {
-                        target.push_signal(Signal::PossibleNewLine);
-                    }
-                },
-                Request::Conditional {
-                    condition,
-                    mut on_true,
-                    mut on_false,
-                } => {
-                    target.push_condition(Condition::new(
-                        "request_conditional",
-                        ConditionProperties {
-                            condition,
-                            true_path: {
-                                let mut pi = PrintItems::new();
-                                on_true.resolve(&mut pi);
-                                Some(pi)
-                            },
-                            false_path: {
-                                let mut pi = PrintItems::new();
-                                on_false.resolve(&mut pi);
-                                Some(pi)
-                            },
+                if let Some(chosen) = candidates.highest_index() {
+                    apply_item(chosen, target, suggest_linebreak);
+                } else if suggest_linebreak {
+                    target.push_signal(Signal::PossibleNewLine);
+                }
+            },
+            Request::Conditional {
+                condition,
+                on_true,
+                on_false,
+            } => {
+                target.push_condition(Condition::new(
+                    "request_conditional",
+                    ConditionProperties {
+                        condition,
+                        true_path: {
+                            let mut pi = PrintItems::new();
+                            on_true.resolve(&mut pi);
+                            Some(pi)
                         },
-                    ));
-                },
+                        false_path: {
+                            let mut pi = PrintItems::new();
+                            on_false.resolve(&mut pi);
+                            Some(pi)
+                        },
+                    },
+                ));
+            },
+        }
+    }
+}
+
+//TODO This whole api is still a little bit clunky
+//TODO Make sure push_left is really needed, because so far RequestFolder merging is commutative, lets see if its still commutative after im done
+/// A structure to fold multiple requests into a single one.
+#[derive(Default, Clone)]
+pub struct RequestFolder {
+    pub folded_request: Option<Request>,
+}
+
+impl RequestFolder {
+    pub fn push_left(
+        &mut self,
+        request: Request,
+    ) {
+        if let Some(old_request) = self.folded_request.take() {
+            self.folded_request = Some(Request::combine(old_request, request));
+        } else {
+            self.folded_request = Some(request);
+        }
+    }
+
+    pub fn append(
+        &mut self,
+        mut other: Self,
+    ) {
+        if let Some(new_request) = other.folded_request.take() {
+            if let Some(old_request) = self.folded_request.take() {
+                self.folded_request = Some(Request::combine(old_request, new_request));
+            } else {
+                self.folded_request = Some(new_request);
             }
+        }
+    }
+
+    pub fn resolve(
+        &mut self,
+        target: &mut PrintItems,
+    ) {
+        if let Some(request) = self.folded_request.take() {
+            request.clone().resolve(target);
         }
     }
 }

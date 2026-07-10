@@ -87,18 +87,18 @@ impl<'buffer> MultilineGroup<'buffer> {
     pub fn grouped_newline_or_space(&mut self) {
         self.buffer.request(Request::Conditional {
             condition: Rc::clone(&self.is_multiple_lines),
-            on_true: Box::new(RequestFolder::from(Request::expect(RequestItem::LineBreak))),
-            on_false: Box::new(RequestFolder::from(
+            on_true: Box::new(Request::expect(RequestItem::LineBreak)),
+            on_false: Box::new(
                 Request::expect(RequestItem::Space).or_newline(),
-            )),
+            ),
         });
     }
 
     pub fn grouped_possible_newline(&mut self) {
         self.buffer.request(Request::Conditional {
             condition: Rc::clone(&self.is_multiple_lines),
-            on_true: Box::new(RequestFolder::from(Request::expect(RequestItem::LineBreak))),
-            on_false: Box::new(RequestFolder::from(Request::empty().or_newline())),
+            on_true: Box::new(Request::expect(RequestItem::LineBreak)),
+            on_false: Box::new(Request::empty().or_newline()),
         });
     }
 
