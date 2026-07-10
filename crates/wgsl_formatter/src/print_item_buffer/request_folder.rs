@@ -207,6 +207,8 @@ impl Request {
         right: Self,
     ) -> Self {
         match (left, right) {
+
+            // COMMUTATIVITY: union is commutative, || is commutative
             (
                 Self::Unconditional {
                     expected: exp_left,
@@ -222,12 +224,9 @@ impl Request {
                 },
             ) => {
                 let combined_exp = exp_left.union(&exp_right);
-
                 let combined_disc = disc_left.union(&disc_right);
-
                 let combined_forced = forced_left.union(&forced_right);
 
-                // COMMUTATIVITY: union is commutative, || is commutative
                 Self::Unconditional {
                     expected: combined_exp,
                     discouraged: combined_disc,
@@ -236,6 +235,28 @@ impl Request {
                 }
             },
 
+            // COMMUTATIVITY: This is not 100% commutative, however it does not matter as the result is the same
+            // The structure looks like this - and here it does not matter if you reverse the ordering of the ifs
+            // If right_cond {
+            //    if left_cond { combine(left_true, right_true) } else { combine(left_false, right_true) }
+            // } else {
+            //    if left_cond { combine(left_true, right_false) } else { combine(left_false, right_false) }
+            // }
+            (
+                request_left @ Self::Conditional { .. },
+                Self::Conditional {
+                    condition,
+                    on_true,
+                    on_false,
+                },
+            ) => Self::Conditional {
+                condition,
+                on_true: Box::new(Request::combine(request_left.clone(), *on_true)),
+                on_false: Box::new(Request::combine(request_left, *on_false)),
+            },
+
+            // COMMUTATIVITY: The body of this Conditional is the same as with the arguments flipped.
+            // The only difference is the order of arguments to Request::combine, but Request::combine is commutative.
             (
                 request_left,
                 Self::Conditional {
@@ -248,6 +269,8 @@ impl Request {
                 on_true: Box::new(Request::combine(request_left.clone(), *on_true)),
                 on_false: Box::new(Request::combine(request_left, *on_false)),
             },
+            // COMMUTATIVITY: The body of this Conditional is the same as with the arguments flipped.
+            // The only difference is the order of arguments to Request::combine, but Request::combine is commutative.
             (
                 Self::Conditional {
                     condition,
@@ -345,17 +368,6 @@ pub struct RequestFolder {
 }
 
 impl RequestFolder {
-    pub fn push_left(
-        &mut self,
-        request: Request,
-    ) {
-        if let Some(old_request) = self.folded_request.take() {
-            self.folded_request = Some(Request::combine(old_request, request));
-        } else {
-            self.folded_request = Some(request);
-        }
-    }
-
     pub fn append(
         &mut self,
         mut other: Self,
