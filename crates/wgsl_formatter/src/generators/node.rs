@@ -119,8 +119,6 @@ macro_rules! match_ast_exhaustive {
     reason = "It does not make sense to split this up"
 )]
 pub fn gen_node(node: &SyntaxNode) -> FormatDocumentResult<PrintItemBuffer> {
-    // TODO(MonaMayrhofer,outdated => needs_semicolon is fine for our needs, don't overcomplicate) Move the semicolon logic into the gen_* functions. They should not take "include semicolon" but instead some
-    // `context` and then invoke needs_semicolon(context);
     fn needs_semicolon(parent_node: Option<SyntaxNode>) -> bool {
         match parent_node {
             Some(parent_node) => !matches!(
