@@ -146,7 +146,8 @@ pub fn format_override_declaration_with_comments_in_complex_type() {
         expect![[r#"
             /* 0 */
             override /* 1 */ a /* 2 */: /* 3 */ array /* 4 */ <
-                    /* 5 */ u32, /* 6 */ /* 7 */
+                    /* 5 */
+                    u32, /* 6 */ /* 7 */
                     28, /* 8 */
                 > /* 9 */ = /* 10 */ 1 /* 11 */; /* 12 */
         "#]],
