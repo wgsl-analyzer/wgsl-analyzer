@@ -1,7 +1,7 @@
 use dprint_core::formatting::{PrintItems, StringContainer};
 use itertools::{Itertools as _, Position};
 
-use crate::{ast_parse::SyntaxIter, generators::comments::{Comment, gen_comments, parse_many_comments_and_blankspace}, multiline_group::MultilineGroup, print_item_buffer::PrintItemBuffer, reporting::FormatDocumentResult};
+use crate::{ast_parse::SyntaxIter, generators::comments::{Comment, gen_comments, infallible_parse_many_comments_and_blankspace}, multiline_group::MultilineGroup, print_item_buffer::PrintItemBuffer, reporting::FormatDocumentResult};
 
 pub type SeparatedItems<T> = Vec<SeparatedItem<T>>;
 
@@ -22,10 +22,10 @@ pub fn parse_separated_items<T, S>(
         let Some(item_param) = parse_item(syntax) else {
             break;
         };
-        let item_comments_after_param = parse_many_comments_and_blankspace(syntax).unwrap(); //TODO parse_comments cannot return err
+        let item_comments_after_param = infallible_parse_many_comments_and_blankspace(syntax);
 
         let _item_separator = parse_separator(syntax);
-        let item_comments_after_comma = parse_many_comments_and_blankspace(syntax).unwrap(); //TODO parse_comments cannot return err
+        let item_comments_after_comma = infallible_parse_many_comments_and_blankspace(syntax);
 
         items.push(SeparatedItem {
             item: item_param,
