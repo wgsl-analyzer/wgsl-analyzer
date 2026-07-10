@@ -46,7 +46,6 @@ pub fn gen_function_call_arguments(
     // ==== Parse ====
     let mut syntax = put_back(arguments.syntax().children_with_tokens());
     parse_token(&mut syntax, SyntaxKind::ParenthesisLeft)?;
-    let item_comments_after_open_paren = parse_many_comments_and_blankspace(&mut syntax)?;
     let item_parameters = parse_separated_items(
         &mut syntax,
         parse_node_optional::<ast::Expression>,
@@ -62,10 +61,9 @@ pub fn gen_function_call_arguments(
 
     multiline_group.push_sc(sc!("("));
 
-    if !item_parameters.is_blank || !item_comments_after_open_paren.is_empty() {
+    // If its blank we do not give the formatter the option to break within the ()
+    if !item_parameters.is_blank {
         multiline_group.start_indent();
-
-        multiline_group.extend(gen_comments(&item_comments_after_open_paren));
 
         format_separated_items(
             &mut multiline_group,

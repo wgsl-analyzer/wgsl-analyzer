@@ -8,14 +8,19 @@ use syntax::{
 };
 
 use crate::{
-    ast_parse::{parse_end, parse_node, parse_node_optional, parse_token, parse_token_optional}, generators::{
+    ast_parse::{parse_end, parse_node, parse_node_optional, parse_token, parse_token_optional},
+    generators::{
         comments::{gen_comments, parse_many_comments_and_blankspace},
         expressions::gen_expression,
         path::gen_path,
-    }, helpers::separated_items::{format_separated_items, parse_separated_items}, multiline_group::MultilineGroup, print_item_buffer::{
+    },
+    helpers::separated_items::{format_separated_items, parse_separated_items},
+    multiline_group::MultilineGroup,
+    print_item_buffer::{
         PrintItemBuffer,
         spacing_request::{Request, RequestItem},
-    }, reporting::FormatDocumentResult,
+    },
+    reporting::FormatDocumentResult,
 };
 
 pub fn gen_type_specifier(
@@ -47,10 +52,10 @@ pub fn gen_template_list(
     // ==== Parse ====
     let mut syntax = put_back(template_list.syntax().children_with_tokens());
     parse_token(&mut syntax, SyntaxKind::TemplateStart)?;
-    //TODO Remove this comment and also the same logic in attributes and function_call_statment
-    //let item_comments_after_start = parse_many_comments_and_blankspace(&mut syntax)?;
 
-    let items = parse_separated_items(&mut syntax, parse_node_optional::<ast::Expression>, |s| parse_token_optional(s, SyntaxKind::Comma));
+    let items = parse_separated_items(&mut syntax, parse_node_optional::<ast::Expression>, |s| {
+        parse_token_optional(s, SyntaxKind::Comma)
+    });
     parse_token(&mut syntax, parser::SyntaxKind::TemplateEnd)?;
     parse_end(&mut syntax)?;
 
@@ -59,11 +64,20 @@ pub fn gen_template_list(
 
     let mut multiline_group = MultilineGroup::new(&mut formatted);
     multiline_group.push_sc(sc!("<"));
-    multiline_group.start_indent();
-    format_separated_items(&mut multiline_group, items, |item| gen_expression(&item, false), sc!(","))?;
-    multiline_group.request(Request::discourage(RequestItem::Space));
-    multiline_group.finish_indent();
-    multiline_group.grouped_possible_newline();
+
+    // If its blank we do not give the formatter the option to break within the <>
+    if !items.is_blank {
+        multiline_group.start_indent();
+        format_separated_items(
+            &mut multiline_group,
+            items,
+            |item| gen_expression(&item, false),
+            sc!(","),
+        )?;
+        multiline_group.request(Request::discourage(RequestItem::Space));
+        multiline_group.finish_indent();
+        multiline_group.grouped_possible_newline();
+    }
     multiline_group.push_sc(sc!(">"));
     multiline_group.end();
 

@@ -436,14 +436,13 @@ fn gen_attr_standard_with_args(
     //let item_arguments = gen_function_call_like_comma_separated_values(&mut syntax)?;
     let item_arguments = if parse_token_optional(&mut syntax, SyntaxKind::ParenthesisLeft).is_some()
     {
-        let item_comments_after_open_paren = parse_many_comments_and_blankspace(&mut syntax)?;
         let item_arguments = parse_separated_items(
             &mut syntax,
             parse_node_optional::<ast::Expression>,
             |syntax| parse_token_optional(syntax, SyntaxKind::Comma),
         );
         parse_token(&mut syntax, SyntaxKind::ParenthesisRight)?;
-        Some((item_comments_after_open_paren, item_arguments))
+        Some(item_arguments)
     } else {
         None
     };
@@ -454,13 +453,13 @@ fn gen_attr_standard_with_args(
     formatted.extend(gen_comments(&item_comments_after_operator));
     formatted.push_sc(attribute_name);
     formatted.extend(gen_comments(&item_comments_after_identifier));
-    if let Some((item_comments_after_open_paren, item_arguments)) = item_arguments {
+    if let Some(item_arguments) = item_arguments {
         let mut multiline_group = MultilineGroup::new(&mut formatted);
         multiline_group.push_sc(sc!("("));
 
-        if !item_arguments.is_blank || !item_comments_after_open_paren.is_empty() {
+        // If its blank we do not give the formatter the option to break within the ()
+        if !item_arguments.is_blank {
             multiline_group.start_indent();
-            multiline_group.extend(gen_comments(&item_comments_after_open_paren));
 
             format_separated_items(
                 &mut multiline_group,
