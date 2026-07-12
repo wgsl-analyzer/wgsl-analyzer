@@ -17,12 +17,13 @@ impl VfsPath {
     ///
     /// This is most useful for testing, to avoid windows/linux differences.
     ///
+    /// The root path is an empty string, every other path starts with `/`.
+    ///
     /// # Panics
     ///
-    /// Panics if `path` does not start with `'/'`.
-    #[must_use]
+    /// Panics if `path` is invalid.
     pub fn new_virtual_path(path: String) -> Self {
-        assert!(path.starts_with('/') || path.is_empty());
+        assert!(path.is_empty() || path.starts_with('/'));
         assert!(!path.ends_with('/'));
         Self(VfsPathRepr::VirtualPath(VirtualPath(path)))
     }
