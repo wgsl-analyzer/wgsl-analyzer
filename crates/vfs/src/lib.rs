@@ -288,7 +288,10 @@ impl Vfs {
             // two changes to the same file in one cycle, merge them appropriately
             Entry::Occupied(mut o) => {
                 use Change::{Create, Delete, Modify};
-
+                #[expect(
+                    clippy::match_same_arms,
+                    reason = "match rust-analyzer's implementation"
+                )]
                 match (&mut o.get_mut().change, changed_file.change) {
                     // newer `Delete` wins
                     (change, Delete) => *change = Delete,

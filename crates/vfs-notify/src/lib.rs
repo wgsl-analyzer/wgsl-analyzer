@@ -1,5 +1,7 @@
 //! An implementation of `loader::Handle`, based on `walkdir`.
 #![expect(clippy::disallowed_names, reason = "vfs-notify is vendored in")]
+#![expect(clippy::filetype_is_file, reason = "vfs-notify is vendored in")]
+
 use std::{
     fs,
     path::{Component, Path},

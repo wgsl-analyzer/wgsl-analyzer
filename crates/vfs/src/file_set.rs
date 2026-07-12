@@ -212,6 +212,10 @@ impl FileSetConfigBuilder {
     }
 
     /// Build the `FileSetConfig`.
+    #[expect(
+        clippy::missing_panics_doc,
+        reason = "Creating the map should never fail."
+    )]
     #[must_use]
     pub fn build(self) -> FileSetConfig {
         let n_file_sets = self.roots.len() + 1;
@@ -235,6 +239,10 @@ impl FileSetConfigBuilder {
 /// Implements [`fst::Automaton`].
 ///
 /// It will match if `prefix_of` is a prefix of the given data.
+#[expect(
+    clippy::struct_field_names,
+    reason = "match rust-analyzer's implementation"
+)]
 struct PrefixOf<'data> {
     prefix_of: &'data [u8],
 }

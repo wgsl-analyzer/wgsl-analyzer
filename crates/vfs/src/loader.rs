@@ -227,6 +227,7 @@ impl fmt::Debug for Message {
     }
 }
 
+#[cfg(test)]
 #[test]
 fn handle_is_dyn_compatible() {
     fn _assert(_: &dyn Handle) {}

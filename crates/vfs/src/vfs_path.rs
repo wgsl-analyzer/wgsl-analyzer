@@ -22,6 +22,7 @@ impl VfsPath {
     /// # Panics
     ///
     /// Panics if `path` is invalid.
+    #[must_use]
     pub fn new_virtual_path(path: String) -> Self {
         assert!(path.is_empty() || path.starts_with('/'));
         assert!(!path.ends_with('/'));
@@ -156,7 +157,7 @@ impl VfsPath {
             VfsPathRepr::PathBuf(path) => {
                 #[cfg(windows)]
                 {
-                    use windows_paths::Encode;
+                    use windows_paths::Encode as _;
                     let path: &std::path::Path = path.as_ref();
                     let components = path.components();
                     let mut add_separator = false;
@@ -175,7 +176,11 @@ impl VfsPath {
                                     component.as_os_str().encode(buffer);
                                 }
                             },
-                            _ => component.as_os_str().encode(buffer),
+                            std::path::Component::CurDir
+                            | std::path::Component::ParentDir
+                            | std::path::Component::Normal(_) => {
+                                component.as_os_str().encode(buffer);
+                            },
                         }
 
                         // some components may be encoded empty
@@ -199,6 +204,8 @@ impl VfsPath {
 
 #[cfg(windows)]
 mod windows_paths {
+    #![expect(clippy::little_endian_bytes, reason = "vfs is vendored in")]
+
     pub(crate) trait Encode {
         fn encode(
             &self,
@@ -211,7 +218,7 @@ mod windows_paths {
             &self,
             buf: &mut Vec<u8>,
         ) {
-            use std::os::windows::ffi::OsStrExt;
+            use std::os::windows::ffi::OsStrExt as _;
             for wchar in self.encode_wide() {
                 buf.extend(wchar.to_le_bytes().iter().copied());
             }
@@ -223,8 +230,8 @@ mod windows_paths {
             &self,
             buf: &mut Vec<u8>,
         ) {
-            let wide = *self as u16;
-            buf.extend(wide.to_le_bytes().iter().copied())
+            let wide = u16::from(*self);
+            buf.extend(wide.to_le_bytes().iter().copied());
         }
     }
 
@@ -235,7 +242,7 @@ mod windows_paths {
         ) {
             debug_assert!(self.is_ascii());
             for b in self.as_bytes() {
-                b.encode(buf)
+                b.encode(buf);
             }
         }
     }
