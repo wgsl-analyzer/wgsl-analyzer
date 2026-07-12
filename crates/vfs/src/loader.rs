@@ -51,11 +51,11 @@ pub enum LoadingProgress {
 pub enum Message {
     /// Indicate a gradual progress.
     ///
-    /// This is supposed to be the number of loaded files.
+    /// This is supposed to be the number of loaded files and directories.
     Progress {
-        /// The total files to be loaded.
+        /// The total entries to be loaded.
         n_total: usize,
-        /// The files that have been loaded successfully.
+        /// The entries that have been loaded successfully.
         n_done: LoadingProgress,
         /// The dir being loaded, `None` if its for a file.
         directory: Option<AbsPathBuf>,
