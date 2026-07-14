@@ -1,7 +1,7 @@
 mod collector;
 mod diagnostics;
 
-mod module_map;
+mod modules_map;
 #[cfg(test)]
 mod tests;
 
@@ -9,7 +9,7 @@ use base_db::{EditionedFileId, Package};
 pub use collector::collect_module;
 pub use diagnostics::{DefDiagnostic, DefDiagnosticKind};
 use itertools::Itertools as _;
-pub use module_map::{ModuleData, ModulesMap, modules_map_query};
+pub use modules_map::{ModuleData, ModulesMap, modules_map_query};
 
 use crate::{database::DefDatabase, item_tree::Name};
 
