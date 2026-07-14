@@ -192,3 +192,38 @@ const foo = 5;
         "#]],
     );
 }
+
+#[test]
+fn unresolved_import() {
+    check(
+        r#"
+//- /package.wesl edition:2026_pre
+import package::bar::foo;
+
+//- /bar.wesl
+"#,
+        expect![[r#"
+            package
+            - path foo (import)
+            error: import resolved to neither a module nor an item
+            package::bar
+        "#]],
+    );
+}
+
+#[test]
+fn import_resolves_to_folder() {
+    check(
+        r#"
+//- /package.wesl edition:2026_pre
+import package::bar::foo;
+
+//- /bar/foo/deep.wesl
+"#,
+        expect![[r#"
+            package
+            - path foo (import)
+            package::bar::foo::deep
+        "#]],
+    );
+}

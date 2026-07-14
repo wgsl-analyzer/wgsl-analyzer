@@ -10,7 +10,7 @@ use crate::{
     mod_path::{AbsoluteModPath, ModPath, PathKind},
     name_resolution::{
         diagnostics::{self, DefDiagnostic},
-        resolve_module,
+        modules_map_query, resolve_module,
     },
     visibility::Visibility,
 };
@@ -141,7 +141,15 @@ impl ModCollector<'_> {
                 item_id,
             );
 
-            if let Some(definition) = self.resolve_import(package, &path, location) {
+            let definition = match self.resolve_import(package, &path, location) {
+                Ok(value) => value,
+                Err(diagnostic) => {
+                    self.item_scope.push_diagnostic(diagnostic);
+                    return;
+                },
+            };
+
+            if let Some(definition) = definition {
                 self.push_item(
                     &name,
                     ModuleItem {
@@ -258,17 +266,22 @@ impl ModCollector<'_> {
         package: Package,
         path: &AbsoluteModPath,
         location: Location<ast::ImportStatement>,
-    ) -> Option<ModuleDefinitionId> {
+    ) -> Result<Option<ModuleDefinitionId>, DefDiagnostic> {
         let [head_segments @ .., name] = path.segments() else {
-            // TODO: This is an error case
-            return None;
+            return Err(DefDiagnostic::unnamed_import(self.file_id, location));
         };
-
-        resolve_module(self.database, package, head_segments)
-            .and_then(|module| self.resolve_item(module, name))
-
-        // TODO: Check if there's a file OR a folder OR iteme that corresponds to this
-        // let module = resolve_module(self.database, package, path.segments());
+        let module = resolve_module(self.database, package, head_segments);
+        let item = module.and_then(|module| self.resolve_item(module, name));
+        if item.is_some() {
+            Ok(item)
+        } else {
+            let modules_map = modules_map_query(self.database, package);
+            if modules_map.modules.contains_key(path) {
+                Ok(None)
+            } else {
+                Err(DefDiagnostic::unresolved_import(self.file_id, location))
+            }
+        }
     }
 
     fn resolve_item(
