@@ -259,15 +259,16 @@ impl ModCollector<'_> {
         path: AbsoluteModPath,
         location: Location<ast::ImportStatement>,
     ) -> Option<ModuleDefinitionId> {
-        // TODO: Check if there's a file OR a folder that corresponds to this
-        let module = resolve_module(self.database, package, path.segments());
-
-        let [head_segments @ .., last_segment] = path.segments() else {
+        let [head_segments @ .., name] = path.segments() else {
+            // TODO: This is an error case
             return None;
         };
 
         resolve_module(self.database, package, head_segments)
-            .and_then(|module| self.resolve_item(module, last_segment))
+            .and_then(|module| self.resolve_item(module, name))
+
+        // TODO: Check if there's a file OR a folder OR iteme that corresponds to this
+        // let module = resolve_module(self.database, package, path.segments());
     }
 
     fn resolve_item(

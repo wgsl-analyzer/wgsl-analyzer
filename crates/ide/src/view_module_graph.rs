@@ -4,6 +4,7 @@ use hir_def::{
     FxIndexMap,
     item_tree::Name,
     mod_path::{AbsoluteModPath, ModPath, PathKind},
+    name_resolution::{ModulesMap, modules_map_query},
 };
 use ide_db::{FxHashMap, RootDatabase};
 use itertools::Itertools as _;
@@ -26,64 +27,12 @@ pub(crate) fn view_module_graph(
 ) -> Option<String> {
     // TODO: This only renders the children. It should render an edge for each import and inline usage of another module.
     let package = file_package(database, file_id)?;
-    let modules_to_render = modules_map(database, package);
+    let modules_to_render = modules_map_query(database, package);
     let graph = DotModuleGraph::new(database, modules_to_render);
 
     let mut dot = Vec::new();
     dot::render(&graph, &mut dot).unwrap();
     Some(String::from_utf8(dot).unwrap())
-}
-
-fn modules_map(
-    database: &RootDatabase,
-    package: Package,
-) -> FxHashMap<AbsoluteModPath, ModuleData> {
-    let package_data = package.data(database);
-    let source_root = package_data.source_root(database);
-    let modules: Vec<_> = source_root
-        .iter()
-        .filter_map(|file_id| {
-            let (name, extension) = source_root.path_for_file(file_id)?.name_and_extension()?;
-            let file_id = EditionedFileId::try_with_extension(database, file_id, extension?)?;
-            let mod_path = AbsoluteModPath::for_file(database, package, file_id)?;
-            Some(ModuleData {
-                file_id: Some(file_id),
-                mod_path,
-            })
-        })
-        .collect();
-
-    // Invariant: Given a ModPath, the parent ModPath exists in the folders
-    let mut folders = FxHashMap::default();
-    folders.insert(
-        AbsoluteModPath::new_root(),
-        ModuleData {
-            file_id: None,
-            mod_path: AbsoluteModPath::new_root(),
-        },
-    );
-
-    for module in modules {
-        if folders.contains_key(&module.mod_path) {
-            continue;
-        }
-        let mut module_path = module.mod_path.clone();
-        folders.insert(module.mod_path.clone(), module);
-
-        while let Some(_) = module_path.pop_segment()
-            && !folders.contains_key(&module_path)
-        {
-            folders.insert(
-                module_path.clone(),
-                ModuleData {
-                    file_id: None,
-                    mod_path: module_path.clone(),
-                },
-            );
-        }
-    }
-
-    folders
 }
 
 struct ModuleData {
@@ -104,10 +53,15 @@ struct DotModuleGraph<'db> {
 impl<'db> DotModuleGraph<'db> {
     fn new(
         database: &'db RootDatabase,
-        modules_map: FxHashMap<AbsoluteModPath, ModuleData>,
+        modules_map: &ModulesMap,
     ) -> Self {
         let modules: Vec<_> = modules_map
-            .into_values()
+            .modules
+            .iter()
+            .map(|(mod_path, data)| ModuleData {
+                file_id: data.file,
+                mod_path: mod_path.clone(),
+            })
             .sorted_by(|module_a, module_b| module_a.mod_path.cmp(&module_b.mod_path))
             .collect();
 
