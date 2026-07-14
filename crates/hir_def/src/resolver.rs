@@ -307,7 +307,7 @@ fn resolve_path_to_item(
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum ResolutionDiagnostic {
-    /// Cannot resolve a name in the current file
+    /// Cannot resolve a name in the current file.
     UnresolvedName {
         name: Name,
     },
@@ -318,7 +318,7 @@ pub enum ResolutionDiagnostic {
     UnresolvedPackage {
         name: Name,
     },
-    /// Cannot resolve a name in a different file
+    /// Cannot resolve a name in a different file.
     UnresolvedItem {
         file_id: EditionedFileId,
         name: Name,

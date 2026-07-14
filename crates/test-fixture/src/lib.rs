@@ -146,9 +146,11 @@ impl ChangeFixture {
                 "cannot specify dependencies without naming the package"
             );
 
-            let mut meta_package = meta.package.or(roots.is_empty().then(||
-                    // Support tests that have a single file or a few files without setting up a package
-                    ("wa_test_fixture".to_owned(), PackageOrigin::Local)));
+            let mut meta_package = meta.package;
+            if meta_package.is_none() && roots.is_empty() {
+                // Support tests that have a single file or a few files without setting up a package
+                meta_package = Some(("wa_test_fixture".to_owned(), PackageOrigin::Local));
+            }
 
             if let Some((package, origin)) = meta_package {
                 let package_name = PackageName::normalize_dashes(&package);

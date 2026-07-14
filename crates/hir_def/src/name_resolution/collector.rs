@@ -141,7 +141,7 @@ impl ModCollector<'_> {
                 item_id,
             );
 
-            if let Some(definition) = self.resolve_import(package, path, location) {
+            if let Some(definition) = self.resolve_import(package, &path, location) {
                 self.push_item(
                     &name,
                     ModuleItem {
@@ -256,7 +256,7 @@ impl ModCollector<'_> {
     fn resolve_import(
         &self,
         package: Package,
-        path: AbsoluteModPath,
+        path: &AbsoluteModPath,
         location: Location<ast::ImportStatement>,
     ) -> Option<ModuleDefinitionId> {
         let [head_segments @ .., name] = path.segments() else {

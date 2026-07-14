@@ -79,7 +79,7 @@ impl EditionedFileId {
     ) -> Self {
         Self::try_from_file(database, file_id).unwrap_or_else(|error| {
             tracing::error!("{error}");
-            return Self::new_unchecked(database, file_id, Edition::DEFAULT);
+            Self::new_unchecked(database, file_id, Edition::DEFAULT)
         })
     }
 

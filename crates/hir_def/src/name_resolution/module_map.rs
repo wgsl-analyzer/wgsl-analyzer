@@ -1,4 +1,4 @@
-use base_db::{EditionedFileId, Package, SourceDatabase};
+use base_db::{EditionedFileId, Package, SourceDatabase as _};
 
 use crate::{
     FxIndexMap, database::DefDatabase, item_scope::ItemScope, item_tree::Name,

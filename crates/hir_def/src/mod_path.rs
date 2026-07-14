@@ -13,14 +13,16 @@ use crate::{database::DefDatabase, item_tree::Name};
 pub struct AbsoluteModPath(ModPath);
 
 impl AbsoluteModPath {
-    pub fn new_root() -> Self {
+    #[must_use]
+    pub const fn new_root() -> Self {
         Self(ModPath::from_kind(PathKind::Package))
     }
 
+    #[must_use]
     pub fn from_segments(segments: &[Name]) -> Self {
-        AbsoluteModPath(ModPath::from_segments(
+        Self(ModPath::from_segments(
             PathKind::Package,
-            segments.into_iter().cloned(),
+            segments.iter().cloned(),
         ))
     }
 
