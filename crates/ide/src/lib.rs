@@ -389,7 +389,7 @@ impl Analysis {
         trigger_character: Option<char>,
     ) -> Cancellable<Option<Vec<CompletionItem>>> {
         self.with_db(|database| {
-            ide_completion::completions2(database, config, position, trigger_character)
+            ide_completion::completions(database, config, position, trigger_character)
         })
     }
 

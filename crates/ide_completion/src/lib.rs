@@ -55,7 +55,7 @@ impl CompletionFieldsToResolve {
     }
 }
 
-pub fn completions2(
+pub fn completions(
     database: &RootDatabase,
     config: &CompletionConfig,
     position: FilePosition,
