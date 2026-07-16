@@ -36,10 +36,10 @@
 		"node": "^24.15.0"
 	},
 	"devEngines": {
-		"pnpm": "^11.5.2"
+		"pnpm": "^11.13.1"
 	},
 	"engineStrict": true,
-	"packageManager": "pnpm@11.5.2+sha512.71c631e382066efc25625d5cf029075de07b61b37f6e27350fbd84b1bda5864c8c1967adc280776b45c30a715c0359a3be08fef42d5bb09e2b99029979692916",
+	"packageManager": "pnpm@11.13.1+sha512.b2fc7683b8a6525414e7d13e1ba28caaddde96bf66ec540bfaeb7e702b81f3e0be4d1f295edf7f9fe0396740a8dce4509c582ddf79891f4543fea32d37645f25",
 	"enabledApiProposals": [],
 	"extensionKind": [
 		"workspace"
