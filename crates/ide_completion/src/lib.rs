@@ -61,6 +61,7 @@ pub fn completions(
     position: FilePosition,
     _trigger_character: Option<char>,
 ) -> Option<Vec<CompletionItem>> {
+    let _p = tracing::info_span!("completions").entered();
     let mut accumulator = Completions::default();
 
     let context = CompletionContext::new(database, position, config)?;

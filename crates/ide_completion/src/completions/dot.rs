@@ -13,6 +13,7 @@ pub(crate) fn complete_dot(
     accumulator: &mut Completions,
     context: &CompletionContext<'_>,
 ) -> Option<()> {
+    let _p = tracing::info_span!("complete_dot").entered();
     let Some(ImmediateLocation::FieldAccess { expression }) = &context.completion_location else {
         return Some(());
     };

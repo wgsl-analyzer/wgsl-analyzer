@@ -388,6 +388,7 @@ impl Analysis {
         position: FilePosition,
         trigger_character: Option<char>,
     ) -> Cancellable<Option<Vec<CompletionItem>>> {
+        let _p = tracing::info_span!("Analysis::completions").entered();
         self.with_db(|database| {
             ide_completion::completions(database, config, position, trigger_character)
         })
