@@ -35,18 +35,32 @@ pub(crate) fn complete_dot(
             struct_completions(accumulator, context, r#struct);
             Some(())
         },
-        TypeKind::Reference(hir_ty::ty::Reference { address_space, inner, access_mode })
-        | TypeKind::Pointer(hir_ty::ty::Pointer { address_space, inner, access_mode })
-        if let TypeKind::Vector(vector) = inner.kind(context.database) => {
+        TypeKind::Reference(hir_ty::ty::Reference {
+            address_space,
+            inner,
+            access_mode,
+        })
+        | TypeKind::Pointer(hir_ty::ty::Pointer {
+            address_space,
+            inner,
+            access_mode,
+        }) if let TypeKind::Vector(vector) = inner.kind(context.database) => {
             vector_completions(accumulator, context, expression, &vector);
             Some(())
-        }
-        TypeKind::Reference(hir_ty::ty::Reference { address_space, inner, access_mode })
-        | TypeKind::Pointer(hir_ty::ty::Pointer { address_space, inner, access_mode })
-        if let TypeKind::Struct(r#struct) = inner.kind(context.database) => {
+        },
+        TypeKind::Reference(hir_ty::ty::Reference {
+            address_space,
+            inner,
+            access_mode,
+        })
+        | TypeKind::Pointer(hir_ty::ty::Pointer {
+            address_space,
+            inner,
+            access_mode,
+        }) if let TypeKind::Struct(r#struct) = inner.kind(context.database) => {
             struct_completions(accumulator, context, r#struct);
             Some(())
-        }
+        },
         TypeKind::Error
         | TypeKind::Scalar(_)
         | TypeKind::Atomic(_)
