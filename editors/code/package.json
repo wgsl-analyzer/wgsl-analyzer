@@ -81,7 +81,7 @@
 		"esbuild": "^0.28.2",
 		"ovsx": "^1.1.1",
 		"tslib": "^2.8.1",
-		"typescript": "^6.0.3"
+		"typescript": "^7.0.2"
 	},
 	"main": "./out/main.js",
 	"activationEvents": [
