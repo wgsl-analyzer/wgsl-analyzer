@@ -220,12 +220,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7704b5fdd17b18ae31c4c1da5a2e0305a2bf17b5249300a9ee9ed7b72114c636"
 
 [[package]]
-name = "cov-mark"
-version = "2.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "90863d8442510cddf7f46618c4f92413774635771a3e80830c8b30d183420b14"
-
-[[package]]
 name = "crc32fast"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -539,7 +533,6 @@ name = "hir-def"
 version = "0.0.0"
 dependencies = [
  "base-db",
- "cov-mark",
  "either",
  "expect-test",
  "indexmap",
@@ -553,7 +546,6 @@ dependencies = [
  "smol_str",
  "syntax",
  "test-fixture",
- "tracing",
  "triomphe",
  "vfs",
 ]
