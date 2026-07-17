@@ -259,6 +259,7 @@ pub(crate) fn get_all_items(
 }
 
 #[test]
+#[expect(clippy::too_many_lines, reason = "Needs fixing, see the TODO")]
 // TODO https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1321
 fn no_completions_in_comments() {
     assert_eq!(
