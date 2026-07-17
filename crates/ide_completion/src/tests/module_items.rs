@@ -780,21 +780,7 @@ struct Foo               struct Foo
     );
 }
 
-#[test]
-// TODO https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1323
-fn complete_module() {
-    assert_eq!(
-        completion_list(
-            "
-            //- /shaders.wesl edition:2026_pre
-            import package::$0;
-            //- /shaders/foo.wesl
-            alias Foo = u32;
-            ",
-        ),
-        String::new(),
-    );
-}
+// completion test for modules in ./wesl.rs
 
 #[test]
 fn complete_type_alias() {

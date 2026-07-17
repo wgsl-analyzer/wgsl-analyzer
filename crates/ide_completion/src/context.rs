@@ -72,7 +72,7 @@ impl<'database> CompletionContext<'database> {
     pub(crate) fn source_range(&self) -> base_db::TextRange {
         let kind = self.token.kind();
         if kind == SyntaxKind::Identifier
-        // || kind.is_keyword()
+        || kind.is_keyword()
         {
             self.token.text_range()
         } else {

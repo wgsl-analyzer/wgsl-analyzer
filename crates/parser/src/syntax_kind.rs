@@ -507,6 +507,39 @@ impl SyntaxKind {
     }
 
     #[must_use]
+    pub const fn is_keyword(self) -> bool {
+        matches!(
+            self,
+            Self::Alias
+            | Self::Break
+            | Self::Case
+            | Self::Const
+            | Self::ConstantAssert
+            | Self::Continue
+            | Self::Continuing
+            | Self::Default
+            | Self::Diagnostic
+            | Self::Discard
+            | Self::Else
+            | Self::Enable
+            | Self::False
+            | Self::Fn
+            | Self::For
+            | Self::If
+            | Self::Let
+            | Self::Loop
+            | Self::Override
+            | Self::Requires
+            | Self::Return
+            | Self::Struct
+            | Self::Switch
+            | Self::True
+            | Self::Var
+            | Self::While
+        )
+    }
+
+    #[must_use]
     #[expect(clippy::as_conversions, reason = "repr(u16)")]
     pub const fn as_u16(self) -> u16 {
         self as u16

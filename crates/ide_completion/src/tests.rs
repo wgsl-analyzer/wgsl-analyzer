@@ -10,6 +10,7 @@
 
 mod expression;
 mod module_items;
+mod wesl;
 
 use base_db::{EditionedFileId, FilePosition, SourceDatabase, change};
 use expect_test::Expect;
