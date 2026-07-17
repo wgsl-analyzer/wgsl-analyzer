@@ -16,10 +16,10 @@ mod test_db;
 #[cfg(test)]
 mod tests;
 
-pub fn setup_tracing() -> Option<tracing::subscriber::DefaultGuard> {
+pub fn setup_tracing() -> tracing::subscriber::DefaultGuard {
     use std::env;
     use std::sync::LazyLock;
-    use tracing_subscriber::{Registry, layer::SubscriberExt};
+    use tracing_subscriber::{Registry, layer::SubscriberExt as _};
     use tracing_tree::HierarchicalLayer;
 
     let layer = HierarchicalLayer::default()
@@ -28,5 +28,5 @@ pub fn setup_tracing() -> Option<tracing::subscriber::DefaultGuard> {
         .with_indent_amount(2)
         .with_writer(std::io::stderr);
     let subscriber = Registry::default().with(layer);
-    Some(tracing::subscriber::set_default(subscriber))
+    tracing::subscriber::set_default(subscriber)
 }

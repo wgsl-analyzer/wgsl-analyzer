@@ -8,10 +8,19 @@ use base_db::{EditionedFileId, Intern as _, Lookup as _};
 use diagnostics::{AnyDiagnostic, DiagnosticsConfig};
 use either::Either;
 use hir_def::{
-    HasSource as _, InFile, body::{BindingId, Body, BodySourceMap}, database::{
+    HasSource as _, InFile,
+    body::{BindingId, Body, BodySourceMap},
+    database::{
         DefDatabase, DefinitionWithBodyId, FunctionId, GlobalAssertStatementId, GlobalConstantId,
         GlobalVariableId, ImportId, Location, OverrideId, StructId, TypeAliasId,
-    }, expression::{ExpressionId, StatementId}, expression_store::{ExpressionStoreSource, path::Path}, item_scope::ItemScope, item_tree::{self, ItemTree, ModuleItemId, Name}, mod_path::PathKind, resolver::{ResolveKind, Resolver}, signature::{FieldId, ParameterId},
+    },
+    expression::{ExpressionId, StatementId},
+    expression_store::{ExpressionStoreSource, path::Path},
+    item_scope::ItemScope,
+    item_tree::{self, ItemTree, ModuleItemId, Name},
+    mod_path::PathKind,
+    resolver::{ResolveKind, Resolver},
+    signature::{FieldId, ParameterId},
 };
 pub use hir_ty::database::HirDatabase;
 use hir_ty::{infer::InferenceResult, ty::Type};
@@ -34,11 +43,11 @@ pub enum PrefixKind {
 
 impl PrefixKind {
     #[inline]
-    fn path_kind(self) -> PathKind {
+    const fn path_kind(self) -> PathKind {
         match self {
-            PrefixKind::BySelf => PathKind::SELF,
-            PrefixKind::Plain => PathKind::Plain,
-            PrefixKind::ByPackage => PathKind::Package,
+            Self::BySelf => PathKind::SELF,
+            Self::Plain => PathKind::Plain,
+            Self::ByPackage => PathKind::Package,
         }
     }
 }

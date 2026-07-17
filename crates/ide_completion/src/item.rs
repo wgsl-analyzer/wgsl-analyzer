@@ -97,17 +97,18 @@ pub enum CompletionItemKind {
 }
 
 impl CompletionItemKind {
-    pub fn tag(self) -> &'static str {
+    #[must_use]
+    pub const fn tag(self) -> &'static str {
         match self {
-            CompletionItemKind::Field => "field",
-            CompletionItemKind::Function => "function",
-            CompletionItemKind::Variable => "variable",
-            CompletionItemKind::Keyword => "Keyword",
-            CompletionItemKind::Snippet => "snippet",
-            CompletionItemKind::Constant => "Constant",
-            CompletionItemKind::Struct => "struct",
-            CompletionItemKind::Module => "module",
-            CompletionItemKind::TypeAlias => "type alias",
+            Self::Field => "field",
+            Self::Function => "function",
+            Self::Variable => "variable",
+            Self::Keyword => "Keyword",
+            Self::Snippet => "snippet",
+            Self::Constant => "Constant",
+            Self::Struct => "struct",
+            Self::Module => "module",
+            Self::TypeAlias => "type alias",
         }
     }
 }

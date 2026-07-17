@@ -127,8 +127,8 @@ impl SourceDatabase for RootDatabase {
 }
 
 impl Default for RootDatabase {
-    fn default() -> RootDatabase {
-        RootDatabase::new(None)
+    fn default() -> Self {
+        Self::new(None)
     }
 }
 
