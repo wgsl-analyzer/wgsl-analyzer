@@ -5,6 +5,8 @@ mod config;
 mod context;
 pub mod item;
 mod patterns;
+#[cfg(test)]
+mod tests;
 
 use base_db::FilePosition;
 use ide_db::RootDatabase;

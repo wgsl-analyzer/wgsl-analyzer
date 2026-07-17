@@ -8,18 +8,10 @@ use base_db::{EditionedFileId, Intern as _, Lookup as _};
 use diagnostics::{AnyDiagnostic, DiagnosticsConfig};
 use either::Either;
 use hir_def::{
-    HasSource as _, InFile,
-    body::{BindingId, Body, BodySourceMap},
-    database::{
+    HasSource as _, InFile, body::{BindingId, Body, BodySourceMap}, database::{
         DefDatabase, DefinitionWithBodyId, FunctionId, GlobalAssertStatementId, GlobalConstantId,
         GlobalVariableId, ImportId, Location, OverrideId, StructId, TypeAliasId,
-    },
-    expression::{ExpressionId, StatementId},
-    expression_store::{ExpressionStoreSource, path::Path},
-    item_scope::ItemScope,
-    item_tree::{self, ItemTree, ModuleItemId, Name},
-    resolver::{ResolveKind, Resolver},
-    signature::{FieldId, ParameterId},
+    }, expression::{ExpressionId, StatementId}, expression_store::{ExpressionStoreSource, path::Path}, item_scope::ItemScope, item_tree::{self, ItemTree, ModuleItemId, Name}, mod_path::PathKind, resolver::{ResolveKind, Resolver}, signature::{FieldId, ParameterId},
 };
 pub use hir_ty::database::HirDatabase;
 use hir_ty::{infer::InferenceResult, ty::Type};
@@ -27,6 +19,29 @@ use smallvec::SmallVec;
 use stdx::impl_from;
 use syntax::{AstNode as _, HasName as _, SyntaxNode, ast, pointer::AstPointer};
 use triomphe::Arc;
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub enum PrefixKind {
+    /// Causes paths to always start with either `self`, `super`, `package` or a package name.
+    /// This is the same as plain, just that paths will start with `self` prepended if the path
+    /// starts with an identifier that is not a package.
+    BySelf,
+    /// Causes paths to not use a `self`, `super` or `package` prefix.
+    Plain,
+    /// Causes paths to start with `package` where applicable, effectively forcing paths to be absolute.
+    ByPackage,
+}
+
+impl PrefixKind {
+    #[inline]
+    fn path_kind(self) -> PathKind {
+        match self {
+            PrefixKind::BySelf => PathKind::SELF,
+            PrefixKind::Plain => PathKind::Plain,
+            PrefixKind::ByPackage => PathKind::Package,
+        }
+    }
+}
 
 pub trait HasSource {
     type Ast;
@@ -990,3 +1005,5 @@ fn check_type_errors(
         });
     }
 }
+
+pub use hir_ty::setup_tracing;

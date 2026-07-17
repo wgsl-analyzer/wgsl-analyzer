@@ -64,6 +64,7 @@ camino = "1.2.2"
 # cargo_metadata = "0.23.1"
 # wesl_metadata = "0.0.1"
 clap = { version = "4", default-features = false, features = ["help", "std"] }
+cov-mark = "2.0.0"
 dot = "0.1.4"
 glob = "0.3"
 crossbeam-channel = "0.5.15"
@@ -99,7 +100,7 @@ smallvec = {
 }
 smol_str = "0.3.5"
 text-size = "1.1.1"
-tracing = { version = "0.1.44", default-features = false, features = ["std"] }
+tracing = { version = "0.1.44", default-features = false, features = ["std", "attributes"] }
 tracing-subscriber = {
 	version = "0.3.23",
 	default-features = false,
@@ -112,6 +113,7 @@ tracing-subscriber = {
 		"tracing-log",
 	]
 }
+tracing-tree = "0.4.0"
 triomphe = { version = "0.1.15", default-features = false, features = ["std"] }
 wgsl-types = { version = "0.4.0", features = ["naga-ext"] }
 indexmap = { version = "2.14.0" }

@@ -24,5 +24,12 @@ stdx.workspace = true
 syntax.workspace = true
 tracing.workspace = true
 
+[dev-dependencies]
+expect-test.workspace = true
+
+# local deps
+test-fixture.workspace = true
+test-utils.workspace = true
+
 [lints]
 workspace = true

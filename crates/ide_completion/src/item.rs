@@ -82,7 +82,8 @@ pub struct CompletionItemLabel {
     pub detail_right: Option<String>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// The type of the completion item.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum CompletionItemKind {
     Field,
     Function,
@@ -93,6 +94,22 @@ pub enum CompletionItemKind {
     Struct,
     Module,
     TypeAlias,
+}
+
+impl CompletionItemKind {
+    pub fn tag(self) -> &'static str {
+        match self {
+            CompletionItemKind::Field => "field",
+            CompletionItemKind::Function => "function",
+            CompletionItemKind::Variable => "variable",
+            CompletionItemKind::Keyword => "Keyword",
+            CompletionItemKind::Snippet => "snippet",
+            CompletionItemKind::Constant => "Constant",
+            CompletionItemKind::Struct => "struct",
+            CompletionItemKind::Module => "module",
+            CompletionItemKind::TypeAlias => "type alias",
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Default)]
