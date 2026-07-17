@@ -511,31 +511,31 @@ impl SyntaxKind {
         matches!(
             self,
             Self::Alias
-            | Self::Break
-            | Self::Case
-            | Self::Const
-            | Self::ConstantAssert
-            | Self::Continue
-            | Self::Continuing
-            | Self::Default
-            | Self::Diagnostic
-            | Self::Discard
-            | Self::Else
-            | Self::Enable
-            | Self::False
-            | Self::Fn
-            | Self::For
-            | Self::If
-            | Self::Let
-            | Self::Loop
-            | Self::Override
-            | Self::Requires
-            | Self::Return
-            | Self::Struct
-            | Self::Switch
-            | Self::True
-            | Self::Var
-            | Self::While
+                | Self::Break
+                | Self::Case
+                | Self::Const
+                | Self::ConstantAssert
+                | Self::Continue
+                | Self::Continuing
+                | Self::Default
+                | Self::Diagnostic
+                | Self::Discard
+                | Self::Else
+                | Self::Enable
+                | Self::False
+                | Self::Fn
+                | Self::For
+                | Self::If
+                | Self::Let
+                | Self::Loop
+                | Self::Override
+                | Self::Requires
+                | Self::Return
+                | Self::Struct
+                | Self::Switch
+                | Self::True
+                | Self::Var
+                | Self::While
         )
     }
 

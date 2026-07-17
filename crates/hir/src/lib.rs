@@ -29,29 +29,6 @@ use stdx::impl_from;
 use syntax::{AstNode as _, HasName as _, SyntaxNode, ast, pointer::AstPointer};
 use triomphe::Arc;
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub enum PrefixKind {
-    /// Causes paths to always start with either `self`, `super`, `package` or a package name.
-    /// This is the same as plain, just that paths will start with `self` prepended if the path
-    /// starts with an identifier that is not a package.
-    BySelf,
-    /// Causes paths to not use a `self`, `super` or `package` prefix.
-    Plain,
-    /// Causes paths to start with `package` where applicable, effectively forcing paths to be absolute.
-    ByPackage,
-}
-
-impl PrefixKind {
-    #[inline]
-    const fn path_kind(self) -> PathKind {
-        match self {
-            Self::BySelf => PathKind::SELF,
-            Self::Plain => PathKind::Plain,
-            Self::ByPackage => PathKind::Package,
-        }
-    }
-}
-
 pub trait HasSource {
     type Ast;
     fn source(

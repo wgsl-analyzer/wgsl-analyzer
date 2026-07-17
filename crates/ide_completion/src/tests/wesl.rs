@@ -1,7 +1,5 @@
 //! Test for completions that are WESL-specific.
 
-#![expect(clippy::too_many_lines, reason = "snapshot test data")]
-
 use crate::tests::completion_list;
 
 #[test]
