@@ -100,7 +100,11 @@ smallvec = {
 }
 smol_str = "0.3.5"
 text-size = "1.1.1"
-tracing = { version = "0.1.44", default-features = false, features = ["std", "attributes"] }
+tracing = {
+	version = "0.1.44",
+	default-features = false,
+	features = ["attributes", "std"]
+}
 tracing-subscriber = {
 	version = "0.3.23",
 	default-features = false,
