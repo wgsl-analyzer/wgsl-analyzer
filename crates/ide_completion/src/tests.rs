@@ -25,25 +25,8 @@ use crate::{
     CompletionItemKind,
 };
 
-/// Lots of basic item definitions
-const BASE_ITEMS_FIXTURE: &str = r#"
-enum Enum { TupleV(u32), RecordV { field: u32 }, UnitV }
-use self::Enum::TupleV;
-mod module {}
-
-trait Trait {}
-static STATIC: Unit = Unit;
-const CONST: Unit = Unit;
-struct Record { field: u32 }
-struct Tuple(u32);
-struct Unit;
-#[macro_export]
-macro_rules! makro {}
-#[rustc_builtin_macro]
-pub macro Clone {}
-fn function() {}
-union Union { field: i32 }
-"#;
+/// Basic item definitions.
+const BASE_ITEMS_FIXTURE: &str = "";
 
 pub(crate) const TEST_CONFIG: CompletionConfig = CompletionConfig {
     // TODO: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/913
@@ -261,18 +244,18 @@ pub(crate) fn get_all_items(
 ) -> Vec<CompletionItem> {
     let (db, position) = position(code);
     HirDatabase::zalsa_register_downcaster(&db);
-    let res = crate::completions(&db, &config, position, trigger_character)
+    let result = crate::completions(&db, &config, position, trigger_character)
         .map_or_else(Vec::default, Into::into);
     // validate
-    res.iter().for_each(|it| {
-        let sr = it.source_range;
+    result.iter().for_each(|completion_item| {
+        let sr = completion_item.source_range;
         assert!(
             sr.contains_inclusive(position.offset),
-            "source range {sr:?} does not contain the offset {:?} of the completion request: {it:?}",
+            "source range {sr:?} does not contain the offset {:?} of the completion request: {completion_item:?}",
             position.offset
         );
     });
-    res
+    result
 }
 
 #[test]
