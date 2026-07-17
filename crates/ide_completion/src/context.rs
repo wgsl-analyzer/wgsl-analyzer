@@ -26,6 +26,7 @@ impl<'database> CompletionContext<'database> {
         position @ FilePosition { file_id, offset }: FilePosition,
         config: &'database CompletionConfig,
     ) -> Option<Self> {
+        let _p = tracing::info_span!("CompletionContext::new").entered();
         let semantics = Semantics::new(database);
         let file_id = EditionedFileId::from_file(database, file_id);
         let file = semantics.parse(file_id);

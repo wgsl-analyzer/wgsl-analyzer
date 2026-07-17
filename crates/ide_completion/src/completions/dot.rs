@@ -13,6 +13,7 @@ pub(crate) fn complete_dot(
     accumulator: &mut Completions,
     context: &CompletionContext<'_>,
 ) -> Option<()> {
+    let _p = tracing::info_span!("complete_dot").entered();
     let Some(ImmediateLocation::FieldAccess { expression }) = &context.completion_location else {
         return Some(());
     };
@@ -25,15 +26,39 @@ pub(crate) fn complete_dot(
         )
         .type_of_expression(&expression.expression()?)?
         .kind(context.database)
-        .unref(context.database)
-        .as_ref()
     {
         TypeKind::Vector(vector) => {
-            vector_completions(accumulator, context, expression, vector);
+            vector_completions(accumulator, context, expression, &vector);
             Some(())
         },
         TypeKind::Struct(r#struct) => {
-            struct_completions(accumulator, context, *r#struct);
+            struct_completions(accumulator, context, r#struct);
+            Some(())
+        },
+        TypeKind::Reference(hir_ty::ty::Reference {
+            address_space,
+            inner,
+            access_mode,
+        })
+        | TypeKind::Pointer(hir_ty::ty::Pointer {
+            address_space,
+            inner,
+            access_mode,
+        }) if let TypeKind::Vector(vector) = inner.kind(context.database) => {
+            vector_completions(accumulator, context, expression, &vector);
+            Some(())
+        },
+        TypeKind::Reference(hir_ty::ty::Reference {
+            address_space,
+            inner,
+            access_mode,
+        })
+        | TypeKind::Pointer(hir_ty::ty::Pointer {
+            address_space,
+            inner,
+            access_mode,
+        }) if let TypeKind::Struct(r#struct) = inner.kind(context.database) => {
+            struct_completions(accumulator, context, r#struct);
             Some(())
         },
         TypeKind::Error

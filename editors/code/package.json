@@ -36,10 +36,10 @@
 		"node": "^24.15.0"
 	},
 	"devEngines": {
-		"pnpm": "^11.5.2"
+		"pnpm": "^11.13.1"
 	},
 	"engineStrict": true,
-	"packageManager": "pnpm@11.5.2+sha512.71c631e382066efc25625d5cf029075de07b61b37f6e27350fbd84b1bda5864c8c1967adc280776b45c30a715c0359a3be08fef42d5bb09e2b99029979692916",
+	"packageManager": "pnpm@11.13.1+sha512.b2fc7683b8a6525414e7d13e1ba28caaddde96bf66ec540bfaeb7e702b81f3e0be4d1f295edf7f9fe0396740a8dce4509c582ddf79891f4543fea32d37645f25",
 	"enabledApiProposals": [],
 	"extensionKind": [
 		"workspace"
@@ -60,7 +60,7 @@
 		"watch": "pnpm run build-base --sourcemap --watch"
 	},
 	"dependencies": {
-		"@hpcc-js/wasm": "^2.34.0",
+		"@hpcc-js/wasm": "^2.34.5",
 		"anser": "^2.3.5",
 		"d3": "^7.9.0",
 		"d3-graphviz": "^5.6.0",
@@ -70,16 +70,16 @@
 		"vscode-languageclient": "^9.0.1"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "^2.5.0",
+		"@biomejs/biome": "^2.5.3",
 		"@tsconfig/node-ts": "^23.6.4",
 		"@tsconfig/node22": "^22.0.5",
 		"@tsconfig/strictest": "^2.0.8",
-		"@types/node": "^25.9.3",
+		"@types/node": "^26.1.1",
 		"@types/vscode": "^1.120.0",
 		"@vscode/test-electron": "^3.0.0",
 		"@vscode/vsce": "^3.9.2",
 		"esbuild": "^0.28.1",
-		"ovsx": "^1.0.1",
+		"ovsx": "^1.0.2",
 		"tslib": "^2.8.1",
 		"typescript": "^6.0.3"
 	},
@@ -687,19 +687,31 @@
 				"injectTo": [
 					"source.js",
 					"source.ts",
+					"source.jsx",
+					"source.tsx",
+					"source.svelte",
+					"source.vue",
+					"source.astro",
 					"source.rust"
 				],
 				"scopeName": "source.comment-string.wgsl",
 				"path": "./syntaxes/inline-wgsl.tmLanguage.json",
 				"embeddedLanguages": {
 					"meta.embedded.block.wgsl": "wgsl"
-				}
+				},
+				"unbalancedBracketScopes": [
+					"keyword.operator.arrow.skinny.wgsl",
+					"keyword.operator.comparison.wgsl",
+					"keyword.operator.logical.wgsl",
+					"keyword.operator.assignment.wgsl"
+				]
 			},
 			{
 				"scopeName": "markdown.wgsl.codeblock",
 				"path": "./syntaxes/inline-wgsl.markdown.tmLanguage.json",
 				"injectTo": [
-					"text.html.markdown"
+					"text.html.markdown",
+					"source.mdx"
 				],
 				"embeddedLanguages": {
 					"meta.embedded.block.wgsl": "wgsl"
@@ -715,19 +727,31 @@
 				"injectTo": [
 					"source.js",
 					"source.ts",
+					"source.jsx",
+					"source.tsx",
+					"source.svelte",
+					"source.vue",
+					"source.astro",
 					"source.rust"
 				],
 				"scopeName": "source.comment-string.wesl",
 				"path": "./syntaxes/inline-wesl.tmLanguage.json",
 				"embeddedLanguages": {
 					"meta.embedded.block.wesl": "wesl"
-				}
+				},
+				"unbalancedBracketScopes": [
+					"keyword.operator.arrow.skinny.wgsl",
+					"keyword.operator.comparison.wgsl",
+					"keyword.operator.logical.wgsl",
+					"keyword.operator.assignment.wgsl"
+				]
 			},
 			{
 				"scopeName": "markdown.wesl.codeblock",
 				"path": "./syntaxes/inline-wesl.markdown.tmLanguage.json",
 				"injectTo": [
-					"text.html.markdown"
+					"text.html.markdown",
+					"source.mdx"
 				],
 				"embeddedLanguages": {
 					"meta.embedded.block.wesl": "wesl"

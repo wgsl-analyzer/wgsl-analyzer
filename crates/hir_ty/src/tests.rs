@@ -174,7 +174,7 @@ impl<'db> InferPrinter<'db> {
             node.text_range(),
             node.text().to_string().replace('\n', " "),
         );
-        let pretty = pretty_type_with_verbosity(self.database, r#type, TypeVerbosity::Compact);
+        let pretty = pretty_type_with_verbosity(self.database, r#type, TypeVerbosity::Full);
         writeln!(buffer, "{range:?} '{}': {pretty}", ellipsize(text, 15)).unwrap();
     }
 
@@ -205,20 +205,20 @@ impl<'db> InferPrinter<'db> {
                     pretty_type_expectation_with_verbosity(
                         self.database,
                         expected.clone(),
-                        TypeVerbosity::Compact
+                        TypeVerbosity::Full
                     ),
-                    pretty_type_with_verbosity(self.database, *actual, TypeVerbosity::Compact)
+                    pretty_type_with_verbosity(self.database, *actual, TypeVerbosity::Full)
                 )
                 .unwrap();
             },
             InferenceDiagnosticKind::AssignmentNotAReference { .. }
-            | InferenceDiagnosticKind::NoSuchField { .. }
             | InferenceDiagnosticKind::ArrayAccessInvalidType { .. }
             | InferenceDiagnosticKind::UnresolvedName { .. }
             | InferenceDiagnosticKind::InvalidConstructionType { .. }
             | InferenceDiagnosticKind::FunctionCallArgCountMismatch { .. }
             | InferenceDiagnosticKind::NoBuiltinOverload { .. }
             | InferenceDiagnosticKind::NoConstructor { .. }
+            | InferenceDiagnosticKind::AddressOfNotReference { .. }
             | InferenceDiagnosticKind::AddressOfNotReference { .. }
             | InferenceDiagnosticKind::DerefNotAPointer { .. }
             | InferenceDiagnosticKind::InvalidType { .. }
@@ -227,6 +227,45 @@ impl<'db> InferPrinter<'db> {
             | InferenceDiagnosticKind::WgslError { .. }
             | InferenceDiagnosticKind::ExpectedLoweredKind { .. } => {
                 writeln!(buffer, "{:?} in {:?}", diagnostic.kind, diagnostic.source).unwrap();
+            },
+            InferenceDiagnosticKind::NoSuchField {
+                expression,
+                name,
+                r#type,
+            } => {
+                let node = match source_map.expression_to_source(*expression) {
+                    Ok(sp) => sp.to_node(&self.root).syntax().clone(),
+                    Err(SyntheticSyntax) => return,
+                };
+                let (range, text) = (
+                    node.parent().unwrap().text_range(),
+                    node.parent().unwrap().text().to_string().replace('\n', " "),
+                );
+                writeln!(
+                    buffer,
+                    "{range:?} '{}': no such field `{}` on type `{}`",
+                    ellipsize(text, 15),
+                    name.as_str(),
+                    pretty_type_with_verbosity(self.database, *r#type, TypeVerbosity::Full),
+                )
+                .unwrap();
+            },
+            InferenceDiagnosticKind::StoreTypeMustBeStorable { actual, expression } => {
+                let node = match source_map.expression_to_source(*expression) {
+                    Ok(sp) => sp.to_node(&self.root).syntax().clone(),
+                    Err(SyntheticSyntax) => return,
+                };
+                let (range, text) = (
+                    node.text_range(),
+                    node.text().to_string().replace('\n', " "),
+                );
+                writeln!(
+                    buffer,
+                    "{range:?} '{}': expected storable type but got `{}`",
+                    ellipsize(text, 15),
+                    pretty_type_with_verbosity(self.database, *actual, TypeVerbosity::Full),
+                )
+                .unwrap();
             },
         }
     }

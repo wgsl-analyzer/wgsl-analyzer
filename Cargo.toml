@@ -9,7 +9,7 @@ exclude = []
 
 [workspace.package]
 edition = "2024"
-rust-version = "1.96"
+rust-version = "1.97.1"
 repository = "https://github.com/wgsl-analyzer/wgsl-analyzer"
 license = "MIT OR Apache-2.0"
 
@@ -30,21 +30,13 @@ syntax = { path = "./crates/syntax", version = "0.0.0" }
 # toolchain = { path = "./crates/toolchain", version = "0.0.0" }
 test-fixture = { path = "./crates/test-fixture", version = "0.0.0" }
 test-utils = { path = "./crates/test-utils", version = "0.0.0" }
+vfs = { path = "./crates/vfs", version = "0.0.0" }
+vfs-notify = { path = "./crates/vfs-notify", version = "0.0.0" }
 wgsl-formatter = { path = "./crates/wgsl_formatter", version = "0.0.0" }
 edition = { path = "./crates/edition", version = "0.0.0" }
 #
 # rust-analyzer crates
 stdx = {
-	git = "https://github.com/rust-lang/rust-analyzer",
-	rev = "b42b63f390a4dab14e6efa34a70e67f5b087cc62",
-	version = "0.0.0"
-}
-vfs-notify = {
-	git = "https://github.com/rust-lang/rust-analyzer",
-	rev = "b42b63f390a4dab14e6efa34a70e67f5b087cc62",
-	version = "0.0.0"
-}
-vfs = {
 	git = "https://github.com/rust-lang/rust-analyzer",
 	rev = "b42b63f390a4dab14e6efa34a70e67f5b087cc62",
 	version = "0.0.0"
@@ -64,10 +56,10 @@ query-group = {
 # crates from rust-analyzer that are published separately
 line-index = "0.1.2"
 la-arena = "0.3.1"
-lsp-server = "0.7.9"
+lsp-server = "0.8.0"
 #
 # non-local crates
-anyhow = "1.0.102"
+anyhow = "1.0.103"
 camino = "1.2.2"
 # cargo_metadata = "0.23.1"
 # wesl_metadata = "0.0.1"

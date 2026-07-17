@@ -381,7 +381,7 @@ pub fn diagnostics(
                         frange.range,
                     )
                 },
-                AnyDiagnostic::DerefNotPointer { expression, actual } => {
+                AnyDiagnostic::DerefNotAPointer { expression, actual } => {
                     let source = expression.value.to_node(&root);
                     let r#type = ty::pretty::pretty_type(database, actual);
                     let frange = original_file_range(database, expression.file_id, source.syntax());
@@ -484,13 +484,11 @@ pub fn diagnostics(
                     let symbol = operation.symbol();
                     let message = if sequence_permitted {
                         format!(
-                            "{symbol} sequences may only have unary operands.
-More complex operands must be this with parenthesized `()`",
+                            "{symbol} sequences may only have unary operands. More complex operands must be this with parenthesized `()`",
                         )
                     } else {
                         format!(
-                            "{symbol} expressions may only have unary operands.
-More complex operands must be this with parenthesized `()`"
+                            "{symbol} expressions may only have unary operands. More complex operands must be this with parenthesized `()`"
                         )
                     };
                     Diagnostic::new(DiagnosticCode("19"), message, frange.range)
@@ -577,6 +575,16 @@ More complex operands must be this with parenthesized `()`"
                         frange.range,
                     )
                 },
+                AnyDiagnostic::StoreTypeMustBeStorable { expression, actual } => {
+                    let source = expression.value.to_node(&root);
+                    let r#type = ty::pretty::pretty_type(database, actual);
+                    let frange = original_file_range(database, expression.file_id, source.syntax());
+                    Diagnostic::new(
+                        DiagnosticCode("29"),
+                        format!("store type must be storable, found {type}"),
+                        frange.range,
+                    )
+                },
             }
         })
         .collect()
@@ -644,6 +652,74 @@ mod tests {
         }
 
         expect.assert_eq(&actual);
+    }
+
+    #[test]
+    fn store_type_must_be_storable() {
+        check_diagnostics(
+            "fn foo() { var x = 1; var y = &x; }",
+            expect![[r#"
+                30..32 Error 29: store type must be storable, found ptr<i32>
+            "#]],
+        );
+    }
+
+    #[test]
+    fn no_builtin_overload() {
+        check_diagnostics(
+            "fn foo() { var x = 1f + mat2x2f(); }",
+            expect![[r#"
+                11..34 Error 8: no overload of `+` found for given arguments.Found (f32, mat2x2<f32>), expected one of:
+                fn op_binary_number(vecN<U>, vecN<U>) -> vecN<U>
+                fn op_binary_number(vecN<U>, U) -> vecN<U>
+                fn op_binary_number(T, vecM<T>) -> vecM<T>
+                fn op_binary_number(matNxM<f32>, matNxM<f32>) -> matNxM<f32>
+                fn op_binary_number(T, T) -> T
+            "#]],
+        );
+    }
+
+    #[test]
+    fn deref_not_a_pointer() {
+        check_diagnostics(
+            "fn foo() { var x = *1f; }",
+            expect![[r#"
+                20..22 Error 10: cannot dereference expression of type f32
+            "#]],
+        );
+    }
+
+    #[test]
+    fn no_constructor() {
+        check_diagnostics(
+            "fn foo() { var x = vec2f(1, 2, 3); }",
+            expect![[r#"
+                19..33 Error 18: no overload of constructor `vec2<f32>` found for given arguments. Found (integer, integer, integer), expected one of:
+                fn op_vec2_constructor(vec2<T>) -> vec2<T>
+                fn op_vec2_constructor(T) -> vec2<T>
+                fn op_vec2_constructor(T, T) -> vec2<T>
+            "#]],
+        );
+    }
+
+    #[test]
+    fn precedence_sequence_allowed() {
+        check_diagnostics(
+            "fn foo() { let x = true == true & true; }",
+            expect![[r#"
+                19..31 Error 19: & sequences may only have unary operands. More complex operands must be this with parenthesized `()`
+            "#]],
+        );
+    }
+
+    #[test]
+    fn precedence_sequence_disallowed() {
+        check_diagnostics(
+            "fn foo() { let x = true == true == true; }",
+            expect![[r#"
+                19..31 Error 19: == expressions may only have unary operands. More complex operands must be this with parenthesized `()`
+            "#]],
+        );
     }
 
     #[test]
