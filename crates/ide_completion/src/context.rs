@@ -25,6 +25,7 @@ impl<'database> CompletionContext<'database> {
         database: &'database RootDatabase,
         position @ FilePosition { file_id, offset }: FilePosition,
         config: &'database CompletionConfig,
+        trigger_character: Option<char>,
     ) -> Option<Self> {
         let _p = tracing::info_span!("CompletionContext::new").entered();
         let semantics = Semantics::new(database);
@@ -70,9 +71,7 @@ impl<'database> CompletionContext<'database> {
 
     pub(crate) fn source_range(&self) -> base_db::TextRange {
         let kind = self.token.kind();
-        if kind == SyntaxKind::Identifier
-        // || kind.is_keyword()
-        {
+        if kind == SyntaxKind::Identifier || kind.is_keyword() {
             self.token.text_range()
         } else {
             TextRange::empty(self.position.offset)
