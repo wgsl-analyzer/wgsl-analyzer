@@ -16,7 +16,7 @@ use expect_test::Expect;
 use hir::database::HirDatabase;
 use hir::{PrefixKind, setup_tracing};
 use ide_db::{FileId, RootDatabase, SnippetCapability};
-use itertools::Itertools;
+use itertools::Itertools as _;
 use stdx::{format_to, trim_indent};
 use test_fixture::ChangeFixture;
 use test_utils::assert_eq_text;
@@ -64,27 +64,26 @@ pub(crate) const TEST_CONFIG: CompletionConfig = CompletionConfig {
 };
 
 pub(crate) fn completion_list(wa_fixture: &str) -> String {
-    completion_list_with_config(TEST_CONFIG, wa_fixture, true, None)
+    completion_list_with_config(&TEST_CONFIG, wa_fixture, true, None)
 }
 
 pub(crate) fn completion_list_no_kw(wa_fixture: &str) -> String {
-    completion_list_with_config(TEST_CONFIG, wa_fixture, false, None)
+    completion_list_with_config(&TEST_CONFIG, wa_fixture, false, None)
 }
 
 pub(crate) fn completion_list_no_kw_with_private_editable(wa_fixture: &str) -> String {
-    let mut config = TEST_CONFIG;
-    completion_list_with_config(config, wa_fixture, false, None)
+    completion_list_with_config(&TEST_CONFIG, wa_fixture, false, None)
 }
 
 pub(crate) fn completion_list_with_trigger_character(
     wa_fixture: &str,
     trigger_character: Option<char>,
 ) -> String {
-    completion_list_with_config(TEST_CONFIG, wa_fixture, true, trigger_character)
+    completion_list_with_config(&TEST_CONFIG, wa_fixture, true, trigger_character)
 }
 
 fn completion_list_with_config_raw(
-    config: CompletionConfig,
+    config: &CompletionConfig,
     wa_fixture: &str,
     include_keywords: bool,
     trigger_character: Option<char>,
@@ -108,7 +107,7 @@ fn completion_list_with_config_raw(
 }
 
 fn completion_list_with_config(
-    config: CompletionConfig,
+    config: &CompletionConfig,
     wa_fixture: &str,
     include_keywords: bool,
     trigger_character: Option<char>,
@@ -138,24 +137,24 @@ pub(crate) fn do_completion(
     code: &str,
     kind: CompletionItemKind,
 ) -> Vec<CompletionItem> {
-    do_completion_with_config(TEST_CONFIG, code, kind)
+    do_completion_with_config(&TEST_CONFIG, code, kind)
 }
 
 pub(crate) fn do_completion_with_config(
-    config: CompletionConfig,
+    config: &CompletionConfig,
     code: &str,
     kind: CompletionItemKind,
 ) -> Vec<CompletionItem> {
     get_all_items(config, code, None)
         .into_iter()
-        .filter(|c| c.kind == kind)
-        .sorted_by(|l, r| l.label.cmp(&r.label))
+        .filter(|completion_item| completion_item.kind == kind)
+        .sorted_by(|left, right| left.label.cmp(&right.label))
         .collect()
 }
 
 fn render_completion_list(completions: Vec<CompletionItem>) -> String {
-    fn monospace_width(s: &str) -> usize {
-        s.chars().count()
+    fn monospace_width(string: &str) -> usize {
+        string.chars().count()
     }
     let label_width = completions
         .iter()
@@ -163,8 +162,8 @@ fn render_completion_list(completions: Vec<CompletionItem>) -> String {
             monospace_width(&it.label.primary)
                 + monospace_width(it.label.detail_left.as_deref().unwrap_or_default())
                 + monospace_width(it.label.detail_right.as_deref().unwrap_or_default())
-                + it.label.detail_left.is_some() as usize
-                + it.label.detail_right.is_some() as usize
+                + usize::from(it.label.detail_left.is_some())
+                + usize::from(it.label.detail_right.is_some())
         })
         .max()
         .unwrap_or_default();
@@ -181,7 +180,7 @@ fn render_completion_list(completions: Vec<CompletionItem>) -> String {
                     monospace_width(&it.label.primary)
                         + monospace_width(it.label.detail_left.as_deref().unwrap_or_default())
                         + monospace_width(&detail_right)
-                        + it.label.detail_left.is_some() as usize,
+                        + usize::from(it.label.detail_left.is_some()),
                 );
                 format_to!(buf, "{:pad_with$}{detail_right}", "",);
             }
@@ -199,7 +198,7 @@ fn render_completion_list(completions: Vec<CompletionItem>) -> String {
 
 pub(crate) fn check(
     wa_fixture: &str,
-    expect: Expect,
+    expect: &Expect,
 ) {
     let actual = completion_list(wa_fixture);
     expect.assert_eq(&actual);
@@ -207,22 +206,22 @@ pub(crate) fn check(
 
 pub(crate) fn check_with_base_items(
     wa_fixture: &str,
-    expect: Expect,
+    expect: &Expect,
 ) {
-    check(&format!("{BASE_ITEMS_FIXTURE}{wa_fixture}"), expect)
+    check(&format!("{BASE_ITEMS_FIXTURE}{wa_fixture}"), expect);
 }
 
 pub(crate) fn check_no_kw(
     wa_fixture: &str,
-    expect: Expect,
+    expect: &Expect,
 ) {
     let actual = completion_list_no_kw(wa_fixture);
-    expect.assert_eq(&actual)
+    expect.assert_eq(&actual);
 }
 
 pub(crate) fn check_with_private_editable(
     wa_fixture: &str,
-    expect: Expect,
+    expect: &Expect,
 ) {
     let actual = completion_list_no_kw_with_private_editable(wa_fixture);
     expect.assert_eq(&actual);
@@ -231,30 +230,30 @@ pub(crate) fn check_with_private_editable(
 pub(crate) fn check_with_trigger_character(
     wa_fixture: &str,
     trigger_character: Option<char>,
-    expect: Expect,
+    expect: &Expect,
 ) {
     let actual = completion_list_with_trigger_character(wa_fixture, trigger_character);
-    expect.assert_eq(&actual)
+    expect.assert_eq(&actual);
 }
 
 pub(crate) fn get_all_items(
-    config: CompletionConfig,
+    config: &CompletionConfig,
     code: &str,
     trigger_character: Option<char>,
 ) -> Vec<CompletionItem> {
     let (db, position) = position(code);
     HirDatabase::zalsa_register_downcaster(&db);
-    let result = crate::completions(&db, &config, position, trigger_character)
+    let result = crate::completions(&db, config, position, trigger_character)
         .map_or_else(Vec::default, Into::into);
     // validate
-    result.iter().for_each(|completion_item| {
+    for completion_item in &result {
         let sr = completion_item.source_range;
         assert!(
             sr.contains_inclusive(position.offset),
             "source range {sr:?} does not contain the offset {:?} of the completion request: {completion_item:?}",
             position.offset
         );
-    });
+    }
     result
 }
 

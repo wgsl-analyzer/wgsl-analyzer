@@ -792,7 +792,7 @@ fn complete_module() {
             alias Foo = u32;
             ",
         ),
-        "".to_owned(),
+        String::new(),
     );
 }
 

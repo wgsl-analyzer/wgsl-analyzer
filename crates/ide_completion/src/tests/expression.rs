@@ -9,9 +9,9 @@ use crate::{
 };
 
 fn check_with_config(
-    config: CompletionConfig,
+    config: &CompletionConfig,
     wa_fixture: &str,
-    expect: Expect,
+    expect: &Expect,
 ) {
     let actual = completion_list_with_config(
         config,
@@ -19,5 +19,5 @@ fn check_with_config(
         true,
         None,
     );
-    expect.assert_eq(&actual)
+    expect.assert_eq(&actual);
 }
