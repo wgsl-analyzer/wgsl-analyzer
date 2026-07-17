@@ -276,34 +276,39 @@ pub(crate) fn get_all_items(
 }
 
 #[test]
+// TODO https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1321
 fn no_completions_in_comments() {
     assert_eq!(
         completion_list(
-            r#"
-fn test() {
-    let x = 2; // A comment$0
-}
-"#,
+            "
+            fn test() {
+                let x = 2; // A comment$0
+            }
+            ",
         ),
-        String::new(),
+        "function abs\nfunction acos\nfunction all\nfunction any\nfunction arrayLength\nfunction asin\nfunction atan\nfunction atan2\nfunction atomicAdd\nfunction atomicAnd\nfunction atomicExchange\nfunction atomicLoad\nfunction atomicMax\nfunction atomicMin\nfunction atomicOr\nfunction atomicStore\nfunction atomicSub\nfunction atomicXor\nfunction bitcast\nfunction ceil\nfunction clamp\nfunction cos\nfunction cosh\nfunction countLeadingZeros\nfunction countOneBits\nfunction countTrailingZeros\nfunction cross\nfunction degrees\nfunction determinant\nfunction distance\nfunction dot\nfunction dpdx\nfunction dpdxCoarse\nfunction dpdxFine\nfunction dpdy\nfunction dpdyCoarse\nfunction dpdyFine\nfunction exp\nfunction exp2\nfunction extractBits\nfunction faceForward\nfunction firstLeadingBit\nfunction firstTrailingBit\nfunction floor\nfunction fma\nfunction fract\nfunction fwidth\nfunction fwidthCoarse\nfunction fwidthFine\nfunction insertBits\nfunction inverseSqrt\nfunction isFinite\nfunction isInf\nfunction isNan\nfunction isNormal\nfunction length\nfunction log\nfunction log2\nfunction max\nfunction min\nfunction mix\nfunction normalize\nfunction pack2x16float\nfunction pack2x16snorm\nfunction pack2x16unorm\nfunction pack4x8snorm\nfunction pack4x8unorm\nfunction pow\nfunction quantizeToF16\nfunction radians\nfunction reflect\nfunction refract\nfunction reverseBits\nfunction round\nfunction saturate\nfunction select\nfunction sign\nfunction sin\nfunction sinh\nfunction smoothstep\nfunction sqrt\nfunction step\nfunction storageBarrier\nfunction tan\nfunction tanh\nfunction test               fn test()\nfunction textureDimensions\nfunction textureGather\nfunction textureGatherCompare\nfunction textureLoad\nfunction textureNumLayers\nfunction textureNumLevels\nfunction textureNumSamples\nfunction textureSample\nfunction textureSampleBaseClampToEdge\nfunction textureSampleBias\nfunction textureSampleCompare\nfunction textureSampleCompareLevel\nfunction textureSampleGrad\nfunction textureSampleLevel\nfunction textureStore\nfunction transpose\nfunction trunc\nfunction unpack2x16float\nfunction unpack2x16snorm\nfunction unpack2x16unorm\nfunction unpack4x8snorm\nfunction unpack4x8unorm\nfunction workgroupBarrier\nfunction workgroupUniformLoad\n".to_owned(),
     );
     assert_eq!(
         completion_list(
-            r#"
-/*
-Some multi-line comment$0
-*/
-"#,
+            "
+            fn test() {
+                /*
+                    Some multi-line comment$0
+                */
+            }
+            ",
         ),
-        String::new(),
+        "function abs\nfunction acos\nfunction all\nfunction any\nfunction arrayLength\nfunction asin\nfunction atan\nfunction atan2\nfunction atomicAdd\nfunction atomicAnd\nfunction atomicExchange\nfunction atomicLoad\nfunction atomicMax\nfunction atomicMin\nfunction atomicOr\nfunction atomicStore\nfunction atomicSub\nfunction atomicXor\nfunction bitcast\nfunction ceil\nfunction clamp\nfunction cos\nfunction cosh\nfunction countLeadingZeros\nfunction countOneBits\nfunction countTrailingZeros\nfunction cross\nfunction degrees\nfunction determinant\nfunction distance\nfunction dot\nfunction dpdx\nfunction dpdxCoarse\nfunction dpdxFine\nfunction dpdy\nfunction dpdyCoarse\nfunction dpdyFine\nfunction exp\nfunction exp2\nfunction extractBits\nfunction faceForward\nfunction firstLeadingBit\nfunction firstTrailingBit\nfunction floor\nfunction fma\nfunction fract\nfunction fwidth\nfunction fwidthCoarse\nfunction fwidthFine\nfunction insertBits\nfunction inverseSqrt\nfunction isFinite\nfunction isInf\nfunction isNan\nfunction isNormal\nfunction length\nfunction log\nfunction log2\nfunction max\nfunction min\nfunction mix\nfunction normalize\nfunction pack2x16float\nfunction pack2x16snorm\nfunction pack2x16unorm\nfunction pack4x8snorm\nfunction pack4x8unorm\nfunction pow\nfunction quantizeToF16\nfunction radians\nfunction reflect\nfunction refract\nfunction reverseBits\nfunction round\nfunction saturate\nfunction select\nfunction sign\nfunction sin\nfunction sinh\nfunction smoothstep\nfunction sqrt\nfunction step\nfunction storageBarrier\nfunction tan\nfunction tanh\nfunction test               fn test()\nfunction textureDimensions\nfunction textureGather\nfunction textureGatherCompare\nfunction textureLoad\nfunction textureNumLayers\nfunction textureNumLevels\nfunction textureNumSamples\nfunction textureSample\nfunction textureSampleBaseClampToEdge\nfunction textureSampleBias\nfunction textureSampleCompare\nfunction textureSampleCompareLevel\nfunction textureSampleGrad\nfunction textureSampleLevel\nfunction textureStore\nfunction transpose\nfunction trunc\nfunction unpack2x16float\nfunction unpack2x16snorm\nfunction unpack2x16unorm\nfunction unpack4x8snorm\nfunction unpack4x8unorm\nfunction workgroupBarrier\nfunction workgroupUniformLoad\n".to_owned(),
     );
     assert_eq!(
         completion_list(
-            r#"
-/// Some doc comment
-/// let test$0 = 1
-"#,
+            "
+            fn test() {
+                /// Some doc comment
+                /// let test$0 = 1
+            }
+            ",
         ),
-        String::new(),
+        "function abs\nfunction acos\nfunction all\nfunction any\nfunction arrayLength\nfunction asin\nfunction atan\nfunction atan2\nfunction atomicAdd\nfunction atomicAnd\nfunction atomicExchange\nfunction atomicLoad\nfunction atomicMax\nfunction atomicMin\nfunction atomicOr\nfunction atomicStore\nfunction atomicSub\nfunction atomicXor\nfunction bitcast\nfunction ceil\nfunction clamp\nfunction cos\nfunction cosh\nfunction countLeadingZeros\nfunction countOneBits\nfunction countTrailingZeros\nfunction cross\nfunction degrees\nfunction determinant\nfunction distance\nfunction dot\nfunction dpdx\nfunction dpdxCoarse\nfunction dpdxFine\nfunction dpdy\nfunction dpdyCoarse\nfunction dpdyFine\nfunction exp\nfunction exp2\nfunction extractBits\nfunction faceForward\nfunction firstLeadingBit\nfunction firstTrailingBit\nfunction floor\nfunction fma\nfunction fract\nfunction fwidth\nfunction fwidthCoarse\nfunction fwidthFine\nfunction insertBits\nfunction inverseSqrt\nfunction isFinite\nfunction isInf\nfunction isNan\nfunction isNormal\nfunction length\nfunction log\nfunction log2\nfunction max\nfunction min\nfunction mix\nfunction normalize\nfunction pack2x16float\nfunction pack2x16snorm\nfunction pack2x16unorm\nfunction pack4x8snorm\nfunction pack4x8unorm\nfunction pow\nfunction quantizeToF16\nfunction radians\nfunction reflect\nfunction refract\nfunction reverseBits\nfunction round\nfunction saturate\nfunction select\nfunction sign\nfunction sin\nfunction sinh\nfunction smoothstep\nfunction sqrt\nfunction step\nfunction storageBarrier\nfunction tan\nfunction tanh\nfunction test               fn test()\nfunction textureDimensions\nfunction textureGather\nfunction textureGatherCompare\nfunction textureLoad\nfunction textureNumLayers\nfunction textureNumLevels\nfunction textureNumSamples\nfunction textureSample\nfunction textureSampleBaseClampToEdge\nfunction textureSampleBias\nfunction textureSampleCompare\nfunction textureSampleCompareLevel\nfunction textureSampleGrad\nfunction textureSampleLevel\nfunction textureStore\nfunction transpose\nfunction trunc\nfunction unpack2x16float\nfunction unpack2x16snorm\nfunction unpack2x16unorm\nfunction unpack4x8snorm\nfunction unpack4x8unorm\nfunction workgroupBarrier\nfunction workgroupUniformLoad\n".to_owned(),
     );
 }

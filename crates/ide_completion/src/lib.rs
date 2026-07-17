@@ -61,14 +61,16 @@ pub fn completions(
     database: &RootDatabase,
     config: &CompletionConfig,
     position: FilePosition,
-    _trigger_character: Option<char>,
+    trigger_character: Option<char>,
 ) -> Option<Vec<CompletionItem>> {
     let _p = tracing::info_span!("completions").entered();
-    let mut accumulator = Completions::default();
+    let (context) = &CompletionContext::new(database, position, config, trigger_character)?;
+    let mut completions = Completions::default();
 
-    let context = CompletionContext::new(database, position, config)?;
-    completions::dot::complete_dot(&mut accumulator, &context);
-    completions::expression::complete_names_in_scope(&mut accumulator, &context);
+    completions::dot::complete_dot(&mut completions, &context);
+    // TODO: make completions context-sensitive
+    // https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1321
+    completions::expression::complete_names_in_scope(&mut completions, &context);
 
-    Some(accumulator.into())
+    Some(completions.into())
 }

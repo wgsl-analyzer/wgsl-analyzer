@@ -25,6 +25,7 @@ impl<'database> CompletionContext<'database> {
         database: &'database RootDatabase,
         position @ FilePosition { file_id, offset }: FilePosition,
         config: &'database CompletionConfig,
+        trigger_character: Option<char>,
     ) -> Option<Self> {
         let _p = tracing::info_span!("CompletionContext::new").entered();
         let semantics = Semantics::new(database);
