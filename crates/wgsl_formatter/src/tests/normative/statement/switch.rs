@@ -30,9 +30,7 @@ pub fn format_switch_statement_case_colon_gets_removed() {
         expect![[r#"
             fn main() {
                 switch a {
-                    case 1 {
-                        let a = 1;
-                    }
+                    case 1 { let a = 1; }
                 }
             }
         "#]],
@@ -58,15 +56,9 @@ pub fn format_switch_statement_default_amidst_other_cases_does_not_get_moved() {
         expect![[r#"
             fn main() {
                 switch a {
-                    case 1 {
-                        let a = 1;
-                    }
-                    default {
-                        let a = 1;
-                    }
-                    case 2 {
-                        let a = 1;
-                    }
+                    case 1 { let a = 1; }
+                    default { let a = 1; }
+                    case 2 { let a = 1; }
                 }
             }
         "#]],
@@ -86,9 +78,7 @@ pub fn format_switch_statement_case_default_gets_turned_to_default() {
         expect![[r#"
             fn main() {
                 switch a {
-                    default {
-                        let a = 1;
-                    }
+                    default { let a = 1; }
                 }
             }
         "#]],
@@ -108,9 +98,7 @@ pub fn format_switch_statement_case_trailing_comma_gets_removed() {
         expect![[r#"
             fn main() {
                 switch a {
-                    case 1, 2 {
-                        let a = 1;
-                    }
+                    case 1, 2 { let a = 1; }
                 }
             }
         "#]],
