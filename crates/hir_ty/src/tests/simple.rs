@@ -238,7 +238,7 @@ fn no_such_field_on_struct_ref() {
             43..46 'bar': ref<function, Bar, read_write>
             49..55 'Bar(0)': Bar
             53..54 '0': integer
-            65..67 'xx': ref<function, [error], read_write>
+            65..67 'xx': [error]
             70..73 'bar': ref<function, Bar, read_write>
             70..81 'bar.bazzzzz': ref<function, [error], read_write>
             70..81 'bar.bazzzzz': no such field `bazzzzz` on type `ref<function, Bar, read_write>`
@@ -265,7 +265,7 @@ fn no_such_field_on_struct_ptr() {
             65..72 'bar_ptr': ptr<function, Bar, read_write>
             75..79 '&bar': ptr<function, Bar, read_write>
             76..79 'bar': ref<function, Bar, read_write>
-            89..90 'x': ref<function, [error], read_write>
+            89..90 'x': [error]
             93..100 'bar_ptr': ptr<function, Bar, read_write>
             93..106 'bar_ptr.bazzz': ref<function, [error], read_write>
             93..106 'bar_ptr.bazzz': no such field `bazzz` on type `ptr<function, Bar, read_write>`
@@ -286,7 +286,7 @@ fn store_type_must_be_storable() {
         expect![[r#"
             19..22 'bar': ref<function, i32, read_write>
             25..26 '1': integer
-            36..43 'bar_ptr': ref<function, ptr<function, i32, read_write>, read_write>
+            36..43 'bar_ptr': ref<function, [error], read_write>
             46..50 '&bar': ptr<function, i32, read_write>
             47..50 'bar': ref<function, i32, read_write>
             46..50 '&bar': expected storable type but got `ptr<function, i32, read_write>`
@@ -1726,6 +1726,80 @@ fn no_constructor() {
             17..18 '2': integer
             20..21 '3': integer
             NoConstructor { expression: Idx::<Expression>(3), builtins: BuiltinId(2c00), type: Type(2403), parameters: [Type(2401), Type(2401), Type(2401)] } in Body
+        "#]],
+    );
+}
+
+#[test]
+fn add_refs_and_ptrs() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        struct MyData {
+            a: u32,
+            b: u32,
+        }
+
+        @group(0) @binding(9)
+        var<storage, read_write> MyBuff: array<MyData>;
+
+        fn MyFn(idx: u32) {
+            let data = &MyBuff[idx];
+
+            var t = data.a;
+            return t + data.b;
+        }
+
+        fn foo() {
+            var a_ref = 1;
+            var b_ref = 1;
+
+            let a_ptr = &a_ref;
+            let b_ptr = &b_ref;
+
+            let test1 = a_ref + b_ref;
+            let test2 = a_ptr + b_ptr;
+            let test3 = a_ptr + b_ref;
+        }
+        ",
+        expect![[r#"
+            90..96 'MyBuff': ref<storage, array<MyData>, read_write>
+            122..125 'idx': u32
+            142..146 'data': ptr<storage, MyData, read_write>
+            149..161 '&MyBuff[idx]': ptr<storage, MyData, read_write>
+            150..156 'MyBuff': ref<storage, array<MyData>, read_write>
+            150..161 'MyBuff[idx]': ref<storage, MyData, read_write>
+            157..160 'idx': u32
+            172..173 't': ref<function, u32, read_write>
+            176..180 'data': ptr<storage, MyData, read_write>
+            176..182 'data.a': ref<storage, u32, read_write>
+            195..196 't': ref<function, u32, read_write>
+            195..205 't + data.b': u32
+            199..203 'data': ptr<storage, MyData, read_write>
+            199..205 'data.b': ref<storage, u32, read_write>
+            229..234 'a_ref': ref<function, i32, read_write>
+            237..238 '1': integer
+            248..253 'b_ref': ref<function, i32, read_write>
+            256..257 '1': integer
+            268..273 'a_ptr': ptr<function, i32, read_write>
+            276..282 '&a_ref': ptr<function, i32, read_write>
+            277..282 'a_ref': ref<function, i32, read_write>
+            292..297 'b_ptr': ptr<function, i32, read_write>
+            300..306 '&b_ref': ptr<function, i32, read_write>
+            301..306 'b_ref': ref<function, i32, read_write>
+            317..322 'test1': i32
+            325..330 'a_ref': ref<function, i32, read_write>
+            325..338 'a_ref + b_ref': i32
+            333..338 'b_ref': ref<function, i32, read_write>
+            348..353 'test2': ptr<function, i32, read_write>
+            356..361 'a_ptr': ptr<function, i32, read_write>
+            356..369 'a_ptr + b_ptr': ptr<function, i32, read_write>
+            364..369 'b_ptr': ptr<function, i32, read_write>
+            379..384 'test3': [error]
+            387..392 'a_ptr': ptr<function, i32, read_write>
+            387..400 'a_ptr + b_ref': [error]
+            395..400 'b_ref': ref<function, i32, read_write>
+            NoBuiltinOverload { expression: Idx::<Expression>(14), builtin: BuiltinId(3400), name: Some("+"), parameters: [Type(2c12), Type(2c10)] } in Body
         "#]],
     );
 }
