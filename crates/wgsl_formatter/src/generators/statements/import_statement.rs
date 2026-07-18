@@ -112,9 +112,9 @@ pub fn gen_import_item(node: &ast::ImportItem) -> FormatDocumentResult<PrintItem
     formatted.extend(gen_name(&item_name)?);
     formatted.extend(gen_comments(&item_comments_after_name));
     if let Some((item_comments_after_as, item_alias)) = item_alias {
-        formatted.expect(RequestItem::Space);
+        formatted.request(Request::expect((RequestItem::Space)));
         formatted.push_sc(sc!("as"));
-        formatted.expect(RequestItem::Space);
+        formatted.request(Request::expect((RequestItem::Space)));
         formatted.extend(gen_comments(&item_comments_after_as));
         formatted.extend(gen_name(&item_alias)?);
     }
@@ -283,7 +283,7 @@ pub fn gen_import_collection(
             }
         }
         group.extend(gen_comments(after));
-        group.discourage(RequestItem::Space);
+        group.request(Request::discourage(RequestItem::Space));
 
         if position != Position::Last && position != Position::Only {
             group.push_sc(sc!(","));
@@ -323,7 +323,7 @@ pub fn gen_import_statement(
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
     formatted.push_sc(sc!("import"));
-    formatted.expect(RequestItem::Space);
+    formatted.request(Request::expect((RequestItem::Space)));
     formatted.extend(gen_comments(&item_comments_after_import));
 
     if let Some(package_relative) = item_package_relative {
@@ -345,7 +345,7 @@ pub fn gen_import_statement(
     formatted.extend(gen_comments(&item_comments_after_importee));
 
     if include_semicolon {
-        formatted.discourage(RequestItem::Space);
+        formatted.request(Request::discourage((RequestItem::Space)));
         formatted.push_sc(sc!(";"));
     }
 

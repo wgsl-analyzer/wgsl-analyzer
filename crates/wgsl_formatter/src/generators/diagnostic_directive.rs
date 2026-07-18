@@ -6,7 +6,10 @@ use syntax::{AstNode as _, ast};
 use crate::{
     ast_parse::{parse_end, parse_node, parse_token, parse_token_optional},
     generators::comments::{gen_comments, parse_many_comments_and_blankspace},
-    print_item_buffer::{PrintItemBuffer, spacing_request::RequestItem},
+    print_item_buffer::{
+        PrintItemBuffer,
+        spacing_request::{Request, RequestItem},
+    },
     reporting::FormatDocumentResult,
 };
 
@@ -32,7 +35,7 @@ pub fn gen_diagnostic_control(
     formatted.extend(gen_severity_control_name(&item_control_name)?);
     formatted.extend(gen_comments(&item_comments_after_name));
     formatted.push_sc(sc!(","));
-    formatted.expect(RequestItem::Space);
+    formatted.request(Request::expect((RequestItem::Space)));
     formatted.extend(gen_comments(&item_comments_after_comma));
     formatted.extend(gen_diagnostic_rule_name(&item_rule_name)?);
     formatted.extend(gen_comments(&item_comments_after_rule));

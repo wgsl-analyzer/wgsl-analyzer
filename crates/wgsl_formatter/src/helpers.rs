@@ -9,7 +9,10 @@ pub mod separated_items;
 use itertools::{Itertools as _, Position};
 pub use line_spacing::*;
 
-use crate::{print_item_buffer::PrintItemBuffer, reporting::FormatDocumentResult};
+use crate::{
+    print_item_buffer::{PrintItemBuffer, spacing_request::Request},
+    reporting::FormatDocumentResult,
+};
 
 use super::print_item_buffer::spacing_request::RequestItem;
 
@@ -25,7 +28,7 @@ pub fn todo_verbatim_wesl(source: &parser::SyntaxNode) -> FormatDocumentResult<P
     for (pos, line) in source.to_string().lines().with_position() {
         items.push_string(line.to_owned());
         if pos != Position::Last && pos != Position::Only {
-            items.force(RequestItem::LineBreak);
+            items.request(Request::force(RequestItem::LineBreak));
         }
     }
     Ok(items)

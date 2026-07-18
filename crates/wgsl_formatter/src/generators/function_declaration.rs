@@ -56,11 +56,11 @@ pub fn gen_function_declaration(
         AttributeLayout::Multiline,
     )?);
     formatted.push_sc(sc!("fn"));
-    formatted.expect(RequestItem::Space);
+    formatted.request(Request::expect((RequestItem::Space)));
     formatted.extend(gen_comments(&item_comments_after_fn));
 
     // Name
-    formatted.expect(RequestItem::Space);
+    formatted.request(Request::expect((RequestItem::Space)));
     formatted.push_string(item_name.text().to_string());
     formatted.extend(gen_comments(&item_comments_after_name));
 
@@ -75,7 +75,7 @@ pub fn gen_function_declaration(
     formatted.extend(gen_comments(&item_comments_after_return));
 
     // Body
-    formatted.expect(RequestItem::Space);
+    formatted.request(Request::expect((RequestItem::Space)));
     formatted.extend(gen_fn_body(&item_body)?);
 
     Ok(formatted)
@@ -196,7 +196,7 @@ pub fn gen_fn_parameter(syntax: &ast::Parameter) -> FormatDocumentResult<PrintIt
     )?);
     formatted.push_string(item_name.text().to_string());
     formatted.push_sc(sc!(":"));
-    formatted.expect(RequestItem::Space);
+    formatted.request(Request::expect((RequestItem::Space)));
     //The colon should immediately follow the name, we intentionally move the comment
     formatted.extend(gen_comments(&item_comments_after_name));
     formatted.extend(gen_comments(&item_comments_after_colon));
@@ -217,9 +217,9 @@ pub fn gen_fn_return_type(syntax: &ast::ReturnType) -> FormatDocumentResult<Prin
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
 
-    formatted.expect(RequestItem::Space);
+    formatted.request(Request::expect((RequestItem::Space)));
     formatted.push_sc(sc!("->"));
-    formatted.expect(RequestItem::Space);
+    formatted.request(Request::expect((RequestItem::Space)));
     formatted.extend(gen_comments(&item_comments_after_arrow));
     formatted.extend(gen_attributes(&item_attributes, AttributeLayout::Inline)?);
     formatted.extend(gen_type_specifier(&item_type_specifier)?);

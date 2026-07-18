@@ -15,7 +15,10 @@ use crate::{
         statements::{compound_statement::gen_compound_statement, gen_statement_maybe_semicolon},
     },
     multiline_group::MultilineGroup,
-    print_item_buffer::{PrintItemBuffer, spacing_request::RequestItem},
+    print_item_buffer::{
+        PrintItemBuffer,
+        spacing_request::{Request, RequestItem},
+    },
     reporting::FormatDocumentResult,
 };
 
@@ -63,10 +66,10 @@ pub fn gen_for_statement(statement: &ast::ForStatement) -> FormatDocumentResult<
     if let Some(item_initializer) = item_initializer {
         multiline_group.extend(gen_for_statement_initializer(&item_initializer)?);
     } else {
-        multiline_group.discourage(RequestItem::Space);
+        multiline_group.request(Request::discourage(RequestItem::Space));
     }
     multiline_group.extend(gen_comments(&comments_after_initializer));
-    multiline_group.discourage(RequestItem::Space);
+    multiline_group.request(Request::discourage(RequestItem::Space));
     multiline_group.push_sc(sc!(";"));
     multiline_group.extend(gen_comments(&comments_after_initializer_semicolon));
 
@@ -74,10 +77,10 @@ pub fn gen_for_statement(statement: &ast::ForStatement) -> FormatDocumentResult<
     if let Some(item_condition) = item_condition {
         multiline_group.extend(gen_for_statement_condition(&item_condition)?);
     } else {
-        multiline_group.discourage(RequestItem::Space);
+        multiline_group.request(Request::discourage(RequestItem::Space));
     }
     multiline_group.extend(gen_comments(&comments_after_condition));
-    multiline_group.discourage(RequestItem::Space);
+    multiline_group.request(Request::discourage(RequestItem::Space));
     multiline_group.push_sc(sc!(";"));
     multiline_group.extend(gen_comments(&comments_after_condition_semicolon));
 
@@ -85,10 +88,10 @@ pub fn gen_for_statement(statement: &ast::ForStatement) -> FormatDocumentResult<
     if let Some(item_continuing) = item_continuing {
         multiline_group.extend(gen_for_statement_continuing_part(&item_continuing)?);
     } else {
-        multiline_group.discourage(RequestItem::Space);
+        multiline_group.request(Request::discourage(RequestItem::Space));
     }
     multiline_group.extend(gen_comments(&comments_after_continuing));
-    multiline_group.discourage(RequestItem::Space);
+    multiline_group.request(Request::discourage(RequestItem::Space));
 
     multiline_group.grouped_newline_or_space();
 
@@ -98,7 +101,7 @@ pub fn gen_for_statement(statement: &ast::ForStatement) -> FormatDocumentResult<
 
     multiline_group.end();
 
-    formatted.expect(RequestItem::Space);
+    formatted.request(Request::expect((RequestItem::Space)));
     formatted.extend(gen_comments(&comments_after_close_paren));
     formatted.extend(gen_compound_statement(
         &item_body,

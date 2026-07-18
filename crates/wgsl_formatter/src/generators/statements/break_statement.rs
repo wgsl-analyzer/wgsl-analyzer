@@ -6,7 +6,10 @@ use syntax::{AstNode as _, ast};
 use crate::{
     ast_parse::{parse_end, parse_token, parse_token_optional},
     generators::comments::{gen_comments, parse_many_comments_and_blankspace},
-    print_item_buffer::{PrintItemBuffer, spacing_request::RequestItem},
+    print_item_buffer::{
+        PrintItemBuffer,
+        spacing_request::{Request, RequestItem},
+    },
     reporting::FormatDocumentResult,
 };
 
@@ -30,7 +33,7 @@ pub fn gen_break_statement(
     if include_semicolon {
         formatted.push_sc(sc!(";"));
     }
-    formatted.expect(RequestItem::LineBreak);
+    formatted.request(Request::expect((RequestItem::LineBreak)));
     formatted.extend(gen_comments(&comments_after_break));
     Ok(formatted)
 }

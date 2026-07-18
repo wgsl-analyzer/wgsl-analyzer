@@ -11,7 +11,10 @@ use crate::{
         comments::{gen_comments, parse_many_comments_and_blankspace},
         expressions::gen_expression,
     },
-    print_item_buffer::{PrintItemBuffer, spacing_request::RequestItem},
+    print_item_buffer::{
+        PrintItemBuffer,
+        spacing_request::{Request, RequestItem},
+    },
     reporting::FormatDocumentResult,
 };
 
@@ -31,22 +34,22 @@ pub fn gen_parenthesis_expression(
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
     if remove_parentheses {
-        formatted.expect(RequestItem::Space);
+        formatted.request(Request::expect((RequestItem::Space)));
     } else {
         formatted.push_sc(sc!("("));
         formatted.start_new_line_group();
         formatted.start_indent();
 
-        formatted.discourage(RequestItem::Space);
+        formatted.request(Request::discourage((RequestItem::Space)));
     }
     formatted.extend(gen_comments(&item_comment_after_left_paren));
     formatted.extend(gen_expression(&item_content, true)?);
     formatted.extend(gen_comments(&item_comment_after_content));
 
     if remove_parentheses {
-        formatted.expect(RequestItem::Space);
+        formatted.request(Request::expect((RequestItem::Space)));
     } else {
-        formatted.discourage(RequestItem::Space);
+        formatted.request(Request::discourage((RequestItem::Space)));
         formatted.finish_indent();
         formatted.finish_new_line_group();
         formatted.push_sc(sc!(")"));

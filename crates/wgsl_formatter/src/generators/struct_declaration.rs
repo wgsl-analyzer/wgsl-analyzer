@@ -45,16 +45,16 @@ pub fn gen_struct_declaration(
 
     // Struct
     formatted.push_sc(sc!("struct"));
-    formatted.expect(RequestItem::Space);
+    formatted.request(Request::expect((RequestItem::Space)));
     formatted.extend(gen_comments(&item_comments_after_struct));
 
     // Name
-    formatted.expect(RequestItem::Space);
+    formatted.request(Request::expect((RequestItem::Space)));
     formatted.push_string(item_name.text().to_string());
     formatted.extend(gen_comments(&item_comments_after_name));
 
     // Body
-    formatted.expect(RequestItem::Space);
+    formatted.request(Request::expect((RequestItem::Space)));
     formatted.extend(gen_struct_body(&item_body)?);
 
     Ok(formatted)
@@ -102,16 +102,16 @@ pub fn gen_struct_body(body: &ast::StructBody) -> FormatDocumentResult<PrintItem
     formatted.start_indent();
 
     if !item_comments_after_open_paren.is_empty() {
-        formatted.expect(RequestItem::LineBreak);
+        formatted.request(Request::expect((RequestItem::LineBreak)));
         formatted.extend(gen_comments(&item_comments_after_open_paren));
     }
 
     if !is_empty {
-        formatted.expect(RequestItem::LineBreak);
+        formatted.request(Request::expect((RequestItem::LineBreak)));
         for member in item_members {
             match member {
                 StructBodyItem::StructMember(struct_member) => {
-                    formatted.expect(RequestItem::LineBreak); // Any struct member should be on a new line
+                    formatted.request(Request::expect((RequestItem::LineBreak))); // Any struct member should be on a new line
                     formatted.extend(gen_struct_member(&struct_member)?);
                     formatted.push_sc(sc!(","));
                 },
@@ -136,7 +136,7 @@ pub fn gen_struct_body(body: &ast::StructBody) -> FormatDocumentResult<PrintItem
     formatted.push_sc(sc!("}"));
 
     if !is_empty {
-        formatted.expect(RequestItem::LineBreak);
+        formatted.request(Request::expect((RequestItem::LineBreak)));
     }
 
     Ok(formatted)
@@ -162,7 +162,7 @@ pub fn gen_struct_member(member: &ast::StructMember) -> FormatDocumentResult<Pri
     formatted.extend(gen_comments(&item_comments_after_attributes));
     formatted.push_string(item_name.text().to_string());
     formatted.push_sc(sc!(":"));
-    formatted.expect(RequestItem::Space);
+    formatted.request(Request::expect((RequestItem::Space)));
     //The colon should immediately follow the name, we intentionally move the comment
     formatted.extend(gen_comments(&item_comments_after_name));
     formatted.extend(gen_comments(&item_comments_after_colon));
