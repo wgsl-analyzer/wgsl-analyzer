@@ -1,6 +1,6 @@
 use dprint_core_macros::sc;
 use itertools::put_back;
-use parser::SyntaxKind;
+use parser::{SyntaxKind, SyntaxNode};
 use syntax::{
     AstNode as _,
     ast::{self, CompoundStatement, ElseClause, ElseIfClause, Expression, IfClause},
@@ -20,8 +20,6 @@ use crate::{
     },
     reporting::FormatDocumentResult,
 };
-
-use super::compound_statement::CompoundStatementOptions;
 
 pub fn gen_if_statement(statement: &ast::IfStatement) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
@@ -88,13 +86,10 @@ pub fn gen_if_statement_if_clause(statement: &IfClause) -> FormatDocumentResult<
     formatted.push_sc(sc!("if"));
     formatted.request(Request::expect(RequestItem::Space));
     formatted.extend(gen_comments(&comments_after_if));
-    formatted.extend(gen_expression(&item_condition, true)?);
+    formatted.extend(gen_expression(&item_condition)?);
     formatted.extend(gen_comments(&comments_after_condition));
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.extend(gen_compound_statement(
-        &item_body,
-        CompoundStatementOptions::default(),
-    )?);
+    formatted.extend(gen_compound_statement(&item_body)?);
     Ok(formatted)
 }
 
@@ -117,10 +112,7 @@ pub fn gen_if_statement_else_clause(
     formatted.push_sc(sc!("else"));
     formatted.request(Request::expect(RequestItem::Space));
     formatted.extend(gen_comments(&comments_after_clause_token));
-    formatted.extend(gen_compound_statement(
-        &item_body,
-        CompoundStatementOptions::default(),
-    )?);
+    formatted.extend(gen_compound_statement(&item_body)?);
     Ok(formatted)
 }
 
@@ -150,12 +142,20 @@ pub fn gen_if_statement_else_if_clause(
     formatted.push_sc(sc!("if"));
     formatted.request(Request::expect(RequestItem::Space));
     formatted.extend(gen_comments(&comments_after_if));
-    formatted.extend(gen_expression(&item_condition, true)?);
+    formatted.extend(gen_expression(&item_condition)?);
     formatted.extend(gen_comments(&comments_after_condition));
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.extend(gen_compound_statement(
-        &item_body,
-        CompoundStatementOptions::default(),
-    )?);
+    formatted.extend(gen_compound_statement(&item_body)?);
     Ok(formatted)
+}
+
+pub fn remove_if_condition_parens(node: &SyntaxNode) -> bool {
+    let Some(parent) = node.parent() else {
+        return false;
+    };
+    match parent.kind() {
+        SyntaxKind::ElseIfClause => true,
+        SyntaxKind::IfClause => true,
+        _ => false,
+    }
 }

@@ -31,7 +31,7 @@ pub fn gen_prefix_expression(
     //In a benchmark on my machine however, removing this push_string() did not make any measurable impact - so it's fine.
     formatted.push_string(item_operator.to_string());
     formatted.extend(gen_comments(&item_comment_after_operator));
-    formatted.extend(gen_expression(&item_expr, false)?);
+    formatted.extend(gen_expression(&item_expr)?);
     formatted.extend(gen_comments(&item_comment_after_expr));
     Ok(formatted)
 }

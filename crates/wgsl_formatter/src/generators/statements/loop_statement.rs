@@ -20,8 +20,6 @@ use crate::{
     reporting::FormatDocumentResult,
 };
 
-use super::compound_statement::CompoundStatementOptions;
-
 pub fn gen_loop_statement(statement: &ast::LoopStatement) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = put_back(statement.syntax().children_with_tokens());
@@ -40,10 +38,7 @@ pub fn gen_loop_statement(statement: &ast::LoopStatement) -> FormatDocumentResul
     formatted.push_sc(sc!("loop"));
     formatted.extend(gen_comments(&comments_after_loop));
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.extend(gen_compound_statement(
-        &item_body,
-        CompoundStatementOptions::default(),
-    )?);
+    formatted.extend(gen_compound_statement(&item_body)?);
     formatted.request(Request::expect(RequestItem::LineBreak));
 
     Ok(formatted)

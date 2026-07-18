@@ -29,7 +29,7 @@ pub fn gen_field_expression(
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
-    formatted.extend(gen_expression(&item_struct_expr, false)?);
+    formatted.extend(gen_expression(&item_struct_expr)?);
     formatted.extend(gen_comments(&comments_after_ident_expr));
     formatted.start_indent();
     formatted.request(Request::empty().or_newline());

@@ -8,6 +8,7 @@ use syntax::{
 
 use crate::{
     ast_parse::{parse_end, parse_node_optional, parse_token, parse_token_optional},
+    context_policies::collapse_one_liner_compound_statement_policy,
     generators::{
         attributes::{AttributeLayout, gen_attributes, parse_many_attributes},
         comments::{Comment, gen_comment, parse_comment_optional},
@@ -21,17 +22,11 @@ use crate::{
     reporting::FormatDocumentResult,
 };
 
-#[derive(Default)]
-pub struct CompoundStatementOptions {
-    pub collapse_one_liner: bool,
-}
-
 pub fn gen_compound_statement(
-    syntax: &ast::CompoundStatement,
-    options: CompoundStatementOptions,
+    node: &ast::CompoundStatement
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Context ====
-    let starting_attribute_layout = if let Some(parent) = syntax.syntax().parent() {
+    let starting_attribute_layout = if let Some(parent) = node.syntax().parent() {
         if parent.kind() == SyntaxKind::FunctionDeclaration {
             AttributeLayout::Inline
         } else {
@@ -43,7 +38,7 @@ pub fn gen_compound_statement(
 
     // ==== Parse ====
 
-    let mut syntax = put_back(syntax.syntax().children_with_tokens());
+    let mut syntax = put_back(node.syntax().children_with_tokens());
     let item_attributes = parse_many_attributes(&mut syntax)?;
     parse_token(&mut syntax, SyntaxKind::BraceLeft)?;
 
@@ -92,7 +87,7 @@ pub fn gen_compound_statement(
 
     if !body_empty {
         formatted.start_indent();
-        if is_one_liner && options.collapse_one_liner {
+        if is_one_liner && collapse_one_liner_compound_statement_policy(node.syntax()) {
             formatted.request(Request::discourage(RequestItem::LineBreak));
             formatted.request(Request::expect(RequestItem::Space));
         } else {
@@ -104,7 +99,7 @@ pub fn gen_compound_statement(
             match line {
                 CompoundStatementItem::Statement(statement) => {
                     formatted.request(Request::expect(RequestItem::LineBreak));
-                    formatted.extend(gen_statement_maybe_semicolon(&statement, true)?);
+                    formatted.extend(gen_statement_maybe_semicolon(&statement)?);
                 },
                 CompoundStatementItem::Comment(comment) => {
                     formatted.extend(gen_comment(&comment));
@@ -114,7 +109,7 @@ pub fn gen_compound_statement(
                 },
             }
         }
-        if is_one_liner && options.collapse_one_liner {
+        if is_one_liner && collapse_one_liner_compound_statement_policy(node.syntax()) {
             formatted.request(Request::discourage(RequestItem::LineBreak));
             formatted.request(Request::expect(RequestItem::Space));
         } else {

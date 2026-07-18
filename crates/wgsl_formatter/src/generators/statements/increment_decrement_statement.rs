@@ -8,6 +8,7 @@ use syntax::{
 
 use crate::{
     ast_parse::{parse_end, parse_node, parse_token, parse_token_optional},
+    context_policies::statement_needs_semicolon_policy,
     generators::{
         comments::{gen_comments, parse_many_comments_and_blankspace},
         expressions::gen_expression,
@@ -20,8 +21,7 @@ use crate::{
 };
 
 pub fn gen_increment_decrement_statement(
-    increment_decrement_statement: &ast::IncrementDecrementStatement,
-    include_semicolon: bool,
+    increment_decrement_statement: &ast::IncrementDecrementStatement
 ) -> Result<PrintItemBuffer, FormatDocumentError> {
     // NOTE!! - When changing this function, make sure to also update gen_phony_assignment_statement.
     // This is non-dry code, but when inevitably at some point there will be some differences between
@@ -49,7 +49,7 @@ pub fn gen_increment_decrement_statement(
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
-    formatted.extend(gen_expression(&item_ident, true)?);
+    formatted.extend(gen_expression(&item_ident)?);
     formatted.extend(gen_comments(&item_comments_after_ident));
 
     match inc_dec {
@@ -63,7 +63,7 @@ pub fn gen_increment_decrement_statement(
 
     formatted.extend(gen_comments(&item_comments_after_inc_dec));
 
-    if include_semicolon {
+    if statement_needs_semicolon_policy(increment_decrement_statement.syntax()) {
         formatted.request(Request::discourage(RequestItem::Space));
         formatted.push_sc(sc!(";"));
     }

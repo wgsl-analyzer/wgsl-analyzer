@@ -1,5 +1,6 @@
 use dprint_core_macros::sc;
 use itertools::put_back;
+use parser::{SyntaxKind, SyntaxNode};
 use syntax::{
     AstNode as _,
     ast::{self},
@@ -33,7 +34,7 @@ pub fn gen_index_expression(
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
 
-    formatted.extend(gen_expression(&item_array_expr, false)?);
+    formatted.extend(gen_expression(&item_array_expr)?);
     formatted.extend(gen_comments(&comments_after_ident_expr));
 
     let mut multiline_group = MultilineGroup::new(&mut formatted);
@@ -43,7 +44,7 @@ pub fn gen_index_expression(
     multiline_group.start_indent();
 
     multiline_group.extend(gen_comments(&comments_after_open_bracket));
-    multiline_group.extend(gen_expression(&item_actual_index, true)?);
+    multiline_group.extend(gen_expression(&item_actual_index)?);
     multiline_group.extend(gen_comments(&comments_after_index_expr));
     multiline_group.grouped_newline_or_space();
 
@@ -54,4 +55,14 @@ pub fn gen_index_expression(
     multiline_group.end();
 
     Ok(formatted)
+}
+
+pub fn remove_index_expression_nested_parenthesis(node: &SyntaxNode) -> bool {
+    let Some(parent) = node.parent() else {
+        return false;
+    };
+    match parent.kind() {
+        SyntaxKind::IndexExpression => true,
+        _ => false,
+    }
 }

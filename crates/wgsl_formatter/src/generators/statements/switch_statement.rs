@@ -1,6 +1,6 @@
 use dprint_core_macros::sc;
 use itertools::{Itertools as _, Position, put_back};
-use parser::SyntaxKind;
+use parser::{SyntaxKind, SyntaxNode};
 use syntax::{
     AstNode as _,
     ast::{
@@ -23,8 +23,6 @@ use crate::{
     },
     reporting::FormatDocumentError,
 };
-
-use super::compound_statement::CompoundStatementOptions;
 
 pub fn gen_switch_statement(
     statement: &SwitchStatement
@@ -49,7 +47,7 @@ pub fn gen_switch_statement(
     formatted.push_sc(sc!("switch"));
     formatted.extend(gen_comments(&item_comments_after_switch));
     formatted.request(Request::expect(RequestItem::Space)); // We trim out the parens, so we expect a space
-    formatted.extend(gen_expression(&item_expression, true)?);
+    formatted.extend(gen_expression(&item_expression)?);
     formatted.request(Request::expect(RequestItem::Space)); // We trim out the parens, so we expect a space
     formatted.extend(gen_comments(&item_comments_after_parens));
     formatted.extend(gen_switch_body(&item_body)?);
@@ -172,12 +170,7 @@ pub fn gen_switch_body_case(
     // formatted.push_sc(sc!(":"));
     formatted.extend(gen_comments(&item_comments_after_colon));
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.extend(gen_compound_statement(
-        &item_body,
-        CompoundStatementOptions {
-            collapse_one_liner: true,
-        },
-    )?);
+    formatted.extend(gen_compound_statement(&item_body)?);
     Ok(formatted)
 }
 
@@ -235,7 +228,7 @@ pub fn gen_switch_case_selector(
 
     // ==== Format ====
     match statement {
-        SwitchCaseSelector::Expression(expression) => gen_expression(expression, true),
+        SwitchCaseSelector::Expression(expression) => gen_expression(expression),
         SwitchCaseSelector::SwitchDefaultSelector(switch_default_selector) => {
             gen_switch_case_default_selector(switch_default_selector)
         },
@@ -254,4 +247,24 @@ pub fn gen_switch_case_default_selector(
     let mut formatted = PrintItemBuffer::default();
     formatted.push_sc(sc!("default"));
     Ok(formatted)
+}
+
+pub fn collapse_one_liner_case_body_rule(node: &SyntaxNode) -> bool {
+    let Some(parent) = node.parent() else {
+        return false;
+    };
+    match parent.kind() {
+        SyntaxKind::SwitchBodyCase => true,
+        _ => false,
+    }
+}
+
+pub fn remove_switch_subject_parens(node: &SyntaxNode) -> bool {
+    let Some(parent) = node.parent() else {
+        return false;
+    };
+    match parent.kind() {
+        SyntaxKind::SwitchStatement => true,
+        _ => false,
+    }
 }

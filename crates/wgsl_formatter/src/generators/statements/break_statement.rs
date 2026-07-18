@@ -5,6 +5,7 @@ use syntax::{AstNode as _, ast};
 
 use crate::{
     ast_parse::{parse_end, parse_token, parse_token_optional},
+    context_policies::statement_needs_semicolon_policy,
     generators::comments::{gen_comments, parse_many_comments_and_blankspace},
     print_item_buffer::{
         PrintItemBuffer,
@@ -13,10 +14,7 @@ use crate::{
     reporting::FormatDocumentResult,
 };
 
-pub fn gen_break_statement(
-    node: &ast::BreakStatement,
-    include_semicolon: bool,
-) -> FormatDocumentResult<PrintItemBuffer> {
+pub fn gen_break_statement(node: &ast::BreakStatement) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     // We still parse through the break syntax even tho there is no information for
     // the formatter to get out of it. This exists to ensure we don't accidentally delete
@@ -30,7 +28,7 @@ pub fn gen_break_statement(
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
     formatted.push_sc(sc!("break"));
-    if include_semicolon {
+    if statement_needs_semicolon_policy(node.syntax()) {
         formatted.push_sc(sc!(";"));
     }
     formatted.request(Request::expect(RequestItem::LineBreak));

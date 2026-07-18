@@ -1,6 +1,6 @@
 use dprint_core_macros::sc;
 use itertools::put_back;
-use parser::SyntaxKind;
+use parser::{SyntaxKind, SyntaxNode};
 use syntax::{
     AstNode as _,
     ast::{self, Expression},
@@ -8,6 +8,7 @@ use syntax::{
 
 use crate::{
     ast_parse::{parse_end, parse_node_optional, parse_token, parse_token_optional},
+    context_policies::statement_needs_semicolon_policy,
     generators::{
         comments::{gen_comments, parse_many_comments_and_blankspace},
         expressions::gen_expression,
@@ -20,8 +21,7 @@ use crate::{
 };
 
 pub fn gen_return_statement(
-    statement: &ast::ReturnStatement,
-    include_semicolon: bool,
+    statement: &ast::ReturnStatement
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = put_back(statement.syntax().children_with_tokens());
@@ -39,14 +39,24 @@ pub fn gen_return_statement(
     formatted.extend(gen_comments(&comments_after_return));
     if let Some(item_expression) = item_expression {
         formatted.request(Request::expect(RequestItem::Space));
-        formatted.extend(gen_expression(&item_expression, true)?);
+        formatted.extend(gen_expression(&item_expression)?);
     }
     formatted.extend(gen_comments(&comments_after_expression));
 
-    if include_semicolon {
+    if statement_needs_semicolon_policy(statement.syntax()) {
         formatted.request(Request::discourage(RequestItem::Space));
         formatted.push_sc(sc!(";"));
     }
     formatted.finish_indent();
     Ok(formatted)
+}
+
+pub fn remove_return_value_parens(node: &SyntaxNode) -> bool {
+    let Some(parent) = node.parent() else {
+        return false;
+    };
+    match parent.kind() {
+        SyntaxKind::ReturnStatement => true,
+        _ => false,
+    }
 }

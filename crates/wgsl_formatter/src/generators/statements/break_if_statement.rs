@@ -1,6 +1,6 @@
 use dprint_core_macros::sc;
 use itertools::put_back;
-use parser::SyntaxKind;
+use parser::{SyntaxKind, SyntaxNode};
 use syntax::{
     AstNode as _,
     ast::{self, Expression},
@@ -8,6 +8,7 @@ use syntax::{
 
 use crate::{
     ast_parse::{parse_end, parse_node, parse_token, parse_token_optional},
+    context_policies::statement_needs_semicolon_policy,
     generators::{
         comments::{gen_comments, parse_many_comments_and_blankspace},
         expressions::gen_expression,
@@ -20,8 +21,7 @@ use crate::{
 };
 
 pub fn gen_break_if_statement(
-    statement: &ast::BreakIfStatement,
-    include_semicolon: bool,
+    statement: &ast::BreakIfStatement
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = put_back(statement.syntax().children_with_tokens());
@@ -43,13 +43,23 @@ pub fn gen_break_if_statement(
     formatted.start_indent();
     formatted.request(Request::expect(RequestItem::Space));
     formatted.extend(gen_comments(&comments_after_if));
-    formatted.extend(gen_expression(&item_condition, true)?);
+    formatted.extend(gen_expression(&item_condition)?);
     formatted.extend(gen_comments(&comments_after_condition));
     formatted.request(Request::discourage(RequestItem::Space));
-    if include_semicolon {
+    if statement_needs_semicolon_policy(statement.syntax()) {
         formatted.push_sc(sc!(";"));
     }
     formatted.finish_indent();
 
     Ok(formatted)
+}
+
+pub fn remove_break_if_condition_parens(node: &SyntaxNode) -> bool {
+    let Some(parent) = node.parent() else {
+        return false;
+    };
+    match parent.kind() {
+        SyntaxKind::BreakIfStatement => true,
+        _ => false,
+    }
 }

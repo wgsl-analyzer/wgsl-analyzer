@@ -1,6 +1,6 @@
 use dprint_core_macros::sc;
 use itertools::put_back;
-use parser::SyntaxKind;
+use parser::{SyntaxKind, SyntaxNode};
 use syntax::{
     AstNode as _,
     ast::{self, CompoundStatement, Expression},
@@ -20,8 +20,6 @@ use crate::{
     },
     reporting::FormatDocumentResult,
 };
-
-use super::compound_statement::CompoundStatementOptions;
 
 pub fn gen_while_statement(
     statement: &ast::WhileStatement
@@ -45,14 +43,21 @@ pub fn gen_while_statement(
     formatted.push_sc(sc!("while"));
     formatted.extend(gen_comments(&comments_after_while));
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.extend(gen_expression(&item_condition, true)?);
+    formatted.extend(gen_expression(&item_condition)?);
     formatted.request(Request::expect(RequestItem::Space));
     formatted.extend(gen_comments(&comments_after_condition));
-    formatted.extend(gen_compound_statement(
-        &item_body,
-        CompoundStatementOptions::default(),
-    )?);
+    formatted.extend(gen_compound_statement(&item_body)?);
     formatted.request(Request::expect(RequestItem::LineBreak));
 
     Ok(formatted)
+}
+
+pub fn remove_while_condition_parens(node: &SyntaxNode) -> bool {
+    let Some(parent) = node.parent() else {
+        return false;
+    };
+    match parent.kind() {
+        SyntaxKind::WhileStatement => true,
+        _ => false,
+    }
 }

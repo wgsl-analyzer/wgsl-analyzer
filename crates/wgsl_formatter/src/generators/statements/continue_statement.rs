@@ -5,6 +5,7 @@ use syntax::{AstNode as _, ast};
 
 use crate::{
     ast_parse::{parse_end, parse_token, parse_token_optional},
+    context_policies::statement_needs_semicolon_policy,
     generators::comments::{gen_comments, parse_many_comments_and_blankspace},
     print_item_buffer::{
         PrintItemBuffer,
@@ -14,8 +15,7 @@ use crate::{
 };
 
 pub fn gen_continue_statement(
-    node: &ast::ContinueStatement,
-    include_semicolon: bool,
+    node: &ast::ContinueStatement
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     // We still parse through the discard syntax even tho there is no information for
@@ -30,7 +30,7 @@ pub fn gen_continue_statement(
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
     formatted.push_sc(sc!("continue"));
-    if include_semicolon {
+    if statement_needs_semicolon_policy(node.syntax()) {
         formatted.push_sc(sc!(";"));
     }
     formatted.request(Request::expect(RequestItem::LineBreak));
