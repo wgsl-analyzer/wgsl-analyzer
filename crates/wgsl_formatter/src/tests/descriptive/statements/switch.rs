@@ -15,9 +15,7 @@ pub fn format_switch_statement_case_without_colon() {
         expect![[r#"
             fn main() {
                 switch a {
-                    case 1 {
-                        let a = 1;
-                    }
+                    case 1 { let a = 1; }
                 }
             }
         "#]],
@@ -37,9 +35,7 @@ pub fn format_switch_statement_default_amidst_other_options_in_one_case() {
         expect![[r#"
             fn main() {
                 switch a {
-                    case 1, default, 2 {
-                        let a = 1;
-                    }
+                    case 1, default, 2 { let a = 1; }
                 }
             }
         "#]],
@@ -59,9 +55,7 @@ pub fn format_switch_statement_case_default_only() {
         expect![[r#"
             fn main() {
                 switch a {
-                    default {
-                        let a = 1;
-                    }
+                    default { let a = 1; }
                 }
             }
         "#]],
@@ -81,9 +75,7 @@ pub fn format_switch_statement_trailing_comma() {
         expect![[r#"
             fn main() {
                 switch a {
-                    case 1, 2 {
-                        let a = 1;
-                    }
+                    case 1, 2 { let a = 1; }
                 }
             }
         "#]],
@@ -103,9 +95,7 @@ pub fn format_switch_statement_comma_and_colon() {
         expect![[r#"
             fn main() {
                 switch a {
-                    case 1 {
-                        let a = 1;
-                    }
+                    case 1 { let a = 1; }
                 }
             }
         "#]],
@@ -125,9 +115,7 @@ pub fn format_switch_statement_const_expression() {
         expect![[r#"
             fn main() {
                 switch a {
-                    case 1, c {
-                        let a = 1;
-                    }
+                    case 1, c { let a = 1; }
                 }
             }
         "#]],
