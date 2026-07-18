@@ -186,7 +186,6 @@ impl Request {
 
     #[must_use]
     pub fn or_newline(self) -> Self {
-        //TODO(MonaMayrhofer,unclear) Redesign requests once again
         match self {
             Self::Unconditional {
                 expected,
