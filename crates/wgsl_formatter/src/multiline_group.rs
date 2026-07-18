@@ -18,7 +18,15 @@ use crate::{
 
 use super::print_item_buffer::spacing_request::RequestItem;
 
-// TODO(MonaMayrhofer,discuss) Possibly enforce the rules through a typestate pattern or implement debug panics
+#[cfg(debug_assertions)]
+#[derive(Debug)]
+enum MultilineGroupState {
+    New,
+    StartedIndent,
+    FinishedIndent,
+    Ended,
+}
+
 /// Helper to generate a number of items that are either within a single line all on separate lines.
 ///
 /// To use this helper (and to keep the api small), a few rules do need to be manually followed.
@@ -30,6 +38,9 @@ pub struct MultilineGroup<'buffer> {
     pub(crate) is_multiple_lines: ConditionResolver,
     end_ln: LineNumber,
     start_reeval: Option<ConditionReevaluation>,
+
+    #[cfg(debug_assertions)]
+    state: MultilineGroupState,
 }
 
 impl<'buffer> MultilineGroup<'buffer> {
@@ -47,10 +58,23 @@ impl<'buffer> MultilineGroup<'buffer> {
             is_multiple_lines,
             end_ln,
             start_reeval: None,
+
+            #[cfg(debug_assertions)]
+            state: MultilineGroupState::New,
         }
     }
 
     pub fn start_indent(&mut self) {
+        #[cfg(debug_assertions)]
+        {
+            core::assert_matches!(
+                self.state,
+                MultilineGroupState::New,
+                "MultilineGroup was in wrong state"
+            );
+            self.state = MultilineGroupState::StartedIndent;
+        }
+
         let mut start_nl_condition = conditions::if_true_or(
             "paramMultilineStartIndent",
             Rc::clone(&self.is_multiple_lines),
@@ -112,11 +136,31 @@ impl<'buffer> MultilineGroup<'buffer> {
     }
 
     pub fn finish_indent(&mut self) {
+        #[cfg(debug_assertions)]
+        {
+            core::assert_matches!(
+                self.state,
+                MultilineGroupState::StartedIndent,
+                "MultilineGroup was in wrong state"
+            );
+            self.state = MultilineGroupState::FinishedIndent;
+        }
+
         self.buffer.discourage(RequestItem::Space);
         self.buffer.finish_indent();
     }
 
     pub fn end(&mut self) {
+        #[cfg(debug_assertions)]
+        {
+            core::assert_matches!(
+                self.state,
+                MultilineGroupState::FinishedIndent | MultilineGroupState::New,
+                "MultilineGroup was in wrong state"
+            );
+            self.state = MultilineGroupState::Ended;
+        }
+
         self.buffer.push_info(self.end_ln);
 
         // It is legal to call end without calling start_ident or finish_indent
