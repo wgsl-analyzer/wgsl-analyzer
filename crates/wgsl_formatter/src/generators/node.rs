@@ -40,7 +40,7 @@ use crate::{
             },
             break_if_statement::gen_break_if_statement,
             break_statement::gen_break_statement,
-            compound_statement::gen_compound_statement,
+            compound_statement::{CompoundStatementOptions, gen_compound_statement},
             const_assert_statement::gen_const_assert_statement,
             continue_statement::gen_continue_statement,
             continuing_statement::gen_continuing_statement,
@@ -140,7 +140,8 @@ pub fn gen_node(node: &SyntaxNode) -> FormatDocumentResult<PrintItemBuffer> {
              SyntaxKind::Parameter(node) => gen_fn_parameter(&node),
              SyntaxKind::ReturnType(node) => gen_fn_return_type(&node),
              SyntaxKind::AssertStatement(node) => gen_const_assert_statement(&node, needs_semicolon(node.syntax().parent())),
-             SyntaxKind::CompoundStatement(node) => gen_compound_statement(&node),
+            // TODO(MonaMayrhofer) this would need a similar structure to needs_semicolon, because the options should be deduced from the context. When doing that we can also remove the need for needs_semicolon and do a similar thing for it.
+             SyntaxKind::CompoundStatement(node) => gen_compound_statement(&node, CompoundStatementOptions::default()),
              SyntaxKind::AssignmentStatement(node) => gen_assignment_statement(&node, needs_semicolon(node.syntax().parent())),
              SyntaxKind::PhonyAssignmentStatement(node) => gen_phony_assignment_statement(&node, needs_semicolon(node.syntax().parent())),
              SyntaxKind::CompoundAssignmentStatement(node) => gen_compound_assignment_statement(&node, needs_semicolon(node.syntax().parent())),

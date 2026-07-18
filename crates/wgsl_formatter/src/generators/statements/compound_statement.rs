@@ -18,8 +18,14 @@ use crate::{
     reporting::FormatDocumentResult,
 };
 
+#[derive(Default)]
+pub struct CompoundStatementOptions {
+    pub collapse_one_liner: bool,
+}
+
 pub fn gen_compound_statement(
-    syntax: &ast::CompoundStatement
+    syntax: &ast::CompoundStatement,
+    options: CompoundStatementOptions,
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Context ====
     let starting_attribute_layout = if let Some(parent) = syntax.syntax().parent() {
@@ -64,6 +70,17 @@ pub fn gen_compound_statement(
     parse_token(&mut syntax, SyntaxKind::BraceRight)?;
     parse_end(&mut syntax)?;
 
+    let is_one_liner = lines
+        .iter()
+        .filter(|it| {
+            matches!(
+                it,
+                CompoundStatementItem::Comment(_) | CompoundStatementItem::Statement(_)
+            )
+        })
+        .count()
+        == 1;
+
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
 
@@ -72,8 +89,14 @@ pub fn gen_compound_statement(
 
     if !body_empty {
         formatted.start_indent();
-        formatted.discourage(RequestItem::EmptyLine);
-        formatted.expect(RequestItem::LineBreak);
+        if is_one_liner && options.collapse_one_liner {
+            formatted.discourage(RequestItem::LineBreak);
+            formatted.expect(RequestItem::Space);
+        } else {
+            formatted.discourage(RequestItem::EmptyLine);
+            formatted.expect(RequestItem::LineBreak);
+        }
+
         for line in lines {
             match line {
                 CompoundStatementItem::Statement(statement) => {
@@ -88,8 +111,13 @@ pub fn gen_compound_statement(
                 },
             }
         }
-        formatted.discourage(RequestItem::EmptyLine);
-        formatted.expect(RequestItem::LineBreak);
+        if is_one_liner && options.collapse_one_liner {
+            formatted.discourage(RequestItem::LineBreak);
+            formatted.expect(RequestItem::Space);
+        } else {
+            formatted.discourage(RequestItem::EmptyLine);
+            formatted.expect(RequestItem::LineBreak);
+        }
         formatted.finish_indent();
     }
 

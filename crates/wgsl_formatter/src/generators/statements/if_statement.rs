@@ -21,6 +21,8 @@ use crate::{
     reporting::FormatDocumentResult,
 };
 
+use super::compound_statement::CompoundStatementOptions;
+
 pub fn gen_if_statement(statement: &ast::IfStatement) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = put_back(statement.syntax().children_with_tokens());
@@ -89,7 +91,10 @@ pub fn gen_if_statement_if_clause(statement: &IfClause) -> FormatDocumentResult<
     formatted.extend(gen_expression(&item_condition, true)?);
     formatted.extend(gen_comments(&comments_after_condition));
     formatted.expect(RequestItem::Space);
-    formatted.extend(gen_compound_statement(&item_body)?);
+    formatted.extend(gen_compound_statement(
+        &item_body,
+        CompoundStatementOptions::default(),
+    )?);
     Ok(formatted)
 }
 
@@ -112,7 +117,10 @@ pub fn gen_if_statement_else_clause(
     formatted.push_sc(sc!("else"));
     formatted.expect(RequestItem::Space);
     formatted.extend(gen_comments(&comments_after_clause_token));
-    formatted.extend(gen_compound_statement(&item_body)?);
+    formatted.extend(gen_compound_statement(
+        &item_body,
+        CompoundStatementOptions::default(),
+    )?);
     Ok(formatted)
 }
 
@@ -145,6 +153,9 @@ pub fn gen_if_statement_else_if_clause(
     formatted.extend(gen_expression(&item_condition, true)?);
     formatted.extend(gen_comments(&comments_after_condition));
     formatted.expect(RequestItem::Space);
-    formatted.extend(gen_compound_statement(&item_body)?);
+    formatted.extend(gen_compound_statement(
+        &item_body,
+        CompoundStatementOptions::default(),
+    )?);
     Ok(formatted)
 }
