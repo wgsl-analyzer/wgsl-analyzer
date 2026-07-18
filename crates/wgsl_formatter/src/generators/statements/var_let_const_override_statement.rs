@@ -154,30 +154,30 @@ fn gen_var_let_const_override_statement(
         formatted.extend(gen_comments(&item_comments_after_template_list));
     }
 
-    formatted.request(Request::expect((RequestItem::Space)));
+    formatted.request(Request::expect(RequestItem::Space));
     formatted.push_string(item_name.text().to_string());
     formatted.extend(gen_comments(&item_comments_after_name));
 
     if let Some((comments_after_colon, type_specifier, comments_after_type)) = items_type {
-        formatted.request(Request::discourage((RequestItem::Space)));
+        formatted.request(Request::discourage(RequestItem::Space));
         formatted.push_sc(sc!(":"));
-        formatted.request(Request::expect((RequestItem::Space)));
+        formatted.request(Request::expect(RequestItem::Space));
         formatted.extend(gen_comments(&comments_after_colon));
         formatted.extend(gen_type_specifier(&type_specifier)?);
         formatted.extend(gen_comments(&comments_after_type));
     }
 
     if let Some((comments_after_equal, value, comments_after_value)) = assignment {
-        formatted.request(Request::expect((RequestItem::Space)));
+        formatted.request(Request::expect(RequestItem::Space));
         formatted.push_sc(sc!("="));
-        formatted.request(Request::expect((RequestItem::Space)));
+        formatted.request(Request::expect(RequestItem::Space));
         formatted.extend(gen_comments(&comments_after_equal));
         formatted.extend(gen_expression(&value, true)?);
         formatted.extend(gen_comments(&comments_after_value));
     }
 
     if include_semicolon {
-        formatted.request(Request::discourage((RequestItem::Space)));
+        formatted.request(Request::discourage(RequestItem::Space));
         formatted.push_sc(sc!(";"));
     }
     formatted.finish_indent();

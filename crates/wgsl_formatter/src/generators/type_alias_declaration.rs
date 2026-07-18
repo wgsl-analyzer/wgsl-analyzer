@@ -38,18 +38,18 @@ pub fn gen_type_alias_declaration(
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
     formatted.push_sc(sc!("alias"));
-    formatted.request(Request::expect((RequestItem::Space)));
+    formatted.request(Request::expect(RequestItem::Space));
     formatted.extend(gen_comments(&item_comments_after_alias));
     formatted.push_string(item_name.text().to_string());
     formatted.extend(gen_comments(&item_comments_after_ident));
-    formatted.request(Request::expect((RequestItem::Space)));
+    formatted.request(Request::expect(RequestItem::Space));
     formatted.push_sc(sc!("="));
-    formatted.request(Request::expect((RequestItem::Space)));
+    formatted.request(Request::expect(RequestItem::Space));
     formatted.extend(gen_comments(&item_comments_after_equal));
     formatted.extend(gen_type_specifier(&item_type)?);
     formatted.extend(gen_comments(&item_comments_after_type));
     if include_semicolon {
-        formatted.request(Request::discourage((RequestItem::Space)));
+        formatted.request(Request::discourage(RequestItem::Space));
         formatted.push_sc(sc!(";"));
     }
     Ok(formatted)

@@ -39,12 +39,12 @@ pub fn gen_loop_statement(statement: &ast::LoopStatement) -> FormatDocumentResul
     )?);
     formatted.push_sc(sc!("loop"));
     formatted.extend(gen_comments(&comments_after_loop));
-    formatted.request(Request::expect((RequestItem::Space)));
+    formatted.request(Request::expect(RequestItem::Space));
     formatted.extend(gen_compound_statement(
         &item_body,
         CompoundStatementOptions::default(),
     )?);
-    formatted.request(Request::expect((RequestItem::LineBreak)));
+    formatted.request(Request::expect(RequestItem::LineBreak));
 
     Ok(formatted)
 }

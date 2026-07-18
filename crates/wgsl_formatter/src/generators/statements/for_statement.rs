@@ -101,7 +101,7 @@ pub fn gen_for_statement(statement: &ast::ForStatement) -> FormatDocumentResult<
 
     multiline_group.end();
 
-    formatted.request(Request::expect((RequestItem::Space)));
+    formatted.request(Request::expect(RequestItem::Space));
     formatted.extend(gen_comments(&comments_after_close_paren));
     formatted.extend(gen_compound_statement(
         &item_body,

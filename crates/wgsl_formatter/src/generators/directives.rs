@@ -67,7 +67,7 @@ pub fn gen_enable_directive(node: &ast::EnableDirective) -> FormatDocumentResult
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
     formatted.push_sc(sc!("enable"));
-    formatted.request(Request::expect((RequestItem::Space)));
+    formatted.request(Request::expect(RequestItem::Space));
 
     let mut multiline_group = MultilineGroup::new(&mut formatted);
     multiline_group.start_indent();
@@ -144,7 +144,7 @@ pub fn gen_requires_directive(
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
     formatted.push_sc(sc!("requires"));
-    formatted.request(Request::expect((RequestItem::Space)));
+    formatted.request(Request::expect(RequestItem::Space));
 
     let mut multiline_group = MultilineGroup::new(&mut formatted);
     multiline_group.start_indent();

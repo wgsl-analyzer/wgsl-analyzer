@@ -35,7 +35,7 @@ pub fn gen_diagnostic_control(
     formatted.extend(gen_severity_control_name(&item_control_name)?);
     formatted.extend(gen_comments(&item_comments_after_name));
     formatted.push_sc(sc!(","));
-    formatted.request(Request::expect((RequestItem::Space)));
+    formatted.request(Request::expect(RequestItem::Space));
     formatted.extend(gen_comments(&item_comments_after_comma));
     formatted.extend(gen_diagnostic_rule_name(&item_rule_name)?);
     formatted.extend(gen_comments(&item_comments_after_rule));

@@ -44,15 +44,15 @@ pub fn gen_while_statement(
     )?);
     formatted.push_sc(sc!("while"));
     formatted.extend(gen_comments(&comments_after_while));
-    formatted.request(Request::expect((RequestItem::Space)));
+    formatted.request(Request::expect(RequestItem::Space));
     formatted.extend(gen_expression(&item_condition, true)?);
-    formatted.request(Request::expect((RequestItem::Space)));
+    formatted.request(Request::expect(RequestItem::Space));
     formatted.extend(gen_comments(&comments_after_condition));
     formatted.extend(gen_compound_statement(
         &item_body,
         CompoundStatementOptions::default(),
     )?);
-    formatted.request(Request::expect((RequestItem::LineBreak)));
+    formatted.request(Request::expect(RequestItem::LineBreak));
 
     Ok(formatted)
 }

@@ -1,12 +1,11 @@
 use dprint_core::formatting::{PrintItems, StringContainer};
-use itertools::{Itertools as _, Position};
 use parser::SyntaxKind;
 
 use crate::{
     ast_parse::{SyntaxIter, parse_token_optional}, generators::comments::{
-        Comment, gen_comment, gen_comments, infallible_parse_many_comments_and_blankspace,
+        Comment, gen_comment,
         parse_comment_optional,
-    }, multiline_group::MultilineGroup, print_item_buffer::{PrintItemBuffer, spacing_request::Request}, reporting::FormatDocumentResult,
+    }, multiline_group::MultilineGroup, print_item_buffer::PrintItemBuffer, reporting::FormatDocumentResult,
 };
 
 use super::{LineSpacing, parse_line_spacing};
