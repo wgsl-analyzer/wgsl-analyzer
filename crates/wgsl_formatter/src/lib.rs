@@ -27,9 +27,6 @@ pub use format::{FormatStringError, FormattedRange, format_file, format_range, f
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct FormattingOptions {
-    // TODO(MonaMayrhofer,on-demand) Reintroduce that setting if needed
-    // #[cfg_attr(feature = "serde", serde(alias = "trailingCommas"))]
-    // pub trailing_commas: Policy,
     #[cfg_attr(feature = "serde", serde(alias = "maxLineWidth"))]
     pub max_line_width: u32,
     #[cfg_attr(feature = "serde", serde(alias = "indentWidth"))]
