@@ -33,7 +33,7 @@ pub fn gen_discard_statement(
     if include_semicolon {
         formatted.push_sc(sc!(";"));
     }
-    formatted.request(Request::expect((RequestItem::LineBreak)));
+    formatted.request(Request::expect(RequestItem::LineBreak));
     formatted.extend(gen_comments(&comments_after_discard));
     Ok(formatted)
 }

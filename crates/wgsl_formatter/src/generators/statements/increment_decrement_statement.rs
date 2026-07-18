@@ -64,7 +64,7 @@ pub fn gen_increment_decrement_statement(
     formatted.extend(gen_comments(&item_comments_after_inc_dec));
 
     if include_semicolon {
-        formatted.request(Request::discourage((RequestItem::Space)));
+        formatted.request(Request::discourage(RequestItem::Space));
         formatted.push_sc(sc!(";"));
     }
     Ok(formatted)

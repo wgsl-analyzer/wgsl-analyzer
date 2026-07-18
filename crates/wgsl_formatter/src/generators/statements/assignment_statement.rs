@@ -44,15 +44,15 @@ pub fn gen_assignment_statement(
     let mut formatted = PrintItemBuffer::default();
     formatted.extend(gen_expression(&item_target, true)?);
     formatted.extend(gen_comments(&item_comments_after_target));
-    formatted.request(Request::expect((RequestItem::Space)));
+    formatted.request(Request::expect(RequestItem::Space));
     formatted.push_sc(sc!("="));
-    formatted.request(Request::expect((RequestItem::Space)));
+    formatted.request(Request::expect(RequestItem::Space));
     formatted.start_indent();
     formatted.extend(gen_comments(&item_comments_after_equal));
     formatted.extend(gen_expression(&item_value, true)?);
     formatted.extend(gen_comments(&item_comments_after_value));
     if include_semicolon {
-        formatted.request(Request::discourage((RequestItem::Space)));
+        formatted.request(Request::discourage(RequestItem::Space));
         formatted.push_sc(sc!(";"));
     }
     formatted.finish_indent();
@@ -84,15 +84,15 @@ pub fn gen_phony_assignment_statement(
     let mut formatted = PrintItemBuffer::default();
     formatted.push_sc(sc!("_"));
     formatted.extend(gen_comments(&item_comments_after_target));
-    formatted.request(Request::expect((RequestItem::Space)));
+    formatted.request(Request::expect(RequestItem::Space));
     formatted.push_sc(sc!("="));
-    formatted.request(Request::expect((RequestItem::Space)));
+    formatted.request(Request::expect(RequestItem::Space));
     formatted.start_indent();
     formatted.extend(gen_comments(&item_comments_after_equal));
     formatted.extend(gen_expression(&item_value, true)?);
     formatted.extend(gen_comments(&item_comments_after_value));
     if include_semicolon {
-        formatted.request(Request::discourage((RequestItem::Space)));
+        formatted.request(Request::discourage(RequestItem::Space));
         formatted.push_sc(sc!(";"));
     }
     formatted.finish_indent();
@@ -141,15 +141,15 @@ pub fn gen_compound_assignment_statement(
         CompoundAssignmentOperator::ShiftRightEqual(_) => sc!(">>="),
         CompoundAssignmentOperator::ShiftLeftEqual(_) => sc!("<<="),
     };
-    formatted.request(Request::expect((RequestItem::Space)));
+    formatted.request(Request::expect(RequestItem::Space));
     formatted.push_sc(operator_sc);
-    formatted.request(Request::expect((RequestItem::Space)));
+    formatted.request(Request::expect(RequestItem::Space));
     formatted.start_indent();
     formatted.extend(gen_comments(&item_comments_after_equal));
     formatted.extend(gen_expression(&item_value, true)?);
     formatted.extend(gen_comments(&item_comments_after_value));
     if include_semicolon {
-        formatted.request(Request::discourage((RequestItem::Space)));
+        formatted.request(Request::discourage(RequestItem::Space));
         formatted.push_sc(sc!(";"));
     }
     formatted.finish_indent();

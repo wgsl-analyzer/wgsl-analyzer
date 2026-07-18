@@ -38,13 +38,13 @@ pub fn gen_return_statement(
     formatted.start_indent();
     formatted.extend(gen_comments(&comments_after_return));
     if let Some(item_expression) = item_expression {
-        formatted.request(Request::expect((RequestItem::Space)));
+        formatted.request(Request::expect(RequestItem::Space));
         formatted.extend(gen_expression(&item_expression, true)?);
     }
     formatted.extend(gen_comments(&comments_after_expression));
 
     if include_semicolon {
-        formatted.request(Request::discourage((RequestItem::Space)));
+        formatted.request(Request::discourage(RequestItem::Space));
         formatted.push_sc(sc!(";"));
     }
     formatted.finish_indent();

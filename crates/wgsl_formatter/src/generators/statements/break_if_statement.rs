@@ -37,15 +37,15 @@ pub fn gen_break_if_statement(
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
     formatted.push_sc(sc!("break"));
-    formatted.request(Request::expect((RequestItem::Space)));
+    formatted.request(Request::expect(RequestItem::Space));
     formatted.extend(gen_comments(&comments_after_break));
     formatted.push_sc(sc!("if"));
     formatted.start_indent();
-    formatted.request(Request::expect((RequestItem::Space)));
+    formatted.request(Request::expect(RequestItem::Space));
     formatted.extend(gen_comments(&comments_after_if));
     formatted.extend(gen_expression(&item_condition, true)?);
     formatted.extend(gen_comments(&comments_after_condition));
-    formatted.request(Request::discourage((RequestItem::Space)));
+    formatted.request(Request::discourage(RequestItem::Space));
     if include_semicolon {
         formatted.push_sc(sc!(";"));
     }

@@ -34,22 +34,22 @@ pub fn gen_parenthesis_expression(
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
     if remove_parentheses {
-        formatted.request(Request::expect((RequestItem::Space)));
+        formatted.request(Request::expect(RequestItem::Space));
     } else {
         formatted.push_sc(sc!("("));
         formatted.start_new_line_group();
         formatted.start_indent();
 
-        formatted.request(Request::discourage((RequestItem::Space)));
+        formatted.request(Request::discourage(RequestItem::Space));
     }
     formatted.extend(gen_comments(&item_comment_after_left_paren));
     formatted.extend(gen_expression(&item_content, true)?);
     formatted.extend(gen_comments(&item_comment_after_content));
 
     if remove_parentheses {
-        formatted.request(Request::expect((RequestItem::Space)));
+        formatted.request(Request::expect(RequestItem::Space));
     } else {
-        formatted.request(Request::discourage((RequestItem::Space)));
+        formatted.request(Request::discourage(RequestItem::Space));
         formatted.finish_indent();
         formatted.finish_new_line_group();
         formatted.push_sc(sc!(")"));

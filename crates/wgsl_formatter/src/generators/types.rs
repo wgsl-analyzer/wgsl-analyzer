@@ -1,6 +1,5 @@
-use dprint_core::formatting::PrintItems;
 use dprint_core_macros::sc;
-use itertools::{Itertools as _, Position, put_back};
+use itertools::put_back;
 use parser::SyntaxKind;
 use syntax::{
     AstNode as _,
