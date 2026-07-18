@@ -4,7 +4,10 @@ use rowan::NodeOrToken;
 
 use crate::{
     ast_parse::{SyntaxIter, parse_token_optional},
-    print_item_buffer::{PrintItemBuffer, spacing_request::RequestItem},
+    print_item_buffer::{
+        PrintItemBuffer,
+        spacing_request::{Request, RequestItem},
+    },
     reporting::FormatDocumentResult,
 };
 
@@ -77,13 +80,13 @@ pub fn gen_comment(item: &Comment) -> PrintItemBuffer {
     let mut formatted = PrintItemBuffer::default();
     match item {
         Comment::Block(content) => {
-            formatted.expect(RequestItem::Space);
+            formatted.request(Request::expect((RequestItem::Space)));
 
             let mut lines = content.lines().with_position();
             if let Some((pos, line)) = lines.next() {
                 formatted.push_string(line.to_owned());
                 if pos != Position::Only && pos != Position::Last {
-                    formatted.expect(RequestItem::LineBreak);
+                    formatted.request(Request::expect((RequestItem::LineBreak)));
                 }
             }
 
@@ -91,15 +94,15 @@ pub fn gen_comment(item: &Comment) -> PrintItemBuffer {
             for (pos, line) in lines {
                 formatted.push_string(line.to_owned());
                 if pos != Position::Only && pos != Position::Last {
-                    formatted.expect(RequestItem::LineBreak);
+                    formatted.request(Request::expect((RequestItem::LineBreak)));
                 }
             }
-            formatted.discourage(RequestItem::LineBreak);
+            formatted.request(Request::discourage((RequestItem::LineBreak)));
             formatted.finish_ignoring_indent();
-            formatted.expect(RequestItem::Space);
+            formatted.request(Request::expect((RequestItem::Space)));
         },
         Comment::LineEnding(content) => {
-            formatted.expect(RequestItem::Space);
+            formatted.request(Request::expect((RequestItem::Space)));
             // Line ending comments may not contain newlines - otherwise push_string will
             // run into a debug_assert down the line where its a lot harder to debug.
             debug_assert!(
@@ -107,7 +110,7 @@ pub fn gen_comment(item: &Comment) -> PrintItemBuffer {
                 "line ending comment may not contain newlines."
             );
             formatted.push_string(content.clone());
-            formatted.force(RequestItem::LineBreak);
+            formatted.request(Request::force((RequestItem::LineBreak)));
         },
     }
     formatted

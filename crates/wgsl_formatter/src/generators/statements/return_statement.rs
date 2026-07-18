@@ -12,7 +12,10 @@ use crate::{
         comments::{gen_comments, parse_many_comments_and_blankspace},
         expressions::gen_expression,
     },
-    print_item_buffer::{PrintItemBuffer, spacing_request::RequestItem},
+    print_item_buffer::{
+        PrintItemBuffer,
+        spacing_request::{Request, RequestItem},
+    },
     reporting::FormatDocumentResult,
 };
 
@@ -35,13 +38,13 @@ pub fn gen_return_statement(
     formatted.start_indent();
     formatted.extend(gen_comments(&comments_after_return));
     if let Some(item_expression) = item_expression {
-        formatted.expect(RequestItem::Space);
+        formatted.request(Request::expect((RequestItem::Space)));
         formatted.extend(gen_expression(&item_expression, true)?);
     }
     formatted.extend(gen_comments(&comments_after_expression));
 
     if include_semicolon {
-        formatted.discourage(RequestItem::Space);
+        formatted.request(Request::discourage((RequestItem::Space)));
         formatted.push_sc(sc!(";"));
     }
     formatted.finish_indent();

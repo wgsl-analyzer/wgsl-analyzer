@@ -14,7 +14,10 @@ use crate::{
         expressions::gen_expression,
         statements::compound_statement::gen_compound_statement,
     },
-    print_item_buffer::{PrintItemBuffer, spacing_request::RequestItem},
+    print_item_buffer::{
+        PrintItemBuffer,
+        spacing_request::{Request, RequestItem},
+    },
     reporting::FormatDocumentResult,
 };
 
@@ -41,15 +44,15 @@ pub fn gen_while_statement(
     )?);
     formatted.push_sc(sc!("while"));
     formatted.extend(gen_comments(&comments_after_while));
-    formatted.expect(RequestItem::Space);
+    formatted.request(Request::expect((RequestItem::Space)));
     formatted.extend(gen_expression(&item_condition, true)?);
-    formatted.expect(RequestItem::Space);
+    formatted.request(Request::expect((RequestItem::Space)));
     formatted.extend(gen_comments(&comments_after_condition));
     formatted.extend(gen_compound_statement(
         &item_body,
         CompoundStatementOptions::default(),
     )?);
-    formatted.expect(RequestItem::LineBreak);
+    formatted.request(Request::expect((RequestItem::LineBreak)));
 
     Ok(formatted)
 }

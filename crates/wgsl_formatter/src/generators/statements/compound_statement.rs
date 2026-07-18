@@ -14,7 +14,10 @@ use crate::{
         statements::gen_statement_maybe_semicolon,
     },
     helpers::{LineSpacing, gen_line_spacing, parse_line_spacing},
-    print_item_buffer::{PrintItemBuffer, spacing_request::RequestItem},
+    print_item_buffer::{
+        PrintItemBuffer,
+        spacing_request::{Request, RequestItem},
+    },
     reporting::FormatDocumentResult,
 };
 
@@ -90,17 +93,17 @@ pub fn gen_compound_statement(
     if !body_empty {
         formatted.start_indent();
         if is_one_liner && options.collapse_one_liner {
-            formatted.discourage(RequestItem::LineBreak);
-            formatted.expect(RequestItem::Space);
+            formatted.request(Request::discourage((RequestItem::LineBreak)));
+            formatted.request(Request::expect((RequestItem::Space)));
         } else {
-            formatted.discourage(RequestItem::EmptyLine);
-            formatted.expect(RequestItem::LineBreak);
+            formatted.request(Request::discourage((RequestItem::EmptyLine)));
+            formatted.request(Request::expect((RequestItem::LineBreak)));
         }
 
         for line in lines {
             match line {
                 CompoundStatementItem::Statement(statement) => {
-                    formatted.expect(RequestItem::LineBreak);
+                    formatted.request(Request::expect((RequestItem::LineBreak)));
                     formatted.extend(gen_statement_maybe_semicolon(&statement, true)?);
                 },
                 CompoundStatementItem::Comment(comment) => {
@@ -112,11 +115,11 @@ pub fn gen_compound_statement(
             }
         }
         if is_one_liner && options.collapse_one_liner {
-            formatted.discourage(RequestItem::LineBreak);
-            formatted.expect(RequestItem::Space);
+            formatted.request(Request::discourage((RequestItem::LineBreak)));
+            formatted.request(Request::expect((RequestItem::Space)));
         } else {
-            formatted.discourage(RequestItem::EmptyLine);
-            formatted.expect(RequestItem::LineBreak);
+            formatted.request(Request::discourage((RequestItem::EmptyLine)));
+            formatted.request(Request::expect((RequestItem::LineBreak)));
         }
         formatted.finish_indent();
     }
@@ -132,7 +135,7 @@ pub fn gen_compound_statement(
         // }
         // // Thing
         // So the comment is not on the same line as the closing brace.
-        formatted.expect(RequestItem::LineBreak);
+        formatted.request(Request::expect((RequestItem::LineBreak)));
     }
 
     Ok(formatted)

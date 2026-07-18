@@ -68,7 +68,7 @@ pub fn gen_source_file(node: &ast::SourceFile) -> FormatDocumentResult<PrintItem
         match item {
             SourceFileItem::Other(item) => {
                 // Every item should start on a new line.
-                formatted.expect(RequestItem::LineBreak);
+                formatted.request(Request::expect((RequestItem::LineBreak)));
                 formatted.extend(gen_node(&item)?);
             },
             SourceFileItem::Comment(comment) => {

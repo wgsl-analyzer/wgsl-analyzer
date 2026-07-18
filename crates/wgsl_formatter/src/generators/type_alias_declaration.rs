@@ -11,7 +11,10 @@ use crate::{
         comments::{gen_comments, parse_many_comments_and_blankspace},
         types::gen_type_specifier,
     },
-    print_item_buffer::{PrintItemBuffer, spacing_request::RequestItem},
+    print_item_buffer::{
+        PrintItemBuffer,
+        spacing_request::{Request, RequestItem},
+    },
     reporting::FormatDocumentError,
 };
 
@@ -35,18 +38,18 @@ pub fn gen_type_alias_declaration(
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
     formatted.push_sc(sc!("alias"));
-    formatted.expect(RequestItem::Space);
+    formatted.request(Request::expect((RequestItem::Space)));
     formatted.extend(gen_comments(&item_comments_after_alias));
     formatted.push_string(item_name.text().to_string());
     formatted.extend(gen_comments(&item_comments_after_ident));
-    formatted.expect(RequestItem::Space);
+    formatted.request(Request::expect((RequestItem::Space)));
     formatted.push_sc(sc!("="));
-    formatted.expect(RequestItem::Space);
+    formatted.request(Request::expect((RequestItem::Space)));
     formatted.extend(gen_comments(&item_comments_after_equal));
     formatted.extend(gen_type_specifier(&item_type)?);
     formatted.extend(gen_comments(&item_comments_after_type));
     if include_semicolon {
-        formatted.discourage(RequestItem::Space);
+        formatted.request(Request::discourage((RequestItem::Space)));
         formatted.push_sc(sc!(";"));
     }
     Ok(formatted)

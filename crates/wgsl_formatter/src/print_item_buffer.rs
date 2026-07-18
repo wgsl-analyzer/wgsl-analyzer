@@ -52,28 +52,6 @@ pub struct PrintItemBuffer {
 }
 
 impl PrintItemBuffer {
-    // ==== Request Helpers ====
-    pub fn discourage(
-        &mut self,
-        item: RequestItem,
-    ) {
-        self.request(Request::discourage(item));
-    }
-
-    pub fn expect(
-        &mut self,
-        item: RequestItem,
-    ) {
-        self.request(Request::expect(item));
-    }
-
-    pub fn force(
-        &mut self,
-        item: RequestItem,
-    ) {
-        self.request(Request::force(item));
-    }
-
     pub fn request(
         &mut self,
         incoming_request: Request,

@@ -146,7 +146,7 @@ impl<'buffer> MultilineGroup<'buffer> {
             self.state = MultilineGroupState::FinishedIndent;
         }
 
-        self.buffer.discourage(RequestItem::Space);
+        self.buffer.request(Request::discourage(RequestItem::Space));
         self.buffer.finish_indent();
     }
 
