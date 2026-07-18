@@ -21,6 +21,8 @@ use crate::{
     reporting::FormatDocumentError,
 };
 
+use super::compound_statement::CompoundStatementOptions;
+
 pub fn gen_switch_statement(
     statement: &SwitchStatement
 ) -> Result<PrintItemBuffer, FormatDocumentError> {
@@ -167,7 +169,12 @@ pub fn gen_switch_body_case(
     // formatted.push_sc(sc!(":"));
     formatted.extend(gen_comments(&item_comments_after_colon));
     formatted.expect(RequestItem::Space);
-    formatted.extend(gen_compound_statement(&item_body)?);
+    formatted.extend(gen_compound_statement(
+        &item_body,
+        CompoundStatementOptions {
+            collapse_one_liner: true,
+        },
+    )?);
     Ok(formatted)
 }
 

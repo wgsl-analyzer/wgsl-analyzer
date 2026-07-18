@@ -27,7 +27,9 @@ use crate::{
     reporting::FormatDocumentResult,
 };
 
-use super::attributes::AttributeLayout;
+use super::{
+    attributes::AttributeLayout, statements::compound_statement::CompoundStatementOptions,
+};
 
 pub fn gen_function_declaration(
     node: &ast::FunctionDeclaration
@@ -225,5 +227,5 @@ pub fn gen_fn_return_type(syntax: &ast::ReturnType) -> FormatDocumentResult<Prin
 }
 
 fn gen_fn_body(syntax: &ast::CompoundStatement) -> FormatDocumentResult<PrintItemBuffer> {
-    gen_compound_statement(syntax)
+    gen_compound_statement(syntax, CompoundStatementOptions::default())
 }

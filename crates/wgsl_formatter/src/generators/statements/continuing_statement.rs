@@ -16,6 +16,8 @@ use crate::{
     reporting::FormatDocumentResult,
 };
 
+use super::compound_statement::CompoundStatementOptions;
+
 pub fn gen_continuing_statement(
     statement: &ast::ContinuingStatement
 ) -> FormatDocumentResult<PrintItemBuffer> {
@@ -31,7 +33,10 @@ pub fn gen_continuing_statement(
     formatted.push_sc(sc!("continuing"));
     formatted.extend(gen_comments(&comments_after_continuing));
     formatted.expect(RequestItem::Space);
-    formatted.extend(gen_compound_statement(&item_body)?);
+    formatted.extend(gen_compound_statement(
+        &item_body,
+        CompoundStatementOptions::default(),
+    )?);
     formatted.expect(RequestItem::LineBreak);
 
     Ok(formatted)

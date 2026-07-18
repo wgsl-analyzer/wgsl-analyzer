@@ -1,3 +1,4 @@
+use compound_statement::CompoundStatementOptions;
 use syntax::ast;
 
 use crate::generators::statements::{
@@ -56,7 +57,7 @@ pub fn gen_statement_maybe_semicolon(
         ast::Statement::ForStatement(for_statement) => gen_for_statement(for_statement),
         ast::Statement::WhileStatement(while_statement) => gen_while_statement(while_statement),
         ast::Statement::CompoundStatement(compound_statement) => {
-            gen_compound_statement(compound_statement)
+            gen_compound_statement(compound_statement, CompoundStatementOptions::default())
         },
         ast::Statement::FunctionCallStatement(function_call_statement) => {
             gen_function_call_statement(function_call_statement, include_semicolon)

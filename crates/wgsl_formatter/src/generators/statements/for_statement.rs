@@ -19,6 +19,8 @@ use crate::{
     reporting::FormatDocumentResult,
 };
 
+use super::compound_statement::CompoundStatementOptions;
+
 pub fn gen_for_statement(statement: &ast::ForStatement) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = put_back(statement.syntax().children_with_tokens());
@@ -98,7 +100,10 @@ pub fn gen_for_statement(statement: &ast::ForStatement) -> FormatDocumentResult<
 
     formatted.expect(RequestItem::Space);
     formatted.extend(gen_comments(&comments_after_close_paren));
-    formatted.extend(gen_compound_statement(&item_body)?);
+    formatted.extend(gen_compound_statement(
+        &item_body,
+        CompoundStatementOptions::default(),
+    )?);
     Ok(formatted)
 }
 

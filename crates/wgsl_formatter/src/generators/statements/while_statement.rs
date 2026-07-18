@@ -18,6 +18,8 @@ use crate::{
     reporting::FormatDocumentResult,
 };
 
+use super::compound_statement::CompoundStatementOptions;
+
 pub fn gen_while_statement(
     statement: &ast::WhileStatement
 ) -> FormatDocumentResult<PrintItemBuffer> {
@@ -43,7 +45,10 @@ pub fn gen_while_statement(
     formatted.extend(gen_expression(&item_condition, true)?);
     formatted.expect(RequestItem::Space);
     formatted.extend(gen_comments(&comments_after_condition));
-    formatted.extend(gen_compound_statement(&item_body)?);
+    formatted.extend(gen_compound_statement(
+        &item_body,
+        CompoundStatementOptions::default(),
+    )?);
     formatted.expect(RequestItem::LineBreak);
 
     Ok(formatted)
