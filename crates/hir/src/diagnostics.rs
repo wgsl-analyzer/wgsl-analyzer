@@ -421,6 +421,9 @@ pub(crate) fn any_diag_from_infer_diagnostic(
                 actual: *actual,
             }
         },
+        InferenceDiagnosticKind::UnexpectedReturnValue { expression, actual } => {
+            todo!()
+        },
     })
 }
 

@@ -554,7 +554,7 @@ impl<'database> InferenceContext<'database> {
     ) {
         match body.root {
             Some(Either::Left(statement)) => {
-                self.infer_statement(statement, body);
+                self.infer_statement(statement, body, return_type);
             },
             Some(Either::Right(expression)) => {
                 let r#type =
@@ -614,13 +614,14 @@ impl<'database> InferenceContext<'database> {
         &mut self,
         statement: StatementId,
         body: &Body,
+        return_type: Option<Type>,
     ) {
         let resolver = self.resolver_for_statement(statement);
 
         match &body.statements[statement] {
             Statement::Compound { statements } => {
                 for statement in statements {
-                    self.infer_statement(*statement, body);
+                    self.infer_statement(*statement, body, return_type);
                 }
             },
             Statement::Variable {
@@ -690,12 +691,26 @@ impl<'database> InferenceContext<'database> {
             },
 
             Statement::Return { expression } => {
-                if let Some(expression) = expression {
-                    self.infer_expression_expect(
-                        *expression,
-                        &TypeExpectation::from_type(self.return_type),
-                        body,
-                    );
+                match (expression, return_type) {
+                    (Some(expression), Some(return_type)) => {
+                        self.infer_expression_expect(
+                            *expression,
+                            &TypeExpectation::from_type(self.return_type),
+                            body,
+                        );
+                    }
+                    (Some(expression), None) => {
+                        let actual = self.infer_expression_expect(
+                            *expression,
+                            &TypeExpectation::from_type(self.return_type),
+                            body,
+                        );
+                        self.push_diagnostic(body.store_source, InferenceDiagnosticKind::UnexpectedReturnValue {
+                            expression: *expression,
+                            actual,
+                        });
+                    }
+                    _ => (),
                 }
             },
             Statement::Assignment {
@@ -806,12 +821,12 @@ impl<'database> InferenceContext<'database> {
                 else_if_blocks,
                 else_block,
             } => {
-                self.infer_statement(*block, body);
+                self.infer_statement(*block, body, return_type);
                 for else_if_block in else_if_blocks {
-                    self.infer_statement(*else_if_block, body);
+                    self.infer_statement(*else_if_block, body, return_type);
                 }
                 if let Some(else_block) = else_block {
-                    self.infer_statement(*else_block, body);
+                    self.infer_statement(*else_block, body, return_type);
                 }
                 self.infer_expression_expect(
                     *condition,
@@ -820,7 +835,7 @@ impl<'database> InferenceContext<'database> {
                 );
             },
             Statement::While { condition, block } => {
-                self.infer_statement(*block, body);
+                self.infer_statement(*block, body, return_type);
                 self.infer_expression_expect(
                     *condition,
                     &TypeExpectation::from_type(self.bool_type()),
@@ -845,7 +860,7 @@ impl<'database> InferenceContext<'database> {
                             );
                         }
                     }
-                    self.infer_statement(*case, body);
+                    self.infer_statement(*case, body, return_type);
                 }
             },
             Statement::For {
@@ -855,10 +870,10 @@ impl<'database> InferenceContext<'database> {
                 block,
             } => {
                 if let Some(init) = initializer {
-                    self.infer_statement(*init, body);
+                    self.infer_statement(*init, body, return_type);
                 }
                 if let Some(cont) = continuing_part {
-                    self.infer_statement(*cont, body);
+                    self.infer_statement(*cont, body, return_type);
                 }
 
                 if let Some(condition) = condition {
@@ -869,10 +884,10 @@ impl<'database> InferenceContext<'database> {
                     );
                 }
 
-                self.infer_statement(*block, body);
+                self.infer_statement(*block, body, return_type);
             },
             Statement::Loop { body: loop_body } => {
-                self.infer_statement(*loop_body, body);
+                self.infer_statement(*loop_body, body, return_type);
             },
             Statement::Assert { expression } => {
                 self.infer_expression_expect(
@@ -882,7 +897,7 @@ impl<'database> InferenceContext<'database> {
                 );
             },
             Statement::Discard | Statement::Break | Statement::Continue | Statement::Missing => {},
-            Statement::Continuing { block } => self.infer_statement(*block, body),
+            Statement::Continuing { block } => self.infer_statement(*block, body, return_type),
             Statement::BreakIf { condition } => {
                 self.infer_expression_expect(
                     *condition,

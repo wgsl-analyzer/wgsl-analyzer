@@ -1777,6 +1777,7 @@ fn add_refs_and_ptrs() {
             195..205 't + data.b': u32
             199..203 'data': ptr<storage, MyData, read_write>
             199..205 'data.b': ref<storage, u32, read_write>
+            195..205 't + data.b': unexpected return value of type `u32` in function with no return type
             229..234 'a_ref': ref<function, i32, read_write>
             237..238 '1': integer
             248..253 'b_ref': ref<function, i32, read_write>

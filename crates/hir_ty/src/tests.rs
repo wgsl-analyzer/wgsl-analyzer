@@ -267,6 +267,23 @@ impl<'db> InferPrinter<'db> {
                 )
                 .unwrap();
             },
+            InferenceDiagnosticKind::UnexpectedReturnValue { actual, expression } => {
+                let node = match source_map.expression_to_source(*expression) {
+                    Ok(sp) => sp.to_node(&self.root).syntax().clone(),
+                    Err(SyntheticSyntax) => return,
+                };
+                let (range, text) = (
+                    node.text_range(),
+                    node.text().to_string().replace('\n', " "),
+                );
+                writeln!(
+                    buffer,
+                    "{range:?} '{}': unexpected return value of type `{}` in function with no return type",
+                    ellipsize(text, 15),
+                    pretty_type_with_verbosity(self.database, *actual, TypeVerbosity::Full),
+                )
+                .unwrap();
+            },
         }
     }
 }
