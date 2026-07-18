@@ -7,6 +7,7 @@ use syntax::{
 
 use crate::{
     ast_parse::{parse_end, parse_node, parse_token},
+    context_policies::statement_needs_semicolon_policy,
     generators::{
         comments::{gen_comments, parse_many_comments_and_blankspace},
         types::gen_type_specifier,
@@ -19,8 +20,7 @@ use crate::{
 };
 
 pub fn gen_type_alias_declaration(
-    statement: &TypeAliasDeclaration,
-    include_semicolon: bool,
+    statement: &TypeAliasDeclaration
 ) -> Result<PrintItemBuffer, FormatDocumentError> {
     // ==== Parse ====
     let mut syntax = put_back(statement.syntax().children_with_tokens());
@@ -48,7 +48,7 @@ pub fn gen_type_alias_declaration(
     formatted.extend(gen_comments(&item_comments_after_equal));
     formatted.extend(gen_type_specifier(&item_type)?);
     formatted.extend(gen_comments(&item_comments_after_type));
-    if include_semicolon {
+    if statement_needs_semicolon_policy(statement.syntax()) {
         formatted.request(Request::discourage(RequestItem::Space));
         formatted.push_sc(sc!(";"));
     }

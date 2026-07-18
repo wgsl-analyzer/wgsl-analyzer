@@ -33,7 +33,7 @@ pub fn gen_infix_expression(
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
-    formatted.extend(gen_expression(&item_left, false)?);
+    formatted.extend(gen_expression(&item_left)?);
     formatted.extend(gen_comments(&item_comment_after_left));
     formatted.request(Request::expect(RequestItem::Space).or_newline());
     //I don't like to-stringing the operator here, would be better to special case on it,
@@ -41,7 +41,7 @@ pub fn gen_infix_expression(
     formatted.push_string(item_operator.to_string());
     formatted.request(Request::expect(RequestItem::Space));
     formatted.extend(gen_comments(&item_comment_after_operator));
-    formatted.extend(gen_expression(&item_right, false)?);
+    formatted.extend(gen_expression(&item_right)?);
     formatted.extend(gen_comments(&item_comment_after_right));
     Ok(formatted)
 }

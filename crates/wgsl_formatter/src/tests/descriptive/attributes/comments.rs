@@ -1,6 +1,6 @@
 use expect_test::expect;
 
-use crate::test_util::{check, check_comments};
+use crate::test_util::check_comments;
 
 #[test]
 pub fn format_comments_in_attrs_on_struct_members() {
@@ -466,4 +466,3 @@ pub fn format_comments_in_attr_with_many_parameters() {
         "#]],
     );
 }
-

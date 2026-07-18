@@ -460,7 +460,7 @@ fn gen_attr_standard_with_args(
             format_separated_items(
                 &mut multiline_group,
                 item_arguments,
-                |item| gen_expression(item, false),
+                |item| gen_expression(item),
                 sc!(","),
             )?;
 

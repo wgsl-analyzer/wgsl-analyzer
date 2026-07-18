@@ -23,10 +23,7 @@ pub mod literal_expression;
 pub mod parenthesis_expression;
 pub mod prefix_expression;
 
-pub fn gen_expression(
-    expression: &ast::Expression,
-    remove_parentheses: bool,
-) -> FormatDocumentResult<PrintItemBuffer> {
+pub fn gen_expression(expression: &ast::Expression) -> FormatDocumentResult<PrintItemBuffer> {
     match expression {
         ast::Expression::IndexExpression(index_expression) => {
             gen_index_expression(index_expression)
@@ -45,7 +42,7 @@ pub fn gen_expression(
         },
         ast::Expression::FunctionCall(function_call) => gen_function_call(function_call),
         ast::Expression::ParenthesisExpression(parenthesis_expression) => {
-            gen_parenthesis_expression(parenthesis_expression, remove_parentheses)
+            gen_parenthesis_expression(parenthesis_expression)
         },
         ast::Expression::Literal(literal) => gen_literal_expression(literal),
     }

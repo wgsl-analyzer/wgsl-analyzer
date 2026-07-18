@@ -1,4 +1,3 @@
-use compound_statement::CompoundStatementOptions;
 use syntax::ast;
 
 use crate::generators::statements::{
@@ -46,9 +45,9 @@ pub mod switch_statement;
 pub mod var_let_const_override_statement;
 pub mod while_statement;
 
+// TODO Rename this
 pub fn gen_statement_maybe_semicolon(
-    item: &ast::Statement,
-    include_semicolon: bool,
+    item: &ast::Statement
 ) -> Result<PrintItemBuffer, FormatDocumentError> {
     match item {
         ast::Statement::IfStatement(if_statement) => gen_if_statement(if_statement),
@@ -57,52 +56,46 @@ pub fn gen_statement_maybe_semicolon(
         ast::Statement::ForStatement(for_statement) => gen_for_statement(for_statement),
         ast::Statement::WhileStatement(while_statement) => gen_while_statement(while_statement),
         ast::Statement::CompoundStatement(compound_statement) => {
-            gen_compound_statement(compound_statement, CompoundStatementOptions::default())
+            gen_compound_statement(compound_statement)
         },
         ast::Statement::FunctionCallStatement(function_call_statement) => {
-            gen_function_call_statement(function_call_statement, include_semicolon)
+            gen_function_call_statement(function_call_statement)
         },
         ast::Statement::VariableDeclaration(variable_declaration) => {
-            gen_var_declaration_statement(variable_declaration, include_semicolon)
+            gen_var_declaration_statement(variable_declaration)
         },
         ast::Statement::LetDeclaration(let_declaration) => {
-            gen_let_declaration_statement(let_declaration, include_semicolon)
+            gen_let_declaration_statement(let_declaration)
         },
         ast::Statement::ConstantDeclaration(constant_declaration) => {
-            gen_const_declaration_statement(constant_declaration, include_semicolon)
+            gen_const_declaration_statement(constant_declaration)
         },
         ast::Statement::AssignmentStatement(assignment_statement) => {
-            gen_assignment_statement(assignment_statement, include_semicolon)
+            gen_assignment_statement(assignment_statement)
         },
         ast::Statement::PhonyAssignmentStatement(phony_assignment_statement) => {
-            gen_phony_assignment_statement(phony_assignment_statement, include_semicolon)
+            gen_phony_assignment_statement(phony_assignment_statement)
         },
         ast::Statement::CompoundAssignmentStatement(compound_assignment_statement) => {
-            gen_compound_assignment_statement(compound_assignment_statement, include_semicolon)
+            gen_compound_assignment_statement(compound_assignment_statement)
         },
         ast::Statement::IncrementDecrementStatement(increment_decrement_statement) => {
-            gen_increment_decrement_statement(increment_decrement_statement, include_semicolon)
+            gen_increment_decrement_statement(increment_decrement_statement)
         },
         ast::Statement::ContinuingStatement(continuing_statement) => {
             gen_continuing_statement(continuing_statement)
         },
-        ast::Statement::ReturnStatement(return_statement) => {
-            gen_return_statement(return_statement, include_semicolon)
-        },
-        ast::Statement::BreakStatement(break_statement) => {
-            gen_break_statement(break_statement, include_semicolon)
-        },
+        ast::Statement::ReturnStatement(return_statement) => gen_return_statement(return_statement),
+        ast::Statement::BreakStatement(break_statement) => gen_break_statement(break_statement),
         ast::Statement::ContinueStatement(continue_statement) => {
-            gen_continue_statement(continue_statement, include_semicolon)
+            gen_continue_statement(continue_statement)
         },
-        ast::Statement::DiscardStatement(discard) => {
-            gen_discard_statement(discard, include_semicolon)
-        },
+        ast::Statement::DiscardStatement(discard) => gen_discard_statement(discard),
         ast::Statement::AssertStatement(assert_statement) => {
-            gen_const_assert_statement(assert_statement, include_semicolon)
+            gen_const_assert_statement(assert_statement)
         },
         ast::Statement::BreakIfStatement(break_if_statement) => {
-            gen_break_if_statement(break_if_statement, include_semicolon)
+            gen_break_if_statement(break_if_statement)
         },
     }
 }

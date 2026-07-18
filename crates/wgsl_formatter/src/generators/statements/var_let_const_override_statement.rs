@@ -9,6 +9,7 @@ use syntax::{
 
 use crate::{
     ast_parse::{parse_end, parse_node, parse_node_optional, parse_token, parse_token_optional},
+    context_policies::statement_needs_semicolon_policy,
     generators::{
         attributes::{AttributeLayout, gen_attributes, parse_many_attributes},
         comments::{gen_comments, parse_many_comments_and_blankspace},
@@ -23,35 +24,27 @@ use crate::{
 };
 
 pub fn gen_const_declaration_statement(
-    statement: &ast::ConstantDeclaration,
-    include_semicolon: bool,
+    statement: &ast::ConstantDeclaration
 ) -> FormatDocumentResult<PrintItemBuffer> {
-    gen_var_let_const_override_statement(BindingKind::Const, statement.syntax(), include_semicolon)
+    gen_var_let_const_override_statement(BindingKind::Const, statement.syntax())
 }
 
 pub fn gen_let_declaration_statement(
-    statement: &ast::LetDeclaration,
-    include_semicolon: bool,
+    statement: &ast::LetDeclaration
 ) -> FormatDocumentResult<PrintItemBuffer> {
-    gen_var_let_const_override_statement(BindingKind::Let, statement.syntax(), include_semicolon)
+    gen_var_let_const_override_statement(BindingKind::Let, statement.syntax())
 }
 
 pub fn gen_var_declaration_statement(
-    statement: &ast::VariableDeclaration,
-    include_semicolon: bool,
+    statement: &ast::VariableDeclaration
 ) -> FormatDocumentResult<PrintItemBuffer> {
-    gen_var_let_const_override_statement(BindingKind::Var, statement.syntax(), include_semicolon)
+    gen_var_let_const_override_statement(BindingKind::Var, statement.syntax())
 }
 
 pub fn gen_override_declaration_statement(
-    statement: &ast::OverrideDeclaration,
-    include_semicolon: bool,
+    statement: &ast::OverrideDeclaration
 ) -> FormatDocumentResult<PrintItemBuffer> {
-    gen_var_let_const_override_statement(
-        BindingKind::Override,
-        statement.syntax(),
-        include_semicolon,
-    )
+    gen_var_let_const_override_statement(BindingKind::Override, statement.syntax())
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -88,7 +81,6 @@ impl BindingKind {
 fn gen_var_let_const_override_statement(
     kind: BindingKind,
     syntax_node: &SyntaxNode,
-    include_semicolon: bool,
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // Note: When changing this function, should one of the three cases divert from the others more than
     // it already is, consider pulling it into a wholly separate function, instead of expanding this one with ifs
@@ -172,11 +164,11 @@ fn gen_var_let_const_override_statement(
         formatted.push_sc(sc!("="));
         formatted.request(Request::expect(RequestItem::Space));
         formatted.extend(gen_comments(&comments_after_equal));
-        formatted.extend(gen_expression(&value, true)?);
+        formatted.extend(gen_expression(&value)?);
         formatted.extend(gen_comments(&comments_after_value));
     }
 
-    if include_semicolon {
+    if statement_needs_semicolon_policy(syntax_node) {
         formatted.request(Request::discourage(RequestItem::Space));
         formatted.push_sc(sc!(";"));
     }

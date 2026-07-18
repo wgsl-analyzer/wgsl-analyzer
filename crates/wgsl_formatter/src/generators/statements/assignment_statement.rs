@@ -1,6 +1,6 @@
 use dprint_core_macros::sc;
 use itertools::put_back;
-use parser::SyntaxKind;
+use parser::{SyntaxKind, SyntaxNode};
 use syntax::{
     AstNode as _,
     ast::{self, CompoundAssignmentOperator, Expression},
@@ -8,6 +8,7 @@ use syntax::{
 
 use crate::{
     ast_parse::{parse_ast_token, parse_end, parse_node, parse_token, parse_token_optional},
+    context_policies::statement_needs_semicolon_policy,
     generators::{
         comments::{gen_comments, parse_many_comments_and_blankspace},
         expressions::gen_expression,
@@ -20,8 +21,7 @@ use crate::{
 };
 
 pub fn gen_assignment_statement(
-    assignment_statement: &ast::AssignmentStatement,
-    include_semicolon: bool,
+    assignment_statement: &ast::AssignmentStatement
 ) -> Result<PrintItemBuffer, FormatDocumentError> {
     // NOTE!! - When updating this function, keep in mind to
     // update gen_assignment_statement, gen_compound_assignment_statement, gen_phony_assignment_statement together
@@ -42,16 +42,16 @@ pub fn gen_assignment_statement(
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
-    formatted.extend(gen_expression(&item_target, true)?);
+    formatted.extend(gen_expression(&item_target)?);
     formatted.extend(gen_comments(&item_comments_after_target));
     formatted.request(Request::expect(RequestItem::Space));
     formatted.push_sc(sc!("="));
     formatted.request(Request::expect(RequestItem::Space));
     formatted.start_indent();
     formatted.extend(gen_comments(&item_comments_after_equal));
-    formatted.extend(gen_expression(&item_value, true)?);
+    formatted.extend(gen_expression(&item_value)?);
     formatted.extend(gen_comments(&item_comments_after_value));
-    if include_semicolon {
+    if statement_needs_semicolon_policy(assignment_statement.syntax()) {
         formatted.request(Request::discourage(RequestItem::Space));
         formatted.push_sc(sc!(";"));
     }
@@ -60,8 +60,7 @@ pub fn gen_assignment_statement(
 }
 
 pub fn gen_phony_assignment_statement(
-    phony_assignment_statement: &ast::PhonyAssignmentStatement,
-    include_semicolon: bool,
+    phony_assignment_statement: &ast::PhonyAssignmentStatement
 ) -> Result<PrintItemBuffer, FormatDocumentError> {
     // NOTE!! - When updating this function, keep in mind to
     // update gen_assignment_statement, gen_compound_assignment_statement, gen_phony_assignment_statement together
@@ -89,9 +88,9 @@ pub fn gen_phony_assignment_statement(
     formatted.request(Request::expect(RequestItem::Space));
     formatted.start_indent();
     formatted.extend(gen_comments(&item_comments_after_equal));
-    formatted.extend(gen_expression(&item_value, true)?);
+    formatted.extend(gen_expression(&item_value)?);
     formatted.extend(gen_comments(&item_comments_after_value));
-    if include_semicolon {
+    if statement_needs_semicolon_policy(phony_assignment_statement.syntax()) {
         formatted.request(Request::discourage(RequestItem::Space));
         formatted.push_sc(sc!(";"));
     }
@@ -100,8 +99,7 @@ pub fn gen_phony_assignment_statement(
 }
 
 pub fn gen_compound_assignment_statement(
-    compound_assignment_statement: &ast::CompoundAssignmentStatement,
-    include_semicolon: bool,
+    compound_assignment_statement: &ast::CompoundAssignmentStatement
 ) -> Result<PrintItemBuffer, FormatDocumentError> {
     // NOTE!! - When updating this function, keep in mind to
     // update gen_assignment_statement, gen_compound_assignment_statement, gen_phony_assignment_statement together
@@ -126,7 +124,7 @@ pub fn gen_compound_assignment_statement(
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
-    formatted.extend(gen_expression(&item_target, true)?);
+    formatted.extend(gen_expression(&item_target)?);
     formatted.extend(gen_comments(&item_comments_after_target));
 
     let operator_sc = match item_operator {
@@ -146,12 +144,24 @@ pub fn gen_compound_assignment_statement(
     formatted.request(Request::expect(RequestItem::Space));
     formatted.start_indent();
     formatted.extend(gen_comments(&item_comments_after_equal));
-    formatted.extend(gen_expression(&item_value, true)?);
+    formatted.extend(gen_expression(&item_value)?);
     formatted.extend(gen_comments(&item_comments_after_value));
-    if include_semicolon {
+    if statement_needs_semicolon_policy(compound_assignment_statement.syntax()) {
         formatted.request(Request::discourage(RequestItem::Space));
         formatted.push_sc(sc!(";"));
     }
     formatted.finish_indent();
     Ok(formatted)
+}
+
+pub fn remove_assignment_statement_parens(node: &SyntaxNode) -> bool {
+    let Some(parent) = node.parent() else {
+        return false;
+    };
+    match parent.kind() {
+        SyntaxKind::CompoundAssignmentStatement => true,
+        SyntaxKind::PhonyAssignmentStatement => true,
+        SyntaxKind::AssignmentStatement => true,
+        _ => false,
+    }
 }

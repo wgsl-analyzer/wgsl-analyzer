@@ -9,6 +9,7 @@ use syntax::{
 
 use crate::{
     ast_parse::{parse_end, parse_node, parse_node_optional, parse_token, parse_token_optional},
+    context_policies::statement_needs_semicolon_policy,
     generators::{
         comments::{
             Comment, gen_comment, gen_comments, parse_comment_optional,
@@ -301,10 +302,7 @@ pub fn gen_import_collection(
     Ok(formatted)
 }
 
-pub fn gen_import_statement(
-    node: &ast::ImportStatement,
-    include_semicolon: bool,
-) -> FormatDocumentResult<PrintItemBuffer> {
+pub fn gen_import_statement(node: &ast::ImportStatement) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = put_back(node.syntax().children_with_tokens());
     parse_token(&mut syntax, ast::SyntaxKind::Import)?;
@@ -344,7 +342,7 @@ pub fn gen_import_statement(
 
     formatted.extend(gen_comments(&item_comments_after_importee));
 
-    if include_semicolon {
+    if statement_needs_semicolon_policy(node.syntax()) {
         formatted.request(Request::discourage(RequestItem::Space));
         formatted.push_sc(sc!(";"));
     }

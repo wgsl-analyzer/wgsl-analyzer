@@ -1,4 +1,4 @@
-use parser::{SyntaxKind, SyntaxNode};
+use parser::SyntaxNode;
 use syntax::AstNode as _;
 
 use crate::{
@@ -40,7 +40,7 @@ use crate::{
             },
             break_if_statement::gen_break_if_statement,
             break_statement::gen_break_statement,
-            compound_statement::{CompoundStatementOptions, gen_compound_statement},
+            compound_statement::gen_compound_statement,
             const_assert_statement::gen_const_assert_statement,
             continue_statement::gen_continue_statement,
             continuing_statement::gen_continuing_statement,
@@ -106,6 +106,7 @@ macro_rules! match_ast_exhaustive {
                 $result
             },)*
             $(syntax::ast::SyntaxKind::$special_ast => {
+                #[allow(unused)]
                 let $special_name = $node.clone();
                 $special_result
             },)*
@@ -119,18 +120,6 @@ macro_rules! match_ast_exhaustive {
     reason = "It does not make sense to split this up"
 )]
 pub fn gen_node(node: &SyntaxNode) -> FormatDocumentResult<PrintItemBuffer> {
-    fn needs_semicolon(parent_node: Option<SyntaxNode>) -> bool {
-        match parent_node {
-            Some(parent_node) => !matches!(
-                parent_node.kind(),
-                SyntaxKind::ForInitializer
-                    | SyntaxKind::ForCondition
-                    | SyntaxKind::ForContinuingPart
-            ),
-            None => false,
-        }
-    }
-
     match_ast_exhaustive! {
         match node {
              SyntaxKind::SourceFile(node) => gen_source_file(&node),
@@ -139,14 +128,13 @@ pub fn gen_node(node: &SyntaxNode) -> FormatDocumentResult<PrintItemBuffer> {
              SyntaxKind::FunctionParameters(node) => gen_fn_parameters(&node),
              SyntaxKind::Parameter(node) => gen_fn_parameter(&node),
              SyntaxKind::ReturnType(node) => gen_fn_return_type(&node),
-             SyntaxKind::AssertStatement(node) => gen_const_assert_statement(&node, needs_semicolon(node.syntax().parent())),
-            // TODO(MonaMayrhofer) this would need a similar structure to needs_semicolon, because the options should be deduced from the context. When doing that we can also remove the need for needs_semicolon and do a similar thing for it.
-             SyntaxKind::CompoundStatement(node) => gen_compound_statement(&node, CompoundStatementOptions::default()),
-             SyntaxKind::AssignmentStatement(node) => gen_assignment_statement(&node, needs_semicolon(node.syntax().parent())),
-             SyntaxKind::PhonyAssignmentStatement(node) => gen_phony_assignment_statement(&node, needs_semicolon(node.syntax().parent())),
-             SyntaxKind::CompoundAssignmentStatement(node) => gen_compound_assignment_statement(&node, needs_semicolon(node.syntax().parent())),
-             SyntaxKind::FunctionCallStatement(node) => gen_function_call_statement(&node, needs_semicolon(node.syntax().parent())),
-             SyntaxKind::BreakIfStatement(node) => gen_break_if_statement(&node, needs_semicolon(node.syntax().parent())),
+             SyntaxKind::AssertStatement(node) => gen_const_assert_statement(&node),
+             SyntaxKind::CompoundStatement(node) => gen_compound_statement(&node),
+             SyntaxKind::AssignmentStatement(node) => gen_assignment_statement(&node),
+             SyntaxKind::PhonyAssignmentStatement(node) => gen_phony_assignment_statement(&node),
+             SyntaxKind::CompoundAssignmentStatement(node) => gen_compound_assignment_statement(&node),
+             SyntaxKind::FunctionCallStatement(node) => gen_function_call_statement(&node),
+             SyntaxKind::BreakIfStatement(node) => gen_break_if_statement(&node),
              SyntaxKind::LoopStatement(node) => gen_loop_statement(&node),
              SyntaxKind::WhileStatement(node) => gen_while_statement(&node),
              SyntaxKind::IfStatement(node) => gen_if_statement(&node),
@@ -155,7 +143,7 @@ pub fn gen_node(node: &SyntaxNode) -> FormatDocumentResult<PrintItemBuffer> {
              SyntaxKind::SwitchBodyCase(node) => gen_switch_body_case(&node),
              SyntaxKind::SwitchCaseSelectors(node) => gen_switch_case_selectors(&node),
              SyntaxKind::SwitchDefaultSelector(node) => gen_switch_case_default_selector(&node),
-             SyntaxKind::IncrementDecrementStatement(node) => gen_increment_decrement_statement(&node, needs_semicolon(node.syntax().parent())),
+             SyntaxKind::IncrementDecrementStatement(node) => gen_increment_decrement_statement(&node),
              SyntaxKind::IfClause(node) => gen_if_statement_if_clause(&node),
              SyntaxKind::ElseIfClause(node) => gen_if_statement_else_if_clause(&node),
              SyntaxKind::ElseClause(node) => gen_if_statement_else_clause(&node),
@@ -166,27 +154,27 @@ pub fn gen_node(node: &SyntaxNode) -> FormatDocumentResult<PrintItemBuffer> {
              SyntaxKind::IdentExpression(node) => gen_ident_expression(&node),
              SyntaxKind::Path(node) => gen_path(&node),
              SyntaxKind::IndexExpression(node) => gen_index_expression(&node),
-             SyntaxKind::ReturnStatement(node) => gen_return_statement(&node, needs_semicolon(node.syntax().parent())),
+             SyntaxKind::ReturnStatement(node) => gen_return_statement(&node),
              SyntaxKind::InfixExpression(node) => gen_infix_expression(&node),
              SyntaxKind::PrefixExpression(node) => gen_prefix_expression(&node),
              SyntaxKind::Literal(node) => gen_literal_expression(&node),
-             SyntaxKind::ParenthesisExpression(node) => gen_parenthesis_expression(&node, needs_semicolon(node.syntax().parent())),
+             SyntaxKind::ParenthesisExpression(node) => gen_parenthesis_expression(&node),
              SyntaxKind::TypeSpecifier(node) => gen_type_specifier(&node),
              SyntaxKind::Attribute(node) => gen_attribute(&node),
              SyntaxKind::StructDeclaration(node) => gen_struct_declaration(&node),
              SyntaxKind::StructBody(node) => gen_struct_body(&node),
              SyntaxKind::StructMember(node) => gen_struct_member(&node),
-             SyntaxKind::ConstantDeclaration(node) => gen_const_declaration_statement(&node, needs_semicolon(node.syntax().parent())),
-             SyntaxKind::VariableDeclaration(node) => gen_var_declaration_statement(&node, needs_semicolon(node.syntax().parent())),
-             SyntaxKind::LetDeclaration(node) => gen_let_declaration_statement(&node, needs_semicolon(node.syntax().parent())),
-             SyntaxKind::OverrideDeclaration(node) => gen_override_declaration_statement(&node, needs_semicolon(node.syntax().parent())),
+             SyntaxKind::ConstantDeclaration(node) => gen_const_declaration_statement(&node),
+             SyntaxKind::VariableDeclaration(node) => gen_var_declaration_statement(&node),
+             SyntaxKind::LetDeclaration(node) => gen_let_declaration_statement(&node),
+             SyntaxKind::OverrideDeclaration(node) => gen_override_declaration_statement(&node),
              SyntaxKind::ContinuingStatement(node) => gen_continuing_statement(&node),
-             SyntaxKind::TypeAliasDeclaration(node) => gen_type_alias_declaration(&node, needs_semicolon(node.syntax().parent())),
+             SyntaxKind::TypeAliasDeclaration(node) => gen_type_alias_declaration(&node),
              SyntaxKind::EnableDirective(node) => gen_enable_directive(&node),
              SyntaxKind::EnableExtensionName(node) => gen_enable_extension_name(&node),
              SyntaxKind::RequiresDirective(node) => gen_requires_directive(&node),
              SyntaxKind::LanguageExtensionName(node) => gen_language_extension_name(&node),
-             SyntaxKind::ImportStatement(node) => gen_import_statement(&node, needs_semicolon(node.syntax().parent())),
+             SyntaxKind::ImportStatement(node) => gen_import_statement(&node),
              SyntaxKind::DiagnosticControl(node) => gen_diagnostic_control(&node),
              SyntaxKind::DiagnosticAttribute(node) => gen_diagnostic_attribute(&node),
              SyntaxKind::DiagnosticDirective(node) => gen_diagnostic_directive(&node),
@@ -218,9 +206,9 @@ pub fn gen_node(node: &SyntaxNode) -> FormatDocumentResult<PrintItemBuffer> {
              SyntaxKind::FragmentAttribute(node) => gen_fragment_attribute(&node),
              SyntaxKind::ComputeAttribute(node) => gen_compute_attribute(&node),
              SyntaxKind::BuiltinValueName(node) => gen_builtin_value_name(&node),
-             SyntaxKind::BreakStatement(node) => gen_break_statement(&node, needs_semicolon(node.syntax().parent())),
-             SyntaxKind::ContinueStatement(node) => gen_continue_statement(&node, needs_semicolon(node.syntax().parent())),
-             SyntaxKind::DiscardStatement(node) => gen_discard_statement(&node, needs_semicolon(node.syntax().parent())),
+             SyntaxKind::BreakStatement(node) => gen_break_statement(&node),
+             SyntaxKind::ContinueStatement(node) => gen_continue_statement(&node),
+             SyntaxKind::DiscardStatement(node) => gen_discard_statement(&node),
 
              -
 

@@ -8,6 +8,7 @@ use syntax::{
 
 use crate::{
     ast_parse::{parse_end, parse_node, parse_node_optional, parse_token, parse_token_optional},
+    context_policies::statement_needs_semicolon_policy,
     generators::{
         comments::{gen_comments, parse_many_comments_and_blankspace},
         expressions::{gen_expression, ident_expression::gen_ident_expression},
@@ -68,7 +69,7 @@ pub fn gen_function_call_arguments(
         format_separated_items(
             &mut multiline_group,
             item_parameters,
-            |item| gen_expression(item, false),
+            |item| gen_expression(item),
             sc!(","),
         )?;
 
@@ -85,8 +86,7 @@ pub fn gen_function_call_arguments(
 }
 
 pub fn gen_function_call_statement(
-    function_call_statement: &ast::FunctionCallStatement,
-    include_semicolon: bool,
+    function_call_statement: &ast::FunctionCallStatement
 ) -> Result<PrintItemBuffer, FormatDocumentError> {
     // ==== Parse ====
     let mut syntax = put_back(function_call_statement.syntax().children_with_tokens());
@@ -99,7 +99,7 @@ pub fn gen_function_call_statement(
     let mut formatted = PrintItemBuffer::default();
     formatted.extend(gen_function_call(&function_call)?);
     formatted.extend(gen_comments(&comments_after_function_call));
-    if include_semicolon {
+    if statement_needs_semicolon_policy(function_call_statement.syntax()) {
         formatted.push_sc(sc!(";"));
     }
     Ok(formatted)

@@ -1,6 +1,6 @@
 use dprint_core_macros::sc;
 use itertools::put_back;
-use parser::SyntaxKind;
+use parser::{SyntaxKind, SyntaxNode};
 use syntax::{
     AstNode as _,
     ast::{self, CompoundStatement, Expression, Statement},
@@ -21,8 +21,6 @@ use crate::{
     },
     reporting::FormatDocumentResult,
 };
-
-use super::compound_statement::CompoundStatementOptions;
 
 pub fn gen_for_statement(statement: &ast::ForStatement) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
@@ -103,10 +101,7 @@ pub fn gen_for_statement(statement: &ast::ForStatement) -> FormatDocumentResult<
 
     formatted.request(Request::expect(RequestItem::Space));
     formatted.extend(gen_comments(&comments_after_close_paren));
-    formatted.extend(gen_compound_statement(
-        &item_body,
-        CompoundStatementOptions::default(),
-    )?);
+    formatted.extend(gen_compound_statement(&item_body)?);
     Ok(formatted)
 }
 
@@ -119,7 +114,7 @@ pub fn gen_for_statement_initializer(
     parse_end(&mut syntax)?;
 
     // === Format ===
-    gen_statement_maybe_semicolon(&item_statement, false)
+    gen_statement_maybe_semicolon(&item_statement)
 }
 
 pub fn gen_for_statement_condition(
@@ -131,7 +126,7 @@ pub fn gen_for_statement_condition(
     parse_end(&mut sub_syntax)?;
 
     // === Format ===
-    gen_expression(&item_condition, false)
+    gen_expression(&item_condition)
 }
 
 pub fn gen_for_statement_continuing_part(
@@ -141,5 +136,17 @@ pub fn gen_for_statement_continuing_part(
     let item_continuing = parse_node::<Statement>(&mut sub_syntax)?;
     parse_end(&mut sub_syntax)?;
 
-    gen_statement_maybe_semicolon(&item_continuing, false)
+    gen_statement_maybe_semicolon(&item_continuing)
+}
+
+pub fn skip_semicolons_rule(node: &SyntaxNode) -> bool {
+    let Some(parent) = node.parent() else {
+        return false;
+    };
+    match parent.kind() {
+        SyntaxKind::ForInitializer => true,
+        SyntaxKind::ForCondition => true,
+        SyntaxKind::ForContinuingPart => true,
+        _ => false,
+    }
 }

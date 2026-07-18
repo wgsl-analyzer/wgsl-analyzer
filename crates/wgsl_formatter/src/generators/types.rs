@@ -70,7 +70,7 @@ pub fn gen_template_list(
         format_separated_items(
             &mut multiline_group,
             items,
-            |item| gen_expression(&item, false),
+            |item| gen_expression(&item),
             sc!(","),
         )?;
         multiline_group.request(Request::discourage(RequestItem::Space));
