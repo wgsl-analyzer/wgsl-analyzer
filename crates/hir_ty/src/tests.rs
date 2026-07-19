@@ -1,5 +1,6 @@
 #![expect(clippy::use_debug, reason = "tests")]
 
+mod big;
 mod builtins;
 mod imports;
 mod incremental;
@@ -228,9 +229,14 @@ impl<'db> InferPrinter<'db> {
                 name,
                 r#type,
             } => {
-                let Some((range, text)) = self.get_range_text(source_map, *expression) else {
-                    return;
+                let node = match source_map.expression_to_source(*expression) {
+                    Ok(sp) => sp.to_node(&self.root).syntax().clone(),
+                    Err(SyntheticSyntax) => return,
                 };
+                let (range, text) = (
+                    node.parent().unwrap().text_range(),
+                    node.parent().unwrap().text().to_string().replace('\n', " "),
+                );
                 writeln!(
                     buffer,
                     "{range:?} '{}': no such field `{}` on type `{}`",
