@@ -1341,7 +1341,10 @@ impl<'database> InferenceContext<'database> {
                 return self.error_type();
             },
             UnaryOperator::Indirection => {
-                debug_assert!(!matches!(expression_type.kind(self.database), TypeKind::Reference(_)));
+                debug_assert!(!matches!(
+                    expression_type.kind(self.database),
+                    TypeKind::Reference(_)
+                ));
                 if let TypeKind::Pointer(pointer) = expression_type.kind(self.database) {
                     return self.ptr_to_ref(&pointer);
                 }
