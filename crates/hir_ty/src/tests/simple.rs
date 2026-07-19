@@ -1835,3 +1835,30 @@ fn wrong_return_type() {
         "#]],
     );
 }
+
+
+#[test]
+fn shift_operator_inference() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        fn bit_repro() {
+            let x = 1 << 4;
+            let y = 5;
+            let z = x & y;
+        }
+        ",
+        expect![[r#"
+            25..26 'x': i32
+            29..30 '1': integer
+            29..35 '1 << 4': integer
+            34..35 '4': integer
+            45..46 'y': i32
+            49..50 '5': integer
+            60..61 'z': i32
+            64..65 'x': i32
+            64..69 'x & y': i32
+            68..69 'y': i32
+        "#]],
+    );
+}
