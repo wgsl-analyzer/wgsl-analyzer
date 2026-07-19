@@ -190,14 +190,9 @@ impl<'db> InferPrinter<'db> {
                 expected,
                 actual,
             } => {
-                let node = match source_map.expression_to_source(*expression) {
-                    Ok(sp) => sp.to_node(&self.root).syntax().clone(),
-                    Err(SyntheticSyntax) => return,
+                let Some((range, text)) = self.get_range_text(source_map, *expression) else {
+                    return;
                 };
-                let (range, text) = (
-                    node.text_range(),
-                    node.text().to_string().replace('\n', " "),
-                );
                 writeln!(
                     buffer,
                     "{range:?} '{}': expected {} but got {}",
@@ -233,14 +228,9 @@ impl<'db> InferPrinter<'db> {
                 name,
                 r#type,
             } => {
-                let node = match source_map.expression_to_source(*expression) {
-                    Ok(sp) => sp.to_node(&self.root).syntax().clone(),
-                    Err(SyntheticSyntax) => return,
+                let Some((range, text)) = self.get_range_text(source_map, *expression) else {
+                    return;
                 };
-                let (range, text) = (
-                    node.parent().unwrap().text_range(),
-                    node.parent().unwrap().text().to_string().replace('\n', " "),
-                );
                 writeln!(
                     buffer,
                     "{range:?} '{}': no such field `{}` on type `{}`",
@@ -251,14 +241,9 @@ impl<'db> InferPrinter<'db> {
                 .unwrap();
             },
             InferenceDiagnosticKind::StoreTypeMustBeStorable { actual, expression } => {
-                let node = match source_map.expression_to_source(*expression) {
-                    Ok(sp) => sp.to_node(&self.root).syntax().clone(),
-                    Err(SyntheticSyntax) => return,
+                let Some((range, text)) = self.get_range_text(source_map, *expression) else {
+                    return;
                 };
-                let (range, text) = (
-                    node.text_range(),
-                    node.text().to_string().replace('\n', " "),
-                );
                 writeln!(
                     buffer,
                     "{range:?} '{}': expected storable type but got `{}`",
@@ -268,14 +253,9 @@ impl<'db> InferPrinter<'db> {
                 .unwrap();
             },
             InferenceDiagnosticKind::UnexpectedReturnValue { actual, expression } => {
-                let node = match source_map.expression_to_source(*expression) {
-                    Ok(sp) => sp.to_node(&self.root).syntax().clone(),
-                    Err(SyntheticSyntax) => return,
+                let Some((range, text)) = self.get_range_text(source_map, *expression) else {
+                    return;
                 };
-                let (range, text) = (
-                    node.text_range(),
-                    node.text().to_string().replace('\n', " "),
-                );
                 writeln!(
                     buffer,
                     "{range:?} '{}': unexpected return value of type `{}` in function with no return type",
@@ -285,6 +265,22 @@ impl<'db> InferPrinter<'db> {
                 .unwrap();
             },
         }
+    }
+
+    fn get_range_text(
+        &self,
+        source_map: &ExpressionSourceMap,
+        expression: la_arena::Idx<hir_def::expression::Expression>,
+    ) -> Option<(base_db::TextRange, String)> {
+        let node = match source_map.expression_to_source(expression) {
+            Ok(sp) => sp.to_node(&self.root).syntax().clone(),
+            Err(SyntheticSyntax) => return None,
+        };
+        let (range, text) = (
+            node.text_range(),
+            node.text().to_string().replace('\n', " "),
+        );
+        Some((range, text))
     }
 }
 

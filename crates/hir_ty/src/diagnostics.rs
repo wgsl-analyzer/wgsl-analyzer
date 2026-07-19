@@ -97,5 +97,5 @@ pub enum InferenceDiagnosticKind {
     UnexpectedReturnValue {
         expression: ExpressionId,
         actual: Type,
-    }
+    },
 }

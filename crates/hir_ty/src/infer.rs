@@ -632,7 +632,7 @@ impl<'database> InferenceContext<'database> {
             } => {
                 // The store type is the effective-value-type of the variable’s declaration.
                 let mut r#type = self
-                    .get_effective_value_type(body, &resolver, type_ref, initializer)
+                    .get_effective_value_type(body, &resolver, *type_ref, *initializer)
                     .concretize(self.database);
                 if let Some(initializer_expression) = initializer
                     && !r#type.kind(self.database).is_storable()
@@ -690,28 +690,29 @@ impl<'database> InferenceContext<'database> {
                 self.set_binding_type(*binding_id, r#type);
             },
 
-            Statement::Return { expression } => {
-                match (expression, return_type) {
-                    (Some(expression), Some(return_type)) => {
-                        self.infer_expression_expect(
-                            *expression,
-                            &TypeExpectation::from_type(self.return_type),
-                            body,
-                        );
-                    }
-                    (Some(expression), None) => {
-                        let actual = self.infer_expression_expect(
-                            *expression,
-                            &TypeExpectation::from_type(self.return_type),
-                            body,
-                        );
-                        self.push_diagnostic(body.store_source, InferenceDiagnosticKind::UnexpectedReturnValue {
+            Statement::Return { expression } => match (expression, return_type) {
+                (Some(expression), Some(return_type)) => {
+                    self.infer_expression_expect(
+                        *expression,
+                        &TypeExpectation::from_type(self.return_type),
+                        body,
+                    );
+                },
+                (Some(expression), None) => {
+                    let actual = self.infer_expression_expect(
+                        *expression,
+                        &TypeExpectation::from_type(self.return_type),
+                        body,
+                    );
+                    self.push_diagnostic(
+                        body.store_source,
+                        InferenceDiagnosticKind::UnexpectedReturnValue {
                             expression: *expression,
                             actual,
-                        });
-                    }
-                    _ => (),
-                }
+                        },
+                    );
+                },
+                _ => (),
             },
             Statement::Assignment {
                 left_side,
@@ -919,17 +920,18 @@ impl<'database> InferenceContext<'database> {
     /// - Otherwise, if the initializer expression has type T:
     ///   - For a const declaration, the effective-value-type is T itself.
     ///   - For a override, let, or var declaration, the effective-value-type is the concretization of T.
+    ///
     /// Each kind of value or variable declaration may place additional constraints on the form of the initializer expression, if present, and on the effective-value-type.
     fn get_effective_value_type(
         &mut self,
         body: &Body,
         resolver: &Resolver,
-        type_ref: &Option<la_arena::Idx<hir_def::type_specifier::TypeSpecifier>>,
-        initializer: &Option<la_arena::Idx<Expression>>,
+        type_ref: Option<la_arena::Idx<hir_def::type_specifier::TypeSpecifier>>,
+        initializer: Option<la_arena::Idx<Expression>>,
     ) -> Type {
         let r#type = type_ref.map(|r#type| self.lower_type(r#type, resolver, body));
         let r#type =
-            self.infer_initializer(body, *initializer, r#type, AbstractHandling::Concretize);
+            self.infer_initializer(body, initializer, r#type, AbstractHandling::Concretize);
         r#type.loaded(self.database)
     }
 

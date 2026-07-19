@@ -65,6 +65,7 @@ impl Type {
             .is_convertible_to(&r#type.kind(database), database)
     }
 
+    #[expect(clippy::doc_paragraphs_missing_punctuation, reason = "false positive")]
     /// The type T is the concretization of type S if:
     /// - T is concrete, and
     /// - T is not a reference type, and
@@ -74,7 +75,7 @@ impl Type {
     /// The concretization of a value e of type T is the value resulting from applying, to e, the
     /// feasible conversion that maps T to the concretization of T.
     ///
-    /// https://www.w3.org/TR/WGSL/#concretization
+    /// Reference: <https://www.w3.org/TR/WGSL/#concretization>
     #[must_use]
     pub fn concretize(
         self,
@@ -86,9 +87,11 @@ impl Type {
         }
     }
 
+    #[expect(clippy::doc_paragraphs_missing_punctuation, reason = "false positive")]
     /// Apply the load rule.
     ///
     /// Reference: <https://www.w3.org/TR/WGSL/#load-rule>
+    #[must_use]
     pub fn loaded(
         self,
         database: &dyn HirDatabase,

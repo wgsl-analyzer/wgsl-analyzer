@@ -585,6 +585,16 @@ pub fn diagnostics(
                         frange.range,
                     )
                 },
+                AnyDiagnostic::UnexpectedReturnValue { expression, actual } => {
+                    let source = expression.value.to_node(&root);
+                    let r#type = ty::pretty::pretty_type(database, actual);
+                    let frange = original_file_range(database, expression.file_id, source.syntax());
+                    Diagnostic::new(
+                        DiagnosticCode("30"),
+                        format!("unexpected return value of type `{type}` in function with no return type"),
+                        frange.range,
+                    )
+                },
             }
         })
         .collect()

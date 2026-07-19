@@ -181,6 +181,10 @@ pub enum AnyDiagnostic {
         actual: LoweredKind,
         path: Path,
     },
+    UnexpectedReturnValue {
+        expression: InFile<AstPointer<ast::Expression>>,
+        actual: Type,
+    },
 }
 
 impl AnyDiagnostic {
@@ -203,6 +207,7 @@ impl AnyDiagnostic {
             | Self::UnexpectedTemplateArgument { expression, .. }
             | Self::WgslError { expression, .. }
             | Self::InvalidIdentExpression { expression, .. }
+            | Self::UnexpectedReturnValue { expression, .. }
             | Self::ExpectedLoweredKind { expression, .. } => expression.file_id,
             Self::MissingAddressSpace { variable } | Self::InvalidAddressSpace { variable, .. } => {
                 variable.file_id
@@ -422,7 +427,12 @@ pub(crate) fn any_diag_from_infer_diagnostic(
             }
         },
         InferenceDiagnosticKind::UnexpectedReturnValue { expression, actual } => {
-            todo!()
+            let pointer = source_map.expression_to_source(*expression).ok()?.clone();
+            let source = InFile::new(file_id, pointer);
+            AnyDiagnostic::UnexpectedReturnValue {
+                expression: source,
+                actual: *actual,
+            }
         },
     })
 }
