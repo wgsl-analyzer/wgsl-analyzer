@@ -94,4 +94,8 @@ pub enum InferenceDiagnosticKind {
         actual: LoweredKind,
         path: Path,
     },
+    UnexpectedReturnValue {
+        expression: ExpressionId,
+        actual: Type,
+    },
 }

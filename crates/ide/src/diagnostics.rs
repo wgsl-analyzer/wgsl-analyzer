@@ -585,6 +585,16 @@ pub fn diagnostics(
                         frange.range,
                     )
                 },
+                AnyDiagnostic::UnexpectedReturnValue { expression, actual } => {
+                    let source = expression.value.to_node(&root);
+                    let r#type = ty::pretty::pretty_type(database, actual);
+                    let frange = original_file_range(database, expression.file_id, source.syntax());
+                    Diagnostic::new(
+                        DiagnosticCode("30"),
+                        format!("unexpected return value of type `{type}` in function with no return type"),
+                        frange.range,
+                    )
+                },
             }
         })
         .collect()
@@ -660,6 +670,16 @@ mod tests {
             "fn foo() { var x = 1; var y = &x; }",
             expect![[r#"
                 30..32 Error 29: store type must be storable, found ptr<i32>
+            "#]],
+        );
+    }
+
+    #[test]
+    fn unexpected_return_value() {
+        check_diagnostics(
+            "fn foo() { return 0; }",
+            expect![[r#"
+                18..19 Error 30: unexpected return value of type `integer` in function with no return type
             "#]],
         );
     }

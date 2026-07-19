@@ -60,6 +60,7 @@ impl InferenceResult {
     }
 }
 
+// TODO load rule somewhere in here
 fn infer_query(
     database: &dyn HirDatabase,
     definition: DefinitionWithBodyId,
@@ -553,7 +554,7 @@ impl<'database> InferenceContext<'database> {
     ) {
         match body.root {
             Some(Either::Left(statement)) => {
-                self.infer_statement(statement, body);
+                self.infer_statement(statement, body, return_type);
             },
             Some(Either::Right(expression)) => {
                 let r#type =
@@ -613,13 +614,14 @@ impl<'database> InferenceContext<'database> {
         &mut self,
         statement: StatementId,
         body: &Body,
+        return_type: Option<Type>,
     ) {
         let resolver = self.resolver_for_statement(statement);
 
         match &body.statements[statement] {
             Statement::Compound { statements } => {
                 for statement in statements {
-                    self.infer_statement(*statement, body);
+                    self.infer_statement(*statement, body, return_type);
                 }
             },
             Statement::Variable {
@@ -628,13 +630,9 @@ impl<'database> InferenceContext<'database> {
                 initializer,
                 template_parameters,
             } => {
-                let r#type = type_ref.map(|r#type| self.lower_type(r#type, &resolver, body));
-                let r#type = self.infer_initializer(
-                    body,
-                    *initializer,
-                    r#type,
-                    AbstractHandling::Concretize,
-                );
+                // The store type is the effective-value-type of the variable’s declaration.
+                let mut r#type =
+                    self.get_effective_value_type(body, &resolver, *type_ref, *initializer);
                 if let Some(initializer_expression) = initializer
                     && !r#type.kind(self.database).is_storable()
                     && !r#type.kind(self.database).is_error()
@@ -646,6 +644,8 @@ impl<'database> InferenceContext<'database> {
                             expression: *initializer_expression,
                         },
                     );
+                    // this ensures that make_ref has a valid input and analysis can continue
+                    r#type = TypeKind::Error.intern(self.database);
                 }
 
                 let (address_space, access_mode) =
@@ -689,14 +689,29 @@ impl<'database> InferenceContext<'database> {
                 self.set_binding_type(*binding_id, r#type);
             },
 
-            Statement::Return { expression } => {
-                if let Some(expression) = expression {
+            Statement::Return { expression } => match (expression, return_type) {
+                (Some(expression), Some(return_type)) => {
                     self.infer_expression_expect(
                         *expression,
                         &TypeExpectation::from_type(self.return_type),
                         body,
                     );
-                }
+                },
+                (Some(expression), None) => {
+                    let actual = self.infer_expression_expect(
+                        *expression,
+                        &TypeExpectation::from_type(self.return_type),
+                        body,
+                    );
+                    self.push_diagnostic(
+                        body.store_source,
+                        InferenceDiagnosticKind::UnexpectedReturnValue {
+                            expression: *expression,
+                            actual,
+                        },
+                    );
+                },
+                _ => (),
             },
             Statement::Assignment {
                 left_side,
@@ -806,12 +821,12 @@ impl<'database> InferenceContext<'database> {
                 else_if_blocks,
                 else_block,
             } => {
-                self.infer_statement(*block, body);
+                self.infer_statement(*block, body, return_type);
                 for else_if_block in else_if_blocks {
-                    self.infer_statement(*else_if_block, body);
+                    self.infer_statement(*else_if_block, body, return_type);
                 }
                 if let Some(else_block) = else_block {
-                    self.infer_statement(*else_block, body);
+                    self.infer_statement(*else_block, body, return_type);
                 }
                 self.infer_expression_expect(
                     *condition,
@@ -820,7 +835,7 @@ impl<'database> InferenceContext<'database> {
                 );
             },
             Statement::While { condition, block } => {
-                self.infer_statement(*block, body);
+                self.infer_statement(*block, body, return_type);
                 self.infer_expression_expect(
                     *condition,
                     &TypeExpectation::from_type(self.bool_type()),
@@ -833,7 +848,7 @@ impl<'database> InferenceContext<'database> {
             } => {
                 let r#type = self
                     .infer_expression(*expression, body)
-                    .unref(self.database);
+                    .loaded(self.database);
 
                 for (selectors, case) in case_blocks {
                     for selector in selectors {
@@ -845,7 +860,7 @@ impl<'database> InferenceContext<'database> {
                             );
                         }
                     }
-                    self.infer_statement(*case, body);
+                    self.infer_statement(*case, body, return_type);
                 }
             },
             Statement::For {
@@ -855,10 +870,10 @@ impl<'database> InferenceContext<'database> {
                 block,
             } => {
                 if let Some(init) = initializer {
-                    self.infer_statement(*init, body);
+                    self.infer_statement(*init, body, return_type);
                 }
                 if let Some(cont) = continuing_part {
-                    self.infer_statement(*cont, body);
+                    self.infer_statement(*cont, body, return_type);
                 }
 
                 if let Some(condition) = condition {
@@ -869,10 +884,10 @@ impl<'database> InferenceContext<'database> {
                     );
                 }
 
-                self.infer_statement(*block, body);
+                self.infer_statement(*block, body, return_type);
             },
             Statement::Loop { body: loop_body } => {
-                self.infer_statement(*loop_body, body);
+                self.infer_statement(*loop_body, body, return_type);
             },
             Statement::Assert { expression } => {
                 self.infer_expression_expect(
@@ -882,7 +897,7 @@ impl<'database> InferenceContext<'database> {
                 );
             },
             Statement::Discard | Statement::Break | Statement::Continue | Statement::Missing => {},
-            Statement::Continuing { block } => self.infer_statement(*block, body),
+            Statement::Continuing { block } => self.infer_statement(*block, body, return_type),
             Statement::BreakIf { condition } => {
                 self.infer_expression_expect(
                     *condition,
@@ -894,6 +909,29 @@ impl<'database> InferenceContext<'database> {
                 self.infer_expression(*expression, body);
             },
         }
+    }
+
+    /// Each such declaration must have an explicitly specified type or an initializer.
+    /// Both a type and an initializer may be specified.
+    /// Each such declaration determines the type for the associated data value, known as the effective-value-type for the declaration.
+    /// The effective-value-type of the declaration is:
+    /// - The declared type, if explicitly specified.
+    /// - Otherwise, if the initializer expression has type T:
+    ///   - For a const declaration, the effective-value-type is T itself.
+    ///   - For a override, let, or var declaration, the effective-value-type is the concretization of T.
+    ///
+    /// Each kind of value or variable declaration may place additional constraints on the form of the initializer expression, if present, and on the effective-value-type.
+    fn get_effective_value_type(
+        &mut self,
+        body: &Body,
+        resolver: &Resolver,
+        type_ref: Option<la_arena::Idx<hir_def::type_specifier::TypeSpecifier>>,
+        initializer: Option<la_arena::Idx<Expression>>,
+    ) -> Type {
+        let r#type = type_ref.map(|r#type| self.lower_type(r#type, resolver, body));
+        let r#type =
+            self.infer_initializer(body, initializer, r#type, AbstractHandling::Concretize);
+        r#type.loaded(self.database).concretize(self.database)
     }
 
     fn infer_initializer(
@@ -914,7 +952,9 @@ impl<'database> InferenceContext<'database> {
             },
             (Some(r#type), None) => r#type,
             (None, Some(initializer)) => {
-                let r#type = self.infer_expression(initializer, store);
+                let r#type = self
+                    .infer_expression(initializer, store)
+                    .loaded(self.database);
                 if abstract_handling == AbstractHandling::Concretize {
                     r#type.concretize(self.database)
                 } else {
@@ -974,9 +1014,7 @@ impl<'database> InferenceContext<'database> {
         expected: &TypeExpectation,
         store: &ExpressionStore,
     ) -> Type {
-        let r#type = self
-            .infer_expression(expression, store)
-            .unref(self.database);
+        let r#type = self.infer_expression(expression, store);
 
         match expected {
             TypeExpectation::Type(expected_type) => {
@@ -1109,9 +1147,7 @@ impl<'database> InferenceContext<'database> {
                     .map(|&argument| {
                         (
                             argument,
-                            self.infer_expression(argument, store)
-                            // https://www.w3.org/TR/WGSL/#load-rule
-                            .unref(self.database),
+                            self.infer_expression(argument, store).loaded(self.database),
                         )
                     })
                     .collect();
@@ -1120,7 +1156,7 @@ impl<'database> InferenceContext<'database> {
             Expression::Index { left_side, index } => {
                 let left_side = self.infer_expression(*left_side, store);
                 let left_kind = left_side.kind(self.database);
-                let index_type = self.infer_expression(*index, store);
+                let index_type = self.infer_expression(*index, store).loaded(self.database);
                 let index_kind = index_type.kind(self.database);
                 let index_inner = index_kind.unref(self.database);
                 if !index_inner.is_index() {
@@ -1129,7 +1165,7 @@ impl<'database> InferenceContext<'database> {
                         InferenceDiagnosticKind::TypeMismatch {
                             expression: *index,
                             expected: TypeExpectation::Type(TypeExpectationInner::IntegerIndex),
-                            actual: index_type.unref(self.database),
+                            actual: index_type,
                         },
                     );
                 }
@@ -1305,22 +1341,25 @@ impl<'database> InferenceContext<'database> {
                 return self.error_type();
             },
             UnaryOperator::Indirection => {
-                let argument_type = expression_type.unref(self.database);
-                if let TypeKind::Pointer(pointer) = argument_type.kind(self.database) {
+                debug_assert!(!matches!(
+                    expression_type.kind(self.database),
+                    TypeKind::Reference(_)
+                ));
+                if let TypeKind::Pointer(pointer) = expression_type.kind(self.database) {
                     return self.ptr_to_ref(&pointer);
                 }
                 self.push_diagnostic(
                     store.store_source,
                     InferenceDiagnosticKind::DerefNotAPointer {
                         expression,
-                        actual: argument_type,
+                        actual: expression_type,
                     },
                 );
                 return self.error_type();
             },
         };
 
-        let argument_type = expression_type.unref(self.database);
+        let argument_type = expression_type.loaded(self.database);
         self.call_builtin(
             store,
             expression,
@@ -1338,10 +1377,14 @@ impl<'database> InferenceContext<'database> {
         operation: BinaryOperation,
         store: &ExpressionStore,
     ) -> Type {
-        let left_type = self.infer_expression(left_side, store);
-        let rhs_type = self.infer_expression(right_side, store);
+        let left_type = self
+            .infer_expression(left_side, store)
+            .loaded(self.database);
+        let right_type = self
+            .infer_expression(right_side, store)
+            .loaded(self.database);
 
-        if left_type.is_err(self.database) || rhs_type.is_err(self.database) {
+        if left_type.is_err(self.database) || right_type.is_err(self.database) {
             return self.error_type();
         }
 
@@ -1387,7 +1430,7 @@ impl<'database> InferenceContext<'database> {
             store,
             expression,
             builtin,
-            &[(left_side, left_type), (right_side, rhs_type)],
+            &[(left_side, left_type), (right_side, right_type)],
             Some(operation.symbol()),
         )
     }
@@ -2268,6 +2311,10 @@ impl InferenceContext<'_> {
         address_space: AddressSpace,
         access_mode: AccessMode,
     ) -> Type {
+        debug_assert!(!matches!(
+            r#type.kind(self.database),
+            TypeKind::Reference(_) | TypeKind::Pointer(_)
+        ));
         self.database.intern_type(TypeKind::Reference(Reference {
             address_space,
             inner: r#type,

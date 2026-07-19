@@ -238,7 +238,7 @@ fn no_such_field_on_struct_ref() {
             43..46 'bar': ref<function, Bar, read_write>
             49..55 'Bar(0)': Bar
             53..54 '0': integer
-            65..67 'xx': ref<function, [error], read_write>
+            65..67 'xx': [error]
             70..73 'bar': ref<function, Bar, read_write>
             70..81 'bar.bazzzzz': ref<function, [error], read_write>
             70..81 'bar.bazzzzz': no such field `bazzzzz` on type `ref<function, Bar, read_write>`
@@ -265,7 +265,7 @@ fn no_such_field_on_struct_ptr() {
             65..72 'bar_ptr': ptr<function, Bar, read_write>
             75..79 '&bar': ptr<function, Bar, read_write>
             76..79 'bar': ref<function, Bar, read_write>
-            89..90 'x': ref<function, [error], read_write>
+            89..90 'x': [error]
             93..100 'bar_ptr': ptr<function, Bar, read_write>
             93..106 'bar_ptr.bazzz': ref<function, [error], read_write>
             93..106 'bar_ptr.bazzz': no such field `bazzz` on type `ptr<function, Bar, read_write>`
@@ -286,7 +286,7 @@ fn store_type_must_be_storable() {
         expect![[r#"
             19..22 'bar': ref<function, i32, read_write>
             25..26 '1': integer
-            36..43 'bar_ptr': ref<function, ptr<function, i32, read_write>, read_write>
+            36..43 'bar_ptr': ref<function, [error], read_write>
             46..50 '&bar': ptr<function, i32, read_write>
             47..50 'bar': ref<function, i32, read_write>
             46..50 '&bar': expected storable type but got `ptr<function, i32, read_write>`
@@ -1726,6 +1726,138 @@ fn no_constructor() {
             17..18 '2': integer
             20..21 '3': integer
             NoConstructor { expression: Idx::<Expression>(3), builtins: BuiltinId(2c00), type: Type(2403), parameters: [Type(2401), Type(2401), Type(2401)] } in Body
+        "#]],
+    );
+}
+
+#[test]
+fn add_refs_and_ptrs() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        struct MyData {
+            a: u32,
+            b: u32,
+        }
+
+        @group(0) @binding(9)
+        var<storage, read_write> MyBuff: array<MyData>;
+
+        fn MyFn(index: u32) -> u32 {
+            let data = &MyBuff[index];
+
+            var t = data.a;
+            return t + data.b;
+        }
+
+        fn foo() {
+            var a_ref = 1;
+            var b_ref = 1;
+
+            let a_ptr = &a_ref;
+            let b_ptr = &b_ref;
+
+            let test1 = a_ref + b_ref;
+            let test2 = a_ptr + b_ptr;
+            let test3 = a_ptr + b_ref;
+        }
+        ",
+        expect![[r#"
+            90..96 'MyBuff': ref<storage, array<MyData>, read_write>
+            122..127 'index': u32
+            151..155 'data': ptr<storage, MyData, read_write>
+            158..172 '&MyBuff[index]': ptr<storage, MyData, read_write>
+            159..165 'MyBuff': ref<storage, array<MyData>, read_write>
+            159..172 'MyBuff[index]': ref<storage, MyData, read_write>
+            166..171 'index': u32
+            183..184 't': ref<function, u32, read_write>
+            187..191 'data': ptr<storage, MyData, read_write>
+            187..193 'data.a': ref<storage, u32, read_write>
+            206..207 't': ref<function, u32, read_write>
+            206..216 't + data.b': u32
+            210..214 'data': ptr<storage, MyData, read_write>
+            210..216 'data.b': ref<storage, u32, read_write>
+            240..245 'a_ref': ref<function, i32, read_write>
+            248..249 '1': integer
+            259..264 'b_ref': ref<function, i32, read_write>
+            267..268 '1': integer
+            279..284 'a_ptr': ptr<function, i32, read_write>
+            287..293 '&a_ref': ptr<function, i32, read_write>
+            288..293 'a_ref': ref<function, i32, read_write>
+            303..308 'b_ptr': ptr<function, i32, read_write>
+            311..317 '&b_ref': ptr<function, i32, read_write>
+            312..317 'b_ref': ref<function, i32, read_write>
+            328..333 'test1': i32
+            336..341 'a_ref': ref<function, i32, read_write>
+            336..349 'a_ref + b_ref': i32
+            344..349 'b_ref': ref<function, i32, read_write>
+            359..364 'test2': ptr<function, i32, read_write>
+            367..372 'a_ptr': ptr<function, i32, read_write>
+            367..380 'a_ptr + b_ptr': ptr<function, i32, read_write>
+            375..380 'b_ptr': ptr<function, i32, read_write>
+            390..395 'test3': [error]
+            398..403 'a_ptr': ptr<function, i32, read_write>
+            398..411 'a_ptr + b_ref': [error]
+            406..411 'b_ref': ref<function, i32, read_write>
+            NoBuiltinOverload { expression: Idx::<Expression>(14), builtin: BuiltinId(3400), name: Some("+"), parameters: [Type(2c12), Type(2c10)] } in Body
+        "#]],
+    );
+}
+
+#[test]
+fn unexpected_return_type() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        fn foo() {
+            return 0;
+        }
+        ",
+        expect![[r#"
+            22..23 '0': integer
+            22..23 '0': unexpected return value of type `integer` in function with no return type
+        "#]],
+    );
+}
+
+#[test]
+fn wrong_return_type() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        fn foo() -> bool {
+            return 0;
+        }
+        ",
+        expect![[r#"
+            30..31 '0': integer
+            30..31 '0': expected bool but got integer
+        "#]],
+    );
+}
+
+#[test]
+fn shift_operator_inference() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        fn bit_repro() {
+            let x = 1 << 4;
+            let y = 5;
+            let z = x & y;
+        }
+        ",
+        expect![[r#"
+            25..26 'x': i32
+            29..30 '1': integer
+            29..35 '1 << 4': integer
+            34..35 '4': integer
+            45..46 'y': i32
+            49..50 '5': integer
+            60..61 'z': i32
+            64..65 'x': i32
+            64..69 'x & y': i32
+            68..69 'y': i32
         "#]],
     );
 }

@@ -1,5 +1,6 @@
 #![expect(clippy::use_debug, reason = "tests")]
 
+mod big;
 mod builtins;
 mod imports;
 mod incremental;
@@ -190,14 +191,9 @@ impl<'db> InferPrinter<'db> {
                 expected,
                 actual,
             } => {
-                let node = match source_map.expression_to_source(*expression) {
-                    Ok(sp) => sp.to_node(&self.root).syntax().clone(),
-                    Err(SyntheticSyntax) => return,
+                let Some((range, text)) = self.get_range_text(source_map, *expression) else {
+                    return;
                 };
-                let (range, text) = (
-                    node.text_range(),
-                    node.text().to_string().replace('\n', " "),
-                );
                 writeln!(
                     buffer,
                     "{range:?} '{}': expected {} but got {}",
@@ -251,14 +247,9 @@ impl<'db> InferPrinter<'db> {
                 .unwrap();
             },
             InferenceDiagnosticKind::StoreTypeMustBeStorable { actual, expression } => {
-                let node = match source_map.expression_to_source(*expression) {
-                    Ok(sp) => sp.to_node(&self.root).syntax().clone(),
-                    Err(SyntheticSyntax) => return,
+                let Some((range, text)) = self.get_range_text(source_map, *expression) else {
+                    return;
                 };
-                let (range, text) = (
-                    node.text_range(),
-                    node.text().to_string().replace('\n', " "),
-                );
                 writeln!(
                     buffer,
                     "{range:?} '{}': expected storable type but got `{}`",
@@ -267,7 +258,35 @@ impl<'db> InferPrinter<'db> {
                 )
                 .unwrap();
             },
+            InferenceDiagnosticKind::UnexpectedReturnValue { actual, expression } => {
+                let Some((range, text)) = self.get_range_text(source_map, *expression) else {
+                    return;
+                };
+                writeln!(
+                    buffer,
+                    "{range:?} '{}': unexpected return value of type `{}` in function with no return type",
+                    ellipsize(text, 15),
+                    pretty_type_with_verbosity(self.database, *actual, TypeVerbosity::Full),
+                )
+                .unwrap();
+            },
         }
+    }
+
+    fn get_range_text(
+        &self,
+        source_map: &ExpressionSourceMap,
+        expression: la_arena::Idx<hir_def::expression::Expression>,
+    ) -> Option<(base_db::TextRange, String)> {
+        let node = match source_map.expression_to_source(expression) {
+            Ok(sp) => sp.to_node(&self.root).syntax().clone(),
+            Err(SyntheticSyntax) => return None,
+        };
+        let (range, text) = (
+            node.text_range(),
+            node.text().to_string().replace('\n', " "),
+        );
+        Some((range, text))
     }
 }
 
