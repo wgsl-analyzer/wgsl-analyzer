@@ -1836,7 +1836,6 @@ fn wrong_return_type() {
     );
 }
 
-
 #[test]
 fn shift_operator_inference() {
     check_infer(
