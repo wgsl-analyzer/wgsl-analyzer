@@ -675,6 +675,16 @@ mod tests {
     }
 
     #[test]
+    fn unexpected_return_value() {
+        check_diagnostics(
+            "fn foo() { return 0; }",
+            expect![[r#"
+                18..19 Error 30: unexpected return value of type `integer` in function with no return type
+            "#]],
+        );
+    }
+
+    #[test]
     fn no_builtin_overload() {
         check_diagnostics(
             "fn foo() { var x = 1f + mat2x2f(); }",
