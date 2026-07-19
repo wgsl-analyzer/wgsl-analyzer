@@ -1743,7 +1743,7 @@ fn add_refs_and_ptrs() {
         @group(0) @binding(9)
         var<storage, read_write> MyBuff: array<MyData>;
 
-        fn MyFn(idx: u32) {
+        fn MyFn(idx: u32) -> u32 {
             let data = &MyBuff[idx];
 
             var t = data.a;
@@ -1765,42 +1765,73 @@ fn add_refs_and_ptrs() {
         expect![[r#"
             90..96 'MyBuff': ref<storage, array<MyData>, read_write>
             122..125 'idx': u32
-            142..146 'data': ptr<storage, MyData, read_write>
-            149..161 '&MyBuff[idx]': ptr<storage, MyData, read_write>
-            150..156 'MyBuff': ref<storage, array<MyData>, read_write>
-            150..161 'MyBuff[idx]': ref<storage, MyData, read_write>
-            157..160 'idx': u32
-            172..173 't': ref<function, u32, read_write>
-            176..180 'data': ptr<storage, MyData, read_write>
-            176..182 'data.a': ref<storage, u32, read_write>
-            195..196 't': ref<function, u32, read_write>
-            195..205 't + data.b': u32
-            199..203 'data': ptr<storage, MyData, read_write>
-            199..205 'data.b': ref<storage, u32, read_write>
-            195..205 't + data.b': unexpected return value of type `u32` in function with no return type
-            229..234 'a_ref': ref<function, i32, read_write>
-            237..238 '1': integer
-            248..253 'b_ref': ref<function, i32, read_write>
-            256..257 '1': integer
-            268..273 'a_ptr': ptr<function, i32, read_write>
-            276..282 '&a_ref': ptr<function, i32, read_write>
-            277..282 'a_ref': ref<function, i32, read_write>
-            292..297 'b_ptr': ptr<function, i32, read_write>
-            300..306 '&b_ref': ptr<function, i32, read_write>
-            301..306 'b_ref': ref<function, i32, read_write>
-            317..322 'test1': i32
-            325..330 'a_ref': ref<function, i32, read_write>
-            325..338 'a_ref + b_ref': i32
-            333..338 'b_ref': ref<function, i32, read_write>
-            348..353 'test2': ptr<function, i32, read_write>
-            356..361 'a_ptr': ptr<function, i32, read_write>
-            356..369 'a_ptr + b_ptr': ptr<function, i32, read_write>
-            364..369 'b_ptr': ptr<function, i32, read_write>
-            379..384 'test3': [error]
-            387..392 'a_ptr': ptr<function, i32, read_write>
-            387..400 'a_ptr + b_ref': [error]
-            395..400 'b_ref': ref<function, i32, read_write>
+            149..153 'data': ptr<storage, MyData, read_write>
+            156..168 '&MyBuff[idx]': ptr<storage, MyData, read_write>
+            157..163 'MyBuff': ref<storage, array<MyData>, read_write>
+            157..168 'MyBuff[idx]': ref<storage, MyData, read_write>
+            164..167 'idx': u32
+            179..180 't': ref<function, u32, read_write>
+            183..187 'data': ptr<storage, MyData, read_write>
+            183..189 'data.a': ref<storage, u32, read_write>
+            202..203 't': ref<function, u32, read_write>
+            202..212 't + data.b': u32
+            206..210 'data': ptr<storage, MyData, read_write>
+            206..212 'data.b': ref<storage, u32, read_write>
+            236..241 'a_ref': ref<function, i32, read_write>
+            244..245 '1': integer
+            255..260 'b_ref': ref<function, i32, read_write>
+            263..264 '1': integer
+            275..280 'a_ptr': ptr<function, i32, read_write>
+            283..289 '&a_ref': ptr<function, i32, read_write>
+            284..289 'a_ref': ref<function, i32, read_write>
+            299..304 'b_ptr': ptr<function, i32, read_write>
+            307..313 '&b_ref': ptr<function, i32, read_write>
+            308..313 'b_ref': ref<function, i32, read_write>
+            324..329 'test1': i32
+            332..337 'a_ref': ref<function, i32, read_write>
+            332..345 'a_ref + b_ref': i32
+            340..345 'b_ref': ref<function, i32, read_write>
+            355..360 'test2': ptr<function, i32, read_write>
+            363..368 'a_ptr': ptr<function, i32, read_write>
+            363..376 'a_ptr + b_ptr': ptr<function, i32, read_write>
+            371..376 'b_ptr': ptr<function, i32, read_write>
+            386..391 'test3': [error]
+            394..399 'a_ptr': ptr<function, i32, read_write>
+            394..407 'a_ptr + b_ref': [error]
+            402..407 'b_ref': ref<function, i32, read_write>
             NoBuiltinOverload { expression: Idx::<Expression>(14), builtin: BuiltinId(3400), name: Some("+"), parameters: [Type(2c12), Type(2c10)] } in Body
+        "#]],
+    );
+}
+
+#[test]
+fn unexpected_return_type() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        fn foo() {
+            return 0;
+        }
+        ",
+        expect![[r#"
+            22..23 '0': integer
+            22..23 '0': unexpected return value of type `integer` in function with no return type
+        "#]],
+    );
+}
+
+#[test]
+fn wrong_return_type() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        fn foo() -> bool {
+            return 0;
+        }
+        ",
+        expect![[r#"
+            30..31 '0': integer
+            30..31 '0': expected bool but got integer
         "#]],
     );
 }

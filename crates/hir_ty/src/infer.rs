@@ -1378,11 +1378,11 @@ impl<'database> InferenceContext<'database> {
         let left_type = self
             .infer_expression(left_side, store)
             .loaded(self.database);
-        let rhs_type = self
+        let right_type = self
             .infer_expression(right_side, store)
             .loaded(self.database);
 
-        if left_type.is_err(self.database) || rhs_type.is_err(self.database) {
+        if left_type.is_err(self.database) || right_type.is_err(self.database) {
             return self.error_type();
         }
 
@@ -1428,7 +1428,7 @@ impl<'database> InferenceContext<'database> {
             store,
             expression,
             builtin,
-            &[(left_side, left_type), (right_side, rhs_type)],
+            &[(left_side, left_type), (right_side, right_type)],
             Some(operation.symbol()),
         )
     }
