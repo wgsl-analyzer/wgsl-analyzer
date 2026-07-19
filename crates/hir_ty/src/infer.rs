@@ -631,9 +631,8 @@ impl<'database> InferenceContext<'database> {
                 template_parameters,
             } => {
                 // The store type is the effective-value-type of the variable’s declaration.
-                let mut r#type = self
-                    .get_effective_value_type(body, &resolver, *type_ref, *initializer)
-                    .concretize(self.database);
+                let mut r#type =
+                    self.get_effective_value_type(body, &resolver, *type_ref, *initializer);
                 if let Some(initializer_expression) = initializer
                     && !r#type.kind(self.database).is_storable()
                     && !r#type.kind(self.database).is_error()
@@ -932,7 +931,7 @@ impl<'database> InferenceContext<'database> {
         let r#type = type_ref.map(|r#type| self.lower_type(r#type, resolver, body));
         let r#type =
             self.infer_initializer(body, initializer, r#type, AbstractHandling::Concretize);
-        r#type.loaded(self.database)
+        r#type.loaded(self.database).concretize(self.database)
     }
 
     fn infer_initializer(
@@ -1015,9 +1014,7 @@ impl<'database> InferenceContext<'database> {
         expected: &TypeExpectation,
         store: &ExpressionStore,
     ) -> Type {
-        let r#type = self
-            .infer_expression(expression, store)
-            .loaded(self.database);
+        let r#type = self.infer_expression(expression, store);
 
         match expected {
             TypeExpectation::Type(expected_type) => {
@@ -1344,15 +1341,15 @@ impl<'database> InferenceContext<'database> {
                 return self.error_type();
             },
             UnaryOperator::Indirection => {
-                let argument_type = expression_type.loaded(self.database);
-                if let TypeKind::Pointer(pointer) = argument_type.kind(self.database) {
+                debug_assert!(!matches!(expression_type.kind(self.database), TypeKind::Reference(_)));
+                if let TypeKind::Pointer(pointer) = expression_type.kind(self.database) {
                     return self.ptr_to_ref(&pointer);
                 }
                 self.push_diagnostic(
                     store.store_source,
                     InferenceDiagnosticKind::DerefNotAPointer {
                         expression,
-                        actual: argument_type,
+                        actual: expression_type,
                     },
                 );
                 return self.error_type();

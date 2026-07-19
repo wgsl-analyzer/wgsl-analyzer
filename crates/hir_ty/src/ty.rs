@@ -102,7 +102,8 @@ impl Type {
             access_mode,
         }) = self.kind(database)
         {
-            inner.loaded(database)
+            debug_assert!(!matches!(inner.kind(database), TypeKind::Reference(_)));
+            inner
         } else {
             self
         }
