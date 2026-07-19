@@ -4,7 +4,11 @@ use syntax::ExtensionsConfig;
 use crate::tests::check_infer;
 
 #[test]
-#[expect(clippy::too_many_lines, clippy::non_ascii_literal, reason = "snapshot test data")]
+#[expect(
+    clippy::too_many_lines,
+    clippy::non_ascii_literal,
+    reason = "snapshot test data"
+)]
 fn microsoft_qdk() {
     check_infer(
         ExtensionsConfig::default(),
