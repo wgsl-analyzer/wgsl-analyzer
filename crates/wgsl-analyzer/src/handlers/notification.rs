@@ -216,8 +216,8 @@ pub(crate) fn handle_did_change_configuration(
                 },
                 ResponseKind::Err { error } => {
                     tracing::error!("failed to fetch the server settings: {:?}", error);
-                }
-            };
+                },
+            }
         },
     );
 

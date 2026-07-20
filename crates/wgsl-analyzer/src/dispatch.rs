@@ -5,7 +5,8 @@ use std::{fmt, panic, thread};
 use base_db::DbPanicContext;
 use fmt::Debug;
 use lsp_server::{
-    ErrorCode, ExtractError, Notification as ServerNotification, Request as ServerRequest, RequestId, Response, ResponseError, ResponseKind,
+    ErrorCode, ExtractError, Notification as ServerNotification, Request as ServerRequest,
+    RequestId, Response, ResponseError, ResponseKind,
 };
 use lsp_types::{Notification as LspNotification, Request as LspRequest};
 use salsa::Cancelled;
