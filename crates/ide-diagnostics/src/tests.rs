@@ -83,11 +83,31 @@ fn no_builtin_overload() {
         "fn foo() { var x = 1f + mat2x2f(); }",
         expect![[r#"
             11..34 wgsl-analyzer Error 8: no overload of `+` found for given arguments.Found (f32, mat2x2<f32>), expected one of:
-            fn op_binary_number(vecN<U>, vecN<U>) -> vecN<U>
-            fn op_binary_number(vecN<U>, U) -> vecN<U>
-            fn op_binary_number(T, vecM<T>) -> vecM<T>
+            fn op_binary_number(vecN<integer>, vecN<integer>) -> vecN<integer>
+            fn op_binary_number(integer, integer) -> integer
+            fn op_binary_number(vecN<float>, vecN<float>) -> vecN<float>
+            fn op_binary_number(float, float) -> float
+            fn op_binary_number(vecN<i32>, vecN<i32>) -> vecN<i32>
+            fn op_binary_number(i32, i32) -> i32
+            fn op_binary_number(vecN<u32>, vecN<u32>) -> vecN<u32>
+            fn op_binary_number(u32, u32) -> u32
+            fn op_binary_number(vecN<f32>, vecN<f32>) -> vecN<f32>
+            fn op_binary_number(f32, f32) -> f32
+            fn op_binary_number(vecN<f16>, vecN<f16>) -> vecN<f16>
+            fn op_binary_number(f16, f16) -> f16
+            fn op_binary_number(integer, vecN<integer>) -> vecN<integer>
+            fn op_binary_number(vecN<integer>, integer) -> vecN<integer>
+            fn op_binary_number(float, vecN<float>) -> vecN<float>
+            fn op_binary_number(vecN<float>, float) -> vecN<float>
+            fn op_binary_number(i32, vecN<i32>) -> vecN<i32>
+            fn op_binary_number(vecN<i32>, i32) -> vecN<i32>
+            fn op_binary_number(u32, vecN<u32>) -> vecN<u32>
+            fn op_binary_number(vecN<u32>, u32) -> vecN<u32>
+            fn op_binary_number(f32, vecN<f32>) -> vecN<f32>
+            fn op_binary_number(vecN<f32>, f32) -> vecN<f32>
+            fn op_binary_number(f16, vecN<f16>) -> vecN<f16>
+            fn op_binary_number(vecN<f16>, f16) -> vecN<f16>
             fn op_binary_number(matNxM<f32>, matNxM<f32>) -> matNxM<f32>
-            fn op_binary_number(T, T) -> T
         "#]],
     );
 }

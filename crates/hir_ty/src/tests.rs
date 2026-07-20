@@ -16,8 +16,10 @@ use hir_def::{
     database::{
         DefDatabase as _, DefinitionWithBodyId, InternDatabase as _, Location, ModuleDefinitionId,
     },
+    expression::ExpressionId,
     expression_store::{ExpressionSourceMap, ExpressionStoreSource, SyntheticSyntax},
     item_tree::ModuleItemId,
+    type_specifier::{self, TypeSpecifierId},
 };
 use salsa::Durability;
 use syntax::{AstNode as _, ExtensionsConfig, SyntaxNode};
@@ -189,7 +191,8 @@ impl<'db> InferPrinter<'db> {
                 expected,
                 actual,
             } => {
-                let Some((range, text)) = self.get_range_text(source_map, *expression) else {
+                let Some((range, text)) = self.get_expression_range_text(source_map, *expression)
+                else {
                     return;
                 };
                 writeln!(
@@ -206,21 +209,64 @@ impl<'db> InferPrinter<'db> {
                 .unwrap();
             },
             InferenceDiagnosticKind::AssignmentNotAReference { .. }
-            | InferenceDiagnosticKind::ArrayAccessInvalidType { .. }
             | InferenceDiagnosticKind::UnresolvedName { .. }
             | InferenceDiagnosticKind::InvalidConstructionType { .. }
             | InferenceDiagnosticKind::FunctionCallArgCountMismatch { .. }
             | InferenceDiagnosticKind::NoBuiltinOverload { .. }
-            | InferenceDiagnosticKind::NoConstructor { .. }
             | InferenceDiagnosticKind::AddressOfNotReference { .. }
             | InferenceDiagnosticKind::AddressOfNotReference { .. }
             | InferenceDiagnosticKind::DerefNotAPointer { .. }
-            | InferenceDiagnosticKind::InvalidType { .. }
             | InferenceDiagnosticKind::CyclicType { .. }
             | InferenceDiagnosticKind::UnexpectedTemplateArgument { .. }
             | InferenceDiagnosticKind::WgslError { .. }
             | InferenceDiagnosticKind::ExpectedLoweredKind { .. } => {
                 writeln!(buffer, "{:?} in {:?}", diagnostic.kind, diagnostic.source).unwrap();
+            },
+            InferenceDiagnosticKind::InvalidType { error } => {
+                let Some((range, text)) = (match error.container {
+                    crate::lower::TypeContainer::Expression(expression) => {
+                        self.get_expression_range_text(source_map, expression)
+                    },
+                    crate::lower::TypeContainer::TypeSpecifier(type_specifier) => {
+                        self.get_type_range_text(source_map, type_specifier)
+                    },
+                }) else {
+                    return;
+                };
+                writeln!(
+                    buffer,
+                    "{range:?} '{}': {}",
+                    ellipsize(text, 15),
+                    error.kind,
+                )
+                .unwrap();
+            },
+            InferenceDiagnosticKind::NoConstructor {
+                builtins,
+                expression,
+                parameters,
+                r#type,
+            } => {
+                let Some((range, text)) = self.get_expression_range_text(source_map, *expression)
+                else {
+                    return;
+                };
+                writeln!(
+                    buffer,
+                    "{range:?} '{}': no constructor for builtin `{}` with parameters `{}`",
+                    ellipsize(text, 15),
+                    builtins.lookup(self.database).name(),
+                    join_display(
+                        parameters
+                            .iter()
+                            .map(|parameter| pretty_type_with_verbosity(
+                                self.database,
+                                *parameter,
+                                TypeVerbosity::Full
+                            ))
+                    ),
+                )
+                .unwrap();
             },
             InferenceDiagnosticKind::NoSuchField {
                 expression,
@@ -245,7 +291,8 @@ impl<'db> InferPrinter<'db> {
                 .unwrap();
             },
             InferenceDiagnosticKind::StoreTypeMustBeStorable { actual, expression } => {
-                let Some((range, text)) = self.get_range_text(source_map, *expression) else {
+                let Some((range, text)) = self.get_expression_range_text(source_map, *expression)
+                else {
                     return;
                 };
                 writeln!(
@@ -256,8 +303,22 @@ impl<'db> InferPrinter<'db> {
                 )
                 .unwrap();
             },
+            InferenceDiagnosticKind::ArrayAccessInvalidType { expression, r#type } => {
+                let Some((range, text)) = self.get_expression_range_text(source_map, *expression)
+                else {
+                    return;
+                };
+                writeln!(
+                    buffer,
+                    "{range:?} '{}': cannot index into type {}",
+                    ellipsize(text, 15),
+                    pretty_type_with_verbosity(self.database, *r#type, TypeVerbosity::Full),
+                )
+                .unwrap();
+            },
             InferenceDiagnosticKind::UnexpectedReturnValue { actual, expression } => {
-                let Some((range, text)) = self.get_range_text(source_map, *expression) else {
+                let Some((range, text)) = self.get_expression_range_text(source_map, *expression)
+                else {
                     return;
                 };
                 writeln!(
@@ -271,12 +332,28 @@ impl<'db> InferPrinter<'db> {
         }
     }
 
-    fn get_range_text(
+    fn get_expression_range_text(
         &self,
         source_map: &ExpressionSourceMap,
-        expression: la_arena::Idx<hir_def::expression::Expression>,
+        expression: ExpressionId,
     ) -> Option<(base_db::TextRange, String)> {
         let node = match source_map.expression_to_source(expression) {
+            Ok(sp) => sp.to_node(&self.root).syntax().clone(),
+            Err(SyntheticSyntax) => return None,
+        };
+        let (range, text) = (
+            node.text_range(),
+            node.text().to_string().replace('\n', " "),
+        );
+        Some((range, text))
+    }
+
+    fn get_type_range_text(
+        &self,
+        source_map: &ExpressionSourceMap,
+        r#type: TypeSpecifierId,
+    ) -> Option<(base_db::TextRange, String)> {
+        let node = match source_map.type_specifier_to_source(r#type) {
             Ok(sp) => sp.to_node(&self.root).syntax().clone(),
             Err(SyntheticSyntax) => return None,
         };
@@ -415,4 +492,15 @@ fn check_infer(
     let mut actual = infer(extensions, wa_fixture);
     actual.push('\n');
     expect.assert_eq(&actual);
+}
+
+fn join_display<I, T>(iter: I) -> String
+where
+    I: IntoIterator<Item = T>,
+    T: std::fmt::Display,
+{
+    iter.into_iter()
+        .map(|item| item.to_string())
+        .collect::<Vec<_>>()
+        .join(", ")
 }

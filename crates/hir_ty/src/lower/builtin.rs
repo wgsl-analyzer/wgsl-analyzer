@@ -115,7 +115,7 @@ impl TypeLoweringContext<'_> {
                 Ok(lowered) => Some(lowered),
                 Err(error) => {
                     self.diagnostics.push(error);
-                    Some(Lowered::Type(self.database.intern_type(TypeKind::Error)))
+                    Some(Lowered::Type(TypeKind::Error.intern(self.database)))
                 },
             }
         } else if crate::builtins::Builtin::ALL_BUILTINS.contains(&name.as_str()) {

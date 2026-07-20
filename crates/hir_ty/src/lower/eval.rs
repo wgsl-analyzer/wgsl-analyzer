@@ -155,7 +155,7 @@ impl TypeLoweringContext<'_> {
                                 ident_expression.path.clone(),
                             ),
                         });
-                        TemplateParameter::Type(self.database.intern_type(TypeKind::Error))
+                        TemplateParameter::Type(TypeKind::Error.intern(self.database))
                     },
                     Lowered::GlobalConstant(_)
                     | Lowered::GlobalVariable(_)
@@ -186,7 +186,6 @@ impl TypeLoweringContext<'_> {
             .iter()
             .map(|argument| (self.evaluate_template_argument(*argument), *argument))
             .collect();
-        let length = template_parameters.len();
         TemplateParameters::new(container, template_parameters)
     }
 }

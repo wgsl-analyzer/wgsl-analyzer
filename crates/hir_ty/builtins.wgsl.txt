@@ -1,3 +1,7 @@
+// 17.1 Constructor Built-in Functions
+//     17.1.1 Zero Value Built-in Functions
+// these are handled in Rust code
+
 // logical
 all(vecN<bool>) -> bool
 all(bool) -> bool
@@ -17,39 +21,150 @@ isNormal(f32) -> bool
 isNormal(vecN<f32>) -> vecN<bool>
 arrayLength(ptr<array<T>>) -> u32
 
-// float
-abs(f32) -> f32
-abs(vecN<f32>) -> vecN<f32>
-acos(f32) -> f32
-acos(vecN<f32>) -> vecN<f32>
-asin(f32) -> f32
-asin(vecN<f32>) -> vecN<f32>
-atan(f32) -> f32
-atan(vecN<f32>) -> vecN<f32>
-atan2(f32, f32) -> f32
-atan2(vecN<f32>, vecN<f32>) -> vecN<f32>
-ceil(f32) -> f32
-ceil(vecN<f32>) -> vecN<f32>
-clamp(f32, f32, f32) -> f32
-clamp(vecN<f32>, vecN<f32>, vecN<f32>) -> vecN<f32>
-cos(f32) -> f32
-cos(vecN<f32>) -> vecN<f32>
-cosh(f32) -> f32
-cosh(vecN<f32>) -> vecN<f32>
+// Numeric Built-in Functions
+abs(e: AbstractInt) -> AbstractInt
+abs(e: AbstractFloat) -> AbstractFloat
+abs(e: i32) -> i32
+abs(e: u32) -> u32
+abs(e: f32) -> f32
+abs(e: f16) -> f16
+abs(e: vecN<AbstractInt>) -> AbstractInt
+abs(e: vecN<AbstractFloat>) -> AbstractFloat
+abs(e: vecN<i32>) -> i32
+abs(e: vecN<u32>) -> u32
+abs(e: vecN<f32>) -> f32
+abs(e: vecN<f16>) -> f16
+
+acos(e: AbstractFloat) -> AbstractFloat
+acos(e: f32) -> f32
+acos(e: f16) -> f16
+acos(e: vecN<AbstractFloat>) -> vecN<AbstractFloat>
+acos(e: vecN<f32>) -> vecN<f32>
+acos(e: vecN<f16>) -> vecN<f16>
+
+acosh(x: AbstractFloat) -> AbstractFloat
+acosh(x: f32) -> f32
+acosh(x: f16) -> f16
+acosh(x: vecN<AbstractFloat>) -> vecN<AbstractFloat>
+acosh(x: vecN<f32>) -> vecN<f32>
+acosh(x: vecN<f16>) -> vecN<f16>
+
+asin(e: AbstractFloat) -> AbstractFloat
+asin(e: f32) -> f32
+asin(e: f16) -> f16
+asin(e: vecN<AbstractFloat>) -> vecN<AbstractFloat>
+asin(e: vecN<f32>) -> vecN<f32>
+asin(e: vecN<f16>) -> vecN<f16>
+
+asinh(y: AbstractFloat) -> AbstractFloat
+asinh(y: f32) -> f32
+asinh(y: f16) -> f16
+asinh(y: vecN<AbstractFloat>) -> vecN<AbstractFloat>
+asinh(y: vecN<f32>) -> vecN<f32>
+asinh(y: vecN<f16>) -> vecN<f16>
+
+atan(e: AbstractFloat) -> AbstractFloat
+atan(e: f32) -> f32
+atan(e: f16) -> f16
+atan(e: vecN<AbstractFloat>) -> vecN<AbstractFloat>
+atan(e: vecN<f32>) -> vecN<f32>
+atan(e: vecN<f16>) -> vecN<f16>
+
+atanh(t: AbstractFloat) -> AbstractFloat
+atanh(t: f32) -> f32
+atanh(t: f16) -> f16
+atanh(t: vecN<AbstractFloat>) -> vecN<AbstractFloat>
+atanh(t: vecN<f32>) -> vecN<f32>
+atanh(t: vecN<f16>) -> vecN<f16>
+
+atan2(y: AbstractFloat, x: AbstractFloat) -> AbstractFloat
+atan2(y: f32, x: f32) -> f32
+atan2(y: f16, x: f16) -> f16
+atan2(y: vecN<AbstractFloat>, x: vecN<AbstractFloat>) -> vecN<AbstractFloat>
+atan2(y: vecN<f32>, x: vecN<f32>) -> vecN<f32>
+atan2(y: vecN<f16>, x: vecN<f16>) -> vecN<f16>
+
+ceil(e: AbstractFloat) -> AbstractFloat
+ceil(e: f32) -> f32
+ceil(e: vecN<f32>) -> vecN<f32>
+
+clamp(e: AbstractInt, low: AbstractInt, high: AbstractInt) -> AbstractInt
+clamp(e: AbstractFloat, low: AbstractFloat, high: AbstractFloat) -> AbstractFloat
+clamp(e: i32, low: i32, high: i32) -> i32
+clamp(e: u32, low: u32, high: u32) -> u32
+clamp(e: f32, low: f32, high: f32) -> f32
+clamp(e: f16, low: f16, high: f16) -> f16
+clamp(e: vecN<AbstractInt>, low: vecN<AbstractInt>, high: vecN<AbstractInt>) -> vecN<AbstractInt>
+clamp(e: vecN<AbstractFloat>, low: vecN<AbstractFloat>, high: vecN<AbstractFloat>) -> vecN<AbstractFloat>
+clamp(e: vecN<i32>, low: vecN<i32>, high: vecN<i32>) -> vecN<i32>
+clamp(e: vecN<u32>, low: vecN<u32>, high: vecN<u32>) -> vecN<u32>
+clamp(e: vecN<f32>, low: vecN<f32>, high: vecN<f32>) -> vecN<f32>
+clamp(e: vecN<f16>, low: vecN<f16>, high: vecN<f16>) -> vecN<f16>
+
+cos(e: AbstractFloat) -> AbstractFloat
+cos(e: f32) -> f32
+cos(e: f16) -> f16
+cos(e: vecN<AbstractFloat>) -> vecN<AbstractFloat>
+cos(e: vecN<f32>) -> vecN<f32>
+cos(e: vecN<f16>) -> vecN<f16>
+
+cosh(a: AbstractFloat) -> AbstractFloat
+cosh(a: f32) -> f32
+cosh(a: f16) -> f16
+cosh(a: vecN<AbstractFloat>) -> vecN<AbstractFloat>
+cosh(a: vecN<f32>) -> vecN<f32>
+cosh(a: vecN<f16>) -> vecN<f16>
+
+countLeadingZeros(e: i32) -> i32
+countLeadingZeros(e: u32) -> u32
+countLeadingZeros(e: vecN<i32>) -> vecN<i32>
+countLeadingZeros(e: vecN<u32>) -> vecN<u32>
+
+countOneBits(e: i32) -> i32
+countOneBits(e: u32) -> u32
+countOneBits(e: vecN<i32>) -> vecN<i32>
+countOneBits(e: vecN<u32>) -> vecN<u32>
+
+countTrailingZeros(e: i32) -> i32
+countTrailingZeros(e: u32) -> u32
+countTrailingZeros(e: vecN<i32>) -> vecN<i32>
+countTrailingZeros(e: vecN<u32>) -> vecN<u32>
+
+cross(vec3<AbstractFloat>, vec3<AbstractFloat>) -> vec3<AbstractFloat>
 cross(vec3<f32>, vec3<f32>) -> vec3<f32>
+cross(vec3<f16>, vec3<f16>) -> vec3<f16>
+
+degrees(e1: AbstractFloat) -> AbstractFloat
+degrees(e1: f32) -> f32
+degrees(e1: f16) -> f16
+degrees(e1: vecN<AbstractFloat>) -> vecN<AbstractFloat>
+degrees(e1: vecN<f32>) -> vecN<f32>
+degrees(e1: vecN<f16>) -> vecN<f16>
+
+determinant(e: matNxN<AbstractFloat>) -> AbstractFloat
+determinant(e: matNxN<f32>) -> f32
+determinant(e: matNxN<f16>) -> f16
+
 distance(f32, f32) -> f32
 distance(vecN<f32>, vecN<f32>) -> f32
+
 exp(f32) -> f32
 exp(vecN<f32>) -> vecN<f32>
+
 exp2(f32) -> f32
 exp2(vecN<f32>) -> vecN<f32>
+
 faceForward(vecN<f32>, vecN<f32>, vecN<f32>) -> vecN<f32>
+
 floor(f32) -> f32
 floor(vecN<f32>) -> vecN<f32>
+
 fma(f32, f32) -> f32
 fma(vecN<f32>, vecN<f32>) -> f32
+
 fract(f32) -> f32
 fract(vecN<f32>) -> vecN<f32>
+
 // TODO frexp
 inverseSqrt(f32) -> f32
 inverseSqrt(vecN<f32>) -> vecN<f32>
@@ -102,30 +217,8 @@ fma(f32, f32, f32) -> f32
 fma(vecN<f32>, vecN<f32>, vecN<f32>) -> vecN<f32>
 radians(f32) -> f32
 radians(vecN<f32>) -> vecN<f32>
-degrees(f32) -> f32
-degrees(vecN<f32>) -> vecN<f32>
 
 // integer
-abs(i32) -> i32
-abs(vecN<i32>) -> vecN<i32>
-abs(u32) -> u32
-abs(vecN<u32>) -> vecN<u32>
-clamp(i32, low: i32, high: i32) -> i32
-clamp(vecN<i32>, low: vecN<i32>, high: vecN<i32>) -> vecN<i32>
-clamp(u32, low: u32, high: u32) -> u32
-clamp(vecN<u32>, low: vecN<u32>, high: vecN<u32>) -> vecN<u32>
-countLeadingZeros(i32) -> i32
-countLeadingZeros(vecN<i32>) -> vecN<i32>
-countLeadingZeros(u32) -> u32
-countLeadingZeros(vecN<u32>) -> vecN<u32>
-countOneBits(i32) -> i32
-countOneBits(vecN<i32>) -> vecN<i32>
-countOneBits(u32) -> u32
-countOneBits(vecN<u32>) -> vecN<u32>
-countTrailingZeros(i32) -> i32
-countTrailingZeros(vecN<i32>) -> vecN<i32>
-countTrailingZeros(u32) -> u32
-countTrailingZeros(vecN<u32>) -> vecN<u32>
 firstLeadingBit(i32) -> i32
 firstLeadingBit(vecN<i32>) -> vecN<i32>
 firstLeadingBit(u32) -> u32
@@ -156,7 +249,6 @@ reverseBits(u32) -> u32
 reverseBits(vecN<u32>) -> vecN<u32>
 
 // matrix
-determinant(matNxN<T>) -> T
 transpose(matMxN<T>) -> matNxM<T>
 
 // vector
@@ -508,12 +600,36 @@ op_binary_bitop(T, T) -> T
 op_binary_shift(vecN<T>, vecN<u32>) -> vecN<T>
 op_binary_shift(T, u32) -> T
 
+// Binary arithmetic expressions
+op_binary_number(vecN<AbstractInt>, vecN<AbstractInt>) -> vecN<AbstractInt>
+op_binary_number(AbstractInt, AbstractInt) -> AbstractInt
+op_binary_number(vecN<AbstractFloat>, vecN<AbstractFloat>) -> vecN<AbstractFloat>
+op_binary_number(AbstractFloat, AbstractFloat) -> AbstractFloat
+op_binary_number(vecN<i32>, vecN<i32>) -> vecN<i32>
+op_binary_number(i32, i32) -> i32
+op_binary_number(vecN<u32>, vecN<u32>) -> vecN<u32>
+op_binary_number(u32, u32) -> u32
+op_binary_number(vecN<f32>, vecN<f32>) -> vecN<f32>
+op_binary_number(f32, f32) -> f32
+op_binary_number(vecN<f16>, vecN<f16>) -> vecN<f16>
+op_binary_number(f16, f16) -> f16
 
-op_binary_number(vecN<T>, vecN<T>) -> vecN<T>
-op_binary_number(vecN<T>, T) -> vecN<T>
-op_binary_number(T, vecN<T>) -> vecN<T>
+// Binary arithmetic expressions with mixed scalar and vector operands
+op_binary_number(AbstractInt, vecN<AbstractInt>) -> vecN<AbstractInt>
+op_binary_number(vecN<AbstractInt>, AbstractInt) -> vecN<AbstractInt>
+op_binary_number(AbstractFloat, vecN<AbstractFloat>) -> vecN<AbstractFloat>
+op_binary_number(vecN<AbstractFloat>, AbstractFloat) -> vecN<AbstractFloat>
+op_binary_number(i32, vecN<i32>) -> vecN<i32>
+op_binary_number(vecN<i32>, i32) -> vecN<i32>
+op_binary_number(u32, vecN<u32>) -> vecN<u32>
+op_binary_number(vecN<u32>, u32) -> vecN<u32>
+op_binary_number(f32, vecN<f32>) -> vecN<f32>
+op_binary_number(vecN<f32>, f32) -> vecN<f32>
+op_binary_number(f16, vecN<f16>) -> vecN<f16>
+op_binary_number(vecN<f16>, f16) -> vecN<f16>
+
+// Matrix arithmetic
 op_binary_number(matMxN<f32>, matMxN<f32>) -> matMxN<f32>
-op_binary_number(T, T) -> T
 
 op_binary_div(vecN<T>, vecN<T>) -> vecN<T>
 op_binary_div(vecN<T>, T) -> vecN<T>
@@ -638,6 +754,7 @@ op_f16_constructor(bool) -> f16
 op_f16_constructor(u32) -> f16
 op_f16_constructor(i32) -> f16
 op_f16_constructor(f32) -> f16
+op_f16_constructor(f16) -> f16
 
 // naga SHADER_INT64
 op_i64_constructor(bool) -> i64

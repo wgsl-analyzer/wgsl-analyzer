@@ -184,7 +184,7 @@ fn cannot_import_imported_item() {
         expect![[r#"
             6..7 'b': [error]
             10..25 'package::foo::A': [error]
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(0)), kind: Resolution(PrivateItem { name: Name("A"), visibility: File }) } } in Body
+            10..25 'package::foo::A': `A` is private
             ExpectedLoweredKind { expression: Idx::<Expression>(0), expected: Variable, actual: Type, path: Path(ModPath("package::foo::A")) } in Body
             ---
             ---
@@ -405,7 +405,7 @@ fn import_escapes_root() {
             13..44 'super:...= true': [error]
             34..35 '3': integer
             40..44 'true': bool
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(1)), kind: Resolution(TooManySupers) } } in Body
+            13..36 'super:...ype(3)': too many `super::`s
         "#]],
     );
 }
@@ -422,7 +422,7 @@ fn import_nonexistent_module() {
         const a = Bar(2);
         ",
         expect![[r#"
-            InvalidType { error: TypeLoweringError { container: TypeSpecifier(Idx::<TypeSpecifier>(0)), kind: Resolution(UnresolvedPackage { name: Name("not_a_module") }) } } in Signature
+            20..37 'not_a_...e::foo': package `not_a_module` not found
             47..48 'a': [error]
             51..57 'Bar(2)': [error]
             55..56 '2': integer
@@ -447,7 +447,7 @@ fn invalid_import_starting_with_item() {
             12..13 '5': integer
             81..86 'fails': [error]
             89..97 'bar::nya': [error]
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(0)), kind: Resolution(UnresolvedPackage { name: Name("bar") }) } } in Body
+            89..97 'bar::nya': package `bar` not found
             ExpectedLoweredKind { expression: Idx::<Expression>(0), expected: Variable, actual: Type, path: Path(ModPath("bar::nya")) } in Body
         "#]],
     );
@@ -482,7 +482,7 @@ fn import_with_nested_dependency() {
         //- /package.wesl package:my_shaders edition:2026_pre dependencies:nested
         import nested;
         const a = nested::myValue;
-        
+
         //- /foo.wesl
         const a = nested::myValue;
 

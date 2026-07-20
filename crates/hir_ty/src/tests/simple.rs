@@ -44,7 +44,7 @@ fn field_expression_on_error_type() {
             23..33 'Nonsense()': [error]
             43..44 'a': [error]
             47..48 'x': [error]
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(0)), kind: Resolution(UnresolvedName { name: Name("Nonsense") }) } } in Body
+            23..33 'Nonsense()': `Nonsense` not found in scope
         "#]],
     );
 }
@@ -66,8 +66,7 @@ fn index_expression_on_error_type() {
             47..48 'x': [error]
             47..51 'x[0]': [error]
             49..50 '0': integer
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(0)), kind: Resolution(UnresolvedName { name: Name("Nonsense") }) } } in Body
-            ArrayAccessInvalidType { expression: Idx::<Expression>(3), type: Type(2400) } in Body
+            23..33 'Nonsense()': `Nonsense` not found in scope
         "#]],
     );
 }
@@ -890,7 +889,7 @@ fn const_u32_as_array_size() {
             6..15 'maxLayers': u32
             18..21 '12u': u32
             27..33 'layers': ref<handle, [error], read>
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(1)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } } in Signature
+            46..55 'maxLayers': unexpected template argument, expected a `u32` or a `i32` greater than `0`
         "#]],
     );
 }
@@ -1724,7 +1723,7 @@ fn no_constructor() {
             14..15 '1': integer
             17..18 '2': integer
             20..21 '3': integer
-            NoConstructor { expression: Idx::<Expression>(3), builtins: BuiltinId(2c00), type: Type(2403), parameters: [Type(2401), Type(2401), Type(2401)] } in Body
+            8..22 'vec2f(1, 2, 3)': no constructor for builtin `op_vec2_constructor` with parameters `integer, integer, integer`
         "#]],
     );
 }
@@ -1790,15 +1789,16 @@ fn add_refs_and_ptrs() {
             336..341 'a_ref': ref<function, i32, read_write>
             336..349 'a_ref + b_ref': i32
             344..349 'b_ref': ref<function, i32, read_write>
-            359..364 'test2': ptr<function, i32, read_write>
+            359..364 'test2': [error]
             367..372 'a_ptr': ptr<function, i32, read_write>
-            367..380 'a_ptr + b_ptr': ptr<function, i32, read_write>
+            367..380 'a_ptr + b_ptr': [error]
             375..380 'b_ptr': ptr<function, i32, read_write>
             390..395 'test3': [error]
             398..403 'a_ptr': ptr<function, i32, read_write>
             398..411 'a_ptr + b_ref': [error]
             406..411 'b_ref': ref<function, i32, read_write>
-            NoBuiltinOverload { expression: Idx::<Expression>(14), builtin: BuiltinId(3400), name: Some("+"), parameters: [Type(2c12), Type(2c10)] } in Body
+            NoBuiltinOverload { expression: Idx::<Expression>(11), builtin: BuiltinId(3400), name: Some("+"), parameters: [Type(2c16), Type(2c16)] } in Body
+            NoBuiltinOverload { expression: Idx::<Expression>(14), builtin: BuiltinId(3400), name: Some("+"), parameters: [Type(2c16), Type(2c0d)] } in Body
         "#]],
     );
 }

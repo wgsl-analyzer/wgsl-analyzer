@@ -1210,8 +1210,7 @@ impl<'database> InferenceContext<'database> {
                         self.make_ref(array.inner, address_space, access_mode)
                     },
                     TypeKind::Array(array) => array.inner,
-                    TypeKind::Error
-                    | TypeKind::Scalar(_)
+                    TypeKind::Scalar(_)
                     | TypeKind::Atomic(_)
                     | TypeKind::Struct(_)
                     | TypeKind::Texture(_)
@@ -1227,6 +1226,11 @@ impl<'database> InferenceContext<'database> {
                                 r#type: left_side,
                             },
                         );
+                        self.error_type()
+                    },
+                    // No need to create extra diagnostics for problems upstream
+                    TypeKind::Error => {
+                        debug_assert!(!self.result.diagnostics.is_empty());
                         self.error_type()
                     },
                 }

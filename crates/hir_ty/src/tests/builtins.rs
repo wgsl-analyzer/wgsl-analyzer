@@ -1,5 +1,8 @@
 #![expect(non_snake_case, reason = "name based on WGSL builtins")]
 
+mod numeric;
+mod zero_value;
+
 use expect_test::expect;
 use syntax::ExtensionsConfig;
 

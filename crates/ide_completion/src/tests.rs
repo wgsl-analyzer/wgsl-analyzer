@@ -13,7 +13,7 @@ mod module_items;
 mod wesl;
 
 use base_db::{EditionedFileId, FilePosition, SourceDatabase, change};
-use expect_test::Expect;
+use expect_test::{Expect, expect};
 use hir::database::HirDatabase;
 use hir::setup_tracing;
 use ide_db::{FileId, RootDatabase, SnippetCapability};
@@ -153,10 +153,11 @@ pub(crate) fn do_completion_with_config(
         .collect()
 }
 
-fn render_completion_list(completions: Vec<CompletionItem>) -> String {
+fn render_completion_list(mut completions: Vec<CompletionItem>) -> String {
     fn monospace_width(string: &str) -> usize {
         string.chars().count()
     }
+    completions.sort_by(|a, b| a.label.cmp(&b.label));
     let label_width = completions
         .iter()
         .map(|it| {
@@ -197,41 +198,46 @@ fn render_completion_list(completions: Vec<CompletionItem>) -> String {
         .collect()
 }
 
+#[expect(clippy::needless_pass_by_value, reason = "Matches expect! macro")]
 pub(crate) fn check(
     wa_fixture: &str,
-    expect: &Expect,
+    expect: Expect,
 ) {
     let actual = completion_list(wa_fixture);
     expect.assert_eq(&actual);
 }
 
+#[expect(clippy::needless_pass_by_value, reason = "Matches expect! macro")]
 pub(crate) fn check_with_base_items(
     wa_fixture: &str,
-    expect: &Expect,
+    expect: Expect,
 ) {
     check(&format!("{BASE_ITEMS_FIXTURE}{wa_fixture}"), expect);
 }
 
+#[expect(clippy::needless_pass_by_value, reason = "Matches expect! macro")]
 pub(crate) fn check_no_kw(
     wa_fixture: &str,
-    expect: &Expect,
+    expect: Expect,
 ) {
     let actual = completion_list_no_kw(wa_fixture);
     expect.assert_eq(&actual);
 }
 
+#[expect(clippy::needless_pass_by_value, reason = "Matches expect! macro")]
 pub(crate) fn check_with_private_editable(
     wa_fixture: &str,
-    expect: &Expect,
+    expect: Expect,
 ) {
     let actual = completion_list_no_kw_with_private_editable(wa_fixture);
     expect.assert_eq(&actual);
 }
 
+#[expect(clippy::needless_pass_by_value, reason = "Matches expect! macro")]
 pub(crate) fn check_with_trigger_character(
     wa_fixture: &str,
     trigger_character: Option<char>,
-    expect: &Expect,
+    expect: Expect,
 ) {
     let actual = completion_list_with_trigger_character(wa_fixture, trigger_character);
     expect.assert_eq(&actual);
@@ -262,370 +268,373 @@ pub(crate) fn get_all_items(
 #[expect(clippy::too_many_lines, reason = "Needs fixing, see the TODO")]
 // TODO https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1321
 fn no_completions_in_comments() {
-    assert_eq!(
-        completion_list(
-            "
+    check(
+        "
             fn test() {
                 let x = 2; // A comment$0
             }
             ",
-        ),
-        "function abs
-function acos
-function all
-function any
-function arrayLength
-function asin
-function atan
-function atan2
-function atomicAdd
-function atomicAnd
-function atomicExchange
-function atomicLoad
-function atomicMax
-function atomicMin
-function atomicOr
-function atomicStore
-function atomicSub
-function atomicXor
-function bitcast
-function ceil
-function clamp
-function cos
-function cosh
-function countLeadingZeros
-function countOneBits
-function countTrailingZeros
-function cross
-function degrees
-function determinant
-function distance
-function dot
-function dpdx
-function dpdxCoarse
-function dpdxFine
-function dpdy
-function dpdyCoarse
-function dpdyFine
-function exp
-function exp2
-function extractBits
-function faceForward
-function firstLeadingBit
-function firstTrailingBit
-function floor
-function fma
-function fract
-function fwidth
-function fwidthCoarse
-function fwidthFine
-function insertBits
-function inverseSqrt
-function isFinite
-function isInf
-function isNan
-function isNormal
-function length
-function log
-function log2
-function max
-function min
-function mix
-function normalize
-function pack2x16float
-function pack2x16snorm
-function pack2x16unorm
-function pack4x8snorm
-function pack4x8unorm
-function pow
-function quantizeToF16
-function radians
-function reflect
-function refract
-function reverseBits
-function round
-function saturate
-function select
-function sign
-function sin
-function sinh
-function smoothstep
-function sqrt
-function step
-function storageBarrier
-function tan
-function tanh
-function test               fn test()
-function textureDimensions
-function textureGather
-function textureGatherCompare
-function textureLoad
-function textureNumLayers
-function textureNumLevels
-function textureNumSamples
-function textureSample
-function textureSampleBaseClampToEdge
-function textureSampleBias
-function textureSampleCompare
-function textureSampleCompareLevel
-function textureSampleGrad
-function textureSampleLevel
-function textureStore
-function transpose
-function trunc
-function unpack2x16float
-function unpack2x16snorm
-function unpack2x16unorm
-function unpack4x8snorm
-function unpack4x8unorm
-function workgroupBarrier
-function workgroupUniformLoad
-"
-        .to_owned(),
+        expect![[r#"
+            function abs
+            function acos
+            function acosh
+            function all
+            function any
+            function arrayLength
+            function asin
+            function asinh
+            function atan
+            function atan2
+            function atanh
+            function atomicAdd
+            function atomicAnd
+            function atomicExchange
+            function atomicLoad
+            function atomicMax
+            function atomicMin
+            function atomicOr
+            function atomicStore
+            function atomicSub
+            function atomicXor
+            function bitcast
+            function ceil
+            function clamp
+            function cos
+            function cosh
+            function countLeadingZeros
+            function countOneBits
+            function countTrailingZeros
+            function cross
+            function degrees
+            function determinant
+            function distance
+            function dot
+            function dpdx
+            function dpdxCoarse
+            function dpdxFine
+            function dpdy
+            function dpdyCoarse
+            function dpdyFine
+            function exp
+            function exp2
+            function extractBits
+            function faceForward
+            function firstLeadingBit
+            function firstTrailingBit
+            function floor
+            function fma
+            function fract
+            function fwidth
+            function fwidthCoarse
+            function fwidthFine
+            function insertBits
+            function inverseSqrt
+            function isFinite
+            function isInf
+            function isNan
+            function isNormal
+            function length
+            function log
+            function log2
+            function max
+            function min
+            function mix
+            function normalize
+            function pack2x16float
+            function pack2x16snorm
+            function pack2x16unorm
+            function pack4x8snorm
+            function pack4x8unorm
+            function pow
+            function quantizeToF16
+            function radians
+            function reflect
+            function refract
+            function reverseBits
+            function round
+            function saturate
+            function select
+            function sign
+            function sin
+            function sinh
+            function smoothstep
+            function sqrt
+            function step
+            function storageBarrier
+            function tan
+            function tanh
+            function test               fn test()
+            function textureDimensions
+            function textureGather
+            function textureGatherCompare
+            function textureLoad
+            function textureNumLayers
+            function textureNumLevels
+            function textureNumSamples
+            function textureSample
+            function textureSampleBaseClampToEdge
+            function textureSampleBias
+            function textureSampleCompare
+            function textureSampleCompareLevel
+            function textureSampleGrad
+            function textureSampleLevel
+            function textureStore
+            function transpose
+            function trunc
+            function unpack2x16float
+            function unpack2x16snorm
+            function unpack2x16unorm
+            function unpack4x8snorm
+            function unpack4x8unorm
+            function workgroupBarrier
+            function workgroupUniformLoad
+        "#]],
     );
-    assert_eq!(
-        completion_list(
-            "
+    check(
+        "
             fn test() {
                 /*
                     Some multi-line comment$0
                 */
             }
             ",
-        ),
-        "function abs
-function acos
-function all
-function any
-function arrayLength
-function asin
-function atan
-function atan2
-function atomicAdd
-function atomicAnd
-function atomicExchange
-function atomicLoad
-function atomicMax
-function atomicMin
-function atomicOr
-function atomicStore
-function atomicSub
-function atomicXor
-function bitcast
-function ceil
-function clamp
-function cos
-function cosh
-function countLeadingZeros
-function countOneBits
-function countTrailingZeros
-function cross
-function degrees
-function determinant
-function distance
-function dot
-function dpdx
-function dpdxCoarse
-function dpdxFine
-function dpdy
-function dpdyCoarse
-function dpdyFine
-function exp
-function exp2
-function extractBits
-function faceForward
-function firstLeadingBit
-function firstTrailingBit
-function floor
-function fma
-function fract
-function fwidth
-function fwidthCoarse
-function fwidthFine
-function insertBits
-function inverseSqrt
-function isFinite
-function isInf
-function isNan
-function isNormal
-function length
-function log
-function log2
-function max
-function min
-function mix
-function normalize
-function pack2x16float
-function pack2x16snorm
-function pack2x16unorm
-function pack4x8snorm
-function pack4x8unorm
-function pow
-function quantizeToF16
-function radians
-function reflect
-function refract
-function reverseBits
-function round
-function saturate
-function select
-function sign
-function sin
-function sinh
-function smoothstep
-function sqrt
-function step
-function storageBarrier
-function tan
-function tanh
-function test               fn test()
-function textureDimensions
-function textureGather
-function textureGatherCompare
-function textureLoad
-function textureNumLayers
-function textureNumLevels
-function textureNumSamples
-function textureSample
-function textureSampleBaseClampToEdge
-function textureSampleBias
-function textureSampleCompare
-function textureSampleCompareLevel
-function textureSampleGrad
-function textureSampleLevel
-function textureStore
-function transpose
-function trunc
-function unpack2x16float
-function unpack2x16snorm
-function unpack2x16unorm
-function unpack4x8snorm
-function unpack4x8unorm
-function workgroupBarrier
-function workgroupUniformLoad
-"
-        .to_owned(),
+        expect![[r#"
+            function abs
+            function acos
+            function acosh
+            function all
+            function any
+            function arrayLength
+            function asin
+            function asinh
+            function atan
+            function atan2
+            function atanh
+            function atomicAdd
+            function atomicAnd
+            function atomicExchange
+            function atomicLoad
+            function atomicMax
+            function atomicMin
+            function atomicOr
+            function atomicStore
+            function atomicSub
+            function atomicXor
+            function bitcast
+            function ceil
+            function clamp
+            function cos
+            function cosh
+            function countLeadingZeros
+            function countOneBits
+            function countTrailingZeros
+            function cross
+            function degrees
+            function determinant
+            function distance
+            function dot
+            function dpdx
+            function dpdxCoarse
+            function dpdxFine
+            function dpdy
+            function dpdyCoarse
+            function dpdyFine
+            function exp
+            function exp2
+            function extractBits
+            function faceForward
+            function firstLeadingBit
+            function firstTrailingBit
+            function floor
+            function fma
+            function fract
+            function fwidth
+            function fwidthCoarse
+            function fwidthFine
+            function insertBits
+            function inverseSqrt
+            function isFinite
+            function isInf
+            function isNan
+            function isNormal
+            function length
+            function log
+            function log2
+            function max
+            function min
+            function mix
+            function normalize
+            function pack2x16float
+            function pack2x16snorm
+            function pack2x16unorm
+            function pack4x8snorm
+            function pack4x8unorm
+            function pow
+            function quantizeToF16
+            function radians
+            function reflect
+            function refract
+            function reverseBits
+            function round
+            function saturate
+            function select
+            function sign
+            function sin
+            function sinh
+            function smoothstep
+            function sqrt
+            function step
+            function storageBarrier
+            function tan
+            function tanh
+            function test               fn test()
+            function textureDimensions
+            function textureGather
+            function textureGatherCompare
+            function textureLoad
+            function textureNumLayers
+            function textureNumLevels
+            function textureNumSamples
+            function textureSample
+            function textureSampleBaseClampToEdge
+            function textureSampleBias
+            function textureSampleCompare
+            function textureSampleCompareLevel
+            function textureSampleGrad
+            function textureSampleLevel
+            function textureStore
+            function transpose
+            function trunc
+            function unpack2x16float
+            function unpack2x16snorm
+            function unpack2x16unorm
+            function unpack4x8snorm
+            function unpack4x8unorm
+            function workgroupBarrier
+            function workgroupUniformLoad
+        "#]],
     );
-    assert_eq!(
-        completion_list(
-            "
+    check(
+        "
             fn test() {
                 /// Some doc comment
                 /// let test$0 = 1
             }
             ",
-        ),
-        "function abs
-function acos
-function all
-function any
-function arrayLength
-function asin
-function atan
-function atan2
-function atomicAdd
-function atomicAnd
-function atomicExchange
-function atomicLoad
-function atomicMax
-function atomicMin
-function atomicOr
-function atomicStore
-function atomicSub
-function atomicXor
-function bitcast
-function ceil
-function clamp
-function cos
-function cosh
-function countLeadingZeros
-function countOneBits
-function countTrailingZeros
-function cross
-function degrees
-function determinant
-function distance
-function dot
-function dpdx
-function dpdxCoarse
-function dpdxFine
-function dpdy
-function dpdyCoarse
-function dpdyFine
-function exp
-function exp2
-function extractBits
-function faceForward
-function firstLeadingBit
-function firstTrailingBit
-function floor
-function fma
-function fract
-function fwidth
-function fwidthCoarse
-function fwidthFine
-function insertBits
-function inverseSqrt
-function isFinite
-function isInf
-function isNan
-function isNormal
-function length
-function log
-function log2
-function max
-function min
-function mix
-function normalize
-function pack2x16float
-function pack2x16snorm
-function pack2x16unorm
-function pack4x8snorm
-function pack4x8unorm
-function pow
-function quantizeToF16
-function radians
-function reflect
-function refract
-function reverseBits
-function round
-function saturate
-function select
-function sign
-function sin
-function sinh
-function smoothstep
-function sqrt
-function step
-function storageBarrier
-function tan
-function tanh
-function test               fn test()
-function textureDimensions
-function textureGather
-function textureGatherCompare
-function textureLoad
-function textureNumLayers
-function textureNumLevels
-function textureNumSamples
-function textureSample
-function textureSampleBaseClampToEdge
-function textureSampleBias
-function textureSampleCompare
-function textureSampleCompareLevel
-function textureSampleGrad
-function textureSampleLevel
-function textureStore
-function transpose
-function trunc
-function unpack2x16float
-function unpack2x16snorm
-function unpack2x16unorm
-function unpack4x8snorm
-function unpack4x8unorm
-function workgroupBarrier
-function workgroupUniformLoad
-"
-        .to_owned(),
+        expect![[r#"
+            function abs
+            function acos
+            function acosh
+            function all
+            function any
+            function arrayLength
+            function asin
+            function asinh
+            function atan
+            function atan2
+            function atanh
+            function atomicAdd
+            function atomicAnd
+            function atomicExchange
+            function atomicLoad
+            function atomicMax
+            function atomicMin
+            function atomicOr
+            function atomicStore
+            function atomicSub
+            function atomicXor
+            function bitcast
+            function ceil
+            function clamp
+            function cos
+            function cosh
+            function countLeadingZeros
+            function countOneBits
+            function countTrailingZeros
+            function cross
+            function degrees
+            function determinant
+            function distance
+            function dot
+            function dpdx
+            function dpdxCoarse
+            function dpdxFine
+            function dpdy
+            function dpdyCoarse
+            function dpdyFine
+            function exp
+            function exp2
+            function extractBits
+            function faceForward
+            function firstLeadingBit
+            function firstTrailingBit
+            function floor
+            function fma
+            function fract
+            function fwidth
+            function fwidthCoarse
+            function fwidthFine
+            function insertBits
+            function inverseSqrt
+            function isFinite
+            function isInf
+            function isNan
+            function isNormal
+            function length
+            function log
+            function log2
+            function max
+            function min
+            function mix
+            function normalize
+            function pack2x16float
+            function pack2x16snorm
+            function pack2x16unorm
+            function pack4x8snorm
+            function pack4x8unorm
+            function pow
+            function quantizeToF16
+            function radians
+            function reflect
+            function refract
+            function reverseBits
+            function round
+            function saturate
+            function select
+            function sign
+            function sin
+            function sinh
+            function smoothstep
+            function sqrt
+            function step
+            function storageBarrier
+            function tan
+            function tanh
+            function test               fn test()
+            function textureDimensions
+            function textureGather
+            function textureGatherCompare
+            function textureLoad
+            function textureNumLayers
+            function textureNumLevels
+            function textureNumSamples
+            function textureSample
+            function textureSampleBaseClampToEdge
+            function textureSampleBias
+            function textureSampleCompare
+            function textureSampleCompareLevel
+            function textureSampleGrad
+            function textureSampleLevel
+            function textureStore
+            function transpose
+            function trunc
+            function unpack2x16float
+            function unpack2x16snorm
+            function unpack2x16unorm
+            function unpack4x8snorm
+            function unpack4x8unorm
+            function workgroupBarrier
+            function workgroupUniformLoad
+        "#]],
     );
 }

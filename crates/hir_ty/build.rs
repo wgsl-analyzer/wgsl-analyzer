@@ -28,6 +28,8 @@ struct Overload {
 
 #[derive(Debug)]
 enum Type {
+    AbstractFloat,
+    AbstractInt,
     Vec(VecSize, Box<Self>),
     Matrix(VecSize, VecSize, Box<Self>),
     Texture(TextureType),
@@ -400,6 +402,8 @@ fn parse_type(
         "bool" => Type::Bool,
         "f16" => Type::F16,
         "f32" => Type::F32,
+        "AbstractFloat" => Type::AbstractFloat,
+        "AbstractInt" => Type::AbstractInt,
         "i32" => Type::I32,
         "u32" => Type::U32,
         "i64" => Type::I64,
@@ -426,7 +430,15 @@ fn type_to_rust(r#type: &Type) -> String {
             type_to_rust(inner)
         ),
 
-        Type::Bool | Type::F32 | Type::I32 | Type::U32 | Type::F16 | Type::U64 | Type::I64 => {
+        Type::Bool
+        | Type::AbstractFloat
+        | Type::AbstractInt
+        | Type::F32
+        | Type::I32
+        | Type::U32
+        | Type::F16
+        | Type::U64
+        | Type::I64 => {
             format!("TypeKind::Scalar(ScalarType::{type:?}).intern(database)")
         },
         Type::Bound(index) => {
