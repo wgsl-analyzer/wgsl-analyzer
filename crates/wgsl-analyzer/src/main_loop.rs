@@ -167,7 +167,7 @@ impl fmt::Debug for Event {
                 return formatter
                     .debug_struct("Response")
                     .field("id", &response.id)
-                    .field("error", &response.error)
+                    .field("response_kind", &response.response_kind)
                     .finish();
             },
             Self::Lsp(_)

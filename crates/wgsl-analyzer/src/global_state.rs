@@ -7,7 +7,7 @@ use base_db::{
 };
 use crossbeam_channel::{Receiver, Sender, unbounded};
 use ide::{Analysis, AnalysisHost, Cancellable};
-use lsp_server::{Notification as ServerNotification, Request as ServerRequest};
+use lsp_server::{Notification as ServerNotification, Request as ServerRequest, ResponseKind};
 use lsp_types::{
     Diagnostic, Notification as LspNotification, PublishDiagnosticsNotification,
     PublishDiagnosticsParams, Request as LspRequest, Uri,
@@ -445,7 +445,7 @@ impl GlobalState {
         response: lsp_server::Response,
     ) {
         if let Some((method, start)) = self.request_queue.incoming.complete(&response.id) {
-            if let Some(error) = &response.error
+            if let ResponseKind::Err { error } = &response.response_kind
                 && error.message.starts_with("server panicked")
             {
                 self.poke_wgsl_analyzer_developer(format!("{}, check the log", error.message));

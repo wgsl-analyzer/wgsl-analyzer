@@ -6,7 +6,7 @@
 use std::{ops::Not as _, str::FromStr as _};
 
 use itertools::Itertools as _;
-use lsp_server::{RequestId, Response};
+use lsp_server::{RequestId, Response, ResponseKind};
 use lsp_types::{
     CancelParams, ConfigurationItem, ConfigurationParams, ConfigurationRequest,
     DidChangeConfigurationParams, DidChangeTextDocumentParams, DidChangeWatchedFilesParams,
@@ -202,27 +202,20 @@ pub(crate) fn handle_did_change_configuration(
         },
         |this, response| {
             tracing::debug!("config update response: '{:?}", response);
-            let Response { error, result, .. } = response;
+            match response.response_kind {
+                ResponseKind::Ok { mut result } => {
+                    let config = Config::clone(&*this.config);
+                    let mut change = ConfigChange::default();
+                    change.change_client_config(result.take());
 
-            match (error, result) {
-                (Some(error), _) => {
+                    let (config, errors, _) = config.apply_change(change);
+                    this.config_errors = errors.is_empty().not().then_some(errors);
+
+                    // Client config changes neccesitates .update_config method to be called.
+                    this.update_configuration(config);
+                },
+                ResponseKind::Err { error } => {
                     tracing::error!("failed to fetch the server settings: {:?}", error);
-                },
-                (None, Some(mut configs)) => {
-                    if let Some(json) = configs.get_mut(0) {
-                        let config = Config::clone(&*this.config);
-                        let mut change = ConfigChange::default();
-                        change.change_client_config(json.take());
-
-                        let (config, errors, _) = config.apply_change(change);
-                        this.config_errors = errors.is_empty().not().then_some(errors);
-
-                        // Client config changes neccesitates .update_config method to be called.
-                        this.update_configuration(config);
-                    }
-                },
-                (None, None) => {
-                    tracing::error!("received empty server settings response from the client");
                 },
             }
         },
