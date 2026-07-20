@@ -41,7 +41,7 @@ pub enum InferenceDiagnosticKind {
         expression: ExpressionId,
         name: Name,
     },
-    InvalidConstructionType {
+    NotConstructible {
         expression: ExpressionId,
         r#type: Type,
     },

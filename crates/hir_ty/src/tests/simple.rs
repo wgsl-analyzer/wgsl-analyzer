@@ -776,7 +776,7 @@ fn struct_constructor_not_enough_args() {
             59..60 's': [error]
             63..68 'S(1u)': [error]
             65..67 '1u': u32
-            FunctionCallArgCountMismatch { expression: Idx::<Expression>(1), n_expected: 2, n_actual: 1 } in Body
+            63..68 'S(1u)': expected `2` arguments, but received `1`
         "#]],
     );
 }

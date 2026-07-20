@@ -285,13 +285,13 @@ pub fn diagnostics(
                         frange.range,
                     )
                 },
-                AnyDiagnostic::InvalidConstructionType { expression, r#type } => {
+                AnyDiagnostic::NotConstructible { expression, r#type } => {
                     let source = expression.value.to_node(&root);
                     let r#type = ty::pretty::pretty_type(database, r#type);
                     let frange = original_file_range(database, expression.file_id, source.syntax());
                     Diagnostic::new(
                         DiagnosticCode("6"),
-                        format!("cannot construct value of type {type}"),
+                        format!("type `{type}` is not constructible"),
                         frange.range,
                     )
                 },

@@ -14,6 +14,7 @@ fn zero_value_constructors() {
         },
         "
 enable f16;
+struct Foo { bar: bool }
 fn foo() {
     let boolean = bool();
     let signed_integer_32 = i32();
@@ -29,70 +30,59 @@ fn foo() {
 
     let abstract_int_vector = vec2();
 
-    let boolean_matrix = mat2x2<bool>();
-    let signed_integer_32_matrix = mat2x2<i32>();
-    let unsigned_integer_32_matrix = mat2x2<u32>();
     let float_32_matrix = mat2x2<f32>();
     let float_16_matrix = mat2x2<f16>();
 
-    let boolean_array = array<bool>();
-    let signed_integer_32_array = array<i32>();
-    let unsigned_integer_32_array = array<u32>();
-    let float_32_array = array<f32>();
-    let float_16_array = array<f16>();
+    let boolean_array = array<bool, 1>();
+    let signed_integer_32_array = array<i32, 1>();
+    let unsigned_integer_32_array = array<u32, 1>();
+    let float_32_array = array<f32, 1>();
+    let float_16_array = array<f16, 1>();
 
-    struct Foo { bar: bool }
     let structure = Foo();
 
     // AbstractInt and AbstractFloat do not have builtin functions to access the zero values
 }
 ",
         expect![[r#"
-            31..38 'boolean': bool
-            41..47 'bool()': bool
-            57..74 'signed...ger_32': i32
-            77..82 'i32()': i32
-            92..111 'unsign...ger_32': u32
-            114..119 'u32()': u32
-            129..137 'float_32': f32
-            140..145 'f32()': f32
-            155..163 'float_16': f16
-            166..171 'f16()': f16
-            182..196 'boolean_vector': vec2<bool>
-            199..211 'vec2<bool>()': vec2<bool>
-            221..245 'signed...vector': vec2<i32>
-            248..259 'vec2<i32>()': vec2<i32>
-            269..295 'unsign...vector': vec2<u32>
-            298..309 'vec2<u32>()': vec2<u32>
-            319..334 'float_32_vector': vec2<f32>
-            337..348 'vec2<f32>()': vec2<f32>
-            358..373 'float_16_vector': vec2<f16>
-            376..387 'vec2<f16>()': vec2<f16>
-            398..417 'abstra...vector': vec2<i32>
-            420..426 'vec2()': vec2<integer>
-            437..451 'boolean_matrix': mat2x2<[error]>
-            454..468 'mat2x2<bool>()': mat2x2<[error]>
-            478..502 'signed...matrix': mat2x2<[error]>
-            505..518 'mat2x2<i32>()': mat2x2<[error]>
-            528..554 'unsign...matrix': mat2x2<[error]>
-            557..570 'mat2x2<u32>()': mat2x2<[error]>
-            580..595 'float_32_matrix': mat2x2<f32>
-            598..611 'mat2x2<f32>()': mat2x2<f32>
-            621..636 'float_16_matrix': mat2x2<f16>
-            639..652 'mat2x2<f16>()': mat2x2<f16>
-            663..676 'boolean_array': array<bool>
-            679..692 'array<bool>()': array<bool>
-            702..725 'signed..._array': array<i32>
-            728..740 'array<i32>()': array<i32>
-            750..775 'unsign..._array': array<u32>
-            778..790 'array<u32>()': array<u32>
-            800..814 'float_32_array': array<f32>
-            817..829 'array<f32>()': array<f32>
-            839..853 'float_16_array': array<f16>
-            856..868 'array<f16>()': array<f16>
-            461..465 'bool': unexpected template argument, expected one of: f32 or f16
-            512..515 'i32': unexpected template argument, expected one of: f32 or f16
-            564..567 'u32': unexpected template argument, expected one of: f32 or f16
+            56..63 'boolean': bool
+            66..72 'bool()': bool
+            82..99 'signed...ger_32': i32
+            102..107 'i32()': i32
+            117..136 'unsign...ger_32': u32
+            139..144 'u32()': u32
+            154..162 'float_32': f32
+            165..170 'f32()': f32
+            180..188 'float_16': f16
+            191..196 'f16()': f16
+            207..221 'boolean_vector': vec2<bool>
+            224..236 'vec2<bool>()': vec2<bool>
+            246..270 'signed...vector': vec2<i32>
+            273..284 'vec2<i32>()': vec2<i32>
+            294..320 'unsign...vector': vec2<u32>
+            323..334 'vec2<u32>()': vec2<u32>
+            344..359 'float_32_vector': vec2<f32>
+            362..373 'vec2<f32>()': vec2<f32>
+            383..398 'float_16_vector': vec2<f16>
+            401..412 'vec2<f16>()': vec2<f16>
+            423..442 'abstra...vector': vec2<i32>
+            445..451 'vec2()': vec2<integer>
+            462..477 'float_32_matrix': mat2x2<f32>
+            480..493 'mat2x2<f32>()': mat2x2<f32>
+            503..518 'float_16_matrix': mat2x2<f16>
+            521..534 'mat2x2<f16>()': mat2x2<f16>
+            545..558 'boolean_array': array<bool, 1>
+            561..577 'array<..., 1>()': array<bool, 1>
+            587..610 'signed..._array': array<i32, 1>
+            613..628 'array<i32, 1>()': array<i32, 1>
+            638..663 'unsign..._array': array<u32, 1>
+            666..681 'array<u32, 1>()': array<u32, 1>
+            691..705 'float_32_array': array<f32, 1>
+            708..723 'array<f32, 1>()': array<f32, 1>
+            733..747 'float_16_array': array<f16, 1>
+            750..765 'array<f16, 1>()': array<f16, 1>
+            776..785 'structure': Foo
+            788..793 'Foo()': Foo
         "#]],
     );
 }
@@ -106,49 +96,70 @@ fn not_constructible() {
         },
         "
 enable f16;
+struct Foo { bar: atomic<u32> }
 fn foo() {
-    let boolean_matrix = mat2x2<bool>();
-    let signed_integer_32_matrix = mat2x2<i32>();
-    let unsigned_integer_32_matrix = mat2x2<u32>();
-    let float_32_matrix = mat2x2<f32>();
-    let float_16_matrix = mat2x2<f16>();
-
     let boolean_array = array<bool>();
     let signed_integer_32_array = array<i32>();
     let unsigned_integer_32_array = array<u32>();
     let float_32_array = array<f32>();
     let float_16_array = array<f16>();
 
-    struct Foo { bar: bool }
+    let signed_integer_32_atomic = atomic<i32>();
+    let unsigned_integer_32_atomic = atomic<u32>();
+
     let structure = Foo();
 
-    // AbstractInt and AbstractFloat do not have builtin functions to access the zero values
+    let pointer = ptr<function, u32, read>();
+    let reference = ref<function, u32, read>();
+    let tex = texture_storage_2d<rgba16float, write>();
 }
 ",
         expect![[r#"
-            31..45 'boolean_matrix': mat2x2<[error]>
-            48..62 'mat2x2<bool>()': mat2x2<[error]>
-            72..96 'signed...matrix': mat2x2<[error]>
-            99..112 'mat2x2<i32>()': mat2x2<[error]>
-            122..148 'unsign...matrix': mat2x2<[error]>
-            151..164 'mat2x2<u32>()': mat2x2<[error]>
-            174..189 'float_32_matrix': mat2x2<f32>
-            192..205 'mat2x2<f32>()': mat2x2<f32>
-            215..230 'float_16_matrix': mat2x2<f16>
-            233..246 'mat2x2<f16>()': mat2x2<f16>
-            257..270 'boolean_array': array<bool>
-            273..286 'array<bool>()': array<bool>
-            296..319 'signed..._array': array<i32>
-            322..334 'array<i32>()': array<i32>
-            344..369 'unsign..._array': array<u32>
-            372..384 'array<u32>()': array<u32>
-            394..408 'float_32_array': array<f32>
-            411..423 'array<f32>()': array<f32>
-            433..447 'float_16_array': array<f16>
-            450..462 'array<f16>()': array<f16>
-            55..59 'bool': unexpected template argument, expected one of: f32 or f16
-            106..109 'i32': unexpected template argument, expected one of: f32 or f16
-            158..161 'u32': unexpected template argument, expected one of: f32 or f16
+            63..76 'boolean_array': array<bool>
+            79..92 'array<bool>()': array<bool>
+            102..125 'signed..._array': array<i32>
+            128..140 'array<i32>()': array<i32>
+            150..175 'unsign..._array': array<u32>
+            178..190 'array<u32>()': array<u32>
+            200..214 'float_32_array': array<f32>
+            217..229 'array<f32>()': array<f32>
+            239..253 'float_16_array': array<f16>
+            256..268 'array<f16>()': array<f16>
+            279..303 'signed...atomic': [error]
+            306..319 'atomic<i32>()': [error]
+            329..355 'unsign...atomic': [error]
+            358..371 'atomic<u32>()': [error]
+            382..391 'structure': Foo
+            394..399 'Foo()': Foo
+            410..417 'pointer': [error]
+            420..446 'ptr<fu...ead>()': [error]
+            456..465 'reference': [error]
+            472..480 'function': [error]
+            482..485 'u32': [error]
+            487..491 'read': [error]
+            504..507 'tex': [error]
+            510..550 'textur...ite>()': [error]
+            79..92 'array<bool>()': type `array<bool>` is not constructible
+            128..140 'array<i32>()': type `array<i32>` is not constructible
+            178..190 'array<u32>()': type `array<u32>` is not constructible
+            217..229 'array<f32>()': type `array<f32>` is not constructible
+            256..268 'array<f16>()': type `array<f16>` is not constructible
+            306..319 'atomic<i32>()': type `atomic<i32>` is not constructible
+            306..319 'atomic<i32>()': type `atomic<i32>` is not constructible
+            358..371 'atomic<u32>()': type `atomic<u32>` is not constructible
+            358..371 'atomic<u32>()': type `atomic<u32>` is not constructible
+            394..399 'Foo()': type `Foo` is not constructible
+            420..446 'ptr<fu...ead>()': type `ptr<function, u32, read>` is not constructible
+            420..446 'ptr<fu...ead>()': type `ptr<function, u32, read>` is not constructible
+            ExpectedLoweredKind { expression: Idx::<Expression>(19), expected: Variable, actual: Enumerant, path: Path(ModPath("function")) } in Body
+            AssignmentNotAReference { left_side: Idx::<Expression>(19), actual: Type(2802) } in Body
+            ExpectedLoweredKind { expression: Idx::<Expression>(21), expected: Variable, actual: Type, path: Path(ModPath("u32")) } in Body
+            AssignmentNotAReference { left_side: Idx::<Expression>(21), actual: Type(2802) } in Body
+            ExpectedLoweredKind { expression: Idx::<Expression>(23), expected: Variable, actual: Enumerant, path: Path(ModPath("read")) } in Body
+            AssignmentNotAReference { left_side: Idx::<Expression>(23), actual: Type(2802) } in Body
+            AssignmentNotAReference { left_side: Idx::<Expression>(25), actual: Type(2802) } in Body
+            510..550 'textur...ite>()': type `texture_storage_2d<rgba16float,write>` is not constructible
+            510..550 'textur...ite>()': type `texture_storage_2d<rgba16float,write>` is not constructible
         "#]],
     );
 }

@@ -6,7 +6,7 @@ use std::{
     str::FromStr,
 };
 
-use base_db::impl_intern_key;
+use base_db::{Lookup, impl_intern_key};
 use hir_def::{database::StructId, type_ref::VecDimensionality};
 use wgsl_types::{
     syntax::{AccessMode, AddressSpace},
@@ -109,6 +109,35 @@ impl Type {
         }
     }
 
+    #[expect(clippy::doc_paragraphs_missing_punctuation, reason = "false positive")]
+    /// Apply the load rule.
+    ///
+    /// Reference: <https://www.w3.org/TR/WGSL/#load-rule>
+    #[must_use]
+    pub fn is_constructible(
+        self,
+        database: &dyn HirDatabase,
+    ) -> bool {
+        match self.kind(database) {
+            TypeKind::Error | TypeKind::Scalar(_) | TypeKind::Vector(_) | TypeKind::Matrix(_) => {
+                true
+            },
+            TypeKind::Struct(struct_id) => database
+                .field_types(struct_id)
+                .0
+                .iter()
+                .all(|(field, field_type)| field_type.is_constructible(database)),
+            TypeKind::Array(array_type) => array_type.is_constructible(database),
+            TypeKind::Atomic(_)
+            | TypeKind::Texture(_)
+            | TypeKind::Sampler(_)
+            | TypeKind::Reference(_)
+            | TypeKind::Pointer(_)
+            | TypeKind::StorageTypeOfTexelFormat(_)
+            | TypeKind::BoundVariable(_) => false,
+        }
+    }
+
     pub fn contains_struct(
         self,
         database: &dyn HirDatabase,
@@ -133,7 +162,7 @@ pub enum TypeKind {
     Sampler(SamplerType),
     Reference(Reference),
     Pointer(Pointer),
-    BoundVariable(BoundVariable),
+    BoundVariable(BoundVariable),            // used for builtins?
     StorageTypeOfTexelFormat(BoundVariable), // for example, rgba8unorm -> vec4<f32>
 }
 
@@ -695,6 +724,15 @@ pub struct ArrayType {
     pub inner: Type,
     pub binding_array: bool,
     pub size: ArraySize,
+}
+
+impl ArrayType {
+    fn is_constructible(
+        self,
+        database: &dyn HirDatabase,
+    ) -> bool {
+        self.size != ArraySize::Dynamic && self.inner.is_constructible(database)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]

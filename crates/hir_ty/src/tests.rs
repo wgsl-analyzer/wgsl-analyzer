@@ -210,8 +210,6 @@ impl<'db> InferPrinter<'db> {
             },
             InferenceDiagnosticKind::AssignmentNotAReference { .. }
             | InferenceDiagnosticKind::UnresolvedName { .. }
-            | InferenceDiagnosticKind::InvalidConstructionType { .. }
-            | InferenceDiagnosticKind::FunctionCallArgCountMismatch { .. }
             | InferenceDiagnosticKind::NoBuiltinOverload { .. }
             | InferenceDiagnosticKind::AddressOfNotReference { .. }
             | InferenceDiagnosticKind::AddressOfNotReference { .. }
@@ -326,6 +324,35 @@ impl<'db> InferPrinter<'db> {
                     "{range:?} '{}': unexpected return value of type `{}` in function with no return type",
                     ellipsize(text, 15),
                     pretty_type_with_verbosity(self.database, *actual, TypeVerbosity::Full),
+                )
+                .unwrap();
+            },
+            InferenceDiagnosticKind::NotConstructible { expression, r#type } => {
+                let Some((range, text)) = self.get_expression_range_text(source_map, *expression)
+                else {
+                    return;
+                };
+                writeln!(
+                    buffer,
+                    "{range:?} '{}': type `{}` is not constructible",
+                    ellipsize(text, 15),
+                    pretty_type_with_verbosity(self.database, *r#type, TypeVerbosity::Full),
+                )
+                .unwrap();
+            },
+            InferenceDiagnosticKind::FunctionCallArgCountMismatch {
+                expression,
+                n_actual,
+                n_expected,
+            } => {
+                let Some((range, text)) = self.get_expression_range_text(source_map, *expression)
+                else {
+                    return;
+                };
+                writeln!(
+                    buffer,
+                    "{range:?} '{}': expected `{n_expected}` arguments, but received `{n_actual}`",
+                    ellipsize(text, 15),
                 )
                 .unwrap();
             },

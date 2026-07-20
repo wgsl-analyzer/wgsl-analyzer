@@ -1862,11 +1862,21 @@ impl<'database> InferenceContext<'database> {
             }
         }
 
+        // https://www.w3.org/TR/WGSL/#zero-value-builtin-function
+        if (arguments.is_empty() && !r#type.is_constructible(self.database)) {
+            self.push_diagnostic(
+                store.store_source,
+                InferenceDiagnosticKind::NotConstructible { expression, r#type },
+            );
+        }
         match r#type.kind(self.database) {
             TypeKind::Scalar(scalar_type) => {
                 self.call_scalar_constructor(store, scalar_type, expression, r#type, arguments)
             },
             TypeKind::Array(array_type) => {
+                if arguments.is_empty() {
+                    return r#type;
+                }
                 for (argument_expression, argument_type) in &arguments {
                     if !argument_type.is_convertible_to(array_type.inner, self.database) {
                         self.push_diagnostic(
@@ -1924,6 +1934,7 @@ impl<'database> InferenceContext<'database> {
                 }
             },
             TypeKind::Matrix(matrix) => {
+                // https://www.w3.org/TR/WGSL/#zero-value-builtin-function
                 if arguments.is_empty() {
                     return r#type;
                 }
@@ -1962,7 +1973,7 @@ impl<'database> InferenceContext<'database> {
             | TypeKind::Reference(_) => {
                 self.push_diagnostic(
                     store.store_source,
-                    InferenceDiagnosticKind::InvalidConstructionType { expression, r#type },
+                    InferenceDiagnosticKind::NotConstructible { expression, r#type },
                 );
                 self.error_type()
             },
@@ -1997,11 +2008,22 @@ impl<'database> InferenceContext<'database> {
             }
         }
 
+        // https://www.w3.org/TR/WGSL/#zero-value-builtin-function
+        if (arguments.is_empty() && !r#type.is_constructible(self.database)) {
+            self.push_diagnostic(
+                store.store_source,
+                InferenceDiagnosticKind::NotConstructible { expression, r#type },
+            );
+        }
+
         match r#type.kind(self.database) {
             TypeKind::Scalar(scalar_type) => {
                 self.call_scalar_constructor(store, scalar_type, expression, r#type, arguments)
             },
             TypeKind::Array(array_type) => {
+                if arguments.is_empty() {
+                    return r#type;
+                }
                 let Some((_, mut first_argument_type)) = arguments.first().copied() else {
                     self.push_diagnostic(
                         store.store_source,
@@ -2060,6 +2082,9 @@ impl<'database> InferenceContext<'database> {
                 }
             },
             TypeKind::Vector(vec) => {
+                // See note in WGSL reference:
+                // Note: Zero-filled vectors of AbstractInt can be written as vec2(), vec3(), and vec4().
+                // https://www.w3.org/TR/WGSL/#zero-value-builtin-function
                 if arguments.is_empty() {
                     return TypeKind::Vector(VectorType {
                         size: vec.size,
@@ -2089,6 +2114,7 @@ impl<'database> InferenceContext<'database> {
                 }
             },
             TypeKind::Matrix(matrix) => {
+                // https://www.w3.org/TR/WGSL/#zero-value-builtin-function
                 if arguments.is_empty() {
                     self.push_diagnostic(
                         store.store_source,
@@ -2134,7 +2160,7 @@ impl<'database> InferenceContext<'database> {
             | TypeKind::Reference(_) => {
                 self.push_diagnostic(
                     store.store_source,
-                    InferenceDiagnosticKind::InvalidConstructionType { expression, r#type },
+                    InferenceDiagnosticKind::NotConstructible { expression, r#type },
                 );
                 self.error_type()
             },
@@ -2150,8 +2176,8 @@ impl<'database> InferenceContext<'database> {
         r#type: Type,
         arguments: Vec<(ExpressionId, Type)>,
     ) -> Type {
+        // https://www.w3.org/TR/WGSL/#zero-value-builtin-function
         if arguments.is_empty() {
-            // Permit the zero value
             return r#type;
         }
         let construction_builtin_id = match scalar_type {
@@ -2217,7 +2243,6 @@ impl<'database> InferenceContext<'database> {
         if arguments.is_empty() {
             return r#type;
         }
-
         let signature = self.database.struct_data(struct_id).0;
         if arguments.len() != signature.fields.len() {
             self.push_diagnostic(
