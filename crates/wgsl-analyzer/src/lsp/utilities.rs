@@ -1,7 +1,7 @@
 //! Utilities for LSP-related boilerplate code.
 use std::{error::Error, mem, ops::Range};
 
-use lsp_server::{ErrorCode, Notification as ServerNotification, Response};
+use lsp_server::{ErrorCode, Notification as ServerNotification, Response, ResponseKind};
 use lsp_types::{
     CompletionItem, CompletionItemTextEdit, MessageActionItem, MessageType,
     Notification as LspNotification, ProgressNotification, ProgressParams, ProgressToken,
@@ -74,8 +74,7 @@ impl GlobalState {
                 },
                 |this, response| {
                     let Response {
-                        error: None,
-                        result: Some(result),
+                        response_kind: ResponseKind::Ok { result },
                         ..
                     } = response
                     else {

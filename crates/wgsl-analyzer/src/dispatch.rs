@@ -5,8 +5,7 @@ use std::{fmt, panic, thread};
 use base_db::DbPanicContext;
 use fmt::Debug;
 use lsp_server::{
-    ErrorCode, ExtractError, Notification as ServerNotification, Request as ServerRequest,
-    RequestId, Response, ResponseError,
+    ErrorCode, ExtractError, Notification as ServerNotification, Request as ServerRequest, RequestId, Response, ResponseError, ResponseKind,
 };
 use lsp_types::{Notification as LspNotification, Request as LspRequest};
 use salsa::Cancelled;
@@ -240,8 +239,7 @@ impl<'global_state> RequestDispatcher<'global_state> {
                     let error = on_cancelled();
                     Task::Response(Response {
                         id: request.id,
-                        result: None,
-                        error: Some(error),
+                        response_kind: ResponseKind::Err { error },
                     })
                 },
             }
