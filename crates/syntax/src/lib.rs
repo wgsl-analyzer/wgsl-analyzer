@@ -259,11 +259,17 @@ pub trait HasTemplateParameters: AstNode {
 
 pub trait HasAttributes: AstNode {
     fn attributes(&self) -> Vec<ast::Attribute> {
-        self.syntax()
-            .prev_sibling()
-            .into_iter()
-            .map_while(Attribute::cast)
-            .collect()
+        let mut attributes = Vec::new();
+        let mut sibling = self.syntax().prev_sibling();
+        while let Some(node) = sibling {
+            let Some(attribute) = Attribute::cast(node.clone()) else {
+                break;
+            };
+            attributes.push(attribute);
+            sibling = node.prev_sibling();
+        }
+        attributes.reverse();
+        attributes
     }
 }
 
