@@ -743,19 +743,19 @@ ast_node! {
 
 ast_node! {
     IfAttribute:
-    name: Option<SyntaxToken Id>;
+    name: Option<SyntaxToken If>;
     parameter: Option<Expression>;
 }
 
 ast_node! {
     ElifAttribute:
-    name: Option<SyntaxToken Id>;
+    name: Option<SyntaxToken Elif>;
     parameter: Option<Expression>;
 }
 
 ast_node! {
     ElseAttribute:
-    name: Option<SyntaxToken Id>;
+    name: Option<SyntaxToken Else>;
 }
 
 ast_node! {
