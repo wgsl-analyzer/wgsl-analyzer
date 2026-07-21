@@ -655,6 +655,9 @@ ast_enum! {
         FragmentAttribute,
         ComputeAttribute,
         OtherAttribute,
+        IfAttribute,
+        ElifAttribute,
+        ElseAttribute,
     }
 }
 
@@ -680,6 +683,9 @@ impl Attribute {
             Self::FragmentAttribute(inner) => inner.name(),
             Self::ComputeAttribute(inner) => inner.name(),
             Self::OtherAttribute(inner) => inner.name(),
+            Self::IfAttribute(inner) => inner.name(),
+            Self::ElifAttribute(inner) => inner.name(),
+            Self::ElseAttribute(inner) => inner.name(),
         }
     }
 }
@@ -733,6 +739,23 @@ ast_node! {
     GroupAttribute:
     name: Option<SyntaxToken Group>;
     parameter: Option<Expression>;
+}
+
+ast_node! {
+    IfAttribute:
+    name: Option<SyntaxToken Id>;
+    parameter: Option<Expression>;
+}
+
+ast_node! {
+    ElifAttribute:
+    name: Option<SyntaxToken Id>;
+    parameter: Option<Expression>;
+}
+
+ast_node! {
+    ElseAttribute:
+    name: Option<SyntaxToken Id>;
 }
 
 ast_node! {

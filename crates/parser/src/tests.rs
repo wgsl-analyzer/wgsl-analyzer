@@ -2,6 +2,7 @@
 #![expect(clippy::too_many_lines, reason = "snapshot test data")]
 
 mod attributes;
+mod conditional;
 mod diagnostic;
 mod expression;
 mod imports;
@@ -2437,7 +2438,7 @@ fn annotation_with_invalid_statement_recover() {
 }",
         expect![[r#"
             SourceFile@0..103
-              FunctionDeclaration@0..72
+              FunctionDeclaration@0..101
                 Fn@0..2 "fn"
                 Blankspace@2..3 " "
                 Name@3..6
@@ -2446,22 +2447,19 @@ fn annotation_with_invalid_statement_recover() {
                   ParenthesisLeft@6..7 "("
                   ParenthesisRight@7..8 ")"
                 Blankspace@8..9 " "
-                CompoundStatement@9..72
+                CompoundStatement@9..101
                   BraceLeft@9..10 "{"
                   Blankspace@10..15 "\n    "
-                  IfStatement@15..38
-                    OtherAttribute@15..16
+                  LetDeclaration@15..66
+                    IfAttribute@15..33
                       AttributeOperator@15..16 "@"
-                    IfClause@16..38
                       If@16..18 "if"
-                      ParenthesisExpression@18..33
-                        ParenthesisLeft@18..19 "("
-                        IdentExpression@19..32
-                          Path@19..32
-                            Identifier@19..32 "MIXOKLAB_SRGB"
-                        ParenthesisRight@32..33 ")"
-                      Blankspace@33..38 "\n    "
-                  LetDeclaration@38..66
+                      ParenthesisLeft@18..19 "("
+                      IdentExpression@19..32
+                        Path@19..32
+                          Identifier@19..32 "MIXOKLAB_SRGB"
+                      ParenthesisRight@32..33 ")"
+                    Blankspace@33..38 "\n    "
                     Let@38..41 "let"
                     Blankspace@41..42 " "
                     Name@42..48
@@ -2481,35 +2479,29 @@ fn annotation_with_invalid_statement_recover() {
                         ParenthesisRight@64..65 ")"
                     Semicolon@65..66 ";"
                   Blankspace@66..71 "\n    "
-                  Error@71..72
-                    OtherAttribute@71..72
+                  LetDeclaration@71..99
+                    ElseAttribute@71..76
                       AttributeOperator@71..72 "@"
-              Error@72..76
-                Else@72..76 "else"
-              Blankspace@76..81 "\n    "
-              Error@81..99
-                Let@81..84 "let"
-                Blankspace@84..85 " "
-                Name@85..91
-                  Identifier@85..91 "colorA"
-                Blankspace@91..92 " "
-                Equal@92..93 "="
-                Blankspace@93..94 " "
-                IdentExpression@94..98
-                  Path@94..98
-                    Identifier@94..98 "colA"
-                Semicolon@98..99 ";"
-              Blankspace@99..100 "\n"
-              Error@100..103
-                BraceRight@100..101 "}"
-                Blankspace@101..102 "\n"
+                      Else@72..76 "else"
+                    Blankspace@76..81 "\n    "
+                    Let@81..84 "let"
+                    Blankspace@84..85 " "
+                    Name@85..91
+                      Identifier@85..91 "colorA"
+                    Blankspace@91..92 " "
+                    Equal@92..93 "="
+                    Blankspace@93..94 " "
+                    IdentExpression@94..98
+                      Path@94..98
+                        Identifier@94..98 "colA"
+                    Semicolon@98..99 ";"
+                  Blankspace@99..100 "\n"
+                  BraceRight@100..101 "}"
+              Blankspace@101..102 "\n"
+              Error@102..103
                 BraceRight@102..103 "}"
 
-            error at 16..18: invalid syntax, expected one of: 'align', 'binding', 'blend_src', 'builtin', 'compute', 'const', 'diagnostic', 'early_depth_test', 'fragment', 'group', 'id', <identifier>, 'interpolate', 'invariant', 'location', 'must_use', 'size', 'vertex', 'workgroup_size'
-            error at 38..41: invalid syntax, expected one of: '@', '{'
-            error at 72..76: invalid syntax, expected one of: 'align', 'binding', 'blend_src', 'builtin', 'compute', 'const', 'diagnostic', 'early_depth_test', 'fragment', 'group', 'id', <identifier>, 'interpolate', 'invariant', 'location', 'must_use', 'size', 'vertex', 'workgroup_size'
-            error at 81..99: global let declarations are not allowed
-            error at 100..101: invalid syntax, expected one of: 'alias', '@', 'const', 'const_assert', 'diagnostic', <end of file>, 'enable', 'fn', 'import', 'let', 'override', 'requires', ';', 'struct', 'var'"#]],
+            error at 102..103: invalid syntax, expected one of: 'alias', '@', 'const', 'const_assert', 'diagnostic', <end of file>, 'enable', 'fn', 'import', 'let', 'override', 'requires', ';', 'struct', 'var'"#]],
     );
 }
 
@@ -3574,12 +3566,11 @@ fn attribute_only_recover() {
         "@fragment",
         expect![[r#"
             SourceFile@0..9
-              FunctionDeclaration@0..9
-                FragmentAttribute@0..9
-                  AttributeOperator@0..1 "@"
-                  Fragment@1..9 "fragment"
+              FragmentAttribute@0..9
+                AttributeOperator@0..1 "@"
+                Fragment@1..9 "fragment"
 
-            error at 9..9: invalid syntax, expected one of: '@', 'fn', 'let', 'override', 'var'"#]],
+            error at 9..9: invalid syntax, expected one of: 'alias', '@', 'const', 'const_assert', 'diagnostic', 'enable', 'fn', 'import', 'let', 'override', 'requires', 'struct', 'var'"#]],
     );
 }
 

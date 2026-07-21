@@ -196,8 +196,57 @@ impl<'source> ParserCallbacks<'source> for Parser<'source> {
         self.is_func_call()
     }
 
+    fn predicate_loop_compound_statement_1(&self) -> bool {
+        let mut lookahead = 0;
+        while self.peek(lookahead) == Token::AttributeOperator {
+            lookahead += 1; // '@'
+            lookahead += 1; // attribute keyword or Identifier
+            if self.peek(lookahead) == Token::ParenthesisLeft {
+                let mut depth = 0i32;
+                loop {
+                    match self.peek(lookahead) {
+                        Token::ParenthesisLeft => depth += 1,
+                        Token::ParenthesisRight => depth -= 1,
+                        Token::EOF => break,
+                        _ => {},
+                    }
+                    lookahead += 1;
+                    if depth == 0 {
+                        break;
+                    }
+                }
+            }
+        }
+        self.peek(lookahead) != Token::Continuing
+    }
+
     fn predicate_continuing_compound_statement_1(&self) -> bool {
-        self.peek(1) != Token::If
+        let mut lookahead = 0;
+
+        // Skip any number of leading attributes: '@' name ['(' ... ')']
+        while self.peek(lookahead) == Token::AttributeOperator {
+            lookahead += 1; // '@'
+            lookahead += 1; // attribute keyword or Identifier
+
+            if self.peek(lookahead) == Token::ParenthesisLeft {
+                let mut depth = 0i32;
+                loop {
+                    match self.peek(lookahead) {
+                        Token::ParenthesisLeft => depth += 1,
+                        Token::ParenthesisRight => depth -= 1,
+                        Token::EOF => break, // bail out on unexpected end of input
+                        _ => {},
+                    }
+                    lookahead += 1;
+                    if depth == 0 {
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Not a break-if statement -> keep looping over plain statements.
+        !(self.peek(lookahead) == Token::Break && self.peek(lookahead + 1) == Token::If)
     }
 
     fn predicate_for_init_1(&self) -> bool {

@@ -142,7 +142,7 @@ fn diagnostic_attribute() {
     assert!(parsed.errors().is_empty());
 
     match parsed.tree().items().next().unwrap() {
-        Item::FunctionDeclaration(func) => match func.attributes().next().unwrap() {
+        Item::FunctionDeclaration(func) => match func.attributes().first().unwrap() {
             ast::Attribute::DiagnosticAttribute(diagnostic_attribute) => {
                 assert_eq!(
                     diagnostic_attribute
@@ -186,7 +186,7 @@ fn const_attribute() {
     assert!(parsed.errors().is_empty());
 
     match parsed.tree().items().next().unwrap() {
-        Item::FunctionDeclaration(func) => match func.attributes().next().unwrap() {
+        Item::FunctionDeclaration(func) => match func.attributes().first().unwrap() {
             ast::Attribute::ConstantAttribute(constant_attribute) => {
                 assert_eq!(constant_attribute.name().unwrap().text(), "const");
             },
@@ -209,7 +209,7 @@ fn other_attribute() {
     assert!(parsed.errors().is_empty());
 
     match parsed.tree().items().next().unwrap() {
-        Item::FunctionDeclaration(func) => match func.attributes().next().unwrap() {
+        Item::FunctionDeclaration(func) => match func.attributes().first().unwrap() {
             ast::Attribute::OtherAttribute(other_attribute) => {
                 assert_eq!(other_attribute.name().unwrap().text(), "nonexistent");
                 match other_attribute

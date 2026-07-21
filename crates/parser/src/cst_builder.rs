@@ -160,7 +160,10 @@ impl CstBuilder<'_, '_> {
             | Rule::LhsExpression
             | Rule::VariableUpdating
             | Rule::Attribute => {
-                panic!("{rule:?} should always be a more specific node")
+                panic!(
+                    "{rule:?} should always be a more specific node.\ttoken starts at index {}",
+                    self.token_start_index
+                )
             },
             // This is reachable when an attribute is parsed, but no statement variant applies
             #[expect(clippy::match_same_arms, reason = "Reasons might be different")]
@@ -193,6 +196,10 @@ impl CstBuilder<'_, '_> {
             // naga
             Rule::EarlyDepthTestAttr => self.start_node(SyntaxKind::EarlyDepthTestAttribute),
             Rule::EarlyDepthTestMode => self.start_node(SyntaxKind::EarlyDepthTestMode),
+            // WESL
+            Rule::IfAttr => self.start_node(SyntaxKind::IfAttribute),
+            Rule::ElifAttr => self.start_node(SyntaxKind::ElifAttribute),
+            Rule::ElseAttr => self.start_node(SyntaxKind::ElseAttribute),
         }
     }
 

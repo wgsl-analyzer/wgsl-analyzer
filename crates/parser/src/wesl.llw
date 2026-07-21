@@ -131,6 +131,10 @@ token
 	Unchanged='unchanged'
 ;
 
+token
+	Elif='elif'
+;
+
 token Blankspace LineEndingComment BlockComment;
 
 skip Blankspace LineEndingComment BlockComment;
@@ -155,7 +159,7 @@ import_path: name (
 import_collection: '{' import_path (?1 ',' import_path)* [','] '}';
 
 translation_unit: (global_item | ';')*;
-global_item^: #2 import_statement | #1 global_directive | #2 global_declaration | #2 global_assert;
+global_item^: attribute* ( #2 import_statement | #1 global_directive | #2 global_declaration | #2 global_assert );
 
 global_assert: 'const_assert' expression ';' @assert_statement; // §10
 global_directive:
@@ -171,12 +175,10 @@ enable_extension_name: Identifier;
 language_extension_name: Identifier;
 
 global_declaration:
-	attribute* @function_declaration (
-		'fn' name function_parameters [return_type] compound_statement @function_declaration
-		| variable_declaration_semi @variable_declaration
-		| override_declaration_semi @override_declaration
-		| let_declaration_semi @global_let_declaration
-	)
+	'fn' name function_parameters [return_type] compound_statement @function_declaration
+	| variable_declaration_semi @variable_declaration
+	| override_declaration_semi @override_declaration
+	| let_declaration_semi @global_let_declaration
 	| const_declaration_semi @const_declaration
 	| 'alias' name '=' type_specifier ';' @type_alias_declaration
 	| 'struct' name struct_body @struct_declaration
@@ -193,26 +195,30 @@ struct_member: attribute* name ':' type_specifier;
 
 // all attributes that do not use keywords have to be parsed generically and separated later
 attribute:
-	'@' @other_attr (
-			'align' '(' expression [','] ')' @align_attr
-			| 'binding' '(' expression [','] ')' @binding_attr
-			| 'blend_src' '(' expression [','] ')' @blend_src_attr
-			| 'builtin' '(' builtin_value_name [','] ')' @builtin_attr
-			| 'const' @const_attr
-			| 'diagnostic' diagnostic_control @diagnostic_attr
-			| 'group' '(' expression [','] ')' @group_attr
-			| 'id' '(' expression [','] ')' @id_attr
-			| 'interpolate' '(' interpolate_type_name [ ',' ] [ interpolate_sampling_name [ ',' ] ] ')' @interpolate_attr
-			| 'invariant' @invariant_attr
-			| 'location' '(' expression [','] ')' @location_attr
-			| 'must_use' @must_use_attr
-			| 'size' '(' expression [','] ')'@size_attr
-			| workgroup_size_attr @workgroup_size_attr
-			| 'vertex' @vertex_attr
-			| 'fragment' @fragment_attr
-			| 'compute' @compute_attr
-			| 'early_depth_test' '(' early_depth_test_mode ')' @early_depth_test_attr
-			| Identifier [ argument_expression_list ] @other_attr
+	'@'
+	(
+		'align' '(' expression [','] ')' @align_attr
+		| 'binding' '(' expression [','] ')' @binding_attr
+		| 'blend_src' '(' expression [','] ')' @blend_src_attr
+		| 'builtin' '(' builtin_value_name [','] ')' @builtin_attr
+		| 'const' @const_attr
+		| 'diagnostic' diagnostic_control @diagnostic_attr
+		| 'group' '(' expression [','] ')' @group_attr
+		| 'id' '(' expression [','] ')' @id_attr
+		| 'interpolate' '(' interpolate_type_name [ ',' ] [ interpolate_sampling_name [ ',' ] ] ')' @interpolate_attr
+		| 'invariant' @invariant_attr
+		| 'location' '(' expression [','] ')' @location_attr
+		| 'must_use' @must_use_attr
+		| 'size' '(' expression [','] ')'@size_attr
+		| workgroup_size_attr @workgroup_size_attr
+		| 'vertex' @vertex_attr
+		| 'fragment' @fragment_attr
+		| 'compute' @compute_attr
+		| 'early_depth_test' '(' early_depth_test_mode ')' @early_depth_test_attr
+		| 'if' '(' expression [','] ')' @if_attr
+		| 'elif' '(' expression [','] ')' @elif_attr
+		| 'else' @else_attr
+		| Identifier [?t argument_expression_list] @other_attr
 	)
 ;
 
@@ -303,7 +309,8 @@ argument_expression_list: '(' [expression (?1 ',' expression)* [',']] ')' @argum
 argument_expression_list_expr: '(' [expression (?1 ',' expression)* [',']] ')' @arguments;
 
 statement:
-	attribute* (
+	attribute*
+	(
 		// NOTE: The WGSL spec (§9.4.1) requires `if_clause (else_if_clause)* [else_clause]`,
 		// i.e. at most one trailing else and no else-if after else. We accept the more
 		// permissive form here so the parser produces a valid AST for malformed input
@@ -311,41 +318,42 @@ statement:
 		// features to operate on it.
 		// A parser-level diagnostic in `create_node_if_statement` reports the error.
 		if_clause (?1 else_if_clause | else_clause)* @if_statement // §9.4.1
-	| 'switch' expression switch_body @switch_statement // §9.4.2
-	| 'loop' loop_compound_statement @loop_statement // §9.4.3
-	| 'for' '(' [for_init] ';' [for_condition] ';' [for_update] ')' compound_statement @for_statement // §9.4.4
-	| 'while' expression compound_statement @while_statement // §9.4.5
-	// TODO: check if using & here makes it recover better https://github.com/0x2a-42/lelwel/issues/34
-	// See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/684
-	| '{' statement* '}' @compound_statement // §9.1
+		| 'switch' expression switch_body @switch_statement // §9.4.2
+		| 'loop' loop_compound_statement @loop_statement // §9.4.3
+		| 'for' '(' [for_init] ';' [for_condition] ';' [for_update] ')' compound_statement @for_statement // §9.4.4
+		| 'while' expression compound_statement @while_statement // §9.4.5
+		// TODO: check if using & here makes it recover better https://github.com/0x2a-42/lelwel/issues/34
+		// See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/684
+		| '{' statement* '}' @compound_statement // §9.1
+		| ?2 function_call ';' @function_call_statement // §9.5
+		| variable_declaration_semi @variable_declaration
+		| let_declaration_semi @let_declaration
+		| const_declaration_semi @const_declaration
+		// we need to choose a statement type as the default, so we choose simple_assignment_statement
+		| lhs_expression @simple_assignment_statement
+			(
+				'=' expression @simple_assignment_statement // §9.2.1
+				| compound_assignment_operator expression @compound_assignment_statement // §9.2.3
+				| '++' @increment_statement // §9.3
+				| '--' @decrement_statement // §9.3
+			) ';'
+		| '_' '=' expression ';' @phony_assignment_statement // §9.2.2
+		| 'const_assert' expression ';' @assert_statement // §10.1
+		| 'break' ';' @break_statement // §9.4.6
+		| 'continue' ';' @continue_statement // §9.4.8
+		| ';' @empty_statement
+		| 'discard' ';' @discard_statement // §9.4.11
+		| 'return' [expression] ';' @return_statement // §9.4.10
 	)
-	| ?2 function_call ';' @function_call_statement // §9.5
-	| variable_declaration_semi @variable_declaration
-	| let_declaration_semi @let_declaration
-	| const_declaration_semi @const_declaration
-	// we need to choose a statement type as the default, so we choose simple_assignment_statement
-	| lhs_expression @simple_assignment_statement (
-		'=' expression @simple_assignment_statement // §9.2.1
-		| compound_assignment_operator expression @compound_assignment_statement // §9.2.3
-		| '++' @increment_statement // §9.3
-		| '--' @decrement_statement // §9.3
-	) ';'
-	| '_' '=' expression ';' @phony_assignment_statement // §9.2.2
-	| 'const_assert' expression ';' @assert_statement // §10.1
-	| 'break' ';' @break_statement // §9.4.6
-	| 'continue' ';' @continue_statement // §9.4.8
-	| ';' @empty_statement
-	| 'discard' ';' @discard_statement // §9.4.11
-	| 'return' [expression] ';' @return_statement // §9.4.10
-	;
+;
 
-loop_compound_statement: attribute* '{' statement* [continuing_statement] '}' @compound_statement;
+loop_compound_statement: attribute* '{' (?1 statement)* [continuing_statement] '}' @compound_statement;
 
-continuing_statement: 'continuing' continuing_compound_statement; // §9.4.9
+continuing_statement: attribute* 'continuing' continuing_compound_statement; // §9.4.9
 
 continuing_compound_statement: attribute* '{' (?1 statement)* [break_if_statement] '}' @compound_statement;
 
-break_if_statement: 'break' 'if' expression ';'; // §9.4.7
+break_if_statement: attribute* 'break' 'if' expression ';'; // §9.4.7
 
 for_init:
 	?1 function_call
@@ -360,7 +368,7 @@ for_update: ?1 function_call | variable_updating;
 if_clause: 'if' expression compound_statement;
 else_if_clause: 'else' 'if' expression compound_statement;
 else_clause: 'else' compound_statement;
-switch_body: attribute* '{' switch_clause * '}';
+switch_body: attribute* '{' attribute* switch_clause * '}';
 switch_clause^: case_clause | default_alone_clause;
 case_clause: 'case' case_selectors [':'] compound_statement;
 case_selectors: case_selector (?1 ',' case_selector)* [','];
@@ -382,12 +390,13 @@ override_declaration_semi^: 'override' typed_ident ['=' expression] ';';
 
 // duplicated so it can be used in `for` statement without semicolon
 variable_updating:
-	lhs_expression @simple_assignment_statement (
+	lhs_expression @simple_assignment_statement
+	(
 		'=' expression @simple_assignment_statement // §9.2.1
 		| compound_assignment_operator expression @compound_assignment_statement // §9.2.3
 		| '++' @increment_statement // §9.3
 		| '--' @decrement_statement // §9.3
-		)
+	)
 	| '_' '=' expression @phony_assignment_statement // §9.2.2
 	;
 
@@ -402,7 +411,7 @@ compound_assignment_operator^:
 	| '/='
 	| '^='
 	| '|='
-	;
+;
 
 lhs_expression:
 	lhs_expression '[' expression ']' @indexing_expression // §8.5
@@ -411,4 +420,4 @@ lhs_expression:
 	| '&' lhs_expression @unary_expression // §8.13
 	| '(' lhs_expression ')' @paren_expression // §8.4
 	| path @ident_expression
-	;
+;
