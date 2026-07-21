@@ -77,7 +77,7 @@ fn is_keyword_in_wesl(word: &str) -> bool {
         is_reserved_word(word),
         "this is meant to be called with a reserved word"
     );
-    matches!(word, "import" | "package" | "super" | "as" | "elif")
+    matches!(word, "import" | "package" | "super" | "as")
 }
 
 /// Returns `true` if the given word is a WGSL reserved word.
