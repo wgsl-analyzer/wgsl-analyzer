@@ -368,7 +368,7 @@ for_update: ?1 function_call | variable_updating;
 if_clause: 'if' expression compound_statement;
 else_if_clause: 'else' 'if' expression compound_statement;
 else_clause: 'else' compound_statement;
-switch_body: attribute* '{' attribute* switch_clause * '}';
+switch_body: attribute* '{' (attribute* switch_clause) * '}';
 switch_clause^: case_clause | default_alone_clause;
 case_clause: 'case' case_selectors [':'] compound_statement;
 case_selectors: case_selector (?1 ',' case_selector)* [','];
