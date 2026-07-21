@@ -1,10 +1,10 @@
-import * as assert from "node:assert";
+import * as assert from "node:assert/strict";
 import * as vscode from "vscode";
 import * as lc from "vscode-languageclient/node";
-import * as commands from "./commands";
-import { type CommandFactory, Context, fetchWorkspace } from "./context";
-import * as diagnostics from "./diagnostics";
-import { setContextValue } from "./utilities";
+import * as commands from "./commands.ts";
+import { type CommandFactory, Context, fetchWorkspace } from "./context.ts";
+import * as diagnostics from "./diagnostics.ts";
+import { setContextValue } from "./utilities.ts";
 
 const WESL_PROJECT_CONTEXT_NAME = "inWeslProject";
 

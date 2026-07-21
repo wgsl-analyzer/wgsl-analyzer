@@ -1,4 +1,7 @@
-import { runTests, TestOptions } from "@vscode/test-electron";
+/** biome-ignore-all lint/correctness/noGlobalDirnameFilename: CommonJS */
+
+import process from "node:process";
+import { runTests, type TestOptions } from "@vscode/test-electron";
 import { fold } from "fp-ts/Either";
 import { pipe } from "fp-ts/function";
 import * as fs from "fs";
@@ -21,7 +24,7 @@ async function main() {
 		PackageJson.decode(JSON.parse(jsonData)),
 		fold(
 			(errors) => {
-				throw Error(`Invalid package.json: ${JSON.stringify(errors)}`);
+				throw new Error(`Invalid package.json: ${JSON.stringify(errors)}`);
 			},
 			(parsed) => {
 				const { vscode } = parsed.engines;

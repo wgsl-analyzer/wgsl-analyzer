@@ -5,11 +5,11 @@ import { WorkspaceEdit } from "vscode";
 import * as Is from "vscode-languageclient/lib/common/utils/is";
 import * as lc from "vscode-languageclient/node";
 
-import { type Config, prepareVSCodeConfig } from "./config";
-import * as diagnostics from "./diagnostics";
-import { WaLanguageClient } from "./lang_client";
-import * as wa from "./lsp_ext";
-import { assert } from "./utilities";
+import { type Config, prepareVSCodeConfig } from "./config.ts";
+import * as diagnostics from "./diagnostics.ts";
+import { WaLanguageClient } from "./lang_client.ts";
+import * as wa from "./lsp_ext.ts";
+import { assert } from "./utilities.ts";
 
 export function createClient(
 	traceOutputChannel: vscode.OutputChannel,
@@ -36,12 +36,9 @@ export function createClient(
 			) {
 				const response = await next(parameters, token);
 				if (response && Array.isArray(response)) {
-					return response.map((value) => {
-						return prepareVSCodeConfig(value);
-					});
-				} else {
-					return response;
+					return response.map((value) => prepareVSCodeConfig(value));
 				}
+				return response;
 			},
 		},
 		handleDiagnostics(
@@ -181,7 +178,7 @@ export function createClient(
 			const callback = async (
 				values: (lc.Command | lc.CodeAction | object)[] | null,
 			): Promise<(vscode.Command | vscode.CodeAction)[] | undefined> => {
-				if (values === null) return undefined;
+				if (values === null) return;
 				const result: (vscode.CodeAction | vscode.Command)[] = [];
 				const groups = new Map<
 					string,
@@ -216,14 +213,14 @@ export function createClient(
 
 					if (group) {
 						let entry = groups.get(group);
-						if (!entry) {
-							entry = { primary: mkAction(), items: [] };
-							groups.set(group, entry);
-						} else {
+						if (entry) {
 							entry.items.push({
 								label: item.title,
 								arguments: item,
 							});
+						} else {
+							entry = { primary: mkAction(), items: [] };
+							groups.set(group, entry);
 						}
 					} else {
 						result.push(mkAction());
@@ -235,7 +232,7 @@ export function createClient(
 						const args = [
 							{
 								label: primary.title,
-								arguments: primary.command!.arguments![0],
+								arguments: primary.command?.arguments?.[0],
 							},
 							...items,
 						];
@@ -288,6 +285,7 @@ class ExperimentalFeatures implements lc.StaticFeature {
 	private readonly testExplorer: boolean;
 
 	constructor(config: Config) {
+		// biome-ignore lint/complexity/useSimplifiedLogicExpression: false positive
 		this.testExplorer = config.testExplorer || false;
 	}
 
@@ -341,9 +339,9 @@ class OverrideFeatures implements lc.StaticFeature {
 	fillClientCapabilities(capabilities: lc.ClientCapabilities): void {
 		// Force disable `augmentsSyntaxTokens`, VS Code's textmate grammar is somewhat incomplete
 		// making the experience generally worse
-		const semantic_tokens_client_capabilities = capabilities.textDocument?.semanticTokens;
-		if (semantic_tokens_client_capabilities) {
-			semantic_tokens_client_capabilities.augmentsSyntaxTokens = false;
+		const semanticTokensClientCapabilities = capabilities.textDocument?.semanticTokens;
+		if (semanticTokensClientCapabilities) {
+			semanticTokensClientCapabilities.augmentsSyntaxTokens = false;
 		}
 	}
 

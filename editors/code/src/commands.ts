@@ -2,15 +2,15 @@ import * as path from "path";
 import * as vscode from "vscode";
 import * as lc from "vscode-languageclient";
 import type { LanguageClient } from "vscode-languageclient/node";
-import { HOVER_REFERENCE_COMMAND } from "./client";
-import type { Cmd, Context, InitializedContext } from "./context";
-import * as wa from "./lsp_ext";
+import { HOVER_REFERENCE_COMMAND } from "./client.ts";
+import type { Cmd, Context, InitializedContext } from "./context.ts";
+import * as wa from "./lsp_ext.ts";
 import {
 	applySnippetTextEdits,
 	applySnippetWorkspaceEdit,
 	type SnippetTextDocumentEdit,
-} from "./snippets";
-import type { SyntaxElement } from "./syntax_tree_provider";
+} from "./snippets.ts";
+import type { SyntaxElement } from "./syntax_tree_provider.ts";
 import {
 	isWeslDocument,
 	isWeslEditor,
@@ -18,7 +18,7 @@ import {
 	log,
 	sleep,
 	unwrapUndefinable,
-} from "./utilities";
+} from "./utilities.ts";
 
 export function analyzerStatus(context: InitializedContext): Cmd {
 	const tdcp = new (class implements vscode.TextDocumentContentProvider {
@@ -66,9 +66,12 @@ export function memoryUsage(context: InitializedContext): Cmd {
 				return "";
 			}
 
-			return context.client.sendRequest(wa.memoryUsage).then((memory: string) => {
-				return "Per-query memory usage:\n" + memory + "\n(note: database has been cleared)";
-			});
+			return context.client
+				.sendRequest(wa.memoryUsage)
+				.then(
+					(memory: string) =>
+						`Per-query memory usage:\n${memory}\n(note: database has been cleared)`,
+				);
 		}
 
 		get onDidChange(): vscode.Event<vscode.Uri> {
@@ -172,7 +175,7 @@ export function moveItem(context: InitializedContext, direction: wa.Direction): 
 			direction,
 		});
 
-		if (lcEdits.length == 0) {
+		if (lcEdits.length === 0) {
 			return;
 		}
 
@@ -334,7 +337,7 @@ export function ssr(context: InitializedContext): Cmd {
 export function serverVersion(context: InitializedContext): Cmd {
 	return () => {
 		if (!context.serverPath) {
-			void vscode.window.showWarningMessage(`wgsl-analyzer server is not running`);
+			void vscode.window.showWarningMessage("wgsl-analyzer server is not running");
 			return;
 		}
 		void vscode.window.showInformationMessage(
@@ -490,7 +493,7 @@ function packageGraph(context: InitializedContext, full: boolean): Cmd {
 			},
 		);
 		const parameters = {
-			full: full,
+			full,
 		};
 		const client = context.client;
 		const dot = await client.sendRequest(wa.viewPackageGraph, parameters);
@@ -796,10 +799,9 @@ function asWorkspaceSnippetEdit(
 			}
 		}
 		return [result, snippetTextDocumentEdits];
-	} else {
-		// we do not handle WorkspaceEdit.changes since it is not relevant for code actions
-		return [result, []];
 	}
+	// we do not handle WorkspaceEdit.changes since it is not relevant for code actions
+	return [result, []];
 }
 
 export function applySnippetWorkspaceEditCommand(_ctx: InitializedContext): Cmd {

@@ -1,12 +1,11 @@
+import process from "node:process";
 import * as os from "os";
 import * as path from "path";
 import type { Disposable } from "vscode";
 import * as vscode from "vscode";
 import * as Is from "vscode-languageclient/lib/common/utils/is";
-
-import type { Env } from "./utilities";
-
-import { expectNotUndefined, log, unwrapUndefinable } from "./utilities";
+import type { Env } from "./utilities.ts";
+import { expectNotUndefined, log, unwrapUndefinable } from "./utilities.ts";
 
 export type RunnableEnvCfgItem = {
 	mask?: string;
@@ -216,7 +215,7 @@ export class Config {
 		const extraEnv = this.get<{ [key: string]: string | number } | null>("server.extraEnv") ?? {};
 		return substituteVariablesInEnv(
 			Object.fromEntries(
-				Object.entries(extraEnv).map(([k, v]) => [k, typeof v !== "string" ? v.toString() : v]),
+				Object.entries(extraEnv).map(([k, v]) => [k, typeof v === "string" ? v : v.toString()]),
 			),
 		);
 	}
@@ -251,7 +250,7 @@ export class Config {
 			overrideInLanguage = config.defaultLanguageValue;
 			value = config.defaultValue || config.defaultLanguageValue;
 		}
-		await this.cfg.update("checkOnSave", !(value || false), target || null, overrideInLanguage);
+		await this.cfg.update("checkOnSave", !value, target || null, overrideInLanguage);
 	}
 
 	get problemMatcher(): string[] {
@@ -284,7 +283,7 @@ export class Config {
 			engineSettings: this.get<object>("debug.engineSettings") ?? {},
 			openDebugPane: this.get<boolean>("debug.openDebugPane"),
 			buildBeforeRestart: this.get<boolean>("debug.buildBeforeRestart"),
-			sourceFileMap: sourceFileMap,
+			sourceFileMap,
 		};
 	}
 
@@ -326,13 +325,13 @@ export class Config {
 
 export function prepareVSCodeConfig<T>(response: T): T {
 	if (Is.string(response)) {
-		return substituteVSCodeVariableInString(response) as T;
+		return substituteVsCodeVariableInString(response) as T;
 		// biome-ignore lint/suspicious/noExplicitAny: Signature comes from upstream
-	} else if (response && Is.array<any>(response)) {
-		return response.map((value) => {
-			return prepareVSCodeConfig(value);
-		}) as T;
-	} else if (response && typeof response === "object") {
+	}
+	if (response && Is.array<any>(response)) {
+		return response.map((value) => prepareVSCodeConfig(value)) as T;
+	}
+	if (response && typeof response === "object") {
 		// biome-ignore lint/suspicious/noExplicitAny: Signature comes from upstream
 		const result: { [key: string]: any } = {};
 		for (const key in response) {
@@ -354,7 +353,7 @@ export function substituteVariablesInEnv(env: Env): Env {
 		Object.entries(env).map(([key, value]) => {
 			const dependencies = new Set<string>();
 			const depRe = new RegExp(/\$\{(?<depName>.+?)\}/g);
-			let match = undefined;
+			let match;
 			while ((match = depRe.exec(value))) {
 				const depName = unwrapUndefinable(match.groups?.["depName"]);
 				dependencies.add(depName);
@@ -425,13 +424,12 @@ export function substituteVariablesInEnv(env: Env): Env {
 
 const VarRegex = new RegExp(/\$\{(.+?)\}/g);
 
-function substituteVSCodeVariableInString(value: string): string {
+function substituteVsCodeVariableInString(value: string): string {
 	return value.replace(VarRegex, (substring: string, varName) => {
 		if (Is.string(varName)) {
 			return computeVscodeVar(varName) || substring;
-		} else {
-			return substring;
 		}
+		return substring;
 	});
 }
 
@@ -455,9 +453,7 @@ function computeVscodeVar(varName: string): string | null {
 	const supportedVariables: { [k: string]: () => string } = {
 		workspaceFolder,
 
-		workspaceFolderBasename: () => {
-			return path.basename(workspaceFolder());
-		},
+		workspaceFolderBasename: () => path.basename(workspaceFolder()),
 
 		cwd: () => process.cwd(),
 		userHome: () => os.homedir(),
@@ -477,8 +473,7 @@ function computeVscodeVar(varName: string): string | null {
 			`${varName} should not be undefined here`,
 		);
 		return fn();
-	} else {
-		// return "${" + varName + "}";
-		return null;
 	}
+	// return "${" + varName + "}";
+	return null;
 }

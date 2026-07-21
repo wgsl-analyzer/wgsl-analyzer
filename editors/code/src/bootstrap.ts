@@ -1,11 +1,10 @@
+import process from "node:process";
 import { exec } from "child_process";
 import * as os from "os";
 import * as vscode from "vscode";
-
-import type { Config } from "./config";
-import type { PersistentState } from "./persistent_state";
-
-import { type Env, log, spawnAsync } from "./utilities";
+import type { Config } from "./config.ts";
+import type { PersistentState } from "./persistent_state.ts";
+import { type Env, log, spawnAsync } from "./utilities.ts";
 
 export async function bootstrap(
 	context: vscode.ExtensionContext,
@@ -169,7 +168,7 @@ async function patchelf(destination: vscode.Uri): Promise<void> {
                     '';
                 }
             `;
-			const originalFile = vscode.Uri.file(destination.fsPath + "-orig");
+			const originalFile = vscode.Uri.file(`${destination.fsPath}-orig`);
 			await vscode.workspace.fs.rename(destination, originalFile, {
 				overwrite: true,
 			});
@@ -179,10 +178,10 @@ async function patchelf(destination: vscode.Uri): Promise<void> {
 					const handle = exec(
 						`nix-build -E - --argstr srcStr '${originalFile.fsPath}' -o '${destination.fsPath}'`,
 						(error, stdout, stderr) => {
-							if (error != null) {
-								reject(Error(stderr));
-							} else {
+							if (error === null) {
 								resolve(stdout);
+							} else {
+								reject(new Error(stderr));
 							}
 						},
 					);

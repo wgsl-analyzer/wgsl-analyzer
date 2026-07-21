@@ -1,4 +1,4 @@
-import { InlayHint } from "vscode";
+import type { InlayHint } from "vscode";
 import * as lc from "vscode-languageclient";
 
 // wgsl-analyzer overrides
