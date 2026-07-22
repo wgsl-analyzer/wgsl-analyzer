@@ -15,7 +15,7 @@ pub use rowan::Direction;
 use smol_str::SmolStr;
 use triomphe::Arc;
 
-use crate::ast::Attribute;
+use crate::ast::{Attribute, AttributeList};
 
 #[derive(Clone, Debug)]
 pub struct Parse {
@@ -258,18 +258,12 @@ pub trait HasTemplateParameters: AstNode {
 }
 
 pub trait HasAttributes: AstNode {
-    fn attributes(&self) -> Vec<ast::Attribute> {
-        let mut attributes = Vec::new();
-        let mut sibling = self.syntax().prev_sibling();
-        while let Some(node) = sibling {
-            let Some(attribute) = Attribute::cast(node.clone()) else {
-                break;
-            };
-            attributes.push(attribute);
-            sibling = node.prev_sibling();
+    fn attributes(&self) -> Option<AstChildren<ast::Attribute>> {
+        let prev_sibling = self.syntax().prev_sibling()?;
+        if let Some(node) = AttributeList::cast(prev_sibling) {
+            return Some(node.attributes());
         }
-        attributes.reverse();
-        attributes
+        None
     }
 }
 

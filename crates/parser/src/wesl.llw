@@ -346,7 +346,7 @@ statement:
 
 loop_compound_statement:
 	'{'
-		attribute_list
+		attribute_list !1
 		(
 			statement attribute_list !1
 		)*
@@ -359,7 +359,7 @@ continuing_statement: 'continuing' attribute_list !1 continuing_compound_stateme
 
 continuing_compound_statement:
 	'{'
-		attribute_list
+		attribute_list !1
 		(
 			?1 statement attribute_list !1
 		)*
@@ -383,7 +383,7 @@ for_update: ?1 function_call | variable_updating;
 if_clause: 'if' expression attribute_list !1 compound_statement;
 else_if_clause: 'else' 'if' expression attribute_list !1 compound_statement;
 else_clause: 'else' attribute_list !1 compound_statement;
-switch_body: attribute_list !1 '{' (attribute_list !1 switch_clause) * '}';
+switch_body: attribute_list !1 '{' (attribute_list switch_clause) * '}';
 switch_clause^: case_clause | default_alone_clause;
 case_clause: 'case' case_selectors [':'] attribute_list !1 compound_statement;
 case_selectors: case_selector (?1 ',' case_selector)* [','];

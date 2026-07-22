@@ -111,11 +111,7 @@ impl Cst<'_> {
     }
 }
 
-const TRANSLATE_TIME_ATTRS: &[Rule] = &[
-    Rule::IfAttr,
-    Rule::ElifAttr,
-    Rule::ElseAttr,
-];
+const TRANSLATE_TIME_ATTRS: &[Rule] = &[Rule::IfAttr, Rule::ElifAttr, Rule::ElseAttr];
 
 impl Parser<'_> {
     fn is_func_call(&self) -> bool {
@@ -139,24 +135,43 @@ impl Parser<'_> {
     /// still on top of the builder at the call site) for any attribute
     /// whose identifier is translate-time-only, and returns a diagnostic
     /// for the first offender.
-    fn assert_no_translate_time_attrs(&self, context: &str) -> Option<Diagnostic> {
-        let Some(last_attribute_list) = self.context.last_attribute_list else {
-            return None;
-        };
+    fn assert_no_translate_time_attrs(
+        &self,
+        context: &str,
+    ) -> Option<Diagnostic> {
+        let last_attribute_list = self.context.last_attribute_list?;
         self.cst
             .children(last_attribute_list)
             .find_map(|child| match self.cst.get(child) {
-                Node::Rule(rule, cst_index) if TRANSLATE_TIME_ATTRS.contains(&rule) => {
-                    Some((rule, self.cst.span(child), self.cst.get_text(cst_index)))
-                }
+                Node::Rule(rule, _) => Some((
+                    match rule {
+                        Rule::IfAttr => "if",
+                        Rule::ElifAttr => "elif",
+                        Rule::ElseAttr => "else",
+                        _ => return None,
+                    },
+                    self.cst.span(child),
+                )),
                 _ => None,
             })
-            .map(|(rule, span, name)| {
-                Diagnostic {
-                    message: format!("translate-time attribute `@{name}` is not allowed on {context}"),
-                    range: to_range(span),
-                }
+            .map(|(name, span)| Diagnostic {
+                message: format!("translate-time attribute `@{name}` is not allowed on {context}"),
+                range: to_range(span),
             })
+    }
+
+    fn assert_attribute_list_empty(
+        &self,
+        list: Option<NodeRef>,
+        message: &str,
+    ) -> Option<Diagnostic> {
+        let list = list?;
+        // attribute_list has no children when empty
+        self.cst.children(list).next()?;
+        Some(Diagnostic {
+            message: message.to_string(),
+            range: to_range(self.cst.span(list)),
+        })
     }
 }
 
@@ -400,7 +415,11 @@ impl<'source> ParserCallbacks<'source> for Parser<'source> {
 
     // attribute validation
 
-    fn create_node_attribute_list(&mut self, node_ref: NodeRef, diagnostics: &mut Vec<Self::Diagnostic>) {
+    fn create_node_attribute_list(
+        &mut self,
+        node_ref: NodeRef,
+        diagnostics: &mut Vec<Self::Diagnostic>,
+    ) {
         self.context.last_attribute_list = Some(node_ref);
     }
 
@@ -453,10 +472,22 @@ impl<'source> ParserCallbacks<'source> for Parser<'source> {
     }
 
     fn assertion_continuing_compound_statement_1(&self) -> Option<Self::Diagnostic> {
-        todo!("no trailing attributes")
+        if self.peek(0) == Token::BraceRight {
+            return Some(self.create_diagnostic(
+                self.span(),
+                "attributes must precede a statement here".to_owned(),
+            ));
+        }
+        None
     }
 
     fn assertion_loop_compound_statement_1(&self) -> Option<Self::Diagnostic> {
-        todo!("no trailing attributes")
+        if !matches!(self.current, Token::Continuing | Token::BraceRight) {
+            return None;
+        }
+        self.assert_attribute_list_empty(
+            self.context.last_attribute_list,
+            "attributes must precede a statement here",
+        )
     }
 }

@@ -662,6 +662,11 @@ impl IndexExpression {
     }
 }
 
+ast_node! {
+    AttributeList:
+    attributes: AstChildren<Attribute>;
+}
+
 ast_enum! {
     enum Attribute {
         AlignAttribute,
