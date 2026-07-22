@@ -2450,16 +2450,16 @@ fn annotation_with_invalid_statement_recover() {
                 CompoundStatement@9..101
                   BraceLeft@9..10 "{"
                   Blankspace@10..15 "\n    "
-                  LetDeclaration@15..66
-                    IfAttribute@15..33
-                      AttributeOperator@15..16 "@"
-                      If@16..18 "if"
-                      ParenthesisLeft@18..19 "("
-                      IdentExpression@19..32
-                        Path@19..32
-                          Identifier@19..32 "MIXOKLAB_SRGB"
-                      ParenthesisRight@32..33 ")"
-                    Blankspace@33..38 "\n    "
+                  IfAttribute@15..33
+                    AttributeOperator@15..16 "@"
+                    If@16..18 "if"
+                    ParenthesisLeft@18..19 "("
+                    IdentExpression@19..32
+                      Path@19..32
+                        Identifier@19..32 "MIXOKLAB_SRGB"
+                    ParenthesisRight@32..33 ")"
+                  Blankspace@33..38 "\n    "
+                  LetDeclaration@38..66
                     Let@38..41 "let"
                     Blankspace@41..42 " "
                     Name@42..48
@@ -2479,11 +2479,11 @@ fn annotation_with_invalid_statement_recover() {
                         ParenthesisRight@64..65 ")"
                     Semicolon@65..66 ";"
                   Blankspace@66..71 "\n    "
-                  LetDeclaration@71..99
-                    ElseAttribute@71..76
-                      AttributeOperator@71..72 "@"
-                      Else@72..76 "else"
-                    Blankspace@76..81 "\n    "
+                  ElseAttribute@71..76
+                    AttributeOperator@71..72 "@"
+                    Else@72..76 "else"
+                  Blankspace@76..81 "\n    "
+                  LetDeclaration@81..99
                     Let@81..84 "let"
                     Blankspace@84..85 " "
                     Name@85..91
