@@ -260,10 +260,12 @@ fn parse_hex_float(hex: &str) -> f64 {
 }
 
 impl Expression {
-    pub fn walk_child_expressions<Function: FnMut(ExpressionId)>(
+    pub fn walk_child_expressions<Function>(
         &self,
         mut function: Function,
-    ) {
+    ) where
+        Function: FnMut(ExpressionId),
+    {
         match self {
             Self::BinaryOperation {
                 left_side,

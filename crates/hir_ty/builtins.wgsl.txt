@@ -505,10 +505,8 @@ op_cmp(T, T) -> bool
 op_binary_bitop(vecN<T>, vecN<T>) -> vecN<T>
 op_binary_bitop(T, T) -> T
 
-op_binary_shift(vecN<u32>, vecN<u32>) -> vecN<u32>
-op_binary_shift(u32, u32) -> u32
-op_binary_shift(vecN<i32>, vecN<u32>) -> vecN<u32>
-op_binary_shift(i32, u32) -> i32
+op_binary_shift(vecN<T>, vecN<u32>) -> vecN<T>
+op_binary_shift(T, u32) -> T
 
 
 op_binary_number(vecN<T>, vecN<T>) -> vecN<T>

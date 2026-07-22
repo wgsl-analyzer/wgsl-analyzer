@@ -22,9 +22,15 @@ salsa.workspace = true
 salsa-macros.workspace = true
 smallvec.workspace = true
 syntax.workspace = true
+tracing.workspace = true
 triomphe.workspace = true
 vfs.workspace = true
 wgsl-types.workspace = true
+
+# These moved to dev deps if `setup_tracing` was a macro and dependents also
+# included these
+tracing-subscriber.workspace = true
+tracing-tree.workspace = true
 
 [dev-dependencies]
 expect-test.workspace = true

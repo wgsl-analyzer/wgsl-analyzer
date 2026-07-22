@@ -6,8 +6,8 @@ use hir::{Field, HasSource as _, Semantics};
 use hir_def::{InFile, database::DefDatabase as _, item_tree::Name, signature::FieldId};
 use hir_ty::{
     function::FunctionDetails,
-    infer::ResolvedCall,
     layout::{FieldLayout, LayoutAddressSpace},
+    lower::ResolvedCall,
     ty::pretty::{TypeVerbosity, pretty_type_with_verbosity},
 };
 use ide_db::text_edit::TextEdit;
@@ -86,10 +86,12 @@ impl<T> LazyProperty<T> {
 }
 
 impl hash::Hash for InlayHint {
-    fn hash<H: hash::Hasher>(
+    fn hash<Hasher>(
         &self,
-        state: &mut H,
-    ) {
+        state: &mut Hasher,
+    ) where
+        Hasher: hash::Hasher,
+    {
         self.range.hash(state);
         self.position.hash(state);
         self.pad_left.hash(state);
@@ -129,11 +131,14 @@ pub struct InlayHintLabel {
 }
 
 impl InlayHintLabel {
-    pub fn simple<Stringy: Into<String>>(
+    pub fn simple<Stringy>(
         stringy: Stringy,
         tooltip: Option<LazyProperty<InlayTooltip>>,
         linked_location: Option<LazyProperty<FileRange>>,
-    ) -> Self {
+    ) -> Self
+    where
+        Stringy: Into<String>,
+    {
         Self {
             parts: smallvec![InlayHintLabelPart {
                 text: stringy.into(),
@@ -267,10 +272,12 @@ pub struct InlayHintLabelPart {
 }
 
 impl hash::Hash for InlayHintLabelPart {
-    fn hash<H: hash::Hasher>(
+    fn hash<Hasher>(
         &self,
-        state: &mut H,
-    ) {
+        state: &mut Hasher,
+    ) where
+        Hasher: hash::Hasher,
+    {
         self.text.hash(state);
         self.linked_location.is_some().hash(state);
         self.tooltip.is_some().hash(state);
@@ -385,11 +392,9 @@ fn get_struct_layout_hints(
                 let source = field.source(semantics.database)?.value;
 
                 // this is only necessary, because the field syntax nodes include the whitespace to the next line...
-                let actual_last_token = iter::successors(
-                    source.syntax().last_token(),
-                    rowan::SyntaxToken::prev_token, // spellchecker:disable-line
-                )
-                .find(|token| !token.kind().is_trivia())?;
+                let actual_last_token =
+                    iter::successors(source.syntax().last_token(), rowan::SyntaxToken::prev_token)
+                        .find(|token| !token.kind().is_trivia())?;
                 let range = TextRange::new(
                     source.syntax().text_range().start(),
                     actual_last_token.text_range().end(),

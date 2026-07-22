@@ -273,12 +273,15 @@ pub struct FieldLayout {
 }
 
 /// Returns the (align, size) of the struct, and calls `on_field` for every field.
-pub fn struct_member_layout<Result, Function: FnMut(LocalFieldId, FieldLayout) -> Result>(
+pub fn struct_member_layout<Result, Function>(
     fields: &ArenaMap<LocalFieldId, Type>,
     database: &dyn HirDatabase,
     address_space: LayoutAddressSpace,
     mut on_field: Function,
-) -> Option<(Bytes, Bytes)> {
+) -> Option<(Bytes, Bytes)>
+where
+    Function: FnMut(LocalFieldId, FieldLayout) -> Result,
+{
     let mut struct_align = Bytes::MIN;
 
     let mut offset = 0;

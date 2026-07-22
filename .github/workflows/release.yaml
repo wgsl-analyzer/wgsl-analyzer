@@ -47,13 +47,13 @@ jobs:
             target: x86_64-unknown-linux-gnu
             # Use a container with glibc 2.28
             # Zig is not used because it does not work with PGO
-            container: quay.io/pypa/manylinux_2_28_x86_64:sha256:dee559b640ecd6c8a3dacf8c7cad3ea339c7d1f505c52efdc57891f17f2c931b
+            container: quay.io/pypa/manylinux_2_28_x86_64@sha256:c1eab7504661beb3b1381336a2d7a5b86d91f9b6486e6b1b653f53fdb183ce2f
             code-target: linux-x64
             pgo: bevyengine/bevy@v0.16.1
 
           - os: ubuntu-24.04-arm
             target: aarch64-unknown-linux-gnu
-            container: quay.io/pypa/manylinux_2_28_aarch64:sha256:dee559b640ecd6c8a3dacf8c7cad3ea339c7d1f505c52efdc57891f17f2c931b
+            container: quay.io/pypa/manylinux_2_28_aarch64@sha256:79ef9ac575740a16d374c036e150a2817f2d5e7dd09f3aef91707055f4b929c9
             code-target: linux-arm64
             pgo: bevyengine/bevy@v0.16.1
 
@@ -76,13 +76,13 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           fetch-depth: ${{ env.FETCH_DEPTH }}
           persist-credentials: false
 
       - name: Install Node.js
-        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version-file: ./editors/code/package.json
           cache: ''
@@ -90,10 +90,13 @@ jobs:
           package-manager-cache: false
 
       - name: Enable Corepack
-        run: corepack enable
+        run: |
+          corepack enable
+          corepack prepare --activate
+        working-directory: ./editors/code
 
       - name: Install stable Rust toolchain
-        uses: dtolnay/rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9
+        uses: dtolnay/rust-toolchain@2c7215f132e9ebf062739d9130488b56d53c060c
         with:
           toolchain: stable
           components: ${{ matrix.pgo && 'llvm-tools' || '' }}
@@ -163,7 +166,7 @@ jobs:
         run: apk add --no-cache git clang lld musl-dev nodejs pnpm
 
       - name: Checkout repository
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           fetch-depth: ${{ env.FETCH_DEPTH }}
           persist-credentials: false
@@ -199,13 +202,13 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           fetch-depth: ${{ env.FETCH_DEPTH }}
           persist-credentials: false
 
       - name: Install stable Rust toolchain
-        uses: dtolnay/rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9
+        uses: dtolnay/rust-toolchain@2c7215f132e9ebf062739d9130488b56d53c060c
         with:
           toolchain: stable
           target: wasm32-unknown-unknown
@@ -233,13 +236,13 @@ jobs:
     needs: ["dist", "dist-x86_64-unknown-linux-musl", "dist-dprint-plugin"]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           fetch-depth: ${{ env.FETCH_DEPTH }}
           persist-credentials: false
 
       - name: Install Node.js
-        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version-file: ./editors/code/package.json
           cache: ''
@@ -247,7 +250,10 @@ jobs:
           package-manager-cache: false
 
       - name: Enable Corepack
-        run: corepack enable
+        run: |
+          corepack enable
+          corepack prepare --activate
+        working-directory: ./editors/code
 
       - run: echo "TAG=$(date --iso -u)" >> $GITHUB_ENV
         if: github.ref == 'refs/heads/release'
@@ -351,3 +357,42 @@ jobs:
         working-directory: ./editors/code
         run: pnpm exec ovsx publish --pat ${{ secrets.OVSX_PAT }} --packagePath ../../dist/wgsl-analyzer-*.vsix --no-dependencies
         timeout-minutes: 2
+
+  notify-failure:
+    name: notify failure
+    runs-on: ubuntu-latest
+    needs: ["dist", "dist-x86_64-unknown-linux-musl", "dist-dprint-plugin", "publish"]
+    permissions:
+      issues: write
+    if: |
+      always() &&
+      contains(needs.*.result, 'failure') &&
+      (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/release')
+    steps:
+      - name: Create or update failure issue
+        run: |
+          previous_issue_number=$(gh issue list \
+            --search "$TITLE in:title" \
+            --json number \
+            --jq '.[0].number')
+          if [[ -n $previous_issue_number ]]; then
+            gh issue comment "$previous_issue_number" \
+              --body "Release workflow still failing: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          else
+            gh issue create \
+              --title "$TITLE" \
+              --label "$LABELS" \
+              --body "$BODY"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          TITLE: Release workflow failed on `${{ github.ref_name }}`
+          LABELS: "C-Bug,S-Needs-Triage"
+          BODY: |
+            ## Release workflow failed
+
+            [The offending run.](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
+            **Branch:** `${{ github.ref_name }}`
+            **Triggered by:** `${{ github.event_name }}`

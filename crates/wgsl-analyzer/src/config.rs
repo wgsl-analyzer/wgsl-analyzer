@@ -294,10 +294,12 @@ impl Config {
         }
     }
 
-    pub fn add_workspaces<Workspaces: Iterator<Item = AbsPathBuf>>(
+    pub fn add_workspaces<Workspaces>(
         &mut self,
         paths: Workspaces,
-    ) {
+    ) where
+        Workspaces: Iterator<Item = AbsPathBuf>,
+    {
         self.workspace_roots.extend(paths);
     }
 
@@ -770,12 +772,15 @@ struct GlobalWorkspaceLocalConfigInput {
     // workspace: WorkspaceConfigInput,
 }
 
-fn get_field_json<T: serde::de::DeserializeOwned>(
+fn get_field_json<T>(
     json: &mut serde_json::Value,
     error_sink: &mut Vec<(String, serde_json::Error)>,
     field: &'static str,
     alias: Option<&'static str>,
-) -> Option<T> {
+) -> Option<T>
+where
+    T: serde::de::DeserializeOwned,
+{
     // XXX: check alias first, to work around the VS Code issue where it pre-fills defaults
     // instead of sending an empty object.
     alias

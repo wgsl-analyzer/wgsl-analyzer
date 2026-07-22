@@ -22,9 +22,672 @@ fn type_alias_in_struct() {
             63..64 '5': integer
             75..76 'b': u32
             79..80 'a': S
-            79..82 'a.x': ref<u32>
+            79..82 'a.x': u32
             79..88 'a.x + 10u': u32
             85..88 '10u': u32
+        "#]],
+    );
+}
+
+#[test]
+fn field_expression_on_error_type() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        fn foo() {
+            let x = Nonsense();
+            let a = x.nonsense;
+        }
+        ",
+        expect![[r#"
+            19..20 'x': [error]
+            23..33 'Nonsense()': [error]
+            43..44 'a': [error]
+            47..48 'x': [error]
+            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(0)), kind: UnresolvedPath { path: Path(ModPath("Nonsense")), failed_segment: 0 } } } in Body
+        "#]],
+    );
+}
+
+#[test]
+fn index_expression_on_error_type() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        fn foo() {
+            let x = Nonsense();
+            let a = x[0];
+        }
+        ",
+        expect![[r#"
+            19..20 'x': [error]
+            23..33 'Nonsense()': [error]
+            43..44 'a': [error]
+            47..48 'x': [error]
+            47..51 'x[0]': [error]
+            49..50 '0': integer
+            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(0)), kind: UnresolvedPath { path: Path(ModPath("Nonsense")), failed_segment: 0 } } } in Body
+            ArrayAccessInvalidType { expression: Idx::<Expression>(3), type: Type(2400) } in Body
+        "#]],
+    );
+}
+
+#[test]
+fn ident_expression_infers_ref() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        struct Bar { baz: u32 }
+
+        fn foo() {
+            var in_memory = Bar(5);
+            let value = in_memory.baz + 10u;
+        }
+        ",
+        expect![[r#"
+            44..53 'in_memory': ref<function, Bar, read_write>
+            56..62 'Bar(5)': Bar
+            60..61 '5': integer
+            72..77 'value': u32
+            80..89 'in_memory': ref<function, Bar, read_write>
+            80..93 'in_memory.baz': ref<function, u32, read_write>
+            80..99 'in_mem... + 10u': u32
+            96..99 '10u': u32
+        "#]],
+    );
+}
+
+#[test]
+fn automatic_ptr_dereference() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        struct MyData {
+            alpha: f32,
+            beta: f32,
+        }
+
+        @group(0) @binding(1)
+        var<storage, read_write> mybuff: array<MyData>;
+
+        fn my_op(index: u32) {
+            mybuff[index].alpha = 1.0;
+            let data = &mybuff[index];
+            data.alpha = 1.0;
+        }
+        ",
+        expect![[r#"
+            97..103 'mybuff': ref<storage, array<MyData>, read_write>
+            130..135 'index': u32
+            148..154 'mybuff': ref<storage, array<MyData>, read_write>
+            148..161 'mybuff[index]': ref<storage, MyData, read_write>
+            148..167 'mybuff....alpha': ref<storage, f32, read_write>
+            155..160 'index': u32
+            170..173 '1.0': float
+            183..187 'data': ptr<storage, MyData, read_write>
+            190..204 '&mybuff[index]': ptr<storage, MyData, read_write>
+            191..197 'mybuff': ref<storage, array<MyData>, read_write>
+            191..204 'mybuff[index]': ref<storage, MyData, read_write>
+            198..203 'index': u32
+            210..214 'data': ptr<storage, MyData, read_write>
+            210..220 'data.alpha': ref<storage, f32, read_write>
+            223..226 '1.0': float
+        "#]],
+    );
+}
+
+#[test]
+fn ptr_deref_is_ref() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        fn foo() {
+            var v = vec2(1, 2);
+            let p = &v;
+            p.x = 2;
+        }
+        ",
+        expect![[r#"
+            19..20 'v': ref<function, vec2<i32>, read_write>
+            23..33 'vec2(1, 2)': vec2<integer>
+            28..29 '1': integer
+            31..32 '2': integer
+            43..44 'p': ptr<function, vec2<i32>, read_write>
+            47..49 '&v': ptr<function, vec2<i32>, read_write>
+            48..49 'v': ref<function, vec2<i32>, read_write>
+            55..56 'p': ptr<function, vec2<i32>, read_write>
+            55..58 'p.x': ref<function, i32, read_write>
+            61..62 '2': integer
+        "#]],
+    );
+}
+
+#[test]
+fn vec_x_is_ref() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        fn foo() {
+            var v = vec2(1, 2);
+            v.x = v.y;
+        }
+        ",
+        expect![[r#"
+            19..20 'v': ref<function, vec2<i32>, read_write>
+            23..33 'vec2(1, 2)': vec2<integer>
+            28..29 '1': integer
+            31..32 '2': integer
+            39..40 'v': ref<function, vec2<i32>, read_write>
+            39..42 'v.x': ref<function, i32, read_write>
+            45..46 'v': ref<function, vec2<i32>, read_write>
+            45..48 'v.y': ref<function, i32, read_write>
+        "#]],
+    );
+}
+
+#[test]
+fn vec_field_is_not_ref() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        fn foo() {
+            let not_ref = vec2(1, 2).x;
+        }
+        ",
+        expect![[r#"
+            19..26 'not_ref': i32
+            29..39 'vec2(1, 2)': vec2<integer>
+            29..41 'vec2(1, 2).x': integer
+            34..35 '1': integer
+            37..38 '2': integer
+        "#]],
+    );
+}
+
+#[test]
+fn struct_field_is_not_ref() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        struct Bar { baz: u32 }
+        fn foo() {
+            let not_ref = Bar(0).baz;
+        }
+        ",
+        expect![[r#"
+            43..50 'not_ref': u32
+            53..59 'Bar(0)': Bar
+            53..63 'Bar(0).baz': u32
+            57..58 '0': integer
+        "#]],
+    );
+}
+
+#[test]
+fn no_such_field_on_struct_ref() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        struct Bar { baz: u32 }
+        fn foo() {
+            var bar = Bar(0);
+            let xx = bar.bazzzzz;
+        }
+        ",
+        expect![[r#"
+            43..46 'bar': ref<function, Bar, read_write>
+            49..55 'Bar(0)': Bar
+            53..54 '0': integer
+            65..67 'xx': [error]
+            70..73 'bar': ref<function, Bar, read_write>
+            70..81 'bar.bazzzzz': ref<function, [error], read_write>
+            70..81 'bar.bazzzzz': no such field `bazzzzz` on type `ref<function, Bar, read_write>`
+        "#]],
+    );
+}
+
+#[test]
+fn no_such_field_on_struct_ptr() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        struct Bar { baz: u32 }
+        fn foo() {
+            var bar = Bar(0);
+            let bar_ptr = &bar;
+            let x = bar_ptr.bazzz;
+        }
+        ",
+        expect![[r#"
+            43..46 'bar': ref<function, Bar, read_write>
+            49..55 'Bar(0)': Bar
+            53..54 '0': integer
+            65..72 'bar_ptr': ptr<function, Bar, read_write>
+            75..79 '&bar': ptr<function, Bar, read_write>
+            76..79 'bar': ref<function, Bar, read_write>
+            89..90 'x': [error]
+            93..100 'bar_ptr': ptr<function, Bar, read_write>
+            93..106 'bar_ptr.bazzz': ref<function, [error], read_write>
+            93..106 'bar_ptr.bazzz': no such field `bazzz` on type `ptr<function, Bar, read_write>`
+        "#]],
+    );
+}
+
+#[test]
+fn store_type_must_be_storable() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        fn foo() {
+            var bar = 1;
+            var bar_ptr = &bar;
+        }
+        ",
+        expect![[r#"
+            19..22 'bar': ref<function, i32, read_write>
+            25..26 '1': integer
+            36..43 'bar_ptr': ref<function, [error], read_write>
+            46..50 '&bar': ptr<function, i32, read_write>
+            47..50 'bar': ref<function, i32, read_write>
+            46..50 '&bar': expected storable type but got `ptr<function, i32, read_write>`
+        "#]],
+    );
+}
+
+#[test]
+fn no_such_field_on_struct() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        struct Bar { baz: u32 }
+        fn foo() {
+            let xx = Bar(0).bazzzzz;
+        }
+        ",
+        expect![[r#"
+            43..45 'xx': [error]
+            48..54 'Bar(0)': Bar
+            48..62 'Bar(0).bazzzzz': [error]
+            52..53 '0': integer
+            48..62 'Bar(0).bazzzzz': no such field `bazzzzz` on type `Bar`
+        "#]],
+    );
+}
+
+#[test]
+fn no_such_field_on_vec() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        fn foo() {
+            let xyz = vec2(0, 0).xyz;
+        }
+        ",
+        expect![[r#"
+            19..22 'xyz': [error]
+            25..35 'vec2(0, 0)': vec2<integer>
+            25..39 'vec2(0, 0).xyz': [error]
+            30..31 '0': integer
+            33..34 '0': integer
+            25..39 'vec2(0, 0).xyz': no such field `xyz` on type `vec2<integer>`
+        "#]],
+    );
+}
+
+#[test]
+fn no_such_field_on_vec_ref() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        fn foo() {
+            var v = vec2(0, 0);
+            let xyz = v.xyz;
+        }
+        ",
+        expect![[r#"
+            19..20 'v': ref<function, vec2<i32>, read_write>
+            23..33 'vec2(0, 0)': vec2<integer>
+            28..29 '0': integer
+            31..32 '0': integer
+            43..46 'xyz': [error]
+            49..50 'v': ref<function, vec2<i32>, read_write>
+            49..54 'v.xyz': [error]
+            49..54 'v.xyz': no such field `xyz` on type `ref<function, vec2<i32>, read_write>`
+        "#]],
+    );
+}
+
+#[test]
+fn no_such_field_on_vec_ptr() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        fn foo() {
+            var v = vec2(0, 0);
+            let v_ptr = &v;
+            let xyz = v_ptr.xyz;
+        }
+        ",
+        expect![[r#"
+            19..20 'v': ref<function, vec2<i32>, read_write>
+            23..33 'vec2(0, 0)': vec2<integer>
+            28..29 '0': integer
+            31..32 '0': integer
+            43..48 'v_ptr': ptr<function, vec2<i32>, read_write>
+            51..53 '&v': ptr<function, vec2<i32>, read_write>
+            52..53 'v': ref<function, vec2<i32>, read_write>
+            63..66 'xyz': [error]
+            69..74 'v_ptr': ptr<function, vec2<i32>, read_write>
+            69..78 'v_ptr.xyz': [error]
+            69..78 'v_ptr.xyz': no such field `xyz` on type `ptr<function, vec2<i32>, read_write>`
+        "#]],
+    );
+}
+
+#[test]
+fn zero_swizzle_vec() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        fn foo() {
+            let v = vec2(0, 0);
+            let x = v.;
+        }
+        ",
+        expect![[r#"
+            19..20 'v': vec2<i32>
+            23..33 'vec2(0, 0)': vec2<integer>
+            28..29 '0': integer
+            31..32 '0': integer
+            43..44 'x': [error]
+            47..48 'v': vec2<i32>
+            47..49 'v.': [error]
+            47..49 'v.': no such field `[missing name]` on type `vec2<i32>`
+        "#]],
+    );
+}
+
+#[test]
+fn address_of_not_reference() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        fn foo() {
+            let x = 1;
+            let x_ptr = &x;
+        }
+        ",
+        expect![[r#"
+            19..20 'x': i32
+            23..24 '1': integer
+            34..39 'x_ptr': [error]
+            42..44 '&x': [error]
+            43..44 'x': i32
+            AddressOfNotReference { expression: Idx::<Expression>(1), actual: Type(2402) } in Body
+        "#]],
+    );
+}
+
+#[test]
+fn component_reference_from_a_composite_reference() {
+    // From example in spec: <https://www.w3.org/TR/WGSL/#example-5aaac12b>
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+struct S {
+    age: i32,
+    weight: f32
+}
+var<private> person: S;
+// Elsewhere, 'person' denotes the reference to the memory underlying the variable,
+// and will have type ref<private,S,read_write>.
+
+fn f() {
+    var uv: vec2<f32>;
+    // For the remainder of this function body, 'uv' denotes the reference
+    // to the memory underlying the variable, and will have type
+    // ref<function,vec2<f32>,read_write>.
+
+    // Evaluate the left-hand side of the assignment:
+    //   Evaluate 'uv.x' to yield a reference:
+    //   1. First evaluate 'uv', yielding a reference to the memory for
+    //      the 'uv' variable. The result has type ref<function,vec2<f32>,read_write>.
+    //   2. Then apply the '.x' vector access phrase, yielding a reference to
+    //      the memory for the first component of the vector pointed at by the
+    //      reference value from the previous step.
+    //      The result has type ref<function,f32,read_write>.
+    // Evaluating the right-hand side of the assignment yields the f32 value 1.0.
+    // Store the f32 value 1.0 into the storage memory locations referenced by uv.x.
+    uv.x = 1.0;
+
+    // Evaluate the left-hand side of the assignment:
+    //   Evaluate 'uv[1]' to yield a reference:
+    //   1. First evaluate 'uv', yielding a reference to the memory for
+    //      the 'uv' variable. The result has type ref<function,vec2<f32>,read_write>.
+    //   2. Then apply the '[1]' array index phrase, yielding a reference to
+    //      the memory for second component of the vector referenced from
+    //      the previous step.  The result has type ref<function,f32,read_write>.
+    // Evaluating the right-hand side of the assignment yields the f32 value 2.0.
+    // Store the f32 value 2.0 into the storage memory locations referenced by uv[1].
+    uv[1] = 2.0;
+
+    var m: mat3x2<f32>;
+    // When evaluating 'm[2]':
+    // 1. First evaluate 'm', yielding a reference to the memory for
+    //    the 'm' variable. The result has type ref<function,mat3x2<f32>,read_write>.
+    // 2. Then apply the '[2]' array index phrase, yielding a reference to
+    //    the memory for the third column vector pointed at by the reference
+    //    value from the previous step.
+    //    Therefore the 'm[2]' expression has type ref<function,vec2<f32>,read_write>.
+    // The 'let' declaration is for type vec2<f32>, so the declaration
+    // statement requires the initializer to be of type vec2<f32>.
+    // The Load Rule applies (because no other type rule can apply), and
+    // the evaluation of the initializer yields the vec2<f32> value loaded
+    // from the memory locations referenced by 'm[2]' at the time the declaration
+    // is executed.
+    let p_m_col2: vec2<f32> = m[2];
+
+    var A: array<i32,5>;
+    // When evaluating 'A[4]'
+    // 1. First evaluate 'A', yielding a reference to the memory for
+    //    the 'A' variable. The result has type ref<function,array<i32,5>,read_write>.
+    // 2. Then apply the '[4]' array index phrase, yielding a reference to
+    //    the memory for the fifth element of the array referenced by
+    //    the reference value from the previous step.
+    //    The result value has type ref<function,i32,read_write>.
+    // The let-declaration requires the right-hand-side to be of type i32.
+    // The Load Rule applies (because no other type rule can apply), and
+    // the evaluation of the initializer yields the i32 value loaded from
+    // the memory locations referenced by 'A[4]' at the time the declaration
+    // is executed.
+    let A_4_value: i32 = A[4];
+
+    // When evaluating 'person.weight'
+    // 1. First evaluate 'person', yielding a reference to the memory for
+    //    the 'person' variable declared at module scope.
+    //    The result has type ref<private,S,read_write>.
+    // 2. Then apply the '.weight' member access phrase, yielding a reference to
+    //    the memory for the second member of the memory referenced by
+    //    the reference value from the previous step.
+    //    The result has type ref<private,f32,read_write>.
+    // The let-declaration requires the right-hand-side to be of type f32.
+    // The Load Rule applies (because no other type rule can apply), and
+    // the evaluation of the initializer yields the f32 value loaded from
+    // the memory locations referenced by 'person.weight' at the time the
+    // declaration is executed.
+    let person_weight: f32 = person.weight;
+
+    // Alternatively, references can also be formed from pointers using
+    // the same syntax.
+
+    let uv_ptr = &uv;
+    // For the remainder of this function body, 'uv_ptr' denotes a pointer
+    // to the memory underlying 'uv', and will have the type
+    // ptr<function,vec2<f32>,read_write>.
+
+    // Evaluate the left-hand side of the assignment:
+    //   Evaluate '*uv_ptr' to yield a reference:
+    //   1. First evaluate 'uv_ptr', yielding a pointer to the memory for
+    //      the 'uv' variable. The result has type ptr<function,vec2<f32>,read_write>.
+    //   2. Then apply the indirection expression operator, yielding a
+    //      reference to memory for 'uv'.
+    // Evaluating the right-hand side of the assignment yields the vec2<f32> value (1.0, 2.0).
+    // Store the value (1.0, 2.0) into the storage memory locations referenced by uv.
+    *uv_ptr = vec2f(1.0, 2.0);
+
+    // Evaluate the left-hand side of the assignment:
+    //   Evaluate 'uv_ptr.x' to yield a reference:
+    //   1. First evaluate 'uv_ptr', yielding a pointer to the memory for
+    //      the 'uv' variable. The result has type ptr<function,vec2<f32>,read_write>.
+    //   2. Then apply the '.x' vector access phrase, yielding a reference to
+    //      the memory for the first component of the vector pointed at by the
+    //      reference value from the previous step.
+    //      The result has type ref<function,f32,read_write>.
+    // Evaluating the right-hand side of the assignment yields the f32 value 1.0.
+    // Store the f32 value 1.0 into the storage memory locations referenced by uv.x.
+    uv_ptr.x = 1.0;
+
+    // Evaluate the left-hand side of the assignment:
+    //   Evaluate 'uv_ptr[1]' to yield a reference:
+    //   1. First evaluate 'uv_ptr', yielding a pointer to the memory for
+    //      the 'uv' variable. The result has type ptr<function,vec2<f32>,read_write>.
+    //   2. Then apply the '[1]' array index phrase, yielding a reference to
+    //      the memory for second component of the vector referenced from
+    //      the previous step.  The result has type ref<function,f32,read_write>.
+    // Evaluating the right-hand side of the assignment yields the f32 value 2.0.
+    // Store the f32 value 2.0 into the storage memory locations referenced by uv[1].
+    uv_ptr[1] = 2.0;
+
+    let m_ptr = &m;
+    // When evaluating 'm_ptr[2]':
+    // 1. First evaluate 'm_ptr', yielding a pointer to the memory for
+    //    the 'm' variable. The result has type ptr<function,mat3x2<f32>,read_write>.
+    // 2. Then apply the '[2]' array index phrase, yielding a reference to
+    //    the memory for the third column vector pointed at by the reference
+    //    value from the previous step.
+    //    Therefore the 'm[2]' expression has type ref<function,vec2<f32>,read_write>.
+    // The 'let' declaration is for type vec2<f32>, so the declaration
+    // statement requires the initializer to be of type vec2<f32>.
+    // The Load Rule applies (because no other type rule can apply), and
+    // the evaluation of the initializer yields the vec2<f32> value loaded
+    // from the memory locations referenced by 'm[2]' at the time the declaration
+    // is executed.
+    let p_m_col2: vec2<f32> = m_ptr[2];
+
+    let A_ptr = &A;
+    // When evaluating 'A[4]'
+    // 1. First evaluate 'A', yielding a pointer to the memory for
+    //    the 'A' variable. The result has type ptr<function,array<i32,5>,read_write>.
+    // 2. Then apply the '[4]' array index phrase, yielding a reference to
+    //    the memory for the fifth element of the array referenced by
+    //    the reference value from the previous step.
+    //    The result value has type ref<function,i32,read_write>.
+    // The let-declaration requires the right-hand-side to be of type i32.
+    // The Load Rule applies (because no other type rule can apply), and
+    // the evaluation of the initializer yields the i32 value loaded from
+    // the memory locations referenced by 'A[4]' at the time the declaration
+    // is executed.
+    let A_4_value: i32 = A_ptr[4];
+
+    let person_ptr = &person;
+    // When evaluating 'person.weight'
+    // 1. First evaluate 'person_ptr', yielding a pointer to the memory for
+    //    the 'person' variable declared at module scope.
+    //    The result has type ptr<private,S,read_write>.
+    // 2. Then apply the '.weight' member access phrase, yielding a reference to
+    //    the memory for the second member of the memory referenced by
+    //    the reference value from the previous step.
+    //    The result has type ref<private,f32,read_write>.
+    // The let-declaration requires the right-hand-side to be of type f32.
+    // The Load Rule applies (because no other type rule can apply), and
+    // the evaluation of the initializer yields the f32 value loaded from
+    // the memory locations referenced by 'person.weight' at the time the
+    // declaration is executed.
+    let person_weight: f32 = person_ptr.weight;
+}
+",
+        expect![[r#"
+            56..62 'person': ref<private, S, read_write>
+            218..220 'uv': ref<function, vec2<f32>, read_write>
+            1119..1121 'uv': ref<function, vec2<f32>, read_write>
+            1119..1123 'uv.x': ref<function, f32, read_write>
+            1126..1129 '1.0': float
+            1798..1800 'uv': ref<function, vec2<f32>, read_write>
+            1798..1803 'uv[1]': ref<function, f32, read_write>
+            1801..1802 '1': integer
+            1806..1809 '2.0': float
+            1820..1821 'm': ref<function, mat3x2<f32>, read_write>
+            2697..2705 'p_m_col2': vec2<f32>
+            2719..2720 'm': ref<function, mat3x2<f32>, read_write>
+            2719..2723 'm[2]': ref<function, vec2<f32>, read_write>
+            2721..2722 '2': integer
+            2734..2735 'A': ref<function, array<i32, 5>, read_write>
+            3529..3538 'A_4_value': i32
+            3546..3547 'A': ref<function, array<i32, 5>, read_write>
+            3546..3550 'A[4]': ref<function, i32, read_write>
+            3548..3549 '4': integer
+            4382..4395 'person_weight': f32
+            4403..4409 'person': ref<private, S, read_write>
+            4403..4416 'person.weight': ref<private, f32, read_write>
+            4524..4530 'uv_ptr': ptr<function, vec2<f32>, read_write>
+            4533..4536 '&uv': ptr<function, vec2<f32>, read_write>
+            4534..4536 'uv': ref<function, vec2<f32>, read_write>
+            5281..5288 '*uv_ptr': ref<function, vec2<f32>, read_write>
+            5282..5288 'uv_ptr': ptr<function, vec2<f32>, read_write>
+            5291..5306 'vec2f(1.0, 2.0)': vec2<f32>
+            5297..5300 '1.0': float
+            5302..5305 '2.0': float
+            6017..6023 'uv_ptr': ptr<function, vec2<f32>, read_write>
+            6017..6025 'uv_ptr.x': ref<function, f32, read_write>
+            6028..6031 '1.0': float
+            6706..6712 'uv_ptr': ptr<function, vec2<f32>, read_write>
+            6706..6715 'uv_ptr[1]': ref<function, f32, read_write>
+            6713..6714 '1': integer
+            6718..6721 '2.0': float
+            6732..6737 'm_ptr': ptr<function, mat3x2<f32>, read_write>
+            6740..6742 '&m': ptr<function, mat3x2<f32>, read_write>
+            6741..6742 'm': ref<function, mat3x2<f32>, read_write>
+            7611..7619 'p_m_col2': vec2<f32>
+            7633..7638 'm_ptr': ptr<function, mat3x2<f32>, read_write>
+            7633..7641 'm_ptr[2]': ref<function, vec2<f32>, read_write>
+            7639..7640 '2': integer
+            7652..7657 'A_ptr': ptr<function, array<i32, 5>, read_write>
+            7660..7662 '&A': ptr<function, array<i32, 5>, read_write>
+            7661..7662 'A': ref<function, array<i32, 5>, read_write>
+            8440..8449 'A_4_value': i32
+            8457..8462 'A_ptr': ptr<function, array<i32, 5>, read_write>
+            8457..8465 'A_ptr[4]': ref<function, i32, read_write>
+            8463..8464 '4': integer
+            8476..8486 'person_ptr': ptr<private, S, read_write>
+            8489..8496 '&person': ptr<private, S, read_write>
+            8490..8496 'person': ref<private, S, read_write>
+            9329..9342 'person_weight': f32
+            9350..9360 'person_ptr': ptr<private, S, read_write>
+            9350..9367 'person...weight': ref<private, f32, read_write>
+        "#]],
+    );
+}
+
+#[test]
+fn vec_xy_is_not_ref() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        fn foo() {
+            var v = vec2(1, 2);
+            v.xy = v.yx;
+        }
+        ",
+        expect![[r#"
+            19..20 'v': ref<function, vec2<i32>, read_write>
+            23..33 'vec2(1, 2)': vec2<integer>
+            28..29 '1': integer
+            31..32 '2': integer
+            39..40 'v': ref<function, vec2<i32>, read_write>
+            39..43 'v.xy': vec2<i32>
+            46..47 'v': ref<function, vec2<i32>, read_write>
+            46..50 'v.yx': vec2<i32>
+            AssignmentNotAReference { left_side: Idx::<Expression>(4), actual: Type(2407) } in Body
         "#]],
     );
 }
@@ -84,17 +747,17 @@ fn struct_constructor_unrefs() {
         }
         ",
         expect![[r#"
-            59..60 'u': ref<u32>
+            59..60 'u': ref<function, u32, read_write>
             63..65 '1u': u32
-            75..76 'a': ref<array<f32, 3>>
+            75..76 'a': ref<function, array<f32, 3>, read_write>
             79..107 'array<..., 3.0)': array<f32, 3>
             93..96 '1.0': float
             98..101 '2.0': float
             103..106 '3.0': float
             117..118 's': S
             121..128 'S(u, a)': S
-            123..124 'u': ref<u32>
-            126..127 'a': ref<array<f32, 3>>
+            123..124 'u': ref<function, u32, read_write>
+            126..127 'a': ref<function, array<f32, 3>, read_write>
         "#]],
     );
 }
@@ -114,7 +777,7 @@ fn struct_constructor_not_enough_args() {
             59..60 's': [error]
             63..68 'S(1u)': [error]
             65..67 '1u': u32
-            InferenceDiagnostic { source: Body, kind: FunctionCallArgCountMismatch { expression: Idx::<Expression>(1), n_expected: 2, n_actual: 1 } }
+            FunctionCallArgCountMismatch { expression: Idx::<Expression>(1), n_expected: 2, n_actual: 1 } in Body
         "#]],
     );
 }
@@ -226,9 +889,9 @@ fn const_u32_as_array_size() {
         expect![[r#"
             6..15 'maxLayers': u32
             18..21 '12u': u32
-            27..33 'layers': ref<[error]>
-            InferenceDiagnostic { source: Signature, kind: InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(1)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } } }
-            InferenceDiagnostic { source: Signature, kind: InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(1)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } } }
+            27..33 'layers': ref<handle, [error], read>
+            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(1)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } } in Signature
+            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(1)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } } in Signature
         "#]],
     );
 }
@@ -261,7 +924,7 @@ fn var_array() {
         @group(0) @binding(0) var<storage, read_write> data: array<f32>;
         ",
         expect![[r#"
-            47..51 'data': ref<array<f32>>
+            47..51 'data': ref<storage, array<f32>, read_write>
         "#]],
     );
 }
@@ -318,15 +981,15 @@ var f32_promotion : f32 = 5;
 }
         ",
         expect![[r#"
-            4..17 'i32_from_type': ref<i32>
+            4..17 'i32_from_type': ref<handle, i32, read>
             26..27 '3': integer
             46..54 'some_i32': i32
             57..58 '2': integer
             64..72 'some_u32': u32
             80..81 '2': integer
-            87..100 'i32_from_type': ref<i32>
+            87..100 'i32_from_type': ref<function, i32, read_write>
             109..110 '3': integer
-            116..129 'f32_promotion': ref<f32>
+            116..129 'f32_promotion': ref<function, f32, read_write>
             138..139 '5': integer
         "#]],
     );
@@ -362,11 +1025,11 @@ var u32_expr2 = 1u + (1 + 2);
 }
     ",
         expect![[r#"
-            16..25 'u32_expr1': ref<u32>
+            16..25 'u32_expr1': ref<function, u32, read_write>
             28..29 '6': integer
             28..34 '6 + 1u': u32
             32..34 '1u': u32
-            40..49 'u32_expr2': ref<u32>
+            40..49 'u32_expr2': ref<function, u32, read_write>
             52..54 '1u': u32
             52..64 '1u + (1 + 2)': u32
             58..59 '1': integer
@@ -511,7 +1174,7 @@ fn texture_storage_2d_template() {
 var framebuffer : texture_storage_2d<rgba16float, write>;
     ",
         expect![[r#"
-            4..15 'framebuffer': ref<texture_storage_2d<rgba16float,write>>
+            4..15 'framebuffer': ref<handle, texture_storage_2d<rgba16float,write>, read>
         "#]],
     );
 }
@@ -559,8 +1222,8 @@ fn global_var_function_address_space_error() {
         ExtensionsConfig::default(),
         "var<function> not_allowed_at_module_level: u32;",
         expect![[r#"
-            14..41 'not_al..._level': ref<u32>
-            InferenceDiagnostic { source: Signature, kind: UnexpectedTemplateArgument { expression: Idx::<Expression>(0) } }
+            14..41 'not_al..._level': ref<function, u32, read_write>
+            UnexpectedTemplateArgument { expression: Idx::<Expression>(0) } in Signature
         "#]],
     );
 }
@@ -703,12 +1366,12 @@ fn array_index_is_ref_i32() {
         ",
         expect![[r#"
             8..11 'arr': array<i32>
-            35..40 'index': ref<i32>
+            35..40 'index': ref<function, i32, read_write>
             43..45 '1i': i32
             57..58 'a': i32
             61..64 'arr': array<i32>
             61..71 'arr[index]': i32
-            65..70 'index': ref<i32>
+            65..70 'index': ref<function, i32, read_write>
         "#]],
     );
 }
@@ -725,12 +1388,12 @@ fn array_index_is_not_ref_f32() {
         ",
         expect![[r#"
             8..11 'arr': array<i32>
-            35..40 'index': ref<f32>
+            35..40 'index': ref<function, f32, read_write>
             43..47 '1.0f': f32
             59..60 'a': i32
             63..66 'arr': array<i32>
             63..73 'arr[index]': i32
-            67..72 'index': ref<f32>
+            67..72 'index': ref<function, f32, read_write>
             67..72 'index': expected i32 or u32 but got f32
         "#]],
     );
@@ -957,6 +1620,30 @@ fn mat_index_is_int() {
 }
 
 #[test]
+fn concretize_matrix() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        fn foo() {
+            let x = bar(mat2x2(0, 0, 0, 0));
+        }
+        fn bar(baz: mat2x2<f32>) -> u32 { return 0; }
+        ",
+        expect![[r#"
+            19..20 'x': u32
+            23..46 'bar(ma...0, 0))': u32
+            27..45 'mat2x2... 0, 0)': mat2x2<integer>
+            34..35 '0': integer
+            37..38 '0': integer
+            40..41 '0': integer
+            43..44 '0': integer
+            57..60 'baz': mat2x2<f32>
+            91..92 '0': integer
+        "#]],
+    );
+}
+
+#[test]
 fn mat_index_i_is_not_f32() {
     check_infer(
         ExtensionsConfig::default(),
@@ -1077,6 +1764,189 @@ fn foo(bar: i64, baz: u64) {}
         expect![[r#"
             7..10 'bar': i64
             17..20 'baz': u64
+        "#]],
+    );
+}
+
+#[test]
+fn no_builtin_overload() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        var x = 1f + mat2x2f();
+        ",
+        expect![[r#"
+            4..5 'x': ref<handle, [error], read>
+            8..10 '1f': f32
+            8..22 '1f + mat2x2f()': [error]
+            13..22 'mat2x2f()': mat2x2<f32>
+            NoBuiltinOverload { expression: Idx::<Expression>(2), builtin: BuiltinId(2c00), name: Some("+"), parameters: [Type(2401), Type(2402)] } in Body
+        "#]],
+    );
+}
+
+#[test]
+fn deref_not_a_pointer() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        var x = *1f;
+        ",
+        expect![[r#"
+            4..5 'x': ref<handle, [error], read>
+            8..11 '*1f': [error]
+            9..11 '1f': f32
+            DerefNotAPointer { expression: Idx::<Expression>(0), actual: Type(2401) } in Body
+        "#]],
+    );
+}
+
+#[test]
+fn no_constructor() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        var x = vec2f(1, 2, 3);
+        ",
+        expect![[r#"
+            4..5 'x': ref<handle, [error], read>
+            8..22 'vec2f(1, 2, 3)': [error]
+            14..15 '1': integer
+            17..18 '2': integer
+            20..21 '3': integer
+            NoConstructor { expression: Idx::<Expression>(3), builtins: BuiltinId(2c00), type: Type(2403), parameters: [Type(2401), Type(2401), Type(2401)] } in Body
+        "#]],
+    );
+}
+
+#[test]
+fn add_refs_and_ptrs() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        struct MyData {
+            a: u32,
+            b: u32,
+        }
+
+        @group(0) @binding(9)
+        var<storage, read_write> MyBuff: array<MyData>;
+
+        fn MyFn(index: u32) -> u32 {
+            let data = &MyBuff[index];
+
+            var t = data.a;
+            return t + data.b;
+        }
+
+        fn foo() {
+            var a_ref = 1;
+            var b_ref = 1;
+
+            let a_ptr = &a_ref;
+            let b_ptr = &b_ref;
+
+            let test1 = a_ref + b_ref;
+            let test2 = a_ptr + b_ptr;
+            let test3 = a_ptr + b_ref;
+        }
+        ",
+        expect![[r#"
+            90..96 'MyBuff': ref<storage, array<MyData>, read_write>
+            122..127 'index': u32
+            151..155 'data': ptr<storage, MyData, read_write>
+            158..172 '&MyBuff[index]': ptr<storage, MyData, read_write>
+            159..165 'MyBuff': ref<storage, array<MyData>, read_write>
+            159..172 'MyBuff[index]': ref<storage, MyData, read_write>
+            166..171 'index': u32
+            183..184 't': ref<function, u32, read_write>
+            187..191 'data': ptr<storage, MyData, read_write>
+            187..193 'data.a': ref<storage, u32, read_write>
+            206..207 't': ref<function, u32, read_write>
+            206..216 't + data.b': u32
+            210..214 'data': ptr<storage, MyData, read_write>
+            210..216 'data.b': ref<storage, u32, read_write>
+            240..245 'a_ref': ref<function, i32, read_write>
+            248..249 '1': integer
+            259..264 'b_ref': ref<function, i32, read_write>
+            267..268 '1': integer
+            279..284 'a_ptr': ptr<function, i32, read_write>
+            287..293 '&a_ref': ptr<function, i32, read_write>
+            288..293 'a_ref': ref<function, i32, read_write>
+            303..308 'b_ptr': ptr<function, i32, read_write>
+            311..317 '&b_ref': ptr<function, i32, read_write>
+            312..317 'b_ref': ref<function, i32, read_write>
+            328..333 'test1': i32
+            336..341 'a_ref': ref<function, i32, read_write>
+            336..349 'a_ref + b_ref': i32
+            344..349 'b_ref': ref<function, i32, read_write>
+            359..364 'test2': ptr<function, i32, read_write>
+            367..372 'a_ptr': ptr<function, i32, read_write>
+            367..380 'a_ptr + b_ptr': ptr<function, i32, read_write>
+            375..380 'b_ptr': ptr<function, i32, read_write>
+            390..395 'test3': [error]
+            398..403 'a_ptr': ptr<function, i32, read_write>
+            398..411 'a_ptr + b_ref': [error]
+            406..411 'b_ref': ref<function, i32, read_write>
+            NoBuiltinOverload { expression: Idx::<Expression>(14), builtin: BuiltinId(3400), name: Some("+"), parameters: [Type(2c12), Type(2c10)] } in Body
+        "#]],
+    );
+}
+
+#[test]
+fn unexpected_return_type() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        fn foo() {
+            return 0;
+        }
+        ",
+        expect![[r#"
+            22..23 '0': integer
+            22..23 '0': unexpected return value of type `integer` in function with no return type
+        "#]],
+    );
+}
+
+#[test]
+fn wrong_return_type() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        fn foo() -> bool {
+            return 0;
+        }
+        ",
+        expect![[r#"
+            30..31 '0': integer
+            30..31 '0': expected bool but got integer
+        "#]],
+    );
+}
+
+#[test]
+fn shift_operator_inference() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        fn bit_repro() {
+            let x = 1 << 4;
+            let y = 5;
+            let z = x & y;
+        }
+        ",
+        expect![[r#"
+            25..26 'x': i32
+            29..30 '1': integer
+            29..35 '1 << 4': integer
+            34..35 '4': integer
+            45..46 'y': i32
+            49..50 '5': integer
+            60..61 'z': i32
+            64..65 'x': i32
+            64..69 'x & y': i32
+            68..69 'y': i32
         "#]],
     );
 }

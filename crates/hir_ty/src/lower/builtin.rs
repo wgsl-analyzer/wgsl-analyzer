@@ -1,6 +1,6 @@
 use std::str::FromStr as _;
 
-use hir_def::{expression::ExpressionId, expression_store::path::Path, item_tree::Name};
+use hir_def::{expression::ExpressionId, item_tree::Name};
 use wgsl_types::{
     Instance,
     inst::LiteralInstance,
@@ -8,9 +8,9 @@ use wgsl_types::{
 };
 
 use crate::{
-    infer::{
+    lower::{
         Lowered, TypeContainer, TypeLoweringContext, TypeLoweringError, TypeLoweringErrorKind,
-        eval::TemplateParameters, from_wgsl_texel_format,
+        from_wgsl_texel_format, generics::TemplateParameters,
     },
     ty::{
         ArraySize, ArrayType, AtomicType, MatrixType, Pointer, ScalarType, TextureDimensionality,
@@ -101,34 +101,30 @@ impl TypeLoweringContext<'_> {
             )
     }
 
-    pub fn lower_predeclared(
+    pub fn lower_if_predeclared(
         &mut self,
         type_container: TypeContainer,
-        path: &Path,
+        name: &Name,
         template_parameters: &[ExpressionId],
-    ) -> Result<Lowered, TypeLoweringError> {
+    ) -> Option<Lowered> {
         // Lower predeclared types
-        if let Some(name) = path.mod_path().as_ident() {
-            if self.is_predeclared_type(name) {
-                self.lower_predeclared_type(type_container, name, template_parameters)
-            } else if crate::builtins::Builtin::ALL_BUILTINS.contains(&name.as_str()) {
-                Ok(Lowered::BuiltinFunction)
-            } else if let Ok(enum_value) = Enumerant::from_str(name.as_str()) {
-                self.expect_no_template(template_parameters);
-                Ok(Lowered::Enumerant(enum_value))
-            } else {
-                self.diagnostics.push(TypeLoweringError {
-                    container: type_container,
-                    kind: TypeLoweringErrorKind::UnresolvedName(name.clone()),
-                });
-                Ok(Lowered::Type(TypeKind::Error.intern(self.database)))
+        if self.is_predeclared_type(name) {
+            // If lowering the predeclared type failed, we should return a error type
+            // As opposed to ignoring it when it's not a predeclared type
+            match self.lower_predeclared_type(type_container, name, template_parameters) {
+                Ok(lowered) => Some(lowered),
+                Err(error) => {
+                    self.diagnostics.push(error);
+                    Some(Lowered::Type(self.database.intern_type(TypeKind::Error)))
+                },
             }
+        } else if crate::builtins::Builtin::ALL_BUILTINS.contains(&name.as_str()) {
+            Some(Lowered::BuiltinFunction)
+        } else if let Ok(enum_value) = Enumerant::from_str(name.as_str()) {
+            self.expect_no_template(template_parameters);
+            Some(Lowered::Enumerant(enum_value))
         } else {
-            self.diagnostics.push(TypeLoweringError {
-                container: type_container,
-                kind: TypeLoweringErrorKind::UnresolvedPath(path.clone()),
-            });
-            Ok(Lowered::Type(TypeKind::Error.intern(self.database)))
+            None
         }
     }
 
@@ -139,12 +135,12 @@ impl TypeLoweringContext<'_> {
     fn lower_predeclared_type(
         &mut self,
         type_container: TypeContainer,
-        path: &Name,
+        name: &Name,
         template_parameters: &[ExpressionId],
     ) -> Result<Lowered, TypeLoweringError> {
         let evaluated_parameters = self.eval_template_args(type_container, template_parameters);
 
-        let type_kind = match path.as_str() {
+        let type_kind = match name.as_str() {
             "bool" => {
                 self.expect_no_template(template_parameters);
                 TypeKind::Scalar(ScalarType::Bool)
@@ -711,7 +707,7 @@ impl TypeLoweringContext<'_> {
             _ => {
                 return Err(TypeLoweringError {
                     container: type_container,
-                    kind: TypeLoweringErrorKind::UnresolvedName(path.clone()),
+                    kind: TypeLoweringErrorKind::UnresolvedName(name.clone()),
                 });
             },
         };

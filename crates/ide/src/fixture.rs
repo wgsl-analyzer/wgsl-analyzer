@@ -17,5 +17,5 @@ pub(crate) fn single_file_db(source: &str) -> (Analysis, FileId) {
         "Multiple files found in the fixture"
     );
 
-    (host.analysis(), fixture.files[0].file_id)
+    (host.analysis(), fixture.files[0])
 }

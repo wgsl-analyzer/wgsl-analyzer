@@ -39,6 +39,16 @@ impl Edition {
     pub fn iter() -> impl Iterator<Item = Self> {
         [Self::Wgsl, Self::Wesl2025Unstable].iter().copied()
     }
+
+    /// Guesses the edition based on the file extension.
+    #[must_use]
+    pub fn from_file_extension(extension: &str) -> Option<Self> {
+        match extension {
+            "wesl" => Some(Self::LATEST),
+            "wgsl" => Some(Self::Wgsl),
+            _ => None,
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -63,8 +73,9 @@ impl str::FromStr for Edition {
     fn from_str(string: &str) -> Result<Self, Self::Err> {
         // https://github.com/wgsl-tooling-wg/wesl-rs/tree/main/crates/wesl/src/wesl_toml.rs#L78
         match string {
-            "WGSL" => Ok(Self::Wgsl),
             "2026_pre" => Ok(Self::Wesl2025Unstable),
+            // "WGSL" is not an edition that can be selected.
+            // Therefore it is not included here.
             _ => Err(ParseEditionError {
                 invalid_input: string.to_owned(),
             }),

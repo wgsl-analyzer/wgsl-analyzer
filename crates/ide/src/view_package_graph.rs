@@ -2,9 +2,7 @@ use base_db::input::{Dependency, PackageData, PackageId};
 use dot::{Id, LabelText};
 use ide_db::{
     FxHashMap, RootDatabase,
-    base_db::{
-        ExtraPackageData, Package, SourceDatabase as _, all_packages, salsa::plumbing::AsId,
-    },
+    base_db::{SourceDatabase as _, all_packages},
 };
 
 /// # Feature: View Package Graph

@@ -29,9 +29,28 @@ updates:
       - S-Ready-to-Review
     cooldown:
       default-days: 7
+    groups:
+      codeql:
+        patterns:
+          - "github/codeql-action/*"
 
   - package-ecosystem: npm
     directory: /editors/code
+    schedule:
+      interval: daily
+    open-pull-requests-limit: 20
+    commit-message:
+      prefix: internal
+    labels:
+      - A-Editor
+      - C-Dependencies
+      - D-Trivial
+      - S-Ready-to-Review
+    cooldown:
+      default-days: 7
+
+  - package-ecosystem: docker
+    directory: /.github
     schedule:
       interval: daily
     open-pull-requests-limit: 20

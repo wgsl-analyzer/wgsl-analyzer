@@ -1,4 +1,4 @@
-use std::env::var;
+use std::{env::var, path};
 
 use anyhow::bail;
 use xshell::{Shell, cmd};
@@ -35,7 +35,10 @@ impl flags::PublishReleaseNotes {
     }
 }
 
-fn check_file_name<P: AsRef<std::path::Path>>(path: P) -> anyhow::Result<String> {
+fn check_file_name<Path>(path: Path) -> anyhow::Result<String>
+where
+    Path: AsRef<path::Path>,
+{
     let file_name = path
         .as_ref()
         .file_name()

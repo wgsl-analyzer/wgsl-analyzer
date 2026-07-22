@@ -3,7 +3,6 @@
 
 use std::fmt;
 
-use la_arena::Idx;
 use rustc_hash::FxHashMap;
 use salsa::{Durability, Setter as _};
 use triomphe::Arc;

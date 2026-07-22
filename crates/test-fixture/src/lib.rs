@@ -4,8 +4,8 @@ mod fixture;
 use std::{any::TypeId, mem, str::FromStr as _, sync};
 
 use base_db::{
-    FileId, FilePosition, FileRange, FileSet, RawEditionedFileId, SourceDatabase, SourceRoot,
-    VfsPath,
+    EditionedFileId, FileId, FilePosition, FileRange, FileSet, RawEditionedFileId, SourceDatabase,
+    SourceRoot, VfsPath,
     change::Change,
     input::{Dependency, PackageData, PackageId, PackageName, PackageOrigin},
 };
@@ -22,7 +22,7 @@ pub const WORKSPACE: base_db::SourceRootId = base_db::SourceRootId(0);
 pub trait WithFixture: Default + SourceDatabase + 'static {
     #[must_use]
     #[track_caller]
-    fn with_single_file(wa_fixture: &str) -> (Self, RawEditionedFileId) {
+    fn with_single_file(wa_fixture: &str) -> (Self, EditionedFileId) {
         let mut database = Self::default();
         let fixture = ChangeFixture::parse(wa_fixture);
         fixture.change.apply(&mut database);
@@ -31,17 +31,23 @@ pub trait WithFixture: Default + SourceDatabase + 'static {
             1,
             "Multiple files found in the fixture"
         );
-        (database, fixture.files[0])
+        let file_id = EditionedFileId::from_file(&database, fixture.files[0]);
+        (database, file_id)
     }
 
     #[must_use]
     #[track_caller]
-    fn with_many_files(wa_fixture: &str) -> (Self, Vec<RawEditionedFileId>) {
+    fn with_many_files(wa_fixture: &str) -> (Self, Vec<EditionedFileId>) {
         let mut database = Self::default();
         let fixture = ChangeFixture::parse(wa_fixture);
         fixture.change.apply(&mut database);
         assert!(fixture.file_position.is_none());
-        (database, fixture.files)
+        let files = fixture
+            .files
+            .iter()
+            .map(|file_id| EditionedFileId::from_file(&database, *file_id))
+            .collect();
+        (database, files)
     }
 
     #[must_use]
@@ -89,7 +95,7 @@ impl<Database: SourceDatabase + Default + 'static> WithFixture for Database {}
 pub struct ChangeFixture {
     pub file_position: Option<(FileId, RangeOrOffset)>,
     pub file_lines: Vec<usize>,
-    pub files: Vec<RawEditionedFileId>,
+    pub files: Vec<FileId>,
     pub change: Change,
 }
 
@@ -110,7 +116,7 @@ impl ChangeFixture {
         let mut package_dependencies = Vec::new();
 
         let mut file_id = FileId::from_raw(0);
-        let mut roots: Vec<(FileSet, PackageData)> = Vec::new();
+        let mut roots: Vec<(FileSet, PackageOrigin)> = Vec::new();
 
         let mut file_position = None;
 
@@ -140,30 +146,30 @@ impl ChangeFixture {
             if !meta.dependencies.is_empty() {
                 assert!(
                     meta.package.is_some(),
-                    "cannot specify dependencies without naming the crate"
+                    "cannot specify dependencies without naming the package"
                 );
             }
 
-            if let Some((krate, origin)) = meta.package {
-                let crate_name = PackageName::normalize_dashes(&krate);
+            if let Some((package, origin)) = meta.package {
+                let package_name = PackageName::normalize_dashes(&package);
                 let package = PackageData {
                     root_file_id: file_id,
                     edition: meta.edition,
-                    display_name: Some(krate.clone()),
+                    display_name: Some(package.clone()),
                     dependencies: Vec::new(),
                     origin,
                 };
-                let package_id = PackageId::from_raw(u32::try_from(roots.len()).unwrap());
-                roots.push((FileSet::default(), package));
+                roots.push((FileSet::default(), origin));
 
-                let previous = packages.insert(crate_name.clone(), package_id);
+                let package_id = PackageId::from_raw(u32::try_from(packages.len()).unwrap());
+                let previous = packages.insert(package_name.clone(), (package_id, package));
                 assert!(
                     previous.is_none(),
-                    "multiple crates with same name: {crate_name}"
+                    "multiple packages with same name: {package_name}"
                 );
                 for dep in meta.dependencies {
                     let dep = PackageName::normalize_dashes(&dep);
-                    package_dependencies.push((crate_name.clone(), dep));
+                    package_dependencies.push((package_name.clone(), dep));
                 }
             }
 
@@ -178,32 +184,41 @@ impl ChangeFixture {
                     dependencies: Vec::new(),
                     origin: PackageOrigin::Local,
                 };
-                roots.push((FileSet::default(), default_package));
+                roots.push((FileSet::default(), PackageOrigin::Local));
+
+                let package_id = PackageId::from_raw(u32::try_from(packages.len()).unwrap());
+                let previous = packages.insert(
+                    PackageName::new("wa_test_fixture").unwrap(),
+                    (package_id, default_package),
+                );
+                assert!(
+                    previous.is_none(),
+                    "multiple packages with same name: wa_test_fixture"
+                );
             }
             roots.last_mut().unwrap().0.insert(file_id, path);
-            files.push(RawEditionedFileId {
-                file_id,
-                edition: meta.edition,
-            });
+            // We use raw file IDs here and then let the packages determine the editions.
+            files.push(file_id);
             file_id = FileId::from_raw(file_id.index() + 1);
         }
 
         for (from, to) in package_dependencies {
-            let from_id = packages[&from];
-            let to_id = packages[&to];
-            roots[from_id.to_raw_usize()]
-                .1
-                .dependencies
-                .push(Dependency {
-                    name: to.clone(),
-                    package_id: to_id,
-                });
+            let (to_id, _) = packages[&to];
+            let (_, from_data) = &mut packages[&from];
+            from_data.dependencies.push(Dependency {
+                name: to.clone(),
+                package_id: to_id,
+            });
+        }
+
+        for (package_id, package_data) in packages.into_values() {
+            source_change.change_package(package_id, Some(package_data));
         }
 
         source_change.set_roots(
             roots
                 .into_iter()
-                .map(|(file_set, package)| match package.origin {
+                .map(|(file_set, origin)| match origin {
                     PackageOrigin::Local => SourceRoot::new_local(file_set),
                     PackageOrigin::Library | PackageOrigin::Language => {
                         SourceRoot::new_library(file_set)
@@ -257,7 +272,7 @@ const fn parse_package(
     explicit_non_workspace_member: bool,
 ) -> (String, PackageOrigin) {
     // syntax:
-    //   "my_awesome_crate"
+    //   "my_awesome_package"
 
     let origin = if explicit_non_workspace_member {
         PackageOrigin::Library

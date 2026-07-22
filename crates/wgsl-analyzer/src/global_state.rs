@@ -7,7 +7,7 @@ use base_db::{
 };
 use crossbeam_channel::{Receiver, Sender, unbounded};
 use ide::{Analysis, AnalysisHost, Cancellable};
-use lsp_server::{Notification as ServerNotification, Request as ServerRequest};
+use lsp_server::{Notification as ServerNotification, Request as ServerRequest, ResponseKind};
 use lsp_types::{
     Diagnostic, Notification as LspNotification, PublishDiagnosticsNotification,
     PublishDiagnosticsParams, Request as LspRequest, Uri,
@@ -393,15 +393,17 @@ impl GlobalState {
         }
     }
 
-    pub(crate) fn send_request<R: LspRequest>(
+    pub(crate) fn send_request<Request>(
         &mut self,
-        parameters: R::Params,
+        parameters: Request::Params,
         handler: RequestHandler,
-    ) {
+    ) where
+        Request: LspRequest,
+    {
         let request =
             self.request_queue
                 .outgoing
-                .register(R::METHOD.to_string(), parameters, handler);
+                .register(Request::METHOD.to_string(), parameters, handler);
         self.send(request.into());
     }
 
@@ -417,11 +419,13 @@ impl GlobalState {
         handler(self, response);
     }
 
-    pub(crate) fn send_notification<N: LspNotification>(
+    pub(crate) fn send_notification<Notification>(
         &self,
-        parameters: N::Params,
-    ) {
-        let notification = ServerNotification::new(N::METHOD.to_string(), parameters);
+        parameters: Notification::Params,
+    ) where
+        Notification: LspNotification,
+    {
+        let notification = ServerNotification::new(Notification::METHOD.to_string(), parameters);
         self.send(notification.into());
     }
 
@@ -441,7 +445,7 @@ impl GlobalState {
         response: lsp_server::Response,
     ) {
         if let Some((method, start)) = self.request_queue.incoming.complete(&response.id) {
-            if let Some(error) = &response.error
+            if let ResponseKind::Err { error } = &response.response_kind
                 && error.message.starts_with("server panicked")
             {
                 self.poke_wgsl_analyzer_developer(format!("{}, check the log", error.message));

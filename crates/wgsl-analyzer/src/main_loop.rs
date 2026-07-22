@@ -167,7 +167,7 @@ impl fmt::Debug for Event {
                 return formatter
                     .debug_struct("Response")
                     .field("id", &response.id)
-                    .field("error", &response.error)
+                    .field("response_kind", &response.response_kind)
                     .finish();
             },
             Self::Lsp(_)
@@ -236,10 +236,12 @@ impl GlobalState {
         ))
     }
 
-    fn register_did_save_capability(
+    fn register_did_save_capability<Patterns>(
         &mut self,
-        additional_patterns: impl Iterator<Item = String>,
-    ) {
+        additional_patterns: Patterns,
+    ) where
+        Patterns: Iterator<Item = String>,
+    {
         let additional_filters = additional_patterns.map(|pattern| {
             DocumentFilter::TextDocumentFilter(TextDocumentFilter::Pattern(
                 TextDocumentFilterPattern {
@@ -775,7 +777,7 @@ impl GlobalState {
             vfs::loader::Message::Progress {
                 n_total,
                 n_done,
-                dir: directory, // spellchecker:disable-line
+                directory,
                 config_version,
             } => {
                 let _p = span!(Level::INFO, "GlobalState::handle_vfs_message/progress").entered();
@@ -960,7 +962,7 @@ impl GlobalState {
             .on::<NO_RETRY, lsp::extensions::HoverRequest>(handlers::request::handle_hover)
             .on::<NO_RETRY, ShutdownRequest>(handlers::request::handle_shutdown)
             .on::<NO_RETRY, InlayHintRequest>(handlers::request::handle_inlay_hints)
-            .on_with_vfs_default::<DocumentDiagnosticRequest>(
+            .on_with_vfs_default::<DocumentDiagnosticRequest, _>(
                 handlers::request::handle_document_diagnostics,
                 handlers::request::empty_diagnostic_report,
                 || lsp_server::ResponseError {
@@ -982,6 +984,9 @@ impl GlobalState {
             .on::<NO_RETRY, lsp::extensions::FullSourceRequest>(handlers::request::full_source)
             .on::<RETRY, lsp::extensions::AnalyzerStatusRequest>(
                 handlers::request::handle_analyzer_status,
+            )
+            .on::<RETRY, lsp::extensions::ViewModuleGraphRequest>(
+                handlers::request::handle_view_module_graph,
             )
             .on::<RETRY, lsp::extensions::ViewPackageGraphRequest>(
                 handlers::request::handle_view_package_graph,

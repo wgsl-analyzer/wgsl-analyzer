@@ -432,16 +432,19 @@ impl Iterator for WgslLexer<'_, '_> {
     clippy::wildcard_enum_match_arm,
     reason = "Tries to mirror the algorithm as specified in the spec. Listing all tokens makes it less clear."
 )]
-fn collect_with_templates(
-    tokens_iter: impl Iterator<Item = (Token, Span)>
-) -> (Vec<Token>, Vec<Range<usize>>) {
-    let mut tokens_iter = tokens_iter.peekable();
+fn collect_with_templates<TokensIterator>(
+    tokens_iterator: TokensIterator
+) -> (Vec<Token>, Vec<Range<usize>>)
+where
+    TokensIterator: Iterator<Item = (Token, Span)>,
+{
+    let mut tokens_iterator = tokens_iterator.peekable();
     let mut nesting_depth = 0;
     let mut pending = vec![];
     let mut tokens = vec![];
     let mut spans = vec![];
 
-    while let Some((token, span)) = tokens_iter.next() {
+    while let Some((token, span)) = tokens_iterator.next() {
         tokens.push(token);
         spans.push(span);
         match token {
@@ -450,15 +453,15 @@ fn collect_with_templates(
                 while let Some((
                     Token::Blankspace | Token::LineEndingComment | Token::BlockComment,
                     _,
-                )) = tokens_iter.peek()
+                )) = tokens_iterator.peek()
                 {
-                    let (next_token, next_span) = tokens_iter.next().unwrap();
+                    let (next_token, next_span) = tokens_iterator.next().unwrap();
                     tokens.push(next_token);
                     spans.push(next_span);
                 }
 
-                if let Some((Token::LessThan, _)) = tokens_iter.peek() {
-                    let (next_token, next_span) = tokens_iter.next().unwrap();
+                if let Some((Token::LessThan, _)) = tokens_iterator.peek() {
+                    let (next_token, next_span) = tokens_iterator.next().unwrap();
                     tokens.push(next_token);
                     spans.push(next_span);
 
@@ -474,18 +477,18 @@ fn collect_with_templates(
                 } else {
                     // Patch up >>, >>=, >>==, >=, >==
                     // Precondition: pending.last().depth != nesting_depth
-                    match tokens_iter.peek() {
+                    match tokens_iterator.peek() {
                         Some((Token::GreaterThan, span)) => {
                             // Might be a `>>`
                             *tokens.last_mut().unwrap() = Token::ShiftRight;
                             spans[tokens.len() - 1].end = span.end;
-                            tokens_iter.next();
-                            match tokens_iter.peek() {
+                            tokens_iterator.next();
+                            match tokens_iterator.peek() {
                                 Some((Token::Equal, span)) => {
                                     // Is a >>=
                                     *tokens.last_mut().unwrap() = Token::ShiftRightEqual;
                                     spans[tokens.len() - 1].end = span.end;
-                                    tokens_iter.next();
+                                    tokens_iterator.next();
                                 },
                                 Some((Token::EqualEqual, span)) => {
                                     // Is a >>= =
@@ -496,7 +499,7 @@ fn collect_with_templates(
                                     spans.push(middle..span.end);
                                     nesting_depth = 0;
                                     pending.clear();
-                                    tokens_iter.next();
+                                    tokens_iterator.next();
                                 },
                                 _ => {},
                             }
@@ -505,7 +508,7 @@ fn collect_with_templates(
                             // Is a >=
                             *tokens.last_mut().unwrap() = Token::GreaterThanEqual;
                             spans[tokens.len() - 1].end = span.end;
-                            tokens_iter.next();
+                            tokens_iterator.next();
                         },
                         Some((Token::EqualEqual, span)) => {
                             // Is a >= =
@@ -516,7 +519,7 @@ fn collect_with_templates(
                             spans.push(middle..span.end);
                             nesting_depth = 0;
                             pending.clear();
-                            tokens_iter.next();
+                            tokens_iterator.next();
                         },
                         _ => {},
                     }

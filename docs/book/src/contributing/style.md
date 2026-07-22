@@ -156,6 +156,7 @@ Instead, explicitly check for `None`, `Err`, etc.
 `wgsl-analyzer` is not a library.
 We do not need to test for API misuse, and we have to handle any user input without panics.
 Panic messages in the logs from the `#[should_panic]` tests are confusing.
+Finally, `#[should_panic]` hides the "current state" (it panics, but where?), making it hard to see the before and after of a change. This is especially relevant in a snapshot test.
 
 ### `#[ignore]`
 

@@ -28,18 +28,27 @@ pub fn ancestors_at_offset(
 /// ```
 ///
 /// then the shorter node will be silently preferred.
-pub fn find_node_at_offset<N: AstNode>(
+pub fn find_node_at_offset<Node>(
     syntax: &SyntaxNode,
     offset: TextSize,
-) -> Option<N> {
-    ancestors_at_offset(syntax, offset).find_map(N::cast)
+) -> Option<Node>
+where
+    Node: AstNode,
+{
+    ancestors_at_offset(syntax, offset).find_map(Node::cast)
 }
 
-pub fn find_node_at_range<N: AstNode>(
+pub fn find_node_at_range<Node>(
     syntax: &SyntaxNode,
     range: TextRange,
-) -> Option<N> {
-    syntax.covering_element(range).ancestors().find_map(N::cast)
+) -> Option<Node>
+where
+    Node: AstNode,
+{
+    syntax
+        .covering_element(range)
+        .ancestors()
+        .find_map(Node::cast)
 }
 
 /// Skip to next non `trivia` token.
@@ -51,7 +60,7 @@ pub fn skip_trivia_token(
     while token.kind().is_trivia() {
         token = match direction {
             Direction::Next => token.next_token()?,
-            Direction::Prev => token.prev_token()?, // spellchecker:disable-line
+            Direction::Prev => token.prev_token()?,
         }
     }
     Some(token)
@@ -66,7 +75,7 @@ pub fn skip_whitespace_token(
     while token.kind() == SyntaxKind::Blankspace {
         token = match direction {
             Direction::Next => token.next_token()?,
-            Direction::Prev => token.prev_token()?, // spellchecker:disable-line
+            Direction::Prev => token.prev_token()?,
         }
     }
     Some(token)
@@ -117,11 +126,14 @@ pub fn least_common_ancestor(
     Some(result)
 }
 
-pub fn neighbor<T: AstNode>(
-    me: &T,
+pub fn neighbor<Node>(
+    me: &Node,
     direction: Direction,
-) -> Option<T> {
-    me.syntax().siblings(direction).skip(1).find_map(T::cast)
+) -> Option<Node>
+where
+    Node: AstNode,
+{
+    me.syntax().siblings(direction).skip(1).find_map(Node::cast)
 }
 
 #[must_use]

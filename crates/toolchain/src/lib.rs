@@ -86,11 +86,15 @@ impl Tool {
     clippy::disallowed_types,
     reason = "generic parameter allows for FxHashMap"
 )]
-pub fn command<Hashy, OsStringy: AsRef<OsStr>, Pathy: AsRef<Path>>(
+pub fn command<Hashy, OsStringy, Pathy>(
     cmd: OsStringy,
     working_directory: Pathy,
     extra_env: &std::collections::HashMap<String, Option<String>, Hashy>,
-) -> Command {
+) -> Command
+where
+    OsStringy: AsRef<OsStr>,
+    Pathy: AsRef<Path>,
+{
     #[expect(clippy::disallowed_methods, reason = "we are `toolchain::command`")]
     let mut cmd = Command::new(cmd);
     cmd.current_dir(working_directory);

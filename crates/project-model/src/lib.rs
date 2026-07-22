@@ -28,8 +28,6 @@ use paths::{AbsPath, AbsPathBuf};
 pub use wesl_package::{PackageDependency, WeslPackage, WeslPackageRoot};
 pub use wesl_toml::{WeslDependency, WeslToml};
 
-use crate::package_interner::PackageInterner;
-
 /// Points at a relevant manifest file on disk.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Ord, PartialOrd)]
 pub enum ProjectManifest {
@@ -78,10 +76,6 @@ impl ProjectManifest {
                 return Some(manifest);
             }
 
-            if !search_parents {
-                return None;
-            }
-
             let mut curr = Some(path);
             while let Some(path) = curr {
                 let candidate = path.join(target_file_name);
@@ -90,7 +84,11 @@ impl ProjectManifest {
                 {
                     return Some(manifest);
                 }
-                curr = path.parent();
+                if search_parents {
+                    curr = path.parent();
+                } else {
+                    return None;
+                }
             }
 
             None

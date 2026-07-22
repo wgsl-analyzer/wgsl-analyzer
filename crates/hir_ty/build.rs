@@ -352,7 +352,7 @@ fn parse_type(
         } else if let Some(size) = r#type.strip_prefix("mat") {
             let mut characters = size.chars();
             let columns = characters.next().unwrap();
-            assert!(characters.next().unwrap() == 'x');
+            assert_eq!(characters.next().unwrap(), 'x');
             let rows = characters.next().unwrap();
             assert!(characters.next().is_none());
 

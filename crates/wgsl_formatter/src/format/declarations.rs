@@ -52,7 +52,7 @@ fn format_function_declaration(
 
     let param_list = function.parameter_list()?;
 
-    remove_if_whitespace(&param_list.left_parenthesis_token()?.prev_token()?); // spellchecker:disable-line
+    remove_if_whitespace(&param_list.left_parenthesis_token()?.prev_token()?);
 
     let has_newline =
         is_whitespace_with_newline(&param_list.left_parenthesis_token()?.next_token()?);
@@ -72,7 +72,7 @@ fn format_function_declaration(
             create_whitespace("\n"),
         );
     } else {
-        remove_if_whitespace(&param_list.right_parenthesis_token()?.prev_token()?); // spellchecker:disable-line
+        remove_if_whitespace(&param_list.right_parenthesis_token()?.prev_token()?);
     }
     Some(())
 }

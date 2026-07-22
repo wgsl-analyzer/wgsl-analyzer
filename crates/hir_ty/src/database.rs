@@ -14,6 +14,7 @@ use hir_def::{
     database::{
         DefDatabase, DefinitionWithBodyId, FunctionId, ModuleDefinitionId, StructId, TypeAliasId,
     },
+    item_scope::ItemScope,
     resolver::Resolver,
     signature::{FieldId, LocalFieldId},
 };
@@ -24,30 +25,15 @@ use wgsl_types::syntax::AddressSpace;
 
 use crate::{
     builtins::{Builtin, BuiltinId},
+    diagnostics::{InferenceDiagnostic, InferenceDiagnosticKind},
     function::{FunctionDetails, ResolvedFunctionId},
-    infer::{
-        InferenceDiagnostic, InferenceDiagnosticKind, InferenceResult, TypeLoweringContext,
-        TypeLoweringError,
-    },
+    infer::InferenceResult,
+    lower::{TypeLoweringContext, TypeLoweringError},
     ty::{Type, TypeKind},
 };
 
 #[query_group::query_group]
 pub trait HirDatabase: DefDatabase + fmt::Debug {
-    #[salsa::invoke(crate::infer::infer_query)]
-    #[salsa::cycle(cycle_result = crate::infer::infer_cycle_result)]
-    fn infer(
-        &self,
-        key: DefinitionWithBodyId,
-    ) -> Arc<InferenceResult>;
-
-    #[salsa::invoke(crate::infer::infer_signature_query)]
-    #[salsa::cycle(cycle_result = crate::infer::infer_signature_cycle_result)]
-    fn infer_signature(
-        &self,
-        key: ModuleDefinitionId,
-    ) -> Option<Arc<InferenceResult>>;
-
     fn field_types(
         &self,
         key: StructId,
@@ -98,8 +84,8 @@ fn field_types(
     let data = database.struct_data(r#struct).0;
 
     let file_id = r#struct.lookup(database).file_id;
-    let module_info = database.item_tree(file_id);
-    let resolver = Resolver::default().push_module_scope(file_id, module_info);
+    let module_info = ItemScope::of(database, file_id);
+    let resolver = Resolver::new(file_id, module_info);
 
     let mut type_context = TypeLoweringContext::new(database, &resolver, &data.store);
 
@@ -130,8 +116,8 @@ fn type_alias_type(
     let data = database.type_alias_data(type_alias).0;
 
     let file_id = type_alias.lookup(database).file_id;
-    let module_info = database.item_tree(file_id);
-    let resolver = Resolver::default().push_module_scope(file_id, module_info);
+    let module_info = ItemScope::of(database, file_id);
+    let resolver = Resolver::new(file_id, module_info);
 
     let mut type_context = TypeLoweringContext::new(database, &resolver, &data.store);
     let result = type_context.lower_type(data.r#type);
@@ -154,8 +140,8 @@ fn function_type(
     let data = database.function_data(function).0;
 
     let file_id = function.lookup(database).file_id;
-    let module_info = database.item_tree(file_id);
-    let resolver = Resolver::default().push_module_scope(file_id, module_info);
+    let module_info = ItemScope::of(database, file_id);
+    let resolver = Resolver::new(file_id, module_info);
 
     let mut type_context = TypeLoweringContext::new(database, &resolver, &data.store);
 
@@ -186,26 +172,33 @@ fn struct_is_used_in_uniform(
     file_id: EditionedFileId,
 ) -> bool {
     let module_info = database.item_tree(file_id);
-    module_info.items().iter().any(|item| match *item {
-        hir_def::item_tree::ModuleItem::GlobalVariable(declaration) => {
-            let declaration = database.intern_global_variable(InFile::new(file_id, declaration));
-            let inference = database.infer(DefinitionWithBodyId::GlobalVariable(declaration));
-            let type_kind = inference.return_type().kind(database);
+    module_info
+        .top_level_items()
+        .iter()
+        .any(|item| match *item {
+            hir_def::item_tree::ModuleItemId::GlobalVariable(declaration) => {
+                let declaration =
+                    database.intern_global_variable(InFile::new(file_id, declaration));
+                let inference = InferenceResult::of(
+                    database,
+                    DefinitionWithBodyId::GlobalVariable(declaration),
+                );
+                let type_kind = inference.return_type().kind(database);
 
-            if let TypeKind::Reference(crate::ty::Reference { address_space, .. }) = type_kind
-                && !matches!(address_space, AddressSpace::Uniform)
-            {
-                return false;
-            }
+                if let TypeKind::Reference(crate::ty::Reference { address_space, .. }) = type_kind
+                    && !matches!(address_space, AddressSpace::Uniform)
+                {
+                    return false;
+                }
 
-            inference.return_type().contains_struct(database, r#struct)
-        },
-        hir_def::item_tree::ModuleItem::Function(_)
-        | hir_def::item_tree::ModuleItem::Struct(_)
-        | hir_def::item_tree::ModuleItem::GlobalConstant(_)
-        | hir_def::item_tree::ModuleItem::Override(_)
-        | hir_def::item_tree::ModuleItem::GlobalAssertStatement(_)
-        | hir_def::item_tree::ModuleItem::TypeAlias(_)
-        | hir_def::item_tree::ModuleItem::ImportStatement(_) => false,
-    })
+                inference.return_type().contains_struct(database, r#struct)
+            },
+            hir_def::item_tree::ModuleItemId::Function(_)
+            | hir_def::item_tree::ModuleItemId::Struct(_)
+            | hir_def::item_tree::ModuleItemId::GlobalConstant(_)
+            | hir_def::item_tree::ModuleItemId::Override(_)
+            | hir_def::item_tree::ModuleItemId::GlobalAssertStatement(_)
+            | hir_def::item_tree::ModuleItemId::TypeAlias(_)
+            | hir_def::item_tree::ModuleItemId::ImportStatement(_) => false,
+        })
 }

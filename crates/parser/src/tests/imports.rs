@@ -1,6 +1,6 @@
 use expect_test::expect;
 
-use crate::tests::{check, check_with_edition};
+use crate::tests::{check, check_statement_with_edition, check_with_edition};
 
 #[test]
 fn simplest_import_fail() {
@@ -221,5 +221,125 @@ fn import_nested_collections() {
                     Blankspace@115..116 "\n"
                     BraceRight@116..117 "}"
                 Semicolon@117..118 ";""#]],
+    );
+}
+
+#[test]
+fn path_function_call() {
+    check_with_edition(
+        edition::Edition::Wesl2025Unstable,
+        "fn main() { foo::bar::baz(); }",
+        expect![[r#"
+            SourceFile@0..30
+              FunctionDeclaration@0..30
+                Fn@0..2 "fn"
+                Blankspace@2..3 " "
+                Name@3..7
+                  Identifier@3..7 "main"
+                FunctionParameters@7..9
+                  ParenthesisLeft@7..8 "("
+                  ParenthesisRight@8..9 ")"
+                Blankspace@9..10 " "
+                CompoundStatement@10..30
+                  BraceLeft@10..11 "{"
+                  Blankspace@11..12 " "
+                  FunctionCallStatement@12..28
+                    FunctionCall@12..27
+                      IdentExpression@12..25
+                        Path@12..25
+                          Identifier@12..15 "foo"
+                          ColonColon@15..17 "::"
+                          Identifier@17..20 "bar"
+                          ColonColon@20..22 "::"
+                          Identifier@22..25 "baz"
+                      Arguments@25..27
+                        ParenthesisLeft@25..26 "("
+                        ParenthesisRight@26..27 ")"
+                    Semicolon@27..28 ";"
+                  Blankspace@28..29 " "
+                  BraceRight@29..30 "}""#]],
+    );
+}
+
+#[test]
+fn path_assignment() {
+    check_with_edition(
+        edition::Edition::Wesl2025Unstable,
+        "fn main() { foo::bar = 3; }",
+        expect![[r#"
+            SourceFile@0..27
+              FunctionDeclaration@0..27
+                Fn@0..2 "fn"
+                Blankspace@2..3 " "
+                Name@3..7
+                  Identifier@3..7 "main"
+                FunctionParameters@7..9
+                  ParenthesisLeft@7..8 "("
+                  ParenthesisRight@8..9 ")"
+                Blankspace@9..10 " "
+                CompoundStatement@10..27
+                  BraceLeft@10..11 "{"
+                  Blankspace@11..12 " "
+                  AssignmentStatement@12..25
+                    IdentExpression@12..20
+                      Path@12..20
+                        Identifier@12..15 "foo"
+                        ColonColon@15..17 "::"
+                        Identifier@17..20 "bar"
+                    Blankspace@20..21 " "
+                    Equal@21..22 "="
+                    Blankspace@22..23 " "
+                    Literal@23..24
+                      IntLiteral@23..24 "3"
+                    Semicolon@24..25 ";"
+                  Blankspace@25..26 " "
+                  BraceRight@26..27 "}""#]],
+    );
+}
+
+#[test]
+fn path_with_super_or_package() {
+    check_statement_with_edition(
+        edition::Edition::Wesl2025Unstable,
+        "package::foo::bar();",
+        expect![[r#"
+            SourceFile@0..20
+              FunctionCallStatement@0..20
+                FunctionCall@0..19
+                  IdentExpression@0..17
+                    Path@0..17
+                      ImportPackageRelative@0..9
+                        Package@0..7 "package"
+                        ColonColon@7..9 "::"
+                      Identifier@9..12 "foo"
+                      ColonColon@12..14 "::"
+                      Identifier@14..17 "bar"
+                  Arguments@17..19
+                    ParenthesisLeft@17..18 "("
+                    ParenthesisRight@18..19 ")"
+                Semicolon@19..20 ";""#]],
+    );
+
+    check_statement_with_edition(
+        edition::Edition::Wesl2025Unstable,
+        "super::foo::utils::barValue();",
+        expect![[r#"
+            SourceFile@0..30
+              FunctionCallStatement@0..30
+                FunctionCall@0..29
+                  IdentExpression@0..27
+                    Path@0..27
+                      ImportSuperRelative@0..7
+                        Super@0..5 "super"
+                        ColonColon@5..7 "::"
+                      Identifier@7..10 "foo"
+                      ColonColon@10..12 "::"
+                      Identifier@12..17 "utils"
+                      ColonColon@17..19 "::"
+                      Identifier@19..27 "barValue"
+                  Arguments@27..29
+                    ParenthesisLeft@27..28 "("
+                    ParenthesisRight@28..29 ")"
+                Semicolon@29..30 ";""#]],
     );
 }

@@ -1,7 +1,7 @@
 //! Utilities for LSP-related boilerplate code.
 use std::{error::Error, mem, ops::Range};
 
-use lsp_server::{ErrorCode, Notification as ServerNotification, Response};
+use lsp_server::{ErrorCode, Notification as ServerNotification, Response, ResponseKind};
 use lsp_types::{
     CompletionItem, CompletionItemTextEdit, MessageActionItem, MessageType,
     Notification as LspNotification, ProgressNotification, ProgressParams, ProgressToken,
@@ -31,8 +31,11 @@ pub(crate) const fn invalid_params_error(message: String) -> LspError {
     }
 }
 
-pub(crate) fn notification_is<N: LspNotification>(notification: &ServerNotification) -> bool {
-    notification.method.as_str() == N::METHOD.as_str()
+pub(crate) fn notification_is<Notification>(notification: &ServerNotification) -> bool
+where
+    Notification: LspNotification,
+{
+    notification.method.as_str() == Notification::METHOD.as_str()
 }
 
 #[derive(Debug, Eq, PartialEq)]
@@ -71,8 +74,7 @@ impl GlobalState {
                 },
                 |this, response| {
                     let Response {
-                        error: None,
-                        result: Some(result),
+                        response_kind: ResponseKind::Ok { result },
                         ..
                     } = response
                     else {

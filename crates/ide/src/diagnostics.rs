@@ -16,7 +16,7 @@ use hir_ty::ty::{
 };
 use itertools::Itertools as _;
 use rowan::NodeOrToken;
-use syntax::AstNode as _;
+use syntax::{AstNode as _, Edition};
 use vfs::FileId;
 
 pub struct Diagnostic {
@@ -128,13 +128,15 @@ use naga27::Naga27;
 use naga28::Naga28;
 use naga29::Naga29;
 
-fn emit<Error: NagaError>(
+fn emit<Error>(
     database: &dyn HirDatabase,
     error: &Error,
     file_id: EditionedFileId,
     full_range: TextRange,
     accumulator: &mut Vec<AnyDiagnostic>,
-) {
+) where
+    Error: NagaError,
+{
     let message = error_message_cause_chain(&error);
     let original_range = |range: ops::Range<usize>| {
         TextRange::new(
@@ -169,21 +171,23 @@ fn emit<Error: NagaError>(
     });
 }
 
-fn naga_diagnostics<N: Naga>(
+fn naga_diagnostics<Naga>(
     database: &dyn HirDatabase,
     file_id: EditionedFileId,
     config: &DiagnosticsConfig,
     accumulator: &mut Vec<AnyDiagnostic>,
-) {
+) where
+    Naga: self::Naga,
+{
     let source: &str = database.file_text(file_id.file_id(database)).text(database);
     let full_range = TextRange::up_to(TextSize::of(source));
 
-    match N::parse(source) {
+    match Naga::parse(source) {
         Ok(module) => {
             if !config.naga_validation_errors {
                 return;
             }
-            if let Err(error) = N::validate(&module) {
+            if let Err(error) = Naga::validate(&module) {
                 emit(database, &error, file_id, full_range, accumulator);
             }
         },
@@ -229,7 +233,8 @@ pub fn diagnostics(
             .diagnostics(database, config, &mut diagnostics);
     }
 
-    if config.naga_parsing_errors || config.naga_validation_errors {
+    let edition = file_id.edition(database);
+    if edition == Edition::Wgsl && (config.naga_parsing_errors || config.naga_validation_errors) {
         match &config.naga_version {
             NagaVersion::Naga27 => {
                 naga_diagnostics::<Naga27>(database, file_id, config, &mut diagnostics);
@@ -250,7 +255,7 @@ pub fn diagnostics(
         .into_iter()
         .map(|diagnostic| {
             let file_id = diagnostic.file_id();
-            let root = database.parse_or_resolve(file_id).syntax();
+            let root = file_id.parse(database).syntax();
             match diagnostic {
                 AnyDiagnostic::AssignmentNotAReference { left_side, actual } => {
                     let source = left_side.value.to_node(&root);
@@ -376,7 +381,7 @@ pub fn diagnostics(
                         frange.range,
                     )
                 },
-                AnyDiagnostic::DerefNotPointer { expression, actual } => {
+                AnyDiagnostic::DerefNotAPointer { expression, actual } => {
                     let source = expression.value.to_node(&root);
                     let r#type = ty::pretty::pretty_type(database, actual);
                     let frange = original_file_range(database, expression.file_id, source.syntax());
@@ -479,13 +484,11 @@ pub fn diagnostics(
                     let symbol = operation.symbol();
                     let message = if sequence_permitted {
                         format!(
-                            "{symbol} sequences may only have unary operands.
-More complex operands must be this with parenthesized `()`",
+                            "{symbol} sequences may only have unary operands. More complex operands must be this with parenthesized `()`",
                         )
                     } else {
                         format!(
-                            "{symbol} expressions may only have unary operands.
-More complex operands must be this with parenthesized `()`"
+                            "{symbol} expressions may only have unary operands. More complex operands must be this with parenthesized `()`"
                         )
                     };
                     Diagnostic::new(DiagnosticCode("19"), message, frange.range)
@@ -530,9 +533,68 @@ More complex operands must be this with parenthesized `()`"
                 },
                 AnyDiagnostic::InvalidIdentifier { name, range, .. } => Diagnostic::new(
                     DiagnosticCode("24"),
-                    format!("'{}' is not a valid name for an identifier", name.as_str()),
+                    format!("`{}` is not a valid name for an identifier", name.as_str()),
                     range,
                 ),
+                AnyDiagnostic::UnresolvedImport { id, name } => {
+                    let source = id.value.to_node(&root);
+                    let frange = original_file_range(database, id.file_id, source.syntax());
+                    Diagnostic::new(
+                        DiagnosticCode("25"),
+                        format!("unresolved import `{}`", name.as_str()),
+                        frange.range,
+                    )
+                },
+                AnyDiagnostic::TooManySupers { id } => {
+                    let source = id.value.to_node(&root);
+                    let frange = original_file_range(database, id.file_id, source.syntax());
+                    Diagnostic::new(
+                        DiagnosticCode("26"),
+                        "too many leading `super` keywords".to_owned(),
+                        frange.range,
+                    )
+                },
+                AnyDiagnostic::DetachedFile { id } => {
+                    let source = id.value.to_node(&root);
+                    let frange = original_file_range(database, id.file_id, source.syntax());
+                    Diagnostic::new(
+                        DiagnosticCode("27"),
+                        "file is detached. Include it with a wesl.toml".to_owned(),
+                        frange.range,
+                    )
+                },
+                AnyDiagnostic::NameConflict {
+                    item,
+                    name: previous,
+                } => {
+                    let source = item.value.to_node(&root);
+                    let frange = original_file_range(database, item.file_id, source.syntax());
+                    Diagnostic::new(
+                        DiagnosticCode("28"),
+                        format!("Duplicate identifier `{}`", previous.as_str()),
+                        frange.range,
+                    )
+                },
+                AnyDiagnostic::StoreTypeMustBeStorable { expression, actual } => {
+                    let source = expression.value.to_node(&root);
+                    let r#type = ty::pretty::pretty_type(database, actual);
+                    let frange = original_file_range(database, expression.file_id, source.syntax());
+                    Diagnostic::new(
+                        DiagnosticCode("29"),
+                        format!("store type must be storable, found {type}"),
+                        frange.range,
+                    )
+                },
+                AnyDiagnostic::UnexpectedReturnValue { expression, actual } => {
+                    let source = expression.value.to_node(&root);
+                    let r#type = ty::pretty::pretty_type(database, actual);
+                    let frange = original_file_range(database, expression.file_id, source.syntax());
+                    Diagnostic::new(
+                        DiagnosticCode("30"),
+                        format!("unexpected return value of type `{type}` in function with no return type"),
+                        frange.range,
+                    )
+                },
             }
         })
         .collect()
@@ -603,6 +665,84 @@ mod tests {
     }
 
     #[test]
+    fn store_type_must_be_storable() {
+        check_diagnostics(
+            "fn foo() { var x = 1; var y = &x; }",
+            expect![[r#"
+                30..32 Error 29: store type must be storable, found ptr<i32>
+            "#]],
+        );
+    }
+
+    #[test]
+    fn unexpected_return_value() {
+        check_diagnostics(
+            "fn foo() { return 0; }",
+            expect![[r#"
+                18..19 Error 30: unexpected return value of type `integer` in function with no return type
+            "#]],
+        );
+    }
+
+    #[test]
+    fn no_builtin_overload() {
+        check_diagnostics(
+            "fn foo() { var x = 1f + mat2x2f(); }",
+            expect![[r#"
+                11..34 Error 8: no overload of `+` found for given arguments.Found (f32, mat2x2<f32>), expected one of:
+                fn op_binary_number(vecN<U>, vecN<U>) -> vecN<U>
+                fn op_binary_number(vecN<U>, U) -> vecN<U>
+                fn op_binary_number(T, vecM<T>) -> vecM<T>
+                fn op_binary_number(matNxM<f32>, matNxM<f32>) -> matNxM<f32>
+                fn op_binary_number(T, T) -> T
+            "#]],
+        );
+    }
+
+    #[test]
+    fn deref_not_a_pointer() {
+        check_diagnostics(
+            "fn foo() { var x = *1f; }",
+            expect![[r#"
+                20..22 Error 10: cannot dereference expression of type f32
+            "#]],
+        );
+    }
+
+    #[test]
+    fn no_constructor() {
+        check_diagnostics(
+            "fn foo() { var x = vec2f(1, 2, 3); }",
+            expect![[r#"
+                19..33 Error 18: no overload of constructor `vec2<f32>` found for given arguments. Found (integer, integer, integer), expected one of:
+                fn op_vec2_constructor(vec2<T>) -> vec2<T>
+                fn op_vec2_constructor(T) -> vec2<T>
+                fn op_vec2_constructor(T, T) -> vec2<T>
+            "#]],
+        );
+    }
+
+    #[test]
+    fn precedence_sequence_allowed() {
+        check_diagnostics(
+            "fn foo() { let x = true == true & true; }",
+            expect![[r#"
+                19..31 Error 19: & sequences may only have unary operands. More complex operands must be this with parenthesized `()`
+            "#]],
+        );
+    }
+
+    #[test]
+    fn precedence_sequence_disallowed() {
+        check_diagnostics(
+            "fn foo() { let x = true == true == true; }",
+            expect![[r#"
+                19..31 Error 19: == expressions may only have unary operands. More complex operands must be this with parenthesized `()`
+            "#]],
+        );
+    }
+
+    #[test]
     fn global_var_function_address_space_error() {
         check_diagnostics(
             "var<function> not_allowed_at_module_level: u32;",
@@ -648,7 +788,7 @@ var<storage> lines: array<LineSegment>;
 fn __my_func() {}
 ",
             expect![[r#"
-                3..12 Error 24: '__my_func' is not a valid name for an identifier
+                3..12 Error 24: `__my_func` is not a valid name for an identifier
             "#]],
         );
     }
@@ -726,6 +866,16 @@ fn foo() { let _ = 1; }
                 3..4 Error 16: invalid syntax, expected: <identifier>
                 25..26 Error 16: invalid syntax, expected: <identifier>
             "#]],
+        );
+    }
+
+    #[test]
+    fn binding_array_validates() {
+        check_diagnostics(
+            "
+    @group(0) @binding(0) var textures: binding_array<texture_2d<f32>>;
+    ",
+            expect![""],
         );
     }
 }

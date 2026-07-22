@@ -1,10 +1,9 @@
 //! [dprint](https://dprint.dev/) plugin for formatting WGSL code.
 
-use anyhow::Result;
 use dprint_core::{
     configuration::{ConfigKeyMap, GlobalConfiguration},
     plugins::{
-        CheckConfigUpdatesMessage, ConfigChange, FormatResult, PluginInfo,
+        CheckConfigUpdatesMessage, ConfigChange, FormatError, FormatResult, PluginInfo,
         PluginResolveConfigurationResult, SyncFormatRequest, SyncHostFormatRequest,
         SyncPluginHandler,
     },
@@ -53,7 +52,7 @@ impl SyncPluginHandler<FormattingOptions> for WgslPluginHandler {
     fn check_config_updates(
         &self,
         _: CheckConfigUpdatesMessage,
-    ) -> Result<Vec<ConfigChange>> {
+    ) -> Result<Vec<ConfigChange>, FormatError> {
         Ok(Vec::new())
     }
 
@@ -64,7 +63,9 @@ impl SyncPluginHandler<FormattingOptions> for WgslPluginHandler {
     ) -> FormatResult {
         let config = request.config;
 
-        let formatted = format_str(std::str::from_utf8(&request.file_bytes)?, config);
+        let file_text =
+            std::str::from_utf8(&request.file_bytes).map_err(|error| error.to_string())?;
+        let formatted = format_str(file_text, config);
 
         Ok(Some(formatted.into_bytes()))
     }

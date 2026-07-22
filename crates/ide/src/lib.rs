@@ -15,6 +15,7 @@ mod navigation_target;
 pub mod signature_help;
 mod status;
 mod typing;
+mod view_module_graph;
 mod view_package_graph;
 mod view_syntax_tree;
 
@@ -311,6 +312,14 @@ impl Analysis {
         self.with_db(|database| EditionedFileId::from_file(database, file_id).parse(database))
     }
 
+    /// Renders the module graph to `GraphViz` "dot" syntax.
+    pub fn view_module_graph(
+        &self,
+        file_id: FileId,
+    ) -> Cancellable<Option<String>> {
+        self.with_db(|database| view_module_graph::view_module_graph(database, file_id))
+    }
+
     /// Renders the package graph to `GraphViz` "dot" syntax.
     pub fn view_package_graph(
         &self,
@@ -368,7 +377,7 @@ impl Analysis {
     pub fn goto_definition(
         &self,
         file_position: FilePosition,
-    ) -> Cancellable<Option<NavigationTarget>> {
+    ) -> Cancellable<Option<RangeInfo<NavigationTarget>>> {
         self.with_db(|database| goto_definition::goto_definition(database, file_position))
     }
 
@@ -379,8 +388,9 @@ impl Analysis {
         position: FilePosition,
         trigger_character: Option<char>,
     ) -> Cancellable<Option<Vec<CompletionItem>>> {
+        let _p = tracing::info_span!("Analysis::completions").entered();
         self.with_db(|database| {
-            ide_completion::completions2(database, config, position, trigger_character)
+            ide_completion::completions(database, config, position, trigger_character)
         })
     }
 

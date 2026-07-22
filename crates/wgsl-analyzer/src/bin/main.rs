@@ -329,11 +329,15 @@ const STACK_SIZE: usize = 1 << 24;
 /// Parts of wgsl-analyzer can use a lot of stack space, and some operating systems only give us
 /// 1 MB by default (eg. Windows), so this spawns a new thread with hopefully sufficient stack
 /// space.
-fn with_extra_thread(
-    thread_name: impl Into<String>,
+fn with_extra_thread<ThreadName, Function>(
+    thread_name: ThreadName,
     thread_intent: stdx::thread::ThreadIntent,
-    function: impl FnOnce() -> anyhow::Result<()> + Send + 'static,
-) -> anyhow::Result<()> {
+    function: Function,
+) -> anyhow::Result<()>
+where
+    ThreadName: Into<String>,
+    Function: FnOnce() -> anyhow::Result<()> + Send + 'static,
+{
     let handle = stdx::thread::Builder::new(thread_intent, thread_name)
         .stack_size(STACK_SIZE)
         .spawn(function)?;

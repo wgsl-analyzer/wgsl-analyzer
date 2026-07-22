@@ -9,7 +9,10 @@
 use std::{fmt, ops};
 
 use edition::Edition;
+use salsa::Database;
 use vfs::{AnchoredPath, FileId, VfsPath, file_set::FileSet};
+
+use crate::EditionedFileId;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct SourceRootId(pub u32);
@@ -54,14 +57,14 @@ impl SourceRoot {
         &self,
         file: FileId,
     ) -> Option<&VfsPath> {
-        self.file_set.path_for_file(&file)
+        self.file_set.path_for_file(file)
     }
 
     #[must_use]
     pub fn file_for_path(
         &self,
         path: &VfsPath,
-    ) -> Option<&FileId> {
+    ) -> Option<FileId> {
         self.file_set.file_for_path(path)
     }
 
@@ -210,7 +213,7 @@ pub struct PackageData {
     pub root_file_id: FileId,
     pub edition: Edition,
     /// A name used for UI. For purposes of analysis, packages are anonymous.
-    /// (only names in `Dependency` matters).
+    /// (only names in [`Dependency`] matters).
     pub display_name: Option<String>,
     /// The dependencies of this package.
     ///
@@ -223,6 +226,15 @@ pub struct PackageData {
     /// to avoid infinite loops.
     pub dependencies: Vec<Dependency>,
     pub origin: PackageOrigin,
+}
+
+impl PackageData {
+    pub fn root_file(
+        &self,
+        database: &dyn Database,
+    ) -> EditionedFileId {
+        EditionedFileId::new_unchecked(database, self.root_file_id, self.edition)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]

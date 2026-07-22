@@ -4,7 +4,10 @@ use itertools::Itertools as _;
 use smallvec::{SmallVec, smallvec};
 use wgsl_types::syntax::{AccessMode, AddressSpace};
 
-use crate::{database::HirDatabase, ty::TypeKind};
+use crate::{
+    database::HirDatabase,
+    ty::{ArrayType, TypeKind},
+};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Scope {
@@ -65,14 +68,16 @@ impl fmt::Display for AddressSpaceError {
 
 #[expect(clippy::cognitive_complexity, reason = "TODO")]
 #[expect(clippy::too_many_lines, reason = "TODO")]
-pub fn validate_address_space<DiagnosticBuilder: FnMut(AddressSpaceError)>(
+pub fn validate_address_space<DiagnosticBuilder>(
     address_space: AddressSpace,
     access_mode: AccessMode,
     scope: Scope,
     r#type: &TypeKind,
     database: &dyn HirDatabase,
     mut diagnostic_builder: DiagnosticBuilder,
-) {
+) where
+    DiagnosticBuilder: FnMut(AddressSpaceError),
+{
     // We only care about the inner type here
     let r#type = r#type.unref(database);
     match address_space {
@@ -156,7 +161,12 @@ pub fn validate_address_space<DiagnosticBuilder: FnMut(AddressSpaceError)>(
                 ]));
             }
             match r#type.as_ref() {
-                TypeKind::Sampler(_) | TypeKind::Texture(_) => {},
+                TypeKind::Sampler(_)
+                | TypeKind::Texture(_)
+                | TypeKind::Array(ArrayType {
+                    binding_array: true,
+                    ..
+                }) => {},
                 TypeKind::Error
                 | TypeKind::Scalar(_)
                 | TypeKind::Atomic(_)
@@ -172,8 +182,8 @@ pub fn validate_address_space<DiagnosticBuilder: FnMut(AddressSpaceError)>(
                 },
             }
         },
-        AddressSpace::PushConstant => {
-            // TODO: validate push constants
+        AddressSpace::Immediate => {
+            // TODO: validate immediates
             // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/682
         },
     }
