@@ -335,6 +335,34 @@ impl<'source> ParserCallbacks<'source> for Parser<'source> {
         }
     }
 
+    fn create_node_language_extension_name(
+        &mut self,
+        node_ref: NodeRef,
+        diagnostics: &mut Vec<Self::Diagnostic>,
+    ) {
+        let text = &self.cst.source()[self.cst.span(node_ref)];
+        match text {
+            "readonly_and_readwrite_storage_textures" => self.context.extensions.readonly_and_readwrite_storage_textures = true,
+            "packed_4x8_integer_dot_product" => self.context.extensions.packed_4x8_integer_dot_product = true,
+            "unrestricted_pointer_parameters" => self.context.extensions.unrestricted_pointer_parameters = true,
+            "pointer_composite_access" => self.context.extensions.pointer_composite_access = true,
+            "uniform_buffer_standard_layout" => self.context.extensions.uniform_buffer_standard_layout = true,
+            "subgroup_id" => self.context.extensions.subgroup_id = true,
+            "subgroup_uniformity" => self.context.extensions.subgroup_uniformity = true,
+            "texture_and_sampler_let" => self.context.extensions.texture_and_sampler_let = true,
+            "texture_formats_tier1" => self.context.extensions.texture_formats_tier1 = true,
+            "linear_indexing" => self.context.extensions.linear_indexing = true,
+            "immediate_address_space" => self.context.extensions.immediate_address_space = true,
+            "buffer_view" => self.context.extensions.buffer_view = true,
+            _ => {
+                diagnostics.push(self.create_diagnostic(
+                    self.cst.span(node_ref),
+                    format!("unknown extension {text}"),
+                ));
+            },
+        }
+    }
+
     fn create_node_early_depth_test_attr(
         &mut self,
         node_ref: NodeRef,
