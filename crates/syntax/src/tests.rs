@@ -4,9 +4,9 @@ use expect_test::{Expect, expect};
 use parser::Edition;
 
 use crate::{
-    AstNode, HasAttributes as _, HasName as _,
+    AstNode, HasAttributes as _, HasName as _, Parse,
     ast::{
-        self, EnableDirective, EnableExtension, EnableExtensionName, Item, LiteralKind,
+        self, Directive, EnableDirective, EnableExtension, EnableExtensionName, Item, LiteralKind,
         UnknownExtension,
     },
     parse,
@@ -15,7 +15,7 @@ use crate::{
 fn check_errors(
     wa_fixture: &str,
     expect: Expect,
-) {
+) -> Parse {
     let parse = parse(wa_fixture, Edition::LATEST);
     let errors = parse.errors();
     let actual = errors
@@ -24,13 +24,21 @@ fn check_errors(
         .collect::<Vec<String>>()
         .join("\n");
     expect.assert_eq(&actual);
+    parse
 }
 
 #[test]
 fn smoke_test() {
-    let ast = parse("fn foo(a: u32) -> f32 { let b = 1 + a; }", Edition::LATEST).tree();
+    let parsed = check_errors(
+        "
+        fn foo(a: u32) -> f32 { let b = 1 + a; }
+        ",
+        expect![""],
+    );
 
-    let ast::Item::FunctionDeclaration(function_declaration) = ast.items().next().unwrap() else {
+    let ast::Item::FunctionDeclaration(function_declaration) =
+        parsed.tree().items().next().unwrap()
+    else {
         panic!()
     };
     let mut function_parameters = function_declaration.parameter_list().unwrap().parameters();
@@ -54,9 +62,16 @@ fn smoke_test() {
 
 #[test]
 fn discard_statement() {
-    let ast = parse("fn main() { discard; }", Edition::LATEST).tree();
+    let parsed = check_errors(
+        "
+        fn main() { discard; }
+        ",
+        expect![""],
+    );
 
-    let ast::Item::FunctionDeclaration(function_declaration) = ast.items().next().unwrap() else {
+    let ast::Item::FunctionDeclaration(function_declaration) =
+        parsed.tree().items().next().unwrap()
+    else {
         panic!()
     };
     let body = function_declaration.body().unwrap();
@@ -67,9 +82,16 @@ fn discard_statement() {
 
 #[test]
 fn function_call_statement() {
-    let ast = parse("fn main() { foo(1,2,3); }", Edition::LATEST).tree();
+    let parsed = check_errors(
+        "
+        fn main() { foo(1,2,3); }
+        ",
+        expect![""],
+    );
 
-    let ast::Item::FunctionDeclaration(function_declaration) = ast.items().next().unwrap() else {
+    let ast::Item::FunctionDeclaration(function_declaration) =
+        parsed.tree().items().next().unwrap()
+    else {
         panic!()
     };
     let body = function_declaration.body().unwrap();
@@ -85,21 +107,21 @@ fn function_call_statement() {
 
 #[test]
 fn switch_with_case_default() {
-    let ast = parse(
+    let parsed = check_errors(
         "
-fn main() {
-    switch foo {
-        case 1,2: {},
-        case default, 2, default: {}
-        default: {}
-    }
-}
-    ",
-        Edition::LATEST,
-    )
-    .tree();
-
-    let ast::Item::FunctionDeclaration(function_declaration) = ast.items().next().unwrap() else {
+        fn main() {
+            switch foo {
+                case 1,2: {}
+                case default, 2, default: {}
+                default: {}
+            }
+        }
+        ",
+        expect![""],
+    );
+    let ast::Item::FunctionDeclaration(function_declaration) =
+        parsed.tree().items().next().unwrap()
+    else {
         panic!()
     };
     let body = function_declaration.body().unwrap();
@@ -127,17 +149,17 @@ fn main() {
 
 #[test]
 fn loop_with_block() {
-    let ast = parse(
+    let parsed = check_errors(
         "
-fn main() {
-    loop { let a = 3; }
-}
-    ",
-        Edition::LATEST,
-    )
-    .tree();
-
-    let ast::Item::FunctionDeclaration(function_declaration) = ast.items().next().unwrap() else {
+        fn main() {
+            loop { let a = 3; }
+        }
+        ",
+        expect![""],
+    );
+    let ast::Item::FunctionDeclaration(function_declaration) =
+        parsed.tree().items().next().unwrap()
+    else {
         panic!()
     };
     let body = function_declaration.body().unwrap();
@@ -149,16 +171,13 @@ fn main() {
 
 #[test]
 fn diagnostic_attribute() {
-    let parsed = parse(
+    let parsed = check_errors(
         "
         @diagnostic(off, bla)
         fn main() {}
         ",
-        Edition::LATEST,
+        expect![""],
     );
-
-    assert!(parsed.errors().is_empty());
-
     match parsed.tree().items().next().unwrap() {
         Item::FunctionDeclaration(func) => match func.attributes().unwrap().next().unwrap() {
             ast::Attribute::DiagnosticAttribute(diagnostic_attribute) => {
@@ -193,16 +212,13 @@ fn diagnostic_attribute() {
 
 #[test]
 fn const_attribute() {
-    let parsed = parse(
+    let parsed = check_errors(
         "
         @const
         fn foo() {}
         ",
-        Edition::LATEST,
+        expect![""],
     );
-
-    assert!(parsed.errors().is_empty());
-
     match parsed.tree().items().next().unwrap() {
         Item::FunctionDeclaration(func) => match func.attributes().unwrap().next().unwrap() {
             ast::Attribute::ConstantAttribute(constant_attribute) => {
@@ -216,16 +232,13 @@ fn const_attribute() {
 
 #[test]
 fn other_attribute() {
-    let parsed = parse(
+    let parsed = check_errors(
         "
         @nonexistent(wacky * 2)
         fn foo() {}
         ",
-        Edition::LATEST,
+        expect![""],
     );
-
-    assert!(parsed.errors().is_empty());
-
     match parsed.tree().items().next().unwrap() {
         Item::FunctionDeclaration(func) => match func.attributes().unwrap().next().unwrap() {
             ast::Attribute::OtherAttribute(other_attribute) => {
@@ -275,16 +288,138 @@ fn other_attribute() {
 }
 
 #[test]
+fn struct_translate_attribute() {
+    let parsed = check_errors(
+        "
+        @if(true)
+        struct Foo { bar: bool }
+        ",
+        expect![""],
+    );
+    match parsed.tree().items().next().unwrap() {
+        Item::StructDeclaration(r#struct) => match r#struct.attributes().unwrap().next().unwrap() {
+            ast::Attribute::IfAttribute(if_attribute) => {
+                assert_eq!(if_attribute.name().unwrap().text(), "if");
+            },
+            _ => panic!("wrong attribute"),
+        },
+        _ => panic!("expected function"),
+    }
+}
+
+#[test]
+fn assert_translate_attribute() {
+    let parsed = check_errors(
+        "
+        @if(true)
+        const_assert 2 > 1;
+        ",
+        expect![""],
+    );
+    match parsed.tree().items().next().unwrap() {
+        Item::AssertStatement(assert) => match assert.attributes().unwrap().next().unwrap() {
+            ast::Attribute::IfAttribute(if_attribute) => {
+                assert_eq!(if_attribute.name().unwrap().text(), "if");
+            },
+            _ => panic!("wrong attribute"),
+        },
+        _ => panic!("expected function"),
+    }
+}
+
+#[test]
+fn diagnostic_translate_attribute() {
+    let parsed = check_errors(
+        "
+        @if(true)
+        diagnostic(off, bla);
+        ",
+        expect![""],
+    );
+    match parsed.tree().directives().next().unwrap() {
+        Directive::DiagnosticDirective(diagnostic) => {
+            match diagnostic.attributes().unwrap().next().unwrap() {
+                ast::Attribute::IfAttribute(if_attribute) => {
+                    assert_eq!(if_attribute.name().unwrap().text(), "if");
+                },
+                _ => panic!("wrong attribute"),
+            }
+        },
+        _ => panic!("expected function"),
+    }
+}
+
+#[test]
+fn enable_translate_attribute() {
+    let parsed = check_errors(
+        "
+        @if(true)
+        enable f16;
+        ",
+        expect![""],
+    );
+    match parsed.tree().directives().next().unwrap() {
+        Directive::EnableDirective(enable) => match enable.attributes().unwrap().next().unwrap() {
+            ast::Attribute::IfAttribute(if_attribute) => {
+                assert_eq!(if_attribute.name().unwrap().text(), "if");
+            },
+            _ => panic!("wrong attribute"),
+        },
+        _ => panic!("expected function"),
+    }
+}
+
+#[test]
+fn requires_translate_attribute() {
+    let parsed = check_errors(
+        "
+        @if(true)
+        requires packed_4x8_integer_dot_product;
+        ",
+        expect![""],
+    );
+    match parsed.tree().directives().next().unwrap() {
+        Directive::RequiresDirective(enable) => {
+            match enable.attributes().unwrap().next().unwrap() {
+                ast::Attribute::IfAttribute(if_attribute) => {
+                    assert_eq!(if_attribute.name().unwrap().text(), "if");
+                },
+                _ => panic!("wrong attribute"),
+            }
+        },
+        _ => panic!("expected function"),
+    }
+}
+
+#[test]
+fn type_translate_attribute() {
+    let parsed = check_errors(
+        "
+        @if(true)
+        alias Foo = bool;
+        ",
+        expect![""],
+    );
+    match parsed.tree().items().next().unwrap() {
+        Item::TypeAliasDeclaration(enable) => match enable.attributes().unwrap().next().unwrap() {
+            ast::Attribute::IfAttribute(if_attribute) => {
+                assert_eq!(if_attribute.name().unwrap().text(), "if");
+            },
+            _ => panic!("wrong attribute"),
+        },
+        _ => panic!("expected function"),
+    }
+}
+
+#[test]
 fn no_attributes() {
-    let parsed = parse(
+    let parsed = check_errors(
         "
         struct Foo { bar: bool }
         fn foo() {}
         ",
-        Edition::LATEST,
+        expect![""],
     );
-
-    assert!(parsed.errors().is_empty());
     let Some(Item::FunctionDeclaration(func)) = parsed.tree().items().nth(1) else {
         panic!("expected function");
     };
@@ -293,13 +428,10 @@ fn no_attributes() {
 
 #[test]
 fn enable_extension_names() {
-    let wa_fixture = "
+    let parsed = check_errors(
+        "
         enable f16, clip_distances, dual_source_blending, subgroups, primitive_index, unknown_nonsense;
-        ";
-    let parsed = parse(wa_fixture, Edition::LATEST);
-
-    check_errors(
-        wa_fixture,
+        ",
         expect!["error at 87..103: unknown extension unknown_nonsense"],
     );
     let items = vec![

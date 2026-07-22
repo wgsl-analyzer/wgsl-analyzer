@@ -184,18 +184,18 @@ fn parse_builtin_attribute() {
                   Identifier@146..149 "bar"
                 FunctionParameters@149..191
                   ParenthesisLeft@149..150 "("
-                  Parameter@150..190
-                    AttributeList@150..170
-                      BuiltinAttribute@150..170
-                        AttributeOperator@150..151 "@"
-                        Builtin@151..158 "builtin"
-                        ParenthesisLeft@158..159 "("
-                        Blankspace@159..160 " "
-                        BuiltinValueName@160..168
-                          Identifier@160..168 "position"
-                        Blankspace@168..169 " "
-                        ParenthesisRight@169..170 ")"
-                    Blankspace@170..171 " "
+                  AttributeList@150..170
+                    BuiltinAttribute@150..170
+                      AttributeOperator@150..151 "@"
+                      Builtin@151..158 "builtin"
+                      ParenthesisLeft@158..159 "("
+                      Blankspace@159..160 " "
+                      BuiltinValueName@160..168
+                        Identifier@160..168 "position"
+                      Blankspace@168..169 " "
+                      ParenthesisRight@169..170 ")"
+                  Blankspace@170..171 " "
+                  Parameter@171..190
                     Name@171..179
                       Identifier@171..179 "coord_in"
                     Colon@179..180 ":"
@@ -1311,24 +1311,24 @@ fn parse_all_attributes() {
                 StructBody@18..88
                   BraceLeft@18..19 "{"
                   Blankspace@19..32 "\n            "
-                  StructMember@32..77
-                    AttributeList@32..52
-                      AlignAttribute@32..42
-                        AttributeOperator@32..33 "@"
-                        Align@33..38 "align"
-                        ParenthesisLeft@38..39 "("
-                        Literal@39..41
-                          IntLiteral@39..41 "16"
-                        ParenthesisRight@41..42 ")"
-                      Blankspace@42..43 " "
-                      SizeAttribute@43..52
-                        AttributeOperator@43..44 "@"
-                        Size@44..48 "size"
-                        ParenthesisLeft@48..49 "("
-                        Literal@49..51
-                          IntLiteral@49..51 "16"
-                        ParenthesisRight@51..52 ")"
-                    Blankspace@52..65 "\n            "
+                  AttributeList@32..52
+                    AlignAttribute@32..42
+                      AttributeOperator@32..33 "@"
+                      Align@33..38 "align"
+                      ParenthesisLeft@38..39 "("
+                      Literal@39..41
+                        IntLiteral@39..41 "16"
+                      ParenthesisRight@41..42 ")"
+                    Blankspace@42..43 " "
+                    SizeAttribute@43..52
+                      AttributeOperator@43..44 "@"
+                      Size@44..48 "size"
+                      ParenthesisLeft@48..49 "("
+                      Literal@49..51
+                        IntLiteral@49..51 "16"
+                      ParenthesisRight@51..52 ")"
+                  Blankspace@52..65 "\n            "
+                  StructMember@65..77
                     Name@65..66
                       Identifier@65..66 "a"
                     Colon@66..67 ":"
@@ -1420,24 +1420,24 @@ fn parse_all_attributes() {
                   Identifier@223..224 "f"
                 FunctionParameters@224..266
                   ParenthesisLeft@224..225 "("
-                  Parameter@225..265
-                    AttributeList@225..258
-                      LocationAttribute@225..237
-                        AttributeOperator@225..226 "@"
-                        Location@226..234 "location"
-                        ParenthesisLeft@234..235 "("
-                        Literal@235..236
-                          IntLiteral@235..236 "0"
-                        ParenthesisRight@236..237 ")"
-                      Blankspace@237..238 " "
-                      InterpolateAttribute@238..258
-                        AttributeOperator@238..239 "@"
-                        Interpolate@239..250 "interpolate"
-                        ParenthesisLeft@250..251 "("
-                        InterpolateTypeName@251..257
-                          Linear@251..257 "linear"
-                        ParenthesisRight@257..258 ")"
-                    Blankspace@258..259 " "
+                  AttributeList@225..258
+                    LocationAttribute@225..237
+                      AttributeOperator@225..226 "@"
+                      Location@226..234 "location"
+                      ParenthesisLeft@234..235 "("
+                      Literal@235..236
+                        IntLiteral@235..236 "0"
+                      ParenthesisRight@236..237 ")"
+                    Blankspace@237..238 " "
+                    InterpolateAttribute@238..258
+                      AttributeOperator@238..239 "@"
+                      Interpolate@239..250 "interpolate"
+                      ParenthesisLeft@250..251 "("
+                      InterpolateTypeName@251..257
+                        Linear@251..257 "linear"
+                      ParenthesisRight@257..258 ")"
+                  Blankspace@258..259 " "
+                  Parameter@259..265
                     Name@259..260
                       Identifier@259..260 "x"
                     Colon@260..261 ":"
@@ -1488,16 +1488,16 @@ fn parse_all_attributes() {
                   Identifier@349..351 "vs"
                 FunctionParameters@351..382
                   ParenthesisLeft@351..352 "("
-                  Parameter@352..381
-                    AttributeList@352..374
-                      BuiltinAttribute@352..374
-                        AttributeOperator@352..353 "@"
-                        Builtin@353..360 "builtin"
-                        ParenthesisLeft@360..361 "("
-                        BuiltinValueName@361..373
-                          Identifier@361..373 "vertex_index"
-                        ParenthesisRight@373..374 ")"
-                    Blankspace@374..375 " "
+                  AttributeList@352..374
+                    BuiltinAttribute@352..374
+                      AttributeOperator@352..353 "@"
+                      Builtin@353..360 "builtin"
+                      ParenthesisLeft@360..361 "("
+                      BuiltinValueName@361..373
+                        Identifier@361..373 "vertex_index"
+                      ParenthesisRight@373..374 ")"
+                  Blankspace@374..375 " "
+                  Parameter@375..381
                     Name@375..376
                       Identifier@375..376 "i"
                     Colon@376..377 ":"
@@ -1590,24 +1590,24 @@ fn parse_all_attributes() {
                 StructBody@505..581
                   BraceLeft@505..506 "{"
                   Blankspace@506..515 "\n        "
-                  StructMember@515..570
-                    AttributeList@515..541
-                      LocationAttribute@515..527
-                        AttributeOperator@515..516 "@"
-                        Location@516..524 "location"
-                        ParenthesisLeft@524..525 "("
-                        Literal@525..526
-                          IntLiteral@525..526 "0"
-                        ParenthesisRight@526..527 ")"
-                      Blankspace@527..528 " "
-                      BlendSrcAttribute@528..541
-                        AttributeOperator@528..529 "@"
-                        BlendSrc@529..538 "blend_src"
-                        ParenthesisLeft@538..539 "("
-                        Literal@539..540
-                          IntLiteral@539..540 "0"
-                        ParenthesisRight@540..541 ")"
-                    Blankspace@541..554 "\n            "
+                  AttributeList@515..541
+                    LocationAttribute@515..527
+                      AttributeOperator@515..516 "@"
+                      Location@516..524 "location"
+                      ParenthesisLeft@524..525 "("
+                      Literal@525..526
+                        IntLiteral@525..526 "0"
+                      ParenthesisRight@526..527 ")"
+                    Blankspace@527..528 " "
+                    BlendSrcAttribute@528..541
+                      AttributeOperator@528..529 "@"
+                      BlendSrc@529..538 "blend_src"
+                      ParenthesisLeft@538..539 "("
+                      Literal@539..540
+                        IntLiteral@539..540 "0"
+                      ParenthesisRight@540..541 ")"
+                  Blankspace@541..554 "\n            "
+                  StructMember@554..570
                     Name@554..559
                       Identifier@554..559 "color"
                     Colon@559..560 ":"

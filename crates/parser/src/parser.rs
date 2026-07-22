@@ -15,6 +15,7 @@ use rowan::GreenNodeBuilder;
 use super::lexer::Token;
 use crate::{Parse, ParseEntryPoint, SyntaxKind, cst_builder::CstBuilder, lexer::lex};
 
+// cannot be in a submodule due to visibility of fields
 include!(concat!(env!("OUT_DIR"), "/generated.rs"));
 
 pub struct ParserContext {
@@ -37,10 +38,10 @@ pub struct Diagnostic {
 impl fmt::Display for Diagnostic {
     fn fmt(
         &self,
-        f: &mut fmt::Formatter<'_>,
+        formatter: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
         write!(
-            f,
+            formatter,
             "error at {}..{}: {}",
             u32::from(self.range.start()),
             u32::from(self.range.end()),
@@ -131,10 +132,9 @@ impl Parser<'_> {
         )
     }
 
-    /// Checks the most recently completed `attribute_list` node (the one
-    /// still on top of the builder at the call site) for any attribute
-    /// whose identifier is translate-time-only, and returns a diagnostic
-    /// for the first offender.
+    /// Checks the most recently completed `attribute_list` node (the one still on top of the
+    /// builder at the call site) for any attribute whose identifier is translate-time-only,
+    /// and returns a diagnostic for the first offender.
     fn assert_no_translate_time_attrs(
         &self,
         context: &str,
@@ -435,7 +435,7 @@ impl<'source> ParserCallbacks<'source> for Parser<'source> {
         self.assert_no_translate_time_attrs("a function body")
     }
 
-    fn assertion_switch_body_1(&self) -> Option<Diagnostic> {
+    fn assertion_statement_0(&self) -> Option<Diagnostic> {
         self.assert_no_translate_time_attrs("a switch body")
     }
 
