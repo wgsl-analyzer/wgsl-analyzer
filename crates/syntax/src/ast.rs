@@ -438,7 +438,7 @@ pub enum EnableExtension {
 
 ast_node! {
     RequiresDirective:
-    enable_extensions: AstChildren<LanguageExtensionName>;
+    require_extensions: AstChildren<LanguageExtensionName>;
 }
 
 ast_node! {
@@ -449,17 +449,22 @@ ast_node! {
 
 impl LanguageExtensionName {
     pub fn extension(&self) -> Result<LanguageExtension, UnknownExtension> {
-        match self.text().as_str() {
-            "readonly_and_readwrite_storage_textures" => {
-                Ok(LanguageExtension::ReadonlyAndReadwriteStorageTextures)
-            },
-            "packed_4x8_integer_dot_product" => Ok(LanguageExtension::Packed4x8IntegerDotProduct),
-            "unrestricted_pointer_parameters" => {
-                Ok(LanguageExtension::UnrestrictedPointerParameters)
-            },
-            "pointer_composite_access" => Ok(LanguageExtension::PointerCompositeAccess),
-            _ => Err(UnknownExtension),
-        }
+        use LanguageExtension as LE;
+        Ok(match self.text().as_str() {
+            "readonly_and_readwrite_storage_textures" => LE::ReadonlyAndReadwriteStorageTextures,
+            "packed_4x8_integer_dot_product" => LE::Packed4x8IntegerDotProduct,
+            "unrestricted_pointer_parameters" => LE::UnrestrictedPointerParameters,
+            "pointer_composite_access" => LE::PointerCompositeAccess,
+            "uniform_buffer_standard_layout" => LE::UniformBufferStandardLayout,
+            "subgroup_id" => LE::SubgroupId,
+            "subgroup_uniformity" => LE::SubgroupUniformity,
+            "texture_and_sampler_let" => LE::TextureAndSamplerLet,
+            "texture_formats_tier1" => LE::TextureFormatsTier1,
+            "linear_indexing" => LE::LinearIndexing,
+            "immediate_address_space" => LE::ImmediateAddressSpace,
+            "buffer_view" => LE::BufferView,
+            _ => return Err(UnknownExtension),
+        })
     }
 }
 
@@ -469,10 +474,61 @@ impl LanguageExtensionName {
 /// Source: <https://www.w3.org/TR/WGSL/#syntax-enable_extension_name>
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub enum LanguageExtension {
+    /// Allows the use of `read` and `read_write` access modes with storage textures.
+    /// Additionally, adds the `textureBarrier` built-in function.
     ReadonlyAndReadwriteStorageTextures,
+
+    /// Supports using 32-bit integer scalars packing 4-component vectors of 8-bit integers as inputs to the dot product instructions with `dot4U8Packed` and `dot4I8Packed` built-in functions.
+    /// Additionally, adds packing and unpacking instructions with packed 4-component vectors of 8-bit integers with `pack4xI8`, `pack4xU8`, `pack4xI8Clamp`, `pack4xU8Clamp`, `unpack4xI8`, and `unpack4xU8` built-in functions.
     Packed4x8IntegerDotProduct,
+
+    /// Removes the following restrictions from user-defined functions:
+    ///
+    /// - For user-defined functions, a parameter of pointer type must be in one of the following address spaces:
+    ///   - function
+    ///   - private
+    /// - Each argument of pointer type to a user-defined function must have the same memory view as its root identifier.
     UnrestrictedPointerParameters,
+
+    /// Supports composite-value decomposition expressions where the root expression is a pointer, yielding a reference.
+    ///
+    /// For example, if `p` is a pointer to a structure with member `m`, then `p.m` is a reference to the memory locations for `m` inside the structure `p` points to.
+    ///
+    /// Similarly, if `pa` is a pointer to an array, then `pa[i]` is a reference to the memory locations for the `i`'th element of the array `pa` points to.
     PointerCompositeAccess,
+
+    /// Allow buffers in the uniform address space to use the same memory layout constraints as other address spaces.
+    UniformBufferStandardLayout,
+
+    /// Allows the use of the `subgroup_id` and `num_subgroups` built-in values when the subgroups extension is enabled.
+    SubgroupId,
+
+    /// Adds an additional scope, subgroup, for uniform control flow subgroup and quad built-in functions to be all invocations in the same subgroup.
+    SubgroupUniformity,
+
+    /// Allows the effective-value-type of a let-declaration to be a texture or sampler type.
+    TextureAndSamplerLet,
+
+    /// Supports additional texel formats:
+    /// `rgba16unorm`, `rgba16snorm`,
+    /// `rg8unorm`, `rg8snorm`, `rg8uint`, `rg8sint`,
+    /// `rg16unorm`, `rg16snorm`, `rg16uint`, `rg16sint`, `rg16float`,
+    /// `r8unorm`, `r8snorm`, `r8uint`, `r8sint`,
+    /// `r16unorm`, `r16snorm`, `r16uint`, `r16sint`, `r16float`,
+    /// `rgb10a2unorm`, `rgb10a2uint`, `rg11b10ufloat`
+    TextureFormatsTier1,
+
+    /// Supports the `global_invocation_index` and `workgroup_index` built-in values.
+    LinearIndexing,
+
+    /// Enables the immediate address space, allowing variables to be declared with `var<immediate>`
+    /// and bound to small amounts of frequently updated data passed directly from the command encoder
+    /// via the WebGPU API.
+    ImmediateAddressSpace,
+
+    /// Enables the use of buffer types and the `buffer_view` built-in functions.
+    /// Allow the declaration of variables with an opaque store type that can be reinterpreted as other host-shareable types.
+    BufferView,
 }
 
 impl HasAttributes for Directive {}

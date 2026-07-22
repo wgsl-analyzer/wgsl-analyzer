@@ -1,17 +1,22 @@
 #![expect(clippy::wildcard_enum_match_arm, reason = "brevity in test data")]
 
+use std::string;
+
 use expect_test::{Expect, expect};
 use parser::Edition;
 
 use crate::{
     AstNode, HasAttributes as _, HasName as _, Parse,
     ast::{
-        self, Directive, EnableDirective, EnableExtension, EnableExtensionName, Item, LiteralKind,
-        UnknownExtension,
+        self, Attribute, CaseToken, Directive, EnableDirective, EnableExtension,
+        EnableExtensionName, Expression, FunctionCall, Item, LanguageExtension, LiteralKind,
+        Statement, SwitchCaseSelector, UnknownExtension,
+        operators::{ArithmeticOperation, BinaryOperation, UnaryOperator},
     },
     parse,
 };
 
+#[expect(clippy::needless_pass_by_value, reason = "matches expect! macro")]
 fn check_errors(
     wa_fixture: &str,
     expect: Expect,
@@ -20,7 +25,7 @@ fn check_errors(
     let errors = parse.errors();
     let actual = errors
         .iter()
-        .map(|error| error.to_string())
+        .map(string::ToString::to_string)
         .collect::<Vec<String>>()
         .join("\n");
     expect.assert_eq(&actual);
@@ -36,8 +41,7 @@ fn smoke_test() {
         expect![""],
     );
 
-    let ast::Item::FunctionDeclaration(function_declaration) =
-        parsed.tree().items().next().unwrap()
+    let Item::FunctionDeclaration(function_declaration) = parsed.tree().items().next().unwrap()
     else {
         panic!()
     };
@@ -45,18 +49,16 @@ fn smoke_test() {
     let a_parameter = function_parameters.next().unwrap();
     assert_eq!(a_parameter.name().unwrap().text().as_str(), "a");
     let body = function_declaration.body().unwrap();
-    let ast::Statement::LetDeclaration(let_statement) = body.statements().next().unwrap() else {
+    let Statement::LetDeclaration(let_statement) = body.statements().next().unwrap() else {
         panic!()
     };
     assert_eq!(let_statement.name().unwrap().text().as_str(), "b");
-    let ast::Expression::InfixExpression(addition) = let_statement.init().unwrap() else {
+    let Expression::InfixExpression(addition) = let_statement.init().unwrap() else {
         panic!();
     };
     assert_eq!(
         addition.op_kind(),
-        Some(ast::operators::BinaryOperation::Arithmetic(
-            ast::operators::ArithmeticOperation::Addition
-        ))
+        Some(BinaryOperation::Arithmetic(ArithmeticOperation::Addition))
     );
 }
 
@@ -69,13 +71,12 @@ fn discard_statement() {
         expect![""],
     );
 
-    let ast::Item::FunctionDeclaration(function_declaration) =
-        parsed.tree().items().next().unwrap()
+    let Item::FunctionDeclaration(function_declaration) = parsed.tree().items().next().unwrap()
     else {
         panic!()
     };
     let body = function_declaration.body().unwrap();
-    let ast::Statement::DiscardStatement(_) = body.statements().next().unwrap() else {
+    let Statement::DiscardStatement(_) = body.statements().next().unwrap() else {
         panic!()
     };
 }
@@ -89,17 +90,15 @@ fn function_call_statement() {
         expect![""],
     );
 
-    let ast::Item::FunctionDeclaration(function_declaration) =
-        parsed.tree().items().next().unwrap()
+    let Item::FunctionDeclaration(function_declaration) = parsed.tree().items().next().unwrap()
     else {
         panic!()
     };
     let body = function_declaration.body().unwrap();
-    let ast::Statement::FunctionCallStatement(function_call) = body.statements().next().unwrap()
-    else {
+    let Statement::FunctionCallStatement(function_call) = body.statements().next().unwrap() else {
         panic!()
     };
-    let expression: ast::FunctionCall = function_call.expression().unwrap();
+    let expression: FunctionCall = function_call.expression().unwrap();
     let path = expression.ident_expression().unwrap().path().unwrap();
     assert_eq!(path.segments().count(), 1);
     assert_eq!(path.segments().next().unwrap().text(), "foo");
@@ -119,14 +118,12 @@ fn switch_with_case_default() {
         ",
         expect![""],
     );
-    let ast::Item::FunctionDeclaration(function_declaration) =
-        parsed.tree().items().next().unwrap()
+    let Item::FunctionDeclaration(function_declaration) = parsed.tree().items().next().unwrap()
     else {
         panic!()
     };
     let body = function_declaration.body().unwrap();
-    let ast::Statement::SwitchStatement(switch_statement) = body.statements().next().unwrap()
-    else {
+    let Statement::SwitchStatement(switch_statement) = body.statements().next().unwrap() else {
         panic!()
     };
     let cases = switch_statement
@@ -138,12 +135,12 @@ fn switch_with_case_default() {
     assert_eq!(cases[1].selectors().unwrap().exprs().count(), 3);
     assert!(matches!(
         cases[1].selectors().unwrap().exprs().next(),
-        Some(ast::SwitchCaseSelector::SwitchDefaultSelector(_))
+        Some(SwitchCaseSelector::SwitchDefaultSelector(_))
     ));
     assert!(cases[2].selectors().is_none());
     assert!(matches!(
         cases[2].case_token().unwrap(),
-        ast::CaseToken::Default(_)
+        CaseToken::Default(_)
     ));
 }
 
@@ -157,13 +154,12 @@ fn loop_with_block() {
         ",
         expect![""],
     );
-    let ast::Item::FunctionDeclaration(function_declaration) =
-        parsed.tree().items().next().unwrap()
+    let Item::FunctionDeclaration(function_declaration) = parsed.tree().items().next().unwrap()
     else {
         panic!()
     };
     let body = function_declaration.body().unwrap();
-    let ast::Statement::LoopStatement(loop_statement) = body.statements().next().unwrap() else {
+    let Statement::LoopStatement(loop_statement) = body.statements().next().unwrap() else {
         panic!()
     };
     assert!(loop_statement.block().is_some());
@@ -180,7 +176,7 @@ fn diagnostic_attribute() {
     );
     match parsed.tree().items().next().unwrap() {
         Item::FunctionDeclaration(func) => match func.attributes().unwrap().next().unwrap() {
-            ast::Attribute::DiagnosticAttribute(diagnostic_attribute) => {
+            Attribute::DiagnosticAttribute(diagnostic_attribute) => {
                 assert_eq!(
                     diagnostic_attribute
                         .parameters()
@@ -221,7 +217,7 @@ fn const_attribute() {
     );
     match parsed.tree().items().next().unwrap() {
         Item::FunctionDeclaration(func) => match func.attributes().unwrap().next().unwrap() {
-            ast::Attribute::ConstantAttribute(constant_attribute) => {
+            Attribute::ConstantAttribute(constant_attribute) => {
                 assert_eq!(constant_attribute.name().unwrap().text(), "const");
             },
             _ => panic!("wrong attribute"),
@@ -241,7 +237,7 @@ fn other_attribute() {
     );
     match parsed.tree().items().next().unwrap() {
         Item::FunctionDeclaration(func) => match func.attributes().unwrap().next().unwrap() {
-            ast::Attribute::OtherAttribute(other_attribute) => {
+            Attribute::OtherAttribute(other_attribute) => {
                 assert_eq!(other_attribute.name().unwrap().text(), "nonexistent");
                 match other_attribute
                     .parameters()
@@ -250,9 +246,9 @@ fn other_attribute() {
                     .next()
                     .unwrap()
                 {
-                    ast::Expression::InfixExpression(infix_expression) => {
+                    Expression::InfixExpression(infix_expression) => {
                         match infix_expression.left_side().unwrap() {
-                            ast::Expression::IdentExpression(ident_expression) => {
+                            Expression::IdentExpression(ident_expression) => {
                                 assert_eq!(
                                     ident_expression
                                         .path()
@@ -267,7 +263,7 @@ fn other_attribute() {
                             _ => panic!("wrong expression"),
                         }
                         match infix_expression.right_side().unwrap() {
-                            ast::Expression::Literal(literal) => match literal.kind() {
+                            Expression::Literal(literal) => match literal.kind() {
                                 LiteralKind::IntLiteral(syntax_token) => {
                                     assert_eq!(syntax_token.text(), "2");
                                 },
@@ -298,7 +294,7 @@ fn struct_translate_attribute() {
     );
     match parsed.tree().items().next().unwrap() {
         Item::StructDeclaration(r#struct) => match r#struct.attributes().unwrap().next().unwrap() {
-            ast::Attribute::IfAttribute(if_attribute) => {
+            Attribute::IfAttribute(if_attribute) => {
                 assert_eq!(if_attribute.name().unwrap().text(), "if");
             },
             _ => panic!("wrong attribute"),
@@ -318,7 +314,7 @@ fn assert_translate_attribute() {
     );
     match parsed.tree().items().next().unwrap() {
         Item::AssertStatement(assert) => match assert.attributes().unwrap().next().unwrap() {
-            ast::Attribute::IfAttribute(if_attribute) => {
+            Attribute::IfAttribute(if_attribute) => {
                 assert_eq!(if_attribute.name().unwrap().text(), "if");
             },
             _ => panic!("wrong attribute"),
@@ -339,7 +335,7 @@ fn diagnostic_translate_attribute() {
     match parsed.tree().directives().next().unwrap() {
         Directive::DiagnosticDirective(diagnostic) => {
             match diagnostic.attributes().unwrap().next().unwrap() {
-                ast::Attribute::IfAttribute(if_attribute) => {
+                Attribute::IfAttribute(if_attribute) => {
                     assert_eq!(if_attribute.name().unwrap().text(), "if");
                 },
                 _ => panic!("wrong attribute"),
@@ -360,7 +356,7 @@ fn enable_translate_attribute() {
     );
     match parsed.tree().directives().next().unwrap() {
         Directive::EnableDirective(enable) => match enable.attributes().unwrap().next().unwrap() {
-            ast::Attribute::IfAttribute(if_attribute) => {
+            Attribute::IfAttribute(if_attribute) => {
                 assert_eq!(if_attribute.name().unwrap().text(), "if");
             },
             _ => panic!("wrong attribute"),
@@ -381,7 +377,7 @@ fn requires_translate_attribute() {
     match parsed.tree().directives().next().unwrap() {
         Directive::RequiresDirective(enable) => {
             match enable.attributes().unwrap().next().unwrap() {
-                ast::Attribute::IfAttribute(if_attribute) => {
+                Attribute::IfAttribute(if_attribute) => {
                     assert_eq!(if_attribute.name().unwrap().text(), "if");
                 },
                 _ => panic!("wrong attribute"),
@@ -402,7 +398,7 @@ fn type_translate_attribute() {
     );
     match parsed.tree().items().next().unwrap() {
         Item::TypeAliasDeclaration(enable) => match enable.attributes().unwrap().next().unwrap() {
-            ast::Attribute::IfAttribute(if_attribute) => {
+            Attribute::IfAttribute(if_attribute) => {
                 assert_eq!(if_attribute.name().unwrap().text(), "if");
             },
             _ => panic!("wrong attribute"),
@@ -447,13 +443,109 @@ fn enable_extension_names() {
         .directives()
         .flat_map(|directive| {
             match directive {
-                ast::Directive::EnableDirective(enable_directive) => {
+                Directive::EnableDirective(enable_directive) => {
                     enable_directive.enable_extensions()
                 },
                 _ => panic!("wrong directive kind"),
             }
-            .map(|x| x.extension())
+            .map(|enable_extension_name| enable_extension_name.extension())
         })
         .collect::<Vec<_>>();
     assert_eq!(map, items);
+}
+
+#[test]
+fn language_extension_names() {
+    let parsed = check_errors(
+        "
+        requires readonly_and_readwrite_storage_textures, packed_4x8_integer_dot_product, unrestricted_pointer_parameters, pointer_composite_access, uniform_buffer_standard_layout, subgroup_id, subgroup_uniformity, texture_and_sampler_let, texture_formats_tier1, linear_indexing, immediate_address_space, buffer_view;
+        ",
+        expect![""],
+    );
+    let items = vec![
+        Ok(LanguageExtension::ReadonlyAndReadwriteStorageTextures),
+        Ok(LanguageExtension::Packed4x8IntegerDotProduct),
+        Ok(LanguageExtension::UnrestrictedPointerParameters),
+        Ok(LanguageExtension::PointerCompositeAccess),
+        Ok(LanguageExtension::UniformBufferStandardLayout),
+        Ok(LanguageExtension::SubgroupId),
+        Ok(LanguageExtension::SubgroupUniformity),
+        Ok(LanguageExtension::TextureAndSamplerLet),
+        Ok(LanguageExtension::TextureFormatsTier1),
+        Ok(LanguageExtension::LinearIndexing),
+        Ok(LanguageExtension::ImmediateAddressSpace),
+        Ok(LanguageExtension::BufferView),
+        Err(UnknownExtension),
+    ];
+    let map = parsed
+        .tree()
+        .directives()
+        .flat_map(|directive| {
+            match directive {
+                Directive::RequiresDirective(requires_directive) => {
+                    requires_directive.require_extensions()
+                },
+                _ => panic!("wrong directive kind"),
+            }
+            .map(|language_extension_name| language_extension_name.extension())
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(map, items);
+}
+
+#[test]
+fn operator_fun() {
+    let parsed = check_errors(
+        "
+        fn foo() {
+            var x = 1;
+            let y = &x;
+            let z = x * *y;
+        }
+        ",
+        expect![""],
+    );
+
+    let Item::FunctionDeclaration(function_declaration) = parsed.tree().items().next().unwrap()
+    else {
+        panic!()
+    };
+    let compound_statement = function_declaration.body().unwrap();
+    let mut statements = compound_statement.statements();
+    let Statement::VariableDeclaration(variable_declaration) = statements.next().unwrap() else {
+        panic!()
+    };
+    let Statement::LetDeclaration(let_declaration) = statements.next().unwrap() else {
+        panic!()
+    };
+    match let_declaration.init().unwrap() {
+        Expression::PrefixExpression(prefix_expression) => {
+            assert_eq!(
+                prefix_expression.operator_kind().unwrap(),
+                UnaryOperator::AddressOf
+            );
+        },
+        _ => panic!(),
+    }
+    let Statement::LetDeclaration(let_declaration) = statements.next().unwrap() else {
+        panic!()
+    };
+    match let_declaration.init().unwrap() {
+        Expression::InfixExpression(infix_expression) => {
+            assert_eq!(
+                infix_expression.op_kind().unwrap(),
+                BinaryOperation::Arithmetic(ArithmeticOperation::Multiplication)
+            );
+            match infix_expression.right_side().unwrap() {
+                Expression::PrefixExpression(prefix_expression) => {
+                    assert_eq!(
+                        prefix_expression.operator_kind().unwrap(),
+                        UnaryOperator::Indirection
+                    );
+                },
+                _ => panic!(),
+            }
+        },
+        _ => panic!(),
+    }
 }
