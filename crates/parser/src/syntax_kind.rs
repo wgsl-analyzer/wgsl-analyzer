@@ -177,14 +177,13 @@ pub enum SyntaxKind {
     /// A list of imports `{foo, bar, baz}`
     ImportCollection,
 
-    // WESL
+    // WESL attributes
     /// @if
     IfAttribute,
     /// @elif
     ElifAttribute,
     /// @else
     ElseAttribute,
-    Elif,
 
     // Tokens
     /// Source: <https://www.w3.org/TR/WGSL/#blankspace-and-line-breaks>
@@ -370,10 +369,12 @@ pub enum SyntaxKind {
     #[token("^")]
     Xor,
 
+    // WESL keywords
     Import,
     Package,
     Super,
     As,
+    Elif,
 
     #[token("+=")]
     PlusEqual,

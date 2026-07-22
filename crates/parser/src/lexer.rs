@@ -315,6 +315,8 @@ impl Iterator for WgslLexer<'_, '_> {
                     "package" if self.edition.at_least_wesl_0_0_1() => Token::Package,
                     "super" if self.edition.at_least_wesl_0_0_1() => Token::Super,
                     "as" if self.edition.at_least_wesl_0_0_1() => Token::As,
+
+                    // These valid identifiers are keywords in WESL
                     "elif" if self.edition.at_least_wesl_0_0_1() => Token::Elif,
 
                     // Context-dependent attribute keywords

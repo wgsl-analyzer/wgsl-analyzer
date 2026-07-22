@@ -3736,3 +3736,100 @@ fn struct_recover_semicolon_instead_of_comma() {
             error at 21..22: invalid syntax, expected ','"#]],
     );
 }
+
+#[test]
+fn attribute_edge_case_else() {
+    check(
+        "
+        fn foo() {
+            @else
+            (bar) = 3;
+        }
+        ",
+        expect![[r#"
+            SourceFile@0..79
+              Blankspace@0..9 "\n        "
+              FunctionDeclaration@9..70
+                Fn@9..11 "fn"
+                Blankspace@11..12 " "
+                Name@12..15
+                  Identifier@12..15 "foo"
+                FunctionParameters@15..17
+                  ParenthesisLeft@15..16 "("
+                  ParenthesisRight@16..17 ")"
+                Blankspace@17..18 " "
+                CompoundStatement@18..70
+                  BraceLeft@18..19 "{"
+                  Blankspace@19..32 "\n            "
+                  AttributeList@32..37
+                    ElseAttribute@32..37
+                      AttributeOperator@32..33 "@"
+                      Else@33..37 "else"
+                  Blankspace@37..50 "\n            "
+                  AssignmentStatement@50..60
+                    ParenthesisExpression@50..55
+                      ParenthesisLeft@50..51 "("
+                      IdentExpression@51..54
+                        Path@51..54
+                          Identifier@51..54 "bar"
+                      ParenthesisRight@54..55 ")"
+                    Blankspace@55..56 " "
+                    Equal@56..57 "="
+                    Blankspace@57..58 " "
+                    Literal@58..59
+                      IntLiteral@58..59 "3"
+                    Semicolon@59..60 ";"
+                  Blankspace@60..69 "\n        "
+                  BraceRight@69..70 "}"
+              Blankspace@70..79 "\n        ""#]],
+    );
+}
+
+#[test]
+fn attribute_edge_case_if() {
+    check(
+        "
+        fn foo() {
+            @if
+            (bar) = 3;
+        }
+        ",
+        expect![[r#"
+            SourceFile@0..77
+              Blankspace@0..9 "\n        "
+              FunctionDeclaration@9..68
+                Fn@9..11 "fn"
+                Blankspace@11..12 " "
+                Name@12..15
+                  Identifier@12..15 "foo"
+                FunctionParameters@15..17
+                  ParenthesisLeft@15..16 "("
+                  ParenthesisRight@16..17 ")"
+                Blankspace@17..18 " "
+                CompoundStatement@18..68
+                  BraceLeft@18..19 "{"
+                  Blankspace@19..32 "\n            "
+                  AttributeList@32..57
+                    IfAttribute@32..53
+                      AttributeOperator@32..33 "@"
+                      If@33..35 "if"
+                      Blankspace@35..48 "\n            "
+                      ParenthesisLeft@48..49 "("
+                      IdentExpression@49..52
+                        Path@49..52
+                          Identifier@49..52 "bar"
+                      ParenthesisRight@52..53 ")"
+                    Blankspace@53..54 " "
+                    Error@54..57
+                      Equal@54..55 "="
+                      Blankspace@55..56 " "
+                      IntLiteral@56..57 "3"
+                  EmptyStatement@57..58
+                    Semicolon@57..58 ";"
+                  Blankspace@58..67 "\n        "
+                  BraceRight@67..68 "}"
+              Blankspace@68..77 "\n        "
+
+            error at 54..55: invalid syntax, expected one of: 'alias', '&', '@', '{', '}', 'break', 'case', 'const', 'const_assert', 'continue', 'continuing', 'default', 'diagnostic', 'discard', 'enable', 'fn', 'for', <identifier>, 'if', 'import', 'let', 'loop', 'override', 'package', '(', 'requires', 'return', ';', '*', 'struct', 'super', 'switch', '_', 'var', 'while'"#]],
+    );
+}
