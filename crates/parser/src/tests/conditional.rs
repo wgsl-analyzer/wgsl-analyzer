@@ -15,13 +15,14 @@ fn foo(){}
         expect![[r#"
             SourceFile@0..54
               Blankspace@0..1 "\n"
-              IfAttribute@1..10
-                AttributeOperator@1..2 "@"
-                If@2..4 "if"
-                ParenthesisLeft@4..5 "("
-                Literal@5..9
-                  True@5..9 "true"
-                ParenthesisRight@9..10 ")"
+              AttributeList@1..10
+                IfAttribute@1..10
+                  AttributeOperator@1..2 "@"
+                  If@2..4 "if"
+                  ParenthesisLeft@4..5 "("
+                  Literal@5..9
+                    True@5..9 "true"
+                  ParenthesisRight@9..10 ")"
               Blankspace@10..11 "\n"
               FunctionDeclaration@11..21
                 Fn@11..13 "fn"
@@ -35,13 +36,14 @@ fn foo(){}
                   BraceLeft@19..20 "{"
                   BraceRight@20..21 "}"
               Blankspace@21..22 "\n"
-              ElifAttribute@22..34
-                AttributeOperator@22..23 "@"
-                Elif@23..27 "elif"
-                ParenthesisLeft@27..28 "("
-                Literal@28..33
-                  False@28..33 "false"
-                ParenthesisRight@33..34 ")"
+              AttributeList@22..34
+                ElifAttribute@22..34
+                  AttributeOperator@22..23 "@"
+                  Elif@23..27 "elif"
+                  ParenthesisLeft@27..28 "("
+                  Literal@28..33
+                    False@28..33 "false"
+                  ParenthesisRight@33..34 ")"
               Blankspace@34..35 "\n"
               FunctionDeclaration@35..45
                 Fn@35..37 "fn"
@@ -71,9 +73,10 @@ fn foo(){}
         expect![[r#"
             SourceFile@0..41
               Blankspace@0..1 "\n"
-              IfAttribute@1..4
-                AttributeOperator@1..2 "@"
-                If@2..4 "if"
+              AttributeList@1..4
+                IfAttribute@1..4
+                  AttributeOperator@1..2 "@"
+                  If@2..4 "if"
               Blankspace@4..5 "\n"
               FunctionDeclaration@5..15
                 Fn@5..7 "fn"
@@ -87,9 +90,10 @@ fn foo(){}
                   BraceLeft@13..14 "{"
                   BraceRight@14..15 "}"
               Blankspace@15..16 "\n"
-              ElifAttribute@16..21
-                AttributeOperator@16..17 "@"
-                Elif@17..21 "elif"
+              AttributeList@16..21
+                ElifAttribute@16..21
+                  AttributeOperator@16..17 "@"
+                  Elif@17..21 "elif"
               Blankspace@21..22 "\n"
               FunctionDeclaration@22..32
                 Fn@22..24 "fn"
@@ -122,11 +126,12 @@ fn foo(){}
         expect![[r#"
             SourceFile@0..43
               Blankspace@0..1 "\n"
-              IfAttribute@1..6
-                AttributeOperator@1..2 "@"
-                If@2..4 "if"
-                ParenthesisLeft@4..5 "("
-                ParenthesisRight@5..6 ")"
+              AttributeList@1..6
+                IfAttribute@1..6
+                  AttributeOperator@1..2 "@"
+                  If@2..4 "if"
+                  ParenthesisLeft@4..5 "("
+                  ParenthesisRight@5..6 ")"
               Blankspace@6..7 "\n"
               FunctionDeclaration@7..17
                 Fn@7..9 "fn"
@@ -140,9 +145,10 @@ fn foo(){}
                   BraceLeft@15..16 "{"
                   BraceRight@16..17 "}"
               Blankspace@17..18 "\n"
-              ElseAttribute@18..23
-                AttributeOperator@18..19 "@"
-                Else@19..23 "else"
+              AttributeList@18..23
+                ElseAttribute@18..23
+                  AttributeOperator@18..19 "@"
+                  Else@19..23 "else"
               Blankspace@23..24 "\n"
               FunctionDeclaration@24..34
                 Fn@24..26 "fn"
@@ -174,13 +180,14 @@ fn foo(){}
         expect![[r#"
             SourceFile@0..54
               Blankspace@0..1 "\n"
-              IfAttribute@1..10
-                AttributeOperator@1..2 "@"
-                If@2..4 "if"
-                ParenthesisLeft@4..5 "("
-                Literal@5..9
-                  True@5..9 "true"
-                ParenthesisRight@9..10 ")"
+              AttributeList@1..10
+                IfAttribute@1..10
+                  AttributeOperator@1..2 "@"
+                  If@2..4 "if"
+                  ParenthesisLeft@4..5 "("
+                  Literal@5..9
+                    True@5..9 "true"
+                  ParenthesisRight@9..10 ")"
               Blankspace@10..11 "\n"
               FunctionDeclaration@11..21
                 Fn@11..13 "fn"
@@ -194,9 +201,10 @@ fn foo(){}
                   BraceLeft@19..20 "{"
                   BraceRight@20..21 "}"
               Blankspace@21..22 "\n"
-              ElseAttribute@22..27
-                AttributeOperator@22..23 "@"
-                Else@23..27 "else"
+              AttributeList@22..27
+                ElseAttribute@22..27
+                  AttributeOperator@22..23 "@"
+                  Else@23..27 "else"
               Error@27..34
                 ParenthesisLeft@27..28 "("
                 False@28..33 "false"
@@ -215,7 +223,7 @@ fn foo(){}
                   BraceRight@44..45 "}"
               Blankspace@45..54 "\n        "
 
-            error at 27..28: invalid syntax, expected one of: 'alias', '@', 'const', 'const_assert', 'diagnostic', 'enable', 'fn', 'import', 'let', 'override', 'requires', 'struct', 'var'"#]],
+            error at 27..28: invalid syntax, expected one of: 'alias', 'const', 'const_assert', 'diagnostic', 'enable', 'fn', 'import', 'let', 'override', 'requires', 'struct', 'var'"#]],
     );
 }
 
@@ -228,19 +236,14 @@ fn foo() {
     switch true {
         @if(true)
         case true, false: { return; }
-        @elif(false)
-        case true, false: { return; }
-        @if(true)
-        default: { return; }
-        @else
         default: { return; }
     }
 }
         ",
         expect![[r#"
-            SourceFile@0..251
+            SourceFile@0..131
               Blankspace@0..1 "\n"
-              FunctionDeclaration@1..242
+              FunctionDeclaration@1..122
                 Fn@1..3 "fn"
                 Blankspace@3..4 " "
                 Name@4..7
@@ -249,25 +252,26 @@ fn foo() {
                   ParenthesisLeft@7..8 "("
                   ParenthesisRight@8..9 ")"
                 Blankspace@9..10 " "
-                CompoundStatement@10..242
+                CompoundStatement@10..122
                   BraceLeft@10..11 "{"
                   Blankspace@11..16 "\n    "
-                  SwitchStatement@16..240
+                  SwitchStatement@16..120
                     Switch@16..22 "switch"
                     Blankspace@22..23 " "
                     Literal@23..27
                       True@23..27 "true"
                     Blankspace@27..28 " "
-                    SwitchBody@28..240
+                    SwitchBody@28..120
                       BraceLeft@28..29 "{"
                       Blankspace@29..38 "\n        "
-                      IfAttribute@38..47
-                        AttributeOperator@38..39 "@"
-                        If@39..41 "if"
-                        ParenthesisLeft@41..42 "("
-                        Literal@42..46
-                          True@42..46 "true"
-                        ParenthesisRight@46..47 ")"
+                      AttributeList@38..47
+                        IfAttribute@38..47
+                          AttributeOperator@38..39 "@"
+                          If@39..41 "if"
+                          ParenthesisLeft@41..42 "("
+                          Literal@42..46
+                            True@42..46 "true"
+                          ParenthesisRight@46..47 ")"
                       Blankspace@47..56 "\n        "
                       SwitchBodyCase@56..85
                         Case@56..60 "case"
@@ -290,76 +294,22 @@ fn foo() {
                           Blankspace@83..84 " "
                           BraceRight@84..85 "}"
                       Blankspace@85..94 "\n        "
-                      ElifAttribute@94..106
-                        AttributeOperator@94..95 "@"
-                        Elif@95..99 "elif"
-                        ParenthesisLeft@99..100 "("
-                        Literal@100..105
-                          False@100..105 "false"
-                        ParenthesisRight@105..106 ")"
-                      Blankspace@106..115 "\n        "
-                      SwitchBodyCase@115..144
-                        Case@115..119 "case"
-                        Blankspace@119..120 " "
-                        SwitchCaseSelectors@120..131
-                          Literal@120..124
-                            True@120..124 "true"
-                          Comma@124..125 ","
-                          Blankspace@125..126 " "
-                          Literal@126..131
-                            False@126..131 "false"
-                        Colon@131..132 ":"
-                        Blankspace@132..133 " "
-                        CompoundStatement@133..144
-                          BraceLeft@133..134 "{"
-                          Blankspace@134..135 " "
-                          ReturnStatement@135..142
-                            Return@135..141 "return"
-                            Semicolon@141..142 ";"
-                          Blankspace@142..143 " "
-                          BraceRight@143..144 "}"
-                      Blankspace@144..153 "\n        "
-                      IfAttribute@153..162
-                        AttributeOperator@153..154 "@"
-                        If@154..156 "if"
-                        ParenthesisLeft@156..157 "("
-                        Literal@157..161
-                          True@157..161 "true"
-                        ParenthesisRight@161..162 ")"
-                      Blankspace@162..171 "\n        "
-                      SwitchBodyCase@171..191
-                        Default@171..178 "default"
-                        Colon@178..179 ":"
-                        Blankspace@179..180 " "
-                        CompoundStatement@180..191
-                          BraceLeft@180..181 "{"
-                          Blankspace@181..182 " "
-                          ReturnStatement@182..189
-                            Return@182..188 "return"
-                            Semicolon@188..189 ";"
-                          Blankspace@189..190 " "
-                          BraceRight@190..191 "}"
-                      Blankspace@191..200 "\n        "
-                      ElseAttribute@200..205
-                        AttributeOperator@200..201 "@"
-                        Else@201..205 "else"
-                      Blankspace@205..214 "\n        "
-                      SwitchBodyCase@214..234
-                        Default@214..221 "default"
-                        Colon@221..222 ":"
-                        Blankspace@222..223 " "
-                        CompoundStatement@223..234
-                          BraceLeft@223..224 "{"
-                          Blankspace@224..225 " "
-                          ReturnStatement@225..232
-                            Return@225..231 "return"
-                            Semicolon@231..232 ";"
-                          Blankspace@232..233 " "
-                          BraceRight@233..234 "}"
-                      Blankspace@234..239 "\n    "
-                      BraceRight@239..240 "}"
-                  Blankspace@240..241 "\n"
-                  BraceRight@241..242 "}"
-              Blankspace@242..251 "\n        ""#]],
+                      SwitchBodyCase@94..114
+                        Default@94..101 "default"
+                        Colon@101..102 ":"
+                        Blankspace@102..103 " "
+                        CompoundStatement@103..114
+                          BraceLeft@103..104 "{"
+                          Blankspace@104..105 " "
+                          ReturnStatement@105..112
+                            Return@105..111 "return"
+                            Semicolon@111..112 ";"
+                          Blankspace@112..113 " "
+                          BraceRight@113..114 "}"
+                      Blankspace@114..119 "\n    "
+                      BraceRight@119..120 "}"
+                  Blankspace@120..121 "\n"
+                  BraceRight@121..122 "}"
+              Blankspace@122..131 "\n        ""#]],
     );
 }

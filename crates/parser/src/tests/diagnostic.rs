@@ -12,18 +12,19 @@ fn parse_diagnostic_attribute() {
         expect![[r#"
             SourceFile@0..57
               Blankspace@0..9 "\n        "
-              DiagnosticAttribute@9..30
-                AttributeOperator@9..10 "@"
-                Diagnostic@10..20 "diagnostic"
-                DiagnosticControl@20..30
-                  ParenthesisLeft@20..21 "("
-                  SeverityControlName@21..24
-                    Identifier@21..24 "off"
-                  Comma@24..25 ","
-                  Blankspace@25..26 " "
-                  DiagnosticRuleName@26..29
-                    Identifier@26..29 "bla"
-                  ParenthesisRight@29..30 ")"
+              AttributeList@9..30
+                DiagnosticAttribute@9..30
+                  AttributeOperator@9..10 "@"
+                  Diagnostic@10..20 "diagnostic"
+                  DiagnosticControl@20..30
+                    ParenthesisLeft@20..21 "("
+                    SeverityControlName@21..24
+                      Identifier@21..24 "off"
+                    Comma@24..25 ","
+                    Blankspace@25..26 " "
+                    DiagnosticRuleName@26..29
+                      Identifier@26..29 "bla"
+                    ParenthesisRight@29..30 ")"
               Blankspace@30..39 "\n        "
               FunctionDeclaration@39..48
                 Fn@39..41 "fn"

@@ -229,6 +229,8 @@ pub enum SyntaxKind {
     DiagnosticDirective,
     DiagnosticRuleName,
     SeverityControlName,
+
+    AttributeList,
     DiagnosticAttribute,
     OtherAttribute,
     EarlyDepthTest,

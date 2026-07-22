@@ -21,6 +21,11 @@ pub struct ParserContext {
     edition: Edition,
     after_declarations: bool,
     extensions: ExtensionsConfig,
+
+    /// The most recently completed `attribute_list`.
+    /// Set by `create_node_attribute_list`.
+    /// Read by assertion callbacks that sit immediately after an `attribute_list` in the grammar.
+    last_attribute_list: Option<NodeRef>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -64,6 +69,7 @@ pub fn parse_entrypoint(
             edition,
             after_declarations: false,
             extensions: ExtensionsConfig::default(),
+            last_attribute_list: None,
         },
     );
     let parsed = match entrypoint {
@@ -105,6 +111,12 @@ impl Cst<'_> {
     }
 }
 
+const TRANSLATE_TIME_ATTRS: &[Rule] = &[
+    Rule::IfAttr,
+    Rule::ElifAttr,
+    Rule::ElseAttr,
+];
+
 impl Parser<'_> {
     fn is_func_call(&self) -> bool {
         // Skip past paths like `foo::bar::baz()`
@@ -121,6 +133,30 @@ impl Parser<'_> {
                 .next(),
             Some(Token::ParenthesisLeft | Token::TemplateStart)
         )
+    }
+
+    /// Checks the most recently completed `attribute_list` node (the one
+    /// still on top of the builder at the call site) for any attribute
+    /// whose identifier is translate-time-only, and returns a diagnostic
+    /// for the first offender.
+    fn assert_no_translate_time_attrs(&self, context: &str) -> Option<Diagnostic> {
+        let Some(last_attribute_list) = self.context.last_attribute_list else {
+            return None;
+        };
+        self.cst
+            .children(last_attribute_list)
+            .find_map(|child| match self.cst.get(child) {
+                Node::Rule(rule, cst_index) if TRANSLATE_TIME_ATTRS.contains(&rule) => {
+                    Some((rule, self.cst.span(child), self.cst.get_text(cst_index)))
+                }
+                _ => None,
+            })
+            .map(|(rule, span, name)| {
+                Diagnostic {
+                    message: format!("translate-time attribute `@{name}` is not allowed on {context}"),
+                    range: to_range(span),
+                }
+            })
     }
 }
 
@@ -360,5 +396,67 @@ impl<'source> ParserCallbacks<'source> for Parser<'source> {
                 "directives must come before other items".to_owned(),
             ));
         }
+    }
+
+    // attribute validation
+
+    fn create_node_attribute_list(&mut self, node_ref: NodeRef, diagnostics: &mut Vec<Self::Diagnostic>) {
+        self.context.last_attribute_list = Some(node_ref);
+    }
+
+    fn assertion_return_type_1(&self) -> Option<Diagnostic> {
+        self.assert_no_translate_time_attrs("a function return type")
+    }
+
+    fn assertion_global_declaration_1(&self) -> Option<Diagnostic> {
+        self.assert_no_translate_time_attrs("a function body")
+    }
+
+    fn assertion_switch_body_1(&self) -> Option<Diagnostic> {
+        self.assert_no_translate_time_attrs("a switch body")
+    }
+
+    fn assertion_default_alone_clause_1(&self) -> Option<Diagnostic> {
+        self.assert_no_translate_time_attrs("a switch case clause body")
+    }
+
+    fn assertion_case_clause_1(&self) -> Option<Diagnostic> {
+        self.assert_no_translate_time_attrs("a switch default clause body")
+    }
+
+    fn assertion_statement_1(&self) -> Option<Diagnostic> {
+        self.assert_no_translate_time_attrs("a loop body")
+    }
+
+    fn assertion_statement_2(&self) -> Option<Diagnostic> {
+        self.assert_no_translate_time_attrs("a for body")
+    }
+
+    fn assertion_statement_3(&self) -> Option<Diagnostic> {
+        self.assert_no_translate_time_attrs("a while body")
+    }
+
+    fn assertion_if_clause_1(&self) -> Option<Diagnostic> {
+        self.assert_no_translate_time_attrs("an if/else body")
+    }
+
+    fn assertion_else_if_clause_1(&self) -> Option<Self::Diagnostic> {
+        self.assert_no_translate_time_attrs("an if/else body")
+    }
+
+    fn assertion_else_clause_1(&self) -> Option<Self::Diagnostic> {
+        self.assert_no_translate_time_attrs("an if/else body")
+    }
+
+    fn assertion_continuing_statement_1(&self) -> Option<Diagnostic> {
+        self.assert_no_translate_time_attrs("a continuing body")
+    }
+
+    fn assertion_continuing_compound_statement_1(&self) -> Option<Self::Diagnostic> {
+        todo!("no trailing attributes")
+    }
+
+    fn assertion_loop_compound_statement_1(&self) -> Option<Self::Diagnostic> {
+        todo!("no trailing attributes")
     }
 }

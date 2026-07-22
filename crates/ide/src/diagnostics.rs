@@ -869,6 +869,139 @@ fn foo() { let _ = 1; }
         );
     }
 
+
+    #[test]
+    fn invalid_translate_attribute_function_return_type() {
+        check_diagnostics(
+            "
+fn foo() ->
+@if(true) bool
+{ _ = 1; }
+",
+            expect![""],
+        );
+    }
+
+    #[test]
+    fn invalid_translate_attribute_body_function_declaration() {
+        check_diagnostics(
+            "
+fn foo()
+@if(true) { _ = 1; }
+",
+            expect![""],
+        );
+    }
+
+    #[test]
+    fn invalid_translate_attribute_body_switch_statement() {
+        check_diagnostics(
+            "
+fn foo()
+{
+    switch true
+    @if(true)
+    {
+        case true: { return; }
+        default: { return; }
+    }
+}
+",
+            expect![""],
+        );
+    }
+
+    #[test]
+    fn invalid_translate_attribute_body_switch_clause() {
+        check_diagnostics(
+            "
+fn foo() {
+    switch true
+    {
+        case true: @if(true) { return; }
+        default: { return; }
+    }
+}
+",
+            expect![""],
+        );
+    }
+
+    #[test]
+    fn invalid_translate_attribute_body_loop_statement() {
+        check_diagnostics(
+            "
+fn foo() {
+    loop
+    @if(true)
+    { continuing {} }
+}
+",
+            expect![""],
+        );
+    }
+
+    #[test]
+    fn invalid_translate_attribute_body_for_statement() {
+        check_diagnostics(
+            "
+fn foo() {
+    for(; ;)
+    @if(true)
+    { return; }
+}
+",
+            expect![""],
+        );
+    }
+
+    #[test]
+    fn invalid_translate_attribute_body_while_statement() {
+        check_diagnostics(
+            "
+fn foo() {
+    while true
+    @if(true)
+    { return; }
+}
+",
+            expect![""],
+        );
+    }
+
+    #[test]
+    fn invalid_translate_attribute_body_if_else_statement() {
+        check_diagnostics(
+            "
+fn foo() {
+    if true
+    @if(true)
+    { return; }
+    else
+    @if(true)
+    { return; }
+}
+",
+            expect![""],
+        );
+    }
+
+    #[test]
+    fn invalid_translate_attribute_body_continuing_statement() {
+        check_diagnostics(
+            "
+fn foo() {
+    loop {
+        continuing
+        @if(true)
+        {}
+    }
+}
+",
+            expect![""],
+        );
+    }
+
     #[test]
     fn binding_array_validates() {
         check_diagnostics(

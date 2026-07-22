@@ -159,7 +159,7 @@ import_path: name (
 import_collection: '{' import_path (?1 ',' import_path)* [','] '}';
 
 translation_unit: (global_item | ';')*;
-global_item^: attribute* ( #2 import_statement | #1 global_directive | #2 global_declaration | #2 global_assert );
+global_item^: attribute_list ( #2 import_statement | #1 global_directive | #2 global_declaration | #2 global_assert );
 
 global_assert: 'const_assert' expression ';' @assert_statement; // §10
 global_directive:
@@ -175,7 +175,7 @@ enable_extension_name: Identifier;
 language_extension_name: Identifier;
 
 global_declaration:
-	'fn' name function_parameters [return_type] compound_statement @function_declaration
+	'fn' name function_parameters [return_type] attribute_list !1 compound_statement @function_declaration
 	| variable_declaration_semi @variable_declaration
 	| override_declaration_semi @override_declaration
 	| let_declaration_semi @global_let_declaration
@@ -186,12 +186,12 @@ global_declaration:
 
 // Manual error recovery for missing commas between parameters
 function_parameters: '(' [parameter (?1 (',' | !1) parameter)* [',']] ')';
-parameter: attribute* name ':' type_specifier;
-return_type: '->' attribute* type_specifier;
+parameter: attribute_list name ':' type_specifier;
+return_type: '->' attribute_list !1 type_specifier;
 
 // Manual error recovery branches for structs
 struct_body: '{' & struct_member (?1 (','| ';'!1 | !1) struct_member)* [','] '}';
-struct_member: attribute* name ':' type_specifier;
+struct_member: attribute_list name ':' type_specifier;
 
 // all attributes that do not use keywords have to be parsed generically and separated later
 attribute:
@@ -317,12 +317,12 @@ statement:
 	// A parser-level diagnostic in `create_node_if_statement` reports the error.
 	if_clause (?1 else_if_clause | else_clause)* @if_statement // §9.4.1
 	| 'switch' expression switch_body @switch_statement // §9.4.2
-	| 'loop' loop_compound_statement @loop_statement // §9.4.3
-	| 'for' '(' [for_init] ';' [for_condition] ';' [for_update] ')' compound_statement @for_statement // §9.4.4
-	| 'while' expression compound_statement @while_statement // §9.4.5
+	| 'loop' attribute_list !1 loop_compound_statement @loop_statement // §9.4.3
+	| 'for' '(' [for_init] ';' [for_condition] ';' [for_update] ')' attribute_list !2 compound_statement @for_statement // §9.4.4
+	| 'while' expression attribute_list !3 compound_statement @while_statement // §9.4.5
 	// TODO: check if using & here makes it recover better https://github.com/0x2a-42/lelwel/issues/34
 	// See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/684
-	| '{' (attribute* statement)* '}' @compound_statement // §9.1
+	| '{' (attribute_list statement)* '}' @compound_statement // §9.1
 	| ?2 function_call ';' @function_call_statement // §9.5
 	| variable_declaration_semi @variable_declaration
 	| let_declaration_semi @let_declaration
@@ -346,22 +346,22 @@ statement:
 
 loop_compound_statement:
 	'{'
-		attribute*
+		attribute_list
 		(
-			statement attribute*
+			statement attribute_list !1
 		)*
 		[continuing_statement]
 	'}'
 	@compound_statement
 ;
 
-continuing_statement: 'continuing' continuing_compound_statement; // §9.4.9
+continuing_statement: 'continuing' attribute_list !1 continuing_compound_statement; // §9.4.9
 
 continuing_compound_statement:
 	'{'
-		attribute*
+		attribute_list
 		(
-			?1 statement attribute*
+			?1 statement attribute_list !1
 		)*
 		[break_if_statement]
 	'}'
@@ -380,17 +380,17 @@ for_init:
 
 for_condition: expression;
 for_update: ?1 function_call | variable_updating;
-if_clause: 'if' expression compound_statement;
-else_if_clause: 'else' 'if' expression compound_statement;
-else_clause: 'else' compound_statement;
-switch_body: attribute* '{' (attribute* switch_clause) * '}';
+if_clause: 'if' expression attribute_list !1 compound_statement;
+else_if_clause: 'else' 'if' expression attribute_list !1 compound_statement;
+else_clause: 'else' attribute_list !1 compound_statement;
+switch_body: attribute_list !1 '{' (attribute_list !1 switch_clause) * '}';
 switch_clause^: case_clause | default_alone_clause;
-case_clause: 'case' case_selectors [':'] compound_statement;
+case_clause: 'case' case_selectors [':'] attribute_list !1 compound_statement;
 case_selectors: case_selector (?1 ',' case_selector)* [','];
 case_selector^: default_case_selector | expression;
 default_case_selector: 'default';
-default_alone_clause: 'default' [':'] compound_statement;
-compound_statement: attribute* '{' & (attribute* statement)* '}'; // §9.1
+default_alone_clause: 'default' [':'] attribute_list !1 compound_statement;
+compound_statement: '{' & (attribute_list statement)* '}'; // §9.1
 
 function_call: ident_expression argument_expression_list;
 
@@ -436,3 +436,5 @@ lhs_expression:
 	| '(' lhs_expression ')' @paren_expression // §8.4
 	| path @ident_expression
 ;
+
+attribute_list: attribute*;

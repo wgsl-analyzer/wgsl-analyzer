@@ -12,18 +12,19 @@ fn diagnostic_attribute() {
         expect![[r#"
             SourceFile@0..60
               Blankspace@0..9 "\n        "
-              DiagnosticAttribute@9..30
-                AttributeOperator@9..10 "@"
-                Diagnostic@10..20 "diagnostic"
-                DiagnosticControl@20..30
-                  ParenthesisLeft@20..21 "("
-                  SeverityControlName@21..24
-                    Identifier@21..24 "off"
-                  Comma@24..25 ","
-                  Blankspace@25..26 " "
-                  DiagnosticRuleName@26..29
-                    Identifier@26..29 "bla"
-                  ParenthesisRight@29..30 ")"
+              AttributeList@9..30
+                DiagnosticAttribute@9..30
+                  AttributeOperator@9..10 "@"
+                  Diagnostic@10..20 "diagnostic"
+                  DiagnosticControl@20..30
+                    ParenthesisLeft@20..21 "("
+                    SeverityControlName@21..24
+                      Identifier@21..24 "off"
+                    Comma@24..25 ","
+                    Blankspace@25..26 " "
+                    DiagnosticRuleName@26..29
+                      Identifier@26..29 "bla"
+                    ParenthesisRight@29..30 ")"
               Blankspace@30..39 "\n        "
               FunctionDeclaration@39..51
                 Fn@39..41 "fn"
@@ -51,9 +52,10 @@ fn parse_const_attribute() {
         expect![[r#"
             SourceFile@0..42
               Blankspace@0..9 "\n        "
-              ConstantAttribute@9..15
-                AttributeOperator@9..10 "@"
-                Const@10..15 "const"
+              AttributeList@9..15
+                ConstantAttribute@9..15
+                  AttributeOperator@9..10 "@"
+                  Const@10..15 "const"
               Blankspace@15..24 "\n        "
               FunctionDeclaration@24..33
                 Fn@24..26 "fn"
@@ -112,14 +114,15 @@ fn parse_builtin_attribute() {
                 ReturnType@48..80
                   Arrow@48..50 "->"
                   Blankspace@50..51 " "
-                  BuiltinAttribute@51..70
-                    AttributeOperator@51..52 "@"
-                    Blankspace@52..53 " "
-                    Builtin@53..60 "builtin"
-                    ParenthesisLeft@60..61 "("
-                    BuiltinValueName@61..69
-                      Identifier@61..69 "position"
-                    ParenthesisRight@69..70 ")"
+                  AttributeList@51..70
+                    BuiltinAttribute@51..70
+                      AttributeOperator@51..52 "@"
+                      Blankspace@52..53 " "
+                      Builtin@53..60 "builtin"
+                      ParenthesisLeft@60..61 "("
+                      BuiltinValueName@61..69
+                        Identifier@61..69 "position"
+                      ParenthesisRight@69..70 ")"
                   Blankspace@70..71 " "
                   TypeSpecifier@71..80
                     Path@71..75
@@ -182,15 +185,16 @@ fn parse_builtin_attribute() {
                 FunctionParameters@149..191
                   ParenthesisLeft@149..150 "("
                   Parameter@150..190
-                    BuiltinAttribute@150..170
-                      AttributeOperator@150..151 "@"
-                      Builtin@151..158 "builtin"
-                      ParenthesisLeft@158..159 "("
-                      Blankspace@159..160 " "
-                      BuiltinValueName@160..168
-                        Identifier@160..168 "position"
-                      Blankspace@168..169 " "
-                      ParenthesisRight@169..170 ")"
+                    AttributeList@150..170
+                      BuiltinAttribute@150..170
+                        AttributeOperator@150..151 "@"
+                        Builtin@151..158 "builtin"
+                        ParenthesisLeft@158..159 "("
+                        Blankspace@159..160 " "
+                        BuiltinValueName@160..168
+                          Identifier@160..168 "position"
+                        Blankspace@168..169 " "
+                        ParenthesisRight@169..170 ")"
                     Blankspace@170..171 " "
                     Name@171..179
                       Identifier@171..179 "coord_in"
@@ -227,13 +231,14 @@ fn parse_interpolate_perspective() {
         expect![[r#"
             SourceFile@0..72
               Blankspace@0..9 "\n        "
-              InterpolateAttribute@9..34
-                AttributeOperator@9..10 "@"
-                Interpolate@10..21 "interpolate"
-                ParenthesisLeft@21..22 "("
-                InterpolateTypeName@22..33
-                  Perspective@22..33 "perspective"
-                ParenthesisRight@33..34 ")"
+              AttributeList@9..34
+                InterpolateAttribute@9..34
+                  AttributeOperator@9..10 "@"
+                  Interpolate@10..21 "interpolate"
+                  ParenthesisLeft@21..22 "("
+                  InterpolateTypeName@22..33
+                    Perspective@22..33 "perspective"
+                  ParenthesisRight@33..34 ")"
               Blankspace@34..43 "\n        "
               VariableDeclaration@43..63
                 Var@43..46 "var"
@@ -266,13 +271,14 @@ fn parse_interpolate_linear() {
         expect![[r#"
             SourceFile@0..67
               Blankspace@0..9 "\n        "
-              InterpolateAttribute@9..29
-                AttributeOperator@9..10 "@"
-                Interpolate@10..21 "interpolate"
-                ParenthesisLeft@21..22 "("
-                InterpolateTypeName@22..28
-                  Linear@22..28 "linear"
-                ParenthesisRight@28..29 ")"
+              AttributeList@9..29
+                InterpolateAttribute@9..29
+                  AttributeOperator@9..10 "@"
+                  Interpolate@10..21 "interpolate"
+                  ParenthesisLeft@21..22 "("
+                  InterpolateTypeName@22..28
+                    Linear@22..28 "linear"
+                  ParenthesisRight@28..29 ")"
               Blankspace@29..38 "\n        "
               VariableDeclaration@38..58
                 Var@38..41 "var"
@@ -305,13 +311,14 @@ fn parse_interpolate_flat() {
         expect![[r#"
             SourceFile@0..65
               Blankspace@0..9 "\n        "
-              InterpolateAttribute@9..27
-                AttributeOperator@9..10 "@"
-                Interpolate@10..21 "interpolate"
-                ParenthesisLeft@21..22 "("
-                InterpolateTypeName@22..26
-                  Flat@22..26 "flat"
-                ParenthesisRight@26..27 ")"
+              AttributeList@9..27
+                InterpolateAttribute@9..27
+                  AttributeOperator@9..10 "@"
+                  Interpolate@10..21 "interpolate"
+                  ParenthesisLeft@21..22 "("
+                  InterpolateTypeName@22..26
+                    Flat@22..26 "flat"
+                  ParenthesisRight@26..27 ")"
               Blankspace@27..36 "\n        "
               VariableDeclaration@36..56
                 Var@36..39 "var"
@@ -346,17 +353,18 @@ fn parse_interpolate_perspective_center() {
         expect![[r#"
             SourceFile@0..80
               Blankspace@0..9 "\n        "
-              InterpolateAttribute@9..42
-                AttributeOperator@9..10 "@"
-                Interpolate@10..21 "interpolate"
-                ParenthesisLeft@21..22 "("
-                InterpolateTypeName@22..33
-                  Perspective@22..33 "perspective"
-                Comma@33..34 ","
-                Blankspace@34..35 " "
-                InterpolateSamplingName@35..41
-                  Center@35..41 "center"
-                ParenthesisRight@41..42 ")"
+              AttributeList@9..42
+                InterpolateAttribute@9..42
+                  AttributeOperator@9..10 "@"
+                  Interpolate@10..21 "interpolate"
+                  ParenthesisLeft@21..22 "("
+                  InterpolateTypeName@22..33
+                    Perspective@22..33 "perspective"
+                  Comma@33..34 ","
+                  Blankspace@34..35 " "
+                  InterpolateSamplingName@35..41
+                    Center@35..41 "center"
+                  ParenthesisRight@41..42 ")"
               Blankspace@42..51 "\n        "
               VariableDeclaration@51..71
                 Var@51..54 "var"
@@ -389,17 +397,18 @@ fn parse_interpolate_perspective_centroid() {
         expect![[r#"
             SourceFile@0..82
               Blankspace@0..9 "\n        "
-              InterpolateAttribute@9..44
-                AttributeOperator@9..10 "@"
-                Interpolate@10..21 "interpolate"
-                ParenthesisLeft@21..22 "("
-                InterpolateTypeName@22..33
-                  Perspective@22..33 "perspective"
-                Comma@33..34 ","
-                Blankspace@34..35 " "
-                InterpolateSamplingName@35..43
-                  Centroid@35..43 "centroid"
-                ParenthesisRight@43..44 ")"
+              AttributeList@9..44
+                InterpolateAttribute@9..44
+                  AttributeOperator@9..10 "@"
+                  Interpolate@10..21 "interpolate"
+                  ParenthesisLeft@21..22 "("
+                  InterpolateTypeName@22..33
+                    Perspective@22..33 "perspective"
+                  Comma@33..34 ","
+                  Blankspace@34..35 " "
+                  InterpolateSamplingName@35..43
+                    Centroid@35..43 "centroid"
+                  ParenthesisRight@43..44 ")"
               Blankspace@44..53 "\n        "
               VariableDeclaration@53..73
                 Var@53..56 "var"
@@ -432,17 +441,18 @@ fn parse_interpolate_perspective_sample() {
         expect![[r#"
             SourceFile@0..80
               Blankspace@0..9 "\n        "
-              InterpolateAttribute@9..42
-                AttributeOperator@9..10 "@"
-                Interpolate@10..21 "interpolate"
-                ParenthesisLeft@21..22 "("
-                InterpolateTypeName@22..33
-                  Perspective@22..33 "perspective"
-                Comma@33..34 ","
-                Blankspace@34..35 " "
-                InterpolateSamplingName@35..41
-                  Sample@35..41 "sample"
-                ParenthesisRight@41..42 ")"
+              AttributeList@9..42
+                InterpolateAttribute@9..42
+                  AttributeOperator@9..10 "@"
+                  Interpolate@10..21 "interpolate"
+                  ParenthesisLeft@21..22 "("
+                  InterpolateTypeName@22..33
+                    Perspective@22..33 "perspective"
+                  Comma@33..34 ","
+                  Blankspace@34..35 " "
+                  InterpolateSamplingName@35..41
+                    Sample@35..41 "sample"
+                  ParenthesisRight@41..42 ")"
               Blankspace@42..51 "\n        "
               VariableDeclaration@51..71
                 Var@51..54 "var"
@@ -477,17 +487,18 @@ fn parse_interpolate_linear_center() {
         expect![[r#"
             SourceFile@0..75
               Blankspace@0..9 "\n        "
-              InterpolateAttribute@9..37
-                AttributeOperator@9..10 "@"
-                Interpolate@10..21 "interpolate"
-                ParenthesisLeft@21..22 "("
-                InterpolateTypeName@22..28
-                  Linear@22..28 "linear"
-                Comma@28..29 ","
-                Blankspace@29..30 " "
-                InterpolateSamplingName@30..36
-                  Center@30..36 "center"
-                ParenthesisRight@36..37 ")"
+              AttributeList@9..37
+                InterpolateAttribute@9..37
+                  AttributeOperator@9..10 "@"
+                  Interpolate@10..21 "interpolate"
+                  ParenthesisLeft@21..22 "("
+                  InterpolateTypeName@22..28
+                    Linear@22..28 "linear"
+                  Comma@28..29 ","
+                  Blankspace@29..30 " "
+                  InterpolateSamplingName@30..36
+                    Center@30..36 "center"
+                  ParenthesisRight@36..37 ")"
               Blankspace@37..46 "\n        "
               VariableDeclaration@46..66
                 Var@46..49 "var"
@@ -520,17 +531,18 @@ fn parse_interpolate_linear_centroid() {
         expect![[r#"
             SourceFile@0..77
               Blankspace@0..9 "\n        "
-              InterpolateAttribute@9..39
-                AttributeOperator@9..10 "@"
-                Interpolate@10..21 "interpolate"
-                ParenthesisLeft@21..22 "("
-                InterpolateTypeName@22..28
-                  Linear@22..28 "linear"
-                Comma@28..29 ","
-                Blankspace@29..30 " "
-                InterpolateSamplingName@30..38
-                  Centroid@30..38 "centroid"
-                ParenthesisRight@38..39 ")"
+              AttributeList@9..39
+                InterpolateAttribute@9..39
+                  AttributeOperator@9..10 "@"
+                  Interpolate@10..21 "interpolate"
+                  ParenthesisLeft@21..22 "("
+                  InterpolateTypeName@22..28
+                    Linear@22..28 "linear"
+                  Comma@28..29 ","
+                  Blankspace@29..30 " "
+                  InterpolateSamplingName@30..38
+                    Centroid@30..38 "centroid"
+                  ParenthesisRight@38..39 ")"
               Blankspace@39..48 "\n        "
               VariableDeclaration@48..68
                 Var@48..51 "var"
@@ -563,17 +575,18 @@ fn parse_interpolate_linear_sample() {
         expect![[r#"
             SourceFile@0..75
               Blankspace@0..9 "\n        "
-              InterpolateAttribute@9..37
-                AttributeOperator@9..10 "@"
-                Interpolate@10..21 "interpolate"
-                ParenthesisLeft@21..22 "("
-                InterpolateTypeName@22..28
-                  Linear@22..28 "linear"
-                Comma@28..29 ","
-                Blankspace@29..30 " "
-                InterpolateSamplingName@30..36
-                  Sample@30..36 "sample"
-                ParenthesisRight@36..37 ")"
+              AttributeList@9..37
+                InterpolateAttribute@9..37
+                  AttributeOperator@9..10 "@"
+                  Interpolate@10..21 "interpolate"
+                  ParenthesisLeft@21..22 "("
+                  InterpolateTypeName@22..28
+                    Linear@22..28 "linear"
+                  Comma@28..29 ","
+                  Blankspace@29..30 " "
+                  InterpolateSamplingName@30..36
+                    Sample@30..36 "sample"
+                  ParenthesisRight@36..37 ")"
               Blankspace@37..46 "\n        "
               VariableDeclaration@46..66
                 Var@46..49 "var"
@@ -608,17 +621,18 @@ fn parse_interpolate_flat_first() {
         expect![[r#"
             SourceFile@0..72
               Blankspace@0..9 "\n        "
-              InterpolateAttribute@9..34
-                AttributeOperator@9..10 "@"
-                Interpolate@10..21 "interpolate"
-                ParenthesisLeft@21..22 "("
-                InterpolateTypeName@22..26
-                  Flat@22..26 "flat"
-                Comma@26..27 ","
-                Blankspace@27..28 " "
-                InterpolateSamplingName@28..33
-                  First@28..33 "first"
-                ParenthesisRight@33..34 ")"
+              AttributeList@9..34
+                InterpolateAttribute@9..34
+                  AttributeOperator@9..10 "@"
+                  Interpolate@10..21 "interpolate"
+                  ParenthesisLeft@21..22 "("
+                  InterpolateTypeName@22..26
+                    Flat@22..26 "flat"
+                  Comma@26..27 ","
+                  Blankspace@27..28 " "
+                  InterpolateSamplingName@28..33
+                    First@28..33 "first"
+                  ParenthesisRight@33..34 ")"
               Blankspace@34..43 "\n        "
               VariableDeclaration@43..63
                 Var@43..46 "var"
@@ -651,17 +665,18 @@ fn parse_interpolate_flat_either() {
         expect![[r#"
             SourceFile@0..73
               Blankspace@0..9 "\n        "
-              InterpolateAttribute@9..35
-                AttributeOperator@9..10 "@"
-                Interpolate@10..21 "interpolate"
-                ParenthesisLeft@21..22 "("
-                InterpolateTypeName@22..26
-                  Flat@22..26 "flat"
-                Comma@26..27 ","
-                Blankspace@27..28 " "
-                InterpolateSamplingName@28..34
-                  Either@28..34 "either"
-                ParenthesisRight@34..35 ")"
+              AttributeList@9..35
+                InterpolateAttribute@9..35
+                  AttributeOperator@9..10 "@"
+                  Interpolate@10..21 "interpolate"
+                  ParenthesisLeft@21..22 "("
+                  InterpolateTypeName@22..26
+                    Flat@22..26 "flat"
+                  Comma@26..27 ","
+                  Blankspace@27..28 " "
+                  InterpolateSamplingName@28..34
+                    Either@28..34 "either"
+                  ParenthesisRight@34..35 ")"
               Blankspace@35..44 "\n        "
               VariableDeclaration@44..64
                 Var@44..47 "var"
@@ -698,17 +713,18 @@ fn parse_interpolate_flat_center_error() {
         expect![[r#"
             SourceFile@0..73
               Blankspace@0..9 "\n        "
-              InterpolateAttribute@9..35
-                AttributeOperator@9..10 "@"
-                Interpolate@10..21 "interpolate"
-                ParenthesisLeft@21..22 "("
-                InterpolateTypeName@22..26
-                  Flat@22..26 "flat"
-                Comma@26..27 ","
-                Blankspace@27..28 " "
-                InterpolateSamplingName@28..34
-                  Center@28..34 "center"
-                ParenthesisRight@34..35 ")"
+              AttributeList@9..35
+                InterpolateAttribute@9..35
+                  AttributeOperator@9..10 "@"
+                  Interpolate@10..21 "interpolate"
+                  ParenthesisLeft@21..22 "("
+                  InterpolateTypeName@22..26
+                    Flat@22..26 "flat"
+                  Comma@26..27 ","
+                  Blankspace@27..28 " "
+                  InterpolateSamplingName@28..34
+                    Center@28..34 "center"
+                  ParenthesisRight@34..35 ")"
               Blankspace@35..44 "\n        "
               VariableDeclaration@44..64
                 Var@44..47 "var"
@@ -741,17 +757,18 @@ fn parse_interpolate_flat_centroid_error() {
         expect![[r#"
             SourceFile@0..75
               Blankspace@0..9 "\n        "
-              InterpolateAttribute@9..37
-                AttributeOperator@9..10 "@"
-                Interpolate@10..21 "interpolate"
-                ParenthesisLeft@21..22 "("
-                InterpolateTypeName@22..26
-                  Flat@22..26 "flat"
-                Comma@26..27 ","
-                Blankspace@27..28 " "
-                InterpolateSamplingName@28..36
-                  Centroid@28..36 "centroid"
-                ParenthesisRight@36..37 ")"
+              AttributeList@9..37
+                InterpolateAttribute@9..37
+                  AttributeOperator@9..10 "@"
+                  Interpolate@10..21 "interpolate"
+                  ParenthesisLeft@21..22 "("
+                  InterpolateTypeName@22..26
+                    Flat@22..26 "flat"
+                  Comma@26..27 ","
+                  Blankspace@27..28 " "
+                  InterpolateSamplingName@28..36
+                    Centroid@28..36 "centroid"
+                  ParenthesisRight@36..37 ")"
               Blankspace@37..46 "\n        "
               VariableDeclaration@46..66
                 Var@46..49 "var"
@@ -784,17 +801,18 @@ fn parse_interpolate_flat_sample_error() {
         expect![[r#"
             SourceFile@0..73
               Blankspace@0..9 "\n        "
-              InterpolateAttribute@9..35
-                AttributeOperator@9..10 "@"
-                Interpolate@10..21 "interpolate"
-                ParenthesisLeft@21..22 "("
-                InterpolateTypeName@22..26
-                  Flat@22..26 "flat"
-                Comma@26..27 ","
-                Blankspace@27..28 " "
-                InterpolateSamplingName@28..34
-                  Sample@28..34 "sample"
-                ParenthesisRight@34..35 ")"
+              AttributeList@9..35
+                InterpolateAttribute@9..35
+                  AttributeOperator@9..10 "@"
+                  Interpolate@10..21 "interpolate"
+                  ParenthesisLeft@21..22 "("
+                  InterpolateTypeName@22..26
+                    Flat@22..26 "flat"
+                  Comma@26..27 ","
+                  Blankspace@27..28 " "
+                  InterpolateSamplingName@28..34
+                    Sample@28..34 "sample"
+                  ParenthesisRight@34..35 ")"
               Blankspace@35..44 "\n        "
               VariableDeclaration@44..64
                 Var@44..47 "var"
@@ -829,17 +847,18 @@ fn parse_interpolate_perspective_first_error() {
         expect![[r#"
             SourceFile@0..79
               Blankspace@0..9 "\n        "
-              InterpolateAttribute@9..41
-                AttributeOperator@9..10 "@"
-                Interpolate@10..21 "interpolate"
-                ParenthesisLeft@21..22 "("
-                InterpolateTypeName@22..33
-                  Perspective@22..33 "perspective"
-                Comma@33..34 ","
-                Blankspace@34..35 " "
-                InterpolateSamplingName@35..40
-                  First@35..40 "first"
-                ParenthesisRight@40..41 ")"
+              AttributeList@9..41
+                InterpolateAttribute@9..41
+                  AttributeOperator@9..10 "@"
+                  Interpolate@10..21 "interpolate"
+                  ParenthesisLeft@21..22 "("
+                  InterpolateTypeName@22..33
+                    Perspective@22..33 "perspective"
+                  Comma@33..34 ","
+                  Blankspace@34..35 " "
+                  InterpolateSamplingName@35..40
+                    First@35..40 "first"
+                  ParenthesisRight@40..41 ")"
               Blankspace@41..50 "\n        "
               VariableDeclaration@50..70
                 Var@50..53 "var"
@@ -872,17 +891,18 @@ fn parse_interpolate_perspective_either_error() {
         expect![[r#"
             SourceFile@0..80
               Blankspace@0..9 "\n        "
-              InterpolateAttribute@9..42
-                AttributeOperator@9..10 "@"
-                Interpolate@10..21 "interpolate"
-                ParenthesisLeft@21..22 "("
-                InterpolateTypeName@22..33
-                  Perspective@22..33 "perspective"
-                Comma@33..34 ","
-                Blankspace@34..35 " "
-                InterpolateSamplingName@35..41
-                  Either@35..41 "either"
-                ParenthesisRight@41..42 ")"
+              AttributeList@9..42
+                InterpolateAttribute@9..42
+                  AttributeOperator@9..10 "@"
+                  Interpolate@10..21 "interpolate"
+                  ParenthesisLeft@21..22 "("
+                  InterpolateTypeName@22..33
+                    Perspective@22..33 "perspective"
+                  Comma@33..34 ","
+                  Blankspace@34..35 " "
+                  InterpolateSamplingName@35..41
+                    Either@35..41 "either"
+                  ParenthesisRight@41..42 ")"
               Blankspace@42..51 "\n        "
               VariableDeclaration@51..71
                 Var@51..54 "var"
@@ -915,17 +935,18 @@ fn parse_interpolate_linear_first_error() {
         expect![[r#"
             SourceFile@0..74
               Blankspace@0..9 "\n        "
-              InterpolateAttribute@9..36
-                AttributeOperator@9..10 "@"
-                Interpolate@10..21 "interpolate"
-                ParenthesisLeft@21..22 "("
-                InterpolateTypeName@22..28
-                  Linear@22..28 "linear"
-                Comma@28..29 ","
-                Blankspace@29..30 " "
-                InterpolateSamplingName@30..35
-                  First@30..35 "first"
-                ParenthesisRight@35..36 ")"
+              AttributeList@9..36
+                InterpolateAttribute@9..36
+                  AttributeOperator@9..10 "@"
+                  Interpolate@10..21 "interpolate"
+                  ParenthesisLeft@21..22 "("
+                  InterpolateTypeName@22..28
+                    Linear@22..28 "linear"
+                  Comma@28..29 ","
+                  Blankspace@29..30 " "
+                  InterpolateSamplingName@30..35
+                    First@30..35 "first"
+                  ParenthesisRight@35..36 ")"
               Blankspace@36..45 "\n        "
               VariableDeclaration@45..65
                 Var@45..48 "var"
@@ -958,17 +979,18 @@ fn parse_interpolate_linear_either_error() {
         expect![[r#"
             SourceFile@0..75
               Blankspace@0..9 "\n        "
-              InterpolateAttribute@9..37
-                AttributeOperator@9..10 "@"
-                Interpolate@10..21 "interpolate"
-                ParenthesisLeft@21..22 "("
-                InterpolateTypeName@22..28
-                  Linear@22..28 "linear"
-                Comma@28..29 ","
-                Blankspace@29..30 " "
-                InterpolateSamplingName@30..36
-                  Either@30..36 "either"
-                ParenthesisRight@36..37 ")"
+              AttributeList@9..37
+                InterpolateAttribute@9..37
+                  AttributeOperator@9..10 "@"
+                  Interpolate@10..21 "interpolate"
+                  ParenthesisLeft@21..22 "("
+                  InterpolateTypeName@22..28
+                    Linear@22..28 "linear"
+                  Comma@28..29 ","
+                  Blankspace@29..30 " "
+                  InterpolateSamplingName@30..36
+                    Either@30..36 "either"
+                  ParenthesisRight@36..37 ")"
               Blankspace@37..46 "\n        "
               VariableDeclaration@46..66
                 Var@46..49 "var"
@@ -1002,10 +1024,11 @@ fn parse_interpolate_unknown_type_error() {
         expect![[r#"
             SourceFile@0..67
               Blankspace@0..9 "\n        "
-              InterpolateAttribute@9..22
-                AttributeOperator@9..10 "@"
-                Interpolate@10..21 "interpolate"
-                ParenthesisLeft@21..22 "("
+              AttributeList@9..22
+                InterpolateAttribute@9..22
+                  AttributeOperator@9..10 "@"
+                  Interpolate@10..21 "interpolate"
+                  ParenthesisLeft@21..22 "("
               Error@22..29
                 Identifier@22..28 "value1"
                 ParenthesisRight@28..29 ")"
@@ -1044,10 +1067,11 @@ fn parse_interpolate_unknown_type_and_sampling_error() {
         expect![[r#"
             SourceFile@0..73
               Blankspace@0..9 "\n        "
-              InterpolateAttribute@9..22
-                AttributeOperator@9..10 "@"
-                Interpolate@10..21 "interpolate"
-                ParenthesisLeft@21..22 "("
+              AttributeList@9..22
+                InterpolateAttribute@9..22
+                  AttributeOperator@9..10 "@"
+                  Interpolate@10..21 "interpolate"
+                  ParenthesisLeft@21..22 "("
               Error@22..35
                 Identifier@22..28 "value0"
                 Comma@28..29 ","
@@ -1089,11 +1113,12 @@ fn parse_interpolate_empty_error() {
         expect![[r#"
             SourceFile@0..61
               Blankspace@0..9 "\n        "
-              InterpolateAttribute@9..23
-                AttributeOperator@9..10 "@"
-                Interpolate@10..21 "interpolate"
-                ParenthesisLeft@21..22 "("
-                ParenthesisRight@22..23 ")"
+              AttributeList@9..23
+                InterpolateAttribute@9..23
+                  AttributeOperator@9..10 "@"
+                  Interpolate@10..21 "interpolate"
+                  ParenthesisLeft@21..22 "("
+                  ParenthesisRight@22..23 ")"
               Blankspace@23..32 "\n        "
               VariableDeclaration@32..52
                 Var@32..35 "var"
@@ -1129,12 +1154,13 @@ fn parse_interpolate_unclosed_error() {
         expect![[r#"
             SourceFile@0..71
               Blankspace@0..9 "\n        "
-              InterpolateAttribute@9..33
-                AttributeOperator@9..10 "@"
-                Interpolate@10..21 "interpolate"
-                ParenthesisLeft@21..22 "("
-                InterpolateTypeName@22..33
-                  Perspective@22..33 "perspective"
+              AttributeList@9..33
+                InterpolateAttribute@9..33
+                  AttributeOperator@9..10 "@"
+                  Interpolate@10..21 "interpolate"
+                  ParenthesisLeft@21..22 "("
+                  InterpolateTypeName@22..33
+                    Perspective@22..33 "perspective"
               Blankspace@33..42 "\n        "
               VariableDeclaration@42..62
                 Var@42..45 "var"
@@ -1172,9 +1198,10 @@ fn parse_fragment_shader() {
         expect![[r#"
             SourceFile@0..120
               Blankspace@0..9 "\n        "
-              FragmentAttribute@9..18
-                AttributeOperator@9..10 "@"
-                Fragment@10..18 "fragment"
+              AttributeList@9..18
+                FragmentAttribute@9..18
+                  AttributeOperator@9..10 "@"
+                  Fragment@10..18 "fragment"
               Blankspace@18..27 "\n        "
               FunctionDeclaration@27..111
                 Fn@27..29 "fn"
@@ -1285,21 +1312,22 @@ fn parse_all_attributes() {
                   BraceLeft@18..19 "{"
                   Blankspace@19..32 "\n            "
                   StructMember@32..77
-                    AlignAttribute@32..42
-                      AttributeOperator@32..33 "@"
-                      Align@33..38 "align"
-                      ParenthesisLeft@38..39 "("
-                      Literal@39..41
-                        IntLiteral@39..41 "16"
-                      ParenthesisRight@41..42 ")"
-                    Blankspace@42..43 " "
-                    SizeAttribute@43..52
-                      AttributeOperator@43..44 "@"
-                      Size@44..48 "size"
-                      ParenthesisLeft@48..49 "("
-                      Literal@49..51
-                        IntLiteral@49..51 "16"
-                      ParenthesisRight@51..52 ")"
+                    AttributeList@32..52
+                      AlignAttribute@32..42
+                        AttributeOperator@32..33 "@"
+                        Align@33..38 "align"
+                        ParenthesisLeft@38..39 "("
+                        Literal@39..41
+                          IntLiteral@39..41 "16"
+                        ParenthesisRight@41..42 ")"
+                      Blankspace@42..43 " "
+                      SizeAttribute@43..52
+                        AttributeOperator@43..44 "@"
+                        Size@44..48 "size"
+                        ParenthesisLeft@48..49 "("
+                        Literal@49..51
+                          IntLiteral@49..51 "16"
+                        ParenthesisRight@51..52 ")"
                     Blankspace@52..65 "\n            "
                     Name@65..66
                       Identifier@65..66 "a"
@@ -1319,21 +1347,22 @@ fn parse_all_attributes() {
                   BraceRight@87..88 "}"
               Semicolon@88..89 ";"
               Blankspace@89..99 "\n\n        "
-              GroupAttribute@99..108
-                AttributeOperator@99..100 "@"
-                Group@100..105 "group"
-                ParenthesisLeft@105..106 "("
-                Literal@106..107
-                  IntLiteral@106..107 "0"
-                ParenthesisRight@107..108 ")"
-              Blankspace@108..109 " "
-              BindingAttribute@109..120
-                AttributeOperator@109..110 "@"
-                Binding@110..117 "binding"
-                ParenthesisLeft@117..118 "("
-                Literal@118..119
-                  IntLiteral@118..119 "0"
-                ParenthesisRight@119..120 ")"
+              AttributeList@99..120
+                GroupAttribute@99..108
+                  AttributeOperator@99..100 "@"
+                  Group@100..105 "group"
+                  ParenthesisLeft@105..106 "("
+                  Literal@106..107
+                    IntLiteral@106..107 "0"
+                  ParenthesisRight@107..108 ")"
+                Blankspace@108..109 " "
+                BindingAttribute@109..120
+                  AttributeOperator@109..110 "@"
+                  Binding@110..117 "binding"
+                  ParenthesisLeft@117..118 "("
+                  Literal@118..119
+                    IntLiteral@118..119 "0"
+                  ParenthesisRight@119..120 ")"
               Blankspace@120..129 "\n        "
               VariableDeclaration@129..147
                 Var@129..132 "var"
@@ -1353,13 +1382,14 @@ fn parse_all_attributes() {
                     Identifier@145..146 "S"
                 Semicolon@146..147 ";"
               Blankspace@147..157 "\n\n        "
-              IdAttribute@157..163
-                AttributeOperator@157..158 "@"
-                Id@158..160 "id"
-                ParenthesisLeft@160..161 "("
-                Literal@161..162
-                  IntLiteral@161..162 "0"
-                ParenthesisRight@162..163 ")"
+              AttributeList@157..163
+                IdAttribute@157..163
+                  AttributeOperator@157..158 "@"
+                  Id@158..160 "id"
+                  ParenthesisLeft@160..161 "("
+                  Literal@161..162
+                    IntLiteral@161..162 "0"
+                  ParenthesisRight@162..163 ")"
               Blankspace@163..172 "\n        "
               OverrideDeclaration@172..192
                 Override@172..180 "override"
@@ -1378,9 +1408,10 @@ fn parse_all_attributes() {
                   IntLiteral@190..191 "1"
                 Semicolon@191..192 ";"
               Blankspace@192..202 "\n\n        "
-              MustUseAttribute@202..211
-                AttributeOperator@202..203 "@"
-                MustUse@203..211 "must_use"
+              AttributeList@202..211
+                MustUseAttribute@202..211
+                  AttributeOperator@202..203 "@"
+                  MustUse@203..211 "must_use"
               Blankspace@211..220 "\n        "
               FunctionDeclaration@220..320
                 Fn@220..222 "fn"
@@ -1390,21 +1421,22 @@ fn parse_all_attributes() {
                 FunctionParameters@224..266
                   ParenthesisLeft@224..225 "("
                   Parameter@225..265
-                    LocationAttribute@225..237
-                      AttributeOperator@225..226 "@"
-                      Location@226..234 "location"
-                      ParenthesisLeft@234..235 "("
-                      Literal@235..236
-                        IntLiteral@235..236 "0"
-                      ParenthesisRight@236..237 ")"
-                    Blankspace@237..238 " "
-                    InterpolateAttribute@238..258
-                      AttributeOperator@238..239 "@"
-                      Interpolate@239..250 "interpolate"
-                      ParenthesisLeft@250..251 "("
-                      InterpolateTypeName@251..257
-                        Linear@251..257 "linear"
-                      ParenthesisRight@257..258 ")"
+                    AttributeList@225..258
+                      LocationAttribute@225..237
+                        AttributeOperator@225..226 "@"
+                        Location@226..234 "location"
+                        ParenthesisLeft@234..235 "("
+                        Literal@235..236
+                          IntLiteral@235..236 "0"
+                        ParenthesisRight@236..237 ")"
+                      Blankspace@237..238 " "
+                      InterpolateAttribute@238..258
+                        AttributeOperator@238..239 "@"
+                        Interpolate@239..250 "interpolate"
+                        ParenthesisLeft@250..251 "("
+                        InterpolateTypeName@251..257
+                          Linear@251..257 "linear"
+                        ParenthesisRight@257..258 ")"
                     Blankspace@258..259 " "
                     Name@259..260
                       Identifier@259..260 "x"
@@ -1418,13 +1450,14 @@ fn parse_all_attributes() {
                 ReturnType@267..286
                   Arrow@267..269 "->"
                   Blankspace@269..270 " "
-                  LocationAttribute@270..282
-                    AttributeOperator@270..271 "@"
-                    Location@271..279 "location"
-                    ParenthesisLeft@279..280 "("
-                    Literal@280..281
-                      IntLiteral@280..281 "0"
-                    ParenthesisRight@281..282 ")"
+                  AttributeList@270..282
+                    LocationAttribute@270..282
+                      AttributeOperator@270..271 "@"
+                      Location@271..279 "location"
+                      ParenthesisLeft@279..280 "("
+                      Literal@280..281
+                        IntLiteral@280..281 "0"
+                      ParenthesisRight@281..282 ")"
                   Blankspace@282..283 " "
                   TypeSpecifier@283..286
                     Path@283..286
@@ -1443,9 +1476,10 @@ fn parse_all_attributes() {
                   Blankspace@310..319 "\n        "
                   BraceRight@319..320 "}"
               Blankspace@320..330 "\n\n        "
-              VertexAttribute@330..337
-                AttributeOperator@330..331 "@"
-                Vertex@331..337 "vertex"
+              AttributeList@330..337
+                VertexAttribute@330..337
+                  AttributeOperator@330..331 "@"
+                  Vertex@331..337 "vertex"
               Blankspace@337..346 "\n        "
               FunctionDeclaration@346..482
                 Fn@346..348 "fn"
@@ -1455,13 +1489,14 @@ fn parse_all_attributes() {
                 FunctionParameters@351..382
                   ParenthesisLeft@351..352 "("
                   Parameter@352..381
-                    BuiltinAttribute@352..374
-                      AttributeOperator@352..353 "@"
-                      Builtin@353..360 "builtin"
-                      ParenthesisLeft@360..361 "("
-                      BuiltinValueName@361..373
-                        Identifier@361..373 "vertex_index"
-                      ParenthesisRight@373..374 ")"
+                    AttributeList@352..374
+                      BuiltinAttribute@352..374
+                        AttributeOperator@352..353 "@"
+                        Builtin@353..360 "builtin"
+                        ParenthesisLeft@360..361 "("
+                        BuiltinValueName@361..373
+                          Identifier@361..373 "vertex_index"
+                        ParenthesisRight@373..374 ")"
                     Blankspace@374..375 " "
                     Name@375..376
                       Identifier@375..376 "i"
@@ -1475,13 +1510,14 @@ fn parse_all_attributes() {
                 ReturnType@383..414
                   Arrow@383..385 "->"
                   Blankspace@385..386 " "
-                  BuiltinAttribute@386..404
-                    AttributeOperator@386..387 "@"
-                    Builtin@387..394 "builtin"
-                    ParenthesisLeft@394..395 "("
-                    BuiltinValueName@395..403
-                      Identifier@395..403 "position"
-                    ParenthesisRight@403..404 ")"
+                  AttributeList@386..404
+                    BuiltinAttribute@386..404
+                      AttributeOperator@386..387 "@"
+                      Builtin@387..394 "builtin"
+                      ParenthesisLeft@394..395 "("
+                      BuiltinValueName@395..403
+                        Identifier@395..403 "position"
+                      ParenthesisRight@403..404 ")"
                   Blankspace@404..405 " "
                   TypeSpecifier@405..414
                     Path@405..409
@@ -1555,21 +1591,22 @@ fn parse_all_attributes() {
                   BraceLeft@505..506 "{"
                   Blankspace@506..515 "\n        "
                   StructMember@515..570
-                    LocationAttribute@515..527
-                      AttributeOperator@515..516 "@"
-                      Location@516..524 "location"
-                      ParenthesisLeft@524..525 "("
-                      Literal@525..526
-                        IntLiteral@525..526 "0"
-                      ParenthesisRight@526..527 ")"
-                    Blankspace@527..528 " "
-                    BlendSrcAttribute@528..541
-                      AttributeOperator@528..529 "@"
-                      BlendSrc@529..538 "blend_src"
-                      ParenthesisLeft@538..539 "("
-                      Literal@539..540
-                        IntLiteral@539..540 "0"
-                      ParenthesisRight@540..541 ")"
+                    AttributeList@515..541
+                      LocationAttribute@515..527
+                        AttributeOperator@515..516 "@"
+                        Location@516..524 "location"
+                        ParenthesisLeft@524..525 "("
+                        Literal@525..526
+                          IntLiteral@525..526 "0"
+                        ParenthesisRight@526..527 ")"
+                      Blankspace@527..528 " "
+                      BlendSrcAttribute@528..541
+                        AttributeOperator@528..529 "@"
+                        BlendSrc@529..538 "blend_src"
+                        ParenthesisLeft@538..539 "("
+                        Literal@539..540
+                          IntLiteral@539..540 "0"
+                        ParenthesisRight@540..541 ")"
                     Blankspace@541..554 "\n            "
                     Name@554..559
                       Identifier@554..559 "color"
@@ -1589,13 +1626,14 @@ fn parse_all_attributes() {
                   BraceRight@580..581 "}"
               Semicolon@581..582 ";"
               Blankspace@582..592 "\n\n        "
-              FragmentAttribute@592..601
-                AttributeOperator@592..593 "@"
-                Fragment@593..601 "fragment"
-              Blankspace@601..610 "\n        "
-              InvariantAttribute@610..620
-                AttributeOperator@610..611 "@"
-                Invariant@611..620 "invariant"
+              AttributeList@592..620
+                FragmentAttribute@592..601
+                  AttributeOperator@592..593 "@"
+                  Fragment@593..601 "fragment"
+                Blankspace@601..610 "\n        "
+                InvariantAttribute@610..620
+                  AttributeOperator@610..611 "@"
+                  Invariant@611..620 "invariant"
               Blankspace@620..629 "\n        "
               FunctionDeclaration@629..699
                 Fn@629..631 "fn"
@@ -1645,17 +1683,18 @@ fn parse_all_attributes() {
                   Blankspace@689..698 "\n        "
                   BraceRight@698..699 "}"
               Blankspace@699..709 "\n\n        "
-              ComputeAttribute@709..717
-                AttributeOperator@709..710 "@"
-                Compute@710..717 "compute"
-              Blankspace@717..726 "\n        "
-              WorkgroupSizeAttribute@726..744
-                AttributeOperator@726..727 "@"
-                WorkgroupSize@727..741 "workgroup_size"
-                ParenthesisLeft@741..742 "("
-                Literal@742..743
-                  IntLiteral@742..743 "1"
-                ParenthesisRight@743..744 ")"
+              AttributeList@709..744
+                ComputeAttribute@709..717
+                  AttributeOperator@709..710 "@"
+                  Compute@710..717 "compute"
+                Blankspace@717..726 "\n        "
+                WorkgroupSizeAttribute@726..744
+                  AttributeOperator@726..727 "@"
+                  WorkgroupSize@727..741 "workgroup_size"
+                  ParenthesisLeft@741..742 "("
+                  Literal@742..743
+                    IntLiteral@742..743 "1"
+                  ParenthesisRight@743..744 ")"
               Blankspace@744..753 "\n        "
               FunctionDeclaration@753..763
                 Fn@753..755 "fn"

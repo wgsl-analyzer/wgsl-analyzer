@@ -1395,15 +1395,15 @@ fn parse_if_else_if_after_else() {
 #[test]
 fn parse_for_statement() {
     check_statement(
-        "for(let i = 0; i < 3; i = i + 1) {}",
+        "for(var i = 0; i < 3; i = i + 1) {}",
         expect![[r#"
             SourceFile@0..35
               ForStatement@0..35
                 For@0..3 "for"
                 ParenthesisLeft@3..4 "("
                 ForInitializer@4..13
-                  LetDeclaration@4..13
-                    Let@4..7 "let"
+                  VariableDeclaration@4..13
+                    Var@4..7 "var"
                     Blankspace@7..8 " "
                     Name@8..9
                       Identifier@8..9 "i"
@@ -1454,15 +1454,15 @@ fn parse_for_statement() {
 #[test]
 fn parse_for_statement_comma() {
     check_statement(
-        "for(let i = 0, i < 3, i = i + 1) {}",
+        "for(var i = 0, i < 3, i = i + 1) {}",
         expect![[r#"
             SourceFile@0..35
               ForStatement@0..35
                 For@0..3 "for"
                 ParenthesisLeft@3..4 "("
                 ForInitializer@4..13
-                  LetDeclaration@4..13
-                    Let@4..7 "let"
+                  VariableDeclaration@4..13
+                    Var@4..7 "var"
                     Blankspace@7..8 " "
                     Name@8..9
                       Identifier@8..9 "i"

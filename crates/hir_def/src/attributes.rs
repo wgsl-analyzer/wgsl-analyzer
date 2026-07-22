@@ -52,6 +52,7 @@ impl AttributeList {
         let attributes = source
             .attributes()
             .into_iter()
+            .flat_map(std::iter::IntoIterator::into_iter)
             .map(|attribute| Attribute {
                 name: attribute
                     .name()

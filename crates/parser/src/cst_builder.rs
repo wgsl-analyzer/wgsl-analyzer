@@ -170,8 +170,7 @@ impl CstBuilder<'_, '_> {
             Rule::Statement => self.start_node(SyntaxKind::Error),
 
             // Attributes
-            // Note: The commented out attribute variants are parsed as OtherAttribute because they do not use
-            // keywords and it confuses the lexer. These variants can be separated in higher layers.
+            Rule::AttributeList => self.start_node(SyntaxKind::AttributeList),
             Rule::AlignAttr => self.start_node(SyntaxKind::AlignAttribute),
             Rule::BindingAttr => self.start_node(SyntaxKind::BindingAttribute),
             Rule::BlendSrcAttr => self.start_node(SyntaxKind::BlendSrcAttribute),

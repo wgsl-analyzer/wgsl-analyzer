@@ -232,6 +232,7 @@ ast_node! {
 ast_node! {
     ImportSuperRelative
 }
+
 impl ImportSuperRelative {
     /// Counts how often `super` appeared in a chain.
     ///
@@ -266,6 +267,7 @@ ast_node! {
     ImportItem:
     name: Option<Name>;
 }
+
 impl ImportItem {
     #[must_use]
     pub fn alias(&self) -> Option<Name> {
@@ -286,6 +288,7 @@ ast_node! {
 }
 
 impl HasName for FunctionDeclaration {}
+
 impl HasAttributes for FunctionDeclaration {}
 
 ast_node! {
@@ -295,6 +298,7 @@ ast_node! {
 }
 
 impl HasName for StructDeclaration {}
+
 impl HasAttributes for StructDeclaration {}
 
 ast_node! {
@@ -311,6 +315,7 @@ ast_node! {
 }
 
 impl HasName for StructMember {}
+
 impl HasAttributes for StructMember {}
 
 ast_node! {
@@ -321,8 +326,11 @@ ast_node! {
     equal_token: Option<SyntaxToken Equal>;
     init: Option<Expression>;
 }
+
 impl HasTemplateParameters for VariableDeclaration {}
+
 impl HasName for VariableDeclaration {}
+
 impl HasAttributes for VariableDeclaration {}
 
 ast_node! {
@@ -333,7 +341,9 @@ ast_node! {
     equal_token: Option<SyntaxToken Equal>;
     init: Option<Expression>;
 }
+
 impl HasName for LetDeclaration {}
+
 impl HasAttributes for LetDeclaration {}
 
 ast_node! {
@@ -346,6 +356,7 @@ ast_node! {
 }
 
 impl HasName for ConstantDeclaration {}
+
 impl HasAttributes for ConstantDeclaration {}
 
 ast_node! {
@@ -356,7 +367,9 @@ ast_node! {
     equal_token: Option<SyntaxToken Equal>;
     init: Option<Expression>;
 }
+
 impl HasName for OverrideDeclaration {}
+
 impl HasAttributes for OverrideDeclaration {}
 
 ast_node! {
@@ -365,7 +378,9 @@ ast_node! {
     equal_token: Option<SyntaxToken Equal>;
     type_declaration: Option<TypeSpecifier>;
 }
+
 impl HasName for TypeAliasDeclaration {}
+
 impl HasAttributes for TypeAliasDeclaration {}
 
 ast_enum! {
@@ -459,9 +474,17 @@ pub enum LanguageExtension {
     PointerCompositeAccess,
 }
 
+impl HasAttributes for Directive {}
+
+impl HasAttributes for DiagnosticDirective {}
+
+impl HasAttributes for EnableDirective {}
+
+impl HasAttributes for RequiresDirective {}
+
 ast_enum! {
     enum Directive {
-        // Diagnostic directive goes here
+        DiagnosticDirective,
         EnableDirective,
         RequiresDirective,
     }
@@ -477,6 +500,7 @@ ast_node! {
     Path:
     relative: Option<ImportRelative>;
 }
+
 impl Path {
     /// Returns a list of identifiers.
     pub fn segments(&self) -> impl Iterator<Item = SyntaxToken> {
@@ -496,7 +520,9 @@ ast_node! {
     colon_token: Option<SyntaxToken Colon>;
     r#type: Option<TypeSpecifier>;
 }
+
 impl HasName for Parameter {}
+
 impl HasAttributes for Parameter {}
 
 ast_node! {
@@ -591,6 +617,7 @@ ast_node! {
     IdentExpression:
     path: Option<Path>;
 }
+
 impl HasTemplateParameters for IdentExpression {}
 
 ast_node! {
@@ -852,12 +879,15 @@ ast_node! {
     right_brace_token: Option<SyntaxToken BraceRight>;
     statements: AstChildren<Statement>;
 }
+
 impl HasAttributes for CompoundStatement {}
 
 ast_node! {
     AssignmentStatement:
     equal_token: Option<SyntaxToken Equal>;
 }
+
+impl HasAttributes for AssignmentStatement {}
 
 impl AssignmentStatement {
     #[must_use]
@@ -876,6 +906,8 @@ ast_node! {
     equal_token: Option<SyntaxToken Equal>;
 }
 
+impl HasAttributes for PhonyAssignmentStatement {}
+
 impl PhonyAssignmentStatement {
     #[must_use]
     pub fn right_side(&self) -> Option<Expression> {
@@ -892,6 +924,8 @@ pub enum IncrementDecrement {
 ast_node! {
     IncrementDecrementStatement
 }
+
+impl HasAttributes for IncrementDecrementStatement {}
 
 impl IncrementDecrementStatement {
     #[must_use]
@@ -919,6 +953,8 @@ ast_node! {
         expression: Option<Expression>;
 }
 
+impl HasAttributes for AssertStatement {}
+
 ast_token_enum! {
     enum CompoundAssignmentOperator {
         PlusEqual,
@@ -937,6 +973,8 @@ ast_token_enum! {
 ast_node! {
     CompoundAssignmentStatement
 }
+
+impl HasAttributes for CompoundAssignmentStatement {}
 
 impl CompoundAssignmentStatement {
     #[must_use]
@@ -1001,6 +1039,8 @@ ast_node! {
     else_block: Option<ElseClause>;
 }
 
+impl HasAttributes for IfStatement {}
+
 ast_node! {
     WhileStatement:
     while_token: Option<SyntaxToken While>;
@@ -1008,11 +1048,15 @@ ast_node! {
     block: Option<CompoundStatement>;
 }
 
+impl HasAttributes for WhileStatement {}
+
 ast_node! {
     SwitchStatement:
     expression: Option<Expression>;
     block: Option<SwitchBody>;
 }
+
+impl HasAttributes for SwitchStatement {}
 
 ast_node! {
     SwitchBody:
@@ -1089,27 +1133,39 @@ ast_node! {
     block: Option<CompoundStatement>;
 }
 
+impl HasAttributes for LoopStatement {}
+
 ast_node! {
     ReturnStatement:
     expression: Option<Expression>;
 }
 
+impl HasAttributes for ReturnStatement {}
+
 ast_node! {
     BreakStatement
 }
+
+impl HasAttributes for BreakStatement {}
 
 ast_node! {
     ContinueStatement
 }
 
+impl HasAttributes for ContinueStatement {}
+
 ast_node! {
     DiscardStatement
 }
+
+impl HasAttributes for DiscardStatement {}
 
 ast_node! {
     ForStatement:
     for_token: Option<SyntaxToken For>;
 }
+
+impl HasAttributes for ForStatement {}
 
 impl ForStatement {
     #[must_use]
@@ -1140,6 +1196,8 @@ ast_node! {
     FunctionCallStatement
 }
 
+impl HasAttributes for FunctionCallStatement {}
+
 impl FunctionCallStatement {
     #[must_use]
     pub fn expression(&self) -> Option<FunctionCall> {
@@ -1158,10 +1216,14 @@ ast_node! {
     block: Option<CompoundStatement>;
 }
 
+impl HasAttributes for ContinuingStatement {}
+
 ast_node! {
     BreakIfStatement:
     condition: Option<Expression>;
 }
+
+impl HasAttributes for BreakIfStatement {}
 
 ast_enum! {
     enum Statement {
@@ -1193,6 +1255,8 @@ ast_enum! {
     }
 }
 
+impl HasAttributes for Statement {}
+
 ast_enum! {
     enum Expression {
         IndexExpression,
@@ -1210,6 +1274,7 @@ ast_node! {
     TypeSpecifier:
     path: Option<Path>;
 }
+
 impl HasTemplateParameters for TypeSpecifier {}
 
 impl InfixExpression {
