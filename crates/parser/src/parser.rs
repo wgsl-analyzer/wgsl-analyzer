@@ -342,11 +342,21 @@ impl<'source> ParserCallbacks<'source> for Parser<'source> {
     ) {
         let text = &self.cst.source()[self.cst.span(node_ref)];
         match text {
-            "readonly_and_readwrite_storage_textures" => self.context.extensions.readonly_and_readwrite_storage_textures = true,
-            "packed_4x8_integer_dot_product" => self.context.extensions.packed_4x8_integer_dot_product = true,
-            "unrestricted_pointer_parameters" => self.context.extensions.unrestricted_pointer_parameters = true,
+            "readonly_and_readwrite_storage_textures" => {
+                self.context
+                    .extensions
+                    .readonly_and_readwrite_storage_textures = true
+            },
+            "packed_4x8_integer_dot_product" => {
+                self.context.extensions.packed_4x8_integer_dot_product = true
+            },
+            "unrestricted_pointer_parameters" => {
+                self.context.extensions.unrestricted_pointer_parameters = true
+            },
             "pointer_composite_access" => self.context.extensions.pointer_composite_access = true,
-            "uniform_buffer_standard_layout" => self.context.extensions.uniform_buffer_standard_layout = true,
+            "uniform_buffer_standard_layout" => {
+                self.context.extensions.uniform_buffer_standard_layout = true
+            },
             "subgroup_id" => self.context.extensions.subgroup_id = true,
             "subgroup_uniformity" => self.context.extensions.subgroup_uniformity = true,
             "texture_and_sampler_let" => self.context.extensions.texture_and_sampler_let = true,
