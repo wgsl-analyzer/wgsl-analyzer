@@ -1,12 +1,30 @@
 #![expect(clippy::wildcard_enum_match_arm, reason = "brevity in test data")]
 
+use expect_test::{Expect, expect};
 use parser::Edition;
 
 use crate::{
     AstNode, HasAttributes as _, HasName as _,
-    ast::{self, Item, LiteralKind},
+    ast::{
+        self, EnableDirective, EnableExtension, EnableExtensionName, Item, LiteralKind,
+        UnknownExtension,
+    },
     parse,
 };
+
+fn check_errors(
+    wa_fixture: &str,
+    expect: Expect,
+) {
+    let parse = parse(wa_fixture, Edition::LATEST);
+    let errors = parse.errors();
+    let actual = errors
+        .iter()
+        .map(|error| error.to_string())
+        .collect::<Vec<String>>()
+        .join("\n");
+    expect.assert_eq(&actual);
+}
 
 #[test]
 fn smoke_test() {
@@ -254,4 +272,56 @@ fn other_attribute() {
         },
         _ => panic!("expected function"),
     }
+}
+
+#[test]
+fn no_attributes() {
+    let parsed = parse(
+        "
+        struct Foo { bar: bool }
+        fn foo() {}
+        ",
+        Edition::LATEST,
+    );
+
+    assert!(parsed.errors().is_empty());
+    let Some(Item::FunctionDeclaration(func)) = parsed.tree().items().nth(1) else {
+        panic!("expected function");
+    };
+    assert!(func.attributes().is_none());
+}
+
+#[test]
+fn enable_extension_names() {
+    let wa_fixture = "
+        enable f16, clip_distances, dual_source_blending, subgroups, primitive_index, unknown_nonsense;
+        ";
+    let parsed = parse(wa_fixture, Edition::LATEST);
+
+    check_errors(
+        wa_fixture,
+        expect!["error at 87..103: unknown extension unknown_nonsense"],
+    );
+    let items = vec![
+        Ok(EnableExtension::F16),
+        Ok(EnableExtension::ClipDistances),
+        Ok(EnableExtension::DualSourceBlending),
+        Ok(EnableExtension::Subgroups),
+        Ok(EnableExtension::PrimitiveIndex),
+        Err(UnknownExtension),
+    ];
+    let map = parsed
+        .tree()
+        .directives()
+        .flat_map(|directive| {
+            match directive {
+                ast::Directive::EnableDirective(enable_directive) => {
+                    enable_directive.enable_extensions()
+                },
+                _ => panic!("wrong directive kind"),
+            }
+            .map(|x| x.extension())
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(map, items);
 }

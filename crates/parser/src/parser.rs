@@ -317,11 +317,15 @@ impl<'source> ParserCallbacks<'source> for Parser<'source> {
     ) {
         let text = &self.cst.source()[self.cst.span(node_ref)];
         match text {
-            "SHADER_INT64" => self.context.extensions.shader_int64 = true,
-            "EARLY_DEPTH_TEST" => self.context.extensions.early_depth_test = true,
             "f16" => self.context.extensions.f16 = true,
             "clip_distances" => self.context.extensions.clip_distances = true,
             "dual_source_blending" => self.context.extensions.dual_source_blending = true,
+            "subgroups" => self.context.extensions.subgroups = true,
+            "primitive_index" => self.context.extensions.primitive_index = true,
+            "subgroup_size_control" => self.context.extensions.subgroup_size_control = true,
+
+            "SHADER_INT64" => self.context.extensions.shader_int64 = true,
+            "EARLY_DEPTH_TEST" => self.context.extensions.early_depth_test = true,
             _ => {
                 diagnostics.push(self.create_diagnostic(
                     self.cst.span(node_ref),

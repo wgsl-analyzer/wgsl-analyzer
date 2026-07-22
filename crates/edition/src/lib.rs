@@ -97,11 +97,16 @@ impl fmt::Display for Edition {
 
 #[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ExtensionsConfig {
-    pub shader_int64: bool,
-    pub early_depth_test: bool,
+    // base WGSL
     pub f16: bool,
     pub clip_distances: bool,
     pub dual_source_blending: bool,
+    pub subgroups: bool,
+    pub primitive_index: bool,
+    pub subgroup_size_control: bool,
+    // naga
+    pub shader_int64: bool,
+    pub early_depth_test: bool,
 }
 
 impl ExtensionsConfig {
@@ -113,11 +118,14 @@ impl ExtensionsConfig {
     #[must_use]
     pub const fn all() -> Self {
         Self {
-            shader_int64: true,
-            early_depth_test: true,
             f16: true,
             clip_distances: true,
             dual_source_blending: true,
+            subgroups: true,
+            primitive_index: true,
+            subgroup_size_control: true,
+            shader_int64: true,
+            early_depth_test: true,
         }
     }
 }
