@@ -7,12 +7,7 @@
 		}
 	},
 	"files": {
-		"includes": [
-			"**",
-			"!**/out",
-			"!**/.vscode-test",
-			"!**/node_modules"
-		]
+		"includes": ["**", "!**/out", "!**/.vscode-test", "!**/node_modules"]
 	},
 	"formatter": {
 		"indentStyle": "tab",
