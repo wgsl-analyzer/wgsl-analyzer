@@ -6,7 +6,7 @@ use base_db::DbPanicContext;
 use fmt::Debug;
 use lsp_server::{
     ErrorCode, ExtractError, Notification as ServerNotification, Request as ServerRequest,
-    RequestId, Response, ResponseError, ResponseKind,
+    RequestId, Response, ResponseError,
 };
 use lsp_types::{Notification as LspNotification, Request as LspRequest};
 use salsa::Cancelled;
@@ -240,7 +240,7 @@ impl<'global_state> RequestDispatcher<'global_state> {
                     let error = on_cancelled();
                     Task::Response(Response {
                         id: request.id,
-                        response_kind: ResponseKind::Err { error },
+                        response_result: Err(error),
                     })
                 },
             }

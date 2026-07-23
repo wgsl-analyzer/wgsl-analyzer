@@ -56,7 +56,7 @@ query-group = {
 # crates from rust-analyzer that are published separately
 line-index = "0.1.2"
 la-arena = "0.3.1"
-lsp-server = "0.9.0"
+lsp-server = "0.10.0"
 #
 # non-local crates
 anyhow = "1.0.103"
