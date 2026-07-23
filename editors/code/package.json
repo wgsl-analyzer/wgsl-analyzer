@@ -448,47 +448,27 @@
 			{
 				"title": "Diagnostics",
 				"properties": {
-					"wgsl-analyzer.diagnostics.semanticErrors": {
-						"markdownDescription": "Controls whether to show type errors.",
+					"wgsl-analyzer.diagnostics.external.naga.parsing": {
+						"markdownDescription": "Whether to show diagnostics from naga about parsing.",
 						"default": true,
 						"type": "boolean"
 					}
 				}
 			},
 			{
-				"title": "Extensions",
+				"title": "Diagnostics",
 				"properties": {
-					"wgsl-analyzer.extensions.shaderInt64": {
-						"markdownDescription": "Whether to enable u64 and i64 scalar types.",
+					"wgsl-analyzer.diagnostics.external.naga.validation.errors": {
+						"markdownDescription": "Whether to show diagnostics from naga about validation.",
 						"default": true,
 						"type": "boolean"
 					}
 				}
 			},
 			{
-				"title": "External Diagnostics",
+				"title": "Diagnostics",
 				"properties": {
-					"wgsl-analyzer.externalDiagnostics.nagaParsingErrors": {
-						"markdownDescription": "Controls whether to show naga's parsing errors.",
-						"default": true,
-						"type": "boolean"
-					}
-				}
-			},
-			{
-				"title": "External Diagnostics",
-				"properties": {
-					"wgsl-analyzer.externalDiagnostics.nagaValidationErrors": {
-						"markdownDescription": "Controls whether to show naga's validation errors.",
-						"default": true,
-						"type": "boolean"
-					}
-				}
-			},
-			{
-				"title": "External Diagnostics",
-				"properties": {
-					"wgsl-analyzer.externalDiagnostics.nagaVersion": {
+					"wgsl-analyzer.diagnostics.external.naga.version": {
 						"markdownDescription": "Naga version used for validation.",
 						"default": "0.29",
 						"type": "string",
@@ -508,25 +488,45 @@
 				}
 			},
 			{
-				"title": "External Diagnostics",
+				"title": "Diagnostics",
 				"properties": {
-					"wgsl-analyzer.externalDiagnostics.tintErrors": {
-						"markdownDescription": "Controls whether to show Tint shader compiler's messages.",
+					"wgsl-analyzer.diagnostics.external.tintErrors": {
+						"markdownDescription": "Whether to show Tint shader compiler's messages.",
 						"default": false,
 						"type": "boolean"
 					}
 				}
 			},
 			{
-				"title": "External Diagnostics",
+				"title": "Diagnostics",
 				"properties": {
-					"wgsl-analyzer.externalDiagnostics.tintPath": {
+					"wgsl-analyzer.diagnostics.external.tintPath": {
 						"markdownDescription": "The path to the tint binary.",
 						"default": null,
 						"type": [
 							"null",
 							"string"
 						]
+					}
+				}
+			},
+			{
+				"title": "Diagnostics",
+				"properties": {
+					"wgsl-analyzer.diagnostics.semanticErrors": {
+						"markdownDescription": "Whether to show diagnostics about the code semantics.",
+						"default": true,
+						"type": "boolean"
+					}
+				}
+			},
+			{
+				"title": "Extensions",
+				"properties": {
+					"wgsl-analyzer.extensions.shaderInt64": {
+						"markdownDescription": "Whether to enable u64 and i64 scalar types.",
+						"default": true,
+						"type": "boolean"
 					}
 				}
 			},

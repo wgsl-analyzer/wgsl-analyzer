@@ -62,23 +62,25 @@ config_data! {
         /// Use `0` to let the server choose automatically based on the machine.
         cachePriming_numThreads: NumThreads = NumThreads::default(),
 
-        /// Controls whether to show type errors.
+        // TODO: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/998
+        // `diagnostics_external` becomes `check` or similar
+        /// Whether to show diagnostics from naga about parsing.
+        diagnostics_external_naga_parsing: bool = true,
+        /// Whether to show diagnostics from naga about validation.
+        diagnostics_external_naga_validation_errors: bool = true,
+        /// Naga version used for validation.
+        diagnostics_external_naga_version: NagaVersionConfig = NagaVersionConfig::default(),
+        /// Whether to show Tint shader compiler's messages.
+        diagnostics_external_tintErrors: bool = false,
+        /// The path to the tint binary.
+        diagnostics_external_tintPath: Option<Utf8PathBuf> = None,
+
+        /// Whether to show diagnostics about the code semantics.
         diagnostics_semanticErrors: bool = true,
 
         // TODO: remove this, this is not config
         /// Whether to enable u64 and i64 scalar types.
         extensions_shaderInt64: bool = true,
-
-        /// Controls whether to show naga's parsing errors.
-        externalDiagnostics_nagaParsingErrors: bool = true,
-        /// Controls whether to show naga's validation errors.
-        externalDiagnostics_nagaValidationErrors: bool = true,
-        /// Naga version used for validation.
-        externalDiagnostics_nagaVersion: NagaVersionConfig = NagaVersionConfig::default(),
-        /// Controls whether to show Tint shader compiler's messages.
-        externalDiagnostics_tintErrors: bool = false,
-        /// The path to the tint binary.
-        externalDiagnostics_tintPath: Option<Utf8PathBuf> = None,
 
         /// Whether to show inlay hints.
         inlayHints_enabled: bool = true,
@@ -585,22 +587,22 @@ impl Config {
         &self,
         source_root: Option<SourceRootId>,
     ) -> DiagnosticsConfig {
-        let tint_path = self.externalDiagnostics_tintPath().clone().map(|path| {
+        let tint_path = self.diagnostics_external_tintPath().clone().map(|path| {
             AbsPathBuf::try_from(path).unwrap_or_else(|path| self.root_path.join(path))
         });
 
         DiagnosticsConfig {
             enabled: true,
             semantic_enabled: *self.diagnostics_semanticErrors(),
-            naga_parsing_enabled: *self.externalDiagnostics_nagaParsingErrors(),
-            naga_validation_enabled: *self.externalDiagnostics_nagaValidationErrors(),
-            naga_version: match self.externalDiagnostics_nagaVersion() {
+            naga_parsing_enabled: *self.diagnostics_external_naga_parsing(),
+            naga_validation_enabled: *self.diagnostics_external_naga_validation_errors(),
+            naga_version: match self.diagnostics_external_naga_version() {
                 NagaVersionConfig::Naga27 => NagaVersion::Naga27,
                 NagaVersionConfig::Naga28 => NagaVersion::Naga28,
                 NagaVersionConfig::Naga29 => NagaVersion::Naga29,
                 NagaVersionConfig::NagaMain => NagaVersion::NagaMain,
             },
-            tint_enabled: *self.externalDiagnostics_tintErrors(),
+            tint_enabled: *self.diagnostics_external_tintErrors(),
             tint_path,
         }
     }
