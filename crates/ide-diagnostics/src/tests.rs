@@ -48,13 +48,91 @@ fn check_diagnostics(
 }
 
 #[test]
+fn store_type_must_be_storable() {
+    check_diagnostics(
+        "fn foo() { var x = 1; var y = &x; }",
+        expect![[r#"
+            30..32 Error 29: store type must be storable, found ptr<i32>
+        "#]],
+    );
+}
+
+#[test]
+fn unexpected_return_value() {
+    check_diagnostics(
+        "fn foo() { return 0; }",
+        expect![[r#"
+            18..19 Error 30: unexpected return value of type `integer` in function with no return type
+        "#]],
+    );
+}
+
+#[test]
+fn no_builtin_overload() {
+    check_diagnostics(
+        "fn foo() { var x = 1f + mat2x2f(); }",
+        expect![[r#"
+            11..34 Error 8: no overload of `+` found for given arguments.Found (f32, mat2x2<f32>), expected one of:
+            fn op_binary_number(vecN<U>, vecN<U>) -> vecN<U>
+            fn op_binary_number(vecN<U>, U) -> vecN<U>
+            fn op_binary_number(T, vecM<T>) -> vecM<T>
+            fn op_binary_number(matNxM<f32>, matNxM<f32>) -> matNxM<f32>
+            fn op_binary_number(T, T) -> T
+        "#]],
+    );
+}
+
+#[test]
+fn deref_not_a_pointer() {
+    check_diagnostics(
+        "fn foo() { var x = *1f; }",
+        expect![[r#"
+            20..22 Error 10: cannot dereference expression of type f32
+        "#]],
+    );
+}
+
+#[test]
+fn no_constructor() {
+    check_diagnostics(
+        "fn foo() { var x = vec2f(1, 2, 3); }",
+        expect![[r#"
+            19..33 Error 18: no overload of constructor `vec2<f32>` found for given arguments. Found (integer, integer, integer), expected one of:
+            fn op_vec2_constructor(vec2<T>) -> vec2<T>
+            fn op_vec2_constructor(T) -> vec2<T>
+            fn op_vec2_constructor(T, T) -> vec2<T>
+        "#]],
+    );
+}
+
+#[test]
+fn precedence_sequence_allowed() {
+    check_diagnostics(
+        "fn foo() { let x = true == true & true; }",
+        expect![[r#"
+            19..31 Error 19: & sequences may only have unary operands. More complex operands must be this with parenthesized `()`
+        "#]],
+    );
+}
+
+#[test]
+fn precedence_sequence_disallowed() {
+    check_diagnostics(
+        "fn foo() { let x = true == true == true; }",
+        expect![[r#"
+            19..31 Error 19: == expressions may only have unary operands. More complex operands must be this with parenthesized `()`
+        "#]],
+    );
+}
+
+#[test]
 fn global_var_function_address_space_error() {
     check_diagnostics(
         "var<function> not_allowed_at_module_level: u32;",
         expect![[r#"
-                0..3 Error 12: address space is only valid in function-scope
-                4..12 Error 21: unexpected template argument
-            "#]],
+            0..3 Error 12: address space is only valid in function-scope
+            4..12 Error 21: unexpected template argument
+        "#]],
     );
 }
 
@@ -63,8 +141,8 @@ fn invalid_body() {
     check_diagnostics(
         "fn f() { let x: u32 = 1.0; }",
         expect![[r#"
-                22..25 Error 2: expected u32, found float
-            "#]],
+            22..25 Error 2: expected u32, found float
+        "#]],
     );
 }
 
@@ -79,8 +157,8 @@ fn no_host_shareable_error_for_undefined_struct() {
 var<storage> lines: array<LineSegment>;
 ",
         expect![[r#"
-                48..59 Error 14: `LineSegment` not found in scope
-            "#]],
+            48..59 Error 14: `LineSegment` not found in scope
+        "#]],
     );
 }
 
@@ -93,8 +171,8 @@ fn reserved_identifier_double_underscore() {
 fn __my_func() {}
 ",
         expect![[r#"
-                3..12 Error 24: `__my_func` is not a valid name for an identifier
-            "#]],
+            3..12 Error 24: `__my_func` is not a valid name for an identifier
+        "#]],
     );
 }
 
@@ -121,13 +199,13 @@ var<storage, read> a: array<f32>;
 var<storage
 ",
         expect![[r#"
-                92..93 Error 16: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
-                101..101 Error 16: invalid syntax, expected one of: ':', '=', ';'
-                22..25 Error 12: address space is only valid for handle or texture types
-                26..33 Error 21: unexpected template argument
-                26..33 Error 21: unexpected template argument
-                89..92 Error 12: address space is only valid for handle or texture types
-            "#]],
+            92..93 Error 16: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
+            101..101 Error 16: invalid syntax, expected one of: ':', '=', ';'
+            22..25 Error 12: address space is only valid for handle or texture types
+            26..33 Error 21: unexpected template argument
+            26..33 Error 21: unexpected template argument
+            89..92 Error 12: address space is only valid for handle or texture types
+        "#]],
     );
 }
 
@@ -141,9 +219,9 @@ fn test() {
 }
 ",
         expect![[r#"
-                20..24 Error 16: 'enum' is a reserved word in WGSL
-                20..24 Error 16: invalid syntax, expected: <identifier>
-            "#]],
+            20..24 Error 16: 'enum' is a reserved word in WGSL
+            20..24 Error 16: invalid syntax, expected: <identifier>
+        "#]],
     );
 }
 
@@ -168,8 +246,18 @@ fn _() {}
 fn foo() { let _ = 1; }
 ",
         expect![[r#"
-                3..4 Error 16: invalid syntax, expected: <identifier>
-                25..26 Error 16: invalid syntax, expected: <identifier>
-            "#]],
+            3..4 Error 16: invalid syntax, expected: <identifier>
+            25..26 Error 16: invalid syntax, expected: <identifier>
+        "#]],
+    );
+}
+
+#[test]
+fn binding_array_validates() {
+    check_diagnostics(
+        "
+@group(0) @binding(0) var textures: binding_array<texture_2d<f32>>;
+",
+        expect![""],
     );
 }
