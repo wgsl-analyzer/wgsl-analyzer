@@ -6,7 +6,7 @@
 use std::{ops::Not as _, str::FromStr as _};
 
 use itertools::Itertools as _;
-use lsp_server::{RequestId, Response, ResponseKind};
+use lsp_server::{RequestId, Response};
 use lsp_types::{
     CancelParams, ConfigurationItem, ConfigurationParams, ConfigurationRequest,
     DidChangeConfigurationParams, DidChangeTextDocumentParams, DidChangeWatchedFilesParams,
@@ -202,8 +202,8 @@ pub(crate) fn handle_did_change_configuration(
         },
         |this, response| {
             tracing::debug!("config update response: '{:?}", response);
-            match response.response_kind {
-                ResponseKind::Ok { mut result } => {
+            match response.response_result {
+                Ok(mut result) => {
                     let config = Config::clone(&*this.config);
                     let mut change = ConfigChange::default();
                     change.change_client_config(result.take());
@@ -214,7 +214,7 @@ pub(crate) fn handle_did_change_configuration(
                     // Client config changes neccesitates .update_config method to be called.
                     this.update_configuration(config);
                 },
-                ResponseKind::Err { error } => {
+                Err(error) => {
                     tracing::error!("failed to fetch the server settings: {:?}", error);
                 },
             }
