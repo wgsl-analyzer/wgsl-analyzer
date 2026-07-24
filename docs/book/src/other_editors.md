@@ -107,7 +107,7 @@ There are several LSP client implementations for Vim or Neovim:
     lspconfig.wgsl_analyzer.setup({})
     ```
 
-### Using coc.nvim
+### Using [coc.nvim](<https://github.com/neoclide/coc.nvim>)
 
 1. open Neovim / Vim and type `:CocConfig` to configure coc.nvim.
 
