@@ -8,21 +8,15 @@ This page assumes that you have already [installed the `wgsl-analyzer` binary](.
 
 - Assumes you are using `wgsl-mode`: <https://github.com/acowley/wgsl-mode>
 
-1. Install the language server
+Add the following to your init.el
 
-    ```bash
-    cargo install --git https://github.com/wgsl-analyzer/wgsl-analyzer wgsl-analyzer
-    ```
-
-2. Add the following to your init.el
-
-    ```emacs-lisp
-    (with-eval-after-load 'lsp-mode
-    (add-to-list 'lsp-language-id-configuration '(wgsl-mode . "wgsl"))
-    (lsp-register-client (make-lsp-client :new-connection (lsp-stdio-connection "wgsl-analyzer")
-                                          :activation-fn (lsp-activate-on "wgsl")
-                                          :server-id 'wgsl-analyzer)))
-    ```
+```emacs-lisp
+(with-eval-after-load 'lsp-mode
+(add-to-list 'lsp-language-id-configuration '(wgsl-mode . "wgsl"))
+(lsp-register-client (make-lsp-client :new-connection (lsp-stdio-connection "wgsl-analyzer")
+                                      :activation-fn (lsp-activate-on "wgsl")
+                                      :server-id 'wgsl-analyzer)))
+```
 
 ### [Eglot]
 
@@ -94,8 +88,7 @@ There are several LSP client implementations for Vim or Neovim:
 
 ### Using lsp
 
-1. Install the `wgsl-analyzer` language server
-2. Configure the `.wgsl` and `.wesl` filetype
+1. Configure the `.wgsl` and `.wesl` filetype
 
     Create `/ftdetect/wgsl.lua` and `/ftdetect/wesl.lua` in your neovim configuration.
 
@@ -107,7 +100,7 @@ There are several LSP client implementations for Vim or Neovim:
     vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, { pattern = "*.wesl",  command = "setfiletype wesl" })
     ```
 
-3. Configure the nvim lsp
+2. Configure the nvim lsp
 
     ```lua
     local lspconfig = require('lspconfig')
@@ -116,21 +109,9 @@ There are several LSP client implementations for Vim or Neovim:
 
 ### Using coc.nvim
 
-- Requires CoC to be installed: <https://github.com/neoclide/coc.nvim>
-- Requires cargo to be installed to build binaries:
+1. open Neovim / Vim and type `:CocConfig` to configure coc.nvim.
 
-1. Install the language server
-
-    ```bash
-    cargo install --git https://github.com/wgsl-analyzer/wgsl-analyzer.git wgsl-analyzer
-    ```
-
-    (if you are not familiar with using and setting up cargo, you might run into problems finding your binary.
-    Ensure that $HOME/.cargo/bin is in your $PATH. More Info about $PATH: <https://linuxconfig.org/linux-path-environment-variable>)
-
-2. open Neovim / Vim and type `:CocConfig` to configure coc.nvim.
-
-3. under `.languageserver: { ... }` create a new field `"wgsl-analyzer-language-server"`. The field should look like this:
+2. under `.languageserver: { ... }` create a new field `"wgsl-analyzer-language-server"`. The field should look like this:
 
     ```jsonc
     //  {
@@ -143,7 +124,7 @@ There are several LSP client implementations for Vim or Neovim:
     //  }
     ```
 
-4. In order for your editor to recognize WGSL files as such, you need to put this into your `vim.rc`
+3. In order for your editor to recognize WGSL files as such, you need to put this into your `vim.rc`
 
     ```vim
     " Recognize wgsl
@@ -206,7 +187,7 @@ lspconfig.wgsl_analyzer.setup({
   on_attach = on_attach,
   settings = {
     ["wgsl-analyzer"] = {
-      
+
     }
   }
 })
@@ -356,8 +337,6 @@ hook global WinSetOption filetype=(wgsl|wesl) %{
 ## Helix
 
 [Helix](https://docs.helix-editor.com) supports LSP by default.
-However, it will not install `wgsl-analyzer` automatically.
-You can follow instructions for [installing the `wgsl-analyzer` binary](./wgsl-analyzer_binary.md).
 
 ## Visual Studio 2022
 
@@ -390,4 +369,4 @@ This includes:
 
 No support.
 
-See #207
+See [#207](https://github.com/wgsl-analyzer/wgsl-analyzer/issues/207)

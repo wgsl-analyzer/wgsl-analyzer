@@ -5,7 +5,7 @@ The `wgsl-analyzer` plugin for VS Code is maintained [in-tree].
 
 You can install the latest release of the plugin from [the marketplace].
 
-[in-tree]: <https://github.com/wgsl-analyzer/wgsl-analyzer/tree/master/editors/code>
+[in-tree]: <https://github.com/wgsl-analyzer/wgsl-analyzer/tree/main/editors/code>
 [the marketplace]: <https://marketplace.visualstudio.com/items?itemName=wgsl-analyzer.wgsl-analyzer>
 
 The server binary is stored in the extension install directory, which starts with `wgsl-analyzer.wgsl-analyzer-` and is located in:

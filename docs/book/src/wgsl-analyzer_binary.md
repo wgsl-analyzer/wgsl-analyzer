@@ -39,9 +39,8 @@ On Unix, running the editor from a shell or changing the `.desktop` file to set 
 
 The `wgsl-analyzer` binary can be installed from the repos or AUR (Arch User Repository):
 
-- [`wgsl-analyzer`](https://www.archlinux.org/packages/extra/x86_64/wgsl-analyzer) (built from latest tagged source)
-
-- [`wgsl-analyzer-git`](https://aur.archlinux.org/packages/wgsl-analyzer-git) (latest Git version)
+- [`wgsl-analyzer`](https://aur.archlinux.org/packages/wgsl-analyzer) (compiles from source)
+- [`wgsl-analyzer-bin`](https://aur.archlinux.org/packages/wgsl-analyzer-bin) (downloads pre-compiled binary)
 
 Install it with `pacman`, for example:
 
@@ -49,9 +48,11 @@ Install it with `pacman`, for example:
 pacman -S wgsl-analyzer
 ```
 
+<!--
 ## Gentoo Linux
 
-<!-- TODO make this real -->
+TODO make this real
+-->
 
 ## macOS
 
@@ -63,10 +64,11 @@ The `wgsl-analyzer` binary can be installed via [Homebrew](https://brew.sh).
 brew install wgsl-analyzer
 ```
 
+<!--
 ## Windows
 
-<!-- TODO publish to winget -->
-<!-- TODO publish to choco -->
+TODO publish to winget
+TODO publish to choco
 
 The `wgsl-analyzer` binary can be installed via [WinGet](https://github.com/microsoft/winget-cli) or [Chocolatey](https://github.com/chocolatey/choco).
 
@@ -77,3 +79,4 @@ winget install wgsl-analyzer
 ```powershell
 choco install wgsl-analyzer
 ```
+-->
