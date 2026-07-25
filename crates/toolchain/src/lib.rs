@@ -210,6 +210,7 @@ pub fn probe_for_binary(path: Utf8PathBuf) -> Option<Utf8PathBuf> {
         .find(|path| path.is_file())
 }
 
+#[cfg(test)]
 mod tests {
     use crate::Tool;
 

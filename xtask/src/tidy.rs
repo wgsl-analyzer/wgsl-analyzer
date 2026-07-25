@@ -184,7 +184,7 @@ mod tests {
     ) -> Result<(), ()> {
         let mut args: Vec<_> = cmd.split_whitespace().collect();
         let bin = args.remove(0);
-        println!("> {}", cmd);
+        println!("> {cmd}");
         let output = Command::new(bin)
             .args(args)
             .current_dir(dir)
@@ -197,7 +197,7 @@ mod tests {
             Ok(())
         } else {
             let stdout = String::from_utf8(output.stdout).map_err(drop)?;
-            print!("{}", stdout);
+            print!("{stdout}");
             Err(())
         }
     }
@@ -205,14 +205,12 @@ mod tests {
     #[test]
     fn check_code_formatting() {
         let dir = project_root();
-        if run("rustfmt +stable --version", &dir).is_err() {
-            panic!(
-                "failed to run rustfmt from toolchain 'stable'; \
-             please run `rustup component add rustfmt --toolchain stable` to install it.",
-            );
-        }
-        if run("cargo +stable fmt -- --check", &dir).is_err() {
-            panic!("code is not properly formatted; please format the code by running `cargo fmt`")
-        }
+        let fmt_exists = run("rustfmt +stable --version", &dir);
+        assert!(fmt_exists.is_ok(),
+            "failed to run rustfmt from toolchain 'stable'; \
+            please run `rustup component add rustfmt --toolchain stable` to install it.",
+        );
+        let fmt = run("cargo +stable fmt -- --check", &dir);
+        assert!(fmt.is_ok(), "code is not properly formatted; please format the code by running `cargo fmt`");
     }
 }

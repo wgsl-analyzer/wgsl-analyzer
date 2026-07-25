@@ -9,8 +9,6 @@ use crate::{Diagnostic, DiagnosticsConfig, Severity};
 
 mod tint;
 
-#[expect(clippy::needless_pass_by_value, reason = "Matches expect! macro")]
-#[expect(clippy::use_debug, reason = "useful in tests")]
 fn check_diagnostics(
     source: &str,
     expect: Expect,
