@@ -14,6 +14,7 @@ use camino::{Utf8Path, Utf8PathBuf};
 pub enum Tool {
     Wesl,
     Wgslfmt,
+    Tint,
 }
 
 impl Tool {
@@ -77,6 +78,7 @@ impl Tool {
         match self {
             Self::Wesl => "wesl",
             Self::Wgslfmt => "wgslfmt",
+            Self::Tint => "tint",
         }
     }
 }

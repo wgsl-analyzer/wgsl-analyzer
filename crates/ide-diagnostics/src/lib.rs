@@ -17,7 +17,7 @@ use hir_ty::ty::{
 };
 use ide_db::RootDatabase;
 use itertools::Itertools as _;
-use paths::AbsPathBuf;
+use paths::{AbsPathBuf, Utf8PathBuf};
 use rowan::NodeOrToken;
 use syntax::{AstNode as _, Edition};
 use vfs::FileId;
@@ -45,7 +45,7 @@ pub struct DiagnosticsConfig {
     pub naga_validation_enabled: bool,
     pub naga_version: NagaVersion,
     pub tint_enabled: bool,
-    pub tint_path: Option<AbsPathBuf>,
+    pub tint_path: Option<Utf8PathBuf>,
 }
 
 impl Default for DiagnosticsConfig {

@@ -587,10 +587,10 @@ impl Config {
         &self,
         source_root: Option<SourceRootId>,
     ) -> DiagnosticsConfig {
-        let tint_path = self.diagnostics_external_tintPath().clone().map(|path| {
-            AbsPathBuf::try_from(path).unwrap_or_else(|path| self.root_path.join(path))
-        });
-
+        let tint_path = self
+            .diagnostics_external_tintPath()
+            .as_deref()
+            .unwrap_or_else(|| "tint".into());
         DiagnosticsConfig {
             enabled: true,
             semantic_enabled: *self.diagnostics_semanticErrors(),
@@ -603,7 +603,7 @@ impl Config {
                 NagaVersionConfig::NagaMain => NagaVersion::NagaMain,
             },
             tint_enabled: *self.diagnostics_external_tintErrors(),
-            tint_path,
+            tint_path: Some(tint_path.to_owned()),
         }
     }
 

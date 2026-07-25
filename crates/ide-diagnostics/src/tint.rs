@@ -10,7 +10,7 @@ use base_db::{EditionedFileId, SourceDatabase as _};
 use hir::diagnostics::{AnyDiagnostic, Severity};
 use ide_db::{FxHashMap, LineIndexDatabase as _, RootDatabase};
 use line_index::{LineCol, LineIndex};
-use paths::Utf8PathBuf;
+use paths::{Utf8Path, Utf8PathBuf};
 use rowan::{TextRange, TextSize};
 use serde::Deserialize;
 use vfs::{AbsPath, AbsPathBuf};
@@ -80,7 +80,7 @@ pub(crate) fn tint_diagnostics<Pathy>(
 }
 
 fn command<Pathy>(
-    path: Option<&AbsPath>,
+    path: Option<&Utf8Path>,
     working_directory: Pathy,
 ) -> Command
 where
