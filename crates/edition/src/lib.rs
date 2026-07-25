@@ -106,6 +106,7 @@ pub struct ExtensionsConfig {
     pub primitive_index: bool,
     pub subgroup_size_control: bool,
     // naga
+    // TODO https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1350
     pub shader_int64: bool,
     pub early_depth_test: bool,
 
@@ -139,6 +140,8 @@ impl ExtensionsConfig {
             subgroups: true,
             primitive_index: true,
             subgroup_size_control: true,
+
+            // TODO https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1350
             shader_int64: true,
             early_depth_test: true,
 
