@@ -22,12 +22,12 @@ fn check_diagnostics(
         naga_validation_enabled: false,
         ..Default::default()
     };
-    check_diagnostics_wth_config(&config, source, expect);
+    check_diagnostics_with_config(&config, source, expect);
 }
 
 #[expect(clippy::needless_pass_by_value, reason = "Matches expect! macro")]
 #[expect(clippy::use_debug, reason = "useful in tests")]
-fn check_diagnostics_wth_config(
+fn check_diagnostics_with_config(
     config: &DiagnosticsConfig,
     source: &str,
     expect: Expect,

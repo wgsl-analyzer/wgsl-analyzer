@@ -4,12 +4,12 @@ use vfs::{AbsPath, AbsPathBuf};
 
 use crate::DiagnosticsConfig;
 
-use super::check_diagnostics_wth_config;
+use super::check_diagnostics_with_config;
 
 #[test]
 fn store_type_must_be_storable() {
     require_tool!(Tool::Tint);
-    check_diagnostics_wth_config(
+    check_diagnostics_with_config(
         &DiagnosticsConfig {
             tint_enabled: true,
             naga_parsing_enabled: false,
