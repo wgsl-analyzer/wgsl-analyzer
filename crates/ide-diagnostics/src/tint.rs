@@ -216,7 +216,9 @@ mod tests {
                 TintDiagnosticSeverity::Warning => "Warning",
                 TintDiagnosticSeverity::Note => "Note",
             };
-            let byte_range = range.to_range(&line_index).unwrap_or_else(TextRange::default);
+            let byte_range = range
+                .to_range(&line_index)
+                .unwrap_or_else(TextRange::default);
             writeln!(actual, "{byte_range:?} {severity_text}: {message}");
         }
 
