@@ -1,4 +1,4 @@
-name: autopublish
+name: Autopublish
 on:
   workflow_dispatch: # We can add version input when 1.0 is released and scheduled releases are removed
 
