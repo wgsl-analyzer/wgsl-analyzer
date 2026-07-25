@@ -9,6 +9,8 @@ on:
     branches:
       - release
 
+permissions: {}
+
 jobs:
   publish:
     if: ${{ github.repository == 'wgsl-analyzer/wgsl-analyzer' || github.event_name == 'workflow_dispatch' }}
@@ -16,9 +18,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       # https://github.com/jlumbroso/free-disk-space/blob/main/action.yml
       - name: Free up some disk space
