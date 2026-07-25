@@ -1,0 +1,69 @@
+name: autopublish
+on:
+  workflow_dispatch: # We can add version input when 1.0 is released and scheduled releases are removed
+
+  #   schedule:
+  #     - cron: "0 0 * * *" # midnight UTC
+
+  push:
+    branches:
+      - release
+
+jobs:
+  publish:
+    if: ${{ github.repository == 'wgsl-analyzer/wgsl-analyzer' || github.event_name == 'workflow_dispatch' }}
+    name: publish
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      # https://github.com/jlumbroso/free-disk-space/blob/main/action.yml
+      - name: Free up some disk space
+        run: sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc /usr/local/.ghcup
+
+      - name: Install Rust toolchain
+        run: rustup update --no-self-update stable
+
+      - name: Install cargo-workspaces
+        run: cargo install cargo-workspaces --version "0.3.6" # TODO update to 0.4.2
+
+      - name: Publish Crates
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+          RUN_NUMBER: ${{ github.run_number }}
+        shell: bash
+        run: |
+          git config --global user.email "runner@gha.local"
+          git config --global user.name "GitHub Action"
+          rm Cargo.lock
+          # Rename subcrates with "too generic" names
+          cargo workspaces rename --from base_db wgsl-analyzer-base-db
+          cargo workspaces rename --from edition wgsl-analyzer-edition
+          cargo workspaces rename --from hir wgsl-analyzer-hir
+          cargo workspaces rename --from hir_def wgsl-analyzer-hir-def
+          cargo workspaces rename --from hir_ty wgsl-analyzer-hir-ty
+          cargo workspaces rename --from ide wgsl-analyzer-ide
+          cargo workspaces rename --from ide_completion wgsl-analyzer-ide-completion
+          cargo workspaces rename --from ide-db wgsl-analyzer-ide-db
+          cargo workspaces rename --from ide-diagnostics wgsl-analyzer-ide-diagnostics
+          cargo workspaces rename --from parser wgsl-analyzer-parser
+          cargo workspaces rename --from profile wgsl-analyzer-profile
+          cargo workspaces rename --from project-model wgsl-analyzer-project-model
+          cargo workspaces rename --from syntax wgsl-analyzer-syntax
+          cargo workspaces rename --from test-fixture wgsl-analyzer-test-fixture
+          cargo workspaces rename --from test-utils wgsl-analyzer-test-utils
+          cargo workspaces rename --from toolchain wgsl-analyzer-toolchain
+          cargo workspaces rename --from vfs wgsl-analyzer-vfs
+          cargo workspaces rename --from vfs-notify wgsl-analyzer-vfs-notify
+          cargo workspaces rename --from wgsl_formatter wgsl-formatter
+          # cargo workspaces rename --from wgsl-analyzer wgsl-analyzer
+          # cargo workspaces rename --from wgslfmt wgslfmt
+          cargo workspaces rename --from wgslfmt_dprint wgslfmt-dprint
+          # Remove library crates and xtask from the workspaces so we don't auto-publish them as well
+          sed -i -Ez 's|members = \[[^]]*\]|members = ["crates/*"]|' Cargo.toml
+          cargo workspaces rename wa-ap-%n
+          find crates/wgsl-analyzer -type f -name '*.rs' -exec sed -i 's/wgsl_analyzer/wa_ap_wgsl_analyzer/g' {} +
+          cargo workspaces publish --yes --force '*' --exact --no-git-commit --allow-dirty --skip-published custom 0.0.$($RUN_NUMBER)
