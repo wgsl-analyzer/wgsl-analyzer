@@ -315,12 +315,13 @@ mod tests {
         b: f32,
 
                 }",
-            expect![["
-            struct Test {
-                @location(0) x: i32,
-                a: i32,
-                b: f32,
-            }"]],
+            expect![[r#"
+                struct Test {
+                    @location(0)
+                    x: i32,
+                    a: i32,
+                    b: f32,
+                }"#]],
         );
     }
 
@@ -529,10 +530,12 @@ struct S {
     @location(0) color: vec4<f32>,
 }",
             expect![[r#"
-            struct VertexOutput {
-                @builtin(position) pos: vec4<f32>,
-                @location(0) color: vec4<f32>,
-            }"#]],
+                struct VertexOutput {
+                    @builtin(position)
+                    pos: vec4<f32>,
+                    @location(0)
+                    color: vec4<f32>,
+                }"#]],
         );
     }
 
@@ -549,7 +552,8 @@ struct S {
 }",
             expect![[r#"
                 struct V {
-                    @location(0)@interpolate(flat)color: vec4<f32>,
+                    @location(0)@interpolate(flat)
+                    color: vec4<f32>,
                 }"#]],
         );
     }

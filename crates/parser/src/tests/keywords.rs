@@ -792,6 +792,7 @@ fn keywords_do_not_parse() {
             error at 427..435: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
             error at 427..435: directives must come before other items
             error at 435..436: invalid syntax, expected: <identifier>
+            error at 435..435: unknown extension 
             error at 451..457: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
             error at 473..479: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
             error at 479..480: invalid syntax, expected: <identifier>

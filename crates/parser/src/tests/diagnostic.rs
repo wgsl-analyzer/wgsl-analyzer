@@ -12,7 +12,7 @@ fn parse_diagnostic_attribute() {
         expect![[r#"
             SourceFile@0..57
               Blankspace@0..9 "\n        "
-              FunctionDeclaration@9..48
+              AttributeList@9..30
                 DiagnosticAttribute@9..30
                   AttributeOperator@9..10 "@"
                   Diagnostic@10..20 "diagnostic"
@@ -25,7 +25,8 @@ fn parse_diagnostic_attribute() {
                     DiagnosticRuleName@26..29
                       Identifier@26..29 "bla"
                     ParenthesisRight@29..30 ")"
-                Blankspace@30..39 "\n        "
+              Blankspace@30..39 "\n        "
+              FunctionDeclaration@39..48
                 Fn@39..41 "fn"
                 Blankspace@41..42 " "
                 Name@42..43
