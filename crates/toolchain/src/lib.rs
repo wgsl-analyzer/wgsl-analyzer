@@ -10,6 +10,21 @@ use std::{
 
 use camino::{Utf8Path, Utf8PathBuf};
 
+/// Can be used in unit tests to gate the test on tool availability.
+/// If the tool is not available, print to stderr and early return/bail.
+#[macro_export]
+macro_rules! require_tool {
+    ($tool:expr) => {
+        if $tool.try_path().is_none() {
+            eprintln!(
+                "SKIPPED: `{}` not found on PATH, skipping test",
+                $tool.name()
+            );
+            return;
+        }
+    };
+}
+
 #[derive(Copy, Clone)]
 pub enum Tool {
     Wesl,
@@ -44,7 +59,7 @@ impl Tool {
         )
     }
 
-    /// Return a `PathBuf` to use for the given executable.
+    /// Return a [`PathBuf`] to use for the given executable.
     ///
     /// The current implementation checks three places for an executable to use:
     /// 1) Appropriate environment variable (erroring if this is set but not a usable executable)
@@ -56,10 +71,31 @@ impl Tool {
     ///    where `$CARGO_HOME` defaults to ~/.cargo (see <https://doc.rust-lang.org/cargo/guide/cargo-home.html>)
     ///    example: for cargo, this tries `$CARGO_HOME/bin/cargo`, or ~/.cargo/bin/cargo if `$CARGO_HOME` is unset.
     ///    It seems that this is a reasonable place to try for cargo, rustc, and rustup
-    /// 4) If all else fails, we just try to use the executable name directly
+    /// 4) If all else fails, we just try to use the executable name directly.
     #[must_use]
     pub fn path(self) -> Utf8PathBuf {
         invoke(
+            &[lookup_as_env_var, lookup_in_path, cargo_proxy],
+            self.name(),
+        )
+    }
+
+    /// Return a [`PathBuf`] to use for the given executable.
+    ///
+    /// The current implementation checks three places for an executable to use:
+    /// 1) Appropriate environment variable (erroring if this is set but not a usable executable)
+    ///    example: for cargo, this checks $CARGO environment variable; for rustc, $RUSTC; etc
+    /// 2) $PATH/`<executable_name>`
+    ///    example: for cargo, this tries all paths in $PATH with appended `cargo`, returning the
+    ///    first that exists
+    /// 3) `$CARGO_HOME/bin/<executable_name>`
+    ///    where `$CARGO_HOME` defaults to ~/.cargo (see <https://doc.rust-lang.org/cargo/guide/cargo-home.html>)
+    ///    example: for cargo, this tries `$CARGO_HOME/bin/cargo`, or ~/.cargo/bin/cargo if `$CARGO_HOME` is unset.
+    ///    It seems that this is a reasonable place to try for cargo, rustc, and rustup
+    /// 4) If all else fails, return [`None`].
+    #[must_use]
+    pub fn try_path(self) -> Option<Utf8PathBuf> {
+        try_invoke(
             &[lookup_as_env_var, lookup_in_path, cargo_proxy],
             self.name(),
         )
@@ -118,6 +154,13 @@ fn invoke(
         .unwrap_or_else(|| executable.into())
 }
 
+fn try_invoke(
+    list: &[fn(&str) -> Option<Utf8PathBuf>],
+    executable: &str,
+) -> Option<Utf8PathBuf> {
+    list.iter().find_map(|getter| getter(executable))
+}
+
 /// Looks up the binary as its SCREAMING upper case in the env variables.
 fn lookup_as_env_var(executable_name: &str) -> Option<Utf8PathBuf> {
     env::var_os(executable_name.to_ascii_uppercase())
@@ -165,4 +208,26 @@ pub fn probe_for_binary(path: Utf8PathBuf) -> Option<Utf8PathBuf> {
     iter::once(path)
         .chain(with_extension)
         .find(|path| path.is_file())
+}
+
+mod tests {
+    use crate::Tool;
+
+    #[test]
+    fn tint_path() {
+        require_tool!(Tool::Tint);
+        let path = Tool::Tint.try_path();
+    }
+
+    #[test]
+    fn weslrs_path() {
+        require_tool!(Tool::Wesl);
+        let path = Tool::Wesl.try_path();
+    }
+
+    #[test]
+    fn wgslfmt_path() {
+        require_tool!(Tool::Wgslfmt);
+        let path = Tool::Wgslfmt.try_path();
+    }
 }

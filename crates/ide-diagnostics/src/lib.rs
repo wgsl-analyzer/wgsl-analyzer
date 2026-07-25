@@ -84,13 +84,13 @@ pub enum DiagnosticSource {
 impl Display for DiagnosticSource {
     fn fmt(
         &self,
-        f: &mut std::fmt::Formatter<'_>,
+        formatter: &mut std::fmt::Formatter<'_>,
     ) -> std::fmt::Result {
         match self {
-            Self::WgslAnalyzer => write!(f, "wgsl-analyzer"),
-            Self::Naga => write!(f, "naga"),
-            Self::Tint => write!(f, "tint"),
-            Self::WeslRs => write!(f, "wesl-rs"),
+            Self::WgslAnalyzer => write!(formatter, "wgsl-analyzer"),
+            Self::Naga => write!(formatter, "naga"),
+            Self::Tint => write!(formatter, "tint"),
+            Self::WeslRs => write!(formatter, "wesl-rs"),
         }
     }
 }

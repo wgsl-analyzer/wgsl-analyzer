@@ -88,7 +88,7 @@ where
 {
     let path = path
         .as_ref()
-        .map_or_else(|| PathBuf::from("tint"), PathBuf::from);
+        .map_or_else(|| toolchain::Tool::Tint.path().into(), PathBuf::from);
     let mut cmd = toolchain::command(path, ".", &FxHashMap::default());
     cmd.current_dir(working_directory);
     cmd.args([
@@ -172,13 +172,13 @@ pub enum TintCommandError {
 impl Display for TintCommandError {
     fn fmt(
         &self,
-        f: &mut std::fmt::Formatter<'_>,
+        formatter: &mut std::fmt::Formatter<'_>,
     ) -> std::fmt::Result {
         match self {
-            Self::Io(error) => write!(f, "failed to execute Tint: {error}"),
-            Self::Tint { stderr } => write!(f, "Tint error: {stderr}"),
+            Self::Io(error) => write!(formatter, "failed to execute Tint: {error}"),
+            Self::Tint { stderr } => write!(formatter, "Tint error: {stderr}"),
             Self::Deserialize(error) => {
-                write!(f, "could not deserialize Tint output: {error}")
+                write!(formatter, "could not deserialize Tint output: {error}")
             },
         }
     }

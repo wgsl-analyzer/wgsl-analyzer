@@ -1,4 +1,5 @@
 use expect_test::expect;
+use toolchain::{Tool, require_tool};
 use vfs::{AbsPath, AbsPathBuf};
 
 use crate::DiagnosticsConfig;
@@ -7,10 +8,10 @@ use super::check_diagnostics_wth_config;
 
 #[test]
 fn store_type_must_be_storable() {
+    require_tool!(Tool::Tint);
     check_diagnostics_wth_config(
         &DiagnosticsConfig {
             tint_enabled: true,
-            tint_path: Some(toolchain::Tool::Tint.path()),
             naga_parsing_enabled: false,
             naga_validation_enabled: false,
             ..Default::default()
