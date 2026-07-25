@@ -57,7 +57,7 @@ fn check_test_attrs(
     text: &str,
 ) {
     let panic_rule =
-        "https://github.com/wgsl-analyzer/wgsl-analyzer/blob/master/docs/dev/style.md#should_panic";
+        "https://github.com/wgsl-analyzer/wgsl-analyzer/blob/main/docs/dev/style.md#should_panic";
     let need_panic: &[&str] = &[
         // This file.
         "slow-tests/tidy.rs",
