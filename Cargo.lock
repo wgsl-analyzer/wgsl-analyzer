@@ -1490,6 +1490,7 @@ name = "syntax"
 version = "0.0.0"
 dependencies = [
  "either",
+ "expect-test",
  "itertools 0.15.0",
  "parser",
  "rowan",

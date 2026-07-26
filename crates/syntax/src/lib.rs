@@ -15,6 +15,8 @@ pub use rowan::Direction;
 use smol_str::SmolStr;
 use triomphe::Arc;
 
+use crate::ast::{Attribute, AttributeList};
+
 #[derive(Clone, Debug)]
 pub struct Parse {
     green_node: rowan::GreenNode,
@@ -256,8 +258,12 @@ pub trait HasTemplateParameters: AstNode {
 }
 
 pub trait HasAttributes: AstNode {
-    fn attributes(&self) -> AstChildren<ast::Attribute> {
-        support::children(self.syntax())
+    fn attributes(&self) -> Option<AstChildren<ast::Attribute>> {
+        let prev_sibling = self.syntax().prev_sibling()?;
+        if let Some(node) = AttributeList::cast(prev_sibling) {
+            return Some(node.attributes());
+        }
+        None
     }
 }
 

@@ -272,3 +272,156 @@ fn binding_array_validates() {
         expect![""],
     );
 }
+
+#[test]
+fn invalid_translate_attribute_function_return_type() {
+    check_diagnostics(
+        "
+fn foo() ->
+@if(true) bool
+{ _ = 1; }
+",
+        expect![[r#"
+            12..21 Error 16: translate-time attribute `@if` is not allowed on a function return type
+        "#]],
+    );
+}
+
+#[test]
+fn invalid_translate_attribute_body_function_declaration() {
+    check_diagnostics(
+        "
+fn foo()
+@if(true) { _ = 1; }
+",
+        expect![[r#"
+            9..18 Error 16: translate-time attribute `@if` is not allowed on a function body
+        "#]],
+    );
+}
+
+#[test]
+fn invalid_translate_attribute_body_switch_statement() {
+    check_diagnostics(
+        "
+fn foo()
+{
+switch true
+@if(true)
+{
+    case true: { return; }
+    default: { return; }
+}
+}
+",
+        expect![[r#"
+            31..40 Error 16: translate-time attribute `@if` is not allowed on a switch body
+        "#]],
+    );
+}
+
+#[test]
+fn invalid_translate_attribute_body_switch_clause() {
+    check_diagnostics(
+        "
+fn foo() {
+switch true
+{
+    case true: @if(true) { return; }
+    default: { return; }
+}
+}
+",
+        expect![[r#"
+            52..61 Error 16: translate-time attribute `@if` is not allowed on a switch default clause body
+        "#]],
+    );
+}
+
+#[test]
+fn invalid_translate_attribute_body_loop_statement() {
+    check_diagnostics(
+        "
+fn foo() {
+loop
+@if(true)
+{ continuing {} }
+}
+",
+        expect![[r#"
+            24..33 Error 16: translate-time attribute `@if` is not allowed on a loop body
+            52..53 Error 16: attributes must precede a statement here
+        "#]],
+    );
+}
+
+#[test]
+fn invalid_translate_attribute_body_for_statement() {
+    check_diagnostics(
+        "
+fn foo() {
+for(; ;)
+@if(true)
+{ return; }
+}
+",
+        expect![[r#"
+            28..37 Error 16: translate-time attribute `@if` is not allowed on a for body
+        "#]],
+    );
+}
+
+#[test]
+fn invalid_translate_attribute_body_while_statement() {
+    check_diagnostics(
+        "
+fn foo() {
+while true
+@if(true)
+{ return; }
+}
+",
+        expect![[r#"
+            30..39 Error 16: translate-time attribute `@if` is not allowed on a while body
+        "#]],
+    );
+}
+
+#[test]
+fn invalid_translate_attribute_body_if_else_statement() {
+    check_diagnostics(
+        "
+fn foo() {
+if true
+@if(true)
+{ return; }
+else
+@if(true)
+{ return; }
+}
+",
+        expect![[r#"
+            27..36 Error 16: translate-time attribute `@if` is not allowed on an if/else body
+            66..75 Error 16: translate-time attribute `@if` is not allowed on an if/else body
+        "#]],
+    );
+}
+
+#[test]
+fn invalid_translate_attribute_body_continuing_statement() {
+    check_diagnostics(
+        "
+fn foo() {
+loop {
+    continuing
+    @if(true)
+    {}
+}
+}
+",
+        expect![[r#"
+            49..58 Error 16: translate-time attribute `@if` is not allowed on a continuing body
+            68..69 Error 16: attributes must precede a statement here
+        "#]],
+    );
+}

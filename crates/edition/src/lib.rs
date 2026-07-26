@@ -97,11 +97,31 @@ impl fmt::Display for Edition {
 
 #[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct ExtensionsConfig {
-    pub shader_int64: bool,
-    pub early_depth_test: bool,
+    // == Enable extensions
+    // base WGSL
     pub f16: bool,
     pub clip_distances: bool,
     pub dual_source_blending: bool,
+    pub subgroups: bool,
+    pub primitive_index: bool,
+    pub subgroup_size_control: bool,
+    // naga
+    pub shader_int64: bool,
+    pub early_depth_test: bool,
+
+    // == Language extensions
+    pub readonly_and_readwrite_storage_textures: bool,
+    pub packed_4x8_integer_dot_product: bool,
+    pub unrestricted_pointer_parameters: bool,
+    pub pointer_composite_access: bool,
+    pub uniform_buffer_standard_layout: bool,
+    pub subgroup_id: bool,
+    pub subgroup_uniformity: bool,
+    pub texture_and_sampler_let: bool,
+    pub texture_formats_tier1: bool,
+    pub linear_indexing: bool,
+    pub immediate_address_space: bool,
+    pub buffer_view: bool,
 }
 
 impl ExtensionsConfig {
@@ -113,11 +133,27 @@ impl ExtensionsConfig {
     #[must_use]
     pub const fn all() -> Self {
         Self {
-            shader_int64: true,
-            early_depth_test: true,
             f16: true,
             clip_distances: true,
             dual_source_blending: true,
+            subgroups: true,
+            primitive_index: true,
+            subgroup_size_control: true,
+            shader_int64: true,
+            early_depth_test: true,
+
+            readonly_and_readwrite_storage_textures: true,
+            packed_4x8_integer_dot_product: true,
+            unrestricted_pointer_parameters: true,
+            pointer_composite_access: true,
+            uniform_buffer_standard_layout: true,
+            subgroup_id: true,
+            subgroup_uniformity: true,
+            texture_and_sampler_let: true,
+            texture_formats_tier1: true,
+            linear_indexing: true,
+            immediate_address_space: true,
+            buffer_view: true,
         }
     }
 }

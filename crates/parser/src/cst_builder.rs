@@ -160,15 +160,17 @@ impl CstBuilder<'_, '_> {
             | Rule::LhsExpression
             | Rule::VariableUpdating
             | Rule::Attribute => {
-                panic!("{rule:?} should always be a more specific node")
+                panic!(
+                    "{rule:?} should always be a more specific node.\ttoken starts at index {}",
+                    self.token_start_index
+                )
             },
             // This is reachable when an attribute is parsed, but no statement variant applies
             #[expect(clippy::match_same_arms, reason = "Reasons might be different")]
             Rule::Statement => self.start_node(SyntaxKind::Error),
 
             // Attributes
-            // Note: The commented out attribute variants are parsed as OtherAttribute because they do not use
-            // keywords and it confuses the lexer. These variants can be separated in higher layers.
+            Rule::AttributeList => self.start_node(SyntaxKind::AttributeList),
             Rule::AlignAttr => self.start_node(SyntaxKind::AlignAttribute),
             Rule::BindingAttr => self.start_node(SyntaxKind::BindingAttribute),
             Rule::BlendSrcAttr => self.start_node(SyntaxKind::BlendSrcAttribute),
@@ -193,6 +195,10 @@ impl CstBuilder<'_, '_> {
             // naga
             Rule::EarlyDepthTestAttr => self.start_node(SyntaxKind::EarlyDepthTestAttribute),
             Rule::EarlyDepthTestMode => self.start_node(SyntaxKind::EarlyDepthTestMode),
+            // WESL
+            Rule::IfAttr => self.start_node(SyntaxKind::IfAttribute),
+            Rule::ElifAttr => self.start_node(SyntaxKind::ElifAttribute),
+            Rule::ElseAttr => self.start_node(SyntaxKind::ElseAttribute),
         }
     }
 

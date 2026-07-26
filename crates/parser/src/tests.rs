@@ -2,6 +2,7 @@
 #![expect(clippy::too_many_lines, reason = "snapshot test data")]
 
 mod attributes;
+mod conditional;
 mod diagnostic;
 mod expression;
 mod imports;
@@ -1394,15 +1395,15 @@ fn parse_if_else_if_after_else() {
 #[test]
 fn parse_for_statement() {
     check_statement(
-        "for(let i = 0; i < 3; i = i + 1) {}",
+        "for(var i = 0; i < 3; i = i + 1) {}",
         expect![[r#"
             SourceFile@0..35
               ForStatement@0..35
                 For@0..3 "for"
                 ParenthesisLeft@3..4 "("
                 ForInitializer@4..13
-                  LetDeclaration@4..13
-                    Let@4..7 "let"
+                  VariableDeclaration@4..13
+                    Var@4..7 "var"
                     Blankspace@7..8 " "
                     Name@8..9
                       Identifier@8..9 "i"
@@ -1453,15 +1454,15 @@ fn parse_for_statement() {
 #[test]
 fn parse_for_statement_comma() {
     check_statement(
-        "for(let i = 0, i < 3, i = i + 1) {}",
+        "for(var i = 0, i < 3, i = i + 1) {}",
         expect![[r#"
             SourceFile@0..35
               ForStatement@0..35
                 For@0..3 "for"
                 ParenthesisLeft@3..4 "("
                 ForInitializer@4..13
-                  LetDeclaration@4..13
-                    Let@4..7 "let"
+                  VariableDeclaration@4..13
+                    Var@4..7 "var"
                     Blankspace@7..8 " "
                     Name@8..9
                       Identifier@8..9 "i"
@@ -1527,7 +1528,7 @@ fn for_statement_incomplete_1() {
                 Semicolon@5..6 ";"
                 ParenthesisRight@6..7 ")"
 
-            error at 7..7: invalid syntax, expected one of: '@', '{'"#]],
+            error at 7..7: invalid syntax, expected one of: 'alias', '&', '@', '{', '}', 'break', 'case', 'const', 'const_assert', 'continue', 'continuing', 'default', 'diagnostic', 'discard', 'enable', 'fn', 'for', <identifier>, 'if', 'import', 'let', 'loop', 'override', 'package', '(', 'requires', 'return', ';', '*', 'struct', 'super', 'switch', '_', 'var', 'while'"#]],
     );
 }
 
@@ -1552,7 +1553,7 @@ fn for_statement_incomplete_2() {
                 Semicolon@8..9 ";"
                 ParenthesisRight@9..10 ")"
 
-            error at 10..10: invalid syntax, expected one of: '@', '{'"#]],
+            error at 10..10: invalid syntax, expected one of: 'alias', '&', '@', '{', '}', 'break', 'case', 'const', 'const_assert', 'continue', 'continuing', 'default', 'diagnostic', 'discard', 'enable', 'fn', 'for', <identifier>, 'if', 'import', 'let', 'loop', 'override', 'package', '(', 'requires', 'return', ';', '*', 'struct', 'super', 'switch', '_', 'var', 'while'"#]],
     );
 }
 
@@ -1572,7 +1573,7 @@ fn for_statement_incomplete_3() {
                 Semicolon@10..11 ";"
                 ParenthesisRight@11..12 ")"
 
-            error at 12..12: invalid syntax, expected one of: '@', '{'"#]],
+            error at 12..12: invalid syntax, expected one of: 'alias', '&', '@', '{', '}', 'break', 'case', 'const', 'const_assert', 'continue', 'continuing', 'default', 'diagnostic', 'discard', 'enable', 'fn', 'for', <identifier>, 'if', 'import', 'let', 'loop', 'override', 'package', '(', 'requires', 'return', ';', '*', 'struct', 'super', 'switch', '_', 'var', 'while'"#]],
     );
 }
 
@@ -1599,7 +1600,7 @@ fn for_statement_incomplete_4() {
                       IntLiteral@10..11 "1"
                 ParenthesisRight@11..12 ")"
 
-            error at 12..12: invalid syntax, expected one of: '@', '{'"#]],
+            error at 12..12: invalid syntax, expected one of: 'alias', '&', '@', '{', '}', 'break', 'case', 'const', 'const_assert', 'continue', 'continuing', 'default', 'diagnostic', 'discard', 'enable', 'fn', 'for', <identifier>, 'if', 'import', 'let', 'loop', 'override', 'package', '(', 'requires', 'return', ';', '*', 'struct', 'super', 'switch', '_', 'var', 'while'"#]],
     );
 }
 
@@ -1649,7 +1650,9 @@ fn loop_statement_continuing() {
                       BraceLeft@18..19 "{"
                       BraceRight@19..20 "}"
                   Blankspace@20..21 " "
-                  BraceRight@21..22 "}""#]],
+                  BraceRight@21..22 "}"
+
+            error at 19..20: attributes must precede a statement here"#]],
     );
 }
 #[test]
@@ -2437,7 +2440,7 @@ fn annotation_with_invalid_statement_recover() {
 }",
         expect![[r#"
             SourceFile@0..103
-              FunctionDeclaration@0..72
+              FunctionDeclaration@0..101
                 Fn@0..2 "fn"
                 Blankspace@2..3 " "
                 Name@3..6
@@ -2446,21 +2449,19 @@ fn annotation_with_invalid_statement_recover() {
                   ParenthesisLeft@6..7 "("
                   ParenthesisRight@7..8 ")"
                 Blankspace@8..9 " "
-                CompoundStatement@9..72
+                CompoundStatement@9..101
                   BraceLeft@9..10 "{"
                   Blankspace@10..15 "\n    "
-                  IfStatement@15..38
-                    OtherAttribute@15..16
+                  AttributeList@15..33
+                    IfAttribute@15..33
                       AttributeOperator@15..16 "@"
-                    IfClause@16..38
                       If@16..18 "if"
-                      ParenthesisExpression@18..33
-                        ParenthesisLeft@18..19 "("
-                        IdentExpression@19..32
-                          Path@19..32
-                            Identifier@19..32 "MIXOKLAB_SRGB"
-                        ParenthesisRight@32..33 ")"
-                      Blankspace@33..38 "\n    "
+                      ParenthesisLeft@18..19 "("
+                      IdentExpression@19..32
+                        Path@19..32
+                          Identifier@19..32 "MIXOKLAB_SRGB"
+                      ParenthesisRight@32..33 ")"
+                  Blankspace@33..38 "\n    "
                   LetDeclaration@38..66
                     Let@38..41 "let"
                     Blankspace@41..42 " "
@@ -2481,35 +2482,30 @@ fn annotation_with_invalid_statement_recover() {
                         ParenthesisRight@64..65 ")"
                     Semicolon@65..66 ";"
                   Blankspace@66..71 "\n    "
-                  Error@71..72
-                    OtherAttribute@71..72
+                  AttributeList@71..76
+                    ElseAttribute@71..76
                       AttributeOperator@71..72 "@"
-              Error@72..76
-                Else@72..76 "else"
-              Blankspace@76..81 "\n    "
-              Error@81..99
-                Let@81..84 "let"
-                Blankspace@84..85 " "
-                Name@85..91
-                  Identifier@85..91 "colorA"
-                Blankspace@91..92 " "
-                Equal@92..93 "="
-                Blankspace@93..94 " "
-                IdentExpression@94..98
-                  Path@94..98
-                    Identifier@94..98 "colA"
-                Semicolon@98..99 ";"
-              Blankspace@99..100 "\n"
-              Error@100..103
-                BraceRight@100..101 "}"
-                Blankspace@101..102 "\n"
+                      Else@72..76 "else"
+                  Blankspace@76..81 "\n    "
+                  LetDeclaration@81..99
+                    Let@81..84 "let"
+                    Blankspace@84..85 " "
+                    Name@85..91
+                      Identifier@85..91 "colorA"
+                    Blankspace@91..92 " "
+                    Equal@92..93 "="
+                    Blankspace@93..94 " "
+                    IdentExpression@94..98
+                      Path@94..98
+                        Identifier@94..98 "colA"
+                    Semicolon@98..99 ";"
+                  Blankspace@99..100 "\n"
+                  BraceRight@100..101 "}"
+              Blankspace@101..102 "\n"
+              Error@102..103
                 BraceRight@102..103 "}"
 
-            error at 16..18: invalid syntax, expected one of: 'align', 'binding', 'blend_src', 'builtin', 'compute', 'const', 'diagnostic', 'early_depth_test', 'fragment', 'group', 'id', <identifier>, 'interpolate', 'invariant', 'location', 'must_use', 'size', 'vertex', 'workgroup_size'
-            error at 38..41: invalid syntax, expected one of: '@', '{'
-            error at 72..76: invalid syntax, expected one of: 'align', 'binding', 'blend_src', 'builtin', 'compute', 'const', 'diagnostic', 'early_depth_test', 'fragment', 'group', 'id', <identifier>, 'interpolate', 'invariant', 'location', 'must_use', 'size', 'vertex', 'workgroup_size'
-            error at 81..99: global let declarations are not allowed
-            error at 100..101: invalid syntax, expected one of: 'alias', '@', 'const', 'const_assert', 'diagnostic', <end of file>, 'enable', 'fn', 'import', 'let', 'override', 'requires', ';', 'struct', 'var'"#]],
+            error at 102..103: invalid syntax, expected one of: 'alias', '@', 'const', 'const_assert', 'diagnostic', <end of file>, 'enable', 'fn', 'import', 'let', 'override', 'requires', ';', 'struct', 'var'"#]],
     );
 }
 
@@ -2968,7 +2964,7 @@ fn test()
               Semicolon@28..29 ";"
               Blankspace@29..30 "\n"
 
-            error at 14..15: invalid syntax, expected one of: '@', <identifier>
+            error at 14..15: invalid syntax, expected: <identifier>
             error at 27..28: invalid syntax, expected one of: '->', '@', '{'"#]],
     );
 }
@@ -3425,7 +3421,7 @@ let x = 3;
                 BraceRight@38..39 "}"
               Blankspace@39..48 "\n        "
 
-            error at 24..25: invalid syntax, expected one of: '@', '{'"#]],
+            error at 24..25: invalid syntax, expected: '{'"#]],
     );
 }
 
@@ -3574,12 +3570,12 @@ fn attribute_only_recover() {
         "@fragment",
         expect![[r#"
             SourceFile@0..9
-              FunctionDeclaration@0..9
+              AttributeList@0..9
                 FragmentAttribute@0..9
                   AttributeOperator@0..1 "@"
                   Fragment@1..9 "fragment"
 
-            error at 9..9: invalid syntax, expected one of: '@', 'fn', 'let', 'override', 'var'"#]],
+            error at 9..9: invalid syntax, expected one of: 'alias', '&', '@', '{', '}', 'break', 'case', 'const', 'const_assert', 'continue', 'continuing', 'default', 'diagnostic', 'discard', 'enable', 'fn', 'for', <identifier>, 'if', 'import', 'let', 'loop', 'override', 'package', '(', 'requires', 'return', ';', '*', 'struct', 'super', 'switch', '_', 'var', 'while'"#]],
     );
 }
 
@@ -3738,5 +3734,102 @@ fn struct_recover_semicolon_instead_of_comma() {
                   BraceRight@28..29 "}"
 
             error at 21..22: invalid syntax, expected ','"#]],
+    );
+}
+
+#[test]
+fn attribute_edge_case_else() {
+    check(
+        "
+        fn foo() {
+            @else
+            (bar) = 3;
+        }
+        ",
+        expect![[r#"
+            SourceFile@0..79
+              Blankspace@0..9 "\n        "
+              FunctionDeclaration@9..70
+                Fn@9..11 "fn"
+                Blankspace@11..12 " "
+                Name@12..15
+                  Identifier@12..15 "foo"
+                FunctionParameters@15..17
+                  ParenthesisLeft@15..16 "("
+                  ParenthesisRight@16..17 ")"
+                Blankspace@17..18 " "
+                CompoundStatement@18..70
+                  BraceLeft@18..19 "{"
+                  Blankspace@19..32 "\n            "
+                  AttributeList@32..37
+                    ElseAttribute@32..37
+                      AttributeOperator@32..33 "@"
+                      Else@33..37 "else"
+                  Blankspace@37..50 "\n            "
+                  AssignmentStatement@50..60
+                    ParenthesisExpression@50..55
+                      ParenthesisLeft@50..51 "("
+                      IdentExpression@51..54
+                        Path@51..54
+                          Identifier@51..54 "bar"
+                      ParenthesisRight@54..55 ")"
+                    Blankspace@55..56 " "
+                    Equal@56..57 "="
+                    Blankspace@57..58 " "
+                    Literal@58..59
+                      IntLiteral@58..59 "3"
+                    Semicolon@59..60 ";"
+                  Blankspace@60..69 "\n        "
+                  BraceRight@69..70 "}"
+              Blankspace@70..79 "\n        ""#]],
+    );
+}
+
+#[test]
+fn attribute_edge_case_if() {
+    check(
+        "
+        fn foo() {
+            @if
+            (bar) = 3;
+        }
+        ",
+        expect![[r#"
+            SourceFile@0..77
+              Blankspace@0..9 "\n        "
+              FunctionDeclaration@9..68
+                Fn@9..11 "fn"
+                Blankspace@11..12 " "
+                Name@12..15
+                  Identifier@12..15 "foo"
+                FunctionParameters@15..17
+                  ParenthesisLeft@15..16 "("
+                  ParenthesisRight@16..17 ")"
+                Blankspace@17..18 " "
+                CompoundStatement@18..68
+                  BraceLeft@18..19 "{"
+                  Blankspace@19..32 "\n            "
+                  AttributeList@32..57
+                    IfAttribute@32..53
+                      AttributeOperator@32..33 "@"
+                      If@33..35 "if"
+                      Blankspace@35..48 "\n            "
+                      ParenthesisLeft@48..49 "("
+                      IdentExpression@49..52
+                        Path@49..52
+                          Identifier@49..52 "bar"
+                      ParenthesisRight@52..53 ")"
+                    Blankspace@53..54 " "
+                    Error@54..57
+                      Equal@54..55 "="
+                      Blankspace@55..56 " "
+                      IntLiteral@56..57 "3"
+                  EmptyStatement@57..58
+                    Semicolon@57..58 ";"
+                  Blankspace@58..67 "\n        "
+                  BraceRight@67..68 "}"
+              Blankspace@68..77 "\n        "
+
+            error at 54..55: invalid syntax, expected one of: 'alias', '&', '@', '{', '}', 'break', 'case', 'const', 'const_assert', 'continue', 'continuing', 'default', 'diagnostic', 'discard', 'enable', 'fn', 'for', <identifier>, 'if', 'import', 'let', 'loop', 'override', 'package', '(', 'requires', 'return', ';', '*', 'struct', 'super', 'switch', '_', 'var', 'while'"#]],
     );
 }
