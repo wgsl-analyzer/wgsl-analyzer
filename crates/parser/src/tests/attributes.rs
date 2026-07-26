@@ -1201,15 +1201,16 @@ fn parse_conditional_transpilation() {
         expect![[r#"
             SourceFile@0..137
               Blankspace@0..9 "\n        "
-              FunctionDeclaration@9..43
-                OtherAttribute@9..10
+              AttributeList@9..18
+                IfAttribute@9..18
                   AttributeOperator@9..10 "@"
-                Error@10..18
                   If@10..12 "if"
                   ParenthesisLeft@12..13 "("
-                  True@13..17 "true"
+                  Literal@13..17
+                    True@13..17 "true"
                   ParenthesisRight@17..18 ")"
-                Blankspace@18..27 "\n        "
+              Blankspace@18..27 "\n        "
+              FunctionDeclaration@27..43
                 Fn@27..29 "fn"
                 Blankspace@29..30 " "
                 Name@30..38
@@ -1222,16 +1223,16 @@ fn parse_conditional_transpilation() {
                   BraceLeft@41..42 "{"
                   BraceRight@42..43 "}"
               Blankspace@43..52 "\n        "
-              FunctionDeclaration@52..89
-                OtherAttribute@52..64
+              AttributeList@52..64
+                ElifAttribute@52..64
                   AttributeOperator@52..53 "@"
-                  Identifier@53..57 "elif"
-                  Arguments@57..64
-                    ParenthesisLeft@57..58 "("
-                    Literal@58..63
-                      False@58..63 "false"
-                    ParenthesisRight@63..64 ")"
-                Blankspace@64..73 "\n        "
+                  Elif@53..57 "elif"
+                  ParenthesisLeft@57..58 "("
+                  Literal@58..63
+                    False@58..63 "false"
+                  ParenthesisRight@63..64 ")"
+              Blankspace@64..73 "\n        "
+              FunctionDeclaration@73..89
                 Fn@73..75 "fn"
                 Blankspace@75..76 " "
                 Name@76..84
@@ -1244,12 +1245,12 @@ fn parse_conditional_transpilation() {
                   BraceLeft@87..88 "{"
                   BraceRight@88..89 "}"
               Blankspace@89..98 "\n        "
-              FunctionDeclaration@98..128
-                OtherAttribute@98..99
+              AttributeList@98..103
+                ElseAttribute@98..103
                   AttributeOperator@98..99 "@"
-                Error@99..103
                   Else@99..103 "else"
-                Blankspace@103..112 "\n        "
+              Blankspace@103..112 "\n        "
+              FunctionDeclaration@112..128
                 Fn@112..114 "fn"
                 Blankspace@114..115 " "
                 Name@115..123
@@ -1261,10 +1262,7 @@ fn parse_conditional_transpilation() {
                 CompoundStatement@126..128
                   BraceLeft@126..127 "{"
                   BraceRight@127..128 "}"
-              Blankspace@128..137 "\n        "
-
-            error at 10..12: invalid syntax, expected one of: 'align', 'binding', 'blend_src', 'builtin', 'compute', 'const', 'diagnostic', 'early_depth_test', 'fragment', 'group', 'id', <identifier>, 'interpolate', 'invariant', 'location', 'must_use', 'size', 'vertex', 'workgroup_size'
-            error at 99..103: invalid syntax, expected one of: 'align', 'binding', 'blend_src', 'builtin', 'compute', 'const', 'diagnostic', 'early_depth_test', 'fragment', 'group', 'id', <identifier>, 'interpolate', 'invariant', 'location', 'must_use', 'size', 'vertex', 'workgroup_size'"#]],
+              Blankspace@128..137 "\n        ""#]],
     );
 }
 

@@ -329,7 +329,7 @@ impl<'source> ParserCallbacks<'source> for Parser<'source> {
             _ => {
                 diagnostics.push(self.create_diagnostic(
                     self.cst.span(node_ref),
-                    format!("unknown extension {text}"),
+                    format!("unknown extension: `{text}`"),
                 ));
             },
         }
@@ -367,7 +367,7 @@ impl<'source> ParserCallbacks<'source> for Parser<'source> {
             _ => {
                 diagnostics.push(self.create_diagnostic(
                     self.cst.span(node_ref),
-                    format!("unknown extension {text}"),
+                    format!("unknown extension: `{text}`"),
                 ));
             },
         }
