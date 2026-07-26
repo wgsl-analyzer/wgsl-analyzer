@@ -1,17 +1,15 @@
 //! A set of high-level utility fixture methods to use in tests.
 mod fixture;
 
-use std::{any::TypeId, mem, str::FromStr as _, sync};
+use std::str::FromStr as _;
 
 use base_db::{
-    EditionedFileId, FileId, FilePosition, FileRange, FileSet, RawEditionedFileId, SourceDatabase,
-    SourceRoot, VfsPath,
+    EditionedFileId, FileId, FilePosition, FileRange, FileSet, SourceDatabase, SourceRoot, VfsPath,
     change::Change,
     input::{Dependency, PackageData, PackageId, PackageName, PackageOrigin},
 };
 use edition::Edition;
 use test_utils::{CURSOR_MARKER, ESCAPED_CURSOR_MARKER, RangeOrOffset, extract_range_or_offset};
-use triomphe::Arc;
 
 pub use crate::fixture::{Fixture, FixtureWithProjectMeta};
 

@@ -1,23 +1,66 @@
-use std::{
-    error,
-    fmt::Display,
-    ops::{self, Range},
-};
+mod naga;
+#[cfg(test)]
+mod tests;
+mod tint;
 
-use base_db::{EditionedFileId, FileRange, TextRange, TextSize};
+use std::{error, fmt::Display};
+
+use base_db::{EditionedFileId, FileRange, TextRange};
 use hir::{
     HirDatabase, Semantics,
-    diagnostics::{AnyDiagnostic, DiagnosticsConfig, NagaVersion},
+    diagnostics::{AnyDiagnostic, Severity},
 };
 use hir_def::original_file_range;
 use hir_ty::ty::{
     self,
     pretty::{pretty_fn, pretty_type},
 };
+use ide_db::RootDatabase;
 use itertools::Itertools as _;
+use paths::{AbsPathBuf, Utf8PathBuf};
 use rowan::NodeOrToken;
 use syntax::{AstNode as _, Edition};
 use vfs::FileId;
+
+use crate::{
+    naga::{Naga27, Naga28, Naga29, NagaMain, naga_diagnostics},
+    tint::tint_diagnostics,
+};
+
+#[derive(Clone, Copy, Debug, Default)]
+pub enum NagaVersion {
+    Naga27,
+    Naga28,
+    #[default]
+    Naga29,
+    NagaMain,
+}
+
+#[derive(Clone, Debug)]
+pub struct DiagnosticsConfig {
+    /// Whether native diagnostics are enabled.
+    pub enabled: bool,
+    pub semantic_enabled: bool,
+    pub naga_parsing_enabled: bool,
+    pub naga_validation_enabled: bool,
+    pub naga_version: NagaVersion,
+    pub tint_enabled: bool,
+    pub tint_path: Option<Utf8PathBuf>,
+}
+
+impl Default for DiagnosticsConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            semantic_enabled: true,
+            naga_parsing_enabled: true,
+            naga_validation_enabled: true,
+            naga_version: NagaVersion::default(),
+            tint_enabled: false,
+            tint_path: None,
+        }
+    }
+}
 
 pub struct Diagnostic {
     pub code: DiagnosticCode,
@@ -34,18 +77,20 @@ pub enum DiagnosticSource {
     #[default]
     WgslAnalyzer,
     Naga,
+    Tint,
     WeslRs,
 }
 
 impl Display for DiagnosticSource {
     fn fmt(
         &self,
-        f: &mut std::fmt::Formatter<'_>,
+        formatter: &mut std::fmt::Formatter<'_>,
     ) -> std::fmt::Result {
         match self {
-            Self::WgslAnalyzer => write!(f, "wgsl-analyzer"),
-            Self::Naga => write!(f, "naga"),
-            Self::WeslRs => write!(f, "wesl-rs"),
+            Self::WgslAnalyzer => write!(formatter, "wgsl-analyzer"),
+            Self::Naga => write!(formatter, "naga"),
+            Self::Tint => write!(formatter, "tint"),
+            Self::WeslRs => write!(formatter, "wesl-rs"),
         }
     }
 }
@@ -62,12 +107,6 @@ impl DiagnosticCode {
     pub const fn as_str(&self) -> &'static str {
         self.0
     }
-}
-
-#[derive(Clone, Copy)]
-pub enum Severity {
-    Error,
-    WeakWarning,
 }
 
 impl Diagnostic {
@@ -105,107 +144,12 @@ impl Diagnostic {
     }
 }
 
-trait Naga {
-    type Module;
-    type ParseError: NagaError;
-    type ValidationError: NagaError;
-
-    fn parse(source: &str) -> Result<Self::Module, Self::ParseError>;
-    fn validate(module: &Self::Module) -> Result<(), Self::ValidationError>;
-}
-
-trait NagaError: error::Error {
-    fn spans(&self) -> Box<dyn Iterator<Item = (Option<Range<usize>>, String)> + '_>;
-    fn location(&self) -> Option<Range<usize>>;
-}
-mod naga27;
-mod naga28;
-mod naga29;
-mod naga_main;
-
-use naga_main::NagaMain;
-use naga27::Naga27;
-use naga28::Naga28;
-use naga29::Naga29;
-
-fn emit<Error>(
-    database: &dyn HirDatabase,
-    error: &Error,
-    file_id: EditionedFileId,
-    full_range: TextRange,
-    accumulator: &mut Vec<AnyDiagnostic>,
-) where
-    Error: NagaError,
-{
-    let message = error_message_cause_chain(&error);
-    let original_range = |range: ops::Range<usize>| {
-        TextRange::new(
-            TextSize::from(u32::try_from(range.start).expect("indexes are small numbers")),
-            TextSize::from(u32::try_from(range.end).expect("indexes are small numbers")),
-        )
-    };
-    let location = error.location().map_or(full_range, original_range);
-
-    let spans = error.spans().filter_map(|(span, label)| {
-        let range = original_range(span?);
-        Some((range, label))
-    });
-
-    let related: Vec<_> = spans
-        .map(|(range, message)| {
-            (
-                message,
-                FileRange {
-                    range,
-                    file_id: file_id.file_id(database),
-                },
-            )
-        })
-        .collect();
-
-    accumulator.push(AnyDiagnostic::NagaValidationError {
-        file_id,
-        range: location,
-        message,
-        related,
-    });
-}
-
-fn naga_diagnostics<Naga>(
-    database: &dyn HirDatabase,
-    file_id: EditionedFileId,
-    config: &DiagnosticsConfig,
-    accumulator: &mut Vec<AnyDiagnostic>,
-) where
-    Naga: self::Naga,
-{
-    let source: &str = database.file_text(file_id.file_id(database)).text(database);
-    let full_range = TextRange::up_to(TextSize::of(source));
-
-    match Naga::parse(source) {
-        Ok(module) => {
-            if !config.naga_validation_errors {
-                return;
-            }
-            if let Err(error) = Naga::validate(&module) {
-                emit(database, &error, file_id, full_range, accumulator);
-            }
-        },
-        Err(error) => {
-            if !config.naga_parsing_errors {
-                return;
-            }
-            emit(database, &error, file_id, full_range, accumulator);
-        },
-    }
-}
-
 /// # Panics
 ///
 /// Panics if the file is not found in the database.
 #[expect(clippy::too_many_lines, reason = "TODO")]
 pub fn diagnostics(
-    database: &dyn HirDatabase,
+    database: &RootDatabase,
     config: &DiagnosticsConfig,
     file_id: FileId,
 ) -> Vec<Diagnostic> {
@@ -227,14 +171,14 @@ pub fn diagnostics(
 
     let semantics = Semantics::new(database);
 
-    if config.type_errors {
+    if config.semantic_enabled {
         semantics
             .module(file_id)
-            .diagnostics(database, config, &mut diagnostics);
+            .semantic_diagnostics(database, &mut diagnostics);
     }
 
     let edition = file_id.edition(database);
-    if edition == Edition::Wgsl && (config.naga_parsing_errors || config.naga_validation_errors) {
+    if edition == Edition::Wgsl && (config.naga_parsing_enabled || config.naga_validation_enabled) {
         match &config.naga_version {
             NagaVersion::Naga27 => {
                 naga_diagnostics::<Naga27>(database, file_id, config, &mut diagnostics);
@@ -249,6 +193,13 @@ pub fn diagnostics(
                 naga_diagnostics::<NagaMain>(database, file_id, config, &mut diagnostics);
             },
         }
+    }
+
+    if edition == Edition::Wgsl && config.tint_enabled {
+        // TODO: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/998
+        // Clean this up by turning external tool integrations into flycheck.
+        // This "." is a hack to avoid adding a working_dir to the interface of ide-diagnostics.
+        tint_diagnostics(database, file_id, config, ".", &mut diagnostics);
     }
 
     diagnostics
@@ -439,6 +390,17 @@ pub fn diagnostics(
                     message.source = DiagnosticSource::Naga;
                     message
                 },
+                AnyDiagnostic::TintValidationError {
+                    file_id,
+                    range,
+                    message,
+                    severity,
+                } => {
+                    let mut message = Diagnostic::new(DiagnosticCode("15"), message, range);
+                    message.severity = severity;
+                    message.source = DiagnosticSource::Tint;
+                    message
+                },
                 AnyDiagnostic::ParseError { message, range, .. } => {
                     Diagnostic::new(DiagnosticCode("16"), message, range)
                 },
@@ -614,421 +576,4 @@ fn error_message_cause_chain(error: &dyn error::Error) -> String {
     }
 
     message
-}
-
-#[cfg(test)]
-mod tests {
-    use std::fmt::Write as _;
-
-    use expect_test::{Expect, expect};
-    use hir::diagnostics::DiagnosticsConfig;
-    use itertools::Itertools;
-
-    use crate::{diagnostics::Diagnostic, fixture::single_file_db};
-
-    #[expect(clippy::needless_pass_by_value, reason = "Matches expect! macro")]
-    #[expect(clippy::use_debug, reason = "useful in tests")]
-    fn check_diagnostics(
-        source: &str,
-        expect: Expect,
-    ) {
-        let (analysis, file_id) = single_file_db(source);
-        let config = DiagnosticsConfig {
-            enabled: true,
-            type_errors: true,
-            naga_parsing_errors: false,
-            naga_validation_errors: false,
-            ..Default::default()
-        };
-        let diagnostics = analysis.diagnostics(&config, file_id).unwrap();
-        let mut actual = String::new();
-        for Diagnostic {
-            code,
-            message,
-            range,
-            severity,
-            ..
-        } in diagnostics
-        {
-            let severity_text = match severity {
-                crate::diagnostics::Severity::Error => "Error",
-                crate::diagnostics::Severity::WeakWarning => "Warning",
-            };
-            writeln!(
-                actual,
-                "{range:?} {severity_text} {}: {message}",
-                code.as_str()
-            );
-        }
-
-        expect.assert_eq(&actual);
-    }
-
-    #[test]
-    fn store_type_must_be_storable() {
-        check_diagnostics(
-            "fn foo() { var x = 1; var y = &x; }",
-            expect![[r#"
-                30..32 Error 29: store type must be storable, found ptr<i32>
-            "#]],
-        );
-    }
-
-    #[test]
-    fn unexpected_return_value() {
-        check_diagnostics(
-            "fn foo() { return 0; }",
-            expect![[r#"
-                18..19 Error 30: unexpected return value of type `integer` in function with no return type
-            "#]],
-        );
-    }
-
-    #[test]
-    fn no_builtin_overload() {
-        check_diagnostics(
-            "fn foo() { var x = 1f + mat2x2f(); }",
-            expect![[r#"
-                11..34 Error 8: no overload of `+` found for given arguments.Found (f32, mat2x2<f32>), expected one of:
-                fn op_binary_number(vecN<U>, vecN<U>) -> vecN<U>
-                fn op_binary_number(vecN<U>, U) -> vecN<U>
-                fn op_binary_number(T, vecM<T>) -> vecM<T>
-                fn op_binary_number(matNxM<f32>, matNxM<f32>) -> matNxM<f32>
-                fn op_binary_number(T, T) -> T
-            "#]],
-        );
-    }
-
-    #[test]
-    fn deref_not_a_pointer() {
-        check_diagnostics(
-            "fn foo() { var x = *1f; }",
-            expect![[r#"
-                20..22 Error 10: cannot dereference expression of type f32
-            "#]],
-        );
-    }
-
-    #[test]
-    fn no_constructor() {
-        check_diagnostics(
-            "fn foo() { var x = vec2f(1, 2, 3); }",
-            expect![[r#"
-                19..33 Error 18: no overload of constructor `vec2<f32>` found for given arguments. Found (integer, integer, integer), expected one of:
-                fn op_vec2_constructor(vec2<T>) -> vec2<T>
-                fn op_vec2_constructor(T) -> vec2<T>
-                fn op_vec2_constructor(T, T) -> vec2<T>
-            "#]],
-        );
-    }
-
-    #[test]
-    fn precedence_sequence_allowed() {
-        check_diagnostics(
-            "fn foo() { let x = true == true & true; }",
-            expect![[r#"
-                19..31 Error 19: & sequences may only have unary operands. More complex operands must be this with parenthesized `()`
-            "#]],
-        );
-    }
-
-    #[test]
-    fn precedence_sequence_disallowed() {
-        check_diagnostics(
-            "fn foo() { let x = true == true == true; }",
-            expect![[r#"
-                19..31 Error 19: == expressions may only have unary operands. More complex operands must be this with parenthesized `()`
-            "#]],
-        );
-    }
-
-    #[test]
-    fn global_var_function_address_space_error() {
-        check_diagnostics(
-            "var<function> not_allowed_at_module_level: u32;",
-            expect![[r#"
-                0..3 Error 12: address space is only valid in function-scope
-                4..12 Error 21: unexpected template argument
-            "#]],
-        );
-    }
-
-    #[test]
-    fn invalid_body() {
-        check_diagnostics(
-            "fn f() { let x: u32 = 1.0; }",
-            expect![[r#"
-                22..25 Error 2: expected u32, found float
-            "#]],
-        );
-    }
-
-    #[test]
-    fn no_host_shareable_error_for_undefined_struct() {
-        // https://github.com/wgsl-analyzer/wgsl-analyzer/issues/722
-        // When referencing an undefined struct, we should NOT get a spurious
-        // "not host-shareable" diagnostic — only the "unresolved" error.
-        check_diagnostics(
-            "
-@group(0) @binding(0)
-var<storage> lines: array<LineSegment>;
-",
-            expect![[r#"
-                48..59 Error 14: `LineSegment` not found in scope
-            "#]],
-        );
-    }
-
-    #[test]
-    fn reserved_identifier_double_underscore() {
-        // https://github.com/wgsl-analyzer/wgsl-analyzer/issues/681
-        // Identifiers starting with "__" are reserved by the WGSL spec.
-        check_diagnostics(
-            "
-fn __my_func() {}
-",
-            expect![[r#"
-                3..12 Error 24: `__my_func` is not a valid name for an identifier
-            "#]],
-        );
-    }
-
-    #[test]
-    fn non_reserved_identifier_single_underscore() {
-        // A single underscore prefix should NOT trigger the reserved identifier diagnostic.
-        check_diagnostics(
-            "
-fn _my_func() {}
-",
-            expect![""],
-        );
-    }
-
-    #[test]
-    fn incomplete_variable_error() {
-        // https://github.com/wgsl-analyzer/wgsl-analyzer/issues/825
-        check_diagnostics(
-            "
-@group(0) @binding(0)
-var<storage, read> a: array<f32>;
-
-@group(0) @binding(1) // line 4
-var<storage
-",
-            expect![[r#"
-                92..93 Error 16: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
-                101..101 Error 16: invalid syntax, expected one of: ':', '=', ';'
-                22..25 Error 12: address space is only valid for handle or texture types
-                26..33 Error 21: unexpected template argument
-                26..33 Error 21: unexpected template argument
-                89..92 Error 12: address space is only valid for handle or texture types
-            "#]],
-        );
-    }
-
-    #[test]
-    fn reserved_word_diagnostic() {
-        // WGSL reserved words should produce a diagnostic.
-        check_diagnostics(
-            "
-fn test() {
-    let enum = 1u;
-}
-",
-            expect![[r#"
-                20..24 Error 16: 'enum' is a reserved word in WGSL
-                20..24 Error 16: invalid syntax, expected: <identifier>
-            "#]],
-        );
-    }
-
-    #[test]
-    fn invalid_bitcast() {
-        // TODO: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/908
-        check_diagnostics(
-            "
-fn foo() { let bar: f32 = bitcast<f32>(vec4u(1, 2, 3, 4)); }
-",
-            expect![""],
-        );
-    }
-
-    #[test]
-    fn invalid_identifier_underscore() {
-        // An identifier must not be _ (a single underscore, U+005F).
-        // https://www.w3.org/TR/WGSL/#identifiers
-        check_diagnostics(
-            "
-fn _() {}
-fn foo() { let _ = 1; }
-",
-            expect![[r#"
-                3..4 Error 16: invalid syntax, expected: <identifier>
-                25..26 Error 16: invalid syntax, expected: <identifier>
-            "#]],
-        );
-    }
-
-    #[test]
-    fn invalid_translate_attribute_function_return_type() {
-        check_diagnostics(
-            "
-fn foo() ->
-@if(true) bool
-{ _ = 1; }
-",
-            expect![[r#"
-                12..21 Error 16: translate-time attribute `@if` is not allowed on a function return type
-            "#]],
-        );
-    }
-
-    #[test]
-    fn invalid_translate_attribute_body_function_declaration() {
-        check_diagnostics(
-            "
-fn foo()
-@if(true) { _ = 1; }
-",
-            expect![[r#"
-                9..18 Error 16: translate-time attribute `@if` is not allowed on a function body
-            "#]],
-        );
-    }
-
-    #[test]
-    fn invalid_translate_attribute_body_switch_statement() {
-        check_diagnostics(
-            "
-fn foo()
-{
-    switch true
-    @if(true)
-    {
-        case true: { return; }
-        default: { return; }
-    }
-}
-",
-            expect![[r#"
-                31..40 Error 16: translate-time attribute `@if` is not allowed on a switch body
-            "#]],
-        );
-    }
-
-    #[test]
-    fn invalid_translate_attribute_body_switch_clause() {
-        check_diagnostics(
-            "
-fn foo() {
-    switch true
-    {
-        case true: @if(true) { return; }
-        default: { return; }
-    }
-}
-",
-            expect![[r#"
-                52..61 Error 16: translate-time attribute `@if` is not allowed on a switch default clause body
-            "#]],
-        );
-    }
-
-    #[test]
-    fn invalid_translate_attribute_body_loop_statement() {
-        check_diagnostics(
-            "
-fn foo() {
-    loop
-    @if(true)
-    { continuing {} }
-}
-",
-            expect![[r#"
-                24..33 Error 16: translate-time attribute `@if` is not allowed on a loop body
-                52..53 Error 16: attributes must precede a statement here
-            "#]],
-        );
-    }
-
-    #[test]
-    fn invalid_translate_attribute_body_for_statement() {
-        check_diagnostics(
-            "
-fn foo() {
-    for(; ;)
-    @if(true)
-    { return; }
-}
-",
-            expect![[r#"
-                28..37 Error 16: translate-time attribute `@if` is not allowed on a for body
-            "#]],
-        );
-    }
-
-    #[test]
-    fn invalid_translate_attribute_body_while_statement() {
-        check_diagnostics(
-            "
-fn foo() {
-    while true
-    @if(true)
-    { return; }
-}
-",
-            expect![[r#"
-                30..39 Error 16: translate-time attribute `@if` is not allowed on a while body
-            "#]],
-        );
-    }
-
-    #[test]
-    fn invalid_translate_attribute_body_if_else_statement() {
-        check_diagnostics(
-            "
-fn foo() {
-    if true
-    @if(true)
-    { return; }
-    else
-    @if(true)
-    { return; }
-}
-",
-            expect![[r#"
-                27..36 Error 16: translate-time attribute `@if` is not allowed on an if/else body
-                66..75 Error 16: translate-time attribute `@if` is not allowed on an if/else body
-            "#]],
-        );
-    }
-
-    #[test]
-    fn invalid_translate_attribute_body_continuing_statement() {
-        check_diagnostics(
-            "
-fn foo() {
-    loop {
-        continuing
-        @if(true)
-        {}
-    }
-}
-",
-            expect![[r#"
-                49..58 Error 16: translate-time attribute `@if` is not allowed on a continuing body
-                68..69 Error 16: attributes must precede a statement here
-            "#]],
-        );
-    }
-
-    #[test]
-    fn binding_array_validates() {
-        check_diagnostics(
-            "
-    @group(0) @binding(0) var textures: binding_array<texture_2d<f32>>;
-    ",
-            expect![""],
-        );
-    }
 }
