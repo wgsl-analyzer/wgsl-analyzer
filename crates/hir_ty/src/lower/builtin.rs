@@ -762,9 +762,10 @@ impl TypeLoweringContext<'_> {
                 Ok((_, expression)) => {
                     let error = TypeLoweringError {
                         container: TypeContainer::Expression(expression),
-                        kind: TypeLoweringErrorKind::UnexpectedTemplateArgument(
-                            "a `u32` or a `i32` greater than `0`".to_owned(),
-                        ),
+                        kind: TypeLoweringErrorKind::UnexpectedTemplateArgument {
+                            expected: "a `u32` or an `i32` greater than `0`".to_owned(),
+                            // actual:
+                        },
                     };
                     self.diagnostics.push(error.clone());
                     return Err(error);
@@ -796,9 +797,9 @@ impl TypeLoweringContext<'_> {
                 } else {
                     self.diagnostics.push(TypeLoweringError {
                         container: TypeContainer::Expression(expression),
-                        kind: TypeLoweringErrorKind::UnexpectedTemplateArgument(
-                            "a scalar".to_owned(),
-                        ),
+                        kind: TypeLoweringErrorKind::UnexpectedTemplateArgument {
+                            expected: "a scalar".to_owned(),
+                        },
                     });
                     TypeKind::Error.intern(self.database)
                 }
@@ -827,9 +828,9 @@ impl TypeLoweringContext<'_> {
                 } else {
                     self.diagnostics.push(TypeLoweringError {
                         container: TypeContainer::Expression(expression),
-                        kind: TypeLoweringErrorKind::UnexpectedTemplateArgument(
-                            "one of: f32 or f16".to_owned(),
-                        ),
+                        kind: TypeLoweringErrorKind::UnexpectedTemplateArgument {
+                            expected: "one of: f32 or f16".to_owned(),
+                        },
                     });
                     TypeKind::Error.intern(self.database)
                 }
@@ -851,9 +852,9 @@ impl TypeLoweringContext<'_> {
             Ok((_, expression)) => {
                 let error = TypeLoweringError {
                     container: TypeContainer::Expression(expression),
-                    kind: TypeLoweringErrorKind::UnexpectedTemplateArgument(
-                        "an address space".to_owned(),
-                    ),
+                    kind: TypeLoweringErrorKind::UnexpectedTemplateArgument {
+                        expected: "an address space".to_owned(),
+                    },
                 };
                 self.diagnostics.push(error.clone());
                 return Err(error);
@@ -868,9 +869,9 @@ impl TypeLoweringContext<'_> {
             Ok((_, expression)) => {
                 self.diagnostics.push(TypeLoweringError {
                     container: TypeContainer::Expression(expression),
-                    kind: TypeLoweringErrorKind::UnexpectedTemplateArgument(
-                        "a storable type".to_owned(),
-                    ),
+                    kind: TypeLoweringErrorKind::UnexpectedTemplateArgument {
+                        expected: "a storable type".to_owned(),
+                    },
                 });
                 TypeKind::Error.intern(self.database)
             },
@@ -884,14 +885,14 @@ impl TypeLoweringContext<'_> {
             match template_parameters.next_as_enumerant() {
                 // uniform address space requires the read access mode
                 Ok((
-                    Enumerant::AccessMode(AccessMode::ReadWrite | AccessMode::ReadWrite),
+                    Enumerant::AccessMode(AccessMode::ReadWrite | AccessMode::Write),
                     expression,
                 )) if address_space == AddressSpace::Uniform => {
                     self.diagnostics.push(TypeLoweringError {
                         container: TypeContainer::Expression(expression),
-                        kind: TypeLoweringErrorKind::UnexpectedTemplateArgument(
-                            "`read` access mode for uniforms".to_owned(),
-                        ),
+                        kind: TypeLoweringErrorKind::UnexpectedTemplateArgument {
+                            expected: "`read` access mode for uniforms".to_owned(),
+                        },
                     });
                     AccessMode::Read
                 },
@@ -900,9 +901,9 @@ impl TypeLoweringContext<'_> {
                 Ok((_, expression)) => {
                     let error = TypeLoweringError {
                         container: TypeContainer::Expression(expression),
-                        kind: TypeLoweringErrorKind::UnexpectedTemplateArgument(
-                            "on of: (read, read_write, write)".to_owned(),
-                        ),
+                        kind: TypeLoweringErrorKind::UnexpectedTemplateArgument {
+                            expected: "one of: (read, read_write, write)".to_owned(),
+                        },
                     };
                     self.diagnostics.push(error.clone());
                     return Err(error);
@@ -950,7 +951,9 @@ impl TypeLoweringContext<'_> {
                     };
                     self.diagnostics.push(TypeLoweringError {
                         container: TypeContainer::Expression(expression),
-                        kind: TypeLoweringErrorKind::UnexpectedTemplateArgument(possible_types),
+                        kind: TypeLoweringErrorKind::UnexpectedTemplateArgument {
+                            expected: possible_types,
+                        },
                     });
                     TypeKind::Error.intern(self.database)
                 }
@@ -991,9 +994,9 @@ impl TypeLoweringContext<'_> {
                         // texture_2d<invalid>()
                         let error = TypeLoweringError {
                             container: TypeContainer::Expression(expression),
-                            kind: TypeLoweringErrorKind::UnexpectedTemplateArgument(
-                                "i32 or u32 or f32".to_owned(),
-                            ),
+                            kind: TypeLoweringErrorKind::UnexpectedTemplateArgument {
+                                expected: "i32 or u32 or f32".to_owned(),
+                            },
                         };
                         self.diagnostics.push(error.clone());
                         Err(error)
@@ -1017,9 +1020,9 @@ impl TypeLoweringContext<'_> {
             Ok((_, expression)) => {
                 let error = TypeLoweringError {
                     container: TypeContainer::Expression(expression),
-                    kind: TypeLoweringErrorKind::UnexpectedTemplateArgument(
-                        "a texel format (`rgba8unorm`, `rgba8snorm`, ...)".to_owned(),
-                    ),
+                    kind: TypeLoweringErrorKind::UnexpectedTemplateArgument {
+                        expected: "a texel format (`rgba8unorm`, `rgba8snorm`, ...)".to_owned(),
+                    },
                 };
                 self.diagnostics.push(error.clone());
                 return Err(error);
@@ -1034,9 +1037,9 @@ impl TypeLoweringContext<'_> {
             Ok((_, expression)) => {
                 let error = TypeLoweringError {
                     container: TypeContainer::Expression(expression),
-                    kind: TypeLoweringErrorKind::UnexpectedTemplateArgument(
-                        "one of: read, write, read_write".to_owned(),
-                    ),
+                    kind: TypeLoweringErrorKind::UnexpectedTemplateArgument {
+                        expected: "one of: read, write, read_write".to_owned(),
+                    },
                 };
                 self.diagnostics.push(error.clone());
                 return Err(error);

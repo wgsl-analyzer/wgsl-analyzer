@@ -890,8 +890,8 @@ fn const_u32_as_array_size() {
             6..15 'maxLayers': u32
             18..21 '12u': u32
             27..33 'layers': ref<handle, [error], read>
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(1)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } } in Signature
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(1)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } } in Signature
+            40..56 '<f32, ...ayers>': unexpected template argument, expected: a `u32` or an `i32` greater than `0`
+            40..56 '<f32, ...ayers>': unexpected template argument, expected: a `u32` or an `i32` greater than `0`
         "#]],
     );
 }
@@ -1858,6 +1858,68 @@ fn shift_operator_inference() {
             64..65 'x': i32
             64..69 'x & y': i32
             68..69 'y': i32
+        "#]],
+    );
+}
+
+#[test]
+fn array_template_const_expressions() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+            fn test_local_const() {
+                const local_const = 2;
+                var arr2: array<f32, local_const>;
+            }
+            ",
+        expect![[r#"
+            34..45 'local_const': integer
+            48..49 '2': integer
+            59..63 'arr2': ref<function, [error], read_write>
+            70..88 '<f32, ...const>': unexpected template argument, expected: a `u32` or an `i32` greater than `0`
+            70..88 '<f32, ...const>': unexpected template argument, expected: a `u32` or an `i32` greater than `0`
+        "#]],
+    );
+}
+
+#[test]
+fn array_template_const_expressions_hoisting() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+            const c1 = arr[0];
+            const arr: array<u32, abs(-c2)> = array(1, 2);
+            const c2 = 2;
+            ",
+        expect![[r#"
+            6..8 'c1': [error]
+            11..14 'arr': [error]
+            11..17 'arr[0]': [error]
+            15..16 '0': integer
+            ArrayAccessInvalidType { expression: Idx::<Expression>(2), type: Type(2400) } in Body
+            25..28 'arr': [error]
+            53..64 'array(1, 2)': array<integer, 2>
+            59..60 '1': integer
+            62..63 '2': integer
+            35..50 '<u32, abs(-c2)>': unexpected template argument, expected: a `u32` or an `i32` greater than `0`
+            35..50 '<u32, abs(-c2)>': unexpected template argument, expected: a `u32` or an `i32` greater than `0`
+            72..74 'c2': integer
+            77..78 '2': integer
+        "#]],
+    );
+}
+
+#[test]
+fn array_template_const_expressions_cyclic() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+            const a = b;
+            const b = a;
+            ",
+        expect![[r#"
+            CyclicType { name: Name("a"), range: 0..12 } in Body
+            CyclicType { name: Name("b"), range: 13..25 } in Body
         "#]],
     );
 }

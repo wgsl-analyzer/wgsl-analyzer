@@ -52,7 +52,9 @@ impl TemplateParameters {
             Some((TemplateParameter::Type(r#type), id)) => Ok((r#type, id)),
             Some((_, id)) => Err(TypeLoweringError {
                 container: TypeContainer::Expression(id),
-                kind: TypeLoweringErrorKind::UnexpectedTemplateArgument("a type".to_owned()),
+                kind: TypeLoweringErrorKind::UnexpectedTemplateArgument {
+                    expected: "a type".to_owned(),
+                },
             }),
             None => Err(TypeLoweringError {
                 container: self.container,
@@ -68,8 +70,11 @@ impl TemplateParameters {
             Some((TemplateParameter::Instance(instance), id)) => Ok((instance, id)),
             Some((_, id)) => Err(TypeLoweringError {
                 container: TypeContainer::Expression(id),
-                kind: TypeLoweringErrorKind::UnexpectedTemplateArgument("an instance".to_owned()),
+                kind: TypeLoweringErrorKind::UnexpectedTemplateArgument {
+                    expected: "an instance".to_owned(),
+                },
             }),
+            // this is currently unreachable because the only callsite is array_template which can assume dynamic size
             None => Err(TypeLoweringError {
                 container: self.container,
                 kind: TypeLoweringErrorKind::MissingTemplateArgument("an instance".to_owned()),
@@ -82,7 +87,9 @@ impl TemplateParameters {
             Some((TemplateParameter::Enumerant(enumerant), id)) => Ok((enumerant, id)),
             Some((_, id)) => Err(TypeLoweringError {
                 container: TypeContainer::Expression(id),
-                kind: TypeLoweringErrorKind::UnexpectedTemplateArgument("an enum".to_owned()),
+                kind: TypeLoweringErrorKind::UnexpectedTemplateArgument {
+                    expected: "an enum".to_owned(),
+                },
             }),
             None => Err(TypeLoweringError {
                 container: self.container,

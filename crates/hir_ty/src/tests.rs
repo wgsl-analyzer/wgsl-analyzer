@@ -191,21 +191,20 @@ impl<'db> InferPrinter<'db> {
                 expected,
                 actual,
             } => {
-                let Some((range, text)) = self.get_range_text(source_map, *expression) else {
-                    return;
-                };
-                writeln!(
-                    buffer,
-                    "{range:?} '{}': expected {} but got {}",
-                    ellipsize(text, 15),
-                    pretty_type_expectation_with_verbosity(
-                        self.database,
-                        expected.clone(),
-                        TypeVerbosity::Full
-                    ),
-                    pretty_type_with_verbosity(self.database, *actual, TypeVerbosity::Full)
-                )
-                .unwrap();
+                self.print_type_mismatch(source_map, buffer, *expression, expected, *actual);
+            },
+            InferenceDiagnosticKind::InvalidType {
+                error: crate::lower::TypeLoweringError { container, kind },
+            } => self.print_invalid_type(diagnostic, source_map, buffer, *container, kind),
+            InferenceDiagnosticKind::NoSuchField {
+                expression,
+                name,
+                r#type,
+            } => {
+                self.print_no_such_field(source_map, buffer, *expression, name, *r#type);
+            },
+            InferenceDiagnosticKind::StoreTypeMustBeStorable { actual, expression } => {
+                self.print_store_type_must_be_storable(source_map, buffer, *actual, *expression);
             },
             InferenceDiagnosticKind::AssignmentNotAReference { .. }
             | InferenceDiagnosticKind::ArrayAccessInvalidType { .. }
@@ -217,46 +216,11 @@ impl<'db> InferPrinter<'db> {
             | InferenceDiagnosticKind::AddressOfNotReference { .. }
             | InferenceDiagnosticKind::AddressOfNotReference { .. }
             | InferenceDiagnosticKind::DerefNotAPointer { .. }
-            | InferenceDiagnosticKind::InvalidType { .. }
             | InferenceDiagnosticKind::CyclicType { .. }
             | InferenceDiagnosticKind::UnexpectedTemplateArgument { .. }
             | InferenceDiagnosticKind::WgslError { .. }
             | InferenceDiagnosticKind::ExpectedLoweredKind { .. } => {
-                writeln!(buffer, "{:?} in {:?}", diagnostic.kind, diagnostic.source).unwrap();
-            },
-            InferenceDiagnosticKind::NoSuchField {
-                expression,
-                name,
-                r#type,
-            } => {
-                let node = match source_map.expression_to_source(*expression) {
-                    Ok(sp) => sp.to_node(&self.root).syntax().clone(),
-                    Err(SyntheticSyntax) => return,
-                };
-                let (range, text) = (
-                    node.parent().unwrap().text_range(),
-                    node.parent().unwrap().text().to_string().replace('\n', " "),
-                );
-                writeln!(
-                    buffer,
-                    "{range:?} '{}': no such field `{}` on type `{}`",
-                    ellipsize(text, 15),
-                    name.as_str(),
-                    pretty_type_with_verbosity(self.database, *r#type, TypeVerbosity::Full),
-                )
-                .unwrap();
-            },
-            InferenceDiagnosticKind::StoreTypeMustBeStorable { actual, expression } => {
-                let Some((range, text)) = self.get_range_text(source_map, *expression) else {
-                    return;
-                };
-                writeln!(
-                    buffer,
-                    "{range:?} '{}': expected storable type but got `{}`",
-                    ellipsize(text, 15),
-                    pretty_type_with_verbosity(self.database, *actual, TypeVerbosity::Full),
-                )
-                .unwrap();
+                print_raw_diagnostic(diagnostic, buffer);
             },
             InferenceDiagnosticKind::UnexpectedReturnValue { actual, expression } => {
                 let Some((range, text)) = self.get_range_text(source_map, *expression) else {
@@ -271,6 +235,112 @@ impl<'db> InferPrinter<'db> {
                 .unwrap();
             },
         }
+    }
+
+    fn print_invalid_type(
+        &self,
+        diagnostic: &InferenceDiagnostic,
+        source_map: &ExpressionSourceMap,
+        buffer: &mut String,
+        container: crate::lower::TypeContainer,
+        kind: &crate::lower::TypeLoweringErrorKind,
+    ) {
+        match container {
+            crate::lower::TypeContainer::Expression(expression) => match kind {
+                crate::lower::TypeLoweringErrorKind::UnexpectedTemplateArgument { expected } => {
+                    let Some((range, text)) = self.get_range_text(source_map, expression) else {
+                        return;
+                    };
+                    writeln!(
+                        buffer,
+                        "{range:?} '{}': unexpected template argument, expected: {expected}",
+                        ellipsize(text, 15),
+                    )
+                    .unwrap();
+                },
+                crate::lower::TypeLoweringErrorKind::UnresolvedName(_)
+                | crate::lower::TypeLoweringErrorKind::UnresolvedPath { .. }
+                | crate::lower::TypeLoweringErrorKind::UnexpectedModule(_)
+                | crate::lower::TypeLoweringErrorKind::MissingTemplateArgument(_)
+                | crate::lower::TypeLoweringErrorKind::MissingTemplate
+                | crate::lower::TypeLoweringErrorKind::WrongNumberOfTemplateArguments { .. }
+                | crate::lower::TypeLoweringErrorKind::ExpectedType(_)
+                | crate::lower::TypeLoweringErrorKind::ExpectedFunctionToBeCalled(_)
+                | crate::lower::TypeLoweringErrorKind::WgslError(_) => {
+                    writeln!(buffer, "{:?} in {:?}", diagnostic.kind, diagnostic.source).unwrap();
+                },
+            },
+            crate::lower::TypeContainer::TypeSpecifier(index) => {
+                writeln!(buffer, "{:?} in {:?}", diagnostic.kind, diagnostic.source).unwrap();
+            },
+        }
+    }
+
+    fn print_no_such_field(
+        &self,
+        source_map: &ExpressionSourceMap,
+        buffer: &mut String,
+        expression: la_arena::Idx<hir_def::expression::Expression>,
+        name: &hir_def::item_tree::Name,
+        r#type: Type,
+    ) {
+        let Some((range, text)) = self.get_range_text(source_map, expression) else {
+            return;
+        };
+        writeln!(
+            buffer,
+            "{range:?} '{}': no such field `{}` on type `{}`",
+            ellipsize(text, 15),
+            name.as_str(),
+            pretty_type_with_verbosity(self.database, r#type, TypeVerbosity::Full),
+        )
+        .unwrap();
+    }
+
+    fn print_store_type_must_be_storable(
+        &self,
+        source_map: &ExpressionSourceMap,
+        buffer: &mut String,
+        actual: Type,
+        expression: la_arena::Idx<hir_def::expression::Expression>,
+    ) {
+        let Some((range, text)) = self.get_range_text(source_map, expression) else {
+            return;
+        };
+
+        writeln!(
+            buffer,
+            "{range:?} '{}': expected storable type but got `{}`",
+            ellipsize(text, 15),
+            pretty_type_with_verbosity(self.database, actual, TypeVerbosity::Full),
+        )
+        .unwrap();
+    }
+
+    fn print_type_mismatch(
+        &self,
+        source_map: &ExpressionSourceMap,
+        buffer: &mut String,
+        expression: la_arena::Idx<hir_def::expression::Expression>,
+        expected: &crate::infer::TypeExpectation,
+        actual: Type,
+    ) {
+        let Some((range, text)) = self.get_range_text(source_map, expression) else {
+            return;
+        };
+
+        writeln!(
+            buffer,
+            "{range:?} '{}': expected {} but got {}",
+            ellipsize(text, 15),
+            pretty_type_expectation_with_verbosity(
+                self.database,
+                expected.clone(),
+                TypeVerbosity::Full
+            ),
+            pretty_type_with_verbosity(self.database, actual, TypeVerbosity::Full)
+        )
+        .unwrap();
     }
 
     fn get_range_text(
@@ -288,6 +358,13 @@ impl<'db> InferPrinter<'db> {
         );
         Some((range, text))
     }
+}
+
+fn print_raw_diagnostic(
+    diagnostic: &InferenceDiagnostic,
+    buffer: &mut String,
+) {
+    writeln!(buffer, "{:?} in {:?}", diagnostic.kind, diagnostic.source).unwrap();
 }
 
 fn text_range_start(

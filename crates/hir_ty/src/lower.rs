@@ -50,7 +50,10 @@ pub enum TypeLoweringErrorKind {
         path: Path,
         failed_segment: usize,
     },
-    UnexpectedTemplateArgument(String),
+    UnexpectedTemplateArgument {
+        expected: String,
+        // actual: Option<String>,
+    },
     UnexpectedModule(Path),
     MissingTemplateArgument(String),
     MissingTemplate,
@@ -97,10 +100,15 @@ impl fmt::Display for TypeLoweringErrorKind {
             Self::WgslError(error) => {
                 write!(formatter, "{error}")
             },
-            Self::UnexpectedTemplateArgument(expected) => {
+            Self::UnexpectedTemplateArgument {
+                expected,
+                // actual
+            } => {
                 write!(
                     formatter,
-                    "unexpected template argument, expected {expected}"
+                    "unexpected template argument, expected {expected}",
+                    // "unexpected template argument, expected `{expected}`, actual: `{}`",
+                    // actual.clone().unwrap_or("<none>".to_owned())
                 )
             },
             Self::UnexpectedModule(path) => {
@@ -318,7 +326,10 @@ impl<'database> TypeLoweringContext<'database> {
         for template_expression in template_parameters {
             self.diagnostics.push(TypeLoweringError {
                 container: TypeContainer::Expression(*template_expression),
-                kind: TypeLoweringErrorKind::UnexpectedTemplateArgument("nothing".to_owned()),
+                kind: TypeLoweringErrorKind::UnexpectedTemplateArgument {
+                    expected: "nothing".to_owned(),
+                    // actual: Some((*template_expression).),
+                },
             });
         }
     }
