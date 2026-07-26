@@ -1,6 +1,6 @@
 use expect_test::expect;
 
-use crate::tests::check;
+use crate::tests::{check, check_with_edition};
 
 #[test]
 fn diagnostic_attribute() {
@@ -1182,6 +1182,89 @@ fn parse_interpolate_unclosed_error() {
               Blankspace@62..71 "\n        "
 
             error at 42..45: invalid syntax, expected one of: 'center', 'centroid', ',', 'either', 'first', ')', 'sample'"#]],
+    );
+}
+
+/// Tests context handling for no parentheses attribute.
+#[test]
+fn parse_conditional_transpilation() {
+    check_with_edition(
+        edition::Edition::Wesl2025Unstable,
+        "
+        @if(true)
+        fn fragment() {}
+        @elif(false)
+        fn fragment() {}
+        @else
+        fn fragment() {}
+        ",
+        expect![[r#"
+            SourceFile@0..137
+              Blankspace@0..9 "\n        "
+              FunctionDeclaration@9..43
+                OtherAttribute@9..10
+                  AttributeOperator@9..10 "@"
+                Error@10..18
+                  If@10..12 "if"
+                  ParenthesisLeft@12..13 "("
+                  True@13..17 "true"
+                  ParenthesisRight@17..18 ")"
+                Blankspace@18..27 "\n        "
+                Fn@27..29 "fn"
+                Blankspace@29..30 " "
+                Name@30..38
+                  Identifier@30..38 "fragment"
+                FunctionParameters@38..40
+                  ParenthesisLeft@38..39 "("
+                  ParenthesisRight@39..40 ")"
+                Blankspace@40..41 " "
+                CompoundStatement@41..43
+                  BraceLeft@41..42 "{"
+                  BraceRight@42..43 "}"
+              Blankspace@43..52 "\n        "
+              FunctionDeclaration@52..89
+                OtherAttribute@52..64
+                  AttributeOperator@52..53 "@"
+                  Identifier@53..57 "elif"
+                  Arguments@57..64
+                    ParenthesisLeft@57..58 "("
+                    Literal@58..63
+                      False@58..63 "false"
+                    ParenthesisRight@63..64 ")"
+                Blankspace@64..73 "\n        "
+                Fn@73..75 "fn"
+                Blankspace@75..76 " "
+                Name@76..84
+                  Identifier@76..84 "fragment"
+                FunctionParameters@84..86
+                  ParenthesisLeft@84..85 "("
+                  ParenthesisRight@85..86 ")"
+                Blankspace@86..87 " "
+                CompoundStatement@87..89
+                  BraceLeft@87..88 "{"
+                  BraceRight@88..89 "}"
+              Blankspace@89..98 "\n        "
+              FunctionDeclaration@98..128
+                OtherAttribute@98..99
+                  AttributeOperator@98..99 "@"
+                Error@99..103
+                  Else@99..103 "else"
+                Blankspace@103..112 "\n        "
+                Fn@112..114 "fn"
+                Blankspace@114..115 " "
+                Name@115..123
+                  Identifier@115..123 "fragment"
+                FunctionParameters@123..125
+                  ParenthesisLeft@123..124 "("
+                  ParenthesisRight@124..125 ")"
+                Blankspace@125..126 " "
+                CompoundStatement@126..128
+                  BraceLeft@126..127 "{"
+                  BraceRight@127..128 "}"
+              Blankspace@128..137 "\n        "
+
+            error at 10..12: invalid syntax, expected one of: 'align', 'binding', 'blend_src', 'builtin', 'compute', 'const', 'diagnostic', 'early_depth_test', 'fragment', 'group', 'id', <identifier>, 'interpolate', 'invariant', 'location', 'must_use', 'size', 'vertex', 'workgroup_size'
+            error at 99..103: invalid syntax, expected one of: 'align', 'binding', 'blend_src', 'builtin', 'compute', 'const', 'diagnostic', 'early_depth_test', 'fragment', 'group', 'id', <identifier>, 'interpolate', 'invariant', 'location', 'must_use', 'size', 'vertex', 'workgroup_size'"#]],
     );
 }
 
