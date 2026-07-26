@@ -1185,7 +1185,6 @@ fn parse_interpolate_unclosed_error() {
     );
 }
 
-/// Tests context handling for no parentheses attribute.
 #[test]
 fn parse_conditional_transpilation() {
     check_with_edition(
