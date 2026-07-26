@@ -374,6 +374,8 @@ pub enum SyntaxKind {
     Package,
     Super,
     As,
+
+    // Context-sensitive WESL token
     Elif,
 
     #[token("+=")]
