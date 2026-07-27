@@ -1,6 +1,6 @@
 use expect_test::expect;
 
-use crate::tests::check;
+use crate::tests::{check, check_with_edition};
 
 #[test]
 fn reserved_words_do_not_parse() {
@@ -777,7 +777,7 @@ fn keywords_do_not_parse() {
             error at 266..272: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
             error at 266..272: directives must come before other items
             error at 272..273: invalid syntax, expected: <identifier>
-            error at 272..272: unknown extension 
+            error at 272..272: unknown extension: ``
             error at 288..293: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
             error at 309..311: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
             error at 311..312: invalid syntax, expected: <identifier>
@@ -792,7 +792,7 @@ fn keywords_do_not_parse() {
             error at 427..435: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
             error at 427..435: directives must come before other items
             error at 435..436: invalid syntax, expected: <identifier>
-            error at 435..435: unknown extension 
+            error at 435..435: unknown extension: ``
             error at 451..457: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
             error at 473..479: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
             error at 479..480: invalid syntax, expected: <identifier>
@@ -801,5 +801,91 @@ fn keywords_do_not_parse() {
             error at 537..540: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
             error at 540..541: invalid syntax, expected: <identifier>
             error at 556..561: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>"#]],
+    );
+}
+
+#[test]
+fn context_sensitive_keywords() {
+    check_with_edition(
+        edition::Edition::Wesl2025Unstable,
+        "
+        @if(true)
+        fn foo() { let elif = 0; }
+        @elif(false)
+        fn foo() { let elif = 0; }
+        ",
+        expect![[r#"
+            SourceFile@0..118
+              Blankspace@0..9 "\n        "
+              AttributeList@9..18
+                IfAttribute@9..18
+                  AttributeOperator@9..10 "@"
+                  If@10..12 "if"
+                  ParenthesisLeft@12..13 "("
+                  Literal@13..17
+                    True@13..17 "true"
+                  ParenthesisRight@17..18 ")"
+              Blankspace@18..27 "\n        "
+              FunctionDeclaration@27..53
+                Fn@27..29 "fn"
+                Blankspace@29..30 " "
+                Name@30..33
+                  Identifier@30..33 "foo"
+                FunctionParameters@33..35
+                  ParenthesisLeft@33..34 "("
+                  ParenthesisRight@34..35 ")"
+                Blankspace@35..36 " "
+                CompoundStatement@36..53
+                  BraceLeft@36..37 "{"
+                  Blankspace@37..38 " "
+                  LetDeclaration@38..51
+                    Let@38..41 "let"
+                    Blankspace@41..42 " "
+                    Name@42..46
+                      Identifier@42..46 "elif"
+                    Blankspace@46..47 " "
+                    Equal@47..48 "="
+                    Blankspace@48..49 " "
+                    Literal@49..50
+                      IntLiteral@49..50 "0"
+                    Semicolon@50..51 ";"
+                  Blankspace@51..52 " "
+                  BraceRight@52..53 "}"
+              Blankspace@53..62 "\n        "
+              AttributeList@62..74
+                ElifAttribute@62..74
+                  AttributeOperator@62..63 "@"
+                  Elif@63..67 "elif"
+                  ParenthesisLeft@67..68 "("
+                  Literal@68..73
+                    False@68..73 "false"
+                  ParenthesisRight@73..74 ")"
+              Blankspace@74..83 "\n        "
+              FunctionDeclaration@83..109
+                Fn@83..85 "fn"
+                Blankspace@85..86 " "
+                Name@86..89
+                  Identifier@86..89 "foo"
+                FunctionParameters@89..91
+                  ParenthesisLeft@89..90 "("
+                  ParenthesisRight@90..91 ")"
+                Blankspace@91..92 " "
+                CompoundStatement@92..109
+                  BraceLeft@92..93 "{"
+                  Blankspace@93..94 " "
+                  LetDeclaration@94..107
+                    Let@94..97 "let"
+                    Blankspace@97..98 " "
+                    Name@98..102
+                      Identifier@98..102 "elif"
+                    Blankspace@102..103 " "
+                    Equal@103..104 "="
+                    Blankspace@104..105 " "
+                    Literal@105..106
+                      IntLiteral@105..106 "0"
+                    Semicolon@106..107 ";"
+                  Blankspace@107..108 " "
+                  BraceRight@108..109 "}"
+              Blankspace@109..118 "\n        ""#]],
     );
 }

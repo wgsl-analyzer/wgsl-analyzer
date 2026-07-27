@@ -1,6 +1,6 @@
 use expect_test::expect;
 
-use crate::tests::check;
+use crate::tests::{check, check_with_edition};
 
 #[test]
 fn diagnostic_attribute() {
@@ -1182,6 +1182,86 @@ fn parse_interpolate_unclosed_error() {
               Blankspace@62..71 "\n        "
 
             error at 42..45: invalid syntax, expected one of: 'center', 'centroid', ',', 'either', 'first', ')', 'sample'"#]],
+    );
+}
+
+#[test]
+fn parse_conditional_transpilation() {
+    check_with_edition(
+        edition::Edition::Wesl2025Unstable,
+        "
+        @if(true)
+        fn fragment() {}
+        @elif(false)
+        fn fragment() {}
+        @else
+        fn fragment() {}
+        ",
+        expect![[r#"
+            SourceFile@0..137
+              Blankspace@0..9 "\n        "
+              AttributeList@9..18
+                IfAttribute@9..18
+                  AttributeOperator@9..10 "@"
+                  If@10..12 "if"
+                  ParenthesisLeft@12..13 "("
+                  Literal@13..17
+                    True@13..17 "true"
+                  ParenthesisRight@17..18 ")"
+              Blankspace@18..27 "\n        "
+              FunctionDeclaration@27..43
+                Fn@27..29 "fn"
+                Blankspace@29..30 " "
+                Name@30..38
+                  Identifier@30..38 "fragment"
+                FunctionParameters@38..40
+                  ParenthesisLeft@38..39 "("
+                  ParenthesisRight@39..40 ")"
+                Blankspace@40..41 " "
+                CompoundStatement@41..43
+                  BraceLeft@41..42 "{"
+                  BraceRight@42..43 "}"
+              Blankspace@43..52 "\n        "
+              AttributeList@52..64
+                ElifAttribute@52..64
+                  AttributeOperator@52..53 "@"
+                  Elif@53..57 "elif"
+                  ParenthesisLeft@57..58 "("
+                  Literal@58..63
+                    False@58..63 "false"
+                  ParenthesisRight@63..64 ")"
+              Blankspace@64..73 "\n        "
+              FunctionDeclaration@73..89
+                Fn@73..75 "fn"
+                Blankspace@75..76 " "
+                Name@76..84
+                  Identifier@76..84 "fragment"
+                FunctionParameters@84..86
+                  ParenthesisLeft@84..85 "("
+                  ParenthesisRight@85..86 ")"
+                Blankspace@86..87 " "
+                CompoundStatement@87..89
+                  BraceLeft@87..88 "{"
+                  BraceRight@88..89 "}"
+              Blankspace@89..98 "\n        "
+              AttributeList@98..103
+                ElseAttribute@98..103
+                  AttributeOperator@98..99 "@"
+                  Else@99..103 "else"
+              Blankspace@103..112 "\n        "
+              FunctionDeclaration@112..128
+                Fn@112..114 "fn"
+                Blankspace@114..115 " "
+                Name@115..123
+                  Identifier@115..123 "fragment"
+                FunctionParameters@123..125
+                  ParenthesisLeft@123..124 "("
+                  ParenthesisRight@124..125 ")"
+                Blankspace@125..126 " "
+                CompoundStatement@126..128
+                  BraceLeft@126..127 "{"
+                  BraceRight@127..128 "}"
+              Blankspace@128..137 "\n        ""#]],
     );
 }
 

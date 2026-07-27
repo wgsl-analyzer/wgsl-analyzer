@@ -13,7 +13,6 @@ indexmap.workspace = true
 rustc-hash.workspace = true
 stdx.workspace = true
 test-utils.workspace = true
-triomphe.workspace = true
 
 [lints]
 workspace = true
