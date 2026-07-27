@@ -2,7 +2,7 @@ use base_db::{EditionedFileId, FilePosition, RangeInfo, SourceDatabase as _};
 use hir::{HasSource as _, Local, Semantics, definition::Definition};
 use hir_def::{InFile, database::DefDatabase as _};
 use ide_db::RootDatabase;
-use syntax::{AstNode as _, HasName as _, SyntaxKind};
+use syntax::{AstNode as _, SyntaxKind, ast::HasName as _};
 
 use crate::{NavigationTarget, helpers};
 
@@ -52,7 +52,6 @@ impl TryToNavigationTarget for Local {
         database: &RootDatabase,
     ) -> Option<NavigationTarget> {
         let binding = self.source(database)?;
-
         let file_range = binding.original_file_range(database);
         // let name: SmolStr = binding.value.name()?.text().into();
         let navigation = NavigationTarget::from_syntax(file_range.file_id, file_range.range, None);

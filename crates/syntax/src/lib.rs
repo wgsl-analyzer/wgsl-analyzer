@@ -245,28 +245,6 @@ mod support {
     }
 }
 
-pub trait HasName: AstNode {
-    fn name(&self) -> Option<ast::Name> {
-        crate::support::child(self.syntax())
-    }
-}
-
-pub trait HasTemplateParameters: AstNode {
-    fn template_parameters(&self) -> Option<ast::TemplateList> {
-        support::child(self.syntax())
-    }
-}
-
-pub trait HasAttributes: AstNode {
-    fn attributes(&self) -> Option<AstChildren<ast::Attribute>> {
-        let prev_sibling = self.syntax().prev_sibling()?;
-        if let Some(node) = AttributeList::cast(prev_sibling) {
-            return Some(node.attributes());
-        }
-        None
-    }
-}
-
 #[macro_export]
 macro_rules! match_ast {
     (match $node:ident { $($tt:tt)* }) => { match_ast!(match ($node) { $($tt)* }) };

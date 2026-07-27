@@ -15,7 +15,10 @@ use itertools::Itertools as _;
 use rowan::NodeOrToken;
 use rustc_hash::FxHashSet;
 use smallvec::{SmallVec, smallvec};
-use syntax::{AstChildren, AstNode as _, HasName as _, SyntaxNode, ast};
+use syntax::{
+    AstChildren, AstNode as _, SyntaxNode,
+    ast::{self, HasName as _},
+};
 
 use crate::RootDatabase;
 

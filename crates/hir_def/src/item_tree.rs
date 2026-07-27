@@ -7,7 +7,7 @@ mod tests;
 
 use std::{hash, marker::PhantomData};
 
-use base_db::EditionedFileId;
+use base_db::{EditionedFileId, FileAstId};
 use rustc_hash::FxHashMap;
 use smol_str::SmolStr;
 use syntax::{
@@ -17,7 +17,6 @@ use syntax::{
 use triomphe::Arc;
 
 use crate::{
-    ast_id::FileAstId,
     database::{DefDatabase, ModuleDefinitionId},
     mod_path::{ModPath, PathKind},
 };

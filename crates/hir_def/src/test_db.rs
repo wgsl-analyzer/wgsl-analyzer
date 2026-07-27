@@ -1,8 +1,8 @@
 use std::{fmt, panic};
 
 use base_db::{
-    EditionedFileId, FileSourceRootInput, FileText, Nonce, Package, SourceDatabase, SourceRootId,
-    SourceRootInput, all_packages, change::Change, input::SourceRoot,
+    AstIdMap, EditionedFileId, FileSourceRootInput, FileText, Nonce, Package, SourceDatabase,
+    SourceRootId, SourceRootInput, all_packages, change::Change, input::SourceRoot,
     set_all_packages_with_durability,
 };
 use salsa::{Durability, Storage};
@@ -56,6 +56,15 @@ impl panic::RefUnwindSafe for TestDatabase {}
 
 #[salsa_macros::db]
 impl SourceDatabase for TestDatabase {
+    fn ast_id_map(
+        &self,
+        file_id: EditionedFileId,
+    ) -> Arc<AstIdMap> {
+        let parsed = file_id.parse(self);
+        let map = AstIdMap::from_source(&parsed.tree());
+        Arc::new(map)
+    }
+
     fn file_text(
         &self,
         file_id: base_db::FileId,

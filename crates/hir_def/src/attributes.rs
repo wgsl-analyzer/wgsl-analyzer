@@ -2,7 +2,7 @@ use std::iter;
 
 use base_db::Lookup as _;
 use either::Either;
-use syntax::{HasAttributes, ast};
+use syntax::ast::{self, HasAttributes};
 use triomphe::Arc;
 
 use crate::{
@@ -41,6 +41,16 @@ impl AttributeList {
             .iter()
             .any(|attribute| attribute.name.as_str() == name)
     }
+
+    #[must_use]
+    pub fn try_get(
+        &self,
+        name: &str,
+    ) -> Option<&Attribute> {
+        self.attributes
+            .iter()
+            .find(|attribute| attribute.name.as_str() == name)
+    }
 }
 
 impl AttributeList {
@@ -49,17 +59,7 @@ impl AttributeList {
         source: &dyn HasAttributes,
     ) -> (Self, ExpressionSourceMap) {
         let mut collector = ExprCollector::new(database, ExpressionStoreSource::Signature);
-        let attributes = source
-            .attributes()
-            .into_iter()
-            .flat_map(std::iter::IntoIterator::into_iter)
-            .map(|attribute| Attribute {
-                name: attribute
-                    .name()
-                    .map_or_else(Name::missing, |attribute| Name::from(attribute.text())),
-                parameters: get_attribute_parameters(&mut collector, attribute),
-            })
-            .collect();
+        let attributes = Self::get_attributes(database, source, &mut collector);
         let (store, source_map) = collector.finish();
         (
             Self {
@@ -68,6 +68,24 @@ impl AttributeList {
             },
             source_map,
         )
+    }
+
+    pub fn get_attributes(
+        database: &dyn DefDatabase,
+        source: &dyn HasAttributes,
+        mut collector: &mut ExprCollector<'_>,
+    ) -> Vec<Attribute> {
+        source
+            .attributes()
+            .into_iter()
+            .flat_map(std::iter::IntoIterator::into_iter)
+            .map(|attribute| Attribute {
+                name: attribute
+                    .name()
+                    .map_or_else(Name::missing, |attribute| Name::from(attribute.text())),
+                parameters: get_attribute_parameters(collector, attribute),
+            })
+            .collect()
     }
 
     fn empty() -> (Self, ExpressionSourceMap) {
@@ -169,7 +187,7 @@ pub struct AttributesWithOwner {
 }
 
 impl AttributesWithOwner {
-    pub(crate) fn attrs_query(
+    pub(crate) fn attributes_query(
         database: &dyn DefDatabase,
         definition: AttributeDefId,
     ) -> (Arc<Self>, Arc<ExpressionSourceMap>) {

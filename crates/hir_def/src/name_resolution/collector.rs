@@ -2,6 +2,7 @@ use base_db::{EditionedFileId, Intern as _, file_package};
 use syntax::ast;
 
 use crate::{
+    attributes::AttributeDefId,
     database::{DefDatabase, Location, ModuleDefinitionId},
     item_scope::{ItemScope, ModuleItem},
     item_tree::{FlatImport, ItemTree, ModuleItemId, Name},
@@ -78,12 +79,25 @@ impl ModCollector<'_> {
                     });
                     continue;
                 },
-                ModuleItemId::Function(id) => (
-                    &item_tree[id].name,
-                    ModuleDefinitionId::Function(
-                        Location::new(self.file_id, id).intern(self.database),
-                    ),
-                ),
+                ModuleItemId::Function(id) => {
+                    let in_file = Location::new(self.file_id, id);
+                    let function = in_file.intern(self.database);
+                    let (data, _) = self.database.function_data(function);
+                    let (attributes, _) =
+                        self.database.attributes(AttributeDefId::Function(function));
+                    if let Some(attribute) = attributes.attribute_list.try_get("must_use")
+                        && data.return_type.is_none()
+                    {
+                        self.item_scope
+                            .push_diagnostic(DefDiagnostic::invalid_must_use(
+                                self.file_id,
+                                in_file,
+                            ));
+                    }
+                    let name = &item_tree[id].name;
+                    let function = ModuleDefinitionId::Function(function);
+                    (name, function)
+                },
                 ModuleItemId::Struct(id) => (
                     &item_tree[id].name,
                     ModuleDefinitionId::Struct(

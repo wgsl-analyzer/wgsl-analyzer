@@ -1,10 +1,15 @@
 #![expect(clippy::use_debug, reason = "tests")]
+#![expect(
+    clippy::too_many_lines,
+    reason = "snapshot test data makes functions long"
+)]
 
 mod big;
 mod builtins;
 mod imports;
 mod incremental;
 mod simple;
+
 use std::{fmt::Write as _, ops::ControlFlow};
 
 use base_db::{EditionedFileId, Intern as _, Lookup as _};

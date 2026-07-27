@@ -8,17 +8,19 @@
 )]
 use std::fmt::Debug;
 
-use base_db::{EditionedFileId, Lookup as _, SourceDatabase, impl_intern_key, impl_intern_lookup};
+use base_db::{
+    AstIdMap, EditionedFileId, FileAstId, Lookup as _, SourceDatabase, impl_intern_key,
+    impl_intern_lookup,
+};
 use salsa::plumbing::AsId as _;
 use syntax::{ExtensionsConfig, Parse, ast};
 use triomphe::Arc;
 use vfs::VfsPath;
 
 use crate::{
-    FileAstId, InFile,
-    ast_id::AstIdMap,
+    InFile,
     attributes::{AttributeDefId, AttributesWithOwner},
-    body::{Body, BodySourceMap, scope::ExprScopes},
+    body::{Binding, BindingId, Body, BodySourceMap, scope::ExprScopes},
     expression_store::{ExpressionSourceMap, ExpressionStore},
     item_scope::ItemScope,
     item_tree::{
@@ -38,15 +40,10 @@ pub trait DefDatabase: InternDatabase + SourceDatabase {
     #[salsa::input]
     fn extensions(&self) -> ExtensionsConfig;
 
-    fn ast_id_map(
-        &self,
-        key: EditionedFileId,
-    ) -> Arc<AstIdMap>;
-
     #[salsa::invoke(ItemTree::query)]
     fn item_tree(
         &self,
-        key: EditionedFileId,
+        file_id: EditionedFileId,
     ) -> Arc<ItemTree>;
 
     #[salsa::invoke(Body::body_with_source_map_query)]
@@ -85,6 +82,12 @@ pub trait DefDatabase: InternDatabase + SourceDatabase {
         key: StructId,
     ) -> (Arc<StructSignature>, Arc<ExpressionSourceMap>);
 
+    // #[salsa::invoke(Binding::query)]
+    // fn binding_data(
+    //     &self,
+    //     key: BindingId,
+    // ) -> (Arc<TypeAliasSignature>, Arc<ExpressionSourceMap>);
+
     #[salsa::invoke(TypeAliasSignature::query)]
     fn type_alias_data(
         &self,
@@ -118,8 +121,8 @@ pub trait DefDatabase: InternDatabase + SourceDatabase {
         key: OverrideId,
     ) -> (Arc<OverrideSignature>, Arc<ExpressionSourceMap>);
 
-    #[salsa::invoke(AttributesWithOwner::attrs_query)]
-    fn attrs(
+    #[salsa::invoke(AttributesWithOwner::attributes_query)]
+    fn attributes(
         &self,
         key: AttributeDefId,
     ) -> (Arc<AttributesWithOwner>, Arc<ExpressionSourceMap>);
@@ -151,15 +154,6 @@ fn signature_with_source_map(
             (data.store.clone(), source_map)
         },
     }
-}
-
-fn ast_id_map(
-    database: &dyn DefDatabase,
-    file_id: EditionedFileId,
-) -> Arc<AstIdMap> {
-    let parsed = file_id.parse(database);
-    let map = AstIdMap::from_source(&parsed.tree());
-    Arc::new(map)
 }
 
 #[query_group::query_group(InternDatabaseStorage)]
@@ -217,9 +211,9 @@ pub trait InternDatabase: SourceDatabase {
 pub type Location<T> = InFile<FileAstId<T>>;
 
 macro_rules! impl_intern {
-    ($id:ident, $loc:ty, $intern:ident, $lookup:ident) => {
-        impl_intern_key!($id, $loc);
-        impl_intern_lookup!(DefDatabase, $id, $loc, $intern, $lookup);
+    ($id:ident, $location:ty, $intern:ident, $lookup:ident) => {
+        impl_intern_key!($id, $location);
+        impl_intern_lookup!(DefDatabase, $id, $location, $intern, $lookup);
     };
 }
 

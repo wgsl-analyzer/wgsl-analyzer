@@ -595,6 +595,15 @@ pub fn diagnostics(
                         frange.range,
                     )
                 },
+                AnyDiagnostic::InvalidMustUse { id } => {
+                    let source = id.value.to_node(&root);
+                    let frange = original_file_range(database, id.file_id, source.syntax());
+                    Diagnostic::new(
+                        DiagnosticCode("31"),
+                        "invalid `@must_use` - it must be used on a function that returns a value".to_owned(),
+                        frange.range,
+                    )
+                },
             }
         })
         .collect()

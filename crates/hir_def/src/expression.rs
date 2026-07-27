@@ -10,21 +10,21 @@ use crate::{
 
 pub type ExpressionId = Idx<Expression>;
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Literal {
     Int(u64, BuiltinInt),
     Float(u64, BuiltinFloat),
     Bool(bool),
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum BuiltinFloat {
     F16,
     F32,
     Abstract,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum BuiltinInt {
     I32,
     U32,
@@ -84,7 +84,7 @@ pub enum Statement {
         binding_id: BindingId,
         type_ref: Option<TypeSpecifierId>,
         initializer: Option<ExpressionId>,
-        template_parameters: Vec<ExpressionId>,
+        template_arguments: Vec<ExpressionId>,
     },
     Return {
         expression: Option<ExpressionId>,
@@ -149,6 +149,41 @@ pub enum Statement {
 pub enum SwitchCaseSelector {
     Expression(ExpressionId),
     Default,
+}
+
+impl Literal {
+    #[must_use]
+    pub const fn suffix(self) -> &'static str {
+        match self {
+            Self::Int(_, builtin_int) => builtin_int.suffix(),
+            Self::Float(_, builtin_float) => builtin_float.suffix(),
+            Self::Bool(_) => "",
+        }
+    }
+}
+
+impl BuiltinInt {
+    #[must_use]
+    pub const fn suffix(self) -> &'static str {
+        match self {
+            Self::I32 => "i",
+            Self::U32 => "u",
+            Self::I64 => "li",
+            Self::U64 => "lu",
+            Self::Abstract => "",
+        }
+    }
+}
+
+impl BuiltinFloat {
+    #[must_use]
+    pub const fn suffix(self) -> &'static str {
+        match self {
+            Self::F16 => "h",
+            Self::F32 => "f",
+            Self::Abstract => "",
+        }
+    }
 }
 
 /// Parses a literal from the given [`ast::LiteralKind`].

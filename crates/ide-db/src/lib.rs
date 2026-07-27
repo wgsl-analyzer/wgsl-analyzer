@@ -10,8 +10,9 @@ use std::{fmt, panic};
 pub use base_db;
 pub use base_db::FileId;
 use base_db::{
-    ExtensionsConfig, FileSourceRootInput, FileText, Files, Nonce, SourceDatabase, SourceRoot,
-    SourceRootId, SourceRootInput, change::Change, set_all_packages_with_durability,
+    AstIdMap, EditionedFileId, ExtensionsConfig, FileSourceRootInput, FileText, Files, Nonce,
+    SourceDatabase, SourceRoot, SourceRootId, SourceRootInput, change::Change,
+    set_all_packages_with_durability,
 };
 use hir_def::database::DefDatabase as _;
 use line_index::LineIndex;
@@ -57,6 +58,15 @@ impl fmt::Debug for RootDatabase {
 
 #[salsa_macros::db]
 impl SourceDatabase for RootDatabase {
+    fn ast_id_map(
+        &self,
+        file_id: EditionedFileId,
+    ) -> Arc<AstIdMap> {
+        let parsed = file_id.parse(self);
+        let map = AstIdMap::from_source(&parsed.tree());
+        Arc::new(map)
+    }
+
     fn file_text(
         &self,
         file_id: vfs::FileId,

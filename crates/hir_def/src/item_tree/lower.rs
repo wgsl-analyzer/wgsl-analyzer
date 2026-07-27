@@ -1,13 +1,9 @@
-use base_db::EditionedFileId;
-use syntax::{
-    HasName as _,
-    ast::{Directive, Item, SourceFile},
-};
+use base_db::{AstIdMap, EditionedFileId};
+use syntax::ast::{Directive, HasName as _, Item, SourceFile};
 use triomphe::Arc;
 
 use super::{GlobalConstant, GlobalVariable, Override, Struct, TypeAlias};
 use crate::{
-    ast_id::AstIdMap,
     database::DefDatabase,
     item_tree::{
         self, BigModItem, Function, GlobalAssertStatement, ImportStatement, ImportTree, ItemTree,

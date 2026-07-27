@@ -21,6 +21,7 @@ syntax.workspace = true
 tracing.workspace = true
 triomphe.workspace = true
 vfs.workspace = true
+la-arena.workspace = true
 
 [dev-dependencies]
 expect-test.workspace = true

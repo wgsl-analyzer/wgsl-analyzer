@@ -2,8 +2,9 @@
 
 use std::fmt::Write as _;
 
+use base_db::FileAstId;
+
 use crate::{
-    FileAstId,
     item_tree::{ImportTree, ItemTree, ModuleItemId},
     mod_path::PathKind,
 };

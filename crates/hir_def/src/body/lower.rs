@@ -1,9 +1,13 @@
 use base_db::EditionedFileId;
 use either::Either;
-use syntax::{HasName as _, HasTemplateParameters as _, ast, pointer::AstPointer};
+use syntax::{
+    ast::{self, HasName as _, HasTemplateParameters as _},
+    pointer::AstPointer,
+};
 
-use super::{Binding, BindingId, Body, BodySourceMap, SyntheticSyntax};
+use super::{Binding, Body, BodySourceMap, SyntheticSyntax};
 use crate::{
+    body::BindingId,
     database::DefDatabase,
     expression::{ExpressionId, Statement, StatementId, SwitchCaseSelector},
     expression_store::{ExpressionStoreSource, lower::ExprCollector},
@@ -234,7 +238,7 @@ impl Collector<'_> {
                     binding_id,
                     type_ref,
                     initializer,
-                    template_parameters,
+                    template_arguments: template_parameters,
                 }
             },
             ast::Statement::ConstantDeclaration(variable_statement) => {

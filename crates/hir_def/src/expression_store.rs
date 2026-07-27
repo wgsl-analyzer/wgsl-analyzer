@@ -1,5 +1,6 @@
 pub mod lower;
 pub mod path;
+pub mod pretty;
 
 use std::ops::Index;
 
@@ -18,7 +19,7 @@ pub struct SyntheticSyntax;
 /// An arena with expressions.
 #[derive(Default, Debug, PartialEq, Eq)]
 pub struct ExpressionStore {
-    pub exprs: Arena<Expression>,
+    pub expressions: Arena<Expression>,
     pub types: Arena<TypeSpecifier>,
     /// Used for signatures and for bodies.
     /// For example, a `const foo: vec3<f32> = vec3f(1,2,3);` will have two stores.
@@ -46,7 +47,7 @@ impl Index<ExpressionId> for ExpressionStore {
         &self,
         index: ExpressionId,
     ) -> &Expression {
-        &self.exprs[index]
+        &self.expressions[index]
     }
 }
 
@@ -129,7 +130,7 @@ impl ExpressionStoreBuilder {
         type_map_back.shrink_to_fit();
         (
             ExpressionStore {
-                exprs,
+                expressions: exprs,
                 types,
                 store_source,
                 parenthesis_expressions,

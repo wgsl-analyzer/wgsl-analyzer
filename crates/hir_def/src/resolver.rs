@@ -18,7 +18,7 @@ use crate::{
     visibility::Visibility,
 };
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum Scope {
     /// Local bindings.
     Expression(ExpressionScope),
@@ -28,14 +28,14 @@ pub enum Scope {
     Builtin,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct ExpressionScope {
     owner: FunctionId,
     expression_scopes: Arc<ExprScopes>,
     scope_id: ScopeId,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct ModuleScope {
     module_info: Arc<ItemScope>,
     file_id: EditionedFileId,
@@ -75,7 +75,7 @@ pub enum ScopeDef {
     ModuleDefinition(ModuleDefinitionId),
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Resolver {
     file_id: EditionedFileId,
     scopes: Vec<Scope>,

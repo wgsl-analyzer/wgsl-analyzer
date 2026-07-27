@@ -26,6 +26,9 @@ pub enum DefDiagnosticKind {
         item: Location<ast::Item>,
         previous: Name,
     },
+    InvalidMustUse {
+        id: Location<ast::FunctionDeclaration>,
+    },
 }
 
 impl DefDiagnostic {
@@ -59,6 +62,7 @@ impl DefDiagnostic {
             kind: DefDiagnosticKind::DetachedFile { id },
         }
     }
+
     pub(crate) const fn name_conflict(
         container: EditionedFileId,
         item: Location<ast::Item>,
@@ -67,6 +71,16 @@ impl DefDiagnostic {
         Self {
             in_module: container,
             kind: DefDiagnosticKind::NameConflict { item, previous },
+        }
+    }
+
+    pub(crate) const fn invalid_must_use(
+        container: EditionedFileId,
+        id: Location<ast::FunctionDeclaration>,
+    ) -> Self {
+        Self {
+            in_module: container,
+            kind: DefDiagnosticKind::InvalidMustUse { id },
         }
     }
 }

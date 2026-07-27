@@ -16,9 +16,12 @@ pub struct ModPath {
 impl fmt::Debug for ModPath {
     fn fmt(
         &self,
-        f: &mut fmt::Formatter<'_>,
+        formatter: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
-        f.debug_tuple("ModPath").field(&self.to_string()).finish()
+        formatter
+            .debug_tuple("ModPath")
+            .field(&self.to_string())
+            .finish()
     }
 }
 

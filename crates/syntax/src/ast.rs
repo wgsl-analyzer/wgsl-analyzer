@@ -11,10 +11,32 @@ pub use trivia::{Comment, Whitespace};
 
 use self::operators::{AssignmentOperator, BinaryOperation, UnaryOperator};
 use crate::{
-    AstChildren, AstNode, AstToken, HasAttributes, HasName, HasTemplateParameters, TokenText,
+    AstChildren, AstNode, AstToken, TokenText,
     ast::operators::{ArithmeticOperation, ComparisonOperation, LogicOperation},
     support,
 };
+
+pub trait HasName: AstNode {
+    fn name(&self) -> Option<Name> {
+        crate::support::child(self.syntax())
+    }
+}
+
+pub trait HasTemplateParameters: AstNode {
+    fn template_parameters(&self) -> Option<TemplateList> {
+        support::child(self.syntax())
+    }
+}
+
+pub trait HasAttributes: AstNode {
+    fn attributes(&self) -> Option<AstChildren<Attribute>> {
+        let prev_sibling = self.syntax().prev_sibling()?;
+        if let Some(node) = AttributeList::cast(prev_sibling) {
+            return Some(node.attributes());
+        }
+        None
+    }
+}
 
 macro_rules! ast_node {
     ($kind:ident $($name:ident)? $(:

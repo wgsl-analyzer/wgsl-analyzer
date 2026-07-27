@@ -1,5 +1,6 @@
 //! Basic database traits.
 
+mod ast_id;
 pub mod change;
 pub mod input;
 
@@ -20,6 +21,7 @@ use rustc_hash::FxHasher;
 use salsa::{Durability, Setter as _};
 use triomphe::Arc;
 
+pub use crate::ast_id::{AstIdMap, FileAstId};
 pub use crate::editioned_file_id::{EditionedFileId, ExtensionsConfig, RawEditionedFileId};
 pub use input::{SourceRoot, SourceRootId};
 pub use salsa;
@@ -29,11 +31,11 @@ pub use vfs::{AnchoredPath, AnchoredPathBuf, FileId, VfsPath, file_set::FileSet}
 
 #[macro_export]
 macro_rules! impl_intern_key {
-    ($id:ident, $loc:ty) => {
+    ($id:ident, $location:ty) => {
         #[salsa_macros::interned(no_lifetime, revisions = usize::MAX)]
         #[derive(PartialOrd, Ord)]
         pub struct $id {
-            pub loc: $loc,
+            pub location: $location,
         }
 
         // If we derive this salsa prints the values recursively, and this causes us to blow.
@@ -52,8 +54,8 @@ macro_rules! impl_intern_key {
 
 #[macro_export]
 macro_rules! impl_intern_lookup {
-    ($db:ident, $id:ident, $loc:ty, $intern:ident, $lookup:ident) => {
-        impl base_db::Intern for $loc {
+    ($db:ident, $id:ident, $location:ty, $intern:ident, $lookup:ident) => {
+        impl base_db::Intern for $location {
             type Database = dyn $db;
             type ID = $id;
 
@@ -66,13 +68,13 @@ macro_rules! impl_intern_lookup {
         }
 
         impl base_db::Lookup for $id {
-            type Data = $loc;
+            type Data = $location;
             type Database = dyn $db;
 
             fn lookup(
                 &self,
                 database: &Self::Database,
-            ) -> $loc {
+            ) -> $location {
                 database.$lookup(*self)
             }
         }
@@ -352,7 +354,12 @@ impl PackageDisplayName {
 }
 
 #[salsa_macros::db]
-pub trait SourceDatabase: salsa::Database {
+pub trait SourceDatabase: salsa::Database + std::fmt::Debug {
+    fn ast_id_map(
+        &self,
+        file_id: EditionedFileId,
+    ) -> Arc<AstIdMap>;
+
     /// Text of the file.
     fn file_text(
         &self,
@@ -399,6 +406,15 @@ pub trait SourceDatabase: salsa::Database {
     );
 
     fn nonce_and_revision(&self) -> (Nonce, salsa::Revision);
+}
+
+fn ast_id_map(
+    database: &dyn SourceDatabase,
+    file_id: EditionedFileId,
+) -> Arc<AstIdMap> {
+    let parsed = file_id.parse(database);
+    let map = AstIdMap::from_source(&parsed.tree());
+    Arc::new(map)
 }
 
 static NEXT_NONCE: AtomicUsize = AtomicUsize::new(0);

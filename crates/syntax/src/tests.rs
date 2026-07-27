@@ -6,11 +6,11 @@ use expect_test::{Expect, expect};
 use parser::Edition;
 
 use crate::{
-    AstNode, HasAttributes as _, HasName as _, Parse,
+    AstNode, Parse,
     ast::{
         self, Attribute, CaseToken, Directive, EnableDirective, EnableExtension,
-        EnableExtensionName, Expression, FunctionCall, Item, LanguageExtension, LiteralKind,
-        Statement, SwitchCaseSelector, UnknownExtension,
+        EnableExtensionName, Expression, FunctionCall, HasAttributes as _, HasName as _, Item,
+        LanguageExtension, LiteralKind, Statement, SwitchCaseSelector, UnknownExtension,
         operators::{ArithmeticOperation, BinaryOperation, UnaryOperator},
     },
     parse,

@@ -288,6 +288,7 @@ impl Index<BindingId> for InferenceResult {
 }
 
 /// Runs inference for items that have a body, such as functions.
+#[derive(Debug)]
 pub struct InferenceContext<'database> {
     database: &'database dyn HirDatabase,
     owner: ModuleDefinitionId,
@@ -628,7 +629,7 @@ impl<'database> InferenceContext<'database> {
                 binding_id,
                 type_ref,
                 initializer,
-                template_parameters,
+                template_arguments: template_parameters,
             } => {
                 // The store type is the effective-value-type of the variable’s declaration.
                 let mut r#type =

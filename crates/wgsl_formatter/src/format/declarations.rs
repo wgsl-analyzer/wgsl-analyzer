@@ -1,6 +1,6 @@
 use syntax::{
-    AstNode as _, HasName as _, HasTemplateParameters as _, SyntaxKind, SyntaxNode, ast,
-    ast::SyntaxToken,
+    AstNode as _, SyntaxKind, SyntaxNode,
+    ast::{self, HasName as _, HasTemplateParameters as _, SyntaxToken},
 };
 
 use crate::{

@@ -1,6 +1,7 @@
 use rowan::NodeOrToken;
 use syntax::{
-    AstNode as _, HasTemplateParameters as _, SyntaxKind, SyntaxNode, ast, ast::SyntaxToken,
+    AstNode as _, SyntaxKind, SyntaxNode,
+    ast::{self, HasTemplateParameters as _, SyntaxToken},
 };
 
 use crate::{

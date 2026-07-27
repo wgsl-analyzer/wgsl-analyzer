@@ -1,6 +1,5 @@
 //! RPC API.
 
-mod ast_id;
 pub mod attributes;
 pub mod body;
 pub mod database;
@@ -14,11 +13,12 @@ pub mod resolver;
 pub mod signature;
 #[cfg(test)]
 mod test_db;
+#[cfg(test)]
+mod tests;
 pub mod type_ref;
 pub mod type_specifier;
 pub mod visibility;
-pub use ast_id::*;
-use base_db::{EditionedFileId, FileRange, TextRange};
+use base_db::{EditionedFileId, FileAstId, FileRange, SourceDatabase, TextRange};
 use database::DefDatabase;
 use rowan::NodeOrToken;
 use syntax::{AstNode, SyntaxNode, SyntaxToken, pointer::AstPointer};
@@ -135,14 +135,15 @@ pub trait HasSource {
     type Value: AstNode;
     fn source(
         &self,
-        database: &dyn DefDatabase,
+        database: &dyn SourceDatabase,
     ) -> InFile<Self::Value> {
         let InFile { file_id, value } = self.ast_ptr(database);
         InFile::new(file_id, value.to_node(&file_id.parse(database).syntax()))
     }
+
     fn ast_ptr(
         &self,
-        database: &dyn DefDatabase,
+        database: &dyn SourceDatabase,
     ) -> InFile<AstPointer<Self::Value>>;
 }
 
@@ -151,7 +152,7 @@ impl<Node: AstNode> HasSource for InFile<FileAstId<Node>> {
 
     fn ast_ptr(
         &self,
-        database: &dyn DefDatabase,
+        database: &dyn SourceDatabase,
     ) -> InFile<AstPointer<Self::Value>> {
         let ast_id_map = database.ast_id_map(self.file_id);
         InFile::new(self.file_id, ast_id_map.get(self.value))
