@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@hpcc-js/wasm':
-        specifier: ^2.34.7
-        version: 2.34.7
+        specifier: ^2.34.8
+        version: 2.34.8
       anser:
         specifier: ^2.3.5
         version: 2.3.5
@@ -49,8 +49,8 @@ importers:
         specifier: ^26.1.1
         version: 26.1.1
       '@types/vscode':
-        specifier: ^1.120.0
-        version: 1.120.0
+        specifier: ^1.125.0
+        version: 1.125.0
       '@vscode/test-electron':
         specifier: ^3.0.0
         version: 3.0.0
@@ -352,8 +352,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@hpcc-js/wasm@2.34.7':
-    resolution: {integrity: sha512-P4O1u0V1bZkSIlzs6TjQotqZDW5oLqF4zKcEz1CWRZkIbJNdw/eCrpncRC52Zu0qGCnctkCkdUQjULROtU1Sbg==}
+  '@hpcc-js/wasm@2.34.8':
+    resolution: {integrity: sha512-wRJs2DVPZ3qj4TV+g3xD8JkY0WfAQwpSSEVWw8xlpM9wh+PZwh00mDcrbXECBNdBcXO86+QRi89uYeiaUj78/g==}
     hasBin: true
 
   '@napi-rs/wasm-runtime@0.2.12':
@@ -547,8 +547,8 @@ packages:
   '@types/sarif@2.1.7':
     resolution: {integrity: sha512-kRz0VEkJqWLf1LLVN4pT1cg1Z9wAuvI6L97V3m2f5B76Tg8d413ddvLBPTEHAZJlnn4XSvu0FkZtViCQGVyrXQ==}
 
-  '@types/vscode@1.120.0':
-    resolution: {integrity: sha512-feaT4Rst+FkTch5zz/ZbNCxoIvo55YU80Be2kiL7OJcod4+CUYf2lUBPdIJzozNnSEMq1VRTGrWEcCGFB3fBmA==}
+  '@types/vscode@1.125.0':
+    resolution: {integrity: sha512-0icm/ZQAaism87P0ekHqi4/Ju9du+Tm0RUW+y7vqRsxY2cY0FNRX1nAnaW7nT6npPt2tfHiheZ55Zm9UhqonFA==}
 
   '@typespec/ts-http-runtime@0.3.6':
     resolution: {integrity: sha512-jIXhD0eWQ1JA6ln/5Dltyx22UxWNrw0hZmhy2rlv6m6KgF7kplHx3g0fzi09lNmTJQRR91OlemYp3xFnvDK9og==}
@@ -2094,7 +2094,7 @@ snapshots:
   '@esbuild/win32-x64@0.28.1':
     optional: true
 
-  '@hpcc-js/wasm@2.34.7':
+  '@hpcc-js/wasm@2.34.8':
     dependencies:
       yargs: 18.0.0
 
@@ -2302,7 +2302,7 @@ snapshots:
 
   '@types/sarif@2.1.7': {}
 
-  '@types/vscode@1.120.0': {}
+  '@types/vscode@1.125.0': {}
 
   '@typespec/ts-http-runtime@0.3.6':
     dependencies:
@@ -2629,7 +2629,7 @@ snapshots:
 
   d3-graphviz@5.6.0(d3-selection@3.0.0):
     dependencies:
-      '@hpcc-js/wasm': 2.34.7
+      '@hpcc-js/wasm': 2.34.8
       d3-dispatch: 3.0.1
       d3-format: 3.1.2
       d3-interpolate: 3.0.1
