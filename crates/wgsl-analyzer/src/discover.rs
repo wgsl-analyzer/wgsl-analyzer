@@ -1,7 +1,7 @@
 //! Infrastructure for lazy project discovery and loading. Currently only support wesl.toml discovery.
 use std::str::FromStr as _;
 
-use anyhow::bail;
+use anyhow::{Context as _, bail};
 use base_db::input::{PackageName, PackageOrigin};
 use crossbeam_channel::Sender;
 use edition::Edition;
@@ -79,7 +79,11 @@ impl LoadPackageTask {
     fn try_run(&self) -> anyhow::Result<()> {
         let project = match &self.manifest {
             ProjectManifest::WeslToml(manifest_path) => {
-                let wesl_toml = WeslToml::from_slice(&std::fs::read(manifest_path)?)?;
+                let bytes = std::fs::read(manifest_path)
+                    .with_context(|| format!("failed to read manifest file '{manifest_path}'"))?;
+                let wesl_toml = WeslToml::from_slice(&bytes).with_context(|| {
+                    format!("unable to parse contents of manifest '{manifest_path}'")
+                })?;
                 let root = manifest_path.parent().join(&wesl_toml.root);
 
                 let dependencies = wesl_toml
@@ -128,17 +132,20 @@ impl LoadPackageTask {
                     }
                 }
 
+                let metadata = std::fs::metadata(&root)
+                    .with_context(|| format!("failed to get metadata of root file '{root}'"))?;
+                let edition = Edition::from_str(&wesl_toml.edition).with_context(|| format!("manifest '{manifest_path}' specifies an invalid value for `edition`, found '{}'", wesl_toml.edition))?;
                 WeslPackage {
                     manifest: manifest_path.clone(),
                     display_name: manifest_path.parent().file_name().map(str::to_owned),
-                    root: if std::fs::metadata(&root)?.is_file() {
+                    root: if metadata.is_file() {
                         WeslPackageRoot::File(root)
                     } else {
                         WeslPackageRoot::Folder(root)
                     },
                     origin: self.origin,
                     dependencies,
-                    edition: Edition::from_str(&wesl_toml.edition)?,
+                    edition,
                 }
             },
             ProjectManifest::ProjectJson(manifest_path) => bail!("project json not supported"),
