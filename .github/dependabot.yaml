@@ -57,11 +57,32 @@ updates:
       - S-Ready-to-Review
     cooldown:
       default-days: 7
+    ignore:
+      - dependency-name: "@types/vscode"
+        update-types: version-update:semver-minor
     groups:
       minor-patch:
         update-types:
           - minor
           - patch
+
+  - package-ecosystem: npm
+    directory: /editors/code
+    schedule:
+      interval: daily
+    open-pull-requests-limit: 1
+    commit-message:
+      prefix: internal
+    labels:
+      - A-Editor
+      - C-Dependencies
+      - D-Trivial
+      - S-Ready-to-Review
+    cooldown:
+      default-days: 90
+    allow:
+      - dependency-name: "@types/vscode"
+        update-types: version-update:semver-minor
 
   - package-ecosystem: docker
     directory: /.github
