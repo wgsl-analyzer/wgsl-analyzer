@@ -381,7 +381,7 @@ pub fn diagnostics(
                         frange.range,
                     )
                 },
-                AnyDiagnostic::DerefNotPointer { expression, actual } => {
+                AnyDiagnostic::DerefNotAPointer { expression, actual } => {
                     let source = expression.value.to_node(&root);
                     let r#type = ty::pretty::pretty_type(database, actual);
                     let frange = original_file_range(database, expression.file_id, source.syntax());
@@ -484,13 +484,11 @@ pub fn diagnostics(
                     let symbol = operation.symbol();
                     let message = if sequence_permitted {
                         format!(
-                            "{symbol} sequences may only have unary operands.
-More complex operands must be this with parenthesized `()`",
+                            "{symbol} sequences may only have unary operands. More complex operands must be this with parenthesized `()`",
                         )
                     } else {
                         format!(
-                            "{symbol} expressions may only have unary operands.
-More complex operands must be this with parenthesized `()`"
+                            "{symbol} expressions may only have unary operands. More complex operands must be this with parenthesized `()`"
                         )
                     };
                     Diagnostic::new(DiagnosticCode("19"), message, frange.range)
@@ -577,6 +575,26 @@ More complex operands must be this with parenthesized `()`"
                         frange.range,
                     )
                 },
+                AnyDiagnostic::StoreTypeMustBeStorable { expression, actual } => {
+                    let source = expression.value.to_node(&root);
+                    let r#type = ty::pretty::pretty_type(database, actual);
+                    let frange = original_file_range(database, expression.file_id, source.syntax());
+                    Diagnostic::new(
+                        DiagnosticCode("29"),
+                        format!("store type must be storable, found {type}"),
+                        frange.range,
+                    )
+                },
+                AnyDiagnostic::UnexpectedReturnValue { expression, actual } => {
+                    let source = expression.value.to_node(&root);
+                    let r#type = ty::pretty::pretty_type(database, actual);
+                    let frange = original_file_range(database, expression.file_id, source.syntax());
+                    Diagnostic::new(
+                        DiagnosticCode("30"),
+                        format!("unexpected return value of type `{type}` in function with no return type"),
+                        frange.range,
+                    )
+                },
             }
         })
         .collect()
@@ -644,6 +662,84 @@ mod tests {
         }
 
         expect.assert_eq(&actual);
+    }
+
+    #[test]
+    fn store_type_must_be_storable() {
+        check_diagnostics(
+            "fn foo() { var x = 1; var y = &x; }",
+            expect![[r#"
+                30..32 Error 29: store type must be storable, found ptr<i32>
+            "#]],
+        );
+    }
+
+    #[test]
+    fn unexpected_return_value() {
+        check_diagnostics(
+            "fn foo() { return 0; }",
+            expect![[r#"
+                18..19 Error 30: unexpected return value of type `integer` in function with no return type
+            "#]],
+        );
+    }
+
+    #[test]
+    fn no_builtin_overload() {
+        check_diagnostics(
+            "fn foo() { var x = 1f + mat2x2f(); }",
+            expect![[r#"
+                11..34 Error 8: no overload of `+` found for given arguments.Found (f32, mat2x2<f32>), expected one of:
+                fn op_binary_number(vecN<U>, vecN<U>) -> vecN<U>
+                fn op_binary_number(vecN<U>, U) -> vecN<U>
+                fn op_binary_number(T, vecM<T>) -> vecM<T>
+                fn op_binary_number(matNxM<f32>, matNxM<f32>) -> matNxM<f32>
+                fn op_binary_number(T, T) -> T
+            "#]],
+        );
+    }
+
+    #[test]
+    fn deref_not_a_pointer() {
+        check_diagnostics(
+            "fn foo() { var x = *1f; }",
+            expect![[r#"
+                20..22 Error 10: cannot dereference expression of type f32
+            "#]],
+        );
+    }
+
+    #[test]
+    fn no_constructor() {
+        check_diagnostics(
+            "fn foo() { var x = vec2f(1, 2, 3); }",
+            expect![[r#"
+                19..33 Error 18: no overload of constructor `vec2<f32>` found for given arguments. Found (integer, integer, integer), expected one of:
+                fn op_vec2_constructor(vec2<T>) -> vec2<T>
+                fn op_vec2_constructor(T) -> vec2<T>
+                fn op_vec2_constructor(T, T) -> vec2<T>
+            "#]],
+        );
+    }
+
+    #[test]
+    fn precedence_sequence_allowed() {
+        check_diagnostics(
+            "fn foo() { let x = true == true & true; }",
+            expect![[r#"
+                19..31 Error 19: & sequences may only have unary operands. More complex operands must be this with parenthesized `()`
+            "#]],
+        );
+    }
+
+    #[test]
+    fn precedence_sequence_disallowed() {
+        check_diagnostics(
+            "fn foo() { let x = true == true == true; }",
+            expect![[r#"
+                19..31 Error 19: == expressions may only have unary operands. More complex operands must be this with parenthesized `()`
+            "#]],
+        );
     }
 
     #[test]
@@ -770,6 +866,169 @@ fn foo() { let _ = 1; }
                 3..4 Error 16: invalid syntax, expected: <identifier>
                 25..26 Error 16: invalid syntax, expected: <identifier>
             "#]],
+        );
+    }
+
+    #[test]
+    fn invalid_translate_attribute_function_return_type() {
+        check_diagnostics(
+            "
+fn foo() ->
+@if(true) bool
+{ _ = 1; }
+",
+            expect![[r#"
+                12..21 Error 16: translate-time attribute `@if` is not allowed on a function return type
+            "#]],
+        );
+    }
+
+    #[test]
+    fn invalid_translate_attribute_body_function_declaration() {
+        check_diagnostics(
+            "
+fn foo()
+@if(true) { _ = 1; }
+",
+            expect![[r#"
+                9..18 Error 16: translate-time attribute `@if` is not allowed on a function body
+            "#]],
+        );
+    }
+
+    #[test]
+    fn invalid_translate_attribute_body_switch_statement() {
+        check_diagnostics(
+            "
+fn foo()
+{
+    switch true
+    @if(true)
+    {
+        case true: { return; }
+        default: { return; }
+    }
+}
+",
+            expect![[r#"
+                31..40 Error 16: translate-time attribute `@if` is not allowed on a switch body
+            "#]],
+        );
+    }
+
+    #[test]
+    fn invalid_translate_attribute_body_switch_clause() {
+        check_diagnostics(
+            "
+fn foo() {
+    switch true
+    {
+        case true: @if(true) { return; }
+        default: { return; }
+    }
+}
+",
+            expect![[r#"
+                52..61 Error 16: translate-time attribute `@if` is not allowed on a switch default clause body
+            "#]],
+        );
+    }
+
+    #[test]
+    fn invalid_translate_attribute_body_loop_statement() {
+        check_diagnostics(
+            "
+fn foo() {
+    loop
+    @if(true)
+    { continuing {} }
+}
+",
+            expect![[r#"
+                24..33 Error 16: translate-time attribute `@if` is not allowed on a loop body
+                52..53 Error 16: attributes must precede a statement here
+            "#]],
+        );
+    }
+
+    #[test]
+    fn invalid_translate_attribute_body_for_statement() {
+        check_diagnostics(
+            "
+fn foo() {
+    for(; ;)
+    @if(true)
+    { return; }
+}
+",
+            expect![[r#"
+                28..37 Error 16: translate-time attribute `@if` is not allowed on a for body
+            "#]],
+        );
+    }
+
+    #[test]
+    fn invalid_translate_attribute_body_while_statement() {
+        check_diagnostics(
+            "
+fn foo() {
+    while true
+    @if(true)
+    { return; }
+}
+",
+            expect![[r#"
+                30..39 Error 16: translate-time attribute `@if` is not allowed on a while body
+            "#]],
+        );
+    }
+
+    #[test]
+    fn invalid_translate_attribute_body_if_else_statement() {
+        check_diagnostics(
+            "
+fn foo() {
+    if true
+    @if(true)
+    { return; }
+    else
+    @if(true)
+    { return; }
+}
+",
+            expect![[r#"
+                27..36 Error 16: translate-time attribute `@if` is not allowed on an if/else body
+                66..75 Error 16: translate-time attribute `@if` is not allowed on an if/else body
+            "#]],
+        );
+    }
+
+    #[test]
+    fn invalid_translate_attribute_body_continuing_statement() {
+        check_diagnostics(
+            "
+fn foo() {
+    loop {
+        continuing
+        @if(true)
+        {}
+    }
+}
+",
+            expect![[r#"
+                49..58 Error 16: translate-time attribute `@if` is not allowed on a continuing body
+                68..69 Error 16: attributes must precede a statement here
+            "#]],
+        );
+    }
+
+    #[test]
+    fn binding_array_validates() {
+        check_diagnostics(
+            "
+    @group(0) @binding(0) var textures: binding_array<texture_2d<f32>>;
+    ",
+            expect![""],
         );
     }
 }

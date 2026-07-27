@@ -6,6 +6,7 @@ version = 2
 ignore = [
 	# TODO: # - Delete this once tikv-jemalloc-ctl has been bumped.
 	"RUSTSEC-2024-0436",
+	"RUSTSEC-2026-0204",
 ]
 
 # Ignore warnings about unused license exceptions

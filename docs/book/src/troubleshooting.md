@@ -36,4 +36,4 @@ $ wgsl-analyzer analysis-stats .
 
 It is especially useful when the `repo` does not use external crates or the standard library.
 
-If you want to go as far as to modify the source code to debug the problem, be sure to take a look at the [dev docs](https://github.com/wgsl-analyzer/wgsl-analyzer/tree/master/docs/dev)!
+If you want to go as far as to modify the source code to debug the problem, be sure to take a look at the [dev docs](https://github.com/wgsl-analyzer/wgsl-analyzer/tree/main/docs/dev)!

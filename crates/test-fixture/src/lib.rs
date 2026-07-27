@@ -146,30 +146,30 @@ impl ChangeFixture {
             if !meta.dependencies.is_empty() {
                 assert!(
                     meta.package.is_some(),
-                    "cannot specify dependencies without naming the crate"
+                    "cannot specify dependencies without naming the package"
                 );
             }
 
-            if let Some((krate, origin)) = meta.package {
-                let crate_name = PackageName::normalize_dashes(&krate);
+            if let Some((package, origin)) = meta.package {
+                let package_name = PackageName::normalize_dashes(&package);
                 let package = PackageData {
                     root_file_id: file_id,
                     edition: meta.edition,
-                    display_name: Some(krate.clone()),
+                    display_name: Some(package.clone()),
                     dependencies: Vec::new(),
                     origin,
                 };
                 roots.push((FileSet::default(), origin));
 
                 let package_id = PackageId::from_raw(u32::try_from(packages.len()).unwrap());
-                let previous = packages.insert(crate_name.clone(), (package_id, package));
+                let previous = packages.insert(package_name.clone(), (package_id, package));
                 assert!(
                     previous.is_none(),
-                    "multiple crates with same name: {crate_name}"
+                    "multiple packages with same name: {package_name}"
                 );
                 for dep in meta.dependencies {
                     let dep = PackageName::normalize_dashes(&dep);
-                    package_dependencies.push((crate_name.clone(), dep));
+                    package_dependencies.push((package_name.clone(), dep));
                 }
             }
 
@@ -193,7 +193,7 @@ impl ChangeFixture {
                 );
                 assert!(
                     previous.is_none(),
-                    "multiple crates with same name: wa_test_fixture"
+                    "multiple packages with same name: wa_test_fixture"
                 );
             }
             roots.last_mut().unwrap().0.insert(file_id, path);
@@ -272,7 +272,7 @@ const fn parse_package(
     explicit_non_workspace_member: bool,
 ) -> (String, PackageOrigin) {
     // syntax:
-    //   "my_awesome_crate"
+    //   "my_awesome_package"
 
     let origin = if explicit_non_workspace_member {
         PackageOrigin::Library

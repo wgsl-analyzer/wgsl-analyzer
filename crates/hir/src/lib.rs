@@ -18,6 +18,7 @@ use hir_def::{
     expression_store::{ExpressionStoreSource, path::Path},
     item_scope::ItemScope,
     item_tree::{self, ItemTree, ModuleItemId, Name},
+    mod_path::PathKind,
     resolver::{ResolveKind, Resolver},
     signature::{FieldId, ParameterId},
 };
@@ -990,3 +991,5 @@ fn check_type_errors(
         });
     }
 }
+
+pub use hir_ty::setup_tracing;

@@ -7,10 +7,10 @@ For other editors, you will need to [install the binary](./wgsl-analyzer_binary.
 
 ## Crates
 
-There is a package named `wa_ap_wgsl-analyzer` available on [crates.io] for people who want to use `wgsl-analyzer` programmatically.
+There is a package named `wa-ap-wgsl-analyzer` available on [crates.io] for people who want to use `wgsl-analyzer` programmatically.
 
 For more details, see [the publish workflow].
 
 [LSP]: <https://microsoft.github.io/language-server-protocol>
-[crates.io]: <https://crates.io/crates/wa_ap_wgsl-analyzer>
+[crates.io]: <https://crates.io/crates/wa-ap-wgsl-analyzer>
 [the publish workflow]: <https://github.com/wgsl-analyzer/wgsl-analyzer/blob/main/.github/workflows/autopublish.yaml>

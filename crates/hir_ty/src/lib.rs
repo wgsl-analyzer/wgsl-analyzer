@@ -15,3 +15,18 @@ pub mod lower;
 mod test_db;
 #[cfg(test)]
 mod tests;
+
+pub fn setup_tracing() -> tracing::subscriber::DefaultGuard {
+    use std::env;
+    use std::sync::LazyLock;
+    use tracing_subscriber::{Registry, layer::SubscriberExt as _};
+    use tracing_tree::HierarchicalLayer;
+
+    let layer = HierarchicalLayer::default()
+        .with_indent_lines(true)
+        .with_ansi(false)
+        .with_indent_amount(2)
+        .with_writer(std::io::stderr);
+    let subscriber = Registry::default().with(layer);
+    tracing::subscriber::set_default(subscriber)
+}

@@ -457,7 +457,7 @@ impl GlobalState {
         response: lsp_server::Response,
     ) {
         if let Some((method, start)) = self.request_queue.incoming.complete(&response.id) {
-            if let Some(error) = &response.error
+            if let Err(error) = &response.response_result
                 && error.message.starts_with("server panicked")
             {
                 self.poke_wgsl_analyzer_developer(format!("{}, check the log", error.message));

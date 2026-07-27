@@ -14,6 +14,11 @@ updates:
       - S-Ready-to-Review
     cooldown:
       default-days: 7
+    groups:
+      minor-patch:
+        update-types:
+          - minor
+          - patch
 
   - package-ecosystem: github-actions
     directory: /
@@ -29,6 +34,14 @@ updates:
       - S-Ready-to-Review
     cooldown:
       default-days: 7
+    groups:
+      codeql:
+        patterns:
+          - "github/codeql-action/*"
+      minor-patch:
+        update-types:
+          - minor
+          - patch
 
   - package-ecosystem: npm
     directory: /editors/code
@@ -44,6 +57,11 @@ updates:
       - S-Ready-to-Review
     cooldown:
       default-days: 7
+    groups:
+      minor-patch:
+        update-types:
+          - minor
+          - patch
 
   - package-ecosystem: docker
     directory: /.github
@@ -53,9 +71,14 @@ updates:
     commit-message:
       prefix: internal
     labels:
-      - A-Editor
+      - A-Build-System
       - C-Dependencies
       - D-Trivial
       - S-Ready-to-Review
     cooldown:
       default-days: 7
+    groups:
+      minor-patch:
+        update-types:
+          - minor
+          - patch

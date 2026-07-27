@@ -74,8 +74,7 @@ impl GlobalState {
                 },
                 |this, response| {
                     let Response {
-                        error: None,
-                        result: Some(result),
+                        response_result: Ok(result),
                         ..
                     } = response
                     else {

@@ -240,8 +240,7 @@ impl<'global_state> RequestDispatcher<'global_state> {
                     let error = on_cancelled();
                     Task::Response(Response {
                         id: request.id,
-                        result: None,
-                        error: Some(error),
+                        response_result: Err(error),
                     })
                 },
             }

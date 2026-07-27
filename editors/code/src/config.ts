@@ -10,29 +10,21 @@ import { expectNotUndefined, log, unwrapUndefinable } from "./utilities";
 
 export type RunnableEnvCfgItem = {
 	mask?: string;
-	env: Record<string, string>;
+	env: { [key: string]: { toString(): string } | null };
 	platform?: string | string[];
 };
-export type RunnableEnvCfg = Record<string, string> | RunnableEnvCfgItem[];
+
+export type ConfigurationTree = { [key: string]: ConfigurationValue };
+export type ConfigurationValue =
+	| undefined
+	| null
+	| boolean
+	| number
+	| string
+	| ConfigurationValue[]
+	| ConfigurationTree;
+
 type ShowStatusBar = "always" | "never" | { documentSelector: vscode.DocumentSelector };
-
-export interface TraceConfig {
-	extension: boolean;
-	server: boolean;
-}
-
-export interface InlayHintsConfig {
-	enabled: boolean;
-	typeHints: boolean;
-	parameterHints: boolean;
-	typeVerbosity: "full" | "short" | "compact";
-}
-
-export interface DiagnosticsConfig {
-	typeErrors: boolean;
-	nagaParsingErrors: boolean;
-	nagaValidationErrors: boolean;
-}
 
 export class Config {
 	readonly extensionId = "wgsl-analyzer.wgsl-analyzer";
@@ -329,18 +321,6 @@ export class Config {
 
 	async setAskBeforeUpdateTest(value: boolean) {
 		await this.cfg.update("runnables.askBeforeUpdateTest", value, true);
-	}
-
-	get diagnostics(): DiagnosticsConfig | undefined {
-		return this.get<DiagnosticsConfig>("diagnostics");
-	}
-
-	get trace(): TraceConfig | undefined {
-		return this.get("trace");
-	}
-
-	get inlayHints(): InlayHintsConfig | undefined {
-		return this.get("inlayHints");
 	}
 }
 

@@ -118,7 +118,11 @@ pub enum AnyDiagnostic {
         expression: InFile<AstPointer<ast::Expression>>,
         actual: Type,
     },
-    DerefNotPointer {
+    StoreTypeMustBeStorable {
+        expression: InFile<AstPointer<ast::Expression>>,
+        actual: Type,
+    },
+    DerefNotAPointer {
         expression: InFile<AstPointer<ast::Expression>>,
         actual: Type,
     },
@@ -177,6 +181,10 @@ pub enum AnyDiagnostic {
         actual: LoweredKind,
         path: Path,
     },
+    UnexpectedReturnValue {
+        expression: InFile<AstPointer<ast::Expression>>,
+        actual: Type,
+    },
 }
 
 impl AnyDiagnostic {
@@ -191,13 +199,15 @@ impl AnyDiagnostic {
             | Self::InvalidConstructionType { expression, .. }
             | Self::FunctionCallArgCountMismatch { expression, .. }
             | Self::NoBuiltinOverload { expression, .. }
+            | Self::StoreTypeMustBeStorable { expression, .. }
             | Self::AddressOfNotReference { expression, .. }
-            | Self::DerefNotPointer { expression, .. }
+            | Self::DerefNotAPointer { expression, .. }
             | Self::NoConstructor { expression, .. }
             | Self::PrecedenceParensRequired { expression, .. }
             | Self::UnexpectedTemplateArgument { expression, .. }
             | Self::WgslError { expression, .. }
             | Self::InvalidIdentExpression { expression, .. }
+            | Self::UnexpectedReturnValue { expression, .. }
             | Self::ExpectedLoweredKind { expression, .. } => expression.file_id,
             Self::MissingAddressSpace { variable } | Self::InvalidAddressSpace { variable, .. } => {
                 variable.file_id
@@ -343,7 +353,7 @@ pub(crate) fn any_diag_from_infer_diagnostic(
             let pointer = source_map.expression_to_source(*expression).ok()?.clone();
             let source = InFile::new(file_id, pointer);
 
-            AnyDiagnostic::DerefNotPointer {
+            AnyDiagnostic::DerefNotAPointer {
                 expression: source,
                 actual: *actual,
             }
@@ -405,6 +415,22 @@ pub(crate) fn any_diag_from_infer_diagnostic(
                 expression: source,
                 path: path.clone(),
                 expected: *expected,
+                actual: *actual,
+            }
+        },
+        InferenceDiagnosticKind::StoreTypeMustBeStorable { actual, expression } => {
+            let pointer = source_map.expression_to_source(*expression).ok()?.clone();
+            let source = InFile::new(file_id, pointer);
+            AnyDiagnostic::StoreTypeMustBeStorable {
+                expression: source,
+                actual: *actual,
+            }
+        },
+        InferenceDiagnosticKind::UnexpectedReturnValue { expression, actual } => {
+            let pointer = source_map.expression_to_source(*expression).ok()?.clone();
+            let source = InFile::new(file_id, pointer);
+            AnyDiagnostic::UnexpectedReturnValue {
+                expression: source,
                 actual: *actual,
             }
         },

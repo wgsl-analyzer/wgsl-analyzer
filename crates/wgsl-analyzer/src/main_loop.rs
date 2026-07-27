@@ -167,7 +167,7 @@ impl fmt::Debug for Event {
                 return formatter
                     .debug_struct("Response")
                     .field("id", &response.id)
-                    .field("error", &response.error)
+                    .field("response_result", &response.response_result)
                     .finish();
             },
             Self::Lsp(_)
@@ -771,7 +771,7 @@ impl GlobalState {
             vfs::loader::Message::Progress {
                 n_total,
                 n_done,
-                dir: directory, // spellchecker:disable-line
+                directory,
                 config_version,
             } => {
                 let _p = span!(Level::INFO, "GlobalState::handle_vfs_message/progress").entered();

@@ -126,6 +126,12 @@ impl SourceDatabase for RootDatabase {
     }
 }
 
+impl Default for RootDatabase {
+    fn default() -> Self {
+        Self::new(None)
+    }
+}
+
 impl RootDatabase {
     #[must_use]
     pub fn new(lru_capacity: Option<u16>) -> Self {
