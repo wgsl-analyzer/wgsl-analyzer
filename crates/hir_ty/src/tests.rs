@@ -18,7 +18,7 @@ use hir_def::{
     },
     expression::ExpressionId,
     expression_store::{ExpressionSourceMap, ExpressionStoreSource, SyntheticSyntax},
-    item_tree::ModuleItemId,
+    item_tree::{ModuleItemId, Name},
     type_specifier::{self, TypeSpecifierId},
 };
 use salsa::Durability;
@@ -29,7 +29,8 @@ use triomphe::Arc;
 use crate::{
     database::HirDatabase as _,
     diagnostics::{self, InferenceDiagnostic, InferenceDiagnosticKind},
-    infer::InferenceResult,
+    infer::{InferenceResult, TypeExpectation},
+    lower::{TypeContainer, TypeLoweringError},
     test_db::TestDatabase,
     ty::{
         Type,
@@ -128,14 +129,14 @@ impl<'db> InferPrinter<'db> {
         let (_, body_source_map) = self.database.body_with_source_map(definition);
         let inference_result = InferenceResult::of(self.database, definition);
 
-        let mut types: Vec<(SyntaxNode, &Type)> = Vec::new();
+        let mut types: Vec<(SyntaxNode, Type)> = Vec::new();
 
         for (binding, r#type) in inference_result.type_of_binding.iter() {
             let node = match body_source_map.binding_to_source(binding) {
                 Ok(sp) => sp.to_node(&self.root).syntax().clone(),
                 Err(SyntheticSyntax) => continue,
             };
-            types.push((node.clone(), r#type));
+            types.push((node.clone(), *r#type));
         }
 
         for (expr, r#type) in inference_result.type_of_expression.iter() {
@@ -143,7 +144,7 @@ impl<'db> InferPrinter<'db> {
                 Ok(sp) => sp.to_node(&self.root).syntax().clone(),
                 Err(SyntheticSyntax) => continue,
             };
-            types.push((node.clone(), r#type));
+            types.push((node.clone(), *r#type));
         }
 
         // sort ranges for consistency
@@ -153,7 +154,7 @@ impl<'db> InferPrinter<'db> {
         });
 
         for (node, r#type) in types {
-            self.print_type(&node, *r#type, buffer);
+            self.print_type(&node, r#type, buffer);
         }
 
         for diagnostic in inference_result.diagnostics() {
@@ -185,178 +186,280 @@ impl<'db> InferPrinter<'db> {
         source_map: &ExpressionSourceMap,
         buffer: &mut String,
     ) {
+        use InferenceDiagnosticKind as IDK;
         match &diagnostic.kind {
-            InferenceDiagnosticKind::TypeMismatch {
+            IDK::TypeMismatch {
                 expression,
                 expected,
                 actual,
             } => {
-                let Some((range, text)) = self.get_expression_range_text(source_map, *expression)
-                else {
-                    return;
-                };
-                writeln!(
-                    buffer,
-                    "{range:?} '{}': expected {} but got {}",
-                    ellipsize(text, 15),
-                    pretty_type_expectation_with_verbosity(
-                        self.database,
-                        expected.clone(),
-                        TypeVerbosity::Full
-                    ),
-                    pretty_type_with_verbosity(self.database, *actual, TypeVerbosity::Full)
-                )
-                .unwrap();
+                self.print_type_mismatch(source_map, buffer, *expression, *expected, *actual);
             },
-            InferenceDiagnosticKind::AssignmentNotAReference { .. }
-            | InferenceDiagnosticKind::UnresolvedName { .. }
-            | InferenceDiagnosticKind::NoBuiltinOverload { .. }
-            | InferenceDiagnosticKind::AddressOfNotReference { .. }
-            | InferenceDiagnosticKind::AddressOfNotReference { .. }
-            | InferenceDiagnosticKind::DerefNotAPointer { .. }
-            | InferenceDiagnosticKind::CyclicType { .. }
-            | InferenceDiagnosticKind::UnexpectedTemplateArgument { .. }
-            | InferenceDiagnosticKind::WgslError { .. }
-            | InferenceDiagnosticKind::ExpectedLoweredKind { .. } => {
-                writeln!(buffer, "{:?} in {:?}", diagnostic.kind, diagnostic.source).unwrap();
+            IDK::AssignmentNotAReference { .. }
+            | IDK::UnresolvedName { .. }
+            | IDK::NoBuiltinOverload { .. }
+            | IDK::AddressOfNotReference { .. }
+            | IDK::AddressOfNotReference { .. }
+            | IDK::DerefNotAPointer { .. }
+            | IDK::CyclicType { .. }
+            | IDK::UnexpectedTemplateArgument { .. }
+            | IDK::WgslError { .. }
+            | IDK::ExpectedLoweredKind { .. } => {
+                self.print_todo_bad_diagnostic(diagnostic, buffer);
             },
-            InferenceDiagnosticKind::InvalidType { error } => {
-                let Some((range, text)) = (match error.container {
-                    crate::lower::TypeContainer::Expression(expression) => {
-                        self.get_expression_range_text(source_map, expression)
-                    },
-                    crate::lower::TypeContainer::TypeSpecifier(type_specifier) => {
-                        self.get_type_range_text(source_map, type_specifier)
-                    },
-                }) else {
-                    return;
-                };
-                writeln!(
-                    buffer,
-                    "{range:?} '{}': {}",
-                    ellipsize(text, 15),
-                    error.kind,
-                )
-                .unwrap();
+            IDK::InvalidType { error } => {
+                self.print_invalid_type(source_map, buffer, error);
             },
-            InferenceDiagnosticKind::NoConstructor {
+            IDK::NoConstructor {
                 builtins,
                 expression,
                 parameters,
                 r#type,
             } => {
-                let Some((range, text)) = self.get_expression_range_text(source_map, *expression)
-                else {
-                    return;
-                };
-                writeln!(
-                    buffer,
-                    "{range:?} '{}': no constructor for builtin `{}` with parameters `{}`",
-                    ellipsize(text, 15),
-                    builtins.lookup(self.database).name(),
-                    join_display(
-                        parameters
-                            .iter()
-                            .map(|parameter| pretty_type_with_verbosity(
-                                self.database,
-                                *parameter,
-                                TypeVerbosity::Full
-                            ))
-                    ),
-                )
-                .unwrap();
+                self.print_no_constructor(source_map, buffer, *builtins, *expression, parameters);
             },
-            InferenceDiagnosticKind::NoSuchField {
+            IDK::NoSuchField {
                 expression,
                 name,
                 r#type,
             } => {
-                let node = match source_map.expression_to_source(*expression) {
-                    Ok(sp) => sp.to_node(&self.root).syntax().clone(),
-                    Err(SyntheticSyntax) => return,
-                };
-                let (range, text) = (
-                    node.parent().unwrap().text_range(),
-                    node.parent().unwrap().text().to_string().replace('\n', " "),
-                );
-                writeln!(
-                    buffer,
-                    "{range:?} '{}': no such field `{}` on type `{}`",
-                    ellipsize(text, 15),
-                    name.as_str(),
-                    pretty_type_with_verbosity(self.database, *r#type, TypeVerbosity::Full),
-                )
-                .unwrap();
+                self.print_no_such_field(source_map, buffer, *expression, name, *r#type);
             },
-            InferenceDiagnosticKind::StoreTypeMustBeStorable { actual, expression } => {
-                let Some((range, text)) = self.get_expression_range_text(source_map, *expression)
-                else {
-                    return;
-                };
-                writeln!(
-                    buffer,
-                    "{range:?} '{}': expected storable type but got `{}`",
-                    ellipsize(text, 15),
-                    pretty_type_with_verbosity(self.database, *actual, TypeVerbosity::Full),
-                )
-                .unwrap();
+            IDK::StoreTypeMustBeStorable { actual, expression } => {
+                self.print_store_type_must_be_storable(source_map, buffer, *actual, *expression);
             },
-            InferenceDiagnosticKind::ArrayAccessInvalidType { expression, r#type } => {
-                let Some((range, text)) = self.get_expression_range_text(source_map, *expression)
-                else {
-                    return;
-                };
-                writeln!(
-                    buffer,
-                    "{range:?} '{}': cannot index into type {}",
-                    ellipsize(text, 15),
-                    pretty_type_with_verbosity(self.database, *r#type, TypeVerbosity::Full),
-                )
-                .unwrap();
+            IDK::ArrayAccessInvalidType { expression, r#type } => {
+                self.print_array_access_invalid(source_map, buffer, *expression, *r#type);
             },
-            InferenceDiagnosticKind::UnexpectedReturnValue { actual, expression } => {
-                let Some((range, text)) = self.get_expression_range_text(source_map, *expression)
-                else {
-                    return;
-                };
-                writeln!(
-                    buffer,
-                    "{range:?} '{}': unexpected return value of type `{}` in function with no return type",
-                    ellipsize(text, 15),
-                    pretty_type_with_verbosity(self.database, *actual, TypeVerbosity::Full),
-                )
-                .unwrap();
+            IDK::UnexpectedReturnValue { actual, expression } => {
+                self.print_unexpected_return_value(source_map, buffer, *actual, *expression);
             },
-            InferenceDiagnosticKind::NotConstructible { expression, r#type } => {
-                let Some((range, text)) = self.get_expression_range_text(source_map, *expression)
-                else {
-                    return;
-                };
-                writeln!(
-                    buffer,
-                    "{range:?} '{}': type `{}` is not constructible",
-                    ellipsize(text, 15),
-                    pretty_type_with_verbosity(self.database, *r#type, TypeVerbosity::Full),
-                )
-                .unwrap();
+            IDK::NotConstructible { expression, r#type } => {
+                self.print_not_constructible(source_map, buffer, *expression, *r#type);
             },
-            InferenceDiagnosticKind::FunctionCallArgCountMismatch {
+            IDK::FunctionCallArgCountMismatch {
                 expression,
                 n_actual,
                 n_expected,
             } => {
-                let Some((range, text)) = self.get_expression_range_text(source_map, *expression)
-                else {
-                    return;
-                };
-                writeln!(
+                self.print_function_call_argument_count_mismatch(
+                    source_map,
                     buffer,
-                    "{range:?} '{}': expected `{n_expected}` arguments, but received `{n_actual}`",
-                    ellipsize(text, 15),
-                )
-                .unwrap();
+                    *expression,
+                    *n_actual,
+                    *n_expected,
+                );
             },
         }
+    }
+
+    fn print_type_mismatch(
+        &self,
+        source_map: &ExpressionSourceMap,
+        buffer: &mut String,
+        expression: ExpressionId,
+        expected: TypeExpectation,
+        actual: Type,
+    ) {
+        let Some((range, text)) = self.get_expression_range_text(source_map, expression) else {
+            return;
+        };
+        writeln!(
+            buffer,
+            "{range:?} '{}': expected {} but got {}",
+            ellipsize(text, 15),
+            pretty_type_expectation_with_verbosity(self.database, expected, TypeVerbosity::Full),
+            pretty_type_with_verbosity(self.database, actual, TypeVerbosity::Full)
+        )
+        .unwrap();
+    }
+
+    fn print_invalid_type(
+        &self,
+        source_map: &ExpressionSourceMap,
+        buffer: &mut String,
+        error: &TypeLoweringError,
+    ) {
+        let Some((range, text)) = (match error.container {
+            TypeContainer::Expression(expression) => {
+                self.get_expression_range_text(source_map, expression)
+            },
+            TypeContainer::TypeSpecifier(type_specifier) => {
+                self.get_type_range_text(source_map, type_specifier)
+            },
+        }) else {
+            return;
+        };
+        writeln!(
+            buffer,
+            "{range:?} '{}': {}",
+            ellipsize(text, 15),
+            error.kind,
+        )
+        .unwrap();
+    }
+
+    fn print_no_constructor(
+        &self,
+        source_map: &ExpressionSourceMap,
+        buffer: &mut String,
+        builtins: crate::builtins::BuiltinId,
+        expression: ExpressionId,
+        parameters: &[Type],
+    ) {
+        let Some((range, text)) = self.get_expression_range_text(source_map, expression) else {
+            return;
+        };
+        writeln!(
+            buffer,
+            "{range:?} '{}': no constructor for builtin `{}` with parameters `{}`",
+            ellipsize(text, 15),
+            builtins.lookup(self.database).name(),
+            join_display(
+                parameters
+                    .iter()
+                    .map(|parameter| pretty_type_with_verbosity(
+                        self.database,
+                        *parameter,
+                        TypeVerbosity::Full
+                    ))
+            ),
+        )
+        .unwrap();
+    }
+
+    fn print_todo_bad_diagnostic(
+        &self,
+        diagnostic: &InferenceDiagnostic,
+        buffer: &mut String,
+    ) {
+        writeln!(
+            buffer,
+            "[{:?}] {:?} in {:?}",
+            self.file_id, diagnostic.kind, diagnostic.source
+        )
+        .unwrap();
+    }
+
+    fn print_no_such_field(
+        &self,
+        source_map: &ExpressionSourceMap,
+        buffer: &mut String,
+        expression: ExpressionId,
+        name: &Name,
+        r#type: Type,
+    ) {
+        let node = match source_map.expression_to_source(expression) {
+            Ok(sp) => sp.to_node(&self.root).syntax().clone(),
+            Err(SyntheticSyntax) => return,
+        };
+        let (range, text) = (
+            node.parent().unwrap().text_range(),
+            node.parent().unwrap().text().to_string().replace('\n', " "),
+        );
+        writeln!(
+            buffer,
+            "{range:?} '{}': no such field `{}` on type `{}`",
+            ellipsize(text, 15),
+            name.as_str(),
+            pretty_type_with_verbosity(self.database, r#type, TypeVerbosity::Full),
+        )
+        .unwrap();
+    }
+
+    fn print_store_type_must_be_storable(
+        &self,
+        source_map: &ExpressionSourceMap,
+        buffer: &mut String,
+        actual: Type,
+        expression: ExpressionId,
+    ) {
+        let Some((range, text)) = self.get_expression_range_text(source_map, expression) else {
+            return;
+        };
+        writeln!(
+            buffer,
+            "{range:?} '{}': expected storable type but got `{}`",
+            ellipsize(text, 15),
+            pretty_type_with_verbosity(self.database, actual, TypeVerbosity::Full),
+        )
+        .unwrap();
+    }
+
+    fn print_array_access_invalid(
+        &self,
+        source_map: &ExpressionSourceMap,
+        buffer: &mut String,
+        expression: ExpressionId,
+        r#type: Type,
+    ) {
+        let Some((range, text)) = self.get_expression_range_text(source_map, expression) else {
+            return;
+        };
+        writeln!(
+            buffer,
+            "{range:?} '{}': cannot index into type {}",
+            ellipsize(text, 15),
+            pretty_type_with_verbosity(self.database, r#type, TypeVerbosity::Full),
+        )
+        .unwrap();
+    }
+
+    fn print_unexpected_return_value(
+        &self,
+        source_map: &ExpressionSourceMap,
+        buffer: &mut String,
+        actual: Type,
+        expression: ExpressionId,
+    ) {
+        let Some((range, text)) = self.get_expression_range_text(source_map, expression) else {
+            return;
+        };
+        writeln!(
+            buffer,
+            "{range:?} '{}': unexpected return value of type `{}` in function with no return type",
+            ellipsize(text, 15),
+            pretty_type_with_verbosity(self.database, actual, TypeVerbosity::Full),
+        )
+        .unwrap();
+    }
+
+    fn print_not_constructible(
+        &self,
+        source_map: &ExpressionSourceMap,
+        buffer: &mut String,
+        expression: ExpressionId,
+        r#type: Type,
+    ) {
+        let Some((range, text)) = self.get_expression_range_text(source_map, expression) else {
+            return;
+        };
+        writeln!(
+            buffer,
+            "{range:?} '{}': type `{}` is not constructible",
+            ellipsize(text, 15),
+            pretty_type_with_verbosity(self.database, r#type, TypeVerbosity::Full),
+        )
+        .unwrap();
+    }
+
+    fn print_function_call_argument_count_mismatch(
+        &self,
+        source_map: &ExpressionSourceMap,
+        buffer: &mut String,
+        expression: ExpressionId,
+        n_actual: usize,
+        n_expected: usize,
+    ) {
+        let Some((range, text)) = self.get_expression_range_text(source_map, expression) else {
+            return;
+        };
+        writeln!(
+            buffer,
+            "{range:?} '{}': expected `{n_expected}` arguments, but received `{n_actual}`",
+            ellipsize(text, 15),
+        )
+        .unwrap();
     }
 
     fn get_expression_range_text(

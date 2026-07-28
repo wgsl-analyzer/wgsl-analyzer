@@ -157,7 +157,7 @@ fn render_completion_list(mut completions: Vec<CompletionItem>) -> String {
     fn monospace_width(string: &str) -> usize {
         string.chars().count()
     }
-    completions.sort_by(|a, b| a.label.cmp(&b.label));
+    completions.sort_by(|first, other| first.label.cmp(&other.label));
     let label_width = completions
         .iter()
         .map(|it| {
@@ -205,14 +205,6 @@ pub(crate) fn check(
 ) {
     let actual = completion_list(wa_fixture);
     expect.assert_eq(&actual);
-}
-
-#[expect(clippy::needless_pass_by_value, reason = "Matches expect! macro")]
-pub(crate) fn check_with_base_items(
-    wa_fixture: &str,
-    expect: Expect,
-) {
-    check(&format!("{BASE_ITEMS_FIXTURE}{wa_fixture}"), expect);
 }
 
 #[expect(clippy::needless_pass_by_value, reason = "Matches expect! macro")]

@@ -3,9 +3,7 @@ use expect_test::{Expect, expect};
 
 use crate::{
     CompletionConfig,
-    tests::{
-        BASE_ITEMS_FIXTURE, TEST_CONFIG, check, check_with_base_items, completion_list_with_config,
-    },
+    tests::{BASE_ITEMS_FIXTURE, TEST_CONFIG, check, completion_list_with_config},
 };
 
 fn check_with_config(

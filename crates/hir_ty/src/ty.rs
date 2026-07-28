@@ -728,7 +728,7 @@ pub struct ArrayType {
 
 impl ArrayType {
     fn is_constructible(
-        self,
+        &self,
         database: &dyn HirDatabase,
     ) -> bool {
         self.size != ArraySize::Dynamic && self.inner.is_constructible(database)

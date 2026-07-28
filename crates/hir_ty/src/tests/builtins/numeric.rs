@@ -1,4 +1,5 @@
 // #![expect(non_snake_case, reason = "name based on WGSL builtins")]
+#![expect(clippy::too_many_lines, reason = "snapshot test data")]
 
 use expect_test::expect;
 use syntax::ExtensionsConfig;
@@ -879,9 +880,9 @@ fn foo() {
             283..308 'determ...1.0h))': [error]
             295..307 'mat3x2(1.0h)': mat3x2<f16>
             302..306 '1.0h': f16
-            WgslError { expression: Idx::<Expression>(11), message: "`determinant` expects a square matrix argument" } in Body
-            WgslError { expression: Idx::<Expression>(14), message: "`determinant` expects a square matrix argument" } in Body
-            WgslError { expression: Idx::<Expression>(17), message: "`determinant` expects a square matrix argument" } in Body
+            [EditionedFileId(Id(1c00))] WgslError { expression: Idx::<Expression>(11), message: "`determinant` expects a square matrix argument" } in Body
+            [EditionedFileId(Id(1c00))] WgslError { expression: Idx::<Expression>(14), message: "`determinant` expects a square matrix argument" } in Body
+            [EditionedFileId(Id(1c00))] WgslError { expression: Idx::<Expression>(17), message: "`determinant` expects a square matrix argument" } in Body
         "#]],
     );
 }

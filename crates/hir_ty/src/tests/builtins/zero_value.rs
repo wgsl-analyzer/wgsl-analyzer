@@ -151,13 +151,13 @@ fn foo() {
             394..399 'Foo()': type `Foo` is not constructible
             420..446 'ptr<fu...ead>()': type `ptr<function, u32, read>` is not constructible
             420..446 'ptr<fu...ead>()': type `ptr<function, u32, read>` is not constructible
-            ExpectedLoweredKind { expression: Idx::<Expression>(19), expected: Variable, actual: Enumerant, path: Path(ModPath("function")) } in Body
-            AssignmentNotAReference { left_side: Idx::<Expression>(19), actual: Type(2802) } in Body
-            ExpectedLoweredKind { expression: Idx::<Expression>(21), expected: Variable, actual: Type, path: Path(ModPath("u32")) } in Body
-            AssignmentNotAReference { left_side: Idx::<Expression>(21), actual: Type(2802) } in Body
-            ExpectedLoweredKind { expression: Idx::<Expression>(23), expected: Variable, actual: Enumerant, path: Path(ModPath("read")) } in Body
-            AssignmentNotAReference { left_side: Idx::<Expression>(23), actual: Type(2802) } in Body
-            AssignmentNotAReference { left_side: Idx::<Expression>(25), actual: Type(2802) } in Body
+            [EditionedFileId(Id(1c00))] ExpectedLoweredKind { expression: Idx::<Expression>(19), expected: Variable, actual: Enumerant, path: Path(ModPath("function")) } in Body
+            [EditionedFileId(Id(1c00))] AssignmentNotAReference { left_side: Idx::<Expression>(19), actual: Type(2802) } in Body
+            [EditionedFileId(Id(1c00))] ExpectedLoweredKind { expression: Idx::<Expression>(21), expected: Variable, actual: Type, path: Path(ModPath("u32")) } in Body
+            [EditionedFileId(Id(1c00))] AssignmentNotAReference { left_side: Idx::<Expression>(21), actual: Type(2802) } in Body
+            [EditionedFileId(Id(1c00))] ExpectedLoweredKind { expression: Idx::<Expression>(23), expected: Variable, actual: Enumerant, path: Path(ModPath("read")) } in Body
+            [EditionedFileId(Id(1c00))] AssignmentNotAReference { left_side: Idx::<Expression>(23), actual: Type(2802) } in Body
+            [EditionedFileId(Id(1c00))] AssignmentNotAReference { left_side: Idx::<Expression>(25), actual: Type(2802) } in Body
             510..550 'textur...ite>()': type `texture_storage_2d<rgba16float,write>` is not constructible
             510..550 'textur...ite>()': type `texture_storage_2d<rgba16float,write>` is not constructible
         "#]],

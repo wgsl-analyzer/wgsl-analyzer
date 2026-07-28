@@ -422,7 +422,7 @@ fn address_of_not_reference() {
             34..39 'x_ptr': [error]
             42..44 '&x': [error]
             43..44 'x': i32
-            AddressOfNotReference { expression: Idx::<Expression>(1), actual: Type(2402) } in Body
+            [EditionedFileId(Id(1c00))] AddressOfNotReference { expression: Idx::<Expression>(1), actual: Type(2402) } in Body
         "#]],
     );
 }
@@ -686,7 +686,7 @@ fn vec_xy_is_not_ref() {
             39..43 'v.xy': vec2<i32>
             46..47 'v': ref<function, vec2<i32>, read_write>
             46..50 'v.yx': vec2<i32>
-            AssignmentNotAReference { left_side: Idx::<Expression>(4), actual: Type(2407) } in Body
+            [EditionedFileId(Id(1c00))] AssignmentNotAReference { left_side: Idx::<Expression>(4), actual: Type(2407) } in Body
         "#]],
     );
 }
@@ -1221,7 +1221,7 @@ fn global_var_function_address_space_error() {
         "var<function> not_allowed_at_module_level: u32;",
         expect![[r#"
             14..41 'not_al..._level': ref<function, u32, read_write>
-            UnexpectedTemplateArgument { expression: Idx::<Expression>(0) } in Signature
+            [EditionedFileId(Id(1c00))] UnexpectedTemplateArgument { expression: Idx::<Expression>(0) } in Signature
         "#]],
     );
 }
@@ -1689,7 +1689,7 @@ fn no_builtin_overload() {
             8..10 '1f': f32
             8..22 '1f + mat2x2f()': [error]
             13..22 'mat2x2f()': mat2x2<f32>
-            NoBuiltinOverload { expression: Idx::<Expression>(2), builtin: BuiltinId(2c00), name: Some("+"), parameters: [Type(2401), Type(2402)] } in Body
+            [EditionedFileId(Id(1c00))] NoBuiltinOverload { expression: Idx::<Expression>(2), builtin: BuiltinId(2c00), name: Some("+"), parameters: [Type(2401), Type(2402)] } in Body
         "#]],
     );
 }
@@ -1705,7 +1705,7 @@ fn deref_not_a_pointer() {
             4..5 'x': ref<handle, [error], read>
             8..11 '*1f': [error]
             9..11 '1f': f32
-            DerefNotAPointer { expression: Idx::<Expression>(0), actual: Type(2401) } in Body
+            [EditionedFileId(Id(1c00))] DerefNotAPointer { expression: Idx::<Expression>(0), actual: Type(2401) } in Body
         "#]],
     );
 }
@@ -1797,8 +1797,8 @@ fn add_refs_and_ptrs() {
             398..403 'a_ptr': ptr<function, i32, read_write>
             398..411 'a_ptr + b_ref': [error]
             406..411 'b_ref': ref<function, i32, read_write>
-            NoBuiltinOverload { expression: Idx::<Expression>(11), builtin: BuiltinId(3400), name: Some("+"), parameters: [Type(2c16), Type(2c16)] } in Body
-            NoBuiltinOverload { expression: Idx::<Expression>(14), builtin: BuiltinId(3400), name: Some("+"), parameters: [Type(2c16), Type(2c0d)] } in Body
+            [EditionedFileId(Id(1c00))] NoBuiltinOverload { expression: Idx::<Expression>(11), builtin: BuiltinId(3400), name: Some("+"), parameters: [Type(2c16), Type(2c16)] } in Body
+            [EditionedFileId(Id(1c00))] NoBuiltinOverload { expression: Idx::<Expression>(14), builtin: BuiltinId(3400), name: Some("+"), parameters: [Type(2c16), Type(2c0d)] } in Body
         "#]],
     );
 }
