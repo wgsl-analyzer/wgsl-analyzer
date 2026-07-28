@@ -294,9 +294,12 @@ min(e1: vecN<u32>, e2: vecN<u32>) -> vecN<u32>
 min(e1: vecN<f32>, e2: vecN<f32>) -> vecN<f32>
 min(e1: vecN<f16>, e2: vecN<f16>) -> vecN<f16>
 
-mix(f32, f32, f32) -> f32
-mix(vecN<f32>, vecN<f32>, vecN<f32>) -> vecN<f32>
-mix(vecN<f32>, vecN<f32>, f32) -> vecN<f32>
+mix(e1: AbstractFloat, e2: AbstractFloat, e3: AbstractFloat) -> AbstractFloat
+mix(e1: f32, e2: f32, e3: f32) -> f32
+mix(e1: f16, e2: f16, e3: f16) -> f16
+mix(e1: vecN<AbstractFloat>, e2: vecN<AbstractFloat>, e3: vecN<AbstractFloat>) -> vecN<AbstractFloat>
+mix(e1: vecN<f32>, e2: vecN<f32>, e3: vecN<f32>) -> vecN<f32>
+mix(e1: vecN<f16>, e2: vecN<f16>, e3: vecN<f16>) -> vecN<f16>
 
 modf(e: AbstractFloat) -> struct __modf_result_abstract { fract: AbstractFloat, whole: AbstractFloat }
 modf(e: f32) -> struct __modf_result_f32 { fract: f32, whole: f32 }
