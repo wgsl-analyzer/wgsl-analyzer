@@ -2097,3 +2097,35 @@ fn foo() {
         "#]],
     );
 }
+
+#[test]
+fn normalize() {
+    check_infer(
+        ExtensionsConfig {
+            f16: true,
+            ..Default::default()
+        },
+        "
+enable f16;
+fn foo() {
+    let abstract_float_vec = normalize(vec2(1.0));
+    let float_32_vec = normalize(vec2(1.0f));
+    let float_16_vec = normalize(vec2(1.0h));
+}
+",
+        expect![[r#"
+            31..49 'abstra...at_vec': vec2<f32>
+            52..72 'normal...(1.0))': vec2<float>
+            62..71 'vec2(1.0)': vec2<float>
+            67..70 '1.0': float
+            82..94 'float_32_vec': vec2<f32>
+            97..118 'normal...1.0f))': vec2<f32>
+            107..117 'vec2(1.0f)': vec2<f32>
+            112..116 '1.0f': f32
+            128..140 'float_16_vec': vec2<f16>
+            143..164 'normal...1.0h))': vec2<f16>
+            153..163 'vec2(1.0h)': vec2<f16>
+            158..162 '1.0h': f16
+        "#]],
+    );
+}

@@ -308,7 +308,10 @@ modf(e: vecN<AbstractFloat>) -> struct __modf_result_vecN_abstract { fract: vecN
 modf(e: vecN<f32>) -> struct __modf_result_vecN_f32 { fract: vecN<f32>, whole: vecN<f32> }
 modf(e: vecN<f16>) -> struct __modf_result_vecN_f16 { fract: vecN<f16>, whole: vecN<f16> }
 
+normalize(vecN<AbstractFloat>) -> vecN<AbstractFloat>
 normalize(vecN<f32>) -> vecN<f32>
+normalize(vecN<f16>) -> vecN<f16>
+
 pow(f32, f32) -> f32
 pow(vecN<f32>, vecN<f32>) -> vecN<f32>
 quantizeToF16(f32) -> f32
