@@ -131,7 +131,7 @@ impl TypeKind {
             Self::Struct(r#struct) => {
                 let fields = &database.field_types(*r#struct).0;
                 let (align, _) =
-                    struct_member_layout(fields, database, AddressSpace::Storage, |_, _| {})?;
+                    struct_member_layout(fields, database, AddressSpace::Storage, |_, _, _| {})?;
                 Some(if address_space == AddressSpace::Uniform {
                     round_up(16, align)
                 } else {
@@ -236,7 +236,7 @@ impl TypeKind {
             Self::Struct(r#struct) => {
                 let fields = &database.field_types(*r#struct).0;
                 let (_, size) =
-                    struct_member_layout(fields, database, AddressSpace::Storage, |_, _| {})?;
+                    struct_member_layout(fields, database, AddressSpace::Storage, |_, _, _| {})?;
                 Some(size)
             },
             Self::Array(array) => match array.size {
@@ -273,7 +273,7 @@ pub fn struct_member_layout<Result, Function>(
     mut on_field: Function,
 ) -> Option<(Bytes, Bytes)>
 where
-    Function: FnMut(LocalFieldId, FieldLayout) -> Result,
+    Function: FnMut(LocalFieldId, Type, FieldLayout) -> Result,
 {
     let mut struct_align = Bytes::MIN;
 
@@ -293,6 +293,7 @@ where
 
         on_field(
             field_id,
+            field,
             FieldLayout {
                 offset,
                 align,

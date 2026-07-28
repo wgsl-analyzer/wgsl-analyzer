@@ -439,7 +439,6 @@ var<task_payload> foo: f16;
     );
 }
 
-
 #[test]
 fn task_payload_compatible() {
     check_diagnostics(

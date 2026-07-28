@@ -17,6 +17,7 @@ pub(crate) struct TestDatabase {
     events: Arc<Mutex<Option<Vec<salsa::Event>>>>,
     nonce: Nonce,
 }
+
 impl Default for TestDatabase {
     fn default() -> Self {
         let events = Arc::<Mutex<Option<Vec<salsa::Event>>>>::default();
@@ -55,9 +56,9 @@ impl Clone for TestDatabase {
 impl fmt::Debug for TestDatabase {
     fn fmt(
         &self,
-        f: &mut fmt::Formatter<'_>,
+        formatter: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
-        f.debug_struct("TestDatabase").finish()
+        formatter.debug_struct("TestDatabase").finish()
     }
 }
 
