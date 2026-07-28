@@ -37,10 +37,6 @@ pub enum InferenceDiagnosticKind {
         expression: ExpressionId,
         r#type: Type,
     },
-    UnresolvedName {
-        expression: ExpressionId,
-        name: Name,
-    },
     NotConstructible {
         expression: ExpressionId,
         r#type: Type,

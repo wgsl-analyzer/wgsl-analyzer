@@ -6,9 +6,7 @@ use crate::tests::check_infer;
 #[test]
 fn atomicCompareExchangeWeak() {
     check_infer(
-        ExtensionsConfig {
-            ..Default::default()
-        },
+        ExtensionsConfig::default(),
         "
 var<storage, read_write> buffer: atomic<bool>;
 fn foo() {

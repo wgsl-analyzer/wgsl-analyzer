@@ -276,15 +276,6 @@ pub fn diagnostics(
                         frange.range,
                     )
                 },
-                AnyDiagnostic::UnresolvedName { expression, name } => {
-                    let source = expression.value.to_node(&root);
-                    let frange = original_file_range(database, expression.file_id, source.syntax());
-                    Diagnostic::new(
-                        DiagnosticCode("5"),
-                        format!("cannot find `{}` in this scope", name.as_str()),
-                        frange.range,
-                    )
-                },
                 AnyDiagnostic::NotConstructible { expression, r#type } => {
                     let source = expression.value.to_node(&root);
                     let r#type = ty::pretty::pretty_type(database, r#type);

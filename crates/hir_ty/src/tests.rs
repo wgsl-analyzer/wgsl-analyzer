@@ -196,7 +196,6 @@ impl<'db> InferPrinter<'db> {
                 self.print_type_mismatch(source_map, buffer, *expression, *expected, *actual);
             },
             IDK::AssignmentNotAReference { .. }
-            | IDK::UnresolvedName { .. }
             | IDK::NoBuiltinOverload { .. }
             | IDK::AddressOfNotReference { .. }
             | IDK::AddressOfNotReference { .. }

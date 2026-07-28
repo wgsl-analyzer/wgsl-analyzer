@@ -19,112 +19,30 @@ use crate::{
 };
 
 impl TypeLoweringContext<'_> {
-    fn is_predeclared_type(
-        &self,
-        name: &Name,
-    ) -> bool {
-        // naga extensions
-        (self.database.extensions().shader_int64 && matches!(name.as_str(), "i64" | "u64"))
-        // base WGSL predeclared types
-            || matches!(
-                name.as_str(),
-                "bool"
-                    | "i32"
-                    | "u32"
-                    | "f32"
-                    | "f16"
-                    | "array"
-                    | "binding_array"
-                    | "vec2"
-                    | "vec3"
-                    | "vec4"
-                    | "vec2i"
-                    | "vec3i"
-                    | "vec4i"
-                    | "vec2u"
-                    | "vec3u"
-                    | "vec4u"
-                    | "vec2f"
-                    | "vec3f"
-                    | "vec4f"
-                    | "vec2h"
-                    | "vec3h"
-                    | "vec4h"
-                    | "mat2x2"
-                    | "mat2x3"
-                    | "mat2x4"
-                    | "mat3x2"
-                    | "mat3x3"
-                    | "mat3x4"
-                    | "mat4x2"
-                    | "mat4x3"
-                    | "mat4x4"
-                    | "mat2x2f"
-                    | "mat2x3f"
-                    | "mat2x4f"
-                    | "mat3x2f"
-                    | "mat3x3f"
-                    | "mat3x4f"
-                    | "mat4x2f"
-                    | "mat4x3f"
-                    | "mat4x4f"
-                    | "mat2x2h"
-                    | "mat2x3h"
-                    | "mat2x4h"
-                    | "mat3x2h"
-                    | "mat3x3h"
-                    | "mat3x4h"
-                    | "mat4x2h"
-                    | "mat4x3h"
-                    | "mat4x4h"
-                    | "ptr"
-                    | "atomic"
-                    | "texture_1d"
-                    | "texture_2d"
-                    | "texture_2d_array"
-                    | "texture_3d"
-                    | "texture_cube"
-                    | "texture_cube_array"
-                    | "texture_multisampled_2d"
-                    | "texture_storage_1d"
-                    | "texture_storage_2d"
-                    | "texture_storage_2d_array"
-                    | "texture_storage_3d"
-                    | "texture_depth_multisampled_2d"
-                    | "texture_external"
-                    | "texture_depth_2d"
-                    | "texture_depth_2d_array"
-                    | "texture_depth_cube"
-                    | "texture_depth_cube_array"
-                    | "sampler"
-                    | "sampler_comparison"
-            )
-    }
-
     pub fn lower_if_predeclared(
         &mut self,
         type_container: TypeContainer,
         name: &Name,
         template_parameters: &[ExpressionId],
     ) -> Option<Lowered> {
-        // Lower predeclared types
-        if self.is_predeclared_type(name) {
-            // If lowering the predeclared type failed, we should return a error type
-            // As opposed to ignoring it when it's not a predeclared type
-            match self.lower_predeclared_type(type_container, name, template_parameters) {
-                Ok(lowered) => Some(lowered),
-                Err(error) => {
-                    self.diagnostics.push(error);
-                    Some(Lowered::Type(TypeKind::Error.intern(self.database)))
-                },
-            }
-        } else if crate::builtins::Builtin::ALL_BUILTINS.contains(&name.as_str()) {
-            Some(Lowered::BuiltinFunction)
-        } else if let Ok(enum_value) = Enumerant::from_str(name.as_str()) {
-            self.expect_no_template(template_parameters);
-            Some(Lowered::Enumerant(enum_value))
-        } else {
-            None
+        // If lowering the predeclared type failed, we should return a error type
+        // As opposed to ignoring it when it's not a predeclared type
+        match self.lower_predeclared_type(type_container, name, template_parameters) {
+            Ok(Some(lowered)) => Some(lowered),
+            Ok(None) => {
+                if crate::builtins::Builtin::ALL_BUILTINS.contains(&name.as_str()) {
+                    Some(Lowered::BuiltinFunction)
+                } else if let Ok(enum_value) = Enumerant::from_str(name.as_str()) {
+                    self.expect_no_template(template_parameters);
+                    Some(Lowered::Enumerant(enum_value))
+                } else {
+                    None
+                }
+            },
+            Err(error) => {
+                self.diagnostics.push(error);
+                Some(Lowered::Type(TypeKind::Error.intern(self.database)))
+            },
         }
     }
 
@@ -137,9 +55,8 @@ impl TypeLoweringContext<'_> {
         type_container: TypeContainer,
         name: &Name,
         template_parameters: &[ExpressionId],
-    ) -> Result<Lowered, TypeLoweringError> {
+    ) -> Result<Option<Lowered>, TypeLoweringError> {
         let evaluated_parameters = self.eval_template_args(type_container, template_parameters);
-
         let type_kind = match name.as_str() {
             "bool" => {
                 self.expect_no_template(template_parameters);
@@ -171,14 +88,14 @@ impl TypeLoweringContext<'_> {
             },
             "array" => {
                 if template_parameters.is_empty() {
-                    return Ok(Lowered::TypeWithoutTemplate(
+                    return Ok(Some(Lowered::TypeWithoutTemplate(
                         TypeKind::Array(ArrayType {
                             inner: TypeKind::Error.intern(self.database),
                             binding_array: false,
                             size: ArraySize::Dynamic,
                         })
                         .intern(self.database),
-                    ));
+                    )));
                 }
                 let array_template = self.array_template(evaluated_parameters)?;
                 TypeKind::Array(ArrayType {
@@ -189,14 +106,14 @@ impl TypeLoweringContext<'_> {
             },
             "binding_array" => {
                 if template_parameters.is_empty() {
-                    return Ok(Lowered::TypeWithoutTemplate(
+                    return Ok(Some(Lowered::TypeWithoutTemplate(
                         TypeKind::Array(ArrayType {
                             inner: TypeKind::Error.intern(self.database),
                             binding_array: true,
                             size: ArraySize::Dynamic,
                         })
                         .intern(self.database),
-                    ));
+                    )));
                 }
                 let array_template = self.array_template(evaluated_parameters)?;
                 TypeKind::Array(ArrayType {
@@ -207,13 +124,13 @@ impl TypeLoweringContext<'_> {
             },
             "vec2" => {
                 if template_parameters.is_empty() {
-                    return Ok(Lowered::TypeWithoutTemplate(
+                    return Ok(Some(Lowered::TypeWithoutTemplate(
                         TypeKind::Vector(VectorType {
                             size: VecSize::Two,
                             component_type: TypeKind::Error.intern(self.database),
                         })
                         .intern(self.database),
-                    ));
+                    )));
                 }
                 let component_type = self.vector_template(evaluated_parameters);
                 TypeKind::Vector(VectorType {
@@ -223,13 +140,13 @@ impl TypeLoweringContext<'_> {
             },
             "vec3" => {
                 if template_parameters.is_empty() {
-                    return Ok(Lowered::TypeWithoutTemplate(
+                    return Ok(Some(Lowered::TypeWithoutTemplate(
                         TypeKind::Vector(VectorType {
                             size: VecSize::Three,
                             component_type: TypeKind::Error.intern(self.database),
                         })
                         .intern(self.database),
-                    ));
+                    )));
                 }
                 let component_type = self.vector_template(evaluated_parameters);
                 TypeKind::Vector(VectorType {
@@ -239,13 +156,13 @@ impl TypeLoweringContext<'_> {
             },
             "vec4" => {
                 if template_parameters.is_empty() {
-                    return Ok(Lowered::TypeWithoutTemplate(
+                    return Ok(Some(Lowered::TypeWithoutTemplate(
                         TypeKind::Vector(VectorType {
                             size: VecSize::Four,
                             component_type: TypeKind::Error.intern(self.database),
                         })
                         .intern(self.database),
-                    ));
+                    )));
                 }
                 let component_type = self.vector_template(evaluated_parameters);
                 TypeKind::Vector(VectorType {
@@ -359,14 +276,14 @@ impl TypeLoweringContext<'_> {
                 };
 
                 if template_parameters.is_empty() {
-                    return Ok(Lowered::TypeWithoutTemplate(
+                    return Ok(Some(Lowered::TypeWithoutTemplate(
                         TypeKind::Matrix(MatrixType {
                             columns,
                             rows,
                             inner: TypeKind::Error.intern(self.database),
                         })
                         .intern(self.database),
-                    ));
+                    )));
                 }
                 let inner = self.matrix_template(evaluated_parameters);
                 TypeKind::Matrix(MatrixType {
@@ -705,17 +622,10 @@ impl TypeLoweringContext<'_> {
                 TypeKind::Sampler(wgsl_types::ty::SamplerType::SamplerComparison)
             },
             _ => {
-                return Err(TypeLoweringError {
-                    container: type_container,
-                    kind: TypeLoweringErrorKind::Resolution(
-                        hir_def::resolver::ResolutionDiagnostic::UnresolvedName {
-                            name: name.clone(),
-                        },
-                    ),
-                });
+                return Ok(None);
             },
         };
-        Ok(Lowered::Type(type_kind.intern(self.database)))
+        Ok(Some(Lowered::Type(type_kind.intern(self.database))))
     }
 
     fn array_template(
