@@ -268,8 +268,18 @@ log2(e: vecN<AbstractFloat>) -> vecN<AbstractFloat>
 log2(e: vecN<f32>) -> vecN<f32>
 log2(e: vecN<f16>) -> vecN<f16>
 
-min(f32, f32) -> f32
-min(vecN<f32>, vecN<f32>) -> vecN<f32>
+min(e1: AbstractInt, e2: AbstractInt) -> AbstractInt
+min(e1: AbstractFloat, e2: AbstractFloat) -> AbstractFloat
+min(e1: i32, e2: i32) -> i32
+min(e1: u32, e2: u32) -> u32
+min(e1: f32, e2: f32) -> f32
+min(e1: f16, e2: f16) -> f16
+min(e1: vecN<AbstractInt>, e2: vecN<AbstractInt>) -> vecN<AbstractInt>
+min(e1: vecN<AbstractFloat>, e2: vecN<AbstractFloat>) -> vecN<AbstractFloat>
+min(e1: vecN<i32>, e2: vecN<i32>) -> vecN<i32>
+min(e1: vecN<u32>, e2: vecN<u32>) -> vecN<u32>
+min(e1: vecN<f32>, e2: vecN<f32>) -> vecN<f32>
+min(e1: vecN<f16>, e2: vecN<f16>) -> vecN<f16>
 
 max(f32, f32) -> f32
 max(vecN<f32>, vecN<f32>) -> vecN<f32>
@@ -325,10 +335,6 @@ max(i32, i32) -> i32
 max(vecN<i32>, vecN<i32>) -> vecN<i32>
 max(u32, u32) -> u32
 max(vecN<u32>, vecN<u32>) -> vecN<u32>
-min(i32, i32) -> i32
-min(vecN<i32>, vecN<i32>) -> vecN<i32>
-min(u32, u32) -> u32
-min(vecN<u32>, vecN<u32>) -> vecN<u32>
 reverseBits(i32) -> i32
 reverseBits(vecN<i32>) -> vecN<i32>
 reverseBits(u32) -> u32
