@@ -50,19 +50,16 @@ pub struct DiagnosticsConfig {
 }
 
 impl DiagnosticsConfig {
-    #[must_use]
-    pub const fn none() -> Self {
-        Self {
-            enabled: false,
-            semantic_enabled: false,
-            parse_enabled: false,
-            naga_parsing_enabled: false,
-            naga_validation_enabled: false,
-            naga_version: NagaVersion::Naga29, // no const default :()
-            tint_enabled: false,
-            tint_path: None,
-        }
-    }
+    const NONE: Self = Self {
+        enabled: false,
+        semantic_enabled: false,
+        parse_enabled: false,
+        naga_parsing_enabled: false,
+        naga_validation_enabled: false,
+        naga_version: NagaVersion::Naga29, // no const default :(
+        tint_enabled: false,
+        tint_path: None,
+    };
 }
 
 impl Default for DiagnosticsConfig {
