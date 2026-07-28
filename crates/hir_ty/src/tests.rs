@@ -30,7 +30,7 @@ use crate::{
     database::HirDatabase as _,
     diagnostics::{self, InferenceDiagnostic, InferenceDiagnosticKind},
     infer::{InferenceResult, TypeExpectation},
-    lower::{TypeContainer, TypeLoweringError},
+    lower::{LoweredKind, TypeContainer, TypeLoweringError},
     test_db::TestDatabase,
     ty::{
         Type,
@@ -205,25 +205,20 @@ impl<'db> InferPrinter<'db> {
             | IDK::WgslError { .. } => {
                 self.print_todo_bad_diagnostic(diagnostic, buffer);
             },
-            IDK::ExpectedLoweredKind {
+            IDK::UnexpectedLoweredKind {
                 actual,
                 expected,
                 expression,
                 path,
             } => {
-                let Some((range, text)) = self.get_expression_range_text(source_map, *expression)
-                else {
-                    return;
-                };
-                writeln!(
+                self.print_unexpected_lower_kind(
+                    source_map,
                     buffer,
-                    "{range:?} '{}': expected {}, but got {} `{}`",
-                    ellipsize(text, 15),
-                    expected,
-                    actual,
-                    path.0
-                )
-                .unwrap();
+                    *actual,
+                    *expected,
+                    *expression,
+                    path,
+                );
             },
             IDK::InvalidType { error } => {
                 self.print_invalid_type(source_map, buffer, error);
@@ -269,6 +264,27 @@ impl<'db> InferPrinter<'db> {
                 );
             },
         }
+    }
+
+    fn print_unexpected_lower_kind(
+        &self,
+        source_map: &ExpressionSourceMap,
+        buffer: &mut String,
+        actual: LoweredKind,
+        expected: LoweredKind,
+        expression: ExpressionId,
+        path: &hir_def::expression_store::path::Path,
+    ) {
+        let Some((range, text)) = self.get_expression_range_text(source_map, expression) else {
+            return;
+        };
+        writeln!(
+            buffer,
+            "{range:?} '{}': expected {expected}, but got {actual} `{}`",
+            ellipsize(text, 15),
+            path.0
+        )
+        .unwrap();
     }
 
     fn print_type_mismatch(

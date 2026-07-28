@@ -84,7 +84,7 @@ pub enum InferenceDiagnosticKind {
         expression: ExpressionId,
         message: String,
     },
-    ExpectedLoweredKind {
+    UnexpectedLoweredKind {
         expression: ExpressionId,
         expected: LoweredKind,
         actual: LoweredKind,
