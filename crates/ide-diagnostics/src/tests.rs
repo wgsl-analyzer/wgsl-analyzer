@@ -3,6 +3,7 @@ use std::fmt::Write as _;
 use expect_test::{Expect, expect};
 use ide_db::RootDatabase;
 use itertools::Itertools;
+use syntax::ExtensionsConfig;
 use test_fixture::WithFixture as _;
 
 use crate::{Diagnostic, DiagnosticsConfig, Severity};
@@ -502,5 +503,60 @@ struct TaskPayload { foo: f32 }
 var<task_payload> foo: TaskPayload;
 ",
         expect![""],
+    );
+}
+
+#[test]
+fn not_constructible() {
+    check_diagnostics(
+        "
+enable f16;
+struct Foo { bar: atomic<u32> }
+fn foo() {
+    let boolean_array = array<bool>();
+    let signed_integer_32_array = array<i32>();
+    let unsigned_integer_32_array = array<u32>();
+    let float_32_array = array<f32>();
+    let float_16_array = array<f16>();
+
+    let signed_integer_32_atomic = atomic<i32>();
+    let unsigned_integer_32_atomic = atomic<u32>();
+
+    let structure = Foo();
+
+    let pointer = ptr<function, u32, read>();
+    let reference = ref<function, u32, read>();
+    let tex = texture_storage_2d<rgba16float, write>();
+}
+",
+        expect![[r#"
+            468..471 wgsl-analyzer Error 16: 'ref' is a reserved word in WGSL
+            468..471 wgsl-analyzer Error 16: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '-', 'package', '(', '*', 'super', '~', 'true'
+            480..481 wgsl-analyzer Error 16: invalid syntax, expected one of: '&=', '/=', '=', '-=', '--', '%=', '|=', '+=', '++', '<<=', '>>=', '*=', '^='
+            485..486 wgsl-analyzer Error 16: invalid syntax, expected one of: '&=', '/=', '=', '-=', '--', '%=', '|=', '+=', '++', '<<=', '>>=', '*=', '^='
+            491..492 wgsl-analyzer Error 16: invalid syntax, expected one of: '&=', '/=', '=', '-=', '--', '%=', '|=', '+=', '++', '<<=', '>>=', '*=', '^='
+            493..494 wgsl-analyzer Error 16: invalid syntax, expected one of: '&', <identifier>, 'package', '(', '*', 'super'
+            494..495 wgsl-analyzer Error 16: invalid syntax, expected one of: '&=', '/=', '=', '-=', '--', '%=', '|=', '+=', '++', '<<=', '>>=', '*=', '^='
+            79..92 wgsl-analyzer Error 6: type `array<bool>` is not constructible
+            128..140 wgsl-analyzer Error 6: type `array<i32>` is not constructible
+            178..190 wgsl-analyzer Error 6: type `array<u32>` is not constructible
+            217..229 wgsl-analyzer Error 6: type `array<f32>` is not constructible
+            256..268 wgsl-analyzer Error 6: type `array<f16>` is not constructible
+            306..319 wgsl-analyzer Error 6: type `atomic<i32>` is not constructible
+            306..319 wgsl-analyzer Error 6: type `atomic<i32>` is not constructible
+            358..371 wgsl-analyzer Error 6: type `atomic<u32>` is not constructible
+            358..371 wgsl-analyzer Error 6: type `atomic<u32>` is not constructible
+            394..399 wgsl-analyzer Error 6: type `Foo` is not constructible
+            420..446 wgsl-analyzer Error 6: type `ptr<u32>` is not constructible
+            420..446 wgsl-analyzer Error 6: type `ptr<u32>` is not constructible
+            472..480 wgsl-analyzer Error 23: enumerant function is not a variable
+            472..480 wgsl-analyzer Error 1: left hand side of assignment should be a reference, found [error]
+            482..485 wgsl-analyzer Error 23: type u32 is not a variable
+            482..485 wgsl-analyzer Error 1: left hand side of assignment should be a reference, found [error]
+            487..491 wgsl-analyzer Error 23: enumerant read is not a variable
+            487..491 wgsl-analyzer Error 1: left hand side of assignment should be a reference, found [error]
+            510..550 wgsl-analyzer Error 6: type `texture_storage_2d<rgba16float,write>` is not constructible
+            510..550 wgsl-analyzer Error 6: type `texture_storage_2d<rgba16float,write>` is not constructible
+        "#]],
     );
 }
