@@ -76,6 +76,16 @@ fn infer_assert_expect() {
 }
 
 #[test]
+fn infer_field_scalar() {
+    check_diagnostics(
+        "fn foo() { let x = 1; let y = x.nonsense; }",
+        expect![[r#"
+            30..40 wgsl-analyzer Error 3: no field `nonsense` on type i32
+        "#]],
+    );
+}
+
+#[test]
 fn store_type_must_be_storable() {
     check_diagnostics(
         "fn foo() { var x = 1; var y = &x; }",
