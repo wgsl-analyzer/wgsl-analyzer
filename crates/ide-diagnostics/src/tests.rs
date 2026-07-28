@@ -560,3 +560,32 @@ fn foo() {
         "#]],
     );
 }
+
+#[test]
+fn arg_count_mismatch() {
+    check_diagnostics(
+        "
+fn foo() {
+    let x = foo(foo());
+}
+",
+        expect![[r#"
+            15..34 wgsl-analyzer Error 7: expected 0 parameters, found 1
+        "#]],
+    );
+}
+
+#[test]
+fn invalid_array_access() {
+    check_diagnostics(
+        "
+fn foo() {
+    let x = true;
+    let z = x[1];
+}
+",
+        expect![[r#"
+            41..45 wgsl-analyzer Error 4: cannot index into type bool
+        "#]],
+    );
+}
