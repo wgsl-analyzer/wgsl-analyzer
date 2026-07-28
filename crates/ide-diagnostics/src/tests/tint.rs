@@ -14,7 +14,7 @@ fn store_type_must_be_storable() {
     check_diagnostics_with_config(
         &DiagnosticsConfig {
             tint_enabled: true,
-            ..DiagnosticsConfig::none()
+            ..DiagnosticsConfig::NONE
         },
         "fn foo() { let ambiguous_clamp = clamp(1u, 0, 1i); }",
         expect![[r#"
