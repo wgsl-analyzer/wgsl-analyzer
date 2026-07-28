@@ -167,15 +167,15 @@ fn example_layout_of_structures_using_implicit_member_sizes_and_alignments() {
                 w: vec2<f32>,                              // offset(8)  align(8)  size(8)
                 x: f32,                                    // offset(16)  align(4)  size(4)
             }
-            struct B {                                     //             align(16)  size(80)
+            struct B {                                     //             align(16)  size(160)
                 a: vec2<f32>,                              // offset(0)  align(8)  size(8)
-                b: vec3<f32>,                              // offset(8)  align(16)  size(16)
+                b: vec3<f32>,                              // offset(8)  align(16)  size(12)
                 c: f32,                                    // offset(32)  align(4)  size(4)
                 d: f32,                                    // offset(36)  align(4)  size(4)
-                e: A,                                      // offset(40)  align(8)  size(8)
-                f: vec3<f32>,                              // offset(48)  align(16)  size(16)
-                g: array<A, 3>,                            // offset(64)  align(8)  size(8)
-                h: i32,                                    // offset(72)  align(4)  size(4)
+                e: A,                                      // offset(40)  align(8)  size(24)
+                f: vec3<f32>,                              // offset(64)  align(16)  size(12)
+                g: array<A, 3>,                            // offset(80)  align(8)  size(72)
+                h: i32,                                    // offset(152)  align(4)  size(4)
             }
         "#]],
     );

@@ -287,7 +287,7 @@ where
         let custom_size = None;
 
         let align = custom_align.or_else(|| field.align(address_space, database))?;
-        let size = custom_size.or_else(|| field.align(address_space, database))?;
+        let size = custom_size.or_else(|| field.size(address_space, database))?;
 
         struct_align = struct_align.max(align);
 
