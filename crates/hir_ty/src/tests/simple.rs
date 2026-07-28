@@ -1894,3 +1894,25 @@ fn lowering_type_missing_expected_type() {
         "#]],
     );
 }
+
+#[test]
+fn to_wgsl_types_builtin_struct() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        fn foo() {
+            let x = modf(1.0);
+            let y = modf(x);
+        }
+        ",
+        expect![[r#"
+            19..20 'x': __modf_result_abstract
+            23..32 'modf(1.0)': __modf_result_abstract
+            28..31 '1.0': float
+            42..43 'y': [error]
+            46..53 'modf(x)': [error]
+            51..52 'x': __modf_result_abstract
+            [EditionedFileId(Id(1c00))] WgslError { expression: Idx::<Expression>(3), message: "`modf` expects a float scalar or vector argument" } in Body
+        "#]],
+    );
+}
