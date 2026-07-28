@@ -259,16 +259,16 @@ impl Extend<Name> for ModPath {
 impl fmt::Display for ModPath {
     fn fmt(
         &self,
-        f: &mut fmt::Formatter<'_>,
+        formatter: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
         let mut segments = self.display_iter();
         let Some(first_segment) = segments.next() else {
             return Ok(());
         };
-        f.write_str(first_segment)?;
+        formatter.write_str(first_segment)?;
         for segment in segments {
-            f.write_str("::")?;
-            f.write_str(segment)?;
+            formatter.write_str("::")?;
+            formatter.write_str(segment)?;
         }
         Ok(())
     }
@@ -285,6 +285,7 @@ struct ModPathDisplayIter<'path> {
     segments: &'path SmallVec<[Name; 1]>,
     segment_index: usize,
 }
+
 impl<'path> Iterator for ModPathDisplayIter<'path> {
     type Item = &'path str;
 
