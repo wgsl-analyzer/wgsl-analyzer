@@ -1,26 +1,19 @@
-use base_db::{EditionedFileId, Intern, Lookup};
+use base_db::EditionedFileId;
 use expect_test::{Expect, expect};
-use hir_def::{
-    database::{DefDatabase, ModuleDefinitionId},
-    expression_store::ExpressionSourceMap,
-};
+use hir_def::database::{DefDatabase, ModuleDefinitionId};
 use salsa::Durability;
 use std::fmt::Write;
-use syntax::{AstNode, ExtensionsConfig, SyntaxNode};
+use syntax::ExtensionsConfig;
 use test_fixture::WithFixture;
 use vfs::FileId;
 use wgsl_types::syntax::AddressSpace;
 
 use crate::{
     database::HirDatabase,
-    diagnostics::{InferenceDiagnostic, InferenceDiagnosticKind},
-    layout::{FieldLayout, struct_member_layout},
+    layout::struct_member_layout,
     test_db::TestDatabase,
-    tests::{ellipsize, module_definitions, text_range_start},
-    ty::{
-        Type, TypeKind,
-        pretty::{TypeVerbosity, pretty_type_with_verbosity},
-    },
+    tests::{module_definitions, text_range_start},
+    ty::pretty::{TypeVerbosity, pretty_type_with_verbosity},
 };
 
 #[expect(clippy::needless_pass_by_value, reason = "Matches expect! macro")]
@@ -45,7 +38,6 @@ fn check_layout(
 struct LayoutPrinter<'database> {
     database: &'database TestDatabase,
     file_id: EditionedFileId,
-    root: SyntaxNode,
 }
 
 impl<'db> LayoutPrinter<'db> {
@@ -53,12 +45,7 @@ impl<'db> LayoutPrinter<'db> {
         database: &'db TestDatabase,
         file_id: EditionedFileId,
     ) -> Self {
-        let root = file_id.parse(database).syntax();
-        Self {
-            database,
-            file_id,
-            root,
-        }
+        Self { database, file_id }
     }
 
     fn infer_layout(
@@ -70,14 +57,14 @@ impl<'db> LayoutPrinter<'db> {
         definitions.sort_by_key(|definition| text_range_start(*definition, self.database));
         for definition in definitions {
             match definition {
-                ModuleDefinitionId::Function(id) => (),
-                ModuleDefinitionId::GlobalVariable(id) => (),
-                ModuleDefinitionId::GlobalConstant(id) => (),
-                ModuleDefinitionId::GlobalAssertStatement(id) => (),
-                ModuleDefinitionId::Override(id) => (),
+                ModuleDefinitionId::Function(_) => (),
+                ModuleDefinitionId::GlobalVariable(_) => (),
+                ModuleDefinitionId::GlobalConstant(_) => (),
+                ModuleDefinitionId::GlobalAssertStatement(_) => (),
+                ModuleDefinitionId::Override(_) => (),
                 ModuleDefinitionId::Module(_) => (),
                 ModuleDefinitionId::Struct(id) => {
-                    let (signature, map) = self.database.struct_data(id);
+                    let (signature, _) = self.database.struct_data(id);
                     let (fields, diagnostics) = &*self.database.field_types(id);
                     assert!(diagnostics.is_empty());
                     let mut fields_output = vec![];
@@ -107,7 +94,8 @@ impl<'db> LayoutPrinter<'db> {
                         " ".repeat(spaces),
                         align,
                         size
-                    );
+                    )
+                    .unwrap();
                     for field_output in fields_output {
                         let name = field_output.0.map(|x| x.name.as_str()).unwrap();
                         let r#type = pretty_type_with_verbosity(
@@ -125,11 +113,12 @@ impl<'db> LayoutPrinter<'db> {
                             field_output.2,
                             field_output.3,
                             field_output.4,
-                        );
+                        )
+                        .unwrap();
                     }
-                    writeln!(buffer, "}}");
+                    writeln!(buffer, "}}").unwrap();
                 },
-                ModuleDefinitionId::TypeAlias(id) => (),
+                ModuleDefinitionId::TypeAlias(_) => (),
             }
         }
     }
