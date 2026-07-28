@@ -1935,3 +1935,39 @@ fn lower_function_as_template_argument() {
         "#]],
     );
 }
+
+#[test]
+fn builtin_struct_not_constructible() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        fn foo() {
+            let y = __modf_result_abstract(1.0, 0.1);
+        }
+        ",
+        expect![[r#"
+            19..20 'y': [error]
+            23..55 '__modf..., 0.1)': [error]
+            46..49 '1.0': float
+            51..54 '0.1': float
+            23..55 '__modf..., 0.1)': `__modf_result_abstract` not found in scope
+        "#]],
+    );
+}
+
+#[test]
+fn lower_call_uncallable_diagnostic() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        fn foo() {
+            let y = rgba16float();
+        }
+        ",
+        expect![[r#"
+            19..20 'y': [error]
+            23..36 'rgba16float()': [error]
+            23..36 'rgba16float()': expected function, but got enumerant `rgba16float`
+        "#]],
+    );
+}

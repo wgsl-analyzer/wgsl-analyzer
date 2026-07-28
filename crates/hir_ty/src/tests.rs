@@ -202,9 +202,28 @@ impl<'db> InferPrinter<'db> {
             | IDK::DerefNotAPointer { .. }
             | IDK::CyclicType { .. }
             | IDK::UnexpectedTemplateArgument { .. }
-            | IDK::WgslError { .. }
-            | IDK::ExpectedLoweredKind { .. } => {
+            | IDK::WgslError { .. } => {
                 self.print_todo_bad_diagnostic(diagnostic, buffer);
+            },
+            IDK::ExpectedLoweredKind {
+                actual,
+                expected,
+                expression,
+                path,
+            } => {
+                let Some((range, text)) = self.get_expression_range_text(source_map, *expression)
+                else {
+                    return;
+                };
+                writeln!(
+                    buffer,
+                    "{range:?} '{}': expected {}, but got {} `{}`",
+                    ellipsize(text, 15),
+                    expected,
+                    actual,
+                    path.0
+                )
+                .unwrap();
             },
             IDK::InvalidType { error } => {
                 self.print_invalid_type(source_map, buffer, error);

@@ -151,15 +151,35 @@ fn foo() {
             394..399 'Foo()': type `Foo` is not constructible
             420..446 'ptr<fu...ead>()': type `ptr<function, u32, read>` is not constructible
             420..446 'ptr<fu...ead>()': type `ptr<function, u32, read>` is not constructible
-            [EditionedFileId(Id(1c00))] ExpectedLoweredKind { expression: Idx::<Expression>(19), expected: Variable, actual: Enumerant, path: Path(ModPath("function")) } in Body
+            472..480 'function': expected variable, but got enumerant `function`
             [EditionedFileId(Id(1c00))] AssignmentNotAReference { left_side: Idx::<Expression>(19), actual: Type(2802) } in Body
-            [EditionedFileId(Id(1c00))] ExpectedLoweredKind { expression: Idx::<Expression>(21), expected: Variable, actual: Type, path: Path(ModPath("u32")) } in Body
+            482..485 'u32': expected variable, but got type `u32`
             [EditionedFileId(Id(1c00))] AssignmentNotAReference { left_side: Idx::<Expression>(21), actual: Type(2802) } in Body
-            [EditionedFileId(Id(1c00))] ExpectedLoweredKind { expression: Idx::<Expression>(23), expected: Variable, actual: Enumerant, path: Path(ModPath("read")) } in Body
+            487..491 'read': expected variable, but got enumerant `read`
             [EditionedFileId(Id(1c00))] AssignmentNotAReference { left_side: Idx::<Expression>(23), actual: Type(2802) } in Body
             [EditionedFileId(Id(1c00))] AssignmentNotAReference { left_side: Idx::<Expression>(25), actual: Type(2802) } in Body
             510..550 'textur...ite>()': type `texture_storage_2d<rgba16float,write>` is not constructible
             510..550 'textur...ite>()': type `texture_storage_2d<rgba16float,write>` is not constructible
+        "#]],
+    );
+}
+
+#[test]
+fn not_constructible_no_template() {
+    check_infer(
+        ExtensionsConfig {
+            f16: true,
+            ..Default::default()
+        },
+        "
+fn foo() {
+    let structure = array();
+}
+",
+        expect![[r#"
+            19..28 'structure': array<[error]>
+            31..38 'array()': array<[error]>
+            31..38 'array()': type `array<[error]>` is not constructible
         "#]],
     );
 }
