@@ -3,6 +3,21 @@ use expect_test::expect;
 use crate::tests::{check, check_with_edition};
 
 #[test]
+fn evil_attribute() {
+    check(
+        "@9",
+        expect![[r#"
+            SourceFile@0..2
+              AttributeList@0..2
+                AttributeOperator@0..1 "@"
+                Error@1..2
+                  IntLiteral@1..2 "9"
+
+            error at 1..2: invalid syntax, expected one of: 'align', 'binding', 'blend_src', 'builtin', 'compute', 'const', 'diagnostic', 'early_depth_test', 'elif', 'else', 'fragment', 'group', 'id', <identifier>, 'if', 'interpolate', 'invariant', 'location', 'must_use', 'size', 'vertex', 'workgroup_size'"#]],
+    );
+}
+
+#[test]
 fn diagnostic_attribute() {
     check(
         "

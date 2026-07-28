@@ -207,31 +207,31 @@ struct_body:
 struct_member: name ':' type_specifier;
 
 // all attributes that do not use keywords have to be parsed generically and separated later
-attribute:
+attribute^:
 	'@'
 	(
-		'align' '(' expression [','] ')' @align_attr
-		| 'binding' '(' expression [','] ')' @binding_attr
-		| 'blend_src' '(' expression [','] ')' @blend_src_attr
-		| 'builtin' '(' builtin_value_name [','] ')' @builtin_attr
-		| 'const' @const_attr
-		| 'diagnostic' diagnostic_control @diagnostic_attr
-		| 'group' '(' expression [','] ')' @group_attr
-		| 'id' '(' expression [','] ')' @id_attr
-		| 'interpolate' '(' interpolate_type_name [ ',' ] [ interpolate_sampling_name [ ',' ] ] ')' @interpolate_attr
-		| 'invariant' @invariant_attr
-		| 'location' '(' expression [','] ')' @location_attr
-		| 'must_use' @must_use_attr
-		| 'size' '(' expression [','] ')'@size_attr
-		| workgroup_size_attr @workgroup_size_attr
-		| 'vertex' @vertex_attr
-		| 'fragment' @fragment_attr
-		| 'compute' @compute_attr
-		| 'early_depth_test' '(' early_depth_test_mode ')' @early_depth_test_attr
-		| 'if' '(' expression [','] ')' @if_attr
-		| 'elif' '(' expression [','] ')' @elif_attr
-		| 'else' @else_attr
-		| Identifier [?t argument_expression_list] @other_attr
+		'align' '(' expression [','] ')' >align_attr
+		| 'binding' '(' expression [','] ')' >binding_attr
+		| 'blend_src' '(' expression [','] ')' >blend_src_attr
+		| 'builtin' '(' builtin_value_name [','] ')' >builtin_attr
+		| 'const' >const_attr
+		| 'diagnostic' diagnostic_control >diagnostic_attr
+		| 'group' '(' expression [','] ')' >group_attr
+		| 'id' '(' expression [','] ')' >id_attr
+		| 'interpolate' '(' interpolate_type_name [ ',' ] [ interpolate_sampling_name [ ',' ] ] ')' >interpolate_attr
+		| 'invariant' >invariant_attr
+		| 'location' '(' expression [','] ')' >location_attr
+		| 'must_use' >must_use_attr
+		| 'size' '(' expression [','] ')'>size_attr
+		| workgroup_size_attr >workgroup_size_attr
+		| 'vertex' >vertex_attr
+		| 'fragment' >fragment_attr
+		| 'compute' >compute_attr
+		| 'early_depth_test' '(' early_depth_test_mode ')' >early_depth_test_attr
+		| 'if' '(' expression [','] ')' >if_attr
+		| 'elif' '(' expression [','] ')' >elif_attr
+		| 'else' >else_attr
+		| Identifier [?t argument_expression_list] >other_attr
 	)
 ;
 
