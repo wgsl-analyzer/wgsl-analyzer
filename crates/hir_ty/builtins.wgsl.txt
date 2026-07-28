@@ -228,8 +228,13 @@ insertBits(e: u32, newbits: u32, offset: u32, count: u32) -> u32
 insertBits(e: vecN<i32>, newbits: vecN<i32>, offset: u32, count: u32) -> vecN<i32>
 insertBits(e: vecN<u32>, newbits: vecN<u32>, offset: u32, count: u32) -> vecN<u32>
 
-inverseSqrt(f32) -> f32
-inverseSqrt(vecN<f32>) -> vecN<f32>
+inverseSqrt(e: AbstractFloat) -> AbstractFloat
+inverseSqrt(e: f32) -> f32
+inverseSqrt(e: f16) -> f16
+inverseSqrt(e: vecN<AbstractFloat>) -> vecN<AbstractFloat>
+inverseSqrt(e: vecN<f32>) -> vecN<f32>
+inverseSqrt(e: vecN<f16>) -> vecN<f16>
+
 // TODO ldexp
 length(f32) -> f32
 length(vecN<f32>) -> f32

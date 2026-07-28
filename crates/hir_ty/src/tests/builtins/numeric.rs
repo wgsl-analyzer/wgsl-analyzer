@@ -1433,3 +1433,49 @@ fn foo() {
     );
 }
 
+#[test]
+fn inverseSqrt() {
+    check_infer(
+        ExtensionsConfig {
+            f16: true,
+            ..Default::default()
+        },
+        "
+enable f16;
+fn foo() {
+    let abstract_float = inverseSqrt(1.0);
+    let float_32 = inverseSqrt(1.0f);
+    let float_16 = inverseSqrt(1.0h);
+
+    let abstract_float_vec = inverseSqrt(vec2(1.0));
+    let float_32_vec = inverseSqrt(vec2(1.0f));
+    let float_16_vec = inverseSqrt(vec2(1.0h));
+}
+",
+        expect![[r#"
+            31..45 'abstract_float': f32
+            48..64 'invers...t(1.0)': float
+            60..63 '1.0': float
+            74..82 'float_32': f32
+            85..102 'invers...(1.0f)': f32
+            97..101 '1.0f': f32
+            112..120 'float_16': f16
+            123..140 'invers...(1.0h)': f16
+            135..139 '1.0h': f16
+            151..169 'abstra...at_vec': vec2<f32>
+            172..194 'invers...(1.0))': vec2<float>
+            184..193 'vec2(1.0)': vec2<float>
+            189..192 '1.0': float
+            204..216 'float_32_vec': vec2<f32>
+            219..242 'invers...1.0f))': vec2<f32>
+            231..241 'vec2(1.0f)': vec2<f32>
+            236..240 '1.0f': f32
+            252..264 'float_16_vec': vec2<f16>
+            267..290 'invers...1.0h))': vec2<f16>
+            279..289 'vec2(1.0h)': vec2<f16>
+            284..288 '1.0h': f16
+        "#]],
+    );
+}
+
+
