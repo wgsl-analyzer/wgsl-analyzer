@@ -426,3 +426,27 @@ loop {
         "#]],
     );
 }
+
+#[test]
+fn task_payload_incompatible() {
+    check_diagnostics(
+        "
+var<task_payload> foo: f16;
+",
+        expect![[r#"
+            0..3 wgsl-analyzer Error 12: type is not compatible with `task_payload` address space
+        "#]],
+    );
+}
+
+
+#[test]
+fn task_payload_compatible() {
+    check_diagnostics(
+        "
+struct TaskPayload { foo: f32 }
+var<task_payload> foo: TaskPayload;
+",
+        expect![""],
+    );
+}

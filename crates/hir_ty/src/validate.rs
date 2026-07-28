@@ -194,9 +194,12 @@ pub fn validate_address_space<DiagnosticBuilder>(
             if !matches!(scope, Scope::Module) {
                 diagnostic_builder(AddressSpaceError::Scope(Scope::Module));
             }
-            if !matches!(access_mode, AccessMode::Read) {
-                diagnostic_builder(AddressSpaceError::AccessMode(smallvec![AccessMode::Read]));
-            }
+            // TODO: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1360
+            // if is_mesh_shader {
+            //     if !matches!(access_mode, AccessMode::Read) {
+            //         diagnostic_builder(AddressSpaceError::AccessMode(smallvec![AccessMode::Read]));
+            //     }
+            // }
             if !r#type.is_error() && r#type.size_of(address_space, database) < Some(4) {
                 diagnostic_builder(AddressSpaceError::TaskPayloadCompatible);
             }
