@@ -145,16 +145,48 @@ determinant(e: matNxN<AbstractFloat>) -> AbstractFloat
 determinant(e: matNxN<f32>) -> f32
 determinant(e: matNxN<f16>) -> f16
 
-distance(f32, f32) -> f32
-distance(vecN<f32>, vecN<f32>) -> f32
+distance(e1: AbstractFloat, e2: AbstractFloat) -> AbstractFloat
+distance(e1: f32, e2: f32) -> f32
+distance(e1: f16, e2: f16) -> f16
+distance(e1: vecN<AbstractFloat>, e2: vecN<AbstractFloat>) -> AbstractFloat
+distance(e1: vecN<f32>, e2: vecN<f32>) -> f32
+distance(e1: vecN<f16>, e2: vecN<f16>) -> f16
 
-exp(f32) -> f32
-exp(vecN<f32>) -> vecN<f32>
+dot(e1: vecN<AbstractInt>, e2: vecN<AbstractInt>) -> AbstractInt
+dot(e1: vecN<AbstractFloat>, e2: vecN<AbstractFloat>) -> AbstractFloat
+dot(e1: vecN<AbstractFloat>, e2: vecN<AbstractFloat>) -> AbstractFloat
+dot(e1: vecN<i32>, e2: vecN<i32>) -> i32
+dot(e1: vecN<u32>, e2: vecN<u32>) -> u32
+dot(e1: vecN<f32>, e2: vecN<f32>) -> f32
+dot(e1: vecN<f16>, e2: vecN<f16>) -> f16
 
-exp2(f32) -> f32
-exp2(vecN<f32>) -> vecN<f32>
+dot4U8Packed(e1: u32, e2: u32) -> u32
 
-faceForward(vecN<f32>, vecN<f32>, vecN<f32>) -> vecN<f32>
+dot4I8Packed(e1: u32, e2: u32) -> i32
+
+exp(e1: AbstractFloat) -> AbstractFloat
+exp(e1: f32) -> f32
+exp(e1: f16) -> f16
+exp(e1: vecN<AbstractFloat>) -> vecN<AbstractFloat>
+exp(e1: vecN<f32>) -> vecN<f32>
+exp(e1: vecN<f16>) -> vecN<f16>
+
+exp2(e: AbstractFloat) -> AbstractFloat
+exp2(e: f32) -> f32
+exp2(e: f16) -> f16
+exp2(e: vecN<AbstractFloat>) -> vecN<AbstractFloat>
+exp2(e: vecN<f32>) -> vecN<f32>
+exp2(e: vecN<f16>) -> vecN<f16>
+
+extractBits(e: i32, offset: u32, count: u32) -> i32
+extractBits(e: vecN<i32>, offset: u32, count: u32) -> vecN<i32>
+
+extractBits(e: u32, offset: u32, count: u32) -> u32
+extractBits(e: vecN<u32>, offset: u32, count: u32) -> vecN<i32>
+
+faceForward(e1: vecN<AbstractFloat>, e2: vecN<AbstractFloat>, e3: vecN<AbstractFloat>) -> vecN<AbstractFloat>
+faceForward(e1: vecN<f32>, e2: vecN<f32>, e3: vecN<f32>) -> vecN<f32>
+faceForward(e1: vecN<f16>, e2: vecN<f16>, e3: vecN<f16>) -> vecN<f16>
 
 floor(f32) -> f32
 floor(vecN<f32>) -> vecN<f32>
@@ -227,10 +259,6 @@ firstTrailingBit(i32) -> i32
 firstTrailingBit(vecN<i32>) -> vecN<i32>
 firstTrailingBit(u32) -> u32
 firstTrailingBit(vecN<u32>) -> vecN<u32>
-extractBits(i32, u32, u32) -> i32
-extractBits(vecN<i32>, u32, u32) -> vecN<i32>
-extractBits(u32, u32, u32) -> u32
-extractBits(vecN<u32>, u32, u32) -> vecN<i32>
 insertBits(i32, i32, u32, u32) -> i32
 insertBits(vecN<i32>, vecN<i32>, u32, u32) -> vecN<i32>
 insertBits(u32, u32, u32, u32) -> u32
@@ -250,11 +278,6 @@ reverseBits(vecN<u32>) -> vecN<u32>
 
 // matrix
 transpose(matMxN<T>) -> matNxM<T>
-
-// vector
-dot(vecN<f32>, vecN<f32>) -> f32
-dot(vecN<i32>, vecN<i32>) -> i32
-dot(vecN<u32>, vecN<u32>) -> u32
 
 // derivative
 dpdx(f32) -> f32

@@ -1,4 +1,3 @@
-// #![expect(non_snake_case, reason = "name based on WGSL builtins")]
 #![expect(clippy::too_many_lines, reason = "snapshot test data")]
 
 use expect_test::expect;
@@ -648,12 +647,8 @@ fn foo() {
 #[test]
 fn countLeadingZeros() {
     check_infer(
-        ExtensionsConfig {
-            f16: true,
-            ..Default::default()
-        },
+        ExtensionsConfig::default(),
         "
-enable f16;
 fn foo() {
     let signed_integer_32 = countLeadingZeros(1i);
     let unsigned_integer_32 = countLeadingZeros(1u);
@@ -684,12 +679,8 @@ fn foo() {
 #[test]
 fn countOneBits() {
     check_infer(
-        ExtensionsConfig {
-            f16: true,
-            ..Default::default()
-        },
+        ExtensionsConfig::default(),
         "
-enable f16;
 fn foo() {
     let signed_integer_32 = countOneBits(1i);
     let unsigned_integer_32 = countOneBits(1u);
@@ -720,12 +711,8 @@ fn foo() {
 #[test]
 fn countTrailingZeros() {
     check_infer(
-        ExtensionsConfig {
-            f16: true,
-            ..Default::default()
-        },
+        ExtensionsConfig::default(),
         "
-enable f16;
 fn foo() {
     let signed_integer_32 = countTrailingZeros(1i);
     let unsigned_integer_32 = countTrailingZeros(1u);
@@ -849,10 +836,6 @@ fn foo() {
     let abstract_float = determinant(mat2x2(1.0));
     let float_32 = determinant(mat2x2(1.0f));
     let float_16 = determinant(mat2x2(1.0h));
-
-    let abstract_float = determinant(mat3x2(1.0));
-    let float_32 = determinant(mat3x2(1.0f));
-    let float_16 = determinant(mat3x2(1.0h));
 }
 ",
         expect![[r#"
@@ -868,21 +851,297 @@ fn foo() {
             139..164 'determ...1.0h))': f16
             151..163 'mat2x2(1.0h)': mat2x2<f16>
             158..162 '1.0h': f16
-            175..189 'abstract_float': [error]
-            192..216 'determ...(1.0))': [error]
-            204..215 'mat3x2(1.0)': mat3x2<float>
-            211..214 '1.0': float
-            226..234 'float_32': [error]
-            237..262 'determ...1.0f))': [error]
-            249..261 'mat3x2(1.0f)': mat3x2<f32>
-            256..260 '1.0f': f32
-            272..280 'float_16': [error]
-            283..308 'determ...1.0h))': [error]
-            295..307 'mat3x2(1.0h)': mat3x2<f16>
-            302..306 '1.0h': f16
-            [EditionedFileId(Id(1c00))] WgslError { expression: Idx::<Expression>(11), message: "`determinant` expects a square matrix argument" } in Body
-            [EditionedFileId(Id(1c00))] WgslError { expression: Idx::<Expression>(14), message: "`determinant` expects a square matrix argument" } in Body
-            [EditionedFileId(Id(1c00))] WgslError { expression: Idx::<Expression>(17), message: "`determinant` expects a square matrix argument" } in Body
+        "#]],
+    );
+}
+
+#[test]
+fn distance() {
+    check_infer(
+        ExtensionsConfig {
+            f16: true,
+            ..Default::default()
+        },
+        "
+enable f16;
+fn foo() {
+    let abstract_float = distance(1.0, 1.0);
+    let float_32 = distance(1.0f, 1.0f);
+    let float_16 = distance(1.0h, 1.0h);
+
+    let abstract_float_vec = distance(vec2(1.0), vec2(1.0));
+    let float_32_vec = distance(vec2(1.0f), vec2(1.0f));
+    let float_16_vec = distance(vec2(1.0h), vec2(1.0h));
+}
+",
+        expect![[r#"
+            31..45 'abstract_float': f32
+            48..66 'distan..., 1.0)': float
+            57..60 '1.0': float
+            62..65 '1.0': float
+            76..84 'float_32': f32
+            87..107 'distan... 1.0f)': f32
+            96..100 '1.0f': f32
+            102..106 '1.0f': f32
+            117..125 'float_16': f16
+            128..148 'distan... 1.0h)': f16
+            137..141 '1.0h': f16
+            143..147 '1.0h': f16
+            159..177 'abstra...at_vec': f32
+            180..210 'distan...(1.0))': float
+            189..198 'vec2(1.0)': vec2<float>
+            194..197 '1.0': float
+            200..209 'vec2(1.0)': vec2<float>
+            205..208 '1.0': float
+            220..232 'float_32_vec': f32
+            235..267 'distan...1.0f))': f32
+            244..254 'vec2(1.0f)': vec2<f32>
+            249..253 '1.0f': f32
+            256..266 'vec2(1.0f)': vec2<f32>
+            261..265 '1.0f': f32
+            277..289 'float_16_vec': f16
+            292..324 'distan...1.0h))': f16
+            301..311 'vec2(1.0h)': vec2<f16>
+            306..310 '1.0h': f16
+            313..323 'vec2(1.0h)': vec2<f16>
+            318..322 '1.0h': f16
+        "#]],
+    );
+}
+
+#[test]
+fn dot4U8Packed() {
+    check_infer(
+        ExtensionsConfig {
+            f16: true,
+            ..Default::default()
+        },
+        "
+enable f16;
+fn foo() {
+    let unsigned_integer_32 = dot4U8Packed(1u, 1u);
+}
+",
+        expect![[r#"
+            31..50 'unsign...ger_32': u32
+            53..73 'dot4U8...u, 1u)': u32
+            66..68 '1u': u32
+            70..72 '1u': u32
+        "#]],
+    );
+}
+
+#[test]
+fn dot4I8Packed() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+fn foo() {
+    let signed_integer_32 = dot4I8Packed(1u, 1u);
+}
+",
+        expect![[r#"
+            31..48 'signed...ger_32': i32
+            51..71 'dot4I8...u, 1u)': i32
+            64..66 '1u': u32
+            68..70 '1u': u32
+        "#]],
+    );
+}
+
+#[test]
+fn exp() {
+    check_infer(
+        ExtensionsConfig {
+            f16: true,
+            ..Default::default()
+        },
+        "
+enable f16;
+fn foo() {
+    let abstract_float = exp(1.0);
+    let float_32 = exp(1.0f);
+    let float_16 = exp(1.0h);
+
+    let abstract_float_vec = exp(vec2(1.0));
+    let float_32_vec = exp(vec2(1.0f));
+    let float_16_vec = exp(vec2(1.0h));
+}
+",
+        expect![[r#"
+            31..45 'abstract_float': f32
+            48..56 'exp(1.0)': float
+            52..55 '1.0': float
+            66..74 'float_32': f32
+            77..86 'exp(1.0f)': f32
+            81..85 '1.0f': f32
+            96..104 'float_16': f16
+            107..116 'exp(1.0h)': f16
+            111..115 '1.0h': f16
+            127..145 'abstra...at_vec': vec2<f32>
+            148..162 'exp(vec2(1.0))': vec2<float>
+            152..161 'vec2(1.0)': vec2<float>
+            157..160 '1.0': float
+            172..184 'float_32_vec': vec2<f32>
+            187..202 'exp(vec2(1.0f))': vec2<f32>
+            191..201 'vec2(1.0f)': vec2<f32>
+            196..200 '1.0f': f32
+            212..224 'float_16_vec': vec2<f16>
+            227..242 'exp(vec2(1.0h))': vec2<f16>
+            231..241 'vec2(1.0h)': vec2<f16>
+            236..240 '1.0h': f16
+        "#]],
+    );
+}
+
+#[test]
+fn exp2() {
+    check_infer(
+        ExtensionsConfig {
+            f16: true,
+            ..Default::default()
+        },
+        "
+enable f16;
+fn foo() {
+    let abstract_float = exp2(1.0);
+    let float_32 = exp2(1.0f);
+    let float_16 = exp2(1.0h);
+
+    let abstract_float_vec = exp2(vec2(1.0));
+    let float_32_vec = exp2(vec2(1.0f));
+    let float_16_vec = exp2(vec2(1.0h));
+}
+",
+        expect![[r#"
+            31..45 'abstract_float': f32
+            48..57 'exp2(1.0)': float
+            53..56 '1.0': float
+            67..75 'float_32': f32
+            78..88 'exp2(1.0f)': f32
+            83..87 '1.0f': f32
+            98..106 'float_16': f16
+            109..119 'exp2(1.0h)': f16
+            114..118 '1.0h': f16
+            130..148 'abstra...at_vec': vec2<f32>
+            151..166 'exp2(vec2(1.0))': vec2<float>
+            156..165 'vec2(1.0)': vec2<float>
+            161..164 '1.0': float
+            176..188 'float_32_vec': vec2<f32>
+            191..207 'exp2(v...1.0f))': vec2<f32>
+            196..206 'vec2(1.0f)': vec2<f32>
+            201..205 '1.0f': f32
+            217..229 'float_16_vec': vec2<f16>
+            232..248 'exp2(v...1.0h))': vec2<f16>
+            237..247 'vec2(1.0h)': vec2<f16>
+            242..246 '1.0h': f16
+        "#]],
+    );
+}
+
+#[test]
+fn extractBits_signed() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+fn foo() {
+    let signed_integer_32 = extractBits(1i, 0, 0);
+    let signed_integer_32_vec = extractBits(vec2(1i), 0, 0);
+}
+",
+        expect![[r#"
+            19..36 'signed...ger_32': i32
+            39..60 'extrac... 0, 0)': i32
+            51..53 '1i': i32
+            55..56 '0': integer
+            58..59 '0': integer
+            70..91 'signed...32_vec': vec2<i32>
+            94..121 'extrac... 0, 0)': vec2<i32>
+            106..114 'vec2(1i)': vec2<i32>
+            111..113 '1i': i32
+            116..117 '0': integer
+            119..120 '0': integer
+            132..149 'signed...ger_32': i32
+            152..172 'extrac... 0, 0)': i32
+            164..165 '1': integer
+            167..168 '0': integer
+            170..171 '0': integer
+            182..203 'signed...32_vec': vec2<i32>
+            206..232 'extrac... 0, 0)': vec2<i32>
+            218..225 'vec2(1)': vec2<integer>
+            223..224 '1': integer
+            227..228 '0': integer
+            230..231 '0': integer
+        "#]],
+    );
+}
+
+#[test]
+fn extractBits_unsigned() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+fn foo() {
+    let unsigned_integer_32 = extractBits(1u, 0, 0);
+    let unsigned_integer_32_vec = extractBits(vec2(1u), 0, 0);
+}
+",
+        expect![[r#"
+            19..38 'unsign...ger_32': u32
+            41..62 'extrac... 0, 0)': u32
+            53..55 '1u': u32
+            57..58 '0': integer
+            60..61 '0': integer
+            72..95 'unsign...32_vec': vec2<u32>
+            98..125 'extrac... 0, 0)': vec2<u32>
+            110..118 'vec2(1u)': vec2<u32>
+            115..117 '1u': u32
+            120..121 '0': integer
+            123..124 '0': integer
+        "#]],
+    );
+}
+
+#[test]
+fn faceForward() {
+    check_infer(
+        ExtensionsConfig {
+            f16: true,
+            ..Default::default()
+        },
+        "
+enable f16;
+fn foo() {
+    let abstract_float_vec = faceForward(vec2(1.0), vec2(1.0), vec2(1.0));
+    let float_32_vec = faceForward(vec2(1.0f), vec2(1.0f), vec2(1.0f));
+    let float_16_vec = faceForward(vec2(1.0h), vec2(1.0h), vec2(1.0h));
+}
+",
+        expect![[r#"
+            31..49 'abstra...at_vec': vec2<f32>
+            52..96 'faceFo...(1.0))': vec2<float>
+            64..73 'vec2(1.0)': vec2<float>
+            69..72 '1.0': float
+            75..84 'vec2(1.0)': vec2<float>
+            80..83 '1.0': float
+            86..95 'vec2(1.0)': vec2<float>
+            91..94 '1.0': float
+            106..118 'float_32_vec': vec2<f32>
+            121..168 'faceFo...1.0f))': vec2<f32>
+            133..143 'vec2(1.0f)': vec2<f32>
+            138..142 '1.0f': f32
+            145..155 'vec2(1.0f)': vec2<f32>
+            150..154 '1.0f': f32
+            157..167 'vec2(1.0f)': vec2<f32>
+            162..166 '1.0f': f32
+            178..190 'float_16_vec': vec2<f16>
+            193..240 'faceFo...1.0h))': vec2<f16>
+            205..215 'vec2(1.0h)': vec2<f16>
+            210..214 '1.0h': f16
+            217..227 'vec2(1.0h)': vec2<f16>
+            222..226 '1.0h': f16
+            229..239 'vec2(1.0h)': vec2<f16>
+            234..238 '1.0h': f16
         "#]],
     );
 }
