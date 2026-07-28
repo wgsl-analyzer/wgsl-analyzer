@@ -167,10 +167,7 @@ fn foo() {
 #[test]
 fn not_constructible_no_template() {
     check_infer(
-        ExtensionsConfig {
-            f16: true,
-            ..Default::default()
-        },
+        ExtensionsConfig::default(),
         "
 fn foo() {
     let structure = array();

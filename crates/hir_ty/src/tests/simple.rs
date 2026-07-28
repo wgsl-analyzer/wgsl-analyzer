@@ -1690,7 +1690,7 @@ fn no_builtin_overload() {
             8..10 '1f': f32
             8..22 '1f + mat2x2f()': [error]
             13..22 'mat2x2f()': mat2x2<f32>
-            [EditionedFileId(Id(1c00))] NoBuiltinOverload { expression: Idx::<Expression>(2), builtin: BuiltinId(2c00), name: Some("+"), parameters: [Type(2401), Type(2402)] } in Body
+            8..22 '1f + mat2x2f()': no built-in overload of `+` with parameters: (f32, mat2x2<f32>)
         "#]],
     );
 }
@@ -1798,8 +1798,8 @@ fn add_refs_and_ptrs() {
             398..403 'a_ptr': ptr<function, i32, read_write>
             398..411 'a_ptr + b_ref': [error]
             406..411 'b_ref': ref<function, i32, read_write>
-            [EditionedFileId(Id(1c00))] NoBuiltinOverload { expression: Idx::<Expression>(11), builtin: BuiltinId(3400), name: Some("+"), parameters: [Type(2c16), Type(2c16)] } in Body
-            [EditionedFileId(Id(1c00))] NoBuiltinOverload { expression: Idx::<Expression>(14), builtin: BuiltinId(3400), name: Some("+"), parameters: [Type(2c16), Type(2c0d)] } in Body
+            367..380 'a_ptr + b_ptr': no built-in overload of `+` with parameters: (ptr<function, i32, read_write>, ptr<function, i32, read_write>)
+            398..411 'a_ptr + b_ref': no built-in overload of `+` with parameters: (ptr<function, i32, read_write>, i32)
         "#]],
     );
 }
@@ -1968,6 +1968,25 @@ fn lower_call_uncallable_diagnostic() {
             19..20 'y': [error]
             23..36 'rgba16float()': [error]
             23..36 'rgba16float()': expected function, but got enumerant `rgba16float`
+        "#]],
+    );
+}
+
+#[test]
+fn not_convertible() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        fn foo() {
+            let x = 1i * 1.0f;
+        }
+        ",
+        expect![[r#"
+            19..20 'x': [error]
+            23..25 '1i': i32
+            23..32 '1i * 1.0f': [error]
+            28..32 '1.0f': f32
+            23..32 '1i * 1.0f': no built-in overload of `*` with parameters: (i32, f32)
         "#]],
     );
 }

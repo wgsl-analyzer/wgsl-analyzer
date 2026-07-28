@@ -21,6 +21,7 @@ use hir_def::{
     item_tree::{ModuleItemId, Name},
     type_specifier::{self, TypeSpecifierId},
 };
+use itertools::Itertools as _;
 use salsa::Durability;
 use syntax::{AstNode as _, ExtensionsConfig, SyntaxNode};
 use test_fixture::WithFixture as _;
@@ -196,7 +197,6 @@ impl<'db> InferPrinter<'db> {
                 self.print_type_mismatch(source_map, buffer, *expression, *expected, *actual);
             },
             IDK::AssignmentNotAReference { .. }
-            | IDK::NoBuiltinOverload { .. }
             | IDK::AddressOfNotReference { .. }
             | IDK::AddressOfNotReference { .. }
             | IDK::DerefNotAPointer { .. }
@@ -204,6 +204,14 @@ impl<'db> InferPrinter<'db> {
             | IDK::UnexpectedTemplateArgument { .. }
             | IDK::WgslError { .. } => {
                 self.print_todo_bad_diagnostic(diagnostic, buffer);
+            },
+            IDK::NoBuiltinOverload {
+                builtin,
+                expression,
+                name,
+                parameters,
+            } => {
+                self.print_no_builtin_overload(source_map, buffer, *expression, *name, parameters);
             },
             IDK::UnexpectedLoweredKind {
                 actual,
@@ -264,6 +272,34 @@ impl<'db> InferPrinter<'db> {
                 );
             },
         }
+    }
+
+    fn print_no_builtin_overload(
+        &self,
+        source_map: &ExpressionSourceMap,
+        buffer: &mut String,
+        expression: ExpressionId,
+        name: Option<&'static str>,
+        parameters: &[Type],
+    ) {
+        let Some((range, text)) = self.get_expression_range_text(source_map, expression) else {
+            return;
+        };
+        writeln!(
+            buffer,
+            "{range:?} '{}': no built-in overload of `{}` with parameters: ({})",
+            ellipsize(text, 15),
+            name.unwrap_or("<missing>"),
+            parameters
+                .iter()
+                .map(|r#type| pretty_type_with_verbosity(
+                    self.database,
+                    *r#type,
+                    TypeVerbosity::Full
+                ))
+                .join(", ")
+        )
+        .unwrap();
     }
 
     fn print_unexpected_lower_kind(
