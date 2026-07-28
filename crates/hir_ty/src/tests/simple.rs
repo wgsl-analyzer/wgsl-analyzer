@@ -1868,10 +1868,29 @@ fn lowering_type_missing_template_arguments() {
         ExtensionsConfig::default(),
         "
         var x: mat4x4;
+        const m: mat4x4 = mat4x4(0.0);
         ",
         expect![[r#"
             4..5 'x': ref<handle, [error], read>
             7..13 'mat4x4': missing template arguments
+            21..22 'm': [error]
+            33..44 'mat4x4(0.0)': mat4x4<float>
+            40..43 '0.0': float
+            24..30 'mat4x4': missing template arguments
+        "#]],
+    );
+}
+
+#[test]
+fn lowering_type_missing_expected_type() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        var x: modf;
+        ",
+        expect![[r#"
+            4..5 'x': ref<handle, [error], read>
+            7..11 'modf': modf is not a type
         "#]],
     );
 }
