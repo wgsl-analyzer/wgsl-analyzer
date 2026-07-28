@@ -1341,3 +1341,48 @@ fn foo() {
         "#]],
     );
 }
+
+#[test]
+fn fract() {
+    check_infer(
+        ExtensionsConfig {
+            f16: true,
+            ..Default::default()
+        },
+        "
+enable f16;
+fn foo() {
+    let abstract_float = fract(1.0);
+    let float_32 = fract(1.0f);
+    let float_16 = fract(1.0h);
+
+    let abstract_float_vec = fract(vec2(1.0));
+    let float_32_vec = fract(vec2(1.0f));
+    let float_16_vec = fract(vec2(1.0h));
+}
+",
+        expect![[r#"
+            31..45 'abstract_float': f32
+            48..58 'fract(1.0)': float
+            54..57 '1.0': float
+            68..76 'float_32': f32
+            79..90 'fract(1.0f)': f32
+            85..89 '1.0f': f32
+            100..108 'float_16': f16
+            111..122 'fract(1.0h)': f16
+            117..121 '1.0h': f16
+            133..151 'abstra...at_vec': vec2<f32>
+            154..170 'fract(...(1.0))': vec2<float>
+            160..169 'vec2(1.0)': vec2<float>
+            165..168 '1.0': float
+            180..192 'float_32_vec': vec2<f32>
+            195..212 'fract(...1.0f))': vec2<f32>
+            201..211 'vec2(1.0f)': vec2<f32>
+            206..210 '1.0f': f32
+            222..234 'float_16_vec': vec2<f16>
+            237..254 'fract(...1.0h))': vec2<f16>
+            243..253 'vec2(1.0h)': vec2<f16>
+            248..252 '1.0h': f16
+        "#]],
+    );
+}

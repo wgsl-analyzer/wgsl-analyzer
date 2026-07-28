@@ -214,8 +214,12 @@ fma(e1: vecN<AbstractFloat>, e2: vecN<AbstractFloat>, e3: vecN<AbstractFloat>) -
 fma(e1: vecN<f32>, e2: vecN<f32>, e3: vecN<f32>) -> vecN<f32>
 fma(e1: vecN<f16>, e2: vecN<f16>, e3: vecN<f16>) -> vecN<f16>
 
-fract(f32) -> f32
-fract(vecN<f32>) -> vecN<f32>
+fract(e: AbstractFloat) -> AbstractFloat
+fract(e: f32) -> f32
+fract(e: f16) -> f16
+fract(e: vecN<AbstractFloat>) -> vecN<AbstractFloat>
+fract(e: vecN<f32>) -> vecN<f32>
+fract(e: vecN<f16>) -> vecN<f16>
 
 // TODO frexp
 inverseSqrt(f32) -> f32
