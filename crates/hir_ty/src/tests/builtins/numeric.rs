@@ -1145,3 +1145,98 @@ fn foo() {
         "#]],
     );
 }
+
+#[test]
+fn firstLeadingBit_signed() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+fn foo() {
+    let signed_integer_32 = firstLeadingBit(1i);
+    let signed_integer_32_vec = firstLeadingBit(vec2(1i));
+}
+",
+        expect![[r#"
+            19..36 'signed...ger_32': i32
+            39..58 'firstL...it(1i)': i32
+            55..57 '1i': i32
+            68..89 'signed...32_vec': vec2<i32>
+            92..117 'firstL...2(1i))': vec2<i32>
+            108..116 'vec2(1i)': vec2<i32>
+            113..115 '1i': i32
+        "#]],
+    );
+}
+
+#[test]
+fn firstLeadingBit_unsigned() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+fn foo() {
+    let unsigned_integer_32 = firstLeadingBit(1u);
+    let unsigned_integer_32_vec = firstLeadingBit(vec2(1u));
+}
+",
+        expect![[r#"
+            19..38 'unsign...ger_32': u32
+            41..60 'firstL...it(1u)': u32
+            57..59 '1u': u32
+            70..93 'unsign...32_vec': vec2<u32>
+            96..121 'firstL...2(1u))': vec2<u32>
+            112..120 'vec2(1u)': vec2<u32>
+            117..119 '1u': u32
+        "#]],
+    );
+}
+
+#[test]
+fn firstTrailingBit_signed() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+fn foo() {
+    let signed_integer_32 = firstTrailingBit(1i);
+    let signed_integer_32_vec = firstTrailingBit(vec2(1i));
+}
+",
+        expect![[r#"
+            19..36 'signed...ger_32': i32
+            39..59 'firstT...it(1i)': i32
+            56..58 '1i': i32
+            69..90 'signed...32_vec': vec2<i32>
+            93..119 'firstT...2(1i))': vec2<i32>
+            110..118 'vec2(1i)': vec2<i32>
+            115..117 '1i': i32
+        "#]],
+    );
+}
+
+#[test]
+fn firstTrailingBit_unsigned() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+fn foo() {
+    let unsigned_integer_32 = firstTrailingBit(1u);
+    let unsigned_integer_32_vec = firstTrailingBit(vec2(1u));
+}
+",
+        expect![[r#"
+            19..38 'unsign...ger_32': u32
+            41..61 'firstT...it(1u)': u32
+            58..60 '1u': u32
+            71..94 'unsign...32_vec': vec2<u32>
+            97..123 'firstT...2(1u))': vec2<u32>
+            114..122 'vec2(1u)': vec2<u32>
+            119..121 '1u': u32
+        "#]],
+    );
+}
+
+
+
+
+
+
+

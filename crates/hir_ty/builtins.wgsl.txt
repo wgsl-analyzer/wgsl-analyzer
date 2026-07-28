@@ -188,6 +188,18 @@ faceForward(e1: vecN<AbstractFloat>, e2: vecN<AbstractFloat>, e3: vecN<AbstractF
 faceForward(e1: vecN<f32>, e2: vecN<f32>, e3: vecN<f32>) -> vecN<f32>
 faceForward(e1: vecN<f16>, e2: vecN<f16>, e3: vecN<f16>) -> vecN<f16>
 
+firstLeadingBit(e: i32) -> i32
+firstLeadingBit(e: vecN<i32>) -> vecN<i32>
+
+firstLeadingBit(e: u32) -> u32
+firstLeadingBit(e: vecN<u32>) -> vecN<u32>
+
+firstTrailingBit(e: i32) -> i32
+firstTrailingBit(e: vecN<i32>) -> vecN<i32>
+
+firstTrailingBit(e: u32) -> u32
+firstTrailingBit(e: vecN<u32>) -> vecN<u32>
+
 floor(f32) -> f32
 floor(vecN<f32>) -> vecN<f32>
 
@@ -251,14 +263,6 @@ radians(f32) -> f32
 radians(vecN<f32>) -> vecN<f32>
 
 // integer
-firstLeadingBit(i32) -> i32
-firstLeadingBit(vecN<i32>) -> vecN<i32>
-firstLeadingBit(u32) -> u32
-firstLeadingBit(vecN<u32>) -> vecN<u32>
-firstTrailingBit(i32) -> i32
-firstTrailingBit(vecN<i32>) -> vecN<i32>
-firstTrailingBit(u32) -> u32
-firstTrailingBit(vecN<u32>) -> vecN<u32>
 insertBits(i32, i32, u32, u32) -> i32
 insertBits(vecN<i32>, vecN<i32>, u32, u32) -> vecN<i32>
 insertBits(u32, u32, u32, u32) -> u32
