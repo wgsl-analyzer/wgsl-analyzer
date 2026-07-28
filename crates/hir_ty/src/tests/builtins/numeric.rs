@@ -1388,6 +1388,93 @@ fn foo() {
 }
 
 #[test]
+fn frexp() {
+    check_infer(
+        ExtensionsConfig {
+            f16: true,
+            ..Default::default()
+        },
+        "
+enable f16;
+fn foo() {
+    let abstract_float = frexp(1.0);
+    let abstract_float_fract = abstract_float.fract;
+    let abstract_float_exp = abstract_float.exp;
+    let float_32 = frexp(1.0f);
+    let float_32_fract = float_32.fract;
+    let float_32_exp = float_32.exp;
+    let float_16 = frexp(1.0h);
+    let float_16_fract = float_16.fract;
+    let float_16_exp = float_16.exp;
+
+    let abstract_float_vec = frexp(vec2(1.0));
+    let abstract_float_vec_fract = abstract_float_vec.fract;
+    let abstract_float_vec_exp = abstract_float_vec.exp;
+    let float_32_vec = frexp(vec2(1.0f));
+    let float_32_vec_fract = float_32_vec.fract;
+    let float_32_vec_exp = float_32_vec.exp;
+    let float_16_vec = frexp(vec2(1.0h));
+    let float_16_vec_fract = float_16_vec.fract;
+    let float_16_vec_exp = float_16_vec.exp;
+}
+",
+        expect![[r#"
+            31..45 'abstract_float': [error]
+            48..58 'frexp(1.0)': [error]
+            54..57 '1.0': float
+            68..88 'abstra..._fract': [error]
+            91..105 'abstract_float': [error]
+            121..139 'abstra...at_exp': [error]
+            142..156 'abstract_float': [error]
+            170..178 'float_32': [error]
+            181..192 'frexp(1.0f)': [error]
+            187..191 '1.0f': f32
+            202..216 'float_32_fract': [error]
+            219..227 'float_32': [error]
+            243..255 'float_32_exp': [error]
+            258..266 'float_32': [error]
+            280..288 'float_16': [error]
+            291..302 'frexp(1.0h)': [error]
+            297..301 '1.0h': f16
+            312..326 'float_16_fract': [error]
+            329..337 'float_16': [error]
+            353..365 'float_16_exp': [error]
+            368..376 'float_16': [error]
+            391..409 'abstra...at_vec': [error]
+            412..428 'frexp(...(1.0))': [error]
+            418..427 'vec2(1.0)': vec2<float>
+            423..426 '1.0': float
+            438..462 'abstra..._fract': [error]
+            465..483 'abstra...at_vec': [error]
+            499..521 'abstra...ec_exp': [error]
+            524..542 'abstra...at_vec': [error]
+            556..568 'float_32_vec': [error]
+            571..588 'frexp(...1.0f))': [error]
+            577..587 'vec2(1.0f)': vec2<f32>
+            582..586 '1.0f': f32
+            598..616 'float_..._fract': [error]
+            619..631 'float_32_vec': [error]
+            647..663 'float_...ec_exp': [error]
+            666..678 'float_32_vec': [error]
+            692..704 'float_16_vec': [error]
+            707..724 'frexp(...1.0h))': [error]
+            713..723 'vec2(1.0h)': vec2<f16>
+            718..722 '1.0h': f16
+            734..752 'float_..._fract': [error]
+            755..767 'float_16_vec': [error]
+            783..799 'float_...ec_exp': [error]
+            802..814 'float_16_vec': [error]
+            48..58 'frexp(1.0)': `frexp` not found in scope
+            181..192 'frexp(1.0f)': `frexp` not found in scope
+            291..302 'frexp(1.0h)': `frexp` not found in scope
+            412..428 'frexp(...(1.0))': `frexp` not found in scope
+            571..588 'frexp(...1.0f))': `frexp` not found in scope
+            707..724 'frexp(...1.0h))': `frexp` not found in scope
+        "#]],
+    );
+}
+
+#[test]
 fn insertBits() {
     check_infer(
         ExtensionsConfig::default(),

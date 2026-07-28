@@ -221,7 +221,14 @@ fract(e: vecN<AbstractFloat>) -> vecN<AbstractFloat>
 fract(e: vecN<f32>) -> vecN<f32>
 fract(e: vecN<f16>) -> vecN<f16>
 
-// TODO frexp
+frexp(T) -> T
+// frexp(e: AbstractFloat) -> __frexp_result_abstract
+// frexp(e: f32) -> __frexp_result_f32
+// frexp(e: f16) -> __frexp_result_f16
+// frexp(e: vecN<AbstractFloat>) -> __frexp_result_vecN_abstract
+// frexp(e: vecN<f32>) -> __frexp_result_vecN_f32
+// frexp(e: vecN<f16>) -> __frexp_result_vecN_f16
+
 
 insertBits(e: i32, newbits: i32, offset: u32, count: u32) -> i32
 insertBits(e: u32, newbits: u32, offset: u32, count: u32) -> u32
