@@ -1386,3 +1386,50 @@ fn foo() {
         "#]],
     );
 }
+
+#[test]
+fn insertBits() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+fn foo() {
+    let signed_integer_32 = insertBits(1i, 1i, 0u, 0u);
+    let unsigned_integer_32 = insertBits(1u, 1u, 0u, 0u);
+
+    let signed_integer_32_vec = insertBits(vec2(1i), vec2(1i), 0u, 0u);
+    let unsigned_integer_32_vec = insertBits(vec2(1u), vec2(1u), 0u, 0u);
+}
+",
+        expect![[r#"
+            19..36 'signed...ger_32': i32
+            39..65 'insert...u, 0u)': i32
+            50..52 '1i': i32
+            54..56 '1i': i32
+            58..60 '0u': u32
+            62..64 '0u': u32
+            75..94 'unsign...ger_32': u32
+            97..123 'insert...u, 0u)': u32
+            108..110 '1u': u32
+            112..114 '1u': u32
+            116..118 '0u': u32
+            120..122 '0u': u32
+            134..155 'signed...32_vec': vec2<i32>
+            158..196 'insert...u, 0u)': vec2<i32>
+            169..177 'vec2(1i)': vec2<i32>
+            174..176 '1i': i32
+            179..187 'vec2(1i)': vec2<i32>
+            184..186 '1i': i32
+            189..191 '0u': u32
+            193..195 '0u': u32
+            206..229 'unsign...32_vec': vec2<u32>
+            232..270 'insert...u, 0u)': vec2<u32>
+            243..251 'vec2(1u)': vec2<u32>
+            248..250 '1u': u32
+            253..261 'vec2(1u)': vec2<u32>
+            258..260 '1u': u32
+            263..265 '0u': u32
+            267..269 '0u': u32
+        "#]],
+    );
+}
+
