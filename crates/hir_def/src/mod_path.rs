@@ -101,19 +101,10 @@ impl fmt::Display for AbsoluteModPath {
     }
 }
 
-#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ModPath {
     kind: PathKind,
     segments: SmallVec<[Name; 1]>,
-}
-
-impl fmt::Debug for ModPath {
-    fn fmt(
-        &self,
-        f: &mut fmt::Formatter<'_>,
-    ) -> fmt::Result {
-        f.debug_tuple("ModPath").field(&self.to_string()).finish()
-    }
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
