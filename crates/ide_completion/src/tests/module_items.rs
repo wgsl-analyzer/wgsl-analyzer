@@ -6,17 +6,52 @@ use crate::tests::{check, completion_list};
 use expect_test::expect;
 
 #[test]
-fn complete_field() {
+fn complete_struct_field() {
     check(
         "
-            struct Foo { bar: u32 }
-            fn test() {
-                let test = Foo(0);
-                let x = test.$0;
-            }
-            ",
-        expect![["field bar
-"]],
+        struct Foo { bar: u32 }
+        fn test() {
+            let test = Foo(0);
+            let x = test.$0;
+        }
+        ",
+        expect![[r#"
+            field bar
+        "#]],
+    );
+}
+
+#[test]
+fn complete_builtin_field() {
+    check(
+        "
+        fn test() {
+            let test = modf(0.0);
+            let x = test.$0;
+        }
+        ",
+        expect![[r#"
+            field fract
+            field whole
+        "#]],
+    );
+}
+
+#[test]
+fn complete_vec_field() {
+    check(
+        "
+        fn test() {
+            let test = vec2(0);
+            let x = test.$0;
+        }
+        ",
+        expect![[r#"
+            field g
+            field r
+            field x
+            field y
+        "#]],
     );
 }
 

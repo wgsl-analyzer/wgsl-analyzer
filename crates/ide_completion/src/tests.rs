@@ -173,9 +173,9 @@ fn render_completion_list(mut completions: Vec<CompletionItem>) -> String {
         .into_iter()
         .map(|it| {
             let tag = it.kind.tag();
-            let mut buf = format!("{tag} {}", it.label.primary);
+            let mut buffer = format!("{tag} {}", it.label.primary);
             if let Some(label_detail) = &it.label.detail_left {
-                format_to!(buf, " {label_detail}");
+                format_to!(buffer, " {label_detail}");
             }
             if let Some(detail_right) = it.label.detail_right {
                 let pad_with = label_width.saturating_sub(
@@ -184,16 +184,13 @@ fn render_completion_list(mut completions: Vec<CompletionItem>) -> String {
                         + monospace_width(&detail_right)
                         + usize::from(it.label.detail_left.is_some()),
                 );
-                format_to!(buf, "{:pad_with$}{detail_right}", "",);
+                format_to!(buffer, "{:pad_with$}{detail_right}", "",);
             }
             if it.deprecated {
-                format_to!(buf, " DEPRECATED");
+                format_to!(buffer, " DEPRECATED");
             }
-            format_to!(
-                buf, "
-"
-            );
-            buf
+            format_to!(buffer, "\n");
+            buffer
         })
         .collect()
 }
