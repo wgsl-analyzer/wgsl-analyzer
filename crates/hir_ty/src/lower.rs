@@ -405,15 +405,13 @@ impl<'database> WgslTypeConverter<'database> {
     pub fn to_wgsl_types(
         &mut self,
         r#type: Type,
-    ) -> Option<wgsl_types::Type> {
-        Some(match r#type.kind(self.database) {
+    ) -> wgsl_types::Type {
+        match r#type.kind(self.database) {
             // TODO: This should not be necessary because the types should align 1:1
             // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/672
             TypeKind::Error
             | TypeKind::BoundVariable(_)
-            | TypeKind::StorageTypeOfTexelFormat(_) => {
-                return None;
-            },
+            | TypeKind::StorageTypeOfTexelFormat(_) => wgsl_types::Type::Unknown,
             TypeKind::Scalar(ScalarType::AbstractFloat) => wgsl_types::Type::AbstractFloat,
             TypeKind::Scalar(ScalarType::AbstractInt) => wgsl_types::Type::AbstractInt,
             TypeKind::Scalar(ScalarType::Bool) => wgsl_types::Type::Bool,
@@ -424,14 +422,12 @@ impl<'database> WgslTypeConverter<'database> {
             TypeKind::Scalar(ScalarType::I64) => wgsl_types::Type::I64,
             TypeKind::Scalar(ScalarType::U64) => wgsl_types::Type::U64,
             TypeKind::Atomic(AtomicType { inner }) => {
-                wgsl_types::Type::Atomic(Box::new(self.to_wgsl_types(inner)?))
+                wgsl_types::Type::Atomic(Box::new(self.to_wgsl_types(inner)))
             },
             TypeKind::Vector(VectorType {
                 size,
                 component_type,
-            }) => {
-                wgsl_types::Type::Vec(size.as_u8(), Box::new(self.to_wgsl_types(component_type)?))
-            },
+            }) => wgsl_types::Type::Vec(size.as_u8(), Box::new(self.to_wgsl_types(component_type))),
             TypeKind::Matrix(MatrixType {
                 columns,
                 rows,
@@ -439,7 +435,7 @@ impl<'database> WgslTypeConverter<'database> {
             }) => wgsl_types::Type::Mat(
                 columns.as_u8(),
                 rows.as_u8(),
-                Box::new(self.to_wgsl_types(inner)?),
+                Box::new(self.to_wgsl_types(inner)),
             ),
             TypeKind::Struct(struct_id) => {
                 let data = self.database.struct_data(struct_id).0;
@@ -451,16 +447,15 @@ impl<'database> WgslTypeConverter<'database> {
                         .fields
                         .iter()
                         .map(|(id, data)| {
-                            Some(wgsl_types::ty::StructMemberType {
+                            wgsl_types::ty::StructMemberType {
                                 name: data.name.as_str().to_owned(),
-                                // Skip broken struct fields
-                                ty: self.to_wgsl_types(fields[id])?,
+                                ty: self.to_wgsl_types(fields[id]),
                                 // Don't bother reconstructing the correct layout
                                 size: None,
                                 align: None,
-                            })
+                            }
                         })
-                        .collect::<Option<Vec<_>>>()?,
+                        .collect::<Vec<_>>(),
                 }))
             },
             TypeKind::Array(ArrayType {
@@ -468,7 +463,7 @@ impl<'database> WgslTypeConverter<'database> {
                 binding_array: false,
                 size,
             }) => wgsl_types::Type::Array(
-                Box::new(self.to_wgsl_types(inner)?),
+                Box::new(self.to_wgsl_types(inner)),
                 match size {
                     #[expect(clippy::as_conversions, reason = "externally defined")]
                     ArraySize::Constant(size) => Some(size as usize),
@@ -480,7 +475,7 @@ impl<'database> WgslTypeConverter<'database> {
                 binding_array: true,
                 size,
             }) => wgsl_types::Type::BindingArray(
-                Box::new(self.to_wgsl_types(inner)?),
+                Box::new(self.to_wgsl_types(inner)),
                 match size {
                     #[expect(clippy::as_conversions, reason = "externally defined")]
                     ArraySize::Constant(size) => Some(size as usize),
@@ -497,7 +492,7 @@ impl<'database> WgslTypeConverter<'database> {
                 access_mode,
             }) => wgsl_types::Type::Ref(
                 address_space,
-                Box::new(self.to_wgsl_types(inner)?),
+                Box::new(self.to_wgsl_types(inner)),
                 access_mode,
             ),
             TypeKind::Pointer(Pointer {
@@ -506,10 +501,10 @@ impl<'database> WgslTypeConverter<'database> {
                 access_mode,
             }) => wgsl_types::Type::Ptr(
                 address_space,
-                Box::new(self.to_wgsl_types(inner)?),
+                Box::new(self.to_wgsl_types(inner)),
                 access_mode,
             ),
-        })
+        }
     }
 
     /// Returns `None` if it is an error type.
@@ -519,7 +514,7 @@ impl<'database> WgslTypeConverter<'database> {
     ) -> Option<wgsl_types::tplt::TpltParam> {
         Some(match param {
             TemplateParameter::Type(r#type) => {
-                wgsl_types::tplt::TpltParam::Type(self.to_wgsl_types(r#type)?)
+                wgsl_types::tplt::TpltParam::Type(self.to_wgsl_types(r#type))
             },
             TemplateParameter::Instance(instance) => {
                 wgsl_types::tplt::TpltParam::Instance(instance?)
@@ -637,6 +632,7 @@ impl<'database> WgslTypeConverter<'database> {
             },
             wgsl_types::Type::RayQuery(_) => todo!("naga extension"),
             wgsl_types::Type::AccelerationStructure(_) => todo!("naga extension"),
+            wgsl_types::Type::Unknown => TypeKind::Error.intern(self.database),
         }
     }
 

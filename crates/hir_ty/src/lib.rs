@@ -11,6 +11,9 @@ pub mod validate;
 
 pub mod diagnostics;
 pub mod lower;
+
+pub use wgsl_types::syntax::AddressSpace;
+
 #[cfg(test)]
 mod test_db;
 #[cfg(test)]

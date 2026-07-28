@@ -593,6 +593,7 @@ impl Config {
             .unwrap_or_else(|| "tint".into());
         DiagnosticsConfig {
             enabled: true,
+            parse_enabled: true,
             semantic_enabled: *self.diagnostics_semanticErrors(),
             naga_parsing_enabled: *self.diagnostics_external_naga_parsing(),
             naga_validation_enabled: *self.diagnostics_external_naga_validation_errors(),
