@@ -58,12 +58,20 @@ fn check_diagnostics_with_config(
 }
 
 #[test]
-fn incr_decr_must_be_integer_scalar() {
+fn infer_incr_decr_must_be_integer_scalar() {
     check_diagnostics(
         "fn foo() { var x = true; x++; }",
         expect![[r#"
             25..26 wgsl-analyzer Error 2: expected i32 or u32, found bool
         "#]],
+    );
+}
+
+#[test]
+fn infer_assert_expect() {
+    check_diagnostics(
+        "fn foo() { const_assert 1 != 0; }",
+        expect![""],
     );
 }
 
