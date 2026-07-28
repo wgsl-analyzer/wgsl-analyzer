@@ -588,6 +588,7 @@ impl<'database> WgslTypeConverter<'database> {
                     .intern(self.database)
                 }
             },
+            // TODO: bufferArrayView
             wgsl_types::Type::Array(r#type, size) => TypeKind::Array(ArrayType {
                 inner: self.from_wgsl_types(*r#type),
                 binding_array: false,

@@ -1916,3 +1916,22 @@ fn to_wgsl_types_builtin_struct() {
         "#]],
     );
 }
+
+#[test]
+fn lower_function_as_template_argument() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        fn foo() {
+            let y = array<foo>(1.0);
+        }
+        ",
+        expect![[r#"
+            19..20 'y': array<[error]>
+            23..38 'array<foo>(1.0)': array<[error]>
+            34..37 '1.0': float
+            34..37 '1.0': expected [error] but got float
+            29..32 'foo': foo was written, write foo() instead
+        "#]],
+    );
+}
