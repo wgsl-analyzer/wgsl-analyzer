@@ -200,8 +200,12 @@ firstTrailingBit(e: vecN<i32>) -> vecN<i32>
 firstTrailingBit(e: u32) -> u32
 firstTrailingBit(e: vecN<u32>) -> vecN<u32>
 
-floor(f32) -> f32
-floor(vecN<f32>) -> vecN<f32>
+floor(e: AbstractFloat) -> AbstractFloat
+floor(e: f32) -> f32
+floor(e: f16) -> f16
+floor(e: vecN<AbstractFloat>) -> vecN<AbstractFloat>
+floor(e: vecN<f32>) -> vecN<f32>
+floor(e: vecN<f16>) -> vecN<f16>
 
 fma(f32, f32) -> f32
 fma(vecN<f32>, vecN<f32>) -> f32
