@@ -1861,3 +1861,17 @@ fn shift_operator_inference() {
         "#]],
     );
 }
+
+#[test]
+fn lowering_type_missing_template_arguments() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        var x: mat4x4;
+        ",
+        expect![[r#"
+            4..5 'x': ref<handle, [error], read>
+            7..13 'mat4x4': missing template arguments
+        "#]],
+    );
+}
