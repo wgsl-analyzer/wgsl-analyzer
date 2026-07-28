@@ -249,11 +249,19 @@ length(e: vecN<AbstractFloat>) -> AbstractFloat
 length(e: vecN<f32>) -> f32
 length(e: vecN<f16>) -> f16
 
-log(f32) -> f32
-log(vecN<f32>) -> vecN<f32>
+log(e: AbstractFloat) -> AbstractFloat
+log(e: f32) -> f32
+log(e: f16) -> f16
+log(e: vecN<AbstractFloat>) -> vecN<AbstractFloat>
+log(e: vecN<f32>) -> vecN<f32>
+log(e: vecN<f16>) -> vecN<f16>
 
-log2(f32) -> f32
-log2(vecN<f32>) -> vecN<f32>
+log2(e: AbstractFloat) -> AbstractFloat
+log2(e: f32) -> f32
+log2(e: f16) -> f16
+log2(e: vecN<AbstractFloat>) -> vecN<AbstractFloat>
+log2(e: vecN<f32>) -> vecN<f32>
+log2(e: vecN<f16>) -> vecN<f16>
 
 min(f32, f32) -> f32
 min(vecN<f32>, vecN<f32>) -> vecN<f32>
