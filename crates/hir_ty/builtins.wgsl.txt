@@ -242,12 +242,19 @@ ldexp(e1: vecN<AbstractFloat>, e2: vecN<AbstractInt>) -> vecN<AbstractFloat>
 ldexp(e1: vecN<f32>, e2: vecN<i32>) -> vecN<f32>
 ldexp(e1: vecN<f16>, e2: vecN<i32>) -> vecN<f16>
 
-length(f32) -> f32
-length(vecN<f32>) -> f32
+length(e: AbstractFloat) -> AbstractFloat
+length(e: f32) -> f32
+length(e: f16) -> f16
+length(e: vecN<AbstractFloat>) -> AbstractFloat
+length(e: vecN<f32>) -> f32
+length(e: vecN<f16>) -> f16
+
 log(f32) -> f32
 log(vecN<f32>) -> vecN<f32>
+
 log2(f32) -> f32
 log2(vecN<f32>) -> vecN<f32>
+
 min(f32, f32) -> f32
 min(vecN<f32>, vecN<f32>) -> vecN<f32>
 max(f32, f32) -> f32

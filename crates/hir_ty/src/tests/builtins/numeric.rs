@@ -1545,4 +1545,50 @@ fn foo() {
     );
 }
 
+#[test]
+fn length() {
+    check_infer(
+        ExtensionsConfig {
+            f16: true,
+            ..Default::default()
+        },
+        "
+enable f16;
+fn foo() {
+    let abstract_float = length(1.0);
+    let float_32 = length(1.0f);
+    let float_16 = length(1.0h);
+
+    let abstract_float_vec = length(vec2(1.0));
+    let float_32_vec = length(vec2(1.0f));
+    let float_16_vec = length(vec2(1.0h));
+}
+",
+        expect![[r#"
+            31..45 'abstract_float': f32
+            48..59 'length(1.0)': float
+            55..58 '1.0': float
+            69..77 'float_32': f32
+            80..92 'length(1.0f)': f32
+            87..91 '1.0f': f32
+            102..110 'float_16': f16
+            113..125 'length(1.0h)': f16
+            120..124 '1.0h': f16
+            136..154 'abstra...at_vec': f32
+            157..174 'length...(1.0))': float
+            164..173 'vec2(1.0)': vec2<float>
+            169..172 '1.0': float
+            184..196 'float_32_vec': f32
+            199..217 'length...1.0f))': f32
+            206..216 'vec2(1.0f)': vec2<f32>
+            211..215 '1.0f': f32
+            227..239 'float_16_vec': f16
+            242..260 'length...1.0h))': f16
+            249..259 'vec2(1.0h)': vec2<f16>
+            254..258 '1.0h': f16
+        "#]],
+    );
+}
+
+
 
