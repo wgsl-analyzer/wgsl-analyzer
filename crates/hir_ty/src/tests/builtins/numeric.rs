@@ -1478,4 +1478,71 @@ fn foo() {
     );
 }
 
+#[test]
+fn ldexp() {
+    check_infer(
+        ExtensionsConfig {
+            f16: true,
+            ..Default::default()
+        },
+        "
+enable f16;
+fn foo() {
+    let abstract_float_abstract_integer = ldexp(1.0, 1);
+    let float_32 = ldexp(1.0f, 1i);
+    let float_16 = ldexp(1.0h, 1i);
+
+    let abstract_float_abstract_integer_vec = ldexp(vec2(1.0), vec2(1));
+    let float_32_vec = ldexp(vec2(1.0f), vec2(1i));
+    let float_16_vec = ldexp(vec2(1.0h), vec2(1i));
+
+    let automatic_concrete = ldexp(1.0, 1i);
+    let automatic_concrete_vec = ldexp(vec2(1.0), vec2(1i));
+}
+",
+        expect![[r#"
+            31..62 'abstra...nteger': f32
+            65..78 'ldexp(1.0, 1)': float
+            71..74 '1.0': float
+            76..77 '1': integer
+            88..96 'float_32': f32
+            99..114 'ldexp(1.0f, 1i)': f32
+            105..109 '1.0f': f32
+            111..113 '1i': i32
+            124..132 'float_16': f16
+            135..150 'ldexp(1.0h, 1i)': f16
+            141..145 '1.0h': f16
+            147..149 '1i': i32
+            161..196 'abstra...er_vec': vec2<f32>
+            199..224 'ldexp(...c2(1))': vec2<float>
+            205..214 'vec2(1.0)': vec2<float>
+            210..213 '1.0': float
+            216..223 'vec2(1)': vec2<integer>
+            221..222 '1': integer
+            234..246 'float_32_vec': vec2<f32>
+            249..276 'ldexp(...2(1i))': vec2<f32>
+            255..265 'vec2(1.0f)': vec2<f32>
+            260..264 '1.0f': f32
+            267..275 'vec2(1i)': vec2<i32>
+            272..274 '1i': i32
+            286..298 'float_16_vec': vec2<f16>
+            301..328 'ldexp(...2(1i))': vec2<f16>
+            307..317 'vec2(1.0h)': vec2<f16>
+            312..316 '1.0h': f16
+            319..327 'vec2(1i)': vec2<i32>
+            324..326 '1i': i32
+            339..357 'automa...ncrete': f32
+            360..374 'ldexp(1.0, 1i)': f32
+            366..369 '1.0': float
+            371..373 '1i': i32
+            384..406 'automa...te_vec': vec2<f32>
+            409..435 'ldexp(...2(1i))': vec2<f32>
+            415..424 'vec2(1.0)': vec2<float>
+            420..423 '1.0': float
+            426..434 'vec2(1i)': vec2<i32>
+            431..433 '1i': i32
+        "#]],
+    );
+}
+
 

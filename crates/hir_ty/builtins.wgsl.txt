@@ -235,7 +235,13 @@ inverseSqrt(e: vecN<AbstractFloat>) -> vecN<AbstractFloat>
 inverseSqrt(e: vecN<f32>) -> vecN<f32>
 inverseSqrt(e: vecN<f16>) -> vecN<f16>
 
-// TODO ldexp
+ldexp(e1: AbstractFloat, e2: AbstractInt) -> AbstractFloat
+ldexp(e1: f32, e2: i32) -> f32
+ldexp(e1: f16, e2: i32) -> f16
+ldexp(e1: vecN<AbstractFloat>, e2: vecN<AbstractInt>) -> vecN<AbstractFloat>
+ldexp(e1: vecN<f32>, e2: vecN<i32>) -> vecN<f32>
+ldexp(e1: vecN<f16>, e2: vecN<i32>) -> vecN<f16>
+
 length(f32) -> f32
 length(vecN<f32>) -> f32
 log(f32) -> f32
@@ -286,10 +292,6 @@ radians(f32) -> f32
 radians(vecN<f32>) -> vecN<f32>
 
 // integer
-insertBits(i32, i32, u32, u32) -> i32
-insertBits(vecN<i32>, vecN<i32>, u32, u32) -> vecN<i32>
-insertBits(u32, u32, u32, u32) -> u32
-insertBits(vecN<u32>, vecN<u32>, u32, u32) -> vecN<u32>
 max(i32, i32) -> i32
 max(vecN<i32>, vecN<i32>) -> vecN<i32>
 max(u32, u32) -> u32
