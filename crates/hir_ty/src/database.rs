@@ -38,14 +38,17 @@ pub trait HirDatabase: DefDatabase + fmt::Debug {
         &self,
         key: StructId,
     ) -> Arc<(ArenaMap<LocalFieldId, Type>, Vec<InferenceDiagnostic>)>;
+
     fn function_type(
         &self,
         key: FunctionId,
     ) -> ResolvedFunctionId;
+
     fn type_alias_type(
         &self,
         key: TypeAliasId,
     ) -> Arc<(Type, Vec<InferenceDiagnostic>)>;
+
     fn struct_is_used_in_uniform(
         &self,
         key: StructId,

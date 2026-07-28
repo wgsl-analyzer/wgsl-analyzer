@@ -41,6 +41,7 @@ pub struct DiagnosticsConfig {
     /// Whether native diagnostics are enabled.
     pub enabled: bool,
     pub semantic_enabled: bool,
+    pub parse_enabled: bool,
     pub naga_parsing_enabled: bool,
     pub naga_validation_enabled: bool,
     pub naga_version: NagaVersion,
@@ -48,11 +49,28 @@ pub struct DiagnosticsConfig {
     pub tint_path: Option<Utf8PathBuf>,
 }
 
+impl DiagnosticsConfig {
+    #[must_use]
+    pub const fn none() -> Self {
+        Self {
+            enabled: false,
+            semantic_enabled: false,
+            parse_enabled: false,
+            naga_parsing_enabled: false,
+            naga_validation_enabled: false,
+            naga_version: NagaVersion::Naga29, // no const default :()
+            tint_enabled: false,
+            tint_path: None,
+        }
+    }
+}
+
 impl Default for DiagnosticsConfig {
     fn default() -> Self {
         Self {
             enabled: true,
             semantic_enabled: true,
+            parse_enabled: true,
             naga_parsing_enabled: true,
             naga_validation_enabled: true,
             naga_version: NagaVersion::default(),
@@ -158,16 +176,18 @@ pub fn diagnostics(
 
     let mut diagnostics = Vec::new();
 
-    diagnostics.extend(
-        parse
-            .errors()
-            .iter()
-            .map(|error| AnyDiagnostic::ParseError {
-                message: error.message.clone(),
-                range: error.range,
-                file_id,
-            }),
-    );
+    if config.parse_enabled {
+        diagnostics.extend(
+            parse
+                .errors()
+                .iter()
+                .map(|error| AnyDiagnostic::ParseError {
+                    message: error.message.clone(),
+                    range: error.range,
+                    file_id,
+                }),
+        );
+    }
 
     let semantics = Semantics::new(database);
 

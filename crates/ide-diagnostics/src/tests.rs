@@ -54,7 +54,6 @@ fn check_diagnostics_with_config(
             code.as_str()
         );
     }
-
     expect.assert_eq(&actual);
 }
 
@@ -243,7 +242,9 @@ fn invalid_bitcast() {
         "
 fn foo() { let bar: f32 = bitcast<f32>(vec4u(1, 2, 3, 4)); }
 ",
-        expect![""],
+        expect![[r#"
+            26..57 wesl-rs Error 22: `bitcast` argument must have the same byte length as the template type
+        "#]],
     );
 }
 

@@ -36,6 +36,7 @@ pub enum AddressSpaceError {
     /// Plain type, excluding runtime-sized arrays.
     WorkgroupCompatible,
     HandleOrTexture,
+    TaskPayloadCompatible,
 }
 
 impl fmt::Display for AddressSpaceError {
@@ -61,6 +62,9 @@ impl fmt::Display for AddressSpaceError {
             Self::WorkgroupCompatible => formatter.write_str(""),
             Self::HandleOrTexture => {
                 formatter.write_str("address space is only valid for handle or texture types")
+            },
+            Self::TaskPayloadCompatible => {
+                formatter.write_str("type is not compatible with `task_payload` address space")
             },
         }
     }
@@ -187,7 +191,15 @@ pub fn validate_address_space<DiagnosticBuilder>(
             // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/682
         },
         AddressSpace::TaskPayload => {
-            // TODO naga extension task payload
+            if !matches!(scope, Scope::Module) {
+                diagnostic_builder(AddressSpaceError::Scope(Scope::Module));
+            }
+            if !matches!(access_mode, AccessMode::Read) {
+                diagnostic_builder(AddressSpaceError::AccessMode(smallvec![AccessMode::Read]));
+            }
+            if !r#type.is_error() && r#type.size_of(address_space, database) < Some(4) {
+                diagnostic_builder(AddressSpaceError::TaskPayloadCompatible);
+            }
         },
     }
 }

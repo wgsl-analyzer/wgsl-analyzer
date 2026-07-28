@@ -22,12 +22,13 @@ use hir_def::{
     resolver::{ResolveKind, Resolver},
     signature::{FieldId, ParameterId},
 };
-pub use hir_ty::database::HirDatabase;
 use hir_ty::{infer::InferenceResult, ty::Type};
 use smallvec::SmallVec;
 use stdx::impl_from;
 use syntax::{AstNode as _, HasName as _, SyntaxNode, ast, pointer::AstPointer};
 use triomphe::Arc;
+
+pub use hir_ty::{AddressSpace, database::HirDatabase};
 
 pub trait HasSource {
     type Ast;
