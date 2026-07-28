@@ -69,10 +69,7 @@ fn infer_incr_decr_must_be_integer_scalar() {
 
 #[test]
 fn infer_assert_expect() {
-    check_diagnostics(
-        "fn foo() { const_assert 1 != 0; }",
-        expect![""],
-    );
+    check_diagnostics("fn foo() { const_assert 1 != 0; }", expect![""]);
 }
 
 #[test]
