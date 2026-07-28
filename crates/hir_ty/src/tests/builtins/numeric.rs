@@ -1856,6 +1856,96 @@ fn foo() {
 }
 
 #[test]
+fn max() {
+    check_infer(
+        ExtensionsConfig {
+            f16: true,
+            ..Default::default()
+        },
+        "
+enable f16;
+fn foo() {
+    let abstract_integer = max(1, 1);
+    let abstract_float = max(1.0, 1.0);
+    let signed_integer_32 = max(1i, 1i);
+    let unsigned_integer_32 = max(1u, 1u);
+    let float_32 = max(1.0f, 1.0f);
+    let float_16 = max(1.0h, 1.0h);
+
+    let abstract_integer_vec = max(vec2(1), vec2(1));
+    let abstract_float_vec = max(vec2(1.0), vec2(1.0));
+    let signed_integer_32_vec = max(vec2(1i), vec2(1i));
+    let unsigned_integer_32_vec = max(vec2(1u), vec2(1u));
+    let float_32_vec = max(vec2(1.0f), vec2(1.0f));
+    let float_16_vec = max(vec2(1.0h), vec2(1.0h));
+}
+",
+        expect![[r#"
+            31..47 'abstra...nteger': i32
+            50..59 'max(1, 1)': integer
+            54..55 '1': integer
+            57..58 '1': integer
+            69..83 'abstract_float': f32
+            86..99 'max(1.0, 1.0)': float
+            90..93 '1.0': float
+            95..98 '1.0': float
+            109..126 'signed...ger_32': i32
+            129..140 'max(1i, 1i)': i32
+            133..135 '1i': i32
+            137..139 '1i': i32
+            150..169 'unsign...ger_32': u32
+            172..183 'max(1u, 1u)': u32
+            176..178 '1u': u32
+            180..182 '1u': u32
+            193..201 'float_32': f32
+            204..219 'max(1.0f, 1.0f)': f32
+            208..212 '1.0f': f32
+            214..218 '1.0f': f32
+            229..237 'float_16': f16
+            240..255 'max(1.0h, 1.0h)': f16
+            244..248 '1.0h': f16
+            250..254 '1.0h': f16
+            266..286 'abstra...er_vec': vec2<i32>
+            289..310 'max(ve...c2(1))': vec2<integer>
+            293..300 'vec2(1)': vec2<integer>
+            298..299 '1': integer
+            302..309 'vec2(1)': vec2<integer>
+            307..308 '1': integer
+            320..338 'abstra...at_vec': vec2<f32>
+            341..366 'max(ve...(1.0))': vec2<float>
+            345..354 'vec2(1.0)': vec2<float>
+            350..353 '1.0': float
+            356..365 'vec2(1.0)': vec2<float>
+            361..364 '1.0': float
+            376..397 'signed...32_vec': vec2<i32>
+            400..423 'max(ve...2(1i))': vec2<i32>
+            404..412 'vec2(1i)': vec2<i32>
+            409..411 '1i': i32
+            414..422 'vec2(1i)': vec2<i32>
+            419..421 '1i': i32
+            433..456 'unsign...32_vec': vec2<u32>
+            459..482 'max(ve...2(1u))': vec2<u32>
+            463..471 'vec2(1u)': vec2<u32>
+            468..470 '1u': u32
+            473..481 'vec2(1u)': vec2<u32>
+            478..480 '1u': u32
+            492..504 'float_32_vec': vec2<f32>
+            507..534 'max(ve...1.0f))': vec2<f32>
+            511..521 'vec2(1.0f)': vec2<f32>
+            516..520 '1.0f': f32
+            523..533 'vec2(1.0f)': vec2<f32>
+            528..532 '1.0f': f32
+            544..556 'float_16_vec': vec2<f16>
+            559..586 'max(ve...1.0h))': vec2<f16>
+            563..573 'vec2(1.0h)': vec2<f16>
+            568..572 '1.0h': f16
+            575..585 'vec2(1.0h)': vec2<f16>
+            580..584 '1.0h': f16
+        "#]],
+    );
+}
+
+#[test]
 fn min() {
     check_infer(
         ExtensionsConfig {
