@@ -1,15 +1,15 @@
 use base_db::EditionedFileId;
 use expect_test::{Expect, expect};
-use hir_def::database::{DefDatabase, ModuleDefinitionId};
+use hir_def::database::{DefDatabase as _, ModuleDefinitionId};
 use salsa::Durability;
-use std::fmt::Write;
+use std::fmt::Write as _;
 use syntax::ExtensionsConfig;
-use test_fixture::WithFixture;
+use test_fixture::WithFixture as _;
 use vfs::FileId;
 use wgsl_types::syntax::AddressSpace;
 
 use crate::{
-    database::HirDatabase,
+    database::HirDatabase as _,
     layout::struct_member_layout,
     test_db::TestDatabase,
     tests::{module_definitions, text_range_start},
@@ -57,24 +57,25 @@ impl<'db> LayoutPrinter<'db> {
         definitions.sort_by_key(|definition| text_range_start(*definition, self.database));
         for definition in definitions {
             match definition {
-                ModuleDefinitionId::Function(_) => (),
-                ModuleDefinitionId::GlobalVariable(_) => (),
-                ModuleDefinitionId::GlobalConstant(_) => (),
-                ModuleDefinitionId::GlobalAssertStatement(_) => (),
-                ModuleDefinitionId::Override(_) => (),
-                ModuleDefinitionId::Module(_) => (),
+                ModuleDefinitionId::Function(_)
+                | ModuleDefinitionId::GlobalVariable(_)
+                | ModuleDefinitionId::GlobalConstant(_)
+                | ModuleDefinitionId::GlobalAssertStatement(_)
+                | ModuleDefinitionId::Override(_)
+                | ModuleDefinitionId::Module(_)
+                | ModuleDefinitionId::TypeAlias(_) => (),
                 ModuleDefinitionId::Struct(id) => {
                     let (signature, _) = self.database.struct_data(id);
                     let (fields, diagnostics) = &*self.database.field_types(id);
                     assert!(diagnostics.is_empty());
                     let mut fields_output = vec![];
                     let Some((align, size)) = struct_member_layout(
-                        &fields,
+                        fields,
                         self.database,
                         AddressSpace::Storage,
                         |field_data, field_type, field_layout| {
                             fields_output.push((
-                                signature.field_data(&field_data),
+                                signature.field_data(field_data),
                                 field_type,
                                 field_layout.offset,
                                 field_layout.align,
@@ -85,30 +86,28 @@ impl<'db> LayoutPrinter<'db> {
                         panic!("unable to calculate layout for struct {id:?}");
                     };
                     let name = signature.name.as_str();
-                    let before = format!("struct {} {{", name);
-                    let spaces = 47 - before.len();
+                    let before = format!("struct {name} {{");
+                    let spaces = " ".repeat(47 - before.len());
                     writeln!(
                         buffer,
-                        "{}{}//             align({})  size({})",
-                        before,
-                        " ".repeat(spaces),
-                        align,
-                        size
+                        "{before}{spaces}//             align({align})  size({size})"
                     )
                     .unwrap();
                     for field_output in fields_output {
-                        let name = field_output.0.map(|x| x.name.as_str()).unwrap();
+                        let name = field_output
+                            .0
+                            .map(|field_data| field_data.name.as_str())
+                            .unwrap();
                         let r#type = pretty_type_with_verbosity(
                             self.database,
                             field_output.1,
                             TypeVerbosity::Full,
                         );
-                        let before = format!("    {}: {},", name, r#type);
+                        let before = format!("    {name}: {type},");
                         let spaces = 47 - before.len();
                         writeln!(
                             buffer,
-                            "{}{}// offset({})  align({})  size({})",
-                            before,
+                            "{before}{}// offset({})  align({})  size({})",
                             " ".repeat(spaces),
                             field_output.2,
                             field_output.3,
@@ -118,7 +117,6 @@ impl<'db> LayoutPrinter<'db> {
                     }
                     writeln!(buffer, "}}").unwrap();
                 },
-                ModuleDefinitionId::TypeAlias(_) => (),
             }
         }
     }
