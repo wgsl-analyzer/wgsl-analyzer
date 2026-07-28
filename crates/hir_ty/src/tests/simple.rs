@@ -1990,3 +1990,42 @@ fn not_convertible() {
         "#]],
     );
 }
+
+#[test]
+fn sampler_comparison_no_template() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        var x: sampler_comparison<wrong>;
+        ",
+        expect![[r#"
+            4..5 'x': ref<handle, sampler_comparison, read>
+            26..31 'wrong': `wrong` not found in scope
+            26..31 'wrong': unexpected template argument, expected nothing
+        "#]],
+    );
+}
+
+#[test]
+fn ptr_template_not_enumerant() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        fn foo1(bar1: ptr<rgba8unorm, i32, read_write>) { }
+        fn foo2(bar2: ptr<storage, 123i, read_write>) { }
+        fn foo3(bar3: ptr<storage, i32, rgba8unorm>) { }
+        fn foo4(bar4: ptr<storage, i32>) { }
+        ",
+        expect![[r#"
+            8..12 'bar1': [error]
+            18..28 'rgba8unorm': unexpected template argument, expected an address space
+            18..28 'rgba8unorm': unexpected template argument, expected an address space
+            60..64 'bar2': ptr<storage, [error], read_write>
+            79..83 '123i': unexpected template argument, expected a type
+            110..114 'bar3': [error]
+            134..144 'rgba8unorm': unexpected template argument, expected one of: (read, read_write, write)
+            134..144 'rgba8unorm': unexpected template argument, expected one of: (read, read_write, write)
+            159..163 'bar4': ptr<storage, i32, read>
+        "#]],
+    );
+}

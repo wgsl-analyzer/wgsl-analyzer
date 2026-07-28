@@ -811,7 +811,7 @@ impl TypeLoweringContext<'_> {
                     let error = TypeLoweringError {
                         container: TypeContainer::Expression(expression),
                         kind: TypeLoweringErrorKind::UnexpectedTemplateArgument(
-                            "on of: (read, read_write, write)".to_owned(),
+                            "one of: (read, read_write, write)".to_owned(),
                         ),
                     };
                     return Err(error);
