@@ -186,5 +186,8 @@ pub fn validate_address_space<DiagnosticBuilder>(
             // TODO: validate immediates
             // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/682
         },
+        AddressSpace::TaskPayload => {
+            // TODO naga extension task payload
+        },
     }
 }

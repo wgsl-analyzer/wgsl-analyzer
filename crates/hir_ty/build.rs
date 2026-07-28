@@ -241,6 +241,7 @@ fn parse_line(line: &str) -> (&str, Overload) {
                 let name = (!name.is_empty()).then(|| name.to_owned());
                 (parse_type(&mut generics, r#type.trim()), name)
             },
+            // TODO remove this branch
             _ => (parse_type(&mut generics, r#type.trim()), None),
         })
         .collect();
