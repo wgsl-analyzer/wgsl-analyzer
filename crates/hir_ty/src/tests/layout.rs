@@ -103,7 +103,10 @@ impl<'db> LayoutPrinter<'db> {
                     writeln!(
                         buffer,
                         "{}{}//             align({})  size({})",
-                        before, " ".repeat(spaces), align, size
+                        before,
+                        " ".repeat(spaces),
+                        align,
+                        size
                     );
                     for field_output in fields_output {
                         let name = field_output.0.map(|x| x.name.as_str()).unwrap();
