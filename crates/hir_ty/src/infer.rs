@@ -368,7 +368,7 @@ impl<'database> InferenceContext<'database> {
         mut diagnostics: Vec<TypeLoweringError>,
         store: &ExpressionStore,
     ) {
-        for diagnostic in diagnostics.drain(..) {
+        for diagnostic in diagnostics {
             self.push_diagnostic(
                 store.store_source,
                 InferenceDiagnosticKind::InvalidType { error: diagnostic },
