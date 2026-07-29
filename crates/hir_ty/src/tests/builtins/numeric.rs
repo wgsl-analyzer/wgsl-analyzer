@@ -2129,3 +2129,57 @@ fn foo() {
         "#]],
     );
 }
+
+#[test]
+fn pow() {
+    check_infer(
+        ExtensionsConfig {
+            f16: true,
+            ..Default::default()
+        },
+        "
+enable f16;
+fn foo() {
+    let abstract_float = pow(1.0, 1.0);
+    let float_32 = pow(1.0f, 1.0f);
+    let float_16 = pow(1.0h, 1.0h);
+
+    let abstract_float_vec = pow(vec2(1.0), vec2(1.0));
+    let float_32_vec = pow(vec2(1.0f), vec2(1.0f));
+    let float_16_vec = pow(vec2(1.0h), vec2(1.0h));
+}
+",
+        expect![[r#"
+            31..45 'abstract_float': f32
+            48..61 'pow(1.0, 1.0)': float
+            52..55 '1.0': float
+            57..60 '1.0': float
+            71..79 'float_32': f32
+            82..97 'pow(1.0f, 1.0f)': f32
+            86..90 '1.0f': f32
+            92..96 '1.0f': f32
+            107..115 'float_16': f16
+            118..133 'pow(1.0h, 1.0h)': f16
+            122..126 '1.0h': f16
+            128..132 '1.0h': f16
+            144..162 'abstra...at_vec': vec2<f32>
+            165..190 'pow(ve...(1.0))': vec2<float>
+            169..178 'vec2(1.0)': vec2<float>
+            174..177 '1.0': float
+            180..189 'vec2(1.0)': vec2<float>
+            185..188 '1.0': float
+            200..212 'float_32_vec': vec2<f32>
+            215..242 'pow(ve...1.0f))': vec2<f32>
+            219..229 'vec2(1.0f)': vec2<f32>
+            224..228 '1.0f': f32
+            231..241 'vec2(1.0f)': vec2<f32>
+            236..240 '1.0f': f32
+            252..264 'float_16_vec': vec2<f16>
+            267..294 'pow(ve...1.0h))': vec2<f16>
+            271..281 'vec2(1.0h)': vec2<f16>
+            276..280 '1.0h': f16
+            283..293 'vec2(1.0h)': vec2<f16>
+            288..292 '1.0h': f16
+        "#]],
+    );
+}

@@ -312,7 +312,13 @@ normalize(vecN<AbstractFloat>) -> vecN<AbstractFloat>
 normalize(vecN<f32>) -> vecN<f32>
 normalize(vecN<f16>) -> vecN<f16>
 
-pow(f32, f32) -> f32
+pow(e1: AbstractFloat, e2: AbstractFloat) -> AbstractFloat
+pow(e1: f32, e2: f32) -> f32
+pow(e1: f16, e2: f16) -> f16
+pow(e1: vecN<AbstractFloat>, e2: vecN<AbstractFloat>) -> vecN<AbstractFloat>
+pow(e1: vecN<f32>, e2: vecN<f32>) -> vecN<f32>
+pow(e1: vecN<f16>, e2: vecN<f16>) -> vecN<f16>
+
 pow(vecN<f32>, vecN<f32>) -> vecN<f32>
 quantizeToF16(f32) -> f32
 quantizeToF16(vecN<f32>) -> vecN<f32>
