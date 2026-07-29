@@ -2183,3 +2183,25 @@ fn foo() {
         "#]],
     );
 }
+
+#[test]
+fn quantizeToF16() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+fn foo() {
+    let float_32 = quantizeToF16(1.0f);
+    let float_32_vec = quantizeToF16(vec2(1.0f));
+}
+",
+        expect![[r#"
+            31..39 'float_32': f32
+            42..61 'quanti...(1.0f)': f32
+            56..60 '1.0f': f32
+            71..83 'float_32_vec': vec2<f32>
+            86..111 'quanti...1.0f))': vec2<f32>
+            100..110 'vec2(1.0f)': vec2<f32>
+            105..109 '1.0f': f32
+        "#]],
+    );
+}

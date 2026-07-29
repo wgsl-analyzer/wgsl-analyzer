@@ -319,9 +319,9 @@ pow(e1: vecN<AbstractFloat>, e2: vecN<AbstractFloat>) -> vecN<AbstractFloat>
 pow(e1: vecN<f32>, e2: vecN<f32>) -> vecN<f32>
 pow(e1: vecN<f16>, e2: vecN<f16>) -> vecN<f16>
 
-pow(vecN<f32>, vecN<f32>) -> vecN<f32>
-quantizeToF16(f32) -> f32
-quantizeToF16(vecN<f32>) -> vecN<f32>
+quantizeToF16(e: f32) -> f32
+quantizeToF16(e: vecN<f32>) -> vecN<f32>
+
 reflect(vecN<f32>, vecN<f32>) -> vecN<f32>
 refract(vecN<f32>, vecN<f32>, f32) -> vecN<f32>
 round(f32) -> f32
