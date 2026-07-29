@@ -2604,3 +2604,66 @@ fn foo() {
         "#]],
     );
 }
+
+#[test]
+fn smoothstep() {
+    check_infer(
+        ExtensionsConfig {
+            f16: true,
+            ..Default::default()
+        },
+        "
+enable f16;
+fn foo() {
+    let abstract_float = smoothstep(1.0, 1.0, 1.0);
+    let float_32 = smoothstep(1.0f, 1.0f, 1.0f);
+    let float_16 = smoothstep(1.0h, 1.0h, 1.0h);
+
+    let abstract_float_vec = smoothstep(vec2(1.0), vec2(1.0), vec2(1.0));
+    let float_32_vec = smoothstep(vec2(1.0f), vec2(1.0f), vec2(1.0f));
+    let float_16_vec = smoothstep(vec2(1.0h), vec2(1.0h), vec2(1.0h));
+}
+",
+        expect![[r#"
+            31..45 'abstract_float': f32
+            48..73 'smooth..., 1.0)': float
+            59..62 '1.0': float
+            64..67 '1.0': float
+            69..72 '1.0': float
+            83..91 'float_32': f32
+            94..122 'smooth... 1.0f)': f32
+            105..109 '1.0f': f32
+            111..115 '1.0f': f32
+            117..121 '1.0f': f32
+            132..140 'float_16': f16
+            143..171 'smooth... 1.0h)': f16
+            154..158 '1.0h': f16
+            160..164 '1.0h': f16
+            166..170 '1.0h': f16
+            182..200 'abstra...at_vec': vec2<f32>
+            203..246 'smooth...(1.0))': vec2<float>
+            214..223 'vec2(1.0)': vec2<float>
+            219..222 '1.0': float
+            225..234 'vec2(1.0)': vec2<float>
+            230..233 '1.0': float
+            236..245 'vec2(1.0)': vec2<float>
+            241..244 '1.0': float
+            256..268 'float_32_vec': vec2<f32>
+            271..317 'smooth...1.0f))': vec2<f32>
+            282..292 'vec2(1.0f)': vec2<f32>
+            287..291 '1.0f': f32
+            294..304 'vec2(1.0f)': vec2<f32>
+            299..303 '1.0f': f32
+            306..316 'vec2(1.0f)': vec2<f32>
+            311..315 '1.0f': f32
+            327..339 'float_16_vec': vec2<f16>
+            342..388 'smooth...1.0h))': vec2<f16>
+            353..363 'vec2(1.0h)': vec2<f16>
+            358..362 '1.0h': f16
+            365..375 'vec2(1.0h)': vec2<f16>
+            370..374 '1.0h': f16
+            377..387 'vec2(1.0h)': vec2<f16>
+            382..386 '1.0h': f16
+        "#]],
+    );
+}

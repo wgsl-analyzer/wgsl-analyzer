@@ -381,8 +381,13 @@ sinh(a: vecN<AbstractFloat>) -> vecN<AbstractFloat>
 sinh(a: vecN<f32>) -> vecN<f32>
 sinh(a: vecN<f16>) -> vecN<f16>
 
-smoothstep(f32, f32, f32) -> f32
-smoothstep(vecN<f32>, vecN<f32>, vecN<f32>) -> vecN<f32>
+smoothstep(edge0: AbstractFloat, edge1: AbstractFloat, x: AbstractFloat) -> AbstractFloat
+smoothstep(edge0: f32, edge1: f32, x: f32) -> f32
+smoothstep(edge0: f16, edge1: f16, x: f16) -> f16
+smoothstep(edge0: vecN<AbstractFloat>, edge1: vecN<AbstractFloat>, x: vecN<AbstractFloat>) -> vecN<AbstractFloat>
+smoothstep(edge0: vecN<f32>, edge1: vecN<f32>, x: vecN<f32>) -> vecN<f32>
+smoothstep(edge0: vecN<f16>, edge1: vecN<f16>, x: vecN<f16>) -> vecN<f16>
+
 sqrt(f32) -> f32
 sqrt(vecN<f32>) -> vecN<f32>
 step(f32, f32) -> f32
