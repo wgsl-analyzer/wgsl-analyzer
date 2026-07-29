@@ -322,6 +322,13 @@ pow(e1: vecN<f16>, e2: vecN<f16>) -> vecN<f16>
 quantizeToF16(e: f32) -> f32
 quantizeToF16(e: vecN<f32>) -> vecN<f32>
 
+radians(e1: AbstractFloat) -> AbstractFloat
+radians(e1: f32) -> f32
+radians(e1: f16) -> f16
+radians(e1: vecN<AbstractFloat>) -> vecN<AbstractFloat>
+radians(e1: vecN<f32>) -> vecN<f32>
+radians(e1: vecN<f16>) -> vecN<f16>
+
 reflect(vecN<f32>, vecN<f32>) -> vecN<f32>
 refract(vecN<f32>, vecN<f32>, f32) -> vecN<f32>
 round(f32) -> f32
@@ -349,8 +356,6 @@ trunc(f32) -> f32
 trunc(vecN<f32>) -> vecN<f32>
 fma(f32, f32, f32) -> f32
 fma(vecN<f32>, vecN<f32>, vecN<f32>) -> vecN<f32>
-radians(f32) -> f32
-radians(vecN<f32>) -> vecN<f32>
 
 // integer
 reverseBits(i32) -> i32

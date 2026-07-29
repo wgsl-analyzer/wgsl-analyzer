@@ -2205,3 +2205,48 @@ fn foo() {
         "#]],
     );
 }
+
+#[test]
+fn radians() {
+    check_infer(
+        ExtensionsConfig {
+            f16: true,
+            ..Default::default()
+        },
+        "
+enable f16;
+fn foo() {
+    let abstract_float = radians(1.0);
+    let float_32 = radians(1.0f);
+    let float_16 = radians(1.0h);
+
+    let abstract_float_vec = radians(vec2(1.0));
+    let float_32_vec = radians(vec2(1.0f));
+    let float_16_vec = radians(vec2(1.0h));
+}
+",
+        expect![[r#"
+            31..45 'abstract_float': f32
+            48..60 'radians(1.0)': float
+            56..59 '1.0': float
+            70..78 'float_32': f32
+            81..94 'radians(1.0f)': f32
+            89..93 '1.0f': f32
+            104..112 'float_16': f16
+            115..128 'radians(1.0h)': f16
+            123..127 '1.0h': f16
+            139..157 'abstra...at_vec': vec2<f32>
+            160..178 'radian...(1.0))': vec2<float>
+            168..177 'vec2(1.0)': vec2<float>
+            173..176 '1.0': float
+            188..200 'float_32_vec': vec2<f32>
+            203..222 'radian...1.0f))': vec2<f32>
+            211..221 'vec2(1.0f)': vec2<f32>
+            216..220 '1.0f': f32
+            232..244 'float_16_vec': vec2<f16>
+            247..266 'radian...1.0h))': vec2<f16>
+            255..265 'vec2(1.0h)': vec2<f16>
+            260..264 '1.0h': f16
+        "#]],
+    );
+}
