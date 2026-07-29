@@ -2329,3 +2329,35 @@ fn foo() {
         "#]],
     );
 }
+
+#[test]
+fn reverseBits() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+fn foo() {
+    let signed_integer_32 = reverseBits(1i);
+    let unsigned_integer_32 = reverseBits(1u);
+
+    let signed_integer_32_vec = reverseBits(vec2(1i));
+    let unsigned_integer_32_vec = reverseBits(vec2(1u));
+}
+",
+        expect![[r#"
+            19..36 'signed...ger_32': i32
+            39..54 'reverseBits(1i)': i32
+            51..53 '1i': i32
+            64..83 'unsign...ger_32': u32
+            86..101 'reverseBits(1u)': u32
+            98..100 '1u': u32
+            112..133 'signed...32_vec': vec2<i32>
+            136..157 'revers...2(1i))': vec2<i32>
+            148..156 'vec2(1i)': vec2<i32>
+            153..155 '1i': i32
+            167..190 'unsign...32_vec': vec2<u32>
+            193..214 'revers...2(1u))': vec2<u32>
+            205..213 'vec2(1u)': vec2<u32>
+            210..212 '1u': u32
+        "#]],
+    );
+}

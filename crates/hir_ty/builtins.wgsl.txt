@@ -337,6 +337,11 @@ refract(e1: vecN<AbstractFloat>, e2: vecN<AbstractFloat>, e3: AbstractFloat) -> 
 refract(e1: vecN<f32>, e2: vecN<f32>, e3: f32) -> vecN<f32>
 refract(e1: vecN<f16>, e2: vecN<f16>, e3: f16) -> vecN<f16>
 
+reverseBits(e: i32) -> i32
+reverseBits(e: u32) -> u32
+reverseBits(e: vecN<i32>) -> vecN<i32>
+reverseBits(e: vecN<u32>) -> vecN<u32>
+
 round(f32) -> f32
 round(vecN<f32>) -> vecN<f32>
 saturate(e: f32) -> f32
@@ -362,12 +367,6 @@ trunc(f32) -> f32
 trunc(vecN<f32>) -> vecN<f32>
 fma(f32, f32, f32) -> f32
 fma(vecN<f32>, vecN<f32>, vecN<f32>) -> vecN<f32>
-
-// integer
-reverseBits(i32) -> i32
-reverseBits(vecN<i32>) -> vecN<i32>
-reverseBits(u32) -> u32
-reverseBits(vecN<u32>) -> vecN<u32>
 
 // matrix
 transpose(matMxN<T>) -> matNxM<T>
