@@ -74,7 +74,6 @@ updates:
           - minor
           - patch
 
-  # Kept separate on purpose: slow, throttled cadence for @types/vscode only
   - package-ecosystem: npm
     directory: /editors/code
     schedule:
