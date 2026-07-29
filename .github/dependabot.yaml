@@ -52,7 +52,8 @@ updates:
       - A-Editor
     ignore:
       - dependency-name: "@types/vscode"
-        update-types: version-update:semver-minor
+        update-types:
+          - version-update:semver-minor
     groups:
       minor-patch:
         update-types:
@@ -90,4 +91,5 @@ updates:
       default-days: 90
     allow:
       - dependency-name: "@types/vscode"
-        update-types: version-update:semver-minor
+        update-types:
+          - version-update:semver-minor
