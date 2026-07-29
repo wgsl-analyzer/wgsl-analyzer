@@ -333,7 +333,10 @@ reflect(vecN<AbstractFloat>, vecN<AbstractFloat>) -> vecN<AbstractFloat>
 reflect(vecN<f32>, vecN<f32>) -> vecN<f32>
 reflect(vecN<f16>, vecN<f16>) -> vecN<f16>
 
-refract(vecN<f32>, vecN<f32>, f32) -> vecN<f32>
+refract(e1: vecN<AbstractFloat>, e2: vecN<AbstractFloat>, e3: AbstractFloat) -> vecN<AbstractFloat>
+refract(e1: vecN<f32>, e2: vecN<f32>, e3: f32) -> vecN<f32>
+refract(e1: vecN<f16>, e2: vecN<f16>, e3: f16) -> vecN<f16>
+
 round(f32) -> f32
 round(vecN<f32>) -> vecN<f32>
 saturate(e: f32) -> f32
