@@ -349,8 +349,13 @@ round(e: vecN<AbstractFloat>) -> vecN<AbstractFloat>
 round(e: vecN<f32>) -> vecN<f32>
 round(e: vecN<f16>) -> vecN<f16>
 
+saturate(e: AbstractFloat) -> AbstractFloat
 saturate(e: f32) -> f32
+saturate(e: f16) -> f16
+saturate(e: vecN<AbstractFloat>) -> vecN<AbstractFloat>
 saturate(e: vecN<f32>) -> vecN<f32>
+saturate(e: vecN<f16>) -> vecN<f16>
+
 sign(i32) -> i32
 sign(f32) -> f32
 sign(vecN<f32>) -> vecN<f32>

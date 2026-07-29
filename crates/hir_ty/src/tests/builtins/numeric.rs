@@ -2406,3 +2406,48 @@ fn foo() {
         "#]],
     );
 }
+
+#[test]
+fn saturate() {
+    check_infer(
+        ExtensionsConfig {
+            f16: true,
+            ..Default::default()
+        },
+        "
+enable f16;
+fn foo() {
+    let abstract_float = saturate(1.0);
+    let float_32 = saturate(1.0f);
+    let float_16 = saturate(1.0h);
+
+    let abstract_float_vec = saturate(vec2(1.0));
+    let float_32_vec = saturate(vec2(1.0f));
+    let float_16_vec = saturate(vec2(1.0h));
+}
+",
+        expect![[r#"
+            31..45 'abstract_float': f32
+            48..61 'saturate(1.0)': float
+            57..60 '1.0': float
+            71..79 'float_32': f32
+            82..96 'saturate(1.0f)': f32
+            91..95 '1.0f': f32
+            106..114 'float_16': f16
+            117..131 'saturate(1.0h)': f16
+            126..130 '1.0h': f16
+            142..160 'abstra...at_vec': vec2<f32>
+            163..182 'satura...(1.0))': vec2<float>
+            172..181 'vec2(1.0)': vec2<float>
+            177..180 '1.0': float
+            192..204 'float_32_vec': vec2<f32>
+            207..227 'satura...1.0f))': vec2<f32>
+            216..226 'vec2(1.0f)': vec2<f32>
+            221..225 '1.0f': f32
+            237..249 'float_16_vec': vec2<f16>
+            252..272 'satura...1.0h))': vec2<f16>
+            261..271 'vec2(1.0h)': vec2<f16>
+            266..270 '1.0h': f16
+        "#]],
+    );
+}
