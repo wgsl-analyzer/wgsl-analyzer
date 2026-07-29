@@ -395,8 +395,13 @@ sqrt(e: vecN<AbstractFloat>) -> vecN<AbstractFloat>
 sqrt(e: vecN<f32>) -> vecN<f32>
 sqrt(e: vecN<f16>) -> vecN<f16>
 
-step(f32, f32) -> f32
-step(vecN<f32>, vecN<f32>) -> vecN<f32>
+step(edge: AbstractFloat, x: AbstractFloat) -> AbstractFloat
+step(edge: f32, x: f32) -> f32
+step(edge: f16, x: f16) -> f16
+step(edge: vecN<AbstractFloat>, x: vecN<AbstractFloat>) -> vecN<AbstractFloat>
+step(edge: vecN<f32>, x: vecN<f32>) -> vecN<f32>
+step(edge: vecN<f16>, x: vecN<f16>) -> vecN<f16>
+
 tan(f32) -> f32
 tan(vecN<f32>) -> vecN<f32>
 tanh(f32) -> f32
