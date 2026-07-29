@@ -367,8 +367,13 @@ sign(e: vecN<i32>) -> vecN<i32>
 sign(e: vecN<f32>) -> vecN<f32>
 sign(e: vecN<f16>) -> vecN<f16>
 
-sin(f32) -> f32
-sin(vecN<f32>) -> vecN<f32>
+sin(e: AbstractFloat) -> AbstractFloat
+sin(e: f32) -> f32
+sin(e: f32) -> f32
+sin(e: vecN<AbstractFloat>) -> vecN<AbstractFloat>
+sin(e: vecN<f32>) -> vecN<f32>
+sin(e: vecN<f16>) -> vecN<f16>
+
 sinh(f32) -> f32
 sinh(vecN<f32>) -> vecN<f32>
 smoothstep(f32, f32, f32) -> f32
