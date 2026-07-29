@@ -416,13 +416,10 @@ tanh(a: vecN<AbstractFloat>) -> vecN<AbstractFloat>
 tanh(a: vecN<f32>) -> vecN<f32>
 tanh(a: vecN<f16>) -> vecN<f16>
 
+transpose(matMxN<T>) -> matNxM<T>
+
 trunc(f32) -> f32
 trunc(vecN<f32>) -> vecN<f32>
-fma(f32, f32, f32) -> f32
-fma(vecN<f32>, vecN<f32>, vecN<f32>) -> vecN<f32>
-
-// matrix
-transpose(matMxN<T>) -> matNxM<T>
 
 // derivative
 dpdx(f32) -> f32
