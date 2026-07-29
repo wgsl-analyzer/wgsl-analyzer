@@ -2559,3 +2559,48 @@ fn foo() {
         "#]],
     );
 }
+
+#[test]
+fn sinh() {
+    check_infer(
+        ExtensionsConfig {
+            f16: true,
+            ..Default::default()
+        },
+        "
+enable f16;
+fn foo() {
+    let abstract_float = sinh(1.0);
+    let float_32 = sinh(1.0f);
+    let float_16 = sinh(1.0h);
+
+    let abstract_float_vec = sinh(vec2(1.0));
+    let float_32_vec = sinh(vec2(1.0f));
+    let float_16_vec = sinh(vec2(1.0h));
+}
+",
+        expect![[r#"
+            31..45 'abstract_float': f32
+            48..57 'sinh(1.0)': float
+            53..56 '1.0': float
+            67..75 'float_32': f32
+            78..88 'sinh(1.0f)': f32
+            83..87 '1.0f': f32
+            98..106 'float_16': f16
+            109..119 'sinh(1.0h)': f16
+            114..118 '1.0h': f16
+            130..148 'abstra...at_vec': vec2<f32>
+            151..166 'sinh(vec2(1.0))': vec2<float>
+            156..165 'vec2(1.0)': vec2<float>
+            161..164 '1.0': float
+            176..188 'float_32_vec': vec2<f32>
+            191..207 'sinh(v...1.0f))': vec2<f32>
+            196..206 'vec2(1.0f)': vec2<f32>
+            201..205 '1.0f': f32
+            217..229 'float_16_vec': vec2<f16>
+            232..248 'sinh(v...1.0h))': vec2<f16>
+            237..247 'vec2(1.0h)': vec2<f16>
+            242..246 '1.0h': f16
+        "#]],
+    );
+}

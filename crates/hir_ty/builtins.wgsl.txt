@@ -374,8 +374,13 @@ sin(e: vecN<AbstractFloat>) -> vecN<AbstractFloat>
 sin(e: vecN<f32>) -> vecN<f32>
 sin(e: vecN<f16>) -> vecN<f16>
 
-sinh(f32) -> f32
-sinh(vecN<f32>) -> vecN<f32>
+sinh(a: AbstractFloat) -> AbstractFloat
+sinh(a: f32) -> f32
+sinh(a: f32) -> f32
+sinh(a: vecN<AbstractFloat>) -> vecN<AbstractFloat>
+sinh(a: vecN<f32>) -> vecN<f32>
+sinh(a: vecN<f16>) -> vecN<f16>
+
 smoothstep(f32, f32, f32) -> f32
 smoothstep(vecN<f32>, vecN<f32>, vecN<f32>) -> vecN<f32>
 sqrt(f32) -> f32
