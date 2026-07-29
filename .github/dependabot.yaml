@@ -18,7 +18,6 @@ updates:
     directory: /
     patterns: ["*"]
     multi-ecosystem-group: daily-dependencies
-    open-pull-requests-limit: 20
     labels:
       - A-Language-Server
     cooldown: 
@@ -33,7 +32,6 @@ updates:
     directory: /
     patterns: ["*"]
     multi-ecosystem-group: daily-dependencies
-    open-pull-requests-limit: 20
     labels:
       - A-Build-System
     cooldown: 
@@ -51,7 +49,6 @@ updates:
     directory: /editors/code
     patterns: ["*"]
     multi-ecosystem-group: daily-dependencies
-    open-pull-requests-limit: 20
     labels:
       - A-Editor
     ignore:
@@ -72,7 +69,6 @@ updates:
     directory: /.github
     patterns: ["*"]
     multi-ecosystem-group: daily-dependencies
-    open-pull-requests-limit: 20
     labels:
       - A-Build-System
     cooldown: 
