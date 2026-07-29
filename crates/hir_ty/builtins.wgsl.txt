@@ -342,8 +342,13 @@ reverseBits(e: u32) -> u32
 reverseBits(e: vecN<i32>) -> vecN<i32>
 reverseBits(e: vecN<u32>) -> vecN<u32>
 
-round(f32) -> f32
-round(vecN<f32>) -> vecN<f32>
+round(e: AbstractFloat) -> AbstractFloat
+round(e: f32) -> f32
+round(e: f16) -> f16
+round(e: vecN<AbstractFloat>) -> vecN<AbstractFloat>
+round(e: vecN<f32>) -> vecN<f32>
+round(e: vecN<f16>) -> vecN<f16>
+
 saturate(e: f32) -> f32
 saturate(e: vecN<f32>) -> vecN<f32>
 sign(i32) -> i32
