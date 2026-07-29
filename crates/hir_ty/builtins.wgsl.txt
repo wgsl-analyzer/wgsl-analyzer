@@ -356,9 +356,17 @@ saturate(e: vecN<AbstractFloat>) -> vecN<AbstractFloat>
 saturate(e: vecN<f32>) -> vecN<f32>
 saturate(e: vecN<f16>) -> vecN<f16>
 
-sign(i32) -> i32
-sign(f32) -> f32
-sign(vecN<f32>) -> vecN<f32>
+sign(e: AbstractInt) -> AbstractInt
+sign(e: AbstractFloat) -> AbstractFloat
+sign(e: i32) -> i32
+sign(e: f32) -> f32
+sign(e: f16) -> f16
+sign(e: vecN<AbstractInt>) -> vecN<AbstractInt>
+sign(e: vecN<AbstractFloat>) -> vecN<AbstractFloat>
+sign(e: vecN<i32>) -> vecN<i32>
+sign(e: vecN<f32>) -> vecN<f32>
+sign(e: vecN<f16>) -> vecN<f16>
+
 sin(f32) -> f32
 sin(vecN<f32>) -> vecN<f32>
 sinh(f32) -> f32

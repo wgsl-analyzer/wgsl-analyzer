@@ -37,3 +37,27 @@ fn foo() {
         "#]],
     );
 }
+
+#[test]
+fn sign() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+fn foo() {
+    let unsigned_integer_32 = sign(1u);
+    let unsigned_integer_32_vec = sign(vec2(1u));
+}
+",
+        expect![[r#"
+            19..38 'unsign...ger_32': [error]
+            41..49 'sign(1u)': [error]
+            46..48 '1u': u32
+            59..82 'unsign...32_vec': [error]
+            85..99 'sign(vec2(1u))': [error]
+            90..98 'vec2(1u)': vec2<u32>
+            95..97 '1u': u32
+            [EditionedFileId(Id(1c00))] WgslError { expression: Idx::<Expression>(1), message: "`sign` argument must be a signed numeric scalar or vector" } in Body
+            [EditionedFileId(Id(1c00))] WgslError { expression: Idx::<Expression>(4), message: "`sign` argument must be a signed numeric scalar or vector" } in Body
+        "#]],
+    );
+}

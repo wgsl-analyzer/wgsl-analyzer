@@ -2451,3 +2451,66 @@ fn foo() {
         "#]],
     );
 }
+
+#[test]
+fn sign() {
+    check_infer(
+        ExtensionsConfig {
+            f16: true,
+            ..Default::default()
+        },
+        "
+enable f16;
+fn foo() {
+    let abstract_float = sign(1.0);
+    let abstract_integer = sign(1.0);
+    let signed_integer_32 = sign(1i);
+    let float_32 = sign(1.0f);
+    let float_16 = sign(1.0h);
+
+    let abstract_float_vec = sign(vec2(1.0));
+    let abstract_integer_vec = sign(vec2(1.0));
+    let signed_integer_32_vec = sign(vec2(1i));
+    let float_32_vec = sign(vec2(1.0f));
+    let float_16_vec = sign(vec2(1.0h));
+}
+",
+        expect![[r#"
+            31..45 'abstract_float': f32
+            48..57 'sign(1.0)': float
+            53..56 '1.0': float
+            67..83 'abstra...nteger': f32
+            86..95 'sign(1.0)': float
+            91..94 '1.0': float
+            105..122 'signed...ger_32': i32
+            125..133 'sign(1i)': i32
+            130..132 '1i': i32
+            143..151 'float_32': f32
+            154..164 'sign(1.0f)': f32
+            159..163 '1.0f': f32
+            174..182 'float_16': f16
+            185..195 'sign(1.0h)': f16
+            190..194 '1.0h': f16
+            206..224 'abstra...at_vec': vec2<f32>
+            227..242 'sign(vec2(1.0))': vec2<float>
+            232..241 'vec2(1.0)': vec2<float>
+            237..240 '1.0': float
+            252..272 'abstra...er_vec': vec2<f32>
+            275..290 'sign(vec2(1.0))': vec2<float>
+            280..289 'vec2(1.0)': vec2<float>
+            285..288 '1.0': float
+            300..321 'signed...32_vec': vec2<i32>
+            324..338 'sign(vec2(1i))': vec2<i32>
+            329..337 'vec2(1i)': vec2<i32>
+            334..336 '1i': i32
+            348..360 'float_32_vec': vec2<f32>
+            363..379 'sign(v...1.0f))': vec2<f32>
+            368..378 'vec2(1.0f)': vec2<f32>
+            373..377 '1.0f': f32
+            389..401 'float_16_vec': vec2<f16>
+            404..420 'sign(v...1.0h))': vec2<f16>
+            409..419 'vec2(1.0h)': vec2<f16>
+            414..418 '1.0h': f16
+        "#]],
+    );
+}
