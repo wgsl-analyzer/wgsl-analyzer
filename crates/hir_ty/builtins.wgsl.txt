@@ -409,8 +409,13 @@ tan(e: vecN<AbstractFloat>) -> vecN<AbstractFloat>
 tan(e: vecN<f32>) -> vecN<f32>
 tan(e: vecN<f16>) -> vecN<f16>
 
-tanh(f32) -> f32
-tanh(vecN<f32>) -> vecN<f32>
+tanh(a: AbstractFloat) -> AbstractFloat
+tanh(a: f32) -> f32
+tanh(a: f16) -> f16
+tanh(a: vecN<AbstractFloat>) -> vecN<AbstractFloat>
+tanh(a: vecN<f32>) -> vecN<f32>
+tanh(a: vecN<f16>) -> vecN<f16>
+
 trunc(f32) -> f32
 trunc(vecN<f32>) -> vecN<f32>
 fma(f32, f32, f32) -> f32
