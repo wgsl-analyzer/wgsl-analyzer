@@ -416,7 +416,9 @@ tanh(a: vecN<AbstractFloat>) -> vecN<AbstractFloat>
 tanh(a: vecN<f32>) -> vecN<f32>
 tanh(a: vecN<f16>) -> vecN<f16>
 
-transpose(matMxN<T>) -> matNxM<T>
+transpose(e: matMxN<AbstractFloat>) -> matNxM<AbstractFloat>
+transpose(e: matMxN<f32>) -> matNxM<f32>
+transpose(e: matMxN<f16>) -> matNxM<f16>
 
 trunc(f32) -> f32
 trunc(vecN<f32>) -> vecN<f32>

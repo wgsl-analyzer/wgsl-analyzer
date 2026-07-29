@@ -2856,3 +2856,35 @@ fn foo() {
         "#]],
     );
 }
+
+#[test]
+fn transpose() {
+    check_infer(
+        ExtensionsConfig {
+            f16: true,
+            ..Default::default()
+        },
+        "
+enable f16;
+fn foo() {
+    let abstract_float_mat = transpose(mat2x2(1.0));
+    let float_32_mat = transpose(mat2x2(1.0f));
+    let float_16_mat = transpose(mat2x2(1.0h));
+}
+",
+        expect![[r#"
+            31..49 'abstra...at_mat': mat2x2<f32>
+            52..74 'transp...(1.0))': mat2x2<float>
+            62..73 'mat2x2(1.0)': mat2x2<float>
+            69..72 '1.0': float
+            84..96 'float_32_mat': mat2x2<f32>
+            99..122 'transp...1.0f))': mat2x2<f32>
+            109..121 'mat2x2(1.0f)': mat2x2<f32>
+            116..120 '1.0f': f32
+            132..144 'float_16_mat': mat2x2<f16>
+            147..170 'transp...1.0h))': mat2x2<f16>
+            157..169 'mat2x2(1.0h)': mat2x2<f16>
+            164..168 '1.0h': f16
+        "#]],
+    );
+}
