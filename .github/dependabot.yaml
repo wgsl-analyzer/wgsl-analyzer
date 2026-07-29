@@ -21,6 +21,8 @@ updates:
     open-pull-requests-limit: 20
     labels:
       - A-Language-Server
+    cooldown: 
+      default-days: 7
     groups:
       minor-patch:
         update-types:
@@ -34,6 +36,8 @@ updates:
     open-pull-requests-limit: 20
     labels:
       - A-Build-System
+    cooldown: 
+      default-days: 7
     groups:
       codeql:
         patterns:
@@ -54,6 +58,8 @@ updates:
       - dependency-name: "@types/vscode"
         update-types:
           - version-update:semver-minor
+    cooldown: 
+      default-days: 7
     groups:
       minor-patch:
         update-types:
@@ -69,6 +75,8 @@ updates:
     open-pull-requests-limit: 20
     labels:
       - A-Build-System
+    cooldown: 
+      default-days: 7
     groups:
       minor-patch:
         update-types:
