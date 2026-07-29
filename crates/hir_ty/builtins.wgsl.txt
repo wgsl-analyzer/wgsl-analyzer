@@ -402,8 +402,13 @@ step(edge: vecN<AbstractFloat>, x: vecN<AbstractFloat>) -> vecN<AbstractFloat>
 step(edge: vecN<f32>, x: vecN<f32>) -> vecN<f32>
 step(edge: vecN<f16>, x: vecN<f16>) -> vecN<f16>
 
-tan(f32) -> f32
-tan(vecN<f32>) -> vecN<f32>
+tan(e: AbstractFloat) -> AbstractFloat
+tan(e: f32) -> f32
+tan(e: f16) -> f16
+tan(e: vecN<AbstractFloat>) -> vecN<AbstractFloat>
+tan(e: vecN<f32>) -> vecN<f32>
+tan(e: vecN<f16>) -> vecN<f16>
+
 tanh(f32) -> f32
 tanh(vecN<f32>) -> vecN<f32>
 trunc(f32) -> f32
