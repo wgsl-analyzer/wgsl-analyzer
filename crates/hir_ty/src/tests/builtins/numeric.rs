@@ -15,14 +15,14 @@ fn abs() {
         "
 enable f16;
 fn foo() {
-    let abstract_int = abs(1);
+    let abstract_integer = abs(1);
     let abstract_float = abs(1.0);
     let signed_integer_32 = abs(1i);
     let unsigned_integer_32 = abs(1u);
     let float_32 = abs(1.0f);
     let float_16 = abs(1.0h);
 
-    let abstract_int_vec = abs(vec2(1));
+    let abstract_integer_vec = abs(vec2(1));
     let abstract_float_vec = abs(vec2(1.0));
     let signed_integer_32_vec = abs(vec2(1i));
     let unsigned_integer_32_vec = abs(vec2(1u));
@@ -31,48 +31,48 @@ fn foo() {
 }
 ",
         expect![[r#"
-            31..43 'abstract_int': i32
-            46..52 'abs(1)': integer
-            50..51 '1': integer
-            62..76 'abstract_float': f32
-            79..87 'abs(1.0)': float
-            83..86 '1.0': float
-            97..114 'signed...ger_32': i32
-            117..124 'abs(1i)': i32
-            121..123 '1i': i32
-            134..153 'unsign...ger_32': u32
-            156..163 'abs(1u)': u32
-            160..162 '1u': u32
-            173..181 'float_32': f32
-            184..193 'abs(1.0f)': f32
-            188..192 '1.0f': f32
-            203..211 'float_16': f16
-            214..223 'abs(1.0h)': f16
-            218..222 '1.0h': f16
-            234..250 'abstra...nt_vec': vec2<i32>
-            253..265 'abs(vec2(1))': vec2<integer>
-            257..264 'vec2(1)': vec2<integer>
-            262..263 '1': integer
-            275..293 'abstra...at_vec': vec2<f32>
-            296..310 'abs(vec2(1.0))': vec2<float>
-            300..309 'vec2(1.0)': vec2<float>
-            305..308 '1.0': float
-            320..341 'signed...32_vec': vec2<i32>
-            344..357 'abs(vec2(1i))': vec2<i32>
-            348..356 'vec2(1i)': vec2<i32>
-            353..355 '1i': i32
-            367..390 'unsign...32_vec': vec2<u32>
-            393..406 'abs(vec2(1u))': vec2<u32>
-            397..405 'vec2(1u)': vec2<u32>
-            402..404 '1u': u32
-            416..428 'float_32_vec': vec2<f32>
-            431..446 'abs(vec2(1.0f))': vec2<f32>
-            435..445 'vec2(1.0f)': vec2<f32>
-            440..444 '1.0f': f32
-            456..468 'float_16_vec': vec2<f16>
-            471..486 'abs(vec2(1.0h))': vec2<f16>
-            475..485 'vec2(1.0h)': vec2<f16>
-            480..484 '1.0h': f16
+            31..47 'abstra...nteger': i32
+            50..56 'abs(1)': integer
+            54..55 '1': integer
+            66..80 'abstract_float': f32
+            83..91 'abs(1.0)': float
+            87..90 '1.0': float
+            101..118 'signed...ger_32': i32
+            121..128 'abs(1i)': i32
+            125..127 '1i': i32
+            138..157 'unsign...ger_32': u32
+            160..167 'abs(1u)': u32
+            164..166 '1u': u32
+            177..185 'float_32': f32
+            188..197 'abs(1.0f)': f32
+            192..196 '1.0f': f32
+            207..215 'float_16': f16
+            218..227 'abs(1.0h)': f16
+            222..226 '1.0h': f16
+            238..258 'abstra...er_vec': vec2<i32>
+            261..273 'abs(vec2(1))': vec2<integer>
+            265..272 'vec2(1)': vec2<integer>
+            270..271 '1': integer
+            283..301 'abstra...at_vec': vec2<f32>
+            304..318 'abs(vec2(1.0))': vec2<float>
+            308..317 'vec2(1.0)': vec2<float>
+            313..316 '1.0': float
+            328..349 'signed...32_vec': vec2<i32>
+            352..365 'abs(vec2(1i))': vec2<i32>
+            356..364 'vec2(1i)': vec2<i32>
+            361..363 '1i': i32
+            375..398 'unsign...32_vec': vec2<u32>
+            401..414 'abs(vec2(1u))': vec2<u32>
+            405..413 'vec2(1u)': vec2<u32>
+            410..412 '1u': u32
+            424..436 'float_32_vec': vec2<f32>
+            439..454 'abs(vec2(1.0f))': vec2<f32>
+            443..453 'vec2(1.0f)': vec2<f32>
+            448..452 '1.0f': f32
+            464..476 'float_16_vec': vec2<f16>
+            479..494 'abs(vec2(1.0h))': vec2<f16>
+            483..493 'vec2(1.0h)': vec2<f16>
+            488..492 '1.0h': f16
         "#]],
     );
 }
@@ -456,14 +456,14 @@ fn clamp() {
         "
 enable f16;
 fn foo() {
-    let abstract_int = clamp(1, 1, 1);
+    let abstract_integer = clamp(1, 1, 1);
     let abstract_float = clamp(1.0, 1.0, 1.0);
     let signed_integer_32 = clamp(1i, 1i, 1i);
     let unsigned_integer_32 = clamp(1u, 1u, 1u);
     let float_32 = clamp(1.0f, 1.0f, 1.0f);
     let float_16 = clamp(1.0h, 1.0h, 1.0h);
 
-    let abstract_int_vec = clamp(vec2(1), vec2(1), vec2(1));
+    let abstract_integer_vec = clamp(vec2(1), vec2(1), vec2(1));
     let abstract_float_vec = clamp(vec2(1.0), vec2(1.0), vec2(1.0));
     let signed_integer_32_vec = clamp(vec2(1i), vec2(1i), vec2(1i));
     let unsigned_integer_32_vec = clamp(vec2(1u), vec2(1u), vec2(1u));
@@ -472,84 +472,84 @@ fn foo() {
 }
 ",
         expect![[r#"
-            31..43 'abstract_int': i32
-            46..60 'clamp(1, 1, 1)': integer
-            52..53 '1': integer
-            55..56 '1': integer
-            58..59 '1': integer
-            70..84 'abstract_float': f32
-            87..107 'clamp(..., 1.0)': float
-            93..96 '1.0': float
-            98..101 '1.0': float
-            103..106 '1.0': float
-            117..134 'signed...ger_32': i32
-            137..154 'clamp(...i, 1i)': i32
-            143..145 '1i': i32
+            31..47 'abstra...nteger': i32
+            50..64 'clamp(1, 1, 1)': integer
+            56..57 '1': integer
+            59..60 '1': integer
+            62..63 '1': integer
+            74..88 'abstract_float': f32
+            91..111 'clamp(..., 1.0)': float
+            97..100 '1.0': float
+            102..105 '1.0': float
+            107..110 '1.0': float
+            121..138 'signed...ger_32': i32
+            141..158 'clamp(...i, 1i)': i32
             147..149 '1i': i32
             151..153 '1i': i32
-            164..183 'unsign...ger_32': u32
-            186..203 'clamp(...u, 1u)': u32
-            192..194 '1u': u32
+            155..157 '1i': i32
+            168..187 'unsign...ger_32': u32
+            190..207 'clamp(...u, 1u)': u32
             196..198 '1u': u32
             200..202 '1u': u32
-            213..221 'float_32': f32
-            224..247 'clamp(... 1.0f)': f32
-            230..234 '1.0f': f32
-            236..240 '1.0f': f32
-            242..246 '1.0f': f32
-            257..265 'float_16': f16
-            268..291 'clamp(... 1.0h)': f16
-            274..278 '1.0h': f16
-            280..284 '1.0h': f16
-            286..290 '1.0h': f16
-            302..318 'abstra...nt_vec': vec2<i32>
-            321..353 'clamp(...c2(1))': vec2<integer>
-            327..334 'vec2(1)': vec2<integer>
-            332..333 '1': integer
-            336..343 'vec2(1)': vec2<integer>
-            341..342 '1': integer
-            345..352 'vec2(1)': vec2<integer>
-            350..351 '1': integer
-            363..381 'abstra...at_vec': vec2<f32>
-            384..422 'clamp(...(1.0))': vec2<float>
-            390..399 'vec2(1.0)': vec2<float>
-            395..398 '1.0': float
-            401..410 'vec2(1.0)': vec2<float>
-            406..409 '1.0': float
-            412..421 'vec2(1.0)': vec2<float>
-            417..420 '1.0': float
-            432..453 'signed...32_vec': vec2<i32>
-            456..491 'clamp(...2(1i))': vec2<i32>
-            462..470 'vec2(1i)': vec2<i32>
-            467..469 '1i': i32
-            472..480 'vec2(1i)': vec2<i32>
-            477..479 '1i': i32
-            482..490 'vec2(1i)': vec2<i32>
-            487..489 '1i': i32
-            501..524 'unsign...32_vec': vec2<u32>
-            527..562 'clamp(...2(1u))': vec2<u32>
-            533..541 'vec2(1u)': vec2<u32>
-            538..540 '1u': u32
-            543..551 'vec2(1u)': vec2<u32>
-            548..550 '1u': u32
-            553..561 'vec2(1u)': vec2<u32>
-            558..560 '1u': u32
-            572..584 'float_32_vec': vec2<f32>
-            587..628 'clamp(...1.0f))': vec2<f32>
-            593..603 'vec2(1.0f)': vec2<f32>
-            598..602 '1.0f': f32
-            605..615 'vec2(1.0f)': vec2<f32>
-            610..614 '1.0f': f32
-            617..627 'vec2(1.0f)': vec2<f32>
-            622..626 '1.0f': f32
-            638..650 'float_16_vec': vec2<f16>
-            653..694 'clamp(...1.0h))': vec2<f16>
-            659..669 'vec2(1.0h)': vec2<f16>
-            664..668 '1.0h': f16
-            671..681 'vec2(1.0h)': vec2<f16>
-            676..680 '1.0h': f16
-            683..693 'vec2(1.0h)': vec2<f16>
-            688..692 '1.0h': f16
+            204..206 '1u': u32
+            217..225 'float_32': f32
+            228..251 'clamp(... 1.0f)': f32
+            234..238 '1.0f': f32
+            240..244 '1.0f': f32
+            246..250 '1.0f': f32
+            261..269 'float_16': f16
+            272..295 'clamp(... 1.0h)': f16
+            278..282 '1.0h': f16
+            284..288 '1.0h': f16
+            290..294 '1.0h': f16
+            306..326 'abstra...er_vec': vec2<i32>
+            329..361 'clamp(...c2(1))': vec2<integer>
+            335..342 'vec2(1)': vec2<integer>
+            340..341 '1': integer
+            344..351 'vec2(1)': vec2<integer>
+            349..350 '1': integer
+            353..360 'vec2(1)': vec2<integer>
+            358..359 '1': integer
+            371..389 'abstra...at_vec': vec2<f32>
+            392..430 'clamp(...(1.0))': vec2<float>
+            398..407 'vec2(1.0)': vec2<float>
+            403..406 '1.0': float
+            409..418 'vec2(1.0)': vec2<float>
+            414..417 '1.0': float
+            420..429 'vec2(1.0)': vec2<float>
+            425..428 '1.0': float
+            440..461 'signed...32_vec': vec2<i32>
+            464..499 'clamp(...2(1i))': vec2<i32>
+            470..478 'vec2(1i)': vec2<i32>
+            475..477 '1i': i32
+            480..488 'vec2(1i)': vec2<i32>
+            485..487 '1i': i32
+            490..498 'vec2(1i)': vec2<i32>
+            495..497 '1i': i32
+            509..532 'unsign...32_vec': vec2<u32>
+            535..570 'clamp(...2(1u))': vec2<u32>
+            541..549 'vec2(1u)': vec2<u32>
+            546..548 '1u': u32
+            551..559 'vec2(1u)': vec2<u32>
+            556..558 '1u': u32
+            561..569 'vec2(1u)': vec2<u32>
+            566..568 '1u': u32
+            580..592 'float_32_vec': vec2<f32>
+            595..636 'clamp(...1.0f))': vec2<f32>
+            601..611 'vec2(1.0f)': vec2<f32>
+            606..610 '1.0f': f32
+            613..623 'vec2(1.0f)': vec2<f32>
+            618..622 '1.0f': f32
+            625..635 'vec2(1.0f)': vec2<f32>
+            630..634 '1.0f': f32
+            646..658 'float_16_vec': vec2<f16>
+            661..702 'clamp(...1.0h))': vec2<f16>
+            667..677 'vec2(1.0h)': vec2<f16>
+            672..676 '1.0h': f16
+            679..689 'vec2(1.0h)': vec2<f16>
+            684..688 '1.0h': f16
+            691..701 'vec2(1.0h)': vec2<f16>
+            696..700 '1.0h': f16
         "#]],
     );
 }
@@ -2195,13 +2195,13 @@ fn foo() {
 }
 ",
         expect![[r#"
-            31..39 'float_32': f32
-            42..61 'quanti...(1.0f)': f32
-            56..60 '1.0f': f32
-            71..83 'float_32_vec': vec2<f32>
-            86..111 'quanti...1.0f))': vec2<f32>
-            100..110 'vec2(1.0f)': vec2<f32>
-            105..109 '1.0f': f32
+            19..27 'float_32': f32
+            30..49 'quanti...(1.0f)': f32
+            44..48 '1.0f': f32
+            59..71 'float_32_vec': vec2<f32>
+            74..99 'quanti...1.0f))': vec2<f32>
+            88..98 'vec2(1.0f)': vec2<f32>
+            93..97 '1.0f': f32
         "#]],
     );
 }
