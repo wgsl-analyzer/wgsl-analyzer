@@ -2250,3 +2250,41 @@ fn foo() {
         "#]],
     );
 }
+
+#[test]
+fn reflect() {
+    check_infer(
+        ExtensionsConfig {
+            f16: true,
+            ..Default::default()
+        },
+        "
+enable f16;
+fn foo() {
+    let abstract_float_vec = reflect(vec2(1.0), vec2(1.0));
+    let float_32_vec = reflect(vec2(1.0f), vec2(1.0f));
+    let float_16_vec = reflect(vec2(1.0h), vec2(1.0h));
+}
+",
+        expect![[r#"
+            31..49 'abstra...at_vec': vec2<f32>
+            52..81 'reflec...(1.0))': vec2<float>
+            60..69 'vec2(1.0)': vec2<float>
+            65..68 '1.0': float
+            71..80 'vec2(1.0)': vec2<float>
+            76..79 '1.0': float
+            91..103 'float_32_vec': vec2<f32>
+            106..137 'reflec...1.0f))': vec2<f32>
+            114..124 'vec2(1.0f)': vec2<f32>
+            119..123 '1.0f': f32
+            126..136 'vec2(1.0f)': vec2<f32>
+            131..135 '1.0f': f32
+            147..159 'float_16_vec': vec2<f16>
+            162..193 'reflec...1.0h))': vec2<f16>
+            170..180 'vec2(1.0h)': vec2<f16>
+            175..179 '1.0h': f16
+            182..192 'vec2(1.0h)': vec2<f16>
+            187..191 '1.0h': f16
+        "#]],
+    );
+}

@@ -329,7 +329,10 @@ radians(e1: vecN<AbstractFloat>) -> vecN<AbstractFloat>
 radians(e1: vecN<f32>) -> vecN<f32>
 radians(e1: vecN<f16>) -> vecN<f16>
 
+reflect(vecN<AbstractFloat>, vecN<AbstractFloat>) -> vecN<AbstractFloat>
 reflect(vecN<f32>, vecN<f32>) -> vecN<f32>
+reflect(vecN<f16>, vecN<f16>) -> vecN<f16>
+
 refract(vecN<f32>, vecN<f32>, f32) -> vecN<f32>
 round(f32) -> f32
 round(vecN<f32>) -> vecN<f32>
