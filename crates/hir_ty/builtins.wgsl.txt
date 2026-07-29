@@ -420,8 +420,12 @@ transpose(e: matMxN<AbstractFloat>) -> matNxM<AbstractFloat>
 transpose(e: matMxN<f32>) -> matNxM<f32>
 transpose(e: matMxN<f16>) -> matNxM<f16>
 
-trunc(f32) -> f32
-trunc(vecN<f32>) -> vecN<f32>
+trunc(e: AbstractFloat) -> AbstractFloat
+trunc(e: f32) -> f32
+trunc(e: f16) -> f16
+trunc(e: vecN<AbstractFloat>) -> vecN<AbstractFloat>
+trunc(e: vecN<f32>) -> vecN<f32>
+trunc(e: vecN<f16>) -> vecN<f16>
 
 // derivative
 dpdx(f32) -> f32
