@@ -1,19 +1,26 @@
 version: 2
-updates:
-  - package-ecosystem: cargo
-    directory: /
+
+multi-ecosystem-groups:
+  daily-dependencies:
     schedule:
       interval: daily
-    open-pull-requests-limit: 20
     commit-message:
       prefix: internal
     labels:
-      - A-Language-Server
       - C-Dependencies
       - D-Trivial
       - S-Ready-to-Review
     cooldown:
       default-days: 7
+
+updates:
+  - package-ecosystem: cargo
+    directory: /
+    patterns: ["*"]
+    multi-ecosystem-group: daily-dependencies
+    open-pull-requests-limit: 20
+    labels:
+      - A-Language-Server
     groups:
       minor-patch:
         update-types:
@@ -22,18 +29,11 @@ updates:
 
   - package-ecosystem: github-actions
     directory: /
-    schedule:
-      interval: daily
+    patterns: ["*"]
+    multi-ecosystem-group: daily-dependencies
     open-pull-requests-limit: 20
-    commit-message:
-      prefix: internal
     labels:
       - A-Build-System
-      - C-Dependencies
-      - D-Trivial
-      - S-Ready-to-Review
-    cooldown:
-      default-days: 7
     groups:
       codeql:
         patterns:
@@ -45,18 +45,11 @@ updates:
 
   - package-ecosystem: npm
     directory: /editors/code
-    schedule:
-      interval: daily
+    patterns: ["*"]
+    multi-ecosystem-group: daily-dependencies
     open-pull-requests-limit: 20
-    commit-message:
-      prefix: internal
     labels:
       - A-Editor
-      - C-Dependencies
-      - D-Trivial
-      - S-Ready-to-Review
-    cooldown:
-      default-days: 7
     ignore:
       - dependency-name: "@types/vscode"
         update-types: version-update:semver-minor
@@ -65,7 +58,23 @@ updates:
         update-types:
           - minor
           - patch
+        exclude-patterns:
+          - "@types/vscode"
 
+  - package-ecosystem: docker
+    directory: /.github
+    patterns: ["*"]
+    multi-ecosystem-group: daily-dependencies
+    open-pull-requests-limit: 20
+    labels:
+      - A-Build-System
+    groups:
+      minor-patch:
+        update-types:
+          - minor
+          - patch
+
+  # Kept separate on purpose: slow, throttled cadence for @types/vscode only
   - package-ecosystem: npm
     directory: /editors/code
     schedule:
@@ -83,23 +92,3 @@ updates:
     allow:
       - dependency-name: "@types/vscode"
         update-types: version-update:semver-minor
-
-  - package-ecosystem: docker
-    directory: /.github
-    schedule:
-      interval: daily
-    open-pull-requests-limit: 20
-    commit-message:
-      prefix: internal
-    labels:
-      - A-Build-System
-      - C-Dependencies
-      - D-Trivial
-      - S-Ready-to-Review
-    cooldown:
-      default-days: 7
-    groups:
-      minor-patch:
-        update-types:
-          - minor
-          - patch
