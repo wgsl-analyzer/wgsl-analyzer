@@ -1,5 +1,6 @@
 #![expect(non_snake_case, reason = "name based on WGSL builtins")]
 
+mod array;
 mod atomic;
 mod numeric;
 mod numeric_invalid;

@@ -19,9 +19,11 @@ isFinite(f32) -> bool
 isFinite(vecN<f32>) -> vecN<bool>
 isNormal(f32) -> bool
 isNormal(vecN<f32>) -> vecN<bool>
-arrayLength(ptr<array<T>>) -> u32
 
-// Numeric Built-in Functions
+// 17.4 Array Built-in Functions
+arrayLength(p: ptr<array<T>>) -> u32
+
+//     17.5 Numeric Built-in Functions
 abs(e: AbstractInt) -> AbstractInt
 abs(e: AbstractFloat) -> AbstractFloat
 abs(e: i32) -> i32
