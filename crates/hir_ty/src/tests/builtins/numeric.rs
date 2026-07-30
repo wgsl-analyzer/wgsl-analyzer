@@ -833,24 +833,33 @@ fn determinant() {
         "
 enable f16;
 fn foo() {
-    let abstract_float = determinant(mat2x2(1.0));
-    let float_32 = determinant(mat2x2(1.0f));
-    let float_16 = determinant(mat2x2(1.0h));
+    let abstract_float = determinant(mat2x2(1, 2, 3, 4));
+    let float_32 = determinant(mat2x2(1f, 2f, 3f, 4f));
+    let float_16 = determinant(mat2x2(1h, 2h, 3h, 4h));
 }
 ",
         expect![[r#"
             31..45 'abstract_float': f32
-            48..72 'determ...(1.0))': float
-            60..71 'mat2x2(1.0)': mat2x2<float>
-            67..70 '1.0': float
-            82..90 'float_32': f32
-            93..118 'determ...1.0f))': f32
-            105..117 'mat2x2(1.0f)': mat2x2<f32>
-            112..116 '1.0f': f32
-            128..136 'float_16': f16
-            139..164 'determ...1.0h))': f16
-            151..163 'mat2x2(1.0h)': mat2x2<f16>
-            158..162 '1.0h': f16
+            48..79 'determ...3, 4))': float
+            60..78 'mat2x2... 3, 4)': mat2x2<float>
+            67..68 '1': integer
+            70..71 '2': integer
+            73..74 '3': integer
+            76..77 '4': integer
+            89..97 'float_32': f32
+            100..135 'determ..., 4f))': f32
+            112..134 'mat2x2...f, 4f)': mat2x2<f32>
+            119..121 '1f': f32
+            123..125 '2f': f32
+            127..129 '3f': f32
+            131..133 '4f': f32
+            145..153 'float_16': f16
+            156..191 'determ..., 4h))': f16
+            168..190 'mat2x2...h, 4h)': mat2x2<f16>
+            175..177 '1h': f16
+            179..181 '2h': f16
+            183..185 '3h': f16
+            187..189 '4h': f16
         "#]],
     );
 }
@@ -2867,24 +2876,33 @@ fn transpose() {
         "
 enable f16;
 fn foo() {
-    let abstract_float_mat = transpose(mat2x2(1.0));
-    let float_32_mat = transpose(mat2x2(1.0f));
-    let float_16_mat = transpose(mat2x2(1.0h));
+    let abstract_float_mat = transpose(mat2x2(1, 2, 3, 4));
+    let float_32_mat = transpose(mat2x2(1f, 2f, 3f, 4f));
+    let float_16_mat = transpose(mat2x2(1h, 2h, 3h, 4h));
 }
 ",
         expect![[r#"
             31..49 'abstra...at_mat': mat2x2<f32>
-            52..74 'transp...(1.0))': mat2x2<float>
-            62..73 'mat2x2(1.0)': mat2x2<float>
-            69..72 '1.0': float
-            84..96 'float_32_mat': mat2x2<f32>
-            99..122 'transp...1.0f))': mat2x2<f32>
-            109..121 'mat2x2(1.0f)': mat2x2<f32>
-            116..120 '1.0f': f32
-            132..144 'float_16_mat': mat2x2<f16>
-            147..170 'transp...1.0h))': mat2x2<f16>
-            157..169 'mat2x2(1.0h)': mat2x2<f16>
-            164..168 '1.0h': f16
+            52..81 'transp...3, 4))': mat2x2<float>
+            62..80 'mat2x2... 3, 4)': mat2x2<float>
+            69..70 '1': integer
+            72..73 '2': integer
+            75..76 '3': integer
+            78..79 '4': integer
+            91..103 'float_32_mat': mat2x2<f32>
+            106..139 'transp..., 4f))': mat2x2<f32>
+            116..138 'mat2x2...f, 4f)': mat2x2<f32>
+            123..125 '1f': f32
+            127..129 '2f': f32
+            131..133 '3f': f32
+            135..137 '4f': f32
+            149..161 'float_16_mat': mat2x2<f16>
+            164..197 'transp..., 4h))': mat2x2<f16>
+            174..196 'mat2x2...h, 4h)': mat2x2<f16>
+            181..183 '1h': f16
+            185..187 '2h': f16
+            189..191 '3h': f16
+            193..195 '4h': f16
         "#]],
     );
 }

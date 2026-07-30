@@ -1504,6 +1504,7 @@ impl<'database> InferenceContext<'database> {
         .intern(self.database)
     }
 
+    // TODO: should we use the more specific overloads such as `builtin_op_mat2x2_constructor_T`?
     fn builtin_matrix_inferred_constructor(
         &self,
         columns: VecDimensionality,

@@ -4,6 +4,7 @@ mod array;
 mod atomic;
 mod numeric;
 mod numeric_invalid;
+mod value_constructor;
 mod zero_value;
 
 use expect_test::expect;

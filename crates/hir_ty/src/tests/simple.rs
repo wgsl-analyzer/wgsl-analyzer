@@ -1542,7 +1542,7 @@ fn concretize_matrix() {
         expect![[r#"
             19..20 'x': u32
             23..46 'bar(ma...0, 0))': u32
-            27..45 'mat2x2... 0, 0)': mat2x2<integer>
+            27..45 'mat2x2... 0, 0)': mat2x2<float>
             34..35 '0': integer
             37..38 '0': integer
             40..41 '0': integer
@@ -1868,14 +1868,17 @@ fn lowering_type_missing_template_arguments() {
         ExtensionsConfig::default(),
         "
         var x: mat4x4;
-        const m: mat4x4 = mat4x4(0.0);
+        const m: mat4x4 = mat2x2(0, 1, 2, 3);
         ",
         expect![[r#"
             4..5 'x': ref<handle, [error], read>
             7..13 'mat4x4': missing template arguments
             21..22 'm': [error]
-            33..44 'mat4x4(0.0)': mat4x4<float>
-            40..43 '0.0': float
+            33..51 'mat2x2... 2, 3)': mat2x2<float>
+            40..41 '0': integer
+            43..44 '1': integer
+            46..47 '2': integer
+            49..50 '3': integer
             24..30 'mat4x4': missing template arguments
         "#]],
     );

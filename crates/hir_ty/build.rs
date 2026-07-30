@@ -9,6 +9,8 @@ use std::{
     str::FromStr,
 };
 
+use itertools::Itertools as _;
+
 #[derive(Default, Debug)]
 struct Builtin {
     overloads: Vec<Overload>,
@@ -152,17 +154,14 @@ fn main() -> Result<(), Box<dyn error::Error>> {
         builtin.overloads.push(overload);
     }
 
-    // panic!("{:#?}", builtins);
-
     for (name, builtin) in &builtins {
         builtin_to_rust(&mut file, name, builtin)?;
     }
-    foo(&mut file, &builtins)?;
-
+    write_output(&mut file, &builtins)?;
     Ok(())
 }
 
-fn foo(
+fn write_output(
     destination: &mut dyn io::Write,
     builtins: &BTreeMap<String, Builtin>,
 ) -> io::Result<()> {
@@ -182,6 +181,8 @@ impl Builtin {{
     )?;
 
     for name in builtins.keys() {
+        let name = name.replace("<", "_");
+        let name = name.replace(">", "");
         if name.starts_with("op") {
             continue;
         }
@@ -565,6 +566,8 @@ fn builtin_to_rust(
     name: &str,
     builtin: &Builtin,
 ) -> io::Result<()> {
+    let name = name.replace("<", "_");
+    let name = name.replace(">", "");
     write!(
         sink,
         r#"
