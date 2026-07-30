@@ -687,7 +687,7 @@ fn vec_xy_is_not_ref() {
             39..43 'v.xy': vec2<i32>
             46..47 'v': ref<function, vec2<i32>, read_write>
             46..50 'v.yx': vec2<i32>
-            [EditionedFileId(Id(1c00))] AssignmentNotAReference { left_side: Idx::<Expression>(4), actual: Type(2407) } in Body
+            [EditionedFileId(Id(1c00))] AssignmentNotAReference { left_side: Idx::<Expression>(4), actual: Type(2409) } in Body
         "#]],
     );
 }

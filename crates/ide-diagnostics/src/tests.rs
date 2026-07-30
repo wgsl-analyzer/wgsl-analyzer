@@ -164,9 +164,27 @@ fn no_constructor() {
         "fn foo() { var x = vec2f(1, 2, 3); }",
         expect![[r#"
             19..33 wgsl-analyzer Error 18: no overload of constructor `vec2<f32>` found for given arguments. Found (integer, integer, integer), expected one of:
-            fn op_vec2_constructor(vec2<T>) -> vec2<T>
-            fn op_vec2_constructor(T) -> vec2<T>
-            fn op_vec2_constructor(T, T) -> vec2<T>
+            fn op_vec2_constructor(e: bool) -> vec2<bool>
+            fn op_vec2_constructor(e: integer) -> vec2<integer>
+            fn op_vec2_constructor(e: float) -> vec2<float>
+            fn op_vec2_constructor(e: i32) -> vec2<i32>
+            fn op_vec2_constructor(e: u32) -> vec2<u32>
+            fn op_vec2_constructor(e: f32) -> vec2<f32>
+            fn op_vec2_constructor(e: f16) -> vec2<f16>
+            fn op_vec2_constructor(e: vec2<bool>) -> vec2<bool>
+            fn op_vec2_constructor(e: vec2<integer>) -> vec2<integer>
+            fn op_vec2_constructor(e: vec2<float>) -> vec2<float>
+            fn op_vec2_constructor(e: vec2<i32>) -> vec2<i32>
+            fn op_vec2_constructor(e: vec2<u32>) -> vec2<u32>
+            fn op_vec2_constructor(e: vec2<f32>) -> vec2<f32>
+            fn op_vec2_constructor(e: vec2<f16>) -> vec2<f16>
+            fn op_vec2_constructor(e1: bool, e2: bool) -> vec2<bool>
+            fn op_vec2_constructor(e1: integer, e2: integer) -> vec2<integer>
+            fn op_vec2_constructor(e1: float, e2: float) -> vec2<float>
+            fn op_vec2_constructor(e1: i32, e2: i32) -> vec2<i32>
+            fn op_vec2_constructor(e1: u32, e2: u32) -> vec2<u32>
+            fn op_vec2_constructor(e1: f32, e2: f32) -> vec2<f32>
+            fn op_vec2_constructor(e1: f16, e2: f16) -> vec2<f16>
         "#]],
     );
 }

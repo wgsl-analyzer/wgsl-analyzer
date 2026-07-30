@@ -1764,3 +1764,249 @@ fn foo() {
         "#]],
     );
 }
+
+#[test]
+fn vec2() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+fn foo() {
+    let vec2_abstract_float = vec2(1.0);
+    let vec2_abstract_integer = vec2(1);
+}
+",
+        expect![[r#"
+            19..38 'vec2_a..._float': vec2<f32>
+            41..50 'vec2(1.0)': vec2<float>
+            46..49 '1.0': float
+            60..81 'vec2_a...nteger': vec2<i32>
+            84..91 'vec2(1)': vec2<integer>
+            89..90 '1': integer
+        "#]],
+    );
+}
+
+// op_vec2_constructor<bool>(e: bool) -> vec2<bool>
+// op_vec2_constructor<i32>(e: i32) -> vec2<i32>
+// op_vec2_constructor<u32>(e: u32) -> vec2<u32>
+// op_vec2_constructor<f32>(e: f32) -> vec2<f32>
+// op_vec2_constructor<f16>(e: f16) -> vec2<f16>
+// op_vec2_constructor(e: bool) -> vec2<bool>
+// op_vec2_constructor(e: AbstractFloat) -> vec2<AbstractFloat>
+// op_vec2_constructor(e: AbstractInt) -> vec2<AbstractInt>
+// op_vec2_constructor(e: i32) -> vec2<i32>
+// op_vec2_constructor(e: u32) -> vec2<u32>
+// op_vec2_constructor(e: f32) -> vec2<f32>
+// op_vec2_constructor(e: f16) -> vec2<f16>
+
+// op_vec2_constructor<bool>(e: vec2<bool>) -> vec2<bool>
+// op_vec2_constructor<i32>(e: vec2<i32>) -> vec2<i32>
+// op_vec2_constructor<u32>(e: vec2<u32>) -> vec2<u32>
+// op_vec2_constructor<f32>(e: vec2<f32>) -> vec2<f32>
+// op_vec2_constructor<f16>(e: vec2<f16>) -> vec2<f16>
+// op_vec2_constructor(e: vec2<bool>) -> vec2<bool>
+// op_vec2_constructor(e: vec2<AbstractFloat>) -> vec2<AbstractFloat>
+// op_vec2_constructor(e: vec2<AbstractInt>) -> vec2<AbstractInt>
+// op_vec2_constructor(e: vec2<i32>) -> vec2<i32>
+// op_vec2_constructor(e: vec2<u32>) -> vec2<u32>
+// op_vec2_constructor(e: vec2<f32>) -> vec2<f32>
+// op_vec2_constructor(e: vec2<f16>) -> vec2<f16>
+
+// op_vec2_constructor<bool>(e1: bool, e2: bool) -> vec2<bool>
+// op_vec2_constructor<i32>(e1: i32, e2: i32) -> vec2<i32>
+// op_vec2_constructor<u32>(e1: u32, e2: u32) -> vec2<u32>
+// op_vec2_constructor<f32>(e1: f32, e2: f32) -> vec2<f32>
+// op_vec2_constructor<f16>(e1: f16, e2: f16) -> vec2<f16>
+// op_vec2_constructor(e1: bool, e2: bool) -> vec2<bool>
+// op_vec2_constructor(e1: AbstractFloat, e2: AbstractFloat) -> vec2<AbstractFloat>
+// op_vec2_constructor(e1: AbstractInt, e2: AbstractInt) -> vec2<AbstractInt>
+// op_vec2_constructor(e1: i32, e2: i32) -> vec2<i32>
+// op_vec2_constructor(e1: u32, e2: u32) -> vec2<u32>
+// op_vec2_constructor(e1: f32, e2: f32) -> vec2<f32>
+// op_vec2_constructor(e1: f16, e2: f16) -> vec2<f16>
+
+// // parameterless is handled in Rust code
+
+// op_vec3_constructor<bool>(e: bool) -> vec3<bool>
+// op_vec3_constructor<i32>(e: i32) -> vec3<i32>
+// op_vec3_constructor<u32>(e: u32) -> vec3<u32>
+// op_vec3_constructor<f32>(e: f32) -> vec3<f32>
+// op_vec3_constructor<f16>(e: f16) -> vec3<f16>
+// op_vec3_constructor(e: bool) -> vec3<bool>
+// op_vec3_constructor(e: AbstractFloat) -> vec3<AbstractFloat>
+// op_vec3_constructor(e: AbstractInt) -> vec3<AbstractInt>
+// op_vec3_constructor(e: i32) -> vec3<i32>
+// op_vec3_constructor(e: u32) -> vec3<u32>
+// op_vec3_constructor(e: f32) -> vec3<f32>
+// op_vec3_constructor(e: f16) -> vec3<f16>
+
+// op_vec3_constructor<bool>(e: vec3<bool>) -> vec3<bool>
+// op_vec3_constructor<i32>(e: vec3<i32>) -> vec3<i32>
+// op_vec3_constructor<u32>(e: vec3<u32>) -> vec3<u32>
+// op_vec3_constructor<f32>(e: vec3<f32>) -> vec3<f32>
+// op_vec3_constructor<f16>(e: vec3<f16>) -> vec3<f16>
+// op_vec3_constructor(e: vec3<bool>) -> vec3<bool>
+// op_vec3_constructor(e: vec3<AbstractFloat>) -> vec3<AbstractFloat>
+// op_vec3_constructor(e: vec3<AbstractInt>) -> vec3<AbstractInt>
+// op_vec3_constructor(e: vec3<i32>) -> vec3<i32>
+// op_vec3_constructor(e: vec3<u32>) -> vec3<u32>
+// op_vec3_constructor(e: vec3<f32>) -> vec3<f32>
+// op_vec3_constructor(e: vec3<f16>) -> vec3<f16>
+
+// op_vec3_constructor<bool>(e1: bool, e2: bool, e3: bool) -> vec3<bool>
+// op_vec3_constructor<i32>(e1: i32, e2: i32, e3: i32) -> vec3<i32>
+// op_vec3_constructor<u32>(e1: u32, e2: u32, e3: u32) -> vec3<u32>
+// op_vec3_constructor<f32>(e1: f32, e2: f32, e3: f32) -> vec3<f32>
+// op_vec3_constructor<f16>(e1: f16, e2: f16, e3: f16) -> vec3<f16>
+// op_vec3_constructor(e1: bool, e2: bool, e3: bool) -> vec3<bool>
+// op_vec3_constructor(e1: AbstractFloat, e2: AbstractFloat, e3: AbstractFloat) -> vec3<AbstractFloat>
+// op_vec3_constructor(e1: AbstractInt, e2: AbstractInt, e3: AbstractInt) -> vec3<AbstractInt>
+// op_vec3_constructor(e1: i32, e2: i32, e3: i32) -> vec3<i32>
+// op_vec3_constructor(e1: u32, e2: u32, e3: u32) -> vec3<u32>
+// op_vec3_constructor(e1: f32, e2: f32, e3: f32) -> vec3<f32>
+// op_vec3_constructor(e1: f16, e2: f16, e3: f16) -> vec3<f16>
+
+// op_vec3_constructor<bool>(v1: vec2<bool>, e1: bool) -> vec3<bool>
+// op_vec3_constructor<i32>(v1: vec2<i32>, e1: i32) -> vec3<i32>
+// op_vec3_constructor<u32>(v1: vec2<u32>, e1: u32) -> vec3<u32>
+// op_vec3_constructor<f32>(v1: vec2<f32>, e1: f32) -> vec3<f32>
+// op_vec3_constructor<f16>(v1: vec2<f16>, e1: f16) -> vec3<f16>
+// op_vec3_constructor(v1: vec2<bool>, e1: bool) -> vec3<bool>
+// op_vec3_constructor(v1: vec2<AbstractFloat>, e1: AbstractFloat) -> vec3<AbstractFloat>
+// op_vec3_constructor(v1: vec2<AbstractInt>, e1: AbstractInt) -> vec3<AbstractInt>
+// op_vec3_constructor(v1: vec2<i32>, e1: i32) -> vec3<i32>
+// op_vec3_constructor(v1: vec2<u32>, e1: u32) -> vec3<u32>
+// op_vec3_constructor(v1: vec2<f32>, e1: f32) -> vec3<f32>
+// op_vec3_constructor(v1: vec2<f16>, e1: f16) -> vec3<f16>
+
+// op_vec3_constructor<bool>(e1: bool, v1: vec2<bool>) -> vec3<bool>
+// op_vec3_constructor<i32>(e1: i32, v1: vec2<i32>) -> vec3<i32>
+// op_vec3_constructor<u32>(e1: u32, v1: vec2<u32>) -> vec3<u32>
+// op_vec3_constructor<f32>(e1: f32, v1: vec2<f32>) -> vec3<f32>
+// op_vec3_constructor<f16>(e1: f16, v1: vec2<f16>) -> vec3<f16>
+// op_vec3_constructor(e1: bool, v1: vec2<bool>) -> vec3<bool>
+// op_vec3_constructor(e1: AbstractFloat, v1: vec2<AbstractFloat>) -> vec3<AbstractFloat>
+// op_vec3_constructor(e1: AbstractInt, v1: vec2<AbstractInt>) -> vec3<AbstractInt>
+// op_vec3_constructor(e1: i32, v1: vec2<i32>) -> vec3<i32>
+// op_vec3_constructor(e1: u32, v1: vec2<u32>) -> vec3<u32>
+// op_vec3_constructor(e1: f32, v1: vec2<f32>) -> vec3<f32>
+// op_vec3_constructor(e1: f16, v1: vec2<f16>) -> vec3<f16>
+
+// // parameterless is handled in Rust code
+
+// op_vec4_constructor<bool>(e: bool) -> vec4<bool>
+// op_vec4_constructor<i32>(e: i32) -> vec4<i32>
+// op_vec4_constructor<u32>(e: u32) -> vec4<u32>
+// op_vec4_constructor<f32>(e: f32) -> vec4<f32>
+// op_vec4_constructor<f16>(e: f16) -> vec4<f16>
+// op_vec4_constructor(e: bool) -> vec4<bool>
+// op_vec4_constructor(e: AbstractFloat) -> vec4<AbstractFloat>
+// op_vec4_constructor(e: AbstractInt) -> vec4<AbstractInt>
+// op_vec4_constructor(e: i32) -> vec4<i32>
+// op_vec4_constructor(e: u32) -> vec4<u32>
+// op_vec4_constructor(e: f32) -> vec4<f32>
+// op_vec4_constructor(e: f16) -> vec4<f16>
+
+// op_vec4_constructor<bool>(e: vec4<bool>) -> vec4<bool>
+// op_vec4_constructor<i32>(e: vec4<i32>) -> vec4<i32>
+// op_vec4_constructor<u32>(e: vec4<u32>) -> vec4<u32>
+// op_vec4_constructor<f32>(e: vec4<f32>) -> vec4<f32>
+// op_vec4_constructor<f16>(e: vec4<f16>) -> vec4<f16>
+// op_vec4_constructor(e: vec4<bool>) -> vec4<bool>
+// op_vec4_constructor(e: vec4<AbstractFloat>) -> vec4<AbstractFloat>
+// op_vec4_constructor(e: vec4<AbstractInt>) -> vec4<AbstractInt>
+// op_vec4_constructor(e: vec4<i32>) -> vec4<i32>
+// op_vec4_constructor(e: vec4<u32>) -> vec4<u32>
+// op_vec4_constructor(e: vec4<f32>) -> vec4<f32>
+// op_vec4_constructor(e: vec4<f16>) -> vec4<f16>
+
+// op_vec4_constructor<bool>(e1: bool, e2: bool, e3: bool, e4: bool) -> vec4<bool>
+// op_vec4_constructor<i32>(e1: i32, e2: i32, e3: i32, e4: i32) -> vec4<i32>
+// op_vec4_constructor<u32>(e1: u32, e2: u32, e3: u32, e4: u32) -> vec4<u32>
+// op_vec4_constructor<f32>(e1: f32, e2: f32, e3: f32, e4: f32) -> vec4<f32>
+// op_vec4_constructor<f16>(e1: f16, e2: f16, e3: f16, e4: f16) -> vec4<f16>
+// op_vec4_constructor(e1: bool, e2: bool, e3: bool, e4: bool) -> vec4<bool>
+// op_vec4_constructor(e1: AbstractFloat, e2: AbstractFloat, e3: AbstractFloat, e4: AbstractFloat) -> vec4<AbstractFloat>
+// op_vec4_constructor(e1: AbstractInt, e2: AbstractInt, e3: AbstractInt, e4: AbstractInt) -> vec4<AbstractInt>
+// op_vec4_constructor(e1: i32, e2: i32, e3: i32, e4: i32) -> vec4<i32>
+// op_vec4_constructor(e1: u32, e2: u32, e3: u32, e4: u32) -> vec4<u32>
+// op_vec4_constructor(e1: f32, e2: f32, e3: f32, e4: f32) -> vec4<f32>
+// op_vec4_constructor(e1: f16, e2: f16, e3: f16, e4: f16) -> vec4<f16>
+
+// op_vec4_constructor<bool>(e1: bool, v1: vec2<bool>, e2: bool) -> vec4<bool>
+// op_vec4_constructor<i32>(e1: i32, v1: vec2<i32>, e2: i32) -> vec4<i32>
+// op_vec4_constructor<u32>(e1: u32, v1: vec2<u32>, e2: u32) -> vec4<u32>
+// op_vec4_constructor<f32>(e1: f32, v1: vec2<f32>, e2: f32) -> vec4<f32>
+// op_vec4_constructor<f16>(e1: f16, v1: vec2<f16>, e2: f16) -> vec4<f16>
+// op_vec4_constructor(e1: bool, v1: vec2<bool>, e2: bool) -> vec4<bool>
+// op_vec4_constructor(e1: AbstractFloat, v1: vec2<AbstractFloat>, e2: AbstractFloat) -> vec4<AbstractFloat>
+// op_vec4_constructor(e1: AbstractInt, v1: vec2<AbstractInt>, e2: AbstractInt) -> vec4<AbstractInt>
+// op_vec4_constructor(e1: i32, v1: vec2<i32>, e2: i32) -> vec4<i32>
+// op_vec4_constructor(e1: u32, v1: vec2<u32>, e2: u32) -> vec4<u32>
+// op_vec4_constructor(e1: f32, v1: vec2<f32>, e2: f32) -> vec4<f32>
+// op_vec4_constructor(e1: f16, v1: vec2<f16>, e2: f16) -> vec4<f16>
+
+// op_vec4_constructor<bool>(e1: bool, e2: bool, v1: vec2<bool>) -> vec4<bool>
+// op_vec4_constructor<i32>(e1: i32, e2: i32, v1: vec2<i32>) -> vec4<i32>
+// op_vec4_constructor<u32>(e1: u32, e2: u32, v1: vec2<u32>) -> vec4<u32>
+// op_vec4_constructor<f32>(e1: f32, e2: f32, v1: vec2<f32>) -> vec4<f32>
+// op_vec4_constructor<f16>(e1: f16, e2: f16, v1: vec2<f16>) -> vec4<f16>
+// op_vec4_constructor(e1: bool, e2: bool, v1: vec2<bool>) -> vec4<bool>
+// op_vec4_constructor(e1: AbstractFloat, e2: AbstractFloat, v1: vec2<AbstractFloat>) -> vec4<AbstractFloat>
+// op_vec4_constructor(e1: AbstractInt, e2: AbstractInt, v1: vec2<AbstractInt>) -> vec4<AbstractInt>
+// op_vec4_constructor(e1: i32, e2: i32, v1: vec2<i32>) -> vec4<i32>
+// op_vec4_constructor(e1: u32, e2: u32, v1: vec2<u32>) -> vec4<u32>
+// op_vec4_constructor(e1: f32, e2: f32, v1: vec2<f32>) -> vec4<f32>
+// op_vec4_constructor(e1: f16, e2: f16, v1: vec2<f16>) -> vec4<f16>
+
+// op_vec4_constructor<bool>(v1: vec2<bool>, v2: vec2<bool>) -> vec4<bool>
+// op_vec4_constructor<i32>(v1: vec2<i32>, v2: vec2<i32>) -> vec4<i32>
+// op_vec4_constructor<u32>(v1: vec2<u32>, v2: vec2<u32>) -> vec4<u32>
+// op_vec4_constructor<f32>(v1: vec2<f32>, v2: vec2<f32>) -> vec4<f32>
+// op_vec4_constructor<f16>(v1: vec2<f16>, v2: vec2<f16>) -> vec4<f16>
+// op_vec4_constructor(v1: vec2<bool>, v2: vec2<bool>) -> vec4<bool>
+// op_vec4_constructor(v1: vec2<AbstractFloat>, v2: vec2<AbstractFloat>) -> vec4<AbstractFloat>
+// op_vec4_constructor(v1: vec2<AbstractInt>, v2: vec2<AbstractInt>) -> vec4<AbstractInt>
+// op_vec4_constructor(v1: vec2<i32>, v2: vec2<i32>) -> vec4<i32>
+// op_vec4_constructor(v1: vec2<u32>, v2: vec2<u32>) -> vec4<u32>
+// op_vec4_constructor(v1: vec2<f32>, v2: vec2<f32>) -> vec4<f32>
+// op_vec4_constructor(v1: vec2<f16>, v2: vec2<f16>) -> vec4<f16>
+
+// op_vec4_constructor<bool>(v1: vec2<bool>, e1: bool, e2: bool) -> vec4<bool>
+// op_vec4_constructor<i32>(v1: vec2<i32>, e1: i32, e2: i32) -> vec4<i32>
+// op_vec4_constructor<u32>(v1: vec2<u32>, e1: u32, e2: u32) -> vec4<u32>
+// op_vec4_constructor<f32>(v1: vec2<f32>, e1: f32, e2: f32) -> vec4<f32>
+// op_vec4_constructor<f16>(v1: vec2<f16>, e1: f16, e2: f16) -> vec4<f16>
+// op_vec4_constructor(v1: vec2<bool>, e1: bool, e2: bool) -> vec4<bool>
+// op_vec4_constructor(v1: vec2<AbstractFloat>, e1: AbstractFloat, e2: AbstractFloat) -> vec4<AbstractFloat>
+// op_vec4_constructor(v1: vec2<AbstractInt>, e1: AbstractInt, e2: AbstractInt) -> vec4<AbstractInt>
+// op_vec4_constructor(v1: vec2<i32>, e1: i32, e2: i32) -> vec4<i32>
+// op_vec4_constructor(v1: vec2<u32>, e1: u32, e2: u32) -> vec4<u32>
+// op_vec4_constructor(v1: vec2<f32>, e1: f32, e2: f32) -> vec4<f32>
+// op_vec4_constructor(v1: vec2<f16>, e1: f16, e2: f16) -> vec4<f16>
+
+// op_vec4_constructor<bool>(v1: vec3<bool>, e1: bool) -> vec4<bool>
+// op_vec4_constructor<i32>(v1: vec3<i32>, e1: i32) -> vec4<i32>
+// op_vec4_constructor<u32>(v1: vec3<u32>, e1: u32) -> vec4<u32>
+// op_vec4_constructor<f32>(v1: vec3<f32>, e1: f32) -> vec4<f32>
+// op_vec4_constructor<f16>(v1: vec3<f16>, e1: f16) -> vec4<f16>
+// op_vec4_constructor(v1: vec3<bool>, e1: bool) -> vec4<bool>
+// op_vec4_constructor(v1: vec3<AbstractFloat>, e1: AbstractFloat) -> vec4<AbstractFloat>
+// op_vec4_constructor(v1: vec3<AbstractInt>, e1: AbstractInt) -> vec4<AbstractInt>
+// op_vec4_constructor(v1: vec3<i32>, e1: i32) -> vec4<i32>
+// op_vec4_constructor(v1: vec3<u32>, e1: u32) -> vec4<u32>
+// op_vec4_constructor(v1: vec3<f32>, e1: f32) -> vec4<f32>
+// op_vec4_constructor(v1: vec3<f16>, e1: f16) -> vec4<f16>
+
+// op_vec4_constructor<bool>(e1: bool, v1: vec3<bool>) -> vec4<bool>
+// op_vec4_constructor<i32>(e1: i32, v1: vec3<i32>) -> vec4<i32>
+// op_vec4_constructor<u32>(e1: u32, v1: vec3<u32>) -> vec4<u32>
+// op_vec4_constructor<f32>(e1: f32, v1: vec3<f32>) -> vec4<f32>
+// op_vec4_constructor<f16>(e1: f16, v1: vec3<f16>) -> vec4<f16>
+// op_vec4_constructor(e1: bool, v1: vec3<bool>) -> vec4<bool>
+// op_vec4_constructor(e1: AbstractFloat, v1: vec3<AbstractFloat>) -> vec4<AbstractFloat>
+// op_vec4_constructor(e1: AbstractInt, v1: vec3<AbstractInt>) -> vec4<AbstractInt>
+// op_vec4_constructor(e1: i32, v1: vec3<i32>) -> vec4<i32>
+// op_vec4_constructor(e1: u32, v1: vec3<u32>) -> vec4<u32>
+// op_vec4_constructor(e1: f32, v1: vec3<f32>) -> vec4<f32>
+// op_vec4_constructor(e1: f16, v1: vec3<f16>) -> vec4<f16>
