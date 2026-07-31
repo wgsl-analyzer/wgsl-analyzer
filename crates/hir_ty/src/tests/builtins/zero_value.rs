@@ -110,7 +110,8 @@ fn foo() {
     let structure = Foo();
 
     let pointer = ptr<function, u32, read>();
-    let reference = ref<function, u32, read>();
+    // ref doesn't even parse
+    // let reference = ref<function, u32, read>();
     let tex = texture_storage_2d<rgba16float, write>();
 }
 ",
@@ -133,12 +134,8 @@ fn foo() {
             394..399 'Foo()': Foo
             410..417 'pointer': [error]
             420..446 'ptr<fu...ead>()': [error]
-            456..465 'reference': [error]
-            472..480 'function': [error]
-            482..485 'u32': [error]
-            487..491 'read': [error]
-            504..507 'tex': [error]
-            510..550 'textur...ite>()': [error]
+            537..540 'tex': [error]
+            543..583 'textur...ite>()': [error]
             79..92 'array<bool>()': type `array<bool>` is not constructible
             128..140 'array<i32>()': type `array<i32>` is not constructible
             178..190 'array<u32>()': type `array<u32>` is not constructible
@@ -151,15 +148,8 @@ fn foo() {
             394..399 'Foo()': type `Foo` is not constructible
             420..446 'ptr<fu...ead>()': type `ptr<function, u32, read>` is not constructible
             420..446 'ptr<fu...ead>()': type `ptr<function, u32, read>` is not constructible
-            472..480 'function': expected variable, but got enumerant `function`
-            [EditionedFileId(Id(1c00))] AssignmentNotAReference { left_side: Idx::<Expression>(19), actual: Type(2802) } in Body
-            482..485 'u32': expected variable, but got type `u32`
-            [EditionedFileId(Id(1c00))] AssignmentNotAReference { left_side: Idx::<Expression>(21), actual: Type(2802) } in Body
-            487..491 'read': expected variable, but got enumerant `read`
-            [EditionedFileId(Id(1c00))] AssignmentNotAReference { left_side: Idx::<Expression>(23), actual: Type(2802) } in Body
-            [EditionedFileId(Id(1c00))] AssignmentNotAReference { left_side: Idx::<Expression>(25), actual: Type(2802) } in Body
-            510..550 'textur...ite>()': type `texture_storage_2d<rgba16float,write>` is not constructible
-            510..550 'textur...ite>()': type `texture_storage_2d<rgba16float,write>` is not constructible
+            543..583 'textur...ite>()': type `texture_storage_2d<rgba16float,write>` is not constructible
+            543..583 'textur...ite>()': type `texture_storage_2d<rgba16float,write>` is not constructible
         "#]],
     );
 }

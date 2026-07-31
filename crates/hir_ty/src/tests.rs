@@ -23,7 +23,7 @@ use hir_def::{
 };
 use itertools::Itertools as _;
 use salsa::Durability;
-use syntax::{AstNode as _, ExtensionsConfig, SyntaxNode};
+use syntax::{AstNode as _, Diagnostic, ExtensionsConfig, SyntaxNode};
 use test_fixture::WithFixture as _;
 use triomphe::Arc;
 
@@ -70,7 +70,9 @@ impl<'db> InferPrinter<'db> {
         database: &'db TestDatabase,
         file_id: EditionedFileId,
     ) -> Self {
-        let root = file_id.parse(database).syntax();
+        let parse = file_id.parse(database);
+        assert_eq!(<&[Diagnostic]>::default(), parse.errors());
+        let root = parse.syntax();
         Self {
             database,
             file_id,

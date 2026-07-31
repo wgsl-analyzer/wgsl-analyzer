@@ -385,29 +385,6 @@ fn no_such_field_on_vec_ptr() {
 }
 
 #[test]
-fn zero_swizzle_vec() {
-    check_infer(
-        ExtensionsConfig::default(),
-        "
-        fn foo() {
-            let v = vec2(0, 0);
-            let x = v.;
-        }
-        ",
-        expect![[r#"
-            19..20 'v': vec2<i32>
-            23..33 'vec2(0, 0)': vec2<integer>
-            28..29 '0': integer
-            31..32 '0': integer
-            43..44 'x': [error]
-            47..48 'v': vec2<i32>
-            47..49 'v.': [error]
-            47..49 'v.': no such field `[missing name]` on type `vec2<i32>`
-        "#]],
-    );
-}
-
-#[test]
 fn address_of_not_reference() {
     check_infer(
         ExtensionsConfig::default(),
@@ -1235,7 +1212,7 @@ fn no_crash_on_hex_int() {
         "
 fn f() {
     let i2 = 0u;
-    let p0 = (i2 >> 0u) & 0xf
+    let p0 = (i2 >> 0u) & 0xf;
 }
 ",
         expect![[r#"
