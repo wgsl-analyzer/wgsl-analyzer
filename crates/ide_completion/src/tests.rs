@@ -286,7 +286,30 @@ fn no_completions_in_comments() {
             function atomicStore
             function atomicSub
             function atomicXor
-            function bitcast
+            function bitcast<f16>
+            function bitcast<f32>
+            function bitcast<i32>
+            function bitcast<i64>
+            function bitcast<u32>
+            function bitcast<u64>
+            function bitcast<vec2<f16>>
+            function bitcast<vec2<f32>>
+            function bitcast<vec2<i32>>
+            function bitcast<vec2<i64>>
+            function bitcast<vec2<u32>>
+            function bitcast<vec2<u64>>
+            function bitcast<vec3<f16>>
+            function bitcast<vec3<f32>>
+            function bitcast<vec3<i32>>
+            function bitcast<vec3<i64>>
+            function bitcast<vec3<u32>>
+            function bitcast<vec3<u64>>
+            function bitcast<vec4<f16>>
+            function bitcast<vec4<f32>>
+            function bitcast<vec4<i32>>
+            function bitcast<vec4<i64>>
+            function bitcast<vec4<u32>>
+            function bitcast<vec4<u64>>
             function ceil
             function clamp
             function cos
@@ -412,7 +435,30 @@ fn no_completions_in_comments() {
             function atomicStore
             function atomicSub
             function atomicXor
-            function bitcast
+            function bitcast<f16>
+            function bitcast<f32>
+            function bitcast<i32>
+            function bitcast<i64>
+            function bitcast<u32>
+            function bitcast<u64>
+            function bitcast<vec2<f16>>
+            function bitcast<vec2<f32>>
+            function bitcast<vec2<i32>>
+            function bitcast<vec2<i64>>
+            function bitcast<vec2<u32>>
+            function bitcast<vec2<u64>>
+            function bitcast<vec3<f16>>
+            function bitcast<vec3<f32>>
+            function bitcast<vec3<i32>>
+            function bitcast<vec3<i64>>
+            function bitcast<vec3<u32>>
+            function bitcast<vec3<u64>>
+            function bitcast<vec4<f16>>
+            function bitcast<vec4<f32>>
+            function bitcast<vec4<i32>>
+            function bitcast<vec4<i64>>
+            function bitcast<vec4<u32>>
+            function bitcast<vec4<u64>>
             function ceil
             function clamp
             function cos
@@ -537,7 +583,30 @@ fn no_completions_in_comments() {
             function atomicStore
             function atomicSub
             function atomicXor
-            function bitcast
+            function bitcast<f16>
+            function bitcast<f32>
+            function bitcast<i32>
+            function bitcast<i64>
+            function bitcast<u32>
+            function bitcast<u64>
+            function bitcast<vec2<f16>>
+            function bitcast<vec2<f32>>
+            function bitcast<vec2<i32>>
+            function bitcast<vec2<i64>>
+            function bitcast<vec2<u32>>
+            function bitcast<vec2<u64>>
+            function bitcast<vec3<f16>>
+            function bitcast<vec3<f32>>
+            function bitcast<vec3<i32>>
+            function bitcast<vec3<i64>>
+            function bitcast<vec3<u32>>
+            function bitcast<vec3<u64>>
+            function bitcast<vec4<f16>>
+            function bitcast<vec4<f32>>
+            function bitcast<vec4<i32>>
+            function bitcast<vec4<i64>>
+            function bitcast<vec4<u32>>
+            function bitcast<vec4<u64>>
             function ceil
             function clamp
             function cos

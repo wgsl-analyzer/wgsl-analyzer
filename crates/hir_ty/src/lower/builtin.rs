@@ -1,6 +1,7 @@
 use std::str::FromStr as _;
 
 use hir_def::{expression::ExpressionId, item_tree::Name};
+use itertools::Itertools as _;
 use wgsl_types::{
     Instance,
     inst::LiteralInstance,
@@ -14,7 +15,7 @@ use crate::{
     },
     ty::{
         ArraySize, ArrayType, AtomicType, MatrixType, Pointer, ScalarType, TextureDimensionality,
-        TextureKind, TextureType, Type, TypeKind, VecSize, VectorType,
+        TextureKind, TextureType, Type, TypeKind, VecSize, VectorType, pretty::pretty_type,
     },
 };
 
@@ -30,6 +31,20 @@ impl TypeLoweringContext<'_> {
         match self.lower_predeclared_type(type_container, name, template_parameters) {
             Ok(Some(lowered)) => Some(lowered),
             Ok(None) => {
+                let mut evaluated = self.eval_template_args(type_container, template_parameters);
+                let mut buffer = String::new();
+                if !template_parameters.is_empty() {
+                    buffer.push('<');
+                }
+                while let Ok(next) = evaluated.next_as_type() {
+                    buffer.push_str(&pretty_type(self.database, next.0));
+                    buffer.push(',');
+                }
+                let mut buffer = buffer.trim_end_matches(',').to_owned();
+                if !template_parameters.is_empty() {
+                    buffer.push('>');
+                }
+                let name = format!("{}{buffer}", name.as_str());
                 if crate::builtins::Builtin::ALL_BUILTINS.contains(&name.as_str()) {
                     Some(Lowered::BuiltinFunction)
                 } else if let Ok(enum_value) = Enumerant::from_str(name.as_str()) {

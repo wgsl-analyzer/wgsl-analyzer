@@ -2,6 +2,7 @@
 
 mod array;
 mod atomic;
+mod bit_reinterpretation;
 mod numeric;
 mod numeric_invalid;
 mod value_constructor;
