@@ -1,5 +1,7 @@
 #![expect(clippy::unimplemented, reason = "build script, best tool for the job")]
 
+use itertools::Itertools as _;
+use rustc_hash::FxHashSet;
 use std::{
     collections::BTreeMap,
     env, error, fmt,
@@ -8,8 +10,6 @@ use std::{
     path::PathBuf,
     str::FromStr,
 };
-
-use itertools::Itertools as _;
 
 #[derive(Default, Debug)]
 struct Builtin {
@@ -145,9 +145,15 @@ fn main() -> Result<(), Box<dyn error::Error>> {
     let mut builtins: BTreeMap<String, Builtin> = BTreeMap::new();
 
     let builtins_file = fs::read_to_string("builtins.wgsl.txt")?;
+    let mut seen = FxHashSet::default();
     for line in builtins_file.lines() {
         if line.is_empty() || line.starts_with("//") {
             continue;
+        }
+        if seen.contains(line) {
+            panic!("duplicate builtint: {line}");
+        } else {
+            seen.insert(line);
         }
         let (name, overload) = parse_line(line);
         let builtin = builtins.entry(name.to_owned()).or_default();
@@ -181,8 +187,8 @@ impl Builtin {{
     )?;
 
     for name in builtins.keys() {
-        let name = name.replace("<", "_");
-        let name = name.replace(">", "");
+        let name = name.replace('<', "_");
+        let name = name.replace('>', "");
         if name.starts_with("op") {
             continue;
         }
@@ -566,8 +572,8 @@ fn builtin_to_rust(
     name: &str,
     builtin: &Builtin,
 ) -> io::Result<()> {
-    let name = name.replace("<", "_");
-    let name = name.replace(">", "");
+    let name = name.replace('<', "_");
+    let name = name.replace('>', "");
     write!(
         sink,
         r#"

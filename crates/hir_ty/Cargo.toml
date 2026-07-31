@@ -34,6 +34,7 @@ tracing-tree.workspace = true
 
 [build-dependencies]
 itertools.workspace = true
+rustc-hash.workspace = true
 
 [dev-dependencies]
 expect-test.workspace = true

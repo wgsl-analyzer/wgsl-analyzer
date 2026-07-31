@@ -249,10 +249,6 @@ fn complete_variable() {
             function fwidthFine
             function insertBits
             function inverseSqrt
-            function isFinite
-            function isInf
-            function isNan
-            function isNormal
             function ldexp
             function length
             function log
@@ -383,10 +379,6 @@ fn complete_keyword() {
             function fwidthFine
             function insertBits
             function inverseSqrt
-            function isFinite
-            function isInf
-            function isNan
-            function isNormal
             function ldexp
             function length
             function log
@@ -516,10 +508,6 @@ fn complete_snippet() {
             function fwidthFine
             function insertBits
             function inverseSqrt
-            function isFinite
-            function isInf
-            function isNan
-            function isNormal
             function ldexp
             function length
             function log
@@ -650,10 +638,6 @@ fn complete_constant() {
             function fwidthFine
             function insertBits
             function inverseSqrt
-            function isFinite
-            function isInf
-            function isNan
-            function isNormal
             function ldexp
             function length
             function log
@@ -784,10 +768,6 @@ fn complete_struct() {
             function fwidthFine
             function insertBits
             function inverseSqrt
-            function isFinite
-            function isInf
-            function isNan
-            function isNormal
             function ldexp
             function length
             function log
@@ -920,10 +900,6 @@ fn complete_type_alias() {
             function fwidthFine
             function insertBits
             function inverseSqrt
-            function isFinite
-            function isInf
-            function isNan
-            function isNormal
             function ldexp
             function length
             function log

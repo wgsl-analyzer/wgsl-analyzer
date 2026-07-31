@@ -322,10 +322,6 @@ fn no_completions_in_comments() {
             function fwidthFine
             function insertBits
             function inverseSqrt
-            function isFinite
-            function isInf
-            function isNan
-            function isNormal
             function ldexp
             function length
             function log
@@ -452,10 +448,6 @@ fn no_completions_in_comments() {
             function fwidthFine
             function insertBits
             function inverseSqrt
-            function isFinite
-            function isInf
-            function isNan
-            function isNormal
             function ldexp
             function length
             function log
@@ -581,10 +573,6 @@ fn no_completions_in_comments() {
             function fwidthFine
             function insertBits
             function inverseSqrt
-            function isFinite
-            function isInf
-            function isNan
-            function isNormal
             function ldexp
             function length
             function log
