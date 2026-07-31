@@ -1,8 +1,8 @@
 // 17.1 Constructor Built-in Functions
-//     17.1.1 Zero Value Built-in Functions
+// 17.1.1 Zero Value Built-in Functions
 // these are handled in Rust code
 
-//     17.1.2 Value Constructor Built-in Functions
+// 17.1.2 Value Constructor Built-in Functions
 op_bool_constructor(bool) -> bool
 op_bool_constructor(AbstractInt) -> bool
 op_bool_constructor(AbstractFloat) -> bool
@@ -699,7 +699,7 @@ select(f: vecN<i64>, t: vecN<i64>, cond: bool) -> vecN<i64>
 // 17.4 Array Built-in Functions
 arrayLength(p: ptr<array<T>>) -> u32
 
-//     17.5 Numeric Built-in Functions
+// 17.5 Numeric Built-in Functions
 abs(e: AbstractInt) -> AbstractInt
 abs(e: AbstractFloat) -> AbstractFloat
 abs(e: i32) -> i32
@@ -1104,25 +1104,33 @@ trunc(e: vecN<AbstractFloat>) -> vecN<AbstractFloat>
 trunc(e: vecN<f32>) -> vecN<f32>
 trunc(e: vecN<f16>) -> vecN<f16>
 
-// derivative
-dpdx(f32) -> f32
-dpdx(vecN<f32>) -> vecN<f32>
-dpdxCoarse(f32) -> f32
-dpdxCoarse(vecN<f32>) -> vecN<f32>
-dpdxFine(f32) -> f32
-dpdxFine(vecN<f32>) -> vecN<f32>
-dpdy(f32) -> f32
-dpdy(vecN<f32>) -> vecN<f32>
-dpdyCoarse(f32) -> f32
-dpdyCoarse(vecN<f32>) -> vecN<f32>
-dpdyFine(f32) -> f32
-dpdyFine(vecN<f32>) -> vecN<f32>
-fwidth(f32) -> f32
-fwidth(vecN<f32>) -> vecN<f32>
-fwidthCoarse(f32) -> f32
-fwidthCoarse(vecN<f32>) -> vecN<f32>
-fwidthFine(f32) -> f32
-fwidthFine(vecN<f32>) -> vecN<f32>
+// 17.6 Derivative Built-in Functions
+dpdx(e: f32) -> f32
+dpdx(e: vecN<f32>) -> vecN<f32>
+
+dpdxCoarse(e: f32) -> f32
+dpdxCoarse(e: vecN<f32>) -> vecN<f32>
+
+dpdxFine(e: f32) -> f32
+dpdxFine(e: vecN<f32>) -> vecN<f32>
+
+dpdy(e: f32) -> f32
+dpdy(e: vecN<f32>) -> vecN<f32>
+
+dpdyCoarse(e: f32) -> f32
+dpdyCoarse(e: vecN<f32>) -> vecN<f32>
+
+dpdyFine(e: f32) -> f32
+dpdyFine(e: vecN<f32>) -> vecN<f32>
+
+fwidth(e: f32) -> f32
+fwidth(e: vecN<f32>) -> vecN<f32>
+
+fwidthCoarse(e: f32) -> f32
+fwidthCoarse(e: vecN<f32>) -> vecN<f32>
+
+fwidthFine(e: f32) -> f32
+fwidthFine(e: vecN<f32>) -> vecN<f32>
 
 // texture
 textureDimensions(texture_1d<T>) -> u32
