@@ -670,23 +670,31 @@ bitcast<vec4<i32>>(e: vec2<u64>) -> vec4<i32>
 bitcast<vec4<u32>>(e: vec2<u64>) -> vec4<u32>
 bitcast<vec4<f32>>(e: vec2<u64>) -> vec4<f32>
 
-// logical
-all(vecN<bool>) -> bool
-all(bool) -> bool
-any(vecN<bool>) -> bool
-any(bool) -> bool
-select(T, T, bool) -> T
-select(vecN<T>, vecN<T>, vecN<bool>) -> vecN<T>
+// 17.3 Logical Built-in Functions
+all(e: vecN<bool>) -> bool
+all(e: bool) -> bool
 
-// value-testing
-isNan(f32) -> bool
-isNan(vecN<f32>) -> vecN<bool>
-isInf(f32) -> bool
-isInf(vecN<f32>) -> vecN<bool>
-isFinite(f32) -> bool
-isFinite(vecN<f32>) -> vecN<bool>
-isNormal(f32) -> bool
-isNormal(vecN<f32>) -> vecN<bool>
+any(e: vecN<bool>) -> bool
+any(e: bool) -> bool
+
+select(f: bool, t: bool, cond: bool) -> bool
+select(f: AbstractInt, t: AbstractInt, cond: bool) -> AbstractInt
+select(f: AbstractFloat, t: AbstractFloat, cond: bool) -> AbstractFloat
+select(f: i32, t: i32, cond: bool) -> i32
+select(f: u32, t: u32, cond: bool) -> u32
+select(f: f32, t: f32, cond: bool) -> f32
+select(f: f16, t: f16, cond: bool) -> f16
+select(f: u64, t: u64, cond: bool) -> u64
+select(f: i64, t: i64, cond: bool) -> i64
+select(f: vecN<bool>, t: vecN<bool>, cond: bool) -> vecN<bool>
+select(f: vecN<AbstractInt>, t: vecN<AbstractInt>, cond: bool) -> vecN<AbstractInt>
+select(f: vecN<AbstractFloat>, t: vecN<AbstractFloat>, cond: bool) -> vecN<AbstractFloat>
+select(f: vecN<i32>, t: vecN<i32>, cond: bool) -> vecN<i32>
+select(f: vecN<u32>, t: vecN<u32>, cond: bool) -> vecN<u32>
+select(f: vecN<f32>, t: vecN<f32>, cond: bool) -> vecN<f32>
+select(f: vecN<f16>, t: vecN<f16>, cond: bool) -> vecN<f16>
+select(f: vecN<u64>, t: vecN<u64>, cond: bool) -> vecN<u64>
+select(f: vecN<i64>, t: vecN<i64>, cond: bool) -> vecN<i64>
 
 // 17.4 Array Built-in Functions
 arrayLength(p: ptr<array<T>>) -> u32
