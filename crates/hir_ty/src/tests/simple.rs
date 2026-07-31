@@ -2009,3 +2009,31 @@ fn ptr_template_not_enumerant() {
         "#]],
     );
 }
+
+#[test]
+fn small_fragment_shader() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+@fragment
+fn main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
+    var x: f32;
+    @if (true)
+    {
+        var x = 1i;
+    }
+    return vec4(vec3(x), 1);
+}
+        ",
+        expect![[r#"
+            37..40 'pos': vec4<f32>
+            81..82 'x': ref<function, f32, read_write>
+            122..123 'x': ref<function, i32, read_write>
+            126..128 '1i': i32
+            147..163 'vec4(v...x), 1)': vec4<f32>
+            152..159 'vec3(x)': vec3<f32>
+            157..158 'x': ref<function, f32, read_write>
+            161..162 '1': integer
+        "#]],
+    );
+}
