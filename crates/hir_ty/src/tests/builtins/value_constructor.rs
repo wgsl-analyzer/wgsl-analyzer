@@ -93,6 +93,43 @@ fn foo() {
 }
 
 #[test]
+fn u64() {
+    check_infer(
+        ExtensionsConfig {
+            shader_int64: true,
+            ..Default::default()
+        },
+        "
+fn foo() {
+    u64();
+}
+",
+        expect![[r#"
+            15..20 'u64()': u64
+        "#]],
+    );
+}
+
+#[test]
+fn i64() {
+    check_infer(
+        ExtensionsConfig {
+            shader_int64: true,
+            ..Default::default()
+        },
+        "
+fn foo() {
+    i64(1);
+}
+",
+        expect![[r#"
+            15..21 'i64(1)': i64
+            19..20 '1': integer
+        "#]],
+    );
+}
+
+#[test]
 fn mat2x2() {
     check_infer(
         ExtensionsConfig::default(),
@@ -1786,11 +1823,45 @@ fn foo() {
     );
 }
 
-// op_vec2_constructor<bool>(e: bool) -> vec2<bool>
-// op_vec2_constructor<i32>(e: i32) -> vec2<i32>
-// op_vec2_constructor<u32>(e: u32) -> vec2<u32>
-// op_vec2_constructor<f32>(e: f32) -> vec2<f32>
-// op_vec2_constructor<f16>(e: f16) -> vec2<f16>
+#[test]
+fn vec2t() {
+    check_infer(
+        ExtensionsConfig {
+            f16: true,
+            shader_int64: true,
+            ..Default::default()
+        },
+        "
+enable f16;
+fn foo() {
+    vec2<bool>(bool());
+    vec2<i32>(i32());
+    vec2<u32>(u32());
+    vec2<f32>(f32());
+    vec2<f16>(f16());
+    vec2<u64>(u64());
+    vec2<i64>(i64());
+}
+",
+        expect![[r#"
+            27..45 'vec2<b...ool())': vec2<bool>
+            38..44 'bool()': bool
+            51..67 'vec2<i...i32())': vec2<i32>
+            61..66 'i32()': i32
+            73..89 'vec2<u...u32())': vec2<u32>
+            83..88 'u32()': u32
+            95..111 'vec2<f...f32())': vec2<f32>
+            105..110 'f32()': f32
+            117..133 'vec2<f...f16())': vec2<f16>
+            127..132 'f16()': f16
+            139..155 'vec2<u...u64())': vec2<u64>
+            149..154 'u64()': u64
+            161..177 'vec2<i...i64())': vec2<i64>
+            171..176 'i64()': i64
+        "#]],
+    );
+}
+
 // op_vec2_constructor(e: bool) -> vec2<bool>
 // op_vec2_constructor(e: AbstractFloat) -> vec2<AbstractFloat>
 // op_vec2_constructor(e: AbstractInt) -> vec2<AbstractInt>

@@ -171,6 +171,8 @@ fn no_constructor() {
             fn op_vec2_constructor(e: u32) -> vec2<u32>
             fn op_vec2_constructor(e: f32) -> vec2<f32>
             fn op_vec2_constructor(e: f16) -> vec2<f16>
+            fn op_vec2_constructor(e: u64) -> vec2<u64>
+            fn op_vec2_constructor(e: i64) -> vec2<i64>
             fn op_vec2_constructor(e: vec2<bool>) -> vec2<bool>
             fn op_vec2_constructor(e: vec2<integer>) -> vec2<integer>
             fn op_vec2_constructor(e: vec2<float>) -> vec2<float>
@@ -178,6 +180,8 @@ fn no_constructor() {
             fn op_vec2_constructor(e: vec2<u32>) -> vec2<u32>
             fn op_vec2_constructor(e: vec2<f32>) -> vec2<f32>
             fn op_vec2_constructor(e: vec2<f16>) -> vec2<f16>
+            fn op_vec2_constructor(e: vec2<u64>) -> vec2<u64>
+            fn op_vec2_constructor(e: vec2<i64>) -> vec2<i64>
             fn op_vec2_constructor(e1: bool, e2: bool) -> vec2<bool>
             fn op_vec2_constructor(e1: integer, e2: integer) -> vec2<integer>
             fn op_vec2_constructor(e1: float, e2: float) -> vec2<float>
@@ -185,6 +189,8 @@ fn no_constructor() {
             fn op_vec2_constructor(e1: u32, e2: u32) -> vec2<u32>
             fn op_vec2_constructor(e1: f32, e2: f32) -> vec2<f32>
             fn op_vec2_constructor(e1: f16, e2: f16) -> vec2<f16>
+            fn op_vec2_constructor(e1: u64, e2: u64) -> vec2<u64>
+            fn op_vec2_constructor(e1: i64, e2: i64) -> vec2<i64>
         "#]],
     );
 }
