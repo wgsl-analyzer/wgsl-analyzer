@@ -110,7 +110,7 @@ impl FromStr for AccessMode {
 
     fn from_str(string: &str) -> Result<Self, Self::Err> {
         Ok(match string {
-            "read_write" | "_" => Self::ReadWrite,
+            "read_write" => Self::ReadWrite,
             "read" => Self::Read,
             "write" => Self::Write,
             _ => return Err(()),
@@ -468,12 +468,10 @@ fn type_to_rust(r#type: &Type) -> String {
             "TypeKind::Vector(crate::ty::VectorType {{ size: VecSize::{size:?}, component_type: {} }}).intern(database)",
             type_to_rust(component_type)
         ),
-
         Type::Matrix(columns, rows, inner) => format!(
             "TypeKind::Matrix(crate::ty::MatrixType {{ columns: VecSize::{columns:?}, rows: VecSize::{rows:?}, inner: {} }}).intern(database)",
             type_to_rust(inner)
         ),
-
         Type::Bool
         | Type::AbstractFloat
         | Type::AbstractInt
