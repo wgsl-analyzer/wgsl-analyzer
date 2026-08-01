@@ -1572,11 +1572,11 @@ textureSampleCompareLevel(t: texture_depth_cube_array, s: sampler_comparison, co
 
 //     17.7.12 textureSampleGrad
 textureSampleGrad(t: texture_2d<f32>, s: sampler, vec2<f32>, vec2<f32>, vec2<f32>) -> vec4<f32>
-textureSampleGrad(t: texture_2d<f32>, s: sampler, vec2<f32>, vec2<f32>, vec2<f32>, vec2<i32>) -> vec4<f32>
+textureSampleGrad(t: texture_2d<f32>, s: sampler, vec2<f32>, vec2<f32>, vec2<f32>, offset: vec2<i32>) -> vec4<f32>
 textureSampleGrad(t: texture_2d_array<f32>, s: sampler, vec2<f32>, i32, vec2<f32>, vec2<f32>) -> vec4<f32>
 textureSampleGrad(t: texture_2d_array<f32>, s: sampler, vec2<f32>, u32, vec2<f32>, vec2<f32>) -> vec4<f32>
-textureSampleGrad(t: texture_2d_array<f32>, s: sampler, vec2<f32>, i32, vec2<f32>, vec2<f32>, vec2<i32>) -> vec4<f32>
-textureSampleGrad(t: texture_2d_array<f32>, s: sampler, vec2<f32>, u32, vec2<f32>, vec2<f32>, vec2<i32>) -> vec4<f32>
+textureSampleGrad(t: texture_2d_array<f32>, s: sampler, vec2<f32>, i32, vec2<f32>, vec2<f32>, offset: vec2<i32>) -> vec4<f32>
+textureSampleGrad(t: texture_2d_array<f32>, s: sampler, vec2<f32>, u32, vec2<f32>, vec2<f32>, offset: vec2<i32>) -> vec4<f32>
 textureSampleGrad(t: texture_3d<f32>, s: sampler, vec3<f32>, vec3<f32>, vec3<f32>) -> vec4<f32>
 textureSampleGrad(t: texture_3d<f32>, s: sampler, vec3<f32>, vec3<f32>, vec3<f32>, vec3<i32>) -> vec4<f32>
 textureSampleGrad(t: texture_cube<f32>, s: sampler, vec3<f32>, vec3<f32>, vec3<f32>) -> vec4<f32>
@@ -1584,55 +1584,58 @@ textureSampleGrad(t: texture_cube_array<f32>, s: sampler, vec3<f32>, i32, vec3<f
 textureSampleGrad(t: texture_cube_array<f32>, s: sampler, vec3<f32>, u32, vec3<f32>, vec3<f32>) -> vec4<f32>
 
 //     17.7.13 textureSampleLevel
-textureSampleLevel(t: texture_2d<f32>, s: sampler, vec2<f32>, f32) -> vec4<f32>
-textureSampleLevel(t: texture_2d<f32>, s: sampler, vec2<f32>, f32, vec2<i32>) -> vec4<f32>
-textureSampleLevel(t: texture_2d_array<f32>, s: sampler, vec2<f32>, i32, f32) -> vec4<f32>
-textureSampleLevel(t: texture_2d_array<f32>, s: sampler, vec2<f32>, u32, f32) -> vec4<f32>
-textureSampleLevel(t: texture_2d_array<f32>, s: sampler, vec2<f32>, i32, f32, vec2<i32>) -> vec4<f32>
-textureSampleLevel(t: texture_2d_array<f32>, s: sampler, vec2<f32>, u32, f32, vec2<i32>) -> vec4<f32>
-textureSampleLevel(t: texture_3d<f32>, s: sampler, vec3<f32>, f32) -> vec4<f32>
-textureSampleLevel(t: texture_3d<f32>, s: sampler, vec3<f32>, f32, vec3<i32>) -> vec4<f32>
-textureSampleLevel(t: texture_cube<f32>, s: sampler, vec3<f32>, f32) -> vec4<f32>
-textureSampleLevel(t: texture_cube_array<f32>, s: sampler, vec3<f32>, i32, f32) -> vec4<f32>
-textureSampleLevel(t: texture_cube_array<f32>, s: sampler, vec3<f32>, u32, f32) -> vec4<f32>
+textureSampleLevel(t: texture_2d<f32>, s: sampler, vec2<f32>, depth_ref: f32) -> vec4<f32>
+textureSampleLevel(t: texture_2d<f32>, s: sampler, vec2<f32>, depth_ref: f32, offset: vec2<i32>) -> vec4<f32>
+textureSampleLevel(t: texture_2d_array<f32>, s: sampler, vec2<f32>, i32, depth_ref: f32) -> vec4<f32>
+textureSampleLevel(t: texture_2d_array<f32>, s: sampler, vec2<f32>, u32, depth_ref: f32) -> vec4<f32>
+textureSampleLevel(t: texture_2d_array<f32>, s: sampler, vec2<f32>, i32, depth_ref: f32, offset: vec2<i32>) -> vec4<f32>
+textureSampleLevel(t: texture_2d_array<f32>, s: sampler, vec2<f32>, u32, depth_ref: f32, offset: vec2<i32>) -> vec4<f32>
+textureSampleLevel(t: texture_3d<f32>, s: sampler, vec3<f32>, depth_ref: f32) -> vec4<f32>
+textureSampleLevel(t: texture_3d<f32>, s: sampler, vec3<f32>, depth_ref: f32, vec3<i32>) -> vec4<f32>
+textureSampleLevel(t: texture_cube<f32>, s: sampler, vec3<f32>, depth_ref: f32) -> vec4<f32>
+textureSampleLevel(t: texture_cube_array<f32>, s: sampler, vec3<f32>, i32, depth_ref: f32) -> vec4<f32>
+textureSampleLevel(t: texture_cube_array<f32>, s: sampler, vec3<f32>, u32, depth_ref: f32) -> vec4<f32>
 textureSampleLevel(t: texture_depth_2d, s: sampler, vec2<f32>, i32) -> f32
-textureSampleLevel(t: texture_depth_2d, s: sampler, vec2<f32>, i32, vec2<i32>) -> f32
+textureSampleLevel(t: texture_depth_2d, s: sampler, vec2<f32>, i32, offset: vec2<i32>) -> f32
 textureSampleLevel(t: texture_depth_2d_array, s: sampler, vec2<f32>, i32, i32) -> f32
 textureSampleLevel(t: texture_depth_2d_array, s: sampler, vec2<f32>, u32, i32) -> f32
-textureSampleLevel(t: texture_depth_2d_array, s: sampler, vec2<f32>, i32, i32, vec2<i32>) -> f32
-textureSampleLevel(t: texture_depth_2d_array, s: sampler, vec2<f32>, u32, i32, vec2<i32>) -> f32
+textureSampleLevel(t: texture_depth_2d_array, s: sampler, vec2<f32>, i32, i32, offset: vec2<i32>) -> f32
+textureSampleLevel(t: texture_depth_2d_array, s: sampler, vec2<f32>, u32, i32, offset: vec2<i32>) -> f32
 textureSampleLevel(t: texture_depth_cube, s: sampler, vec3<f32>, i32) -> f32
 textureSampleLevel(t: texture_depth_cube_array, s: sampler, vec3<f32>, i32, i32) -> f32
 textureSampleLevel(t: texture_depth_cube_array, s: sampler, vec3<f32>, u32, i32) -> f32
 textureSampleLevel(t: texture_external, s: sampler, vec2<f32>) -> vec4<f32>
 
-//     17.7.14 textureSampleBaseClampToEdge
-textureSampleBaseClampToEdge(t: texture_2d<f32>, s: sampler, vec2<f32>) -> vec4<f32>
-textureSampleBaseClampToEdge(t: texture_external, s: sampler, vec2<f32>) -> vec4<f32>
 
-//     17.7.15 textureStore
-textureStore(t: texture_storage_1d<F;write>, i32, F::StorageType)
-textureStore(t: texture_storage_2d<F;write>, vec2<i32>, F::StorageType)
-textureStore(t: texture_storage_2d_array<F;write>, vec2<i32>, i32, F::StorageType)
-textureStore(t: texture_storage_2d_array<F;write>, vec2<i32>, u32, F::StorageType)
-textureStore(t: texture_storage_3d<F;write>, vec3<i32>, F::StorageType)
-textureStore(t: texture_storage_1d<F;read_write>, i32, F::StorageType)
-textureStore(t: texture_storage_2d<F;read_write>, vec2<i32>, F::StorageType)
-textureStore(t: texture_storage_2d_array<F;read_write>, vec2<i32>, i32, F::StorageType)
-textureStore(t: texture_storage_2d_array<F;read_write>, vec2<i32>, u32, F::StorageType)
-textureStore(t: texture_storage_3d<F;read_write>, vec3<i32>, F::StorageType)
-textureStore(t: texture_storage_1d<F;write>, u32, F::StorageType)
-textureStore(t: texture_storage_2d<F;write>, vec2<u32>, F::StorageType)
-textureStore(t: texture_storage_2d_array<F;write>, vec2<u32>, i32, F::StorageType)
-textureStore(t: texture_storage_2d_array<F;write>, vec2<u32>, u32, F::StorageType)
-textureStore(t: texture_storage_3d<F;write>, vec3<u32>, F::StorageType)
-textureStore(t: texture_storage_1d<F;read_write>, u32, F::StorageType)
-textureStore(t: texture_storage_2d<F;read_write>, vec2<u32>, F::StorageType)
-textureStore(t: texture_storage_2d_array<F;read_write>, vec2<u32>, i32, F::StorageType)
-textureStore(t: texture_storage_2d_array<F;read_write>, vec2<u32>, u32, F::StorageType)
-textureStore(t: texture_storage_3d<F;read_write>, vec3<u32>, F::StorageType)
+textureSampleBaseClampToEdge(t: texture_2d<f32>, s: sampler, coords: vec2<f32>) -> vec4<f32>
+textureSampleBaseClampToEdge(t: texture_external, s: sampler, coords: vec2<f32>) -> vec4<f32>
 
-// TODO atomic
+
+textureStore(t: texture_storage_1d<F;write>, coords: i32, value: F::StorageType)
+textureStore(t: texture_storage_1d<F;read_write>, coords: i32, value: F::StorageType)
+textureStore(t: texture_storage_1d<F;write>, coords: u32, value: F::StorageType)
+textureStore(t: texture_storage_1d<F;read_write>, coords: u32, value: F::StorageType)
+
+textureStore(t: texture_storage_2d<F;write>, coords: vec2<i32>, value: F::StorageType)
+textureStore(t: texture_storage_2d<F;read_write>, coords: vec2<i32>, F::StorageType)
+textureStore(t: texture_storage_2d<F;write>, coords: vec2<u32>, value: F::StorageType)
+textureStore(t: texture_storage_2d<F;read_write>, coords: vec2<u32>, value: F::StorageType)
+
+textureStore(t: texture_storage_2d_array<F;write>, coords: vec2<i32>, array_index: i32, value: F::StorageType)
+textureStore(t: texture_storage_2d_array<F;write>, coords: vec2<i32>, array_index: u32, value: F::StorageType)
+textureStore(t: texture_storage_2d_array<F;read_write>, coords: vec2<i32>, array_index: i32, value: F::StorageType)
+textureStore(t: texture_storage_2d_array<F;read_write>, coords: vec2<i32>, array_index: u32, value: F::StorageType)
+textureStore(t: texture_storage_2d_array<F;write>, coords: vec2<u32>, array_index: i32, value: F::StorageType)
+textureStore(t: texture_storage_2d_array<F;write>, coords: vec2<u32>, array_index: u32, value: F::StorageType)
+textureStore(t: texture_storage_2d_array<F;read_write>, coords: vec2<u32>, array_index: i32, value: F::StorageType)
+textureStore(t: texture_storage_2d_array<F;read_write>, coords: vec2<u32>, array_index: u32, value: F::StorageType)
+
+textureStore(t: texture_storage_3d<F;write>, coords: vec3<i32>, value: F::StorageType)
+textureStore(t: texture_storage_3d<F;read_write>, coords: vec3<i32>, value: F::StorageType)
+textureStore(t: texture_storage_3d<F;write>, coords: vec3<u32>, value: F::StorageType)
+textureStore(t: texture_storage_3d<F;read_write>, coords: vec3<u32>, value: F::StorageType)
+
+// 17.8 Atomic Built-in Functions
 atomicLoad(ptr<atomic<T>>) -> T
 atomicStore(ptr<atomic<T>>, T)
 
