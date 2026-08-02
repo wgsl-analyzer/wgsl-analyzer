@@ -359,6 +359,10 @@ fn no_completions_in_comments() {
             function pack2x16unorm
             function pack4x8snorm
             function pack4x8unorm
+            function pack4xI8
+            function pack4xI8Clamp
+            function pack4xU8
+            function pack4xU8Clamp
             function pow
             function quantizeToF16
             function radians
@@ -378,6 +382,7 @@ fn no_completions_in_comments() {
             function tan
             function tanh
             function test               fn test()
+            function textureBarrier
             function textureDimensions
             function textureGather
             function textureGatherCompare
@@ -400,6 +405,8 @@ fn no_completions_in_comments() {
             function unpack2x16unorm
             function unpack4x8snorm
             function unpack4x8unorm
+            function unpack4xI8
+            function unpack4xU8
             function workgroupBarrier
             function workgroupUniformLoad
         "#]],
@@ -508,6 +515,10 @@ fn no_completions_in_comments() {
             function pack2x16unorm
             function pack4x8snorm
             function pack4x8unorm
+            function pack4xI8
+            function pack4xI8Clamp
+            function pack4xU8
+            function pack4xU8Clamp
             function pow
             function quantizeToF16
             function radians
@@ -527,6 +538,7 @@ fn no_completions_in_comments() {
             function tan
             function tanh
             function test               fn test()
+            function textureBarrier
             function textureDimensions
             function textureGather
             function textureGatherCompare
@@ -549,6 +561,8 @@ fn no_completions_in_comments() {
             function unpack2x16unorm
             function unpack4x8snorm
             function unpack4x8unorm
+            function unpack4xI8
+            function unpack4xU8
             function workgroupBarrier
             function workgroupUniformLoad
         "#]],
@@ -656,6 +670,10 @@ fn no_completions_in_comments() {
             function pack2x16unorm
             function pack4x8snorm
             function pack4x8unorm
+            function pack4xI8
+            function pack4xI8Clamp
+            function pack4xU8
+            function pack4xU8Clamp
             function pow
             function quantizeToF16
             function radians
@@ -675,6 +693,7 @@ fn no_completions_in_comments() {
             function tan
             function tanh
             function test               fn test()
+            function textureBarrier
             function textureDimensions
             function textureGather
             function textureGatherCompare
@@ -697,6 +716,8 @@ fn no_completions_in_comments() {
             function unpack2x16unorm
             function unpack4x8snorm
             function unpack4x8unorm
+            function unpack4xI8
+            function unpack4xU8
             function workgroupBarrier
             function workgroupUniformLoad
         "#]],
