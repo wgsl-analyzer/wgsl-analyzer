@@ -1721,6 +1721,50 @@ workgroupBarrier()
 workgroupUniformLoad(p: ptr<workgroup;T;read_write>) -> T
 workgroupUniformLoad(p: ptr<workgroup;atomic<T>;read_write>) -> T
 
+// 17.12 Subgroup Built-in Functions
+//     17.12.1 subgroupAdd
+subgroupAdd(e : T) -> T
+//         17.12.1.1 subgroupExclusiveAdd
+subgroupExclusiveAdd(e : T) -> T
+//         17.12.1.2 subgroupInclusiveAdd
+subgroupInclusiveAdd(e : T) -> T
+//     17.12.2 subgroupAll
+subgroupAll(e : bool) -> bool
+//     17.12.3 subgroupAnd
+subgroupAnd(e : T) -> T
+//     17.12.4 subgroupAny
+subgroupAny(e : bool) -> bool
+//     17.12.5 subgroupBallot
+subgroupBallot(pred : bool) -> vec4<u32>
+//     17.12.6 subgroupBroadcast
+subgroupBroadcast(e : T, id : I) -> T
+//         17.12.6.1 subgroupBroadcastFirst
+subgroupBroadcastFirst(e : T) -> T
+//     17.12.7 subgroupElect
+subgroupElect() -> bool
+//     17.12.8 subgroupMax
+subgroupMax(e : T) -> T
+//     17.12.9 subgroupMin
+subgroupMin(e : T) -> T
+//     17.12.10 subgroupMul
+subgroupMul(e : T) -> T
+//         17.12.10.1 subgroupExclusiveMul
+subgroupExclusiveMul(e : T) -> T
+//         17.12.10.2 subgroupInclusiveMul
+subgroupInclusiveMul(e : T) -> T
+//     17.12.11 subgroupOr
+subgroupOr(e : T) -> T
+//     17.12.12 subgroupShuffle
+subgroupShuffle(e : T, id : I) -> T
+//         17.12.12.1 subgroupShuffleDown
+subgroupShuffleDown(e : T, delta : u32) -> T
+//         17.12.12.2 subgroupShuffleUp
+subgroupShuffleUp(e : T, delta : u32) -> T
+//         17.12.12.3 subgroupShuffleXor
+subgroupShuffleXor(e : T,  mask : u32) -> T
+//     17.12.13 subgroupXor
+subgroupXor(e : T) -> T
+
 // TODO: T should only match i32, f32, u32 in a lot of ops
 
 // TODO: T should only match AbstractInt, i32, or u32 for a lot of bitwise ops
