@@ -2007,9 +2007,6 @@ quadSwapY(e: vecN<f16>) -> vecN<f16>
 // TODO: T should only match AbstractInt, i32, or u32 for a lot of bitwise ops
 // https://www.w3.org/TR/WGSL/#bit-expr
 
-op_unary_minus(vecN<T>) -> vecN<T>
-op_unary_minus(T) -> T
-
 op_binary_bool(bool, bool) -> bool
 
 op_eq(vecN<T>, vecN<T>) -> vecN<bool>

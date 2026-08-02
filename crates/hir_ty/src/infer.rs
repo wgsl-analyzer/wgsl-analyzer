@@ -1327,7 +1327,13 @@ impl<'database> InferenceContext<'database> {
 
         let builtin = match operator {
             UnaryOperator::Negation => {
-                Builtin::builtin_op_unary_minus(self.database).intern(self.database)
+                return match wgsl_types::builtin::type_unary_op(
+                    wgsl_types::syntax::UnaryOperator::Negation,
+                    &self.converter.to_wgsl_types(expression_type),
+                ) {
+                    Ok(r#type) => self.converter.from_wgsl_types(r#type),
+                    Err(error) => self.error_type(),
+                };
             },
             UnaryOperator::LogicalNegation => {
                 return match wgsl_types::builtin::type_unary_op(
