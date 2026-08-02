@@ -2076,23 +2076,3 @@ op_binary_mul(vecN<T>, vecN<T>) -> vecN<T>
 op_binary_mul(vecN<T>, T) -> vecN<T>
 op_binary_mul(T, vecN<T>) -> vecN<T>
 op_binary_mul(T, T) -> T
-
-// TODO: Those are unused. Fix that, by merging them into the vector constructors
-op_convert(vecN<u32>) -> vecN<bool>
-op_convert(vecN<i32>) -> vecN<bool>
-op_convert(vecN<f32>) -> vecN<bool>
-
-op_convert(vecN<bool>) -> vecN<i32>
-op_convert(vecN<u32>) -> vecN<i32>
-op_convert(vecN<f32>) -> vecN<i32>
-
-op_convert(vecN<bool>) -> vecN<u32>
-op_convert(vecN<i32>) -> vecN<u32>
-op_convert(vecN<f32>) -> vecN<u32>
-
-op_convert(vecN<bool>) -> vecN<f32>
-op_convert(vecN<i32>) -> vecN<f32>
-op_convert(vecN<u32>) -> vecN<f32>
-
-// op_convert(matNxM<f16>) -> matNxM<f32>
-// op_convert(matNxM<f32>) -> matNxM<f16>
