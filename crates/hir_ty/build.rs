@@ -1,6 +1,6 @@
 #![expect(clippy::unimplemented, reason = "build script, best tool for the job")]
+#![warn(unused)]
 
-use itertools::Itertools as _;
 use rustc_hash::FxHashSet;
 use std::{
     collections::BTreeMap,
@@ -46,7 +46,7 @@ enum Type {
     I32,
     U32,
     RuntimeArray(Box<Self>),
-    Pointer(Box<Self>),
+    Pointer(AddressSpace, Box<Self>, AccessMode),
     Atomic(Box<Self>),
     Bound(usize),
     StorageTypeOfTexelFormat(usize),
@@ -58,6 +58,34 @@ enum Type {
     I64,
     /// This is from naga's `SHADER_INT64` extension.
     U64,
+}
+
+#[derive(Debug)]
+pub enum AddressSpace {
+    Function,
+    Private,
+    Workgroup,
+    Uniform,
+    Storage,
+    Handle,
+    // Immediate,
+    // TaskPayload,
+}
+
+impl FromStr for AddressSpace {
+    type Err = ();
+
+    fn from_str<'a>(s: &'a str) -> Result<Self, Self::Err> {
+        Ok(match s {
+            "function" => Self::Function,
+            "private" => Self::Private,
+            "workgroup" => Self::Workgroup,
+            "uniform" => Self::Uniform,
+            "storage" => Self::Storage,
+            "handle" => Self::Handle,
+            _ => return Err(()),
+        })
+    }
 }
 
 enum VecSize {
@@ -324,23 +352,24 @@ fn parse_type(
     generics: &mut BTreeMap<char, (usize, Generic)>,
     r#type: &str,
 ) -> Type {
-    if let Some((r#type, inner)) = parse_generic(r#type) {
-        if let Some(size) = r#type.strip_prefix("vec") {
+    if let Some((generic_type, inner)) = parse_generic(r#type) {
+        if let Some(size) = generic_type.strip_prefix("vec") {
             let size = only_char(size);
             let size = parse_vec_size(generics, size);
             let inner = parse_type(generics, inner.trim());
             return Type::Vec(size, Box::new(inner));
-        } else if let Some(texture_storage) = r#type.strip_prefix("texture_storage_") {
+        } else if let Some(texture_storage) = generic_type.strip_prefix("texture_storage_") {
             let (format, mode) = inner.split_once(';').unwrap();
             let format = parse_texel_format(generics, only_char(format));
             let mode = mode.parse().unwrap();
-            let texture_storage_type = texture_storage_type(format, mode, texture_storage, r#type);
+            let texture_storage_type =
+                texture_storage_type(format, mode, texture_storage, generic_type);
             return Type::Texture(texture_storage_type);
-        } else if let Some(texture) = r#type.strip_prefix("texture_") {
+        } else if let Some(texture) = generic_type.strip_prefix("texture_") {
             let inner = parse_type(generics, inner.trim());
-            let texture_type = texture_type(inner, texture, r#type);
+            let texture_type = texture_type(inner, texture, generic_type);
             return Type::Texture(texture_type);
-        } else if let Some(size) = r#type.strip_prefix("mat") {
+        } else if let Some(size) = generic_type.strip_prefix("mat") {
             let mut characters = size.chars();
             let columns = characters.next().unwrap();
             assert_eq!(characters.next().unwrap(), 'x');
@@ -350,17 +379,35 @@ fn parse_type(
             let rows = parse_vec_size(generics, rows);
             let inner = parse_type(generics, inner.trim());
             return Type::Matrix(columns, rows, Box::new(inner));
-        } else if r#type == "array" {
-            let inner = parse_type(generics, inner.trim());
+        } else if generic_type == "array" {
+            let inner = parse_type(generics, inner);
             return Type::RuntimeArray(Box::new(inner));
-        } else if r#type == "ptr" {
+        } else if generic_type == "ptr" {
+            let mut template_arguments = inner.split(';');
+            let storage = if let Some(argument) = template_arguments.next()
+                && let Ok(storage) = argument.parse::<AddressSpace>()
+            {
+                storage
+            } else {
+                panic!("add storage for {}", r#type)
+            };
+            let Some(inner) = template_arguments.next() else {
+                panic!("add inner for {}", r#type)
+            };
             let inner = parse_type(generics, inner.trim());
-            return Type::Pointer(Box::new(inner));
-        } else if r#type == "atomic" {
+            let access_mode = if let Some(argument) = template_arguments.next()
+                && let Ok(access_mode) = argument.parse::<AccessMode>()
+            {
+                access_mode
+            } else {
+                panic!("add access mode for {}", r#type)
+            };
+            return Type::Pointer(storage, Box::new(inner), access_mode);
+        } else if generic_type == "atomic" {
             let inner = parse_type(generics, inner.trim());
             return Type::Atomic(Box::new(inner));
         }
-        unimplemented!("{}", r#type);
+        unimplemented!("{}", generic_type);
     }
 
     if let Some(texture) = r#type.strip_prefix("texture_") {
@@ -528,11 +575,11 @@ fn type_to_rust(r#type: &Type) -> String {
         }}).intern(database)",
             type_to_rust(inner)
         ),
-        Type::Pointer(inner) => format!(
+        Type::Pointer(address_space, inner, access_mode) => format!(
             "TypeKind::Pointer(Pointer {{
             inner: {},
-            access_mode: AccessMode::ReadWrite,
-            address_space: AddressSpace::Private,
+            access_mode: AccessMode::{access_mode:?},
+            address_space: AddressSpace::{address_space:?},
         }}).intern(database)",
             type_to_rust(inner)
         ),

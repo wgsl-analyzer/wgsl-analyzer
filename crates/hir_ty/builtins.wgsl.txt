@@ -697,7 +697,10 @@ select(f: vecN<u64>, t: vecN<u64>, cond: bool) -> vecN<u64>
 select(f: vecN<i64>, t: vecN<i64>, cond: bool) -> vecN<i64>
 
 // 17.4 Array Built-in Functions
-arrayLength(p: ptr<array<T>>) -> u32
+arrayLength(p: ptr<storage;array<T>;read>) -> u32
+arrayLength(p: ptr<storage;array<T>;read_write>) -> u32
+arrayLength(p: ptr<uniform;array<T>;read>) -> u32
+arrayLength(p: ptr<workgroup;array<T>;read_write>) -> u32
 
 // 17.5 Numeric Built-in Functions
 abs(e: AbstractInt) -> AbstractInt
@@ -1636,38 +1639,60 @@ textureStore(t: texture_storage_3d<F;write>, coords: vec3<u32>, value: F::Storag
 textureStore(t: texture_storage_3d<F;read_write>, coords: vec3<u32>, value: F::StorageType)
 
 // 17.8 Atomic Built-in Functions
-atomicLoad(atomic_ptr: ptr<atomic<i32>>) -> i32
-atomicLoad(atomic_ptr: ptr<atomic<u32>>) -> u32
+atomicLoad(atomic_ptr: ptr<storage;atomic<i32>;read_write>) -> i32
+atomicLoad(atomic_ptr: ptr<workgroup;atomic<i32>;read_write>) -> i32
+atomicLoad(atomic_ptr: ptr<storage;atomic<u32>;read_write>) -> u32
+atomicLoad(atomic_ptr: ptr<workgroup;atomic<u32>;read_write>) -> u32
 
-atomicStore(atomic_ptr: ptr<atomic<i32>>, v: i32)
-atomicStore(atomic_ptr: ptr<atomic<u32>>, v: u32)
+atomicStore(atomic_ptr: ptr<storage;atomic<i32>;read_write>, v: i32)
+atomicStore(atomic_ptr: ptr<workgroup;atomic<i32>;read_write>, v: i32)
+atomicStore(atomic_ptr: ptr<storage;atomic<u32>;read_write>, v: u32)
+atomicStore(atomic_ptr: ptr<workgroup;atomic<u32>;read_write>, v: u32)
 
-atomicAdd(atomic_ptr: ptr<atomic<i32>>, v: i32) -> i32
-atomicAdd(atomic_ptr: ptr<atomic<u32>>, v: u32) -> u32
+atomicAdd(atomic_ptr: ptr<storage;atomic<i32>;read_write>, v: i32) -> i32
+atomicAdd(atomic_ptr: ptr<workgroup;atomic<i32>;read_write>, v: i32) -> i32
+atomicAdd(atomic_ptr: ptr<storage;atomic<u32>;read_write>, v: u32) -> u32
+atomicAdd(atomic_ptr: ptr<workgroup;atomic<u32>;read_write>, v: u32) -> u32
 
-atomicSub(atomic_ptr: ptr<atomic<i32>>, v: i32) -> i32
-atomicSub(atomic_ptr: ptr<atomic<u32>>, v: u32) -> u32
+atomicSub(atomic_ptr: ptr<storage;atomic<i32>;read_write>, v: i32) -> i32
+atomicSub(atomic_ptr: ptr<workgroup;atomic<i32>;read_write>, v: i32) -> i32
+atomicSub(atomic_ptr: ptr<storage;atomic<u32>;read_write>, v: u32) -> u32
+atomicSub(atomic_ptr: ptr<workgroup;atomic<u32>;read_write>, v: u32) -> u32
 
-atomicMax(atomic_ptr: ptr<atomic<i32>>, v: i32) -> i32
-atomicMax(atomic_ptr: ptr<atomic<u32>>, v: u32) -> u32
+atomicMax(atomic_ptr: ptr<storage;atomic<i32>;read_write>, v: i32) -> i32
+atomicMax(atomic_ptr: ptr<workgroup;atomic<i32>;read_write>, v: i32) -> i32
+atomicMax(atomic_ptr: ptr<storage;atomic<u32>;read_write>, v: u32) -> u32
+atomicMax(atomic_ptr: ptr<workgroup;atomic<u32>;read_write>, v: u32) -> u32
 
-atomicMin(atomic_ptr: ptr<atomic<i32>>, v: i32) -> i32
-atomicMin(atomic_ptr: ptr<atomic<u32>>, v: u32) -> u32
+atomicMin(atomic_ptr: ptr<storage;atomic<i32>;read_write>, v: i32) -> i32
+atomicMin(atomic_ptr: ptr<workgroup;atomic<i32>;read_write>, v: i32) -> i32
+atomicMin(atomic_ptr: ptr<storage;atomic<u32>;read_write>, v: u32) -> u32
+atomicMin(atomic_ptr: ptr<workgroup;atomic<u32>;read_write>, v: u32) -> u32
 
-atomicAnd(atomic_ptr: ptr<atomic<i32>>, v: i32) -> i32
-atomicAnd(atomic_ptr: ptr<atomic<u32>>, v: u32) -> u32
+atomicAnd(atomic_ptr: ptr<storage;atomic<i32>;read_write>, v: i32) -> i32
+atomicAnd(atomic_ptr: ptr<workgroup;atomic<i32>;read_write>, v: i32) -> i32
+atomicAnd(atomic_ptr: ptr<storage;atomic<u32>;read_write>, v: u32) -> u32
+atomicAnd(atomic_ptr: ptr<workgroup;atomic<u32>;read_write>, v: u32) -> u32
 
-atomicOr(atomic_ptr: ptr<atomic<i32>>, v: i32) -> i32
-atomicOr(atomic_ptr: ptr<atomic<u32>>, v: u32) -> u32
+atomicOr(atomic_ptr: ptr<storage;atomic<i32>;read_write>, v: i32) -> i32
+atomicOr(atomic_ptr: ptr<workgroup;atomic<i32>;read_write>, v: i32) -> i32
+atomicOr(atomic_ptr: ptr<storage;atomic<u32>;read_write>, v: u32) -> u32
+atomicOr(atomic_ptr: ptr<workgroup;atomic<u32>;read_write>, v: u32) -> u32
 
-atomicXor(atomic_ptr: ptr<atomic<i32>>, v: i32) -> i32
-atomicXor(atomic_ptr: ptr<atomic<u32>>, v: u32) -> u32
+atomicXor(atomic_ptr: ptr<storage;atomic<i32>;read_write>, v: i32) -> i32
+atomicXor(atomic_ptr: ptr<workgroup;atomic<i32>;read_write>, v: i32) -> i32
+atomicXor(atomic_ptr: ptr<storage;atomic<u32>;read_write>, v: u32) -> u32
+atomicXor(atomic_ptr: ptr<workgroup;atomic<u32>;read_write>, v: u32) -> u32
 
-atomicExchange(atomic_ptr: ptr<atomic<i32>>, v: i32) -> i32
-atomicExchange(atomic_ptr: ptr<atomic<u32>>, v: u32) -> u32
+atomicExchange(atomic_ptr: ptr<storage;atomic<i32>;read_write>, v: i32) -> i32
+atomicExchange(atomic_ptr: ptr<workgroup;atomic<i32>;read_write>, v: i32) -> i32
+atomicExchange(atomic_ptr: ptr<storage;atomic<u32>;read_write>, v: u32) -> u32
+atomicExchange(atomic_ptr: ptr<workgroup;atomic<u32>;read_write>, v: u32) -> u32
 
-atomicCompareExchangeWeak(atomic_ptr: ptr<atomic<i32>>, cmp: i32, v: i32) -> struct __atomic_compare_exchange_result { old_value: i32, exchanged: bool }
-atomicCompareExchangeWeak(atomic_ptr: ptr<atomic<u32>>, cmp: u32, v: u32) -> struct __atomic_compare_exchange_result { old_value: u32, exchanged: bool }
+atomicCompareExchangeWeak(atomic_ptr: ptr<storage;atomic<i32>;read_write>, cmp: i32, v: i32) -> struct __atomic_compare_exchange_result { old_value: i32, exchanged: bool }
+atomicCompareExchangeWeak(atomic_ptr: ptr<workgroup;atomic<i32>;read_write>, cmp: i32, v: i32) -> struct __atomic_compare_exchange_result { old_value: i32, exchanged: bool }
+atomicCompareExchangeWeak(atomic_ptr: ptr<storage;atomic<u32>;read_write>, cmp: u32, v: u32) -> struct __atomic_compare_exchange_result { old_value: u32, exchanged: bool }
+atomicCompareExchangeWeak(atomic_ptr: ptr<workgroup;atomic<u32>;read_write>, cmp: u32, v: u32) -> struct __atomic_compare_exchange_result { old_value: u32, exchanged: bool }
 
 // 17.9 Data Packing Built-in Functions
 pack4x8snorm(e: vec4<f32>) -> u32
@@ -1689,10 +1714,12 @@ unpack2x16snorm(e: u32) -> vec2<f32>
 unpack2x16unorm(e: u32) -> vec2<f32>
 unpack2x16float(e: u32) -> vec2<f32>
 
-// synchronization
+// 17.11 Synchronization Built-in Functions
 storageBarrier()
+textureBarrier()
 workgroupBarrier()
-workgroupUniformLoad(ptr<T>) -> T
+workgroupUniformLoad(p: ptr<workgroup;T;read_write>) -> T
+workgroupUniformLoad(p: ptr<workgroup;atomic<T>;read_write>) -> T
 
 // TODO: T should only match i32, f32, u32 in a lot of ops
 
