@@ -1339,7 +1339,13 @@ impl<'database> InferenceContext<'database> {
                 };
             },
             UnaryOperator::BitwiseComplement => {
-                Builtin::builtin_op_unary_bitnot(self.database).intern(self.database)
+                return match wgsl_types::builtin::type_unary_op(
+                    wgsl_types::syntax::UnaryOperator::BitwiseComplement,
+                    &self.converter.to_wgsl_types(expression_type),
+                ) {
+                    Ok(r#type) => self.converter.from_wgsl_types(r#type),
+                    Err(error) => self.error_type(),
+                };
             },
             UnaryOperator::AddressOf => {
                 if let TypeKind::Reference(reference) = expression_type.kind(self.database) {
