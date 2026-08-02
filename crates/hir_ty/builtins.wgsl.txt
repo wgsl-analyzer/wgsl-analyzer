@@ -255,7 +255,7 @@ op_mat4x4_constructor(e1: f16, e2: f16, e3: f16, e4: f16, e5: f16, e6: f16, e7: 
 op_mat4x4_constructor(e1: f32, e2: f32, e3: f32, e4: f32, e5: f32, e6: f32, e7: f32, e8: f32, e9: f32, e10: f32, e11: f32, e12: f32, e13: f32, e14: f32, e15: f32, e16: f32) -> mat4x4<f32>
 
 // structures
-// @const @must_use fn S(e1 : T1, ..., eN : TN) -> S
+// @const @must_use fn S(e1: T1, ..., eN: TN) -> S
 
 op_vec2_constructor<bool>(e: bool) -> vec2<bool>
 op_vec2_constructor<i32>(e: i32) -> vec2<i32>
@@ -1722,48 +1722,170 @@ workgroupUniformLoad(p: ptr<workgroup;T;read_write>) -> T
 workgroupUniformLoad(p: ptr<workgroup;atomic<T>;read_write>) -> T
 
 // 17.12 Subgroup Built-in Functions
-//     17.12.1 subgroupAdd
-subgroupAdd(e : T) -> T
-//         17.12.1.1 subgroupExclusiveAdd
-subgroupExclusiveAdd(e : T) -> T
-//         17.12.1.2 subgroupInclusiveAdd
-subgroupInclusiveAdd(e : T) -> T
-//     17.12.2 subgroupAll
-subgroupAll(e : bool) -> bool
-//     17.12.3 subgroupAnd
-subgroupAnd(e : T) -> T
-//     17.12.4 subgroupAny
-subgroupAny(e : bool) -> bool
-//     17.12.5 subgroupBallot
-subgroupBallot(pred : bool) -> vec4<u32>
-//     17.12.6 subgroupBroadcast
-subgroupBroadcast(e : T, id : I) -> T
-//         17.12.6.1 subgroupBroadcastFirst
-subgroupBroadcastFirst(e : T) -> T
-//     17.12.7 subgroupElect
+subgroupAdd(e: i32) -> i32
+subgroupAdd(e: u32) -> u32
+subgroupAdd(e: f32) -> f32
+subgroupAdd(e: f16) -> f16
+subgroupAdd(e: vecN<i32>) -> vecN<i32>
+subgroupAdd(e: vecN<u32>) -> vecN<u32>
+subgroupAdd(e: vecN<f32>) -> vecN<f32>
+subgroupAdd(e: vecN<f16>) -> vecN<f16>
+
+subgroupExclusiveAdd(e: i32) -> i32
+subgroupExclusiveAdd(e: u32) -> u32
+subgroupExclusiveAdd(e: f32) -> f32
+subgroupExclusiveAdd(e: f16) -> f16
+subgroupExclusiveAdd(e: vecN<i32>) -> vecN<i32>
+subgroupExclusiveAdd(e: vecN<u32>) -> vecN<u32>
+subgroupExclusiveAdd(e: vecN<f32>) -> vecN<f32>
+subgroupExclusiveAdd(e: vecN<f16>) -> vecN<f16>
+
+subgroupInclusiveAdd(e: i32) -> i32
+subgroupInclusiveAdd(e: u32) -> u32
+subgroupInclusiveAdd(e: f32) -> f32
+subgroupInclusiveAdd(e: f16) -> f16
+subgroupInclusiveAdd(e: vecN<i32>) -> vecN<i32>
+subgroupInclusiveAdd(e: vecN<u32>) -> vecN<u32>
+subgroupInclusiveAdd(e: vecN<f32>) -> vecN<f32>
+subgroupInclusiveAdd(e: vecN<f16>) -> vecN<f16>
+
+subgroupAll(e: bool) -> bool
+
+subgroupAnd(e: i32) -> i32
+subgroupAnd(e: u32) -> u32
+subgroupAnd(e: vecN<i32>) -> vecN<i32>
+subgroupAnd(e: vecN<u32>) -> vecN<u32>
+
+subgroupAny(e: bool) -> bool
+
+subgroupBallot(pred: bool) -> vec4<u32>
+
+subgroupBroadcast(e: i32, id: i32) -> i32
+subgroupBroadcast(e: u32, id: i32) -> u32
+subgroupBroadcast(e: f32, id: i32) -> f32
+subgroupBroadcast(e: f16, id: i32) -> f16
+subgroupBroadcast(e: vecN<i32>, id: i32) -> vecN<i32>
+subgroupBroadcast(e: vecN<u32>, id: i32) -> vecN<u32>
+subgroupBroadcast(e: vecN<f32>, id: i32) -> vecN<f32>
+subgroupBroadcast(e: vecN<f16>, id: i32) -> vecN<f16>
+subgroupBroadcast(e: i32, id: u32) -> i32
+subgroupBroadcast(e: u32, id: u32) -> u32
+subgroupBroadcast(e: f32, id: u32) -> f32
+subgroupBroadcast(e: f16, id: u32) -> f16
+subgroupBroadcast(e: vecN<i32>, id: u32) -> vecN<i32>
+subgroupBroadcast(e: vecN<u32>, id: u32) -> vecN<u32>
+subgroupBroadcast(e: vecN<f32>, id: u32) -> vecN<f32>
+subgroupBroadcast(e: vecN<f16>, id: u32) -> vecN<f16>
+
+subgroupBroadcastFirst(e: i32) -> i32
+subgroupBroadcastFirst(e: u32) -> u32
+subgroupBroadcastFirst(e: f32) -> f32
+subgroupBroadcastFirst(e: f16) -> f16
+subgroupBroadcastFirst(e: vecN<i32>) -> vecN<i32>
+subgroupBroadcastFirst(e: vecN<u32>) -> vecN<u32>
+subgroupBroadcastFirst(e: vecN<f32>) -> vecN<f32>
+subgroupBroadcastFirst(e: vecN<f16>) -> vecN<f16>
+
 subgroupElect() -> bool
-//     17.12.8 subgroupMax
-subgroupMax(e : T) -> T
-//     17.12.9 subgroupMin
-subgroupMin(e : T) -> T
-//     17.12.10 subgroupMul
-subgroupMul(e : T) -> T
-//         17.12.10.1 subgroupExclusiveMul
-subgroupExclusiveMul(e : T) -> T
-//         17.12.10.2 subgroupInclusiveMul
-subgroupInclusiveMul(e : T) -> T
-//     17.12.11 subgroupOr
-subgroupOr(e : T) -> T
-//     17.12.12 subgroupShuffle
-subgroupShuffle(e : T, id : I) -> T
-//         17.12.12.1 subgroupShuffleDown
-subgroupShuffleDown(e : T, delta : u32) -> T
-//         17.12.12.2 subgroupShuffleUp
-subgroupShuffleUp(e : T, delta : u32) -> T
-//         17.12.12.3 subgroupShuffleXor
-subgroupShuffleXor(e : T,  mask : u32) -> T
-//     17.12.13 subgroupXor
-subgroupXor(e : T) -> T
+
+subgroupMax(e: i32) -> i32
+subgroupMax(e: u32) -> u32
+subgroupMax(e: f32) -> f32
+subgroupMax(e: f16) -> f16
+subgroupMax(e: vecN<i32>) -> vecN<i32>
+subgroupMax(e: vecN<u32>) -> vecN<u32>
+subgroupMax(e: vecN<f32>) -> vecN<f32>
+subgroupMax(e: vecN<f16>) -> vecN<f16>
+
+subgroupMin(e: i32) -> i32
+subgroupMin(e: u32) -> u32
+subgroupMin(e: f32) -> f32
+subgroupMin(e: f16) -> f16
+subgroupMin(e: vecN<i32>) -> vecN<i32>
+subgroupMin(e: vecN<u32>) -> vecN<u32>
+subgroupMin(e: vecN<f32>) -> vecN<f32>
+subgroupMin(e: vecN<f16>) -> vecN<f16>
+
+subgroupMul(e: i32) -> i32
+subgroupMul(e: u32) -> u32
+subgroupMul(e: f32) -> f32
+subgroupMul(e: f16) -> f16
+subgroupMul(e: vecN<i32>) -> vecN<i32>
+subgroupMul(e: vecN<u32>) -> vecN<u32>
+subgroupMul(e: vecN<f32>) -> vecN<f32>
+subgroupMul(e: vecN<f16>) -> vecN<f16>
+
+subgroupExclusiveMul(e: i32) -> i32
+subgroupExclusiveMul(e: u32) -> u32
+subgroupExclusiveMul(e: f32) -> f32
+subgroupExclusiveMul(e: f16) -> f16
+subgroupExclusiveMul(e: vecN<i32>) -> vecN<i32>
+subgroupExclusiveMul(e: vecN<u32>) -> vecN<u32>
+subgroupExclusiveMul(e: vecN<f32>) -> vecN<f32>
+subgroupExclusiveMul(e: vecN<f16>) -> vecN<f16>
+
+subgroupInclusiveMul(e: i32) -> i32
+subgroupInclusiveMul(e: u32) -> u32
+subgroupInclusiveMul(e: f32) -> f32
+subgroupInclusiveMul(e: f16) -> f16
+subgroupInclusiveMul(e: vecN<i32>) -> vecN<i32>
+subgroupInclusiveMul(e: vecN<u32>) -> vecN<u32>
+subgroupInclusiveMul(e: vecN<f32>) -> vecN<f32>
+subgroupInclusiveMul(e: vecN<f16>) -> vecN<f16>
+
+subgroupOr(e: i32) -> i32
+subgroupOr(e: u32) -> u32
+subgroupOr(e: vecN<i32>) -> vecN<i32>
+subgroupOr(e: vecN<u32>) -> vecN<u32>
+
+subgroupShuffle(e: i32, id: i32) -> i32
+subgroupShuffle(e: u32, id: i32) -> u32
+subgroupShuffle(e: f32, id: i32) -> f32
+subgroupShuffle(e: f16, id: i32) -> f16
+subgroupShuffle(e: vecN<i32>, id: i32) -> vecN<i32>
+subgroupShuffle(e: vecN<u32>, id: i32) -> vecN<u32>
+subgroupShuffle(e: vecN<f32>, id: i32) -> vecN<f32>
+subgroupShuffle(e: vecN<f16>, id: i32) -> vecN<f16>
+subgroupShuffle(e: i32, id: u32) -> i32
+subgroupShuffle(e: u32, id: u32) -> u32
+subgroupShuffle(e: f32, id: u32) -> f32
+subgroupShuffle(e: f16, id: u32) -> f16
+subgroupShuffle(e: vecN<i32>, id: u32) -> vecN<i32>
+subgroupShuffle(e: vecN<u32>, id: u32) -> vecN<u32>
+subgroupShuffle(e: vecN<f32>, id: u32) -> vecN<f32>
+subgroupShuffle(e: vecN<f16>, id: u32) -> vecN<f16>
+
+subgroupShuffleDown(e: i32, delta: u32) -> i32
+subgroupShuffleDown(e: u32, delta: u32) -> u32
+subgroupShuffleDown(e: f32, delta: u32) -> f32
+subgroupShuffleDown(e: f16, delta: u32) -> f16
+subgroupShuffleDown(e: vecN<i32>, delta: u32) -> vecN<i32>
+subgroupShuffleDown(e: vecN<u32>, delta: u32) -> vecN<u32>
+subgroupShuffleDown(e: vecN<f32>, delta: u32) -> vecN<f32>
+subgroupShuffleDown(e: vecN<f16>, delta: u32) -> vecN<f16>
+
+subgroupShuffleUp(e: i32, delta: u32) -> i32
+subgroupShuffleUp(e: u32, delta: u32) -> u32
+subgroupShuffleUp(e: f32, delta: u32) -> f32
+subgroupShuffleUp(e: f16, delta: u32) -> f16
+subgroupShuffleUp(e: vecN<i32>, delta: u32) -> vecN<i32>
+subgroupShuffleUp(e: vecN<u32>, delta: u32) -> vecN<u32>
+subgroupShuffleUp(e: vecN<f32>, delta: u32) -> vecN<f32>
+subgroupShuffleUp(e: vecN<f16>, delta: u32) -> vecN<f16>
+
+subgroupShuffleXor(e: i32,  mask: u32) -> i32
+subgroupShuffleXor(e: u32,  mask: u32) -> u32
+subgroupShuffleXor(e: f32,  mask: u32) -> f32
+subgroupShuffleXor(e: f16,  mask: u32) -> f16
+subgroupShuffleXor(e: vecN<i32>,  mask: u32) -> vecN<i32>
+subgroupShuffleXor(e: vecN<u32>,  mask: u32) -> vecN<u32>
+subgroupShuffleXor(e: vecN<f32>,  mask: u32) -> vecN<f32>
+subgroupShuffleXor(e: vecN<f16>,  mask: u32) -> vecN<f16>
+
+subgroupXor(e: i32) -> i32
+subgroupXor(e: u32) -> u32
+subgroupXor(e: vecN<i32>) -> vecN<i32>
+subgroupXor(e: vecN<u32>) -> vecN<u32>
 
 // TODO: T should only match i32, f32, u32 in a lot of ops
 
