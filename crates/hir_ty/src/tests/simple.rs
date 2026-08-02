@@ -400,7 +400,7 @@ fn address_of_not_reference() {
             34..39 'x_ptr': [error]
             42..44 '&x': [error]
             43..44 'x': i32
-            [EditionedFileId(Id(1c00))] AddressOfNotReference { expression: Idx::<Expression>(1), actual: Type(2402) } in Body
+            [EditionedFileId(Id(1c00))] WgslError { expression: Idx::<Expression>(1), message: "cannot use unary operator `&` on type `i32`" } in Body
         "#]],
     );
 }
@@ -1667,7 +1667,7 @@ fn no_builtin_overload() {
             8..10 '1f': f32
             8..22 '1f + mat2x2f()': [error]
             13..22 'mat2x2f()': mat2x2<f32>
-            8..22 '1f + mat2x2f()': no built-in overload of `+` with parameters: (f32, mat2x2<f32>)
+            [EditionedFileId(Id(1c00))] WgslError { expression: Idx::<Expression>(2), message: "cannot use binary operator `+` with operands `f32` and `mat2x2<f32>`" } in Body
         "#]],
     );
 }
@@ -1683,7 +1683,7 @@ fn deref_not_a_pointer() {
             4..5 'x': ref<handle, [error], read>
             8..11 '*1f': [error]
             9..11 '1f': f32
-            [EditionedFileId(Id(1c00))] DerefNotAPointer { expression: Idx::<Expression>(0), actual: Type(2401) } in Body
+            [EditionedFileId(Id(1c00))] WgslError { expression: Idx::<Expression>(0), message: "cannot use unary operator `*` on type `f32`" } in Body
         "#]],
     );
 }
@@ -1775,8 +1775,8 @@ fn add_refs_and_ptrs() {
             398..403 'a_ptr': ptr<function, i32, read_write>
             398..411 'a_ptr + b_ref': [error]
             406..411 'b_ref': ref<function, i32, read_write>
-            367..380 'a_ptr + b_ptr': no built-in overload of `+` with parameters: (ptr<function, i32, read_write>, ptr<function, i32, read_write>)
-            398..411 'a_ptr + b_ref': no built-in overload of `+` with parameters: (ptr<function, i32, read_write>, i32)
+            [EditionedFileId(Id(1c00))] WgslError { expression: Idx::<Expression>(11), message: "cannot use binary operator `+` with operands `ptr<function, i32, read_write>` and `ptr<function, i32, read_write>`" } in Body
+            [EditionedFileId(Id(1c00))] WgslError { expression: Idx::<Expression>(14), message: "cannot use binary operator `+` with operands `ptr<function, i32, read_write>` and `i32`" } in Body
         "#]],
     );
 }
@@ -1966,7 +1966,7 @@ fn not_convertible() {
             23..25 '1i': i32
             23..32 '1i * 1.0f': [error]
             28..32 '1.0f': f32
-            23..32 '1i * 1.0f': no built-in overload of `*` with parameters: (i32, f32)
+            [EditionedFileId(Id(1c00))] WgslError { expression: Idx::<Expression>(2), message: "cannot use binary operator `*` with operands `i32` and `f32`" } in Body
         "#]],
     );
 }

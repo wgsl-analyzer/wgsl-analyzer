@@ -3,7 +3,10 @@ use std::fmt;
 use hir_def::{
     body::BindingId,
     database::{GlobalConstantId, GlobalVariableId, OverrideId, StructId},
-    expression::ExpressionId,
+    expression::{
+        ArithmeticOperation, BinaryOperation, ComparisonOperation, ExpressionId, LogicOperation,
+        UnaryOperator,
+    },
     expression_store::{ExpressionStore, path::Path},
     item_tree::Name,
     mod_path::PathKind,
@@ -1007,5 +1010,82 @@ pub fn to_wgsl_texel_format(
             panic!("bound var is not a valid texel format to convert")
         },
         crate::ty::TexelFormat::Any => panic!("any is not a valid texel format to convert"),
+    }
+}
+
+pub fn to_wgsl_binary_operator(operation: BinaryOperation) -> wgsl_types::syntax::BinaryOperator {
+    use wgsl_types::syntax::BinaryOperator as Wtbo;
+    match operation {
+        BinaryOperation::Logical(logic_operation) => match logic_operation {
+            LogicOperation::ShortCircuitAnd => Wtbo::ShortCircuitAnd,
+            LogicOperation::ShortCircuitOr => Wtbo::ShortCircuitOr,
+        },
+        BinaryOperation::Arithmetic(arithmetic_operation) => match arithmetic_operation {
+            ArithmeticOperation::Addition => Wtbo::Addition,
+            ArithmeticOperation::Multiplication => Wtbo::Multiplication,
+            ArithmeticOperation::Subtraction => Wtbo::Subtraction,
+            ArithmeticOperation::Division => Wtbo::Division,
+            ArithmeticOperation::ShiftLeft => Wtbo::ShiftLeft,
+            ArithmeticOperation::ShiftRight => Wtbo::ShiftRight,
+            ArithmeticOperation::BitwiseXor => Wtbo::BitwiseXor,
+            ArithmeticOperation::BitwiseOr => Wtbo::BitwiseOr,
+            ArithmeticOperation::BitwiseAnd => Wtbo::BitwiseAnd,
+            ArithmeticOperation::Remainder => Wtbo::Remainder,
+        },
+        BinaryOperation::Comparison(comparison_operation) => match comparison_operation {
+            ComparisonOperation::Equality => Wtbo::Equality,
+            ComparisonOperation::Inequality => Wtbo::Inequality,
+            ComparisonOperation::LessThan => Wtbo::LessThan,
+            ComparisonOperation::LessThanEqual => Wtbo::LessThanEqual,
+            ComparisonOperation::GreaterThan => Wtbo::GreaterThan,
+            ComparisonOperation::GreaterThanEqual => Wtbo::GreaterThanEqual,
+        },
+    }
+}
+
+pub fn from_wgsl_binary_operator(operation: wgsl_types::syntax::BinaryOperator) -> BinaryOperation {
+    use syntax::ast::operators::BinaryOperation as Bo;
+    use wgsl_types::syntax::BinaryOperator as Wtbo;
+    match operation {
+        Wtbo::ShortCircuitAnd => Bo::Logical(LogicOperation::ShortCircuitAnd),
+        Wtbo::ShortCircuitOr => Bo::Logical(LogicOperation::ShortCircuitOr),
+        Wtbo::Addition => Bo::Arithmetic(ArithmeticOperation::Addition),
+        Wtbo::Multiplication => Bo::Arithmetic(ArithmeticOperation::Multiplication),
+        Wtbo::Subtraction => Bo::Arithmetic(ArithmeticOperation::Subtraction),
+        Wtbo::Division => Bo::Arithmetic(ArithmeticOperation::Division),
+        Wtbo::ShiftLeft => Bo::Arithmetic(ArithmeticOperation::ShiftLeft),
+        Wtbo::ShiftRight => Bo::Arithmetic(ArithmeticOperation::ShiftRight),
+        Wtbo::BitwiseXor => Bo::Arithmetic(ArithmeticOperation::BitwiseXor),
+        Wtbo::BitwiseOr => Bo::Arithmetic(ArithmeticOperation::BitwiseOr),
+        Wtbo::BitwiseAnd => Bo::Arithmetic(ArithmeticOperation::BitwiseAnd),
+        Wtbo::Remainder => Bo::Arithmetic(ArithmeticOperation::Remainder),
+        Wtbo::Equality => Bo::Comparison(ComparisonOperation::Equality),
+        Wtbo::Inequality => Bo::Comparison(ComparisonOperation::Inequality),
+        Wtbo::LessThan => Bo::Comparison(ComparisonOperation::LessThan),
+        Wtbo::LessThanEqual => Bo::Comparison(ComparisonOperation::LessThanEqual),
+        Wtbo::GreaterThan => Bo::Comparison(ComparisonOperation::GreaterThan),
+        Wtbo::GreaterThanEqual => Bo::Comparison(ComparisonOperation::GreaterThanEqual),
+    }
+}
+
+pub fn to_wgsl_unary_operator(operation: UnaryOperator) -> wgsl_types::syntax::UnaryOperator {
+    use wgsl_types::syntax::UnaryOperator as Wtuo;
+    match operation {
+        UnaryOperator::Negation => Wtuo::Negation,
+        UnaryOperator::LogicalNegation => Wtuo::LogicalNegation,
+        UnaryOperator::AddressOf => Wtuo::AddressOf,
+        UnaryOperator::Indirection => Wtuo::Indirection,
+        UnaryOperator::BitwiseComplement => Wtuo::BitwiseComplement,
+    }
+}
+
+pub fn from_wgsl_unary_operator(operation: wgsl_types::syntax::UnaryOperator) -> UnaryOperator {
+    use wgsl_types::syntax::UnaryOperator as Wtuo;
+    match operation {
+        Wtuo::LogicalNegation => UnaryOperator::Negation,
+        Wtuo::Negation => UnaryOperator::LogicalNegation,
+        Wtuo::BitwiseComplement => UnaryOperator::AddressOf,
+        Wtuo::AddressOf => UnaryOperator::Indirection,
+        Wtuo::Indirection => UnaryOperator::BitwiseComplement,
     }
 }

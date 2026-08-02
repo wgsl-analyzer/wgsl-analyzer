@@ -37,7 +37,8 @@ use crate::{
     infer::unify::{UnificationTable, unify},
     lower::{
         Lowered, LoweredKind, ResolvedCall, TemplateParameter, TemplateParameters, TypeContainer,
-        TypeLoweringContext, TypeLoweringError, WgslTypeConverter,
+        TypeLoweringContext, TypeLoweringError, WgslTypeConverter, to_wgsl_binary_operator,
+        to_wgsl_unary_operator,
     },
     ty::{
         ArraySize, ArrayType, AtomicType, BuiltinStruct, MatrixType, Pointer, Reference,
@@ -1324,75 +1325,22 @@ impl<'database> InferenceContext<'database> {
         if expression_type.is_err(self.database) {
             return self.error_type();
         }
-
-        let builtin = match operator {
-            UnaryOperator::Negation => {
-                return match wgsl_types::builtin::type_unary_op(
-                    wgsl_types::syntax::UnaryOperator::Negation,
-                    &self.converter.to_wgsl_types(expression_type),
-                ) {
-                    Ok(r#type) => self.converter.from_wgsl_types(r#type),
-                    Err(error) => self.error_type(),
-                };
-            },
-            UnaryOperator::LogicalNegation => {
-                return match wgsl_types::builtin::type_unary_op(
-                    wgsl_types::syntax::UnaryOperator::LogicalNegation,
-                    &self.converter.to_wgsl_types(expression_type),
-                ) {
-                    Ok(r#type) => self.converter.from_wgsl_types(r#type),
-                    Err(error) => self.error_type(),
-                };
-            },
-            UnaryOperator::BitwiseComplement => {
-                return match wgsl_types::builtin::type_unary_op(
-                    wgsl_types::syntax::UnaryOperator::BitwiseComplement,
-                    &self.converter.to_wgsl_types(expression_type),
-                ) {
-                    Ok(r#type) => self.converter.from_wgsl_types(r#type),
-                    Err(error) => self.error_type(),
-                };
-            },
-            UnaryOperator::AddressOf => {
-                if let TypeKind::Reference(reference) = expression_type.kind(self.database) {
-                    return self.ref_to_pointer(&reference);
-                }
+        match wgsl_types::builtin::type_unary_op(
+            to_wgsl_unary_operator(operator),
+            &self.converter.to_wgsl_types(expression_type),
+        ) {
+            Ok(r#type) => self.converter.from_wgsl_types(r#type),
+            Err(error) => {
                 self.push_diagnostic(
                     store.store_source,
-                    InferenceDiagnosticKind::AddressOfNotReference {
+                    InferenceDiagnosticKind::WgslError {
                         expression,
-                        actual: expression_type,
+                        message: error.to_string(),
                     },
                 );
-                return self.error_type();
+                self.error_type()
             },
-            UnaryOperator::Indirection => {
-                debug_assert!(!matches!(
-                    expression_type.kind(self.database),
-                    TypeKind::Reference(_)
-                ));
-                if let TypeKind::Pointer(pointer) = expression_type.kind(self.database) {
-                    return self.ptr_to_ref(&pointer);
-                }
-                self.push_diagnostic(
-                    store.store_source,
-                    InferenceDiagnosticKind::DerefNotAPointer {
-                        expression,
-                        actual: expression_type,
-                    },
-                );
-                return self.error_type();
-            },
-        };
-
-        let argument_type = expression_type.loaded(self.database);
-        self.call_builtin(
-            store,
-            expression,
-            builtin,
-            &[(expression, argument_type)],
-            Some(operator.symbol()),
-        )
+        }
     }
 
     fn infer_binary_op(
@@ -1413,52 +1361,23 @@ impl<'database> InferenceContext<'database> {
         if left_type.is_err(self.database) || right_type.is_err(self.database) {
             return self.error_type();
         }
-
-        let builtin = match operation {
-            BinaryOperation::Logical(_) => {
-                Builtin::builtin_op_binary_bool(self.database).intern(self.database)
+        match wgsl_types::builtin::type_binary_op(
+            to_wgsl_binary_operator(operation),
+            &self.converter.to_wgsl_types(left_type),
+            &self.converter.to_wgsl_types(right_type),
+        ) {
+            Ok(r#type) => self.converter.from_wgsl_types(r#type),
+            Err(error) => {
+                self.push_diagnostic(
+                    store.store_source,
+                    InferenceDiagnosticKind::WgslError {
+                        expression,
+                        message: error.to_string(),
+                    },
+                );
+                self.error_type()
             },
-            BinaryOperation::Arithmetic(operation) => match operation {
-                ArithmeticOperation::BitwiseOr
-                | ArithmeticOperation::BitwiseAnd
-                | ArithmeticOperation::BitwiseXor => {
-                    Builtin::builtin_op_binary_bitop(self.database).intern(self.database)
-                },
-                ArithmeticOperation::Multiplication => {
-                    Builtin::builtin_op_binary_mul(self.database).intern(self.database)
-                },
-                ArithmeticOperation::Division => {
-                    Builtin::builtin_op_binary_div(self.database).intern(self.database)
-                },
-                ArithmeticOperation::Addition
-                | ArithmeticOperation::Subtraction
-                | ArithmeticOperation::Remainder => {
-                    Builtin::builtin_op_binary_number(self.database).intern(self.database)
-                },
-                ArithmeticOperation::ShiftLeft | ArithmeticOperation::ShiftRight => {
-                    Builtin::builtin_op_binary_shift(self.database).intern(self.database)
-                },
-            },
-            BinaryOperation::Comparison(cmp) => match cmp {
-                ComparisonOperation::Equality | ComparisonOperation::Inequality => {
-                    Builtin::builtin_op_eq(self.database).intern(self.database)
-                },
-                ComparisonOperation::LessThan
-                | ComparisonOperation::LessThanEqual
-                | ComparisonOperation::GreaterThan
-                | ComparisonOperation::GreaterThanEqual => {
-                    Builtin::builtin_op_cmp(self.database).intern(self.database)
-                },
-            },
-        };
-
-        self.call_builtin(
-            store,
-            expression,
-            builtin,
-            &[(left_side, left_type), (right_side, right_type)],
-            Some(operation.symbol()),
-        )
+        }
     }
 
     fn infer_ident_expression(
