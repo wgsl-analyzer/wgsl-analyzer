@@ -1932,6 +1932,74 @@ quadSwapY(e: vecN<u32>) -> vecN<u32>
 quadSwapY(e: vecN<f32>) -> vecN<f32>
 quadSwapY(e: vecN<f16>) -> vecN<f16>
 
+// TODO https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1303
+// 17.14 Buffer View Built-in Functions
+
+// T is a host-shareable type.
+// T must not be or contain an atomic or buffer type.
+// T must satisfy the address space layout constraints for AS.
+
+// bufferView<T>(p: ptr<storage;    buffer; read>,       offset: u32) -> ptr<storage,   T, read>
+// bufferView<T>(p: ptr<storage;    buffer; read_write>, offset: u32) -> ptr<storage,   T, read_write>
+// bufferView<T>(p: ptr<storage;    buffer; read>,       offset: i32) -> ptr<storage,   T, read>
+// bufferView<T>(p: ptr<storage;    buffer; read_write>, offset: i32) -> ptr<storage,   T, read_write>
+// bufferView<T>(p: ptr<uniform;    buffer; read>,       offset: u32) -> ptr<uniform,   T, read>
+// bufferView<T>(p: ptr<uniform;    buffer; read>,       offset: i32) -> ptr<uniform,   T, read>
+// bufferView<T>(p: ptr<workgroup;  buffer; read_write>, offset: u32) -> ptr<workgroup, T, read_write>
+// bufferView<T>(p: ptr<workgroup;  buffer; read_write>, offset: i32) -> ptr<workgroup, T, read_write>
+
+// bufferView<T>(p: ptr<storage;    buffer<N>; read>,       offset: u32) -> ptr<storage,   T, read>
+// bufferView<T>(p: ptr<storage;    buffer<N>; read_write>, offset: u32) -> ptr<storage,   T, read_write>
+// bufferView<T>(p: ptr<storage;    buffer<N>; read>,       offset: i32) -> ptr<storage,   T, read>
+// bufferView<T>(p: ptr<storage;    buffer<N>; read_write>, offset: i32) -> ptr<storage,   T, read_write>
+// bufferView<T>(p: ptr<uniform;    buffer<N>; read_write>, offset: u32) -> ptr<uniform,   T, read_write>
+// bufferView<T>(p: ptr<uniform;    buffer<N>; read_write>, offset: i32) -> ptr<uniform,   T, read_write>
+// bufferView<T>(p: ptr<workgroup;  buffer<N>; read_write>, offset: u32) -> ptr<workgroup, T, read_write>
+// bufferView<T>(p: ptr<workgroup;  buffer<N>; read_write>, offset: i32) -> ptr<workgroup, T, read_write>
+
+// bufferArrayView<T>(p: ptr<storage,   buffer, read>,       offset: u32, size: u32) -> ptr<storage,   T, read>
+// bufferArrayView<T>(p: ptr<storage,   buffer, read>,       offset: u32, size: i32) -> ptr<storage,   T, read>
+// bufferArrayView<T>(p: ptr<storage,   buffer, read>,       offset: u32, size: u32) -> ptr<storage,   T, read>
+// bufferArrayView<T>(p: ptr<storage,   buffer, read>,       offset: u32, size: i32) -> ptr<storage,   T, read>
+// bufferArrayView<T>(p: ptr<storage,   buffer, read_write>, offset: i32, size: u32) -> ptr<storage,   T, read_write>
+// bufferArrayView<T>(p: ptr<storage,   buffer, read_write>, offset: i32, size: i32) -> ptr<storage,   T, read_write>
+// bufferArrayView<T>(p: ptr<storage,   buffer, read_write>, offset: i32, size: u32) -> ptr<storage,   T, read_write>
+// bufferArrayView<T>(p: ptr<storage,   buffer, read_write>, offset: i32, size: i32) -> ptr<storage,   T, read_write>
+// bufferArrayView<T>(p: ptr<uniform,   buffer, read>,       offset: u32, size: u32) -> ptr<uniform,   T, read>
+// bufferArrayView<T>(p: ptr<uniform,   buffer, read>,       offset: u32, size: i32) -> ptr<uniform,   T, read>
+// bufferArrayView<T>(p: ptr<uniform,   buffer, read>,       offset: i32, size: u32) -> ptr<uniform,   T, read>
+// bufferArrayView<T>(p: ptr<uniform,   buffer, read>,       offset: i32, size: i32) -> ptr<uniform,   T, read>
+// bufferArrayView<T>(p: ptr<workgroup, buffer, read_write>, offset: u32, size: u32) -> ptr<workgroup, T, read_write>
+// bufferArrayView<T>(p: ptr<workgroup, buffer, read_write>, offset: u32, size: i32) -> ptr<workgroup, T, read_write>
+// bufferArrayView<T>(p: ptr<workgroup, buffer, read_write>, offset: i32, size: u32) -> ptr<workgroup, T, read_write>
+// bufferArrayView<T>(p: ptr<workgroup, buffer, read_write>, offset: i32, size: i32) -> ptr<workgroup, T, read_write>
+
+// bufferArrayView<T>(p: ptr<storage,   buffer<N>, read>,       offset: u32, size: u32) -> ptr<storage,   T, read>
+// bufferArrayView<T>(p: ptr<storage,   buffer<N>, read>,       offset: u32, size: i32) -> ptr<storage,   T, read>
+// bufferArrayView<T>(p: ptr<storage,   buffer<N>, read>,       offset: u32, size: u32) -> ptr<storage,   T, read>
+// bufferArrayView<T>(p: ptr<storage,   buffer<N>, read>,       offset: u32, size: i32) -> ptr<storage,   T, read>
+// bufferArrayView<T>(p: ptr<storage,   buffer<N>, read_write>, offset: i32, size: u32) -> ptr<storage,   T, read_write>
+// bufferArrayView<T>(p: ptr<storage,   buffer<N>, read_write>, offset: i32, size: i32) -> ptr<storage,   T, read_write>
+// bufferArrayView<T>(p: ptr<storage,   buffer<N>, read_write>, offset: i32, size: u32) -> ptr<storage,   T, read_write>
+// bufferArrayView<T>(p: ptr<storage,   buffer<N>, read_write>, offset: i32, size: i32) -> ptr<storage,   T, read_write>
+// bufferArrayView<T>(p: ptr<uniform,   buffer<N>, read>,       offset: u32, size: u32) -> ptr<uniform,   T, read>
+// bufferArrayView<T>(p: ptr<uniform,   buffer<N>, read>,       offset: u32, size: i32) -> ptr<uniform,   T, read>
+// bufferArrayView<T>(p: ptr<uniform,   buffer<N>, read>,       offset: i32, size: u32) -> ptr<uniform,   T, read>
+// bufferArrayView<T>(p: ptr<uniform,   buffer<N>, read>,       offset: i32, size: i32) -> ptr<uniform,   T, read>
+// bufferArrayView<T>(p: ptr<workgroup, buffer<N>, read_write>, offset: u32, size: u32) -> ptr<workgroup, T, read_write>
+// bufferArrayView<T>(p: ptr<workgroup, buffer<N>, read_write>, offset: u32, size: i32) -> ptr<workgroup, T, read_write>
+// bufferArrayView<T>(p: ptr<workgroup, buffer<N>, read_write>, offset: i32, size: u32) -> ptr<workgroup, T, read_write>
+// bufferArrayView<T>(p: ptr<workgroup, buffer<N>, read_write>, offset: i32, size: i32) -> ptr<workgroup, T, read_write>
+
+// bufferLength(p: ptr<storage,   buffer,    read>)       -> u32
+// bufferLength(p: ptr<storage,   buffer,    read_write>) -> u32
+// bufferLength(p: ptr<uniform,   buffer,    read>)       -> u32
+// bufferLength(p: ptr<workgroup, buffer,    read_write>) -> u32
+// bufferLength(p: ptr<storage,   buffer<N>, read>)       -> u32
+// bufferLength(p: ptr<storage,   buffer<N>, read_write>) -> u32
+// bufferLength(p: ptr<uniform,   buffer<N>, read>)       -> u32
+// bufferLength(p: ptr<workgroup, buffer<N>, read_write>) -> u32
+
 // Operators
 
 // TODO: T should only match i32, f32, u32 in a lot of ops
