@@ -1636,19 +1636,38 @@ textureStore(t: texture_storage_3d<F;write>, coords: vec3<u32>, value: F::Storag
 textureStore(t: texture_storage_3d<F;read_write>, coords: vec3<u32>, value: F::StorageType)
 
 // 17.8 Atomic Built-in Functions
-atomicLoad(ptr<atomic<T>>) -> T
-atomicStore(ptr<atomic<T>>, T)
+atomicLoad(atomic_ptr: ptr<atomic<i32>>) -> i32
+atomicLoad(atomic_ptr: ptr<atomic<u32>>) -> u32
 
-atomicAdd(ptr<atomic<T>>, T) -> T
-atomicSub(ptr<atomic<T>>, T) -> T
-atomicMax(ptr<atomic<T>>, T) -> T
-atomicMin(ptr<atomic<T>>, T) -> T
-atomicAnd(ptr<atomic<T>>, T) -> T
-atomicOr(ptr<atomic<T>>, T) -> T
-atomicXor(ptr<atomic<T>>, T) -> T
-atomicExchange(ptr<atomic<T>>, T) -> T
+atomicStore(atomic_ptr: ptr<atomic<i32>>, v: i32)
+atomicStore(atomic_ptr: ptr<atomic<u32>>, v: u32)
 
-atomicCompareExchangeWeak(atomic_ptr: ptr<atomic<T>>, cmp: T, v: T) -> struct __atomic_compare_exchange_result { old_value: T, exchanged: bool }
+atomicAdd(atomic_ptr: ptr<atomic<i32>>, v: i32) -> i32
+atomicAdd(atomic_ptr: ptr<atomic<u32>>, v: u32) -> u32
+
+atomicSub(atomic_ptr: ptr<atomic<i32>>, v: i32) -> i32
+atomicSub(atomic_ptr: ptr<atomic<u32>>, v: u32) -> u32
+
+atomicMax(atomic_ptr: ptr<atomic<i32>>, v: i32) -> i32
+atomicMax(atomic_ptr: ptr<atomic<u32>>, v: u32) -> u32
+
+atomicMin(atomic_ptr: ptr<atomic<i32>>, v: i32) -> i32
+atomicMin(atomic_ptr: ptr<atomic<u32>>, v: u32) -> u32
+
+atomicAnd(atomic_ptr: ptr<atomic<i32>>, v: i32) -> i32
+atomicAnd(atomic_ptr: ptr<atomic<u32>>, v: u32) -> u32
+
+atomicOr(atomic_ptr: ptr<atomic<i32>>, v: i32) -> i32
+atomicOr(atomic_ptr: ptr<atomic<u32>>, v: u32) -> u32
+
+atomicXor(atomic_ptr: ptr<atomic<i32>>, v: i32) -> i32
+atomicXor(atomic_ptr: ptr<atomic<u32>>, v: u32) -> u32
+
+atomicExchange(atomic_ptr: ptr<atomic<i32>>, v: i32) -> i32
+atomicExchange(atomic_ptr: ptr<atomic<u32>>, v: u32) -> u32
+
+atomicCompareExchangeWeak(atomic_ptr: ptr<atomic<i32>>, cmp: i32, v: i32) -> struct __atomic_compare_exchange_result { old_value: i32, exchanged: bool }
+atomicCompareExchangeWeak(atomic_ptr: ptr<atomic<u32>>, cmp: u32, v: u32) -> struct __atomic_compare_exchange_result { old_value: u32, exchanged: bool }
 
 // data packing
 pack4x8snorm(vec4<f32>) -> u32
