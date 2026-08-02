@@ -286,6 +286,7 @@ pub struct InferenceContext<'database> {
     resolver: Resolver,
     result: InferenceResult, // set in collect_* calls
     return_type: Type,
+    converter: WgslTypeConverter<'database>,
 }
 
 impl<'database> InferenceContext<'database> {
@@ -300,6 +301,7 @@ impl<'database> InferenceContext<'database> {
             resolver,
             result: InferenceResult::new(database),
             return_type: TypeKind::Error.intern(database),
+            converter: WgslTypeConverter::new(database),
         }
     }
 
@@ -1328,7 +1330,13 @@ impl<'database> InferenceContext<'database> {
                 Builtin::builtin_op_unary_minus(self.database).intern(self.database)
             },
             UnaryOperator::LogicalNegation => {
-                Builtin::builtin_op_unary_not(self.database).intern(self.database)
+                return match wgsl_types::builtin::type_unary_op(
+                    wgsl_types::syntax::UnaryOperator::LogicalNegation,
+                    &self.converter.to_wgsl_types(expression_type),
+                ) {
+                    Ok(r#type) => self.converter.from_wgsl_types(r#type),
+                    Err(error) => self.error_type(),
+                };
             },
             UnaryOperator::BitwiseComplement => {
                 Builtin::builtin_op_unary_bitnot(self.database).intern(self.database)
@@ -1814,11 +1822,11 @@ impl<'database> InferenceContext<'database> {
             return self.error_type();
         };
 
-        let mut converter = WgslTypeConverter::new(self.database);
         let mut template_args = vec![];
         while let Some((template_parameter, _)) = template_parameters.take_next() {
-            if let Some(template_parameter) =
-                converter.template_parameter_to_wgsl_types(template_parameter)
+            if let Some(template_parameter) = self
+                .converter
+                .template_parameter_to_wgsl_types(template_parameter)
             {
                 template_args.push(template_parameter);
             } else {
@@ -1841,7 +1849,7 @@ impl<'database> InferenceContext<'database> {
 
         let converted_arguments: Vec<_> = arguments
             .iter()
-            .map(|(_, r#type)| converter.to_wgsl_types(*r#type))
+            .map(|(_, r#type)| self.converter.to_wgsl_types(*r#type))
             .collect();
 
         if converted_arguments
@@ -1859,7 +1867,7 @@ impl<'database> InferenceContext<'database> {
         );
 
         match return_type {
-            Ok(Some(r#type)) => converter.from_wgsl_types(r#type),
+            Ok(Some(r#type)) => self.converter.from_wgsl_types(r#type),
             Ok(None) => self.error_type(),
             Err(error) => {
                 self.push_diagnostic(
