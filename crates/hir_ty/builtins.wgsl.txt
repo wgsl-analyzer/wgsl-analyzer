@@ -1887,6 +1887,53 @@ subgroupXor(e: u32) -> u32
 subgroupXor(e: vecN<i32>) -> vecN<i32>
 subgroupXor(e: vecN<u32>) -> vecN<u32>
 
+// 17.13 Quad Operations
+quadBroadcast(e: i32, id: u32) -> i32
+quadBroadcast(e: u32, id: u32) -> u32
+quadBroadcast(e: f32, id: u32) -> f32
+quadBroadcast(e: f16, id: u32) -> f16
+quadBroadcast(e: vecN<i32>, id: u32) -> vecN<i32>
+quadBroadcast(e: vecN<u32>, id: u32) -> vecN<u32>
+quadBroadcast(e: vecN<f32>, id: u32) -> vecN<f32>
+quadBroadcast(e: vecN<f16>, id: u32) -> vecN<f16>
+quadBroadcast(e: i32, id: i32) -> i32
+quadBroadcast(e: u32, id: i32) -> u32
+quadBroadcast(e: f32, id: i32) -> f32
+quadBroadcast(e: f16, id: i32) -> f16
+quadBroadcast(e: vecN<i32>, id: i32) -> vecN<i32>
+quadBroadcast(e: vecN<u32>, id: i32) -> vecN<u32>
+quadBroadcast(e: vecN<f32>, id: i32) -> vecN<f32>
+quadBroadcast(e: vecN<f16>, id: i32) -> vecN<f16>
+
+quadSwapDiagonal(e: i32) -> i32
+quadSwapDiagonal(e: u32) -> u32
+quadSwapDiagonal(e: f32) -> f32
+quadSwapDiagonal(e: f16) -> f16
+quadSwapDiagonal(e: vecN<i32>) -> vecN<i32>
+quadSwapDiagonal(e: vecN<u32>) -> vecN<u32>
+quadSwapDiagonal(e: vecN<f32>) -> vecN<f32>
+quadSwapDiagonal(e: vecN<f16>) -> vecN<f16>
+
+quadSwapX(e: i32) -> i32
+quadSwapX(e: u32) -> u32
+quadSwapX(e: f32) -> f32
+quadSwapX(e: f16) -> f16
+quadSwapX(e: vecN<i32>) -> vecN<i32>
+quadSwapX(e: vecN<u32>) -> vecN<u32>
+quadSwapX(e: vecN<f32>) -> vecN<f32>
+quadSwapX(e: vecN<f16>) -> vecN<f16>
+
+quadSwapY(e: i32) -> i32
+quadSwapY(e: u32) -> u32
+quadSwapY(e: f32) -> f32
+quadSwapY(e: f16) -> f16
+quadSwapY(e: vecN<i32>) -> vecN<i32>
+quadSwapY(e: vecN<u32>) -> vecN<u32>
+quadSwapY(e: vecN<f32>) -> vecN<f32>
+quadSwapY(e: vecN<f16>) -> vecN<f16>
+
+// Operators
+
 // TODO: T should only match i32, f32, u32 in a lot of ops
 
 // TODO: T should only match AbstractInt, i32, or u32 for a lot of bitwise ops
