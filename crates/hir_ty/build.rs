@@ -75,8 +75,8 @@ pub enum AddressSpace {
 impl FromStr for AddressSpace {
     type Err = ();
 
-    fn from_str<'a>(s: &'a str) -> Result<Self, Self::Err> {
-        Ok(match s {
+    fn from_str(string: &str) -> Result<Self, Self::Err> {
+        Ok(match string {
             "function" => Self::Function,
             "private" => Self::Private,
             "workgroup" => Self::Workgroup,
@@ -383,26 +383,7 @@ fn parse_type(
             let inner = parse_type(generics, inner);
             return Type::RuntimeArray(Box::new(inner));
         } else if generic_type == "ptr" {
-            let mut template_arguments = inner.split(';');
-            let storage = if let Some(argument) = template_arguments.next()
-                && let Ok(storage) = argument.parse::<AddressSpace>()
-            {
-                storage
-            } else {
-                panic!("add storage for {}", r#type)
-            };
-            let Some(inner) = template_arguments.next() else {
-                panic!("add inner for {}", r#type)
-            };
-            let inner = parse_type(generics, inner.trim());
-            let access_mode = if let Some(argument) = template_arguments.next()
-                && let Ok(access_mode) = argument.parse::<AccessMode>()
-            {
-                access_mode
-            } else {
-                panic!("add access mode for {}", r#type)
-            };
-            return Type::Pointer(storage, Box::new(inner), access_mode);
+            return parse_ptr(generics, r#type, inner);
         } else if generic_type == "atomic" {
             let inner = parse_type(generics, inner.trim());
             return Type::Atomic(Box::new(inner));
@@ -471,6 +452,33 @@ fn parse_type(
         },
         other => unimplemented!("{}", other),
     }
+}
+
+fn parse_ptr(
+    generics: &mut BTreeMap<char, (usize, Generic)>,
+    r#type: &str,
+    inner: &str,
+) -> Type {
+    let mut template_arguments = inner.split(';');
+    let storage = if let Some(argument) = template_arguments.next()
+        && let Ok(storage) = argument.parse::<AddressSpace>()
+    {
+        storage
+    } else {
+        panic!("add storage for {type}")
+    };
+    let Some(inner) = template_arguments.next() else {
+        panic!("add inner for {type}")
+    };
+    let inner = parse_type(generics, inner.trim());
+    let access_mode = if let Some(argument) = template_arguments.next()
+        && let Ok(access_mode) = argument.parse::<AccessMode>()
+    {
+        access_mode
+    } else {
+        panic!("add access mode for {type}")
+    };
+    Type::Pointer(storage, Box::new(inner), access_mode)
 }
 
 fn texture_type(

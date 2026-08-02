@@ -1013,7 +1013,10 @@ pub fn to_wgsl_texel_format(
     }
 }
 
-pub fn to_wgsl_binary_operator(operation: BinaryOperation) -> wgsl_types::syntax::BinaryOperator {
+#[must_use]
+pub const fn to_wgsl_binary_operator(
+    operation: BinaryOperation
+) -> wgsl_types::syntax::BinaryOperator {
     use wgsl_types::syntax::BinaryOperator as Wtbo;
     match operation {
         BinaryOperation::Logical(logic_operation) => match logic_operation {
@@ -1043,7 +1046,10 @@ pub fn to_wgsl_binary_operator(operation: BinaryOperation) -> wgsl_types::syntax
     }
 }
 
-pub fn from_wgsl_binary_operator(operation: wgsl_types::syntax::BinaryOperator) -> BinaryOperation {
+#[must_use]
+pub const fn from_wgsl_binary_operator(
+    operation: wgsl_types::syntax::BinaryOperator
+) -> BinaryOperation {
     use syntax::ast::operators::BinaryOperation as Bo;
     use wgsl_types::syntax::BinaryOperator as Wtbo;
     match operation {
@@ -1068,7 +1074,8 @@ pub fn from_wgsl_binary_operator(operation: wgsl_types::syntax::BinaryOperator) 
     }
 }
 
-pub fn to_wgsl_unary_operator(operation: UnaryOperator) -> wgsl_types::syntax::UnaryOperator {
+#[must_use]
+pub const fn to_wgsl_unary_operator(operation: UnaryOperator) -> wgsl_types::syntax::UnaryOperator {
     use wgsl_types::syntax::UnaryOperator as Wtuo;
     match operation {
         UnaryOperator::Negation => Wtuo::Negation,
@@ -1079,7 +1086,10 @@ pub fn to_wgsl_unary_operator(operation: UnaryOperator) -> wgsl_types::syntax::U
     }
 }
 
-pub fn from_wgsl_unary_operator(operation: wgsl_types::syntax::UnaryOperator) -> UnaryOperator {
+#[must_use]
+pub const fn from_wgsl_unary_operator(
+    operation: wgsl_types::syntax::UnaryOperator
+) -> UnaryOperator {
     use wgsl_types::syntax::UnaryOperator as Wtuo;
     match operation {
         Wtuo::LogicalNegation => UnaryOperator::Negation,

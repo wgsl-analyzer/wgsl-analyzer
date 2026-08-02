@@ -1,5 +1,3 @@
-#![expect(clippy::too_many_lines, reason = "snapshot test data")]
-
 use expect_test::expect;
 use syntax::ExtensionsConfig;
 
