@@ -364,6 +364,10 @@ fn no_completions_in_comments() {
             function pack4xU8
             function pack4xU8Clamp
             function pow
+            function quadBroadcast
+            function quadSwapDiagonal
+            function quadSwapX
+            function quadSwapY
             function quantizeToF16
             function radians
             function reflect
@@ -379,6 +383,27 @@ fn no_completions_in_comments() {
             function sqrt
             function step
             function storageBarrier
+            function subgroupAdd
+            function subgroupAll
+            function subgroupAnd
+            function subgroupAny
+            function subgroupBallot
+            function subgroupBroadcast
+            function subgroupBroadcastFirst
+            function subgroupElect
+            function subgroupExclusiveAdd
+            function subgroupExclusiveMul
+            function subgroupInclusiveAdd
+            function subgroupInclusiveMul
+            function subgroupMax
+            function subgroupMin
+            function subgroupMul
+            function subgroupOr
+            function subgroupShuffle
+            function subgroupShuffleDown
+            function subgroupShuffleUp
+            function subgroupShuffleXor
+            function subgroupXor
             function tan
             function tanh
             function test               fn test()
@@ -520,6 +545,10 @@ fn no_completions_in_comments() {
             function pack4xU8
             function pack4xU8Clamp
             function pow
+            function quadBroadcast
+            function quadSwapDiagonal
+            function quadSwapX
+            function quadSwapY
             function quantizeToF16
             function radians
             function reflect
@@ -535,6 +564,27 @@ fn no_completions_in_comments() {
             function sqrt
             function step
             function storageBarrier
+            function subgroupAdd
+            function subgroupAll
+            function subgroupAnd
+            function subgroupAny
+            function subgroupBallot
+            function subgroupBroadcast
+            function subgroupBroadcastFirst
+            function subgroupElect
+            function subgroupExclusiveAdd
+            function subgroupExclusiveMul
+            function subgroupInclusiveAdd
+            function subgroupInclusiveMul
+            function subgroupMax
+            function subgroupMin
+            function subgroupMul
+            function subgroupOr
+            function subgroupShuffle
+            function subgroupShuffleDown
+            function subgroupShuffleUp
+            function subgroupShuffleXor
+            function subgroupXor
             function tan
             function tanh
             function test               fn test()
@@ -675,6 +725,10 @@ fn no_completions_in_comments() {
             function pack4xU8
             function pack4xU8Clamp
             function pow
+            function quadBroadcast
+            function quadSwapDiagonal
+            function quadSwapX
+            function quadSwapY
             function quantizeToF16
             function radians
             function reflect
@@ -690,6 +744,27 @@ fn no_completions_in_comments() {
             function sqrt
             function step
             function storageBarrier
+            function subgroupAdd
+            function subgroupAll
+            function subgroupAnd
+            function subgroupAny
+            function subgroupBallot
+            function subgroupBroadcast
+            function subgroupBroadcastFirst
+            function subgroupElect
+            function subgroupExclusiveAdd
+            function subgroupExclusiveMul
+            function subgroupInclusiveAdd
+            function subgroupInclusiveMul
+            function subgroupMax
+            function subgroupMin
+            function subgroupMul
+            function subgroupOr
+            function subgroupShuffle
+            function subgroupShuffleDown
+            function subgroupShuffleUp
+            function subgroupShuffleXor
+            function subgroupXor
             function tan
             function tanh
             function test               fn test()
