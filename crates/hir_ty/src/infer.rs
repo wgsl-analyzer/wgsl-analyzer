@@ -1806,15 +1806,18 @@ impl<'database> InferenceContext<'database> {
             Some(template_args.as_slice())
         };
 
-        let converted_arguments: Option<Vec<_>> = arguments
+        let converted_arguments: Vec<_> = arguments
             .iter()
             .map(|(_, r#type)| converter.to_wgsl_types(*r#type))
             .collect();
 
-        let Some(converted_arguments) = converted_arguments else {
+        if converted_arguments
+            .iter()
+            .any(|argument| matches!(argument, wgsl_types::Type::Unknown))
+        {
             // One of the arguments had an error type
             return self.error_type();
-        };
+        }
 
         let return_type = wgsl_types::builtin::type_builtin_fn(
             name.as_str(),

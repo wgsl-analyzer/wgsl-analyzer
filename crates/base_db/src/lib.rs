@@ -33,7 +33,7 @@ macro_rules! impl_intern_key {
         #[salsa_macros::interned(no_lifetime, revisions = usize::MAX)]
         #[derive(PartialOrd, Ord)]
         pub struct $id {
-            pub loc: $loc,
+            pub location: $loc,
         }
 
         // If we derive this salsa prints the values recursively, and this causes us to blow.

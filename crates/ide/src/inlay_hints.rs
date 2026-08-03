@@ -2,11 +2,11 @@ use std::{fmt, hash, iter, mem};
 
 use ast::Expression as AstExpression;
 use base_db::{EditionedFileId, FileId, FileRange, TextRange};
-use hir::{Field, HasSource as _, Semantics};
+use hir::{AddressSpace, Field, HasSource as _, Semantics};
 use hir_def::{InFile, database::DefDatabase as _, item_tree::Name, signature::FieldId};
 use hir_ty::{
     function::FunctionDetails,
-    layout::{FieldLayout, LayoutAddressSpace},
+    layout::FieldLayout,
     lower::ResolvedCall,
     ty::pretty::{TypeVerbosity, pretty_type_with_verbosity},
 };
@@ -370,20 +370,22 @@ fn get_struct_layout_hints(
             .intern_struct(InFile::new(file_id, r#struct));
         let fields = semantics.database.field_types(r#struct);
 
+        // TODO check uniform_buffer_standard_layout extension here
+        // https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1358
         let address_space = if semantics
             .database
             .struct_is_used_in_uniform(r#struct, file_id)
         {
-            LayoutAddressSpace::Uniform
+            AddressSpace::Uniform
         } else {
-            LayoutAddressSpace::Other
+            AddressSpace::Storage
         };
 
         hir_ty::layout::struct_member_layout(
             &fields.0,
             semantics.database,
             address_space,
-            |field, field_layout| {
+            |field, _, field_layout| {
                 let FieldLayout { offset, .. } = field_layout;
                 let field = Field {
                     id: FieldId { r#struct, field },

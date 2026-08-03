@@ -100,6 +100,16 @@ impl StructSignature {
             .iter()
             .find_map(|(id, data)| (&data.name == name).then_some(id))
     }
+
+    #[must_use]
+    pub fn field_data(
+        &self,
+        field: LocalFieldId,
+    ) -> Option<&FieldData> {
+        self.fields()
+            .iter()
+            .find_map(|(id, data)| (id == field).then_some(data))
+    }
 }
 
 #[derive(Debug, PartialEq, Eq)]
