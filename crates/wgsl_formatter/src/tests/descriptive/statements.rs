@@ -9,6 +9,7 @@ mod continuing;
 mod discard;
 mod r#for;
 mod function_call;
+mod function_call_matrix;
 mod r#if;
 mod increment_decrement;
 mod let_declarations;

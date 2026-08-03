@@ -7,6 +7,7 @@ mod r#continue;
 mod continuing;
 mod r#for;
 mod function_call;
+mod function_call_matrix;
 mod r#if;
 mod r#loop;
 mod r#return;
