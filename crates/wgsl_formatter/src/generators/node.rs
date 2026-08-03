@@ -1,17 +1,18 @@
 use parser::SyntaxNode;
+use rowan::NodeOrToken;
 use syntax::AstNode as _;
 
 use crate::{
     generators::{
         attributes::{
-            gen_align_attribute, gen_attribute, gen_binding_attribute, gen_blend_src_attribute,
-            gen_builtin_attribute, gen_builtin_value_name, gen_compute_attribute,
-            gen_const_attribute, gen_diagnostic_attribute, gen_early_depth_test_attribute,
-            gen_early_depth_test_mode, gen_elif_attribute, gen_else_attribute,
-            gen_fragment_attribute, gen_group_attribute, gen_id_attribute, gen_if_attribute,
-            gen_interpolate_attribute, gen_interpolate_sampling_name, gen_interpolate_type_name,
-            gen_invariant_attribute, gen_location_attribute, gen_must_use_attribute,
-            gen_other_attribute, gen_size_attribute, gen_vertex_attribute,
+            gen_align_attribute, gen_attribute, gen_attribute_list, gen_binding_attribute,
+            gen_blend_src_attribute, gen_builtin_attribute, gen_builtin_value_name,
+            gen_compute_attribute, gen_const_attribute, gen_diagnostic_attribute,
+            gen_early_depth_test_attribute, gen_early_depth_test_mode, gen_elif_attribute,
+            gen_else_attribute, gen_fragment_attribute, gen_group_attribute, gen_id_attribute,
+            gen_if_attribute, gen_interpolate_attribute, gen_interpolate_sampling_name,
+            gen_interpolate_type_name, gen_invariant_attribute, gen_location_attribute,
+            gen_must_use_attribute, gen_other_attribute, gen_size_attribute, gen_vertex_attribute,
             gen_workgroup_size_attribute,
         },
         comments::{Comment, gen_comment},
@@ -79,11 +80,13 @@ use crate::{
         type_alias_declaration::gen_type_alias_declaration,
         types::{gen_template_list, gen_type_specifier},
     },
+    helpers::{gen_line_spacing, gen_next_gen_line_spacing},
     print_item_buffer::{
         PrintItemBuffer,
         spacing_request::{Request, RequestItem},
     },
     reporting::FormatDocumentResult,
+    trivia::{NodeTriviaItem, NodeWithTrivia},
 };
 
 pub fn gen_node_no_newlines(node: &SyntaxNode) -> FormatDocumentResult<PrintItemBuffer> {
@@ -208,7 +211,7 @@ pub fn gen_node(node: &SyntaxNode) -> FormatDocumentResult<PrintItemBuffer> {
              SyntaxKind::ElifAttribute(node) => gen_elif_attribute(&node),
              SyntaxKind::ElseAttribute(node) => gen_else_attribute(&node),
              SyntaxKind::EarlyDepthTestAttribute(node) => gen_early_depth_test_attribute(&node),
-             SyntaxKind::AttributeList(node) => todo!(),
+             SyntaxKind::AttributeList(node) => gen_attribute_list(&node),
              SyntaxKind::SizeAttribute(node) => gen_size_attribute(&node),
              SyntaxKind::WorkgroupSizeAttribute(node) => gen_workgroup_size_attribute(&node),
              SyntaxKind::VertexAttribute(node) => gen_vertex_attribute(&node),
@@ -359,4 +362,35 @@ pub fn gen_node(node: &SyntaxNode) -> FormatDocumentResult<PrintItemBuffer> {
              }
         }
     }
+}
+
+pub fn gen_node_with_trivia(node: &NodeWithTrivia) -> FormatDocumentResult<PrintItemBuffer> {
+    let mut formatted = PrintItemBuffer::default();
+
+    for trivia in &node.preceding_trivia {
+        match trivia {
+            NodeTriviaItem::LineSpacing(line_spacing) => {
+                formatted.extend(gen_next_gen_line_spacing(&line_spacing)?);
+            },
+            NodeTriviaItem::Comment(comment) => {
+                formatted.extend(gen_comment(&comment));
+            },
+            NodeTriviaItem::AttributeList(attribute_list) => {
+                formatted.extend(gen_attribute_list(&attribute_list)?);
+            },
+        }
+    }
+
+    match &node.node {
+        crate::trivia::NodeWithTriviaContent::Content(NodeOrToken::Node(node)) => {
+            formatted.extend(gen_node(&node)?)
+        },
+        crate::trivia::NodeWithTriviaContent::Content(NodeOrToken::Token(node)) => {
+            todo!()
+        },
+        crate::trivia::NodeWithTriviaContent::NoContent => todo!(),
+        crate::trivia::NodeWithTriviaContent::End => todo!(),
+    }
+
+    Ok(formatted)
 }

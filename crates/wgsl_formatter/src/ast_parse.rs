@@ -4,9 +4,17 @@
 use itertools::PutBack;
 use parser::{SyntaxElementChildren, SyntaxKind, SyntaxNode, SyntaxToken};
 use rowan::NodeOrToken;
-use syntax::{AstNode, AstToken};
+use syntax::{
+    AstNode, AstToken,
+    ast::{Attribute, AttributeList},
+};
 
-use crate::reporting::{FormatDocumentError, FormatDocumentResult, UnwrapIfPreferCrash as _};
+use crate::{
+    generators::{attributes::parse_many_attributes, comments::parse_comment_optional},
+    helpers::{LineSpacing, NextGenLineSpacing, parse_line_spacing, parse_next_gen_line_spacing},
+    reporting::{FormatDocumentError, FormatDocumentResult, UnwrapIfPreferCrash as _},
+    trivia::{NodeTriviaItem, NodeWithTrivia, NodeWithTriviaContent},
+};
 
 pub type SyntaxIter = PutBack<SyntaxElementChildren>;
 pub fn parse_token(
@@ -94,6 +102,7 @@ pub fn parse_token_optional(
     }
 }
 
+#[deprecated]
 pub fn parse_end(syntax: &mut SyntaxIter) -> FormatDocumentResult<()> {
     match syntax.next() {
         None => Ok(()),
@@ -135,6 +144,52 @@ where
         None => None,
     }
 }
+
+pub fn parse_node_with_trivia(syntax: &mut SyntaxIter) -> NodeWithTrivia {
+    let mut trivia = Vec::new();
+
+    loop {
+        // We allow line spacing at the very top of trivia
+        if let Some(spacing) = parse_next_gen_line_spacing(syntax) {
+            trivia.push(NodeTriviaItem::LineSpacing(spacing));
+        } else {
+            break;
+        }
+    }
+
+    loop {
+        if let Some(line_spacing) = parse_next_gen_line_spacing(syntax) {
+            match line_spacing {
+                NextGenLineSpacing::EmptyLine(blankspace) => {
+                    syntax.put_back(NodeOrToken::Token(blankspace));
+                    return NodeWithTrivia {
+                        preceding_trivia: trivia,
+                        node: NodeWithTriviaContent::NoContent,
+                    };
+                },
+                NextGenLineSpacing::LineBreak(_) | NextGenLineSpacing::OnelineBlankspace(_) => {
+                    // Line breaks and oneline blankspace never carry any meaning
+                },
+            }
+        } else if let Some(comment) = parse_comment_optional(syntax) {
+            trivia.push(NodeTriviaItem::Comment(comment));
+        } else if let Some(attributes) = parse_node_optional::<AttributeList>(syntax) {
+            trivia.push(NodeTriviaItem::AttributeList(attributes));
+        } else {
+            break;
+        }
+    }
+
+    NodeWithTrivia {
+        preceding_trivia: trivia,
+        node: match syntax.next() {
+            Some(next) => NodeWithTriviaContent::Content(next),
+            None => NodeWithTriviaContent::End,
+        },
+    }
+}
+
+#[deprecated]
 pub fn parse_node<T>(syntax: &mut SyntaxIter) -> FormatDocumentResult<T>
 where
     T: AstNode,

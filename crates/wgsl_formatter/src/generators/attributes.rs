@@ -19,7 +19,10 @@ use crate::{
     },
     generators::{
         attributes,
-        comments::{Comment, gen_comments, parse_many_comments_and_blankspace},
+        comments::{
+            Comment, gen_comments, infallible_parse_many_comments_and_blankspace,
+            parse_many_comments_and_blankspace,
+        },
         diagnostic_directive::gen_diagnostic_control,
         statements::function_call_statement::gen_function_call_arguments,
     },
@@ -45,23 +48,20 @@ pub struct ParsedAttributes {
     attributes: Vec<ParsedAttribute>,
 }
 
-pub fn parse_many_attributes(syntax: &mut SyntaxIter) -> FormatDocumentResult<ParsedAttributes> {
-    let attributes = parse_node_optional::<AttributeList>(syntax);
+#[deprecated]
+pub fn parse_many_attributes(
+    syntax: &mut SyntaxIter
+) -> FormatDocumentResult<Option<AttributeList>> {
+    Ok(parse_node_optional::<AttributeList>(syntax))
+}
 
-    let Some(attributes) = attributes else {
-        return Ok(ParsedAttributes {
-            attributes: Vec::new(),
-        });
-    };
-
-    let mut syntax = put_back(attributes.syntax().children_with_tokens());
-
+pub fn parse_attributes_inner(syntax: &mut SyntaxIter) -> FormatDocumentResult<ParsedAttributes> {
     let mut attributes = Vec::new();
     loop {
-        let Some(item_attribute) = parse_node_optional::<Attribute>(&mut syntax) else {
+        let Some(item_attribute) = parse_node_optional::<Attribute>(syntax) else {
             break;
         };
-        let item_comments_after_attribute = parse_many_comments_and_blankspace(&mut syntax)?;
+        let item_comments_after_attribute = parse_many_comments_and_blankspace(syntax)?;
 
         attributes.push(ParsedAttribute {
             attribute: item_attribute,
@@ -71,7 +71,7 @@ pub fn parse_many_attributes(syntax: &mut SyntaxIter) -> FormatDocumentResult<Pa
     Ok(ParsedAttributes { attributes })
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum AttributeLayout {
     Inline,
     Multiline,
@@ -125,10 +125,37 @@ where
     Ok(formatted)
 }
 
+#[deprecated]
 pub fn gen_attributes(
-    attributes: &ParsedAttributes,
+    attributes: &Option<AttributeList>,
     layout: AttributeLayout,
 ) -> FormatDocumentResult<PrintItemBuffer> {
+    let Some(attributes) = attributes else {
+        return Ok(PrintItemBuffer::default());
+    };
+
+    let temp_expected_layout = if let Some(parent) = attributes.syntax().parent() {
+        if parent.kind() == SyntaxKind::FunctionDeclaration
+            || parent.kind() == SyntaxKind::SwitchBody
+        {
+            AttributeLayout::Inline
+        } else {
+            AttributeLayout::Multiline
+        }
+    } else {
+        AttributeLayout::Multiline
+    };
+
+    assert_eq!(temp_expected_layout, layout);
+
+    gen_attribute_list(attributes)
+}
+
+pub fn gen_attribute_list(attribute_list: &AttributeList) -> FormatDocumentResult<PrintItemBuffer> {
+    let attributes = parse_attributes_inner(&mut put_back(
+        attribute_list.syntax().children_with_tokens(),
+    ))?;
+
     // If we don't have any attributes, we early exit to avoid all the bureaucracy with newlines
     if attributes.attributes.is_empty() {
         return Ok(PrintItemBuffer::default());
@@ -190,6 +217,18 @@ pub fn gen_attributes(
     }
 
     let expect_space_or_linebreak = Request::expect(RequestItem::Space).or_newline();
+
+    let layout = if let Some(parent) = attribute_list.syntax().parent() {
+        if parent.kind() == SyntaxKind::FunctionDeclaration
+            || parent.kind() == SyntaxKind::SwitchBody
+        {
+            AttributeLayout::Inline
+        } else {
+            AttributeLayout::Multiline
+        }
+    } else {
+        AttributeLayout::Multiline
+    };
 
     let group_separator = match layout {
         AttributeLayout::Inline => expect_space_or_linebreak.clone(),
