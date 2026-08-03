@@ -1,17 +1,22 @@
 #![expect(
     clippy::needless_pass_by_value,
+    clippy::unnecessary_wraps,
     reason = "handlers should have a specific signature"
 )]
 
 use base_db::{FilePosition, FileRange, TextLen as _, TextRange};
-use hir::diagnostics::DiagnosticsConfig;
-use ide::{Cancellable, HoverAction, HoverGotoTypeData, diagnostics::Severity};
+use ide::{Cancellable, HoverAction, HoverGotoTypeData};
+use ide_diagnostics::DiagnosticsConfig;
 use lsp_types::{
-    DiagnosticRelatedInformation, DiagnosticTag, FoldingRange, FoldingRangeParams,
-    GotoDefinitionResponse, HoverContents, InlayHint, InlayHintParams, MarkupContent, MarkupKind,
-    Range, TextDocumentIdentifier,
+    CompletionList, CompletionParams, CompletionResponse, Contents, Definition, DefinitionParams,
+    DefinitionResponse, Diagnostic, DiagnosticRelatedInformation, DiagnosticSeverity,
+    DiagnosticTag, DocumentDiagnosticParams, DocumentDiagnosticReport, DocumentFormattingParams,
+    FoldingRange, FoldingRangeParams, FullDocumentDiagnosticReport, Hover, InlayHint,
+    InlayHintParams, MarkupContent, MarkupKind, Range, RelatedFullDocumentDiagnosticReport,
+    SignatureHelp, SignatureHelpParams, TextDocumentIdentifier, TextEdit,
 };
-use vfs::FileId;
+use stdx::format_to;
+use vfs::{AbsPath, FileId};
 
 use crate::{
     Result,
@@ -19,16 +24,71 @@ use crate::{
     global_state::GlobalStateSnapshot,
     lsp::{
         self,
-        extensions::{self, PositionOrRange},
+        extensions::{
+            self, PositionOrRange, ViewModuleGraphParameters, ViewPackageGraphParameters,
+        },
         from_proto, to_proto,
     },
     try_default,
 };
 
+pub(crate) fn handle_view_module_graph(
+    snap: GlobalStateSnapshot,
+    parameters: ViewModuleGraphParameters,
+) -> anyhow::Result<Option<String>> {
+    let _p = tracing::info_span!("handle_view_module_graph").entered();
+    let file_id = try_default!(from_proto::file_id(&snap, &parameters.text_document.uri)?);
+    let dot = snap.analysis.view_module_graph(file_id)?;
+    Ok(dot)
+}
+
+pub(crate) fn handle_view_package_graph(
+    snap: GlobalStateSnapshot,
+    parameters: ViewPackageGraphParameters,
+) -> anyhow::Result<String> {
+    let _p = tracing::info_span!("handle_view_package_graph").entered();
+    let dot = snap.analysis.view_package_graph(parameters.full)?;
+    Ok(dot)
+}
+
+pub(crate) fn handle_analyzer_status(
+    snap: GlobalStateSnapshot,
+    parameters: lsp::extensions::AnalyzerStatusParameters,
+) -> anyhow::Result<String> {
+    let _p = tracing::info_span!("handle_analyzer_status").entered();
+
+    let mut buffer = String::new();
+
+    let mut file_id = None;
+    if let Some(tdi) = parameters.text_document {
+        match from_proto::file_id(&snap, &tdi.uri) {
+            Ok(Some(found_file_id)) => file_id = Some(found_file_id),
+            Ok(None) => {},
+            Err(_) => format_to!(buffer, "file {} not found in vfs", tdi.uri),
+        }
+    }
+
+    buffer.push_str("\nAnalysis:\n");
+    buffer.push_str(
+        &snap
+            .analysis
+            .status(file_id)
+            .unwrap_or_else(|_| "Analysis retrieval was cancelled".to_owned()),
+    );
+
+    buffer.push_str("\nVersion: \n");
+    format_to!(buffer, "{}", crate::version());
+
+    buffer.push_str("\nConfiguration: \n");
+    format_to!(buffer, "{:#?}", snap.config);
+
+    Ok(buffer)
+}
+
 pub(crate) fn handle_goto_definition(
     snap: GlobalStateSnapshot,
-    parameters: lsp_types::GotoDefinitionParams,
-) -> anyhow::Result<Option<lsp_types::GotoDefinitionResponse>> {
+    parameters: DefinitionParams,
+) -> anyhow::Result<Option<DefinitionResponse>> {
     let _p = tracing::info_span!("handle_goto_definition").entered();
     let position = try_default!(from_proto::file_position(
         &snap,
@@ -39,24 +99,26 @@ pub(crate) fn handle_goto_definition(
     };
     let source = FileRange {
         file_id: position.file_id,
-        range: navigation_info.focus_or_full_range(),
+        range: navigation_info.range,
     };
-    let location = to_proto::location(&snap, source)?;
-    Ok(Some(GotoDefinitionResponse::Scalar(location)))
-    // let result = to_proto::goto_definition_response(&snap, Some(source), vec![navigation_info])?;
-    // Ok(Some(result))
+    let result =
+        to_proto::goto_definition_response(&snap, Some(source), vec![navigation_info.info])?;
+    Ok(Some(result))
 }
 
 pub(crate) fn handle_completion(
     snap: GlobalStateSnapshot,
-    lsp_types::CompletionParams {
-        text_document_position,
+    CompletionParams {
+        text_document_position_params,
         context,
         ..
-    }: lsp_types::CompletionParams,
-) -> anyhow::Result<Option<lsp_types::CompletionResponse>> {
+    }: CompletionParams,
+) -> anyhow::Result<Option<CompletionResponse>> {
     let _p = tracing::info_span!("handle_completion").entered();
-    let mut position = try_default!(from_proto::file_position(&snap, &text_document_position)?);
+    let mut position = try_default!(from_proto::file_position(
+        &snap,
+        &text_document_position_params
+    )?);
     let line_index = snap.file_line_index(position.file_id)?;
     let completion_trigger_character = context
         .and_then(|context| context.trigger_character)
@@ -78,14 +140,16 @@ pub(crate) fn handle_completion(
         completion_config.fields_to_resolve,
         &line_index,
         snap.file_version(position.file_id),
-        &text_document_position,
+        &text_document_position_params,
         completion_trigger_character,
         items,
     );
 
-    let completion_list = lsp_types::CompletionList {
+    let completion_list = CompletionList {
         is_incomplete: true,
         items,
+        item_defaults: None,
+        apply_kind: None,
     };
     Ok(Some(completion_list.into()))
 }
@@ -109,8 +173,8 @@ pub(crate) fn handle_folding_range(
 
 pub(crate) fn handle_formatting(
     snap: GlobalStateSnapshot,
-    parameters: lsp_types::DocumentFormattingParams,
-) -> Result<Option<Vec<lsp_types::TextEdit>>> {
+    parameters: DocumentFormattingParams,
+) -> Result<Option<Vec<TextEdit>>> {
     let Some(file_id) = from_proto::file_id(&snap, &parameters.text_document.uri)? else {
         return Ok(None);
     };
@@ -197,8 +261,8 @@ pub(crate) fn handle_hover(
     let range = to_proto::range(&line_index, info.range);
     let markup_kind = hover.format;
     let hover = lsp::extensions::HoverResult {
-        hover: lsp_types::Hover {
-            contents: HoverContents::Markup(MarkupContent {
+        hover: Hover {
+            contents: Contents::MarkupContent(MarkupContent {
                 kind: match markup_kind {
                     ide::HoverDocFormat::Markdown => MarkupKind::Markdown,
                     ide::HoverDocFormat::PlainText => MarkupKind::PlainText,
@@ -219,8 +283,8 @@ pub(crate) fn handle_hover(
 
 pub(crate) fn handle_signature_help(
     snap: GlobalStateSnapshot,
-    parameters: lsp_types::SignatureHelpParams,
-) -> Result<Option<lsp_types::SignatureHelp>> {
+    parameters: SignatureHelpParams,
+) -> Result<Option<SignatureHelp>> {
     let _p = tracing::info_span!("handle_signature_help").entered();
     let position = try_default!(from_proto::file_position(
         &snap,
@@ -283,35 +347,24 @@ pub(crate) fn view_syntax_tree(
     Ok(string)
 }
 
-pub(crate) fn debug_command(
-    snap: GlobalStateSnapshot,
-    parameters: extensions::DebugCommandParameters,
-) -> Result<()> {
-    let Some(position) = from_proto::file_position(&snap, &parameters.position)? else {
-        return Ok(());
-    };
-    snap.analysis.debug_command(position)?;
-    Ok(())
-}
-
 // This is the “empty” fallback if the VFS lookup fails.
 // It returns an “Unchanged” report with the same `previousResultId` the client sent.
-pub(crate) fn empty_diagnostic_report() -> lsp_types::DocumentDiagnosticReportResult {
-    lsp_types::DocumentDiagnosticReportResult::Report(lsp_types::DocumentDiagnosticReport::Full(
-        lsp_types::RelatedFullDocumentDiagnosticReport {
+pub(crate) fn empty_diagnostic_report() -> DocumentDiagnosticReport {
+    DocumentDiagnosticReport::RelatedFullDocumentDiagnosticReport(
+        RelatedFullDocumentDiagnosticReport {
             related_documents: None,
-            full_document_diagnostic_report: lsp_types::FullDocumentDiagnosticReport {
+            full_document_diagnostic_report: FullDocumentDiagnosticReport {
                 result_id: Some("wgsl-analyzer".to_owned()),
                 items: vec![],
             },
         },
-    ))
+    )
 }
 
 pub(crate) fn handle_document_diagnostics(
     snap: GlobalStateSnapshot,
-    parameters: lsp_types::DocumentDiagnosticParams,
-) -> anyhow::Result<lsp_types::DocumentDiagnosticReportResult> {
+    parameters: DocumentDiagnosticParams,
+) -> anyhow::Result<DocumentDiagnosticReport> {
     let Some(file_id) = from_proto::file_id(&snap, &parameters.text_document.uri)? else {
         return Ok(empty_diagnostic_report());
     };
@@ -324,19 +377,21 @@ pub(crate) fn handle_document_diagnostics(
 
     let items = publish_diagnostics(&snap, &config, file_id)?;
 
-    Ok(lsp_types::DocumentDiagnosticReportResult::Report(
-        lsp_types::DocumentDiagnosticReport::Full(lsp_types::RelatedFullDocumentDiagnosticReport {
-            related_documents: None,
-            full_document_diagnostic_report: lsp_types::FullDocumentDiagnosticReport {
-                result_id: Some(
-                    parameters
-                        .previous_result_id
-                        .unwrap_or_else(|| "wgsl-analyzer".to_owned()),
-                ),
-                items,
+    Ok(
+        DocumentDiagnosticReport::RelatedFullDocumentDiagnosticReport(
+            RelatedFullDocumentDiagnosticReport {
+                related_documents: None,
+                full_document_diagnostic_report: FullDocumentDiagnosticReport {
+                    result_id: Some(
+                        parameters
+                            .previous_result_id
+                            .unwrap_or_else(|| "wgsl-analyzer".to_owned()),
+                    ),
+                    items,
+                },
             },
-        }),
-    ))
+        ),
+    )
 }
 
 pub(crate) fn handle_inlay_hints(
@@ -378,7 +433,7 @@ pub(crate) fn publish_diagnostics(
     snapshot: &GlobalStateSnapshot,
     config: &DiagnosticsConfig,
     file_id: FileId,
-) -> Result<Vec<lsp_types::Diagnostic>> {
+) -> Result<Vec<Diagnostic>> {
     let line_index = snapshot.file_line_index(file_id)?;
     let diagnostics = snapshot.analysis.diagnostics(config, file_id)?;
 
@@ -391,13 +446,6 @@ pub(crate) fn publish_diagnostics(
             Ok(lsp_diagnostic)
         })
         .collect()
-}
-
-const fn diagnostic_severity(severity: Severity) -> lsp_types::DiagnosticSeverity {
-    match severity {
-        Severity::Error => lsp_types::DiagnosticSeverity::ERROR,
-        Severity::WeakWarning => lsp_types::DiagnosticSeverity::HINT,
-    }
 }
 
 fn prepare_hover_actions(

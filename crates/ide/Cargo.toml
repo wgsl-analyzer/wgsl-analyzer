@@ -11,26 +11,25 @@ license.workspace = true
 
 # tombi: format.rules.table-keys-order.disabled = true
 [dependencies]
+dot.workspace = true
 itertools.workspace = true
 line-index.workspace = true
-naga27 = { package = "naga", version = "27.0.3", features = ["wgsl-in"] }
-naga28 = { package = "naga", version = "28.0.0", features = ["wgsl-in"] }
-nagamain = { package = "naga", git = "https://github.com/gfx-rs/wgpu", rev = "2b8b5f7cdc1872a412371fc458b100de4d88068d", version = "28.0.0", features = [
-	"wgsl-in",
-] }
 rowan.workspace = true
 rustc-hash.workspace = true
 salsa.workspace = true
 smallvec.workspace = true
 smol_str.workspace = true
+tracing.workspace = true
 triomphe.workspace = true
-# local deps
+# local dependencies
 ide-completion.workspace = true
+ide-diagnostics.workspace = true
 ide-db.workspace = true
 syntax.workspace = true
 # span.workspace = true
 vfs.workspace = true
 wgsl-formatter.workspace = true
+stdx.workspace = true
 # ide should depend only on the top-level `hir` package. if you need
 # something from some `hir-xxx` subpackage, reexport the API via `hir`.
 # todo: remove this dependency by re-exporting the API via `hir`
@@ -40,7 +39,6 @@ hir.workspace = true
 hir-def.workspace = true
 # todo: remove this dependency by re-exporting the API via `hir`
 hir-ty.workspace = true
-tracing.workspace = true
 
 [dev-dependencies]
 expect-test.workspace = true

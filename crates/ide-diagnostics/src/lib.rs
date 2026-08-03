@@ -1,23 +1,81 @@
-use std::{
-    error,
-    fmt::Display,
-    ops::{self, Range},
-};
+mod naga;
+#[cfg(test)]
+mod tests;
+mod tint;
 
-use base_db::{EditionedFileId, FileRange, TextRange, TextSize};
+use std::{error, fmt::Display};
+
+use base_db::{EditionedFileId, FileRange, TextRange};
 use hir::{
     HirDatabase, Semantics,
-    diagnostics::{AnyDiagnostic, DiagnosticsConfig, NagaVersion},
+    diagnostics::{AnyDiagnostic, Severity},
 };
 use hir_def::original_file_range;
 use hir_ty::ty::{
     self,
     pretty::{pretty_fn, pretty_type},
 };
+use ide_db::RootDatabase;
 use itertools::Itertools as _;
+use paths::{AbsPathBuf, Utf8PathBuf};
 use rowan::NodeOrToken;
-use syntax::AstNode as _;
+use syntax::{AstNode as _, Edition};
 use vfs::FileId;
+
+use crate::{
+    naga::{Naga27, Naga28, Naga29, NagaMain, naga_diagnostics},
+    tint::tint_diagnostics,
+};
+
+#[derive(Clone, Copy, Debug, Default)]
+pub enum NagaVersion {
+    Naga27,
+    Naga28,
+    #[default]
+    Naga29,
+    NagaMain,
+}
+
+#[derive(Clone, Debug)]
+pub struct DiagnosticsConfig {
+    /// Whether native diagnostics are enabled.
+    pub enabled: bool,
+    pub semantic_enabled: bool,
+    pub parse_enabled: bool,
+    pub naga_parsing_enabled: bool,
+    pub naga_validation_enabled: bool,
+    pub naga_version: NagaVersion,
+    pub tint_enabled: bool,
+    pub tint_path: Option<Utf8PathBuf>,
+}
+
+impl DiagnosticsConfig {
+    const NONE: Self = Self {
+        enabled: false,
+        semantic_enabled: false,
+        parse_enabled: false,
+        naga_parsing_enabled: false,
+        naga_validation_enabled: false,
+        naga_version: NagaVersion::Naga29, // no const default :(
+        tint_enabled: false,
+        tint_path: None,
+    };
+}
+
+impl Default for DiagnosticsConfig {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            semantic_enabled: true,
+            parse_enabled: true,
+            naga_parsing_enabled: true,
+            naga_validation_enabled: true,
+            naga_version: NagaVersion::default(),
+            tint_enabled: false,
+            tint_path: None,
+        }
+    }
+}
 
 pub struct Diagnostic {
     pub code: DiagnosticCode,
@@ -34,18 +92,20 @@ pub enum DiagnosticSource {
     #[default]
     WgslAnalyzer,
     Naga,
+    Tint,
     WeslRs,
 }
 
 impl Display for DiagnosticSource {
     fn fmt(
         &self,
-        f: &mut std::fmt::Formatter<'_>,
+        formatter: &mut std::fmt::Formatter<'_>,
     ) -> std::fmt::Result {
         match self {
-            Self::WgslAnalyzer => write!(f, "wgsl-analyzer"),
-            Self::Naga => write!(f, "naga"),
-            Self::WeslRs => write!(f, "wesl-rs"),
+            Self::WgslAnalyzer => write!(formatter, "wgsl-analyzer"),
+            Self::Naga => write!(formatter, "naga"),
+            Self::Tint => write!(formatter, "tint"),
+            Self::WeslRs => write!(formatter, "wesl-rs"),
         }
     }
 }
@@ -62,12 +122,6 @@ impl DiagnosticCode {
     pub const fn as_str(&self) -> &'static str {
         self.0
     }
-}
-
-#[derive(Clone, Copy)]
-pub enum Severity {
-    Error,
-    WeakWarning,
 }
 
 impl Diagnostic {
@@ -105,257 +159,43 @@ impl Diagnostic {
     }
 }
 
-trait Naga {
-    type Module;
-    type ParseError: NagaError;
-    type ValidationError: NagaError;
-
-    fn parse(source: &str) -> Result<Self::Module, Self::ParseError>;
-    fn validate(module: &Self::Module) -> Result<(), Self::ValidationError>;
-}
-
-trait NagaError: error::Error {
-    fn spans(&self) -> Box<dyn Iterator<Item = (Option<Range<usize>>, String)> + '_>;
-    fn location(&self) -> Option<Range<usize>>;
-}
-
-struct Naga27;
-impl Naga for Naga27 {
-    type Module = naga27::Module;
-    type ParseError = naga27::front::wgsl::ParseError;
-    type ValidationError = naga27::WithSpan<naga27::valid::ValidationError>;
-
-    fn parse(source: &str) -> Result<Self::Module, Self::ParseError> {
-        naga27::front::wgsl::parse_str(source)
-    }
-
-    fn validate(module: &Self::Module) -> Result<(), Self::ValidationError> {
-        let flags = naga27::valid::ValidationFlags::all();
-        let capabilities = naga27::valid::Capabilities::all();
-        let mut validator = naga27::valid::Validator::new(flags, capabilities);
-        validator.validate(module).map(drop)
-    }
-}
-
-impl NagaError for naga27::front::wgsl::ParseError {
-    fn spans(&self) -> Box<dyn Iterator<Item = (Option<Range<usize>>, String)> + '_> {
-        Box::new(
-            self.labels()
-                .map(|(span, label)| (span.to_range(), label.to_owned())),
-        )
-    }
-
-    fn location(&self) -> Option<Range<usize>> {
-        let (span, _) = self.labels().next()?;
-        span.to_range()
-    }
-}
-
-impl NagaError for naga27::WithSpan<naga27::valid::ValidationError> {
-    fn spans(&self) -> Box<dyn Iterator<Item = (Option<Range<usize>>, String)> + '_> {
-        Box::new(
-            self.spans()
-                .map(move |(span, label)| (span.to_range(), label.clone())),
-        )
-    }
-
-    fn location(&self) -> Option<Range<usize>> {
-        self.spans().next().and_then(|(span, _)| span.to_range())
-    }
-}
-
-struct Naga28;
-impl Naga for Naga28 {
-    type Module = naga28::Module;
-    type ParseError = naga28::front::wgsl::ParseError;
-    type ValidationError = naga28::WithSpan<naga28::valid::ValidationError>;
-
-    fn parse(source: &str) -> Result<Self::Module, Self::ParseError> {
-        naga28::front::wgsl::parse_str(source)
-    }
-
-    fn validate(module: &Self::Module) -> Result<(), Self::ValidationError> {
-        let flags = naga28::valid::ValidationFlags::all();
-        let capabilities = naga28::valid::Capabilities::all();
-        let mut validator = naga28::valid::Validator::new(flags, capabilities);
-        validator.validate(module).map(drop)
-    }
-}
-
-impl NagaError for naga28::front::wgsl::ParseError {
-    fn spans(&self) -> Box<dyn Iterator<Item = (Option<Range<usize>>, String)> + '_> {
-        Box::new(
-            self.labels()
-                .map(|(span, label)| (span.to_range(), label.to_owned())),
-        )
-    }
-
-    fn location(&self) -> Option<Range<usize>> {
-        let (span, _) = self.labels().next()?;
-        span.to_range()
-    }
-}
-
-impl NagaError for naga28::WithSpan<naga28::valid::ValidationError> {
-    fn spans(&self) -> Box<dyn Iterator<Item = (Option<Range<usize>>, String)> + '_> {
-        Box::new(
-            self.spans()
-                .map(move |(span, label)| (span.to_range(), label.clone())),
-        )
-    }
-
-    fn location(&self) -> Option<Range<usize>> {
-        self.spans().next().and_then(|(span, _)| span.to_range())
-    }
-}
-
-struct NagaMain;
-impl Naga for NagaMain {
-    type Module = nagamain::Module;
-    type ParseError = nagamain::front::wgsl::ParseError;
-    type ValidationError = nagamain::WithSpan<nagamain::valid::ValidationError>;
-
-    fn parse(source: &str) -> Result<Self::Module, Self::ParseError> {
-        nagamain::front::wgsl::parse_str(source)
-    }
-
-    fn validate(module: &Self::Module) -> Result<(), Self::ValidationError> {
-        let flags = nagamain::valid::ValidationFlags::all();
-        let capabilities = nagamain::valid::Capabilities::all();
-        let mut validator = nagamain::valid::Validator::new(flags, capabilities);
-        validator.validate(module).map(drop)
-    }
-}
-
-impl NagaError for nagamain::front::wgsl::ParseError {
-    fn spans(&self) -> Box<dyn Iterator<Item = (Option<Range<usize>>, String)> + '_> {
-        Box::new(
-            self.labels()
-                .map(|(span, label)| (span.to_range(), label.to_owned())),
-        )
-    }
-
-    fn location(&self) -> Option<Range<usize>> {
-        let (span, _) = self.labels().next()?;
-        span.to_range()
-    }
-}
-
-impl NagaError for nagamain::WithSpan<nagamain::valid::ValidationError> {
-    fn spans(&self) -> Box<dyn Iterator<Item = (Option<Range<usize>>, String)> + '_> {
-        Box::new(
-            self.spans()
-                .map(move |(span, label)| (span.to_range(), label.clone())),
-        )
-    }
-
-    fn location(&self) -> Option<Range<usize>> {
-        self.spans().next().and_then(|(span, _)| span.to_range())
-    }
-}
-
-fn emit<Error: NagaError>(
-    database: &dyn HirDatabase,
-    error: &Error,
-    file_id: EditionedFileId,
-    full_range: TextRange,
-    accumulator: &mut Vec<AnyDiagnostic>,
-) {
-    let message = error_message_cause_chain(&error);
-    let original_range = |range: ops::Range<usize>| {
-        TextRange::new(
-            TextSize::from(u32::try_from(range.start).expect("indexes are small numbers")),
-            TextSize::from(u32::try_from(range.end).expect("indexes are small numbers")),
-        )
-    };
-    let location = error.location().map_or(full_range, original_range);
-
-    let spans = error.spans().filter_map(|(span, label)| {
-        let range = original_range(span?);
-        Some((range, label))
-    });
-
-    let related: Vec<_> = spans
-        .map(|(range, message)| {
-            (
-                message,
-                FileRange {
-                    range,
-                    file_id: file_id.file_id(database),
-                },
-            )
-        })
-        .collect();
-
-    accumulator.push(AnyDiagnostic::NagaValidationError {
-        file_id,
-        range: location,
-        message,
-        related,
-    });
-}
-
-fn naga_diagnostics<N: Naga>(
-    database: &dyn HirDatabase,
-    file_id: EditionedFileId,
-    config: &DiagnosticsConfig,
-    accumulator: &mut Vec<AnyDiagnostic>,
-) {
-    let source: &str = database.file_text(file_id.file_id(database)).text(database);
-    let full_range = TextRange::up_to(TextSize::of(source));
-
-    match N::parse(source) {
-        Ok(module) => {
-            if !config.naga_validation_errors {
-                return;
-            }
-            if let Err(error) = N::validate(&module) {
-                emit(database, &error, file_id, full_range, accumulator);
-            }
-        },
-        Err(error) => {
-            if !config.naga_parsing_errors {
-                return;
-            }
-            emit(database, &error, file_id, full_range, accumulator);
-        },
-    }
-}
-
 /// # Panics
 ///
 /// Panics if the file is not found in the database.
 #[expect(clippy::too_many_lines, reason = "TODO")]
 pub fn diagnostics(
-    database: &dyn HirDatabase,
+    database: &RootDatabase,
     config: &DiagnosticsConfig,
     file_id: FileId,
 ) -> Vec<Diagnostic> {
     let file_id = EditionedFileId::from_file(database, file_id);
-    let parse = database.parse(file_id);
+    let parse = file_id.parse(database);
 
     let mut diagnostics = Vec::new();
 
-    diagnostics.extend(
-        parse
-            .errors()
-            .iter()
-            .map(|error| AnyDiagnostic::ParseError {
-                message: error.message.clone(),
-                range: error.range,
-                file_id,
-            }),
-    );
+    if config.parse_enabled {
+        diagnostics.extend(
+            parse
+                .errors()
+                .iter()
+                .map(|error| AnyDiagnostic::ParseError {
+                    message: error.message.clone(),
+                    range: error.range,
+                    file_id,
+                }),
+        );
+    }
 
     let semantics = Semantics::new(database);
 
-    if config.type_errors {
+    if config.semantic_enabled {
         semantics
             .module(file_id)
-            .diagnostics(database, config, &mut diagnostics);
+            .semantic_diagnostics(database, &mut diagnostics);
     }
 
-    if config.naga_parsing_errors || config.naga_validation_errors {
+    let edition = file_id.edition(database);
+    if edition == Edition::Wgsl && (config.naga_parsing_enabled || config.naga_validation_enabled) {
         match &config.naga_version {
             NagaVersion::Naga27 => {
                 naga_diagnostics::<Naga27>(database, file_id, config, &mut diagnostics);
@@ -363,17 +203,27 @@ pub fn diagnostics(
             NagaVersion::Naga28 => {
                 naga_diagnostics::<Naga28>(database, file_id, config, &mut diagnostics);
             },
+            NagaVersion::Naga29 => {
+                naga_diagnostics::<Naga29>(database, file_id, config, &mut diagnostics);
+            },
             NagaVersion::NagaMain => {
                 naga_diagnostics::<NagaMain>(database, file_id, config, &mut diagnostics);
             },
         }
     }
 
+    if edition == Edition::Wgsl && config.tint_enabled {
+        // TODO: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/998
+        // Clean this up by turning external tool integrations into flycheck.
+        // This "." is a hack to avoid adding a working_dir to the interface of ide-diagnostics.
+        tint_diagnostics(database, file_id, config, ".", &mut diagnostics);
+    }
+
     diagnostics
         .into_iter()
         .map(|diagnostic| {
             let file_id = diagnostic.file_id();
-            let root = database.parse_or_resolve(file_id).syntax();
+            let root = file_id.parse(database).syntax();
             match diagnostic {
                 AnyDiagnostic::AssignmentNotAReference { left_side, actual } => {
                     let source = left_side.value.to_node(&root);
@@ -499,7 +349,7 @@ pub fn diagnostics(
                         frange.range,
                     )
                 },
-                AnyDiagnostic::DerefNotPointer { expression, actual } => {
+                AnyDiagnostic::DerefNotAPointer { expression, actual } => {
                     let source = expression.value.to_node(&root);
                     let r#type = ty::pretty::pretty_type(database, actual);
                     let frange = original_file_range(database, expression.file_id, source.syntax());
@@ -557,6 +407,17 @@ pub fn diagnostics(
                     message.source = DiagnosticSource::Naga;
                     message
                 },
+                AnyDiagnostic::TintValidationError {
+                    file_id,
+                    range,
+                    message,
+                    severity,
+                } => {
+                    let mut message = Diagnostic::new(DiagnosticCode("15"), message, range);
+                    message.severity = severity;
+                    message.source = DiagnosticSource::Tint;
+                    message
+                },
                 AnyDiagnostic::ParseError { message, range, .. } => {
                     Diagnostic::new(DiagnosticCode("16"), message, range)
                 },
@@ -602,13 +463,11 @@ pub fn diagnostics(
                     let symbol = operation.symbol();
                     let message = if sequence_permitted {
                         format!(
-                            "{symbol} sequences may only have unary operands.
-More complex operands must be this with parenthesized `()`",
+                            "{symbol} sequences may only have unary operands. More complex operands must be this with parenthesized `()`",
                         )
                     } else {
                         format!(
-                            "{symbol} expressions may only have unary operands.
-More complex operands must be this with parenthesized `()`"
+                            "{symbol} expressions may only have unary operands. More complex operands must be this with parenthesized `()`"
                         )
                     };
                     Diagnostic::new(DiagnosticCode("19"), message, frange.range)
@@ -653,9 +512,68 @@ More complex operands must be this with parenthesized `()`"
                 },
                 AnyDiagnostic::InvalidIdentifier { name, range, .. } => Diagnostic::new(
                     DiagnosticCode("24"),
-                    format!("'{}' is not a valid name for an identifier", name.as_str()),
+                    format!("`{}` is not a valid name for an identifier", name.as_str()),
                     range,
                 ),
+                AnyDiagnostic::UnresolvedImport { id, name } => {
+                    let source = id.value.to_node(&root);
+                    let frange = original_file_range(database, id.file_id, source.syntax());
+                    Diagnostic::new(
+                        DiagnosticCode("25"),
+                        format!("unresolved import `{}`", name.as_str()),
+                        frange.range,
+                    )
+                },
+                AnyDiagnostic::TooManySupers { id } => {
+                    let source = id.value.to_node(&root);
+                    let frange = original_file_range(database, id.file_id, source.syntax());
+                    Diagnostic::new(
+                        DiagnosticCode("26"),
+                        "too many leading `super` keywords".to_owned(),
+                        frange.range,
+                    )
+                },
+                AnyDiagnostic::DetachedFile { id } => {
+                    let source = id.value.to_node(&root);
+                    let frange = original_file_range(database, id.file_id, source.syntax());
+                    Diagnostic::new(
+                        DiagnosticCode("27"),
+                        "file is detached. Include it with a wesl.toml".to_owned(),
+                        frange.range,
+                    )
+                },
+                AnyDiagnostic::NameConflict {
+                    item,
+                    name: previous,
+                } => {
+                    let source = item.value.to_node(&root);
+                    let frange = original_file_range(database, item.file_id, source.syntax());
+                    Diagnostic::new(
+                        DiagnosticCode("28"),
+                        format!("Duplicate identifier `{}`", previous.as_str()),
+                        frange.range,
+                    )
+                },
+                AnyDiagnostic::StoreTypeMustBeStorable { expression, actual } => {
+                    let source = expression.value.to_node(&root);
+                    let r#type = ty::pretty::pretty_type(database, actual);
+                    let frange = original_file_range(database, expression.file_id, source.syntax());
+                    Diagnostic::new(
+                        DiagnosticCode("29"),
+                        format!("store type must be storable, found {type}"),
+                        frange.range,
+                    )
+                },
+                AnyDiagnostic::UnexpectedReturnValue { expression, actual } => {
+                    let source = expression.value.to_node(&root);
+                    let r#type = ty::pretty::pretty_type(database, actual);
+                    let frange = original_file_range(database, expression.file_id, source.syntax());
+                    Diagnostic::new(
+                        DiagnosticCode("30"),
+                        format!("unexpected return value of type `{type}` in function with no return type"),
+                        frange.range,
+                    )
+                },
             }
         })
         .collect()
@@ -675,164 +593,4 @@ fn error_message_cause_chain(error: &dyn error::Error) -> String {
     }
 
     message
-}
-
-#[cfg(test)]
-mod tests {
-    use std::fmt::Write as _;
-
-    use expect_test::{Expect, expect};
-    use hir::diagnostics::DiagnosticsConfig;
-    use itertools::Itertools;
-
-    use crate::{diagnostics::Diagnostic, fixture::single_file_db};
-
-    #[expect(clippy::needless_pass_by_value, reason = "Matches expect! macro")]
-    #[expect(clippy::use_debug, reason = "useful in tests")]
-    fn check_diagnostics(
-        source: &str,
-        expect: Expect,
-    ) {
-        let (analysis, file_id) = single_file_db(source);
-        let config = DiagnosticsConfig {
-            enabled: true,
-            type_errors: true,
-            naga_parsing_errors: false,
-            naga_validation_errors: false,
-            ..Default::default()
-        };
-        let diagnostics = analysis.diagnostics(&config, file_id).unwrap();
-        let mut actual = String::new();
-        for Diagnostic {
-            code,
-            message,
-            range,
-            severity,
-            ..
-        } in diagnostics
-        {
-            let severity_text = match severity {
-                crate::diagnostics::Severity::Error => "Error",
-                crate::diagnostics::Severity::WeakWarning => "Warning",
-            };
-            writeln!(
-                actual,
-                "{range:?} {severity_text} {}: {message}",
-                code.as_str()
-            );
-        }
-
-        expect.assert_eq(&actual);
-    }
-
-    #[test]
-    fn global_var_function_address_space_error() {
-        check_diagnostics(
-            "var<function> not_allowed_at_module_level: u32;",
-            expect![[r#"
-                0..3 Error 12: address space is only valid in function-scope
-                4..12 Error 21: unexpected template argument
-            "#]],
-        );
-    }
-
-    #[test]
-    fn invalid_body() {
-        check_diagnostics(
-            "fn f() { let x: u32 = 1.0; }",
-            expect![[r#"
-                22..25 Error 2: expected u32, found float
-            "#]],
-        );
-    }
-
-    #[test]
-    fn no_host_shareable_error_for_undefined_struct() {
-        // https://github.com/wgsl-analyzer/wgsl-analyzer/issues/722
-        // When referencing an undefined struct, we should NOT get a spurious
-        // "not host-shareable" diagnostic — only the "unresolved" error.
-        check_diagnostics(
-            "
-@group(0) @binding(0)
-var<storage> lines: array<LineSegment>;
-",
-            expect![[r#"
-                48..59 Error 14: `LineSegment` not found in scope
-            "#]],
-        );
-    }
-
-    #[test]
-    fn reserved_identifier_double_underscore() {
-        // https://github.com/wgsl-analyzer/wgsl-analyzer/issues/681
-        // Identifiers starting with "__" are reserved by the WGSL spec.
-        check_diagnostics(
-            "
-fn __my_func() {}
-",
-            expect![[r#"
-                3..12 Error 24: '__my_func' is not a valid name for an identifier
-            "#]],
-        );
-    }
-
-    #[test]
-    fn non_reserved_identifier_single_underscore() {
-        // A single underscore prefix should NOT trigger the reserved identifier diagnostic.
-        check_diagnostics(
-            "
-fn _my_func() {}
-",
-            expect![""],
-        );
-    }
-
-    #[test]
-    fn incomplete_variable_error() {
-        // https://github.com/wgsl-analyzer/wgsl-analyzer/issues/825
-        check_diagnostics(
-            "
-@group(0) @binding(0)
-var<storage, read> a: array<f32>;
-
-@group(0) @binding(1) // line 4
-var<storage
-",
-            expect![[r#"
-                92..93 Error 16: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
-                101..101 Error 16: invalid syntax, expected one of: ':', '=', ';'
-                22..25 Error 12: address space is only valid for handle or texture types
-                26..33 Error 21: unexpected template argument
-                26..33 Error 21: unexpected template argument
-                89..92 Error 12: address space is only valid for handle or texture types
-            "#]],
-        );
-    }
-
-    #[test]
-    fn invalid_bitcast() {
-        // TODO: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/908
-        check_diagnostics(
-            "
-fn foo() { let bar: f32 = bitcast<f32>(vec4u(1, 2, 3, 4)); }
-",
-            expect![""],
-        );
-    }
-
-    #[test]
-    fn invalid_identifier_underscore() {
-        // An identifier must not be _ (a single underscore, U+005F).
-        // https://www.w3.org/TR/WGSL/#identifiers
-        check_diagnostics(
-            "
-fn _() {}
-fn foo() { let _ = 1; }
-",
-            expect![[r#"
-                3..4 Error 16: invalid syntax, expected: <identifier>
-                25..26 Error 16: invalid syntax, expected: <identifier>
-            "#]],
-        );
-    }
 }

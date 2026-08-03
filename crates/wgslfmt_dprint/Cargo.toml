@@ -15,13 +15,12 @@ ignored = ["serde", "serde_json"]
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-anyhow.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 wgsl-formatter = { workspace = true, features = ["serde"] }
 
 [dependencies.dprint-core]
-version = "0.67"
+version = "0.68"
 default-features = false
 features = ["wasm"]
 

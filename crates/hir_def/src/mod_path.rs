@@ -1,22 +1,25 @@
 //! A lowering for `import`-paths (more generally, paths without angle-bracketed segments).
 
-use std::{
-    fmt::{self, Display as _},
-    iter,
-};
+use std::{fmt, iter};
 
 use smallvec::SmallVec;
-use syntax::{
-    AstNode,
-    ast::{self, ImportRelative},
-};
+use syntax::ast::{self, ImportRelative};
 
-use crate::{database::DefDatabase, item_tree::Name};
+use crate::item_tree::Name;
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ModPath {
     kind: PathKind,
     segments: SmallVec<[Name; 1]>,
+}
+
+impl fmt::Debug for ModPath {
+    fn fmt(
+        &self,
+        f: &mut fmt::Formatter<'_>,
+    ) -> fmt::Result {
+        f.debug_tuple("ModPath").field(&self.to_string()).finish()
+    }
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -51,10 +54,13 @@ impl ModPath {
         convert_path(path)
     }
 
-    pub fn from_segments<Segments: IntoIterator<Item = Name>>(
+    pub fn from_segments<Segments>(
         kind: PathKind,
         segments: Segments,
-    ) -> Self {
+    ) -> Self
+    where
+        Segments: IntoIterator<Item = Name>,
+    {
         let mut segments: SmallVec<_> = segments.into_iter().collect();
         segments.shrink_to_fit();
         Self { kind, segments }
@@ -72,6 +78,13 @@ impl ModPath {
     #[must_use]
     pub const fn kind(&self) -> PathKind {
         self.kind
+    }
+
+    pub const fn set_kind(
+        &mut self,
+        kind: PathKind,
+    ) {
+        self.kind = kind;
     }
 
     #[must_use]
@@ -121,11 +134,6 @@ impl ModPath {
     }
 
     #[must_use]
-    pub fn is_ident(&self) -> bool {
-        self.as_ident().is_some()
-    }
-
-    #[must_use]
     pub fn is_self(&self) -> bool {
         self.kind == PathKind::SELF && self.segments.is_empty()
     }
@@ -142,13 +150,23 @@ impl ModPath {
             _ => None,
         }
     }
+
+    pub fn display_iter(&self) -> impl Iterator<Item = &str> {
+        ModPathDisplayIter {
+            kind: self.kind,
+            segments: &self.segments,
+            segment_index: 0,
+        }
+    }
 }
 
 impl Extend<Name> for ModPath {
-    fn extend<T: IntoIterator<Item = Name>>(
+    fn extend<T>(
         &mut self,
         iter: T,
-    ) {
+    ) where
+        T: IntoIterator<Item = Name>,
+    {
         self.segments.extend(iter);
     }
 }
@@ -158,7 +176,16 @@ impl fmt::Display for ModPath {
         &self,
         f: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
-        display_fmt_path(self, f)
+        let mut segments = self.display_iter();
+        let Some(first_segment) = segments.next() else {
+            return Ok(());
+        };
+        f.write_str(first_segment)?;
+        for segment in segments {
+            f.write_str("::")?;
+            f.write_str(segment)?;
+        }
+        Ok(())
     }
 }
 
@@ -168,37 +195,39 @@ impl From<Name> for ModPath {
     }
 }
 
-fn display_fmt_path(
-    path: &ModPath,
-    fmt: &mut fmt::Formatter<'_>,
-) -> fmt::Result {
-    let mut first_segment = true;
-    let mut add_segment = |segment| -> fmt::Result {
-        if !first_segment {
-            fmt.write_str("::")?;
+struct ModPathDisplayIter<'path> {
+    kind: PathKind,
+    segments: &'path SmallVec<[Name; 1]>,
+    segment_index: usize,
+}
+impl<'path> Iterator for ModPathDisplayIter<'path> {
+    type Item = &'path str;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match self.kind {
+            PathKind::Plain => {
+                let name = self.segments.get(self.segment_index)?;
+                self.segment_index += 1;
+                Some(name.as_str())
+            },
+            PathKind::Super(0) => {
+                self.kind = PathKind::Plain;
+                Some("self")
+            },
+            PathKind::Super(1) => {
+                self.kind = PathKind::Plain;
+                Some("super")
+            },
+            PathKind::Super(level) => {
+                self.kind = PathKind::Super(level - 1);
+                Some("super")
+            },
+            PathKind::Package => {
+                self.kind = PathKind::Plain;
+                Some("package")
+            },
         }
-        first_segment = false;
-        fmt.write_str(segment)?;
-        Ok(())
-    };
-    match path.kind {
-        PathKind::Plain => {},
-        PathKind::SELF => add_segment("self")?,
-        PathKind::Super(levels) => {
-            for _ in 0..levels {
-                add_segment("super")?;
-            }
-        },
-        PathKind::Package => add_segment("crate")?,
     }
-    for segment in &path.segments {
-        if !first_segment {
-            fmt.write_str("::")?;
-        }
-        first_segment = false;
-        fmt::Display::fmt(segment.as_str(), fmt)?;
-    }
-    Ok(())
 }
 
 fn convert_path(path: &ast::Path) -> ModPath {

@@ -2,11 +2,12 @@
 
 use std::{error, fmt, str};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(u8)]
 #[non_exhaustive]
 pub enum Edition {
     // The syntax context stuff needs the discriminants to start from 0 and be consecutive.
+    #[default]
     Wgsl = 0,
     Wesl2025Unstable,
 }
@@ -38,6 +39,16 @@ impl Edition {
     pub fn iter() -> impl Iterator<Item = Self> {
         [Self::Wgsl, Self::Wesl2025Unstable].iter().copied()
     }
+
+    /// Guesses the edition based on the file extension.
+    #[must_use]
+    pub fn from_file_extension(extension: &str) -> Option<Self> {
+        match extension {
+            "wesl" => Some(Self::LATEST),
+            "wgsl" => Some(Self::Wgsl),
+            _ => None,
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -62,8 +73,9 @@ impl str::FromStr for Edition {
     fn from_str(string: &str) -> Result<Self, Self::Err> {
         // https://github.com/wgsl-tooling-wg/wesl-rs/tree/main/crates/wesl/src/wesl_toml.rs#L78
         match string {
-            "WGSL" => Ok(Self::Wgsl),
             "2026_pre" => Ok(Self::Wesl2025Unstable),
+            // "WGSL" is not an edition that can be selected.
+            // Therefore it is not included here.
             _ => Err(ParseEditionError {
                 invalid_input: string.to_owned(),
             }),
@@ -80,5 +92,68 @@ impl fmt::Display for Edition {
             Self::Wgsl => "WGSL",
             Self::Wesl2025Unstable => "WESL 2025 (Unstable)",
         })
+    }
+}
+
+#[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+pub struct ExtensionsConfig {
+    // == Enable extensions
+    // base WGSL
+    pub f16: bool,
+    pub clip_distances: bool,
+    pub dual_source_blending: bool,
+    pub subgroups: bool,
+    pub primitive_index: bool,
+    pub subgroup_size_control: bool,
+    // naga
+    pub shader_int64: bool,
+    pub early_depth_test: bool,
+
+    // == Language extensions
+    pub readonly_and_readwrite_storage_textures: bool,
+    pub packed_4x8_integer_dot_product: bool,
+    pub unrestricted_pointer_parameters: bool,
+    pub pointer_composite_access: bool,
+    pub uniform_buffer_standard_layout: bool,
+    pub subgroup_id: bool,
+    pub subgroup_uniformity: bool,
+    pub texture_and_sampler_let: bool,
+    pub texture_formats_tier1: bool,
+    pub linear_indexing: bool,
+    pub immediate_address_space: bool,
+    pub buffer_view: bool,
+}
+
+impl ExtensionsConfig {
+    #[must_use]
+    pub fn none() -> Self {
+        Self::default()
+    }
+
+    #[must_use]
+    pub const fn all() -> Self {
+        Self {
+            f16: true,
+            clip_distances: true,
+            dual_source_blending: true,
+            subgroups: true,
+            primitive_index: true,
+            subgroup_size_control: true,
+            shader_int64: true,
+            early_depth_test: true,
+
+            readonly_and_readwrite_storage_textures: true,
+            packed_4x8_integer_dot_product: true,
+            unrestricted_pointer_parameters: true,
+            pointer_composite_access: true,
+            uniform_buffer_standard_layout: true,
+            subgroup_id: true,
+            subgroup_uniformity: true,
+            texture_and_sampler_let: true,
+            texture_formats_tier1: true,
+            linear_indexing: true,
+            immediate_address_space: true,
+            buffer_view: true,
+        }
     }
 }

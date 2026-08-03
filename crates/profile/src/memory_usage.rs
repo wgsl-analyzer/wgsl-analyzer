@@ -3,8 +3,6 @@
 //! Measures the total size of all currently allocated objects.
 use std::fmt;
 
-use cfg_if::cfg_if;
-
 #[derive(Copy, Clone)]
 pub struct MemoryUsage {
     pub allocated: Bytes,
@@ -40,15 +38,17 @@ impl MemoryUsage {
     /// Panics if using jemalloc targeting msvc and advance fails.
     #[must_use]
     pub fn now() -> Self {
-        cfg_if! {
-            if #[cfg(all(feature = "jemalloc", not(target_env = "msvc")))] {
+        cfg_select! {
+            all(feature = "jemalloc", not(target_env = "msvc")) => {
                 jemalloc_ctl::epoch::advance().unwrap();
                 Self {
                     allocated: Bytes(i32::try_from(jemalloc_ctl::stats::allocated::read().unwrap()).unwrap().try_into().unwrap()),
                 }
-            } else if #[cfg(all(target_os = "linux", target_env = "gnu"))] {
+            }
+            all(target_os = "linux", target_env = "gnu") => {
                 memusage_linux()
-            } else if #[cfg(windows)] {
+            }
+            windows => {
                 // There doesn't seem to be an API for determining heap usage, so we try to
                 // approximate that by using the Commit Charge value.
 
@@ -66,7 +66,8 @@ impl MemoryUsage {
                 // SAFETY: mem_counters is initialized by GetProcessMemoryInfo.
                 let usage = unsafe { mem_counters.assume_init().PagefileUsage };
                 Self { allocated: Bytes(isize::try_from(usage).unwrap()) }
-            } else {
+            }
+            _ => {
                 Self { allocated: Bytes(0) }
             }
         }

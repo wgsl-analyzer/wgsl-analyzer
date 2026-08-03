@@ -3,8 +3,8 @@ import * as vscode from "vscode";
 import { targetToExecution } from "../../src/tasks";
 import type { Context } from ".";
 
-export async function getTests(ctx: Context) {
-	await ctx.suite("Tasks", (suite) => {
+export async function getTests(context: Context) {
+	await context.suite("Tasks", (suite) => {
 		suite.addTest("wesl targetToExecution", async () => {
 			assert.deepStrictEqual(
 				await targetToExecution({

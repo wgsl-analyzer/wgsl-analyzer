@@ -10,6 +10,8 @@
 
 [![Discord](https://img.shields.io/discord/691052431525675048.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2)](https://discord.gg/dZJ3JTbhaU)
 
+[![codecov](https://codecov.io/github/wgsl-analyzer/wgsl-analyzer/graph/badge.svg)](https://app.codecov.io/github/wgsl-analyzer/wgsl-analyzer/tree/main)
+
 wgsl-analyzer is a [language server][ls] plugin for the [WebGPU Shading language][WGSL] (WGSL).
 It also supports [WGSL Extended Shader Language][WESL] (WESL).
 Note: (support for WESL is experimental and in-progress)

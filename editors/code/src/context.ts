@@ -4,22 +4,16 @@ import * as vscode from "vscode";
 import type * as lc from "vscode-languageclient/node";
 import { bootstrap } from "./bootstrap";
 import { createClient } from "./client";
-import {
-	Config,
-	DiagnosticsConfig,
-	InlayHintsConfig,
-	prepareVSCodeConfig,
-	TraceConfig,
-} from "./config";
+import { Config, prepareVSCodeConfig } from "./config";
 import type { ServerStatusParameters } from "./lsp_ext";
 import * as wa from "./lsp_ext";
 import type { WgslAnalyzerExtensionApi } from "./main";
 import { PersistentState } from "./persistent_state";
 import { type SyntaxElement, SyntaxTreeProvider } from "./syntax_tree_provider";
 import {
-	expectNotUndefined,
 	isWeslDocument,
 	isWeslEditor,
+	isWeslTomlEditor,
 	LazyOutputChannel,
 	log,
 	type WeslEditor,
@@ -50,38 +44,15 @@ export function fetchWorkspace(): Workspace {
 }
 
 export type CommandFactory = {
-	enabled: (ctx: CtxInit) => Cmd;
-	disabled?: (ctx: Ctx) => Cmd;
+	enabled: (context: InitializedContext) => Cmd;
+	disabled?: (context: Context) => Cmd;
 };
 
-export type CtxInit = Ctx & {
+export type InitializedContext = Context & {
 	readonly client: lc.LanguageClient;
 };
 
-interface WgslAnalyzerConfiguration {
-	trace: TraceConfig;
-	diagnostics: DiagnosticsConfig;
-	inlayHints: InlayHintsConfig;
-}
-
-function lspOptions(config: Config): WgslAnalyzerConfiguration {
-	const start = process.hrtime();
-	const elapsed = process.hrtime(start);
-	const millis = elapsed[0] * 1000 + elapsed[1] / 1_000_000;
-	if (millis > 1000) {
-		vscode.window.showWarningMessage(
-			`wgsl-analyzer: Took ${millis.toFixed(0)}ms to resolve imports.`,
-		);
-	}
-
-	return {
-		diagnostics: expectNotUndefined(config.diagnostics, "diagnostics was undefined"),
-		trace: expectNotUndefined(config.trace, "trace was undefined"),
-		inlayHints: expectNotUndefined(config.inlayHints, "inlayHints was undefined"),
-	};
-}
-
-export class Ctx implements WgslAnalyzerExtensionApi {
+export class Context implements WgslAnalyzerExtensionApi {
 	readonly statusBar: vscode.StatusBarItem;
 	readonly config: Config;
 	readonly workspace: Workspace;
@@ -286,16 +257,6 @@ export class Ctx implements WgslAnalyzerExtensionApi {
 			return;
 		}
 		await client.start();
-		this.subscriptions.push(
-			client.onRequest(wa.requestConfiguration, (_, __) => {
-				const options = lspOptions(this.config);
-				return options;
-			}),
-			client.onRequest(wa.importTextDocument, (parameters, __) => {
-				vscode.workspace.openTextDocument(parameters.uri);
-				return;
-			}),
-		);
 		this.updateCommands();
 		if (this.config.showSyntaxTree) {
 			this.prepareSyntaxTreeView(client);
@@ -303,7 +264,7 @@ export class Ctx implements WgslAnalyzerExtensionApi {
 	}
 
 	private prepareSyntaxTreeView(client: lc.LanguageClient) {
-		const ctxInit: CtxInit = Object.assign({}, this, { client });
+		const ctxInit: InitializedContext = Object.assign({}, this, { client });
 		this._syntaxTreeProvider = new SyntaxTreeProvider(ctxInit);
 		this._syntaxTreeView = vscode.window.createTreeView("weslSyntaxTree", {
 			treeDataProvider: this._syntaxTreeProvider,
@@ -318,10 +279,10 @@ export class Ctx implements WgslAnalyzerExtensionApi {
 			}
 		});
 
-		vscode.workspace.onDidChangeTextDocument(async (e) => {
+		vscode.workspace.onDidChangeTextDocument(async (event) => {
 			if (
-				vscode.window.activeTextEditor?.document !== e.document
-				|| e.contentChanges.length === 0
+				vscode.window.activeTextEditor?.document !== event.document
+				|| event.contentChanges.length === 0
 			) {
 				return;
 			}
@@ -331,12 +292,12 @@ export class Ctx implements WgslAnalyzerExtensionApi {
 			}
 		});
 
-		vscode.window.onDidChangeTextEditorSelection(async (e) => {
-			if (!this.syntaxTreeView?.visible || !isWeslEditor(e.textEditor)) {
+		vscode.window.onDidChangeTextEditorSelection(async (event) => {
+			if (!this.syntaxTreeView?.visible || !isWeslEditor(event.textEditor)) {
 				return;
 			}
 
-			const selection = e.selections[0];
+			const selection = event.selections[0];
 			if (selection === undefined) {
 				return;
 			}
@@ -347,15 +308,15 @@ export class Ctx implements WgslAnalyzerExtensionApi {
 			}
 		});
 
-		this._syntaxTreeView.onDidChangeVisibility(async (e) => {
-			if (e.visible) {
+		this._syntaxTreeView.onDidChangeVisibility(async (event) => {
+			if (event.visible) {
 				await this.syntaxTreeProvider?.refresh();
 			}
 		});
 	}
 
 	async restart() {
-		// FIXME: We should re-use the client, that is ctx.deactivate() if none of the configs have changed
+		// FIXME: We should re-use the client, that is context.deactivate() if none of the configs have changed
 		await this.stopAndDispose();
 		await this.start();
 	}
@@ -397,6 +358,11 @@ export class Ctx implements WgslAnalyzerExtensionApi {
 		return editor && isWeslEditor(editor) ? editor : undefined;
 	}
 
+	get activeWeslTomlEditor(): vscode.TextEditor | undefined {
+		const editor = vscode.window.activeTextEditor;
+		return editor && isWeslTomlEditor(editor) ? editor : undefined;
+	}
+
 	get extensionPath(): string {
 		return this.extCtx.extensionPath;
 	}
@@ -412,7 +378,7 @@ export class Ctx implements WgslAnalyzerExtensionApi {
 		this.commandDisposables = [];
 
 		const clientRunning = (!forceDisable && this._client?.isRunning()) ?? false;
-		const isClientRunning = function (_ctx: Ctx): _ctx is CtxInit {
+		const isClientRunning = function (_ctx: Context): _ctx is InitializedContext {
 			return clientRunning;
 		};
 

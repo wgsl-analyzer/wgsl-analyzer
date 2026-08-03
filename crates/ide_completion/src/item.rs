@@ -7,11 +7,11 @@ use smallvec::SmallVec;
 use smol_str::{SmolStr, format_smolstr};
 use stdx::never;
 
-/// `CompletionItem` describes a single completion entity which expands to 1 or more entries in the
+/// [`CompletionItem`] describes a single completion entity which expands to 1 or more entries in the
 /// editor pop-up.
 ///
 /// It is basically a POD with various properties. To construct a [`CompletionItem`],
-/// use [`Builder::new`] method and the [`Builder`] struct.
+/// use [`Builder::build`] method and the [`Builder`] struct.
 #[derive(Clone)]
 #[non_exhaustive]
 pub struct CompletionItem {
@@ -82,7 +82,8 @@ pub struct CompletionItemLabel {
     pub detail_right: Option<String>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// The type of the completion item.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum CompletionItemKind {
     Field,
     Function,
@@ -93,6 +94,23 @@ pub enum CompletionItemKind {
     Struct,
     Module,
     TypeAlias,
+}
+
+impl CompletionItemKind {
+    #[must_use]
+    pub const fn tag(self) -> &'static str {
+        match self {
+            Self::Field => "field",
+            Self::Function => "function",
+            Self::Variable => "variable",
+            Self::Keyword => "keyword",
+            Self::Snippet => "snippet",
+            Self::Constant => "constant",
+            Self::Struct => "struct",
+            Self::Module => "module",
+            Self::TypeAlias => "type alias",
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Default)]
@@ -300,12 +318,16 @@ impl CompletionRelevance {
 
 impl CompletionItem {
     #[expect(clippy::new_ret_no_self, reason = "builder")]
-    pub(crate) fn new(
-        kind: impl Into<CompletionItemKind>,
+    pub(crate) fn new<Kind, Label>(
+        kind: Kind,
         source_range: TextRange,
-        label: impl Into<SmolStr>,
+        label: Label,
         // edition: Edition,
-    ) -> Builder {
+    ) -> Builder
+    where
+        Kind: Into<CompletionItemKind>,
+        Label: Into<SmolStr>,
+    {
         let label = label.into();
         Builder {
             source_range,
@@ -561,18 +583,24 @@ impl Builder {
         }
     }
 
-    pub(crate) fn lookup_by(
+    pub(crate) fn lookup_by<Lookup>(
         &mut self,
-        lookup: impl Into<SmolStr>,
-    ) -> &mut Self {
+        lookup: Lookup,
+    ) -> &mut Self
+    where
+        Lookup: Into<SmolStr>,
+    {
         self.lookup = Some(lookup.into());
         self
     }
 
-    pub(crate) fn label(
+    pub(crate) fn label<Label>(
         &mut self,
-        label: impl Into<SmolStr>,
-    ) -> &mut Self {
+        label: Label,
+    ) -> &mut Self
+    where
+        Label: Into<SmolStr>,
+    {
         self.label = label.into();
         self
     }
@@ -593,19 +621,25 @@ impl Builder {
         self
     }
 
-    pub(crate) fn insert_text(
+    pub(crate) fn insert_text<InsertText>(
         &mut self,
-        insert_text: impl Into<String>,
-    ) -> &mut Self {
+        insert_text: InsertText,
+    ) -> &mut Self
+    where
+        InsertText: Into<String>,
+    {
         self.insert_text = Some(insert_text.into());
         self
     }
 
-    pub(crate) fn insert_snippet(
+    pub(crate) fn insert_snippet<Snippet>(
         &mut self,
         capability: SnippetCapability,
-        snippet: impl Into<String>,
-    ) -> &mut Self {
+        snippet: Snippet,
+    ) -> &mut Self
+    where
+        Snippet: Into<String>,
+    {
         self.is_snippet = true;
         self.insert_text(snippet)
     }
@@ -627,17 +661,23 @@ impl Builder {
         self.text_edit(edit)
     }
 
-    pub(crate) fn detail(
+    pub(crate) fn detail<Detail>(
         &mut self,
-        detail: impl Into<String>,
-    ) -> &mut Self {
+        detail: Detail,
+    ) -> &mut Self
+    where
+        Detail: Into<String>,
+    {
         self.set_detail(Some(detail))
     }
 
-    pub(crate) fn set_detail(
+    pub(crate) fn set_detail<Detail>(
         &mut self,
-        detail: Option<impl Into<String>>,
-    ) -> &mut Self {
+        detail: Option<Detail>,
+    ) -> &mut Self
+    where
+        Detail: Into<String>,
+    {
         self.detail = detail.map(Into::into);
         if let Some(detail) = &self.detail
             && never!(detail.contains('\n'), "multiline detail:\n{}", detail)
@@ -679,10 +719,13 @@ impl Builder {
         self
     }
 
-    pub(crate) fn with_relevance(
+    pub(crate) fn with_relevance<RelevanceMapping>(
         &mut self,
-        relevance: impl FnOnce(CompletionRelevance) -> CompletionRelevance,
-    ) -> &mut Self {
+        relevance: RelevanceMapping,
+    ) -> &mut Self
+    where
+        RelevanceMapping: FnOnce(CompletionRelevance) -> CompletionRelevance,
+    {
         self.relevance = relevance(mem::take(&mut self.relevance));
         self
     }

@@ -37,11 +37,17 @@ impl Markup {
         self.text.as_str()
     }
 
-    pub fn fenced_block<Displayable: fmt::Display>(contents: Displayable) -> Self {
+    pub fn fenced_block<Displayable>(contents: Displayable) -> Self
+    where
+        Displayable: fmt::Display,
+    {
         format!("```rust\n{contents}\n```").into()
     }
 
-    pub fn fenced_block_text<Displayable: fmt::Display>(contents: Displayable) -> Self {
+    pub fn fenced_block_text<Displayable>(contents: Displayable) -> Self
+    where
+        Displayable: fmt::Display,
+    {
         format!("```text\n{contents}\n```").into()
     }
 }

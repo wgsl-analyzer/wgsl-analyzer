@@ -1,40 +1,89 @@
 version: 2
-updates:
-  - package-ecosystem: cargo
-    directory: /
+
+multi-ecosystem-groups:
+  daily-dependencies:
     schedule:
       interval: daily
-    open-pull-requests-limit: 20
     commit-message:
       prefix: internal
     labels:
-      - A-Language-Server
       - C-Dependencies
       - D-Trivial
       - S-Ready-to-Review
     cooldown:
       default-days: 7
 
+updates:
+  - package-ecosystem: cargo
+    directory: /
+    patterns: ["*"]
+    multi-ecosystem-group: daily-dependencies
+    labels:
+      - A-Language-Server
+    cooldown: 
+      default-days: 7
+    groups:
+      minor-patch:
+        update-types:
+          - minor
+          - patch
+
   - package-ecosystem: github-actions
     directory: /
-    schedule:
-      interval: daily
-    open-pull-requests-limit: 20
-    commit-message:
-      prefix: internal
+    patterns: ["*"]
+    multi-ecosystem-group: daily-dependencies
     labels:
       - A-Build-System
-      - C-Dependencies
-      - D-Trivial
-      - S-Ready-to-Review
-    cooldown:
+    cooldown: 
       default-days: 7
+    groups:
+      codeql:
+        patterns:
+          - "github/codeql-action/*"
+      minor-patch:
+        update-types:
+          - minor
+          - patch
+
+  - package-ecosystem: npm
+    directory: /editors/code
+    patterns: ["*"]
+    multi-ecosystem-group: daily-dependencies
+    labels:
+      - A-Editor
+    ignore:
+      - dependency-name: "@types/vscode"
+        update-types:
+          - version-update:semver-minor
+    cooldown: 
+      default-days: 7
+    groups:
+      minor-patch:
+        update-types:
+          - minor
+          - patch
+        exclude-patterns:
+          - "@types/vscode"
+
+  - package-ecosystem: docker
+    directory: /.github
+    patterns: ["*"]
+    multi-ecosystem-group: daily-dependencies
+    labels:
+      - A-Build-System
+    cooldown: 
+      default-days: 7
+    groups:
+      minor-patch:
+        update-types:
+          - minor
+          - patch
 
   - package-ecosystem: npm
     directory: /editors/code
     schedule:
       interval: daily
-    open-pull-requests-limit: 20
+    open-pull-requests-limit: 1
     commit-message:
       prefix: internal
     labels:
@@ -43,4 +92,8 @@ updates:
       - D-Trivial
       - S-Ready-to-Review
     cooldown:
-      default-days: 7
+      default-days: 90
+    allow:
+      - dependency-name: "@types/vscode"
+        update-types:
+          - version-update:semver-minor

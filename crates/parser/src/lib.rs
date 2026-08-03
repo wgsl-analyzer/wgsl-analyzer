@@ -1,3 +1,5 @@
+//! Parser for WGSL code, supporting language extensions such as naga and WESL.
+
 mod cst_builder;
 mod lexer;
 mod parser;
@@ -5,25 +7,14 @@ mod syntax_kind;
 
 use std::fmt::{self, Debug, Write as _};
 
-pub use edition::Edition;
+pub use edition::{Edition, ExtensionsConfig};
 pub use parser::{Diagnostic, parse_entrypoint};
 use rowan::GreenNode;
 
+#[derive(Debug)]
 pub struct Parse {
     green_node: GreenNode,
     errors: Vec<Diagnostic>,
-}
-impl fmt::Debug for Parse {
-    fn fmt(
-        &self,
-        formatter: &mut fmt::Formatter<'_>,
-    ) -> fmt::Result {
-        formatter
-            .debug_struct("Parse")
-            .field("green_node", &self.green_node)
-            .field("errors", &self.errors)
-            .finish()
-    }
 }
 
 impl PartialEq for Parse {
@@ -106,21 +97,16 @@ pub enum ParseEntryPoint {
     Attribute,
 }
 
-// TODO: Remove this function, it is only used by wgsl_formatter
-#[must_use]
-pub fn parse_file(input: &str) -> Parse {
-    parse_entrypoint(input, ParseEntryPoint::File, Edition::Wgsl)
-}
-
 #[cfg(test)]
 fn check_entrypoint(
     input: &str,
     entry_point: ParseEntryPoint,
     expected_tree: &expect_test::Expect,
+    edition: Edition,
 ) {
     use rowan::TextSize;
 
-    let parse = crate::parser::parse_entrypoint(input, entry_point, Edition::LATEST);
+    let parse = crate::parser::parse_entrypoint(input, entry_point, edition);
     assert_eq!(parse.syntax().text_range().start(), TextSize::new(0));
     assert_eq!(
         parse.syntax().text_range().end(),

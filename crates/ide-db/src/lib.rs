@@ -1,3 +1,5 @@
+//! IDE database.
+
 #![expect(
     clippy::trailing_empty_array,
     reason = "Clippy has a false positive for the query_group macro, see: https://github.com/rust-lang/rust-clippy/issues/16754"
@@ -5,13 +7,15 @@
 
 use std::{fmt, panic};
 
+pub use base_db;
+pub use base_db::FileId;
 use base_db::{
-    FileId, FileSourceRootInput, FileText, Files, Nonce, RootQueryDb as _, SourceDatabase,
-    SourceRoot, SourceRootId, SourceRootInput, change::Change,
+    ExtensionsConfig, FileSourceRootInput, FileText, Files, Nonce, SourceDatabase, SourceRoot,
+    SourceRootId, SourceRootInput, change::Change, set_all_packages_with_durability,
 };
-use hir_def::database::{DefDatabase as _, ExtensionsConfig};
+use hir_def::database::DefDatabase as _;
 use line_index::LineIndex;
-use rustc_hash::FxHashMap;
+pub use rustc_hash::{FxHashMap, FxHashSet, FxHasher};
 use salsa::{Database as _, Durability};
 use triomphe::Arc;
 
@@ -122,6 +126,12 @@ impl SourceDatabase for RootDatabase {
     }
 }
 
+impl Default for RootDatabase {
+    fn default() -> Self {
+        Self::new(None)
+    }
+}
+
 impl RootDatabase {
     #[must_use]
     pub fn new(lru_capacity: Option<u16>) -> Self {
@@ -132,7 +142,7 @@ impl RootDatabase {
             nonce: Nonce::new(),
         };
         // This needs to be here otherwise the first `Change` will panic.
-        database.set_all_packages(Arc::new(Box::new([])));
+        set_all_packages_with_durability(&mut database, [], Durability::HIGH);
         // CrateGraphBuilder::default().set_in_db(&mut database);
         // database.set_proc_macros_with_durability(Default::default(), Durability::MEDIUM);
         // database.set_local_roots_with_durability(Default::default(), Durability::MEDIUM);
@@ -198,7 +208,9 @@ impl RootDatabase {
         &mut self,
         change: Change,
     ) {
+        let _p = tracing::info_span!("RootDatabase::apply_change").entered();
         self.trigger_cancellation();
+        tracing::trace!("apply_change {:?}", change);
         change.apply(self);
     }
 }
@@ -220,7 +232,7 @@ impl SnippetCapability {
 }
 
 #[query_group::query_group]
-pub trait LineIndexDatabase: base_db::RootQueryDb {
+pub trait LineIndexDatabase: base_db::SourceDatabase {
     #[salsa::invoke_interned(line_index)]
     fn line_index(
         &self,

@@ -1,12 +1,12 @@
+//! A high-level object-oriented access to code.
+
 pub mod database;
 pub mod definition;
 pub mod diagnostics;
 
-use base_db::{EditionedFileId, FileId, Lookup as _};
-use definition::Definition;
-use diagnostics::{AnyDiagnostic, DiagnosticsConfig};
+use base_db::{EditionedFileId, Intern as _, Lookup as _};
+use diagnostics::AnyDiagnostic;
 use either::Either;
-pub use hir_def::database::ExtensionsConfig;
 use hir_def::{
     HasSource as _, InFile,
     body::{BindingId, Body, BodySourceMap},
@@ -16,16 +16,19 @@ use hir_def::{
     },
     expression::{ExpressionId, StatementId},
     expression_store::{ExpressionStoreSource, path::Path},
-    item_tree::{self, ItemTree, ModuleItem, Name},
+    item_scope::ItemScope,
+    item_tree::{self, ItemTree, ModuleItemId, Name},
+    mod_path::PathKind,
     resolver::{ResolveKind, Resolver},
     signature::{FieldId, ParameterId},
 };
-pub use hir_ty::database::HirDatabase;
 use hir_ty::{infer::InferenceResult, ty::Type};
 use smallvec::SmallVec;
 use stdx::impl_from;
 use syntax::{AstNode as _, HasName as _, SyntaxNode, ast, pointer::AstPointer};
 use triomphe::Arc;
+
+pub use hir_ty::{AddressSpace, database::HirDatabase};
 
 pub trait HasSource {
     type Ast;
@@ -34,6 +37,8 @@ pub trait HasSource {
         database: &dyn DefDatabase,
     ) -> Option<InFile<Self::Ast>>;
 }
+
+type ExprOrStatement = Either<ast::Expression, ast::Statement>;
 
 /// Nice API on top of the layers below.
 pub struct Semantics<'database> {
@@ -50,7 +55,7 @@ impl<'database> Semantics<'database> {
         &self,
         file_id: EditionedFileId,
     ) -> ast::SourceFile {
-        self.database.parse(file_id).tree()
+        file_id.parse(self.database).tree()
     }
 
     #[must_use]
@@ -150,10 +155,33 @@ impl<'database> Semantics<'database> {
         source: &SyntaxNode,
     ) -> Resolver {
         if let Some(definition) = self.find_container(file_id, source) {
-            definition.resolver(self.database)
+            match definition {
+                ChildContainer::DefinitionWithBodyId(
+                    id @ DefinitionWithBodyId::Function(function_id),
+                ) => {
+                    if let Some(nearest_scope) = nearest_scope(source) {
+                        self.analyze(id).resolver_for(nearest_scope)
+                    } else {
+                        id.resolver(self.database)
+                    }
+                },
+                ChildContainer::DefinitionWithBodyId(id) => id.resolver(self.database),
+                ChildContainer::ImportId(_)
+                | ChildContainer::FunctionId(_)
+                | ChildContainer::GlobalVariableId(_)
+                | ChildContainer::GlobalConstantId(_)
+                | ChildContainer::OverrideId(_)
+                | ChildContainer::StructId(_)
+                | ChildContainer::GlobalAssertStatementId(_)
+                | ChildContainer::TypeAliasId(_) => {
+                    let file_id = definition.file_id(self.database);
+                    let module_info = ItemScope::of(self.database, file_id);
+                    Resolver::new(file_id, module_info)
+                },
+            }
         } else {
-            let module_info = self.database.item_tree(file_id);
-            Resolver::default().push_module_scope(file_id, module_info)
+            let module_info = ItemScope::of(self.database, file_id);
+            Resolver::new(file_id, module_info)
         }
     }
 
@@ -166,151 +194,90 @@ impl<'database> Semantics<'database> {
         Module { file_id }
     }
 
-    fn resolve_path_in_container(
-        &self,
-        container: ChildContainer,
-        expression: &ast::Expression,
-        path: &Path,
-    ) -> Option<Definition> {
-        let mut resolver = container.resolver(self.database);
-
-        if let ChildContainer::DefinitionWithBodyId(DefinitionWithBodyId::Function(function)) =
-            container
-        {
-            let (_, source_map) = self
-                .database
-                .body_with_source_map(DefinitionWithBodyId::Function(function));
-            let expression_id = source_map.lookup_expression(&AstPointer::new(expression))?;
-            let expression_scopes = self
-                .database
-                .expression_scopes(DefinitionWithBodyId::Function(function));
-            let scope_id = expression_scopes.scope_for_expression(expression_id)?;
-            resolver = resolver.push_expression_scope(function, expression_scopes, scope_id);
-        }
-
-        let value = resolver.resolve(path)?;
-
-        let definition = match value {
-            ResolveKind::Local(binding) => Definition::Local(Local {
-                parent: resolver.body_owner()?,
-                binding,
-            }),
-            ResolveKind::GlobalVariable(location) => {
-                let id = self.database.intern_global_variable(location);
-                Definition::ModuleDef(ModuleDef::GlobalVariable(GlobalVariable { id }))
-            },
-            ResolveKind::GlobalConstant(location) => {
-                let id = self.database.intern_global_constant(location);
-                Definition::ModuleDef(ModuleDef::GlobalConstant(GlobalConstant { id }))
-            },
-            ResolveKind::Override(location) => {
-                let id = self.database.intern_override(location);
-                Definition::ModuleDef(ModuleDef::Override(Override { id }))
-            },
-            ResolveKind::Struct(location) => {
-                let id = self.database.intern_struct(location);
-                Definition::ModuleDef(ModuleDef::Struct(Struct { id }))
-            },
-            ResolveKind::TypeAlias(location) => {
-                let id = self.database.intern_type_alias(location);
-                Definition::ModuleDef(ModuleDef::TypeAlias(TypeAlias { id }))
-            },
-            ResolveKind::Function(location) => {
-                let id = self.database.intern_function(location);
-                Definition::ModuleDef(ModuleDef::Function(Function { id }))
-            },
-        };
-
-        Some(definition)
-    }
-
     fn import_to_def(
         &self,
         source: &InFile<ast::ImportStatement>,
     ) -> Option<ImportId> {
-        let import = item_tree::find_item(self.database, source.file_id, &source.value)?;
-        let import_id = self
-            .database
-            .intern_import(Location::new(source.file_id, import));
-        Some(import_id)
+        let ast_id_map = self.database.ast_id_map(source.file_id);
+        let id = ast_id_map.try_ast_id(&source.value)?;
+        Some(Location::new(source.file_id, id).intern(self.database))
     }
 
     fn function_to_def(
         &self,
         source: &InFile<ast::FunctionDeclaration>,
     ) -> Option<FunctionId> {
-        let function = item_tree::find_item(self.database, source.file_id, &source.value)?;
-        let function_id = self
-            .database
-            .intern_function(Location::new(source.file_id, function));
-        Some(function_id)
+        let ast_id_map = self.database.ast_id_map(source.file_id);
+        let id = ast_id_map.try_ast_id(&source.value)?;
+        Some(Location::new(source.file_id, id).intern(self.database))
     }
 
     fn global_constant_to_def(
         &self,
         source: &InFile<ast::ConstantDeclaration>,
     ) -> Option<GlobalConstantId> {
-        let global_constant = item_tree::find_item(self.database, source.file_id, &source.value)?;
-        let id = self
-            .database
-            .intern_global_constant(Location::new(source.file_id, global_constant));
-        Some(id)
+        let ast_id_map = self.database.ast_id_map(source.file_id);
+        let id = ast_id_map.try_ast_id(&source.value)?;
+        Some(Location::new(source.file_id, id).intern(self.database))
     }
 
     fn global_variable_to_def(
         &self,
         source: &InFile<ast::VariableDeclaration>,
     ) -> Option<GlobalVariableId> {
-        let global_variable = item_tree::find_item(self.database, source.file_id, &source.value)?;
-        let id = self
-            .database
-            .intern_global_variable(Location::new(source.file_id, global_variable));
-        Some(id)
+        let ast_id_map = self.database.ast_id_map(source.file_id);
+        let id = ast_id_map.try_ast_id(&source.value)?;
+        Some(Location::new(source.file_id, id).intern(self.database))
     }
 
     fn global_override_to_def(
         &self,
         source: &InFile<ast::OverrideDeclaration>,
     ) -> Option<OverrideId> {
-        let item = item_tree::find_item(self.database, source.file_id, &source.value)?;
-        let id = self
-            .database
-            .intern_override(Location::new(source.file_id, item));
-        Some(id)
+        let ast_id_map = self.database.ast_id_map(source.file_id);
+        let id = ast_id_map.try_ast_id(&source.value)?;
+        Some(Location::new(source.file_id, id).intern(self.database))
     }
 
     fn global_type_alias_to_def(
         &self,
         source: &InFile<ast::TypeAliasDeclaration>,
     ) -> Option<TypeAliasId> {
-        let item = item_tree::find_item(self.database, source.file_id, &source.value)?;
-        let id = self
-            .database
-            .intern_type_alias(Location::new(source.file_id, item));
-        Some(id)
+        let ast_id_map = self.database.ast_id_map(source.file_id);
+        let id = ast_id_map.try_ast_id(&source.value)?;
+        Some(Location::new(source.file_id, id).intern(self.database))
     }
 
     fn global_struct_to_def(
         &self,
         source: &InFile<ast::StructDeclaration>,
     ) -> Option<StructId> {
-        let item = item_tree::find_item(self.database, source.file_id, &source.value)?;
-        let id = self
-            .database
-            .intern_struct(Location::new(source.file_id, item));
-        Some(id)
+        let ast_id_map = self.database.ast_id_map(source.file_id);
+        let id = ast_id_map.try_ast_id(&source.value)?;
+        Some(Location::new(source.file_id, id).intern(self.database))
     }
 
     fn global_assert_statement_to_def(
         &self,
         source: &InFile<ast::AssertStatement>,
     ) -> Option<GlobalAssertStatementId> {
-        let item = item_tree::find_item(self.database, source.file_id, &source.value)?;
-        let id = self
-            .database
-            .intern_global_assert_statement(Location::new(source.file_id, item));
-        Some(id)
+        let ast_id_map = self.database.ast_id_map(source.file_id);
+        let id = ast_id_map.try_ast_id(&source.value)?;
+        Some(Location::new(source.file_id, id).intern(self.database))
     }
+}
+
+#[must_use]
+pub fn nearest_scope(node: &SyntaxNode) -> Option<ExprOrStatement> {
+    node.siblings(syntax::Direction::Prev)
+        .find_map(|sib| {
+            if ExprOrStatement::can_cast(sib.kind()) {
+                ExprOrStatement::cast(sib)
+            } else {
+                None
+            }
+        })
+        .or_else(|| node.ancestors().find_map(ExprOrStatement::cast))
 }
 
 fn is_node_in_body(
@@ -408,27 +375,6 @@ impl ChildContainer {
         }
     }
 
-    pub fn resolver(
-        self,
-        database: &dyn HirDatabase,
-    ) -> Resolver {
-        match self {
-            Self::DefinitionWithBodyId(id) => id.resolver(database),
-            Self::ImportId(_)
-            | Self::FunctionId(_)
-            | Self::GlobalVariableId(_)
-            | Self::GlobalConstantId(_)
-            | Self::OverrideId(_)
-            | Self::StructId(_)
-            | Self::GlobalAssertStatementId(_)
-            | Self::TypeAliasId(_) => {
-                let file_id = self.file_id(database);
-                let module_info = database.item_tree(file_id);
-                Resolver::default().push_module_scope(file_id, module_info)
-            },
-        }
-    }
-
     #[must_use]
     pub const fn as_def_with_body_id(self) -> Option<DefinitionWithBodyId> {
         if let Self::DefinitionWithBodyId(id) = self {
@@ -442,45 +388,45 @@ impl ChildContainer {
 fn module_item_to_def(
     database: &dyn HirDatabase,
     file_id: EditionedFileId,
-    module_item: ModuleItem,
+    module_item: ModuleItemId,
 ) -> SmallVec<[ModuleDef; 1]> {
     let definition = match module_item {
-        ModuleItem::Function(function) => {
+        ModuleItemId::Function(function) => {
             let location = Location::new(file_id, function);
             let id = database.intern_function(location);
             ModuleDef::Function(Function { id })
         },
-        ModuleItem::Struct(r#struct) => {
+        ModuleItemId::Struct(r#struct) => {
             let location = Location::new(file_id, r#struct);
             let id = database.intern_struct(location);
             ModuleDef::Struct(Struct { id })
         },
-        ModuleItem::GlobalVariable(variable) => {
+        ModuleItemId::GlobalVariable(variable) => {
             let location = Location::new(file_id, variable);
             let id = database.intern_global_variable(location);
             ModuleDef::GlobalVariable(GlobalVariable { id })
         },
-        ModuleItem::GlobalConstant(constant) => {
+        ModuleItemId::GlobalConstant(constant) => {
             let location = Location::new(file_id, constant);
             let id = database.intern_global_constant(location);
             ModuleDef::GlobalConstant(GlobalConstant { id })
         },
-        ModuleItem::Override(constant) => {
+        ModuleItemId::Override(constant) => {
             let location = Location::new(file_id, constant);
             let id = database.intern_override(location);
             ModuleDef::Override(Override { id })
         },
-        ModuleItem::TypeAlias(type_alias) => {
+        ModuleItemId::TypeAlias(type_alias) => {
             let location = Location::new(file_id, type_alias);
             let id = database.intern_type_alias(location);
             ModuleDef::TypeAlias(TypeAlias { id })
         },
-        ModuleItem::GlobalAssertStatement(global_assert_statement) => {
+        ModuleItemId::GlobalAssertStatement(global_assert_statement) => {
             let location = Location::new(file_id, global_assert_statement);
             let id = database.intern_global_assert_statement(location);
             ModuleDef::GlobalAssertStatement(GlobalAssertStatement { id })
         },
-        ModuleItem::ImportStatement(_) => return smallvec::SmallVec::new(),
+        ModuleItemId::ImportStatement(_) => return smallvec::SmallVec::new(),
     };
     smallvec::smallvec![definition]
 }
@@ -489,7 +435,7 @@ pub struct SourceAnalyzer<'database> {
     pub database: &'database dyn HirDatabase,
     pub body: Arc<Body>,
     pub body_source_map: Arc<BodySourceMap>,
-    pub infer: Arc<InferenceResult>,
+    pub infer: &'database InferenceResult,
     pub owner: DefinitionWithBodyId,
 }
 
@@ -499,7 +445,7 @@ impl<'database> SourceAnalyzer<'database> {
         definition: DefinitionWithBodyId,
     ) -> Self {
         let (body, body_source_map) = database.body_with_source_map(definition);
-        let infer = database.infer(definition);
+        let infer = InferenceResult::of(database, definition);
         Self {
             database,
             body,
@@ -541,7 +487,7 @@ impl<'database> SourceAnalyzer<'database> {
     #[must_use]
     pub fn resolver_for(
         &self,
-        scope: Either<ast::Expression, ast::Statement>,
+        scope: ExprOrStatement,
     ) -> Resolver {
         let mut resolver = self.owner.resolver(self.database);
 
@@ -617,12 +563,8 @@ impl HasSource for Local {
         let file_id = self.parent.lookup(database).file_id;
         let (_, source_map) =
             database.body_with_source_map(DefinitionWithBodyId::Function(self.parent));
-        let binding = source_map
-            .binding_to_source(self.binding)
-            .map_err(drop)
-            .ok()?;
-
-        let root = database.parse_or_resolve(file_id).syntax();
+        let binding = source_map.binding_to_source(self.binding).ok()?;
+        let root = file_id.parse(database).syntax();
         Some(InFile::new(file_id, binding.to_node(&root)))
     }
 }
@@ -797,8 +739,10 @@ impl HasSource for Field {
     }
 }
 
+/// The defs which can be visible in the module.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ModuleDef {
+    Module(Module),
     Function(Function),
     GlobalVariable(GlobalVariable),
     GlobalConstant(GlobalConstant),
@@ -825,39 +769,51 @@ impl ModuleDef {
             Self::GlobalAssertStatement(global_assert_statement) => Some(
                 DefinitionWithBodyId::GlobalAssertStatement(global_assert_statement.id),
             ),
-            Self::Struct(_) | Self::TypeAlias(_) => None,
+            Self::Module(_) | Self::Struct(_) | Self::TypeAlias(_) => None,
         }
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Copy)]
 pub struct Module {
-    file_id: EditionedFileId,
+    pub file_id: EditionedFileId,
+}
+
+impl HasSource for Module {
+    type Ast = ast::SourceFile;
+
+    fn source(
+        self,
+        database: &dyn DefDatabase,
+    ) -> Option<InFile<Self::Ast>> {
+        let source_file = self.file_id.parse(database).tree();
+        Some(InFile::new(self.file_id, source_file))
+    }
 }
 
 impl Module {
     pub fn items(
-        &self,
+        self,
         database: &dyn HirDatabase,
     ) -> Vec<ModuleDef> {
         let item_tree = database.item_tree(self.file_id);
         item_tree
-            .items()
+            .top_level_items()
             .iter()
             .flat_map(|item| module_item_to_def(database, self.file_id, *item))
             .collect()
     }
 
-    pub fn diagnostics(
-        &self,
+    pub fn semantic_diagnostics(
+        self,
         database: &dyn HirDatabase,
-        config: &DiagnosticsConfig,
         accumulator: &mut Vec<AnyDiagnostic>,
     ) {
         validate_identifiers(self.file_id, database, accumulator);
 
         for item in self.items(database) {
             match item {
-                ModuleDef::Function(_function) => {},
+                ModuleDef::Module(_) | ModuleDef::Function(_) => {},
                 ModuleDef::GlobalVariable(variable) => {
                     diagnostics::global_variable::collect(database, variable.id, |error| {
                         if let Some(source) = variable.source(database) {
@@ -918,9 +874,15 @@ impl Module {
                     }
                 },
             }
-            if config.type_errors {
-                check_type_errors(database, accumulator, &item);
-            }
+            check_type_errors(database, accumulator, &item);
+        }
+
+        for diagnostic in &ItemScope::of(database, self.file_id).diagnostics {
+            accumulator.push(diagnostics::any_diag_from_def_diagnostic(
+                database,
+                diagnostic,
+                self.file_id,
+            ));
         }
     }
 }
@@ -936,7 +898,7 @@ fn validate_identifiers(
 ) {
     let item_tree = database.item_tree(file_id);
     let ast_id_map = database.ast_id_map(file_id);
-    let root = database.parse_or_resolve(file_id).syntax();
+    let root = file_id.parse(database).syntax();
 
     macro_rules! validate {
         (
@@ -947,9 +909,9 @@ fn validate_identifiers(
             $accumulator:expr,
             $file_id:expr
         ) => {{
-            let data = $item_tree.get(*$id);
+            let data = &$item_tree[*$id];
             if data.name.as_str().starts_with("__") {
-                let ast_ptr = $ast_id_map.get(data.ast_id);
+                let ast_ptr = $ast_id_map.get(*$id);
                 let node = ast_ptr.to_node(&$root);
                 if let Some(name_node) = node.name() {
                     $accumulator.push(AnyDiagnostic::InvalidIdentifier {
@@ -962,27 +924,27 @@ fn validate_identifiers(
         }};
     }
 
-    for item in item_tree.items() {
+    for item in item_tree.top_level_items() {
         match item {
-            ModuleItem::Function(id) => {
+            ModuleItemId::Function(id) => {
                 validate!(id, item_tree, ast_id_map, root, accumulator, file_id);
             },
-            ModuleItem::GlobalVariable(id) => {
+            ModuleItemId::GlobalVariable(id) => {
                 validate!(id, item_tree, ast_id_map, root, accumulator, file_id);
             },
-            ModuleItem::GlobalConstant(id) => {
+            ModuleItemId::GlobalConstant(id) => {
                 validate!(id, item_tree, ast_id_map, root, accumulator, file_id);
             },
-            ModuleItem::Override(id) => {
+            ModuleItemId::Override(id) => {
                 validate!(id, item_tree, ast_id_map, root, accumulator, file_id);
             },
-            ModuleItem::Struct(id) => {
+            ModuleItemId::Struct(id) => {
                 validate!(id, item_tree, ast_id_map, root, accumulator, file_id);
             },
-            ModuleItem::TypeAlias(id) => {
+            ModuleItemId::TypeAlias(id) => {
                 validate!(id, item_tree, ast_id_map, root, accumulator, file_id);
             },
-            ModuleItem::ImportStatement(_) | ModuleItem::GlobalAssertStatement(_) => {},
+            ModuleItemId::ImportStatement(_) | ModuleItemId::GlobalAssertStatement(_) => {},
         }
     }
 }
@@ -996,7 +958,7 @@ fn check_type_errors(
         let file = definition.file_id(database);
         let (_, signature_map) = database.signature_with_source_map(definition);
         let (_, source_map) = database.body_with_source_map(definition);
-        let infer = database.infer(definition);
+        let infer = InferenceResult::of(database, definition);
         for diagnostic in infer.diagnostics() {
             match diagnostics::any_diag_from_infer_diagnostic(
                 &diagnostic.kind,
@@ -1027,3 +989,5 @@ fn check_type_errors(
         });
     }
 }
+
+pub use hir_ty::setup_tracing;

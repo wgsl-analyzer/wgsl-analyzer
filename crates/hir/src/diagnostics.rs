@@ -3,53 +3,24 @@ pub mod precedence;
 
 use base_db::{EditionedFileId, FileRange, TextRange};
 use hir_def::{
-    InFile,
+    HasSource as _, InFile,
     expression::BinaryOperation,
-    expression_store::{ExpressionSourceMap, ExpressionStoreSource, path::Path},
+    expression_store::{ExpressionSourceMap, path::Path},
     item_tree::Name,
+    name_resolution::{DefDiagnostic, DefDiagnosticKind},
 };
 use hir_ty::{
     builtins::BuiltinId,
-    infer::{
-        InferenceDiagnostic, InferenceDiagnosticKind, LoweredKind, TypeExpectation,
-        TypeLoweringError, TypeLoweringErrorKind,
-    },
+    database::HirDatabase,
+    diagnostics::InferenceDiagnosticKind,
+    infer::TypeExpectation,
+    lower::{LoweredKind, TypeContainer, TypeLoweringError, TypeLoweringErrorKind},
     ty::Type,
     validate::AddressSpaceError,
 };
 use syntax::{ast, pointer::AstPointer};
 
 use self::{global_variable::GlobalVariableDiagnostic, precedence::PrecedenceDiagnostic};
-
-#[derive(Clone, Copy, Debug, Default)]
-pub enum NagaVersion {
-    Naga27,
-    #[default]
-    Naga28,
-    NagaMain,
-}
-
-#[derive(Clone, Debug)]
-pub struct DiagnosticsConfig {
-    /// Whether native diagnostics are enabled.
-    pub enabled: bool,
-    pub type_errors: bool,
-    pub naga_parsing_errors: bool,
-    pub naga_validation_errors: bool,
-    pub naga_version: NagaVersion,
-}
-
-impl Default for DiagnosticsConfig {
-    fn default() -> Self {
-        Self {
-            enabled: true,
-            type_errors: true,
-            naga_parsing_errors: true,
-            naga_validation_errors: true,
-            naga_version: NagaVersion::default(),
-        }
-    }
-}
 
 pub enum AnyDiagnostic {
     ParseError {
@@ -58,6 +29,23 @@ pub enum AnyDiagnostic {
         file_id: EditionedFileId,
     },
 
+    // Module system errors
+    UnresolvedImport {
+        id: InFile<AstPointer<ast::ImportStatement>>,
+        name: Name,
+    },
+    TooManySupers {
+        id: InFile<AstPointer<ast::ImportStatement>>,
+    },
+    DetachedFile {
+        id: InFile<AstPointer<ast::ImportStatement>>,
+    },
+    NameConflict {
+        item: InFile<AstPointer<ast::Item>>,
+        name: Name,
+    },
+
+    // Type checking errors
     AssignmentNotAReference {
         left_side: InFile<AstPointer<ast::Expression>>,
         actual: Type,
@@ -99,7 +87,11 @@ pub enum AnyDiagnostic {
         expression: InFile<AstPointer<ast::Expression>>,
         actual: Type,
     },
-    DerefNotPointer {
+    StoreTypeMustBeStorable {
+        expression: InFile<AstPointer<ast::Expression>>,
+        actual: Type,
+    },
+    DerefNotAPointer {
         expression: InFile<AstPointer<ast::Expression>>,
         actual: Type,
     },
@@ -128,6 +120,12 @@ pub enum AnyDiagnostic {
         range: TextRange,
         message: String,
         related: Vec<(String, FileRange)>,
+    },
+    TintValidationError {
+        file_id: EditionedFileId,
+        range: TextRange,
+        message: String,
+        severity: Severity,
     },
     NoConstructor {
         expression: InFile<AstPointer<ast::Expression>>,
@@ -158,6 +156,18 @@ pub enum AnyDiagnostic {
         actual: LoweredKind,
         path: Path,
     },
+    UnexpectedReturnValue {
+        expression: InFile<AstPointer<ast::Expression>>,
+        actual: Type,
+    },
+}
+
+#[derive(Clone, Copy)]
+pub enum Severity {
+    Error,
+    Warning,
+    Information,
+    Hint,
 }
 
 impl AnyDiagnostic {
@@ -172,22 +182,29 @@ impl AnyDiagnostic {
             | Self::InvalidConstructionType { expression, .. }
             | Self::FunctionCallArgCountMismatch { expression, .. }
             | Self::NoBuiltinOverload { expression, .. }
+            | Self::StoreTypeMustBeStorable { expression, .. }
             | Self::AddressOfNotReference { expression, .. }
-            | Self::DerefNotPointer { expression, .. }
+            | Self::DerefNotAPointer { expression, .. }
             | Self::NoConstructor { expression, .. }
             | Self::PrecedenceParensRequired { expression, .. }
             | Self::UnexpectedTemplateArgument { expression, .. }
             | Self::WgslError { expression, .. }
             | Self::InvalidIdentExpression { expression, .. }
+            | Self::UnexpectedReturnValue { expression, .. }
             | Self::ExpectedLoweredKind { expression, .. } => expression.file_id,
             Self::MissingAddressSpace { variable } | Self::InvalidAddressSpace { variable, .. } => {
                 variable.file_id
             },
             Self::InvalidTypeSpecifier { type_specifier, .. } => type_specifier.file_id,
             Self::NagaValidationError { file_id, .. }
+            | Self::TintValidationError { file_id, .. }
             | Self::ParseError { file_id, .. }
             | Self::CyclicType { file_id, .. }
             | Self::InvalidIdentifier { file_id, .. } => *file_id,
+            Self::UnresolvedImport { id, .. }
+            | Self::TooManySupers { id }
+            | Self::DetachedFile { id } => id.file_id,
+            Self::NameConflict { item, .. } => item.file_id,
         }
     }
 }
@@ -320,7 +337,7 @@ pub(crate) fn any_diag_from_infer_diagnostic(
             let pointer = source_map.expression_to_source(*expression).ok()?.clone();
             let source = InFile::new(file_id, pointer);
 
-            AnyDiagnostic::DerefNotPointer {
+            AnyDiagnostic::DerefNotAPointer {
                 expression: source,
                 actual: *actual,
             }
@@ -328,7 +345,7 @@ pub(crate) fn any_diag_from_infer_diagnostic(
         InferenceDiagnosticKind::InvalidType {
             error: TypeLoweringError { container, kind },
         } => match container {
-            hir_ty::infer::TypeContainer::Expression(expression) => {
+            TypeContainer::Expression(expression) => {
                 let pointer = source_map.expression_to_source(*expression).ok()?.clone();
                 let source = InFile::new(file_id, pointer);
 
@@ -337,7 +354,7 @@ pub(crate) fn any_diag_from_infer_diagnostic(
                     error: kind.clone(),
                 }
             },
-            hir_ty::infer::TypeContainer::TypeSpecifier(type_specifier) => {
+            TypeContainer::TypeSpecifier(type_specifier) => {
                 let pointer = source_map
                     .type_specifier_to_source(*type_specifier)
                     .ok()?
@@ -385,7 +402,46 @@ pub(crate) fn any_diag_from_infer_diagnostic(
                 actual: *actual,
             }
         },
+        InferenceDiagnosticKind::StoreTypeMustBeStorable { actual, expression } => {
+            let pointer = source_map.expression_to_source(*expression).ok()?.clone();
+            let source = InFile::new(file_id, pointer);
+            AnyDiagnostic::StoreTypeMustBeStorable {
+                expression: source,
+                actual: *actual,
+            }
+        },
+        InferenceDiagnosticKind::UnexpectedReturnValue { expression, actual } => {
+            let pointer = source_map.expression_to_source(*expression).ok()?.clone();
+            let source = InFile::new(file_id, pointer);
+            AnyDiagnostic::UnexpectedReturnValue {
+                expression: source,
+                actual: *actual,
+            }
+        },
     })
+}
+
+pub(crate) fn any_diag_from_def_diagnostic(
+    database: &dyn HirDatabase,
+    def_diagnostic: &DefDiagnostic,
+    file_id: EditionedFileId,
+) -> AnyDiagnostic {
+    match &def_diagnostic.kind {
+        DefDiagnosticKind::UnresolvedImport { id, name } => AnyDiagnostic::UnresolvedImport {
+            id: id.ast_ptr(database),
+            name: name.clone(),
+        },
+        DefDiagnosticKind::TooManySupers { id } => AnyDiagnostic::TooManySupers {
+            id: id.ast_ptr(database),
+        },
+        DefDiagnosticKind::DetachedFile { id } => AnyDiagnostic::DetachedFile {
+            id: id.ast_ptr(database),
+        },
+        DefDiagnosticKind::NameConflict { item, previous } => AnyDiagnostic::NameConflict {
+            item: item.ast_ptr(database),
+            name: previous.clone(),
+        },
+    }
 }
 
 pub(crate) fn any_diag_from_global_var(

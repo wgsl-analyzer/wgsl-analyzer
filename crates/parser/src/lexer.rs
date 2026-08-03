@@ -1,5 +1,7 @@
 use std::ops::Range;
 
+use edition::Edition;
+
 use super::parser::{Diagnostic, Span};
 use crate::{SyntaxKind, parser::to_range};
 
@@ -9,6 +11,9 @@ pub(crate) type Token = SyntaxKind;
 pub struct LexerExtras {
     pub after_at: bool,
     pub after_interpolate: bool,
+    pub after_early_depth_test: bool,
+    pub edition: edition::Edition,
+    pub extensions: edition::ExtensionsConfig,
 }
 
 /// A line-ending comment is a kind of comment consisting of the two code points `//` (U+002F followed by U+002F)
@@ -66,18 +71,186 @@ pub(crate) fn lex_block_comment(lexer: &mut logos::Lexer<'_, SyntaxKind>) -> Opt
     None
 }
 
+/// Returns `true` if the given reserved word is upgraded to a keyword in WESL.
+fn is_keyword_in_wesl(word: &str) -> bool {
+    debug_assert!(
+        is_reserved_word(word),
+        "this is meant to be called with a reserved word"
+    );
+    matches!(word, "import" | "package" | "super" | "as")
+}
+
+/// Returns `true` if the given word is a WGSL reserved word.
+/// See <https://www.w3.org/TR/WGSL/#reserved-words>.
+#[expect(clippy::too_many_lines, reason = "just a big matches!")]
+fn is_reserved_word(word: &str) -> bool {
+    matches!(
+        word,
+        "NULL"
+            | "Self"
+            | "abstract"
+            | "active"
+            | "alignas"
+            | "alignof"
+            | "as"
+            | "asm"
+            | "asm_fragment"
+            | "async"
+            | "attribute"
+            | "auto"
+            | "await"
+            | "become"
+            | "cast"
+            | "catch"
+            | "class"
+            | "co_await"
+            | "co_return"
+            | "co_yield"
+            | "coherent"
+            | "column_major"
+            | "common"
+            | "compile"
+            | "compile_fragment"
+            | "concept"
+            | "const_cast"
+            | "consteval"
+            | "constexpr"
+            | "constinit"
+            | "crate"
+            | "debugger"
+            | "decltype"
+            | "delete"
+            | "demote"
+            | "demote_to_helper"
+            | "do"
+            | "dynamic_cast"
+            | "enum"
+            | "explicit"
+            | "export"
+            | "extends"
+            | "extern"
+            | "external"
+            | "fallthrough"
+            | "filter"
+            | "final"
+            | "finally"
+            | "friend"
+            | "from"
+            | "fxgroup"
+            | "get"
+            | "goto"
+            | "groupshared"
+            | "highp"
+            | "impl"
+            | "implements"
+            | "import"
+            | "inline"
+            | "instanceof"
+            | "interface"
+            | "layout"
+            | "lowp"
+            | "macro"
+            | "macro_rules"
+            | "match"
+            | "mediump"
+            | "meta"
+            | "mod"
+            | "module"
+            | "move"
+            | "mut"
+            | "mutable"
+            | "namespace"
+            | "new"
+            | "nil"
+            | "noexcept"
+            | "noinline"
+            | "nointerpolation"
+            | "non_coherent"
+            | "noncoherent"
+            | "noperspective"
+            | "null"
+            | "nullptr"
+            | "of"
+            | "operator"
+            | "package"
+            | "packoffset"
+            | "partition"
+            | "pass"
+            | "patch"
+            | "pixelfragment"
+            | "precise"
+            | "precision"
+            | "premerge"
+            | "priv"
+            | "protected"
+            | "pub"
+            | "public"
+            | "readonly"
+            | "ref"
+            | "regardless"
+            | "register"
+            | "reinterpret_cast"
+            | "require"
+            | "resource"
+            | "restrict"
+            | "self"
+            | "set"
+            | "shared"
+            | "sizeof"
+            | "smooth"
+            | "snorm"
+            | "static"
+            | "static_assert"
+            | "static_cast"
+            | "std"
+            | "subroutine"
+            | "super"
+            | "target"
+            | "template"
+            | "this"
+            | "thread_local"
+            | "throw"
+            | "trait"
+            | "try"
+            | "type"
+            | "typedef"
+            | "typeid"
+            | "typename"
+            | "typeof"
+            | "union"
+            | "unless"
+            | "unorm"
+            | "unsafe"
+            | "unsized"
+            | "use"
+            | "using"
+            | "varying"
+            | "virtual"
+            | "volatile"
+            | "wgsl"
+            | "where"
+            | "with"
+            | "writeonly"
+            | "yield"
+    )
+}
+
 pub fn lex(
     source: &str,
+    edition: Edition,
     diagnostics: &mut Vec<Diagnostic>,
 ) -> (Vec<Token>, Vec<Range<usize>>) {
+    let inner = <Token as logos::Logos>::lexer(source);
     collect_with_templates(WgslLexer {
-        inner: <Token as logos::Logos>::lexer(source),
+        inner,
+        edition,
         diagnostics,
     })
 }
 
 struct WgslLexer<'source, 'diagnostics> {
     inner: logos::Lexer<'source, Token>,
+    edition: Edition,
     diagnostics: &'diagnostics mut Vec<Diagnostic>,
 }
 
@@ -138,12 +311,12 @@ impl Iterator for WgslLexer<'_, '_> {
                     "while" => Token::While,
 
                     // These WGSL reserved words are keywords in WESL
-                    "import" => Token::Import,
-                    "package" => Token::Package,
-                    "super" => Token::Super,
-                    "as" => Token::As,
+                    "import" if self.edition.at_least_wesl_0_0_1() => Token::Import,
+                    "package" if self.edition.at_least_wesl_0_0_1() => Token::Package,
+                    "super" if self.edition.at_least_wesl_0_0_1() => Token::Super,
+                    "as" if self.edition.at_least_wesl_0_0_1() => Token::As,
 
-                    // Context-dependent attribute keywords
+                    // Context-dependent attribute enums and identifiers
                     "align" if self.inner.extras.after_at => Token::Align,
                     "binding" if self.inner.extras.after_at => Token::Binding,
                     "blend_src" if self.inner.extras.after_at => Token::BlendSrc,
@@ -162,6 +335,9 @@ impl Iterator for WgslLexer<'_, '_> {
                     "vertex" if self.inner.extras.after_at => Token::Vertex,
                     "fragment" if self.inner.extras.after_at => Token::Fragment,
                     "compute" if self.inner.extras.after_at => Token::Compute,
+                    "elif" if self.inner.extras.after_at && self.edition.at_least_wesl_0_0_1() => {
+                        Token::Elif
+                    },
 
                     // Context-dependent attribute arguments
                     "flat" if self.inner.extras.after_interpolate => Token::Flat,
@@ -173,6 +349,32 @@ impl Iterator for WgslLexer<'_, '_> {
                     "first" if self.inner.extras.after_interpolate => Token::First,
                     "either" if self.inner.extras.after_interpolate => Token::Either,
 
+                    // naga extensions
+                    "early_depth_test" if self.inner.extras.after_at => {
+                        self.inner.extras.after_early_depth_test = true;
+                        Token::EarlyDepthTest
+                    },
+                    "less_equal" if self.inner.extras.after_early_depth_test => Token::LessEqual,
+                    "greater_equal" if self.inner.extras.after_early_depth_test => {
+                        Token::GreaterEqual
+                    },
+                    "force" if self.inner.extras.after_early_depth_test => Token::Force,
+                    "unchanged" if self.inner.extras.after_early_depth_test => Token::Unchanged,
+
+                    word if is_reserved_word(word) => {
+                        self.diagnostics.push(Diagnostic {
+                            message: format!("'{word}' is a reserved word in WGSL"),
+                            range: to_range(token_start..token_end),
+                        });
+                        // upgraded reserved words are already mapped above
+                        if is_keyword_in_wesl(word) {
+                            self.diagnostics.push(Diagnostic {
+                                message: format!("switch to WESL to use `{word}`"),
+                                range: to_range(self.inner.span()),
+                            });
+                        }
+                        Token::Reserved
+                    },
                     _ => Token::Identifier,
                 };
                 self.inner.extras.after_at = false;
@@ -200,6 +402,7 @@ impl Iterator for WgslLexer<'_, '_> {
             },
             Some(')') => {
                 self.inner.extras.after_interpolate = false;
+                self.inner.extras.after_early_depth_test = false;
             },
             _ => (), // Not an ident
         }
@@ -232,16 +435,19 @@ impl Iterator for WgslLexer<'_, '_> {
     clippy::wildcard_enum_match_arm,
     reason = "Tries to mirror the algorithm as specified in the spec. Listing all tokens makes it less clear."
 )]
-fn collect_with_templates(
-    tokens_iter: impl Iterator<Item = (Token, Span)>
-) -> (Vec<Token>, Vec<Range<usize>>) {
-    let mut tokens_iter = tokens_iter.peekable();
+fn collect_with_templates<TokensIterator>(
+    tokens_iterator: TokensIterator
+) -> (Vec<Token>, Vec<Range<usize>>)
+where
+    TokensIterator: Iterator<Item = (Token, Span)>,
+{
+    let mut tokens_iterator = tokens_iterator.peekable();
     let mut nesting_depth = 0;
     let mut pending = vec![];
     let mut tokens = vec![];
     let mut spans = vec![];
 
-    while let Some((token, span)) = tokens_iter.next() {
+    while let Some((token, span)) = tokens_iterator.next() {
         tokens.push(token);
         spans.push(span);
         match token {
@@ -250,15 +456,15 @@ fn collect_with_templates(
                 while let Some((
                     Token::Blankspace | Token::LineEndingComment | Token::BlockComment,
                     _,
-                )) = tokens_iter.peek()
+                )) = tokens_iterator.peek()
                 {
-                    let (next_token, next_span) = tokens_iter.next().unwrap();
+                    let (next_token, next_span) = tokens_iterator.next().unwrap();
                     tokens.push(next_token);
                     spans.push(next_span);
                 }
 
-                if let Some((Token::LessThan, _)) = tokens_iter.peek() {
-                    let (next_token, next_span) = tokens_iter.next().unwrap();
+                if let Some((Token::LessThan, _)) = tokens_iterator.peek() {
+                    let (next_token, next_span) = tokens_iterator.next().unwrap();
                     tokens.push(next_token);
                     spans.push(next_span);
 
@@ -274,18 +480,18 @@ fn collect_with_templates(
                 } else {
                     // Patch up >>, >>=, >>==, >=, >==
                     // Precondition: pending.last().depth != nesting_depth
-                    match tokens_iter.peek() {
+                    match tokens_iterator.peek() {
                         Some((Token::GreaterThan, span)) => {
                             // Might be a `>>`
                             *tokens.last_mut().unwrap() = Token::ShiftRight;
                             spans[tokens.len() - 1].end = span.end;
-                            tokens_iter.next();
-                            match tokens_iter.peek() {
+                            tokens_iterator.next();
+                            match tokens_iterator.peek() {
                                 Some((Token::Equal, span)) => {
                                     // Is a >>=
                                     *tokens.last_mut().unwrap() = Token::ShiftRightEqual;
                                     spans[tokens.len() - 1].end = span.end;
-                                    tokens_iter.next();
+                                    tokens_iterator.next();
                                 },
                                 Some((Token::EqualEqual, span)) => {
                                     // Is a >>= =
@@ -296,7 +502,7 @@ fn collect_with_templates(
                                     spans.push(middle..span.end);
                                     nesting_depth = 0;
                                     pending.clear();
-                                    tokens_iter.next();
+                                    tokens_iterator.next();
                                 },
                                 _ => {},
                             }
@@ -305,7 +511,7 @@ fn collect_with_templates(
                             // Is a >=
                             *tokens.last_mut().unwrap() = Token::GreaterThanEqual;
                             spans[tokens.len() - 1].end = span.end;
-                            tokens_iter.next();
+                            tokens_iterator.next();
                         },
                         Some((Token::EqualEqual, span)) => {
                             // Is a >= =
@@ -316,7 +522,7 @@ fn collect_with_templates(
                             spans.push(middle..span.end);
                             nesting_depth = 0;
                             pending.clear();
-                            tokens_iter.next();
+                            tokens_iterator.next();
                         },
                         _ => {},
                     }
@@ -368,7 +574,7 @@ mod tests {
         expect: expect_test::Expect,
     ) {
         let mut diagnostics = vec![];
-        let (tokens, _) = lex(source, &mut diagnostics);
+        let (tokens, _) = lex(source, edition::Edition::Wgsl, &mut diagnostics);
         let mut expected = format!("{tokens:?}");
         if !diagnostics.is_empty() {
             writeln!(expected, "\n{diagnostics:?}");
@@ -382,7 +588,7 @@ mod tests {
         expect: expect_test::Expect,
     ) {
         let mut diagnostics = Vec::new();
-        let (tokens, spans) = lex(source, &mut diagnostics);
+        let (tokens, spans) = lex(source, edition::Edition::Wgsl, &mut diagnostics);
         let mut tokens_with_spans: String =
             tokens
                 .into_iter()

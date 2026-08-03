@@ -1,47 +1,64 @@
-use std::{fmt, panic};
+use std::{fmt, panic, sync::Mutex};
 
 use base_db::{
-    EditionedFileId, FileSourceRootInput, FileText, Nonce, RootQueryDb as _, SourceDatabase,
-    SourceRootId, SourceRootInput, change::Change, input::SourceRoot,
+    EditionedFileId, FileSourceRootInput, FileText, Nonce, SourceDatabase, SourceRootId,
+    SourceRootInput, change::Change, input::SourceRoot, set_all_packages_with_durability,
 };
-use hir_def::database::{DefDatabase as _, ExtensionsConfig};
-use salsa::Durability;
-use syntax::Edition;
+use hir_def::database::DefDatabase as _;
+use salsa::{Database as _, Durability};
+use syntax::{Edition, ExtensionsConfig};
 use triomphe::Arc;
 use vfs::{AnchoredPath, FileId, VfsPath, file_set::FileSet};
 
 #[salsa_macros::db]
-#[derive(Clone)]
 pub(crate) struct TestDatabase {
     storage: salsa::Storage<Self>,
     files: Arc<base_db::Files>,
+    events: Arc<Mutex<Option<Vec<salsa::Event>>>>,
     nonce: Nonce,
 }
+
 impl Default for TestDatabase {
     fn default() -> Self {
+        let events = Arc::<Mutex<Option<Vec<salsa::Event>>>>::default();
         let mut value = Self {
-            storage: salsa::Storage::default(),
+            storage: salsa::Storage::new(Some(Box::new({
+                let events = events.clone();
+                move |event| {
+                    let mut events = events.lock().unwrap();
+                    if let Some(events) = &mut *events {
+                        events.push(event);
+                    }
+                }
+            }))),
             files: Arc::default(),
+            events,
             nonce: Nonce::new(),
         };
-        value.set_extensions_with_durability(
-            ExtensionsConfig {
-                shader_int64: false,
-            },
-            Durability::MEDIUM,
-        );
+        value.set_extensions_with_durability(ExtensionsConfig::none(), Durability::MEDIUM);
         // This needs to be here otherwise the first `Change` will panic.
-        value.set_all_packages(Arc::new(Box::new([])));
+        set_all_packages_with_durability(&mut value, [], Durability::LOW);
         value
+    }
+}
+
+impl Clone for TestDatabase {
+    fn clone(&self) -> Self {
+        Self {
+            storage: self.storage.clone(),
+            files: self.files.clone(),
+            events: self.events.clone(),
+            nonce: Nonce::new(),
+        }
     }
 }
 
 impl fmt::Debug for TestDatabase {
     fn fmt(
         &self,
-        f: &mut fmt::Formatter<'_>,
+        formatter: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
-        f.debug_struct("TestDB").finish()
+        formatter.debug_struct("TestDatabase").finish()
     }
 }
 
@@ -117,5 +134,52 @@ impl SourceDatabase for TestDatabase {
             self.nonce,
             salsa::plumbing::ZalsaDatabase::zalsa(self).current_revision(),
         )
+    }
+}
+
+impl TestDatabase {
+    pub(crate) fn log<Callback>(
+        &self,
+        callback: Callback,
+    ) -> Vec<salsa::Event>
+    where
+        Callback: FnOnce(),
+    {
+        *self.events.lock().unwrap() = Some(Vec::new());
+        callback();
+        self.events.lock().unwrap().take().unwrap()
+    }
+
+    pub(crate) fn log_executed<Callback>(
+        &self,
+        callback: Callback,
+    ) -> (Vec<String>, Vec<salsa::Event>)
+    where
+        Callback: FnOnce(),
+    {
+        let events = self.log(callback);
+        let executed = events
+            .iter()
+            .filter_map(|event| match event.kind {
+                // This is pretty horrible, but `Debug` is the only way to inspect
+                // QueryDescriptor at the moment.
+                salsa::EventKind::WillExecute { database_key } => {
+                    let ingredient = self.ingredient_debug_name(database_key.ingredient_index());
+                    Some(ingredient.to_string())
+                },
+                salsa::EventKind::DidValidateMemoizedValue { .. }
+                | salsa::EventKind::WillBlockOn { .. }
+                | salsa::EventKind::WillIterateCycle { .. }
+                | salsa::EventKind::WillCheckCancellation
+                | salsa::EventKind::DidSetCancellationFlag
+                | salsa::EventKind::WillDiscardStaleOutput { .. }
+                | salsa::EventKind::DidDiscard { .. }
+                | salsa::EventKind::DidDiscardAccumulated { .. }
+                | salsa::EventKind::DidInternValue { .. }
+                | salsa::EventKind::DidReuseInternedValue { .. }
+                | salsa::EventKind::DidValidateInternedValue { .. } => None,
+            })
+            .collect();
+        (executed, events)
     }
 }

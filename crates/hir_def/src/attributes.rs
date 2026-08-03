@@ -2,7 +2,7 @@ use std::iter;
 
 use base_db::Lookup as _;
 use either::Either;
-use syntax::{HasAttributes, HasName as _, ast};
+use syntax::{HasAttributes, ast};
 use triomphe::Arc;
 
 use crate::{
@@ -51,6 +51,8 @@ impl AttributeList {
         let mut collector = ExprCollector::new(database, ExpressionStoreSource::Signature);
         let attributes = source
             .attributes()
+            .into_iter()
+            .flat_map(std::iter::IntoIterator::into_iter)
             .map(|attribute| Attribute {
                 name: attribute
                     .name()
@@ -138,6 +140,17 @@ fn get_attribute_parameters(
         ast::Attribute::VertexAttribute(inner) => Vec::new(),
         ast::Attribute::FragmentAttribute(inner) => Vec::new(),
         ast::Attribute::ComputeAttribute(inner) => Vec::new(),
+        ast::Attribute::ElifAttribute(inner) => inner
+            .parameter()
+            .into_iter()
+            .map(|e| collector.collect_expression(e))
+            .collect(),
+        ast::Attribute::ElseAttribute(inner) => Vec::new(),
+        ast::Attribute::IfAttribute(inner) => inner
+            .parameter()
+            .into_iter()
+            .map(|e| collector.collect_expression(e))
+            .collect(),
     }
 }
 

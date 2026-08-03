@@ -241,6 +241,7 @@ fn parse_line(line: &str) -> (&str, Overload) {
                 let name = (!name.is_empty()).then(|| name.to_owned());
                 (parse_type(&mut generics, r#type.trim()), name)
             },
+            // TODO remove this branch
             _ => (parse_type(&mut generics, r#type.trim()), None),
         })
         .collect();
@@ -352,7 +353,7 @@ fn parse_type(
         } else if let Some(size) = r#type.strip_prefix("mat") {
             let mut characters = size.chars();
             let columns = characters.next().unwrap();
-            assert!(characters.next().unwrap() == 'x');
+            assert_eq!(characters.next().unwrap(), 'x');
             let rows = characters.next().unwrap();
             assert!(characters.next().is_none());
 

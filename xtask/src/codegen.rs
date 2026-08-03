@@ -137,7 +137,7 @@ impl fmt::Display for Location {
         let name = self.file.file_name().unwrap();
         write!(
             formatter,
-            " [{}](https://github.com/wgsl-analyzer/wgsl-analyzer/blob/master/{path}#L{}) ",
+            " [{}](https://github.com/wgsl-analyzer/wgsl-analyzer/blob/main/{path}#L{}) ",
             name.to_str().unwrap(),
             self.line
         )

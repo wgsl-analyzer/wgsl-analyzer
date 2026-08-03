@@ -1,8 +1,8 @@
+//! Core data structure representing IDE state.
+
 #[cfg(test)]
 mod fixture;
 
-mod debug_command;
-pub mod diagnostics;
 mod folding_ranges;
 mod formatting;
 mod goto_definition;
@@ -12,26 +12,28 @@ pub mod inlay_hints;
 mod markup;
 mod navigation_target;
 pub mod signature_help;
+mod status;
 mod typing;
+mod view_module_graph;
+mod view_package_graph;
 mod view_syntax_tree;
 
 use std::panic;
 
 use base_db::{
-    EditionedFileId, FilePosition, FileRange, FileSet, RangeInfo, RootQueryDb as _,
-    SourceDatabase as _, SourceRoot, TextRange, change::Change, input::SourceRootId,
+    EditionedFileId, FilePosition, FileRange, FileSet, RangeInfo, SourceDatabase as _, SourceRoot,
+    TextRange, change::Change, input::SourceRootId,
 };
-use diagnostics::Diagnostic;
-use hir::{ExtensionsConfig, diagnostics::DiagnosticsConfig};
 use hir_def::database::DefDatabase as _;
 use ide_completion::{CompletionConfig, item::CompletionItem};
 use ide_db::LineIndexDatabase as _;
+use ide_diagnostics::{Diagnostic, DiagnosticsConfig};
 pub use line_index::{LineCol, LineIndex};
 use rustc_hash::FxHashMap;
 use salsa::{Cancelled, Database as _, Durability};
-use syntax::{Edition, Parse, SyntaxNode};
+use syntax::{ExtensionsConfig, Parse, SyntaxNode};
 use triomphe::Arc;
-use vfs::{AbsPathBuf, FileId, VfsPath};
+use vfs::{FileId, VfsPath};
 use wgsl_formatter::FormattingOptions;
 
 use crate::signature_help::SignatureHelp;
@@ -241,6 +243,14 @@ impl Analysis {
         Cancelled::catch(|| function(&self.database))
     }
 
+    /// Debug info about the current state of the analysis.
+    pub fn status(
+        &self,
+        file_id: Option<FileId>,
+    ) -> Cancellable<String> {
+        self.with_db(|database| status::status(database, file_id))
+    }
+
     pub fn source_root_id(
         &self,
         file_id: FileId,
@@ -298,7 +308,23 @@ impl Analysis {
         &self,
         file_id: FileId,
     ) -> Cancellable<Parse> {
-        self.with_db(|database| database.parse(EditionedFileId::from_file(database, file_id)))
+        self.with_db(|database| EditionedFileId::from_file(database, file_id).parse(database))
+    }
+
+    /// Renders the module graph to `GraphViz` "dot" syntax.
+    pub fn view_module_graph(
+        &self,
+        file_id: FileId,
+    ) -> Cancellable<Option<String>> {
+        self.with_db(|database| view_module_graph::view_module_graph(database, file_id))
+    }
+
+    /// Renders the package graph to `GraphViz` "dot" syntax.
+    pub fn view_package_graph(
+        &self,
+        full: bool,
+    ) -> Cancellable<String> {
+        self.with_db(|database| view_package_graph::view_package_graph(database, full))
     }
 
     pub fn line_index(
@@ -332,8 +358,8 @@ impl Analysis {
     ) -> Cancellable<Vec<Fold>> {
         self.with_db(|database| {
             folding_ranges::folding_ranges(
-                &database
-                    .parse(EditionedFileId::from_file(database, file_id))
+                &EditionedFileId::from_file(database, file_id)
+                    .parse(database)
                     .tree(),
             )
         })
@@ -344,13 +370,13 @@ impl Analysis {
         config: &DiagnosticsConfig,
         file_id: FileId,
     ) -> Cancellable<Vec<Diagnostic>> {
-        self.with_db(|database| diagnostics::diagnostics(database, config, file_id))
+        self.with_db(|database| ide_diagnostics::diagnostics(database, config, file_id))
     }
 
     pub fn goto_definition(
         &self,
         file_position: FilePosition,
-    ) -> Cancellable<Option<NavigationTarget>> {
+    ) -> Cancellable<Option<RangeInfo<NavigationTarget>>> {
         self.with_db(|database| goto_definition::goto_definition(database, file_position))
     }
 
@@ -361,8 +387,9 @@ impl Analysis {
         position: FilePosition,
         trigger_character: Option<char>,
     ) -> Cancellable<Option<Vec<CompletionItem>>> {
+        let _p = tracing::info_span!("Analysis::completions").entered();
         self.with_db(|database| {
-            ide_completion::completions2(database, config, position, trigger_character)
+            ide_completion::completions(database, config, position, trigger_character)
         })
     }
 
@@ -389,16 +416,5 @@ impl Analysis {
         position: FilePosition,
     ) -> Cancellable<Option<SignatureHelp>> {
         self.with_db(|database| signature_help::signature_help(database, position))
-    }
-
-    /// # Panics
-    ///
-    /// Panics if the command was cancelled.
-    pub fn debug_command(
-        &self,
-        file_position: FilePosition,
-    ) -> Cancellable<()> {
-        self.with_db(|database| debug_command::debug_command(database, file_position))?;
-        Ok(())
     }
 }

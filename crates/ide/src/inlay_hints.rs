@@ -2,12 +2,12 @@ use std::{fmt, hash, iter, mem};
 
 use ast::Expression as AstExpression;
 use base_db::{EditionedFileId, FileId, FileRange, TextRange};
-use hir::{Field, HasSource as _, Semantics};
+use hir::{AddressSpace, Field, HasSource as _, Semantics};
 use hir_def::{InFile, database::DefDatabase as _, item_tree::Name, signature::FieldId};
 use hir_ty::{
     function::FunctionDetails,
-    infer::ResolvedCall,
-    layout::{FieldLayout, LayoutAddressSpace},
+    layout::FieldLayout,
+    lower::ResolvedCall,
     ty::pretty::{TypeVerbosity, pretty_type_with_verbosity},
 };
 use ide_db::text_edit::TextEdit;
@@ -86,10 +86,12 @@ impl<T> LazyProperty<T> {
 }
 
 impl hash::Hash for InlayHint {
-    fn hash<H: hash::Hasher>(
+    fn hash<Hasher>(
         &self,
-        state: &mut H,
-    ) {
+        state: &mut Hasher,
+    ) where
+        Hasher: hash::Hasher,
+    {
         self.range.hash(state);
         self.position.hash(state);
         self.pad_left.hash(state);
@@ -129,11 +131,14 @@ pub struct InlayHintLabel {
 }
 
 impl InlayHintLabel {
-    pub fn simple<Stringy: Into<String>>(
+    pub fn simple<Stringy>(
         stringy: Stringy,
         tooltip: Option<LazyProperty<InlayTooltip>>,
         linked_location: Option<LazyProperty<FileRange>>,
-    ) -> Self {
+    ) -> Self
+    where
+        Stringy: Into<String>,
+    {
         Self {
             parts: smallvec![InlayHintLabelPart {
                 text: stringy.into(),
@@ -267,10 +272,12 @@ pub struct InlayHintLabelPart {
 }
 
 impl hash::Hash for InlayHintLabelPart {
-    fn hash<H: hash::Hasher>(
+    fn hash<Hasher>(
         &self,
-        state: &mut H,
-    ) {
+        state: &mut Hasher,
+    ) where
+        Hasher: hash::Hasher,
+    {
         self.text.hash(state);
         self.linked_location.is_some().hash(state);
         self.tooltip.is_some().hash(state);
@@ -363,20 +370,22 @@ fn get_struct_layout_hints(
             .intern_struct(InFile::new(file_id, r#struct));
         let fields = semantics.database.field_types(r#struct);
 
+        // TODO check uniform_buffer_standard_layout extension here
+        // https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1358
         let address_space = if semantics
             .database
             .struct_is_used_in_uniform(r#struct, file_id)
         {
-            LayoutAddressSpace::Uniform
+            AddressSpace::Uniform
         } else {
-            LayoutAddressSpace::Other
+            AddressSpace::Storage
         };
 
         hir_ty::layout::struct_member_layout(
             &fields.0,
             semantics.database,
             address_space,
-            |field, field_layout| {
+            |field, _, field_layout| {
                 let FieldLayout { offset, .. } = field_layout;
                 let field = Field {
                     id: FieldId { r#struct, field },
@@ -385,11 +394,9 @@ fn get_struct_layout_hints(
                 let source = field.source(semantics.database)?.value;
 
                 // this is only necessary, because the field syntax nodes include the whitespace to the next line...
-                let actual_last_token = iter::successors(
-                    source.syntax().last_token(),
-                    rowan::SyntaxToken::prev_token, // spellchecker:disable-line
-                )
-                .find(|token| !token.kind().is_trivia())?;
+                let actual_last_token =
+                    iter::successors(source.syntax().last_token(), rowan::SyntaxToken::prev_token)
+                        .find(|token| !token.kind().is_trivia())?;
                 let range = TextRange::new(
                     source.syntax().text_range().start(),
                     actual_last_token.text_range().end(),

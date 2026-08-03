@@ -12,6 +12,9 @@ trim_trailing_whitespace = true
 
 [*.rs]
 
+[*.ts]
+indent_style = tab
+
 [*.toml]
 indent_style = tab
 
@@ -30,3 +33,6 @@ indent_style = tab
 
 [*.llw]
 indent_style = tab
+
+[.nvmrc]
+insert_final_newline = false

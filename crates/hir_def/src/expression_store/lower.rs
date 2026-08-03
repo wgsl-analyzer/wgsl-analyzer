@@ -410,9 +410,9 @@ pub(crate) fn lower_override(
     (specifier, source_map)
 }
 
-fn as_name_opt<N>(name: Option<N>) -> Name
+fn as_name_opt<Namelike>(name: Option<Namelike>) -> Name
 where
-    Name: From<N>,
+    Name: From<Namelike>,
 {
     name.map_or_else(Name::missing, Name::from)
 }

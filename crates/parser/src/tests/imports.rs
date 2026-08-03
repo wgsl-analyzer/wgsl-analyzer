@@ -1,10 +1,58 @@
 use expect_test::expect;
 
-use crate::tests::check;
+use crate::tests::{check, check_statement_with_edition, check_with_edition};
+
+#[test]
+fn simplest_import_fail() {
+    check(
+        "import foo;",
+        expect![[r#"
+            SourceFile@0..11
+              Error@0..10
+                Reserved@0..6 "import"
+                Blankspace@6..7 " "
+                Identifier@7..10 "foo"
+              Semicolon@10..11 ";"
+
+            error at 0..6: 'import' is a reserved word in WGSL
+            error at 0..6: switch to WESL to use `import`
+            error at 0..6: invalid syntax, expected one of: 'alias', '@', 'const', 'const_assert', 'diagnostic', <end of file>, 'enable', 'fn', 'import', 'let', 'override', 'requires', ';', 'struct', 'var'"#]],
+    );
+}
+
+#[test]
+fn qualified_path_fail() {
+    check(
+        "const x: some_package::Type = 0;",
+        expect![[r#"
+            SourceFile@0..32
+              ConstantDeclaration@0..32
+                Const@0..5 "const"
+                Blankspace@5..6 " "
+                Name@6..7
+                  Identifier@6..7 "x"
+                Colon@7..8 ":"
+                Blankspace@8..9 " "
+                TypeSpecifier@9..27
+                  Path@9..27
+                    Identifier@9..21 "some_package"
+                    ColonColon@21..23 "::"
+                    Identifier@23..27 "Type"
+                Blankspace@27..28 " "
+                Equal@28..29 "="
+                Blankspace@29..30 " "
+                Literal@30..31
+                  IntLiteral@30..31 "0"
+                Semicolon@31..32 ";"
+
+            error at 23..27: switch to WESL to use qualified paths"#]],
+    );
+}
 
 #[test]
 fn simplest_import() {
-    check(
+    check_with_edition(
+        edition::Edition::Wesl2025Unstable,
         "import foo;",
         expect![[r#"
             SourceFile@0..11
@@ -20,7 +68,8 @@ fn simplest_import() {
 
 #[test]
 fn super_import() {
-    check(
+    check_with_edition(
+        edition::Edition::Wesl2025Unstable,
         "import super::super::bar;",
         expect![[r#"
             SourceFile@0..25
@@ -41,7 +90,8 @@ fn super_import() {
 
 #[test]
 fn package_import() {
-    check(
+    check_with_edition(
+        edition::Edition::Wesl2025Unstable,
         "import package::{bar};",
         expect![[r#"
             SourceFile@0..22
@@ -63,7 +113,8 @@ fn package_import() {
 
 #[test]
 fn import_alias() {
-    check(
+    check_with_edition(
+        edition::Edition::Wesl2025Unstable,
         "import foo::bar as bar;",
         expect![[r#"
             SourceFile@0..23
@@ -88,7 +139,8 @@ fn import_alias() {
 
 #[test]
 fn illegal_import_aliasing_super() {
-    check(
+    check_with_edition(
+        edition::Edition::Wesl2025Unstable,
         "import super as bar;",
         expect![[r#"
             SourceFile@0..20
@@ -112,7 +164,8 @@ fn illegal_import_aliasing_super() {
 
 #[test]
 fn import_nested_collections() {
-    check(
+    check_with_edition(
+        edition::Edition::Wesl2025Unstable,
         "import bevy_pbr::{
   forward_io::VertexOutput,
   pbr_types::{PbrInput as PbrOutput, pbr_input_new},
@@ -168,5 +221,125 @@ fn import_nested_collections() {
                     Blankspace@115..116 "\n"
                     BraceRight@116..117 "}"
                 Semicolon@117..118 ";""#]],
+    );
+}
+
+#[test]
+fn path_function_call() {
+    check_with_edition(
+        edition::Edition::Wesl2025Unstable,
+        "fn main() { foo::bar::baz(); }",
+        expect![[r#"
+            SourceFile@0..30
+              FunctionDeclaration@0..30
+                Fn@0..2 "fn"
+                Blankspace@2..3 " "
+                Name@3..7
+                  Identifier@3..7 "main"
+                FunctionParameters@7..9
+                  ParenthesisLeft@7..8 "("
+                  ParenthesisRight@8..9 ")"
+                Blankspace@9..10 " "
+                CompoundStatement@10..30
+                  BraceLeft@10..11 "{"
+                  Blankspace@11..12 " "
+                  FunctionCallStatement@12..28
+                    FunctionCall@12..27
+                      IdentExpression@12..25
+                        Path@12..25
+                          Identifier@12..15 "foo"
+                          ColonColon@15..17 "::"
+                          Identifier@17..20 "bar"
+                          ColonColon@20..22 "::"
+                          Identifier@22..25 "baz"
+                      Arguments@25..27
+                        ParenthesisLeft@25..26 "("
+                        ParenthesisRight@26..27 ")"
+                    Semicolon@27..28 ";"
+                  Blankspace@28..29 " "
+                  BraceRight@29..30 "}""#]],
+    );
+}
+
+#[test]
+fn path_assignment() {
+    check_with_edition(
+        edition::Edition::Wesl2025Unstable,
+        "fn main() { foo::bar = 3; }",
+        expect![[r#"
+            SourceFile@0..27
+              FunctionDeclaration@0..27
+                Fn@0..2 "fn"
+                Blankspace@2..3 " "
+                Name@3..7
+                  Identifier@3..7 "main"
+                FunctionParameters@7..9
+                  ParenthesisLeft@7..8 "("
+                  ParenthesisRight@8..9 ")"
+                Blankspace@9..10 " "
+                CompoundStatement@10..27
+                  BraceLeft@10..11 "{"
+                  Blankspace@11..12 " "
+                  AssignmentStatement@12..25
+                    IdentExpression@12..20
+                      Path@12..20
+                        Identifier@12..15 "foo"
+                        ColonColon@15..17 "::"
+                        Identifier@17..20 "bar"
+                    Blankspace@20..21 " "
+                    Equal@21..22 "="
+                    Blankspace@22..23 " "
+                    Literal@23..24
+                      IntLiteral@23..24 "3"
+                    Semicolon@24..25 ";"
+                  Blankspace@25..26 " "
+                  BraceRight@26..27 "}""#]],
+    );
+}
+
+#[test]
+fn path_with_super_or_package() {
+    check_statement_with_edition(
+        edition::Edition::Wesl2025Unstable,
+        "package::foo::bar();",
+        expect![[r#"
+            SourceFile@0..20
+              FunctionCallStatement@0..20
+                FunctionCall@0..19
+                  IdentExpression@0..17
+                    Path@0..17
+                      ImportPackageRelative@0..9
+                        Package@0..7 "package"
+                        ColonColon@7..9 "::"
+                      Identifier@9..12 "foo"
+                      ColonColon@12..14 "::"
+                      Identifier@14..17 "bar"
+                  Arguments@17..19
+                    ParenthesisLeft@17..18 "("
+                    ParenthesisRight@18..19 ")"
+                Semicolon@19..20 ";""#]],
+    );
+
+    check_statement_with_edition(
+        edition::Edition::Wesl2025Unstable,
+        "super::foo::utils::barValue();",
+        expect![[r#"
+            SourceFile@0..30
+              FunctionCallStatement@0..30
+                FunctionCall@0..29
+                  IdentExpression@0..27
+                    Path@0..27
+                      ImportSuperRelative@0..7
+                        Super@0..5 "super"
+                        ColonColon@5..7 "::"
+                      Identifier@7..10 "foo"
+                      ColonColon@10..12 "::"
+                      Identifier@12..17 "utils"
+                      ColonColon@17..19 "::"
+                      Identifier@19..27 "barValue"
+                  Arguments@27..29
+                    ParenthesisLeft@27..28 "("
+                    ParenthesisRight@28..29 ")"
+                Semicolon@29..30 ";""#]],
     );
 }

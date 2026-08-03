@@ -1,7 +1,7 @@
 # LSP Extensions
 
 <!---
-crates/wgsl-analyzer/src/lsp/extensions.rs hash: a2fcb0c9c05299e6
+crates/wgsl-analyzer/src/lsp/extensions.rs hash: a08155a5bb70b5e4
 
 If you need to change the above hash to make the test pass, please check whether you
 need to adjust this doc as well and ping this issue:
@@ -418,7 +418,7 @@ Note that this functionality is intended primarily to inform the end user about 
 In particular, it is valid for the client to completely ignore this extension.
 Clients are discouraged from but are allowed to use the `health` status to decide if it is worth sending a request to the server.
 
-### Controlling Flycheck
+## Controlling Flycheck
 
 The flycheck/checkOnSave feature can be controlled via notifications sent by the client to the server.
 

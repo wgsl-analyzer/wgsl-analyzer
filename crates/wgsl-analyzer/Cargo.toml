@@ -26,7 +26,7 @@ dissimilar.workspace = true
 ide-completion.workspace = true
 itertools.workspace = true
 # scip = "0.5.2"
-lsp-types = { version = "=0.95.0", features = ["proposed"] }
+lsp-types = { package = "gen-lsp-types", version = "0.4.0", features = ["url"] }
 parking_lot = "0.12.5"
 xflags = "0.3.2"
 # threadpool = "1.8.1"
@@ -44,12 +44,13 @@ triomphe.workspace = true
 # toml = "0.8.8"
 nohash-hasher.workspace = true
 semver.workspace = true
-memchr = "2.8.0"
+memchr = "2.8.1"
 # process-wrap = { version = "8.2.0", features = ["std"] }
 # cfg.workspace = true
 hir-ty.workspace = true
 hir.workspace = true
 ide-db.workspace = true
+ide-diagnostics.workspace = true
 # intern.workspace = true
 # This should only be used in CLI
 # ide-ssr.workspace = true
@@ -59,14 +60,15 @@ ide.workspace = true
 project-model.workspace = true
 stdx.workspace = true
 # toolchain.workspace = true
-vfs-notify.workspace = true
 vfs.workspace = true
+vfs-notify.workspace = true
 paths.workspace = true
 camino.workspace = true
 base-db.workspace = true
 line-index.workspace = true
 wgsl-formatter.workspace = true
 edition.workspace = true
+idna_adapter.workspace = true
 
 [dev-dependencies]
 expect-test.workspace = true
@@ -76,11 +78,14 @@ test-utils.workspace = true
 # test-fixture.workspace = true
 # syntax-bridge.workspace = true
 
-[target.'cfg(windows)'.dependencies]
-windows-sys = { version = "0.61", features = [
-	"Win32_System_Diagnostics_Debug",
-	"Win32_System_Threading",
-] }
+[target."cfg(windows)".dependencies]
+windows-sys = {
+	version = "0.61",
+	features = [
+		"Win32_System_Diagnostics_Debug",
+		"Win32_System_Threading",
+	]
+}
 
 [features]
 force-always-assert = ["stdx/force-always-assert"]

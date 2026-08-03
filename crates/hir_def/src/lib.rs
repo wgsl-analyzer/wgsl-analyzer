@@ -1,25 +1,31 @@
+//! RPC API.
+
 mod ast_id;
 pub mod attributes;
 pub mod body;
 pub mod database;
 pub mod expression;
 pub mod expression_store;
+pub mod item_scope;
 pub mod item_tree;
 pub mod mod_path;
+pub mod name_resolution;
 pub mod resolver;
 pub mod signature;
 #[cfg(test)]
 mod test_db;
-#[cfg(test)]
-mod tests;
 pub mod type_ref;
 pub mod type_specifier;
+pub mod visibility;
 pub use ast_id::*;
 use base_db::{EditionedFileId, FileRange, TextRange};
 use database::DefDatabase;
-use item_tree::{ItemTreeNode, ModuleItemId};
 use rowan::NodeOrToken;
-use syntax::{AstNode, SyntaxNode, SyntaxToken};
+use syntax::{AstNode, SyntaxNode, SyntaxToken, pointer::AstPointer};
+
+pub type FxIndexSet<T> = indexmap::IndexSet<T, rustc_hash::FxBuildHasher>;
+pub type FxIndexMap<K, V> =
+    indexmap::IndexMap<K, V, std::hash::BuildHasherDefault<rustc_hash::FxHasher>>;
 
 /// `InFile<T>` stores a value of `T` inside a particular file/syntax tree.
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Hash)]
@@ -44,10 +50,13 @@ impl<T> InFile<T> {
         InFile::new(self.file_id, value)
     }
 
-    pub fn map<Function: FnOnce(T) -> U, U>(
+    pub fn map<Function, U>(
         self,
         function: Function,
-    ) -> InFile<U> {
+    ) -> InFile<U>
+    where
+        Function: FnOnce(T) -> U,
+    {
         InFile::new(self.file_id, function(self.value))
     }
 
@@ -64,11 +73,11 @@ impl<T> InFile<T> {
         &self,
         database: &dyn database::DefDatabase,
     ) -> SyntaxNode {
-        database.parse_or_resolve(self.file_id).syntax()
+        self.file_id.parse(database).syntax()
     }
 }
 
-impl<N: AstNode> InFile<N> {
+impl<Node: AstNode> InFile<Node> {
     pub fn original_file_range(
         &self,
         database: &dyn DefDatabase,
@@ -108,11 +117,14 @@ impl<N: HasTextRange, T: HasTextRange> HasTextRange for NodeOrToken<N, T> {
     }
 }
 
-pub fn original_file_range<T: HasTextRange>(
+pub fn original_file_range<T>(
     database: &dyn DefDatabase,
     file_id: EditionedFileId,
     value: &T,
-) -> FileRange {
+) -> FileRange
+where
+    T: HasTextRange,
+{
     FileRange {
         file_id: file_id.file_id(database),
         range: value.text_range(),
@@ -120,28 +132,28 @@ pub fn original_file_range<T: HasTextRange>(
 }
 
 pub trait HasSource {
-    type Value;
+    type Value: AstNode;
     fn source(
         &self,
         database: &dyn DefDatabase,
-    ) -> InFile<Self::Value>;
+    ) -> InFile<Self::Value> {
+        let InFile { file_id, value } = self.ast_ptr(database);
+        InFile::new(file_id, value.to_node(&file_id.parse(database).syntax()))
+    }
+    fn ast_ptr(
+        &self,
+        database: &dyn DefDatabase,
+    ) -> InFile<AstPointer<Self::Value>>;
 }
 
-impl<N: ItemTreeNode> HasSource for InFile<ModuleItemId<N>> {
-    type Value = N::Source;
+impl<Node: AstNode> HasSource for InFile<FileAstId<Node>> {
+    type Value = Node;
 
-    fn source(
+    fn ast_ptr(
         &self,
         database: &dyn DefDatabase,
-    ) -> InFile<N::Source> {
-        let item_tree = database.item_tree(self.file_id);
+    ) -> InFile<AstPointer<Self::Value>> {
         let ast_id_map = database.ast_id_map(self.file_id);
-        let root = database.parse_or_resolve(self.file_id);
-        let node = N::lookup(&item_tree, self.value.index);
-
-        InFile::new(
-            self.file_id,
-            ast_id_map.get(node.ast_id()).to_node(&root.syntax()),
-        )
+        InFile::new(self.file_id, ast_id_map.get(self.value))
     }
 }

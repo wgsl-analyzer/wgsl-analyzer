@@ -1,6 +1,9 @@
+use std::str::FromStr as _;
+
 use anyhow::format_err;
 use base_db::{FilePosition, FileRange, TextRange, TextSize};
 use line_index::{LineCol, WideLineCol};
+use lsp_types::{Position, Range, TextDocumentIdentifier, TextDocumentPositionParams, Uri};
 use paths::Utf8PathBuf;
 use vfs::{AbsPathBuf, FileId};
 
@@ -11,20 +14,20 @@ use crate::{
     try_default,
 };
 
-pub(crate) fn absolute_path(url: &lsp_types::Url) -> anyhow::Result<AbsPathBuf> {
+pub(crate) fn absolute_path(url: &Uri) -> anyhow::Result<AbsPathBuf> {
     let path = url
         .to_file_path()
         .map_err(|()| anyhow::format_err!("url is not a file"))?;
     Ok(AbsPathBuf::try_from(Utf8PathBuf::from_path_buf(path).unwrap()).unwrap())
 }
 
-pub(crate) fn vfs_path(url: &lsp_types::Url) -> Result<vfs::VfsPath> {
+pub(crate) fn vfs_path(url: &Uri) -> Result<vfs::VfsPath> {
     absolute_path(url).map(vfs::VfsPath::from)
 }
 
 pub(crate) fn offset(
     line_index: &LineIndex,
-    position: lsp_types::Position,
+    position: Position,
 ) -> anyhow::Result<TextSize> {
     let line_column = match line_index.encoding {
         PositionEncoding::Utf8 => LineCol {
@@ -61,7 +64,7 @@ pub(crate) fn offset(
 
 pub(crate) fn text_range(
     line_index: &LineIndex,
-    range: lsp_types::Range,
+    range: Range,
 ) -> Result<TextRange> {
     let start = offset(line_index, range.start)?;
     let end = offset(line_index, range.end)?;
@@ -72,7 +75,7 @@ pub(crate) fn text_range(
 /// Returns `None` if the file was excluded.
 pub(crate) fn file_id(
     snap: &GlobalStateSnapshot,
-    url: &lsp_types::Url,
+    url: &Uri,
 ) -> anyhow::Result<Option<FileId>> {
     snap.url_to_file_id(url)
 }
@@ -80,7 +83,7 @@ pub(crate) fn file_id(
 /// Returns `None` if the file was excluded.
 pub(crate) fn file_position(
     snap: &GlobalStateSnapshot,
-    tdpp: &lsp_types::TextDocumentPositionParams,
+    tdpp: &TextDocumentPositionParams,
 ) -> anyhow::Result<Option<FilePosition>> {
     let file_id = try_default!(file_id(snap, &tdpp.text_document.uri)?);
     let line_index = snap.file_line_index(file_id)?;
@@ -91,8 +94,8 @@ pub(crate) fn file_position(
 /// Returns `None` if the file was excluded.
 pub(crate) fn file_range(
     snap: &GlobalStateSnapshot,
-    text_document_identifier: &lsp_types::TextDocumentIdentifier,
-    range: lsp_types::Range,
+    text_document_identifier: &TextDocumentIdentifier,
+    range: Range,
 ) -> anyhow::Result<Option<FileRange>> {
     file_range_uri(snap, &text_document_identifier.uri, range)
 }
@@ -100,8 +103,8 @@ pub(crate) fn file_range(
 /// Returns `None` if the file was excluded.
 pub(crate) fn file_range_uri(
     snap: &GlobalStateSnapshot,
-    document: &lsp_types::Url,
-    range: lsp_types::Range,
+    document: &Uri,
+    range: Range,
 ) -> anyhow::Result<Option<FileRange>> {
     let file_id = try_default!(file_id(snap, document)?);
     let line_index = snap.file_line_index(file_id)?;

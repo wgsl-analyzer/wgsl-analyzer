@@ -7,7 +7,7 @@ The `wgsl-analyzer` manual uses [mdBook](https://rust-lang.github.io/mdBook).
 To run the documentation site locally:
 
 ```bash
-cargo install mdbook
+cargo install mdbook mdbook-toc
 cd docs/book
 mdbook serve
 # make changes to documentation files in doc/book/src

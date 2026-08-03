@@ -11,8 +11,34 @@ use syntax::{
     match_ast,
 };
 
-const REGION_START: &str = "// region:";
-const REGION_END: &str = "// endregion";
+fn is_region_start(text: &str) -> bool {
+    is_region_marker(text, "region")
+}
+
+fn is_region_end(text: &str) -> bool {
+    is_region_marker(text, "endregion")
+}
+
+fn is_region_marker(
+    text: &str,
+    marker: &str,
+) -> bool {
+    let text = text.trim_start();
+    let text = if let Some(text) = text.strip_prefix("//") {
+        text
+    } else if let Some(text) = text.strip_prefix("/*") {
+        text
+    } else {
+        return false;
+    };
+
+    let text = text.trim_start();
+    let text = text.strip_suffix("*/").map_or(text, str::trim_end);
+    let text = text.strip_prefix('#').map_or(text, str::trim_start);
+    text.strip_prefix(marker).is_some_and(|rest| {
+        rest.is_empty() || rest.starts_with(':') || rest.starts_with(char::is_whitespace)
+    })
+}
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum FoldKind {
@@ -98,9 +124,9 @@ pub(crate) fn folding_ranges(file: &SourceFile) -> Vec<Fold> {
                         continue;
                     }
                     let text = comment.text().trim_start();
-                    if text.starts_with(REGION_START) {
+                    if is_region_start(text) {
                         region_starts.push(comment.syntax().text_range().start());
-                    } else if text.starts_with(REGION_END) {
+                    } else if is_region_end(text) {
                         if let Some(region) = region_starts.pop() {
                             result.push(Fold {
                                 range: TextRange::new(region, comment.syntax().text_range().end()),
@@ -166,12 +192,12 @@ const fn fold_kind(kind: SyntaxKind) -> Option<FoldKind> {
     }
 }
 
-fn contiguous_range_for_item_group<N>(
-    first: &N,
+fn contiguous_range_for_item_group<Node>(
+    first: &Node,
     visited: &mut FxHashSet<SyntaxNode>,
 ) -> Option<TextRange>
 where
-    N: AstNode + Clone,
+    Node: AstNode + Clone,
 {
     if !visited.insert(first.syntax().clone()) {
         return None;
@@ -200,7 +226,7 @@ where
             },
         };
 
-        if let Some(next) = N::cast(node) {
+        if let Some(next) = Node::cast(node) {
             // Rust-Analyzer has a check for equal visibility here
             // WGSL does not yet have a notion of visibility, so that check doesn't exist
             visited.insert(next.syntax().clone());
@@ -249,7 +275,7 @@ fn contiguous_range_for_comment(
                 {
                     let text = comment.text().trim_start();
                     // regions are not real comments
-                    if !(text.starts_with(REGION_START) || text.starts_with(REGION_END)) {
+                    if !(is_region_start(text) || is_region_end(text)) {
                         visited.insert(comment.clone());
                         last = comment;
                         continue;

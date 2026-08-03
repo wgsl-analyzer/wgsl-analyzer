@@ -9,7 +9,7 @@ exclude = []
 
 [workspace.package]
 edition = "2024"
-rust-version = "1.93"
+rust-version = "1.97.1"
 repository = "https://github.com/wgsl-analyzer/wgsl-analyzer"
 license = "MIT OR Apache-2.0"
 
@@ -22,75 +22,110 @@ hir-def = { path = "./crates/hir_def", version = "0.0.0" }
 hir-ty = { path = "./crates/hir_ty", version = "0.0.0" }
 ide = { path = "./crates/ide", version = "0.0.0" }
 ide-completion = { path = "./crates/ide_completion", version = "0.0.0" }
+ide-diagnostics = { path = "./crates/ide-diagnostics", version = "0.0.0" }
 ide-db = { path = "./crates/ide-db", version = "0.0.0" }
 parser = { path = "./crates/parser", version = "0.0.0" }
 profile = { path = "./crates/profile", version = "0.0.0" }
 project-model = { path = "./crates/project-model", version = "0.0.0" }
-stdx = { git = "https://github.com/rust-lang/rust-analyzer", rev = "b42b63f390a4dab14e6efa34a70e67f5b087cc62", version = "0.0.0" }
 syntax = { path = "./crates/syntax", version = "0.0.0" }
-# toolchain = { path = "./crates/toolchain", version = "0.0.0" }
+toolchain = { path = "./crates/toolchain", version = "0.0.0" }
 test-fixture = { path = "./crates/test-fixture", version = "0.0.0" }
 test-utils = { path = "./crates/test-utils", version = "0.0.0" }
+vfs = { path = "./crates/vfs", version = "0.0.0" }
+vfs-notify = { path = "./crates/vfs-notify", version = "0.0.0" }
 wgsl-formatter = { path = "./crates/wgsl_formatter", version = "0.0.0" }
 edition = { path = "./crates/edition", version = "0.0.0" }
 #
 # rust-analyzer crates
-vfs-notify = { git = "https://github.com/rust-lang/rust-analyzer", rev = "b42b63f390a4dab14e6efa34a70e67f5b087cc62", version = "0.0.0" }
-vfs = { git = "https://github.com/rust-lang/rust-analyzer", rev = "b42b63f390a4dab14e6efa34a70e67f5b087cc62", version = "0.0.0" }
-paths = { git = "https://github.com/rust-lang/rust-analyzer", rev = "b42b63f390a4dab14e6efa34a70e67f5b087cc62", version = "0.0.0" }
-query-group = { package = "query-group-macro", git = "https://github.com/rust-lang/rust-analyzer", rev = "b42b63f390a4dab14e6efa34a70e67f5b087cc62", version = "0.0.0" }
+stdx = {
+	git = "https://github.com/rust-lang/rust-analyzer",
+	rev = "b42b63f390a4dab14e6efa34a70e67f5b087cc62",
+	version = "0.0.0"
+}
+paths = {
+	git = "https://github.com/rust-lang/rust-analyzer",
+	rev = "b42b63f390a4dab14e6efa34a70e67f5b087cc62",
+	version = "0.0.0"
+}
+query-group = {
+	package = "query-group-macro",
+	git = "https://github.com/rust-lang/rust-analyzer",
+	rev = "b42b63f390a4dab14e6efa34a70e67f5b087cc62",
+	version = "0.0.0"
+}
 #
 # crates from rust-analyzer that are published separately
 line-index = "0.1.2"
 la-arena = "0.3.1"
-lsp-server = "0.7.9"
+lsp-server = "0.10.0"
 #
 # non-local crates
-anyhow = "1.0.102"
+anyhow = "1.0.103"
 camino = "1.2.2"
 # cargo_metadata = "0.23.1"
+# wesl_metadata = "0.0.1"
 clap = { version = "4", default-features = false, features = ["help", "std", "usage", "error-context"] }
+# cov-mark = "2.0.0"
+dot = "0.1.4"
 glob = "0.3"
 crossbeam-channel = "0.5.15"
 dissimilar = "1.0.11"
-either = "1.15.0"
+either = "1.16.0"
 expect-test = "1.5.1"
-itertools = "0.14.0"
-libc = "0.2.183"
-dashmap = { version = "6.1.0" }
+itertools = "0.15.0"
+libc = "0.2.185"
+dashmap = { version = "6.2.1" }
 nohash-hasher = "0.2.0"
 rowan = "0.16.1"
 rustc-hash = "2.1.2"
-salsa = { version = "0.25.2", default-features = true, features = [
-	"macros",
-	"rayon",
-	"salsa_unstable"
-] }
+salsa = {
+	version = "0.25.2",
+	default-features = true,
+	features = [
+		"macros",
+		"rayon",
+		"salsa_unstable",
+	]
+}
 salsa-macros = "0.25.2"
 semver = "1.0.27"
 serde = { version = "1.0.228", features = ["derive"] }
-serde_json = "1.0.149"
-smallvec = { version = "1.15.1", features = [
-	"const_generics",
-	"const_new",
-	"union",
-] }
+serde_json = "1.0.150"
+smallvec = {
+	version = "1.15.1",
+	features = [
+		"const_generics",
+		"const_new",
+		"union",
+	]
+}
 smol_str = "0.3.5"
 text-size = "1.1.1"
-tracing = { version = "0.1.44", default-features = false, features = ["std"] }
-tracing-subscriber = { version = "0.3.23", default-features = false, features = [
-	"fmt",
-	"local-time",
-	"registry",
-	"std",
-	"time",
-	"tracing-log",
-] }
+tracing = {
+	version = "0.1.44",
+	default-features = false,
+	features = ["attributes", "std"]
+}
+tracing-subscriber = {
+	version = "0.3.23",
+	default-features = false,
+	features = [
+		"fmt",
+		"local-time",
+		"registry",
+		"std",
+		"time",
+		"tracing-log",
+	]
+}
+tracing-tree = "0.4.0"
 triomphe = { version = "0.1.15", default-features = false, features = ["std"] }
-wgsl-types = { version = "0.3.2", features = [
-	"naga-ext",
-] }
-indexmap = { version = "2.13.0" }
+wgsl-types = { version = "0.4.1", features = ["naga-ext"] }
+indexmap = { version = "2.14.0" }
+
+# idna_adapter does not use semantic versioning
+# 1.0 is a feature band that indicates no IDNA support
+idna_adapter = "~1.0.0"
 
 # tombi: format.rules.table-keys-order.disabled = true
 [workspace.lints.clippy]
@@ -170,6 +205,8 @@ needless_raw_strings = "allow"
 needless_raw_string_hashes = "allow"
 # not useful
 shadow_same = "allow"
+# do not care
+inline_modules = "allow"
 # TODOs
 missing_docs_in_private_items = "allow"
 module_name_repetitions = "allow"
@@ -205,6 +242,23 @@ rust-2018-idioms = { level = "deny", priority = -1 }
 rust-2021-compatibility = { level = "deny", priority = -1 }
 rust-2024-compatibility = { level = "deny", priority = -1 }
 unused = { level = "allow", priority = 1 }
+
+[workspace.lints.rustdoc]
+bare_urls = "warn"
+broken_intra_doc_links = "warn"
+invalid_codeblock_attributes = "warn"
+invalid_html_tags = "warn"
+invalid_rust_codeblocks = "warn"
+missing_crate_level_docs = "warn"
+# missing_doc_code_examples = "warn"
+private_doc_tests = "warn"
+private_intra_doc_links = "allow"
+redundant_explicit_links = "warn"
+unescaped_backticks = "warn"
+
+[workspace.metadata.cargo-shear]
+# this transitive dependency is pinned because it does not use semantic versioning
+ignored = ["idna_adapter"]
 
 [profile.dev]
 debug = 1

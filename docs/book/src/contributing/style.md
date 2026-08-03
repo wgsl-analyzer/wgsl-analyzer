@@ -156,6 +156,7 @@ Instead, explicitly check for `None`, `Err`, etc.
 `wgsl-analyzer` is not a library.
 We do not need to test for API misuse, and we have to handle any user input without panics.
 Panic messages in the logs from the `#[should_panic]` tests are confusing.
+Finally, `#[should_panic]` hides the "current state" (it panics, but where?), making it hard to see the before and after of a change. This is especially relevant in a snapshot test.
 
 ### `#[ignore]`
 
@@ -231,7 +232,7 @@ As a special case of the previous rule, do not hide control flow inside function
 
 ```rust
 // GOOD
-if cond {
+if condition {
     foo();
 }
 
@@ -243,7 +244,7 @@ fn foo() {
 bar();
 
 fn bar() {
-    if !cond {
+    if !condition {
         return;
     }
     ...
@@ -989,13 +990,13 @@ Mostly avoid `bool::then` and `Option::filter`.
 
 ```rust
 // GOOD
-if !x.cond() {
+if !x.condition() {
     return None;
 }
 Some(x)
 
 // BAD
-Some(x).filter(|it| it.cond())
+Some(x).filter(|item| item.condition())
 ```
 
 This rule is more "soft" then others, and boils down mostly to taste.
@@ -1015,13 +1016,13 @@ When ascribing types, avoid `_`
 
 ```rust
 // GOOD
-let mutable: Vec<T> = old.into_iter().map(|it| builder.make_mut(it)).collect();
+let mutable: Vec<T> = old.into_iter().map(|item| builder.make_mut(item)).collect();
 
 // BAD
-let mutable: Vec<_> = old.into_iter().map(|it| builder.make_mut(it)).collect();
+let mutable: Vec<_> = old.into_iter().map(|item| builder.make_mut(item)).collect();
 
 // BAD
-let mutable = old.into_iter().map(|it| builder.make_mut(it)).collect::<Vec<_>>();
+let mutable = old.into_iter().map(|item| builder.make_mut(item)).collect::<Vec<_>>();
 ```
 
 **Rationale:** consistency, readability.

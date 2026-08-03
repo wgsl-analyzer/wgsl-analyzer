@@ -18,7 +18,7 @@ pub enum SyntaxKind {
     #[doc(hidden)]
     TOMBSTONE,
     SourceFile,
-    /// A name that can be referenced by a [`NameRef`]
+    /// <https://www.w3.org/TR/WGSL/#name>
     Name,
     /// a function
     FunctionDeclaration,
@@ -177,6 +177,14 @@ pub enum SyntaxKind {
     /// A list of imports `{foo, bar, baz}`
     ImportCollection,
 
+    // WESL attributes
+    /// @if
+    IfAttribute,
+    /// @elif
+    ElifAttribute,
+    /// @else
+    ElseAttribute,
+
     // Tokens
     /// Source: <https://www.w3.org/TR/WGSL/#blankspace-and-line-breaks>
     #[regex("[\x20\x09\x0A-\x0D\u{0085}\u{200E}\u{200F}\u{2028}\u{2029}]+")]
@@ -220,8 +228,17 @@ pub enum SyntaxKind {
     DiagnosticDirective,
     DiagnosticRuleName,
     SeverityControlName,
+
+    AttributeList,
     DiagnosticAttribute,
     OtherAttribute,
+    EarlyDepthTest,
+    LessEqual,
+    GreaterEqual,
+    Force,
+    Unchanged,
+    EarlyDepthTestAttribute,
+    EarlyDepthTestMode,
     AlignAttribute,
     BindingAttribute,
     BlendSrcAttribute,
@@ -352,10 +369,14 @@ pub enum SyntaxKind {
     #[token("^")]
     Xor,
 
+    // WESL keywords
     Import,
     Package,
     Super,
     As,
+
+    // Context-sensitive WESL token
+    Elif,
 
     #[token("+=")]
     PlusEqual,
@@ -381,7 +402,8 @@ pub enum SyntaxKind {
     ShiftRight,
     TemplateStart,
     TemplateEnd,
-
+    /// A WGSL reserved word (<https://www.w3.org/TR/WGSL/#reserved-words>)
+    Reserved,
     // Only used internally by the parser
     #[doc(hidden)]
     EOF,
@@ -495,6 +517,39 @@ impl SyntaxKind {
                 | Self::ReturnStatement
                 | Self::PhonyAssignmentStatement
                 | Self::AssertStatement
+        )
+    }
+
+    #[must_use]
+    pub const fn is_keyword(self) -> bool {
+        matches!(
+            self,
+            Self::Alias
+                | Self::Break
+                | Self::Case
+                | Self::Const
+                | Self::ConstantAssert
+                | Self::Continue
+                | Self::Continuing
+                | Self::Default
+                | Self::Diagnostic
+                | Self::Discard
+                | Self::Else
+                | Self::Enable
+                | Self::False
+                | Self::Fn
+                | Self::For
+                | Self::If
+                | Self::Let
+                | Self::Loop
+                | Self::Override
+                | Self::Requires
+                | Self::Return
+                | Self::Struct
+                | Self::Switch
+                | Self::True
+                | Self::Var
+                | Self::While
         )
     }
 

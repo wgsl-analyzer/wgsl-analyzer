@@ -28,21 +28,29 @@ jobs:
 
     steps:
       - name: Checkout PR branch
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.head_ref }}
           token: ${{ secrets.GITHUB_TOKEN }}
           persist-credentials: false
 
-      - name: Set up Node.js
-        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+      - name: Install Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: 24
+          node-version-file: ./editors/code/package.json
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
+      - name: Enable Corepack and prepare pnpm
+        run: |
+          corepack enable
+          corepack prepare --activate
+        working-directory: ./editors/code
+
+      - name: Set up pnpm cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          package_json_file: ./editors/code/package.json
+          path: ~/.local/share/pnpm/store
+          key: pnpm-${{ runner.os }}-${{ hashFiles('editors/code/pnpm-lock.yaml') }}
+          restore-keys: pnpm-${{ runner.os }}-
 
       - name: Read current @types/vscode version
         id: types-version
@@ -54,7 +62,8 @@ jobs:
 
       - name: Update engines.vscode
         run: |
-          pnpm dlx json -I -f ./editors/code/package.json -e "this.engines = this.engines || {}; this.engines.vscode = '^${STEPS_TYPES_VERSION_OUTPUTS_VERSION}'"
+          pnpm dlx json -I -f ./editors/code/package.json \
+            -e "this.engines = this.engines || {}; this.engines.vscode = '^${STEPS_TYPES_VERSION_OUTPUTS_VERSION}'"
           pnpm --dir editors/code install --frozen-lockfile
           pnpm --dir editors/code run format
         env:
@@ -71,6 +80,6 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add .
           git commit -m "chore: align engines.vscode with types/vscode@${STEPS_TYPES_VERSION_OUTPUTS_VERSION}"
-          git push origin HEAD:${GITHUB_HEAD_REF}
+          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} HEAD:${GITHUB_HEAD_REF}
         env:
           STEPS_TYPES_VERSION_OUTPUTS_VERSION: ${{ steps.types-version.outputs.version }}

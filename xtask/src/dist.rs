@@ -281,10 +281,13 @@ struct Patch {
 }
 
 impl Patch {
-    fn new(
+    fn new<Path>(
         shell: &Shell,
-        path: impl Into<PathBuf>,
-    ) -> anyhow::Result<Self> {
+        path: Path,
+    ) -> anyhow::Result<Self>
+    where
+        Path: Into<PathBuf>,
+    {
         let path = path.into();
         let contents = shell.read_file(&path)?;
         Ok(Self {

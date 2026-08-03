@@ -13,12 +13,12 @@ doctest = false
 [dependencies]
 dashmap.workspace = true
 edition.workspace = true
-query-group.workspace = true
 rowan.workspace = true
 rustc-hash.workspace = true
 salsa.workspace = true
 salsa-macros.workspace = true
 syntax.workspace = true
+tracing.workspace = true
 triomphe.workspace = true
 vfs.workspace = true
 

@@ -1,28 +1,31 @@
+//! Basic database traits.
+
 pub mod change;
 pub mod input;
 
 mod editioned_file_id;
 mod util_types;
+
 use std::{
     cell::RefCell,
-    hash::BuildHasherDefault,
-    panic,
+    fmt,
+    hash::{self, BuildHasherDefault},
+    ops, panic,
     sync::{Once, atomic::AtomicUsize},
 };
 
+use crate::input::{PackageData, PackageId, PackageName};
 use dashmap::{DashMap, Entry};
-pub use input::{SourceRoot, SourceRootId};
 use rustc_hash::FxHasher;
-pub use salsa;
 use salsa::{Durability, Setter as _};
-pub use salsa_macros;
-use syntax::Parse;
 use triomphe::Arc;
+
+pub use crate::editioned_file_id::{EditionedFileId, ExtensionsConfig, RawEditionedFileId};
+pub use input::{SourceRoot, SourceRootId};
+pub use salsa;
+pub use salsa_macros;
 pub use util_types::*;
 pub use vfs::{AnchoredPath, AnchoredPathBuf, FileId, VfsPath, file_set::FileSet};
-
-pub use crate::editioned_file_id::{EditionedFileId, RawEditionedFileId};
-use crate::input::{PackageData, PackageId};
 
 #[macro_export]
 macro_rules! impl_intern_key {
@@ -30,7 +33,7 @@ macro_rules! impl_intern_key {
         #[salsa_macros::interned(no_lifetime, revisions = usize::MAX)]
         #[derive(PartialOrd, Ord)]
         pub struct $id {
-            pub loc: $loc,
+            pub location: $loc,
         }
 
         // If we derive this salsa prints the values recursively, and this causes us to blow.
@@ -109,7 +112,7 @@ impl Files {
     /// Contents of a file.
     ///
     /// # Panics
-    /// If called with a file id that has not been added by the [`Change`]s.
+    /// If called with a file id that has not been added by the [`change::Change`]s.
     #[must_use]
     pub fn file_text(
         &self,
@@ -167,7 +170,7 @@ impl Files {
     /// Source root of the file.
     ///
     /// # Panics
-    /// If the source root has not been set. This can only happen if there were some incorrect [`Change`]s.
+    /// If the source root has not been set. This can only happen if there were some incorrect [`change::Change`]s.
     #[must_use]
     pub fn source_root(
         &self,
@@ -208,14 +211,14 @@ impl Files {
     /// Gets the source root for a file.
     ///
     /// # Panics
-    /// If the source root has not been set. This can only happen if there were some incorrect [`Change`]s.
+    /// If the source root has not been set. This can only happen if there were some incorrect [`change::Change`]s.
     #[must_use]
     pub fn file_source_root(
         &self,
         id: vfs::FileId,
     ) -> FileSourceRootInput {
         let Some(file_source_root) = self.file_source_roots.get(&id) else {
-            panic!("Unable to get `FileSourceRootInput` with `vfs::FileId` ({id:?}); this is a bug",)
+            panic!("unable to get `FileSourceRootInput` with `vfs::FileId` ({id:?}); this is a bug")
         };
         *file_source_root
     }
@@ -266,25 +269,86 @@ pub struct SourceRootInput {
 pub struct Package {
     #[returns(ref)]
     pub data: PackageData,
+    // TODO: separate display name and version into extra_data
+    // https://github.com/wgsl-analyzer/wgsl-analyzer/issues/999
+    // /// Package data that is not needed for analysis.
+    // ///
+    // /// This is split into a separate field to increase incrementality.
+    // #[returns(ref)]
+    // pub extra_data: ExtraPackageData,
     pub package_id: PackageId,
 }
 
-/// Database which stores all significant input facts: source code and project
-/// model. Everything else in rust-analyzer is derived from these queries.
-#[query_group::query_group]
-pub trait RootQueryDb: SourceDatabase + salsa::Database {
-    #[salsa::invoke(parse)]
-    #[salsa::lru(128)]
-    fn parse(
-        &self,
-        key: EditionedFileId,
-    ) -> Parse;
-
-    /// Returns the packages in topological order.
+/// Package data unrelated to analysis.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ExtraPackageData {
+    pub version: Option<String>,
+    /// A name used in the package's project declaration: for Cargo projects,
+    /// its `[package].name` can be different for other project types or even
+    /// absent (a dummy package for the code snippet, for example).
     ///
-    /// **Warning**: do not use this query in `hir-*` packages! It kills incrementality across crate metadata modifications.
-    #[salsa::input]
-    fn all_packages(&self) -> Arc<Box<[Package]>>;
+    /// For purposes of analysis, packages are anonymous (only names in
+    /// [`crate::input::Dependency`] matters). This name should only be used for UI.
+    pub display_name: Option<PackageDisplayName>,
+}
+
+#[expect(clippy::struct_field_names, reason = "no better idea")]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct PackageDisplayName {
+    // The name we use to display various paths (with `_`).
+    package_name: PackageName,
+    // The name as specified in, for example, wesl.toml (with `-`).
+    canonical_name: String,
+}
+
+impl PackageDisplayName {
+    #[must_use]
+    pub const fn canonical_name(&self) -> &String {
+        &self.canonical_name
+    }
+
+    #[must_use]
+    pub const fn package_name(&self) -> &PackageName {
+        &self.package_name
+    }
+}
+
+impl From<PackageName> for PackageDisplayName {
+    fn from(package_name: PackageName) -> Self {
+        let canonical_name = package_name.to_string();
+        Self {
+            package_name,
+            canonical_name,
+        }
+    }
+}
+
+impl fmt::Display for PackageDisplayName {
+    fn fmt(
+        &self,
+        f: &mut fmt::Formatter<'_>,
+    ) -> fmt::Result {
+        self.package_name.fmt(f)
+    }
+}
+
+impl ops::Deref for PackageDisplayName {
+    type Target = String;
+
+    fn deref(&self) -> &String {
+        &self.package_name
+    }
+}
+
+impl PackageDisplayName {
+    #[must_use]
+    pub fn from_canonical_name(canonical_name: &str) -> Self {
+        let package_name = PackageName::normalize_dashes(canonical_name);
+        Self {
+            package_name,
+            canonical_name: canonical_name.to_owned(),
+        }
+    }
 }
 
 #[salsa_macros::db]
@@ -356,15 +420,6 @@ impl Nonce {
     }
 }
 
-fn parse(
-    database: &dyn RootQueryDb,
-    file_id: EditionedFileId,
-) -> Parse {
-    let RawEditionedFileId { file_id, edition } = file_id.unpack(database);
-    let source = database.file_text(file_id).text(database);
-    syntax::parse(source, edition)
-}
-
 #[must_use]
 #[non_exhaustive]
 pub struct DbPanicContext;
@@ -403,10 +458,81 @@ impl DbPanicContext {
         Self
     }
 
-    fn with_ctx(function: impl FnOnce(&mut Vec<String>)) {
+    fn with_ctx<Function>(function: Function)
+    where
+        Function: FnOnce(&mut Vec<String>),
+    {
         thread_local! {
             static CTX: RefCell<Vec<String>> = const { RefCell::new(Vec::new()) };
         }
         CTX.with(|ctx| function(&mut ctx.borrow_mut()));
     }
+}
+
+#[salsa::input(singleton, debug)]
+struct AllPackages {
+    packages: std::sync::Arc<[Package]>,
+}
+
+pub fn set_all_packages_with_durability<Packages>(
+    database: &mut dyn salsa::Database,
+    packages: Packages,
+    durability: Durability,
+) where
+    Packages: IntoIterator<Item = Package>,
+{
+    AllPackages::try_get(database)
+        .unwrap_or_else(|| AllPackages::new(database, std::sync::Arc::default()))
+        .set_packages(database)
+        .with_durability(durability)
+        .to(packages.into_iter().collect());
+}
+
+/// Returns the packages in topological order.
+///
+/// **Warning**: do not use this query in `hir-*` crates! It kills incrementality across crate metadata modifications.
+pub fn all_packages(database: &dyn salsa::Database) -> std::sync::Arc<[Package]> {
+    AllPackages::try_get(database).map_or_else(std::sync::Arc::default, |all_packages| {
+        all_packages.packages(database)
+    })
+}
+
+/// I believe this exists because each file has a different `FileSourceRootInput`.
+/// So Salsa cannot reuse computations that are driven by a `FileSourceRootInput`.
+/// TODO: Rust-Analyzer will remove this when the vfs gets rewritten.
+#[doc(hidden)]
+#[salsa::interned]
+pub struct InternedSourceRootId {
+    pub id: SourceRootId,
+}
+
+#[salsa::tracked]
+pub fn source_root_package<'db>(
+    database: &'db dyn SourceDatabase,
+    id: InternedSourceRootId<'db>,
+) -> Option<Package> {
+    let packages = AllPackages::get(database).packages(database);
+    let id = id.id(database);
+
+    packages.iter().copied().find(|package| {
+        let root_file = package.data(database).root_file_id;
+        database
+            .file_source_root(root_file)
+            .source_root_id(database)
+            == id
+    })
+}
+
+/// Returns the package for a given file, if the file is a part of one.
+pub fn file_package(
+    database: &dyn SourceDatabase,
+    file_id: vfs::FileId,
+) -> Option<Package> {
+    let _p = tracing::info_span!("file_package").entered();
+
+    let source_root = database.file_source_root(file_id);
+    source_root_package(
+        database,
+        InternedSourceRootId::new(database, source_root.source_root_id(database)),
+    )
 }

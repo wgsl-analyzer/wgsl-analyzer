@@ -1,28 +1,33 @@
 #![expect(clippy::use_debug, reason = "tests")]
 
+mod big;
 mod builtins;
+mod imports;
+mod incremental;
+mod layout;
 mod simple;
-use std::fmt::Write as _;
+use std::{fmt::Write as _, ops::ControlFlow};
 
-use base_db::{EditionedFileId, Lookup as _};
+use base_db::{EditionedFileId, Intern as _, Lookup as _};
 use expect_test::Expect;
 use hir_def::{
     HasSource as _,
     body::{Body, BodySourceMap},
     database::{
-        DefDatabase as _, DefinitionWithBodyId, ExtensionsConfig, InternDatabase as _, Location,
+        DefDatabase as _, DefinitionWithBodyId, InternDatabase as _, Location, ModuleDefinitionId,
     },
-    expression_store::SyntheticSyntax,
-    item_tree::ModuleItem,
+    expression_store::{ExpressionSourceMap, ExpressionStoreSource, SyntheticSyntax},
+    item_tree::ModuleItemId,
 };
 use salsa::Durability;
-use syntax::{AstNode as _, SyntaxNode};
+use syntax::{AstNode as _, ExtensionsConfig, SyntaxNode};
 use test_fixture::WithFixture as _;
 use triomphe::Arc;
 
 use crate::{
     database::HirDatabase as _,
-    infer::{InferenceDiagnosticKind, InferenceResult},
+    diagnostics::{self, InferenceDiagnostic, InferenceDiagnosticKind},
+    infer::InferenceResult,
     test_db::TestDatabase,
     ty::{
         Type,
@@ -36,19 +41,99 @@ fn infer(
     extensions: ExtensionsConfig,
     wa_fixture: &str,
 ) -> String {
-    let (mut database, file_id) = TestDatabase::with_single_file(wa_fixture);
+    let (mut database, files) = TestDatabase::with_many_files(wa_fixture);
     database.set_extensions_with_durability(extensions, Durability::MEDIUM);
-    let file_id = EditionedFileId::new(&database, file_id.file_id, file_id.edition);
-    let root = database.parse_or_resolve(file_id).syntax();
     let mut buffer = String::new();
-    let mut infer_def = |inference_result: Arc<InferenceResult>,
-                         _body: Arc<Body>,
-                         body_source_map: Arc<BodySourceMap>| {
+
+    if files.len() == 1 {
+        InferPrinter::new(&database, files[0]).infer_file(&mut buffer);
+    } else {
+        for file_id in files {
+            buffer.push_str("---\n");
+            InferPrinter::new(&database, file_id).infer_file(&mut buffer);
+        }
+    }
+    buffer.truncate(buffer.trim_end().len());
+    buffer
+}
+
+struct InferPrinter<'db> {
+    database: &'db TestDatabase,
+    file_id: EditionedFileId,
+    root: SyntaxNode,
+}
+
+impl<'db> InferPrinter<'db> {
+    fn new(
+        database: &'db TestDatabase,
+        file_id: EditionedFileId,
+    ) -> Self {
+        let root = file_id.parse(database).syntax();
+        Self {
+            database,
+            file_id,
+            root,
+        }
+    }
+
+    fn infer_file(
+        &self,
+        buffer: &mut String,
+    ) {
+        let module_info = self.database.item_tree(self.file_id);
+        let mut definitions = module_definitions(self.database, self.file_id, &module_info);
+        definitions.sort_by_key(|definition| text_range_start(*definition, self.database));
+        for definition in definitions {
+            match definition {
+                ModuleDefinitionId::Function(id) => {
+                    self.infer_with_body(DefinitionWithBodyId::Function(id), buffer);
+                },
+                ModuleDefinitionId::GlobalVariable(id) => {
+                    self.infer_with_body(DefinitionWithBodyId::GlobalVariable(id), buffer);
+                },
+                ModuleDefinitionId::GlobalConstant(id) => {
+                    self.infer_with_body(DefinitionWithBodyId::GlobalConstant(id), buffer);
+                },
+                ModuleDefinitionId::GlobalAssertStatement(id) => {
+                    self.infer_with_body(DefinitionWithBodyId::GlobalAssertStatement(id), buffer);
+                },
+                ModuleDefinitionId::Override(id) => {
+                    self.infer_with_body(DefinitionWithBodyId::Override(id), buffer);
+                },
+                ModuleDefinitionId::Module(_) => (),
+                ModuleDefinitionId::Struct(id) => {
+                    let (_, signature_map) = self.database.struct_data(id);
+                    let (_, diagnostics) = &*self.database.field_types(id);
+
+                    for diagnostic in diagnostics {
+                        self.print_diagnostic(diagnostic, &signature_map, buffer);
+                    }
+                },
+                ModuleDefinitionId::TypeAlias(id) => {
+                    let (_, signature_map) = self.database.type_alias_data(id);
+                    let (_, diagnostics) = &*self.database.type_alias_type(id);
+                    for diagnostic in diagnostics {
+                        self.print_diagnostic(diagnostic, &signature_map, buffer);
+                    }
+                },
+            }
+        }
+    }
+
+    fn infer_with_body(
+        &self,
+        definition: DefinitionWithBodyId,
+        buffer: &mut String,
+    ) {
+        let (_, signature_map) = self.database.signature_with_source_map(definition);
+        let (_, body_source_map) = self.database.body_with_source_map(definition);
+        let inference_result = InferenceResult::of(self.database, definition);
+
         let mut types: Vec<(SyntaxNode, &Type)> = Vec::new();
 
         for (binding, r#type) in inference_result.type_of_binding.iter() {
             let node = match body_source_map.binding_to_source(binding) {
-                Ok(sp) => sp.to_node(&root).syntax().clone(),
+                Ok(sp) => sp.to_node(&self.root).syntax().clone(),
                 Err(SyntheticSyntax) => continue,
             };
             types.push((node.clone(), r#type));
@@ -56,7 +141,7 @@ fn infer(
 
         for (expr, r#type) in inference_result.type_of_expression.iter() {
             let node = match body_source_map.expression_to_source(expr) {
-                Ok(sp) => sp.to_node(&root).syntax().clone(),
+                Ok(sp) => sp.to_node(&self.root).syntax().clone(),
                 Err(SyntheticSyntax) => continue,
             };
             types.push((node.clone(), r#type));
@@ -67,111 +152,194 @@ fn infer(
             let range = node.text_range();
             (range.start(), range.end())
         });
+
         for (node, r#type) in types {
-            let (range, text) = (
-                node.text_range(),
-                node.text().to_string().replace('\n', " "),
-            );
-            let pretty = pretty_type_with_verbosity(&database, *r#type, TypeVerbosity::Compact);
-            writeln!(buffer, "{range:?} '{}': {pretty}", ellipsize(text, 15)).unwrap();
+            self.print_type(&node, *r#type, buffer);
         }
 
-        // It'd be nicer if the diagnostics were sorted with the types.
-        // But this is good enough for unit tests
         for diagnostic in inference_result.diagnostics() {
-            match &diagnostic.kind {
-                InferenceDiagnosticKind::TypeMismatch {
-                    expression,
-                    expected,
-                    actual,
-                } => {
-                    let node = match body_source_map.expression_to_source(*expression) {
-                        Ok(sp) => sp.to_node(&root).syntax().clone(),
-                        Err(SyntheticSyntax) => continue,
-                    };
-                    let (range, text) = (
-                        node.text_range(),
-                        node.text().to_string().replace('\n', " "),
-                    );
-                    writeln!(
-                        buffer,
-                        "{range:?} '{}': expected {} but got {}",
-                        ellipsize(text, 15),
-                        pretty_type_expectation_with_verbosity(
-                            &database,
-                            expected.clone(),
-                            TypeVerbosity::Compact
-                        ),
-                        pretty_type_with_verbosity(&database, *actual, TypeVerbosity::Compact)
-                    )
-                    .unwrap();
-                },
-                InferenceDiagnosticKind::AssignmentNotAReference { .. }
-                | InferenceDiagnosticKind::NoSuchField { .. }
-                | InferenceDiagnosticKind::ArrayAccessInvalidType { .. }
-                | InferenceDiagnosticKind::UnresolvedName { .. }
-                | InferenceDiagnosticKind::InvalidConstructionType { .. }
-                | InferenceDiagnosticKind::FunctionCallArgCountMismatch { .. }
-                | InferenceDiagnosticKind::NoBuiltinOverload { .. }
-                | InferenceDiagnosticKind::NoConstructor { .. }
-                | InferenceDiagnosticKind::AddressOfNotReference { .. }
-                | InferenceDiagnosticKind::DerefNotAPointer { .. }
-                | InferenceDiagnosticKind::InvalidType { .. }
-                | InferenceDiagnosticKind::CyclicType { .. }
-                | InferenceDiagnosticKind::UnexpectedTemplateArgument { .. }
-                | InferenceDiagnosticKind::WgslError { .. }
-                | InferenceDiagnosticKind::ExpectedLoweredKind { .. } => {
-                    writeln!(buffer, "{diagnostic:?}").unwrap();
-                },
-            }
+            let source_map = match diagnostic.source {
+                ExpressionStoreSource::Body => body_source_map.expression_source_map(),
+                ExpressionStoreSource::Signature => &signature_map,
+            };
+            self.print_diagnostic(diagnostic, source_map, buffer);
         }
-    };
-    let module_info = database.item_tree(file_id);
-    let mut definitions = module_definitions(&database, file_id, &module_info);
-    definitions.sort_by_key(|definition| text_size(*definition, &database));
-    for definition in definitions {
-        let (body, source_map) = database.body_with_source_map(definition);
-        let infer = database.infer(definition);
-        infer_def(infer, body, source_map);
     }
-    buffer.truncate(buffer.trim_end().len());
-    buffer
+
+    fn print_type(
+        &self,
+        node: &SyntaxNode,
+        r#type: Type,
+        buffer: &mut String,
+    ) {
+        let (range, text) = (
+            node.text_range(),
+            node.text().to_string().replace('\n', " "),
+        );
+        let pretty = pretty_type_with_verbosity(self.database, r#type, TypeVerbosity::Full);
+        writeln!(buffer, "{range:?} '{}': {pretty}", ellipsize(text, 15)).unwrap();
+    }
+
+    fn print_diagnostic(
+        &self,
+        diagnostic: &InferenceDiagnostic,
+        source_map: &ExpressionSourceMap,
+        buffer: &mut String,
+    ) {
+        match &diagnostic.kind {
+            InferenceDiagnosticKind::TypeMismatch {
+                expression,
+                expected,
+                actual,
+            } => {
+                let Some((range, text)) = self.get_range_text(source_map, *expression) else {
+                    return;
+                };
+                writeln!(
+                    buffer,
+                    "{range:?} '{}': expected {} but got {}",
+                    ellipsize(text, 15),
+                    pretty_type_expectation_with_verbosity(
+                        self.database,
+                        expected.clone(),
+                        TypeVerbosity::Full
+                    ),
+                    pretty_type_with_verbosity(self.database, *actual, TypeVerbosity::Full)
+                )
+                .unwrap();
+            },
+            InferenceDiagnosticKind::AssignmentNotAReference { .. }
+            | InferenceDiagnosticKind::ArrayAccessInvalidType { .. }
+            | InferenceDiagnosticKind::UnresolvedName { .. }
+            | InferenceDiagnosticKind::InvalidConstructionType { .. }
+            | InferenceDiagnosticKind::FunctionCallArgCountMismatch { .. }
+            | InferenceDiagnosticKind::NoBuiltinOverload { .. }
+            | InferenceDiagnosticKind::NoConstructor { .. }
+            | InferenceDiagnosticKind::AddressOfNotReference { .. }
+            | InferenceDiagnosticKind::AddressOfNotReference { .. }
+            | InferenceDiagnosticKind::DerefNotAPointer { .. }
+            | InferenceDiagnosticKind::InvalidType { .. }
+            | InferenceDiagnosticKind::CyclicType { .. }
+            | InferenceDiagnosticKind::UnexpectedTemplateArgument { .. }
+            | InferenceDiagnosticKind::WgslError { .. }
+            | InferenceDiagnosticKind::ExpectedLoweredKind { .. } => {
+                writeln!(buffer, "{:?} in {:?}", diagnostic.kind, diagnostic.source).unwrap();
+            },
+            InferenceDiagnosticKind::NoSuchField {
+                expression,
+                name,
+                r#type,
+            } => {
+                let node = match source_map.expression_to_source(*expression) {
+                    Ok(sp) => sp.to_node(&self.root).syntax().clone(),
+                    Err(SyntheticSyntax) => return,
+                };
+                let (range, text) = (
+                    node.parent().unwrap().text_range(),
+                    node.parent().unwrap().text().to_string().replace('\n', " "),
+                );
+                writeln!(
+                    buffer,
+                    "{range:?} '{}': no such field `{}` on type `{}`",
+                    ellipsize(text, 15),
+                    name.as_str(),
+                    pretty_type_with_verbosity(self.database, *r#type, TypeVerbosity::Full),
+                )
+                .unwrap();
+            },
+            InferenceDiagnosticKind::StoreTypeMustBeStorable { actual, expression } => {
+                let Some((range, text)) = self.get_range_text(source_map, *expression) else {
+                    return;
+                };
+                writeln!(
+                    buffer,
+                    "{range:?} '{}': expected storable type but got `{}`",
+                    ellipsize(text, 15),
+                    pretty_type_with_verbosity(self.database, *actual, TypeVerbosity::Full),
+                )
+                .unwrap();
+            },
+            InferenceDiagnosticKind::UnexpectedReturnValue { actual, expression } => {
+                let Some((range, text)) = self.get_range_text(source_map, *expression) else {
+                    return;
+                };
+                writeln!(
+                    buffer,
+                    "{range:?} '{}': unexpected return value of type `{}` in function with no return type",
+                    ellipsize(text, 15),
+                    pretty_type_with_verbosity(self.database, *actual, TypeVerbosity::Full),
+                )
+                .unwrap();
+            },
+        }
+    }
+
+    fn get_range_text(
+        &self,
+        source_map: &ExpressionSourceMap,
+        expression: la_arena::Idx<hir_def::expression::Expression>,
+    ) -> Option<(base_db::TextRange, String)> {
+        let node = match source_map.expression_to_source(expression) {
+            Ok(sp) => sp.to_node(&self.root).syntax().clone(),
+            Err(SyntheticSyntax) => return None,
+        };
+        let (range, text) = (
+            node.text_range(),
+            node.text().to_string().replace('\n', " "),
+        );
+        Some((range, text))
+    }
 }
 
-fn text_size(
-    definition: DefinitionWithBodyId,
+fn text_range_start(
+    definition: ModuleDefinitionId,
     database: &TestDatabase,
 ) -> base_db::TextSize {
     match definition {
-        DefinitionWithBodyId::Function(item) => item
+        ModuleDefinitionId::Module(_) => base_db::TextSize::new(0),
+        ModuleDefinitionId::Function(item) => item
             .lookup(database)
             .source(database)
             .value
             .syntax()
             .text_range()
             .start(),
-        DefinitionWithBodyId::GlobalConstant(item) => item
+        ModuleDefinitionId::GlobalConstant(item) => item
             .lookup(database)
             .source(database)
             .value
             .syntax()
             .text_range()
             .start(),
-        DefinitionWithBodyId::GlobalVariable(item) => item
+        ModuleDefinitionId::GlobalVariable(item) => item
             .lookup(database)
             .source(database)
             .value
             .syntax()
             .text_range()
             .start(),
-        DefinitionWithBodyId::Override(item) => item
+        ModuleDefinitionId::Override(item) => item
             .lookup(database)
             .source(database)
             .value
             .syntax()
             .text_range()
             .start(),
-        DefinitionWithBodyId::GlobalAssertStatement(item) => item
+        ModuleDefinitionId::GlobalAssertStatement(item) => item
+            .lookup(database)
+            .source(database)
+            .value
+            .syntax()
+            .text_range()
+            .start(),
+        ModuleDefinitionId::Struct(item) => item
+            .lookup(database)
+            .source(database)
+            .value
+            .syntax()
+            .text_range()
+            .start(),
+        ModuleDefinitionId::TypeAlias(item) => item
             .lookup(database)
             .source(database)
             .value
@@ -182,40 +350,39 @@ fn text_size(
 }
 
 fn module_definitions(
-    db: &TestDatabase,
+    database: &TestDatabase,
     file_id: EditionedFileId,
-    item_tree: &Arc<hir_def::item_tree::ItemTree>,
-) -> Vec<DefinitionWithBodyId> {
+    item_tree: &hir_def::item_tree::ItemTree,
+) -> Vec<ModuleDefinitionId> {
     item_tree
-        .items()
+        .top_level_items()
         .iter()
         .filter_map(|item| {
             Some(match item {
-                ModuleItem::Function(id) => {
-                    let loc = Location::new(file_id, *id);
-                    DefinitionWithBodyId::Function(db.intern_function(loc))
+                ModuleItemId::Function(id) => {
+                    ModuleDefinitionId::Function(Location::new(file_id, *id).intern(database))
                 },
-                ModuleItem::GlobalVariable(id) => {
-                    let loc = Location::new(file_id, *id);
-                    DefinitionWithBodyId::GlobalVariable(db.intern_global_variable(loc))
+                ModuleItemId::GlobalVariable(id) => {
+                    ModuleDefinitionId::GlobalVariable(Location::new(file_id, *id).intern(database))
                 },
-                ModuleItem::GlobalConstant(id) => {
-                    let loc = Location::new(file_id, *id);
-                    DefinitionWithBodyId::GlobalConstant(db.intern_global_constant(loc))
+                ModuleItemId::GlobalConstant(id) => {
+                    ModuleDefinitionId::GlobalConstant(Location::new(file_id, *id).intern(database))
                 },
-                ModuleItem::Override(id) => {
-                    let loc = Location::new(file_id, *id);
-                    DefinitionWithBodyId::Override(db.intern_override(loc))
+                ModuleItemId::Override(id) => {
+                    ModuleDefinitionId::Override(Location::new(file_id, *id).intern(database))
                 },
-                ModuleItem::GlobalAssertStatement(id) => {
-                    let loc = Location::new(file_id, *id);
-                    DefinitionWithBodyId::GlobalAssertStatement(
-                        db.intern_global_assert_statement(loc),
+                ModuleItemId::GlobalAssertStatement(id) => {
+                    ModuleDefinitionId::GlobalAssertStatement(
+                        Location::new(file_id, *id).intern(database),
                     )
                 },
-                ModuleItem::TypeAlias(_)
-                | ModuleItem::Struct(_)
-                | ModuleItem::ImportStatement(_) => return None,
+                ModuleItemId::TypeAlias(id) => {
+                    ModuleDefinitionId::TypeAlias(Location::new(file_id, *id).intern(database))
+                },
+                ModuleItemId::Struct(id) => {
+                    ModuleDefinitionId::Struct(Location::new(file_id, *id).intern(database))
+                },
+                ModuleItemId::ImportStatement(id) => return None,
             })
         })
         .collect()

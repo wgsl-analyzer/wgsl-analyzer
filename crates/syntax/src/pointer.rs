@@ -54,8 +54,11 @@ impl SyntaxNodePointer {
     }
 
     #[must_use]
-    pub fn cast<N: AstNode>(self) -> Option<AstPointer<N>> {
-        if !N::can_cast(self.kind) {
+    pub fn cast<Node>(self) -> Option<AstPointer<Node>>
+    where
+        Node: AstNode,
+    {
+        if !Node::can_cast(self.kind) {
             return None;
         }
         Some(AstPointer {
@@ -71,7 +74,7 @@ pub struct AstPointer<N: AstNode> {
     _type: PhantomData<fn() -> N>,
 }
 
-impl<N: AstNode> std::fmt::Debug for AstPointer<N> {
+impl<Node: AstNode> std::fmt::Debug for AstPointer<Node> {
     fn fmt(
         &self,
         formatter: &mut std::fmt::Formatter<'_>,
@@ -83,7 +86,7 @@ impl<N: AstNode> std::fmt::Debug for AstPointer<N> {
     }
 }
 
-impl<N: AstNode> Clone for AstPointer<N> {
+impl<Node: AstNode> Clone for AstPointer<Node> {
     fn clone(&self) -> Self {
         Self {
             raw: self.raw.clone(),
@@ -92,9 +95,9 @@ impl<N: AstNode> Clone for AstPointer<N> {
     }
 }
 
-impl<N: AstNode> Eq for AstPointer<N> {}
+impl<Node: AstNode> Eq for AstPointer<Node> {}
 
-impl<N: AstNode> PartialEq for AstPointer<N> {
+impl<Node: AstNode> PartialEq for AstPointer<Node> {
     fn eq(
         &self,
         other: &Self,
@@ -104,10 +107,12 @@ impl<N: AstNode> PartialEq for AstPointer<N> {
 }
 
 impl<Node: AstNode> std::hash::Hash for AstPointer<Node> {
-    fn hash<H: std::hash::Hasher>(
+    fn hash<H>(
         &self,
         state: &mut H,
-    ) {
+    ) where
+        H: std::hash::Hasher,
+    {
         self.raw.hash(state);
     }
 }
@@ -139,7 +144,10 @@ impl<Node: AstNode> AstPointer<Node> {
     }
 
     #[must_use]
-    pub fn cast<TargetNode: AstNode>(self) -> Option<AstPointer<TargetNode>> {
+    pub fn cast<TargetNode>(self) -> Option<AstPointer<TargetNode>>
+    where
+        TargetNode: AstNode,
+    {
         if !TargetNode::can_cast(self.raw.kind) {
             return None;
         }

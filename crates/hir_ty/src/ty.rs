@@ -66,29 +66,16 @@ impl Type {
     }
 
     #[expect(clippy::doc_paragraphs_missing_punctuation, reason = "false positive")]
-    /// `ref<inner>` -> `inner`, `ptr<inner>` -> `ptr<inner>`
-    #[must_use]
-    pub fn unref(
-        self,
-        database: &dyn HirDatabase,
-    ) -> Self {
-        match self.kind(database) {
-            TypeKind::Reference(reference) => reference.inner,
-            TypeKind::Error
-            | TypeKind::Scalar(_)
-            | TypeKind::Atomic(_)
-            | TypeKind::Vector(_)
-            | TypeKind::Matrix(_)
-            | TypeKind::Struct(_)
-            | TypeKind::Array(_)
-            | TypeKind::Texture(_)
-            | TypeKind::Sampler(_)
-            | TypeKind::Pointer(_)
-            | TypeKind::BoundVariable(_)
-            | TypeKind::StorageTypeOfTexelFormat(_) => self,
-        }
-    }
-
+    /// The type T is the concretization of type S if:
+    /// - T is concrete, and
+    /// - T is not a reference type, and
+    /// - ConversionRank(S, T) is finite, and
+    /// - For any other non-reference type T2, ConversionRank(S, T2) > ConversionRank(S, T).
+    ///
+    /// The concretization of a value e of type T is the value resulting from applying, to e, the
+    /// feasible conversion that maps T to the concretization of T.
+    ///
+    /// Reference: <https://www.w3.org/TR/WGSL/#concretization>
     #[must_use]
     pub fn concretize(
         self,
@@ -97,6 +84,28 @@ impl Type {
         match self.kind(database).concretize(database) {
             Some(type_kind) => type_kind.intern(database),
             None => self,
+        }
+    }
+
+    #[expect(clippy::doc_paragraphs_missing_punctuation, reason = "false positive")]
+    /// Apply the load rule.
+    ///
+    /// Reference: <https://www.w3.org/TR/WGSL/#load-rule>
+    #[must_use]
+    pub fn loaded(
+        self,
+        database: &dyn HirDatabase,
+    ) -> Self {
+        if let TypeKind::Reference(Reference {
+            address_space,
+            inner,
+            access_mode,
+        }) = self.kind(database)
+        {
+            debug_assert!(!matches!(inner.kind(database), TypeKind::Reference(_)));
+            inner
+        } else {
+            self
         }
     }
 
@@ -163,6 +172,7 @@ impl TypeKind {
         }
     }
 
+    /// Abstract types will be mapped to the corresponding default concrete type.
     pub fn concretize(
         &self,
         database: &dyn HirDatabase,

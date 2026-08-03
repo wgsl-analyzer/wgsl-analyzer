@@ -2,13 +2,17 @@
 
 // pub(crate) mod to_proto;
 
-use std::mem;
+use std::{mem, ops};
 
 use base_db::{DbPanicContext, input::PackageId};
 type FileId = vfs::FileId;
-use ide::diagnostics::{Diagnostic, Severity};
+use hir::diagnostics::Severity;
+use ide_diagnostics::Diagnostic as IdeDiagnostic;
 use itertools::Itertools as _;
-use lsp_types::DiagnosticSeverity;
+use lsp_types::{
+    Code, Diagnostic as LspDiagnostic, DiagnosticRelatedInformation, DiagnosticSeverity,
+    DiagnosticTag, Range,
+};
 use nohash_hasher::{IntMap, IntSet};
 use rustc_hash::{FxHashMap, FxHashSet};
 use salsa::Cancelled;
@@ -30,14 +34,13 @@ pub(crate) struct DiagnosticsMapConfig {
 
 pub(crate) type DiagnosticsGeneration = usize;
 
-type Checks =
-    IntMap<usize, FxHashMap<Option<Arc<PackageId>>, IntMap<FileId, Vec<lsp_types::Diagnostic>>>>;
+type Checks = IntMap<usize, FxHashMap<Option<Arc<PackageId>>, IntMap<FileId, Vec<LspDiagnostic>>>>;
 
 #[derive(Debug, Default, Clone)]
 pub(crate) struct DiagnosticCollection {
     // FIXME: should be FxHashMap<FileId, Vec<wa_id::Diagnostic>>
-    pub(crate) native_syntax: IntMap<FileId, (DiagnosticsGeneration, Vec<lsp_types::Diagnostic>)>,
-    pub(crate) native_semantic: IntMap<FileId, (DiagnosticsGeneration, Vec<lsp_types::Diagnostic>)>,
+    pub(crate) native_syntax: IntMap<FileId, (DiagnosticsGeneration, Vec<LspDiagnostic>)>,
+    pub(crate) native_semantic: IntMap<FileId, (DiagnosticsGeneration, Vec<LspDiagnostic>)>,
     // FIXME: should be Vec<WorkspaceFlycheckDiagnostic>
     pub(crate) check: Checks,
     pub(crate) check_fixes: CheckFixes,
@@ -52,7 +55,7 @@ pub(crate) struct DiagnosticCollection {
 #[derive(Debug, Clone)]
 pub(crate) struct Fix {
     // Fixes may be triggerable from multiple ranges.
-    pub(crate) ranges: Vec<lsp_types::Range>,
+    pub(crate) ranges: Vec<Range>,
     pub(crate) action: lsp::extensions::CodeAction,
 }
 
@@ -112,7 +115,7 @@ impl DiagnosticCollection {
         flycheck_id: usize,
         package_id: &Option<Arc<PackageId>>,
         file_id: FileId,
-        diagnostic: lsp_types::Diagnostic,
+        diagnostic: LspDiagnostic,
         fix: Option<Box<Fix>>,
     ) {
         let diagnostics = self
@@ -188,7 +191,7 @@ impl DiagnosticCollection {
     pub(crate) fn diagnostics_for(
         &self,
         file_id: FileId,
-    ) -> impl Iterator<Item = &lsp_types::Diagnostic> {
+    ) -> impl Iterator<Item = &LspDiagnostic> {
         let native_syntax = self
             .native_syntax
             .get(&file_id)
@@ -229,8 +232,8 @@ impl DiagnosticCollection {
 }
 
 fn are_diagnostics_equal(
-    left: &lsp_types::Diagnostic,
-    right: &lsp_types::Diagnostic,
+    left: &LspDiagnostic,
+    right: &LspDiagnostic,
 ) -> bool {
     left.source == right.source
         && left.severity == right.severity
@@ -247,9 +250,9 @@ pub(crate) enum NativeDiagnosticsFetchKind {
 pub(crate) fn fetch_native_diagnostics(
     snapshot: &GlobalStateSnapshot,
     subscriptions: Arc<[FileId]>,
-    slice: std::ops::Range<usize>,
+    slice: ops::Range<usize>,
     kind: NativeDiagnosticsFetchKind,
-) -> Vec<(FileId, Vec<lsp_types::Diagnostic>)> {
+) -> Vec<(FileId, Vec<LspDiagnostic>)> {
     let _p = tracing::info_span!("fetch_native_diagnostics").entered();
     let _context = DbPanicContext::enter("fetch_native_diagnostics".to_owned());
 
@@ -285,34 +288,30 @@ pub(crate) fn fetch_native_diagnostics(
 
 pub(crate) fn convert_diagnostic(
     line_index: &crate::line_index::LineIndex,
-    diagnostic: Diagnostic,
-) -> lsp_types::Diagnostic {
-    lsp_types::Diagnostic {
+    diagnostic: IdeDiagnostic,
+) -> LspDiagnostic {
+    LspDiagnostic {
         range: lsp::to_proto::range(line_index, diagnostic.range),
         severity: Some(diagnostic_severity(diagnostic.severity)),
-        code: Some(lsp_types::NumberOrString::String(
-            diagnostic.code.as_str().to_owned(),
-        )),
+        code: Some(Code::String(diagnostic.code.as_str().to_owned())),
         code_description: None,
         source: Some(diagnostic.source.to_string()),
         message: diagnostic.message,
         related_information: None,
-        tags: diagnostic
-            .unused
-            .then(|| vec![lsp_types::DiagnosticTag::UNNECESSARY]),
+        tags: diagnostic.unused.then(|| vec![DiagnosticTag::Unnecessary]),
         data: None,
     }
 }
 
 pub(crate) fn convert_related_information(
     snapshot: &GlobalStateSnapshot,
-    diagnostic: &mut Diagnostic,
-) -> Result<Vec<lsp_types::DiagnosticRelatedInformation>, Cancelled> {
+    diagnostic: &mut IdeDiagnostic,
+) -> Result<Vec<DiagnosticRelatedInformation>, Cancelled> {
     diagnostic
         .related
         .drain(..)
         .map(|(message, range)| {
-            Ok(lsp_types::DiagnosticRelatedInformation {
+            Ok(DiagnosticRelatedInformation {
                 location: lsp::to_proto::location(snapshot, range)?,
                 message,
             })
@@ -320,9 +319,11 @@ pub(crate) fn convert_related_information(
         .collect::<Result<Vec<_>, Cancelled>>()
 }
 
-const fn diagnostic_severity(severity: Severity) -> lsp_types::DiagnosticSeverity {
+const fn diagnostic_severity(severity: Severity) -> DiagnosticSeverity {
     match severity {
-        Severity::Error => lsp_types::DiagnosticSeverity::ERROR,
-        Severity::WeakWarning => lsp_types::DiagnosticSeverity::HINT,
+        Severity::Error => DiagnosticSeverity::Error,
+        Severity::Warning => DiagnosticSeverity::Warning,
+        Severity::Information => DiagnosticSeverity::Information,
+        Severity::Hint => DiagnosticSeverity::Hint,
     }
 }

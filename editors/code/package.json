@@ -32,10 +32,14 @@
 		}
 	},
 	"engines": {
-		"vscode": "^1.110.0",
-		"pnpm": "^10.32.0"
+		"vscode": "^1.120.0",
+		"node": "^24.15.0"
 	},
-	"packageManager": "pnpm@10.32.0",
+	"devEngines": {
+		"pnpm": "^11.13.1"
+	},
+	"engineStrict": true,
+	"packageManager": "pnpm@11.13.1+sha512.b2fc7683b8a6525414e7d13e1ba28caaddde96bf66ec540bfaeb7e702b81f3e0be4d1f295edf7f9fe0396740a8dce4509c582ddf79891f4543fea32d37645f25",
 	"enabledApiProposals": [],
 	"extensionKind": [
 		"workspace"
@@ -56,28 +60,28 @@
 		"watch": "pnpm run build-base --sourcemap --watch"
 	},
 	"dependencies": {
-		"@hpcc-js/wasm": "^2.33.2",
+		"@hpcc-js/wasm": "^2.34.7",
 		"anser": "^2.3.5",
 		"d3": "^7.9.0",
 		"d3-graphviz": "^5.6.0",
 		"fp-ts": "^2.16.11",
 		"io-ts": "^2.2.22",
-		"jiti": "^2.6.1",
+		"jiti": "^2.7.0",
 		"vscode-languageclient": "^9.0.1"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "^2.4.10",
+		"@biomejs/biome": "^2.5.4",
 		"@tsconfig/node-ts": "^23.6.4",
 		"@tsconfig/node22": "^22.0.5",
 		"@tsconfig/strictest": "^2.0.8",
-		"@types/node": "^25.5.2",
-		"@types/vscode": "^1.110.0",
-		"@vscode/test-electron": "^2.5.2",
-		"@vscode/vsce": "^3.7.1",
-		"esbuild": "^0.28.0",
-		"ovsx": "^0.10.10",
+		"@types/node": "^26.1.1",
+		"@types/vscode": "^1.120.0",
+		"@vscode/test-electron": "^3.0.0",
+		"@vscode/vsce": "^3.9.2",
+		"esbuild": "^0.28.1",
+		"ovsx": "^1.0.2",
 		"tslib": "^2.8.1",
-		"typescript": "^6.0.2"
+		"typescript": "^6.0.3"
 	},
 	"main": "./out/main.js",
 	"activationEvents": [
@@ -88,11 +92,6 @@
 	],
 	"contributes": {
 		"commands": [
-			{
-				"command": "wgsl-analyzer.debugCommand",
-				"title": "Debug command",
-				"category": "wgsl-analyzer"
-			},
 			{
 				"command": "wgsl-analyzer.fullSource",
 				"title": "Show full source",
@@ -112,6 +111,21 @@
 				"command": "wgsl-analyzer.memoryUsage",
 				"title": "Memory Usage (Clears Database)",
 				"category": "wgsl-analyzer (debug command)"
+			},
+			{
+				"command": "wgsl-analyzer.viewModuleGraph",
+				"title": "View Module Graph",
+				"category": "wgsl-analyzer"
+			},
+			{
+				"command": "wgsl-analyzer.viewPackageGraph",
+				"title": "View Package Graph",
+				"category": "wgsl-analyzer"
+			},
+			{
+				"command": "wgsl-analyzer.viewFullPackageGraph",
+				"title": "View Package Graph (Full)",
+				"category": "wgsl-analyzer"
 			},
 			{
 				"command": "wgsl-analyzer.matchingBrace",
@@ -160,7 +174,7 @@
 			},
 			{
 				"command": "wgsl-analyzer.serverVersion",
-				"title": "Show RA Version",
+				"title": "Show wgsl-analyzer Version",
 				"category": "wgsl-analyzer"
 			},
 			{
@@ -434,8 +448,8 @@
 			{
 				"title": "Diagnostics",
 				"properties": {
-					"wgsl-analyzer.diagnostics.nagaParsingErrors": {
-						"markdownDescription": "Controls whether to show naga's parsing errors.",
+					"wgsl-analyzer.diagnostics.external.naga.parsing": {
+						"markdownDescription": "Whether to show diagnostics from naga about parsing.",
 						"default": true,
 						"type": "boolean"
 					}
@@ -444,8 +458,8 @@
 			{
 				"title": "Diagnostics",
 				"properties": {
-					"wgsl-analyzer.diagnostics.nagaValidationErrors": {
-						"markdownDescription": "Controls whether to show naga's validation errors.",
+					"wgsl-analyzer.diagnostics.external.naga.validation.errors": {
+						"markdownDescription": "Whether to show diagnostics from naga about validation.",
 						"default": true,
 						"type": "boolean"
 					}
@@ -454,18 +468,20 @@
 			{
 				"title": "Diagnostics",
 				"properties": {
-					"wgsl-analyzer.diagnostics.nagaVersion": {
+					"wgsl-analyzer.diagnostics.external.naga.version": {
 						"markdownDescription": "Naga version used for validation.",
-						"default": "0.28",
+						"default": "0.29",
 						"type": "string",
 						"enum": [
 							"0.27",
 							"0.28",
+							"0.29",
 							"main"
 						],
 						"enumDescriptions": [
 							"Naga version 27",
 							"Naga version 28",
+							"Naga version 29",
 							"Version of Naga on main (most recent stable version)"
 						]
 					}
@@ -474,8 +490,31 @@
 			{
 				"title": "Diagnostics",
 				"properties": {
-					"wgsl-analyzer.diagnostics.typeErrors": {
-						"markdownDescription": "Controls whether to show type errors.",
+					"wgsl-analyzer.diagnostics.external.tintErrors": {
+						"markdownDescription": "Whether to show Tint shader compiler's messages.",
+						"default": false,
+						"type": "boolean"
+					}
+				}
+			},
+			{
+				"title": "Diagnostics",
+				"properties": {
+					"wgsl-analyzer.diagnostics.external.tintPath": {
+						"markdownDescription": "The path to the tint binary.",
+						"default": null,
+						"type": [
+							"null",
+							"string"
+						]
+					}
+				}
+			},
+			{
+				"title": "Diagnostics",
+				"properties": {
+					"wgsl-analyzer.diagnostics.semanticErrors": {
+						"markdownDescription": "Whether to show diagnostics about the code semantics.",
 						"default": true,
 						"type": "boolean"
 					}
@@ -671,19 +710,31 @@
 				"injectTo": [
 					"source.js",
 					"source.ts",
+					"source.jsx",
+					"source.tsx",
+					"source.svelte",
+					"source.vue",
+					"source.astro",
 					"source.rust"
 				],
 				"scopeName": "source.comment-string.wgsl",
 				"path": "./syntaxes/inline-wgsl.tmLanguage.json",
 				"embeddedLanguages": {
 					"meta.embedded.block.wgsl": "wgsl"
-				}
+				},
+				"unbalancedBracketScopes": [
+					"keyword.operator.arrow.skinny.wgsl",
+					"keyword.operator.comparison.wgsl",
+					"keyword.operator.logical.wgsl",
+					"keyword.operator.assignment.wgsl"
+				]
 			},
 			{
 				"scopeName": "markdown.wgsl.codeblock",
 				"path": "./syntaxes/inline-wgsl.markdown.tmLanguage.json",
 				"injectTo": [
-					"text.html.markdown"
+					"text.html.markdown",
+					"source.mdx"
 				],
 				"embeddedLanguages": {
 					"meta.embedded.block.wgsl": "wgsl"
@@ -699,19 +750,31 @@
 				"injectTo": [
 					"source.js",
 					"source.ts",
+					"source.jsx",
+					"source.tsx",
+					"source.svelte",
+					"source.vue",
+					"source.astro",
 					"source.rust"
 				],
 				"scopeName": "source.comment-string.wesl",
 				"path": "./syntaxes/inline-wesl.tmLanguage.json",
 				"embeddedLanguages": {
 					"meta.embedded.block.wesl": "wesl"
-				}
+				},
+				"unbalancedBracketScopes": [
+					"keyword.operator.arrow.skinny.wgsl",
+					"keyword.operator.comparison.wgsl",
+					"keyword.operator.logical.wgsl",
+					"keyword.operator.assignment.wgsl"
+				]
 			},
 			{
 				"scopeName": "markdown.wesl.codeblock",
 				"path": "./syntaxes/inline-wesl.markdown.tmLanguage.json",
 				"injectTo": [
-					"text.html.markdown"
+					"text.html.markdown",
+					"source.mdx"
 				],
 				"embeddedLanguages": {
 					"meta.embedded.block.wesl": "wesl"

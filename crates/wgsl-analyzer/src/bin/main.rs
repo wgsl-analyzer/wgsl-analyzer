@@ -4,11 +4,15 @@
 
 #![expect(clippy::print_stdout, clippy::print_stderr, reason = "CLI tool")]
 
-use std::{env, fs, path::PathBuf, process::ExitCode, sync::Arc};
+use std::{env, fs, path::PathBuf, process::ExitCode, str::FromStr as _, sync::Arc};
 
 use anyhow::Context as _;
-use lsp_server::Connection;
-use paths::{AbsPathBuf, Utf8PathBuf};
+use lsp_server::{Connection, Message, Notification};
+use lsp_types::{
+    InitializeParams, InitializeResult, MessageType, Notification as _, ServerInfo,
+    ShowMessageNotification, ShowMessageParams, WorkspaceFolders,
+};
+use paths::{AbsPathBuf, Utf8Component, Utf8Path, Utf8PathBuf, Utf8Prefix};
 use tracing::info;
 use tracing_subscriber::fmt::writer::BoxMakeWriter;
 use wgsl_analyzer::{
@@ -123,14 +127,15 @@ fn run_server() -> anyhow::Result<()> {
     };
 
     tracing::info!("InitializeParameters: {}", initialize_parameters);
-    let lsp_types::InitializeParams {
+    let InitializeParams {
+        #[expect(deprecated, reason = "migration TODO")]
         root_uri,
         capabilities,
-        workspace_folders,
+        workspace_folders_initialize_params,
         initialization_options,
         client_info,
         ..
-    } = from_json::<lsp_types::InitializeParams>("InitializeParameters", &initialize_parameters)?;
+    } = from_json::<InitializeParams, _>("InitializeParameters", &initialize_parameters)?;
 
     let root_path = if let Some(path) = root_uri
         .and_then(|uri| uri.to_file_path().ok())
@@ -152,7 +157,12 @@ fn run_server() -> anyhow::Result<()> {
         );
     }
 
-    let workspace_roots = workspace_folders
+    let workspace_roots = workspace_folders_initialize_params
+        .workspace_folders
+        .and_then(|workspaces| match workspaces {
+            WorkspaceFolders::WorkspaceFolderList(workspace_folders) => Some(workspace_folders),
+            WorkspaceFolders::Null => None,
+        })
         .map(|workspaces| {
             workspaces
                 .into_iter()
@@ -173,33 +183,28 @@ fn run_server() -> anyhow::Result<()> {
         (config, error_sink, _) = config.apply_change(change);
 
         if !error_sink.is_empty() {
-            use lsp_types::{
-                MessageType, ShowMessageParams,
-                notification::{Notification as _, ShowMessage},
-            };
-            let notification = lsp_server::Notification::new(
-                ShowMessage::METHOD.to_owned(),
+            let notification = Notification::new(
+                ShowMessageNotification::METHOD.into(),
                 ShowMessageParams {
-                    typ: MessageType::WARNING,
+                    kind: MessageType::Warning,
                     message: error_sink.to_string(),
                 },
             );
             connection
                 .sender
-                .send(lsp_server::Message::Notification(notification))
+                .send(Message::Notification(notification))
                 .unwrap();
         }
     }
 
     let server_capabilities = wgsl_analyzer::server_capabilities(&config);
 
-    let initialize_result = lsp_types::InitializeResult {
+    let initialize_result = InitializeResult {
         capabilities: server_capabilities,
-        server_info: Some(lsp_types::ServerInfo {
+        server_info: Some(ServerInfo {
             name: String::from("wgsl-analyzer"),
             version: Some(wgsl_analyzer::version().to_string()),
         }),
-        offset_encoding: None,
     };
 
     let initialize_result = serde_json::to_value(initialize_result).unwrap();
@@ -324,11 +329,15 @@ const STACK_SIZE: usize = 1 << 24;
 /// Parts of wgsl-analyzer can use a lot of stack space, and some operating systems only give us
 /// 1 MB by default (eg. Windows), so this spawns a new thread with hopefully sufficient stack
 /// space.
-fn with_extra_thread(
-    thread_name: impl Into<String>,
+fn with_extra_thread<ThreadName, Function>(
+    thread_name: ThreadName,
     thread_intent: stdx::thread::ThreadIntent,
-    function: impl FnOnce() -> anyhow::Result<()> + Send + 'static,
-) -> anyhow::Result<()> {
+    function: Function,
+) -> anyhow::Result<()>
+where
+    ThreadName: Into<String>,
+    Function: FnOnce() -> anyhow::Result<()> + Send + 'static,
+{
     let handle = stdx::thread::Builder::new(thread_intent, thread_name)
         .stack_size(STACK_SIZE)
         .spawn(function)?;

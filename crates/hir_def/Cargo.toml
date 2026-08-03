@@ -3,7 +3,7 @@ name = "hir-def"
 version = "0.0.0"
 edition.workspace = true
 rust-version.workspace = true
-description = "RPC Api for the `proc-macro-srv` crate of wgsl-analyzer."
+description = "RPC API for wgsl-analyzer."
 repository.workspace = true
 license.workspace = true
 
@@ -12,7 +12,9 @@ doctest = false
 
 [dependencies]
 base-db.workspace = true
+# cov-mark.workspace = true
 either.workspace = true
+indexmap.workspace = true
 la-arena.workspace = true
 query-group.workspace = true
 rowan.workspace = true
@@ -22,6 +24,7 @@ salsa-macros.workspace = true
 smallvec.workspace = true
 smol_str.workspace = true
 syntax.workspace = true
+# tracing.workspace = true
 triomphe.workspace = true
 vfs.workspace = true
 

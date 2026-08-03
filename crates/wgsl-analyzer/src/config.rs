@@ -1,10 +1,6 @@
 use std::{fmt, sync::OnceLock};
 
-use base_db::input::SourceRootId;
-use hir::{
-    ExtensionsConfig,
-    diagnostics::{DiagnosticsConfig, NagaVersion},
-};
+use base_db::{ExtensionsConfig, input::SourceRootId};
 use hir_ty::ty::pretty::TypeVerbosity;
 use ide::{
     HoverConfig, HoverDocFormat, MemoryLayoutHoverRenderKind,
@@ -35,13 +31,12 @@ use ide::{
     // SourceRootId,
 };
 use ide_completion::{CompletionConfig, CompletionFieldsToResolve};
-use ide_db::{
-    SnippetCapability,
-    // imports::insert_use::{ImportGranularity, InsertUseConfig, PrefixKind},
-};
+use ide_db::SnippetCapability;
+use ide_diagnostics::{DiagnosticsConfig, NagaVersion};
 use itertools::Itertools as _;
+use lsp_types::{ClientCapabilities as LspClientCapabilities, ClientInfo};
+use paths::Utf8PathBuf;
 use rustc_hash::FxHashMap;
-use semver::Version;
 use serde::{Deserialize, Serialize};
 use stdx::format_to_acc;
 use triomphe::Arc;
@@ -69,15 +64,23 @@ config_data! {
         /// Use `0` to let the server choose automatically based on the machine.
         cachePriming_numThreads: NumThreads = NumThreads::default(),
 
-        /// Controls whether to show naga's parsing errors.
-        diagnostics_nagaParsingErrors: bool = true,
-        /// Controls whether to show naga's validation errors.
-        diagnostics_nagaValidationErrors: bool = true,
+        // TODO: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/998
+        // `diagnostics_external` becomes `check` or similar
+        /// Whether to show diagnostics from naga about parsing.
+        diagnostics_external_naga_parsing: bool = true,
+        /// Whether to show diagnostics from naga about validation.
+        diagnostics_external_naga_validation_errors: bool = true,
         /// Naga version used for validation.
-        diagnostics_nagaVersion: NagaVersionConfig = NagaVersionConfig::default(),
-        /// Controls whether to show type errors.
-        diagnostics_typeErrors: bool = true,
+        diagnostics_external_naga_version: NagaVersionConfig = NagaVersionConfig::default(),
+        /// Whether to show Tint shader compiler's messages.
+        diagnostics_external_tintErrors: bool = false,
+        /// The path to the tint binary.
+        diagnostics_external_tintPath: Option<Utf8PathBuf> = None,
 
+        /// Whether to show diagnostics about the code semantics.
+        diagnostics_semanticErrors: bool = true,
+
+        // TODO: remove this, this is not config
         /// Whether to enable u64 and i64 scalar types.
         extensions_shaderInt64: bool = true,
 
@@ -115,8 +118,10 @@ pub enum NagaVersionConfig {
     #[serde(rename = "0.27")]
     Naga27,
     #[serde(rename = "0.28")]
-    #[default]
     Naga28,
+    #[default]
+    #[serde(rename = "0.29")]
+    Naga29,
     #[serde(rename = "main")]
     NagaMain,
 }
@@ -147,12 +152,6 @@ pub enum TraceServer {
     Verbose,
 }
 
-#[derive(Clone, Debug, Default, Hash, PartialEq, Eq)]
-struct ClientInfo {
-    name: String,
-    version: Option<Version>,
-}
-
 #[derive(Clone, Debug)]
 pub struct Config {
     /// The workspace roots as registered by the LSP client.
@@ -167,7 +166,7 @@ pub struct Config {
 
     default: &'static DefaultConfigData,
     /// Config node that obtains its initial value during the server initialization and
-    /// by receiving a `lsp_types::notification::DidChangeConfiguration`.
+    /// by receiving a [`lsp_types::DidChangeConfigurationNotification`].
     client: (FullConfigInput, ConfigErrors),
 
     /// Config node whose values apply to **every** wgsl project.
@@ -266,25 +265,18 @@ impl Config {
     #[must_use]
     pub fn new(
         root_path: AbsPathBuf,
-        caps: lsp_types::ClientCapabilities,
+        capabilities: LspClientCapabilities,
         workspace_roots: Vec<AbsPathBuf>,
-        client_info: Option<lsp_types::ClientInfo>,
+        client_info: Option<ClientInfo>,
     ) -> Self {
         static DEFAULT_CONFIG_DATA: OnceLock<&'static DefaultConfigData> = OnceLock::new();
 
         Self {
             workspace_roots,
-            capabilities: ClientCapabilities::new(caps),
+            capabilities: ClientCapabilities::new(capabilities),
             // snippets: Default::default(),
             root_path,
-            client_info: client_info.map(|client_info| ClientInfo {
-                name: client_info.name,
-                version: client_info
-                    .version
-                    .as_deref()
-                    .map(Version::parse)
-                    .and_then(Result::ok),
-            }),
+            client_info,
             diagnostics_enable: true,
             default: DEFAULT_CONFIG_DATA.get_or_init(|| Box::leak(Box::default())),
             client: (FullConfigInput::default(), ConfigErrors(vec![])),
@@ -305,10 +297,12 @@ impl Config {
         }
     }
 
-    pub fn add_workspaces<Workspaces: Iterator<Item = AbsPathBuf>>(
+    pub fn add_workspaces<Workspaces>(
         &mut self,
         paths: Workspaces,
-    ) {
+    ) where
+        Workspaces: Iterator<Item = AbsPathBuf>,
+    {
         self.workspace_roots.extend(paths);
     }
 
@@ -553,6 +547,7 @@ impl Config {
     pub fn extensions(&self) -> ExtensionsConfig {
         ExtensionsConfig {
             shader_int64: *self.extensions_shaderInt64(),
+            ..Default::default()
         }
     }
 
@@ -578,16 +573,24 @@ impl Config {
         &self,
         source_root: Option<SourceRootId>,
     ) -> DiagnosticsConfig {
+        let tint_path = self
+            .diagnostics_external_tintPath()
+            .as_deref()
+            .unwrap_or_else(|| "tint".into());
         DiagnosticsConfig {
             enabled: true,
-            type_errors: *self.diagnostics_typeErrors(),
-            naga_parsing_errors: *self.diagnostics_nagaParsingErrors(),
-            naga_validation_errors: *self.diagnostics_nagaValidationErrors(),
-            naga_version: match self.diagnostics_nagaVersion() {
+            parse_enabled: true,
+            semantic_enabled: *self.diagnostics_semanticErrors(),
+            naga_parsing_enabled: *self.diagnostics_external_naga_parsing(),
+            naga_validation_enabled: *self.diagnostics_external_naga_validation_errors(),
+            naga_version: match self.diagnostics_external_naga_version() {
                 NagaVersionConfig::Naga27 => NagaVersion::Naga27,
                 NagaVersionConfig::Naga28 => NagaVersion::Naga28,
+                NagaVersionConfig::Naga29 => NagaVersion::Naga29,
                 NagaVersionConfig::NagaMain => NagaVersion::NagaMain,
             },
+            tint_enabled: *self.diagnostics_external_tintErrors(),
+            tint_path: Some(tint_path.to_owned()),
         }
     }
 
@@ -599,31 +602,6 @@ impl Config {
     )]
     pub fn typing_trigger_chars(&self) -> Option<String> {
         Some("=.".to_owned())
-    }
-
-    // VSCode is our reference implementation, so we allow ourselves to work around issues by
-    // special casing certain versions
-    #[must_use]
-    pub fn visual_studio_code_version(&self) -> Option<&Version> {
-        let client_info = self
-            .client_info
-            .as_ref()
-            .filter(|client_info| client_info.name.starts_with("Visual Studio Code"))?;
-        client_info.version.as_ref()
-    }
-
-    #[must_use]
-    pub fn client_is_helix(&self) -> bool {
-        self.client_info
-            .as_ref()
-            .is_some_and(|client_info| client_info.name == "helix")
-    }
-
-    #[must_use]
-    pub fn client_is_neovim(&self) -> bool {
-        self.client_info
-            .as_ref()
-            .is_some_and(|client_info| client_info.name == "Neovim")
     }
 }
 
@@ -782,12 +760,15 @@ struct GlobalWorkspaceLocalConfigInput {
     // workspace: WorkspaceConfigInput,
 }
 
-fn get_field_json<T: serde::de::DeserializeOwned>(
+fn get_field_json<T>(
     json: &mut serde_json::Value,
     error_sink: &mut Vec<(String, serde_json::Error)>,
     field: &'static str,
     alias: Option<&'static str>,
-) -> Option<T> {
+) -> Option<T>
+where
+    T: serde::de::DeserializeOwned,
+{
     // XXX: check alias first, to work around the VS Code issue where it pre-fills defaults
     // instead of sending an empty object.
     alias
@@ -915,6 +896,9 @@ fn field_props(
             "minimum": 0,
             "maximum": 0xFFFF,
         },
+        "Option<String>" | "Option<Utf8PathBuf>" => set! {
+            "type": ["null", "string"],
+        },
         "Option<bool>" => set! {
             "type": ["null", "boolean"],
         },
@@ -952,10 +936,11 @@ fn field_props(
         },
         "NagaVersionConfig" => set! {
             "type": "string",
-            "enum": ["0.27", "0.28", "main"],
+            "enum": ["0.27", "0.28", "0.29", "main"],
             "enumDescriptions": [
                 "Naga version 27",
                 "Naga version 28",
+                "Naga version 29",
                 "Version of Naga on main (most recent stable version)"
             ],
         },

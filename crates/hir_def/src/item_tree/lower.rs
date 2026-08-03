@@ -10,8 +10,8 @@ use crate::{
     ast_id::AstIdMap,
     database::DefDatabase,
     item_tree::{
-        self, Function, GlobalAssertStatement, ImportStatement, ImportTree, ItemTree, ModuleItem,
-        ModuleItemId,
+        self, BigModItem, Function, GlobalAssertStatement, ImportStatement, ImportTree, ItemTree,
+        ItemTreeAstId, ModuleItemId, SmallModItem,
     },
     mod_path::{ModPath, PathKind},
 };
@@ -21,7 +21,7 @@ pub(crate) struct Ctx<'database> {
     file_id: EditionedFileId,
     source_ast_id_map: Arc<AstIdMap>,
     pub(crate) tree: ItemTree,
-    pub(crate) items: Vec<ModuleItem>,
+    pub(crate) items: Vec<ModuleItemId>,
 }
 
 impl<'database> Ctx<'database> {
@@ -55,25 +55,27 @@ impl<'database> Ctx<'database> {
     ) -> Option<()> {
         let item = match item {
             Item::ImportStatement(import_statement) => {
-                ModuleItem::ImportStatement(self.lower_import(&import_statement)?)
+                ModuleItemId::ImportStatement(self.lower_import(&import_statement)?)
             },
             Item::FunctionDeclaration(function) => {
-                ModuleItem::Function(self.lower_function(&function)?)
+                ModuleItemId::Function(self.lower_function(&function)?)
             },
-            Item::StructDeclaration(r#struct) => ModuleItem::Struct(self.lower_struct(&r#struct)?),
+            Item::StructDeclaration(r#struct) => {
+                ModuleItemId::Struct(self.lower_struct(&r#struct)?)
+            },
             Item::VariableDeclaration(variable) => {
-                ModuleItem::GlobalVariable(self.lower_global_variable(&variable)?)
+                ModuleItemId::GlobalVariable(self.lower_global_variable(&variable)?)
             },
             Item::ConstantDeclaration(constant) => {
-                ModuleItem::GlobalConstant(self.lower_global_constant(&constant)?)
+                ModuleItemId::GlobalConstant(self.lower_global_constant(&constant)?)
             },
             Item::OverrideDeclaration(override_declaration) => {
-                ModuleItem::Override(self.lower_override(&override_declaration)?)
+                ModuleItemId::Override(self.lower_override(&override_declaration)?)
             },
             Item::TypeAliasDeclaration(type_alias) => {
-                ModuleItem::TypeAlias(self.lower_type_alias(&type_alias)?)
+                ModuleItemId::TypeAlias(self.lower_type_alias(&type_alias)?)
             },
-            Item::AssertStatement(assert_statement) => ModuleItem::GlobalAssertStatement(
+            Item::AssertStatement(assert_statement) => ModuleItemId::GlobalAssertStatement(
                 self.lower_global_assert_statement(&assert_statement)?,
             ),
         };
@@ -84,16 +86,16 @@ impl<'database> Ctx<'database> {
     fn lower_import(
         &mut self,
         item: &syntax::ast::ImportStatement,
-    ) -> Option<ModuleItemId<ImportStatement>> {
+    ) -> Option<ItemTreeAstId<ImportStatement>> {
         let kind = PathKind::from_src(item.relative());
         let tree = Self::lower_import_tree(&item.item()?)?;
         let ast_id = self.source_ast_id_map.ast_id(item);
-        Some(
-            self.tree
-                .imports
-                .alloc(ImportStatement { kind, tree, ast_id })
-                .into(),
-        )
+        let import_statement = ImportStatement { kind, tree };
+        self.tree.big_data.insert(
+            ast_id.upcast(),
+            BigModItem::ImportStatement(import_statement),
+        );
+        Some(ast_id)
     }
 
     fn lower_import_tree(import_tree: &syntax::ast::ImportTree) -> Option<ImportTree> {
@@ -122,66 +124,81 @@ impl<'database> Ctx<'database> {
     fn lower_type_alias(
         &mut self,
         type_alias: &syntax::ast::TypeAliasDeclaration,
-    ) -> Option<ModuleItemId<TypeAlias>> {
+    ) -> Option<ItemTreeAstId<TypeAlias>> {
         let name = type_alias.name()?.text().into();
         let ast_id = self.source_ast_id_map.ast_id(type_alias);
-        Some(
-            self.tree
-                .type_aliases
-                .alloc(TypeAlias { name, ast_id })
-                .into(),
-        )
+        let type_alias = TypeAlias { name };
+        self.tree
+            .small_data
+            .insert(ast_id.upcast(), SmallModItem::TypeAlias(type_alias));
+        Some(ast_id)
     }
 
     fn lower_override(
         &mut self,
         override_declaration: &syntax::ast::OverrideDeclaration,
-    ) -> Option<ModuleItemId<Override>> {
+    ) -> Option<ItemTreeAstId<Override>> {
         let name = override_declaration.name()?.text().into();
         let ast_id = self.source_ast_id_map.ast_id(override_declaration);
-
-        let override_declaration = Override { name, ast_id };
-        Some(self.tree.overrides.alloc(override_declaration).into())
+        let override_declaration = Override { name };
+        self.tree.small_data.insert(
+            ast_id.upcast(),
+            SmallModItem::Override(override_declaration),
+        );
+        Some(ast_id)
     }
 
     fn lower_global_constant(
         &mut self,
         constant: &syntax::ast::ConstantDeclaration,
-    ) -> Option<ModuleItemId<GlobalConstant>> {
+    ) -> Option<ItemTreeAstId<GlobalConstant>> {
         let name = constant.name()?.text().into();
         let ast_id = self.source_ast_id_map.ast_id(constant);
-        let constant = GlobalConstant { name, ast_id };
-        Some(self.tree.global_constants.alloc(constant).into())
+        let constant = GlobalConstant { name };
+        self.tree
+            .small_data
+            .insert(ast_id.upcast(), SmallModItem::GlobalConstant(constant));
+        Some(ast_id)
     }
 
     fn lower_global_variable(
         &mut self,
         variable: &syntax::ast::VariableDeclaration,
-    ) -> Option<ModuleItemId<GlobalVariable>> {
+    ) -> Option<ItemTreeAstId<GlobalVariable>> {
         let name = variable.name()?.text().into();
         let ast_id = self.source_ast_id_map.ast_id(variable);
-        let variable = GlobalVariable { name, ast_id };
-        Some(self.tree.global_variables.alloc(variable).into())
+        let variable = GlobalVariable { name };
+        self.tree
+            .small_data
+            .insert(ast_id.upcast(), SmallModItem::GlobalVariable(variable));
+
+        Some(ast_id)
     }
 
     fn lower_struct(
         &mut self,
         r#struct: &syntax::ast::StructDeclaration,
-    ) -> Option<ModuleItemId<Struct>> {
+    ) -> Option<ItemTreeAstId<Struct>> {
         let name = r#struct.name()?.text().into();
         let ast_id = self.source_ast_id_map.ast_id(r#struct);
-        let r#struct = Struct { name, ast_id };
-        Some(self.tree.structs.alloc(r#struct).into())
+        let r#struct = Struct { name };
+        self.tree
+            .small_data
+            .insert(ast_id.upcast(), SmallModItem::Struct(r#struct));
+        Some(ast_id)
     }
 
     fn lower_function(
         &mut self,
         function: &syntax::ast::FunctionDeclaration,
-    ) -> Option<ModuleItemId<Function>> {
+    ) -> Option<ItemTreeAstId<Function>> {
         let name = function.name()?.text().into();
         let ast_id = self.source_ast_id_map.ast_id(function);
-        let function = Function { name, ast_id };
-        Some(self.tree.functions.alloc(function).into())
+        let function = Function { name };
+        self.tree
+            .small_data
+            .insert(ast_id.upcast(), SmallModItem::Function(function));
+        Some(ast_id)
     }
 
     #[expect(
@@ -191,14 +208,14 @@ impl<'database> Ctx<'database> {
     fn lower_global_assert_statement(
         &mut self,
         assert_statement: &syntax::ast::AssertStatement,
-    ) -> Option<ModuleItemId<GlobalAssertStatement>> {
+    ) -> Option<ItemTreeAstId<GlobalAssertStatement>> {
         let ast_id = self.source_ast_id_map.ast_id(assert_statement);
-        let assert_statement = GlobalAssertStatement { ast_id };
-        Some(
-            self.tree
-                .global_assert_statements
-                .alloc(assert_statement)
-                .into(),
-        )
+        let assert_statement = GlobalAssertStatement {};
+        self.tree.small_data.insert(
+            ast_id.upcast(),
+            SmallModItem::GlobalAssertStatement(assert_statement),
+        );
+
+        Some(ast_id)
     }
 }

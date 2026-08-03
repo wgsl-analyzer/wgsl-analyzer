@@ -175,7 +175,7 @@ These crates also define various intermediate representations of the core.
 
 `ItemTree` condenses a single `SyntaxTree` into a "summary" data structure, which is stable over modifications to function bodies.
 
-`DefMap` contains the module tree of a crate and stores module scopes.
+`ModuleMap` contains the module tree of a package. `ModuleData` incrementally keeps track of the children of a given module.
 
 `Body` stores information about expressions.
 
@@ -400,8 +400,7 @@ fn spam() {
 To specify input data, we use a single string literal in a special format, which can describe a set of WGSL files.
 See the `Fixture` its module for fixture examples and documentation.
 
-**Architecture Invariant:** all code invariants are tested by `#[test]` tests.
-There is no additional checks in CI, formatting, and tidy tests are run with `cargo test`.
+**Architecture Invariant:** all code invariants are tested by `#[test]` tests, including formatting and tidy tests.
 
 **Architecture Invariant:** tests do not depend on any kind of external resources, they are perfectly reproducible.
 

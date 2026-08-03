@@ -6,13 +6,11 @@
     clippy::trailing_empty_array,
     reason = "Clippy has a false positive for the query_group macro, see: https://github.com/rust-lang/rust-clippy/issues/16754"
 )]
-use std::fmt::{self, Debug};
+use std::fmt::Debug;
 
-use base_db::{
-    EditionedFileId, Lookup as _, RootQueryDb, SourceDatabase, impl_intern_key, impl_intern_lookup,
-};
+use base_db::{EditionedFileId, Lookup as _, SourceDatabase, impl_intern_key, impl_intern_lookup};
 use salsa::plumbing::AsId as _;
-use syntax::{Parse, ast};
+use syntax::{ExtensionsConfig, Parse, ast};
 use triomphe::Arc;
 use vfs::VfsPath;
 
@@ -22,6 +20,7 @@ use crate::{
     attributes::{AttributeDefId, AttributesWithOwner},
     body::{Body, BodySourceMap, scope::ExprScopes},
     expression_store::{ExpressionSourceMap, ExpressionStore},
+    item_scope::ItemScope,
     item_tree::{
         Directive, Function, GlobalAssertStatement, GlobalConstant, GlobalVariable,
         ImportStatement, ItemTree, ModuleItemId, Override, Struct, TypeAlias,
@@ -33,21 +32,11 @@ use crate::{
     },
 };
 
-#[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
-pub struct ExtensionsConfig {
-    pub shader_int64: bool,
-}
-
 #[query_group::query_group(DefDatabaseStorage)]
 pub trait DefDatabase: InternDatabase + SourceDatabase {
     /// Which language extensions are enabled.
     #[salsa::input]
     fn extensions(&self) -> ExtensionsConfig;
-
-    fn parse_or_resolve(
-        &self,
-        key: EditionedFileId,
-    ) -> Parse;
 
     fn ast_id_map(
         &self,
@@ -164,72 +153,68 @@ fn signature_with_source_map(
     }
 }
 
-fn parse_or_resolve(
-    database: &dyn DefDatabase,
-    file_id: EditionedFileId,
-) -> Parse {
-    database.parse(file_id)
-}
-
 fn ast_id_map(
     database: &dyn DefDatabase,
     file_id: EditionedFileId,
 ) -> Arc<AstIdMap> {
-    let parsed = database.parse_or_resolve(file_id);
+    let parsed = file_id.parse(database);
     let map = AstIdMap::from_source(&parsed.tree());
     Arc::new(map)
 }
 
 #[query_group::query_group(InternDatabaseStorage)]
-pub trait InternDatabase: RootQueryDb {
+pub trait InternDatabase: SourceDatabase {
     #[salsa::interned]
     fn intern_import(
         &self,
-        location: Location<ImportStatement>,
+        location: Location<ast::ImportStatement>,
     ) -> ImportId;
     #[salsa::interned]
     fn intern_directive(
         &self,
-        location: Location<Directive>,
+        location: Location<ast::Directive>,
     ) -> DirectiveId;
     #[salsa::interned]
     fn intern_function(
         &self,
-        location: Location<Function>,
+        location: Location<ast::FunctionDeclaration>,
     ) -> FunctionId;
     #[salsa::interned]
     fn intern_global_variable(
         &self,
-        location: Location<GlobalVariable>,
+        location: Location<ast::VariableDeclaration>,
     ) -> GlobalVariableId;
     #[salsa::interned]
     fn intern_global_constant(
         &self,
-        location: Location<GlobalConstant>,
+        location: Location<ast::ConstantDeclaration>,
     ) -> GlobalConstantId;
     #[salsa::interned]
     fn intern_override(
         &self,
-        location: Location<Override>,
+        location: Location<ast::OverrideDeclaration>,
     ) -> OverrideId;
     #[salsa::interned]
     fn intern_struct(
         &self,
-        location: Location<Struct>,
+        location: Location<ast::StructDeclaration>,
     ) -> StructId;
     #[salsa::interned]
     fn intern_type_alias(
         &self,
-        location: Location<TypeAlias>,
+        location: Location<ast::TypeAliasDeclaration>,
     ) -> TypeAliasId;
     #[salsa::interned]
     fn intern_global_assert_statement(
         &self,
-        location: Location<GlobalAssertStatement>,
+        location: Location<ast::AssertStatement>,
     ) -> GlobalAssertStatementId;
 }
 
-pub type Location<T> = InFile<ModuleItemId<T>>;
+/// `Location` points to an AST node in any file. Corresponds to `AstId` in Rust-Analyzer.
+///
+/// It is stable across reparses, and can be used as salsa key/value.
+pub type Location<T> = InFile<FileAstId<T>>;
 
 macro_rules! impl_intern {
     ($id:ident, $loc:ty, $intern:ident, $lookup:ident) => {
@@ -240,55 +225,55 @@ macro_rules! impl_intern {
 
 impl_intern!(
     ImportId,
-    Location<ImportStatement>,
+    Location<ast::ImportStatement>,
     intern_import,
     lookup_intern_import
 );
 impl_intern!(
     DirectiveId,
-    Location<Directive>,
+    Location<ast::Directive>,
     intern_directive,
     lookup_intern_directive
 );
 impl_intern!(
     FunctionId,
-    Location<Function>,
+    Location<ast::FunctionDeclaration>,
     intern_function,
     lookup_intern_function
 );
 impl_intern!(
     GlobalVariableId,
-    Location<GlobalVariable>,
+    Location<ast::VariableDeclaration>,
     intern_global_variable,
     lookup_intern_global_variable
 );
 impl_intern!(
     GlobalConstantId,
-    Location<GlobalConstant>,
+    Location<ast::ConstantDeclaration>,
     intern_global_constant,
     lookup_intern_global_constant
 );
 impl_intern!(
     OverrideId,
-    Location<Override>,
+    Location<ast::OverrideDeclaration>,
     intern_override,
     lookup_intern_override
 );
 impl_intern!(
     StructId,
-    Location<Struct>,
+    Location<ast::StructDeclaration>,
     intern_struct,
     lookup_intern_struct
 );
 impl_intern!(
     TypeAliasId,
-    Location<TypeAlias>,
+    Location<ast::TypeAliasDeclaration>,
     intern_type_alias,
     lookup_intern_type_alias
 );
 impl_intern!(
     GlobalAssertStatementId,
-    Location<GlobalAssertStatement>,
+    Location<ast::AssertStatement>,
     intern_global_assert_statement,
     lookup_intern_global_assert_statement
 );
@@ -322,14 +307,18 @@ impl DefinitionWithBodyId {
         database: &dyn DefDatabase,
     ) -> Resolver {
         let file_id = self.file_id(database);
-        let module_info = database.item_tree(file_id);
-        Resolver::default().push_module_scope(file_id, module_info)
+        let module_info = ItemScope::of(database, file_id);
+        Resolver::new(file_id, module_info)
     }
 }
 
-/// All module items.
+/// The definitions which are visible in the module.
+///
+/// Includes other modules, since they can be visible when they are imported.
+/// Does not include import statements, since its the items of the import statement that are visible.
 #[derive(PartialEq, Eq, Hash, Debug, Clone, Copy, salsa_macros::Supertype)]
 pub enum ModuleDefinitionId {
+    Module(EditionedFileId),
     Function(FunctionId),
     GlobalVariable(GlobalVariableId),
     GlobalConstant(GlobalConstantId),
@@ -345,6 +334,7 @@ impl ModuleDefinitionId {
         database: &dyn DefDatabase,
     ) -> EditionedFileId {
         match self {
+            Self::Module(id) => id,
             Self::Function(id) => id.lookup(database).file_id,
             Self::GlobalVariable(id) => id.lookup(database).file_id,
             Self::GlobalConstant(id) => id.lookup(database).file_id,
@@ -360,8 +350,22 @@ impl ModuleDefinitionId {
         database: &dyn DefDatabase,
     ) -> Resolver {
         let file_id = self.file_id(database);
-        let module_info = database.item_tree(file_id);
-        Resolver::default().push_module_scope(file_id, module_info)
+        let module_info = ItemScope::of(database, file_id);
+        Resolver::new(file_id, module_info)
+    }
+
+    #[must_use]
+    pub const fn with_body(self) -> Option<DefinitionWithBodyId> {
+        match self {
+            Self::Function(id) => Some(DefinitionWithBodyId::Function(id)),
+            Self::GlobalVariable(id) => Some(DefinitionWithBodyId::GlobalVariable(id)),
+            Self::GlobalConstant(id) => Some(DefinitionWithBodyId::GlobalConstant(id)),
+            Self::GlobalAssertStatement(id) => {
+                Some(DefinitionWithBodyId::GlobalAssertStatement(id))
+            },
+            Self::Override(id) => Some(DefinitionWithBodyId::Override(id)),
+            Self::Module(_) | Self::Struct(_) | Self::TypeAlias(_) => None,
+        }
     }
 }
 

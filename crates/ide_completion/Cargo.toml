@@ -12,19 +12,24 @@ doctest = false
 
 [dependencies]
 base-db.workspace = true
-either.workspace = true
 hir.workspace = true
 hir-def.workspace = true
 hir-ty.workspace = true
 ide-db.workspace = true
 itertools.workspace = true
-rowan.workspace = true
 rustc-hash.workspace = true
 smallvec.workspace = true
 smol_str.workspace = true
 stdx.workspace = true
 syntax.workspace = true
 tracing.workspace = true
+
+[dev-dependencies]
+expect-test.workspace = true
+
+# local deps
+test-fixture.workspace = true
+test-utils.workspace = true
 
 [lints]
 workspace = true

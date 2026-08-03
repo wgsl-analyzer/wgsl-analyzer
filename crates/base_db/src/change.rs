@@ -9,8 +9,9 @@ use triomphe::Arc;
 use vfs::FileId;
 
 use crate::{
-    Package, RootQueryDb,
+    Package, PackageDisplayName, SourceDatabase, all_packages,
     input::{Dependency, PackageData, PackageId, PackageOrigin, SourceRoot, SourceRootId},
+    set_all_packages_with_durability,
 };
 
 /// Encapsulate a bunch of raw `.set` calls on the database.
@@ -81,7 +82,7 @@ impl Change {
     /// Panics if the number of source roots exceeds `u32::MAX`, as `SourceRootId` holds a `u32`.
     pub fn apply(
         self,
-        database: &mut dyn RootQueryDb,
+        database: &mut dyn SourceDatabase,
     ) {
         if let Some(roots) = self.roots {
             for (root, root_id) in roots.into_iter().zip(0_u32..) {
@@ -107,7 +108,6 @@ impl Change {
         let mut package_graph = PackageGraph::new(&*database);
         package_graph.update(self.packages_changed);
         let (sorted_packages, errors) = package_graph.to_topological_order();
-        package_graph.remove_cycles(&errors);
 
         // TODO: Report the errors?
 
@@ -116,12 +116,11 @@ impl Change {
 }
 
 fn apply_package_graph(
-    database: &mut dyn RootQueryDb,
+    database: &mut dyn SourceDatabase,
     mut package_graph: PackageGraph,
     sorted_packages: Vec<PackageId>,
 ) {
-    let mut old_packages: FxHashMap<PackageId, Package> = database
-        .all_packages()
+    let mut old_packages: FxHashMap<PackageId, Package> = all_packages(database)
         .iter()
         .map(|package| (package.package_id(database), *package))
         .collect();
@@ -155,14 +154,12 @@ fn apply_package_graph(
             edition: package_data.edition,
             display_name: None,
             dependencies: Vec::new(),
-            cyclic_dependencies: Vec::new(),
             origin: package_data.origin,
         };
         // Salsa does not have a removal API yet, see: https://github.com/salsa-rs/salsa/issues/37
         remaining_package.set_data(database).to(dummy_package);
     }
-
-    database.set_all_packages(Arc::new(all_packages.into_boxed_slice()));
+    set_all_packages_with_durability(database, all_packages, Durability::MEDIUM);
 }
 
 #[must_use]
@@ -199,16 +196,12 @@ struct PackageGraph {
 }
 
 impl PackageGraph {
-    pub fn new(database: &dyn RootQueryDb) -> Self {
-        let (ids, packages): (Vec<_>, FxHashMap<_, _>) = database
-            .all_packages()
+    pub fn new(database: &dyn SourceDatabase) -> Self {
+        let (ids, packages): (Vec<_>, FxHashMap<_, _>) = all_packages(database)
             .iter()
             .map(|package| {
                 let mut package_data = PackageData::clone(package.data(database));
                 // Ensure that we view everything as a potential dependency
-                package_data
-                    .dependencies
-                    .append(&mut package_data.cyclic_dependencies);
                 let id = package.package_id(database);
                 (id, (id, package_data))
             })
@@ -227,25 +220,6 @@ impl PackageGraph {
             } else {
                 self.packages.remove(&package_id);
             }
-        }
-    }
-
-    fn remove_cycles(
-        &mut self,
-        errors: &[CyclicDependenciesError],
-    ) {
-        for error in errors {
-            let package_data = self.packages.get_mut(&error.to().package_id).unwrap();
-            let previous_length = package_data.dependencies.len();
-            package_data
-                .dependencies
-                .retain_mut(|dependency| dependency != error.from());
-            package_data.cyclic_dependencies.push(error.from().clone());
-            assert_eq!(
-                previous_length - 1,
-                package_data.dependencies.len(),
-                "Expected to have removed exactly one cyclic dependency."
-            );
         }
     }
 
@@ -288,7 +262,12 @@ impl PackageGraph {
                     visited.insert(current, CycleState::Finished);
                     path.push(cycle_dependency);
                 }
-                errors.push(CyclicDependenciesError { path });
+                errors.push(CyclicDependenciesError {
+                    path: path
+                        .iter()
+                        .map(|path| (path.package_id, Some(path.name.clone().into())))
+                        .collect(),
+                });
             },
             Some(CycleState::Unvisited) => {
                 visited.insert(source, CycleState::Visited);
@@ -317,15 +296,15 @@ impl PackageGraph {
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct CyclicDependenciesError {
-    path: Vec<Dependency>,
+    path: Vec<(PackageId, Option<PackageDisplayName>)>,
 }
 
 impl CyclicDependenciesError {
-    fn from(&self) -> &Dependency {
+    fn from(&self) -> &(PackageId, Option<PackageDisplayName>) {
         self.path.first().unwrap()
     }
 
-    fn to(&self) -> &Dependency {
+    fn to(&self) -> &(PackageId, Option<PackageDisplayName>) {
         self.path.last().unwrap()
     }
 }
@@ -333,21 +312,26 @@ impl CyclicDependenciesError {
 impl fmt::Display for CyclicDependenciesError {
     fn fmt(
         &self,
-        f: &mut fmt::Formatter<'_>,
+        formatter: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
-        let render = |Dependency { package_id, name }: &Dependency| {
-            format!("Package {name}({})", package_id.index())
+        let render = |(id, name): &(PackageId, Option<PackageDisplayName>)| match name {
+            Some(package_name) => format!(
+                "(Name: {}, PackageId: {})",
+                package_name.canonical_name,
+                id.index()
+            ),
+            None => format!("(Name: {}, PackageId: {})", "<none>", id.index()),
         };
-        let path = self
+        let alternative_path = self
             .path
             .iter()
-            .chain(std::iter::once(self.from()))
+            .rev()
             .map(render)
             .collect::<Vec<String>>()
             .join(" -> ");
         write!(
-            f,
-            "Cyclic dependency from {} to {}. Path: {path}",
+            formatter,
+            "Cyclic dependency: {} -> {}, alternative path: {alternative_path}",
             render(self.from()),
             render(self.to())
         )
@@ -410,7 +394,6 @@ mod tests {
                 edition: Edition::LATEST,
                 display_name: None,
                 dependencies,
-                cyclic_dependencies: Vec::new(),
                 origin: PackageOrigin::Local,
             },
         )
@@ -466,7 +449,7 @@ mod tests {
             ],
             expect![[r#"
                 2, 1, 0
-                Cyclic dependency from Package 1(1) to Package 0(0). Path: Package 1(1) -> Package 2(2) -> Package 0(0) -> Package 1(1)
+                Cyclic dependency: (Name: 1, PackageId: 1) -> (Name: 0, PackageId: 0), alternative path: (Name: 0, PackageId: 0) -> (Name: 2, PackageId: 2) -> (Name: 1, PackageId: 1)
             "#]],
         );
     }
@@ -486,7 +469,7 @@ mod tests {
             ],
             expect![[r#"
                 5, 2
-                Cyclic dependency from Package 5(5) to Package 2(2). Path: Package 5(5) -> Package 2(2) -> Package 5(5)
+                Cyclic dependency: (Name: 5, PackageId: 5) -> (Name: 2, PackageId: 2), alternative path: (Name: 2, PackageId: 2) -> (Name: 5, PackageId: 5)
             "#]],
         );
     }
@@ -497,7 +480,7 @@ mod tests {
             &[new_package(2, vec![dependency(2)]), new_package(5, vec![])],
             expect![[r#"
                 2, 5
-                Cyclic dependency from Package 2(2) to Package 2(2). Path: Package 2(2) -> Package 2(2)
+                Cyclic dependency: (Name: 2, PackageId: 2) -> (Name: 2, PackageId: 2), alternative path: (Name: 2, PackageId: 2)
             "#]],
         );
         check(
@@ -507,7 +490,7 @@ mod tests {
             ],
             expect![[r#"
                 2, 5
-                Cyclic dependency from Package 2(2) to Package 2(2). Path: Package 2(2) -> Package 2(2)
+                Cyclic dependency: (Name: 2, PackageId: 2) -> (Name: 2, PackageId: 2), alternative path: (Name: 2, PackageId: 2)
             "#]],
         );
     }

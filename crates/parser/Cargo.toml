@@ -20,7 +20,7 @@ unicode-ident = "1.0.24"
 expect-test.workspace = true
 
 [build-dependencies]
-lelwel = "0.10.2"
+lelwel = "0.10.4"
 
 [lints]
 workspace = true

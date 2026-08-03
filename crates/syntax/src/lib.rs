@@ -1,3 +1,5 @@
+//! Concrete syntax tree definitions.
+
 pub mod algorithms;
 pub mod ast;
 pub mod pointer;
@@ -6,12 +8,14 @@ use std::{marker::PhantomData, ops::Deref};
 
 use either::Either;
 pub use parser::{
-    Diagnostic, Edition, ParseEntryPoint, SyntaxElement, SyntaxKind, SyntaxNode,
+    Diagnostic, Edition, ExtensionsConfig, ParseEntryPoint, SyntaxElement, SyntaxKind, SyntaxNode,
     SyntaxNodeChildren, SyntaxToken,
 };
 pub use rowan::Direction;
 use smol_str::SmolStr;
 use triomphe::Arc;
+
+use crate::ast::{Attribute, AttributeList};
 
 #[derive(Clone, Debug)]
 pub struct Parse {
@@ -49,6 +53,13 @@ impl Parse {
     #[must_use]
     pub fn tree(&self) -> ast::SourceFile {
         ast::SourceFile::cast(self.syntax()).unwrap()
+    }
+
+    pub fn ok(self) -> Result<ast::SourceFile, Vec<Diagnostic>> {
+        match self.errors() {
+            errors if !errors.is_empty() => Err(errors.to_vec()),
+            _ => Ok(self.tree()),
+        }
     }
 }
 
@@ -110,12 +121,12 @@ impl AstNode for SyntaxNode {
 
 /// An iterator over `SyntaxNode` children of a particular AST type.
 #[derive(Debug, Clone)]
-pub struct AstChildren<N> {
+pub struct AstChildren<Node: AstNode> {
     inner: SyntaxNodeChildren,
-    ph: PhantomData<N>,
+    ph: PhantomData<Node>,
 }
 
-impl<N> AstChildren<N> {
+impl<Node: AstNode> AstChildren<Node> {
     #[must_use]
     pub fn new(parent: &SyntaxNode) -> Self {
         Self {
@@ -125,11 +136,11 @@ impl<N> AstChildren<N> {
     }
 }
 
-impl<N: AstNode> Iterator for AstChildren<N> {
-    type Item = N;
+impl<Node: AstNode> Iterator for AstChildren<Node> {
+    type Item = Node;
 
-    fn next(&mut self) -> Option<N> {
-        self.inner.find_map(N::cast)
+    fn next(&mut self) -> Option<Node> {
+        self.inner.find_map(Node::cast)
     }
 }
 
@@ -174,11 +185,17 @@ mod support {
     use super::{AstChildren, AstNode, SyntaxKind, SyntaxNode, SyntaxToken, TokenText};
     use crate::AstToken;
 
-    pub(crate) fn child<N: AstNode>(parent: &SyntaxNode) -> Option<N> {
-        parent.children().find_map(N::cast)
+    pub(crate) fn child<Node>(parent: &SyntaxNode) -> Option<Node>
+    where
+        Node: AstNode,
+    {
+        parent.children().find_map(Node::cast)
     }
 
-    pub(crate) fn children<N: AstNode>(parent: &SyntaxNode) -> AstChildren<N> {
+    pub(crate) fn children<Node>(parent: &SyntaxNode) -> AstChildren<Node>
+    where
+        Node: AstNode,
+    {
         AstChildren::new(parent)
     }
 
@@ -189,11 +206,14 @@ mod support {
         parent.children().find(|node| node.kind() == kind)
     }
 
-    pub(crate) fn child_token<N: AstToken>(parent: &SyntaxNode) -> Option<N> {
+    pub(crate) fn child_token<Node>(parent: &SyntaxNode) -> Option<Node>
+    where
+        Node: AstToken,
+    {
         parent
             .children_with_tokens()
             .filter_map(rowan::NodeOrToken::into_token)
-            .find_map(N::cast)
+            .find_map(Node::cast)
     }
 
     pub(crate) fn token(
@@ -238,8 +258,12 @@ pub trait HasTemplateParameters: AstNode {
 }
 
 pub trait HasAttributes: AstNode {
-    fn attributes(&self) -> AstChildren<ast::Attribute> {
-        support::children(self.syntax())
+    fn attributes(&self) -> Option<AstChildren<ast::Attribute>> {
+        let prev_sibling = self.syntax().prev_sibling()?;
+        if let Some(node) = AttributeList::cast(prev_sibling) {
+            return Some(node.attributes());
+        }
+        None
     }
 }
 

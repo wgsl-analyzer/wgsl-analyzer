@@ -269,7 +269,7 @@ pub fn add_cursor(
 ///
 /// Multiline string values are supported:
 ///
-/// ```
+/// ```text
 /// // ^^^ first line
 /// //   | second line
 /// ```
@@ -279,7 +279,7 @@ pub fn add_cursor(
 /// annotation. In those cases the annotation can be explicitly ended with the
 /// `$` character.
 ///
-/// ```
+/// ```text
 /// // ^^^ trailing-ws-wanted  $
 /// ```
 ///
@@ -394,7 +394,7 @@ fn extract_line_annotations(mut line: &str) -> Vec<LineAnnotation> {
             .find(marker)
             .map_or(line.len(), |item| item + length);
 
-        let cond = |end_marker| {
+        let predicate = |end_marker| {
             end_marker < next
                 && (line_no_caret[end_marker + 1..].is_empty()
                     || line_no_caret[end_marker + 1..]
@@ -402,7 +402,7 @@ fn extract_line_annotations(mut line: &str) -> Vec<LineAnnotation> {
                         .is_some())
         };
         let mut content = match end_marker {
-            Some(end_marker) if cond(end_marker) => &line_no_caret[..end_marker],
+            Some(end_marker) if predicate(end_marker) => &line_no_caret[..end_marker],
             _ => line_no_caret[..next - length].trim_end(),
         };
 
