@@ -26,7 +26,5 @@ RUST_BACKTRACE=1 cargo test --features=prefer-immediate-crash
 ```
 
 # TODOs
-- matrix formatting https://discord.com/channels/1289346613185351722/1483520786378657866
-- vec3f https://discord.com/channels/1289346613185351722/1341941812675481680/1485309798156210266
 - [Some more thoughts](https://discord.com/channels/1289346613185351722/1341941812675481680/1475555853066047549)
 - Ignoring Code [Issue](https://github.com/wgsl-analyzer/wgsl-analyzer/issues/93)

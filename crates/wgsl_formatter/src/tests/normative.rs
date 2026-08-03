@@ -8,3 +8,4 @@ mod no_space_before_semicolon;
 mod statement;
 mod struct_definition;
 mod types;
+mod types_expanded;
