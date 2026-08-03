@@ -75,6 +75,7 @@ impl<'buffer> MultilineGroup<'buffer> {
             self.state = MultilineGroupState::StartedIndent;
         }
 
+        // TODO I wonder if we can get rid of this thing inserting newlines here...
         let mut start_nl_condition = conditions::if_true_or(
             "paramMultilineStartIndent",
             Rc::clone(&self.is_multiple_lines),

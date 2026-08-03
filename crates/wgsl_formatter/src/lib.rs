@@ -18,6 +18,7 @@ pub mod multiline_group;
 pub mod print_item_buffer;
 pub mod reporting;
 pub mod test_util;
+pub mod trivia;
 
 use std::str::FromStr;
 

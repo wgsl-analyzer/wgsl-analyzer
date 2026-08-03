@@ -1,5 +1,5 @@
 use dprint_core_macros::sc;
-use itertools::put_back;
+use itertools::{Itertools, Position, put_back};
 use parser::SyntaxKind;
 use syntax::{
     AstNode as _,
@@ -7,119 +7,107 @@ use syntax::{
 };
 
 use crate::{
-    ast_parse::{parse_end, parse_node_optional, parse_token, parse_token_optional},
+    ast_parse::{
+        parse_end, parse_node_optional, parse_node_with_trivia, parse_token, parse_token_optional,
+    },
     context_policies::collapse_one_liner_compound_statement_policy,
     generators::{
         attributes::{AttributeLayout, gen_attributes, parse_many_attributes},
         comments::{Comment, gen_comment, parse_comment_optional},
+        node::gen_node_with_trivia,
         statements::gen_statement_maybe_semicolon,
     },
     helpers::{LineSpacing, gen_line_spacing, parse_line_spacing},
+    multiline_group::MultilineGroup,
     print_item_buffer::{
         PrintItemBuffer,
         spacing_request::{Request, RequestItem},
     },
     reporting::FormatDocumentResult,
+    trivia::{NodeWithTrivia, NodeWithTriviaContent},
 };
 
 pub fn gen_compound_statement(
     node: &ast::CompoundStatement
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Context ====
-    let starting_attribute_layout = if let Some(parent) = node.syntax().parent() {
-        if parent.kind() == SyntaxKind::FunctionDeclaration {
-            AttributeLayout::Inline
-        } else {
-            AttributeLayout::Multiline
-        }
-    } else {
-        AttributeLayout::Multiline
-    };
 
     // ==== Parse ====
 
     let mut syntax = put_back(node.syntax().children_with_tokens());
-    let item_attributes = parse_many_attributes(&mut syntax)?;
     parse_token(&mut syntax, SyntaxKind::BraceLeft)?;
 
-    enum CompoundStatementItem {
-        Statement(ast::Statement),
-        Comment(Comment),
-        LineSpacing(LineSpacing),
-    }
-    let mut lines = Vec::new();
-    let mut body_empty = true;
+    let mut items = Vec::new();
 
     loop {
-        if let Some(spacing) = parse_line_spacing(&mut syntax) {
-            lines.push(CompoundStatementItem::LineSpacing(spacing));
-        } else if let Some(_statement) = parse_token_optional(&mut syntax, SyntaxKind::Blankspace) {
-            // If its not a line_spacing blankspace, then we simply discard it
-        } else if let Some(statement) = parse_node_optional::<Statement>(&mut syntax) {
-            body_empty = false;
-            lines.push(CompoundStatementItem::Statement(statement));
-        } else if let Some(comment) = parse_comment_optional(&mut syntax) {
-            body_empty = false;
-            lines.push(CompoundStatementItem::Comment(comment));
-        } else {
+        let mut item = parse_node_with_trivia(&mut syntax);
+
+        if let NodeWithTriviaContent::Content(node) = &mut item.node
+            && node.kind() == SyntaxKind::BraceRight
+        {
+            let old_node = std::mem::replace(&mut item.node, NodeWithTriviaContent::End);
+            syntax.put_back(old_node.unwrap()); //TODO
+        }
+
+        let is_end = item.is_end();
+        if !item.is_whitespace() {
+            items.push(item);
+        }
+        if is_end {
             break;
         }
     }
     parse_token(&mut syntax, SyntaxKind::BraceRight)?;
     parse_end(&mut syntax)?;
 
-    let is_one_liner = lines
-        .iter()
-        .filter(|item| {
-            matches!(
-                item,
-                CompoundStatementItem::Comment(_) | CompoundStatementItem::Statement(_)
-            )
-        })
-        .count()
-        == 1;
+    let body_empty = items.iter().all(NodeWithTrivia::is_whitespace);
 
+    dbg!(&items);
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
 
-    formatted.extend(gen_attributes(&item_attributes, starting_attribute_layout)?);
-    formatted.push_sc(sc!("{"));
+    let mut multiline_group = MultilineGroup::new(&mut formatted);
+
+    multiline_group.push_sc(sc!("{"));
 
     if !body_empty {
-        formatted.start_indent();
-        if is_one_liner && collapse_one_liner_compound_statement_policy(node.syntax()) {
-            formatted.request(Request::discourage(RequestItem::LineBreak));
-            formatted.request(Request::expect(RequestItem::Space));
+        multiline_group.start_indent();
+
+        if collapse_one_liner_compound_statement_policy(node.syntax()) {
+            //TODO This is a dirty hack to get rid of the discouragement of spaces in start_indent
+            multiline_group.push_sc(dprint_core_macros::sc!(""));
+            //TODO and now we need to get the discouragement of newlines back...
+            multiline_group.request(Request::discourage(RequestItem::LineBreak));
+
+            multiline_group.grouped_newline_or_space();
         } else {
-            formatted.request(Request::discourage(RequestItem::EmptyLine));
-            formatted.request(Request::expect(RequestItem::LineBreak));
+            multiline_group.request(Request::discourage(RequestItem::EmptyLine));
+            multiline_group.request(Request::expect(RequestItem::LineBreak));
         }
 
-        for line in lines {
-            match line {
-                CompoundStatementItem::Statement(statement) => {
-                    formatted.request(Request::expect(RequestItem::LineBreak));
-                    formatted.extend(gen_statement_maybe_semicolon(&statement)?);
-                },
-                CompoundStatementItem::Comment(comment) => {
-                    formatted.extend(gen_comment(&comment));
-                },
-                CompoundStatementItem::LineSpacing(line_spacing) => {
-                    formatted.extend(gen_line_spacing(&line_spacing)?);
-                },
+        for (pos, item) in items.iter().with_position() {
+            if !matches!(pos, Position::Only | Position::First) {
+                multiline_group.request(Request::expect(RequestItem::LineBreak));
             }
+            multiline_group.extend(gen_node_with_trivia(item)?);
         }
-        if is_one_liner && collapse_one_liner_compound_statement_policy(node.syntax()) {
-            formatted.request(Request::discourage(RequestItem::LineBreak));
-            formatted.request(Request::expect(RequestItem::Space));
+
+        multiline_group.finish_indent();
+
+        if collapse_one_liner_compound_statement_policy(node.syntax()) {
+            //TODO This is a dirty hack to get rid of the discouragement of spaces in start_indent
+            multiline_group.push_sc(dprint_core_macros::sc!(""));
+
+            multiline_group.grouped_newline_or_space();
         } else {
-            formatted.request(Request::discourage(RequestItem::EmptyLine));
-            formatted.request(Request::expect(RequestItem::LineBreak));
+            multiline_group.request(Request::discourage(RequestItem::EmptyLine));
+            multiline_group.request(Request::expect(RequestItem::LineBreak));
         }
-        formatted.finish_indent();
     }
 
-    formatted.push_sc(sc!("}"));
+    multiline_group.push_sc(sc!("}"));
+
+    multiline_group.end();
 
     if !body_empty {
         // This exists mainly for things like

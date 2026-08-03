@@ -36,10 +36,10 @@ pub fn gen_while_statement(
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
-    formatted.extend(gen_attributes(
-        &item_attributes,
-        AttributeLayout::Multiline,
-    )?);
+    // formatted.extend(gen_attributes(
+    //     &item_attributes,
+    //     AttributeLayout::Multiline,
+    // )?);
     formatted.push_sc(sc!("while"));
     formatted.extend(gen_comments(&comments_after_while));
     formatted.request(Request::expect(RequestItem::Space));
