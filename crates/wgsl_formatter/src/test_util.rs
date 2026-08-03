@@ -153,32 +153,31 @@ where
     let syntax = syntax::parse(formatted.trim_start(), edition).tree();
     //dbg!(&syntax);
 
-    let new_second = format_tree(&syntax, options)
+    let formatted_twice = format_tree(&syntax, options)
         .expect("Formatting already formatted sources should never fail with an error");
     let position = panic::Location::caller();
-    if formatted == new_second {
+    if formatted == formatted_twice {
         return formatted;
     }
 
     println!(
         "\n
-\x1b[1m\x1b[91merror\x1b[97m: Formatting Idempotence check failed\x1b[0m
+\x1b[1m\x1b[91merror\x1b[97m: Formatting Idempotence check failed. Expected output to after two formatting passes to equal the output after just one.\x1b[0m
 \x1b[1m\x1b[34m-->\x1b[0m {position}
-\x1b[1mExpect\x1b[0m:
+\x1b[1mAfter one formatting pass\x1b[0m:
 ----
 {formatted}
 ----
 
-\x1b[1mActual\x1b[0m:
+\x1b[1mAfter two formatting passes\x1b[0m:
 ----
-{new_second}
+{formatted_twice}
 ----
-
 "
     );
     #[cfg(test)]
     {
-        let diff = dissimilar::diff(&formatted, &new_second);
+        let diff = dissimilar::diff(&formatted, &formatted_twice);
         println!(
             "
 \x1b[1mDiff\x1b[0m:
