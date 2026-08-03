@@ -49,10 +49,12 @@ pub fn modules_map_query(
     modules.insert(AbsoluteModPath::new_root(), ModuleData { file: None });
 
     for (module_path, module) in base_modules {
-        if modules.contains_key(&module_path) {
-            continue;
+        let previous_module = modules.insert(module_path.clone(), module);
+        if let Some(previous_module) = previous_module
+            && let Some(previous_file) = previous_module.file
+        {
+            tracing::error!("Module with path {module_path} has a conflict.");
         }
-        modules.insert(module_path.clone(), module);
 
         let mut parent_path = module_path;
         while let Some(_) = parent_path.pop_segment()

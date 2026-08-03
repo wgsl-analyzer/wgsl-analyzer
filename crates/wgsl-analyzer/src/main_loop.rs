@@ -8,7 +8,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use base_db::{SourceDatabase as _, input::PackageOrigin};
+use base_db::SourceDatabase as _;
 use crossbeam_channel::{Receiver, select};
 use hir::database::DefDatabase as _;
 // use ide_db::base_db::{SourceDatabase, SourceRootDatabase, VfsPath};

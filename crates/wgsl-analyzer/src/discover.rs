@@ -81,7 +81,7 @@ impl LoadPackageTask {
                 let wesl_toml = WeslToml::from_slice(&bytes).with_context(|| {
                     format!("unable to parse contents of manifest '{manifest_path}'")
                 })?;
-                let root = manifest_path.parent().join(&wesl_toml.root);
+                let root = manifest_path.parent().absolutize(&wesl_toml.root);
                 if std::fs::metadata(&root)?.is_file() {
                     return Err(std::io::Error::new(
                         std::io::ErrorKind::InvalidInput,
@@ -106,7 +106,7 @@ impl LoadPackageTask {
                             (None, Some(package)) => PackageDependency::Library { name, package },
                             (Some(path), None) => {
                                 let path = ManifestPath::try_from(
-                                    manifest_path.parent().join(path).join("wesl.toml"),
+                                    manifest_path.parent().absolutize(path).join("wesl.toml"),
                                 )
                                 .map_err(|_path| DependencyError::InvalidPath(name.clone()))?;
                                 PackageDependency::Path { name, path }

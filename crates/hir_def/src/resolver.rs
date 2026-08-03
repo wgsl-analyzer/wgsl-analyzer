@@ -172,10 +172,6 @@ impl Resolver {
 
     /// Resolve an *inline* path. Import statements are already resolved.
     /// Corresponds to `resolve_path_in_type_ns` in rust-analyzer.
-    ///
-    /// # Panics
-    /// Panics if an empty path was passed.
-    /// Empty paths should not be produced, they should at most contain a "missing" name.
     pub fn resolve(
         &self,
         database: &dyn DefDatabase,

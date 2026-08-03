@@ -4,12 +4,12 @@ mod fixture;
 use std::str::FromStr as _;
 
 use base_db::{
+    EditionedFileId, FileId, FilePosition, FileRange, FileSet, SourceDatabase, SourceRoot, VfsPath,
     change::Change,
     input::{Dependency, PackageData, PackageId, PackageName, PackageOrigin},
-    EditionedFileId, FileId, FilePosition, FileRange, FileSet, SourceDatabase, SourceRoot, VfsPath,
 };
 use edition::Edition;
-use test_utils::{extract_range_or_offset, RangeOrOffset, CURSOR_MARKER, ESCAPED_CURSOR_MARKER};
+use test_utils::{CURSOR_MARKER, ESCAPED_CURSOR_MARKER, RangeOrOffset, extract_range_or_offset};
 
 pub use crate::fixture::{Fixture, FixtureWithProjectMeta};
 
@@ -162,14 +162,14 @@ impl ChangeFixture {
 
                 let package = PackageData {
                     manifest_file_id,
-                    root: package_root.clone(),
+                    root: root.clone(),
                     edition: meta.edition,
                     display_name: Some(package.clone()),
                     dependencies: Vec::new(),
                     origin,
                 };
                 let mut file_set = FileSet::default();
-                file_set.insert(manifest_file_id, package_root.join("wesl.toml").unwrap());
+                file_set.insert(manifest_file_id, root.join("wesl.toml").unwrap());
                 roots.push((file_set, origin));
 
                 let package_id = PackageId::from_raw(u32::try_from(packages.len()).unwrap());
@@ -219,7 +219,7 @@ impl ChangeFixture {
                     PackageOrigin::Local => SourceRoot::new_local(file_set),
                     PackageOrigin::Library | PackageOrigin::Language => {
                         SourceRoot::new_library(file_set)
-                    }
+                    },
                 })
                 .collect(),
         );

@@ -548,6 +548,7 @@ dependencies = [
  "smol_str",
  "syntax",
  "test-fixture",
+ "tracing",
  "triomphe",
  "vfs",
 ]
