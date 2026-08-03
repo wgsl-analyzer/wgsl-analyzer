@@ -7,8 +7,8 @@ use parser::{SyntaxKind, SyntaxNode};
 use syntax::{
     AstNode as _,
     ast::{
-        self, Arguments, Attribute, BuiltinValueName, DiagnosticControl, InterpolateSamplingName,
-        InterpolateTypeName,
+        self, Arguments, Attribute, AttributeList, BuiltinValueName, DiagnosticControl,
+        InterpolateSamplingName, InterpolateTypeName,
     },
 };
 
@@ -18,6 +18,7 @@ use crate::{
         parse_token_optional,
     },
     generators::{
+        attributes,
         comments::{Comment, gen_comments, parse_many_comments_and_blankspace},
         diagnostic_directive::gen_diagnostic_control,
         statements::function_call_statement::gen_function_call_arguments,
@@ -45,12 +46,22 @@ pub struct ParsedAttributes {
 }
 
 pub fn parse_many_attributes(syntax: &mut SyntaxIter) -> FormatDocumentResult<ParsedAttributes> {
+    let attributes = parse_node_optional::<AttributeList>(syntax);
+
+    let Some(attributes) = attributes else {
+        return Ok(ParsedAttributes {
+            attributes: Vec::new(),
+        });
+    };
+
+    let mut syntax = put_back(attributes.syntax().children_with_tokens());
+
     let mut attributes = Vec::new();
     loop {
-        let Some(item_attribute) = parse_node_optional::<Attribute>(syntax) else {
+        let Some(item_attribute) = parse_node_optional::<Attribute>(&mut syntax) else {
             break;
         };
-        let item_comments_after_attribute = parse_many_comments_and_blankspace(syntax)?;
+        let item_comments_after_attribute = parse_many_comments_and_blankspace(&mut syntax)?;
 
         attributes.push(ParsedAttribute {
             attribute: item_attribute,
@@ -69,6 +80,7 @@ pub enum AttributeLayout {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 // The order of the variants determines the order of the attribute groups in the output
 enum AttributeGroup {
+    Conditional,
     Diagnostics,
     BlendSrc,
     Id,
@@ -77,6 +89,7 @@ enum AttributeGroup {
     Location,
     OffsetAlignSize,
     BindingGroup,
+    EarlyDepthTest,
     ComputeWorkgroup,
     Fragment,
     Vertex,
@@ -160,6 +173,10 @@ pub fn gen_attributes(
             Attribute::BuiltinAttribute(_) => Inline(2),
             Attribute::MustUseAttribute(_) => Inline(1),
             Attribute::ConstantAttribute(_) => Inline(0),
+            Attribute::IfAttribute(_) => Grouped(AttributeGroup::Conditional, 0),
+            Attribute::ElifAttribute(_) => Grouped(AttributeGroup::Conditional, 1),
+            Attribute::ElseAttribute(_) => Grouped(AttributeGroup::Conditional, 2),
+            Attribute::EarlyDepthTestAttribute(_) => Grouped(AttributeGroup::EarlyDepthTest, 0),
         };
 
         match cat {
@@ -204,7 +221,8 @@ pub fn gen_attributes(
 pub fn gen_attribute(attribute: &Attribute) -> FormatDocumentResult<PrintItemBuffer> {
     use Attribute::{
         AlignAttribute, BindingAttribute, BlendSrcAttribute, BuiltinAttribute, ComputeAttribute,
-        ConstantAttribute, DiagnosticAttribute, FragmentAttribute, GroupAttribute, IdAttribute,
+        ConstantAttribute, DiagnosticAttribute, EarlyDepthTestAttribute, ElifAttribute,
+        ElseAttribute, FragmentAttribute, GroupAttribute, IdAttribute, IfAttribute,
         InterpolateAttribute, InvariantAttribute, LocationAttribute, MustUseAttribute,
         OtherAttribute, SizeAttribute, VertexAttribute, WorkgroupSizeAttribute,
     };
@@ -232,6 +250,12 @@ pub fn gen_attribute(attribute: &Attribute) -> FormatDocumentResult<PrintItemBuf
         VertexAttribute(vertex_attribute) => gen_vertex_attribute(vertex_attribute),
         FragmentAttribute(fragment_attribute) => gen_fragment_attribute(fragment_attribute),
         ComputeAttribute(compute_attribute) => gen_compute_attribute(compute_attribute),
+        IfAttribute(if_attribute) => gen_if_attribute(if_attribute),
+        ElifAttribute(elif_attribute) => gen_elif_attribute(elif_attribute),
+        ElseAttribute(else_attribute) => gen_else_attribute(else_attribute),
+        EarlyDepthTestAttribute(early_depth_test_attribute) => {
+            gen_early_depth_test_attribute(early_depth_test_attribute)
+        },
     }
 }
 
@@ -267,6 +291,17 @@ pub fn gen_interpolate_type_name(
     formatted.push_string(content.text().to_owned());
     Ok(formatted)
 }
+
+pub fn gen_early_depth_test_mode(attribute: &SyntaxNode) -> FormatDocumentResult<PrintItemBuffer> {
+    let mut syntax = put_back(attribute.children_with_tokens());
+    let content = parse_token_any(&mut syntax)?;
+    parse_end(&mut syntax)?;
+
+    let mut formatted = PrintItemBuffer::default();
+    formatted.push_string(content.text().to_owned());
+    Ok(formatted)
+}
+
 pub fn gen_interpolate_sampling_name(
     attribute: &ast::InterpolateSamplingName
 ) -> FormatDocumentResult<PrintItemBuffer> {
@@ -398,7 +433,7 @@ pub fn gen_other_attribute(
 mod standard_attributes {
     use super::gen_attr_standard_with_args;
     use dprint_core_macros::sc;
-    use parser::SyntaxKind;
+    use parser::{SyntaxKind, SyntaxNode};
     use syntax::{AstNode as _, ast};
 
     use crate::{print_item_buffer::PrintItemBuffer, reporting::FormatDocumentResult};
@@ -418,6 +453,14 @@ mod standard_attributes {
     pub fn gen_vertex_attribute(attribute: &ast::VertexAttribute ) -> FormatDocumentResult<PrintItemBuffer>                { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::Vertex, sc!("vertex")) }
     pub fn gen_fragment_attribute(attribute: &ast::FragmentAttribute ) -> FormatDocumentResult<PrintItemBuffer>            { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::Fragment, sc!("fragment")) }
     pub fn gen_compute_attribute(attribute: &ast::ComputeAttribute ) -> FormatDocumentResult<PrintItemBuffer>              { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::Compute, sc!("compute")) }
+
+    // Naga
+    pub fn gen_early_depth_test_attribute(attribute: &ast::EarlyDepthTestAttribute ) -> FormatDocumentResult<PrintItemBuffer> { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::EarlyDepthTest, sc!("early_depth_test")) }
+
+    // WESL
+    pub fn gen_if_attribute(attribute: &ast::IfAttribute ) -> FormatDocumentResult<PrintItemBuffer>                        { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::If, sc!("if")) }
+    pub fn gen_elif_attribute(attribute: &ast::ElifAttribute ) -> FormatDocumentResult<PrintItemBuffer>                    { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::Elif, sc!("elif")) }
+    pub fn gen_else_attribute(attribute: &ast::ElseAttribute ) -> FormatDocumentResult<PrintItemBuffer>                    { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::Else, sc!("else")) }
 }
 
 /// Attributes of the form:

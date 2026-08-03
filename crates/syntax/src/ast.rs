@@ -747,6 +747,7 @@ ast_enum! {
         IfAttribute,
         ElifAttribute,
         ElseAttribute,
+        EarlyDepthTestAttribute,
     }
 }
 
@@ -775,6 +776,7 @@ impl Attribute {
             Self::IfAttribute(inner) => inner.name(),
             Self::ElifAttribute(inner) => inner.name(),
             Self::ElseAttribute(inner) => inner.name(),
+            Self::EarlyDepthTestAttribute(inner) => inner.name(),
         }
     }
 }
@@ -908,6 +910,11 @@ ast_node! {
 
 ast_node! {
     ComputeAttribute:
+    name: Option<SyntaxToken Compute>;
+}
+
+ast_node! {
+    EarlyDepthTestAttribute:
     name: Option<SyntaxToken Compute>;
 }
 

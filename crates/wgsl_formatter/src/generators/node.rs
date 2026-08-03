@@ -6,11 +6,13 @@ use crate::{
         attributes::{
             gen_align_attribute, gen_attribute, gen_binding_attribute, gen_blend_src_attribute,
             gen_builtin_attribute, gen_builtin_value_name, gen_compute_attribute,
-            gen_const_attribute, gen_diagnostic_attribute, gen_fragment_attribute,
-            gen_group_attribute, gen_id_attribute, gen_interpolate_attribute,
-            gen_interpolate_sampling_name, gen_interpolate_type_name, gen_invariant_attribute,
-            gen_location_attribute, gen_must_use_attribute, gen_other_attribute,
-            gen_size_attribute, gen_vertex_attribute, gen_workgroup_size_attribute,
+            gen_const_attribute, gen_diagnostic_attribute, gen_early_depth_test_attribute,
+            gen_early_depth_test_mode, gen_elif_attribute, gen_else_attribute,
+            gen_fragment_attribute, gen_group_attribute, gen_id_attribute, gen_if_attribute,
+            gen_interpolate_attribute, gen_interpolate_sampling_name, gen_interpolate_type_name,
+            gen_invariant_attribute, gen_location_attribute, gen_must_use_attribute,
+            gen_other_attribute, gen_size_attribute, gen_vertex_attribute,
+            gen_workgroup_size_attribute,
         },
         comments::{Comment, gen_comment},
         diagnostic_directive::{
@@ -202,6 +204,11 @@ pub fn gen_node(node: &SyntaxNode) -> FormatDocumentResult<PrintItemBuffer> {
              SyntaxKind::InvariantAttribute(node) => gen_invariant_attribute(&node),
              SyntaxKind::LocationAttribute(node) => gen_location_attribute(&node),
              SyntaxKind::MustUseAttribute(node) => gen_must_use_attribute(&node),
+             SyntaxKind::IfAttribute(node) => gen_if_attribute(&node),
+             SyntaxKind::ElifAttribute(node) => gen_elif_attribute(&node),
+             SyntaxKind::ElseAttribute(node) => gen_else_attribute(&node),
+             SyntaxKind::EarlyDepthTestAttribute(node) => gen_early_depth_test_attribute(&node),
+             SyntaxKind::AttributeList(node) => todo!(),
              SyntaxKind::SizeAttribute(node) => gen_size_attribute(&node),
              SyntaxKind::WorkgroupSizeAttribute(node) => gen_workgroup_size_attribute(&node),
              SyntaxKind::VertexAttribute(node) => gen_vertex_attribute(&node),
@@ -220,6 +227,7 @@ pub fn gen_node(node: &SyntaxNode) -> FormatDocumentResult<PrintItemBuffer> {
              SyntaxKind::LineEndingComment(node as SyntaxNode) => Ok(gen_comment(&Comment::LineEnding(node.to_string()))),
              SyntaxKind::BlockComment(node as SyntaxNode) => Ok(gen_comment(&Comment::Block(node.to_string()))),
              SyntaxKind::EmptyStatement(node as SyntaxNode) => Ok(PrintItemBuffer::default()),
+             SyntaxKind::EarlyDepthTestMode(node as SyntaxNode) => gen_early_depth_test_mode(&node),
 
              -
 
@@ -268,6 +276,7 @@ pub fn gen_node(node: &SyntaxNode) -> FormatDocumentResult<PrintItemBuffer> {
              SyntaxKind::Fn |
              SyntaxKind::For |
              SyntaxKind::If |
+             SyntaxKind::Elif |
              SyntaxKind::Let |
              SyntaxKind::Loop |
              SyntaxKind::Override |
@@ -336,6 +345,14 @@ pub fn gen_node(node: &SyntaxNode) -> FormatDocumentResult<PrintItemBuffer> {
              SyntaxKind::EOFExpression |
              SyntaxKind::EOFStatement |
              SyntaxKind::EOFTypeSpecifier |
+             SyntaxKind::EarlyDepthTest |
+             SyntaxKind::GreaterEqual |
+             SyntaxKind::GreaterThan |
+             SyntaxKind::GreaterThanEqual |
+             SyntaxKind::LessEqual |
+             SyntaxKind::Force |
+             SyntaxKind::Unchanged |
+             SyntaxKind::Reserved |
              SyntaxKind::TOMBSTONE |
              SyntaxKind::Error => {
                  todo!("gen_node not implemented for {:?}", node.kind())
