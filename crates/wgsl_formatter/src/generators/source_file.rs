@@ -6,10 +6,10 @@ use syntax::{
 };
 
 use crate::{
-    ast_parse::{parse_any_node_optional, parse_end, parse_token_optional},
+    ast_parse::{parse_any_node_optional, parse_end, parse_node_with_trivia, parse_token_optional},
     generators::{
         comments::{Comment, gen_comment, parse_comment_optional},
-        node::gen_node,
+        node::{gen_node, gen_node_with_trivia},
     },
     helpers::{LineSpacing, gen_line_spacing, parse_line_spacing},
     print_item_buffer::{
@@ -20,31 +20,20 @@ use crate::{
 };
 
 pub fn gen_source_file(node: &ast::SourceFile) -> FormatDocumentResult<PrintItemBuffer> {
-    enum SourceFileItem {
-        Other(SyntaxNode),
-        Comment(Comment),
-        LineSpacing(LineSpacing),
-    }
-
     // ==== Parse ====
 
     let mut syntax = put_back(node.syntax().children_with_tokens());
 
     let mut items = Vec::new();
+
     loop {
-        if let Some(spacing) = parse_line_spacing(&mut syntax) {
-            items.push(SourceFileItem::LineSpacing(spacing));
-        } else if let Some(_statement) = parse_token_optional(&mut syntax, SyntaxKind::Blankspace) {
-            // If its not a line_spacing blankspace, then we simply discard it
-        } else if let Some(_statement) = parse_token_optional(&mut syntax, SyntaxKind::Semicolon) {
-            // Top level semicolons, like after struct defs
-        } else if let Some(comment) = parse_comment_optional(&mut syntax) {
-            items.push(SourceFileItem::Comment(comment));
-        } else if let Some(item) = parse_any_node_optional(&mut syntax) {
-            // Any other node. We do not care what exact node it is, because that will be handled by gen_node later
-            // The formatter should format items that are in wrong places, its the job of the parser to check correctness
-            items.push(SourceFileItem::Other(item));
-        } else {
+        let mut item = parse_node_with_trivia(&mut syntax);
+
+        let is_end = item.is_end();
+        if !item.is_whitespace() {
+            items.push(item);
+        }
+        if is_end {
             break;
         }
     }
@@ -65,19 +54,8 @@ pub fn gen_source_file(node: &ast::SourceFile) -> FormatDocumentResult<PrintItem
     });
 
     for item in items {
-        match item {
-            SourceFileItem::Other(item) => {
-                // Every item should start on a new line.
-                formatted.request(Request::expect(RequestItem::LineBreak));
-                formatted.extend(gen_node(&item)?);
-            },
-            SourceFileItem::Comment(comment) => {
-                formatted.extend(gen_comment(&comment));
-            },
-            SourceFileItem::LineSpacing(line_spacing) => {
-                formatted.extend(gen_line_spacing(&line_spacing)?);
-            },
-        }
+        formatted.request(Request::expect(RequestItem::LineBreak));
+        formatted.extend(gen_node_with_trivia(&item)?);
     }
 
     formatted.request(Request::Unconditional {
