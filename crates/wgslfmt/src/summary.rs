@@ -1,4 +1,3 @@
-#![expect(clippy::print_stderr, reason = "CLI program")]
 #![expect(clippy::print_stdout, reason = "CLI program")]
 
 use crate::{FileResult, FileStatus, FormattingSource, cli::OutputFormat};
@@ -74,10 +73,7 @@ pub struct TextSummary {
 }
 
 impl TextSummary {
-    fn print_diff(
-        &self,
-        result: &FileResult,
-    ) {
+    fn print_diff(result: &FileResult) {
         if let FileStatus::Changed { source, formatted } = &result.status {
             // We re-output the path of the file, to avoid confusion
             // about whether diff comes before or after the filename when the
@@ -126,7 +122,7 @@ impl Summary for TextSummary {
             },
         }
         if self.print_diff {
-            self.print_diff(file_result);
+            Self::print_diff(file_result);
         }
     }
 
@@ -143,7 +139,7 @@ impl Summary for TextSummary {
             },
         }
         if self.print_diff {
-            self.print_diff(file_result);
+            Self::print_diff(file_result);
         }
     }
 
@@ -183,28 +179,28 @@ impl JsonSummary {
         if self.need_semicolon {
             print!(",");
         }
-        print!("\"{}\":", name);
+        print!("\"{name}\":");
         self.need_semicolon = false;
     }
     fn string_literal(
         &mut self,
         value: &str,
     ) {
-        print!("\"{}\"", value);
+        print!("\"{value}\"");
         self.need_semicolon = true;
     }
     fn usize_literal(
         &mut self,
         value: usize,
     ) {
-        print!("\"{}\"", value);
+        print!("\"{value}\"");
         self.need_semicolon = true;
     }
     fn end_field(
         &mut self,
         name: &str,
     ) {
-        print!("\"{}\"", name);
+        print!("\"{name}\"");
         self.need_semicolon = true;
     }
     fn begin_struct(&mut self) {
@@ -238,12 +234,12 @@ impl Summary for JsonSummary {
 
     fn file_result_written(
         &mut self,
-        result: &FileResult,
+        file_result: &FileResult,
     ) {
         self.begin_struct();
         self.begin_field("file");
-        self.string_literal(&result.file.to_string());
-        match &result.status {
+        self.string_literal(&file_result.file.to_string());
+        match &file_result.status {
             crate::FileStatus::Unchanged => {
                 self.begin_field("status");
                 self.string_literal("unchanged");
@@ -258,17 +254,17 @@ impl Summary for JsonSummary {
             },
         }
         self.end_struct();
-        println!("");
+        println!();
     }
 
     fn file_result_checked(
         &mut self,
-        result: &FileResult,
+        file_result: &FileResult,
     ) {
         self.begin_struct();
         self.begin_field("file");
-        self.string_literal(&result.file.to_string());
-        match &result.status {
+        self.string_literal(&file_result.file.to_string());
+        match &file_result.status {
             crate::FileStatus::Unchanged => {
                 self.begin_field("status");
                 self.string_literal("pass");
@@ -283,13 +279,13 @@ impl Summary for JsonSummary {
             },
         }
         self.end_struct();
-        println!("");
+        println!();
     }
 
     fn write_summary(
         &mut self,
         formatted_files: usize,
-        unchanged_fles: usize,
+        unchanged_files: usize,
         errored_files: usize,
     ) {
         self.begin_field("summary");
@@ -297,7 +293,7 @@ impl Summary for JsonSummary {
         self.begin_field("formatted");
         self.usize_literal(formatted_files);
         self.begin_field("unchanged");
-        self.usize_literal(unchanged_fles);
+        self.usize_literal(unchanged_files);
         self.begin_field("errors");
         self.usize_literal(errored_files);
         self.end_struct();

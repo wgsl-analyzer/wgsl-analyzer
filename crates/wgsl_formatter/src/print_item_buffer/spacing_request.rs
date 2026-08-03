@@ -11,7 +11,7 @@ pub enum RequestItem {
 }
 
 impl RequestItem {
-    /// Converts the [`RequestItem`] to its index in the RequestItemSets that store expected, discouraged, and forced requests.
+    /// Converts the [`RequestItem`] to its index in the [`RequestItemSet`]s that store expected, discouraged, and forced requests.
     /// If multiple request items are requested at a stage (e.g expect space & line break), the request item with
     /// the highest index is used.
     #[must_use]
@@ -34,7 +34,7 @@ impl RequestItem {
     }
 }
 
-/// A Set holding RequestItems, implemented via a bitmap
+/// A Set holding [`RequestItems`], implemented via a bitmap.
 #[derive(Clone)]
 pub struct RequestItemSet(u8);
 
@@ -94,9 +94,9 @@ impl RequestItemSet {
 
 /// A structure that marks whether a particular [`RequestItem`] is expected, discouraged or forced - unconditionally or under some condition.
 ///
-/// An "expected" [`RequestItem will be put into the output, unless it is "discouraged".
+/// An "expected" [`RequestItem`] will be put into the output, unless it is "discouraged".
 /// A "forced" [`RequestItem`] will be put into the output, regardless of if it is "discouraged".
-/// If multiple [`RequestItem`] would be elegible to be put into the output,
+/// If multiple [`RequestItem`] would be eligible to be put into the output,
 /// only the "biggest" one (the one that subsumes all the other ones) is actually put into the output.
 ///
 /// Optionally a request can also "suggest" a newline, which means that if a space or nothing at all would be put into the output,
@@ -132,8 +132,8 @@ pub enum Request {
     },
     Conditional {
         condition: ConditionResolver,
-        on_true: Box<Request>,
-        on_false: Box<Request>,
+        on_true: Box<Self>,
+        on_false: Box<Self>,
     },
 }
 
@@ -215,12 +215,16 @@ impl Request {
     ///
     /// This is commutative with respect to the outcome, so order of left and right does not matter.
     /// However - when using Conditional Requests, order of left and right will determine how the conditions are combined
-    /// (but in practice that should not have any implications)
+    /// (but in practice that should not have any implications).
     #[must_use]
     pub fn combine(
         left: Self,
         right: Self,
     ) -> Self {
+        #[expect(
+            clippy::match_same_arms,
+            reason = "We want to explicitly enumerate the important cases to make commutativty apparent"
+        )]
         match (left, right) {
             // COMMUTATIVITY: union is commutative, || is commutative
             (
@@ -265,8 +269,8 @@ impl Request {
                 },
             ) => Self::Conditional {
                 condition,
-                on_true: Box::new(Request::combine(request_left.clone(), *on_true)),
-                on_false: Box::new(Request::combine(request_left, *on_false)),
+                on_true: Box::new(Self::combine(request_left.clone(), *on_true)),
+                on_false: Box::new(Self::combine(request_left, *on_false)),
             },
 
             // COMMUTATIVITY: The body of this Conditional is the same as with the arguments flipped.
@@ -280,8 +284,8 @@ impl Request {
                 },
             ) => Self::Conditional {
                 condition,
-                on_true: Box::new(Request::combine(request_left.clone(), *on_true)),
-                on_false: Box::new(Request::combine(request_left, *on_false)),
+                on_true: Box::new(Self::combine(request_left.clone(), *on_true)),
+                on_false: Box::new(Self::combine(request_left, *on_false)),
             },
             // COMMUTATIVITY: The body of this Conditional is the same as with the arguments flipped.
             // The only difference is the order of arguments to Request::combine, but Request::combine is commutative.
@@ -294,13 +298,13 @@ impl Request {
                 request_right,
             ) => Self::Conditional {
                 condition,
-                on_true: Box::new(Request::combine(*on_true, request_right.clone())),
-                on_false: Box::new(Request::combine(*on_false, request_right)),
+                on_true: Box::new(Self::combine(*on_true, request_right.clone())),
+                on_false: Box::new(Self::combine(*on_false, request_right)),
             },
         }
     }
 
-    /// Evaluate this [`Request`] and append its output to the given [`PrintItems`]
+    /// Evaluate this [`Request`] and append its output to the given [`PrintItems`].
     pub fn resolve(
         self,
         target: &mut PrintItems,
@@ -329,7 +333,7 @@ impl Request {
         }
 
         match self {
-            Request::Unconditional {
+            Self::Unconditional {
                 expected,
                 discouraged,
                 forced,
@@ -348,7 +352,7 @@ impl Request {
                     target.push_signal(Signal::PossibleNewLine);
                 }
             },
-            Request::Conditional {
+            Self::Conditional {
                 condition,
                 on_true,
                 on_false,

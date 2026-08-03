@@ -26,6 +26,30 @@ pub struct WgslFmtOptions {
     pub line_break_style: LineBreakStyle,
 }
 
+#[expect(
+    clippy::inline_modules,
+    reason = "These should be colocated with the WgslFmtOptions struct"
+)]
+mod defaults {
+    use crate::options::{IndentStyle, LineBreakStyle};
+
+    pub const fn indent_style() -> IndentStyle {
+        IndentStyle::Spaces
+    }
+
+    pub const fn indent_width() -> u8 {
+        4
+    }
+
+    pub const fn max_line_width() -> u32 {
+        80
+    }
+
+    pub const fn line_break_style() -> LineBreakStyle {
+        LineBreakStyle::LineFeed
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 pub enum IndentStyle {
     #[serde(rename = "spaces")]
@@ -34,6 +58,10 @@ pub enum IndentStyle {
     Tabs,
 }
 
+#[expect(
+    clippy::enum_variant_names,
+    reason = "it is a coincidence that the line-break styles' names both end in lf"
+)]
 #[derive(Serialize, Deserialize, Debug)]
 pub enum LineBreakStyle {
     #[serde(rename = "crlf")]
@@ -42,28 +70,9 @@ pub enum LineBreakStyle {
     LineFeed,
 }
 
-mod defaults {
-    use crate::options::{IndentStyle, LineBreakStyle};
-
-    pub fn indent_style() -> IndentStyle {
-        IndentStyle::Spaces
-    }
-
-    pub fn indent_width() -> u8 {
-        4
-    }
-
-    pub fn max_line_width() -> u32 {
-        80
-    }
-
-    pub fn line_break_style() -> LineBreakStyle {
-        LineBreakStyle::LineFeed
-    }
-}
-
 impl WgslFmtOptions {
-    pub fn to_formatting_options(&self) -> wgsl_formatter::FormattingOptions {
+    #[must_use]
+    pub const fn to_formatting_options(&self) -> wgsl_formatter::FormattingOptions {
         wgsl_formatter::FormattingOptions {
             indent_style: match self.indent_style {
                 IndentStyle::Spaces => wgsl_formatter::IndentStyle::Spaces,

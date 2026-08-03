@@ -115,7 +115,10 @@ pub fn parse_end_optional(syntax: &mut SyntaxIter) -> Option<()> {
     }
 }
 
-pub fn parse_node_optional<T: AstNode>(syntax: &mut SyntaxIter) -> Option<T> {
+pub fn parse_node_optional<T>(syntax: &mut SyntaxIter) -> Option<T>
+where
+    T: AstNode,
+{
     match syntax.next() {
         Some(NodeOrToken::Node(child)) => {
             if let Some(child) = T::cast(child.clone()) {
@@ -132,7 +135,10 @@ pub fn parse_node_optional<T: AstNode>(syntax: &mut SyntaxIter) -> Option<T> {
         None => None,
     }
 }
-pub fn parse_node<T: AstNode>(syntax: &mut SyntaxIter) -> FormatDocumentResult<T> {
+pub fn parse_node<T>(syntax: &mut SyntaxIter) -> FormatDocumentResult<T>
+where
+    T: AstNode,
+{
     match syntax.next() {
         Some(NodeOrToken::Node(child)) => {
             //TOCO This clone wouldn't be necessary if T::cast returned the item on failure
@@ -153,7 +159,10 @@ pub fn parse_node<T: AstNode>(syntax: &mut SyntaxIter) -> FormatDocumentResult<T
     .expect_if_prefer_crash()
 }
 
-pub fn parse_ast_token<T: AstToken>(syntax: &mut SyntaxIter) -> FormatDocumentResult<T> {
+pub fn parse_ast_token<T>(syntax: &mut SyntaxIter) -> FormatDocumentResult<T>
+where
+    T: AstToken,
+{
     match syntax.next() {
         Some(NodeOrToken::Token(child)) => {
             //TOCO This clone wouldn't be necessary if T::cast returned the item on failure

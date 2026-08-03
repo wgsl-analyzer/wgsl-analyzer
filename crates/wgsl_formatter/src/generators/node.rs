@@ -106,6 +106,8 @@ macro_rules! match_ast_exhaustive {
                 $result
             },)*
             $(syntax::ast::SyntaxKind::$special_ast => {
+                #[expect(clippy::allow_attributes, reason = "in a macro")]
+                #[expect(clippy::allow_attributes_without_reason, reason = "in a macro")]
                 #[allow(unused)]
                 let $special_name = $node.clone();
                 $special_result

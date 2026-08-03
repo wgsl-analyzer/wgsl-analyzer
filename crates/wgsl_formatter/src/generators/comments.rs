@@ -44,16 +44,16 @@ pub fn parse_comment_optional(syntax: &mut SyntaxIter) -> Option<Comment> {
     clippy::unnecessary_wraps,
     reason = "Keep the API homogeneous with all gen_* functions"
 )]
-#[expect(
-    clippy::redundant_pattern_matching,
-    reason = "Make it more obvious that the syntax token is consumed"
-)]
 pub fn parse_many_comments_and_blankspace(
     syntax: &mut SyntaxIter
 ) -> FormatDocumentResult<Vec<Comment>> {
     Ok(infallible_parse_many_comments_and_blankspace(syntax))
 }
 
+#[expect(
+    clippy::redundant_pattern_matching,
+    reason = "Make it more obvious that the syntax token is consumed"
+)]
 pub fn infallible_parse_many_comments_and_blankspace(syntax: &mut SyntaxIter) -> Vec<Comment> {
     let mut comments = Vec::new();
     loop {

@@ -41,6 +41,7 @@ impl Display for FormatDocumentError {
 pub type FormatDocumentResult<T> = Result<T, FormatDocumentError>;
 
 pub trait UnwrapIfPreferCrash {
+    #[must_use]
     fn expect_if_prefer_crash(self) -> Self;
 }
 

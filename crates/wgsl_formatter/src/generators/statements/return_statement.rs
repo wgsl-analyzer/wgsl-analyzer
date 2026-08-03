@@ -51,12 +51,9 @@ pub fn gen_return_statement(
     Ok(formatted)
 }
 
-pub fn remove_return_value_parens(node: &SyntaxNode) -> bool {
+pub fn remove_return_value_parens_rule(node: &SyntaxNode) -> bool {
     let Some(parent) = node.parent() else {
         return false;
     };
-    match parent.kind() {
-        SyntaxKind::ReturnStatement => true,
-        _ => false,
-    }
+    matches!(parent.kind(), SyntaxKind::ReturnStatement)
 }

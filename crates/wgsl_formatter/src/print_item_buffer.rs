@@ -119,18 +119,22 @@ impl PrintItemBuffer {
         self.items.push_sc(sc);
     }
 
-    pub fn push_info<T: Into<Info>>(
+    pub fn push_info<T>(
         &mut self,
         info: T,
-    ) {
+    ) where
+        T: Into<Info>,
+    {
         self.apply_end_request();
         self.items.push_info(info);
     }
 
-    pub fn push_anchor<T: Into<Anchor>>(
+    pub fn push_anchor<T>(
         &mut self,
         anchor: T,
-    ) {
+    ) where
+        T: Into<Anchor>,
+    {
         self.apply_end_request();
         self.items.push_anchor(anchor);
     }

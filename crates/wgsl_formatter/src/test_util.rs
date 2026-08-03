@@ -53,10 +53,13 @@ pub fn assert_is_formatted(source: &str) {
 }
 
 #[expect(clippy::needless_pass_by_value, reason = "intentional API")]
-pub fn check<E: ExpectAssertEq>(
+pub fn check<E>(
     before: &str,
     after: E,
-) -> String {
+) -> String
+where
+    E: ExpectAssertEq,
+{
     check_with_options(
         before,
         &after,
@@ -67,10 +70,12 @@ pub fn check<E: ExpectAssertEq>(
 
 // TODO(MonaMayrhofer,discuss) Phase this api out, and find a proper replacement, or retire tab tests completely
 #[expect(clippy::needless_pass_by_value, reason = "intentional API")]
-pub fn check_tabs<E: ExpectAssertEq>(
+pub fn check_tabs<E>(
     before: &str,
     after: E,
-) {
+) where
+    E: ExpectAssertEq,
+{
     let options = FormattingOptions {
         indent_style: IndentStyle::Tabs,
         ..Default::default()
@@ -111,12 +116,15 @@ pub fn assert_out_of_scope(
 }
 
 #[track_caller]
-pub fn check_with_options<E: ExpectAssertEq>(
+pub fn check_with_options<E>(
     before: &str,
     after: &E,
     options: &FormattingOptions,
     edition: Edition,
-) -> String {
+) -> String
+where
+    E: ExpectAssertEq,
+{
     let parse = syntax::parse(before.trim_start(), edition);
     let syntax = parse.tree();
 
@@ -225,11 +233,13 @@ fn format_chunks(chunks: Vec<dissimilar::Chunk<'_>>) -> String {
 /// ```compile_fail
 /// /* 0 */ a /* 1 */ b
 /// ```
-pub fn check_comments<E: ExpectAssertEq>(
+pub fn check_comments<E>(
     before: &str,
     after_block: E,
     after_line: E,
-) {
+) where
+    E: ExpectAssertEq,
+{
     let before = before.lines().join("");
     {
         let mut comment_index = 0;
@@ -291,10 +301,12 @@ pub fn check_comments<E: ExpectAssertEq>(
 /// Note that the range formatting works on the level of syntax nodes, so the node that will be formatted might
 /// be larger than the range specified by the markers.
 #[expect(clippy::needless_pass_by_value, reason = "intentional API")]
-pub fn check_range<E: ExpectAssertEq>(
+pub fn check_range<E>(
     source: &str,
     expected: E,
-) {
+) where
+    E: ExpectAssertEq,
+{
     let (raw_text, range_to_format) = {
         let mut parts = source.split("#|#");
         let pre = parts

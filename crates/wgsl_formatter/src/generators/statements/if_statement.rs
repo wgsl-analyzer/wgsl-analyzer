@@ -149,13 +149,12 @@ pub fn gen_if_statement_else_if_clause(
     Ok(formatted)
 }
 
-pub fn remove_if_condition_parens(node: &SyntaxNode) -> bool {
+pub fn remove_if_condition_parens_rule(node: &SyntaxNode) -> bool {
     let Some(parent) = node.parent() else {
         return false;
     };
-    match parent.kind() {
-        SyntaxKind::ElseIfClause => true,
-        SyntaxKind::IfClause => true,
-        _ => false,
-    }
+    matches!(
+        parent.kind(),
+        SyntaxKind::ElseIfClause | SyntaxKind::IfClause
+    )
 }

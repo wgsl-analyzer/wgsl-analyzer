@@ -24,11 +24,15 @@ pub enum SeparatedItem<T> {
     LineSpacing(LineSpacing),
 }
 
-pub fn parse_separated_items<T, S>(
+pub fn parse_separated_items<T, S, ParseSeparatorFn, ParseItemFn>(
     syntax: &mut SyntaxIter,
-    parse_item: impl Fn(&mut SyntaxIter) -> Option<T>,
-    parse_separator: impl Fn(&mut SyntaxIter) -> Option<S>,
-) -> SeparatedItems<T> {
+    parse_item: ParseItemFn,
+    parse_separator: ParseSeparatorFn,
+) -> SeparatedItems<T>
+where
+    ParseSeparatorFn: Fn(&mut SyntaxIter) -> Option<S>,
+    ParseItemFn: Fn(&mut SyntaxIter) -> Option<T>,
+{
     let mut items = Vec::new();
     let mut is_blank = true;
     let mut last_item_index = 0;
@@ -59,12 +63,15 @@ pub fn parse_separated_items<T, S>(
     }
 }
 
-pub fn format_separated_items<'a, T>(
-    multiline_group: &mut MultilineGroup<'a>,
+pub fn format_separated_items<T, GenItemFn>(
+    multiline_group: &mut MultilineGroup<'_>,
     items: SeparatedItems<T>,
-    gen_item: impl Fn(&T) -> FormatDocumentResult<PrintItemBuffer>,
+    gen_item: GenItemFn,
     separator: &'static StringContainer,
-) -> FormatDocumentResult<()> {
+) -> FormatDocumentResult<()>
+where
+    GenItemFn: Fn(&T) -> FormatDocumentResult<PrintItemBuffer>,
+{
     for (index, item) in items.items.into_iter().enumerate() {
         match item {
             SeparatedItem::Item(item) => {
