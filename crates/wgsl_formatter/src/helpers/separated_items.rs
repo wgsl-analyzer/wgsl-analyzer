@@ -2,10 +2,11 @@ use dprint_core::formatting::{PrintItems, StringContainer};
 use parser::SyntaxKind;
 
 use crate::{
-    ast_parse::{SyntaxIter, parse_token_optional}, generators::comments::{
-        Comment, gen_comment,
-        parse_comment_optional,
-    }, multiline_group::MultilineGroup, print_item_buffer::PrintItemBuffer, reporting::FormatDocumentResult,
+    ast_parse::{SyntaxIter, parse_token_optional},
+    generators::comments::{Comment, gen_comment, parse_comment_optional},
+    multiline_group::MultilineGroup,
+    print_item_buffer::PrintItemBuffer,
+    reporting::FormatDocumentResult,
 };
 
 use super::{LineSpacing, parse_line_spacing};
@@ -13,7 +14,7 @@ use super::{LineSpacing, parse_line_spacing};
 pub struct SeparatedItems<T> {
     pub is_blank: bool,
     pub last_item_index: usize,
-    pub items: Vec<SeparatedItem<T>>
+    pub items: Vec<SeparatedItem<T>>,
 }
 
 pub enum SeparatedItem<T> {
@@ -51,7 +52,11 @@ pub fn parse_separated_items<T, S>(
             break;
         }
     }
-    SeparatedItems { is_blank, last_item_index, items }
+    SeparatedItems {
+        is_blank,
+        last_item_index,
+        items,
+    }
 }
 
 pub fn format_separated_items<'a, T>(
@@ -88,7 +93,6 @@ pub fn format_separated_items<'a, T>(
                 // We discard empty lines
             },
         }
-
     }
     Ok(())
 }

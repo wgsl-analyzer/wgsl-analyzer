@@ -1,6 +1,5 @@
 mod attributes;
 mod comment_layout;
-mod common_conventions;
 mod expression;
 mod function;
 mod import;
