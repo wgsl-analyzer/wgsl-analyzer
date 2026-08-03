@@ -116,22 +116,29 @@ fn format_file(
     }
 }
 
-
-fn process<S: Summary>(
+fn process<S>(
     mode: WgslFmtMode,
     formatted_files: impl Iterator<Item = FileResult>,
-    s: S,
-) {
+    summary: S,
+) where
+    S: Summary,
+{
     match mode {
-        WgslFmtMode::Check => check_file_results(formatted_files, s),
-        WgslFmtMode::Write => write_file_results(formatted_files, s),
+        WgslFmtMode::Check => check_file_results(formatted_files, summary),
+        WgslFmtMode::Write => write_file_results(formatted_files, summary),
     }
 }
 
-fn check_file_results<S: Summary>(
+#[expect(
+    clippy::exit,
+    reason = "the task of this fn is to exit the process if there are errors"
+)]
+fn check_file_results<S>(
     results: impl Iterator<Item = FileResult>,
     mut summary: S,
-) {
+) where
+    S: Summary,
+{
     summary.begin();
     let mut passed_count = 0;
     let mut failed_count = 0;
@@ -162,10 +169,12 @@ fn check_file_results<S: Summary>(
     }
 }
 
-fn write_file_results<S: Summary>(
+fn write_file_results<S>(
     results: impl Iterator<Item = FileResult>,
     mut summary: S,
-) {
+) where
+    S: Summary,
+{
     summary.begin();
 
     let mut formatted_count = 0;
@@ -222,8 +231,8 @@ impl Display for FormattingSource {
         f: &mut std::fmt::Formatter<'_>,
     ) -> std::fmt::Result {
         match self {
-            FormattingSource::File(path_buf) => write!(f, "{}", path_buf.display()),
-            FormattingSource::Stdin => write!(f, "Stdin"),
+            Self::File(path_buf) => write!(f, "{}", path_buf.display()),
+            Self::Stdin => write!(f, "Stdin"),
         }
     }
 }

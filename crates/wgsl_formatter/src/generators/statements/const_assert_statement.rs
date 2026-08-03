@@ -50,12 +50,9 @@ pub fn gen_const_assert_statement(
     Ok(formatted)
 }
 
-pub fn remove_const_assert_condition_parens(node: &SyntaxNode) -> bool {
+pub fn remove_const_assert_condition_parens_rule(node: &SyntaxNode) -> bool {
     let Some(parent) = node.parent() else {
         return false;
     };
-    match parent.kind() {
-        SyntaxKind::AssertStatement => true,
-        _ => false,
-    }
+    matches!(parent.kind(), SyntaxKind::AssertStatement)
 }

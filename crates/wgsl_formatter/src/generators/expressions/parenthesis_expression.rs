@@ -58,12 +58,9 @@ pub fn gen_parenthesis_expression(
     Ok(formatted)
 }
 
-pub fn remove_nested_parenthesis(node: &SyntaxNode) -> bool {
+pub fn remove_nested_parens_rule(node: &SyntaxNode) -> bool {
     let Some(parent) = node.parent() else {
         return false;
     };
-    match parent.kind() {
-        SyntaxKind::ParenthesisExpression => true,
-        _ => false,
-    }
+    matches!(parent.kind(), SyntaxKind::ParenthesisExpression)
 }

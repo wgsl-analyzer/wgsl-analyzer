@@ -70,9 +70,9 @@ pub fn gen_compound_statement(
 
     let is_one_liner = lines
         .iter()
-        .filter(|it| {
+        .filter(|item| {
             matches!(
-                it,
+                item,
                 CompoundStatementItem::Comment(_) | CompoundStatementItem::Statement(_)
             )
         })

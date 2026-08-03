@@ -130,11 +130,9 @@ Pass \"-\" to read from stdin",
             WgslFmtMode::Write
         };
 
-        let stdout_format =
-            if matches.remove_one::<bool>("silent").unwrap_or_default() {
+        let stdout_format = if matches.remove_one::<bool>("silent").unwrap_or_default() {
             OutputFormat::Silent
-                }else
-            if matches.remove_one::<bool>("json").unwrap_or_default() {
+        } else if matches.remove_one::<bool>("json").unwrap_or_default() {
             OutputFormat::Json
         } else {
             OutputFormat::Text
@@ -143,9 +141,7 @@ Pass \"-\" to read from stdin",
         Self {
             mode,
             stdout_format,
-            print_diff: matches
-                .remove_one::<bool>("print-diff")
-                .unwrap_or_default(),
+            print_diff: matches.remove_one::<bool>("print-diff").unwrap_or_default(),
             config_overrides: matches
                 .remove_many::<ConfigOverride>("config")
                 .map(std::iter::Iterator::collect::<Vec<_>>)

@@ -52,9 +52,11 @@ pub fn gen_template_list(
     let mut syntax = put_back(template_list.syntax().children_with_tokens());
     parse_token(&mut syntax, SyntaxKind::TemplateStart)?;
 
-    let items = parse_separated_items(&mut syntax, parse_node_optional::<ast::Expression>, |s| {
-        parse_token_optional(s, SyntaxKind::Comma)
-    });
+    let items = parse_separated_items(
+        &mut syntax,
+        parse_node_optional::<ast::Expression>,
+        |syntax| parse_token_optional(syntax, SyntaxKind::Comma),
+    );
     parse_token(&mut syntax, parser::SyntaxKind::TemplateEnd)?;
     parse_end(&mut syntax)?;
 
@@ -67,12 +69,7 @@ pub fn gen_template_list(
     // If its blank we do not give the formatter the option to break within the <>
     if !items.is_blank {
         multiline_group.start_indent();
-        format_separated_items(
-            &mut multiline_group,
-            items,
-            |item| gen_expression(&item),
-            sc!(","),
-        )?;
+        format_separated_items(&mut multiline_group, items, gen_expression, sc!(","))?;
         multiline_group.request(Request::discourage(RequestItem::Space));
         multiline_group.finish_indent();
         multiline_group.grouped_possible_newline();

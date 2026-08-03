@@ -1,4 +1,4 @@
-use dprint_core::formatting::{PrintItem, PrintItems};
+use dprint_core::formatting::PrintItems;
 use dprint_core_macros::sc;
 use itertools::put_back;
 use parser::SyntaxKind;
@@ -108,11 +108,9 @@ pub fn determine_function_call_argument_style(
                 },
                 _ => FunctionCallArgumentStyle::Standard,
             };
-        } else {
-            return FunctionCallArgumentStyle::Standard;
         }
     }
-    return FunctionCallArgumentStyle::Standard;
+    FunctionCallArgumentStyle::Standard
 }
 
 pub enum FunctionCallArgumentStyle {
@@ -154,7 +152,7 @@ pub fn gen_function_call_arguments(
         format_separated_items(
             &mut multiline_group,
             item_arguments,
-            |item| gen_expression(item),
+            gen_expression,
             sc!(","),
         )?;
 
@@ -183,7 +181,7 @@ pub fn gen_function_call_arguments_tabular(
     let item_count = item_arguments
         .items
         .iter()
-        .filter(|it| matches!(it, SeparatedItem::Item(_)))
+        .filter(|item| matches!(item, SeparatedItem::Item(_)))
         .count();
 
     if item_count != table_columns * table_rows {
@@ -211,7 +209,7 @@ pub fn gen_function_call_arguments_tabular(
                     } else {
                         multiline_group.request(Request::expect(RequestItem::Space));
                     }
-                    multiline_group.extend((|item| gen_expression(item))(&item)?);
+                    multiline_group.extend(gen_expression(&item)?);
 
                     // The separator is always immediately after the item
                     if index == item_arguments.last_item_index {

@@ -87,10 +87,13 @@ enum AttributeCategorization {
     Inline(usize),
 }
 
-fn gen_attribute_group<T: Ord>(
+fn gen_attribute_group<T>(
     mut attributes: Vec<(T, &ParsedAttribute)>,
     separator: &Request,
-) -> FormatDocumentResult<PrintItemBuffer> {
+) -> FormatDocumentResult<PrintItemBuffer>
+where
+    T: Ord,
+{
     attributes.sort_by(|(order_a, _), (order_b, _)| order_a.cmp(order_b));
 
     let mut formatted = PrintItemBuffer::default();
@@ -391,6 +394,7 @@ pub fn gen_other_attribute(
     Ok(formatted)
 }
 #[rustfmt::skip]
+#[expect(clippy::inline_modules, reason = "Its much neater this way, simply grouping them together.")]
 mod standard_attributes {
     use super::gen_attr_standard_with_args;
     use dprint_core_macros::sc;
@@ -460,7 +464,7 @@ fn gen_attr_standard_with_args(
             format_separated_items(
                 &mut multiline_group,
                 item_arguments,
-                |item| gen_expression(item),
+                gen_expression,
                 sc!(","),
             )?;
 

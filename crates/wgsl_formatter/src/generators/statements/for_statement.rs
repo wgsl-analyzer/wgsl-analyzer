@@ -143,10 +143,8 @@ pub fn skip_semicolons_rule(node: &SyntaxNode) -> bool {
     let Some(parent) = node.parent() else {
         return false;
     };
-    match parent.kind() {
-        SyntaxKind::ForInitializer => true,
-        SyntaxKind::ForCondition => true,
-        SyntaxKind::ForContinuingPart => true,
-        _ => false,
-    }
+    matches!(
+        parent.kind(),
+        SyntaxKind::ForInitializer | SyntaxKind::ForCondition | SyntaxKind::ForContinuingPart
+    )
 }

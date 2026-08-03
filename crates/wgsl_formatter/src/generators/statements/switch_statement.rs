@@ -253,18 +253,12 @@ pub fn collapse_one_liner_case_body_rule(node: &SyntaxNode) -> bool {
     let Some(parent) = node.parent() else {
         return false;
     };
-    match parent.kind() {
-        SyntaxKind::SwitchBodyCase => true,
-        _ => false,
-    }
+    matches!(parent.kind(), SyntaxKind::SwitchBodyCase)
 }
 
-pub fn remove_switch_subject_parens(node: &SyntaxNode) -> bool {
+pub fn remove_switch_subject_parens_rule(node: &SyntaxNode) -> bool {
     let Some(parent) = node.parent() else {
         return false;
     };
-    match parent.kind() {
-        SyntaxKind::SwitchStatement => true,
-        _ => false,
-    }
+    matches!(parent.kind(), SyntaxKind::SwitchStatement)
 }

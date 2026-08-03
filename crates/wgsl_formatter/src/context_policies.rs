@@ -8,22 +8,25 @@ use crate::generators::{
     },
 };
 
+#[must_use]
 pub fn statement_needs_semicolon_policy(node: &SyntaxNode) -> bool {
     !for_statement::skip_semicolons_rule(node)
 }
 
+#[must_use]
 pub fn expression_parens_are_irrelevant_policy(node: &SyntaxNode) -> bool {
-    if_statement::remove_if_condition_parens(node)
-        || switch_statement::remove_switch_subject_parens(node)
-        || while_statement::remove_while_condition_parens(node)
-        || return_statement::remove_return_value_parens(node)
-        || break_if_statement::remove_break_if_condition_parens(node)
-        || assignment_statement::remove_assignment_statement_parens(node)
-        || const_assert_statement::remove_const_assert_condition_parens(node)
-        || parenthesis_expression::remove_nested_parenthesis(node)
-        || index_expression::remove_index_expression_nested_parenthesis(node)
+    if_statement::remove_if_condition_parens_rule(node)
+        || switch_statement::remove_switch_subject_parens_rule(node)
+        || while_statement::remove_while_condition_parens_rule(node)
+        || return_statement::remove_return_value_parens_rule(node)
+        || break_if_statement::remove_break_if_condition_parens_rule(node)
+        || assignment_statement::remove_assignment_statement_parens_rule(node)
+        || const_assert_statement::remove_const_assert_condition_parens_rule(node)
+        || parenthesis_expression::remove_nested_parens_rule(node)
+        || index_expression::remove_index_expression_nested_parens_rule(node)
 }
 
+#[must_use]
 pub fn collapse_one_liner_compound_statement_policy(node: &SyntaxNode) -> bool {
     switch_statement::collapse_one_liner_case_body_rule(node)
 }

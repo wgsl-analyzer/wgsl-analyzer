@@ -2,7 +2,7 @@
 name = "wgsl-formatter"
 version = "0.0.0"
 repository.workspace = true
-description = "RPC Api for the `proc-macro-srv` crate of wgsl-analyzer."
+description = "API for formatting WGSL code."
 edition.workspace = true
 license.workspace = true
 rust-version.workspace = true

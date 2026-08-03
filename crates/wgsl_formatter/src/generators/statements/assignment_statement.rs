@@ -154,14 +154,14 @@ pub fn gen_compound_assignment_statement(
     Ok(formatted)
 }
 
-pub fn remove_assignment_statement_parens(node: &SyntaxNode) -> bool {
+pub fn remove_assignment_statement_parens_rule(node: &SyntaxNode) -> bool {
     let Some(parent) = node.parent() else {
         return false;
     };
-    match parent.kind() {
-        SyntaxKind::CompoundAssignmentStatement => true,
-        SyntaxKind::PhonyAssignmentStatement => true,
-        SyntaxKind::AssignmentStatement => true,
-        _ => false,
-    }
+    matches!(
+        parent.kind(),
+        SyntaxKind::CompoundAssignmentStatement
+            | SyntaxKind::PhonyAssignmentStatement
+            | SyntaxKind::AssignmentStatement
+    )
 }

@@ -52,12 +52,9 @@ pub fn gen_while_statement(
     Ok(formatted)
 }
 
-pub fn remove_while_condition_parens(node: &SyntaxNode) -> bool {
+pub fn remove_while_condition_parens_rule(node: &SyntaxNode) -> bool {
     let Some(parent) = node.parent() else {
         return false;
     };
-    match parent.kind() {
-        SyntaxKind::WhileStatement => true,
-        _ => false,
-    }
+    matches!(parent.kind(), SyntaxKind::WhileStatement)
 }
