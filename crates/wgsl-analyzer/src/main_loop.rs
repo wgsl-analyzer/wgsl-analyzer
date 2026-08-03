@@ -8,7 +8,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use base_db::SourceDatabase as _;
+use base_db::{SourceDatabase as _, input::PackageOrigin};
 use crossbeam_channel::{Receiver, select};
 use hir::database::DefDatabase as _;
 // use ide_db::base_db::{SourceDatabase, SourceRootDatabase, VfsPath};
@@ -25,7 +25,7 @@ use lsp_types::{
     ShutdownRequest, SignatureHelpRequest, TextDocumentFilter, TextDocumentFilterPattern,
     TextDocumentRegistrationOptions, TextDocumentSaveRegistrationOptions, Uri,
 };
-use project_model::PackageKey;
+use project_model::{PackageKey, ProjectManifest};
 use salsa::{Cancelled, Durability};
 use stdx::thread::ThreadIntent;
 use tracing::{Level, error, span};
@@ -736,16 +736,10 @@ impl GlobalState {
                 PrimeCachesProgress::End { .. } => prime_caches_progress.push(progress),
             },
             Task::DiscoverProject(argument) => {
-                if let Some(load_package_task) =
+                if let Some(load_task) =
                     LoadPackageTask::discover_local(&argument, self.load_package_sender.clone())
                 {
-                    if self.load_package_jobs_active == 0 {
-                        self.report_progress("Project loading", &Progress::Begin, None, None, None);
-                    }
-                    self.load_package_jobs_active += 1;
-                    let last_entry = self.load_package_tasks.len();
-                    self.load_package_tasks.push(load_package_task);
-                    self.load_package_tasks[last_entry].run();
+                    self.load_package(load_task);
                 }
             },
         }
@@ -881,6 +875,9 @@ impl GlobalState {
                 if self.load_package_jobs_active > 0 {
                     self.report_progress(title, &Progress::Report, Some(message), None, None);
                 }
+            },
+            LoadPackageMessage::Dependency { task } => {
+                self.load_package(task);
             },
             LoadPackageMessage::Error { error, source } => {
                 let message = format!("Project discovery failed: {error}");

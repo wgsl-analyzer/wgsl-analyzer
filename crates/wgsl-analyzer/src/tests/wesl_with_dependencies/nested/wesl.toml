@@ -1,0 +1,2 @@
+edition = "2026_pre"
+root = "package.wesl"

@@ -151,7 +151,7 @@ impl PackageGraph {
             }
 
             for dependency in &self.packages[&id].dependencies {
-                if let Some(child_id) = self.package_id(&dependency.pkg) {
+                if let Some(child_id) = self.package_id(&dependency.package_key()) {
                     stack.push(child_id);
                 }
             }

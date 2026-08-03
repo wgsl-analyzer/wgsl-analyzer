@@ -6687,7 +6687,7 @@ fn execute(
             ArrayAccessInvalidType { expression: Idx::<Expression>(11), type: Type(304f) } in Body
             ArrayAccessInvalidType { expression: Idx::<Expression>(19), type: Type(304f) } in Body
             62208..62222 '1u << survivor': expected u32 but got [error]
-            NoConstructor { expression: Idx::<Expression>(116), builtins: BuiltinId(3801), type: Type(3003), parameters: [Type(3000)] } in Body
+            NoConstructor { expression: Idx::<Expression>(116), builtins: BuiltinId(3c01), type: Type(3003), parameters: [Type(3000)] } in Body
             62623..62637 'survivor_is_q2': expected bool but got [error]
             62639..62648 'u32(term)': expected u32 but got [error]
             62980..62994 'survivor_is_q2': expected bool but got [error]
@@ -7741,8 +7741,8 @@ fn execute(
             80470..80475 'entry': [error]
             80487..80492 'entry': [error]
             ArrayAccessInvalidType { expression: Idx::<Expression>(7), type: Type(305c) } in Body
-            NoConstructor { expression: Idx::<Expression>(45), builtins: BuiltinId(380c), type: Type(3001), parameters: [Type(3000)] } in Body
-            NoConstructor { expression: Idx::<Expression>(48), builtins: BuiltinId(380c), type: Type(3001), parameters: [Type(3000)] } in Body
+            NoConstructor { expression: Idx::<Expression>(45), builtins: BuiltinId(3c0c), type: Type(3001), parameters: [Type(3000)] } in Body
+            NoConstructor { expression: Idx::<Expression>(48), builtins: BuiltinId(3c0c), type: Type(3001), parameters: [Type(3000)] } in Body
             80344..80349 'start': expected i32 but got [error]
             80351..80356 'count': expected i32 but got [error]
             80412..80429 'start ...ry_idx': expected i32 or u32 but got [error]
