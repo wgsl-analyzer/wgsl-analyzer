@@ -410,6 +410,7 @@ pub fn format_attrs_on_for_statement() {
     );
 }
 
+//TODO Look at these cases a bit more closely
 #[test]
 pub fn format_attrs_on_loop_continuing_block() {
     check(
@@ -424,9 +425,7 @@ pub fn format_attrs_on_loop_continuing_block() {
         expect![[r#"
             fn main() {
                 loop {
-                    continuing @attr(0)
-                    @attr(1)
-                    {}
+                    continuing @attr(0) @attr(1) {}
                 }
             }
         "#]],
