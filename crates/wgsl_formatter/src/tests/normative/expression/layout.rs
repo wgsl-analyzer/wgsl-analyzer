@@ -84,12 +84,7 @@ pub fn format_infix_expr_very_long_break_outer_first() {
             fn main() {
                 //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
                 let aaaaaaaaaaaaa = 1 + 1
-                    + long_function(
-                        aaaaaaaaaaa,
-                        bbbbbbbbbbb,
-                        ccccccccccccc,
-                        dddddddddddddd,
-                    );
+                    + long_function(aaaaaaaaaaa, bbbbbbbbbbb, ccccccccccccc, dddddddddddddd);
             }
         "#]],
     );

@@ -17,6 +17,7 @@ use crate::{
         spacing_request::{Request, RequestItem, RequestItemSet},
     },
     reporting::FormatDocumentResult,
+    trivia::NodeWithTriviaContent,
 };
 
 pub fn gen_source_file(node: &ast::SourceFile) -> FormatDocumentResult<PrintItemBuffer> {
@@ -28,6 +29,13 @@ pub fn gen_source_file(node: &ast::SourceFile) -> FormatDocumentResult<PrintItem
 
     loop {
         let mut item = parse_node_with_trivia(&mut syntax);
+
+        if item
+            .kind()
+            .is_some_and(|item| item == SyntaxKind::Semicolon)
+        {
+            item.node = NodeWithTriviaContent::NoContent;
+        }
 
         let is_end = item.is_end();
         if !item.is_whitespace() {

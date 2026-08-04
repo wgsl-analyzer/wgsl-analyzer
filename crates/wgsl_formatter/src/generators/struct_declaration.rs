@@ -1,5 +1,5 @@
 use dprint_core_macros::sc;
-use itertools::put_back;
+use itertools::{Itertools, Position, put_back};
 use parser::SyntaxKind;
 use syntax::{
     AstNode as _,
@@ -7,13 +7,18 @@ use syntax::{
 };
 
 use crate::{
-    ast_parse::{parse_end, parse_node, parse_node_optional, parse_token, parse_token_optional},
+    ast_parse::{
+        parse_end, parse_node, parse_node_optional, parse_node_with_trivia, parse_token,
+        parse_token_optional,
+    },
+    generators::node::gen_node_with_trivia,
     helpers::{LineSpacing, gen_line_spacing},
     print_item_buffer::{
         PrintItemBuffer,
         spacing_request::{Request, RequestItem, RequestItemSet},
     },
     reporting::FormatDocumentResult,
+    trivia::NodeWithTriviaContent,
 };
 use crate::{
     generators::{
@@ -61,12 +66,6 @@ pub fn gen_struct_declaration(
 }
 
 pub fn gen_struct_body(body: &ast::StructBody) -> FormatDocumentResult<PrintItemBuffer> {
-    enum StructBodyItem {
-        StructMember(ast::StructMember),
-        LineSpacing(LineSpacing),
-        Comment(Comment),
-    }
-
     // === Parse ===
     let mut syntax = put_back(body.syntax().children_with_tokens());
 
@@ -76,19 +75,30 @@ pub fn gen_struct_body(body: &ast::StructBody) -> FormatDocumentResult<PrintItem
     let mut item_members = Vec::new();
 
     loop {
-        if let Some(item_member) = parse_node_optional::<ast::StructMember>(&mut syntax) {
-            item_members.push(StructBodyItem::StructMember(item_member));
-        } else if let Some(line_spacing) = parse_line_spacing(&mut syntax) {
-            item_members.push(StructBodyItem::LineSpacing(line_spacing));
-        } else if let Some(_blank) = parse_token_optional(&mut syntax, SyntaxKind::Blankspace) {
-            // We throw away any non-linespacing information about blanksapces
-        } else if let Some(comment) = parse_comment_optional(&mut syntax) {
-            item_members.push(StructBodyItem::Comment(comment));
-        } else {
+        let mut item = parse_node_with_trivia(&mut syntax);
+
+        if item
+            .kind()
+            .is_some_and(|item| item == SyntaxKind::BraceRight)
+        {
+            let old_node = std::mem::replace(&mut item.node, NodeWithTriviaContent::End);
+            syntax.put_back(old_node.into_option().unwrap()); //TODO
+        }
+
+        if item
+            .kind()
+            .is_some_and(|item| item != SyntaxKind::StructMember)
+        {
+            item.node = NodeWithTriviaContent::NoContent;
+        }
+
+        let is_end = item.is_end();
+        if !item.is_whitespace() {
+            item_members.push(item);
+        }
+        if is_end {
             break;
         }
-        // We throw away any information about commas
-        parse_token_optional(&mut syntax, SyntaxKind::Comma);
     }
 
     parse_token(&mut syntax, SyntaxKind::BraceRight)?;
@@ -106,21 +116,16 @@ pub fn gen_struct_body(body: &ast::StructBody) -> FormatDocumentResult<PrintItem
         formatted.extend(gen_comments(&item_comments_after_open_paren));
     }
 
+    dbg!(&item_members);
     if !is_empty {
-        formatted.request(Request::expect(RequestItem::LineBreak));
-        for member in item_members {
-            match member {
-                StructBodyItem::StructMember(struct_member) => {
-                    formatted.request(Request::expect(RequestItem::LineBreak)); // Any struct member should be on a new line
-                    formatted.extend(gen_struct_member(&struct_member)?);
-                    formatted.push_sc(sc!(","));
-                },
-                StructBodyItem::LineSpacing(line_spacing) => {
-                    formatted.extend(gen_line_spacing(&line_spacing)?);
-                },
-                StructBodyItem::Comment(comment) => {
-                    formatted.extend(gen_comment(&comment));
-                },
+        for (pos, member) in item_members.iter().with_position() {
+            if member.has_content() {
+                formatted.request(Request::expect(RequestItem::LineBreak));
+            }
+
+            formatted.extend(gen_node_with_trivia(&member)?);
+            if member.has_content() {
+                formatted.push_sc(sc!(","));
             }
         }
     }

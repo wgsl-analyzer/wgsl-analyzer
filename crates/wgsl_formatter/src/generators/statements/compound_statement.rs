@@ -42,11 +42,9 @@ pub fn gen_compound_statement(
     loop {
         let mut item = parse_node_with_trivia(&mut syntax);
 
-        if let NodeWithTriviaContent::Content(node) = &mut item.node
-            && node.kind() == SyntaxKind::BraceRight
-        {
+        if matches!(item.kind(), Some(SyntaxKind::BraceRight)) {
             let old_node = std::mem::replace(&mut item.node, NodeWithTriviaContent::End);
-            syntax.put_back(old_node.unwrap()); //TODO
+            syntax.put_back(old_node.into_option().unwrap()); //TODO
         }
 
         let is_end = item.is_end();
