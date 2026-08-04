@@ -53,10 +53,7 @@ fn function_compound() {
         expect![[r#"
             27..28 'x': ref<function, i32, read_write>
             31..32 '0': integer
-            36..37 'x': [error]
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(1)), kind: UnresolvedPath { path: Path(ModPath("x")), failed_segment: 0 } } } in Body
-            ExpectedLoweredKind { expression: Idx::<Expression>(1), expected: Variable, actual: Type, path: Path(ModPath("x")) } in Body
-            AssignmentNotAReference { left_side: Idx::<Expression>(1), actual: Type(2400) } in Body
+            36..37 'x': ref<function, i32, read_write>
         "#]],
     );
 }
