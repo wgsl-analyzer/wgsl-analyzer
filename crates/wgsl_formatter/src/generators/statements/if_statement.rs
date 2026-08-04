@@ -7,11 +7,12 @@ use syntax::{
 };
 
 use crate::{
-    ast_parse::{parse_end, parse_node, parse_node_optional, parse_token},
+    ast_parse::{parse_end, parse_node, parse_node_optional, parse_node_with_trivia, parse_token},
     generators::{
         attributes::{AttributeLayout, gen_attributes, parse_many_attributes},
         comments::{gen_comments, parse_many_comments_and_blankspace},
         expressions::gen_expression,
+        node::gen_node_with_trivia,
         statements::compound_statement::gen_compound_statement,
     },
     print_item_buffer::{
@@ -19,49 +20,60 @@ use crate::{
         spacing_request::{Request, RequestItem, RequestItemSet},
     },
     reporting::FormatDocumentResult,
+    trivia::NodeWithTriviaContent,
 };
 
 pub fn gen_if_statement(statement: &ast::IfStatement) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = put_back(statement.syntax().children_with_tokens());
 
-    let attributes = parse_many_attributes(&mut syntax)?;
-
-    let item_if_clause = parse_node::<IfClause>(&mut syntax)?;
-    let comments_after_if_clause = parse_many_comments_and_blankspace(&mut syntax)?;
+    let item_if_clause = parse_node_with_trivia(&mut syntax).expect_kind(SyntaxKind::IfClause)?;
 
     let mut else_if_clauses = Vec::new();
-    while let Some(else_if_clause) = parse_node_optional::<ElseIfClause>(&mut syntax) {
-        let comments_after_else_if_clause = parse_many_comments_and_blankspace(&mut syntax)?;
-        else_if_clauses.push((else_if_clause, comments_after_else_if_clause));
+    loop {
+        let mut item = parse_node_with_trivia(&mut syntax);
+
+        if item
+            .kind()
+            .is_some_and(|item| item != SyntaxKind::ElseIfClause)
+        {
+            let old_node = std::mem::replace(&mut item.node, NodeWithTriviaContent::End);
+            syntax.put_back(old_node.into_option().unwrap()); //TODO
+        }
+
+        let is_end = item.is_end();
+        if !item.is_whitespace() {
+            else_if_clauses.push(item);
+        }
+        if is_end {
+            break;
+        }
     }
 
-    let item_else_clause = parse_node_optional::<ElseClause>(&mut syntax);
+    let item_else_clause =
+        parse_node_with_trivia(&mut syntax).expect_kind_optional(SyntaxKind::ElseClause)?;
     parse_end(&mut syntax)?;
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
-    formatted.extend(gen_attributes(&attributes, AttributeLayout::Multiline)?);
-    formatted.extend(gen_if_statement_if_clause(&item_if_clause)?);
-    formatted.extend(gen_comments(&comments_after_if_clause));
-    for (else_if_clause, comments_after_else_if_clause) in else_if_clauses {
+    formatted.extend(gen_node_with_trivia(&item_if_clause)?);
+    for else_if_clause in else_if_clauses {
         formatted.request(Request::Unconditional {
             expected: RequestItemSet::from(RequestItem::Space),
             discouraged: RequestItemSet::from(RequestItem::LineBreak),
             forced: RequestItemSet::empty(),
             suggest_linebreak: false,
         });
-        formatted.extend(gen_if_statement_else_if_clause(&else_if_clause)?);
-        formatted.extend(gen_comments(&comments_after_else_if_clause));
+        formatted.extend(gen_node_with_trivia(&else_if_clause)?);
     }
-    if let Some(item_else_clause) = item_else_clause {
+    if !item_else_clause.is_whitespace() {
         formatted.request(Request::Unconditional {
             expected: RequestItemSet::from(RequestItem::Space),
             discouraged: RequestItemSet::from(RequestItem::LineBreak),
             forced: RequestItemSet::empty(),
             suggest_linebreak: false,
         });
-        formatted.extend(gen_if_statement_else_clause(&item_else_clause)?);
+        formatted.extend(gen_node_with_trivia(&item_else_clause)?);
     }
 
     Ok(formatted)
@@ -75,21 +87,21 @@ pub fn gen_if_statement_if_clause(statement: &IfClause) -> FormatDocumentResult<
     // ==== Parse ====
     let mut syntax = put_back(statement.syntax().children_with_tokens());
     parse_token(&mut syntax, SyntaxKind::If)?;
-    let comments_after_if = parse_many_comments_and_blankspace(&mut syntax)?;
-    let item_condition = parse_node::<Expression>(&mut syntax)?;
-    let comments_after_condition = parse_many_comments_and_blankspace(&mut syntax)?;
-    let item_body = parse_node::<CompoundStatement>(&mut syntax)?;
+    let item_condition =
+        parse_node_with_trivia(&mut syntax).expect_castable_kind::<Expression>()?;
+    let item_body =
+        parse_node_with_trivia(&mut syntax).expect_castable_kind::<CompoundStatement>()?;
     parse_end(&mut syntax)?;
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
     formatted.push_sc(sc!("if"));
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.extend(gen_comments(&comments_after_if));
-    formatted.extend(gen_expression(&item_condition)?);
-    formatted.extend(gen_comments(&comments_after_condition));
+    formatted.request(Request::discourage(RequestItem::LineBreak));
+    formatted.extend(gen_node_with_trivia(&item_condition)?);
+    formatted.request(Request::discourage(RequestItem::LineBreak));
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.extend(gen_compound_statement(&item_body)?);
+    formatted.extend(gen_node_with_trivia(&item_body)?);
     Ok(formatted)
 }
 
@@ -103,16 +115,16 @@ pub fn gen_if_statement_else_clause(
     // ==== Parse ====
     let mut syntax = put_back(statement.syntax().children_with_tokens());
     parse_token(&mut syntax, SyntaxKind::Else)?;
-    let comments_after_clause_token = parse_many_comments_and_blankspace(&mut syntax)?;
-    let item_body = parse_node::<CompoundStatement>(&mut syntax)?;
+    let item_body =
+        parse_node_with_trivia(&mut syntax).expect_castable_kind::<CompoundStatement>()?;
     parse_end(&mut syntax)?;
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
     formatted.push_sc(sc!("else"));
+    formatted.request(Request::discourage(RequestItem::LineBreak));
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.extend(gen_comments(&comments_after_clause_token));
-    formatted.extend(gen_compound_statement(&item_body)?);
+    formatted.extend(gen_node_with_trivia(&item_body)?);
     Ok(formatted)
 }
 
@@ -126,26 +138,25 @@ pub fn gen_if_statement_else_if_clause(
     // ==== Parse ====
     let mut syntax = put_back(statement.syntax().children_with_tokens());
     parse_token(&mut syntax, SyntaxKind::Else)?;
-    let comments_after_else = parse_many_comments_and_blankspace(&mut syntax)?;
     parse_token(&mut syntax, SyntaxKind::If)?;
-    let comments_after_if = parse_many_comments_and_blankspace(&mut syntax)?;
-    let item_condition = parse_node::<Expression>(&mut syntax)?;
-    let comments_after_condition = parse_many_comments_and_blankspace(&mut syntax)?;
-    let item_body = parse_node::<CompoundStatement>(&mut syntax)?;
+    let item_condition =
+        parse_node_with_trivia(&mut syntax).expect_castable_kind::<Expression>()?;
+    let item_body =
+        parse_node_with_trivia(&mut syntax).expect_castable_kind::<CompoundStatement>()?;
     parse_end(&mut syntax)?;
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
     formatted.push_sc(sc!("else"));
+    formatted.request(Request::discourage(RequestItem::LineBreak));
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.extend(gen_comments(&comments_after_else));
     formatted.push_sc(sc!("if"));
+    formatted.request(Request::discourage(RequestItem::LineBreak));
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.extend(gen_comments(&comments_after_if));
-    formatted.extend(gen_expression(&item_condition)?);
-    formatted.extend(gen_comments(&comments_after_condition));
+    formatted.extend(gen_node_with_trivia(&item_condition)?);
+    formatted.request(Request::discourage(RequestItem::LineBreak));
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.extend(gen_compound_statement(&item_body)?);
+    formatted.extend(gen_node_with_trivia(&item_body)?);
     Ok(formatted)
 }
 

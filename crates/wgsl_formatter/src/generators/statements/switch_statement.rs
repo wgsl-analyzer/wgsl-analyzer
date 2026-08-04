@@ -10,11 +10,15 @@ use syntax::{
 };
 
 use crate::{
-    ast_parse::{parse_end, parse_node, parse_node_optional, parse_token, parse_token_optional},
+    ast_parse::{
+        parse_end, parse_node, parse_node_optional, parse_node_with_trivia, parse_token,
+        parse_token_optional,
+    },
     generators::{
         attributes::{AttributeLayout, gen_attributes, parse_many_attributes},
         comments::{Comment, gen_comments, parse_many_comments_and_blankspace},
         expressions::gen_expression,
+        node::gen_node_with_trivia,
         statements::compound_statement::gen_compound_statement,
     },
     print_item_buffer::{
@@ -22,6 +26,7 @@ use crate::{
         spacing_request::{Request, RequestItem},
     },
     reporting::FormatDocumentError,
+    trivia::{NodeWithTrivia, NodeWithTriviaContent},
 };
 
 pub fn gen_switch_statement(
@@ -29,28 +34,22 @@ pub fn gen_switch_statement(
 ) -> Result<PrintItemBuffer, FormatDocumentError> {
     // ==== Parse ====
     let mut syntax = put_back(statement.syntax().children_with_tokens());
-    let item_attributes = parse_many_attributes(&mut syntax)?;
     parse_token(&mut syntax, SyntaxKind::Switch)?;
-    let item_comments_after_switch = parse_many_comments_and_blankspace(&mut syntax)?;
-    let item_expression = parse_node::<Expression>(&mut syntax)?;
-    let item_comments_after_parens = parse_many_comments_and_blankspace(&mut syntax)?;
-    let item_body = parse_node::<SwitchBody>(&mut syntax)?;
+    let item_expression =
+        parse_node_with_trivia(&mut syntax).expect_castable_kind::<Expression>()?;
+    let item_body = parse_node_with_trivia(&mut syntax).expect_castable_kind::<SwitchBody>()?;
     parse_end(&mut syntax)?;
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
 
-    formatted.extend(gen_attributes(
-        &item_attributes,
-        AttributeLayout::Multiline,
-    )?);
     formatted.push_sc(sc!("switch"));
-    formatted.extend(gen_comments(&item_comments_after_switch));
     formatted.request(Request::expect(RequestItem::Space)); // We trim out the parens, so we expect a space
-    formatted.extend(gen_expression(&item_expression)?);
+    formatted.request(Request::discourage(RequestItem::LineBreak));
+    formatted.extend(gen_node_with_trivia(&item_expression)?);
     formatted.request(Request::expect(RequestItem::Space)); // We trim out the parens, so we expect a space
-    formatted.extend(gen_comments(&item_comments_after_parens));
-    formatted.extend(gen_switch_body(&item_body)?);
+    formatted.request(Request::discourage(RequestItem::LineBreak));
+    formatted.extend(gen_node_with_trivia(&item_body)?);
 
     Ok(formatted)
 }
@@ -58,15 +57,28 @@ pub fn gen_switch_statement(
 pub fn gen_switch_body(statement: &SwitchBody) -> Result<PrintItemBuffer, FormatDocumentError> {
     // ==== Parse ====
     let mut syntax = put_back(statement.syntax().children_with_tokens());
-    let item_attributes = parse_many_attributes(&mut syntax)?;
     parse_token(&mut syntax, SyntaxKind::BraceLeft)?;
-    let item_comments_after_brace_left = parse_many_comments_and_blankspace(&mut syntax)?;
 
     let mut item_cases = Vec::new();
 
-    while let Some(item_case) = parse_node_optional::<SwitchBodyCase>(&mut syntax) {
-        let item_comments_after_case = parse_many_comments_and_blankspace(&mut syntax)?;
-        item_cases.push((item_case, item_comments_after_case));
+    loop {
+        let mut item = parse_node_with_trivia(&mut syntax);
+
+        if item
+            .kind()
+            .is_some_and(|item| item == SyntaxKind::BraceRight)
+        {
+            let old_node = std::mem::replace(&mut item.node, NodeWithTriviaContent::End);
+            syntax.put_back(old_node.into_option().unwrap()); //TODO
+        }
+
+        let is_end = item.is_end();
+        if !item.is_whitespace() {
+            item_cases.push(item);
+        }
+        if is_end {
+            break;
+        }
     }
 
     parse_token(&mut syntax, SyntaxKind::BraceRight)?;
@@ -74,17 +86,14 @@ pub fn gen_switch_body(statement: &SwitchBody) -> Result<PrintItemBuffer, Format
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
-    formatted.extend(gen_attributes(&item_attributes, AttributeLayout::Inline)?);
     formatted.push_sc(sc!("{"));
     formatted.start_indent();
-    formatted.extend(gen_comments(&item_comments_after_brace_left));
 
     let is_empty = item_cases.is_empty();
     if !is_empty {
-        for (item_case, item_comments_after_case) in item_cases {
+        for item_case in &item_cases {
             formatted.request(Request::expect(RequestItem::LineBreak));
-            formatted.extend(gen_switch_body_case(&item_case)?);
-            formatted.extend(gen_comments(&item_comments_after_case));
+            formatted.extend(gen_node_with_trivia(item_case)?);
         }
         formatted.request(Request::expect(RequestItem::LineBreak));
     }
@@ -99,10 +108,12 @@ pub fn gen_switch_body(statement: &SwitchBody) -> Result<PrintItemBuffer, Format
 }
 
 pub enum SwitchBodyCaseKind {
-    Default,
+    Default {
+        item_default: NodeWithTrivia,
+    },
     Case {
-        item_comments_after_case: Vec<Comment>,
-        item_selectors: SwitchCaseSelectors,
+        item_case: NodeWithTrivia,
+        item_selectors: NodeWithTrivia,
     },
 }
 
@@ -113,51 +124,85 @@ pub fn gen_switch_body_case(
     let mut syntax = put_back(statement.syntax().children_with_tokens());
 
     // Either default or case
+    let item_case_keyword = parse_node_with_trivia(&mut syntax);
     let kind = {
-        let item_default = parse_token_optional(&mut syntax, SyntaxKind::Default);
-        if item_default.is_some() {
-            SwitchBodyCaseKind::Default
+        if item_case_keyword
+            .kind()
+            .is_some_and(|keyword| keyword == SyntaxKind::Default)
+        {
+            SwitchBodyCaseKind::Default {
+                item_default: item_case_keyword,
+            }
         } else {
-            parse_token(&mut syntax, SyntaxKind::Case)?;
-            let item_comments_after_case = parse_many_comments_and_blankspace(&mut syntax)?;
-            let item_selectors = parse_node::<SwitchCaseSelectors>(&mut syntax)?;
+            let selectors = parse_node_with_trivia(&mut syntax);
+
+            let mut item_case_keyword = item_case_keyword;
+
+            if selectors
+                .node
+                .as_ref()
+                .and_then(|selectors| match selectors {
+                    rowan::NodeOrToken::Node(node) => Some(node),
+                    rowan::NodeOrToken::Token(_) => None,
+                })
+                .is_some_and(is_case_default)
+            {
+                item_case_keyword.node = NodeWithTriviaContent::NoContent;
+            }
 
             SwitchBodyCaseKind::Case {
-                item_comments_after_case,
-                item_selectors,
+                item_case: item_case_keyword,
+                item_selectors: selectors,
             }
         }
     };
 
-    let item_comments_after_selectors = parse_many_comments_and_blankspace(&mut syntax)?;
+    // let kind = {
+
+    //     if item.kind() == SyntaxKind::Default {
+
+    //     }
+
+    //     let item_default = parse_token_optional(&mut syntax, SyntaxKind::Default);
+    //     if item_default.is_some() {
+    //         SwitchBodyCaseKind::Default
+    //     } else {
+    //         parse_token(&mut syntax, SyntaxKind::Case)?;
+    //         let item_selectors = parse_node_with_trivia(&mut syntax)
+    //             .expect_castable_kind::<SwitchCaseSelectors>()?;
+
+    //         SwitchBodyCaseKind::Case { item_selectors }
+    //     }
+    // };
+
+    //let item_comments_after_selectors = parse_many_comments_and_blankspace(&mut syntax)?; TODO Verify this is unneeded
     let item_colon = parse_token_optional(&mut syntax, SyntaxKind::Colon);
-    let item_comments_after_colon = parse_many_comments_and_blankspace(&mut syntax)?;
-    let item_body = parse_node::<CompoundStatement>(&mut syntax)?;
+    let item_body =
+        parse_node_with_trivia(&mut syntax).expect_castable_kind::<CompoundStatement>()?;
     parse_end(&mut syntax)?;
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
 
+    formatted.request(Request::expect(RequestItem::LineBreak));
     match kind {
-        SwitchBodyCaseKind::Default => {
-            formatted.push_sc(sc!("default"));
+        SwitchBodyCaseKind::Default { item_default } => {
+            formatted.extend(gen_node_with_trivia(&item_default)?);
         },
         SwitchBodyCaseKind::Case {
-            item_comments_after_case,
+            item_case,
             item_selectors,
         } => {
-            if is_case_default(&item_selectors) {
-                formatted.push_sc(sc!("default"));
-                formatted.extend(gen_comments(&item_comments_after_case));
-            } else {
-                formatted.push_sc(sc!("case"));
-                formatted.request(Request::expect(RequestItem::Space));
-                formatted.extend(gen_comments(&item_comments_after_case));
-                formatted.extend(gen_switch_case_selectors(&item_selectors)?);
+            formatted.extend(gen_node_with_trivia(&item_case)?);
+            if !item_case.is_whitespace() {
+                formatted.request(Request::discourage(RequestItem::LineBreak));
             }
+            formatted.request(Request::expect(RequestItem::Space));
+            formatted.extend(gen_node_with_trivia(&item_selectors)?);
         },
     }
-    formatted.extend(gen_comments(&item_comments_after_selectors));
+
+    //formatted.extend(gen_comments(&item_comments_after_selectors));
 
     // For now we opted for option a) because we like it more. Its easy to add support for a wgslfmt.toml later
     // Option a) Always trim colon
@@ -168,14 +213,17 @@ pub fn gen_switch_body_case(
     // }
     // Option b) Force colon
     // formatted.push_sc(sc!(":"));
-    formatted.extend(gen_comments(&item_comments_after_colon));
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.extend(gen_compound_statement(&item_body)?);
+    formatted.request(Request::discourage(RequestItem::LineBreak));
+    formatted.extend(gen_node_with_trivia(&item_body)?);
     Ok(formatted)
 }
 
 /// Check if the [`SwitchCaseSelectors`] only contains one "default" expr, and nothing else.
-fn is_case_default(item_selectors: &SwitchCaseSelectors) -> bool {
+fn is_case_default(item_selectors: &SyntaxNode) -> bool {
+    let Some(item_selectors) = SwitchCaseSelectors::cast(item_selectors.clone()) else {
+        return false;
+    };
     let mut exprs = item_selectors.exprs();
     let maybe_default = exprs.next();
 

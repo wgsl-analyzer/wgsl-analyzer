@@ -1,6 +1,9 @@
 use parser::{SyntaxKind, SyntaxNode, SyntaxToken};
 use rowan::NodeOrToken;
-use syntax::ast::{Attribute, AttributeList};
+use syntax::{
+    AstNode,
+    ast::{Attribute, AttributeList},
+};
 
 use crate::{
     generators::comments::Comment,
@@ -60,6 +63,20 @@ impl NodeWithTrivia {
             .map(NodeOrToken::<SyntaxNode, SyntaxToken>::kind)
     }
 
+    pub fn expect_kind_optional(
+        self,
+        kind: SyntaxKind,
+    ) -> FormatDocumentResult<Self> {
+        if self.node.as_ref().is_some_and(|node| node.kind() != kind) {
+            //TODO Better error here
+            Err(FormatDocumentError::UnexpectedNodeOrToken {
+                received: self.node.into_option().unwrap(),
+            })
+        } else {
+            Ok(self)
+        }
+    }
+
     pub fn expect_kind(
         self,
         kind: SyntaxKind,
@@ -72,6 +89,21 @@ impl NodeWithTrivia {
                 received: self.node.into_option().unwrap(),
             })
         }
+    }
+
+    pub fn expect_castable_kind<T>(self) -> FormatDocumentResult<Self>
+    where
+        T: AstNode,
+    {
+        if let NodeWithTriviaContent::Content(NodeOrToken::Node(node)) = &self.node {
+            if T::cast(node.clone()).is_some() {
+                return Ok(self);
+            }
+        }
+        //TODO Better error here
+        Err(FormatDocumentError::UnexpectedNodeOrToken {
+            received: self.node.into_option().unwrap(),
+        })
     }
 
     pub fn is_end(&self) -> bool {

@@ -1,3 +1,4 @@
+use itertools::{Itertools, Position};
 use parser::SyntaxNode;
 use rowan::NodeOrToken;
 use syntax::AstNode as _;
@@ -365,9 +366,10 @@ pub fn gen_node(node: &SyntaxNode) -> FormatDocumentResult<PrintItemBuffer> {
 }
 
 pub fn gen_node_with_trivia(node: &NodeWithTrivia) -> FormatDocumentResult<PrintItemBuffer> {
+    dbg!(&node);
     let mut formatted = PrintItemBuffer::default();
 
-    for trivia in &node.preceding_trivia {
+    for (pos, trivia) in node.preceding_trivia.iter().with_position() {
         match trivia {
             NodeTriviaItem::LineSpacing(line_spacing) => {
                 formatted.extend(gen_next_gen_line_spacing(line_spacing)?);
@@ -385,8 +387,8 @@ pub fn gen_node_with_trivia(node: &NodeWithTrivia) -> FormatDocumentResult<Print
         NodeWithTriviaContent::Content(NodeOrToken::Node(node)) => {
             formatted.extend(gen_node(node)?);
         },
-        NodeWithTriviaContent::Content(NodeOrToken::Token(_)) => {
-            todo!();
+        NodeWithTriviaContent::Content(NodeOrToken::Token(token)) => {
+            formatted.push_string(token.text().to_owned());
         },
         NodeWithTriviaContent::NoContent | NodeWithTriviaContent::End => {},
     }

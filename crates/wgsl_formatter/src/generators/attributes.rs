@@ -220,7 +220,7 @@ pub fn gen_attribute_list(attribute_list: &AttributeList) -> FormatDocumentResul
 
     let layout = if let Some(parent) = attribute_list.syntax().parent() {
         if parent.kind() == SyntaxKind::FunctionDeclaration
-            || parent.kind() == SyntaxKind::SwitchBody
+            || parent.kind() == SyntaxKind::SwitchStatement
         {
             AttributeLayout::Inline
         } else {
@@ -246,7 +246,6 @@ pub fn gen_attribute_list(attribute_list: &AttributeList) -> FormatDocumentResul
         formatted.extend(gen_attribute_group(attribute, &expect_space_or_linebreak)?);
         formatted.request(group_separator.clone());
     }
-    let contains_inline = !attribute_group_inlined_with_target.is_empty();
     // Then attributes that should be inline with the target
     formatted.extend(gen_attribute_group(
         attribute_group_inlined_with_target,
