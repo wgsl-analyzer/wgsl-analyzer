@@ -437,7 +437,8 @@ pub fn format_attrs_on_while_statement() {
     check(
         "
         fn main() {
-        @attr(0) @attr(1) while true {}
+        @attr(0) @attr(1)
+        while true {}
         }
         ",
         expect![[r#"

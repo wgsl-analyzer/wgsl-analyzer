@@ -255,9 +255,9 @@ pub fn gen_attribute_list(attribute_list: &AttributeList) -> FormatDocumentResul
     // No final line break, these should be inline with the target
     formatted.finish_new_line_group();
 
-    if contains_inline {
-        formatted.request(Request::discourage(RequestItem::LineBreak));
-    }
+    // WE can discourage NewLines and Emptylines because finish_new_line_group
+    // applies all the stuff beforehand already
+    formatted.request(Request::discourage(RequestItem::LineBreak));
     formatted.request(Request::discourage(RequestItem::EmptyLine));
 
     Ok(formatted)
