@@ -11,7 +11,8 @@ pub struct DefDiagnostic {
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum DefDiagnosticKind {
-    // TODO: Can this even happen? Isn't that straight up a parsing error?
+    /// Currently cannot be triggered, as the grammar guarantees that import statements have a name.
+    /// May be triggered in the future if a `self` keyword is added. See https://github.com/webgpu-tools/wesl-spec/issues/120
     UnnamedImport {
         id: Location<ast::ImportStatement>,
     },

@@ -27,7 +27,6 @@ pub fn resolve_module(
 
     // package.wesl special case
     if segments.is_empty() {
-        // TODO: document that package.wgsl is not supported?
         return source_root
             .file_for_path(&root_path.join("package.wesl").unwrap())
             .map(|module| EditionedFileId::from_file(database, module));

@@ -236,10 +236,7 @@ impl ModCollector<'_> {
             },
             PathKind::Super(levels) => {
                 let mut mod_path = AbsoluteModPath::for_file(self.database, package, self.file_id)
-                    .ok_or_else(|| {
-                        // TODO: That's the wrong error kind
-                        DefDiagnostic::detached_file(self.file_id, location)
-                    })?;
+                    .ok_or_else(|| DefDiagnostic::detached_file(self.file_id, location))?;
 
                 for _ in 0..levels {
                     if mod_path.pop_segment().is_none() {
