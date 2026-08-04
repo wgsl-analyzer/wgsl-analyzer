@@ -2,6 +2,7 @@
 
 mod big;
 mod builtins;
+mod conditional_compilation;
 mod imports;
 mod incremental;
 mod layout;
