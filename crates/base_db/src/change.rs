@@ -109,9 +109,10 @@ impl Change {
         package_graph.update(self.packages_changed);
         let (sorted_packages, errors) = package_graph.to_topological_order();
 
-        // TODO: Properly report the errors
+        // These errors should be reported as diagnostics
+        // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1373
         if !errors.is_empty() {
-            tracing::warn!("Package graph errors {:?}", errors);
+            tracing::error!("Package graph errors {:?}", errors);
         }
 
         apply_package_graph(database, package_graph, sorted_packages);

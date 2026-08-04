@@ -341,11 +341,13 @@ impl GlobalState {
         let vfs = &self.vfs.read().0;
         let changed_packages = packages.take_changes();
         for (id, package_change) in changed_packages {
+            // TODO: Report the tracing::errors via diagnostics instead
+            // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1373
+
             let package_data = packages.get(id).and_then(|package| {
                 let manifest_path = vfs::VfsPath::from(AbsPathBuf::from(package.manifest.clone()));
                 let Some((manifest_file_id, root_file_excluded)) = vfs.file_id(&manifest_path)
                 else {
-                    // TODO: Properly report the error
                     tracing::error!("Could not find manifest file {}", &package.manifest);
                     return None;
                 };
@@ -356,7 +358,6 @@ impl GlobalState {
                     .dependencies
                     .iter()
                     .filter_map(|dependency| {
-                        // TODO: Properly report the errors
                         let Some(package_id) = packages.package_id(&dependency.package_key())
                         else {
                             tracing::error!("Could not find dependency {}", dependency.name());
