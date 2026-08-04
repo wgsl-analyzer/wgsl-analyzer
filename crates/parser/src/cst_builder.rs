@@ -202,7 +202,7 @@ impl CstBuilder<'_, '_> {
             Rule::ElseAttr => self.start_node(SyntaxKind::ElseAttribute),
             // experimental WESL
             Rule::GlobalCompoundDeclaration => {
-                self.start_node(SyntaxKind::GlobalCompoundDeclaration)
+                self.start_node(SyntaxKind::GlobalCompoundDeclaration);
             },
         }
     }

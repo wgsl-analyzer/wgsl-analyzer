@@ -1,6 +1,8 @@
 use base_db::{EditionedFileId, SourceDatabase};
 use either::Either;
-use syntax::{HasName as _, HasTemplateParameters as _, ast, pointer::AstPointer};
+use syntax::{
+    HasAttributes as _, HasName as _, HasTemplateParameters as _, ast, pointer::AstPointer,
+};
 
 use super::{Binding, BindingId, Body, BodySourceMap, SyntheticSyntax};
 use crate::{
@@ -195,10 +197,22 @@ impl Collector<'_> {
             .statements()
             .filter_map(|statement| self.collect_statement(&statement))
             .collect();
-
         self.body
             .statements
             .alloc(Statement::Compound { statements })
+    }
+
+    fn collect_conditional_compound_statement(
+        &mut self,
+        compound_statement: &ast::CompoundStatement,
+    ) -> StatementId {
+        let statements = compound_statement
+            .statements()
+            .filter_map(|statement| self.collect_statement(&statement))
+            .collect();
+        self.body
+            .statements
+            .alloc(Statement::ConditionalCompound { statements })
     }
 
     #[expect(
@@ -268,6 +282,11 @@ impl Collector<'_> {
                 }
             },
             ast::Statement::CompoundStatement(compound_statement) => {
+                if let Some(mut attributes) = statement.attributes()
+                    && attributes.any(|attribute| attribute.is_conditional_compilation())
+                {
+                    return Some(self.collect_conditional_compound_statement(compound_statement));
+                }
                 return Some(self.collect_compound_statement(compound_statement));
             },
             ast::Statement::ReturnStatement(ret_statement) => {

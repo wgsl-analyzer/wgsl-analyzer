@@ -588,7 +588,7 @@ impl<'db> InferenceContext<'db> {
         let resolver = self.resolver_for_statement(statement);
 
         match &body.statements[statement] {
-            Statement::Compound { statements } => {
+            Statement::Compound { statements } | Statement::ConditionalCompound { statements } => {
                 for statement in statements {
                     self.infer_statement(*statement, body, return_type);
                 }

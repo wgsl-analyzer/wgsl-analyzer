@@ -777,6 +777,14 @@ impl Attribute {
             Self::ElseAttribute(inner) => inner.name(),
         }
     }
+
+    #[must_use]
+    pub const fn is_conditional_compilation(&self) -> bool {
+        matches!(
+            self,
+            Self::IfAttribute(_) | Self::ElifAttribute(_) | Self::ElseAttribute(_)
+        )
+    }
 }
 
 ast_node! {
