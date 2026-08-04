@@ -453,7 +453,7 @@ fn reserved_words_do_not_parse() {
             error at 1132..1136: 'with' is a reserved word in WGSL
             error at 1137..1146: 'writeonly' is a reserved word in WGSL
             error at 1147..1152: 'yield' is a reserved word in WGSL
-            error at 9..13: invalid syntax, expected one of: 'alias', '@', 'const', 'const_assert', 'diagnostic', <end of file>, 'enable', 'fn', 'import', 'let', 'override', 'requires', ';', 'struct', 'var'"#]],
+            error at 9..13: invalid syntax, expected one of: 'alias', '@', '{', 'const', 'const_assert', 'diagnostic', <end of file>, 'enable', 'fn', 'import', 'let', 'override', 'requires', ';', 'struct', 'var'"#]],
     );
 }
 

@@ -2506,7 +2506,7 @@ fn annotation_with_invalid_statement_recover() {
               Error@102..103
                 BraceRight@102..103 "}"
 
-            error at 102..103: invalid syntax, expected one of: 'alias', '@', 'const', 'const_assert', 'diagnostic', <end of file>, 'enable', 'fn', 'import', 'let', 'override', 'requires', ';', 'struct', 'var'"#]],
+            error at 102..103: invalid syntax, expected one of: 'alias', '@', '{', 'const', 'const_assert', 'diagnostic', <end of file>, 'enable', 'fn', 'import', 'let', 'override', 'requires', ';', 'struct', 'var'"#]],
     );
 }
 
@@ -2951,7 +2951,7 @@ fn test()
                     TypeSpecifier@14..14
                   BraceRight@14..15 "}"
               Blankspace@15..17 "\n\n"
-              FunctionDeclaration@17..28
+              FunctionDeclaration@17..27
                 Fn@17..19 "fn"
                 Blankspace@19..20 " "
                 Name@20..24
@@ -2960,8 +2960,8 @@ fn test()
                   ParenthesisLeft@24..25 "("
                   ParenthesisRight@25..26 ")"
                 Blankspace@26..27 "\n"
-                Error@27..28
-                  BraceRight@27..28 "}"
+              Error@27..28
+                BraceRight@27..28 "}"
               Semicolon@28..29 ";"
               Blankspace@29..30 "\n"
 

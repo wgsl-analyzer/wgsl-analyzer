@@ -11,7 +11,7 @@ fn module_compound() {
         fn f() {} @if(true) { const_assert true; fn foo() {} struct bar { x: u32 } }
         ",
         expect![[r#"
-            35..39 'true': bool
+
         "#]],
     );
 }
@@ -37,8 +37,6 @@ fn module_compound_shadow() {
         { const foo: u32 = 0; } const foo: u32 = 1;
         ",
         expect![[r#"
-            8..11 'foo': u32
-            19..20 '0': integer
             30..33 'foo': u32
             41..42 '1': integer
         "#]],
@@ -53,10 +51,12 @@ fn function_compound() {
         fn foo() { @if(true) { var x = 0; } x++; }
         ",
         expect![[r#"
-            8..11 'foo': u32
-            19..20 '0': integer
-            30..33 'foo': u32
-            41..42 '1': integer
+            27..28 'x': ref<function, i32, read_write>
+            31..32 '0': integer
+            36..37 'x': [error]
+            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(1)), kind: UnresolvedPath { path: Path(ModPath("x")), failed_segment: 0 } } } in Body
+            ExpectedLoweredKind { expression: Idx::<Expression>(1), expected: Variable, actual: Type, path: Path(ModPath("x")) } in Body
+            AssignmentNotAReference { left_side: Idx::<Expression>(1), actual: Type(2400) } in Body
         "#]],
     );
 }

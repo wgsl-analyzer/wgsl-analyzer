@@ -185,6 +185,9 @@ pub enum SyntaxKind {
     /// @else
     ElseAttribute,
 
+    // WESL experiment
+    GlobalCompoundDeclaration,
+
     // Tokens
     /// Source: <https://www.w3.org/TR/WGSL/#blankspace-and-line-breaks>
     #[regex("[\x20\x09\x0A-\x0D\u{0085}\u{200E}\u{200F}\u{2028}\u{2029}]+")]
