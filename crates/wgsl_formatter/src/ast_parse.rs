@@ -143,6 +143,21 @@ where
 }
 
 pub fn parse_node_with_trivia(syntax: &mut SyntaxIter) -> NodeWithTrivia {
+    parse_node_with_trivia_filter(syntax, |_| FilterAction::Content)
+}
+
+pub enum FilterAction {
+    Ignored,
+    Content,
+}
+
+pub fn parse_node_with_trivia_filter<F>(
+    syntax: &mut SyntaxIter,
+    filter: F,
+) -> NodeWithTrivia
+where
+    F: Fn(&NodeOrToken<SyntaxNode, SyntaxToken>) -> FilterAction,
+{
     let mut preceding_trivia = Vec::new();
     let mut succeeding_trivia = Vec::new();
 
@@ -155,7 +170,7 @@ pub fn parse_node_with_trivia(syntax: &mut SyntaxIter) -> NodeWithTrivia {
         }
     }
 
-    loop {
+    let content = loop {
         if let Some(line_spacing) = parse_next_gen_line_spacing(syntax) {
             match line_spacing {
                 NextGenLineSpacing::EmptyLine(blankspace) => {
@@ -177,13 +192,14 @@ pub fn parse_node_with_trivia(syntax: &mut SyntaxIter) -> NodeWithTrivia {
             preceding_trivia.push(NodeTriviaItem::Comment(comment));
         } else if let Some(attributes) = parse_node_optional::<AttributeList>(syntax) {
             preceding_trivia.push(NodeTriviaItem::AttributeList(attributes));
+        } else if let Some(node) = syntax.next() {
+            match filter(&node) {
+                FilterAction::Ignored => {},
+                FilterAction::Content => break NodeWithTriviaContent::Content(node),
+            }
         } else {
-            break;
+            break NodeWithTriviaContent::End;
         }
-    }
-    let node = match syntax.next() {
-        Some(next) => NodeWithTriviaContent::Content(next),
-        None => NodeWithTriviaContent::End,
     };
 
     loop {
@@ -201,6 +217,15 @@ pub fn parse_node_with_trivia(syntax: &mut SyntaxIter) -> NodeWithTrivia {
                     break;
                 },
             }
+        } else if let Some(node) = syntax.next() {
+            match filter(&node) {
+                FilterAction::Ignored => {},
+                FilterAction::Content => {
+                    // This should be parsed by the next parse_node_with_trivia call
+                    syntax.put_back(node);
+                    break;
+                },
+            }
         } else {
             break;
         }
@@ -208,7 +233,7 @@ pub fn parse_node_with_trivia(syntax: &mut SyntaxIter) -> NodeWithTrivia {
 
     NodeWithTrivia {
         preceding_trivia,
-        node,
+        node: content,
         succeeding_trivia,
     }
 }
