@@ -12,6 +12,7 @@ use crate::{
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct ModulesMap {
     /// All folders and modules in the project.
+    /// Invariant: If a module path exists, then the parent module path exists.
     pub modules: FxIndexMap<AbsoluteModPath, ModuleData>,
 }
 
@@ -44,7 +45,7 @@ pub fn modules_map_query(
         })
         .collect();
 
-    // Invariant: Given a ModPath, the parent ModPath also exists
+    /// Invariant: If a module path exists, then the parent module path exists.
     let mut modules = FxIndexMap::default();
     modules.insert(AbsoluteModPath::new_root(), ModuleData { file: None });
 

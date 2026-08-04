@@ -273,7 +273,6 @@ const fn parse_package(
 ) -> (String, PackageOrigin) {
     // syntax:
     //   "my_awesome_package"
-    //   "my_awesome_package"
 
     let origin = if explicit_non_workspace_member {
         PackageOrigin::Library
