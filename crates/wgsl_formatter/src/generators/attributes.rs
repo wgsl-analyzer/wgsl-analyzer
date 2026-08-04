@@ -219,9 +219,10 @@ pub fn gen_attribute_list(attribute_list: &AttributeList) -> FormatDocumentResul
     let expect_space_or_linebreak = Request::expect(RequestItem::Space).or_newline();
 
     let layout = if let Some(parent) = attribute_list.syntax().parent() {
-        if parent.kind() == SyntaxKind::FunctionDeclaration
-            || parent.kind() == SyntaxKind::SwitchStatement
-        {
+        if matches!(
+            parent.kind(),
+            SyntaxKind::FunctionDeclaration | SyntaxKind::SwitchStatement | SyntaxKind::ReturnType
+        ) {
             AttributeLayout::Inline
         } else {
             AttributeLayout::Multiline

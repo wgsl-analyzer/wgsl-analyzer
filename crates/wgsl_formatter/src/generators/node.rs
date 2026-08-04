@@ -365,8 +365,7 @@ pub fn gen_node(node: &SyntaxNode) -> FormatDocumentResult<PrintItemBuffer> {
     }
 }
 
-pub fn gen_node_with_trivia(node: &NodeWithTrivia) -> FormatDocumentResult<PrintItemBuffer> {
-    dbg!(&node);
+pub fn gen_node_preceding_trivia(node: &NodeWithTrivia) -> FormatDocumentResult<PrintItemBuffer> {
     let mut formatted = PrintItemBuffer::default();
 
     for (pos, trivia) in node.preceding_trivia.iter().with_position() {
@@ -382,7 +381,10 @@ pub fn gen_node_with_trivia(node: &NodeWithTrivia) -> FormatDocumentResult<Print
             },
         }
     }
-
+    Ok(formatted)
+}
+pub fn gen_node_content(node: &NodeWithTrivia) -> FormatDocumentResult<PrintItemBuffer> {
+    let mut formatted = PrintItemBuffer::default();
     match &node.node {
         NodeWithTriviaContent::Content(NodeOrToken::Node(node)) => {
             formatted.extend(gen_node(node)?);
@@ -392,7 +394,10 @@ pub fn gen_node_with_trivia(node: &NodeWithTrivia) -> FormatDocumentResult<Print
         },
         NodeWithTriviaContent::NoContent | NodeWithTriviaContent::End => {},
     }
-
+    Ok(formatted)
+}
+pub fn gen_node_succeeding_trivia(node: &NodeWithTrivia) -> FormatDocumentResult<PrintItemBuffer> {
+    let mut formatted = PrintItemBuffer::default();
     for trivia in &node.succeeding_trivia {
         match trivia {
             NodeTriviaItem::LineSpacing(line_spacing) => {
@@ -406,6 +411,16 @@ pub fn gen_node_with_trivia(node: &NodeWithTrivia) -> FormatDocumentResult<Print
             },
         }
     }
+    Ok(formatted)
+}
+
+pub fn gen_node_with_trivia(node: &NodeWithTrivia) -> FormatDocumentResult<PrintItemBuffer> {
+    dbg!(&node);
+    let mut formatted = PrintItemBuffer::default();
+
+    formatted.extend(gen_node_preceding_trivia(node)?);
+    formatted.extend(gen_node_content(node)?);
+    formatted.extend(gen_node_succeeding_trivia(node)?);
 
     Ok(formatted)
 }

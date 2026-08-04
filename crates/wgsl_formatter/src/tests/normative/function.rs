@@ -81,7 +81,6 @@ fn format_fn_header_with_parameters_inline_line_comments() {
         "fn main(
             a: u32, // This comment describes B
             b: u32, // This comment describes C
-
             // This comment describes C
             c: u32,
             // This comment describes D
@@ -91,7 +90,6 @@ fn format_fn_header_with_parameters_inline_line_comments() {
             fn main(
                 a: u32, // This comment describes B
                 b: u32, // This comment describes C
-
                 // This comment describes C
                 c: u32,
                 // This comment describes D
