@@ -29,7 +29,7 @@ fn g() {}
 fn ignore_outside_of_root() {
     check(
         r#"
-//- /shaders/package.wesl package:my_package package_root:/shaders
+//- /shaders/package.wesl package:my_package root:/shaders
 
 //- /shaders/foo.wesl
 
@@ -47,7 +47,7 @@ fn ignore_outside_of_root() {
 fn wesl_files() {
     check(
         r#"
-//- /shaders/package.wesl package:my_package package_root:/shaders
+//- /shaders/package.wesl package:my_package root:/shaders
 const a = 3;
 //- /shaders.wesl
 const hidden = 9;

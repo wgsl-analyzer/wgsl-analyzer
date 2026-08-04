@@ -1690,7 +1690,7 @@ fn no_builtin_overload() {
             8..10 '1f': f32
             8..22 '1f + mat2x2f()': [error]
             13..22 'mat2x2f()': mat2x2<f32>
-            NoBuiltinOverload { expression: Idx::<Expression>(2), builtin: BuiltinId(3000), name: Some("+"), parameters: [Type(2401), Type(2402)] } in Body
+            NoBuiltinOverload { expression: Idx::<Expression>(2), builtin: BuiltinId(2c00), name: Some("+"), parameters: [Type(2401), Type(2402)] } in Body
         "#]],
     );
 }
@@ -1724,7 +1724,7 @@ fn no_constructor() {
             14..15 '1': integer
             17..18 '2': integer
             20..21 '3': integer
-            NoConstructor { expression: Idx::<Expression>(3), builtins: BuiltinId(3000), type: Type(2403), parameters: [Type(2401), Type(2401), Type(2401)] } in Body
+            NoConstructor { expression: Idx::<Expression>(3), builtins: BuiltinId(2c00), type: Type(2403), parameters: [Type(2401), Type(2401), Type(2401)] } in Body
         "#]],
     );
 }
@@ -1798,7 +1798,7 @@ fn add_refs_and_ptrs() {
             398..403 'a_ptr': ptr<function, i32, read_write>
             398..411 'a_ptr + b_ref': [error]
             406..411 'b_ref': ref<function, i32, read_write>
-            NoBuiltinOverload { expression: Idx::<Expression>(14), builtin: BuiltinId(3800), name: Some("+"), parameters: [Type(3012), Type(3010)] } in Body
+            NoBuiltinOverload { expression: Idx::<Expression>(14), builtin: BuiltinId(3400), name: Some("+"), parameters: [Type(2c12), Type(2c10)] } in Body
         "#]],
     );
 }

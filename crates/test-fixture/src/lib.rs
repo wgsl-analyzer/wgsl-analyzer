@@ -137,24 +137,25 @@ impl ChangeFixture {
             };
 
             let meta = FileMeta::from_fixture(entry);
-            assert!(
-                meta.package_root.is_none() || meta.package.is_some(),
-                "cannot specify package root without naming the package"
-            );
-            assert!(
-                meta.dependencies.is_empty() || meta.package.is_some(),
-                "cannot specify dependencies without naming the package"
-            );
-
             let mut meta_package = meta.package;
             if meta_package.is_none() && roots.is_empty() {
                 // Support tests that have a single file or a few files without setting up a package
-                meta_package = Some(("wa_test_fixture".to_owned(), PackageOrigin::Local));
+                meta_package = Some(PackageMeta {
+                    name: "wa_test_fixture".to_owned(),
+                    origin: PackageOrigin::Local,
+                    root: None,
+                    dependencies: Vec::new(),
+                });
             }
 
-            if let Some((package, origin)) = meta_package {
-                let package_name = PackageName::normalize_dashes(&package);
-                let root = VfsPath::new_virtual_path(meta.package_root.unwrap_or_default());
+            if let Some(meta_package) = meta_package {
+                let package_name = PackageName::normalize_dashes(&meta_package.name);
+                let root = match meta_package.root {
+                    Some(root) => VfsPath::new_virtual_path(root),
+                    None => VfsPath::new_virtual_path(meta.path.clone())
+                        .parent()
+                        .unwrap(),
+                };
 
                 let manifest_file_id = next_file_id.next().unwrap();
                 manifest_files.push(manifest_file_id);
@@ -164,13 +165,13 @@ impl ChangeFixture {
                     manifest_file_id,
                     root: root.clone(),
                     edition: meta.edition,
-                    display_name: Some(package.clone()),
+                    display_name: Some(meta_package.name.clone()),
                     dependencies: Vec::new(),
-                    origin,
+                    origin: meta_package.origin,
                 };
                 let mut file_set = FileSet::default();
                 file_set.insert(manifest_file_id, root.join("wesl.toml").unwrap());
-                roots.push((file_set, origin));
+                roots.push((file_set, package.origin));
 
                 let package_id = PackageId::from_raw(u32::try_from(packages.len()).unwrap());
                 let previous = packages.insert(package_name.clone(), (package_id, package));
@@ -178,7 +179,7 @@ impl ChangeFixture {
                     previous.is_none(),
                     "multiple packages with same name: {package_name}"
                 );
-                for dep in meta.dependencies {
+                for dep in meta_package.dependencies {
                     let dep = PackageName::normalize_dashes(&dep);
                     package_dependencies.push((package_name.clone(), dep));
                 }
@@ -243,26 +244,53 @@ enum SourceRootKind {
 #[derive(Debug)]
 struct FileMeta {
     path: String,
-    package: Option<(String, PackageOrigin)>,
-    package_root: Option<String>,
-    dependencies: Vec<String>,
     edition: Edition,
+    package: Option<PackageMeta>,
+}
+
+#[derive(Debug)]
+struct PackageMeta {
+    name: String,
+    origin: PackageOrigin,
+    root: Option<String>,
+    dependencies: Vec<String>,
 }
 
 impl FileMeta {
     fn from_fixture(fixture: Fixture) -> Self {
-        let dependencies = fixture.dependencies;
+        let edition = fixture.edition.map_or(Edition::CURRENT, |version| {
+            Edition::from_str(&version).unwrap()
+        });
+
+        let package = if let Some(package_name) = fixture.package {
+            let (name, origin) = parse_package(package_name, fixture.library);
+
+            Some(PackageMeta {
+                name,
+                origin,
+                root: fixture.root,
+                dependencies: fixture.dependencies,
+            })
+        } else {
+            assert!(
+                !fixture.library,
+                "cannot specify library mode without naming the package"
+            );
+            assert!(
+                fixture.root.is_none(),
+                "cannot specify package root without naming the package"
+            );
+            assert!(
+                fixture.dependencies.is_empty(),
+                "cannot specify dependencies without naming the package"
+            );
+            None
+        };
 
         Self {
             path: fixture.path,
-            package: fixture
-                .package
-                .map(|package_name| parse_package(package_name, fixture.library)),
-            package_root: fixture.package_root,
-            dependencies,
-            edition: fixture.edition.map_or(Edition::CURRENT, |version| {
-                Edition::from_str(&version).unwrap()
-            }),
+            edition,
+            package,
         }
     }
 }

@@ -22,12 +22,12 @@ fn check_layout(
     wa_fixture: &str,
     expect: Expect,
 ) {
-    let mut database = TestDatabase::with_files(wa_fixture);
+    let (mut database, file_id) = TestDatabase::with_single_file(wa_fixture);
     database.set_extensions_with_durability(extensions, Durability::MEDIUM);
     let mut buffer = String::new();
     LayoutPrinter::new(
         &database,
-        EditionedFileId::from_file(&database, FileId::from_raw(0)),
+        EditionedFileId::from_file(&database, file_id.file_id(&database)),
     )
     .infer_layout(&mut buffer);
     buffer.truncate(buffer.trim_end().len());

@@ -45,13 +45,11 @@ fn infer(
     database.set_extensions_with_durability(extensions, Durability::MEDIUM);
     let mut buffer = String::new();
 
-    if files.len() == 1 {
-        InferPrinter::new(&database, files[0]).infer_file(&mut buffer);
-    } else {
-        for file_id in files {
+    for (index, file_id) in files.into_iter().enumerate() {
+        if index > 0 {
             buffer.push_str("---\n");
-            InferPrinter::new(&database, file_id).infer_file(&mut buffer);
         }
+        InferPrinter::new(&database, file_id).infer_file(&mut buffer);
     }
     buffer.truncate(buffer.trim_end().len());
     buffer

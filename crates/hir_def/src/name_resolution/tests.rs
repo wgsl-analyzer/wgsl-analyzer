@@ -3,7 +3,7 @@ mod item_scopes;
 
 use base_db::EditionedFileId;
 use expect_test::{Expect, expect};
-use itertools::Itertools;
+use itertools::Itertools as _;
 use std::fmt::Write as _;
 use test_fixture::WithFixture as _;
 
