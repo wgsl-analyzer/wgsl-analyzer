@@ -246,6 +246,7 @@ pub fn gen_attribute_list(attribute_list: &AttributeList) -> FormatDocumentResul
         formatted.extend(gen_attribute_group(attribute, &expect_space_or_linebreak)?);
         formatted.request(group_separator.clone());
     }
+    let contains_inline = !attribute_group_inlined_with_target.is_empty();
     // Then attributes that should be inline with the target
     formatted.extend(gen_attribute_group(
         attribute_group_inlined_with_target,
@@ -253,6 +254,11 @@ pub fn gen_attribute_list(attribute_list: &AttributeList) -> FormatDocumentResul
     )?);
     // No final line break, these should be inline with the target
     formatted.finish_new_line_group();
+
+    if contains_inline {
+        formatted.request(Request::discourage(RequestItem::LineBreak));
+    }
+    formatted.request(Request::discourage(RequestItem::EmptyLine));
 
     Ok(formatted)
 }

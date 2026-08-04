@@ -23,34 +23,24 @@ pub enum NodeWithTriviaContent {
 }
 
 impl NodeWithTriviaContent {
-    pub fn is_empty(&self) -> bool {
-        matches!(
-            self,
-            NodeWithTriviaContent::NoContent | NodeWithTriviaContent::End
-        )
+    #[must_use]
+    pub const fn is_empty(&self) -> bool {
+        matches!(self, Self::NoContent | Self::End)
     }
 
-    pub fn as_ref(&self) -> Option<&NodeOrToken<SyntaxNode, SyntaxToken>> {
+    #[must_use]
+    pub const fn as_ref(&self) -> Option<&NodeOrToken<SyntaxNode, SyntaxToken>> {
         match self {
-            NodeWithTriviaContent::NoContent => todo!(),
-            NodeWithTriviaContent::Content(node_or_token) => Some(&node_or_token),
-            NodeWithTriviaContent::End => todo!(),
+            Self::Content(node_or_token) => Some(node_or_token),
+            Self::NoContent | Self::End => None,
         }
     }
 
-    pub fn unwrap(self) -> NodeOrToken<SyntaxNode, SyntaxToken> {
+    #[must_use]
+    pub fn into_option(self) -> Option<NodeOrToken<SyntaxNode, SyntaxToken>> {
         match self {
-            NodeWithTriviaContent::NoContent => todo!(),
-            NodeWithTriviaContent::Content(node_or_token) => node_or_token,
-            NodeWithTriviaContent::End => todo!(),
-        }
-    }
-
-    pub fn as_option(self) -> Option<NodeOrToken<SyntaxNode, SyntaxToken>> {
-        match self {
-            NodeWithTriviaContent::NoContent => None,
-            NodeWithTriviaContent::Content(node_or_token) => Some(node_or_token),
-            NodeWithTriviaContent::End => None,
+            Self::Content(node_or_token) => Some(node_or_token),
+            Self::NoContent | Self::End => None,
         }
     }
 }
@@ -60,9 +50,16 @@ impl NodeWithTriviaContent {
 pub struct NodeWithTrivia {
     pub preceding_trivia: Vec<NodeTriviaItem>,
     pub node: NodeWithTriviaContent,
+    pub succeeding_trivia: Vec<NodeTriviaItem>,
 }
 
 impl NodeWithTrivia {
+    pub fn kind(&self) -> Option<SyntaxKind> {
+        self.node
+            .as_ref()
+            .map(NodeOrToken::<SyntaxNode, SyntaxToken>::kind)
+    }
+
     pub fn expect_kind(
         self,
         kind: SyntaxKind,
@@ -72,7 +69,7 @@ impl NodeWithTrivia {
         } else {
             //TODO Better error here
             Err(FormatDocumentError::UnexpectedNodeOrToken {
-                received: self.node.unwrap(),
+                received: self.node.into_option().unwrap(),
             })
         }
     }
@@ -87,5 +84,14 @@ impl NodeWithTrivia {
                 .preceding_trivia
                 .iter()
                 .all(|trivia| matches!(trivia, NodeTriviaItem::LineSpacing(_)))
+            && self
+                .succeeding_trivia
+                .iter()
+                .all(|trivia| matches!(trivia, NodeTriviaItem::LineSpacing(_)))
+    }
+
+    #[must_use]
+    pub const fn has_content(&self) -> bool {
+        matches!(self.node, NodeWithTriviaContent::Content(_))
     }
 }

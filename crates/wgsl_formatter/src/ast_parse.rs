@@ -4,14 +4,11 @@
 use itertools::PutBack;
 use parser::{SyntaxElementChildren, SyntaxKind, SyntaxNode, SyntaxToken};
 use rowan::NodeOrToken;
-use syntax::{
-    AstNode, AstToken,
-    ast::{Attribute, AttributeList},
-};
+use syntax::{AstNode, AstToken, ast::AttributeList};
 
 use crate::{
-    generators::{attributes::parse_many_attributes, comments::parse_comment_optional},
-    helpers::{LineSpacing, NextGenLineSpacing, parse_line_spacing, parse_next_gen_line_spacing},
+    generators::comments::parse_comment_optional,
+    helpers::{NextGenLineSpacing, parse_next_gen_line_spacing},
     reporting::{FormatDocumentError, FormatDocumentResult, UnwrapIfPreferCrash as _},
     trivia::{NodeTriviaItem, NodeWithTrivia, NodeWithTriviaContent},
 };
@@ -146,12 +143,13 @@ where
 }
 
 pub fn parse_node_with_trivia(syntax: &mut SyntaxIter) -> NodeWithTrivia {
-    let mut trivia = Vec::new();
+    let mut preceding_trivia = Vec::new();
+    let mut succeeding_trivia = Vec::new();
 
     loop {
         // We allow line spacing at the very top of trivia
         if let Some(spacing) = parse_next_gen_line_spacing(syntax) {
-            trivia.push(NodeTriviaItem::LineSpacing(spacing));
+            preceding_trivia.push(NodeTriviaItem::LineSpacing(spacing));
         } else {
             break;
         }
@@ -163,29 +161,55 @@ pub fn parse_node_with_trivia(syntax: &mut SyntaxIter) -> NodeWithTrivia {
                 NextGenLineSpacing::EmptyLine(blankspace) => {
                     syntax.put_back(NodeOrToken::Token(blankspace));
                     return NodeWithTrivia {
-                        preceding_trivia: trivia,
+                        preceding_trivia,
                         node: NodeWithTriviaContent::NoContent,
+                        succeeding_trivia,
                     };
                 },
-                NextGenLineSpacing::LineBreak(_) | NextGenLineSpacing::OnelineBlankspace(_) => {
+                NextGenLineSpacing::LineBreak(_) => {
+                    preceding_trivia.push(NodeTriviaItem::LineSpacing(line_spacing));
+                },
+                NextGenLineSpacing::OnelineBlankspace(_) => {
                     // Line breaks and oneline blankspace never carry any meaning
                 },
             }
         } else if let Some(comment) = parse_comment_optional(syntax) {
-            trivia.push(NodeTriviaItem::Comment(comment));
+            preceding_trivia.push(NodeTriviaItem::Comment(comment));
         } else if let Some(attributes) = parse_node_optional::<AttributeList>(syntax) {
-            trivia.push(NodeTriviaItem::AttributeList(attributes));
+            preceding_trivia.push(NodeTriviaItem::AttributeList(attributes));
+        } else {
+            break;
+        }
+    }
+    let node = match syntax.next() {
+        Some(next) => NodeWithTriviaContent::Content(next),
+        None => NodeWithTriviaContent::End,
+    };
+
+    loop {
+        if let Some(trivia) = parse_comment_optional(syntax) {
+            succeeding_trivia.push(NodeTriviaItem::Comment(trivia));
+        } else if let Some(line_spacing) = parse_next_gen_line_spacing(syntax) {
+            match line_spacing {
+                NextGenLineSpacing::OnelineBlankspace(syntax_token) => {
+                    // Oneline blankspace does not differentiate between where trivia belongs to
+                },
+                NextGenLineSpacing::LineBreak(blankspace)
+                | NextGenLineSpacing::EmptyLine(blankspace) => {
+                    // Any meaningful line spacing ends succeeding trivia
+                    syntax.put_back(NodeOrToken::Token(blankspace));
+                    break;
+                },
+            }
         } else {
             break;
         }
     }
 
     NodeWithTrivia {
-        preceding_trivia: trivia,
-        node: match syntax.next() {
-            Some(next) => NodeWithTriviaContent::Content(next),
-            None => NodeWithTriviaContent::End,
-        },
+        preceding_trivia,
+        node,
+        succeeding_trivia,
     }
 }
 

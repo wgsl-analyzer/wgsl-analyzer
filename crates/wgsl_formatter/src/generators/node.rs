@@ -86,7 +86,7 @@ use crate::{
         spacing_request::{Request, RequestItem},
     },
     reporting::FormatDocumentResult,
-    trivia::{NodeTriviaItem, NodeWithTrivia},
+    trivia::{NodeTriviaItem, NodeWithTrivia, NodeWithTriviaContent},
 };
 
 pub fn gen_node_no_newlines(node: &SyntaxNode) -> FormatDocumentResult<PrintItemBuffer> {
@@ -370,26 +370,39 @@ pub fn gen_node_with_trivia(node: &NodeWithTrivia) -> FormatDocumentResult<Print
     for trivia in &node.preceding_trivia {
         match trivia {
             NodeTriviaItem::LineSpacing(line_spacing) => {
-                formatted.extend(gen_next_gen_line_spacing(&line_spacing)?);
+                formatted.extend(gen_next_gen_line_spacing(line_spacing)?);
             },
             NodeTriviaItem::Comment(comment) => {
-                formatted.extend(gen_comment(&comment));
+                formatted.extend(gen_comment(comment));
             },
             NodeTriviaItem::AttributeList(attribute_list) => {
-                formatted.extend(gen_attribute_list(&attribute_list)?);
+                formatted.extend(gen_attribute_list(attribute_list)?);
             },
         }
     }
 
     match &node.node {
-        crate::trivia::NodeWithTriviaContent::Content(NodeOrToken::Node(node)) => {
-            formatted.extend(gen_node(&node)?)
+        NodeWithTriviaContent::Content(NodeOrToken::Node(node)) => {
+            formatted.extend(gen_node(node)?);
         },
-        crate::trivia::NodeWithTriviaContent::Content(NodeOrToken::Token(node)) => {
-            todo!()
+        NodeWithTriviaContent::Content(NodeOrToken::Token(_)) => {
+            todo!();
         },
-        crate::trivia::NodeWithTriviaContent::NoContent => todo!(),
-        crate::trivia::NodeWithTriviaContent::End => todo!(),
+        NodeWithTriviaContent::NoContent | NodeWithTriviaContent::End => {},
+    }
+
+    for trivia in &node.succeeding_trivia {
+        match trivia {
+            NodeTriviaItem::LineSpacing(line_spacing) => {
+                formatted.extend(gen_next_gen_line_spacing(line_spacing)?);
+            },
+            NodeTriviaItem::Comment(comment) => {
+                formatted.extend(gen_comment(comment));
+            },
+            NodeTriviaItem::AttributeList(attribute_list) => {
+                formatted.extend(gen_attribute_list(attribute_list)?);
+            },
+        }
     }
 
     Ok(formatted)
