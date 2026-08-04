@@ -3,6 +3,7 @@
 
 mod attributes;
 mod conditional;
+mod conditional_compilation;
 mod diagnostic;
 mod expression;
 mod imports;
