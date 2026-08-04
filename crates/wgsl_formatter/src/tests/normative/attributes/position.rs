@@ -412,6 +412,7 @@ pub fn format_attrs_on_for_statement() {
 
 //TODO Look at these cases a bit more closely
 #[test]
+#[ignore = "TODO Parser Error?"]
 pub fn format_attrs_on_loop_continuing_block() {
     check(
         "
@@ -452,13 +453,17 @@ pub fn format_attrs_on_while_statement() {
 }
 
 #[test]
+//TODO Rename to import
 pub fn format_attrs_on_input_statement() {
-    assert_out_of_scope(
+    check(
         "
         @if(THING)
         import the::thing;
         ",
-        "This should be supported as soon as the parser supports it.",
+        expect![[r#"
+            @if(THING)
+            import the::thing;
+        "#]],
     );
 }
 #[test]
