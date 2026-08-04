@@ -156,6 +156,7 @@ global_item^:
 	| #2 global_directive
 	| #3 global_declaration
 	| #3 global_assert
+	| #3 global_compound_declaration
 );
 
 // WESL: Import statements
@@ -173,6 +174,14 @@ global_directive:
 	'diagnostic' diagnostic_control ';' @diagnostic_directive // §4.2
 	| 'enable' enable_extension_name (?1 ',' enable_extension_name)* [','] ';' @enable_directive // §4.1.1
 	| 'requires' language_extension_name (?1 ',' language_extension_name)* [','] ';' @requires_directive // §4.1.2
+;
+
+global_compound_declaration:
+    '{' (attribute_list global_compound_declaration_item)* '}'
+;
+
+global_compound_declaration_item^:
+	global_declaration | global_assert | global_compound_declaration
 ;
 
 diagnostic_control: '(' severity_control_name ',' diagnostic_rule_name [','] ')';

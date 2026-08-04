@@ -33,55 +33,51 @@ fn module_compound() {
                     True@23..27 "true"
                   ParenthesisRight@27..28 ")"
               Blankspace@28..29 " "
-              Error@29..30
+              GlobalCompoundDeclaration@29..85
                 BraceLeft@29..30 "{"
-              Blankspace@30..31 " "
-              AssertStatement@31..49
-                ConstantAssert@31..43 "const_assert"
-                Blankspace@43..44 " "
-                Literal@44..48
-                  True@44..48 "true"
-                Semicolon@48..49 ";"
-              Blankspace@49..50 " "
-              FunctionDeclaration@50..61
-                Fn@50..52 "fn"
-                Blankspace@52..53 " "
-                Name@53..56
-                  Identifier@53..56 "foo"
-                FunctionParameters@56..58
-                  ParenthesisLeft@56..57 "("
-                  ParenthesisRight@57..58 ")"
-                Blankspace@58..59 " "
-                CompoundStatement@59..61
-                  BraceLeft@59..60 "{"
-                  BraceRight@60..61 "}"
-              Blankspace@61..62 " "
-              StructDeclaration@62..83
-                Struct@62..68 "struct"
-                Blankspace@68..69 " "
-                Name@69..72
-                  Identifier@69..72 "bar"
-                Blankspace@72..73 " "
-                StructBody@73..83
-                  BraceLeft@73..74 "{"
-                  Blankspace@74..75 " "
-                  StructMember@75..81
-                    Name@75..76
-                      Identifier@75..76 "x"
-                    Colon@76..77 ":"
-                    Blankspace@77..78 " "
-                    TypeSpecifier@78..81
-                      Path@78..81
-                        Identifier@78..81 "u32"
-                  Blankspace@81..82 " "
-                  BraceRight@82..83 "}"
-              Blankspace@83..84 " "
-              Error@84..85
+                Blankspace@30..31 " "
+                AssertStatement@31..49
+                  ConstantAssert@31..43 "const_assert"
+                  Blankspace@43..44 " "
+                  Literal@44..48
+                    True@44..48 "true"
+                  Semicolon@48..49 ";"
+                Blankspace@49..50 " "
+                FunctionDeclaration@50..61
+                  Fn@50..52 "fn"
+                  Blankspace@52..53 " "
+                  Name@53..56
+                    Identifier@53..56 "foo"
+                  FunctionParameters@56..58
+                    ParenthesisLeft@56..57 "("
+                    ParenthesisRight@57..58 ")"
+                  Blankspace@58..59 " "
+                  CompoundStatement@59..61
+                    BraceLeft@59..60 "{"
+                    BraceRight@60..61 "}"
+                Blankspace@61..62 " "
+                StructDeclaration@62..83
+                  Struct@62..68 "struct"
+                  Blankspace@68..69 " "
+                  Name@69..72
+                    Identifier@69..72 "bar"
+                  Blankspace@72..73 " "
+                  StructBody@73..83
+                    BraceLeft@73..74 "{"
+                    Blankspace@74..75 " "
+                    StructMember@75..81
+                      Name@75..76
+                        Identifier@75..76 "x"
+                      Colon@76..77 ":"
+                      Blankspace@77..78 " "
+                      TypeSpecifier@78..81
+                        Path@78..81
+                          Identifier@78..81 "u32"
+                    Blankspace@81..82 " "
+                    BraceRight@82..83 "}"
+                Blankspace@83..84 " "
                 BraceRight@84..85 "}"
-              Blankspace@85..94 "\n        "
-
-            error at 29..30: invalid syntax, expected one of: 'alias', 'const', 'const_assert', 'diagnostic', 'enable', 'fn', 'import', 'let', 'override', 'requires', 'struct', 'var'
-            error at 84..85: invalid syntax, expected one of: 'alias', '@', 'const', 'const_assert', 'diagnostic', <end of file>, 'enable', 'fn', 'import', 'let', 'override', 'requires', ';', 'struct', 'var'"#]],
+              Blankspace@85..94 "\n        ""#]],
     );
 }
 
@@ -103,86 +99,78 @@ fn module_compound_nested() {
                     True@13..17 "true"
                   ParenthesisRight@17..18 ")"
               Blankspace@18..19 " "
-              Error@19..20
+              GlobalCompoundDeclaration@19..86
                 BraceLeft@19..20 "{"
-              Blankspace@20..21 " "
-              FunctionDeclaration@21..32
-                Fn@21..23 "fn"
-                Blankspace@23..24 " "
-                Name@24..27
-                  Identifier@24..27 "foo"
-                FunctionParameters@27..29
-                  ParenthesisLeft@27..28 "("
-                  ParenthesisRight@28..29 ")"
-                Blankspace@29..30 " "
-                CompoundStatement@30..32
-                  BraceLeft@30..31 "{"
-                  BraceRight@31..32 "}"
-              Blankspace@32..33 " "
-              Error@33..34
-                BraceLeft@33..34 "{"
-              Blankspace@34..35 " "
-              AttributeList@35..44
-                IfAttribute@35..44
-                  AttributeOperator@35..36 "@"
-                  If@36..38 "if"
-                  ParenthesisLeft@38..39 "("
-                  Literal@39..43
-                    True@39..43 "true"
-                  ParenthesisRight@43..44 ")"
-              Blankspace@44..45 " "
-              FunctionDeclaration@45..56
-                Fn@45..47 "fn"
-                Blankspace@47..48 " "
-                Name@48..51
-                  Identifier@48..51 "bar"
-                FunctionParameters@51..53
-                  ParenthesisLeft@51..52 "("
-                  ParenthesisRight@52..53 ")"
-                Blankspace@53..54 " "
-                CompoundStatement@54..56
-                  BraceLeft@54..55 "{"
-                  BraceRight@55..56 "}"
-              Blankspace@56..57 " "
-              Error@57..58
-                BraceRight@57..58 "}"
-              Blankspace@58..59 " "
-              AttributeList@59..68
-                IfAttribute@59..68
-                  AttributeOperator@59..60 "@"
-                  If@60..62 "if"
-                  ParenthesisLeft@62..63 "("
-                  Literal@63..67
-                    True@63..67 "true"
-                  ParenthesisRight@67..68 ")"
-              Blankspace@68..69 " "
-              Error@69..70
-                BraceLeft@69..70 "{"
-              Blankspace@70..71 " "
-              FunctionDeclaration@71..82
-                Fn@71..73 "fn"
-                Blankspace@73..74 " "
-                Name@74..77
-                  Identifier@74..77 "baz"
-                FunctionParameters@77..79
-                  ParenthesisLeft@77..78 "("
-                  ParenthesisRight@78..79 ")"
-                Blankspace@79..80 " "
-                CompoundStatement@80..82
-                  BraceLeft@80..81 "{"
-                  BraceRight@81..82 "}"
-              Blankspace@82..83 " "
-              Error@83..86
-                BraceRight@83..84 "}"
+                Blankspace@20..21 " "
+                FunctionDeclaration@21..32
+                  Fn@21..23 "fn"
+                  Blankspace@23..24 " "
+                  Name@24..27
+                    Identifier@24..27 "foo"
+                  FunctionParameters@27..29
+                    ParenthesisLeft@27..28 "("
+                    ParenthesisRight@28..29 ")"
+                  Blankspace@29..30 " "
+                  CompoundStatement@30..32
+                    BraceLeft@30..31 "{"
+                    BraceRight@31..32 "}"
+                Blankspace@32..33 " "
+                GlobalCompoundDeclaration@33..58
+                  BraceLeft@33..34 "{"
+                  Blankspace@34..35 " "
+                  AttributeList@35..44
+                    IfAttribute@35..44
+                      AttributeOperator@35..36 "@"
+                      If@36..38 "if"
+                      ParenthesisLeft@38..39 "("
+                      Literal@39..43
+                        True@39..43 "true"
+                      ParenthesisRight@43..44 ")"
+                  Blankspace@44..45 " "
+                  FunctionDeclaration@45..56
+                    Fn@45..47 "fn"
+                    Blankspace@47..48 " "
+                    Name@48..51
+                      Identifier@48..51 "bar"
+                    FunctionParameters@51..53
+                      ParenthesisLeft@51..52 "("
+                      ParenthesisRight@52..53 ")"
+                    Blankspace@53..54 " "
+                    CompoundStatement@54..56
+                      BraceLeft@54..55 "{"
+                      BraceRight@55..56 "}"
+                  Blankspace@56..57 " "
+                  BraceRight@57..58 "}"
+                Blankspace@58..59 " "
+                AttributeList@59..68
+                  IfAttribute@59..68
+                    AttributeOperator@59..60 "@"
+                    If@60..62 "if"
+                    ParenthesisLeft@62..63 "("
+                    Literal@63..67
+                      True@63..67 "true"
+                    ParenthesisRight@67..68 ")"
+                Blankspace@68..69 " "
+                GlobalCompoundDeclaration@69..84
+                  BraceLeft@69..70 "{"
+                  Blankspace@70..71 " "
+                  FunctionDeclaration@71..82
+                    Fn@71..73 "fn"
+                    Blankspace@73..74 " "
+                    Name@74..77
+                      Identifier@74..77 "baz"
+                    FunctionParameters@77..79
+                      ParenthesisLeft@77..78 "("
+                      ParenthesisRight@78..79 ")"
+                    Blankspace@79..80 " "
+                    CompoundStatement@80..82
+                      BraceLeft@80..81 "{"
+                      BraceRight@81..82 "}"
+                  Blankspace@82..83 " "
+                  BraceRight@83..84 "}"
                 Blankspace@84..85 " "
                 BraceRight@85..86 "}"
-              Blankspace@86..95 "\n        "
-
-            error at 19..20: invalid syntax, expected one of: 'alias', 'const', 'const_assert', 'diagnostic', 'enable', 'fn', 'import', 'let', 'override', 'requires', 'struct', 'var'
-            error at 33..34: invalid syntax, expected one of: 'alias', '@', 'const', 'const_assert', 'diagnostic', <end of file>, 'enable', 'fn', 'import', 'let', 'override', 'requires', ';', 'struct', 'var'
-            error at 57..58: invalid syntax, expected one of: 'alias', '@', 'const', 'const_assert', 'diagnostic', <end of file>, 'enable', 'fn', 'import', 'let', 'override', 'requires', ';', 'struct', 'var'
-            error at 69..70: invalid syntax, expected one of: 'alias', 'const', 'const_assert', 'diagnostic', 'enable', 'fn', 'import', 'let', 'override', 'requires', 'struct', 'var'
-            error at 83..84: invalid syntax, expected one of: 'alias', '@', 'const', 'const_assert', 'diagnostic', <end of file>, 'enable', 'fn', 'import', 'let', 'override', 'requires', ';', 'struct', 'var'"#]],
+              Blankspace@86..95 "\n        ""#]],
     );
 }
 
@@ -195,27 +183,26 @@ fn module_compound_shadow() {
         expect![[r#"
             SourceFile@0..61
               Blankspace@0..9 "\n        "
-              Error@9..10
+              GlobalCompoundDeclaration@9..32
                 BraceLeft@9..10 "{"
-              Blankspace@10..11 " "
-              ConstantDeclaration@11..30
-                Const@11..16 "const"
-                Blankspace@16..17 " "
-                Name@17..20
-                  Identifier@17..20 "foo"
-                Colon@20..21 ":"
-                Blankspace@21..22 " "
-                TypeSpecifier@22..25
-                  Path@22..25
-                    Identifier@22..25 "u32"
-                Blankspace@25..26 " "
-                Equal@26..27 "="
-                Blankspace@27..28 " "
-                Literal@28..29
-                  IntLiteral@28..29 "0"
-                Semicolon@29..30 ";"
-              Blankspace@30..31 " "
-              Error@31..32
+                Blankspace@10..11 " "
+                ConstantDeclaration@11..30
+                  Const@11..16 "const"
+                  Blankspace@16..17 " "
+                  Name@17..20
+                    Identifier@17..20 "foo"
+                  Colon@20..21 ":"
+                  Blankspace@21..22 " "
+                  TypeSpecifier@22..25
+                    Path@22..25
+                      Identifier@22..25 "u32"
+                  Blankspace@25..26 " "
+                  Equal@26..27 "="
+                  Blankspace@27..28 " "
+                  Literal@28..29
+                    IntLiteral@28..29 "0"
+                  Semicolon@29..30 ";"
+                Blankspace@30..31 " "
                 BraceRight@31..32 "}"
               Blankspace@32..33 " "
               ConstantDeclaration@33..52
@@ -234,10 +221,7 @@ fn module_compound_shadow() {
                 Literal@50..51
                   IntLiteral@50..51 "1"
                 Semicolon@51..52 ";"
-              Blankspace@52..61 "\n        "
-
-            error at 9..10: invalid syntax, expected one of: 'alias', '@', 'const', 'const_assert', 'diagnostic', <end of file>, 'enable', 'fn', 'import', 'let', 'override', 'requires', ';', 'struct', 'var'
-            error at 31..32: invalid syntax, expected one of: 'alias', '@', 'const', 'const_assert', 'diagnostic', <end of file>, 'enable', 'fn', 'import', 'let', 'override', 'requires', ';', 'struct', 'var'"#]],
+              Blankspace@52..61 "\n        ""#]],
     );
 }
 
