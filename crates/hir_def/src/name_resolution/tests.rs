@@ -30,7 +30,7 @@ fn render_modules_map_with_items(wa_fixture: &str) -> String {
 
     let mut buffer = String::new();
     for module in modules {
-        _ = writeln!(buffer, "{}", &ModPath::from(module.mod_path).to_string());
+        _ = writeln!(buffer, "{}", ModPath::from(module.mod_path));
         ItemScope::of(&database, module.file_id).dump(&mut buffer);
     }
     buffer
