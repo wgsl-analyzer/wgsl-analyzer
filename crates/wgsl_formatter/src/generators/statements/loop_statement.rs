@@ -3,16 +3,12 @@ use itertools::put_back;
 use parser::SyntaxKind;
 use syntax::{
     AstNode as _,
-    ast::{self, CompoundStatement},
+    ast::{self},
 };
 
 use crate::{
-    ast_parse::{parse_end, parse_node, parse_token},
-    generators::{
-        attributes::{AttributeLayout, gen_attributes, parse_many_attributes},
-        comments::{gen_comments, parse_many_comments_and_blankspace},
-        statements::compound_statement::gen_compound_statement,
-    },
+    ast_parse::{parse_end, parse_node_with_trivia, parse_token},
+    generators::node::gen_node_with_trivia,
     print_item_buffer::{
         PrintItemBuffer,
         spacing_request::{Request, RequestItem},
@@ -23,22 +19,16 @@ use crate::{
 pub fn gen_loop_statement(statement: &ast::LoopStatement) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = put_back(statement.syntax().children_with_tokens());
-    let item_attributes = parse_many_attributes(&mut syntax)?;
     parse_token(&mut syntax, SyntaxKind::Loop)?;
-    let comments_after_loop = parse_many_comments_and_blankspace(&mut syntax)?;
-    let item_body = parse_node::<CompoundStatement>(&mut syntax)?;
+    let item_body =
+        parse_node_with_trivia(&mut syntax).expect_kind(SyntaxKind::CompoundStatement)?;
     parse_end(&mut syntax)?;
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
-    formatted.extend(gen_attributes(
-        &item_attributes,
-        AttributeLayout::Multiline,
-    )?);
     formatted.push_sc(sc!("loop"));
-    formatted.extend(gen_comments(&comments_after_loop));
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.extend(gen_compound_statement(&item_body)?);
+    formatted.extend(gen_node_with_trivia(&item_body)?);
     formatted.request(Request::expect(RequestItem::LineBreak));
 
     Ok(formatted)
