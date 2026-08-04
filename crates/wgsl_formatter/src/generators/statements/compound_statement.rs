@@ -3,21 +3,13 @@ use itertools::{Itertools, Position, put_back};
 use parser::SyntaxKind;
 use syntax::{
     AstNode as _,
-    ast::{self, Statement},
+    ast::{self},
 };
 
 use crate::{
-    ast_parse::{
-        parse_end, parse_node_optional, parse_node_with_trivia, parse_token, parse_token_optional,
-    },
+    ast_parse::{parse_end, parse_node_with_trivia, parse_token},
     context_policies::collapse_one_liner_compound_statement_policy,
-    generators::{
-        attributes::{AttributeLayout, gen_attributes, parse_many_attributes},
-        comments::{Comment, gen_comment, parse_comment_optional},
-        node::gen_node_with_trivia,
-        statements::gen_statement_maybe_semicolon,
-    },
-    helpers::{LineSpacing, gen_line_spacing, parse_line_spacing},
+    generators::node::gen_node_with_trivia,
     multiline_group::MultilineGroup,
     print_item_buffer::{
         PrintItemBuffer,
@@ -60,7 +52,6 @@ pub fn gen_compound_statement(
 
     let body_empty = items.iter().all(NodeWithTrivia::is_whitespace);
 
-    dbg!(&items);
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
 

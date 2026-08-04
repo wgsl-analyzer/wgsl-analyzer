@@ -85,8 +85,7 @@ pub fn format_comments_in_var_decl() {
         }",
         expect![[r#"
             fn main() {
-                /* 0 */
-                var /* 1 */ a /* 2 */ = /* 3 */ 1 /* 4 */; /* 5 */
+                /* 0 */ var /* 1 */ a /* 2 */ = /* 3 */ 1 /* 4 */; /* 5 */
             }
         "#]],
         expect![[r#"
