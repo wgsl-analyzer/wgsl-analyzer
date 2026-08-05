@@ -20,7 +20,9 @@ use rustc_hash::FxHasher;
 use salsa::{Durability, Setter as _};
 use triomphe::Arc;
 
-pub use crate::editioned_file_id::{EditionedFileId, FileExtension, ExtensionsConfig, RawEditionedFileId};
+pub use crate::editioned_file_id::{
+    EditionedFileId, ExtensionsConfig, FileExtension, RawEditionedFileId,
+};
 pub use input::{SourceRoot, SourceRootId};
 pub use salsa;
 pub use salsa_macros;
