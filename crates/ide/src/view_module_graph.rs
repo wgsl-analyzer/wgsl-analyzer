@@ -4,7 +4,7 @@ use hir_def::{
     FxIndexMap,
     item_tree::Name,
     mod_path::{AbsoluteModPath, ModPath, PathKind},
-    name_resolution::{ModulesMap, modules_map_query},
+    name_resolution::ModulesMap,
 };
 use ide_db::{FxHashMap, RootDatabase};
 use itertools::Itertools as _;
@@ -27,7 +27,7 @@ pub(crate) fn view_module_graph(
 ) -> Option<String> {
     // TODO: This only renders the children. It should render an edge for each import and inline usage of another module.
     let package = file_package(database, file_id)?;
-    let modules_to_render = modules_map_query(database, package);
+    let modules_to_render = ModulesMap::of(database, package);
     let graph = DotModuleGraph::new(database, modules_to_render);
 
     let mut dot = Vec::new();

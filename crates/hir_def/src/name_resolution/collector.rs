@@ -9,8 +9,9 @@ use crate::{
     item_tree::{FlatImport, ImportStatement, ItemTree, ModuleItemId, Name},
     mod_path::{AbsoluteModPath, ModPath, PathKind},
     name_resolution::{
+        ModulesMap,
         diagnostics::{self, DefDiagnostic},
-        modules_map_query, resolve_module,
+        resolve_module,
     },
     visibility::Visibility,
 };
@@ -272,7 +273,7 @@ impl ModCollector<'_> {
         if item.is_some() {
             Ok(item)
         } else {
-            let modules_map = modules_map_query(self.database, package);
+            let modules_map = ModulesMap::of(self.database, package);
             if modules_map.modules.contains_key(path) {
                 Ok(None)
             } else {

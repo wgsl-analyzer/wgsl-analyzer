@@ -1,4 +1,5 @@
-use base_db::{EditionedFileId, Package, SourceDatabase as _};
+use base_db::{EditionedFileId, FileExtension, Package, SourceDatabase as _};
+use indexmap::map::Entry;
 
 use crate::{
     FxIndexMap, database::DefDatabase, item_scope::ItemScope, item_tree::Name,
@@ -22,8 +23,18 @@ pub struct ModuleData {
     pub file: Option<EditionedFileId>,
 }
 
-#[salsa_macros::tracked(returns(ref))]
-pub fn modules_map_query(
+#[salsa::tracked]
+impl ModulesMap {
+    #[salsa::tracked(returns(ref))]
+    pub fn of(
+        database: &dyn DefDatabase,
+        package: Package,
+    ) -> ModulesMap {
+        modules_map_query(database, package)
+    }
+}
+
+fn modules_map_query(
     database: &dyn DefDatabase,
     package: Package,
 ) -> ModulesMap {
@@ -33,14 +44,15 @@ pub fn modules_map_query(
     let base_modules: Vec<_> = source_root
         .iter()
         .filter_map(|file_id| {
-            let (name, extension) = source_root.path_for_file(file_id)?.name_and_extension()?;
-            let file_id = EditionedFileId::try_with_extension(database, file_id, extension?)?;
+            let extension = FileExtension::from_file(&source_root, file_id).ok()?;
+            let file_id = EditionedFileId::from_file_with_extension(database, file_id, extension);
             let mod_path = AbsoluteModPath::for_file(database, package, file_id)?;
             Some((
                 mod_path,
                 ModuleData {
                     file: Some(file_id),
                 },
+                extension,
             ))
         })
         .collect();
@@ -49,12 +61,13 @@ pub fn modules_map_query(
     let mut modules = FxIndexMap::default();
     modules.insert(AbsoluteModPath::new_root(), ModuleData { file: None });
 
-    for (module_path, module) in base_modules {
-        let previous_module = modules.insert(module_path.clone(), module);
-        if let Some(previous_module) = previous_module
-            && let Some(previous_file) = previous_module.file
-        {
-            tracing::error!("Module with path {module_path} has a conflict.");
+    for (module_path, module, extension) in base_modules {
+        // Insert modules, making sure to shadow WGSL files
+        let is_empty = modules
+            .get(&module_path)
+            .is_none_or(|module| module.file.is_none());
+        if is_empty || extension == FileExtension::Wesl {
+            modules.insert(module_path.clone(), module);
         }
 
         let mut parent_path = module_path;

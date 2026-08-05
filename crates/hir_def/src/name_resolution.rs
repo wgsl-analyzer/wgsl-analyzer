@@ -9,7 +9,7 @@ use base_db::{EditionedFileId, Package};
 pub use collector::collect_module;
 pub use diagnostics::{DefDiagnostic, DefDiagnosticKind};
 use itertools::Itertools as _;
-pub use modules_map::{ModuleData, ModulesMap, modules_map_query};
+pub use modules_map::{ModuleData, ModulesMap};
 
 use crate::{database::DefDatabase, item_tree::Name};
 

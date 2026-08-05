@@ -91,13 +91,9 @@ const A = 5;
         expect![[r#"
             package::shaders
             package::shaders::bar
-            - const WGSL
-            package::shaders::bar
             - const A
             package::shaders::foo
             - const A
-            package::shaders::foo
-            - const WGSL
         "#]],
     );
 }

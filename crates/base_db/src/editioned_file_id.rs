@@ -77,52 +77,36 @@ impl EditionedFileId {
         database: &dyn SourceDatabase,
         file_id: FileId,
     ) -> Self {
-        Self::try_from_file(database, file_id).unwrap_or_else(|error| {
-            tracing::error!("{error}");
-            Self::new_unchecked(database, file_id, Edition::DEFAULT)
-        })
-    }
-
-    pub fn try_from_file(
-        database: &dyn SourceDatabase,
-        file_id: FileId,
-    ) -> Result<Self, InvalidFileError> {
         let source_root = database
             .source_root(database.file_source_root(file_id).source_root_id(database))
             .source_root(database);
 
-        let extension = source_root
-            .path_for_file(file_id)
-            .ok_or(InvalidFileError::MissingPath)?
-            .name_and_extension()
-            .ok_or(InvalidFileError::MissingName)?
-            .1
-            .ok_or(InvalidFileError::MissingExtension)?;
+        let extension = match FileExtension::from_file(&source_root, file_id) {
+            Ok(extension) => extension,
+            Err(error) => {
+                tracing::error!("{error}");
+                return Self::new_unchecked(database, file_id, Edition::DEFAULT);
+            },
+        };
 
-        Self::try_with_extension(database, file_id, extension)
-            .ok_or_else(|| InvalidFileError::InvalidExtension(extension.to_owned()))
+        Self::from_file_with_extension(database, file_id, extension)
     }
 
-    pub fn try_with_extension(
+    pub fn from_file_with_extension(
         database: &dyn SourceDatabase,
         file_id: FileId,
-        extension: &str,
-    ) -> Option<Self> {
+        extension: FileExtension,
+    ) -> Self {
         match extension {
-            "wgsl" => Some(Self::new_unchecked(database, file_id, Edition::DEFAULT)),
-            "wesl" => {
+            FileExtension::Wgsl => Self::new_unchecked(database, file_id, Edition::DEFAULT),
+            FileExtension::Wesl => {
                 if let Some(package) = file_package(database, file_id) {
-                    Some(Self::new_unchecked(
-                        database,
-                        file_id,
-                        package.data(database).edition,
-                    ))
+                    Self::new_unchecked(database, file_id, package.data(database).edition)
                 } else {
                     // Assume latest WESL for standalone files
-                    Some(Self::new_unchecked(database, file_id, Edition::LATEST))
+                    Self::new_unchecked(database, file_id, Edition::LATEST)
                 }
             },
-            _ => None,
         }
     }
 
@@ -148,6 +132,33 @@ impl EditionedFileId {
         database: &dyn Database,
     ) -> RawEditionedFileId {
         self.field(database)
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum FileExtension {
+    Wgsl,
+    Wesl,
+}
+
+impl FileExtension {
+    pub fn from_file(
+        source_root: &SourceRoot,
+        file_id: FileId,
+    ) -> Result<Self, InvalidFileError> {
+        let extension = source_root
+            .path_for_file(file_id)
+            .ok_or(InvalidFileError::MissingPath)?
+            .name_and_extension()
+            .ok_or(InvalidFileError::MissingName)?
+            .1
+            .ok_or(InvalidFileError::MissingExtension)?;
+
+        match extension {
+            "wgsl" => Ok(Self::Wgsl),
+            "wesl" => Ok(Self::Wesl),
+            other => Err(InvalidFileError::InvalidExtension(other.to_owned())),
+        }
     }
 }
 

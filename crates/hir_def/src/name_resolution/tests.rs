@@ -10,35 +10,29 @@ use test_fixture::WithFixture as _;
 use crate::{
     item_scope::ItemScope,
     mod_path::{AbsoluteModPath, ModPath},
+    name_resolution::ModulesMap,
     test_db::TestDatabase,
 };
 
 fn render_modules_map_with_items(wa_fixture: &str) -> String {
     let database = TestDatabase::with_files(wa_fixture);
     let package = database.fetch_test_package();
-    let source_root = package.data(&database).source_root(&database);
-    let modules: Vec<_> = source_root
+    let modules_map = ModulesMap::of(&database, package);
+    let sorted_modules: Vec<_> = modules_map
+        .modules
         .iter()
-        .filter_map(|file_id| {
-            let (name, extension) = source_root.path_for_file(file_id)?.name_and_extension()?;
-            let file_id = EditionedFileId::try_with_extension(&database, file_id, extension?)?;
-            let mod_path = AbsoluteModPath::for_file(&database, package, file_id)?;
-            Some(ModuleData { file_id, mod_path })
-        })
-        .sorted_by(|module_a, module_b| module_a.mod_path.cmp(&module_b.mod_path))
+        .sorted_by(|(path_a, _), (path_b, _)| path_a.cmp(&path_b))
         .collect();
 
     let mut buffer = String::new();
-    for module in modules {
-        _ = writeln!(buffer, "{}", ModPath::from(module.mod_path));
-        ItemScope::of(&database, module.file_id).dump(&mut buffer);
+    for (module_path, module) in sorted_modules {
+        let Some(file_id) = module.file else {
+            continue;
+        };
+        _ = writeln!(buffer, "{module_path}");
+        ItemScope::of(&database, file_id).dump(&mut buffer);
     }
     buffer
-}
-
-struct ModuleData {
-    file_id: EditionedFileId,
-    mod_path: AbsoluteModPath,
 }
 
 #[expect(clippy::needless_pass_by_value, reason = "matches expect! macro")]
