@@ -168,7 +168,7 @@ import super::super::bar;
 }
 
 #[test]
-fn import_name_conflict() {
+fn name_conflict_with_const() {
     check(
         r#"
 //- /package.wesl edition:2026_pre
@@ -182,6 +182,28 @@ const foo = 5;
             package
             - path foo (import)
             - const foo
+            error: name conflict for foo
+            package::bar
+            - const foo
+        "#]],
+    );
+}
+
+#[test]
+fn name_conflict_with_import() {
+    check(
+        r#"
+//- /package.wesl edition:2026_pre
+import package::bar::{foo, foo};
+
+//- /bar.wesl
+const foo = 5;
+"#,
+        expect![[r#"
+            package
+            - path foo (import)
+            - const foo (import)
+            error: name conflict for foo
             error: name conflict for foo
             package::bar
             - const foo
