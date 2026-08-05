@@ -21,7 +21,7 @@ fn render_modules_map_with_items(wa_fixture: &str) -> String {
     let sorted_modules: Vec<_> = modules_map
         .modules
         .iter()
-        .sorted_by(|(path_a, _), (path_b, _)| path_a.cmp(&path_b))
+        .sorted_by(|(path_a, _), (path_b, _)| path_a.cmp(path_b))
         .collect();
 
     let mut buffer = String::new();
