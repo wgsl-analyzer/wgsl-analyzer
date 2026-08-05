@@ -85,7 +85,7 @@ impl LoadPackageTask {
                     format!("unable to parse contents of manifest '{manifest_path}'")
                 })?;
                 let root = manifest_path.parent().join(&wesl_toml.root);
-                if std::fs::metadata(&root)?.is_file() {
+                if !std::fs::metadata(&root)?.is_dir() {
                     return Err(std::io::Error::new(
                         std::io::ErrorKind::InvalidInput,
                         "wesl.toml root must point at a folder",
