@@ -136,14 +136,12 @@ impl PackageGraph {
         });
     }
 
-    pub fn retain_referenced(&mut self) {
+    pub fn retain_referenced(
+        &mut self,
+        roots: Vec<PackageId>,
+    ) {
         let mut seen = FxHashSet::default();
-        let mut stack: Vec<PackageId> = self
-            .packages
-            .iter()
-            .filter(|(_, package)| package.origin.is_local())
-            .map(|(id, _)| *id)
-            .collect();
+        let mut stack: Vec<PackageId> = roots;
         while let Some(id) = stack.pop() {
             let is_new = seen.insert(id);
             if !is_new {

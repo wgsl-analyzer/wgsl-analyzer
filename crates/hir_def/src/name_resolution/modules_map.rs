@@ -27,10 +27,10 @@ pub struct ModuleData {
 impl ModulesMap {
     #[salsa::tracked(returns(ref))]
     pub fn of(
-        database: &dyn DefDatabase,
+        db: &dyn DefDatabase,
         package: Package,
     ) -> ModulesMap {
-        modules_map_query(database, package)
+        modules_map_query(db, package)
     }
 }
 

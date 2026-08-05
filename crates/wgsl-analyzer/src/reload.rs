@@ -145,14 +145,15 @@ impl GlobalState {
     /// Cleans up the discovered packages.
     pub(crate) fn refresh_packages(&self) {
         let mut packages = self.packages.write();
-        packages.retain(|_, project| {
-            if project.origin == PackageOrigin::Local {
-                self.config.is_in_workspace(&project.manifest)
-            } else {
-                true
-            }
-        });
-        packages.retain_referenced();
+
+        let roots = packages
+            .iter()
+            .filter(|(_, package)| {
+                package.origin.is_local() && self.config.is_in_workspace(&package.manifest)
+            })
+            .map(|(id, _)| id)
+            .collect();
+        packages.retain_referenced(roots);
 
         let workspace_roots = self.config.workspace_roots();
         if packages.is_empty() && !workspace_roots.is_empty() {
