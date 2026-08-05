@@ -71,7 +71,7 @@ impl TryFrom<ModuleDefinitionId> for ResolveKind {
 pub enum ScopeDef {
     Local(BindingId),
     ModuleDefinition(ModuleDefinitionId),
-    ModulePath(AbsoluteModPath),
+    Module,
 }
 
 #[derive(Clone)]
@@ -160,7 +160,7 @@ impl Resolver {
                     .import_paths
                     .iter()
                     .for_each(|(name, item)| {
-                        callback(name, ScopeDef::ModulePath(item.path.clone()));
+                        callback(name, ScopeDef::Module);
                     });
             },
             Scope::Builtin => {
