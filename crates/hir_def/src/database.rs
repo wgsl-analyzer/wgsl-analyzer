@@ -25,56 +25,7 @@ use crate::{
 };
 
 #[query_group::query_group(DefDatabaseStorage)]
-pub trait DefDatabase: InternDatabase + SourceDatabase {}
-
-#[query_group::query_group(InternDatabaseStorage)]
-pub trait InternDatabase: SourceDatabase {
-    #[salsa::interned]
-    fn intern_import(
-        &self,
-        location: Location<ast::ImportStatement>,
-    ) -> ImportId;
-    #[salsa::interned]
-    fn intern_directive(
-        &self,
-        location: Location<ast::Directive>,
-    ) -> DirectiveId;
-    #[salsa::interned]
-    fn intern_function(
-        &self,
-        location: Location<ast::FunctionDeclaration>,
-    ) -> FunctionId;
-    #[salsa::interned]
-    fn intern_global_variable(
-        &self,
-        location: Location<ast::VariableDeclaration>,
-    ) -> GlobalVariableId;
-    #[salsa::interned]
-    fn intern_global_constant(
-        &self,
-        location: Location<ast::ConstantDeclaration>,
-    ) -> GlobalConstantId;
-    #[salsa::interned]
-    fn intern_override(
-        &self,
-        location: Location<ast::OverrideDeclaration>,
-    ) -> OverrideId;
-    #[salsa::interned]
-    fn intern_struct(
-        &self,
-        location: Location<ast::StructDeclaration>,
-    ) -> StructId;
-    #[salsa::interned]
-    fn intern_type_alias(
-        &self,
-        location: Location<ast::TypeAliasDeclaration>,
-    ) -> TypeAliasId;
-    #[salsa::interned]
-    fn intern_global_assert_statement(
-        &self,
-        location: Location<ast::AssertStatement>,
-    ) -> GlobalAssertStatementId;
-}
+pub trait DefDatabase: SourceDatabase {}
 
 /// `Location` points to an AST node in any file. Corresponds to `AstId` in Rust-Analyzer.
 ///
@@ -82,66 +33,21 @@ pub trait InternDatabase: SourceDatabase {
 pub type Location<T> = InFile<FileAstId<T>>;
 
 macro_rules! impl_intern {
-    ($id:ident, $loc:ty, $intern:ident, $lookup:ident) => {
+    ($id:ident, $loc:ty) => {
         impl_intern_key!($id, $loc);
-        impl_intern_lookup!(DefDatabase, $id, $loc, $intern, $lookup);
+        impl_intern_lookup!($id, $loc);
     };
 }
 
-impl_intern!(
-    ImportId,
-    Location<ast::ImportStatement>,
-    intern_import,
-    lookup_intern_import
-);
-impl_intern!(
-    DirectiveId,
-    Location<ast::Directive>,
-    intern_directive,
-    lookup_intern_directive
-);
-impl_intern!(
-    FunctionId,
-    Location<ast::FunctionDeclaration>,
-    intern_function,
-    lookup_intern_function
-);
-impl_intern!(
-    GlobalVariableId,
-    Location<ast::VariableDeclaration>,
-    intern_global_variable,
-    lookup_intern_global_variable
-);
-impl_intern!(
-    GlobalConstantId,
-    Location<ast::ConstantDeclaration>,
-    intern_global_constant,
-    lookup_intern_global_constant
-);
-impl_intern!(
-    OverrideId,
-    Location<ast::OverrideDeclaration>,
-    intern_override,
-    lookup_intern_override
-);
-impl_intern!(
-    StructId,
-    Location<ast::StructDeclaration>,
-    intern_struct,
-    lookup_intern_struct
-);
-impl_intern!(
-    TypeAliasId,
-    Location<ast::TypeAliasDeclaration>,
-    intern_type_alias,
-    lookup_intern_type_alias
-);
-impl_intern!(
-    GlobalAssertStatementId,
-    Location<ast::AssertStatement>,
-    intern_global_assert_statement,
-    lookup_intern_global_assert_statement
-);
+impl_intern!(ImportId, Location<ast::ImportStatement>);
+impl_intern!(DirectiveId, Location<ast::Directive>);
+impl_intern!(FunctionId, Location<ast::FunctionDeclaration>);
+impl_intern!(GlobalVariableId, Location<ast::VariableDeclaration>);
+impl_intern!(GlobalConstantId, Location<ast::ConstantDeclaration>);
+impl_intern!(OverrideId, Location<ast::OverrideDeclaration>);
+impl_intern!(StructId, Location<ast::StructDeclaration>);
+impl_intern!(TypeAliasId, Location<ast::TypeAliasDeclaration>);
+impl_intern!(GlobalAssertStatementId, Location<ast::AssertStatement>);
 
 /// Module items with a body.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, salsa_macros::Supertype)]

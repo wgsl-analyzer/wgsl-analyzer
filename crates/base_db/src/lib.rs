@@ -35,6 +35,7 @@ macro_rules! impl_intern_key {
         #[salsa::interned(no_lifetime, revisions = usize::MAX)]
         #[derive(PartialOrd, Ord)]
         pub struct $id {
+            #[returns(ref)]
             pub location: $loc,
         }
 
@@ -54,49 +55,44 @@ macro_rules! impl_intern_key {
 
 #[macro_export]
 macro_rules! impl_intern_lookup {
-    ($db:ident, $id:ident, $loc:ty, $intern:ident, $lookup:ident) => {
+    ($id:ident, $loc:ty) => {
         impl base_db::Intern for $loc {
-            type Database = dyn $db;
             type ID = $id;
-
             fn intern(
                 self,
-                database: &Self::Database,
+                database: &dyn ::base_db::SourceDatabase,
             ) -> Self::ID {
-                database.$intern(self)
+                $id::new(database, self)
             }
         }
 
         impl base_db::Lookup for $id {
             type Data = $loc;
-            type Database = dyn $db;
 
-            fn lookup(
+            fn lookup<'database>(
                 &self,
-                database: &Self::Database,
-            ) -> $loc {
-                database.$lookup(*self)
+                database: &'database dyn ::base_db::SourceDatabase,
+            ) -> &'database Self::Data {
+                self.location(database)
             }
         }
     };
 }
 
 pub trait Intern {
-    type Database: ?Sized;
     type ID;
     fn intern(
         self,
-        database: &Self::Database,
+        database: &dyn SourceDatabase,
     ) -> Self::ID;
 }
 
 pub trait Lookup {
-    type Database: ?Sized;
     type Data;
-    fn lookup(
+    fn lookup<'database>(
         &self,
-        database: &Self::Database,
-    ) -> Self::Data;
+        database: &'database dyn SourceDatabase,
+    ) -> &'database Self::Data;
 }
 
 #[expect(
@@ -372,7 +368,7 @@ impl ExtensionsConfigInput {
         extensions: ExtensionsConfig,
     ) {
         Self::try_get(database)
-            .unwrap_or_else(|| ExtensionsConfigInput::new(database, ExtensionsConfig::default()))
+            .unwrap_or_else(|| Self::new(database, ExtensionsConfig::default()))
             .set_extensions(database)
             .with_durability(Durability::MEDIUM)
             .to(extensions);

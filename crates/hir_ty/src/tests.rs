@@ -14,9 +14,7 @@ use expect_test::Expect;
 use hir_def::{
     HasSource as _,
     body::{Body, BodySourceMap},
-    database::{
-        DefDatabase as _, DefinitionWithBodyId, InternDatabase as _, Location, ModuleDefinitionId,
-    },
+    database::{DefDatabase as _, DefinitionWithBodyId, Location, ModuleDefinitionId},
     expression::ExpressionId,
     expression_store::{
         ExpressionSourceMap, ExpressionStore, ExpressionStoreOwnerId, ExpressionStoreSource,

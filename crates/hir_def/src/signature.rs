@@ -58,8 +58,7 @@ impl FunctionSignature {
         db: &dyn DefDatabase,
         id: FunctionId,
     ) -> (Arc<Self>, Arc<ExpressionSourceMap>) {
-        let location = id.lookup(db);
-        let source = location.source(db);
+        let source = id.lookup(db).source(db);
         let (function_data, source_map) = lower_function(db, &source);
         (Arc::new(function_data), Arc::new(source_map))
     }
@@ -101,8 +100,7 @@ impl StructSignature {
         db: &dyn DefDatabase,
         id: StructId,
     ) -> (Arc<Self>, Arc<ExpressionSourceMap>) {
-        let location = id.lookup(db);
-        let source = location.source(db);
+        let source = id.lookup(db).source(db);
         let (struct_data, source_map) = lower_struct(db, &source);
         (Arc::new(struct_data), Arc::new(source_map))
     }
@@ -157,9 +155,7 @@ impl TypeAliasSignature {
         db: &dyn DefDatabase,
         id: TypeAliasId,
     ) -> (Arc<Self>, Arc<ExpressionSourceMap>) {
-        let location = id.lookup(db);
-        let source = location.source(db);
-
+        let source = id.lookup(db).source(db);
         let (type_alias, source_map) = lower_type_alias(db, &source);
         (Arc::new(type_alias), Arc::new(source_map))
     }
@@ -189,9 +185,7 @@ impl VariableSignature {
         db: &dyn DefDatabase,
         id: GlobalVariableId,
     ) -> (Arc<Self>, Arc<ExpressionSourceMap>) {
-        let location = db.lookup_intern_global_variable(id);
-        let source = location.source(db);
-
+        let source = id.lookup(db).source(db);
         let (global_variable, source_map) = lower_variable(db, &source);
         (Arc::new(global_variable), Arc::new(source_map))
     }
@@ -220,9 +214,7 @@ impl ConstantSignature {
         db: &dyn DefDatabase,
         id: GlobalConstantId,
     ) -> (Arc<Self>, Arc<ExpressionSourceMap>) {
-        let location = db.lookup_intern_global_constant(id);
-        let source = location.source(db);
-
+        let source = id.lookup(db).source(db);
         let (global_constant, source_map) = lower_constant(db, &source);
         (Arc::new(global_constant), Arc::new(source_map))
     }
@@ -250,9 +242,7 @@ impl OverrideSignature {
         db: &dyn DefDatabase,
         id: OverrideId,
     ) -> (Arc<Self>, Arc<ExpressionSourceMap>) {
-        let location = db.lookup_intern_override(id);
-        let source = location.source(db);
-
+        let source = id.lookup(db).source(db);
         let (global_override, source_map) = lower_override(db, &source);
         (Arc::new(global_override), Arc::new(source_map))
     }
@@ -278,9 +268,7 @@ impl AssertStatementSignature {
         db: &dyn DefDatabase,
         id: GlobalAssertStatementId,
     ) -> (Arc<Self>, Arc<ExpressionSourceMap>) {
-        let location = db.lookup_intern_global_assert_statement(id);
-        let source = location.source(db);
-
+        let source = id.lookup(db).source(db);
         let (global_assert_statement, source_map) = lower_global_assert_statement(db, &source);
         (Arc::new(global_assert_statement), Arc::new(source_map))
     }
