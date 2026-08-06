@@ -465,7 +465,6 @@ fn mod_path_super_display() {
         const fails = super::super::Foo::nya;
         ",
         expect![[r#"
-            ---
             6..9 'Foo': f32
             12..20 'f32(1.0)': f32
             16..19 '1.0': float
@@ -473,7 +472,7 @@ fn mod_path_super_display() {
             ---
             6..11 'fails': [error]
             14..36 'super:...o::nya': [error]
-            14..36 'super:...o::nya': `nya` not found in `Foo`
+            14..36 'super:...o::nya': could not find file
             14..36 'super:...o::nya': expected variable, but got type `super::super::Foo::nya`
         "#]],
     );

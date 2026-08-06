@@ -1999,11 +1999,9 @@ fn ptr_template_not_enumerant() {
         expect![[r#"
             8..12 'bar1': [error]
             18..28 'rgba8unorm': unexpected template argument, expected an address space
-            18..28 'rgba8unorm': unexpected template argument, expected an address space
             60..64 'bar2': ptr<storage, [error], read_write>
             79..83 '123i': unexpected template argument, expected a type
             110..114 'bar3': [error]
-            134..144 'rgba8unorm': unexpected template argument, expected one of: (read, read_write, write)
             134..144 'rgba8unorm': unexpected template argument, expected one of: (read, read_write, write)
             159..163 'bar4': ptr<storage, i32, read>
         "#]],
