@@ -36,18 +36,6 @@ pub trait DefDatabase: InternDatabase + SourceDatabase {
         key: DefinitionWithBodyId,
     ) -> (Arc<ExpressionStore>, Arc<ExpressionSourceMap>);
 
-    #[salsa::invoke(VariableSignature::query)]
-    fn global_var_data(
-        &self,
-        key: GlobalVariableId,
-    ) -> (Arc<VariableSignature>, Arc<ExpressionSourceMap>);
-
-    #[salsa::invoke(ConstantSignature::query)]
-    fn global_constant_data(
-        &self,
-        key: GlobalConstantId,
-    ) -> (Arc<ConstantSignature>, Arc<ExpressionSourceMap>);
-
     #[salsa::invoke(GlobalAssertStatementSignature::query)]
     fn global_assert_statement_data(
         &self,
@@ -56,12 +44,6 @@ pub trait DefDatabase: InternDatabase + SourceDatabase {
         Arc<GlobalAssertStatementSignature>,
         Arc<ExpressionSourceMap>,
     );
-
-    #[salsa::invoke(OverrideSignature::query)]
-    fn override_data(
-        &self,
-        key: OverrideId,
-    ) -> (Arc<OverrideSignature>, Arc<ExpressionSourceMap>);
 
     #[salsa::invoke(AttributesWithOwner::attrs_query)]
     fn attrs(
@@ -80,20 +62,20 @@ fn signature_with_source_map(
             (data.store.clone(), source_map.clone())
         },
         DefinitionWithBodyId::GlobalVariable(id) => {
-            let (data, source_map) = database.global_var_data(id);
-            (data.store.clone(), source_map)
+            let (data, source_map) = VariableSignature::with_source_map(database, id);
+            (data.store.clone(), source_map.clone())
         },
         DefinitionWithBodyId::GlobalConstant(id) => {
-            let (data, source_map) = database.global_constant_data(id);
-            (data.store.clone(), source_map)
+            let (data, source_map) = ConstantSignature::with_source_map(database, id);
+            (data.store.clone(), source_map.clone())
         },
         DefinitionWithBodyId::Override(id) => {
-            let (data, source_map) = database.override_data(id);
-            (data.store.clone(), source_map)
+            let (data, source_map) = OverrideSignature::with_source_map(database, id);
+            (data.store.clone(), source_map.clone())
         },
         DefinitionWithBodyId::GlobalAssertStatement(id) => {
             let (data, source_map) = database.global_assert_statement_data(id);
-            (data.store.clone(), source_map)
+            (data.store.clone(), source_map.clone())
         },
     }
 }

@@ -174,15 +174,25 @@ pub struct VariableSignature {
     pub template_parameters: Vec<ExpressionId>,
 }
 
+#[salsa::tracked]
 impl VariableSignature {
-    pub fn query(
-        database: &dyn DefDatabase,
-        variable: GlobalVariableId,
-    ) -> (Arc<Self>, Arc<ExpressionSourceMap>) {
-        let location = database.lookup_intern_global_variable(variable);
-        let source = location.source(database);
+    #[salsa::tracked(returns(deref))]
+    pub fn of(
+        db: &dyn DefDatabase,
+        id: GlobalVariableId,
+    ) -> Arc<Self> {
+        Self::with_source_map(db, id).0.clone()
+    }
 
-        let (global_variable, source_map) = lower_variable(database, &source);
+    #[salsa::tracked(returns(ref))]
+    pub fn with_source_map(
+        db: &dyn DefDatabase,
+        id: GlobalVariableId,
+    ) -> (Arc<Self>, Arc<ExpressionSourceMap>) {
+        let location = db.lookup_intern_global_variable(id);
+        let source = location.source(db);
+
+        let (global_variable, source_map) = lower_variable(db, &source);
         (Arc::new(global_variable), Arc::new(source_map))
     }
 }
@@ -195,16 +205,58 @@ pub struct ConstantSignature {
     pub r#type: Option<TypeSpecifierId>,
 }
 
+#[salsa::tracked]
 impl ConstantSignature {
-    pub fn query(
-        database: &dyn DefDatabase,
-        constant: GlobalConstantId,
-    ) -> (Arc<Self>, Arc<ExpressionSourceMap>) {
-        let location = database.lookup_intern_global_constant(constant);
-        let source = location.source(database);
+    #[salsa::tracked(returns(deref))]
+    pub fn of(
+        db: &dyn DefDatabase,
+        id: GlobalConstantId,
+    ) -> Arc<Self> {
+        Self::with_source_map(db, id).0.clone()
+    }
 
-        let (global_constant, source_map) = lower_constant(database, &source);
+    #[salsa::tracked(returns(ref))]
+    pub fn with_source_map(
+        db: &dyn DefDatabase,
+        id: GlobalConstantId,
+    ) -> (Arc<Self>, Arc<ExpressionSourceMap>) {
+        let location = db.lookup_intern_global_constant(id);
+        let source = location.source(db);
+
+        let (global_constant, source_map) = lower_constant(db, &source);
         (Arc::new(global_constant), Arc::new(source_map))
+    }
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct OverrideSignature {
+    pub name: Name,
+    pub store: Arc<ExpressionStore>,
+    pub r#type: Option<TypeSpecifierId>,
+}
+
+#[salsa::tracked]
+impl OverrideSignature {
+    #[salsa::tracked(returns(deref))]
+    pub fn of(
+        database: &dyn DefDatabase,
+        override_declaration: OverrideId,
+    ) -> Arc<Self> {
+        Self::with_source_map(database, override_declaration)
+            .0
+            .clone()
+    }
+
+    #[salsa::tracked(returns(ref))]
+    pub fn with_source_map(
+        db: &dyn DefDatabase,
+        id: OverrideId,
+    ) -> (Arc<Self>, Arc<ExpressionSourceMap>) {
+        let location = db.lookup_intern_override(id);
+        let source = location.source(db);
+
+        let (global_override, source_map) = lower_override(db, &source);
+        (Arc::new(global_override), Arc::new(source_map))
     }
 }
 
@@ -223,25 +275,5 @@ impl GlobalAssertStatementSignature {
 
         let (global_constant, source_map) = lower_global_assert_statement(database, &source);
         (Arc::new(global_constant), Arc::new(source_map))
-    }
-}
-
-#[derive(Debug, PartialEq, Eq)]
-pub struct OverrideSignature {
-    pub name: Name,
-    pub store: Arc<ExpressionStore>,
-    pub r#type: Option<TypeSpecifierId>,
-}
-
-impl OverrideSignature {
-    pub fn query(
-        database: &dyn DefDatabase,
-        override_declaration: OverrideId,
-    ) -> (Arc<Self>, Arc<ExpressionSourceMap>) {
-        let location = database.lookup_intern_override(override_declaration);
-        let source = location.source(database);
-
-        let (global_override, source_map) = lower_override(database, &source);
-        (Arc::new(global_override), Arc::new(source_map))
     }
 }
