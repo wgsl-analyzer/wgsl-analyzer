@@ -170,6 +170,7 @@ impl TestDatabase {
                 salsa::EventKind::DidValidateMemoizedValue { .. }
                 | salsa::EventKind::WillBlockOn { .. }
                 | salsa::EventKind::WillIterateCycle { .. }
+                | salsa::EventKind::DidFinalizeCycle { .. }
                 | salsa::EventKind::WillCheckCancellation
                 | salsa::EventKind::DidSetCancellationFlag
                 | salsa::EventKind::WillDiscardStaleOutput { .. }
