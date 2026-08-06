@@ -9,7 +9,7 @@
 use std::fmt;
 
 use base_db::{EditionedFileId, Lookup as _};
-use hir_def::signature::StructSignature;
+use hir_def::signature::{StructSignature, TypeAliasSignature};
 use hir_def::{
     InFile,
     database::{
@@ -118,7 +118,7 @@ fn type_alias_type(
     database: &dyn HirDatabase,
     type_alias: TypeAliasId,
 ) -> Arc<(Type, Vec<InferenceDiagnostic>)> {
-    let data = database.type_alias_data(type_alias).0;
+    let data = TypeAliasSignature::of(database, type_alias);
 
     let file_id = type_alias.lookup(database).file_id;
     let module_info = ItemScope::of(database, file_id);

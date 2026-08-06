@@ -20,7 +20,7 @@ use hir_def::{
     item_tree::{self, ItemTree, ModuleItemId, Name},
     mod_path::PathKind,
     resolver::{ResolveKind, Resolver},
-    signature::{FieldId, FunctionSignature, ParameterId, StructSignature},
+    signature::{FieldId, FunctionSignature, ParameterId, StructSignature, TypeAliasSignature},
 };
 use hir_ty::{infer::InferenceResult, ty::Type};
 use smallvec::SmallVec;
@@ -851,7 +851,8 @@ impl Module {
                 },
                 ModuleDef::TypeAlias(type_alias) => {
                     let file = type_alias.id.lookup(database).file_id;
-                    let (_, signature_map) = database.type_alias_data(type_alias.id);
+                    let (_, signature_map) =
+                        TypeAliasSignature::with_source_map(database, type_alias.id);
                     let diagnostics = &database.type_alias_type(type_alias.id).1;
                     for diagnostic in diagnostics {
                         if diagnostic.source != ExpressionStoreSource::Signature {
