@@ -8,8 +8,8 @@ use syntax::{
 
 use crate::{
     ast_parse::{
-        FilterAction, parse_end, parse_node, parse_node_optional, parse_node_with_trivia,
-        parse_node_with_trivia_filter, parse_token, parse_token_optional,
+        FilterAction, parse_end, parse_node, parse_node_optional, parse_node_with_trivia_filter,
+        parse_node_with_trivia_filter_2, parse_token, parse_token_optional,
     },
     generators::node::{
         gen_node_content, gen_node_preceding_trivia, gen_node_succeeding_trivia,
@@ -78,19 +78,22 @@ pub fn gen_struct_body(body: &ast::StructBody) -> FormatDocumentResult<PrintItem
     let mut item_members = Vec::new();
 
     loop {
-        let mut item = parse_node_with_trivia_filter(&mut syntax, |node| match node.kind() {
-            SyntaxKind::StructMember => Some(FilterAction::Content),
-            SyntaxKind::Comma => Some(FilterAction::Ignored),
-            SyntaxKind::Blankspace
-                if matches!(
-                    read_blankspace(node),
-                    Some(NextGenLineSpacing::EmptyLine(_))
-                ) =>
-            {
-                Some(FilterAction::Stop)
+        let mut item = parse_node_with_trivia_filter_2(
+            &mut syntax,
+            |node| None,
+            |node| match node.kind() {
+                SyntaxKind::Comma => Some(FilterAction::Ignored),
+                SyntaxKind::Blankspace
+                    if matches!(
+                        read_blankspace(node),
+                        Some(NextGenLineSpacing::EmptyLine(_))
+                    ) =>
+                {
+                    Some(FilterAction::Stop)
+                },
+                _ => None,
             },
-            _ => None,
-        });
+        );
 
         // TODO This should be absorbed into the parse_node
         if item
@@ -109,6 +112,8 @@ pub fn gen_struct_body(body: &ast::StructBody) -> FormatDocumentResult<PrintItem
             item.node = NodeWithTriviaContent::NoContent;
         }
 
+        dbg!(&item);
+
         let is_end = item.is_end();
         if !item.is_whitespace() {
             item_members.push(item);
@@ -117,8 +122,6 @@ pub fn gen_struct_body(body: &ast::StructBody) -> FormatDocumentResult<PrintItem
             break;
         }
     }
-
-    dbg!(&item_members);
 
     parse_token(&mut syntax, SyntaxKind::BraceRight)?;
     parse_end(&mut syntax)?;

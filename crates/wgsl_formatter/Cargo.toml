@@ -39,3 +39,6 @@ workspace = true
 [[bench]]
 name = "large_file"
 harness = false
+
+[profile.dev]
+opt-level = 0

@@ -7,16 +7,8 @@ use syntax::{
 };
 
 use crate::{
-    ast_parse::{
-        BareSyntaxKind, FilterAction, UntilSyntaxKind, parse_end, parse_node,
-        parse_node_with_trivia, parse_node_with_trivia_filter, parse_node_with_trivia_until,
-        parse_token,
-    },
-    generators::{
-        comments::{gen_comments, parse_many_comments_and_blankspace},
-        expressions::gen_expression,
-        node::gen_node_with_trivia,
-    },
+    ast_parse::{BareSyntaxKind, UntilSyntaxKind, parse_end, parse_node_with_trivia_until},
+    generators::node::gen_node_with_trivia,
     multiline_group::MultilineGroup,
     print_item_buffer::PrintItemBuffer,
     reporting::FormatDocumentResult,
@@ -40,13 +32,6 @@ pub fn gen_index_expression(
         parse_node_with_trivia_until(&mut syntax, BareSyntaxKind(SyntaxKind::BracketRight))
             .expect_kind(SyntaxKind::BracketRight)?;
     parse_end(&mut syntax)?;
-
-    dbg!(
-        &item_array_expr,
-        &item_bracket_left,
-        &item_actual_index,
-        &item_bracket_right
-    );
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();

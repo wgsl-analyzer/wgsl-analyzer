@@ -11,8 +11,8 @@ use syntax::{
 
 use crate::{
     ast_parse::{
-        parse_end, parse_node, parse_node_optional, parse_node_with_trivia, parse_token,
-        parse_token_optional,
+        IgnoreBlankspace, NoTrivia, parse_end, parse_node, parse_node_optional,
+        parse_node_with_trivia_until, parse_token, parse_token_optional,
     },
     generators::{
         attributes::{AttributeLayout, gen_attributes, parse_many_attributes},
@@ -34,10 +34,11 @@ pub fn gen_switch_statement(
 ) -> Result<PrintItemBuffer, FormatDocumentError> {
     // ==== Parse ====
     let mut syntax = put_back(statement.syntax().children_with_tokens());
-    parse_token(&mut syntax, SyntaxKind::Switch)?;
-    let item_expression =
-        parse_node_with_trivia(&mut syntax).expect_castable_kind::<Expression>()?;
-    let item_body = parse_node_with_trivia(&mut syntax).expect_castable_kind::<SwitchBody>()?;
+    parse_node_with_trivia_until(&mut syntax, NoTrivia).expect_kind(SyntaxKind::Switch)?;
+    let item_expression = parse_node_with_trivia_until(&mut syntax, IgnoreBlankspace)
+        .expect_castable_kind::<Expression>()?;
+    let item_body = parse_node_with_trivia_until(&mut syntax, IgnoreBlankspace)
+        .expect_castable_kind::<SwitchBody>()?;
     parse_end(&mut syntax)?;
 
     // ==== Format ====
@@ -62,7 +63,7 @@ pub fn gen_switch_body(statement: &SwitchBody) -> Result<PrintItemBuffer, Format
     let mut item_cases = Vec::new();
 
     loop {
-        let mut item = parse_node_with_trivia(&mut syntax);
+        let mut item = parse_node_with_trivia_until(&mut syntax, IgnoreBlankspace);
 
         if item
             .kind()
@@ -124,7 +125,7 @@ pub fn gen_switch_body_case(
     let mut syntax = put_back(statement.syntax().children_with_tokens());
 
     // Either default or case
-    let item_case_keyword = parse_node_with_trivia(&mut syntax);
+    let item_case_keyword = parse_node_with_trivia_until(&mut syntax, IgnoreBlankspace);
     let kind = {
         if item_case_keyword
             .kind()
@@ -134,7 +135,7 @@ pub fn gen_switch_body_case(
                 item_default: item_case_keyword,
             }
         } else {
-            let selectors = parse_node_with_trivia(&mut syntax);
+            let selectors = parse_node_with_trivia_until(&mut syntax, IgnoreBlankspace);
 
             let mut item_case_keyword = item_case_keyword;
 
@@ -177,8 +178,8 @@ pub fn gen_switch_body_case(
 
     //let item_comments_after_selectors = parse_many_comments_and_blankspace(&mut syntax)?; TODO Verify this is unneeded
     let item_colon = parse_token_optional(&mut syntax, SyntaxKind::Colon);
-    let item_body =
-        parse_node_with_trivia(&mut syntax).expect_castable_kind::<CompoundStatement>()?;
+    let item_body = parse_node_with_trivia_until(&mut syntax, IgnoreBlankspace)
+        .expect_castable_kind::<CompoundStatement>()?;
     parse_end(&mut syntax)?;
 
     // ==== Format ====
