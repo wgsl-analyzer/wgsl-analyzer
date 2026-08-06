@@ -415,7 +415,6 @@ pub fn gen_node_succeeding_trivia(node: &NodeWithTrivia) -> FormatDocumentResult
 }
 
 pub fn gen_node_with_trivia(node: &NodeWithTrivia) -> FormatDocumentResult<PrintItemBuffer> {
-    dbg!(&node);
     let mut formatted = PrintItemBuffer::default();
 
     formatted.extend(gen_node_preceding_trivia(node)?);
