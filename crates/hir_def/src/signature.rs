@@ -261,19 +261,29 @@ impl OverrideSignature {
 }
 
 #[derive(Debug, PartialEq, Eq)]
-pub struct GlobalAssertStatementSignature {
+pub struct AssertStatementSignature {
     pub store: Arc<ExpressionStore>,
 }
 
-impl GlobalAssertStatementSignature {
-    pub fn query(
-        database: &dyn DefDatabase,
-        constant: GlobalAssertStatementId,
-    ) -> (Arc<Self>, Arc<ExpressionSourceMap>) {
-        let location = database.lookup_intern_global_assert_statement(constant);
-        let source = location.source(database);
+#[salsa::tracked]
+impl AssertStatementSignature {
+    #[salsa::tracked(returns(deref))]
+    pub fn of(
+        db: &dyn DefDatabase,
+        id: GlobalAssertStatementId,
+    ) -> Arc<Self> {
+        Self::with_source_map(db, id).0.clone()
+    }
 
-        let (global_constant, source_map) = lower_global_assert_statement(database, &source);
-        (Arc::new(global_constant), Arc::new(source_map))
+    #[salsa::tracked(returns(ref))]
+    pub fn with_source_map(
+        db: &dyn DefDatabase,
+        id: GlobalAssertStatementId,
+    ) -> (Arc<Self>, Arc<ExpressionSourceMap>) {
+        let location = db.lookup_intern_global_assert_statement(id);
+        let source = location.source(db);
+
+        let (global_assert_statement, source_map) = lower_global_assert_statement(db, &source);
+        (Arc::new(global_assert_statement), Arc::new(source_map))
     }
 }
