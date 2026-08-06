@@ -1,11 +1,3 @@
-#![expect(
-    clippy::drop_non_drop,
-    reason = "Clippy has a false positive for the query_group macro, see: https://github.com/rust-lang/rust-clippy/issues/16753"
-)]
-#![expect(
-    clippy::trailing_empty_array,
-    reason = "Clippy has a false positive for the query_group macro, see: https://github.com/rust-lang/rust-clippy/issues/16754"
-)]
 use std::fmt::Debug;
 
 use base_db::{EditionedFileId, Lookup as _, SourceDatabase, impl_intern_key, impl_intern_lookup};
@@ -37,11 +29,6 @@ pub trait DefDatabase: InternDatabase + SourceDatabase {
     /// Which language extensions are enabled.
     #[salsa::input]
     fn extensions(&self) -> ExtensionsConfig;
-
-    fn ast_id_map(
-        &self,
-        key: EditionedFileId,
-    ) -> Arc<AstIdMap>;
 
     #[salsa::invoke(ItemTree::query)]
     fn item_tree(
@@ -151,15 +138,6 @@ fn signature_with_source_map(
             (data.store.clone(), source_map)
         },
     }
-}
-
-fn ast_id_map(
-    database: &dyn DefDatabase,
-    file_id: EditionedFileId,
-) -> Arc<AstIdMap> {
-    let parsed = file_id.parse(database);
-    let map = AstIdMap::from_source(&parsed.tree());
-    Arc::new(map)
 }
 
 #[query_group::query_group(InternDatabaseStorage)]

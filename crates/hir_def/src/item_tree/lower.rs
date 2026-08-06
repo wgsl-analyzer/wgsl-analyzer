@@ -19,7 +19,7 @@ use crate::{
 pub(crate) struct Ctx<'database> {
     database: &'database dyn DefDatabase,
     file_id: EditionedFileId,
-    source_ast_id_map: Arc<AstIdMap>,
+    source_ast_id_map: &'database AstIdMap,
     pub(crate) tree: ItemTree,
     pub(crate) items: Vec<ModuleItemId>,
 }
@@ -32,7 +32,7 @@ impl<'database> Ctx<'database> {
         Self {
             database,
             file_id,
-            source_ast_id_map: database.ast_id_map(file_id),
+            source_ast_id_map: AstIdMap::of(database, file_id),
             tree: ItemTree::default(),
             items: vec![],
         }

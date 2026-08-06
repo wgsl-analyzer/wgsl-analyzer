@@ -8,7 +8,7 @@ use base_db::{EditionedFileId, Intern as _, Lookup as _};
 use diagnostics::AnyDiagnostic;
 use either::Either;
 use hir_def::{
-    HasSource as _, InFile,
+    AstIdMap, HasSource as _, InFile,
     body::{BindingId, Body, BodySourceMap},
     database::{
         DefDatabase, DefinitionWithBodyId, FunctionId, GlobalAssertStatementId, GlobalConstantId,
@@ -198,7 +198,7 @@ impl<'database> Semantics<'database> {
         &self,
         source: &InFile<ast::ImportStatement>,
     ) -> Option<ImportId> {
-        let ast_id_map = self.database.ast_id_map(source.file_id);
+        let ast_id_map = AstIdMap::of(self.database, source.file_id);
         let id = ast_id_map.try_ast_id(&source.value)?;
         Some(Location::new(source.file_id, id).intern(self.database))
     }
@@ -207,7 +207,7 @@ impl<'database> Semantics<'database> {
         &self,
         source: &InFile<ast::FunctionDeclaration>,
     ) -> Option<FunctionId> {
-        let ast_id_map = self.database.ast_id_map(source.file_id);
+        let ast_id_map = AstIdMap::of(self.database, source.file_id);
         let id = ast_id_map.try_ast_id(&source.value)?;
         Some(Location::new(source.file_id, id).intern(self.database))
     }
@@ -216,7 +216,7 @@ impl<'database> Semantics<'database> {
         &self,
         source: &InFile<ast::ConstantDeclaration>,
     ) -> Option<GlobalConstantId> {
-        let ast_id_map = self.database.ast_id_map(source.file_id);
+        let ast_id_map = AstIdMap::of(self.database, source.file_id);
         let id = ast_id_map.try_ast_id(&source.value)?;
         Some(Location::new(source.file_id, id).intern(self.database))
     }
@@ -225,7 +225,7 @@ impl<'database> Semantics<'database> {
         &self,
         source: &InFile<ast::VariableDeclaration>,
     ) -> Option<GlobalVariableId> {
-        let ast_id_map = self.database.ast_id_map(source.file_id);
+        let ast_id_map = AstIdMap::of(self.database, source.file_id);
         let id = ast_id_map.try_ast_id(&source.value)?;
         Some(Location::new(source.file_id, id).intern(self.database))
     }
@@ -234,7 +234,7 @@ impl<'database> Semantics<'database> {
         &self,
         source: &InFile<ast::OverrideDeclaration>,
     ) -> Option<OverrideId> {
-        let ast_id_map = self.database.ast_id_map(source.file_id);
+        let ast_id_map = AstIdMap::of(self.database, source.file_id);
         let id = ast_id_map.try_ast_id(&source.value)?;
         Some(Location::new(source.file_id, id).intern(self.database))
     }
@@ -243,7 +243,7 @@ impl<'database> Semantics<'database> {
         &self,
         source: &InFile<ast::TypeAliasDeclaration>,
     ) -> Option<TypeAliasId> {
-        let ast_id_map = self.database.ast_id_map(source.file_id);
+        let ast_id_map = AstIdMap::of(self.database, source.file_id);
         let id = ast_id_map.try_ast_id(&source.value)?;
         Some(Location::new(source.file_id, id).intern(self.database))
     }
@@ -252,7 +252,7 @@ impl<'database> Semantics<'database> {
         &self,
         source: &InFile<ast::StructDeclaration>,
     ) -> Option<StructId> {
-        let ast_id_map = self.database.ast_id_map(source.file_id);
+        let ast_id_map = AstIdMap::of(self.database, source.file_id);
         let id = ast_id_map.try_ast_id(&source.value)?;
         Some(Location::new(source.file_id, id).intern(self.database))
     }
@@ -261,7 +261,7 @@ impl<'database> Semantics<'database> {
         &self,
         source: &InFile<ast::AssertStatement>,
     ) -> Option<GlobalAssertStatementId> {
-        let ast_id_map = self.database.ast_id_map(source.file_id);
+        let ast_id_map = AstIdMap::of(self.database, source.file_id);
         let id = ast_id_map.try_ast_id(&source.value)?;
         Some(Location::new(source.file_id, id).intern(self.database))
     }
@@ -896,7 +896,7 @@ fn validate_identifiers(
     accumulator: &mut Vec<AnyDiagnostic>,
 ) {
     let item_tree = database.item_tree(file_id);
-    let ast_id_map = database.ast_id_map(file_id);
+    let ast_id_map = AstIdMap::of(database, file_id);
     let root = file_id.parse(database).syntax();
 
     macro_rules! validate {

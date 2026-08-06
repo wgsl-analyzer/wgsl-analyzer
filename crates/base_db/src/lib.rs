@@ -32,7 +32,7 @@ pub use vfs::{AnchoredPath, AnchoredPathBuf, FileId, VfsPath, file_set::FileSet}
 #[macro_export]
 macro_rules! impl_intern_key {
     ($id:ident, $loc:ty) => {
-        #[salsa_macros::interned(no_lifetime, revisions = usize::MAX)]
+        #[salsa::interned(no_lifetime, revisions = usize::MAX)]
         #[derive(PartialOrd, Ord)]
         pub struct $id {
             pub location: $loc,
@@ -250,24 +250,26 @@ impl Files {
     }
 }
 
-#[salsa_macros::input(debug)]
+#[salsa::input(debug)]
 pub struct FileText {
     #[returns(ref)]
     pub text: Arc<str>,
     pub file_id: vfs::FileId,
 }
 
-#[salsa_macros::input(debug)]
+#[salsa::input(debug)]
 pub struct FileSourceRootInput {
+    #[returns(copy)]
     pub source_root_id: SourceRootId,
 }
 
-#[salsa_macros::input(debug)]
+#[salsa::input(debug)]
 pub struct SourceRootInput {
+    #[returns(clone)]
     pub source_root: Arc<SourceRoot>,
 }
 
-#[salsa_macros::input(debug)]
+#[salsa::input(debug)]
 pub struct Package {
     #[returns(ref)]
     pub data: PackageData,
@@ -353,8 +355,8 @@ impl PackageDisplayName {
     }
 }
 
-#[salsa_macros::db]
-pub trait SourceDatabase: salsa::Database {
+#[salsa::db]
+pub trait SourceDatabase: salsa::Database + std::fmt::Debug {
     /// Text of the file.
     fn file_text(
         &self,
@@ -473,6 +475,7 @@ impl DbPanicContext {
 
 #[salsa::input(singleton, debug)]
 struct AllPackages {
+    #[returns(clone)]
     packages: std::sync::Arc<[Package]>,
 }
 
