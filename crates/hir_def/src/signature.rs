@@ -56,9 +56,9 @@ impl FunctionSignature {
 
     pub fn with_source_map(
         db: &dyn DefDatabase,
-        function: FunctionId,
+        id: FunctionId,
     ) -> (Arc<Self>, Arc<ExpressionSourceMap>) {
-        let location = function.lookup(db);
+        let location = id.lookup(db);
         let source = location.source(db);
         let (function_data, source_map) = lower_function(db, &source);
         (Arc::new(function_data), Arc::new(source_map))
@@ -86,17 +86,29 @@ pub struct FieldData {
     pub r#type: TypeSpecifierId,
 }
 
+#[salsa::tracked]
 impl StructSignature {
-    pub fn query(
-        database: &dyn DefDatabase,
-        function: StructId,
-    ) -> (Arc<Self>, Arc<ExpressionSourceMap>) {
-        let location = function.lookup(database);
-        let source = location.source(database);
-        let (struct_data, source_map) = lower_struct(database, &source);
-        (Arc::new(struct_data), Arc::new(source_map))
+    #[salsa::tracked(returns(deref))]
+    pub fn of(
+        db: &dyn DefDatabase,
+        id: StructId,
+    ) -> Arc<Self> {
+        Self::with_source_map(db, id).0.clone()
     }
 
+    #[salsa::tracked(returns(ref))]
+    pub fn with_source_map(
+        db: &dyn DefDatabase,
+        id: StructId,
+    ) -> (Arc<Self>, Arc<ExpressionSourceMap>) {
+        let location = id.lookup(db);
+        let source = location.source(db);
+        let (struct_data, source_map) = lower_struct(db, &source);
+        (Arc::new(struct_data), Arc::new(source_map))
+    }
+}
+
+impl StructSignature {
     #[must_use]
     pub const fn fields(&self) -> &Arena<FieldData> {
         &self.fields

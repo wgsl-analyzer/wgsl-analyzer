@@ -1,6 +1,10 @@
 use base_db::EditionedFileId;
 use expect_test::{Expect, expect};
-use hir_def::{database::{DefDatabase as _, ModuleDefinitionId}, item_tree::ItemTree};
+use hir_def::{
+    database::{DefDatabase as _, ModuleDefinitionId},
+    item_tree::ItemTree,
+    signature::StructSignature,
+};
 use salsa::Durability;
 use std::fmt::Write as _;
 use syntax::ExtensionsConfig;
@@ -64,7 +68,7 @@ impl<'db> LayoutPrinter<'db> {
                 | ModuleDefinitionId::Override(_)
                 | ModuleDefinitionId::TypeAlias(_) => (),
                 ModuleDefinitionId::Struct(id) => {
-                    let (signature, _) = self.database.struct_data(id);
+                    let signature = StructSignature::of(self.database, id);
                     let (fields, diagnostics) = &*self.database.field_types(id);
                     assert!(diagnostics.is_empty());
                     let mut fields_output = vec![];

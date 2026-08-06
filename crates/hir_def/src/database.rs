@@ -36,12 +36,6 @@ pub trait DefDatabase: InternDatabase + SourceDatabase {
         key: DefinitionWithBodyId,
     ) -> (Arc<ExpressionStore>, Arc<ExpressionSourceMap>);
 
-    #[salsa::invoke(StructSignature::query)]
-    fn struct_data(
-        &self,
-        key: StructId,
-    ) -> (Arc<StructSignature>, Arc<ExpressionSourceMap>);
-
     #[salsa::invoke(TypeAliasSignature::query)]
     fn type_alias_data(
         &self,

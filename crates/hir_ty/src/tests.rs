@@ -14,7 +14,7 @@ use expect_test::Expect;
 use hir_def::{
     HasSource as _, body::{Body, BodySourceMap}, database::{
         DefDatabase as _, DefinitionWithBodyId, InternDatabase as _, Location, ModuleDefinitionId,
-    }, expression::ExpressionId, expression_store::{ExpressionSourceMap, ExpressionStoreSource, SyntheticSyntax}, item_tree::{ItemTree, ModuleItemId, Name}, type_specifier::{self, TypeSpecifierId},
+    }, expression::ExpressionId, expression_store::{ExpressionSourceMap, ExpressionStoreSource, SyntheticSyntax}, item_tree::{ItemTree, ModuleItemId, Name}, signature::StructSignature, type_specifier::{self, TypeSpecifierId},
 };
 use itertools::Itertools as _;
 use salsa::Durability;
@@ -100,7 +100,7 @@ impl<'db> InferPrinter<'db> {
                     self.infer_with_body(DefinitionWithBodyId::Override(id), buffer);
                 },
                 ModuleDefinitionId::Struct(id) => {
-                    let (_, signature_map) = self.database.struct_data(id);
+                    let (_, signature_map) = StructSignature::with_source_map(self.database, id);
                     let (_, diagnostics) = &*self.database.field_types(id);
 
                     for diagnostic in diagnostics {

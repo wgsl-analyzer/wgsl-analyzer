@@ -11,6 +11,7 @@ use hir_def::{
     item_tree::Name,
     mod_path::PathKind,
     resolver::{ResolutionDiagnostic, ResolveKind, Resolver},
+    signature::StructSignature,
     type_specifier::TypeSpecifierId,
 };
 use wgsl_types::syntax::Enumerant;
@@ -438,7 +439,7 @@ impl<'database> WgslTypeConverter<'database> {
                 Box::new(self.to_wgsl_types(inner)),
             ),
             TypeKind::Struct(struct_id) => {
-                let data = self.database.struct_data(struct_id).0;
+                let data = StructSignature::of(self.database, struct_id);
                 let fields = &self.database.field_types(struct_id).0;
                 let name = self.intern_struct(struct_id);
                 wgsl_types::Type::Struct(Box::new(wgsl_types::ty::StructType {
