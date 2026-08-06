@@ -1,5 +1,6 @@
 use std::{iter, ops::Index};
 
+use base_db::SourceDatabase;
 use either::Either;
 use la_arena::{Arena, Idx};
 use rustc_hash::FxHashMap;
@@ -7,7 +8,7 @@ use triomphe::Arc;
 
 use super::{BindingId, Body};
 use crate::{
-    database::{DefDatabase, DefinitionWithBodyId},
+    database::DefinitionWithBodyId,
     expression::{ExpressionId, Statement, StatementId, SwitchCaseSelector},
     item_tree::Name,
 };
@@ -48,7 +49,7 @@ impl Index<ScopeId> for ExprScopes {
 impl ExprScopes {
     #[salsa::tracked(returns(ref))]
     pub fn of(
-        db: &dyn DefDatabase,
+        db: &dyn SourceDatabase,
         definition: DefinitionWithBodyId,
     ) -> Self {
         let body = Body::of(db, definition);

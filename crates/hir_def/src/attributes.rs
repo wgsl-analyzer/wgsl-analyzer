@@ -1,13 +1,13 @@
 use std::iter;
 
-use base_db::Lookup as _;
+use base_db::{Lookup as _, SourceDatabase};
 use either::Either;
 use syntax::{HasAttributes, ast};
 use triomphe::Arc;
 
 use crate::{
     HasSource as _,
-    database::{DefDatabase, FunctionId, GlobalVariableId, StructId},
+    database::{FunctionId, GlobalVariableId, StructId},
     expression::ExpressionId,
     expression_store::{
         ExpressionSourceMap, ExpressionStore, ExpressionStoreSource, lower::ExprCollector,
@@ -45,7 +45,7 @@ impl AttributeList {
 
 impl AttributeList {
     pub fn from_src(
-        database: &dyn DefDatabase,
+        database: &dyn SourceDatabase,
         source: &dyn HasAttributes,
     ) -> (Self, ExpressionSourceMap) {
         let mut collector = ExprCollector::new(database, ExpressionStoreSource::Signature);
@@ -172,7 +172,7 @@ pub struct AttributesWithOwner {
 impl AttributesWithOwner {
     #[salsa::tracked(returns(deref))]
     pub fn of(
-        db: &dyn DefDatabase,
+        db: &dyn SourceDatabase,
         definition: AttributeDefId,
     ) -> Arc<Self> {
         Self::with_source_map(db, definition).0.clone()
@@ -180,7 +180,7 @@ impl AttributesWithOwner {
 
     #[salsa::tracked(returns(ref))]
     pub fn with_source_map(
-        db: &dyn DefDatabase,
+        db: &dyn SourceDatabase,
         definition: AttributeDefId,
     ) -> (Arc<Self>, Arc<ExpressionSourceMap>) {
         let (attributes, source_map) = match definition {

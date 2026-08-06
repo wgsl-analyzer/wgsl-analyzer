@@ -5,7 +5,7 @@ use base_db::{EditionedFileId, FileId, FileRange, Intern as _, TextRange};
 use hir::{AddressSpace, Field, HasSource as _, Semantics};
 use hir_def::{
     InFile,
-    database::{DefDatabase as _, Location},
+    database::{ Location},
     item_tree::{ItemTree, Name},
     signature::FieldId,
 };

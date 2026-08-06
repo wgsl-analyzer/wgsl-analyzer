@@ -1,6 +1,5 @@
 use std::iter;
 
-use hir_def::database::DefDatabase as _;
 use hir_def::signature::StructSignature;
 use hir_ty::ty::TypeKind;
 

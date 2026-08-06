@@ -8,14 +8,12 @@
 
 use std::fmt;
 
-use base_db::{EditionedFileId, Intern as _, Lookup as _};
+use base_db::{EditionedFileId, Intern as _, Lookup as _, SourceDatabase};
 use hir_def::database::Location;
 use hir_def::signature::{StructSignature, TypeAliasSignature};
 use hir_def::{
     InFile,
-    database::{
-        DefDatabase, DefinitionWithBodyId, FunctionId, ModuleDefinitionId, StructId, TypeAliasId,
-    },
+    database::{DefinitionWithBodyId, FunctionId, ModuleDefinitionId, StructId, TypeAliasId},
     item_scope::ItemScope,
     item_tree::ItemTree,
     resolver::Resolver,
@@ -36,7 +34,7 @@ use crate::{
 };
 
 #[query_group::query_group]
-pub trait HirDatabase: DefDatabase + fmt::Debug {
+pub trait HirDatabase: SourceDatabase + fmt::Debug {
     fn field_types(
         &self,
         key: StructId,

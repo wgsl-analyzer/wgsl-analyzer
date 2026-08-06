@@ -3,13 +3,14 @@ pub mod path;
 
 use std::ops::Index;
 
+use base_db::SourceDatabase;
 use la_arena::{Arena, ArenaMap};
 use rustc_hash::{FxHashMap, FxHashSet};
 use syntax::{ast, pointer::AstPointer};
 
 use crate::{
     body::Body,
-    database::{DefDatabase, DefinitionWithBodyId},
+    database::DefinitionWithBodyId,
     expression::{Expression, ExpressionId},
     signature::{
         AssertStatementSignature, ConstantSignature, FunctionSignature, OverrideSignature,
@@ -78,7 +79,7 @@ impl Index<TypeSpecifierId> for ExpressionStore {
 
 impl ExpressionStore {
     pub fn of(
-        database: &dyn DefDatabase,
+        database: &dyn SourceDatabase,
         owner: ExpressionStoreOwnerId,
     ) -> &Self {
         match owner {
@@ -101,7 +102,7 @@ impl ExpressionStore {
         }
     }
     pub fn with_source_map(
-        database: &dyn DefDatabase,
+        database: &dyn SourceDatabase,
         owner: ExpressionStoreOwnerId,
     ) -> (&Self, &ExpressionSourceMap) {
         match owner {

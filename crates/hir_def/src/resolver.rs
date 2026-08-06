@@ -1,4 +1,4 @@
-use base_db::{EditionedFileId, Package, file_package, input::PackageId};
+use base_db::{EditionedFileId, Package, SourceDatabase, file_package, input::PackageId};
 use triomphe::Arc;
 
 use crate::{
@@ -7,8 +7,8 @@ use crate::{
         scope::{ExprScopes, ScopeId},
     },
     database::{
-        DefDatabase, FunctionId, GlobalConstantId, GlobalVariableId, ModuleDefinitionId,
-        OverrideId, StructId, TypeAliasId,
+        FunctionId, GlobalConstantId, GlobalVariableId, ModuleDefinitionId, OverrideId, StructId,
+        TypeAliasId,
     },
     expression_store::path::Path,
     item_scope::ItemScope,
@@ -174,7 +174,7 @@ impl<'database> Resolver<'database> {
     /// Corresponds to `resolve_path_in_type_ns` in rust-analyzer.
     pub fn resolve(
         &self,
-        database: &dyn DefDatabase,
+        database: &dyn SourceDatabase,
         path: &Path,
     ) -> Result<ResolveKind, ResolutionDiagnostic> {
         let path = path.mod_path();
@@ -241,7 +241,7 @@ impl<'database> Resolver<'database> {
 
     fn resolve_name(
         &self,
-        database: &dyn DefDatabase,
+        database: &dyn SourceDatabase,
         name: &Name,
     ) -> Result<ResolveKind, ResolutionDiagnostic> {
         self.scopes()
@@ -267,7 +267,7 @@ impl<'database> Resolver<'database> {
 }
 
 fn resolve_path_to_item(
-    database: &dyn DefDatabase,
+    database: &dyn SourceDatabase,
     package: Package,
     segments: &[Name],
 ) -> Result<ResolveKind, ResolutionDiagnostic> {

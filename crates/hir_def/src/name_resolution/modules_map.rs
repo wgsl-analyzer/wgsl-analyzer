@@ -1,10 +1,7 @@
-use base_db::{EditionedFileId, FileExtension, Package, SourceDatabase as _};
+use base_db::{EditionedFileId, FileExtension, Package, SourceDatabase};
 use indexmap::map::Entry;
 
-use crate::{
-    FxIndexMap, database::DefDatabase, item_scope::ItemScope, item_tree::Name,
-    mod_path::AbsoluteModPath,
-};
+use crate::{FxIndexMap, item_scope::ItemScope, item_tree::Name, mod_path::AbsoluteModPath};
 
 /// A map of all modules and their children in a package.
 ///
@@ -27,7 +24,7 @@ pub struct ModuleData {
 impl ModulesMap {
     #[salsa::tracked(returns(ref))]
     pub fn of(
-        db: &dyn DefDatabase,
+        db: &dyn SourceDatabase,
         package: Package,
     ) -> ModulesMap {
         modules_map_query(db, package)
@@ -35,7 +32,7 @@ impl ModulesMap {
 }
 
 fn modules_map_query(
-    database: &dyn DefDatabase,
+    database: &dyn SourceDatabase,
     package: Package,
 ) -> ModulesMap {
     let package_data = package.data(database);

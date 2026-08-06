@@ -7,7 +7,7 @@ mod tests;
 
 use std::{hash, marker::PhantomData};
 
-use base_db::EditionedFileId;
+use base_db::{EditionedFileId, SourceDatabase};
 use rustc_hash::FxHashMap;
 use smol_str::SmolStr;
 use syntax::{
@@ -18,7 +18,7 @@ use triomphe::Arc;
 
 use crate::{
     ast_id::FileAstId,
-    database::{DefDatabase, ModuleDefinitionId},
+    database::ModuleDefinitionId,
     mod_path::{ModPath, PathKind},
 };
 
@@ -198,7 +198,7 @@ pub struct ItemTree {
 impl ItemTree {
     #[salsa::tracked(returns(ref))]
     pub fn of(
-        db: &dyn DefDatabase,
+        db: &dyn SourceDatabase,
         file_id: EditionedFileId,
     ) -> Self {
         let source = file_id.parse(db).tree();

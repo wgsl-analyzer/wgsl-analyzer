@@ -1,7 +1,7 @@
 use base_db::{EditionedFileId, ExtensionsConfigInput};
 use expect_test::{Expect, expect};
 use hir_def::{
-    database::{DefDatabase as _, ModuleDefinitionId},
+    database::{ModuleDefinitionId},
     item_tree::ItemTree,
     signature::StructSignature,
 };

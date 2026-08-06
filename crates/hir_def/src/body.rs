@@ -1,7 +1,7 @@
 mod lower;
 pub mod scope;
 
-use base_db::Lookup as _;
+use base_db::{Lookup as _, SourceDatabase};
 use either::Either;
 use la_arena::{Arena, ArenaMap, Idx};
 use rustc_hash::FxHashMap;
@@ -11,7 +11,7 @@ use triomphe::Arc;
 use crate::{
     HasSource as _,
     attributes::Attribute,
-    database::{DefDatabase, DefinitionWithBodyId},
+    database::DefinitionWithBodyId,
     expression::{ExpressionId, Statement, StatementId},
     expression_store::{ExpressionSourceMap, ExpressionStore, SyntheticSyntax},
     item_tree::Name,
@@ -70,7 +70,7 @@ pub struct BodySourceMap {
 impl Body {
     #[salsa::tracked(returns(deref))]
     pub fn of(
-        db: &dyn DefDatabase,
+        db: &dyn SourceDatabase,
         definition: DefinitionWithBodyId,
     ) -> Arc<Self> {
         Self::with_source_map(db, definition).0.clone()
@@ -78,7 +78,7 @@ impl Body {
 
     #[salsa::tracked(lru = 512, returns(ref))]
     pub fn with_source_map(
-        db: &dyn DefDatabase,
+        db: &dyn SourceDatabase,
         definition: DefinitionWithBodyId,
     ) -> (Arc<Self>, Arc<BodySourceMap>) {
         let file_id = definition.file_id(db);

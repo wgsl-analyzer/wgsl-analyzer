@@ -14,7 +14,6 @@ use base_db::{
     SourceDatabase, SourceRoot, SourceRootId, SourceRootInput, change::Change,
     set_all_packages_with_durability,
 };
-use hir_def::database::DefDatabase as _;
 use line_index::LineIndex;
 pub use rustc_hash::{FxHashMap, FxHashSet, FxHasher};
 use salsa::{Database as _, Durability};

@@ -3,7 +3,7 @@ use expect_test::{Expect, expect};
 use test_fixture::WithFixture as _;
 use triomphe::Arc;
 
-use crate::{database::DefDatabase as _, item_tree::ItemTree, test_db::TestDatabase};
+use crate::{item_tree::ItemTree, test_db::TestDatabase};
 
 #[expect(clippy::needless_pass_by_value, reason = "matches expect! macro")]
 fn check_item_tree(

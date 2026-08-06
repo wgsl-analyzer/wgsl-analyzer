@@ -24,7 +24,6 @@ use base_db::{
     EditionedFileId, ExtensionsConfigInput, FilePosition, FileRange, FileSet, RangeInfo,
     SourceDatabase as _, SourceRoot, TextRange, change::Change, input::SourceRootId,
 };
-use hir_def::database::DefDatabase as _;
 use ide_completion::{CompletionConfig, item::CompletionItem};
 use ide_db::LineIndexDatabase as _;
 use ide_diagnostics::{Diagnostic, DiagnosticsConfig};

@@ -5,20 +5,20 @@ mod modules_map;
 #[cfg(test)]
 mod tests;
 
-use base_db::{EditionedFileId, Package};
+use base_db::{EditionedFileId, Package, SourceDatabase};
 pub use collector::collect_module;
 pub use diagnostics::{DefDiagnostic, DefDiagnosticKind};
 use itertools::Itertools as _;
 pub use modules_map::{ModuleData, ModulesMap};
 
-use crate::{database::DefDatabase, item_tree::Name};
+use crate::item_tree::Name;
 
 #[expect(
     clippy::missing_panics_doc,
     reason = "The path manipulation should be infallible"
 )]
 pub fn resolve_module(
-    database: &dyn DefDatabase,
+    database: &dyn SourceDatabase,
     package: Package,
     segments: &[Name],
 ) -> Option<EditionedFileId> {

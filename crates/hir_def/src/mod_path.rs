@@ -2,12 +2,12 @@
 
 use std::{fmt, iter};
 
-use base_db::{EditionedFileId, Package};
+use base_db::{EditionedFileId, Package, SourceDatabase};
 use camino::Utf8Component;
 use smallvec::SmallVec;
 use syntax::ast::{self, ImportRelative};
 
-use crate::{database::DefDatabase, item_tree::Name};
+use crate::item_tree::Name;
 
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct AbsoluteModPath(ModPath);
@@ -30,7 +30,7 @@ impl AbsoluteModPath {
     ///
     /// Returns none if there is no valid path.
     pub fn for_file(
-        database: &dyn DefDatabase,
+        database: &dyn SourceDatabase,
         package: Package,
         file_id: EditionedFileId,
     ) -> Option<Self> {
