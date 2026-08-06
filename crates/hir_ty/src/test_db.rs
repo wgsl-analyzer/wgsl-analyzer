@@ -1,8 +1,9 @@
 use std::{fmt, panic, sync::Mutex};
 
 use base_db::{
-    EditionedFileId, FileSourceRootInput, FileText, Nonce, SourceDatabase, SourceRootId,
-    SourceRootInput, change::Change, input::SourceRoot, set_all_packages_with_durability,
+    EditionedFileId, ExtensionsConfigInput, FileSourceRootInput, FileText, Nonce, SourceDatabase,
+    SourceRootId, SourceRootInput, change::Change, input::SourceRoot,
+    set_all_packages_with_durability,
 };
 use hir_def::database::DefDatabase as _;
 use salsa::{Database as _, Durability};
@@ -21,7 +22,7 @@ pub(crate) struct TestDatabase {
 impl Default for TestDatabase {
     fn default() -> Self {
         let events = Arc::<Mutex<Option<Vec<salsa::Event>>>>::default();
-        let mut value = Self {
+        let mut database = Self {
             storage: salsa::Storage::new(Some(Box::new({
                 let events = events.clone();
                 move |event| {
@@ -35,10 +36,10 @@ impl Default for TestDatabase {
             events,
             nonce: Nonce::new(),
         };
-        value.set_extensions_with_durability(ExtensionsConfig::none(), Durability::MEDIUM);
+        ExtensionsConfigInput::update_extensions(&mut database, ExtensionsConfig::none());
         // This needs to be here otherwise the first `Change` will panic.
-        set_all_packages_with_durability(&mut value, [], Durability::LOW);
-        value
+        set_all_packages_with_durability(&mut database, [], Durability::LOW);
+        database
     }
 }
 

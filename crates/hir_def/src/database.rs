@@ -25,11 +25,7 @@ use crate::{
 };
 
 #[query_group::query_group(DefDatabaseStorage)]
-pub trait DefDatabase: InternDatabase + SourceDatabase {
-    /// Which language extensions are enabled.
-    #[salsa::input]
-    fn extensions(&self) -> ExtensionsConfig;
-}
+pub trait DefDatabase: InternDatabase + SourceDatabase {}
 
 #[query_group::query_group(InternDatabaseStorage)]
 pub trait InternDatabase: SourceDatabase {
