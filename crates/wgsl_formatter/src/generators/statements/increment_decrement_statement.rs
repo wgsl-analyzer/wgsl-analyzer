@@ -46,7 +46,7 @@ pub fn gen_increment_decrement_statement(
         IncrementDecrement::Decrement
     };
     let item_comments_after_inc_dec = parse_many_comments_and_blankspace(&mut syntax)?;
-    parse_token_optional(&mut syntax, SyntaxKind::Semicolon);
+    parse_node_with(&mut syntax, NoTrivia).expect_kind_optional(SyntaxKind::Semicolon)?;
     parse_end(&mut syntax)?;
 
     // ==== Format ====

@@ -9,7 +9,8 @@ use syntax::{
 
 use crate::{
     ast_parse::{
-        SyntaxIter, parse_end, parse_node, parse_node_optional, parse_token, parse_token_optional,
+        NoTrivia, SyntaxIter, parse_end, parse_node, parse_node_optional, parse_node_with,
+        parse_token, parse_token_optional,
     },
     context_policies::statement_needs_semicolon_policy,
     generators::{
@@ -254,7 +255,7 @@ pub fn gen_function_call_statement(
     let mut syntax = put_back(function_call_statement.syntax().children_with_tokens());
     let function_call = parse_node::<FunctionCall>(&mut syntax)?;
     let comments_after_function_call = parse_many_comments_and_blankspace(&mut syntax)?;
-    parse_token_optional(&mut syntax, SyntaxKind::Semicolon);
+    parse_node_with(&mut syntax, NoTrivia).expect_kind_optional(SyntaxKind::Semicolon)?;
     parse_end(&mut syntax)?;
 
     // ==== Format ====

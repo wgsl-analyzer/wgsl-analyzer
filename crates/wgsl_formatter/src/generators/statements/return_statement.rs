@@ -32,7 +32,7 @@ pub fn gen_return_statement(
     let comments_after_return = parse_many_comments_and_blankspace(&mut syntax)?;
     let item_expression = parse_node_optional::<Expression>(&mut syntax);
     let comments_after_expression = parse_many_comments_and_blankspace(&mut syntax)?;
-    parse_token_optional(&mut syntax, SyntaxKind::Semicolon);
+    parse_node_with(&mut syntax, NoTrivia).expect_kind_optional(SyntaxKind::Semicolon)?;
     parse_end(&mut syntax)?;
 
     // ==== Format ====

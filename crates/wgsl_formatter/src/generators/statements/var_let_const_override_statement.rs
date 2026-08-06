@@ -131,7 +131,7 @@ fn gen_var_let_const_override_statement(
         None
     };
 
-    parse_token_optional(&mut syntax, SyntaxKind::Semicolon); //Not all var-statements have a semicolon (e.g for loop)
+    parse_node_with(&mut syntax, NoTrivia).expect_kind_optional(SyntaxKind::Semicolon)?; //Not all var-statements have a semicolon (e.g for loop)
     parse_end(&mut syntax)?;
 
     // ==== Format ====
