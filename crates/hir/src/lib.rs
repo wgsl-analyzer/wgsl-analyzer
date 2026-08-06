@@ -9,7 +9,7 @@ use diagnostics::AnyDiagnostic;
 use either::Either;
 use hir_def::{
     AstIdMap, HasSource as _, InFile,
-    body::{BindingId, Body, BodySourceMap},
+    body::{BindingId, Body, BodySourceMap, scope::ExprScopes},
     database::{
         DefDatabase, DefinitionWithBodyId, FunctionId, GlobalAssertStatementId, GlobalConstantId,
         GlobalVariableId, ImportId, Location, OverrideId, StructId, TypeAliasId,
@@ -62,7 +62,7 @@ impl<'database> Semantics<'database> {
     pub fn analyze(
         &self,
         definition: DefinitionWithBodyId,
-    ) -> SourceAnalyzer<'_> {
+    ) -> SourceAnalyzer<'database> {
         SourceAnalyzer::new(self.database, definition)
     }
 
@@ -153,7 +153,7 @@ impl<'database> Semantics<'database> {
         &self,
         file_id: EditionedFileId,
         source: &SyntaxNode,
-    ) -> Resolver {
+    ) -> Resolver<'database> {
         if let Some(definition) = self.find_container(file_id, source) {
             match definition {
                 ChildContainer::DefinitionWithBodyId(
@@ -488,10 +488,10 @@ impl<'database> SourceAnalyzer<'database> {
     pub fn resolver_for(
         &self,
         scope: ExprOrStatement,
-    ) -> Resolver {
+    ) -> Resolver<'database> {
         let mut resolver = self.owner.resolver(self.database);
 
-        let expression_scopes = self.database.expression_scopes(self.owner);
+        let expression_scopes = ExprScopes::of(self.database, self.owner);
 
         let scope_id = scope
             .map_left(|expression| {

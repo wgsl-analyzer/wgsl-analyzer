@@ -6,7 +6,7 @@ use base_db::{Lookup as _, TextRange, TextSize};
 use either::Either;
 use hir_def::{
     HasSource as _,
-    body::{BindingId, Body},
+    body::{BindingId, Body, scope::ExprScopes},
     database::{
         DefinitionWithBodyId, GlobalConstantId, GlobalVariableId, ModuleDefinitionId, OverrideId,
         StructId,
@@ -284,7 +284,7 @@ pub struct InferenceContext<'database> {
     database: &'database dyn HirDatabase,
     owner: ModuleDefinitionId,
     /// Root resolver for the entire module.
-    resolver: Resolver,
+    resolver: Resolver<'database>,
     result: InferenceResult, // set in collect_* calls
     return_type: Type,
     converter: WgslTypeConverter<'database>,
@@ -294,7 +294,7 @@ impl<'database> InferenceContext<'database> {
     pub fn new(
         database: &'database dyn HirDatabase,
         owner: ModuleDefinitionId,
-        resolver: Resolver,
+        resolver: Resolver<'database>,
     ) -> Self {
         Self {
             database,
@@ -565,13 +565,12 @@ impl<'database> InferenceContext<'database> {
     fn resolver_for_expression(
         &self,
         expression: ExpressionId,
-    ) -> Option<Resolver> {
+    ) -> Option<Resolver<'database>> {
         let ModuleDefinitionId::Function(function) = self.owner else {
             return None;
         };
-        let expression_scopes = self
-            .database
-            .expression_scopes(DefinitionWithBodyId::Function(function));
+        let expression_scopes =
+            ExprScopes::of(self.database, DefinitionWithBodyId::Function(function));
 
         let scope_id = expression_scopes.scope_for_expression(expression)?;
 
@@ -585,14 +584,13 @@ impl<'database> InferenceContext<'database> {
     fn resolver_for_statement(
         &self,
         statement: StatementId,
-    ) -> Resolver {
+    ) -> Resolver<'database> {
         let ModuleDefinitionId::Function(function) = self.owner else {
             return self.resolver.clone();
         };
 
-        let expression_scopes = self
-            .database
-            .expression_scopes(DefinitionWithBodyId::Function(function));
+        let expression_scopes =
+            ExprScopes::of(self.database, DefinitionWithBodyId::Function(function));
 
         if let Some(scope_id) = expression_scopes.scope_for_statement(statement) {
             self.resolver
@@ -917,7 +915,7 @@ impl<'database> InferenceContext<'database> {
     fn get_effective_value_type(
         &mut self,
         body: &Body,
-        resolver: &Resolver,
+        resolver: &Resolver<'database>,
         type_ref: Option<la_arena::Idx<hir_def::type_specifier::TypeSpecifier>>,
         initializer: Option<ExpressionId>,
     ) -> Type {
@@ -2270,7 +2268,7 @@ impl<'database> InferenceContext<'database> {
     fn lower_type(
         &mut self,
         type_ref: TypeSpecifierId,
-        resolver: &Resolver,
+        resolver: &Resolver<'database>,
         store: &ExpressionStore,
     ) -> Type {
         let mut context = TypeLoweringContext::new(self.database, resolver, store);

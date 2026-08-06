@@ -19,9 +19,9 @@ use crate::{
 };
 
 #[derive(Clone)]
-pub enum Scope {
+pub enum Scope<'database> {
     /// Local bindings.
-    Expression(ExpressionScope),
+    Expression(ExpressionScope<'database>),
     /// The items inside a module.
     Module(ModuleScope),
     /// Predeclared WGSL items.
@@ -29,9 +29,9 @@ pub enum Scope {
 }
 
 #[derive(Clone)]
-pub struct ExpressionScope {
+pub struct ExpressionScope<'database> {
     owner: FunctionId,
-    expression_scopes: Arc<ExprScopes>,
+    expression_scopes: &'database ExprScopes,
     scope_id: ScopeId,
 }
 
@@ -75,12 +75,12 @@ pub enum ScopeDef {
 }
 
 #[derive(Clone)]
-pub struct Resolver {
+pub struct Resolver<'database> {
     file_id: EditionedFileId,
-    scopes: Vec<Scope>,
+    scopes: Vec<Scope<'database>>,
 }
 
-impl Resolver {
+impl<'database> Resolver<'database> {
     #[must_use]
     pub fn new(
         file_id: EditionedFileId,
@@ -99,7 +99,7 @@ impl Resolver {
     #[must_use]
     pub fn push_scope(
         mut self,
-        scope: Scope,
+        scope: Scope<'database>,
     ) -> Self {
         self.scopes.push(scope);
         self
@@ -109,7 +109,7 @@ impl Resolver {
     pub fn push_expression_scope(
         mut self,
         owner: FunctionId,
-        expression_scopes: Arc<ExprScopes>,
+        expression_scopes: &'database ExprScopes,
         scope_id: ScopeId,
     ) -> Self {
         self.scopes.push(Scope::Expression(ExpressionScope {
@@ -120,7 +120,7 @@ impl Resolver {
         self
     }
 
-    pub fn scopes(&self) -> impl Iterator<Item = &Scope> {
+    pub fn scopes(&self) -> impl Iterator<Item = &Scope<'database>> {
         self.scopes.iter().rev()
     }
 

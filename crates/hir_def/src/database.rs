@@ -48,12 +48,6 @@ pub trait DefDatabase: InternDatabase + SourceDatabase {
         key: DefinitionWithBodyId,
     ) -> Arc<Body>;
 
-    #[salsa::invoke(ExprScopes::expression_scopes_query)]
-    fn expression_scopes(
-        &self,
-        key: DefinitionWithBodyId,
-    ) -> Arc<ExprScopes>;
-
     #[salsa::invoke(signature_with_source_map)]
     fn signature_with_source_map(
         &self,
@@ -283,7 +277,7 @@ impl DefinitionWithBodyId {
     pub fn resolver(
         self,
         database: &dyn DefDatabase,
-    ) -> Resolver {
+    ) -> Resolver<'_> {
         let file_id = self.file_id(database);
         let module_info = ItemScope::of(database, file_id);
         Resolver::new(file_id, module_info)
@@ -323,7 +317,7 @@ impl ModuleDefinitionId {
     pub fn resolver(
         self,
         database: &dyn DefDatabase,
-    ) -> Resolver {
+    ) -> Resolver<'_> {
         let file_id = self.file_id(database);
         let module_info = ItemScope::of(database, file_id);
         Resolver::new(file_id, module_info)

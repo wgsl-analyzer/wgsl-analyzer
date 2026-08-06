@@ -17,7 +17,7 @@ pub(crate) struct CompletionContext<'database> {
     pub(crate) file: ast::SourceFile,
     pub(crate) container: Option<ChildContainer>,
     pub(crate) completion_location: Option<ImmediateLocation>,
-    pub(crate) resolver: Resolver,
+    pub(crate) resolver: Resolver<'database>,
 }
 
 impl<'database> CompletionContext<'database> {
