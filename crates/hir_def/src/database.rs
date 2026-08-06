@@ -19,7 +19,7 @@ use crate::{
     },
     resolver::Resolver,
     signature::{
-        ConstantSignature, FunctionSignature, AssertStatementSignature, OverrideSignature,
+        AssertStatementSignature, ConstantSignature, FunctionSignature, OverrideSignature,
         StructSignature, TypeAliasSignature, VariableSignature,
     },
 };
@@ -35,12 +35,6 @@ pub trait DefDatabase: InternDatabase + SourceDatabase {
         &self,
         key: DefinitionWithBodyId,
     ) -> (Arc<ExpressionStore>, Arc<ExpressionSourceMap>);
-
-    #[salsa::invoke(AttributesWithOwner::attrs_query)]
-    fn attrs(
-        &self,
-        key: AttributeDefId,
-    ) -> (Arc<AttributesWithOwner>, Arc<ExpressionSourceMap>);
 }
 
 fn signature_with_source_map(
