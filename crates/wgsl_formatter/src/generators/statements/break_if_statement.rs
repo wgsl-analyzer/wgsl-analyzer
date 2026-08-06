@@ -8,12 +8,14 @@ use syntax::{
 
 use crate::{
     ast_parse::{
-        NoTrivia, parse_end, parse_node, parse_node_with, parse_token, parse_token_optional,
+        IgnoreBlankspace, NoTrivia, parse_end, parse_node, parse_node_with, parse_token,
+        parse_token_optional,
     },
     context_policies::statement_needs_semicolon_policy,
     generators::{
         comments::{gen_comments, parse_many_comments_and_blankspace},
         expressions::gen_expression,
+        node::gen_node_with_trivia,
     },
     print_item_buffer::{
         PrintItemBuffer,
@@ -27,17 +29,18 @@ pub fn gen_break_if_statement(
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = put_back(statement.syntax().children_with_tokens());
-    parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::Break)?;
-    parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::If)?;
+    let item_break =
+        parse_node_with(&mut syntax, IgnoreBlankspace).expect_kind(SyntaxKind::Break)?;
+    let item_if = parse_node_with(&mut syntax, IgnoreBlankspace).expect_kind(SyntaxKind::If)?;
     let item_condition = parse_node::<Expression>(&mut syntax)?;
     parse_node_with(&mut syntax, NoTrivia).expect_kind_optional(SyntaxKind::Semicolon)?;
     parse_end(&mut syntax)?;
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
-    formatted.push_sc(sc!("break"));
+    formatted.extend(gen_node_with_trivia(&item_break)?);
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.push_sc(sc!("if"));
+    formatted.extend(gen_node_with_trivia(&item_if)?);
     formatted.start_indent();
     formatted.request(Request::expect(RequestItem::Space));
     formatted.extend(gen_expression(&item_condition)?);
