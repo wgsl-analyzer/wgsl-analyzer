@@ -2,6 +2,7 @@
 
 mod big;
 mod builtins;
+mod conditional_compilation;
 mod imports;
 mod incremental;
 mod layout;
@@ -52,7 +53,12 @@ fn infer(
         InferPrinter::new(&database, file_id).infer_file(&mut buffer);
     }
     buffer.truncate(buffer.trim_end().len());
-    buffer
+    let mut buffer2 = String::new();
+    for line in buffer.lines() {
+        buffer2.push_str(line.trim_end());
+        buffer2.push('\n');
+    }
+    buffer2
 }
 
 struct InferPrinter<'db> {
@@ -413,6 +419,5 @@ fn check_infer(
     expect: Expect,
 ) {
     let mut actual = infer(extensions, wa_fixture);
-    actual.push('\n');
     expect.assert_eq(&actual);
 }
