@@ -1,11 +1,10 @@
-use base_db::EditionedFileId;
+use base_db::{EditionedFileId, ExtensionsConfigInput};
 use expect_test::{Expect, expect};
 use hir_def::{
     database::{DefDatabase as _, ModuleDefinitionId},
     item_tree::ItemTree,
     signature::StructSignature,
 };
-use salsa::Durability;
 use std::fmt::Write as _;
 use syntax::ExtensionsConfig;
 use test_fixture::WithFixture as _;
@@ -27,7 +26,7 @@ fn check_layout(
     expect: Expect,
 ) {
     let (mut database, file_id) = TestDatabase::with_single_file(wa_fixture);
-    database.set_extensions_with_durability(extensions, Durability::MEDIUM);
+    ExtensionsConfigInput::update_extensions(&mut database, extensions);
     let mut buffer = String::new();
     LayoutPrinter::new(
         &database,

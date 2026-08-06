@@ -9,7 +9,7 @@ mod operators;
 mod simple;
 use std::{fmt::Write as _, ops::ControlFlow};
 
-use base_db::{EditionedFileId, Intern as _, Lookup as _};
+use base_db::{EditionedFileId, ExtensionsConfigInput, Intern as _, Lookup as _};
 use expect_test::Expect;
 use hir_def::{
     HasSource as _,
@@ -27,7 +27,6 @@ use hir_def::{
     type_specifier::{self, TypeSpecifierId},
 };
 use itertools::Itertools as _;
-use salsa::Durability;
 use syntax::{AstNode as _, Diagnostic, ExtensionsConfig, SyntaxNode};
 use test_fixture::WithFixture as _;
 use triomphe::Arc;
@@ -51,7 +50,7 @@ fn infer(
     wa_fixture: &str,
 ) -> String {
     let (mut database, files) = TestDatabase::with_many_files(wa_fixture);
-    database.set_extensions_with_durability(extensions, Durability::MEDIUM);
+    ExtensionsConfigInput::update_extensions(&mut database, extensions);
     let mut buffer = String::new();
 
     for (index, file_id) in files.into_iter().enumerate() {

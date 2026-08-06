@@ -355,6 +355,30 @@ impl PackageDisplayName {
     }
 }
 
+#[salsa::input(singleton, debug)]
+pub struct ExtensionsConfigInput {
+    #[returns(ref)]
+    pub extensions: ExtensionsConfig,
+}
+
+impl ExtensionsConfigInput {
+    #[must_use]
+    pub fn get_extensions(database: &dyn SourceDatabase) -> &ExtensionsConfig {
+        Self::get(database).extensions(database)
+    }
+
+    pub fn update_extensions(
+        database: &mut dyn SourceDatabase,
+        extensions: ExtensionsConfig,
+    ) {
+        Self::try_get(database)
+            .unwrap_or_else(|| ExtensionsConfigInput::new(database, ExtensionsConfig::default()))
+            .set_extensions(database)
+            .with_durability(Durability::MEDIUM)
+            .to(extensions);
+    }
+}
+
 #[salsa::db]
 pub trait SourceDatabase: salsa::Database + std::fmt::Debug {
     /// Text of the file.
