@@ -36,12 +36,6 @@ pub trait DefDatabase: InternDatabase + SourceDatabase {
         key: DefinitionWithBodyId,
     ) -> (Arc<ExpressionStore>, Arc<ExpressionSourceMap>);
 
-    #[salsa::invoke(FunctionSignature::query)]
-    fn function_data(
-        &self,
-        key: FunctionId,
-    ) -> (Arc<FunctionSignature>, Arc<ExpressionSourceMap>);
-
     #[salsa::invoke(StructSignature::query)]
     fn struct_data(
         &self,
@@ -94,8 +88,8 @@ fn signature_with_source_map(
 ) -> (Arc<ExpressionStore>, Arc<ExpressionSourceMap>) {
     match key {
         DefinitionWithBodyId::Function(id) => {
-            let (data, source_map) = database.function_data(id);
-            (data.store.clone(), source_map)
+            let (data, source_map) = FunctionSignature::with_source_map(database, id);
+            (data.store.clone(), source_map.clone())
         },
         DefinitionWithBodyId::GlobalVariable(id) => {
             let (data, source_map) = database.global_var_data(id);

@@ -17,7 +17,7 @@ use hir_def::{
     item_scope::ItemScope,
     item_tree::ItemTree,
     resolver::Resolver,
-    signature::{FieldId, LocalFieldId},
+    signature::{FieldId, FunctionSignature, LocalFieldId},
 };
 use la_arena::ArenaMap;
 use salsa::plumbing::AsId as _;
@@ -141,7 +141,7 @@ fn function_type(
     database: &dyn HirDatabase,
     function: FunctionId,
 ) -> ResolvedFunctionId {
-    let data = database.function_data(function).0;
+    let data = FunctionSignature::of(database, function);
 
     let file_id = function.lookup(database).file_id;
     let module_info = ItemScope::of(database, file_id);

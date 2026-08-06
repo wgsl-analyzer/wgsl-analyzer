@@ -20,7 +20,7 @@ use hir_def::{
     item_tree::{self, ItemTree, ModuleItemId, Name},
     mod_path::PathKind,
     resolver::{ResolveKind, Resolver},
-    signature::{FieldId, ParameterId},
+    signature::{FieldId, FunctionSignature, ParameterId},
 };
 use hir_ty::{infer::InferenceResult, ty::Type};
 use smallvec::SmallVec;
@@ -581,7 +581,7 @@ impl HasSource for Parameter {
         self,
         database: &dyn DefDatabase,
     ) -> Option<InFile<Self::Ast>> {
-        let function_data = database.function_data(self.id.function).0;
+        let function_data = FunctionSignature::of(database, self.id.function);
         let parameter_data = &function_data.parameters[self.id.param];
         let parameter_name = &parameter_data.name;
 
