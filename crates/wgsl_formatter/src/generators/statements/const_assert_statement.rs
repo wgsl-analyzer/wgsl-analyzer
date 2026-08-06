@@ -7,7 +7,7 @@ use syntax::{
 };
 
 use crate::{
-    ast_parse::{parse_end, parse_node, parse_token},
+    ast_parse::{NoTrivia, parse_end, parse_node, parse_node_with, parse_token},
     context_policies::statement_needs_semicolon_policy,
     generators::{
         comments::{gen_comments, parse_many_comments_and_blankspace},
@@ -25,11 +25,11 @@ pub fn gen_const_assert_statement(
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = put_back(statement.syntax().children_with_tokens());
-    parse_token(&mut syntax, SyntaxKind::ConstantAssert)?;
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::ConstantAssert)?;
     let comments_after_const_assert = parse_many_comments_and_blankspace(&mut syntax)?;
     let item_condition = parse_node::<Expression>(&mut syntax)?;
     let comments_after_condition = parse_many_comments_and_blankspace(&mut syntax)?;
-    parse_token(&mut syntax, SyntaxKind::Semicolon)?;
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::Semicolon)?;
     parse_end(&mut syntax)?;
 
     // ==== Format ====

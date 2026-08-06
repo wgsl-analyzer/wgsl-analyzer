@@ -58,7 +58,7 @@ pub fn gen_switch_statement(
 pub fn gen_switch_body(statement: &SwitchBody) -> Result<PrintItemBuffer, FormatDocumentError> {
     // ==== Parse ====
     let mut syntax = put_back(statement.syntax().children_with_tokens());
-    parse_token(&mut syntax, SyntaxKind::BraceLeft)?;
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::BraceLeft)?;
 
     let mut item_cases = Vec::new();
 
@@ -82,7 +82,7 @@ pub fn gen_switch_body(statement: &SwitchBody) -> Result<PrintItemBuffer, Format
         }
     }
 
-    parse_token(&mut syntax, SyntaxKind::BraceRight)?;
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::BraceRight)?;
     parse_end(&mut syntax)?;
 
     // ==== Format ====
@@ -168,7 +168,7 @@ pub fn gen_switch_body_case(
     //     if item_default.is_some() {
     //         SwitchBodyCaseKind::Default
     //     } else {
-    //         parse_token(&mut syntax, SyntaxKind::Case)?;
+    //         parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::Case)?;
     //         let item_selectors = parse_node_with_trivia(&mut syntax)
     //             .expect_castable_kind::<SwitchCaseSelectors>()?;
 
@@ -289,7 +289,7 @@ pub fn gen_switch_case_default_selector(
 ) -> Result<PrintItemBuffer, FormatDocumentError> {
     // ==== Parse ====
     let mut syntax = put_back(statement.syntax().children_with_tokens());
-    parse_token(&mut syntax, SyntaxKind::Default)?;
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::Default)?;
     parse_end(&mut syntax)?;
 
     // ==== Format ====

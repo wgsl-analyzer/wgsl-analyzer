@@ -8,7 +8,10 @@ use syntax::{
 };
 
 use crate::{
-    ast_parse::{parse_end, parse_node, parse_node_optional, parse_token, parse_token_optional},
+    ast_parse::{
+        NoTrivia, parse_end, parse_node, parse_node_optional, parse_node_with, parse_token,
+        parse_token_optional,
+    },
     context_policies::statement_needs_semicolon_policy,
     generators::{
         attributes::{AttributeLayout, gen_attributes, parse_many_attributes},
@@ -90,7 +93,7 @@ fn gen_var_let_const_override_statement(
 
     let item_attributes = parse_many_attributes(&mut syntax)?;
 
-    parse_token(&mut syntax, kind.syntax_kind())?;
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(kind.syntax_kind())?;
     let item_comments_after_let = parse_many_comments_and_blankspace(&mut syntax)?;
 
     let item_template_list = if let Some(template_list) =

@@ -7,7 +7,7 @@ use syntax::{
 };
 
 use crate::{
-    ast_parse::{parse_end, parse_node, parse_token},
+    ast_parse::{NoTrivia, parse_end, parse_node, parse_node_with, parse_token},
     generators::{
         attributes::{AttributeLayout, gen_attributes, parse_many_attributes},
         comments::{gen_comments, parse_many_comments_and_blankspace},
@@ -27,7 +27,7 @@ pub fn gen_while_statement(
     // ==== Parse ====
     let mut syntax = put_back(statement.syntax().children_with_tokens());
     let item_attributes = parse_many_attributes(&mut syntax)?;
-    parse_token(&mut syntax, SyntaxKind::While)?;
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::While)?;
     let comments_after_while = parse_many_comments_and_blankspace(&mut syntax)?;
     let item_condition = parse_node::<Expression>(&mut syntax)?;
     let comments_after_condition = parse_many_comments_and_blankspace(&mut syntax)?;

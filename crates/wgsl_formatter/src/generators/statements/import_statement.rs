@@ -8,7 +8,10 @@ use syntax::{
 };
 
 use crate::{
-    ast_parse::{parse_end, parse_node, parse_node_optional, parse_token, parse_token_optional},
+    ast_parse::{
+        NoTrivia, parse_end, parse_node, parse_node_optional, parse_node_with, parse_token,
+        parse_token_optional,
+    },
     context_policies::statement_needs_semicolon_policy,
     generators::{
         comments::{
@@ -39,8 +42,8 @@ pub fn gen_import_package_relative(
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = put_back(node.syntax().children_with_tokens());
-    parse_token(&mut syntax, ast::SyntaxKind::Package)?;
-    parse_token(&mut syntax, ast::SyntaxKind::ColonColon)?;
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(ast::SyntaxKind::Package)?;
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(ast::SyntaxKind::ColonColon)?;
     parse_end(&mut syntax)?;
 
     // ==== Format ====
@@ -126,7 +129,7 @@ pub fn gen_import_path(node: &ast::ImportPath) -> FormatDocumentResult<PrintItem
     let mut syntax = put_back(node.syntax().children_with_tokens());
     let item_name = parse_node::<ast::Name>(&mut syntax)?;
     let item_comments_after_name = parse_many_comments_and_blankspace(&mut syntax)?;
-    parse_token(&mut syntax, SyntaxKind::ColonColon)?;
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::ColonColon)?;
     let item_comments_after_colon = parse_many_comments_and_blankspace(&mut syntax)?;
     let item_path_rest = parse_node_optional::<ImportPath>(&mut syntax);
     let item_collection_rest = parse_node_optional::<ImportCollection>(&mut syntax);
@@ -237,7 +240,7 @@ pub fn gen_import_collection(
 
     let mut items = Vec::new();
 
-    parse_token(&mut syntax, SyntaxKind::BraceLeft)?;
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::BraceLeft)?;
 
     loop {
         let before = parse_many_comments_and_blankspace(&mut syntax)?;
@@ -253,7 +256,7 @@ pub fn gen_import_collection(
         }
     }
 
-    parse_token(&mut syntax, SyntaxKind::BraceRight)?;
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::BraceRight)?;
 
     parse_end(&mut syntax)?;
 
@@ -305,7 +308,7 @@ pub fn gen_import_collection(
 pub fn gen_import_statement(node: &ast::ImportStatement) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = put_back(node.syntax().children_with_tokens());
-    parse_token(&mut syntax, ast::SyntaxKind::Import)?;
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(ast::SyntaxKind::Import)?;
     let item_comments_after_import = parse_many_comments_and_blankspace(&mut syntax)?;
     let item_package_relative = parse_node_optional::<ast::ImportPackageRelative>(&mut syntax);
     let item_super_relative = parse_node_optional::<ast::ImportSuperRelative>(&mut syntax);
@@ -315,7 +318,7 @@ pub fn gen_import_statement(node: &ast::ImportStatement) -> FormatDocumentResult
 
     let item_comments_after_importee = parse_many_comments_and_blankspace(&mut syntax)?;
 
-    parse_token(&mut syntax, ast::SyntaxKind::Semicolon)?;
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(ast::SyntaxKind::Semicolon)?;
     parse_end(&mut syntax)?;
 
     // ==== Format ====
