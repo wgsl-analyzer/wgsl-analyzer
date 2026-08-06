@@ -6,12 +6,17 @@ use syntax::{
 };
 
 use crate::{
-    ast_parse::{parse_any_node_optional, parse_end, parse_node_with_trivia, parse_token_optional},
+    ast_parse::{
+        FilterAction, parse_any_node_optional, parse_end, parse_node_with_trivia_filter,
+        parse_token_optional,
+    },
     generators::{
         comments::{Comment, gen_comment, parse_comment_optional},
         node::{gen_node, gen_node_with_trivia},
     },
-    helpers::{LineSpacing, gen_line_spacing, parse_line_spacing},
+    helpers::{
+        LineSpacing, NextGenLineSpacing, gen_line_spacing, parse_line_spacing, read_blankspace,
+    },
     print_item_buffer::{
         PrintItemBuffer,
         spacing_request::{Request, RequestItem, RequestItemSet},
@@ -28,7 +33,7 @@ pub fn gen_source_file(node: &ast::SourceFile) -> FormatDocumentResult<PrintItem
     let mut items = Vec::new();
 
     loop {
-        let mut item = parse_node_with_trivia(&mut syntax);
+        let mut item = parse_node_with_trivia_filter(&mut syntax, |_| None);
 
         if item
             .kind()

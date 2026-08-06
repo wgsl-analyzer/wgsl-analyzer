@@ -183,6 +183,27 @@ impl UntilFilter for BareSyntaxKind {
     }
 }
 
+// TODO I think the default should be to ignore blankspace and *including* it should be explicit (in struct body and compound statements)
+pub struct IgnoreBlankspace;
+impl UntilFilter for IgnoreBlankspace {
+    fn filter(
+        &self,
+        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
+    ) -> Option<FilterAction> {
+        (node.kind() == SyntaxKind::Blankspace).then_some(FilterAction::Ignored)
+    }
+}
+
+pub struct NoTrivia;
+impl UntilFilter for NoTrivia {
+    fn filter(
+        &self,
+        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
+    ) -> Option<FilterAction> {
+        Some(FilterAction::Content)
+    }
+}
+
 pub fn parse_node_with_trivia_until<F>(
     syntax: &mut SyntaxIter,
     until: F,
@@ -191,11 +212,6 @@ where
     F: UntilFilter,
 {
     parse_node_with_trivia_filter(syntax, |node| until.filter(node))
-}
-
-pub fn parse_node_with_trivia(syntax: &mut SyntaxIter) -> NodeWithTrivia {
-    // TODO Remove Empty Line Handling from here
-    parse_node_with_trivia_until(syntax, UntilEmptyLine)
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
@@ -213,24 +229,29 @@ pub fn parse_node_with_trivia_filter<F>(
 where
     F: Fn(&NodeOrToken<SyntaxNode, SyntaxToken>) -> Option<FilterAction>,
 {
+    parse_node_with_trivia_filter_2(syntax, &filter, &filter)
+}
+
+// TODO Rename this... .... WIP api naming is hard
+pub fn parse_node_with_trivia_filter_2<FPre, FPost>(
+    syntax: &mut SyntaxIter,
+    filter_pre: FPre,
+    filter_post: FPost,
+) -> NodeWithTrivia
+where
+    FPre: Fn(&NodeOrToken<SyntaxNode, SyntaxToken>) -> Option<FilterAction>,
+    FPost: Fn(&NodeOrToken<SyntaxNode, SyntaxToken>) -> Option<FilterAction>,
+{
     let mut preceding_trivia = Vec::new();
     let mut succeeding_trivia = Vec::new();
 
     // TODO Remove this
-    loop {
-        // We allow line spacing at the very top of trivia
-        if let Some(spacing) = parse_next_gen_line_spacing(syntax) {
-            preceding_trivia.push(NodeTriviaItem::LineSpacing(spacing));
-        } else {
-            break;
-        }
-    }
 
     let content = loop {
         // I wish we had linear types...
         // NOTE: Make sure node is either put_back onto syntax or consumed in a meaningful way
         if let Some(node) = syntax.next() {
-            let action = filter(&node);
+            let action = filter_pre(&node);
             match action {
                 Some(FilterAction::Ignored) => {},
                 Some(FilterAction::Content) => {
@@ -260,7 +281,7 @@ where
     };
 
     while let Some(node) = syntax.next() {
-        let action = filter(&node);
+        let action = filter_post(&node);
         match action {
             Some(FilterAction::Ignored) => {},
             Some(FilterAction::Content) => {

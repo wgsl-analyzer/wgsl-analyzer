@@ -7,9 +7,7 @@ use syntax::{
 };
 
 use crate::{
-    ast_parse::{
-        FilterAction, parse_end, parse_node_with_trivia, parse_node_with_trivia_filter, parse_token,
-    },
+    ast_parse::{FilterAction, parse_end, parse_node_with_trivia_filter, parse_token},
     context_policies::collapse_one_liner_compound_statement_policy,
     generators::node::gen_node_with_trivia,
     helpers::{NextGenLineSpacing, read_blankspace},
@@ -85,7 +83,6 @@ pub fn gen_compound_statement(
 
     let body_empty = items.iter().all(NodeWithTrivia::is_whitespace);
 
-    dbg!(&items);
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
 

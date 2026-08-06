@@ -7,14 +7,11 @@ use syntax::{
 };
 
 use crate::{
-    ast_parse::{parse_end, parse_node, parse_node_optional, parse_node_with_trivia, parse_token},
-    generators::{
-        attributes::{AttributeLayout, gen_attributes, parse_many_attributes},
-        comments::{gen_comments, parse_many_comments_and_blankspace},
-        expressions::gen_expression,
-        node::gen_node_with_trivia,
-        statements::compound_statement::gen_compound_statement,
+    ast_parse::{
+        IgnoreBlankspace, NoTrivia, parse_end, parse_node_with_trivia_filter,
+        parse_node_with_trivia_until, parse_token,
     },
+    generators::node::gen_node_with_trivia,
     print_item_buffer::{
         PrintItemBuffer,
         spacing_request::{Request, RequestItem, RequestItemSet},
@@ -27,11 +24,12 @@ pub fn gen_if_statement(statement: &ast::IfStatement) -> FormatDocumentResult<Pr
     // ==== Parse ====
     let mut syntax = put_back(statement.syntax().children_with_tokens());
 
-    let item_if_clause = parse_node_with_trivia(&mut syntax).expect_kind(SyntaxKind::IfClause)?;
+    let item_if_clause = parse_node_with_trivia_until(&mut syntax, IgnoreBlankspace)
+        .expect_kind(SyntaxKind::IfClause)?;
 
     let mut else_if_clauses = Vec::new();
     loop {
-        let mut item = parse_node_with_trivia(&mut syntax);
+        let mut item = parse_node_with_trivia_until(&mut syntax, IgnoreBlankspace);
 
         if item
             .kind()
@@ -50,8 +48,8 @@ pub fn gen_if_statement(statement: &ast::IfStatement) -> FormatDocumentResult<Pr
         }
     }
 
-    let item_else_clause =
-        parse_node_with_trivia(&mut syntax).expect_kind_optional(SyntaxKind::ElseClause)?;
+    let item_else_clause = parse_node_with_trivia_until(&mut syntax, IgnoreBlankspace)
+        .expect_kind_optional(SyntaxKind::ElseClause)?;
     parse_end(&mut syntax)?;
 
     // ==== Format ====
@@ -86,11 +84,11 @@ pub fn gen_if_statement_if_clause(statement: &IfClause) -> FormatDocumentResult<
 
     // ==== Parse ====
     let mut syntax = put_back(statement.syntax().children_with_tokens());
-    parse_token(&mut syntax, SyntaxKind::If)?;
-    let item_condition =
-        parse_node_with_trivia(&mut syntax).expect_castable_kind::<Expression>()?;
-    let item_body =
-        parse_node_with_trivia(&mut syntax).expect_castable_kind::<CompoundStatement>()?;
+    parse_node_with_trivia_until(&mut syntax, NoTrivia).expect_kind(SyntaxKind::If)?;
+    let item_condition = parse_node_with_trivia_until(&mut syntax, IgnoreBlankspace)
+        .expect_castable_kind::<Expression>()?;
+    let item_body = parse_node_with_trivia_until(&mut syntax, IgnoreBlankspace)
+        .expect_castable_kind::<CompoundStatement>()?;
     parse_end(&mut syntax)?;
 
     // ==== Format ====
@@ -114,9 +112,9 @@ pub fn gen_if_statement_else_clause(
 
     // ==== Parse ====
     let mut syntax = put_back(statement.syntax().children_with_tokens());
-    parse_token(&mut syntax, SyntaxKind::Else)?;
-    let item_body =
-        parse_node_with_trivia(&mut syntax).expect_castable_kind::<CompoundStatement>()?;
+    parse_node_with_trivia_until(&mut syntax, NoTrivia).expect_kind(SyntaxKind::Else)?;
+    let item_body = parse_node_with_trivia_until(&mut syntax, IgnoreBlankspace)
+        .expect_castable_kind::<CompoundStatement>()?;
     parse_end(&mut syntax)?;
 
     // ==== Format ====
@@ -137,12 +135,12 @@ pub fn gen_if_statement_else_if_clause(
 
     // ==== Parse ====
     let mut syntax = put_back(statement.syntax().children_with_tokens());
-    parse_token(&mut syntax, SyntaxKind::Else)?;
-    parse_token(&mut syntax, SyntaxKind::If)?;
-    let item_condition =
-        parse_node_with_trivia(&mut syntax).expect_castable_kind::<Expression>()?;
-    let item_body =
-        parse_node_with_trivia(&mut syntax).expect_castable_kind::<CompoundStatement>()?;
+    parse_node_with_trivia_until(&mut syntax, NoTrivia).expect_kind(SyntaxKind::Else)?;
+    parse_node_with_trivia_until(&mut syntax, NoTrivia).expect_kind(SyntaxKind::If)?;
+    let item_condition = parse_node_with_trivia_until(&mut syntax, IgnoreBlankspace)
+        .expect_castable_kind::<Expression>()?;
+    let item_body = parse_node_with_trivia_until(&mut syntax, IgnoreBlankspace)
+        .expect_castable_kind::<CompoundStatement>()?;
     parse_end(&mut syntax)?;
 
     // ==== Format ====
