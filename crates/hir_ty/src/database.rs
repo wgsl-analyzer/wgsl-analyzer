@@ -9,6 +9,7 @@
 use std::fmt;
 
 use base_db::{EditionedFileId, Lookup as _};
+use hir_def::signature::StructSignature;
 use hir_def::{
     InFile,
     database::{
@@ -85,7 +86,7 @@ fn field_types(
     database: &dyn HirDatabase,
     r#struct: StructId,
 ) -> Arc<(ArenaMap<LocalFieldId, Type>, Vec<InferenceDiagnostic>)> {
-    let data = database.struct_data(r#struct).0;
+    let data = StructSignature::of(database, r#struct);
 
     let file_id = r#struct.lookup(database).file_id;
     let module_info = ItemScope::of(database, file_id);

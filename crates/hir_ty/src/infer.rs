@@ -20,7 +20,8 @@ use hir_def::{
     mod_path::PathKind,
     resolver::{ResolveKind, Resolver},
     signature::{
-        ConstantSignature, FieldId, FunctionSignature, OverrideSignature, VariableSignature,
+        ConstantSignature, FieldId, FunctionSignature, OverrideSignature, StructSignature,
+        VariableSignature,
     },
     type_ref::{self, VecDimensionality},
     type_specifier::{IdentExpression, TypeSpecifierId},
@@ -157,7 +158,7 @@ fn get_name_and_range(
                 .range,
         ),
         ModuleDefinitionId::Struct(id) => (
-            database.struct_data(id).0.name.clone(),
+            StructSignature::of(database, id).name.clone(),
             id.lookup(database)
                 .source(database)
                 .original_file_range(database)
@@ -1551,7 +1552,7 @@ impl<'database> InferenceContext<'database> {
         expression_type: Type,
         r#struct: StructId,
     ) -> Type {
-        let struct_data = self.database.struct_data(r#struct).0;
+        let struct_data = StructSignature::of(self.database, r#struct);
         let field_types = &self.database.field_types(r#struct).0;
         if let Some(field) = struct_data.field(name) {
             self.set_field_resolution(expression, FieldId { r#struct, field });
@@ -2227,7 +2228,7 @@ impl<'database> InferenceContext<'database> {
         if arguments.is_empty() {
             return r#type;
         }
-        let signature = self.database.struct_data(struct_id).0;
+        let signature = StructSignature::of(self.database, struct_id);
         if arguments.len() != signature.fields.len() {
             self.push_diagnostic(
                 store.store_source,

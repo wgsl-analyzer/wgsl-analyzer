@@ -1,6 +1,7 @@
 use std::fmt::{self, Write as _};
 
 use base_db::{TextRange, TextSize};
+use hir_def::signature::StructSignature;
 use wgsl_types::ty::SamplerType;
 
 use super::{Type, TypeKind};
@@ -210,7 +211,7 @@ fn write_type(
             write!(formatter, ">")
         },
         TypeKind::Struct(r#struct) => {
-            let data = database.struct_data(r#struct).0;
+            let data = StructSignature::of(database, r#struct);
             write!(formatter, "{}", data.name.as_str())
         },
         TypeKind::BuiltinStruct(builtin_struct) => {

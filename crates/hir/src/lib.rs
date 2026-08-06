@@ -20,7 +20,7 @@ use hir_def::{
     item_tree::{self, ItemTree, ModuleItemId, Name},
     mod_path::PathKind,
     resolver::{ResolveKind, Resolver},
-    signature::{FieldId, FunctionSignature, ParameterId},
+    signature::{FieldId, FunctionSignature, ParameterId, StructSignature},
 };
 use hir_ty::{infer::InferenceResult, ty::Type};
 use smallvec::SmallVec;
@@ -724,7 +724,7 @@ impl HasSource for Field {
         self,
         database: &dyn DefDatabase,
     ) -> Option<InFile<Self::Ast>> {
-        let struct_data = database.struct_data(self.id.r#struct).0;
+        let struct_data = StructSignature::of(database, self.id.r#struct);
         let field_data = &struct_data.fields()[self.id.field];
         let field_name = &field_data.name;
 
@@ -826,7 +826,8 @@ impl Module {
                 ModuleDef::GlobalAssertStatement(_global_assert_statement) => {},
                 ModuleDef::Struct(r#struct) => {
                     let file = r#struct.id.lookup(database).file_id;
-                    let (_, signature_map) = database.struct_data(r#struct.id);
+                    let (_, signature_map) =
+                        StructSignature::with_source_map(database, r#struct.id);
                     let (fields, diagnostics) = &*database.field_types(r#struct.id);
                     for diagnostic in diagnostics {
                         if diagnostic.source != ExpressionStoreSource::Signature {
