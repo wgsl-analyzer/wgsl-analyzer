@@ -239,12 +239,10 @@ pub struct OverrideSignature {
 impl OverrideSignature {
     #[salsa::tracked(returns(deref))]
     pub fn of(
-        database: &dyn DefDatabase,
-        override_declaration: OverrideId,
+        db: &dyn DefDatabase,
+        id: OverrideId,
     ) -> Arc<Self> {
-        Self::with_source_map(database, override_declaration)
-            .0
-            .clone()
+        Self::with_source_map(db, id).0.clone()
     }
 
     #[salsa::tracked(returns(ref))]

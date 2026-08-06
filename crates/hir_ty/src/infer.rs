@@ -74,23 +74,23 @@ fn infer_query(
     match definition {
         DefinitionWithBodyId::Function(function) => {
             let data = FunctionSignature::of(database, function);
-            let return_type = context.collect_fn(&data, body);
+            let return_type = context.collect_fn(data, body);
             context.infer_body(body, return_type, AbstractHandling::Concretize);
         },
         DefinitionWithBodyId::GlobalVariable(variable) => {
             let data = VariableSignature::of(database, variable);
-            let return_type = context.collect_global_variable(&data, body);
+            let return_type = context.collect_global_variable(data, body);
             context.infer_body(body, return_type, AbstractHandling::Concretize);
-            context.infer_global_variable(&data, body);
+            context.infer_global_variable(data, body);
         },
         DefinitionWithBodyId::GlobalConstant(constant) => {
             let data = ConstantSignature::of(database, constant);
-            let return_type = context.collect_global_constant(&data, body);
+            let return_type = context.collect_global_constant(data, body);
             context.infer_body(body, return_type, AbstractHandling::Abstract);
         },
         DefinitionWithBodyId::Override(override_declaration) => {
             let data = OverrideSignature::of(database, override_declaration);
-            let return_type = context.collect_override(&data, body);
+            let return_type = context.collect_override(data, body);
             context.infer_body(body, return_type, AbstractHandling::Concretize);
         },
         DefinitionWithBodyId::GlobalAssertStatement(_global_assert_statement) => {

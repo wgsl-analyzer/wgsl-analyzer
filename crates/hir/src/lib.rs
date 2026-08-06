@@ -839,7 +839,7 @@ impl Module {
                         }
                         match diagnostics::any_diag_from_infer_diagnostic(
                             &diagnostic.kind,
-                            &signature_map,
+                            signature_map,
                             file,
                         ) {
                             Some(diagnostic) => accumulator.push(diagnostic),
@@ -864,7 +864,7 @@ impl Module {
                         }
                         match diagnostics::any_diag_from_infer_diagnostic(
                             &diagnostic.kind,
-                            &signature_map,
+                            signature_map,
                             file,
                         ) {
                             Some(diagnostic) => accumulator.push(diagnostic),
