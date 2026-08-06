@@ -1,6 +1,9 @@
-import * as assert from "assert";
-import { substituteVariablesInEnv } from "../../src/config";
-import type { Context } from ".";
+/** biome-ignore-all lint/style/useNamingConvention: environment variables naming convention */
+/** biome-ignore-all lint/suspicious/noTemplateCurlyInString: substituteVariablesInEnv */
+import { deepStrictEqual } from "node:assert/strict";
+import process from "node:process";
+import { substituteVariablesInEnv } from "../../src/config.ts";
+import type { Context } from "./index.ts";
 
 export async function getTests(context: Context) {
 	await context.suite("Server Env Settings", (suite) => {
@@ -14,7 +17,7 @@ export async function getTests(context: Context) {
 				MY_VAR: "test",
 			};
 			const actualEnv = substituteVariablesInEnv(envJson);
-			assert.deepStrictEqual(actualEnv, expectedEnv);
+			deepStrictEqual(actualEnv, expectedEnv);
 		});
 
 		suite.addSyncTest("Circular dependencies remain as is", () => {
@@ -35,7 +38,7 @@ export async function getTests(context: Context) {
 				F_USES_E: "test",
 			};
 			const actualEnv = substituteVariablesInEnv(envJson);
-			assert.deepStrictEqual(actualEnv, expectedEnv);
+			deepStrictEqual(actualEnv, expectedEnv);
 		});
 
 		suite.addSyncTest("Should support external variables", () => {
@@ -48,7 +51,9 @@ export async function getTests(context: Context) {
 			};
 
 			const actualEnv = substituteVariablesInEnv(envJson);
-			assert.deepStrictEqual(actualEnv, expectedEnv);
+			deepStrictEqual(actualEnv, expectedEnv);
+			// biome-ignore lint/performance/noDelete: this is correct
+			// biome-ignore lint/complexity/useLiteralKeys: Property 'TEST_VARIABLE' comes from an index signature
 			delete process.env["TEST_VARIABLE"];
 		});
 
@@ -57,7 +62,7 @@ export async function getTests(context: Context) {
 				USING_VSCODE_VAR: "${workspaceFolderBasename}",
 			};
 			const actualEnv = substituteVariablesInEnv(envJson);
-			assert.deepStrictEqual(actualEnv["USING_VSCODE_VAR"], "code");
+			deepStrictEqual(actualEnv["USING_VSCODE_VAR"], "code");
 		});
 	});
 }

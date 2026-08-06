@@ -1,8 +1,8 @@
 import * as vscode from "vscode";
 
-import type { Config } from "./config";
+import type { Config } from "./config.ts";
 
-import * as toolchain from "./toolchain";
+import * as toolchain from "./toolchain.ts";
 
 // This ends up as the `type` key in tasks.json. RLS also uses `cargo` and
 // our configuration should be compatible with it so use the same key.
@@ -29,11 +29,11 @@ function isWeslTask(definition: vscode.TaskDefinition): definition is WeslTaskDe
 class WeslTaskProvider implements vscode.TaskProvider {
 	private readonly config: Config;
 
-	constructor(config: Config) {
+	public constructor(config: Config) {
 		this.config = config;
 	}
 
-	async provideTasks(): Promise<vscode.Task[]> {
+	public async provideTasks(): Promise<vscode.Task[]> {
 		if (!vscode.workspace.workspaceFolders) {
 			return [];
 		}
@@ -45,7 +45,7 @@ class WeslTaskProvider implements vscode.TaskProvider {
 		//
 		// Sourced from:
 		// https://github.com/wgsl-tooling-wg/wesl-rs/blob/main/crates/wesl-cli/src/main.rs#L45
-		const task_definitions = [
+		const taskDefinitions = [
 			{ command: "check", group: vscode.TaskGroup.Build },
 			{ command: "compile", group: vscode.TaskGroup.Build },
 			{ command: "eval", group: vscode.TaskGroup.Test },
@@ -61,20 +61,20 @@ class WeslTaskProvider implements vscode.TaskProvider {
 
 		const tasks: vscode.Task[] = [];
 		for (const workspaceTarget of vscode.workspace.workspaceFolders) {
-			for (const task_definition of task_definitions) {
+			for (const taskDefinition of taskDefinitions) {
 				const definition = {
-					command: task_definition.command,
+					command: taskDefinition.command,
 					type: WESL_TASK_TYPE,
 				} as const;
 				const exec = await targetToExecution(definition, {}, cargo);
 				const vscodeTask = buildWeslTask(
 					workspaceTarget,
 					definition,
-					`cargo ${task_definition.command}`,
+					`cargo ${taskDefinition.command}`,
 					this.config.problemMatcher,
 					exec,
 				);
-				vscodeTask.group = task_definition.group;
+				vscodeTask.group = taskDefinition.group;
 				tasks.push(vscodeTask);
 			}
 		}
@@ -82,7 +82,7 @@ class WeslTaskProvider implements vscode.TaskProvider {
 		return tasks;
 	}
 
-	async resolveTask(task: vscode.Task): Promise<undefined | vscode.Task> {
+	public async resolveTask(task: vscode.Task): Promise<undefined | vscode.Task> {
 		// VSCode calls this for every cargo task in the user's tasks.json,
 		// we need to inform VSCode how to execute that command by creating
 		// a ShellExecution for it.

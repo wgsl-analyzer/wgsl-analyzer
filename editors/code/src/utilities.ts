@@ -1,18 +1,18 @@
-import { strict as nativeAssert } from "assert";
+import { strict as nativeAssert } from "node:assert/strict";
 import {
 	type ExecOptionsWithStringEncoding,
 	exec,
 	type SpawnOptionsWithoutStdio,
 	spawn,
-} from "child_process";
-import { inspect } from "util";
+} from "node:child_process";
+import { inspect } from "node:util";
 import * as vscode from "vscode";
 
 export function assert(condition: boolean, explanation: string): asserts condition {
 	try {
 		nativeAssert(condition, explanation);
 	} catch (error) {
-		log.error(`Assertion failed:`, explanation);
+		log.error("Assertion failed:", explanation);
 		throw error;
 	}
 }
@@ -26,23 +26,23 @@ class Log {
 		log: true,
 	});
 
-	trace(...messages: [unknown, ...unknown[]]): void {
+	public trace(...messages: [unknown, ...unknown[]]): void {
 		this.output.trace(this.stringify(messages));
 	}
 
-	debug(...messages: [unknown, ...unknown[]]): void {
+	public debug(...messages: [unknown, ...unknown[]]): void {
 		this.output.debug(this.stringify(messages));
 	}
 
-	info(...messages: [unknown, ...unknown[]]): void {
+	public info(...messages: [unknown, ...unknown[]]): void {
 		this.output.info(this.stringify(messages));
 	}
 
-	warn(...messages: [unknown, ...unknown[]]): void {
+	public warn(...messages: [unknown, ...unknown[]]): void {
 		this.output.warn(this.stringify(messages));
 	}
 
-	error(...messages: [unknown, ...unknown[]]): void {
+	public error(...messages: [unknown, ...unknown[]]): void {
 		this.output.error(this.stringify(messages));
 		this.output.show(true);
 	}
@@ -158,41 +158,41 @@ export function execute(command: string, options: ExecOptionsWithStringEncoding)
 }
 
 export class LazyOutputChannel implements vscode.OutputChannel {
-	constructor(name: string) {
+	public constructor(name: string) {
 		this.name = name;
 	}
 
-	name: string;
-	_channel: vscode.OutputChannel | undefined;
+	public name: string;
+	public _channel: vscode.OutputChannel | undefined;
 
-	get channel(): vscode.OutputChannel {
+	public get channel(): vscode.OutputChannel {
 		if (!this._channel) {
 			this._channel = vscode.window.createOutputChannel(this.name);
 		}
 		return this._channel;
 	}
 
-	append(value: string): void {
+	public append(value: string): void {
 		this.channel.append(value);
 	}
 
-	appendLine(value: string): void {
+	public appendLine(value: string): void {
 		this.channel.appendLine(value);
 	}
 
-	replace(value: string): void {
+	public replace(value: string): void {
 		this.channel.replace(value);
 	}
 
-	clear(): void {
+	public clear(): void {
 		if (this._channel) {
 			this._channel.clear();
 		}
 	}
 
-	show(preserveFocus?: boolean): void;
-	show(column: vscode.ViewColumn, preserveFocus?: boolean): void;
-	show(arg1?: boolean | vscode.ViewColumn, arg2?: boolean): void {
+	public show(preserveFocus?: boolean): void;
+	public show(column: vscode.ViewColumn, preserveFocus?: boolean): void;
+	public show(arg1?: boolean | vscode.ViewColumn, arg2?: boolean): void {
 		let preserveFocus: boolean;
 		if (typeof arg1 === "boolean") {
 			preserveFocus = arg1;
@@ -202,13 +202,13 @@ export class LazyOutputChannel implements vscode.OutputChannel {
 		this.channel.show(preserveFocus);
 	}
 
-	hide(): void {
+	public hide(): void {
 		if (this._channel) {
 			this._channel.hide();
 		}
 	}
 
-	dispose(): void {
+	public dispose(): void {
 		if (this._channel) {
 			this._channel.dispose();
 		}
@@ -231,7 +231,7 @@ function expectNotNull<T>(input: Nullable<T>, message: string): NotNull<T> {
 	throw new TypeError(message);
 }
 export function unwrapNullable<T>(input: Nullable<T>): NotNull<T> {
-	return expectNotNull(input, `unwrapping \`null\``);
+	return expectNotNull(input, "unwrapping `null`");
 }
 
 export type NotUndefined<T> = T extends undefined ? never : T;
@@ -250,7 +250,7 @@ export function expectNotUndefined<T>(input: Undefinable<T>, message: string): N
 }
 
 export function unwrapUndefinable<T>(input: Undefinable<T>): NotUndefined<T> {
-	return expectNotUndefined(input, `unwrapping \`undefined\``);
+	return expectNotUndefined(input, "unwrapping `undefined`");
 }
 
 interface SpawnAsyncReturns {
@@ -262,14 +262,14 @@ interface SpawnAsyncReturns {
 
 export async function spawnAsync(
 	path: string,
-	inputs?: ReadonlyArray<string>,
+	inputs?: readonly string[],
 	options?: SpawnOptionsWithoutStdio,
 ): Promise<SpawnAsyncReturns> {
 	const child = spawn(path, inputs, options);
 	// biome-ignore lint/suspicious/noExplicitAny: Signature comes from upstream
-	const stdout: Array<Buffer<any>> = [];
+	const stdout: Buffer<any>[] = [];
 	// biome-ignore lint/suspicious/noExplicitAny: Signature comes from upstream
-	const stderr: Array<Buffer<any>> = [];
+	const stderr: Buffer<any>[] = [];
 	try {
 		const result = await new Promise<{
 			status: null | number;

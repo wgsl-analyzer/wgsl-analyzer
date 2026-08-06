@@ -1,8 +1,8 @@
+import process from "node:process";
 import * as os from "os";
 import * as path from "path";
 import * as vscode from "vscode";
-
-import { log, memoizeAsync } from "./utilities";
+import { log, memoizeAsync } from "./utilities.ts";
 
 interface CompilationArtifact {
 	fileName: string;

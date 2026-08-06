@@ -1,7 +1,7 @@
 import * as assert from "assert";
 import * as vscode from "vscode";
-import { targetToExecution } from "../../src/tasks";
-import type { Context } from ".";
+import { targetToExecution } from "../../src/tasks.ts";
+import type { Context } from "./index.ts";
 
 export async function getTests(context: Context) {
 	await context.suite("Tasks", (suite) => {
@@ -91,7 +91,7 @@ export async function getTests(context: Context) {
 					},
 				},
 			];
-			tasks.map(to_test_execution).forEach((actual, i) => {
+			tasks.map(toTestExecution).forEach((actual, i) => {
 				const expected = expectedTasks[i];
 				assert.deepStrictEqual(actual, expected);
 			});
@@ -99,8 +99,8 @@ export async function getTests(context: Context) {
 	});
 }
 
-function to_test_execution(task: vscode.Task): {
-	definition: vscode.TaskDefinition;
+function toTestExecution(task: Task): {
+	definition: TaskDefinition;
 	name: string;
 	execution: {
 		args: string[];
@@ -135,10 +135,9 @@ function executionToSimple(
 				return argument.value;
 			}),
 		};
-	} else {
-		return {
-			process: exec.process,
-			args: exec.args,
-		};
 	}
+	return {
+		process: exec.process,
+		args: exec.args,
+	};
 }

@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 
-import { assert, unwrapUndefinable } from "./utilities";
+import { assert, unwrapUndefinable } from "./utilities.ts";
 
 export type SnippetTextDocumentEdit = [vscode.Uri, (vscode.TextEdit | vscode.SnippetTextEdit)[]];
 
@@ -64,9 +64,8 @@ function toSnippetTextEdits(
 		// treated as if it had a tab stop at the end.
 		if (hasSnippet(textEdit.newText)) {
 			return new vscode.SnippetTextEdit(textEdit.range, new vscode.SnippetString(textEdit.newText));
-		} else {
-			return textEdit;
 		}
+		return textEdit;
 	});
 }
 
@@ -115,9 +114,8 @@ function removeLeadingWhitespace(
 			}
 
 			return snippetEdit;
-		} else {
-			return edit;
 		}
+		return edit;
 	});
 }
 

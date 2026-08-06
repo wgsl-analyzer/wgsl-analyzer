@@ -1,15 +1,16 @@
 import { spawn } from "node:child_process";
+import process from "node:process";
 import { text } from "node:stream/consumers";
 import * as vscode from "vscode";
 import type * as lc from "vscode-languageclient/node";
-import { bootstrap } from "./bootstrap";
-import { createClient } from "./client";
-import { Config, prepareVSCodeConfig } from "./config";
-import type { ServerStatusParameters } from "./lsp_ext";
-import * as wa from "./lsp_ext";
-import type { WgslAnalyzerExtensionApi } from "./main";
-import { PersistentState } from "./persistent_state";
-import { type SyntaxElement, SyntaxTreeProvider } from "./syntax_tree_provider";
+import { bootstrap } from "./bootstrap.ts";
+import { createClient } from "./client.ts";
+import { Config, prepareVSCodeConfig } from "./config.ts";
+import type { ServerStatusParameters } from "./lsp_ext.ts";
+import * as wa from "./lsp_ext.ts";
+import type { WgslAnalyzerExtensionApi } from "./main.ts";
+import { PersistentState } from "./persistent_state.ts";
+import { type SyntaxElement, SyntaxTreeProvider } from "./syntax_tree_provider.ts";
 import {
 	isWeslDocument,
 	isWeslEditor,
@@ -17,7 +18,7 @@ import {
 	LazyOutputChannel,
 	log,
 	type WeslEditor,
-} from "./utilities";
+} from "./utilities.ts";
 
 // We only support local folders, not eg. Live Share (`vlsl:` scheme), so do not activate if
 // only those are in use. We use "Empty" to represent these scenarios.
@@ -136,16 +137,18 @@ export class Context implements WgslAnalyzerExtensionApi {
 
 	async onWorkspaceFolderChanges() {
 		const workspace = fetchWorkspace();
-		if (workspace.kind === "Detached Files" && this.workspace.kind === "Detached Files") {
-			if (workspace.files !== this.workspace.files) {
-				if (this.client?.isRunning()) {
-					// Ideally we would not need to tear down the server here, but currently detached files
-					// are only specified at server start
-					await this.stopAndDispose();
-					await this.start();
-				}
-				return;
+		if (
+			workspace.kind === "Detached Files"
+			&& this.workspace.kind === "Detached Files"
+			&& workspace.files !== this.workspace.files
+		) {
+			if (this.client?.isRunning()) {
+				// Ideally we would not need to tear down the server here, but currently detached files
+				// are only specified at server start
+				await this.stopAndDispose();
+				await this.start();
 			}
+			return;
 		}
 		if (workspace.kind === "Workspace Folder" && this.workspace.kind === "Workspace Folder") {
 			return;
@@ -168,7 +171,7 @@ export class Context implements WgslAnalyzerExtensionApi {
 			this._serverPath = await this.bootstrap();
 			text(spawn(this._serverPath, ["--version"]).stdout.setEncoding("utf-8")).then(
 				(data) => {
-					const prefix = `wgsl-analyzer `;
+					const prefix = "wgsl-analyzer ";
 					this._serverVersion = data.slice(data.startsWith(prefix) ? prefix.length : 0).trim();
 					this.refreshServerStatus();
 				},
@@ -178,7 +181,7 @@ export class Context implements WgslAnalyzerExtensionApi {
 					this.refreshServerStatus();
 				},
 			);
-			const newEnv = Object.assign({}, process.env, this.config.serverExtraEnv);
+			const newEnv = { ...process.env, ...this.config.serverExtraEnv };
 			const run: lc.Executable = {
 				command: this._serverPath,
 				options: { env: newEnv },
@@ -264,7 +267,7 @@ export class Context implements WgslAnalyzerExtensionApi {
 	}
 
 	private prepareSyntaxTreeView(client: lc.LanguageClient) {
-		const ctxInit: InitializedContext = Object.assign({}, this, { client });
+		const ctxInit: InitializedContext = { ...this, client };
 		this._syntaxTreeProvider = new SyntaxTreeProvider(ctxInit);
 		this._syntaxTreeView = vscode.window.createTreeView("weslSyntaxTree", {
 			treeDataProvider: this._syntaxTreeProvider,
@@ -293,7 +296,7 @@ export class Context implements WgslAnalyzerExtensionApi {
 		});
 
 		vscode.window.onDidChangeTextEditorSelection(async (event) => {
-			if (!this.syntaxTreeView?.visible || !isWeslEditor(event.textEditor)) {
+			if (!(this.syntaxTreeView?.visible && isWeslEditor(event.textEditor))) {
 				return;
 			}
 
@@ -378,9 +381,7 @@ export class Context implements WgslAnalyzerExtensionApi {
 		this.commandDisposables = [];
 
 		const clientRunning = (!forceDisable && this._client?.isRunning()) ?? false;
-		const isClientRunning = function (_ctx: Context): _ctx is InitializedContext {
-			return clientRunning;
-		};
+		const isClientRunning = (_ctx: Context): _ctx is InitializedContext => clientRunning;
 
 		for (const [name, factory] of Object.entries(this.commandFactories)) {
 			const fullName = `wgsl-analyzer.${name}`;
@@ -498,7 +499,7 @@ export class Context implements WgslAnalyzerExtensionApi {
 }
 
 export interface Disposable {
-	dispose(): void;
+	dispose: () => void;
 }
 
 // biome-ignore lint/suspicious/noExplicitAny: Signature comes from upstream

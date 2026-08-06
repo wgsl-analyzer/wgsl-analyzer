@@ -8,9 +8,9 @@ import {
 	window,
 } from "vscode";
 
-import type { Context } from "./context";
+import type { Context } from "./context.ts";
 
-import { unwrapUndefinable } from "./utilities";
+import { unwrapUndefinable } from "./utilities.ts";
 
 export const URI_SCHEME = "wgsl-analyzer-diagnostics-view";
 
@@ -45,7 +45,7 @@ function getRenderedDiagnostic(context: Context, uri: vscode.Uri): string {
 		return "Unable to find original diagnostic";
 	}
 
-	const diagnostic = diagnostics[parseInt(uri.query)];
+	const diagnostic = diagnostics[Number.parseInt(uri.query, 10)];
 	if (!diagnostic) {
 		return "Unable to find original diagnostic";
 	}
