@@ -795,7 +795,7 @@ impl Module {
         self,
         database: &dyn HirDatabase,
     ) -> Vec<ModuleDef> {
-        let item_tree = database.item_tree(self.file_id);
+        let item_tree = ItemTree::of(database, self.file_id);
         item_tree
             .top_level_items()
             .iter()
@@ -895,7 +895,7 @@ fn validate_identifiers(
     database: &dyn HirDatabase,
     accumulator: &mut Vec<AnyDiagnostic>,
 ) {
-    let item_tree = database.item_tree(file_id);
+    let item_tree = ItemTree::of(database, file_id);
     let ast_id_map = AstIdMap::of(database, file_id);
     let root = file_id.parse(database).syntax();
 

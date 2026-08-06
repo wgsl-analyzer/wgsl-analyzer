@@ -30,12 +30,6 @@ pub trait DefDatabase: InternDatabase + SourceDatabase {
     #[salsa::input]
     fn extensions(&self) -> ExtensionsConfig;
 
-    #[salsa::invoke(ItemTree::query)]
-    fn item_tree(
-        &self,
-        key: EditionedFileId,
-    ) -> Arc<ItemTree>;
-
     #[salsa::invoke(signature_with_source_map)]
     fn signature_with_source_map(
         &self,

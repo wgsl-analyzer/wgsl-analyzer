@@ -1,6 +1,6 @@
 use base_db::EditionedFileId;
 use expect_test::{Expect, expect};
-use hir_def::database::{DefDatabase as _, ModuleDefinitionId};
+use hir_def::{database::{DefDatabase as _, ModuleDefinitionId}, item_tree::ItemTree};
 use salsa::Durability;
 use std::fmt::Write as _;
 use syntax::ExtensionsConfig;
@@ -52,7 +52,7 @@ impl<'db> LayoutPrinter<'db> {
         &self,
         buffer: &mut String,
     ) {
-        let module_info = self.database.item_tree(self.file_id);
+        let module_info = ItemTree::of(self.database, self.file_id);
         let mut definitions = module_definitions(self.database, self.file_id, &module_info);
         definitions.sort_by_key(|definition| text_range_start(*definition, self.database));
         for definition in definitions {

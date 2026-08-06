@@ -20,7 +20,7 @@ pub fn collect_module(
     database: &dyn DefDatabase,
     file_id: EditionedFileId,
 ) -> ItemScope {
-    let item_tree = database.item_tree(file_id);
+    let item_tree = ItemTree::of(database, file_id);
 
     let mut collector = ModCollector {
         database,
@@ -287,7 +287,7 @@ impl ModCollector<'_> {
         file_id: EditionedFileId,
         name: &Name,
     ) -> Option<ModuleDefinitionId> {
-        let item_tree = self.database.item_tree(file_id);
+        let item_tree = ItemTree::of(self.database, file_id);
         item_tree
             .top_level_items()
             .iter()
