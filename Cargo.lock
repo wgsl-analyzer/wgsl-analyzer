@@ -1942,9 +1942,9 @@ dependencies = [
 
 [[package]]
 name = "wgsl-types"
-version = "0.4.1"
+version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f706be58c957ecf61a1645fb4de85892996a8d8a6e08135dad31442663a46615"
+checksum = "8286b1a2ce08736a048da13f6fcdd427c7baf7e3c48e0b5a0c51f954675b2f73"
 dependencies = [
  "half",
  "itertools 0.15.0",

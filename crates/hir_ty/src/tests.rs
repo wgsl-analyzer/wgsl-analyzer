@@ -5,6 +5,7 @@ mod builtins;
 mod imports;
 mod incremental;
 mod layout;
+mod operators;
 mod simple;
 use std::{fmt::Write as _, ops::ControlFlow};
 
