@@ -7,8 +7,8 @@ use rowan::NodeOrToken;
 use syntax::{AstNode, AstToken, ast::AttributeList};
 
 use crate::{
-    generators::comments::parse_comment_optional,
-    helpers::{NextGenLineSpacing, parse_next_gen_line_spacing},
+    generators::comments::{parse_comment_optional, read_comment},
+    helpers::{NextGenLineSpacing, parse_next_gen_line_spacing, read_blankspace},
     reporting::{FormatDocumentError, FormatDocumentResult, UnwrapIfPreferCrash as _},
     trivia::{NodeTriviaItem, NodeWithTrivia, NodeWithTriviaContent},
 };
@@ -142,13 +142,68 @@ where
     }
 }
 
-pub fn parse_node_with_trivia(syntax: &mut SyntaxIter) -> NodeWithTrivia {
-    parse_node_with_trivia_filter(syntax, |_| FilterAction::Content)
+pub trait UntilFilter {
+    fn filter(
+        &self,
+        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
+    ) -> Option<FilterAction>;
 }
 
+pub struct UntilEmptyLine;
+
+impl UntilFilter for UntilEmptyLine {
+    fn filter(
+        &self,
+        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
+    ) -> Option<FilterAction> {
+        match read_blankspace(node) {
+            Some(NextGenLineSpacing::EmptyLine(_)) => Some(FilterAction::Stop),
+            _ => None,
+        }
+    }
+}
+
+pub struct UntilSyntaxKind(pub SyntaxKind);
+impl UntilFilter for UntilSyntaxKind {
+    fn filter(
+        &self,
+        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
+    ) -> Option<FilterAction> {
+        (node.kind() == self.0).then_some(FilterAction::Stop)
+    }
+}
+
+pub struct BareSyntaxKind(pub SyntaxKind);
+impl UntilFilter for BareSyntaxKind {
+    fn filter(
+        &self,
+        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
+    ) -> Option<FilterAction> {
+        (node.kind() != self.0).then_some(FilterAction::Stop)
+    }
+}
+
+pub fn parse_node_with_trivia_until<F>(
+    syntax: &mut SyntaxIter,
+    until: F,
+) -> NodeWithTrivia
+where
+    F: UntilFilter,
+{
+    parse_node_with_trivia_filter(syntax, |node| until.filter(node))
+}
+
+pub fn parse_node_with_trivia(syntax: &mut SyntaxIter) -> NodeWithTrivia {
+    // TODO Remove Empty Line Handling from here
+    parse_node_with_trivia_until(syntax, UntilEmptyLine)
+}
+
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum FilterAction {
     Ignored,
+    // TODO I think we can do without Content, as that is just a worse None in the filter
     Content,
+    Stop,
 }
 
 pub fn parse_node_with_trivia_filter<F>(
@@ -156,7 +211,7 @@ pub fn parse_node_with_trivia_filter<F>(
     filter: F,
 ) -> NodeWithTrivia
 where
-    F: Fn(&NodeOrToken<SyntaxNode, SyntaxToken>) -> FilterAction,
+    F: Fn(&NodeOrToken<SyntaxNode, SyntaxToken>) -> Option<FilterAction>,
 {
     let mut preceding_trivia = Vec::new();
     let mut succeeding_trivia = Vec::new();
@@ -171,63 +226,68 @@ where
     }
 
     let content = loop {
-        if let Some(line_spacing) = parse_next_gen_line_spacing(syntax) {
-            match line_spacing {
-                NextGenLineSpacing::EmptyLine(blankspace) => {
-                    syntax.put_back(NodeOrToken::Token(blankspace));
-                    return NodeWithTrivia {
-                        preceding_trivia,
-                        node: NodeWithTriviaContent::NoContent,
-                        succeeding_trivia,
-                    };
+        // I wish we had linear types...
+        // NOTE: Make sure node is either put_back onto syntax or consumed in a meaningful way
+        if let Some(node) = syntax.next() {
+            let action = filter(&node);
+            match action {
+                Some(FilterAction::Ignored) => {},
+                Some(FilterAction::Content) => {
+                    break NodeWithTriviaContent::Content(node);
                 },
-                NextGenLineSpacing::LineBreak(_) => {
-                    preceding_trivia.push(NodeTriviaItem::LineSpacing(line_spacing));
+                Some(FilterAction::Stop) => {
+                    syntax.put_back(node);
+                    break NodeWithTriviaContent::NoContent;
                 },
-                NextGenLineSpacing::OnelineBlankspace(_) => {
-                    // Line breaks and oneline blankspace never carry any meaning
+                None => {
+                    if let Some(line_spacing) = read_blankspace(&node) {
+                        preceding_trivia.push(NodeTriviaItem::LineSpacing(line_spacing));
+                    } else if let Some(comment) = read_comment(&node) {
+                        preceding_trivia.push(NodeTriviaItem::Comment(comment));
+                    } else if let NodeOrToken::Node(node) = &node
+                        && let Some(attributes) = AttributeList::cast(node.clone())
+                    {
+                        preceding_trivia.push(NodeTriviaItem::AttributeList(attributes));
+                    } else {
+                        break NodeWithTriviaContent::Content(node);
+                    }
                 },
             }
-        } else if let Some(comment) = parse_comment_optional(syntax) {
-            preceding_trivia.push(NodeTriviaItem::Comment(comment));
-        } else if let Some(attributes) = parse_node_optional::<AttributeList>(syntax) {
-            preceding_trivia.push(NodeTriviaItem::AttributeList(attributes));
-        } else if let Some(node) = syntax.next() {
-            match filter(&node) {
-                FilterAction::Ignored => {},
-                FilterAction::Content => break NodeWithTriviaContent::Content(node),
-            }
+            dbg!(&node, action, &preceding_trivia, &succeeding_trivia);
         } else {
             break NodeWithTriviaContent::End;
         }
     };
 
-    loop {
-        if let Some(trivia) = parse_comment_optional(syntax) {
-            succeeding_trivia.push(NodeTriviaItem::Comment(trivia));
-        } else if let Some(line_spacing) = parse_next_gen_line_spacing(syntax) {
-            match line_spacing {
-                NextGenLineSpacing::OnelineBlankspace(syntax_token) => {
-                    // Oneline blankspace does not differentiate between where trivia belongs to
-                },
-                NextGenLineSpacing::LineBreak(blankspace)
-                | NextGenLineSpacing::EmptyLine(blankspace) => {
-                    // Any meaningful line spacing ends succeeding trivia
-                    syntax.put_back(NodeOrToken::Token(blankspace));
-                    break;
-                },
-            }
-        } else if let Some(node) = syntax.next() {
-            match filter(&node) {
-                FilterAction::Ignored => {},
-                FilterAction::Content => {
-                    // This should be parsed by the next parse_node_with_trivia call
+    while let Some(node) = syntax.next() {
+        let action = filter(&node);
+        match action {
+            Some(FilterAction::Ignored) => {},
+            Some(FilterAction::Content) => {
+                // This belongs into the "content" of the next call to parse_node_...
+                syntax.put_back(node);
+                break;
+            },
+            Some(FilterAction::Stop) => {
+                // We want to stop parsing succeeding trivia
+                syntax.put_back(node);
+                break;
+            },
+            None => {
+                if let Some(line_spacing) = read_blankspace(&node) {
+                    succeeding_trivia.push(NodeTriviaItem::LineSpacing(line_spacing));
+                } else if let Some(comment) = read_comment(&node) {
+                    succeeding_trivia.push(NodeTriviaItem::Comment(comment));
+                } else if let NodeOrToken::Node(node) = &node
+                    && let Some(attributes) = AttributeList::cast(node.clone())
+                {
+                    succeeding_trivia.push(NodeTriviaItem::AttributeList(attributes));
+                } else {
+                    // This belongs into the "content" of the next call to parse_node_...
                     syntax.put_back(node);
                     break;
-                },
-            }
-        } else {
-            break;
+                }
+            },
         }
     }
 

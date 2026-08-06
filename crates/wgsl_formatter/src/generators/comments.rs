@@ -1,5 +1,5 @@
 use itertools::{Itertools as _, Position};
-use parser::SyntaxKind;
+use parser::{SyntaxKind, SyntaxNode, SyntaxToken};
 use rowan::NodeOrToken;
 
 use crate::{
@@ -18,8 +18,7 @@ pub enum Comment {
     LineEnding(String),
 }
 
-pub fn parse_comment_optional(syntax: &mut SyntaxIter) -> Option<Comment> {
-    let item = syntax.next()?;
+pub fn read_comment(item: &NodeOrToken<SyntaxNode, SyntaxToken>) -> Option<Comment> {
     if let NodeOrToken::Token(child) = &item {
         #[expect(
             clippy::wildcard_enum_match_arm,
@@ -28,12 +27,17 @@ pub fn parse_comment_optional(syntax: &mut SyntaxIter) -> Option<Comment> {
         match child.kind() {
             SyntaxKind::BlockComment => Some(Comment::Block(child.text().to_owned())),
             SyntaxKind::LineEndingComment => Some(Comment::LineEnding(child.text().to_owned())),
-
-            _ => {
-                syntax.put_back(item);
-                None
-            },
+            _ => None,
         }
+    } else {
+        None
+    }
+}
+
+pub fn parse_comment_optional(syntax: &mut SyntaxIter) -> Option<Comment> {
+    let item = syntax.next()?;
+    if let Some(comment) = read_comment(&item) {
+        Some(comment)
     } else {
         syntax.put_back(item);
         None

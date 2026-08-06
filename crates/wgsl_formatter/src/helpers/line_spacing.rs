@@ -1,4 +1,4 @@
-use parser::SyntaxToken;
+use parser::{SyntaxKind, SyntaxNode, SyntaxToken};
 use rowan::NodeOrToken;
 
 use crate::{
@@ -25,9 +25,16 @@ pub enum LineSpacing {
     EmptyLine,
 }
 
-//TODO Rename to parse_line_spacing
-pub fn parse_next_gen_line_spacing(syntax: &mut SyntaxIter) -> Option<NextGenLineSpacing> {
-    let blankspace = parse_token_optional(syntax, parser::SyntaxKind::Blankspace)?;
+pub fn read_blankspace(
+    blankspace: &NodeOrToken<SyntaxNode, SyntaxToken>
+) -> Option<NextGenLineSpacing> {
+    let NodeOrToken::Token(blankspace) = blankspace else {
+        return None;
+    };
+
+    if blankspace.kind() != SyntaxKind::Blankspace {
+        return None;
+    }
 
     let newlines = blankspace
         .text()
@@ -35,15 +42,30 @@ pub fn parse_next_gen_line_spacing(syntax: &mut SyntaxIter) -> Option<NextGenLin
         .filter(|item| *item == '\n')
         .count();
     match newlines {
-        0 => Some(NextGenLineSpacing::OnelineBlankspace(blankspace)),
-        1 => Some(NextGenLineSpacing::LineBreak(blankspace)),
-        _ => Some(NextGenLineSpacing::EmptyLine(blankspace)),
+        0 => Some(NextGenLineSpacing::OnelineBlankspace(blankspace.clone())),
+        1 => Some(NextGenLineSpacing::LineBreak(blankspace.clone())),
+        _ => Some(NextGenLineSpacing::EmptyLine(blankspace.clone())),
+    }
+}
+
+//TODO Rename to parse_line_spacing
+pub fn parse_next_gen_line_spacing(syntax: &mut SyntaxIter) -> Option<NextGenLineSpacing> {
+    let blankspace = syntax.next();
+
+    if let Some(blankspace) = blankspace {
+        let spacing = read_blankspace(&blankspace);
+        if spacing.is_none() {
+            syntax.put_back(blankspace);
+        }
+        spacing
+    } else {
+        None
     }
 }
 
 #[deprecated]
 pub fn parse_line_spacing(syntax: &mut SyntaxIter) -> Option<LineSpacing> {
-    let blankspace = parse_token_optional(syntax, parser::SyntaxKind::Blankspace)?;
+    let blankspace = parse_token_optional(syntax, SyntaxKind::Blankspace)?;
 
     let newlines = blankspace
         .text()
