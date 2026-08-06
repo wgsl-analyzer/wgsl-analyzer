@@ -8,7 +8,8 @@
 
 use std::fmt;
 
-use base_db::{EditionedFileId, Lookup as _};
+use base_db::{EditionedFileId, Intern as _, Lookup as _};
+use hir_def::database::Location;
 use hir_def::signature::{StructSignature, TypeAliasSignature};
 use hir_def::{
     InFile,
@@ -182,8 +183,7 @@ fn struct_is_used_in_uniform(
         .iter()
         .any(|item| match *item {
             hir_def::item_tree::ModuleItemId::GlobalVariable(declaration) => {
-                let declaration =
-                    database.intern_global_variable(InFile::new(file_id, declaration));
+                let declaration = Location::new(file_id, declaration).intern(database);
                 let inference = InferenceResult::of(
                     database,
                     DefinitionWithBodyId::GlobalVariable(declaration),

@@ -394,38 +394,31 @@ fn module_item_to_def(
 ) -> SmallVec<[ModuleDef; 1]> {
     let definition = match module_item {
         ModuleItemId::Function(function) => {
-            let location = Location::new(file_id, function);
-            let id = database.intern_function(location);
+            let id = Location::new(file_id, function).intern(database);
             ModuleDef::Function(Function { id })
         },
         ModuleItemId::Struct(r#struct) => {
-            let location = Location::new(file_id, r#struct);
-            let id = database.intern_struct(location);
+            let id = Location::new(file_id, r#struct).intern(database);
             ModuleDef::Struct(Struct { id })
         },
         ModuleItemId::GlobalVariable(variable) => {
-            let location = Location::new(file_id, variable);
-            let id = database.intern_global_variable(location);
+            let id = Location::new(file_id, variable).intern(database);
             ModuleDef::GlobalVariable(GlobalVariable { id })
         },
         ModuleItemId::GlobalConstant(constant) => {
-            let location = Location::new(file_id, constant);
-            let id = database.intern_global_constant(location);
+            let id = Location::new(file_id, constant).intern(database);
             ModuleDef::GlobalConstant(GlobalConstant { id })
         },
         ModuleItemId::Override(constant) => {
-            let location = Location::new(file_id, constant);
-            let id = database.intern_override(location);
+            let id = Location::new(file_id, constant).intern(database);
             ModuleDef::Override(Override { id })
         },
         ModuleItemId::TypeAlias(type_alias) => {
-            let location = Location::new(file_id, type_alias);
-            let id = database.intern_type_alias(location);
+            let id = Location::new(file_id, type_alias).intern(database);
             ModuleDef::TypeAlias(TypeAlias { id })
         },
         ModuleItemId::GlobalAssertStatement(global_assert_statement) => {
-            let location = Location::new(file_id, global_assert_statement);
-            let id = database.intern_global_assert_statement(location);
+            let id = Location::new(file_id, global_assert_statement).intern(database);
             ModuleDef::GlobalAssertStatement(GlobalAssertStatement { id })
         },
         ModuleItemId::ImportStatement(_) => return smallvec::SmallVec::new(),
