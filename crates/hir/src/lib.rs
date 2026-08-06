@@ -742,7 +742,6 @@ impl HasSource for Field {
 /// The defs which can be visible in the module.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ModuleDef {
-    Module(Module),
     Function(Function),
     GlobalVariable(GlobalVariable),
     GlobalConstant(GlobalConstant),
@@ -769,7 +768,7 @@ impl ModuleDef {
             Self::GlobalAssertStatement(global_assert_statement) => Some(
                 DefinitionWithBodyId::GlobalAssertStatement(global_assert_statement.id),
             ),
-            Self::Module(_) | Self::Struct(_) | Self::TypeAlias(_) => None,
+            Self::Struct(_) | Self::TypeAlias(_) => None,
         }
     }
 }
@@ -813,7 +812,7 @@ impl Module {
 
         for item in self.items(database) {
             match item {
-                ModuleDef::Module(_) | ModuleDef::Function(_) => {},
+                ModuleDef::Function(_) => {},
                 ModuleDef::GlobalVariable(variable) => {
                     diagnostics::global_variable::collect(database, variable.id, |error| {
                         if let Some(source) = variable.source(database) {

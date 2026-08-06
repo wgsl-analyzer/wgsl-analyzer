@@ -1,5 +1,5 @@
 edition = "2026_pre"
-root = "./package.wesl"
+root = "."
 
 [dependencies]
 simple_wesl = { path = "../simple_wesl" }

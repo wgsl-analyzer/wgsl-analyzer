@@ -32,7 +32,7 @@ pub(crate) fn complete_names_in_scope(
             return;
         }
         let kind = match item {
-            ScopeDef::ModuleDefinition(ModuleDefinitionId::Module(_)) => CompletionItemKind::Module,
+            ScopeDef::Module => CompletionItemKind::Module,
             ScopeDef::ModuleDefinition(ModuleDefinitionId::Function(_)) => {
                 CompletionItemKind::Function
             },
@@ -63,6 +63,7 @@ pub(crate) fn complete_names_in_scope(
                 let detail = render_detail(context, name, item);
                 Some(detail)
             },
+            ScopeDef::Module => Some(format!("path {}", name.as_str())),
         };
 
         let mut completion = CompletionItem::new(kind, context.source_range(), name.as_str());
@@ -105,9 +106,6 @@ fn render_detail(
     let database = context.database;
 
     match item {
-        ModuleDefinitionId::Module(_id) => {
-            format!("module {}", name.as_str())
-        },
         ModuleDefinitionId::Function(id) => {
             let function_type = database.function_type(id);
             pretty_fn_with_verbosity(

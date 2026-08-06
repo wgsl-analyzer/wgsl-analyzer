@@ -9,7 +9,7 @@
 use std::{fmt, ops};
 
 use edition::Edition;
-use salsa::Database;
+use triomphe::Arc;
 use vfs::{AnchoredPath, FileId, VfsPath, file_set::FileSet};
 
 use crate::{
@@ -211,8 +211,10 @@ impl PackageOrigin {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PackageData {
-    /// Root `.wesl` file. If `root = ./some-dir`, we create a virtual file.
-    pub root_file_id: FileId,
+    /// File id of the wesl.toml.
+    pub manifest_file_id: FileId,
+    /// Root directory. May contain a `package.wesl`.
+    pub root: VfsPath,
     pub edition: Edition,
     /// A name used for UI. For purposes of analysis, packages are anonymous.
     /// (only names in [`Dependency`] matters).
@@ -231,11 +233,17 @@ pub struct PackageData {
 }
 
 impl PackageData {
-    pub fn root_file(
+    pub fn source_root(
         &self,
-        database: &dyn Database,
-    ) -> EditionedFileId {
-        EditionedFileId::new_unchecked(database, self.root_file_id, self.edition)
+        database: &dyn SourceDatabase,
+    ) -> Arc<SourceRoot> {
+        database
+            .source_root(
+                database
+                    .file_source_root(self.manifest_file_id)
+                    .source_root_id(database),
+            )
+            .source_root(database)
     }
 }
 

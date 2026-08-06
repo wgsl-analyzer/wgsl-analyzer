@@ -707,7 +707,11 @@ impl TypeLoweringContext<'_> {
             _ => {
                 return Err(TypeLoweringError {
                     container: type_container,
-                    kind: TypeLoweringErrorKind::UnresolvedName(name.clone()),
+                    kind: TypeLoweringErrorKind::Resolution(
+                        hir_def::resolver::ResolutionDiagnostic::UnresolvedName {
+                            name: name.clone(),
+                        },
+                    ),
                 });
             },
         };
@@ -766,11 +770,9 @@ impl TypeLoweringContext<'_> {
                             "a `u32` or a `i32` greater than `0`".to_owned(),
                         ),
                     };
-                    self.diagnostics.push(error.clone());
                     return Err(error);
                 },
                 Err(error) => {
-                    self.diagnostics.push(error.clone());
                     return Err(error);
                 },
             }
@@ -855,11 +857,9 @@ impl TypeLoweringContext<'_> {
                         "an address space".to_owned(),
                     ),
                 };
-                self.diagnostics.push(error.clone());
                 return Err(error);
             },
             Err(error) => {
-                self.diagnostics.push(error.clone());
                 return Err(error);
             },
         };
@@ -904,11 +904,9 @@ impl TypeLoweringContext<'_> {
                             "on of: (read, read_write, write)".to_owned(),
                         ),
                     };
-                    self.diagnostics.push(error.clone());
                     return Err(error);
                 },
                 Err(error) => {
-                    self.diagnostics.push(error.clone());
                     return Err(error);
                 },
             }
@@ -995,15 +993,11 @@ impl TypeLoweringContext<'_> {
                                 "i32 or u32 or f32".to_owned(),
                             ),
                         };
-                        self.diagnostics.push(error.clone());
                         Err(error)
                     },
                 }
             },
-            Err(error) => {
-                self.diagnostics.push(error.clone());
-                Err(error)
-            },
+            Err(error) => Err(error),
         }
     }
 
@@ -1021,11 +1015,9 @@ impl TypeLoweringContext<'_> {
                         "a texel format (`rgba8unorm`, `rgba8snorm`, ...)".to_owned(),
                     ),
                 };
-                self.diagnostics.push(error.clone());
                 return Err(error);
             },
             Err(error) => {
-                self.diagnostics.push(error.clone());
                 return Err(error);
             },
         };
@@ -1038,11 +1030,9 @@ impl TypeLoweringContext<'_> {
                         "one of: read, write, read_write".to_owned(),
                     ),
                 };
-                self.diagnostics.push(error.clone());
                 return Err(error);
             },
             Err(error) => {
-                self.diagnostics.push(error.clone());
                 return Err(error);
             },
         };

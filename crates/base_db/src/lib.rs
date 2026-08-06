@@ -20,7 +20,9 @@ use rustc_hash::FxHasher;
 use salsa::{Durability, Setter as _};
 use triomphe::Arc;
 
-pub use crate::editioned_file_id::{EditionedFileId, ExtensionsConfig, RawEditionedFileId};
+pub use crate::editioned_file_id::{
+    EditionedFileId, ExtensionsConfig, FileExtension, RawEditionedFileId,
+};
 pub use input::{SourceRoot, SourceRootId};
 pub use salsa;
 pub use salsa_macros;
@@ -515,9 +517,9 @@ pub fn source_root_package<'db>(
     let id = id.id(database);
 
     packages.iter().copied().find(|package| {
-        let root_file = package.data(database).root_file_id;
+        let manifest_file = package.data(database).manifest_file_id;
         database
-            .file_source_root(root_file)
+            .file_source_root(manifest_file)
             .source_root_id(database)
             == id
     })

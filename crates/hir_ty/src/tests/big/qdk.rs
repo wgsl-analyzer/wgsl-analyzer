@@ -3929,35 +3929,18 @@ fn execute(
             InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(1)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } } in Signature
             InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(1)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } } in Signature
             InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(1)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } } in Signature
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(1)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } } in Signature
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(1)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } } in Signature
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(1)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } } in Signature
             InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(3)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } } in Signature
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(3)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } } in Signature
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(5)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } } in Signature
             InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(5)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } } in Signature
             InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(7)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } } in Signature
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(7)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } } in Signature
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(9)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } } in Signature
             InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(9)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } } in Signature
             InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(11)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } } in Signature
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(11)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } } in Signature
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(13)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } } in Signature
             InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(13)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } } in Signature
             InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(3)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } } in Signature
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(3)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } } in Signature
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(5)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } } in Signature
             InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(5)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } } in Signature
             InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(1)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } } in Signature
             InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(1)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } } in Signature
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(1)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } } in Signature
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(1)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } } in Signature
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(3)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } } in Signature
             InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(3)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } } in Signature
             InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(1)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } } in Signature
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(1)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } } in Signature
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(3)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } } in Signature
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(3)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } } in Signature
             InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(3)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } } in Signature
             InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(3)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } } in Signature
             18849..18868 'workgr...lation': ref<storage, WorkgroupCollationBuffer, read_write>
@@ -3969,7 +3952,6 @@ fn execute(
             19504..19512 'uniforms': ref<uniform, Uniforms, read>
             19566..19576 'batch_data': ref<storage, BatchData, read>
             19605..19623 'qubitP...lities': ref<workgroup, [error], read_write>
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(1)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } } in Signature
             InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(1)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } } in Signature
             19866..19867 'a': vec2<f32>
             19897..19898 'a': vec2<f32>
@@ -4717,8 +4699,8 @@ fn execute(
             AssignmentNotAReference { left_side: Idx::<Expression>(92), actual: Type(3000) } in Body
             ArrayAccessInvalidType { expression: Idx::<Expression>(97), type: Type(304f) } in Body
             AssignmentNotAReference { left_side: Idx::<Expression>(98), actual: Type(3000) } in Body
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(115)), kind: UnresolvedPath { path: Path(ModPath("atomicCompareExchangeWeak")), failed_segment: 0 } } } in Body
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(150)), kind: UnresolvedPath { path: Path(ModPath("atomicCompareExchangeWeak")), failed_segment: 0 } } } in Body
+            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(115)), kind: Resolution(UnresolvedName { name: Name("atomicCompareExchangeWeak") }) } } in Body
+            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(150)), kind: Resolution(UnresolvedName { name: Name("atomicCompareExchangeWeak") }) } } in Body
             30488..30504 'stateV...rIndex': u32
             30511..30520 'amplitude': vec2<f32>
             30529..30532 'tid': u32
@@ -4886,8 +4868,8 @@ fn execute(
             ArrayAccessInvalidType { expression: Idx::<Expression>(27), type: Type(304f) } in Body
             ArrayAccessInvalidType { expression: Idx::<Expression>(30), type: Type(3000) } in Body
             AssignmentNotAReference { left_side: Idx::<Expression>(30), actual: Type(3000) } in Body
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(49)), kind: UnresolvedPath { path: Path(ModPath("atomicCompareExchangeWeak")), failed_segment: 0 } } } in Body
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(89)), kind: UnresolvedPath { path: Path(ModPath("atomicCompareExchangeWeak")), failed_segment: 0 } } } in Body
+            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(49)), kind: Resolution(UnresolvedName { name: Name("atomicCompareExchangeWeak") }) } } in Body
+            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(89)), kind: Resolution(UnresolvedName { name: Name("atomicCompareExchangeWeak") }) } } in Body
             ArrayAccessInvalidType { expression: Idx::<Expression>(95), type: Type(304f) } in Body
             AssignmentNotAReference { left_side: Idx::<Expression>(96), actual: Type(3000) } in Body
             ArrayAccessInvalidType { expression: Idx::<Expression>(103), type: Type(304f) } in Body
@@ -5843,8 +5825,8 @@ fn execute(
             50061..50070 'err_index': u32
             50073..50075 '0u': u32
             50077..50081 'code': u32
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(5)), kind: UnresolvedPath { path: Path(ModPath("atomicCompareExchangeWeak")), failed_segment: 0 } } } in Body
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(19)), kind: UnresolvedPath { path: Path(ModPath("atomicCompareExchangeWeak")), failed_segment: 0 } } } in Body
+            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(5)), kind: Resolution(UnresolvedName { name: Name("atomicCompareExchangeWeak") }) } } in Body
+            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(19)), kind: Resolution(UnresolvedName { name: Name("atomicCompareExchangeWeak") }) } } in Body
             50238..50244 'op_idx': u32
             50268..50285 'arrayL...(&ops)': u32
             50268..50300 'arrayL...x + 1)': bool
@@ -6687,7 +6669,7 @@ fn execute(
             ArrayAccessInvalidType { expression: Idx::<Expression>(11), type: Type(304f) } in Body
             ArrayAccessInvalidType { expression: Idx::<Expression>(19), type: Type(304f) } in Body
             62208..62222 '1u << survivor': expected u32 but got [error]
-            NoConstructor { expression: Idx::<Expression>(116), builtins: BuiltinId(3c01), type: Type(3003), parameters: [Type(3000)] } in Body
+            NoConstructor { expression: Idx::<Expression>(116), builtins: BuiltinId(3801), type: Type(3003), parameters: [Type(3000)] } in Body
             62623..62637 'survivor_is_q2': expected bool but got [error]
             62639..62648 'u32(term)': expected u32 but got [error]
             62980..62994 'survivor_is_q2': expected bool but got [error]
@@ -7741,8 +7723,8 @@ fn execute(
             80470..80475 'entry': [error]
             80487..80492 'entry': [error]
             ArrayAccessInvalidType { expression: Idx::<Expression>(7), type: Type(305c) } in Body
-            NoConstructor { expression: Idx::<Expression>(45), builtins: BuiltinId(3c0c), type: Type(3001), parameters: [Type(3000)] } in Body
-            NoConstructor { expression: Idx::<Expression>(48), builtins: BuiltinId(3c0c), type: Type(3001), parameters: [Type(3000)] } in Body
+            NoConstructor { expression: Idx::<Expression>(45), builtins: BuiltinId(380c), type: Type(3001), parameters: [Type(3000)] } in Body
+            NoConstructor { expression: Idx::<Expression>(48), builtins: BuiltinId(380c), type: Type(3001), parameters: [Type(3000)] } in Body
             80344..80349 'start': expected i32 but got [error]
             80351..80356 'count': expected i32 but got [error]
             80412..80429 'start ...ry_idx': expected i32 or u32 but got [error]
@@ -10491,28 +10473,28 @@ fn execute(
             145144..145184 'shots[...ock_id': ref<storage, u32, read_write>
             145150..145158 'shot_idx': u32
             145187..145197 'prev_block': ref<function, u32, read_write>
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(122)), kind: UnresolvedPath { path: Path(ModPath("atomicCompareExchangeWeak")), failed_segment: 0 } } } in Body
+            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(122)), kind: Resolution(UnresolvedName { name: Name("atomicCompareExchangeWeak") }) } } in Body
             ArrayAccessInvalidType { expression: Idx::<Expression>(148), type: Type(305c) } in Body
             ArrayAccessInvalidType { expression: Idx::<Expression>(171), type: Type(305c) } in Body
             ArrayAccessInvalidType { expression: Idx::<Expression>(182), type: Type(305c) } in Body
             ArrayAccessInvalidType { expression: Idx::<Expression>(209), type: Type(305c) } in Body
             ArrayAccessInvalidType { expression: Idx::<Expression>(226), type: Type(305c) } in Body
             ArrayAccessInvalidType { expression: Idx::<Expression>(239), type: Type(305c) } in Body
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(267)), kind: UnresolvedPath { path: Path(ModPath("atomicCompareExchangeWeak")), failed_segment: 0 } } } in Body
+            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(267)), kind: Resolution(UnresolvedName { name: Name("atomicCompareExchangeWeak") }) } } in Body
             ArrayAccessInvalidType { expression: Idx::<Expression>(332), type: Type(305c) } in Body
             116579..116586 'arg_reg': expected u32 but got [error]
             116544..116558 'param_base + i': expected u32 but got [error]
             ArrayAccessInvalidType { expression: Idx::<Expression>(349), type: Type(305c) } in Body
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(378)), kind: UnresolvedPath { path: Path(ModPath("atomicCompareExchangeWeak")), failed_segment: 0 } } } in Body
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(923)), kind: UnresolvedPath { path: Path(ModPath("atomicCompareExchangeWeak")), failed_segment: 0 } } } in Body
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(1010)), kind: UnresolvedPath { path: Path(ModPath("atomicCompareExchangeWeak")), failed_segment: 0 } } } in Body
+            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(378)), kind: Resolution(UnresolvedName { name: Name("atomicCompareExchangeWeak") }) } } in Body
+            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(923)), kind: Resolution(UnresolvedName { name: Name("atomicCompareExchangeWeak") }) } } in Body
+            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(1010)), kind: Resolution(UnresolvedName { name: Name("atomicCompareExchangeWeak") }) } } in Body
             ArrayAccessInvalidType { expression: Idx::<Expression>(1297), type: Type(305c) } in Body
             139498..139511 'entry.val_reg': expected u32 but got [error]
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(1398)), kind: UnresolvedPath { path: Path(ModPath("atomicCompareExchangeWeak")), failed_segment: 0 } } } in Body
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(1447)), kind: UnresolvedPath { path: Path(ModPath("atomicCompareExchangeWeak")), failed_segment: 0 } } } in Body
+            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(1398)), kind: Resolution(UnresolvedName { name: Name("atomicCompareExchangeWeak") }) } } in Body
+            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(1447)), kind: Resolution(UnresolvedName { name: Name("atomicCompareExchangeWeak") }) } } in Body
             ArrayAccessInvalidType { expression: Idx::<Expression>(1467), type: Type(304f) } in Body
             142992..142995 'val': expected u32 but got [error]
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(1509)), kind: UnresolvedPath { path: Path(ModPath("atomicCompareExchangeWeak")), failed_segment: 0 } } } in Body
+            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(1509)), kind: Resolution(UnresolvedName { name: Name("atomicCompareExchangeWeak") }) } } in Body
             ArrayAccessInvalidType { expression: Idx::<Expression>(1529), type: Type(304f) } in Body
             AssignmentNotAReference { left_side: Idx::<Expression>(1529), actual: Type(3000) } in Body
             145649..145657 'shot_idx': u32

@@ -1,10 +1,11 @@
 use crate::{
     database::{DefDatabase, ImportId, ModuleDefinitionId},
     item_tree::Name,
+    mod_path::{AbsoluteModPath, ModPath},
     name_resolution::{DefDiagnostic, DefDiagnosticKind, collect_module},
     visibility::Visibility,
 };
-use base_db::EditionedFileId;
+use base_db::{EditionedFileId, Package};
 use rustc_hash::FxHashMap;
 use std::fmt::Write as _;
 use triomphe::Arc;
@@ -16,8 +17,28 @@ pub struct ModuleItem {
     pub import: Option<ImportId>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ModuleImportPath {
+    pub package: Package,
+    pub path: AbsoluteModPath,
+    pub import: ImportId,
+}
+
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct ItemScope {
+    /// An import statement results in one or more import paths being brought into scope.
+    /// They live in a different namespace from other items.
+    ///
+    /// We wait before resolving their modules,
+    /// since it's valid for them to not resolve to any module at all.
+    ///
+    /// For example
+    /// ```wesl
+    /// import package::foo;
+    /// const a = foo::bar::baz;
+    /// ```
+    pub import_paths: FxHashMap<Name, ModuleImportPath>,
+
     /// Items visible in this scope. Includes both declarations and imported items.
     pub items: FxHashMap<Name, ModuleItem>,
 
@@ -47,6 +68,16 @@ impl ItemScope {
         self.items.insert(name, definition)
     }
 
+    /// Pushes an import path and returns the old value if there is one.
+    #[must_use]
+    pub(crate) fn push_import_path(
+        &mut self,
+        name: Name,
+        definition: ModuleImportPath,
+    ) -> Option<ModuleImportPath> {
+        self.import_paths.insert(name, definition)
+    }
+
     pub(crate) fn push_diagnostic(
         &mut self,
         diagnostic: DefDiagnostic,
@@ -67,12 +98,17 @@ impl ItemScope {
         &self,
         buffer: &mut String,
     ) {
+        let mut import_paths: Vec<_> = self.import_paths.iter().collect();
+        import_paths.sort_by_key(|(name, _)| *name);
+        for (name, _) in import_paths {
+            writeln!(buffer, "- path {} (import)", name.as_str());
+        }
+
         let mut entries: Vec<_> = self.items.iter().collect();
         entries.sort_by_key(|(name, _)| *name);
 
         for (name, value) in entries {
             let r#type = match value.definition {
-                ModuleDefinitionId::Module(_) => "module",
                 ModuleDefinitionId::Function(_) => "fn",
                 ModuleDefinitionId::GlobalVariable(_) => "var",
                 ModuleDefinitionId::GlobalConstant(_) => "const",
@@ -92,8 +128,14 @@ impl ItemScope {
         for diagnostic in &self.diagnostics {
             buffer.push_str("error: ");
             match &diagnostic.kind {
-                DefDiagnosticKind::UnresolvedImport { name, .. } => {
-                    writeln!(buffer, "unresolved import for {}", name.as_str())
+                DefDiagnosticKind::UnnamedImport { .. } => {
+                    writeln!(buffer, "import without a name")
+                },
+                DefDiagnosticKind::UnresolvedPackage { name, .. } => {
+                    writeln!(buffer, "unresolved package {}", name.as_str())
+                },
+                DefDiagnosticKind::UnresolvedImport { .. } => {
+                    writeln!(buffer, "import resolved to neither a module nor an item")
                 },
                 DefDiagnosticKind::TooManySupers { .. } => writeln!(buffer, "too many supers"),
                 DefDiagnosticKind::DetachedFile { .. } => writeln!(buffer, "detached file"),
@@ -106,7 +148,12 @@ impl ItemScope {
 
     pub(crate) fn shrink_to_fit(&mut self) {
         // Exhaustive match to require handling new fields.
-        let Self { items, diagnostics } = self;
+        let Self {
+            import_paths,
+            items,
+            diagnostics,
+        } = self;
+        import_paths.shrink_to_fit();
         items.shrink_to_fit();
         diagnostics.shrink_to_fit();
     }

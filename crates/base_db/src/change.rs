@@ -109,9 +109,10 @@ impl Change {
         package_graph.update(self.packages_changed);
         let (sorted_packages, errors) = package_graph.to_topological_order();
 
-        // TODO: Properly report the errors
+        // These errors should be reported as diagnostics
+        // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1373
         if !errors.is_empty() {
-            tracing::warn!("Package graph errors {:?}", errors);
+            tracing::error!("Package graph errors {:?}", errors);
         }
 
         apply_package_graph(database, package_graph, sorted_packages);
@@ -153,7 +154,8 @@ fn apply_package_graph(
     for (_, remaining_package) in old_packages {
         let package_data = remaining_package.data(database);
         let dummy_package = PackageData {
-            root_file_id: package_data.root_file_id,
+            manifest_file_id: package_data.manifest_file_id,
+            root: package_data.root.clone(),
             edition: package_data.edition,
             display_name: None,
             dependencies: Vec::new(),
@@ -355,7 +357,7 @@ mod tests {
     use edition::Edition;
     use expect_test::expect;
     use triomphe::Arc;
-    use vfs::{AbsPathBuf, file_set::FileSet};
+    use vfs::{AbsPathBuf, VfsPath, file_set::FileSet};
 
     use super::{CyclicDependenciesError, FileId, PackageGraph};
     use crate::{
@@ -393,7 +395,8 @@ mod tests {
         (
             PackageId::from_raw(id),
             PackageData {
-                root_file_id: FileId::from_raw(id),
+                manifest_file_id: FileId::from_raw(id),
+                root: VfsPath::new_virtual_path(String::new()),
                 edition: Edition::LATEST,
                 display_name: None,
                 dependencies,

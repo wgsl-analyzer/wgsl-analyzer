@@ -314,11 +314,9 @@ impl DefinitionWithBodyId {
 
 /// The definitions which are visible in the module.
 ///
-/// Includes other modules, since they can be visible when they are imported.
 /// Does not include import statements, since its the items of the import statement that are visible.
 #[derive(PartialEq, Eq, Hash, Debug, Clone, Copy, salsa_macros::Supertype)]
 pub enum ModuleDefinitionId {
-    Module(EditionedFileId),
     Function(FunctionId),
     GlobalVariable(GlobalVariableId),
     GlobalConstant(GlobalConstantId),
@@ -334,7 +332,6 @@ impl ModuleDefinitionId {
         database: &dyn DefDatabase,
     ) -> EditionedFileId {
         match self {
-            Self::Module(id) => id,
             Self::Function(id) => id.lookup(database).file_id,
             Self::GlobalVariable(id) => id.lookup(database).file_id,
             Self::GlobalConstant(id) => id.lookup(database).file_id,
@@ -364,7 +361,7 @@ impl ModuleDefinitionId {
                 Some(DefinitionWithBodyId::GlobalAssertStatement(id))
             },
             Self::Override(id) => Some(DefinitionWithBodyId::Override(id)),
-            Self::Module(_) | Self::Struct(_) | Self::TypeAlias(_) => None,
+            Self::Struct(_) | Self::TypeAlias(_) => None,
         }
     }
 }

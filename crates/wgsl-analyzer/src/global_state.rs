@@ -19,7 +19,7 @@ use salsa::Revision;
 use tracing::Level;
 use triomphe::Arc;
 use vfs::{
-    Change as VfsChange, FileExcluded, FileId, Vfs, VfsPath,
+    AbsPathBuf, Change as VfsChange, FileExcluded, FileId, Vfs, VfsPath,
     loader::{Handle, Message},
 };
 use vfs_notify::NotifyHandle;
@@ -341,32 +341,23 @@ impl GlobalState {
         let vfs = &self.vfs.read().0;
         let changed_packages = packages.take_changes();
         for (id, package_change) in changed_packages {
+            // TODO: Report the tracing::errors via diagnostics instead
+            // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1373
+
             let package_data = packages.get(id).and_then(|package| {
-                let vfs_path = match &package.root {
-                    WeslPackageRoot::File(path) => vfs::VfsPath::from(path.clone()),
-                    WeslPackageRoot::Folder(path) => {
-                        // TODO: Support folders as the root https://github.com/wgsl-analyzer/wgsl-analyzer/issues/992
-                        tracing::error!(
-                            "Folders as the root are not supported at the moment {}",
-                            path
-                        );
-                        return None;
-                    },
-                };
-                let Some((root_file_id, root_file_excluded)) = vfs.file_id(&vfs_path) else {
-                    // TODO: Properly report the error
-                    tracing::error!("Could not find root file {}", &vfs_path);
+                let manifest_path = vfs::VfsPath::from(AbsPathBuf::from(package.manifest.clone()));
+                let Some((manifest_file_id, root_file_excluded)) = vfs.file_id(&manifest_path)
+                else {
+                    tracing::error!("Could not find manifest file {}", &package.manifest);
                     return None;
                 };
                 if root_file_excluded == FileExcluded::Yes {
                     return None;
                 }
-
                 let dependencies = package
                     .dependencies
                     .iter()
                     .filter_map(|dependency| {
-                        // TODO: Properly report the errors
                         let Some(package_id) = packages.package_id(&dependency.package_key())
                         else {
                             tracing::error!("Could not find dependency {}", dependency.name());
@@ -380,7 +371,8 @@ impl GlobalState {
                     .collect();
 
                 Some(PackageData {
-                    root_file_id,
+                    manifest_file_id,
+                    root: vfs::VfsPath::from(package.root.clone()),
                     edition: package.edition,
                     display_name: package.display_name.clone(),
                     dependencies,

@@ -62,7 +62,7 @@ fn store_type_must_be_storable() {
     check_diagnostics(
         "fn foo() { var x = 1; var y = &x; }",
         expect![[r#"
-            30..32 wgsl-analyzer Error 29: store type must be storable, found ptr<i32>
+            30..32 wgsl-analyzer Error 32: store type must be storable, found ptr<i32>
         "#]],
     );
 }
@@ -72,7 +72,7 @@ fn unexpected_return_value() {
     check_diagnostics(
         "fn foo() { return 0; }",
         expect![[r#"
-            18..19 wgsl-analyzer Error 30: unexpected return value of type `integer` in function with no return type
+            18..19 wgsl-analyzer Error 33: unexpected return value of type `integer` in function with no return type
         "#]],
     );
 }

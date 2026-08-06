@@ -1,10 +1,10 @@
 use expect_test::expect;
 
-use crate::name_resolution::tests::{check, check_modules};
+use crate::name_resolution::tests::check;
 
 #[test]
-fn crate_modules_map_smoke_test() {
-    check_modules(
+fn name_resolution_smoke_test() {
+    check(
         r#"
 //- /shaders.wesl edition:2026_pre
 use package::foo::bar::g;
@@ -16,65 +16,41 @@ fn f() {}
 fn g() {}
 "#,
         expect![[r#"
-            package
-            package::foo
-            package::foo::bar
+            package::shaders
+            package::shaders::foo
+            - fn f
+            package::shaders::foo::bar
+            - fn g
         "#]],
     );
 }
 
 #[test]
-fn module_map_ignores_unreachable() {
-    // The current implementation ignores files that do not have a corresponding parent
-    // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1182
-
-    check_modules(
+fn ignore_outside_of_root() {
+    check(
         r#"
-//- /shaders.wesl
+//- /shaders/package.wesl package:my_package root:/shaders
 
 //- /shaders/foo.wesl
 
-//- /shaders/bar/unreachable.wesl
+//- /unreachable.wesl
 
-//- /shaders/foo/bar.wesl
 "#,
         expect![[r#"
             package
             package::foo
-            package::foo::bar
         "#]],
     );
 }
 
 #[test]
-fn module_map_package_wesl() {
-    check_modules(
+fn wesl_files() {
+    check(
         r#"
-//- /package.wesl
-
-//- /bar.wesl
-
-//- /foo.wesl
-
-//- /foo/bar.wesl
-"#,
-        expect![[r#"
-            package
-            package::bar
-            package::foo
-            package::foo::bar
-        "#]],
-    );
-}
-
-#[test]
-fn module_map_deep_package_wesl() {
-    check_modules(
-        r#"
-//- /shaders/package.wesl package:my_package
-
+//- /shaders/package.wesl package:my_package root:/shaders
+const a = 3;
 //- /shaders.wesl
-
+const hidden = 9;
 //- /unrelated.wesl
 
 //- /shaders/foo.wesl
@@ -85,6 +61,7 @@ fn module_map_deep_package_wesl() {
 "#,
         expect![[r#"
             package
+            - const a
             package::bar
             package::foo
             package::foo::baz
@@ -93,7 +70,7 @@ fn module_map_deep_package_wesl() {
 }
 
 #[test]
-fn module_map_wesl_shadows_wgsl() {
+fn wesl_shadows_wgsl() {
     check(
         r#"
 //- /shaders.wesl
@@ -112,10 +89,10 @@ const WGSL = 3;
 const A = 5;
 "#,
         expect![[r#"
-            package
-            package::bar
+            package::shaders
+            package::shaders::bar
             - const A
-            package::foo
+            package::shaders::foo
             - const A
         "#]],
     );
@@ -129,20 +106,44 @@ fn import_as_test() {
 const Foo = 32;
 
 //- /shaders/bar.wesl
-import package::Foo as MyFoo;
-const Bar = package::Foo + MyFoo;
+import package::shaders::Foo as MyFoo;
+const Bar = package::shaders::Foo + MyFoo;
 
 //- /shaders/foo.wesl
 fn Foo() {}
 "#,
         expect![[r#"
-            package
+            package::shaders
             - const Foo
-            package::bar
+            package::shaders::bar
+            - path MyFoo (import)
             - const Bar
             - const MyFoo (import)
-            package::foo
+            package::shaders::foo
             - fn Foo
+        "#]],
+    );
+}
+
+#[test]
+fn import_super() {
+    check(
+        r#"
+//- /package.wesl edition:2026_pre
+const foo = 4;
+
+//- /bar.wesl
+import package::foo as SimpleFoo;
+import super::foo;
+"#,
+        expect![[r#"
+            package
+            - const foo
+            package::bar
+            - path SimpleFoo (import)
+            - path foo (import)
+            - const SimpleFoo (import)
+            - const foo (import)
         "#]],
     );
 }
@@ -167,7 +168,7 @@ import super::super::bar;
 }
 
 #[test]
-fn import_name_conflict() {
+fn name_conflict_with_const() {
     check(
         r#"
 //- /package.wesl edition:2026_pre
@@ -179,10 +180,68 @@ const foo = 5;
 "#,
         expect![[r#"
             package
+            - path foo (import)
             - const foo
             error: name conflict for foo
             package::bar
             - const foo
+        "#]],
+    );
+}
+
+#[test]
+fn name_conflict_with_import() {
+    check(
+        r#"
+//- /package.wesl edition:2026_pre
+import package::bar::{foo, foo};
+
+//- /bar.wesl
+const foo = 5;
+"#,
+        expect![[r#"
+            package
+            - path foo (import)
+            - const foo (import)
+            error: name conflict for foo
+            error: name conflict for foo
+            package::bar
+            - const foo
+        "#]],
+    );
+}
+
+#[test]
+fn unresolved_import() {
+    check(
+        r#"
+//- /package.wesl edition:2026_pre
+import package::bar::foo;
+
+//- /bar.wesl
+"#,
+        expect![[r#"
+            package
+            - path foo (import)
+            error: import resolved to neither a module nor an item
+            package::bar
+        "#]],
+    );
+}
+
+#[test]
+fn import_resolves_to_folder() {
+    check(
+        r#"
+//- /package.wesl edition:2026_pre
+import package::bar::foo;
+
+//- /bar/foo/deep.wesl
+"#,
+        expect![[r#"
+            package
+            - path foo (import)
+            package::bar::foo::deep
         "#]],
     );
 }

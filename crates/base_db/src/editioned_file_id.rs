@@ -81,47 +81,32 @@ impl EditionedFileId {
             .source_root(database.file_source_root(file_id).source_root_id(database))
             .source_root(database);
 
-        let Some((_, extension)) = source_root
-            .path_for_file(file_id)
-            .and_then(|file| file.name_and_extension())
-        else {
-            tracing::error!("All files need to have a source root.");
-            return Self::new_unchecked(database, file_id, Edition::DEFAULT);
+        let extension = match FileExtension::from_file(&source_root, file_id) {
+            Ok(extension) => extension,
+            Err(error) => {
+                tracing::error!("{error}");
+                return Self::new_unchecked(database, file_id, Edition::DEFAULT);
+            },
         };
 
-        let Some(extension) = extension else {
-            tracing::error!("File is missing an extension.");
-            return Self::new_unchecked(database, file_id, Edition::DEFAULT);
-        };
-
-        Self::try_with_extension(database, file_id, extension).unwrap_or_else(|| {
-            tracing::error!(
-                "File must be a WGSL or WESL file, {extension} is not a valid file extension."
-            );
-            Self::new_unchecked(database, file_id, Edition::DEFAULT)
-        })
+        Self::from_file_with_extension(database, file_id, extension)
     }
 
-    pub fn try_with_extension(
+    pub fn from_file_with_extension(
         database: &dyn SourceDatabase,
         file_id: FileId,
-        extension: &str,
-    ) -> Option<Self> {
+        extension: FileExtension,
+    ) -> Self {
         match extension {
-            "wgsl" => Some(Self::new_unchecked(database, file_id, Edition::DEFAULT)),
-            "wesl" => {
+            FileExtension::Wgsl => Self::new_unchecked(database, file_id, Edition::DEFAULT),
+            FileExtension::Wesl => {
                 if let Some(package) = file_package(database, file_id) {
-                    Some(Self::new_unchecked(
-                        database,
-                        file_id,
-                        package.data(database).edition,
-                    ))
+                    Self::new_unchecked(database, file_id, package.data(database).edition)
                 } else {
                     // Assume latest WESL for standalone files
-                    Some(Self::new_unchecked(database, file_id, Edition::LATEST))
+                    Self::new_unchecked(database, file_id, Edition::LATEST)
                 }
             },
-            _ => None,
         }
     }
 
@@ -147,5 +132,56 @@ impl EditionedFileId {
         database: &dyn Database,
     ) -> RawEditionedFileId {
         self.field(database)
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum FileExtension {
+    Wgsl,
+    Wesl,
+}
+
+impl FileExtension {
+    pub fn from_file(
+        source_root: &SourceRoot,
+        file_id: FileId,
+    ) -> Result<Self, InvalidFileError> {
+        let extension = source_root
+            .path_for_file(file_id)
+            .ok_or(InvalidFileError::MissingPath)?
+            .name_and_extension()
+            .ok_or(InvalidFileError::MissingName)?
+            .1
+            .ok_or(InvalidFileError::MissingExtension)?;
+
+        match extension {
+            "wgsl" => Ok(Self::Wgsl),
+            "wesl" => Ok(Self::Wesl),
+            other => Err(InvalidFileError::InvalidExtension(other.to_owned())),
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub enum InvalidFileError {
+    MissingPath,
+    MissingName,
+    MissingExtension,
+    InvalidExtension(String),
+}
+
+impl std::fmt::Display for InvalidFileError {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+    ) -> std::fmt::Result {
+        match self {
+            Self::MissingPath => write!(f, "File is missing a path."),
+            Self::MissingName => write!(f, "File is missing a name."),
+            Self::MissingExtension => write!(f, "File is missing an extension."),
+            Self::InvalidExtension(extension) => {
+                write!(f, "File extension {extension} is invalid.")
+            },
+        }
     }
 }

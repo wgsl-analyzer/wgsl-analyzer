@@ -3,14 +3,36 @@ mod item_scopes;
 
 use base_db::EditionedFileId;
 use expect_test::{Expect, expect};
+use itertools::Itertools as _;
+use std::fmt::Write as _;
 use test_fixture::WithFixture as _;
 
-use crate::{item_scope::ItemScope, name_resolution::modules_map_query, test_db::TestDatabase};
+use crate::{
+    item_scope::ItemScope,
+    mod_path::{AbsoluteModPath, ModPath},
+    name_resolution::ModulesMap,
+    test_db::TestDatabase,
+};
 
 fn render_modules_map_with_items(wa_fixture: &str) -> String {
     let database = TestDatabase::with_files(wa_fixture);
     let package = database.fetch_test_package();
-    modules_map_query(&database, package).dump_with_items(&database)
+    let modules_map = ModulesMap::of(&database, package);
+    let sorted_modules: Vec<_> = modules_map
+        .modules
+        .iter()
+        .sorted_by(|(path_a, _), (path_b, _)| path_a.cmp(path_b))
+        .collect();
+
+    let mut buffer = String::new();
+    for (module_path, module) in sorted_modules {
+        let Some(file_id) = module.file else {
+            continue;
+        };
+        _ = writeln!(buffer, "{module_path}");
+        ItemScope::of(&database, file_id).dump(&mut buffer);
+    }
+    buffer
 }
 
 #[expect(clippy::needless_pass_by_value, reason = "matches expect! macro")]
@@ -21,29 +43,13 @@ fn check(
     let actual = render_modules_map_with_items(wa_fixture);
     expect.assert_eq(&actual);
 }
-
-fn render_modules_map(wa_fixture: &str) -> String {
-    let database = TestDatabase::with_files(wa_fixture);
-    let package = database.fetch_test_package();
-    modules_map_query(&database, package).dump()
-}
-
-#[expect(clippy::needless_pass_by_value, reason = "matches expect! macro")]
-fn check_modules(
-    wa_fixture: &str,
-    expect: Expect,
-) {
-    let actual = render_modules_map(wa_fixture);
-    expect.assert_eq(&actual);
-}
-
 fn render_item_scope(wa_fixture: &str) -> String {
-    let database = TestDatabase::with_files(wa_fixture);
+    let (database, file) = TestDatabase::with_single_file(wa_fixture);
     let package = database.fetch_test_package();
     let package_data = package.data(&database);
 
     let mut output = String::new();
-    ItemScope::of(&database, package_data.root_file(&database)).dump(&mut output);
+    ItemScope::of(&database, file).dump(&mut output);
     output
 }
 

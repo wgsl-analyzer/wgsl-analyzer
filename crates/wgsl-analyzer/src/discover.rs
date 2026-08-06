@@ -85,6 +85,13 @@ impl LoadPackageTask {
                     format!("unable to parse contents of manifest '{manifest_path}'")
                 })?;
                 let root = manifest_path.parent().join(&wesl_toml.root);
+                if !std::fs::metadata(&root)?.is_dir() {
+                    return Err(std::io::Error::new(
+                        std::io::ErrorKind::InvalidInput,
+                        "wesl.toml root must point at a folder",
+                    )
+                    .into());
+                }
 
                 let dependencies = wesl_toml
                     .dependencies
@@ -138,11 +145,7 @@ impl LoadPackageTask {
                 WeslPackage {
                     manifest: manifest_path.clone(),
                     display_name: manifest_path.parent().file_name().map(str::to_owned),
-                    root: if metadata.is_file() {
-                        WeslPackageRoot::File(root)
-                    } else {
-                        WeslPackageRoot::Folder(root)
-                    },
+                    root,
                     origin: self.origin,
                     dependencies,
                     edition,

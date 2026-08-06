@@ -29,13 +29,7 @@ pub(crate) fn view_package_graph(
                 true
             } else {
                 // Only render workspace packages
-                let root_id = database
-                    .file_source_root(package_data.root_file_id)
-                    .source_root_id(database);
-                !database
-                    .source_root(root_id)
-                    .source_root(database)
-                    .is_library()
+                !package_data.source_root(database).is_library()
             }
         })
         .collect();

@@ -20,7 +20,6 @@ fn import_statement_simple() {
         const barValue = 3;
         ",
         expect![[r#"
-            ---
             32..38 'output': integer
             41..44 'bar': integer
             ---
@@ -48,7 +47,6 @@ fn inline_import_simple() {
         const bar = 4;
         ",
         expect![[r#"
-            ---
             6..9 'bar': bool
             12..16 'true': bool
             38..39 'a': i32
@@ -80,7 +78,6 @@ fn import_super() {
         }
         ",
         expect![[r#"
-            ---
             6..9 'foo': integer
             12..13 '4': integer
             ---
@@ -111,7 +108,6 @@ fn import_statement_cycle_allowed() {
         const bar = 3;
         ",
         expect![[r#"
-            ---
             32..38 'output': integer
             41..44 'bar': integer
             ---
@@ -135,7 +131,6 @@ fn import_statement_cycle_error() {
         const bar = output;
         ",
         expect![[r#"
-            ---
             CyclicType { name: Name("output"), range: 26..45 } in Body
             ---
             CyclicType { name: Name("bar"), range: 24..43 } in Body
@@ -162,7 +157,6 @@ fn import_statement_inline() {
         fn barValue() -> f32 { return 3; }
         ",
         expect![[r#"
-            ---
             16..35 'packag...:bar()': f32
             41..72 'packag...alue()': f32
             ---
@@ -188,10 +182,9 @@ fn cannot_import_imported_item() {
         const A = 3;
         ",
         expect![[r#"
-            ---
             6..7 'b': [error]
             10..25 'package::foo::A': [error]
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(0)), kind: UnresolvedPath { path: Path(ModPath("package::foo::A")), failed_segment: 2 } } } in Body
+            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(0)), kind: Resolution(PrivateItem { name: Name("A"), visibility: File }) } } in Body
             ExpectedLoweredKind { expression: Idx::<Expression>(0), expected: Variable, actual: Type, path: Path(ModPath("package::foo::A")) } in Body
             ---
             ---
@@ -221,7 +214,6 @@ fn import_statement_multiple_items() {
         const bar = true;
         ",
         expect![[r#"
-            ---
             80..87 'boolBar': bool
             103..106 'foo': i32
             109..117 'foo::bar': integer
@@ -252,7 +244,6 @@ fn import_statement_self_shadowing() {
         const bar = 3;
         ",
         expect![[r#"
-            ---
             32..39 'shadows': integer
             42..43 '3': integer
             51..54 'foo': integer
@@ -265,26 +256,28 @@ fn import_statement_self_shadowing() {
 }
 
 #[test]
-fn import_statement_self_shadowing_error() {
+fn import_statement_package_and_local_same_name() {
     check_infer(
         ExtensionsConfig::default(),
         "
         //- /package.wesl edition:2026_pre
-        import package::foo::bar; // this should fail, because
-        const foo = bar;          // package::foo resolves to this constant
+        import package::foo;
+        const foo = 3;
+        const bar = foo + foo::a;
 
         //- /foo.wesl
-        const bar = 3;
+        const a: u32 = 6;
         ",
         expect![[r#"
+            27..30 'foo': integer
+            33..34 '3': integer
+            42..45 'bar': u32
+            48..51 'foo': integer
+            48..60 'foo + foo::a': u32
+            54..60 'foo::a': u32
             ---
-            61..64 'foo': [error]
-            67..70 'bar': [error]
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(0)), kind: UnresolvedPath { path: Path(ModPath("bar")), failed_segment: 0 } } } in Body
-            ExpectedLoweredKind { expression: Idx::<Expression>(0), expected: Variable, actual: Type, path: Path(ModPath("bar")) } in Body
-            ---
-            6..9 'bar': integer
-            12..13 '3': integer
+            6..7 'a': u32
+            15..16 '6': integer
         "#]],
     );
 }
@@ -307,7 +300,6 @@ fn import_statement_local_shadows() {
         const bar = 3;
         ",
         expect![[r#"
-            ---
             46..49 'bar': bool
             52..56 'true': bool
             65..70 'false': bool
@@ -336,7 +328,6 @@ fn import_statement_local_uses_and_shadows() {
         const bar = 3; // abstract int
         ",
         expect![[r#"
-            ---
             46..49 'bar': i32
             52..55 'bar': integer
             65..68 'foo': i32
@@ -366,7 +357,6 @@ fn import_statement_shadows_submodule() {
         const shadowed = 3;
         ",
         expect![[r#"
-            ---
             32..38 'output': integer
             41..44 'bar': integer
             ---
@@ -393,7 +383,6 @@ fn import_statement_shadows_predeclared() {
         alias vec3f = u32;
         ",
         expect![[r#"
-            ---
             50..56 'output': u32
             66..71 'vec2f': integer
             ---
@@ -416,7 +405,7 @@ fn import_escapes_root() {
             13..44 'super:...= true': [error]
             34..35 '3': integer
             40..44 'true': bool
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(1)), kind: UnresolvedPath { path: Path(ModPath("super::super::MyType")), failed_segment: 0 } } } in Body
+            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(1)), kind: Resolution(TooManySupers) } } in Body
         "#]],
     );
 }
@@ -433,7 +422,7 @@ fn import_nonexistent_module() {
         const a = Bar(2);
         ",
         expect![[r#"
-            InvalidType { error: TypeLoweringError { container: TypeSpecifier(Idx::<TypeSpecifier>(0)), kind: UnresolvedPath { path: Path(ModPath("not_a_module::foo")), failed_segment: 0 } } } in Signature
+            InvalidType { error: TypeLoweringError { container: TypeSpecifier(Idx::<TypeSpecifier>(0)), kind: Resolution(UnresolvedPackage { name: Name("not_a_module") }) } } in Signature
             47..48 'a': [error]
             51..57 'Bar(2)': [error]
             55..56 '2': integer
@@ -458,14 +447,35 @@ fn invalid_import_starting_with_item() {
             12..13 '5': integer
             81..86 'fails': [error]
             89..97 'bar::nya': [error]
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(0)), kind: UnresolvedPath { path: Path(ModPath("bar::nya")), failed_segment: 0 } } } in Body
+            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(0)), kind: Resolution(UnresolvedPackage { name: Name("bar") }) } } in Body
             ExpectedLoweredKind { expression: Idx::<Expression>(0), expected: Variable, actual: Type, path: Path(ModPath("bar::nya")) } in Body
         "#]],
     );
 }
 
 #[test]
-fn import_with_dependencies() {
+fn import_with_basic_dependency() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        //- /bar/package.wesl package:bar edition:2026_pre
+        const myValue = 3;
+
+        //- /foo/package.wesl package:foo edition:2026_pre dependencies:bar
+        const a = bar::myValue;
+        ",
+        expect![[r#"
+            6..13 'myValue': integer
+            16..17 '3': integer
+            ---
+            6..7 'a': integer
+            10..22 'bar::myValue': integer
+        "#]],
+    );
+}
+
+#[test]
+fn import_with_nested_dependency() {
     check_infer(
         ExtensionsConfig::default(),
         "
@@ -480,7 +490,6 @@ fn import_with_dependencies() {
         const myValue = 3;
         ",
         expect![[r#"
-            ---
             21..22 'a': integer
             25..40 'nested::myValue': integer
             ---

@@ -42,34 +42,48 @@ impl MemoryUsage {
             all(feature = "jemalloc", not(target_env = "msvc")) => {
                 jemalloc_ctl::epoch::advance().unwrap();
                 Self {
-                    allocated: Bytes(i32::try_from(jemalloc_ctl::stats::allocated::read().unwrap()).unwrap().try_into().unwrap()),
+                    allocated: Bytes(
+                        i32::try_from(jemalloc_ctl::stats::allocated::read().unwrap())
+                            .unwrap()
+                            .try_into()
+                            .unwrap(),
+                    ),
                 }
-            }
-            all(target_os = "linux", target_env = "gnu") => {
-                memusage_linux()
-            }
+            },
+            all(target_os = "linux", target_env = "gnu") => memusage_linux(),
             windows => {
                 // There doesn't seem to be an API for determining heap usage, so we try to
                 // approximate that by using the Commit Charge value.
 
-                use windows_sys::Win32::System::{Threading::GetCurrentProcess, ProcessStatus::{PROCESS_MEMORY_COUNTERS, GetProcessMemoryInfo}};
                 use std::mem::MaybeUninit;
+                use windows_sys::Win32::System::{
+                    ProcessStatus::{GetProcessMemoryInfo, PROCESS_MEMORY_COUNTERS},
+                    Threading::GetCurrentProcess,
+                };
 
                 // SAFETY: Windows API safety is undocumented.
                 let proc = unsafe { GetCurrentProcess() };
                 let mut mem_counters = MaybeUninit::uninit();
                 let cb = size_of::<PROCESS_MEMORY_COUNTERS>();
                 // SAFETY: Windows API safety is undocumented.
-                let ret = unsafe { GetProcessMemoryInfo(proc, mem_counters.as_mut_ptr(), u32::try_from(cb).expect("struct size should fit into a u32")) };
+                let ret = unsafe {
+                    GetProcessMemoryInfo(
+                        proc,
+                        mem_counters.as_mut_ptr(),
+                        u32::try_from(cb).expect("struct size should fit into a u32"),
+                    )
+                };
                 assert!(ret != 0);
 
                 // SAFETY: mem_counters is initialized by GetProcessMemoryInfo.
                 let usage = unsafe { mem_counters.assume_init().PagefileUsage };
-                Self { allocated: Bytes(isize::try_from(usage).unwrap()) }
-            }
-            _ => {
-                Self { allocated: Bytes(0) }
-            }
+                Self {
+                    allocated: Bytes(isize::try_from(usage).unwrap()),
+                }
+            },
+            _ => Self {
+                allocated: Bytes(0),
+            },
         }
     }
 }
