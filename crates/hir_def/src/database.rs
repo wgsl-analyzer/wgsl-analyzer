@@ -19,7 +19,7 @@ use crate::{
     },
     resolver::Resolver,
     signature::{
-        ConstantSignature, FunctionSignature, GlobalAssertStatementSignature, OverrideSignature,
+        ConstantSignature, FunctionSignature, AssertStatementSignature, OverrideSignature,
         StructSignature, TypeAliasSignature, VariableSignature,
     },
 };
@@ -35,15 +35,6 @@ pub trait DefDatabase: InternDatabase + SourceDatabase {
         &self,
         key: DefinitionWithBodyId,
     ) -> (Arc<ExpressionStore>, Arc<ExpressionSourceMap>);
-
-    #[salsa::invoke(GlobalAssertStatementSignature::query)]
-    fn global_assert_statement_data(
-        &self,
-        key: GlobalAssertStatementId,
-    ) -> (
-        Arc<GlobalAssertStatementSignature>,
-        Arc<ExpressionSourceMap>,
-    );
 
     #[salsa::invoke(AttributesWithOwner::attrs_query)]
     fn attrs(
@@ -74,7 +65,7 @@ fn signature_with_source_map(
             (data.store.clone(), source_map.clone())
         },
         DefinitionWithBodyId::GlobalAssertStatement(id) => {
-            let (data, source_map) = database.global_assert_statement_data(id);
+            let (data, source_map) = AssertStatementSignature::with_source_map(database, id);
             (data.store.clone(), source_map.clone())
         },
     }

@@ -13,7 +13,7 @@ use crate::{
     item_tree::Name,
     mod_path::ModPath,
     signature::{
-        ConstantSignature, FieldData, FunctionSignature, GlobalAssertStatementSignature,
+        AssertStatementSignature, ConstantSignature, FieldData, FunctionSignature,
         OverrideSignature, ParamData, StructSignature, TypeAliasSignature, VariableSignature,
     },
     type_specifier::{IdentExpression, TypeSpecifier, TypeSpecifierId},
@@ -379,11 +379,11 @@ pub(crate) fn lower_constant(
 pub(crate) fn lower_global_assert_statement(
     database: &dyn DefDatabase,
     _global_assert_statement: &InFile<ast::AssertStatement>,
-) -> (GlobalAssertStatementSignature, ExpressionSourceMap) {
+) -> (AssertStatementSignature, ExpressionSourceMap) {
     let collector = ExprCollector::new(database, ExpressionStoreSource::Signature);
 
     let (store, source_map) = collector.finish();
-    let specifier = GlobalAssertStatementSignature {
+    let specifier = AssertStatementSignature {
         store: Arc::new(store),
     };
     (specifier, source_map)
