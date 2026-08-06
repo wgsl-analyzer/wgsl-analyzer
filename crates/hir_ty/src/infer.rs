@@ -1325,6 +1325,12 @@ impl<'database> InferenceContext<'database> {
         if expression_type.is_err(self.database) {
             return self.error_type();
         }
+        // Load rule does not apply to this specific operator because it has precondition `r: ref<AS,T,AM>`
+        let expression_type = if operator == UnaryOperator::AddressOf {
+            expression_type
+        } else {
+            expression_type.loaded(self.database)
+        };
         match wgsl_types::builtin::type_unary_op(
             to_wgsl_unary_operator(operator),
             &self.converter.to_wgsl_types(expression_type),
@@ -1351,20 +1357,20 @@ impl<'database> InferenceContext<'database> {
         operation: BinaryOperation,
         store: &ExpressionStore,
     ) -> Type {
-        let left_type = self
-            .infer_expression(left_side, store)
-            .loaded(self.database);
-        let right_type = self
-            .infer_expression(right_side, store)
-            .loaded(self.database);
+        let left_type = self.infer_expression(left_side, store);
+        let right_type = self.infer_expression(right_side, store);
 
         if left_type.is_err(self.database) || right_type.is_err(self.database) {
             return self.error_type();
         }
         match wgsl_types::builtin::type_binary_op(
             to_wgsl_binary_operator(operation),
-            &self.converter.to_wgsl_types(left_type),
-            &self.converter.to_wgsl_types(right_type),
+            &self
+                .converter
+                .to_wgsl_types(left_type.loaded(self.database)),
+            &self
+                .converter
+                .to_wgsl_types(right_type.loaded(self.database)),
         ) {
             Ok(r#type) => self.converter.from_wgsl_types(r#type),
             Err(error) => {
