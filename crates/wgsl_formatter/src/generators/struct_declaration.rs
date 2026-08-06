@@ -8,11 +8,14 @@ use syntax::{
 
 use crate::{
     ast_parse::{
-        parse_end, parse_node, parse_node_optional, parse_node_with_trivia, parse_token,
-        parse_token_optional,
+        FilterAction, parse_end, parse_node, parse_node_optional, parse_node_with_trivia,
+        parse_node_with_trivia_filter, parse_token, parse_token_optional,
     },
-    generators::node::gen_node_with_trivia,
-    helpers::{LineSpacing, gen_line_spacing},
+    generators::node::{
+        gen_node_content, gen_node_preceding_trivia, gen_node_succeeding_trivia,
+        gen_node_with_trivia,
+    },
+    helpers::{LineSpacing, NextGenLineSpacing, gen_line_spacing, read_blankspace},
     print_item_buffer::{
         PrintItemBuffer,
         spacing_request::{Request, RequestItem, RequestItemSet},
@@ -75,8 +78,21 @@ pub fn gen_struct_body(body: &ast::StructBody) -> FormatDocumentResult<PrintItem
     let mut item_members = Vec::new();
 
     loop {
-        let mut item = parse_node_with_trivia(&mut syntax);
+        let mut item = parse_node_with_trivia_filter(&mut syntax, |node| match node.kind() {
+            SyntaxKind::StructMember => Some(FilterAction::Content),
+            SyntaxKind::Comma => Some(FilterAction::Ignored),
+            SyntaxKind::Blankspace
+                if matches!(
+                    read_blankspace(node),
+                    Some(NextGenLineSpacing::EmptyLine(_))
+                ) =>
+            {
+                Some(FilterAction::Stop)
+            },
+            _ => None,
+        });
 
+        // TODO This should be absorbed into the parse_node
         if item
             .kind()
             .is_some_and(|item| item == SyntaxKind::BraceRight)
@@ -85,6 +101,7 @@ pub fn gen_struct_body(body: &ast::StructBody) -> FormatDocumentResult<PrintItem
             syntax.put_back(old_node.into_option().unwrap()); //TODO
         }
 
+        // TODO This should be absorbed into the parse_node
         if item
             .kind()
             .is_some_and(|item| item != SyntaxKind::StructMember)
@@ -101,6 +118,8 @@ pub fn gen_struct_body(body: &ast::StructBody) -> FormatDocumentResult<PrintItem
         }
     }
 
+    dbg!(&item_members);
+
     parse_token(&mut syntax, SyntaxKind::BraceRight)?;
     parse_end(&mut syntax)?;
 
@@ -116,17 +135,18 @@ pub fn gen_struct_body(body: &ast::StructBody) -> FormatDocumentResult<PrintItem
         formatted.extend(gen_comments(&item_comments_after_open_paren));
     }
 
-    dbg!(&item_members);
     if !is_empty {
         for (pos, member) in item_members.iter().with_position() {
             if member.has_content() {
                 formatted.request(Request::expect(RequestItem::LineBreak));
             }
 
-            formatted.extend(gen_node_with_trivia(&member)?);
+            formatted.extend(gen_node_preceding_trivia(&member)?);
+            formatted.extend(gen_node_content(&member)?);
             if member.has_content() {
                 formatted.push_sc(sc!(","));
             }
+            formatted.extend(gen_node_succeeding_trivia(&member)?);
         }
     }
 

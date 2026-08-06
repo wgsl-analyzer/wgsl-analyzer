@@ -216,6 +216,7 @@ where
     let mut preceding_trivia = Vec::new();
     let mut succeeding_trivia = Vec::new();
 
+    // TODO Remove this
     loop {
         // We allow line spacing at the very top of trivia
         if let Some(spacing) = parse_next_gen_line_spacing(syntax) {
@@ -258,6 +259,8 @@ where
             break NodeWithTriviaContent::End;
         }
     };
+
+    dbg!(&content, &preceding_trivia);
 
     while let Some(node) = syntax.next() {
         let action = filter(&node);
