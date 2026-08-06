@@ -78,18 +78,18 @@ fn infer_query(
             context.infer_body(body, return_type, AbstractHandling::Concretize);
         },
         DefinitionWithBodyId::GlobalVariable(variable) => {
-            let data = database.global_var_data(variable).0;
+            let data = VariableSignature::of(database, variable);
             let return_type = context.collect_global_variable(&data, body);
             context.infer_body(body, return_type, AbstractHandling::Concretize);
             context.infer_global_variable(&data, body);
         },
         DefinitionWithBodyId::GlobalConstant(constant) => {
-            let data = database.global_constant_data(constant).0;
+            let data = ConstantSignature::of(database, constant);
             let return_type = context.collect_global_constant(&data, body);
             context.infer_body(body, return_type, AbstractHandling::Abstract);
         },
         DefinitionWithBodyId::Override(override_declaration) => {
-            let data = database.override_data(override_declaration).0;
+            let data = OverrideSignature::of(database, override_declaration);
             let return_type = context.collect_override(&data, body);
             context.infer_body(body, return_type, AbstractHandling::Concretize);
         },
@@ -137,21 +137,21 @@ fn get_name_and_range(
                 .range,
         ),
         ModuleDefinitionId::GlobalVariable(id) => (
-            database.global_var_data(id).0.name.clone(),
+            VariableSignature::of(database, id).name.clone(),
             id.lookup(database)
                 .source(database)
                 .original_file_range(database)
                 .range,
         ),
         ModuleDefinitionId::GlobalConstant(id) => (
-            database.global_constant_data(id).0.name.clone(),
+            ConstantSignature::of(database, id).name.clone(),
             id.lookup(database)
                 .source(database)
                 .original_file_range(database)
                 .range,
         ),
         ModuleDefinitionId::Override(id) => (
-            database.override_data(id).0.name.clone(),
+            OverrideSignature::of(database, id).name.clone(),
             id.lookup(database)
                 .source(database)
                 .original_file_range(database)
