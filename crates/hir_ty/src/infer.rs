@@ -72,7 +72,7 @@ fn infer_query(
 
     match definition {
         DefinitionWithBodyId::Function(function) => {
-            let data = database.function_data(function).0;
+            let data = FunctionSignature::of(database, function);
             let return_type = context.collect_fn(&data, body);
             context.infer_body(body, return_type, AbstractHandling::Concretize);
         },
@@ -129,7 +129,7 @@ fn get_name_and_range(
 ) -> (Name, base_db::TextRange) {
     match definition {
         ModuleDefinitionId::Function(id) => (
-            database.function_data(id).0.name.clone(),
+            FunctionSignature::of(database, id).name.clone(),
             id.lookup(database)
                 .source(database)
                 .original_file_range(database)
