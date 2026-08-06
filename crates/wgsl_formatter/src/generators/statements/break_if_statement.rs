@@ -30,7 +30,7 @@ pub fn gen_break_if_statement(
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::Break)?;
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::If)?;
     let item_condition = parse_node::<Expression>(&mut syntax)?;
-    parse_token_optional(&mut syntax, SyntaxKind::Semicolon);
+    parse_node_with(&mut syntax, NoTrivia).expect_kind_optional(SyntaxKind::Semicolon)?;
     parse_end(&mut syntax)?;
 
     // ==== Format ====

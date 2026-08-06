@@ -76,7 +76,7 @@ pub fn gen_import_super_relative(
         } else {
             break;
         }
-        parse_token_optional(&mut syntax, ast::SyntaxKind::ColonColon);
+        parse_node_with(&mut syntax, NoTrivia).expect_kind_optional(ast::SyntaxKind::ColonColon)?;
     }
 
     parse_end(&mut syntax)?;

@@ -164,7 +164,7 @@ pub fn gen_switch_body_case(
 
     //     }
 
-    //     let item_default = parse_token_optional(&mut syntax, SyntaxKind::Default);
+    //     let item_default = parse_node_with(&mut syntax, NoTrivia).expect_kind_optional(SyntaxKind::Default)?;
     //     if item_default.is_some() {
     //         SwitchBodyCaseKind::Default
     //     } else {
@@ -177,7 +177,8 @@ pub fn gen_switch_body_case(
     // };
 
     //let item_comments_after_selectors = parse_many_comments_and_blankspace(&mut syntax)?; TODO Verify this is unneeded
-    let item_colon = parse_token_optional(&mut syntax, SyntaxKind::Colon);
+    let item_colon =
+        parse_node_with(&mut syntax, NoTrivia).expect_kind_optional(SyntaxKind::Colon)?;
     let item_body = parse_node_with(&mut syntax, IgnoreBlankspace)
         .expect_castable_kind::<CompoundStatement>()?;
     parse_end(&mut syntax)?;
@@ -243,7 +244,7 @@ pub fn gen_switch_case_selectors(
     let mut selectors = Vec::new();
     while let Some(selector) = parse_node_optional::<SwitchCaseSelector>(&mut syntax) {
         let item_comments_after_selector = parse_many_comments_and_blankspace(&mut syntax)?;
-        parse_token_optional(&mut syntax, SyntaxKind::Comma);
+        parse_node_with(&mut syntax, NoTrivia).expect_kind_optional(SyntaxKind::Comma)?;
         let item_comments_after_comma = parse_many_comments_and_blankspace(&mut syntax)?;
 
         selectors.push((
