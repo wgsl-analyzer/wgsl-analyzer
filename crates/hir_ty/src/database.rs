@@ -15,6 +15,7 @@ use hir_def::{
         DefDatabase, DefinitionWithBodyId, FunctionId, ModuleDefinitionId, StructId, TypeAliasId,
     },
     item_scope::ItemScope,
+    item_tree::ItemTree,
     resolver::Resolver,
     signature::{FieldId, LocalFieldId},
 };
@@ -174,7 +175,7 @@ fn struct_is_used_in_uniform(
     r#struct: StructId,
     file_id: EditionedFileId,
 ) -> bool {
-    let module_info = database.item_tree(file_id);
+    let module_info = ItemTree::of(database, file_id);
     module_info
         .top_level_items()
         .iter()
