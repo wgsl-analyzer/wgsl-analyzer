@@ -1,7 +1,7 @@
 use base_db::{EditionedFileId, SourceDatabase as _};
 use expect_test::{Expect, expect};
 use hir_def::{
-    database::{DefDatabase as _, DefinitionWithBodyId, ModuleDefinitionId},
+    database::{DefinitionWithBodyId, ModuleDefinitionId},
     item_tree::ItemTree,
 };
 use test_fixture::WithFixture as _;

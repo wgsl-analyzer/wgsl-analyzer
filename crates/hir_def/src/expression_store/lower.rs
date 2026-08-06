@@ -1,10 +1,10 @@
+use base_db::SourceDatabase;
 use la_arena::Arena;
 use syntax::{HasName as _, HasTemplateParameters as _, ast, pointer::AstPointer};
 use triomphe::Arc;
 
 use crate::{
     InFile,
-    database::DefDatabase,
     expression::{Expression, ExpressionId, parse_literal},
     expression_store::{
         ExpressionSourceMap, ExpressionStoreBuilder, ExpressionStoreSource, SyntheticSyntax,
@@ -20,13 +20,13 @@ use crate::{
 };
 
 pub struct ExprCollector<'database> {
-    database: &'database dyn DefDatabase,
+    database: &'database dyn SourceDatabase,
     store: ExpressionStoreBuilder,
 }
 
 impl ExprCollector<'_> {
     pub fn new(
-        database: &dyn DefDatabase,
+        database: &dyn SourceDatabase,
         store_source: ExpressionStoreSource,
     ) -> ExprCollector<'_> {
         ExprCollector {
@@ -253,7 +253,7 @@ impl ExprCollector<'_> {
 }
 
 pub(crate) fn lower_function(
-    database: &dyn DefDatabase,
+    database: &dyn SourceDatabase,
     function: &InFile<ast::FunctionDeclaration>,
 ) -> (FunctionSignature, ExpressionSourceMap) {
     let name = as_name_opt(function.value.name());
@@ -282,7 +282,7 @@ pub(crate) fn lower_function(
 }
 
 pub(crate) fn lower_struct(
-    database: &dyn DefDatabase,
+    database: &dyn SourceDatabase,
     struct_declaration: &InFile<ast::StructDeclaration>,
 ) -> (StructSignature, ExpressionSourceMap) {
     let name = as_name_opt(struct_declaration.value.name());
@@ -306,7 +306,7 @@ pub(crate) fn lower_struct(
 }
 
 pub(crate) fn lower_type_alias(
-    database: &dyn DefDatabase,
+    database: &dyn SourceDatabase,
     type_alias: &InFile<ast::TypeAliasDeclaration>,
 ) -> (TypeAliasSignature, ExpressionSourceMap) {
     let name = as_name_opt(type_alias.value.name());
@@ -324,7 +324,7 @@ pub(crate) fn lower_type_alias(
 }
 
 pub(crate) fn lower_variable(
-    database: &dyn DefDatabase,
+    database: &dyn SourceDatabase,
     global_variable: &InFile<ast::VariableDeclaration>,
 ) -> (VariableSignature, ExpressionSourceMap) {
     let name = as_name_opt(global_variable.value.name());
@@ -356,7 +356,7 @@ pub(crate) fn lower_variable(
 }
 
 pub(crate) fn lower_constant(
-    database: &dyn DefDatabase,
+    database: &dyn SourceDatabase,
     global_constant: &InFile<ast::ConstantDeclaration>,
 ) -> (ConstantSignature, ExpressionSourceMap) {
     let name = as_name_opt(global_constant.value.name());
@@ -377,7 +377,7 @@ pub(crate) fn lower_constant(
 }
 
 pub(crate) fn lower_global_assert_statement(
-    database: &dyn DefDatabase,
+    database: &dyn SourceDatabase,
     _global_assert_statement: &InFile<ast::AssertStatement>,
 ) -> (AssertStatementSignature, ExpressionSourceMap) {
     let collector = ExprCollector::new(database, ExpressionStoreSource::Signature);
@@ -390,7 +390,7 @@ pub(crate) fn lower_global_assert_statement(
 }
 
 pub(crate) fn lower_override(
-    database: &dyn DefDatabase,
+    database: &dyn SourceDatabase,
     global_override: &InFile<ast::OverrideDeclaration>,
 ) -> (OverrideSignature, ExpressionSourceMap) {
     let name = as_name_opt(global_override.value.name());

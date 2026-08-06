@@ -24,9 +24,6 @@ use crate::{
     },
 };
 
-#[query_group::query_group(DefDatabaseStorage)]
-pub trait DefDatabase: SourceDatabase {}
-
 /// `Location` points to an AST node in any file. Corresponds to `AstId` in Rust-Analyzer.
 ///
 /// It is stable across reparses, and can be used as salsa key/value.
@@ -62,7 +59,7 @@ pub enum DefinitionWithBodyId {
 impl DefinitionWithBodyId {
     pub fn file_id(
         self,
-        database: &dyn DefDatabase,
+        database: &dyn SourceDatabase,
     ) -> EditionedFileId {
         match self {
             Self::Function(id) => id.lookup(database).file_id,
@@ -75,7 +72,7 @@ impl DefinitionWithBodyId {
 
     pub fn resolver(
         self,
-        database: &dyn DefDatabase,
+        database: &dyn SourceDatabase,
     ) -> Resolver<'_> {
         let file_id = self.file_id(database);
         let module_info = ItemScope::of(database, file_id);
@@ -100,7 +97,7 @@ pub enum ModuleDefinitionId {
 impl ModuleDefinitionId {
     pub fn file_id(
         self,
-        database: &dyn DefDatabase,
+        database: &dyn SourceDatabase,
     ) -> EditionedFileId {
         match self {
             Self::Function(id) => id.lookup(database).file_id,
@@ -115,7 +112,7 @@ impl ModuleDefinitionId {
 
     pub fn resolver(
         self,
-        database: &dyn DefDatabase,
+        database: &dyn SourceDatabase,
     ) -> Resolver<'_> {
         let file_id = self.file_id(database);
         let module_info = ItemScope::of(database, file_id);

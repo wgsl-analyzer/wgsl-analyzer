@@ -1,6 +1,5 @@
 use base_db::{EditionedFileId, FilePosition, FileRange, RangeInfo, SourceDatabase as _};
 use hir::Semantics;
-use hir_def::database::DefDatabase as _;
 use ide_db::RootDatabase;
 
 use crate::{NavigationTarget, markup::Markup};

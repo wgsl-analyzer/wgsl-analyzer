@@ -1,12 +1,12 @@
-use base_db::Lookup as _;
+use base_db::{Lookup as _, SourceDatabase};
 use la_arena::{Arena, Idx};
 use triomphe::Arc;
 
 use crate::{
     HasSource as _,
     database::{
-        DefDatabase, FunctionId, GlobalAssertStatementId, GlobalConstantId, GlobalVariableId,
-        OverrideId, StructId, TypeAliasId,
+        FunctionId, GlobalAssertStatementId, GlobalConstantId, GlobalVariableId, OverrideId,
+        StructId, TypeAliasId,
     },
     expression::ExpressionId,
     expression_store::{
@@ -46,7 +46,7 @@ pub struct ParamData {
 impl FunctionSignature {
     #[salsa::tracked(returns(deref))]
     pub fn of(
-        db: &dyn DefDatabase,
+        db: &dyn SourceDatabase,
         id: FunctionId,
     ) -> Arc<Self> {
         Self::with_source_map(db, id).0.clone()
@@ -55,7 +55,7 @@ impl FunctionSignature {
     #[salsa::tracked(returns(ref))]
 
     pub fn with_source_map(
-        db: &dyn DefDatabase,
+        db: &dyn SourceDatabase,
         id: FunctionId,
     ) -> (Arc<Self>, Arc<ExpressionSourceMap>) {
         let source = id.lookup(db).source(db);
@@ -89,7 +89,7 @@ pub struct FieldData {
 impl StructSignature {
     #[salsa::tracked(returns(deref))]
     pub fn of(
-        db: &dyn DefDatabase,
+        db: &dyn SourceDatabase,
         id: StructId,
     ) -> Arc<Self> {
         Self::with_source_map(db, id).0.clone()
@@ -97,7 +97,7 @@ impl StructSignature {
 
     #[salsa::tracked(returns(ref))]
     pub fn with_source_map(
-        db: &dyn DefDatabase,
+        db: &dyn SourceDatabase,
         id: StructId,
     ) -> (Arc<Self>, Arc<ExpressionSourceMap>) {
         let source = id.lookup(db).source(db);
@@ -144,7 +144,7 @@ pub struct TypeAliasSignature {
 impl TypeAliasSignature {
     #[salsa::tracked(returns(deref))]
     pub fn of(
-        db: &dyn DefDatabase,
+        db: &dyn SourceDatabase,
         id: TypeAliasId,
     ) -> Arc<Self> {
         Self::with_source_map(db, id).0.clone()
@@ -152,7 +152,7 @@ impl TypeAliasSignature {
 
     #[salsa::tracked(returns(ref))]
     pub fn with_source_map(
-        db: &dyn DefDatabase,
+        db: &dyn SourceDatabase,
         id: TypeAliasId,
     ) -> (Arc<Self>, Arc<ExpressionSourceMap>) {
         let source = id.lookup(db).source(db);
@@ -174,7 +174,7 @@ pub struct VariableSignature {
 impl VariableSignature {
     #[salsa::tracked(returns(deref))]
     pub fn of(
-        db: &dyn DefDatabase,
+        db: &dyn SourceDatabase,
         id: GlobalVariableId,
     ) -> Arc<Self> {
         Self::with_source_map(db, id).0.clone()
@@ -182,7 +182,7 @@ impl VariableSignature {
 
     #[salsa::tracked(returns(ref))]
     pub fn with_source_map(
-        db: &dyn DefDatabase,
+        db: &dyn SourceDatabase,
         id: GlobalVariableId,
     ) -> (Arc<Self>, Arc<ExpressionSourceMap>) {
         let source = id.lookup(db).source(db);
@@ -203,7 +203,7 @@ pub struct ConstantSignature {
 impl ConstantSignature {
     #[salsa::tracked(returns(deref))]
     pub fn of(
-        db: &dyn DefDatabase,
+        db: &dyn SourceDatabase,
         id: GlobalConstantId,
     ) -> Arc<Self> {
         Self::with_source_map(db, id).0.clone()
@@ -211,7 +211,7 @@ impl ConstantSignature {
 
     #[salsa::tracked(returns(ref))]
     pub fn with_source_map(
-        db: &dyn DefDatabase,
+        db: &dyn SourceDatabase,
         id: GlobalConstantId,
     ) -> (Arc<Self>, Arc<ExpressionSourceMap>) {
         let source = id.lookup(db).source(db);
@@ -231,7 +231,7 @@ pub struct OverrideSignature {
 impl OverrideSignature {
     #[salsa::tracked(returns(deref))]
     pub fn of(
-        db: &dyn DefDatabase,
+        db: &dyn SourceDatabase,
         id: OverrideId,
     ) -> Arc<Self> {
         Self::with_source_map(db, id).0.clone()
@@ -239,7 +239,7 @@ impl OverrideSignature {
 
     #[salsa::tracked(returns(ref))]
     pub fn with_source_map(
-        db: &dyn DefDatabase,
+        db: &dyn SourceDatabase,
         id: OverrideId,
     ) -> (Arc<Self>, Arc<ExpressionSourceMap>) {
         let source = id.lookup(db).source(db);
@@ -257,7 +257,7 @@ pub struct AssertStatementSignature {
 impl AssertStatementSignature {
     #[salsa::tracked(returns(deref))]
     pub fn of(
-        db: &dyn DefDatabase,
+        db: &dyn SourceDatabase,
         id: GlobalAssertStatementId,
     ) -> Arc<Self> {
         Self::with_source_map(db, id).0.clone()
@@ -265,7 +265,7 @@ impl AssertStatementSignature {
 
     #[salsa::tracked(returns(ref))]
     pub fn with_source_map(
-        db: &dyn DefDatabase,
+        db: &dyn SourceDatabase,
         id: GlobalAssertStatementId,
     ) -> (Arc<Self>, Arc<ExpressionSourceMap>) {
         let source = id.lookup(db).source(db);

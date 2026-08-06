@@ -10,7 +10,6 @@ use std::{
 
 use base_db::SourceDatabase as _;
 use crossbeam_channel::{Receiver, select};
-use hir::database::DefDatabase as _;
 // use ide_db::base_db::{SourceDatabase, SourceRootDatabase, VfsPath};
 use lsp_server::{Connection, Notification, Request};
 use lsp_types::{

@@ -4,14 +4,14 @@ pub mod database;
 pub mod definition;
 pub mod diagnostics;
 
-use base_db::{EditionedFileId, Intern as _, Lookup as _};
+use base_db::{EditionedFileId, Intern as _, Lookup as _, SourceDatabase};
 use diagnostics::AnyDiagnostic;
 use either::Either;
 use hir_def::{
     AstIdMap, HasSource as _, InFile,
     body::{BindingId, Body, BodySourceMap, scope::ExprScopes},
     database::{
-        DefDatabase, DefinitionWithBodyId, FunctionId, GlobalAssertStatementId, GlobalConstantId,
+        DefinitionWithBodyId, FunctionId, GlobalAssertStatementId, GlobalConstantId,
         GlobalVariableId, ImportId, Location, OverrideId, StructId, TypeAliasId,
     },
     expression::{ExpressionId, StatementId},
@@ -36,7 +36,7 @@ pub trait HasSource {
     type Ast;
     fn source(
         self,
-        database: &dyn DefDatabase,
+        database: &dyn SourceDatabase,
     ) -> Option<InFile<Self::Ast>>;
 }
 
@@ -362,7 +362,7 @@ impl_from!(
 impl ChildContainer {
     pub fn file_id(
         self,
-        database: &dyn DefDatabase,
+        database: &dyn SourceDatabase,
     ) -> EditionedFileId {
         match self {
             Self::DefinitionWithBodyId(id) => id.file_id(database),
@@ -553,7 +553,7 @@ impl HasSource for Local {
 
     fn source(
         self,
-        database: &dyn DefDatabase,
+        database: &dyn SourceDatabase,
     ) -> Option<InFile<Self::Ast>> {
         let file_id = self.parent.lookup(database).file_id;
         let (_, source_map) =
@@ -574,7 +574,7 @@ impl HasSource for Parameter {
 
     fn source(
         self,
-        database: &dyn DefDatabase,
+        database: &dyn SourceDatabase,
     ) -> Option<InFile<Self::Ast>> {
         let function_data = FunctionSignature::of(database, self.id.function);
         let parameter_data = &function_data.parameters[self.id.param];
@@ -605,7 +605,7 @@ impl HasSource for Function {
 
     fn source(
         self,
-        database: &dyn DefDatabase,
+        database: &dyn SourceDatabase,
     ) -> Option<InFile<Self::Ast>> {
         Some(self.id.lookup(database).source(database))
     }
@@ -621,7 +621,7 @@ impl HasSource for GlobalVariable {
 
     fn source(
         self,
-        database: &dyn DefDatabase,
+        database: &dyn SourceDatabase,
     ) -> Option<InFile<Self::Ast>> {
         Some(self.id.lookup(database).source(database))
     }
@@ -637,7 +637,7 @@ impl HasSource for GlobalConstant {
 
     fn source(
         self,
-        database: &dyn DefDatabase,
+        database: &dyn SourceDatabase,
     ) -> Option<InFile<Self::Ast>> {
         Some(self.id.lookup(database).source(database))
     }
@@ -653,7 +653,7 @@ impl HasSource for Override {
 
     fn source(
         self,
-        database: &dyn DefDatabase,
+        database: &dyn SourceDatabase,
     ) -> Option<InFile<Self::Ast>> {
         Some(self.id.lookup(database).source(database))
     }
@@ -669,7 +669,7 @@ impl HasSource for Struct {
 
     fn source(
         self,
-        database: &dyn DefDatabase,
+        database: &dyn SourceDatabase,
     ) -> Option<InFile<Self::Ast>> {
         Some(self.id.lookup(database).source(database))
     }
@@ -685,7 +685,7 @@ impl HasSource for TypeAlias {
 
     fn source(
         self,
-        database: &dyn DefDatabase,
+        database: &dyn SourceDatabase,
     ) -> Option<InFile<Self::Ast>> {
         Some(self.id.lookup(database).source(database))
     }
@@ -701,7 +701,7 @@ impl HasSource for GlobalAssertStatement {
 
     fn source(
         self,
-        database: &dyn DefDatabase,
+        database: &dyn SourceDatabase,
     ) -> Option<InFile<Self::Ast>> {
         Some(self.id.lookup(database).source(database))
     }
@@ -717,7 +717,7 @@ impl HasSource for Field {
 
     fn source(
         self,
-        database: &dyn DefDatabase,
+        database: &dyn SourceDatabase,
     ) -> Option<InFile<Self::Ast>> {
         let struct_data = StructSignature::of(database, self.id.r#struct);
         let field_data = &struct_data.fields()[self.id.field];
@@ -778,7 +778,7 @@ impl HasSource for Module {
 
     fn source(
         self,
-        database: &dyn DefDatabase,
+        database: &dyn SourceDatabase,
     ) -> Option<InFile<Self::Ast>> {
         let source_file = self.file_id.parse(database).tree();
         Some(InFile::new(self.file_id, source_file))

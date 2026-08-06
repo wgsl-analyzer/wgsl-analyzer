@@ -5,7 +5,6 @@ use base_db::{
     SourceRootId, SourceRootInput, change::Change, input::SourceRoot,
     set_all_packages_with_durability,
 };
-use hir_def::database::DefDatabase as _;
 use salsa::{Database as _, Durability};
 use syntax::{Edition, ExtensionsConfig};
 use triomphe::Arc;

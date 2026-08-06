@@ -1,17 +1,16 @@
-use base_db::EditionedFileId;
+use base_db::{EditionedFileId, SourceDatabase};
 use either::Either;
 use syntax::{HasName as _, HasTemplateParameters as _, ast, pointer::AstPointer};
 
 use super::{Binding, BindingId, Body, BodySourceMap, SyntheticSyntax};
 use crate::{
-    database::DefDatabase,
     expression::{ExpressionId, Statement, StatementId, SwitchCaseSelector},
     expression_store::{ExpressionStoreSource, lower::ExprCollector},
     item_tree::Name,
 };
 
 pub(super) fn lower_function_body(
-    database: &dyn DefDatabase,
+    database: &dyn SourceDatabase,
     file_id: EditionedFileId,
     param_list: Option<ast::FunctionParameters>,
     body: Option<ast::CompoundStatement>,
@@ -20,7 +19,7 @@ pub(super) fn lower_function_body(
 }
 
 pub(super) fn lower_global_variable_declaration(
-    database: &dyn DefDatabase,
+    database: &dyn SourceDatabase,
     file_id: EditionedFileId,
     declaration: &ast::VariableDeclaration,
 ) -> (Body, BodySourceMap) {
@@ -28,7 +27,7 @@ pub(super) fn lower_global_variable_declaration(
 }
 
 pub(super) fn lower_global_constant_declaration(
-    database: &dyn DefDatabase,
+    database: &dyn SourceDatabase,
     file_id: EditionedFileId,
     declaration: &ast::ConstantDeclaration,
 ) -> (Body, BodySourceMap) {
@@ -36,7 +35,7 @@ pub(super) fn lower_global_constant_declaration(
 }
 
 pub(super) fn lower_global_assert_statement(
-    database: &dyn DefDatabase,
+    database: &dyn SourceDatabase,
     file_id: EditionedFileId,
     declaration: &ast::AssertStatement,
 ) -> (Body, BodySourceMap) {
@@ -44,7 +43,7 @@ pub(super) fn lower_global_assert_statement(
 }
 
 pub(super) fn lower_override_declaration(
-    database: &dyn DefDatabase,
+    database: &dyn SourceDatabase,
     file_id: EditionedFileId,
     declaration: &ast::OverrideDeclaration,
 ) -> (Body, BodySourceMap) {
@@ -53,7 +52,7 @@ pub(super) fn lower_override_declaration(
 
 struct Collector<'database> {
     expressions: ExprCollector<'database>,
-    database: &'database dyn DefDatabase,
+    database: &'database dyn SourceDatabase,
     body: Body,
     source_map: BodySourceMap,
     file_id: EditionedFileId,
@@ -61,7 +60,7 @@ struct Collector<'database> {
 
 impl Collector<'_> {
     fn new(
-        database: &dyn DefDatabase,
+        database: &dyn SourceDatabase,
         file_id: EditionedFileId,
     ) -> Collector<'_> {
         Collector {
