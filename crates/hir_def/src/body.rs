@@ -66,51 +66,54 @@ pub struct BodySourceMap {
     binding_map_back: ArenaMap<BindingId, Result<AstPointer<ast::Name>, SyntheticSyntax>>,
 }
 
+#[salsa::tracked]
 impl Body {
-    pub fn body_query(
-        database: &dyn DefDatabase,
+    #[salsa::tracked(returns(deref))]
+    pub fn of(
+        db: &dyn DefDatabase,
         definition: DefinitionWithBodyId,
     ) -> Arc<Self> {
-        database.body_with_source_map(definition).0
+        Self::with_source_map(db, definition).0.clone()
     }
 
-    pub fn body_with_source_map_query(
-        database: &dyn DefDatabase,
+    #[salsa::tracked(lru = 512, returns(ref))]
+    pub fn with_source_map(
+        db: &dyn DefDatabase,
         definition: DefinitionWithBodyId,
     ) -> (Arc<Self>, Arc<BodySourceMap>) {
-        let file_id = definition.file_id(database);
+        let file_id = definition.file_id(db);
         let (body, source_map) = match definition {
             DefinitionWithBodyId::Function(id) => {
-                let location = id.lookup(database);
-                let source = location.source(database);
+                let location = id.lookup(db);
+                let source = location.source(db);
                 let parameters = source.value.parameter_list();
                 let body = source.value.body();
 
-                lower::lower_function_body(database, file_id, parameters, body)
+                lower::lower_function_body(db, file_id, parameters, body)
             },
             DefinitionWithBodyId::GlobalVariable(id) => {
-                let location = id.lookup(database);
-                let source = location.source(database);
+                let location = id.lookup(db);
+                let source = location.source(db);
 
-                lower::lower_global_variable_declaration(database, file_id, &source.value)
+                lower::lower_global_variable_declaration(db, file_id, &source.value)
             },
             DefinitionWithBodyId::GlobalConstant(id) => {
-                let location = id.lookup(database);
-                let source = location.source(database);
+                let location = id.lookup(db);
+                let source = location.source(db);
 
-                lower::lower_global_constant_declaration(database, file_id, &source.value)
+                lower::lower_global_constant_declaration(db, file_id, &source.value)
             },
             DefinitionWithBodyId::Override(id) => {
-                let location = id.lookup(database);
-                let source = location.source(database);
+                let location = id.lookup(db);
+                let source = location.source(db);
 
-                lower::lower_override_declaration(database, file_id, &source.value)
+                lower::lower_override_declaration(db, file_id, &source.value)
             },
             DefinitionWithBodyId::GlobalAssertStatement(id) => {
-                let location = id.lookup(database);
-                let source = location.source(database);
+                let location = id.lookup(db);
+                let source = location.source(db);
 
-                lower::lower_global_assert_statement(database, file_id, &source.value)
+                lower::lower_global_assert_statement(db, file_id, &source.value)
             },
         };
 

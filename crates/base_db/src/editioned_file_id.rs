@@ -28,11 +28,11 @@ impl EditionedFileId {
     #[salsa::tracked(lru = 128, returns(clone))]
     pub fn parse(
         self,
-        database: &dyn SourceDatabase,
+        db: &dyn SourceDatabase,
     ) -> syntax::Parse {
         let _p = tracing::info_span!("parse", ?self).entered();
-        let RawEditionedFileId { file_id, edition } = self.unpack(database);
-        let text = database.file_text(file_id).text(database);
+        let RawEditionedFileId { file_id, edition } = self.unpack(db);
+        let text = db.file_text(file_id).text(db);
         syntax::parse(text, edition)
     }
 
@@ -40,9 +40,9 @@ impl EditionedFileId {
     #[salsa::tracked(returns(as_deref))]
     pub fn parse_errors(
         self,
-        database: &dyn SourceDatabase,
+        db: &dyn SourceDatabase,
     ) -> Option<Box<[Diagnostic]>> {
-        let parse = self.parse(database);
+        let parse = self.parse(db);
         let errors = parse.errors();
         match errors {
             [] => None,

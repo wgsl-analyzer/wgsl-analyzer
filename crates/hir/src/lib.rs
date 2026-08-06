@@ -433,8 +433,8 @@ fn module_item_to_def(
 
 pub struct SourceAnalyzer<'database> {
     pub database: &'database dyn HirDatabase,
-    pub body: Arc<Body>,
-    pub body_source_map: Arc<BodySourceMap>,
+    pub body: &'database Body,
+    pub body_source_map: &'database BodySourceMap,
     pub infer: &'database InferenceResult,
     pub owner: DefinitionWithBodyId,
 }
@@ -444,7 +444,7 @@ impl<'database> SourceAnalyzer<'database> {
         database: &'database dyn HirDatabase,
         definition: DefinitionWithBodyId,
     ) -> Self {
-        let (body, body_source_map) = database.body_with_source_map(definition);
+        let (body, body_source_map) = Body::with_source_map(database, definition);
         let infer = InferenceResult::of(database, definition);
         Self {
             database,
@@ -562,7 +562,7 @@ impl HasSource for Local {
     ) -> Option<InFile<Self::Ast>> {
         let file_id = self.parent.lookup(database).file_id;
         let (_, source_map) =
-            database.body_with_source_map(DefinitionWithBodyId::Function(self.parent));
+            Body::with_source_map(database, DefinitionWithBodyId::Function(self.parent));
         let binding = source_map.binding_to_source(self.binding).ok()?;
         let root = file_id.parse(database).syntax();
         Some(InFile::new(file_id, binding.to_node(&root)))
@@ -956,7 +956,7 @@ fn check_type_errors(
     if let Some(definition) = item.as_def_with_body_id() {
         let file = definition.file_id(database);
         let (_, signature_map) = database.signature_with_source_map(definition);
-        let (_, source_map) = database.body_with_source_map(definition);
+        let (_, source_map) = Body::with_source_map(database, definition);
         let infer = InferenceResult::of(database, definition);
         for diagnostic in infer.diagnostics() {
             match diagnostics::any_diag_from_infer_diagnostic(

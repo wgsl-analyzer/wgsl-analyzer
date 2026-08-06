@@ -1,4 +1,5 @@
 use hir_def::{
+    body::Body,
     database::DefinitionWithBodyId,
     expression::{ArithmeticOperation, BinaryOperation, ExpressionId},
 };
@@ -17,7 +18,7 @@ pub fn collect<Function>(
 ) where
     Function: FnMut(PrecedenceDiagnostic),
 {
-    let (body, _) = database.body_with_source_map(body);
+    let body = Body::of(database, body);
 
     for (_, expression) in body.store.exprs.iter() {
         // See https://github.com/gpuweb/gpuweb/issues/1146#issuecomment-714721825

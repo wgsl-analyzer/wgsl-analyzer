@@ -48,11 +48,11 @@ impl Index<ScopeId> for ExprScopes {
 impl ExprScopes {
     #[salsa::tracked(returns(ref))]
     pub fn of(
-        database: &dyn DefDatabase,
+        db: &dyn DefDatabase,
         definition: DefinitionWithBodyId,
     ) -> Self {
-        let body = database.body(definition);
-        let mut scopes = Self::new(&body);
+        let body = Body::of(db, definition);
+        let mut scopes = Self::new(body);
         scopes.shrink_to_fit();
         scopes
     }
@@ -182,7 +182,7 @@ impl ExprScopes {
     }
 
     fn shrink_to_fit(&mut self) {
-        let ExprScopes {
+        let Self {
             scopes,
             scope_by_expression,
             scope_by_statement,

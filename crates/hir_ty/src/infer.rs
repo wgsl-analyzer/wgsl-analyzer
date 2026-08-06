@@ -67,30 +67,30 @@ fn infer_query(
     definition: DefinitionWithBodyId,
 ) -> InferenceResult {
     let resolver = definition.resolver(database);
-    let body = database.body(definition);
+    let body = Body::of(database, definition);
     let mut context = InferenceContext::new(database, definition.into(), resolver);
 
     match definition {
         DefinitionWithBodyId::Function(function) => {
             let data = database.function_data(function).0;
-            let return_type = context.collect_fn(&data, &body);
-            context.infer_body(&body, return_type, AbstractHandling::Concretize);
+            let return_type = context.collect_fn(&data, body);
+            context.infer_body(body, return_type, AbstractHandling::Concretize);
         },
         DefinitionWithBodyId::GlobalVariable(variable) => {
             let data = database.global_var_data(variable).0;
-            let return_type = context.collect_global_variable(&data, &body);
-            context.infer_body(&body, return_type, AbstractHandling::Concretize);
-            context.infer_global_variable(&data, &body);
+            let return_type = context.collect_global_variable(&data, body);
+            context.infer_body(body, return_type, AbstractHandling::Concretize);
+            context.infer_global_variable(&data, body);
         },
         DefinitionWithBodyId::GlobalConstant(constant) => {
             let data = database.global_constant_data(constant).0;
-            let return_type = context.collect_global_constant(&data, &body);
-            context.infer_body(&body, return_type, AbstractHandling::Abstract);
+            let return_type = context.collect_global_constant(&data, body);
+            context.infer_body(body, return_type, AbstractHandling::Abstract);
         },
         DefinitionWithBodyId::Override(override_declaration) => {
             let data = database.override_data(override_declaration).0;
-            let return_type = context.collect_override(&data, &body);
-            context.infer_body(&body, return_type, AbstractHandling::Concretize);
+            let return_type = context.collect_override(&data, body);
+            context.infer_body(body, return_type, AbstractHandling::Concretize);
         },
         DefinitionWithBodyId::GlobalAssertStatement(_global_assert_statement) => {
             let expression = body.root.and_then(Either::right);
