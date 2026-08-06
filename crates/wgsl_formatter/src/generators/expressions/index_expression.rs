@@ -7,10 +7,15 @@ use syntax::{
 };
 
 use crate::{
-    ast_parse::{parse_end, parse_node, parse_token},
+    ast_parse::{
+        BareSyntaxKind, FilterAction, UntilSyntaxKind, parse_end, parse_node,
+        parse_node_with_trivia, parse_node_with_trivia_filter, parse_node_with_trivia_until,
+        parse_token,
+    },
     generators::{
         comments::{gen_comments, parse_many_comments_and_blankspace},
         expressions::gen_expression,
+        node::gen_node_with_trivia,
     },
     multiline_group::MultilineGroup,
     print_item_buffer::PrintItemBuffer,
@@ -22,35 +27,44 @@ pub fn gen_index_expression(
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = put_back(index_expression.syntax().children_with_tokens());
-    let item_array_expr = parse_node::<ast::Expression>(&mut syntax)?;
-    let comments_after_ident_expr = parse_many_comments_and_blankspace(&mut syntax)?;
-    parse_token(&mut syntax, parser::SyntaxKind::BracketLeft)?;
-    let comments_after_open_bracket = parse_many_comments_and_blankspace(&mut syntax)?;
-    let item_actual_index = parse_node::<ast::Expression>(&mut syntax)?;
-    let comments_after_index_expr = parse_many_comments_and_blankspace(&mut syntax)?;
-    parse_token(&mut syntax, parser::SyntaxKind::BracketRight)?;
+    let item_array_expr =
+        parse_node_with_trivia_until(&mut syntax, UntilSyntaxKind(SyntaxKind::BracketLeft))
+            .expect_castable_kind::<ast::Expression>()?;
+    let item_bracket_left =
+        parse_node_with_trivia_until(&mut syntax, BareSyntaxKind(SyntaxKind::BracketLeft))
+            .expect_kind(SyntaxKind::BracketLeft)?;
+    let item_actual_index =
+        parse_node_with_trivia_until(&mut syntax, UntilSyntaxKind(SyntaxKind::BracketRight))
+            .expect_castable_kind::<ast::Expression>()?;
+    let item_bracket_right =
+        parse_node_with_trivia_until(&mut syntax, BareSyntaxKind(SyntaxKind::BracketRight))
+            .expect_kind(SyntaxKind::BracketRight)?;
     parse_end(&mut syntax)?;
+
+    dbg!(
+        &item_array_expr,
+        &item_bracket_left,
+        &item_actual_index,
+        &item_bracket_right
+    );
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
 
-    formatted.extend(gen_expression(&item_array_expr)?);
-    formatted.extend(gen_comments(&comments_after_ident_expr));
+    formatted.extend(gen_node_with_trivia(&item_array_expr)?);
 
     let mut multiline_group = MultilineGroup::new(&mut formatted);
 
-    multiline_group.push_sc(sc!("["));
+    multiline_group.extend(gen_node_with_trivia(&item_bracket_left)?);
 
     multiline_group.start_indent();
 
-    multiline_group.extend(gen_comments(&comments_after_open_bracket));
-    multiline_group.extend(gen_expression(&item_actual_index)?);
-    multiline_group.extend(gen_comments(&comments_after_index_expr));
+    multiline_group.extend(gen_node_with_trivia(&item_actual_index)?);
     multiline_group.grouped_newline_or_space();
 
     multiline_group.finish_indent();
 
-    multiline_group.push_sc(sc!("]"));
+    multiline_group.extend(gen_node_with_trivia(&item_bracket_right)?);
 
     multiline_group.end();
 

@@ -104,8 +104,8 @@ pub fn gen_fn_parameters(node: &ast::FunctionParameters) -> FormatDocumentResult
 
     loop {
         let mut item = parse_node_with_trivia_filter(&mut syntax, |node| match node.kind() {
-            SyntaxKind::Comma => FilterAction::Ignored,
-            _ => FilterAction::Content,
+            SyntaxKind::Comma => Some(FilterAction::Ignored),
+            _ => None,
         });
 
         // TODO Do I want to move this logicto trivia_filter too?
