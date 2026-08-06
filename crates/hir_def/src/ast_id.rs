@@ -1,5 +1,6 @@
 use std::{fmt, marker::PhantomData};
 
+use base_db::{EditionedFileId, SourceDatabase};
 use la_arena::{Arena, Idx};
 use syntax::{
     AstNode, SyntaxNode,
@@ -11,6 +12,17 @@ use syntax::{
 #[derive(Debug, PartialEq, Eq, Default)]
 pub struct AstIdMap {
     arena: Arena<SyntaxNodePointer>,
+}
+#[salsa::tracked]
+impl AstIdMap {
+    #[salsa::tracked(lru = 1024, returns(ref))]
+    pub fn of(
+        database: &dyn SourceDatabase,
+        file_id: EditionedFileId,
+    ) -> AstIdMap {
+        let parsed = file_id.parse(database);
+        AstIdMap::from_source(&parsed.tree())
+    }
 }
 
 impl AstIdMap {

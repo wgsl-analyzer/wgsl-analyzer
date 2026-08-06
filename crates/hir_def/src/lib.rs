@@ -153,7 +153,7 @@ impl<Node: AstNode> HasSource for InFile<FileAstId<Node>> {
         &self,
         database: &dyn DefDatabase,
     ) -> InFile<AstPointer<Self::Value>> {
-        let ast_id_map = database.ast_id_map(self.file_id);
+        let ast_id_map = AstIdMap::of(database, self.file_id);
         InFile::new(self.file_id, ast_id_map.get(self.value))
     }
 }
