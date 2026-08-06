@@ -1333,9 +1333,7 @@ impl<'database> InferenceContext<'database> {
         };
         match wgsl_types::builtin::type_unary_op(
             to_wgsl_unary_operator(operator),
-            &self
-                .converter
-                .to_wgsl_types(expression_type),
+            &self.converter.to_wgsl_types(expression_type),
         ) {
             Ok(r#type) => self.converter.from_wgsl_types(r#type),
             Err(error) => {
