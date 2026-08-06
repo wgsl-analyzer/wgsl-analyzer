@@ -390,6 +390,7 @@ pub fn gen_node_content(node: &NodeWithTrivia) -> FormatDocumentResult<PrintItem
             formatted.extend(gen_node(node)?);
         },
         NodeWithTriviaContent::Content(NodeOrToken::Token(token)) => {
+            //TODO Benchmark this vs a big match and sc!
             formatted.push_string(token.text().to_owned());
         },
         NodeWithTriviaContent::NoContent | NodeWithTriviaContent::End => {},

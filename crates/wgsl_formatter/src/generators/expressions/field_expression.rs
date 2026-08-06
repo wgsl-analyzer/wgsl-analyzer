@@ -1,15 +1,11 @@
 use itertools::put_back;
-use parser::SyntaxKind;
 use syntax::{
     AstNode as _,
     ast::{self},
 };
 
 use crate::{
-    ast_parse::{
-        FilterAction, IgnoreBlankspace, NoTrivia, parse_end, parse_node_with,
-        parse_node_with_trivia_filter,
-    },
+    ast_parse::{IgnoreBlankspace, NoTrivia, parse_end, parse_node_with},
     generators::node::gen_node_with_trivia,
     print_item_buffer::{PrintItemBuffer, spacing_request::Request},
     reporting::FormatDocumentResult,

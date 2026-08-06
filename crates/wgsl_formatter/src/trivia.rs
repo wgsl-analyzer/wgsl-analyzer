@@ -1,7 +1,7 @@
 use parser::{SyntaxKind, SyntaxNode, SyntaxToken};
 use rowan::NodeOrToken;
 use syntax::{
-    AstNode,
+    AstNode, AstToken,
     ast::{Attribute, AttributeList},
 };
 
@@ -91,11 +91,27 @@ impl NodeWithTrivia {
         }
     }
 
+    // TODO Rename to expect_ast_node
     pub fn expect_castable_kind<T>(self) -> FormatDocumentResult<Self>
     where
         T: AstNode,
     {
         if let NodeWithTriviaContent::Content(NodeOrToken::Node(node)) = &self.node {
+            if T::cast(node.clone()).is_some() {
+                return Ok(self);
+            }
+        }
+        //TODO Better error here
+        Err(FormatDocumentError::UnexpectedNodeOrToken {
+            received: self.node.into_option().unwrap(),
+        })
+    }
+
+    pub fn expect_ast_token<T>(self) -> FormatDocumentResult<Self>
+    where
+        T: AstToken,
+    {
+        if let NodeWithTriviaContent::Content(NodeOrToken::Token(node)) = &self.node {
             if T::cast(node.clone()).is_some() {
                 return Ok(self);
             }
