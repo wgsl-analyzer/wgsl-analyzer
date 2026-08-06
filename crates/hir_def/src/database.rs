@@ -36,18 +36,6 @@ pub trait DefDatabase: InternDatabase + SourceDatabase {
         key: EditionedFileId,
     ) -> Arc<ItemTree>;
 
-    #[salsa::invoke(Body::body_with_source_map_query)]
-    fn body_with_source_map(
-        &self,
-        key: DefinitionWithBodyId,
-    ) -> (Arc<Body>, Arc<BodySourceMap>);
-
-    #[salsa::invoke(Body::body_query)]
-    fn body(
-        &self,
-        key: DefinitionWithBodyId,
-    ) -> Arc<Body>;
-
     #[salsa::invoke(signature_with_source_map)]
     fn signature_with_source_map(
         &self,

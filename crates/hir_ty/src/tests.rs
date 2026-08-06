@@ -130,7 +130,7 @@ impl<'db> InferPrinter<'db> {
         buffer: &mut String,
     ) {
         let (_, signature_map) = self.database.signature_with_source_map(definition);
-        let (_, body_source_map) = self.database.body_with_source_map(definition);
+        let (_, body_source_map) = Body::with_source_map(self.database, definition);
         let inference_result = InferenceResult::of(self.database, definition);
 
         let mut types: Vec<(SyntaxNode, Type)> = Vec::new();

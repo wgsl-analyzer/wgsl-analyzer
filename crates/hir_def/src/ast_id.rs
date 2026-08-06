@@ -17,10 +17,10 @@ pub struct AstIdMap {
 impl AstIdMap {
     #[salsa::tracked(lru = 1024, returns(ref))]
     pub fn of(
-        database: &dyn SourceDatabase,
+        db: &dyn SourceDatabase,
         file_id: EditionedFileId,
     ) -> AstIdMap {
-        let parsed = file_id.parse(database);
+        let parsed = file_id.parse(db);
         AstIdMap::from_source(&parsed.tree())
     }
 }
