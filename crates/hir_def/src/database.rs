@@ -29,40 +29,6 @@ pub trait DefDatabase: InternDatabase + SourceDatabase {
     /// Which language extensions are enabled.
     #[salsa::input]
     fn extensions(&self) -> ExtensionsConfig;
-
-    #[salsa::invoke(signature_with_source_map)]
-    fn signature_with_source_map(
-        &self,
-        key: DefinitionWithBodyId,
-    ) -> (Arc<ExpressionStore>, Arc<ExpressionSourceMap>);
-}
-
-fn signature_with_source_map(
-    database: &dyn DefDatabase,
-    key: DefinitionWithBodyId,
-) -> (Arc<ExpressionStore>, Arc<ExpressionSourceMap>) {
-    match key {
-        DefinitionWithBodyId::Function(id) => {
-            let (data, source_map) = FunctionSignature::with_source_map(database, id);
-            (data.store.clone(), source_map.clone())
-        },
-        DefinitionWithBodyId::GlobalVariable(id) => {
-            let (data, source_map) = VariableSignature::with_source_map(database, id);
-            (data.store.clone(), source_map.clone())
-        },
-        DefinitionWithBodyId::GlobalConstant(id) => {
-            let (data, source_map) = ConstantSignature::with_source_map(database, id);
-            (data.store.clone(), source_map.clone())
-        },
-        DefinitionWithBodyId::Override(id) => {
-            let (data, source_map) = OverrideSignature::with_source_map(database, id);
-            (data.store.clone(), source_map.clone())
-        },
-        DefinitionWithBodyId::GlobalAssertStatement(id) => {
-            let (data, source_map) = AssertStatementSignature::with_source_map(database, id);
-            (data.store.clone(), source_map.clone())
-        },
-    }
 }
 
 #[query_group::query_group(InternDatabaseStorage)]
@@ -182,7 +148,7 @@ impl_intern!(
 );
 
 /// Module items with a body.
-#[derive(PartialEq, Eq, Hash, Debug, Clone, Copy, salsa_macros::Supertype)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, salsa_macros::Supertype)]
 pub enum DefinitionWithBodyId {
     Function(FunctionId),
     GlobalVariable(GlobalVariableId),

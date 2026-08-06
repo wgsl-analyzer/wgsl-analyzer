@@ -18,7 +18,10 @@ use hir_def::{
         DefDatabase as _, DefinitionWithBodyId, InternDatabase as _, Location, ModuleDefinitionId,
     },
     expression::ExpressionId,
-    expression_store::{ExpressionSourceMap, ExpressionStoreSource, SyntheticSyntax},
+    expression_store::{
+        ExpressionSourceMap, ExpressionStore, ExpressionStoreOwnerId, ExpressionStoreSource,
+        SyntheticSyntax,
+    },
     item_tree::{ItemTree, ModuleItemId, Name},
     signature::{StructSignature, TypeAliasSignature},
     type_specifier::{self, TypeSpecifierId},
@@ -130,7 +133,10 @@ impl<'db> InferPrinter<'db> {
         definition: DefinitionWithBodyId,
         buffer: &mut String,
     ) {
-        let (_, signature_map) = self.database.signature_with_source_map(definition);
+        let (_, signature_map) = ExpressionStore::with_source_map(
+            self.database,
+            ExpressionStoreOwnerId::Signature(definition),
+        );
         let (_, body_source_map) = Body::with_source_map(self.database, definition);
         let inference_result = InferenceResult::of(self.database, definition);
 
