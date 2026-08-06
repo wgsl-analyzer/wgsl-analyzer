@@ -1,6 +1,9 @@
 use base_db::{EditionedFileId, SourceDatabase as _};
 use expect_test::{Expect, expect};
-use hir_def::database::{DefDatabase as _, DefinitionWithBodyId, ModuleDefinitionId};
+use hir_def::{
+    database::{DefinitionWithBodyId, ModuleDefinitionId},
+    item_tree::ItemTree,
+};
 use test_fixture::WithFixture as _;
 
 use crate::{
@@ -22,7 +25,7 @@ fn foo() {
     execute_assert_events(
         &database,
         || {
-            let module_info = database.item_tree(file_id);
+            let module_info = ItemTree::of(&database, file_id);
             let definitions = module_definitions(&database, file_id, &module_info);
             for definition in definitions {
                 if let ModuleDefinitionId::Function(id) = definition {
@@ -60,7 +63,7 @@ fn foo() {
     execute_assert_events(
         &database,
         || {
-            let module_info = database.item_tree(file_id);
+            let module_info = ItemTree::of(&database, file_id);
             let definitions = module_definitions(&database, file_id, &module_info);
             for definition in definitions {
                 if let ModuleDefinitionId::Function(id) = definition {
@@ -108,7 +111,7 @@ fn baz() -> i32 {
     execute_assert_events(
         &database,
         || {
-            let module_info = database.item_tree(file_id);
+            let module_info = ItemTree::of(&database, file_id);
             let definitions = module_definitions(&database, file_id, &module_info);
             for definition in definitions {
                 if let ModuleDefinitionId::Function(id) = definition {
@@ -160,7 +163,7 @@ fn baz() -> i32 {
     execute_assert_events(
         &database,
         || {
-            let module_info = database.item_tree(file_id);
+            let module_info = ItemTree::of(&database, file_id);
             let definitions = module_definitions(&database, file_id, &module_info);
             for definition in definitions {
                 if let ModuleDefinitionId::Function(id) = definition {

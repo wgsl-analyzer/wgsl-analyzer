@@ -1,6 +1,6 @@
 use std::iter;
 
-use hir_def::database::DefDatabase as _;
+use hir_def::signature::StructSignature;
 use hir_ty::ty::TypeKind;
 
 use super::Completions;
@@ -89,7 +89,7 @@ fn struct_completions(
             .build(context.database)
     };
 
-    let r#struct = context.database.struct_data(r#struct).0;
+    let r#struct = StructSignature::of(context.database, r#struct);
     let items = r#struct
         .fields()
         .iter()

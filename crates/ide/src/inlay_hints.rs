@@ -1,9 +1,14 @@
 use std::{fmt, hash, iter, mem};
 
 use ast::Expression as AstExpression;
-use base_db::{EditionedFileId, FileId, FileRange, TextRange};
+use base_db::{EditionedFileId, FileId, FileRange, Intern as _, TextRange};
 use hir::{AddressSpace, Field, HasSource as _, Semantics};
-use hir_def::{InFile, database::DefDatabase as _, item_tree::Name, signature::FieldId};
+use hir_def::{
+    InFile,
+    database::{ Location},
+    item_tree::{ItemTree, Name},
+    signature::FieldId,
+};
 use hir_ty::{
     function::FunctionDetails,
     layout::FieldLayout,
@@ -362,12 +367,10 @@ fn get_struct_layout_hints(
 ) -> Option<()> {
     let display_kind = config.struct_layout_hints?;
 
-    let module_info = semantics.database.item_tree(file_id);
+    let module_info = ItemTree::of(semantics.database, file_id);
 
     for r#struct in module_info.structs() {
-        let r#struct = semantics
-            .database
-            .intern_struct(InFile::new(file_id, r#struct));
+        let r#struct = Location::new(file_id, r#struct).intern(semantics.database);
         let fields = semantics.database.field_types(r#struct);
 
         // TODO check uniform_buffer_standard_layout extension here

@@ -1,5 +1,4 @@
 use base_db::{EditionedFileId, FileId, SourceDatabase as _, TextRange};
-use hir_def::database::DefDatabase as _;
 use rowan::NodeOrToken;
 use syntax::{AstNode as _, SyntaxNode, ast};
 use wgsl_formatter::FormattingOptions;

@@ -32,9 +32,10 @@ pub use vfs::{AnchoredPath, AnchoredPathBuf, FileId, VfsPath, file_set::FileSet}
 #[macro_export]
 macro_rules! impl_intern_key {
     ($id:ident, $loc:ty) => {
-        #[salsa_macros::interned(no_lifetime, revisions = usize::MAX)]
+        #[salsa::interned(no_lifetime, revisions = usize::MAX)]
         #[derive(PartialOrd, Ord)]
         pub struct $id {
+            #[returns(ref)]
             pub location: $loc,
         }
 
@@ -54,49 +55,44 @@ macro_rules! impl_intern_key {
 
 #[macro_export]
 macro_rules! impl_intern_lookup {
-    ($db:ident, $id:ident, $loc:ty, $intern:ident, $lookup:ident) => {
+    ($id:ident, $loc:ty) => {
         impl base_db::Intern for $loc {
-            type Database = dyn $db;
             type ID = $id;
-
             fn intern(
                 self,
-                database: &Self::Database,
+                database: &dyn ::base_db::SourceDatabase,
             ) -> Self::ID {
-                database.$intern(self)
+                $id::new(database, self)
             }
         }
 
         impl base_db::Lookup for $id {
             type Data = $loc;
-            type Database = dyn $db;
 
-            fn lookup(
+            fn lookup<'database>(
                 &self,
-                database: &Self::Database,
-            ) -> $loc {
-                database.$lookup(*self)
+                database: &'database dyn ::base_db::SourceDatabase,
+            ) -> &'database Self::Data {
+                self.location(database)
             }
         }
     };
 }
 
 pub trait Intern {
-    type Database: ?Sized;
     type ID;
     fn intern(
         self,
-        database: &Self::Database,
+        database: &dyn SourceDatabase,
     ) -> Self::ID;
 }
 
 pub trait Lookup {
-    type Database: ?Sized;
     type Data;
-    fn lookup(
+    fn lookup<'database>(
         &self,
-        database: &Self::Database,
-    ) -> Self::Data;
+        database: &'database dyn SourceDatabase,
+    ) -> &'database Self::Data;
 }
 
 #[expect(
@@ -250,24 +246,26 @@ impl Files {
     }
 }
 
-#[salsa_macros::input(debug)]
+#[salsa::input(debug)]
 pub struct FileText {
     #[returns(ref)]
     pub text: Arc<str>,
     pub file_id: vfs::FileId,
 }
 
-#[salsa_macros::input(debug)]
+#[salsa::input(debug)]
 pub struct FileSourceRootInput {
+    #[returns(copy)]
     pub source_root_id: SourceRootId,
 }
 
-#[salsa_macros::input(debug)]
+#[salsa::input(debug)]
 pub struct SourceRootInput {
+    #[returns(clone)]
     pub source_root: Arc<SourceRoot>,
 }
 
-#[salsa_macros::input(debug)]
+#[salsa::input(debug)]
 pub struct Package {
     #[returns(ref)]
     pub data: PackageData,
@@ -353,8 +351,32 @@ impl PackageDisplayName {
     }
 }
 
-#[salsa_macros::db]
-pub trait SourceDatabase: salsa::Database {
+#[salsa::input(singleton, debug)]
+pub struct ExtensionsConfigInput {
+    #[returns(ref)]
+    pub extensions: ExtensionsConfig,
+}
+
+impl ExtensionsConfigInput {
+    #[must_use]
+    pub fn get_extensions(database: &dyn SourceDatabase) -> &ExtensionsConfig {
+        Self::get(database).extensions(database)
+    }
+
+    pub fn update_extensions(
+        database: &mut dyn SourceDatabase,
+        extensions: ExtensionsConfig,
+    ) {
+        Self::try_get(database)
+            .unwrap_or_else(|| Self::new(database, ExtensionsConfig::default()))
+            .set_extensions(database)
+            .with_durability(Durability::MEDIUM)
+            .to(extensions);
+    }
+}
+
+#[salsa::db]
+pub trait SourceDatabase: salsa::Database + std::fmt::Debug {
     /// Text of the file.
     fn file_text(
         &self,
@@ -473,6 +495,7 @@ impl DbPanicContext {
 
 #[salsa::input(singleton, debug)]
 struct AllPackages {
+    #[returns(clone)]
     packages: std::sync::Arc<[Package]>,
 }
 

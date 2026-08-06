@@ -1,11 +1,3 @@
-#![expect(
-    clippy::drop_non_drop,
-    reason = "Clippy has a false positive for the query_group macro, see: https://github.com/rust-lang/rust-clippy/issues/16753"
-)]
-#![expect(
-    clippy::trailing_empty_array,
-    reason = "Clippy has a false positive for the query_group macro, see: https://github.com/rust-lang/rust-clippy/issues/16754"
-)]
 use std::fmt::Debug;
 
 use base_db::{EditionedFileId, Lookup as _, SourceDatabase, impl_intern_key, impl_intern_lookup};
@@ -27,189 +19,10 @@ use crate::{
     },
     resolver::Resolver,
     signature::{
-        ConstantSignature, FunctionSignature, GlobalAssertStatementSignature, OverrideSignature,
+        AssertStatementSignature, ConstantSignature, FunctionSignature, OverrideSignature,
         StructSignature, TypeAliasSignature, VariableSignature,
     },
 };
-
-#[query_group::query_group(DefDatabaseStorage)]
-pub trait DefDatabase: InternDatabase + SourceDatabase {
-    /// Which language extensions are enabled.
-    #[salsa::input]
-    fn extensions(&self) -> ExtensionsConfig;
-
-    fn ast_id_map(
-        &self,
-        key: EditionedFileId,
-    ) -> Arc<AstIdMap>;
-
-    #[salsa::invoke(ItemTree::query)]
-    fn item_tree(
-        &self,
-        key: EditionedFileId,
-    ) -> Arc<ItemTree>;
-
-    #[salsa::invoke(Body::body_with_source_map_query)]
-    fn body_with_source_map(
-        &self,
-        key: DefinitionWithBodyId,
-    ) -> (Arc<Body>, Arc<BodySourceMap>);
-
-    #[salsa::invoke(Body::body_query)]
-    fn body(
-        &self,
-        key: DefinitionWithBodyId,
-    ) -> Arc<Body>;
-
-    #[salsa::invoke(ExprScopes::expression_scopes_query)]
-    fn expression_scopes(
-        &self,
-        key: DefinitionWithBodyId,
-    ) -> Arc<ExprScopes>;
-
-    #[salsa::invoke(signature_with_source_map)]
-    fn signature_with_source_map(
-        &self,
-        key: DefinitionWithBodyId,
-    ) -> (Arc<ExpressionStore>, Arc<ExpressionSourceMap>);
-
-    #[salsa::invoke(FunctionSignature::query)]
-    fn function_data(
-        &self,
-        key: FunctionId,
-    ) -> (Arc<FunctionSignature>, Arc<ExpressionSourceMap>);
-
-    #[salsa::invoke(StructSignature::query)]
-    fn struct_data(
-        &self,
-        key: StructId,
-    ) -> (Arc<StructSignature>, Arc<ExpressionSourceMap>);
-
-    #[salsa::invoke(TypeAliasSignature::query)]
-    fn type_alias_data(
-        &self,
-        key: TypeAliasId,
-    ) -> (Arc<TypeAliasSignature>, Arc<ExpressionSourceMap>);
-
-    #[salsa::invoke(VariableSignature::query)]
-    fn global_var_data(
-        &self,
-        key: GlobalVariableId,
-    ) -> (Arc<VariableSignature>, Arc<ExpressionSourceMap>);
-
-    #[salsa::invoke(ConstantSignature::query)]
-    fn global_constant_data(
-        &self,
-        key: GlobalConstantId,
-    ) -> (Arc<ConstantSignature>, Arc<ExpressionSourceMap>);
-
-    #[salsa::invoke(GlobalAssertStatementSignature::query)]
-    fn global_assert_statement_data(
-        &self,
-        key: GlobalAssertStatementId,
-    ) -> (
-        Arc<GlobalAssertStatementSignature>,
-        Arc<ExpressionSourceMap>,
-    );
-
-    #[salsa::invoke(OverrideSignature::query)]
-    fn override_data(
-        &self,
-        key: OverrideId,
-    ) -> (Arc<OverrideSignature>, Arc<ExpressionSourceMap>);
-
-    #[salsa::invoke(AttributesWithOwner::attrs_query)]
-    fn attrs(
-        &self,
-        key: AttributeDefId,
-    ) -> (Arc<AttributesWithOwner>, Arc<ExpressionSourceMap>);
-}
-
-fn signature_with_source_map(
-    database: &dyn DefDatabase,
-    key: DefinitionWithBodyId,
-) -> (Arc<ExpressionStore>, Arc<ExpressionSourceMap>) {
-    match key {
-        DefinitionWithBodyId::Function(id) => {
-            let (data, source_map) = database.function_data(id);
-            (data.store.clone(), source_map)
-        },
-        DefinitionWithBodyId::GlobalVariable(id) => {
-            let (data, source_map) = database.global_var_data(id);
-            (data.store.clone(), source_map)
-        },
-        DefinitionWithBodyId::GlobalConstant(id) => {
-            let (data, source_map) = database.global_constant_data(id);
-            (data.store.clone(), source_map)
-        },
-        DefinitionWithBodyId::Override(id) => {
-            let (data, source_map) = database.override_data(id);
-            (data.store.clone(), source_map)
-        },
-        DefinitionWithBodyId::GlobalAssertStatement(id) => {
-            let (data, source_map) = database.global_assert_statement_data(id);
-            (data.store.clone(), source_map)
-        },
-    }
-}
-
-fn ast_id_map(
-    database: &dyn DefDatabase,
-    file_id: EditionedFileId,
-) -> Arc<AstIdMap> {
-    let parsed = file_id.parse(database);
-    let map = AstIdMap::from_source(&parsed.tree());
-    Arc::new(map)
-}
-
-#[query_group::query_group(InternDatabaseStorage)]
-pub trait InternDatabase: SourceDatabase {
-    #[salsa::interned]
-    fn intern_import(
-        &self,
-        location: Location<ast::ImportStatement>,
-    ) -> ImportId;
-    #[salsa::interned]
-    fn intern_directive(
-        &self,
-        location: Location<ast::Directive>,
-    ) -> DirectiveId;
-    #[salsa::interned]
-    fn intern_function(
-        &self,
-        location: Location<ast::FunctionDeclaration>,
-    ) -> FunctionId;
-    #[salsa::interned]
-    fn intern_global_variable(
-        &self,
-        location: Location<ast::VariableDeclaration>,
-    ) -> GlobalVariableId;
-    #[salsa::interned]
-    fn intern_global_constant(
-        &self,
-        location: Location<ast::ConstantDeclaration>,
-    ) -> GlobalConstantId;
-    #[salsa::interned]
-    fn intern_override(
-        &self,
-        location: Location<ast::OverrideDeclaration>,
-    ) -> OverrideId;
-    #[salsa::interned]
-    fn intern_struct(
-        &self,
-        location: Location<ast::StructDeclaration>,
-    ) -> StructId;
-    #[salsa::interned]
-    fn intern_type_alias(
-        &self,
-        location: Location<ast::TypeAliasDeclaration>,
-    ) -> TypeAliasId;
-    #[salsa::interned]
-    fn intern_global_assert_statement(
-        &self,
-        location: Location<ast::AssertStatement>,
-    ) -> GlobalAssertStatementId;
-}
 
 /// `Location` points to an AST node in any file. Corresponds to `AstId` in Rust-Analyzer.
 ///
@@ -217,69 +30,24 @@ pub trait InternDatabase: SourceDatabase {
 pub type Location<T> = InFile<FileAstId<T>>;
 
 macro_rules! impl_intern {
-    ($id:ident, $loc:ty, $intern:ident, $lookup:ident) => {
+    ($id:ident, $loc:ty) => {
         impl_intern_key!($id, $loc);
-        impl_intern_lookup!(DefDatabase, $id, $loc, $intern, $lookup);
+        impl_intern_lookup!($id, $loc);
     };
 }
 
-impl_intern!(
-    ImportId,
-    Location<ast::ImportStatement>,
-    intern_import,
-    lookup_intern_import
-);
-impl_intern!(
-    DirectiveId,
-    Location<ast::Directive>,
-    intern_directive,
-    lookup_intern_directive
-);
-impl_intern!(
-    FunctionId,
-    Location<ast::FunctionDeclaration>,
-    intern_function,
-    lookup_intern_function
-);
-impl_intern!(
-    GlobalVariableId,
-    Location<ast::VariableDeclaration>,
-    intern_global_variable,
-    lookup_intern_global_variable
-);
-impl_intern!(
-    GlobalConstantId,
-    Location<ast::ConstantDeclaration>,
-    intern_global_constant,
-    lookup_intern_global_constant
-);
-impl_intern!(
-    OverrideId,
-    Location<ast::OverrideDeclaration>,
-    intern_override,
-    lookup_intern_override
-);
-impl_intern!(
-    StructId,
-    Location<ast::StructDeclaration>,
-    intern_struct,
-    lookup_intern_struct
-);
-impl_intern!(
-    TypeAliasId,
-    Location<ast::TypeAliasDeclaration>,
-    intern_type_alias,
-    lookup_intern_type_alias
-);
-impl_intern!(
-    GlobalAssertStatementId,
-    Location<ast::AssertStatement>,
-    intern_global_assert_statement,
-    lookup_intern_global_assert_statement
-);
+impl_intern!(ImportId, Location<ast::ImportStatement>);
+impl_intern!(DirectiveId, Location<ast::Directive>);
+impl_intern!(FunctionId, Location<ast::FunctionDeclaration>);
+impl_intern!(GlobalVariableId, Location<ast::VariableDeclaration>);
+impl_intern!(GlobalConstantId, Location<ast::ConstantDeclaration>);
+impl_intern!(OverrideId, Location<ast::OverrideDeclaration>);
+impl_intern!(StructId, Location<ast::StructDeclaration>);
+impl_intern!(TypeAliasId, Location<ast::TypeAliasDeclaration>);
+impl_intern!(GlobalAssertStatementId, Location<ast::AssertStatement>);
 
 /// Module items with a body.
-#[derive(PartialEq, Eq, Hash, Debug, Clone, Copy, salsa_macros::Supertype)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, salsa_macros::Supertype)]
 pub enum DefinitionWithBodyId {
     Function(FunctionId),
     GlobalVariable(GlobalVariableId),
@@ -291,7 +59,7 @@ pub enum DefinitionWithBodyId {
 impl DefinitionWithBodyId {
     pub fn file_id(
         self,
-        database: &dyn DefDatabase,
+        database: &dyn SourceDatabase,
     ) -> EditionedFileId {
         match self {
             Self::Function(id) => id.lookup(database).file_id,
@@ -304,8 +72,8 @@ impl DefinitionWithBodyId {
 
     pub fn resolver(
         self,
-        database: &dyn DefDatabase,
-    ) -> Resolver {
+        database: &dyn SourceDatabase,
+    ) -> Resolver<'_> {
         let file_id = self.file_id(database);
         let module_info = ItemScope::of(database, file_id);
         Resolver::new(file_id, module_info)
@@ -329,7 +97,7 @@ pub enum ModuleDefinitionId {
 impl ModuleDefinitionId {
     pub fn file_id(
         self,
-        database: &dyn DefDatabase,
+        database: &dyn SourceDatabase,
     ) -> EditionedFileId {
         match self {
             Self::Function(id) => id.lookup(database).file_id,
@@ -344,8 +112,8 @@ impl ModuleDefinitionId {
 
     pub fn resolver(
         self,
-        database: &dyn DefDatabase,
-    ) -> Resolver {
+        database: &dyn SourceDatabase,
+    ) -> Resolver<'_> {
         let file_id = self.file_id(database);
         let module_info = ItemScope::of(database, file_id);
         Resolver::new(file_id, module_info)

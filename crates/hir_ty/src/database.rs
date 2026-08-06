@@ -8,15 +8,16 @@
 
 use std::fmt;
 
-use base_db::{EditionedFileId, Lookup as _};
+use base_db::{EditionedFileId, Intern as _, Lookup as _, SourceDatabase};
+use hir_def::database::Location;
+use hir_def::signature::{StructSignature, TypeAliasSignature};
 use hir_def::{
     InFile,
-    database::{
-        DefDatabase, DefinitionWithBodyId, FunctionId, ModuleDefinitionId, StructId, TypeAliasId,
-    },
+    database::{DefinitionWithBodyId, FunctionId, ModuleDefinitionId, StructId, TypeAliasId},
     item_scope::ItemScope,
+    item_tree::ItemTree,
     resolver::Resolver,
-    signature::{FieldId, LocalFieldId},
+    signature::{FieldId, FunctionSignature, LocalFieldId},
 };
 use la_arena::ArenaMap;
 use salsa::plumbing::AsId as _;
@@ -33,7 +34,7 @@ use crate::{
 };
 
 #[query_group::query_group]
-pub trait HirDatabase: DefDatabase + fmt::Debug {
+pub trait HirDatabase: SourceDatabase + fmt::Debug {
     fn field_types(
         &self,
         key: StructId,
@@ -84,7 +85,7 @@ fn field_types(
     database: &dyn HirDatabase,
     r#struct: StructId,
 ) -> Arc<(ArenaMap<LocalFieldId, Type>, Vec<InferenceDiagnostic>)> {
-    let data = database.struct_data(r#struct).0;
+    let data = StructSignature::of(database, r#struct);
 
     let file_id = r#struct.lookup(database).file_id;
     let module_info = ItemScope::of(database, file_id);
@@ -116,7 +117,7 @@ fn type_alias_type(
     database: &dyn HirDatabase,
     type_alias: TypeAliasId,
 ) -> Arc<(Type, Vec<InferenceDiagnostic>)> {
-    let data = database.type_alias_data(type_alias).0;
+    let data = TypeAliasSignature::of(database, type_alias);
 
     let file_id = type_alias.lookup(database).file_id;
     let module_info = ItemScope::of(database, file_id);
@@ -140,7 +141,7 @@ fn function_type(
     database: &dyn HirDatabase,
     function: FunctionId,
 ) -> ResolvedFunctionId {
-    let data = database.function_data(function).0;
+    let data = FunctionSignature::of(database, function);
 
     let file_id = function.lookup(database).file_id;
     let module_info = ItemScope::of(database, file_id);
@@ -174,14 +175,13 @@ fn struct_is_used_in_uniform(
     r#struct: StructId,
     file_id: EditionedFileId,
 ) -> bool {
-    let module_info = database.item_tree(file_id);
+    let module_info = ItemTree::of(database, file_id);
     module_info
         .top_level_items()
         .iter()
         .any(|item| match *item {
             hir_def::item_tree::ModuleItemId::GlobalVariable(declaration) => {
-                let declaration =
-                    database.intern_global_variable(InFile::new(file_id, declaration));
+                let declaration = Location::new(file_id, declaration).intern(database);
                 let inference = InferenceResult::of(
                     database,
                     DefinitionWithBodyId::GlobalVariable(declaration),

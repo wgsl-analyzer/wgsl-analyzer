@@ -23,42 +23,31 @@ pub struct EditionedFileId {
     field: RawEditionedFileId,
 }
 
+#[salsa::tracked]
 impl EditionedFileId {
+    #[salsa::tracked(lru = 128, returns(clone))]
     pub fn parse(
         self,
-        database: &dyn SourceDatabase,
+        db: &dyn SourceDatabase,
     ) -> syntax::Parse {
-        #[salsa::tracked(lru = 128)]
-        pub fn parse(
-            database: &dyn SourceDatabase,
-            file_id: EditionedFileId,
-        ) -> syntax::Parse {
-            let _p = tracing::info_span!("parse", ?file_id).entered();
-            let (file_id, edition) = (file_id.file_id(database), file_id.edition(database));
-            let text = database.file_text(file_id).text(database);
-            syntax::parse(text, edition)
-        }
-        parse(database, self)
+        let _p = tracing::info_span!("parse", ?self).entered();
+        let RawEditionedFileId { file_id, edition } = self.unpack(db);
+        let text = db.file_text(file_id).text(db);
+        syntax::parse(text, edition)
     }
 
     // firewall query
+    #[salsa::tracked(returns(as_deref))]
     pub fn parse_errors(
         self,
-        database: &dyn SourceDatabase,
-    ) -> Option<&[Diagnostic]> {
-        #[salsa::tracked(returns(as_deref))]
-        pub fn parse_errors(
-            database: &dyn SourceDatabase,
-            file_id: EditionedFileId,
-        ) -> Option<Box<[Diagnostic]>> {
-            let parse = file_id.parse(database);
-            let errors = parse.errors();
-            match errors {
-                [] => None,
-                [..] => Some(errors.into()),
-            }
+        db: &dyn SourceDatabase,
+    ) -> Option<Box<[Diagnostic]>> {
+        let parse = self.parse(db);
+        let errors = parse.errors();
+        match errors {
+            [] => None,
+            [..] => Some(errors.into()),
         }
-        parse_errors(database, self)
     }
 }
 

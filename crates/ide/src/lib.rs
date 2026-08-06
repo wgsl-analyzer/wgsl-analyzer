@@ -21,16 +21,15 @@ mod view_syntax_tree;
 use std::panic;
 
 use base_db::{
-    EditionedFileId, FilePosition, FileRange, FileSet, RangeInfo, SourceDatabase as _, SourceRoot,
-    TextRange, change::Change, input::SourceRootId,
+    EditionedFileId, ExtensionsConfigInput, FilePosition, FileRange, FileSet, RangeInfo,
+    SourceDatabase as _, SourceRoot, TextRange, change::Change, input::SourceRootId,
 };
-use hir_def::database::DefDatabase as _;
 use ide_completion::{CompletionConfig, item::CompletionItem};
 use ide_db::LineIndexDatabase as _;
 use ide_diagnostics::{Diagnostic, DiagnosticsConfig};
 pub use line_index::{LineCol, LineIndex};
 use rustc_hash::FxHashMap;
-use salsa::{Cancelled, Database as _, Durability};
+use salsa::{Cancelled, Database as _};
 use syntax::{ExtensionsConfig, Parse, SyntaxNode};
 use triomphe::Arc;
 use vfs::{FileId, VfsPath};
@@ -155,8 +154,7 @@ impl AnalysisHost {
         &mut self,
         extensions: ExtensionsConfig,
     ) {
-        self.database
-            .set_extensions_with_durability(extensions, Durability::MEDIUM);
+        ExtensionsConfigInput::update_extensions(&mut self.database, extensions);
     }
 
     /// Returns a snapshot of the current state, which you can query for

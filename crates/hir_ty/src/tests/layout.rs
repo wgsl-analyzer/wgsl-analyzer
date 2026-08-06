@@ -1,7 +1,10 @@
-use base_db::EditionedFileId;
+use base_db::{EditionedFileId, ExtensionsConfigInput};
 use expect_test::{Expect, expect};
-use hir_def::database::{DefDatabase as _, ModuleDefinitionId};
-use salsa::Durability;
+use hir_def::{
+    database::{ModuleDefinitionId},
+    item_tree::ItemTree,
+    signature::StructSignature,
+};
 use std::fmt::Write as _;
 use syntax::ExtensionsConfig;
 use test_fixture::WithFixture as _;
@@ -23,7 +26,7 @@ fn check_layout(
     expect: Expect,
 ) {
     let (mut database, file_id) = TestDatabase::with_single_file(wa_fixture);
-    database.set_extensions_with_durability(extensions, Durability::MEDIUM);
+    ExtensionsConfigInput::update_extensions(&mut database, extensions);
     let mut buffer = String::new();
     LayoutPrinter::new(
         &database,
@@ -52,7 +55,7 @@ impl<'db> LayoutPrinter<'db> {
         &self,
         buffer: &mut String,
     ) {
-        let module_info = self.database.item_tree(self.file_id);
+        let module_info = ItemTree::of(self.database, self.file_id);
         let mut definitions = module_definitions(self.database, self.file_id, &module_info);
         definitions.sort_by_key(|definition| text_range_start(*definition, self.database));
         for definition in definitions {
@@ -64,7 +67,7 @@ impl<'db> LayoutPrinter<'db> {
                 | ModuleDefinitionId::Override(_)
                 | ModuleDefinitionId::TypeAlias(_) => (),
                 ModuleDefinitionId::Struct(id) => {
-                    let (signature, _) = self.database.struct_data(id);
+                    let signature = StructSignature::of(self.database, id);
                     let (fields, diagnostics) = &*self.database.field_types(id);
                     assert!(diagnostics.is_empty());
                     let mut fields_output = vec![];

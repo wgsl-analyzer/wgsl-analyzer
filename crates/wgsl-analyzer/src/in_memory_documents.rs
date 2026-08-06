@@ -3,6 +3,7 @@
 use std::mem;
 
 use rustc_hash::FxHashMap;
+use triomphe::Arc;
 use vfs::VfsPath;
 
 /// Holds the set of in-memory documents.
@@ -11,7 +12,7 @@ use vfs::VfsPath;
 /// might be different from what's on disk.
 #[derive(Default, Clone)]
 pub(crate) struct InMemoryDocuments {
-    data: FxHashMap<VfsPath, DocumentData>,
+    data: Arc<FxHashMap<VfsPath, Arc<DocumentData>>>,
     added_or_removed: bool,
 }
 
@@ -29,7 +30,7 @@ impl InMemoryDocuments {
         data: DocumentData,
     ) -> Result<(), ()> {
         self.added_or_removed = true;
-        match self.data.insert(path, data) {
+        match Arc::make_mut(&mut self.data).insert(path, Arc::new(data)) {
             Some(_) => Err(()),
             None => Ok(()),
         }
@@ -40,7 +41,7 @@ impl InMemoryDocuments {
         path: &VfsPath,
     ) -> Result<(), ()> {
         self.added_or_removed = true;
-        match self.data.remove(path) {
+        match Arc::make_mut(&mut self.data).remove(path) {
             Some(_) => Ok(()),
             None => Err(()),
         }
@@ -50,7 +51,7 @@ impl InMemoryDocuments {
         &self,
         path: &VfsPath,
     ) -> Option<&DocumentData> {
-        self.data.get(path)
+        self.data.get(path).map(Arc::as_ref)
     }
 
     pub(crate) fn get_mut(
@@ -59,7 +60,9 @@ impl InMemoryDocuments {
     ) -> Option<&mut DocumentData> {
         // NB: don't set `self.added_or_removed` here, as that purposefully only
         // tracks changes to the key set.
-        self.data.get_mut(path)
+        Arc::make_mut(&mut self.data)
+            .get_mut(path)
+            .map(Arc::make_mut)
     }
 
     pub(crate) fn iter(&self) -> impl Iterator<Item = &VfsPath> {

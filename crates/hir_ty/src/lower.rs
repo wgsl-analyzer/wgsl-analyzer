@@ -11,6 +11,7 @@ use hir_def::{
     item_tree::Name,
     mod_path::PathKind,
     resolver::{ResolutionDiagnostic, ResolveKind, Resolver},
+    signature::StructSignature,
     type_specifier::TypeSpecifierId,
 };
 use wgsl_types::syntax::Enumerant;
@@ -35,7 +36,7 @@ mod generics;
 pub struct TypeLoweringContext<'database> {
     database: &'database dyn HirDatabase,
     /// Make sure to set the correct resolver when going into function scopes.
-    resolver: &'database Resolver,
+    resolver: &'database Resolver<'database>,
     store: &'database ExpressionStore,
 
     pub(crate) diagnostics: Vec<TypeLoweringError>,
@@ -232,7 +233,7 @@ pub enum ResolvedCall {
 impl<'database> TypeLoweringContext<'database> {
     pub fn new(
         database: &'database dyn HirDatabase,
-        resolver: &'database Resolver,
+        resolver: &'database Resolver<'database>,
         store: &'database ExpressionStore,
     ) -> Self {
         Self {
@@ -438,7 +439,7 @@ impl<'database> WgslTypeConverter<'database> {
                 Box::new(self.to_wgsl_types(inner)),
             ),
             TypeKind::Struct(struct_id) => {
-                let data = self.database.struct_data(struct_id).0;
+                let data = StructSignature::of(self.database, struct_id);
                 let fields = &self.database.field_types(struct_id).0;
                 let name = self.intern_struct(struct_id);
                 wgsl_types::Type::Struct(Box::new(wgsl_types::ty::StructType {

@@ -10,7 +10,6 @@ use std::{
 
 use base_db::SourceDatabase as _;
 use crossbeam_channel::{Receiver, select};
-use hir::database::DefDatabase as _;
 // use ide_db::base_db::{SourceDatabase, SourceRootDatabase, VfsPath};
 use lsp_server::{Connection, Notification, Request};
 use lsp_types::{
@@ -485,6 +484,7 @@ impl GlobalState {
             (false, false)
         };
 
+        let mut gc_elapsed = None;
         if self.is_quiescent() {
             let became_quiescent = !was_quiescent;
             // if became_quiescent {
@@ -544,8 +544,10 @@ impl GlobalState {
                 && self.fmt_pool.handle.is_empty()
                 && current_revision != self.last_gc_revision
             {
+                let gc_start = Instant::now();
                 self.trigger_garbage_collection();
-                self.last_gc_revision = current_revision;
+                self.last_gc_revision = self.analysis_host.raw_database().nonce_and_revision().1;
+                gc_elapsed = Some(gc_start.elapsed());
             }
         }
 
@@ -578,10 +580,14 @@ impl GlobalState {
         let loop_duration = loop_start.elapsed();
         if loop_duration > Duration::from_millis(100) && was_quiescent {
             tracing::warn!(
-                "overly long loop turn took {loop_duration:?} (event handling took {event_handling_duration:?}): {event_debug_message}"
+                "overly long loop turn took {loop_duration:?}:\n\
+                (event handling took {event_handling_duration:?}): {event_debug_message}\n\
+                (garbage collection took {gc_elapsed:?})"
             );
             self.poke_wgsl_analyzer_developer(format!(
-                "overly long loop turn took {loop_duration:?} (event handling took {event_handling_duration:?}): {event_debug_message}"
+                "overly long loop turn took {loop_duration:?}:\n\
+                (event handling took {event_handling_duration:?}): {event_debug_message}\n\
+                (garbage collection took {gc_elapsed:?})"
             ));
         }
     }

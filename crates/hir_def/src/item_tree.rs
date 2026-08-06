@@ -7,7 +7,7 @@ mod tests;
 
 use std::{hash, marker::PhantomData};
 
-use base_db::EditionedFileId;
+use base_db::{EditionedFileId, SourceDatabase};
 use rustc_hash::FxHashMap;
 use smol_str::SmolStr;
 use syntax::{
@@ -18,7 +18,7 @@ use triomphe::Arc;
 
 use crate::{
     ast_id::FileAstId,
-    database::{DefDatabase, ModuleDefinitionId},
+    database::{ ModuleDefinitionId},
     mod_path::{ModPath, PathKind},
 };
 
@@ -194,19 +194,23 @@ pub struct ItemTree {
     small_data: FxHashMap<FileAstId<ast::Item>, SmallModItem>,
 }
 
+#[salsa::tracked]
 impl ItemTree {
-    pub fn query(
-        database: &dyn DefDatabase,
+    #[salsa::tracked(returns(ref))]
+    pub fn of(
+        db: &dyn SourceDatabase,
         file_id: EditionedFileId,
-    ) -> Arc<Self> {
-        let source = file_id.parse(database).tree();
+    ) -> Self {
+        let source = file_id.parse(db).tree();
 
-        let lower_ctx = lower::Ctx::new(database, file_id);
+        let lower_ctx = lower::Ctx::new(db, file_id);
         let mut tree = lower_ctx.lower_source_file(&source);
         tree.shrink_to_fit();
-        Arc::new(tree)
+        tree
     }
+}
 
+impl ItemTree {
     #[must_use]
     pub fn top_level_items(&self) -> &[ModuleItemId] {
         &self.top_level

@@ -1,10 +1,10 @@
-use base_db::{EditionedFileId, Intern as _, Package, file_package, input::PackageData};
+use base_db::{EditionedFileId, Intern as _, Package, SourceDatabase, file_package, input::PackageData};
 use itertools::Itertools as _;
 use syntax::ast;
 use vfs::VfsPath;
 
 use crate::{
-    database::{DefDatabase, Location, ModuleDefinitionId},
+    database::{ Location, ModuleDefinitionId},
     item_scope::{ItemScope, ModuleImportPath, ModuleItem},
     item_tree::{FlatImport, ImportStatement, ItemTree, ModuleItemId, Name},
     mod_path::{AbsoluteModPath, ModPath, PathKind},
@@ -17,17 +17,17 @@ use crate::{
 };
 
 pub fn collect_module(
-    database: &dyn DefDatabase,
+    database: &dyn SourceDatabase,
     file_id: EditionedFileId,
 ) -> ItemScope {
-    let item_tree = database.item_tree(file_id);
+    let item_tree = ItemTree::of(database, file_id);
 
     let mut collector = ModCollector {
         database,
         file_id,
         item_scope: ItemScope::default(),
     };
-    collector.collect(&item_tree);
+    collector.collect(item_tree);
     collector.item_scope.shrink_to_fit();
     collector.item_scope
 }
@@ -40,7 +40,7 @@ pub fn collect_module(
 /// It also eagerly verifies that names, including imported ones,
 /// do not clash.
 pub(super) struct ModCollector<'db> {
-    database: &'db dyn DefDatabase,
+    database: &'db dyn SourceDatabase,
     file_id: EditionedFileId,
     item_scope: ItemScope,
 }
@@ -287,7 +287,7 @@ impl ModCollector<'_> {
         file_id: EditionedFileId,
         name: &Name,
     ) -> Option<ModuleDefinitionId> {
-        let item_tree = self.database.item_tree(file_id);
+        let item_tree = ItemTree::of(self.database, file_id);
         item_tree
             .top_level_items()
             .iter()

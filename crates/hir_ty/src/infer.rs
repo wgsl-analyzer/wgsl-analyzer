@@ -6,7 +6,7 @@ use base_db::{Lookup as _, TextRange, TextSize};
 use either::Either;
 use hir_def::{
     HasSource as _,
-    body::{BindingId, Body},
+    body::{BindingId, Body, scope::ExprScopes},
     database::{
         DefinitionWithBodyId, GlobalConstantId, GlobalVariableId, ModuleDefinitionId, OverrideId,
         StructId,
@@ -20,7 +20,8 @@ use hir_def::{
     mod_path::PathKind,
     resolver::{ResolveKind, Resolver},
     signature::{
-        ConstantSignature, FieldId, FunctionSignature, OverrideSignature, VariableSignature,
+        ConstantSignature, FieldId, FunctionSignature, OverrideSignature, StructSignature,
+        TypeAliasSignature, VariableSignature,
     },
     type_ref::{self, VecDimensionality},
     type_specifier::{IdentExpression, TypeSpecifierId},
@@ -67,30 +68,30 @@ fn infer_query(
     definition: DefinitionWithBodyId,
 ) -> InferenceResult {
     let resolver = definition.resolver(database);
-    let body = database.body(definition);
+    let body = Body::of(database, definition);
     let mut context = InferenceContext::new(database, definition.into(), resolver);
 
     match definition {
         DefinitionWithBodyId::Function(function) => {
-            let data = database.function_data(function).0;
-            let return_type = context.collect_fn(&data, &body);
-            context.infer_body(&body, return_type, AbstractHandling::Concretize);
+            let data = FunctionSignature::of(database, function);
+            let return_type = context.collect_fn(data, body);
+            context.infer_body(body, return_type, AbstractHandling::Concretize);
         },
         DefinitionWithBodyId::GlobalVariable(variable) => {
-            let data = database.global_var_data(variable).0;
-            let return_type = context.collect_global_variable(&data, &body);
-            context.infer_body(&body, return_type, AbstractHandling::Concretize);
-            context.infer_global_variable(&data, &body);
+            let data = VariableSignature::of(database, variable);
+            let return_type = context.collect_global_variable(data, body);
+            context.infer_body(body, return_type, AbstractHandling::Concretize);
+            context.infer_global_variable(data, body);
         },
         DefinitionWithBodyId::GlobalConstant(constant) => {
-            let data = database.global_constant_data(constant).0;
-            let return_type = context.collect_global_constant(&data, &body);
-            context.infer_body(&body, return_type, AbstractHandling::Abstract);
+            let data = ConstantSignature::of(database, constant);
+            let return_type = context.collect_global_constant(data, body);
+            context.infer_body(body, return_type, AbstractHandling::Abstract);
         },
         DefinitionWithBodyId::Override(override_declaration) => {
-            let data = database.override_data(override_declaration).0;
-            let return_type = context.collect_override(&data, &body);
-            context.infer_body(&body, return_type, AbstractHandling::Concretize);
+            let data = OverrideSignature::of(database, override_declaration);
+            let return_type = context.collect_override(data, body);
+            context.infer_body(body, return_type, AbstractHandling::Concretize);
         },
         DefinitionWithBodyId::GlobalAssertStatement(_global_assert_statement) => {
             let expression = body.root.and_then(Either::right);
@@ -129,42 +130,42 @@ fn get_name_and_range(
 ) -> (Name, base_db::TextRange) {
     match definition {
         ModuleDefinitionId::Function(id) => (
-            database.function_data(id).0.name.clone(),
+            FunctionSignature::of(database, id).name.clone(),
             id.lookup(database)
                 .source(database)
                 .original_file_range(database)
                 .range,
         ),
         ModuleDefinitionId::GlobalVariable(id) => (
-            database.global_var_data(id).0.name.clone(),
+            VariableSignature::of(database, id).name.clone(),
             id.lookup(database)
                 .source(database)
                 .original_file_range(database)
                 .range,
         ),
         ModuleDefinitionId::GlobalConstant(id) => (
-            database.global_constant_data(id).0.name.clone(),
+            ConstantSignature::of(database, id).name.clone(),
             id.lookup(database)
                 .source(database)
                 .original_file_range(database)
                 .range,
         ),
         ModuleDefinitionId::Override(id) => (
-            database.override_data(id).0.name.clone(),
+            OverrideSignature::of(database, id).name.clone(),
             id.lookup(database)
                 .source(database)
                 .original_file_range(database)
                 .range,
         ),
         ModuleDefinitionId::Struct(id) => (
-            database.struct_data(id).0.name.clone(),
+            StructSignature::of(database, id).name.clone(),
             id.lookup(database)
                 .source(database)
                 .original_file_range(database)
                 .range,
         ),
         ModuleDefinitionId::TypeAlias(id) => (
-            database.type_alias_data(id).0.name.clone(),
+            TypeAliasSignature::of(database, id).name.clone(),
             id.lookup(database)
                 .source(database)
                 .original_file_range(database)
@@ -284,7 +285,7 @@ pub struct InferenceContext<'database> {
     database: &'database dyn HirDatabase,
     owner: ModuleDefinitionId,
     /// Root resolver for the entire module.
-    resolver: Resolver,
+    resolver: Resolver<'database>,
     result: InferenceResult, // set in collect_* calls
     return_type: Type,
     converter: WgslTypeConverter<'database>,
@@ -294,7 +295,7 @@ impl<'database> InferenceContext<'database> {
     pub fn new(
         database: &'database dyn HirDatabase,
         owner: ModuleDefinitionId,
-        resolver: Resolver,
+        resolver: Resolver<'database>,
     ) -> Self {
         Self {
             database,
@@ -565,13 +566,12 @@ impl<'database> InferenceContext<'database> {
     fn resolver_for_expression(
         &self,
         expression: ExpressionId,
-    ) -> Option<Resolver> {
+    ) -> Option<Resolver<'database>> {
         let ModuleDefinitionId::Function(function) = self.owner else {
             return None;
         };
-        let expression_scopes = self
-            .database
-            .expression_scopes(DefinitionWithBodyId::Function(function));
+        let expression_scopes =
+            ExprScopes::of(self.database, DefinitionWithBodyId::Function(function));
 
         let scope_id = expression_scopes.scope_for_expression(expression)?;
 
@@ -585,14 +585,13 @@ impl<'database> InferenceContext<'database> {
     fn resolver_for_statement(
         &self,
         statement: StatementId,
-    ) -> Resolver {
+    ) -> Resolver<'database> {
         let ModuleDefinitionId::Function(function) = self.owner else {
             return self.resolver.clone();
         };
 
-        let expression_scopes = self
-            .database
-            .expression_scopes(DefinitionWithBodyId::Function(function));
+        let expression_scopes =
+            ExprScopes::of(self.database, DefinitionWithBodyId::Function(function));
 
         if let Some(scope_id) = expression_scopes.scope_for_statement(statement) {
             self.resolver
@@ -917,7 +916,7 @@ impl<'database> InferenceContext<'database> {
     fn get_effective_value_type(
         &mut self,
         body: &Body,
-        resolver: &Resolver,
+        resolver: &Resolver<'database>,
         type_ref: Option<la_arena::Idx<hir_def::type_specifier::TypeSpecifier>>,
         initializer: Option<ExpressionId>,
     ) -> Type {
@@ -1553,7 +1552,7 @@ impl<'database> InferenceContext<'database> {
         expression_type: Type,
         r#struct: StructId,
     ) -> Type {
-        let struct_data = self.database.struct_data(r#struct).0;
+        let struct_data = StructSignature::of(self.database, r#struct);
         let field_types = &self.database.field_types(r#struct).0;
         if let Some(field) = struct_data.field(name) {
             self.set_field_resolution(expression, FieldId { r#struct, field });
@@ -2229,7 +2228,7 @@ impl<'database> InferenceContext<'database> {
         if arguments.is_empty() {
             return r#type;
         }
-        let signature = self.database.struct_data(struct_id).0;
+        let signature = StructSignature::of(self.database, struct_id);
         if arguments.len() != signature.fields.len() {
             self.push_diagnostic(
                 store.store_source,
@@ -2270,7 +2269,7 @@ impl<'database> InferenceContext<'database> {
     fn lower_type(
         &mut self,
         type_ref: TypeSpecifierId,
-        resolver: &Resolver,
+        resolver: &Resolver<'database>,
         store: &ExpressionStore,
     ) -> Type {
         let mut context = TypeLoweringContext::new(self.database, resolver, store);

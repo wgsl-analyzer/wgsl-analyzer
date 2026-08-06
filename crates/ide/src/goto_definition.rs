@@ -1,6 +1,6 @@
 use base_db::{EditionedFileId, FilePosition, RangeInfo, SourceDatabase as _};
 use hir::{HasSource as _, Local, Semantics, definition::Definition};
-use hir_def::{InFile, database::DefDatabase as _};
+use hir_def::InFile;
 use ide_db::RootDatabase;
 use syntax::{AstNode as _, HasName as _, SyntaxKind};
 

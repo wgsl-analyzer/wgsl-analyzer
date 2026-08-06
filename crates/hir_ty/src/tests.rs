@@ -9,21 +9,22 @@ mod operators;
 mod simple;
 use std::{fmt::Write as _, ops::ControlFlow};
 
-use base_db::{EditionedFileId, Intern as _, Lookup as _};
+use base_db::{EditionedFileId, ExtensionsConfigInput, Intern as _, Lookup as _};
 use expect_test::Expect;
 use hir_def::{
     HasSource as _,
     body::{Body, BodySourceMap},
-    database::{
-        DefDatabase as _, DefinitionWithBodyId, InternDatabase as _, Location, ModuleDefinitionId,
-    },
+    database::{ DefinitionWithBodyId, Location, ModuleDefinitionId},
     expression::ExpressionId,
-    expression_store::{ExpressionSourceMap, ExpressionStoreSource, SyntheticSyntax},
-    item_tree::{ModuleItemId, Name},
+    expression_store::{
+        ExpressionSourceMap, ExpressionStore, ExpressionStoreOwnerId, ExpressionStoreSource,
+        SyntheticSyntax,
+    },
+    item_tree::{ItemTree, ModuleItemId, Name},
+    signature::{StructSignature, TypeAliasSignature},
     type_specifier::{self, TypeSpecifierId},
 };
 use itertools::Itertools as _;
-use salsa::Durability;
 use syntax::{AstNode as _, Diagnostic, ExtensionsConfig, SyntaxNode};
 use test_fixture::WithFixture as _;
 use triomphe::Arc;
@@ -47,7 +48,7 @@ fn infer(
     wa_fixture: &str,
 ) -> String {
     let (mut database, files) = TestDatabase::with_many_files(wa_fixture);
-    database.set_extensions_with_durability(extensions, Durability::MEDIUM);
+    ExtensionsConfigInput::update_extensions(&mut database, extensions);
     let mut buffer = String::new();
 
     for (index, file_id) in files.into_iter().enumerate() {
@@ -85,7 +86,7 @@ impl<'db> InferPrinter<'db> {
         &self,
         buffer: &mut String,
     ) {
-        let module_info = self.database.item_tree(self.file_id);
+        let module_info = ItemTree::of(self.database, self.file_id);
         let mut definitions = module_definitions(self.database, self.file_id, &module_info);
         definitions.sort_by_key(|definition| text_range_start(*definition, self.database));
         for definition in definitions {
@@ -106,7 +107,7 @@ impl<'db> InferPrinter<'db> {
                     self.infer_with_body(DefinitionWithBodyId::Override(id), buffer);
                 },
                 ModuleDefinitionId::Struct(id) => {
-                    let (_, signature_map) = self.database.struct_data(id);
+                    let (_, signature_map) = StructSignature::with_source_map(self.database, id);
                     let (_, diagnostics) = &*self.database.field_types(id);
 
                     for diagnostic in diagnostics {
@@ -114,7 +115,7 @@ impl<'db> InferPrinter<'db> {
                     }
                 },
                 ModuleDefinitionId::TypeAlias(id) => {
-                    let (_, signature_map) = self.database.type_alias_data(id);
+                    let (_, signature_map) = TypeAliasSignature::with_source_map(self.database, id);
                     let (_, diagnostics) = &*self.database.type_alias_type(id);
                     for diagnostic in diagnostics {
                         self.print_diagnostic(diagnostic, &signature_map, buffer);
@@ -129,8 +130,11 @@ impl<'db> InferPrinter<'db> {
         definition: DefinitionWithBodyId,
         buffer: &mut String,
     ) {
-        let (_, signature_map) = self.database.signature_with_source_map(definition);
-        let (_, body_source_map) = self.database.body_with_source_map(definition);
+        let (_, signature_map) = ExpressionStore::with_source_map(
+            self.database,
+            ExpressionStoreOwnerId::Signature(definition),
+        );
+        let (_, body_source_map) = Body::with_source_map(self.database, definition);
         let inference_result = InferenceResult::of(self.database, definition);
 
         let mut types: Vec<(SyntaxNode, Type)> = Vec::new();
