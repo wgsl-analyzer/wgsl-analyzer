@@ -27,7 +27,7 @@ pub fn collect_module(
         file_id,
         item_scope: ItemScope::default(),
     };
-    collector.collect(&item_tree);
+    collector.collect(item_tree);
     collector.item_scope.shrink_to_fit();
     collector.item_scope
 }
