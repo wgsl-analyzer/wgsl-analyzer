@@ -1,4 +1,3 @@
-use dprint_core_macros::sc;
 use itertools::put_back;
 use parser::{SyntaxKind, SyntaxNode};
 use syntax::{

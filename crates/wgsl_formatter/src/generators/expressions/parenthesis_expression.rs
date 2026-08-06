@@ -7,22 +7,14 @@ use syntax::{
 };
 
 use crate::{
-    ast_parse::{
-        FilterAction, IgnoreBlankspace, NoTrivia, parse_end, parse_node, parse_node_with,
-        parse_node_with_trivia_filter, parse_token,
-    },
+    ast_parse::{IgnoreBlankspace, NoTrivia, parse_end, parse_node_with},
     context_policies::expression_parens_are_irrelevant_policy,
-    generators::{
-        comments::{gen_comments, parse_many_comments_and_blankspace},
-        expressions::gen_expression,
-        node::gen_node_with_trivia,
-    },
+    generators::node::gen_node_with_trivia,
     print_item_buffer::{
         PrintItemBuffer,
         spacing_request::{Request, RequestItem},
     },
     reporting::FormatDocumentResult,
-    trivia::NodeWithTriviaContent::NoContent,
 };
 
 pub fn gen_parenthesis_expression(
@@ -31,12 +23,10 @@ pub fn gen_parenthesis_expression(
     // ==== Parse ====
     let mut syntax = put_back(parenthesis_expression.syntax().children_with_tokens());
 
-    let item_paren_left =
-        parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::ParenthesisLeft)?;
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::ParenthesisLeft)?;
     let item_content =
         parse_node_with(&mut syntax, IgnoreBlankspace).expect_castable_kind::<ast::Expression>()?;
-    let item_paren_left =
-        parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::ParenthesisRight)?;
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::ParenthesisRight)?;
     parse_end(&mut syntax)?;
 
     // ==== Format ====

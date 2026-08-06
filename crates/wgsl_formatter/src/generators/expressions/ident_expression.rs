@@ -1,13 +1,11 @@
 use itertools::put_back;
 use syntax::{
     AstNode as _,
-    ast::{self, SyntaxKind, TemplateList},
+    ast::{self, SyntaxKind},
 };
 
 use crate::{
-    ast_parse::{
-        FilterAction, IgnoreBlankspace, parse_end, parse_node_with, parse_node_with_trivia_filter,
-    },
+    ast_parse::{IgnoreBlankspace, parse_end, parse_node_with},
     generators::node::gen_node_with_trivia,
     print_item_buffer::PrintItemBuffer,
     reporting::FormatDocumentResult,
