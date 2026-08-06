@@ -3,6 +3,7 @@ use std::fmt::Write as _;
 use expect_test::{Expect, expect};
 use ide_db::RootDatabase;
 use itertools::Itertools;
+use syntax::ExtensionsConfig;
 use test_fixture::WithFixture as _;
 
 use crate::{Diagnostic, DiagnosticsConfig, Severity};
@@ -58,6 +59,41 @@ fn check_diagnostics_with_config(
 }
 
 #[test]
+fn infer_incr_decr_must_be_integer_scalar() {
+    check_diagnostics(
+        "fn foo() { var x = true; x++; }",
+        expect![[r#"
+            25..26 wgsl-analyzer Error 2: expected i32 or u32, found bool
+        "#]],
+    );
+}
+
+#[test]
+fn infer_assert_expect() {
+    check_diagnostics("fn foo() { const_assert 1 != 0; }", expect![""]);
+}
+
+#[test]
+fn infer_field_scalar_no_such_field() {
+    check_diagnostics(
+        "fn foo() { let x = 1; let y = x.nonsense; }",
+        expect![[r#"
+            30..40 wgsl-analyzer Error 3: no field `nonsense` on type i32
+        "#]],
+    );
+}
+
+#[test]
+fn infer_field_builtin_struct_no_such_field() {
+    check_diagnostics(
+        "fn foo() { let x = modf(1.0); let y = x.nonsense; }",
+        expect![[r#"
+            38..48 wgsl-analyzer Error 3: no field `nonsense` on type __modf_result_abstract
+        "#]],
+    );
+}
+
+#[test]
 fn store_type_must_be_storable() {
     check_diagnostics(
         "fn foo() { var x = 1; var y = &x; }",
@@ -82,13 +118,8 @@ fn no_builtin_overload() {
     check_diagnostics(
         "fn foo() { var x = 1f + mat2x2f(); }",
         expect![[r#"
-            11..34 wgsl-analyzer Error 8: no overload of `+` found for given arguments.Found (f32, mat2x2<f32>), expected one of:
-            fn op_binary_number(vecN<U>, vecN<U>) -> vecN<U>
-            fn op_binary_number(vecN<U>, U) -> vecN<U>
-            fn op_binary_number(T, vecM<T>) -> vecM<T>
-            fn op_binary_number(matNxM<f32>, matNxM<f32>) -> matNxM<f32>
-            fn op_binary_number(T, T) -> T
-        "#]],
+        19..33 wesl-rs Error 22: cannot use binary operator `+` with operands `f32` and `mat2x2<f32>`
+    "#]],
     );
 }
 
@@ -97,8 +128,8 @@ fn deref_not_a_pointer() {
     check_diagnostics(
         "fn foo() { var x = *1f; }",
         expect![[r#"
-            20..22 wgsl-analyzer Error 10: cannot dereference expression of type f32
-        "#]],
+        20..22 wesl-rs Error 22: cannot use unary operator `*` on type `f32`
+    "#]],
     );
 }
 
@@ -108,9 +139,33 @@ fn no_constructor() {
         "fn foo() { var x = vec2f(1, 2, 3); }",
         expect![[r#"
             19..33 wgsl-analyzer Error 18: no overload of constructor `vec2<f32>` found for given arguments. Found (integer, integer, integer), expected one of:
-            fn op_vec2_constructor(vec2<T>) -> vec2<T>
-            fn op_vec2_constructor(T) -> vec2<T>
-            fn op_vec2_constructor(T, T) -> vec2<T>
+            fn op_vec2_constructor(e: bool) -> vec2<bool>
+            fn op_vec2_constructor(e: integer) -> vec2<integer>
+            fn op_vec2_constructor(e: float) -> vec2<float>
+            fn op_vec2_constructor(e: i32) -> vec2<i32>
+            fn op_vec2_constructor(e: u32) -> vec2<u32>
+            fn op_vec2_constructor(e: f32) -> vec2<f32>
+            fn op_vec2_constructor(e: f16) -> vec2<f16>
+            fn op_vec2_constructor(e: u64) -> vec2<u64>
+            fn op_vec2_constructor(e: i64) -> vec2<i64>
+            fn op_vec2_constructor(e: vec2<bool>) -> vec2<bool>
+            fn op_vec2_constructor(e: vec2<integer>) -> vec2<integer>
+            fn op_vec2_constructor(e: vec2<float>) -> vec2<float>
+            fn op_vec2_constructor(e: vec2<i32>) -> vec2<i32>
+            fn op_vec2_constructor(e: vec2<u32>) -> vec2<u32>
+            fn op_vec2_constructor(e: vec2<f32>) -> vec2<f32>
+            fn op_vec2_constructor(e: vec2<f16>) -> vec2<f16>
+            fn op_vec2_constructor(e: vec2<u64>) -> vec2<u64>
+            fn op_vec2_constructor(e: vec2<i64>) -> vec2<i64>
+            fn op_vec2_constructor(e1: bool, e2: bool) -> vec2<bool>
+            fn op_vec2_constructor(e1: integer, e2: integer) -> vec2<integer>
+            fn op_vec2_constructor(e1: float, e2: float) -> vec2<float>
+            fn op_vec2_constructor(e1: i32, e2: i32) -> vec2<i32>
+            fn op_vec2_constructor(e1: u32, e2: u32) -> vec2<u32>
+            fn op_vec2_constructor(e1: f32, e2: f32) -> vec2<f32>
+            fn op_vec2_constructor(e1: f16, e2: f16) -> vec2<f16>
+            fn op_vec2_constructor(e1: u64, e2: u64) -> vec2<u64>
+            fn op_vec2_constructor(e1: i64, e2: i64) -> vec2<i64>
         "#]],
     );
 }
@@ -120,6 +175,7 @@ fn precedence_sequence_allowed() {
     check_diagnostics(
         "fn foo() { let x = true == true & true; }",
         expect![[r#"
+            19..38 wesl-rs Error 22: cannot use binary operator `&` with operands `bool` and `bool`
             19..31 wgsl-analyzer Error 19: & sequences may only have unary operands. More complex operands must be this with parenthesized `()`
         "#]],
     );
@@ -447,5 +503,89 @@ struct TaskPayload { foo: f32 }
 var<task_payload> foo: TaskPayload;
 ",
         expect![""],
+    );
+}
+
+#[test]
+fn not_constructible() {
+    check_diagnostics(
+        "
+enable f16;
+struct Foo { bar: atomic<u32> }
+fn foo() {
+    let boolean_array = array<bool>();
+    let signed_integer_32_array = array<i32>();
+    let unsigned_integer_32_array = array<u32>();
+    let float_32_array = array<f32>();
+    let float_16_array = array<f16>();
+
+    let signed_integer_32_atomic = atomic<i32>();
+    let unsigned_integer_32_atomic = atomic<u32>();
+
+    let structure = Foo();
+
+    let pointer = ptr<function, u32, read>();
+    let reference = ref<function, u32, read>();
+    let tex = texture_storage_2d<rgba16float, write>();
+}
+",
+        expect![[r#"
+            468..471 wgsl-analyzer Error 16: 'ref' is a reserved word in WGSL
+            468..471 wgsl-analyzer Error 16: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '-', 'package', '(', '*', 'super', '~', 'true'
+            480..481 wgsl-analyzer Error 16: invalid syntax, expected one of: '&=', '/=', '=', '-=', '--', '%=', '|=', '+=', '++', '<<=', '>>=', '*=', '^='
+            485..486 wgsl-analyzer Error 16: invalid syntax, expected one of: '&=', '/=', '=', '-=', '--', '%=', '|=', '+=', '++', '<<=', '>>=', '*=', '^='
+            491..492 wgsl-analyzer Error 16: invalid syntax, expected one of: '&=', '/=', '=', '-=', '--', '%=', '|=', '+=', '++', '<<=', '>>=', '*=', '^='
+            493..494 wgsl-analyzer Error 16: invalid syntax, expected one of: '&', <identifier>, 'package', '(', '*', 'super'
+            494..495 wgsl-analyzer Error 16: invalid syntax, expected one of: '&=', '/=', '=', '-=', '--', '%=', '|=', '+=', '++', '<<=', '>>=', '*=', '^='
+            79..92 wgsl-analyzer Error 6: type `array<bool>` is not constructible
+            128..140 wgsl-analyzer Error 6: type `array<i32>` is not constructible
+            178..190 wgsl-analyzer Error 6: type `array<u32>` is not constructible
+            217..229 wgsl-analyzer Error 6: type `array<f32>` is not constructible
+            256..268 wgsl-analyzer Error 6: type `array<f16>` is not constructible
+            306..319 wgsl-analyzer Error 6: type `atomic<i32>` is not constructible
+            306..319 wgsl-analyzer Error 6: type `atomic<i32>` is not constructible
+            358..371 wgsl-analyzer Error 6: type `atomic<u32>` is not constructible
+            358..371 wgsl-analyzer Error 6: type `atomic<u32>` is not constructible
+            394..399 wgsl-analyzer Error 6: type `Foo` is not constructible
+            420..446 wgsl-analyzer Error 6: type `ptr<u32>` is not constructible
+            420..446 wgsl-analyzer Error 6: type `ptr<u32>` is not constructible
+            472..480 wgsl-analyzer Error 23: enumerant function is not a variable
+            472..480 wgsl-analyzer Error 1: left hand side of assignment should be a reference, found [error]
+            482..485 wgsl-analyzer Error 23: type u32 is not a variable
+            482..485 wgsl-analyzer Error 1: left hand side of assignment should be a reference, found [error]
+            487..491 wgsl-analyzer Error 23: enumerant read is not a variable
+            487..491 wgsl-analyzer Error 1: left hand side of assignment should be a reference, found [error]
+            510..550 wgsl-analyzer Error 6: type `texture_storage_2d<rgba16float,write>` is not constructible
+            510..550 wgsl-analyzer Error 6: type `texture_storage_2d<rgba16float,write>` is not constructible
+        "#]],
+    );
+}
+
+#[test]
+fn arg_count_mismatch() {
+    check_diagnostics(
+        "
+fn foo() {
+    let x = foo(foo());
+}
+",
+        expect![[r#"
+            15..34 wgsl-analyzer Error 7: expected 0 parameters, found 1
+        "#]],
+    );
+}
+
+#[test]
+fn invalid_array_access() {
+    check_diagnostics(
+        "
+fn foo() {
+    let x = true;
+    let z = x[1];
+}
+",
+        expect![[r#"
+            41..45 wgsl-analyzer Error 4: cannot index into type bool
+        "#]],
     );
 }

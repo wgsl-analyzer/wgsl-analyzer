@@ -6,7 +6,7 @@ use std::{
     str::FromStr,
 };
 
-use base_db::impl_intern_key;
+use base_db::{Lookup, impl_intern_key};
 use hir_def::{database::StructId, type_ref::VecDimensionality};
 use wgsl_types::{
     syntax::{AccessMode, AddressSpace},
@@ -47,6 +47,7 @@ impl Type {
             | TypeKind::Atomic(_)
             | TypeKind::Matrix(_)
             | TypeKind::Struct(_)
+            | TypeKind::BuiltinStruct(_)
             | TypeKind::Array(_)
             | TypeKind::Texture(_)
             | TypeKind::Sampler(_)
@@ -109,6 +110,39 @@ impl Type {
         }
     }
 
+    #[expect(clippy::doc_paragraphs_missing_punctuation, reason = "false positive")]
+    /// Apply the load rule.
+    ///
+    /// Reference: <https://www.w3.org/TR/WGSL/#load-rule>
+    #[must_use]
+    pub fn is_constructible(
+        self,
+        database: &dyn HirDatabase,
+    ) -> bool {
+        match self.kind(database) {
+            TypeKind::Error | TypeKind::Scalar(_) | TypeKind::Vector(_) | TypeKind::Matrix(_) => {
+                true
+            },
+            TypeKind::Struct(struct_id) => database
+                .field_types(struct_id)
+                .0
+                .iter()
+                .all(|(field, field_type)| field_type.is_constructible(database)),
+            TypeKind::BuiltinStruct(builtin_struct) => builtin_struct
+                .fields
+                .iter()
+                .all(|(field, field_type)| field_type.is_constructible(database)),
+            TypeKind::Array(array_type) => array_type.is_constructible(database),
+            TypeKind::Atomic(_)
+            | TypeKind::Texture(_)
+            | TypeKind::Sampler(_)
+            | TypeKind::Reference(_)
+            | TypeKind::Pointer(_)
+            | TypeKind::StorageTypeOfTexelFormat(_)
+            | TypeKind::BoundVariable(_) => false,
+        }
+    }
+
     pub fn contains_struct(
         self,
         database: &dyn HirDatabase,
@@ -116,6 +150,13 @@ impl Type {
     ) -> bool {
         self.kind(database).contains_struct(database, r#struct)
     }
+}
+
+/// A struct type returned by builtin functions.
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct BuiltinStruct {
+    pub name: String,
+    pub fields: Vec<(String, Type)>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -128,12 +169,13 @@ pub enum TypeKind {
     Vector(VectorType),
     Matrix(MatrixType),
     Struct(StructId),
+    BuiltinStruct(BuiltinStruct),
     Array(ArrayType),
     Texture(TextureType),
     Sampler(SamplerType),
     Reference(Reference),
     Pointer(Pointer),
-    BoundVariable(BoundVariable),
+    BoundVariable(BoundVariable),            // used for builtins?
     StorageTypeOfTexelFormat(BoundVariable), // for example, rgba8unorm -> vec4<f32>
 }
 
@@ -163,6 +205,7 @@ impl TypeKind {
             | Self::Vector(_)
             | Self::Matrix(_)
             | Self::Struct(_)
+            | Self::BuiltinStruct(_)
             | Self::Array(_)
             | Self::Texture(_)
             | Self::Sampler(_)
@@ -212,6 +255,7 @@ impl TypeKind {
             | Self::Scalar(_)
             | Self::Atomic(_)
             | Self::Struct(_)
+            | Self::BuiltinStruct(_)
             | Self::Texture(_)
             | Self::Sampler(_)
             | Self::Reference(_)
@@ -230,6 +274,7 @@ impl TypeKind {
             | Self::Vector(_)
             | Self::Matrix(_)
             | Self::Struct(_)
+            | Self::BuiltinStruct(_)
             | Self::Array(_)
             | Self::Texture(_)
             | Self::Sampler(_)
@@ -246,6 +291,7 @@ impl TypeKind {
             Self::Scalar(scalar) => scalar.is_index(),
             Self::Error
             | Self::Atomic(_)
+            | Self::BuiltinStruct(_)
             | Self::Vector(_)
             | Self::Matrix(_)
             | Self::Struct(_)
@@ -276,6 +322,7 @@ impl TypeKind {
             | Self::Error
             | Self::Atomic(_)
             | Self::Struct(_)
+            | Self::BuiltinStruct(_)
             | Self::Texture(_)
             | Self::Sampler(_)
             | Self::Reference(_)
@@ -307,6 +354,7 @@ impl TypeKind {
                 | Self::Atomic(_)
                 | Self::Array(_)
                 | Self::Struct(_)
+                | Self::BuiltinStruct(_)
         )
     }
 
@@ -356,7 +404,8 @@ impl TypeKind {
                 .0
                 .iter()
                 .all(|(_, r#type)| r#type.kind(database).is_host_shareable(database)),
-            Self::Texture(_)
+            Self::BuiltinStruct(_)
+            | Self::Texture(_)
             | Self::Sampler(_)
             | Self::Reference(_)
             | Self::Pointer(_)
@@ -385,6 +434,7 @@ impl TypeKind {
             | Self::Vector(_)
             | Self::Matrix(_)
             | Self::Array(_)
+            | Self::BuiltinStruct(_)
             | Self::Texture(_)
             | Self::Sampler(_)
             | Self::Reference(_)
@@ -418,6 +468,7 @@ impl TypeKind {
             | Self::Scalar(_)
             | Self::Vector(_)
             | Self::Matrix(_)
+            | Self::BuiltinStruct(_)
             | Self::Texture(_)
             | Self::Sampler(_)
             | Self::BoundVariable(_)
@@ -695,6 +746,15 @@ pub struct ArrayType {
     pub inner: Type,
     pub binding_array: bool,
     pub size: ArraySize,
+}
+
+impl ArrayType {
+    fn is_constructible(
+        &self,
+        database: &dyn HirDatabase,
+    ) -> bool {
+        self.size != ArraySize::Dynamic && self.inner.is_constructible(database)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]

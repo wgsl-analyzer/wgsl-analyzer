@@ -3833,3 +3833,50 @@ fn attribute_edge_case_if() {
             error at 54..55: invalid syntax, expected one of: 'alias', '&', '@', '{', '}', 'break', 'case', 'const', 'const_assert', 'continue', 'continuing', 'default', 'diagnostic', 'discard', 'enable', 'fn', 'for', <identifier>, 'if', 'import', 'let', 'loop', 'override', 'package', '(', 'requires', 'return', ';', '*', 'struct', 'super', 'switch', '_', 'var', 'while'"#]],
     );
 }
+
+#[test]
+fn invalid_suffix() {
+    check(
+        "
+        fn foo() {
+            let bar = 1.0u;
+        }
+        ",
+        expect![[r#"
+            SourceFile@0..66
+              Blankspace@0..9 "\n        "
+              FunctionDeclaration@9..57
+                Fn@9..11 "fn"
+                Blankspace@11..12 " "
+                Name@12..15
+                  Identifier@12..15 "foo"
+                FunctionParameters@15..17
+                  ParenthesisLeft@15..16 "("
+                  ParenthesisRight@16..17 ")"
+                Blankspace@17..18 " "
+                CompoundStatement@18..57
+                  BraceLeft@18..19 "{"
+                  Blankspace@19..32 "\n            "
+                  LetDeclaration@32..45
+                    Let@32..35 "let"
+                    Blankspace@35..36 " "
+                    Name@36..39
+                      Identifier@36..39 "bar"
+                    Blankspace@39..40 " "
+                    Equal@40..41 "="
+                    Blankspace@41..42 " "
+                    Literal@42..45
+                      FloatLiteral@42..45 "1.0"
+                  AssignmentStatement@45..47
+                    IdentExpression@45..46
+                      Path@45..46
+                        Identifier@45..46 "u"
+                    Semicolon@46..47 ";"
+                  Blankspace@47..56 "\n        "
+                  BraceRight@56..57 "}"
+              Blankspace@57..66 "\n        "
+
+            error at 45..46: invalid syntax, expected: ';'
+            error at 46..47: invalid syntax, expected one of: '&=', '/=', '=', '-=', '--', '%=', '|=', '+=', '++', '<<=', '>>=', '*=', '^='"#]],
+    );
+}

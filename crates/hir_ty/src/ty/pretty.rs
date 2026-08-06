@@ -35,7 +35,7 @@ pub fn pretty_type_expectation_with_verbosity(
 
     match r#type {
         TypeExpectation::Type(r#type) => {
-            _ = write_type_expectation_inner(database, &r#type, false, &mut str, verbosity);
+            _ = write_type_expectation_inner(database, r#type, false, &mut str, verbosity);
         },
         TypeExpectation::Any => _ = write!(&mut str, "any"),
     }
@@ -44,17 +44,17 @@ pub fn pretty_type_expectation_with_verbosity(
 
 fn write_type_expectation_inner(
     database: &dyn HirDatabase,
-    inner: &TypeExpectationInner,
+    inner: TypeExpectationInner,
     or_vec: bool,
     buffer: &mut String,
     verbosity: TypeVerbosity,
 ) -> fmt::Result {
     match inner {
         TypeExpectationInner::Exact(r#type) => {
-            write_type(database, *r#type, buffer, verbosity)?;
+            write_type(database, r#type, buffer, verbosity)?;
             if or_vec {
                 write!(buffer, " or vecN<")?;
-                write_type(database, *r#type, buffer, verbosity)?;
+                write_type(database, r#type, buffer, verbosity)?;
                 write!(buffer, ">")?;
             }
         },
@@ -212,6 +212,9 @@ fn write_type(
         TypeKind::Struct(r#struct) => {
             let data = database.struct_data(r#struct).0;
             write!(formatter, "{}", data.name.as_str())
+        },
+        TypeKind::BuiltinStruct(builtin_struct) => {
+            write!(formatter, "{}", builtin_struct.name)
         },
         TypeKind::Array(array_type) => {
             if array_type.binding_array {

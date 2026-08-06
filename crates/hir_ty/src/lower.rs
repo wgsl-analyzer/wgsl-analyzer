@@ -3,7 +3,10 @@ use std::fmt;
 use hir_def::{
     body::BindingId,
     database::{GlobalConstantId, GlobalVariableId, OverrideId, StructId},
-    expression::ExpressionId,
+    expression::{
+        ArithmeticOperation, BinaryOperation, ComparisonOperation, ExpressionId, LogicOperation,
+        UnaryOperator,
+    },
     expression_store::{ExpressionStore, path::Path},
     item_tree::Name,
     mod_path::PathKind,
@@ -16,8 +19,9 @@ use crate::{
     database::HirDatabase,
     function::ResolvedFunctionId,
     ty::{
-        ArraySize, ArrayType, AtomicType, MatrixType, Pointer, Reference, ScalarType,
-        TextureDimensionality, TextureKind, TextureType, Type, TypeKind, VecSize, VectorType,
+        ArraySize, ArrayType, AtomicType, BuiltinStruct, MatrixType, Pointer, Reference,
+        ScalarType, TextureDimensionality, TextureKind, TextureType, Type, TypeKind, VecSize,
+        VectorType,
     },
 };
 
@@ -253,7 +257,7 @@ impl<'database> TypeLoweringContext<'database> {
             Ok(lowered) => lowered,
             Err(error) => {
                 self.diagnostics.push(error);
-                Lowered::Type(self.database.intern_type(TypeKind::Error))
+                Lowered::Type(TypeKind::Error.intern(self.database))
             },
         }
     }
@@ -352,7 +356,7 @@ impl<'database> TypeLoweringContext<'database> {
                     container: TypeContainer::TypeSpecifier(type_specifier_id),
                     kind: TypeLoweringErrorKind::MissingTemplate,
                 });
-                self.database.intern_type(TypeKind::Error)
+                TypeKind::Error.intern(self.database)
             },
             Ok(
                 Lowered::Enumerant(_)
@@ -367,11 +371,11 @@ impl<'database> TypeLoweringContext<'database> {
                     container: TypeContainer::TypeSpecifier(type_specifier_id),
                     kind: TypeLoweringErrorKind::ExpectedType(type_specifier.path.clone()),
                 });
-                self.database.intern_type(TypeKind::Error)
+                TypeKind::Error.intern(self.database)
             },
             Err(error) => {
                 self.diagnostics.push(error);
-                self.database.intern_type(TypeKind::Error)
+                TypeKind::Error.intern(self.database)
             },
         }
     }
@@ -393,6 +397,10 @@ impl<'database> WgslTypeConverter<'database> {
     #[expect(
         clippy::wrong_self_convention,
         reason = "naming things is hard and this is probably changing in the future"
+    )]
+    #[expect(
+        clippy::too_many_lines,
+        reason = "long match, not a good candidate for refactoring"
     )]
     pub fn to_wgsl_types(
         &mut self,
@@ -442,6 +450,24 @@ impl<'database> WgslTypeConverter<'database> {
                             wgsl_types::ty::StructMemberType {
                                 name: data.name.as_str().to_owned(),
                                 ty: self.to_wgsl_types(fields[id]),
+                                // Don't bother reconstructing the correct layout
+                                size: None,
+                                align: None,
+                            }
+                        })
+                        .collect::<Vec<_>>(),
+                }))
+            },
+            TypeKind::BuiltinStruct(builtin_struct) => {
+                wgsl_types::Type::Struct(Box::new(wgsl_types::ty::StructType {
+                    name: builtin_struct.name,
+                    members: builtin_struct
+                        .fields
+                        .into_iter()
+                        .map(|(name, r#type)| {
+                            wgsl_types::ty::StructMemberType {
+                                name,
+                                ty: self.to_wgsl_types(r#type),
                                 // Don't bother reconstructing the correct layout
                                 size: None,
                                 align: None,
@@ -521,6 +547,10 @@ impl<'database> WgslTypeConverter<'database> {
         clippy::wrong_self_convention,
         reason = "naming things is hard and this is probably changing in the future"
     )]
+    #[expect(
+        clippy::too_many_lines,
+        reason = "long match, bad candidate for refactor"
+    )]
     pub fn from_wgsl_types(
         &self,
         r#type: wgsl_types::Type,
@@ -545,12 +575,23 @@ impl<'database> WgslTypeConverter<'database> {
             wgsl_types::Type::F32 => TypeKind::Scalar(ScalarType::F32).intern(self.database),
             wgsl_types::Type::F64 => todo!("naga extension"),
             wgsl_types::Type::Struct(struct_type) => {
-                let struct_id = self
-                    .get_interned_struct(&struct_type.name)
-                    // I think this doesn't hold true when calling `atomicCompareExchangeWeak`
-                    .expect("Only struct types that have been passed in should be returned");
-                TypeKind::Struct(struct_id).intern(self.database)
+                if let Some(struct_id) = self.get_interned_struct(&struct_type.name) {
+                    TypeKind::Struct(struct_id).intern(self.database)
+                } else {
+                    // fallback, assume that it is a builtin struct
+                    let fields = struct_type
+                        .members
+                        .into_iter()
+                        .map(|member| (member.name, self.from_wgsl_types(member.ty)))
+                        .collect();
+                    TypeKind::BuiltinStruct(BuiltinStruct {
+                        name: struct_type.name,
+                        fields,
+                    })
+                    .intern(self.database)
+                }
             },
+            // TODO: bufferArrayView
             wgsl_types::Type::Array(r#type, size) => TypeKind::Array(ArrayType {
                 inner: self.from_wgsl_types(*r#type),
                 binding_array: false,
@@ -865,6 +906,7 @@ impl<'database> WgslTypeConverter<'database> {
             | TypeKind::Vector(_)
             | TypeKind::Matrix(_)
             | TypeKind::Struct(_)
+            | TypeKind::BuiltinStruct(_)
             | TypeKind::Array(_)
             | TypeKind::Texture(_)
             | TypeKind::Sampler(_)
@@ -968,5 +1010,92 @@ pub fn to_wgsl_texel_format(
             panic!("bound var is not a valid texel format to convert")
         },
         crate::ty::TexelFormat::Any => panic!("any is not a valid texel format to convert"),
+    }
+}
+
+#[must_use]
+pub const fn to_wgsl_binary_operator(
+    operation: BinaryOperation
+) -> wgsl_types::syntax::BinaryOperator {
+    use wgsl_types::syntax::BinaryOperator as Wtbo;
+    match operation {
+        BinaryOperation::Logical(logic_operation) => match logic_operation {
+            LogicOperation::ShortCircuitAnd => Wtbo::ShortCircuitAnd,
+            LogicOperation::ShortCircuitOr => Wtbo::ShortCircuitOr,
+        },
+        BinaryOperation::Arithmetic(arithmetic_operation) => match arithmetic_operation {
+            ArithmeticOperation::Addition => Wtbo::Addition,
+            ArithmeticOperation::Multiplication => Wtbo::Multiplication,
+            ArithmeticOperation::Subtraction => Wtbo::Subtraction,
+            ArithmeticOperation::Division => Wtbo::Division,
+            ArithmeticOperation::ShiftLeft => Wtbo::ShiftLeft,
+            ArithmeticOperation::ShiftRight => Wtbo::ShiftRight,
+            ArithmeticOperation::BitwiseXor => Wtbo::BitwiseXor,
+            ArithmeticOperation::BitwiseOr => Wtbo::BitwiseOr,
+            ArithmeticOperation::BitwiseAnd => Wtbo::BitwiseAnd,
+            ArithmeticOperation::Remainder => Wtbo::Remainder,
+        },
+        BinaryOperation::Comparison(comparison_operation) => match comparison_operation {
+            ComparisonOperation::Equality => Wtbo::Equality,
+            ComparisonOperation::Inequality => Wtbo::Inequality,
+            ComparisonOperation::LessThan => Wtbo::LessThan,
+            ComparisonOperation::LessThanEqual => Wtbo::LessThanEqual,
+            ComparisonOperation::GreaterThan => Wtbo::GreaterThan,
+            ComparisonOperation::GreaterThanEqual => Wtbo::GreaterThanEqual,
+        },
+    }
+}
+
+#[must_use]
+pub const fn from_wgsl_binary_operator(
+    operation: wgsl_types::syntax::BinaryOperator
+) -> BinaryOperation {
+    use syntax::ast::operators::BinaryOperation as Bo;
+    use wgsl_types::syntax::BinaryOperator as Wtbo;
+    match operation {
+        Wtbo::ShortCircuitAnd => Bo::Logical(LogicOperation::ShortCircuitAnd),
+        Wtbo::ShortCircuitOr => Bo::Logical(LogicOperation::ShortCircuitOr),
+        Wtbo::Addition => Bo::Arithmetic(ArithmeticOperation::Addition),
+        Wtbo::Multiplication => Bo::Arithmetic(ArithmeticOperation::Multiplication),
+        Wtbo::Subtraction => Bo::Arithmetic(ArithmeticOperation::Subtraction),
+        Wtbo::Division => Bo::Arithmetic(ArithmeticOperation::Division),
+        Wtbo::ShiftLeft => Bo::Arithmetic(ArithmeticOperation::ShiftLeft),
+        Wtbo::ShiftRight => Bo::Arithmetic(ArithmeticOperation::ShiftRight),
+        Wtbo::BitwiseXor => Bo::Arithmetic(ArithmeticOperation::BitwiseXor),
+        Wtbo::BitwiseOr => Bo::Arithmetic(ArithmeticOperation::BitwiseOr),
+        Wtbo::BitwiseAnd => Bo::Arithmetic(ArithmeticOperation::BitwiseAnd),
+        Wtbo::Remainder => Bo::Arithmetic(ArithmeticOperation::Remainder),
+        Wtbo::Equality => Bo::Comparison(ComparisonOperation::Equality),
+        Wtbo::Inequality => Bo::Comparison(ComparisonOperation::Inequality),
+        Wtbo::LessThan => Bo::Comparison(ComparisonOperation::LessThan),
+        Wtbo::LessThanEqual => Bo::Comparison(ComparisonOperation::LessThanEqual),
+        Wtbo::GreaterThan => Bo::Comparison(ComparisonOperation::GreaterThan),
+        Wtbo::GreaterThanEqual => Bo::Comparison(ComparisonOperation::GreaterThanEqual),
+    }
+}
+
+#[must_use]
+pub const fn to_wgsl_unary_operator(operation: UnaryOperator) -> wgsl_types::syntax::UnaryOperator {
+    use wgsl_types::syntax::UnaryOperator as Wtuo;
+    match operation {
+        UnaryOperator::Negation => Wtuo::Negation,
+        UnaryOperator::LogicalNegation => Wtuo::LogicalNegation,
+        UnaryOperator::AddressOf => Wtuo::AddressOf,
+        UnaryOperator::Indirection => Wtuo::Indirection,
+        UnaryOperator::BitwiseComplement => Wtuo::BitwiseComplement,
+    }
+}
+
+#[must_use]
+pub const fn from_wgsl_unary_operator(
+    operation: wgsl_types::syntax::UnaryOperator
+) -> UnaryOperator {
+    use wgsl_types::syntax::UnaryOperator as Wtuo;
+    match operation {
+        Wtuo::LogicalNegation => UnaryOperator::Negation,
+        Wtuo::Negation => UnaryOperator::LogicalNegation,
+        Wtuo::BitwiseComplement => UnaryOperator::AddressOf,
+        Wtuo::AddressOf => UnaryOperator::Indirection,
+        Wtuo::Indirection => UnaryOperator::BitwiseComplement,
     }
 }

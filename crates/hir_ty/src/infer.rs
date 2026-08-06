@@ -37,11 +37,13 @@ use crate::{
     infer::unify::{UnificationTable, unify},
     lower::{
         Lowered, LoweredKind, ResolvedCall, TemplateParameter, TemplateParameters, TypeContainer,
-        TypeLoweringContext, TypeLoweringError, WgslTypeConverter,
+        TypeLoweringContext, TypeLoweringError, WgslTypeConverter, to_wgsl_binary_operator,
+        to_wgsl_unary_operator,
     },
     ty::{
-        ArraySize, ArrayType, AtomicType, MatrixType, Pointer, Reference, ScalarType,
-        TextureDimensionality, TextureKind, TextureType, Type, TypeKind, VecSize, VectorType,
+        ArraySize, ArrayType, AtomicType, BuiltinStruct, MatrixType, Pointer, Reference,
+        ScalarType, TextureDimensionality, TextureKind, TextureType, Type, TypeKind, VecSize,
+        VectorType,
     },
 };
 
@@ -94,7 +96,7 @@ fn infer_query(
             let expression = body.root.and_then(Either::right);
 
             if let Some(expression) = expression {
-                let expected_type = &TypeExpectation::from_type(
+                let expected_type = TypeExpectation::from_type(
                     database.intern_type(TypeKind::Scalar(ScalarType::Bool)),
                 );
                 context.infer_expression_expect(expression, expected_type, &body.store);
@@ -285,6 +287,7 @@ pub struct InferenceContext<'database> {
     resolver: Resolver,
     result: InferenceResult, // set in collect_* calls
     return_type: Type,
+    converter: WgslTypeConverter<'database>,
 }
 
 impl<'database> InferenceContext<'database> {
@@ -299,6 +302,7 @@ impl<'database> InferenceContext<'database> {
             resolver,
             result: InferenceResult::new(database),
             return_type: TypeKind::Error.intern(database),
+            converter: WgslTypeConverter::new(database),
         }
     }
 
@@ -364,10 +368,10 @@ impl<'database> InferenceContext<'database> {
 
     fn push_lowering_diagnostics(
         &mut self,
-        diagnostics: &mut Vec<TypeLoweringError>,
+        mut diagnostics: Vec<TypeLoweringError>,
         store: &ExpressionStore,
     ) {
-        for diagnostic in diagnostics.drain(..) {
+        for diagnostic in diagnostics {
             self.push_diagnostic(
                 store.store_source,
                 InferenceDiagnosticKind::InvalidType { error: diagnostic },
@@ -426,7 +430,7 @@ impl<'database> InferenceContext<'database> {
             .iter()
             .map(|argument| context.evaluate_template_argument(*argument))
             .collect();
-        self.push_lowering_diagnostics(&mut context.diagnostics, store);
+        self.push_lowering_diagnostics(context.diagnostics, store);
 
         let default_address_space = match store.store_source {
             ExpressionStoreSource::Body => AddressSpace::Function,
@@ -667,7 +671,6 @@ impl<'database> InferenceContext<'database> {
                 binding_id,
                 type_ref,
                 initializer,
-                ..
             } => {
                 let r#type = type_ref.map(|r#type| self.lower_type(r#type, &resolver, body));
                 let r#type = self.infer_initializer(
@@ -683,14 +686,14 @@ impl<'database> InferenceContext<'database> {
                 (Some(expression), Some(return_type)) => {
                     self.infer_expression_expect(
                         *expression,
-                        &TypeExpectation::from_type(self.return_type),
+                        TypeExpectation::from_type(self.return_type),
                         body,
                     );
                 },
                 (Some(expression), None) => {
                     let actual = self.infer_expression_expect(
                         *expression,
-                        &TypeExpectation::from_type(self.return_type),
+                        TypeExpectation::from_type(self.return_type),
                         body,
                     );
                     self.push_diagnostic(
@@ -725,7 +728,7 @@ impl<'database> InferenceContext<'database> {
 
                 self.infer_expression_expect(
                     *right_side,
-                    &TypeExpectation::from_type(left_inner),
+                    TypeExpectation::from_type(left_inner),
                     body,
                 );
             },
@@ -792,7 +795,7 @@ impl<'database> InferenceContext<'database> {
                 };
 
                 if self
-                    .expect_type_inner(left_inner, &TypeExpectationInner::IntegerScalar)
+                    .expect_type_inner(left_inner, TypeExpectationInner::IntegerScalar)
                     .is_err()
                 {
                     self.push_diagnostic(
@@ -820,7 +823,7 @@ impl<'database> InferenceContext<'database> {
                 }
                 self.infer_expression_expect(
                     *condition,
-                    &TypeExpectation::from_type(self.bool_type()),
+                    TypeExpectation::from_type(self.bool_type()),
                     body,
                 );
             },
@@ -828,7 +831,7 @@ impl<'database> InferenceContext<'database> {
                 self.infer_statement(*block, body, return_type);
                 self.infer_expression_expect(
                     *condition,
-                    &TypeExpectation::from_type(self.bool_type()),
+                    TypeExpectation::from_type(self.bool_type()),
                     body,
                 );
             },
@@ -845,7 +848,7 @@ impl<'database> InferenceContext<'database> {
                         if let SwitchCaseSelector::Expression(selector) = selector {
                             self.infer_expression_expect(
                                 *selector,
-                                &TypeExpectation::from_type(r#type),
+                                TypeExpectation::from_type(r#type),
                                 body,
                             );
                         }
@@ -869,7 +872,7 @@ impl<'database> InferenceContext<'database> {
                 if let Some(condition) = condition {
                     self.infer_expression_expect(
                         *condition,
-                        &TypeExpectation::from_type(self.bool_type()),
+                        TypeExpectation::from_type(self.bool_type()),
                         body,
                     );
                 }
@@ -882,7 +885,7 @@ impl<'database> InferenceContext<'database> {
             Statement::Assert { expression } => {
                 self.infer_expression_expect(
                     *expression,
-                    &TypeExpectation::from_type(self.bool_type()),
+                    TypeExpectation::from_type(self.bool_type()),
                     body,
                 );
             },
@@ -891,7 +894,7 @@ impl<'database> InferenceContext<'database> {
             Statement::BreakIf { condition } => {
                 self.infer_expression_expect(
                     *condition,
-                    &TypeExpectation::from_type(self.bool_type()),
+                    TypeExpectation::from_type(self.bool_type()),
                     body,
                 );
             },
@@ -916,7 +919,7 @@ impl<'database> InferenceContext<'database> {
         body: &Body,
         resolver: &Resolver,
         type_ref: Option<la_arena::Idx<hir_def::type_specifier::TypeSpecifier>>,
-        initializer: Option<la_arena::Idx<Expression>>,
+        initializer: Option<ExpressionId>,
     ) -> Type {
         let r#type = type_ref.map(|r#type| self.lower_type(r#type, resolver, body));
         let r#type =
@@ -935,7 +938,7 @@ impl<'database> InferenceContext<'database> {
             (Some(r#type), Some(initializer)) => {
                 self.infer_expression_expect(
                     initializer,
-                    &TypeExpectation::from_type(r#type),
+                    TypeExpectation::from_type(r#type),
                     store,
                 );
                 r#type
@@ -958,14 +961,14 @@ impl<'database> InferenceContext<'database> {
     fn expect_type_inner(
         &self,
         r#type: Type,
-        expectation: &TypeExpectationInner,
+        expectation: TypeExpectationInner,
     ) -> Result<(), ()> {
         let type_kind = r#type.kind(self.database);
         if type_kind == TypeKind::Error {
             return Ok(());
         }
 
-        match *expectation {
+        match expectation {
             TypeExpectationInner::Exact(expected_type) => {
                 if expected_type.kind(self.database) == TypeKind::Error
                     || r#type.is_convertible_to(expected_type, self.database)
@@ -1001,7 +1004,7 @@ impl<'database> InferenceContext<'database> {
     fn infer_expression_expect(
         &mut self,
         expression: ExpressionId,
-        expected: &TypeExpectation,
+        expected: TypeExpectation,
         store: &ExpressionStore,
     ) -> Type {
         let r#type = self.infer_expression(expression, store);
@@ -1014,7 +1017,7 @@ impl<'database> InferenceContext<'database> {
                         InferenceDiagnosticKind::TypeMismatch {
                             expression,
                             actual: r#type,
-                            expected: expected.clone(),
+                            expected,
                         },
                     );
                 }
@@ -1044,90 +1047,7 @@ impl<'database> InferenceContext<'database> {
             Expression::Field {
                 expression: field_expression,
                 name,
-            } => {
-                let expression_type = self.infer_expression(*field_expression, store);
-                if expression_type.is_err(self.database) {
-                    return self.error_type();
-                }
-
-                match expression_type.kind(self.database) {
-                    TypeKind::Reference(Reference {
-                        address_space,
-                        inner,
-                        access_mode,
-                    })
-                    | TypeKind::Pointer(Pointer {
-                        address_space,
-                        inner,
-                        access_mode,
-                    }) if let TypeKind::Struct(r#struct) = inner.kind(self.database) => {
-                        let r#type = self.infer_struct_field_expression(
-                            expression,
-                            store,
-                            *field_expression,
-                            name,
-                            expression_type,
-                            r#struct,
-                        );
-                        self.make_ref(r#type, address_space, access_mode)
-                    },
-                    TypeKind::Struct(r#struct) => self.infer_struct_field_expression(
-                        expression,
-                        store,
-                        *field_expression,
-                        name,
-                        expression_type,
-                        r#struct,
-                    ),
-                    TypeKind::Reference(Reference {
-                        address_space,
-                        inner,
-                        access_mode,
-                    })
-                    | TypeKind::Pointer(Pointer {
-                        address_space,
-                        inner,
-                        access_mode,
-                    }) if let TypeKind::Vector(vector_type) = inner.kind(self.database) => self
-                        .infer_vec_swizzle_expression(
-                            store,
-                            *field_expression,
-                            name,
-                            expression_type,
-                            &vector_type,
-                            Some((address_space, access_mode)),
-                        ),
-                    TypeKind::Vector(vector_type) => self.infer_vec_swizzle_expression(
-                        store,
-                        *field_expression,
-                        name,
-                        expression_type,
-                        &vector_type,
-                        None,
-                    ),
-                    TypeKind::Error
-                    | TypeKind::Scalar(_)
-                    | TypeKind::Atomic(_)
-                    | TypeKind::Matrix(_)
-                    | TypeKind::Array(_)
-                    | TypeKind::Texture(_)
-                    | TypeKind::Sampler(_)
-                    | TypeKind::Reference(_)
-                    | TypeKind::Pointer(_)
-                    | TypeKind::BoundVariable(_)
-                    | TypeKind::StorageTypeOfTexelFormat(_) => {
-                        self.push_diagnostic(
-                            store.store_source,
-                            InferenceDiagnosticKind::NoSuchField {
-                                expression: *field_expression,
-                                name: name.clone(),
-                                r#type: expression_type,
-                            },
-                        );
-                        self.error_type()
-                    },
-                }
-            },
+            } => self.infer_field_expression(expression, store, *field_expression, name),
             Expression::Call {
                 ident_expression,
                 arguments,
@@ -1210,10 +1130,10 @@ impl<'database> InferenceContext<'database> {
                         self.make_ref(array.inner, address_space, access_mode)
                     },
                     TypeKind::Array(array) => array.inner,
-                    TypeKind::Error
-                    | TypeKind::Scalar(_)
+                    TypeKind::Scalar(_)
                     | TypeKind::Atomic(_)
                     | TypeKind::Struct(_)
+                    | TypeKind::BuiltinStruct(_)
                     | TypeKind::Texture(_)
                     | TypeKind::Sampler(_)
                     | TypeKind::Reference(_)
@@ -1227,6 +1147,11 @@ impl<'database> InferenceContext<'database> {
                                 r#type: left_side,
                             },
                         );
+                        self.error_type()
+                    },
+                    // No need to create extra diagnostics for problems upstream
+                    TypeKind::Error => {
+                        debug_assert!(!self.result.diagnostics.is_empty());
                         self.error_type()
                     },
                 }
@@ -1256,6 +1181,100 @@ impl<'database> InferenceContext<'database> {
         };
         self.set_expression_type(expression, r#type);
         r#type
+    }
+
+    fn infer_field_expression(
+        &mut self,
+        expression: ExpressionId,
+        store: &ExpressionStore,
+        field_expression: ExpressionId,
+        name: &Name,
+    ) -> Type {
+        let expression_type = self.infer_expression(field_expression, store);
+        if expression_type.is_err(self.database) {
+            return self.error_type();
+        }
+        let (kind, ref_info) = match expression_type.kind(self.database) {
+            TypeKind::Reference(Reference {
+                address_space,
+                inner,
+                access_mode,
+            })
+            | TypeKind::Pointer(Pointer {
+                address_space,
+                inner,
+                access_mode,
+            }) => (
+                inner.kind(self.database),
+                Some((address_space, access_mode)),
+            ),
+            kind @ (TypeKind::Error
+            | TypeKind::Scalar(_)
+            | TypeKind::Atomic(_)
+            | TypeKind::Vector(_)
+            | TypeKind::Matrix(_)
+            | TypeKind::Struct(_)
+            | TypeKind::BuiltinStruct(_)
+            | TypeKind::Array(_)
+            | TypeKind::Texture(_)
+            | TypeKind::Sampler(_)
+            | TypeKind::BoundVariable(_)
+            | TypeKind::StorageTypeOfTexelFormat(_)) => (kind, None),
+        };
+
+        let r#type = match kind {
+            TypeKind::Struct(r#struct) => self.infer_struct_field_expression(
+                expression,
+                store,
+                field_expression,
+                name,
+                expression_type,
+                r#struct,
+            ),
+            TypeKind::BuiltinStruct(builtin_struct) => self.infer_builtin_struct_field_expression(
+                store,
+                field_expression,
+                name,
+                expression_type,
+                builtin_struct,
+            ),
+            TypeKind::Vector(vector_type) => {
+                return self.infer_vec_swizzle_expression(
+                    store,
+                    field_expression,
+                    name,
+                    expression_type,
+                    &vector_type,
+                    ref_info,
+                );
+            },
+            TypeKind::Error
+            | TypeKind::Scalar(_)
+            | TypeKind::Atomic(_)
+            | TypeKind::Matrix(_)
+            | TypeKind::Array(_)
+            | TypeKind::Texture(_)
+            | TypeKind::Sampler(_)
+            | TypeKind::Reference(_)
+            | TypeKind::Pointer(_)
+            | TypeKind::BoundVariable(_)
+            | TypeKind::StorageTypeOfTexelFormat(_) => {
+                self.push_diagnostic(
+                    store.store_source,
+                    InferenceDiagnosticKind::NoSuchField {
+                        expression: field_expression,
+                        name: name.clone(),
+                        r#type: expression_type,
+                    },
+                );
+                return self.error_type();
+            },
+        };
+
+        match ref_info {
+            Some((address_space, access_mode)) => self.make_ref(r#type, address_space, access_mode),
+            None => r#type,
+        }
     }
 
     fn validate_function_call(
@@ -1306,57 +1325,22 @@ impl<'database> InferenceContext<'database> {
         if expression_type.is_err(self.database) {
             return self.error_type();
         }
-
-        let builtin = match operator {
-            UnaryOperator::Negation => {
-                Builtin::builtin_op_unary_minus(self.database).intern(self.database)
-            },
-            UnaryOperator::LogicalNegation => {
-                Builtin::builtin_op_unary_not(self.database).intern(self.database)
-            },
-            UnaryOperator::BitwiseComplement => {
-                Builtin::builtin_op_unary_bitnot(self.database).intern(self.database)
-            },
-            UnaryOperator::AddressOf => {
-                if let TypeKind::Reference(reference) = expression_type.kind(self.database) {
-                    return self.ref_to_pointer(&reference);
-                }
+        match wgsl_types::builtin::type_unary_op(
+            to_wgsl_unary_operator(operator),
+            &self.converter.to_wgsl_types(expression_type),
+        ) {
+            Ok(r#type) => self.converter.from_wgsl_types(r#type),
+            Err(error) => {
                 self.push_diagnostic(
                     store.store_source,
-                    InferenceDiagnosticKind::AddressOfNotReference {
+                    InferenceDiagnosticKind::WgslError {
                         expression,
-                        actual: expression_type,
+                        message: error.to_string(),
                     },
                 );
-                return self.error_type();
+                self.error_type()
             },
-            UnaryOperator::Indirection => {
-                debug_assert!(!matches!(
-                    expression_type.kind(self.database),
-                    TypeKind::Reference(_)
-                ));
-                if let TypeKind::Pointer(pointer) = expression_type.kind(self.database) {
-                    return self.ptr_to_ref(&pointer);
-                }
-                self.push_diagnostic(
-                    store.store_source,
-                    InferenceDiagnosticKind::DerefNotAPointer {
-                        expression,
-                        actual: expression_type,
-                    },
-                );
-                return self.error_type();
-            },
-        };
-
-        let argument_type = expression_type.loaded(self.database);
-        self.call_builtin(
-            store,
-            expression,
-            builtin,
-            &[(expression, argument_type)],
-            Some(operator.symbol()),
-        )
+        }
     }
 
     fn infer_binary_op(
@@ -1377,52 +1361,23 @@ impl<'database> InferenceContext<'database> {
         if left_type.is_err(self.database) || right_type.is_err(self.database) {
             return self.error_type();
         }
-
-        let builtin = match operation {
-            BinaryOperation::Logical(_) => {
-                Builtin::builtin_op_binary_bool(self.database).intern(self.database)
+        match wgsl_types::builtin::type_binary_op(
+            to_wgsl_binary_operator(operation),
+            &self.converter.to_wgsl_types(left_type),
+            &self.converter.to_wgsl_types(right_type),
+        ) {
+            Ok(r#type) => self.converter.from_wgsl_types(r#type),
+            Err(error) => {
+                self.push_diagnostic(
+                    store.store_source,
+                    InferenceDiagnosticKind::WgslError {
+                        expression,
+                        message: error.to_string(),
+                    },
+                );
+                self.error_type()
             },
-            BinaryOperation::Arithmetic(operation) => match operation {
-                ArithmeticOperation::BitwiseOr
-                | ArithmeticOperation::BitwiseAnd
-                | ArithmeticOperation::BitwiseXor => {
-                    Builtin::builtin_op_binary_bitop(self.database).intern(self.database)
-                },
-                ArithmeticOperation::Multiplication => {
-                    Builtin::builtin_op_binary_mul(self.database).intern(self.database)
-                },
-                ArithmeticOperation::Division => {
-                    Builtin::builtin_op_binary_div(self.database).intern(self.database)
-                },
-                ArithmeticOperation::Addition
-                | ArithmeticOperation::Subtraction
-                | ArithmeticOperation::Remainder => {
-                    Builtin::builtin_op_binary_number(self.database).intern(self.database)
-                },
-                ArithmeticOperation::ShiftLeft | ArithmeticOperation::ShiftRight => {
-                    Builtin::builtin_op_binary_shift(self.database).intern(self.database)
-                },
-            },
-            BinaryOperation::Comparison(cmp) => match cmp {
-                ComparisonOperation::Equality | ComparisonOperation::Inequality => {
-                    Builtin::builtin_op_eq(self.database).intern(self.database)
-                },
-                ComparisonOperation::LessThan
-                | ComparisonOperation::LessThanEqual
-                | ComparisonOperation::GreaterThan
-                | ComparisonOperation::GreaterThanEqual => {
-                    Builtin::builtin_op_cmp(self.database).intern(self.database)
-                },
-            },
-        };
-
-        self.call_builtin(
-            store,
-            expression,
-            builtin,
-            &[(left_side, left_type), (right_side, right_type)],
-            Some(operation.symbol()),
-        )
+        }
     }
 
     fn infer_ident_expression(
@@ -1442,7 +1397,7 @@ impl<'database> InferenceContext<'database> {
             &ident_expression.path,
             &ident_expression.template_parameters,
         );
-        self.push_lowering_diagnostics(&mut context.diagnostics, store);
+        self.push_lowering_diagnostics(context.diagnostics, store);
 
         match lowered {
             Lowered::GlobalConstant(id) => {
@@ -1464,7 +1419,7 @@ impl<'database> InferenceContext<'database> {
             | Lowered::Enumerant(_) => {
                 self.push_diagnostic(
                     store.store_source,
-                    InferenceDiagnosticKind::ExpectedLoweredKind {
+                    InferenceDiagnosticKind::UnexpectedLoweredKind {
                         expression,
                         expected: LoweredKind::Variable,
                         actual: lowered.kind(),
@@ -1488,6 +1443,7 @@ impl<'database> InferenceContext<'database> {
         .intern(self.database)
     }
 
+    // TODO: should we use the more specific overloads such as `builtin_op_mat2x2_constructor_T`?
     fn builtin_matrix_inferred_constructor(
         &self,
         columns: VecDimensionality,
@@ -1529,7 +1485,7 @@ impl<'database> InferenceContext<'database> {
     fn infer_vec_swizzle_expression(
         &mut self,
         store: &ExpressionStore,
-        field_expression: la_arena::Idx<Expression>,
+        field_expression: ExpressionId,
         name: &Name,
         expression_type: Type,
         vector_type: &VectorType,
@@ -1584,9 +1540,9 @@ impl<'database> InferenceContext<'database> {
 
     fn infer_struct_field_expression(
         &mut self,
-        expression: la_arena::Idx<Expression>,
+        expression: ExpressionId,
         store: &ExpressionStore,
-        field_expression: la_arena::Idx<Expression>,
+        field_expression: ExpressionId,
         name: &Name,
         expression_type: Type,
         r#struct: StructId,
@@ -1596,6 +1552,33 @@ impl<'database> InferenceContext<'database> {
         if let Some(field) = struct_data.field(name) {
             self.set_field_resolution(expression, FieldId { r#struct, field });
             field_types[field]
+        } else {
+            self.push_diagnostic(
+                store.store_source,
+                InferenceDiagnosticKind::NoSuchField {
+                    expression: field_expression,
+                    name: name.clone(),
+                    r#type: expression_type,
+                },
+            );
+            self.error_type()
+        }
+    }
+
+    fn infer_builtin_struct_field_expression(
+        &mut self,
+        store: &ExpressionStore,
+        field_expression: ExpressionId,
+        name: &Name,
+        expression_type: Type,
+        builtin_struct: BuiltinStruct,
+    ) -> Type {
+        if let Some((_, field_type)) = builtin_struct
+            .fields
+            .into_iter()
+            .find(|(field_name, _)| field_name.as_str() == name.as_str())
+        {
+            field_type
         } else {
             self.push_diagnostic(
                 store.store_source,
@@ -1709,9 +1692,7 @@ impl<'database> InferenceContext<'database> {
             .unwrap_or_else(|| self.resolver.clone());
         let mut context = TypeLoweringContext::new(self.database, &resolver, store);
         let lowered = context.lower(expression, &callee.path, &callee.template_parameters);
-        self.push_lowering_diagnostics(&mut context.diagnostics, store);
-
-        match lowered {
+        let inferred = match lowered {
             Lowered::Type(r#type) => {
                 self.call_templated_type_constructor(store, expression, r#type, arguments)
             },
@@ -1730,7 +1711,6 @@ impl<'database> InferenceContext<'database> {
                     TypeContainer::Expression(expression),
                     &callee.template_parameters,
                 );
-                self.push_lowering_diagnostics(&mut context.diagnostics, store);
                 self.call_builtin_function(store, expression, callee, template_args, &arguments)
             },
             Lowered::Enumerant(_)
@@ -1740,7 +1720,7 @@ impl<'database> InferenceContext<'database> {
             | Lowered::Local(_) => {
                 self.push_diagnostic(
                     store.store_source,
-                    InferenceDiagnosticKind::ExpectedLoweredKind {
+                    InferenceDiagnosticKind::UnexpectedLoweredKind {
                         expression,
                         expected: LoweredKind::Function,
                         actual: lowered.kind(),
@@ -1749,7 +1729,9 @@ impl<'database> InferenceContext<'database> {
                 );
                 self.error_type()
             },
-        }
+        };
+        self.push_lowering_diagnostics(context.diagnostics, store);
+        inferred
     }
 
     fn call_builtin_function(
@@ -1771,11 +1753,11 @@ impl<'database> InferenceContext<'database> {
             return self.error_type();
         };
 
-        let mut converter = WgslTypeConverter::new(self.database);
         let mut template_args = vec![];
         while let Some((template_parameter, _)) = template_parameters.take_next() {
-            if let Some(template_parameter) =
-                converter.template_parameter_to_wgsl_types(template_parameter)
+            if let Some(template_parameter) = self
+                .converter
+                .template_parameter_to_wgsl_types(template_parameter)
             {
                 template_args.push(template_parameter);
             } else {
@@ -1798,7 +1780,7 @@ impl<'database> InferenceContext<'database> {
 
         let converted_arguments: Vec<_> = arguments
             .iter()
-            .map(|(_, r#type)| converter.to_wgsl_types(*r#type))
+            .map(|(_, r#type)| self.converter.to_wgsl_types(*r#type))
             .collect();
 
         if converted_arguments
@@ -1816,7 +1798,7 @@ impl<'database> InferenceContext<'database> {
         );
 
         match return_type {
-            Ok(Some(r#type)) => converter.from_wgsl_types(r#type),
+            Ok(Some(r#type)) => self.converter.from_wgsl_types(r#type),
             Ok(None) => self.error_type(),
             Err(error) => {
                 self.push_diagnostic(
@@ -1858,11 +1840,21 @@ impl<'database> InferenceContext<'database> {
             }
         }
 
+        // https://www.w3.org/TR/WGSL/#zero-value-builtin-function
+        if (arguments.is_empty() && !r#type.is_constructible(self.database)) {
+            self.push_diagnostic(
+                store.store_source,
+                InferenceDiagnosticKind::NotConstructible { expression, r#type },
+            );
+        }
         match r#type.kind(self.database) {
             TypeKind::Scalar(scalar_type) => {
                 self.call_scalar_constructor(store, scalar_type, expression, r#type, arguments)
             },
             TypeKind::Array(array_type) => {
+                if arguments.is_empty() {
+                    return r#type;
+                }
                 for (argument_expression, argument_type) in &arguments {
                     if !argument_type.is_convertible_to(array_type.inner, self.database) {
                         self.push_diagnostic(
@@ -1920,6 +1912,7 @@ impl<'database> InferenceContext<'database> {
                 }
             },
             TypeKind::Matrix(matrix) => {
+                // https://www.w3.org/TR/WGSL/#zero-value-builtin-function
                 if arguments.is_empty() {
                     return r#type;
                 }
@@ -1953,12 +1946,13 @@ impl<'database> InferenceContext<'database> {
             | TypeKind::Sampler(_)
             | TypeKind::Pointer(_)
             | TypeKind::Atomic(_)
+            | TypeKind::BuiltinStruct(_)
             | TypeKind::StorageTypeOfTexelFormat(_)
             | TypeKind::BoundVariable(_)
             | TypeKind::Reference(_) => {
                 self.push_diagnostic(
                     store.store_source,
-                    InferenceDiagnosticKind::InvalidConstructionType { expression, r#type },
+                    InferenceDiagnosticKind::NotConstructible { expression, r#type },
                 );
                 self.error_type()
             },
@@ -1993,11 +1987,22 @@ impl<'database> InferenceContext<'database> {
             }
         }
 
+        // https://www.w3.org/TR/WGSL/#zero-value-builtin-function
+        if (arguments.is_empty() && !r#type.is_constructible(self.database)) {
+            self.push_diagnostic(
+                store.store_source,
+                InferenceDiagnosticKind::NotConstructible { expression, r#type },
+            );
+        }
+
         match r#type.kind(self.database) {
             TypeKind::Scalar(scalar_type) => {
                 self.call_scalar_constructor(store, scalar_type, expression, r#type, arguments)
             },
             TypeKind::Array(array_type) => {
+                if arguments.is_empty() {
+                    return r#type;
+                }
                 let Some((_, mut first_argument_type)) = arguments.first().copied() else {
                     self.push_diagnostic(
                         store.store_source,
@@ -2056,6 +2061,9 @@ impl<'database> InferenceContext<'database> {
                 }
             },
             TypeKind::Vector(vec) => {
+                // See note in WGSL reference:
+                // Note: Zero-filled vectors of AbstractInt can be written as vec2(), vec3(), and vec4().
+                // https://www.w3.org/TR/WGSL/#zero-value-builtin-function
                 if arguments.is_empty() {
                     return TypeKind::Vector(VectorType {
                         size: vec.size,
@@ -2085,6 +2093,7 @@ impl<'database> InferenceContext<'database> {
                 }
             },
             TypeKind::Matrix(matrix) => {
+                // https://www.w3.org/TR/WGSL/#zero-value-builtin-function
                 if arguments.is_empty() {
                     self.push_diagnostic(
                         store.store_source,
@@ -2125,12 +2134,13 @@ impl<'database> InferenceContext<'database> {
             | TypeKind::Sampler(_)
             | TypeKind::Pointer(_)
             | TypeKind::Atomic(_)
+            | TypeKind::BuiltinStruct(_)
             | TypeKind::StorageTypeOfTexelFormat(_)
             | TypeKind::BoundVariable(_)
             | TypeKind::Reference(_) => {
                 self.push_diagnostic(
                     store.store_source,
-                    InferenceDiagnosticKind::InvalidConstructionType { expression, r#type },
+                    InferenceDiagnosticKind::NotConstructible { expression, r#type },
                 );
                 self.error_type()
             },
@@ -2146,8 +2156,8 @@ impl<'database> InferenceContext<'database> {
         r#type: Type,
         arguments: Vec<(ExpressionId, Type)>,
     ) -> Type {
+        // https://www.w3.org/TR/WGSL/#zero-value-builtin-function
         if arguments.is_empty() {
-            // Permit the zero value
             return r#type;
         }
         let construction_builtin_id = match scalar_type {
@@ -2213,7 +2223,6 @@ impl<'database> InferenceContext<'database> {
         if arguments.is_empty() {
             return r#type;
         }
-
         let signature = self.database.struct_data(struct_id).0;
         if arguments.len() != signature.fields.len() {
             self.push_diagnostic(
@@ -2260,7 +2269,7 @@ impl<'database> InferenceContext<'database> {
     ) -> Type {
         let mut context = TypeLoweringContext::new(self.database, resolver, store);
         let r#type = context.lower_type(type_ref);
-        self.push_lowering_diagnostics(&mut context.diagnostics, store);
+        self.push_lowering_diagnostics(context.diagnostics, store);
         r#type
     }
 }
@@ -2271,14 +2280,14 @@ enum AbstractHandling {
     Abstract,
 }
 
-#[derive(PartialEq, Eq, Debug, Clone)]
+#[derive(PartialEq, Eq, Debug, Clone, Copy)]
 pub enum TypeExpectationInner {
     Exact(Type),
     IntegerScalar,
     IntegerIndex,
 }
 
-#[derive(PartialEq, Eq, Debug, Clone)]
+#[derive(PartialEq, Eq, Debug, Clone, Copy)]
 pub enum TypeExpectation {
     Type(TypeExpectationInner),
     Any,

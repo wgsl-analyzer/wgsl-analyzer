@@ -3926,23 +3926,23 @@ fn execute(
             9600..9602 '15': integer
             9692..9703 'VOID_RETURN': u32
             9718..9728 '0xFFFFFFFF': integer
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(1)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } } in Signature
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(1)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } } in Signature
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(1)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } } in Signature
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(3)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } } in Signature
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(5)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } } in Signature
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(7)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } } in Signature
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(9)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } } in Signature
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(11)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } } in Signature
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(13)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } } in Signature
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(3)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } } in Signature
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(5)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } } in Signature
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(1)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } } in Signature
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(1)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } } in Signature
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(3)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } } in Signature
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(1)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } } in Signature
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(3)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } } in Signature
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(3)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } } in Signature
+            9863..9878 'MAX_QUBIT_COUNT': unexpected template argument, expected a `u32` or a `i32` greater than `0`
+            10006..10034 'MAX_WO...ITIONS': unexpected template argument, expected a `u32` or a `i32` greater than `0`
+            11207..11224 'INSTRU...S_SIZE': unexpected template argument, expected a `u32` or a `i32` greater than `0`
+            11299..11315 'BLOCK_...E_SIZE': unexpected template argument, expected a `u32` or a `i32` greater than `0`
+            11378..11397 'FUNCTI...E_SIZE': unexpected template argument, expected a `u32` or a `i32` greater than `0`
+            11512..11526 'PHI_TABLE_SIZE': unexpected template argument, expected a `u32` or a `i32` greater than `0`
+            11632..11649 'SWITCH...S_SIZE': unexpected template argument, expected a `u32` or a `i32` greater than `0`
+            11723..11737 'CALL_ARGS_SIZE': unexpected template argument, expected a `u32` or a `i32` greater than `0`
+            11832..11850 'CONSTA...A_SIZE': unexpected template argument, expected a `u32` or a `i32` greater than `0`
+            12850..12863 'MAX_REGISTERS': unexpected template argument, expected a `u32` or a `i32` greater than `0`
+            12948..12958 'MAX_MEMORY': unexpected template argument, expected a `u32` or a `i32` greater than `0`
+            14713..14728 'MAX_QUBIT_COUNT': unexpected template argument, expected a `u32` or a `i32` greater than `0`
+            17289..17306 'NOISE_..._COUNT': unexpected template argument, expected a `u32` or a `i32` greater than `0`
+            17362..17379 'NOISE_..._COUNT': unexpected template argument, expected a `u32` or a `i32` greater than `0`
+            17908..17923 'MAX_QUBIT_COUNT': unexpected template argument, expected a `u32` or a `i32` greater than `0`
+            17946..17961 'MAX_QUBIT_COUNT': unexpected template argument, expected a `u32` or a `i32` greater than `0`
+            18480..18501 'THREAD...KGROUP': unexpected template argument, expected a `u32` or a `i32` greater than `0`
             18849..18868 'workgr...lation': ref<storage, WorkgroupCollationBuffer, read_write>
             19020..19025 'shots': ref<storage, array<ShotData>, read_write>
             19086..19089 'ops': ref<storage, array<Op>, read>
@@ -3952,7 +3952,7 @@ fn execute(
             19504..19512 'uniforms': ref<uniform, Uniforms, read>
             19566..19576 'batch_data': ref<storage, BatchData, read>
             19605..19623 'qubitP...lities': ref<workgroup, [error], read_write>
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(1)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } } in Signature
+            19658..19679 'THREAD...KGROUP': unexpected template argument, expected a `u32` or a `i32` greater than `0`
             19866..19867 'a': vec2<f32>
             19897..19898 'a': vec2<f32>
             19897..19900 'a.x': f32
@@ -4481,31 +4481,35 @@ fn execute(
             25929..25933 'shot': ptr<storage, ShotData, read_write>
             25929..25945 'shot.q..._state': ref<storage, [error], read_write>
             25929..25948 'shot.q...ate[i]': [error]
+            25929..25965 'shot.q...bility': [error]
             25946..25947 'i': ref<function, i32, read_write>
             25968..25971 '1.0': float
             25981..25985 'shot': ptr<storage, ShotData, read_write>
             25981..25997 'shot.q..._state': ref<storage, [error], read_write>
             25981..26000 'shot.q...ate[i]': [error]
+            25981..26016 'shot.q...bility': [error]
             25998..25999 'i': ref<function, i32, read_write>
             26019..26022 '0.0': float
             26032..26036 'shot': ptr<storage, ShotData, read_write>
             26032..26048 'shot.q..._state': ref<storage, [error], read_write>
             26032..26051 'shot.q...ate[i]': [error]
+            26032..26056 'shot.q...].heat': [error]
             26049..26050 'i': ref<function, i32, read_write>
             26059..26062 '0.0': float
             26072..26076 'shot': ptr<storage, ShotData, read_write>
             26072..26088 'shot.q..._state': ref<storage, [error], read_write>
             26072..26091 'shot.q...ate[i]': [error]
+            26072..26102 'shot.q..._since': [error]
             26089..26090 'i': ref<function, i32, read_write>
             26105..26108 '0.0': float
-            ArrayAccessInvalidType { expression: Idx::<Expression>(110), type: Type(304f) } in Body
-            AssignmentNotAReference { left_side: Idx::<Expression>(111), actual: Type(3000) } in Body
-            ArrayAccessInvalidType { expression: Idx::<Expression>(116), type: Type(304f) } in Body
-            AssignmentNotAReference { left_side: Idx::<Expression>(117), actual: Type(3000) } in Body
-            ArrayAccessInvalidType { expression: Idx::<Expression>(122), type: Type(304f) } in Body
-            AssignmentNotAReference { left_side: Idx::<Expression>(123), actual: Type(3000) } in Body
-            ArrayAccessInvalidType { expression: Idx::<Expression>(128), type: Type(304f) } in Body
-            AssignmentNotAReference { left_side: Idx::<Expression>(129), actual: Type(3000) } in Body
+            25929..25948 'shot.q...ate[i]': cannot index into type ref<storage, [error], read_write>
+            [EditionedFileId(Id(1c00))] AssignmentNotAReference { left_side: Idx::<Expression>(111), actual: Type(3000) } in Body
+            25981..26000 'shot.q...ate[i]': cannot index into type ref<storage, [error], read_write>
+            [EditionedFileId(Id(1c00))] AssignmentNotAReference { left_side: Idx::<Expression>(117), actual: Type(3000) } in Body
+            26032..26051 'shot.q...ate[i]': cannot index into type ref<storage, [error], read_write>
+            [EditionedFileId(Id(1c00))] AssignmentNotAReference { left_side: Idx::<Expression>(123), actual: Type(3000) } in Body
+            26072..26091 'shot.q...ate[i]': cannot index into type ref<storage, [error], read_write>
+            [EditionedFileId(Id(1c00))] AssignmentNotAReference { left_side: Idx::<Expression>(129), actual: Type(3000) } in Body
             26235..26243 'shot_idx': u32
             26260..26264 'shot': ptr<storage, ShotData, read_write>
             26267..26283 '&shots...t_idx]': ptr<storage, ShotData, read_write>
@@ -4559,23 +4563,29 @@ fn execute(
             27537..27547 'total_zero': ref<function, f32, read_write>
             27537..27566 'total_...s[q].x': [error]
             27550..27554 'sums': [error]
+            27550..27561 'sums.qubits': [error]
             27550..27564 'sums.qubits[q]': [error]
+            27550..27566 'sums.q...s[q].x': [error]
             27562..27563 'q': ref<function, u32, read_write>
             27588..27597 'total_one': ref<function, f32, read_write>
             27600..27609 'total_one': ref<function, f32, read_write>
             27600..27628 'total_...s[q].y': [error]
             27612..27616 'sums': [error]
+            27612..27623 'sums.qubits': [error]
             27612..27626 'sums.qubits[q]': [error]
+            27612..27628 'sums.q...s[q].y': [error]
             27624..27625 'q': ref<function, u32, read_write>
             27770..27780 'total_zero': ref<function, f32, read_write>
             27783..27787 'shot': ptr<storage, ShotData, read_write>
             27783..27799 'shot.q..._state': ref<storage, [error], read_write>
             27783..27802 'shot.q...ate[q]': [error]
+            27783..27819 'shot.q...bility': [error]
             27800..27801 'q': ref<function, u32, read_write>
             27837..27846 'total_one': ref<function, f32, read_write>
             27849..27853 'shot': ptr<storage, ShotData, read_write>
             27849..27865 'shot.q..._state': ref<storage, [error], read_write>
             27849..27868 'shot.q...ate[q]': [error]
+            27849..27884 'shot.q...bility': [error]
             27866..27867 'q': ref<function, u32, read_write>
             28129..28139 'total_zero': ref<function, f32, read_write>
             28129..28150 'total_...000001': bool
@@ -4600,11 +4610,13 @@ fn execute(
             28366..28370 'shot': ptr<storage, ShotData, read_write>
             28366..28382 'shot.q..._state': ref<storage, [error], read_write>
             28366..28385 'shot.q...ate[q]': [error]
+            28366..28402 'shot.q...bility': [error]
             28383..28384 'q': ref<function, u32, read_write>
             28405..28415 'total_zero': ref<function, f32, read_write>
             28429..28433 'shot': ptr<storage, ShotData, read_write>
             28429..28445 'shot.q..._state': ref<storage, [error], read_write>
             28429..28448 'shot.q...ate[q]': [error]
+            28429..28464 'shot.q...bility': [error]
             28446..28447 'q': ref<function, u32, read_write>
             28467..28476 'total_one': ref<function, f32, read_write>
             28711..28727 'within...eshold': bool
@@ -4618,14 +4630,15 @@ fn execute(
             28768..28782 'PROB_THRESHOLD': f32
             28799..28816 '!withi...eshold': bool
             28800..28816 'within...eshold': bool
-            28910..28919 'old_value': [error]
-            28922..29056 'atomic...PROBS)': [error]
+            28910..28919 'old_value': __atomic_compare_exchange_result
+            28922..29056 'atomic...PROBS)': __atomic_compare_exchange_result
             28969..28992 '&diagn...r_code': ptr<storage, atomic<u32>, read_write>
             28970..28981 'diagnostics': ref<storage, DiagnosticData, read_write>
             28970..28992 'diagno...r_code': ref<storage, atomic<u32>, read_write>
             29014..29016 '0u': u32
             29038..29055 'ERR_IN..._PROBS': u32
-            29077..29086 'old_value': [error]
+            29077..29086 'old_value': __atomic_compare_exchange_result
+            29077..29096 'old_va...hanged': bool
             29188..29199 'diagnostics': ref<storage, DiagnosticData, read_write>
             29188..29206 'diagno...extra1': ref<storage, u32, read_write>
             29209..29210 'q': ref<function, u32, read_write>
@@ -4653,7 +4666,7 @@ fn execute(
             29734..29735 '1': integer
             29739..29751 'RESULT_COUNT': u32
             29754..29755 '1': integer
-            29773..29903 'atomic...PROBS)': [error]
+            29773..29903 'atomic...PROBS)': __atomic_compare_exchange_result
             29820..29839 '&resul...index]': ptr<storage, atomic<u32>, read_write>
             29821..29828 'results': ref<storage, array<atomic<u32>>, read_write>
             29821..29839 'result...index]': ref<storage, atomic<u32>, read_write>
@@ -4690,17 +4703,13 @@ fn execute(
             30316..30325 'total_one': ref<function, f32, read_write>
             30316..30332 'total_...== 1.0': bool
             30329..30332 '1.0': float
-            ArrayAccessInvalidType { expression: Idx::<Expression>(39), type: Type(304f) } in Body
-            ArrayAccessInvalidType { expression: Idx::<Expression>(45), type: Type(3000) } in Body
-            ArrayAccessInvalidType { expression: Idx::<Expression>(53), type: Type(3000) } in Body
-            ArrayAccessInvalidType { expression: Idx::<Expression>(60), type: Type(304f) } in Body
-            ArrayAccessInvalidType { expression: Idx::<Expression>(66), type: Type(304f) } in Body
-            ArrayAccessInvalidType { expression: Idx::<Expression>(91), type: Type(304f) } in Body
-            AssignmentNotAReference { left_side: Idx::<Expression>(92), actual: Type(3000) } in Body
-            ArrayAccessInvalidType { expression: Idx::<Expression>(97), type: Type(304f) } in Body
-            AssignmentNotAReference { left_side: Idx::<Expression>(98), actual: Type(3000) } in Body
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(115)), kind: Resolution(UnresolvedName { name: Name("atomicCompareExchangeWeak") }) } } in Body
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(150)), kind: Resolution(UnresolvedName { name: Name("atomicCompareExchangeWeak") }) } } in Body
+            27460..27502 'workgr...ffset]': cannot index into type ref<storage, [error], read_write>
+            27783..27802 'shot.q...ate[q]': cannot index into type ref<storage, [error], read_write>
+            27849..27868 'shot.q...ate[q]': cannot index into type ref<storage, [error], read_write>
+            28366..28385 'shot.q...ate[q]': cannot index into type ref<storage, [error], read_write>
+            [EditionedFileId(Id(1c00))] AssignmentNotAReference { left_side: Idx::<Expression>(92), actual: Type(3000) } in Body
+            28429..28448 'shot.q...ate[q]': cannot index into type ref<storage, [error], read_write>
+            [EditionedFileId(Id(1c00))] AssignmentNotAReference { left_side: Idx::<Expression>(98), actual: Type(3000) } in Body
             30488..30504 'stateV...rIndex': u32
             30511..30520 'amplitude': vec2<f32>
             30529..30532 'tid': u32
@@ -4725,12 +4734,14 @@ fn execute(
             30737..30743 'is_one': bool
             30759..30777 'qubitP...lities': ref<workgroup, [error], read_write>
             30759..30782 'qubitP...s[tid]': [error]
+            30759..30786 'qubitP...d].one': [error]
             30759..30789 'qubitP...one[q]': [error]
             30778..30781 'tid': u32
             30787..30788 'q': ref<function, u32, read_write>
             30793..30797 'prob': f32
             30828..30846 'qubitP...lities': ref<workgroup, [error], read_write>
             30828..30851 'qubitP...s[tid]': [error]
+            30828..30856 'qubitP...].zero': [error]
             30828..30859 'qubitP...ero[q]': [error]
             30847..30850 'tid': u32
             30857..30858 'q': ref<function, u32, read_write>
@@ -4739,16 +4750,12 @@ fn execute(
             30894..30898 'mask': ref<function, u32, read_write>
             30894..30904 'mask << 1u': u32
             30902..30904 '1u': u32
-            ArrayAccessInvalidType { expression: Idx::<Expression>(17), type: Type(3033) } in Body
-            ArrayAccessInvalidType { expression: Idx::<Expression>(20), type: Type(3000) } in Body
-            AssignmentNotAReference { left_side: Idx::<Expression>(20), actual: Type(3000) } in Body
-            ArrayAccessInvalidType { expression: Idx::<Expression>(17), type: Type(3033) } in Body
-            ArrayAccessInvalidType { expression: Idx::<Expression>(20), type: Type(3000) } in Body
-            ArrayAccessInvalidType { expression: Idx::<Expression>(24), type: Type(3033) } in Body
-            ArrayAccessInvalidType { expression: Idx::<Expression>(27), type: Type(3000) } in Body
-            AssignmentNotAReference { left_side: Idx::<Expression>(27), actual: Type(3000) } in Body
-            ArrayAccessInvalidType { expression: Idx::<Expression>(24), type: Type(3033) } in Body
-            ArrayAccessInvalidType { expression: Idx::<Expression>(27), type: Type(3000) } in Body
+            30759..30782 'qubitP...s[tid]': cannot index into type ref<workgroup, [error], read_write>
+            [EditionedFileId(Id(1c00))] AssignmentNotAReference { left_side: Idx::<Expression>(20), actual: Type(3000) } in Body
+            30759..30782 'qubitP...s[tid]': cannot index into type ref<workgroup, [error], read_write>
+            30828..30851 'qubitP...s[tid]': cannot index into type ref<workgroup, [error], read_write>
+            [EditionedFileId(Id(1c00))] AssignmentNotAReference { left_side: Idx::<Expression>(27), actual: Type(3000) } in Body
+            30828..30851 'qubitP...s[tid]': cannot index into type ref<workgroup, [error], read_write>
             30944..30945 'q': u32
             30952..30960 'shot_idx': i32
             30967..30984 'wkg_co...on_idx': i32
@@ -4765,12 +4772,14 @@ fn execute(
             31116..31126 'total_zero': ref<function, f32, read_write>
             31130..31148 'qubitP...lities': ref<workgroup, [error], read_write>
             31130..31151 'qubitP...ies[j]': [error]
+            31130..31156 'qubitP...].zero': [error]
             31130..31159 'qubitP...ero[q]': [error]
             31149..31150 'j': ref<function, i32, read_write>
             31157..31158 'q': u32
             31169..31178 'total_one': ref<function, f32, read_write>
             31182..31200 'qubitP...lities': ref<workgroup, [error], read_write>
             31182..31203 'qubitP...ies[j]': [error]
+            31182..31207 'qubitP...j].one': [error]
             31182..31210 'qubitP...one[q]': [error]
             31201..31202 'j': ref<function, i32, read_write>
             31208..31209 'q': u32
@@ -4780,6 +4789,7 @@ fn execute(
             31351..31370 'workgr...lation': ref<storage, WorkgroupCollationBuffer, read_write>
             31351..31375 'workgr...n.sums': ref<storage, [error], read_write>
             31351..31394 'workgr...n_idx]': [error]
+            31351..31401 'workgr...qubits': [error]
             31351..31404 'workgr...its[q]': [error]
             31376..31393 'wkg_co...on_idx': i32
             31402..31403 'q': u32
@@ -4797,14 +4807,15 @@ fn execute(
             31596..31610 'PROB_THRESHOLD': f32
             31623..31640 '!withi...eshold': bool
             31624..31640 'within...eshold': bool
-            31726..31735 'old_value': [error]
-            31738..31867 'atomic...TOTAL)': [error]
+            31726..31735 'old_value': __atomic_compare_exchange_result
+            31738..31867 'atomic...TOTAL)': __atomic_compare_exchange_result
             31781..31804 '&diagn...r_code': ptr<storage, atomic<u32>, read_write>
             31782..31793 'diagnostics': ref<storage, DiagnosticData, read_write>
             31782..31804 'diagno...r_code': ref<storage, atomic<u32>, read_write>
             31822..31824 '0u': u32
             31842..31866 'ERR_IN..._TOTAL': u32
-            31884..31893 'old_value': [error]
+            31884..31893 'old_value': __atomic_compare_exchange_result
+            31884..31903 'old_va...hanged': bool
             31991..31995 'shot': ptr<storage, ShotData, read_write>
             31998..32014 '&shots...t_idx]': ptr<storage, ShotData, read_write>
             31999..32004 'shots': ref<storage, array<ShotData>, read_write>
@@ -4838,7 +4849,7 @@ fn execute(
             32482..32499 'i32(RE...COUNT)': i32
             32486..32498 'RESULT_COUNT': u32
             32502..32503 '1': integer
-            32517..32654 'atomic...TOTAL)': [error]
+            32517..32654 'atomic...TOTAL)': __atomic_compare_exchange_result
             32564..32583 '&resul...index]': ptr<storage, atomic<u32>, read_write>
             32565..32572 'results': ref<storage, array<atomic<u32>>, read_write>
             32565..32583 'result...index]': ref<storage, atomic<u32>, read_write>
@@ -4849,6 +4860,7 @@ fn execute(
             32685..32700 'shots[shot_idx]': ref<storage, ShotData, read_write>
             32685..32712 'shots[..._state': ref<storage, [error], read_write>
             32685..32715 'shots[...ate[q]': [error]
+            32685..32732 'shots[...bility': [error]
             32691..32699 'shot_idx': i32
             32713..32714 'q': u32
             32735..32745 'total_zero': ref<function, f32, read_write>
@@ -4856,24 +4868,20 @@ fn execute(
             32759..32774 'shots[shot_idx]': ref<storage, ShotData, read_write>
             32759..32786 'shots[..._state': ref<storage, [error], read_write>
             32759..32789 'shots[...ate[q]': [error]
+            32759..32805 'shots[...bility': [error]
             32765..32773 'shot_idx': i32
             32787..32788 'q': u32
             32808..32817 'total_one': ref<function, f32, read_write>
-            ArrayAccessInvalidType { expression: Idx::<Expression>(10), type: Type(3033) } in Body
-            ArrayAccessInvalidType { expression: Idx::<Expression>(13), type: Type(3000) } in Body
+            31130..31151 'qubitP...ies[j]': cannot index into type ref<workgroup, [error], read_write>
             31130..31159 'qubitP...ero[q]': expected f32 but got [error]
-            ArrayAccessInvalidType { expression: Idx::<Expression>(17), type: Type(3033) } in Body
-            ArrayAccessInvalidType { expression: Idx::<Expression>(20), type: Type(3000) } in Body
+            31182..31203 'qubitP...ies[j]': cannot index into type ref<workgroup, [error], read_write>
             31182..31210 'qubitP...one[q]': expected f32 but got [error]
-            ArrayAccessInvalidType { expression: Idx::<Expression>(27), type: Type(304f) } in Body
-            ArrayAccessInvalidType { expression: Idx::<Expression>(30), type: Type(3000) } in Body
-            AssignmentNotAReference { left_side: Idx::<Expression>(30), actual: Type(3000) } in Body
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(49)), kind: Resolution(UnresolvedName { name: Name("atomicCompareExchangeWeak") }) } } in Body
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(89)), kind: Resolution(UnresolvedName { name: Name("atomicCompareExchangeWeak") }) } } in Body
-            ArrayAccessInvalidType { expression: Idx::<Expression>(95), type: Type(304f) } in Body
-            AssignmentNotAReference { left_side: Idx::<Expression>(96), actual: Type(3000) } in Body
-            ArrayAccessInvalidType { expression: Idx::<Expression>(103), type: Type(304f) } in Body
-            AssignmentNotAReference { left_side: Idx::<Expression>(104), actual: Type(3000) } in Body
+            31351..31394 'workgr...n_idx]': cannot index into type ref<storage, [error], read_write>
+            [EditionedFileId(Id(1c00))] AssignmentNotAReference { left_side: Idx::<Expression>(30), actual: Type(3000) } in Body
+            32685..32715 'shots[...ate[q]': cannot index into type ref<storage, [error], read_write>
+            [EditionedFileId(Id(1c00))] AssignmentNotAReference { left_side: Idx::<Expression>(96), actual: Type(3000) } in Body
+            32759..32789 'shots[...ate[q]': cannot index into type ref<storage, [error], read_write>
+            [EditionedFileId(Id(1c00))] AssignmentNotAReference { left_side: Idx::<Expression>(104), actual: Type(3000) } in Body
             33298..33306 'shot_idx': u32
             33313..33318 'qubit': u32
             33325..33331 'result': u32
@@ -4969,6 +4977,7 @@ fn execute(
             34465..34469 'shot': ptr<storage, ShotData, read_write>
             34465..34481 'shot.q..._state': ref<storage, [error], read_write>
             34465..34488 'shot.q...qubit]': [error]
+            34465..34505 'shot.q...bility': [error]
             34482..34487 'qubit': u32
             34516..34519 '1.0': float
             34516..34567 '1.0 / ...ility)': [error]
@@ -4976,6 +4985,7 @@ fn execute(
             34527..34531 'shot': ptr<storage, ShotData, read_write>
             34527..34543 'shot.q..._state': ref<storage, [error], read_write>
             34527..34550 'shot.q...qubit]': [error]
+            34527..34566 'shot.q...bility': [error]
             34544..34549 'qubit': u32
             34577..34583 'result': u32
             34577..34589 'result == 1u': bool
@@ -5013,8 +5023,8 @@ fn execute(
             35308..35351 'shot.q...1_mask': u32
             35331..35335 'shot': ptr<storage, ShotData, read_write>
             35331..35351 'shot.q...1_mask': ref<storage, u32, read_write>
-            ArrayAccessInvalidType { expression: Idx::<Expression>(87), type: Type(304f) } in Body
-            ArrayAccessInvalidType { expression: Idx::<Expression>(95), type: Type(304f) } in Body
+            34465..34488 'shot.q...qubit]': cannot index into type ref<storage, [error], read_write>
+            34527..34550 'shot.q...qubit]': cannot index into type ref<storage, [error], read_write>
             35605..35613 'shot_idx': u32
             35620..35626 'op_idx': u32
             35633..35638 'qubit': u32
@@ -5037,6 +5047,7 @@ fn execute(
             35887..35891 'shot': ptr<storage, ShotData, read_write>
             35887..35903 'shot.q..._state': ref<storage, [error], read_write>
             35887..35910 'shot.q...qubit]': [error]
+            35887..35927 'shot.q...bility': [error]
             35904..35909 'qubit': u32
             36108..36116 '!is_loss': bool
             36109..36116 'is_loss': bool
@@ -5044,6 +5055,7 @@ fn execute(
             36364..36368 'shot': ptr<storage, ShotData, read_write>
             36364..36380 'shot.q..._state': ref<storage, [error], read_write>
             36364..36387 'shot.q...qubit]': [error]
+            36364..36392 'shot.q...].heat': [error]
             36364..36400 'shot.q...= -1.0': [error]
             36381..36386 'qubit': u32
             36396..36400 '-1.0': float
@@ -5067,6 +5079,7 @@ fn execute(
             36666..36670 'shot': ptr<storage, ShotData, read_write>
             36666..36682 'shot.q..._state': ref<storage, [error], read_write>
             36666..36689 'shot.q...qubit]': [error]
+            36666..36694 'shot.q...].heat': [error]
             36683..36688 'qubit': u32
             36697..36700 '0.0': float
             36763..36831 'atomic...esult)': [error]
@@ -5082,6 +5095,7 @@ fn execute(
             37045..37049 'shot': ptr<storage, ShotData, read_write>
             37045..37061 'shot.q..._state': ref<storage, [error], read_write>
             37045..37068 'shot.q...qubit]': [error]
+            37045..37073 'shot.q...].heat': [error]
             37045..37081 'shot.q...= -1.0': [error]
             37062..37067 'qubit': u32
             37077..37081 '-1.0': float
@@ -5095,6 +5109,7 @@ fn execute(
             37231..37235 'shot': ptr<storage, ShotData, read_write>
             37231..37247 'shot.q..._state': ref<storage, [error], read_write>
             37231..37254 'shot.q...qubit]': [error]
+            37231..37259 'shot.q...].heat': [error]
             37248..37253 'qubit': u32
             37262..37266 '-1.0': float
             37263..37266 '1.0': float
@@ -5109,13 +5124,13 @@ fn execute(
             37535..37539 'shot': ptr<storage, ShotData, read_write>
             37535..37547 'shot.op_type': ref<storage, u32, read_write>
             37550..37562 'OPID_MRESETZ': u32
-            ArrayAccessInvalidType { expression: Idx::<Expression>(11), type: Type(304f) } in Body
-            ArrayAccessInvalidType { expression: Idx::<Expression>(45), type: Type(304f) } in Body
-            AssignmentNotAReference { left_side: Idx::<Expression>(46), actual: Type(3000) } in Body
-            ArrayAccessInvalidType { expression: Idx::<Expression>(21), type: Type(304f) } in Body
-            ArrayAccessInvalidType { expression: Idx::<Expression>(61), type: Type(304f) } in Body
-            ArrayAccessInvalidType { expression: Idx::<Expression>(75), type: Type(304f) } in Body
-            AssignmentNotAReference { left_side: Idx::<Expression>(76), actual: Type(3000) } in Body
+            35887..35910 'shot.q...qubit]': cannot index into type ref<storage, [error], read_write>
+            36666..36689 'shot.q...qubit]': cannot index into type ref<storage, [error], read_write>
+            [EditionedFileId(Id(1c00))] AssignmentNotAReference { left_side: Idx::<Expression>(46), actual: Type(3000) } in Body
+            36364..36387 'shot.q...qubit]': cannot index into type ref<storage, [error], read_write>
+            37045..37068 'shot.q...qubit]': cannot index into type ref<storage, [error], read_write>
+            37231..37254 'shot.q...qubit]': cannot index into type ref<storage, [error], read_write>
+            [EditionedFileId(Id(1c00))] AssignmentNotAReference { left_side: Idx::<Expression>(76), actual: Type(3000) } in Body
             37326..37332 'result': expected u32 but got [error]
             37981..37989 'shot_idx': u32
             37996..38008 'target_is_q2': bool
@@ -5299,6 +5314,7 @@ fn execute(
             40065..40069 'shot': ptr<storage, ShotData, read_write>
             40065..40081 'shot.q..._state': ref<storage, [error], read_write>
             40065..40085 'shot.q...te[q1]': [error]
+            40065..40090 'shot.q...].heat': [error]
             40065..40098 'shot.q...= -1.0': [error]
             40082..40084 'q1': u32
             40094..40098 '-1.0': float
@@ -5314,12 +5330,13 @@ fn execute(
             40184..40188 'shot': ptr<storage, ShotData, read_write>
             40184..40200 'shot.q..._state': ref<storage, [error], read_write>
             40184..40204 'shot.q...te[q2]': [error]
+            40184..40209 'shot.q...].heat': [error]
             40184..40217 'shot.q...= -1.0': [error]
             40201..40203 'q2': u32
             40213..40217 '-1.0': float
             40214..40217 '1.0': float
-            ArrayAccessInvalidType { expression: Idx::<Expression>(11), type: Type(304f) } in Body
-            ArrayAccessInvalidType { expression: Idx::<Expression>(25), type: Type(304f) } in Body
+            40065..40085 'shot.q...te[q1]': cannot index into type ref<storage, [error], read_write>
+            40184..40204 'shot.q...te[q2]': cannot index into type ref<storage, [error], read_write>
             40698..40706 'shot_idx': u32
             40713..40719 'op_idx': u32
             40726..40728 'q1': u32
@@ -5340,6 +5357,7 @@ fn execute(
             40844..40848 'shot': ptr<storage, ShotData, read_write>
             40844..40860 'shot.q..._state': ref<storage, [error], read_write>
             40844..40867 'shot.q...qubit]': [error]
+            40844..40884 'shot.q...bility': [error]
             40861..40866 'qubit': u32
             41041..41044 'm00': [error]
             41047..41101 'select...== 1u)': [error]
@@ -5391,6 +5409,7 @@ fn execute(
             41452..41456 'shot': ptr<storage, ShotData, read_write>
             41452..41468 'shot.q..._state': ref<storage, [error], read_write>
             41452..41475 'shot.q...qubit]': [error]
+            41452..41492 'shot.q...bility': [error]
             41469..41474 'qubit': u32
             41503..41506 '1.0': float
             41503..41554 '1.0 / ...ility)': [error]
@@ -5398,6 +5417,7 @@ fn execute(
             41514..41518 'shot': ptr<storage, ShotData, read_write>
             41514..41530 'shot.q..._state': ref<storage, [error], read_write>
             41514..41537 'shot.q...qubit]': [error]
+            41514..41553 'shot.q...bility': [error]
             41531..41536 'qubit': u32
             41564..41570 'result': [error]
             41564..41576 'result == 1u': [error]
@@ -5405,6 +5425,7 @@ fn execute(
             41691..41695 'shot': ptr<storage, ShotData, read_write>
             41691..41707 'shot.q..._state': ref<storage, [error], read_write>
             41691..41714 'shot.q...qubit]': [error]
+            41691..41719 'shot.q...].heat': [error]
             41708..41713 'qubit': u32
             41722..41726 '-1.0': float
             41723..41726 '1.0': float
@@ -5431,13 +5452,13 @@ fn execute(
             41897..41903 'op_idx': u32
             41905..41907 'q1': u32
             41909..41911 'q2': u32
-            ArrayAccessInvalidType { expression: Idx::<Expression>(11), type: Type(304f) } in Body
+            40844..40867 'shot.q...qubit]': cannot index into type ref<storage, [error], read_write>
             41325..41328 'm00': expected vec2<f32> but got [error]
             41330..41333 'm01': expected vec2<f32> but got [error]
-            ArrayAccessInvalidType { expression: Idx::<Expression>(57), type: Type(304f) } in Body
-            ArrayAccessInvalidType { expression: Idx::<Expression>(65), type: Type(304f) } in Body
-            ArrayAccessInvalidType { expression: Idx::<Expression>(76), type: Type(304f) } in Body
-            AssignmentNotAReference { left_side: Idx::<Expression>(77), actual: Type(3000) } in Body
+            41452..41475 'shot.q...qubit]': cannot index into type ref<storage, [error], read_write>
+            41514..41537 'shot.q...qubit]': cannot index into type ref<storage, [error], read_write>
+            41691..41714 'shot.q...qubit]': cannot index into type ref<storage, [error], read_write>
+            [EditionedFileId(Id(1c00))] AssignmentNotAReference { left_side: Idx::<Expression>(77), actual: Type(3000) } in Body
             42393..42401 'shot_idx': u32
             42408..42414 'op_idx': u32
             42421..42423 'q1': u32
@@ -5473,6 +5494,7 @@ fn execute(
             42824..42828 'shot': ptr<storage, ShotData, read_write>
             42824..42840 'shot.q..._state': ref<storage, [error], read_write>
             42824..42844 'shot.q...te[q1]': [error]
+            42824..42849 'shot.q...].heat': [error]
             42824..42857 'shot.q...= -1.0': [error]
             42841..42843 'q1': u32
             42853..42857 '-1.0': float
@@ -5483,6 +5505,7 @@ fn execute(
             42887..42891 'shot': ptr<storage, ShotData, read_write>
             42887..42903 'shot.q..._state': ref<storage, [error], read_write>
             42887..42907 'shot.q...te[q2]': [error]
+            42887..42912 'shot.q...].heat': [error]
             42887..42920 'shot.q...= -1.0': [error]
             42904..42906 'q2': u32
             42916..42920 '-1.0': float
@@ -5529,18 +5552,22 @@ fn execute(
             44592..44596 'shot': ptr<storage, ShotData, read_write>
             44592..44608 'shot.q..._state': ref<storage, [error], read_write>
             44592..44612 'shot.q...te[q1]': [error]
+            44592..44617 'shot.q...].heat': [error]
             44609..44611 'q1': u32
             44635..44639 'shot': ptr<storage, ShotData, read_write>
             44635..44651 'shot.q..._state': ref<storage, [error], read_write>
             44635..44655 'shot.q...te[q1]': [error]
+            44635..44660 'shot.q...].heat': [error]
             44652..44654 'q1': u32
             44663..44667 'shot': ptr<storage, ShotData, read_write>
             44663..44679 'shot.q..._state': ref<storage, [error], read_write>
             44663..44683 'shot.q...te[q2]': [error]
+            44663..44688 'shot.q...].heat': [error]
             44680..44682 'q2': u32
             44706..44710 'shot': ptr<storage, ShotData, read_write>
             44706..44722 'shot.q..._state': ref<storage, [error], read_write>
             44706..44726 'shot.q...te[q2]': [error]
+            44706..44731 'shot.q...].heat': [error]
             44723..44725 'q2': u32
             44734..44739 'heat1': [error]
             45020..45024 'shot': ptr<storage, ShotData, read_write>
@@ -5579,18 +5606,22 @@ fn execute(
             45508..45512 'shot': ptr<storage, ShotData, read_write>
             45508..45524 'shot.q..._state': ref<storage, [error], read_write>
             45508..45528 'shot.q...te[q1]': [error]
+            45508..45533 'shot.q...].heat': [error]
             45525..45527 'q1': u32
             45551..45555 'shot': ptr<storage, ShotData, read_write>
             45551..45567 'shot.q..._state': ref<storage, [error], read_write>
             45551..45571 'shot.q...te[q1]': [error]
+            45551..45576 'shot.q...].heat': [error]
             45568..45570 'q1': u32
             45579..45583 'shot': ptr<storage, ShotData, read_write>
             45579..45595 'shot.q..._state': ref<storage, [error], read_write>
             45579..45599 'shot.q...te[q2]': [error]
+            45579..45604 'shot.q...].heat': [error]
             45596..45598 'q2': u32
             45622..45626 'shot': ptr<storage, ShotData, read_write>
             45622..45638 'shot.q..._state': ref<storage, [error], read_write>
             45622..45642 'shot.q...te[q2]': [error]
+            45622..45647 'shot.q...].heat': [error]
             45639..45641 'q2': u32
             45650..45655 'heat1': [error]
             45936..45940 'shot': ptr<storage, ShotData, read_write>
@@ -5781,22 +5812,22 @@ fn execute(
             49507..49511 'shot': ptr<storage, ShotData, read_write>
             49507..49518 'shot.op_idx': ref<storage, u32, read_write>
             49521..49527 'op_idx': u32
-            ArrayAccessInvalidType { expression: Idx::<Expression>(25), type: Type(304f) } in Body
-            ArrayAccessInvalidType { expression: Idx::<Expression>(34), type: Type(304f) } in Body
+            42824..42844 'shot.q...te[q1]': cannot index into type ref<storage, [error], read_write>
+            42887..42907 'shot.q...te[q2]': cannot index into type ref<storage, [error], read_write>
             43514..43522 'survivor': expected u32 but got [error]
             44410..44418 'lost_row': expected u32 but got [error]
-            ArrayAccessInvalidType { expression: Idx::<Expression>(77), type: Type(304f) } in Body
-            ArrayAccessInvalidType { expression: Idx::<Expression>(82), type: Type(304f) } in Body
-            AssignmentNotAReference { left_side: Idx::<Expression>(83), actual: Type(3000) } in Body
-            ArrayAccessInvalidType { expression: Idx::<Expression>(87), type: Type(304f) } in Body
-            ArrayAccessInvalidType { expression: Idx::<Expression>(92), type: Type(304f) } in Body
-            AssignmentNotAReference { left_side: Idx::<Expression>(93), actual: Type(3000) } in Body
-            ArrayAccessInvalidType { expression: Idx::<Expression>(130), type: Type(304f) } in Body
-            ArrayAccessInvalidType { expression: Idx::<Expression>(135), type: Type(304f) } in Body
-            AssignmentNotAReference { left_side: Idx::<Expression>(136), actual: Type(3000) } in Body
-            ArrayAccessInvalidType { expression: Idx::<Expression>(140), type: Type(304f) } in Body
-            ArrayAccessInvalidType { expression: Idx::<Expression>(145), type: Type(304f) } in Body
-            AssignmentNotAReference { left_side: Idx::<Expression>(146), actual: Type(3000) } in Body
+            44592..44612 'shot.q...te[q1]': cannot index into type ref<storage, [error], read_write>
+            44635..44655 'shot.q...te[q1]': cannot index into type ref<storage, [error], read_write>
+            [EditionedFileId(Id(1c00))] AssignmentNotAReference { left_side: Idx::<Expression>(83), actual: Type(3000) } in Body
+            44663..44683 'shot.q...te[q2]': cannot index into type ref<storage, [error], read_write>
+            44706..44726 'shot.q...te[q2]': cannot index into type ref<storage, [error], read_write>
+            [EditionedFileId(Id(1c00))] AssignmentNotAReference { left_side: Idx::<Expression>(93), actual: Type(3000) } in Body
+            45508..45528 'shot.q...te[q1]': cannot index into type ref<storage, [error], read_write>
+            45551..45571 'shot.q...te[q1]': cannot index into type ref<storage, [error], read_write>
+            [EditionedFileId(Id(1c00))] AssignmentNotAReference { left_side: Idx::<Expression>(136), actual: Type(3000) } in Body
+            45579..45599 'shot.q...te[q2]': cannot index into type ref<storage, [error], read_write>
+            45622..45642 'shot.q...te[q2]': cannot index into type ref<storage, [error], read_write>
+            [EditionedFileId(Id(1c00))] AssignmentNotAReference { left_side: Idx::<Expression>(146), actual: Type(3000) } in Body
             47365..47373 'survivor': expected u32 but got [error]
             47573..47587 'survivor_is_q2': expected bool but got [error]
             48445..48459 'survivor_is_q2': expected bool but got [error]
@@ -5804,7 +5835,7 @@ fn execute(
             49167..49181 'survivor_is_q2': expected bool but got [error]
             49871..49879 'shot_idx': u32
             49886..49890 'code': u32
-            49903..49963 'atomic... code)': [error]
+            49903..49963 'atomic... code)': __atomic_compare_exchange_result
             49929..49952 '&diagn...r_code': ptr<storage, atomic<u32>, read_write>
             49930..49941 'diagnostics': ref<storage, DiagnosticData, read_write>
             49930..49952 'diagno...r_code': ref<storage, atomic<u32>, read_write>
@@ -5818,15 +5849,13 @@ fn execute(
             49997..49999 '1u': u32
             50003..50015 'RESULT_COUNT': u32
             50018..50020 '1u': u32
-            50026..50082 'atomic... code)': [error]
+            50026..50082 'atomic... code)': __atomic_compare_exchange_result
             50052..50071 '&resul...index]': ptr<storage, atomic<u32>, read_write>
             50053..50060 'results': ref<storage, array<atomic<u32>>, read_write>
             50053..50071 'result...index]': ref<storage, atomic<u32>, read_write>
             50061..50070 'err_index': u32
             50073..50075 '0u': u32
             50077..50081 'code': u32
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(5)), kind: Resolution(UnresolvedName { name: Name("atomicCompareExchangeWeak") }) } } in Body
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(19)), kind: Resolution(UnresolvedName { name: Name("atomicCompareExchangeWeak") }) } } in Body
             50238..50244 'op_idx': u32
             50268..50285 'arrayL...(&ops)': u32
             50268..50300 'arrayL...x + 1)': bool
@@ -6476,6 +6505,7 @@ fn execute(
             60866..60870 'shot': ptr<storage, ShotData, read_write>
             60866..60882 'shot.q..._state': ref<storage, [error], read_write>
             60866..60886 'shot.q...te[q1]': [error]
+            60866..60891 'shot.q...].heat': [error]
             60866..60899 'shot.q...= -1.0': [error]
             60883..60885 'q1': u32
             60895..60899 '-1.0': float
@@ -6484,6 +6514,7 @@ fn execute(
             60920..60924 'shot': ptr<storage, ShotData, read_write>
             60920..60936 'shot.q..._state': ref<storage, [error], read_write>
             60920..60940 'shot.q...te[q2]': [error]
+            60920..60945 'shot.q...].heat': [error]
             60920..60953 'shot.q...= -1.0': [error]
             60937..60939 'q2': u32
             60949..60953 '-1.0': float
@@ -6666,10 +6697,10 @@ fn execute(
             63958..63960 '1u': u32
             63958..63972 '1u << survivor': [error]
             63964..63972 'survivor': [error]
-            ArrayAccessInvalidType { expression: Idx::<Expression>(11), type: Type(304f) } in Body
-            ArrayAccessInvalidType { expression: Idx::<Expression>(19), type: Type(304f) } in Body
+            60866..60886 'shot.q...te[q1]': cannot index into type ref<storage, [error], read_write>
+            60920..60940 'shot.q...te[q2]': cannot index into type ref<storage, [error], read_write>
             62208..62222 '1u << survivor': expected u32 but got [error]
-            NoConstructor { expression: Idx::<Expression>(116), builtins: BuiltinId(3801), type: Type(3003), parameters: [Type(3000)] } in Body
+            62639..62648 'u32(term)': no constructor for builtin `op_u32_constructor` with parameters `[error]`
             62623..62637 'survivor_is_q2': expected bool but got [error]
             62639..62648 'u32(term)': expected u32 but got [error]
             62980..62994 'survivor_is_q2': expected bool but got [error]
@@ -6966,6 +6997,7 @@ fn execute(
             68824..68839 'OPID_LOSS_NOISE': u32
             68933..68951 'qubitP...lities': ref<workgroup, [error], read_write>
             68933..68956 'qubitP...s[tid]': [error]
+            68933..68961 'qubitP...].zero': [error]
             68933..68965 'qubitP...ro[q1]': [error]
             68952..68955 'tid': u32
             68962..68964 'q1': u32
@@ -6974,18 +7006,17 @@ fn execute(
             68981..68982 '0': integer
             68993..69011 'qubitP...lities': ref<workgroup, [error], read_write>
             68993..69016 'qubitP...s[tid]': [error]
+            68993..69020 'qubitP...d].one': [error]
             68993..69024 'qubitP...ne[q1]': [error]
             69012..69015 'tid': u32
             69021..69023 'q1': u32
             69028..69040 'summed_probs': ref<function, vec4<f32>, read_write>
             69028..69043 'summed_probs[1]': ref<function, f32, read_write>
             69041..69042 '1': integer
-            ArrayAccessInvalidType { expression: Idx::<Expression>(208), type: Type(3033) } in Body
-            ArrayAccessInvalidType { expression: Idx::<Expression>(211), type: Type(3000) } in Body
-            AssignmentNotAReference { left_side: Idx::<Expression>(211), actual: Type(3000) } in Body
-            ArrayAccessInvalidType { expression: Idx::<Expression>(217), type: Type(3033) } in Body
-            ArrayAccessInvalidType { expression: Idx::<Expression>(220), type: Type(3000) } in Body
-            AssignmentNotAReference { left_side: Idx::<Expression>(220), actual: Type(3000) } in Body
+            68933..68956 'qubitP...s[tid]': cannot index into type ref<workgroup, [error], read_write>
+            [EditionedFileId(Id(1c00))] AssignmentNotAReference { left_side: Idx::<Expression>(211), actual: Type(3000) } in Body
+            68993..69016 'qubitP...s[tid]': cannot index into type ref<workgroup, [error], read_write>
+            [EditionedFileId(Id(1c00))] AssignmentNotAReference { left_side: Idx::<Expression>(220), actual: Type(3000) } in Body
             69069..69080 'workgroupId': u32
             69087..69090 'tid': u32
             69097..69099 'q1': u32
@@ -7469,6 +7500,7 @@ fn execute(
             75624..75636 'update_probs': bool
             75694..75712 'qubitP...lities': ref<workgroup, [error], read_write>
             75694..75717 'qubitP...s[tid]': [error]
+            75694..75722 'qubitP...].zero': [error]
             75694..75726 'qubitP...ro[q1]': [error]
             75713..75716 'tid': u32
             75723..75725 'q1': u32
@@ -7477,6 +7509,7 @@ fn execute(
             75742..75743 '0': integer
             75754..75772 'qubitP...lities': ref<workgroup, [error], read_write>
             75754..75777 'qubitP...s[tid]': [error]
+            75754..75781 'qubitP...d].one': [error]
             75754..75785 'qubitP...ne[q1]': [error]
             75773..75776 'tid': u32
             75782..75784 'q1': u32
@@ -7485,6 +7518,7 @@ fn execute(
             75802..75803 '1': integer
             75814..75832 'qubitP...lities': ref<workgroup, [error], read_write>
             75814..75837 'qubitP...s[tid]': [error]
+            75814..75842 'qubitP...].zero': [error]
             75814..75846 'qubitP...ro[q2]': [error]
             75833..75836 'tid': u32
             75843..75845 'q2': u32
@@ -7493,24 +7527,21 @@ fn execute(
             75862..75863 '2': integer
             75874..75892 'qubitP...lities': ref<workgroup, [error], read_write>
             75874..75897 'qubitP...s[tid]': [error]
+            75874..75901 'qubitP...d].one': [error]
             75874..75905 'qubitP...ne[q2]': [error]
             75893..75896 'tid': u32
             75902..75904 'q2': u32
             75909..75921 'summed_probs': ref<function, vec4<f32>, read_write>
             75909..75924 'summed_probs[3]': ref<function, f32, read_write>
             75922..75923 '3': integer
-            ArrayAccessInvalidType { expression: Idx::<Expression>(446), type: Type(3033) } in Body
-            ArrayAccessInvalidType { expression: Idx::<Expression>(449), type: Type(3000) } in Body
-            AssignmentNotAReference { left_side: Idx::<Expression>(449), actual: Type(3000) } in Body
-            ArrayAccessInvalidType { expression: Idx::<Expression>(455), type: Type(3033) } in Body
-            ArrayAccessInvalidType { expression: Idx::<Expression>(458), type: Type(3000) } in Body
-            AssignmentNotAReference { left_side: Idx::<Expression>(458), actual: Type(3000) } in Body
-            ArrayAccessInvalidType { expression: Idx::<Expression>(464), type: Type(3033) } in Body
-            ArrayAccessInvalidType { expression: Idx::<Expression>(467), type: Type(3000) } in Body
-            AssignmentNotAReference { left_side: Idx::<Expression>(467), actual: Type(3000) } in Body
-            ArrayAccessInvalidType { expression: Idx::<Expression>(473), type: Type(3033) } in Body
-            ArrayAccessInvalidType { expression: Idx::<Expression>(476), type: Type(3000) } in Body
-            AssignmentNotAReference { left_side: Idx::<Expression>(476), actual: Type(3000) } in Body
+            75694..75717 'qubitP...s[tid]': cannot index into type ref<workgroup, [error], read_write>
+            [EditionedFileId(Id(1c00))] AssignmentNotAReference { left_side: Idx::<Expression>(449), actual: Type(3000) } in Body
+            75754..75777 'qubitP...s[tid]': cannot index into type ref<workgroup, [error], read_write>
+            [EditionedFileId(Id(1c00))] AssignmentNotAReference { left_side: Idx::<Expression>(458), actual: Type(3000) } in Body
+            75814..75837 'qubitP...s[tid]': cannot index into type ref<workgroup, [error], read_write>
+            [EditionedFileId(Id(1c00))] AssignmentNotAReference { left_side: Idx::<Expression>(467), actual: Type(3000) } in Body
+            75874..75897 'qubitP...s[tid]': cannot index into type ref<workgroup, [error], read_write>
+            [EditionedFileId(Id(1c00))] AssignmentNotAReference { left_side: Idx::<Expression>(476), actual: Type(3000) } in Body
             75961..75972 'workgroupId': u32
             75979..75982 'tid': u32
             75999..76005 'params': ShotParams
@@ -7672,8 +7703,10 @@ fn execute(
             79451..79462 '0x7FFFFFFFu': u32
             79536..79549 'noise_prob_lo': [error]
             79552..79557 'table': [error]
+            79552..79578 'table....ity_lo': [error]
             79588..79601 'noise_prob_hi': [error]
             79604..79609 'table': [error]
+            79604..79630 'table....ity_hi': [error]
             79817..79824 'rand_hi': u32
             79817..79840 'rand_h...rob_hi': [error]
             79817..79898 'rand_h...ob_lo)': [error]
@@ -7701,9 +7734,11 @@ fn execute(
             80207..80212 'start': [error]
             80215..80238 'i32(ta...ffset)': [error]
             80219..80224 'table': [error]
+            80219..80237 'table....offset': [error]
             80248..80253 'count': [error]
             80256..80278 'i32(ta...count)': [error]
             80260..80265 'table': [error]
+            80260..80277 'table...._count': [error]
             80288..80297 'entry_idx': i32
             80300..80357 'binary...count)': i32
             80326..80333 'rand_lo': u32
@@ -7721,14 +7756,16 @@ fn execute(
             80444..80503 'Correl...is_hi)': [error]
             80466..80468 '1u': u32
             80470..80475 'entry': [error]
+            80470..80485 'entry.paulis_lo': [error]
             80487..80492 'entry': [error]
-            ArrayAccessInvalidType { expression: Idx::<Expression>(7), type: Type(305c) } in Body
-            NoConstructor { expression: Idx::<Expression>(45), builtins: BuiltinId(380c), type: Type(3001), parameters: [Type(3000)] } in Body
-            NoConstructor { expression: Idx::<Expression>(48), builtins: BuiltinId(380c), type: Type(3001), parameters: [Type(3000)] } in Body
+            80487..80502 'entry.paulis_hi': [error]
+            79154..79205 'batch_...e_idx]': cannot index into type ref<storage, [error], read>
+            80215..80238 'i32(ta...ffset)': no constructor for builtin `op_i32_constructor` with parameters `[error]`
+            80256..80278 'i32(ta...count)': no constructor for builtin `op_i32_constructor` with parameters `[error]`
             80344..80349 'start': expected i32 but got [error]
             80351..80356 'count': expected i32 but got [error]
             80412..80429 'start ...ry_idx': expected i32 or u32 but got [error]
-            ArrayAccessInvalidType { expression: Idx::<Expression>(59), type: Type(305c) } in Body
+            80376..80430 'batch_...y_idx]': cannot index into type ref<storage, [error], read>
             80470..80485 'entry.paulis_lo': expected u32 but got [error]
             80487..80502 'entry.paulis_hi': expected u32 but got [error]
             80922..80931 'paulis_lo': u32
@@ -7817,18 +7854,22 @@ fn execute(
             82769..82773 'shot': ptr<storage, ShotData, read_write>
             82769..82785 'shot.q..._state': ref<storage, [error], read_write>
             82769..82788 'shot.q...ate[q]': [error]
+            82769..82805 'shot.q...bility': [error]
             82786..82787 'q': ref<function, u32, read_write>
             82819..82823 'shot': ptr<storage, ShotData, read_write>
             82819..82835 'shot.q..._state': ref<storage, [error], read_write>
             82819..82838 'shot.q...ate[q]': [error]
+            82819..82855 'shot.q...bility': [error]
             82836..82837 'q': ref<function, u32, read_write>
             82858..82862 'shot': ptr<storage, ShotData, read_write>
             82858..82874 'shot.q..._state': ref<storage, [error], read_write>
             82858..82877 'shot.q...ate[q]': [error]
+            82858..82893 'shot.q...bility': [error]
             82875..82876 'q': ref<function, u32, read_write>
             82907..82911 'shot': ptr<storage, ShotData, read_write>
             82907..82923 'shot.q..._state': ref<storage, [error], read_write>
             82907..82926 'shot.q...ate[q]': [error]
+            82907..82942 'shot.q...bility': [error]
             82924..82925 'q': ref<function, u32, read_write>
             82945..82949 'temp': [error]
             83036..83041 'was_0': bool
@@ -7869,12 +7910,12 @@ fn execute(
             83686..83690 'shot': ptr<storage, ShotData, read_write>
             83686..83718 'shot.q...p_mask': ref<storage, u32, read_write>
             83721..83723 '0u': u32
-            ArrayAccessInvalidType { expression: Idx::<Expression>(35), type: Type(304f) } in Body
-            ArrayAccessInvalidType { expression: Idx::<Expression>(40), type: Type(304f) } in Body
-            AssignmentNotAReference { left_side: Idx::<Expression>(41), actual: Type(3000) } in Body
-            ArrayAccessInvalidType { expression: Idx::<Expression>(45), type: Type(304f) } in Body
-            ArrayAccessInvalidType { expression: Idx::<Expression>(50), type: Type(304f) } in Body
-            AssignmentNotAReference { left_side: Idx::<Expression>(51), actual: Type(3000) } in Body
+            82769..82788 'shot.q...ate[q]': cannot index into type ref<storage, [error], read_write>
+            82819..82838 'shot.q...ate[q]': cannot index into type ref<storage, [error], read_write>
+            [EditionedFileId(Id(1c00))] AssignmentNotAReference { left_side: Idx::<Expression>(41), actual: Type(3000) } in Body
+            82858..82877 'shot.q...ate[q]': cannot index into type ref<storage, [error], read_write>
+            82907..82926 'shot.q...ate[q]': cannot index into type ref<storage, [error], read_write>
+            [EditionedFileId(Id(1c00))] AssignmentNotAReference { left_side: Idx::<Expression>(51), actual: Type(3000) } in Body
             84485..84492 'rand_lo': u32
             84499..84506 'rand_hi': u32
             84513..84518 'start': i32
@@ -7898,6 +7939,7 @@ fn execute(
             84687..84697 'batch_data': ref<storage, BatchData, read>
             84687..84722 'batch_...ntries': ref<storage, [error], read>
             84687..84735 'batch_...+ mid]': [error]
+            84687..84750 'batch_...ity_lo': [error]
             84723..84728 'start': i32
             84723..84734 'start + mid': i32
             84731..84734 'mid': i32
@@ -7905,6 +7947,7 @@ fn execute(
             84771..84781 'batch_data': ref<storage, BatchData, read>
             84771..84806 'batch_...ntries': ref<storage, [error], read>
             84771..84819 'batch_...+ mid]': [error]
+            84771..84834 'batch_...ity_hi': [error]
             84807..84812 'start': i32
             84807..84818 'start + mid': i32
             84815..84818 'mid': i32
@@ -7926,8 +7969,8 @@ fn execute(
             84965..84972 'mid + 1': i32
             84971..84972 '1': integer
             85001..85004 'low': ref<function, i32, read_write>
-            ArrayAccessInvalidType { expression: Idx::<Expression>(17), type: Type(305c) } in Body
-            ArrayAccessInvalidType { expression: Idx::<Expression>(24), type: Type(305c) } in Body
+            84687..84735 'batch_...+ mid]': cannot index into type ref<storage, [error], read>
+            84771..84819 'batch_...+ mid]': cannot index into type ref<storage, [error], read>
             85190..85196 'op_idx': u32
             85203..85208 'index': u32
             85335..85342 'vec_idx': u32
@@ -8041,7 +8084,7 @@ fn execute(
             87155..87192 'shots[...s[reg]': [error]
             87161..87169 'shot_idx': u32
             87188..87191 'reg': u32
-            ArrayAccessInvalidType { expression: Idx::<Expression>(6), type: Type(304f) } in Body
+            87155..87192 'shots[...s[reg]': cannot index into type ref<storage, [error], read_write>
             87210..87218 'shot_idx': u32
             87225..87228 'reg': u32
             87235..87238 'val': u32
@@ -8053,8 +8096,8 @@ fn execute(
             87257..87265 'shot_idx': u32
             87284..87287 'reg': u32
             87291..87294 'val': u32
-            ArrayAccessInvalidType { expression: Idx::<Expression>(6), type: Type(304f) } in Body
-            AssignmentNotAReference { left_side: Idx::<Expression>(6), actual: Type(3000) } in Body
+            87251..87288 'shots[...s[reg]': cannot index into type ref<storage, [error], read_write>
+            [EditionedFileId(Id(1c00))] AssignmentNotAReference { left_side: Idx::<Expression>(6), actual: Type(3000) } in Body
             87315..87323 'shot_idx': u32
             87330..87333 'reg': u32
             87360..87397 'bitcas... reg))': i32
@@ -8089,7 +8132,7 @@ fn execute(
             88000..88031 'batch_...ctions': ref<storage, [error], read>
             88000..88035 'batch_...ns[pc]': [error]
             88032..88034 'pc': u32
-            ArrayAccessInvalidType { expression: Idx::<Expression>(4), type: Type(305c) } in Body
+            88000..88035 'batch_...ns[pc]': cannot index into type ref<storage, [error], read>
             88054..88060 'packed': u32
             88085..88091 'packed': u32
             88085..88099 'packed & 0xFFu': u32
@@ -8287,10 +8330,12 @@ fn execute(
             91031..91035 'shot': ptr<storage, ShotData, read_write>
             91031..91047 'shot.q..._state': ref<storage, [error], read_write>
             91031..91054 'shot.q...qubit]': [error]
+            91031..91071 'shot.q...bility': [error]
             91048..91053 'qubit': u32
             91078..91082 'shot': ptr<storage, ShotData, read_write>
             91078..91094 'shot.q..._state': ref<storage, [error], read_write>
             91078..91101 'shot.q...qubit]': [error]
+            91078..91106 'shot.q...].heat': [error]
             91095..91100 'qubit': u32
             91109..91113 '-1.0': float
             91110..91113 '1.0': float
@@ -8305,9 +8350,9 @@ fn execute(
             91275..91279 'shot': ptr<storage, ShotData, read_write>
             91275..91287 'shot.op_type': ref<storage, u32, read_write>
             91290..91305 'OPID_LOSS_NOISE': u32
-            ArrayAccessInvalidType { expression: Idx::<Expression>(11), type: Type(304f) } in Body
-            ArrayAccessInvalidType { expression: Idx::<Expression>(18), type: Type(304f) } in Body
-            AssignmentNotAReference { left_side: Idx::<Expression>(19), actual: Type(3000) } in Body
+            91031..91054 'shot.q...qubit]': cannot index into type ref<storage, [error], read_write>
+            91078..91101 'shot.q...qubit]': cannot index into type ref<storage, [error], read_write>
+            [EditionedFileId(Id(1c00))] AssignmentNotAReference { left_side: Idx::<Expression>(19), actual: Type(3000) } in Body
             91166..91172 'result': expected u32 but got [error]
             91516..91524 'shot_idx': u32
             91531..91537 'op_idx': u32
@@ -8388,7 +8433,7 @@ fn execute(
             92614..92627 'bit_flip_mask': ref<function, u32, read_write>
             92629..92644 'phase_flip_mask': ref<function, u32, read_write>
             92646..92655 'loss_mask': ref<function, u32, read_write>
-            ArrayAccessInvalidType { expression: Idx::<Expression>(33), type: Type(305c) } in Body
+            92111..92160 'batch_...t + i]': cannot index into type ref<storage, [error], read>
             92212..92219 'arg_reg': expected u32 but got [error]
             92977..92983 'params': ShotParams
             93208..93209 'i': ref<function, i32, read_write>
@@ -8803,11 +8848,11 @@ fn execute(
             102768..102783 'params.shot_idx': i32
             102799..102800 'm': ref<function, u32, read_write>
             102804..102806 '0u': u32
-            ArrayAccessInvalidType { expression: Idx::<Expression>(43), type: Type(304f) } in Body
-            AssignmentNotAReference { left_side: Idx::<Expression>(43), actual: Type(3000) } in Body
-            ArrayAccessInvalidType { expression: Idx::<Expression>(48), type: Type(305c) } in Body
-            ArrayAccessInvalidType { expression: Idx::<Expression>(61), type: Type(304f) } in Body
-            AssignmentNotAReference { left_side: Idx::<Expression>(61), actual: Type(3000) } in Body
+            102544..102583 'shots[...ory[m]': cannot index into type ref<storage, [error], read_write>
+            [EditionedFileId(Id(1c00))] AssignmentNotAReference { left_side: Idx::<Expression>(43), actual: Type(3000) } in Body
+            102586..102621 'batch_...ata[m]': cannot index into type ref<storage, [error], read>
+            102762..102801 'shots[...ory[m]': cannot index into type ref<storage, [error], read_write>
+            [EditionedFileId(Id(1c00))] AssignmentNotAReference { left_side: Idx::<Expression>(61), actual: Type(3000) } in Body
             105427..105430 'gid': vec3<u32>
             105567..105575 'shot_idx': u32
             105578..105581 'gid': vec3<u32>
@@ -8940,7 +8985,7 @@ fn execute(
             110996..110997 '1': integer
             111001..111013 'RESULT_COUNT': u32
             111016..111017 '1': integer
-            111035..111096 'atomic..._code)': [error]
+            111035..111096 'atomic..._code)': __atomic_compare_exchange_result
             111061..111080 '&resul...index]': ptr<storage, atomic<u32>, read_write>
             111062..111069 'results': ref<storage, array<atomic<u32>>, read_write>
             111062..111080 'result...index]': ref<storage, atomic<u32>, read_write>
@@ -8971,6 +9016,7 @@ fn execute(
             111723..111741 'batch_...rogram': ref<storage, Program, read>
             111723..111753 'batch_..._table': ref<storage, [error], read>
             111723..111764 'batch_...r.dst]': [error]
+            111723..111777 'batch_...offset': [error]
             111754..111759 'instr': Instruction
             111754..111763 'instr.dst': u32
             112193..112202 'OP_BRANCH': u32
@@ -8994,6 +9040,7 @@ fn execute(
             112417..112435 'batch_...rogram': ref<storage, Program, read>
             112417..112447 'batch_..._table': ref<storage, [error], read>
             112417..112459 'batch_....aux0]': [error]
+            112417..112472 'batch_...offset': [error]
             112448..112453 'instr': Instruction
             112448..112458 'instr.aux0': u32
             112519..112527 'block_id': ref<function, u32, read_write>
@@ -9004,6 +9051,7 @@ fn execute(
             112567..112585 'batch_...rogram': ref<storage, Program, read>
             112567..112597 'batch_..._table': ref<storage, [error], read>
             112567..112609 'batch_....aux1]': [error]
+            112567..112622 'batch_...offset': [error]
             112598..112603 'instr': Instruction
             112598..112608 'instr.aux1': u32
             113189..113198 'OP_SWITCH': u32
@@ -9040,10 +9088,12 @@ fn execute(
             113582..113597 'case_offset + i': u32
             113596..113597 'i': ref<function, u32, read_write>
             113623..113628 'entry': [error]
+            113623..113637 'entry.case_val': [error]
             113623..113644 'entry....== val': [error]
             113641..113644 'val': u32
             113671..113683 'target_block': ref<function, u32, read_write>
             113686..113691 'entry': [error]
+            113686..113704 'entry...._block': [error]
             113793..113803 'prev_block': ref<function, u32, read_write>
             113806..113814 'block_id': ref<function, u32, read_write>
             113832..113840 'block_id': ref<function, u32, read_write>
@@ -9053,6 +9103,7 @@ fn execute(
             113878..113896 'batch_...rogram': ref<storage, Program, read>
             113878..113908 'batch_..._table': ref<storage, [error], read>
             113878..113922 'batch_...block]': [error]
+            113878..113935 'batch_...offset': [error]
             113909..113921 'target_block': ref<function, u32, read_write>
             114905..114912 'OP_CALL': u32
             114935..114942 'func_id': u32
@@ -9093,7 +9144,7 @@ fn execute(
             115455..115456 '1': integer
             115460..115472 'RESULT_COUNT': u32
             115475..115476 '1': integer
-            115498..115571 'atomic...RFLOW)': [error]
+            115498..115571 'atomic...RFLOW)': __atomic_compare_exchange_result
             115524..115541 '&resul...r_idx]': ptr<storage, atomic<u32>, read_write>
             115525..115532 'results': ref<storage, array<atomic<u32>>, read_write>
             115525..115541 'result...r_idx]': ref<storage, atomic<u32>, read_write>
@@ -9153,6 +9204,7 @@ fn execute(
             116227..116229 '1u': u32
             116330..116340 'param_base': [error]
             116343..116347 'func': [error]
+            116343..116362 'func.p...se_reg': [error]
             116389..116390 'i': ref<function, u32, read_write>
             116393..116395 '0u': u32
             116397..116398 'i': ref<function, u32, read_write>
@@ -9177,11 +9229,13 @@ fn execute(
             116579..116586 'arg_reg': [error]
             116688..116696 'block_id': ref<function, u32, read_write>
             116699..116703 'func': [error]
+            116699..116718 'func.e...ock_id': [error]
             116736..116738 'pc': ref<function, u32, read_write>
             116741..116751 'batch_data': ref<storage, BatchData, read>
             116741..116759 'batch_...rogram': ref<storage, Program, read>
             116741..116771 'batch_..._table': ref<storage, [error], read>
             116741..116781 'batch_...ck_id]': [error]
+            116741..116794 'batch_...offset': [error]
             116772..116780 'block_id': ref<function, u32, read_write>
             117233..117247 'OP_CALL_RETURN': u32
             117269..117274 'shots': ref<storage, array<ShotData>, read_write>
@@ -9205,7 +9259,7 @@ fn execute(
             117435..117436 '1': integer
             117440..117452 'RESULT_COUNT': u32
             117455..117456 '1': integer
-            117478..117552 'atomic...RFLOW)': [error]
+            117478..117552 'atomic...RFLOW)': __atomic_compare_exchange_result
             117504..117521 '&resul...r_idx]': ptr<storage, atomic<u32>, read_write>
             117505..117512 'results': ref<storage, array<atomic<u32>>, read_write>
             117505..117521 'result...r_idx]': ref<storage, atomic<u32>, read_write>
@@ -9768,7 +9822,7 @@ fn execute(
             130592..130593 '1': integer
             130597..130609 'RESULT_COUNT': u32
             130612..130613 '1': integer
-            130639..130712 'atomic...CTION)': [error]
+            130639..130712 'atomic...CTION)': __atomic_compare_exchange_result
             130665..130682 '&resul...r_idx]': ptr<storage, atomic<u32>, read_write>
             130666..130673 'results': ref<storage, array<atomic<u32>>, read_write>
             130666..130682 'result...r_idx]': ref<storage, atomic<u32>, read_write>
@@ -9859,7 +9913,7 @@ fn execute(
             132209..132210 '1': integer
             132214..132226 'RESULT_COUNT': u32
             132229..132230 '1': integer
-            132256..132329 'atomic...CTION)': [error]
+            132256..132329 'atomic...CTION)': __atomic_compare_exchange_result
             132282..132299 '&resul...r_idx]': ptr<storage, atomic<u32>, read_write>
             132283..132290 'results': ref<storage, array<atomic<u32>>, read_write>
             132283..132299 'result...r_idx]': ref<storage, atomic<u32>, read_write>
@@ -10163,6 +10217,7 @@ fn execute(
             139357..139367 'offset + i': u32
             139366..139367 'i': ref<function, u32, read_write>
             139393..139398 'entry': [error]
+            139393..139407 'entry.block_id': [error]
             139393..139421 'entry...._block': [error]
             139411..139421 'prev_block': ref<function, u32, read_write>
             139448..139513 'write_..._reg))': [error]
@@ -10172,6 +10227,7 @@ fn execute(
             139479..139512 'read_r...l_reg)': u32
             139488..139496 'shot_idx': u32
             139498..139503 'entry': [error]
+            139498..139511 'entry.val_reg': [error]
             139602..139604 'pc': ref<function, u32, read_write>
             140050..140059 'OP_SELECT': u32
             140082..140086 'cond': bool
@@ -10260,7 +10316,7 @@ fn execute(
             141704..141705 '1': integer
             141709..141721 'RESULT_COUNT': u32
             141724..141725 '1': integer
-            141747..141821 'atomic...OUNDS)': [error]
+            141747..141821 'atomic...OUNDS)': __atomic_compare_exchange_result
             141773..141790 '&resul...r_idx]': ptr<storage, atomic<u32>, read_write>
             141774..141781 'results': ref<storage, array<atomic<u32>>, read_write>
             141774..141790 'result...r_idx]': ref<storage, atomic<u32>, read_write>
@@ -10311,7 +10367,7 @@ fn execute(
             142544..142545 '1': integer
             142549..142561 'RESULT_COUNT': u32
             142564..142565 '1': integer
-            142587..142661 'atomic...OUNDS)': [error]
+            142587..142661 'atomic...OUNDS)': __atomic_compare_exchange_result
             142613..142630 '&resul...r_idx]': ptr<storage, atomic<u32>, read_write>
             142614..142621 'results': ref<storage, array<atomic<u32>>, read_write>
             142614..142630 'result...r_idx]': ref<storage, atomic<u32>, read_write>
@@ -10377,7 +10433,7 @@ fn execute(
             143514..143515 '1': integer
             143519..143531 'RESULT_COUNT': u32
             143534..143535 '1': integer
-            143557..143631 'atomic...OUNDS)': [error]
+            143557..143631 'atomic...OUNDS)': __atomic_compare_exchange_result
             143583..143600 '&resul...r_idx]': ptr<storage, atomic<u32>, read_write>
             143584..143591 'results': ref<storage, array<atomic<u32>>, read_write>
             143584..143600 'result...r_idx]': ref<storage, atomic<u32>, read_write>
@@ -10473,30 +10529,22 @@ fn execute(
             145144..145184 'shots[...ock_id': ref<storage, u32, read_write>
             145150..145158 'shot_idx': u32
             145187..145197 'prev_block': ref<function, u32, read_write>
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(122)), kind: Resolution(UnresolvedName { name: Name("atomicCompareExchangeWeak") }) } } in Body
-            ArrayAccessInvalidType { expression: Idx::<Expression>(148), type: Type(305c) } in Body
-            ArrayAccessInvalidType { expression: Idx::<Expression>(171), type: Type(305c) } in Body
-            ArrayAccessInvalidType { expression: Idx::<Expression>(182), type: Type(305c) } in Body
-            ArrayAccessInvalidType { expression: Idx::<Expression>(209), type: Type(305c) } in Body
-            ArrayAccessInvalidType { expression: Idx::<Expression>(226), type: Type(305c) } in Body
-            ArrayAccessInvalidType { expression: Idx::<Expression>(239), type: Type(305c) } in Body
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(267)), kind: Resolution(UnresolvedName { name: Name("atomicCompareExchangeWeak") }) } } in Body
-            ArrayAccessInvalidType { expression: Idx::<Expression>(332), type: Type(305c) } in Body
+            111723..111764 'batch_...r.dst]': cannot index into type ref<storage, [error], read>
+            112417..112459 'batch_....aux0]': cannot index into type ref<storage, [error], read>
+            112567..112609 'batch_....aux1]': cannot index into type ref<storage, [error], read>
+            113550..113598 'batch_...t + i]': cannot index into type ref<storage, [error], read>
+            113878..113922 'batch_...block]': cannot index into type ref<storage, [error], read>
+            115073..115115 'batch_...nc_id]': cannot index into type ref<storage, [error], read>
+            116453..116502 'batch_...t + i]': cannot index into type ref<storage, [error], read>
             116579..116586 'arg_reg': expected u32 but got [error]
             116544..116558 'param_base + i': expected u32 but got [error]
-            ArrayAccessInvalidType { expression: Idx::<Expression>(349), type: Type(305c) } in Body
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(378)), kind: Resolution(UnresolvedName { name: Name("atomicCompareExchangeWeak") }) } } in Body
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(923)), kind: Resolution(UnresolvedName { name: Name("atomicCompareExchangeWeak") }) } } in Body
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(1010)), kind: Resolution(UnresolvedName { name: Name("atomicCompareExchangeWeak") }) } } in Body
-            ArrayAccessInvalidType { expression: Idx::<Expression>(1297), type: Type(305c) } in Body
+            116741..116781 'batch_...ck_id]': cannot index into type ref<storage, [error], read>
+            139328..139368 'batch_...t + i]': cannot index into type ref<storage, [error], read>
             139498..139511 'entry.val_reg': expected u32 but got [error]
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(1398)), kind: Resolution(UnresolvedName { name: Name("atomicCompareExchangeWeak") }) } } in Body
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(1447)), kind: Resolution(UnresolvedName { name: Name("atomicCompareExchangeWeak") }) } } in Body
-            ArrayAccessInvalidType { expression: Idx::<Expression>(1467), type: Type(304f) } in Body
+            142908..142943 'shots[...[addr]': cannot index into type ref<storage, [error], read_write>
             142992..142995 'val': expected u32 but got [error]
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(1509)), kind: Resolution(UnresolvedName { name: Name("atomicCompareExchangeWeak") }) } } in Body
-            ArrayAccessInvalidType { expression: Idx::<Expression>(1529), type: Type(304f) } in Body
-            AssignmentNotAReference { left_side: Idx::<Expression>(1529), actual: Type(3000) } in Body
+            143868..143903 'shots[...[addr]': cannot index into type ref<storage, [error], read_write>
+            [EditionedFileId(Id(1c00))] AssignmentNotAReference { left_side: Idx::<Expression>(1529), actual: Type(3000) } in Body
             145649..145657 'shot_idx': u32
             145674..145678 'shot': ptr<storage, ShotData, read_write>
             145681..145697 '&shots...t_idx]': ptr<storage, ShotData, read_write>

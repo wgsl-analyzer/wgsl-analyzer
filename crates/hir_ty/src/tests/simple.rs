@@ -44,7 +44,8 @@ fn field_expression_on_error_type() {
             23..33 'Nonsense()': [error]
             43..44 'a': [error]
             47..48 'x': [error]
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(0)), kind: Resolution(UnresolvedName { name: Name("Nonsense") }) } } in Body
+            47..57 'x.nonsense': [error]
+            23..33 'Nonsense()': `Nonsense` not found in scope
         "#]],
     );
 }
@@ -66,8 +67,7 @@ fn index_expression_on_error_type() {
             47..48 'x': [error]
             47..51 'x[0]': [error]
             49..50 '0': integer
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(0)), kind: Resolution(UnresolvedName { name: Name("Nonsense") }) } } in Body
-            ArrayAccessInvalidType { expression: Idx::<Expression>(3), type: Type(2400) } in Body
+            23..33 'Nonsense()': `Nonsense` not found in scope
         "#]],
     );
 }
@@ -385,29 +385,6 @@ fn no_such_field_on_vec_ptr() {
 }
 
 #[test]
-fn zero_swizzle_vec() {
-    check_infer(
-        ExtensionsConfig::default(),
-        "
-        fn foo() {
-            let v = vec2(0, 0);
-            let x = v.;
-        }
-        ",
-        expect![[r#"
-            19..20 'v': vec2<i32>
-            23..33 'vec2(0, 0)': vec2<integer>
-            28..29 '0': integer
-            31..32 '0': integer
-            43..44 'x': [error]
-            47..48 'v': vec2<i32>
-            47..49 'v.': [error]
-            47..49 'v.': no such field `[missing name]` on type `vec2<i32>`
-        "#]],
-    );
-}
-
-#[test]
 fn address_of_not_reference() {
     check_infer(
         ExtensionsConfig::default(),
@@ -423,7 +400,7 @@ fn address_of_not_reference() {
             34..39 'x_ptr': [error]
             42..44 '&x': [error]
             43..44 'x': i32
-            AddressOfNotReference { expression: Idx::<Expression>(1), actual: Type(2402) } in Body
+            [EditionedFileId(Id(1c00))] WgslError { expression: Idx::<Expression>(1), message: "cannot use unary operator `&` on type `i32`" } in Body
         "#]],
     );
 }
@@ -687,7 +664,7 @@ fn vec_xy_is_not_ref() {
             39..43 'v.xy': vec2<i32>
             46..47 'v': ref<function, vec2<i32>, read_write>
             46..50 'v.yx': vec2<i32>
-            AssignmentNotAReference { left_side: Idx::<Expression>(4), actual: Type(2407) } in Body
+            [EditionedFileId(Id(1c00))] AssignmentNotAReference { left_side: Idx::<Expression>(4), actual: Type(2409) } in Body
         "#]],
     );
 }
@@ -777,7 +754,7 @@ fn struct_constructor_not_enough_args() {
             59..60 's': [error]
             63..68 'S(1u)': [error]
             65..67 '1u': u32
-            FunctionCallArgCountMismatch { expression: Idx::<Expression>(1), n_expected: 2, n_actual: 1 } in Body
+            63..68 'S(1u)': expected `2` arguments, but received `1`
         "#]],
     );
 }
@@ -890,7 +867,7 @@ fn const_u32_as_array_size() {
             6..15 'maxLayers': u32
             18..21 '12u': u32
             27..33 'layers': ref<handle, [error], read>
-            InvalidType { error: TypeLoweringError { container: Expression(Idx::<Expression>(1)), kind: UnexpectedTemplateArgument("a `u32` or a `i32` greater than `0`") } } in Signature
+            46..55 'maxLayers': unexpected template argument, expected a `u32` or a `i32` greater than `0`
         "#]],
     );
 }
@@ -1222,7 +1199,7 @@ fn global_var_function_address_space_error() {
         "var<function> not_allowed_at_module_level: u32;",
         expect![[r#"
             14..41 'not_al..._level': ref<function, u32, read_write>
-            UnexpectedTemplateArgument { expression: Idx::<Expression>(0) } in Signature
+            [EditionedFileId(Id(1c00))] UnexpectedTemplateArgument { expression: Idx::<Expression>(0) } in Signature
         "#]],
     );
 }
@@ -1235,7 +1212,7 @@ fn no_crash_on_hex_int() {
         "
 fn f() {
     let i2 = 0u;
-    let p0 = (i2 >> 0u) & 0xf
+    let p0 = (i2 >> 0u) & 0xf;
 }
 ",
         expect![[r#"
@@ -1542,7 +1519,7 @@ fn concretize_matrix() {
         expect![[r#"
             19..20 'x': u32
             23..46 'bar(ma...0, 0))': u32
-            27..45 'mat2x2... 0, 0)': mat2x2<integer>
+            27..45 'mat2x2... 0, 0)': mat2x2<float>
             34..35 '0': integer
             37..38 '0': integer
             40..41 '0': integer
@@ -1690,7 +1667,7 @@ fn no_builtin_overload() {
             8..10 '1f': f32
             8..22 '1f + mat2x2f()': [error]
             13..22 'mat2x2f()': mat2x2<f32>
-            NoBuiltinOverload { expression: Idx::<Expression>(2), builtin: BuiltinId(2c00), name: Some("+"), parameters: [Type(2401), Type(2402)] } in Body
+            [EditionedFileId(Id(1c00))] WgslError { expression: Idx::<Expression>(2), message: "cannot use binary operator `+` with operands `f32` and `mat2x2<f32>`" } in Body
         "#]],
     );
 }
@@ -1706,7 +1683,7 @@ fn deref_not_a_pointer() {
             4..5 'x': ref<handle, [error], read>
             8..11 '*1f': [error]
             9..11 '1f': f32
-            DerefNotAPointer { expression: Idx::<Expression>(0), actual: Type(2401) } in Body
+            [EditionedFileId(Id(1c00))] WgslError { expression: Idx::<Expression>(0), message: "cannot use unary operator `*` on type `f32`" } in Body
         "#]],
     );
 }
@@ -1724,7 +1701,7 @@ fn no_constructor() {
             14..15 '1': integer
             17..18 '2': integer
             20..21 '3': integer
-            NoConstructor { expression: Idx::<Expression>(3), builtins: BuiltinId(2c00), type: Type(2403), parameters: [Type(2401), Type(2401), Type(2401)] } in Body
+            8..22 'vec2f(1, 2, 3)': no constructor for builtin `op_vec2_constructor` with parameters `integer, integer, integer`
         "#]],
     );
 }
@@ -1790,15 +1767,16 @@ fn add_refs_and_ptrs() {
             336..341 'a_ref': ref<function, i32, read_write>
             336..349 'a_ref + b_ref': i32
             344..349 'b_ref': ref<function, i32, read_write>
-            359..364 'test2': ptr<function, i32, read_write>
+            359..364 'test2': [error]
             367..372 'a_ptr': ptr<function, i32, read_write>
-            367..380 'a_ptr + b_ptr': ptr<function, i32, read_write>
+            367..380 'a_ptr + b_ptr': [error]
             375..380 'b_ptr': ptr<function, i32, read_write>
             390..395 'test3': [error]
             398..403 'a_ptr': ptr<function, i32, read_write>
             398..411 'a_ptr + b_ref': [error]
             406..411 'b_ref': ref<function, i32, read_write>
-            NoBuiltinOverload { expression: Idx::<Expression>(14), builtin: BuiltinId(3400), name: Some("+"), parameters: [Type(2c12), Type(2c10)] } in Body
+            [EditionedFileId(Id(1c00))] WgslError { expression: Idx::<Expression>(11), message: "cannot use binary operator `+` with operands `ptr<function, i32, read_write>` and `ptr<function, i32, read_write>`" } in Body
+            [EditionedFileId(Id(1c00))] WgslError { expression: Idx::<Expression>(14), message: "cannot use binary operator `+` with operands `ptr<function, i32, read_write>` and `i32`" } in Body
         "#]],
     );
 }
@@ -1857,6 +1835,203 @@ fn shift_operator_inference() {
             64..65 'x': i32
             64..69 'x & y': i32
             68..69 'y': i32
+        "#]],
+    );
+}
+
+#[test]
+fn lowering_type_missing_template_arguments() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        var x: mat4x4;
+        const m: mat4x4 = mat2x2(0, 1, 2, 3);
+        ",
+        expect![[r#"
+            4..5 'x': ref<handle, [error], read>
+            7..13 'mat4x4': missing template arguments
+            21..22 'm': [error]
+            33..51 'mat2x2... 2, 3)': mat2x2<float>
+            40..41 '0': integer
+            43..44 '1': integer
+            46..47 '2': integer
+            49..50 '3': integer
+            24..30 'mat4x4': missing template arguments
+        "#]],
+    );
+}
+
+#[test]
+fn lowering_type_missing_expected_type() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        var x: modf;
+        ",
+        expect![[r#"
+            4..5 'x': ref<handle, [error], read>
+            7..11 'modf': modf is not a type
+        "#]],
+    );
+}
+
+#[test]
+fn to_wgsl_types_builtin_struct() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        fn foo() {
+            let x = modf(1.0);
+            let y = modf(x);
+        }
+        ",
+        expect![[r#"
+            19..20 'x': __modf_result_abstract
+            23..32 'modf(1.0)': __modf_result_abstract
+            28..31 '1.0': float
+            42..43 'y': [error]
+            46..53 'modf(x)': [error]
+            51..52 'x': __modf_result_abstract
+            [EditionedFileId(Id(1c00))] WgslError { expression: Idx::<Expression>(3), message: "`modf` expects a float scalar or vector argument" } in Body
+        "#]],
+    );
+}
+
+#[test]
+fn lower_function_as_template_argument() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        fn foo() {
+            let y = array<foo>(1.0);
+        }
+        ",
+        expect![[r#"
+            19..20 'y': array<[error]>
+            23..38 'array<foo>(1.0)': array<[error]>
+            34..37 '1.0': float
+            34..37 '1.0': expected [error] but got float
+            29..32 'foo': foo was written, write foo() instead
+        "#]],
+    );
+}
+
+#[test]
+fn builtin_struct_not_constructible() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        fn foo() {
+            let y = __modf_result_abstract(1.0, 0.1);
+        }
+        ",
+        expect![[r#"
+            19..20 'y': [error]
+            23..55 '__modf..., 0.1)': [error]
+            46..49 '1.0': float
+            51..54 '0.1': float
+            23..55 '__modf..., 0.1)': `__modf_result_abstract` not found in scope
+        "#]],
+    );
+}
+
+#[test]
+fn lower_call_uncallable_diagnostic() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        fn foo() {
+            let y = rgba16float();
+        }
+        ",
+        expect![[r#"
+            19..20 'y': [error]
+            23..36 'rgba16float()': [error]
+            23..36 'rgba16float()': expected function, but got enumerant `rgba16float`
+        "#]],
+    );
+}
+
+#[test]
+fn not_convertible() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        fn foo() {
+            let x = 1i * 1.0f;
+        }
+        ",
+        expect![[r#"
+            19..20 'x': [error]
+            23..25 '1i': i32
+            23..32 '1i * 1.0f': [error]
+            28..32 '1.0f': f32
+            [EditionedFileId(Id(1c00))] WgslError { expression: Idx::<Expression>(2), message: "cannot use binary operator `*` with operands `i32` and `f32`" } in Body
+        "#]],
+    );
+}
+
+#[test]
+fn sampler_comparison_no_template() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        var x: sampler_comparison<wrong>;
+        ",
+        expect![[r#"
+            4..5 'x': ref<handle, sampler_comparison, read>
+            26..31 'wrong': `wrong` not found in scope
+            26..31 'wrong': unexpected template argument, expected nothing
+        "#]],
+    );
+}
+
+#[test]
+fn ptr_template_not_enumerant() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        fn foo1(bar1: ptr<rgba8unorm, i32, read_write>) { }
+        fn foo2(bar2: ptr<storage, 123i, read_write>) { }
+        fn foo3(bar3: ptr<storage, i32, rgba8unorm>) { }
+        fn foo4(bar4: ptr<storage, i32>) { }
+        ",
+        expect![[r#"
+            8..12 'bar1': [error]
+            18..28 'rgba8unorm': unexpected template argument, expected an address space
+            60..64 'bar2': ptr<storage, [error], read_write>
+            79..83 '123i': unexpected template argument, expected a type
+            110..114 'bar3': [error]
+            134..144 'rgba8unorm': unexpected template argument, expected one of: (read, read_write, write)
+            159..163 'bar4': ptr<storage, i32, read>
+        "#]],
+    );
+}
+
+#[test]
+fn small_fragment_shader() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+@fragment
+fn main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
+    var x: f32;
+    @if (true)
+    {
+        var x = 1i;
+    }
+    return vec4(vec3(x), 1);
+}
+        ",
+        expect![[r#"
+            37..40 'pos': vec4<f32>
+            81..82 'x': ref<function, f32, read_write>
+            122..123 'x': ref<function, i32, read_write>
+            126..128 '1i': i32
+            147..163 'vec4(v...x), 1)': vec4<f32>
+            152..159 'vec3(x)': vec3<f32>
+            157..158 'x': ref<function, f32, read_write>
+            161..162 '1': integer
         "#]],
     );
 }
