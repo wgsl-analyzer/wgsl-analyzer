@@ -168,20 +168,31 @@ pub struct AttributesWithOwner {
     pub owner: AttributeDefId,
 }
 
+#[salsa::tracked]
 impl AttributesWithOwner {
-    pub(crate) fn attrs_query(
-        database: &dyn DefDatabase,
+    #[salsa::tracked(returns(deref))]
+    pub fn of(
+        db: &dyn DefDatabase,
+        definition: AttributeDefId,
+    ) -> Arc<Self> {
+        Self::with_source_map(db, definition).0.clone()
+    }
+
+    #[salsa::tracked(returns(ref))]
+
+    pub fn with_source_map(
+        db: &dyn DefDatabase,
         definition: AttributeDefId,
     ) -> (Arc<Self>, Arc<ExpressionSourceMap>) {
         let (attributes, source_map) = match definition {
             AttributeDefId::Struct(id) => {
-                AttributeList::from_src(database, &id.lookup(database).source(database).value)
+                AttributeList::from_src(db, &id.lookup(db).source(db).value)
             },
             AttributeDefId::Function(id) => {
-                AttributeList::from_src(database, &id.lookup(database).source(database).value)
+                AttributeList::from_src(db, &id.lookup(db).source(db).value)
             },
             AttributeDefId::GlobalVariable(id) => {
-                AttributeList::from_src(database, &id.lookup(database).source(database).value)
+                AttributeList::from_src(db, &id.lookup(db).source(db).value)
             },
         };
 
