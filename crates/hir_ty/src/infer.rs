@@ -21,7 +21,7 @@ use hir_def::{
     resolver::{ResolveKind, Resolver},
     signature::{
         ConstantSignature, FieldId, FunctionSignature, OverrideSignature, StructSignature,
-        VariableSignature,
+        TypeAliasSignature, VariableSignature,
     },
     type_ref::{self, VecDimensionality},
     type_specifier::{IdentExpression, TypeSpecifierId},
@@ -165,7 +165,7 @@ fn get_name_and_range(
                 .range,
         ),
         ModuleDefinitionId::TypeAlias(id) => (
-            database.type_alias_data(id).0.name.clone(),
+            TypeAliasSignature::of(database, id).name.clone(),
             id.lookup(database)
                 .source(database)
                 .original_file_range(database)

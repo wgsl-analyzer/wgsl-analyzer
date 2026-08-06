@@ -12,9 +12,16 @@ use std::{fmt::Write as _, ops::ControlFlow};
 use base_db::{EditionedFileId, Intern as _, Lookup as _};
 use expect_test::Expect;
 use hir_def::{
-    HasSource as _, body::{Body, BodySourceMap}, database::{
+    HasSource as _,
+    body::{Body, BodySourceMap},
+    database::{
         DefDatabase as _, DefinitionWithBodyId, InternDatabase as _, Location, ModuleDefinitionId,
-    }, expression::ExpressionId, expression_store::{ExpressionSourceMap, ExpressionStoreSource, SyntheticSyntax}, item_tree::{ItemTree, ModuleItemId, Name}, signature::StructSignature, type_specifier::{self, TypeSpecifierId},
+    },
+    expression::ExpressionId,
+    expression_store::{ExpressionSourceMap, ExpressionStoreSource, SyntheticSyntax},
+    item_tree::{ItemTree, ModuleItemId, Name},
+    signature::{StructSignature, TypeAliasSignature},
+    type_specifier::{self, TypeSpecifierId},
 };
 use itertools::Itertools as _;
 use salsa::Durability;
@@ -108,7 +115,7 @@ impl<'db> InferPrinter<'db> {
                     }
                 },
                 ModuleDefinitionId::TypeAlias(id) => {
-                    let (_, signature_map) = self.database.type_alias_data(id);
+                    let (_, signature_map) = TypeAliasSignature::with_source_map(self.database, id);
                     let (_, diagnostics) = &*self.database.type_alias_type(id);
                     for diagnostic in diagnostics {
                         self.print_diagnostic(diagnostic, &signature_map, buffer);

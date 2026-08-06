@@ -142,15 +142,25 @@ pub struct TypeAliasSignature {
     pub r#type: TypeSpecifierId,
 }
 
+#[salsa::tracked]
 impl TypeAliasSignature {
-    pub fn query(
-        database: &dyn DefDatabase,
-        function: TypeAliasId,
-    ) -> (Arc<Self>, Arc<ExpressionSourceMap>) {
-        let location = function.lookup(database);
-        let source = location.source(database);
+    #[salsa::tracked(returns(deref))]
+    pub fn of(
+        db: &dyn DefDatabase,
+        id: TypeAliasId,
+    ) -> Arc<Self> {
+        Self::with_source_map(db, id).0.clone()
+    }
 
-        let (type_alias, source_map) = lower_type_alias(database, &source);
+    #[salsa::tracked(returns(ref))]
+    pub fn with_source_map(
+        db: &dyn DefDatabase,
+        id: TypeAliasId,
+    ) -> (Arc<Self>, Arc<ExpressionSourceMap>) {
+        let location = id.lookup(db);
+        let source = location.source(db);
+
+        let (type_alias, source_map) = lower_type_alias(db, &source);
         (Arc::new(type_alias), Arc::new(source_map))
     }
 }
