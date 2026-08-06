@@ -7,8 +7,8 @@ use syntax::{
 
 use crate::{
     ast_parse::{
-        FilterAction, IgnoreBlankspace, NoTrivia, parse_end, parse_node_with_trivia_filter,
-        parse_node_with_trivia_until,
+        FilterAction, IgnoreBlankspace, NoTrivia, parse_end, parse_node_with,
+        parse_node_with_trivia_filter,
     },
     generators::node::gen_node_with_trivia,
     print_item_buffer::{PrintItemBuffer, spacing_request::Request},
@@ -20,11 +20,11 @@ pub fn gen_field_expression(
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = put_back(field_expression.syntax().children_with_tokens());
-    let item_struct_expr = parse_node_with_trivia_until(&mut syntax, IgnoreBlankspace)
-        .expect_castable_kind::<ast::Expression>()?;
-    let item_period = parse_node_with_trivia_until(&mut syntax, NoTrivia)
-        .expect_kind(parser::SyntaxKind::Period)?;
-    let item_target_ident = parse_node_with_trivia_until(&mut syntax, IgnoreBlankspace)
+    let item_struct_expr =
+        parse_node_with(&mut syntax, IgnoreBlankspace).expect_castable_kind::<ast::Expression>()?;
+    let item_period =
+        parse_node_with(&mut syntax, NoTrivia).expect_kind(parser::SyntaxKind::Period)?;
+    let item_target_ident = parse_node_with(&mut syntax, IgnoreBlankspace)
         .expect_kind(parser::SyntaxKind::Identifier)?;
     parse_end(&mut syntax)?;
 
