@@ -7,7 +7,10 @@ use syntax::{
 };
 
 use crate::{
-    ast_parse::{parse_end, parse_node_optional, parse_token, parse_token_optional},
+    ast_parse::{
+        NoTrivia, parse_end, parse_node_optional, parse_node_with, parse_token,
+        parse_token_optional,
+    },
     context_policies::statement_needs_semicolon_policy,
     generators::{
         comments::{gen_comments, parse_many_comments_and_blankspace},
@@ -25,7 +28,7 @@ pub fn gen_return_statement(
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = put_back(statement.syntax().children_with_tokens());
-    parse_token(&mut syntax, SyntaxKind::Return)?;
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::Return)?;
     let comments_after_return = parse_many_comments_and_blankspace(&mut syntax)?;
     let item_expression = parse_node_optional::<Expression>(&mut syntax);
     let comments_after_expression = parse_many_comments_and_blankspace(&mut syntax)?;

@@ -7,7 +7,9 @@ use syntax::{
 };
 
 use crate::{
-    ast_parse::{parse_end, parse_node, parse_token, parse_token_optional},
+    ast_parse::{
+        NoTrivia, parse_end, parse_node, parse_node_with, parse_token, parse_token_optional,
+    },
     context_policies::statement_needs_semicolon_policy,
     generators::{
         comments::{gen_comments, parse_many_comments_and_blankspace},
@@ -40,7 +42,7 @@ pub fn gen_increment_decrement_statement(
     let inc_dec = if parse_token_optional(&mut syntax, SyntaxKind::PlusPlus).is_some() {
         IncrementDecrement::Increment
     } else {
-        parse_token(&mut syntax, SyntaxKind::MinusMinus)?;
+        parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::MinusMinus)?;
         IncrementDecrement::Decrement
     };
     let item_comments_after_inc_dec = parse_many_comments_and_blankspace(&mut syntax)?;

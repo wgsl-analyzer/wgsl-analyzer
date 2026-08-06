@@ -7,7 +7,10 @@ use syntax::{
 };
 
 use crate::{
-    ast_parse::{FilterAction, parse_end, parse_node_with_trivia_filter, parse_token},
+    ast_parse::{
+        FilterAction, NoTrivia, parse_end, parse_node_with, parse_node_with_trivia_filter,
+        parse_token,
+    },
     context_policies::collapse_one_liner_compound_statement_policy,
     generators::node::gen_node_with_trivia,
     helpers::{NextGenLineSpacing, read_blankspace},
@@ -28,7 +31,7 @@ pub fn gen_compound_statement(
     // ==== Parse ====
 
     let mut syntax = put_back(node.syntax().children_with_tokens());
-    parse_token(&mut syntax, SyntaxKind::BraceLeft)?;
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::BraceLeft)?;
 
     let mut items = Vec::new();
 
@@ -78,7 +81,7 @@ pub fn gen_compound_statement(
             break;
         }
     }
-    parse_token(&mut syntax, SyntaxKind::BraceRight)?;
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::BraceRight)?;
     parse_end(&mut syntax)?;
 
     let body_empty = items.iter().all(NodeWithTrivia::is_whitespace);

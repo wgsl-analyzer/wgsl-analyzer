@@ -7,7 +7,9 @@ use syntax::{
 };
 
 use crate::{
-    ast_parse::{parse_end, parse_node, parse_node_by_kind_optional, parse_token},
+    ast_parse::{
+        NoTrivia, parse_end, parse_node, parse_node_by_kind_optional, parse_node_with, parse_token,
+    },
     generators::{
         attributes::{AttributeLayout, gen_attributes, parse_many_attributes},
         comments::{gen_comments, parse_many_comments_and_blankspace},
@@ -26,21 +28,21 @@ pub fn gen_for_statement(statement: &ast::ForStatement) -> FormatDocumentResult<
     // ==== Parse ====
     let mut syntax = put_back(statement.syntax().children_with_tokens());
     let item_attributes = parse_many_attributes(&mut syntax)?;
-    parse_token(&mut syntax, SyntaxKind::For)?;
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::For)?;
     let comments_after_for = parse_many_comments_and_blankspace(&mut syntax)?;
-    parse_token(&mut syntax, SyntaxKind::ParenthesisLeft)?;
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::ParenthesisLeft)?;
     let comments_after_open_paren = parse_many_comments_and_blankspace(&mut syntax)?;
     let item_initializer = parse_node_by_kind_optional(&mut syntax, SyntaxKind::ForInitializer);
     let comments_after_initializer = parse_many_comments_and_blankspace(&mut syntax)?;
-    parse_token(&mut syntax, SyntaxKind::Semicolon)?;
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::Semicolon)?;
     let comments_after_initializer_semicolon = parse_many_comments_and_blankspace(&mut syntax)?;
     let item_condition = parse_node_by_kind_optional(&mut syntax, SyntaxKind::ForCondition);
     let comments_after_condition = parse_many_comments_and_blankspace(&mut syntax)?;
-    parse_token(&mut syntax, SyntaxKind::Semicolon)?;
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::Semicolon)?;
     let comments_after_condition_semicolon = parse_many_comments_and_blankspace(&mut syntax)?;
     let item_continuing = parse_node_by_kind_optional(&mut syntax, SyntaxKind::ForContinuingPart);
     let comments_after_continuing = parse_many_comments_and_blankspace(&mut syntax)?;
-    parse_token(&mut syntax, SyntaxKind::ParenthesisRight)?;
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::ParenthesisRight)?;
     let comments_after_close_paren = parse_many_comments_and_blankspace(&mut syntax)?;
     let item_body = parse_node::<CompoundStatement>(&mut syntax)?;
     parse_end(&mut syntax)?;

@@ -8,7 +8,7 @@ use syntax::{
 
 use crate::{
     ast_parse::{
-        FilterAction, IgnoreBlankspace, parse_end, parse_node, parse_node_with,
+        FilterAction, IgnoreBlankspace, NoTrivia, parse_end, parse_node, parse_node_with,
         parse_node_with_trivia_filter, parse_token,
     },
     generators::{
@@ -28,7 +28,7 @@ pub fn gen_continuing_statement(
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = put_back(statement.syntax().children_with_tokens());
-    parse_token(&mut syntax, SyntaxKind::Continuing)?;
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::Continuing)?;
     let item_body = parse_node_with(&mut syntax, IgnoreBlankspace)
         .expect_kind(SyntaxKind::CompoundStatement)?;
     parse_end(&mut syntax)?;

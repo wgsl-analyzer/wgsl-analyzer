@@ -4,7 +4,7 @@ use parser::SyntaxKind;
 use syntax::{AstNode as _, ast};
 
 use crate::{
-    ast_parse::{parse_end, parse_token, parse_token_optional},
+    ast_parse::{NoTrivia, parse_end, parse_node_with, parse_token, parse_token_optional},
     context_policies::statement_needs_semicolon_policy,
     generators::comments::{gen_comments, parse_many_comments_and_blankspace},
     print_item_buffer::{
@@ -20,7 +20,7 @@ pub fn gen_break_statement(node: &ast::BreakStatement) -> FormatDocumentResult<P
     // the formatter to get out of it. This exists to ensure we don't accidentally delete
     // user's code should future changes to wgsl allow more complex break statements.
     let mut syntax = put_back(node.syntax().children_with_tokens());
-    parse_token(&mut syntax, SyntaxKind::Break)?;
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::Break)?;
     let comments_after_break = parse_many_comments_and_blankspace(&mut syntax)?;
     parse_token_optional(&mut syntax, SyntaxKind::Semicolon);
     parse_end(&mut syntax)?;
