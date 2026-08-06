@@ -254,13 +254,10 @@ where
                     }
                 },
             }
-            dbg!(&node, action, &preceding_trivia, &succeeding_trivia);
         } else {
             break NodeWithTriviaContent::End;
         }
     };
-
-    dbg!(&content, &preceding_trivia);
 
     while let Some(node) = syntax.next() {
         let action = filter(&node);
@@ -281,10 +278,10 @@ where
                     succeeding_trivia.push(NodeTriviaItem::LineSpacing(line_spacing));
                 } else if let Some(comment) = read_comment(&node) {
                     succeeding_trivia.push(NodeTriviaItem::Comment(comment));
-                } else if let NodeOrToken::Node(node) = &node
-                    && let Some(attributes) = AttributeList::cast(node.clone())
-                {
-                    succeeding_trivia.push(NodeTriviaItem::AttributeList(attributes));
+                } else if node.kind() == SyntaxKind::AttributeList {
+                    // Attributes are always "before" the item they are attached to
+                    syntax.put_back(node);
+                    break;
                 } else {
                     // This belongs into the "content" of the next call to parse_node_...
                     syntax.put_back(node);

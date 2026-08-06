@@ -7,16 +7,19 @@ use syntax::{
 };
 
 use crate::{
-    ast_parse::{parse_end, parse_node_with_trivia, parse_token},
+    ast_parse::{
+        FilterAction, parse_end, parse_node_with_trivia, parse_node_with_trivia_filter, parse_token,
+    },
     context_policies::collapse_one_liner_compound_statement_policy,
     generators::node::gen_node_with_trivia,
+    helpers::{NextGenLineSpacing, read_blankspace},
     multiline_group::MultilineGroup,
     print_item_buffer::{
         PrintItemBuffer,
         spacing_request::{Request, RequestItem},
     },
     reporting::FormatDocumentResult,
-    trivia::{NodeWithTrivia, NodeWithTriviaContent},
+    trivia::{NodeTriviaItem, NodeWithTrivia, NodeWithTriviaContent},
 };
 
 pub fn gen_compound_statement(
@@ -32,8 +35,38 @@ pub fn gen_compound_statement(
     let mut items = Vec::new();
 
     loop {
-        let mut item = parse_node_with_trivia(&mut syntax);
+        let mut item =
+            parse_node_with_trivia_filter(&mut syntax, |node| match read_blankspace(node) {
+                Some(NextGenLineSpacing::OnelineBlankspace(_)) => Some(FilterAction::Ignored),
+                _ => None,
+            });
 
+        // We only care about newlines if they are somewhere within the trivia, not at the start or end
+        let first_interesting_item = item.preceding_trivia.iter().position(|it| {
+            !matches!(
+                it,
+                NodeTriviaItem::LineSpacing(NextGenLineSpacing::LineBreak(_))
+            )
+        });
+        if let Some(first_interesting_item) = first_interesting_item {
+            item.preceding_trivia = item.preceding_trivia.split_off(first_interesting_item);
+        } else {
+            item.preceding_trivia = Vec::new();
+        }
+        let last_interesting_item = item.succeeding_trivia.iter().rev().position(|it| {
+            !matches!(
+                it,
+                NodeTriviaItem::LineSpacing(NextGenLineSpacing::LineBreak(_))
+            )
+        });
+        if let Some(last_interesting_item) = last_interesting_item {
+            item.succeeding_trivia
+                .shrink_to(item.succeeding_trivia.len() - last_interesting_item);
+        } else {
+            item.succeeding_trivia = Vec::new();
+        }
+
+        // TODO This needs to be absorbed into parse_node..
         if matches!(item.kind(), Some(SyntaxKind::BraceRight)) {
             let old_node = std::mem::replace(&mut item.node, NodeWithTriviaContent::End);
             syntax.put_back(old_node.into_option().unwrap()); //TODO
@@ -52,6 +85,7 @@ pub fn gen_compound_statement(
 
     let body_empty = items.iter().all(NodeWithTrivia::is_whitespace);
 
+    dbg!(&items);
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
 
