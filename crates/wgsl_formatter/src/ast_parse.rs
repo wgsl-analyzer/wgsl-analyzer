@@ -204,7 +204,8 @@ impl UntilFilter for NoTrivia {
     }
 }
 
-pub fn parse_node_with_trivia_until<F>(
+/// Parses a node with surrounding trivia, based on the given strategy.
+pub fn parse_node_with<F>(
     syntax: &mut SyntaxIter,
     until: F,
 ) -> NodeWithTrivia

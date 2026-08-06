@@ -10,8 +10,7 @@ use syntax::{
 use crate::{
     ast_parse::{
         FilterAction, IgnoreBlankspace, parse_end, parse_node, parse_node_optional,
-        parse_node_with_trivia_filter, parse_node_with_trivia_until, parse_token,
-        parse_token_optional,
+        parse_node_with, parse_node_with_trivia_filter, parse_token, parse_token_optional,
     },
     generators::{
         attributes::{gen_attributes, parse_many_attributes},
@@ -44,19 +43,18 @@ pub fn gen_function_declaration(
     let mut syntax = put_back(node.syntax().children_with_tokens());
 
     parse_token(&mut syntax, SyntaxKind::Fn)?;
-    let item_name = parse_node_with_trivia_until(&mut syntax, IgnoreBlankspace)
-        .expect_kind(SyntaxKind::Name)?;
-    let item_params = parse_node_with_trivia_until(&mut syntax, IgnoreBlankspace)
+    let item_name = parse_node_with(&mut syntax, IgnoreBlankspace).expect_kind(SyntaxKind::Name)?;
+    let item_params = parse_node_with(&mut syntax, IgnoreBlankspace)
         .expect_kind(SyntaxKind::FunctionParameters)?;
     let (item_return, item_body) = {
-        let item = parse_node_with_trivia_until(&mut syntax, IgnoreBlankspace);
+        let item = parse_node_with(&mut syntax, IgnoreBlankspace);
         if item
             .kind()
             .is_some_and(|kind| kind == SyntaxKind::ReturnType)
         {
             (
                 Some(item),
-                parse_node_with_trivia_until(&mut syntax, IgnoreBlankspace)
+                parse_node_with(&mut syntax, IgnoreBlankspace)
                     .expect_kind(SyntaxKind::CompoundStatement)?,
             )
         } else {
@@ -240,8 +238,8 @@ pub fn gen_fn_return_type(syntax: &ast::ReturnType) -> FormatDocumentResult<Prin
     let mut syntax = put_back(syntax.syntax().children_with_tokens());
 
     parse_token(&mut syntax, SyntaxKind::Arrow)?;
-    let item_type_specifier = parse_node_with_trivia_until(&mut syntax, IgnoreBlankspace)
-        .expect_kind(SyntaxKind::TypeSpecifier)?;
+    let item_type_specifier =
+        parse_node_with(&mut syntax, IgnoreBlankspace).expect_kind(SyntaxKind::TypeSpecifier)?;
     parse_end(&mut syntax)?;
 
     // ==== Format ====

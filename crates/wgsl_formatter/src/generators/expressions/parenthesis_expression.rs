@@ -8,8 +8,8 @@ use syntax::{
 
 use crate::{
     ast_parse::{
-        FilterAction, IgnoreBlankspace, NoTrivia, parse_end, parse_node,
-        parse_node_with_trivia_filter, parse_node_with_trivia_until, parse_token,
+        FilterAction, IgnoreBlankspace, NoTrivia, parse_end, parse_node, parse_node_with,
+        parse_node_with_trivia_filter, parse_token,
     },
     context_policies::expression_parens_are_irrelevant_policy,
     generators::{
@@ -31,12 +31,12 @@ pub fn gen_parenthesis_expression(
     // ==== Parse ====
     let mut syntax = put_back(parenthesis_expression.syntax().children_with_tokens());
 
-    let item_paren_left = parse_node_with_trivia_until(&mut syntax, NoTrivia)
-        .expect_kind(SyntaxKind::ParenthesisLeft)?;
-    let item_content = parse_node_with_trivia_until(&mut syntax, IgnoreBlankspace)
-        .expect_castable_kind::<ast::Expression>()?;
-    let item_paren_left = parse_node_with_trivia_until(&mut syntax, NoTrivia)
-        .expect_kind(SyntaxKind::ParenthesisRight)?;
+    let item_paren_left =
+        parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::ParenthesisLeft)?;
+    let item_content =
+        parse_node_with(&mut syntax, IgnoreBlankspace).expect_castable_kind::<ast::Expression>()?;
+    let item_paren_left =
+        parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::ParenthesisRight)?;
     parse_end(&mut syntax)?;
 
     // ==== Format ====

@@ -6,8 +6,7 @@ use syntax::{
 
 use crate::{
     ast_parse::{
-        FilterAction, IgnoreBlankspace, parse_end, parse_node_with_trivia_filter,
-        parse_node_with_trivia_until,
+        FilterAction, IgnoreBlankspace, parse_end, parse_node_with, parse_node_with_trivia_filter,
     },
     generators::node::gen_node_with_trivia,
     print_item_buffer::PrintItemBuffer,
@@ -19,10 +18,9 @@ pub fn gen_ident_expression(
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = put_back(ident_expression.syntax().children_with_tokens());
-    let item_path = parse_node_with_trivia_until(&mut syntax, IgnoreBlankspace)
-        .expect_kind(SyntaxKind::Path)?;
+    let item_path = parse_node_with(&mut syntax, IgnoreBlankspace).expect_kind(SyntaxKind::Path)?;
     let item_template = {
-        let item = parse_node_with_trivia_until(&mut syntax, IgnoreBlankspace);
+        let item = parse_node_with(&mut syntax, IgnoreBlankspace);
         (item.kind() == Some(SyntaxKind::TemplateList)).then_some(item)
     };
     parse_end(&mut syntax)?;
