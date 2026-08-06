@@ -44,15 +44,21 @@ impl Index<ScopeId> for ExprScopes {
     }
 }
 
+#[salsa::tracked]
 impl ExprScopes {
-    pub fn expression_scopes_query(
+    #[salsa::tracked(returns(ref))]
+    pub fn of(
         database: &dyn DefDatabase,
         definition: DefinitionWithBodyId,
-    ) -> Arc<Self> {
+    ) -> Self {
         let body = database.body(definition);
-        Arc::new(Self::new(&body))
+        let mut scopes = Self::new(&body);
+        scopes.shrink_to_fit();
+        scopes
     }
+}
 
+impl ExprScopes {
     #[must_use]
     pub fn new(body: &Body) -> Self {
         let mut scopes = Self {
@@ -173,6 +179,17 @@ impl ExprScopes {
             parent: Some(parent),
             entries: vec![],
         })
+    }
+
+    fn shrink_to_fit(&mut self) {
+        let ExprScopes {
+            scopes,
+            scope_by_expression,
+            scope_by_statement,
+        } = self;
+        scopes.shrink_to_fit();
+        scope_by_expression.shrink_to_fit();
+        scope_by_statement.shrink_to_fit();
     }
 }
 

@@ -35,7 +35,7 @@ mod generics;
 pub struct TypeLoweringContext<'database> {
     database: &'database dyn HirDatabase,
     /// Make sure to set the correct resolver when going into function scopes.
-    resolver: &'database Resolver,
+    resolver: &'database Resolver<'database>,
     store: &'database ExpressionStore,
 
     pub(crate) diagnostics: Vec<TypeLoweringError>,
@@ -232,7 +232,7 @@ pub enum ResolvedCall {
 impl<'database> TypeLoweringContext<'database> {
     pub fn new(
         database: &'database dyn HirDatabase,
-        resolver: &'database Resolver,
+        resolver: &'database Resolver<'database>,
         store: &'database ExpressionStore,
     ) -> Self {
         Self {
