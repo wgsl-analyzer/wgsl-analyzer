@@ -15,7 +15,9 @@ use hir_def::{
         GlobalVariableId, ImportId, Location, OverrideId, StructId, TypeAliasId,
     },
     expression::{ExpressionId, StatementId},
-    expression_store::{ExpressionStoreSource, path::Path},
+    expression_store::{
+        ExpressionStore, ExpressionStoreOwnerId, ExpressionStoreSource, path::Path,
+    },
     item_scope::ItemScope,
     item_tree::{self, ItemTree, ModuleItemId, Name},
     mod_path::PathKind,
@@ -957,7 +959,10 @@ fn check_type_errors(
 ) {
     if let Some(definition) = item.as_def_with_body_id() {
         let file = definition.file_id(database);
-        let (_, signature_map) = database.signature_with_source_map(definition);
+        let (_, signature_map) = ExpressionStore::with_source_map(
+            database,
+            ExpressionStoreOwnerId::Signature(definition),
+        );
         let (_, source_map) = Body::with_source_map(database, definition);
         let infer = InferenceResult::of(database, definition);
         for diagnostic in infer.diagnostics() {
@@ -965,7 +970,7 @@ fn check_type_errors(
                 &diagnostic.kind,
                 match diagnostic.source {
                     ExpressionStoreSource::Body => source_map.expression_source_map(),
-                    ExpressionStoreSource::Signature => &signature_map,
+                    ExpressionStoreSource::Signature => signature_map,
                 },
                 file,
             ) {

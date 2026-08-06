@@ -8,7 +8,13 @@ use rustc_hash::{FxHashMap, FxHashSet};
 use syntax::{ast, pointer::AstPointer};
 
 use crate::{
+    body::Body,
+    database::{DefDatabase, DefinitionWithBodyId},
     expression::{Expression, ExpressionId},
+    signature::{
+        AssertStatementSignature, ConstantSignature, FunctionSignature, OverrideSignature,
+        VariableSignature,
+    },
     type_specifier::{TypeSpecifier, TypeSpecifierId},
 };
 
@@ -38,6 +44,14 @@ pub enum ExpressionStoreSource {
     Signature,
 }
 
+/// Owner of an expression store - either a body or a signature.
+// NOTE: This type cannot be `salsa::Supertype` as its variants are overlapping.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ExpressionStoreOwnerId {
+    Signature(DefinitionWithBodyId),
+    Body(DefinitionWithBodyId),
+}
+
 impl Index<ExpressionId> for ExpressionStore {
     type Output = Expression;
 
@@ -59,6 +73,63 @@ impl Index<TypeSpecifierId> for ExpressionStore {
         index: TypeSpecifierId,
     ) -> &TypeSpecifier {
         &self.types[index]
+    }
+}
+
+impl ExpressionStore {
+    pub fn of(
+        database: &dyn DefDatabase,
+        owner: ExpressionStoreOwnerId,
+    ) -> &Self {
+        match owner {
+            ExpressionStoreOwnerId::Signature(DefinitionWithBodyId::Function(id)) => {
+                &FunctionSignature::of(database, id).store
+            },
+            ExpressionStoreOwnerId::Signature(DefinitionWithBodyId::GlobalVariable(id)) => {
+                &VariableSignature::of(database, id).store
+            },
+            ExpressionStoreOwnerId::Signature(DefinitionWithBodyId::GlobalConstant(id)) => {
+                &ConstantSignature::of(database, id).store
+            },
+            ExpressionStoreOwnerId::Signature(DefinitionWithBodyId::Override(id)) => {
+                &OverrideSignature::of(database, id).store
+            },
+            ExpressionStoreOwnerId::Signature(DefinitionWithBodyId::GlobalAssertStatement(id)) => {
+                &AssertStatementSignature::of(database, id).store
+            },
+            ExpressionStoreOwnerId::Body(definition) => &Body::of(database, definition).store,
+        }
+    }
+    pub fn with_source_map(
+        database: &dyn DefDatabase,
+        owner: ExpressionStoreOwnerId,
+    ) -> (&Self, &ExpressionSourceMap) {
+        match owner {
+            ExpressionStoreOwnerId::Signature(DefinitionWithBodyId::Function(id)) => {
+                let (data, source_map) = FunctionSignature::with_source_map(database, id);
+                (&data.store, source_map)
+            },
+            ExpressionStoreOwnerId::Signature(DefinitionWithBodyId::GlobalVariable(id)) => {
+                let (data, source_map) = VariableSignature::with_source_map(database, id);
+                (&data.store, source_map)
+            },
+            ExpressionStoreOwnerId::Signature(DefinitionWithBodyId::GlobalConstant(id)) => {
+                let (data, source_map) = ConstantSignature::with_source_map(database, id);
+                (&data.store, source_map)
+            },
+            ExpressionStoreOwnerId::Signature(DefinitionWithBodyId::Override(id)) => {
+                let (data, source_map) = OverrideSignature::with_source_map(database, id);
+                (&data.store, source_map)
+            },
+            ExpressionStoreOwnerId::Signature(DefinitionWithBodyId::GlobalAssertStatement(id)) => {
+                let (data, source_map) = AssertStatementSignature::with_source_map(database, id);
+                (&data.store, source_map)
+            },
+            ExpressionStoreOwnerId::Body(definition) => {
+                let (body, source_map) = Body::with_source_map(database, definition);
+                (&body.store, source_map.expression_source_map())
+            },
+        }
     }
 }
 

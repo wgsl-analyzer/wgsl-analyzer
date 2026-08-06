@@ -179,7 +179,6 @@ impl AttributesWithOwner {
     }
 
     #[salsa::tracked(returns(ref))]
-
     pub fn with_source_map(
         db: &dyn DefDatabase,
         definition: AttributeDefId,
