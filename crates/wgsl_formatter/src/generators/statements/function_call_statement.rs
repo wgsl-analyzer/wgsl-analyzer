@@ -1,7 +1,9 @@
 use dprint_core::formatting::PrintItems;
 use dprint_core_macros::sc;
-use itertools::put_back;
-use parser::SyntaxKind;
+use parser::{
+    SyntaxKind::{self},
+    SyntaxNode,
+};
 use syntax::{
     AstNode as _,
     ast::{self, Expression, FunctionCall},
@@ -9,13 +11,14 @@ use syntax::{
 
 use crate::{
     ast_parse::{
-        NoTrivia, SyntaxIter, parse_end, parse_node, parse_node_optional, parse_node_with,
-        parse_token, parse_token_optional, syntax_iter,
+        IgnoreBlankspace, NoTrivia, SyntaxIter, parse_end, parse_node, parse_node_optional,
+        parse_node_with, parse_token, parse_token_optional, syntax_iter,
     },
     context_policies::statement_needs_semicolon_policy,
     generators::{
         comments::{gen_comment, gen_comments, parse_many_comments_and_blankspace},
-        expressions::{gen_expression, ident_expression::gen_ident_expression},
+        expressions::gen_expression,
+        node::gen_node_with_trivia,
     },
     helpers::separated_items::{
         SeparatedItem, SeparatedItems, format_separated_items, parse_separated_items,
@@ -33,85 +36,77 @@ pub fn gen_function_call(
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = syntax_iter(function_call.syntax());
-    let item_identifier = parse_node::<ast::IdentExpression>(&mut syntax)?;
-    let item_comments_after_identifier = parse_many_comments_and_blankspace(&mut syntax)?;
-    let item_arguments = parse_node::<ast::Arguments>(&mut syntax)?;
+    let item_identifier =
+        parse_node_with(&mut syntax, IgnoreBlankspace).expect_kind(SyntaxKind::IdentExpression)?;
+    let item_arguments =
+        parse_node_with(&mut syntax, IgnoreBlankspace).expect_kind(SyntaxKind::Arguments)?;
     parse_end(&mut syntax)?;
-
-    let style = determine_function_call_argument_style(&item_identifier);
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
-    // Function call "name" is always an ident_expression
-    formatted.extend(gen_ident_expression(&item_identifier)?);
-    formatted.extend(gen_comments(&item_comments_after_identifier));
-
-    match style {
-        FunctionCallArgumentStyle::Standard => {
-            formatted.extend(gen_function_call_arguments(&item_arguments)?);
-        },
-        FunctionCallArgumentStyle::Tabular { width, height } => {
-            formatted.extend(gen_function_call_arguments_tabular(
-                &item_arguments,
-                width,
-                height,
-            )?);
-        },
-    }
+    formatted.extend(gen_node_with_trivia(&item_identifier)?);
+    formatted.extend(gen_node_with_trivia(&item_arguments)?);
     Ok(formatted)
 }
 
 pub fn determine_function_call_argument_style(
-    identifier: &ast::IdentExpression
+    function_call: Option<SyntaxNode>
 ) -> FunctionCallArgumentStyle {
-    if let Some(path) = identifier.path() {
-        let mut segments = path.segments();
-        let only_segment = segments.next();
-        if let Some(segment) = only_segment
-            && segments.next().is_none()
-        {
-            return match segment.text() {
-                "mat2x2" => FunctionCallArgumentStyle::Tabular {
-                    width: 2,
-                    height: 2,
-                },
-                "mat2x3" => FunctionCallArgumentStyle::Tabular {
-                    width: 3,
-                    height: 2,
-                },
-                "mat2x4" => FunctionCallArgumentStyle::Tabular {
-                    width: 4,
-                    height: 2,
-                },
-                "mat3x2" => FunctionCallArgumentStyle::Tabular {
-                    width: 2,
-                    height: 3,
-                },
-                "mat3x3" => FunctionCallArgumentStyle::Tabular {
-                    width: 3,
-                    height: 3,
-                },
-                "mat3x4" => FunctionCallArgumentStyle::Tabular {
-                    width: 4,
-                    height: 3,
-                },
-                "mat4x2" => FunctionCallArgumentStyle::Tabular {
-                    width: 2,
-                    height: 4,
-                },
-                "mat4x3" => FunctionCallArgumentStyle::Tabular {
-                    width: 3,
-                    height: 4,
-                },
-                "mat4x4" => FunctionCallArgumentStyle::Tabular {
-                    width: 4,
-                    height: 4,
-                },
-                _ => FunctionCallArgumentStyle::Standard,
-            };
+    let Some(path) = function_call
+        .and_then(FunctionCall::cast)
+        .and_then(|node| node.ident_expression())
+        .and_then(|node| node.path())
+    else {
+        return FunctionCallArgumentStyle::Standard;
+    };
+    let mut segments = path.segments();
+    let only_segment = segments.next();
+
+    if let Some(segment) = only_segment
+        && segments.next().is_none()
+    {
+        match segment.text() {
+            "mat2x2" => FunctionCallArgumentStyle::Tabular {
+                width: 2,
+                height: 2,
+            },
+            "mat2x3" => FunctionCallArgumentStyle::Tabular {
+                width: 3,
+                height: 2,
+            },
+            "mat2x4" => FunctionCallArgumentStyle::Tabular {
+                width: 4,
+                height: 2,
+            },
+            "mat3x2" => FunctionCallArgumentStyle::Tabular {
+                width: 2,
+                height: 3,
+            },
+            "mat3x3" => FunctionCallArgumentStyle::Tabular {
+                width: 3,
+                height: 3,
+            },
+            "mat3x4" => FunctionCallArgumentStyle::Tabular {
+                width: 4,
+                height: 3,
+            },
+            "mat4x2" => FunctionCallArgumentStyle::Tabular {
+                width: 2,
+                height: 4,
+            },
+            "mat4x3" => FunctionCallArgumentStyle::Tabular {
+                width: 3,
+                height: 4,
+            },
+            "mat4x4" => FunctionCallArgumentStyle::Tabular {
+                width: 4,
+                height: 4,
+            },
+            _ => FunctionCallArgumentStyle::Standard,
         }
+    } else {
+        FunctionCallArgumentStyle::Standard
     }
-    FunctionCallArgumentStyle::Standard
 }
 
 pub enum FunctionCallArgumentStyle {
@@ -132,6 +127,18 @@ pub fn parse_function_call_arguments(
 }
 
 pub fn gen_function_call_arguments(
+    arguments: &ast::Arguments
+) -> FormatDocumentResult<PrintItemBuffer> {
+    let style = determine_function_call_argument_style(arguments.syntax().parent());
+    match style {
+        FunctionCallArgumentStyle::Standard => gen_function_call_arguments_standard(arguments),
+        FunctionCallArgumentStyle::Tabular { width, height } => {
+            gen_function_call_arguments_tabular(arguments, width, height)
+        },
+    }
+}
+
+pub fn gen_function_call_arguments_standard(
     arguments: &ast::Arguments
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
@@ -186,7 +193,7 @@ pub fn gen_function_call_arguments_tabular(
         .count();
 
     if item_count != table_columns * table_rows {
-        return gen_function_call_arguments(arguments);
+        return gen_function_call_arguments_standard(arguments);
     }
 
     // ==== Format ====
@@ -253,15 +260,14 @@ pub fn gen_function_call_statement(
 ) -> Result<PrintItemBuffer, FormatDocumentError> {
     // ==== Parse ====
     let mut syntax = syntax_iter(function_call_statement.syntax());
-    let function_call = parse_node::<FunctionCall>(&mut syntax)?;
-    let comments_after_function_call = parse_many_comments_and_blankspace(&mut syntax)?;
+    let function_call =
+        parse_node_with(&mut syntax, IgnoreBlankspace).expect_castable_kind::<FunctionCall>()?;
     parse_node_with(&mut syntax, NoTrivia).expect_kind_optional(SyntaxKind::Semicolon)?;
     parse_end(&mut syntax)?;
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
-    formatted.extend(gen_function_call(&function_call)?);
-    formatted.extend(gen_comments(&comments_after_function_call));
+    formatted.extend(gen_node_with_trivia(&function_call)?);
     if statement_needs_semicolon_policy(function_call_statement.syntax()) {
         formatted.push_sc(sc!(";"));
     }

@@ -114,11 +114,11 @@ impl NodeWithTrivia {
         kind: SyntaxKind,
         syntax: &mut SyntaxIter,
     ) -> Option<Self> {
-        if self.node.as_ref().is_some_and(|node| node.kind() != kind) {
+        if self.node.as_ref().is_some_and(|node| node.kind() == kind) {
+            Some(self)
+        } else {
             self.put_back(syntax);
             None
-        } else {
-            Some(self)
         }
     }
 
@@ -142,6 +142,7 @@ impl NodeWithTrivia {
         }
     }
 
+    #[track_caller]
     pub fn expect_kind_optional(
         self,
         kind: SyntaxKind,
@@ -157,10 +158,12 @@ impl NodeWithTrivia {
         }
     }
 
+    #[track_caller]
     pub fn expect_kind(
         self,
         kind: SyntaxKind,
     ) -> FormatDocumentResult<Self> {
+        // TODO Flip these around - expect it to be some
         if self.node.as_ref().is_some_and(|node| node.kind() == kind) {
             Ok(self)
         } else {
@@ -173,6 +176,7 @@ impl NodeWithTrivia {
     }
 
     // TODO Rename to expect_ast_node
+    #[track_caller]
     pub fn expect_castable_kind<T>(self) -> FormatDocumentResult<Self>
     where
         T: AstNode,
@@ -189,6 +193,7 @@ impl NodeWithTrivia {
         .expect_if_prefer_crash()
     }
 
+    #[track_caller]
     pub fn expect_ast_token<T>(self) -> FormatDocumentResult<Self>
     where
         T: AstToken,
@@ -224,5 +229,14 @@ impl NodeWithTrivia {
     #[must_use]
     pub const fn has_content(&self) -> bool {
         matches!(self.node, NodeWithTriviaContent::Content(_))
+    }
+
+    #[must_use]
+    pub fn content(&self) -> Option<NodeOrToken<SyntaxNode, SyntaxToken>> {
+        match &self.node {
+            NodeWithTriviaContent::NoContent => None,
+            NodeWithTriviaContent::Content(node_or_token) => Some(node_or_token.clone()),
+            NodeWithTriviaContent::End => None,
+        }
     }
 }

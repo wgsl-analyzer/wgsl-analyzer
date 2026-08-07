@@ -18,6 +18,7 @@ pub fn syntax_iter(syntax: &SyntaxNode) -> SyntaxIter {
     put_back_n(syntax.children_with_tokens())
 }
 
+#[deprecated]
 pub fn parse_token(
     syntax: &mut SyntaxIter,
     expected: SyntaxKind,
@@ -205,6 +206,21 @@ impl UntilFilter for NoTrivia {
         node: &NodeOrToken<SyntaxNode, SyntaxToken>,
     ) -> Option<FilterAction> {
         Some(FilterAction::Content)
+    }
+}
+
+pub struct Oneline;
+impl UntilFilter for Oneline {
+    fn filter(
+        &self,
+        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
+    ) -> Option<FilterAction> {
+        match read_blankspace(node) {
+            Some(NextGenLineSpacing::EmptyLine(_)) | Some(NextGenLineSpacing::LineBreak(_)) => {
+                Some(FilterAction::Stop)
+            },
+            _ => None,
+        }
     }
 }
 
