@@ -14,8 +14,8 @@ use crate::{
 // We don't have a Comment SyntaxNode in the AST yet, so we use a custom enum and parser function
 #[derive(Clone, Debug)]
 pub enum Comment {
-    Block(String),
-    LineEnding(String),
+    Block(SyntaxToken),
+    LineEnding(SyntaxToken),
 }
 
 pub fn read_comment(item: &NodeOrToken<SyntaxNode, SyntaxToken>) -> Option<Comment> {
@@ -25,8 +25,8 @@ pub fn read_comment(item: &NodeOrToken<SyntaxNode, SyntaxToken>) -> Option<Comme
             reason = "We don't care about future enum variants."
         )]
         match child.kind() {
-            SyntaxKind::BlockComment => Some(Comment::Block(child.text().to_owned())),
-            SyntaxKind::LineEndingComment => Some(Comment::LineEnding(child.text().to_owned())),
+            SyntaxKind::BlockComment => Some(Comment::Block(child.clone())),
+            SyntaxKind::LineEndingComment => Some(Comment::LineEnding(child.clone())),
             _ => None,
         }
     } else {
@@ -88,7 +88,7 @@ pub fn gen_comment(item: &Comment) -> PrintItemBuffer {
         Comment::Block(content) => {
             formatted.request(Request::expect(RequestItem::Space));
 
-            let mut lines = content.lines().with_position();
+            let mut lines = content.text().lines().with_position();
             if let Some((pos, line)) = lines.next() {
                 formatted.push_string(line.to_owned());
                 if pos != Position::Only && pos != Position::Last {
@@ -112,10 +112,10 @@ pub fn gen_comment(item: &Comment) -> PrintItemBuffer {
             // Line ending comments may not contain newlines - otherwise push_string will
             // run into a debug_assert down the line where its a lot harder to debug.
             debug_assert!(
-                content.lines().count() == 1,
+                content.text().lines().count() == 1,
                 "line ending comment may not contain newlines."
             );
-            formatted.push_string(content.clone());
+            formatted.push_string(content.text().to_owned());
             formatted.request(Request::force(RequestItem::LineBreak));
         },
     }

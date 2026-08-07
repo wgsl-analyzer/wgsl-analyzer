@@ -10,16 +10,11 @@ use syntax::{
 };
 
 use crate::{
-    ast_parse::{
-        IgnoreBlankspace, NoTrivia, parse_end, parse_node, parse_node_optional, parse_node_with,
-        parse_token, parse_token_optional,
-    },
+    ast_parse::{IgnoreBlankspace, NoTrivia, parse_end, parse_node_optional, parse_node_with},
     generators::{
-        attributes::{AttributeLayout, gen_attributes, parse_many_attributes},
-        comments::{Comment, gen_comments, parse_many_comments_and_blankspace},
+        comments::{gen_comments, parse_many_comments_and_blankspace},
         expressions::gen_expression,
         node::gen_node_with_trivia,
-        statements::compound_statement::gen_compound_statement,
     },
     print_item_buffer::{
         PrintItemBuffer,
@@ -65,6 +60,7 @@ pub fn gen_switch_body(statement: &SwitchBody) -> Result<PrintItemBuffer, Format
     loop {
         let mut item = parse_node_with(&mut syntax, IgnoreBlankspace);
 
+        // TODO Absorb this into the parse_node_filter...
         if item
             .kind()
             .is_some_and(|item| item == SyntaxKind::BraceRight)
@@ -158,27 +154,10 @@ pub fn gen_switch_body_case(
         }
     };
 
-    // let kind = {
-
-    //     if item.kind() == SyntaxKind::Default {
-
-    //     }
-
-    //     let item_default = parse_node_with(&mut syntax, NoTrivia).expect_kind_optional(SyntaxKind::Default)?;
-    //     if item_default.is_some() {
-    //         SwitchBodyCaseKind::Default
-    //     } else {
-    //         parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::Case)?;
-    //         let item_selectors = parse_node_with_trivia(&mut syntax)
-    //             .expect_castable_kind::<SwitchCaseSelectors>()?;
-
-    //         SwitchBodyCaseKind::Case { item_selectors }
-    //     }
-    // };
-
     //let item_comments_after_selectors = parse_many_comments_and_blankspace(&mut syntax)?; TODO Verify this is unneeded
+
     let item_colon =
-        parse_node_with(&mut syntax, NoTrivia).expect_kind_optional(SyntaxKind::Colon)?;
+        parse_node_with(&mut syntax, NoTrivia).only_if_kind(SyntaxKind::Colon, &mut syntax);
     let item_body = parse_node_with(&mut syntax, IgnoreBlankspace)
         .expect_castable_kind::<CompoundStatement>()?;
     parse_end(&mut syntax)?;
