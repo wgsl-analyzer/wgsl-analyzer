@@ -47,6 +47,7 @@ pub trait UnwrapIfPreferCrash {
 
 impl<T> UnwrapIfPreferCrash for FormatDocumentResult<T> {
     #[inline]
+    #[track_caller]
     fn expect_if_prefer_crash(self) -> Self {
         #[cfg(feature = "prefer-immediate-crash")]
         {

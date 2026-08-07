@@ -1,24 +1,20 @@
 use dprint_core_macros::sc;
-use itertools::{Itertools as _, Position, put_back};
+use itertools::{Itertools as _, Position};
 use parser::SyntaxKind;
 use rowan::SyntaxToken;
 use syntax::{
     AstNode as _,
-    ast::{self, ImportCollection, ImportItem, ImportPath, ImportTree},
+    ast::{self, ImportTree},
 };
 
 use crate::{
     ast_parse::{
-        NoTrivia, parse_end, parse_node, parse_node_optional, parse_node_with, parse_token,
-        parse_token_optional, syntax_iter,
+        IgnoreBlankspace, NoTrivia, parse_end, parse_node_with, parse_token_optional, syntax_iter,
     },
     context_policies::statement_needs_semicolon_policy,
     generators::{
-        comments::{
-            Comment, gen_comment, gen_comments, parse_comment_optional,
-            parse_many_comments_and_blankspace,
-        },
-        name::gen_name,
+        comments::{Comment, gen_comment, parse_comment_optional},
+        node::gen_node_with_trivia,
     },
     multiline_group::MultilineGroup,
     print_item_buffer::{
@@ -26,6 +22,7 @@ use crate::{
         spacing_request::{Request, RequestItem},
     },
     reporting::FormatDocumentResult,
+    trivia::NodeWithTriviaContent,
 };
 
 // TODO(MonaMayrhofer,post-1.0) Collapse imports
@@ -100,12 +97,10 @@ pub fn gen_import_super_relative(
 pub fn gen_import_item(node: &ast::ImportItem) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = syntax_iter(node.syntax());
-    let item_name = parse_node::<ast::Name>(&mut syntax)?;
-    let item_comments_after_name = parse_many_comments_and_blankspace(&mut syntax)?;
-    let item_alias = if parse_token_optional(&mut syntax, SyntaxKind::As).is_some() {
-        let item_comments_after_as = parse_many_comments_and_blankspace(&mut syntax)?;
-        let item_name = parse_node::<ast::Name>(&mut syntax)?;
-        Some((item_comments_after_as, item_name))
+    let item_name = parse_node_with(&mut syntax, IgnoreBlankspace).expect_kind(SyntaxKind::Name)?;
+    let item_as = parse_node_with(&mut syntax, NoTrivia).only_if_kind(SyntaxKind::As, &mut syntax);
+    let item_alias = if item_as.is_some() {
+        Some(parse_node_with(&mut syntax, IgnoreBlankspace).expect_kind(SyntaxKind::Name)?)
     } else {
         None
     };
@@ -113,36 +108,32 @@ pub fn gen_import_item(node: &ast::ImportItem) -> FormatDocumentResult<PrintItem
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
-    formatted.extend(gen_name(&item_name)?);
-    formatted.extend(gen_comments(&item_comments_after_name));
-    if let Some((item_comments_after_as, item_alias)) = item_alias {
+    formatted.extend(gen_node_with_trivia(&item_name)?);
+    if let Some(item_alias) = item_alias {
         formatted.request(Request::expect(RequestItem::Space));
         formatted.push_sc(sc!("as"));
         formatted.request(Request::expect(RequestItem::Space));
-        formatted.extend(gen_comments(&item_comments_after_as));
-        formatted.extend(gen_name(&item_alias)?);
+        formatted.extend(gen_node_with_trivia(&item_alias)?);
     }
     Ok(formatted)
 }
 pub fn gen_import_path(node: &ast::ImportPath) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = syntax_iter(node.syntax());
-    let item_name = parse_node::<ast::Name>(&mut syntax)?;
-    let item_comments_after_name = parse_many_comments_and_blankspace(&mut syntax)?;
+    let item_name = parse_node_with(&mut syntax, IgnoreBlankspace).expect_kind(SyntaxKind::Name)?;
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::ColonColon)?;
-    let item_comments_after_colon = parse_many_comments_and_blankspace(&mut syntax)?;
-    let item_path_rest = parse_node_optional::<ImportPath>(&mut syntax);
-    let item_collection_rest = parse_node_optional::<ImportCollection>(&mut syntax);
-    let item_item = parse_node_optional::<ImportItem>(&mut syntax);
-    let item_comments_after_rest = parse_many_comments_and_blankspace(&mut syntax)?;
-
+    let item_path_rest = parse_node_with(&mut syntax, IgnoreBlankspace)
+        .only_if_kind(SyntaxKind::ImportPath, &mut syntax);
+    let item_collection_rest = parse_node_with(&mut syntax, IgnoreBlankspace)
+        .only_if_kind(SyntaxKind::ImportCollection, &mut syntax);
+    let item_item = parse_node_with(&mut syntax, IgnoreBlankspace)
+        .only_if_kind(SyntaxKind::ImportItem, &mut syntax);
     parse_end(&mut syntax)?;
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
 
-    formatted.extend(gen_name(&item_name)?);
-    formatted.extend(gen_comments(&item_comments_after_name));
+    formatted.extend(gen_node_with_trivia(&item_name)?);
     formatted.start_indent();
     formatted.start_new_line_group();
     formatted.request(Request::empty().or_newline());
@@ -150,19 +141,15 @@ pub fn gen_import_path(node: &ast::ImportPath) -> FormatDocumentResult<PrintItem
     formatted.finish_new_line_group();
     formatted.finish_indent();
 
-    formatted.extend(gen_comments(&item_comments_after_colon));
-
     if let Some(path) = item_path_rest {
-        formatted.extend(gen_import_path(&path)?);
+        formatted.extend(gen_node_with_trivia(&path)?);
     }
     if let Some(collection) = item_collection_rest {
-        formatted.extend(gen_import_collection(&collection)?);
+        formatted.extend(gen_node_with_trivia(&collection)?);
     }
     if let Some(item) = item_item {
-        formatted.extend(gen_import_item(&item)?);
+        formatted.extend(gen_node_with_trivia(&item)?);
     }
-
-    formatted.extend(gen_comments(&item_comments_after_rest));
 
     Ok(formatted)
 }
@@ -243,15 +230,36 @@ pub fn gen_import_collection(
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::BraceLeft)?;
 
     loop {
-        let before = parse_many_comments_and_blankspace(&mut syntax)?;
-        // This also allows ImportCollection directly inside ImportCollection, but
-        // its no problems to be more general. It does make the code simpler.
-        if let Some(item) = parse_node_optional::<ImportTree>(&mut syntax) {
-            let after = parse_many_comments_and_blankspace(&mut syntax)?;
-            items.push((before, Some(item), after));
+        let mut item = parse_node_with(&mut syntax, IgnoreBlankspace);
+
+        // TODO This should be absorbed into the parse_node
+        if item
+            .kind()
+            .is_some_and(|item| item == SyntaxKind::BraceRight)
+        {
+            let old_node = std::mem::replace(&mut item.node, NodeWithTriviaContent::End);
+            syntax.put_back(old_node.into_option().unwrap()); //TODO
         }
 
-        if parse_token_optional(&mut syntax, SyntaxKind::Comma).is_none() {
+        // TODO This should be absorbed into the parse_node
+        if item.kind().is_some_and(|node| !ImportTree::can_cast(node)) {
+            item.node = NodeWithTriviaContent::NoContent;
+        }
+
+        dbg!(&item);
+
+        let is_end = item.is_end();
+        if !item.is_whitespace() {
+            let import_tree = item
+                .content()
+                .and_then(|node_or_token| match node_or_token {
+                    rowan::NodeOrToken::Node(node) => Some(node),
+                    rowan::NodeOrToken::Token(_) => None,
+                })
+                .and_then(ImportTree::cast);
+            items.push((item, import_tree));
+        }
+        if is_end {
             break;
         }
     }
@@ -260,7 +268,7 @@ pub fn gen_import_collection(
 
     parse_end(&mut syntax)?;
 
-    items.sort_by(|(_, tree_a, _), (_, tree_b, _)| {
+    items.sort_by(|(_, tree_a), (_, tree_b)| {
         let tree_a = tree_a.as_ref().map(CmpImportTree);
         let tree_b = tree_b.as_ref().map(CmpImportTree);
         tree_a.cmp(&tree_b)
@@ -274,24 +282,14 @@ pub fn gen_import_collection(
 
     group.start_indent();
 
-    for (position, (before, item, after)) in items.iter().with_position() {
-        group.extend(gen_comments(before));
-        if let Some(item) = item {
-            match item {
-                ImportTree::ImportPath(path) => group.extend(gen_import_path(path)?),
-                ImportTree::ImportItem(item) => group.extend(gen_import_item(item)?),
-                // This case will never happen but it makes the code simpler to just use ImportTree here
-                ImportTree::ImportCollection(collection) => {
-                    group.extend(gen_import_collection(collection)?);
-                },
+    for (position, (item, _)) in items.iter().with_position() {
+        group.extend(gen_node_with_trivia(item)?);
+        if item.has_content() {
+            group.request(Request::discourage(RequestItem::Space));
+            if position != Position::Last && position != Position::Only {
+                group.push_sc(sc!(","));
+                group.request(Request::expect(RequestItem::Space).or_newline());
             }
-        }
-        group.extend(gen_comments(after));
-        group.request(Request::discourage(RequestItem::Space));
-
-        if position != Position::Last && position != Position::Only {
-            group.push_sc(sc!(","));
-            group.request(Request::expect(RequestItem::Space).or_newline());
         }
     }
 
@@ -309,14 +307,13 @@ pub fn gen_import_statement(node: &ast::ImportStatement) -> FormatDocumentResult
     // ==== Parse ====
     let mut syntax = syntax_iter(node.syntax());
     parse_node_with(&mut syntax, NoTrivia).expect_kind(ast::SyntaxKind::Import)?;
-    let item_comments_after_import = parse_many_comments_and_blankspace(&mut syntax)?;
-    let item_package_relative = parse_node_optional::<ast::ImportPackageRelative>(&mut syntax);
-    let item_super_relative = parse_node_optional::<ast::ImportSuperRelative>(&mut syntax);
-    let item_path = parse_node_optional::<ast::ImportPath>(&mut syntax);
-    let item_collection = parse_node_optional::<ast::ImportCollection>(&mut syntax);
-    let item_item = parse_node_optional::<ast::ImportItem>(&mut syntax);
 
-    let item_comments_after_importee = parse_many_comments_and_blankspace(&mut syntax)?;
+    let item_package_relative = parse_node_with(&mut syntax, IgnoreBlankspace)
+        .only_if_kind(SyntaxKind::ImportPackageRelative, &mut syntax);
+    let item_super_relative = parse_node_with(&mut syntax, IgnoreBlankspace)
+        .only_if_kind(SyntaxKind::ImportSuperRelative, &mut syntax);
+    let item_entity =
+        parse_node_with(&mut syntax, IgnoreBlankspace).expect_castable_kind::<ast::ImportTree>()?;
 
     parse_node_with(&mut syntax, NoTrivia).expect_kind(ast::SyntaxKind::Semicolon)?;
     parse_end(&mut syntax)?;
@@ -325,25 +322,14 @@ pub fn gen_import_statement(node: &ast::ImportStatement) -> FormatDocumentResult
     let mut formatted = PrintItemBuffer::default();
     formatted.push_sc(sc!("import"));
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.extend(gen_comments(&item_comments_after_import));
 
     if let Some(package_relative) = item_package_relative {
-        formatted.extend(gen_import_package_relative(&package_relative)?);
+        formatted.extend(gen_node_with_trivia(&package_relative)?);
     }
     if let Some(super_relative) = item_super_relative {
-        formatted.extend(gen_import_super_relative(&super_relative)?);
+        formatted.extend(gen_node_with_trivia(&super_relative)?);
     }
-    if let Some(path) = item_path {
-        formatted.extend(gen_import_path(&path)?);
-    }
-    if let Some(collection) = item_collection {
-        formatted.extend(gen_import_collection(&collection)?);
-    }
-    if let Some(item) = item_item {
-        formatted.extend(gen_import_item(&item)?);
-    }
-
-    formatted.extend(gen_comments(&item_comments_after_importee));
+    formatted.extend(gen_node_with_trivia(&item_entity)?);
 
     if statement_needs_semicolon_policy(node.syntax()) {
         formatted.request(Request::discourage(RequestItem::Space));

@@ -1,5 +1,4 @@
 use dprint_core_macros::sc;
-use itertools::put_back;
 use parser::{SyntaxKind, SyntaxNode};
 use syntax::{
     AstNode as _,
@@ -7,15 +6,8 @@ use syntax::{
 };
 
 use crate::{
-    ast_parse::{
-        NoTrivia, parse_end, parse_node, parse_node_by_kind_optional, parse_node_with, parse_token,
-    },
-    generators::{
-        attributes::{AttributeLayout, gen_attributes, parse_many_attributes},
-        comments::{gen_comments, parse_many_comments_and_blankspace},
-        expressions::gen_expression,
-        statements::{compound_statement::gen_compound_statement, gen_statement_maybe_semicolon},
-    },
+    ast_parse::{IgnoreBlankspace, NoTrivia, Oneline, parse_end, parse_node_with, syntax_iter},
+    generators::node::gen_node_with_trivia,
     multiline_group::MultilineGroup,
     print_item_buffer::{
         PrintItemBuffer,
@@ -26,71 +18,57 @@ use crate::{
 
 pub fn gen_for_statement(statement: &ast::ForStatement) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
-    let mut syntax = put_back(statement.syntax().children_with_tokens());
-    let item_attributes = parse_many_attributes(&mut syntax)?;
-    parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::For)?;
-    let comments_after_for = parse_many_comments_and_blankspace(&mut syntax)?;
+    let mut syntax = syntax_iter(statement.syntax());
+    let item_for = parse_node_with(&mut syntax, IgnoreBlankspace).expect_kind(SyntaxKind::For)?;
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::ParenthesisLeft)?;
-    let comments_after_open_paren = parse_many_comments_and_blankspace(&mut syntax)?;
-    let item_initializer = parse_node_by_kind_optional(&mut syntax, SyntaxKind::ForInitializer);
-    let comments_after_initializer = parse_many_comments_and_blankspace(&mut syntax)?;
-    parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::Semicolon)?;
-    let comments_after_initializer_semicolon = parse_many_comments_and_blankspace(&mut syntax)?;
-    let item_condition = parse_node_by_kind_optional(&mut syntax, SyntaxKind::ForCondition);
-    let comments_after_condition = parse_many_comments_and_blankspace(&mut syntax)?;
-    parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::Semicolon)?;
-    let comments_after_condition_semicolon = parse_many_comments_and_blankspace(&mut syntax)?;
-    let item_continuing = parse_node_by_kind_optional(&mut syntax, SyntaxKind::ForContinuingPart);
-    let comments_after_continuing = parse_many_comments_and_blankspace(&mut syntax)?;
+    let item_initializer = parse_node_with(&mut syntax, IgnoreBlankspace)
+        .only_if_kind(SyntaxKind::ForInitializer, &mut syntax);
+    let item_semicolon_1 =
+        parse_node_with(&mut syntax, Oneline).expect_kind(SyntaxKind::Semicolon)?;
+    let item_condition = parse_node_with(&mut syntax, IgnoreBlankspace)
+        .only_if_kind(SyntaxKind::ForCondition, &mut syntax);
+    let item_semicolon_2 =
+        parse_node_with(&mut syntax, Oneline).expect_kind(SyntaxKind::Semicolon)?;
+    let item_continuing = parse_node_with(&mut syntax, IgnoreBlankspace)
+        .only_if_kind(SyntaxKind::ForContinuingPart, &mut syntax);
+
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::ParenthesisRight)?;
-    let comments_after_close_paren = parse_many_comments_and_blankspace(&mut syntax)?;
-    let item_body = parse_node::<CompoundStatement>(&mut syntax)?;
+    let item_body = parse_node_with(&mut syntax, IgnoreBlankspace)
+        .expect_castable_kind::<CompoundStatement>()?;
     parse_end(&mut syntax)?;
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
-    formatted.extend(gen_attributes(
-        &item_attributes,
-        AttributeLayout::Multiline,
-    )?);
-    formatted.push_sc(sc!("for"));
-    formatted.extend(gen_comments(&comments_after_for));
+    formatted.extend(gen_node_with_trivia(&item_for)?);
     formatted.push_sc(sc!("("));
 
     let mut multiline_group = MultilineGroup::new(&mut formatted);
     multiline_group.start_indent();
 
-    multiline_group.extend(gen_comments(&comments_after_open_paren));
-
     multiline_group.grouped_newline_or_space();
     if let Some(item_initializer) = item_initializer {
-        multiline_group.extend(gen_for_statement_initializer(&item_initializer)?);
+        multiline_group.extend(gen_node_with_trivia(&item_initializer)?);
     } else {
         multiline_group.request(Request::discourage(RequestItem::Space));
     }
-    multiline_group.extend(gen_comments(&comments_after_initializer));
     multiline_group.request(Request::discourage(RequestItem::Space));
-    multiline_group.push_sc(sc!(";"));
-    multiline_group.extend(gen_comments(&comments_after_initializer_semicolon));
+    multiline_group.extend(gen_node_with_trivia(&item_semicolon_1)?);
 
     multiline_group.grouped_newline_or_space();
     if let Some(item_condition) = item_condition {
-        multiline_group.extend(gen_for_statement_condition(&item_condition)?);
+        multiline_group.extend(gen_node_with_trivia(&item_condition)?);
     } else {
         multiline_group.request(Request::discourage(RequestItem::Space));
     }
-    multiline_group.extend(gen_comments(&comments_after_condition));
     multiline_group.request(Request::discourage(RequestItem::Space));
-    multiline_group.push_sc(sc!(";"));
-    multiline_group.extend(gen_comments(&comments_after_condition_semicolon));
+    multiline_group.extend(gen_node_with_trivia(&item_semicolon_2)?);
 
     multiline_group.grouped_newline_or_space();
     if let Some(item_continuing) = item_continuing {
-        multiline_group.extend(gen_for_statement_continuing_part(&item_continuing)?);
+        multiline_group.extend(gen_node_with_trivia(&item_continuing)?);
     } else {
         multiline_group.request(Request::discourage(RequestItem::Space));
     }
-    multiline_group.extend(gen_comments(&comments_after_continuing));
     multiline_group.request(Request::discourage(RequestItem::Space));
 
     multiline_group.grouped_newline_or_space();
@@ -102,8 +80,7 @@ pub fn gen_for_statement(statement: &ast::ForStatement) -> FormatDocumentResult<
     multiline_group.end();
 
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.extend(gen_comments(&comments_after_close_paren));
-    formatted.extend(gen_compound_statement(&item_body)?);
+    formatted.extend(gen_node_with_trivia(&item_body)?);
     Ok(formatted)
 }
 
@@ -111,34 +88,37 @@ pub fn gen_for_statement_initializer(
     node: &ast::SyntaxNode
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // === Parse ===
-    let mut syntax = put_back(node.syntax().children_with_tokens());
-    let item_statement = parse_node::<Statement>(&mut syntax)?;
+    let mut syntax = syntax_iter(node.syntax());
+    let item_statement =
+        parse_node_with(&mut syntax, IgnoreBlankspace).expect_castable_kind::<Statement>()?;
     parse_end(&mut syntax)?;
 
     // === Format ===
-    gen_statement_maybe_semicolon(&item_statement)
+    gen_node_with_trivia(&item_statement)
 }
 
 pub fn gen_for_statement_condition(
     node: &ast::SyntaxNode
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // === Parse ===
-    let mut sub_syntax = put_back(node.syntax().children_with_tokens());
-    let item_condition = parse_node::<Expression>(&mut sub_syntax)?;
+    let mut sub_syntax = syntax_iter(node.syntax());
+    let item_condition =
+        parse_node_with(&mut sub_syntax, IgnoreBlankspace).expect_castable_kind::<Expression>()?;
     parse_end(&mut sub_syntax)?;
 
     // === Format ===
-    gen_expression(&item_condition)
+    gen_node_with_trivia(&item_condition)
 }
 
 pub fn gen_for_statement_continuing_part(
     node: &ast::SyntaxNode
 ) -> FormatDocumentResult<PrintItemBuffer> {
-    let mut sub_syntax = put_back(node.syntax().children_with_tokens());
-    let item_continuing = parse_node::<Statement>(&mut sub_syntax)?;
+    let mut sub_syntax = syntax_iter(node.syntax());
+    let item_continuing =
+        parse_node_with(&mut sub_syntax, IgnoreBlankspace).expect_castable_kind::<Statement>()?;
     parse_end(&mut sub_syntax)?;
 
-    gen_statement_maybe_semicolon(&item_continuing)
+    gen_node_with_trivia(&item_continuing)
 }
 
 pub fn skip_semicolons_rule(node: &SyntaxNode) -> bool {
