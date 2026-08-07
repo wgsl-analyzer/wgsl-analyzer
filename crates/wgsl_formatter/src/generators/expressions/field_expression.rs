@@ -5,7 +5,7 @@ use syntax::{
 };
 
 use crate::{
-    ast_parse::{IgnoreBlankspace, NoTrivia, parse_end, parse_node_with},
+    ast_parse::{IgnoreBlankspace, NoTrivia, parse_end, parse_node_with, syntax_iter},
     generators::node::gen_node_with_trivia,
     print_item_buffer::{PrintItemBuffer, spacing_request::Request},
     reporting::FormatDocumentResult,
@@ -15,7 +15,7 @@ pub fn gen_field_expression(
     field_expression: &ast::FieldExpression
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
-    let mut syntax = put_back(field_expression.syntax().children_with_tokens());
+    let mut syntax = syntax_iter(field_expression.syntax());
     let item_struct_expr =
         parse_node_with(&mut syntax, IgnoreBlankspace).expect_castable_kind::<ast::Expression>()?;
     let item_period =

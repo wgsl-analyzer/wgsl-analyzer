@@ -10,7 +10,9 @@ use syntax::{
 };
 
 use crate::{
-    ast_parse::{IgnoreBlankspace, NoTrivia, parse_end, parse_node_optional, parse_node_with},
+    ast_parse::{
+        IgnoreBlankspace, NoTrivia, parse_end, parse_node_optional, parse_node_with, syntax_iter,
+    },
     generators::{
         comments::{gen_comments, parse_many_comments_and_blankspace},
         expressions::gen_expression,
@@ -28,7 +30,7 @@ pub fn gen_switch_statement(
     statement: &SwitchStatement
 ) -> Result<PrintItemBuffer, FormatDocumentError> {
     // ==== Parse ====
-    let mut syntax = put_back(statement.syntax().children_with_tokens());
+    let mut syntax = syntax_iter(statement.syntax());
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::Switch)?;
     let item_expression =
         parse_node_with(&mut syntax, IgnoreBlankspace).expect_castable_kind::<Expression>()?;
@@ -52,7 +54,7 @@ pub fn gen_switch_statement(
 
 pub fn gen_switch_body(statement: &SwitchBody) -> Result<PrintItemBuffer, FormatDocumentError> {
     // ==== Parse ====
-    let mut syntax = put_back(statement.syntax().children_with_tokens());
+    let mut syntax = syntax_iter(statement.syntax());
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::BraceLeft)?;
 
     let mut item_cases = Vec::new();
@@ -118,7 +120,7 @@ pub fn gen_switch_body_case(
     statement: &SwitchBodyCase
 ) -> Result<PrintItemBuffer, FormatDocumentError> {
     // ==== Parse ====
-    let mut syntax = put_back(statement.syntax().children_with_tokens());
+    let mut syntax = syntax_iter(statement.syntax());
 
     // Either default or case
     let item_case_keyword = parse_node_with(&mut syntax, IgnoreBlankspace);
@@ -218,7 +220,7 @@ pub fn gen_switch_case_selectors(
     statement: &SwitchCaseSelectors
 ) -> Result<PrintItemBuffer, FormatDocumentError> {
     // ==== Parse ====
-    let mut syntax = put_back(statement.syntax().children_with_tokens());
+    let mut syntax = syntax_iter(statement.syntax());
 
     let mut selectors = Vec::new();
     while let Some(selector) = parse_node_optional::<SwitchCaseSelector>(&mut syntax) {
@@ -268,7 +270,7 @@ pub fn gen_switch_case_default_selector(
     statement: &SwitchDefaultSelector
 ) -> Result<PrintItemBuffer, FormatDocumentError> {
     // ==== Parse ====
-    let mut syntax = put_back(statement.syntax().children_with_tokens());
+    let mut syntax = syntax_iter(statement.syntax());
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::Default)?;
     parse_end(&mut syntax)?;
 

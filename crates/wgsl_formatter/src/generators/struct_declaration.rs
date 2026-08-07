@@ -9,7 +9,7 @@ use syntax::{
 use crate::{
     ast_parse::{
         FilterAction, parse_end, parse_node, parse_node_optional, parse_node_with_trivia_filter,
-        parse_node_with_trivia_filter_2, parse_token, parse_token_optional,
+        parse_node_with_trivia_filter_2, parse_token, parse_token_optional, syntax_iter,
     },
     generators::node::{
         gen_node_content, gen_node_preceding_trivia, gen_node_succeeding_trivia,
@@ -39,7 +39,7 @@ pub fn gen_struct_declaration(
     node: &ast::StructDeclaration
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // === Parse ===
-    let mut syntax = put_back(node.syntax().children_with_tokens());
+    let mut syntax = syntax_iter(node.syntax());
 
     parse_token(&mut syntax, SyntaxKind::Struct)?;
     let item_comments_after_struct = parse_many_comments_and_blankspace(&mut syntax)?;
@@ -70,7 +70,7 @@ pub fn gen_struct_declaration(
 
 pub fn gen_struct_body(body: &ast::StructBody) -> FormatDocumentResult<PrintItemBuffer> {
     // === Parse ===
-    let mut syntax = put_back(body.syntax().children_with_tokens());
+    let mut syntax = syntax_iter(body.syntax());
 
     parse_token(&mut syntax, SyntaxKind::BraceLeft)?;
     let item_comments_after_open_paren = parse_many_comments_and_blankspace(&mut syntax)?;
@@ -172,7 +172,7 @@ pub fn gen_struct_body(body: &ast::StructBody) -> FormatDocumentResult<PrintItem
 
 pub fn gen_struct_member(member: &ast::StructMember) -> FormatDocumentResult<PrintItemBuffer> {
     // === Parse ===
-    let mut syntax = put_back(member.syntax().children_with_tokens());
+    let mut syntax = syntax_iter(member.syntax());
 
     let attributes = parse_many_attributes(&mut syntax)?;
     let item_comments_after_attributes = parse_many_comments_and_blankspace(&mut syntax)?;

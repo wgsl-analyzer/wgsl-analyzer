@@ -11,6 +11,7 @@ use crate::{
     ast_parse::{
         FilterAction, IgnoreBlankspace, parse_end, parse_node, parse_node_optional,
         parse_node_with, parse_node_with_trivia_filter, parse_token, parse_token_optional,
+        syntax_iter,
     },
     generators::{
         attributes::{gen_attributes, parse_many_attributes},
@@ -40,7 +41,7 @@ use super::attributes::AttributeLayout;
 pub fn gen_function_declaration(
     node: &ast::FunctionDeclaration
 ) -> FormatDocumentResult<PrintItemBuffer> {
-    let mut syntax = put_back(node.syntax().children_with_tokens());
+    let mut syntax = syntax_iter(node.syntax());
 
     parse_token(&mut syntax, SyntaxKind::Fn)?;
     let item_name = parse_node_with(&mut syntax, IgnoreBlankspace).expect_kind(SyntaxKind::Name)?;
@@ -96,7 +97,7 @@ pub fn gen_fn_parameters(node: &ast::FunctionParameters) -> FormatDocumentResult
     }
     // ==== Parse ====
 
-    let mut syntax = put_back(node.syntax().children_with_tokens());
+    let mut syntax = syntax_iter(node.syntax());
 
     parse_token(&mut syntax, SyntaxKind::ParenthesisLeft)?;
     let item_comments_start = parse_many_comments_and_blankspace(&mut syntax)?;
@@ -206,7 +207,7 @@ pub fn gen_fn_parameters(node: &ast::FunctionParameters) -> FormatDocumentResult
 
 pub fn gen_fn_parameter(syntax: &ast::Parameter) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
-    let mut syntax = put_back(syntax.syntax().children_with_tokens());
+    let mut syntax = syntax_iter(syntax.syntax());
 
     let item_attributes = parse_many_attributes(&mut syntax)?;
     let item_name = parse_node::<ast::Name>(&mut syntax)?;
@@ -235,7 +236,7 @@ pub fn gen_fn_parameter(syntax: &ast::Parameter) -> FormatDocumentResult<PrintIt
 
 pub fn gen_fn_return_type(syntax: &ast::ReturnType) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
-    let mut syntax = put_back(syntax.syntax().children_with_tokens());
+    let mut syntax = syntax_iter(syntax.syntax());
 
     parse_token(&mut syntax, SyntaxKind::Arrow)?;
     let item_type_specifier =

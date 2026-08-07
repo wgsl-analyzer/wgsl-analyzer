@@ -7,7 +7,7 @@ use syntax::{
 };
 
 use crate::{
-    ast_parse::{IgnoreBlankspace, NoTrivia, parse_end, parse_node_with},
+    ast_parse::{IgnoreBlankspace, NoTrivia, parse_end, parse_node_with, syntax_iter},
     generators::node::gen_node_with_trivia,
     print_item_buffer::{
         PrintItemBuffer,
@@ -18,7 +18,7 @@ use crate::{
 
 pub fn gen_loop_statement(statement: &ast::LoopStatement) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
-    let mut syntax = put_back(statement.syntax().children_with_tokens());
+    let mut syntax = syntax_iter(statement.syntax());
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::Loop)?;
     let item_body = parse_node_with(&mut syntax, IgnoreBlankspace)
         .expect_kind(SyntaxKind::CompoundStatement)?;

@@ -15,7 +15,7 @@ use syntax::{
 use crate::{
     ast_parse::{
         SyntaxIter, parse_end, parse_node, parse_node_optional, parse_token, parse_token_any,
-        parse_token_optional,
+        parse_token_optional, syntax_iter,
     },
     generators::{
         attributes,
@@ -152,9 +152,7 @@ pub fn gen_attributes(
 }
 
 pub fn gen_attribute_list(attribute_list: &AttributeList) -> FormatDocumentResult<PrintItemBuffer> {
-    let attributes = parse_attributes_inner(&mut put_back(
-        attribute_list.syntax().children_with_tokens(),
-    ))?;
+    let attributes = parse_attributes_inner(&mut syntax_iter(attribute_list.syntax()))?;
 
     // If we don't have any attributes, we early exit to avoid all the bureaucracy with newlines
     if attributes.attributes.is_empty() {
@@ -307,7 +305,7 @@ pub fn gen_attribute(attribute: &Attribute) -> FormatDocumentResult<PrintItemBuf
 pub fn gen_diagnostic_attribute(
     attribute: &ast::DiagnosticAttribute
 ) -> FormatDocumentResult<PrintItemBuffer> {
-    let mut syntax = put_back(attribute.syntax().children_with_tokens());
+    let mut syntax = syntax_iter(attribute.syntax());
 
     parse_token(&mut syntax, SyntaxKind::AttributeOperator)?;
     let item_comments_after_operator = parse_many_comments_and_blankspace(&mut syntax)?;
@@ -328,7 +326,7 @@ pub fn gen_diagnostic_attribute(
 pub fn gen_interpolate_type_name(
     attribute: &ast::InterpolateTypeName
 ) -> FormatDocumentResult<PrintItemBuffer> {
-    let mut syntax = put_back(attribute.syntax().children_with_tokens());
+    let mut syntax = syntax_iter(attribute.syntax());
     let content = parse_token_any(&mut syntax)?;
     parse_end(&mut syntax)?;
 
@@ -338,7 +336,7 @@ pub fn gen_interpolate_type_name(
 }
 
 pub fn gen_early_depth_test_mode(attribute: &SyntaxNode) -> FormatDocumentResult<PrintItemBuffer> {
-    let mut syntax = put_back(attribute.children_with_tokens());
+    let mut syntax = syntax_iter(attribute);
     let content = parse_token_any(&mut syntax)?;
     parse_end(&mut syntax)?;
 
@@ -350,7 +348,7 @@ pub fn gen_early_depth_test_mode(attribute: &SyntaxNode) -> FormatDocumentResult
 pub fn gen_interpolate_sampling_name(
     attribute: &ast::InterpolateSamplingName
 ) -> FormatDocumentResult<PrintItemBuffer> {
-    let mut syntax = put_back(attribute.syntax().children_with_tokens());
+    let mut syntax = syntax_iter(attribute.syntax());
     let content = parse_token_any(&mut syntax)?;
     parse_end(&mut syntax)?;
 
@@ -361,7 +359,7 @@ pub fn gen_interpolate_sampling_name(
 pub fn gen_interpolate_attribute(
     attribute: &ast::InterpolateAttribute
 ) -> FormatDocumentResult<PrintItemBuffer> {
-    let mut syntax = put_back(attribute.syntax().children_with_tokens());
+    let mut syntax = syntax_iter(attribute.syntax());
 
     parse_token(&mut syntax, SyntaxKind::AttributeOperator)?;
     let item_comments_after_operator = parse_many_comments_and_blankspace(&mut syntax)?;
@@ -413,7 +411,7 @@ pub fn gen_interpolate_attribute(
 pub fn gen_builtin_value_name(
     attribute: &ast::BuiltinValueName
 ) -> FormatDocumentResult<PrintItemBuffer> {
-    let mut syntax = put_back(attribute.syntax().children_with_tokens());
+    let mut syntax = syntax_iter(attribute.syntax());
     let content = parse_token_any(&mut syntax)?;
     parse_end(&mut syntax)?;
 
@@ -424,7 +422,7 @@ pub fn gen_builtin_value_name(
 pub fn gen_builtin_attribute(
     attribute: &ast::BuiltinAttribute
 ) -> FormatDocumentResult<PrintItemBuffer> {
-    let mut syntax = put_back(attribute.syntax().children_with_tokens());
+    let mut syntax = syntax_iter(attribute.syntax());
 
     parse_token(&mut syntax, SyntaxKind::AttributeOperator)?;
     let item_comments_after_operator = parse_many_comments_and_blankspace(&mut syntax)?;
@@ -454,7 +452,7 @@ pub fn gen_builtin_attribute(
 pub fn gen_other_attribute(
     attribute: &ast::OtherAttribute
 ) -> FormatDocumentResult<PrintItemBuffer> {
-    let mut syntax = put_back(attribute.syntax().children_with_tokens());
+    let mut syntax = syntax_iter(attribute.syntax());
 
     parse_token(&mut syntax, SyntaxKind::AttributeOperator)?;
     let item_comments_after_operator = parse_many_comments_and_blankspace(&mut syntax)?;
@@ -515,7 +513,7 @@ fn gen_attr_standard_with_args(
     expected_token: SyntaxKind,
     attribute_name: &'static StringContainer,
 ) -> FormatDocumentResult<PrintItemBuffer> {
-    let mut syntax = put_back(syntax.children_with_tokens());
+    let mut syntax = syntax_iter(syntax);
 
     parse_token(&mut syntax, SyntaxKind::AttributeOperator)?;
     let item_comments_after_operator = parse_many_comments_and_blankspace(&mut syntax)?;

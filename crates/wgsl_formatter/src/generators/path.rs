@@ -4,7 +4,7 @@ use parser::SyntaxKind;
 use syntax::{AstNode as _, ast};
 
 use crate::{
-    ast_parse::{parse_end, parse_token_optional},
+    ast_parse::{parse_end, parse_token_optional, syntax_iter},
     generators::comments::{Comment, gen_comment, parse_comment_optional},
     print_item_buffer::{PrintItemBuffer, spacing_request::Request},
     reporting::FormatDocumentResult,
@@ -12,7 +12,7 @@ use crate::{
 
 pub fn gen_path(path: &ast::Path) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
-    let mut syntax = put_back(path.syntax().children_with_tokens());
+    let mut syntax = syntax_iter(path.syntax());
 
     enum PathItem {
         Identifier(ast::SyntaxToken),

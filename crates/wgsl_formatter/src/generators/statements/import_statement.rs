@@ -10,7 +10,7 @@ use syntax::{
 use crate::{
     ast_parse::{
         NoTrivia, parse_end, parse_node, parse_node_optional, parse_node_with, parse_token,
-        parse_token_optional,
+        parse_token_optional, syntax_iter,
     },
     context_policies::statement_needs_semicolon_policy,
     generators::{
@@ -41,7 +41,7 @@ pub fn gen_import_package_relative(
     node: &ast::ImportPackageRelative
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
-    let mut syntax = put_back(node.syntax().children_with_tokens());
+    let mut syntax = syntax_iter(node.syntax());
     parse_node_with(&mut syntax, NoTrivia).expect_kind(ast::SyntaxKind::Package)?;
     parse_node_with(&mut syntax, NoTrivia).expect_kind(ast::SyntaxKind::ColonColon)?;
     parse_end(&mut syntax)?;
@@ -56,7 +56,7 @@ pub fn gen_import_super_relative(
     node: &ast::ImportSuperRelative
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
-    let mut syntax = put_back(node.syntax().children_with_tokens());
+    let mut syntax = syntax_iter(node.syntax());
 
     enum SuperRelativeItem {
         Super,
@@ -99,7 +99,7 @@ pub fn gen_import_super_relative(
 }
 pub fn gen_import_item(node: &ast::ImportItem) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
-    let mut syntax = put_back(node.syntax().children_with_tokens());
+    let mut syntax = syntax_iter(node.syntax());
     let item_name = parse_node::<ast::Name>(&mut syntax)?;
     let item_comments_after_name = parse_many_comments_and_blankspace(&mut syntax)?;
     let item_alias = if parse_token_optional(&mut syntax, SyntaxKind::As).is_some() {
@@ -126,7 +126,7 @@ pub fn gen_import_item(node: &ast::ImportItem) -> FormatDocumentResult<PrintItem
 }
 pub fn gen_import_path(node: &ast::ImportPath) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
-    let mut syntax = put_back(node.syntax().children_with_tokens());
+    let mut syntax = syntax_iter(node.syntax());
     let item_name = parse_node::<ast::Name>(&mut syntax)?;
     let item_comments_after_name = parse_many_comments_and_blankspace(&mut syntax)?;
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::ColonColon)?;
@@ -236,7 +236,7 @@ pub fn gen_import_collection(
     node: &ast::ImportCollection
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
-    let mut syntax = put_back(node.syntax().children_with_tokens());
+    let mut syntax = syntax_iter(node.syntax());
 
     let mut items = Vec::new();
 
@@ -307,7 +307,7 @@ pub fn gen_import_collection(
 
 pub fn gen_import_statement(node: &ast::ImportStatement) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
-    let mut syntax = put_back(node.syntax().children_with_tokens());
+    let mut syntax = syntax_iter(node.syntax());
     parse_node_with(&mut syntax, NoTrivia).expect_kind(ast::SyntaxKind::Import)?;
     let item_comments_after_import = parse_many_comments_and_blankspace(&mut syntax)?;
     let item_package_relative = parse_node_optional::<ast::ImportPackageRelative>(&mut syntax);

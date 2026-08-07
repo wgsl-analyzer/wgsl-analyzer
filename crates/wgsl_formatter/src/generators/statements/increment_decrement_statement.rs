@@ -9,6 +9,7 @@ use syntax::{
 use crate::{
     ast_parse::{
         NoTrivia, parse_end, parse_node, parse_node_with, parse_token, parse_token_optional,
+        syntax_iter,
     },
     context_policies::statement_needs_semicolon_policy,
     generators::{
@@ -31,11 +32,7 @@ pub fn gen_increment_decrement_statement(
     // continue to be one function with a whole lot of parameters and ifs.
 
     // ==== Parse ====
-    let mut syntax = put_back(
-        increment_decrement_statement
-            .syntax()
-            .children_with_tokens(),
-    );
+    let mut syntax = syntax_iter(increment_decrement_statement.syntax());
 
     let item_ident = parse_node::<Expression>(&mut syntax)?;
     let item_comments_after_ident = parse_many_comments_and_blankspace(&mut syntax)?;

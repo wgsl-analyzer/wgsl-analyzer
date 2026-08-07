@@ -1,7 +1,7 @@
 //! A minimal parser toolbox used by the formatter
 //! to parse the AST into a structure usable for the formatter itself.
 
-use itertools::PutBack;
+use itertools::{PutBack, PutBackN, put_back_n};
 use parser::{SyntaxElementChildren, SyntaxKind, SyntaxNode, SyntaxToken};
 use rowan::NodeOrToken;
 use syntax::{AstNode, AstToken, ast::AttributeList};
@@ -13,7 +13,11 @@ use crate::{
     trivia::{NodeTriviaItem, NodeWithTrivia, NodeWithTriviaContent},
 };
 
-pub type SyntaxIter = PutBack<SyntaxElementChildren>;
+pub type SyntaxIter = PutBackN<SyntaxElementChildren>;
+pub fn syntax_iter(syntax: &SyntaxNode) -> SyntaxIter {
+    put_back_n(syntax.children_with_tokens())
+}
+
 pub fn parse_token(
     syntax: &mut SyntaxIter,
     expected: SyntaxKind,
@@ -253,6 +257,7 @@ where
         // NOTE: Make sure node is either put_back onto syntax or consumed in a meaningful way
         if let Some(node) = syntax.next() {
             let action = filter_pre(&node);
+            println!("Pre {node:?} {action:?}");
             match action {
                 Some(FilterAction::Ignored) => {},
                 Some(FilterAction::Content) => {
@@ -283,6 +288,7 @@ where
 
     while let Some(node) = syntax.next() {
         let action = filter_post(&node);
+        println!("Post {node:?} {action:?}");
         match action {
             Some(FilterAction::Ignored) => {},
             Some(FilterAction::Content) => {
