@@ -6,9 +6,10 @@ use syntax::{
 };
 
 use crate::{
+    ast_parse::SyntaxIter,
     generators::comments::Comment,
     helpers::{LineSpacing, NextGenLineSpacing},
-    reporting::{FormatDocumentError, FormatDocumentResult},
+    reporting::{FormatDocumentError, FormatDocumentResult, UnwrapIfPreferCrash},
 };
 
 #[derive(Clone, Debug)]
@@ -16,6 +17,31 @@ pub enum NodeTriviaItem {
     LineSpacing(NextGenLineSpacing),
     Comment(Comment),
     AttributeList(AttributeList),
+}
+
+impl NodeTriviaItem {
+    pub fn put_back(
+        self,
+        syntax: &mut SyntaxIter,
+    ) {
+        match self {
+            NodeTriviaItem::LineSpacing(next_gen_line_spacing) => match next_gen_line_spacing {
+                NextGenLineSpacing::LineBreak(syntax_token)
+                | NextGenLineSpacing::EmptyLine(syntax_token)
+                | NextGenLineSpacing::OnelineBlankspace(syntax_token) => {
+                    syntax.put_back(NodeOrToken::Token(syntax_token));
+                },
+            },
+            NodeTriviaItem::Comment(comment) => match comment {
+                Comment::Block(node) | Comment::LineEnding(node) => {
+                    syntax.put_back(NodeOrToken::Token(node));
+                },
+            },
+            NodeTriviaItem::AttributeList(attribute_list) => {
+                syntax.put_back(NodeOrToken::Node(attribute_list.syntax().clone()));
+            },
+        }
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -63,6 +89,39 @@ impl NodeWithTrivia {
             .map(NodeOrToken::<SyntaxNode, SyntaxToken>::kind)
     }
 
+    pub fn put_back(
+        self,
+        syntax: &mut SyntaxIter,
+    ) {
+        for item in self.succeeding_trivia.into_iter().rev() {
+            item.put_back(syntax);
+        }
+        match self.node {
+            NodeWithTriviaContent::NoContent => {},
+            NodeWithTriviaContent::Content(node_or_token) => {
+                syntax.put_back(node_or_token);
+            },
+            NodeWithTriviaContent::End => {},
+        }
+        for item in self.preceding_trivia.into_iter().rev() {
+            item.put_back(syntax);
+        }
+    }
+
+    // TODO This api is suboptimal
+    pub fn only_if_kind(
+        self,
+        kind: SyntaxKind,
+        syntax: &mut SyntaxIter,
+    ) -> Option<Self> {
+        if self.node.as_ref().is_some_and(|node| node.kind() != kind) {
+            self.put_back(syntax);
+            None
+        } else {
+            Some(self)
+        }
+    }
+
     pub fn expect_kind_optional(
         self,
         kind: SyntaxKind,
@@ -72,6 +131,7 @@ impl NodeWithTrivia {
             Err(FormatDocumentError::UnexpectedNodeOrToken {
                 received: self.node.into_option().unwrap(),
             })
+            .expect_if_prefer_crash()
         } else {
             Ok(self)
         }
@@ -88,6 +148,7 @@ impl NodeWithTrivia {
             Err(FormatDocumentError::UnexpectedNodeOrToken {
                 received: self.node.into_option().unwrap(),
             })
+            .expect_if_prefer_crash()
         }
     }
 
@@ -105,6 +166,7 @@ impl NodeWithTrivia {
         Err(FormatDocumentError::UnexpectedNodeOrToken {
             received: self.node.into_option().unwrap(),
         })
+        .expect_if_prefer_crash()
     }
 
     pub fn expect_ast_token<T>(self) -> FormatDocumentResult<Self>
@@ -120,6 +182,7 @@ impl NodeWithTrivia {
         Err(FormatDocumentError::UnexpectedNodeOrToken {
             received: self.node.into_option().unwrap(),
         })
+        .expect_if_prefer_crash()
     }
 
     pub fn is_end(&self) -> bool {

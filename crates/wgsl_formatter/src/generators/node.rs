@@ -228,14 +228,15 @@ pub fn gen_node(node: &SyntaxNode) -> FormatDocumentResult<PrintItemBuffer> {
              SyntaxKind::ForInitializer(node as SyntaxNode) => gen_for_statement_initializer(&node),
              SyntaxKind::ForCondition(node as SyntaxNode) => gen_for_statement_condition(&node),
              SyntaxKind::ForContinuingPart(node as SyntaxNode) => gen_for_statement_continuing_part(&node),
-             SyntaxKind::LineEndingComment(node as SyntaxNode) => Ok(gen_comment(&Comment::LineEnding(node.to_string()))),
-             SyntaxKind::BlockComment(node as SyntaxNode) => Ok(gen_comment(&Comment::Block(node.to_string()))),
              SyntaxKind::EmptyStatement(node as SyntaxNode) => Ok(PrintItemBuffer::default()),
              SyntaxKind::EarlyDepthTestMode(node as SyntaxNode) => gen_early_depth_test_mode(&node),
+
 
              -
 
              // Tokens
+             SyntaxKind::LineEndingComment | //(node as SyntaxNode) => Ok(gen_comment(todo!())),
+             SyntaxKind::BlockComment | //(node as SyntaxNode) => Ok(gen_comment(todo!())),
              SyntaxKind::Blankspace |
              SyntaxKind::Identifier |
              SyntaxKind::FloatLiteral |
