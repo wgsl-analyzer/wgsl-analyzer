@@ -1,24 +1,15 @@
 use dprint_core::formatting::StringContainer;
 use dprint_core_macros::sc;
-use itertools::put_back;
 use parser::{SyntaxKind, SyntaxNode};
 use syntax::{
     AstNode as _,
-    ast::{self, TemplateList},
+    ast::{self},
 };
 
 use crate::{
-    ast_parse::{
-        NoTrivia, parse_end, parse_node, parse_node_optional, parse_node_with, parse_token,
-        parse_token_optional, syntax_iter,
-    },
+    ast_parse::{IgnoreBlankspace, NoTrivia, parse_end, parse_node_with, syntax_iter},
     context_policies::statement_needs_semicolon_policy,
-    generators::{
-        attributes::{AttributeLayout, gen_attributes, parse_many_attributes},
-        comments::{gen_comments, parse_many_comments_and_blankspace},
-        expressions::gen_expression,
-        types::{gen_template_list, gen_type_specifier},
-    },
+    generators::node::gen_node_with_trivia,
     print_item_buffer::{
         PrintItemBuffer,
         spacing_request::{Request, RequestItem},
@@ -91,42 +82,29 @@ fn gen_var_let_const_override_statement(
     // ==== Parse ====
     let mut syntax = syntax_iter(syntax_node);
 
-    let item_attributes = parse_many_attributes(&mut syntax)?;
-
     parse_node_with(&mut syntax, NoTrivia).expect_kind(kind.syntax_kind())?;
-    let item_comments_after_let = parse_many_comments_and_blankspace(&mut syntax)?;
+    let item_template_list = parse_node_with(&mut syntax, IgnoreBlankspace)
+        .only_if_kind(SyntaxKind::TemplateList, &mut syntax);
+    let item_name = parse_node_with(&mut syntax, IgnoreBlankspace).expect_kind(SyntaxKind::Name)?;
 
-    let item_template_list = if let Some(template_list) =
-        parse_node_optional::<TemplateList>(&mut syntax)
-    {
-        let item_comments_after_template_list = parse_many_comments_and_blankspace(&mut syntax)?;
-        Some((template_list, item_comments_after_template_list))
+    let item_colon =
+        parse_node_with(&mut syntax, NoTrivia).only_if_kind(SyntaxKind::Colon, &mut syntax);
+
+    let items_type = if item_colon.is_some() {
+        let item_type_specifier = parse_node_with(&mut syntax, IgnoreBlankspace)
+            .expect_kind(SyntaxKind::TypeSpecifier)?;
+        Some(item_type_specifier)
     } else {
         None
     };
 
-    let item_name = parse_node::<ast::Name>(&mut syntax)?;
-    let item_comments_after_name = parse_many_comments_and_blankspace(&mut syntax)?;
+    let item_equal =
+        parse_node_with(&mut syntax, NoTrivia).only_if_kind(SyntaxKind::Equal, &mut syntax);
 
-    let items_type = if parse_token_optional(&mut syntax, SyntaxKind::Colon).is_some() {
-        let item_comments_after_colon = parse_many_comments_and_blankspace(&mut syntax)?;
-        let item_type_specifier = parse_node::<ast::TypeSpecifier>(&mut syntax)?;
-        let item_comments_after_type = parse_many_comments_and_blankspace(&mut syntax)?;
-        Some((
-            item_comments_after_colon,
-            item_type_specifier,
-            item_comments_after_type,
-        ))
-    } else {
-        None
-    };
-
-    let assignment = if parse_token_optional(&mut syntax, SyntaxKind::Equal).is_some() {
-        let item_comments_after_equal = parse_many_comments_and_blankspace(&mut syntax)?;
-
-        let value = parse_node::<ast::Expression>(&mut syntax)?;
-        let item_comments_after_value = parse_many_comments_and_blankspace(&mut syntax)?;
-        Some((item_comments_after_equal, value, item_comments_after_value))
+    let assignment = if item_equal.is_some() {
+        let value = parse_node_with(&mut syntax, IgnoreBlankspace)
+            .expect_castable_kind::<ast::Expression>()?;
+        Some(value)
     } else {
         None
     };
@@ -136,39 +114,28 @@ fn gen_var_let_const_override_statement(
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
-    formatted.extend(gen_attributes(
-        &item_attributes,
-        AttributeLayout::Multiline,
-    )?);
     formatted.push_sc(kind.sc());
     formatted.start_indent();
 
-    formatted.extend(gen_comments(&item_comments_after_let));
-    if let Some((item_template_list, item_comments_after_template_list)) = item_template_list {
-        formatted.extend(gen_template_list(&item_template_list)?);
-        formatted.extend(gen_comments(&item_comments_after_template_list));
+    if let Some(item_template_list) = item_template_list {
+        formatted.extend(gen_node_with_trivia(&item_template_list)?);
     }
 
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.push_string(item_name.text().to_string());
-    formatted.extend(gen_comments(&item_comments_after_name));
+    formatted.extend(gen_node_with_trivia(&item_name)?);
 
-    if let Some((comments_after_colon, type_specifier, comments_after_type)) = items_type {
+    if let Some(type_specifier) = items_type {
         formatted.request(Request::discourage(RequestItem::Space));
         formatted.push_sc(sc!(":"));
         formatted.request(Request::expect(RequestItem::Space));
-        formatted.extend(gen_comments(&comments_after_colon));
-        formatted.extend(gen_type_specifier(&type_specifier)?);
-        formatted.extend(gen_comments(&comments_after_type));
+        formatted.extend(gen_node_with_trivia(&type_specifier)?);
     }
 
-    if let Some((comments_after_equal, value, comments_after_value)) = assignment {
+    if let Some(value) = assignment {
         formatted.request(Request::expect(RequestItem::Space));
         formatted.push_sc(sc!("="));
         formatted.request(Request::expect(RequestItem::Space));
-        formatted.extend(gen_comments(&comments_after_equal));
-        formatted.extend(gen_expression(&value)?);
-        formatted.extend(gen_comments(&comments_after_value));
+        formatted.extend(gen_node_with_trivia(&value)?);
     }
 
     if statement_needs_semicolon_policy(syntax_node) {
