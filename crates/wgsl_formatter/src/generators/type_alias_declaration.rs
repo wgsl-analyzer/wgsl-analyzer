@@ -6,7 +6,7 @@ use syntax::{
 };
 
 use crate::{
-    ast_parse::{parse_end, parse_node, parse_token, syntax_iter},
+    ast_parse::{NoTrivia, parse_end, parse_node, parse_node_with, parse_token, syntax_iter},
     context_policies::statement_needs_semicolon_policy,
     generators::{
         comments::{gen_comments, parse_many_comments_and_blankspace},
@@ -24,15 +24,15 @@ pub fn gen_type_alias_declaration(
 ) -> Result<PrintItemBuffer, FormatDocumentError> {
     // ==== Parse ====
     let mut syntax = syntax_iter(statement.syntax());
-    parse_token(&mut syntax, parser::SyntaxKind::Alias)?;
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(parser::SyntaxKind::Alias)?;
     let item_comments_after_alias = parse_many_comments_and_blankspace(&mut syntax)?;
     let item_name = parse_node::<Name>(&mut syntax)?;
     let item_comments_after_ident = parse_many_comments_and_blankspace(&mut syntax)?;
-    parse_token(&mut syntax, parser::SyntaxKind::Equal)?;
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(parser::SyntaxKind::Equal)?;
     let item_comments_after_equal = parse_many_comments_and_blankspace(&mut syntax)?;
     let item_type = parse_node::<TypeSpecifier>(&mut syntax)?;
     let item_comments_after_type = parse_many_comments_and_blankspace(&mut syntax)?;
-    parse_token(&mut syntax, parser::SyntaxKind::Semicolon)?;
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(parser::SyntaxKind::Semicolon)?; //Optional?
     parse_end(&mut syntax)?;
 
     // ==== Format ====

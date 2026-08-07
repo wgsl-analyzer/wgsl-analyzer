@@ -14,8 +14,8 @@ use syntax::{
 
 use crate::{
     ast_parse::{
-        SyntaxIter, parse_end, parse_node, parse_node_optional, parse_token, parse_token_any,
-        parse_token_optional, syntax_iter,
+        NoTrivia, SyntaxIter, parse_end, parse_node, parse_node_optional, parse_node_with,
+        parse_token, parse_token_any, parse_token_optional, syntax_iter,
     },
     generators::{
         attributes,
@@ -307,9 +307,9 @@ pub fn gen_diagnostic_attribute(
 ) -> FormatDocumentResult<PrintItemBuffer> {
     let mut syntax = syntax_iter(attribute.syntax());
 
-    parse_token(&mut syntax, SyntaxKind::AttributeOperator)?;
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::AttributeOperator)?;
     let item_comments_after_operator = parse_many_comments_and_blankspace(&mut syntax)?;
-    parse_token(&mut syntax, parser::SyntaxKind::Diagnostic)?;
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(parser::SyntaxKind::Diagnostic)?;
     let item_comments_after_identifier = parse_many_comments_and_blankspace(&mut syntax)?;
     let item_control = parse_node::<DiagnosticControl>(&mut syntax)?;
     parse_end(&mut syntax)?;
@@ -361,11 +361,11 @@ pub fn gen_interpolate_attribute(
 ) -> FormatDocumentResult<PrintItemBuffer> {
     let mut syntax = syntax_iter(attribute.syntax());
 
-    parse_token(&mut syntax, SyntaxKind::AttributeOperator)?;
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::AttributeOperator)?;
     let item_comments_after_operator = parse_many_comments_and_blankspace(&mut syntax)?;
-    parse_token(&mut syntax, parser::SyntaxKind::Interpolate)?;
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(parser::SyntaxKind::Interpolate)?;
     let item_comments_after_identifier = parse_many_comments_and_blankspace(&mut syntax)?;
-    parse_token(&mut syntax, parser::SyntaxKind::ParenthesisLeft)?;
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(parser::SyntaxKind::ParenthesisLeft)?;
     let item_comments_after_open_paren = parse_many_comments_and_blankspace(&mut syntax)?;
     let interpolate_type_name = parse_node::<InterpolateTypeName>(&mut syntax)?;
     let item_comments_after_itn = parse_many_comments_and_blankspace(&mut syntax)?;
@@ -383,7 +383,7 @@ pub fn gen_interpolate_attribute(
         None
     };
     parse_token_optional(&mut syntax, SyntaxKind::Comma);
-    parse_token(&mut syntax, parser::SyntaxKind::ParenthesisRight)?;
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(parser::SyntaxKind::ParenthesisRight)?;
     parse_end(&mut syntax)?;
 
     let mut formatted = PrintItemBuffer::default();
@@ -424,16 +424,16 @@ pub fn gen_builtin_attribute(
 ) -> FormatDocumentResult<PrintItemBuffer> {
     let mut syntax = syntax_iter(attribute.syntax());
 
-    parse_token(&mut syntax, SyntaxKind::AttributeOperator)?;
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::AttributeOperator)?;
     let item_comments_after_operator = parse_many_comments_and_blankspace(&mut syntax)?;
-    parse_token(&mut syntax, parser::SyntaxKind::Builtin)?;
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(parser::SyntaxKind::Builtin)?;
     let item_comments_after_identifier = parse_many_comments_and_blankspace(&mut syntax)?;
-    parse_token(&mut syntax, parser::SyntaxKind::ParenthesisLeft)?;
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(parser::SyntaxKind::ParenthesisLeft)?;
     let item_comments_after_open_paren = parse_many_comments_and_blankspace(&mut syntax)?;
     let item_builtin_value_name = parse_node::<BuiltinValueName>(&mut syntax)?;
     let item_comments_after_itn = parse_many_comments_and_blankspace(&mut syntax)?;
     parse_token_optional(&mut syntax, SyntaxKind::Comma);
-    parse_token(&mut syntax, parser::SyntaxKind::ParenthesisRight)?;
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(parser::SyntaxKind::ParenthesisRight)?;
     parse_end(&mut syntax)?;
 
     let mut formatted = PrintItemBuffer::default();
@@ -454,7 +454,7 @@ pub fn gen_other_attribute(
 ) -> FormatDocumentResult<PrintItemBuffer> {
     let mut syntax = syntax_iter(attribute.syntax());
 
-    parse_token(&mut syntax, SyntaxKind::AttributeOperator)?;
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::AttributeOperator)?;
     let item_comments_after_operator = parse_many_comments_and_blankspace(&mut syntax)?;
     let item_identifier = parse_token(&mut syntax, parser::SyntaxKind::Identifier)?;
     let item_comments_after_identifier = parse_many_comments_and_blankspace(&mut syntax)?;
@@ -515,9 +515,9 @@ fn gen_attr_standard_with_args(
 ) -> FormatDocumentResult<PrintItemBuffer> {
     let mut syntax = syntax_iter(syntax);
 
-    parse_token(&mut syntax, SyntaxKind::AttributeOperator)?;
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::AttributeOperator)?;
     let item_comments_after_operator = parse_many_comments_and_blankspace(&mut syntax)?;
-    parse_token(&mut syntax, expected_token)?;
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(expected_token)?;
     let item_comments_after_identifier = parse_many_comments_and_blankspace(&mut syntax)?;
     //let item_arguments = gen_function_call_like_comma_separated_values(&mut syntax)?;
     let item_arguments = if parse_token_optional(&mut syntax, SyntaxKind::ParenthesisLeft).is_some()
@@ -527,7 +527,7 @@ fn gen_attr_standard_with_args(
             parse_node_optional::<ast::Expression>,
             |syntax| parse_token_optional(syntax, SyntaxKind::Comma),
         );
-        parse_token(&mut syntax, SyntaxKind::ParenthesisRight)?;
+        parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::ParenthesisRight)?;
         Some(item_arguments)
     } else {
         None
