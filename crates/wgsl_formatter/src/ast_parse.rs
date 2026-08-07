@@ -1,14 +1,14 @@
 //! A minimal parser toolbox used by the formatter
 //! to parse the AST into a structure usable for the formatter itself.
 
-use itertools::{PutBack, PutBackN, put_back_n};
+use itertools::{PutBackN, put_back_n};
 use parser::{SyntaxElementChildren, SyntaxKind, SyntaxNode, SyntaxToken};
 use rowan::NodeOrToken;
 use syntax::{AstNode, AstToken, ast::AttributeList};
 
 use crate::{
-    generators::comments::{parse_comment_optional, read_comment},
-    helpers::{NextGenLineSpacing, parse_next_gen_line_spacing, read_blankspace},
+    generators::comments::read_comment,
+    helpers::{NextGenLineSpacing, read_blankspace},
     reporting::{FormatDocumentError, FormatDocumentResult, UnwrapIfPreferCrash as _},
     trivia::{NodeTriviaItem, NodeWithTrivia, NodeWithTriviaContent},
 };
@@ -36,6 +36,7 @@ pub fn parse_token(
     .expect_if_prefer_crash()
 }
 
+#[deprecated]
 pub fn parse_node_by_kind(
     syntax: &mut SyntaxIter,
     expected: SyntaxKind,
@@ -53,6 +54,7 @@ pub fn parse_node_by_kind(
     .expect_if_prefer_crash()
 }
 
+#[deprecated]
 pub fn parse_any_node_optional(syntax: &mut SyntaxIter) -> Option<SyntaxNode> {
     match syntax.next() {
         Some(NodeOrToken::Node(child)) => Some(child),
@@ -64,6 +66,7 @@ pub fn parse_any_node_optional(syntax: &mut SyntaxIter) -> Option<SyntaxNode> {
     }
 }
 
+#[deprecated]
 pub fn parse_node_by_kind_optional(
     syntax: &mut SyntaxIter,
     expected: SyntaxKind,
@@ -78,6 +81,7 @@ pub fn parse_node_by_kind_optional(
     }
 }
 
+#[deprecated]
 pub fn parse_token_any(syntax: &mut SyntaxIter) -> FormatDocumentResult<SyntaxToken> {
     match syntax.next() {
         Some(NodeOrToken::Token(child)) => Ok(child),
@@ -90,6 +94,7 @@ pub fn parse_token_any(syntax: &mut SyntaxIter) -> FormatDocumentResult<SyntaxTo
     .expect_if_prefer_crash()
 }
 
+#[deprecated]
 pub fn parse_token_optional(
     syntax: &mut SyntaxIter,
     expected: SyntaxKind,
@@ -116,6 +121,7 @@ pub fn parse_end(syntax: &mut SyntaxIter) -> FormatDocumentResult<()> {
     .expect_if_prefer_crash()
 }
 
+#[deprecated]
 pub fn parse_end_optional(syntax: &mut SyntaxIter) -> Option<()> {
     match syntax.next() {
         None => Some(()),
@@ -126,6 +132,7 @@ pub fn parse_end_optional(syntax: &mut SyntaxIter) -> Option<()> {
     }
 }
 
+#[deprecated]
 pub fn parse_node_optional<T>(syntax: &mut SyntaxIter) -> Option<T>
 where
     T: AstNode,
@@ -221,6 +228,22 @@ impl UntilFilter for Oneline {
             },
             _ => None,
         }
+    }
+}
+
+#[derive(Clone)]
+pub struct Filter<T>(pub T)
+where
+    T: Fn(&NodeOrToken<SyntaxNode, SyntaxToken>) -> Option<FilterAction>;
+impl<T> UntilFilter for Filter<T>
+where
+    T: Fn(&NodeOrToken<SyntaxNode, SyntaxToken>) -> Option<FilterAction>,
+{
+    fn filter(
+        &self,
+        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
+    ) -> Option<FilterAction> {
+        self.0(node)
     }
 }
 
@@ -367,6 +390,7 @@ where
     .expect_if_prefer_crash()
 }
 
+#[deprecated]
 pub fn parse_ast_token<T>(syntax: &mut SyntaxIter) -> FormatDocumentResult<T>
 where
     T: AstToken,

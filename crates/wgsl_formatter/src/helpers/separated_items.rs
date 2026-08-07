@@ -2,21 +2,24 @@ use dprint_core::formatting::{PrintItems, StringContainer};
 use parser::SyntaxKind;
 
 use crate::{
-    ast_parse::{SyntaxIter, parse_token_optional},
+    ast_parse::{SyntaxIter, UntilFilter, parse_node_with, parse_token_optional},
     generators::comments::{Comment, gen_comment, parse_comment_optional},
     multiline_group::MultilineGroup,
     print_item_buffer::PrintItemBuffer,
     reporting::FormatDocumentResult,
+    trivia::NodeWithTrivia,
 };
 
 use super::{LineSpacing, parse_line_spacing};
 
+#[deprecated]
 pub struct SeparatedItems<T> {
     pub is_blank: bool,
     pub last_item_index: usize,
     pub items: Vec<SeparatedItem<T>>,
 }
 
+#[deprecated]
 pub enum SeparatedItem<T> {
     Item(T),
     Separator,
@@ -24,6 +27,7 @@ pub enum SeparatedItem<T> {
     LineSpacing(LineSpacing),
 }
 
+#[deprecated]
 pub fn parse_separated_items<T, S, ParseSeparatorFn, ParseItemFn>(
     syntax: &mut SyntaxIter,
     parse_item: ParseItemFn,
@@ -63,6 +67,7 @@ where
     }
 }
 
+#[deprecated]
 pub fn format_separated_items<T, GenItemFn>(
     multiline_group: &mut MultilineGroup<'_>,
     items: SeparatedItems<T>,
