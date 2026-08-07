@@ -8,7 +8,8 @@ use syntax::{
 
 use crate::{
     ast_parse::{
-        parse_end, parse_node, parse_node_optional, parse_token, parse_token_optional, syntax_iter,
+        NoTrivia, parse_end, parse_node, parse_node_optional, parse_node_with, parse_token,
+        parse_token_optional, syntax_iter,
     },
     generators::{
         comments::{
@@ -45,7 +46,7 @@ pub fn gen_enable_directive(node: &ast::EnableDirective) -> FormatDocumentResult
 
     let mut syntax = syntax_iter(node.syntax());
 
-    parse_token(&mut syntax, SyntaxKind::Enable)?;
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::Enable)?;
 
     let mut items = Vec::new();
     let mut last_content_item_index = None;
@@ -63,7 +64,7 @@ pub fn gen_enable_directive(node: &ast::EnableDirective) -> FormatDocumentResult
             break;
         }
     }
-    parse_token(&mut syntax, SyntaxKind::Semicolon)?;
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::Semicolon)?; //TODO Optionalize
     parse_end(&mut syntax)?;
 
     // ==== Format ====
@@ -122,7 +123,7 @@ pub fn gen_requires_directive(
 
     let mut syntax = syntax_iter(node.syntax());
 
-    parse_token(&mut syntax, SyntaxKind::Requires)?;
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::Requires)?;
 
     let mut items = Vec::new();
     let mut last_content_item_index = None;
@@ -140,7 +141,7 @@ pub fn gen_requires_directive(
             break;
         }
     }
-    parse_token(&mut syntax, SyntaxKind::Semicolon)?;
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::Semicolon)?; //Optionalize
     parse_end(&mut syntax)?;
 
     // ==== Format ====
@@ -181,11 +182,11 @@ pub fn gen_diagnostic_directive(
 ) -> FormatDocumentResult<PrintItemBuffer> {
     let mut syntax = syntax_iter(node.syntax());
 
-    parse_token(&mut syntax, SyntaxKind::Diagnostic)?;
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::Diagnostic)?;
     let item_comments_after_identifier = parse_many_comments_and_blankspace(&mut syntax)?;
     let item_control = parse_node::<DiagnosticControl>(&mut syntax)?;
     let item_comments_after_control = parse_many_comments_and_blankspace(&mut syntax)?;
-    parse_token(&mut syntax, SyntaxKind::Semicolon)?;
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::Semicolon)?; //Make optional
     parse_end(&mut syntax)?;
 
     let mut formatted = PrintItemBuffer::default();

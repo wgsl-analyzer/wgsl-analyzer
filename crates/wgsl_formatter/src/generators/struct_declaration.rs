@@ -8,8 +8,9 @@ use syntax::{
 
 use crate::{
     ast_parse::{
-        FilterAction, parse_end, parse_node, parse_node_optional, parse_node_with_trivia_filter,
-        parse_node_with_trivia_filter_2, parse_token, parse_token_optional, syntax_iter,
+        FilterAction, NoTrivia, parse_end, parse_node, parse_node_optional, parse_node_with,
+        parse_node_with_trivia_filter, parse_node_with_trivia_filter_2, parse_token,
+        parse_token_optional, syntax_iter,
     },
     generators::node::{
         gen_node_content, gen_node_preceding_trivia, gen_node_succeeding_trivia,
@@ -41,7 +42,7 @@ pub fn gen_struct_declaration(
     // === Parse ===
     let mut syntax = syntax_iter(node.syntax());
 
-    parse_token(&mut syntax, SyntaxKind::Struct)?;
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::Struct)?;
     let item_comments_after_struct = parse_many_comments_and_blankspace(&mut syntax)?;
     let item_name = parse_node::<ast::Name>(&mut syntax)?;
     let item_comments_after_name = parse_many_comments_and_blankspace(&mut syntax)?;
@@ -72,7 +73,7 @@ pub fn gen_struct_body(body: &ast::StructBody) -> FormatDocumentResult<PrintItem
     // === Parse ===
     let mut syntax = syntax_iter(body.syntax());
 
-    parse_token(&mut syntax, SyntaxKind::BraceLeft)?;
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::BraceLeft)?;
     let item_comments_after_open_paren = parse_many_comments_and_blankspace(&mut syntax)?;
 
     let mut item_members = Vec::new();
@@ -123,7 +124,7 @@ pub fn gen_struct_body(body: &ast::StructBody) -> FormatDocumentResult<PrintItem
         }
     }
 
-    parse_token(&mut syntax, SyntaxKind::BraceRight)?;
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::BraceRight)?;
     parse_end(&mut syntax)?;
 
     // === Format ===
@@ -178,7 +179,7 @@ pub fn gen_struct_member(member: &ast::StructMember) -> FormatDocumentResult<Pri
     let item_comments_after_attributes = parse_many_comments_and_blankspace(&mut syntax)?;
     let item_name = parse_node::<ast::Name>(&mut syntax)?;
     let item_comments_after_name = parse_many_comments_and_blankspace(&mut syntax)?;
-    parse_token(&mut syntax, SyntaxKind::Colon)?;
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::Colon)?;
     let item_comments_after_colon = parse_many_comments_and_blankspace(&mut syntax)?;
     let item_type_specifier = parse_node::<ast::TypeSpecifier>(&mut syntax)?;
     parse_end(&mut syntax)?;

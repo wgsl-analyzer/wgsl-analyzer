@@ -8,7 +8,8 @@ use syntax::{
 
 use crate::{
     ast_parse::{
-        parse_end, parse_node, parse_node_optional, parse_token, parse_token_optional, syntax_iter,
+        NoTrivia, parse_end, parse_node, parse_node_optional, parse_node_with, parse_token,
+        parse_token_optional, syntax_iter,
     },
     generators::{
         comments::{gen_comments, parse_many_comments_and_blankspace},
@@ -52,14 +53,14 @@ pub fn gen_template_list(
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = syntax_iter(template_list.syntax());
-    parse_token(&mut syntax, SyntaxKind::TemplateStart)?;
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::TemplateStart)?;
 
     let items = parse_separated_items(
         &mut syntax,
         parse_node_optional::<ast::Expression>,
         |syntax| parse_token_optional(syntax, SyntaxKind::Comma),
     );
-    parse_token(&mut syntax, parser::SyntaxKind::TemplateEnd)?;
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(parser::SyntaxKind::TemplateEnd)?;
     parse_end(&mut syntax)?;
 
     // ==== Format ====

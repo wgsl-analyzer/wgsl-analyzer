@@ -9,7 +9,7 @@ use syntax::{
 
 use crate::{
     ast_parse::{
-        FilterAction, IgnoreBlankspace, parse_end, parse_node, parse_node_optional,
+        FilterAction, IgnoreBlankspace, NoTrivia, parse_end, parse_node, parse_node_optional,
         parse_node_with, parse_node_with_trivia_filter, parse_token, parse_token_optional,
         syntax_iter,
     },
@@ -43,7 +43,7 @@ pub fn gen_function_declaration(
 ) -> FormatDocumentResult<PrintItemBuffer> {
     let mut syntax = syntax_iter(node.syntax());
 
-    parse_token(&mut syntax, SyntaxKind::Fn)?;
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::Fn)?;
     let item_name = parse_node_with(&mut syntax, IgnoreBlankspace).expect_kind(SyntaxKind::Name)?;
     let item_params = parse_node_with(&mut syntax, IgnoreBlankspace)
         .expect_kind(SyntaxKind::FunctionParameters)?;
@@ -99,7 +99,7 @@ pub fn gen_fn_parameters(node: &ast::FunctionParameters) -> FormatDocumentResult
 
     let mut syntax = syntax_iter(node.syntax());
 
-    parse_token(&mut syntax, SyntaxKind::ParenthesisLeft)?;
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::ParenthesisLeft)?;
     let item_comments_start = parse_many_comments_and_blankspace(&mut syntax)?;
 
     let mut items = Vec::new();
@@ -131,7 +131,7 @@ pub fn gen_fn_parameters(node: &ast::FunctionParameters) -> FormatDocumentResult
         }
     }
 
-    parse_token(&mut syntax, SyntaxKind::ParenthesisRight)?;
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::ParenthesisRight)?;
     parse_end(&mut syntax)?;
 
     // ==== Format ====
@@ -212,7 +212,7 @@ pub fn gen_fn_parameter(syntax: &ast::Parameter) -> FormatDocumentResult<PrintIt
     let item_attributes = parse_many_attributes(&mut syntax)?;
     let item_name = parse_node::<ast::Name>(&mut syntax)?;
     let item_comments_after_name = parse_many_comments_and_blankspace(&mut syntax)?;
-    parse_token(&mut syntax, SyntaxKind::Colon)?;
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::Colon)?;
     let item_comments_after_colon = parse_many_comments_and_blankspace(&mut syntax)?;
     let item_type_specifier = parse_node::<ast::TypeSpecifier>(&mut syntax)?;
     parse_end(&mut syntax)?;
@@ -238,7 +238,7 @@ pub fn gen_fn_return_type(syntax: &ast::ReturnType) -> FormatDocumentResult<Prin
     // ==== Parse ====
     let mut syntax = syntax_iter(syntax.syntax());
 
-    parse_token(&mut syntax, SyntaxKind::Arrow)?;
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::Arrow)?;
     let item_type_specifier =
         parse_node_with(&mut syntax, IgnoreBlankspace).expect_kind(SyntaxKind::TypeSpecifier)?;
     parse_end(&mut syntax)?;
