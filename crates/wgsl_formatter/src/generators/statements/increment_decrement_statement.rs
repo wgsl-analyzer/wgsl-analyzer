@@ -1,21 +1,14 @@
 use dprint_core_macros::sc;
-use itertools::put_back;
 use parser::SyntaxKind;
 use syntax::{
     AstNode as _,
-    ast::{self, Expression, IncrementDecrement},
+    ast::{self, Expression},
 };
 
 use crate::{
-    ast_parse::{
-        NoTrivia, parse_end, parse_node, parse_node_with, parse_token, parse_token_optional,
-        syntax_iter,
-    },
+    ast_parse::{IgnoreBlankspace, NoTrivia, parse_end, parse_node_with, syntax_iter},
     context_policies::statement_needs_semicolon_policy,
-    generators::{
-        comments::{gen_comments, parse_many_comments_and_blankspace},
-        expressions::gen_expression,
-    },
+    generators::node::gen_node_with_trivia,
     print_item_buffer::{
         PrintItemBuffer,
         spacing_request::{Request, RequestItem},
@@ -26,41 +19,19 @@ use crate::{
 pub fn gen_increment_decrement_statement(
     increment_decrement_statement: &ast::IncrementDecrementStatement
 ) -> Result<PrintItemBuffer, FormatDocumentError> {
-    // NOTE!! - When changing this function, make sure to also update gen_phony_assignment_statement.
-    // This is non-dry code, but when inevitably at some point there will be some differences between
-    // the two, this should clearly communicate that they should be split up and not
-    // continue to be one function with a whole lot of parameters and ifs.
-
     // ==== Parse ====
     let mut syntax = syntax_iter(increment_decrement_statement.syntax());
 
-    let item_ident = parse_node::<Expression>(&mut syntax)?;
-    let item_comments_after_ident = parse_many_comments_and_blankspace(&mut syntax)?;
-    let inc_dec = if parse_token_optional(&mut syntax, SyntaxKind::PlusPlus).is_some() {
-        IncrementDecrement::Increment
-    } else {
-        parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::MinusMinus)?;
-        IncrementDecrement::Decrement
-    };
-    let item_comments_after_inc_dec = parse_many_comments_and_blankspace(&mut syntax)?;
+    let item_ident =
+        parse_node_with(&mut syntax, IgnoreBlankspace).expect_castable_kind::<Expression>()?;
+    let item_operator = parse_node_with(&mut syntax, IgnoreBlankspace); //TODO Expect PlusPlus or MinusMinus
     parse_node_with(&mut syntax, NoTrivia).expect_kind_optional(SyntaxKind::Semicolon)?;
     parse_end(&mut syntax)?;
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
-    formatted.extend(gen_expression(&item_ident)?);
-    formatted.extend(gen_comments(&item_comments_after_ident));
-
-    match inc_dec {
-        IncrementDecrement::Increment => {
-            formatted.push_sc(sc!("++"));
-        },
-        IncrementDecrement::Decrement => {
-            formatted.push_sc(sc!("--"));
-        },
-    }
-
-    formatted.extend(gen_comments(&item_comments_after_inc_dec));
+    formatted.extend(gen_node_with_trivia(&item_ident)?);
+    formatted.extend(gen_node_with_trivia(&item_operator)?);
 
     if statement_needs_semicolon_policy(increment_decrement_statement.syntax()) {
         formatted.request(Request::discourage(RequestItem::Space));
