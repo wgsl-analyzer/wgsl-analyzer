@@ -1,5 +1,5 @@
 use dprint_core_macros::sc;
-use itertools::{Itertools, Position, put_back};
+use itertools::{Itertools as _, Position, put_back};
 use parser::SyntaxKind;
 use syntax::{
     AstNode as _,
@@ -9,7 +9,6 @@ use syntax::{
 use crate::{
     ast_parse::{
         FilterAction, NoTrivia, parse_end, parse_node_with, parse_node_with_trivia_filter,
-        parse_token,
     },
     context_policies::collapse_one_liner_compound_statement_policy,
     generators::node::gen_node_with_trivia,
@@ -43,9 +42,9 @@ pub fn gen_compound_statement(
             });
 
         // We only care about newlines if they are somewhere within the trivia, not at the start or end
-        let first_interesting_item = item.preceding_trivia.iter().position(|it| {
+        let first_interesting_item = item.preceding_trivia.iter().position(|node| {
             !matches!(
-                it,
+                node,
                 NodeTriviaItem::LineSpacing(NextGenLineSpacing::LineBreak(_))
             )
         });
@@ -54,9 +53,9 @@ pub fn gen_compound_statement(
         } else {
             item.preceding_trivia = Vec::new();
         }
-        let last_interesting_item = item.succeeding_trivia.iter().rev().position(|it| {
+        let last_interesting_item = item.succeeding_trivia.iter().rev().position(|node| {
             !matches!(
-                it,
+                node,
                 NodeTriviaItem::LineSpacing(NextGenLineSpacing::LineBreak(_))
             )
         });

@@ -7,16 +7,9 @@ use syntax::{
 };
 
 use crate::{
-    ast_parse::{
-        IgnoreBlankspace, NoTrivia, parse_end, parse_node, parse_node_with, parse_token,
-        parse_token_optional,
-    },
+    ast_parse::{IgnoreBlankspace, NoTrivia, parse_end, parse_node_with},
     context_policies::statement_needs_semicolon_policy,
-    generators::{
-        comments::{gen_comments, parse_many_comments_and_blankspace},
-        expressions::gen_expression,
-        node::gen_node_with_trivia,
-    },
+    generators::node::gen_node_with_trivia,
     print_item_buffer::{
         PrintItemBuffer,
         spacing_request::{Request, RequestItem},
@@ -32,7 +25,8 @@ pub fn gen_break_if_statement(
     let item_break =
         parse_node_with(&mut syntax, IgnoreBlankspace).expect_kind(SyntaxKind::Break)?;
     let item_if = parse_node_with(&mut syntax, IgnoreBlankspace).expect_kind(SyntaxKind::If)?;
-    let item_condition = parse_node::<Expression>(&mut syntax)?;
+    let item_condition =
+        parse_node_with(&mut syntax, IgnoreBlankspace).expect_castable_kind::<Expression>()?;
     parse_node_with(&mut syntax, NoTrivia).expect_kind_optional(SyntaxKind::Semicolon)?;
     parse_end(&mut syntax)?;
 
@@ -43,7 +37,7 @@ pub fn gen_break_if_statement(
     formatted.extend(gen_node_with_trivia(&item_if)?);
     formatted.start_indent();
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.extend(gen_expression(&item_condition)?);
+    formatted.extend(gen_node_with_trivia(&item_condition)?);
     formatted.request(Request::discourage(RequestItem::Space));
     if statement_needs_semicolon_policy(statement.syntax()) {
         formatted.push_sc(sc!(";"));

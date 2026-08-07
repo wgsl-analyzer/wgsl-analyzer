@@ -7,12 +7,9 @@ use syntax::{
 };
 
 use crate::{
-    ast_parse::{NoTrivia, parse_end, parse_node, parse_node_with, parse_token},
+    ast_parse::{IgnoreBlankspace, NoTrivia, parse_end, parse_node_with},
     context_policies::statement_needs_semicolon_policy,
-    generators::{
-        comments::{gen_comments, parse_many_comments_and_blankspace},
-        expressions::gen_expression,
-    },
+    generators::node::gen_node_with_trivia,
     print_item_buffer::{
         PrintItemBuffer,
         spacing_request::{Request, RequestItem},
@@ -26,9 +23,8 @@ pub fn gen_const_assert_statement(
     // ==== Parse ====
     let mut syntax = put_back(statement.syntax().children_with_tokens());
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::ConstantAssert)?;
-    let comments_after_const_assert = parse_many_comments_and_blankspace(&mut syntax)?;
-    let item_condition = parse_node::<Expression>(&mut syntax)?;
-    let comments_after_condition = parse_many_comments_and_blankspace(&mut syntax)?;
+    let item_condition =
+        parse_node_with(&mut syntax, IgnoreBlankspace).expect_castable_kind::<Expression>()?;
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::Semicolon)?;
     parse_end(&mut syntax)?;
 
@@ -38,9 +34,7 @@ pub fn gen_const_assert_statement(
     formatted.push_sc(sc!("const_assert"));
     formatted.start_indent();
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.extend(gen_comments(&comments_after_const_assert));
-    formatted.extend(gen_expression(&item_condition)?);
-    formatted.extend(gen_comments(&comments_after_condition));
+    formatted.extend(gen_node_with_trivia(&item_condition)?);
     if statement_needs_semicolon_policy(statement.syntax()) {
         formatted.request(Request::discourage(RequestItem::Space));
         formatted.push_sc(sc!(";"));

@@ -3,19 +3,12 @@ use itertools::put_back;
 use parser::SyntaxKind;
 use syntax::{
     AstNode as _,
-    ast::{self, CompoundStatement},
+    ast::{self},
 };
 
 use crate::{
-    ast_parse::{
-        FilterAction, IgnoreBlankspace, NoTrivia, parse_end, parse_node, parse_node_with,
-        parse_node_with_trivia_filter, parse_token,
-    },
-    generators::{
-        comments::{gen_comments, parse_many_comments_and_blankspace},
-        node::gen_node_with_trivia,
-        statements::compound_statement::gen_compound_statement,
-    },
+    ast_parse::{IgnoreBlankspace, NoTrivia, parse_end, parse_node_with},
+    generators::node::gen_node_with_trivia,
     print_item_buffer::{
         PrintItemBuffer,
         spacing_request::{Request, RequestItem},

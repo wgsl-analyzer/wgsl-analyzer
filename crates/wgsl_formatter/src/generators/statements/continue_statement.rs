@@ -4,9 +4,9 @@ use parser::SyntaxKind;
 use syntax::{AstNode as _, ast};
 
 use crate::{
-    ast_parse::{NoTrivia, parse_end, parse_node_with, parse_token, parse_token_optional},
+    ast_parse::{IgnoreBlankspace, NoTrivia, parse_end, parse_node_with},
     context_policies::statement_needs_semicolon_policy,
-    generators::comments::{gen_comments, parse_many_comments_and_blankspace},
+    generators::node::gen_node_with_trivia,
     print_item_buffer::{
         PrintItemBuffer,
         spacing_request::{Request, RequestItem},
@@ -22,18 +22,17 @@ pub fn gen_continue_statement(
     // the formatter to get out of it. This exists to ensure we don't accidentally delete
     // user's code should future changes to wgsl allow more complex continue statements.
     let mut syntax = put_back(node.syntax().children_with_tokens());
-    parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::Continue)?;
-    let comments_after_continue = parse_many_comments_and_blankspace(&mut syntax)?;
+    let item_continue =
+        parse_node_with(&mut syntax, IgnoreBlankspace).expect_kind(SyntaxKind::Continue)?;
     parse_node_with(&mut syntax, NoTrivia).expect_kind_optional(SyntaxKind::Semicolon)?;
     parse_end(&mut syntax)?;
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
-    formatted.push_sc(sc!("continue"));
+    formatted.extend(gen_node_with_trivia(&item_continue)?);
     if statement_needs_semicolon_policy(node.syntax()) {
         formatted.push_sc(sc!(";"));
     }
     formatted.request(Request::expect(RequestItem::LineBreak));
-    formatted.extend(gen_comments(&comments_after_continue));
     Ok(formatted)
 }

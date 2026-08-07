@@ -7,13 +7,8 @@ use syntax::{
 };
 
 use crate::{
-    ast_parse::{NoTrivia, parse_end, parse_node, parse_node_with, parse_token},
-    generators::{
-        attributes::{AttributeLayout, gen_attributes, parse_many_attributes},
-        comments::{gen_comments, parse_many_comments_and_blankspace},
-        expressions::gen_expression,
-        statements::compound_statement::gen_compound_statement,
-    },
+    ast_parse::{IgnoreBlankspace, NoTrivia, parse_end, parse_node_with},
+    generators::node::gen_node_with_trivia,
     print_item_buffer::{
         PrintItemBuffer,
         spacing_request::{Request, RequestItem},
@@ -26,12 +21,11 @@ pub fn gen_while_statement(
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = put_back(statement.syntax().children_with_tokens());
-    let item_attributes = parse_many_attributes(&mut syntax)?;
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::While)?;
-    let comments_after_while = parse_many_comments_and_blankspace(&mut syntax)?;
-    let item_condition = parse_node::<Expression>(&mut syntax)?;
-    let comments_after_condition = parse_many_comments_and_blankspace(&mut syntax)?;
-    let item_body = parse_node::<CompoundStatement>(&mut syntax)?;
+    let item_condition =
+        parse_node_with(&mut syntax, IgnoreBlankspace).expect_castable_kind::<Expression>()?;
+    let item_body = parse_node_with(&mut syntax, IgnoreBlankspace)
+        .expect_castable_kind::<CompoundStatement>()?;
     parse_end(&mut syntax)?;
 
     // ==== Format ====
@@ -41,12 +35,10 @@ pub fn gen_while_statement(
     //     AttributeLayout::Multiline,
     // )?);
     formatted.push_sc(sc!("while"));
-    formatted.extend(gen_comments(&comments_after_while));
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.extend(gen_expression(&item_condition)?);
+    formatted.extend(gen_node_with_trivia(&item_condition)?);
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.extend(gen_comments(&comments_after_condition));
-    formatted.extend(gen_compound_statement(&item_body)?);
+    formatted.extend(gen_node_with_trivia(&item_body)?);
     formatted.request(Request::expect(RequestItem::LineBreak));
 
     Ok(formatted)
