@@ -955,6 +955,9 @@ impl GlobalState {
             .on::<NO_RETRY, DefinitionRequest>(handlers::request::handle_goto_definition)
             .on::<RETRY, CompletionRequest>(handlers::request::handle_completion)
             .on_fmt_thread::<DocumentFormattingRequest>(handlers::request::handle_formatting)
+            .on_fmt_thread::<lt::request::RangeFormatting>(
+                handlers::request::handle_range_formatting,
+            )
             .on::<RETRY, FoldingRangeRequest>(handlers::request::handle_folding_range)
             .on::<NO_RETRY, lsp::extensions::HoverRequest>(handlers::request::handle_hover)
             .on::<NO_RETRY, ShutdownRequest>(handlers::request::handle_shutdown)

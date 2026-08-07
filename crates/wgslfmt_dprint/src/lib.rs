@@ -1,14 +1,13 @@
-//! [dprint](https://dprint.dev/) plugin for formatting WGSL code.
-
+use anyhow::Result;
 use dprint_core::{
     configuration::{ConfigKeyMap, GlobalConfiguration},
     plugins::{
-        CheckConfigUpdatesMessage, ConfigChange, FormatError, FormatResult, PluginInfo,
+        CheckConfigUpdatesMessage, ConfigChange, FormatResult, PluginInfo,
         PluginResolveConfigurationResult, SyncFormatRequest, SyncHostFormatRequest,
         SyncPluginHandler,
     },
 };
-use wgsl_formatter::{FormattingOptions, format_str};
+use wgsl_formatter::{FormattingOptions, format_file};
 
 use crate::config::resolve_config;
 
@@ -52,7 +51,7 @@ impl SyncPluginHandler<FormattingOptions> for WgslPluginHandler {
     fn check_config_updates(
         &self,
         _: CheckConfigUpdatesMessage,
-    ) -> Result<Vec<ConfigChange>, FormatError> {
+    ) -> Result<Vec<ConfigChange>> {
         Ok(Vec::new())
     }
 
@@ -63,11 +62,12 @@ impl SyncPluginHandler<FormattingOptions> for WgslPluginHandler {
     ) -> FormatResult {
         let config = request.config;
 
-        let file_text =
-            std::str::from_utf8(&request.file_bytes).map_err(|error| error.to_string())?;
-        let formatted = format_str(file_text, config);
+        // TODO(MonaMayrhofer) Better error handling here
+        let formatted = format_file(std::str::from_utf8(&request.file_bytes)?, config);
 
-        Ok(Some(formatted.into_bytes()))
+        formatted
+            .map(|formatted| Some(formatted.into_bytes()))
+            .map_err(|error| anyhow::anyhow!("Formatter encountered an error. This is a bug in the formatter. Feel free to report this. {error:?}"))
     }
 }
 

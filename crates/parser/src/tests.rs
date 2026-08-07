@@ -8,6 +8,7 @@ mod expression;
 mod imports;
 mod keywords;
 mod naga;
+mod statement;
 
 use edition::Edition;
 use expect_test::{Expect, expect};

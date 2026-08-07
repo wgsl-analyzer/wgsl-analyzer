@@ -1,0 +1,123 @@
+use itertools::{Itertools as _, Position};
+use parser::{SyntaxKind, SyntaxNode, SyntaxToken};
+use rowan::NodeOrToken;
+
+use crate::{
+    ast_parse::{SyntaxIter, parse_token_optional},
+    print_item_buffer::{
+        PrintItemBuffer,
+        spacing_request::{Request, RequestItem},
+    },
+    reporting::FormatDocumentResult,
+};
+
+// We don't have a Comment SyntaxNode in the AST yet, so we use a custom enum and parser function
+#[derive(Clone, Debug)]
+pub enum Comment {
+    Block(SyntaxToken),
+    LineEnding(SyntaxToken),
+}
+
+pub fn read_comment(item: &NodeOrToken<SyntaxNode, SyntaxToken>) -> Option<Comment> {
+    if let NodeOrToken::Token(child) = &item {
+        #[expect(
+            clippy::wildcard_enum_match_arm,
+            reason = "We don't care about future enum variants."
+        )]
+        match child.kind() {
+            SyntaxKind::BlockComment => Some(Comment::Block(child.clone())),
+            SyntaxKind::LineEndingComment => Some(Comment::LineEnding(child.clone())),
+            _ => None,
+        }
+    } else {
+        None
+    }
+}
+
+pub fn parse_comment_optional(syntax: &mut SyntaxIter) -> Option<Comment> {
+    let item = syntax.next()?;
+    if let Some(comment) = read_comment(&item) {
+        Some(comment)
+    } else {
+        syntax.put_back(item);
+        None
+    }
+}
+
+#[expect(
+    clippy::unnecessary_wraps,
+    reason = "Keep the API homogeneous with all gen_* functions"
+)]
+#[deprecated]
+pub fn parse_many_comments_and_blankspace(
+    syntax: &mut SyntaxIter
+) -> FormatDocumentResult<Vec<Comment>> {
+    Ok(infallible_parse_many_comments_and_blankspace(syntax))
+}
+
+#[expect(
+    clippy::redundant_pattern_matching,
+    reason = "Make it more obvious that the syntax token is consumed"
+)]
+#[deprecated]
+pub fn infallible_parse_many_comments_and_blankspace(syntax: &mut SyntaxIter) -> Vec<Comment> {
+    let mut comments = Vec::new();
+    loop {
+        if let Some(comment) = parse_comment_optional(syntax) {
+            comments.push(comment);
+        } else if let Some(_) = parse_token_optional(syntax, SyntaxKind::Blankspace) {
+            //Allowed, we ignore and consume it
+        } else {
+            break;
+        }
+    }
+    comments
+}
+
+pub fn gen_comments(comments: &[Comment]) -> PrintItemBuffer {
+    let mut formatted = PrintItemBuffer::default();
+    for item in comments {
+        formatted.extend(gen_comment(item));
+    }
+    formatted
+}
+
+pub fn gen_comment(item: &Comment) -> PrintItemBuffer {
+    let mut formatted = PrintItemBuffer::default();
+    match item {
+        Comment::Block(content) => {
+            formatted.request(Request::expect(RequestItem::Space));
+
+            let mut lines = content.text().lines().with_position();
+            if let Some((pos, line)) = lines.next() {
+                formatted.push_string(line.to_owned());
+                if pos != Position::Only && pos != Position::Last {
+                    formatted.request(Request::expect(RequestItem::LineBreak));
+                }
+            }
+
+            formatted.start_ignoring_indent();
+            for (pos, line) in lines {
+                formatted.push_string(line.to_owned());
+                if pos != Position::Only && pos != Position::Last {
+                    formatted.request(Request::expect(RequestItem::LineBreak));
+                }
+            }
+            formatted.request(Request::discourage(RequestItem::LineBreak));
+            formatted.finish_ignoring_indent();
+            formatted.request(Request::expect(RequestItem::Space));
+        },
+        Comment::LineEnding(content) => {
+            formatted.request(Request::expect(RequestItem::Space));
+            // Line ending comments may not contain newlines - otherwise push_string will
+            // run into a debug_assert down the line where its a lot harder to debug.
+            debug_assert!(
+                content.text().lines().count() == 1,
+                "line ending comment may not contain newlines."
+            );
+            formatted.push_string(content.text().to_owned());
+            formatted.request(Request::force(RequestItem::LineBreak));
+        },
+    }
+    formatted
+}

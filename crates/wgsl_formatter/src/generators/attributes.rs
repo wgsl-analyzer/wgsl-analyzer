@@ -1,0 +1,566 @@
+use std::{collections::BTreeMap, string::String};
+
+use dprint_core::formatting::StringContainer;
+use dprint_core_macros::sc;
+use itertools::put_back;
+use parser::{SyntaxKind, SyntaxNode};
+use syntax::{
+    AstNode as _,
+    ast::{
+        self, Arguments, Attribute, AttributeList, BuiltinValueName, DiagnosticControl,
+        InterpolateSamplingName, InterpolateTypeName,
+    },
+};
+
+use crate::{
+    ast_parse::{
+        NoTrivia, SyntaxIter, parse_end, parse_node, parse_node_optional, parse_node_with,
+        parse_token, parse_token_any, parse_token_optional, syntax_iter,
+    },
+    generators::{
+        attributes,
+        comments::{
+            Comment, gen_comments, infallible_parse_many_comments_and_blankspace,
+            parse_many_comments_and_blankspace,
+        },
+        diagnostic_directive::gen_diagnostic_control,
+        statements::function_call_statement::gen_function_call_arguments,
+    },
+    helpers::separated_items::{format_separated_items, parse_separated_items},
+    multiline_group::MultilineGroup,
+    print_item_buffer::{
+        PrintItemBuffer,
+        spacing_request::{Request, RequestItem},
+    },
+    reporting::FormatDocumentResult,
+};
+
+pub use standard_attributes::*;
+
+use super::expressions::gen_expression;
+
+#[derive(Debug)]
+pub struct ParsedAttribute {
+    attribute: Attribute,
+    comments_after_attribute: Vec<Comment>,
+}
+pub struct ParsedAttributes {
+    attributes: Vec<ParsedAttribute>,
+}
+
+#[deprecated]
+pub fn parse_many_attributes(
+    syntax: &mut SyntaxIter
+) -> FormatDocumentResult<Option<AttributeList>> {
+    Ok(parse_node_optional::<AttributeList>(syntax))
+}
+
+pub fn parse_attributes_inner(syntax: &mut SyntaxIter) -> FormatDocumentResult<ParsedAttributes> {
+    let mut attributes = Vec::new();
+    loop {
+        let Some(item_attribute) = parse_node_optional::<Attribute>(syntax) else {
+            break;
+        };
+        let item_comments_after_attribute = parse_many_comments_and_blankspace(syntax)?;
+
+        attributes.push(ParsedAttribute {
+            attribute: item_attribute,
+            comments_after_attribute: item_comments_after_attribute,
+        });
+    }
+    Ok(ParsedAttributes { attributes })
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AttributeLayout {
+    Inline,
+    Multiline,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+// The order of the variants determines the order of the attribute groups in the output
+enum AttributeGroup {
+    Conditional,
+    Diagnostics,
+    BlendSrc,
+    Id,
+    Interpolate,
+    Invariant,
+    Location,
+    OffsetAlignSize,
+    BindingGroup,
+    EarlyDepthTest,
+    ComputeWorkgroup,
+    Fragment,
+    Vertex,
+}
+enum AttributeCategorization {
+    Ungrouped(String),
+    Grouped(AttributeGroup, usize),
+    Inline(usize),
+}
+
+fn gen_attribute_group<T>(
+    mut attributes: Vec<(T, &ParsedAttribute)>,
+    separator: &Request,
+) -> FormatDocumentResult<PrintItemBuffer>
+where
+    T: Ord,
+{
+    attributes.sort_by(|(order_a, _), (order_b, _)| order_a.cmp(order_b));
+
+    let mut formatted = PrintItemBuffer::default();
+    // Ungrouped attributes go first
+    for ParsedAttribute {
+        attribute,
+        comments_after_attribute,
+    } in attributes.iter().map(|(_, attribute)| attribute)
+    {
+        formatted.finish_new_line_group();
+        formatted.extend(gen_attribute(attribute)?);
+        formatted.start_new_line_group();
+        formatted.extend(gen_comments(comments_after_attribute));
+        formatted.request(separator.clone());
+    }
+    Ok(formatted)
+}
+
+#[deprecated]
+pub fn gen_attributes(
+    attributes: &Option<AttributeList>,
+    layout: AttributeLayout,
+) -> FormatDocumentResult<PrintItemBuffer> {
+    let Some(attributes) = attributes else {
+        return Ok(PrintItemBuffer::default());
+    };
+
+    let temp_expected_layout = if let Some(parent) = attributes.syntax().parent() {
+        if parent.kind() == SyntaxKind::FunctionDeclaration
+            || parent.kind() == SyntaxKind::SwitchBody
+        {
+            AttributeLayout::Inline
+        } else {
+            AttributeLayout::Multiline
+        }
+    } else {
+        AttributeLayout::Multiline
+    };
+
+    assert_eq!(temp_expected_layout, layout);
+
+    gen_attribute_list(attributes)
+}
+
+pub fn gen_attribute_list(attribute_list: &AttributeList) -> FormatDocumentResult<PrintItemBuffer> {
+    let attributes = parse_attributes_inner(&mut syntax_iter(attribute_list.syntax()))?;
+
+    // If we don't have any attributes, we early exit to avoid all the bureaucracy with newlines
+    if attributes.attributes.is_empty() {
+        return Ok(PrintItemBuffer::default());
+    }
+
+    // ==== Sort and Group the Attributes ====
+    let mut ungrouped_attributes = Vec::new();
+    let mut grouped_attributes = BTreeMap::<AttributeGroup, Vec<_>>::new();
+    // Attributes that are inline with the target (like @const fn main()...)
+    let mut attribute_group_inlined_with_target = Vec::new();
+
+    for attribute in &attributes.attributes {
+        use AttributeCategorization::{Grouped, Inline, Ungrouped};
+        let cat = match &attribute.attribute {
+            Attribute::DiagnosticAttribute(_) => Grouped(AttributeGroup::Diagnostics, 0),
+            Attribute::SizeAttribute(_) => Grouped(AttributeGroup::OffsetAlignSize, 2),
+            Attribute::AlignAttribute(_) => Grouped(AttributeGroup::OffsetAlignSize, 1),
+            Attribute::GroupAttribute(_) => Grouped(AttributeGroup::BindingGroup, 0),
+            Attribute::BindingAttribute(_) => Grouped(AttributeGroup::BindingGroup, 1),
+            Attribute::ComputeAttribute(_) => Grouped(AttributeGroup::ComputeWorkgroup, 0),
+            Attribute::WorkgroupSizeAttribute(_) => Grouped(AttributeGroup::ComputeWorkgroup, 1),
+            Attribute::VertexAttribute(_) => Grouped(AttributeGroup::Vertex, 0),
+            Attribute::FragmentAttribute(_) => Grouped(AttributeGroup::Fragment, 0),
+            Attribute::BlendSrcAttribute(_) => Grouped(AttributeGroup::BlendSrc, 0),
+            Attribute::IdAttribute(_) => Grouped(AttributeGroup::Id, 0),
+            Attribute::InterpolateAttribute(_) => Grouped(AttributeGroup::Interpolate, 0),
+            Attribute::InvariantAttribute(_) => Grouped(AttributeGroup::Invariant, 0),
+            Attribute::LocationAttribute(_) => Grouped(AttributeGroup::Location, 0),
+
+            Attribute::OtherAttribute(attrib) => {
+                let name = attrib.name().map(|identifier| identifier.text().to_owned());
+                let name = name.as_deref();
+                match name {
+                    Some("offset") => Grouped(AttributeGroup::OffsetAlignSize, 0),
+
+                    Some(name) => Ungrouped(name.to_owned()),
+                    //ungrouped_attributes.push((name.to_owned(), attribute)),
+                    None => Ungrouped(String::new()),
+                    //ungrouped_attributes.push((String::new(), attribute)),
+                }
+            },
+            Attribute::BuiltinAttribute(_) => Inline(2),
+            Attribute::MustUseAttribute(_) => Inline(1),
+            Attribute::ConstantAttribute(_) => Inline(0),
+            Attribute::IfAttribute(_) => Grouped(AttributeGroup::Conditional, 0),
+            Attribute::ElifAttribute(_) => Grouped(AttributeGroup::Conditional, 1),
+            Attribute::ElseAttribute(_) => Grouped(AttributeGroup::Conditional, 2),
+            Attribute::EarlyDepthTestAttribute(_) => Grouped(AttributeGroup::EarlyDepthTest, 0),
+        };
+
+        match cat {
+            Ungrouped(order) => ungrouped_attributes.push((order, attribute)),
+            Grouped(attribute_group, order) => grouped_attributes
+                .entry(attribute_group)
+                .or_default()
+                .push((order, attribute)),
+            Inline(order) => attribute_group_inlined_with_target.push((order, attribute)),
+        }
+    }
+
+    let expect_space_or_linebreak = Request::expect(RequestItem::Space).or_newline();
+
+    let layout = if let Some(parent) = attribute_list.syntax().parent() {
+        if matches!(
+            parent.kind(),
+            SyntaxKind::FunctionDeclaration | SyntaxKind::SwitchStatement | SyntaxKind::ReturnType
+        ) {
+            AttributeLayout::Inline
+        } else {
+            AttributeLayout::Multiline
+        }
+    } else {
+        AttributeLayout::Multiline
+    };
+
+    let group_separator = match layout {
+        AttributeLayout::Inline => expect_space_or_linebreak.clone(),
+        AttributeLayout::Multiline => Request::expect(RequestItem::LineBreak),
+    };
+
+    let mut formatted = PrintItemBuffer::default();
+    formatted.start_new_line_group();
+    // Ungrouped attributes go first
+    formatted.extend(gen_attribute_group(ungrouped_attributes, &group_separator)?);
+
+    // The grouped attributes in order
+    // (They are ordered by the AttributeGroup enum's discriminator, because of the BTreeMap)
+    for (_, attribute) in grouped_attributes {
+        formatted.extend(gen_attribute_group(attribute, &expect_space_or_linebreak)?);
+        formatted.request(group_separator.clone());
+    }
+    // Then attributes that should be inline with the target
+    formatted.extend(gen_attribute_group(
+        attribute_group_inlined_with_target,
+        &expect_space_or_linebreak,
+    )?);
+    // No final line break, these should be inline with the target
+    formatted.finish_new_line_group();
+
+    // WE can discourage NewLines and Emptylines because finish_new_line_group
+    // applies all the stuff beforehand already
+    formatted.request(Request::discourage(RequestItem::LineBreak));
+    formatted.request(Request::discourage(RequestItem::EmptyLine));
+
+    Ok(formatted)
+}
+
+pub fn gen_attribute(attribute: &Attribute) -> FormatDocumentResult<PrintItemBuffer> {
+    use Attribute::{
+        AlignAttribute, BindingAttribute, BlendSrcAttribute, BuiltinAttribute, ComputeAttribute,
+        ConstantAttribute, DiagnosticAttribute, EarlyDepthTestAttribute, ElifAttribute,
+        ElseAttribute, FragmentAttribute, GroupAttribute, IdAttribute, IfAttribute,
+        InterpolateAttribute, InvariantAttribute, LocationAttribute, MustUseAttribute,
+        OtherAttribute, SizeAttribute, VertexAttribute, WorkgroupSizeAttribute,
+    };
+    match attribute {
+        OtherAttribute(other_attribute) => gen_other_attribute(other_attribute),
+        // === Standard Attributes ===
+        ConstantAttribute(constant_attribute) => gen_const_attribute(constant_attribute),
+        DiagnosticAttribute(diagnostic_attribute) => gen_diagnostic_attribute(diagnostic_attribute),
+        AlignAttribute(align_attribute) => gen_align_attribute(align_attribute),
+        BindingAttribute(binding_attribute) => gen_binding_attribute(binding_attribute),
+        BlendSrcAttribute(blend_src_attribute) => gen_blend_src_attribute(blend_src_attribute),
+        BuiltinAttribute(builtin_attribute) => gen_builtin_attribute(builtin_attribute),
+        GroupAttribute(group_attribute) => gen_group_attribute(group_attribute),
+        IdAttribute(id_attribute) => gen_id_attribute(id_attribute),
+        InterpolateAttribute(interpolate_attribute) => {
+            gen_interpolate_attribute(interpolate_attribute)
+        },
+        InvariantAttribute(invariant_attribute) => gen_invariant_attribute(invariant_attribute),
+        LocationAttribute(location_attribute) => gen_location_attribute(location_attribute),
+        MustUseAttribute(must_use_attribute) => gen_must_use_attribute(must_use_attribute),
+        SizeAttribute(size_attribute) => gen_size_attribute(size_attribute),
+        WorkgroupSizeAttribute(workgroup_size_attribute) => {
+            gen_workgroup_size_attribute(workgroup_size_attribute)
+        },
+        VertexAttribute(vertex_attribute) => gen_vertex_attribute(vertex_attribute),
+        FragmentAttribute(fragment_attribute) => gen_fragment_attribute(fragment_attribute),
+        ComputeAttribute(compute_attribute) => gen_compute_attribute(compute_attribute),
+        IfAttribute(if_attribute) => gen_if_attribute(if_attribute),
+        ElifAttribute(elif_attribute) => gen_elif_attribute(elif_attribute),
+        ElseAttribute(else_attribute) => gen_else_attribute(else_attribute),
+        EarlyDepthTestAttribute(early_depth_test_attribute) => {
+            gen_early_depth_test_attribute(early_depth_test_attribute)
+        },
+    }
+}
+
+pub fn gen_diagnostic_attribute(
+    attribute: &ast::DiagnosticAttribute
+) -> FormatDocumentResult<PrintItemBuffer> {
+    let mut syntax = syntax_iter(attribute.syntax());
+
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::AttributeOperator)?;
+    let item_comments_after_operator = parse_many_comments_and_blankspace(&mut syntax)?;
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(parser::SyntaxKind::Diagnostic)?;
+    let item_comments_after_identifier = parse_many_comments_and_blankspace(&mut syntax)?;
+    let item_control = parse_node::<DiagnosticControl>(&mut syntax)?;
+    parse_end(&mut syntax)?;
+
+    let mut formatted = PrintItemBuffer::default();
+    formatted.push_sc(sc!("@"));
+    formatted.extend(gen_comments(&item_comments_after_operator));
+    formatted.push_sc(sc!("diagnostic"));
+    formatted.extend(gen_comments(&item_comments_after_identifier));
+    formatted.extend(gen_diagnostic_control(&item_control)?);
+    Ok(formatted)
+}
+
+pub fn gen_interpolate_type_name(
+    attribute: &ast::InterpolateTypeName
+) -> FormatDocumentResult<PrintItemBuffer> {
+    let mut syntax = syntax_iter(attribute.syntax());
+    let content = parse_token_any(&mut syntax)?;
+    parse_end(&mut syntax)?;
+
+    let mut formatted = PrintItemBuffer::default();
+    formatted.push_string(content.text().to_owned());
+    Ok(formatted)
+}
+
+pub fn gen_early_depth_test_mode(attribute: &SyntaxNode) -> FormatDocumentResult<PrintItemBuffer> {
+    let mut syntax = syntax_iter(attribute);
+    let content = parse_token_any(&mut syntax)?;
+    parse_end(&mut syntax)?;
+
+    let mut formatted = PrintItemBuffer::default();
+    formatted.push_string(content.text().to_owned());
+    Ok(formatted)
+}
+
+pub fn gen_interpolate_sampling_name(
+    attribute: &ast::InterpolateSamplingName
+) -> FormatDocumentResult<PrintItemBuffer> {
+    let mut syntax = syntax_iter(attribute.syntax());
+    let content = parse_token_any(&mut syntax)?;
+    parse_end(&mut syntax)?;
+
+    let mut formatted = PrintItemBuffer::default();
+    formatted.push_string(content.text().to_owned());
+    Ok(formatted)
+}
+pub fn gen_interpolate_attribute(
+    attribute: &ast::InterpolateAttribute
+) -> FormatDocumentResult<PrintItemBuffer> {
+    let mut syntax = syntax_iter(attribute.syntax());
+
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::AttributeOperator)?;
+    let item_comments_after_operator = parse_many_comments_and_blankspace(&mut syntax)?;
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(parser::SyntaxKind::Interpolate)?;
+    let item_comments_after_identifier = parse_many_comments_and_blankspace(&mut syntax)?;
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(parser::SyntaxKind::ParenthesisLeft)?;
+    let item_comments_after_open_paren = parse_many_comments_and_blankspace(&mut syntax)?;
+    let interpolate_type_name = parse_node::<InterpolateTypeName>(&mut syntax)?;
+    let item_comments_after_itn = parse_many_comments_and_blankspace(&mut syntax)?;
+
+    let sampling = if parse_token_optional(&mut syntax, SyntaxKind::Comma).is_some() {
+        let item_comments_after_comma = parse_many_comments_and_blankspace(&mut syntax)?;
+        let interpolate_sampling_name = parse_node::<InterpolateSamplingName>(&mut syntax)?;
+        let item_comments_after_isn = parse_many_comments_and_blankspace(&mut syntax)?;
+        Some((
+            item_comments_after_comma,
+            interpolate_sampling_name,
+            item_comments_after_isn,
+        ))
+    } else {
+        None
+    };
+    parse_token_optional(&mut syntax, SyntaxKind::Comma);
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(parser::SyntaxKind::ParenthesisRight)?;
+    parse_end(&mut syntax)?;
+
+    let mut formatted = PrintItemBuffer::default();
+    formatted.push_sc(sc!("@"));
+    formatted.extend(gen_comments(&item_comments_after_operator));
+    formatted.push_sc(sc!("interpolate"));
+    formatted.extend(gen_comments(&item_comments_after_identifier));
+    formatted.push_sc(sc!("("));
+    formatted.extend(gen_comments(&item_comments_after_open_paren));
+    formatted.extend(gen_interpolate_type_name(&interpolate_type_name)?);
+    formatted.extend(gen_comments(&item_comments_after_itn));
+    if let Some((item_comments_after_comma, interpolate_sampling_name, item_comments_after_isn)) =
+        sampling
+    {
+        formatted.push_sc(sc!(","));
+        formatted.extend(gen_comments(&item_comments_after_comma));
+        formatted.extend(gen_interpolate_sampling_name(&interpolate_sampling_name)?);
+        formatted.extend(gen_comments(&item_comments_after_isn));
+    }
+
+    formatted.push_sc(sc!(")"));
+    Ok(formatted)
+}
+
+pub fn gen_builtin_value_name(
+    attribute: &ast::BuiltinValueName
+) -> FormatDocumentResult<PrintItemBuffer> {
+    let mut syntax = syntax_iter(attribute.syntax());
+    let content = parse_token_any(&mut syntax)?;
+    parse_end(&mut syntax)?;
+
+    let mut formatted = PrintItemBuffer::default();
+    formatted.push_string(content.text().to_owned());
+    Ok(formatted)
+}
+pub fn gen_builtin_attribute(
+    attribute: &ast::BuiltinAttribute
+) -> FormatDocumentResult<PrintItemBuffer> {
+    let mut syntax = syntax_iter(attribute.syntax());
+
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::AttributeOperator)?;
+    let item_comments_after_operator = parse_many_comments_and_blankspace(&mut syntax)?;
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(parser::SyntaxKind::Builtin)?;
+    let item_comments_after_identifier = parse_many_comments_and_blankspace(&mut syntax)?;
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(parser::SyntaxKind::ParenthesisLeft)?;
+    let item_comments_after_open_paren = parse_many_comments_and_blankspace(&mut syntax)?;
+    let item_builtin_value_name = parse_node::<BuiltinValueName>(&mut syntax)?;
+    let item_comments_after_itn = parse_many_comments_and_blankspace(&mut syntax)?;
+    parse_token_optional(&mut syntax, SyntaxKind::Comma);
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(parser::SyntaxKind::ParenthesisRight)?;
+    parse_end(&mut syntax)?;
+
+    let mut formatted = PrintItemBuffer::default();
+    formatted.push_sc(sc!("@"));
+    formatted.extend(gen_comments(&item_comments_after_operator));
+    formatted.push_sc(sc!("builtin"));
+    formatted.extend(gen_comments(&item_comments_after_identifier));
+    formatted.push_sc(sc!("("));
+    formatted.extend(gen_comments(&item_comments_after_open_paren));
+    formatted.extend(gen_builtin_value_name(&item_builtin_value_name)?);
+    formatted.extend(gen_comments(&item_comments_after_itn));
+    formatted.push_sc(sc!(")"));
+    Ok(formatted)
+}
+
+pub fn gen_other_attribute(
+    attribute: &ast::OtherAttribute
+) -> FormatDocumentResult<PrintItemBuffer> {
+    let mut syntax = syntax_iter(attribute.syntax());
+
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::AttributeOperator)?;
+    let item_comments_after_operator = parse_many_comments_and_blankspace(&mut syntax)?;
+    let item_identifier = parse_token(&mut syntax, parser::SyntaxKind::Identifier)?;
+    let item_comments_after_identifier = parse_many_comments_and_blankspace(&mut syntax)?;
+    let item_arguments = parse_node_optional::<Arguments>(&mut syntax);
+    parse_end(&mut syntax)?;
+
+    let mut formatted = PrintItemBuffer::default();
+    formatted.push_sc(sc!("@"));
+    formatted.extend(gen_comments(&item_comments_after_operator));
+    formatted.push_string(item_identifier.to_string());
+    formatted.extend(gen_comments(&item_comments_after_identifier));
+    if let Some(item_arguments) = item_arguments {
+        formatted.extend(gen_function_call_arguments(&item_arguments)?);
+    }
+    Ok(formatted)
+}
+#[rustfmt::skip]
+#[expect(clippy::inline_modules, reason = "Its much neater this way, simply grouping them together.")]
+mod standard_attributes {
+    use super::gen_attr_standard_with_args;
+    use dprint_core_macros::sc;
+    use parser::{SyntaxKind, SyntaxNode};
+    use syntax::{AstNode as _, ast};
+
+    use crate::{print_item_buffer::PrintItemBuffer, reporting::FormatDocumentResult};
+
+
+    pub fn gen_align_attribute(attribute: &ast::AlignAttribute) -> FormatDocumentResult<PrintItemBuffer>                   { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::Align, sc!("align")) }
+    pub fn gen_const_attribute(attribute: &ast::ConstantAttribute ) -> FormatDocumentResult<PrintItemBuffer>               { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::Const, sc!("const")) }
+    pub fn gen_binding_attribute(attribute: &ast::BindingAttribute ) -> FormatDocumentResult<PrintItemBuffer>              { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::Binding, sc!("binding")) }
+    pub fn gen_blend_src_attribute(attribute: &ast::BlendSrcAttribute ) -> FormatDocumentResult<PrintItemBuffer>           { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::BlendSrc, sc!("blend_src")) }
+    pub fn gen_group_attribute(attribute: &ast::GroupAttribute ) -> FormatDocumentResult<PrintItemBuffer>                  { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::Group, sc!("group")) }
+    pub fn gen_id_attribute(attribute: &ast::IdAttribute) -> FormatDocumentResult<PrintItemBuffer>                         { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::Id, sc!("id")) }
+    pub fn gen_invariant_attribute(attribute: &ast::InvariantAttribute ) -> FormatDocumentResult<PrintItemBuffer>          { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::Invariant, sc!("invariant")) }
+    pub fn gen_location_attribute(attribute: &ast::LocationAttribute ) -> FormatDocumentResult<PrintItemBuffer>            { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::Location, sc!("location")) }
+    pub fn gen_must_use_attribute(attribute: &ast::MustUseAttribute ) -> FormatDocumentResult<PrintItemBuffer>             { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::MustUse, sc!("must_use")) }
+    pub fn gen_size_attribute(attribute: &ast::SizeAttribute ) -> FormatDocumentResult<PrintItemBuffer>                    { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::Size, sc!("size")) }
+    pub fn gen_workgroup_size_attribute(attribute: &ast::WorkgroupSizeAttribute ) -> FormatDocumentResult<PrintItemBuffer> { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::WorkgroupSize, sc!("workgroup_size"), ) }
+    pub fn gen_vertex_attribute(attribute: &ast::VertexAttribute ) -> FormatDocumentResult<PrintItemBuffer>                { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::Vertex, sc!("vertex")) }
+    pub fn gen_fragment_attribute(attribute: &ast::FragmentAttribute ) -> FormatDocumentResult<PrintItemBuffer>            { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::Fragment, sc!("fragment")) }
+    pub fn gen_compute_attribute(attribute: &ast::ComputeAttribute ) -> FormatDocumentResult<PrintItemBuffer>              { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::Compute, sc!("compute")) }
+
+    // Naga
+    pub fn gen_early_depth_test_attribute(attribute: &ast::EarlyDepthTestAttribute ) -> FormatDocumentResult<PrintItemBuffer> { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::EarlyDepthTest, sc!("early_depth_test")) }
+
+    // WESL
+    pub fn gen_if_attribute(attribute: &ast::IfAttribute ) -> FormatDocumentResult<PrintItemBuffer>                        { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::If, sc!("if")) }
+    pub fn gen_elif_attribute(attribute: &ast::ElifAttribute ) -> FormatDocumentResult<PrintItemBuffer>                    { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::Elif, sc!("elif")) }
+    pub fn gen_else_attribute(attribute: &ast::ElseAttribute ) -> FormatDocumentResult<PrintItemBuffer>                    { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::Else, sc!("else")) }
+}
+
+/// Attributes of the form:
+/// `'expected_token' '(' expression [','] ')'`.
+fn gen_attr_standard_with_args(
+    syntax: &SyntaxNode,
+    expected_token: SyntaxKind,
+    attribute_name: &'static StringContainer,
+) -> FormatDocumentResult<PrintItemBuffer> {
+    let mut syntax = syntax_iter(syntax);
+
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::AttributeOperator)?;
+    let item_comments_after_operator = parse_many_comments_and_blankspace(&mut syntax)?;
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(expected_token)?;
+    let item_comments_after_identifier = parse_many_comments_and_blankspace(&mut syntax)?;
+    //let item_arguments = gen_function_call_like_comma_separated_values(&mut syntax)?;
+    let item_arguments = if parse_token_optional(&mut syntax, SyntaxKind::ParenthesisLeft).is_some()
+    {
+        let item_arguments = parse_separated_items(
+            &mut syntax,
+            parse_node_optional::<ast::Expression>,
+            |syntax| parse_token_optional(syntax, SyntaxKind::Comma),
+        );
+        parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::ParenthesisRight)?;
+        Some(item_arguments)
+    } else {
+        None
+    };
+    parse_end(&mut syntax)?;
+
+    let mut formatted = PrintItemBuffer::default();
+    formatted.push_sc(sc!("@"));
+    formatted.extend(gen_comments(&item_comments_after_operator));
+    formatted.push_sc(attribute_name);
+    formatted.extend(gen_comments(&item_comments_after_identifier));
+    if let Some(item_arguments) = item_arguments {
+        let mut multiline_group = MultilineGroup::new(&mut formatted);
+        multiline_group.push_sc(sc!("("));
+
+        // If its blank we do not give the formatter the option to break within the ()
+        if !item_arguments.is_blank {
+            multiline_group.start_indent();
+
+            format_separated_items(
+                &mut multiline_group,
+                item_arguments,
+                gen_expression,
+                sc!(","),
+            )?;
+
+            multiline_group.request(Request::discourage(RequestItem::Space));
+            multiline_group.grouped_possible_newline();
+            multiline_group.finish_indent();
+        }
+
+        multiline_group.push_sc(sc!(")"));
+        multiline_group.end();
+    }
+    Ok(formatted)
+}

@@ -51,13 +51,15 @@ For all options, see `wgslfmt --help`.
 
 When running with `--check`, wgslfmt will exit with `0` if the input is
 already formatted correctly, and `1` if formatting changes are needed.
-A diff of the required changes is printed to stdout.
+
+### Diff output
+
+When running with `--print-diff`, a pretty printed diff of unformatted files is printed to stdout.
 
 ### JSON output
 
-Use `--output-format json` to get machine-readable output. This emits a
-single JSON object containing per-file results (changed status, duration,
-parse errors, and diffs).
+Use `--json` to get machine-readable output. This emits a
+single JSON object containing per-file results and a summary.
 
 ## WESL support
 
