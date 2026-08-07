@@ -9,6 +9,7 @@ use syntax::{
 use crate::{
     ast_parse::{
         FilterAction, NoTrivia, parse_end, parse_node_with, parse_node_with_trivia_filter,
+        syntax_iter,
     },
     context_policies::collapse_one_liner_compound_statement_policy,
     generators::node::gen_node_with_trivia,
@@ -29,7 +30,7 @@ pub fn gen_compound_statement(
 
     // ==== Parse ====
 
-    let mut syntax = put_back(node.syntax().children_with_tokens());
+    let mut syntax = syntax_iter(node.syntax());
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::BraceLeft)?;
 
     let mut items = Vec::new();

@@ -8,7 +8,7 @@ use syntax::{
 use crate::{
     ast_parse::{
         FilterAction, parse_any_node_optional, parse_end, parse_node_with_trivia_filter,
-        parse_token_optional,
+        parse_token_optional, syntax_iter,
     },
     generators::{
         comments::{Comment, gen_comment, parse_comment_optional},
@@ -28,7 +28,7 @@ use crate::{
 pub fn gen_source_file(node: &ast::SourceFile) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
 
-    let mut syntax = put_back(node.syntax().children_with_tokens());
+    let mut syntax = syntax_iter(node.syntax());
 
     let mut items = Vec::new();
 

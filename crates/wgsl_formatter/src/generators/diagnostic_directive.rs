@@ -4,7 +4,7 @@ use parser::SyntaxKind;
 use syntax::{AstNode as _, ast};
 
 use crate::{
-    ast_parse::{parse_end, parse_node, parse_token, parse_token_optional},
+    ast_parse::{parse_end, parse_node, parse_token, parse_token_optional, syntax_iter},
     generators::comments::{gen_comments, parse_many_comments_and_blankspace},
     print_item_buffer::{
         PrintItemBuffer,
@@ -16,7 +16,7 @@ use crate::{
 pub fn gen_diagnostic_control(
     node: &ast::DiagnosticControl
 ) -> FormatDocumentResult<PrintItemBuffer> {
-    let mut syntax = put_back(node.syntax().children_with_tokens());
+    let mut syntax = syntax_iter(node.syntax());
 
     parse_token(&mut syntax, SyntaxKind::ParenthesisLeft)?;
     let item_comments_after_open = parse_many_comments_and_blankspace(&mut syntax)?;
@@ -46,7 +46,7 @@ pub fn gen_diagnostic_control(
 pub fn gen_severity_control_name(
     node: &ast::SeverityControlName
 ) -> FormatDocumentResult<PrintItemBuffer> {
-    let mut syntax = put_back(node.syntax().children_with_tokens());
+    let mut syntax = syntax_iter(node.syntax());
     let item_identifier = parse_token(&mut syntax, SyntaxKind::Identifier)?;
     parse_end(&mut syntax)?;
 
@@ -58,7 +58,7 @@ pub fn gen_severity_control_name(
 pub fn gen_diagnostic_rule_name(
     node: &ast::DiagnosticRuleName
 ) -> FormatDocumentResult<PrintItemBuffer> {
-    let mut syntax = put_back(node.syntax().children_with_tokens());
+    let mut syntax = syntax_iter(node.syntax());
 
     let item_control_first = parse_token(&mut syntax, SyntaxKind::Identifier)?;
     let item_comments_after_first = parse_many_comments_and_blankspace(&mut syntax)?;

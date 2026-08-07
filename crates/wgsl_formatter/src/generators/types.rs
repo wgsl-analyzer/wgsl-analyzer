@@ -7,7 +7,9 @@ use syntax::{
 };
 
 use crate::{
-    ast_parse::{parse_end, parse_node, parse_node_optional, parse_token, parse_token_optional},
+    ast_parse::{
+        parse_end, parse_node, parse_node_optional, parse_token, parse_token_optional, syntax_iter,
+    },
     generators::{
         comments::{gen_comments, parse_many_comments_and_blankspace},
         expressions::gen_expression,
@@ -26,7 +28,7 @@ pub fn gen_type_specifier(
     type_specifier: &ast::TypeSpecifier
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
-    let mut syntax = put_back(type_specifier.syntax().children_with_tokens());
+    let mut syntax = syntax_iter(type_specifier.syntax());
 
     let item_path = parse_node::<Path>(&mut syntax)?;
     let comments_after_ident = parse_many_comments_and_blankspace(&mut syntax)?;
@@ -49,7 +51,7 @@ pub fn gen_template_list(
     template_list: &ast::TemplateList
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
-    let mut syntax = put_back(template_list.syntax().children_with_tokens());
+    let mut syntax = syntax_iter(template_list.syntax());
     parse_token(&mut syntax, SyntaxKind::TemplateStart)?;
 
     let items = parse_separated_items(

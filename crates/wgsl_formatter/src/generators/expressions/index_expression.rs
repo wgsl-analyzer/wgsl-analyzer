@@ -6,7 +6,7 @@ use syntax::{
 };
 
 use crate::{
-    ast_parse::{BareSyntaxKind, UntilSyntaxKind, parse_end, parse_node_with},
+    ast_parse::{BareSyntaxKind, UntilSyntaxKind, parse_end, parse_node_with, syntax_iter},
     generators::node::gen_node_with_trivia,
     multiline_group::MultilineGroup,
     print_item_buffer::PrintItemBuffer,
@@ -17,7 +17,7 @@ pub fn gen_index_expression(
     index_expression: &ast::IndexExpression
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
-    let mut syntax = put_back(index_expression.syntax().children_with_tokens());
+    let mut syntax = syntax_iter(index_expression.syntax());
     let item_array_expr = parse_node_with(&mut syntax, UntilSyntaxKind(SyntaxKind::BracketLeft))
         .expect_castable_kind::<ast::Expression>()?;
     let item_bracket_left = parse_node_with(&mut syntax, BareSyntaxKind(SyntaxKind::BracketLeft))

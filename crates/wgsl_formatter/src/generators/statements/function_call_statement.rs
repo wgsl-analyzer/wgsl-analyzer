@@ -10,7 +10,7 @@ use syntax::{
 use crate::{
     ast_parse::{
         NoTrivia, SyntaxIter, parse_end, parse_node, parse_node_optional, parse_node_with,
-        parse_token, parse_token_optional,
+        parse_token, parse_token_optional, syntax_iter,
     },
     context_policies::statement_needs_semicolon_policy,
     generators::{
@@ -32,7 +32,7 @@ pub fn gen_function_call(
     function_call: &ast::FunctionCall
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
-    let mut syntax = put_back(function_call.syntax().children_with_tokens());
+    let mut syntax = syntax_iter(function_call.syntax());
     let item_identifier = parse_node::<ast::IdentExpression>(&mut syntax)?;
     let item_comments_after_identifier = parse_many_comments_and_blankspace(&mut syntax)?;
     let item_arguments = parse_node::<ast::Arguments>(&mut syntax)?;
@@ -135,7 +135,7 @@ pub fn gen_function_call_arguments(
     arguments: &ast::Arguments
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
-    let mut syntax = put_back(arguments.syntax().children_with_tokens());
+    let mut syntax = syntax_iter(arguments.syntax());
     let item_arguments = parse_function_call_arguments(&mut syntax)?;
     parse_end(&mut syntax)?;
 
@@ -175,7 +175,7 @@ pub fn gen_function_call_arguments_tabular(
     table_rows: usize,
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
-    let mut syntax = put_back(arguments.syntax().children_with_tokens());
+    let mut syntax = syntax_iter(arguments.syntax());
     let item_arguments = parse_function_call_arguments(&mut syntax)?;
     parse_end(&mut syntax)?;
 
@@ -252,7 +252,7 @@ pub fn gen_function_call_statement(
     function_call_statement: &ast::FunctionCallStatement
 ) -> Result<PrintItemBuffer, FormatDocumentError> {
     // ==== Parse ====
-    let mut syntax = put_back(function_call_statement.syntax().children_with_tokens());
+    let mut syntax = syntax_iter(function_call_statement.syntax());
     let function_call = parse_node::<FunctionCall>(&mut syntax)?;
     let comments_after_function_call = parse_many_comments_and_blankspace(&mut syntax)?;
     parse_node_with(&mut syntax, NoTrivia).expect_kind_optional(SyntaxKind::Semicolon)?;

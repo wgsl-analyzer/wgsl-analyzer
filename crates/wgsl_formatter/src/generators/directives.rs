@@ -7,7 +7,9 @@ use syntax::{
 };
 
 use crate::{
-    ast_parse::{parse_end, parse_node, parse_node_optional, parse_token, parse_token_optional},
+    ast_parse::{
+        parse_end, parse_node, parse_node_optional, parse_token, parse_token_optional, syntax_iter,
+    },
     generators::{
         comments::{
             Comment, gen_comment, gen_comments, parse_comment_optional,
@@ -25,7 +27,7 @@ use crate::{
 pub fn gen_enable_extension_name(
     node: &ast::EnableExtensionName
 ) -> FormatDocumentResult<PrintItemBuffer> {
-    let mut syntax = put_back(node.syntax().children_with_tokens());
+    let mut syntax = syntax_iter(node.syntax());
     let identifier = parse_token(&mut syntax, SyntaxKind::Identifier)?;
     parse_end(&mut syntax)?;
 
@@ -41,7 +43,7 @@ pub fn gen_enable_directive(node: &ast::EnableDirective) -> FormatDocumentResult
         Comment(Comment),
     }
 
-    let mut syntax = put_back(node.syntax().children_with_tokens());
+    let mut syntax = syntax_iter(node.syntax());
 
     parse_token(&mut syntax, SyntaxKind::Enable)?;
 
@@ -100,7 +102,7 @@ pub fn gen_enable_directive(node: &ast::EnableDirective) -> FormatDocumentResult
 pub fn gen_language_extension_name(
     node: &ast::LanguageExtensionName
 ) -> FormatDocumentResult<PrintItemBuffer> {
-    let mut syntax = put_back(node.syntax().children_with_tokens());
+    let mut syntax = syntax_iter(node.syntax());
     let identifier = parse_token(&mut syntax, SyntaxKind::Identifier)?;
     parse_end(&mut syntax)?;
 
@@ -118,7 +120,7 @@ pub fn gen_requires_directive(
         Comment(Comment),
     }
 
-    let mut syntax = put_back(node.syntax().children_with_tokens());
+    let mut syntax = syntax_iter(node.syntax());
 
     parse_token(&mut syntax, SyntaxKind::Requires)?;
 
@@ -177,7 +179,7 @@ pub fn gen_requires_directive(
 pub fn gen_diagnostic_directive(
     node: &ast::DiagnosticDirective
 ) -> FormatDocumentResult<PrintItemBuffer> {
-    let mut syntax = put_back(node.syntax().children_with_tokens());
+    let mut syntax = syntax_iter(node.syntax());
 
     parse_token(&mut syntax, SyntaxKind::Diagnostic)?;
     let item_comments_after_identifier = parse_many_comments_and_blankspace(&mut syntax)?;

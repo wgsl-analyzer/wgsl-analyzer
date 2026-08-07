@@ -10,7 +10,7 @@ use syntax::{
 use crate::{
     ast_parse::{
         NoTrivia, parse_end, parse_node, parse_node_optional, parse_node_with, parse_token,
-        parse_token_optional,
+        parse_token_optional, syntax_iter,
     },
     context_policies::statement_needs_semicolon_policy,
     generators::{
@@ -89,7 +89,7 @@ fn gen_var_let_const_override_statement(
     // it already is, consider pulling it into a wholly separate function, instead of expanding this one with ifs
 
     // ==== Parse ====
-    let mut syntax = put_back(syntax_node.children_with_tokens());
+    let mut syntax = syntax_iter(syntax_node);
 
     let item_attributes = parse_many_attributes(&mut syntax)?;
 

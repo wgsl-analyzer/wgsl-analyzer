@@ -7,7 +7,7 @@ use syntax::{
 };
 
 use crate::{
-    ast_parse::{IgnoreBlankspace, NoTrivia, parse_end, parse_node_with},
+    ast_parse::{IgnoreBlankspace, NoTrivia, parse_end, parse_node_with, syntax_iter},
     context_policies::statement_needs_semicolon_policy,
     generators::node::gen_node_with_trivia,
     print_item_buffer::{
@@ -27,7 +27,7 @@ pub fn gen_assignment_statement(
     // continue to be one function with a whole lot of parameters and ifs.
 
     // ==== Parse ====
-    let mut syntax = put_back(assignment_statement.syntax().children_with_tokens());
+    let mut syntax = syntax_iter(assignment_statement.syntax());
     let item_target =
         parse_node_with(&mut syntax, IgnoreBlankspace).expect_castable_kind::<Expression>()?;
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::Equal)?;
@@ -62,7 +62,7 @@ pub fn gen_phony_assignment_statement(
     // continue to be one function with a whole lot of parameters and ifs.
 
     // ==== Parse ====
-    let mut syntax = put_back(phony_assignment_statement.syntax().children_with_tokens());
+    let mut syntax = syntax_iter(phony_assignment_statement.syntax());
     let item_phony =
         parse_node_with(&mut syntax, IgnoreBlankspace).expect_kind(SyntaxKind::Underscore)?;
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::Equal)?;
@@ -97,11 +97,7 @@ pub fn gen_compound_assignment_statement(
     // continue to be one function with a whole lot of parameters and ifs.
 
     // ==== Parse ====
-    let mut syntax = put_back(
-        compound_assignment_statement
-            .syntax()
-            .children_with_tokens(),
-    );
+    let mut syntax = syntax_iter(compound_assignment_statement.syntax());
     let item_target =
         parse_node_with(&mut syntax, IgnoreBlankspace).expect_castable_kind::<Expression>()?;
     let item_operator =
