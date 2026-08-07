@@ -3,19 +3,13 @@ use itertools::put_back;
 use parser::{SyntaxKind, SyntaxNode};
 use syntax::{
     AstNode as _,
-    ast::{self, Expression},
+    ast::{self},
 };
 
 use crate::{
-    ast_parse::{
-        NoTrivia, parse_end, parse_node_optional, parse_node_with, parse_token,
-        parse_token_optional,
-    },
+    ast_parse::{IgnoreBlankspace, NoTrivia, parse_end, parse_node_with},
     context_policies::statement_needs_semicolon_policy,
-    generators::{
-        comments::{gen_comments, parse_many_comments_and_blankspace},
-        expressions::gen_expression,
-    },
+    generators::node::gen_node_with_trivia,
     print_item_buffer::{
         PrintItemBuffer,
         spacing_request::{Request, RequestItem},
@@ -28,23 +22,21 @@ pub fn gen_return_statement(
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = put_back(statement.syntax().children_with_tokens());
-    parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::Return)?;
-    let comments_after_return = parse_many_comments_and_blankspace(&mut syntax)?;
-    let item_expression = parse_node_optional::<Expression>(&mut syntax);
-    let comments_after_expression = parse_many_comments_and_blankspace(&mut syntax)?;
+    let item_return =
+        parse_node_with(&mut syntax, IgnoreBlankspace).expect_kind(SyntaxKind::Return)?;
+    let item_expression = parse_node_with(&mut syntax, IgnoreBlankspace)
+        .only_if_ast_node::<ast::Expression>(&mut syntax);
     parse_node_with(&mut syntax, NoTrivia).expect_kind_optional(SyntaxKind::Semicolon)?;
     parse_end(&mut syntax)?;
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
-    formatted.push_sc(sc!("return"));
+    formatted.extend(gen_node_with_trivia(&item_return)?);
     formatted.start_indent();
-    formatted.extend(gen_comments(&comments_after_return));
     if let Some(item_expression) = item_expression {
         formatted.request(Request::expect(RequestItem::Space));
-        formatted.extend(gen_expression(&item_expression)?);
+        formatted.extend(gen_node_with_trivia(&item_expression)?);
     }
-    formatted.extend(gen_comments(&comments_after_expression));
 
     if statement_needs_semicolon_policy(statement.syntax()) {
         formatted.request(Request::discourage(RequestItem::Space));

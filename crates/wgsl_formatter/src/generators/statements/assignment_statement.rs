@@ -1,5 +1,3 @@
-use std::process::CommandArgs;
-
 use dprint_core_macros::sc;
 use itertools::put_back;
 use parser::{SyntaxKind, SyntaxNode};
@@ -9,16 +7,9 @@ use syntax::{
 };
 
 use crate::{
-    ast_parse::{
-        IgnoreBlankspace, NoTrivia, parse_ast_token, parse_end, parse_node, parse_node_with,
-        parse_token, parse_token_optional,
-    },
+    ast_parse::{IgnoreBlankspace, NoTrivia, parse_end, parse_node_with},
     context_policies::statement_needs_semicolon_policy,
-    generators::{
-        comments::{gen_comments, parse_many_comments_and_blankspace},
-        expressions::gen_expression,
-        node::gen_node_with_trivia,
-    },
+    generators::node::gen_node_with_trivia,
     print_item_buffer::{
         PrintItemBuffer,
         spacing_request::{Request, RequestItem},

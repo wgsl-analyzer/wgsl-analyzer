@@ -7,7 +7,7 @@ use syntax::{
 };
 
 use crate::{
-    ast_parse::{IgnoreBlankspace, NoTrivia, parse_end, parse_node_with, parse_token},
+    ast_parse::{IgnoreBlankspace, NoTrivia, parse_end, parse_node_with},
     generators::node::gen_node_with_trivia,
     print_item_buffer::{
         PrintItemBuffer,

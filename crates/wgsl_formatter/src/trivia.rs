@@ -122,6 +122,26 @@ impl NodeWithTrivia {
         }
     }
 
+    // TODO This api is suboptimal
+    pub fn only_if_ast_node<T>(
+        self,
+        syntax: &mut SyntaxIter,
+    ) -> Option<Self>
+    where
+        T: AstNode,
+    {
+        if self
+            .node
+            .as_ref()
+            .is_some_and(|node| !T::can_cast(node.kind()))
+        {
+            self.put_back(syntax);
+            None
+        } else {
+            Some(self)
+        }
+    }
+
     pub fn expect_kind_optional(
         self,
         kind: SyntaxKind,
