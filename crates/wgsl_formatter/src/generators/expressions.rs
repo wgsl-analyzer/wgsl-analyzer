@@ -23,6 +23,7 @@ pub mod literal_expression;
 pub mod parenthesis_expression;
 pub mod prefix_expression;
 
+#[deprecated]
 pub fn gen_expression(expression: &ast::Expression) -> FormatDocumentResult<PrintItemBuffer> {
     match expression {
         ast::Expression::IndexExpression(index_expression) => {

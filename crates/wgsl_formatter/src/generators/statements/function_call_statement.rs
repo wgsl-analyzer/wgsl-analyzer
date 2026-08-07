@@ -1,27 +1,24 @@
 use dprint_core::formatting::PrintItems;
 use dprint_core_macros::sc;
+use itertools::{Itertools, Position};
 use parser::{
     SyntaxKind::{self},
     SyntaxNode,
 };
 use syntax::{
     AstNode as _,
-    ast::{self, Expression, FunctionCall},
+    ast::{self, FunctionCall},
 };
 
 use crate::{
     ast_parse::{
-        IgnoreBlankspace, NoTrivia, SyntaxIter, parse_end, parse_node, parse_node_optional,
-        parse_node_with, parse_token, parse_token_optional, syntax_iter,
+        Filter, FilterAction, IgnoreBlankspace, NoTrivia, SyntaxIter, parse_end, parse_node_with,
+        syntax_iter,
     },
     context_policies::statement_needs_semicolon_policy,
-    generators::{
-        comments::{gen_comment, gen_comments, parse_many_comments_and_blankspace},
-        expressions::gen_expression,
-        node::gen_node_with_trivia,
-    },
-    helpers::separated_items::{
-        SeparatedItem, SeparatedItems, format_separated_items, parse_separated_items,
+    generators::node::{
+        gen_node_content, gen_node_preceding_trivia, gen_node_succeeding_trivia,
+        gen_node_with_trivia,
     },
     multiline_group::MultilineGroup,
     print_item_buffer::{
@@ -29,6 +26,7 @@ use crate::{
         spacing_request::{Request, RequestItem},
     },
     reporting::{FormatDocumentError, FormatDocumentResult},
+    trivia::{NodeWithTrivia, NodeWithTriviaContent},
 };
 
 pub fn gen_function_call(
@@ -116,13 +114,34 @@ pub enum FunctionCallArgumentStyle {
 
 pub fn parse_function_call_arguments(
     syntax: &mut SyntaxIter
-) -> FormatDocumentResult<SeparatedItems<Expression>> {
-    parse_token(syntax, SyntaxKind::ParenthesisLeft)?;
-    let item_parameters =
-        parse_separated_items(syntax, parse_node_optional::<ast::Expression>, |syntax| {
-            parse_token_optional(syntax, SyntaxKind::Comma)
-        });
-    parse_token(syntax, SyntaxKind::ParenthesisRight)?;
+) -> FormatDocumentResult<Vec<NodeWithTrivia>> {
+    parse_node_with(syntax, NoTrivia).expect_kind(SyntaxKind::ParenthesisLeft)?;
+    let mut item_parameters = Vec::new();
+    loop {
+        let mut item = parse_node_with(
+            syntax,
+            Filter(|node| match node.kind() {
+                //TODO Make Filter combinators so that we can chain IgnoreBlankspace and this filter
+                SyntaxKind::Blankspace | SyntaxKind::Comma => Some(FilterAction::Ignored),
+                _ => None,
+            }),
+        );
+
+        // TODO This needs to be absorbed into parse_node..
+        if matches!(item.kind(), Some(SyntaxKind::ParenthesisRight)) {
+            let old_node = std::mem::replace(&mut item.node, NodeWithTriviaContent::End);
+            syntax.put_back(old_node.into_option().unwrap()); //TODO
+        }
+
+        let is_end = item.is_end();
+        if !item.is_whitespace() {
+            item_parameters.push(item);
+        }
+        if is_end {
+            break;
+        }
+    }
+    parse_node_with(syntax, NoTrivia).expect_kind(SyntaxKind::ParenthesisRight)?;
     Ok(item_parameters)
 }
 
@@ -154,15 +173,26 @@ pub fn gen_function_call_arguments_standard(
     multiline_group.push_sc(sc!("("));
 
     // If its blank we do not give the formatter the option to break within the ()
-    if !item_arguments.is_blank {
+    if !item_arguments.is_empty() {
         multiline_group.start_indent();
+        multiline_group.request(Request::discourage(RequestItem::Space));
 
-        format_separated_items(
-            &mut multiline_group,
-            item_arguments,
-            gen_expression,
-            sc!(","),
-        )?;
+        for (position, item) in item_arguments.into_iter().with_position() {
+            multiline_group.grouped_newline_or_space();
+            multiline_group.extend(gen_node_preceding_trivia(&item)?);
+            multiline_group.extend(gen_node_content(&item)?);
+            multiline_group.request(Request::discourage(RequestItem::Space));
+            if position == Position::Last || position == Position::Only {
+                multiline_group.extend_if_multi_line({
+                    let mut pi = PrintItems::default();
+                    pi.push_sc(sc!(","));
+                    pi
+                });
+            } else {
+                multiline_group.push_sc(sc!(","));
+            }
+            multiline_group.extend(gen_node_succeeding_trivia(&item)?);
+        }
 
         multiline_group.request(Request::discourage(RequestItem::Space));
         multiline_group.grouped_possible_newline();
@@ -186,11 +216,7 @@ pub fn gen_function_call_arguments_tabular(
     let item_arguments = parse_function_call_arguments(&mut syntax)?;
     parse_end(&mut syntax)?;
 
-    let item_count = item_arguments
-        .items
-        .iter()
-        .filter(|item| matches!(item, SeparatedItem::Item(_)))
-        .count();
+    let item_count = item_arguments.len();
 
     if item_count != table_columns * table_rows {
         return gen_function_call_arguments_standard(arguments);
@@ -204,43 +230,31 @@ pub fn gen_function_call_arguments_tabular(
     multiline_group.push_sc(sc!("("));
 
     // If its blank we do not give the formatter the option to break within the ()
-    if !item_arguments.is_blank {
+    if !item_arguments.is_empty() {
         multiline_group.start_indent();
 
-        let mut item_index = 0;
-        for (index, item) in item_arguments.items.into_iter().enumerate() {
-            match item {
-                SeparatedItem::Item(item) => {
-                    // Separated Items only start on a new line if they are the first of a table
-                    if item_index % table_columns == 0 {
-                        multiline_group.request(Request::expect(RequestItem::LineBreak));
-                    } else {
-                        multiline_group.request(Request::expect(RequestItem::Space));
-                    }
-                    multiline_group.extend(gen_expression(&item)?);
-
-                    // The separator is always immediately after the item
-                    if index == item_arguments.last_item_index {
-                        multiline_group.extend_if_multi_line({
-                            let mut pi = PrintItems::default();
-                            pi.push_sc(sc!(","));
-                            pi
-                        });
-                    } else {
-                        multiline_group.push_sc(sc!(","));
-                    }
-                    item_index += 1;
-                },
-                SeparatedItem::Separator => {
-                    // The separator is always immediately after the item
-                },
-                SeparatedItem::Comment(comment) => {
-                    multiline_group.extend(gen_comment(&comment));
-                },
-                SeparatedItem::LineSpacing(_line_spacing) => {
-                    // We discard empty lines
-                },
+        for (item_index, item) in item_arguments.into_iter().enumerate() {
+            // Separated Items only start on a new line if they are the first of a table
+            if item_index % table_columns == 0 {
+                multiline_group.request(Request::expect(RequestItem::LineBreak));
+            } else {
+                multiline_group.request(Request::expect(RequestItem::Space));
             }
+            multiline_group.extend(gen_node_preceding_trivia(&item)?);
+            multiline_group.extend(gen_node_content(&item)?);
+            multiline_group.request(Request::discourage(RequestItem::Space));
+            // The separator is always immediately after the item
+            if item_index == item_count - 1 {
+                multiline_group.extend_if_multi_line({
+                    let mut pi = PrintItems::default();
+                    pi.push_sc(sc!(","));
+                    pi
+                });
+            } else {
+                multiline_group.push_sc(sc!(","));
+            }
+
+            multiline_group.extend(gen_node_succeeding_trivia(&item)?);
         }
     }
 
