@@ -181,30 +181,30 @@ impl<'db> Resolver<'db> {
             Scope::Builtin => {
                 // TODO: Match against "name.as_str()" and then point at a "builtin" file
                 // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/559
-                // for name in wgsl_types::idents::BUILTIN_ALIAS_NAMES {
-                //     callback(
-                //         &(*name).into(),
-                //         ScopeDef::BuiltIn(BuiltInKind::Alias((*name).into())),
-                //     );
-                // }
-                // for name in wgsl_types::idents::BUILTIN_CONSTRUCTOR_NAMES {
-                //     callback(
-                //         &(*name).into(),
-                //         ScopeDef::BuiltIn(BuiltInKind::Constructor((*name).into())),
-                //     );
-                // }
-                // for name in wgsl_types::idents::BUILTIN_DECLARATION_NAMES {
-                //     callback(
-                //         &(*name).into(),
-                //         ScopeDef::BuiltIn(BuiltInKind::Declaration((*name).into())),
-                //     );
-                // }
-                // for name in wgsl_types::idents::BUILTIN_ENUMERANT_NAMES {
-                //     callback(
-                //         &(*name).into(),
-                //         ScopeDef::BuiltIn(BuiltInKind::Enumerant((*name).into())),
-                //     );
-                // }
+                for name in wgsl_types::idents::BUILTIN_ALIAS_NAMES {
+                    callback(
+                        &(*name).into(),
+                        ScopeDef::BuiltIn(BuiltInKind::Alias((*name).into())),
+                    );
+                }
+                for name in wgsl_types::idents::BUILTIN_CONSTRUCTOR_NAMES {
+                    callback(
+                        &(*name).into(),
+                        ScopeDef::BuiltIn(BuiltInKind::Constructor((*name).into())),
+                    );
+                }
+                for name in wgsl_types::idents::BUILTIN_DECLARATION_NAMES {
+                    callback(
+                        &(*name).into(),
+                        ScopeDef::BuiltIn(BuiltInKind::Declaration((*name).into())),
+                    );
+                }
+                for name in wgsl_types::idents::BUILTIN_ENUMERANT_NAMES {
+                    callback(
+                        &(*name).into(),
+                        ScopeDef::BuiltIn(BuiltInKind::Enumerant((*name).into())),
+                    );
+                }
                 for name in wgsl_types::idents::BUILTIN_FUNCTION_NAMES {
                     callback(
                         &(*name).into(),
@@ -216,12 +216,12 @@ impl<'db> Resolver<'db> {
                 // for name in wgsl_types::idents::BUILTIN_STRUCT_NAMES {
                 //     callback(&(*name).into(), ScopeDef::BuiltIn(BuiltInKind::Struct((*name).into())));
                 // }
-                // for name in wgsl_types::idents::BUILTIN_TYPE_GENERATOR_NAMES {
-                //     callback(
-                //         &(*name).into(),
-                //         ScopeDef::BuiltIn(BuiltInKind::Type((*name).into())),
-                //     );
-                // }
+                for name in wgsl_types::idents::BUILTIN_TYPE_GENERATOR_NAMES {
+                    callback(
+                        &(*name).into(),
+                        ScopeDef::BuiltIn(BuiltInKind::Type((*name).into())),
+                    );
+                }
                 for name in wgsl_types::idents::BUILTIN_TYPE_NAMES
                     .iter()
                     .filter(|type_name| !type_name.starts_with("__"))
