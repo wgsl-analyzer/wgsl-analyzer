@@ -99,7 +99,7 @@ smallvec = {
 		"union",
 	]
 }
-smol_str = "0.3.5"
+smol_str = { version = "0.3.5", default-features = false }
 text-size = "1.1.1"
 tracing = {
 	version = "0.1.44",
