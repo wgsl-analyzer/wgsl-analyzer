@@ -5,7 +5,6 @@ use expect_test::expect;
 use crate::tests::check_infer;
 
 #[test]
-#[should_panic(expected = "not implemented: not yet supported naga extension")]
 fn texture_storage_1d() {
     check_infer(
         "
@@ -31,7 +30,6 @@ fn main() {
 }
 
 #[test]
-#[should_panic(expected = "not implemented: not yet supported naga extension")]
 fn texture_storage_2d() {
     check_infer(
         "
@@ -295,7 +293,6 @@ fn main() {
 }
 
 #[test]
-#[should_panic(expected = "not implemented: not yet supported naga extension")]
 fn texture_storage_2d_array() {
     check_infer(
         "

@@ -299,38 +299,6 @@ pub fn diagnostics(
                         frange.range,
                     )
                 },
-                AnyDiagnostic::NoBuiltinOverload {
-                    expression,
-                    builtin,
-                    parameters,
-                    name,
-                } => {
-                    let source = expression.value.to_node(&root).syntax().parent().unwrap();
-                    let builtin = builtin.lookup(db);
-
-                    let parameters = parameters
-                        .iter()
-                        .map(|r#type| ty::pretty::pretty_type(db, *r#type))
-                        .join(", ");
-
-                    let possible = builtin
-                        .overloads()
-                        .map(|(_, overload)| pretty_fn(db, overload.r#type.lookup(db)))
-                        .join("\n");
-
-                    let name = name.unwrap_or_else(|| builtin.name().into());
-
-                    let frange = original_file_range(db, expression.file_id, source.syntax());
-                    Diagnostic::new(
-                        DiagnosticCode("8"),
-                        format!(
-                            "no overload of `{}` found for given arguments.\
-                            ),
-                            Found ({parameters}), expected one of:\n{possible}",
-                            name.as_str()),
-                        frange.range,
-                    )
-                },
                 AnyDiagnostic::AddressOfNotReference { expression, actual } => {
                     let source = expression.value.to_node(&root);
                     let r#type = ty::pretty::pretty_type(db, actual);
@@ -415,7 +383,6 @@ pub fn diagnostics(
                 },
                 AnyDiagnostic::NoConstructor {
                     expression,
-                    builtins,
                     r#type,
                     parameters,
                 } => {
@@ -426,20 +393,11 @@ pub fn diagnostics(
                         .map(|r#type| ty::pretty::pretty_type(db, *r#type))
                         .join(", ");
 
-                    let mut possible = Vec::with_capacity(32);
-                    let builtin_specific = builtins.lookup(db);
-                    possible.extend(builtin_specific.overloads().map(|(_, overload)| {
-                        pretty_fn(db, overload.r#type.lookup(db))
-                    }));
-
-                    let possible = possible.join("\n");
-
                     let frange = original_file_range(db, expression.file_id, source.syntax());
                     Diagnostic::new(
                         DiagnosticCode("18"),
                         format!(
-                            "no overload of constructor `{}` found for given \
-                            arguments. Found ({parameters}), expected one of:\n{possible}",
+                            "no overload of constructor `{}` found for arguments of type ({parameters})",
                             pretty_type(db, r#type),
                         ),
                         frange.range,

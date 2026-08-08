@@ -9,6 +9,7 @@ use hir_def::{
         UnaryOperator,
     },
     expression_store::{ExpressionStore, path::Path},
+    item_tree::Name,
     mod_path::PathKind,
     resolver::{ResolutionDiagnostic, ResolveKind, Resolver},
     signature::StructSignature,
@@ -166,15 +167,20 @@ pub enum Lowered {
     Override(OverrideId),
     Local(BindingId),
     Enumerant(Enumerant),
-    BuiltinFunction,
+    BuiltinFunction(Name),
+    // BuiltinConstructor(Name),
 }
 
 impl Lowered {
     #[must_use]
     pub const fn kind(&self) -> LoweredKind {
         match self {
-            Self::Type(_) | Self::TypeWithoutTemplate(_) => LoweredKind::Type,
-            Self::Function(_) | Self::BuiltinFunction => LoweredKind::Function,
+            Self::Type(_) | Self::TypeWithoutTemplate(_)
+            // | Self::BuiltinConstructor(_)
+            => {
+                LoweredKind::Type
+            },
+            Self::Function(_) | Self::BuiltinFunction(_) => LoweredKind::Function,
             Self::GlobalConstant(_) => LoweredKind::Constant,
             Self::GlobalVariable(_) => LoweredKind::Variable,
             Self::Override(_) => LoweredKind::Override,
@@ -284,6 +290,7 @@ impl<'db> TypeLoweringContext<'db> {
             Ok(ResolveKind::GlobalVariable(id)) => Ok(Lowered::GlobalVariable(id)),
             Ok(ResolveKind::Override(id)) => Ok(Lowered::Override(id)),
             Ok(ResolveKind::Local(local, _)) => Ok(Lowered::Local(local)),
+            Ok(ResolveKind::BuiltinFunction(name)) => Ok(Lowered::BuiltinFunction(name)),
             Err(diagnostic)
                 if path.mod_path().kind() == PathKind::Plain && path.mod_path().len() == 1 =>
             {
@@ -358,7 +365,8 @@ impl<'db> TypeLoweringContext<'db> {
             Ok(
                 Lowered::Enumerant(_)
                 | Lowered::Function(_)
-                | Lowered::BuiltinFunction
+                | Lowered::BuiltinFunction(_)
+                // | Lowered::BuiltinConstructor(_)
                 | Lowered::GlobalConstant(_)
                 | Lowered::GlobalVariable(_)
                 | Lowered::Override(_)
@@ -395,20 +403,12 @@ impl<'db> WgslTypeConverter<'db> {
         clippy::wrong_self_convention,
         reason = "naming things is hard and this is probably changing in the future"
     )]
-    #[expect(
-        clippy::too_many_lines,
-        reason = "long match, not a good candidate for refactoring"
-    )]
     pub fn to_wgsl_types(
         &mut self,
         r#type: Type,
     ) -> wgsl_types::Type {
         match r#type.kind(self.db) {
-            // TODO: This should not be necessary because the types should align 1:1
-            // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/672
-            TypeKind::Error
-            | TypeKind::BoundVariable(_)
-            | TypeKind::StorageTypeOfTexelFormat(_) => wgsl_types::Type::Unknown,
+            TypeKind::Error => wgsl_types::Type::Unknown,
             TypeKind::Scalar(ScalarType::AbstractFloat) => wgsl_types::Type::AbstractFloat,
             TypeKind::Scalar(ScalarType::AbstractInt) => wgsl_types::Type::AbstractInt,
             TypeKind::Scalar(ScalarType::Bool) => wgsl_types::Type::Bool,
@@ -435,25 +435,8 @@ impl<'db> WgslTypeConverter<'db> {
                 Box::new(self.to_wgsl_types(inner)),
             ),
             TypeKind::Struct(struct_id) => {
-                let data = StructSignature::of(self.db, struct_id);
-                let fields = &self.db.field_types(struct_id).0;
-                let name = self.intern_struct(struct_id);
-                wgsl_types::Type::Struct(Box::new(wgsl_types::ty::StructType {
-                    name,
-                    members: data
-                        .fields
-                        .iter()
-                        .map(|(id, data)| {
-                            wgsl_types::ty::StructMemberType {
-                                name: data.name.as_str().to_owned(),
-                                ty: self.to_wgsl_types(fields[id]),
-                                // Don't bother reconstructing the correct layout
-                                size: None,
-                                align: None,
-                            }
-                        })
-                        .collect::<Vec<_>>(),
-                }))
+                let struct_type = self.to_wgsl_struct(struct_id);
+                wgsl_types::Type::Struct(Box::new(struct_type))
             },
             TypeKind::BuiltinStruct(builtin_struct) => {
                 wgsl_types::Type::Struct(Box::new(wgsl_types::ty::StructType {
@@ -519,6 +502,35 @@ impl<'db> WgslTypeConverter<'db> {
                 Box::new(self.to_wgsl_types(inner)),
                 access_mode,
             ),
+        }
+    }
+
+    #[expect(
+        clippy::wrong_self_convention,
+        reason = "naming things is hard and this is probably changing in the future"
+    )]
+    pub fn to_wgsl_struct(
+        &mut self,
+        struct_id: StructId,
+    ) -> wgsl_types::ty::StructType {
+        let data = StructSignature::of(self.db, struct_id);
+        let fields = &self.db.field_types(struct_id).0;
+        let name = self.intern_struct(struct_id);
+        wgsl_types::ty::StructType {
+            name,
+            members: data
+                .fields
+                .iter()
+                .map(|(id, data)| {
+                    wgsl_types::ty::StructMemberType {
+                        name: data.name.as_str().to_owned(),
+                        ty: self.to_wgsl_types(fields[id]),
+                        // Don't bother reconstructing the correct layout
+                        size: None,
+                        align: None,
+                    }
+                })
+                .collect::<Vec<_>>(),
         }
     }
 
@@ -743,31 +755,31 @@ impl<'db> WgslTypeConverter<'db> {
                 multisampled: false,
             },
             wgsl_types::ty::TextureType::Storage1D(texel_format, access_mode) => TextureType {
-                kind: TextureKind::Storage(from_wgsl_texel_format(texel_format), access_mode),
+                kind: TextureKind::Storage(texel_format, access_mode),
                 dimension: TextureDimensionality::D1,
                 arrayed: false,
                 multisampled: false,
             },
             wgsl_types::ty::TextureType::Storage1DArray(texel_format, access_mode) => TextureType {
-                kind: TextureKind::Storage(from_wgsl_texel_format(texel_format), access_mode),
+                kind: TextureKind::Storage(texel_format, access_mode),
                 dimension: TextureDimensionality::D1,
                 arrayed: true,
                 multisampled: false,
             },
             wgsl_types::ty::TextureType::Storage2D(texel_format, access_mode) => TextureType {
-                kind: TextureKind::Storage(from_wgsl_texel_format(texel_format), access_mode),
+                kind: TextureKind::Storage(texel_format, access_mode),
                 dimension: TextureDimensionality::D2,
                 arrayed: false,
                 multisampled: false,
             },
             wgsl_types::ty::TextureType::Storage2DArray(texel_format, access_mode) => TextureType {
-                kind: TextureKind::Storage(from_wgsl_texel_format(texel_format), access_mode),
+                kind: TextureKind::Storage(texel_format, access_mode),
                 dimension: TextureDimensionality::D2,
                 arrayed: true,
                 multisampled: false,
             },
             wgsl_types::ty::TextureType::Storage3D(texel_format, access_mode) => TextureType {
-                kind: TextureKind::Storage(from_wgsl_texel_format(texel_format), access_mode),
+                kind: TextureKind::Storage(texel_format, access_mode),
                 dimension: TextureDimensionality::D3,
                 arrayed: false,
                 multisampled: false,
@@ -826,34 +838,19 @@ impl<'db> WgslTypeConverter<'db> {
                 wgsl_types::ty::TextureType::SampledCubeArray(self.to_wgsl_sampled(sampled))
             },
             (TextureKind::Storage(texel_format, access_mode), TextureDimensionality::D1, false) => {
-                wgsl_types::ty::TextureType::Storage1D(
-                    to_wgsl_texel_format(texel_format),
-                    access_mode,
-                )
+                wgsl_types::ty::TextureType::Storage1D(texel_format, access_mode)
             },
             (TextureKind::Storage(texel_format, access_mode), TextureDimensionality::D1, true) => {
-                wgsl_types::ty::TextureType::Storage1DArray(
-                    to_wgsl_texel_format(texel_format),
-                    access_mode,
-                )
+                wgsl_types::ty::TextureType::Storage1DArray(texel_format, access_mode)
             },
             (TextureKind::Storage(texel_format, access_mode), TextureDimensionality::D2, false) => {
-                wgsl_types::ty::TextureType::Storage2D(
-                    to_wgsl_texel_format(texel_format),
-                    access_mode,
-                )
+                wgsl_types::ty::TextureType::Storage2D(texel_format, access_mode)
             },
             (TextureKind::Storage(texel_format, access_mode), TextureDimensionality::D2, true) => {
-                wgsl_types::ty::TextureType::Storage2DArray(
-                    to_wgsl_texel_format(texel_format),
-                    access_mode,
-                )
+                wgsl_types::ty::TextureType::Storage2DArray(texel_format, access_mode)
             },
             (TextureKind::Storage(texel_format, access_mode), TextureDimensionality::D3, false) => {
-                wgsl_types::ty::TextureType::Storage3D(
-                    to_wgsl_texel_format(texel_format),
-                    access_mode,
-                )
+                wgsl_types::ty::TextureType::Storage3D(texel_format, access_mode)
             },
             (TextureKind::Depth, TextureDimensionality::D2, false) => {
                 wgsl_types::ty::TextureType::Depth2D
@@ -908,105 +905,8 @@ impl<'db> WgslTypeConverter<'db> {
             | TypeKind::Texture(_)
             | TypeKind::Sampler(_)
             | TypeKind::Reference(_)
-            | TypeKind::Pointer(_)
-            | TypeKind::BoundVariable(_)
-            | TypeKind::StorageTypeOfTexelFormat(_)) => panic!("invalid sampled type {kind:?}"),
+            | TypeKind::Pointer(_)) => panic!("invalid sampled type {kind:?}"),
         }
-    }
-}
-
-#[must_use]
-pub fn from_wgsl_texel_format(
-    texel_format: wgsl_types::syntax::TexelFormat
-) -> crate::ty::TexelFormat {
-    match texel_format {
-        wgsl_types::syntax::TexelFormat::Rgba8Unorm => crate::ty::TexelFormat::Rgba8unorm,
-        wgsl_types::syntax::TexelFormat::Rgba8Snorm => crate::ty::TexelFormat::Rgba8snorm,
-        wgsl_types::syntax::TexelFormat::Rgba8Uint => crate::ty::TexelFormat::Rgba8uint,
-        wgsl_types::syntax::TexelFormat::Rgba8Sint => crate::ty::TexelFormat::Rgba8sint,
-        wgsl_types::syntax::TexelFormat::Rgba16Uint => crate::ty::TexelFormat::Rgba16uint,
-        wgsl_types::syntax::TexelFormat::Rgba16Sint => crate::ty::TexelFormat::Rgba16sint,
-        wgsl_types::syntax::TexelFormat::Rgba16Float => crate::ty::TexelFormat::Rgba16float,
-        wgsl_types::syntax::TexelFormat::R32Uint => crate::ty::TexelFormat::R32uint,
-        wgsl_types::syntax::TexelFormat::R32Sint => crate::ty::TexelFormat::R32sint,
-        wgsl_types::syntax::TexelFormat::R32Float => crate::ty::TexelFormat::R32float,
-        wgsl_types::syntax::TexelFormat::Rg32Uint => crate::ty::TexelFormat::Rg32uint,
-        wgsl_types::syntax::TexelFormat::Rg32Sint => crate::ty::TexelFormat::Rg32sint,
-        wgsl_types::syntax::TexelFormat::Rg32Float => crate::ty::TexelFormat::Rg32float,
-        wgsl_types::syntax::TexelFormat::Rgba32Uint => crate::ty::TexelFormat::Rgba32uint,
-        wgsl_types::syntax::TexelFormat::Rgba32Sint => crate::ty::TexelFormat::Rgba32sint,
-        wgsl_types::syntax::TexelFormat::Rgba32Float => crate::ty::TexelFormat::Rgba32float,
-        wgsl_types::syntax::TexelFormat::Bgra8Unorm => crate::ty::TexelFormat::Bgra8unorm,
-        wgsl_types::syntax::TexelFormat::R8Unorm
-        | wgsl_types::syntax::TexelFormat::R8Snorm
-        | wgsl_types::syntax::TexelFormat::R8Uint
-        | wgsl_types::syntax::TexelFormat::R8Sint
-        | wgsl_types::syntax::TexelFormat::R16Unorm
-        | wgsl_types::syntax::TexelFormat::R16Snorm
-        | wgsl_types::syntax::TexelFormat::R16Uint
-        | wgsl_types::syntax::TexelFormat::R16Sint
-        | wgsl_types::syntax::TexelFormat::R16Float
-        | wgsl_types::syntax::TexelFormat::Rg8Unorm
-        | wgsl_types::syntax::TexelFormat::Rg8Snorm
-        | wgsl_types::syntax::TexelFormat::Rg8Uint
-        | wgsl_types::syntax::TexelFormat::Rg8Sint
-        | wgsl_types::syntax::TexelFormat::Rg16Unorm
-        | wgsl_types::syntax::TexelFormat::Rg16Snorm
-        | wgsl_types::syntax::TexelFormat::Rg16Uint
-        | wgsl_types::syntax::TexelFormat::Rg16Sint
-        | wgsl_types::syntax::TexelFormat::Rg16Float
-        | wgsl_types::syntax::TexelFormat::Rgb10a2Uint
-        | wgsl_types::syntax::TexelFormat::Rgb10a2Unorm
-        | wgsl_types::syntax::TexelFormat::Rg11b10Float
-        | wgsl_types::syntax::TexelFormat::R64Uint
-        | wgsl_types::syntax::TexelFormat::Rgba16Unorm
-        | wgsl_types::syntax::TexelFormat::Rgba16Snorm => {
-            #[expect(
-                clippy::unimplemented,
-                reason = "TODO: support naga texture formats, see: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/675"
-            )]
-            {
-                unimplemented!("not yet supported naga extension")
-            }
-        },
-    }
-}
-
-/// Convert a [`crate::ty::TexelFormat`] into a [`wgsl_types::syntax::TexelFormat`].
-///
-/// # Panics
-///
-/// Panics if `texel_format` is `BoundVariable` or `Any`.
-#[expect(
-    deprecated,
-    reason = "TODO: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/559"
-)]
-#[must_use]
-pub fn to_wgsl_texel_format(
-    texel_format: crate::ty::TexelFormat
-) -> wgsl_types::syntax::TexelFormat {
-    match texel_format {
-        crate::ty::TexelFormat::Rgba8unorm => wgsl_types::syntax::TexelFormat::Rgba8Unorm,
-        crate::ty::TexelFormat::Rgba8snorm => wgsl_types::syntax::TexelFormat::Rgba8Snorm,
-        crate::ty::TexelFormat::Rgba8uint => wgsl_types::syntax::TexelFormat::Rgba8Uint,
-        crate::ty::TexelFormat::Rgba8sint => wgsl_types::syntax::TexelFormat::Rgba8Sint,
-        crate::ty::TexelFormat::Rgba16uint => wgsl_types::syntax::TexelFormat::Rgba16Uint,
-        crate::ty::TexelFormat::Rgba16sint => wgsl_types::syntax::TexelFormat::Rgba16Sint,
-        crate::ty::TexelFormat::Rgba16float => wgsl_types::syntax::TexelFormat::Rgba16Float,
-        crate::ty::TexelFormat::R32uint => wgsl_types::syntax::TexelFormat::R32Uint,
-        crate::ty::TexelFormat::R32sint => wgsl_types::syntax::TexelFormat::R32Sint,
-        crate::ty::TexelFormat::R32float => wgsl_types::syntax::TexelFormat::R32Float,
-        crate::ty::TexelFormat::Rg32uint => wgsl_types::syntax::TexelFormat::Rg32Uint,
-        crate::ty::TexelFormat::Rg32sint => wgsl_types::syntax::TexelFormat::Rg32Sint,
-        crate::ty::TexelFormat::Rg32float => wgsl_types::syntax::TexelFormat::Rg32Float,
-        crate::ty::TexelFormat::Rgba32uint => wgsl_types::syntax::TexelFormat::Rgba32Uint,
-        crate::ty::TexelFormat::Rgba32sint => wgsl_types::syntax::TexelFormat::Rgba32Sint,
-        crate::ty::TexelFormat::Rgba32float => wgsl_types::syntax::TexelFormat::Rgba32Float,
-        crate::ty::TexelFormat::Bgra8unorm => wgsl_types::syntax::TexelFormat::Bgra8Unorm,
-        crate::ty::TexelFormat::BoundVariable(_) => {
-            panic!("bound var is not a valid texel format to convert")
-        },
-        crate::ty::TexelFormat::Any => panic!("any is not a valid texel format to convert"),
     }
 }
 

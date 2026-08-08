@@ -138,34 +138,7 @@ fn no_constructor() {
     check_diagnostics(
         "fn foo() { var x = vec2f(1, 2, 3); }",
         expect![[r#"
-            19..33 wgsl-analyzer Error 18: no overload of constructor `vec2<f32>` found for given arguments. Found (integer, integer, integer), expected one of:
-            fn op_vec2_constructor(e: bool) -> vec2<bool>
-            fn op_vec2_constructor(e: integer) -> vec2<integer>
-            fn op_vec2_constructor(e: float) -> vec2<float>
-            fn op_vec2_constructor(e: i32) -> vec2<i32>
-            fn op_vec2_constructor(e: u32) -> vec2<u32>
-            fn op_vec2_constructor(e: f32) -> vec2<f32>
-            fn op_vec2_constructor(e: f16) -> vec2<f16>
-            fn op_vec2_constructor(e: u64) -> vec2<u64>
-            fn op_vec2_constructor(e: i64) -> vec2<i64>
-            fn op_vec2_constructor(e: vec2<bool>) -> vec2<bool>
-            fn op_vec2_constructor(e: vec2<integer>) -> vec2<integer>
-            fn op_vec2_constructor(e: vec2<float>) -> vec2<float>
-            fn op_vec2_constructor(e: vec2<i32>) -> vec2<i32>
-            fn op_vec2_constructor(e: vec2<u32>) -> vec2<u32>
-            fn op_vec2_constructor(e: vec2<f32>) -> vec2<f32>
-            fn op_vec2_constructor(e: vec2<f16>) -> vec2<f16>
-            fn op_vec2_constructor(e: vec2<u64>) -> vec2<u64>
-            fn op_vec2_constructor(e: vec2<i64>) -> vec2<i64>
-            fn op_vec2_constructor(e1: bool, e2: bool) -> vec2<bool>
-            fn op_vec2_constructor(e1: integer, e2: integer) -> vec2<integer>
-            fn op_vec2_constructor(e1: float, e2: float) -> vec2<float>
-            fn op_vec2_constructor(e1: i32, e2: i32) -> vec2<i32>
-            fn op_vec2_constructor(e1: u32, e2: u32) -> vec2<u32>
-            fn op_vec2_constructor(e1: f32, e2: f32) -> vec2<f32>
-            fn op_vec2_constructor(e1: f16, e2: f16) -> vec2<f16>
-            fn op_vec2_constructor(e1: u64, e2: u64) -> vec2<u64>
-            fn op_vec2_constructor(e1: i64, e2: i64) -> vec2<i64>
+            19..33 wgsl-analyzer Error 18: no overload of constructor `vec2<f32>` found for arguments of type (integer, integer, integer)
         "#]],
     );
 }
@@ -598,7 +571,7 @@ fn foo() {
 }
 ",
         expect![[r#"
-            23..34 wgsl-analyzer Error 14: `bitcast` not found in scope
+            23..34 wesl-rs Error 22: invalid function call signature: `bitcast(f32)`
         "#]],
     );
 }
@@ -612,9 +585,7 @@ fn foo() {
     let x = sqrt<f32>(1f);
 }
 ",
-        expect![[r#"
-            23..36 wgsl-analyzer Error 14: `sqrt` not found in scope
-        "#]],
+        expect![""],
     );
 }
 

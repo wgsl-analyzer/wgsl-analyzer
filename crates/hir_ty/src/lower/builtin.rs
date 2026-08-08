@@ -11,11 +11,11 @@ use wgsl_types::{
 use crate::{
     lower::{
         Lowered, TypeContainer, TypeLoweringContext, TypeLoweringError, TypeLoweringErrorKind,
-        from_wgsl_texel_format, generics::TemplateParameters,
+        generics::TemplateParameters,
     },
     ty::{
         ArraySize, ArrayType, AtomicType, MatrixType, Pointer, ScalarType, TextureDimensionality,
-        TextureKind, TextureType, Type, TypeKind, VecSize, VectorType, pretty::pretty_type,
+        TextureKind, TextureType, Type, TypeKind, VecSize, VectorType,
     },
 };
 
@@ -31,22 +31,10 @@ impl TypeLoweringContext<'_> {
         match self.lower_predeclared_type(type_container, name, template_parameters) {
             Ok(Some(lowered)) => Some(lowered),
             Ok(None) => {
-                let mut evaluated = self.eval_template_args(type_container, template_parameters);
-                let mut buffer = String::new();
-                if !template_parameters.is_empty() {
-                    buffer.push('<');
-                }
-                while let Ok(next) = evaluated.next_as_type() {
-                    buffer.push_str(&pretty_type(self.db, next.0));
-                    buffer.push(',');
-                }
-                let mut buffer = buffer.trim_end_matches(',').to_owned();
-                if !template_parameters.is_empty() {
-                    buffer.push('>');
-                }
-                let name = format!("{}{buffer}", name.as_str());
-                if crate::builtins::Builtin::ALL_BUILTINS.contains(&name.as_str()) {
-                    Some(Lowered::BuiltinFunction)
+                if wgsl_types::idents::BUILTIN_FUNCTION_NAMES.contains(&name.as_str()) {
+                    Some(Lowered::BuiltinFunction(name.clone()))
+                // } else if wgsl_types::idents::BUILTIN_CONSTRUCTOR_NAMES.contains(&name.as_str()) {
+                //     Some(Lowered::BuiltinConstructor(name.clone()))
                 } else if let Ok(enum_value) = Enumerant::from_str(name.as_str()) {
                     self.expect_no_template(template_parameters);
                     Some(Lowered::Enumerant(enum_value))
@@ -530,7 +518,7 @@ impl TypeLoweringContext<'_> {
                 let storage_template = self.storage_texture_template(evaluated_parameters)?;
                 TypeKind::Texture(TextureType {
                     kind: TextureKind::Storage(
-                        from_wgsl_texel_format(storage_template.texel_format),
+                        storage_template.texel_format,
                         storage_template.access_mode,
                     ),
                     dimension: TextureDimensionality::D1,
@@ -542,7 +530,7 @@ impl TypeLoweringContext<'_> {
                 let storage_template = self.storage_texture_template(evaluated_parameters)?;
                 TypeKind::Texture(TextureType {
                     kind: TextureKind::Storage(
-                        from_wgsl_texel_format(storage_template.texel_format),
+                        storage_template.texel_format,
                         storage_template.access_mode,
                     ),
                     dimension: TextureDimensionality::D2,
@@ -554,7 +542,7 @@ impl TypeLoweringContext<'_> {
                 let storage_template = self.storage_texture_template(evaluated_parameters)?;
                 TypeKind::Texture(TextureType {
                     kind: TextureKind::Storage(
-                        from_wgsl_texel_format(storage_template.texel_format),
+                        storage_template.texel_format,
                         storage_template.access_mode,
                     ),
                     dimension: TextureDimensionality::D2,
@@ -566,7 +554,7 @@ impl TypeLoweringContext<'_> {
                 let storage_template = self.storage_texture_template(evaluated_parameters)?;
                 TypeKind::Texture(TextureType {
                     kind: TextureKind::Storage(
-                        from_wgsl_texel_format(storage_template.texel_format),
+                        storage_template.texel_format,
                         storage_template.access_mode,
                     ),
                     dimension: TextureDimensionality::D3,
@@ -909,9 +897,7 @@ impl TypeLoweringContext<'_> {
                     | TypeKind::Texture(_)
                     | TypeKind::Sampler(_)
                     | TypeKind::Reference(_)
-                    | TypeKind::Pointer(_)
-                    | TypeKind::BoundVariable(_)
-                    | TypeKind::StorageTypeOfTexelFormat(_) => {
+                    | TypeKind::Pointer(_) => {
                         // texture_2d<invalid>()
                         let error = TypeLoweringError {
                             container: TypeContainer::Expression(expression),

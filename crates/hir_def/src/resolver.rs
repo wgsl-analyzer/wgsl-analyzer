@@ -10,6 +10,7 @@ use crate::{
         FunctionId, GlobalConstantId, GlobalVariableId, ModuleDefinitionId, OverrideId, StructId,
         TypeAliasId,
     },
+    expression::ExpressionId,
     expression_store::path::Path,
     item_scope::ItemScope,
     item_tree::Name,
@@ -50,6 +51,8 @@ pub enum ResolveKind {
     GlobalConstant(GlobalConstantId),
     Override(OverrideId),
     Function(FunctionId),
+    BuiltinFunction(Name),
+    // BuiltinType(Name),
 }
 
 impl TryFrom<ModuleDefinitionId> for ResolveKind {
@@ -71,7 +74,19 @@ impl TryFrom<ModuleDefinitionId> for ResolveKind {
 pub enum ScopeDef {
     Local(BindingId),
     ModuleDefinition(ModuleDefinitionId),
+    BuiltIn(BuiltInKind),
     Module,
+}
+
+pub enum BuiltInKind {
+    Alias(Name),
+    Constructor(Name),
+    Declaration(Name),
+    Enumerant(Name),
+    Function(Name),
+    Struct(Name),
+    TypeGenerator(Name),
+    Type(Name),
 }
 
 #[derive(Clone)]
@@ -166,6 +181,56 @@ impl<'db> Resolver<'db> {
             Scope::Builtin => {
                 // TODO: Match against "name.as_str()" and then point at a "builtin" file
                 // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/559
+                // for name in wgsl_types::idents::BUILTIN_ALIAS_NAMES {
+                //     callback(
+                //         &(*name).into(),
+                //         ScopeDef::BuiltIn(BuiltInKind::Alias((*name).into())),
+                //     );
+                // }
+                // for name in wgsl_types::idents::BUILTIN_CONSTRUCTOR_NAMES {
+                //     callback(
+                //         &(*name).into(),
+                //         ScopeDef::BuiltIn(BuiltInKind::Constructor((*name).into())),
+                //     );
+                // }
+                // for name in wgsl_types::idents::BUILTIN_DECLARATION_NAMES {
+                //     callback(
+                //         &(*name).into(),
+                //         ScopeDef::BuiltIn(BuiltInKind::Declaration((*name).into())),
+                //     );
+                // }
+                // for name in wgsl_types::idents::BUILTIN_ENUMERANT_NAMES {
+                //     callback(
+                //         &(*name).into(),
+                //         ScopeDef::BuiltIn(BuiltInKind::Enumerant((*name).into())),
+                //     );
+                // }
+                for name in wgsl_types::idents::BUILTIN_FUNCTION_NAMES {
+                    callback(
+                        &(*name).into(),
+                        ScopeDef::BuiltIn(BuiltInKind::Function((*name).into())),
+                    );
+                }
+                // builtin struct names are "unmentionable" in user source code and
+                // never need to be processed by name or completed.
+                // for name in wgsl_types::idents::BUILTIN_STRUCT_NAMES {
+                //     callback(&(*name).into(), ScopeDef::BuiltIn(BuiltInKind::Struct((*name).into())));
+                // }
+                // for name in wgsl_types::idents::BUILTIN_TYPE_GENERATOR_NAMES {
+                //     callback(
+                //         &(*name).into(),
+                //         ScopeDef::BuiltIn(BuiltInKind::Type((*name).into())),
+                //     );
+                // }
+                for name in wgsl_types::idents::BUILTIN_TYPE_NAMES
+                    .iter()
+                    .filter(|type_name| !type_name.starts_with("__"))
+                {
+                    callback(
+                        &(*name).into(),
+                        ScopeDef::BuiltIn(BuiltInKind::TypeGenerator((*name).into())),
+                    );
+                }
             },
         });
     }
@@ -261,6 +326,12 @@ impl<'db> Resolver<'db> {
                     // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/559
                     None
                 },
+                // Scope::Builtin => wgsl_types::idents::BUILTIN_FUNCTION_NAMES
+                //     .contains(&name.as_str())
+                //     .then(|| ResolveKind::BuiltinFunction(name.clone())),
+                // Scope::Builtin => wgsl_types::idents::BUILTIN_TYPE_NAMES
+                //     .contains(&name.as_str())
+                //     .then(|| ResolveKind::BuiltinType(name.clone())),
             })
             .ok_or(ResolutionDiagnostic::UnresolvedName { name: name.clone() })
     }

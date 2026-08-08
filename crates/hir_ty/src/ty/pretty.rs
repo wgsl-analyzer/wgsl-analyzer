@@ -298,15 +298,5 @@ fn write_type(
                 write!(formatter, ">")
             },
         },
-        TypeKind::BoundVariable(variable) => {
-            write!(formatter, "{}", ('T'..).nth(variable.index).unwrap())
-        },
-        TypeKind::StorageTypeOfTexelFormat(variable) => {
-            write!(
-                formatter,
-                "{}::StorageType",
-                ('F'..).nth(variable.index).unwrap()
-            )
-        },
     }
 }

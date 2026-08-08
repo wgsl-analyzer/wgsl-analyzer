@@ -67,6 +67,7 @@ impl TryToNavigationTarget for Definition {
     ) -> Option<NavigationTarget> {
         let navigation =
             match self {
+                Self::BuiltIn => None?,
                 Self::Local(local) => local.try_to_navigation_target(db)?,
                 Self::ModuleDef(definition) => {
                     match definition {

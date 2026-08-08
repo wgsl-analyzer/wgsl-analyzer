@@ -26,7 +26,6 @@ use hir_def::{
     signature::{StructSignature, TypeAliasSignature},
     type_specifier::TypeSpecifierId,
 };
-use itertools::Itertools as _;
 use syntax::{AstNode as _, Capabilities, Diagnostic, SyntaxNode};
 use test_fixture::WithFixture as _;
 
@@ -212,20 +211,6 @@ impl<'db> InferPrinter<'db> {
             InferenceDiagnosticKind::UnexpectedTemplateArgument { expression } => {
                 self.print_unexpected_template_argument(source_map, buffer, *expression);
             },
-            InferenceDiagnosticKind::NoBuiltinOverload {
-                builtin: _,
-                expression,
-                name,
-                parameters,
-            } => {
-                self.print_no_builtin_overload(
-                    source_map,
-                    buffer,
-                    *expression,
-                    name.as_ref(),
-                    parameters,
-                );
-            },
             InferenceDiagnosticKind::UnexpectedLoweredKind {
                 actual,
                 expected,
@@ -245,19 +230,11 @@ impl<'db> InferPrinter<'db> {
                 self.print_invalid_type(source_map, buffer, error);
             },
             InferenceDiagnosticKind::NoConstructor {
-                builtins,
                 expression,
                 parameters,
                 r#type,
             } => {
-                self.print_no_constructor(
-                    source_map,
-                    buffer,
-                    *builtins,
-                    *expression,
-                    parameters,
-                    *r#type,
-                );
+                self.print_no_constructor(source_map, buffer, *expression, parameters, *r#type);
             },
             InferenceDiagnosticKind::NoSuchField {
                 expression,
@@ -326,34 +303,6 @@ impl<'db> InferPrinter<'db> {
             buffer,
             "{range:?} '{}': unexpected template argument `{text}`",
             ellipsize(text.clone(), 15),
-        )
-        .unwrap();
-    }
-
-    fn print_no_builtin_overload(
-        &self,
-        source_map: &ExpressionSourceMap,
-        buffer: &mut String,
-        expression: ExpressionId,
-        name: Option<&Name>,
-        parameters: &[Type],
-    ) {
-        let Some((range, text)) = self.get_expression_range_text(source_map, expression) else {
-            return;
-        };
-        writeln!(
-            buffer,
-            "{range:?} '{}': no built-in overload of `{}` with parameters: ({})",
-            ellipsize(text, 15),
-            if let Some(name) = name {
-                name.as_str()
-            } else {
-                "<missing>"
-            },
-            parameters
-                .iter()
-                .map(|r#type| pretty_type_with_verbosity(self.db, *r#type, TypeVerbosity::Full))
-                .join(", ")
         )
         .unwrap();
     }
@@ -429,7 +378,6 @@ impl<'db> InferPrinter<'db> {
         &self,
         source_map: &ExpressionSourceMap,
         buffer: &mut String,
-        builtins: crate::builtins::BuiltinId,
         expression: ExpressionId,
         parameters: &[Type],
         r#type: Type,
@@ -439,9 +387,8 @@ impl<'db> InferPrinter<'db> {
         };
         writeln!(
             buffer,
-            "{range:?} '{}': no constructor for builtin `{}` of type `{}` with parameters `{}`",
+            "{range:?} '{}': no constructor found for type `{}` with parameters `{}`",
             ellipsize(text, 15),
-            builtins.lookup(self.db).name(),
             pretty_type(self.db, r#type),
             join_display(
                 parameters

@@ -94,6 +94,19 @@ pub enum CompletionItemKind {
     Struct,
     Module,
     TypeAlias,
+    Builtin(BuiltInKind),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub enum BuiltInKind {
+    Alias,
+    Constructor,
+    Declaration,
+    Enumerant,
+    Function,
+    Struct,
+    TypeGenerator,
+    Type,
 }
 
 impl CompletionItemKind {
@@ -109,6 +122,16 @@ impl CompletionItemKind {
             Self::Struct => "struct",
             Self::Module => "module",
             Self::TypeAlias => "type alias",
+            Self::Builtin(kind) => match kind {
+                BuiltInKind::Alias => "builtin alias",
+                BuiltInKind::Constructor => "builtin constructor",
+                BuiltInKind::Declaration => "builtin declaration",
+                BuiltInKind::Enumerant => "builtin enumerant",
+                BuiltInKind::Function => "builtin function",
+                BuiltInKind::Struct => "builtin struct",
+                BuiltInKind::TypeGenerator => "builtin type generator",
+                BuiltInKind::Type => "builtin type",
+            },
         }
     }
 }

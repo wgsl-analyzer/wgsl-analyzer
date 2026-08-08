@@ -153,9 +153,7 @@ impl TypeKind {
             | Self::Texture(_)
             | Self::Sampler(_)
             | Self::Reference(_)
-            | Self::Pointer(_)
-            | Self::BoundVariable(_)
-            | Self::StorageTypeOfTexelFormat(_) => None,
+            | Self::Pointer(_) => None,
         }
     }
 
@@ -254,9 +252,7 @@ impl TypeKind {
             | Self::Texture(_)
             | Self::Sampler(_)
             | Self::Reference(_)
-            | Self::Pointer(_)
-            | Self::BoundVariable(_)
-            | Self::StorageTypeOfTexelFormat(_) => None,
+            | Self::Pointer(_) => None,
         }
     }
 }

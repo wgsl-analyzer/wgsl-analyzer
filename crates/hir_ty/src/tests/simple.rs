@@ -1589,7 +1589,7 @@ fn no_constructor() {
             14..15 '1': integer
             17..18 '2': integer
             20..21 '3': integer
-            8..22 'vec2f(1, 2, 3)': no constructor for builtin `op_vec2_constructor` of type `vec2<f32>` with parameters `integer, integer, integer`
+            8..22 'vec2f(1, 2, 3)': no constructor found for type `vec2<f32>` with parameters `integer, integer, integer`
         "#]],
     );
 }
@@ -2066,7 +2066,7 @@ fn foo() {
             34..35 'x': [error]
             38..49 'sqrt<&y>(y)': [error]
             47..48 'y': i32
-            38..49 'sqrt<&y>(y)': `sqrt` not found in scope
+            [EditionedFileId(Id(300))] WgslError { expression: Idx::<Expression>(4), message: "internal error: wgsl-types did not align with wgsl-analyzer's type system" } in Body
         "#]],
     );
 }
@@ -2088,7 +2088,7 @@ fn foo() {
             39..51 'vec2<f32>(y)': [error]
             49..50 'y': [error]
             [EditionedFileId(Id(300))] WgslError { expression: Idx::<Expression>(0), message: "cannot use unary operator `&` on type `AbstractInt`" } in Body
-            39..51 'vec2<f32>(y)': no constructor for builtin `op_vec2_constructor` of type `vec2<f32>` with parameters `[error]`
+            39..51 'vec2<f32>(y)': no constructor found for type `vec2<f32>` with parameters `[error]`
         "#]],
     );
 }
@@ -2110,7 +2110,7 @@ fn foo() {
             39..46 'vec2(y)': [error]
             44..45 'y': [error]
             [EditionedFileId(Id(300))] WgslError { expression: Idx::<Expression>(0), message: "cannot use unary operator `&` on type `AbstractInt`" } in Body
-            39..46 'vec2(y)': no constructor for builtin `op_vec2_constructor` of type `vec2<[error]>` with parameters `[error]`
+            39..46 'vec2(y)': no constructor found for type `vec2<[error]>` with parameters `[error]`
         "#]],
     );
 }
@@ -2127,7 +2127,7 @@ fn foo() {
             19..20 'y': [error]
             23..36 'mat2x2f(true)': [error]
             31..35 'true': bool
-            23..36 'mat2x2f(true)': no constructor for builtin `op_mat2x2_constructor` of type `mat2x2<f32>` with parameters `bool`
+            23..36 'mat2x2f(true)': no constructor found for type `mat2x2<f32>` with parameters `bool`
         "#]],
     );
 }
@@ -2146,7 +2146,7 @@ fn foo() {
             28..32 'true': bool
             34..38 'true': bool
             40..44 'true': bool
-            23..45 'vec2(t... true)': no constructor for builtin `op_vec2_constructor` of type `vec2<[error]>` with parameters `bool, bool, bool`
+            23..45 'vec2(t... true)': no constructor found for type `vec2<[error]>` with parameters `bool, bool, bool`
         "#]],
     );
 }
@@ -2210,7 +2210,7 @@ fn foo() {
             19..20 'y': [error]
             23..35 'mat2x2(true)': [error]
             30..34 'true': bool
-            23..35 'mat2x2(true)': no constructor for builtin `op_mat2x2_constructor` of type `mat2x2<[error]>` with parameters `bool`
+            23..35 'mat2x2(true)': no constructor found for type `mat2x2<[error]>` with parameters `bool`
         "#]],
     );
 }

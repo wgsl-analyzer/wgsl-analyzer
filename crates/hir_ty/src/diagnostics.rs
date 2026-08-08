@@ -5,7 +5,6 @@ use hir_def::{
 };
 
 use crate::{
-    builtins::BuiltinId,
     infer::TypeExpectation,
     lower::{LoweredKind, TypeLoweringError},
     ty::Type,
@@ -46,15 +45,8 @@ pub enum InferenceDiagnosticKind {
         n_expected: usize,
         n_actual: usize,
     },
-    NoBuiltinOverload {
-        expression: ExpressionId,
-        builtin: BuiltinId,
-        name: Option<Name>,
-        parameters: Vec<Type>,
-    },
     NoConstructor {
         expression: ExpressionId,
-        builtins: BuiltinId,
         r#type: Type,
         parameters: Vec<Type>,
     },

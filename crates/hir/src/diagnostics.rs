@@ -10,7 +10,6 @@ use hir_def::{
     name_resolution::{DefDiagnostic, DefDiagnosticKind},
 };
 use hir_ty::{
-    builtins::BuiltinId,
     db::HirDatabase,
     diagnostics::InferenceDiagnosticKind,
     infer::TypeExpectation,
@@ -79,12 +78,6 @@ pub enum AnyDiagnostic {
         n_expected: usize,
         n_actual: usize,
     },
-    NoBuiltinOverload {
-        expression: InFile<AstPointer<ast::Expression>>,
-        builtin: BuiltinId,
-        name: Option<Name>,
-        parameters: Vec<Type>,
-    },
     AddressOfNotReference {
         expression: InFile<AstPointer<ast::Expression>>,
         actual: Type,
@@ -131,7 +124,6 @@ pub enum AnyDiagnostic {
     },
     NoConstructor {
         expression: InFile<AstPointer<ast::Expression>>,
-        builtins: BuiltinId,
         r#type: Type,
         parameters: Vec<Type>,
     },
@@ -182,7 +174,6 @@ impl AnyDiagnostic {
             | Self::ArrayAccessInvalidType { expression, .. }
             | Self::NotConstructible { expression, .. }
             | Self::FunctionCallArgCountMismatch { expression, .. }
-            | Self::NoBuiltinOverload { expression, .. }
             | Self::StoreTypeMustBeStorable { expression, .. }
             | Self::AddressOfNotReference { expression, .. }
             | Self::DerefNotAPointer { expression, .. }
@@ -272,14 +263,12 @@ pub(crate) fn any_diag_from_infer_diagnostic(
         InferenceDiagnosticKind::NoConstructor {
             expression,
             r#type,
-            builtins,
             parameters,
         } => {
             let pointer = source_map.expression_to_source(*expression).ok()?.clone();
             let source = InFile::new(file_id, pointer);
             AnyDiagnostic::NoConstructor {
                 expression: source,
-                builtins: *builtins,
                 r#type: *r#type,
                 parameters: parameters.clone(),
             }
@@ -295,21 +284,6 @@ pub(crate) fn any_diag_from_infer_diagnostic(
                 expression: source,
                 n_expected: *n_expected,
                 n_actual: *n_actual,
-            }
-        },
-        InferenceDiagnosticKind::NoBuiltinOverload {
-            expression,
-            builtin,
-            parameters,
-            name,
-        } => {
-            let pointer = source_map.expression_to_source(*expression).ok()?.clone();
-            let source = InFile::new(file_id, pointer);
-            AnyDiagnostic::NoBuiltinOverload {
-                expression: source,
-                builtin: *builtin,
-                name: name.clone(),
-                parameters: parameters.clone(),
             }
         },
         InferenceDiagnosticKind::AddressOfNotReference { expression, actual } => {

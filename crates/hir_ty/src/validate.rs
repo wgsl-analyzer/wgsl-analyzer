@@ -179,9 +179,7 @@ pub fn validate_address_space<DiagnosticBuilder>(
                 | TypeKind::BuiltinStruct(_)
                 | TypeKind::Array(_)
                 | TypeKind::Reference(_)
-                | TypeKind::Pointer(_)
-                | TypeKind::BoundVariable(_)
-                | TypeKind::StorageTypeOfTexelFormat(_) => {
+                | TypeKind::Pointer(_) => {
                     diagnostic_builder(AddressSpaceError::HandleOrTexture);
                 },
             }

@@ -12,6 +12,7 @@ pub enum Definition {
     Local(Local),
     Field(Field),
     ModuleDef(ModuleDef),
+    BuiltIn,
 }
 
 impl Definition {
@@ -61,6 +62,7 @@ impl From<ResolveKind> for Definition {
             ResolveKind::Struct(id) => Self::ModuleDef(ModuleDef::Struct(Struct { id })),
             ResolveKind::TypeAlias(id) => Self::ModuleDef(ModuleDef::TypeAlias(TypeAlias { id })),
             ResolveKind::Function(id) => Self::ModuleDef(ModuleDef::Function(Function { id })),
+            ResolveKind::BuiltinFunction(_) => Self::BuiltIn,
         }
     }
 }
