@@ -1,75 +1,32 @@
 use std::{collections::BTreeMap, string::String};
 
-use dprint_core::formatting::StringContainer;
+use dprint_core::formatting::{PrintItems, StringContainer};
 use dprint_core_macros::sc;
-use itertools::put_back;
+use itertools::{Itertools as _, Position};
 use parser::{SyntaxKind, SyntaxNode};
 use syntax::{
     AstNode as _,
-    ast::{
-        self, Arguments, Attribute, AttributeList, BuiltinValueName, DiagnosticControl,
-        InterpolateSamplingName, InterpolateTypeName,
-    },
+    ast::{self, Attribute, AttributeList},
 };
 
 use crate::{
     ast_parse::{
-        NoTrivia, SyntaxIter, parse_end, parse_node, parse_node_optional, parse_node_with,
-        parse_token, parse_token_any, parse_token_optional, syntax_iter,
+        Filter, FilterAction, IgnoreBlankspace, NoTrivia, parse_end, parse_node_with, syntax_iter,
     },
-    generators::{
-        attributes,
-        comments::{
-            Comment, gen_comments, infallible_parse_many_comments_and_blankspace,
-            parse_many_comments_and_blankspace,
-        },
-        diagnostic_directive::gen_diagnostic_control,
-        statements::function_call_statement::gen_function_call_arguments,
+    generators::node::{
+        gen_node_content, gen_node_preceding_trivia, gen_node_succeeding_trivia,
+        gen_node_with_trivia,
     },
-    helpers::separated_items::{format_separated_items, parse_separated_items},
     multiline_group::MultilineGroup,
     print_item_buffer::{
         PrintItemBuffer,
         spacing_request::{Request, RequestItem},
     },
     reporting::FormatDocumentResult,
+    trivia::{NodeWithTrivia, NodeWithTriviaContent},
 };
 
 pub use standard_attributes::*;
-
-use super::expressions::gen_expression;
-
-#[derive(Debug)]
-pub struct ParsedAttribute {
-    attribute: Attribute,
-    comments_after_attribute: Vec<Comment>,
-}
-pub struct ParsedAttributes {
-    attributes: Vec<ParsedAttribute>,
-}
-
-#[deprecated]
-pub fn parse_many_attributes(
-    syntax: &mut SyntaxIter
-) -> FormatDocumentResult<Option<AttributeList>> {
-    Ok(parse_node_optional::<AttributeList>(syntax))
-}
-
-pub fn parse_attributes_inner(syntax: &mut SyntaxIter) -> FormatDocumentResult<ParsedAttributes> {
-    let mut attributes = Vec::new();
-    loop {
-        let Some(item_attribute) = parse_node_optional::<Attribute>(syntax) else {
-            break;
-        };
-        let item_comments_after_attribute = parse_many_comments_and_blankspace(syntax)?;
-
-        attributes.push(ParsedAttribute {
-            attribute: item_attribute,
-            comments_after_attribute: item_comments_after_attribute,
-        });
-    }
-    Ok(ParsedAttributes { attributes })
-}
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum AttributeLayout {
@@ -101,7 +58,7 @@ enum AttributeCategorization {
 }
 
 fn gen_attribute_group<T>(
-    mut attributes: Vec<(T, &ParsedAttribute)>,
+    mut attributes: Vec<(T, &NodeWithTrivia)>,
     separator: &Request,
 ) -> FormatDocumentResult<PrintItemBuffer>
 where
@@ -111,51 +68,35 @@ where
 
     let mut formatted = PrintItemBuffer::default();
     // Ungrouped attributes go first
-    for ParsedAttribute {
-        attribute,
-        comments_after_attribute,
-    } in attributes.iter().map(|(_, attribute)| attribute)
-    {
+    for attribute in attributes.iter().map(|(_, attribute)| attribute) {
         formatted.finish_new_line_group();
-        formatted.extend(gen_attribute(attribute)?);
+        formatted.extend(gen_node_preceding_trivia(attribute)?);
+        formatted.extend(gen_node_content(attribute)?);
         formatted.start_new_line_group();
-        formatted.extend(gen_comments(comments_after_attribute));
+        formatted.extend(gen_node_succeeding_trivia(attribute)?);
         formatted.request(separator.clone());
     }
     Ok(formatted)
 }
 
-#[deprecated]
-pub fn gen_attributes(
-    attributes: &Option<AttributeList>,
-    layout: AttributeLayout,
-) -> FormatDocumentResult<PrintItemBuffer> {
-    let Some(attributes) = attributes else {
-        return Ok(PrintItemBuffer::default());
-    };
-
-    let temp_expected_layout = if let Some(parent) = attributes.syntax().parent() {
-        if parent.kind() == SyntaxKind::FunctionDeclaration
-            || parent.kind() == SyntaxKind::SwitchBody
-        {
-            AttributeLayout::Inline
-        } else {
-            AttributeLayout::Multiline
-        }
-    } else {
-        AttributeLayout::Multiline
-    };
-
-    assert_eq!(temp_expected_layout, layout);
-
-    gen_attribute_list(attributes)
-}
-
 pub fn gen_attribute_list(attribute_list: &AttributeList) -> FormatDocumentResult<PrintItemBuffer> {
-    let attributes = parse_attributes_inner(&mut syntax_iter(attribute_list.syntax()))?;
+    let mut syntax = syntax_iter(attribute_list.syntax());
+    let mut attributes = Vec::new();
+    loop {
+        let item_attribute = parse_node_with(&mut syntax, IgnoreBlankspace)
+            .expect_ast_node_optional::<Attribute>()?;
+
+        let is_end = item_attribute.is_end();
+        if !item_attribute.is_whitespace() {
+            attributes.push(item_attribute);
+        }
+        if is_end {
+            break;
+        }
+    }
 
     // If we don't have any attributes, we early exit to avoid all the bureaucracy with newlines
-    if attributes.attributes.is_empty() {
+    if attributes.is_empty() {
         return Ok(PrintItemBuffer::default());
     }
 
@@ -165,9 +106,11 @@ pub fn gen_attribute_list(attribute_list: &AttributeList) -> FormatDocumentResul
     // Attributes that are inline with the target (like @const fn main()...)
     let mut attribute_group_inlined_with_target = Vec::new();
 
-    for attribute in &attributes.attributes {
+    for attribute_item in &attributes {
         use AttributeCategorization::{Grouped, Inline, Ungrouped};
-        let cat = match &attribute.attribute {
+        let attribute =
+            Attribute::cast(attribute_item.content().unwrap().into_node().unwrap()).unwrap(); //TODO
+        let cat = match &attribute {
             Attribute::DiagnosticAttribute(_) => Grouped(AttributeGroup::Diagnostics, 0),
             Attribute::SizeAttribute(_) => Grouped(AttributeGroup::OffsetAlignSize, 2),
             Attribute::AlignAttribute(_) => Grouped(AttributeGroup::OffsetAlignSize, 1),
@@ -205,12 +148,12 @@ pub fn gen_attribute_list(attribute_list: &AttributeList) -> FormatDocumentResul
         };
 
         match cat {
-            Ungrouped(order) => ungrouped_attributes.push((order, attribute)),
+            Ungrouped(order) => ungrouped_attributes.push((order, attribute_item)),
             Grouped(attribute_group, order) => grouped_attributes
                 .entry(attribute_group)
                 .or_default()
-                .push((order, attribute)),
-            Inline(order) => attribute_group_inlined_with_target.push((order, attribute)),
+                .push((order, attribute_item)),
+            Inline(order) => attribute_group_inlined_with_target.push((order, attribute_item)),
         }
     }
 
@@ -308,18 +251,15 @@ pub fn gen_diagnostic_attribute(
     let mut syntax = syntax_iter(attribute.syntax());
 
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::AttributeOperator)?;
-    let item_comments_after_operator = parse_many_comments_and_blankspace(&mut syntax)?;
     parse_node_with(&mut syntax, NoTrivia).expect_kind(parser::SyntaxKind::Diagnostic)?;
-    let item_comments_after_identifier = parse_many_comments_and_blankspace(&mut syntax)?;
-    let item_control = parse_node::<DiagnosticControl>(&mut syntax)?;
+    let item_control = parse_node_with(&mut syntax, IgnoreBlankspace)
+        .expect_kind(SyntaxKind::DiagnosticControl)?;
     parse_end(&mut syntax)?;
 
     let mut formatted = PrintItemBuffer::default();
     formatted.push_sc(sc!("@"));
-    formatted.extend(gen_comments(&item_comments_after_operator));
     formatted.push_sc(sc!("diagnostic"));
-    formatted.extend(gen_comments(&item_comments_after_identifier));
-    formatted.extend(gen_diagnostic_control(&item_control)?);
+    formatted.extend(gen_node_with_trivia(&item_control)?);
     Ok(formatted)
 }
 
@@ -327,21 +267,21 @@ pub fn gen_interpolate_type_name(
     attribute: &ast::InterpolateTypeName
 ) -> FormatDocumentResult<PrintItemBuffer> {
     let mut syntax = syntax_iter(attribute.syntax());
-    let content = parse_token_any(&mut syntax)?;
+    let content = parse_node_with(&mut syntax, IgnoreBlankspace); // TODO It would be great to expect_kind here
     parse_end(&mut syntax)?;
 
     let mut formatted = PrintItemBuffer::default();
-    formatted.push_string(content.text().to_owned());
+    formatted.extend(gen_node_with_trivia(&content)?);
     Ok(formatted)
 }
 
 pub fn gen_early_depth_test_mode(attribute: &SyntaxNode) -> FormatDocumentResult<PrintItemBuffer> {
-    let mut syntax = syntax_iter(attribute);
-    let content = parse_token_any(&mut syntax)?;
+    let mut syntax = syntax_iter(attribute.syntax());
+    let content = parse_node_with(&mut syntax, IgnoreBlankspace); // TODO It would be great to expect_kind here
     parse_end(&mut syntax)?;
 
     let mut formatted = PrintItemBuffer::default();
-    formatted.push_string(content.text().to_owned());
+    formatted.extend(gen_node_with_trivia(&content)?);
     Ok(formatted)
 }
 
@@ -349,11 +289,11 @@ pub fn gen_interpolate_sampling_name(
     attribute: &ast::InterpolateSamplingName
 ) -> FormatDocumentResult<PrintItemBuffer> {
     let mut syntax = syntax_iter(attribute.syntax());
-    let content = parse_token_any(&mut syntax)?;
+    let content = parse_node_with(&mut syntax, IgnoreBlankspace); // TODO It would be great to expect_kind here
     parse_end(&mut syntax)?;
 
     let mut formatted = PrintItemBuffer::default();
-    formatted.push_string(content.text().to_owned());
+    formatted.extend(gen_node_with_trivia(&content)?);
     Ok(formatted)
 }
 pub fn gen_interpolate_attribute(
@@ -361,47 +301,36 @@ pub fn gen_interpolate_attribute(
 ) -> FormatDocumentResult<PrintItemBuffer> {
     let mut syntax = syntax_iter(attribute.syntax());
 
-    parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::AttributeOperator)?;
-    let item_comments_after_operator = parse_many_comments_and_blankspace(&mut syntax)?;
-    parse_node_with(&mut syntax, NoTrivia).expect_kind(parser::SyntaxKind::Interpolate)?;
-    let item_comments_after_identifier = parse_many_comments_and_blankspace(&mut syntax)?;
-    parse_node_with(&mut syntax, NoTrivia).expect_kind(parser::SyntaxKind::ParenthesisLeft)?;
-    let item_comments_after_open_paren = parse_many_comments_and_blankspace(&mut syntax)?;
-    let interpolate_type_name = parse_node::<InterpolateTypeName>(&mut syntax)?;
-    let item_comments_after_itn = parse_many_comments_and_blankspace(&mut syntax)?;
+    let item_attr_operator =
+        parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::AttributeOperator)?;
+    let item_interpolate = parse_node_with(&mut syntax, IgnoreBlankspace)
+        .expect_kind(parser::SyntaxKind::Interpolate)?;
+    let item_paren_left =
+        parse_node_with(&mut syntax, NoTrivia).expect_kind(parser::SyntaxKind::ParenthesisLeft)?;
+    let interpolate_type_name = parse_node_with(&mut syntax, IgnoreBlankspace)
+        .expect_kind(SyntaxKind::InterpolateTypeName)?;
 
-    let sampling = if parse_token_optional(&mut syntax, SyntaxKind::Comma).is_some() {
-        let item_comments_after_comma = parse_many_comments_and_blankspace(&mut syntax)?;
-        let interpolate_sampling_name = parse_node::<InterpolateSamplingName>(&mut syntax)?;
-        let item_comments_after_isn = parse_many_comments_and_blankspace(&mut syntax)?;
-        Some((
-            item_comments_after_comma,
-            interpolate_sampling_name,
-            item_comments_after_isn,
-        ))
+    let item_comma =
+        parse_node_with(&mut syntax, NoTrivia).only_if_kind(SyntaxKind::Comma, &mut syntax);
+    let sampling = if item_comma.is_some() {
+        let interpolate_sampling_name = parse_node_with(&mut syntax, IgnoreBlankspace)
+            .expect_kind(SyntaxKind::InterpolateSamplingName)?;
+        Some(interpolate_sampling_name)
     } else {
         None
     };
-    parse_token_optional(&mut syntax, SyntaxKind::Comma);
+    parse_node_with(&mut syntax, NoTrivia).only_if_kind(SyntaxKind::Comma, &mut syntax);
     parse_node_with(&mut syntax, NoTrivia).expect_kind(parser::SyntaxKind::ParenthesisRight)?;
     parse_end(&mut syntax)?;
 
     let mut formatted = PrintItemBuffer::default();
-    formatted.push_sc(sc!("@"));
-    formatted.extend(gen_comments(&item_comments_after_operator));
-    formatted.push_sc(sc!("interpolate"));
-    formatted.extend(gen_comments(&item_comments_after_identifier));
-    formatted.push_sc(sc!("("));
-    formatted.extend(gen_comments(&item_comments_after_open_paren));
-    formatted.extend(gen_interpolate_type_name(&interpolate_type_name)?);
-    formatted.extend(gen_comments(&item_comments_after_itn));
-    if let Some((item_comments_after_comma, interpolate_sampling_name, item_comments_after_isn)) =
-        sampling
-    {
+    formatted.extend(gen_node_with_trivia(&item_attr_operator)?);
+    formatted.extend(gen_node_with_trivia(&item_interpolate)?);
+    formatted.extend(gen_node_with_trivia(&item_paren_left)?);
+    formatted.extend(gen_node_with_trivia(&interpolate_type_name)?);
+    if let Some(sampling) = sampling {
         formatted.push_sc(sc!(","));
-        formatted.extend(gen_comments(&item_comments_after_comma));
-        formatted.extend(gen_interpolate_sampling_name(&interpolate_sampling_name)?);
-        formatted.extend(gen_comments(&item_comments_after_isn));
+        formatted.extend(gen_node_with_trivia(&sampling)?);
     }
 
     formatted.push_sc(sc!(")"));
@@ -412,11 +341,11 @@ pub fn gen_builtin_value_name(
     attribute: &ast::BuiltinValueName
 ) -> FormatDocumentResult<PrintItemBuffer> {
     let mut syntax = syntax_iter(attribute.syntax());
-    let content = parse_token_any(&mut syntax)?;
+    let content = parse_node_with(&mut syntax, IgnoreBlankspace); // TODO It would be great to expect_kind here
     parse_end(&mut syntax)?;
 
     let mut formatted = PrintItemBuffer::default();
-    formatted.push_string(content.text().to_owned());
+    formatted.extend(gen_node_with_trivia(&content)?);
     Ok(formatted)
 }
 pub fn gen_builtin_attribute(
@@ -424,27 +353,22 @@ pub fn gen_builtin_attribute(
 ) -> FormatDocumentResult<PrintItemBuffer> {
     let mut syntax = syntax_iter(attribute.syntax());
 
-    parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::AttributeOperator)?;
-    let item_comments_after_operator = parse_many_comments_and_blankspace(&mut syntax)?;
-    parse_node_with(&mut syntax, NoTrivia).expect_kind(parser::SyntaxKind::Builtin)?;
-    let item_comments_after_identifier = parse_many_comments_and_blankspace(&mut syntax)?;
+    let item_attr_operator =
+        parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::AttributeOperator)?;
+    let item_builtin =
+        parse_node_with(&mut syntax, IgnoreBlankspace).expect_kind(parser::SyntaxKind::Builtin)?;
     parse_node_with(&mut syntax, NoTrivia).expect_kind(parser::SyntaxKind::ParenthesisLeft)?;
-    let item_comments_after_open_paren = parse_many_comments_and_blankspace(&mut syntax)?;
-    let item_builtin_value_name = parse_node::<BuiltinValueName>(&mut syntax)?;
-    let item_comments_after_itn = parse_many_comments_and_blankspace(&mut syntax)?;
-    parse_token_optional(&mut syntax, SyntaxKind::Comma);
+    let item_builtin_value_name =
+        parse_node_with(&mut syntax, IgnoreBlankspace).expect_kind(SyntaxKind::BuiltinValueName)?;
+    parse_node_with(&mut syntax, NoTrivia).only_if_kind(SyntaxKind::Comma, &mut syntax);
     parse_node_with(&mut syntax, NoTrivia).expect_kind(parser::SyntaxKind::ParenthesisRight)?;
     parse_end(&mut syntax)?;
 
     let mut formatted = PrintItemBuffer::default();
-    formatted.push_sc(sc!("@"));
-    formatted.extend(gen_comments(&item_comments_after_operator));
-    formatted.push_sc(sc!("builtin"));
-    formatted.extend(gen_comments(&item_comments_after_identifier));
+    formatted.extend(gen_node_with_trivia(&item_attr_operator)?);
+    formatted.extend(gen_node_with_trivia(&item_builtin)?);
     formatted.push_sc(sc!("("));
-    formatted.extend(gen_comments(&item_comments_after_open_paren));
-    formatted.extend(gen_builtin_value_name(&item_builtin_value_name)?);
-    formatted.extend(gen_comments(&item_comments_after_itn));
+    formatted.extend(gen_node_with_trivia(&item_builtin_value_name)?);
     formatted.push_sc(sc!(")"));
     Ok(formatted)
 }
@@ -455,19 +379,17 @@ pub fn gen_other_attribute(
     let mut syntax = syntax_iter(attribute.syntax());
 
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::AttributeOperator)?;
-    let item_comments_after_operator = parse_many_comments_and_blankspace(&mut syntax)?;
-    let item_identifier = parse_token(&mut syntax, parser::SyntaxKind::Identifier)?;
-    let item_comments_after_identifier = parse_many_comments_and_blankspace(&mut syntax)?;
-    let item_arguments = parse_node_optional::<Arguments>(&mut syntax);
+    let item_identifier = parse_node_with(&mut syntax, IgnoreBlankspace)
+        .expect_kind(parser::SyntaxKind::Identifier)?;
+    let item_arguments = parse_node_with(&mut syntax, IgnoreBlankspace)
+        .only_if_kind(SyntaxKind::Arguments, &mut syntax);
     parse_end(&mut syntax)?;
 
     let mut formatted = PrintItemBuffer::default();
     formatted.push_sc(sc!("@"));
-    formatted.extend(gen_comments(&item_comments_after_operator));
-    formatted.push_string(item_identifier.to_string());
-    formatted.extend(gen_comments(&item_comments_after_identifier));
+    formatted.extend(gen_node_with_trivia(&item_identifier)?);
     if let Some(item_arguments) = item_arguments {
-        formatted.extend(gen_function_call_arguments(&item_arguments)?);
+        formatted.extend(gen_node_with_trivia(&item_arguments)?);
     }
     Ok(formatted)
 }
@@ -476,7 +398,7 @@ pub fn gen_other_attribute(
 mod standard_attributes {
     use super::gen_attr_standard_with_args;
     use dprint_core_macros::sc;
-    use parser::{SyntaxKind, SyntaxNode};
+    use parser::{SyntaxKind};
     use syntax::{AstNode as _, ast};
 
     use crate::{print_item_buffer::PrintItemBuffer, reporting::FormatDocumentResult};
@@ -516,43 +438,71 @@ fn gen_attr_standard_with_args(
     let mut syntax = syntax_iter(syntax);
 
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::AttributeOperator)?;
-    let item_comments_after_operator = parse_many_comments_and_blankspace(&mut syntax)?;
     parse_node_with(&mut syntax, NoTrivia).expect_kind(expected_token)?;
-    let item_comments_after_identifier = parse_many_comments_and_blankspace(&mut syntax)?;
-    //let item_arguments = gen_function_call_like_comma_separated_values(&mut syntax)?;
-    let item_arguments = if parse_token_optional(&mut syntax, SyntaxKind::ParenthesisLeft).is_some()
-    {
-        let item_arguments = parse_separated_items(
-            &mut syntax,
-            parse_node_optional::<ast::Expression>,
-            |syntax| parse_token_optional(syntax, SyntaxKind::Comma),
-        );
+
+    let item_paren_left = parse_node_with(&mut syntax, NoTrivia)
+        .only_if_kind(SyntaxKind::ParenthesisLeft, &mut syntax);
+    let item_arguments = if item_paren_left.is_some() {
+        let mut item_arguments = Vec::new();
+        loop {
+            let mut item = parse_node_with(
+                &mut syntax,
+                Filter(|node| match node.kind() {
+                    //TODO Make Filter combinators so that we can chain IgnoreBlankspace and this filter
+                    SyntaxKind::Blankspace | SyntaxKind::Comma => Some(FilterAction::Ignored),
+                    _ => None,
+                }),
+            );
+
+            // TODO This needs to be absorbed into parse_node..
+            if matches!(item.kind(), Some(SyntaxKind::ParenthesisRight)) {
+                let old_node = std::mem::replace(&mut item.node, NodeWithTriviaContent::End);
+                syntax.put_back(old_node.into_option().unwrap()); //TODO
+            }
+
+            let is_end = item.is_end();
+            if !item.is_whitespace() {
+                item_arguments.push(item);
+            }
+            if is_end {
+                break;
+            }
+        }
         parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::ParenthesisRight)?;
         Some(item_arguments)
     } else {
         None
     };
+
     parse_end(&mut syntax)?;
 
     let mut formatted = PrintItemBuffer::default();
     formatted.push_sc(sc!("@"));
-    formatted.extend(gen_comments(&item_comments_after_operator));
     formatted.push_sc(attribute_name);
-    formatted.extend(gen_comments(&item_comments_after_identifier));
     if let Some(item_arguments) = item_arguments {
         let mut multiline_group = MultilineGroup::new(&mut formatted);
         multiline_group.push_sc(sc!("("));
 
         // If its blank we do not give the formatter the option to break within the ()
-        if !item_arguments.is_blank {
+        if !item_arguments.is_empty() {
             multiline_group.start_indent();
 
-            format_separated_items(
-                &mut multiline_group,
-                item_arguments,
-                gen_expression,
-                sc!(","),
-            )?;
+            for (position, item) in item_arguments.into_iter().with_position() {
+                multiline_group.grouped_newline_or_space();
+                multiline_group.extend(gen_node_preceding_trivia(&item)?);
+                multiline_group.extend(gen_node_content(&item)?);
+                multiline_group.request(Request::discourage(RequestItem::Space));
+                if position == Position::Last || position == Position::Only {
+                    multiline_group.extend_if_multi_line({
+                        let mut pi = PrintItems::default();
+                        pi.push_sc(sc!(","));
+                        pi
+                    });
+                } else {
+                    multiline_group.push_sc(sc!(","));
+                }
+                multiline_group.extend(gen_node_succeeding_trivia(&item)?);
+            }
 
             multiline_group.request(Request::discourage(RequestItem::Space));
             multiline_group.grouped_possible_newline();
