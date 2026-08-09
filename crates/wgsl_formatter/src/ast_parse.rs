@@ -264,8 +264,10 @@ pub enum FilterAction {
     // TODO I think we can do without Content, as that is just a worse None in the filter
     Content,
     Stop,
+    IgnoreAndStop,
 }
 
+#[deprecated]
 pub fn parse_node_with_trivia_filter<F>(
     syntax: &mut SyntaxIter,
     filter: F,
@@ -306,6 +308,9 @@ where
                     syntax.put_back(node);
                     break NodeWithTriviaContent::NoContent;
                 },
+                Some(FilterAction::IgnoreAndStop) => {
+                    break NodeWithTriviaContent::NoContent;
+                },
                 None => {
                     if let Some(line_spacing) = read_blankspace(&node) {
                         preceding_trivia.push(NodeTriviaItem::LineSpacing(line_spacing));
@@ -338,6 +343,10 @@ where
             Some(FilterAction::Stop) => {
                 // We want to stop parsing succeeding trivia
                 syntax.put_back(node);
+                break;
+            },
+            Some(FilterAction::IgnoreAndStop) => {
+                // We want to stop parsing succeeding trivia
                 break;
             },
             None => {

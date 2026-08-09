@@ -1,5 +1,5 @@
 use dprint_core_macros::sc;
-use itertools::{Itertools as _, Position, put_back};
+use itertools::{Itertools as _, Position};
 use parser::{SyntaxKind, SyntaxNode};
 use syntax::{
     AstNode as _,
@@ -11,13 +11,9 @@ use syntax::{
 
 use crate::{
     ast_parse::{
-        IgnoreBlankspace, NoTrivia, parse_end, parse_node_optional, parse_node_with, syntax_iter,
+        Filter, FilterAction, IgnoreBlankspace, NoTrivia, parse_end, parse_node_with, syntax_iter,
     },
-    generators::{
-        comments::{gen_comments, parse_many_comments_and_blankspace},
-        expressions::gen_expression,
-        node::gen_node_with_trivia,
-    },
+    generators::node::gen_node_with_trivia,
     print_item_buffer::{
         PrintItemBuffer,
         spacing_request::{Request, RequestItem},
@@ -223,47 +219,38 @@ pub fn gen_switch_case_selectors(
     let mut syntax = syntax_iter(statement.syntax());
 
     let mut selectors = Vec::new();
-    while let Some(selector) = parse_node_optional::<SwitchCaseSelector>(&mut syntax) {
-        let item_comments_after_selector = parse_many_comments_and_blankspace(&mut syntax)?;
-        parse_node_with(&mut syntax, NoTrivia).expect_kind_optional(SyntaxKind::Comma)?;
-        let item_comments_after_comma = parse_many_comments_and_blankspace(&mut syntax)?;
 
-        selectors.push((
-            selector,
-            item_comments_after_selector,
-            item_comments_after_comma,
-        ));
+    loop {
+        let item = parse_node_with(
+            &mut syntax,
+            Filter(|node| match node.kind() {
+                SyntaxKind::Comma => Some(FilterAction::IgnoreAndStop),
+                _ => None,
+            }),
+        )
+        .expect_ast_node_optional::<SwitchCaseSelector>()?;
+
+        let is_end = item.is_end();
+        if !item.is_whitespace() {
+            selectors.push(item);
+        }
+        if is_end {
+            break;
+        }
     }
+
     parse_end(&mut syntax)?;
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
-    for (position, (selector, item_comments_after_selector, item_comments_after_comma)) in
-        selectors.into_iter().with_position()
-    {
-        formatted.extend(gen_switch_case_selector(&selector)?);
-        formatted.extend(gen_comments(&item_comments_after_selector));
+    for (position, selector) in selectors.into_iter().with_position() {
+        formatted.extend(gen_node_with_trivia(&selector)?);
         if !matches!(position, Position::Last | Position::Only) {
             formatted.push_sc(sc!(","));
             formatted.request(Request::expect(RequestItem::Space));
         }
-        formatted.extend(gen_comments(&item_comments_after_comma));
     }
     Ok(formatted)
-}
-
-pub fn gen_switch_case_selector(
-    statement: &SwitchCaseSelector
-) -> Result<PrintItemBuffer, FormatDocumentError> {
-    // ==== Parse ====
-
-    // ==== Format ====
-    match statement {
-        SwitchCaseSelector::Expression(expression) => gen_expression(expression),
-        SwitchCaseSelector::SwitchDefaultSelector(switch_default_selector) => {
-            gen_switch_case_default_selector(switch_default_selector)
-        },
-    }
 }
 
 pub fn gen_switch_case_default_selector(

@@ -194,6 +194,28 @@ impl NodeWithTrivia {
     }
 
     #[track_caller]
+    pub fn expect_ast_node_optional<T>(self) -> FormatDocumentResult<Self>
+    where
+        T: AstNode,
+    {
+        match &self.node {
+            NodeWithTriviaContent::NoContent | NodeWithTriviaContent::End => Ok(self),
+            NodeWithTriviaContent::Content(node_or_token) => {
+                if let NodeOrToken::Node(node) = node_or_token
+                    && T::can_cast(node.kind())
+                {
+                    Ok(self)
+                } else {
+                    Err(FormatDocumentError::UnexpectedNodeOrToken {
+                        received: self.node.into_option().unwrap(),
+                    })
+                    .expect_if_prefer_crash()
+                }
+            },
+        }
+    }
+
+    #[track_caller]
     pub fn expect_ast_token<T>(self) -> FormatDocumentResult<Self>
     where
         T: AstToken,
