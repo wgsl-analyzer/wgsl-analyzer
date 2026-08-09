@@ -454,7 +454,8 @@ fn gen_attr_standard_with_args(
     let mut syntax = syntax_iter(syntax);
 
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::AttributeOperator)?;
-    parse_node_with(&mut syntax, NoTrivia).expect_kind(expected_token)?;
+    let item_attribute_name =
+        parse_node_with(&mut syntax, IgnoreBlankspace).expect_kind(expected_token)?;
 
     let item_paren_left = parse_node_with(&mut syntax, NoTrivia)
         .only_if_kind(SyntaxKind::ParenthesisLeft, &mut syntax);
@@ -494,7 +495,7 @@ fn gen_attr_standard_with_args(
 
     let mut formatted = PrintItemBuffer::default();
     formatted.push_sc(sc!("@"));
-    formatted.push_sc(attribute_name);
+    formatted.extend(gen_node_with_trivia(&item_attribute_name)?);
     if let Some(item_arguments) = item_arguments {
         let mut multiline_group = MultilineGroup::new(&mut formatted);
         multiline_group.push_sc(sc!("("));
