@@ -1,5 +1,4 @@
 use dprint_core_macros::sc;
-use itertools::put_back;
 use parser::{SyntaxKind, SyntaxNode};
 use syntax::{
     AstNode as _,
@@ -7,10 +6,7 @@ use syntax::{
 };
 
 use crate::{
-    ast_parse::{
-        IgnoreBlankspace, NoTrivia, parse_end, parse_node_with, parse_node_with_trivia_filter,
-        parse_token, syntax_iter,
-    },
+    ast_parse::{IgnoreBlankspace, NoTrivia, parse_end, parse_node_with, syntax_iter},
     generators::node::gen_node_with_trivia,
     print_item_buffer::{
         PrintItemBuffer,
