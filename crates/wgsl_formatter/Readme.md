@@ -30,6 +30,12 @@ RUST_BACKTRACE=1 cargo test --features=prefer-immediate-crash
 * `NodeWithTrivia` implements `Debug`, so it's very useful to just `dbg!(&items)` the items that were returned by `parse_node_with` to see what trivia (comments etc) gets attached to which nodes.
 * Strategically inserting `formatted.push_sc(sc!("|"))` calls into the `==== Format` section of the `gen_` functions can help you visualize which part of the code is responsible for which part of the formatted output.
 
+## Opinions on Comments
+Generally the formatter should leave comments where they are - even if they are in weird places.
+It should try to detect the programmer's intent (i.e what they wanted to comment) and then when
+things shift around during formatting, keep the comment in a place where that intent is preserved.
+
+The formatter should not *prevent* the programmer from putting comments in strange places and should not impose opinions on where comments should belong.
 
 
 # TODOs
