@@ -5,13 +5,13 @@ use syntax::{AstNode, AstToken, ast::AttributeList};
 use crate::{
     ast_parse::SyntaxIter,
     generators::comments::Comment,
-    helpers::NextGenLineSpacing,
+    helpers::LineSpacing,
     reporting::{FormatDocumentError, FormatDocumentResult, UnwrapIfPreferCrash as _},
 };
 
 #[derive(Clone, Debug)]
 pub enum NodeTriviaItem {
-    LineSpacing(NextGenLineSpacing),
+    LineSpacing(LineSpacing),
     Comment(Comment),
     AttributeList(AttributeList),
 }
@@ -23,9 +23,9 @@ impl NodeTriviaItem {
     ) {
         match self {
             Self::LineSpacing(next_gen_line_spacing) => match next_gen_line_spacing {
-                NextGenLineSpacing::LineBreak(syntax_token)
-                | NextGenLineSpacing::EmptyLine(syntax_token)
-                | NextGenLineSpacing::OnelineBlankspace(syntax_token) => {
+                LineSpacing::LineBreak(syntax_token)
+                | LineSpacing::EmptyLine(syntax_token)
+                | LineSpacing::OnelineBlankspace(syntax_token) => {
                     syntax.put_back(NodeOrToken::Token(syntax_token));
                 },
             },

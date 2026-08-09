@@ -4,35 +4,8 @@ use dprint_core::formatting::{
     ConditionResolver, ConditionResolverContext, LineNumber, condition_helpers,
 };
 mod line_spacing;
-pub mod separated_items;
 
-use itertools::{Itertools as _, Position};
 pub use line_spacing::*;
-
-use crate::{
-    print_item_buffer::{PrintItemBuffer, spacing_request::Request},
-    reporting::FormatDocumentResult,
-};
-
-use super::print_item_buffer::spacing_request::RequestItem;
-
-/// In cases where the formatter is not yet complete we simply output source verbatim.
-#[deprecated]
-#[expect(
-    clippy::unnecessary_wraps,
-    reason = "Should follow the api of gen_* methods"
-)]
-pub fn todo_verbatim_wesl(source: &parser::SyntaxNode) -> FormatDocumentResult<PrintItemBuffer> {
-    let mut items = PrintItemBuffer::default();
-
-    for (pos, line) in source.to_string().lines().with_position() {
-        items.push_string(line.to_owned());
-        if pos != Position::Last && pos != Position::Only {
-            items.request(Request::force(RequestItem::LineBreak));
-        }
-    }
-    Ok(items)
-}
 
 #[must_use]
 pub fn create_is_multiple_lines_resolver(

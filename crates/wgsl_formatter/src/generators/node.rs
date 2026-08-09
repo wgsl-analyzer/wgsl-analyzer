@@ -80,7 +80,7 @@ use crate::{
         type_alias_declaration::gen_type_alias_declaration,
         types::{gen_template_list, gen_type_specifier},
     },
-    helpers::gen_next_gen_line_spacing,
+    helpers::gen_line_spacing,
     print_item_buffer::{
         PrintItemBuffer,
         spacing_request::{Request, RequestItem},
@@ -371,7 +371,7 @@ pub fn gen_node_preceding_trivia(node: &NodeWithTrivia) -> FormatDocumentResult<
     for trivia in &node.preceding_trivia {
         match trivia {
             NodeTriviaItem::LineSpacing(line_spacing) => {
-                formatted.extend(gen_next_gen_line_spacing(line_spacing)?);
+                formatted.extend(gen_line_spacing(line_spacing)?);
             },
             NodeTriviaItem::Comment(comment) => {
                 formatted.extend(gen_comment(comment));
@@ -402,7 +402,7 @@ pub fn gen_node_succeeding_trivia(node: &NodeWithTrivia) -> FormatDocumentResult
     for trivia in &node.succeeding_trivia {
         match trivia {
             NodeTriviaItem::LineSpacing(line_spacing) => {
-                formatted.extend(gen_next_gen_line_spacing(line_spacing)?);
+                formatted.extend(gen_line_spacing(line_spacing)?);
             },
             NodeTriviaItem::Comment(comment) => {
                 formatted.extend(gen_comment(comment));

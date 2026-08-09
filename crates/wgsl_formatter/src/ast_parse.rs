@@ -8,7 +8,7 @@ use syntax::{AstNode as _, ast::AttributeList};
 
 use crate::{
     generators::comments::read_comment,
-    helpers::{NextGenLineSpacing, read_blankspace},
+    helpers::{LineSpacing, read_blankspace},
     reporting::FormatDocumentResult,
     trivia::{NodeTriviaItem, NodeWithTrivia, NodeWithTriviaContent},
 };
@@ -111,21 +111,6 @@ pub fn parse_end(syntax: &mut SyntaxIter) -> FormatDocumentResult<()> {
     }
 }
 
-#[deprecated]
-pub fn parse_token_optional(
-    syntax: &mut SyntaxIter,
-    expected: SyntaxKind,
-) -> Option<SyntaxToken> {
-    match syntax.next() {
-        Some(NodeOrToken::Token(child)) if child.kind() == expected => Some(child),
-        Some(other) => {
-            syntax.put_back(other);
-            None
-        },
-        None => None,
-    }
-}
-
 pub trait UntilFilter {
     fn filter(
         &self,
@@ -141,7 +126,7 @@ impl UntilFilter for UntilEmptyLine {
         node: &NodeOrToken<SyntaxNode, SyntaxToken>,
     ) -> Option<FilterAction> {
         match read_blankspace(node) {
-            Some(NextGenLineSpacing::EmptyLine(_)) => Some(FilterAction::Stop),
+            Some(LineSpacing::EmptyLine(_)) => Some(FilterAction::Stop),
             _ => None,
         }
     }
@@ -195,9 +180,7 @@ impl UntilFilter for Oneline {
         node: &NodeOrToken<SyntaxNode, SyntaxToken>,
     ) -> Option<FilterAction> {
         match read_blankspace(node) {
-            Some(NextGenLineSpacing::EmptyLine(_) | NextGenLineSpacing::LineBreak(_)) => {
-                Some(FilterAction::Stop)
-            },
+            Some(LineSpacing::EmptyLine(_) | LineSpacing::LineBreak(_)) => Some(FilterAction::Stop),
             _ => None,
         }
     }

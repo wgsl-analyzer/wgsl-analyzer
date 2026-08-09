@@ -12,7 +12,7 @@ use crate::{
         syntax_iter,
     },
     generators::node::{gen_node_content, gen_node_preceding_trivia, gen_node_succeeding_trivia},
-    helpers::{NextGenLineSpacing, read_blankspace},
+    helpers::{LineSpacing, read_blankspace},
     print_item_buffer::{
         PrintItemBuffer,
         spacing_request::{Request, RequestItem, RequestItemSet},
@@ -63,10 +63,7 @@ pub fn gen_struct_body(body: &ast::StructBody) -> FormatDocumentResult<PrintItem
             |node| match node.kind() {
                 SyntaxKind::Comma => Some(FilterAction::Ignored),
                 SyntaxKind::Blankspace
-                    if matches!(
-                        read_blankspace(node),
-                        Some(NextGenLineSpacing::EmptyLine(_))
-                    ) =>
+                    if matches!(read_blankspace(node), Some(LineSpacing::EmptyLine(_))) =>
                 {
                     Some(FilterAction::Stop)
                 },
