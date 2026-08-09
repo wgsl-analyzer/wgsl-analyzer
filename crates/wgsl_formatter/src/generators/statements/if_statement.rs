@@ -131,8 +131,8 @@ pub fn gen_if_statement_else_if_clause(
 
     // ==== Parse ====
     let mut syntax = syntax_iter(statement.syntax());
-    parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::Else)?;
-    parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::If)?;
+    let item_else = parse_node_with(&mut syntax, IgnoreBlankspace).expect_kind(SyntaxKind::Else)?;
+    let item_if = parse_node_with(&mut syntax, IgnoreBlankspace).expect_kind(SyntaxKind::If)?;
     let item_condition =
         parse_node_with(&mut syntax, IgnoreBlankspace).expect_castable_kind::<Expression>()?;
     let item_body = parse_node_with(&mut syntax, IgnoreBlankspace)
@@ -141,10 +141,10 @@ pub fn gen_if_statement_else_if_clause(
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
-    formatted.push_sc(sc!("else"));
+    formatted.extend(gen_node_with_trivia(&item_else)?);
     formatted.request(Request::discourage(RequestItem::LineBreak));
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.push_sc(sc!("if"));
+    formatted.extend(gen_node_with_trivia(&item_if)?);
     formatted.request(Request::discourage(RequestItem::LineBreak));
     formatted.request(Request::expect(RequestItem::Space));
     formatted.extend(gen_node_with_trivia(&item_condition)?);

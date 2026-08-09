@@ -223,8 +223,7 @@ pub fn format_comments_in_if_elseif_else_statement() {
         }",
         expect![[r#"
             fn main() {
-                /* 0 */
-                if /* 1 */ a /* 2 */ {
+                /* 0 */ if /* 1 */ a /* 2 */ {
                     /* 3 */
                 }
                 /* 4 */ else /* 5 */ if /* 6 */ a /* 7 */ {
@@ -270,8 +269,7 @@ pub fn format_comments_in_if_else_statement() {
         }",
         expect![[r#"
             fn main() {
-                /* 0 */
-                if /* 1 */ a /* 2 */ {
+                /* 0 */ if /* 1 */ a /* 2 */ {
                     /* 3 */
                 }
                 /* 4 */ else /* 5 */ {
