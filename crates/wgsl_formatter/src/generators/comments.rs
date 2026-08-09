@@ -3,12 +3,11 @@ use parser::{SyntaxKind, SyntaxNode, SyntaxToken};
 use rowan::NodeOrToken;
 
 use crate::{
-    ast_parse::{SyntaxIter, parse_token_optional},
+    ast_parse::SyntaxIter,
     print_item_buffer::{
         PrintItemBuffer,
         spacing_request::{Request, RequestItem},
     },
-    reporting::FormatDocumentResult,
 };
 
 // We don't have a Comment SyntaxNode in the AST yet, so we use a custom enum and parser function
@@ -42,44 +41,6 @@ pub fn parse_comment_optional(syntax: &mut SyntaxIter) -> Option<Comment> {
         syntax.put_back(item);
         None
     }
-}
-
-#[expect(
-    clippy::unnecessary_wraps,
-    reason = "Keep the API homogeneous with all gen_* functions"
-)]
-#[deprecated]
-pub fn parse_many_comments_and_blankspace(
-    syntax: &mut SyntaxIter
-) -> FormatDocumentResult<Vec<Comment>> {
-    Ok(infallible_parse_many_comments_and_blankspace(syntax))
-}
-
-#[expect(
-    clippy::redundant_pattern_matching,
-    reason = "Make it more obvious that the syntax token is consumed"
-)]
-#[deprecated]
-pub fn infallible_parse_many_comments_and_blankspace(syntax: &mut SyntaxIter) -> Vec<Comment> {
-    let mut comments = Vec::new();
-    loop {
-        if let Some(comment) = parse_comment_optional(syntax) {
-            comments.push(comment);
-        } else if let Some(_) = parse_token_optional(syntax, SyntaxKind::Blankspace) {
-            //Allowed, we ignore and consume it
-        } else {
-            break;
-        }
-    }
-    comments
-}
-
-pub fn gen_comments(comments: &[Comment]) -> PrintItemBuffer {
-    let mut formatted = PrintItemBuffer::default();
-    for item in comments {
-        formatted.extend(gen_comment(item));
-    }
-    formatted
 }
 
 pub fn gen_comment(item: &Comment) -> PrintItemBuffer {

@@ -10,7 +10,7 @@ use crate::{
     ast_parse::{
         Filter, FilterAction, IgnoreBlankspace, NoTrivia, parse_end, parse_node_with, syntax_iter,
     },
-    generators::{comments::Comment, node::gen_node_with_trivia},
+    generators::node::gen_node_with_trivia,
     multiline_group::MultilineGroup,
     print_item_buffer::{
         PrintItemBuffer,

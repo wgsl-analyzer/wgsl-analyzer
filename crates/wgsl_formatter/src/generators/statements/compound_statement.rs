@@ -1,5 +1,5 @@
 use dprint_core_macros::sc;
-use itertools::{Itertools as _, Position, put_back};
+use itertools::{Itertools as _, Position};
 use parser::SyntaxKind;
 use syntax::{
     AstNode as _,
@@ -7,10 +7,7 @@ use syntax::{
 };
 
 use crate::{
-    ast_parse::{
-        FilterAction, NoTrivia, parse_end, parse_node_with, parse_node_with_trivia_filter,
-        syntax_iter,
-    },
+    ast_parse::{Filter, FilterAction, NoTrivia, parse_end, parse_node_with, syntax_iter},
     context_policies::collapse_one_liner_compound_statement_policy,
     generators::node::gen_node_with_trivia,
     helpers::{NextGenLineSpacing, read_blankspace},
@@ -36,11 +33,13 @@ pub fn gen_compound_statement(
     let mut items = Vec::new();
 
     loop {
-        let mut item =
-            parse_node_with_trivia_filter(&mut syntax, |node| match read_blankspace(node) {
+        let mut item = parse_node_with(
+            &mut syntax,
+            Filter(|node| match read_blankspace(node) {
                 Some(NextGenLineSpacing::OnelineBlankspace(_)) => Some(FilterAction::Ignored),
                 _ => None,
-            });
+            }),
+        );
 
         // We only care about newlines if they are somewhere within the trivia, not at the start or end
         let first_interesting_item = item.preceding_trivia.iter().position(|node| {

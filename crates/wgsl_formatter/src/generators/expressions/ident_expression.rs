@@ -1,4 +1,3 @@
-use itertools::put_back;
 use syntax::{
     AstNode as _,
     ast::{self, SyntaxKind},

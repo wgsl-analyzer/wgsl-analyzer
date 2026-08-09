@@ -91,8 +91,6 @@ pub fn gen_struct_body(body: &ast::StructBody) -> FormatDocumentResult<PrintItem
             item.node = NodeWithTriviaContent::NoContent;
         }
 
-        dbg!(&item);
-
         let is_end = item.is_end();
         if !item.is_whitespace() {
             item_members.push(item);
