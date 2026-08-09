@@ -148,26 +148,6 @@ impl UntilFilter for UntilEmptyLine {
     }
 }
 
-pub struct UntilSyntaxKind(pub SyntaxKind);
-impl UntilFilter for UntilSyntaxKind {
-    fn filter(
-        &self,
-        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
-    ) -> Option<FilterAction> {
-        (node.kind() == self.0).then_some(FilterAction::Stop)
-    }
-}
-
-pub struct BareSyntaxKind(pub SyntaxKind);
-impl UntilFilter for BareSyntaxKind {
-    fn filter(
-        &self,
-        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
-    ) -> Option<FilterAction> {
-        (node.kind() != self.0).then_some(FilterAction::Stop)
-    }
-}
-
 // TODO I think the default should be to ignore blankspace and *including* it should be explicit (in struct body and compound statements)
 pub struct IgnoreBlankspace;
 impl UntilFilter for IgnoreBlankspace {
