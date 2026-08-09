@@ -429,18 +429,16 @@ pub fn format_comments_in_attr_with_many_parameters() {
         override a: usize = 0;
         ",
         expect![[r#"
-            /* 0 */
-            @ /* 1 */ foo /* 2 */ (
-                /* 3 */
-                1, /* 4 */ /* 5 */
+            /* 0 */ @ /* 1 */ foo /* 2 */ (
+                /* 3 */ 1, /* 4 */ /* 5 */
                 2, /* 6 */ /* 7 */
                 3, /* 8 */ /* 9 */
                 4, /* 10 */ /* 11 */
                 5, /* 12 */ /* 13 */
                 6, /* 14 */ /* 15 */
                 7,
-            ) /* 16 */
-            override a: usize = 0;
+            )
+            /* 16 */ override a: usize = 0;
         "#]],
         expect![[r#"
             // 0
@@ -461,7 +459,8 @@ pub fn format_comments_in_attr_with_many_parameters() {
                 6, // 14
                 // 15
                 7,
-            ) // 16
+            )
+            // 16
             override a: usize = 0;
         "#]],
     );

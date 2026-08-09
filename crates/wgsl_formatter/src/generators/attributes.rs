@@ -1,6 +1,6 @@
 use std::{collections::BTreeMap, string::String};
 
-use dprint_core::formatting::{PrintItems, StringContainer};
+use dprint_core::formatting::{PrintItem, PrintItems, StringContainer};
 use dprint_core_macros::sc;
 use itertools::{Itertools as _, Position};
 use parser::{SyntaxKind, SyntaxNode};
@@ -68,13 +68,19 @@ where
 
     let mut formatted = PrintItemBuffer::default();
     // Ungrouped attributes go first
-    for attribute in attributes.iter().map(|(_, attribute)| attribute) {
+    for (pos, attribute) in attributes
+        .iter()
+        .map(|(_, attribute)| attribute)
+        .with_position()
+    {
         formatted.finish_new_line_group();
         formatted.extend(gen_node_preceding_trivia(attribute)?);
         formatted.extend(gen_node_content(attribute)?);
         formatted.start_new_line_group();
         formatted.extend(gen_node_succeeding_trivia(attribute)?);
-        formatted.request(separator.clone());
+        if pos != Position::Only && pos != Position::Last {
+            formatted.request(separator.clone());
+        }
     }
     Ok(formatted)
 }
@@ -180,8 +186,12 @@ pub fn gen_attribute_list(attribute_list: &AttributeList) -> FormatDocumentResul
 
     let mut formatted = PrintItemBuffer::default();
     formatted.start_new_line_group();
+
     // Ungrouped attributes go first
-    formatted.extend(gen_attribute_group(ungrouped_attributes, &group_separator)?);
+    if !ungrouped_attributes.is_empty() {
+        formatted.extend(gen_attribute_group(ungrouped_attributes, &group_separator)?);
+        formatted.request(group_separator.clone());
+    }
 
     // The grouped attributes in order
     // (They are ordered by the AttributeGroup enum's discriminator, because of the BTreeMap)
@@ -190,17 +200,22 @@ pub fn gen_attribute_list(attribute_list: &AttributeList) -> FormatDocumentResul
         formatted.request(group_separator.clone());
     }
     // Then attributes that should be inline with the target
-    formatted.extend(gen_attribute_group(
-        attribute_group_inlined_with_target,
-        &expect_space_or_linebreak,
-    )?);
+    if !attribute_group_inlined_with_target.is_empty() {
+        formatted.extend(gen_attribute_group(
+            attribute_group_inlined_with_target,
+            &expect_space_or_linebreak,
+        )?);
+        formatted.request(expect_space_or_linebreak);
+    }
+
     // No final line break, these should be inline with the target
     formatted.finish_new_line_group();
 
-    // WE can discourage NewLines and Emptylines because finish_new_line_group
+    // We can discourage NewLines and Emptylines because finish_new_line_group
     // applies all the stuff beforehand already
     formatted.request(Request::discourage(RequestItem::LineBreak));
     formatted.request(Request::discourage(RequestItem::EmptyLine));
+    formatted.request(Request::discourage(RequestItem::Space));
 
     Ok(formatted)
 }

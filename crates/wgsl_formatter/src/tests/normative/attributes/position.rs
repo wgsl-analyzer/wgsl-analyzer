@@ -503,3 +503,119 @@ pub fn format_all_attribute_order() {
         "#]],
     );
 }
+
+#[test]
+pub fn format_attribute_suboptimal_comment_positioning_1() {
+    // This test exists to demonstrate pretty suboptimal positioning of comments between attributes and functions
+    // The issue in question is that comments get placed differently depending on if the attribute is an inline attribute (@must_use) or a
+    // non-inline attribute (@fragment).
+    //
+    // Ideally we could have "// Hello" placed at the same position no matter what attribute is preceding it.
+    //
+    // This is a tradeoff, because I don't think these cases will occur very frequently, and even if they do, i doubt this will annoy people.
+    // Supporting this without breaking other things would introduce a nontrivial amount of complexity into the code
+    // because of how the formatter currently works (the comments are attached to the function as trivia, just as the attributes.)
+    // A starting point of how to support this would be "trivia on trivia" so that comments can be attached to the attribute as trivia, which in turn
+    // is then attached to the function - and as such we can "always put the comment after the attribute" and only after handling the succeeding trivia of the
+    // attribute decide "do we need a newline or a space before the item the attribute is attached to".
+    //
+    // This behavior can be changed for the better.
+    check(
+        "
+        @must_use //Hello
+        fn a() {}
+
+        @fragment //Hello
+        fn b() {}
+        ",
+        expect![[r#"
+            @must_use //Hello
+            fn a() {}
+
+            @fragment
+            //Hello
+            fn b() {}
+        "#]],
+    );
+}
+
+#[test]
+pub fn format_attribute_suboptimal_comment_positioning_2() {
+    // This test exists to demonstrate pretty suboptimal positioning of comments between attributes and functions
+    // The issue in question is that comments get placed differently depending on if the attribute is an inline attribute (@must_use) or a
+    // non-inline attribute (@fragment).
+    //
+    // Ideally we could have "/* Hello */" placed at the same position no matter what attribute is preceding it.
+    // That position would probably be on the same line as the attribute (for consistency), but on a different line than the function (in order
+    // to preserve the intent of "there was a newline after the block comment in the source")
+    //
+    // This is a tradeoff, because I don't think these cases will occur very frequently, and even if they do, i doubt this will annoy people.
+    // Supporting this without breaking other things would introduce a nontrivial amount of complexity into the code
+    // because of how the formatter currently works (the comments are attached to the function as trivia, just as the attributes.)
+    // A starting point of how to support this would be "trivia on trivia" so that comments can be attached to the attribute as trivia, which in turn
+    // is then attached to the function - and as such we can "always put the comment after the attribute" and only after handling the succeeding trivia of the
+    // attribute decide "do we need a newline or a space before the item the attribute is attached to".
+    //
+    // This behavior can be changed for the better.
+    check(
+        "
+        @must_use /* Hello */
+        fn a() {}
+
+        @fragment /* Hello */
+        fn b() {}
+        ",
+        expect![[r#"
+            @must_use /* Hello */
+            fn a() {}
+
+            @fragment
+            /* Hello */
+            fn b() {}
+        "#]],
+    );
+}
+
+#[test]
+pub fn format_attribute_comment_positioning() {
+    // This test exists to demonstrate optimal behavior of block comments between attributes and functions.
+    // In contrast to the suboptimal behavior demonstrated in `format_attribute_suboptimal_comment_positioning_1` and `format_attribute_suboptimal_comment_positioning_2`
+    // this behavior seems optimal and consistent with the behavior of comments across the formatter.
+    //
+    // In this case the comment is attached to the function (and not to the attribute) and as such sticks to the function.
+    //
+    // This case is the one we will probably see the most in the wild for example in cases where people have an attribute, but temporarily comment it out.
+    // In these cases we really do not want the comment shifting around.
+    //
+    // This behavior should not be changed without good reason.
+    check(
+        "
+        @must_use /* @some_inline_attr */ fn a() {}
+
+        @fragment
+        /* @some_inline_attr */ fn b() {}
+
+        @fragment
+        /* @some_noninline_attr */
+        fn c() {}
+
+        @fragment
+        // @some_noninline_attr
+        fn d() {}
+        ",
+        expect![[r#"
+            @must_use /* @some_inline_attr */ fn a() {}
+
+            @fragment
+            /* @some_inline_attr */ fn b() {}
+
+            @fragment
+            /* @some_noninline_attr */
+            fn c() {}
+
+            @fragment
+            // @some_noninline_attr
+            fn d() {}
+        "#]],
+    );
+}

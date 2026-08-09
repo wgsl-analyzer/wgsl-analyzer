@@ -17,13 +17,20 @@ a better default.
 
 When issues with the formatter arise, those decisions should be documented as a *normative* test in order to prevent regressions.
 
-## Debugging the tests
+## Tricks for debugging the crate
 
 When compiled with the `prefer-immediate-crash` feature, the formatter will crash immediately when encountering a formatting error. This can be useful for debugging the tests, as a proper backtrace can be enabled with `RUST_BACKTRACE=1`.
 
 ```
 RUST_BACKTRACE=1 cargo test --features=prefer-immediate-crash
 ```
+
+* If you insert a strategic `dbg!(&syntax)` call into `check_with_options` inside `test_util.rs` code, you can see the AST nodes being processed at runtime.
+* When the formatter errors, you can see the source position of the problematic AST nodes and can then locate that within the printed ast (see above). From there on you might want to look for the responsible `gen_...` function (see `generators/node.rs`).
+* `NodeWithTrivia` implements `Debug`, so it's very useful to just `dbg!(&items)` the items that were returned by `parse_node_with` to see what trivia (comments etc) gets attached to which nodes.
+* Strategically inserting `formatted.push_sc(sc!("|"))` calls into the `==== Format` section of the `gen_` functions can help you visualize which part of the code is responsible for which part of the formatted output.
+
+
 
 # TODOs
 - [Some more thoughts](https://discord.com/channels/1289346613185351722/1341941812675481680/1475555853066047549)

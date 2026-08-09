@@ -120,6 +120,20 @@ pub trait UntilFilter {
     ) -> Option<FilterAction>;
 }
 
+pub struct Chain<F: UntilFilter, G: UntilFilter> {
+    pub first: F,
+    pub second: G,
+}
+
+impl<F: UntilFilter, G: UntilFilter> UntilFilter for Chain<F, G> {
+    fn filter(
+        &self,
+        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
+    ) -> Option<FilterAction> {
+        self.first.filter(node).or_else(|| self.second.filter(node))
+    }
+}
+
 pub struct UntilEmptyLine;
 
 impl UntilFilter for UntilEmptyLine {
@@ -255,7 +269,8 @@ where
         // NOTE: Make sure node is either put_back onto syntax or consumed in a meaningful way
         if let Some(node) = syntax.next() {
             let action = filter_pre(&node);
-            println!("Pre {node:?} {action:?}");
+            //TODO REMOVE THIS
+            //println!("Pre {node:?} {action:?}");
             match action {
                 Some(FilterAction::Ignored) => {},
                 Some(FilterAction::Content) => {
@@ -270,7 +285,14 @@ where
                 },
                 None => {
                     if let Some(line_spacing) = read_blankspace(&node) {
-                        preceding_trivia.push(NodeTriviaItem::LineSpacing(line_spacing));
+                        match line_spacing {
+                            LineSpacing::OnelineBlankspace(_) => {
+                                // OnelineBlankspace is *always* ignored as it never carries any formatting information
+                            },
+                            LineSpacing::LineBreak(_) | LineSpacing::EmptyLine(_) => {
+                                preceding_trivia.push(NodeTriviaItem::LineSpacing(line_spacing));
+                            },
+                        }
                     } else if let Some(comment) = read_comment(&node) {
                         preceding_trivia.push(NodeTriviaItem::Comment(comment));
                     } else if let NodeOrToken::Node(node) = &node
@@ -289,7 +311,8 @@ where
 
     while let Some(node) = syntax.next() {
         let action = filter_post(&node);
-        println!("Post {node:?} {action:?}");
+        //TODO REMOVE THIS
+        //println!("Pre {node:?} {action:?}");
         match action {
             Some(FilterAction::Ignored) => {},
             Some(FilterAction::Content) => {
@@ -308,7 +331,14 @@ where
             },
             None => {
                 if let Some(line_spacing) = read_blankspace(&node) {
-                    succeeding_trivia.push(NodeTriviaItem::LineSpacing(line_spacing));
+                    match line_spacing {
+                        LineSpacing::OnelineBlankspace(_) => {
+                            // OnelineBlankspace is *always* ignored as it never carries any formatting information
+                        },
+                        LineSpacing::LineBreak(_) | LineSpacing::EmptyLine(_) => {
+                            succeeding_trivia.push(NodeTriviaItem::LineSpacing(line_spacing));
+                        },
+                    }
                 } else if let Some(comment) = read_comment(&node) {
                     succeeding_trivia.push(NodeTriviaItem::Comment(comment));
                 } else if node.kind() == SyntaxKind::AttributeList {
