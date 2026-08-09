@@ -1,17 +1,10 @@
 use dprint_core_macros::sc;
-use itertools::put_back;
-use syntax::{
-    AstNode as _,
-    ast::{Name, TypeAliasDeclaration, TypeSpecifier},
-};
+use syntax::{AstNode as _, ast::TypeAliasDeclaration};
 
 use crate::{
-    ast_parse::{NoTrivia, parse_end, parse_node, parse_node_with, parse_token, syntax_iter},
+    ast_parse::{IgnoreBlankspace, NoTrivia, parse_end, parse_node_with, syntax_iter},
     context_policies::statement_needs_semicolon_policy,
-    generators::{
-        comments::{gen_comments, parse_many_comments_and_blankspace},
-        types::gen_type_specifier,
-    },
+    generators::node::gen_node_with_trivia,
     print_item_buffer::{
         PrintItemBuffer,
         spacing_request::{Request, RequestItem},
@@ -25,13 +18,11 @@ pub fn gen_type_alias_declaration(
     // ==== Parse ====
     let mut syntax = syntax_iter(statement.syntax());
     parse_node_with(&mut syntax, NoTrivia).expect_kind(parser::SyntaxKind::Alias)?;
-    let item_comments_after_alias = parse_many_comments_and_blankspace(&mut syntax)?;
-    let item_name = parse_node::<Name>(&mut syntax)?;
-    let item_comments_after_ident = parse_many_comments_and_blankspace(&mut syntax)?;
+    let item_name =
+        parse_node_with(&mut syntax, IgnoreBlankspace).expect_kind(parser::SyntaxKind::Name)?;
     parse_node_with(&mut syntax, NoTrivia).expect_kind(parser::SyntaxKind::Equal)?;
-    let item_comments_after_equal = parse_many_comments_and_blankspace(&mut syntax)?;
-    let item_type = parse_node::<TypeSpecifier>(&mut syntax)?;
-    let item_comments_after_type = parse_many_comments_and_blankspace(&mut syntax)?;
+    let item_type = parse_node_with(&mut syntax, IgnoreBlankspace)
+        .expect_kind(parser::SyntaxKind::TypeSpecifier)?;
     parse_node_with(&mut syntax, NoTrivia).expect_kind(parser::SyntaxKind::Semicolon)?; //Optional?
     parse_end(&mut syntax)?;
 
@@ -39,15 +30,11 @@ pub fn gen_type_alias_declaration(
     let mut formatted = PrintItemBuffer::default();
     formatted.push_sc(sc!("alias"));
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.extend(gen_comments(&item_comments_after_alias));
-    formatted.push_string(item_name.text().to_string());
-    formatted.extend(gen_comments(&item_comments_after_ident));
+    formatted.extend(gen_node_with_trivia(&item_name)?);
     formatted.request(Request::expect(RequestItem::Space));
     formatted.push_sc(sc!("="));
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.extend(gen_comments(&item_comments_after_equal));
-    formatted.extend(gen_type_specifier(&item_type)?);
-    formatted.extend(gen_comments(&item_comments_after_type));
+    formatted.extend(gen_node_with_trivia(&item_type)?);
     if statement_needs_semicolon_policy(statement.syntax()) {
         formatted.request(Request::discourage(RequestItem::Space));
         formatted.push_sc(sc!(";"));
