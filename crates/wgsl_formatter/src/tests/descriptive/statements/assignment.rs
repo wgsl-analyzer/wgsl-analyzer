@@ -79,8 +79,7 @@ fn format_comments_within_assignment_statement() {
         }",
         expect![[r#"
             fn main() {
-                /* 0 */
-                a /* 1 */ = /* 2 */ b /* 3 */; /* 4 */
+                /* 0 */ a /* 1 */ = /* 2 */ b /* 3 */; /* 4 */
             }
         "#]],
         expect![[r#"

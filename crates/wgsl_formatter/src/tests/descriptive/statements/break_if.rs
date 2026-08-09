@@ -109,12 +109,9 @@ pub fn format_comments_in_loop_continuing_break_if_statement() {
         "fn main() { ## loop ## { ## continuing ## { ## break ## if ## false ## ; ## } ## } ## }",
         expect![[r#"
             fn main() {
-                /* 0 */
-                loop /* 1 */ {
-                    /* 2 */
-                    continuing /* 3 */ {
-                        /* 4 */
-                        break /* 5 */ if /* 6 */ false /* 7 */; /* 8 */
+                /* 0 */ loop /* 1 */ {
+                    /* 2 */ continuing /* 3 */ {
+                        /* 4 */ break /* 5 */ if /* 6 */ false /* 7 */; /* 8 */
                     }
                     /* 9 */
                 }
