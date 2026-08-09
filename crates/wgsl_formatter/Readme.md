@@ -31,7 +31,8 @@ RUST_BACKTRACE=1 cargo test --features=prefer-immediate-crash
 * Strategically inserting `formatted.push_sc(sc!("|"))` calls into the `==== Format` section of the `gen_` functions can help you visualize which part of the code is responsible for which part of the formatted output.
 
 ## Opinions on Comments
-Generally the formatter should leave comments where they are - even if they are in weird places.
+Generally the formatter should leave comments where they are - even if they are in weird places. 
+If the programmer wants a comment to be in a strange place, they will have a reason for it.
 It should try to detect the programmer's intent (i.e what they wanted to comment) and then when
 things shift around during formatting, keep the comment in a place where that intent is preserved.
 

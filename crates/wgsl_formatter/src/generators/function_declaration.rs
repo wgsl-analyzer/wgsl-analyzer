@@ -9,12 +9,14 @@ use syntax::{
 
 use crate::{
     ast_parse::{
-        Filter, FilterAction, IgnoreBlankspace, NoTrivia, parse_end, parse_node_with, syntax_iter,
+        Chain, Filter, FilterAction, IgnoreBlankspace, IgnoreComma, NoTrivia,
+        UntilSucceedingNewline, parse_end, parse_node_with, syntax_iter,
     },
     generators::node::{
         gen_node_content, gen_node_preceding_trivia, gen_node_succeeding_trivia,
         gen_node_with_trivia,
     },
+    helpers::{LineSpacing, read_blankspace},
     multiline_group::MultilineGroup,
     print_item_buffer::{
         PrintItemBuffer,
@@ -85,13 +87,14 @@ pub fn gen_fn_parameters(node: &ast::FunctionParameters) -> FormatDocumentResult
 
     let mut items = Vec::new();
 
+    // TODO Recreate something akin to parse_separated_items
+    // However i think it would be better to have a central space where
+    // we define "strategies" - one for each application, and then look for those that are
+    // the same, and type alias between them.
     loop {
         let mut item = parse_node_with(
             &mut syntax,
-            Filter(|node| match node.kind() {
-                SyntaxKind::Comma => Some(FilterAction::Ignored),
-                _ => None,
-            }),
+            Chain(UntilSucceedingNewline, Chain(IgnoreBlankspace, IgnoreComma)),
         );
 
         // TODO Do I want to move this logicto trivia_filter too?
@@ -128,15 +131,15 @@ pub fn gen_fn_parameters(node: &ast::FunctionParameters) -> FormatDocumentResult
     multiline_group.start_indent();
 
     for (pos, item) in items.into_iter().with_position() {
-        if item.has_content() {
-            // If the parameters are multiple lines long, every parameter should be on a new line
-            // If the parameters is a single line long, every parameter should be prepended with a space,
-            // with a chance for breaking into multiple lines
-            multiline_group.grouped_newline_or_space();
+        // If the parameters are multiple lines long, every parameter should be on a new line
+        // If the parameters is a single line long, every parameter should be prepended with a space,
+        // with a chance for breaking into multiple lines
+        multiline_group.grouped_newline_or_space();
 
-            multiline_group.request(Request::discourage(RequestItem::EmptyLine));
-            multiline_group.extend(gen_node_preceding_trivia(&item)?);
-            multiline_group.extend(gen_node_content(&item)?);
+        multiline_group.request(Request::discourage(RequestItem::EmptyLine));
+        multiline_group.extend(gen_node_preceding_trivia(&item)?);
+        multiline_group.extend(gen_node_content(&item)?);
+        if item.has_content() {
             if pos == Position::Last || pos == Position::Only {
                 multiline_group.extend_if_multi_line({
                     let mut pi = PrintItems::default();
@@ -146,8 +149,8 @@ pub fn gen_fn_parameters(node: &ast::FunctionParameters) -> FormatDocumentResult
             } else {
                 multiline_group.push_sc(sc!(","));
             }
-            multiline_group.extend(gen_node_succeeding_trivia(&item)?);
         }
+        multiline_group.extend(gen_node_succeeding_trivia(&item)?);
     }
 
     multiline_group.request(Request::discourage(RequestItem::Space));

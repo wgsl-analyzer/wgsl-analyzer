@@ -76,6 +76,33 @@ fn format_fn_header_with_parameters_spacing() {
 }
 
 #[test]
+pub fn format_fn_header_keep_comments_in_position() {
+    // Following "the formatter should not unnecessarily move comments around" - if programmer wants them there, we will let them have it.
+    check(
+        "
+            fn main(
+a: u32 /* after a */,
+b: u32, /* after b */
+/*before c*/ c: u32,
+/*line before d*/
+d: u32,
+//force newline
+) {}
+        ",
+        expect![[r#"
+            fn main(
+                a: u32, /* after a */
+                b: u32, /* after b */
+                /*before c*/ c: u32,
+                /*line before d*/
+                d: u32,
+                //force newline
+            ) {}
+        "#]],
+    );
+}
+
+#[test]
 fn format_fn_header_with_parameters_inline_line_comments() {
     check(
         "fn main(

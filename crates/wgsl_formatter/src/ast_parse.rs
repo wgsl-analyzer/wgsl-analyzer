@@ -114,30 +114,20 @@ pub fn parse_end(syntax: &mut SyntaxIter) -> FormatDocumentResult<()> {
 }
 
 pub trait UntilFilter {
-    fn filter(
+    fn filter_preceding(
+        &self,
+        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
+    ) -> Option<FilterAction>;
+    fn filter_succeeding(
         &self,
         node: &NodeOrToken<SyntaxNode, SyntaxToken>,
     ) -> Option<FilterAction>;
 }
 
-pub struct Chain<F: UntilFilter, G: UntilFilter> {
-    pub first: F,
-    pub second: G,
-}
-
-impl<F: UntilFilter, G: UntilFilter> UntilFilter for Chain<F, G> {
-    fn filter(
-        &self,
-        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
-    ) -> Option<FilterAction> {
-        self.first.filter(node).or_else(|| self.second.filter(node))
-    }
-}
-
 pub struct UntilEmptyLine;
 
 impl UntilFilter for UntilEmptyLine {
-    fn filter(
+    fn filter_preceding(
         &self,
         node: &NodeOrToken<SyntaxNode, SyntaxToken>,
     ) -> Option<FilterAction> {
@@ -146,37 +136,104 @@ impl UntilFilter for UntilEmptyLine {
             _ => None,
         }
     }
+
+    fn filter_succeeding(
+        &self,
+        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
+    ) -> Option<FilterAction> {
+        self.filter_preceding(node)
+    }
 }
 
 // TODO I think the default should be to ignore blankspace and *including* it should be explicit (in struct body and compound statements)
 pub struct IgnoreBlankspace;
 impl UntilFilter for IgnoreBlankspace {
-    fn filter(
+    fn filter_preceding(
         &self,
         node: &NodeOrToken<SyntaxNode, SyntaxToken>,
     ) -> Option<FilterAction> {
         (node.kind() == SyntaxKind::Blankspace).then_some(FilterAction::Ignored)
     }
+
+    fn filter_succeeding(
+        &self,
+        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
+    ) -> Option<FilterAction> {
+        self.filter_preceding(node)
+    }
+}
+
+pub struct IgnoreComma;
+impl UntilFilter for IgnoreComma {
+    fn filter_preceding(
+        &self,
+        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
+    ) -> Option<FilterAction> {
+        (node.kind() == SyntaxKind::Comma).then_some(FilterAction::Ignored)
+    }
+
+    fn filter_succeeding(
+        &self,
+        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
+    ) -> Option<FilterAction> {
+        self.filter_preceding(node)
+    }
 }
 
 pub struct NoTrivia;
 impl UntilFilter for NoTrivia {
-    fn filter(
+    fn filter_preceding(
         &self,
         _node: &NodeOrToken<SyntaxNode, SyntaxToken>,
     ) -> Option<FilterAction> {
         Some(FilterAction::Content)
     }
+
+    fn filter_succeeding(
+        &self,
+        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
+    ) -> Option<FilterAction> {
+        self.filter_preceding(node)
+    }
 }
 
 pub struct Oneline;
 impl UntilFilter for Oneline {
-    fn filter(
+    fn filter_preceding(
         &self,
         node: &NodeOrToken<SyntaxNode, SyntaxToken>,
     ) -> Option<FilterAction> {
         match read_blankspace(node) {
             Some(LineSpacing::EmptyLine(_) | LineSpacing::LineBreak(_)) => Some(FilterAction::Stop),
+            _ => None,
+        }
+    }
+    fn filter_succeeding(
+        &self,
+        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
+    ) -> Option<FilterAction> {
+        self.filter_preceding(node)
+    }
+}
+
+pub struct UntilSucceedingNewline;
+impl UntilFilter for UntilSucceedingNewline {
+    fn filter_preceding(
+        &self,
+        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
+    ) -> Option<FilterAction> {
+        None
+    }
+
+    fn filter_succeeding(
+        &self,
+        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
+    ) -> Option<FilterAction> {
+        match read_blankspace(node) {
+            // TODO Most IgnoreBlankspace cases should be handled this way - linebreaks and empty lines will most often stop parsing trivia
+            Some(LineSpacing::LineBreak(_) | LineSpacing::EmptyLine(_)) => {
+                Some(FilterAction::IgnoreAndStop)
+            },
             _ => None,
         }
     }
@@ -190,11 +247,46 @@ impl<T> UntilFilter for Filter<T>
 where
     T: Fn(&NodeOrToken<SyntaxNode, SyntaxToken>) -> Option<FilterAction>,
 {
-    fn filter(
+    fn filter_preceding(
         &self,
         node: &NodeOrToken<SyntaxNode, SyntaxToken>,
     ) -> Option<FilterAction> {
         self.0(node)
+    }
+    fn filter_succeeding(
+        &self,
+        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
+    ) -> Option<FilterAction> {
+        self.filter_preceding(node)
+    }
+}
+
+pub struct Chain<F, G>(pub F, pub G)
+where
+    F: UntilFilter,
+    G: UntilFilter;
+impl<F, G> UntilFilter for Chain<F, G>
+where
+    F: UntilFilter,
+    G: UntilFilter,
+{
+    fn filter_preceding(
+        &self,
+        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
+    ) -> Option<FilterAction> {
+        if let Some(action) = self.0.filter_preceding(node) {
+            return Some(action);
+        }
+        self.1.filter_preceding(node)
+    }
+    fn filter_succeeding(
+        &self,
+        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
+    ) -> Option<FilterAction> {
+        if let Some(action) = self.0.filter_succeeding(node) {
+            return Some(action);
+        }
+        self.1.filter_succeeding(node)
     }
 }
 
@@ -206,7 +298,11 @@ pub fn parse_node_with<F>(
 where
     F: UntilFilter,
 {
-    parse_node_with_trivia_filter(syntax, |node| until.filter(node))
+    parse_node_with_trivia_filter_2(
+        syntax,
+        |node| until.filter_preceding(node),
+        |node| until.filter_succeeding(node),
+    )
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
@@ -275,6 +371,15 @@ where
                         }
                     } else if let Some(comment) = read_comment(&node) {
                         preceding_trivia.push(NodeTriviaItem::Comment(comment));
+                        // TODO Think about if this can be handled in any other way...
+                        // Hacky special handling to remember if a comment was followed by a newline
+                        if let Some(next_item) = syntax.next() {
+                            if let Some(blankspace) = read_blankspace(&next_item) {
+                                preceding_trivia.push(NodeTriviaItem::LineSpacing(blankspace));
+                            } else {
+                                syntax.put_back(next_item);
+                            }
+                        }
                     } else if let NodeOrToken::Node(node) = &node
                         && let Some(attributes) = AttributeList::cast(node.clone())
                     {

@@ -46,20 +46,55 @@ pub fn format_type_nested_multiline_template_gets_broken_into_multiple_lines() {
 }
 
 #[test]
-pub fn format_type_multiline_arguments_always_start_on_a_new_line() {
-    // If arguments to a type are broken into several lines, they should all start at the same horizontal offset (and not have comments *before* them)
+pub fn format_type_multiline_arguments_keeps_comments_in_position() {
+    check(
+        "fn main() {
+            bla(
+                11 /* after 11 */,
+                12, /* after 12 */
+                /*before 13*/ 13,
+                /*line before 14*/
+                14,
+            );
+        }",
+        expect![[r#"
+            fn main() {
+                bla(
+                    11, /* after 11 */
+                    12, /* after 12 */
+                    /*before 13*/ 13,
+                    /*line before 14*/
+                    14,
+                );
+            }
+        "#]],
+    );
+}
+
+#[test]
+pub fn format_type_multiline_arguments_keep_comments_in_position() {
+    // Following "the formatter should not unnecessarily move comments around" - if programmer wants them there, we will let them have it.
     check(
         "
         alias Test =
-        array</*hmm*/27 //force newline
-,18>
+        array<
+11 /* after 11 */,
+12, /* after 12 */
+/*before 13*/ 13,
+/*line before 14*/
+14,
+//force newline
+>
         ;
         ",
         expect![[r#"
             alias Test = array<
-                /*hmm*/
-                27, //force newline
-                18,
+                11, /* after 11 */
+                12, /* after 12 */
+                /*before 13*/ 13,
+                /*line before 14*/
+                14,
+                //force newline
             >;
         "#]],
     );

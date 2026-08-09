@@ -12,8 +12,8 @@ use syntax::{
 
 use crate::{
     ast_parse::{
-        Filter, FilterAction, IgnoreBlankspace, NoTrivia, SyntaxIter, parse_end, parse_node_with,
-        syntax_iter,
+        Chain, IgnoreBlankspace, IgnoreComma, NoTrivia, SyntaxIter, UntilSucceedingNewline,
+        parse_end, parse_node_with, syntax_iter,
     },
     context_policies::statement_needs_semicolon_policy,
     generators::node::{
@@ -116,15 +116,11 @@ pub fn parse_function_call_arguments(
     syntax: &mut SyntaxIter
 ) -> FormatDocumentResult<Vec<NodeWithTrivia>> {
     parse_node_with(syntax, NoTrivia).expect_kind(SyntaxKind::ParenthesisLeft)?;
-    let mut item_parameters = Vec::new();
+    let mut item_arguments = Vec::new();
     loop {
         let mut item = parse_node_with(
             syntax,
-            Filter(|node| match node.kind() {
-                //TODO Make Filter combinators so that we can chain IgnoreBlankspace and this filter
-                SyntaxKind::Blankspace | SyntaxKind::Comma => Some(FilterAction::Ignored),
-                _ => None,
-            }),
+            Chain(UntilSucceedingNewline, Chain(IgnoreBlankspace, IgnoreComma)),
         );
 
         // TODO This needs to be absorbed into parse_node..
@@ -135,14 +131,14 @@ pub fn parse_function_call_arguments(
 
         let is_end = item.is_end();
         if !item.is_whitespace() {
-            item_parameters.push(item);
+            item_arguments.push(item);
         }
         if is_end {
             break;
         }
     }
     parse_node_with(syntax, NoTrivia).expect_kind(SyntaxKind::ParenthesisRight)?;
-    Ok(item_parameters)
+    Ok(item_arguments)
 }
 
 pub fn gen_function_call_arguments(
@@ -180,16 +176,18 @@ pub fn gen_function_call_arguments_standard(
         for (position, item) in item_arguments.into_iter().with_position() {
             multiline_group.grouped_newline_or_space();
             multiline_group.extend(gen_node_preceding_trivia(&item)?);
-            multiline_group.extend(gen_node_content(&item)?);
-            multiline_group.request(Request::discourage(RequestItem::Space));
-            if position == Position::Last || position == Position::Only {
-                multiline_group.extend_if_multi_line({
-                    let mut pi = PrintItems::default();
-                    pi.push_sc(sc!(","));
-                    pi
-                });
-            } else {
-                multiline_group.push_sc(sc!(","));
+            if item.has_content() {
+                multiline_group.extend(gen_node_content(&item)?);
+                multiline_group.request(Request::discourage(RequestItem::Space));
+                if position == Position::Last || position == Position::Only {
+                    multiline_group.extend_if_multi_line({
+                        let mut pi = PrintItems::default();
+                        pi.push_sc(sc!(","));
+                        pi
+                    });
+                } else {
+                    multiline_group.push_sc(sc!(","));
+                }
             }
             multiline_group.extend(gen_node_succeeding_trivia(&item)?);
         }

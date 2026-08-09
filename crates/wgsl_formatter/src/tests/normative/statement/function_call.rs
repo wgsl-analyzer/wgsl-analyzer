@@ -94,20 +94,28 @@ pub fn format_function_call_statement_with_comment_has_no_trailing_whitespace() 
 }
 
 #[test]
-pub fn format_function_call_multiline_arguments_always_start_on_a_new_line() {
-    // If arguments to a function are broken into several lines, they should all start at the same horizontal offset (and not have comments *before* them)
+pub fn format_function_call_multiline_arguments_keeps_comments_in_position() {
+    // Following "the formatter should not unnecessarily move comments around" - if programmer wants them there, we will let them have it.
     check(
         "fn main() {
-        bla(/*beb*/12, 13//fe
-, 15);
+            bla(
+                11 /* after 11 */,
+                12, /* after 12 */
+                /*before 13*/ 13,
+                /*line before 14*/
+                14,
+                // Force newline
+            );
         }",
         expect![[r#"
             fn main() {
                 bla(
-                    /*beb*/
-                    12,
-                    13, //fe
-                    15,
+                    11, /* after 11 */
+                    12, /* after 12 */
+                    /*before 13*/ 13,
+                    /*line before 14*/
+                    14,
+                    // Force newline
                 );
             }
         "#]],
