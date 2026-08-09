@@ -1,39 +1,24 @@
 use dprint_core_macros::sc;
-use itertools::{Itertools, Position, put_back};
 use parser::SyntaxKind;
 use syntax::{
     AstNode as _,
     ast::{self},
 };
 
+use crate::{ast_parse::IgnoreBlankspace, generators::node::gen_node_with_trivia};
 use crate::{
     ast_parse::{
-        FilterAction, NoTrivia, parse_end, parse_node, parse_node_optional, parse_node_with,
-        parse_node_with_trivia_filter, parse_node_with_trivia_filter_2, parse_token,
-        parse_token_optional, syntax_iter,
+        FilterAction, NoTrivia, parse_end, parse_node_with, parse_node_with_trivia_filter_2,
+        syntax_iter,
     },
-    generators::node::{
-        gen_node_content, gen_node_preceding_trivia, gen_node_succeeding_trivia,
-        gen_node_with_trivia,
-    },
-    helpers::{LineSpacing, NextGenLineSpacing, gen_line_spacing, read_blankspace},
+    generators::node::{gen_node_content, gen_node_preceding_trivia, gen_node_succeeding_trivia},
+    helpers::{NextGenLineSpacing, read_blankspace},
     print_item_buffer::{
         PrintItemBuffer,
         spacing_request::{Request, RequestItem, RequestItemSet},
     },
     reporting::FormatDocumentResult,
     trivia::NodeWithTriviaContent,
-};
-use crate::{
-    generators::{
-        attributes::{AttributeLayout, gen_attributes, parse_many_attributes},
-        comments::{
-            Comment, gen_comment, gen_comments, parse_comment_optional,
-            parse_many_comments_and_blankspace,
-        },
-        types::gen_type_specifier,
-    },
-    helpers::parse_line_spacing,
 };
 
 pub fn gen_struct_declaration(
@@ -43,10 +28,9 @@ pub fn gen_struct_declaration(
     let mut syntax = syntax_iter(node.syntax());
 
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::Struct)?;
-    let item_comments_after_struct = parse_many_comments_and_blankspace(&mut syntax)?;
-    let item_name = parse_node::<ast::Name>(&mut syntax)?;
-    let item_comments_after_name = parse_many_comments_and_blankspace(&mut syntax)?;
-    let item_body = parse_node::<ast::StructBody>(&mut syntax)?;
+    let item_name = parse_node_with(&mut syntax, IgnoreBlankspace).expect_kind(SyntaxKind::Name)?;
+    let item_body =
+        parse_node_with(&mut syntax, IgnoreBlankspace).expect_kind(SyntaxKind::StructBody)?;
     parse_end(&mut syntax)?;
 
     // === Format ===
@@ -55,16 +39,11 @@ pub fn gen_struct_declaration(
     // Struct
     formatted.push_sc(sc!("struct"));
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.extend(gen_comments(&item_comments_after_struct));
-
-    // Name
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.push_string(item_name.text().to_string());
-    formatted.extend(gen_comments(&item_comments_after_name));
-
+    formatted.extend(gen_node_with_trivia(&item_name)?);
     // Body
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.extend(gen_struct_body(&item_body)?);
+    formatted.extend(gen_node_with_trivia(&item_body)?);
 
     Ok(formatted)
 }
@@ -74,7 +53,6 @@ pub fn gen_struct_body(body: &ast::StructBody) -> FormatDocumentResult<PrintItem
     let mut syntax = syntax_iter(body.syntax());
 
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::BraceLeft)?;
-    let item_comments_after_open_paren = parse_many_comments_and_blankspace(&mut syntax)?;
 
     let mut item_members = Vec::new();
 
@@ -133,14 +111,10 @@ pub fn gen_struct_body(body: &ast::StructBody) -> FormatDocumentResult<PrintItem
 
     formatted.push_sc(sc!("{"));
     formatted.start_indent();
-
-    if !item_comments_after_open_paren.is_empty() {
-        formatted.request(Request::expect(RequestItem::LineBreak));
-        formatted.extend(gen_comments(&item_comments_after_open_paren));
-    }
+    formatted.request(Request::discourage(RequestItem::EmptyLine));
 
     if !is_empty {
-        for (pos, member) in item_members.iter().with_position() {
+        for member in item_members {
             if member.has_content() {
                 formatted.request(Request::expect(RequestItem::LineBreak));
             }
@@ -175,27 +149,20 @@ pub fn gen_struct_member(member: &ast::StructMember) -> FormatDocumentResult<Pri
     // === Parse ===
     let mut syntax = syntax_iter(member.syntax());
 
-    let attributes = parse_many_attributes(&mut syntax)?;
-    let item_comments_after_attributes = parse_many_comments_and_blankspace(&mut syntax)?;
-    let item_name = parse_node::<ast::Name>(&mut syntax)?;
-    let item_comments_after_name = parse_many_comments_and_blankspace(&mut syntax)?;
+    let item_name = parse_node_with(&mut syntax, IgnoreBlankspace).expect_kind(SyntaxKind::Name)?;
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::Colon)?;
-    let item_comments_after_colon = parse_many_comments_and_blankspace(&mut syntax)?;
-    let item_type_specifier = parse_node::<ast::TypeSpecifier>(&mut syntax)?;
+    let item_type_specifier =
+        parse_node_with(&mut syntax, IgnoreBlankspace).expect_kind(SyntaxKind::TypeSpecifier)?;
     parse_end(&mut syntax)?;
 
     // === Format ===
     let mut formatted = PrintItemBuffer::default();
 
-    formatted.extend(gen_attributes(&attributes, AttributeLayout::Multiline)?);
-    formatted.extend(gen_comments(&item_comments_after_attributes));
-    formatted.push_string(item_name.text().to_string());
+    formatted.extend(gen_node_with_trivia(&item_name)?);
     formatted.push_sc(sc!(":"));
     formatted.request(Request::expect(RequestItem::Space));
     //The colon should immediately follow the name, we intentionally move the comment
-    formatted.extend(gen_comments(&item_comments_after_name));
-    formatted.extend(gen_comments(&item_comments_after_colon));
-    formatted.extend(gen_type_specifier(&item_type_specifier)?);
+    formatted.extend(gen_node_with_trivia(&item_type_specifier)?);
 
     Ok(formatted)
 }
