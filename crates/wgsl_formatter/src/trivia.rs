@@ -1,15 +1,12 @@
 use parser::{SyntaxKind, SyntaxNode, SyntaxToken};
 use rowan::NodeOrToken;
-use syntax::{
-    AstNode, AstToken,
-    ast::{Attribute, AttributeList},
-};
+use syntax::{AstNode, AstToken, ast::AttributeList};
 
 use crate::{
     ast_parse::SyntaxIter,
     generators::comments::Comment,
-    helpers::{LineSpacing, NextGenLineSpacing},
-    reporting::{FormatDocumentError, FormatDocumentResult, UnwrapIfPreferCrash},
+    helpers::NextGenLineSpacing,
+    reporting::{FormatDocumentError, FormatDocumentResult, UnwrapIfPreferCrash as _},
 };
 
 #[derive(Clone, Debug)]
@@ -25,19 +22,19 @@ impl NodeTriviaItem {
         syntax: &mut SyntaxIter,
     ) {
         match self {
-            NodeTriviaItem::LineSpacing(next_gen_line_spacing) => match next_gen_line_spacing {
+            Self::LineSpacing(next_gen_line_spacing) => match next_gen_line_spacing {
                 NextGenLineSpacing::LineBreak(syntax_token)
                 | NextGenLineSpacing::EmptyLine(syntax_token)
                 | NextGenLineSpacing::OnelineBlankspace(syntax_token) => {
                     syntax.put_back(NodeOrToken::Token(syntax_token));
                 },
             },
-            NodeTriviaItem::Comment(comment) => match comment {
+            Self::Comment(comment) => match comment {
                 Comment::Block(node) | Comment::LineEnding(node) => {
                     syntax.put_back(NodeOrToken::Token(node));
                 },
             },
-            NodeTriviaItem::AttributeList(attribute_list) => {
+            Self::AttributeList(attribute_list) => {
                 syntax.put_back(NodeOrToken::Node(attribute_list.syntax().clone()));
             },
         }
@@ -97,11 +94,10 @@ impl NodeWithTrivia {
             item.put_back(syntax);
         }
         match self.node {
-            NodeWithTriviaContent::NoContent => {},
             NodeWithTriviaContent::Content(node_or_token) => {
                 syntax.put_back(node_or_token);
             },
-            NodeWithTriviaContent::End => {},
+            NodeWithTriviaContent::NoContent | NodeWithTriviaContent::End => {},
         }
         for item in self.preceding_trivia.into_iter().rev() {
             item.put_back(syntax);
@@ -232,10 +228,12 @@ impl NodeWithTrivia {
         .expect_if_prefer_crash()
     }
 
-    pub fn is_end(&self) -> bool {
+    #[must_use]
+    pub const fn is_end(&self) -> bool {
         matches!(self.node, NodeWithTriviaContent::End)
     }
 
+    #[must_use]
     pub fn is_whitespace(&self) -> bool {
         self.node.is_empty()
             && self
@@ -256,9 +254,8 @@ impl NodeWithTrivia {
     #[must_use]
     pub fn content(&self) -> Option<NodeOrToken<SyntaxNode, SyntaxToken>> {
         match &self.node {
-            NodeWithTriviaContent::NoContent => None,
             NodeWithTriviaContent::Content(node_or_token) => Some(node_or_token.clone()),
-            NodeWithTriviaContent::End => None,
+            NodeWithTriviaContent::NoContent | NodeWithTriviaContent::End => None,
         }
     }
 }
