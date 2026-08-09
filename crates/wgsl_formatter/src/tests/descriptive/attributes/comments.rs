@@ -475,3 +475,108 @@ pub fn format_comments_in_attr_with_many_parameters() {
         "#]],
     );
 }
+
+#[test]
+pub fn format_comments_in_attr_with_multiple_arguments() {
+    check_comments(
+        "
+        ## @ ## attr ## ( ## 0 ## , ## 0 ## , ## 0 ## ) ## fn ## main() {}
+        ",
+        expect![[r#"
+            /* 0 */ @ /* 1 */ attr /* 2 */ (
+                /* 3 */ 0, /* 4 */ /* 5 */
+                0, /* 6 */ /* 7 */
+                0, /* 8 */
+            )
+            /* 9 */ fn /* 10 */ main() {}
+        "#]],
+        expect![[r#"
+            // 0
+            @ // 1
+            attr // 2
+            (
+                // 3
+                0, // 4
+                // 5
+                0, // 6
+                // 7
+                0, // 8
+            )
+            // 9
+            fn // 10
+            main() {}
+        "#]],
+    );
+}
+
+#[test]
+pub fn format_comments_in_attr_with_text_arguments() {
+    check_comments(
+        "
+        ## @ ## thingy ## ( ## magic ## , ## thing ## ) ## fn ## main() {}
+        ",
+        expect![[r#"
+            /* 0 */ @ /* 1 */ thingy /* 2 */ (/* 3 */ magic, /* 4 */ /* 5 */ thing /* 6 */)
+            /* 7 */ fn /* 8 */ main() {}
+        "#]],
+        expect![[r#"
+            // 0
+            @ // 1
+            thingy // 2
+            (
+                // 3
+                magic, // 4
+                // 5
+                thing, // 6
+            )
+            // 7
+            fn // 8
+            main() {}
+        "#]],
+    );
+}
+
+#[test]
+pub fn format_comments_in_diagnostic_attr_simple_1() {
+    check_comments(
+        "## @ ## diagnostic ## ( ## off ## , ## something ## ) ## fn ## main() {}",
+        expect![[r#"
+            /* 0 */ @ /* 1 */ diagnostic /* 2 */ ( /* 3 */ off /* 4 */ , /* 5 */ something /* 6 */ )
+            /* 7 */ fn /* 8 */ main() {}
+        "#]],
+        expect![[r#"
+            // 0
+            @ // 1
+            diagnostic // 2
+            ( // 3
+            off // 4
+            , // 5
+            something // 6
+            )
+            // 7
+            fn // 8
+            main() {}
+        "#]],
+    );
+}
+
+#[test]
+pub fn format_comments_in_attr_simple() {
+    check_comments(
+        "
+        ## @ ## fragment ## fn ## main() {}
+        ",
+        expect![[r#"
+            /* 0 */ @ /* 1 */ fragment
+            /* 2 */ fn /* 3 */ main() {}
+        "#]],
+        expect![[r#"
+            // 0
+            @ // 1
+            fragment
+            // 2
+            fn // 3
+            main() {}
+        "#]],
+    );
+}

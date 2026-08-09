@@ -14,8 +14,7 @@ fn format_comment_indent_1() {
         1;
 
 
-        for(/* A */ var i = 0;
-        // Force Multiline
+        for(/* A */ var i = 0; // Force Multiline
         ; a++) {}
         }
         ",
@@ -26,8 +25,7 @@ fn format_comment_indent_1() {
                     1;
 
                 for(
-                    /* A */
-                    var i = 0; // Force Multiline
+                    /* A */ var i = 0; // Force Multiline
                     ;
                     a++
                 ) {}
