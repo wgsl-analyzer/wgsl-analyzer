@@ -124,7 +124,7 @@ fn format_expr_function_call_bitcast() {
 }
 
 #[test]
-fn format_expr_function_call_comments_in_bitcast() {
+fn format_comments_in_expr_function_call_bitcast() {
     check_comments(
         "fn main() {
         let a = ## bitcast ## < ## vec4 ## < ## u32 ## > ## > ## ( ## x ## + ## 5 ## ) ## ; ##
@@ -132,8 +132,7 @@ fn format_expr_function_call_comments_in_bitcast() {
         expect![[r#"
             fn main() {
                 let a = /* 0 */ bitcast /* 1 */ <
-                        /* 2 */
-                        vec4 /* 3 */ </* 4 */ u32 /* 5 */>, /* 6 */
+                        /* 2 */ vec4 /* 3 */ </* 4 */ u32 /* 5 */>, /* 6 */
                     > /* 7 */ (/* 8 */ x /* 9 */ + /* 10 */ 5 /* 11 */) /* 12 */; /* 13 */
             }
         "#]],
@@ -170,8 +169,7 @@ pub fn format_comments_in_expr_function_call() {
         expect![[r#"
             fn main() {
                 let a = /* 0 */ foo /* 1 */ (
-                        /* 2 */
-                        3, /* 3 */ /* 4 */
+                        /* 2 */ 3, /* 3 */ /* 4 */
                         2, /* 5 */
                     ) /* 6 */; /* 7 */
             }
