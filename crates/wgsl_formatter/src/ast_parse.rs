@@ -80,9 +80,11 @@ mod syntax_iter_asserting {
     impl Drop for SyntaxIter {
         fn drop(&mut self) {
             // Come on we need linear types, please...
-            #[expect(clippy::print_stderr, reason = "This is only active in debug builds")]
-            if self.had_end_expected {
-                eprintln!("SyntaxIter was dropped without expect_end having been called");
+            if !::std::thread::panicking() {
+                assert!(
+                    self.had_end_expected,
+                    "SyntaxIter was dropped without expect_end having been called"
+                );
             }
         }
     }
