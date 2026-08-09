@@ -66,8 +66,7 @@ pub fn format_comment_in_override_declaration() {
         ## override ## a ## = ## 1 ## ; ##
         ",
         expect![[r#"
-            /* 0 */
-            override /* 1 */ a /* 2 */ = /* 3 */ 1 /* 4 */; /* 5 */
+            /* 0 */ override /* 1 */ a /* 2 */ = /* 3 */ 1 /* 4 */; /* 5 */
         "#]],
         expect![[r#"
             // 0
@@ -144,10 +143,8 @@ pub fn format_override_declaration_with_comments_in_complex_type() {
             ## override ## a ## : ## array ## < ## u32 ## , ## 28 ## > ## = ## 1 ## ; ##
         ",
         expect![[r#"
-            /* 0 */
-            override /* 1 */ a /* 2 */: /* 3 */ array /* 4 */ <
-                    /* 5 */
-                    u32, /* 6 */ /* 7 */
+            /* 0 */ override /* 1 */ a /* 2 */: /* 3 */ array /* 4 */ <
+                    /* 5 */ u32, /* 6 */ /* 7 */
                     28, /* 8 */
                 > /* 9 */ = /* 10 */ 1 /* 11 */; /* 12 */
         "#]],

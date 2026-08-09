@@ -11,8 +11,7 @@ pub fn format_comment_in_loop_statement_empty() {
         }",
         expect![[r#"
             fn main() {
-                /* 0 */
-                loop /* 1 */ {
+                /* 0 */ loop /* 1 */ {
                     /* 2 */
                 }
                 /* 3 */

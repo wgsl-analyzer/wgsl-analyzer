@@ -20,6 +20,7 @@ discard;
 
 #[test]
 pub fn format_discard_statement_with_weird_comment() {
+    // Following "the formatter should not unnecessarily move comments around" - if programmer wants them there, we will let them have it.
     check_comments(
         "fn main() {
         ## discard ## ; ##
@@ -28,16 +29,15 @@ pub fn format_discard_statement_with_weird_comment() {
         }",
         expect![[r#"
             fn main() {
-                /* 0 */
-                discard;
-                /* 1 */ /* 2 */
+                /* 0 */ discard /* 1 */ ;
+                /* 2 */
             }
         "#]],
         expect![[r#"
             fn main() {
                 // 0
-                discard;
-                // 1
+                discard // 1
+                ;
                 // 2
             }
         "#]],

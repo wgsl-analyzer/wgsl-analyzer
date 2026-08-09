@@ -58,8 +58,7 @@ pub fn format_comment_in_return_statement_with_simple_expr() {
         }",
         expect![[r#"
             fn main() {
-                /* 0 */
-                return /* 1 */ 1 /* 2 */; /* 3 */
+                /* 0 */ return /* 1 */ 1 /* 2 */; /* 3 */
             }
         "#]],
         expect![[r#"
@@ -81,8 +80,7 @@ pub fn format_comment_in_return_statement_without_expr() {
         }",
         expect![[r#"
             fn main() {
-                /* 0 */
-                return /* 1 */; /* 2 */
+                /* 0 */ return /* 1 */; /* 2 */
             }
         "#]],
         expect![[r#"
