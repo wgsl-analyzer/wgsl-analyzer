@@ -3,7 +3,7 @@ use expect_test::expect;
 use crate::test_util::{check, check_tabs};
 
 #[test]
-fn prettify_matrix_if_correct_number_of_args() {
+fn format_matrix_if_correct_number_of_args() {
     check(
         "
 fn main() {
@@ -26,7 +26,7 @@ fn main() {
 }
 
 #[test]
-fn prettify_matrix_dont_if_incorrect_number_of_args_random() {
+fn format_matrix_dont_if_incorrect_number_of_args_random() {
     check(
         "
 fn main() {
@@ -45,7 +45,7 @@ fn main() {
 }
 
 #[test]
-fn prettify_matrix_if_forced_multiline_by_comment() {
+fn format_matrix_if_forced_multiline_by_comment() {
     // I don't think this looks too bad - but there was no big discussion on how we should handle this
     check(
         "
@@ -74,15 +74,14 @@ fn main() {
 }
 
 #[test]
-fn prettify_matrix_if_forced_multiline_by_nesting() {
+fn format_matrix_if_forced_multiline_by_nesting() {
     // I don't think this looks too bad - but there was no big discussion on how we should handle this
     check(
         "
 fn main() {
     let x = mat3x3(
         cosR, do_thing(
-        1.0
-        // Breaky
+        1.0 // Breaky
         ), 1.0,
         sinR,
         0.0, 1.0, 0.0,
@@ -104,7 +103,7 @@ fn main() {
 }
 
 #[test]
-fn prettify_matrix_if_forced_multiline_by_line_length() {
+fn format_matrix_if_forced_multiline_by_line_length() {
     // I don't think this looks too bad - but there was no big discussion on how we should handle this
     check(
         "
@@ -134,7 +133,7 @@ fn main() {
 }
 
 #[test]
-fn prettify_matrix_dont_if_incorrect_number_of_args_vecs() {
+fn format_matrix_dont_if_incorrect_number_of_args_vecs() {
     check(
         "
 fn main() {
