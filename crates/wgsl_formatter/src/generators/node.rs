@@ -1,4 +1,3 @@
-use itertools::{Itertools, Position};
 use parser::SyntaxNode;
 use rowan::NodeOrToken;
 use syntax::AstNode as _;
@@ -16,7 +15,7 @@ use crate::{
             gen_must_use_attribute, gen_other_attribute, gen_size_attribute, gen_vertex_attribute,
             gen_workgroup_size_attribute,
         },
-        comments::{Comment, gen_comment},
+        comments::gen_comment,
         diagnostic_directive::{
             gen_diagnostic_control, gen_diagnostic_rule_name, gen_severity_control_name,
         },
@@ -81,7 +80,7 @@ use crate::{
         type_alias_declaration::gen_type_alias_declaration,
         types::{gen_template_list, gen_type_specifier},
     },
-    helpers::{gen_line_spacing, gen_next_gen_line_spacing},
+    helpers::gen_next_gen_line_spacing,
     print_item_buffer::{
         PrintItemBuffer,
         spacing_request::{Request, RequestItem},
@@ -369,7 +368,7 @@ pub fn gen_node(node: &SyntaxNode) -> FormatDocumentResult<PrintItemBuffer> {
 pub fn gen_node_preceding_trivia(node: &NodeWithTrivia) -> FormatDocumentResult<PrintItemBuffer> {
     let mut formatted = PrintItemBuffer::default();
 
-    for (pos, trivia) in node.preceding_trivia.iter().with_position() {
+    for trivia in &node.preceding_trivia {
         match trivia {
             NodeTriviaItem::LineSpacing(line_spacing) => {
                 formatted.extend(gen_next_gen_line_spacing(line_spacing)?);
@@ -419,7 +418,6 @@ pub fn gen_node_succeeding_trivia(node: &NodeWithTrivia) -> FormatDocumentResult
 pub fn gen_node_with_trivia(node: &NodeWithTrivia) -> FormatDocumentResult<PrintItemBuffer> {
     let mut formatted = PrintItemBuffer::default();
 
-    dbg!(&node);
     formatted.extend(gen_node_preceding_trivia(node)?);
     formatted.extend(gen_node_content(node)?);
     formatted.extend(gen_node_succeeding_trivia(node)?);
