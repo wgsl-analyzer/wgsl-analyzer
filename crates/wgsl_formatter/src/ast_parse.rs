@@ -1,7 +1,7 @@
 //! A minimal parser toolbox used by the formatter
 //! to parse the AST into a structure usable for the formatter itself.
 
-use itertools::{PutBackN, put_back_n};
+use itertools::PutBackN;
 use parser::{SyntaxElementChildren, SyntaxKind, SyntaxNode, SyntaxToken};
 use rowan::NodeOrToken;
 use syntax::{AstNode, AstToken, ast::AttributeList};
@@ -13,9 +13,102 @@ use crate::{
     trivia::{NodeTriviaItem, NodeWithTrivia, NodeWithTriviaContent},
 };
 
-pub type SyntaxIter = PutBackN<SyntaxElementChildren>;
-pub fn syntax_iter(syntax: &SyntaxNode) -> SyntaxIter {
-    put_back_n(syntax.children_with_tokens())
+type SyntaxIterInner = PutBackN<SyntaxElementChildren>;
+
+#[cfg(not(debug_assertions))]
+mod syntax_iter {
+    use itertools::put_back_n;
+    use parser::SyntaxNode;
+
+    use crate::ast_parse::SyntaxIterInner;
+
+    pub type SyntaxIter = SyntaxIterInner;
+    pub fn syntax_iter(syntax: &SyntaxNode) -> SyntaxIter {
+        put_back_n(syntax.children_with_tokens())
+    }
+}
+#[cfg(not(debug_assertions))]
+pub use syntax_iter::{SyntaxIter, syntax_iter};
+
+#[cfg(debug_assertions)]
+mod syntax_iter_asserting {
+    use itertools::put_back_n;
+    use parser::SyntaxNode;
+
+    use crate::{
+        ast_parse::SyntaxIterInner,
+        reporting::{FormatDocumentError, FormatDocumentResult, UnwrapIfPreferCrash as _},
+    };
+
+    pub struct SyntaxIter {
+        inner: SyntaxIterInner,
+
+        #[cfg(debug_assertions)]
+        had_end_expected: bool,
+    }
+
+    impl Iterator for SyntaxIter {
+        type Item = <SyntaxIterInner as Iterator>::Item;
+
+        fn next(&mut self) -> Option<Self::Item> {
+            self.inner.next()
+        }
+    }
+
+    impl SyntaxIter {
+        pub fn put_back(
+            &mut self,
+            item: <Self as Iterator>::Item,
+        ) {
+            self.inner.put_back(item);
+        }
+
+        pub fn expect_end(&mut self) -> FormatDocumentResult<()> {
+            self.had_end_expected = true;
+
+            match self.inner.next() {
+                None => Ok(()),
+                Some(other) => {
+                    self.inner.put_back(other.clone());
+                    Err(FormatDocumentError::UnexpectedNodeOrToken { received: other })
+                },
+            }
+            .expect_if_prefer_crash()
+        }
+    }
+
+    impl Drop for SyntaxIter {
+        fn drop(&mut self) {
+            // Come on we need linear types, please...
+            #[expect(clippy::print_stderr, reason = "This is only active in debug builds")]
+            if self.had_end_expected {
+                eprintln!("SyntaxIter was dropped without expect_end having been called");
+            }
+        }
+    }
+
+    #[must_use]
+    pub fn syntax_iter(syntax: &SyntaxNode) -> SyntaxIter {
+        let iterator = put_back_n(syntax.children_with_tokens());
+
+        SyntaxIter {
+            inner: iterator,
+            had_end_expected: false,
+        }
+    }
+}
+#[cfg(debug_assertions)]
+pub use syntax_iter_asserting::{SyntaxIter, syntax_iter};
+
+pub fn parse_end(syntax: &mut SyntaxIter) -> FormatDocumentResult<()> {
+    #[cfg(debug_assertions)]
+    {
+        syntax.expect_end()
+    }
+    #[cfg(not(debug_assertions))]
+    {
+        Ok(())
+    }
 }
 
 #[deprecated]
@@ -107,18 +200,6 @@ pub fn parse_token_optional(
         },
         None => None,
     }
-}
-
-#[deprecated]
-pub fn parse_end(syntax: &mut SyntaxIter) -> FormatDocumentResult<()> {
-    match syntax.next() {
-        None => Ok(()),
-        Some(other) => {
-            syntax.put_back(other.clone());
-            Err(FormatDocumentError::UnexpectedNodeOrToken { received: other })
-        },
-    }
-    .expect_if_prefer_crash()
 }
 
 #[deprecated]
