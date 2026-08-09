@@ -5,7 +5,7 @@ use syntax::{
 };
 
 use crate::{
-    ast_parse::{BareSyntaxKind, UntilSyntaxKind, parse_end, parse_node_with, syntax_iter},
+    ast_parse::{IgnoreBlankspace, NoTrivia, parse_end, parse_node_with, syntax_iter},
     generators::node::gen_node_with_trivia,
     multiline_group::MultilineGroup,
     print_item_buffer::PrintItemBuffer,
@@ -17,14 +17,14 @@ pub fn gen_index_expression(
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = syntax_iter(index_expression.syntax());
-    let item_array_expr = parse_node_with(&mut syntax, UntilSyntaxKind(SyntaxKind::BracketLeft))
-        .expect_castable_kind::<ast::Expression>()?;
-    let item_bracket_left = parse_node_with(&mut syntax, BareSyntaxKind(SyntaxKind::BracketLeft))
-        .expect_kind(SyntaxKind::BracketLeft)?;
-    let item_actual_index = parse_node_with(&mut syntax, UntilSyntaxKind(SyntaxKind::BracketRight))
-        .expect_castable_kind::<ast::Expression>()?;
-    let item_bracket_right = parse_node_with(&mut syntax, BareSyntaxKind(SyntaxKind::BracketRight))
-        .expect_kind(SyntaxKind::BracketRight)?;
+    let item_array_expr =
+        parse_node_with(&mut syntax, IgnoreBlankspace).expect_castable_kind::<ast::Expression>()?;
+    let item_bracket_left =
+        parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::BracketLeft)?;
+    let item_actual_index =
+        parse_node_with(&mut syntax, IgnoreBlankspace).expect_castable_kind::<ast::Expression>()?;
+    let item_bracket_right =
+        parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::BracketRight)?;
     parse_end(&mut syntax)?;
 
     // ==== Format ====
