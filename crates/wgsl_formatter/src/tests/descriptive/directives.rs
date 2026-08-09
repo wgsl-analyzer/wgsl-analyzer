@@ -43,28 +43,7 @@ pub fn format_diagnostic_with_dot_and_newline() {
     );
 }
 
-#[test]
-pub fn format_comments_in_diagnostic_1() {
-    check_comments(
-        "## diagnostic ## ( ## off ## , ## something ## . ## something ## ) ## ; ##",
-        expect![[r#"
-            /* 0 */
-            diagnostic /* 1 */ ( /* 2 */ off /* 3 */ , /* 4 */ something /* 5 */ . /* 6 */ something /* 7 */ ) /* 8 */ ; /* 9 */
-        "#]],
-        expect![[r#"
-            // 0
-            diagnostic // 1
-            ( // 2
-            off // 3
-            , // 4
-            something // 5
-            . // 6
-            something // 7
-            ) // 8
-            ; // 9
-        "#]],
-    );
-}
+//pub fn format_comments_in_diagnostic_1() { ... } already exists in attribute::comments::format_comments_in_diagnostic_attr_simple_1
 
 #[test]
 pub fn format_enable_simple_1() {

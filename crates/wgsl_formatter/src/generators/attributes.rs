@@ -267,14 +267,15 @@ pub fn gen_diagnostic_attribute(
     let mut syntax = syntax_iter(attribute.syntax());
 
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::AttributeOperator)?;
-    parse_node_with(&mut syntax, NoTrivia).expect_kind(parser::SyntaxKind::Diagnostic)?;
+    let item_diagnostic = parse_node_with(&mut syntax, IgnoreBlankspace)
+        .expect_kind(parser::SyntaxKind::Diagnostic)?;
     let item_control = parse_node_with(&mut syntax, IgnoreBlankspace)
         .expect_kind(SyntaxKind::DiagnosticControl)?;
     parse_end(&mut syntax)?;
 
     let mut formatted = PrintItemBuffer::default();
     formatted.push_sc(sc!("@"));
-    formatted.push_sc(sc!("diagnostic"));
+    formatted.extend(gen_node_with_trivia(&item_diagnostic)?);
     formatted.extend(gen_node_with_trivia(&item_control)?);
     Ok(formatted)
 }
