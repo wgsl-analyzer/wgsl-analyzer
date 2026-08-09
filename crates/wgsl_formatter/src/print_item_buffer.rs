@@ -74,7 +74,7 @@ impl PrintItemBuffer {
         pi
     }
 
-    fn apply_end_request(&mut self) {
+    pub fn apply_end_request(&mut self) {
         std::mem::take(&mut self.end_request).resolve(&mut self.items);
     }
 

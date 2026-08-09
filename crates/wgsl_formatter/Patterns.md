@@ -40,37 +40,3 @@ are simply the bindings we have in scope.
 As we still have to keep all the parent nodes in memory (because this procedure is recursive), there will be problematic situations where
 a stack-overflow will occur, when the AST is particularly deeply nested. 
 As far as I can tell the highly structured approach to the gen_ functions should make converting this to an iterative approach relatively straight forward, however I don't think such deeply nested ASTs will ever occur in practice.
-
-
-# Parsing a list of many things
-Oftentimes we iterate over a list of nodes (statements in a compound statement, fields of a struct, etc).
-
-This is usually done with the following pattern:
-
-```rust
-    enum Item {
-        Item(Baz),
-        Comment(Comment),
-        LineSpacing(LineSpacing),
-    }
-
-    let mut items = Vec::new();
-    loop {
-        if let Some(spacing) = parse_line_spacing(&mut syntax) {
-            items.push(SourceFileItem::LineSpacing(spacing));
-        } else if let Some(_statement) = parse_token_optional(&mut syntax, SyntaxKind::Blankspace) {
-            // If its not a line_spacing blankspace, then we simply discard it
-        } else if let Some(comment) = parse_comment_optional(&mut syntax) {
-            items.push(SourceFileItem::Comment(comment));
-        } else if let Some(item) = parse_node::<Baz>(&mut syntax) {
-            items.push(SourceFileItem::Item(item));
-        } else {
-            break;
-        }
-    }
-```
-
-Conceptually we "filter" the list of children of the AST into a list of only the things that we are interested in. 
-This usually yields a very clean "//== Format" section of the `gen_`-function.
-
-If the list of many things is similar to function parameters, use `crate::helpers::separated_items`, which uses this pattern internally.

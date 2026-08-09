@@ -5,8 +5,12 @@ use syntax::{
 };
 
 use crate::{
-    ast_parse::{parse_end, parse_node_with_trivia_filter, syntax_iter},
+    ast_parse::{
+        FilterAction, parse_end, parse_node_with_trivia_filter, parse_node_with_trivia_filter_2,
+        syntax_iter,
+    },
     generators::node::gen_node_with_trivia,
+    helpers::{LineSpacing, read_blankspace},
     print_item_buffer::{
         PrintItemBuffer,
         spacing_request::{Request, RequestItem, RequestItemSet},
@@ -23,7 +27,15 @@ pub fn gen_source_file(node: &ast::SourceFile) -> FormatDocumentResult<PrintItem
     let mut items = Vec::new();
 
     loop {
-        let mut item = parse_node_with_trivia_filter(&mut syntax, |_| None);
+        let mut item = parse_node_with_trivia_filter_2(
+            &mut syntax,
+            |_| None,
+            |node| match read_blankspace(node) {
+                Some(LineSpacing::OnelineBlankspace(_)) => Some(FilterAction::Ignored),
+                Some(_) => Some(FilterAction::Stop),
+                _ => None,
+            },
+        );
 
         if item
             .kind()
@@ -42,6 +54,8 @@ pub fn gen_source_file(node: &ast::SourceFile) -> FormatDocumentResult<PrintItem
     }
 
     parse_end(&mut syntax)?;
+
+    dbg!(&items);
 
     // ==== Format ====
 

@@ -1,3 +1,4 @@
+use dprint_core_macros::sc;
 use parser::SyntaxNode;
 use rowan::NodeOrToken;
 use syntax::AstNode as _;
