@@ -86,7 +86,14 @@ b: u32, /* after b */
 /*before c*/ c: u32,
 /*line before d*/
 d: u32,
-//force newline
+
+                // line before e
+                e: u32,
+
+                f: u32, // after f
+
+                g: u32
+                // line after g
 ) {}
         ",
         expect![[r#"
@@ -96,7 +103,11 @@ d: u32,
                 /*before c*/ c: u32,
                 /*line before d*/
                 d: u32,
-                //force newline
+                // line before e
+                e: u32,
+                f: u32, // after f
+                g: u32,
+                // line after g
             ) {}
         "#]],
     );
