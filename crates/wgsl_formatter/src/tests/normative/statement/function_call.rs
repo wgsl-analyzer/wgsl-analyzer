@@ -104,7 +104,14 @@ pub fn format_function_call_multiline_arguments_keeps_comments_in_position() {
                 /*before 13*/ 13,
                 /*line before 14*/
                 14,
-                // Force newline
+
+                // line before 15
+                15,
+
+                16, // after 16
+
+                17
+                // line after 17
             );
         }",
         expect![[r#"
@@ -115,7 +122,11 @@ pub fn format_function_call_multiline_arguments_keeps_comments_in_position() {
                     /*before 13*/ 13,
                     /*line before 14*/
                     14,
-                    // Force newline
+                    // line before 15
+                    15,
+                    16, // after 16
+                    17,
+                    // line after 17
                 );
             }
         "#]],

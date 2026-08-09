@@ -46,32 +46,6 @@ pub fn format_type_nested_multiline_template_gets_broken_into_multiple_lines() {
 }
 
 #[test]
-pub fn format_type_multiline_arguments_keeps_comments_in_position() {
-    check(
-        "fn main() {
-            bla(
-                11 /* after 11 */,
-                12, /* after 12 */
-                /*before 13*/ 13,
-                /*line before 14*/
-                14,
-            );
-        }",
-        expect![[r#"
-            fn main() {
-                bla(
-                    11, /* after 11 */
-                    12, /* after 12 */
-                    /*before 13*/ 13,
-                    /*line before 14*/
-                    14,
-                );
-            }
-        "#]],
-    );
-}
-
-#[test]
 pub fn format_type_multiline_arguments_keep_comments_in_position() {
     // Following "the formatter should not unnecessarily move comments around" - if programmer wants them there, we will let them have it.
     check(
@@ -83,7 +57,13 @@ pub fn format_type_multiline_arguments_keep_comments_in_position() {
 /*before 13*/ 13,
 /*line before 14*/
 14,
-//force newline
+// line before 15
+15,
+
+16, // after 16
+
+17
+// line after 17
 >
         ;
         ",
@@ -94,7 +74,11 @@ pub fn format_type_multiline_arguments_keep_comments_in_position() {
                 /*before 13*/ 13,
                 /*line before 14*/
                 14,
-                //force newline
+                // line before 15
+                15,
+                16, // after 16
+                17,
+                // line after 17
             >;
         "#]],
     );
