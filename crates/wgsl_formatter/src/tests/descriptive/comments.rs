@@ -21,7 +21,8 @@ fn format_comment_indent_1() {
         expect![[r#"
             fn main() {
                 let a = //a
-                    /* A */ // b
+                    /* A */
+                    // b
                     1;
 
                 for(
