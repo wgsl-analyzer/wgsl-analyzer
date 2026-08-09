@@ -265,6 +265,17 @@ pub fn check_comments<E>(
                 )
             }
         }
+
+        // Check that every line is indented by a multiple of 4 spaces
+        assert!(
+            formatted.lines().all(|line| {
+                let indent_width = line
+                    .split_once(|ch| ch != ' ')
+                    .map_or(0, |(indent, _)| indent.len());
+                indent_width % 4 == 0
+            }),
+            "Expected every line to be indented by a multiple of 4 spaces"
+        );
     }
     {
         let mut comment_index = 0;
@@ -290,6 +301,17 @@ pub fn check_comments<E>(
                 )
             }
         }
+
+        // Check that every line is indented by a multiple of 4 spaces
+        assert!(
+            formatted.lines().all(|line| {
+                let indent_width = line
+                    .split_once(|ch| ch != ' ')
+                    .map_or(0, |(indent, _)| indent.len());
+                indent_width % 4 == 0
+            }),
+            "Expected every line to be indented by a multiple of 4 spaces"
+        );
     }
 }
 
