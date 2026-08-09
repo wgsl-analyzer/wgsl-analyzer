@@ -94,6 +94,7 @@ pub fn gen_attribute_list(attribute_list: &AttributeList) -> FormatDocumentResul
             break;
         }
     }
+    parse_end(&mut syntax)?;
 
     // If we don't have any attributes, we early exit to avoid all the bureaucracy with newlines
     if attributes.is_empty() {
