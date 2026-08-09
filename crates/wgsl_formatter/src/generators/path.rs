@@ -1,13 +1,12 @@
-use dprint_core_macros::sc;
-use itertools::put_back;
 use parser::SyntaxKind;
 use syntax::{AstNode as _, ast};
 
 use crate::{
-    ast_parse::{parse_end, parse_token_optional, syntax_iter},
-    generators::comments::{Comment, gen_comment, parse_comment_optional},
+    ast_parse::{IgnoreBlankspace, NoTrivia, parse_end, parse_node_with, syntax_iter},
+    generators::node::gen_node_with_trivia,
     print_item_buffer::{PrintItemBuffer, spacing_request::Request},
     reporting::FormatDocumentResult,
+    trivia::NodeWithTrivia,
 };
 
 pub fn gen_path(path: &ast::Path) -> FormatDocumentResult<PrintItemBuffer> {
@@ -15,24 +14,32 @@ pub fn gen_path(path: &ast::Path) -> FormatDocumentResult<PrintItemBuffer> {
     let mut syntax = syntax_iter(path.syntax());
 
     enum PathItem {
-        Identifier(ast::SyntaxToken),
-        Comment(Comment),
-        ColonColon,
+        Identifier(NodeWithTrivia),
+        ColonColon(NodeWithTrivia),
     }
 
     let mut items = Vec::new();
 
-    #[expect(clippy::redundant_pattern_matching, reason = "Looks neater")]
     loop {
-        if let Some(identifier) = parse_token_optional(&mut syntax, SyntaxKind::Identifier) {
-            items.push(PathItem::Identifier(identifier));
-        } else if let Some(_) = parse_token_optional(&mut syntax, SyntaxKind::ColonColon) {
-            items.push(PathItem::ColonColon);
-        } else if let Some(_) = parse_token_optional(&mut syntax, SyntaxKind::Blankspace) {
-            // We ignore blankspace
-        } else if let Some(comment) = parse_comment_optional(&mut syntax) {
-            items.push(PathItem::Comment(comment));
-        } else {
+        let item = parse_node_with(&mut syntax, IgnoreBlankspace)
+            .expect_kind_optional(SyntaxKind::Identifier)?;
+
+        let is_end = item.is_end();
+        if !item.is_whitespace() {
+            items.push(PathItem::Identifier(item));
+        }
+        if is_end {
+            break;
+        }
+
+        let item =
+            parse_node_with(&mut syntax, NoTrivia).expect_kind_optional(SyntaxKind::ColonColon)?;
+
+        let is_end = item.is_end();
+        if !item.is_whitespace() {
+            items.push(PathItem::ColonColon(item));
+        }
+        if is_end {
             break;
         }
     }
@@ -44,17 +51,14 @@ pub fn gen_path(path: &ast::Path) -> FormatDocumentResult<PrintItemBuffer> {
 
     for item in items {
         match item {
-            PathItem::Comment(comment) => {
-                formatted.extend(gen_comment(&comment));
+            PathItem::Identifier(item) => {
+                formatted.extend(gen_node_with_trivia(&item)?);
             },
-            PathItem::Identifier(syntax_token) => {
-                formatted.push_string(syntax_token.text().to_owned());
-            },
-            PathItem::ColonColon => {
+            PathItem::ColonColon(item) => {
                 formatted.start_indent();
                 formatted.start_new_line_group();
                 formatted.request(Request::empty().or_newline());
-                formatted.push_sc(sc!("::"));
+                formatted.extend(gen_node_with_trivia(&item)?);
                 formatted.finish_new_line_group();
                 formatted.finish_indent();
             },
