@@ -37,9 +37,8 @@ pub fn format_comment_in_continue_statement() {
         expect![[r#"
             fn main() {
                 while true {
-                    /* 0 */
-                    continue;
-                    /* 1 */ /* 2 */
+                    /* 0 */ continue /* 1 */ ;
+                    /* 2 */
                 }
             }
         "#]],
@@ -47,8 +46,8 @@ pub fn format_comment_in_continue_statement() {
             fn main() {
                 while true {
                     // 0
-                    continue;
-                    // 1
+                    continue // 1
+                    ;
                     // 2
                 }
             }

@@ -73,8 +73,7 @@ pub fn format_comment_in_let_decl() {
         }",
         expect![[r#"
             fn main() {
-                /* 0 */
-                let /* 1 */ a /* 2 */ = /* 3 */ 1 /* 4 */; /* 5 */
+                /* 0 */ let /* 1 */ a /* 2 */ = /* 3 */ 1 /* 4 */; /* 5 */
             }
         "#]],
         expect![[r#"

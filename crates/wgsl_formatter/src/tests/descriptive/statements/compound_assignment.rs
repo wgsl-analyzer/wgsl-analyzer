@@ -153,8 +153,7 @@ pub fn format_comments_in_compound_assignment_statement_simple() {
         }",
         expect![[r#"
             fn main() {
-                /* 0 */
-                a /* 1 */ <<= /* 2 */ b /* 3 */; /* 4 */
+                /* 0 */ a /* 1 */ <<= /* 2 */ b /* 3 */; /* 4 */
             }
         "#]],
         expect![[r#"

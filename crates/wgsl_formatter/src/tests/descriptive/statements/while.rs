@@ -85,8 +85,7 @@ pub fn format_comments_in_while_statement_simple() {
         }",
         expect![[r#"
             fn main() {
-                /* 0 */
-                while /* 1 */ /* 2 */ true /* 3 */ /* 4 */ {
+                /* 0 */ while /* 1 */ /* 2 */ true /* 3 */ /* 4 */ {
                     /* 5 */
                 }
                 /* 6 */
