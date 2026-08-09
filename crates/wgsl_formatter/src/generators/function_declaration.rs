@@ -1,6 +1,6 @@
 use dprint_core::formatting::PrintItems;
 use dprint_core_macros::sc;
-use itertools::{Itertools, Position, put_back};
+use itertools::{Itertools as _, Position};
 use parser::SyntaxKind;
 use syntax::{
     AstNode as _,
@@ -9,24 +9,12 @@ use syntax::{
 
 use crate::{
     ast_parse::{
-        FilterAction, IgnoreBlankspace, NoTrivia, parse_end, parse_node, parse_node_optional,
-        parse_node_with, parse_node_with_trivia_filter, parse_token, parse_token_optional,
-        syntax_iter,
+        Filter, FilterAction, IgnoreBlankspace, NoTrivia, parse_end, parse_node_with, syntax_iter,
     },
-    generators::{
-        attributes::{gen_attributes, parse_many_attributes},
-        comments::{
-            Comment, gen_comment, gen_comments, parse_comment_optional,
-            parse_many_comments_and_blankspace,
-        },
-        node::{
-            gen_node_content, gen_node_preceding_trivia, gen_node_succeeding_trivia,
-            gen_node_with_trivia,
-        },
-        statements::compound_statement::gen_compound_statement,
-        types::gen_type_specifier,
+    generators::node::{
+        gen_node_content, gen_node_preceding_trivia, gen_node_succeeding_trivia,
+        gen_node_with_trivia,
     },
-    helpers::{LineSpacing, gen_line_spacing, parse_line_spacing},
     multiline_group::MultilineGroup,
     print_item_buffer::{
         PrintItemBuffer,
@@ -35,8 +23,6 @@ use crate::{
     reporting::FormatDocumentResult,
     trivia::NodeWithTriviaContent,
 };
-
-use super::attributes::AttributeLayout;
 
 pub fn gen_function_declaration(
     node: &ast::FunctionDeclaration
@@ -47,6 +33,7 @@ pub fn gen_function_declaration(
     let item_name = parse_node_with(&mut syntax, IgnoreBlankspace).expect_kind(SyntaxKind::Name)?;
     let item_params = parse_node_with(&mut syntax, IgnoreBlankspace)
         .expect_kind(SyntaxKind::FunctionParameters)?;
+    // TODO Use new only_if api here
     let (item_return, item_body) = {
         let item = parse_node_with(&mut syntax, IgnoreBlankspace);
         if item
@@ -90,25 +77,22 @@ pub fn gen_function_declaration(
 }
 
 pub fn gen_fn_parameters(node: &ast::FunctionParameters) -> FormatDocumentResult<PrintItemBuffer> {
-    enum GenFnParameterItem {
-        Parameter(ast::Parameter),
-        LineSpacing(LineSpacing),
-        Comment(Comment),
-    }
     // ==== Parse ====
 
     let mut syntax = syntax_iter(node.syntax());
 
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::ParenthesisLeft)?;
-    let item_comments_start = parse_many_comments_and_blankspace(&mut syntax)?;
 
     let mut items = Vec::new();
 
     loop {
-        let mut item = parse_node_with_trivia_filter(&mut syntax, |node| match node.kind() {
-            SyntaxKind::Comma => Some(FilterAction::Ignored),
-            _ => None,
-        });
+        let mut item = parse_node_with(
+            &mut syntax,
+            Filter(|node| match node.kind() {
+                SyntaxKind::Comma => Some(FilterAction::Ignored),
+                _ => None,
+            }),
+        );
 
         // TODO Do I want to move this logicto trivia_filter too?
         if matches!(item.kind(), Some(SyntaxKind::ParenthesisRight)) {
@@ -143,8 +127,6 @@ pub fn gen_fn_parameters(node: &ast::FunctionParameters) -> FormatDocumentResult
 
     multiline_group.start_indent();
 
-    multiline_group.extend(gen_comments(&item_comments_start));
-
     for (pos, item) in items.into_iter().with_position() {
         if item.has_content() {
             // If the parameters are multiple lines long, every parameter should be on a new line
@@ -166,32 +148,6 @@ pub fn gen_fn_parameters(node: &ast::FunctionParameters) -> FormatDocumentResult
             }
             multiline_group.extend(gen_node_succeeding_trivia(&item)?);
         }
-
-        // match item {
-        //     GenFnParameterItem::Parameter(parameter) => {
-        //         // If the parameters are multiple lines long, every parameter should be on a new line
-        //         // If the parameters is a single line long, every parameter should be prepended with a space,
-        //         // with a chance for breaking into multiple lines
-        //         multiline_group.grouped_newline_or_space();
-
-        //         multiline_group.extend(gen_fn_parameter(&parameter)?);
-        //         if index == last_parameter_index {
-        //             multiline_group.extend_if_multi_line({
-        //                 let mut pi = PrintItems::default();
-        //                 pi.push_sc(sc!(","));
-        //                 pi
-        //             });
-        //         } else {
-        //             multiline_group.push_sc(sc!(","));
-        //         }
-        //     },
-        //     GenFnParameterItem::LineSpacing(line_spacing) => {
-        //         multiline_group.extend(gen_line_spacing(&line_spacing)?);
-        //     },
-        //     GenFnParameterItem::Comment(comment) => {
-        //         multiline_group.extend(gen_comment(&comment));
-        //     },
-        // }
     }
 
     multiline_group.request(Request::discourage(RequestItem::Space));
@@ -209,28 +165,19 @@ pub fn gen_fn_parameter(syntax: &ast::Parameter) -> FormatDocumentResult<PrintIt
     // ==== Parse ====
     let mut syntax = syntax_iter(syntax.syntax());
 
-    let item_attributes = parse_many_attributes(&mut syntax)?;
-    let item_name = parse_node::<ast::Name>(&mut syntax)?;
-    let item_comments_after_name = parse_many_comments_and_blankspace(&mut syntax)?;
+    let item_name = parse_node_with(&mut syntax, IgnoreBlankspace).expect_kind(SyntaxKind::Name)?;
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::Colon)?;
-    let item_comments_after_colon = parse_many_comments_and_blankspace(&mut syntax)?;
-    let item_type_specifier = parse_node::<ast::TypeSpecifier>(&mut syntax)?;
+    let item_type_specifier =
+        parse_node_with(&mut syntax, IgnoreBlankspace).expect_kind(SyntaxKind::TypeSpecifier)?;
     parse_end(&mut syntax)?;
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
 
-    formatted.extend(gen_attributes(
-        &item_attributes,
-        AttributeLayout::Multiline,
-    )?);
-    formatted.push_string(item_name.text().to_string());
+    formatted.extend(gen_node_with_trivia(&item_name)?);
     formatted.push_sc(sc!(":"));
     formatted.request(Request::expect(RequestItem::Space));
-    //The colon should immediately follow the name, we intentionally move the comment
-    formatted.extend(gen_comments(&item_comments_after_name));
-    formatted.extend(gen_comments(&item_comments_after_colon));
-    formatted.extend(gen_type_specifier(&item_type_specifier)?);
+    formatted.extend(gen_node_with_trivia(&item_type_specifier)?);
     Ok(formatted)
 }
 
@@ -251,8 +198,4 @@ pub fn gen_fn_return_type(syntax: &ast::ReturnType) -> FormatDocumentResult<Prin
     formatted.request(Request::expect(RequestItem::Space));
     formatted.extend(gen_node_with_trivia(&item_type_specifier)?);
     Ok(formatted)
-}
-
-fn gen_fn_body(syntax: &ast::CompoundStatement) -> FormatDocumentResult<PrintItemBuffer> {
-    gen_compound_statement(syntax)
 }
