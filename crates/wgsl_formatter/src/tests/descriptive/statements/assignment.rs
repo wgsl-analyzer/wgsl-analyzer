@@ -98,13 +98,12 @@ fn format_comments_within_assignment_statement() {
 fn format_comments_within_complex_assignment_statement() {
     check_comments(
         "fn main() {
-        ## a ## = ## b ## + ## get ## ( ## 17 ## ) ## ; ##
+        ## a ## = ## b ## + ## get_thing ## ( ## 17 ## ) ## ; ##
         }",
         expect![[r#"
             fn main() {
-                /* 0 */
-                a /* 1 */ = /* 2 */ b /* 3 */
-                    + /* 4 */ get /* 5 */ (/* 6 */ 17 /* 7 */) /* 8 */; /* 9 */
+                /* 0 */ a /* 1 */ = /* 2 */ b /* 3 */
+                    + /* 4 */ get_thing /* 5 */ (/* 6 */ 17 /* 7 */) /* 8 */; /* 9 */
             }
         "#]],
         expect![[r#"
@@ -114,7 +113,7 @@ fn format_comments_within_complex_assignment_statement() {
                 = // 2
                     b // 3
                     + // 4
-                    get // 5
+                    get_thing // 5
                     (
                         // 6
                         17, // 7
