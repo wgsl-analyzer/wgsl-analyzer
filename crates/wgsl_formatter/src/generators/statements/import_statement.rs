@@ -8,14 +8,9 @@ use syntax::{
 };
 
 use crate::{
-    ast_parse::{
-        IgnoreBlankspace, NoTrivia, parse_end, parse_node_with, parse_token_optional, syntax_iter,
-    },
+    ast_parse::{IgnoreBlankspace, NoTrivia, parse_end, parse_node_with, syntax_iter},
     context_policies::statement_needs_semicolon_policy,
-    generators::{
-        comments::{Comment, gen_comment, parse_comment_optional},
-        node::gen_node_with_trivia,
-    },
+    generators::node::gen_node_with_trivia,
     multiline_group::MultilineGroup,
     print_item_buffer::{
         PrintItemBuffer,
@@ -55,25 +50,30 @@ pub fn gen_import_super_relative(
     // ==== Parse ====
     let mut syntax = syntax_iter(node.syntax());
 
-    enum SuperRelativeItem {
-        Super,
-        Comment(Comment),
-    }
-
     let mut items = Vec::new();
 
-    #[expect(clippy::redundant_pattern_matching, reason = "Looks neater")]
     loop {
-        if let Some(_) = parse_token_optional(&mut syntax, SyntaxKind::Super) {
-            items.push(SuperRelativeItem::Super);
-        } else if let Some(_) = parse_token_optional(&mut syntax, SyntaxKind::Blankspace) {
-            // We ignore blankspace
-        } else if let Some(comment) = parse_comment_optional(&mut syntax) {
-            items.push(SuperRelativeItem::Comment(comment));
-        } else {
+        let item = parse_node_with(&mut syntax, IgnoreBlankspace)
+            .expect_kind_optional(SyntaxKind::Super)?;
+
+        let is_end = item.is_end();
+        if !item.is_whitespace() {
+            items.push(item);
+        }
+        if is_end {
             break;
         }
-        parse_node_with(&mut syntax, NoTrivia).expect_kind_optional(ast::SyntaxKind::ColonColon)?;
+
+        let item =
+            parse_node_with(&mut syntax, NoTrivia).expect_kind_optional(SyntaxKind::ColonColon)?;
+
+        let is_end = item.is_end();
+        if !item.is_whitespace() {
+            items.push(item);
+        }
+        if is_end {
+            break;
+        }
     }
 
     parse_end(&mut syntax)?;
@@ -82,15 +82,7 @@ pub fn gen_import_super_relative(
     let mut formatted = PrintItemBuffer::default();
 
     for item in items {
-        match item {
-            SuperRelativeItem::Super => {
-                formatted.push_sc(sc!("super"));
-                formatted.push_sc(sc!("::"));
-            },
-            SuperRelativeItem::Comment(comment) => {
-                formatted.extend(gen_comment(&comment));
-            },
-        }
+        formatted.extend(gen_node_with_trivia(&item)?);
     }
     Ok(formatted)
 }
@@ -245,8 +237,6 @@ pub fn gen_import_collection(
         if item.kind().is_some_and(|node| !ImportTree::can_cast(node)) {
             item.node = NodeWithTriviaContent::NoContent;
         }
-
-        dbg!(&item);
 
         let is_end = item.is_end();
         if !item.is_whitespace() {
