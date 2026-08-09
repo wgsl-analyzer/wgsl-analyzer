@@ -4,12 +4,12 @@
 use itertools::PutBackN;
 use parser::{SyntaxElementChildren, SyntaxKind, SyntaxNode, SyntaxToken};
 use rowan::NodeOrToken;
-use syntax::{AstNode, AstToken, ast::AttributeList};
+use syntax::{AstNode as _, ast::AttributeList};
 
 use crate::{
     generators::comments::read_comment,
     helpers::{NextGenLineSpacing, read_blankspace},
-    reporting::{FormatDocumentError, FormatDocumentResult, UnwrapIfPreferCrash as _},
+    reporting::FormatDocumentResult,
     trivia::{NodeTriviaItem, NodeWithTrivia, NodeWithTriviaContent},
 };
 
@@ -112,121 +112,12 @@ pub fn parse_end(syntax: &mut SyntaxIter) -> FormatDocumentResult<()> {
 }
 
 #[deprecated]
-pub fn parse_token(
-    syntax: &mut SyntaxIter,
-    expected: SyntaxKind,
-) -> FormatDocumentResult<SyntaxToken> {
-    match syntax.next() {
-        Some(NodeOrToken::Token(child)) if child.kind() == expected => Ok(child),
-        Some(other) => {
-            syntax.put_back(other.clone());
-            Err(FormatDocumentError::UnexpectedNodeOrToken { received: other })
-        },
-        None => Err(FormatDocumentError::MissingTokens {
-            expected: Some(expected),
-        }),
-    }
-    .expect_if_prefer_crash()
-}
-
-#[deprecated]
-pub fn parse_node_by_kind(
-    syntax: &mut SyntaxIter,
-    expected: SyntaxKind,
-) -> FormatDocumentResult<SyntaxNode> {
-    match syntax.next() {
-        Some(NodeOrToken::Node(child)) if child.kind() == expected => Ok(child),
-        Some(other) => {
-            syntax.put_back(other.clone());
-            Err(FormatDocumentError::UnexpectedNodeOrToken { received: other })
-        },
-        None => Err(FormatDocumentError::MissingTokens {
-            expected: Some(expected),
-        }),
-    }
-    .expect_if_prefer_crash()
-}
-
-#[deprecated]
-pub fn parse_any_node_optional(syntax: &mut SyntaxIter) -> Option<SyntaxNode> {
-    match syntax.next() {
-        Some(NodeOrToken::Node(child)) => Some(child),
-        Some(other) => {
-            syntax.put_back(other);
-            None
-        },
-        None => None,
-    }
-}
-
-#[deprecated]
-pub fn parse_node_by_kind_optional(
-    syntax: &mut SyntaxIter,
-    expected: SyntaxKind,
-) -> Option<SyntaxNode> {
-    match syntax.next() {
-        Some(NodeOrToken::Node(child)) if child.kind() == expected => Some(child),
-        Some(other) => {
-            syntax.put_back(other);
-            None
-        },
-        None => None,
-    }
-}
-
-#[deprecated]
-pub fn parse_token_any(syntax: &mut SyntaxIter) -> FormatDocumentResult<SyntaxToken> {
-    match syntax.next() {
-        Some(NodeOrToken::Token(child)) => Ok(child),
-        Some(other) => {
-            syntax.put_back(other.clone());
-            Err(FormatDocumentError::UnexpectedNodeOrToken { received: other })
-        },
-        None => Err(FormatDocumentError::MissingTokens { expected: None }),
-    }
-    .expect_if_prefer_crash()
-}
-
-#[deprecated]
 pub fn parse_token_optional(
     syntax: &mut SyntaxIter,
     expected: SyntaxKind,
 ) -> Option<SyntaxToken> {
     match syntax.next() {
         Some(NodeOrToken::Token(child)) if child.kind() == expected => Some(child),
-        Some(other) => {
-            syntax.put_back(other);
-            None
-        },
-        None => None,
-    }
-}
-
-#[deprecated]
-pub fn parse_end_optional(syntax: &mut SyntaxIter) -> Option<()> {
-    match syntax.next() {
-        None => Some(()),
-        Some(remaining) => {
-            syntax.put_back(remaining);
-            None
-        },
-    }
-}
-
-#[deprecated]
-pub fn parse_node_optional<T>(syntax: &mut SyntaxIter) -> Option<T>
-where
-    T: AstNode,
-{
-    match syntax.next() {
-        Some(NodeOrToken::Node(child)) => {
-            if let Some(child) = T::cast(child.clone()) {
-                Some(child)
-            } else {
-                syntax.put_back(NodeOrToken::Node(child));
-                None
-            }
-        },
         Some(other) => {
             syntax.put_back(other);
             None
@@ -291,7 +182,7 @@ pub struct NoTrivia;
 impl UntilFilter for NoTrivia {
     fn filter(
         &self,
-        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
+        _node: &NodeOrToken<SyntaxNode, SyntaxToken>,
     ) -> Option<FilterAction> {
         Some(FilterAction::Content)
     }
@@ -304,7 +195,7 @@ impl UntilFilter for Oneline {
         node: &NodeOrToken<SyntaxNode, SyntaxToken>,
     ) -> Option<FilterAction> {
         match read_blankspace(node) {
-            Some(NextGenLineSpacing::EmptyLine(_)) | Some(NextGenLineSpacing::LineBreak(_)) => {
+            Some(NextGenLineSpacing::EmptyLine(_) | NextGenLineSpacing::LineBreak(_)) => {
                 Some(FilterAction::Stop)
             },
             _ => None,
@@ -453,54 +344,4 @@ where
         node: content,
         succeeding_trivia,
     }
-}
-
-#[deprecated]
-pub fn parse_node<T>(syntax: &mut SyntaxIter) -> FormatDocumentResult<T>
-where
-    T: AstNode,
-{
-    match syntax.next() {
-        Some(NodeOrToken::Node(child)) => {
-            //TOCO This clone wouldn't be necessary if T::cast returned the item on failure
-            if let Some(child) = T::cast(child.clone()) {
-                Ok(child)
-            } else {
-                Err(FormatDocumentError::UnexpectedNodeOrToken {
-                    received: NodeOrToken::Node(child),
-                })
-            }
-        },
-        Some(other) => {
-            syntax.put_back(other.clone());
-            Err(FormatDocumentError::UnexpectedNodeOrToken { received: other })
-        },
-        None => Err(FormatDocumentError::MissingNode),
-    }
-    .expect_if_prefer_crash()
-}
-
-#[deprecated]
-pub fn parse_ast_token<T>(syntax: &mut SyntaxIter) -> FormatDocumentResult<T>
-where
-    T: AstToken,
-{
-    match syntax.next() {
-        Some(NodeOrToken::Token(child)) => {
-            //TOCO This clone wouldn't be necessary if T::cast returned the item on failure
-            if let Some(child) = T::cast(child.clone()) {
-                Ok(child)
-            } else {
-                Err(FormatDocumentError::UnexpectedNodeOrToken {
-                    received: NodeOrToken::Token(child),
-                })
-            }
-        },
-        Some(other) => {
-            syntax.put_back(other.clone());
-            Err(FormatDocumentError::UnexpectedNodeOrToken { received: other })
-        },
-        None => Err(FormatDocumentError::MissingNode),
-    }
-    .expect_if_prefer_crash()
 }
