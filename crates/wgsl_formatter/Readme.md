@@ -37,6 +37,10 @@ things shift around during formatting, keep the comment in a place where that in
 
 The formatter should not *prevent* the programmer from putting comments in strange places and should not impose opinions on where comments should belong.
 
+Example:
+```
+```
+
 
 # TODOs
 - [Some more thoughts](https://discord.com/channels/1289346613185351722/1341941812675481680/1475555853066047549)

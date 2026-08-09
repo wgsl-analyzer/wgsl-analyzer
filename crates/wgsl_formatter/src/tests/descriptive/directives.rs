@@ -49,12 +49,12 @@ pub fn format_diagnostic_with_dot_and_newline() {
 pub fn format_enable_simple_1() {
     check(
         "
-       enable
-       thing, bla,
-       thingy,;
+       enable f16,
+       clip_distances
+       ,dual_source_blending,;
        ",
         expect![[r#"
-            enable thing, bla, thingy;
+            enable f16, clip_distances, dual_source_blending;
         "#]],
     );
 }
@@ -64,15 +64,19 @@ pub fn format_enable_long_1() {
     check(
         "
         //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
-       enable
-       thing, blaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,thingyyyyyyyyyyyyyyyyyyyyyyyyy,;
+       enable f16,clip_distances,dual_source_blending,subgroups,primitive_index,subgroup_size_control, SHADER_INT64, EARLY_DEPTH_TEST;
        ",
         expect![[r#"
             //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
             enable
-                thing,
-                blaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,
-                thingyyyyyyyyyyyyyyyyyyyyyyyyy;
+                f16,
+                clip_distances,
+                dual_source_blending,
+                subgroups,
+                primitive_index,
+                subgroup_size_control,
+                SHADER_INT64,
+                EARLY_DEPTH_TEST;
         "#]],
     );
 }
@@ -80,16 +84,19 @@ pub fn format_enable_long_1() {
 #[test]
 pub fn format_comments_in_enable_1() {
     check_comments(
-        "enable ## thing ## , ## bla ## , ## ; ##",
+        "enable ## subgroups ## , ## primitive_index ## , ## ; ##",
         expect![[r#"
-            enable /* 0 */ thing, /* 1 */ /* 2 */ bla /* 3 */ /* 4 */; /* 5 */
+            enable
+                /* 0 */ subgroups /* 1 */ /* 2 */ ,
+                primitive_index /* 3 */ /* 4 */; /* 5 */
         "#]],
         expect![[r#"
             enable
                 // 0
-                thing, // 1
+                subgroups // 1
                 // 2
-                bla // 3
+                ,
+                primitive_index // 3
                 // 4
                 ; // 5
         "#]],
@@ -100,12 +107,13 @@ pub fn format_comments_in_enable_1() {
 pub fn format_requires_simple_1() {
     check(
         "
-       requires
-       thing, bla,
-       thingy,;
+        requires
+        uniform_buffer_standard_layout
+        ,
+        subgroup_id,;
        ",
         expect![[r#"
-            requires thing, bla, thingy;
+            requires uniform_buffer_standard_layout, subgroup_id;
         "#]],
     );
 }
@@ -116,14 +124,20 @@ pub fn format_requires_long_1() {
         "
         //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
        requires
-       thing, blaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,thingyyyyyyyyyyyyyyyyyyyyyyyyy,;
+       uniform_buffer_standard_layout,subgroup_id,subgroup_uniformity,texture_and_sampler_let,texture_formats_tier1,linear_indexing,immediate_address_space,buffer_view;
+
        ",
         expect![[r#"
             //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
             requires
-                thing,
-                blaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,
-                thingyyyyyyyyyyyyyyyyyyyyyyyyy;
+                uniform_buffer_standard_layout,
+                subgroup_id,
+                subgroup_uniformity,
+                texture_and_sampler_let,
+                texture_formats_tier1,
+                linear_indexing,
+                immediate_address_space,
+                buffer_view;
         "#]],
     );
 }
@@ -131,16 +145,19 @@ pub fn format_requires_long_1() {
 #[test]
 pub fn format_comments_in_requires_1() {
     check_comments(
-        "requires ## thing ## , ## bla ## , ## ; ##",
+        "requires ## linear_indexing ## , ## buffer_view ## , ## ; ##",
         expect![[r#"
-            requires /* 0 */ thing, /* 1 */ /* 2 */ bla /* 3 */ /* 4 */; /* 5 */
+            requires
+                /* 0 */ linear_indexing /* 1 */ /* 2 */ ,
+                buffer_view /* 3 */ /* 4 */; /* 5 */
         "#]],
         expect![[r#"
             requires
                 // 0
-                thing, // 1
+                linear_indexing // 1
                 // 2
-                bla // 3
+                ,
+                buffer_view // 3
                 // 4
                 ; // 5
         "#]],

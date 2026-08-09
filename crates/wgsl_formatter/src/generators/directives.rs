@@ -17,6 +17,7 @@ use crate::{
         spacing_request::{Request, RequestItem},
     },
     reporting::FormatDocumentResult,
+    trivia::NodeWithTriviaContent,
 };
 pub fn gen_enable_extension_name(
     node: &ast::EnableExtensionName
@@ -40,15 +41,20 @@ pub fn gen_enable_directive(node: &ast::EnableDirective) -> FormatDocumentResult
     let mut items = Vec::new();
 
     loop {
-        let item = parse_node_with(
+        let mut item = parse_node_with(
             &mut syntax,
             Filter(|node| match node.kind() {
                 SyntaxKind::Blankspace | SyntaxKind::Comma => Some(FilterAction::Ignored),
-                SyntaxKind::Semicolon => Some(FilterAction::Stop),
                 _ => None,
             }),
-        )
-        .expect_kind(SyntaxKind::EnableExtensionName)?;
+        );
+        //.expect_kind_optional(SyntaxKind::EnableExtensionName)?;
+
+        // TODO This needs to be absorbed into parse_node..
+        if matches!(item.kind(), Some(SyntaxKind::Semicolon)) {
+            let old_node = std::mem::replace(&mut item.node, NodeWithTriviaContent::End);
+            syntax.put_back(old_node.into_option().unwrap()); //TODO
+        }
 
         let is_end = item.is_end();
         if !item.is_whitespace() {
@@ -112,15 +118,20 @@ pub fn gen_requires_directive(
     let mut items = Vec::new();
 
     loop {
-        let item = parse_node_with(
+        let mut item = parse_node_with(
             &mut syntax,
             Filter(|node| match node.kind() {
                 SyntaxKind::Blankspace | SyntaxKind::Comma => Some(FilterAction::Ignored),
-                SyntaxKind::Semicolon => Some(FilterAction::Stop),
                 _ => None,
             }),
-        )
-        .expect_kind(SyntaxKind::LanguageExtensionName)?;
+        );
+        //.expect_kind_optional(SyntaxKind::LanguageExtensionName)?;
+
+        // TODO This needs to be absorbed into parse_node..
+        if matches!(item.kind(), Some(SyntaxKind::Semicolon)) {
+            let old_node = std::mem::replace(&mut item.node, NodeWithTriviaContent::End);
+            syntax.put_back(old_node.into_option().unwrap()); //TODO
+        }
 
         let is_end = item.is_end();
         if !item.is_whitespace() {
