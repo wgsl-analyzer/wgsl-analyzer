@@ -10,7 +10,7 @@ use crate::{
     ast_parse::{Filter, FilterAction, NoTrivia, parse_end, parse_node_with, syntax_iter},
     context_policies::collapse_one_liner_compound_statement_policy,
     generators::node::gen_node_with_trivia,
-    helpers::{NextGenLineSpacing, read_blankspace},
+    helpers::{LineSpacing, read_blankspace},
     multiline_group::MultilineGroup,
     print_item_buffer::{
         PrintItemBuffer,
@@ -36,17 +36,14 @@ pub fn gen_compound_statement(
         let mut item = parse_node_with(
             &mut syntax,
             Filter(|node| match read_blankspace(node) {
-                Some(NextGenLineSpacing::OnelineBlankspace(_)) => Some(FilterAction::Ignored),
+                Some(LineSpacing::OnelineBlankspace(_)) => Some(FilterAction::Ignored),
                 _ => None,
             }),
         );
 
         // We only care about newlines if they are somewhere within the trivia, not at the start or end
         let first_interesting_item = item.preceding_trivia.iter().position(|node| {
-            !matches!(
-                node,
-                NodeTriviaItem::LineSpacing(NextGenLineSpacing::LineBreak(_))
-            )
+            !matches!(node, NodeTriviaItem::LineSpacing(LineSpacing::LineBreak(_)))
         });
         if let Some(first_interesting_item) = first_interesting_item {
             item.preceding_trivia = item.preceding_trivia.split_off(first_interesting_item);
@@ -54,10 +51,7 @@ pub fn gen_compound_statement(
             item.preceding_trivia = Vec::new();
         }
         let last_interesting_item = item.succeeding_trivia.iter().rev().position(|node| {
-            !matches!(
-                node,
-                NodeTriviaItem::LineSpacing(NextGenLineSpacing::LineBreak(_))
-            )
+            !matches!(node, NodeTriviaItem::LineSpacing(LineSpacing::LineBreak(_)))
         });
         if let Some(last_interesting_item) = last_interesting_item {
             item.succeeding_trivia
