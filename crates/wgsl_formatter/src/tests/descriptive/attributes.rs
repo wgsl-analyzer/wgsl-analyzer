@@ -104,14 +104,12 @@ pub fn format_comments_in_attr_with_multiple_arguments() {
         ## @ ## attr ## ( ## 0 ## , ## 0 ## , ## 0 ## ) ## fn ## main() {}
         ",
         expect![[r#"
-            /* 0 */
-            @ /* 1 */ attr /* 2 */ (
-                /* 3 */
-                0, /* 4 */ /* 5 */
+            /* 0 */ @ /* 1 */ attr /* 2 */ (
+                /* 3 */ 0, /* 4 */ /* 5 */
                 0, /* 6 */ /* 7 */
                 0, /* 8 */
-            ) /* 9 */
-            fn /* 10 */ main() {}
+            )
+            /* 9 */ fn /* 10 */ main() {}
         "#]],
         expect![[r#"
             // 0
@@ -124,7 +122,8 @@ pub fn format_comments_in_attr_with_multiple_arguments() {
                 0, // 6
                 // 7
                 0, // 8
-            ) // 9
+            )
+            // 9
             fn // 10
             main() {}
         "#]],
@@ -201,7 +200,6 @@ pub fn format_comments_in_diagnostic_attr_simple_1() {
         "#]],
     );
 }
-
 
 #[test]
 pub fn format_forced_linebreak_in_attribute_arguments() {
