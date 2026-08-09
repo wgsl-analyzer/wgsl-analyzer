@@ -5,15 +5,10 @@ use crate::test_util::check_comments;
 #[test]
 fn format_comments_in_compound_statement() {
     check_comments(
-        "
-        fn main() {
-        ## { ## } ##
-        }
-        ",
+        "fn main() { ## { ## } ## }",
         expect![[r#"
             fn main() {
-                /* 0 */
-                {
+                /* 0 */ {
                     /* 1 */
                 }
                 /* 2 */

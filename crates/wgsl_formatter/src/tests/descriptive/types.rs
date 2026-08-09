@@ -56,8 +56,7 @@ pub fn format_type_with_template_nested_multiline_array() {
         array<
         array
 
-        <i32,
-        // Miep
+        <i32, // Miep
         19>,
         17>
         ;

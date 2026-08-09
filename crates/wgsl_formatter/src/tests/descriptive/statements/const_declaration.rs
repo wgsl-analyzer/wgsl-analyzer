@@ -50,8 +50,7 @@ pub fn format_comment_in_const_declaration() {
         }",
         expect![[r#"
             fn main() {
-                /* 0 */
-                const /* 1 */ a /* 2 */ = /* 3 */ 1 /* 4 */; /* 5 */
+                /* 0 */ const /* 1 */ a /* 2 */ = /* 3 */ 1 /* 4 */; /* 5 */
             }
         "#]],
         expect![[r#"
@@ -138,10 +137,8 @@ pub fn format_const_declaration_with_comments_in_complex_type() {
         }",
         expect![[r#"
             fn main() {
-                /* 0 */
-                const /* 1 */ a /* 2 */: /* 3 */ array /* 4 */ <
-                        /* 5 */
-                        u32, /* 6 */ /* 7 */
+                /* 0 */ const /* 1 */ a /* 2 */: /* 3 */ array /* 4 */ <
+                        /* 5 */ u32, /* 6 */ /* 7 */
                         28, /* 8 */
                     > /* 9 */ = /* 10 */ 1 /* 11 */; /* 12 */
             }
