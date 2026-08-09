@@ -8,7 +8,10 @@ use syntax::{
 };
 
 use crate::{
-    ast_parse::{IgnoreBlankspace, NoTrivia, parse_end, parse_node_with, syntax_iter},
+    ast_parse::{
+        Chain, IgnoreBlankspace, IgnoreComma, NoTrivia, UntilSucceedingNewline, parse_end,
+        parse_node_with, syntax_iter,
+    },
     context_policies::statement_needs_semicolon_policy,
     generators::node::gen_node_with_trivia,
     multiline_group::MultilineGroup,
@@ -222,7 +225,10 @@ pub fn gen_import_collection(
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::BraceLeft)?;
 
     loop {
-        let mut item = parse_node_with(&mut syntax, IgnoreBlankspace);
+        let mut item = parse_node_with(
+            &mut syntax,
+            Chain(UntilSucceedingNewline, Chain(IgnoreBlankspace, IgnoreComma)),
+        );
 
         // TODO This should be absorbed into the parse_node
         if item
@@ -231,11 +237,6 @@ pub fn gen_import_collection(
         {
             let old_node = std::mem::replace(&mut item.node, NodeWithTriviaContent::End);
             syntax.put_back(old_node.into_option().unwrap()); //TODO
-        }
-
-        // TODO This should be absorbed into the parse_node
-        if item.kind().is_some_and(|node| !ImportTree::can_cast(node)) {
-            item.node = NodeWithTriviaContent::NoContent;
         }
 
         let is_end = item.is_end();
