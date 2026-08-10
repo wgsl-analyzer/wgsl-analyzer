@@ -106,8 +106,20 @@ part expression;
 part statement;
 part type_specifier;
 
+attribute: '@' Identifier [?t argument_expression_list];
+attribute_list: attribute*;
+
+translation_unit: (global_item | ';')*;
+global_item:
+	attribute_list (
+	#2 import_statement
+	| #1 global_directive
+	| #2 global_declaration
+	| #2 global_assert
+);
+
 // WESL: Import statements
-import_statement: attribute_list 'import' [import_package_relative | import_super_relative] (import_collection | import_path) ';';
+import_statement:  'import' [import_package_relative | import_super_relative] (import_collection | import_path) ';';
 import_package_relative: 'package' '::';
 import_super_relative: ('super' '::')+;
 import_path: name (
@@ -117,21 +129,11 @@ import_path: name (
 
 import_collection: '{' import_path (?1 ',' import_path)* [','] '}';
 
-translation_unit: (global_item | ';')*;
-global_item^:
-	#2 import_statement
-	| #1 global_directive
-	| #2 global_declaration
-	| #2 global_assert
-;
-
 global_assert: 'const_assert' expression ';' @assert_statement; // §10
 global_directive:
-	wesl_attribute_list @diagnostic_directive (
 	'diagnostic' diagnostic_control ';' @diagnostic_directive // §4.2
 	| 'enable' enable_extension_name (?1 ',' enable_extension_name)* [','] ';' @enable_directive // §4.1.1
 	| 'requires' language_extension_name (?1 ',' language_extension_name)* [','] ';' @requires_directive // §4.1.2
-	)
 ;
 
 diagnostic_control: '(' severity_control_name ',' diagnostic_rule_name [','] ')';
@@ -141,15 +143,13 @@ enable_extension_name: Identifier;
 language_extension_name: Identifier;
 
 global_declaration:
-	attribute_list @function_declaration (
-	'fn' name function_parameters [return_type] attribute_list compound_statement @function_declaration
+	'fn' name function_parameters [return_type] compound_statement @function_declaration
 	| variable_declaration_semi @variable_declaration
 	| override_declaration_semi @override_declaration
 	| let_declaration_semi @global_let_declaration
 	| const_declaration_semi @const_declaration
 	| 'alias' name '=' type_specifier ';' @type_alias_declaration
 	| 'struct' name struct_body @struct_declaration
-	)
 ;
 
 // Manual error recovery for missing commas between parameters
@@ -160,8 +160,6 @@ return_type: '->' attribute_list type_specifier;
 // Manual error recovery branches for structs
 struct_body: '{' & struct_member (?1 (','| ';'!1 | !1) struct_member)* [','] '}';
 struct_member: attribute_list name ':' type_specifier;
-
-attribute: '@' Identifier [?t argument_expression_list];
 
 typed_ident^: name (':' type_specifier | ());
 
@@ -217,6 +215,7 @@ argument_expression_list: '(' [expression (?1 ',' expression)* [',']] ')' @argum
 argument_expression_list_expr: '(' [expression (?1 ',' expression)* [',']] ')' @arguments;
 
 statement:
+	// TODO: Validate the attributes
 	attribute_list (
 	// NOTE: The WGSL spec (§9.4.1) requires `if_clause (else_if_clause)* [else_clause]`,
 	// i.e. at most one trailing else and no else-if after else. We accept the more
@@ -289,12 +288,13 @@ if_clause: 'if' expression compound_statement;
 else_if_clause: 'else' 'if' expression compound_statement;
 else_clause: 'else' compound_statement;
 switch_body: attribute_list '{' switch_clause* '}';
-switch_clause^: case_clause | default_alone_clause;
-case_clause: wesl_attribute_list 'case' case_selectors [':'] compound_statement;
+// TODO: Tweak the WESL attribute_list here, it currently is free floating
+switch_clause^: attribute_list case_clause | default_alone_clause;
+case_clause: 'case' case_selectors [':'] compound_statement;
 case_selectors: case_selector (?1 ',' case_selector)* [','];
 case_selector^: default_case_selector | expression;
 default_case_selector: 'default';
-default_alone_clause: wesl_attribute_list 'default' [':'] compound_statement;
+default_alone_clause: 'default' [':'] compound_statement;
 compound_statement: attribute_list '{' & statement* '}'; // §9.1
 
 function_call: ident_expression argument_expression_list;
@@ -341,6 +341,3 @@ lhs_expression:
 	| '(' lhs_expression ')' @paren_expression // §8.4
 	| path @ident_expression
 ;
-
-attribute_list: attribute*;
-wesl_attribute_list^: attribute_list #1;

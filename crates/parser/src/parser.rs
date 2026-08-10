@@ -421,24 +421,4 @@ impl<'source> ParserCallbacks<'source> for Parser<'source> {
     ) {
         self.context.last_attribute_list = Some(node_ref);
     }
-
-    fn assertion_continuing_compound_statement_1(&self) -> Option<Self::Diagnostic> {
-        if self.peek(0) == Token::BraceRight {
-            return Some(self.create_diagnostic(
-                self.span(),
-                "attributes must precede a statement here".to_owned(),
-            ));
-        }
-        None
-    }
-
-    fn assertion_loop_compound_statement_1(&self) -> Option<Self::Diagnostic> {
-        if !matches!(self.current, Token::Continuing | Token::BraceRight) {
-            return None;
-        }
-        self.assert_attribute_list_empty(
-            self.context.last_attribute_list,
-            "attributes must precede a statement here",
-        )
-    }
 }

@@ -1655,6 +1655,43 @@ fn loop_statement_continuing() {
             error at 19..20: attributes must precede a statement here"#]],
     );
 }
+
+#[test]
+fn loop_statement_continuing_in_fn() {
+    check(
+        "fn main() {loop { continuing {} }}",
+        expect![[r#"
+            SourceFile@0..34
+              FunctionDeclaration@0..34
+                Fn@0..2 "fn"
+                Blankspace@2..3 " "
+                Name@3..7
+                  Identifier@3..7 "main"
+                FunctionParameters@7..9
+                  ParenthesisLeft@7..8 "("
+                  ParenthesisRight@8..9 ")"
+                Blankspace@9..10 " "
+                CompoundStatement@10..34
+                  BraceLeft@10..11 "{"
+                  LoopStatement@11..33
+                    Loop@11..15 "loop"
+                    Blankspace@15..16 " "
+                    CompoundStatement@16..33
+                      BraceLeft@16..17 "{"
+                      Blankspace@17..18 " "
+                      ContinuingStatement@18..31
+                        Continuing@18..28 "continuing"
+                        Blankspace@28..29 " "
+                        CompoundStatement@29..31
+                          BraceLeft@29..30 "{"
+                          BraceRight@30..31 "}"
+                      Blankspace@31..32 " "
+                      BraceRight@32..33 "}"
+                  BraceRight@33..34 "}"
+
+            error at 30..31: attributes must precede a statement here"#]],
+    );
+}
 #[test]
 fn loop_statement_break_if() {
     check_statement(
