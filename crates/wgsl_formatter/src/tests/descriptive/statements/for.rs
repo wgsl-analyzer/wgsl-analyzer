@@ -167,8 +167,7 @@ pub fn format_comments_in_for_statement() {
                     i /* 12 */ ++ /* 13 */
                 ) /* 14 */ {
                     /* 15 */
-                }
-                /* 16 */
+                } /* 16 */
             }
         "#]],
         expect![[r#"
@@ -191,8 +190,7 @@ pub fn format_comments_in_for_statement() {
                 ) // 14
                 {
                     // 15
-                }
-                // 16
+                } // 16
             }
         "#]],
     );

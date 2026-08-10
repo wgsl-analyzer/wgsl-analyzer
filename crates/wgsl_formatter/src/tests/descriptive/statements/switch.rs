@@ -173,8 +173,7 @@ pub fn format_switch_statement_block_comments_in_case_default_only() {
         expect![[r#"
             fn main() {
                 switch a {
-                    /* 0 */ /* 1 */ default /* 2 */ { /* 3 */ let a = 1; /* 4 */ }
-                    /* 5 */
+                    /* 0 */ /* 1 */ default /* 2 */ { /* 3 */ let a = 1; /* 4 */ } /* 5 */
                 }
             }
         "#]],
@@ -187,8 +186,7 @@ pub fn format_switch_statement_block_comments_in_case_default_only() {
                     {
                         // 3
                         let a = 1; // 4
-                    }
-                    // 5
+                    } // 5
                 }
             }
         "#]],

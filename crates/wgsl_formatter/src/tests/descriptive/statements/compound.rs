@@ -10,8 +10,7 @@ fn format_comments_in_compound_statement() {
             fn main() {
                 /* 0 */ {
                     /* 1 */
-                }
-                /* 2 */
+                } /* 2 */
             }
         "#]],
         expect![[r#"
@@ -19,8 +18,7 @@ fn format_comments_in_compound_statement() {
                 // 0
                 {
                     // 1
-                }
-                // 2
+                } // 2
             }
         "#]],
     );

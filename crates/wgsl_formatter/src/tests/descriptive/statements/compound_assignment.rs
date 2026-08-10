@@ -167,3 +167,34 @@ pub fn format_comments_in_compound_assignment_statement_simple() {
         "#]],
     );
 }
+
+#[test]
+pub fn format_comments_around_compound_assignment_statement() {
+    check(
+        "
+        fn a() {let a = 1;} // A
+
+        fn b() {
+            let b = 1;
+        } // B
+
+        fn c() {let c = 2;}
+        // C
+
+        ",
+        expect![[r#"
+            fn a() {
+                let a = 1;
+            } // A
+
+            fn b() {
+                let b = 1;
+            } // B
+
+            fn c() {
+                let c = 2;
+            }
+            // C
+        "#]],
+    );
+}

@@ -290,7 +290,7 @@ fn format_line_comments_around_nonempty_function_declaration() {
         // Alone
 
         // Line Before
-        fn a() { let a = 1; } // Should be broken into new line
+        fn a() { let a = 1; } // Should Stay on the Same line
         // Line After
 
         // Alone
@@ -301,8 +301,7 @@ fn format_line_comments_around_nonempty_function_declaration() {
             // Line Before
             fn a() {
                 let a = 1;
-            }
-            // Should be broken into new line
+            } // Should Stay on the Same line
             // Line After
 
             // Alone
@@ -317,7 +316,7 @@ fn format_block_comments_around_nonempty_function_declaration() {
         /* Alone */
 
         /* Line Before */
-        fn a() { let a = 1; } /* Should be broken into new line */
+        fn a() { let a = 1; } /* Should stay on the same line */
         /* Line After */
 
         /* Alone */
@@ -328,8 +327,7 @@ fn format_block_comments_around_nonempty_function_declaration() {
             /* Line Before */
             fn a() {
                 let a = 1;
-            }
-            /* Should be broken into new line */
+            } /* Should stay on the same line */
             /* Line After */
 
             /* Alone */

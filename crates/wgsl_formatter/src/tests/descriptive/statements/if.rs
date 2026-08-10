@@ -225,14 +225,11 @@ pub fn format_comments_in_if_elseif_else_statement() {
             fn main() {
                 /* 0 */ if /* 1 */ a /* 2 */ {
                     /* 3 */
-                }
-                /* 4 */ else /* 5 */ if /* 6 */ a /* 7 */ {
+                } /* 4 */ else /* 5 */ if /* 6 */ a /* 7 */ {
                     /* 8 */
-                }
-                /* 9 */ else /* 10 */ {
+                } /* 9 */ else /* 10 */ {
                     /* 11 */
-                }
-                /* 12 */
+                } /* 12 */
             }
         "#]],
         expect![[r#"
@@ -242,20 +239,17 @@ pub fn format_comments_in_if_elseif_else_statement() {
                 a // 2
                 {
                     // 3
-                }
-                // 4
+                } // 4
                 else // 5
                 if // 6
                 a // 7
                 {
                     // 8
-                }
-                // 9
+                } // 9
                 else // 10
                 {
                     // 11
-                }
-                // 12
+                } // 12
             }
         "#]],
     );
@@ -271,11 +265,9 @@ pub fn format_comments_in_if_else_statement() {
             fn main() {
                 /* 0 */ if /* 1 */ a /* 2 */ {
                     /* 3 */
-                }
-                /* 4 */ else /* 5 */ {
+                } /* 4 */ else /* 5 */ {
                     /* 6 */
-                }
-                /* 7 */
+                } /* 7 */
             }
         "#]],
         expect![[r#"
@@ -285,13 +277,11 @@ pub fn format_comments_in_if_else_statement() {
                 a // 2
                 {
                     // 3
-                }
-                // 4
+                } // 4
                 else // 5
                 {
                     // 6
-                }
-                // 7
+                } // 7
             }
         "#]],
     );

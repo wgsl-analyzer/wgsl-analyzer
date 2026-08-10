@@ -171,8 +171,7 @@ fn format_comments_in_fn_signature() {
                 c /* 8 */ : /* 9 */ d, /* 10 */
             ) /* 11 */ -> /* 12 */ f32 /* 13 */ {
                 /* 14 */
-            }
-            /* 15 */
+            } /* 15 */
         "#]],
         expect![[r#"
             // 0
@@ -192,8 +191,7 @@ fn format_comments_in_fn_signature() {
             f32 // 13
             {
                 // 14
-            }
-            // 15
+            } // 15
         "#]],
     );
 }
