@@ -94,10 +94,15 @@ pub fn gen_compound_statement(
         if collapse_one_liner_compound_statement_policy(node.syntax()) {
             //TODO This is a dirty hack to get rid of the discouragement of spaces in start_indent
             multiline_group.apply_end_request();
-            //TODO and now we need to get the discouragement of newlines back...
-            multiline_group.request(Request::discourage(RequestItem::LineBreak));
 
-            multiline_group.grouped_newline_or_space();
+            multiline_group.grouped_request(
+                Request::discourage(RequestItem::Space),
+                Request::combine(
+                    Request::expect(RequestItem::Space),
+                    //TODO Get back the discouragement of line_breaks from start_indent
+                    Request::discourage(RequestItem::LineBreak),
+                ),
+            );
         } else {
             multiline_group.request(Request::discourage(RequestItem::EmptyLine));
             multiline_group.request(Request::expect(RequestItem::LineBreak));
@@ -113,9 +118,8 @@ pub fn gen_compound_statement(
         multiline_group.finish_indent();
 
         if collapse_one_liner_compound_statement_policy(node.syntax()) {
-            //TODO This is a dirty hack to get rid of the discouragement of spaces in start_indent
-            multiline_group.push_sc(dprint_core_macros::sc!(""));
-
+            //TODO This is a dirty hack to get rid of the discouragement of spaces in finish_indent
+            multiline_group.apply_end_request();
             multiline_group.grouped_newline_or_space();
         } else {
             multiline_group.request(Request::expect(RequestItem::LineBreak));
