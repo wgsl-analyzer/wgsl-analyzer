@@ -16,12 +16,12 @@ use vfs::FileId;
 // |---------|-------------|
 // | VS Code | **WGSL Syntax Tree** |
 pub(crate) fn view_syntax_tree(
-    database: &RootDatabase,
+    db: &RootDatabase,
     file_id: FileId,
 ) -> String {
-    let file_id = EditionedFileId::from_file(database, file_id);
-    let syntax_node = file_id.parse(database).syntax();
-    let line_index = line_index(database, file_id.file_id(database)).clone();
+    let file_id = EditionedFileId::from_file(db, file_id);
+    let syntax_node = file_id.parse(db).syntax();
+    let line_index = line_index(db, file_id.file_id(db)).clone();
 
     let ctx = SyntaxTreeCtx {
         line_index,

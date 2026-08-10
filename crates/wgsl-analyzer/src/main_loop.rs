@@ -620,7 +620,7 @@ impl GlobalState {
     }
 
     fn update_diagnostics(&mut self) {
-        let database = self.analysis_host.raw_database();
+        let db = self.analysis_host.raw_database();
         let generation = self.diagnostics.next_generation();
         let subscriptions = {
             let vfs = &self.vfs.read().0;
@@ -631,13 +631,10 @@ impl GlobalState {
                     (excluded == vfs::FileExcluded::No).then_some(file_id)
                 })
                 .filter(|&file_id| {
-                    let source_root = database.file_source_root(file_id).source_root_id(database);
+                    let source_root = db.file_source_root(file_id).source_root_id(db);
                     // Only publish diagnostics for files in the workspace, not from remote dependencies.
                     // While theoretically these should never have errors, this is good to enforce anyway.
-                    !database
-                        .source_root(source_root)
-                        .source_root(database)
-                        .is_library()
+                    !db.source_root(source_root).source_root(db).is_library()
                 })
                 .collect::<Arc<_>>()
         };

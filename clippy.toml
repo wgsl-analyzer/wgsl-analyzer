@@ -59,6 +59,7 @@ disallowed-names = [
 	"char",  # character
 	"col",  # column
 	"ctrl",  # control
+	"database", # db
 	"dbg",  # debug
 	"decl",  # declaration
 	"def",  # definition

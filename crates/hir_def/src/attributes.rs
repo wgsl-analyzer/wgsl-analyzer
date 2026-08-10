@@ -7,7 +7,7 @@ use triomphe::Arc;
 
 use crate::{
     HasSource as _,
-    database::{FunctionId, GlobalVariableId, StructId},
+    db::{FunctionId, GlobalVariableId, StructId},
     expression::ExpressionId,
     expression_store::{
         ExpressionSourceMap, ExpressionStore, ExpressionStoreSource, lower::ExprCollector,
@@ -45,10 +45,10 @@ impl AttributeList {
 
 impl AttributeList {
     pub fn from_src(
-        database: &dyn SourceDatabase,
+        db: &dyn SourceDatabase,
         source: &dyn HasAttributes,
     ) -> (Self, ExpressionSourceMap) {
-        let mut collector = ExprCollector::new(database, ExpressionStoreSource::Signature);
+        let mut collector = ExprCollector::new(db, ExpressionStoreSource::Signature);
         let attributes = source
             .attributes()
             .into_iter()

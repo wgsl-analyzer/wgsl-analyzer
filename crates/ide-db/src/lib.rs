@@ -130,21 +130,21 @@ impl Default for RootDatabase {
 impl RootDatabase {
     #[must_use]
     pub fn new(lru_capacity: Option<u16>) -> Self {
-        let mut database = Self {
+        let mut db = Self {
             storage: salsa::Storage::default(),
             files: Arc::default(),
             // crates_map: Default::default(),
             nonce: Nonce::new(),
         };
         // This needs to be here otherwise the first `Change` will panic.
-        set_all_packages_with_durability(&mut database, [], Durability::HIGH);
-        // CrateGraphBuilder::default().set_in_db(&mut database);
+        set_all_packages_with_durability(&mut db, [], Durability::HIGH);
+        // CrateGraphBuilder::default().set_in_db(&mut db);
         // database.set_proc_macros_with_durability(Default::default(), Durability::MEDIUM);
         // database.set_local_roots_with_durability(Default::default(), Durability::MEDIUM);
         // database.set_library_roots_with_durability(Default::default(), Durability::MEDIUM);
-        ExtensionsConfigInput::update_extensions(&mut database, ExtensionsConfig::default());
-        database.update_base_query_lru_capacities(lru_capacity);
-        database
+        ExtensionsConfigInput::update_extensions(&mut db, ExtensionsConfig::default());
+        db.update_base_query_lru_capacities(lru_capacity);
+        db
     }
 
     #[expect(
@@ -160,9 +160,9 @@ impl RootDatabase {
         // base_db::FileTextQuery.in_db_mut(self).set_lru_capacity(DEFAULT_FILE_TEXT_LRU_CAP);
         // base_db::ParseQuery.in_db_mut(self).set_lru_capacity(lru_capacity);
         // // macro expansions are usually rather small, so we can afford to keep more of them alive
-        // hir::database::ParseMacroExpansionQuery.in_db_mut(self).set_lru_capacity(4 * lru_capacity);
-        // hir::database::BorrowckQuery.in_db_mut(self).set_lru_capacity(base_db::DEFAULT_BORROWCK_LRU_CAP);
-        // hir::database::BodyWithSourceMapQuery.in_db_mut(self).set_lru_capacity(2048);
+        // hir::db::ParseMacroExpansionQuery.in_db_mut(self).set_lru_capacity(4 * lru_capacity);
+        // hir::db::BorrowckQuery.in_db_mut(self).set_lru_capacity(base_db::DEFAULT_BORROWCK_LRU_CAP);
+        // hir::db::BodyWithSourceMapQuery.in_db_mut(self).set_lru_capacity(2048);
     }
 
     #[expect(
@@ -196,7 +196,7 @@ impl RootDatabase {
         //         .copied()
         //         .unwrap_or(base_db::DEFAULT_BORROWCK_LRU_CAP),
         // );
-        // hir::database::BodyWithSourceMapQuery.in_db_mut(self).set_lru_capacity(2048);
+        // hir::db::BodyWithSourceMapQuery.in_db_mut(self).set_lru_capacity(2048);
     }
 
     pub fn apply_change(
@@ -227,7 +227,7 @@ impl SnippetCapability {
 }
 
 pub fn line_index(
-    database: &dyn SourceDatabase,
+    db: &dyn SourceDatabase,
     file_id: FileId,
 ) -> &Arc<LineIndex> {
     #[salsa::interned]
@@ -237,11 +237,11 @@ pub fn line_index(
     }
     #[salsa::tracked(returns(ref))]
     fn line_index<'db>(
-        database: &'db dyn SourceDatabase,
+        db: &'db dyn SourceDatabase,
         file_id: InternedFileId<'db>,
     ) -> Arc<LineIndex> {
-        let text = database.file_text(file_id.id(database)).text(database);
+        let text = db.file_text(file_id.id(db)).text(db);
         Arc::new(LineIndex::new(text))
     }
-    line_index(database, InternedFileId::new(database, file_id))
+    line_index(db, InternedFileId::new(db, file_id))
 }

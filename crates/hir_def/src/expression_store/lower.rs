@@ -19,18 +19,18 @@ use crate::{
     type_specifier::{IdentExpression, TypeSpecifier, TypeSpecifierId},
 };
 
-pub struct ExprCollector<'database> {
-    database: &'database dyn SourceDatabase,
+pub struct ExprCollector<'db> {
+    db: &'db dyn SourceDatabase,
     store: ExpressionStoreBuilder,
 }
 
 impl ExprCollector<'_> {
     pub fn new(
-        database: &dyn SourceDatabase,
+        db: &dyn SourceDatabase,
         store_source: ExpressionStoreSource,
     ) -> ExprCollector<'_> {
         ExprCollector {
-            database,
+            db,
             store: ExpressionStoreBuilder {
                 store_source,
                 ..Default::default()
@@ -253,12 +253,12 @@ impl ExprCollector<'_> {
 }
 
 pub(crate) fn lower_function(
-    database: &dyn SourceDatabase,
+    db: &dyn SourceDatabase,
     function: &InFile<ast::FunctionDeclaration>,
 ) -> (FunctionSignature, ExpressionSourceMap) {
     let name = as_name_opt(function.value.name());
 
-    let mut collector = ExprCollector::new(database, ExpressionStoreSource::Signature);
+    let mut collector = ExprCollector::new(db, ExpressionStoreSource::Signature);
     let parameters = function
         .value
         .parameter_list()
@@ -282,12 +282,12 @@ pub(crate) fn lower_function(
 }
 
 pub(crate) fn lower_struct(
-    database: &dyn SourceDatabase,
+    db: &dyn SourceDatabase,
     struct_declaration: &InFile<ast::StructDeclaration>,
 ) -> (StructSignature, ExpressionSourceMap) {
     let name = as_name_opt(struct_declaration.value.name());
 
-    let mut collector = ExprCollector::new(database, ExpressionStoreSource::Signature);
+    let mut collector = ExprCollector::new(db, ExpressionStoreSource::Signature);
     let mut fields = Arena::new();
     if let Some(body) = struct_declaration.value.body() {
         fields.alloc_many(body.fields().map(|field| FieldData {
@@ -306,12 +306,12 @@ pub(crate) fn lower_struct(
 }
 
 pub(crate) fn lower_type_alias(
-    database: &dyn SourceDatabase,
+    db: &dyn SourceDatabase,
     type_alias: &InFile<ast::TypeAliasDeclaration>,
 ) -> (TypeAliasSignature, ExpressionSourceMap) {
     let name = as_name_opt(type_alias.value.name());
 
-    let mut collector = ExprCollector::new(database, ExpressionStoreSource::Signature);
+    let mut collector = ExprCollector::new(db, ExpressionStoreSource::Signature);
     let r#type = collector.collect_type_specifier_opt(type_alias.value.type_declaration());
 
     let (store, source_map) = collector.finish();
@@ -324,12 +324,12 @@ pub(crate) fn lower_type_alias(
 }
 
 pub(crate) fn lower_variable(
-    database: &dyn SourceDatabase,
+    db: &dyn SourceDatabase,
     global_variable: &InFile<ast::VariableDeclaration>,
 ) -> (VariableSignature, ExpressionSourceMap) {
     let name = as_name_opt(global_variable.value.name());
 
-    let mut collector = ExprCollector::new(database, ExpressionStoreSource::Signature);
+    let mut collector = ExprCollector::new(db, ExpressionStoreSource::Signature);
     let r#type = global_variable
         .value
         .r#type()
@@ -356,12 +356,12 @@ pub(crate) fn lower_variable(
 }
 
 pub(crate) fn lower_constant(
-    database: &dyn SourceDatabase,
+    db: &dyn SourceDatabase,
     global_constant: &InFile<ast::ConstantDeclaration>,
 ) -> (ConstantSignature, ExpressionSourceMap) {
     let name = as_name_opt(global_constant.value.name());
 
-    let mut collector = ExprCollector::new(database, ExpressionStoreSource::Signature);
+    let mut collector = ExprCollector::new(db, ExpressionStoreSource::Signature);
     let r#type = global_constant
         .value
         .r#type()
@@ -377,10 +377,10 @@ pub(crate) fn lower_constant(
 }
 
 pub(crate) fn lower_global_assert_statement(
-    database: &dyn SourceDatabase,
+    db: &dyn SourceDatabase,
     _global_assert_statement: &InFile<ast::AssertStatement>,
 ) -> (AssertStatementSignature, ExpressionSourceMap) {
-    let collector = ExprCollector::new(database, ExpressionStoreSource::Signature);
+    let collector = ExprCollector::new(db, ExpressionStoreSource::Signature);
 
     let (store, source_map) = collector.finish();
     let specifier = AssertStatementSignature {
@@ -390,12 +390,12 @@ pub(crate) fn lower_global_assert_statement(
 }
 
 pub(crate) fn lower_override(
-    database: &dyn SourceDatabase,
+    db: &dyn SourceDatabase,
     global_override: &InFile<ast::OverrideDeclaration>,
 ) -> (OverrideSignature, ExpressionSourceMap) {
     let name = as_name_opt(global_override.value.name());
 
-    let mut collector = ExprCollector::new(database, ExpressionStoreSource::Signature);
+    let mut collector = ExprCollector::new(db, ExpressionStoreSource::Signature);
     let r#type = global_override
         .value
         .r#type()

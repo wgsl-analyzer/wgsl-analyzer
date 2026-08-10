@@ -6,7 +6,7 @@ use la_arena::ArenaMap;
 use wgsl_types::syntax::AddressSpace;
 
 use crate::{
-    database::HirDatabase,
+    db::HirDatabase,
     ty::{ArraySize, ArrayType, ScalarType, Type, TypeKind, VecSize, VectorType},
 };
 
@@ -23,11 +23,11 @@ impl ArrayType {
     pub fn stride(
         &self,
         address_space: AddressSpace,
-        database: &dyn HirDatabase,
+        db: &dyn HirDatabase,
     ) -> Option<Bytes> {
         let stride = round_up(
-            self.inner.align(address_space, database)?,
-            self.inner.size(address_space, database)?,
+            self.inner.align(address_space, db)?,
+            self.inner.size(address_space, db)?,
         );
         if address_space == AddressSpace::Uniform {
             Some(round_up(16, stride))
@@ -41,17 +41,17 @@ impl Type {
     pub fn align(
         self,
         address_space: AddressSpace,
-        database: &dyn HirDatabase,
+        db: &dyn HirDatabase,
     ) -> Option<Bytes> {
-        self.kind(database).align_of(address_space, database)
+        self.kind(db).align_of(address_space, db)
     }
 
     pub fn size(
         self,
         address_space: AddressSpace,
-        database: &dyn HirDatabase,
+        db: &dyn HirDatabase,
     ) -> Option<Bytes> {
-        self.kind(database).size_of(address_space, database)
+        self.kind(db).size_of(address_space, db)
     }
 }
 
@@ -61,7 +61,7 @@ impl TypeKind {
     pub fn align_of(
         &self,
         address_space: AddressSpace,
-        database: &dyn HirDatabase,
+        db: &dyn HirDatabase,
     ) -> Option<Bytes> {
         #[expect(
             clippy::match_same_arms,
@@ -79,7 +79,7 @@ impl TypeKind {
                 size: VecSize::Two,
                 component_type,
             }) if matches!(
-                component_type.kind(database),
+                component_type.kind(db),
                 Self::Scalar(
                     ScalarType::Bool | ScalarType::I32 | ScalarType::U32 | ScalarType::F32
                 )
@@ -90,12 +90,12 @@ impl TypeKind {
             Self::Vector(VectorType {
                 size: VecSize::Two,
                 component_type,
-            }) if matches!(component_type.kind(database), Self::Scalar(ScalarType::F16)) => Some(4),
+            }) if matches!(component_type.kind(db), Self::Scalar(ScalarType::F16)) => Some(4),
             Self::Vector(VectorType {
                 size: VecSize::Three,
                 component_type,
             }) if matches!(
-                component_type.kind(database),
+                component_type.kind(db),
                 Self::Scalar(
                     ScalarType::Bool | ScalarType::I32 | ScalarType::U32 | ScalarType::F32
                 )
@@ -106,12 +106,12 @@ impl TypeKind {
             Self::Vector(VectorType {
                 size: VecSize::Three,
                 component_type,
-            }) if matches!(component_type.kind(database), Self::Scalar(ScalarType::F16)) => Some(8),
+            }) if matches!(component_type.kind(db), Self::Scalar(ScalarType::F16)) => Some(8),
             Self::Vector(VectorType {
                 size: VecSize::Four,
                 component_type,
             }) if matches!(
-                component_type.kind(database),
+                component_type.kind(db),
                 Self::Scalar(
                     ScalarType::Bool | ScalarType::I32 | ScalarType::U32 | ScalarType::F32
                 )
@@ -122,16 +122,16 @@ impl TypeKind {
             Self::Vector(VectorType {
                 size: VecSize::Four,
                 component_type,
-            }) if matches!(component_type.kind(database), Self::Scalar(ScalarType::F16)) => Some(8),
+            }) if matches!(component_type.kind(db), Self::Scalar(ScalarType::F16)) => Some(8),
             Self::Matrix(matrix_type) => Self::Vector(VectorType {
                 size: matrix_type.rows,
                 component_type: matrix_type.inner,
             })
-            .align_of(address_space, database),
+            .align_of(address_space, db),
             Self::Struct(r#struct) => {
-                let fields = &database.field_types(*r#struct).0;
+                let fields = &db.field_types(*r#struct).0;
                 let (align, _) =
-                    struct_member_layout(fields, database, AddressSpace::Storage, |_, _, _| {})?;
+                    struct_member_layout(fields, db, AddressSpace::Storage, |_, _, _| {})?;
                 Some(if address_space == AddressSpace::Uniform {
                     round_up(16, align)
                 } else {
@@ -139,7 +139,7 @@ impl TypeKind {
                 })
             },
             Self::Array(array) => {
-                let inner_align = array.inner.align(address_space, database)?;
+                let inner_align = array.inner.align(address_space, db)?;
                 Some(if address_space == AddressSpace::Uniform {
                     round_up(16, inner_align)
                 } else {
@@ -168,7 +168,7 @@ impl TypeKind {
     pub fn size_of(
         &self,
         address_space: AddressSpace,
-        database: &dyn HirDatabase,
+        db: &dyn HirDatabase,
     ) -> Option<Bytes> {
         #[expect(
             clippy::match_same_arms,
@@ -185,7 +185,7 @@ impl TypeKind {
                 size: VecSize::Two,
                 component_type,
             }) if matches!(
-                component_type.kind(database),
+                component_type.kind(db),
                 Self::Scalar(
                     ScalarType::Bool | ScalarType::I32 | ScalarType::U32 | ScalarType::F32
                 )
@@ -196,12 +196,12 @@ impl TypeKind {
             Self::Vector(VectorType {
                 size: VecSize::Two,
                 component_type,
-            }) if matches!(component_type.kind(database), Self::Scalar(ScalarType::F16)) => Some(4),
+            }) if matches!(component_type.kind(db), Self::Scalar(ScalarType::F16)) => Some(4),
             Self::Vector(VectorType {
                 size: VecSize::Three,
                 component_type,
             }) if matches!(
-                component_type.kind(database),
+                component_type.kind(db),
                 Self::Scalar(
                     ScalarType::Bool | ScalarType::I32 | ScalarType::U32 | ScalarType::F32
                 )
@@ -212,12 +212,12 @@ impl TypeKind {
             Self::Vector(VectorType {
                 size: VecSize::Four,
                 component_type,
-            }) if matches!(component_type.kind(database), Self::Scalar(ScalarType::F16)) => Some(6),
+            }) if matches!(component_type.kind(db), Self::Scalar(ScalarType::F16)) => Some(6),
             Self::Vector(VectorType {
                 size: VecSize::Four,
                 component_type,
             }) if matches!(
-                component_type.kind(database),
+                component_type.kind(db),
                 Self::Scalar(
                     ScalarType::Bool | ScalarType::I32 | ScalarType::U32 | ScalarType::F32
                 )
@@ -228,21 +228,21 @@ impl TypeKind {
             Self::Vector(VectorType {
                 size: VecSize::Three,
                 component_type,
-            }) if matches!(component_type.kind(database), Self::Scalar(ScalarType::F16)) => Some(8),
+            }) if matches!(component_type.kind(db), Self::Scalar(ScalarType::F16)) => Some(8),
             Self::Matrix(matrix_type) => Self::Vector(VectorType {
                 size: matrix_type.rows,
                 component_type: matrix_type.inner,
             })
-            .size_of(address_space, database),
+            .size_of(address_space, db),
             Self::Struct(r#struct) => {
-                let fields = &database.field_types(*r#struct).0;
+                let fields = &db.field_types(*r#struct).0;
                 let (_, size) =
-                    struct_member_layout(fields, database, AddressSpace::Storage, |_, _, _| {})?;
+                    struct_member_layout(fields, db, AddressSpace::Storage, |_, _, _| {})?;
                 Some(size)
             },
             Self::Array(array) => match array.size {
                 ArraySize::Constant(size) => {
-                    let stride = array.stride(address_space, database)?;
+                    let stride = array.stride(address_space, db)?;
                     Some(size.checked_mul(stride).unwrap())
                 },
                 ArraySize::Dynamic => None,
@@ -270,7 +270,7 @@ pub struct FieldLayout {
 /// Returns the (align, size) of the struct, and calls `on_field` for every field.
 pub fn struct_member_layout<Result, Function>(
     fields: &ArenaMap<LocalFieldId, Type>,
-    database: &dyn HirDatabase,
+    db: &dyn HirDatabase,
     address_space: AddressSpace,
     mut on_field: Function,
 ) -> Option<(Bytes, Bytes)>
@@ -288,8 +288,8 @@ where
         let custom_align = None;
         let custom_size = None;
 
-        let align = custom_align.or_else(|| field.align(address_space, database))?;
-        let size = custom_size.or_else(|| field.size(address_space, database))?;
+        let align = custom_align.or_else(|| field.align(address_space, db))?;
+        let size = custom_size.or_else(|| field.size(address_space, db))?;
 
         struct_align = struct_align.max(align);
 

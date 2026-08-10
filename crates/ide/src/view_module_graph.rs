@@ -22,13 +22,13 @@ use vfs::FileId;
 /// |---------|-------------|
 /// | VS Code | **wgsl-analyzer: View Module Graph** |
 pub(crate) fn view_module_graph(
-    database: &RootDatabase,
+    db: &RootDatabase,
     file_id: FileId,
 ) -> Option<String> {
     // TODO: This only renders the children. It should render an edge for each import and inline usage of another module.
-    let package = file_package(database, file_id)?;
-    let modules_to_render = ModulesMap::of(database, package);
-    let graph = DotModuleGraph::new(database, modules_to_render);
+    let package = file_package(db, file_id)?;
+    let modules_to_render = ModulesMap::of(db, package);
+    let graph = DotModuleGraph::new(db, modules_to_render);
 
     let mut dot = Vec::new();
     dot::render(&graph, &mut dot).unwrap();
@@ -46,13 +46,13 @@ impl ModuleData {
 }
 
 struct DotModuleGraph<'db> {
-    database: &'db RootDatabase,
+    db: &'db RootDatabase,
     modules: Vec<ModuleData>,
 }
 
 impl<'db> DotModuleGraph<'db> {
     fn new(
-        database: &'db RootDatabase,
+        db: &'db RootDatabase,
         modules_map: &ModulesMap,
     ) -> Self {
         let modules: Vec<_> = modules_map
@@ -65,7 +65,7 @@ impl<'db> DotModuleGraph<'db> {
             .sorted_by(|module_a, module_b| module_a.mod_path.cmp(&module_b.mod_path))
             .collect();
 
-        Self { database, modules }
+        Self { db, modules }
     }
 }
 

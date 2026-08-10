@@ -4,7 +4,7 @@ use triomphe::Arc;
 
 use crate::{
     HasSource as _,
-    database::{
+    db::{
         FunctionId, GlobalAssertStatementId, GlobalConstantId, GlobalVariableId, OverrideId,
         StructId, TypeAliasId,
     },

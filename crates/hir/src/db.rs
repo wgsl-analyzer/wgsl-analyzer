@@ -4,4 +4,4 @@
 //!
 //! But we need this for at least LRU caching at the query level.
 
-pub use hir_ty::database::HirDatabase;
+pub use hir_ty::db::HirDatabase;

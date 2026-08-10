@@ -8,7 +8,7 @@ use triomphe::Arc;
 
 use super::{BindingId, Body};
 use crate::{
-    database::DefinitionWithBodyId,
+    db::DefinitionWithBodyId,
     expression::{ExpressionId, Statement, StatementId, SwitchCaseSelector},
     item_tree::Name,
 };

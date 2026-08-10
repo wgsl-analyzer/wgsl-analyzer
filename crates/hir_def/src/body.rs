@@ -11,7 +11,7 @@ use triomphe::Arc;
 use crate::{
     HasSource as _,
     attributes::Attribute,
-    database::DefinitionWithBodyId,
+    db::DefinitionWithBodyId,
     expression::{ExpressionId, Statement, StatementId},
     expression_store::{ExpressionSourceMap, ExpressionStore, SyntheticSyntax},
     item_tree::Name,

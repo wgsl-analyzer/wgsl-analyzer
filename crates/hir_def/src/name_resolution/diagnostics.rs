@@ -1,7 +1,7 @@
 use base_db::EditionedFileId;
 use syntax::ast;
 
-use crate::{database::Location, item_tree::Name};
+use crate::{db::Location, item_tree::Name};
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct DefDiagnostic {

@@ -6,7 +6,7 @@ use syntax::ast;
 use vfs::VfsPath;
 
 use crate::{
-    database::{Location, ModuleDefinitionId},
+    db::{Location, ModuleDefinitionId},
     item_scope::{ItemScope, ModuleImportPath, ModuleItem},
     item_tree::{FlatImport, ImportStatement, ItemTree, ModuleItemId, Name},
     mod_path::{AbsoluteModPath, ModPath, PathKind},
@@ -19,13 +19,13 @@ use crate::{
 };
 
 pub fn collect_module(
-    database: &dyn SourceDatabase,
+    db: &dyn SourceDatabase,
     file_id: EditionedFileId,
 ) -> ItemScope {
-    let item_tree = ItemTree::of(database, file_id);
+    let item_tree = ItemTree::of(db, file_id);
 
     let mut collector = ModCollector {
-        database,
+        db,
         file_id,
         item_scope: ItemScope::default(),
     };
@@ -42,7 +42,7 @@ pub fn collect_module(
 /// It also eagerly verifies that names, including imported ones,
 /// do not clash.
 pub(super) struct ModCollector<'db> {
-    database: &'db dyn SourceDatabase,
+    db: &'db dyn SourceDatabase,
     file_id: EditionedFileId,
     item_scope: ItemScope,
 }
@@ -61,39 +61,31 @@ impl ModCollector<'_> {
                 },
                 ModuleItemId::Function(id) => (
                     &item_tree[id].name,
-                    ModuleDefinitionId::Function(
-                        Location::new(self.file_id, id).intern(self.database),
-                    ),
+                    ModuleDefinitionId::Function(Location::new(self.file_id, id).intern(self.db)),
                 ),
                 ModuleItemId::Struct(id) => (
                     &item_tree[id].name,
-                    ModuleDefinitionId::Struct(
-                        Location::new(self.file_id, id).intern(self.database),
-                    ),
+                    ModuleDefinitionId::Struct(Location::new(self.file_id, id).intern(self.db)),
                 ),
                 ModuleItemId::GlobalVariable(id) => (
                     &item_tree[id].name,
                     ModuleDefinitionId::GlobalVariable(
-                        Location::new(self.file_id, id).intern(self.database),
+                        Location::new(self.file_id, id).intern(self.db),
                     ),
                 ),
                 ModuleItemId::GlobalConstant(id) => (
                     &item_tree[id].name,
                     ModuleDefinitionId::GlobalConstant(
-                        Location::new(self.file_id, id).intern(self.database),
+                        Location::new(self.file_id, id).intern(self.db),
                     ),
                 ),
                 ModuleItemId::Override(id) => (
                     &item_tree[id].name,
-                    ModuleDefinitionId::Override(
-                        Location::new(self.file_id, id).intern(self.database),
-                    ),
+                    ModuleDefinitionId::Override(Location::new(self.file_id, id).intern(self.db)),
                 ),
                 ModuleItemId::TypeAlias(id) => (
                     &item_tree[id].name,
-                    ModuleDefinitionId::TypeAlias(
-                        Location::new(self.file_id, id).intern(self.database),
-                    ),
+                    ModuleDefinitionId::TypeAlias(Location::new(self.file_id, id).intern(self.db)),
                 ),
                 ModuleItemId::GlobalAssertStatement(_) => continue,
             };
@@ -116,7 +108,7 @@ impl ModCollector<'_> {
         location: Location<ast::ImportStatement>,
         item_id: ModuleItemId,
     ) {
-        let import_id = location.intern(self.database);
+        let import_id = location.intern(self.db);
         import_statement.expand(|flat_import| {
             let Some(name) = flat_import.leaf_name().cloned() else {
                 // If we do not have a leaf name, there are a few possible cases
@@ -207,7 +199,7 @@ impl ModCollector<'_> {
         location: Location<ast::ImportStatement>,
         import: &FlatImport,
     ) -> Result<(Package, AbsoluteModPath), DefDiagnostic> {
-        let package = file_package(self.database, self.file_id.file_id(self.database))
+        let package = file_package(self.db, self.file_id.file_id(self.db))
             .ok_or_else(|| DefDiagnostic::detached_file(self.file_id, location))?;
 
         match import.path.kind() {
@@ -219,7 +211,7 @@ impl ModCollector<'_> {
                     .ok_or_else(|| DefDiagnostic::unnamed_import(self.file_id, location))?;
 
                 let resolved_dependency = package
-                    .data(self.database)
+                    .data(self.db)
                     .dependencies
                     .iter()
                     .find(|dep| dep.name.as_str() == dependency_name.as_str())
@@ -231,14 +223,14 @@ impl ModCollector<'_> {
                         )
                     })?;
 
-                let dependency_package = resolved_dependency.package(self.database);
+                let dependency_package = resolved_dependency.package(self.db);
                 Ok((
                     dependency_package,
                     AbsoluteModPath::from_segments(&import.path.segments()[1..]),
                 ))
             },
             PathKind::Super(levels) => {
-                let mut mod_path = AbsoluteModPath::for_file(self.database, package, self.file_id)
+                let mut mod_path = AbsoluteModPath::for_file(self.db, package, self.file_id)
                     .ok_or_else(|| DefDiagnostic::detached_file(self.file_id, location))?;
 
                 for _ in 0..levels {
@@ -270,12 +262,12 @@ impl ModCollector<'_> {
         let [head_segments @ .., name] = path.segments() else {
             return Err(DefDiagnostic::unnamed_import(self.file_id, location));
         };
-        let module = resolve_module(self.database, package, head_segments);
+        let module = resolve_module(self.db, package, head_segments);
         let item = module.and_then(|module| self.resolve_item(module, name));
         if item.is_some() {
             Ok(item)
         } else {
-            let modules_map = ModulesMap::of(self.database, package);
+            let modules_map = ModulesMap::of(self.db, package);
             if modules_map.modules.contains_key(path) {
                 Ok(None)
             } else {
@@ -289,7 +281,7 @@ impl ModCollector<'_> {
         file_id: EditionedFileId,
         name: &Name,
     ) -> Option<ModuleDefinitionId> {
-        let item_tree = ItemTree::of(self.database, file_id);
+        let item_tree = ItemTree::of(self.db, file_id);
         item_tree
             .top_level_items()
             .iter()
@@ -297,24 +289,20 @@ impl ModCollector<'_> {
                 ModuleItemId::Struct(id) => {
                     let r#struct = &item_tree[*id];
                     (&r#struct.name == name).then(|| {
-                        ModuleDefinitionId::Struct(
-                            Location::new(file_id, *id).intern(self.database),
-                        )
+                        ModuleDefinitionId::Struct(Location::new(file_id, *id).intern(self.db))
                     })
                 },
                 ModuleItemId::TypeAlias(id) => {
                     let type_alias = &item_tree[*id];
                     (&type_alias.name == name).then(|| {
-                        ModuleDefinitionId::TypeAlias(
-                            Location::new(file_id, *id).intern(self.database),
-                        )
+                        ModuleDefinitionId::TypeAlias(Location::new(file_id, *id).intern(self.db))
                     })
                 },
                 ModuleItemId::GlobalVariable(id) => {
                     let variable = &item_tree[*id];
                     (&variable.name == name).then(|| {
                         ModuleDefinitionId::GlobalVariable(
-                            Location::new(file_id, *id).intern(self.database),
+                            Location::new(file_id, *id).intern(self.db),
                         )
                     })
                 },
@@ -322,24 +310,20 @@ impl ModCollector<'_> {
                     let constant = &item_tree[*id];
                     (&constant.name == name).then(|| {
                         ModuleDefinitionId::GlobalConstant(
-                            Location::new(file_id, *id).intern(self.database),
+                            Location::new(file_id, *id).intern(self.db),
                         )
                     })
                 },
                 ModuleItemId::Override(id) => {
                     let r#override = &item_tree[*id];
                     (&r#override.name == name).then(|| {
-                        ModuleDefinitionId::Override(
-                            Location::new(file_id, *id).intern(self.database),
-                        )
+                        ModuleDefinitionId::Override(Location::new(file_id, *id).intern(self.db))
                     })
                 },
                 ModuleItemId::Function(id) => {
                     let function = &item_tree[*id];
                     (&function.name == name).then(|| {
-                        ModuleDefinitionId::Function(
-                            Location::new(file_id, *id).intern(self.database),
-                        )
+                        ModuleDefinitionId::Function(Location::new(file_id, *id).intern(self.db))
                     })
                 },
                 // TODO: for re-exports, look through the `public import` statements. See https://github.com/wgsl-analyzer/wgsl-analyzer/issues/632

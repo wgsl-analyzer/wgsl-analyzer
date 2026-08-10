@@ -70,13 +70,13 @@ pub struct HoverGotoTypeData {
 // Shows additional information, like the type of an expression or the documentation for a definition when "focusing" code.
 // Focusing is usually hovering with a mouse, but can also be triggered with a shortcut.
 pub(crate) fn hover(
-    database: &RootDatabase,
+    db: &RootDatabase,
     file_range: FileRange,
     _config: &HoverConfig,
 ) -> Option<RangeInfo<HoverResult>> {
-    let _semantics = &Semantics::new(database);
-    let file_id = EditionedFileId::from_file(database, file_range.file_id);
-    let _file = file_id.parse(database).tree();
+    let _semantics = &Semantics::new(db);
+    let file_id = EditionedFileId::from_file(db, file_range.file_id);
+    let _file = file_id.parse(db).tree();
     // TODO: Implement hovering and https://github.com/wgsl-analyzer/wgsl-analyzer/issues/362
     None
 }

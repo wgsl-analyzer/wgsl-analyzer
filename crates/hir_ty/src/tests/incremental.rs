@@ -1,19 +1,18 @@
 use base_db::{EditionedFileId, SourceDatabase as _};
 use expect_test::{Expect, expect};
 use hir_def::{
-    database::{DefinitionWithBodyId, ModuleDefinitionId},
+    db::{DefinitionWithBodyId, ModuleDefinitionId},
     item_tree::ItemTree,
 };
 use test_fixture::WithFixture as _;
 
 use crate::{
-    database::HirDatabase as _, infer::InferenceResult, test_db::TestDatabase,
-    tests::module_definitions,
+    db::HirDatabase as _, infer::InferenceResult, test_db::TestDatabase, tests::module_definitions,
 };
 
 #[test]
 fn typing_whitespace_inside_a_function_should_not_invalidate_types() {
-    let (mut database, position) = TestDatabase::with_position(
+    let (mut db, position) = TestDatabase::with_position(
         "
 //- /package.wesl
 fn foo() {
@@ -21,16 +20,16 @@ fn foo() {
 }
     ",
     );
-    let file_id = EditionedFileId::from_file(&database, position.file_id);
+    let file_id = EditionedFileId::from_file(&db, position.file_id);
     execute_assert_events(
-        &database,
+        &db,
         || {
-            let module_info = ItemTree::of(&database, file_id);
-            let definitions = module_definitions(&database, file_id, module_info);
+            let module_info = ItemTree::of(&db, file_id);
+            let definitions = module_definitions(&db, file_id, module_info);
             for definition in definitions {
                 if let ModuleDefinitionId::Function(id) = definition {
                     let inference_results =
-                        InferenceResult::of(&database, DefinitionWithBodyId::Function(id));
+                        InferenceResult::of(&db, DefinitionWithBodyId::Function(id));
                     assert!(inference_results.diagnostics().is_empty());
                 }
             }
@@ -59,17 +58,17 @@ fn foo() {
     1;
 }";
 
-    database.set_file_text(position.file_id, new_text);
+    db.set_file_text(position.file_id, new_text);
 
     execute_assert_events(
-        &database,
+        &db,
         || {
-            let module_info = ItemTree::of(&database, file_id);
-            let definitions = module_definitions(&database, file_id, module_info);
+            let module_info = ItemTree::of(&db, file_id);
+            let definitions = module_definitions(&db, file_id, module_info);
             for definition in definitions {
                 if let ModuleDefinitionId::Function(id) = definition {
                     let inference_results =
-                        InferenceResult::of(&database, DefinitionWithBodyId::Function(id));
+                        InferenceResult::of(&db, DefinitionWithBodyId::Function(id));
                     assert!(inference_results.diagnostics().is_empty());
                 }
             }
@@ -90,7 +89,7 @@ fn foo() {
 
 #[test]
 fn typing_inside_a_function_should_not_invalidate_types_in_another() {
-    let (mut database, position) = TestDatabase::with_position(
+    let (mut db, position) = TestDatabase::with_position(
         "
 //- /package.wesl
 fn foo() -> f32 {
@@ -103,16 +102,16 @@ fn baz() -> i32 {
     return 1 + 1;
 }",
     );
-    let file_id = EditionedFileId::from_file(&database, position.file_id);
+    let file_id = EditionedFileId::from_file(&db, position.file_id);
     execute_assert_events(
-        &database,
+        &db,
         || {
-            let module_info = ItemTree::of(&database, file_id);
-            let definitions = module_definitions(&database, file_id, module_info);
+            let module_info = ItemTree::of(&db, file_id);
+            let definitions = module_definitions(&db, file_id, module_info);
             for definition in definitions {
                 if let ModuleDefinitionId::Function(id) = definition {
                     let inference_results =
-                        InferenceResult::of(&database, DefinitionWithBodyId::Function(id));
+                        InferenceResult::of(&db, DefinitionWithBodyId::Function(id));
                     assert!(inference_results.diagnostics().is_empty());
                 }
             }
@@ -157,17 +156,17 @@ fn baz() -> i32 {
     return 1 + 1;
 }";
 
-    database.set_file_text(position.file_id, new_text);
+    db.set_file_text(position.file_id, new_text);
 
     execute_assert_events(
-        &database,
+        &db,
         || {
-            let module_info = ItemTree::of(&database, file_id);
-            let definitions = module_definitions(&database, file_id, module_info);
+            let module_info = ItemTree::of(&db, file_id);
+            let definitions = module_definitions(&db, file_id, module_info);
             for definition in definitions {
                 if let ModuleDefinitionId::Function(id) = definition {
                     let inference_results =
-                        InferenceResult::of(&database, DefinitionWithBodyId::Function(id));
+                        InferenceResult::of(&db, DefinitionWithBodyId::Function(id));
                     assert!(inference_results.diagnostics().is_empty());
                 }
             }
@@ -199,14 +198,14 @@ fn baz() -> i32 {
 /// Also checks the full list of events, which may change as the implementation changes.
 #[expect(clippy::needless_pass_by_value, reason = "matches expect! macro")]
 fn execute_assert_events<Callback>(
-    database: &TestDatabase,
+    db: &TestDatabase,
     callback: Callback,
     required: &[(&str, usize)],
     expect: Expect,
 ) where
     Callback: FnOnce(),
 {
-    let (executed, events) = database.log_executed(callback);
+    let (executed, events) = db.log_executed(callback);
     expect.assert_debug_eq(&executed);
     for (event, count) in required {
         let actual_count = executed.iter().filter(|it| it.contains(event)).count();

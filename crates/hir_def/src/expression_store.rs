@@ -10,7 +10,7 @@ use syntax::{ast, pointer::AstPointer};
 
 use crate::{
     body::Body,
-    database::DefinitionWithBodyId,
+    db::DefinitionWithBodyId,
     expression::{Expression, ExpressionId},
     signature::{
         AssertStatementSignature, ConstantSignature, FunctionSignature, OverrideSignature,
@@ -79,55 +79,55 @@ impl Index<TypeSpecifierId> for ExpressionStore {
 
 impl ExpressionStore {
     pub fn of(
-        database: &dyn SourceDatabase,
+        db: &dyn SourceDatabase,
         owner: ExpressionStoreOwnerId,
     ) -> &Self {
         match owner {
             ExpressionStoreOwnerId::Signature(DefinitionWithBodyId::Function(id)) => {
-                &FunctionSignature::of(database, id).store
+                &FunctionSignature::of(db, id).store
             },
             ExpressionStoreOwnerId::Signature(DefinitionWithBodyId::GlobalVariable(id)) => {
-                &VariableSignature::of(database, id).store
+                &VariableSignature::of(db, id).store
             },
             ExpressionStoreOwnerId::Signature(DefinitionWithBodyId::GlobalConstant(id)) => {
-                &ConstantSignature::of(database, id).store
+                &ConstantSignature::of(db, id).store
             },
             ExpressionStoreOwnerId::Signature(DefinitionWithBodyId::Override(id)) => {
-                &OverrideSignature::of(database, id).store
+                &OverrideSignature::of(db, id).store
             },
             ExpressionStoreOwnerId::Signature(DefinitionWithBodyId::GlobalAssertStatement(id)) => {
-                &AssertStatementSignature::of(database, id).store
+                &AssertStatementSignature::of(db, id).store
             },
-            ExpressionStoreOwnerId::Body(definition) => &Body::of(database, definition).store,
+            ExpressionStoreOwnerId::Body(definition) => &Body::of(db, definition).store,
         }
     }
     pub fn with_source_map(
-        database: &dyn SourceDatabase,
+        db: &dyn SourceDatabase,
         owner: ExpressionStoreOwnerId,
     ) -> (&Self, &ExpressionSourceMap) {
         match owner {
             ExpressionStoreOwnerId::Signature(DefinitionWithBodyId::Function(id)) => {
-                let (data, source_map) = FunctionSignature::with_source_map(database, id);
+                let (data, source_map) = FunctionSignature::with_source_map(db, id);
                 (&data.store, source_map)
             },
             ExpressionStoreOwnerId::Signature(DefinitionWithBodyId::GlobalVariable(id)) => {
-                let (data, source_map) = VariableSignature::with_source_map(database, id);
+                let (data, source_map) = VariableSignature::with_source_map(db, id);
                 (&data.store, source_map)
             },
             ExpressionStoreOwnerId::Signature(DefinitionWithBodyId::GlobalConstant(id)) => {
-                let (data, source_map) = ConstantSignature::with_source_map(database, id);
+                let (data, source_map) = ConstantSignature::with_source_map(db, id);
                 (&data.store, source_map)
             },
             ExpressionStoreOwnerId::Signature(DefinitionWithBodyId::Override(id)) => {
-                let (data, source_map) = OverrideSignature::with_source_map(database, id);
+                let (data, source_map) = OverrideSignature::with_source_map(db, id);
                 (&data.store, source_map)
             },
             ExpressionStoreOwnerId::Signature(DefinitionWithBodyId::GlobalAssertStatement(id)) => {
-                let (data, source_map) = AssertStatementSignature::with_source_map(database, id);
+                let (data, source_map) = AssertStatementSignature::with_source_map(db, id);
                 (&data.store, source_map)
             },
             ExpressionStoreOwnerId::Body(definition) => {
-                let (body, source_map) = Body::with_source_map(database, definition);
+                let (body, source_map) = Body::with_source_map(db, definition);
                 (&body.store, source_map.expression_source_map())
             },
         }

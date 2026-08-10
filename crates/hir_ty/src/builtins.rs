@@ -6,7 +6,7 @@ use wgsl_types::{
 };
 
 use crate::{
-    database::HirDatabase,
+    db::HirDatabase,
     function::{FunctionDetails, ResolvedFunctionId},
     ty::{
         ArraySize, ArrayType, AtomicType, BoundVariable, Pointer, ScalarType, TexelFormat,

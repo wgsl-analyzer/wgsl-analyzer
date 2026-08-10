@@ -10,9 +10,9 @@ fn check_item_tree(
     source: &str,
     expect: Expect,
 ) {
-    let (database, file_id) = TestDatabase::with_single_file(source);
+    let (db, file_id) = TestDatabase::with_single_file(source);
 
-    let module_info = ItemTree::of(&database, file_id);
+    let module_info = ItemTree::of(&db, file_id);
     expect.assert_eq(&crate::item_tree::pretty::pretty_print_item_tree(
         module_info,
     ));

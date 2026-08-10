@@ -6,12 +6,12 @@ use wgsl_formatter::FormattingOptions;
 use crate::RootDatabase;
 
 pub(crate) fn format(
-    database: &RootDatabase,
+    db: &RootDatabase,
     file_id: FileId,
     range: Option<TextRange>,
 ) -> Option<SyntaxNode> {
-    let file_id = EditionedFileId::from_file(database, file_id);
-    let file = file_id.parse(database).tree();
+    let file_id = EditionedFileId::from_file(db, file_id);
+    let file = file_id.parse(db).tree();
 
     let node = match range {
         None => file.syntax().clone_for_update(),

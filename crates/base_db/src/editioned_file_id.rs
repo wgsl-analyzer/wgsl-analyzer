@@ -55,45 +55,45 @@ impl EditionedFileId {
     /// Warning: Prefer [`from_file`] to get the correct edition for WGSL and WESL files.
     #[inline]
     pub fn new_unchecked(
-        database: &dyn Database,
+        db: &dyn Database,
         file_id: FileId,
         edition: Edition,
     ) -> Self {
-        Self::from_span_file_id(database, RawEditionedFileId { file_id, edition })
+        Self::from_span_file_id(db, RawEditionedFileId { file_id, edition })
     }
 
     pub fn from_file(
-        database: &dyn SourceDatabase,
+        db: &dyn SourceDatabase,
         file_id: FileId,
     ) -> Self {
-        let source_root = database
-            .source_root(database.file_source_root(file_id).source_root_id(database))
-            .source_root(database);
+        let source_root = db
+            .source_root(db.file_source_root(file_id).source_root_id(db))
+            .source_root(db);
 
         let extension = match FileExtension::from_file(&source_root, file_id) {
             Ok(extension) => extension,
             Err(error) => {
                 tracing::error!("{error}");
-                return Self::new_unchecked(database, file_id, Edition::DEFAULT);
+                return Self::new_unchecked(db, file_id, Edition::DEFAULT);
             },
         };
 
-        Self::from_file_with_extension(database, file_id, extension)
+        Self::from_file_with_extension(db, file_id, extension)
     }
 
     pub fn from_file_with_extension(
-        database: &dyn SourceDatabase,
+        db: &dyn SourceDatabase,
         file_id: FileId,
         extension: FileExtension,
     ) -> Self {
         match extension {
-            FileExtension::Wgsl => Self::new_unchecked(database, file_id, Edition::DEFAULT),
+            FileExtension::Wgsl => Self::new_unchecked(db, file_id, Edition::DEFAULT),
             FileExtension::Wesl => {
-                if let Some(package) = file_package(database, file_id) {
-                    Self::new_unchecked(database, file_id, package.data(database).edition)
+                if let Some(package) = file_package(db, file_id) {
+                    Self::new_unchecked(db, file_id, package.data(db).edition)
                 } else {
                     // Assume latest WESL for standalone files
-                    Self::new_unchecked(database, file_id, Edition::LATEST)
+                    Self::new_unchecked(db, file_id, Edition::LATEST)
                 }
             },
         }
@@ -102,25 +102,25 @@ impl EditionedFileId {
     #[inline]
     pub fn file_id(
         self,
-        database: &dyn Database,
+        db: &dyn Database,
     ) -> vfs::FileId {
-        self.field(database).file_id
+        self.field(db).file_id
     }
 
     #[inline]
     pub fn edition(
         self,
-        database: &dyn Database,
+        db: &dyn Database,
     ) -> Edition {
-        self.field(database).edition
+        self.field(db).edition
     }
 
     #[inline]
     pub fn unpack(
         self,
-        database: &dyn Database,
+        db: &dyn Database,
     ) -> RawEditionedFileId {
-        *self.field(database)
+        *self.field(db)
     }
 }
 

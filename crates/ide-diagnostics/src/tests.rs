@@ -31,8 +31,8 @@ fn check_diagnostics_with_config(
     source: &str,
     expect: Expect,
 ) {
-    let (database, file_id) = RootDatabase::with_single_file(source);
-    let diagnostics = crate::diagnostics(&database, config, file_id.file_id(&database));
+    let (db, file_id) = RootDatabase::with_single_file(source);
+    let diagnostics = crate::diagnostics(&db, config, file_id.file_id(&db));
     let mut actual = String::new();
     for Diagnostic {
         code,

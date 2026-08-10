@@ -11,7 +11,7 @@ use hir_def::{
 };
 use hir_ty::{
     builtins::BuiltinId,
-    database::HirDatabase,
+    db::HirDatabase,
     diagnostics::InferenceDiagnosticKind,
     infer::TypeExpectation,
     lower::{LoweredKind, TypeContainer, TypeLoweringError, TypeLoweringErrorKind},
@@ -407,29 +407,29 @@ pub(crate) fn any_diag_from_infer_diagnostic(
 }
 
 pub(crate) fn any_diag_from_def_diagnostic(
-    database: &dyn HirDatabase,
+    db: &dyn HirDatabase,
     def_diagnostic: &DefDiagnostic,
     file_id: EditionedFileId,
 ) -> AnyDiagnostic {
     match &def_diagnostic.kind {
-        DefDiagnosticKind::UnnamedImport { id } => AnyDiagnostic::UnnamedImport {
-            id: id.ast_ptr(database),
+        DefDiagnosticKind::UnnamedImport { id } => {
+            AnyDiagnostic::UnnamedImport { id: id.ast_ptr(db) }
         },
         DefDiagnosticKind::UnresolvedPackage { id, name } => AnyDiagnostic::UnresolvedPackage {
-            id: id.ast_ptr(database),
+            id: id.ast_ptr(db),
             name: name.clone(),
         },
-        DefDiagnosticKind::UnresolvedImport { id } => AnyDiagnostic::UnresolvedImport {
-            id: id.ast_ptr(database),
+        DefDiagnosticKind::UnresolvedImport { id } => {
+            AnyDiagnostic::UnresolvedImport { id: id.ast_ptr(db) }
         },
-        DefDiagnosticKind::TooManySupers { id } => AnyDiagnostic::TooManySupers {
-            id: id.ast_ptr(database),
+        DefDiagnosticKind::TooManySupers { id } => {
+            AnyDiagnostic::TooManySupers { id: id.ast_ptr(db) }
         },
-        DefDiagnosticKind::DetachedFile { id } => AnyDiagnostic::DetachedFile {
-            id: id.ast_ptr(database),
+        DefDiagnosticKind::DetachedFile { id } => {
+            AnyDiagnostic::DetachedFile { id: id.ast_ptr(db) }
         },
         DefDiagnosticKind::NameConflict { item, previous } => AnyDiagnostic::NameConflict {
-            item: item.ast_ptr(database),
+            item: item.ast_ptr(db),
             name: previous.clone(),
         },
     }

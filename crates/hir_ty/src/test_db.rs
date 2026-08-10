@@ -21,7 +21,7 @@ pub(crate) struct TestDatabase {
 impl Default for TestDatabase {
     fn default() -> Self {
         let events = Arc::<Mutex<Option<Vec<salsa::Event>>>>::default();
-        let mut database = Self {
+        let mut db = Self {
             storage: salsa::Storage::new(Some(Box::new({
                 let events = events.clone();
                 move |event| {
@@ -35,10 +35,10 @@ impl Default for TestDatabase {
             events,
             nonce: Nonce::new(),
         };
-        ExtensionsConfigInput::update_extensions(&mut database, ExtensionsConfig::none());
+        ExtensionsConfigInput::update_extensions(&mut db, ExtensionsConfig::none());
         // This needs to be here otherwise the first `Change` will panic.
-        set_all_packages_with_durability(&mut database, [], Durability::LOW);
-        database
+        set_all_packages_with_durability(&mut db, [], Durability::LOW);
+        db
     }
 }
 

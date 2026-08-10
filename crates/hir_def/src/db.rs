@@ -59,23 +59,23 @@ pub enum DefinitionWithBodyId {
 impl DefinitionWithBodyId {
     pub fn file_id(
         self,
-        database: &dyn SourceDatabase,
+        db: &dyn SourceDatabase,
     ) -> EditionedFileId {
         match self {
-            Self::Function(id) => id.lookup(database).file_id,
-            Self::GlobalVariable(id) => id.lookup(database).file_id,
-            Self::GlobalConstant(id) => id.lookup(database).file_id,
-            Self::GlobalAssertStatement(id) => id.lookup(database).file_id,
-            Self::Override(id) => id.lookup(database).file_id,
+            Self::Function(id) => id.lookup(db).file_id,
+            Self::GlobalVariable(id) => id.lookup(db).file_id,
+            Self::GlobalConstant(id) => id.lookup(db).file_id,
+            Self::GlobalAssertStatement(id) => id.lookup(db).file_id,
+            Self::Override(id) => id.lookup(db).file_id,
         }
     }
 
     pub fn resolver(
         self,
-        database: &dyn SourceDatabase,
+        db: &dyn SourceDatabase,
     ) -> Resolver<'_> {
-        let file_id = self.file_id(database);
-        let module_info = ItemScope::of(database, file_id);
+        let file_id = self.file_id(db);
+        let module_info = ItemScope::of(db, file_id);
         Resolver::new(file_id, module_info)
     }
 }
@@ -97,25 +97,25 @@ pub enum ModuleDefinitionId {
 impl ModuleDefinitionId {
     pub fn file_id(
         self,
-        database: &dyn SourceDatabase,
+        db: &dyn SourceDatabase,
     ) -> EditionedFileId {
         match self {
-            Self::Function(id) => id.lookup(database).file_id,
-            Self::GlobalVariable(id) => id.lookup(database).file_id,
-            Self::GlobalConstant(id) => id.lookup(database).file_id,
-            Self::GlobalAssertStatement(id) => id.lookup(database).file_id,
-            Self::Override(id) => id.lookup(database).file_id,
-            Self::Struct(id) => id.lookup(database).file_id,
-            Self::TypeAlias(id) => id.lookup(database).file_id,
+            Self::Function(id) => id.lookup(db).file_id,
+            Self::GlobalVariable(id) => id.lookup(db).file_id,
+            Self::GlobalConstant(id) => id.lookup(db).file_id,
+            Self::GlobalAssertStatement(id) => id.lookup(db).file_id,
+            Self::Override(id) => id.lookup(db).file_id,
+            Self::Struct(id) => id.lookup(db).file_id,
+            Self::TypeAlias(id) => id.lookup(db).file_id,
         }
     }
 
     pub fn resolver(
         self,
-        database: &dyn SourceDatabase,
+        db: &dyn SourceDatabase,
     ) -> Resolver<'_> {
-        let file_id = self.file_id(database);
-        let module_info = ItemScope::of(database, file_id);
+        let file_id = self.file_id(db);
+        let module_info = ItemScope::of(db, file_id);
         Resolver::new(file_id, module_info)
     }
 

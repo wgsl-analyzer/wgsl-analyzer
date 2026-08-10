@@ -6,7 +6,7 @@ use wgsl_types::ty::SamplerType;
 
 use super::{Type, TypeKind};
 use crate::{
-    database::HirDatabase,
+    db::HirDatabase,
     function::FunctionDetails,
     infer::{TypeExpectation, TypeExpectationInner},
     ty::{ArraySize, ScalarType, TextureKind},
@@ -21,14 +21,14 @@ pub enum TypeVerbosity {
 }
 
 pub fn pretty_type_expectation(
-    database: &dyn HirDatabase,
+    db: &dyn HirDatabase,
     r#type: TypeExpectation,
 ) -> String {
-    pretty_type_expectation_with_verbosity(database, r#type, TypeVerbosity::default())
+    pretty_type_expectation_with_verbosity(db, r#type, TypeVerbosity::default())
 }
 
 pub fn pretty_type_expectation_with_verbosity(
-    database: &dyn HirDatabase,
+    db: &dyn HirDatabase,
     r#type: TypeExpectation,
     verbosity: TypeVerbosity,
 ) -> String {
@@ -36,7 +36,7 @@ pub fn pretty_type_expectation_with_verbosity(
 
     match r#type {
         TypeExpectation::Type(r#type) => {
-            _ = write_type_expectation_inner(database, r#type, false, &mut str, verbosity);
+            _ = write_type_expectation_inner(db, r#type, false, &mut str, verbosity);
         },
         TypeExpectation::Any => _ = write!(&mut str, "any"),
     }
@@ -44,7 +44,7 @@ pub fn pretty_type_expectation_with_verbosity(
 }
 
 fn write_type_expectation_inner(
-    database: &dyn HirDatabase,
+    db: &dyn HirDatabase,
     inner: TypeExpectationInner,
     or_vec: bool,
     buffer: &mut String,
@@ -52,16 +52,16 @@ fn write_type_expectation_inner(
 ) -> fmt::Result {
     match inner {
         TypeExpectationInner::Exact(r#type) => {
-            write_type(database, r#type, buffer, verbosity)?;
+            write_type(db, r#type, buffer, verbosity)?;
             if or_vec {
                 write!(buffer, " or vecN<")?;
-                write_type(database, r#type, buffer, verbosity)?;
+                write_type(db, r#type, buffer, verbosity)?;
                 write!(buffer, ">")?;
             }
         },
         TypeExpectationInner::IntegerScalar => {
             write!(buffer, "i32 or u32")?;
-            if ExtensionsConfigInput::get_extensions(database).shader_int64 {
+            if ExtensionsConfigInput::get_extensions(db).shader_int64 {
                 write!(buffer, " or i64 or u64")?;
             }
         },
@@ -73,10 +73,10 @@ fn write_type_expectation_inner(
 }
 
 pub fn pretty_type(
-    database: &dyn HirDatabase,
+    db: &dyn HirDatabase,
     r#type: Type,
 ) -> String {
-    pretty_type_with_verbosity(database, r#type, TypeVerbosity::default())
+    pretty_type_with_verbosity(db, r#type, TypeVerbosity::default())
 }
 
 /// Pretty-print a type.
@@ -85,20 +85,20 @@ pub fn pretty_type(
 ///
 /// Panics if writing to the internal buffer fails.
 pub fn pretty_type_with_verbosity(
-    database: &dyn HirDatabase,
+    db: &dyn HirDatabase,
     r#type: Type,
     verbosity: TypeVerbosity,
 ) -> String {
     let mut str = String::new();
-    write_type(database, r#type, &mut str, verbosity).unwrap();
+    write_type(db, r#type, &mut str, verbosity).unwrap();
     str
 }
 
 pub fn pretty_fn(
-    database: &dyn HirDatabase,
+    db: &dyn HirDatabase,
     function: &FunctionDetails,
 ) -> String {
-    pretty_fn_with_verbosity(database, function, TypeVerbosity::default())
+    pretty_fn_with_verbosity(db, function, TypeVerbosity::default())
 }
 
 /// Pretty-print a function.
@@ -107,22 +107,22 @@ pub fn pretty_fn(
 ///
 /// Panics if writing into the internal buffer fails.
 pub fn pretty_fn_with_verbosity(
-    database: &dyn HirDatabase,
+    db: &dyn HirDatabase,
     function: &FunctionDetails,
     verbosity: TypeVerbosity,
 ) -> String {
     let mut str = String::new();
-    pretty_fn_inner(database, function, &mut str, verbosity).unwrap();
+    pretty_fn_inner(db, function, &mut str, verbosity).unwrap();
     str
 }
 
 fn pretty_fn_inner(
-    database: &dyn HirDatabase,
+    db: &dyn HirDatabase,
     function: &FunctionDetails,
     buffer: &mut String,
     verbosity: TypeVerbosity,
 ) -> fmt::Result {
-    pretty_fn_inner_with_offsets(database, function, buffer, verbosity, None)
+    pretty_fn_inner_with_offsets(db, function, buffer, verbosity, None)
 }
 
 /// Pretty-print a function signature, optionally recording byte-offset
@@ -132,7 +132,7 @@ fn pretty_fn_inner(
 ///
 /// Panics if writing into the internal buffer fails.
 pub fn pretty_fn_inner_with_offsets(
-    database: &dyn HirDatabase,
+    db: &dyn HirDatabase,
     function: &FunctionDetails,
     buffer: &mut String,
     verbosity: TypeVerbosity,
@@ -153,7 +153,7 @@ pub fn pretty_fn_inner_with_offsets(
         if !param_name.is_empty() && !hir_def::item_tree::Name::is_missing(param_name) {
             write!(buffer, "{param_name}: ")?;
         }
-        write_type(database, param_type, buffer, verbosity)?;
+        write_type(db, param_type, buffer, verbosity)?;
 
         if let Some(ref mut offsets) = param_offsets {
             #[expect(
@@ -168,19 +168,19 @@ pub fn pretty_fn_inner_with_offsets(
     write!(buffer, ")")?;
     if let Some(return_type) = function.return_type {
         buffer.push_str(" -> ");
-        write_type(database, return_type, buffer, verbosity)?;
+        write_type(db, return_type, buffer, verbosity)?;
     }
     Ok(())
 }
 
 #[expect(clippy::too_many_lines, reason = "long but simple (recursive) match")]
 fn write_type(
-    database: &dyn HirDatabase,
+    db: &dyn HirDatabase,
     r#type: Type,
     formatter: &mut String,
     verbosity: TypeVerbosity,
 ) -> fmt::Result {
-    match r#type.kind(database) {
+    match r#type.kind(db) {
         TypeKind::Error => write!(formatter, "[error]"),
         TypeKind::Scalar(ScalarType::Bool) => write!(formatter, "bool"),
         TypeKind::Scalar(ScalarType::AbstractInt) => write!(formatter, "integer"),
@@ -193,12 +193,12 @@ fn write_type(
         TypeKind::Scalar(ScalarType::F16) => write!(formatter, "f16"),
         TypeKind::Atomic(atomic) => {
             write!(formatter, "atomic<")?;
-            write_type(database, atomic.inner, formatter, verbosity)?;
+            write_type(db, atomic.inner, formatter, verbosity)?;
             write!(formatter, ">")
         },
         TypeKind::Vector(vector_type) => {
             write!(formatter, "vec{}<", vector_type.size)?;
-            write_type(database, vector_type.component_type, formatter, verbosity)?;
+            write_type(db, vector_type.component_type, formatter, verbosity)?;
             write!(formatter, ">")
         },
         TypeKind::Matrix(matrix_type) => {
@@ -207,11 +207,11 @@ fn write_type(
                 "mat{}x{}<",
                 matrix_type.columns, matrix_type.rows
             )?;
-            write_type(database, matrix_type.inner, formatter, verbosity)?;
+            write_type(db, matrix_type.inner, formatter, verbosity)?;
             write!(formatter, ">")
         },
         TypeKind::Struct(r#struct) => {
-            let data = StructSignature::of(database, r#struct);
+            let data = StructSignature::of(db, r#struct);
             write!(formatter, "{}", data.name.as_str())
         },
         TypeKind::BuiltinStruct(builtin_struct) => {
@@ -223,7 +223,7 @@ fn write_type(
             } else {
                 write!(formatter, "array<")?;
             }
-            write_type(database, array_type.inner, formatter, verbosity)?;
+            write_type(db, array_type.inner, formatter, verbosity)?;
             match array_type.size {
                 ArraySize::Constant(value) => write!(formatter, ", {value}")?,
                 ArraySize::Dynamic => {},
@@ -241,7 +241,7 @@ fn write_type(
                     },
                     texture_type.dimension,
                     if texture_type.arrayed { "_array" } else { "" },
-                    pretty_type(database, r#type),
+                    pretty_type(db, r#type),
                 ),
                 TextureKind::Storage(format, mode) => format!(
                     "texture_storage_{}{}{}<{format},{mode}>",
@@ -276,25 +276,25 @@ fn write_type(
         TypeKind::Reference(reference) => match verbosity {
             TypeVerbosity::Full => {
                 write!(formatter, "ref<{}, ", reference.address_space)?;
-                write_type(database, reference.inner, formatter, verbosity)?;
+                write_type(db, reference.inner, formatter, verbosity)?;
                 write!(formatter, ", {}>", reference.access_mode)
             },
             TypeVerbosity::Compact => {
                 write!(formatter, "ref<")?;
-                write_type(database, reference.inner, formatter, verbosity)?;
+                write_type(db, reference.inner, formatter, verbosity)?;
                 write!(formatter, ">")
             },
-            TypeVerbosity::Inner => write_type(database, reference.inner, formatter, verbosity),
+            TypeVerbosity::Inner => write_type(db, reference.inner, formatter, verbosity),
         },
         TypeKind::Pointer(pointer) => match verbosity {
             TypeVerbosity::Full => {
                 write!(formatter, "ptr<{}, ", pointer.address_space)?;
-                write_type(database, pointer.inner, formatter, verbosity)?;
+                write_type(db, pointer.inner, formatter, verbosity)?;
                 write!(formatter, ", {}>", pointer.access_mode)
             },
             TypeVerbosity::Compact | TypeVerbosity::Inner => {
                 write!(formatter, "ptr<")?;
-                write_type(database, pointer.inner, formatter, verbosity)?;
+                write_type(db, pointer.inner, formatter, verbosity)?;
                 write!(formatter, ">")
             },
         },

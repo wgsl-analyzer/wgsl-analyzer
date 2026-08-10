@@ -6,7 +6,7 @@ use crate::{
         BindingId,
         scope::{ExprScopes, ScopeId},
     },
-    database::{
+    db::{
         FunctionId, GlobalConstantId, GlobalVariableId, ModuleDefinitionId, OverrideId, StructId,
         TypeAliasId,
     },
@@ -19,9 +19,9 @@ use crate::{
 };
 
 #[derive(Clone)]
-pub enum Scope<'database> {
+pub enum Scope<'db> {
     /// Local bindings.
-    Expression(ExpressionScope<'database>),
+    Expression(ExpressionScope<'db>),
     /// The items inside a module.
     Module(ModuleScope),
     /// Predeclared WGSL items.
@@ -29,9 +29,9 @@ pub enum Scope<'database> {
 }
 
 #[derive(Clone)]
-pub struct ExpressionScope<'database> {
+pub struct ExpressionScope<'db> {
     owner: FunctionId,
-    expression_scopes: &'database ExprScopes,
+    expression_scopes: &'db ExprScopes,
     scope_id: ScopeId,
 }
 
@@ -75,12 +75,12 @@ pub enum ScopeDef {
 }
 
 #[derive(Clone)]
-pub struct Resolver<'database> {
+pub struct Resolver<'db> {
     file_id: EditionedFileId,
-    scopes: Vec<Scope<'database>>,
+    scopes: Vec<Scope<'db>>,
 }
 
-impl<'database> Resolver<'database> {
+impl<'db> Resolver<'db> {
     #[must_use]
     pub fn new(
         file_id: EditionedFileId,
@@ -99,7 +99,7 @@ impl<'database> Resolver<'database> {
     #[must_use]
     pub fn push_scope(
         mut self,
-        scope: Scope<'database>,
+        scope: Scope<'db>,
     ) -> Self {
         self.scopes.push(scope);
         self
@@ -109,7 +109,7 @@ impl<'database> Resolver<'database> {
     pub fn push_expression_scope(
         mut self,
         owner: FunctionId,
-        expression_scopes: &'database ExprScopes,
+        expression_scopes: &'db ExprScopes,
         scope_id: ScopeId,
     ) -> Self {
         self.scopes.push(Scope::Expression(ExpressionScope {
@@ -120,7 +120,7 @@ impl<'database> Resolver<'database> {
         self
     }
 
-    pub fn scopes(&self) -> impl Iterator<Item = &Scope<'database>> {
+    pub fn scopes(&self) -> impl Iterator<Item = &Scope<'db>> {
         self.scopes.iter().rev()
     }
 
@@ -174,7 +174,7 @@ impl<'database> Resolver<'database> {
     /// Corresponds to `resolve_path_in_type_ns` in rust-analyzer.
     pub fn resolve(
         &self,
-        database: &dyn SourceDatabase,
+        db: &dyn SourceDatabase,
         path: &Path,
     ) -> Result<ResolveKind, ResolutionDiagnostic> {
         let path = path.mod_path();
@@ -182,24 +182,24 @@ impl<'database> Resolver<'database> {
             return Err(ResolutionDiagnostic::MissingName);
         }
         match path.kind() {
-            PathKind::Plain if path.len() == 1 => self.resolve_name(database, &path.segments()[0]),
+            PathKind::Plain if path.len() == 1 => self.resolve_name(db, &path.segments()[0]),
             PathKind::Plain => {
                 let dependency_name = &path.segments()[0];
                 // The first segment is either an import or a package name
-                let item_scope = ItemScope::of(database, self.file_id);
+                let item_scope = ItemScope::of(db, self.file_id);
                 if let Some(module_import) = item_scope.import_paths.get(dependency_name) {
                     let mut absolute_path = module_import.path.clone();
                     for segment in &path.segments()[1..] {
                         absolute_path.push_segment(segment.clone());
                     }
 
-                    resolve_path_to_item(database, module_import.package, absolute_path.segments())
+                    resolve_path_to_item(db, module_import.package, absolute_path.segments())
                 } else {
-                    let package = file_package(database, self.file_id.file_id(database))
+                    let package = file_package(db, self.file_id.file_id(db))
                         .ok_or(ResolutionDiagnostic::DetachedFile)?;
 
                     let resolved_dependency = package
-                        .data(database)
+                        .data(db)
                         .dependencies
                         .iter()
                         .find(|dep| dep.name.as_str() == dependency_name.as_str())
@@ -207,16 +207,16 @@ impl<'database> Resolver<'database> {
                             name: dependency_name.clone(),
                         })?;
 
-                    let dependency_package = resolved_dependency.package(database);
+                    let dependency_package = resolved_dependency.package(db);
 
-                    resolve_path_to_item(database, dependency_package, &path.segments()[1..])
+                    resolve_path_to_item(db, dependency_package, &path.segments()[1..])
                 }
             },
             PathKind::Super(levels) => {
-                let package = file_package(database, self.file_id.file_id(database))
+                let package = file_package(db, self.file_id.file_id(db))
                     .ok_or(ResolutionDiagnostic::DetachedFile)?;
 
-                let mut mod_path = AbsoluteModPath::for_file(database, package, self.file_id)
+                let mut mod_path = AbsoluteModPath::for_file(db, package, self.file_id)
                     .ok_or(ResolutionDiagnostic::DetachedFile)?;
 
                 for level in 0..levels {
@@ -229,19 +229,19 @@ impl<'database> Resolver<'database> {
                     mod_path.push_segment(segment.clone());
                 }
 
-                resolve_path_to_item(database, package, mod_path.segments())
+                resolve_path_to_item(db, package, mod_path.segments())
             },
             PathKind::Package => {
-                let package = file_package(database, self.file_id.file_id(database))
+                let package = file_package(db, self.file_id.file_id(db))
                     .ok_or(ResolutionDiagnostic::DetachedFile)?;
-                resolve_path_to_item(database, package, path.segments())
+                resolve_path_to_item(db, package, path.segments())
             },
         }
     }
 
     fn resolve_name(
         &self,
-        database: &dyn SourceDatabase,
+        db: &dyn SourceDatabase,
         name: &Name,
     ) -> Result<ResolveKind, ResolutionDiagnostic> {
         self.scopes()
@@ -267,7 +267,7 @@ impl<'database> Resolver<'database> {
 }
 
 fn resolve_path_to_item(
-    database: &dyn SourceDatabase,
+    db: &dyn SourceDatabase,
     package: Package,
     segments: &[Name],
 ) -> Result<ResolveKind, ResolutionDiagnostic> {
@@ -275,14 +275,14 @@ fn resolve_path_to_item(
         return Err(ResolutionDiagnostic::MissingName);
     };
 
-    let Some(file_id) = resolve_module(database, package, mod_path_segments) else {
+    let Some(file_id) = resolve_module(db, package, mod_path_segments) else {
         return Err(ResolutionDiagnostic::UnresolvedFile {
-            package: package.package_id(database),
+            package: package.package_id(db),
             path: AbsoluteModPath::from_segments(mod_path_segments),
         });
     };
 
-    let item_scope = ItemScope::of(database, file_id);
+    let item_scope = ItemScope::of(db, file_id);
     let Some(item) = item_scope.items.get(name) else {
         return Err(ResolutionDiagnostic::UnresolvedItem {
             file_id,

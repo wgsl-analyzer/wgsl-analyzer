@@ -1,5 +1,5 @@
 use crate::{
-    database::{ImportId, ModuleDefinitionId},
+    db::{ImportId, ModuleDefinitionId},
     item_tree::Name,
     mod_path::{AbsoluteModPath, ModPath},
     name_resolution::{DefDiagnostic, DefDiagnosticKind, collect_module},

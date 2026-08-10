@@ -1,6 +1,6 @@
-use hir_def::database::{DefinitionWithBodyId, GlobalVariableId};
+use hir_def::db::{DefinitionWithBodyId, GlobalVariableId};
 use hir_ty::{
-    database::HirDatabase,
+    db::HirDatabase,
     infer::InferenceResult,
     ty::{ArrayType, Reference, TypeKind},
     validate::AddressSpaceError,
@@ -12,14 +12,14 @@ pub enum GlobalVariableDiagnostic {
 }
 
 pub fn collect<Function>(
-    database: &dyn HirDatabase,
+    db: &dyn HirDatabase,
     variable: GlobalVariableId,
     mut diagnostic_builder: Function,
 ) where
     Function: FnMut(GlobalVariableDiagnostic),
 {
-    let inference = InferenceResult::of(database, DefinitionWithBodyId::GlobalVariable(variable));
-    let type_kind = inference.return_type().kind(database);
+    let inference = InferenceResult::of(db, DefinitionWithBodyId::GlobalVariable(variable));
+    let type_kind = inference.return_type().kind(db);
 
     if let TypeKind::Reference(Reference {
         address_space,
@@ -32,7 +32,7 @@ pub fn collect<Function>(
             access_mode,
             hir_ty::validate::Scope::Module,
             &type_kind,
-            database,
+            db,
             |error| diagnostic_builder(GlobalVariableDiagnostic::AddressSpaceError(error)),
         );
     } else if !matches!(

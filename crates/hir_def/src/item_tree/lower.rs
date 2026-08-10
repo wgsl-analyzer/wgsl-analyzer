@@ -15,23 +15,23 @@ use crate::{
     mod_path::{ModPath, PathKind},
 };
 
-pub(crate) struct Ctx<'database> {
-    database: &'database dyn SourceDatabase,
+pub(crate) struct Ctx<'db> {
+    db: &'db dyn SourceDatabase,
     file_id: EditionedFileId,
-    source_ast_id_map: &'database AstIdMap,
+    source_ast_id_map: &'db AstIdMap,
     pub(crate) tree: ItemTree,
     pub(crate) items: Vec<ModuleItemId>,
 }
 
-impl<'database> Ctx<'database> {
+impl<'db> Ctx<'db> {
     pub(crate) fn new(
-        database: &'database dyn SourceDatabase,
+        db: &'db dyn SourceDatabase,
         file_id: EditionedFileId,
     ) -> Self {
         Self {
-            database,
+            db,
             file_id,
-            source_ast_id_map: AstIdMap::of(database, file_id),
+            source_ast_id_map: AstIdMap::of(db, file_id),
             tree: ItemTree::default(),
             items: vec![],
         }

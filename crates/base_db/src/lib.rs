@@ -60,20 +60,20 @@ macro_rules! impl_intern_lookup {
             type ID = $id;
             fn intern(
                 self,
-                database: &dyn ::base_db::SourceDatabase,
+                db: &dyn ::base_db::SourceDatabase,
             ) -> Self::ID {
-                $id::new(database, self)
+                $id::new(db, self)
             }
         }
 
         impl base_db::Lookup for $id {
             type Data = $loc;
 
-            fn lookup<'database>(
+            fn lookup<'db>(
                 &self,
-                database: &'database dyn ::base_db::SourceDatabase,
-            ) -> &'database Self::Data {
-                self.location(database)
+                db: &'db dyn ::base_db::SourceDatabase,
+            ) -> &'db Self::Data {
+                self.location(db)
             }
         }
     };
@@ -83,16 +83,16 @@ pub trait Intern {
     type ID;
     fn intern(
         self,
-        database: &dyn SourceDatabase,
+        db: &dyn SourceDatabase,
     ) -> Self::ID;
 }
 
 pub trait Lookup {
     type Data;
-    fn lookup<'database>(
+    fn lookup<'db>(
         &self,
-        database: &'database dyn SourceDatabase,
-    ) -> &'database Self::Data;
+        db: &'db dyn SourceDatabase,
+    ) -> &'db Self::Data;
 }
 
 #[expect(
@@ -126,16 +126,16 @@ impl Files {
 
     pub fn set_file_text(
         &self,
-        database: &mut dyn SourceDatabase,
+        db: &mut dyn SourceDatabase,
         file_id: vfs::FileId,
         text: &str,
     ) {
         match self.files.entry(file_id) {
             Entry::Occupied(mut occupied) => {
-                occupied.get_mut().set_text(database).to(Arc::from(text));
+                occupied.get_mut().set_text(db).to(Arc::from(text));
             },
             Entry::Vacant(vacant) => {
-                let text = FileText::new(database, Arc::from(text), file_id);
+                let text = FileText::new(db, Arc::from(text), file_id);
                 vacant.insert(text);
             },
         }
@@ -143,7 +143,7 @@ impl Files {
 
     pub fn set_file_text_with_durability(
         &self,
-        database: &mut dyn SourceDatabase,
+        db: &mut dyn SourceDatabase,
         file_id: vfs::FileId,
         text: &str,
         durability: Durability,
@@ -152,14 +152,14 @@ impl Files {
             Entry::Occupied(mut occupied) => {
                 occupied
                     .get_mut()
-                    .set_text(database)
+                    .set_text(db)
                     .with_durability(durability)
                     .to(Arc::from(text));
             },
             Entry::Vacant(vacant) => {
                 let text = FileText::builder(Arc::from(text), file_id)
                     .durability(durability)
-                    .new(database);
+                    .new(db);
                 vacant.insert(text);
             },
         }
@@ -184,7 +184,7 @@ impl Files {
 
     pub fn set_source_root_with_durability(
         &self,
-        database: &mut dyn SourceDatabase,
+        db: &mut dyn SourceDatabase,
         source_root_id: SourceRootId,
         source_root: Arc<SourceRoot>,
         durability: Durability,
@@ -193,14 +193,14 @@ impl Files {
             Entry::Occupied(mut occupied) => {
                 occupied
                     .get_mut()
-                    .set_source_root(database)
+                    .set_source_root(db)
                     .with_durability(durability)
                     .to(source_root);
             },
             Entry::Vacant(vacant) => {
                 let source_root = SourceRootInput::builder(source_root)
                     .durability(durability)
-                    .new(database);
+                    .new(db);
                 vacant.insert(source_root);
             },
         }
@@ -223,7 +223,7 @@ impl Files {
 
     pub fn set_file_source_root_with_durability(
         &self,
-        database: &mut dyn SourceDatabase,
+        db: &mut dyn SourceDatabase,
         id: vfs::FileId,
         source_root_id: SourceRootId,
         durability: Durability,
@@ -232,14 +232,14 @@ impl Files {
             Entry::Occupied(mut occupied) => {
                 occupied
                     .get_mut()
-                    .set_source_root_id(database)
+                    .set_source_root_id(db)
                     .with_durability(durability)
                     .to(source_root_id);
             },
             Entry::Vacant(vacant) => {
                 let file_source_root = FileSourceRootInput::builder(source_root_id)
                     .durability(durability)
-                    .new(database);
+                    .new(db);
                 vacant.insert(file_source_root);
             },
         }
@@ -360,17 +360,17 @@ pub struct ExtensionsConfigInput {
 
 impl ExtensionsConfigInput {
     #[must_use]
-    pub fn get_extensions(database: &dyn SourceDatabase) -> &ExtensionsConfig {
-        Self::get(database).extensions(database)
+    pub fn get_extensions(db: &dyn SourceDatabase) -> &ExtensionsConfig {
+        Self::get(db).extensions(db)
     }
 
     pub fn update_extensions(
-        database: &mut dyn SourceDatabase,
+        db: &mut dyn SourceDatabase,
         extensions: ExtensionsConfig,
     ) {
-        Self::try_get(database)
-            .unwrap_or_else(|| Self::new(database, ExtensionsConfig::default()))
-            .set_extensions(database)
+        Self::try_get(db)
+            .unwrap_or_else(|| Self::new(db, ExtensionsConfig::default()))
+            .set_extensions(db)
             .with_durability(Durability::MEDIUM)
             .to(extensions);
     }
@@ -501,15 +501,15 @@ struct AllPackages {
 }
 
 pub fn set_all_packages_with_durability<Packages>(
-    database: &mut dyn salsa::Database,
+    db: &mut dyn salsa::Database,
     packages: Packages,
     durability: Durability,
 ) where
     Packages: IntoIterator<Item = Package>,
 {
-    AllPackages::try_get(database)
-        .unwrap_or_else(|| AllPackages::new(database, std::sync::Arc::default()))
-        .set_packages(database)
+    AllPackages::try_get(db)
+        .unwrap_or_else(|| AllPackages::new(db, std::sync::Arc::default()))
+        .set_packages(db)
         .with_durability(durability)
         .to(packages.into_iter().collect());
 }
@@ -517,15 +517,15 @@ pub fn set_all_packages_with_durability<Packages>(
 /// Returns the packages in topological order.
 ///
 /// **Warning**: do not use this query in `hir-*` crates! It kills incrementality across crate metadata modifications.
-pub fn all_packages(database: &dyn salsa::Database) -> std::sync::Arc<[Package]> {
-    AllPackages::try_get(database).map_or_else(std::sync::Arc::default, |all_packages| {
-        all_packages.packages(database)
+pub fn all_packages(db: &dyn salsa::Database) -> std::sync::Arc<[Package]> {
+    AllPackages::try_get(db).map_or_else(std::sync::Arc::default, |all_packages| {
+        all_packages.packages(db)
     })
 }
 
 /// Returns the package for a given file, if the file is a part of one.
 pub fn file_package(
-    database: &dyn SourceDatabase,
+    db: &dyn SourceDatabase,
     file_id: vfs::FileId,
 ) -> Option<Package> {
     /// I believe this exists because each file has a different `FileSourceRootInput`.
@@ -539,31 +539,28 @@ pub fn file_package(
 
     #[salsa::tracked(returns(clone))]
     fn file_package<'db>(
-        database: &'db dyn SourceDatabase,
+        db: &'db dyn SourceDatabase,
         id: InternedSourceRootId<'db>,
     ) -> Option<Package> {
-        let packages = AllPackages::get(database).packages(database);
-        let id = id.id(database);
+        let packages = AllPackages::get(db).packages(db);
+        let id = id.id(db);
 
         packages.iter().copied().find(|package| {
-            let manifest_file = package.data(database).manifest_file_id;
-            database
-                .file_source_root(manifest_file)
-                .source_root_id(database)
-                == id
+            let manifest_file = package.data(db).manifest_file_id;
+            db.file_source_root(manifest_file).source_root_id(db) == id
         })
     }
 
     let _p = tracing::info_span!("file_package").entered();
-    let source_root = database.file_source_root(file_id);
+    let source_root = db.file_source_root(file_id);
     file_package(
-        database,
-        InternedSourceRootId::new(database, source_root.source_root_id(database)),
+        db,
+        InternedSourceRootId::new(db, source_root.source_root_id(db)),
     )
 }
 
 pub(crate) fn package_by_id(
-    database: &dyn SourceDatabase,
+    db: &dyn SourceDatabase,
     id: PackageId,
 ) -> Package {
     #[salsa::interned]
@@ -574,17 +571,17 @@ pub(crate) fn package_by_id(
 
     #[salsa::tracked(returns(clone))]
     fn package_by_id<'db>(
-        database: &'db dyn SourceDatabase,
+        db: &'db dyn SourceDatabase,
         id: InternedPackageId<'db>,
     ) -> Package {
-        let packages = AllPackages::get(database).packages(database);
-        let id = id.id(database);
+        let packages = AllPackages::get(db).packages(db);
+        let id = id.id(db);
 
         *packages
             .iter()
-            .find(|package| package.package_id(database) == id)
+            .find(|package| package.package_id(db) == id)
             .unwrap()
     }
 
-    package_by_id(database, InternedPackageId::new(database, id))
+    package_by_id(db, InternedPackageId::new(db, id))
 }

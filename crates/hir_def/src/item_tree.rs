@@ -18,7 +18,7 @@ use triomphe::Arc;
 
 use crate::{
     ast_id::FileAstId,
-    database::ModuleDefinitionId,
+    db::ModuleDefinitionId,
     mod_path::{ModPath, PathKind},
 };
 
