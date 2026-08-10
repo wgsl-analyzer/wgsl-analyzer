@@ -38,15 +38,16 @@ fn foo() {
         &[("InferenceResult::of", 1)],
         expect_test::expect![[r#"
             [
-                "item_tree_shim",
-                "parse",
-                "ast_id_map_shim",
+                "ItemTree::of_",
+                "EditionedFileId::parse_",
+                "AstIdMap::of_",
                 "InferenceResult::of_",
                 "ItemScope::of_",
-                "body_shim",
-                "body_with_source_map_shim",
-                "function_data_shim",
-                "expression_scopes_shim",
+                "Body::of_",
+                "Body::with_source_map_",
+                "FunctionSignature::of_",
+                "FunctionSignature::with_source_map_",
+                "ExprScopes::of_",
             ]
         "#]],
     );
@@ -76,23 +77,18 @@ fn foo() {
         &[("InferenceResult::of", 0)],
         expect_test::expect![[r#"
             [
-                "parse",
-                "item_tree_shim",
-                "ast_id_map_shim",
-                "body_with_source_map_shim",
-                "body_shim",
-                "function_data_shim",
+                "EditionedFileId::parse_",
+                "ItemTree::of_",
+                "AstIdMap::of_",
+                "Body::with_source_map_",
+                "Body::of_",
+                "FunctionSignature::with_source_map_",
             ]
         "#]],
     );
 }
 
 #[test]
-#[expect(
-    clippy::should_panic_without_expect,
-    reason = "we need to improve our incrementality, see: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1178"
-)]
-#[should_panic]
 fn typing_inside_a_function_should_not_invalidate_types_in_another() {
     let (mut database, position) = TestDatabase::with_position(
         "
@@ -124,25 +120,28 @@ fn baz() -> i32 {
         &[("InferenceResult::of", 3)],
         expect_test::expect![[r#"
             [
-                "item_tree_shim",
-                "parse",
-                "ast_id_map_shim",
+                "ItemTree::of_",
+                "EditionedFileId::parse_",
+                "AstIdMap::of_",
                 "InferenceResult::of_",
                 "ItemScope::of_",
-                "body_shim",
-                "body_with_source_map_shim",
-                "function_data_shim",
-                "expression_scopes_shim",
+                "Body::of_",
+                "Body::with_source_map_",
+                "FunctionSignature::of_",
+                "FunctionSignature::with_source_map_",
+                "ExprScopes::of_",
                 "InferenceResult::of_",
-                "body_shim",
-                "body_with_source_map_shim",
-                "function_data_shim",
-                "expression_scopes_shim",
+                "Body::of_",
+                "Body::with_source_map_",
+                "FunctionSignature::of_",
+                "FunctionSignature::with_source_map_",
+                "ExprScopes::of_",
                 "InferenceResult::of_",
-                "body_shim",
-                "body_with_source_map_shim",
-                "function_data_shim",
-                "expression_scopes_shim",
+                "Body::of_",
+                "Body::with_source_map_",
+                "FunctionSignature::of_",
+                "FunctionSignature::with_source_map_",
+                "ExprScopes::of_",
             ]
         "#]],
     );
@@ -176,21 +175,21 @@ fn baz() -> i32 {
         &[("InferenceResult::of", 0)],
         expect_test::expect![[r#"
             [
-                "parse",
-                "item_tree_shim",
-                "ast_id_map_shim",
-                "body_with_source_map_shim",
-                "body_shim",
-                "function_data_shim",
-                "InferenceResult::of_",
-                "body_with_source_map_shim",
-                "body_shim",
-                "function_data_shim",
-                "InferenceResult::of_",
-                "body_with_source_map_shim",
-                "body_shim",
-                "function_data_shim",
-                "InferenceResult::of_",
+                "EditionedFileId::parse_",
+                "ItemTree::of_",
+                "AstIdMap::of_",
+                "Body::with_source_map_",
+                "Body::of_",
+                "FunctionSignature::with_source_map_",
+                "FunctionSignature::of_",
+                "Body::with_source_map_",
+                "Body::of_",
+                "FunctionSignature::with_source_map_",
+                "FunctionSignature::of_",
+                "Body::with_source_map_",
+                "Body::of_",
+                "FunctionSignature::with_source_map_",
+                "FunctionSignature::of_",
             ]
         "#]],
     );

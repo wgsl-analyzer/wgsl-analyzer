@@ -131,9 +131,9 @@ fn import_statement_cycle_error() {
         const bar = output;
         ",
         expect![[r#"
-            [EditionedFileId(Id(2000))] CyclicType { name: Name("output"), range: 26..45 } in Body
+            [EditionedFileId(Id(1c00))] CyclicType { name: Name("output"), range: 26..45 } in Body
             ---
-            [EditionedFileId(Id(2001))] CyclicType { name: Name("bar"), range: 24..43 } in Body
+            [EditionedFileId(Id(1c01))] CyclicType { name: Name("bar"), range: 24..43 } in Body
         "#]],
     );
 }

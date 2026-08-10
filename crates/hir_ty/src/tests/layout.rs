@@ -1,10 +1,6 @@
 use base_db::{EditionedFileId, ExtensionsConfigInput};
 use expect_test::{Expect, expect};
-use hir_def::{
-    database::{ModuleDefinitionId},
-    item_tree::ItemTree,
-    signature::StructSignature,
-};
+use hir_def::{database::ModuleDefinitionId, item_tree::ItemTree, signature::StructSignature};
 use std::fmt::Write as _;
 use syntax::ExtensionsConfig;
 use test_fixture::WithFixture as _;

@@ -46,9 +46,9 @@ fn foo() {
             201..203 '4h': f16
             205..207 '5h': f16
             209..211 '6h': f16
-            [EditionedFileId(Id(1c00))] WgslError { expression: Idx::<Expression>(7), message: "`determinant` expects a square matrix argument" } in Body
-            [EditionedFileId(Id(1c00))] WgslError { expression: Idx::<Expression>(15), message: "`determinant` expects a square matrix argument" } in Body
-            [EditionedFileId(Id(1c00))] WgslError { expression: Idx::<Expression>(23), message: "`determinant` expects a square matrix argument" } in Body
+            [EditionedFileId(Id(1800))] WgslError { expression: Idx::<Expression>(7), message: "`determinant` expects a square matrix argument" } in Body
+            [EditionedFileId(Id(1800))] WgslError { expression: Idx::<Expression>(15), message: "`determinant` expects a square matrix argument" } in Body
+            [EditionedFileId(Id(1800))] WgslError { expression: Idx::<Expression>(23), message: "`determinant` expects a square matrix argument" } in Body
         "#]],
     );
 }
@@ -71,8 +71,8 @@ fn foo() {
             85..99 'sign(vec2(1u))': [error]
             90..98 'vec2(1u)': vec2<u32>
             95..97 '1u': u32
-            [EditionedFileId(Id(1c00))] WgslError { expression: Idx::<Expression>(1), message: "`sign` argument must be a signed numeric scalar or vector" } in Body
-            [EditionedFileId(Id(1c00))] WgslError { expression: Idx::<Expression>(4), message: "`sign` argument must be a signed numeric scalar or vector" } in Body
+            [EditionedFileId(Id(1800))] WgslError { expression: Idx::<Expression>(1), message: "`sign` argument must be a signed numeric scalar or vector" } in Body
+            [EditionedFileId(Id(1800))] WgslError { expression: Idx::<Expression>(4), message: "`sign` argument must be a signed numeric scalar or vector" } in Body
         "#]],
     );
 }

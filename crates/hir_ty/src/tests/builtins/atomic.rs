@@ -30,7 +30,7 @@ fn foo() {
             170..179 'exchanged': [error]
             182..188 'result': [error]
             182..198 'result...hanged': [error]
-            [EditionedFileId(Id(1c00))] WgslError { expression: Idx::<Expression>(4), message: "`atomicCompareExchangeWeak` 2nd and 3rd arguments are incompatible with the atomic pointer type" } in Body
+            [EditionedFileId(Id(1800))] WgslError { expression: Idx::<Expression>(4), message: "`atomicCompareExchangeWeak` 2nd and 3rd arguments are incompatible with the atomic pointer type" } in Body
         "#]],
     );
 }
