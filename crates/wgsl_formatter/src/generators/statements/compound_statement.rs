@@ -79,9 +79,8 @@ pub fn gen_compound_statement(
 
     let body_empty = items.iter().all(NodeWithTrivia::is_whitespace);
 
-    dbg!(&items);
-
     // ==== Format ====
+
     let mut formatted = PrintItemBuffer::default();
 
     let mut multiline_group = MultilineGroup::new(&mut formatted);

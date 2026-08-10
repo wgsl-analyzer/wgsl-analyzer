@@ -63,6 +63,46 @@ pub fn format_switch_statement_case_default_only() {
 }
 
 #[test]
+pub fn format_comments_in_switch_statement_case_default_only() {
+    check(
+        "fn main() {
+            switch(a) {
+                /* ABC */ case /* DEF */ default {}
+            }
+            switch(b) {
+                /* ABC */
+                case /* DEF */ default {}
+            }
+            switch(c) {
+                /* ABC */ case
+                /* DEF */ default {}
+            }
+            switch(d) {
+                /* ABC */ case /* DEF */
+                default {}
+            }
+        }",
+        expect![[r#"
+            fn main() {
+                switch a {
+                    /* ABC */ /* DEF */ default {}
+                }
+                switch b {
+                    /* ABC */
+                    /* DEF */ default {}
+                }
+                switch c {
+                    /* ABC */ /* DEF */ default {}
+                }
+                switch d {
+                    /* ABC */ /* DEF */ default {}
+                }
+            }
+        "#]],
+    );
+}
+
+#[test]
 pub fn format_switch_statement_trailing_comma() {
     check(
         "fn main() {
@@ -132,20 +172,18 @@ pub fn format_switch_statement_block_comments_in_case_default_only() {
         }",
         expect![[r#"
             fn main() {
-                switch a { /* 0 */
-                    default /* 1 */ /* 2 */ {
-                        /* 3 */
-                        let a = 1; /* 4 */
-                    }
+                switch a {
+                    /* 0 */ /* 1 */ default /* 2 */ { /* 3 */ let a = 1; /* 4 */ }
                     /* 5 */
                 }
             }
         "#]],
         expect![[r#"
             fn main() {
-                switch a { // 0
-                    default // 1
-                    // 2
+                switch a {
+                    // 0
+                    // 1
+                    default // 2
                     {
                         // 3
                         let a = 1; // 4
