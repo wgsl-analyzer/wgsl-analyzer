@@ -2,7 +2,7 @@ use expect_test::expect;
 
 use crate::{
     FormattingOptions,
-    test_util::{check, check_with_options},
+    test_util::{CheckOptions, check, check_with_options},
 };
 
 #[test]
@@ -105,7 +105,7 @@ pub fn format_long_type_alias_linewidth_within_inner_break_outer_arguments_leave
         &FormattingOptions {
             max_line_width: 80,
             ..Default::default()
-        },
+        }.into(),
         parser::Edition::LATEST,
     );
 }
@@ -130,7 +130,7 @@ pub fn format_long_type_alias_linewidth_outside_inner_break_outer_arguments_leav
         &FormattingOptions {
             max_line_width: 80,
             ..Default::default()
-        },
+        }.into(),
         parser::Edition::LATEST
     );
 }

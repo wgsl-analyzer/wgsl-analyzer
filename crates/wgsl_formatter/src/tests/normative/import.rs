@@ -198,7 +198,7 @@ pub fn format_import_collection_break_on_long_items() {
         &FormattingOptions {
             max_line_width: 80,
             ..Default::default()
-        },
+        }.into(),
         parser::Edition::LATEST
     );
 }
@@ -219,7 +219,7 @@ pub fn format_import_collection_long_items_prefer_break_in_collection() {
         &FormattingOptions {
             max_line_width: 80,
             ..Default::default()
-        },
+        }.into(),
         parser::Edition::LATEST
     );
 }
@@ -238,7 +238,7 @@ pub fn format_import_path_single_simple_long_items() {
         &FormattingOptions {
             max_line_width: 80,
             ..Default::default()
-        },
+        }.into(),
         parser::Edition::LATEST
     );
 }

@@ -212,7 +212,8 @@ pub fn format_expr_function_call_with_sensible_comments() {
         &FormattingOptions {
             max_line_width: 10000,
             ..Default::default()
-        },
+        }
+        .into(),
         Edition::LATEST,
     );
 }

@@ -19,7 +19,7 @@ fn format_long_compound_assignment_statement_gets_indented_correctly() {
         &FormattingOptions {
             max_line_width: 80,
             ..Default::default()
-        },
+        }.into(),
         parser::Edition::LATEST
     );
 }

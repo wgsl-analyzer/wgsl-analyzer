@@ -3,7 +3,10 @@
 use expect_test::expect;
 use parser::Edition;
 
-use crate::test_util::{assert_out_of_scope, check, check_comments, check_with_options};
+use crate::{
+    FormattingOptions,
+    test_util::{CheckOptions, assert_out_of_scope, check, check_comments, check_with_options},
+};
 
 #[test]
 fn format_fn_header_with_parameters_1() {
@@ -71,7 +74,8 @@ fn format_fn_header_comma_multiline_wide() {
         &crate::FormattingOptions {
             max_line_width: 26, //Just shy of what the fn would be laid out as on a single line
             ..Default::default()
-        },
+        }
+        .into(),
         Edition::LATEST,
     );
 }
@@ -86,9 +90,12 @@ fn format_fn_header_comma_multiline_narrow() {
                 c: d,
             ) -> f32 {}
             "]],
-        &crate::FormattingOptions {
-            max_line_width: 4, //Just shy of what the fn would be laid out as on a single line
-            ..Default::default()
+        &CheckOptions {
+            assert_line_width: None,
+            formatting: FormattingOptions {
+                max_line_width: 4, //Just shy of what the fn would be laid out as on a single line
+                ..Default::default()
+            },
         },
         Edition::LATEST,
     );
