@@ -102,6 +102,7 @@ pub fn gen_switch_body(statement: &SwitchBody) -> Result<PrintItemBuffer, Format
     Ok(formatted)
 }
 
+#[derive(Debug)]
 pub enum SwitchBodyCaseKind {
     Default {
         item_default: NodeWithTrivia,
@@ -163,7 +164,6 @@ pub fn gen_switch_body_case(
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
 
-    formatted.request(Request::expect(RequestItem::LineBreak));
     match kind {
         SwitchBodyCaseKind::Default { item_default } => {
             formatted.extend(gen_node_with_trivia(&item_default)?);
