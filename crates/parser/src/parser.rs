@@ -18,9 +18,17 @@ use crate::{Parse, ParseEntryPoint, SyntaxKind, cst_builder::CstBuilder, lexer::
 // cannot be in a submodule due to visibility of fields
 include!(concat!(env!("OUT_DIR"), "/generated.rs"));
 
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default)]
+enum TranslationUnitState {
+    #[default]
+    Imports,
+    Directives,
+    Declarations,
+}
+
 pub struct ParserContext {
     edition: Edition,
-    after_declarations: bool,
+    translation_unit_state: TranslationUnitState,
     extensions: ExtensionsConfig,
 
     /// The most recently completed `attribute_list`.
@@ -68,7 +76,7 @@ pub fn parse_entrypoint(
         &mut diagnostics,
         ParserContext {
             edition,
-            after_declarations: false,
+            translation_unit_state: TranslationUnitState::default(),
             extensions: ExtensionsConfig::default(),
             last_attribute_list: None,
         },
@@ -112,8 +120,6 @@ impl Cst<'_> {
     }
 }
 
-const TRANSLATE_TIME_ATTRS: &[Rule] = &[Rule::IfAttr, Rule::ElifAttr, Rule::ElseAttr];
-
 impl Parser<'_> {
     fn is_func_call(&self) -> bool {
         // Skip past paths like `foo::bar::baz()`
@@ -130,48 +136,6 @@ impl Parser<'_> {
                 .next(),
             Some(Token::ParenthesisLeft | Token::TemplateStart)
         )
-    }
-
-    /// Checks the most recently completed `attribute_list` node (the one still on top of the
-    /// builder at the call site) for any attribute whose identifier is translate-time-only,
-    /// and returns a diagnostic for the first offender.
-    fn assert_no_translate_time_attrs(
-        &self,
-        context: &str,
-    ) -> Option<Diagnostic> {
-        let last_attribute_list = self.context.last_attribute_list?;
-        self.cst
-            .children(last_attribute_list)
-            .find_map(|child| match self.cst.get(child) {
-                Node::Rule(rule, _) => Some((
-                    match rule {
-                        Rule::IfAttr => "if",
-                        Rule::ElifAttr => "elif",
-                        Rule::ElseAttr => "else",
-                        _ => return None,
-                    },
-                    self.cst.span(child),
-                )),
-                _ => None,
-            })
-            .map(|(name, span)| Diagnostic {
-                message: format!("translate-time attribute `@{name}` is not allowed on {context}"),
-                range: to_range(span),
-            })
-    }
-
-    fn assert_attribute_list_empty(
-        &self,
-        list: Option<NodeRef>,
-        message: &str,
-    ) -> Option<Diagnostic> {
-        let list = list?;
-        // attribute_list has no children when empty
-        self.cst.children(list).next()?;
-        Some(Diagnostic {
-            message: message.to_string(),
-            range: to_range(self.cst.span(list)),
-        })
     }
 }
 
@@ -373,19 +337,6 @@ impl<'source> ParserCallbacks<'source> for Parser<'source> {
         }
     }
 
-    fn create_node_early_depth_test_attr(
-        &mut self,
-        node_ref: NodeRef,
-        diagnostics: &mut Vec<Self::Diagnostic>,
-    ) {
-        if !self.context.extensions.early_depth_test {
-            diagnostics.push(self.create_diagnostic(
-                self.cst.span(node_ref),
-                "the extension EARLY_DEPTH_TEST is not enabled".to_owned(),
-            ));
-        }
-    }
-
     /// Called when semantic assertion `!1` in rule `let_declaration` is visited.
     fn assertion_let_declaration_1(&self) -> Option<Self::Diagnostic> {
         (self.peek(0) == Token::Semicolon).then(|| {
@@ -416,13 +367,6 @@ impl<'source> ParserCallbacks<'source> for Parser<'source> {
         })
     }
 
-    fn create_node_path(
-        &mut self,
-        node_ref: NodeRef,
-        diags: &mut Vec<Self::Diagnostic>,
-    ) {
-    }
-
     /// Called when semantic assertion `!1` in rule `path` is visited.
     fn assertion_path_1(&self) -> Option<Self::Diagnostic> {
         if self.context.edition == Edition::Wgsl {
@@ -434,25 +378,42 @@ impl<'source> ParserCallbacks<'source> for Parser<'source> {
         None
     }
 
-    /// Called when semantic action `#2` in rule `global_item` is visited.
-    fn action_global_item_2(
-        &mut self,
-        diags: &mut Vec<Self::Diagnostic>,
-    ) {
-        self.context.after_declarations = true;
-    }
-
-    /// Called when semantic action `#1` in rule `global_item` is visited.
+    /// Called the translation unit action is visited.
     fn action_global_item_1(
         &mut self,
         diags: &mut Vec<Self::Diagnostic>,
     ) {
-        if self.context.after_declarations {
+        if self.context.translation_unit_state > TranslationUnitState::Imports {
             diags.push(self.create_diagnostic(
                 self.span(),
-                "directives must come before other items".to_owned(),
+                "import statements must come before other items".to_owned(),
             ));
+        } else {
+            self.context.translation_unit_state = TranslationUnitState::Imports;
         }
+    }
+
+    /// Called the directive action is visited.
+    fn action_global_item_2(
+        &mut self,
+        diags: &mut Vec<Self::Diagnostic>,
+    ) {
+        if self.context.translation_unit_state > TranslationUnitState::Directives {
+            diags.push(self.create_diagnostic(
+                self.span(),
+                "directives must come before declarations".to_owned(),
+            ));
+        } else {
+            self.context.translation_unit_state = TranslationUnitState::Directives;
+        }
+    }
+
+    /// Called the declaration action is visited.
+    fn action_global_item_3(
+        &mut self,
+        diags: &mut Vec<Self::Diagnostic>,
+    ) {
+        self.context.translation_unit_state = TranslationUnitState::Declarations;
     }
 
     // attribute validation
@@ -463,73 +424,5 @@ impl<'source> ParserCallbacks<'source> for Parser<'source> {
         diagnostics: &mut Vec<Self::Diagnostic>,
     ) {
         self.context.last_attribute_list = Some(node_ref);
-    }
-
-    fn assertion_return_type_1(&self) -> Option<Diagnostic> {
-        self.assert_no_translate_time_attrs("a function return type")
-    }
-
-    fn assertion_global_declaration_1(&self) -> Option<Diagnostic> {
-        self.assert_no_translate_time_attrs("a function body")
-    }
-
-    fn assertion_statement_0(&self) -> Option<Diagnostic> {
-        self.assert_no_translate_time_attrs("a switch body")
-    }
-
-    fn assertion_default_alone_clause_1(&self) -> Option<Diagnostic> {
-        self.assert_no_translate_time_attrs("a switch case clause body")
-    }
-
-    fn assertion_case_clause_1(&self) -> Option<Diagnostic> {
-        self.assert_no_translate_time_attrs("a switch default clause body")
-    }
-
-    fn assertion_statement_1(&self) -> Option<Diagnostic> {
-        self.assert_no_translate_time_attrs("a loop body")
-    }
-
-    fn assertion_statement_2(&self) -> Option<Diagnostic> {
-        self.assert_no_translate_time_attrs("a for body")
-    }
-
-    fn assertion_statement_3(&self) -> Option<Diagnostic> {
-        self.assert_no_translate_time_attrs("a while body")
-    }
-
-    fn assertion_if_clause_1(&self) -> Option<Diagnostic> {
-        self.assert_no_translate_time_attrs("an if/else body")
-    }
-
-    fn assertion_else_if_clause_1(&self) -> Option<Self::Diagnostic> {
-        self.assert_no_translate_time_attrs("an if/else body")
-    }
-
-    fn assertion_else_clause_1(&self) -> Option<Self::Diagnostic> {
-        self.assert_no_translate_time_attrs("an if/else body")
-    }
-
-    fn assertion_continuing_statement_1(&self) -> Option<Diagnostic> {
-        self.assert_no_translate_time_attrs("a continuing body")
-    }
-
-    fn assertion_continuing_compound_statement_1(&self) -> Option<Self::Diagnostic> {
-        if self.peek(0) == Token::BraceRight {
-            return Some(self.create_diagnostic(
-                self.span(),
-                "attributes must precede a statement here".to_owned(),
-            ));
-        }
-        None
-    }
-
-    fn assertion_loop_compound_statement_1(&self) -> Option<Self::Diagnostic> {
-        if !matches!(self.current, Token::Continuing | Token::BraceRight) {
-            return None;
-        }
-        self.assert_attribute_list_empty(
-            self.context.last_attribute_list,
-            "attributes must precede a statement here",
-        )
     }
 }

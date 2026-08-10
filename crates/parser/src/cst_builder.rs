@@ -102,6 +102,7 @@ impl CstBuilder<'_, '_> {
             Rule::FunctionDeclaration => self.start_node(SyntaxKind::FunctionDeclaration),
             Rule::FunctionParameters => self.start_node(SyntaxKind::FunctionParameters),
             Rule::GlobalAssert => panic!("should be assert_statement instead"),
+            Rule::GlobalItem => self.start_node(SyntaxKind::GlobalItem),
             // This node exists purely for better parser error messages.
             Rule::GlobalLetDeclaration => self.start_node(SyntaxKind::Error),
             Rule::IdentExpression => self.start_node(SyntaxKind::IdentExpression),
@@ -143,7 +144,6 @@ impl CstBuilder<'_, '_> {
             Rule::ConstDeclarationSemi
             | Rule::CompoundAssignmentOperator
             | Rule::ExprTemplateList
-            | Rule::GlobalItem
             | Rule::IdentOrFunction
             | Rule::LetDeclarationSemi
             | Rule::OverrideDeclarationSemi
@@ -158,8 +158,7 @@ impl CstBuilder<'_, '_> {
             | Rule::GlobalDeclaration
             | Rule::GlobalDirective
             | Rule::LhsExpression
-            | Rule::VariableUpdating
-            | Rule::Attribute => {
+            | Rule::VariableUpdating => {
                 panic!(
                     "{rule:?} should always be a more specific node.\ttoken starts at index {}",
                     self.token_start_index
@@ -169,36 +168,8 @@ impl CstBuilder<'_, '_> {
             #[expect(clippy::match_same_arms, reason = "Reasons might be different")]
             Rule::Statement => self.start_node(SyntaxKind::Error),
 
-            // Attributes
+            Rule::Attribute => self.start_node(SyntaxKind::Attribute),
             Rule::AttributeList => self.start_node(SyntaxKind::AttributeList),
-            Rule::AlignAttr => self.start_node(SyntaxKind::AlignAttribute),
-            Rule::BindingAttr => self.start_node(SyntaxKind::BindingAttribute),
-            Rule::BlendSrcAttr => self.start_node(SyntaxKind::BlendSrcAttribute),
-            Rule::BuiltinAttr => self.start_node(SyntaxKind::BuiltinAttribute),
-            Rule::ComputeAttr => self.start_node(SyntaxKind::ComputeAttribute),
-            Rule::ConstAttr => self.start_node(SyntaxKind::ConstantAttribute),
-            Rule::DiagnosticAttr => self.start_node(SyntaxKind::DiagnosticAttribute),
-            Rule::FragmentAttr => self.start_node(SyntaxKind::FragmentAttribute),
-            Rule::GroupAttr => self.start_node(SyntaxKind::GroupAttribute),
-            Rule::IdAttr => self.start_node(SyntaxKind::IdAttribute),
-            Rule::InterpolateAttr => self.start_node(SyntaxKind::InterpolateAttribute),
-            Rule::InvariantAttr => self.start_node(SyntaxKind::InvariantAttribute),
-            Rule::LocationAttr => self.start_node(SyntaxKind::LocationAttribute),
-            Rule::MustUseAttr => self.start_node(SyntaxKind::MustUseAttribute),
-            Rule::SizeAttr => self.start_node(SyntaxKind::SizeAttribute),
-            Rule::VertexAttr => self.start_node(SyntaxKind::VertexAttribute),
-            Rule::WorkgroupSizeAttr => self.start_node(SyntaxKind::WorkgroupSizeAttribute),
-            Rule::BuiltinValueName => self.start_node(SyntaxKind::BuiltinValueName),
-            Rule::InterpolateSamplingName => self.start_node(SyntaxKind::InterpolateSamplingName),
-            Rule::InterpolateTypeName => self.start_node(SyntaxKind::InterpolateTypeName),
-            Rule::OtherAttr => self.start_node(SyntaxKind::OtherAttribute),
-            // naga
-            Rule::EarlyDepthTestAttr => self.start_node(SyntaxKind::EarlyDepthTestAttribute),
-            Rule::EarlyDepthTestMode => self.start_node(SyntaxKind::EarlyDepthTestMode),
-            // WESL
-            Rule::IfAttr => self.start_node(SyntaxKind::IfAttribute),
-            Rule::ElifAttr => self.start_node(SyntaxKind::ElifAttribute),
-            Rule::ElseAttr => self.start_node(SyntaxKind::ElseAttribute),
         }
     }
 
