@@ -17,7 +17,7 @@ fn foo() {
 ",
         expect![[r#"
             25..31 'buffer': ref<storage, atomic<[error]>, read_write>
-            40..44 'bool': unexpected template argument, expected i32, u32, i64, or u64
+            40..44 'bool': unexpected template argument, expected i32 or u32
             66..72 'result': [error]
             75..122 'atomic...false)': [error]
             101..108 '&buffer': ptr<storage, atomic<[error]>, read_write>
