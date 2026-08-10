@@ -522,63 +522,66 @@ pub fn all_packages(database: &dyn salsa::Database) -> std::sync::Arc<[Package]>
     })
 }
 
-/// I believe this exists because each file has a different `FileSourceRootInput`.
-/// So Salsa cannot reuse computations that are driven by a `FileSourceRootInput`.
-/// TODO: Rust-Analyzer will remove this when the vfs gets rewritten.
-#[doc(hidden)]
-#[salsa::interned]
-pub struct InternedSourceRootId {
-    pub id: SourceRootId,
-}
-
-#[salsa::tracked]
-pub fn source_root_package<'db>(
-    database: &'db dyn SourceDatabase,
-    id: InternedSourceRootId<'db>,
-) -> Option<Package> {
-    let packages = AllPackages::get(database).packages(database);
-    let id = id.id(database);
-
-    packages.iter().copied().find(|package| {
-        let manifest_file = package.data(database).manifest_file_id;
-        database
-            .file_source_root(manifest_file)
-            .source_root_id(database)
-            == id
-    })
-}
-
 /// Returns the package for a given file, if the file is a part of one.
 pub fn file_package(
     database: &dyn SourceDatabase,
     file_id: vfs::FileId,
 ) -> Option<Package> {
-    let _p = tracing::info_span!("file_package").entered();
+    /// I believe this exists because each file has a different `FileSourceRootInput`.
+    /// So Salsa cannot reuse computations that are driven by a `FileSourceRootInput`.
+    /// TODO: Rust-Analyzer will remove this when the vfs gets rewritten.
+    #[salsa::interned]
+    struct InternedSourceRootId {
+        pub id: SourceRootId,
+    }
 
+    #[salsa::tracked]
+    fn file_package<'db>(
+        database: &'db dyn SourceDatabase,
+        id: InternedSourceRootId<'db>,
+    ) -> Option<Package> {
+        let packages = AllPackages::get(database).packages(database);
+        let id = id.id(database);
+
+        packages.iter().copied().find(|package| {
+            let manifest_file = package.data(database).manifest_file_id;
+            database
+                .file_source_root(manifest_file)
+                .source_root_id(database)
+                == id
+        })
+    }
+
+    let _p = tracing::info_span!("file_package").entered();
     let source_root = database.file_source_root(file_id);
-    source_root_package(
+    file_package(
         database,
         InternedSourceRootId::new(database, source_root.source_root_id(database)),
     )
 }
 
-/// This construction is used for incremental package lookups.
-#[doc(hidden)]
-#[salsa::interned]
-pub(crate) struct InternedPackageId {
-    pub id: PackageId,
-}
-
-#[salsa::tracked]
-pub(crate) fn package_by_id<'db>(
-    database: &'db dyn SourceDatabase,
-    id: InternedPackageId<'db>,
+pub(crate) fn package_by_id(
+    database: &dyn SourceDatabase,
+    id: PackageId,
 ) -> Package {
-    let packages = AllPackages::get(database).packages(database);
-    let id = id.id(database);
+    #[salsa::interned]
+    struct InternedPackageId {
+        pub id: PackageId,
+    }
 
-    *packages
-        .iter()
-        .find(|package| package.package_id(database) == id)
-        .unwrap()
+    #[salsa::tracked]
+    fn package_by_id<'db>(
+        database: &'db dyn SourceDatabase,
+        id: InternedPackageId<'db>,
+    ) -> Package {
+        let packages = AllPackages::get(database).packages(database);
+        let id = id.id(database);
+
+        *packages
+            .iter()
+            .find(|package| package.package_id(database) == id)
+            .unwrap()
+    }
+
+    package_by_id(database, InternedPackageId::new(database, id))
 }
