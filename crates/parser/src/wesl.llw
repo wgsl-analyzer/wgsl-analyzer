@@ -112,14 +112,14 @@ attribute_list: attribute*;
 translation_unit: (global_item | ';')*;
 global_item:
 	attribute_list (
-	#2 import_statement
-	| #1 global_directive
-	| #2 global_declaration
-	| #2 global_assert
+	#1 import_statement
+	| #2 global_directive
+	| #3 global_declaration
+	| #3 global_assert
 );
 
 // WESL: Import statements
-import_statement:  'import' [import_package_relative | import_super_relative] (import_collection | import_path) ';';
+import_statement: 'import' [import_package_relative | import_super_relative] (import_collection | import_path) ';';
 import_package_relative: 'package' '::';
 import_super_relative: ('super' '::')+;
 import_path: name (

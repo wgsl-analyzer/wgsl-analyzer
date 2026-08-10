@@ -18,9 +18,17 @@ use crate::{Parse, ParseEntryPoint, SyntaxKind, cst_builder::CstBuilder, lexer::
 // cannot be in a submodule due to visibility of fields
 include!(concat!(env!("OUT_DIR"), "/generated.rs"));
 
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default)]
+enum TranslationUnitState {
+    #[default]
+    Imports,
+    Directives,
+    Declarations,
+}
+
 pub struct ParserContext {
     edition: Edition,
-    after_declarations: bool,
+    translation_unit_state: TranslationUnitState,
     extensions: ExtensionsConfig,
 
     /// The most recently completed `attribute_list`.
@@ -68,7 +76,7 @@ pub fn parse_entrypoint(
         &mut diagnostics,
         ParserContext {
             edition,
-            after_declarations: false,
+            translation_unit_state: TranslationUnitState::default(),
             extensions: ExtensionsConfig::default(),
             last_attribute_list: None,
         },
@@ -391,25 +399,42 @@ impl<'source> ParserCallbacks<'source> for Parser<'source> {
         None
     }
 
-    /// Called when semantic action `#2` in rule `global_item` is visited.
-    fn action_global_item_2(
-        &mut self,
-        diags: &mut Vec<Self::Diagnostic>,
-    ) {
-        self.context.after_declarations = true;
-    }
-
-    /// Called when semantic action `#1` in rule `global_item` is visited.
+    /// Called the translation unit action is visited.
     fn action_global_item_1(
         &mut self,
         diags: &mut Vec<Self::Diagnostic>,
     ) {
-        if self.context.after_declarations {
+        if self.context.translation_unit_state > TranslationUnitState::Imports {
             diags.push(self.create_diagnostic(
                 self.span(),
-                "directives must come before other items".to_owned(),
+                "import statements must come before other items".to_owned(),
             ));
+        } else {
+            self.context.translation_unit_state = TranslationUnitState::Imports;
         }
+    }
+
+    /// Called the directive action is visited.
+    fn action_global_item_2(
+        &mut self,
+        diags: &mut Vec<Self::Diagnostic>,
+    ) {
+        if self.context.translation_unit_state > TranslationUnitState::Directives {
+            diags.push(self.create_diagnostic(
+                self.span(),
+                "directives must come before declarations".to_owned(),
+            ));
+        } else {
+            self.context.translation_unit_state = TranslationUnitState::Directives;
+        }
+    }
+
+    /// Called the declaration action is visited.
+    fn action_global_item_3(
+        &mut self,
+        diags: &mut Vec<Self::Diagnostic>,
+    ) {
+        self.context.translation_unit_state = TranslationUnitState::Declarations;
     }
 
     // attribute validation
