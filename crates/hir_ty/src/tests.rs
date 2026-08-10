@@ -87,7 +87,7 @@ impl<'db> InferPrinter<'db> {
         buffer: &mut String,
     ) {
         let module_info = ItemTree::of(self.database, self.file_id);
-        let mut definitions = module_definitions(self.database, self.file_id, &module_info);
+        let mut definitions = module_definitions(self.database, self.file_id, module_info);
         definitions.sort_by_key(|definition| text_range_start(*definition, self.database));
         for definition in definitions {
             match definition {
@@ -111,14 +111,14 @@ impl<'db> InferPrinter<'db> {
                     let (_, diagnostics) = &*self.database.field_types(id);
 
                     for diagnostic in diagnostics {
-                        self.print_diagnostic(diagnostic, &signature_map, buffer);
+                        self.print_diagnostic(diagnostic, signature_map, buffer);
                     }
                 },
                 ModuleDefinitionId::TypeAlias(id) => {
                     let (_, signature_map) = TypeAliasSignature::with_source_map(self.database, id);
                     let (_, diagnostics) = &*self.database.type_alias_type(id);
                     for diagnostic in diagnostics {
-                        self.print_diagnostic(diagnostic, &signature_map, buffer);
+                        self.print_diagnostic(diagnostic, signature_map, buffer);
                     }
                 },
             }
@@ -168,7 +168,7 @@ impl<'db> InferPrinter<'db> {
         for diagnostic in inference_result.diagnostics() {
             let source_map = match diagnostic.source {
                 ExpressionStoreSource::Body => body_source_map.expression_source_map(),
-                ExpressionStoreSource::Signature => &signature_map,
+                ExpressionStoreSource::Signature => signature_map,
             };
             self.print_diagnostic(diagnostic, source_map, buffer);
         }

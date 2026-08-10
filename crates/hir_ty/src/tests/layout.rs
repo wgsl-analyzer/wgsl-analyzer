@@ -52,7 +52,7 @@ impl<'db> LayoutPrinter<'db> {
         buffer: &mut String,
     ) {
         let module_info = ItemTree::of(self.database, self.file_id);
-        let mut definitions = module_definitions(self.database, self.file_id, &module_info);
+        let mut definitions = module_definitions(self.database, self.file_id, module_info);
         definitions.sort_by_key(|definition| text_range_start(*definition, self.database));
         for definition in definitions {
             match definition {

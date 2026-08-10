@@ -14,7 +14,7 @@ fn check_item_tree(
 
     let module_info = ItemTree::of(&database, file_id);
     expect.assert_eq(&crate::item_tree::pretty::pretty_print_item_tree(
-        &module_info,
+        module_info,
     ));
 }
 

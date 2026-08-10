@@ -26,7 +26,7 @@ fn foo() {
         &database,
         || {
             let module_info = ItemTree::of(&database, file_id);
-            let definitions = module_definitions(&database, file_id, &module_info);
+            let definitions = module_definitions(&database, file_id, module_info);
             for definition in definitions {
                 if let ModuleDefinitionId::Function(id) = definition {
                     let inference_results =
@@ -65,7 +65,7 @@ fn foo() {
         &database,
         || {
             let module_info = ItemTree::of(&database, file_id);
-            let definitions = module_definitions(&database, file_id, &module_info);
+            let definitions = module_definitions(&database, file_id, module_info);
             for definition in definitions {
                 if let ModuleDefinitionId::Function(id) = definition {
                     let inference_results =
@@ -108,7 +108,7 @@ fn baz() -> i32 {
         &database,
         || {
             let module_info = ItemTree::of(&database, file_id);
-            let definitions = module_definitions(&database, file_id, &module_info);
+            let definitions = module_definitions(&database, file_id, module_info);
             for definition in definitions {
                 if let ModuleDefinitionId::Function(id) = definition {
                     let inference_results =
@@ -163,7 +163,7 @@ fn baz() -> i32 {
         &database,
         || {
             let module_info = ItemTree::of(&database, file_id);
-            let definitions = module_definitions(&database, file_id, &module_info);
+            let definitions = module_definitions(&database, file_id, module_info);
             for definition in definitions {
                 if let ModuleDefinitionId::Function(id) = definition {
                     let inference_results =
