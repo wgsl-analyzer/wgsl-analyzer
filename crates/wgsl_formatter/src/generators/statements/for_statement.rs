@@ -74,6 +74,7 @@ pub fn gen_for_statement(statement: &ast::ForStatement) -> FormatDocumentResult<
     multiline_group.grouped_newline_or_space();
 
     multiline_group.finish_indent();
+    multiline_group.request(Request::discourage(RequestItem::Space));
 
     multiline_group.push_sc(sc!(")"));
 
