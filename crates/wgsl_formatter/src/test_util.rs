@@ -231,7 +231,6 @@ fn format_chunks(chunks: Vec<dissimilar::Chunk<'_>>) -> String {
     }
     buf
 }
-
 /// Replaces all occurrences of `##` in the `before` string with block and line comments.
 ///
 /// THIS SHOULD *NOT* BE USED TO TEST POSITIONING OF COMMENTS.

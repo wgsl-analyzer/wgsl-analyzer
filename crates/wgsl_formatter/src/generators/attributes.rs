@@ -345,14 +345,22 @@ pub fn gen_interpolate_attribute(
     let mut formatted = PrintItemBuffer::default();
     formatted.extend(gen_node_with_trivia(&item_attr_operator)?);
     formatted.extend(gen_node_with_trivia(&item_interpolate)?);
-    formatted.extend(gen_node_with_trivia(&item_paren_left)?);
-    formatted.extend(gen_node_with_trivia(&interpolate_type_name)?);
+
+    let mut multiline_group = MultilineGroup::new(&mut formatted);
+    multiline_group.extend(gen_node_with_trivia(&item_paren_left)?);
+    multiline_group.start_indent();
+    multiline_group.grouped_possible_newline();
+    multiline_group.extend(gen_node_with_trivia(&interpolate_type_name)?);
     if let Some(sampling) = sampling {
-        formatted.push_sc(sc!(","));
-        formatted.extend(gen_node_with_trivia(&sampling)?);
+        multiline_group.push_sc(sc!(","));
+        multiline_group.grouped_newline_or_space();
+        multiline_group.extend(gen_node_with_trivia(&sampling)?);
     }
 
-    formatted.push_sc(sc!(")"));
+    multiline_group.finish_indent();
+    multiline_group.grouped_possible_newline();
+    multiline_group.push_sc(sc!(")"));
+    multiline_group.end();
     Ok(formatted)
 }
 
