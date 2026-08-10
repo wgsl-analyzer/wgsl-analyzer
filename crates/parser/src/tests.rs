@@ -2664,7 +2664,7 @@ fn directive_after_declaration() {
                 Semicolon@40..41 ";"
               Blankspace@41..50 "\n        "
 
-            error at 30..36: directives must come before other items"#]],
+            error at 30..36: directives must come before declarations"#]],
     );
 }
 
