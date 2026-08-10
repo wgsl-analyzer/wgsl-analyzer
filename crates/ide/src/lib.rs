@@ -25,7 +25,7 @@ use base_db::{
     SourceDatabase as _, SourceRoot, TextRange, change::Change, input::SourceRootId,
 };
 use ide_completion::{CompletionConfig, item::CompletionItem};
-use ide_db::LineIndexDatabase as _;
+use ide_db::line_index;
 use ide_diagnostics::{Diagnostic, DiagnosticsConfig};
 pub use line_index::{LineCol, LineIndex};
 use rustc_hash::FxHashMap;
@@ -328,7 +328,7 @@ impl Analysis {
         &self,
         file_id: FileId,
     ) -> Cancellable<Arc<LineIndex>> {
-        self.with_db(|database| database.line_index(file_id))
+        self.with_db(|database| line_index(database, file_id).clone())
     }
 
     pub fn view_syntax_tree(

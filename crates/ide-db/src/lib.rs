@@ -1,10 +1,5 @@
 //! IDE database.
 
-#![expect(
-    clippy::trailing_empty_array,
-    reason = "Clippy has a false positive for the query_group macro, see: https://github.com/rust-lang/rust-clippy/issues/16754"
-)]
-
 use std::{fmt, panic};
 
 pub use base_db;
@@ -231,19 +226,22 @@ impl SnippetCapability {
     }
 }
 
-#[query_group::query_group]
-pub trait LineIndexDatabase: base_db::SourceDatabase {
-    #[salsa::invoke_interned(line_index)]
-    fn line_index(
-        &self,
-        file_id: FileId,
-    ) -> Arc<LineIndex>;
-}
-
-fn line_index(
-    database: &dyn LineIndexDatabase,
+pub fn line_index(
+    database: &dyn SourceDatabase,
     file_id: FileId,
-) -> Arc<LineIndex> {
-    let text = database.file_text(file_id).text(database);
-    Arc::new(LineIndex::new(text))
+) -> &Arc<LineIndex> {
+    #[salsa::interned]
+    pub struct InternedFileId {
+        #[returns(copy)]
+        id: FileId,
+    }
+    #[salsa::tracked(returns(ref))]
+    fn line_index<'db>(
+        database: &'db dyn SourceDatabase,
+        file_id: InternedFileId<'db>,
+    ) -> Arc<LineIndex> {
+        let text = database.file_text(file_id.id(database)).text(database);
+        Arc::new(LineIndex::new(text))
+    }
+    line_index(database, InternedFileId::new(database, file_id))
 }

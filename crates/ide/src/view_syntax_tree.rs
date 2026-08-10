@@ -1,7 +1,7 @@
 use std::fmt::Write as _;
 
 use base_db::{EditionedFileId, TextRange};
-use ide_db::{LineIndexDatabase as _, RootDatabase};
+use ide_db::{RootDatabase, line_index};
 use line_index::{LineCol, LineIndex};
 use rowan::{NodeOrToken, TextSize, WalkEvent};
 use syntax::SyntaxNode;
@@ -21,7 +21,7 @@ pub(crate) fn view_syntax_tree(
 ) -> String {
     let file_id = EditionedFileId::from_file(database, file_id);
     let syntax_node = file_id.parse(database).syntax();
-    let line_index = database.line_index(file_id.file_id(database));
+    let line_index = line_index(database, file_id.file_id(database)).clone();
 
     let ctx = SyntaxTreeCtx {
         line_index,

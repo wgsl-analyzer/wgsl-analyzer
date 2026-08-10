@@ -8,7 +8,7 @@ use std::{
 
 use base_db::{EditionedFileId, SourceDatabase as _};
 use hir::diagnostics::{AnyDiagnostic, Severity};
-use ide_db::{FxHashMap, LineIndexDatabase as _, RootDatabase};
+use ide_db::{FxHashMap, RootDatabase, line_index};
 use line_index::{LineCol, LineIndex};
 use paths::{Utf8Path, Utf8PathBuf};
 use rowan::{TextRange, TextSize};
@@ -29,7 +29,7 @@ pub(crate) fn tint_diagnostics<Pathy>(
     let raw_file_id = file_id.file_id(database);
     let source: &str = database.file_text(raw_file_id).text(database);
     let full_range = TextRange::up_to(TextSize::of(source));
-    let line_index = database.line_index(raw_file_id);
+    let line_index = line_index(database, raw_file_id);
     let execute_tint = || {
         let mut child = command(config.tint_path.as_deref(), working_directory)
             .spawn()
