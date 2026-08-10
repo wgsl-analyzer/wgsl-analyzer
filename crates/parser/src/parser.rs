@@ -137,20 +137,6 @@ impl Parser<'_> {
             Some(Token::ParenthesisLeft | Token::TemplateStart)
         )
     }
-
-    fn assert_attribute_list_empty(
-        &self,
-        list: Option<NodeRef>,
-        message: &str,
-    ) -> Option<Diagnostic> {
-        let list = list?;
-        // attribute_list has no children when empty
-        self.cst.children(list).next()?;
-        Some(Diagnostic {
-            message: message.to_string(),
-            range: to_range(self.cst.span(list)),
-        })
-    }
 }
 
 impl<'source> ParserCallbacks<'source> for Parser<'source> {
@@ -379,13 +365,6 @@ impl<'source> ParserCallbacks<'source> for Parser<'source> {
                 "const declaration requires initializer".to_owned(),
             )
         })
-    }
-
-    fn create_node_path(
-        &mut self,
-        node_ref: NodeRef,
-        diags: &mut Vec<Self::Diagnostic>,
-    ) {
     }
 
     /// Called when semantic assertion `!1` in rule `path` is visited.

@@ -20,6 +20,8 @@ pub enum SyntaxKind {
     SourceFile,
     /// <https://www.w3.org/TR/WGSL/#name>
     Name,
+    /// Holds import statements, directives, global declarations and const asserts
+    GlobalItem,
     /// a function
     FunctionDeclaration,
     /// the <a, b, c> of a template

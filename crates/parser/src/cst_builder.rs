@@ -102,6 +102,7 @@ impl CstBuilder<'_, '_> {
             Rule::FunctionDeclaration => self.start_node(SyntaxKind::FunctionDeclaration),
             Rule::FunctionParameters => self.start_node(SyntaxKind::FunctionParameters),
             Rule::GlobalAssert => panic!("should be assert_statement instead"),
+            Rule::GlobalItem => self.start_node(SyntaxKind::GlobalItem),
             // This node exists purely for better parser error messages.
             Rule::GlobalLetDeclaration => self.start_node(SyntaxKind::Error),
             Rule::IdentExpression => self.start_node(SyntaxKind::IdentExpression),
@@ -143,7 +144,6 @@ impl CstBuilder<'_, '_> {
             Rule::ConstDeclarationSemi
             | Rule::CompoundAssignmentOperator
             | Rule::ExprTemplateList
-            | Rule::GlobalItem
             | Rule::IdentOrFunction
             | Rule::LetDeclarationSemi
             | Rule::OverrideDeclarationSemi
