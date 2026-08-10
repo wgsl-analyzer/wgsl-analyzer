@@ -37,7 +37,7 @@ fn format_long_assignment_statement_gets_indented_correctly() {
         &FormattingOptions {
             max_line_width: 80,
             ..Default::default()
-        },
+        }.into(),
         parser::Edition::LATEST
     );
 }
@@ -59,7 +59,7 @@ fn format_long_phony_statement_gets_indented_correctly() {
         &FormattingOptions {
             max_line_width: 80,
             ..Default::default()
-        },
+        }.into(),
         parser::Edition::LATEST
     );
 }

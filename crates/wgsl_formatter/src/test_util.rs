@@ -63,7 +63,7 @@ where
     check_with_options(
         before,
         &after,
-        &FormattingOptions::default(),
+        &FormattingOptions::default().into(),
         Edition::LATEST,
     )
 }
@@ -77,10 +77,11 @@ pub fn check_tabs<E>(
     E: ExpectAssertEq,
 {
     let options = FormattingOptions {
+        max_line_width: 80,
         indent_style: IndentStyle::Tabs,
         ..Default::default()
     };
-    check_with_options(before, &after, &options, Edition::LATEST);
+    check_with_options(before, &after, &options.into(), Edition::LATEST);
 }
 
 /// Checks that the given source raises parsing diagnostics and is
@@ -115,11 +116,24 @@ pub fn assert_out_of_scope(
     }
 }
 
+pub struct CheckOptions {
+    pub assert_line_width: Option<usize>,
+    pub formatting: FormattingOptions,
+}
+impl From<FormattingOptions> for CheckOptions {
+    fn from(value: FormattingOptions) -> Self {
+        Self {
+            assert_line_width: Some(usize::try_from(value.max_line_width).unwrap()),
+            formatting: value,
+        }
+    }
+}
+
 #[track_caller]
 pub fn check_with_options<E>(
     before: &str,
     after: &E,
-    options: &FormattingOptions,
+    options: &CheckOptions,
     edition: Edition,
 ) -> String
 where
@@ -137,7 +151,7 @@ where
 
     // dbg!(&parse.errors());
     dbg!(&syntax);
-    let formatted = match format_tree(&syntax, options) {
+    let formatted = match format_tree(&syntax, &options.formatting) {
         Ok(formatted) => formatted,
         Err(format_error) => {
             println!("Formatting returned an unexpected error: {format_error:?}");
@@ -147,6 +161,17 @@ where
 
     after.assert_eq(&formatted);
 
+    if let Some(max_line_width) = options.assert_line_width {
+        for line in formatted.lines() {
+            assert!(
+                line.chars().count() <= max_line_width,
+                "Formatted line length must be <= {}\nOffending line (at length {}):\n{line}",
+                max_line_width,
+                line.len(),
+            );
+        }
+    }
+
     println!("==Idempodence check==");
 
     // Check for idempotence
@@ -154,7 +179,7 @@ where
     //dbg!(&syntax);
     dbg!(&syntax);
 
-    let formatted_twice = format_tree(&syntax, options)
+    let formatted_twice = format_tree(&syntax, &options.formatting)
         .expect("Formatting already formatted sources should never fail with an error");
     let position = panic::Location::caller();
     if formatted == formatted_twice {

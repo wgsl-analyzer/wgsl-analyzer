@@ -149,7 +149,8 @@ fn format_long_function_call_without_arguments_does_not_break_within_parens() {
         &FormattingOptions {
             max_line_width: 80,
             ..Default::default()
-        },
+        }
+        .into(),
         parser::Edition::LATEST,
     );
 }
@@ -179,7 +180,7 @@ pub fn format_long_function_call_linewidth_within_inner_break_outer_arguments_le
         &FormattingOptions {
             max_line_width: 80,
             ..Default::default()
-        },
+        }.into(),
         parser::Edition::LATEST,
     );
 }
@@ -208,7 +209,7 @@ pub fn format_long_function_call_linewidth_outside_inner_break_outer_arguments_l
         &FormattingOptions {
             max_line_width: 80,
             ..Default::default()
-        },
+        }.into(),
         parser::Edition::LATEST
     );
 }
@@ -239,7 +240,7 @@ pub fn format_long_function_call_prefer_to_break_arguments_over_path() {
         &FormattingOptions {
             max_line_width: 80,
             ..Default::default()
-        },
+        }.into(),
         parser::Edition::LATEST
     );
 }
@@ -266,7 +267,7 @@ pub fn format_long_function_call_break_path_if_necessary_but_keep_arguments_alon
         &FormattingOptions {
             max_line_width: 80,
             ..Default::default()
-        },
+        }.into(),
         parser::Edition::LATEST
     );
 }
