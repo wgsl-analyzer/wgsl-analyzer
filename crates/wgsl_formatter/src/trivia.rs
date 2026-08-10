@@ -13,6 +13,7 @@ use crate::{
 pub enum NodeTriviaItem {
     LineSpacing(LineSpacing),
     Comment(Comment),
+    NewlinedComment(Comment),
     AttributeList(AttributeList),
 }
 
@@ -30,6 +31,11 @@ impl NodeTriviaItem {
                 },
             },
             Self::Comment(comment) => match comment {
+                Comment::Block(node) | Comment::LineEnding(node) => {
+                    syntax.put_back(NodeOrToken::Token(node));
+                },
+            },
+            Self::NewlinedComment(comment) => match comment {
                 Comment::Block(node) | Comment::LineEnding(node) => {
                     syntax.put_back(NodeOrToken::Token(node));
                 },

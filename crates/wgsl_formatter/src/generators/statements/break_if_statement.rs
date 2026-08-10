@@ -23,7 +23,7 @@ pub fn gen_break_if_statement(
     let mut syntax = syntax_iter(statement.syntax());
     let item_break =
         parse_node_with(&mut syntax, IgnoreBlankspace).expect_kind(SyntaxKind::Break)?;
-    let item_if = parse_node_with(&mut syntax, IgnoreBlankspace).expect_kind(SyntaxKind::If)?;
+    let item_if = parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::If)?;
     let item_condition =
         parse_node_with(&mut syntax, IgnoreBlankspace).expect_castable_kind::<Expression>()?;
     parse_node_with(&mut syntax, NoTrivia).expect_kind_optional(SyntaxKind::Semicolon)?;

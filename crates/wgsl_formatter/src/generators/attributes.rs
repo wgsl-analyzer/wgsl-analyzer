@@ -468,7 +468,7 @@ fn gen_attr_standard_with_args(
         loop {
             let mut item = parse_node_with(
                 &mut syntax,
-                Chain(IgnoreBlankspace, Chain(IgnoreComma, UntilSucceedingNewline)),
+                Chain(UntilSucceedingNewline, Chain(IgnoreBlankspace, IgnoreComma)),
             );
 
             // TODO This needs to be absorbed into parse_node..

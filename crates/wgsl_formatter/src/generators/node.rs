@@ -377,6 +377,10 @@ pub fn gen_node_preceding_trivia(node: &NodeWithTrivia) -> FormatDocumentResult<
             NodeTriviaItem::Comment(comment) => {
                 formatted.extend(gen_comment(comment));
             },
+            NodeTriviaItem::NewlinedComment(comment) => {
+                formatted.extend(gen_comment(comment));
+                formatted.request(Request::expect(RequestItem::LineBreak));
+            },
             NodeTriviaItem::AttributeList(attribute_list) => {
                 formatted.extend(gen_attribute_list(attribute_list)?);
             },
@@ -407,6 +411,10 @@ pub fn gen_node_succeeding_trivia(node: &NodeWithTrivia) -> FormatDocumentResult
             },
             NodeTriviaItem::Comment(comment) => {
                 formatted.extend(gen_comment(comment));
+            },
+            NodeTriviaItem::NewlinedComment(comment) => {
+                formatted.extend(gen_comment(comment));
+                formatted.request(Request::expect(RequestItem::LineBreak));
             },
             NodeTriviaItem::AttributeList(attribute_list) => {
                 formatted.extend(gen_attribute_list(attribute_list)?);
