@@ -91,12 +91,13 @@ pub fn format_prefix_expr_with_block_comment() {
         1;
         let b = ~1;
         }",
-        expect![["
+        expect![[r#"
             fn main() {
-                let a = ~ /* A */ 1;
+                let a = ~ /* A */
+                    1;
                 let b = ~1;
             }
-        "]],
+        "#]],
     );
 }
 

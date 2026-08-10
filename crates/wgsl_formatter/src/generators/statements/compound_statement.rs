@@ -79,6 +79,8 @@ pub fn gen_compound_statement(
 
     let body_empty = items.iter().all(NodeWithTrivia::is_whitespace);
 
+    dbg!(&items);
+
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
 
@@ -91,7 +93,7 @@ pub fn gen_compound_statement(
 
         if collapse_one_liner_compound_statement_policy(node.syntax()) {
             //TODO This is a dirty hack to get rid of the discouragement of spaces in start_indent
-            multiline_group.push_sc(dprint_core_macros::sc!(""));
+            multiline_group.apply_end_request();
             //TODO and now we need to get the discouragement of newlines back...
             multiline_group.request(Request::discourage(RequestItem::LineBreak));
 
@@ -116,9 +118,9 @@ pub fn gen_compound_statement(
 
             multiline_group.grouped_newline_or_space();
         } else {
-            multiline_group.request(Request::discourage(RequestItem::EmptyLine));
             multiline_group.request(Request::expect(RequestItem::LineBreak));
         }
+        multiline_group.request(Request::discourage(RequestItem::EmptyLine));
     }
 
     multiline_group.push_sc(sc!("}"));

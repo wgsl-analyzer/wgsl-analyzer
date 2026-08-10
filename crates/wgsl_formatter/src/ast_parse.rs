@@ -370,15 +370,24 @@ where
                             },
                         }
                     } else if let Some(comment) = read_comment(&node) {
-                        preceding_trivia.push(NodeTriviaItem::Comment(comment));
                         // TODO Think about if this can be handled in any other way...
                         // Hacky special handling to remember if a comment was followed by a newline
-                        if let Some(next_item) = syntax.next() {
-                            if let Some(blankspace) = read_blankspace(&next_item) {
-                                preceding_trivia.push(NodeTriviaItem::LineSpacing(blankspace));
-                            } else {
-                                syntax.put_back(next_item);
-                            }
+
+                        let is_newlined = if let Some(next_item) = syntax.next() {
+                            let is_newlined = matches!(
+                                read_blankspace(&next_item),
+                                Some(LineSpacing::EmptyLine(_) | LineSpacing::LineBreak(_))
+                            );
+                            syntax.put_back(next_item);
+                            is_newlined
+                        } else {
+                            false
+                        };
+
+                        if is_newlined {
+                            preceding_trivia.push(NodeTriviaItem::NewlinedComment(comment));
+                        } else {
+                            preceding_trivia.push(NodeTriviaItem::Comment(comment));
                         }
                     } else if let NodeOrToken::Node(node) = &node
                         && let Some(attributes) = AttributeList::cast(node.clone())
