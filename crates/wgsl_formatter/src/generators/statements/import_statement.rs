@@ -285,6 +285,7 @@ pub fn gen_import_collection(
     }
 
     group.finish_indent();
+    group.request(Request::discourage(RequestItem::Space));
     group.grouped_possible_newline();
 
     group.push_sc(sc!("}"));

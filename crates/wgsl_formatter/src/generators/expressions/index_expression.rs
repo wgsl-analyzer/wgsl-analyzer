@@ -8,7 +8,10 @@ use crate::{
     ast_parse::{IgnoreBlankspace, NoTrivia, parse_end, parse_node_with, syntax_iter},
     generators::node::gen_node_with_trivia,
     multiline_group::MultilineGroup,
-    print_item_buffer::PrintItemBuffer,
+    print_item_buffer::{
+        PrintItemBuffer,
+        spacing_request::{Request, RequestItem},
+    },
     reporting::FormatDocumentResult,
 };
 
@@ -42,6 +45,7 @@ pub fn gen_index_expression(
     multiline_group.grouped_newline_or_space();
 
     multiline_group.finish_indent();
+    multiline_group.request(Request::discourage(RequestItem::Space));
 
     multiline_group.extend(gen_node_with_trivia(&item_bracket_right)?);
 
