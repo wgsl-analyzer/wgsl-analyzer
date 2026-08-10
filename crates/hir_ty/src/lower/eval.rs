@@ -1,5 +1,6 @@
 use std::collections::VecDeque;
 
+use base_db::Intern as _;
 use hir_def::expression::{BinaryOperation, Expression, ExpressionId, UnaryOperator};
 use wgsl_types::{
     inst::{Instance, LiteralInstance},

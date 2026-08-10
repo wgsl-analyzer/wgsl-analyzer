@@ -1,11 +1,6 @@
 //! The home of `HirDatabase`, which is the Salsa database containing all the
 //! type inference-related queries.
 
-#![expect(
-    clippy::trailing_empty_array,
-    reason = "Clippy has a false positive for the query_group macro, see: https://github.com/rust-lang/rust-clippy/issues/16754"
-)]
-
 use std::fmt;
 
 use base_db::{EditionedFileId, Intern as _, Lookup as _, SourceDatabase};
@@ -33,46 +28,49 @@ use crate::{
     ty::{Type, TypeKind},
 };
 
-#[query_group::query_group]
-pub trait HirDatabase: SourceDatabase + fmt::Debug {
+#[salsa::db]
+pub trait HirDatabase: SourceDatabase + 'static {
+    /// Manual implementation of upcasting from `dyn SourceDatabase` to `dyn HirDatabase`.
+    ///
+    /// This function is needed because Rust can't perform this upcasting automatically
+    /// in the general case, as `Self` could be unsized.
+    fn as_dyn(&self) -> &dyn HirDatabase;
+
     fn field_types(
         &self,
         key: StructId,
-    ) -> Arc<(ArenaMap<LocalFieldId, Type>, Vec<InferenceDiagnostic>)>;
+    ) -> Arc<(ArenaMap<LocalFieldId, Type>, Vec<InferenceDiagnostic>)> {
+        field_types(self.as_dyn(), key)
+    }
 
     fn function_type(
         &self,
         key: FunctionId,
-    ) -> ResolvedFunctionId;
+    ) -> ResolvedFunctionId {
+        function_type(self.as_dyn(), key)
+    }
 
     fn type_alias_type(
         &self,
         key: TypeAliasId,
-    ) -> Arc<(Type, Vec<InferenceDiagnostic>)>;
+    ) -> Arc<(Type, Vec<InferenceDiagnostic>)> {
+        type_alias_type(self.as_dyn(), key)
+    }
 
     fn struct_is_used_in_uniform(
         &self,
         key: StructId,
         file_id: EditionedFileId,
-    ) -> bool;
+    ) -> bool {
+        struct_is_used_in_uniform(self.as_dyn(), key, file_id)
+    }
+}
 
-    #[salsa::interned]
-    fn intern_type(
-        &self,
-        r#type: TypeKind,
-    ) -> Type;
-
-    #[salsa::interned]
-    fn intern_builtin(
-        &self,
-        builtin: Builtin,
-    ) -> BuiltinId;
-
-    #[salsa::interned]
-    fn intern_resolved_function(
-        &self,
-        builtin: FunctionDetails,
-    ) -> ResolvedFunctionId;
+#[salsa::db]
+impl<T: SourceDatabase> HirDatabase for T {
+    fn as_dyn(&self) -> &dyn HirDatabase {
+        self
+    }
 }
 
 #[derive(PartialEq, Eq, Debug)]
@@ -81,6 +79,7 @@ pub struct FieldInferenceDiagnostic {
     pub error: TypeLoweringError,
 }
 
+#[salsa::tracked]
 fn field_types(
     database: &dyn HirDatabase,
     r#struct: StructId,
@@ -113,6 +112,7 @@ fn field_types(
     Arc::new((map, diagnostics))
 }
 
+#[salsa::tracked]
 fn type_alias_type(
     database: &dyn HirDatabase,
     type_alias: TypeAliasId,
@@ -137,6 +137,7 @@ fn type_alias_type(
     Arc::new((result, diagnostics))
 }
 
+#[salsa::tracked]
 fn function_type(
     database: &dyn HirDatabase,
     function: FunctionId,
@@ -170,6 +171,7 @@ fn function_type(
     .intern(database)
 }
 
+#[salsa::tracked]
 fn struct_is_used_in_uniform(
     database: &dyn HirDatabase,
     r#struct: StructId,

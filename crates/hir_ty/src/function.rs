@@ -1,4 +1,4 @@
-use base_db::impl_intern_key;
+use base_db::{impl_intern_key, impl_intern_lookup};
 use hir_def::item_tree::Name;
 
 use crate::{database::HirDatabase, ty::Type};
@@ -27,21 +27,4 @@ impl FunctionDetails {
 }
 
 impl_intern_key!(ResolvedFunctionId, FunctionDetails);
-
-impl ResolvedFunctionId {
-    pub fn lookup(
-        self,
-        database: &dyn HirDatabase,
-    ) -> FunctionDetails {
-        database.lookup_intern_resolved_function(self)
-    }
-}
-
-impl FunctionDetails {
-    pub fn intern(
-        self,
-        database: &dyn HirDatabase,
-    ) -> ResolvedFunctionId {
-        database.intern_resolved_function(self)
-    }
-}
+impl_intern_lookup!(ResolvedFunctionId, FunctionDetails);

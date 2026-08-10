@@ -1,5 +1,6 @@
 use std::fmt;
 
+use base_db::Intern as _;
 use hir_def::{
     body::BindingId,
     database::{GlobalConstantId, GlobalVariableId, OverrideId, StructId},
@@ -280,9 +281,9 @@ impl<'database> TypeLoweringContext<'database> {
             Ok(ResolveKind::TypeAlias(id)) => {
                 Ok(Lowered::Type(self.database.type_alias_type(id).0))
             },
-            Ok(ResolveKind::Struct(id)) => Ok(Lowered::Type(
-                self.database.intern_type(TypeKind::Struct(id)),
-            )),
+            Ok(ResolveKind::Struct(id)) => {
+                Ok(Lowered::Type(TypeKind::Struct(id).intern(self.database)))
+            },
             Ok(ResolveKind::Function(id)) => Ok(Lowered::Function(self.database.function_type(id))),
             Ok(ResolveKind::GlobalConstant(id)) => Ok(Lowered::GlobalConstant(id)),
             Ok(ResolveKind::GlobalVariable(id)) => Ok(Lowered::GlobalVariable(id)),

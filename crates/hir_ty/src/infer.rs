@@ -2,7 +2,7 @@ mod unify;
 
 use std::{fmt, ops::Index};
 
-use base_db::{Lookup as _, TextRange, TextSize};
+use base_db::{Intern as _, Lookup as _, TextRange, TextSize};
 use either::Either;
 use hir_def::{
     HasSource as _,
@@ -97,9 +97,8 @@ fn infer_query(
             let expression = body.root.and_then(Either::right);
 
             if let Some(expression) = expression {
-                let expected_type = TypeExpectation::from_type(
-                    database.intern_type(TypeKind::Scalar(ScalarType::Bool)),
-                );
+                let expected_type =
+                    TypeExpectation::from_type(TypeKind::Scalar(ScalarType::Bool).intern(database));
                 context.infer_expression_expect(expression, expected_type, &body.store);
             }
         },
@@ -1103,19 +1102,19 @@ impl<'database> InferenceContext<'database> {
                         access_mode,
                     }) if let TypeKind::Matrix(matrix_type) = inner.kind(self.database) => self
                         .make_ref(
-                            self.database.intern_type(TypeKind::Vector(VectorType {
+                            TypeKind::Vector(VectorType {
                                 size: matrix_type.rows,
                                 component_type: matrix_type.inner,
-                            })),
+                            })
+                            .intern(self.database),
                             address_space,
                             access_mode,
                         ),
-                    TypeKind::Matrix(matrix_type) => {
-                        self.database.intern_type(TypeKind::Vector(VectorType {
-                            size: matrix_type.rows,
-                            component_type: matrix_type.inner,
-                        }))
-                    },
+                    TypeKind::Matrix(matrix_type) => TypeKind::Vector(VectorType {
+                        size: matrix_type.rows,
+                        component_type: matrix_type.inner,
+                    })
+                    .intern(self.database),
                     TypeKind::Reference(Reference {
                         address_space,
                         inner,
@@ -1172,7 +1171,7 @@ impl<'database> InferenceContext<'database> {
                     },
                     Literal::Bool(_) => TypeKind::Scalar(ScalarType::Bool),
                 };
-                self.database.intern_type(type_kind)
+                type_kind.intern(self.database)
             },
             Expression::IdentExpression(ident_expression) => {
                 self.infer_ident_expression(expression, ident_expression, store)
@@ -1483,7 +1482,7 @@ impl<'database> InferenceContext<'database> {
                     component_type: inner,
                 })
             });
-            self.database.intern_type(kind)
+            kind.intern(self.database)
         }
     }
 
@@ -1709,7 +1708,7 @@ impl<'database> InferenceContext<'database> {
                 self.result
                     .call_resolutions
                     .insert(expression, ResolvedCall::Function(id));
-                self.validate_function_call(&details, &arguments, store, expression, expression)
+                self.validate_function_call(details, &arguments, store, expression, expression)
             },
             Lowered::BuiltinFunction => {
                 let template_args = context.eval_template_args(
@@ -2322,33 +2321,36 @@ impl InferenceContext<'_> {
             r#type.kind(self.database),
             TypeKind::Reference(_) | TypeKind::Pointer(_)
         ));
-        self.database.intern_type(TypeKind::Reference(Reference {
+        TypeKind::Reference(Reference {
             address_space,
             inner: r#type,
             access_mode,
-        }))
+        })
+        .intern(self.database)
     }
 
     fn ref_to_pointer(
         &self,
         reference: &Reference,
     ) -> Type {
-        self.database.intern_type(TypeKind::Pointer(Pointer {
+        TypeKind::Pointer(Pointer {
             address_space: reference.address_space,
             inner: reference.inner,
             access_mode: reference.access_mode,
-        }))
+        })
+        .intern(self.database)
     }
 
     fn ptr_to_ref(
         &self,
         pointer: &Pointer,
     ) -> Type {
-        self.database.intern_type(TypeKind::Reference(Reference {
+        TypeKind::Reference(Reference {
             address_space: pointer.address_space,
             inner: pointer.inner,
             access_mode: pointer.access_mode,
-        }))
+        })
+        .intern(self.database)
     }
 
     const fn error_type(&self) -> Type {
@@ -2356,7 +2358,6 @@ impl InferenceContext<'_> {
     }
 
     fn bool_type(&self) -> Type {
-        self.database
-            .intern_type(TypeKind::Scalar(ScalarType::Bool))
+        TypeKind::Scalar(ScalarType::Bool).intern(self.database)
     }
 }

@@ -1,3 +1,4 @@
+use base_db::Lookup as _;
 use hir::HirDatabase as _;
 use hir_def::{
     database::{DefinitionWithBodyId, ModuleDefinitionId},
@@ -110,7 +111,7 @@ fn render_detail(
             let function_type = database.function_type(id);
             pretty_fn_with_verbosity(
                 database,
-                &function_type.lookup(database),
+                function_type.lookup(database),
                 TypeVerbosity::Compact,
             )
         },

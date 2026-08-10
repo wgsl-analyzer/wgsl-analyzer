@@ -1,11 +1,11 @@
 use std::{fmt, hash, iter, mem};
 
 use ast::Expression as AstExpression;
-use base_db::{EditionedFileId, FileId, FileRange, Intern as _, TextRange};
+use base_db::{EditionedFileId, FileId, FileRange, Intern as _, Lookup as _, TextRange};
 use hir::{AddressSpace, Field, HasSource as _, Semantics};
 use hir_def::{
     InFile,
-    database::{ Location},
+    database::Location,
     item_tree::{ItemTree, Name},
     signature::FieldId,
 };
@@ -552,7 +552,7 @@ fn function_hints(
         .zip(parameter_expressions)
         .filter(|&(name, _)| !Name::is_missing(name))
         .filter(|(parameter_name, expression)| {
-            !should_hide_param_name_hint(&function, parameter_name, expression)
+            !should_hide_param_name_hint(function, parameter_name, expression)
         })
         .map(|(param_name, expression)| {
             let mut label = InlayHintLabel::from(param_name);

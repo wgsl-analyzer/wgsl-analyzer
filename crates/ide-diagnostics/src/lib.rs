@@ -5,7 +5,7 @@ mod tint;
 
 use std::{error, fmt::Display};
 
-use base_db::{EditionedFileId, FileRange, TextRange};
+use base_db::{EditionedFileId, FileRange, Lookup as _, TextRange};
 use hir::{
     HirDatabase, Semantics,
     diagnostics::{AnyDiagnostic, Severity},
@@ -315,7 +315,7 @@ pub fn diagnostics(
 
                     let possible = builtin
                         .overloads()
-                        .map(|(_, overload)| pretty_fn(database, &overload.r#type.lookup(database)))
+                        .map(|(_, overload)| pretty_fn(database, overload.r#type.lookup(database)))
                         .join("\n");
 
                     let name = name.unwrap_or_else(|| builtin.name());
@@ -428,7 +428,7 @@ pub fn diagnostics(
                     let mut possible = Vec::with_capacity(32);
                     let builtin_specific = builtins.lookup(database);
                     possible.extend(builtin_specific.overloads().map(|(_, overload)| {
-                        pretty_fn(database, &overload.r#type.lookup(database))
+                        pretty_fn(database, overload.r#type.lookup(database))
                     }));
 
                     let possible = possible.join("\n");

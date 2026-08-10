@@ -6,7 +6,7 @@ use std::{
     str::FromStr,
 };
 
-use base_db::{Lookup, impl_intern_key};
+use base_db::{Intern as _, Lookup as _, impl_intern_key, impl_intern_lookup};
 use hir_def::{database::StructId, type_ref::VecDimensionality};
 use wgsl_types::{
     syntax::{AccessMode, AddressSpace},
@@ -16,20 +16,21 @@ use wgsl_types::{
 use crate::database::HirDatabase;
 
 impl_intern_key!(Type, TypeKind);
+impl_intern_lookup!(Type, TypeKind);
 
 impl Type {
     pub fn kind(
         self,
         database: &dyn HirDatabase,
     ) -> TypeKind {
-        database.lookup_intern_type(self)
+        self.lookup(database).clone()
     }
 
     pub fn is_err(
         self,
         database: &dyn HirDatabase,
     ) -> bool {
-        matches!(database.lookup_intern_type(self), TypeKind::Error)
+        matches!(self.kind(database), TypeKind::Error)
     }
 
     #[expect(clippy::doc_paragraphs_missing_punctuation, reason = "false positive")]
@@ -330,13 +331,6 @@ impl TypeKind {
             | Self::BoundVariable(_)
             | Self::StorageTypeOfTexelFormat(_) => false,
         }
-    }
-
-    pub fn intern(
-        self,
-        database: &dyn HirDatabase,
-    ) -> Type {
-        database.intern_type(self)
     }
 
     #[must_use]

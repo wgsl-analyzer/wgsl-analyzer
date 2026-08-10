@@ -1,4 +1,4 @@
-use base_db::{EditionedFileId, FilePosition, TextSize};
+use base_db::{EditionedFileId, FilePosition, Lookup as _, TextSize};
 use hir::{HirDatabase as _, Semantics};
 use hir_def::{expression_store::path::Path, mod_path::ModPath, resolver::ResolveKind};
 use hir_ty::{
@@ -118,7 +118,7 @@ pub(crate) fn signature_help(
         .filter_map(|function| {
             let length: u32 = function.parameters.len().try_into().unwrap();
             (active_parameter.is_none_or(|index| index < length))
-                .then(|| build_signature(database, &function, None))
+                .then(|| build_signature(database, function, None))
         })
         .collect();
     let mut active_signature = None;

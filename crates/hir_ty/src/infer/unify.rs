@@ -1,5 +1,6 @@
 use std::collections::hash_map::Entry;
 
+use base_db::Intern as _;
 use rustc_hash::FxHashMap;
 use wgsl_types::syntax::AccessMode;
 

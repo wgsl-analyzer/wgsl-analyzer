@@ -68,7 +68,7 @@ pub(crate) fn tint_diagnostics<Pathy>(
             TintDiagnosticSeverity::Warning => Severity::Warning,
             TintDiagnosticSeverity::Note => Severity::Information,
         };
-        let range = diagnostic.range.to_range(&line_index).unwrap_or(full_range);
+        let range = diagnostic.range.to_range(line_index).unwrap_or(full_range);
 
         accumulator.push(AnyDiagnostic::TintValidationError {
             file_id,

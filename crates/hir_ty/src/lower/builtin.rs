@@ -1,6 +1,6 @@
 use std::str::FromStr as _;
 
-use base_db::ExtensionsConfigInput;
+use base_db::{ExtensionsConfigInput, Intern as _};
 use hir_def::{expression::ExpressionId, item_tree::Name};
 use itertools::Itertools as _;
 use wgsl_types::{

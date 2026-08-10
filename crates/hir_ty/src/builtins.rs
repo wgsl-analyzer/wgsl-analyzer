@@ -1,4 +1,4 @@
-use base_db::impl_intern_key;
+use base_db::{Intern as _, impl_intern_key, impl_intern_lookup};
 use hir_def::item_tree::Name;
 use wgsl_types::{
     syntax::{AccessMode, AddressSpace},
@@ -15,24 +15,7 @@ use crate::{
 };
 
 impl_intern_key!(BuiltinId, Builtin);
-
-impl BuiltinId {
-    pub fn lookup(
-        self,
-        database: &dyn HirDatabase,
-    ) -> Builtin {
-        database.lookup_intern_builtin(self)
-    }
-}
-
-impl Builtin {
-    pub fn intern(
-        self,
-        database: &dyn HirDatabase,
-    ) -> BuiltinId {
-        database.intern_builtin(self)
-    }
-}
+impl_intern_lookup!(BuiltinId, Builtin);
 
 #[derive(Debug, Hash, PartialEq, Eq, Clone)]
 pub enum GenericArgKind {
