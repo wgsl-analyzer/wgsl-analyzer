@@ -1,11 +1,11 @@
 use crate::{
-    database::{DefDatabase, ImportId, ModuleDefinitionId},
+    db::{ImportId, ModuleDefinitionId},
     item_tree::Name,
     mod_path::{AbsoluteModPath, ModPath},
     name_resolution::{DefDiagnostic, DefDiagnosticKind, collect_module},
     visibility::Visibility,
 };
-use base_db::{EditionedFileId, Package};
+use base_db::{EditionedFileId, Package, SourceDatabase};
 use rustc_hash::FxHashMap;
 use std::fmt::Write as _;
 use triomphe::Arc;
@@ -48,9 +48,9 @@ pub struct ItemScope {
 
 #[salsa::tracked]
 impl ItemScope {
-    #[salsa::tracked]
+    #[salsa::tracked(returns(clone))]
     pub fn of(
-        db: &dyn DefDatabase,
+        db: &dyn SourceDatabase,
         file_id: EditionedFileId,
     ) -> Arc<ItemScope> {
         Arc::new(collect_module(db, file_id))

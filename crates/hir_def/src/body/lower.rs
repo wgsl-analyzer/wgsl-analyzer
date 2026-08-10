@@ -1,59 +1,58 @@
-use base_db::EditionedFileId;
+use base_db::{EditionedFileId, SourceDatabase};
 use either::Either;
 use syntax::{HasName as _, HasTemplateParameters as _, ast, pointer::AstPointer};
 
 use super::{Binding, BindingId, Body, BodySourceMap, SyntheticSyntax};
 use crate::{
-    database::DefDatabase,
     expression::{ExpressionId, Statement, StatementId, SwitchCaseSelector},
     expression_store::{ExpressionStoreSource, lower::ExprCollector},
     item_tree::Name,
 };
 
 pub(super) fn lower_function_body(
-    database: &dyn DefDatabase,
+    db: &dyn SourceDatabase,
     file_id: EditionedFileId,
     param_list: Option<ast::FunctionParameters>,
     body: Option<ast::CompoundStatement>,
 ) -> (Body, BodySourceMap) {
-    Collector::new(database, file_id).collect_function(param_list, body)
+    Collector::new(db, file_id).collect_function(param_list, body)
 }
 
 pub(super) fn lower_global_variable_declaration(
-    database: &dyn DefDatabase,
+    db: &dyn SourceDatabase,
     file_id: EditionedFileId,
     declaration: &ast::VariableDeclaration,
 ) -> (Body, BodySourceMap) {
-    Collector::new(database, file_id).collect_global_variable_declaration(declaration)
+    Collector::new(db, file_id).collect_global_variable_declaration(declaration)
 }
 
 pub(super) fn lower_global_constant_declaration(
-    database: &dyn DefDatabase,
+    db: &dyn SourceDatabase,
     file_id: EditionedFileId,
     declaration: &ast::ConstantDeclaration,
 ) -> (Body, BodySourceMap) {
-    Collector::new(database, file_id).collect_global_constant_declaration(declaration)
+    Collector::new(db, file_id).collect_global_constant_declaration(declaration)
 }
 
 pub(super) fn lower_global_assert_statement(
-    database: &dyn DefDatabase,
+    db: &dyn SourceDatabase,
     file_id: EditionedFileId,
     declaration: &ast::AssertStatement,
 ) -> (Body, BodySourceMap) {
-    Collector::new(database, file_id).collect_global_assert_statement(declaration)
+    Collector::new(db, file_id).collect_global_assert_statement(declaration)
 }
 
 pub(super) fn lower_override_declaration(
-    database: &dyn DefDatabase,
+    db: &dyn SourceDatabase,
     file_id: EditionedFileId,
     declaration: &ast::OverrideDeclaration,
 ) -> (Body, BodySourceMap) {
-    Collector::new(database, file_id).collect_override_declaration(declaration)
+    Collector::new(db, file_id).collect_override_declaration(declaration)
 }
 
-struct Collector<'database> {
-    expressions: ExprCollector<'database>,
-    database: &'database dyn DefDatabase,
+struct Collector<'db> {
+    expressions: ExprCollector<'db>,
+    db: &'db dyn SourceDatabase,
     body: Body,
     source_map: BodySourceMap,
     file_id: EditionedFileId,
@@ -61,12 +60,12 @@ struct Collector<'database> {
 
 impl Collector<'_> {
     fn new(
-        database: &dyn DefDatabase,
+        db: &dyn SourceDatabase,
         file_id: EditionedFileId,
     ) -> Collector<'_> {
         Collector {
-            expressions: ExprCollector::new(database, ExpressionStoreSource::Body),
-            database,
+            expressions: ExprCollector::new(db, ExpressionStoreSource::Body),
+            db,
             body: Body::default(),
             source_map: BodySourceMap::default(),
             file_id,

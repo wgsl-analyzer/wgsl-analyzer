@@ -14,7 +14,7 @@ mod wesl;
 
 use base_db::{EditionedFileId, FilePosition, SourceDatabase, change};
 use expect_test::{Expect, expect};
-use hir::database::HirDatabase;
+use hir::db::HirDatabase;
 use hir::setup_tracing;
 use ide_db::{FileId, RootDatabase, SnippetCapability};
 use itertools::Itertools as _;
@@ -123,15 +123,15 @@ fn completion_list_with_config(
 
 /// Creates analysis from a multi-file fixture and returns the position marked with $0.
 pub(crate) fn position(wa_fixture: &str) -> (RootDatabase, FilePosition) {
-    let mut database = RootDatabase::default();
+    let mut db = RootDatabase::default();
     let change_fixture = ChangeFixture::parse(wa_fixture);
-    database.apply_change(change_fixture.change);
+    db.apply_change(change_fixture.change);
     let (file_id, range_or_offset) = change_fixture
         .file_position
         .expect("expected a marker ($0)");
     let offset = range_or_offset.expect_offset();
     let position = FilePosition { file_id, offset };
-    (database, position)
+    (db, position)
 }
 
 pub(crate) fn do_completion(

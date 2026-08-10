@@ -1,10 +1,7 @@
-use base_db::{EditionedFileId, FileExtension, Package, SourceDatabase as _};
+use base_db::{EditionedFileId, FileExtension, Package, SourceDatabase};
 use indexmap::map::Entry;
 
-use crate::{
-    FxIndexMap, database::DefDatabase, item_scope::ItemScope, item_tree::Name,
-    mod_path::AbsoluteModPath,
-};
+use crate::{FxIndexMap, item_scope::ItemScope, item_tree::Name, mod_path::AbsoluteModPath};
 
 /// A map of all modules and their children in a package.
 ///
@@ -27,7 +24,7 @@ pub struct ModuleData {
 impl ModulesMap {
     #[salsa::tracked(returns(ref))]
     pub fn of(
-        db: &dyn DefDatabase,
+        db: &dyn SourceDatabase,
         package: Package,
     ) -> ModulesMap {
         modules_map_query(db, package)
@@ -35,18 +32,18 @@ impl ModulesMap {
 }
 
 fn modules_map_query(
-    database: &dyn DefDatabase,
+    db: &dyn SourceDatabase,
     package: Package,
 ) -> ModulesMap {
-    let package_data = package.data(database);
-    let source_root = package_data.source_root(database);
+    let package_data = package.data(db);
+    let source_root = package_data.source_root(db);
 
     let base_modules: Vec<_> = source_root
         .iter()
         .filter_map(|file_id| {
             let extension = FileExtension::from_file(&source_root, file_id).ok()?;
-            let file_id = EditionedFileId::from_file_with_extension(database, file_id, extension);
-            let mod_path = AbsoluteModPath::for_file(database, package, file_id)?;
+            let file_id = EditionedFileId::from_file_with_extension(db, file_id, extension);
+            let mod_path = AbsoluteModPath::for_file(db, package, file_id)?;
             Some((
                 mod_path,
                 ModuleData {

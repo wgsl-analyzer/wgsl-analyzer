@@ -9,27 +9,28 @@ mod operators;
 mod simple;
 use std::{fmt::Write as _, ops::ControlFlow};
 
-use base_db::{EditionedFileId, Intern as _, Lookup as _};
+use base_db::{EditionedFileId, ExtensionsConfigInput, Intern as _, Lookup as _};
 use expect_test::Expect;
 use hir_def::{
     HasSource as _,
     body::{Body, BodySourceMap},
-    database::{
-        DefDatabase as _, DefinitionWithBodyId, InternDatabase as _, Location, ModuleDefinitionId,
-    },
+    db::{DefinitionWithBodyId, Location, ModuleDefinitionId},
     expression::ExpressionId,
-    expression_store::{ExpressionSourceMap, ExpressionStoreSource, SyntheticSyntax},
-    item_tree::{ModuleItemId, Name},
+    expression_store::{
+        ExpressionSourceMap, ExpressionStore, ExpressionStoreOwnerId, ExpressionStoreSource,
+        SyntheticSyntax,
+    },
+    item_tree::{ItemTree, ModuleItemId, Name},
+    signature::{StructSignature, TypeAliasSignature},
     type_specifier::{self, TypeSpecifierId},
 };
 use itertools::Itertools as _;
-use salsa::Durability;
 use syntax::{AstNode as _, Diagnostic, ExtensionsConfig, SyntaxNode};
 use test_fixture::WithFixture as _;
 use triomphe::Arc;
 
 use crate::{
-    database::HirDatabase as _,
+    db::HirDatabase as _,
     diagnostics::{self, InferenceDiagnostic, InferenceDiagnosticKind},
     infer::{InferenceResult, TypeExpectation},
     lower::{LoweredKind, TypeContainer, TypeLoweringError},
@@ -46,48 +47,44 @@ fn infer(
     extensions: ExtensionsConfig,
     wa_fixture: &str,
 ) -> String {
-    let (mut database, files) = TestDatabase::with_many_files(wa_fixture);
-    database.set_extensions_with_durability(extensions, Durability::MEDIUM);
+    let (mut db, files) = TestDatabase::with_many_files(wa_fixture);
+    ExtensionsConfigInput::update_extensions(&mut db, extensions);
     let mut buffer = String::new();
 
     for (index, file_id) in files.into_iter().enumerate() {
         if index > 0 {
             buffer.push_str("---\n");
         }
-        InferPrinter::new(&database, file_id).infer_file(&mut buffer);
+        InferPrinter::new(&db, file_id).infer_file(&mut buffer);
     }
     buffer.truncate(buffer.trim_end().len());
     buffer
 }
 
 struct InferPrinter<'db> {
-    database: &'db TestDatabase,
+    db: &'db TestDatabase,
     file_id: EditionedFileId,
     root: SyntaxNode,
 }
 
 impl<'db> InferPrinter<'db> {
     fn new(
-        database: &'db TestDatabase,
+        db: &'db TestDatabase,
         file_id: EditionedFileId,
     ) -> Self {
-        let parse = file_id.parse(database);
+        let parse = file_id.parse(db);
         assert_eq!(<&[Diagnostic]>::default(), parse.errors());
         let root = parse.syntax();
-        Self {
-            database,
-            file_id,
-            root,
-        }
+        Self { db, file_id, root }
     }
 
     fn infer_file(
         &self,
         buffer: &mut String,
     ) {
-        let module_info = self.database.item_tree(self.file_id);
-        let mut definitions = module_definitions(self.database, self.file_id, &module_info);
-        definitions.sort_by_key(|definition| text_range_start(*definition, self.database));
+        let module_info = ItemTree::of(self.db, self.file_id);
+        let mut definitions = module_definitions(self.db, self.file_id, module_info);
+        definitions.sort_by_key(|definition| text_range_start(*definition, self.db));
         for definition in definitions {
             match definition {
                 ModuleDefinitionId::Function(id) => {
@@ -106,18 +103,18 @@ impl<'db> InferPrinter<'db> {
                     self.infer_with_body(DefinitionWithBodyId::Override(id), buffer);
                 },
                 ModuleDefinitionId::Struct(id) => {
-                    let (_, signature_map) = self.database.struct_data(id);
-                    let (_, diagnostics) = &*self.database.field_types(id);
+                    let (_, signature_map) = StructSignature::with_source_map(self.db, id);
+                    let (_, diagnostics) = &*self.db.field_types(id);
 
                     for diagnostic in diagnostics {
-                        self.print_diagnostic(diagnostic, &signature_map, buffer);
+                        self.print_diagnostic(diagnostic, signature_map, buffer);
                     }
                 },
                 ModuleDefinitionId::TypeAlias(id) => {
-                    let (_, signature_map) = self.database.type_alias_data(id);
-                    let (_, diagnostics) = &*self.database.type_alias_type(id);
+                    let (_, signature_map) = TypeAliasSignature::with_source_map(self.db, id);
+                    let (_, diagnostics) = &*self.db.type_alias_type(id);
                     for diagnostic in diagnostics {
-                        self.print_diagnostic(diagnostic, &signature_map, buffer);
+                        self.print_diagnostic(diagnostic, signature_map, buffer);
                     }
                 },
             }
@@ -129,9 +126,12 @@ impl<'db> InferPrinter<'db> {
         definition: DefinitionWithBodyId,
         buffer: &mut String,
     ) {
-        let (_, signature_map) = self.database.signature_with_source_map(definition);
-        let (_, body_source_map) = self.database.body_with_source_map(definition);
-        let inference_result = InferenceResult::of(self.database, definition);
+        let (_, signature_map) = ExpressionStore::with_source_map(
+            self.db,
+            ExpressionStoreOwnerId::Signature(definition),
+        );
+        let (_, body_source_map) = Body::with_source_map(self.db, definition);
+        let inference_result = InferenceResult::of(self.db, definition);
 
         let mut types: Vec<(SyntaxNode, Type)> = Vec::new();
 
@@ -164,7 +164,7 @@ impl<'db> InferPrinter<'db> {
         for diagnostic in inference_result.diagnostics() {
             let source_map = match diagnostic.source {
                 ExpressionStoreSource::Body => body_source_map.expression_source_map(),
-                ExpressionStoreSource::Signature => &signature_map,
+                ExpressionStoreSource::Signature => signature_map,
             };
             self.print_diagnostic(diagnostic, source_map, buffer);
         }
@@ -180,7 +180,7 @@ impl<'db> InferPrinter<'db> {
             node.text_range(),
             node.text().to_string().replace('\n', " "),
         );
-        let pretty = pretty_type_with_verbosity(self.database, r#type, TypeVerbosity::Full);
+        let pretty = pretty_type_with_verbosity(self.db, r#type, TypeVerbosity::Full);
         writeln!(buffer, "{range:?} '{}': {pretty}", ellipsize(text, 15)).unwrap();
     }
 
@@ -295,11 +295,7 @@ impl<'db> InferPrinter<'db> {
             name.unwrap_or("<missing>"),
             parameters
                 .iter()
-                .map(|r#type| pretty_type_with_verbosity(
-                    self.database,
-                    *r#type,
-                    TypeVerbosity::Full
-                ))
+                .map(|r#type| pretty_type_with_verbosity(self.db, *r#type, TypeVerbosity::Full))
                 .join(", ")
         )
         .unwrap();
@@ -341,8 +337,8 @@ impl<'db> InferPrinter<'db> {
             buffer,
             "{range:?} '{}': expected {} but got {}",
             ellipsize(text, 15),
-            pretty_type_expectation_with_verbosity(self.database, expected, TypeVerbosity::Full),
-            pretty_type_with_verbosity(self.database, actual, TypeVerbosity::Full)
+            pretty_type_expectation_with_verbosity(self.db, expected, TypeVerbosity::Full),
+            pretty_type_with_verbosity(self.db, actual, TypeVerbosity::Full)
         )
         .unwrap();
     }
@@ -387,12 +383,12 @@ impl<'db> InferPrinter<'db> {
             buffer,
             "{range:?} '{}': no constructor for builtin `{}` with parameters `{}`",
             ellipsize(text, 15),
-            builtins.lookup(self.database).name(),
+            builtins.lookup(self.db).name(),
             join_display(
                 parameters
                     .iter()
                     .map(|parameter| pretty_type_with_verbosity(
-                        self.database,
+                        self.db,
                         *parameter,
                         TypeVerbosity::Full
                     ))
@@ -435,7 +431,7 @@ impl<'db> InferPrinter<'db> {
             "{range:?} '{}': no such field `{}` on type `{}`",
             ellipsize(text, 15),
             name.as_str(),
-            pretty_type_with_verbosity(self.database, r#type, TypeVerbosity::Full),
+            pretty_type_with_verbosity(self.db, r#type, TypeVerbosity::Full),
         )
         .unwrap();
     }
@@ -454,7 +450,7 @@ impl<'db> InferPrinter<'db> {
             buffer,
             "{range:?} '{}': expected storable type but got `{}`",
             ellipsize(text, 15),
-            pretty_type_with_verbosity(self.database, actual, TypeVerbosity::Full),
+            pretty_type_with_verbosity(self.db, actual, TypeVerbosity::Full),
         )
         .unwrap();
     }
@@ -473,7 +469,7 @@ impl<'db> InferPrinter<'db> {
             buffer,
             "{range:?} '{}': cannot index into type {}",
             ellipsize(text, 15),
-            pretty_type_with_verbosity(self.database, r#type, TypeVerbosity::Full),
+            pretty_type_with_verbosity(self.db, r#type, TypeVerbosity::Full),
         )
         .unwrap();
     }
@@ -492,7 +488,7 @@ impl<'db> InferPrinter<'db> {
             buffer,
             "{range:?} '{}': unexpected return value of type `{}` in function with no return type",
             ellipsize(text, 15),
-            pretty_type_with_verbosity(self.database, actual, TypeVerbosity::Full),
+            pretty_type_with_verbosity(self.db, actual, TypeVerbosity::Full),
         )
         .unwrap();
     }
@@ -511,7 +507,7 @@ impl<'db> InferPrinter<'db> {
             buffer,
             "{range:?} '{}': type `{}` is not constructible",
             ellipsize(text, 15),
-            pretty_type_with_verbosity(self.database, r#type, TypeVerbosity::Full),
+            pretty_type_with_verbosity(self.db, r#type, TypeVerbosity::Full),
         )
         .unwrap();
     }
@@ -570,54 +566,54 @@ impl<'db> InferPrinter<'db> {
 
 fn text_range_start(
     definition: ModuleDefinitionId,
-    database: &TestDatabase,
+    db: &TestDatabase,
 ) -> base_db::TextSize {
     match definition {
         ModuleDefinitionId::Function(item) => item
-            .lookup(database)
-            .source(database)
+            .lookup(db)
+            .source(db)
             .value
             .syntax()
             .text_range()
             .start(),
         ModuleDefinitionId::GlobalConstant(item) => item
-            .lookup(database)
-            .source(database)
+            .lookup(db)
+            .source(db)
             .value
             .syntax()
             .text_range()
             .start(),
         ModuleDefinitionId::GlobalVariable(item) => item
-            .lookup(database)
-            .source(database)
+            .lookup(db)
+            .source(db)
             .value
             .syntax()
             .text_range()
             .start(),
         ModuleDefinitionId::Override(item) => item
-            .lookup(database)
-            .source(database)
+            .lookup(db)
+            .source(db)
             .value
             .syntax()
             .text_range()
             .start(),
         ModuleDefinitionId::GlobalAssertStatement(item) => item
-            .lookup(database)
-            .source(database)
+            .lookup(db)
+            .source(db)
             .value
             .syntax()
             .text_range()
             .start(),
         ModuleDefinitionId::Struct(item) => item
-            .lookup(database)
-            .source(database)
+            .lookup(db)
+            .source(db)
             .value
             .syntax()
             .text_range()
             .start(),
         ModuleDefinitionId::TypeAlias(item) => item
-            .lookup(database)
-            .source(database)
+            .lookup(db)
+            .source(db)
             .value
             .syntax()
             .text_range()
@@ -626,7 +622,7 @@ fn text_range_start(
 }
 
 fn module_definitions(
-    database: &TestDatabase,
+    db: &TestDatabase,
     file_id: EditionedFileId,
     item_tree: &hir_def::item_tree::ItemTree,
 ) -> Vec<ModuleDefinitionId> {
@@ -636,27 +632,27 @@ fn module_definitions(
         .filter_map(|item| {
             Some(match item {
                 ModuleItemId::Function(id) => {
-                    ModuleDefinitionId::Function(Location::new(file_id, *id).intern(database))
+                    ModuleDefinitionId::Function(Location::new(file_id, *id).intern(db))
                 },
                 ModuleItemId::GlobalVariable(id) => {
-                    ModuleDefinitionId::GlobalVariable(Location::new(file_id, *id).intern(database))
+                    ModuleDefinitionId::GlobalVariable(Location::new(file_id, *id).intern(db))
                 },
                 ModuleItemId::GlobalConstant(id) => {
-                    ModuleDefinitionId::GlobalConstant(Location::new(file_id, *id).intern(database))
+                    ModuleDefinitionId::GlobalConstant(Location::new(file_id, *id).intern(db))
                 },
                 ModuleItemId::Override(id) => {
-                    ModuleDefinitionId::Override(Location::new(file_id, *id).intern(database))
+                    ModuleDefinitionId::Override(Location::new(file_id, *id).intern(db))
                 },
                 ModuleItemId::GlobalAssertStatement(id) => {
                     ModuleDefinitionId::GlobalAssertStatement(
-                        Location::new(file_id, *id).intern(database),
+                        Location::new(file_id, *id).intern(db),
                     )
                 },
                 ModuleItemId::TypeAlias(id) => {
-                    ModuleDefinitionId::TypeAlias(Location::new(file_id, *id).intern(database))
+                    ModuleDefinitionId::TypeAlias(Location::new(file_id, *id).intern(db))
                 },
                 ModuleItemId::Struct(id) => {
-                    ModuleDefinitionId::Struct(Location::new(file_id, *id).intern(database))
+                    ModuleDefinitionId::Struct(Location::new(file_id, *id).intern(db))
                 },
                 ModuleItemId::ImportStatement(id) => return None,
             })

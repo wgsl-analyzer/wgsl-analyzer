@@ -2,12 +2,12 @@
 
 use std::{fmt, iter};
 
-use base_db::{EditionedFileId, Package};
+use base_db::{EditionedFileId, Package, SourceDatabase};
 use camino::Utf8Component;
 use smallvec::SmallVec;
 use syntax::ast::{self, ImportRelative};
 
-use crate::{database::DefDatabase, item_tree::Name};
+use crate::item_tree::Name;
 
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct AbsoluteModPath(ModPath);
@@ -30,13 +30,13 @@ impl AbsoluteModPath {
     ///
     /// Returns none if there is no valid path.
     pub fn for_file(
-        database: &dyn DefDatabase,
+        db: &dyn SourceDatabase,
         package: Package,
         file_id: EditionedFileId,
     ) -> Option<Self> {
-        let source_root = package.data(database).source_root(database);
-        let path = source_root.path_for_file(file_id.file_id(database))?;
-        let relative_path = path.strip_prefix(&package.data(database).root)?;
+        let source_root = package.data(db).source_root(db);
+        let path = source_root.path_for_file(file_id.file_id(db))?;
+        let relative_path = path.strip_prefix(&package.data(db).root)?;
         let segments: SmallVec<[Name; 1]> = relative_path
             .as_utf8_path()
             .with_extension("")

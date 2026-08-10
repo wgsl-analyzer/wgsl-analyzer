@@ -5,7 +5,7 @@ use smallvec::{SmallVec, smallvec};
 use wgsl_types::syntax::{AccessMode, AddressSpace};
 
 use crate::{
-    database::HirDatabase,
+    db::HirDatabase,
     ty::{ArrayType, TypeKind},
 };
 
@@ -77,13 +77,13 @@ pub fn validate_address_space<DiagnosticBuilder>(
     access_mode: AccessMode,
     scope: Scope,
     r#type: &TypeKind,
-    database: &dyn HirDatabase,
+    db: &dyn HirDatabase,
     mut diagnostic_builder: DiagnosticBuilder,
 ) where
     DiagnosticBuilder: FnMut(AddressSpaceError),
 {
     // We only care about the inner type here
-    let r#type = r#type.unref(database);
+    let r#type = r#type.unref(db);
     match address_space {
         AddressSpace::Function => {
             if !matches!(scope, Scope::Function) {
@@ -120,8 +120,7 @@ pub fn validate_address_space<DiagnosticBuilder>(
                     AccessMode::ReadWrite
                 ]));
             }
-            if !r#type.is_error()
-                && (!r#type.is_plain() || r#type.contains_runtime_sized_array(database))
+            if !r#type.is_error() && (!r#type.is_plain() || r#type.contains_runtime_sized_array(db))
             {
                 diagnostic_builder(AddressSpaceError::WorkgroupCompatible);
             }
@@ -135,7 +134,7 @@ pub fn validate_address_space<DiagnosticBuilder>(
                     AccessMode::ReadWrite
                 ]));
             }
-            if !r#type.is_error() && !r#type.is_host_shareable(database) {
+            if !r#type.is_error() && !r#type.is_host_shareable(db) {
                 diagnostic_builder(AddressSpaceError::HostShareable);
             }
             if !r#type.is_error() && !r#type.is_constructable() {
@@ -151,7 +150,7 @@ pub fn validate_address_space<DiagnosticBuilder>(
                     AccessMode::ReadWrite
                 ]));
             }
-            if !r#type.is_error() && !r#type.is_host_shareable(database) {
+            if !r#type.is_error() && !r#type.is_host_shareable(db) {
                 diagnostic_builder(AddressSpaceError::HostShareable);
             }
         },
@@ -201,7 +200,7 @@ pub fn validate_address_space<DiagnosticBuilder>(
             //         diagnostic_builder(AddressSpaceError::AccessMode(smallvec![AccessMode::Read]));
             //     }
             // }
-            if !r#type.is_error() && r#type.size_of(address_space, database) < Some(4) {
+            if !r#type.is_error() && r#type.size_of(address_space, db) < Some(4) {
                 diagnostic_builder(AddressSpaceError::TaskPayloadCompatible);
             }
         },

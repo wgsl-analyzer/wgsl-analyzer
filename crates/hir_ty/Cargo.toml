@@ -16,7 +16,6 @@ either.workspace = true
 hir-def.workspace = true
 itertools.workspace = true
 la-arena.workspace = true
-query-group.workspace = true
 rustc-hash.workspace = true
 salsa.workspace = true
 salsa-macros.workspace = true

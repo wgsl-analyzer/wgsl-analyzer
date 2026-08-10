@@ -1,4 +1,4 @@
-use base_db::{EditionedFileId, FilePosition, TextSize};
+use base_db::{EditionedFileId, FilePosition, Lookup as _, TextSize};
 use hir::{HirDatabase as _, Semantics};
 use hir_def::{expression_store::path::Path, mod_path::ModPath, resolver::ResolveKind};
 use hir_ty::{
@@ -84,11 +84,11 @@ impl OverloadSignatureHelp {
 }
 
 pub(crate) fn signature_help(
-    database: &RootDatabase,
+    db: &RootDatabase,
     position: FilePosition,
 ) -> Option<SignatureHelp> {
-    let semantics = Semantics::new(database);
-    let file_id = EditionedFileId::from_file(database, position.file_id);
+    let semantics = Semantics::new(db);
+    let file_id = EditionedFileId::from_file(db, position.file_id);
     let source_file = semantics.parse(file_id);
     let syntax = source_file.syntax();
 
@@ -101,7 +101,7 @@ pub(crate) fn signature_help(
     let resolved = semantics
         .resolver(file_id, syntax)
         .resolve(
-            database,
+            db,
             &Path(ModPath::from_src(
                 &function_call.ident_expression()?.path()?,
             )),
@@ -113,12 +113,12 @@ pub(crate) fn signature_help(
     let overloads = vec![function_id];
     let mut signatures: Vec<_> = overloads
         .into_iter()
-        .map(|function_id| database.function_type(function_id))
-        .map(|function_type| function_type.lookup(database))
+        .map(|function_id| db.function_type(function_id))
+        .map(|function_type| function_type.lookup(db))
         .filter_map(|function| {
             let length: u32 = function.parameters.len().try_into().unwrap();
             (active_parameter.is_none_or(|index| index < length))
-                .then(|| build_signature(database, &function, None))
+                .then(|| build_signature(db, function, None))
         })
         .collect();
     let mut active_signature = None;
@@ -166,14 +166,14 @@ fn find_enclosing_call(
 }
 
 fn build_signature(
-    database: &RootDatabase,
+    db: &RootDatabase,
     function: &FunctionDetails,
     documentation: Option<&str>,
 ) -> OverloadSignatureHelp {
     let mut signature = String::new();
     let mut parameters = Vec::new();
     pretty_fn_inner_with_offsets(
-        database,
+        db,
         function,
         &mut signature,
         TypeVerbosity::default(),
@@ -207,8 +207,8 @@ fn bar(x: u32, y: bool) -> f32 { 0.0f }
 
         let (offset, text) = extract_offset(text);
         let (analysis, file_id) = Analysis::from_single_file(text);
-        let semantics = Semantics::new(&analysis.database);
-        let file_id = EditionedFileId::from_file(&analysis.database, file_id);
+        let semantics = Semantics::new(&analysis.db);
+        let file_id = EditionedFileId::from_file(&analysis.db, file_id);
         let source_file = semantics.parse(file_id);
         let syntax = source_file.syntax();
         let token = syntax.token_at_offset(offset).left_biased().unwrap();
@@ -227,8 +227,8 @@ fn bar(x: u32, y: bool) -> f32 { 0.0f }
 
         let (offset, text) = extract_offset(text);
         let (analysis, file_id) = Analysis::from_single_file(text);
-        let semantics = Semantics::new(&analysis.database);
-        let file_id = EditionedFileId::from_file(&analysis.database, file_id);
+        let semantics = Semantics::new(&analysis.db);
+        let file_id = EditionedFileId::from_file(&analysis.db, file_id);
         let source_file = semantics.parse(file_id);
         let syntax = source_file.syntax();
         let token = syntax.token_at_offset(offset).left_biased().unwrap();
@@ -247,8 +247,8 @@ fn bar(x: u32, y: bool) -> f32 { 0.0f }
 
         let (offset, text) = extract_offset(text);
         let (analysis, file_id) = Analysis::from_single_file(text);
-        let semantics = Semantics::new(&analysis.database);
-        let file_id = EditionedFileId::from_file(&analysis.database, file_id);
+        let semantics = Semantics::new(&analysis.db);
+        let file_id = EditionedFileId::from_file(&analysis.db, file_id);
         let source_file = semantics.parse(file_id);
         let syntax = source_file.syntax();
         let token = syntax.token_at_offset(offset).left_biased().unwrap();

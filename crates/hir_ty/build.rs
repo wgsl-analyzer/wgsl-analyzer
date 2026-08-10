@@ -210,7 +210,7 @@ fn write_output(
 #[allow(clippy::restriction, reason = "generated code")]
 #[allow(rustc::all, reason = "generated code")]
 impl Builtin {{
-    pub fn for_name(database: &dyn HirDatabase, name: &Name) -> Option<Builtin> {{
+    pub fn for_name(db: &dyn HirDatabase, name: &Name) -> Option<Builtin> {{
         match name.as_str() {{"#
     )?;
 
@@ -223,7 +223,7 @@ impl Builtin {{
 
         write!(
             destination,
-            r#""{name}" => Some(Builtin::builtin_{name}(database)),"#
+            r#""{name}" => Some(Builtin::builtin_{name}(db)),"#
         )?;
     }
     write!(
@@ -520,11 +520,11 @@ fn texture_storage_type(
 fn type_to_rust(r#type: &Type) -> String {
     match r#type {
         Type::Vec(size, component_type) => format!(
-            "TypeKind::Vector(crate::ty::VectorType {{ size: VecSize::{size:?}, component_type: {} }}).intern(database)",
+            "TypeKind::Vector(crate::ty::VectorType {{ size: VecSize::{size:?}, component_type: {} }}).intern(db)",
             type_to_rust(component_type)
         ),
         Type::Matrix(columns, rows, inner) => format!(
-            "TypeKind::Matrix(crate::ty::MatrixType {{ columns: VecSize::{columns:?}, rows: VecSize::{rows:?}, inner: {} }}).intern(database)",
+            "TypeKind::Matrix(crate::ty::MatrixType {{ columns: VecSize::{columns:?}, rows: VecSize::{rows:?}, inner: {} }}).intern(db)",
             type_to_rust(inner)
         ),
         Type::Bool
@@ -536,10 +536,10 @@ fn type_to_rust(r#type: &Type) -> String {
         | Type::F16
         | Type::U64
         | Type::I64 => {
-            format!("TypeKind::Scalar(ScalarType::{type:?}).intern(database)")
+            format!("TypeKind::Scalar(ScalarType::{type:?}).intern(db)")
         },
         Type::Bound(index) => {
-            format!("TypeKind::BoundVariable(BoundVariable {{ index: {index} }}).intern(database)")
+            format!("TypeKind::BoundVariable(BoundVariable {{ index: {index} }}).intern(db)")
         },
         Type::Texture(texture) => {
             format!(
@@ -548,7 +548,7 @@ fn type_to_rust(r#type: &Type) -> String {
                             arrayed: {},
                             multisampled: {},
                             dimension: TextureDimensionality::{:?},
-                        }}).intern(database)",
+                        }}).intern(db)",
                 match &texture.kind {
                     TextureKind::Sampled(inner) => format!("Sampled({})", type_to_rust(inner)),
                     TextureKind::Storage(texel_format, access_mode) => {
@@ -570,17 +570,17 @@ fn type_to_rust(r#type: &Type) -> String {
             )
         },
         Type::Sampler { comparison: true } => {
-            "TypeKind::Sampler(SamplerType::SamplerComparison).intern(database)".to_owned()
+            "TypeKind::Sampler(SamplerType::SamplerComparison).intern(db)".to_owned()
         },
         Type::Sampler { comparison: false } => {
-            "TypeKind::Sampler(SamplerType::Sampler).intern(database)".to_owned()
+            "TypeKind::Sampler(SamplerType::Sampler).intern(db)".to_owned()
         },
         Type::RuntimeArray(inner) => format!(
             "TypeKind::Array(ArrayType {{
             size: ArraySize::Dynamic,
             binding_array: false,
             inner: {}
-        }}).intern(database)",
+        }}).intern(db)",
             type_to_rust(inner)
         ),
         Type::Pointer(address_space, inner, access_mode) => format!(
@@ -588,18 +588,18 @@ fn type_to_rust(r#type: &Type) -> String {
             inner: {},
             access_mode: AccessMode::{access_mode:?},
             address_space: AddressSpace::{address_space:?},
-        }}).intern(database)",
+        }}).intern(db)",
             type_to_rust(inner)
         ),
         Type::Atomic(inner) => format!(
             "TypeKind::Atomic(AtomicType {{
             inner: {},
-        }}).intern(database)",
+        }}).intern(db)",
             type_to_rust(inner)
         ),
         Type::StorageTypeOfTexelFormat(variable) => {
             format!(
-                "TypeKind::StorageTypeOfTexelFormat(BoundVariable {{ index: {variable} }}).intern(database)"
+                "TypeKind::StorageTypeOfTexelFormat(BoundVariable {{ index: {variable} }}).intern(db)"
             )
         },
         Type::BuiltinStruct(name, fields) => {
@@ -613,7 +613,7 @@ fn type_to_rust(r#type: &Type) -> String {
                 })
                 .collect();
             format!(
-                "TypeKind::BuiltinStruct(crate::ty::BuiltinStruct {{ name: \"{name}\".to_owned(), fields: vec![{}] }}).intern(database)",
+                "TypeKind::BuiltinStruct(crate::ty::BuiltinStruct {{ name: \"{name}\".to_owned(), fields: vec![{}] }}).intern(db)",
                 fields_code.join(", ")
             )
         },
@@ -638,7 +638,7 @@ fn builtin_to_rust(
 #[allow(clippy::restriction, reason = "generated code")]
 #[allow(rustc::all, reason = "generated code")]
 impl Builtin {{
-    pub fn builtin_{name}(database: &dyn HirDatabase) -> Self {{
+    pub fn builtin_{name}(db: &dyn HirDatabase) -> Self {{
         let name = Name::from("{name}");
         let overloads = vec!["#
     )?;
@@ -684,7 +684,7 @@ impl Builtin {{
             "
                     ],
                 }}
-                .intern(database),
+                .intern(db),
             }},",
         )?;
     }

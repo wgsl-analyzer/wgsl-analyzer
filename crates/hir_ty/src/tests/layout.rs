@@ -1,7 +1,6 @@
-use base_db::EditionedFileId;
+use base_db::{EditionedFileId, ExtensionsConfigInput};
 use expect_test::{Expect, expect};
-use hir_def::database::{DefDatabase as _, ModuleDefinitionId};
-use salsa::Durability;
+use hir_def::{db::ModuleDefinitionId, item_tree::ItemTree, signature::StructSignature};
 use std::fmt::Write as _;
 use syntax::ExtensionsConfig;
 use test_fixture::WithFixture as _;
@@ -9,7 +8,7 @@ use vfs::FileId;
 use wgsl_types::syntax::AddressSpace;
 
 use crate::{
-    database::HirDatabase as _,
+    db::HirDatabase as _,
     layout::struct_member_layout,
     test_db::TestDatabase,
     tests::{module_definitions, text_range_start},
@@ -22,39 +21,36 @@ fn check_layout(
     wa_fixture: &str,
     expect: Expect,
 ) {
-    let (mut database, file_id) = TestDatabase::with_single_file(wa_fixture);
-    database.set_extensions_with_durability(extensions, Durability::MEDIUM);
+    let (mut db, file_id) = TestDatabase::with_single_file(wa_fixture);
+    ExtensionsConfigInput::update_extensions(&mut db, extensions);
     let mut buffer = String::new();
-    LayoutPrinter::new(
-        &database,
-        EditionedFileId::from_file(&database, file_id.file_id(&database)),
-    )
-    .infer_layout(&mut buffer);
+    LayoutPrinter::new(&db, EditionedFileId::from_file(&db, file_id.file_id(&db)))
+        .infer_layout(&mut buffer);
     buffer.truncate(buffer.trim_end().len());
     buffer.push('\n');
     expect.assert_eq(&buffer);
 }
 
-struct LayoutPrinter<'database> {
-    database: &'database TestDatabase,
+struct LayoutPrinter<'db> {
+    db: &'db TestDatabase,
     file_id: EditionedFileId,
 }
 
 impl<'db> LayoutPrinter<'db> {
     fn new(
-        database: &'db TestDatabase,
+        db: &'db TestDatabase,
         file_id: EditionedFileId,
     ) -> Self {
-        Self { database, file_id }
+        Self { db, file_id }
     }
 
     fn infer_layout(
         &self,
         buffer: &mut String,
     ) {
-        let module_info = self.database.item_tree(self.file_id);
-        let mut definitions = module_definitions(self.database, self.file_id, &module_info);
-        definitions.sort_by_key(|definition| text_range_start(*definition, self.database));
+        let module_info = ItemTree::of(self.db, self.file_id);
+        let mut definitions = module_definitions(self.db, self.file_id, module_info);
+        definitions.sort_by_key(|definition| text_range_start(*definition, self.db));
         for definition in definitions {
             match definition {
                 ModuleDefinitionId::Function(_)
@@ -64,13 +60,13 @@ impl<'db> LayoutPrinter<'db> {
                 | ModuleDefinitionId::Override(_)
                 | ModuleDefinitionId::TypeAlias(_) => (),
                 ModuleDefinitionId::Struct(id) => {
-                    let (signature, _) = self.database.struct_data(id);
-                    let (fields, diagnostics) = &*self.database.field_types(id);
+                    let signature = StructSignature::of(self.db, id);
+                    let (fields, diagnostics) = &*self.db.field_types(id);
                     assert!(diagnostics.is_empty());
                     let mut fields_output = vec![];
                     let Some((align, size)) = struct_member_layout(
                         fields,
-                        self.database,
+                        self.db,
                         AddressSpace::Storage,
                         |field_data, field_type, field_layout| {
                             fields_output.push((
@@ -98,7 +94,7 @@ impl<'db> LayoutPrinter<'db> {
                             .map(|field_data| field_data.name.as_str())
                             .unwrap();
                         let r#type = pretty_type_with_verbosity(
-                            self.database,
+                            self.db,
                             field_output.1,
                             TypeVerbosity::Full,
                         );

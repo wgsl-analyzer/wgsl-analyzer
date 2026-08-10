@@ -8,7 +8,7 @@ use std::{
 
 use base_db::{EditionedFileId, SourceDatabase as _};
 use hir::diagnostics::{AnyDiagnostic, Severity};
-use ide_db::{FxHashMap, LineIndexDatabase as _, RootDatabase};
+use ide_db::{FxHashMap, RootDatabase, line_index};
 use line_index::{LineCol, LineIndex};
 use paths::{Utf8Path, Utf8PathBuf};
 use rowan::{TextRange, TextSize};
@@ -18,7 +18,7 @@ use vfs::{AbsPath, AbsPathBuf};
 use crate::DiagnosticsConfig;
 
 pub(crate) fn tint_diagnostics<Pathy>(
-    database: &RootDatabase,
+    db: &RootDatabase,
     file_id: EditionedFileId,
     config: &DiagnosticsConfig,
     working_directory: Pathy,
@@ -26,10 +26,10 @@ pub(crate) fn tint_diagnostics<Pathy>(
 ) where
     Pathy: AsRef<Path>,
 {
-    let raw_file_id = file_id.file_id(database);
-    let source: &str = database.file_text(raw_file_id).text(database);
+    let raw_file_id = file_id.file_id(db);
+    let source: &str = db.file_text(raw_file_id).text(db);
     let full_range = TextRange::up_to(TextSize::of(source));
-    let line_index = database.line_index(raw_file_id);
+    let line_index = line_index(db, raw_file_id);
     let execute_tint = || {
         let mut child = command(config.tint_path.as_deref(), working_directory)
             .spawn()
@@ -68,7 +68,7 @@ pub(crate) fn tint_diagnostics<Pathy>(
             TintDiagnosticSeverity::Warning => Severity::Warning,
             TintDiagnosticSeverity::Note => Severity::Information,
         };
-        let range = diagnostic.range.to_range(&line_index).unwrap_or(full_range);
+        let range = diagnostic.range.to_range(line_index).unwrap_or(full_range);
 
         accumulator.push(AnyDiagnostic::TintValidationError {
             file_id,

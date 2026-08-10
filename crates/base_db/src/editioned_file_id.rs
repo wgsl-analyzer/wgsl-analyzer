@@ -17,48 +17,37 @@ pub struct RawEditionedFileId {
     pub edition: Edition,
 }
 
-#[salsa_macros::interned(debug, constructor = from_span_file_id, no_lifetime, revisions = usize::MAX)]
+#[salsa_macros::interned(debug, constructor = from_span_file_id, unsafe(no_lifetime), revisions = usize::MAX)]
 #[derive(PartialOrd, Ord)]
 pub struct EditionedFileId {
     field: RawEditionedFileId,
 }
 
+#[salsa::tracked]
 impl EditionedFileId {
+    #[salsa::tracked(lru = 128, returns(clone))]
     pub fn parse(
         self,
-        database: &dyn SourceDatabase,
+        db: &dyn SourceDatabase,
     ) -> syntax::Parse {
-        #[salsa::tracked(lru = 128)]
-        pub fn parse(
-            database: &dyn SourceDatabase,
-            file_id: EditionedFileId,
-        ) -> syntax::Parse {
-            let _p = tracing::info_span!("parse", ?file_id).entered();
-            let (file_id, edition) = (file_id.file_id(database), file_id.edition(database));
-            let text = database.file_text(file_id).text(database);
-            syntax::parse(text, edition)
-        }
-        parse(database, self)
+        let _p = tracing::info_span!("parse", ?self).entered();
+        let RawEditionedFileId { file_id, edition } = self.unpack(db);
+        let text = db.file_text(file_id).text(db);
+        syntax::parse(text, edition)
     }
 
     // firewall query
+    #[salsa::tracked(returns(as_deref))]
     pub fn parse_errors(
         self,
-        database: &dyn SourceDatabase,
-    ) -> Option<&[Diagnostic]> {
-        #[salsa::tracked(returns(as_deref))]
-        pub fn parse_errors(
-            database: &dyn SourceDatabase,
-            file_id: EditionedFileId,
-        ) -> Option<Box<[Diagnostic]>> {
-            let parse = file_id.parse(database);
-            let errors = parse.errors();
-            match errors {
-                [] => None,
-                [..] => Some(errors.into()),
-            }
+        db: &dyn SourceDatabase,
+    ) -> Option<Box<[Diagnostic]>> {
+        let parse = self.parse(db);
+        let errors = parse.errors();
+        match errors {
+            [] => None,
+            [..] => Some(errors.into()),
         }
-        parse_errors(database, self)
     }
 }
 
@@ -66,45 +55,45 @@ impl EditionedFileId {
     /// Warning: Prefer [`from_file`] to get the correct edition for WGSL and WESL files.
     #[inline]
     pub fn new_unchecked(
-        database: &dyn Database,
+        db: &dyn Database,
         file_id: FileId,
         edition: Edition,
     ) -> Self {
-        Self::from_span_file_id(database, RawEditionedFileId { file_id, edition })
+        Self::from_span_file_id(db, RawEditionedFileId { file_id, edition })
     }
 
     pub fn from_file(
-        database: &dyn SourceDatabase,
+        db: &dyn SourceDatabase,
         file_id: FileId,
     ) -> Self {
-        let source_root = database
-            .source_root(database.file_source_root(file_id).source_root_id(database))
-            .source_root(database);
+        let source_root = db
+            .source_root(db.file_source_root(file_id).source_root_id(db))
+            .source_root(db);
 
         let extension = match FileExtension::from_file(&source_root, file_id) {
             Ok(extension) => extension,
             Err(error) => {
                 tracing::error!("{error}");
-                return Self::new_unchecked(database, file_id, Edition::DEFAULT);
+                return Self::new_unchecked(db, file_id, Edition::DEFAULT);
             },
         };
 
-        Self::from_file_with_extension(database, file_id, extension)
+        Self::from_file_with_extension(db, file_id, extension)
     }
 
     pub fn from_file_with_extension(
-        database: &dyn SourceDatabase,
+        db: &dyn SourceDatabase,
         file_id: FileId,
         extension: FileExtension,
     ) -> Self {
         match extension {
-            FileExtension::Wgsl => Self::new_unchecked(database, file_id, Edition::DEFAULT),
+            FileExtension::Wgsl => Self::new_unchecked(db, file_id, Edition::DEFAULT),
             FileExtension::Wesl => {
-                if let Some(package) = file_package(database, file_id) {
-                    Self::new_unchecked(database, file_id, package.data(database).edition)
+                if let Some(package) = file_package(db, file_id) {
+                    Self::new_unchecked(db, file_id, package.data(db).edition)
                 } else {
                     // Assume latest WESL for standalone files
-                    Self::new_unchecked(database, file_id, Edition::LATEST)
+                    Self::new_unchecked(db, file_id, Edition::LATEST)
                 }
             },
         }
@@ -113,25 +102,25 @@ impl EditionedFileId {
     #[inline]
     pub fn file_id(
         self,
-        database: &dyn Database,
+        db: &dyn Database,
     ) -> vfs::FileId {
-        self.field(database).file_id
+        self.field(db).file_id
     }
 
     #[inline]
     pub fn edition(
         self,
-        database: &dyn Database,
+        db: &dyn Database,
     ) -> Edition {
-        self.field(database).edition
+        self.field(db).edition
     }
 
     #[inline]
     pub fn unpack(
         self,
-        database: &dyn Database,
+        db: &dyn Database,
     ) -> RawEditionedFileId {
-        self.field(database)
+        *self.field(db)
     }
 }
 

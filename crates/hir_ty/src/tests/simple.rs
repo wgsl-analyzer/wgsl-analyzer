@@ -400,7 +400,7 @@ fn address_of_not_reference() {
             34..39 'x_ptr': [error]
             42..44 '&x': [error]
             43..44 'x': i32
-            [EditionedFileId(Id(1c00))] WgslError { expression: Idx::<Expression>(1), message: "cannot use unary operator `&` on type `i32`" } in Body
+            [EditionedFileId(Id(300))] WgslError { expression: Idx::<Expression>(1), message: "cannot use unary operator `&` on type `i32`" } in Body
         "#]],
     );
 }
@@ -664,7 +664,7 @@ fn vec_xy_is_not_ref() {
             39..43 'v.xy': vec2<i32>
             46..47 'v': ref<function, vec2<i32>, read_write>
             46..50 'v.yx': vec2<i32>
-            [EditionedFileId(Id(1c00))] AssignmentNotAReference { left_side: Idx::<Expression>(4), actual: Type(2409) } in Body
+            [EditionedFileId(Id(300))] AssignmentNotAReference { left_side: Idx::<Expression>(4), actual: Type(0409) } in Body
         "#]],
     );
 }
@@ -1199,7 +1199,7 @@ fn global_var_function_address_space_error() {
         "var<function> not_allowed_at_module_level: u32;",
         expect![[r#"
             14..41 'not_al..._level': ref<function, u32, read_write>
-            [EditionedFileId(Id(1c00))] UnexpectedTemplateArgument { expression: Idx::<Expression>(0) } in Signature
+            [EditionedFileId(Id(300))] UnexpectedTemplateArgument { expression: Idx::<Expression>(0) } in Signature
         "#]],
     );
 }
@@ -1667,7 +1667,7 @@ fn no_builtin_overload() {
             8..10 '1f': f32
             8..22 '1f + mat2x2f()': [error]
             13..22 'mat2x2f()': mat2x2<f32>
-            [EditionedFileId(Id(1c00))] WgslError { expression: Idx::<Expression>(2), message: "cannot use binary operator `+` with operands `f32` and `mat2x2<f32>`" } in Body
+            [EditionedFileId(Id(300))] WgslError { expression: Idx::<Expression>(2), message: "cannot use binary operator `+` with operands `f32` and `mat2x2<f32>`" } in Body
         "#]],
     );
 }
@@ -1683,7 +1683,7 @@ fn deref_not_a_pointer() {
             4..5 'x': ref<handle, [error], read>
             8..11 '*1f': [error]
             9..11 '1f': f32
-            [EditionedFileId(Id(1c00))] WgslError { expression: Idx::<Expression>(0), message: "cannot use unary operator `*` on type `f32`" } in Body
+            [EditionedFileId(Id(300))] WgslError { expression: Idx::<Expression>(0), message: "cannot use unary operator `*` on type `f32`" } in Body
         "#]],
     );
 }
@@ -1775,8 +1775,8 @@ fn add_refs_and_ptrs() {
             398..403 'a_ptr': ptr<function, i32, read_write>
             398..411 'a_ptr + b_ref': [error]
             406..411 'b_ref': ref<function, i32, read_write>
-            [EditionedFileId(Id(1c00))] WgslError { expression: Idx::<Expression>(11), message: "cannot use binary operator `+` with operands `ptr<function, i32, read_write>` and `ptr<function, i32, read_write>`" } in Body
-            [EditionedFileId(Id(1c00))] WgslError { expression: Idx::<Expression>(14), message: "cannot use binary operator `+` with operands `ptr<function, i32, read_write>` and `i32`" } in Body
+            [EditionedFileId(Id(300))] WgslError { expression: Idx::<Expression>(11), message: "cannot use binary operator `+` with operands `ptr<function, i32, read_write>` and `ptr<function, i32, read_write>`" } in Body
+            [EditionedFileId(Id(300))] WgslError { expression: Idx::<Expression>(14), message: "cannot use binary operator `+` with operands `ptr<function, i32, read_write>` and `i32`" } in Body
         "#]],
     );
 }
@@ -1892,7 +1892,7 @@ fn to_wgsl_types_builtin_struct() {
             42..43 'y': [error]
             46..53 'modf(x)': [error]
             51..52 'x': __modf_result_abstract
-            [EditionedFileId(Id(1c00))] WgslError { expression: Idx::<Expression>(3), message: "`modf` expects a float scalar or vector argument" } in Body
+            [EditionedFileId(Id(300))] WgslError { expression: Idx::<Expression>(3), message: "`modf` expects a float scalar or vector argument" } in Body
         "#]],
     );
 }
@@ -1966,7 +1966,7 @@ fn not_convertible() {
             23..25 '1i': i32
             23..32 '1i * 1.0f': [error]
             28..32 '1.0f': f32
-            [EditionedFileId(Id(1c00))] WgslError { expression: Idx::<Expression>(2), message: "cannot use binary operator `*` with operands `i32` and `f32`" } in Body
+            [EditionedFileId(Id(300))] WgslError { expression: Idx::<Expression>(2), message: "cannot use binary operator `*` with operands `i32` and `f32`" } in Body
         "#]],
     );
 }

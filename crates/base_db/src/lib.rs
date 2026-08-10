@@ -32,9 +32,10 @@ pub use vfs::{AnchoredPath, AnchoredPathBuf, FileId, VfsPath, file_set::FileSet}
 #[macro_export]
 macro_rules! impl_intern_key {
     ($id:ident, $loc:ty) => {
-        #[salsa_macros::interned(no_lifetime, revisions = usize::MAX)]
+        #[salsa::interned(unsafe(no_lifetime), revisions = usize::MAX)]
         #[derive(PartialOrd, Ord)]
         pub struct $id {
+            #[returns(ref)]
             pub location: $loc,
         }
 
@@ -54,49 +55,44 @@ macro_rules! impl_intern_key {
 
 #[macro_export]
 macro_rules! impl_intern_lookup {
-    ($db:ident, $id:ident, $loc:ty, $intern:ident, $lookup:ident) => {
+    ($id:ident, $loc:ty) => {
         impl base_db::Intern for $loc {
-            type Database = dyn $db;
             type ID = $id;
-
             fn intern(
                 self,
-                database: &Self::Database,
+                db: &dyn ::base_db::SourceDatabase,
             ) -> Self::ID {
-                database.$intern(self)
+                $id::new(db, self)
             }
         }
 
         impl base_db::Lookup for $id {
             type Data = $loc;
-            type Database = dyn $db;
 
-            fn lookup(
+            fn lookup<'db>(
                 &self,
-                database: &Self::Database,
-            ) -> $loc {
-                database.$lookup(*self)
+                db: &'db dyn ::base_db::SourceDatabase,
+            ) -> &'db Self::Data {
+                self.location(db)
             }
         }
     };
 }
 
 pub trait Intern {
-    type Database: ?Sized;
     type ID;
     fn intern(
         self,
-        database: &Self::Database,
+        db: &dyn SourceDatabase,
     ) -> Self::ID;
 }
 
 pub trait Lookup {
-    type Database: ?Sized;
     type Data;
-    fn lookup(
+    fn lookup<'db>(
         &self,
-        database: &Self::Database,
-    ) -> Self::Data;
+        db: &'db dyn SourceDatabase,
+    ) -> &'db Self::Data;
 }
 
 #[expect(
@@ -130,16 +126,16 @@ impl Files {
 
     pub fn set_file_text(
         &self,
-        database: &mut dyn SourceDatabase,
+        db: &mut dyn SourceDatabase,
         file_id: vfs::FileId,
         text: &str,
     ) {
         match self.files.entry(file_id) {
             Entry::Occupied(mut occupied) => {
-                occupied.get_mut().set_text(database).to(Arc::from(text));
+                occupied.get_mut().set_text(db).to(Arc::from(text));
             },
             Entry::Vacant(vacant) => {
-                let text = FileText::new(database, Arc::from(text), file_id);
+                let text = FileText::new(db, Arc::from(text), file_id);
                 vacant.insert(text);
             },
         }
@@ -147,7 +143,7 @@ impl Files {
 
     pub fn set_file_text_with_durability(
         &self,
-        database: &mut dyn SourceDatabase,
+        db: &mut dyn SourceDatabase,
         file_id: vfs::FileId,
         text: &str,
         durability: Durability,
@@ -156,14 +152,14 @@ impl Files {
             Entry::Occupied(mut occupied) => {
                 occupied
                     .get_mut()
-                    .set_text(database)
+                    .set_text(db)
                     .with_durability(durability)
                     .to(Arc::from(text));
             },
             Entry::Vacant(vacant) => {
                 let text = FileText::builder(Arc::from(text), file_id)
                     .durability(durability)
-                    .new(database);
+                    .new(db);
                 vacant.insert(text);
             },
         }
@@ -188,7 +184,7 @@ impl Files {
 
     pub fn set_source_root_with_durability(
         &self,
-        database: &mut dyn SourceDatabase,
+        db: &mut dyn SourceDatabase,
         source_root_id: SourceRootId,
         source_root: Arc<SourceRoot>,
         durability: Durability,
@@ -197,14 +193,14 @@ impl Files {
             Entry::Occupied(mut occupied) => {
                 occupied
                     .get_mut()
-                    .set_source_root(database)
+                    .set_source_root(db)
                     .with_durability(durability)
                     .to(source_root);
             },
             Entry::Vacant(vacant) => {
                 let source_root = SourceRootInput::builder(source_root)
                     .durability(durability)
-                    .new(database);
+                    .new(db);
                 vacant.insert(source_root);
             },
         }
@@ -227,7 +223,7 @@ impl Files {
 
     pub fn set_file_source_root_with_durability(
         &self,
-        database: &mut dyn SourceDatabase,
+        db: &mut dyn SourceDatabase,
         id: vfs::FileId,
         source_root_id: SourceRootId,
         durability: Durability,
@@ -236,38 +232,40 @@ impl Files {
             Entry::Occupied(mut occupied) => {
                 occupied
                     .get_mut()
-                    .set_source_root_id(database)
+                    .set_source_root_id(db)
                     .with_durability(durability)
                     .to(source_root_id);
             },
             Entry::Vacant(vacant) => {
                 let file_source_root = FileSourceRootInput::builder(source_root_id)
                     .durability(durability)
-                    .new(database);
+                    .new(db);
                 vacant.insert(file_source_root);
             },
         }
     }
 }
 
-#[salsa_macros::input(debug)]
+#[salsa::input(debug)]
 pub struct FileText {
     #[returns(ref)]
     pub text: Arc<str>,
     pub file_id: vfs::FileId,
 }
 
-#[salsa_macros::input(debug)]
+#[salsa::input(debug)]
 pub struct FileSourceRootInput {
+    #[returns(copy)]
     pub source_root_id: SourceRootId,
 }
 
-#[salsa_macros::input(debug)]
+#[salsa::input(debug)]
 pub struct SourceRootInput {
+    #[returns(clone)]
     pub source_root: Arc<SourceRoot>,
 }
 
-#[salsa_macros::input(debug)]
+#[salsa::input(debug)]
 pub struct Package {
     #[returns(ref)]
     pub data: PackageData,
@@ -278,6 +276,7 @@ pub struct Package {
     // /// This is split into a separate field to increase incrementality.
     // #[returns(ref)]
     // pub extra_data: ExtraPackageData,
+    #[returns(copy)]
     pub package_id: PackageId,
 }
 
@@ -353,8 +352,32 @@ impl PackageDisplayName {
     }
 }
 
-#[salsa_macros::db]
-pub trait SourceDatabase: salsa::Database {
+#[salsa::input(singleton, debug)]
+pub struct ExtensionsConfigInput {
+    #[returns(ref)]
+    pub extensions: ExtensionsConfig,
+}
+
+impl ExtensionsConfigInput {
+    #[must_use]
+    pub fn get_extensions(db: &dyn SourceDatabase) -> &ExtensionsConfig {
+        Self::get(db).extensions(db)
+    }
+
+    pub fn update_extensions(
+        db: &mut dyn SourceDatabase,
+        extensions: ExtensionsConfig,
+    ) {
+        Self::try_get(db)
+            .unwrap_or_else(|| Self::new(db, ExtensionsConfig::default()))
+            .set_extensions(db)
+            .with_durability(Durability::MEDIUM)
+            .to(extensions);
+    }
+}
+
+#[salsa::db]
+pub trait SourceDatabase: salsa::Database + std::fmt::Debug {
     /// Text of the file.
     fn file_text(
         &self,
@@ -473,19 +496,20 @@ impl DbPanicContext {
 
 #[salsa::input(singleton, debug)]
 struct AllPackages {
+    #[returns(clone)]
     packages: std::sync::Arc<[Package]>,
 }
 
 pub fn set_all_packages_with_durability<Packages>(
-    database: &mut dyn salsa::Database,
+    db: &mut dyn salsa::Database,
     packages: Packages,
     durability: Durability,
 ) where
     Packages: IntoIterator<Item = Package>,
 {
-    AllPackages::try_get(database)
-        .unwrap_or_else(|| AllPackages::new(database, std::sync::Arc::default()))
-        .set_packages(database)
+    AllPackages::try_get(db)
+        .unwrap_or_else(|| AllPackages::new(db, std::sync::Arc::default()))
+        .set_packages(db)
         .with_durability(durability)
         .to(packages.into_iter().collect());
 }
@@ -493,69 +517,71 @@ pub fn set_all_packages_with_durability<Packages>(
 /// Returns the packages in topological order.
 ///
 /// **Warning**: do not use this query in `hir-*` crates! It kills incrementality across crate metadata modifications.
-pub fn all_packages(database: &dyn salsa::Database) -> std::sync::Arc<[Package]> {
-    AllPackages::try_get(database).map_or_else(std::sync::Arc::default, |all_packages| {
-        all_packages.packages(database)
-    })
-}
-
-/// I believe this exists because each file has a different `FileSourceRootInput`.
-/// So Salsa cannot reuse computations that are driven by a `FileSourceRootInput`.
-/// TODO: Rust-Analyzer will remove this when the vfs gets rewritten.
-#[doc(hidden)]
-#[salsa::interned]
-pub struct InternedSourceRootId {
-    pub id: SourceRootId,
-}
-
-#[salsa::tracked]
-pub fn source_root_package<'db>(
-    database: &'db dyn SourceDatabase,
-    id: InternedSourceRootId<'db>,
-) -> Option<Package> {
-    let packages = AllPackages::get(database).packages(database);
-    let id = id.id(database);
-
-    packages.iter().copied().find(|package| {
-        let manifest_file = package.data(database).manifest_file_id;
-        database
-            .file_source_root(manifest_file)
-            .source_root_id(database)
-            == id
+pub fn all_packages(db: &dyn salsa::Database) -> std::sync::Arc<[Package]> {
+    AllPackages::try_get(db).map_or_else(std::sync::Arc::default, |all_packages| {
+        all_packages.packages(db)
     })
 }
 
 /// Returns the package for a given file, if the file is a part of one.
 pub fn file_package(
-    database: &dyn SourceDatabase,
+    db: &dyn SourceDatabase,
     file_id: vfs::FileId,
 ) -> Option<Package> {
-    let _p = tracing::info_span!("file_package").entered();
+    /// I believe this exists because each file has a different `FileSourceRootInput`.
+    /// So Salsa cannot reuse computations that are driven by a `FileSourceRootInput`.
+    /// TODO: Rust-Analyzer will remove this when the vfs gets rewritten.
+    #[salsa::interned]
+    struct InternedSourceRootId {
+        #[returns(copy)]
+        pub id: SourceRootId,
+    }
 
-    let source_root = database.file_source_root(file_id);
-    source_root_package(
-        database,
-        InternedSourceRootId::new(database, source_root.source_root_id(database)),
+    #[salsa::tracked(returns(clone))]
+    fn file_package<'db>(
+        db: &'db dyn SourceDatabase,
+        id: InternedSourceRootId<'db>,
+    ) -> Option<Package> {
+        let packages = AllPackages::get(db).packages(db);
+        let id = id.id(db);
+
+        packages.iter().copied().find(|package| {
+            let manifest_file = package.data(db).manifest_file_id;
+            db.file_source_root(manifest_file).source_root_id(db) == id
+        })
+    }
+
+    let _p = tracing::info_span!("file_package").entered();
+    let source_root = db.file_source_root(file_id);
+    file_package(
+        db,
+        InternedSourceRootId::new(db, source_root.source_root_id(db)),
     )
 }
 
-/// This construction is used for incremental package lookups.
-#[doc(hidden)]
-#[salsa::interned]
-pub(crate) struct InternedPackageId {
-    pub id: PackageId,
-}
-
-#[salsa::tracked]
-pub(crate) fn package_by_id<'db>(
-    database: &'db dyn SourceDatabase,
-    id: InternedPackageId<'db>,
+pub(crate) fn package_by_id(
+    db: &dyn SourceDatabase,
+    id: PackageId,
 ) -> Package {
-    let packages = AllPackages::get(database).packages(database);
-    let id = id.id(database);
+    #[salsa::interned]
+    struct InternedPackageId {
+        #[returns(copy)]
+        pub id: PackageId,
+    }
 
-    *packages
-        .iter()
-        .find(|package| package.package_id(database) == id)
-        .unwrap()
+    #[salsa::tracked(returns(clone))]
+    fn package_by_id<'db>(
+        db: &'db dyn SourceDatabase,
+        id: InternedPackageId<'db>,
+    ) -> Package {
+        let packages = AllPackages::get(db).packages(db);
+        let id = id.id(db);
+
+        *packages
+            .iter()
+            .find(|package| package.package_id(db) == id)
+            .unwrap()
+    }
+
+    package_by_id(db, InternedPackageId::new(db, id))
 }

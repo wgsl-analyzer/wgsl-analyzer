@@ -12,9 +12,7 @@ use edition::Edition;
 use triomphe::Arc;
 use vfs::{AnchoredPath, FileId, VfsPath, file_set::FileSet};
 
-use crate::{
-    EditionedFileId, InternedPackageId, Package, SourceDatabase, all_packages, package_by_id,
-};
+use crate::{EditionedFileId, Package, SourceDatabase, all_packages, package_by_id};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct SourceRootId(pub u32);
@@ -235,15 +233,13 @@ pub struct PackageData {
 impl PackageData {
     pub fn source_root(
         &self,
-        database: &dyn SourceDatabase,
+        db: &dyn SourceDatabase,
     ) -> Arc<SourceRoot> {
-        database
-            .source_root(
-                database
-                    .file_source_root(self.manifest_file_id)
-                    .source_root_id(database),
-            )
-            .source_root(database)
+        db.source_root(
+            db.file_source_root(self.manifest_file_id)
+                .source_root_id(db),
+        )
+        .source_root(db)
     }
 }
 
@@ -256,8 +252,8 @@ pub struct Dependency {
 impl Dependency {
     pub fn package(
         &self,
-        database: &dyn SourceDatabase,
+        db: &dyn SourceDatabase,
     ) -> Package {
-        package_by_id(database, InternedPackageId::new(database, self.package_id))
+        package_by_id(db, self.package_id)
     }
 }

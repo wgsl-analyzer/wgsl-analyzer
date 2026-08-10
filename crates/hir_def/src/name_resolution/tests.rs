@@ -15,9 +15,9 @@ use crate::{
 };
 
 fn render_modules_map_with_items(wa_fixture: &str) -> String {
-    let database = TestDatabase::with_files(wa_fixture);
-    let package = database.fetch_test_package();
-    let modules_map = ModulesMap::of(&database, package);
+    let db = TestDatabase::with_files(wa_fixture);
+    let package = db.fetch_test_package();
+    let modules_map = ModulesMap::of(&db, package);
     let sorted_modules: Vec<_> = modules_map
         .modules
         .iter()
@@ -30,7 +30,7 @@ fn render_modules_map_with_items(wa_fixture: &str) -> String {
             continue;
         };
         _ = writeln!(buffer, "{module_path}");
-        ItemScope::of(&database, file_id).dump(&mut buffer);
+        ItemScope::of(&db, file_id).dump(&mut buffer);
     }
     buffer
 }
@@ -44,12 +44,12 @@ fn check(
     expect.assert_eq(&actual);
 }
 fn render_item_scope(wa_fixture: &str) -> String {
-    let (database, file) = TestDatabase::with_single_file(wa_fixture);
-    let package = database.fetch_test_package();
-    let package_data = package.data(&database);
+    let (db, file) = TestDatabase::with_single_file(wa_fixture);
+    let package = db.fetch_test_package();
+    let package_data = package.data(&db);
 
     let mut output = String::new();
-    ItemScope::of(&database, file).dump(&mut output);
+    ItemScope::of(&db, file).dump(&mut output);
     output
 }
 

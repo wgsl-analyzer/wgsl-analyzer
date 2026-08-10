@@ -5,7 +5,7 @@ mod tint;
 
 use std::{error, fmt::Display};
 
-use base_db::{EditionedFileId, FileRange, TextRange};
+use base_db::{EditionedFileId, FileRange, Lookup as _, TextRange};
 use hir::{
     HirDatabase, Semantics,
     diagnostics::{AnyDiagnostic, Severity},
@@ -164,12 +164,12 @@ impl Diagnostic {
 /// Panics if the file is not found in the database.
 #[expect(clippy::too_many_lines, reason = "TODO")]
 pub fn diagnostics(
-    database: &RootDatabase,
+    db: &RootDatabase,
     config: &DiagnosticsConfig,
     file_id: FileId,
 ) -> Vec<Diagnostic> {
-    let file_id = EditionedFileId::from_file(database, file_id);
-    let parse = file_id.parse(database);
+    let file_id = EditionedFileId::from_file(db, file_id);
+    let parse = file_id.parse(db);
 
     let mut diagnostics = Vec::new();
 
@@ -186,28 +186,28 @@ pub fn diagnostics(
         );
     }
 
-    let semantics = Semantics::new(database);
+    let semantics = Semantics::new(db);
 
     if config.semantic_enabled {
         semantics
             .module(file_id)
-            .semantic_diagnostics(database, &mut diagnostics);
+            .semantic_diagnostics(db, &mut diagnostics);
     }
 
-    let edition = file_id.edition(database);
+    let edition = file_id.edition(db);
     if edition == Edition::Wgsl && (config.naga_parsing_enabled || config.naga_validation_enabled) {
         match &config.naga_version {
             NagaVersion::Naga27 => {
-                naga_diagnostics::<Naga27>(database, file_id, config, &mut diagnostics);
+                naga_diagnostics::<Naga27>(db, file_id, config, &mut diagnostics);
             },
             NagaVersion::Naga28 => {
-                naga_diagnostics::<Naga28>(database, file_id, config, &mut diagnostics);
+                naga_diagnostics::<Naga28>(db, file_id, config, &mut diagnostics);
             },
             NagaVersion::Naga29 => {
-                naga_diagnostics::<Naga29>(database, file_id, config, &mut diagnostics);
+                naga_diagnostics::<Naga29>(db, file_id, config, &mut diagnostics);
             },
             NagaVersion::NagaMain => {
-                naga_diagnostics::<NagaMain>(database, file_id, config, &mut diagnostics);
+                naga_diagnostics::<NagaMain>(db, file_id, config, &mut diagnostics);
             },
         }
     }
@@ -216,19 +216,19 @@ pub fn diagnostics(
         // TODO: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/998
         // Clean this up by turning external tool integrations into flycheck.
         // This "." is a hack to avoid adding a working_dir to the interface of ide-diagnostics.
-        tint_diagnostics(database, file_id, config, ".", &mut diagnostics);
+        tint_diagnostics(db, file_id, config, ".", &mut diagnostics);
     }
 
     diagnostics
         .into_iter()
         .map(|diagnostic| {
             let file_id = diagnostic.file_id();
-            let root = file_id.parse(database).syntax();
+            let root = file_id.parse(db).syntax();
             match diagnostic {
                 AnyDiagnostic::AssignmentNotAReference { left_side, actual } => {
                     let source = left_side.value.to_node(&root);
-                    let actual = ty::pretty::pretty_type(database, actual);
-                    let frange = original_file_range(database, left_side.file_id, source.syntax());
+                    let actual = ty::pretty::pretty_type(db, actual);
+                    let frange = original_file_range(db, left_side.file_id, source.syntax());
                     Diagnostic::new(
                         DiagnosticCode("1"),
                         format!(
@@ -243,9 +243,9 @@ pub fn diagnostics(
                     actual,
                 } => {
                     let source = expression.value.to_node(&root);
-                    let expected = ty::pretty::pretty_type_expectation(database, expected);
-                    let actual = ty::pretty::pretty_type(database, actual);
-                    let frange = original_file_range(database, expression.file_id, source.syntax());
+                    let expected = ty::pretty::pretty_type_expectation(db, expected);
+                    let actual = ty::pretty::pretty_type(db, actual);
+                    let frange = original_file_range(db, expression.file_id, source.syntax());
                     Diagnostic::new(
                         DiagnosticCode("2"),
                         format!("expected {expected}, found {actual}"),
@@ -258,8 +258,8 @@ pub fn diagnostics(
                     r#type,
                 } => {
                     let source = expression.value.to_node(&root).syntax().parent().unwrap();
-                    let r#type = ty::pretty::pretty_type(database, r#type);
-                    let frange = original_file_range(database, expression.file_id, source.syntax());
+                    let r#type = ty::pretty::pretty_type(db, r#type);
+                    let frange = original_file_range(db, expression.file_id, source.syntax());
                     Diagnostic::new(
                         DiagnosticCode("3"),
                         format!("no field `{}` on type {type}", name.as_ref()),
@@ -268,8 +268,8 @@ pub fn diagnostics(
                 },
                 AnyDiagnostic::ArrayAccessInvalidType { expression, r#type } => {
                     let source = expression.value.to_node(&root);
-                    let r#type = ty::pretty::pretty_type(database, r#type);
-                    let frange = original_file_range(database, expression.file_id, source.syntax());
+                    let r#type = ty::pretty::pretty_type(db, r#type);
+                    let frange = original_file_range(db, expression.file_id, source.syntax());
                     Diagnostic::new(
                         DiagnosticCode("4"),
                         format!("cannot index into type {type}"),
@@ -278,8 +278,8 @@ pub fn diagnostics(
                 },
                 AnyDiagnostic::NotConstructible { expression, r#type } => {
                     let source = expression.value.to_node(&root);
-                    let r#type = ty::pretty::pretty_type(database, r#type);
-                    let frange = original_file_range(database, expression.file_id, source.syntax());
+                    let r#type = ty::pretty::pretty_type(db, r#type);
+                    let frange = original_file_range(db, expression.file_id, source.syntax());
                     Diagnostic::new(
                         DiagnosticCode("6"),
                         format!("type `{type}` is not constructible"),
@@ -292,7 +292,7 @@ pub fn diagnostics(
                     n_actual,
                 } => {
                     let source = expression.value.to_node(&root).syntax().parent().unwrap();
-                    let frange = original_file_range(database, expression.file_id, source.syntax());
+                    let frange = original_file_range(db, expression.file_id, source.syntax());
                     Diagnostic::new(
                         DiagnosticCode("7"),
                         format!("expected {n_expected} parameters, found {n_actual}"),
@@ -306,21 +306,21 @@ pub fn diagnostics(
                     name,
                 } => {
                     let source = expression.value.to_node(&root).syntax().parent().unwrap();
-                    let builtin = builtin.lookup(database);
+                    let builtin = builtin.lookup(db);
 
                     let parameters = parameters
                         .iter()
-                        .map(|r#type| ty::pretty::pretty_type(database, *r#type))
+                        .map(|r#type| ty::pretty::pretty_type(db, *r#type))
                         .join(", ");
 
                     let possible = builtin
                         .overloads()
-                        .map(|(_, overload)| pretty_fn(database, &overload.r#type.lookup(database)))
+                        .map(|(_, overload)| pretty_fn(db, overload.r#type.lookup(db)))
                         .join("\n");
 
                     let name = name.unwrap_or_else(|| builtin.name());
 
-                    let frange = original_file_range(database, expression.file_id, source.syntax());
+                    let frange = original_file_range(db, expression.file_id, source.syntax());
                     Diagnostic::new(
                         DiagnosticCode("8"),
                         format!(
@@ -332,8 +332,8 @@ pub fn diagnostics(
                 },
                 AnyDiagnostic::AddressOfNotReference { expression, actual } => {
                     let source = expression.value.to_node(&root);
-                    let r#type = ty::pretty::pretty_type(database, actual);
-                    let frange = original_file_range(database, expression.file_id, source.syntax());
+                    let r#type = ty::pretty::pretty_type(db, actual);
+                    let frange = original_file_range(db, expression.file_id, source.syntax());
                     Diagnostic::new(
                         DiagnosticCode("9"),
                         format!("expected a reference, found {type}"),
@@ -342,8 +342,8 @@ pub fn diagnostics(
                 },
                 AnyDiagnostic::DerefNotAPointer { expression, actual } => {
                     let source = expression.value.to_node(&root);
-                    let r#type = ty::pretty::pretty_type(database, actual);
-                    let frange = original_file_range(database, expression.file_id, source.syntax());
+                    let r#type = ty::pretty::pretty_type(db, actual);
+                    let frange = original_file_range(db, expression.file_id, source.syntax());
                     Diagnostic::new(
                         DiagnosticCode("10"),
                         format!("cannot dereference expression of type {type}"),
@@ -357,7 +357,7 @@ pub fn diagnostics(
                         NodeOrToken::Token,
                     );
 
-                    let frange = original_file_range(database, variable.file_id, &source);
+                    let frange = original_file_range(db, variable.file_id, &source);
                     Diagnostic::new(
                         DiagnosticCode("11"),
                         "missing address space on global variable".to_owned(),
@@ -370,7 +370,7 @@ pub fn diagnostics(
                         || NodeOrToken::Node(variable_declaration.syntax()),
                         NodeOrToken::Token,
                     );
-                    let frange = original_file_range(database, variable.file_id, &source);
+                    let frange = original_file_range(db, variable.file_id, &source);
                     Diagnostic::new(DiagnosticCode("12"), format!("{error}"), frange.range)
                 },
                 AnyDiagnostic::InvalidTypeSpecifier {
@@ -379,12 +379,12 @@ pub fn diagnostics(
                 } => {
                     let source = type_specifier.value.to_node(&root);
                     let frange =
-                        original_file_range(database, type_specifier.file_id, source.syntax());
+                        original_file_range(db, type_specifier.file_id, source.syntax());
                     Diagnostic::new(DiagnosticCode("13"), format!("{error}"), frange.range)
                 },
                 AnyDiagnostic::InvalidIdentExpression { expression, error } => {
                     let source = expression.value.to_node(&root);
-                    let frange = original_file_range(database, expression.file_id, source.syntax());
+                    let frange = original_file_range(db, expression.file_id, source.syntax());
                     Diagnostic::new(DiagnosticCode("14"), format!("{error}"), frange.range)
                 },
                 AnyDiagnostic::NagaValidationError {
@@ -422,24 +422,24 @@ pub fn diagnostics(
 
                     let parameters = parameters
                         .iter()
-                        .map(|r#type| ty::pretty::pretty_type(database, *r#type))
+                        .map(|r#type| ty::pretty::pretty_type(db, *r#type))
                         .join(", ");
 
                     let mut possible = Vec::with_capacity(32);
-                    let builtin_specific = builtins.lookup(database);
+                    let builtin_specific = builtins.lookup(db);
                     possible.extend(builtin_specific.overloads().map(|(_, overload)| {
-                        pretty_fn(database, &overload.r#type.lookup(database))
+                        pretty_fn(db, overload.r#type.lookup(db))
                     }));
 
                     let possible = possible.join("\n");
 
-                    let frange = original_file_range(database, expression.file_id, source.syntax());
+                    let frange = original_file_range(db, expression.file_id, source.syntax());
                     Diagnostic::new(
                         DiagnosticCode("18"),
                         format!(
                             "no overload of constructor `{}` found for given \
                             arguments. Found ({parameters}), expected one of:\n{possible}",
-                            pretty_type(database, r#type),
+                            pretty_type(db, r#type),
                         ),
                         frange.range,
                     )
@@ -450,7 +450,7 @@ pub fn diagnostics(
                     sequence_permitted,
                 } => {
                     let source = expression.value.to_node(&root);
-                    let frange = original_file_range(database, file_id, source.syntax());
+                    let frange = original_file_range(db, file_id, source.syntax());
                     let symbol = operation.symbol();
                     let message = if sequence_permitted {
                         format!(
@@ -470,7 +470,7 @@ pub fn diagnostics(
                 ),
                 AnyDiagnostic::UnexpectedTemplateArgument { expression } => {
                     let source = expression.value.to_node(&root);
-                    let frange = original_file_range(database, expression.file_id, source.syntax());
+                    let frange = original_file_range(db, expression.file_id, source.syntax());
                     Diagnostic::new(
                         DiagnosticCode("21"),
                         "unexpected template argument".to_owned(),
@@ -482,7 +482,7 @@ pub fn diagnostics(
                     message,
                 } => {
                     let source = expression.value.to_node(&root);
-                    let frange = original_file_range(database, expression.file_id, source.syntax());
+                    let frange = original_file_range(db, expression.file_id, source.syntax());
                     let mut message = Diagnostic::new(DiagnosticCode("22"), message, frange.range);
                     message.source = DiagnosticSource::WeslRs;
                     message
@@ -494,7 +494,7 @@ pub fn diagnostics(
                     path,
                 } => {
                     let source = expression.value.to_node(&root);
-                    let frange = original_file_range(database, expression.file_id, source.syntax());
+                    let frange = original_file_range(db, expression.file_id, source.syntax());
                     Diagnostic::new(
                         DiagnosticCode("23"),
                         format!("{actual} {} is not a {expected}", path.mod_path()),
@@ -508,7 +508,7 @@ pub fn diagnostics(
                 ),
                 AnyDiagnostic::UnnamedImport { id } => {
                     let source = id.value.to_node(&root);
-                    let frange = original_file_range(database, id.file_id, source.syntax());
+                    let frange = original_file_range(db, id.file_id, source.syntax());
                     Diagnostic::new(
                         DiagnosticCode("25"),
                         "import without a name".to_owned(),
@@ -517,7 +517,7 @@ pub fn diagnostics(
                 },
                 AnyDiagnostic::UnresolvedPackage { id, name } => {
                     let source = id.value.to_node(&root);
-                    let frange = original_file_range(database, id.file_id, source.syntax());
+                    let frange = original_file_range(db, id.file_id, source.syntax());
                     Diagnostic::new(
                         DiagnosticCode("26"),
                         format!("could not find package `{}`", name.as_str()),
@@ -526,7 +526,7 @@ pub fn diagnostics(
                 },
                 AnyDiagnostic::UnresolvedImport { id } => {
                     let source = id.value.to_node(&root);
-                    let frange = original_file_range(database, id.file_id, source.syntax());
+                    let frange = original_file_range(db, id.file_id, source.syntax());
                     Diagnostic::new(
                         DiagnosticCode("27"),
                         "could not resolve import".to_owned(),
@@ -535,7 +535,7 @@ pub fn diagnostics(
                 },
                 AnyDiagnostic::TooManySupers { id } => {
                     let source = id.value.to_node(&root);
-                    let frange = original_file_range(database, id.file_id, source.syntax());
+                    let frange = original_file_range(db, id.file_id, source.syntax());
                     Diagnostic::new(
                         DiagnosticCode("28"),
                         "too many leading `super` keywords".to_owned(),
@@ -544,7 +544,7 @@ pub fn diagnostics(
                 },
                 AnyDiagnostic::TooManySupers { id } => {
                     let source = id.value.to_node(&root);
-                    let frange = original_file_range(database, id.file_id, source.syntax());
+                    let frange = original_file_range(db, id.file_id, source.syntax());
                     Diagnostic::new(
                         DiagnosticCode("29"),
                         "too many leading `super` keywords".to_owned(),
@@ -553,7 +553,7 @@ pub fn diagnostics(
                 },
                 AnyDiagnostic::DetachedFile { id } => {
                     let source = id.value.to_node(&root);
-                    let frange = original_file_range(database, id.file_id, source.syntax());
+                    let frange = original_file_range(db, id.file_id, source.syntax());
                     Diagnostic::new(
                         DiagnosticCode("30"),
                         "file is detached. Include it with a wesl.toml".to_owned(),
@@ -565,7 +565,7 @@ pub fn diagnostics(
                     name: previous,
                 } => {
                     let source = item.value.to_node(&root);
-                    let frange = original_file_range(database, item.file_id, source.syntax());
+                    let frange = original_file_range(db, item.file_id, source.syntax());
                     Diagnostic::new(
                         DiagnosticCode("31"),
                         format!("Duplicate identifier `{}`", previous.as_str()),
@@ -574,8 +574,8 @@ pub fn diagnostics(
                 },
                 AnyDiagnostic::StoreTypeMustBeStorable { expression, actual } => {
                     let source = expression.value.to_node(&root);
-                    let r#type = ty::pretty::pretty_type(database, actual);
-                    let frange = original_file_range(database, expression.file_id, source.syntax());
+                    let r#type = ty::pretty::pretty_type(db, actual);
+                    let frange = original_file_range(db, expression.file_id, source.syntax());
                     Diagnostic::new(
                         DiagnosticCode("32"),
                         format!("store type must be storable, found {type}"),
@@ -584,8 +584,8 @@ pub fn diagnostics(
                 },
                 AnyDiagnostic::UnexpectedReturnValue { expression, actual } => {
                     let source = expression.value.to_node(&root);
-                    let r#type = ty::pretty::pretty_type(database, actual);
-                    let frange = original_file_range(database, expression.file_id, source.syntax());
+                    let r#type = ty::pretty::pretty_type(db, actual);
+                    let frange = original_file_range(db, expression.file_id, source.syntax());
                     Diagnostic::new(
                         DiagnosticCode("33"),
                         format!("unexpected return value of type `{type}` in function with no return type"),

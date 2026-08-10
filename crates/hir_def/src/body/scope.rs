@@ -1,5 +1,6 @@
 use std::{iter, ops::Index};
 
+use base_db::SourceDatabase;
 use either::Either;
 use la_arena::{Arena, Idx};
 use rustc_hash::FxHashMap;
@@ -7,7 +8,7 @@ use triomphe::Arc;
 
 use super::{BindingId, Body};
 use crate::{
-    database::{DefDatabase, DefinitionWithBodyId},
+    db::DefinitionWithBodyId,
     expression::{ExpressionId, Statement, StatementId, SwitchCaseSelector},
     item_tree::Name,
 };
@@ -44,15 +45,21 @@ impl Index<ScopeId> for ExprScopes {
     }
 }
 
+#[salsa::tracked]
 impl ExprScopes {
-    pub fn expression_scopes_query(
-        database: &dyn DefDatabase,
+    #[salsa::tracked(returns(ref))]
+    pub fn of(
+        db: &dyn SourceDatabase,
         definition: DefinitionWithBodyId,
-    ) -> Arc<Self> {
-        let body = database.body(definition);
-        Arc::new(Self::new(&body))
+    ) -> Self {
+        let body = Body::of(db, definition);
+        let mut scopes = Self::new(body);
+        scopes.shrink_to_fit();
+        scopes
     }
+}
 
+impl ExprScopes {
     #[must_use]
     pub fn new(body: &Body) -> Self {
         let mut scopes = Self {
@@ -173,6 +180,17 @@ impl ExprScopes {
             parent: Some(parent),
             entries: vec![],
         })
+    }
+
+    fn shrink_to_fit(&mut self) {
+        let Self {
+            scopes,
+            scope_by_expression,
+            scope_by_statement,
+        } = self;
+        scopes.shrink_to_fit();
+        scope_by_expression.shrink_to_fit();
+        scope_by_statement.shrink_to_fit();
     }
 }
 

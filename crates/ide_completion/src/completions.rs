@@ -23,9 +23,9 @@ impl Builder {
     pub(crate) fn add_to(
         self,
         accumulator: &mut Completions,
-        database: &RootDatabase,
+        db: &RootDatabase,
     ) {
-        accumulator.add(self.build(database));
+        accumulator.add(self.build(db));
     }
 }
 

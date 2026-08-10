@@ -47,12 +47,6 @@ paths = {
 	rev = "b42b63f390a4dab14e6efa34a70e67f5b087cc62",
 	version = "0.0.0"
 }
-query-group = {
-	package = "query-group-macro",
-	git = "https://github.com/rust-lang/rust-analyzer",
-	rev = "b42b63f390a4dab14e6efa34a70e67f5b087cc62",
-	version = "0.0.0"
-}
 #
 # crates from rust-analyzer that are published separately
 line-index = "0.1.2"
@@ -78,16 +72,14 @@ dashmap = { version = "6.2.1" }
 nohash-hasher = "0.2.0"
 rowan = "0.16.1"
 rustc-hash = "2.1.2"
+# Ideally we'd not enable the macros feature but unfortunately the `tracked` attribute does not work
+# on impls without it
 salsa = {
-	version = "0.25.2",
-	default-features = true,
-	features = [
-		"macros",
-		"rayon",
-		"salsa_unstable",
-	]
+	version = "0.28.2",
+	default-features = false,
+	features = ["inventory", "macros", "rayon", "salsa_unstable", "triomphe"]
 }
-salsa-macros = "0.25.2"
+salsa-macros = "0.28.2"
 semver = "1.0.27"
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.150"

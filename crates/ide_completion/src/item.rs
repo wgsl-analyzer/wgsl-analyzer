@@ -502,7 +502,7 @@ impl fmt::Debug for CompletionItem {
 impl Builder {
     pub(crate) fn build(
         self,
-        database: &RootDatabase,
+        db: &RootDatabase,
     ) -> CompletionItem {
         let _p = tracing::info_span!("item::Builder::build").entered();
 
@@ -540,7 +540,7 @@ impl Builder {
         //         detail_left,
         //         "{}(use {})",
         //         if detail_left.is_empty() { "" } else { " " },
-        //         import_edit.import_path.display(database, self.edition)
+        //         import_edit.import_path.display(db, self.edition)
         //     );
         // } else if let Some(trait_name) = self.trait_name {
         //     let detail_left = detail_left.get_or_insert_with(String::new);
@@ -559,7 +559,7 @@ impl Builder {
         // let import_to_add = self
         //     .imports_to_add
         //     .into_iter()
-        //     .map(|import| import.import_path.display(database, self.edition).to_string())
+        //     .map(|import| import.import_path.display(db, self.edition).to_string())
         //     .collect();
 
         CompletionItem {

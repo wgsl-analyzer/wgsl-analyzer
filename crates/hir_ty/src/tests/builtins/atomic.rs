@@ -17,7 +17,7 @@ fn foo() {
 ",
         expect![[r#"
             25..31 'buffer': ref<storage, atomic<[error]>, read_write>
-            40..44 'bool': unexpected template argument, expected i32, u32, i64, or u64
+            40..44 'bool': unexpected template argument, expected i32 or u32
             66..72 'result': [error]
             75..122 'atomic...false)': [error]
             101..108 '&buffer': ptr<storage, atomic<[error]>, read_write>
@@ -30,7 +30,7 @@ fn foo() {
             170..179 'exchanged': [error]
             182..188 'result': [error]
             182..198 'result...hanged': [error]
-            [EditionedFileId(Id(1c00))] WgslError { expression: Idx::<Expression>(4), message: "`atomicCompareExchangeWeak` 2nd and 3rd arguments are incompatible with the atomic pointer type" } in Body
+            [EditionedFileId(Id(300))] WgslError { expression: Idx::<Expression>(4), message: "`atomicCompareExchangeWeak` 2nd and 3rd arguments are incompatible with the atomic pointer type" } in Body
         "#]],
     );
 }

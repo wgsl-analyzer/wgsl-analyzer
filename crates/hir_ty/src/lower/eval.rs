@@ -1,5 +1,6 @@
 use std::collections::VecDeque;
 
+use base_db::Intern as _;
 use hir_def::expression::{BinaryOperation, Expression, ExpressionId, UnaryOperator};
 use wgsl_types::{
     inst::{Instance, LiteralInstance},
@@ -144,7 +145,7 @@ impl TypeLoweringContext<'_> {
                             container: TypeContainer::Expression(template_argument),
                             kind: TypeLoweringErrorKind::MissingTemplate,
                         });
-                        TemplateParameter::Type(TypeKind::Error.intern(self.database))
+                        TemplateParameter::Type(TypeKind::Error.intern(self.db))
                     },
                     Lowered::Enumerant(enumerant) => TemplateParameter::Enumerant(enumerant),
                     Lowered::Function(_) | Lowered::BuiltinFunction => {
@@ -155,7 +156,7 @@ impl TypeLoweringContext<'_> {
                                 ident_expression.path.clone(),
                             ),
                         });
-                        TemplateParameter::Type(TypeKind::Error.intern(self.database))
+                        TemplateParameter::Type(TypeKind::Error.intern(self.db))
                     },
                     Lowered::GlobalConstant(_)
                     | Lowered::GlobalVariable(_)

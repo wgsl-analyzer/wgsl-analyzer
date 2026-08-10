@@ -1,12 +1,12 @@
-use base_db::Lookup as _;
+use base_db::{Lookup as _, SourceDatabase};
 use la_arena::{Arena, Idx};
 use triomphe::Arc;
 
 use crate::{
     HasSource as _,
-    database::{
-        DefDatabase, FunctionId, GlobalAssertStatementId, GlobalConstantId, GlobalVariableId,
-        OverrideId, StructId, TypeAliasId,
+    db::{
+        FunctionId, GlobalAssertStatementId, GlobalConstantId, GlobalVariableId, OverrideId,
+        StructId, TypeAliasId,
     },
     expression::ExpressionId,
     expression_store::{
@@ -42,14 +42,24 @@ pub struct ParamData {
     pub r#type: TypeSpecifierId,
 }
 
+#[salsa::tracked]
 impl FunctionSignature {
-    pub fn query(
-        database: &dyn DefDatabase,
-        function: FunctionId,
+    #[salsa::tracked(returns(deref))]
+    pub fn of(
+        db: &dyn SourceDatabase,
+        id: FunctionId,
+    ) -> Arc<Self> {
+        Self::with_source_map(db, id).0.clone()
+    }
+
+    #[salsa::tracked(returns(ref))]
+
+    pub fn with_source_map(
+        db: &dyn SourceDatabase,
+        id: FunctionId,
     ) -> (Arc<Self>, Arc<ExpressionSourceMap>) {
-        let location = function.lookup(database);
-        let source = location.source(database);
-        let (function_data, source_map) = lower_function(database, &source);
+        let source = id.lookup(db).source(db);
+        let (function_data, source_map) = lower_function(db, &source);
         (Arc::new(function_data), Arc::new(source_map))
     }
 }
@@ -75,17 +85,28 @@ pub struct FieldData {
     pub r#type: TypeSpecifierId,
 }
 
+#[salsa::tracked]
 impl StructSignature {
-    pub fn query(
-        database: &dyn DefDatabase,
-        function: StructId,
-    ) -> (Arc<Self>, Arc<ExpressionSourceMap>) {
-        let location = function.lookup(database);
-        let source = location.source(database);
-        let (struct_data, source_map) = lower_struct(database, &source);
-        (Arc::new(struct_data), Arc::new(source_map))
+    #[salsa::tracked(returns(deref))]
+    pub fn of(
+        db: &dyn SourceDatabase,
+        id: StructId,
+    ) -> Arc<Self> {
+        Self::with_source_map(db, id).0.clone()
     }
 
+    #[salsa::tracked(returns(ref))]
+    pub fn with_source_map(
+        db: &dyn SourceDatabase,
+        id: StructId,
+    ) -> (Arc<Self>, Arc<ExpressionSourceMap>) {
+        let source = id.lookup(db).source(db);
+        let (struct_data, source_map) = lower_struct(db, &source);
+        (Arc::new(struct_data), Arc::new(source_map))
+    }
+}
+
+impl StructSignature {
     #[must_use]
     pub const fn fields(&self) -> &Arena<FieldData> {
         &self.fields
@@ -119,15 +140,23 @@ pub struct TypeAliasSignature {
     pub r#type: TypeSpecifierId,
 }
 
+#[salsa::tracked]
 impl TypeAliasSignature {
-    pub fn query(
-        database: &dyn DefDatabase,
-        function: TypeAliasId,
-    ) -> (Arc<Self>, Arc<ExpressionSourceMap>) {
-        let location = function.lookup(database);
-        let source = location.source(database);
+    #[salsa::tracked(returns(deref))]
+    pub fn of(
+        db: &dyn SourceDatabase,
+        id: TypeAliasId,
+    ) -> Arc<Self> {
+        Self::with_source_map(db, id).0.clone()
+    }
 
-        let (type_alias, source_map) = lower_type_alias(database, &source);
+    #[salsa::tracked(returns(ref))]
+    pub fn with_source_map(
+        db: &dyn SourceDatabase,
+        id: TypeAliasId,
+    ) -> (Arc<Self>, Arc<ExpressionSourceMap>) {
+        let source = id.lookup(db).source(db);
+        let (type_alias, source_map) = lower_type_alias(db, &source);
         (Arc::new(type_alias), Arc::new(source_map))
     }
 }
@@ -141,15 +170,23 @@ pub struct VariableSignature {
     pub template_parameters: Vec<ExpressionId>,
 }
 
+#[salsa::tracked]
 impl VariableSignature {
-    pub fn query(
-        database: &dyn DefDatabase,
-        variable: GlobalVariableId,
-    ) -> (Arc<Self>, Arc<ExpressionSourceMap>) {
-        let location = database.lookup_intern_global_variable(variable);
-        let source = location.source(database);
+    #[salsa::tracked(returns(deref))]
+    pub fn of(
+        db: &dyn SourceDatabase,
+        id: GlobalVariableId,
+    ) -> Arc<Self> {
+        Self::with_source_map(db, id).0.clone()
+    }
 
-        let (global_variable, source_map) = lower_variable(database, &source);
+    #[salsa::tracked(returns(ref))]
+    pub fn with_source_map(
+        db: &dyn SourceDatabase,
+        id: GlobalVariableId,
+    ) -> (Arc<Self>, Arc<ExpressionSourceMap>) {
+        let source = id.lookup(db).source(db);
+        let (global_variable, source_map) = lower_variable(db, &source);
         (Arc::new(global_variable), Arc::new(source_map))
     }
 }
@@ -162,33 +199,23 @@ pub struct ConstantSignature {
     pub r#type: Option<TypeSpecifierId>,
 }
 
+#[salsa::tracked]
 impl ConstantSignature {
-    pub fn query(
-        database: &dyn DefDatabase,
-        constant: GlobalConstantId,
-    ) -> (Arc<Self>, Arc<ExpressionSourceMap>) {
-        let location = database.lookup_intern_global_constant(constant);
-        let source = location.source(database);
-
-        let (global_constant, source_map) = lower_constant(database, &source);
-        (Arc::new(global_constant), Arc::new(source_map))
+    #[salsa::tracked(returns(deref))]
+    pub fn of(
+        db: &dyn SourceDatabase,
+        id: GlobalConstantId,
+    ) -> Arc<Self> {
+        Self::with_source_map(db, id).0.clone()
     }
-}
 
-#[derive(Debug, PartialEq, Eq)]
-pub struct GlobalAssertStatementSignature {
-    pub store: Arc<ExpressionStore>,
-}
-
-impl GlobalAssertStatementSignature {
-    pub fn query(
-        database: &dyn DefDatabase,
-        constant: GlobalAssertStatementId,
+    #[salsa::tracked(returns(ref))]
+    pub fn with_source_map(
+        db: &dyn SourceDatabase,
+        id: GlobalConstantId,
     ) -> (Arc<Self>, Arc<ExpressionSourceMap>) {
-        let location = database.lookup_intern_global_assert_statement(constant);
-        let source = location.source(database);
-
-        let (global_constant, source_map) = lower_global_assert_statement(database, &source);
+        let source = id.lookup(db).source(db);
+        let (global_constant, source_map) = lower_constant(db, &source);
         (Arc::new(global_constant), Arc::new(source_map))
     }
 }
@@ -200,15 +227,49 @@ pub struct OverrideSignature {
     pub r#type: Option<TypeSpecifierId>,
 }
 
+#[salsa::tracked]
 impl OverrideSignature {
-    pub fn query(
-        database: &dyn DefDatabase,
-        override_declaration: OverrideId,
-    ) -> (Arc<Self>, Arc<ExpressionSourceMap>) {
-        let location = database.lookup_intern_override(override_declaration);
-        let source = location.source(database);
+    #[salsa::tracked(returns(deref))]
+    pub fn of(
+        db: &dyn SourceDatabase,
+        id: OverrideId,
+    ) -> Arc<Self> {
+        Self::with_source_map(db, id).0.clone()
+    }
 
-        let (global_override, source_map) = lower_override(database, &source);
+    #[salsa::tracked(returns(ref))]
+    pub fn with_source_map(
+        db: &dyn SourceDatabase,
+        id: OverrideId,
+    ) -> (Arc<Self>, Arc<ExpressionSourceMap>) {
+        let source = id.lookup(db).source(db);
+        let (global_override, source_map) = lower_override(db, &source);
         (Arc::new(global_override), Arc::new(source_map))
+    }
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct AssertStatementSignature {
+    pub store: Arc<ExpressionStore>,
+}
+
+#[salsa::tracked]
+impl AssertStatementSignature {
+    #[salsa::tracked(returns(deref))]
+    pub fn of(
+        db: &dyn SourceDatabase,
+        id: GlobalAssertStatementId,
+    ) -> Arc<Self> {
+        Self::with_source_map(db, id).0.clone()
+    }
+
+    #[salsa::tracked(returns(ref))]
+    pub fn with_source_map(
+        db: &dyn SourceDatabase,
+        id: GlobalAssertStatementId,
+    ) -> (Arc<Self>, Arc<ExpressionSourceMap>) {
+        let source = id.lookup(db).source(db);
+        let (global_assert_statement, source_map) = lower_global_assert_statement(db, &source);
+        (Arc::new(global_assert_statement), Arc::new(source_map))
     }
 }

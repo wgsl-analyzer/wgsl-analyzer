@@ -30,7 +30,7 @@ pub(crate) trait NagaError: error::Error {
 }
 
 fn emit<Error>(
-    database: &dyn HirDatabase,
+    db: &dyn HirDatabase,
     error: &Error,
     file_id: EditionedFileId,
     full_range: TextRange,
@@ -58,7 +58,7 @@ fn emit<Error>(
                 message,
                 FileRange {
                     range,
-                    file_id: file_id.file_id(database),
+                    file_id: file_id.file_id(db),
                 },
             )
         })
@@ -73,14 +73,14 @@ fn emit<Error>(
 }
 
 pub(crate) fn naga_diagnostics<Naga>(
-    database: &dyn HirDatabase,
+    db: &dyn HirDatabase,
     file_id: EditionedFileId,
     config: &DiagnosticsConfig,
     accumulator: &mut Vec<AnyDiagnostic>,
 ) where
     Naga: self::Naga,
 {
-    let source: &str = database.file_text(file_id.file_id(database)).text(database);
+    let source: &str = db.file_text(file_id.file_id(db)).text(db);
     let full_range = TextRange::up_to(TextSize::of(source));
 
     match Naga::parse(source) {
@@ -89,14 +89,14 @@ pub(crate) fn naga_diagnostics<Naga>(
                 return;
             }
             if let Err(error) = Naga::validate(&module) {
-                emit(database, &error, file_id, full_range, accumulator);
+                emit(db, &error, file_id, full_range, accumulator);
             }
         },
         Err(error) => {
             if !config.naga_parsing_enabled {
                 return;
             }
-            emit(database, &error, file_id, full_range, accumulator);
+            emit(db, &error, file_id, full_range, accumulator);
         },
     }
 }

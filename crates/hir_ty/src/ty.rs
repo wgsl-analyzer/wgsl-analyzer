@@ -6,30 +6,31 @@ use std::{
     str::FromStr,
 };
 
-use base_db::{Lookup, impl_intern_key};
-use hir_def::{database::StructId, type_ref::VecDimensionality};
+use base_db::{Intern as _, Lookup as _, impl_intern_key, impl_intern_lookup};
+use hir_def::{db::StructId, type_ref::VecDimensionality};
 use wgsl_types::{
     syntax::{AccessMode, AddressSpace},
     ty::SamplerType,
 };
 
-use crate::database::HirDatabase;
+use crate::db::HirDatabase;
 
 impl_intern_key!(Type, TypeKind);
+impl_intern_lookup!(Type, TypeKind);
 
 impl Type {
     pub fn kind(
         self,
-        database: &dyn HirDatabase,
+        db: &dyn HirDatabase,
     ) -> TypeKind {
-        database.lookup_intern_type(self)
+        self.lookup(db).clone()
     }
 
     pub fn is_err(
         self,
-        database: &dyn HirDatabase,
+        db: &dyn HirDatabase,
     ) -> bool {
-        matches!(database.lookup_intern_type(self), TypeKind::Error)
+        matches!(self.kind(db), TypeKind::Error)
     }
 
     #[expect(clippy::doc_paragraphs_missing_punctuation, reason = "false positive")]
@@ -37,11 +38,11 @@ impl Type {
     #[must_use]
     pub fn this_or_vec_inner(
         self,
-        database: &dyn HirDatabase,
+        db: &dyn HirDatabase,
     ) -> Self {
-        match self.kind(database) {
+        match self.kind(db) {
             TypeKind::Vector(vector) => vector.component_type,
-            TypeKind::Reference(reference) => reference.inner.this_or_vec_inner(database),
+            TypeKind::Reference(reference) => reference.inner.this_or_vec_inner(db),
             TypeKind::Error
             | TypeKind::Scalar(_)
             | TypeKind::Atomic(_)
@@ -60,10 +61,9 @@ impl Type {
     pub fn is_convertible_to(
         self,
         r#type: Self,
-        database: &dyn HirDatabase,
+        db: &dyn HirDatabase,
     ) -> bool {
-        self.kind(database)
-            .is_convertible_to(&r#type.kind(database), database)
+        self.kind(db).is_convertible_to(&r#type.kind(db), db)
     }
 
     #[expect(clippy::doc_paragraphs_missing_punctuation, reason = "false positive")]
@@ -80,10 +80,10 @@ impl Type {
     #[must_use]
     pub fn concretize(
         self,
-        database: &dyn HirDatabase,
+        db: &dyn HirDatabase,
     ) -> Self {
-        match self.kind(database).concretize(database) {
-            Some(type_kind) => type_kind.intern(database),
+        match self.kind(db).concretize(db) {
+            Some(type_kind) => type_kind.intern(db),
             None => self,
         }
     }
@@ -95,15 +95,15 @@ impl Type {
     #[must_use]
     pub fn loaded(
         self,
-        database: &dyn HirDatabase,
+        db: &dyn HirDatabase,
     ) -> Self {
         if let TypeKind::Reference(Reference {
             address_space,
             inner,
             access_mode,
-        }) = self.kind(database)
+        }) = self.kind(db)
         {
-            debug_assert!(!matches!(inner.kind(database), TypeKind::Reference(_)));
+            debug_assert!(!matches!(inner.kind(db), TypeKind::Reference(_)));
             inner
         } else {
             self
@@ -117,22 +117,22 @@ impl Type {
     #[must_use]
     pub fn is_constructible(
         self,
-        database: &dyn HirDatabase,
+        db: &dyn HirDatabase,
     ) -> bool {
-        match self.kind(database) {
+        match self.kind(db) {
             TypeKind::Error | TypeKind::Scalar(_) | TypeKind::Vector(_) | TypeKind::Matrix(_) => {
                 true
             },
-            TypeKind::Struct(struct_id) => database
+            TypeKind::Struct(struct_id) => db
                 .field_types(struct_id)
                 .0
                 .iter()
-                .all(|(field, field_type)| field_type.is_constructible(database)),
+                .all(|(field, field_type)| field_type.is_constructible(db)),
             TypeKind::BuiltinStruct(builtin_struct) => builtin_struct
                 .fields
                 .iter()
-                .all(|(field, field_type)| field_type.is_constructible(database)),
-            TypeKind::Array(array_type) => array_type.is_constructible(database),
+                .all(|(field, field_type)| field_type.is_constructible(db)),
+            TypeKind::Array(array_type) => array_type.is_constructible(db),
             TypeKind::Atomic(_)
             | TypeKind::Texture(_)
             | TypeKind::Sampler(_)
@@ -145,10 +145,10 @@ impl Type {
 
     pub fn contains_struct(
         self,
-        database: &dyn HirDatabase,
+        db: &dyn HirDatabase,
         r#struct: StructId,
     ) -> bool {
-        self.kind(database).contains_struct(database, r#struct)
+        self.kind(db).contains_struct(db, r#struct)
     }
 }
 
@@ -188,17 +188,17 @@ impl TypeKind {
     pub fn is_convertible_to(
         &self,
         r#type: &Self,
-        database: &dyn HirDatabase,
+        db: &dyn HirDatabase,
     ) -> bool {
-        conversion_rank(self, r#type, database).is_some()
+        conversion_rank(self, r#type, db).is_some()
     }
 
     pub fn unref(
         &self,
-        database: &dyn HirDatabase,
+        db: &dyn HirDatabase,
     ) -> Cow<'_, Self> {
         match self {
-            Self::Reference(reference) => Cow::Owned(reference.inner.kind(database)),
+            Self::Reference(reference) => Cow::Owned(reference.inner.kind(db)),
             Self::Error
             | Self::Scalar(_)
             | Self::Atomic(_)
@@ -218,7 +218,7 @@ impl TypeKind {
     /// Abstract types will be mapped to the corresponding default concrete type.
     pub fn concretize(
         &self,
-        database: &dyn HirDatabase,
+        db: &dyn HirDatabase,
     ) -> Option<Self> {
         Some(match self {
             Self::Scalar(ScalarType::AbstractInt) => Self::Scalar(ScalarType::I32),
@@ -228,7 +228,7 @@ impl TypeKind {
                 binding_array,
                 size,
             }) => Self::Array(ArrayType {
-                inner: inner.kind(database).concretize(database)?.intern(database),
+                inner: inner.kind(db).concretize(db)?.intern(db),
                 binding_array: *binding_array,
                 size: size.clone(),
             }),
@@ -237,10 +237,7 @@ impl TypeKind {
                 component_type,
             }) => Self::Vector(VectorType {
                 size: *size,
-                component_type: component_type
-                    .kind(database)
-                    .concretize(database)?
-                    .intern(database),
+                component_type: component_type.kind(db).concretize(db)?.intern(db),
             }),
             Self::Matrix(MatrixType {
                 columns,
@@ -249,7 +246,7 @@ impl TypeKind {
             }) => Self::Matrix(MatrixType {
                 columns: *columns,
                 rows: *rows,
-                inner: inner.kind(database).concretize(database)?.intern(database),
+                inner: inner.kind(db).concretize(db)?.intern(db),
             }),
             Self::Error
             | Self::Scalar(_)
@@ -308,7 +305,7 @@ impl TypeKind {
     #[must_use]
     pub fn is_abstract(
         &self,
-        database: &dyn HirDatabase,
+        db: &dyn HirDatabase,
     ) -> bool {
         match self {
             Self::Scalar(ScalarType::AbstractInt | ScalarType::AbstractFloat) => true,
@@ -317,7 +314,7 @@ impl TypeKind {
                 component_type: inner,
                 ..
             })
-            | Self::Matrix(MatrixType { inner, .. }) => inner.kind(database).is_abstract(database),
+            | Self::Matrix(MatrixType { inner, .. }) => inner.kind(db).is_abstract(db),
             Self::Scalar(_)
             | Self::Error
             | Self::Atomic(_)
@@ -330,13 +327,6 @@ impl TypeKind {
             | Self::BoundVariable(_)
             | Self::StorageTypeOfTexelFormat(_) => false,
         }
-    }
-
-    pub fn intern(
-        self,
-        database: &dyn HirDatabase,
-    ) -> Type {
-        database.intern_type(self)
     }
 
     #[must_use]
@@ -390,20 +380,20 @@ impl TypeKind {
 
     pub fn is_host_shareable(
         &self,
-        database: &dyn HirDatabase,
+        db: &dyn HirDatabase,
     ) -> bool {
         match self {
             Self::Scalar(scalar) => scalar.is_numeric(),
-            Self::Vector(vec) => vec.component_type.kind(database).is_numeric_scalar(),
+            Self::Vector(vec) => vec.component_type.kind(db).is_numeric_scalar(),
             // Error types are treated as optimistically compatible to avoid
             // irrelevant diagnostics (for example, when a struct is not yet defined).
             Self::Matrix(_) | Self::Atomic(_) | Self::Error => true,
-            Self::Array(array) => array.inner.kind(database).is_host_shareable(database),
-            Self::Struct(r#struct) => database
+            Self::Array(array) => array.inner.kind(db).is_host_shareable(db),
+            Self::Struct(r#struct) => db
                 .field_types(*r#struct)
                 .0
                 .iter()
-                .all(|(_, r#type)| r#type.kind(database).is_host_shareable(database)),
+                .all(|(_, r#type)| r#type.kind(db).is_host_shareable(db)),
             Self::BuiltinStruct(_)
             | Self::Texture(_)
             | Self::Sampler(_)
@@ -416,18 +406,18 @@ impl TypeKind {
 
     pub fn contains_runtime_sized_array(
         &self,
-        database: &dyn HirDatabase,
+        db: &dyn HirDatabase,
     ) -> bool {
         match self {
             Self::Array(ArrayType {
                 size: ArraySize::Dynamic,
                 ..
             }) => true,
-            Self::Struct(r#struct) => database
+            Self::Struct(r#struct) => db
                 .field_types(*r#struct)
                 .0
                 .iter()
-                .any(|(_, r#type)| r#type.kind(database).contains_runtime_sized_array(database)),
+                .any(|(_, r#type)| r#type.kind(db).contains_runtime_sized_array(db)),
             Self::Error
             | Self::Scalar(_)
             | Self::Atomic(_)
@@ -446,24 +436,23 @@ impl TypeKind {
 
     pub fn contains_struct(
         &self,
-        database: &dyn HirDatabase,
+        db: &dyn HirDatabase,
         r#struct: StructId,
     ) -> bool {
         match self {
-            Self::Atomic(atomic) => atomic.inner.contains_struct(database, r#struct),
+            Self::Atomic(atomic) => atomic.inner.contains_struct(db, r#struct),
             Self::Struct(id) => {
                 if *id == r#struct {
                     return true;
                 }
-                database
-                    .field_types(*id)
+                db.field_types(*id)
                     .0
                     .values()
-                    .any(|r#type| r#type.contains_struct(database, r#struct))
+                    .any(|r#type| r#type.contains_struct(db, r#struct))
             },
-            Self::Array(array) => array.inner.contains_struct(database, r#struct),
-            Self::Reference(reference) => reference.inner.contains_struct(database, r#struct),
-            Self::Pointer(pointer) => pointer.inner.contains_struct(database, r#struct),
+            Self::Array(array) => array.inner.contains_struct(db, r#struct),
+            Self::Reference(reference) => reference.inner.contains_struct(db, r#struct),
+            Self::Pointer(pointer) => pointer.inner.contains_struct(db, r#struct),
             Self::Error
             | Self::Scalar(_)
             | Self::Vector(_)
@@ -482,7 +471,7 @@ impl TypeKind {
 fn conversion_rank(
     ty1: &TypeKind,
     ty2: &TypeKind,
-    database: &dyn HirDatabase,
+    db: &dyn HirDatabase,
 ) -> Option<u32> {
     // reference: <https://www.w3.org/TR/WGSL/#conversion-rank>
     match (ty1, ty2) {
@@ -494,7 +483,7 @@ fn conversion_rank(
                 ..
             }),
             ty2,
-        ) if &ty1.kind(database) == ty2 => Some(0),
+        ) if &ty1.kind(db) == ty2 => Some(0),
         (
             TypeKind::Scalar(ScalarType::AbstractInt),
             TypeKind::Scalar(ScalarType::AbstractFloat),
@@ -522,7 +511,7 @@ fn conversion_rank(
                 size: n2,
                 ..
             }),
-        ) if n1 == n2 => conversion_rank(&ty1.kind(database), &ty2.kind(database), database),
+        ) if n1 == n2 => conversion_rank(&ty1.kind(db), &ty2.kind(db), db),
         (
             TypeKind::Vector(VectorType {
                 size: n1,
@@ -532,7 +521,7 @@ fn conversion_rank(
                 size: n2,
                 component_type: ty2,
             }),
-        ) if n1 == n2 => conversion_rank(&ty1.kind(database), &ty2.kind(database), database),
+        ) if n1 == n2 => conversion_rank(&ty1.kind(db), &ty2.kind(db), db),
         (
             TypeKind::Matrix(MatrixType {
                 columns: c1,
@@ -544,9 +533,7 @@ fn conversion_rank(
                 rows: r2,
                 inner: ty2,
             }),
-        ) if c1 == c2 && r1 == r2 => {
-            conversion_rank(&ty1.kind(database), &ty2.kind(database), database)
-        },
+        ) if c1 == c2 && r1 == r2 => conversion_rank(&ty1.kind(db), &ty2.kind(db), db),
         _ => None,
     }
 }
@@ -751,9 +738,9 @@ pub struct ArrayType {
 impl ArrayType {
     fn is_constructible(
         &self,
-        database: &dyn HirDatabase,
+        db: &dyn HirDatabase,
     ) -> bool {
-        self.size != ArraySize::Dynamic && self.inner.is_constructible(database)
+        self.size != ArraySize::Dynamic && self.inner.is_constructible(db)
     }
 }
 
@@ -800,17 +787,17 @@ pub enum TextureKind {
 impl TextureKind {
     pub fn from_sampled(
         sampled: wgsl_types::syntax::SampledType,
-        database: &dyn HirDatabase,
+        db: &dyn HirDatabase,
     ) -> Self {
         match sampled {
             wgsl_types::syntax::SampledType::I32 => {
-                Self::Sampled(TypeKind::Scalar(ScalarType::I32).intern(database))
+                Self::Sampled(TypeKind::Scalar(ScalarType::I32).intern(db))
             },
             wgsl_types::syntax::SampledType::U32 => {
-                Self::Sampled(TypeKind::Scalar(ScalarType::U32).intern(database))
+                Self::Sampled(TypeKind::Scalar(ScalarType::U32).intern(db))
             },
             wgsl_types::syntax::SampledType::F32 => {
-                Self::Sampled(TypeKind::Scalar(ScalarType::F32).intern(database))
+                Self::Sampled(TypeKind::Scalar(ScalarType::F32).intern(db))
             },
         }
     }

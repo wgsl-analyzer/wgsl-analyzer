@@ -1,7 +1,6 @@
 use std::mem;
 
 use base_db::input::PackageOrigin;
-use hir::database::DefDatabase as _;
 use ide::base_db::input::SourceRoot;
 use lsp_types::{
     BaseUri, DidChangeWatchedFilesRegistrationOptions, FileSystemWatcher, GlobPattern,

@@ -21,70 +21,70 @@ pub trait WithFixture: Default + SourceDatabase + 'static {
     #[must_use]
     #[track_caller]
     fn with_single_file(wa_fixture: &str) -> (Self, EditionedFileId) {
-        let mut database = Self::default();
+        let mut db = Self::default();
         let fixture = ChangeFixture::parse(wa_fixture);
-        fixture.change.apply(&mut database);
+        fixture.change.apply(&mut db);
         assert_eq!(
             fixture.files.len(),
             1,
             "Multiple files found in the fixture"
         );
-        let file_id = EditionedFileId::from_file(&database, fixture.files[0]);
-        (database, file_id)
+        let file_id = EditionedFileId::from_file(&db, fixture.files[0]);
+        (db, file_id)
     }
 
     #[must_use]
     #[track_caller]
     fn with_many_files(wa_fixture: &str) -> (Self, Vec<EditionedFileId>) {
-        let mut database = Self::default();
+        let mut db = Self::default();
         let fixture = ChangeFixture::parse(wa_fixture);
-        fixture.change.apply(&mut database);
+        fixture.change.apply(&mut db);
         assert!(fixture.file_position.is_none());
         let files = fixture
             .files
             .iter()
-            .map(|file_id| EditionedFileId::from_file(&database, *file_id))
+            .map(|file_id| EditionedFileId::from_file(&db, *file_id))
             .collect();
-        (database, files)
+        (db, files)
     }
 
     #[must_use]
     #[track_caller]
     fn with_files(wa_fixture: &str) -> Self {
-        let mut database = Self::default();
+        let mut db = Self::default();
         let fixture = ChangeFixture::parse(wa_fixture);
-        fixture.change.apply(&mut database);
+        fixture.change.apply(&mut db);
         assert!(fixture.file_position.is_none());
-        database
+        db
     }
 
     #[must_use]
     #[track_caller]
     fn with_position(wa_fixture: &str) -> (Self, FilePosition) {
-        let (database, file_id, range_or_offset) = Self::with_range_or_offset(wa_fixture);
+        let (db, file_id, range_or_offset) = Self::with_range_or_offset(wa_fixture);
         let offset = range_or_offset.expect_offset();
-        (database, FilePosition { file_id, offset })
+        (db, FilePosition { file_id, offset })
     }
 
     #[must_use]
     #[track_caller]
     fn with_range(wa_fixture: &str) -> (Self, FileRange) {
-        let (database, file_id, range_or_offset) = Self::with_range_or_offset(wa_fixture);
+        let (db, file_id, range_or_offset) = Self::with_range_or_offset(wa_fixture);
         let range = range_or_offset.expect_range();
-        (database, FileRange { file_id, range })
+        (db, FileRange { file_id, range })
     }
 
     #[must_use]
     #[track_caller]
     fn with_range_or_offset(wa_fixture: &str) -> (Self, FileId, RangeOrOffset) {
-        let mut database = Self::default();
+        let mut db = Self::default();
         let fixture = ChangeFixture::parse(wa_fixture);
-        fixture.change.apply(&mut database);
+        fixture.change.apply(&mut db);
 
         let (file_id, range_or_offset) = fixture
             .file_position
             .expect("Could not find file position in fixture. Did you forget to add an `$0`?");
-        (database, file_id, range_or_offset)
+        (db, file_id, range_or_offset)
     }
 }
 
