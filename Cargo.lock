@@ -511,7 +511,6 @@ dependencies = [
  "indexmap",
  "itertools 0.15.0",
  "la-arena",
- "query-group-macro",
  "rowan",
  "rustc-hash 2.1.3",
  "salsa",
@@ -534,7 +533,6 @@ dependencies = [
  "hir-def",
  "itertools 0.15.0",
  "la-arena",
- "query-group-macro",
  "rustc-hash 2.1.3",
  "salsa",
  "salsa-macros",
@@ -608,7 +606,6 @@ dependencies = [
  "hir-def",
  "itertools 0.15.0",
  "line-index",
- "query-group-macro",
  "rowan",
  "rustc-hash 2.1.3",
  "salsa",
@@ -1153,16 +1150,6 @@ dependencies = [
  "rustc-hash 2.1.3",
  "serde",
  "toml",
-]
-
-[[package]]
-name = "query-group-macro"
-version = "0.0.0"
-source = "git+https://github.com/rust-lang/rust-analyzer?rev=b42b63f390a4dab14e6efa34a70e67f5b087cc62#b42b63f390a4dab14e6efa34a70e67f5b087cc62"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.117",
 ]
 
 [[package]]

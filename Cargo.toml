@@ -47,12 +47,6 @@ paths = {
 	rev = "b42b63f390a4dab14e6efa34a70e67f5b087cc62",
 	version = "0.0.0"
 }
-query-group = {
-	package = "query-group-macro",
-	git = "https://github.com/rust-lang/rust-analyzer",
-	rev = "b42b63f390a4dab14e6efa34a70e67f5b087cc62",
-	version = "0.0.0"
-}
 #
 # crates from rust-analyzer that are published separately
 line-index = "0.1.2"
