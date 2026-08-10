@@ -12,7 +12,6 @@ doctest = false
 
 [dependencies]
 base-db.workspace = true
-hir-def.workspace = true
 itertools.workspace = true
 line-index.workspace = true
 rowan.workspace = true

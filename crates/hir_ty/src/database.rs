@@ -79,7 +79,7 @@ pub struct FieldInferenceDiagnostic {
     pub error: TypeLoweringError,
 }
 
-#[salsa::tracked]
+#[salsa::tracked(returns(clone))]
 fn field_types(
     database: &dyn HirDatabase,
     r#struct: StructId,
@@ -112,7 +112,7 @@ fn field_types(
     Arc::new((map, diagnostics))
 }
 
-#[salsa::tracked]
+#[salsa::tracked(returns(clone))]
 fn type_alias_type(
     database: &dyn HirDatabase,
     type_alias: TypeAliasId,
@@ -137,7 +137,7 @@ fn type_alias_type(
     Arc::new((result, diagnostics))
 }
 
-#[salsa::tracked]
+#[salsa::tracked(returns(clone))]
 fn function_type(
     database: &dyn HirDatabase,
     function: FunctionId,
@@ -171,7 +171,7 @@ fn function_type(
     .intern(database)
 }
 
-#[salsa::tracked]
+#[salsa::tracked(returns(clone))]
 fn struct_is_used_in_uniform(
     database: &dyn HirDatabase,
     r#struct: StructId,

@@ -47,7 +47,7 @@ impl_intern!(TypeAliasId, Location<ast::TypeAliasDeclaration>);
 impl_intern!(GlobalAssertStatementId, Location<ast::AssertStatement>);
 
 /// Module items with a body.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, salsa_macros::Supertype)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, salsa::Supertype)]
 pub enum DefinitionWithBodyId {
     Function(FunctionId),
     GlobalVariable(GlobalVariableId),
@@ -83,7 +83,7 @@ impl DefinitionWithBodyId {
 /// The definitions which are visible in the module.
 ///
 /// Does not include import statements, since its the items of the import statement that are visible.
-#[derive(PartialEq, Eq, Hash, Debug, Clone, Copy, salsa_macros::Supertype)]
+#[derive(PartialEq, Eq, Hash, Debug, Clone, Copy, salsa::Supertype)]
 pub enum ModuleDefinitionId {
     Function(FunctionId),
     GlobalVariable(GlobalVariableId),

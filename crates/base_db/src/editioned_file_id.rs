@@ -17,7 +17,7 @@ pub struct RawEditionedFileId {
     pub edition: Edition,
 }
 
-#[salsa_macros::interned(debug, constructor = from_span_file_id, no_lifetime, revisions = usize::MAX)]
+#[salsa_macros::interned(debug, constructor = from_span_file_id, unsafe(no_lifetime), revisions = usize::MAX)]
 #[derive(PartialOrd, Ord)]
 pub struct EditionedFileId {
     field: RawEditionedFileId,
@@ -120,7 +120,7 @@ impl EditionedFileId {
         self,
         database: &dyn Database,
     ) -> RawEditionedFileId {
-        self.field(database)
+        *self.field(database)
     }
 }
 

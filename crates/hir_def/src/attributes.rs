@@ -154,7 +154,7 @@ fn get_attribute_parameters(
     }
 }
 
-#[derive(PartialEq, Eq, Hash, Clone, Debug, salsa_macros::Supertype)]
+#[derive(PartialEq, Eq, Hash, Clone, Debug, salsa::Supertype)]
 pub enum AttributeDefId {
     Struct(StructId),
     // Field(FieldId),
@@ -167,7 +167,10 @@ pub struct AttributesWithOwner {
     pub attribute_list: AttributeList,
     pub owner: AttributeDefId,
 }
-
+#[expect(
+    clippy::drop_non_drop,
+    reason = "Clippy has a false positive for the salsa::tracked macro, see: https://github.com/rust-lang/rust-clippy/issues/16753"
+)]
 #[salsa::tracked]
 impl AttributesWithOwner {
     #[salsa::tracked(returns(deref))]

@@ -48,7 +48,7 @@ pub struct ItemScope {
 
 #[salsa::tracked]
 impl ItemScope {
-    #[salsa::tracked]
+    #[salsa::tracked(returns(clone))]
     pub fn of(
         db: &dyn SourceDatabase,
         file_id: EditionedFileId,

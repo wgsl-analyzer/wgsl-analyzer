@@ -32,7 +32,7 @@ pub use vfs::{AnchoredPath, AnchoredPathBuf, FileId, VfsPath, file_set::FileSet}
 #[macro_export]
 macro_rules! impl_intern_key {
     ($id:ident, $loc:ty) => {
-        #[salsa::interned(no_lifetime, revisions = usize::MAX)]
+        #[salsa::interned(unsafe(no_lifetime), revisions = usize::MAX)]
         #[derive(PartialOrd, Ord)]
         pub struct $id {
             #[returns(ref)]
@@ -276,6 +276,7 @@ pub struct Package {
     // /// This is split into a separate field to increase incrementality.
     // #[returns(ref)]
     // pub extra_data: ExtraPackageData,
+    #[returns(copy)]
     pub package_id: PackageId,
 }
 
@@ -532,10 +533,11 @@ pub fn file_package(
     /// TODO: Rust-Analyzer will remove this when the vfs gets rewritten.
     #[salsa::interned]
     struct InternedSourceRootId {
+        #[returns(copy)]
         pub id: SourceRootId,
     }
 
-    #[salsa::tracked]
+    #[salsa::tracked(returns(clone))]
     fn file_package<'db>(
         database: &'db dyn SourceDatabase,
         id: InternedSourceRootId<'db>,
@@ -566,10 +568,11 @@ pub(crate) fn package_by_id(
 ) -> Package {
     #[salsa::interned]
     struct InternedPackageId {
+        #[returns(copy)]
         pub id: PackageId,
     }
 
-    #[salsa::tracked]
+    #[salsa::tracked(returns(clone))]
     fn package_by_id<'db>(
         database: &'db dyn SourceDatabase,
         id: InternedPackageId<'db>,
