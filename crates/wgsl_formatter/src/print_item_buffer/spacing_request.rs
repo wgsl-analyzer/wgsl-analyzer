@@ -1,3 +1,5 @@
+use std::fmt::Debug;
+
 use dprint_core::formatting::{
     Condition, ConditionProperties, ConditionResolver, PrintItems, Signal,
 };
@@ -37,6 +39,23 @@ impl RequestItem {
 /// A Set holding [`RequestItems`], implemented via a bitmap.
 #[derive(Clone)]
 pub struct RequestItemSet(u8);
+
+impl Debug for RequestItemSet {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+    ) -> std::fmt::Result {
+        let mut set = f.debug_set();
+        for i in 0..7 {
+            let bit = 1_u8 << i;
+            if self.0 & bit != 0 {
+                set.entry(&RequestItem::from_index(i));
+            }
+        }
+        set.finish();
+        Ok(())
+    }
+}
 
 impl RequestItemSet {
     #[must_use]

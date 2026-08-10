@@ -117,6 +117,18 @@ impl<'buffer> MultilineGroup<'buffer> {
         });
     }
 
+    pub fn grouped_request(
+        &mut self,
+        request_on_multiline: Request,
+        request_on_single_line: Request,
+    ) {
+        self.buffer.request(Request::Conditional {
+            condition: Rc::clone(&self.is_multiple_lines),
+            on_true: Box::new(request_on_multiline),
+            on_false: Box::new(request_on_single_line),
+        });
+    }
+
     pub fn grouped_possible_newline(&mut self) {
         self.buffer.request(Request::Conditional {
             condition: Rc::clone(&self.is_multiple_lines),
