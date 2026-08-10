@@ -128,17 +128,5 @@ pub fn gen_compound_statement(
 
     multiline_group.end();
 
-    if !body_empty {
-        // This exists mainly for things like
-        // fn a { let a = 1; } // Thing
-        // ==>
-        // fn a {
-        //   let a = 1;
-        // }
-        // // Thing
-        // So the comment is not on the same line as the closing brace.
-        formatted.request(Request::expect(RequestItem::LineBreak));
-    }
-
     Ok(formatted)
 }

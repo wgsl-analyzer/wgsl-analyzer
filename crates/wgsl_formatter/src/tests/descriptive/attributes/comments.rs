@@ -181,8 +181,7 @@ pub fn format_comments_in_attrs_on_compound_statement() {
                 @attr(1)
                 /* 2 */ {
                     /* 3 */
-                }
-                /* 4 */
+                } /* 4 */
                 if /* 5 */ true /* 6 */ @attr(0) /* 7 */
                 @attr(1)
                 /* 8 */ {
@@ -198,8 +197,7 @@ pub fn format_comments_in_attrs_on_compound_statement() {
                 // 2
                 {
                     // 3
-                }
-                // 4
+                } // 4
                 if // 5
                 true // 6
                 @attr(0) // 7
