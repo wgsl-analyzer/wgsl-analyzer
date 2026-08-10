@@ -90,7 +90,7 @@ fn get_attribute_parameters(
         return Vec::new();
     };
     match name.text() {
-        // these arguments are not expressions
+        // their arguments are not expressions
         "diagnostic" | "builtin" | "interpolate" => Vec::new(),
         _ => attribute
             .parameters()
