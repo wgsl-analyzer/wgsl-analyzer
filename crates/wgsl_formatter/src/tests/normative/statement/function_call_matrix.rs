@@ -1,6 +1,10 @@
 use expect_test::expect;
+use parser::Edition;
 
-use crate::test_util::check;
+use crate::{
+    FormattingOptions,
+    test_util::{CheckOptions, check, check_with_options},
+};
 
 #[test]
 fn format_matrix_if_correct_number_of_args() {
@@ -52,9 +56,8 @@ fn format_matrix_if_forced_multiline_by_comment() {
 fn main() {
     let x = mat3x3(
         cosR,
-        1.0
-        // Breaky
-        , 1.0,
+        1.0, // Breaky
+        1.0,
         sinR,
         0.0, 1.0, 0.0,
         -sinR, 0.0,
@@ -63,7 +66,8 @@ fn main() {
         expect![[r#"
             fn main() {
                 let x = mat3x3(
-                        cosR, 1.0, // Breaky
+                        cosR,
+                        1.0, // Breaky
                         1.0,
                         sinR, 0.0, 1.0,
                         0.0, -sinR, 0.0,
@@ -91,9 +95,11 @@ fn main() {
         expect![[r#"
             fn main() {
                 let x = mat3x3(
-                        cosR, do_thing(
+                        cosR,
+                        do_thing(
                             1.0, // Breaky
-                        ), 1.0,
+                        ),
+                        1.0,
                         sinR, 0.0, 1.0,
                         0.0, -sinR, 0.0,
                     );
@@ -120,10 +126,12 @@ fn main() {
             //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
             fn main() {
                 let x = mat3x3(
-                        cosR, do_thing(
+                        cosR,
+                        do_thing(
                             aaaaaaaaaaaaaaaaaaa + bbbbbbbbbbbbbbbbbbb + cccccccccccccccc
                             + dddddddddddddddd + eeeeeeeeeeee,
-                        ), 1.0,
+                        ),
+                        1.0,
                         sinR, 1.0, 0.0,
                         0.0, -sinR, 0.0,
                     );
@@ -135,7 +143,7 @@ fn main() {
 #[test]
 fn format_matrix_break_mat_lines_if_forced_multiline_by_line_length() {
     // I don't think this looks too bad - but there was no big discussion on how we should handle this
-    check(
+    check_with_options(
         "
         //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
 fn main() {
@@ -146,7 +154,7 @@ fn main() {
         -sinR, 0.0,
     );
 }",
-        expect![[r#"
+        &expect![[r#"
             //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
             fn main() {
                 let x = mat3x3(
@@ -158,6 +166,15 @@ fn main() {
                     );
             }
         "#]],
+        &CheckOptions {
+            assert_line_width: None,
+            formatting: FormattingOptions {
+                max_line_width: 80,
+                ..Default::default()
+            }
+            ,
+        },
+        Edition::default(),
     );
 }
 

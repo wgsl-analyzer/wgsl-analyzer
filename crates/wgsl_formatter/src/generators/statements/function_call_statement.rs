@@ -20,7 +20,7 @@ use crate::{
         gen_node_content, gen_node_preceding_trivia, gen_node_succeeding_trivia,
         gen_node_with_trivia,
     },
-    multiline_group::MultilineGroup,
+    multiline_group::{self, MultilineGroup},
     print_item_buffer::{
         PrintItemBuffer,
         spacing_request::{Request, RequestItem},
@@ -223,46 +223,43 @@ pub fn gen_function_call_arguments_tabular(
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
 
-    let mut multiline_group = MultilineGroup::new(&mut formatted);
-
-    multiline_group.push_sc(sc!("("));
+    formatted.push_sc(sc!("("));
+    formatted.start_indent();
 
     // If its blank we do not give the formatter the option to break within the ()
     if !item_arguments.is_empty() {
-        multiline_group.start_indent();
+        for row in &item_arguments.into_iter().chunks(table_columns) {
+            // A row always starts on a new line
+            formatted.request(Request::expect(RequestItem::LineBreak));
+            let mut multiline_group = MultilineGroup::new(&mut formatted);
+            for (position, column) in row.with_position() {
+                if position == Position::First || position == Position::Only {
+                    // TODO The first item does not need to be separated by a space nor a newline - because thats already handled by the row,
+                    // however requests wont be merged because multilinegroup resets it.
+                    multiline_group.request(Request::discourage(RequestItem::Space));
+                    multiline_group.request(Request::discourage(RequestItem::LineBreak));
+                } else {
+                    multiline_group.grouped_newline_or_space();
+                }
 
-        for (item_index, item) in item_arguments.into_iter().enumerate() {
-            // Separated Items only start on a new line if they are the first of a table
-            if item_index % table_columns == 0 {
-                multiline_group.request(Request::expect(RequestItem::LineBreak));
-            } else {
-                multiline_group.request(Request::expect(RequestItem::Space));
-            }
-            multiline_group.extend(gen_node_preceding_trivia(&item)?);
-            multiline_group.extend(gen_node_content(&item)?);
-            multiline_group.request(Request::discourage(RequestItem::Space));
-            // The separator is always immediately after the item
-            if item_index == item_count - 1 {
-                multiline_group.extend_if_multi_line({
-                    let mut pi = PrintItems::default();
-                    pi.push_sc(sc!(","));
-                    pi
-                });
-            } else {
+                multiline_group.extend(gen_node_preceding_trivia(&column)?);
+                multiline_group.extend(gen_node_content(&column)?);
+                multiline_group.request(Request::discourage(RequestItem::Space));
+                // We know that there is always a separator - even on the final item
                 multiline_group.push_sc(sc!(","));
+                multiline_group.extend(gen_node_succeeding_trivia(&column)?);
             }
-
-            multiline_group.extend(gen_node_succeeding_trivia(&item)?);
+            // TODO Discourage LineBreaks at the end - as the multilinegroup would immediately apply them
+            // and they wouldn't get merged with the linebreak from starting a new row
+            // TODO This won't help with line-comments as they force it. A proper solution would be to allow requests to propagate through multilinegroup.end()
+            multiline_group.request(Request::discourage(RequestItem::LineBreak));
+            multiline_group.end();
         }
+        formatted.request(Request::expect(RequestItem::LineBreak));
     }
 
-    multiline_group.request(Request::discourage(RequestItem::Space));
-    multiline_group.grouped_possible_newline();
-    multiline_group.finish_indent();
-
-    multiline_group.push_sc(sc!(")"));
-
-    multiline_group.end();
+    formatted.finish_indent();
+    formatted.push_sc(sc!(")"));
 
     Ok(formatted)
 }
