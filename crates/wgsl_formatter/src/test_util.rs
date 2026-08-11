@@ -116,6 +116,7 @@ pub fn assert_out_of_scope(
     }
 }
 
+#[derive(Default)]
 pub struct CheckOptions {
     pub assert_line_width: Option<usize>,
     pub formatting: FormattingOptions,

@@ -76,15 +76,20 @@ pub fn format_comment_position_in_multiline_expression() {
 #[test]
 pub fn format_infix_expr_very_long_break_outer_first() {
     check(
-        "fn main() {
+        "
         //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
+        fn main() {
         let aaaaaaaaaaaaa = 1 + 1 + long_function(aaaaaaaaaaa, bbbbbbbbbbb, ccccccccccccc, dddddddddddddd);
         }",
         expect![[r#"
+            //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
             fn main() {
-                //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
-                let aaaaaaaaaaaaa = 1 + 1
-                    + long_function(aaaaaaaaaaa, bbbbbbbbbbb, ccccccccccccc, dddddddddddddd);
+                let aaaaaaaaaaaaa = 1 + 1 + long_function(
+                        aaaaaaaaaaa,
+                        bbbbbbbbbbb,
+                        ccccccccccccc,
+                        dddddddddddddd,
+                    );
             }
         "#]],
     );
@@ -93,13 +98,14 @@ pub fn format_infix_expr_very_long_break_outer_first() {
 #[test]
 pub fn format_field_expr_deeply_nested() {
     check(
-        "fn main() {
+        "
         //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
+        fn main() {
         let a = foo.baaaaaar.booooooooor.buuuuuuuuuuur.biiiiiiiiir.beeeeeeer.buuuuuuuur.boooooooor.baaaaaaaaaaar.biiiiiiiiiiir.beeeeeeeeer;
         }",
         expect![[r#"
+            //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
             fn main() {
-                //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
                 let a = foo.baaaaaar.booooooooor.buuuuuuuuuuur.biiiiiiiiir.beeeeeeer
                         .buuuuuuuur.boooooooor.baaaaaaaaaaar.biiiiiiiiiiir.beeeeeeeeer;
             }
@@ -110,13 +116,14 @@ pub fn format_field_expr_deeply_nested() {
 #[test]
 pub fn format_index_expr_chained_breaks_in_the_middle() {
     check(
-        "fn main() {
+        "
         //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
+        fn main() {
         let a = aaaaaaaaa[bbbbbbbbbbbbbbb][cccccccccccc][ddddddddddddd][eeeeeeeeeeeee][ffffffffffffff];
         }",
         expect![[r#"
+            //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
             fn main() {
-                //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
                 let a = aaaaaaaaa[bbbbbbbbbbbbbbb][cccccccccccc][ddddddddddddd][
                         eeeeeeeeeeeee
                     ][ffffffffffffff];
@@ -128,13 +135,14 @@ pub fn format_index_expr_chained_breaks_in_the_middle() {
 #[test]
 pub fn format_index_expr_nested_breaks_outside_in() {
     check(
-        "fn main() {
+        "
         //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
+        fn main() {
         let a = aaaaaaaaa[bbbbbbbbbbbbbbb[cccccccccccc[dddddddddddd[eeeeeeeeeeeeeee[ffffffffffffff]]]]];
         }",
         expect![[r#"
+            //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
             fn main() {
-                //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
                 let a = aaaaaaaaa[
                         bbbbbbbbbbbbbbb[
                             cccccccccccc[dddddddddddd[eeeeeeeeeeeeeee[ffffffffffffff]]]

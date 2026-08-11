@@ -1,6 +1,6 @@
 use expect_test::expect;
 
-use crate::test_util::{assert_out_of_scope, check};
+use crate::test_util::{CheckOptions, assert_out_of_scope, check, check_with_options};
 
 #[test]
 pub fn format_fn_body_collapses_empty_body() {
@@ -189,18 +189,23 @@ fn format_fn_header_parameter_with_long_type_and_name() {
 
 #[test]
 pub fn format_type_next_to_long_parameter_does_not_get_broken_into_multiple_lines() {
-    check(
+    check_with_options(
         "
         fn a(
         a: texture_2d<f32>,
         bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb: f32
         ) {}
         ",
-        expect![[r#"
+        &expect![[r#"
             fn a(
                 a: texture_2d<f32>,
                 bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb: f32,
             ) {}
         "#]],
+        &CheckOptions {
+            assert_line_width: None,
+            ..Default::default()
+        },
+        parser::Edition::LATEST
     );
 }

@@ -56,21 +56,21 @@ pub fn format_break_if_statement_without_continuing() {
 fn format_long_break_if_statement_gets_indented_correctly() {
     check_with_options(
         "
+        //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
         fn main() {
             loop{
             continuing {
 
-            //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
             break if  aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa< bbbbbbbbbbbbbbbbbbbbb;
             }
             }
         }
         ",
         &expect![[r#"
+            //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
             fn main() {
                 loop {
                     continuing {
-                        //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
                         break if aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
                             < bbbbbbbbbbbbbbbbbbbbb;
                     }
