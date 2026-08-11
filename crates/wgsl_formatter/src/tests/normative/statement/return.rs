@@ -25,14 +25,14 @@ return (1);
 fn format_long_return_statement_gets_indented_correctly() {
     check_with_options(
         "
+        //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
         fn main() {
-            //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
             return aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa+ bbbbbbbbbbbbbbbbbbbbbb;
         }
         ",
         &expect![[r#"
+            //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
             fn main() {
-                //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
                 return aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
                     + bbbbbbbbbbbbbbbbbbbbbb;
             }

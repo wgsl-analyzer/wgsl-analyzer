@@ -40,14 +40,16 @@ fn format_fn_header_no_return_1() {
 
 #[test]
 fn format_fn_header_long_name() {
-    check(
+    check_with_options(
         "fn  this_is_a_very_long_name_who_knows_when_it_will_end_because_it_just_goes_on_and_on_and_on( a :  b,c:d )  -> f32   {}",
-        expect![["
+        &expect![["
             fn this_is_a_very_long_name_who_knows_when_it_will_end_because_it_just_goes_on_and_on_and_on(
                 a: b,
                 c: d,
             ) -> f32 {}
             "]],
+        &CheckOptions { assert_line_width: None, formatting: FormattingOptions::default() },
+        Edition::LATEST
     );
 }
 

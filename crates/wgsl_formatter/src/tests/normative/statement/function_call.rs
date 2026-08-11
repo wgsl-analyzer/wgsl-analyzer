@@ -2,7 +2,7 @@ use expect_test::expect;
 
 use crate::{
     FormattingOptions,
-    test_util::{check, check_with_options},
+    test_util::{CheckOptions, check, check_with_options},
 };
 
 #[test]
@@ -136,21 +136,24 @@ pub fn format_function_call_multiline_arguments_keeps_comments_in_position() {
 #[test]
 fn format_long_function_call_without_arguments_does_not_break_within_parens() {
     check_with_options(
-        "fn main() {
-            //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
+        "
+        //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
+        fn main() {
             long_name_function_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa();
         }",
         &expect![[r#"
+            //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
             fn main() {
-                //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
                 long_name_function_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa();
             }
         "#]],
-        &FormattingOptions {
-            max_line_width: 80,
-            ..Default::default()
-        }
-        .into(),
+        &CheckOptions {
+            assert_line_width: None,
+            formatting: FormattingOptions {
+                max_line_width: 80,
+                ..Default::default()
+            },
+        },
         parser::Edition::LATEST,
     );
 }
@@ -163,14 +166,14 @@ pub fn format_long_function_call_linewidth_within_inner_break_outer_arguments_le
     // would be enough
     check_with_options(
         "
+        //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
         fn main() {
-            //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
             let a = thing(aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,bla(2,aaaaaaaaa));
         }
         ",
         &expect![[r#"
+            //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
             fn main() {
-                //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
                 let a = thing(
                         aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,
                         bla(2, aaaaaaaaa),
@@ -187,29 +190,32 @@ pub fn format_long_function_call_linewidth_within_inner_break_outer_arguments_le
 
 #[test]
 pub fn format_long_function_call_linewidth_outside_inner_break_outer_arguments_leave_inner_alone() {
-    // Please note that the amount of "aaaa" in this test is carefully chosen to play with the line lengths.
+    // Please note that the amount of characters in this test is carefully chosen to play with the line lengths.
     // This the amount of aaa is such that, breaking the inner argument would still not satisfy the line width
     // requirement.
     check_with_options(
         "
+        //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
         fn main() {
-            //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
-            let a = thing(aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,bla(2,aaaaaaaaa));
+            let a = thing(carefully_chosen_amount_of_characters_xx_do_not_change_do_not_change,bla(2,aaaaaaaaa));
         }
         ",
         &expect![[r#"
+            //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
             fn main() {
-                //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
                 let a = thing(
-                        aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,
+                        carefully_chosen_amount_of_characters_xx_do_not_change_do_not_change,
                         bla(2, aaaaaaaaa),
                     );
             }
         "#]],
-        &FormattingOptions {
-            max_line_width: 80,
-            ..Default::default()
-        }.into(),
+        &CheckOptions {
+            assert_line_width: None,
+            formatting: FormattingOptions {
+                max_line_width: 80,
+                ..Default::default()
+            },
+        },
         parser::Edition::LATEST
     );
 }
@@ -221,14 +227,14 @@ pub fn format_long_function_call_prefer_to_break_arguments_over_path() {
     // requirement.
     check_with_options(
         "
+        //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
         fn main() {
-            //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
             let a = thing::blaaaaa::thing::blaaa::thing::blaaaaaaaaaaaaaaaaaaaa::thing(aaaa,bbbb,ccc,ddd);
         }
         ",
         &expect![[r#"
+            //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
             fn main() {
-                //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
                 let a = thing::blaaaaa::thing::blaaa::thing::blaaaaaaaaaaaaaaaaaaaa::thing(
                         aaaa,
                         bbbb,
@@ -252,14 +258,14 @@ pub fn format_long_function_call_break_path_if_necessary_but_keep_arguments_alon
     // requirement.
     check_with_options(
         "
+        //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
         fn main() {
-            //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
             let a = thing::blaaaaa::thing::blaaa::thing::blaaaaaaaaaaaaaaaaaaaa::thing::loooong::paaath(aaaa,bbbb,ccc,ddd);
         }
         ",
         &expect![[r#"
+            //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
             fn main() {
-                //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
                 let a = thing::blaaaaa::thing::blaaa::thing::blaaaaaaaaaaaaaaaaaaaa::thing
                         ::loooong::paaath(aaaa, bbbb, ccc, ddd);
             }

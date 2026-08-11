@@ -1,6 +1,10 @@
 use expect_test::expect;
+use parser::Edition;
 
-use crate::test_util::{assert_out_of_scope, check, check_comments};
+use crate::{
+    FormattingOptions,
+    test_util::{CheckOptions, assert_out_of_scope, check, check_comments, check_with_options},
+};
 
 #[test]
 pub fn format_naked_paren_exprs_out_of_scope() {
@@ -34,11 +38,11 @@ pub fn format_paren_expr_simple() {
 #[test]
 pub fn format_paren_expr_deep_right_associated() {
     //TODO(MonaMayrhofer,discuss) This is awful. Have another look at how this should be formatted, once more test cases for more common parenthesised expressions are there
-    check(
+    check_with_options(
         "fn main() {
         let a = 1+ (1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+1)))))))))))))))))))));
         }",
-        expect![[r#"
+        &expect![[r#"
             fn main() {
                 let a = 1
                     + (1
@@ -65,17 +69,22 @@ pub fn format_paren_expr_deep_right_associated() {
                                                                                                         + 1)))))))))))))))))))));
             }
         "#]],
+        &CheckOptions {
+            assert_line_width: None,
+            ..Default::default()
+        },
+        Edition::LATEST
     );
 }
 
 #[test]
 pub fn format_paren_expr_deep_left_associated() {
     //TODO(MonaMayrhofer,discuss) This is beyond awful. Have another look at how this should be formatted, once more test cases for more common parenthesised expressions are there
-    check(
+    check_with_options(
         "fn main() {
         let a = 1+ ((((((((((((((((((((((((((((1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1);
         }",
-        expect![[r#"
+        &expect![[r#"
             fn main() {
                 let a = 1
                     + ((((((((((((((((((((((((((((1) + 1) + 1) + 1) + 1) + 1) + 1) + 1) + 1)
@@ -89,6 +98,11 @@ pub fn format_paren_expr_deep_left_associated() {
                             + 1) + 1);
             }
         "#]],
+        &CheckOptions {
+            assert_line_width: None,
+            ..Default::default()
+        },
+        Edition::LATEST
     );
 }
 

@@ -23,13 +23,14 @@ fn format_assignment_statement_parenthesis() {
 #[test]
 fn format_long_assignment_statement_gets_indented_correctly() {
     check_with_options(
-        "fn main() {
-            //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
+        "
+        //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
+        fn main() {
             a = long_name_function_aaaaaaaaaa() + long_name_function_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa();
         }",
         &expect![[r#"
+            //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
             fn main() {
-                //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
                 a = long_name_function_aaaaaaaaaa()
                     + long_name_function_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa();
             }
@@ -45,13 +46,14 @@ fn format_long_assignment_statement_gets_indented_correctly() {
 #[test]
 fn format_long_phony_statement_gets_indented_correctly() {
     check_with_options(
-        "fn main() {
-            //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
+        "
+        //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
+        fn main() {
             _ = long_name_function_aaaaaaaaaa() + long_name_function_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa();
         }",
         &expect![[r#"
+            //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
             fn main() {
-                //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
                 _ = long_name_function_aaaaaaaaaa()
                     + long_name_function_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa();
             }

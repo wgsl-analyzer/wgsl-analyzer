@@ -1,6 +1,10 @@
 use expect_test::expect;
+use parser::Edition;
 
-use crate::test_util::{check, check_comments};
+use crate::{
+    FormattingOptions,
+    test_util::{CheckOptions, check, check_comments, check_with_options},
+};
 
 #[test]
 pub fn format_function_call_statement() {
@@ -34,15 +38,25 @@ pub fn format_2_function_call_statements() {
 
 #[test]
 pub fn format_insanely_long_function_call_statement() {
-    check(
+    check_with_options(
         "fn main() {
+        //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
         foo_efek_felkj_soiu_flejk_lkjef_aoieu_flkejfalk_lkjeifou_flj_lkjsieuf_flkj_Ljklllefjief();
         }",
-        expect![[r#"
+        &expect![[r#"
             fn main() {
+                //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
                 foo_efek_felkj_soiu_flejk_lkjef_aoieu_flkejfalk_lkjeifou_flj_lkjsieuf_flkj_Ljklllefjief();
             }
         "#]],
+        &CheckOptions {
+            assert_line_width: None,
+            formatting: FormattingOptions {
+                max_line_width: 80,
+                ..Default::default()
+            },
+        },
+        Edition::LATEST,
     );
 }
 
