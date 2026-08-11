@@ -42,8 +42,8 @@ pub fn gen_for_statement(statement: &ast::ForStatement) -> FormatDocumentResult<
     formatted.extend(gen_node_with_trivia(&item_for)?);
     formatted.push_sc(sc!("("));
 
-    let mut multiline_group = MultilineGroup::new(&mut formatted);
-    multiline_group.start_indent();
+    let mut multiline_group = MultilineGroup::new_before_requests(&mut formatted);
+    multiline_group.start_indent_before_requests();
 
     multiline_group.grouped_newline_or_space();
     if let Some(item_initializer) = item_initializer {
@@ -78,7 +78,7 @@ pub fn gen_for_statement(statement: &ast::ForStatement) -> FormatDocumentResult<
 
     multiline_group.push_sc(sc!(")"));
 
-    multiline_group.end();
+    multiline_group.end_before_requests();
 
     formatted.request(Request::expect(RequestItem::Space));
     formatted.extend(gen_node_with_trivia(&item_body)?);

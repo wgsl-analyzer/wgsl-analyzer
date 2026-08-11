@@ -268,10 +268,10 @@ pub fn gen_import_collection(
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
 
-    let mut group = MultilineGroup::new(&mut formatted);
+    let mut group = MultilineGroup::new_before_requests(&mut formatted);
     group.push_sc(sc!("{"));
 
-    group.start_indent();
+    group.start_indent_before_requests();
 
     for (position, (item, _)) in items.iter().with_position() {
         group.extend(gen_node_with_trivia(item)?);
@@ -290,7 +290,7 @@ pub fn gen_import_collection(
 
     group.push_sc(sc!("}"));
 
-    group.end();
+    group.end_before_requests();
 
     Ok(formatted)
 }
