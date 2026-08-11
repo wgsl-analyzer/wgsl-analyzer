@@ -9,8 +9,9 @@ use lsp_types::{
     FileOperationRegistrationOptions, FoldingRangeProvider, HoverProvider, InlayHintOptions,
     InlayHintProvider, MarkupKind, PositionEncodingKind, ResourceOperationKind, Save, SaveOptions,
     SelectionRangeProvider, ServerCapabilities, ServerCompletionItemOptions, SignatureHelpOptions,
-    TextDocumentSync, TextDocumentSyncKind, TextDocumentSyncOptions, WorkDoneProgressOptions,
-    WorkspaceFoldersServerCapabilities, WorkspaceOptions,
+    TextDocumentContent, TextDocumentContentOptions, TextDocumentSync, TextDocumentSyncKind,
+    TextDocumentSyncOptions, WorkDoneProgressOptions, WorkspaceFoldersServerCapabilities,
+    WorkspaceOptions,
 };
 use rustc_hash::FxHashSet;
 
@@ -129,7 +130,9 @@ pub fn server_capabilities(config: &Config) -> ServerCapabilities {
                 did_delete: None,
                 will_delete: None,
             }),
-            text_document_content: None,
+            text_document_content: Some(TextDocumentContent::Options(TextDocumentContentOptions {
+                schemes: vec![vfs::VirtualPath::SCHEME.to_owned()],
+            })),
         }),
         call_hierarchy_provider: None, // TODO https://github.com/wgsl-analyzer/wgsl-analyzer/issues/343
         semantic_tokens_provider: None, // TODO https://github.com/wgsl-analyzer/wgsl-analyzer/issues/342

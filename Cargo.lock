@@ -1904,6 +1904,7 @@ dependencies = [
  "triomphe",
  "vfs",
  "vfs-notify",
+ "wgsl-std",
  "windows-sys 0.61.2",
  "xflags",
 ]
