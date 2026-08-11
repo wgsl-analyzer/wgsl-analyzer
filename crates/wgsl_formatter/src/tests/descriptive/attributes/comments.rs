@@ -544,17 +544,22 @@ pub fn format_comments_in_diagnostic_attr_simple_1() {
     check_comments(
         "## @ ## diagnostic ## ( ## off ## , ## something ## ) ## fn ## main() {}",
         expect![[r#"
-            /* 0 */ @ /* 1 */ diagnostic /* 2 */ ( /* 3 */ off /* 4 */ , /* 5 */ something /* 6 */ )
+            /* 0 */ @ /* 1 */ diagnostic /* 2 */ (
+                /* 3 */ off /* 4 */ ,
+                /* 5 */ something /* 6 */
+            )
             /* 7 */ fn /* 8 */ main() {}
         "#]],
         expect![[r#"
             // 0
             @ // 1
             diagnostic // 2
-            ( // 3
-            off // 4
-            , // 5
-            something // 6
+            (
+                // 3
+                off // 4
+                ,
+                // 5
+                something // 6
             )
             // 7
             fn // 8

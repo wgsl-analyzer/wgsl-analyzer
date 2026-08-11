@@ -5,6 +5,7 @@ use syntax::{AstNode as _, ast};
 use crate::{
     ast_parse::{IgnoreBlankspace, NoTrivia, parse_end, parse_node_with, syntax_iter},
     generators::node::gen_node_with_trivia,
+    multiline_group::MultilineGroup,
     print_item_buffer::{
         PrintItemBuffer,
         spacing_request::{Request, RequestItem},
@@ -27,12 +28,18 @@ pub fn gen_diagnostic_control(
     parse_end(&mut syntax)?;
 
     let mut formatted = PrintItemBuffer::default();
-    formatted.push_sc(sc!("("));
-    formatted.extend(gen_node_with_trivia(&item_control_name)?);
-    formatted.push_sc(sc!(","));
-    formatted.request(Request::expect(RequestItem::Space));
-    formatted.extend(gen_node_with_trivia(&item_rule_name)?);
-    formatted.push_sc(sc!(")"));
+    let mut multiline_group = MultilineGroup::new(&mut formatted);
+    multiline_group.push_sc(sc!("("));
+    multiline_group.start_indent();
+    multiline_group.grouped_possible_newline();
+    multiline_group.extend(gen_node_with_trivia(&item_control_name)?);
+    multiline_group.push_sc(sc!(","));
+    multiline_group.grouped_newline_or_space();
+    multiline_group.extend(gen_node_with_trivia(&item_rule_name)?);
+    multiline_group.finish_indent();
+    multiline_group.grouped_possible_newline();
+    multiline_group.push_sc(sc!(")"));
+    multiline_group.end();
     Ok(formatted)
 }
 
