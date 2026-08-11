@@ -35,7 +35,7 @@ pub fn gen_break_if_statement(
     formatted.request(Request::expect(RequestItem::Space));
     formatted.extend(gen_node_with_trivia(&item_if)?);
     formatted.start_indent();
-    formatted.request(Request::expect(RequestItem::Space));
+    formatted.request(Request::expect(RequestItem::Space).or_newline());
     formatted.extend(gen_node_with_trivia(&item_condition)?);
     formatted.request(Request::discourage(RequestItem::Space));
     if statement_needs_semicolon_policy(statement.syntax()) {

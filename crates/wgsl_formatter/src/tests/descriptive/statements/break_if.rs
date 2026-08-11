@@ -148,7 +148,8 @@ pub fn format_comments_in_loop_continuing_break_if_with_needless_parens_statemen
             fn main() {
                 /* 0 */ loop /* 1 */ {
                     /* 2 */ continuing /* 3 */ {
-                        /* 4 */ break /* 5 */ if /* 6 */ /* 7 */ false /* 8 */ /* 9 */; /* 10 */ /* 11 */
+                        /* 4 */ break /* 5 */ if
+                            /* 6 */ /* 7 */ false /* 8 */ /* 9 */; /* 10 */ /* 11 */
                     }
                     /* 12 */
                 }
