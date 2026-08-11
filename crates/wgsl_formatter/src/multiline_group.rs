@@ -59,11 +59,21 @@ impl<'buffer> MultilineGroup<'buffer> {
         formatted.push_info_before_requests(start_ln);
         formatted.push_anchor_before_requests(LineNumberAnchor::new(end_ln));
 
+        let mut start_nl_condition = conditions::if_true_or(
+            "paramMultilineStartIndent",
+            Rc::clone(&is_multiple_lines),
+            PrintItems::default(),
+            PrintItems::default(),
+        );
+
+        let start_reeval = Some(start_nl_condition.create_reevaluation());
+        formatted.push_condition_before_requests(start_nl_condition);
+
         Self {
             buffer: formatted,
             is_multiple_lines,
             end_ln,
-            start_reeval: None,
+            start_reeval,
 
             #[cfg(debug_assertions)]
             state: MultilineGroupState::New,
@@ -73,7 +83,7 @@ impl<'buffer> MultilineGroup<'buffer> {
     #[deprecated]
     pub fn start_indent(&mut self) {
         self.apply_end_request();
-        self.start_indent_before_requests();
+        self.start_indent_with_newline_before_requests();
     }
 
     pub fn start_indent_before_requests(&mut self) {
@@ -87,39 +97,26 @@ impl<'buffer> MultilineGroup<'buffer> {
             self.state = MultilineGroupState::StartedIndent;
         }
 
-        // TODO I wonder if we can get rid of this thing inserting newlines here...
-        let mut start_nl_condition = conditions::if_true_or(
-            "paramMultilineStartIndent",
-            Rc::clone(&self.is_multiple_lines),
-            {
-                let mut pi = PrintItems::default();
-                pi.push_signal(Signal::NewLine);
-                pi
-            },
-            {
-                let mut pi = PrintItems::default();
-                pi.push_signal(Signal::PossibleNewLine);
-                pi
-            },
-        );
-        self.start_reeval = Some(start_nl_condition.create_reevaluation());
-        self.buffer
-            .push_condition_before_requests(start_nl_condition);
+        self.buffer.start_indent_before_requests();
+    }
+
+    #[deprecated]
+    pub fn start_indent_with_newline_before_requests(&mut self) {
+        #[cfg(debug_assertions)]
+        {
+            core::assert_matches!(
+                self.state,
+                MultilineGroupState::New,
+                "MultilineGroup was in wrong state"
+            );
+            self.state = MultilineGroupState::StartedIndent;
+        }
+
         self.buffer.start_indent_before_requests();
 
-        // This is a bit of a shortcoming of the PBI api, this does not really belong into multilinegroup,
-        // and would better be located directly after a "(" token (or whatever was used to open the multilinegroup)
-        // However because pushing the start_nl_condition and the indent will reset any request - it best fits here for now,
-        // until we can move the start_nl_condition to also use the RequestFolder api
-        self.buffer.request(Request::Unconditional {
-            expected: RequestItemSet::empty(),
-            discouraged: RequestItemSet::empty()
-                .extended_by(RequestItem::Space)
-                .extended_by(RequestItem::LineBreak)
-                .extended_by(RequestItem::EmptyLine),
-            forced: RequestItemSet::empty(),
-            suggest_linebreak: false,
-        });
+        self.grouped_possible_newline();
+        self.request(Request::discourage(RequestItem::EmptyLine));
+        self.request(Request::discourage(RequestItem::Space));
     }
 
     pub fn grouped_newline_or_space(&mut self) {

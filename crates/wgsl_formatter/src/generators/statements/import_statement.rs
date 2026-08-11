@@ -271,7 +271,7 @@ pub fn gen_import_collection(
     let mut group = MultilineGroup::new_before_requests(&mut formatted);
     group.push_sc(sc!("{"));
 
-    group.start_indent_before_requests();
+    group.start_indent_with_newline_before_requests();
 
     for (position, (item, _)) in items.iter().with_position() {
         group.extend(gen_node_with_trivia(item)?);

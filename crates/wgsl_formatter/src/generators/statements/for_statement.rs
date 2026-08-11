@@ -43,7 +43,7 @@ pub fn gen_for_statement(statement: &ast::ForStatement) -> FormatDocumentResult<
     formatted.push_sc(sc!("("));
 
     let mut multiline_group = MultilineGroup::new_before_requests(&mut formatted);
-    multiline_group.start_indent_before_requests();
+    multiline_group.start_indent_with_newline_before_requests();
 
     multiline_group.grouped_newline_or_space();
     if let Some(item_initializer) = item_initializer {
