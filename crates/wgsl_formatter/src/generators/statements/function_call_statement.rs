@@ -224,7 +224,7 @@ pub fn gen_function_call_arguments_tabular(
     let mut formatted = PrintItemBuffer::default();
 
     formatted.push_sc(sc!("("));
-    formatted.start_indent();
+    formatted.start_indent_before_requests();
 
     // If its blank we do not give the formatter the option to break within the ()
     if !item_arguments.is_empty() {
@@ -258,7 +258,7 @@ pub fn gen_function_call_arguments_tabular(
         formatted.request(Request::expect(RequestItem::LineBreak));
     }
 
-    formatted.finish_indent();
+    formatted.finish_indent_before_requests();
     formatted.push_sc(sc!(")"));
 
     Ok(formatted)

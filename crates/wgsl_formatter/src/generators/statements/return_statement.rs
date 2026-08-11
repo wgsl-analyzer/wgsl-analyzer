@@ -31,7 +31,7 @@ pub fn gen_return_statement(
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
     formatted.extend(gen_node_with_trivia(&item_return)?);
-    formatted.start_indent();
+    formatted.start_indent_before_requests();
     if let Some(item_expression) = item_expression {
         formatted.request(Request::expect(RequestItem::Space));
         formatted.extend(gen_node_with_trivia(&item_expression)?);
@@ -41,7 +41,7 @@ pub fn gen_return_statement(
         formatted.request(Request::discourage(RequestItem::Space));
         formatted.push_sc(sc!(";"));
     }
-    formatted.finish_indent();
+    formatted.finish_indent_before_requests();
     Ok(formatted)
 }
 

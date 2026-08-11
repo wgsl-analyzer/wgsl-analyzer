@@ -129,12 +129,12 @@ pub fn gen_import_path(node: &ast::ImportPath) -> FormatDocumentResult<PrintItem
     let mut formatted = PrintItemBuffer::default();
 
     formatted.extend(gen_node_with_trivia(&item_name)?);
-    formatted.start_indent();
+    formatted.start_indent_before_requests();
     formatted.start_new_line_group();
     formatted.request(Request::empty().or_newline());
     formatted.push_sc(sc!("::"));
     formatted.finish_new_line_group();
-    formatted.finish_indent();
+    formatted.finish_indent_before_requests();
 
     if let Some(path) = item_path_rest {
         formatted.extend(gen_node_with_trivia(&path)?);

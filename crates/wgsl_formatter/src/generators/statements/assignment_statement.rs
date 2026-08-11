@@ -41,13 +41,13 @@ pub fn gen_assignment_statement(
     formatted.request(Request::expect(RequestItem::Space));
     formatted.push_sc(sc!("="));
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.start_indent();
+    formatted.start_indent_before_requests();
     formatted.extend(gen_node_with_trivia(&item_value)?);
     if statement_needs_semicolon_policy(assignment_statement.syntax()) {
         formatted.request(Request::discourage(RequestItem::Space));
         formatted.push_sc(sc!(";"));
     }
-    formatted.finish_indent();
+    formatted.finish_indent_before_requests();
     Ok(formatted)
 }
 
@@ -76,13 +76,13 @@ pub fn gen_phony_assignment_statement(
     formatted.request(Request::expect(RequestItem::Space));
     formatted.push_sc(sc!("="));
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.start_indent();
+    formatted.start_indent_before_requests();
     formatted.extend(gen_node_with_trivia(&item_value)?);
     if statement_needs_semicolon_policy(phony_assignment_statement.syntax()) {
         formatted.request(Request::discourage(RequestItem::Space));
         formatted.push_sc(sc!(";"));
     }
-    formatted.finish_indent();
+    formatted.finish_indent_before_requests();
     Ok(formatted)
 }
 
@@ -112,13 +112,13 @@ pub fn gen_compound_assignment_statement(
     formatted.request(Request::expect(RequestItem::Space));
     formatted.extend(gen_node_with_trivia(&item_operator)?);
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.start_indent();
+    formatted.start_indent_before_requests();
     formatted.extend(gen_node_with_trivia(&item_value)?);
     if statement_needs_semicolon_policy(compound_assignment_statement.syntax()) {
         formatted.request(Request::discourage(RequestItem::Space));
         formatted.push_sc(sc!(";"));
     }
-    formatted.finish_indent();
+    formatted.finish_indent_before_requests();
     Ok(formatted)
 }
 
