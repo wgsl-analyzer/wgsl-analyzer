@@ -15,7 +15,7 @@ pub fn gen_field_expression(
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = syntax_iter(field_expression.syntax());
-    let item_struct_expr =
+    let item_expression =
         parse_node_with(&mut syntax, IgnoreBlankspace).expect_castable_kind::<ast::Expression>()?;
     let item_period =
         parse_node_with(&mut syntax, NoTrivia).expect_kind(parser::SyntaxKind::Period)?;
@@ -25,11 +25,13 @@ pub fn gen_field_expression(
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
-    formatted.extend(gen_node_with_trivia(&item_struct_expr)?);
+    formatted.start_new_line_group_before_requests();
+    formatted.extend(gen_node_with_trivia(&item_expression)?);
     formatted.start_indent_before_requests();
     formatted.request(Request::empty().or_newline());
     formatted.extend(gen_node_with_trivia(&item_period)?);
     formatted.extend(gen_node_with_trivia(&item_target_ident)?);
     formatted.finish_indent_before_requests();
+    formatted.finish_new_line_group_before_requests();
     Ok(formatted)
 }
