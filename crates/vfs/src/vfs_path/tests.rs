@@ -43,3 +43,12 @@ fn root_virtual_path() {
         ))))
     );
 }
+
+#[test]
+fn virtual_path_components() {
+    let path = VirtualPath::new("/foo/bar/cat.wesl".to_owned());
+    let mut components = path.components();
+    assert_eq!(components.next(), Some("foo"));
+    assert_eq!(components.next(), Some("bar"));
+    assert_eq!(components.next(), Some("cat.wesl"));
+}
