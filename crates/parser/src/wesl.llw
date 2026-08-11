@@ -147,6 +147,17 @@ part expression;
 part statement;
 part type_specifier;
 
+attribute_list: attribute*;
+
+translation_unit: (global_item | ';')*;
+global_item^:
+	attribute_list (
+	#1 import_statement
+	| #2 global_directive
+	| #3 global_declaration
+	| #3 global_assert
+);
+
 // WESL: Import statements
 import_statement: 'import' [import_package_relative | import_super_relative] (import_collection | import_path) ';';
 import_package_relative: 'package' '::';
@@ -158,15 +169,6 @@ import_path: name (
 
 import_collection: '{' import_path (?1 ',' import_path)* [','] '}';
 
-translation_unit: (attribute_list global_item | ';')*;
-global_item^:
-	#2 import_statement
-	| #1 global_directive
-	| #2 global_declaration
-	| #2 global_assert
-;
-
-global_assert: 'const_assert' expression ';' @assert_statement; // §10
 global_directive:
 	'diagnostic' diagnostic_control ';' @diagnostic_directive // §4.2
 	| 'enable' enable_extension_name (?1 ',' enable_extension_name)* [','] ';' @enable_directive // §4.1.1
@@ -178,6 +180,8 @@ severity_control_name: Identifier;
 diagnostic_rule_name: Identifier ['.' Identifier];
 enable_extension_name: Identifier;
 language_extension_name: Identifier;
+
+global_assert: 'const_assert' expression ';' @assert_statement; // §10
 
 global_declaration:
 	'fn' name function_parameters [return_type] attribute_list !1 compound_statement @function_declaration
@@ -449,5 +453,3 @@ lhs_expression:
 	| '(' lhs_expression ')' @paren_expression // §8.4
 	| path @ident_expression
 ;
-
-attribute_list: attribute*;
