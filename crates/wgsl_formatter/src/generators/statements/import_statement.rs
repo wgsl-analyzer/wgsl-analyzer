@@ -14,7 +14,7 @@ use crate::{
     },
     context_policies::statement_needs_semicolon_policy,
     generators::node::gen_node_with_trivia,
-    multiline_group::{self, MultilineGroup},
+    multiline_group::MultilineGroup,
     print_item_buffer::{
         PrintItemBuffer,
         spacing_request::{Request, RequestItem},
@@ -130,10 +130,10 @@ pub fn gen_import_path(node: &ast::ImportPath) -> FormatDocumentResult<PrintItem
 
     formatted.extend(gen_node_with_trivia(&item_name)?);
     formatted.start_indent_before_requests();
-    formatted.start_new_line_group();
+    formatted.start_new_line_group_before_requests();
     formatted.request(Request::empty().or_newline());
     formatted.push_sc(sc!("::"));
-    formatted.finish_new_line_group();
+    formatted.finish_new_line_group_before_requests();
     formatted.finish_indent_before_requests();
 
     if let Some(path) = item_path_rest {
