@@ -44,12 +44,17 @@ pub struct MultilineGroup<'buffer> {
 }
 
 impl<'buffer> MultilineGroup<'buffer> {
+    #[deprecated]
     pub fn new(formatted: &'buffer mut PrintItemBuffer) -> Self {
+        formatted.apply_end_request();
+        Self::new_before_requests(formatted)
+    }
+
+    pub fn new_before_requests(formatted: &'buffer mut PrintItemBuffer) -> Self {
         let start_ln = LineNumber::new("start");
         let end_ln = LineNumber::new("end");
         let is_multiple_lines = create_is_multiple_lines_resolver(start_ln, end_ln);
 
-        formatted.apply_end_request();
         formatted.start_new_line_group_before_requests();
         formatted.push_info_before_requests(start_ln);
         formatted.push_anchor_before_requests(LineNumberAnchor::new(end_ln));
@@ -65,7 +70,13 @@ impl<'buffer> MultilineGroup<'buffer> {
         }
     }
 
+    #[deprecated]
     pub fn start_indent(&mut self) {
+        self.apply_end_request();
+        self.start_indent_before_requests();
+    }
+
+    pub fn start_indent_before_requests(&mut self) {
         #[cfg(debug_assertions)]
         {
             core::assert_matches!(
@@ -92,7 +103,6 @@ impl<'buffer> MultilineGroup<'buffer> {
             },
         );
         self.start_reeval = Some(start_nl_condition.create_reevaluation());
-        self.buffer.apply_end_request();
         self.buffer
             .push_condition_before_requests(start_nl_condition);
         self.buffer.start_indent_before_requests();
@@ -167,7 +177,13 @@ impl<'buffer> MultilineGroup<'buffer> {
         self.buffer.finish_indent_before_requests();
     }
 
+    #[deprecated]
     pub fn end(&mut self) {
+        self.apply_end_request();
+        self.end_before_requests();
+    }
+
+    pub fn end_before_requests(&mut self) {
         #[cfg(debug_assertions)]
         {
             core::assert_matches!(
