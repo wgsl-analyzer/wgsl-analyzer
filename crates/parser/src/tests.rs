@@ -66,7 +66,7 @@ fn check_with_edition(
 }
 
 #[expect(clippy::needless_pass_by_value, reason = "intended API")]
-fn check_type_with_edition_with_edition(
+fn check_type_with_edition(
     edition: Edition,
     input: &str,
     expected_tree: Expect,
@@ -2631,6 +2631,81 @@ fn requires_directive() {
                 LanguageExtensionName@9..39
                   Identifier@9..39 "packed_4x8_integer_do ..."
                 Semicolon@39..40 ";""#]],
+    );
+}
+
+#[test]
+fn directive_after_directive() {
+    check_with_edition(
+        edition::Edition::Wesl2025Unstable,
+        "
+        enable f16;
+        import foo::bar;
+        ",
+        expect![[r#"
+            SourceFile@0..54
+              Blankspace@0..9 "\n        "
+              EnableDirective@9..20
+                Enable@9..15 "enable"
+                Blankspace@15..16 " "
+                EnableExtensionName@16..19
+                  Identifier@16..19 "f16"
+                Semicolon@19..20 ";"
+              Blankspace@20..29 "\n        "
+              ImportStatement@29..45
+                Import@29..35 "import"
+                Blankspace@35..36 " "
+                ImportPath@36..44
+                  Name@36..39
+                    Identifier@36..39 "foo"
+                  ColonColon@39..41 "::"
+                  ImportItem@41..44
+                    Name@41..44
+                      Identifier@41..44 "bar"
+                Semicolon@44..45 ";"
+              Blankspace@45..54 "\n        "
+
+            error at 29..35: import statements must come before other items"#]],
+    );
+}
+
+#[test]
+fn import_after_declaration() {
+    check_with_edition(
+        edition::Edition::Wesl2025Unstable,
+        "
+        const a = 3;
+        import foo::bar;
+        ",
+        expect![[r#"
+            SourceFile@0..55
+              Blankspace@0..9 "\n        "
+              ConstantDeclaration@9..21
+                Const@9..14 "const"
+                Blankspace@14..15 " "
+                Name@15..16
+                  Identifier@15..16 "a"
+                Blankspace@16..17 " "
+                Equal@17..18 "="
+                Blankspace@18..19 " "
+                Literal@19..20
+                  IntLiteral@19..20 "3"
+                Semicolon@20..21 ";"
+              Blankspace@21..30 "\n        "
+              ImportStatement@30..46
+                Import@30..36 "import"
+                Blankspace@36..37 " "
+                ImportPath@37..45
+                  Name@37..40
+                    Identifier@37..40 "foo"
+                  ColonColon@40..42 "::"
+                  ImportItem@42..45
+                    Name@42..45
+                      Identifier@42..45 "bar"
+                Semicolon@45..46 ";"
+              Blankspace@46..55 "\n        "
+
+            error at 30..36: import statements must come before other items"#]],
     );
 }
 
