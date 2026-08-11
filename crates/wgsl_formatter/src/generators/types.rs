@@ -81,10 +81,12 @@ pub fn gen_template_list(
 
     let mut multiline_group = MultilineGroup::new_before_requests(&mut formatted);
     multiline_group.push_sc(sc!("<"));
+    multiline_group.request(Request::discourage(RequestItem::EmptyLine));
+    multiline_group.request(Request::discourage(RequestItem::Space));
 
     // If its blank we do not give the formatter the option to break within the <>
     if !item_arguments.is_empty() {
-        multiline_group.start_indent_with_newline_before_requests();
+        multiline_group.start_indent_before_requests();
 
         for (position, item) in item_arguments.into_iter().with_position() {
             multiline_group.grouped_newline_or_space();

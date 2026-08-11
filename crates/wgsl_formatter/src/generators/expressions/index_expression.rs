@@ -38,8 +38,10 @@ pub fn gen_index_expression(
     let mut multiline_group = MultilineGroup::new_before_requests(&mut formatted);
 
     multiline_group.extend(gen_node_with_trivia(&item_bracket_left)?);
-
-    multiline_group.start_indent_with_newline_before_requests();
+    multiline_group.start_indent_before_requests();
+    multiline_group.grouped_possible_newline();
+    multiline_group.request(Request::discourage(RequestItem::EmptyLine));
+    multiline_group.request(Request::discourage(RequestItem::Space));
 
     multiline_group.extend(gen_node_with_trivia(&item_actual_index)?);
     multiline_group.grouped_newline_or_space();
