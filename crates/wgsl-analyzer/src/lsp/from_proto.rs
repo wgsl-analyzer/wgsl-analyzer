@@ -5,7 +5,8 @@ use base_db::{FilePosition, FileRange, TextRange, TextSize};
 use line_index::{LineCol, WideLineCol};
 use lsp_types::{Position, Range, TextDocumentIdentifier, TextDocumentPositionParams, Uri};
 use paths::Utf8PathBuf;
-use vfs::{AbsPathBuf, FileId};
+use percent_encoding::percent_decode;
+use vfs::{AbsPathBuf, FileId, VirtualPath};
 
 use crate::{
     Result,
@@ -14,15 +15,38 @@ use crate::{
     try_default,
 };
 
-pub(crate) fn absolute_path(url: &Uri) -> anyhow::Result<AbsPathBuf> {
+pub(crate) fn url_to_absolute_path(url: &Uri) -> anyhow::Result<AbsPathBuf> {
     let path = url
         .to_file_path()
         .map_err(|()| anyhow::format_err!("url is not a file"))?;
     Ok(AbsPathBuf::try_from(Utf8PathBuf::from_path_buf(path).unwrap()).unwrap())
 }
 
+pub(crate) fn url_to_virtual_path(url: &Uri) -> anyhow::Result<VirtualPath> {
+    let segments = url
+        .path_segments()
+        .ok_or_else(|| format_err!("url is not a file"))?;
+
+    if !matches!(url.host_str(), None | Some("localhost")) {
+        return Err(format_err!("url for virtual path cannot have a host"));
+    }
+
+    let estimated_capacity = url.as_str().len();
+    let mut path = String::with_capacity(estimated_capacity);
+    for segment in segments {
+        path.push('/');
+        let decoded = percent_decode(segment.as_bytes()).decode_utf8()?;
+        path.push_str(&decoded);
+    }
+    Ok(VirtualPath::new(path))
+}
+
 pub(crate) fn vfs_path(url: &Uri) -> Result<vfs::VfsPath> {
-    absolute_path(url).map(vfs::VfsPath::from)
+    match url.scheme() {
+        "file" => Ok(vfs::VfsPath::from(url_to_absolute_path(url)?)),
+        VirtualPath::SCHEME => Ok(vfs::VfsPath::from(url_to_virtual_path(url)?)),
+        _ => Err(format_err!("url has unsupported scheme: {}", url.scheme())),
+    }
 }
 
 pub(crate) fn offset(

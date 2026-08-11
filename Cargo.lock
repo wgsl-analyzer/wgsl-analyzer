@@ -2188,6 +2188,7 @@ dependencies = [
  "vfs",
  "vfs-notify",
  "wgsl-formatter",
+ "wgsl-std",
  "windows-sys 0.61.2",
  "xflags",
 ]

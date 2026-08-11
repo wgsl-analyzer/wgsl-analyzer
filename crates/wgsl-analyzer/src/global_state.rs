@@ -13,7 +13,7 @@ use lsp_types::{
     PublishDiagnosticsParams, Request as LspRequest, Uri,
 };
 use parking_lot::{MappedRwLockReadGuard, RwLock, RwLockReadGuard, RwLockWriteGuard};
-use project_model::{ManifestPath, PackageChange, PackageGraph, PackageKey, WeslPackageRoot};
+use project_model::{ManifestPath, PackageChange, PackageGraph, PackageKey};
 use rustc_hash::FxHashMap;
 use salsa::Revision;
 use tracing::Level;
@@ -233,20 +233,19 @@ impl GlobalState {
         let mut has_structure_changes = false;
         for file in changed_files.into_values() {
             let vfs_path = vfs.file_path(file.file_id);
+            has_structure_changes |= file.is_created_or_deleted();
 
-            if let Some(path) = vfs_path.as_path() {
-                has_structure_changes |= file.is_created_or_deleted();
-                // Update wesl.toml projects in the workspace
-                if path.name_and_extension() == Some(("wesl", Some("toml")))
-                    && self.config.is_in_workspace(path)
-                    && let Ok(package_path) = ManifestPath::try_from(path.to_path_buf())
-                {
-                    let change = match file.change {
-                        VfsChange::Create(_, _) | VfsChange::Modify(_, _) => PackageChange::Set,
-                        VfsChange::Delete => PackageChange::Delete,
-                    };
-                    modified_local_packages.insert(package_path, change);
-                }
+            // Update wesl.toml projects in the workspace
+            if vfs_path.name_and_extension() == Some(("wesl", Some("toml")))
+                && let Some(path) = vfs_path.as_path()
+                && self.config.is_in_workspace(path)
+                && let Ok(package_path) = ManifestPath::try_from(path.to_path_buf())
+            {
+                let change = match file.change {
+                    VfsChange::Create(_, _) | VfsChange::Modify(_, _) => PackageChange::Set,
+                    VfsChange::Delete => PackageChange::Delete,
+                };
+                modified_local_packages.insert(package_path, change);
             }
             // Clear native diagnostics when their file gets deleted
             if !file.exists() {
@@ -301,15 +300,13 @@ impl GlobalState {
             match modified {
                 PackageChange::Set => self.request_project_discover(
                     DiscoverArgument {
-                        path: path.into(),
+                        path: path.as_abs_path(),
                         search_parents: false,
                     },
                     &"wesl.toml changed".to_owned(),
                 ),
                 PackageChange::Delete => {
-                    if let Some(package_id) =
-                        packages.package_id(&PackageKey::from_manifest_path(path))
-                    {
+                    if let Some(package_id) = packages.package_id(&PackageKey::Manifest(path)) {
                         if let Some(removed_package) = packages.remove(package_id) {
                             tracing::trace!(
                                 "removed {} from the package graph",
@@ -342,8 +339,7 @@ impl GlobalState {
             // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1373
 
             let package_data = packages.get(id).and_then(|package| {
-                let manifest_path = vfs::VfsPath::from(AbsPathBuf::from(package.manifest.clone()));
-                let Some((manifest_file_id, root_file_excluded)) = vfs.file_id(&manifest_path)
+                let Some((manifest_file_id, root_file_excluded)) = vfs.file_id(&package.manifest)
                 else {
                     tracing::error!("Could not find manifest file {}", &package.manifest);
                     return None;
@@ -369,7 +365,7 @@ impl GlobalState {
 
                 Some(PackageData {
                     manifest_file_id,
-                    root: vfs::VfsPath::from(package.root.clone()),
+                    root: package.root.clone(),
                     edition: package.edition,
                     display_name: package.display_name.clone(),
                     dependencies,
@@ -599,8 +595,13 @@ pub(crate) fn file_id_to_url(
     id: FileId,
 ) -> Uri {
     let path = vfs.file_path(id);
-    let path = path.as_path().unwrap();
-    to_proto::url_from_abs_path(path)
+    if let Some(path) = path.as_path() {
+        to_proto::url_from_abs_path(path)
+    } else if let Some(path) = path.as_virtual_path() {
+        to_proto::url_from_virtual_path(path)
+    } else {
+        panic!("file_id_to_url: file_id {id:?} has no path");
+    }
 }
 
 /// Returns `None` if the file was excluded.

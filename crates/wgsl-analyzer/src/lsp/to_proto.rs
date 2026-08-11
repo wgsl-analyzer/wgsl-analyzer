@@ -29,10 +29,11 @@ use lsp_types::{
     SignatureInformation, TextDocumentPositionParams, TextEdit as LspTextEdit, Tooltip, Uri,
 };
 use paths::{AbsPath, Utf8Component, Utf8Prefix};
+use percent_encoding::percent_encode;
 use rustc_hash::FxHasher;
 use semver::VersionReq; // spellchecker:disable-line
 use serde_json::to_value;
-use vfs::FileId;
+use vfs::{FileId, VirtualPath};
 
 use crate::{
     config::Config,
@@ -132,6 +133,38 @@ pub(crate) fn url_from_abs_path(path: &AbsPath) -> lsp_types::Uri {
     let mut url: String = url.into();
     url[driver_letter_range].make_ascii_lowercase();
     lsp_types::Uri::parse(&url).unwrap()
+}
+
+/// List of symbols as specified by <https://url.spec.whatwg.org/#fragment-percent-encode-set> and <https://url.spec.whatwg.org/#path-percent-encode-set>.
+const SPECIAL_PATH_SEGMENT: &percent_encoding::AsciiSet = &percent_encoding::CONTROLS
+    .add(b' ')
+    .add(b'"')
+    .add(b'<')
+    .add(b'>')
+    .add(b'`')
+    .add(b'#')
+    .add(b'?')
+    .add(b'{')
+    .add(b'}')
+    .add(b'/')
+    .add(b'%')
+    .add(b'\\');
+
+pub(crate) fn url_from_virtual_path(path: &VirtualPath) -> lsp_types::Uri {
+    let mut uri = format!("{}://", VirtualPath::SCHEME);
+
+    let mut empty = true;
+    for component in path.components() {
+        empty = false;
+        uri.push('/');
+        uri.extend(percent_encode(component.as_bytes(), SPECIAL_PATH_SEGMENT));
+    }
+
+    if empty {
+        uri.push('/');
+    }
+
+    lsp_types::Uri::parse(&uri).unwrap()
 }
 
 pub(crate) fn range(

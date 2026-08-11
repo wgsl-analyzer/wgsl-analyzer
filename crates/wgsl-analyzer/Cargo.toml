@@ -35,6 +35,7 @@ stdx.workspace = true
 vfs-notify.workspace = true
 vfs.workspace = true
 wgsl-formatter.workspace = true
+wgsl-std.workspace = true
 
 # base64 = "0.22"
 # dirs = "5.0.1"

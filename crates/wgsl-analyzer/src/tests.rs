@@ -3,11 +3,11 @@
 use std::fmt::{self, Write as _};
 
 use base_db::input::PackageOrigin;
-use expect_test::{Expect, expect};
+use expect_test::{expect, Expect};
 use itertools::Itertools as _;
-use project_model::{ManifestPath, ProjectManifest, WeslPackage, WeslPackageRoot};
+use project_model::{ProjectManifest, WeslPackage};
 use test_utils::project_root;
-use vfs::AbsPathBuf;
+use vfs::{AbsPath, AbsPathBuf};
 
 mod bevy;
 
@@ -22,10 +22,7 @@ fn get_test_directory() -> AbsPathBuf {
         .join("src/tests")
 }
 
-fn print_path(
-    path: &AbsPathBuf,
-    base: &AbsPathBuf,
-) -> String {
+fn print_path(path: &AbsPath, base: &AbsPath) -> String {
     let relative_path = path.strip_prefix(base).unwrap().as_utf8_path();
     relative_path
         .components()
@@ -34,11 +31,7 @@ fn print_path(
 }
 
 #[expect(clippy::needless_pass_by_value, reason = "matches expect! macro")]
-fn check_load_project(
-    manifest: &str,
-    origin: PackageOrigin,
-    expect: Expect,
-) {
+fn check_load_project(manifest: &str, origin: PackageOrigin, expect: Expect) {
     let mut actual = String::new();
 
     let test_directory = get_test_directory();
@@ -53,7 +46,7 @@ fn check_load_project(
     // Either a finished or an error message should happen
     for message in &load_package_receiver {
         match message {
-            LoadPackageMessage::Finished { project } => {
+            LoadPackageMessage::Finished { manifest, project } => {
                 let project_name = match project.display_name {
                     Some(name) => format!("Project {name}"),
                     None => "Unnamed project".to_owned(),
@@ -61,25 +54,25 @@ fn check_load_project(
                 writeln!(
                     actual,
                     "{project_name} at {}",
-                    print_path(&project.manifest.into(), &test_directory)
+                    print_path(&manifest, &test_directory)
                 )
                 .unwrap();
                 writeln!(actual, "edition: {}", project.edition).unwrap();
                 writeln!(
                     actual,
                     "root: {}",
-                    print_path(&project.root, &test_directory)
+                    print_path(&project.root.as_path().unwrap(), &test_directory),
                 );
                 writeln!(actual, "dependencies:").unwrap();
                 for dependency in project.dependencies {
                     writeln!(actual, "- {}", dependency.name());
                 }
-            },
+            }
             LoadPackageMessage::Error { error, source } => {
                 writeln!(actual, "{error} - {source:?}");
-            },
-            LoadPackageMessage::Dependency { task } => {},
-            LoadPackageMessage::Progress { message } => {},
+            }
+            LoadPackageMessage::Dependency { task } => {}
+            LoadPackageMessage::Progress { message } => {}
         }
     }
 
@@ -87,11 +80,7 @@ fn check_load_project(
 }
 
 #[expect(clippy::needless_pass_by_value, reason = "matches expect! macro")]
-fn check_load_project_files(
-    manifest: &str,
-    origin: PackageOrigin,
-    expect: Expect,
-) {
+fn check_load_project_files(manifest: &str, origin: PackageOrigin, expect: Expect) {
     let mut actual = String::new();
 
     let test_directory = get_test_directory();
@@ -106,7 +95,7 @@ fn check_load_project_files(
     let project = load_package_receiver
         .iter()
         .filter_map(|message| match message {
-            LoadPackageMessage::Finished { project } => Some(project),
+            LoadPackageMessage::Finished { project, .. } => Some(project),
             LoadPackageMessage::Error { .. }
             | LoadPackageMessage::Dependency { .. }
             | LoadPackageMessage::Progress { .. } => None,
@@ -114,7 +103,7 @@ fn check_load_project_files(
         .exactly_one()
         .unwrap();
 
-    let (load, _) = to_load_and_source_root_config([project.to_root()].to_vec());
+    let (load, _) = to_load_and_source_root_config([project.to_root().unwrap()].to_vec());
 
     for entry in load {
         match entry {
@@ -122,7 +111,7 @@ fn check_load_project_files(
                 for file_path in paths {
                     writeln!(actual, "file: {}", print_path(&file_path, &test_directory));
                 }
-            },
+            }
             vfs::loader::Entry::Directories(directories) => {
                 writeln!(actual, "extensions: {}", directories.extensions.join(", "));
                 for directory_path in directories.include {
@@ -139,7 +128,7 @@ fn check_load_project_files(
                         print_path(&directory_path, &test_directory)
                     );
                 }
-            },
+            }
         }
     }
     expect.assert_eq(&actual);
