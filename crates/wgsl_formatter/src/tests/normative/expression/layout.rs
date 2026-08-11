@@ -119,12 +119,12 @@ pub fn format_index_expr_chained_breaks_in_the_middle() {
         "
         //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
         fn main() {
-        let a = aaaaaaaaa[bbbbbbbbbbbbbbb][cccccccccccc][ddddddddddddd][eeeeeeeeeeeee][ffffffffffffff];
+        let thingy = aaaaaaaaa[bbbbbbbbbbbbbbb][cccccccccccc][ddddddddddddd][eeeeeeeeeeeee][ffffffffffffff];
         }",
         expect![[r#"
             //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
             fn main() {
-                let a = aaaaaaaaa[bbbbbbbbbbbbbbb][cccccccccccc][ddddddddddddd][
+                let thingy = aaaaaaaaa[bbbbbbbbbbbbbbb][cccccccccccc][ddddddddddddd][
                         eeeeeeeeeeeee
                     ][ffffffffffffff];
             }
@@ -138,12 +138,12 @@ pub fn format_index_expr_nested_breaks_outside_in() {
         "
         //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
         fn main() {
-        let a = aaaaaaaaa[bbbbbbbbbbbbbbb[cccccccccccc[dddddddddddd[eeeeeeeeeeeeeee[ffffffffffffff]]]]];
+        let thingy = aaaaaaaaa[bbbbbbbbbbbbbbb[cccccccccccc[dddddddddddd[eeeeeeeeeeeeeee[ffffffffffffff]]]]];
         }",
         expect![[r#"
             //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
             fn main() {
-                let a = aaaaaaaaa[
+                let thingy = aaaaaaaaa[
                         bbbbbbbbbbbbbbb[
                             cccccccccccc[dddddddddddd[eeeeeeeeeeeeeee[ffffffffffffff]]]
                         ]
