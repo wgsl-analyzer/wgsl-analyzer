@@ -1,0 +1,1 @@
+alias vec3f = vec3<f32>;
