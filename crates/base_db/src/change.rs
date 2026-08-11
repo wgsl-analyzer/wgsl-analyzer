@@ -322,7 +322,7 @@ impl fmt::Display for CyclicDependenciesError {
         let render = |(id, name): &(PackageId, Option<PackageDisplayName>)| match name {
             Some(package_name) => format!(
                 "(Name: {}, PackageId: {})",
-                package_name.canonical_name,
+                package_name.canonical_name(),
                 id.index()
             ),
             None => format!("(Name: {}, PackageId: {})", "<none>", id.index()),
