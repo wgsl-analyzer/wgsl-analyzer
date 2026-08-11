@@ -1,8 +1,12 @@
 use std::{ffi::OsString, path::Path};
 
 use expect_test::{expect, expect_file};
+use parser::Edition;
 
-use crate::test_util::check;
+use crate::{
+    FormattingOptions,
+    test_util::{CheckOptions, check, check_with_options},
+};
 
 mod attributes;
 mod code_indentation;
@@ -53,7 +57,15 @@ fn snapshots() {
                 .expect("source file should be a readable text file.");
 
             let result = std::panic::catch_unwind(|| {
-                check(&source, expect_file![smoke_test_output_path]);
+                check_with_options(
+                    &source,
+                    &expect_file![smoke_test_output_path],
+                    &CheckOptions {
+                        assert_line_width: None, // Smoke tests contain code that cannot be formatted to fit within line width
+                        formatting: FormattingOptions::default(),
+                    },
+                    Edition::LATEST,
+                );
             });
             result.unwrap_or_else(|err| {
                 panic!(

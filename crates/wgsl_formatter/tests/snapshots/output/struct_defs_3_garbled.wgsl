@@ -4,7 +4,7 @@ struct StructGarbledOne {
 }
 
 struct StructGarbledTwo {
-    a: /*Hey Look a Comment */ u32,
+    a /*Hey Look a Comment */ : u32,
     b: u32,
 }
 
