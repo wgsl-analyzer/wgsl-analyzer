@@ -178,11 +178,9 @@ fn main() -> Result<(), Box<dyn error::Error>> {
         if line.is_empty() || line.starts_with("//") {
             continue;
         }
-        if seen.contains(line) {
-            panic!("duplicate builtint: {line}");
-        } else {
-            seen.insert(line);
-        }
+        let has_line = seen.insert(line);
+        assert!(has_line, "duplicate builtin: {line}");
+
         let (name, overload) = parse_line(line);
         let builtin = builtins.entry(name.to_owned()).or_default();
         builtin.overloads.push(overload);

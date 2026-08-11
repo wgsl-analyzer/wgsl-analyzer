@@ -223,16 +223,16 @@ indexing_slicing = "allow"
 # tombi: format.rules.table-keys-order.disabled = true
 [workspace.lints.rust]
 warnings = { level = "warn", priority = -2 }
-deprecated-safe = { level = "deny", priority = -1 }
-future-incompatible = { level = "deny", priority = -1 }
-keyword-idents = { level = "deny", priority = -1 }
-let-underscore = { level = "deny", priority = -1 }
-nonstandard-style = { level = "deny", priority = -1 }
-refining-impl-trait = { level = "deny", priority = -1 }
-rust-2018-compatibility = { level = "deny", priority = -1 }
-rust-2018-idioms = { level = "deny", priority = -1 }
-rust-2021-compatibility = { level = "deny", priority = -1 }
-rust-2024-compatibility = { level = "deny", priority = -1 }
+deprecated_safe = { level = "deny", priority = -1 }
+future_incompatible = { level = "deny", priority = -1 }
+keyword_idents = { level = "deny", priority = -1 }
+let_underscore = { level = "deny", priority = -1 }
+nonstandard_style = { level = "deny", priority = -1 }
+refining_impl_trait = { level = "deny", priority = -1 }
+rust_2018_compatibility = { level = "deny", priority = -1 }
+rust_2018_idioms = { level = "deny", priority = -1 }
+rust_2021_compatibility = { level = "deny", priority = -1 }
+rust_2024_compatibility = { level = "deny", priority = -1 }
 unused = { level = "allow", priority = 1 }
 
 [workspace.lints.rustdoc]
