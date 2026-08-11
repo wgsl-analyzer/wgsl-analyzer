@@ -92,7 +92,7 @@ impl<'buffer> MultilineGroup<'buffer> {
         );
         self.start_reeval = Some(start_nl_condition.create_reevaluation());
         self.buffer.push_condition(start_nl_condition);
-        self.buffer.start_indent();
+        self.buffer.start_indent_before_requests();
 
         // This is a bit of a shortcoming of the PBI api, this does not really belong into multilinegroup,
         // and would better be located directly after a "(" token (or whatever was used to open the multilinegroup)
@@ -159,7 +159,7 @@ impl<'buffer> MultilineGroup<'buffer> {
             self.state = MultilineGroupState::FinishedIndent;
         }
 
-        self.buffer.finish_indent();
+        self.buffer.finish_indent_before_requests();
     }
 
     pub fn end(&mut self) {

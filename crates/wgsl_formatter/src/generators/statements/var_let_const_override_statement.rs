@@ -115,7 +115,7 @@ fn gen_var_let_const_override_statement(
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
     formatted.push_sc(kind.sc());
-    formatted.start_indent();
+    formatted.start_indent_before_requests();
 
     if let Some(item_template_list) = item_template_list {
         formatted.extend(gen_node_with_trivia(&item_template_list)?);
@@ -142,7 +142,7 @@ fn gen_var_let_const_override_statement(
         formatted.request(Request::discourage(RequestItem::Space));
         formatted.push_sc(sc!(";"));
     }
-    formatted.finish_indent();
+    formatted.finish_indent_before_requests();
 
     Ok(formatted)
 }

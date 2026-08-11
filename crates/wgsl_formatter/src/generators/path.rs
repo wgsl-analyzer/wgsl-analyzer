@@ -55,12 +55,12 @@ pub fn gen_path(path: &ast::Path) -> FormatDocumentResult<PrintItemBuffer> {
                 formatted.extend(gen_node_with_trivia(&item)?);
             },
             PathItem::ColonColon(item) => {
-                formatted.start_indent();
+                formatted.start_indent_before_requests();
                 formatted.start_new_line_group();
                 formatted.request(Request::empty().or_newline());
                 formatted.extend(gen_node_with_trivia(&item)?);
                 formatted.finish_new_line_group();
-                formatted.finish_indent();
+                formatted.finish_indent_before_requests();
             },
         }
     }

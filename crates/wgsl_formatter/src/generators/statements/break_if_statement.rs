@@ -34,14 +34,14 @@ pub fn gen_break_if_statement(
     formatted.extend(gen_node_with_trivia(&item_break)?);
     formatted.request(Request::expect(RequestItem::Space));
     formatted.extend(gen_node_with_trivia(&item_if)?);
-    formatted.start_indent();
+    formatted.start_indent_before_requests();
     formatted.request(Request::expect(RequestItem::Space).or_newline());
     formatted.extend(gen_node_with_trivia(&item_condition)?);
     formatted.request(Request::discourage(RequestItem::Space));
     if statement_needs_semicolon_policy(statement.syntax()) {
         formatted.push_sc(sc!(";"));
     }
-    formatted.finish_indent();
+    formatted.finish_indent_before_requests();
 
     Ok(formatted)
 }

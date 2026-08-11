@@ -35,7 +35,7 @@ pub fn gen_parenthesis_expression(
     } else {
         formatted.push_sc(sc!("("));
         formatted.start_new_line_group();
-        formatted.start_indent();
+        formatted.start_indent_before_requests();
 
         formatted.request(Request::discourage(RequestItem::Space));
     }
@@ -45,7 +45,7 @@ pub fn gen_parenthesis_expression(
         formatted.request(Request::expect(RequestItem::Space));
     } else {
         formatted.request(Request::discourage(RequestItem::Space));
-        formatted.finish_indent();
+        formatted.finish_indent_before_requests();
         formatted.finish_new_line_group();
         formatted.push_sc(sc!(")"));
     }

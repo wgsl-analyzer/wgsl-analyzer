@@ -84,7 +84,7 @@ pub fn gen_switch_body(statement: &SwitchBody) -> Result<PrintItemBuffer, Format
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
     formatted.push_sc(sc!("{"));
-    formatted.start_indent();
+    formatted.start_indent_before_requests();
 
     let is_empty = item_cases.is_empty();
     if !is_empty {
@@ -94,7 +94,7 @@ pub fn gen_switch_body(statement: &SwitchBody) -> Result<PrintItemBuffer, Format
         }
         formatted.request(Request::expect(RequestItem::LineBreak));
     }
-    formatted.finish_indent();
+    formatted.finish_indent_before_requests();
     formatted.push_sc(sc!("}"));
 
     if !is_empty {

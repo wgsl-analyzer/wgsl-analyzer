@@ -105,7 +105,7 @@ pub fn gen_struct_body(body: &ast::StructBody) -> FormatDocumentResult<PrintItem
     let mut formatted = PrintItemBuffer::default();
 
     formatted.push_sc(sc!("{"));
-    formatted.start_indent();
+    formatted.start_indent_before_requests();
     formatted.request(Request::discourage(RequestItem::EmptyLine));
 
     if !is_empty {
@@ -130,7 +130,7 @@ pub fn gen_struct_body(body: &ast::StructBody) -> FormatDocumentResult<PrintItem
         suggest_linebreak: false,
     });
 
-    formatted.finish_indent();
+    formatted.finish_indent_before_requests();
     formatted.push_sc(sc!("}"));
 
     if !is_empty {

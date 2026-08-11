@@ -31,14 +31,14 @@ pub fn gen_const_assert_statement(
     let mut formatted = PrintItemBuffer::default();
 
     formatted.push_sc(sc!("const_assert"));
-    formatted.start_indent();
+    formatted.start_indent_before_requests();
     formatted.request(Request::expect(RequestItem::Space));
     formatted.extend(gen_node_with_trivia(&item_condition)?);
     if statement_needs_semicolon_policy(statement.syntax()) {
         formatted.request(Request::discourage(RequestItem::Space));
         formatted.push_sc(sc!(";"));
     }
-    formatted.finish_indent();
+    formatted.finish_indent_before_requests();
 
     Ok(formatted)
 }

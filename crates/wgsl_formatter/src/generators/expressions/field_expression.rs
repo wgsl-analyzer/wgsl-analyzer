@@ -26,10 +26,10 @@ pub fn gen_field_expression(
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
     formatted.extend(gen_node_with_trivia(&item_struct_expr)?);
-    formatted.start_indent();
+    formatted.start_indent_before_requests();
     formatted.request(Request::empty().or_newline());
     formatted.extend(gen_node_with_trivia(&item_period)?);
     formatted.extend(gen_node_with_trivia(&item_target_ident)?);
-    formatted.finish_indent();
+    formatted.finish_indent_before_requests();
     Ok(formatted)
 }
