@@ -49,9 +49,10 @@ impl<'buffer> MultilineGroup<'buffer> {
         let end_ln = LineNumber::new("end");
         let is_multiple_lines = create_is_multiple_lines_resolver(start_ln, end_ln);
 
-        formatted.start_new_line_group();
-        formatted.push_info(start_ln);
-        formatted.push_anchor(LineNumberAnchor::new(end_ln));
+        formatted.apply_end_request();
+        formatted.start_new_line_group_before_requests();
+        formatted.push_info_before_requests(start_ln);
+        formatted.push_anchor_before_requests(LineNumberAnchor::new(end_ln));
 
         Self {
             buffer: formatted,
@@ -91,7 +92,9 @@ impl<'buffer> MultilineGroup<'buffer> {
             },
         );
         self.start_reeval = Some(start_nl_condition.create_reevaluation());
-        self.buffer.push_condition(start_nl_condition);
+        self.buffer.apply_end_request();
+        self.buffer
+            .push_condition_before_requests(start_nl_condition);
         self.buffer.start_indent_before_requests();
 
         // This is a bit of a shortcoming of the PBI api, this does not really belong into multilinegroup,
@@ -141,11 +144,13 @@ impl<'buffer> MultilineGroup<'buffer> {
         &mut self,
         items: PrintItems,
     ) {
-        self.buffer.push_condition(conditions::if_true(
-            "paramTrailingComma",
-            Rc::clone(&self.is_multiple_lines),
-            items,
-        ));
+        self.buffer.apply_end_request();
+        self.buffer
+            .push_condition_before_requests(conditions::if_true(
+                "paramTrailingComma",
+                Rc::clone(&self.is_multiple_lines),
+                items,
+            ));
     }
 
     pub fn finish_indent(&mut self) {
@@ -173,13 +178,14 @@ impl<'buffer> MultilineGroup<'buffer> {
             self.state = MultilineGroupState::Ended;
         }
 
-        self.buffer.push_info(self.end_ln);
+        self.buffer.apply_end_request();
+        self.buffer.push_info_before_requests(self.end_ln);
 
         // It is legal to call end without calling start_ident or finish_indent
         if let Some(start_reeval) = self.start_reeval {
-            self.buffer.push_reevaluation(start_reeval);
+            self.buffer.push_reevaluation_before_requests(start_reeval);
         }
-        self.buffer.finish_new_line_group();
+        self.buffer.finish_new_line_group_before_requests();
     }
 }
 
