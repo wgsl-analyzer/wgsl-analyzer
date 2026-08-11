@@ -14,7 +14,7 @@ use crate::{
     },
     context_policies::statement_needs_semicolon_policy,
     generators::node::gen_node_with_trivia,
-    multiline_group::MultilineGroup,
+    multiline_group::{self, MultilineGroup},
     print_item_buffer::{
         PrintItemBuffer,
         spacing_request::{Request, RequestItem},
@@ -271,7 +271,10 @@ pub fn gen_import_collection(
     let mut group = MultilineGroup::new_before_requests(&mut formatted);
     group.push_sc(sc!("{"));
 
-    group.start_indent_with_newline_before_requests();
+    group.start_indent_before_requests();
+    group.grouped_possible_newline();
+    group.request(Request::discourage(RequestItem::EmptyLine));
+    group.request(Request::discourage(RequestItem::Space));
 
     for (position, (item, _)) in items.iter().with_position() {
         group.extend(gen_node_with_trivia(item)?);

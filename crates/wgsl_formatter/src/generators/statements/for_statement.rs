@@ -41,11 +41,14 @@ pub fn gen_for_statement(statement: &ast::ForStatement) -> FormatDocumentResult<
     let mut formatted = PrintItemBuffer::default();
     formatted.extend(gen_node_with_trivia(&item_for)?);
     formatted.push_sc(sc!("("));
+    formatted.request(Request::discourage(RequestItem::EmptyLine));
+    formatted.request(Request::discourage(RequestItem::Space));
 
     let mut multiline_group = MultilineGroup::new_before_requests(&mut formatted);
-    multiline_group.start_indent_with_newline_before_requests();
+    multiline_group.start_indent_before_requests();
 
     multiline_group.grouped_newline_or_space();
+
     if let Some(item_initializer) = item_initializer {
         multiline_group.extend(gen_node_with_trivia(&item_initializer)?);
     } else {

@@ -83,7 +83,10 @@ impl<'buffer> MultilineGroup<'buffer> {
     #[deprecated]
     pub fn start_indent(&mut self) {
         self.apply_end_request();
-        self.start_indent_with_newline_before_requests();
+        self.start_indent_before_requests();
+        self.grouped_possible_newline();
+        self.request(Request::discourage(RequestItem::EmptyLine));
+        self.request(Request::discourage(RequestItem::Space));
     }
 
     pub fn start_indent_before_requests(&mut self) {
@@ -98,25 +101,6 @@ impl<'buffer> MultilineGroup<'buffer> {
         }
 
         self.buffer.start_indent_before_requests();
-    }
-
-    #[deprecated]
-    pub fn start_indent_with_newline_before_requests(&mut self) {
-        #[cfg(debug_assertions)]
-        {
-            core::assert_matches!(
-                self.state,
-                MultilineGroupState::New,
-                "MultilineGroup was in wrong state"
-            );
-            self.state = MultilineGroupState::StartedIndent;
-        }
-
-        self.buffer.start_indent_before_requests();
-
-        self.grouped_possible_newline();
-        self.request(Request::discourage(RequestItem::EmptyLine));
-        self.request(Request::discourage(RequestItem::Space));
     }
 
     pub fn grouped_newline_or_space(&mut self) {
