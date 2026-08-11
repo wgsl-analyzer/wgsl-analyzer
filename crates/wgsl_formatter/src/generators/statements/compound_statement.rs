@@ -83,25 +83,15 @@ pub fn gen_compound_statement(
 
     let mut formatted = PrintItemBuffer::default();
 
-    let mut multiline_group = MultilineGroup::new(&mut formatted);
+    let mut multiline_group = MultilineGroup::new_before_requests(&mut formatted);
 
     multiline_group.push_sc(sc!("{"));
 
     if !body_empty {
-        multiline_group.start_indent();
+        multiline_group.start_indent_before_requests();
 
         if collapse_one_liner_compound_statement_policy(node.syntax()) {
-            //TODO This is a dirty hack to get rid of the discouragement of spaces in start_indent
-            multiline_group.apply_end_request();
-
-            multiline_group.grouped_request(
-                Request::discourage(RequestItem::Space),
-                Request::combine(
-                    Request::expect(RequestItem::Space),
-                    //TODO Get back the discouragement of line_breaks from start_indent
-                    Request::discourage(RequestItem::LineBreak),
-                ),
-            );
+            multiline_group.grouped_newline_or_space();
         } else {
             multiline_group.request(Request::discourage(RequestItem::EmptyLine));
             multiline_group.request(Request::expect(RequestItem::LineBreak));

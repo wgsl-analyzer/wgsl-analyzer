@@ -124,11 +124,10 @@ impl<'buffer> MultilineGroup<'buffer> {
     }
 
     pub fn grouped_possible_newline(&mut self) {
-        self.buffer.request(Request::Conditional {
-            condition: Rc::clone(&self.is_multiple_lines),
-            on_true: Box::new(Request::expect(RequestItem::LineBreak)),
-            on_false: Box::new(Request::empty().or_newline()),
-        });
+        self.grouped_request(
+            Request::expect(RequestItem::LineBreak),
+            Request::empty().or_newline(),
+        );
     }
 
     pub fn extend_if_multi_line(
