@@ -196,25 +196,15 @@ pub fn format_switch_statement_block_comments_in_case_default_only() {
 #[test]
 pub fn format_switch_statement_comments_in_average_switch() {
     check_comments(
-        "fn main() { ## switch ## ( ## a ## ) ## { ## case ## 1 ## , ## 2 ## , ## default ## { ## let a = 1; ## } ## case ## 3 ## { ## let a = 1; ## } ## case ## default ## { ## let a = 1; ## } } }",
+        "fn main() { ## switch ## ( ## a ## ) ## { ## case ## 1 ## , ## default ## { ## let a = 1; ## } ## case ## 3 ## { ## let a = 1; ## } ## case ## default ## { ## let a = 1; ## } } }",
         expect![[r#"
             fn main() {
-                /* 0 */
-                switch /* 1 */ /* 2 */ a /* 3 */ /* 4 */ { /* 5 */
-                    case /* 6 */ 1 /* 7 */ , /* 8 */ 2 /* 9 */ , /* 10 */ default /* 11 */ {
-                        /* 12 */
-                        let a = 1; /* 13 */
-                    }
-                    /* 14 */
-                    case /* 15 */ 3 /* 16 */ {
-                        /* 17 */
-                        let a = 1; /* 18 */
-                    }
-                    /* 19 */
-                    default /* 20 */ /* 21 */ {
-                        /* 22 */
-                        let a = 1; /* 23 */
-                    }
+                /* 0 */ switch /* 1 */ /* 2 */ a /* 3 */ /* 4 */ {
+                    /* 5 */ case /* 6 */ 1 /* 7 */ , /* 8 */ default /* 9 */ {
+                        /* 10 */ let a = 1; /* 11 */
+                    } /* 12 */
+                    case /* 13 */ 3 /* 14 */ { /* 15 */ let a = 1; /* 16 */ } /* 17 */
+                    /* 18 */ default /* 19 */ { /* 20 */ let a = 1; /* 21 */ }
                 }
             }
         "#]],
@@ -225,30 +215,27 @@ pub fn format_switch_statement_comments_in_average_switch() {
                 // 2
                 a // 3
                 // 4
-                { // 5
+                {
+                    // 5
                     case // 6
                     1 // 7
                     , // 8
-                    2 // 9
-                    , // 10
-                    default // 11
+                    default // 9
                     {
-                        // 12
-                        let a = 1; // 13
-                    }
-                    // 14
-                    case // 15
-                    3 // 16
+                        // 10
+                        let a = 1; // 11
+                    } // 12
+                    case // 13
+                    3 // 14
                     {
-                        // 17
-                        let a = 1; // 18
-                    }
-                    // 19
-                    default // 20
-                    // 21
+                        // 15
+                        let a = 1; // 16
+                    } // 17
+                    // 18
+                    default // 19
                     {
-                        // 22
-                        let a = 1; // 23
+                        // 20
+                        let a = 1; // 21
                     }
                 }
             }
