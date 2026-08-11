@@ -30,7 +30,7 @@ pub fn gen_diagnostic_control(
     let mut formatted = PrintItemBuffer::default();
     let mut multiline_group = MultilineGroup::new_before_requests(&mut formatted);
     multiline_group.push_sc(sc!("("));
-    multiline_group.start_indent_before_requests();
+    multiline_group.start_indent_with_newline_before_requests();
     multiline_group.grouped_possible_newline();
     multiline_group.extend(gen_node_with_trivia(&item_control_name)?);
     multiline_group.push_sc(sc!(","));
