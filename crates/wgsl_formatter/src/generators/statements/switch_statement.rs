@@ -11,7 +11,8 @@ use syntax::{
 
 use crate::{
     ast_parse::{
-        Filter, FilterAction, IgnoreBlankspace, NoTrivia, parse_end, parse_node_with, syntax_iter,
+        Chain, Filter, FilterAction, IgnoreBlankspace, NoTrivia, UntilSucceedingNewline, parse_end,
+        parse_node_with, syntax_iter,
     },
     generators::node::gen_node_with_trivia,
     print_item_buffer::{
@@ -56,7 +57,8 @@ pub fn gen_switch_body(statement: &SwitchBody) -> Result<PrintItemBuffer, Format
     let mut item_cases = Vec::new();
 
     loop {
-        let mut item = parse_node_with(&mut syntax, IgnoreBlankspace);
+        let mut item =
+            parse_node_with(&mut syntax, Chain(UntilSucceedingNewline, IgnoreBlankspace));
 
         // TODO Absorb this into the parse_node_filter...
         if item

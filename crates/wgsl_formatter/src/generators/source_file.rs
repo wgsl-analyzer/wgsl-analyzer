@@ -5,10 +5,7 @@ use syntax::{
 };
 
 use crate::{
-    ast_parse::{
-        FilterAction, parse_end, parse_node_with_trivia_filter, parse_node_with_trivia_filter_2,
-        syntax_iter,
-    },
+    ast_parse::{FilterAction, parse_end, parse_node_with_trivia_filter_2, syntax_iter},
     generators::node::gen_node_with_trivia,
     helpers::{LineSpacing, read_blankspace},
     print_item_buffer::{
@@ -54,8 +51,6 @@ pub fn gen_source_file(node: &ast::SourceFile) -> FormatDocumentResult<PrintItem
     }
 
     parse_end(&mut syntax)?;
-
-    dbg!(&items);
 
     // ==== Format ====
 
