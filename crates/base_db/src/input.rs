@@ -12,7 +12,7 @@ use edition::Edition;
 use triomphe::Arc;
 use vfs::{AnchoredPath, FileId, VfsPath, file_set::FileSet};
 
-use crate::{EditionedFileId, Package, SourceDatabase, all_packages, package_by_id};
+use crate::{EditionedFileId, Package, SourceDatabase, package::package_by_id};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct SourceRootId(pub u32);
