@@ -194,7 +194,6 @@ impl<'buffer> MultilineGroup<'buffer> {
             self.state = MultilineGroupState::Ended;
         }
 
-        self.buffer.apply_end_request();
         self.buffer.push_info_before_requests(self.end_ln);
 
         // It is legal to call end without calling start_ident or finish_indent

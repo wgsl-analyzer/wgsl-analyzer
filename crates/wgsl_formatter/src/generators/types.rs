@@ -79,12 +79,12 @@ pub fn gen_template_list(
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
 
-    let mut multiline_group = MultilineGroup::new(&mut formatted);
+    let mut multiline_group = MultilineGroup::new_before_requests(&mut formatted);
     multiline_group.push_sc(sc!("<"));
 
     // If its blank we do not give the formatter the option to break within the <>
     if !item_arguments.is_empty() {
-        multiline_group.start_indent();
+        multiline_group.start_indent_before_requests();
 
         for (position, item) in item_arguments.into_iter().with_position() {
             multiline_group.grouped_newline_or_space();
@@ -110,7 +110,7 @@ pub fn gen_template_list(
         multiline_group.grouped_possible_newline();
     }
     multiline_group.push_sc(sc!(">"));
-    multiline_group.end();
+    multiline_group.end_before_requests();
 
     Ok(formatted)
 }

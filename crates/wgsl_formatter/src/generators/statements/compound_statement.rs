@@ -126,7 +126,7 @@ pub fn gen_compound_statement(
 
     multiline_group.push_sc(sc!("}"));
 
-    multiline_group.end();
+    multiline_group.end_before_requests();
 
     Ok(formatted)
 }

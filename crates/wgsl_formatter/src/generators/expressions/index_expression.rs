@@ -35,11 +35,11 @@ pub fn gen_index_expression(
 
     formatted.extend(gen_node_with_trivia(&item_array_expr)?);
 
-    let mut multiline_group = MultilineGroup::new(&mut formatted);
+    let mut multiline_group = MultilineGroup::new_before_requests(&mut formatted);
 
     multiline_group.extend(gen_node_with_trivia(&item_bracket_left)?);
 
-    multiline_group.start_indent();
+    multiline_group.start_indent_before_requests();
 
     multiline_group.extend(gen_node_with_trivia(&item_actual_index)?);
     multiline_group.grouped_newline_or_space();
@@ -49,7 +49,7 @@ pub fn gen_index_expression(
 
     multiline_group.extend(gen_node_with_trivia(&item_bracket_right)?);
 
-    multiline_group.end();
+    multiline_group.end_before_requests();
 
     Ok(formatted)
 }

@@ -346,9 +346,9 @@ pub fn gen_interpolate_attribute(
     formatted.extend(gen_node_with_trivia(&item_attr_operator)?);
     formatted.extend(gen_node_with_trivia(&item_interpolate)?);
 
-    let mut multiline_group = MultilineGroup::new(&mut formatted);
+    let mut multiline_group = MultilineGroup::new_before_requests(&mut formatted);
     multiline_group.extend(gen_node_with_trivia(&item_paren_left)?);
-    multiline_group.start_indent();
+    multiline_group.start_indent_before_requests();
     multiline_group.grouped_possible_newline();
     multiline_group.extend(gen_node_with_trivia(&interpolate_type_name)?);
     if let Some(sampling) = sampling {
@@ -360,7 +360,7 @@ pub fn gen_interpolate_attribute(
     multiline_group.finish_indent();
     multiline_group.grouped_possible_newline();
     multiline_group.push_sc(sc!(")"));
-    multiline_group.end();
+    multiline_group.end_before_requests();
     Ok(formatted)
 }
 
@@ -540,7 +540,7 @@ fn gen_attr_standard_with_args(
         }
 
         multiline_group.push_sc(sc!(")"));
-        multiline_group.end();
+        multiline_group.end_before_requests();
     }
     Ok(formatted)
 }

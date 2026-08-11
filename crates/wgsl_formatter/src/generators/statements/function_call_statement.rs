@@ -20,7 +20,7 @@ use crate::{
         gen_node_content, gen_node_preceding_trivia, gen_node_succeeding_trivia,
         gen_node_with_trivia,
     },
-    multiline_group::{self, MultilineGroup},
+    multiline_group::MultilineGroup,
     print_item_buffer::{
         PrintItemBuffer,
         spacing_request::{Request, RequestItem},
@@ -199,7 +199,7 @@ pub fn gen_function_call_arguments_standard(
 
     multiline_group.push_sc(sc!(")"));
 
-    multiline_group.end();
+    multiline_group.end_before_requests();
 
     Ok(formatted)
 }

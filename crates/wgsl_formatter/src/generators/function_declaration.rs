@@ -159,7 +159,7 @@ pub fn gen_fn_parameters(node: &ast::FunctionParameters) -> FormatDocumentResult
 
     multiline_group.push_sc(sc!(")"));
 
-    multiline_group.end();
+    multiline_group.end_before_requests();
 
     Ok(formatted)
 }

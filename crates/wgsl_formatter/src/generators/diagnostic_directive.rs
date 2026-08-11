@@ -28,9 +28,9 @@ pub fn gen_diagnostic_control(
     parse_end(&mut syntax)?;
 
     let mut formatted = PrintItemBuffer::default();
-    let mut multiline_group = MultilineGroup::new(&mut formatted);
+    let mut multiline_group = MultilineGroup::new_before_requests(&mut formatted);
     multiline_group.push_sc(sc!("("));
-    multiline_group.start_indent();
+    multiline_group.start_indent_before_requests();
     multiline_group.grouped_possible_newline();
     multiline_group.extend(gen_node_with_trivia(&item_control_name)?);
     multiline_group.push_sc(sc!(","));
@@ -39,7 +39,7 @@ pub fn gen_diagnostic_control(
     multiline_group.finish_indent();
     multiline_group.grouped_possible_newline();
     multiline_group.push_sc(sc!(")"));
-    multiline_group.end();
+    multiline_group.end_before_requests();
     Ok(formatted)
 }
 
