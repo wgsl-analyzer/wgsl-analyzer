@@ -164,13 +164,13 @@ pub fn gen_function_call_arguments_standard(
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
 
-    let mut multiline_group = MultilineGroup::new(&mut formatted);
+    let mut multiline_group = MultilineGroup::new_before_requests(&mut formatted);
 
     multiline_group.push_sc(sc!("("));
 
     // If its blank we do not give the formatter the option to break within the ()
     if !item_arguments.is_empty() {
-        multiline_group.start_indent();
+        multiline_group.start_indent_before_requests();
         multiline_group.request(Request::discourage(RequestItem::Space));
 
         for (position, item) in item_arguments.into_iter().with_position() {
@@ -228,32 +228,25 @@ pub fn gen_function_call_arguments_tabular(
 
     // If its blank we do not give the formatter the option to break within the ()
     if !item_arguments.is_empty() {
+        formatted.request(Request::expect(RequestItem::LineBreak));
         for row in &item_arguments.into_iter().chunks(table_columns) {
-            // A row always starts on a new line
-            formatted.request(Request::expect(RequestItem::LineBreak));
-            let mut multiline_group = MultilineGroup::new(&mut formatted);
-            for (position, column) in row.with_position() {
-                if position == Position::First || position == Position::Only {
-                    // TODO The first item does not need to be separated by a space nor a newline - because thats already handled by the row,
-                    // however requests wont be merged because multilinegroup resets it.
-                    multiline_group.request(Request::discourage(RequestItem::Space));
-                    multiline_group.request(Request::discourage(RequestItem::LineBreak));
-                } else {
-                    multiline_group.grouped_newline_or_space();
-                }
-
+            formatted.apply_end_request();
+            formatted.request(Request::discourage(RequestItem::Space));
+            let mut multiline_group = MultilineGroup::new_before_requests(&mut formatted);
+            for column in row {
                 multiline_group.extend(gen_node_preceding_trivia(&column)?);
                 multiline_group.extend(gen_node_content(&column)?);
                 multiline_group.request(Request::discourage(RequestItem::Space));
                 // We know that there is always a separator - even on the final item
                 multiline_group.push_sc(sc!(","));
                 multiline_group.extend(gen_node_succeeding_trivia(&column)?);
+
+                multiline_group.grouped_newline_or_space();
             }
-            // TODO Discourage LineBreaks at the end - as the multilinegroup would immediately apply them
-            // and they wouldn't get merged with the linebreak from starting a new row
-            // TODO This won't help with line-comments as they force it. A proper solution would be to allow requests to propagate through multilinegroup.end()
-            multiline_group.request(Request::discourage(RequestItem::LineBreak));
-            multiline_group.end();
+            multiline_group.end_before_requests();
+
+            // A row always ends on a new line
+            formatted.request(Request::expect(RequestItem::LineBreak));
         }
         formatted.request(Request::expect(RequestItem::LineBreak));
     }
