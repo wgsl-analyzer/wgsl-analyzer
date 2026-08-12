@@ -119,17 +119,6 @@ impl PrintItemBuffer {
         self.items.push_sc(sc);
     }
 
-    #[deprecated]
-    pub fn push_info<T>(
-        &mut self,
-        info: T,
-    ) where
-        T: Into<Info>,
-    {
-        self.apply_end_request();
-        self.push_info_before_requests(info);
-    }
-
     pub fn push_info_before_requests<T>(
         &mut self,
         info: T,
@@ -137,17 +126,6 @@ impl PrintItemBuffer {
         T: Into<Info>,
     {
         self.items.push_info(info);
-    }
-
-    #[deprecated]
-    pub fn push_anchor<T>(
-        &mut self,
-        anchor: T,
-    ) where
-        T: Into<Anchor>,
-    {
-        self.apply_end_request();
-        self.push_anchor_before_requests(anchor);
     }
 
     pub fn push_anchor_before_requests<T>(
@@ -159,29 +137,11 @@ impl PrintItemBuffer {
         self.items.push_anchor(anchor);
     }
 
-    #[deprecated]
-    pub fn push_condition(
-        &mut self,
-        condition: dprint_core::formatting::Condition,
-    ) {
-        self.apply_end_request();
-        self.push_condition_before_requests(condition);
-    }
-
     pub fn push_condition_before_requests(
         &mut self,
         condition: dprint_core::formatting::Condition,
     ) {
         self.items.push_condition(condition);
-    }
-
-    #[deprecated]
-    pub fn push_reevaluation(
-        &mut self,
-        reeval: dprint_core::formatting::ConditionReevaluation,
-    ) {
-        self.apply_end_request();
-        self.push_reevaluation_before_requests(reeval);
     }
 
     pub fn push_reevaluation_before_requests(
@@ -199,40 +159,16 @@ impl PrintItemBuffer {
         self.items.push_signal(Signal::FinishIndent);
     }
 
-    #[deprecated]
-    pub(crate) fn start_ignoring_indent(&mut self) {
-        self.apply_end_request();
-        self.start_ignoring_indent_before_requests();
-    }
-
     pub(crate) fn start_ignoring_indent_before_requests(&mut self) {
         self.items.push_signal(Signal::StartIgnoringIndent);
-    }
-
-    #[deprecated]
-    pub(crate) fn finish_ignoring_indent(&mut self) {
-        self.apply_end_request();
-        self.finish_ignoring_indent_before_requests();
     }
 
     pub(crate) fn finish_ignoring_indent_before_requests(&mut self) {
         self.items.push_signal(Signal::FinishIgnoringIndent);
     }
 
-    #[deprecated]
-    pub(crate) fn start_new_line_group(&mut self) {
-        self.apply_end_request();
-        self.start_new_line_group_before_requests();
-    }
-
     pub(crate) fn start_new_line_group_before_requests(&mut self) {
         self.items.push_signal(Signal::StartNewLineGroup);
-    }
-
-    #[deprecated]
-    pub(crate) fn finish_new_line_group(&mut self) {
-        self.apply_end_request();
-        self.finish_new_line_group_before_requests();
     }
 
     pub fn finish_new_line_group_before_requests(&mut self) {
