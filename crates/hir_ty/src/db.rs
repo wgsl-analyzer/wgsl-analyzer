@@ -1,22 +1,18 @@
 //! The home of `HirDatabase`, which is the Salsa database containing all the
 //! type inference-related queries.
 
-#![expect(
-    clippy::trailing_empty_array,
-    reason = "Clippy has a false positive for the query_group macro, see: https://github.com/rust-lang/rust-clippy/issues/16754"
-)]
-
 use std::fmt;
 
-use base_db::{EditionedFileId, Lookup as _};
+use base_db::{EditionedFileId, Intern as _, Lookup as _, SourceDatabase};
+use hir_def::db::Location;
+use hir_def::signature::{StructSignature, TypeAliasSignature};
 use hir_def::{
     InFile,
-    database::{
-        DefDatabase, DefinitionWithBodyId, FunctionId, ModuleDefinitionId, StructId, TypeAliasId,
-    },
+    db::{DefinitionWithBodyId, FunctionId, ModuleDefinitionId, StructId, TypeAliasId},
     item_scope::ItemScope,
+    item_tree::ItemTree,
     resolver::Resolver,
-    signature::{FieldId, LocalFieldId},
+    signature::{FieldId, FunctionSignature, LocalFieldId},
 };
 use la_arena::ArenaMap;
 use salsa::plumbing::AsId as _;
@@ -32,46 +28,49 @@ use crate::{
     ty::{Type, TypeKind},
 };
 
-#[query_group::query_group]
-pub trait HirDatabase: DefDatabase + fmt::Debug {
+#[salsa::db]
+pub trait HirDatabase: SourceDatabase + 'static {
+    /// Manual implementation of upcasting from `dyn SourceDatabase` to `dyn HirDatabase`.
+    ///
+    /// This function is needed because Rust can't perform this upcasting automatically
+    /// in the general case, as `Self` could be unsized.
+    fn as_dyn(&self) -> &dyn HirDatabase;
+
     fn field_types(
         &self,
         key: StructId,
-    ) -> Arc<(ArenaMap<LocalFieldId, Type>, Vec<InferenceDiagnostic>)>;
+    ) -> Arc<(ArenaMap<LocalFieldId, Type>, Vec<InferenceDiagnostic>)> {
+        field_types(self.as_dyn(), key)
+    }
 
     fn function_type(
         &self,
         key: FunctionId,
-    ) -> ResolvedFunctionId;
+    ) -> ResolvedFunctionId {
+        function_type(self.as_dyn(), key)
+    }
 
     fn type_alias_type(
         &self,
         key: TypeAliasId,
-    ) -> Arc<(Type, Vec<InferenceDiagnostic>)>;
+    ) -> Arc<(Type, Vec<InferenceDiagnostic>)> {
+        type_alias_type(self.as_dyn(), key)
+    }
 
     fn struct_is_used_in_uniform(
         &self,
         key: StructId,
         file_id: EditionedFileId,
-    ) -> bool;
+    ) -> bool {
+        struct_is_used_in_uniform(self.as_dyn(), key, file_id)
+    }
+}
 
-    #[salsa::interned]
-    fn intern_type(
-        &self,
-        r#type: TypeKind,
-    ) -> Type;
-
-    #[salsa::interned]
-    fn intern_builtin(
-        &self,
-        builtin: Builtin,
-    ) -> BuiltinId;
-
-    #[salsa::interned]
-    fn intern_resolved_function(
-        &self,
-        builtin: FunctionDetails,
-    ) -> ResolvedFunctionId;
+#[salsa::db]
+impl<T: SourceDatabase> HirDatabase for T {
+    fn as_dyn(&self) -> &dyn HirDatabase {
+        self
+    }
 }
 
 #[derive(PartialEq, Eq, Debug)]
@@ -80,17 +79,18 @@ pub struct FieldInferenceDiagnostic {
     pub error: TypeLoweringError,
 }
 
+#[salsa::tracked(returns(clone))]
 fn field_types(
-    database: &dyn HirDatabase,
+    db: &dyn HirDatabase,
     r#struct: StructId,
 ) -> Arc<(ArenaMap<LocalFieldId, Type>, Vec<InferenceDiagnostic>)> {
-    let data = database.struct_data(r#struct).0;
+    let data = StructSignature::of(db, r#struct);
 
-    let file_id = r#struct.lookup(database).file_id;
-    let module_info = ItemScope::of(database, file_id);
+    let file_id = r#struct.lookup(db).file_id;
+    let module_info = ItemScope::of(db, file_id);
     let resolver = Resolver::new(file_id, module_info);
 
-    let mut type_context = TypeLoweringContext::new(database, &resolver, &data.store);
+    let mut type_context = TypeLoweringContext::new(db, &resolver, &data.store);
 
     let mut diagnostics = vec![];
     let mut map = ArenaMap::default();
@@ -112,17 +112,18 @@ fn field_types(
     Arc::new((map, diagnostics))
 }
 
+#[salsa::tracked(returns(clone))]
 fn type_alias_type(
-    database: &dyn HirDatabase,
+    db: &dyn HirDatabase,
     type_alias: TypeAliasId,
 ) -> Arc<(Type, Vec<InferenceDiagnostic>)> {
-    let data = database.type_alias_data(type_alias).0;
+    let data = TypeAliasSignature::of(db, type_alias);
 
-    let file_id = type_alias.lookup(database).file_id;
-    let module_info = ItemScope::of(database, file_id);
+    let file_id = type_alias.lookup(db).file_id;
+    let module_info = ItemScope::of(db, file_id);
     let resolver = Resolver::new(file_id, module_info);
 
-    let mut type_context = TypeLoweringContext::new(database, &resolver, &data.store);
+    let mut type_context = TypeLoweringContext::new(db, &resolver, &data.store);
     let result = type_context.lower_type(data.r#type);
     let diagnostics = type_context
         .diagnostics
@@ -136,17 +137,18 @@ fn type_alias_type(
     Arc::new((result, diagnostics))
 }
 
+#[salsa::tracked(returns(clone))]
 fn function_type(
-    database: &dyn HirDatabase,
+    db: &dyn HirDatabase,
     function: FunctionId,
 ) -> ResolvedFunctionId {
-    let data = database.function_data(function).0;
+    let data = FunctionSignature::of(db, function);
 
-    let file_id = function.lookup(database).file_id;
-    let module_info = ItemScope::of(database, file_id);
+    let file_id = function.lookup(db).file_id;
+    let module_info = ItemScope::of(db, file_id);
     let resolver = Resolver::new(file_id, module_info);
 
-    let mut type_context = TypeLoweringContext::new(database, &resolver, &data.store);
+    let mut type_context = TypeLoweringContext::new(db, &resolver, &data.store);
 
     let return_type = data
         .return_type
@@ -166,27 +168,25 @@ fn function_type(
         return_type,
         parameters,
     }
-    .intern(database)
+    .intern(db)
 }
 
+#[salsa::tracked(returns(clone))]
 fn struct_is_used_in_uniform(
-    database: &dyn HirDatabase,
+    db: &dyn HirDatabase,
     r#struct: StructId,
     file_id: EditionedFileId,
 ) -> bool {
-    let module_info = database.item_tree(file_id);
+    let module_info = ItemTree::of(db, file_id);
     module_info
         .top_level_items()
         .iter()
         .any(|item| match *item {
             hir_def::item_tree::ModuleItemId::GlobalVariable(declaration) => {
-                let declaration =
-                    database.intern_global_variable(InFile::new(file_id, declaration));
-                let inference = InferenceResult::of(
-                    database,
-                    DefinitionWithBodyId::GlobalVariable(declaration),
-                );
-                let type_kind = inference.return_type().kind(database);
+                let declaration = Location::new(file_id, declaration).intern(db);
+                let inference =
+                    InferenceResult::of(db, DefinitionWithBodyId::GlobalVariable(declaration));
+                let type_kind = inference.return_type().kind(db);
 
                 if let TypeKind::Reference(crate::ty::Reference { address_space, .. }) = type_kind
                     && !matches!(address_space, AddressSpace::Uniform)
@@ -194,7 +194,7 @@ fn struct_is_used_in_uniform(
                     return false;
                 }
 
-                inference.return_type().contains_struct(database, r#struct)
+                inference.return_type().contains_struct(db, r#struct)
             },
             hir_def::item_tree::ModuleItemId::Function(_)
             | hir_def::item_tree::ModuleItemId::Struct(_)

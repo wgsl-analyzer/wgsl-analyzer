@@ -16,7 +16,6 @@ either.workspace = true
 hir-def.workspace = true
 itertools.workspace = true
 la-arena.workspace = true
-query-group.workspace = true
 rustc-hash.workspace = true
 salsa.workspace = true
 salsa-macros.workspace = true
@@ -35,6 +34,10 @@ tracing-tree.workspace = true
 [dev-dependencies]
 expect-test.workspace = true
 test-fixture.workspace = true
+
+[build-dependencies]
+itertools.workspace = true
+rustc-hash.workspace = true
 
 [lints]
 workspace = true

@@ -2,24 +2,109 @@
 
 use std::{fmt, iter};
 
+use base_db::{EditionedFileId, Package, SourceDatabase};
+use camino::Utf8Component;
 use smallvec::SmallVec;
 use syntax::ast::{self, ImportRelative};
 
 use crate::item_tree::Name;
 
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct ModPath {
-    kind: PathKind,
-    segments: SmallVec<[Name; 1]>,
+pub struct AbsoluteModPath(ModPath);
+
+impl AbsoluteModPath {
+    #[must_use]
+    pub const fn new_root() -> Self {
+        Self(ModPath::from_kind(PathKind::Package))
+    }
+
+    #[must_use]
+    pub fn from_segments(segments: &[Name]) -> Self {
+        Self(ModPath::from_segments(
+            PathKind::Package,
+            segments.iter().cloned(),
+        ))
+    }
+
+    /// Returns the absolute `package::` path for a given file.
+    ///
+    /// Returns none if there is no valid path.
+    pub fn for_file(
+        db: &dyn SourceDatabase,
+        package: Package,
+        file_id: EditionedFileId,
+    ) -> Option<Self> {
+        let source_root = package.data(db).source_root(db);
+        let path = source_root.path_for_file(file_id.file_id(db))?;
+        let relative_path = path.strip_prefix(&package.data(db).root)?;
+        let segments: SmallVec<[Name; 1]> = relative_path
+            .as_utf8_path()
+            .with_extension("")
+            .components()
+            .filter_map(|component| match component {
+                Utf8Component::Prefix(_)
+                | Utf8Component::RootDir
+                | Utf8Component::ParentDir
+                | Utf8Component::CurDir => None,
+                Utf8Component::Normal(name) => Some(Name::from(name)),
+            })
+            .collect();
+
+        // package.wesl special case
+        if segments.len() == 1 && segments[0].as_str() == "package" {
+            return Some(Self::new_root());
+        }
+
+        Some(Self(ModPath::from_segments(PathKind::Package, segments)))
+    }
+
+    #[must_use]
+    pub fn segments(&self) -> &[Name] {
+        self.0.segments()
+    }
+
+    pub fn push_segment(
+        &mut self,
+        segment: Name,
+    ) {
+        self.0.push_segment(segment);
+    }
+
+    pub fn pop_segment(&mut self) -> Option<Name> {
+        self.0.pop_segment()
+    }
 }
 
-impl fmt::Debug for ModPath {
+impl From<AbsoluteModPath> for ModPath {
+    fn from(value: AbsoluteModPath) -> Self {
+        value.0
+    }
+}
+
+impl fmt::Debug for AbsoluteModPath {
     fn fmt(
         &self,
         f: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
-        f.debug_tuple("ModPath").field(&self.to_string()).finish()
+        f.debug_tuple("AbsoluteModPath")
+            .field(&self.0.to_string())
+            .finish()
     }
+}
+
+impl fmt::Display for AbsoluteModPath {
+    fn fmt(
+        &self,
+        f: &mut fmt::Formatter<'_>,
+    ) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct ModPath {
+    kind: PathKind,
+    segments: SmallVec<[Name; 1]>,
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -174,16 +259,16 @@ impl Extend<Name> for ModPath {
 impl fmt::Display for ModPath {
     fn fmt(
         &self,
-        f: &mut fmt::Formatter<'_>,
+        formatter: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
         let mut segments = self.display_iter();
         let Some(first_segment) = segments.next() else {
             return Ok(());
         };
-        f.write_str(first_segment)?;
+        formatter.write_str(first_segment)?;
         for segment in segments {
-            f.write_str("::")?;
-            f.write_str(segment)?;
+            formatter.write_str("::")?;
+            formatter.write_str(segment)?;
         }
         Ok(())
     }
@@ -200,6 +285,7 @@ struct ModPathDisplayIter<'path> {
     segments: &'path SmallVec<[Name; 1]>,
     segment_index: usize,
 }
+
 impl<'path> Iterator for ModPathDisplayIter<'path> {
     type Item = &'path str;
 

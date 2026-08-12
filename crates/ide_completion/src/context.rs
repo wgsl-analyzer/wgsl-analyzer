@@ -8,28 +8,28 @@ use crate::{config::CompletionConfig, patterns::determine_location};
 
 /// `CompletionContext` is created early during completion to figure out, where
 /// exactly is the cursor, syntax-wise.
-pub(crate) struct CompletionContext<'database> {
-    pub(crate) semantics: Semantics<'database>,
+pub(crate) struct CompletionContext<'db> {
+    pub(crate) semantics: Semantics<'db>,
     pub(crate) file_id: EditionedFileId,
-    pub(crate) database: &'database RootDatabase,
+    pub(crate) db: &'db RootDatabase,
     pub(crate) position: FilePosition,
     pub(crate) token: SyntaxToken,
     pub(crate) file: ast::SourceFile,
     pub(crate) container: Option<ChildContainer>,
     pub(crate) completion_location: Option<ImmediateLocation>,
-    pub(crate) resolver: Resolver,
+    pub(crate) resolver: Resolver<'db>,
 }
 
-impl<'database> CompletionContext<'database> {
+impl<'db> CompletionContext<'db> {
     pub(crate) fn new(
-        database: &'database RootDatabase,
+        db: &'db RootDatabase,
         position @ FilePosition { file_id, offset }: FilePosition,
-        config: &'database CompletionConfig,
+        config: &'db CompletionConfig,
         trigger_character: Option<char>,
     ) -> Option<Self> {
         let _p = tracing::info_span!("CompletionContext::new").entered();
-        let semantics = Semantics::new(database);
-        let file_id = EditionedFileId::from_file(database, file_id);
+        let semantics = Semantics::new(db);
+        let file_id = EditionedFileId::from_file(db, file_id);
         let file = semantics.parse(file_id);
         let token = file
             .syntax()
@@ -43,7 +43,7 @@ impl<'database> CompletionContext<'database> {
         let completion_location =
             determine_location(&semantics, file.syntax(), position.offset, &token);
 
-        let module_info = ItemScope::of(database, file_id);
+        let module_info = ItemScope::of(db, file_id);
         let mut resolver = Resolver::new(file_id, module_info);
 
         let nearest_scope = token.parent().and_then(|node| nearest_scope(&node));
@@ -58,7 +58,7 @@ impl<'database> CompletionContext<'database> {
         let context = Self {
             semantics,
             file_id,
-            database,
+            db,
             position,
             token,
             file,

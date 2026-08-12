@@ -11,7 +11,7 @@ use hir_def::{
 };
 use hir_ty::{
     builtins::BuiltinId,
-    database::HirDatabase,
+    db::HirDatabase,
     diagnostics::InferenceDiagnosticKind,
     infer::TypeExpectation,
     lower::{LoweredKind, TypeContainer, TypeLoweringError, TypeLoweringErrorKind},
@@ -30,9 +30,15 @@ pub enum AnyDiagnostic {
     },
 
     // Module system errors
-    UnresolvedImport {
+    UnnamedImport {
+        id: InFile<AstPointer<ast::ImportStatement>>,
+    },
+    UnresolvedPackage {
         id: InFile<AstPointer<ast::ImportStatement>>,
         name: Name,
+    },
+    UnresolvedImport {
+        id: InFile<AstPointer<ast::ImportStatement>>,
     },
     TooManySupers {
         id: InFile<AstPointer<ast::ImportStatement>>,
@@ -64,11 +70,7 @@ pub enum AnyDiagnostic {
         expression: InFile<AstPointer<ast::Expression>>,
         r#type: Type,
     },
-    UnresolvedName {
-        expression: InFile<AstPointer<ast::Expression>>,
-        name: Name,
-    },
-    InvalidConstructionType {
+    NotConstructible {
         expression: InFile<AstPointer<ast::Expression>>,
         r#type: Type,
     },
@@ -178,8 +180,7 @@ impl AnyDiagnostic {
             Self::TypeMismatch { expression, .. }
             | Self::NoSuchField { expression, .. }
             | Self::ArrayAccessInvalidType { expression, .. }
-            | Self::UnresolvedName { expression, .. }
-            | Self::InvalidConstructionType { expression, .. }
+            | Self::NotConstructible { expression, .. }
             | Self::FunctionCallArgCountMismatch { expression, .. }
             | Self::NoBuiltinOverload { expression, .. }
             | Self::StoreTypeMustBeStorable { expression, .. }
@@ -201,7 +202,9 @@ impl AnyDiagnostic {
             | Self::ParseError { file_id, .. }
             | Self::CyclicType { file_id, .. }
             | Self::InvalidIdentifier { file_id, .. } => *file_id,
-            Self::UnresolvedImport { id, .. }
+            Self::UnnamedImport { id, .. }
+            | Self::UnresolvedPackage { id, .. }
+            | Self::UnresolvedImport { id, .. }
             | Self::TooManySupers { id }
             | Self::DetachedFile { id } => id.file_id,
             Self::NameConflict { item, .. } => item.file_id,
@@ -233,7 +236,7 @@ pub(crate) fn any_diag_from_infer_diagnostic(
             let source = InFile::new(file_id, pointer);
             AnyDiagnostic::TypeMismatch {
                 expression: source,
-                expected: expected.clone(),
+                expected: *expected,
                 actual: *actual,
             }
         },
@@ -244,7 +247,6 @@ pub(crate) fn any_diag_from_infer_diagnostic(
         } => {
             let pointer = source_map.expression_to_source(*expression).ok()?.clone();
             let source = InFile::new(file_id, pointer);
-
             AnyDiagnostic::NoSuchField {
                 expression: source,
                 name: name.clone(),
@@ -254,26 +256,15 @@ pub(crate) fn any_diag_from_infer_diagnostic(
         InferenceDiagnosticKind::ArrayAccessInvalidType { expression, r#type } => {
             let pointer = source_map.expression_to_source(*expression).ok()?.clone();
             let source = InFile::new(file_id, pointer);
-
             AnyDiagnostic::ArrayAccessInvalidType {
                 expression: source,
                 r#type: *r#type,
             }
         },
-        InferenceDiagnosticKind::UnresolvedName { expression, name } => {
+        InferenceDiagnosticKind::NotConstructible { expression, r#type } => {
             let pointer = source_map.expression_to_source(*expression).ok()?.clone();
             let source = InFile::new(file_id, pointer);
-
-            AnyDiagnostic::UnresolvedName {
-                expression: source,
-                name: name.clone(),
-            }
-        },
-        InferenceDiagnosticKind::InvalidConstructionType { expression, r#type } => {
-            let pointer = source_map.expression_to_source(*expression).ok()?.clone();
-            let source = InFile::new(file_id, pointer);
-
-            AnyDiagnostic::InvalidConstructionType {
+            AnyDiagnostic::NotConstructible {
                 expression: source,
                 r#type: *r#type,
             }
@@ -286,7 +277,6 @@ pub(crate) fn any_diag_from_infer_diagnostic(
         } => {
             let pointer = source_map.expression_to_source(*expression).ok()?.clone();
             let source = InFile::new(file_id, pointer);
-
             AnyDiagnostic::NoConstructor {
                 expression: source,
                 builtins: *builtins,
@@ -301,7 +291,6 @@ pub(crate) fn any_diag_from_infer_diagnostic(
         } => {
             let pointer = source_map.expression_to_source(*expression).ok()?.clone();
             let source = InFile::new(file_id, pointer);
-
             AnyDiagnostic::FunctionCallArgCountMismatch {
                 expression: source,
                 n_expected: *n_expected,
@@ -316,7 +305,6 @@ pub(crate) fn any_diag_from_infer_diagnostic(
         } => {
             let pointer = source_map.expression_to_source(*expression).ok()?.clone();
             let source = InFile::new(file_id, pointer);
-
             AnyDiagnostic::NoBuiltinOverload {
                 expression: source,
                 builtin: *builtin,
@@ -327,7 +315,6 @@ pub(crate) fn any_diag_from_infer_diagnostic(
         InferenceDiagnosticKind::AddressOfNotReference { expression, actual } => {
             let pointer = source_map.expression_to_source(*expression).ok()?.clone();
             let source = InFile::new(file_id, pointer);
-
             AnyDiagnostic::AddressOfNotReference {
                 expression: source,
                 actual: *actual,
@@ -336,7 +323,6 @@ pub(crate) fn any_diag_from_infer_diagnostic(
         InferenceDiagnosticKind::DerefNotAPointer { expression, actual } => {
             let pointer = source_map.expression_to_source(*expression).ok()?.clone();
             let source = InFile::new(file_id, pointer);
-
             AnyDiagnostic::DerefNotAPointer {
                 expression: source,
                 actual: *actual,
@@ -348,7 +334,6 @@ pub(crate) fn any_diag_from_infer_diagnostic(
             TypeContainer::Expression(expression) => {
                 let pointer = source_map.expression_to_source(*expression).ok()?.clone();
                 let source = InFile::new(file_id, pointer);
-
                 AnyDiagnostic::InvalidIdentExpression {
                     expression: source,
                     error: kind.clone(),
@@ -387,7 +372,7 @@ pub(crate) fn any_diag_from_infer_diagnostic(
                 message: message.clone(),
             }
         },
-        InferenceDiagnosticKind::ExpectedLoweredKind {
+        InferenceDiagnosticKind::UnexpectedLoweredKind {
             expression,
             expected,
             actual,
@@ -422,23 +407,29 @@ pub(crate) fn any_diag_from_infer_diagnostic(
 }
 
 pub(crate) fn any_diag_from_def_diagnostic(
-    database: &dyn HirDatabase,
+    db: &dyn HirDatabase,
     def_diagnostic: &DefDiagnostic,
     file_id: EditionedFileId,
 ) -> AnyDiagnostic {
     match &def_diagnostic.kind {
-        DefDiagnosticKind::UnresolvedImport { id, name } => AnyDiagnostic::UnresolvedImport {
-            id: id.ast_ptr(database),
+        DefDiagnosticKind::UnnamedImport { id } => {
+            AnyDiagnostic::UnnamedImport { id: id.ast_ptr(db) }
+        },
+        DefDiagnosticKind::UnresolvedPackage { id, name } => AnyDiagnostic::UnresolvedPackage {
+            id: id.ast_ptr(db),
             name: name.clone(),
         },
-        DefDiagnosticKind::TooManySupers { id } => AnyDiagnostic::TooManySupers {
-            id: id.ast_ptr(database),
+        DefDiagnosticKind::UnresolvedImport { id } => {
+            AnyDiagnostic::UnresolvedImport { id: id.ast_ptr(db) }
         },
-        DefDiagnosticKind::DetachedFile { id } => AnyDiagnostic::DetachedFile {
-            id: id.ast_ptr(database),
+        DefDiagnosticKind::TooManySupers { id } => {
+            AnyDiagnostic::TooManySupers { id: id.ast_ptr(db) }
+        },
+        DefDiagnosticKind::DetachedFile { id } => {
+            AnyDiagnostic::DetachedFile { id: id.ast_ptr(db) }
         },
         DefDiagnosticKind::NameConflict { item, previous } => AnyDiagnostic::NameConflict {
-            item: item.ast_ptr(database),
+            item: item.ast_ptr(db),
             name: previous.clone(),
         },
     }

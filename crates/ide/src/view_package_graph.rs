@@ -16,26 +16,20 @@ use ide_db::{
 /// |---------|-------------|
 /// | VS Code | **wgsl-analyzer: View Package Graph** |
 pub(crate) fn view_package_graph(
-    database: &RootDatabase,
+    db: &RootDatabase,
     full: bool,
 ) -> String {
-    let all_packages = all_packages(database);
+    let all_packages = all_packages(db);
     let packages_to_render: FxHashMap<PackageId, (&PackageData, &())> = all_packages
         .iter()
         .copied()
-        .map(|package| (package.package_id(database), (package.data(database), &())))
+        .map(|package| (package.package_id(db), (package.data(db), &())))
         .filter(|(_, (package_data, ()))| {
             if full {
                 true
             } else {
                 // Only render workspace packages
-                let root_id = database
-                    .file_source_root(package_data.root_file_id)
-                    .source_root_id(database);
-                !database
-                    .source_root(root_id)
-                    .source_root(database)
-                    .is_library()
+                !package_data.source_root(db).is_library()
             }
         })
         .collect();

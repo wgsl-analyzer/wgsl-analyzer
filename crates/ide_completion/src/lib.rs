@@ -58,13 +58,13 @@ impl CompletionFieldsToResolve {
 }
 
 pub fn completions(
-    database: &RootDatabase,
+    db: &RootDatabase,
     config: &CompletionConfig,
     position: FilePosition,
     trigger_character: Option<char>,
 ) -> Option<Vec<CompletionItem>> {
     let _p = tracing::info_span!("completions").entered();
-    let (context) = &CompletionContext::new(database, position, config, trigger_character)?;
+    let (context) = &CompletionContext::new(db, position, config, trigger_character)?;
     let mut completions = Completions::default();
 
     completions::dot::complete_dot(&mut completions, context);

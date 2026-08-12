@@ -1,4 +1,4 @@
-use base_db::EditionedFileId;
+use base_db::{EditionedFileId, Package, SourceDatabase, file_package, input::PackageId};
 use triomphe::Arc;
 
 use crate::{
@@ -6,22 +6,22 @@ use crate::{
         BindingId,
         scope::{ExprScopes, ScopeId},
     },
-    database::{
-        DefDatabase, FunctionId, GlobalConstantId, GlobalVariableId, ModuleDefinitionId,
-        OverrideId, StructId, TypeAliasId,
+    db::{
+        FunctionId, GlobalConstantId, GlobalVariableId, ModuleDefinitionId, OverrideId, StructId,
+        TypeAliasId,
     },
     expression_store::path::Path,
     item_scope::ItemScope,
     item_tree::Name,
-    mod_path::PathKind,
-    name_resolution::ModuleData,
+    mod_path::{AbsoluteModPath, ModPath, PathKind},
+    name_resolution::resolve_module,
     visibility::Visibility,
 };
 
 #[derive(Clone)]
-pub enum Scope {
+pub enum Scope<'db> {
     /// Local bindings.
-    Expression(ExpressionScope),
+    Expression(ExpressionScope<'db>),
     /// The items inside a module.
     Module(ModuleScope),
     /// Predeclared WGSL items.
@@ -29,9 +29,9 @@ pub enum Scope {
 }
 
 #[derive(Clone)]
-pub struct ExpressionScope {
+pub struct ExpressionScope<'db> {
     owner: FunctionId,
-    expression_scopes: Arc<ExprScopes>,
+    expression_scopes: &'db ExprScopes,
     scope_id: ScopeId,
 }
 
@@ -50,7 +50,6 @@ pub enum ResolveKind {
     GlobalConstant(GlobalConstantId),
     Override(OverrideId),
     Function(FunctionId),
-    Module(EditionedFileId),
 }
 
 impl TryFrom<ModuleDefinitionId> for ResolveKind {
@@ -58,7 +57,6 @@ impl TryFrom<ModuleDefinitionId> for ResolveKind {
 
     fn try_from(value: ModuleDefinitionId) -> Result<Self, ()> {
         Ok(match value {
-            ModuleDefinitionId::Module(id) => Self::Module(id),
             ModuleDefinitionId::Function(id) => Self::Function(id),
             ModuleDefinitionId::GlobalVariable(id) => Self::GlobalVariable(id),
             ModuleDefinitionId::GlobalConstant(id) => Self::GlobalConstant(id),
@@ -73,15 +71,16 @@ impl TryFrom<ModuleDefinitionId> for ResolveKind {
 pub enum ScopeDef {
     Local(BindingId),
     ModuleDefinition(ModuleDefinitionId),
+    Module,
 }
 
 #[derive(Clone)]
-pub struct Resolver {
+pub struct Resolver<'db> {
     file_id: EditionedFileId,
-    scopes: Vec<Scope>,
+    scopes: Vec<Scope<'db>>,
 }
 
-impl Resolver {
+impl<'db> Resolver<'db> {
     #[must_use]
     pub fn new(
         file_id: EditionedFileId,
@@ -100,7 +99,7 @@ impl Resolver {
     #[must_use]
     pub fn push_scope(
         mut self,
-        scope: Scope,
+        scope: Scope<'db>,
     ) -> Self {
         self.scopes.push(scope);
         self
@@ -110,7 +109,7 @@ impl Resolver {
     pub fn push_expression_scope(
         mut self,
         owner: FunctionId,
-        expression_scopes: Arc<ExprScopes>,
+        expression_scopes: &'db ExprScopes,
         scope_id: ScopeId,
     ) -> Self {
         self.scopes.push(Scope::Expression(ExpressionScope {
@@ -121,7 +120,7 @@ impl Resolver {
         self
     }
 
-    pub fn scopes(&self) -> impl Iterator<Item = &Scope> {
+    pub fn scopes(&self) -> impl Iterator<Item = &Scope<'db>> {
         self.scopes.iter().rev()
     }
 
@@ -156,6 +155,13 @@ impl Resolver {
                 scope.module_info.items.iter().for_each(|(name, item)| {
                     callback(name, ScopeDef::ModuleDefinition(item.definition));
                 });
+                scope
+                    .module_info
+                    .import_paths
+                    .iter()
+                    .for_each(|(name, item)| {
+                        callback(name, ScopeDef::Module);
+                    });
             },
             Scope::Builtin => {
                 // TODO: Match against "name.as_str()" and then point at a "builtin" file
@@ -168,150 +174,157 @@ impl Resolver {
     /// Corresponds to `resolve_path_in_type_ns` in rust-analyzer.
     pub fn resolve(
         &self,
-        database: &dyn DefDatabase,
+        db: &dyn SourceDatabase,
         path: &Path,
     ) -> Result<ResolveKind, ResolutionDiagnostic> {
         let path = path.mod_path();
+        if path.is_empty() {
+            return Err(ResolutionDiagnostic::MissingName);
+        }
         match path.kind() {
-            PathKind::Plain => self.resolve_plain(database, path.segments()),
-            PathKind::Super(levels) => {
-                let mut file_id = self.file_id;
-                for level in 0..levels {
-                    let parent = ModuleData::of(database, file_id)
-                        .and_then(|module_data| module_data.parent)
-                        .ok_or_else(|| ResolutionDiagnostic {
-                            failed_segment: usize::from(level),
-                        })?;
-                    file_id = parent;
-                }
-                if path.is_empty() {
-                    Ok(ResolveKind::Module(file_id))
+            PathKind::Plain if path.len() == 1 => self.resolve_name(db, &path.segments()[0]),
+            PathKind::Plain => {
+                let dependency_name = &path.segments()[0];
+                // The first segment is either an import or a package name
+                let item_scope = ItemScope::of(db, self.file_id);
+                if let Some(module_import) = item_scope.import_paths.get(dependency_name) {
+                    let mut absolute_path = module_import.path.clone();
+                    for segment in &path.segments()[1..] {
+                        absolute_path.push_segment(segment.clone());
+                    }
+
+                    resolve_path_to_item(db, module_import.package, absolute_path.segments())
                 } else {
-                    resolve_submodules(database, file_id, path.segments()).map_err(
-                        |mut diagnostic| {
-                            diagnostic.failed_segment += usize::from(levels);
-                            diagnostic
-                        },
-                    )
+                    let package = file_package(db, self.file_id.file_id(db))
+                        .ok_or(ResolutionDiagnostic::DetachedFile)?;
+
+                    let resolved_dependency = package
+                        .data(db)
+                        .dependencies
+                        .iter()
+                        .find(|dep| dep.name.as_str() == dependency_name.as_str())
+                        .ok_or(ResolutionDiagnostic::UnresolvedPackage {
+                            name: dependency_name.clone(),
+                        })?;
+
+                    let dependency_package = resolved_dependency.package(db);
+
+                    resolve_path_to_item(db, dependency_package, &path.segments()[1..])
                 }
+            },
+            PathKind::Super(levels) => {
+                let package = file_package(db, self.file_id.file_id(db))
+                    .ok_or(ResolutionDiagnostic::DetachedFile)?;
+
+                let mut mod_path = AbsoluteModPath::for_file(db, package, self.file_id)
+                    .ok_or(ResolutionDiagnostic::DetachedFile)?;
+
+                for level in 0..levels {
+                    if mod_path.pop_segment().is_none() {
+                        return Err(ResolutionDiagnostic::TooManySupers);
+                    }
+                }
+
+                for segment in path.segments() {
+                    mod_path.push_segment(segment.clone());
+                }
+
+                resolve_path_to_item(db, package, mod_path.segments())
             },
             PathKind::Package => {
-                let package_data = base_db::file_package(database, self.file_id.file_id(database))
-                    .ok_or(ResolutionDiagnostic { failed_segment: 0 })?
-                    .data(database);
-                let file_id = package_data.root_file(database);
-                if path.is_empty() {
-                    Ok(ResolveKind::Module(package_data.root_file(database)))
-                } else {
-                    resolve_submodules(database, file_id, path.segments()).map_err(
-                        |mut diagnostic| {
-                            diagnostic.failed_segment += 1;
-                            diagnostic
-                        },
-                    )
-                }
+                let package = file_package(db, self.file_id.file_id(db))
+                    .ok_or(ResolutionDiagnostic::DetachedFile)?;
+                resolve_path_to_item(db, package, path.segments())
             },
         }
     }
 
-    fn resolve_plain(
+    fn resolve_name(
         &self,
-        database: &dyn DefDatabase,
-        segments: &[Name],
+        db: &dyn SourceDatabase,
+        name: &Name,
     ) -> Result<ResolveKind, ResolutionDiagnostic> {
-        let name_start = segments
-            .first()
-            .ok_or(ResolutionDiagnostic { failed_segment: 0 })?;
-        let is_path_done = segments.len() == 1;
-
-        let Some(resolved) = self.scopes().find_map(|scope| match scope {
-            Scope::Expression(scope) => {
-                let entry = scope
-                    .expression_scopes
-                    .resolve_name_in_scope(scope.scope_id, name_start)?;
-                Some(ResolveKind::Local(entry.binding, scope.owner))
-            },
-            Scope::Module(scope) => {
-                let item = scope.module_info.items.get(name_start)?;
-                ResolveKind::try_from(item.definition).ok()
-            },
-            Scope::Builtin => {
-                // TODO: Match against the first name segment and then point at a "builtin" file
-                // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/559
-                None
-            },
-        }) else {
-            return Err(ResolutionDiagnostic { failed_segment: 0 });
-        };
-
-        if is_path_done {
-            return Ok(resolved);
-        }
-
-        if let ResolveKind::Module(child) = resolved {
-            resolve_submodules(database, child, &segments[1..]).map_err(|mut diagnostic| {
-                diagnostic.failed_segment += 1;
-                diagnostic
+        self.scopes()
+            .find_map(|scope| match scope {
+                Scope::Expression(scope) => {
+                    let entry = scope
+                        .expression_scopes
+                        .resolve_name_in_scope(scope.scope_id, name)?;
+                    Some(ResolveKind::Local(entry.binding, scope.owner))
+                },
+                Scope::Module(scope) => {
+                    let item = scope.module_info.items.get(name)?;
+                    ResolveKind::try_from(item.definition).ok()
+                },
+                Scope::Builtin => {
+                    // TODO: Match against the first name segment and then point at a "builtin" file
+                    // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/559
+                    None
+                },
             })
-        } else {
-            Err(ResolutionDiagnostic { failed_segment: 0 })
-        }
+            .ok_or(ResolutionDiagnostic::UnresolvedName { name: name.clone() })
     }
 }
 
-fn resolve_submodules(
-    database: &dyn DefDatabase,
-    mut file_id: EditionedFileId,
+fn resolve_path_to_item(
+    db: &dyn SourceDatabase,
+    package: Package,
     segments: &[Name],
 ) -> Result<ResolveKind, ResolutionDiagnostic> {
-    for (index, segment) in segments.iter().enumerate() {
-        let is_path_done = index == segments.len() - 1;
-        let item_scope = ItemScope::of(database, file_id);
-        // Check in current module
-        if let Some(item) = item_scope.items.get(segment) {
-            if item.visibility == Visibility::File {
-                // Unsure what to do when importing from self, see https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1192
-                return Err(ResolutionDiagnostic {
-                    failed_segment: index,
-                });
-            }
+    let [mod_path_segments @ .., name] = segments else {
+        return Err(ResolutionDiagnostic::MissingName);
+    };
 
-            let resolved = ResolveKind::try_from(item.definition)
-                .expect("Item scope may only contain items that can be resolved");
+    let Some(file_id) = resolve_module(db, package, mod_path_segments) else {
+        return Err(ResolutionDiagnostic::UnresolvedFile {
+            package: package.package_id(db),
+            path: AbsoluteModPath::from_segments(mod_path_segments),
+        });
+    };
 
-            if is_path_done {
-                return Ok(resolved);
-            }
-            if let ResolveKind::Module(child) = resolved {
-                file_id = child;
-            } else {
-                // Not at the last segment
-                return Err(ResolutionDiagnostic {
-                    failed_segment: index + 1,
-                });
-            }
-        }
-
-        // Otherwise go to the child file
-        if let Some(child) = ModuleData::of(database, file_id)
-            .and_then(|module_data| module_data.children.get(segment).copied())
-        {
-            if is_path_done {
-                return Ok(ResolveKind::Module(child));
-            }
-            file_id = child;
-        } else {
-            return Err(ResolutionDiagnostic {
-                failed_segment: index,
-            });
-        }
+    let item_scope = ItemScope::of(db, file_id);
+    let Some(item) = item_scope.items.get(name) else {
+        return Err(ResolutionDiagnostic::UnresolvedItem {
+            file_id,
+            name: name.clone(),
+        });
+    };
+    if item.visibility == Visibility::File {
+        // TODO: allow importing from self, see https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1192
+        return Err(ResolutionDiagnostic::PrivateItem {
+            name: name.clone(),
+            visibility: item.visibility,
+        });
     }
 
-    Err(ResolutionDiagnostic { failed_segment: 1 })
+    Ok(ResolveKind::try_from(item.definition)
+        .expect("Item scope may only contain items that can be resolved"))
 }
 
-#[derive(Debug, PartialEq, Eq)]
-pub struct ResolutionDiagnostic {
-    /// The index of the last segment where resolution failed.
-    pub failed_segment: usize,
+#[derive(Debug, PartialEq, Eq, Clone)]
+pub enum ResolutionDiagnostic {
+    /// Cannot resolve a name in the current file.
+    UnresolvedName {
+        name: Name,
+    },
+    UnresolvedFile {
+        package: PackageId,
+        path: AbsoluteModPath,
+    },
+    UnresolvedPackage {
+        name: Name,
+    },
+    /// Cannot resolve a name in a different file.
+    UnresolvedItem {
+        file_id: EditionedFileId,
+        name: Name,
+    },
+    PrivateItem {
+        name: Name,
+        visibility: Visibility,
+    },
+    TooManySupers,
+    /// Cannot resolve an import statement, because the current file is not a part of a package.
+    DetachedFile,
+    MissingName,
 }

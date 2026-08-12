@@ -1,9 +1,14 @@
 use std::{fmt, hash, iter, mem};
 
 use ast::Expression as AstExpression;
-use base_db::{EditionedFileId, FileId, FileRange, TextRange};
+use base_db::{EditionedFileId, FileId, FileRange, Intern as _, Lookup as _, TextRange};
 use hir::{AddressSpace, Field, HasSource as _, Semantics};
-use hir_def::{InFile, database::DefDatabase as _, item_tree::Name, signature::FieldId};
+use hir_def::{
+    InFile,
+    db::Location,
+    item_tree::{ItemTree, Name},
+    signature::FieldId,
+};
 use hir_ty::{
     function::FunctionDetails,
     layout::FieldLayout,
@@ -318,13 +323,13 @@ impl fmt::Debug for InlayHintLabelPart {
 }
 
 pub(crate) fn inlay_hints(
-    database: &RootDatabase,
+    db: &RootDatabase,
     file_id: FileId,
     range_limit: Option<TextRange>,
     config: &InlayHintsConfig,
 ) -> Vec<InlayHint> {
-    let semantics = Semantics::new(database);
-    let file_id = EditionedFileId::from_file(database, file_id);
+    let semantics = Semantics::new(db);
+    let file_id = EditionedFileId::from_file(db, file_id);
     let file = semantics.parse(file_id);
 
     let mut hints = Vec::new();
@@ -362,20 +367,15 @@ fn get_struct_layout_hints(
 ) -> Option<()> {
     let display_kind = config.struct_layout_hints?;
 
-    let module_info = semantics.database.item_tree(file_id);
+    let module_info = ItemTree::of(semantics.db, file_id);
 
     for r#struct in module_info.structs() {
-        let r#struct = semantics
-            .database
-            .intern_struct(InFile::new(file_id, r#struct));
-        let fields = semantics.database.field_types(r#struct);
+        let r#struct = Location::new(file_id, r#struct).intern(semantics.db);
+        let fields = semantics.db.field_types(r#struct);
 
         // TODO check uniform_buffer_standard_layout extension here
         // https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1358
-        let address_space = if semantics
-            .database
-            .struct_is_used_in_uniform(r#struct, file_id)
-        {
+        let address_space = if semantics.db.struct_is_used_in_uniform(r#struct, file_id) {
             AddressSpace::Uniform
         } else {
             AddressSpace::Storage
@@ -383,7 +383,7 @@ fn get_struct_layout_hints(
 
         hir_ty::layout::struct_member_layout(
             &fields.0,
-            semantics.database,
+            semantics.db,
             address_space,
             |field, _, field_layout| {
                 let FieldLayout { offset, .. } = field_layout;
@@ -391,7 +391,7 @@ fn get_struct_layout_hints(
                     id: FieldId { r#struct, field },
                 };
 
-                let source = field.source(semantics.database)?.value;
+                let source = field.source(semantics.db)?.value;
 
                 // this is only necessary, because the field syntax nodes include the whitespace to the next line...
                 let actual_last_token =
@@ -506,7 +506,7 @@ fn declaration_type_hints(
         .type_of_binding(binding)?;
 
     let mut label = InlayHintLabel::from(pretty_type_with_verbosity(
-        semantics.database,
+        semantics.db,
         r#type,
         config.type_verbosity,
     ));
@@ -541,7 +541,7 @@ fn function_hints(
     let expression = analyzed.expression_id(expression)?;
     let resolved = analyzed.infer.call_resolution(expression)?;
     let function = match resolved {
-        ResolvedCall::Function(function) => function.lookup(analyzed.database),
+        ResolvedCall::Function(function) => function.lookup(analyzed.db),
         ResolvedCall::OtherTypeInitializer(_) => return None,
     };
     let param_hints = function
@@ -549,7 +549,7 @@ fn function_hints(
         .zip(parameter_expressions)
         .filter(|&(name, _)| !Name::is_missing(name))
         .filter(|(parameter_name, expression)| {
-            !should_hide_param_name_hint(&function, parameter_name, expression)
+            !should_hide_param_name_hint(function, parameter_name, expression)
         })
         .map(|(param_name, expression)| {
             let mut label = InlayHintLabel::from(param_name);

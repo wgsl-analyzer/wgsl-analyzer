@@ -3,7 +3,8 @@ use std::{borrow::Borrow, fmt, ops};
 
 use paths::{AbsPath, AbsPathBuf, Utf8Path};
 
-/// More or less [`AbsPathBuf`] with non-None parent.
+/// A normalized path to a manifest.
+/// Is guaranteed to have a parent.
 ///
 /// We use it to store path to wesl.toml, as we frequently use the parent dir
 /// as a working directory to spawn various commands, and its nice to not have
@@ -24,7 +25,9 @@ impl TryFrom<AbsPathBuf> for ManifestPath {
         if file.parent().is_none() {
             Err(file)
         } else {
-            Ok(Self { file })
+            Ok(Self {
+                file: file.normalize(),
+            })
         }
     }
 }

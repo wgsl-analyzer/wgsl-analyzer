@@ -47,12 +47,6 @@ paths = {
 	rev = "b42b63f390a4dab14e6efa34a70e67f5b087cc62",
 	version = "0.0.0"
 }
-query-group = {
-	package = "query-group-macro",
-	git = "https://github.com/rust-lang/rust-analyzer",
-	rev = "b42b63f390a4dab14e6efa34a70e67f5b087cc62",
-	version = "0.0.0"
-}
 #
 # crates from rust-analyzer that are published separately
 line-index = "0.1.2"
@@ -78,16 +72,14 @@ dashmap = { version = "6.2.1" }
 nohash-hasher = "0.2.0"
 rowan = "0.16.1"
 rustc-hash = "2.1.2"
+# Ideally we'd not enable the macros feature but unfortunately the `tracked` attribute does not work
+# on impls without it
 salsa = {
-	version = "0.25.2",
-	default-features = true,
-	features = [
-		"macros",
-		"rayon",
-		"salsa_unstable",
-	]
+	version = "0.28.2",
+	default-features = false,
+	features = ["inventory", "macros", "rayon", "salsa_unstable", "triomphe"]
 }
-salsa-macros = "0.25.2"
+salsa-macros = "0.28.2"
 semver = "1.0.27"
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.150"
@@ -99,7 +91,7 @@ smallvec = {
 		"union",
 	]
 }
-smol_str = "0.3.5"
+smol_str = { version = "0.3.5", default-features = false }
 text-size = "1.1.1"
 tracing = {
 	version = "0.1.44",
@@ -120,7 +112,7 @@ tracing-subscriber = {
 }
 tracing-tree = "0.4.0"
 triomphe = { version = "0.1.15", default-features = false, features = ["std"] }
-wgsl-types = { version = "0.4.1", features = ["naga-ext"] }
+wgsl-types = { version = "0.4.2", features = ["naga-ext"] }
 indexmap = { version = "2.14.0" }
 
 # idna_adapter does not use semantic versioning
@@ -231,16 +223,16 @@ indexing_slicing = "allow"
 # tombi: format.rules.table-keys-order.disabled = true
 [workspace.lints.rust]
 warnings = { level = "warn", priority = -2 }
-deprecated-safe = { level = "deny", priority = -1 }
-future-incompatible = { level = "deny", priority = -1 }
-keyword-idents = { level = "deny", priority = -1 }
-let-underscore = { level = "deny", priority = -1 }
-nonstandard-style = { level = "deny", priority = -1 }
-refining-impl-trait = { level = "deny", priority = -1 }
-rust-2018-compatibility = { level = "deny", priority = -1 }
-rust-2018-idioms = { level = "deny", priority = -1 }
-rust-2021-compatibility = { level = "deny", priority = -1 }
-rust-2024-compatibility = { level = "deny", priority = -1 }
+deprecated_safe = { level = "deny", priority = -1 }
+future_incompatible = { level = "deny", priority = -1 }
+keyword_idents = { level = "deny", priority = -1 }
+let_underscore = { level = "deny", priority = -1 }
+nonstandard_style = { level = "deny", priority = -1 }
+refining_impl_trait = { level = "deny", priority = -1 }
+rust_2018_compatibility = { level = "deny", priority = -1 }
+rust_2018_idioms = { level = "deny", priority = -1 }
+rust_2021_compatibility = { level = "deny", priority = -1 }
+rust_2024_compatibility = { level = "deny", priority = -1 }
 unused = { level = "allow", priority = 1 }
 
 [workspace.lints.rustdoc]

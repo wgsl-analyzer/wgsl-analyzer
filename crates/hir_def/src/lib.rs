@@ -3,7 +3,7 @@
 mod ast_id;
 pub mod attributes;
 pub mod body;
-pub mod database;
+pub mod db;
 pub mod expression;
 pub mod expression_store;
 pub mod item_scope;
@@ -18,8 +18,7 @@ pub mod type_ref;
 pub mod type_specifier;
 pub mod visibility;
 pub use ast_id::*;
-use base_db::{EditionedFileId, FileRange, TextRange};
-use database::DefDatabase;
+use base_db::{EditionedFileId, FileRange, SourceDatabase, TextRange};
 use rowan::NodeOrToken;
 use syntax::{AstNode, SyntaxNode, SyntaxToken, pointer::AstPointer};
 
@@ -71,18 +70,18 @@ impl<T> InFile<T> {
     /// Panics if the file is not found.
     pub fn file_syntax(
         &self,
-        database: &dyn database::DefDatabase,
+        db: &dyn base_db::SourceDatabase,
     ) -> SyntaxNode {
-        self.file_id.parse(database).syntax()
+        self.file_id.parse(db).syntax()
     }
 }
 
 impl<Node: AstNode> InFile<Node> {
     pub fn original_file_range(
         &self,
-        database: &dyn DefDatabase,
+        db: &dyn SourceDatabase,
     ) -> FileRange {
-        original_file_range(database, self.file_id, self.value.syntax())
+        original_file_range(db, self.file_id, self.value.syntax())
     }
 }
 
@@ -118,7 +117,7 @@ impl<N: HasTextRange, T: HasTextRange> HasTextRange for NodeOrToken<N, T> {
 }
 
 pub fn original_file_range<T>(
-    database: &dyn DefDatabase,
+    db: &dyn SourceDatabase,
     file_id: EditionedFileId,
     value: &T,
 ) -> FileRange
@@ -126,7 +125,7 @@ where
     T: HasTextRange,
 {
     FileRange {
-        file_id: file_id.file_id(database),
+        file_id: file_id.file_id(db),
         range: value.text_range(),
     }
 }
@@ -135,14 +134,14 @@ pub trait HasSource {
     type Value: AstNode;
     fn source(
         &self,
-        database: &dyn DefDatabase,
+        db: &dyn SourceDatabase,
     ) -> InFile<Self::Value> {
-        let InFile { file_id, value } = self.ast_ptr(database);
-        InFile::new(file_id, value.to_node(&file_id.parse(database).syntax()))
+        let InFile { file_id, value } = self.ast_ptr(db);
+        InFile::new(file_id, value.to_node(&file_id.parse(db).syntax()))
     }
     fn ast_ptr(
         &self,
-        database: &dyn DefDatabase,
+        db: &dyn SourceDatabase,
     ) -> InFile<AstPointer<Self::Value>>;
 }
 
@@ -151,9 +150,9 @@ impl<Node: AstNode> HasSource for InFile<FileAstId<Node>> {
 
     fn ast_ptr(
         &self,
-        database: &dyn DefDatabase,
+        db: &dyn SourceDatabase,
     ) -> InFile<AstPointer<Self::Value>> {
-        let ast_id_map = database.ast_id_map(self.file_id);
+        let ast_id_map = AstIdMap::of(db, self.file_id);
         InFile::new(self.file_id, ast_id_map.get(self.value))
     }
 }

@@ -171,30 +171,28 @@ fn ensure_file_contents(
     }
 
     let display_path = file.strip_prefix(project_root()).unwrap_or(file);
-    if check {
-        panic!(
-            "{} was not up-to-date{}",
-            file.display(),
-            if std::env::var("CI").is_ok() {
-                format!(
-                    "\n    NOTE: run `cargo xtask codegen {cg}` locally and commit the updated files\n"
-                )
-            } else {
-                String::new()
-            }
-        );
-    } else {
-        eprintln!(
-            "\n\x1b[31;1merror\x1b[0m: {} was not up-to-date, updating\n",
-            display_path.display()
-        );
-
-        if let Some(parent) = file.parent() {
-            fs::create_dir_all(parent).unwrap();
+    assert!(
+        !check,
+        "{} was not up-to-date{}",
+        file.display(),
+        if std::env::var("CI").is_ok() {
+            format!(
+                "\n    NOTE: run `cargo xtask codegen {cg}` locally and commit the updated files\n"
+            )
+        } else {
+            String::new()
         }
-        fs::write(file, contents).unwrap();
-        true
+    );
+    eprintln!(
+        "\n\x1b[31;1merror\x1b[0m: {} was not up-to-date, updating\n",
+        display_path.display()
+    );
+
+    if let Some(parent) = file.parent() {
+        fs::create_dir_all(parent).unwrap();
     }
+    fs::write(file, contents).unwrap();
+    true
 }
 
 fn normalize_newlines(string: &str) -> String {

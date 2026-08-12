@@ -3,18 +3,18 @@ use expect_test::{Expect, expect};
 use test_fixture::WithFixture as _;
 use triomphe::Arc;
 
-use crate::{database::DefDatabase as _, test_db::TestDatabase};
+use crate::{item_tree::ItemTree, test_db::TestDatabase};
 
 #[expect(clippy::needless_pass_by_value, reason = "matches expect! macro")]
 fn check_item_tree(
     source: &str,
     expect: Expect,
 ) {
-    let (database, file_id) = TestDatabase::with_single_file(source);
+    let (db, file_id) = TestDatabase::with_single_file(source);
 
-    let module_info = database.item_tree(file_id);
+    let module_info = ItemTree::of(&db, file_id);
     expect.assert_eq(&crate::item_tree::pretty::pretty_print_item_tree(
-        &module_info,
+        module_info,
     ));
 }
 

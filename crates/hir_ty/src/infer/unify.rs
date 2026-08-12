@@ -1,10 +1,11 @@
 use std::collections::hash_map::Entry;
 
+use base_db::Intern as _;
 use rustc_hash::FxHashMap;
 use wgsl_types::syntax::AccessMode;
 
 use crate::{
-    database::HirDatabase,
+    db::HirDatabase,
     ty::{
         BoundVariable, MatrixType, ScalarType, TexelFormat, TextureKind, TextureType, Type,
         TypeKind, VecSize, VectorType,
@@ -38,16 +39,16 @@ impl UnificationTable {
         &mut self,
         variable: BoundVariable,
         r#type: Type,
-        database: &dyn HirDatabase,
+        db: &dyn HirDatabase,
     ) -> Result<(), ()> {
         match self.types.entry(variable) {
             Entry::Occupied(entry) if *entry.get() == r#type => Ok(()),
             Entry::Occupied(mut entry) => {
                 // abstract number conversions
-                if entry.get().is_convertible_to(r#type, database) {
+                if entry.get().is_convertible_to(r#type, db) {
                     *entry.get_mut() = r#type;
                     Ok(())
-                } else if r#type.is_convertible_to(*entry.get(), database) {
+                } else if r#type.is_convertible_to(*entry.get(), db) {
                     Ok(())
                 } else {
                     Err(())
@@ -77,10 +78,10 @@ impl UnificationTable {
 
     pub fn resolve(
         &self,
-        database: &dyn HirDatabase,
+        db: &dyn HirDatabase,
         r#type: Type,
     ) -> Type {
-        match r#type.kind(database) {
+        match r#type.kind(db) {
             TypeKind::BoundVariable(variable) => {
                 *self.types.get(&variable).expect("type var not constrained")
             },
@@ -95,12 +96,12 @@ impl UnificationTable {
                         .expect("vec size var not constrained"),
                     VecSize::Two | VecSize::Three | VecSize::Four => size,
                 };
-                let inner = self.resolve(database, inner);
+                let inner = self.resolve(db, inner);
                 TypeKind::Vector(VectorType {
                     size,
                     component_type: inner,
                 })
-                .intern(database)
+                .intern(db)
             },
             TypeKind::Matrix(matrix) => {
                 let columns = match matrix.columns {
@@ -112,13 +113,13 @@ impl UnificationTable {
                     other @ (VecSize::Two | VecSize::Three | VecSize::Four) => other,
                 };
 
-                let inner = self.resolve(database, matrix.inner);
+                let inner = self.resolve(db, matrix.inner);
                 TypeKind::Matrix(MatrixType {
                     columns,
                     rows,
                     inner,
                 })
-                .intern(database)
+                .intern(db)
             },
             #[expect(
                 deprecated,
@@ -138,7 +139,7 @@ impl UnificationTable {
                     arrayed,
                     multisampled,
                 })
-                .intern(database)
+                .intern(db)
             },
             TypeKind::Texture(TextureType {
                 kind: TextureKind::Sampled(sampled_type),
@@ -146,18 +147,18 @@ impl UnificationTable {
                 arrayed,
                 multisampled,
             }) => {
-                let sampled_type = self.resolve(database, sampled_type);
+                let sampled_type = self.resolve(db, sampled_type);
                 TypeKind::Texture(TextureType {
                     kind: TextureKind::Sampled(sampled_type),
                     dimension,
                     arrayed,
                     multisampled,
                 })
-                .intern(database)
+                .intern(db)
             },
             TypeKind::StorageTypeOfTexelFormat(variable) => {
                 let format = self.texel_formats[&variable];
-                storage_type_of_texel_format(database, format)
+                storage_type_of_texel_format(db, format)
             },
             TypeKind::Error
             | TypeKind::Scalar(
@@ -173,6 +174,7 @@ impl UnificationTable {
             )
             | TypeKind::Atomic(_)
             | TypeKind::Struct(_)
+            | TypeKind::BuiltinStruct(_)
             | TypeKind::Array(_)
             | TypeKind::Texture(_)
             | TypeKind::Sampler(_)
@@ -188,17 +190,17 @@ impl UnificationTable {
     reason = "This long match is not easily broken up"
 )]
 pub fn unify(
-    database: &dyn HirDatabase,
+    db: &dyn HirDatabase,
     table: &mut UnificationTable,
     expected: Type,
     found: Type,
 ) -> Result<(), ()> {
-    let expected_kind = expected.kind(database);
-    let found_kind = found.kind(database);
+    let expected_kind = expected.kind(db);
+    let found_kind = found.kind(db);
 
     match expected_kind {
         TypeKind::BoundVariable(variable) => {
-            table.set_type(variable, found, database)?;
+            table.set_type(variable, found, db)?;
             Ok(())
         },
         TypeKind::Vector(VectorType {
@@ -206,7 +208,7 @@ pub fn unify(
             component_type: inner,
         }) => match found_kind {
             TypeKind::Vector(found_vec) => {
-                unify(database, table, inner, found_vec.component_type)?;
+                unify(db, table, inner, found_vec.component_type)?;
                 if let VecSize::BoundVariable(vec_size_var) = size {
                     table.set_vec_size(vec_size_var, found_vec.size)?;
                 } else if size != found_vec.size {
@@ -219,6 +221,7 @@ pub fn unify(
             | TypeKind::Atomic(_)
             | TypeKind::Matrix(_)
             | TypeKind::Struct(_)
+            | TypeKind::BuiltinStruct(_)
             | TypeKind::Array(_)
             | TypeKind::Texture(_)
             | TypeKind::Sampler(_)
@@ -233,7 +236,7 @@ pub fn unify(
             inner,
         }) => match found_kind {
             TypeKind::Matrix(found_mat) => {
-                unify(database, table, inner, found_mat.inner)?;
+                unify(db, table, inner, found_mat.inner)?;
 
                 if let VecSize::BoundVariable(variable) = columns {
                     table.set_vec_size(variable, found_mat.columns)?;
@@ -254,6 +257,7 @@ pub fn unify(
             | TypeKind::Atomic(_)
             | TypeKind::Vector(_)
             | TypeKind::Struct(_)
+            | TypeKind::BuiltinStruct(_)
             | TypeKind::Array(_)
             | TypeKind::Texture(_)
             | TypeKind::Sampler(_)
@@ -264,7 +268,7 @@ pub fn unify(
         },
         TypeKind::Pointer(pointer) => match found_kind {
             TypeKind::Pointer(found_pointer) => {
-                unify(database, table, pointer.inner, found_pointer.inner)?;
+                unify(db, table, pointer.inner, found_pointer.inner)?;
 
                 Ok(())
             },
@@ -274,6 +278,7 @@ pub fn unify(
             | TypeKind::Vector(_)
             | TypeKind::Matrix(_)
             | TypeKind::Struct(_)
+            | TypeKind::BuiltinStruct(_)
             | TypeKind::Array(_)
             | TypeKind::Texture(_)
             | TypeKind::Sampler(_)
@@ -283,7 +288,7 @@ pub fn unify(
         },
         TypeKind::Array(array) => match found_kind {
             TypeKind::Array(found_array) => {
-                unify(database, table, array.inner, found_array.inner)?;
+                unify(db, table, array.inner, found_array.inner)?;
 
                 Ok(())
             },
@@ -293,6 +298,7 @@ pub fn unify(
             | TypeKind::Vector(_)
             | TypeKind::Matrix(_)
             | TypeKind::Struct(_)
+            | TypeKind::BuiltinStruct(_)
             | TypeKind::Texture(_)
             | TypeKind::Sampler(_)
             | TypeKind::Reference(_)
@@ -302,7 +308,7 @@ pub fn unify(
         },
         TypeKind::Atomic(atomic) => match found_kind {
             TypeKind::Atomic(found_atomic) => {
-                unify(database, table, atomic.inner, found_atomic.inner)?;
+                unify(db, table, atomic.inner, found_atomic.inner)?;
 
                 Ok(())
             },
@@ -311,6 +317,7 @@ pub fn unify(
             | TypeKind::Vector(_)
             | TypeKind::Matrix(_)
             | TypeKind::Struct(_)
+            | TypeKind::BuiltinStruct(_)
             | TypeKind::Array(_)
             | TypeKind::Texture(_)
             | TypeKind::Sampler(_)
@@ -390,6 +397,7 @@ pub fn unify(
             | TypeKind::Vector(_)
             | TypeKind::Matrix(_)
             | TypeKind::Struct(_)
+            | TypeKind::BuiltinStruct(_)
             | TypeKind::Array(_)
             | TypeKind::Texture(_)
             | TypeKind::Sampler(_)
@@ -400,7 +408,7 @@ pub fn unify(
         },
         TypeKind::StorageTypeOfTexelFormat(format) => {
             let format = table.texel_formats[&format];
-            let storage_type = storage_type_of_texel_format(database, format);
+            let storage_type = storage_type_of_texel_format(db, format);
 
             if storage_type != found {
                 return Err(());
@@ -427,7 +435,7 @@ pub fn unify(
                     return Err(());
                 }
 
-                unify(database, table, sampled_type, found_sampled_type)?;
+                unify(db, table, sampled_type, found_sampled_type)?;
 
                 Ok(())
             },
@@ -437,6 +445,7 @@ pub fn unify(
             | TypeKind::Vector(_)
             | TypeKind::Matrix(_)
             | TypeKind::Struct(_)
+            | TypeKind::BuiltinStruct(_)
             | TypeKind::Array(_)
             | TypeKind::Texture(_)
             | TypeKind::Sampler(_)
@@ -448,13 +457,14 @@ pub fn unify(
         TypeKind::Error
         | TypeKind::Scalar(_)
         | TypeKind::Struct(_)
+        | TypeKind::BuiltinStruct(_)
         | TypeKind::Texture(_)
         | TypeKind::Sampler(_)
         | TypeKind::Reference(_) => {
             // Only 1 direction is checked for now
             // Since "expected" cannot be an abstract type,
             // nor can it contain type variables
-            if found.is_convertible_to(expected, database) {
+            if found.is_convertible_to(expected, db) {
                 Ok(())
             } else {
                 Err(())
@@ -464,7 +474,7 @@ pub fn unify(
 }
 
 fn storage_type_of_texel_format(
-    database: &dyn HirDatabase,
+    db: &dyn HirDatabase,
     format: TexelFormat,
 ) -> Type {
     let channel_type = match format {
@@ -496,7 +506,7 @@ fn storage_type_of_texel_format(
     };
     TypeKind::Vector(VectorType {
         size: VecSize::Four,
-        component_type: TypeKind::Scalar(channel_type).intern(database),
+        component_type: TypeKind::Scalar(channel_type).intern(db),
     })
-    .intern(database)
+    .intern(db)
 }

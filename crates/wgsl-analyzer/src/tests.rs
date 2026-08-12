@@ -62,20 +62,20 @@ fn check_load_project(
                     print_path(&project.manifest.into(), &test_directory)
                 );
                 writeln!(actual, "edition: {}", project.edition);
-                let root = match project.root {
-                    WeslPackageRoot::File(path) | WeslPackageRoot::Folder(path) => path,
-                };
-
-                writeln!(actual, "root: {}", print_path(&root, &test_directory));
+                writeln!(
+                    actual,
+                    "root: {}",
+                    print_path(&project.root, &test_directory)
+                );
                 writeln!(actual, "dependencies:");
                 for dependency in project.dependencies {
-                    writeln!(actual, "- {}", dependency.name);
+                    writeln!(actual, "- {}", dependency.name());
                 }
             },
             LoadPackageMessage::Error { error, source } => {
                 writeln!(actual, "{error} - {source:?}");
             },
-            LoadPackageMessage::Progress { message } => (),
+            LoadPackageMessage::Dependency { .. } | LoadPackageMessage::Progress { .. } => (),
         }
     }
 
@@ -103,7 +103,9 @@ fn check_load_project_files(
         .iter()
         .filter_map(|message| match message {
             LoadPackageMessage::Finished { project } => Some(project),
-            LoadPackageMessage::Error { .. } | LoadPackageMessage::Progress { .. } => None,
+            LoadPackageMessage::Error { .. }
+            | LoadPackageMessage::Dependency { .. }
+            | LoadPackageMessage::Progress { .. } => None,
         })
         .exactly_one()
         .unwrap();
@@ -145,7 +147,7 @@ fn simple_wesl() {
         "simple_wesl/wesl.toml",
         PackageOrigin::Local,
         expect![[r#"
-            Unnamed project at simple_wesl/wesl.toml
+            Project simple_wesl at simple_wesl/wesl.toml
             edition: WESL 2025 (Unstable)
             root: simple_wesl/shaders
             dependencies:
@@ -169,9 +171,9 @@ fn flat_wesl() {
         "flat_wesl/wesl.toml",
         PackageOrigin::Local,
         expect![[r#"
-            Unnamed project at flat_wesl/wesl.toml
+            Project flat_wesl at flat_wesl/wesl.toml
             edition: WESL 2025 (Unstable)
-            root: flat_wesl/package.wesl
+            root: flat_wesl
             dependencies:
         "#]],
     );
@@ -183,6 +185,32 @@ fn flat_wesl() {
             extensions: wgsl, wesl, toml
             include: flat_wesl
             file: flat_wesl/wesl.toml
+        "#]],
+    );
+}
+
+#[test]
+fn wesl_with_dependencies() {
+    check_load_project(
+        "wesl_with_dependencies/wesl.toml",
+        PackageOrigin::Local,
+        expect![[r#"
+            Project wesl_with_dependencies at wesl_with_dependencies/wesl.toml
+            edition: WESL 2025 (Unstable)
+            root: wesl_with_dependencies
+            dependencies:
+            - nested
+            - simple_wesl
+        "#]],
+    );
+
+    check_load_project_files(
+        "wesl_with_dependencies/wesl.toml",
+        PackageOrigin::Local,
+        expect![[r#"
+            extensions: wgsl, wesl, toml
+            include: wesl_with_dependencies
+            file: wesl_with_dependencies/wesl.toml
         "#]],
     );
 }

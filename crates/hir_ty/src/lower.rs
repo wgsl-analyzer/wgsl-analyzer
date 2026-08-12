@@ -1,23 +1,29 @@
 use std::fmt;
 
+use base_db::Intern as _;
 use hir_def::{
     body::BindingId,
-    database::{GlobalConstantId, GlobalVariableId, OverrideId, StructId},
-    expression::ExpressionId,
+    db::{GlobalConstantId, GlobalVariableId, OverrideId, StructId},
+    expression::{
+        ArithmeticOperation, BinaryOperation, ComparisonOperation, ExpressionId, LogicOperation,
+        UnaryOperator,
+    },
     expression_store::{ExpressionStore, path::Path},
     item_tree::Name,
     mod_path::PathKind,
-    resolver::{ResolveKind, Resolver},
+    resolver::{ResolutionDiagnostic, ResolveKind, Resolver},
+    signature::StructSignature,
     type_specifier::TypeSpecifierId,
 };
 use wgsl_types::syntax::Enumerant;
 
 use crate::{
-    database::HirDatabase,
+    db::HirDatabase,
     function::ResolvedFunctionId,
     ty::{
-        ArraySize, ArrayType, AtomicType, MatrixType, Pointer, Reference, ScalarType,
-        TextureDimensionality, TextureKind, TextureType, Type, TypeKind, VecSize, VectorType,
+        ArraySize, ArrayType, AtomicType, BuiltinStruct, MatrixType, Pointer, Reference,
+        ScalarType, TextureDimensionality, TextureKind, TextureType, Type, TypeKind, VecSize,
+        VectorType,
     },
 };
 
@@ -28,16 +34,16 @@ mod eval;
 mod generics;
 
 /// Lowers types and evaluates expressions, the two are deeply intertwined.
-pub struct TypeLoweringContext<'database> {
-    database: &'database dyn HirDatabase,
+pub struct TypeLoweringContext<'db> {
+    db: &'db dyn HirDatabase,
     /// Make sure to set the correct resolver when going into function scopes.
-    resolver: &'database Resolver,
-    store: &'database ExpressionStore,
+    resolver: &'db Resolver<'db>,
+    store: &'db ExpressionStore,
 
     pub(crate) diagnostics: Vec<TypeLoweringError>,
 }
 
-#[derive(PartialEq, Eq, Debug, Clone)]
+#[derive(PartialEq, Eq, Debug)]
 pub struct TypeLoweringError {
     pub container: TypeContainer,
     pub kind: TypeLoweringErrorKind,
@@ -45,11 +51,7 @@ pub struct TypeLoweringError {
 
 #[derive(PartialEq, Eq, Debug, Clone)]
 pub enum TypeLoweringErrorKind {
-    UnresolvedName(Name),
-    UnresolvedPath {
-        path: Path,
-        failed_segment: usize,
-    },
+    Resolution(ResolutionDiagnostic),
     UnexpectedTemplateArgument(String),
     UnexpectedModule(Path),
     MissingTemplateArgument(String),
@@ -77,22 +79,29 @@ impl fmt::Display for TypeLoweringErrorKind {
         formatter: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
         match self {
-            Self::UnresolvedName(name) => {
+            Self::Resolution(ResolutionDiagnostic::UnresolvedName { name }) => {
                 write!(formatter, "`{}` not found in scope", name.as_str())
             },
-            Self::UnresolvedPath {
-                path,
-                failed_segment,
-            } => {
-                if *failed_segment == 0 {
-                    let name = path.mod_path().display_iter().next().unwrap_or_default();
-                    write!(formatter, "`{name}` not found in scope")
-                } else {
-                    let mut segments = path.mod_path().display_iter().skip(*failed_segment - 1);
-                    let previous_name = segments.next().unwrap_or_default();
-                    let name = segments.next().unwrap_or_default();
-                    write!(formatter, "`{name}` not found in `{previous_name}`")
-                }
+            Self::Resolution(ResolutionDiagnostic::UnresolvedFile { .. }) => {
+                write!(formatter, "could not find file")
+            },
+            Self::Resolution(ResolutionDiagnostic::DetachedFile) => {
+                write!(formatter, "current file is detached")
+            },
+            Self::Resolution(ResolutionDiagnostic::MissingName) => {
+                write!(formatter, "path is missing a name")
+            },
+            Self::Resolution(ResolutionDiagnostic::PrivateItem { name, .. }) => {
+                write!(formatter, "`{}` is private", name.as_str())
+            },
+            Self::Resolution(ResolutionDiagnostic::TooManySupers) => {
+                write!(formatter, "too many `super::`s")
+            },
+            Self::Resolution(ResolutionDiagnostic::UnresolvedItem { name, .. }) => {
+                write!(formatter, "`{}` not found in other file", name.as_str())
+            },
+            Self::Resolution(ResolutionDiagnostic::UnresolvedPackage { name }) => {
+                write!(formatter, "package `{}` not found", name.as_str())
             },
             Self::WgslError(error) => {
                 write!(formatter, "{error}")
@@ -222,14 +231,14 @@ pub enum ResolvedCall {
     OtherTypeInitializer(Type),
 }
 
-impl<'database> TypeLoweringContext<'database> {
+impl<'db> TypeLoweringContext<'db> {
     pub fn new(
-        database: &'database dyn HirDatabase,
-        resolver: &'database Resolver,
-        store: &'database ExpressionStore,
+        db: &'db dyn HirDatabase,
+        resolver: &'db Resolver<'db>,
+        store: &'db ExpressionStore,
     ) -> Self {
         Self {
-            database,
+            db,
             resolver,
             store,
             diagnostics: Vec::new(),
@@ -250,7 +259,7 @@ impl<'database> TypeLoweringContext<'database> {
             Ok(lowered) => lowered,
             Err(error) => {
                 self.diagnostics.push(error);
-                Lowered::Type(self.database.intern_type(TypeKind::Error))
+                Lowered::Type(TypeKind::Error.intern(self.db))
             },
         }
     }
@@ -262,48 +271,33 @@ impl<'database> TypeLoweringContext<'database> {
         path: &Path,
         template_parameters: &[ExpressionId],
     ) -> Result<Lowered, TypeLoweringError> {
-        let resolved_type = self.resolver.resolve(self.database, path);
+        let resolved_type = self.resolver.resolve(self.db, path);
 
         if resolved_type.is_ok() {
             self.expect_no_template(template_parameters);
         }
 
         match resolved_type {
-            Ok(ResolveKind::Module(module_id)) => Err(TypeLoweringError {
-                container: type_container,
-                kind: TypeLoweringErrorKind::UnexpectedModule(path.clone()),
-            }),
-            Ok(ResolveKind::TypeAlias(id)) => {
-                Ok(Lowered::Type(self.database.type_alias_type(id).0))
-            },
-            Ok(ResolveKind::Struct(id)) => Ok(Lowered::Type(
-                self.database.intern_type(TypeKind::Struct(id)),
-            )),
-            Ok(ResolveKind::Function(id)) => Ok(Lowered::Function(self.database.function_type(id))),
+            Ok(ResolveKind::TypeAlias(id)) => Ok(Lowered::Type(self.db.type_alias_type(id).0)),
+            Ok(ResolveKind::Struct(id)) => Ok(Lowered::Type(TypeKind::Struct(id).intern(self.db))),
+            Ok(ResolveKind::Function(id)) => Ok(Lowered::Function(self.db.function_type(id))),
             Ok(ResolveKind::GlobalConstant(id)) => Ok(Lowered::GlobalConstant(id)),
             Ok(ResolveKind::GlobalVariable(id)) => Ok(Lowered::GlobalVariable(id)),
             Ok(ResolveKind::Override(id)) => Ok(Lowered::Override(id)),
             Ok(ResolveKind::Local(local, _)) => Ok(Lowered::Local(local)),
-            Err(diagnostic) if path.mod_path().kind() == PathKind::Plain => path
-                .mod_path()
-                .segments()
-                .first()
-                .and_then(|predeclared_name| {
-                    self.lower_if_predeclared(type_container, predeclared_name, template_parameters)
-                })
-                .ok_or_else(|| TypeLoweringError {
-                    container: type_container,
-                    kind: TypeLoweringErrorKind::UnresolvedPath {
-                        path: path.clone(),
-                        failed_segment: diagnostic.failed_segment,
-                    },
-                }),
+            Err(diagnostic)
+                if path.mod_path().kind() == PathKind::Plain && path.mod_path().len() == 1 =>
+            {
+                let predeclared_name = &path.mod_path().segments()[0];
+                self.lower_if_predeclared(type_container, predeclared_name, template_parameters)
+                    .ok_or_else(|| TypeLoweringError {
+                        container: type_container,
+                        kind: TypeLoweringErrorKind::Resolution(diagnostic),
+                    })
+            },
             Err(diagnostic) => Err(TypeLoweringError {
                 container: type_container,
-                kind: TypeLoweringErrorKind::UnresolvedPath {
-                    path: path.clone(),
-                    failed_segment: diagnostic.failed_segment,
-                },
+                kind: TypeLoweringErrorKind::Resolution(diagnostic),
             }),
         }
     }
@@ -360,7 +354,7 @@ impl<'database> TypeLoweringContext<'database> {
                     container: TypeContainer::TypeSpecifier(type_specifier_id),
                     kind: TypeLoweringErrorKind::MissingTemplate,
                 });
-                self.database.intern_type(TypeKind::Error)
+                TypeKind::Error.intern(self.db)
             },
             Ok(
                 Lowered::Enumerant(_)
@@ -375,25 +369,25 @@ impl<'database> TypeLoweringContext<'database> {
                     container: TypeContainer::TypeSpecifier(type_specifier_id),
                     kind: TypeLoweringErrorKind::ExpectedType(type_specifier.path.clone()),
                 });
-                self.database.intern_type(TypeKind::Error)
+                TypeKind::Error.intern(self.db)
             },
             Err(error) => {
                 self.diagnostics.push(error);
-                self.database.intern_type(TypeKind::Error)
+                TypeKind::Error.intern(self.db)
             },
         }
     }
 }
 
-pub(crate) struct WgslTypeConverter<'database> {
-    database: &'database dyn HirDatabase,
+pub(crate) struct WgslTypeConverter<'db> {
+    db: &'db dyn HirDatabase,
     interned_structs: Vec<StructId>,
 }
 
-impl<'database> WgslTypeConverter<'database> {
-    pub fn new(database: &'database dyn HirDatabase) -> Self {
+impl<'db> WgslTypeConverter<'db> {
+    pub fn new(db: &'db dyn HirDatabase) -> Self {
         Self {
-            database,
+            db,
             interned_structs: Vec::default(),
         }
     }
@@ -402,11 +396,15 @@ impl<'database> WgslTypeConverter<'database> {
         clippy::wrong_self_convention,
         reason = "naming things is hard and this is probably changing in the future"
     )]
+    #[expect(
+        clippy::too_many_lines,
+        reason = "long match, not a good candidate for refactoring"
+    )]
     pub fn to_wgsl_types(
         &mut self,
         r#type: Type,
     ) -> wgsl_types::Type {
-        match r#type.kind(self.database) {
+        match r#type.kind(self.db) {
             // TODO: This should not be necessary because the types should align 1:1
             // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/672
             TypeKind::Error
@@ -438,8 +436,8 @@ impl<'database> WgslTypeConverter<'database> {
                 Box::new(self.to_wgsl_types(inner)),
             ),
             TypeKind::Struct(struct_id) => {
-                let data = self.database.struct_data(struct_id).0;
-                let fields = &self.database.field_types(struct_id).0;
+                let data = StructSignature::of(self.db, struct_id);
+                let fields = &self.db.field_types(struct_id).0;
                 let name = self.intern_struct(struct_id);
                 wgsl_types::Type::Struct(Box::new(wgsl_types::ty::StructType {
                     name,
@@ -450,6 +448,24 @@ impl<'database> WgslTypeConverter<'database> {
                             wgsl_types::ty::StructMemberType {
                                 name: data.name.as_str().to_owned(),
                                 ty: self.to_wgsl_types(fields[id]),
+                                // Don't bother reconstructing the correct layout
+                                size: None,
+                                align: None,
+                            }
+                        })
+                        .collect::<Vec<_>>(),
+                }))
+            },
+            TypeKind::BuiltinStruct(builtin_struct) => {
+                wgsl_types::Type::Struct(Box::new(wgsl_types::ty::StructType {
+                    name: builtin_struct.name,
+                    members: builtin_struct
+                        .fields
+                        .into_iter()
+                        .map(|(name, r#type)| {
+                            wgsl_types::ty::StructMemberType {
+                                name,
+                                ty: self.to_wgsl_types(r#type),
                                 // Don't bother reconstructing the correct layout
                                 size: None,
                                 align: None,
@@ -529,6 +545,10 @@ impl<'database> WgslTypeConverter<'database> {
         clippy::wrong_self_convention,
         reason = "naming things is hard and this is probably changing in the future"
     )]
+    #[expect(
+        clippy::too_many_lines,
+        reason = "long match, bad candidate for refactor"
+    )]
     pub fn from_wgsl_types(
         &self,
         r#type: wgsl_types::Type,
@@ -538,27 +558,38 @@ impl<'database> WgslTypeConverter<'database> {
             reason = "See https://github.com/wgsl-analyzer/wgsl-analyzer/issues/442"
         )]
         match r#type {
-            wgsl_types::Type::Bool => TypeKind::Scalar(ScalarType::Bool).intern(self.database),
+            wgsl_types::Type::Bool => TypeKind::Scalar(ScalarType::Bool).intern(self.db),
             wgsl_types::Type::AbstractInt => {
-                TypeKind::Scalar(ScalarType::AbstractInt).intern(self.database)
+                TypeKind::Scalar(ScalarType::AbstractInt).intern(self.db)
             },
             wgsl_types::Type::AbstractFloat => {
-                TypeKind::Scalar(ScalarType::AbstractFloat).intern(self.database)
+                TypeKind::Scalar(ScalarType::AbstractFloat).intern(self.db)
             },
-            wgsl_types::Type::I32 => TypeKind::Scalar(ScalarType::I32).intern(self.database),
-            wgsl_types::Type::U32 => TypeKind::Scalar(ScalarType::U32).intern(self.database),
-            wgsl_types::Type::I64 => TypeKind::Scalar(ScalarType::I64).intern(self.database),
-            wgsl_types::Type::U64 => TypeKind::Scalar(ScalarType::U64).intern(self.database),
-            wgsl_types::Type::F16 => TypeKind::Scalar(ScalarType::F16).intern(self.database),
-            wgsl_types::Type::F32 => TypeKind::Scalar(ScalarType::F32).intern(self.database),
+            wgsl_types::Type::I32 => TypeKind::Scalar(ScalarType::I32).intern(self.db),
+            wgsl_types::Type::U32 => TypeKind::Scalar(ScalarType::U32).intern(self.db),
+            wgsl_types::Type::I64 => TypeKind::Scalar(ScalarType::I64).intern(self.db),
+            wgsl_types::Type::U64 => TypeKind::Scalar(ScalarType::U64).intern(self.db),
+            wgsl_types::Type::F16 => TypeKind::Scalar(ScalarType::F16).intern(self.db),
+            wgsl_types::Type::F32 => TypeKind::Scalar(ScalarType::F32).intern(self.db),
             wgsl_types::Type::F64 => todo!("naga extension"),
             wgsl_types::Type::Struct(struct_type) => {
-                let struct_id = self
-                    .get_interned_struct(&struct_type.name)
-                    // I think this doesn't hold true when calling `atomicCompareExchangeWeak`
-                    .expect("Only struct types that have been passed in should be returned");
-                TypeKind::Struct(struct_id).intern(self.database)
+                if let Some(struct_id) = self.get_interned_struct(&struct_type.name) {
+                    TypeKind::Struct(struct_id).intern(self.db)
+                } else {
+                    // fallback, assume that it is a builtin struct
+                    let fields = struct_type
+                        .members
+                        .into_iter()
+                        .map(|member| (member.name, self.from_wgsl_types(member.ty)))
+                        .collect();
+                    TypeKind::BuiltinStruct(BuiltinStruct {
+                        name: struct_type.name,
+                        fields,
+                    })
+                    .intern(self.db)
+                }
             },
+            // TODO: bufferArrayView
             wgsl_types::Type::Array(r#type, size) => TypeKind::Array(ArrayType {
                 inner: self.from_wgsl_types(*r#type),
                 binding_array: false,
@@ -575,7 +606,7 @@ impl<'database> WgslTypeConverter<'database> {
                     None => ArraySize::Dynamic,
                 },
             })
-            .intern(self.database),
+            .intern(self.db),
             wgsl_types::Type::BindingArray(r#type, size) => TypeKind::Array(ArrayType {
                 inner: self.from_wgsl_types(*r#type),
                 binding_array: true,
@@ -592,29 +623,29 @@ impl<'database> WgslTypeConverter<'database> {
                     None => ArraySize::Dynamic,
                 },
             })
-            .intern(self.database),
+            .intern(self.db),
             wgsl_types::Type::Vec(size, r#type) => TypeKind::Vector(VectorType {
                 size: VecSize::try_from(size).unwrap(),
                 component_type: self.from_wgsl_types(*r#type),
             })
-            .intern(self.database),
+            .intern(self.db),
             wgsl_types::Type::Mat(columns, rows, r#type) => TypeKind::Matrix(MatrixType {
                 columns: VecSize::try_from(columns).unwrap(),
                 rows: VecSize::try_from(rows).unwrap(),
                 inner: self.from_wgsl_types(*r#type),
             })
-            .intern(self.database),
+            .intern(self.db),
             wgsl_types::Type::Atomic(r#type) => TypeKind::Atomic(AtomicType {
                 inner: self.from_wgsl_types(*r#type),
             })
-            .intern(self.database),
+            .intern(self.db),
             wgsl_types::Type::Ptr(address_space, r#type, access_mode) => {
                 TypeKind::Pointer(Pointer {
                     address_space,
                     inner: self.from_wgsl_types(*r#type),
                     access_mode,
                 })
-                .intern(self.database)
+                .intern(self.db)
             },
             wgsl_types::Type::Ref(address_space, r#type, access_mode) => {
                 TypeKind::Reference(Reference {
@@ -622,17 +653,17 @@ impl<'database> WgslTypeConverter<'database> {
                     inner: self.from_wgsl_types(*r#type),
                     access_mode,
                 })
-                .intern(self.database)
+                .intern(self.db)
             },
             wgsl_types::Type::Texture(texture_type) => {
-                TypeKind::Texture(self.from_wgsl_texture_type(&texture_type)).intern(self.database)
+                TypeKind::Texture(self.from_wgsl_texture_type(&texture_type)).intern(self.db)
             },
             wgsl_types::Type::Sampler(sampler_type) => {
-                TypeKind::Sampler(sampler_type).intern(self.database)
+                TypeKind::Sampler(sampler_type).intern(self.db)
             },
             wgsl_types::Type::RayQuery(_) => todo!("naga extension"),
             wgsl_types::Type::AccelerationStructure(_) => todo!("naga extension"),
-            wgsl_types::Type::Unknown => TypeKind::Error.intern(self.database),
+            wgsl_types::Type::Unknown => TypeKind::Error.intern(self.db),
         }
     }
 
@@ -647,55 +678,55 @@ impl<'database> WgslTypeConverter<'database> {
     ) -> TextureType {
         match *value {
             wgsl_types::ty::TextureType::Sampled1D(sampled_type) => TextureType {
-                kind: TextureKind::from_sampled(sampled_type, self.database),
+                kind: TextureKind::from_sampled(sampled_type, self.db),
                 dimension: TextureDimensionality::D1,
                 arrayed: false,
                 multisampled: false,
             },
             wgsl_types::ty::TextureType::Sampled1DArray(sampled_type) => TextureType {
-                kind: TextureKind::from_sampled(sampled_type, self.database),
+                kind: TextureKind::from_sampled(sampled_type, self.db),
                 dimension: TextureDimensionality::D1,
                 arrayed: true,
                 multisampled: false,
             },
             wgsl_types::ty::TextureType::Sampled2D(sampled_type) => TextureType {
-                kind: TextureKind::from_sampled(sampled_type, self.database),
+                kind: TextureKind::from_sampled(sampled_type, self.db),
                 dimension: TextureDimensionality::D2,
                 arrayed: false,
                 multisampled: false,
             },
             wgsl_types::ty::TextureType::Sampled2DArray(sampled_type) => TextureType {
-                kind: TextureKind::from_sampled(sampled_type, self.database),
+                kind: TextureKind::from_sampled(sampled_type, self.db),
                 dimension: TextureDimensionality::D2,
                 arrayed: true,
                 multisampled: false,
             },
             wgsl_types::ty::TextureType::Sampled3D(sampled_type) => TextureType {
-                kind: TextureKind::from_sampled(sampled_type, self.database),
+                kind: TextureKind::from_sampled(sampled_type, self.db),
                 dimension: TextureDimensionality::D3,
                 arrayed: false,
                 multisampled: false,
             },
             wgsl_types::ty::TextureType::SampledCube(sampled_type) => TextureType {
-                kind: TextureKind::from_sampled(sampled_type, self.database),
+                kind: TextureKind::from_sampled(sampled_type, self.db),
                 dimension: TextureDimensionality::Cube,
                 arrayed: false,
                 multisampled: false,
             },
             wgsl_types::ty::TextureType::SampledCubeArray(sampled_type) => TextureType {
-                kind: TextureKind::from_sampled(sampled_type, self.database),
+                kind: TextureKind::from_sampled(sampled_type, self.db),
                 dimension: TextureDimensionality::Cube,
                 arrayed: true,
                 multisampled: false,
             },
             wgsl_types::ty::TextureType::Multisampled2D(sampled_type) => TextureType {
-                kind: TextureKind::from_sampled(sampled_type, self.database),
+                kind: TextureKind::from_sampled(sampled_type, self.db),
                 dimension: TextureDimensionality::D2,
                 arrayed: false,
                 multisampled: true,
             },
             wgsl_types::ty::TextureType::Multisampled2DArray(sampled_type) => TextureType {
-                kind: TextureKind::from_sampled(sampled_type, self.database),
+                kind: TextureKind::from_sampled(sampled_type, self.db),
                 dimension: TextureDimensionality::D2,
                 arrayed: true,
                 multisampled: true,
@@ -863,7 +894,7 @@ impl<'database> WgslTypeConverter<'database> {
         &self,
         sampled: Type,
     ) -> wgsl_types::syntax::SampledType {
-        match sampled.kind(self.database) {
+        match sampled.kind(self.db) {
             TypeKind::Scalar(ScalarType::I32) => wgsl_types::syntax::SampledType::I32,
             TypeKind::Scalar(ScalarType::U32) => wgsl_types::syntax::SampledType::U32,
             TypeKind::Scalar(ScalarType::F32) => wgsl_types::syntax::SampledType::F32,
@@ -873,6 +904,7 @@ impl<'database> WgslTypeConverter<'database> {
             | TypeKind::Vector(_)
             | TypeKind::Matrix(_)
             | TypeKind::Struct(_)
+            | TypeKind::BuiltinStruct(_)
             | TypeKind::Array(_)
             | TypeKind::Texture(_)
             | TypeKind::Sampler(_)
@@ -976,5 +1008,92 @@ pub fn to_wgsl_texel_format(
             panic!("bound var is not a valid texel format to convert")
         },
         crate::ty::TexelFormat::Any => panic!("any is not a valid texel format to convert"),
+    }
+}
+
+#[must_use]
+pub const fn to_wgsl_binary_operator(
+    operation: BinaryOperation
+) -> wgsl_types::syntax::BinaryOperator {
+    use wgsl_types::syntax::BinaryOperator as Wtbo;
+    match operation {
+        BinaryOperation::Logical(logic_operation) => match logic_operation {
+            LogicOperation::ShortCircuitAnd => Wtbo::ShortCircuitAnd,
+            LogicOperation::ShortCircuitOr => Wtbo::ShortCircuitOr,
+        },
+        BinaryOperation::Arithmetic(arithmetic_operation) => match arithmetic_operation {
+            ArithmeticOperation::Addition => Wtbo::Addition,
+            ArithmeticOperation::Multiplication => Wtbo::Multiplication,
+            ArithmeticOperation::Subtraction => Wtbo::Subtraction,
+            ArithmeticOperation::Division => Wtbo::Division,
+            ArithmeticOperation::ShiftLeft => Wtbo::ShiftLeft,
+            ArithmeticOperation::ShiftRight => Wtbo::ShiftRight,
+            ArithmeticOperation::BitwiseXor => Wtbo::BitwiseXor,
+            ArithmeticOperation::BitwiseOr => Wtbo::BitwiseOr,
+            ArithmeticOperation::BitwiseAnd => Wtbo::BitwiseAnd,
+            ArithmeticOperation::Remainder => Wtbo::Remainder,
+        },
+        BinaryOperation::Comparison(comparison_operation) => match comparison_operation {
+            ComparisonOperation::Equality => Wtbo::Equality,
+            ComparisonOperation::Inequality => Wtbo::Inequality,
+            ComparisonOperation::LessThan => Wtbo::LessThan,
+            ComparisonOperation::LessThanEqual => Wtbo::LessThanEqual,
+            ComparisonOperation::GreaterThan => Wtbo::GreaterThan,
+            ComparisonOperation::GreaterThanEqual => Wtbo::GreaterThanEqual,
+        },
+    }
+}
+
+#[must_use]
+pub const fn from_wgsl_binary_operator(
+    operation: wgsl_types::syntax::BinaryOperator
+) -> BinaryOperation {
+    use syntax::ast::operators::BinaryOperation as Bo;
+    use wgsl_types::syntax::BinaryOperator as Wtbo;
+    match operation {
+        Wtbo::ShortCircuitAnd => Bo::Logical(LogicOperation::ShortCircuitAnd),
+        Wtbo::ShortCircuitOr => Bo::Logical(LogicOperation::ShortCircuitOr),
+        Wtbo::Addition => Bo::Arithmetic(ArithmeticOperation::Addition),
+        Wtbo::Multiplication => Bo::Arithmetic(ArithmeticOperation::Multiplication),
+        Wtbo::Subtraction => Bo::Arithmetic(ArithmeticOperation::Subtraction),
+        Wtbo::Division => Bo::Arithmetic(ArithmeticOperation::Division),
+        Wtbo::ShiftLeft => Bo::Arithmetic(ArithmeticOperation::ShiftLeft),
+        Wtbo::ShiftRight => Bo::Arithmetic(ArithmeticOperation::ShiftRight),
+        Wtbo::BitwiseXor => Bo::Arithmetic(ArithmeticOperation::BitwiseXor),
+        Wtbo::BitwiseOr => Bo::Arithmetic(ArithmeticOperation::BitwiseOr),
+        Wtbo::BitwiseAnd => Bo::Arithmetic(ArithmeticOperation::BitwiseAnd),
+        Wtbo::Remainder => Bo::Arithmetic(ArithmeticOperation::Remainder),
+        Wtbo::Equality => Bo::Comparison(ComparisonOperation::Equality),
+        Wtbo::Inequality => Bo::Comparison(ComparisonOperation::Inequality),
+        Wtbo::LessThan => Bo::Comparison(ComparisonOperation::LessThan),
+        Wtbo::LessThanEqual => Bo::Comparison(ComparisonOperation::LessThanEqual),
+        Wtbo::GreaterThan => Bo::Comparison(ComparisonOperation::GreaterThan),
+        Wtbo::GreaterThanEqual => Bo::Comparison(ComparisonOperation::GreaterThanEqual),
+    }
+}
+
+#[must_use]
+pub const fn to_wgsl_unary_operator(operation: UnaryOperator) -> wgsl_types::syntax::UnaryOperator {
+    use wgsl_types::syntax::UnaryOperator as Wtuo;
+    match operation {
+        UnaryOperator::Negation => Wtuo::Negation,
+        UnaryOperator::LogicalNegation => Wtuo::LogicalNegation,
+        UnaryOperator::AddressOf => Wtuo::AddressOf,
+        UnaryOperator::Indirection => Wtuo::Indirection,
+        UnaryOperator::BitwiseComplement => Wtuo::BitwiseComplement,
+    }
+}
+
+#[must_use]
+pub const fn from_wgsl_unary_operator(
+    operation: wgsl_types::syntax::UnaryOperator
+) -> UnaryOperator {
+    use wgsl_types::syntax::UnaryOperator as Wtuo;
+    match operation {
+        Wtuo::LogicalNegation => UnaryOperator::Negation,
+        Wtuo::Negation => UnaryOperator::LogicalNegation,
+        Wtuo::BitwiseComplement => UnaryOperator::AddressOf,
+        Wtuo::AddressOf => UnaryOperator::Indirection,
+        Wtuo::Indirection => UnaryOperator::BitwiseComplement,
     }
 }

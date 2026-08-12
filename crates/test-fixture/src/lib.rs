@@ -21,70 +21,70 @@ pub trait WithFixture: Default + SourceDatabase + 'static {
     #[must_use]
     #[track_caller]
     fn with_single_file(wa_fixture: &str) -> (Self, EditionedFileId) {
-        let mut database = Self::default();
+        let mut db = Self::default();
         let fixture = ChangeFixture::parse(wa_fixture);
-        fixture.change.apply(&mut database);
+        fixture.change.apply(&mut db);
         assert_eq!(
             fixture.files.len(),
             1,
             "Multiple files found in the fixture"
         );
-        let file_id = EditionedFileId::from_file(&database, fixture.files[0]);
-        (database, file_id)
+        let file_id = EditionedFileId::from_file(&db, fixture.files[0]);
+        (db, file_id)
     }
 
     #[must_use]
     #[track_caller]
     fn with_many_files(wa_fixture: &str) -> (Self, Vec<EditionedFileId>) {
-        let mut database = Self::default();
+        let mut db = Self::default();
         let fixture = ChangeFixture::parse(wa_fixture);
-        fixture.change.apply(&mut database);
+        fixture.change.apply(&mut db);
         assert!(fixture.file_position.is_none());
         let files = fixture
             .files
             .iter()
-            .map(|file_id| EditionedFileId::from_file(&database, *file_id))
+            .map(|file_id| EditionedFileId::from_file(&db, *file_id))
             .collect();
-        (database, files)
+        (db, files)
     }
 
     #[must_use]
     #[track_caller]
     fn with_files(wa_fixture: &str) -> Self {
-        let mut database = Self::default();
+        let mut db = Self::default();
         let fixture = ChangeFixture::parse(wa_fixture);
-        fixture.change.apply(&mut database);
+        fixture.change.apply(&mut db);
         assert!(fixture.file_position.is_none());
-        database
+        db
     }
 
     #[must_use]
     #[track_caller]
     fn with_position(wa_fixture: &str) -> (Self, FilePosition) {
-        let (database, file_id, range_or_offset) = Self::with_range_or_offset(wa_fixture);
+        let (db, file_id, range_or_offset) = Self::with_range_or_offset(wa_fixture);
         let offset = range_or_offset.expect_offset();
-        (database, FilePosition { file_id, offset })
+        (db, FilePosition { file_id, offset })
     }
 
     #[must_use]
     #[track_caller]
     fn with_range(wa_fixture: &str) -> (Self, FileRange) {
-        let (database, file_id, range_or_offset) = Self::with_range_or_offset(wa_fixture);
+        let (db, file_id, range_or_offset) = Self::with_range_or_offset(wa_fixture);
         let range = range_or_offset.expect_range();
-        (database, FileRange { file_id, range })
+        (db, FileRange { file_id, range })
     }
 
     #[must_use]
     #[track_caller]
     fn with_range_or_offset(wa_fixture: &str) -> (Self, FileId, RangeOrOffset) {
-        let mut database = Self::default();
+        let mut db = Self::default();
         let fixture = ChangeFixture::parse(wa_fixture);
-        fixture.change.apply(&mut database);
+        fixture.change.apply(&mut db);
 
         let (file_id, range_or_offset) = fixture
             .file_position
             .expect("Could not find file position in fixture. Did you forget to add an `$0`?");
-        (database, file_id, range_or_offset)
+        (db, file_id, range_or_offset)
     }
 }
 
@@ -94,6 +94,7 @@ pub struct ChangeFixture {
     pub file_position: Option<(FileId, RangeOrOffset)>,
     pub file_lines: Vec<usize>,
     pub files: Vec<FileId>,
+    pub manifest_files: Vec<FileId>,
     pub change: Change,
 }
 
@@ -109,18 +110,18 @@ impl ChangeFixture {
         let mut source_change = Change::default();
 
         let mut files = Vec::new();
+        let mut manifest_files = Vec::new();
+        let mut next_file_id = (0..).map(FileId::from_raw);
         let mut file_lines = Vec::new();
         let mut packages = FxIndexMap::default();
         let mut package_dependencies = Vec::new();
 
-        let mut file_id = FileId::from_raw(0);
         let mut roots: Vec<(FileSet, PackageOrigin)> = Vec::new();
 
         let mut file_position = None;
 
         for entry in fixture {
             file_lines.push(entry.line);
-
             let mut range_or_offset = None;
             let text = if entry.text.contains(CURSOR_MARKER) {
                 if entry.text.contains(ESCAPED_CURSOR_MARKER) {
@@ -136,28 +137,41 @@ impl ChangeFixture {
             };
 
             let meta = FileMeta::from_fixture(entry);
-            if let Some(range_or_offset) = range_or_offset {
-                file_position = Some((file_id, range_or_offset));
-            }
-
-            assert!(meta.path.starts_with(SOURCE_ROOT_PREFIX));
-            if !meta.dependencies.is_empty() {
-                assert!(
-                    meta.package.is_some(),
-                    "cannot specify dependencies without naming the package"
-                );
-            }
-
-            if let Some((package, origin)) = meta.package {
-                let package_name = PackageName::normalize_dashes(&package);
-                let package = PackageData {
-                    root_file_id: file_id,
-                    edition: meta.edition,
-                    display_name: Some(package.clone()),
+            let mut meta_package = meta.package;
+            if meta_package.is_none() && roots.is_empty() {
+                // Support tests that have a single file or a few files without setting up a package
+                meta_package = Some(PackageMeta {
+                    name: "wa_test_fixture".to_owned(),
+                    origin: PackageOrigin::Local,
+                    root: None,
                     dependencies: Vec::new(),
-                    origin,
+                });
+            }
+
+            if let Some(meta_package) = meta_package {
+                let package_name = PackageName::normalize_dashes(&meta_package.name);
+                let root = match meta_package.root {
+                    Some(root) => VfsPath::new_virtual_path(root),
+                    None => VfsPath::new_virtual_path(meta.path.clone())
+                        .parent()
+                        .unwrap(),
                 };
-                roots.push((FileSet::default(), origin));
+
+                let manifest_file_id = next_file_id.next().unwrap();
+                manifest_files.push(manifest_file_id);
+                source_change.change_file(manifest_file_id, Some(String::new()));
+
+                let package = PackageData {
+                    manifest_file_id,
+                    root: root.clone(),
+                    edition: meta.edition,
+                    display_name: Some(meta_package.name.clone()),
+                    dependencies: Vec::new(),
+                    origin: meta_package.origin,
+                };
+                let mut file_set = FileSet::default();
+                file_set.insert(manifest_file_id, root.join("wesl.toml").unwrap());
+                roots.push((file_set, package.origin));
 
                 let package_id = PackageId::from_raw(u32::try_from(packages.len()).unwrap());
                 let previous = packages.insert(package_name.clone(), (package_id, package));
@@ -165,39 +179,25 @@ impl ChangeFixture {
                     previous.is_none(),
                     "multiple packages with same name: {package_name}"
                 );
-                for dep in meta.dependencies {
+                for dep in meta_package.dependencies {
                     let dep = PackageName::normalize_dashes(&dep);
                     package_dependencies.push((package_name.clone(), dep));
                 }
             }
 
-            source_change.change_file(file_id, Some(text));
-            let path = VfsPath::new_virtual_path(meta.path);
-            if roots.is_empty() {
-                // Support tests that have a single file or a few files without setting up a package
-                let default_package = PackageData {
-                    root_file_id: file_id,
-                    edition: meta.edition,
-                    display_name: Some("wa_test_fixture".into()),
-                    dependencies: Vec::new(),
-                    origin: PackageOrigin::Local,
-                };
-                roots.push((FileSet::default(), PackageOrigin::Local));
-
-                let package_id = PackageId::from_raw(u32::try_from(packages.len()).unwrap());
-                let previous = packages.insert(
-                    PackageName::new("wa_test_fixture").unwrap(),
-                    (package_id, default_package),
-                );
-                assert!(
-                    previous.is_none(),
-                    "multiple packages with same name: wa_test_fixture"
-                );
-            }
-            roots.last_mut().unwrap().0.insert(file_id, path);
             // We use raw file IDs here and then let the packages determine the editions.
+            let file_id = next_file_id.next().unwrap();
             files.push(file_id);
-            file_id = FileId::from_raw(file_id.index() + 1);
+
+            source_change.change_file(file_id, Some(text));
+
+            assert!(meta.path.starts_with(SOURCE_ROOT_PREFIX));
+            let path = VfsPath::new_virtual_path(meta.path);
+            roots.last_mut().unwrap().0.insert(file_id, path);
+
+            if let Some(range_or_offset) = range_or_offset {
+                file_position = Some((file_id, range_or_offset));
+            }
         }
 
         for (from, to) in package_dependencies {
@@ -229,6 +229,7 @@ impl ChangeFixture {
             file_position,
             file_lines,
             files,
+            manifest_files,
             change: source_change,
         }
     }
@@ -243,24 +244,53 @@ enum SourceRootKind {
 #[derive(Debug)]
 struct FileMeta {
     path: String,
-    package: Option<(String, PackageOrigin)>,
-    dependencies: Vec<String>,
     edition: Edition,
+    package: Option<PackageMeta>,
+}
+
+#[derive(Debug)]
+struct PackageMeta {
+    name: String,
+    origin: PackageOrigin,
+    root: Option<String>,
+    dependencies: Vec<String>,
 }
 
 impl FileMeta {
     fn from_fixture(fixture: Fixture) -> Self {
-        let dependencies = fixture.dependencies;
+        let edition = fixture.edition.map_or(Edition::CURRENT, |version| {
+            Edition::from_str(&version).unwrap()
+        });
+
+        let package = if let Some(package_name) = fixture.package {
+            let (name, origin) = parse_package(package_name, fixture.library);
+
+            Some(PackageMeta {
+                name,
+                origin,
+                root: fixture.root,
+                dependencies: fixture.dependencies,
+            })
+        } else {
+            assert!(
+                !fixture.library,
+                "cannot specify library mode without naming the package"
+            );
+            assert!(
+                fixture.root.is_none(),
+                "cannot specify package root without naming the package"
+            );
+            assert!(
+                fixture.dependencies.is_empty(),
+                "cannot specify dependencies without naming the package"
+            );
+            None
+        };
 
         Self {
             path: fixture.path,
-            package: fixture
-                .package
-                .map(|package_name| parse_package(package_name, fixture.library)),
-            dependencies,
-            edition: fixture.edition.map_or(Edition::CURRENT, |version| {
-                Edition::from_str(&version).unwrap()
-            }),
+            edition,
+            package,
         }
     }
 }

@@ -82,47 +82,51 @@ impl Change {
     /// Panics if the number of source roots exceeds `u32::MAX`, as `SourceRootId` holds a `u32`.
     pub fn apply(
         self,
-        database: &mut dyn SourceDatabase,
+        db: &mut dyn SourceDatabase,
     ) {
         if let Some(roots) = self.roots {
             for (root, root_id) in roots.into_iter().zip(0_u32..) {
                 let root_id = SourceRootId(root_id);
                 let durability = source_root_durability(&root);
                 for file_id in root.iter() {
-                    database.set_file_source_root_with_durability(file_id, root_id, durability);
+                    db.set_file_source_root_with_durability(file_id, root_id, durability);
                 }
-                database.set_source_root_with_durability(root_id, Arc::new(root), durability);
+                db.set_source_root_with_durability(root_id, Arc::new(root), durability);
             }
         }
 
         for (file_id, text) in self.files_changed {
-            let source_root_id = database.file_source_root(file_id);
-            let source_root = database.source_root(source_root_id.source_root_id(database));
+            let source_root_id = db.file_source_root(file_id);
+            let source_root = db.source_root(source_root_id.source_root_id(db));
 
-            let durability = file_text_durability(&source_root.source_root(database));
+            let durability = file_text_durability(&source_root.source_root(db));
             // Can't actually remove the file, just reset the text, see: https://github.com/salsa-rs/salsa/issues/37
             let text = text.unwrap_or_default();
-            database.set_file_text_with_durability(file_id, &text, durability);
+            db.set_file_text_with_durability(file_id, &text, durability);
         }
 
-        let mut package_graph = PackageGraph::new(&*database);
+        let mut package_graph = PackageGraph::new(db);
         package_graph.update(self.packages_changed);
         let (sorted_packages, errors) = package_graph.to_topological_order();
 
-        // TODO: Report the errors?
+        // These errors should be reported as diagnostics
+        // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1373
+        if !errors.is_empty() {
+            tracing::error!("Package graph errors {:?}", errors);
+        }
 
-        apply_package_graph(database, package_graph, sorted_packages);
+        apply_package_graph(db, package_graph, sorted_packages);
     }
 }
 
 fn apply_package_graph(
-    database: &mut dyn SourceDatabase,
+    db: &mut dyn SourceDatabase,
     mut package_graph: PackageGraph,
     sorted_packages: Vec<PackageId>,
 ) {
-    let mut old_packages: FxHashMap<PackageId, Package> = all_packages(database)
+    let mut old_packages: FxHashMap<PackageId, Package> = all_packages(db)
         .iter()
-        .map(|package| (package.package_id(database), *package))
+        .map(|package| (package.package_id(db), *package))
         .collect();
 
     let mut all_packages = Vec::with_capacity(sorted_packages.len());
@@ -132,9 +136,9 @@ fn apply_package_graph(
 
         let package = match old_packages.remove(&package_id) {
             Some(old_package) => {
-                if old_package.data(database) != &new_package {
+                if old_package.data(db) != &new_package {
                     old_package
-                        .set_data(database)
+                        .set_data(db)
                         .with_durability(durability)
                         .to(new_package);
                 }
@@ -142,24 +146,25 @@ fn apply_package_graph(
             },
             None => Package::builder(new_package, package_id)
                 .durability(durability)
-                .new(database),
+                .new(db),
         };
         all_packages.push(package);
     }
 
     for (_, remaining_package) in old_packages {
-        let package_data = remaining_package.data(database);
+        let package_data = remaining_package.data(db);
         let dummy_package = PackageData {
-            root_file_id: package_data.root_file_id,
+            manifest_file_id: package_data.manifest_file_id,
+            root: package_data.root.clone(),
             edition: package_data.edition,
             display_name: None,
             dependencies: Vec::new(),
             origin: package_data.origin,
         };
         // Salsa does not have a removal API yet, see: https://github.com/salsa-rs/salsa/issues/37
-        remaining_package.set_data(database).to(dummy_package);
+        remaining_package.set_data(db).to(dummy_package);
     }
-    set_all_packages_with_durability(database, all_packages, Durability::MEDIUM);
+    set_all_packages_with_durability(db, all_packages, Durability::MEDIUM);
 }
 
 #[must_use]
@@ -196,13 +201,13 @@ struct PackageGraph {
 }
 
 impl PackageGraph {
-    pub fn new(database: &dyn SourceDatabase) -> Self {
-        let (ids, packages): (Vec<_>, FxHashMap<_, _>) = all_packages(database)
+    pub fn new(db: &dyn SourceDatabase) -> Self {
+        let (ids, packages): (Vec<_>, FxHashMap<_, _>) = all_packages(db)
             .iter()
             .map(|package| {
-                let mut package_data = PackageData::clone(package.data(database));
+                let mut package_data = PackageData::clone(package.data(db));
                 // Ensure that we view everything as a potential dependency
-                let id = package.package_id(database);
+                let id = package.package_id(db);
                 (id, (id, package_data))
             })
             .unzip();
@@ -352,7 +357,7 @@ mod tests {
     use edition::Edition;
     use expect_test::expect;
     use triomphe::Arc;
-    use vfs::{AbsPathBuf, file_set::FileSet};
+    use vfs::{AbsPathBuf, VfsPath, file_set::FileSet};
 
     use super::{CyclicDependenciesError, FileId, PackageGraph};
     use crate::{
@@ -390,7 +395,8 @@ mod tests {
         (
             PackageId::from_raw(id),
             PackageData {
-                root_file_id: FileId::from_raw(id),
+                manifest_file_id: FileId::from_raw(id),
+                root: VfsPath::new_virtual_path(String::new()),
                 edition: Edition::LATEST,
                 display_name: None,
                 dependencies,

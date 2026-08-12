@@ -37,11 +37,7 @@ pub enum InferenceDiagnosticKind {
         expression: ExpressionId,
         r#type: Type,
     },
-    UnresolvedName {
-        expression: ExpressionId,
-        name: Name,
-    },
-    InvalidConstructionType {
+    NotConstructible {
         expression: ExpressionId,
         r#type: Type,
     },
@@ -88,7 +84,7 @@ pub enum InferenceDiagnosticKind {
         expression: ExpressionId,
         message: String,
     },
-    ExpectedLoweredKind {
+    UnexpectedLoweredKind {
         expression: ExpressionId,
         expected: LoweredKind,
         actual: LoweredKind,

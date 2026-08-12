@@ -1,4 +1,4 @@
-use base_db::EditionedFileId;
+use base_db::{EditionedFileId, SourceDatabase};
 use syntax::{
     HasName as _,
     ast::{Directive, Item, SourceFile},
@@ -8,7 +8,6 @@ use triomphe::Arc;
 use super::{GlobalConstant, GlobalVariable, Override, Struct, TypeAlias};
 use crate::{
     ast_id::AstIdMap,
-    database::DefDatabase,
     item_tree::{
         self, BigModItem, Function, GlobalAssertStatement, ImportStatement, ImportTree, ItemTree,
         ItemTreeAstId, ModuleItemId, SmallModItem,
@@ -16,23 +15,23 @@ use crate::{
     mod_path::{ModPath, PathKind},
 };
 
-pub(crate) struct Ctx<'database> {
-    database: &'database dyn DefDatabase,
+pub(crate) struct Ctx<'db> {
+    db: &'db dyn SourceDatabase,
     file_id: EditionedFileId,
-    source_ast_id_map: Arc<AstIdMap>,
+    source_ast_id_map: &'db AstIdMap,
     pub(crate) tree: ItemTree,
     pub(crate) items: Vec<ModuleItemId>,
 }
 
-impl<'database> Ctx<'database> {
+impl<'db> Ctx<'db> {
     pub(crate) fn new(
-        database: &'database dyn DefDatabase,
+        db: &'db dyn SourceDatabase,
         file_id: EditionedFileId,
     ) -> Self {
         Self {
-            database,
+            db,
             file_id,
-            source_ast_id_map: database.ast_id_map(file_id),
+            source_ast_id_map: AstIdMap::of(db, file_id),
             tree: ItemTree::default(),
             items: vec![],
         }

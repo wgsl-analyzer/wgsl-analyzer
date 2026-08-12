@@ -313,3 +313,141 @@ fn foo() {
               Blankspace@122..131 "\n        ""#]],
     );
 }
+
+#[test]
+fn small_fragment_shader() {
+    check_with_edition(
+        edition::Edition::Wesl2025Unstable,
+        "
+@fragment
+fn main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
+    var x: f32;
+    @if (true)
+    {
+        var x = 1i;
+    }
+    return vec4(vec3(x), 1);
+}
+        ",
+        expect![[r#"
+            SourceFile@0..176
+              Blankspace@0..1 "\n"
+              AttributeList@1..10
+                FragmentAttribute@1..10
+                  AttributeOperator@1..2 "@"
+                  Fragment@2..10 "fragment"
+              Blankspace@10..11 "\n"
+              FunctionDeclaration@11..167
+                Fn@11..13 "fn"
+                Blankspace@13..14 " "
+                Name@14..18
+                  Identifier@14..18 "main"
+                FunctionParameters@18..49
+                  ParenthesisLeft@18..19 "("
+                  AttributeList@19..37
+                    BuiltinAttribute@19..37
+                      AttributeOperator@19..20 "@"
+                      Builtin@20..27 "builtin"
+                      ParenthesisLeft@27..28 "("
+                      BuiltinValueName@28..36
+                        Identifier@28..36 "position"
+                      ParenthesisRight@36..37 ")"
+                  Blankspace@37..38 " "
+                  Parameter@38..48
+                    Name@38..41
+                      Identifier@38..41 "pos"
+                    Colon@41..42 ":"
+                    Blankspace@42..43 " "
+                    TypeSpecifier@43..48
+                      Path@43..48
+                        Identifier@43..48 "vec4f"
+                  ParenthesisRight@48..49 ")"
+                Blankspace@49..50 " "
+                ReturnType@50..71
+                  Arrow@50..52 "->"
+                  Blankspace@52..53 " "
+                  AttributeList@53..65
+                    LocationAttribute@53..65
+                      AttributeOperator@53..54 "@"
+                      Location@54..62 "location"
+                      ParenthesisLeft@62..63 "("
+                      Literal@63..64
+                        IntLiteral@63..64 "0"
+                      ParenthesisRight@64..65 ")"
+                  Blankspace@65..66 " "
+                  TypeSpecifier@66..71
+                    Path@66..71
+                      Identifier@66..71 "vec4f"
+                Blankspace@71..72 " "
+                CompoundStatement@72..167
+                  BraceLeft@72..73 "{"
+                  Blankspace@73..78 "\n    "
+                  VariableDeclaration@78..89
+                    Var@78..81 "var"
+                    Blankspace@81..82 " "
+                    Name@82..83
+                      Identifier@82..83 "x"
+                    Colon@83..84 ":"
+                    Blankspace@84..85 " "
+                    TypeSpecifier@85..88
+                      Path@85..88
+                        Identifier@85..88 "f32"
+                    Semicolon@88..89 ";"
+                  Blankspace@89..94 "\n    "
+                  AttributeList@94..104
+                    IfAttribute@94..104
+                      AttributeOperator@94..95 "@"
+                      If@95..97 "if"
+                      Blankspace@97..98 " "
+                      ParenthesisLeft@98..99 "("
+                      Literal@99..103
+                        True@99..103 "true"
+                      ParenthesisRight@103..104 ")"
+                  Blankspace@104..109 "\n    "
+                  CompoundStatement@109..136
+                    BraceLeft@109..110 "{"
+                    Blankspace@110..119 "\n        "
+                    VariableDeclaration@119..130
+                      Var@119..122 "var"
+                      Blankspace@122..123 " "
+                      Name@123..124
+                        Identifier@123..124 "x"
+                      Blankspace@124..125 " "
+                      Equal@125..126 "="
+                      Blankspace@126..127 " "
+                      Literal@127..129
+                        IntLiteral@127..129 "1i"
+                      Semicolon@129..130 ";"
+                    Blankspace@130..135 "\n    "
+                    BraceRight@135..136 "}"
+                  Blankspace@136..141 "\n    "
+                  ReturnStatement@141..165
+                    Return@141..147 "return"
+                    Blankspace@147..148 " "
+                    FunctionCall@148..164
+                      IdentExpression@148..152
+                        Path@148..152
+                          Identifier@148..152 "vec4"
+                      Arguments@152..164
+                        ParenthesisLeft@152..153 "("
+                        FunctionCall@153..160
+                          IdentExpression@153..157
+                            Path@153..157
+                              Identifier@153..157 "vec3"
+                          Arguments@157..160
+                            ParenthesisLeft@157..158 "("
+                            IdentExpression@158..159
+                              Path@158..159
+                                Identifier@158..159 "x"
+                            ParenthesisRight@159..160 ")"
+                        Comma@160..161 ","
+                        Blankspace@161..162 " "
+                        Literal@162..163
+                          IntLiteral@162..163 "1"
+                        ParenthesisRight@163..164 ")"
+                    Semicolon@164..165 ";"
+                  Blankspace@165..166 "\n"
+                  BraceRight@166..167 "}"
+              Blankspace@167..176 "\n        ""#]],
+    );
+}

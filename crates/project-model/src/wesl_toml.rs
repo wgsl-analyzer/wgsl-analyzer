@@ -22,7 +22,7 @@ impl WeslToml {
 }
 
 fn default_root() -> String {
-    "./shaders/".to_owned()
+    "./shaders".to_owned()
 }
 
 #[derive(Deserialize)]

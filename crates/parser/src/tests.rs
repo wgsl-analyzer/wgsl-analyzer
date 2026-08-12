@@ -67,7 +67,7 @@ fn check_with_edition(
 }
 
 #[expect(clippy::needless_pass_by_value, reason = "intended API")]
-fn check_type_with_edition_with_edition(
+fn check_type_with_edition(
     edition: Edition,
     input: &str,
     expected_tree: Expect,
@@ -2636,6 +2636,81 @@ fn requires_directive() {
 }
 
 #[test]
+fn directive_after_directive() {
+    check_with_edition(
+        edition::Edition::Wesl2025Unstable,
+        "
+        enable f16;
+        import foo::bar;
+        ",
+        expect![[r#"
+            SourceFile@0..54
+              Blankspace@0..9 "\n        "
+              EnableDirective@9..20
+                Enable@9..15 "enable"
+                Blankspace@15..16 " "
+                EnableExtensionName@16..19
+                  Identifier@16..19 "f16"
+                Semicolon@19..20 ";"
+              Blankspace@20..29 "\n        "
+              ImportStatement@29..45
+                Import@29..35 "import"
+                Blankspace@35..36 " "
+                ImportPath@36..44
+                  Name@36..39
+                    Identifier@36..39 "foo"
+                  ColonColon@39..41 "::"
+                  ImportItem@41..44
+                    Name@41..44
+                      Identifier@41..44 "bar"
+                Semicolon@44..45 ";"
+              Blankspace@45..54 "\n        "
+
+            error at 29..35: import statements must come before other items"#]],
+    );
+}
+
+#[test]
+fn import_after_declaration() {
+    check_with_edition(
+        edition::Edition::Wesl2025Unstable,
+        "
+        const a = 3;
+        import foo::bar;
+        ",
+        expect![[r#"
+            SourceFile@0..55
+              Blankspace@0..9 "\n        "
+              ConstantDeclaration@9..21
+                Const@9..14 "const"
+                Blankspace@14..15 " "
+                Name@15..16
+                  Identifier@15..16 "a"
+                Blankspace@16..17 " "
+                Equal@17..18 "="
+                Blankspace@18..19 " "
+                Literal@19..20
+                  IntLiteral@19..20 "3"
+                Semicolon@20..21 ";"
+              Blankspace@21..30 "\n        "
+              ImportStatement@30..46
+                Import@30..36 "import"
+                Blankspace@36..37 " "
+                ImportPath@37..45
+                  Name@37..40
+                    Identifier@37..40 "foo"
+                  ColonColon@40..42 "::"
+                  ImportItem@42..45
+                    Name@42..45
+                      Identifier@42..45 "bar"
+                Semicolon@45..46 ";"
+              Blankspace@46..55 "\n        "
+
+            error at 30..36: import statements must come before other items"#]],
+    );
+}
+
+#[test]
 fn directive_after_declaration() {
     check(
         "
@@ -2665,7 +2740,7 @@ fn directive_after_declaration() {
                 Semicolon@40..41 ";"
               Blankspace@41..50 "\n        "
 
-            error at 30..36: directives must come before other items"#]],
+            error at 30..36: directives must come before declarations"#]],
     );
 }
 
@@ -3832,5 +3907,52 @@ fn attribute_edge_case_if() {
               Blankspace@68..77 "\n        "
 
             error at 54..55: invalid syntax, expected one of: 'alias', '&', '@', '{', '}', 'break', 'case', 'const', 'const_assert', 'continue', 'continuing', 'default', 'diagnostic', 'discard', 'enable', 'fn', 'for', <identifier>, 'if', 'import', 'let', 'loop', 'override', 'package', '(', 'requires', 'return', ';', '*', 'struct', 'super', 'switch', '_', 'var', 'while'"#]],
+    );
+}
+
+#[test]
+fn invalid_suffix() {
+    check(
+        "
+        fn foo() {
+            let bar = 1.0u;
+        }
+        ",
+        expect![[r#"
+            SourceFile@0..66
+              Blankspace@0..9 "\n        "
+              FunctionDeclaration@9..57
+                Fn@9..11 "fn"
+                Blankspace@11..12 " "
+                Name@12..15
+                  Identifier@12..15 "foo"
+                FunctionParameters@15..17
+                  ParenthesisLeft@15..16 "("
+                  ParenthesisRight@16..17 ")"
+                Blankspace@17..18 " "
+                CompoundStatement@18..57
+                  BraceLeft@18..19 "{"
+                  Blankspace@19..32 "\n            "
+                  LetDeclaration@32..45
+                    Let@32..35 "let"
+                    Blankspace@35..36 " "
+                    Name@36..39
+                      Identifier@36..39 "bar"
+                    Blankspace@39..40 " "
+                    Equal@40..41 "="
+                    Blankspace@41..42 " "
+                    Literal@42..45
+                      FloatLiteral@42..45 "1.0"
+                  AssignmentStatement@45..47
+                    IdentExpression@45..46
+                      Path@45..46
+                        Identifier@45..46 "u"
+                    Semicolon@46..47 ";"
+                  Blankspace@47..56 "\n        "
+                  BraceRight@56..57 "}"
+              Blankspace@57..66 "\n        "
+
+            error at 45..46: invalid syntax, expected: ';'
+            error at 46..47: invalid syntax, expected one of: '&=', '/=', '=', '-=', '--', '%=', '|=', '+=', '++', '<<=', '>>=', '*=', '^='"#]],
     );
 }

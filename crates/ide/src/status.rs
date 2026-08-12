@@ -14,7 +14,7 @@ use vfs::FileId;
 //
 // ![Status](https://user-images.githubusercontent.com/48062697/113065584-05f34500-91b1-11eb-98cc-5c196f76be7f.gif)
 pub(crate) fn status(
-    database: &RootDatabase,
+    db: &RootDatabase,
     file_id: Option<FileId>,
 ) -> String {
     let mut buffer = String::new();
@@ -32,20 +32,21 @@ pub(crate) fn status(
 
     if let Some(file_id) = file_id {
         format_to!(buffer, "\nPackage for file {}:\n", file_id.index());
-        let package: Option<Package> = file_package(database, file_id);
+        let package: Option<Package> = file_package(db, file_id);
 
         if let Some(package_id) = package {
             let PackageData {
-                root_file_id,
+                manifest_file_id,
+                root,
                 display_name,
                 edition,
                 dependencies,
                 origin,
-            } = package_id.data(database);
+            } = package_id.data(db);
             // let ExtraPackageData {
             //     version,
             //     display_name,
-            // } = package_id.extra_data(database);
+            // } = package_id.extra_data(db);
             format_to!(
                 buffer,
                 "Crate: {}\n",
@@ -54,11 +55,7 @@ pub(crate) fn status(
                     None => format!("{package_id:?}"),
                 }
             );
-            format_to!(
-                buffer,
-                "    Root module file id: {}\n",
-                root_file_id.index()
-            );
+            format_to!(buffer, "    Root path: {}\n", root);
             format_to!(buffer, "    Edition: {}\n", edition);
             // format_to!(
             //     buffer,

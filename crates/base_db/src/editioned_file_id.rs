@@ -17,48 +17,37 @@ pub struct RawEditionedFileId {
     pub edition: Edition,
 }
 
-#[salsa_macros::interned(debug, constructor = from_span_file_id, no_lifetime, revisions = usize::MAX)]
+#[salsa_macros::interned(debug, constructor = from_span_file_id, unsafe(no_lifetime), revisions = usize::MAX)]
 #[derive(PartialOrd, Ord)]
 pub struct EditionedFileId {
     field: RawEditionedFileId,
 }
 
+#[salsa::tracked]
 impl EditionedFileId {
+    #[salsa::tracked(lru = 128, returns(clone))]
     pub fn parse(
         self,
-        database: &dyn SourceDatabase,
+        db: &dyn SourceDatabase,
     ) -> syntax::Parse {
-        #[salsa::tracked(lru = 128)]
-        pub fn parse(
-            database: &dyn SourceDatabase,
-            file_id: EditionedFileId,
-        ) -> syntax::Parse {
-            let _p = tracing::info_span!("parse", ?file_id).entered();
-            let (file_id, edition) = (file_id.file_id(database), file_id.edition(database));
-            let text = database.file_text(file_id).text(database);
-            syntax::parse(text, edition)
-        }
-        parse(database, self)
+        let _p = tracing::info_span!("parse", ?self).entered();
+        let RawEditionedFileId { file_id, edition } = self.unpack(db);
+        let text = db.file_text(file_id).text(db);
+        syntax::parse(text, edition)
     }
 
     // firewall query
+    #[salsa::tracked(returns(as_deref))]
     pub fn parse_errors(
         self,
-        database: &dyn SourceDatabase,
-    ) -> Option<&[Diagnostic]> {
-        #[salsa::tracked(returns(as_deref))]
-        pub fn parse_errors(
-            database: &dyn SourceDatabase,
-            file_id: EditionedFileId,
-        ) -> Option<Box<[Diagnostic]>> {
-            let parse = file_id.parse(database);
-            let errors = parse.errors();
-            match errors {
-                [] => None,
-                [..] => Some(errors.into()),
-            }
+        db: &dyn SourceDatabase,
+    ) -> Option<Box<[Diagnostic]>> {
+        let parse = self.parse(db);
+        let errors = parse.errors();
+        match errors {
+            [] => None,
+            [..] => Some(errors.into()),
         }
-        parse_errors(database, self)
     }
 }
 
@@ -66,57 +55,46 @@ impl EditionedFileId {
     /// Warning: Prefer [`from_file`] to get the correct edition for WGSL and WESL files.
     #[inline]
     pub fn new_unchecked(
-        database: &dyn Database,
+        db: &dyn Database,
         file_id: FileId,
         edition: Edition,
     ) -> Self {
-        Self::from_span_file_id(database, RawEditionedFileId { file_id, edition })
+        Self::from_span_file_id(db, RawEditionedFileId { file_id, edition })
     }
 
     pub fn from_file(
-        database: &dyn SourceDatabase,
+        db: &dyn SourceDatabase,
         file_id: FileId,
     ) -> Self {
-        let source_root = database
-            .source_root(database.file_source_root(file_id).source_root_id(database))
-            .source_root(database);
-        Self::from_file_in_source_root(database, file_id, &source_root)
-    }
+        let source_root = db
+            .source_root(db.file_source_root(file_id).source_root_id(db))
+            .source_root(db);
 
-    pub fn from_file_in_source_root(
-        database: &dyn SourceDatabase,
-        file_id: FileId,
-        source_root: &SourceRoot,
-    ) -> Self {
-        let Some((_, extension)) = source_root
-            .path_for_file(file_id)
-            .and_then(|file| file.name_and_extension())
-        else {
-            tracing::error!("All files need to have a source root.");
-            return Self::new_unchecked(database, file_id, Edition::DEFAULT);
+        let extension = match FileExtension::from_file(&source_root, file_id) {
+            Ok(extension) => extension,
+            Err(error) => {
+                tracing::error!("{error}");
+                return Self::new_unchecked(db, file_id, Edition::DEFAULT);
+            },
         };
 
+        Self::from_file_with_extension(db, file_id, extension)
+    }
+
+    pub fn from_file_with_extension(
+        db: &dyn SourceDatabase,
+        file_id: FileId,
+        extension: FileExtension,
+    ) -> Self {
         match extension {
-            Some("wgsl") => Self::new_unchecked(database, file_id, Edition::DEFAULT),
-            Some("wesl") => {
-                if let Some(package) = file_package(database, file_id) {
-                    Self::new_unchecked(database, file_id, package.data(database).edition)
+            FileExtension::Wgsl => Self::new_unchecked(db, file_id, Edition::DEFAULT),
+            FileExtension::Wesl => {
+                if let Some(package) = file_package(db, file_id) {
+                    Self::new_unchecked(db, file_id, package.data(db).edition)
                 } else {
                     // Assume latest WESL for standalone files
-                    Self::new_unchecked(database, file_id, Edition::LATEST)
+                    Self::new_unchecked(db, file_id, Edition::LATEST)
                 }
-            },
-            Some(other) => {
-                tracing::error!(
-                    "All files in the source root must be WGSL or WESL files, {other} is not a valid file extension."
-                );
-                Self::new_unchecked(database, file_id, Edition::DEFAULT)
-            },
-            None => {
-                tracing::error!(
-                    "All files in the source root must be WGSL or WESL files, file is missing an extension."
-                );
-                Self::new_unchecked(database, file_id, Edition::DEFAULT)
             },
         }
     }
@@ -124,24 +102,75 @@ impl EditionedFileId {
     #[inline]
     pub fn file_id(
         self,
-        database: &dyn Database,
+        db: &dyn Database,
     ) -> vfs::FileId {
-        self.field(database).file_id
+        self.field(db).file_id
     }
 
     #[inline]
     pub fn edition(
         self,
-        database: &dyn Database,
+        db: &dyn Database,
     ) -> Edition {
-        self.field(database).edition
+        self.field(db).edition
     }
 
     #[inline]
     pub fn unpack(
         self,
-        database: &dyn Database,
+        db: &dyn Database,
     ) -> RawEditionedFileId {
-        self.field(database)
+        *self.field(db)
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum FileExtension {
+    Wgsl,
+    Wesl,
+}
+
+impl FileExtension {
+    pub fn from_file(
+        source_root: &SourceRoot,
+        file_id: FileId,
+    ) -> Result<Self, InvalidFileError> {
+        let extension = source_root
+            .path_for_file(file_id)
+            .ok_or(InvalidFileError::MissingPath)?
+            .name_and_extension()
+            .ok_or(InvalidFileError::MissingName)?
+            .1
+            .ok_or(InvalidFileError::MissingExtension)?;
+
+        match extension {
+            "wgsl" => Ok(Self::Wgsl),
+            "wesl" => Ok(Self::Wesl),
+            other => Err(InvalidFileError::InvalidExtension(other.to_owned())),
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub enum InvalidFileError {
+    MissingPath,
+    MissingName,
+    MissingExtension,
+    InvalidExtension(String),
+}
+
+impl std::fmt::Display for InvalidFileError {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+    ) -> std::fmt::Result {
+        match self {
+            Self::MissingPath => write!(f, "File is missing a path."),
+            Self::MissingName => write!(f, "File is missing a name."),
+            Self::MissingExtension => write!(f, "File is missing an extension."),
+            Self::InvalidExtension(extension) => {
+                write!(f, "File extension {extension} is invalid.")
+            },
+        }
     }
 }

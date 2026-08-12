@@ -19,7 +19,7 @@ use salsa::Revision;
 use tracing::Level;
 use triomphe::Arc;
 use vfs::{
-    Change as VfsChange, FileExcluded, FileId, Vfs, VfsPath,
+    AbsPathBuf, Change as VfsChange, FileExcluded, FileId, Vfs, VfsPath,
     loader::{Handle, Message},
 };
 use vfs_notify::NotifyHandle;
@@ -81,7 +81,6 @@ pub(crate) struct GlobalState {
     pub(crate) vfs_span: Option<tracing::span::EnteredSpan>,
     pub(crate) wants_to_switch: Option<Cause>,
 
-    // pub(crate) vfs_config_version: u32,
     pub(crate) analysis_host: AnalysisHost,
     pub(crate) diagnostics: DiagnosticCollection,
     pub(crate) in_memory_documents: InMemoryDocuments,
@@ -278,8 +277,15 @@ impl GlobalState {
         }
         std::mem::drop(guard);
 
-        // Package graph changes
-        self.process_package_changes(modified_local_packages, &mut change);
+        if !modified_local_packages.is_empty() {
+            self.process_local_package_changes(modified_local_packages);
+        }
+        if self.is_quiescent() {
+            // Delay switching until
+            // - the package graph is fully loaded
+            // - and the root file is loaded
+            self.process_package_changes(&mut change);
+        }
 
         if change.is_empty() {
             false
@@ -289,12 +295,10 @@ impl GlobalState {
         }
     }
 
-    fn process_package_changes(
+    fn process_local_package_changes(
         &self,
         modified_local_packages: FxHashMap<ManifestPath, PackageChange>,
-        change: &mut BaseDbChange,
     ) {
-        let (vfs, _) = &*self.vfs.read();
         let packages = &mut *self.packages.write();
         for (path, modified) in modified_local_packages {
             match modified {
@@ -327,49 +331,48 @@ impl GlobalState {
                 },
             }
         }
+    }
 
+    fn process_package_changes(
+        &self,
+        change: &mut BaseDbChange,
+    ) {
+        let mut packages = self.packages.write();
+        let vfs = &self.vfs.read().0;
         let changed_packages = packages.take_changes();
         for (id, package_change) in changed_packages {
+            // TODO: Report the tracing::errors via diagnostics instead
+            // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1373
+
             let package_data = packages.get(id).and_then(|package| {
-                let vfs_path = match &package.root {
-                    WeslPackageRoot::File(path) => vfs::VfsPath::from(path.clone()),
-                    WeslPackageRoot::Folder(path) => {
-                        // TODO: Support folders as the root https://github.com/wgsl-analyzer/wgsl-analyzer/issues/992
-                        tracing::error!(
-                            "Folders as the root are not supported at the moment {}",
-                            path
-                        );
-                        return None;
-                    },
-                };
-                let Some((root_file_id, root_file_excluded)) = vfs.file_id(&vfs_path) else {
-                    // TODO: Properly report the error
-                    tracing::error!("Could not find root file {}", &vfs_path);
+                let manifest_path = vfs::VfsPath::from(AbsPathBuf::from(package.manifest.clone()));
+                let Some((manifest_file_id, root_file_excluded)) = vfs.file_id(&manifest_path)
+                else {
+                    tracing::error!("Could not find manifest file {}", &package.manifest);
                     return None;
                 };
                 if root_file_excluded == FileExcluded::Yes {
                     return None;
                 }
-
                 let dependencies = package
                     .dependencies
                     .iter()
                     .filter_map(|dependency| {
-                        // TODO: Properly report the errors
-                        let Some(package_id) = packages.package_id(&dependency.pkg) else {
-                            tracing::error!("Could not find dependency {}", &dependency.name);
+                        let Some(package_id) = packages.package_id(&dependency.package_key())
+                        else {
+                            tracing::error!("Could not find dependency {}", dependency.name());
                             return None;
                         };
-                        let Ok(name) = PackageName::new(&dependency.name) else {
-                            tracing::error!("Invalid dependency name {}", &dependency.name);
-                            return None;
-                        };
-                        Some(Dependency { package_id, name })
+                        Some(Dependency {
+                            package_id,
+                            name: dependency.name().clone(),
+                        })
                     })
                     .collect();
 
                 Some(PackageData {
-                    root_file_id,
+                    manifest_file_id,
+                    root: vfs::VfsPath::from(package.root.clone()),
                     edition: package.edition,
                     display_name: package.display_name.clone(),
                     dependencies,
@@ -378,6 +381,7 @@ impl GlobalState {
             });
             change.change_package(id, package_data);
         }
+        std::mem::drop(packages);
     }
 
     pub(crate) fn snapshot(&self) -> GlobalStateSnapshot {

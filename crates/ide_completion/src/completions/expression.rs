@@ -1,6 +1,7 @@
+use base_db::Lookup as _;
 use hir::HirDatabase as _;
 use hir_def::{
-    database::{DefinitionWithBodyId, ModuleDefinitionId},
+    db::{DefinitionWithBodyId, ModuleDefinitionId},
     item_tree::Name,
     resolver::ScopeDef,
 };
@@ -32,7 +33,7 @@ pub(crate) fn complete_names_in_scope(
             return;
         }
         let kind = match item {
-            ScopeDef::ModuleDefinition(ModuleDefinitionId::Module(_)) => CompletionItemKind::Module,
+            ScopeDef::Module => CompletionItemKind::Module,
             ScopeDef::ModuleDefinition(ModuleDefinitionId::Function(_)) => {
                 CompletionItemKind::Function
             },
@@ -55,14 +56,15 @@ pub(crate) fn complete_names_in_scope(
                 .container
                 .and_then(hir::ChildContainer::as_def_with_body_id)
                 .map(|definition| {
-                    let inference = InferenceResult::of(context.database, definition);
+                    let inference = InferenceResult::of(context.db, definition);
                     inference[local]
                 })
-                .map(|r#type| pretty_type(context.database, r#type)),
+                .map(|r#type| pretty_type(context.db, r#type)),
             ScopeDef::ModuleDefinition(item) => {
                 let detail = render_detail(context, name, item);
                 Some(detail)
             },
+            ScopeDef::Module => Some(format!("path {}", name.as_str())),
         };
 
         let mut completion = CompletionItem::new(kind, context.source_range(), name.as_str());
@@ -79,7 +81,7 @@ pub(crate) fn complete_names_in_scope(
             is_builtin: false,
         });
         completion.set_detail(detail);
-        completion.add_to(accumulator, context.database);
+        completion.add_to(accumulator, context.db);
     });
     accumulator.add_all(Builtin::ALL_BUILTINS.iter().map(|name| {
         let mut builder =
@@ -92,7 +94,7 @@ pub(crate) fn complete_names_in_scope(
             is_builtin: true,
             ..relevance
         });
-        builder.build(context.database)
+        builder.build(context.db)
     }));
     None
 }
@@ -102,59 +104,38 @@ fn render_detail(
     name: &Name,
     item: ModuleDefinitionId,
 ) -> String {
-    let database = context.database;
+    let db = context.db;
 
     match item {
-        ModuleDefinitionId::Module(_id) => {
-            format!("module {}", name.as_str())
-        },
         ModuleDefinitionId::Function(id) => {
-            let function_type = database.function_type(id);
-            pretty_fn_with_verbosity(
-                database,
-                &function_type.lookup(database),
-                TypeVerbosity::Compact,
-            )
+            let function_type = db.function_type(id);
+            pretty_fn_with_verbosity(db, function_type.lookup(db), TypeVerbosity::Compact)
         },
         ModuleDefinitionId::Struct(_) => {
             format!("struct {}", name.as_str())
         },
         ModuleDefinitionId::GlobalVariable(id) => {
-            let variable_type =
-                InferenceResult::of(database, DefinitionWithBodyId::GlobalVariable(id));
+            let variable_type = InferenceResult::of(db, DefinitionWithBodyId::GlobalVariable(id));
             format!(
                 "var {}: {}",
                 name.as_str(),
-                pretty_type_with_verbosity(
-                    database,
-                    variable_type.return_type(),
-                    TypeVerbosity::Compact
-                )
+                pretty_type_with_verbosity(db, variable_type.return_type(), TypeVerbosity::Compact)
             )
         },
         ModuleDefinitionId::GlobalConstant(id) => {
-            let constant_type =
-                InferenceResult::of(database, DefinitionWithBodyId::GlobalConstant(id));
+            let constant_type = InferenceResult::of(db, DefinitionWithBodyId::GlobalConstant(id));
             format!(
                 "const {}: {}",
                 name.as_str(),
-                pretty_type_with_verbosity(
-                    database,
-                    constant_type.return_type(),
-                    TypeVerbosity::Compact
-                )
+                pretty_type_with_verbosity(db, constant_type.return_type(), TypeVerbosity::Compact)
             )
         },
         ModuleDefinitionId::Override(id) => {
-            let override_type = InferenceResult::of(database, DefinitionWithBodyId::Override(id));
+            let override_type = InferenceResult::of(db, DefinitionWithBodyId::Override(id));
             format!(
                 "override {}: {}",
                 name.as_str(),
-                pretty_type_with_verbosity(
-                    database,
-                    override_type.return_type(),
-                    TypeVerbosity::Compact
-                )
+                pretty_type_with_verbosity(db, override_type.return_type(), TypeVerbosity::Compact)
             )
         },
         ModuleDefinitionId::TypeAlias(_) => {

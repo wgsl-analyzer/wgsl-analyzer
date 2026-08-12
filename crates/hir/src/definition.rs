@@ -50,9 +50,6 @@ impl Definition {
 impl From<ResolveKind> for Definition {
     fn from(value: ResolveKind) -> Self {
         match value {
-            ResolveKind::Module(module_id) => {
-                Self::ModuleDef(ModuleDef::Module(Module { file_id: module_id }))
-            },
             ResolveKind::Local(binding, parent) => Self::Local(Local { parent, binding }),
             ResolveKind::GlobalVariable(id) => {
                 Self::ModuleDef(ModuleDef::GlobalVariable(GlobalVariable { id }))
@@ -79,7 +76,7 @@ fn resolve_path(
     {
         let resolver = semantics.resolver(file_id, path.syntax());
         resolver
-            .resolve(semantics.database, &Path(ModPath::from_src(path)))
+            .resolve(semantics.db, &Path(ModPath::from_src(path)))
             .ok()
             .map(Definition::from)
     } else if let Some(expression) = ast::FieldExpression::cast(parent) {

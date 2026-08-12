@@ -20,14 +20,14 @@ pub(crate) struct TestDatabase {
 
 impl Default for TestDatabase {
     fn default() -> Self {
-        let mut database = Self {
+        let mut db = Self {
             storage: Storage::default(),
             files: Arc::default(),
             nonce: Nonce::default(),
         };
         // This needs to be here otherwise the first `Change` will panic.
-        set_all_packages_with_durability(&mut database, [], Durability::LOW);
-        database
+        set_all_packages_with_durability(&mut db, [], Durability::LOW);
+        db
     }
 }
 

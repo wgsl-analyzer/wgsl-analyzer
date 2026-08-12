@@ -1,6 +1,8 @@
 use std::str::FromStr as _;
 
+use base_db::{ExtensionsConfigInput, Intern as _};
 use hir_def::{expression::ExpressionId, item_tree::Name};
+use itertools::Itertools as _;
 use wgsl_types::{
     Instance,
     inst::LiteralInstance,
@@ -14,117 +16,49 @@ use crate::{
     },
     ty::{
         ArraySize, ArrayType, AtomicType, MatrixType, Pointer, ScalarType, TextureDimensionality,
-        TextureKind, TextureType, Type, TypeKind, VecSize, VectorType,
+        TextureKind, TextureType, Type, TypeKind, VecSize, VectorType, pretty::pretty_type,
     },
 };
 
 impl TypeLoweringContext<'_> {
-    fn is_predeclared_type(
-        &self,
-        name: &Name,
-    ) -> bool {
-        // naga extensions
-        (self.database.extensions().shader_int64 && matches!(name.as_str(), "i64" | "u64"))
-        // base WGSL predeclared types
-            || matches!(
-                name.as_str(),
-                "bool"
-                    | "i32"
-                    | "u32"
-                    | "f32"
-                    | "f16"
-                    | "array"
-                    | "binding_array"
-                    | "vec2"
-                    | "vec3"
-                    | "vec4"
-                    | "vec2i"
-                    | "vec3i"
-                    | "vec4i"
-                    | "vec2u"
-                    | "vec3u"
-                    | "vec4u"
-                    | "vec2f"
-                    | "vec3f"
-                    | "vec4f"
-                    | "vec2h"
-                    | "vec3h"
-                    | "vec4h"
-                    | "mat2x2"
-                    | "mat2x3"
-                    | "mat2x4"
-                    | "mat3x2"
-                    | "mat3x3"
-                    | "mat3x4"
-                    | "mat4x2"
-                    | "mat4x3"
-                    | "mat4x4"
-                    | "mat2x2f"
-                    | "mat2x3f"
-                    | "mat2x4f"
-                    | "mat3x2f"
-                    | "mat3x3f"
-                    | "mat3x4f"
-                    | "mat4x2f"
-                    | "mat4x3f"
-                    | "mat4x4f"
-                    | "mat2x2h"
-                    | "mat2x3h"
-                    | "mat2x4h"
-                    | "mat3x2h"
-                    | "mat3x3h"
-                    | "mat3x4h"
-                    | "mat4x2h"
-                    | "mat4x3h"
-                    | "mat4x4h"
-                    | "ptr"
-                    | "atomic"
-                    | "texture_1d"
-                    | "texture_2d"
-                    | "texture_2d_array"
-                    | "texture_3d"
-                    | "texture_cube"
-                    | "texture_cube_array"
-                    | "texture_multisampled_2d"
-                    | "texture_storage_1d"
-                    | "texture_storage_2d"
-                    | "texture_storage_2d_array"
-                    | "texture_storage_3d"
-                    | "texture_depth_multisampled_2d"
-                    | "texture_external"
-                    | "texture_depth_2d"
-                    | "texture_depth_2d_array"
-                    | "texture_depth_cube"
-                    | "texture_depth_cube_array"
-                    | "sampler"
-                    | "sampler_comparison"
-            )
-    }
-
     pub fn lower_if_predeclared(
         &mut self,
         type_container: TypeContainer,
         name: &Name,
         template_parameters: &[ExpressionId],
     ) -> Option<Lowered> {
-        // Lower predeclared types
-        if self.is_predeclared_type(name) {
-            // If lowering the predeclared type failed, we should return a error type
-            // As opposed to ignoring it when it's not a predeclared type
-            match self.lower_predeclared_type(type_container, name, template_parameters) {
-                Ok(lowered) => Some(lowered),
-                Err(error) => {
-                    self.diagnostics.push(error);
-                    Some(Lowered::Type(self.database.intern_type(TypeKind::Error)))
-                },
-            }
-        } else if crate::builtins::Builtin::ALL_BUILTINS.contains(&name.as_str()) {
-            Some(Lowered::BuiltinFunction)
-        } else if let Ok(enum_value) = Enumerant::from_str(name.as_str()) {
-            self.expect_no_template(template_parameters);
-            Some(Lowered::Enumerant(enum_value))
-        } else {
-            None
+        // If lowering the predeclared type failed, we should return a error type
+        // As opposed to ignoring it when it's not a predeclared type
+        match self.lower_predeclared_type(type_container, name, template_parameters) {
+            Ok(Some(lowered)) => Some(lowered),
+            Ok(None) => {
+                let mut evaluated = self.eval_template_args(type_container, template_parameters);
+                let mut buffer = String::new();
+                if !template_parameters.is_empty() {
+                    buffer.push('<');
+                }
+                while let Ok(next) = evaluated.next_as_type() {
+                    buffer.push_str(&pretty_type(self.db, next.0));
+                    buffer.push(',');
+                }
+                let mut buffer = buffer.trim_end_matches(',').to_owned();
+                if !template_parameters.is_empty() {
+                    buffer.push('>');
+                }
+                let name = format!("{}{buffer}", name.as_str());
+                if crate::builtins::Builtin::ALL_BUILTINS.contains(&name.as_str()) {
+                    Some(Lowered::BuiltinFunction)
+                } else if let Ok(enum_value) = Enumerant::from_str(name.as_str()) {
+                    self.expect_no_template(template_parameters);
+                    Some(Lowered::Enumerant(enum_value))
+                } else {
+                    None
+                }
+            },
+            Err(error) => {
+                self.diagnostics.push(error);
+                Some(Lowered::Type(TypeKind::Error.intern(self.db)))
+            },
         }
     }
 
@@ -137,9 +71,8 @@ impl TypeLoweringContext<'_> {
         type_container: TypeContainer,
         name: &Name,
         template_parameters: &[ExpressionId],
-    ) -> Result<Lowered, TypeLoweringError> {
+    ) -> Result<Option<Lowered>, TypeLoweringError> {
         let evaluated_parameters = self.eval_template_args(type_container, template_parameters);
-
         let type_kind = match name.as_str() {
             "bool" => {
                 self.expect_no_template(template_parameters);
@@ -153,11 +86,11 @@ impl TypeLoweringContext<'_> {
                 self.expect_no_template(template_parameters);
                 TypeKind::Scalar(ScalarType::U32)
             },
-            "i64" if self.database.extensions().shader_int64 => {
+            "i64" if ExtensionsConfigInput::get_extensions(self.db).shader_int64 => {
                 self.expect_no_template(template_parameters);
                 TypeKind::Scalar(ScalarType::I64)
             },
-            "u64" if self.database.extensions().shader_int64 => {
+            "u64" if ExtensionsConfigInput::get_extensions(self.db).shader_int64 => {
                 self.expect_no_template(template_parameters);
                 TypeKind::Scalar(ScalarType::U64)
             },
@@ -171,14 +104,14 @@ impl TypeLoweringContext<'_> {
             },
             "array" => {
                 if template_parameters.is_empty() {
-                    return Ok(Lowered::TypeWithoutTemplate(
+                    return Ok(Some(Lowered::TypeWithoutTemplate(
                         TypeKind::Array(ArrayType {
-                            inner: TypeKind::Error.intern(self.database),
+                            inner: TypeKind::Error.intern(self.db),
                             binding_array: false,
                             size: ArraySize::Dynamic,
                         })
-                        .intern(self.database),
-                    ));
+                        .intern(self.db),
+                    )));
                 }
                 let array_template = self.array_template(evaluated_parameters)?;
                 TypeKind::Array(ArrayType {
@@ -189,14 +122,14 @@ impl TypeLoweringContext<'_> {
             },
             "binding_array" => {
                 if template_parameters.is_empty() {
-                    return Ok(Lowered::TypeWithoutTemplate(
+                    return Ok(Some(Lowered::TypeWithoutTemplate(
                         TypeKind::Array(ArrayType {
-                            inner: TypeKind::Error.intern(self.database),
+                            inner: TypeKind::Error.intern(self.db),
                             binding_array: true,
                             size: ArraySize::Dynamic,
                         })
-                        .intern(self.database),
-                    ));
+                        .intern(self.db),
+                    )));
                 }
                 let array_template = self.array_template(evaluated_parameters)?;
                 TypeKind::Array(ArrayType {
@@ -207,13 +140,13 @@ impl TypeLoweringContext<'_> {
             },
             "vec2" => {
                 if template_parameters.is_empty() {
-                    return Ok(Lowered::TypeWithoutTemplate(
+                    return Ok(Some(Lowered::TypeWithoutTemplate(
                         TypeKind::Vector(VectorType {
                             size: VecSize::Two,
-                            component_type: TypeKind::Error.intern(self.database),
+                            component_type: TypeKind::Error.intern(self.db),
                         })
-                        .intern(self.database),
-                    ));
+                        .intern(self.db),
+                    )));
                 }
                 let component_type = self.vector_template(evaluated_parameters);
                 TypeKind::Vector(VectorType {
@@ -223,13 +156,13 @@ impl TypeLoweringContext<'_> {
             },
             "vec3" => {
                 if template_parameters.is_empty() {
-                    return Ok(Lowered::TypeWithoutTemplate(
+                    return Ok(Some(Lowered::TypeWithoutTemplate(
                         TypeKind::Vector(VectorType {
                             size: VecSize::Three,
-                            component_type: TypeKind::Error.intern(self.database),
+                            component_type: TypeKind::Error.intern(self.db),
                         })
-                        .intern(self.database),
-                    ));
+                        .intern(self.db),
+                    )));
                 }
                 let component_type = self.vector_template(evaluated_parameters);
                 TypeKind::Vector(VectorType {
@@ -239,13 +172,13 @@ impl TypeLoweringContext<'_> {
             },
             "vec4" => {
                 if template_parameters.is_empty() {
-                    return Ok(Lowered::TypeWithoutTemplate(
+                    return Ok(Some(Lowered::TypeWithoutTemplate(
                         TypeKind::Vector(VectorType {
                             size: VecSize::Four,
-                            component_type: TypeKind::Error.intern(self.database),
+                            component_type: TypeKind::Error.intern(self.db),
                         })
-                        .intern(self.database),
-                    ));
+                        .intern(self.db),
+                    )));
                 }
                 let component_type = self.vector_template(evaluated_parameters);
                 TypeKind::Vector(VectorType {
@@ -259,63 +192,63 @@ impl TypeLoweringContext<'_> {
                 self.expect_no_template(template_parameters);
                 TypeKind::Vector(VectorType {
                     size: VecSize::Two,
-                    component_type: TypeKind::Scalar(ScalarType::I32).intern(self.database),
+                    component_type: TypeKind::Scalar(ScalarType::I32).intern(self.db),
                 })
             },
             "vec3i" => {
                 self.expect_no_template(template_parameters);
                 TypeKind::Vector(VectorType {
                     size: VecSize::Three,
-                    component_type: TypeKind::Scalar(ScalarType::I32).intern(self.database),
+                    component_type: TypeKind::Scalar(ScalarType::I32).intern(self.db),
                 })
             },
             "vec4i" => {
                 self.expect_no_template(template_parameters);
                 TypeKind::Vector(VectorType {
                     size: VecSize::Four,
-                    component_type: TypeKind::Scalar(ScalarType::I32).intern(self.database),
+                    component_type: TypeKind::Scalar(ScalarType::I32).intern(self.db),
                 })
             },
             "vec2u" => {
                 self.expect_no_template(template_parameters);
                 TypeKind::Vector(VectorType {
                     size: VecSize::Two,
-                    component_type: TypeKind::Scalar(ScalarType::U32).intern(self.database),
+                    component_type: TypeKind::Scalar(ScalarType::U32).intern(self.db),
                 })
             },
             "vec3u" => {
                 self.expect_no_template(template_parameters);
                 TypeKind::Vector(VectorType {
                     size: VecSize::Three,
-                    component_type: TypeKind::Scalar(ScalarType::U32).intern(self.database),
+                    component_type: TypeKind::Scalar(ScalarType::U32).intern(self.db),
                 })
             },
             "vec4u" => {
                 self.expect_no_template(template_parameters);
                 TypeKind::Vector(VectorType {
                     size: VecSize::Four,
-                    component_type: TypeKind::Scalar(ScalarType::U32).intern(self.database),
+                    component_type: TypeKind::Scalar(ScalarType::U32).intern(self.db),
                 })
             },
             "vec2f" => {
                 self.expect_no_template(template_parameters);
                 TypeKind::Vector(VectorType {
                     size: VecSize::Two,
-                    component_type: TypeKind::Scalar(ScalarType::F32).intern(self.database),
+                    component_type: TypeKind::Scalar(ScalarType::F32).intern(self.db),
                 })
             },
             "vec3f" => {
                 self.expect_no_template(template_parameters);
                 TypeKind::Vector(VectorType {
                     size: VecSize::Three,
-                    component_type: TypeKind::Scalar(ScalarType::F32).intern(self.database),
+                    component_type: TypeKind::Scalar(ScalarType::F32).intern(self.db),
                 })
             },
             "vec4f" => {
                 self.expect_no_template(template_parameters);
                 TypeKind::Vector(VectorType {
                     size: VecSize::Four,
-                    component_type: TypeKind::Scalar(ScalarType::F32).intern(self.database),
+                    component_type: TypeKind::Scalar(ScalarType::F32).intern(self.db),
                 })
             },
 
@@ -323,21 +256,21 @@ impl TypeLoweringContext<'_> {
                 self.expect_no_template(template_parameters);
                 TypeKind::Vector(VectorType {
                     size: VecSize::Two,
-                    component_type: TypeKind::Scalar(ScalarType::F16).intern(self.database),
+                    component_type: TypeKind::Scalar(ScalarType::F16).intern(self.db),
                 })
             },
             "vec3h" => {
                 self.expect_no_template(template_parameters);
                 TypeKind::Vector(VectorType {
                     size: VecSize::Three,
-                    component_type: TypeKind::Scalar(ScalarType::F16).intern(self.database),
+                    component_type: TypeKind::Scalar(ScalarType::F16).intern(self.db),
                 })
             },
             "vec4h" => {
                 self.expect_no_template(template_parameters);
                 TypeKind::Vector(VectorType {
                     size: VecSize::Four,
-                    component_type: TypeKind::Scalar(ScalarType::F16).intern(self.database),
+                    component_type: TypeKind::Scalar(ScalarType::F16).intern(self.db),
                 })
             },
             name @ ("mat2x2" | "mat2x3" | "mat2x4" | "mat3x2" | "mat3x3" | "mat3x4" | "mat4x2"
@@ -359,14 +292,14 @@ impl TypeLoweringContext<'_> {
                 };
 
                 if template_parameters.is_empty() {
-                    return Ok(Lowered::TypeWithoutTemplate(
+                    return Ok(Some(Lowered::TypeWithoutTemplate(
                         TypeKind::Matrix(MatrixType {
                             columns,
                             rows,
-                            inner: TypeKind::Error.intern(self.database),
+                            inner: TypeKind::Error.intern(self.db),
                         })
-                        .intern(self.database),
-                    ));
+                        .intern(self.db),
+                    )));
                 }
                 let inner = self.matrix_template(evaluated_parameters);
                 TypeKind::Matrix(MatrixType {
@@ -380,7 +313,7 @@ impl TypeLoweringContext<'_> {
                 TypeKind::Matrix(MatrixType {
                     columns: VecSize::Two,
                     rows: VecSize::Two,
-                    inner: TypeKind::Scalar(ScalarType::F32).intern(self.database),
+                    inner: TypeKind::Scalar(ScalarType::F32).intern(self.db),
                 })
             },
             "mat2x3f" => {
@@ -388,7 +321,7 @@ impl TypeLoweringContext<'_> {
                 TypeKind::Matrix(MatrixType {
                     columns: VecSize::Two,
                     rows: VecSize::Three,
-                    inner: TypeKind::Scalar(ScalarType::F32).intern(self.database),
+                    inner: TypeKind::Scalar(ScalarType::F32).intern(self.db),
                 })
             },
             "mat2x4f" => {
@@ -396,7 +329,7 @@ impl TypeLoweringContext<'_> {
                 TypeKind::Matrix(MatrixType {
                     columns: VecSize::Two,
                     rows: VecSize::Four,
-                    inner: TypeKind::Scalar(ScalarType::F32).intern(self.database),
+                    inner: TypeKind::Scalar(ScalarType::F32).intern(self.db),
                 })
             },
             "mat3x2f" => {
@@ -404,7 +337,7 @@ impl TypeLoweringContext<'_> {
                 TypeKind::Matrix(MatrixType {
                     columns: VecSize::Three,
                     rows: VecSize::Two,
-                    inner: TypeKind::Scalar(ScalarType::F32).intern(self.database),
+                    inner: TypeKind::Scalar(ScalarType::F32).intern(self.db),
                 })
             },
             "mat3x3f" => {
@@ -412,7 +345,7 @@ impl TypeLoweringContext<'_> {
                 TypeKind::Matrix(MatrixType {
                     columns: VecSize::Three,
                     rows: VecSize::Three,
-                    inner: TypeKind::Scalar(ScalarType::F32).intern(self.database),
+                    inner: TypeKind::Scalar(ScalarType::F32).intern(self.db),
                 })
             },
             "mat3x4f" => {
@@ -420,7 +353,7 @@ impl TypeLoweringContext<'_> {
                 TypeKind::Matrix(MatrixType {
                     columns: VecSize::Three,
                     rows: VecSize::Four,
-                    inner: TypeKind::Scalar(ScalarType::F32).intern(self.database),
+                    inner: TypeKind::Scalar(ScalarType::F32).intern(self.db),
                 })
             },
             "mat4x2f" => {
@@ -428,7 +361,7 @@ impl TypeLoweringContext<'_> {
                 TypeKind::Matrix(MatrixType {
                     columns: VecSize::Four,
                     rows: VecSize::Two,
-                    inner: TypeKind::Scalar(ScalarType::F32).intern(self.database),
+                    inner: TypeKind::Scalar(ScalarType::F32).intern(self.db),
                 })
             },
             "mat4x3f" => {
@@ -436,7 +369,7 @@ impl TypeLoweringContext<'_> {
                 TypeKind::Matrix(MatrixType {
                     columns: VecSize::Four,
                     rows: VecSize::Three,
-                    inner: TypeKind::Scalar(ScalarType::F32).intern(self.database),
+                    inner: TypeKind::Scalar(ScalarType::F32).intern(self.db),
                 })
             },
             "mat4x4f" => {
@@ -444,7 +377,7 @@ impl TypeLoweringContext<'_> {
                 TypeKind::Matrix(MatrixType {
                     columns: VecSize::Four,
                     rows: VecSize::Four,
-                    inner: TypeKind::Scalar(ScalarType::F32).intern(self.database),
+                    inner: TypeKind::Scalar(ScalarType::F32).intern(self.db),
                 })
             },
             "mat2x2h" => {
@@ -452,7 +385,7 @@ impl TypeLoweringContext<'_> {
                 TypeKind::Matrix(MatrixType {
                     columns: VecSize::Two,
                     rows: VecSize::Two,
-                    inner: TypeKind::Scalar(ScalarType::F16).intern(self.database),
+                    inner: TypeKind::Scalar(ScalarType::F16).intern(self.db),
                 })
             },
             "mat2x3h" => {
@@ -460,7 +393,7 @@ impl TypeLoweringContext<'_> {
                 TypeKind::Matrix(MatrixType {
                     columns: VecSize::Two,
                     rows: VecSize::Three,
-                    inner: TypeKind::Scalar(ScalarType::F16).intern(self.database),
+                    inner: TypeKind::Scalar(ScalarType::F16).intern(self.db),
                 })
             },
             "mat2x4h" => {
@@ -468,7 +401,7 @@ impl TypeLoweringContext<'_> {
                 TypeKind::Matrix(MatrixType {
                     columns: VecSize::Two,
                     rows: VecSize::Four,
-                    inner: TypeKind::Scalar(ScalarType::F16).intern(self.database),
+                    inner: TypeKind::Scalar(ScalarType::F16).intern(self.db),
                 })
             },
             "mat3x2h" => {
@@ -476,7 +409,7 @@ impl TypeLoweringContext<'_> {
                 TypeKind::Matrix(MatrixType {
                     columns: VecSize::Three,
                     rows: VecSize::Two,
-                    inner: TypeKind::Scalar(ScalarType::F16).intern(self.database),
+                    inner: TypeKind::Scalar(ScalarType::F16).intern(self.db),
                 })
             },
             "mat3x3h" => {
@@ -484,7 +417,7 @@ impl TypeLoweringContext<'_> {
                 TypeKind::Matrix(MatrixType {
                     columns: VecSize::Three,
                     rows: VecSize::Three,
-                    inner: TypeKind::Scalar(ScalarType::F16).intern(self.database),
+                    inner: TypeKind::Scalar(ScalarType::F16).intern(self.db),
                 })
             },
             "mat3x4h" => {
@@ -492,7 +425,7 @@ impl TypeLoweringContext<'_> {
                 TypeKind::Matrix(MatrixType {
                     columns: VecSize::Three,
                     rows: VecSize::Four,
-                    inner: TypeKind::Scalar(ScalarType::F16).intern(self.database),
+                    inner: TypeKind::Scalar(ScalarType::F16).intern(self.db),
                 })
             },
             "mat4x2h" => {
@@ -500,7 +433,7 @@ impl TypeLoweringContext<'_> {
                 TypeKind::Matrix(MatrixType {
                     columns: VecSize::Four,
                     rows: VecSize::Two,
-                    inner: TypeKind::Scalar(ScalarType::F16).intern(self.database),
+                    inner: TypeKind::Scalar(ScalarType::F16).intern(self.db),
                 })
             },
             "mat4x3h" => {
@@ -508,7 +441,7 @@ impl TypeLoweringContext<'_> {
                 TypeKind::Matrix(MatrixType {
                     columns: VecSize::Four,
                     rows: VecSize::Three,
-                    inner: TypeKind::Scalar(ScalarType::F16).intern(self.database),
+                    inner: TypeKind::Scalar(ScalarType::F16).intern(self.db),
                 })
             },
             "mat4x4h" => {
@@ -516,7 +449,7 @@ impl TypeLoweringContext<'_> {
                 TypeKind::Matrix(MatrixType {
                     columns: VecSize::Four,
                     rows: VecSize::Four,
-                    inner: TypeKind::Scalar(ScalarType::F16).intern(self.database),
+                    inner: TypeKind::Scalar(ScalarType::F16).intern(self.db),
                 })
             },
             "ptr" => {
@@ -534,7 +467,7 @@ impl TypeLoweringContext<'_> {
             "texture_1d" => {
                 let sampled = self.texture_sampled_template(evaluated_parameters)?;
                 TypeKind::Texture(TextureType {
-                    kind: TextureKind::from_sampled(sampled, self.database),
+                    kind: TextureKind::from_sampled(sampled, self.db),
                     dimension: TextureDimensionality::D1,
                     arrayed: false,
                     multisampled: false,
@@ -543,7 +476,7 @@ impl TypeLoweringContext<'_> {
             "texture_2d" => {
                 let sampled = self.texture_sampled_template(evaluated_parameters)?;
                 TypeKind::Texture(TextureType {
-                    kind: TextureKind::from_sampled(sampled, self.database),
+                    kind: TextureKind::from_sampled(sampled, self.db),
                     dimension: TextureDimensionality::D2,
                     arrayed: false,
                     multisampled: false,
@@ -552,7 +485,7 @@ impl TypeLoweringContext<'_> {
             "texture_2d_array" => {
                 let sampled = self.texture_sampled_template(evaluated_parameters)?;
                 TypeKind::Texture(TextureType {
-                    kind: TextureKind::from_sampled(sampled, self.database),
+                    kind: TextureKind::from_sampled(sampled, self.db),
                     dimension: TextureDimensionality::D2,
                     arrayed: true,
                     multisampled: false,
@@ -561,7 +494,7 @@ impl TypeLoweringContext<'_> {
             "texture_3d" => {
                 let sampled = self.texture_sampled_template(evaluated_parameters)?;
                 TypeKind::Texture(TextureType {
-                    kind: TextureKind::from_sampled(sampled, self.database),
+                    kind: TextureKind::from_sampled(sampled, self.db),
                     dimension: TextureDimensionality::D3,
                     arrayed: false,
                     multisampled: false,
@@ -570,7 +503,7 @@ impl TypeLoweringContext<'_> {
             "texture_cube" => {
                 let sampled = self.texture_sampled_template(evaluated_parameters)?;
                 TypeKind::Texture(TextureType {
-                    kind: TextureKind::from_sampled(sampled, self.database),
+                    kind: TextureKind::from_sampled(sampled, self.db),
                     dimension: TextureDimensionality::Cube,
                     arrayed: false,
                     multisampled: false,
@@ -579,7 +512,7 @@ impl TypeLoweringContext<'_> {
             "texture_cube_array" => {
                 let sampled = self.texture_sampled_template(evaluated_parameters)?;
                 TypeKind::Texture(TextureType {
-                    kind: TextureKind::from_sampled(sampled, self.database),
+                    kind: TextureKind::from_sampled(sampled, self.db),
                     dimension: TextureDimensionality::Cube,
                     arrayed: true,
                     multisampled: false,
@@ -588,7 +521,7 @@ impl TypeLoweringContext<'_> {
             "texture_multisampled_2d" => {
                 let sampled = self.texture_sampled_template(evaluated_parameters)?;
                 TypeKind::Texture(TextureType {
-                    kind: TextureKind::from_sampled(sampled, self.database),
+                    kind: TextureKind::from_sampled(sampled, self.db),
                     dimension: TextureDimensionality::D2,
                     arrayed: false,
                     multisampled: true,
@@ -705,13 +638,10 @@ impl TypeLoweringContext<'_> {
                 TypeKind::Sampler(wgsl_types::ty::SamplerType::SamplerComparison)
             },
             _ => {
-                return Err(TypeLoweringError {
-                    container: type_container,
-                    kind: TypeLoweringErrorKind::UnresolvedName(name.clone()),
-                });
+                return Ok(None);
             },
         };
-        Ok(Lowered::Type(type_kind.intern(self.database)))
+        Ok(Some(Lowered::Type(type_kind.intern(self.db))))
     }
 
     fn array_template(
@@ -723,7 +653,7 @@ impl TypeLoweringContext<'_> {
             Ok((r#type, _)) => r#type,
             Err(error) => {
                 self.diagnostics.push(error);
-                TypeKind::Error.intern(self.database)
+                TypeKind::Error.intern(self.db)
             },
         };
 
@@ -766,11 +696,9 @@ impl TypeLoweringContext<'_> {
                             "a `u32` or a `i32` greater than `0`".to_owned(),
                         ),
                     };
-                    self.diagnostics.push(error.clone());
                     return Err(error);
                 },
                 Err(error) => {
-                    self.diagnostics.push(error.clone());
                     return Err(error);
                 },
             }
@@ -789,9 +717,8 @@ impl TypeLoweringContext<'_> {
 
         match template_parameters.next_as_type() {
             Ok((r#type, expression)) => {
-                let type_kind = r#type.kind(self.database);
-                if matches!(type_kind, TypeKind::Scalar(_)) && !type_kind.is_abstract(self.database)
-                {
+                let type_kind = r#type.kind(self.db);
+                if matches!(type_kind, TypeKind::Scalar(_)) && !type_kind.is_abstract(self.db) {
                     r#type
                 } else {
                     self.diagnostics.push(TypeLoweringError {
@@ -800,12 +727,12 @@ impl TypeLoweringContext<'_> {
                             "a scalar".to_owned(),
                         ),
                     });
-                    TypeKind::Error.intern(self.database)
+                    TypeKind::Error.intern(self.db)
                 }
             },
             Err(error) => {
                 self.diagnostics.push(error);
-                TypeKind::Error.intern(self.database)
+                TypeKind::Error.intern(self.db)
             },
         }
     }
@@ -818,7 +745,7 @@ impl TypeLoweringContext<'_> {
 
         match template_parameters.next_as_type() {
             Ok((r#type, expression)) => {
-                let type_kind = r#type.kind(self.database);
+                let type_kind = r#type.kind(self.db);
                 if matches!(
                     type_kind,
                     TypeKind::Scalar(ScalarType::F16 | ScalarType::F32)
@@ -831,12 +758,12 @@ impl TypeLoweringContext<'_> {
                             "one of: f32 or f16".to_owned(),
                         ),
                     });
-                    TypeKind::Error.intern(self.database)
+                    TypeKind::Error.intern(self.db)
                 }
             },
             Err(error) => {
                 self.diagnostics.push(error);
-                TypeKind::Error.intern(self.database)
+                TypeKind::Error.intern(self.db)
             },
         }
     }
@@ -855,16 +782,14 @@ impl TypeLoweringContext<'_> {
                         "an address space".to_owned(),
                     ),
                 };
-                self.diagnostics.push(error.clone());
                 return Err(error);
             },
             Err(error) => {
-                self.diagnostics.push(error.clone());
                 return Err(error);
             },
         };
         let inner = match template_parameters.next_as_type() {
-            Ok((inner, expression)) if inner.kind(self.database).is_storable() => inner,
+            Ok((inner, expression)) if inner.kind(self.db).is_storable() => inner,
             Ok((_, expression)) => {
                 self.diagnostics.push(TypeLoweringError {
                     container: TypeContainer::Expression(expression),
@@ -872,11 +797,11 @@ impl TypeLoweringContext<'_> {
                         "a storable type".to_owned(),
                     ),
                 });
-                TypeKind::Error.intern(self.database)
+                TypeKind::Error.intern(self.db)
             },
             Err(error) => {
                 self.diagnostics.push(error);
-                TypeKind::Error.intern(self.database)
+                TypeKind::Error.intern(self.db)
             },
         };
 
@@ -901,14 +826,12 @@ impl TypeLoweringContext<'_> {
                     let error = TypeLoweringError {
                         container: TypeContainer::Expression(expression),
                         kind: TypeLoweringErrorKind::UnexpectedTemplateArgument(
-                            "on of: (read, read_write, write)".to_owned(),
+                            "one of: (read, read_write, write)".to_owned(),
                         ),
                     };
-                    self.diagnostics.push(error.clone());
                     return Err(error);
                 },
                 Err(error) => {
-                    self.diagnostics.push(error.clone());
                     return Err(error);
                 },
             }
@@ -931,7 +854,7 @@ impl TypeLoweringContext<'_> {
 
         match template_parameters.next_as_type() {
             Ok((r#type, expression)) => {
-                let type_kind = r#type.kind(self.database);
+                let type_kind = r#type.kind(self.db);
                 if matches!(
                     type_kind,
                     TypeKind::Scalar(
@@ -943,21 +866,22 @@ impl TypeLoweringContext<'_> {
                     // TODO: improve the error message and support naga atomics
                     // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/677
                     // Naga supports more types (f32, i64, u64) here
-                    let possible_types = if self.database.extensions().shader_int64 {
-                        "i32 or u32".to_owned()
-                    } else {
-                        "i32, u32, i64, or u64".to_owned()
-                    };
+                    let possible_types =
+                        if ExtensionsConfigInput::get_extensions(self.db).shader_int64 {
+                            "i32, u32, i64, or u64".to_owned()
+                        } else {
+                            "i32 or u32".to_owned()
+                        };
                     self.diagnostics.push(TypeLoweringError {
                         container: TypeContainer::Expression(expression),
                         kind: TypeLoweringErrorKind::UnexpectedTemplateArgument(possible_types),
                     });
-                    TypeKind::Error.intern(self.database)
+                    TypeKind::Error.intern(self.db)
                 }
             },
             Err(error) => {
                 self.diagnostics.push(error);
-                TypeKind::Error.intern(self.database)
+                TypeKind::Error.intern(self.db)
             },
         }
     }
@@ -970,7 +894,7 @@ impl TypeLoweringContext<'_> {
 
         match template_parameters.next_as_type() {
             Ok((r#type, expression)) => {
-                let type_kind = r#type.kind(self.database);
+                let type_kind = r#type.kind(self.db);
                 match type_kind {
                     TypeKind::Scalar(ScalarType::I32) => Ok(SampledType::I32),
                     TypeKind::Scalar(ScalarType::U32) => Ok(SampledType::U32),
@@ -981,6 +905,7 @@ impl TypeLoweringContext<'_> {
                     | TypeKind::Vector(_)
                     | TypeKind::Matrix(_)
                     | TypeKind::Struct(_)
+                    | TypeKind::BuiltinStruct(_)
                     | TypeKind::Array(_)
                     | TypeKind::Texture(_)
                     | TypeKind::Sampler(_)
@@ -995,15 +920,11 @@ impl TypeLoweringContext<'_> {
                                 "i32 or u32 or f32".to_owned(),
                             ),
                         };
-                        self.diagnostics.push(error.clone());
                         Err(error)
                     },
                 }
             },
-            Err(error) => {
-                self.diagnostics.push(error.clone());
-                Err(error)
-            },
+            Err(error) => Err(error),
         }
     }
 
@@ -1021,11 +942,9 @@ impl TypeLoweringContext<'_> {
                         "a texel format (`rgba8unorm`, `rgba8snorm`, ...)".to_owned(),
                     ),
                 };
-                self.diagnostics.push(error.clone());
                 return Err(error);
             },
             Err(error) => {
-                self.diagnostics.push(error.clone());
                 return Err(error);
             },
         };
@@ -1038,11 +957,9 @@ impl TypeLoweringContext<'_> {
                         "one of: read, write, read_write".to_owned(),
                     ),
                 };
-                self.diagnostics.push(error.clone());
                 return Err(error);
             },
             Err(error) => {
-                self.diagnostics.push(error.clone());
                 return Err(error);
             },
         };
