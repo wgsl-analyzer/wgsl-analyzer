@@ -216,8 +216,17 @@ impl UntilFilter for Oneline {
     }
 }
 
-pub struct UntilSucceedingNewline;
-impl UntilFilter for UntilSucceedingNewline {
+#[deprecated]
+#[expect(non_upper_case_globals, reason = "TODO")]
+pub const UntilSucceedingNewline: Succeeding<UntilNewline> = Succeeding(UntilNewline);
+
+pub struct Succeeding<T>(pub T)
+where
+    T: UntilFilter;
+impl<T> UntilFilter for Succeeding<T>
+where
+    T: UntilFilter,
+{
     fn filter_preceding(
         &self,
         _node: &NodeOrToken<SyntaxNode, SyntaxToken>,
@@ -229,6 +238,16 @@ impl UntilFilter for UntilSucceedingNewline {
         &self,
         node: &NodeOrToken<SyntaxNode, SyntaxToken>,
     ) -> Option<FilterAction> {
+        self.0.filter_succeeding(node)
+    }
+}
+
+pub struct UntilNewline;
+impl UntilFilter for UntilNewline {
+    fn filter_preceding(
+        &self,
+        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
+    ) -> Option<FilterAction> {
         match read_blankspace(node) {
             // TODO Most IgnoreBlankspace cases should be handled this way - linebreaks and empty lines will most often stop parsing trivia
             Some(LineSpacing::LineBreak(_) | LineSpacing::EmptyLine(_)) => {
@@ -236,6 +255,13 @@ impl UntilFilter for UntilSucceedingNewline {
             },
             _ => None,
         }
+    }
+
+    fn filter_succeeding(
+        &self,
+        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
+    ) -> Option<FilterAction> {
+        self.filter_preceding(node)
     }
 }
 

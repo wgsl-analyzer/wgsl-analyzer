@@ -9,7 +9,7 @@ use syntax::{
 
 use crate::{
     ast_parse::{
-        Chain, IgnoreBlankspace, IgnoreComma, NoTrivia, UntilSucceedingNewline, parse_end,
+        Chain, IgnoreBlankspace, IgnoreComma, NoTrivia, Succeeding, UntilNewline, parse_end,
         parse_node_with, syntax_iter,
     },
     context_policies::statement_needs_semicolon_policy,
@@ -227,7 +227,10 @@ pub fn gen_import_collection(
     loop {
         let mut item = parse_node_with(
             &mut syntax,
-            Chain(UntilSucceedingNewline, Chain(IgnoreBlankspace, IgnoreComma)),
+            Chain(
+                Succeeding(UntilNewline),
+                Chain(IgnoreBlankspace, IgnoreComma),
+            ),
         );
 
         // TODO This should be absorbed into the parse_node
