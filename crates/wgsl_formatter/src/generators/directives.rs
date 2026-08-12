@@ -72,10 +72,10 @@ pub fn gen_enable_directive(node: &ast::EnableDirective) -> FormatDocumentResult
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
     formatted.push_sc(sc!("enable"));
-    formatted.request(Request::expect(RequestItem::Space));
+    let mut multiline_group = MultilineGroup::new_before_requests(&mut formatted);
+    multiline_group.start_indent_before_requests();
 
-    let mut multiline_group = MultilineGroup::new(&mut formatted);
-    multiline_group.start_indent();
+    multiline_group.request(Request::expect(RequestItem::Space));
 
     for (position, item) in items.into_iter().with_position() {
         multiline_group.grouped_newline_or_space();
@@ -143,10 +143,11 @@ pub fn gen_requires_directive(
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
     formatted.push_sc(sc!("requires"));
-    formatted.request(Request::expect(RequestItem::Space));
 
-    let mut multiline_group = MultilineGroup::new(&mut formatted);
-    multiline_group.start_indent();
+    let mut multiline_group = MultilineGroup::new_before_requests(&mut formatted);
+    multiline_group.start_indent_before_requests();
+
+    multiline_group.request(Request::expect(RequestItem::Space));
 
     for (position, item) in items.into_iter().with_position() {
         multiline_group.grouped_newline_or_space();
