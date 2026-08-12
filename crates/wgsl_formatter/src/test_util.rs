@@ -124,7 +124,9 @@ pub struct CheckOptions {
 impl From<FormattingOptions> for CheckOptions {
     fn from(value: FormattingOptions) -> Self {
         Self {
-            assert_line_width: Some(usize::try_from(value.max_line_width).unwrap()),
+            assert_line_width: Some(
+                usize::try_from(value.max_line_width).expect("max_line_width must fit into usize"),
+            ),
             formatting: value,
         }
     }
@@ -166,8 +168,7 @@ where
         for line in formatted.lines() {
             assert!(
                 line.chars().count() <= max_line_width,
-                "Formatted line length must be <= {}\nOffending line (at length {}):\n{line}",
-                max_line_width,
+                "Formatted line length must be <= {max_line_width}\nOffending line (at length {}):\n{line}",
                 line.len(),
             );
         }
