@@ -519,7 +519,7 @@ fn conversion_rank(
             }),
         ) if c1 == c2 && r1 == r2 => conversion_rank(&ty1.kind(db), &ty2.kind(db), db),
         // optimistically assume that whatever went wrong, the intention was for it to work
-        // prevents extra diagnostics from being emmitted
+        // prevents extra diagnostics from being emitted
         (TypeKind::Error, _) | (_, TypeKind::Error) => Some(0),
         _ => None,
     }
@@ -742,6 +742,11 @@ pub struct ArrayType {
 }
 
 impl ArrayType {
+    #[must_use]
+    pub const fn name() -> &'static str {
+        "array"
+    }
+
     fn is_constructible(
         &self,
         db: &dyn HirDatabase,

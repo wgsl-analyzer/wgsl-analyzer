@@ -32,9 +32,8 @@ use crate::{
     diagnostics::{InferenceDiagnostic, InferenceDiagnosticKind},
     function::FunctionDetails,
     lower::{
-        Lowered, LoweredKind, ResolvedCall, TemplateParameter, TemplateParameters, TypeContainer,
-        TypeLoweringContext, TypeLoweringError, WgslTypeConverter, to_wgsl_binary_operator,
-        to_wgsl_unary_operator,
+        Lowered, LoweredKind, ResolvedCall, TemplateParameter, TypeContainer, TypeLoweringContext,
+        TypeLoweringError, WgslTypeConverter, to_wgsl_binary_operator, to_wgsl_unary_operator,
     },
     ty::{
         ArraySize, ArrayType, BuiltinStruct, Pointer, Reference, ScalarType, Type, TypeKind,
@@ -1545,48 +1544,16 @@ impl<'db> InferenceContext<'db> {
                 self.call_type_without_template_constructor(store, expression, r#type, arguments)
             },
             // Lowered::BuiltinConstructor(name) => {
-            //     let argument_types = arguments
-            //         .iter()
-            //         .map(|(_, r#type)| r#type)
-            //         .copied()
-            //         .collect_vec();
-            //     let wgsl_arguments = argument_types
-            //         .iter()
-            //         .copied()
-            //         .map(|r#type| self.converter.to_wgsl_types(r#type))
-            //         .collect_vec();
-            //     let template_args = context.eval_template_args(
-            //         TypeContainer::Expression(expression),
-            //         &callee.template_parameters,
-            //     );
-            //     let Ok(template) = self.converter.to_wgsl_template_parameters(template_args) else {
-            //         debug_assert!(
-            //             !self.result.diagnostics().is_empty(),
-            //             "error instance should have a diagnostic associated with it already"
-            //         );
-            //         return self.error_type();
-            //     };
-            //     let template = if template.is_empty() {
-            //         None
-            //     } else {
-            //         Some(template)
-            //     };
-            //     if let Ok(value) = wgsl_types::builtin::type_ctor(
-            //         name.as_str(),
-            //         template.as_deref(),
-            //         &wgsl_arguments,
+            //     match self.infer_builtin_constructor(
+            //         expression,
+            //         callee,
+            //         arguments,
+            //         store,
+            //         &mut context,
+            //         name,
             //     ) {
-            //         self.converter.from_wgsl_types(value)
-            //     } else {
-            //         self.push_diagnostic(
-            //             store.store_source,
-            //             InferenceDiagnosticKind::NoBuiltinOverload {
-            //                 expression,
-            //                 name: Some(name),
-            //                 parameters: argument_types,
-            //             },
-            //         );
-            //         self.error_type()
+            //         Ok(value) => value,
+            //         Err(value) => return value,
             //     }
             // },
             Lowered::Function(id) => {
@@ -1597,11 +1564,23 @@ impl<'db> InferenceContext<'db> {
                 self.validate_function_call(details, arguments, store, expression)
             },
             Lowered::BuiltinFunction(_ /*, _ */) => {
-                let template_args = context.eval_template_args(
-                    TypeContainer::Expression(expression),
+                let Some(name) = callee.path.mod_path().as_ident() else {
+                    self.push_diagnostic(
+                        store.store_source,
+                        InferenceDiagnosticKind::WgslError {
+                            expression,
+                            message: format!("invalid builtin {}", callee.path.mod_path()),
+                        },
+                    );
+                    return self.error_type();
+                };
+                self.infer_builtin_function(
+                    store,
+                    expression,
+                    name,
                     &callee.template_parameters,
-                );
-                self.call_builtin_function(store, expression, callee, template_args, arguments)
+                    arguments,
+                )
             },
             Lowered::Enumerant(_)
             | Lowered::GlobalConstant(_)
@@ -1624,25 +1603,71 @@ impl<'db> InferenceContext<'db> {
         inferred
     }
 
-    fn call_builtin_function(
+    // fn infer_builtin_constructor(
+    //     &mut self,
+    //     expression: ExpressionId,
+    //     callee: &IdentExpression,
+    //     arguments: &[(ExpressionId, Type)],
+    //     store: &ExpressionStore,
+    //     context: &mut TypeLoweringContext<'_>,
+    //     name: Name,
+    // ) -> Result<Type, Type> {
+    //     let argument_types = arguments
+    //         .iter()
+    //         .map(|(_, r#type)| r#type)
+    //         .copied()
+    //         .collect_vec();
+    //     let wgsl_arguments = argument_types
+    //         .iter()
+    //         .copied()
+    //         .map(|r#type| self.converter.to_wgsl_types(r#type))
+    //         .collect_vec();
+    //     let template_args = context.eval_template_args(
+    //         TypeContainer::Expression(expression),
+    //         &callee.template_parameters,
+    //     );
+    //     let Ok(template) = self.converter.to_wgsl_template_parameters(template_args) else {
+    //         debug_assert!(
+    //             !self.result.diagnostics().is_empty(),
+    //             "error instance should have a diagnostic associated with it already"
+    //         );
+    //         return Err(self.error_type());
+    //     };
+    //     let template = if template.is_empty() {
+    //         None
+    //     } else {
+    //         Some(template)
+    //     };
+    //     Ok(
+    //         if let Ok(value) =
+    //             wgsl_types::builtin::type_ctor(name.as_str(), template.as_deref(), &wgsl_arguments)
+    //         {
+    //             self.converter.from_wgsl_types(value)
+    //         } else {
+    //             self.push_diagnostic(
+    //                 store.store_source,
+    //                 InferenceDiagnosticKind::NoBuiltinOverload {
+    //                     expression,
+    //                     name: Some(name),
+    //                     parameters: argument_types,
+    //                 },
+    //             );
+    //             self.error_type()
+    //         },
+    //     )
+    // }
+
+    fn infer_builtin_function(
         &mut self,
         store: &ExpressionStore,
         expression: ExpressionId,
-        callee: &IdentExpression,
-        mut template_parameters: TemplateParameters,
+        name: &Name,
+        template_parameters: &[ExpressionId],
         arguments: &[(ExpressionId, Type)],
     ) -> Type {
-        let Some(name) = callee.path.mod_path().as_ident() else {
-            self.push_diagnostic(
-                store.store_source,
-                InferenceDiagnosticKind::WgslError {
-                    expression,
-                    message: format!("invalid builtin {}", callee.path.mod_path()),
-                },
-            );
-            return self.error_type();
-        };
-
+        let mut context = TypeLoweringContext::new(self.db, &self.resolver, store);
+        let mut template_parameters =
+            context.eval_template_args(TypeContainer::Expression(expression), template_parameters);
         let mut template_args = vec![];
         while let Some((template_parameter, _)) = template_parameters.take_next() {
             if let Some(template_parameter) = self
@@ -1726,42 +1751,13 @@ impl<'db> InferenceContext<'db> {
             TypeKind::Scalar(scalar_type) => {
                 self.call_scalar_constructor(store, scalar_type, expression, r#type, arguments)
             },
-            TypeKind::Array(array_type) => {
-                if arguments.is_empty() {
-                    return r#type;
-                }
-                for (argument_expression, argument_type) in arguments {
-                    if !argument_type.is_convertible_to(array_type.inner, self.db) {
-                        self.push_diagnostic(
-                            store.store_source,
-                            InferenceDiagnosticKind::TypeMismatch {
-                                expression: *argument_expression,
-                                expected: TypeExpectation::Type(TypeExpectationInner::Exact(
-                                    array_type.inner,
-                                )),
-                                actual: *argument_type,
-                            },
-                        );
-                    }
-                }
-                #[expect(
-                    clippy::as_conversions,
-                    reason = "constructing an array with too many parameters is an error anyway"
-                )]
-                if let ArraySize::Constant(size) = array_type.size
-                    && arguments.len() != size.get() as usize
-                {
-                    self.push_diagnostic(
-                        store.store_source,
-                        InferenceDiagnosticKind::FunctionCallArgCountMismatch {
-                            expression,
-                            n_expected: size.get() as usize,
-                            n_actual: arguments.len(),
-                        },
-                    );
-                }
-                r#type
-            },
+            TypeKind::Array(array_type) => self.infer_templated_array_constructor(
+                store,
+                expression,
+                r#type,
+                arguments,
+                &array_type,
+            ),
             TypeKind::Vector(vec) => {
                 let template = &[TpltParam::Type(
                     self.converter.to_wgsl_types(vec.component_type),
@@ -1883,67 +1879,7 @@ impl<'db> InferenceContext<'db> {
                 self.call_scalar_constructor(store, scalar_type, expression, r#type, arguments)
             },
             TypeKind::Array(array_type) => {
-                if arguments.is_empty() {
-                    return r#type;
-                }
-                let Some((_, mut first_argument_type)) = arguments.first().copied() else {
-                    self.push_diagnostic(
-                        store.store_source,
-                        InferenceDiagnosticKind::FunctionCallArgCountMismatch {
-                            expression,
-                            n_expected: 1,
-                            n_actual: arguments.len(),
-                        },
-                    );
-                    return self.error_type();
-                };
-
-                // all of the following arguments must be the same type as the first argument
-                for (argument_expression, argument_type) in &arguments[1..] {
-                    if argument_type.is_convertible_to(first_argument_type, self.db) {
-                        // Everything is as intended
-                    } else if first_argument_type.is_convertible_to(*argument_type, self.db) {
-                        // Narrowing the expected type
-                        first_argument_type = *argument_type;
-                    } else {
-                        self.push_diagnostic(
-                            store.store_source,
-                            InferenceDiagnosticKind::TypeMismatch {
-                                expression: *argument_expression,
-                                expected: TypeExpectation::Type(TypeExpectationInner::Exact(
-                                    first_argument_type,
-                                )),
-                                actual: *argument_type,
-                            },
-                        );
-                    }
-                }
-                if let Ok(length) = u32::try_from(arguments.len())
-                    && let Ok(array_size) = NonZeroU32::try_from(length)
-                {
-                    TypeKind::Array(ArrayType {
-                        inner: first_argument_type,
-                        binding_array: array_type.binding_array,
-                        size: ArraySize::Constant(array_size),
-                    })
-                    .intern(self.db)
-                } else {
-                    self.push_diagnostic(
-                        store.store_source,
-                        InferenceDiagnosticKind::FunctionCallArgCountMismatch {
-                            expression,
-                            #[expect(clippy::as_conversions, reason = "usize always holds a u32")]
-                            n_expected: ArraySize::MAX.get() as usize,
-                            n_actual: arguments.len(),
-                        },
-                    );
-                    TypeKind::Array(ArrayType {
-                        inner: first_argument_type,
-                        binding_array: array_type.binding_array,
-                        size: ArraySize::Constant(ArraySize::MAX),
-                    })
-                    .intern(self.db)
-                }
+                self.infer_array_constructor(store, expression, r#type, arguments, &array_type)
             },
             TypeKind::Vector(vec) => {
                 // See note in WGSL reference:
@@ -2050,6 +1986,110 @@ impl<'db> InferenceContext<'db> {
         }
     }
 
+    fn infer_templated_array_constructor(
+        &mut self,
+        store: &ExpressionStore,
+        expression: la_arena::Idx<Expression>,
+        r#type: Type,
+        arguments: &[(la_arena::Idx<Expression>, Type)],
+        array_type: &ArrayType,
+    ) -> Type {
+        if arguments.is_empty() {
+            return r#type;
+        }
+        for (argument_expression, argument_type) in arguments {
+            if !argument_type.is_convertible_to(array_type.inner, self.db) {
+                self.push_diagnostic(
+                    store.store_source,
+                    InferenceDiagnosticKind::TypeMismatch {
+                        expression: *argument_expression,
+                        expected: TypeExpectation::Type(TypeExpectationInner::Exact(
+                            array_type.inner,
+                        )),
+                        actual: *argument_type,
+                    },
+                );
+            }
+        }
+        #[expect(
+            clippy::as_conversions,
+            reason = "constructing an array with too many parameters is an error anyway"
+        )]
+        if let ArraySize::Constant(size) = array_type.size
+            && arguments.len() != size.get() as usize
+        {
+            self.push_diagnostic(
+                store.store_source,
+                InferenceDiagnosticKind::FunctionCallArgCountMismatch {
+                    expression,
+                    n_expected: size.get() as usize,
+                    n_actual: arguments.len(),
+                },
+            );
+        }
+        r#type
+    }
+
+    fn infer_array_constructor(
+        &mut self,
+        store: &ExpressionStore,
+        expression: la_arena::Idx<Expression>,
+        r#type: Type,
+        arguments: &[(la_arena::Idx<Expression>, Type)],
+        array_type: &ArrayType,
+    ) -> Type {
+        let Some((_, mut first_argument_type)) = arguments.first().copied() else {
+            return r#type;
+        };
+
+        // all of the following arguments must be the same type as the first argument
+        for (argument_expression, argument_type) in &arguments[1..] {
+            if argument_type.is_convertible_to(first_argument_type, self.db) {
+                // Everything is as intended
+            } else if first_argument_type.is_convertible_to(*argument_type, self.db) {
+                // Narrowing the expected type
+                first_argument_type = *argument_type;
+            } else {
+                self.push_diagnostic(
+                    store.store_source,
+                    InferenceDiagnosticKind::TypeMismatch {
+                        expression: *argument_expression,
+                        expected: TypeExpectation::Type(TypeExpectationInner::Exact(
+                            first_argument_type,
+                        )),
+                        actual: *argument_type,
+                    },
+                );
+            }
+        }
+        if let Ok(length) = u32::try_from(arguments.len())
+            && let Ok(array_size) = NonZeroU32::try_from(length)
+        {
+            TypeKind::Array(ArrayType {
+                inner: first_argument_type,
+                binding_array: array_type.binding_array,
+                size: ArraySize::Constant(array_size),
+            })
+            .intern(self.db)
+        } else {
+            self.push_diagnostic(
+                store.store_source,
+                InferenceDiagnosticKind::FunctionCallArgCountMismatch {
+                    expression,
+                    #[expect(clippy::as_conversions, reason = "usize always holds a u32")]
+                    n_expected: ArraySize::MAX.get() as usize,
+                    n_actual: arguments.len(),
+                },
+            );
+            TypeKind::Array(ArrayType {
+                inner: first_argument_type,
+                binding_array: array_type.binding_array,
+                size: ArraySize::Constant(ArraySize::MAX),
+            })
+            .intern(self.db)
+        }
+    }
+
     fn call_scalar_constructor(
         &mut self,
         store: &ExpressionStore,
@@ -2062,14 +2102,20 @@ impl<'db> InferenceContext<'db> {
         if arguments.is_empty() {
             return r#type;
         }
-        if let Ok(inferred_type) = wgsl_types::builtin::type_ctor(
-            scalar_type.name(),
-            None,
-            &arguments
-                .iter()
-                .map(|(_expression, r#type)| self.converter.to_wgsl_types(*r#type))
-                .collect_vec(),
-        ) {
+        let argument_types = arguments.iter().map(|(_, r#type)| r#type).collect_vec();
+        if argument_types.iter().any(|r#type| r#type.is_err(self.db)) {
+            // don't give unnecessary extra diagnostics
+            return self.error_type();
+        }
+        let wgsl_arguments = argument_types
+            .iter()
+            .copied()
+            .map(|r#type| self.converter.to_wgsl_types(*r#type))
+            .collect_vec();
+
+        if let Ok(inferred_type) =
+            wgsl_types::builtin::type_ctor(scalar_type.name(), None, &wgsl_arguments)
+        {
             self.converter.from_wgsl_types(inferred_type)
         } else {
             self.push_diagnostic(

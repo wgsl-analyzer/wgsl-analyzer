@@ -6624,7 +6624,6 @@ fn execute(
             63958..63960 '1u': u32
             63958..63972 '1u << survivor': [error]
             63964..63972 'survivor': [error]
-            62639..62648 'u32(term)': no constructor found for type `u32` with parameters `[error]`
             64054..64065 'workgroupId': u32
             64080..64083 'tid': u32
             64098..64112 'op_qubit_count': i32
@@ -7666,8 +7665,6 @@ fn execute(
             80470..80485 'entry.paulis_lo': [error]
             80487..80492 'entry': [error]
             80487..80502 'entry.paulis_hi': [error]
-            80215..80238 'i32(ta...ffset)': no constructor found for type `i32` with parameters `[error]`
-            80256..80278 'i32(ta...count)': no constructor found for type `i32` with parameters `[error]`
             80412..80429 'start ...ry_idx': expected i32 or u32 but got [error]
             80922..80931 'paulis_lo': u32
             80938..80947 'paulis_hi': u32
