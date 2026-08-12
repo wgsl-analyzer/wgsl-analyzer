@@ -24,13 +24,6 @@ pub struct Attribute {
     pub parameters: Vec<ExpressionId>,
 }
 
-impl Attribute {
-    #[must_use]
-    pub fn is_conditional_compilation(&self) -> bool {
-        matches!(self.name.as_str(), "if" | "elif" | "else")
-    }
-}
-
 // for example, @group(0) @location(0)
 #[derive(PartialEq, Eq, Debug)]
 pub struct AttributeList {
