@@ -316,22 +316,6 @@ where
     }
 }
 
-/// Parses a node with surrounding trivia, based on the given strategy.
-#[expect(clippy::needless_pass_by_value, reason = "Intended API")]
-pub fn parse_node_with<TFilter>(
-    syntax: &mut SyntaxIter,
-    filter: TFilter,
-) -> NodeWithTrivia
-where
-    TFilter: UntilFilter,
-{
-    parse_node_with_trivia_filter_2(
-        syntax,
-        |node| filter.filter_preceding(node),
-        |node| filter.filter_succeeding(node),
-    )
-}
-
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum FilterAction {
     Ignored,
@@ -341,15 +325,14 @@ pub enum FilterAction {
     IgnoreAndStop,
 }
 
-// TODO Rename this... .... WIP api naming is hard
-pub fn parse_node_with_trivia_filter_2<FPre, FPost>(
+/// Parses a node with surrounding trivia, based on the given strategy.
+#[expect(clippy::needless_pass_by_value, reason = "Intended API")]
+pub fn parse_node_with<TFilter>(
     syntax: &mut SyntaxIter,
-    filter_pre: FPre,
-    filter_post: FPost,
+    filter: TFilter,
 ) -> NodeWithTrivia
 where
-    FPre: Fn(&NodeOrToken<SyntaxNode, SyntaxToken>) -> Option<FilterAction>,
-    FPost: Fn(&NodeOrToken<SyntaxNode, SyntaxToken>) -> Option<FilterAction>,
+    TFilter: UntilFilter,
 {
     let mut preceding_trivia = Vec::new();
     let mut succeeding_trivia = Vec::new();
@@ -360,7 +343,7 @@ where
         // I wish we had linear types...
         // NOTE: Make sure node is either put_back onto syntax or consumed in a meaningful way
         if let Some(node) = syntax.next() {
-            let action = filter_pre(&node);
+            let action = filter.filter_preceding(&node);
             //TODO REMOVE THIS
             //println!("Pre {node:?} {action:?}");
             match action {
@@ -420,7 +403,7 @@ where
     };
 
     while let Some(node) = syntax.next() {
-        let action = filter_post(&node);
+        let action = filter.filter_succeeding(&node);
         //TODO REMOVE THIS
         //println!("Pre {node:?} {action:?}");
         match action {
