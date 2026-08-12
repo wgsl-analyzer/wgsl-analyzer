@@ -2036,3 +2036,19 @@ fn main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
         "#]],
     );
 }
+
+#[test]
+fn override_declaration() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        override LEVELS: f32 = 4.0;
+        fn foo() -> f32 { return LEVELS; }
+        ",
+        expect![[r#"
+            9..15 'LEVELS': f32
+            23..26 '4.0': float
+            53..59 'LEVELS': f32
+        "#]],
+    );
+}
