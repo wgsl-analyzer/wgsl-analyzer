@@ -11,7 +11,7 @@ use syntax::{
 
 use crate::{
     ast_parse::{
-        Chain, IgnoreBlankspace, IgnoreComma, NoTrivia, UntilSucceedingNewline, parse_end,
+        Chain, IgnoreBlankspace, IgnoreComma, NoTrivia, Succeeding, UntilNewline, parse_end,
         parse_node_with, syntax_iter,
     },
     generators::node::{
@@ -136,11 +136,8 @@ pub fn gen_attribute_list(attribute_list: &AttributeList) -> FormatDocumentResul
                 let name = name.as_deref();
                 match name {
                     Some("offset") => Grouped(AttributeGroup::OffsetAlignSize, 0),
-
                     Some(name) => Ungrouped(name.to_owned()),
-                    //ungrouped_attributes.push((name.to_owned(), attribute)),
                     None => Ungrouped(String::new()),
-                    //ungrouped_attributes.push((String::new(), attribute)),
                 }
             },
             Attribute::BuiltinAttribute(_) => Inline(2),
@@ -474,7 +471,10 @@ fn gen_attr_standard_with_args(
         loop {
             let mut item = parse_node_with(
                 &mut syntax,
-                Chain(UntilSucceedingNewline, Chain(IgnoreBlankspace, IgnoreComma)),
+                Chain(
+                    Succeeding(UntilNewline),
+                    Chain(IgnoreBlankspace, IgnoreComma),
+                ),
             );
 
             // TODO This needs to be absorbed into parse_node..
