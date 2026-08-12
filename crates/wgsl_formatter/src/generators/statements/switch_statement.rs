@@ -11,7 +11,7 @@ use syntax::{
 
 use crate::{
     ast_parse::{
-        Chain, Filter, FilterAction, IgnoreBlankspace, NoTrivia, Succeeding, UntilNewline,
+        Chain, Filter, IgnoreBlankspace, NoTrivia, PolicyAction, Succeeding, UntilNewline,
         parse_end, parse_node_with, syntax_iter,
     },
     generators::node::gen_node_with_trivia,
@@ -228,7 +228,7 @@ pub fn gen_switch_case_selectors(
         let item = parse_node_with(
             &mut syntax,
             Filter(|node| {
-                matches!(node.kind(), SyntaxKind::Comma).then_some(FilterAction::IgnoreAndStop)
+                matches!(node.kind(), SyntaxKind::Comma).then_some(PolicyAction::IgnoreAndStop)
             }),
         )
         .expect_ast_node_optional::<SwitchCaseSelector>()?;

@@ -7,7 +7,7 @@ use syntax::{
 };
 
 use crate::{
-    ast_parse::{Filter, FilterAction, NoTrivia, parse_end, parse_node_with, syntax_iter},
+    ast_parse::{Filter, NoTrivia, PolicyAction, parse_end, parse_node_with, syntax_iter},
     context_policies::collapse_one_liner_compound_statement_policy,
     generators::node::gen_node_with_trivia,
     helpers::{LineSpacing, read_blankspace},
@@ -36,7 +36,7 @@ pub fn gen_compound_statement(
         let mut item = parse_node_with(
             &mut syntax,
             Filter(|node| match read_blankspace(node) {
-                Some(LineSpacing::OnelineBlankspace(_)) => Some(FilterAction::Ignored),
+                Some(LineSpacing::OnelineBlankspace(_)) => Some(PolicyAction::Ignored),
                 _ => None,
             }),
         );
