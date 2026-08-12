@@ -113,106 +113,106 @@ pub fn parse_end(syntax: &mut SyntaxIter) -> FormatDocumentResult<()> {
     }
 }
 
-pub trait UntilFilter {
-    fn filter_preceding(
+pub trait ParseNodePolicy {
+    fn handle_preceding(
         &self,
         node: &NodeOrToken<SyntaxNode, SyntaxToken>,
-    ) -> Option<FilterAction>;
-    fn filter_succeeding(
+    ) -> Option<PolicyAction>;
+    fn handle_succeeding(
         &self,
         node: &NodeOrToken<SyntaxNode, SyntaxToken>,
-    ) -> Option<FilterAction>;
+    ) -> Option<PolicyAction>;
 }
 
 pub struct UntilEmptyLine;
 
-impl UntilFilter for UntilEmptyLine {
-    fn filter_preceding(
+impl ParseNodePolicy for UntilEmptyLine {
+    fn handle_preceding(
         &self,
         node: &NodeOrToken<SyntaxNode, SyntaxToken>,
-    ) -> Option<FilterAction> {
+    ) -> Option<PolicyAction> {
         match read_blankspace(node) {
-            Some(LineSpacing::EmptyLine(_)) => Some(FilterAction::Stop),
+            Some(LineSpacing::EmptyLine(_)) => Some(PolicyAction::Stop),
             _ => None,
         }
     }
 
-    fn filter_succeeding(
+    fn handle_succeeding(
         &self,
         node: &NodeOrToken<SyntaxNode, SyntaxToken>,
-    ) -> Option<FilterAction> {
-        self.filter_preceding(node)
+    ) -> Option<PolicyAction> {
+        self.handle_preceding(node)
     }
 }
 
 // TODO I think the default should be to ignore blankspace and *including* it should be explicit (in struct body and compound statements)
 pub struct IgnoreBlankspace;
-impl UntilFilter for IgnoreBlankspace {
-    fn filter_preceding(
+impl ParseNodePolicy for IgnoreBlankspace {
+    fn handle_preceding(
         &self,
         node: &NodeOrToken<SyntaxNode, SyntaxToken>,
-    ) -> Option<FilterAction> {
-        (node.kind() == SyntaxKind::Blankspace).then_some(FilterAction::Ignored)
+    ) -> Option<PolicyAction> {
+        (node.kind() == SyntaxKind::Blankspace).then_some(PolicyAction::Ignored)
     }
 
-    fn filter_succeeding(
+    fn handle_succeeding(
         &self,
         node: &NodeOrToken<SyntaxNode, SyntaxToken>,
-    ) -> Option<FilterAction> {
-        self.filter_preceding(node)
+    ) -> Option<PolicyAction> {
+        self.handle_preceding(node)
     }
 }
 
 pub struct IgnoreComma;
-impl UntilFilter for IgnoreComma {
-    fn filter_preceding(
+impl ParseNodePolicy for IgnoreComma {
+    fn handle_preceding(
         &self,
         node: &NodeOrToken<SyntaxNode, SyntaxToken>,
-    ) -> Option<FilterAction> {
-        (node.kind() == SyntaxKind::Comma).then_some(FilterAction::Ignored)
+    ) -> Option<PolicyAction> {
+        (node.kind() == SyntaxKind::Comma).then_some(PolicyAction::Ignored)
     }
 
-    fn filter_succeeding(
+    fn handle_succeeding(
         &self,
         node: &NodeOrToken<SyntaxNode, SyntaxToken>,
-    ) -> Option<FilterAction> {
-        self.filter_preceding(node)
+    ) -> Option<PolicyAction> {
+        self.handle_preceding(node)
     }
 }
 
 pub struct NoTrivia;
-impl UntilFilter for NoTrivia {
-    fn filter_preceding(
+impl ParseNodePolicy for NoTrivia {
+    fn handle_preceding(
         &self,
         _node: &NodeOrToken<SyntaxNode, SyntaxToken>,
-    ) -> Option<FilterAction> {
-        Some(FilterAction::Content)
+    ) -> Option<PolicyAction> {
+        Some(PolicyAction::Content)
     }
 
-    fn filter_succeeding(
+    fn handle_succeeding(
         &self,
         node: &NodeOrToken<SyntaxNode, SyntaxToken>,
-    ) -> Option<FilterAction> {
-        self.filter_preceding(node)
+    ) -> Option<PolicyAction> {
+        self.handle_preceding(node)
     }
 }
 
 pub struct Oneline;
-impl UntilFilter for Oneline {
-    fn filter_preceding(
+impl ParseNodePolicy for Oneline {
+    fn handle_preceding(
         &self,
         node: &NodeOrToken<SyntaxNode, SyntaxToken>,
-    ) -> Option<FilterAction> {
+    ) -> Option<PolicyAction> {
         match read_blankspace(node) {
-            Some(LineSpacing::EmptyLine(_) | LineSpacing::LineBreak(_)) => Some(FilterAction::Stop),
+            Some(LineSpacing::EmptyLine(_) | LineSpacing::LineBreak(_)) => Some(PolicyAction::Stop),
             _ => None,
         }
     }
-    fn filter_succeeding(
+    fn handle_succeeding(
         &self,
         node: &NodeOrToken<SyntaxNode, SyntaxToken>,
-    ) -> Option<FilterAction> {
-        self.filter_preceding(node)
+    ) -> Option<PolicyAction> {
+        self.handle_preceding(node)
     }
 }
 
@@ -222,102 +222,102 @@ pub const UntilSucceedingNewline: Succeeding<UntilNewline> = Succeeding(UntilNew
 
 pub struct Succeeding<T>(pub T)
 where
-    T: UntilFilter;
-impl<T> UntilFilter for Succeeding<T>
+    T: ParseNodePolicy;
+impl<T> ParseNodePolicy for Succeeding<T>
 where
-    T: UntilFilter,
+    T: ParseNodePolicy,
 {
-    fn filter_preceding(
+    fn handle_preceding(
         &self,
         _node: &NodeOrToken<SyntaxNode, SyntaxToken>,
-    ) -> Option<FilterAction> {
+    ) -> Option<PolicyAction> {
         None
     }
 
-    fn filter_succeeding(
+    fn handle_succeeding(
         &self,
         node: &NodeOrToken<SyntaxNode, SyntaxToken>,
-    ) -> Option<FilterAction> {
-        self.0.filter_succeeding(node)
+    ) -> Option<PolicyAction> {
+        self.0.handle_succeeding(node)
     }
 }
 
 pub struct UntilNewline;
-impl UntilFilter for UntilNewline {
-    fn filter_preceding(
+impl ParseNodePolicy for UntilNewline {
+    fn handle_preceding(
         &self,
         node: &NodeOrToken<SyntaxNode, SyntaxToken>,
-    ) -> Option<FilterAction> {
+    ) -> Option<PolicyAction> {
         match read_blankspace(node) {
             // TODO Most IgnoreBlankspace cases should be handled this way - linebreaks and empty lines will most often stop parsing trivia
             Some(LineSpacing::LineBreak(_) | LineSpacing::EmptyLine(_)) => {
-                Some(FilterAction::IgnoreAndStop)
+                Some(PolicyAction::IgnoreAndStop)
             },
             _ => None,
         }
     }
 
-    fn filter_succeeding(
+    fn handle_succeeding(
         &self,
         node: &NodeOrToken<SyntaxNode, SyntaxToken>,
-    ) -> Option<FilterAction> {
-        self.filter_preceding(node)
+    ) -> Option<PolicyAction> {
+        self.handle_preceding(node)
     }
 }
 
 #[derive(Clone)]
 pub struct Filter<T>(pub T)
 where
-    T: Fn(&NodeOrToken<SyntaxNode, SyntaxToken>) -> Option<FilterAction>;
-impl<T> UntilFilter for Filter<T>
+    T: Fn(&NodeOrToken<SyntaxNode, SyntaxToken>) -> Option<PolicyAction>;
+impl<T> ParseNodePolicy for Filter<T>
 where
-    T: Fn(&NodeOrToken<SyntaxNode, SyntaxToken>) -> Option<FilterAction>,
+    T: Fn(&NodeOrToken<SyntaxNode, SyntaxToken>) -> Option<PolicyAction>,
 {
-    fn filter_preceding(
+    fn handle_preceding(
         &self,
         node: &NodeOrToken<SyntaxNode, SyntaxToken>,
-    ) -> Option<FilterAction> {
+    ) -> Option<PolicyAction> {
         self.0(node)
     }
-    fn filter_succeeding(
+    fn handle_succeeding(
         &self,
         node: &NodeOrToken<SyntaxNode, SyntaxToken>,
-    ) -> Option<FilterAction> {
-        self.filter_preceding(node)
+    ) -> Option<PolicyAction> {
+        self.handle_preceding(node)
     }
 }
 
 pub struct Chain<F, G>(pub F, pub G)
 where
-    F: UntilFilter,
-    G: UntilFilter;
-impl<F, G> UntilFilter for Chain<F, G>
+    F: ParseNodePolicy,
+    G: ParseNodePolicy;
+impl<F, G> ParseNodePolicy for Chain<F, G>
 where
-    F: UntilFilter,
-    G: UntilFilter,
+    F: ParseNodePolicy,
+    G: ParseNodePolicy,
 {
-    fn filter_preceding(
+    fn handle_preceding(
         &self,
         node: &NodeOrToken<SyntaxNode, SyntaxToken>,
-    ) -> Option<FilterAction> {
-        if let Some(action) = self.0.filter_preceding(node) {
+    ) -> Option<PolicyAction> {
+        if let Some(action) = self.0.handle_preceding(node) {
             return Some(action);
         }
-        self.1.filter_preceding(node)
+        self.1.handle_preceding(node)
     }
-    fn filter_succeeding(
+    fn handle_succeeding(
         &self,
         node: &NodeOrToken<SyntaxNode, SyntaxToken>,
-    ) -> Option<FilterAction> {
-        if let Some(action) = self.0.filter_succeeding(node) {
+    ) -> Option<PolicyAction> {
+        if let Some(action) = self.0.handle_succeeding(node) {
             return Some(action);
         }
-        self.1.filter_succeeding(node)
+        self.1.handle_succeeding(node)
     }
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
-pub enum FilterAction {
+pub enum PolicyAction {
     Ignored,
     // TODO I think we can do without Content, as that is just a worse None in the filter
     Content,
@@ -327,12 +327,12 @@ pub enum FilterAction {
 
 /// Parses a node with surrounding trivia, based on the given strategy.
 #[expect(clippy::needless_pass_by_value, reason = "Intended API")]
-pub fn parse_node_with<TFilter>(
+pub fn parse_node_with<TPolicy>(
     syntax: &mut SyntaxIter,
-    filter: TFilter,
+    policy: TPolicy,
 ) -> NodeWithTrivia
 where
-    TFilter: UntilFilter,
+    TPolicy: ParseNodePolicy,
 {
     let mut preceding_trivia = Vec::new();
     let mut succeeding_trivia = Vec::new();
@@ -343,19 +343,17 @@ where
         // I wish we had linear types...
         // NOTE: Make sure node is either put_back onto syntax or consumed in a meaningful way
         if let Some(node) = syntax.next() {
-            let action = filter.filter_preceding(&node);
-            //TODO REMOVE THIS
-            //println!("Pre {node:?} {action:?}");
+            let action = policy.handle_preceding(&node);
             match action {
-                Some(FilterAction::Ignored) => {},
-                Some(FilterAction::Content) => {
+                Some(PolicyAction::Ignored) => {},
+                Some(PolicyAction::Content) => {
                     break NodeWithTriviaContent::Content(node);
                 },
-                Some(FilterAction::Stop) => {
+                Some(PolicyAction::Stop) => {
                     syntax.put_back(node);
                     break NodeWithTriviaContent::NoContent;
                 },
-                Some(FilterAction::IgnoreAndStop) => {
+                Some(PolicyAction::IgnoreAndStop) => {
                     break NodeWithTriviaContent::NoContent;
                 },
                 None => {
@@ -403,22 +401,20 @@ where
     };
 
     while let Some(node) = syntax.next() {
-        let action = filter.filter_succeeding(&node);
-        //TODO REMOVE THIS
-        //println!("Pre {node:?} {action:?}");
+        let action = policy.handle_succeeding(&node);
         match action {
-            Some(FilterAction::Ignored) => {},
-            Some(FilterAction::Content) => {
+            Some(PolicyAction::Ignored) => {},
+            Some(PolicyAction::Content) => {
                 // This belongs into the "content" of the next call to parse_node_...
                 syntax.put_back(node);
                 break;
             },
-            Some(FilterAction::Stop) => {
+            Some(PolicyAction::Stop) => {
                 // We want to stop parsing succeeding trivia
                 syntax.put_back(node);
                 break;
             },
-            Some(FilterAction::IgnoreAndStop) => {
+            Some(PolicyAction::IgnoreAndStop) => {
                 // We want to stop parsing succeeding trivia
                 break;
             },
