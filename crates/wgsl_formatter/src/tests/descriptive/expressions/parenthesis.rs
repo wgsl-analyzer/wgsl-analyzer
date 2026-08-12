@@ -1,9 +1,8 @@
 use expect_test::expect;
 use parser::Edition;
 
-use crate::{
-    FormattingOptions,
-    test_util::{CheckOptions, assert_out_of_scope, check, check_comments, check_with_options},
+use crate::test_util::{
+    CheckOptions, assert_out_of_scope, check, check_comments, check_with_options,
 };
 
 #[test]

@@ -1,6 +1,6 @@
 use std::{collections::BTreeMap, string::String};
 
-use dprint_core::formatting::{PrintItem, PrintItems, StringContainer};
+use dprint_core::formatting::{PrintItems, StringContainer};
 use dprint_core_macros::sc;
 use itertools::{Itertools as _, Position};
 use parser::{SyntaxKind, SyntaxNode};
@@ -11,14 +11,13 @@ use syntax::{
 
 use crate::{
     ast_parse::{
-        Chain, Filter, FilterAction, IgnoreBlankspace, IgnoreComma, NoTrivia,
+        Chain, IgnoreBlankspace, IgnoreComma, NoTrivia,
         UntilSucceedingNewline, parse_end, parse_node_with, syntax_iter,
     },
     generators::node::{
         gen_node_content, gen_node_preceding_trivia, gen_node_succeeding_trivia,
         gen_node_with_trivia,
     },
-    helpers::{LineSpacing, read_blankspace},
     multiline_group::MultilineGroup,
     print_item_buffer::{
         PrintItemBuffer,
@@ -462,7 +461,7 @@ mod standard_attributes {
 fn gen_attr_standard_with_args(
     syntax: &SyntaxNode,
     expected_token: SyntaxKind,
-    attribute_name: &'static StringContainer,
+    _attribute_name: &'static StringContainer,
 ) -> FormatDocumentResult<PrintItemBuffer> {
     let mut syntax = syntax_iter(syntax);
 

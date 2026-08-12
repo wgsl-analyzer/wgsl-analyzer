@@ -59,7 +59,7 @@ pub fn gen_struct_body(body: &ast::StructBody) -> FormatDocumentResult<PrintItem
     loop {
         let mut item = parse_node_with_trivia_filter_2(
             &mut syntax,
-            |node| None,
+            |_node| None,
             |node| match node.kind() {
                 SyntaxKind::Comma => Some(FilterAction::Ignored),
                 SyntaxKind::Blankspace

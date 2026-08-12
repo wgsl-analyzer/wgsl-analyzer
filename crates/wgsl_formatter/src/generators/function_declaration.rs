@@ -9,14 +9,13 @@ use syntax::{
 
 use crate::{
     ast_parse::{
-        Chain, Filter, FilterAction, IgnoreBlankspace, IgnoreComma, NoTrivia,
+        Chain, IgnoreBlankspace, IgnoreComma, NoTrivia,
         UntilSucceedingNewline, parse_end, parse_node_with, syntax_iter,
     },
     generators::node::{
         gen_node_content, gen_node_preceding_trivia, gen_node_succeeding_trivia,
         gen_node_with_trivia,
     },
-    helpers::{LineSpacing, read_blankspace},
     multiline_group::MultilineGroup,
     print_item_buffer::{
         PrintItemBuffer,

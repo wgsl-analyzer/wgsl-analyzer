@@ -46,13 +46,13 @@ impl Debug for RequestItemSet {
         f: &mut std::fmt::Formatter<'_>,
     ) -> std::fmt::Result {
         let mut set = f.debug_set();
-        for i in 0..7 {
-            let bit = 1_u8 << i;
+        for index in 0..7 {
+            let bit = 1_u8 << index;
             if self.0 & bit != 0 {
-                set.entry(&RequestItem::from_index(i));
+                set.entry(&RequestItem::from_index(index));
             }
         }
-        set.finish();
+        set.finish()?;
         Ok(())
     }
 }

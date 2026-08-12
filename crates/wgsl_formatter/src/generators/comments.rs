@@ -2,12 +2,9 @@ use itertools::{Itertools as _, Position};
 use parser::{SyntaxKind, SyntaxNode, SyntaxToken};
 use rowan::NodeOrToken;
 
-use crate::{
-    ast_parse::SyntaxIter,
-    print_item_buffer::{
-        PrintItemBuffer,
-        spacing_request::{Request, RequestItem},
-    },
+use crate::print_item_buffer::{
+    PrintItemBuffer,
+    spacing_request::{Request, RequestItem},
 };
 
 // We don't have a Comment SyntaxNode in the AST yet, so we use a custom enum and parser function
@@ -29,16 +26,6 @@ pub fn read_comment(item: &NodeOrToken<SyntaxNode, SyntaxToken>) -> Option<Comme
             _ => None,
         }
     } else {
-        None
-    }
-}
-
-pub fn parse_comment_optional(syntax: &mut SyntaxIter) -> Option<Comment> {
-    let item = syntax.next()?;
-    if let Some(comment) = read_comment(&item) {
-        Some(comment)
-    } else {
-        syntax.put_back(item);
         None
     }
 }

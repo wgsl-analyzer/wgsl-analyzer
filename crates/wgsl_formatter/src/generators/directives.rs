@@ -8,7 +8,8 @@ use syntax::{
 
 use crate::{
     ast_parse::{
-        Filter, FilterAction, IgnoreBlankspace, NoTrivia, parse_end, parse_node_with, syntax_iter,
+        Chain, Filter, FilterAction, IgnoreBlankspace, IgnoreComma, NoTrivia, parse_end,
+        parse_node_with, syntax_iter,
     },
     generators::node::gen_node_with_trivia,
     multiline_group::MultilineGroup,
@@ -118,13 +119,7 @@ pub fn gen_requires_directive(
     let mut items = Vec::new();
 
     loop {
-        let mut item = parse_node_with(
-            &mut syntax,
-            Filter(|node| match node.kind() {
-                SyntaxKind::Blankspace | SyntaxKind::Comma => Some(FilterAction::Ignored),
-                _ => None,
-            }),
-        );
+        let mut item = parse_node_with(&mut syntax, Chain(IgnoreBlankspace, IgnoreComma));
         //.expect_kind_optional(SyntaxKind::LanguageExtensionName)?;
 
         // TODO This needs to be absorbed into parse_node..

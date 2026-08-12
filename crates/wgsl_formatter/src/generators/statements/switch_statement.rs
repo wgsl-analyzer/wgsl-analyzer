@@ -225,9 +225,8 @@ pub fn gen_switch_case_selectors(
     loop {
         let item = parse_node_with(
             &mut syntax,
-            Filter(|node| match node.kind() {
-                SyntaxKind::Comma => Some(FilterAction::IgnoreAndStop),
-                _ => None,
+            Filter(|node| {
+                matches!(node.kind(), SyntaxKind::Comma).then_some(FilterAction::IgnoreAndStop)
             }),
         )
         .expect_ast_node_optional::<SwitchCaseSelector>()?;
