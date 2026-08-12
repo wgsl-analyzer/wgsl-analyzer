@@ -220,7 +220,7 @@ pub struct UntilSucceedingNewline;
 impl UntilFilter for UntilSucceedingNewline {
     fn filter_preceding(
         &self,
-        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
+        _node: &NodeOrToken<SyntaxNode, SyntaxToken>,
     ) -> Option<FilterAction> {
         None
     }

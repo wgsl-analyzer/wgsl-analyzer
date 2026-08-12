@@ -4,7 +4,7 @@ use std::{
 };
 
 use dprint_core::formatting::{
-    ConditionReevaluation, ConditionResolver, LineNumber, LineNumberAnchor, PrintItems, Signal,
+    ConditionReevaluation, ConditionResolver, LineNumber, LineNumberAnchor, PrintItems,
     conditions,
 };
 
@@ -12,7 +12,7 @@ use crate::{
     helpers::create_is_multiple_lines_resolver,
     print_item_buffer::{
         PrintItemBuffer,
-        spacing_request::{Request, RequestItemSet},
+        spacing_request::Request,
     },
 };
 
