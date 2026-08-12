@@ -52,33 +52,56 @@ impl<'db> Ctx<'db> {
         &mut self,
         item: Item,
     ) -> Option<()> {
-        let item = match item {
+        match item {
             Item::ImportStatement(import_statement) => {
-                ModuleItemId::ImportStatement(self.lower_import(&import_statement)?)
+                let file_ast_id = self.lower_import(&import_statement)?;
+                let item = ModuleItemId::ImportStatement(file_ast_id);
+                self.items.push(item);
             },
             Item::FunctionDeclaration(function) => {
-                ModuleItemId::Function(self.lower_function(&function)?)
+                let file_ast_id = self.lower_function(&function)?;
+                let item = ModuleItemId::Function(file_ast_id);
+                self.items.push(item);
             },
             Item::StructDeclaration(r#struct) => {
-                ModuleItemId::Struct(self.lower_struct(&r#struct)?)
+                let file_ast_id = self.lower_struct(&r#struct)?;
+                let item = ModuleItemId::Struct(file_ast_id);
+                self.items.push(item);
             },
             Item::VariableDeclaration(variable) => {
-                ModuleItemId::GlobalVariable(self.lower_global_variable(&variable)?)
+                let file_ast_id = self.lower_global_variable(&variable)?;
+                let item = ModuleItemId::GlobalVariable(file_ast_id);
+                self.items.push(item);
             },
             Item::ConstantDeclaration(constant) => {
-                ModuleItemId::GlobalConstant(self.lower_global_constant(&constant)?)
+                let file_ast_id = self.lower_global_constant(&constant)?;
+                let item = ModuleItemId::GlobalConstant(file_ast_id);
+                self.items.push(item);
             },
             Item::OverrideDeclaration(override_declaration) => {
-                ModuleItemId::Override(self.lower_override(&override_declaration)?)
+                let file_ast_id = self.lower_override(&override_declaration)?;
+                let item = ModuleItemId::Override(file_ast_id);
+                self.items.push(item);
             },
             Item::TypeAliasDeclaration(type_alias) => {
-                ModuleItemId::TypeAlias(self.lower_type_alias(&type_alias)?)
+                let file_ast_id = self.lower_type_alias(&type_alias)?;
+                let item = ModuleItemId::TypeAlias(file_ast_id);
+                self.items.push(item);
             },
-            Item::AssertStatement(assert_statement) => ModuleItemId::GlobalAssertStatement(
-                self.lower_global_assert_statement(&assert_statement)?,
-            ),
-        };
-        self.items.push(item);
+            Item::AssertStatement(assert_statement) => {
+                let file_ast_id = self.lower_global_assert_statement(&assert_statement)?;
+                let item = ModuleItemId::GlobalAssertStatement(file_ast_id);
+                self.items.push(item);
+            },
+            Item::GlobalCompoundDeclaration(global_compound_declaration) => {
+                for item in global_compound_declaration
+                    .items()
+                    .flat_map(Item::flatten_global_compound_declarations)
+                {
+                    self.lower_item(item);
+                }
+            },
+        }
         Some(())
     }
 

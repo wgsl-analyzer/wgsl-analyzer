@@ -33,6 +33,7 @@ impl AstIdMap {
             .syntax()
             .children()
             .filter_map(ast::Item::cast)
+            .flat_map(ast::Item::flatten_global_compound_declarations)
             .for_each(|item| {
                 map.alloc(item.syntax());
             });

@@ -80,74 +80,84 @@ impl<'db> Semantics<'db> {
             .find_map(|syntax| -> Option<ChildContainer> {
                 let item = ast::Item::cast(syntax)?;
                 let is_in_body = is_node_in_body(source, &item);
-
-                let container: ChildContainer = match item {
-                    ast::Item::ImportStatement(import) => {
-                        let definition = self.import_to_def(&InFile::new(file_id, import))?;
-                        ChildContainer::ImportId(definition)
-                    },
-                    ast::Item::FunctionDeclaration(function_declaration) => {
-                        let definition =
-                            self.function_to_def(&InFile::new(file_id, function_declaration))?;
-                        if is_in_body {
-                            DefinitionWithBodyId::Function(definition).into()
-                        } else {
-                            ChildContainer::FunctionId(definition)
-                        }
-                    },
-                    ast::Item::VariableDeclaration(variable_declaration) => {
-                        let definition = self
-                            .global_variable_to_def(&InFile::new(file_id, variable_declaration))?;
-                        if is_in_body {
-                            DefinitionWithBodyId::GlobalVariable(definition).into()
-                        } else {
-                            ChildContainer::GlobalVariableId(definition)
-                        }
-                    },
-                    ast::Item::ConstantDeclaration(constant_declaration) => {
-                        let definition = self
-                            .global_constant_to_def(&InFile::new(file_id, constant_declaration))?;
-                        if is_in_body {
-                            DefinitionWithBodyId::GlobalConstant(definition).into()
-                        } else {
-                            ChildContainer::GlobalConstantId(definition)
-                        }
-                    },
-                    ast::Item::OverrideDeclaration(override_declaration) => {
-                        let definition = self
-                            .global_override_to_def(&InFile::new(file_id, override_declaration))?;
-                        if is_in_body {
-                            DefinitionWithBodyId::Override(definition).into()
-                        } else {
-                            ChildContainer::OverrideId(definition)
-                        }
-                    },
-                    ast::Item::TypeAliasDeclaration(type_alias_declaration) => {
-                        let definition = self.global_type_alias_to_def(&InFile::new(
-                            file_id,
-                            type_alias_declaration,
-                        ))?;
-                        ChildContainer::TypeAliasId(definition)
-                    },
-                    ast::Item::StructDeclaration(struct_declaration) => {
-                        let definition =
-                            self.global_struct_to_def(&InFile::new(file_id, struct_declaration))?;
-                        ChildContainer::StructId(definition)
-                    },
-                    ast::Item::AssertStatement(assert_statement) => {
-                        let definition = self.global_assert_statement_to_def(&InFile::new(
-                            file_id,
-                            assert_statement,
-                        ))?;
-                        if is_in_body {
-                            DefinitionWithBodyId::GlobalAssertStatement(definition).into()
-                        } else {
-                            ChildContainer::GlobalAssertStatementId(definition)
-                        }
-                    },
-                };
+                let container = self.item_to_container(file_id, item, is_in_body)?;
                 Some(container)
             })
+    }
+
+    fn item_to_container(
+        &self,
+        file_id: EditionedFileId,
+        item: ast::Item,
+        is_in_body: bool,
+    ) -> Option<ChildContainer> {
+        let child_container = match item {
+            ast::Item::ImportStatement(import) => {
+                let definition = self.import_to_def(&InFile::new(file_id, import))?;
+                ChildContainer::ImportId(definition)
+            },
+            ast::Item::FunctionDeclaration(function_declaration) => {
+                let definition =
+                    self.function_to_def(&InFile::new(file_id, function_declaration))?;
+                if is_in_body {
+                    DefinitionWithBodyId::Function(definition).into()
+                } else {
+                    ChildContainer::FunctionId(definition)
+                }
+            },
+            ast::Item::VariableDeclaration(variable_declaration) => {
+                let definition =
+                    self.global_variable_to_def(&InFile::new(file_id, variable_declaration))?;
+                if is_in_body {
+                    DefinitionWithBodyId::GlobalVariable(definition).into()
+                } else {
+                    ChildContainer::GlobalVariableId(definition)
+                }
+            },
+            ast::Item::ConstantDeclaration(constant_declaration) => {
+                let definition =
+                    self.global_constant_to_def(&InFile::new(file_id, constant_declaration))?;
+                if is_in_body {
+                    DefinitionWithBodyId::GlobalConstant(definition).into()
+                } else {
+                    ChildContainer::GlobalConstantId(definition)
+                }
+            },
+            ast::Item::OverrideDeclaration(override_declaration) => {
+                let definition =
+                    self.global_override_to_def(&InFile::new(file_id, override_declaration))?;
+                if is_in_body {
+                    DefinitionWithBodyId::Override(definition).into()
+                } else {
+                    ChildContainer::OverrideId(definition)
+                }
+            },
+            ast::Item::TypeAliasDeclaration(type_alias_declaration) => {
+                let definition =
+                    self.global_type_alias_to_def(&InFile::new(file_id, type_alias_declaration))?;
+                ChildContainer::TypeAliasId(definition)
+            },
+            ast::Item::StructDeclaration(struct_declaration) => {
+                let definition =
+                    self.global_struct_to_def(&InFile::new(file_id, struct_declaration))?;
+                ChildContainer::StructId(definition)
+            },
+            ast::Item::AssertStatement(assert_statement) => {
+                let definition =
+                    self.global_assert_statement_to_def(&InFile::new(file_id, assert_statement))?;
+                if is_in_body {
+                    DefinitionWithBodyId::GlobalAssertStatement(definition).into()
+                } else {
+                    ChildContainer::GlobalAssertStatementId(definition)
+                }
+            },
+            ast::Item::GlobalCompoundDeclaration(global_compound_declaration) => {
+                global_compound_declaration
+                    .items()
+                    .find_map(|item| self.item_to_container(file_id, item, is_in_body))?
+            },
+        };
+        Some(child_container)
     }
 
     #[must_use]
@@ -286,49 +296,36 @@ fn is_node_in_body(
     node: &SyntaxNode,
     item: &ast::Item,
 ) -> bool {
+    let child_offset = node.text_range().start();
     match item {
-        ast::Item::FunctionDeclaration(function_declaration) => {
-            let child_offset = node.text_range().start();
-
-            function_declaration
-                .body()
-                .is_some_and(|compound_statement| {
-                    compound_statement
-                        .syntax()
-                        .text_range()
-                        .contains(child_offset)
-                })
-        },
-        ast::Item::VariableDeclaration(variable_declaration) => {
-            let child_offset = node.text_range().start();
-
-            variable_declaration
-                .init()
-                .is_some_and(|expression| expression.syntax().text_range().contains(child_offset))
-        },
-        ast::Item::ConstantDeclaration(constant_declaration) => {
-            let child_offset = node.text_range().start();
-
-            constant_declaration
-                .init()
-                .is_some_and(|expression| expression.syntax().text_range().contains(child_offset))
-        },
-        ast::Item::OverrideDeclaration(override_declaration) => {
-            let child_offset = node.text_range().start();
-
-            override_declaration
-                .init()
-                .is_some_and(|expression| expression.syntax().text_range().contains(child_offset))
-        },
-        ast::Item::AssertStatement(assert_statement) => {
-            let child_offset = node.text_range().start();
-            assert_statement
-                .expression()
-                .is_some_and(|expression| expression.syntax().text_range().contains(child_offset))
-        },
+        ast::Item::FunctionDeclaration(function_declaration) => function_declaration
+            .body()
+            .is_some_and(|compound_statement| {
+                compound_statement
+                    .syntax()
+                    .text_range()
+                    .contains(child_offset)
+            }),
+        ast::Item::VariableDeclaration(variable_declaration) => variable_declaration
+            .init()
+            .is_some_and(|expression| expression.syntax().text_range().contains(child_offset)),
+        ast::Item::ConstantDeclaration(constant_declaration) => constant_declaration
+            .init()
+            .is_some_and(|expression| expression.syntax().text_range().contains(child_offset)),
+        ast::Item::OverrideDeclaration(override_declaration) => override_declaration
+            .init()
+            .is_some_and(|expression| expression.syntax().text_range().contains(child_offset)),
+        ast::Item::AssertStatement(assert_statement) => assert_statement
+            .expression()
+            .is_some_and(|expression| expression.syntax().text_range().contains(child_offset)),
         ast::Item::ImportStatement(_)
         | ast::Item::TypeAliasDeclaration(_)
         | ast::Item::StructDeclaration(_) => false,
+        ast::Item::GlobalCompoundDeclaration(global_compound_declaration) => {
+            global_compound_declaration
+                .items()
+                .any(|item| is_node_in_body(node, &item))
+        },
     }
 }
 
