@@ -317,17 +317,18 @@ where
 }
 
 /// Parses a node with surrounding trivia, based on the given strategy.
-pub fn parse_node_with<F>(
+#[expect(clippy::needless_pass_by_value, reason = "Intended API")]
+pub fn parse_node_with<TFilter>(
     syntax: &mut SyntaxIter,
-    until: F,
+    filter: TFilter,
 ) -> NodeWithTrivia
 where
-    F: UntilFilter,
+    TFilter: UntilFilter,
 {
     parse_node_with_trivia_filter_2(
         syntax,
-        |node| until.filter_preceding(node),
-        |node| until.filter_succeeding(node),
+        |node| filter.filter_preceding(node),
+        |node| filter.filter_succeeding(node),
     )
 }
 
@@ -338,17 +339,6 @@ pub enum FilterAction {
     Content,
     Stop,
     IgnoreAndStop,
-}
-
-#[deprecated]
-pub fn parse_node_with_trivia_filter<F>(
-    syntax: &mut SyntaxIter,
-    filter: F,
-) -> NodeWithTrivia
-where
-    F: Fn(&NodeOrToken<SyntaxNode, SyntaxToken>) -> Option<FilterAction>,
-{
-    parse_node_with_trivia_filter_2(syntax, &filter, &filter)
 }
 
 // TODO Rename this... .... WIP api naming is hard
