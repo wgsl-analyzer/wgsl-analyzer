@@ -44,15 +44,14 @@ pub fn gen_comment(item: &Comment) -> PrintItemBuffer {
                 }
             }
 
-            formatted.start_ignoring_indent();
+            formatted.start_ignoring_indent_before_requests();
             for (pos, line) in lines {
                 formatted.push_string(line.to_owned());
                 if pos != Position::Only && pos != Position::Last {
                     formatted.request(Request::expect(RequestItem::LineBreak));
                 }
             }
-            formatted.request(Request::discourage(RequestItem::LineBreak));
-            formatted.finish_ignoring_indent();
+            formatted.finish_ignoring_indent_before_requests();
             formatted.request(Request::expect(RequestItem::Space));
         },
         Comment::LineEnding(content) => {

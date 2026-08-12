@@ -11,8 +11,8 @@ use syntax::{
 
 use crate::{
     ast_parse::{
-        Chain, IgnoreBlankspace, IgnoreComma, NoTrivia,
-        UntilSucceedingNewline, parse_end, parse_node_with, syntax_iter,
+        Chain, IgnoreBlankspace, IgnoreComma, NoTrivia, UntilSucceedingNewline, parse_end,
+        parse_node_with, syntax_iter,
     },
     generators::node::{
         gen_node_content, gen_node_preceding_trivia, gen_node_succeeding_trivia,
@@ -68,16 +68,13 @@ where
     attributes.sort_by(|(order_a, _), (order_b, _)| order_a.cmp(order_b));
 
     let mut formatted = PrintItemBuffer::default();
-    // Ungrouped attributes go first
     for (pos, attribute) in attributes
         .iter()
         .map(|(_, attribute)| attribute)
         .with_position()
     {
-        formatted.finish_new_line_group();
         formatted.extend(gen_node_preceding_trivia(attribute)?);
         formatted.extend(gen_node_content(attribute)?);
-        formatted.start_new_line_group();
         formatted.extend(gen_node_succeeding_trivia(attribute)?);
         if pos != Position::Only && pos != Position::Last {
             formatted.request(separator.clone());
@@ -186,7 +183,7 @@ pub fn gen_attribute_list(attribute_list: &AttributeList) -> FormatDocumentResul
     };
 
     let mut formatted = PrintItemBuffer::default();
-    formatted.start_new_line_group();
+    formatted.start_new_line_group_before_requests();
 
     // Ungrouped attributes go first
     if !ungrouped_attributes.is_empty() {
@@ -210,10 +207,10 @@ pub fn gen_attribute_list(attribute_list: &AttributeList) -> FormatDocumentResul
     }
 
     // No final line break, these should be inline with the target
-    formatted.finish_new_line_group();
+    formatted.apply_end_request();
+    formatted.finish_new_line_group_before_requests();
 
-    // We can discourage NewLines and Emptylines because finish_new_line_group
-    // applies all the stuff beforehand already
+    // We can discourage NewLines and Emptylines because we applied them beforehand
     formatted.request(Request::discourage(RequestItem::LineBreak));
     formatted.request(Request::discourage(RequestItem::EmptyLine));
     formatted.request(Request::discourage(RequestItem::Space));
@@ -509,12 +506,15 @@ fn gen_attr_standard_with_args(
     formatted.push_sc(sc!("@"));
     formatted.extend(gen_node_with_trivia(&item_attribute_name)?);
     if let Some(item_arguments) = item_arguments {
-        let mut multiline_group = MultilineGroup::new(&mut formatted);
+        let mut multiline_group = MultilineGroup::new_before_requests(&mut formatted);
         multiline_group.push_sc(sc!("("));
 
         // If its blank we do not give the formatter the option to break within the ()
         if !item_arguments.is_empty() {
-            multiline_group.start_indent();
+            multiline_group.start_indent_before_requests();
+            multiline_group.grouped_possible_newline();
+            multiline_group.request(Request::discourage(RequestItem::EmptyLine));
+            multiline_group.request(Request::discourage(RequestItem::Space));
 
             for (position, item) in item_arguments.into_iter().with_position() {
                 multiline_group.grouped_newline_or_space();

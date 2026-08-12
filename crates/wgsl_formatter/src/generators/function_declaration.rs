@@ -9,8 +9,8 @@ use syntax::{
 
 use crate::{
     ast_parse::{
-        Chain, IgnoreBlankspace, IgnoreComma, NoTrivia,
-        UntilSucceedingNewline, parse_end, parse_node_with, syntax_iter,
+        Chain, IgnoreBlankspace, IgnoreComma, NoTrivia, UntilSucceedingNewline, parse_end,
+        parse_node_with, syntax_iter,
     },
     generators::node::{
         gen_node_content, gen_node_preceding_trivia, gen_node_succeeding_trivia,
@@ -123,11 +123,14 @@ pub fn gen_fn_parameters(node: &ast::FunctionParameters) -> FormatDocumentResult
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
 
-    let mut multiline_group = MultilineGroup::new(&mut formatted);
+    let mut multiline_group = MultilineGroup::new_before_requests(&mut formatted);
 
     multiline_group.push_sc(sc!("("));
 
-    multiline_group.start_indent();
+    multiline_group.start_indent_before_requests();
+    multiline_group.grouped_possible_newline();
+    multiline_group.request(Request::discourage(RequestItem::EmptyLine));
+    multiline_group.request(Request::discourage(RequestItem::Space));
 
     for (pos, item) in items.into_iter().with_position() {
         // If the parameters are multiple lines long, every parameter should be on a new line
