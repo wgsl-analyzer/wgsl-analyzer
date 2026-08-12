@@ -1,6 +1,6 @@
 pub mod pretty;
 
-use std::{borrow::Cow, fmt};
+use std::{borrow::Cow, fmt, num::NonZeroU32};
 
 use base_db::{Intern as _, Lookup as _, impl_intern_key, impl_intern_lookup};
 use hir_def::db::StructId;
@@ -736,12 +736,12 @@ impl ArrayType {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum ArraySize {
-    Constant(u32),
+    Constant(NonZeroU32),
     Dynamic,
 }
 
 impl ArraySize {
-    pub const MAX: u32 = u32::MAX;
+    pub const MAX: NonZeroU32 = NonZeroU32::MAX;
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]

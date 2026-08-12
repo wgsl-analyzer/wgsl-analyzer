@@ -1,4 +1,4 @@
-use std::ops::Index;
+use std::{num::NonZeroU32, ops::Index};
 
 use base_db::{Intern as _, Lookup as _};
 use either::Either;
@@ -1734,13 +1734,13 @@ impl<'db> InferenceContext<'db> {
                     reason = "constructing an array with too many parameters is an error anyway"
                 )]
                 if let ArraySize::Constant(size) = array_type.size
-                    && arguments.len() != size as usize
+                    && arguments.len() != size.get() as usize
                 {
                     self.push_diagnostic(
                         store.store_source,
                         InferenceDiagnosticKind::FunctionCallArgCountMismatch {
                             expression,
-                            n_expected: size as usize,
+                            n_expected: size.get() as usize,
                             n_actual: arguments.len(),
                         },
                     );
@@ -1894,11 +1894,13 @@ impl<'db> InferenceContext<'db> {
                         );
                     }
                 }
-                if let Ok(validated_length) = u32::try_from(arguments.len()) {
+                if let Ok(length) = u32::try_from(arguments.len())
+                    && let Ok(array_size) = NonZeroU32::try_from(length)
+                {
                     TypeKind::Array(ArrayType {
                         inner: first_argument_type,
                         binding_array: array_type.binding_array,
-                        size: ArraySize::Constant(validated_length),
+                        size: ArraySize::Constant(array_size),
                     })
                     .intern(self.db)
                 } else {
@@ -1907,7 +1909,7 @@ impl<'db> InferenceContext<'db> {
                         InferenceDiagnosticKind::FunctionCallArgCountMismatch {
                             expression,
                             #[expect(clippy::as_conversions, reason = "usize always holds a u32")]
-                            n_expected: ArraySize::MAX as usize,
+                            n_expected: ArraySize::MAX.get() as usize,
                             n_actual: arguments.len(),
                         },
                     );

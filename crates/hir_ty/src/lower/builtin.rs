@@ -1,4 +1,4 @@
-use std::str::FromStr as _;
+use std::{num::NonZeroU32, str::FromStr as _};
 
 use base_db::{CapabilitiesInput, Intern as _};
 use hir_def::{expression::ExpressionId, item_tree::Name};
@@ -646,32 +646,27 @@ impl TypeLoweringContext<'_> {
 
         let size = if template_parameters.has_next() {
             match template_parameters.next_as_instance() {
-                Ok((Some(Instance::Literal(LiteralInstance::I32(number))), _)) if number > 0 =>
+                Ok((Some(Instance::Literal(LiteralInstance::I32(number))), _))
+                    if let Ok(validated) = u32::try_from(number).and_then(NonZeroU32::try_from) =>
                 {
-                    #[expect(
-                        clippy::cast_sign_loss,
-                        clippy::as_conversions,
-                        reason = "this is checked, could refactor into `if let Ok(validated) = u32::try_from(number)` once that is stable"
-                    )]
-                    ArraySize::Constant(number as u32)
+                    ArraySize::Constant(validated)
                 },
-                Ok((Some(Instance::Literal(LiteralInstance::U32(number))), _)) if number > 0 => {
-                    ArraySize::Constant(number)
+                Ok((Some(Instance::Literal(LiteralInstance::U32(number))), _))
+                    if let Ok(validated) = NonZeroU32::try_from(number) =>
+                {
+                    ArraySize::Constant(validated)
                 },
                 Ok((
                     Some(Instance::Literal(
                         LiteralInstance::AbstractInt(number) | LiteralInstance::I64(number),
                     )),
                     _,
-                )) if let Ok(validated) = u32::try_from(number)
-                    && validated > 0 =>
-                {
+                )) if let Ok(validated) = u32::try_from(number).and_then(NonZeroU32::try_from) => {
                     // skips handling array<E, 1li>() or array<E, 99999999999999999999999999>()
                     ArraySize::Constant(validated)
                 },
                 Ok((Some(Instance::Literal(LiteralInstance::U64(number))), _))
-                    if let Ok(validated) = u32::try_from(number)
-                        && validated > 0 =>
+                    if let Ok(validated) = u32::try_from(number).and_then(NonZeroU32::try_from) =>
                 {
                     // skips handling array<E, 1uL>() or array<E, 99999999999999999999999999uL>()
                     ArraySize::Constant(validated)

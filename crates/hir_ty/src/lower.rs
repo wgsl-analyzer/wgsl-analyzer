@@ -1,4 +1,4 @@
-use std::fmt;
+use std::{fmt, num::NonZeroU32};
 
 use base_db::Intern as _;
 use hir_def::{
@@ -464,7 +464,7 @@ impl<'db> WgslTypeConverter<'db> {
                 Box::new(self.to_wgsl_types(inner)),
                 match size {
                     #[expect(clippy::as_conversions, reason = "externally defined")]
-                    ArraySize::Constant(size) => Some(size as usize),
+                    ArraySize::Constant(size) => Some(size.get() as usize),
                     ArraySize::Dynamic => None,
                 },
             ),
@@ -476,7 +476,7 @@ impl<'db> WgslTypeConverter<'db> {
                 Box::new(self.to_wgsl_types(inner)),
                 match size {
                     #[expect(clippy::as_conversions, reason = "externally defined")]
-                    ArraySize::Constant(size) => Some(size as usize),
+                    ArraySize::Constant(size) => Some(size.get() as usize),
                     ArraySize::Dynamic => None,
                 },
             ),
@@ -556,10 +556,6 @@ impl<'db> WgslTypeConverter<'db> {
         clippy::wrong_self_convention,
         reason = "naming things is hard and this is probably changing in the future"
     )]
-    #[expect(
-        clippy::too_many_lines,
-        reason = "long match, bad candidate for refactor"
-    )]
     pub fn from_wgsl_types(
         &self,
         r#type: wgsl_types::Type,
@@ -604,35 +600,13 @@ impl<'db> WgslTypeConverter<'db> {
             wgsl_types::Type::Array(r#type, size) => TypeKind::Array(ArrayType {
                 inner: self.from_wgsl_types(*r#type),
                 binding_array: false,
-                size: match size {
-                    Some(size) => {
-                        debug_assert!(u32::try_from(size).is_ok());
-                        #[expect(
-                            clippy::cast_possible_truncation,
-                            clippy::as_conversions,
-                            reason = "externally defined"
-                        )]
-                        ArraySize::Constant(size as u32)
-                    },
-                    None => ArraySize::Dynamic,
-                },
+                size: from_wgsl_array_size(size),
             })
             .intern(self.db),
             wgsl_types::Type::BindingArray(r#type, size) => TypeKind::Array(ArrayType {
                 inner: self.from_wgsl_types(*r#type),
                 binding_array: true,
-                size: match size {
-                    Some(size) => {
-                        debug_assert!(u32::try_from(size).is_ok());
-                        #[expect(
-                            clippy::cast_possible_truncation,
-                            clippy::as_conversions,
-                            reason = "externally defined"
-                        )]
-                        ArraySize::Constant(size as u32)
-                    },
-                    None => ArraySize::Dynamic,
-                },
+                size: from_wgsl_array_size(size),
             })
             .intern(self.db),
             wgsl_types::Type::Vec(size, r#type) => TypeKind::Vector(VectorType {
@@ -907,6 +881,19 @@ impl<'db> WgslTypeConverter<'db> {
             | TypeKind::Reference(_)
             | TypeKind::Pointer(_)) => panic!("invalid sampled type {kind:?}"),
         }
+    }
+}
+
+fn from_wgsl_array_size(size: Option<usize>) -> ArraySize {
+    match size.map(|size| u32::try_from(size).map(NonZeroU32::try_from)) {
+        Some(Ok(Ok(size))) => ArraySize::Constant(size),
+        None => ArraySize::Dynamic,
+        Some(Ok(Err(_))) => {
+            panic!("size cannot be 0");
+        },
+        Some(Err(_)) => {
+            panic!("size must not be > u32::MAX");
+        },
     }
 }
 

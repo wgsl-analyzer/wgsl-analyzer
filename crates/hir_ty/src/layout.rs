@@ -241,7 +241,7 @@ impl TypeKind {
             Self::Array(array) => match array.size {
                 ArraySize::Constant(size) => {
                     let stride = array.stride(address_space, db)?;
-                    Some(size.checked_mul(stride).unwrap())
+                    Some(size.get().checked_mul(stride).unwrap())
                 },
                 ArraySize::Dynamic => None,
             },
