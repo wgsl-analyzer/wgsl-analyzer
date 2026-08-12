@@ -1,4 +1,57 @@
 
+@if(THING)
+import the::thing;
+
+import a;
+
+
+import a::b::c::d::e::f;
+
+
+import package::b::c;
+
+
+import super::b::c;
+
+
+import super::super::super::super::c;
+
+
+import a::b::c;
+import a::b::d;
+
+
+import a::b::c;
+import d::e::f;
+
+
+import a::b::c as d;
+
+
+import a::{ZZZ,
+YYY,
+XXX};
+
+
+import a::{a::x, a::m, a::a};
+
+
+import a::{a::x::a, a::m::a, a::a::a};
+
+
+import a::{a::x, a::a, a::m::a};
+
+
+import a::{a::x::a, a::a::a, a::{b,c}};
+
+
+import a::{b,
+c,
+d,};
+
+import aaaaaaaaa::{bbbbbbbb::{cdddddd::{dddddd::{eeeeeee::{ffffffff::{gggggg::{hhhhhh::{iiiiii::jjjjjjjjjj, kkkkkkkk}}}}}}}};
+import aaaaaaaaa::bbbbbbbb::{cdddddd::dddddd::{eeeeeee::ffffffff::{gggggg::hhhhhh::{iiiiii::jjjjjjjjjj, kkkkkkkk}}}};
+
 diagnostic
 (off, something);
 
@@ -926,8 +979,6 @@ d: u32,
         }
 
 
-        @if(THING)
-        import the::thing;
 
 
         @const
@@ -979,52 +1030,6 @@ d: u32,
 
 
 
-        import a;
-
-
-        import a::b::c::d::e::f;
-
-
-        import package::b::c;
-
-
-        import super::b::c;
-
-
-        import super::super::super::super::c;
-
-
-        import a::b::c;
-        import a::b::d;
-
-
-        import a::b::c;
-        import d::e::f;
-
-
-        import a::b::c as d;
-
-
-        import a::{ZZZ,
-    YYY,
-        XXX};
-
-
-        import a::{a::x, a::m, a::a};
-
-
-        import a::{a::x::a, a::m::a, a::a::a};
-
-
-        import a::{a::x, a::a, a::m::a};
-
-
-        import a::{a::x::a, a::a::a, a::{b,c}};
-
-
-        import a::{b,
-        c,
-        d,};
 
 
         alias Test =
@@ -1132,8 +1137,6 @@ d: u32,
         foo, 1 + vubble)
         override a: usize = 0;
 
-    import aaaaaaaaa::{bbbbbbbb::{cdddddd::{dddddd::{eeeeeee::{ffffffff::{gggggg::{hhhhhh::{iiiiii::jjjjjjjjjj, kkkkkkkk}}}}}}}};
-    import aaaaaaaaa::bbbbbbbb::{cdddddd::dddddd::{eeeeeee::ffffffff::{gggggg::hhhhhh::{iiiiii::jjjjjjjjjj, kkkkkkkk}}}};
     fn main() {
 var x=0;
 }

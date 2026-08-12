@@ -10,7 +10,7 @@ const SOURCE: &str = include_str!("large_file.wesl");
 // In order to get meaningful readings over time, the input to the formatter in the benchmarks
 // should remain constant. We hash it to ensure it does not accidentally get formatted or changed
 // by save on Ctrl-S, `wgslfmt .`, or other means.
-const SOURCE_SHA256: &str = "311f9d255ebb27574c988d0e9e1283a2bffc7def4a0fc30e86883d84e06261ba";
+const SOURCE_SHA256: &str = "49a1280dea669d01314e0e132c793cffc9cedd808ada2ed13f51f30df9d0210f";
 
 fn large_file(criterion: &mut Criterion) {
     let parse = parser::parse_entrypoint(
