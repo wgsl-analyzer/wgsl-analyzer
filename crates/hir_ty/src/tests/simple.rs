@@ -1790,7 +1790,6 @@ fn lower_function_as_template_argument() {
             19..20 'y': array<[error], 1>
             23..41 'array<...>(1.0)': array<[error], 1>
             37..40 '1.0': float
-            37..40 '1.0': expected [error] but got float
             29..32 'foo': foo was written, write foo() instead
         "#]],
     );
@@ -2046,7 +2045,6 @@ fn foo() {
             30..31 'x': cannot assign to non-reference `i32`
             41..42 'x': cannot assign to non-reference `i32`
             50..51 'x': cannot assign to non-reference `i32`
-            55..56 '1': expected [error] but got i32
         "#]],
     );
 }
@@ -2088,7 +2086,6 @@ fn foo() {
             39..51 'vec2<f32>(y)': [error]
             49..50 'y': [error]
             [EditionedFileId(Id(300))] WgslError { expression: Idx::<Expression>(0), message: "cannot use unary operator `&` on type `AbstractInt`" } in Body
-            39..51 'vec2<f32>(y)': no constructor found for type `vec2<f32>` with parameters `[error]`
         "#]],
     );
 }
@@ -2110,7 +2107,6 @@ fn foo() {
             39..46 'vec2(y)': [error]
             44..45 'y': [error]
             [EditionedFileId(Id(300))] WgslError { expression: Idx::<Expression>(0), message: "cannot use unary operator `&` on type `AbstractInt`" } in Body
-            39..46 'vec2(y)': no constructor found for type `vec2<[error]>` with parameters `[error]`
         "#]],
     );
 }
@@ -2264,7 +2260,6 @@ fn foo() {
             29..33 'bool': [error]
             35..36 '1': integer
             29..33 'bool': expected variable, but got type `bool`
-            35..36 '1': expected [error] but got integer
         "#]],
     );
 }

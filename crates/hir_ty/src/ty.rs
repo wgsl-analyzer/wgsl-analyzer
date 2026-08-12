@@ -26,7 +26,20 @@ impl Type {
         self,
         db: &dyn HirDatabase,
     ) -> bool {
-        matches!(self.kind(db), TypeKind::Error)
+        match self.lookup(db) {
+            TypeKind::Scalar(_)
+            | TypeKind::Struct(_)
+            | TypeKind::BuiltinStruct(_)
+            | TypeKind::Texture(_)
+            | TypeKind::Sampler(_) => false,
+            TypeKind::Error => true,
+            TypeKind::Atomic(atomic_type) => atomic_type.inner.is_err(db),
+            TypeKind::Vector(vector_type) => vector_type.component_type.is_err(db),
+            TypeKind::Matrix(matrix_type) => matrix_type.inner.is_err(db),
+            TypeKind::Array(array_type) => array_type.inner.is_err(db),
+            TypeKind::Reference(reference) => reference.inner.is_err(db),
+            TypeKind::Pointer(pointer) => pointer.inner.is_err(db),
+        }
     }
 
     #[expect(clippy::doc_paragraphs_missing_punctuation, reason = "false positive")]
@@ -505,6 +518,9 @@ fn conversion_rank(
                 inner: ty2,
             }),
         ) if c1 == c2 && r1 == r2 => conversion_rank(&ty1.kind(db), &ty2.kind(db), db),
+        // optimistically assume that whatever went wrong, the intention was for it to work
+        // prevents extra diagnostics from being emmitted
+        (TypeKind::Error, _) | (_, TypeKind::Error) => Some(0),
         _ => None,
     }
 }

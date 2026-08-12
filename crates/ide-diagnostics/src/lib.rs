@@ -226,6 +226,7 @@ pub fn diagnostics(
             let root = file_id.parse(db).syntax();
             match diagnostic {
                 AnyDiagnostic::AssignmentNotAReference { left_side, actual } => {
+                    debug_assert!(!actual.is_err(db));
                     let source = left_side.value.to_node(&root);
                     let actual = ty::pretty::pretty_type(db, actual);
                     let frange = original_file_range(db, left_side.file_id, source.syntax());
@@ -242,6 +243,7 @@ pub fn diagnostics(
                     expected,
                     actual,
                 } => {
+                    debug_assert!(!actual.is_err(db));
                     let source = expression.value.to_node(&root);
                     let expected = ty::pretty::pretty_type_expectation(db, expected);
                     let actual = ty::pretty::pretty_type(db, actual);
@@ -257,6 +259,7 @@ pub fn diagnostics(
                     name,
                     r#type,
                 } => {
+                    debug_assert!(!r#type.is_err(db));
                     let source = expression.value.to_node(&root).syntax().parent().unwrap();
                     let r#type = ty::pretty::pretty_type(db, r#type);
                     let frange = original_file_range(db, expression.file_id, source.syntax());
@@ -267,6 +270,7 @@ pub fn diagnostics(
                     )
                 },
                 AnyDiagnostic::ArrayAccessInvalidType { expression, r#type } => {
+                    debug_assert!(!r#type.is_err(db));
                     let source = expression.value.to_node(&root);
                     let r#type = ty::pretty::pretty_type(db, r#type);
                     let frange = original_file_range(db, expression.file_id, source.syntax());
@@ -277,6 +281,7 @@ pub fn diagnostics(
                     )
                 },
                 AnyDiagnostic::NotConstructible { expression, r#type } => {
+                    debug_assert!(!r#type.is_err(db));
                     let source = expression.value.to_node(&root);
                     let r#type = ty::pretty::pretty_type(db, r#type);
                     let frange = original_file_range(db, expression.file_id, source.syntax());
@@ -300,6 +305,7 @@ pub fn diagnostics(
                     )
                 },
                 AnyDiagnostic::AddressOfNotReference { expression, actual } => {
+                    debug_assert!(!actual.is_err(db));
                     let source = expression.value.to_node(&root);
                     let r#type = ty::pretty::pretty_type(db, actual);
                     let frange = original_file_range(db, expression.file_id, source.syntax());
@@ -310,6 +316,7 @@ pub fn diagnostics(
                     )
                 },
                 AnyDiagnostic::DerefNotAPointer { expression, actual } => {
+                    debug_assert!(!actual.is_err(db));
                     let source = expression.value.to_node(&root);
                     let r#type = ty::pretty::pretty_type(db, actual);
                     let frange = original_file_range(db, expression.file_id, source.syntax());
@@ -386,11 +393,15 @@ pub fn diagnostics(
                     r#type,
                     parameters,
                 } => {
+                    debug_assert!(!r#type.is_err(db));
                     let source = expression.value.to_node(&root).syntax().clone();
 
                     let parameters = parameters
                         .iter()
-                        .map(|r#type| ty::pretty::pretty_type(db, *r#type))
+                        .map(|r#type| {
+                            debug_assert!(!r#type.is_err(db));
+                            ty::pretty::pretty_type(db, *r#type)
+                        })
                         .join(", ");
 
                     let frange = original_file_range(db, expression.file_id, source.syntax());
@@ -496,15 +507,6 @@ pub fn diagnostics(
                     let source = id.value.to_node(&root);
                     let frange = original_file_range(db, id.file_id, source.syntax());
                     Diagnostic::new(
-                        DiagnosticCode("28"),
-                        "too many leading `super` keywords".to_owned(),
-                        frange.range,
-                    )
-                },
-                AnyDiagnostic::TooManySupers { id } => {
-                    let source = id.value.to_node(&root);
-                    let frange = original_file_range(db, id.file_id, source.syntax());
-                    Diagnostic::new(
                         DiagnosticCode("29"),
                         "too many leading `super` keywords".to_owned(),
                         frange.range,
@@ -532,6 +534,7 @@ pub fn diagnostics(
                     )
                 },
                 AnyDiagnostic::StoreTypeMustBeStorable { expression, actual } => {
+                    debug_assert!(!actual.is_err(db));
                     let source = expression.value.to_node(&root);
                     let r#type = ty::pretty::pretty_type(db, actual);
                     let frange = original_file_range(db, expression.file_id, source.syntax());
@@ -542,6 +545,7 @@ pub fn diagnostics(
                     )
                 },
                 AnyDiagnostic::UnexpectedReturnValue { expression, actual } => {
+                    debug_assert!(!actual.is_err(db));
                     let source = expression.value.to_node(&root);
                     let r#type = ty::pretty::pretty_type(db, actual);
                     let frange = original_file_range(db, expression.file_id, source.syntax());

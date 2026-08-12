@@ -406,10 +406,9 @@ fn import_nonexistent_module() {
         ",
         expect![[r#"
             20..37 'not_a_...e::foo': package `not_a_module` not found
-            47..48 'a': [error]
-            51..57 'Bar(2)': [error]
+            47..48 'a': Bar
+            51..57 'Bar(2)': Bar
             55..56 '2': integer
-            55..56 '2': expected [error] but got integer
         "#]],
     );
 }

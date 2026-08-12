@@ -684,13 +684,15 @@ impl<'db> InferenceContext<'db> {
                 let left_inner = if let TypeKind::Reference(reference) = kind {
                     reference.inner
                 } else {
-                    self.push_diagnostic(
-                        body.store_source,
-                        InferenceDiagnosticKind::AssignmentNotAReference {
-                            left_side: *left_side,
-                            actual: left_type,
-                        },
-                    );
+                    if !left_type.is_err(self.db) {
+                        self.push_diagnostic(
+                            body.store_source,
+                            InferenceDiagnosticKind::AssignmentNotAReference {
+                                left_side: *left_side,
+                                actual: left_type,
+                            },
+                        );
+                    }
                     self.error_type()
                 };
 
@@ -711,13 +713,15 @@ impl<'db> InferenceContext<'db> {
                 let left_inner = if let TypeKind::Reference(reference) = left_kind {
                     reference.inner
                 } else {
-                    self.push_diagnostic(
-                        body.store_source,
-                        InferenceDiagnosticKind::AssignmentNotAReference {
-                            left_side: *left_side,
-                            actual: left_type,
-                        },
-                    );
+                    if !left_type.is_err(self.db) {
+                        self.push_diagnostic(
+                            body.store_source,
+                            InferenceDiagnosticKind::AssignmentNotAReference {
+                                left_side: *left_side,
+                                actual: left_type,
+                            },
+                        );
+                    }
                     self.error_type()
                 };
 
@@ -752,13 +756,15 @@ impl<'db> InferenceContext<'db> {
                 let left_inner = if let TypeKind::Reference(reference) = left_kind {
                     reference.inner
                 } else {
-                    self.push_diagnostic(
-                        body.store_source,
-                        InferenceDiagnosticKind::AssignmentNotAReference {
-                            left_side: *expression,
-                            actual: left_type,
-                        },
-                    );
+                    if !left_type.is_err(self.db) {
+                        self.push_diagnostic(
+                            body.store_source,
+                            InferenceDiagnosticKind::AssignmentNotAReference {
+                                left_side: *expression,
+                                actual: left_type,
+                            },
+                        );
+                    }
                     self.error_type()
                 };
 
@@ -975,7 +981,9 @@ impl<'db> InferenceContext<'db> {
 
         match expected {
             TypeExpectation::Type(expected_type) => {
-                if self.expect_type_inner(r#type, expected_type) != Ok(()) {
+                if !r#type.is_err(self.db)
+                    && self.expect_type_inner(r#type, expected_type) != Ok(())
+                {
                     self.push_diagnostic(
                         store.store_source,
                         InferenceDiagnosticKind::TypeMismatch {
@@ -1093,6 +1101,16 @@ impl<'db> InferenceContext<'db> {
                         self.make_ref(array.inner, address_space, access_mode)
                     },
                     TypeKind::Array(array) => array.inner,
+                    TypeKind::Reference(Reference {
+                        address_space: _,
+                        inner,
+                        access_mode: _,
+                    })
+                    | TypeKind::Pointer(Pointer {
+                        address_space: _,
+                        inner,
+                        access_mode: _,
+                    }) if inner.kind(self.db) == TypeKind::Error => self.error_type(),
                     TypeKind::Scalar(_)
                     | TypeKind::Atomic(_)
                     | TypeKind::Struct(_)
@@ -1111,10 +1129,7 @@ impl<'db> InferenceContext<'db> {
                         self.error_type()
                     },
                     // No need to create extra diagnostics for problems upstream
-                    TypeKind::Error => {
-                        debug_assert!(!self.result.diagnostics.is_empty());
-                        self.error_type()
-                    },
+                    TypeKind::Error => self.error_type(),
                 }
             },
             Expression::Literal(literal) => {
@@ -1748,9 +1763,6 @@ impl<'db> InferenceContext<'db> {
                 r#type
             },
             TypeKind::Vector(vec) => {
-                if arguments.is_empty() {
-                    return r#type;
-                }
                 let template = &[TpltParam::Type(
                     self.converter.to_wgsl_types(vec.component_type),
                 )];
@@ -1759,6 +1771,12 @@ impl<'db> InferenceContext<'db> {
                     .copied()
                     .map(|(_expression, r#type)| r#type)
                     .collect_vec();
+
+                if argument_types.iter().any(|r#type| r#type.is_err(self.db)) {
+                    // don't give unnecessary extra diagnostics
+                    return self.error_type();
+                }
+
                 let wgsl_arguments = argument_types
                     .iter()
                     .copied()
@@ -1792,6 +1810,12 @@ impl<'db> InferenceContext<'db> {
                     .copied()
                     .map(|(_expression, r#type)| r#type)
                     .collect_vec();
+
+                if argument_types.iter().any(|r#type| r#type.is_err(self.db)) {
+                    // don't give unnecessary extra diagnostics
+                    return self.error_type();
+                }
+
                 let wgsl_arguments = argument_types
                     .iter()
                     .copied()
@@ -1938,6 +1962,12 @@ impl<'db> InferenceContext<'db> {
                     .copied()
                     .map(|(_expression, r#type)| r#type)
                     .collect_vec();
+
+                if argument_types.iter().any(|r#type| r#type.is_err(self.db)) {
+                    // don't give unnecessary extra diagnostics
+                    return self.error_type();
+                }
+
                 let wgsl_arguments = argument_types
                     .iter()
                     .copied()
@@ -1974,6 +2004,12 @@ impl<'db> InferenceContext<'db> {
                 }
                 let name = matrix.name();
                 let argument_types = arguments.iter().map(|(_, r#type)| r#type).collect_vec();
+
+                if argument_types.iter().any(|r#type| r#type.is_err(self.db)) {
+                    // don't give unnecessary extra diagnostics
+                    return self.error_type();
+                }
+
                 let wgsl_arguments = argument_types
                     .iter()
                     .map(|r#type| self.converter.to_wgsl_types(**r#type))
