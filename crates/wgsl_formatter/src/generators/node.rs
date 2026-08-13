@@ -1,6 +1,10 @@
-use parser::SyntaxNode;
+use dprint_core_macros::sc;
+use parser::{
+    SyntaxKind::{self},
+    SyntaxNode, SyntaxToken,
+};
 use rowan::NodeOrToken;
-use syntax::AstNode as _;
+use syntax::{AstNode as _, ast};
 
 use crate::{
     generators::{
@@ -15,7 +19,7 @@ use crate::{
             gen_must_use_attribute, gen_other_attribute, gen_size_attribute, gen_vertex_attribute,
             gen_workgroup_size_attribute,
         },
-        comments::gen_comment,
+        comments::{gen_comment, read_comment},
         diagnostic_directive::{
             gen_diagnostic_control, gen_diagnostic_rule_name, gen_severity_control_name,
         },
@@ -80,16 +84,18 @@ use crate::{
         type_alias_declaration::gen_type_alias_declaration,
         types::{gen_template_list, gen_type_specifier},
     },
-    helpers::gen_line_spacing,
+    helpers::{gen_line_spacing, read_blankspace},
     print_item_buffer::{
         PrintItemBuffer,
         spacing_request::{Request, RequestItem},
     },
-    reporting::FormatDocumentResult,
+    reporting::{FormatDocumentError, FormatDocumentResult},
     trivia::{NodeTriviaItem, NodeWithTrivia, NodeWithTriviaContent},
 };
 
-pub fn gen_node_no_newlines(node: &SyntaxNode) -> FormatDocumentResult<PrintItemBuffer> {
+pub fn gen_node_no_newlines(
+    node: &NodeOrToken<SyntaxNode, SyntaxToken>
+) -> FormatDocumentResult<PrintItemBuffer> {
     let mut formatted = PrintItemBuffer::default();
     formatted.request(Request::discourage(RequestItem::EmptyLine));
     formatted.extend(gen_node(node)?);
@@ -103,7 +109,7 @@ macro_rules! match_ast_exhaustive {
         -
         $( SyntaxKind::$special_ast:ident($special_name:ident as SyntaxNode) => $special_result:expr, )*
         -
-        SyntaxKind::$ignored_first:ident $( | SyntaxKind::$ignored:ident)* => $ignored_result:expr
+        $( SyntaxKind::$token:ident => $token_string:expr, )*
     }) => {{
         match $node.kind() {
             $(syntax::ast::SyntaxKind::$ast => {
@@ -117,251 +123,281 @@ macro_rules! match_ast_exhaustive {
                 let $special_name = $node.clone();
                 $special_result
             },)*
-            syntax::ast::SyntaxKind::$ignored_first $(| syntax::ast::SyntaxKind::$ignored)*  => $ignored_result
+            $(syntax::ast::SyntaxKind::$token => {
+                let buffer = PrintItemBuffer::default();
+                buffer.push_sc!($token_string);
+                Ok(buffer)
+            },)*
         }
     }};
+}
+
+macro_rules! with_sc {
+    ($text:expr) => {{
+        let mut buffer = PrintItemBuffer::default();
+        buffer.push_sc(sc!($text));
+        Ok(buffer)
+    }};
+}
+
+macro_rules! with_cast {
+    ($generator:ident, $ast_type:ty, $node:ident) => {
+        $generator(&<$ast_type>::cast($node.as_node().unwrap().clone()).unwrap())
+    };
+}
+
+macro_rules! with_node {
+    ($generator:ident, $node:ident) => {
+        $generator(&($node.as_node().unwrap().clone()))
+    };
 }
 
 #[expect(
     clippy::too_many_lines,
     reason = "It does not make sense to split this up"
 )]
-pub fn gen_node(node: &SyntaxNode) -> FormatDocumentResult<PrintItemBuffer> {
-    match_ast_exhaustive! {
-        match node {
-             SyntaxKind::SourceFile(node) => gen_source_file(&node),
-             SyntaxKind::FunctionDeclaration(node) => gen_function_declaration(&node),
-             SyntaxKind::TemplateList(node) => gen_template_list(&node),
-             SyntaxKind::FunctionParameters(node) => gen_fn_parameters(&node),
-             SyntaxKind::Parameter(node) => gen_fn_parameter(&node),
-             SyntaxKind::ReturnType(node) => gen_fn_return_type(&node),
-             SyntaxKind::AssertStatement(node) => gen_const_assert_statement(&node),
-             SyntaxKind::CompoundStatement(node) => gen_compound_statement(&node),
-             SyntaxKind::AssignmentStatement(node) => gen_assignment_statement(&node),
-             SyntaxKind::PhonyAssignmentStatement(node) => gen_phony_assignment_statement(&node),
-             SyntaxKind::CompoundAssignmentStatement(node) => gen_compound_assignment_statement(&node),
-             SyntaxKind::FunctionCallStatement(node) => gen_function_call_statement(&node),
-             SyntaxKind::BreakIfStatement(node) => gen_break_if_statement(&node),
-             SyntaxKind::LoopStatement(node) => gen_loop_statement(&node),
-             SyntaxKind::WhileStatement(node) => gen_while_statement(&node),
-             SyntaxKind::IfStatement(node) => gen_if_statement(&node),
-             SyntaxKind::SwitchStatement(node) => gen_switch_statement(&node),
-             SyntaxKind::SwitchBody(node) => gen_switch_body(&node),
-             SyntaxKind::SwitchBodyCase(node) => gen_switch_body_case(&node),
-             SyntaxKind::SwitchCaseSelectors(node) => gen_switch_case_selectors(&node),
-             SyntaxKind::SwitchDefaultSelector(node) => gen_switch_case_default_selector(&node),
-             SyntaxKind::IncrementDecrementStatement(node) => gen_increment_decrement_statement(&node),
-             SyntaxKind::IfClause(node) => gen_if_statement_if_clause(&node),
-             SyntaxKind::ElseIfClause(node) => gen_if_statement_else_if_clause(&node),
-             SyntaxKind::ElseClause(node) => gen_if_statement_else_clause(&node),
-             SyntaxKind::ForStatement(node) => gen_for_statement(&node),
-             SyntaxKind::FieldExpression(node) => gen_field_expression(&node),
-             SyntaxKind::FunctionCall(node) => gen_function_call(&node),
-             SyntaxKind::Arguments(node) => gen_function_call_arguments(&node),
-             SyntaxKind::IdentExpression(node) => gen_ident_expression(&node),
-             SyntaxKind::Path(node) => gen_path(&node),
-             SyntaxKind::IndexExpression(node) => gen_index_expression(&node),
-             SyntaxKind::ReturnStatement(node) => gen_return_statement(&node),
-             SyntaxKind::InfixExpression(node) => gen_infix_expression(&node),
-             SyntaxKind::PrefixExpression(node) => gen_prefix_expression(&node),
-             SyntaxKind::Literal(node) => gen_literal_expression(&node),
-             SyntaxKind::ParenthesisExpression(node) => gen_parenthesis_expression(&node),
-             SyntaxKind::TypeSpecifier(node) => gen_type_specifier(&node),
-             SyntaxKind::Attribute(node) => gen_attribute(&node),
-             SyntaxKind::StructDeclaration(node) => gen_struct_declaration(&node),
-             SyntaxKind::StructBody(node) => gen_struct_body(&node),
-             SyntaxKind::StructMember(node) => gen_struct_member(&node),
-             SyntaxKind::ConstantDeclaration(node) => gen_const_declaration_statement(&node),
-             SyntaxKind::VariableDeclaration(node) => gen_var_declaration_statement(&node),
-             SyntaxKind::LetDeclaration(node) => gen_let_declaration_statement(&node),
-             SyntaxKind::OverrideDeclaration(node) => gen_override_declaration_statement(&node),
-             SyntaxKind::ContinuingStatement(node) => gen_continuing_statement(&node),
-             SyntaxKind::TypeAliasDeclaration(node) => gen_type_alias_declaration(&node),
-             SyntaxKind::EnableDirective(node) => gen_enable_directive(&node),
-             SyntaxKind::EnableExtensionName(node) => gen_enable_extension_name(&node),
-             SyntaxKind::RequiresDirective(node) => gen_requires_directive(&node),
-             SyntaxKind::LanguageExtensionName(node) => gen_language_extension_name(&node),
-             SyntaxKind::ImportStatement(node) => gen_import_statement(&node),
-             SyntaxKind::DiagnosticControl(node) => gen_diagnostic_control(&node),
-             SyntaxKind::DiagnosticAttribute(node) => gen_diagnostic_attribute(&node),
-             SyntaxKind::DiagnosticDirective(node) => gen_diagnostic_directive(&node),
-             SyntaxKind::DiagnosticRuleName(node) => gen_diagnostic_rule_name(&node),
-             SyntaxKind::SeverityControlName(node) => gen_severity_control_name(&node),
-             SyntaxKind::InterpolateSamplingName(node) => gen_interpolate_sampling_name(&node),
-             SyntaxKind::InterpolateTypeName(node) => gen_interpolate_type_name(&node),
-             SyntaxKind::ImportPackageRelative(node) => gen_import_package_relative(&node),
-             SyntaxKind::ImportSuperRelative(node) => gen_import_super_relative(&node),
-             SyntaxKind::ImportItem(node) => gen_import_item(&node),
-             SyntaxKind::ImportPath(node) => gen_import_path(&node),
-             SyntaxKind::ImportCollection(node) => gen_import_collection(&node),
-             SyntaxKind::Name(node) => gen_name(&node),
-             SyntaxKind::OtherAttribute(node) => gen_other_attribute(&node),
-             SyntaxKind::AlignAttribute(node) => gen_align_attribute(&node),
-             SyntaxKind::BindingAttribute(node) => gen_binding_attribute(&node),
-             SyntaxKind::BlendSrcAttribute(node) => gen_blend_src_attribute(&node),
-             SyntaxKind::BuiltinAttribute(node) => gen_builtin_attribute(&node),
-             SyntaxKind::ConstantAttribute(node) => gen_const_attribute(&node),
-             SyntaxKind::GroupAttribute(node) => gen_group_attribute(&node),
-             SyntaxKind::IdAttribute(node) => gen_id_attribute(&node),
-             SyntaxKind::InterpolateAttribute(node) => gen_interpolate_attribute(&node),
-             SyntaxKind::InvariantAttribute(node) => gen_invariant_attribute(&node),
-             SyntaxKind::LocationAttribute(node) => gen_location_attribute(&node),
-             SyntaxKind::MustUseAttribute(node) => gen_must_use_attribute(&node),
-             SyntaxKind::IfAttribute(node) => gen_if_attribute(&node),
-             SyntaxKind::ElifAttribute(node) => gen_elif_attribute(&node),
-             SyntaxKind::ElseAttribute(node) => gen_else_attribute(&node),
-             SyntaxKind::EarlyDepthTestAttribute(node) => gen_early_depth_test_attribute(&node),
-             SyntaxKind::AttributeList(node) => gen_attribute_list(&node),
-             SyntaxKind::SizeAttribute(node) => gen_size_attribute(&node),
-             SyntaxKind::WorkgroupSizeAttribute(node) => gen_workgroup_size_attribute(&node),
-             SyntaxKind::VertexAttribute(node) => gen_vertex_attribute(&node),
-             SyntaxKind::FragmentAttribute(node) => gen_fragment_attribute(&node),
-             SyntaxKind::ComputeAttribute(node) => gen_compute_attribute(&node),
-             SyntaxKind::BuiltinValueName(node) => gen_builtin_value_name(&node),
-             SyntaxKind::BreakStatement(node) => gen_break_statement(&node),
-             SyntaxKind::ContinueStatement(node) => gen_continue_statement(&node),
-             SyntaxKind::DiscardStatement(node) => gen_discard_statement(&node),
+#[rustfmt::skip]
+pub fn gen_node(
+    node: &NodeOrToken<SyntaxNode, SyntaxToken>
+) -> FormatDocumentResult<PrintItemBuffer> {
+    match node.kind() {
+        SyntaxKind::SourceFile => with_cast!(gen_source_file, ast::SourceFile, node),
+        SyntaxKind::FunctionDeclaration => with_cast!(gen_function_declaration, ast::FunctionDeclaration, node),
+        SyntaxKind::TemplateList => with_cast!(gen_template_list, ast::TemplateList, node),
+        SyntaxKind::FunctionParameters => with_cast!(gen_fn_parameters, ast::FunctionParameters, node),
+        SyntaxKind::Parameter => with_cast!(gen_fn_parameter, ast::Parameter, node),
+        SyntaxKind::ReturnType => with_cast!(gen_fn_return_type, ast::ReturnType, node),
+        SyntaxKind::AssertStatement => with_cast!(gen_const_assert_statement, ast::AssertStatement, node),
+        SyntaxKind::CompoundStatement => with_cast!(gen_compound_statement, ast::CompoundStatement, node),
+        SyntaxKind::AssignmentStatement => with_cast!(gen_assignment_statement, ast::AssignmentStatement, node),
+        SyntaxKind::PhonyAssignmentStatement => with_cast!(gen_phony_assignment_statement, ast::PhonyAssignmentStatement, node),
+        SyntaxKind::CompoundAssignmentStatement => with_cast!(gen_compound_assignment_statement, ast::CompoundAssignmentStatement, node),
+        SyntaxKind::FunctionCallStatement => with_cast!(gen_function_call_statement, ast::FunctionCallStatement, node),
+        SyntaxKind::BreakIfStatement => with_cast!(gen_break_if_statement, ast::BreakIfStatement, node),
+        SyntaxKind::LoopStatement => with_cast!(gen_loop_statement, ast::LoopStatement, node),
+        SyntaxKind::WhileStatement => with_cast!(gen_while_statement, ast::WhileStatement, node),
+        SyntaxKind::IfStatement => with_cast!(gen_if_statement, ast::IfStatement, node),
+        SyntaxKind::SwitchStatement => with_cast!(gen_switch_statement, ast::SwitchStatement, node),
+        SyntaxKind::SwitchBody => with_cast!(gen_switch_body, ast::SwitchBody, node),
+        SyntaxKind::SwitchBodyCase => with_cast!(gen_switch_body_case, ast::SwitchBodyCase, node),
+        SyntaxKind::SwitchCaseSelectors => with_cast!(gen_switch_case_selectors, ast::SwitchCaseSelectors, node),
+        SyntaxKind::SwitchDefaultSelector => with_cast!(gen_switch_case_default_selector, ast::SwitchDefaultSelector, node),
+        SyntaxKind::IncrementDecrementStatement => with_cast!(gen_increment_decrement_statement, ast::IncrementDecrementStatement, node),
+        SyntaxKind::IfClause => with_cast!(gen_if_statement_if_clause, ast::IfClause, node),
+        SyntaxKind::ElseIfClause => with_cast!(gen_if_statement_else_if_clause, ast::ElseIfClause, node),
+        SyntaxKind::ElseClause => with_cast!(gen_if_statement_else_clause, ast::ElseClause, node),
+        SyntaxKind::ForStatement => with_cast!(gen_for_statement, ast::ForStatement, node),
+        SyntaxKind::FieldExpression => with_cast!(gen_field_expression, ast::FieldExpression, node),
+        SyntaxKind::FunctionCall => with_cast!(gen_function_call, ast::FunctionCall, node),
+        SyntaxKind::Arguments => with_cast!(gen_function_call_arguments, ast::Arguments, node),
+        SyntaxKind::IdentExpression => with_cast!(gen_ident_expression, ast::IdentExpression, node),
+        SyntaxKind::Path => with_cast!(gen_path, ast::Path, node),
+        SyntaxKind::IndexExpression => with_cast!(gen_index_expression, ast::IndexExpression, node),
+        SyntaxKind::ReturnStatement => with_cast!(gen_return_statement, ast::ReturnStatement, node),
+        SyntaxKind::InfixExpression => with_cast!(gen_infix_expression, ast::InfixExpression, node),
+        SyntaxKind::PrefixExpression => with_cast!(gen_prefix_expression, ast::PrefixExpression, node),
+        SyntaxKind::Literal => with_cast!(gen_literal_expression, ast::Literal, node),
+        SyntaxKind::ParenthesisExpression => with_cast!(gen_parenthesis_expression, ast::ParenthesisExpression, node),
+        SyntaxKind::TypeSpecifier => with_cast!(gen_type_specifier, ast::TypeSpecifier, node),
+        SyntaxKind::Attribute => with_cast!(gen_attribute, ast::Attribute, node),
+        SyntaxKind::StructDeclaration => with_cast!(gen_struct_declaration, ast::StructDeclaration, node),
+        SyntaxKind::StructBody => with_cast!(gen_struct_body, ast::StructBody, node),
+        SyntaxKind::StructMember => with_cast!(gen_struct_member, ast::StructMember, node),
+        SyntaxKind::ConstantDeclaration => with_cast!(gen_const_declaration_statement, ast::ConstantDeclaration, node),
+        SyntaxKind::VariableDeclaration => with_cast!(gen_var_declaration_statement, ast::VariableDeclaration, node),
+        SyntaxKind::LetDeclaration => with_cast!(gen_let_declaration_statement, ast::LetDeclaration, node),
+        SyntaxKind::OverrideDeclaration => with_cast!(gen_override_declaration_statement, ast::OverrideDeclaration, node),
+        SyntaxKind::ContinuingStatement => with_cast!(gen_continuing_statement, ast::ContinuingStatement, node),
+        SyntaxKind::TypeAliasDeclaration => with_cast!(gen_type_alias_declaration, ast::TypeAliasDeclaration, node),
+        SyntaxKind::EnableDirective => with_cast!(gen_enable_directive, ast::EnableDirective, node),
+        SyntaxKind::EnableExtensionName => with_cast!(gen_enable_extension_name, ast::EnableExtensionName, node),
+        SyntaxKind::RequiresDirective => with_cast!(gen_requires_directive, ast::RequiresDirective, node),
+        SyntaxKind::LanguageExtensionName => with_cast!(gen_language_extension_name, ast::LanguageExtensionName, node),
+        SyntaxKind::ImportStatement => with_cast!(gen_import_statement, ast::ImportStatement, node),
+        SyntaxKind::DiagnosticControl => with_cast!(gen_diagnostic_control, ast::DiagnosticControl, node),
+        SyntaxKind::DiagnosticAttribute => with_cast!(gen_diagnostic_attribute, ast::DiagnosticAttribute, node),
+        SyntaxKind::DiagnosticDirective => with_cast!(gen_diagnostic_directive, ast::DiagnosticDirective, node),
+        SyntaxKind::DiagnosticRuleName => with_cast!(gen_diagnostic_rule_name, ast::DiagnosticRuleName, node),
+        SyntaxKind::SeverityControlName => with_cast!(gen_severity_control_name, ast::SeverityControlName, node),
+        SyntaxKind::InterpolateSamplingName => with_cast!(gen_interpolate_sampling_name, ast::InterpolateSamplingName, node),
+        SyntaxKind::InterpolateTypeName => with_cast!(gen_interpolate_type_name, ast::InterpolateTypeName, node),
+        SyntaxKind::ImportPackageRelative => with_cast!(gen_import_package_relative, ast::ImportPackageRelative, node),
+        SyntaxKind::ImportSuperRelative => with_cast!(gen_import_super_relative, ast::ImportSuperRelative, node),
+        SyntaxKind::ImportItem => with_cast!(gen_import_item, ast::ImportItem, node),
+        SyntaxKind::ImportPath => with_cast!(gen_import_path, ast::ImportPath, node),
+        SyntaxKind::ImportCollection => with_cast!(gen_import_collection, ast::ImportCollection, node),
+        SyntaxKind::Name => with_cast!(gen_name, ast::Name, node),
+        SyntaxKind::OtherAttribute => with_cast!(gen_other_attribute, ast::OtherAttribute, node),
+        SyntaxKind::AlignAttribute => with_cast!(gen_align_attribute, ast::AlignAttribute, node),
+        SyntaxKind::BindingAttribute => with_cast!(gen_binding_attribute, ast::BindingAttribute, node),
+        SyntaxKind::BlendSrcAttribute => with_cast!(gen_blend_src_attribute, ast::BlendSrcAttribute, node),
+        SyntaxKind::BuiltinAttribute => with_cast!(gen_builtin_attribute, ast::BuiltinAttribute, node),
+        SyntaxKind::ConstantAttribute => with_cast!(gen_const_attribute, ast::ConstantAttribute, node),
+        SyntaxKind::GroupAttribute => with_cast!(gen_group_attribute, ast::GroupAttribute, node),
+        SyntaxKind::IdAttribute => with_cast!(gen_id_attribute, ast::IdAttribute, node),
+        SyntaxKind::InterpolateAttribute => with_cast!(gen_interpolate_attribute, ast::InterpolateAttribute, node),
+        SyntaxKind::InvariantAttribute => with_cast!(gen_invariant_attribute, ast::InvariantAttribute, node),
+        SyntaxKind::LocationAttribute => with_cast!(gen_location_attribute, ast::LocationAttribute, node),
+        SyntaxKind::MustUseAttribute => with_cast!(gen_must_use_attribute, ast::MustUseAttribute, node),
+        SyntaxKind::IfAttribute => with_cast!(gen_if_attribute, ast::IfAttribute, node),
+        SyntaxKind::ElifAttribute => with_cast!(gen_elif_attribute, ast::ElifAttribute, node),
+        SyntaxKind::ElseAttribute => with_cast!(gen_else_attribute, ast::ElseAttribute, node),
+        SyntaxKind::EarlyDepthTestAttribute => with_cast!(gen_early_depth_test_attribute, ast::EarlyDepthTestAttribute, node),
+        SyntaxKind::AttributeList => with_cast!(gen_attribute_list, ast::AttributeList, node),
+        SyntaxKind::SizeAttribute => with_cast!(gen_size_attribute, ast::SizeAttribute, node),
+        SyntaxKind::WorkgroupSizeAttribute => with_cast!(gen_workgroup_size_attribute, ast::WorkgroupSizeAttribute, node),
+        SyntaxKind::VertexAttribute => with_cast!(gen_vertex_attribute, ast::VertexAttribute, node),
+        SyntaxKind::FragmentAttribute => with_cast!(gen_fragment_attribute, ast::FragmentAttribute, node),
+        SyntaxKind::ComputeAttribute => with_cast!(gen_compute_attribute, ast::ComputeAttribute, node),
+        SyntaxKind::BuiltinValueName => with_cast!(gen_builtin_value_name, ast::BuiltinValueName, node),
+        SyntaxKind::BreakStatement => with_cast!(gen_break_statement, ast::BreakStatement, node),
+        SyntaxKind::ContinueStatement => with_cast!(gen_continue_statement, ast::ContinueStatement, node),
+        SyntaxKind::DiscardStatement => with_cast!(gen_discard_statement, ast::DiscardStatement, node),
+        SyntaxKind::EarlyDepthTestMode => with_node!(gen_early_depth_test_mode, node),
+        SyntaxKind::ForInitializer => with_node!(gen_for_statement_initializer, node),
+        SyntaxKind::ForCondition => with_node!(gen_for_statement_condition, node),
+        SyntaxKind::ForContinuingPart => with_node!(gen_for_statement_continuing_part, node),
 
-             -
+//TODO?
+        SyntaxKind::EmptyStatement => Ok(PrintItemBuffer::default()),
 
-             SyntaxKind::ForInitializer(node as SyntaxNode) => gen_for_statement_initializer(&node),
-             SyntaxKind::ForCondition(node as SyntaxNode) => gen_for_statement_condition(&node),
-             SyntaxKind::ForContinuingPart(node as SyntaxNode) => gen_for_statement_continuing_part(&node),
-             SyntaxKind::EmptyStatement(node as SyntaxNode) => Ok(PrintItemBuffer::default()),
-             SyntaxKind::EarlyDepthTestMode(node as SyntaxNode) => gen_early_depth_test_mode(&node),
+        SyntaxKind::Alias => with_sc!("alias"),
+        SyntaxKind::Break => with_sc!("break"),
+        SyntaxKind::Case => with_sc!("case"),
+        SyntaxKind::Const => with_sc!("const"),
+        SyntaxKind::ConstantAssert => with_sc!("assert"),
+        SyntaxKind::Continue => with_sc!("continue"),
+        SyntaxKind::Continuing => with_sc!("continuing"),
+        SyntaxKind::Default => with_sc!("default"),
+        SyntaxKind::Diagnostic => with_sc!("diagnostic"),
+        SyntaxKind::Discard => with_sc!("discard"),
+        SyntaxKind::Align => with_sc!("align"),
+        SyntaxKind::Builtin => with_sc!("builtin"),
+        SyntaxKind::Binding => with_sc!("binding"),
+        SyntaxKind::BlendSrc => with_sc!("blend_src"),
+        SyntaxKind::Group => with_sc!("group"),
+        SyntaxKind::Id => with_sc!("id"),
+        SyntaxKind::Interpolate => with_sc!("interpolate"),
+        SyntaxKind::Invariant => with_sc!("invariant"),
+        SyntaxKind::Location => with_sc!("location"),
+        SyntaxKind::MustUse => with_sc!("must_use"),
+        SyntaxKind::Size => with_sc!("size"),
+        SyntaxKind::WorkgroupSize => with_sc!("workgroup_size"),
+        SyntaxKind::Vertex => with_sc!("vertex"),
+        SyntaxKind::Fragment => with_sc!("fragment"),
+        SyntaxKind::Compute => with_sc!("compute"),
+        SyntaxKind::Perspective => with_sc!("perspective"),
+        SyntaxKind::EarlyDepthTest => with_sc!("early_depth_test"),
+        SyntaxKind::LessEqual => with_sc!("less_equal"),
+        SyntaxKind::GreaterEqual => with_sc!("greater_equal"),
+        SyntaxKind::Force => with_sc!("force"),
+        SyntaxKind::Unchanged => with_sc!("unchanged"),
+        SyntaxKind::Linear => with_sc!("linear"),
+        SyntaxKind::Flat => with_sc!("flat"),
+        SyntaxKind::Center => with_sc!("center"),
+        SyntaxKind::Centroid => with_sc!("centroid"),
+        SyntaxKind::Sample => with_sc!("sample"),
+        SyntaxKind::First => with_sc!("first"),
+        SyntaxKind::Either => with_sc!("either"),
+        SyntaxKind::Else => with_sc!("else"),
+        SyntaxKind::Enable => with_sc!("enable"),
+        SyntaxKind::False => with_sc!("false"),
+        SyntaxKind::Fn => with_sc!("fn"),
+        SyntaxKind::For => with_sc!("for"),
+        SyntaxKind::If => with_sc!("if"),
+        SyntaxKind::Let => with_sc!("let"),
+        SyntaxKind::Loop => with_sc!("loop"),
+        SyntaxKind::Override => with_sc!("override"),
+        SyntaxKind::Requires => with_sc!("requires"),
+        SyntaxKind::Return => with_sc!("return"),
+        SyntaxKind::Struct => with_sc!("struct"),
+        SyntaxKind::Switch => with_sc!("switch"),
+        SyntaxKind::True => with_sc!("true"),
+        SyntaxKind::Var => with_sc!("var"),
+        SyntaxKind::While => with_sc!("while"),
+        SyntaxKind::And => with_sc!("&"),
+        SyntaxKind::AndAnd => with_sc!("&&"),
+        SyntaxKind::Arrow => with_sc!("=>"),
+        SyntaxKind::AttributeOperator => with_sc!("@"),
+        SyntaxKind::ForwardSlash => with_sc!("/"),
+        SyntaxKind::Bang => with_sc!("!"),
+        SyntaxKind::BracketLeft => with_sc!("["),
+        SyntaxKind::BracketRight => with_sc!("]"),
+        SyntaxKind::BraceLeft => with_sc!("{"),
+        SyntaxKind::BraceRight => with_sc!("}"),
+        SyntaxKind::Colon => with_sc!(":"),
+        SyntaxKind::ColonColon => with_sc!("::"),
+        SyntaxKind::Comma => with_sc!(","),
+        SyntaxKind::Equal => with_sc!("="),
+        SyntaxKind::EqualEqual => with_sc!("=="),
+        SyntaxKind::NotEqual => with_sc!("!="),
+        SyntaxKind::GreaterThan |
+        SyntaxKind::TemplateEnd => with_sc!(">"),
+        SyntaxKind::GreaterThanEqual => with_sc!(">="),
+        SyntaxKind::LessThanEqual => with_sc!("<="),
+        SyntaxKind::LessThan |
+        SyntaxKind::TemplateStart => with_sc!("<"),
+        SyntaxKind::Modulo => with_sc!("%"),
+        SyntaxKind::Minus => with_sc!("-"),
+        SyntaxKind::MinusMinus => with_sc!("--"),
+        SyntaxKind::Period => with_sc!("."),
+        SyntaxKind::Plus => with_sc!("+"),
+        SyntaxKind::PlusPlus => with_sc!("++"),
+        SyntaxKind::Or => with_sc!("|"),
+        SyntaxKind::OrOr => with_sc!("||"),
+        SyntaxKind::ParenthesisLeft => with_sc!("("),
+        SyntaxKind::ParenthesisRight => with_sc!(")"),
+        SyntaxKind::Semicolon => with_sc!(";"),
+        SyntaxKind::Star => with_sc!("*"),
+        SyntaxKind::Tilde => with_sc!("~"),
+        SyntaxKind::Underscore => with_sc!("_"),
+        SyntaxKind::Xor => with_sc!("^"),
+        SyntaxKind::Import => with_sc!("import"),
+        SyntaxKind::Package => with_sc!("package"),
+        SyntaxKind::Super => with_sc!("super"),
+        SyntaxKind::As => with_sc!("as"),
+        SyntaxKind::Elif => with_sc!("elif"),
+        SyntaxKind::PlusEqual => with_sc!("+="),
+        SyntaxKind::MinusEqual => with_sc!("-="),
+        SyntaxKind::TimesEqual => with_sc!("*="),
+        SyntaxKind::DivisionEqual => with_sc!("/="),
+        SyntaxKind::ModuloEqual => with_sc!("%="),
+        SyntaxKind::AndEqual => with_sc!("&="),
+        SyntaxKind::OrEqual => with_sc!("|="),
+        SyntaxKind::XorEqual => with_sc!("^="),
+        SyntaxKind::ShiftRightEqual => with_sc!(">>="),
+        SyntaxKind::ShiftLeftEqual => with_sc!("<<="),
+        SyntaxKind::ShiftLeft => with_sc!("<<"),
+        SyntaxKind::ShiftRight => with_sc!(">>"),
 
+        SyntaxKind::LineEndingComment |
+        SyntaxKind::BlockComment => {
+            let comment = read_comment(node).unwrap();
+            Ok(gen_comment(&comment))
+        },
+        SyntaxKind::Blankspace => {
+            let blankspace = read_blankspace(node).unwrap();
+            gen_line_spacing(&blankspace)
+        },
+        SyntaxKind::Identifier
+        | SyntaxKind::FloatLiteral
+        | SyntaxKind::IntLiteral
+        | SyntaxKind::StringLiteral => {
+            let mut formatted = PrintItemBuffer::default();
+            formatted.push_string(node.as_token().unwrap().text().to_string());
+            Ok(formatted)
+        },
 
-             -
+        SyntaxKind::Error |
+        SyntaxKind::Reserved => {
+            //TODO
+            Err(FormatDocumentError::UnexpectedNodeOrToken { received: node.clone() })
+        },
 
-             // Tokens
-             SyntaxKind::LineEndingComment | //(node as SyntaxNode) => Ok(gen_comment(todo!())),
-             SyntaxKind::BlockComment | //(node as SyntaxNode) => Ok(gen_comment(todo!())),
-             SyntaxKind::Blankspace |
-             SyntaxKind::Identifier |
-             SyntaxKind::FloatLiteral |
-             SyntaxKind::IntLiteral |
-             SyntaxKind::StringLiteral |
-             SyntaxKind::Alias |
-             SyntaxKind::Break |
-             SyntaxKind::Case |
-             SyntaxKind::Const |
-             SyntaxKind::ConstantAssert |
-             SyntaxKind::Continue |
-             SyntaxKind::Continuing |
-             SyntaxKind::Default |
-             SyntaxKind::Diagnostic |
-             SyntaxKind::Discard |
-             SyntaxKind::Align |
-             SyntaxKind::Builtin |
-             SyntaxKind::Binding |
-             SyntaxKind::BlendSrc |
-             SyntaxKind::Group |
-             SyntaxKind::Id |
-             SyntaxKind::Interpolate |
-             SyntaxKind::Invariant |
-             SyntaxKind::Location |
-             SyntaxKind::MustUse |
-             SyntaxKind::Size |
-             SyntaxKind::WorkgroupSize |
-             SyntaxKind::Vertex |
-             SyntaxKind::Fragment |
-             SyntaxKind::Compute |
-             SyntaxKind::Perspective |
-             SyntaxKind::Linear |
-             SyntaxKind::Flat |
-             SyntaxKind::Center |
-             SyntaxKind::Centroid |
-             SyntaxKind::Sample |
-             SyntaxKind::First |
-             SyntaxKind::Either |
-             SyntaxKind::Else |
-             SyntaxKind::Enable |
-             SyntaxKind::False |
-             SyntaxKind::Fn |
-             SyntaxKind::For |
-             SyntaxKind::If |
-             SyntaxKind::Elif |
-             SyntaxKind::Let |
-             SyntaxKind::Loop |
-             SyntaxKind::Override |
-             SyntaxKind::Requires |
-             SyntaxKind::Return |
-             SyntaxKind::Struct |
-             SyntaxKind::Switch |
-             SyntaxKind::True |
-             SyntaxKind::Var |
-             SyntaxKind::While |
-             SyntaxKind::And |
-             SyntaxKind::AndAnd |
-             SyntaxKind::Arrow |
-             SyntaxKind::AttributeOperator |
-             SyntaxKind::ForwardSlash |
-             SyntaxKind::Bang |
-             SyntaxKind::BracketLeft |
-             SyntaxKind::BracketRight |
-             SyntaxKind::BraceLeft |
-             SyntaxKind::BraceRight |
-             SyntaxKind::Colon |
-             SyntaxKind::ColonColon |
-             SyntaxKind::Comma |
-             SyntaxKind::Equal |
-             SyntaxKind::EqualEqual |
-             SyntaxKind::NotEqual |
-             SyntaxKind::GreaterThan |
-             SyntaxKind::GreaterThanEqual |
-             SyntaxKind::LessThan |
-             SyntaxKind::LessThanEqual |
-             SyntaxKind::Modulo |
-             SyntaxKind::Minus |
-             SyntaxKind::MinusMinus |
-             SyntaxKind::Period |
-             SyntaxKind::Plus |
-             SyntaxKind::PlusPlus |
-             SyntaxKind::Or |
-             SyntaxKind::OrOr |
-             SyntaxKind::ParenthesisLeft |
-             SyntaxKind::ParenthesisRight |
-             SyntaxKind::Semicolon |
-             SyntaxKind::Star |
-             SyntaxKind::Tilde |
-             SyntaxKind::Underscore |
-             SyntaxKind::Xor |
-             SyntaxKind::Import |
-             SyntaxKind::Package |
-             SyntaxKind::Super |
-             SyntaxKind::As |
-             SyntaxKind::PlusEqual |
-             SyntaxKind::MinusEqual |
-             SyntaxKind::TimesEqual |
-             SyntaxKind::DivisionEqual |
-             SyntaxKind::ModuloEqual |
-             SyntaxKind::AndEqual |
-             SyntaxKind::OrEqual |
-             SyntaxKind::XorEqual |
-             SyntaxKind::ShiftRightEqual |
-             SyntaxKind::ShiftLeftEqual |
-             SyntaxKind::ShiftLeft |
-             SyntaxKind::ShiftRight |
-             SyntaxKind::TemplateStart |
-             SyntaxKind::TemplateEnd |
-             SyntaxKind::EOF |
-             SyntaxKind::EOFAttribute |
-             SyntaxKind::EOFExpression |
-             SyntaxKind::EOFStatement |
-             SyntaxKind::EOFTypeSpecifier |
-             SyntaxKind::EarlyDepthTest |
-             SyntaxKind::GreaterEqual |
-             SyntaxKind::GreaterThan |
-             SyntaxKind::GreaterThanEqual |
-             SyntaxKind::LessEqual |
-             SyntaxKind::Force |
-             SyntaxKind::Unchanged |
-             SyntaxKind::Reserved |
-             SyntaxKind::TOMBSTONE |
-             SyntaxKind::Error => {
-                 todo!("gen_node not implemented for {:?}", node.kind())
-             }
-        }
+        _ => {
+            Err(FormatDocumentError::UnexpectedNodeOrToken { received: node.clone() })
+        },
+
     }
 }
 
@@ -390,12 +426,8 @@ pub fn gen_node_preceding_trivia(node: &NodeWithTrivia) -> FormatDocumentResult<
 pub fn gen_node_content(node: &NodeWithTrivia) -> FormatDocumentResult<PrintItemBuffer> {
     let mut formatted = PrintItemBuffer::default();
     match &node.node {
-        NodeWithTriviaContent::Content(NodeOrToken::Node(node)) => {
-            formatted.extend(gen_node(node)?);
-        },
-        NodeWithTriviaContent::Content(NodeOrToken::Token(token)) => {
-            //TODO Benchmark this vs a big match and sc!
-            formatted.push_string(token.text().to_owned());
+        NodeWithTriviaContent::Content(node_or_token) => {
+            formatted.extend(gen_node(node_or_token)?);
         },
         NodeWithTriviaContent::NoContent | NodeWithTriviaContent::End => {},
     }

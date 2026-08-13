@@ -62,14 +62,18 @@ pub fn format_tree(
     syntax: &ast::SourceFile,
     options: &FormattingOptions,
 ) -> FormatDocumentResult<String> {
-    format(options, || gen_node(syntax.syntax()))
+    format(options, || {
+        gen_node(&NodeOrToken::Node(syntax.syntax().clone()))
+    })
 }
 
 pub fn format_node(
     syntax: &SyntaxNode,
     options: &FormattingOptions,
 ) -> FormatDocumentResult<String> {
-    format(options, || gen_node_no_newlines(syntax))
+    format(options, || {
+        gen_node_no_newlines(&NodeOrToken::Node(syntax.clone()))
+    })
 }
 
 pub fn format<F>(
