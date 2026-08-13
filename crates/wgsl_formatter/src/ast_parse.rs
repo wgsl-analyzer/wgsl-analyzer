@@ -109,7 +109,17 @@ pub fn parse_end(syntax: &mut SyntaxIter) -> FormatDocumentResult<()> {
     }
     #[cfg(not(debug_assertions))]
     {
-        Ok(())
+        use crate::reporting::FormatDocumentError;
+        use crate::reporting::UnwrapIfPreferCrash as _;
+
+        match syntax.next() {
+            None => Ok(()),
+            Some(other) => {
+                syntax.put_back(other.clone());
+                Err(FormatDocumentError::UnexpectedNodeOrToken { received: other })
+            },
+        }
+        .expect_if_prefer_crash()
     }
 }
 
