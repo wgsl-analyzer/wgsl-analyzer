@@ -155,155 +155,50 @@ impl ParseNodePolicy for UntilEmptyLine {
     }
 }
 
+pub struct MatchKind(pub SyntaxKind, pub PolicyAction);
+impl ParseNodePolicy for MatchKind {
+    fn handle_preceding(
+        &self,
+        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
+    ) -> Option<PolicyAction> {
+        (node.kind() == self.0).then_some(self.1)
+    }
+
+    fn handle_succeeding(
+        &self,
+        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
+    ) -> Option<PolicyAction> {
+        self.handle_preceding(node)
+    }
+}
+
 // TODO I think the default should be to ignore blankspace and *including* it should be explicit (in struct body and compound statements)
-pub struct IgnoreBlankspace;
-impl ParseNodePolicy for IgnoreBlankspace {
-    fn handle_preceding(
-        &self,
-        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
-    ) -> Option<PolicyAction> {
-        (node.kind() == SyntaxKind::Blankspace).then_some(PolicyAction::Ignored)
-    }
 
-    fn handle_succeeding(
-        &self,
-        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
-    ) -> Option<PolicyAction> {
-        self.handle_preceding(node)
-    }
-}
-
-pub struct IgnoreComma;
-impl ParseNodePolicy for IgnoreComma {
-    fn handle_preceding(
-        &self,
-        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
-    ) -> Option<PolicyAction> {
-        (node.kind() == SyntaxKind::Comma).then_some(PolicyAction::Ignored)
-    }
-
-    fn handle_succeeding(
-        &self,
-        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
-    ) -> Option<PolicyAction> {
-        self.handle_preceding(node)
-    }
-}
-
-pub struct IgnoreTemplateDelimiters;
-impl ParseNodePolicy for IgnoreTemplateDelimiters {
-    fn handle_preceding(
-        &self,
-        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
-    ) -> Option<PolicyAction> {
-        matches!(
-            node.kind(),
-            SyntaxKind::TemplateStart | SyntaxKind::TemplateEnd
-        )
-        .then_some(PolicyAction::Ignored)
-    }
-
-    fn handle_succeeding(
-        &self,
-        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
-    ) -> Option<PolicyAction> {
-        self.handle_preceding(node)
-    }
-}
-
-// TODO Make a Ignore(SyntaxKind) but benchmark if that hinders inlining
-pub struct IgnoreColonColon;
-impl ParseNodePolicy for IgnoreColonColon {
-    fn handle_preceding(
-        &self,
-        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
-    ) -> Option<PolicyAction> {
-        (node.kind() == SyntaxKind::ColonColon).then_some(PolicyAction::Ignored)
-    }
-
-    fn handle_succeeding(
-        &self,
-        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
-    ) -> Option<PolicyAction> {
-        self.handle_preceding(node)
-    }
-}
-
-// TODO Make a Ignore(SyntaxKind) but benchmark if that hinders inlining
-pub struct IgnoreSemicolon;
-impl ParseNodePolicy for IgnoreSemicolon {
-    fn handle_preceding(
-        &self,
-        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
-    ) -> Option<PolicyAction> {
-        (node.kind() == SyntaxKind::Semicolon).then_some(PolicyAction::Ignored)
-    }
-
-    fn handle_succeeding(
-        &self,
-        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
-    ) -> Option<PolicyAction> {
-        self.handle_preceding(node)
-    }
-}
-
-// TODO Make a Ignore(SyntaxKind) but benchmark if that hinders inlining
-pub struct IgnoreBraces;
-impl ParseNodePolicy for IgnoreBraces {
-    fn handle_preceding(
-        &self,
-        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
-    ) -> Option<PolicyAction> {
-        matches!(node.kind(), SyntaxKind::BraceLeft | SyntaxKind::BraceRight)
-            .then_some(PolicyAction::Ignored)
-    }
-
-    fn handle_succeeding(
-        &self,
-        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
-    ) -> Option<PolicyAction> {
-        self.handle_preceding(node)
-    }
-}
-
-// TODO Make a Ignore(SyntaxKind) but benchmark if that hinders inlining
-pub struct IgnoreParenthesis;
-impl ParseNodePolicy for IgnoreParenthesis {
-    fn handle_preceding(
-        &self,
-        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
-    ) -> Option<PolicyAction> {
-        matches!(
-            node.kind(),
-            SyntaxKind::ParenthesisRight | SyntaxKind::ParenthesisLeft
-        )
-        .then_some(PolicyAction::Ignored)
-    }
-
-    fn handle_succeeding(
-        &self,
-        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
-    ) -> Option<PolicyAction> {
-        self.handle_preceding(node)
-    }
-}
-
-pub struct MarkEndOnSemicolon;
-impl ParseNodePolicy for MarkEndOnSemicolon {
-    fn handle_preceding(
-        &self,
-        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
-    ) -> Option<PolicyAction> {
-        (node.kind() == SyntaxKind::Semicolon).then_some(PolicyAction::MarkEnd)
-    }
-
-    fn handle_succeeding(
-        &self,
-        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
-    ) -> Option<PolicyAction> {
-        self.handle_preceding(node)
-    }
-}
+#[expect(non_upper_case_globals, reason = "TODO")]
+pub const IgnoreBlankspace: MatchKind = MatchKind(SyntaxKind::Blankspace, PolicyAction::Ignored);
+#[expect(non_upper_case_globals, reason = "TODO")]
+pub const IgnoreComma: MatchKind = MatchKind(SyntaxKind::Comma, PolicyAction::Ignored);
+#[expect(non_upper_case_globals, reason = "TODO")]
+pub const IgnoreColonColon: MatchKind = MatchKind(SyntaxKind::ColonColon, PolicyAction::Ignored);
+#[expect(non_upper_case_globals, reason = "TODO")]
+pub const IgnoreSemicolon: MatchKind = MatchKind(SyntaxKind::Semicolon, PolicyAction::Ignored);
+#[expect(non_upper_case_globals, reason = "TODO")]
+pub const IgnoreTemplateDelimiters: (MatchKind, MatchKind) = (
+    MatchKind(SyntaxKind::TemplateStart, PolicyAction::Ignored),
+    MatchKind(SyntaxKind::TemplateEnd, PolicyAction::Ignored),
+);
+#[expect(non_upper_case_globals, reason = "TODO")]
+pub const IgnoreBraces: (MatchKind, MatchKind) = (
+    MatchKind(SyntaxKind::BraceLeft, PolicyAction::Ignored),
+    MatchKind(SyntaxKind::BraceRight, PolicyAction::Ignored),
+);
+#[expect(non_upper_case_globals, reason = "TODO")]
+pub const IgnoreParenthesis: (MatchKind, MatchKind) = (
+    MatchKind(SyntaxKind::ParenthesisLeft, PolicyAction::Ignored),
+    MatchKind(SyntaxKind::ParenthesisRight, PolicyAction::Ignored),
+);
+#[expect(non_upper_case_globals, reason = "TODO")]
+pub const MarkEndOnSemicolon: MatchKind = MatchKind(SyntaxKind::Semicolon, PolicyAction::MarkEnd);
 
 pub struct NoTrivia;
 impl ParseNodePolicy for NoTrivia {
