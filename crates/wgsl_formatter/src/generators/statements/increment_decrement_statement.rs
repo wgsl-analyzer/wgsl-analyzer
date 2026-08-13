@@ -24,7 +24,7 @@ pub fn gen_increment_decrement_statement(
 
     let item_ident =
         parse_node_with(&mut syntax, IgnoreBlankspace).expect_ast_node::<Expression>()?;
-    let item_operator = parse_node_with(&mut syntax, IgnoreBlankspace); // TODO(MonaMayrhofer,outdated) its fine - nothing surprising will appear here
+    let item_operator = parse_node_with(&mut syntax, IgnoreBlankspace);
     parse_node_with(&mut syntax, NoTrivia).expect_kind_optional(SyntaxKind::Semicolon)?;
     parse_end(&mut syntax)?;
 
