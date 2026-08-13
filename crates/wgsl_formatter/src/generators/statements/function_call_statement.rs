@@ -12,8 +12,8 @@ use syntax::{
 
 use crate::{
     ast_parse::{
-        Chain, IgnoreBlankspace, IgnoreComma, NoTrivia, Succeeding, SyntaxIter, UntilNewline,
-        parse_end, parse_node_with, syntax_iter,
+        IgnoreBlankspace, IgnoreComma, NoTrivia, Succeeding, SyntaxIter, UntilNewline, parse_end,
+        parse_node_with, syntax_iter,
     },
     context_policies::statement_needs_semicolon_policy,
     generators::node::{
@@ -120,10 +120,7 @@ pub fn parse_function_call_arguments(
     loop {
         let mut item = parse_node_with(
             syntax,
-            Chain(
-                Succeeding(UntilNewline),
-                Chain(IgnoreBlankspace, IgnoreComma),
-            ),
+            (Succeeding(UntilNewline), IgnoreBlankspace, IgnoreComma),
         );
 
         // TODO This needs to be absorbed into parse_node..

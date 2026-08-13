@@ -283,34 +283,43 @@ where
     }
 }
 
-pub struct Chain<F, G>(pub F, pub G)
-where
-    F: ParseNodePolicy,
-    G: ParseNodePolicy;
-impl<F, G> ParseNodePolicy for Chain<F, G>
-where
-    F: ParseNodePolicy,
-    G: ParseNodePolicy,
-{
-    fn handle_preceding(
-        &self,
-        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
-    ) -> Option<PolicyAction> {
-        if let Some(action) = self.0.handle_preceding(node) {
-            return Some(action);
+macro_rules! impl_tuple {
+    ($($name:ident)+) => {
+        #[expect(non_snake_case, reason = "Easier macro")]
+        impl<$($name: ParseNodePolicy),*> ParseNodePolicy for ($($name,)+) {
+            fn handle_preceding(
+                &self,
+                node: &NodeOrToken<SyntaxNode, SyntaxToken>,
+            ) -> Option<PolicyAction> {
+                let ($($name,)+) = self;
+                $(
+                    if let Some(action) = $name.handle_preceding(node) {
+                        return Some(action);
+                    }
+                )*
+                None
+            }
+            fn handle_succeeding(
+                &self,
+                node: &NodeOrToken<SyntaxNode, SyntaxToken>,
+            ) -> Option<PolicyAction> {
+                let ($($name,)+) = self;
+                $(
+                    if let Some(action) = $name.handle_succeeding(node) {
+                        return Some(action);
+                    }
+                )*
+                None
+            }
         }
-        self.1.handle_preceding(node)
-    }
-    fn handle_succeeding(
-        &self,
-        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
-    ) -> Option<PolicyAction> {
-        if let Some(action) = self.0.handle_succeeding(node) {
-            return Some(action);
-        }
-        self.1.handle_succeeding(node)
-    }
+    };
 }
+
+impl_tuple!(TA TB);
+impl_tuple!(TA TB TC);
+impl_tuple!(TA TB TC TD);
+impl_tuple!(TA TB TC TD TE);
+impl_tuple!(TA TB TC TD TE TF);
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum PolicyAction {
