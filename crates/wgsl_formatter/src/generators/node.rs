@@ -103,35 +103,6 @@ pub fn gen_node_no_newlines(
     Ok(formatted)
 }
 
-macro_rules! match_ast_exhaustive {
-    (match $node:ident {
-        $( SyntaxKind::$ast:ident($name:ident) => $result:expr, )*
-        -
-        $( SyntaxKind::$special_ast:ident($special_name:ident as SyntaxNode) => $special_result:expr, )*
-        -
-        $( SyntaxKind::$token:ident => $token_string:expr, )*
-    }) => {{
-        match $node.kind() {
-            $(syntax::ast::SyntaxKind::$ast => {
-                let $name = syntax::ast::$ast::cast($node.clone()).unwrap();
-                $result
-            },)*
-            $(syntax::ast::SyntaxKind::$special_ast => {
-                #[expect(clippy::allow_attributes, reason = "in a macro")]
-                #[expect(clippy::allow_attributes_without_reason, reason = "in a macro")]
-                #[allow(unused)]
-                let $special_name = $node.clone();
-                $special_result
-            },)*
-            $(syntax::ast::SyntaxKind::$token => {
-                let buffer = PrintItemBuffer::default();
-                buffer.push_sc!($token_string);
-                Ok(buffer)
-            },)*
-        }
-    }};
-}
-
 macro_rules! with_sc {
     ($text:expr) => {{
         let mut buffer = PrintItemBuffer::default();
@@ -384,7 +355,13 @@ pub fn gen_node(
         | SyntaxKind::IntLiteral
         | SyntaxKind::StringLiteral => {
             let mut formatted = PrintItemBuffer::default();
-            formatted.push_string(node.as_token().unwrap().text().to_string());
+            formatted.push_string(
+                node
+                    .as_token()
+                    .ok_or_else(|| FormatDocumentError::UnexpectedNodeOrToken { received: Some(node.clone()) })?
+                    .text()
+                    .to_owned()
+            );
             Ok(formatted)
         },
 
