@@ -12,7 +12,7 @@ use syntax::{
 use crate::{
     ast_parse::{
         IgnoreBlankspace, IgnoreComma, IgnoreParenthesis, NoTrivia, Succeeding, UntilNewline,
-        parse_end, parse_node_with, syntax_iter,
+        parse_end, parse_many_nodes_with, parse_node_with, syntax_iter,
     },
     generators::node::{
         gen_node_content, gen_node_preceding_trivia, gen_node_succeeding_trivia,
@@ -24,7 +24,7 @@ use crate::{
         spacing_request::{Request, RequestItem},
     },
     reporting::FormatDocumentResult,
-    trivia::{NodeWithTrivia, NodeWithTriviaContent},
+    trivia::NodeWithTrivia,
 };
 
 pub use standard_attributes::*;
@@ -85,19 +85,12 @@ where
 
 pub fn gen_attribute_list(attribute_list: &AttributeList) -> FormatDocumentResult<PrintItemBuffer> {
     let mut syntax = syntax_iter(attribute_list.syntax());
-    let mut attributes = Vec::new();
-    loop {
-        let item_attribute = parse_node_with(&mut syntax, IgnoreBlankspace)
-            .expect_ast_node_optional::<Attribute>()?;
 
-        let is_end = item_attribute.is_end();
-        if !item_attribute.is_whitespace() {
-            attributes.push(item_attribute);
-        }
-        if is_end {
-            break;
-        }
-    }
+    let attributes = parse_many_nodes_with(&mut syntax, IgnoreBlankspace)
+        .filter(|node| !node.is_whitespace())
+        .map(NodeWithTrivia::expect_ast_node_optional::<Attribute>)
+        .collect::<Result<Vec<_>, _>>()?;
+
     parse_end(&mut syntax)?;
 
     // If we don't have any attributes, we early exit to avoid all the bureaucracy with newlines
@@ -465,33 +458,19 @@ fn gen_attr_standard_with_args(
 
     let item_paren_left = parse_node_with(&mut syntax, NoTrivia)
         .only_if_kind(SyntaxKind::ParenthesisLeft, &mut syntax);
-    let item_arguments = if item_paren_left.is_some() {
-        let mut item_arguments = Vec::new();
-
-        loop {
-            let mut item = parse_node_with(
-                &mut syntax,
-                (
-                    Succeeding(UntilNewline),
-                    IgnoreBlankspace,
-                    IgnoreComma,
-                    IgnoreParenthesis,
-                ),
-            );
-
-            let is_end = item.is_end();
-            if !item.is_whitespace() {
-                item_arguments.push(item);
-            }
-            if is_end {
-                break;
-            }
-        }
-
-        Some(item_arguments)
-    } else {
-        None
-    };
+    let item_arguments = item_paren_left.is_some().then(|| {
+        parse_many_nodes_with(
+            &mut syntax,
+            (
+                Succeeding(UntilNewline),
+                IgnoreBlankspace,
+                IgnoreComma,
+                IgnoreParenthesis,
+            ),
+        )
+        .filter(|node| !node.is_whitespace())
+        .collect_vec()
+    });
 
     parse_end(&mut syntax)?;
 

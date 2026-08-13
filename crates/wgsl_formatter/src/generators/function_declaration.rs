@@ -10,7 +10,7 @@ use syntax::{
 use crate::{
     ast_parse::{
         IgnoreBlankspace, IgnoreComma, IgnoreParenthesis, NoTrivia, Succeeding, UntilNewline,
-        parse_end, parse_node_with, syntax_iter,
+        parse_end, parse_many_nodes_with, parse_node_with, syntax_iter,
     },
     generators::node::{
         gen_node_content, gen_node_preceding_trivia, gen_node_succeeding_trivia,
@@ -22,7 +22,6 @@ use crate::{
         spacing_request::{Request, RequestItem},
     },
     reporting::FormatDocumentResult,
-    trivia::NodeWithTriviaContent,
 };
 
 pub fn gen_function_declaration(
@@ -34,22 +33,12 @@ pub fn gen_function_declaration(
     let item_name = parse_node_with(&mut syntax, IgnoreBlankspace).expect_kind(SyntaxKind::Name)?;
     let item_params = parse_node_with(&mut syntax, IgnoreBlankspace)
         .expect_kind(SyntaxKind::FunctionParameters)?;
-    // TODO Use new only_if api here
-    let (item_return, item_body) = {
-        let item = parse_node_with(&mut syntax, IgnoreBlankspace);
-        if item
-            .kind()
-            .is_some_and(|kind| kind == SyntaxKind::ReturnType)
-        {
-            (
-                Some(item),
-                parse_node_with(&mut syntax, IgnoreBlankspace)
-                    .expect_kind(SyntaxKind::CompoundStatement)?,
-            )
-        } else {
-            (None, item.expect_kind(SyntaxKind::CompoundStatement)?)
-        }
-    };
+
+    let item_return = parse_node_with(&mut syntax, IgnoreBlankspace)
+        .only_if_kind(SyntaxKind::ReturnType, &mut syntax);
+    let item_body = parse_node_with(&mut syntax, IgnoreBlankspace)
+        .expect_kind(SyntaxKind::CompoundStatement)?;
+
     parse_end(&mut syntax)?;
 
     let mut formatted = PrintItemBuffer::default();
@@ -84,31 +73,23 @@ pub fn gen_fn_parameters(node: &ast::FunctionParameters) -> FormatDocumentResult
 
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::ParenthesisLeft)?;
 
-    let mut items = Vec::new();
-
     // TODO Recreate something akin to parse_separated_items
     // However i think it would be better to have a central space where
     // we define "strategies" - one for each application, and then look for those that are
     // the same, and type alias between them.
-    loop {
-        let item = parse_node_with(
-            &mut syntax,
-            (
-                Succeeding(UntilNewline),
-                IgnoreBlankspace,
-                IgnoreComma,
-                IgnoreParenthesis,
-            ),
-        );
 
-        let is_end = item.is_end();
-        if !item.is_whitespace() {
-            items.push(item);
-        }
-        if is_end {
-            break;
-        }
-    }
+    // This
+    let items = parse_many_nodes_with(
+        &mut syntax,
+        (
+            Succeeding(UntilNewline),
+            IgnoreBlankspace,
+            IgnoreComma,
+            IgnoreParenthesis,
+        ),
+    )
+    .filter(|node| !node.is_whitespace())
+    .collect::<Vec<_>>();
 
     parse_end(&mut syntax)?;
 

@@ -202,6 +202,24 @@ impl ParseNodePolicy for IgnoreTemplateDelimiters {
 }
 
 // TODO Make a Ignore(SyntaxKind) but benchmark if that hinders inlining
+pub struct IgnoreColonColon;
+impl ParseNodePolicy for IgnoreColonColon {
+    fn handle_preceding(
+        &self,
+        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
+    ) -> Option<PolicyAction> {
+        (node.kind() == SyntaxKind::ColonColon).then_some(PolicyAction::Ignored)
+    }
+
+    fn handle_succeeding(
+        &self,
+        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
+    ) -> Option<PolicyAction> {
+        self.handle_preceding(node)
+    }
+}
+
+// TODO Make a Ignore(SyntaxKind) but benchmark if that hinders inlining
 pub struct IgnoreSemicolon;
 impl ParseNodePolicy for IgnoreSemicolon {
     fn handle_preceding(
@@ -412,6 +430,25 @@ macro_rules! impl_tuple {
     };
 }
 
+impl<T> ParseNodePolicy for &T
+where
+    T: ParseNodePolicy,
+{
+    fn handle_preceding(
+        &self,
+        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
+    ) -> Option<PolicyAction> {
+        T::handle_preceding(self, node)
+    }
+
+    fn handle_succeeding(
+        &self,
+        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
+    ) -> Option<PolicyAction> {
+        T::handle_succeeding(self, node)
+    }
+}
+
 impl_tuple!(TA TB);
 impl_tuple!(TA TB TC);
 impl_tuple!(TA TB TC TD);
@@ -421,7 +458,6 @@ impl_tuple!(TA TB TC TD TE TF);
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum PolicyAction {
     Ignored,
-    // TODO I think we can do without Content, as that is just a worse None in the filter
     Content,
     Stop,
     MarkEnd,
@@ -429,7 +465,6 @@ pub enum PolicyAction {
 }
 
 /// Parses a node with surrounding trivia, based on the given strategy.
-#[expect(clippy::needless_pass_by_value, reason = "Intended API")]
 pub fn parse_node_with<TPolicy>(
     syntax: &mut SyntaxIter,
     policy: TPolicy,
@@ -439,8 +474,6 @@ where
 {
     let mut preceding_trivia = Vec::new();
     let mut succeeding_trivia = Vec::new();
-
-    // TODO Remove this
 
     let content = loop {
         // I wish we had linear types...
@@ -554,5 +587,71 @@ where
         preceding_trivia,
         node: content,
         succeeding_trivia,
+    }
+}
+
+pub struct ManyNodesIterator<'syntaxiter, TPolicy: ParseNodePolicy> {
+    syntax: &'syntaxiter mut SyntaxIter,
+    policy: TPolicy,
+    reached_end: bool,
+}
+
+impl<TPolicy: ParseNodePolicy> Iterator for ManyNodesIterator<'_, TPolicy> {
+    type Item = NodeWithTrivia;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.reached_end {
+            return None;
+        }
+
+        let item = parse_node_with(self.syntax, &self.policy);
+
+        self.reached_end = item.is_end();
+        Some(item)
+    }
+}
+
+/// Create a [`ManyNodesIterator`] that parses many nodes according to the given policy until
+/// it encounters the end of the [`SyntaxIter`] or a policy returns [`MarkEnd`].
+///
+/// If some application needs more control over parsing nodes, you can write a pretty much equivalent loop like
+/// ```rust, ignore
+///
+/// let items = parse_many_nodes_with(
+///     &mut syntax,
+///     todo!("Your policies")
+/// )
+/// .filter(|item| !item.is_whitespace())
+/// .collect_vec();
+///
+/// // Is equivalent to
+///
+/// let mut items = Vec::new();
+/// loop {
+///    let item = parse_node_with(
+///        &mut syntax,
+///        todo!("Your policies")
+///    );
+///
+///    let is_end = item.is_end();
+///    if !item.is_whitespace() {
+///        items.push(item);
+///    }
+///    if is_end {
+///        break;
+///    }
+/// }
+/// ```
+pub const fn parse_many_nodes_with<TPolicy>(
+    syntax: &mut SyntaxIter,
+    policy: TPolicy,
+) -> ManyNodesIterator<'_, TPolicy>
+where
+    TPolicy: ParseNodePolicy,
+{
+    ManyNodesIterator {
+        syntax,
+        policy,
+        reached_end: false,
     }
 }

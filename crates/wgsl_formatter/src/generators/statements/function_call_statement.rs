@@ -13,7 +13,7 @@ use syntax::{
 use crate::{
     ast_parse::{
         IgnoreBlankspace, IgnoreComma, IgnoreParenthesis, NoTrivia, Succeeding, SyntaxIter,
-        UntilNewline, parse_end, parse_node_with, syntax_iter,
+        UntilNewline, parse_end, parse_many_nodes_with, parse_node_with, syntax_iter,
     },
     context_policies::statement_needs_semicolon_policy,
     generators::node::{
@@ -26,7 +26,7 @@ use crate::{
         spacing_request::{Request, RequestItem},
     },
     reporting::{FormatDocumentError, FormatDocumentResult},
-    trivia::{NodeWithTrivia, NodeWithTriviaContent},
+    trivia::NodeWithTrivia,
 };
 
 pub fn gen_function_call(
@@ -116,26 +116,20 @@ pub fn parse_function_call_arguments(
     syntax: &mut SyntaxIter
 ) -> FormatDocumentResult<Vec<NodeWithTrivia>> {
     parse_node_with(syntax, NoTrivia).expect_kind(SyntaxKind::ParenthesisLeft)?;
-    let mut item_arguments = Vec::new();
-    loop {
-        let item = parse_node_with(
-            syntax,
-            (
-                Succeeding(UntilNewline),
-                IgnoreBlankspace,
-                IgnoreComma,
-                IgnoreParenthesis,
-            ),
-        );
 
-        let is_end = item.is_end();
-        if !item.is_whitespace() {
-            item_arguments.push(item);
-        }
-        if is_end {
-            break;
-        }
-    }
+    let item_arguments = parse_many_nodes_with(
+        syntax,
+        (
+            Succeeding(UntilNewline),
+            IgnoreBlankspace,
+            IgnoreComma,
+            IgnoreParenthesis,
+        ),
+    )
+    .filter(|item| !item.is_whitespace())
+    .map(|item| item.expect_ast_node_optional::<ast::Expression>())
+    .try_collect()?;
+
     Ok(item_arguments)
 }
 

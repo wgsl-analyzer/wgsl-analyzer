@@ -12,7 +12,7 @@ use syntax::{
 use crate::{
     ast_parse::{
         Filter, IgnoreBlankspace, IgnoreBraces, NoTrivia, PolicyAction, Succeeding, UntilNewline,
-        parse_end, parse_node_with, syntax_iter,
+        parse_end, parse_many_nodes_with, parse_node_with, syntax_iter,
     },
     generators::node::gen_node_with_trivia,
     print_item_buffer::{
@@ -54,22 +54,13 @@ pub fn gen_switch_body(statement: &SwitchBody) -> Result<PrintItemBuffer, Format
     let mut syntax = syntax_iter(statement.syntax());
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::BraceLeft)?;
 
-    let mut item_cases = Vec::new();
-
-    loop {
-        let item = parse_node_with(
-            &mut syntax,
-            (Succeeding(UntilNewline), IgnoreBlankspace, IgnoreBraces),
-        );
-
-        let is_end = item.is_end();
-        if !item.is_whitespace() {
-            item_cases.push(item);
-        }
-        if is_end {
-            break;
-        }
-    }
+    let item_cases = parse_many_nodes_with(
+        &mut syntax,
+        (Succeeding(UntilNewline), IgnoreBlankspace, IgnoreBraces),
+    )
+    .filter(|node| !node.is_whitespace())
+    .map(|node| node.expect_kind_optional(SyntaxKind::SwitchBodyCase))
+    .collect::<Result<Vec<_>, _>>()?;
 
     parse_end(&mut syntax)?;
 
@@ -212,31 +203,24 @@ pub fn gen_switch_case_selectors(
     // ==== Parse ====
     let mut syntax = syntax_iter(statement.syntax());
 
-    let mut selectors = Vec::new();
-
-    loop {
-        let item = parse_node_with(
-            &mut syntax,
+    let item_selectors = parse_many_nodes_with(
+        &mut syntax,
+        (
+            IgnoreBlankspace,
             Filter(|node| {
                 matches!(node.kind(), SyntaxKind::Comma).then_some(PolicyAction::IgnoreAndStop)
             }),
-        )
-        .expect_ast_node_optional::<SwitchCaseSelector>()?;
-
-        let is_end = item.is_end();
-        if !item.is_whitespace() {
-            selectors.push(item);
-        }
-        if is_end {
-            break;
-        }
-    }
+        ),
+    )
+    .filter(|node| !node.is_whitespace())
+    .map(|node| node.expect_ast_node_optional::<SwitchCaseSelector>())
+    .collect::<Result<Vec<_>, _>>()?;
 
     parse_end(&mut syntax)?;
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
-    for (position, selector) in selectors.into_iter().with_position() {
+    for (position, selector) in item_selectors.into_iter().with_position() {
         formatted.extend(gen_node_with_trivia(&selector)?);
         if !matches!(position, Position::Last | Position::Only) {
             formatted.push_sc(sc!(","));
