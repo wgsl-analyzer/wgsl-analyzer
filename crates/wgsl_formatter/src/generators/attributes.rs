@@ -107,7 +107,7 @@ pub fn gen_attribute_list(attribute_list: &AttributeList) -> FormatDocumentResul
     for attribute_item in &attributes {
         use AttributeCategorization::{Grouped, Inline, Ungrouped};
         let attribute =
-            Attribute::cast(attribute_item.content().unwrap().into_node().unwrap()).unwrap(); //TODO
+            Attribute::cast(attribute_item.content().unwrap().into_node().unwrap()).unwrap(); //TODO(MonaMayrhofer,now)
         let cat = match &attribute {
             Attribute::DiagnosticAttribute(_) => Grouped(AttributeGroup::Diagnostics, 0),
             Attribute::SizeAttribute(_) => Grouped(AttributeGroup::OffsetAlignSize, 2),
@@ -272,7 +272,7 @@ pub fn gen_interpolate_type_name(
     attribute: &ast::InterpolateTypeName
 ) -> FormatDocumentResult<PrintItemBuffer> {
     let mut syntax = syntax_iter(attribute.syntax());
-    let content = parse_node_with(&mut syntax, IgnoreBlankspace); // TODO It would be great to expect_kind here
+    let content = parse_node_with(&mut syntax, IgnoreBlankspace); // TODO(MonaMayrhofer,outdated) its fine - nothing surprising will appear here
     parse_end(&mut syntax)?;
 
     let mut formatted = PrintItemBuffer::default();
@@ -282,7 +282,7 @@ pub fn gen_interpolate_type_name(
 
 pub fn gen_early_depth_test_mode(attribute: &SyntaxNode) -> FormatDocumentResult<PrintItemBuffer> {
     let mut syntax = syntax_iter(attribute.syntax());
-    let content = parse_node_with(&mut syntax, IgnoreBlankspace); // TODO It would be great to expect_kind here
+    let content = parse_node_with(&mut syntax, IgnoreBlankspace); // TODO(MonaMayrhofer,outdated) its fine - nothing surprising will appear here
     parse_end(&mut syntax)?;
 
     let mut formatted = PrintItemBuffer::default();
@@ -294,7 +294,7 @@ pub fn gen_interpolate_sampling_name(
     attribute: &ast::InterpolateSamplingName
 ) -> FormatDocumentResult<PrintItemBuffer> {
     let mut syntax = syntax_iter(attribute.syntax());
-    let content = parse_node_with(&mut syntax, IgnoreBlankspace); // TODO It would be great to expect_kind here
+    let content = parse_node_with(&mut syntax, IgnoreBlankspace); // TODO(MonaMayrhofer,outdated) its fine - nothing surprising will appear here
     parse_end(&mut syntax)?;
 
     let mut formatted = PrintItemBuffer::default();
@@ -356,7 +356,7 @@ pub fn gen_builtin_value_name(
     attribute: &ast::BuiltinValueName
 ) -> FormatDocumentResult<PrintItemBuffer> {
     let mut syntax = syntax_iter(attribute.syntax());
-    let content = parse_node_with(&mut syntax, IgnoreBlankspace); // TODO It would be great to expect_kind here
+    let content = parse_node_with(&mut syntax, IgnoreBlankspace); // TODO(MonaMayrhofer,outdated) its fine - nothing surprising will appear here
     parse_end(&mut syntax)?;
 
     let mut formatted = PrintItemBuffer::default();
