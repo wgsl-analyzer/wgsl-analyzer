@@ -8,7 +8,7 @@ use syntax::{
 
 use crate::{
     ast_parse::{
-        Filter, IgnoreBraces, NoTrivia, PolicyAction, parse_end, parse_many_nodes_with,
+        Filter, IgnoreBraces, MatchKind, NoTrivia, PolicyAction, parse_end, parse_many_nodes_with,
         parse_node_with, syntax_iter,
     },
     context_policies::collapse_one_liner_compound_statement_policy,
@@ -37,6 +37,7 @@ pub fn gen_compound_statement(
         &mut syntax,
         (
             IgnoreBraces,
+            MatchKind(SyntaxKind::EmptyStatement, PolicyAction::Ignored),
             Filter(|node| match read_blankspace(node) {
                 Some(LineSpacing::OnelineBlankspace(_)) => Some(PolicyAction::Ignored),
                 _ => None,
