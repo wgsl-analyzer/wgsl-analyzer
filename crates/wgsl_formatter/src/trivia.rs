@@ -77,7 +77,7 @@ impl NodeWithTriviaContent {
     }
 }
 
-/// A syntax node (or a point of code) that is preceded by whitespaces, comments and attributes
+/// A syntax node (or a point of code) that is preceded by whitespaces, comments and attributes.
 #[derive(Clone, Debug)]
 pub struct NodeWithTrivia {
     pub preceding_trivia: Vec<NodeTriviaItem>,
@@ -148,7 +148,6 @@ impl NodeWithTrivia {
         kind: SyntaxKind,
     ) -> FormatDocumentResult<Self> {
         if self.node.as_ref().is_some_and(|node| node.kind() != kind) {
-            //TODO Better error here
             Err(FormatDocumentError::UnexpectedNodeOrToken {
                 received: self.node.into_option(),
             })
@@ -163,11 +162,9 @@ impl NodeWithTrivia {
         self,
         kind: SyntaxKind,
     ) -> FormatDocumentResult<Self> {
-        // TODO Flip these around - expect it to be some
         if self.node.as_ref().is_some_and(|node| node.kind() == kind) {
             Ok(self)
         } else {
-            //TODO Better error here
             Err(FormatDocumentError::UnexpectedNodeOrToken {
                 received: self.node.into_option(),
             })
@@ -180,12 +177,11 @@ impl NodeWithTrivia {
     where
         T: AstNode,
     {
-        if let NodeWithTriviaContent::Content(NodeOrToken::Node(node)) = &self.node {
-            if T::cast(node.clone()).is_some() {
-                return Ok(self);
-            }
+        if let NodeWithTriviaContent::Content(NodeOrToken::Node(node)) = &self.node
+            && T::cast(node.clone()).is_some()
+        {
+            return Ok(self);
         }
-        //TODO Better error here
         Err(FormatDocumentError::UnexpectedNodeOrToken {
             received: self.node.into_option(),
         })
@@ -219,12 +215,11 @@ impl NodeWithTrivia {
     where
         T: AstToken,
     {
-        if let NodeWithTriviaContent::Content(NodeOrToken::Token(node)) = &self.node {
-            if T::cast(node.clone()).is_some() {
-                return Ok(self);
-            }
+        if let NodeWithTriviaContent::Content(NodeOrToken::Token(node)) = &self.node
+            && T::cast(node.clone()).is_some()
+        {
+            return Ok(self);
         }
-        //TODO Better error here
         Err(FormatDocumentError::UnexpectedNodeOrToken {
             received: self.node.into_option(),
         })

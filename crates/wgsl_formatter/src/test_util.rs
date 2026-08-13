@@ -153,7 +153,6 @@ where
     );
 
     // dbg!(&parse.errors());
-    dbg!(&syntax);
     let formatted = match format_tree(&syntax, &options.formatting) {
         Ok(formatted) => formatted,
         Err(format_error) => {
@@ -179,7 +178,6 @@ where
     // Check for idempotence
     let syntax = syntax::parse(formatted.trim_start(), edition).tree();
     //dbg!(&syntax);
-    dbg!(&syntax);
 
     let formatted_twice = format_tree(&syntax, &options.formatting)
         .expect("Formatting already formatted sources should never fail with an error");
