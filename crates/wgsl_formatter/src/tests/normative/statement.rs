@@ -12,4 +12,5 @@ mod r#if;
 mod r#loop;
 mod r#return;
 mod r#switch;
+mod unscoped_compound;
 mod r#while;
