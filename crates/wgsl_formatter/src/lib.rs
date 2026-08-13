@@ -100,8 +100,7 @@ impl Default for FormattingOptions {
     }
 }
 
-/// Controls whether the formatter should insert, remove, or leave a
-/// particular syntactic element (e.g. trailing commas) unchanged.
+// TODO(MonaMayrhofer,now) is this still needed?
 #[derive(Debug, Copy, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "lowercase"))]

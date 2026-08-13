@@ -113,13 +113,24 @@ macro_rules! with_sc {
 
 macro_rules! with_cast {
     ($generator:ident, $ast_type:ty, $node:ident) => {
-        $generator(&<$ast_type>::cast($node.as_node().unwrap().clone()).unwrap())
+        $generator(
+            &$node
+                .clone()
+                .into_node()
+                .and_then(<$ast_type>::cast)
+                .expect("We just matched on the SyntaxKind"),
+        )
     };
 }
 
 macro_rules! with_node {
     ($generator:ident, $node:ident) => {
-        $generator(&($node.as_node().unwrap().clone()))
+        $generator(
+            &($node
+                .as_node()
+                .expect("We just matched on the SyntaxKind")
+                .clone()),
+        )
     };
 }
 
@@ -343,11 +354,11 @@ pub fn gen_node(
 
         SyntaxKind::LineEndingComment |
         SyntaxKind::BlockComment => {
-            let comment = read_comment(node).unwrap();
+            let comment = read_comment(node).expect("We just matched on the SyntaxKind");
             Ok(gen_comment(&comment))
         },
         SyntaxKind::Blankspace => {
-            let blankspace = read_blankspace(node).unwrap();
+            let blankspace = read_blankspace(node).expect("We just matched on the SyntaxKind");
             gen_line_spacing(&blankspace)
         },
         SyntaxKind::Identifier
