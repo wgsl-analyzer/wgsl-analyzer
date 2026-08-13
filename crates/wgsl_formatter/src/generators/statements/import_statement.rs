@@ -135,7 +135,7 @@ impl PartialEq for CmpImportTree<'_> {
         &self,
         other: &Self,
     ) -> bool {
-        self.cmp(other) == std::cmp::Ordering::Equal
+        self.partial_cmp(other) == Some(std::cmp::Ordering::Equal)
     }
 }
 impl Eq for CmpImportTree<'_> {}
@@ -144,15 +144,6 @@ impl PartialOrd for CmpImportTree<'_> {
         &self,
         other: &Self,
     ) -> Option<std::cmp::Ordering> {
-        Some(self.cmp(other))
-    }
-}
-impl Ord for CmpImportTree<'_> {
-    #[expect(clippy::min_ident_chars, reason = "Readable enough, keep it short")]
-    fn cmp(
-        &self,
-        other: &Self,
-    ) -> std::cmp::Ordering {
         let a = self;
         let b = other;
 
@@ -162,7 +153,7 @@ impl Ord for CmpImportTree<'_> {
                 let b = b.name().and_then(|name| name.ident_token());
                 let a = a.as_ref().map(SyntaxToken::text);
                 let b = b.as_ref().map(SyntaxToken::text);
-                a.cmp(&b)
+                Some(a.cmp(&b))
             },
             (ImportTree::ImportPath(a_path), ImportTree::ImportPath(b_path)) => {
                 let a = a_path.name().and_then(|name| name.ident_token());
@@ -175,21 +166,19 @@ impl Ord for CmpImportTree<'_> {
                         let a = a.as_ref().map(CmpImportTree);
                         let b = b_path.item();
                         let b = b.as_ref().map(CmpImportTree);
-                        a.cmp(&b)
+                        a.partial_cmp(&b)
                     },
-                    order @ (std::cmp::Ordering::Less | std::cmp::Ordering::Greater) => order,
+                    order @ (std::cmp::Ordering::Less | std::cmp::Ordering::Greater) => Some(order),
                 }
             },
 
-            (ImportTree::ImportCollection(_), ImportTree::ImportCollection(_)) => {
-                todo!()
-            },
+            (ImportTree::ImportCollection(_), ImportTree::ImportCollection(_)) => None,
 
-            (ImportTree::ImportItem(_), _) => std::cmp::Ordering::Less,
+            (ImportTree::ImportItem(_), _) => Some(std::cmp::Ordering::Less),
             #[expect(clippy::match_same_arms, reason = "Order of matches is important")]
-            (_, ImportTree::ImportItem(_)) => std::cmp::Ordering::Greater,
-            (ImportTree::ImportCollection(_), _) => std::cmp::Ordering::Greater,
-            (_, ImportTree::ImportCollection(_)) => std::cmp::Ordering::Less,
+            (_, ImportTree::ImportItem(_)) => Some(std::cmp::Ordering::Greater),
+            (ImportTree::ImportCollection(_), _) => Some(std::cmp::Ordering::Greater),
+            (_, ImportTree::ImportCollection(_)) => Some(std::cmp::Ordering::Less),
         }
     }
 }
@@ -229,7 +218,9 @@ pub fn gen_import_collection(
     items.sort_by(|(_, tree_a), (_, tree_b)| {
         let tree_a = tree_a.as_ref().map(CmpImportTree);
         let tree_b = tree_b.as_ref().map(CmpImportTree);
-        tree_a.cmp(&tree_b)
+        tree_a.partial_cmp(&tree_b).expect(
+            "There should not be two ImportCollections immediately within an ImportCollection.",
+        )
     });
 
     // ==== Format ====
