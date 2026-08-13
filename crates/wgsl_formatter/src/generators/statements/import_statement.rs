@@ -9,7 +9,7 @@ use syntax::{
 
 use crate::{
     ast_parse::{
-        IgnoreBlankspace, IgnoreComma, NoTrivia, Succeeding, UntilNewline, parse_end,
+        IgnoreBlankspace, IgnoreBraces, IgnoreComma, NoTrivia, Succeeding, UntilNewline, parse_end,
         parse_node_with, syntax_iter,
     },
     context_policies::statement_needs_semicolon_policy,
@@ -225,19 +225,15 @@ pub fn gen_import_collection(
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::BraceLeft)?;
 
     loop {
-        let mut item = parse_node_with(
+        let item = parse_node_with(
             &mut syntax,
-            (Succeeding(UntilNewline), IgnoreBlankspace, IgnoreComma),
+            (
+                Succeeding(UntilNewline),
+                IgnoreBlankspace,
+                IgnoreComma,
+                IgnoreBraces,
+            ),
         );
-
-        // TODO This should be absorbed into the parse_node
-        if item
-            .kind()
-            .is_some_and(|item| item == SyntaxKind::BraceRight)
-        {
-            let old_node = std::mem::replace(&mut item.node, NodeWithTriviaContent::End);
-            syntax.put_back(old_node.into_option().unwrap()); //TODO
-        }
 
         let is_end = item.is_end();
         if !item.is_whitespace() {
@@ -254,8 +250,6 @@ pub fn gen_import_collection(
             break;
         }
     }
-
-    parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::BraceRight)?;
 
     parse_end(&mut syntax)?;
 

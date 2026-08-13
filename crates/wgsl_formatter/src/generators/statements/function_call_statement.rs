@@ -12,8 +12,8 @@ use syntax::{
 
 use crate::{
     ast_parse::{
-        IgnoreBlankspace, IgnoreComma, NoTrivia, Succeeding, SyntaxIter, UntilNewline, parse_end,
-        parse_node_with, syntax_iter,
+        IgnoreBlankspace, IgnoreComma, IgnoreParenthesis, NoTrivia, Succeeding, SyntaxIter,
+        UntilNewline, parse_end, parse_node_with, syntax_iter,
     },
     context_policies::statement_needs_semicolon_policy,
     generators::node::{
@@ -118,16 +118,15 @@ pub fn parse_function_call_arguments(
     parse_node_with(syntax, NoTrivia).expect_kind(SyntaxKind::ParenthesisLeft)?;
     let mut item_arguments = Vec::new();
     loop {
-        let mut item = parse_node_with(
+        let item = parse_node_with(
             syntax,
-            (Succeeding(UntilNewline), IgnoreBlankspace, IgnoreComma),
+            (
+                Succeeding(UntilNewline),
+                IgnoreBlankspace,
+                IgnoreComma,
+                IgnoreParenthesis,
+            ),
         );
-
-        // TODO This needs to be absorbed into parse_node..
-        if matches!(item.kind(), Some(SyntaxKind::ParenthesisRight)) {
-            let old_node = std::mem::replace(&mut item.node, NodeWithTriviaContent::End);
-            syntax.put_back(old_node.into_option().unwrap()); //TODO
-        }
 
         let is_end = item.is_end();
         if !item.is_whitespace() {
@@ -137,7 +136,6 @@ pub fn parse_function_call_arguments(
             break;
         }
     }
-    parse_node_with(syntax, NoTrivia).expect_kind(SyntaxKind::ParenthesisRight)?;
     Ok(item_arguments)
 }
 

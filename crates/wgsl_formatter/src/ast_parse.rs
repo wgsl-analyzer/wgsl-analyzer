@@ -180,6 +180,103 @@ impl ParseNodePolicy for IgnoreComma {
     }
 }
 
+pub struct IgnoreTemplateDelimiters;
+impl ParseNodePolicy for IgnoreTemplateDelimiters {
+    fn handle_preceding(
+        &self,
+        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
+    ) -> Option<PolicyAction> {
+        matches!(
+            node.kind(),
+            SyntaxKind::TemplateStart | SyntaxKind::TemplateEnd
+        )
+        .then_some(PolicyAction::Ignored)
+    }
+
+    fn handle_succeeding(
+        &self,
+        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
+    ) -> Option<PolicyAction> {
+        self.handle_preceding(node)
+    }
+}
+
+// TODO Make a Ignore(SyntaxKind) but benchmark if that hinders inlining
+pub struct IgnoreSemicolon;
+impl ParseNodePolicy for IgnoreSemicolon {
+    fn handle_preceding(
+        &self,
+        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
+    ) -> Option<PolicyAction> {
+        (node.kind() == SyntaxKind::Semicolon).then_some(PolicyAction::Ignored)
+    }
+
+    fn handle_succeeding(
+        &self,
+        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
+    ) -> Option<PolicyAction> {
+        self.handle_preceding(node)
+    }
+}
+
+// TODO Make a Ignore(SyntaxKind) but benchmark if that hinders inlining
+pub struct IgnoreBraces;
+impl ParseNodePolicy for IgnoreBraces {
+    fn handle_preceding(
+        &self,
+        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
+    ) -> Option<PolicyAction> {
+        matches!(node.kind(), SyntaxKind::BraceLeft | SyntaxKind::BraceRight)
+            .then_some(PolicyAction::Ignored)
+    }
+
+    fn handle_succeeding(
+        &self,
+        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
+    ) -> Option<PolicyAction> {
+        self.handle_preceding(node)
+    }
+}
+
+// TODO Make a Ignore(SyntaxKind) but benchmark if that hinders inlining
+pub struct IgnoreParenthesis;
+impl ParseNodePolicy for IgnoreParenthesis {
+    fn handle_preceding(
+        &self,
+        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
+    ) -> Option<PolicyAction> {
+        matches!(
+            node.kind(),
+            SyntaxKind::ParenthesisRight | SyntaxKind::ParenthesisLeft
+        )
+        .then_some(PolicyAction::Ignored)
+    }
+
+    fn handle_succeeding(
+        &self,
+        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
+    ) -> Option<PolicyAction> {
+        self.handle_preceding(node)
+    }
+}
+
+pub struct MarkEndOnSemicolon;
+impl ParseNodePolicy for MarkEndOnSemicolon {
+    fn handle_preceding(
+        &self,
+        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
+    ) -> Option<PolicyAction> {
+        (node.kind() == SyntaxKind::Semicolon).then_some(PolicyAction::MarkEnd)
+    }
+
+    fn handle_succeeding(
+        &self,
+        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
+    ) -> Option<PolicyAction> {
+        self.handle_preceding(node)
+    }
+}
+
 pub struct NoTrivia;
 impl ParseNodePolicy for NoTrivia {
     fn handle_preceding(
@@ -327,6 +424,7 @@ pub enum PolicyAction {
     // TODO I think we can do without Content, as that is just a worse None in the filter
     Content,
     Stop,
+    MarkEnd,
     IgnoreAndStop,
 }
 
@@ -357,6 +455,10 @@ where
                 Some(PolicyAction::Stop) => {
                     syntax.put_back(node);
                     break NodeWithTriviaContent::NoContent;
+                },
+                Some(PolicyAction::MarkEnd) => {
+                    syntax.put_back(node);
+                    break NodeWithTriviaContent::End;
                 },
                 Some(PolicyAction::IgnoreAndStop) => {
                     break NodeWithTriviaContent::NoContent;
@@ -414,7 +516,7 @@ where
                 syntax.put_back(node);
                 break;
             },
-            Some(PolicyAction::Stop) => {
+            Some(PolicyAction::Stop | PolicyAction::MarkEnd) => {
                 // We want to stop parsing succeeding trivia
                 syntax.put_back(node);
                 break;

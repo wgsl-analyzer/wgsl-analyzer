@@ -11,8 +11,8 @@ use syntax::{
 
 use crate::{
     ast_parse::{
-        IgnoreBlankspace, IgnoreComma, NoTrivia, Succeeding, UntilNewline, parse_end,
-        parse_node_with, syntax_iter,
+        IgnoreBlankspace, IgnoreComma, IgnoreParenthesis, NoTrivia, Succeeding, UntilNewline,
+        parse_end, parse_node_with, syntax_iter,
     },
     generators::node::{
         gen_node_content, gen_node_preceding_trivia, gen_node_succeeding_trivia,
@@ -471,14 +471,13 @@ fn gen_attr_standard_with_args(
         loop {
             let mut item = parse_node_with(
                 &mut syntax,
-                (Succeeding(UntilNewline), IgnoreBlankspace, IgnoreComma),
+                (
+                    Succeeding(UntilNewline),
+                    IgnoreBlankspace,
+                    IgnoreComma,
+                    IgnoreParenthesis,
+                ),
             );
-
-            // TODO This needs to be absorbed into parse_node..
-            if matches!(item.kind(), Some(SyntaxKind::ParenthesisRight)) {
-                let old_node = std::mem::replace(&mut item.node, NodeWithTriviaContent::End);
-                syntax.put_back(old_node.into_option().unwrap()); //TODO
-            }
 
             let is_end = item.is_end();
             if !item.is_whitespace() {
@@ -489,7 +488,6 @@ fn gen_attr_standard_with_args(
             }
         }
 
-        parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::ParenthesisRight)?;
         Some(item_arguments)
     } else {
         None
