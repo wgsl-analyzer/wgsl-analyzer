@@ -37,17 +37,27 @@ pub fn gen_comment(item: &Comment) -> PrintItemBuffer {
             formatted.request(Request::expect(RequestItem::Space));
 
             let mut lines = content.text().lines().with_position();
-            if let Some((pos, line)) = lines.next() {
-                formatted.push_string(line.to_owned());
-                if pos != Position::Only && pos != Position::Last {
+            if let Some((line_pos, line)) = lines.next() {
+                for (tab_pos, tab_part) in line.split('\t').with_position() {
+                    formatted.push_string(tab_part.to_owned());
+                    if tab_pos != Position::Last && tab_pos != Position::Only {
+                        formatted.push_tab();
+                    }
+                }
+                if line_pos != Position::Only && line_pos != Position::Last {
                     formatted.request(Request::expect(RequestItem::LineBreak));
                 }
             }
 
             formatted.start_ignoring_indent_before_requests();
-            for (pos, line) in lines {
-                formatted.push_string(line.to_owned());
-                if pos != Position::Only && pos != Position::Last {
+            for (line_pos, line) in lines {
+                for (tab_pos, tab_part) in line.split('\t').with_position() {
+                    formatted.push_string(tab_part.to_owned());
+                    if tab_pos != Position::Last && tab_pos != Position::Only {
+                        formatted.push_tab();
+                    }
+                }
+                if line_pos != Position::Only && line_pos != Position::Last {
                     formatted.request(Request::expect(RequestItem::LineBreak));
                 }
             }
@@ -62,7 +72,12 @@ pub fn gen_comment(item: &Comment) -> PrintItemBuffer {
                 content.text().lines().count() == 1,
                 "line ending comment may not contain newlines."
             );
-            formatted.push_string(content.text().to_owned());
+            for (tab_pos, tab_part) in content.text().split('\t').with_position() {
+                formatted.push_string(tab_part.to_owned());
+                if tab_pos != Position::Last && tab_pos != Position::Only {
+                    formatted.push_tab();
+                }
+            }
             formatted.request(Request::force(RequestItem::LineBreak));
         },
     }
