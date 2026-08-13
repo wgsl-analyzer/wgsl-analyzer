@@ -6,13 +6,10 @@ use rowan::NodeOrToken;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum FormatDocumentError {
     UnexpectedNodeOrToken {
-        received: NodeOrToken<SyntaxNode, SyntaxToken>,
+        received: Option<NodeOrToken<SyntaxNode, SyntaxToken>>,
     },
     UnsupportedNodeOrToken {
         received: NodeOrToken<SyntaxNode, SyntaxToken>,
-    },
-    MissingTokens {
-        expected: Option<SyntaxKind>,
     },
     MissingNode,
 }
@@ -30,9 +27,6 @@ impl Display for FormatDocumentError {
                 f,
                 "Node/Token found at an unsupported location: {received:?}",
             ),
-            Self::MissingTokens { expected } => {
-                write!(f, "Expected to find a token {expected:?} but found none")
-            },
             Self::MissingNode => write!(f, "Expected to find a node but found none"),
         }
     }

@@ -391,11 +391,11 @@ pub fn gen_node(
         SyntaxKind::Error |
         SyntaxKind::Reserved => {
             //TODO
-            Err(FormatDocumentError::UnexpectedNodeOrToken { received: node.clone() })
+            Err(FormatDocumentError::UnsupportedNodeOrToken  { received: node.clone() })
         },
 
         _ => {
-            Err(FormatDocumentError::UnexpectedNodeOrToken { received: node.clone() })
+            Err(FormatDocumentError::UnsupportedNodeOrToken  { received: node.clone() })
         },
 
     }
