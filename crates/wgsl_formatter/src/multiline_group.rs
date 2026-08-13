@@ -4,16 +4,12 @@ use std::{
 };
 
 use dprint_core::formatting::{
-    ConditionReevaluation, ConditionResolver, LineNumber, LineNumberAnchor, PrintItems,
-    conditions,
+    ConditionReevaluation, ConditionResolver, LineNumber, LineNumberAnchor, PrintItems, conditions,
 };
 
 use crate::{
     helpers::create_is_multiple_lines_resolver,
-    print_item_buffer::{
-        PrintItemBuffer,
-        spacing_request::Request,
-    },
+    print_item_buffer::{PrintItemBuffer, spacing_request::Request},
 };
 
 use super::print_item_buffer::spacing_request::RequestItem;
@@ -44,12 +40,6 @@ pub struct MultilineGroup<'buffer> {
 }
 
 impl<'buffer> MultilineGroup<'buffer> {
-    #[deprecated]
-    pub fn new(formatted: &'buffer mut PrintItemBuffer) -> Self {
-        formatted.apply_end_request();
-        Self::new_before_requests(formatted)
-    }
-
     pub fn new_before_requests(formatted: &'buffer mut PrintItemBuffer) -> Self {
         let start_ln = LineNumber::new("start");
         let end_ln = LineNumber::new("end");
@@ -78,15 +68,6 @@ impl<'buffer> MultilineGroup<'buffer> {
             #[cfg(debug_assertions)]
             state: MultilineGroupState::New,
         }
-    }
-
-    #[deprecated]
-    pub fn start_indent(&mut self) {
-        self.apply_end_request();
-        self.start_indent_before_requests();
-        self.grouped_possible_newline();
-        self.request(Request::discourage(RequestItem::EmptyLine));
-        self.request(Request::discourage(RequestItem::Space));
     }
 
     pub fn start_indent_before_requests(&mut self) {
@@ -155,12 +136,6 @@ impl<'buffer> MultilineGroup<'buffer> {
         }
 
         self.buffer.finish_indent_before_requests();
-    }
-
-    #[deprecated]
-    pub fn end(&mut self) {
-        self.apply_end_request();
-        self.end_before_requests();
     }
 
     pub fn end_before_requests(&mut self) {

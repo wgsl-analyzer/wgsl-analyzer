@@ -216,10 +216,6 @@ impl ParseNodePolicy for Oneline {
     }
 }
 
-#[deprecated]
-#[expect(non_upper_case_globals, reason = "TODO")]
-pub const UntilSucceedingNewline: Succeeding<UntilNewline> = Succeeding(UntilNewline);
-
 pub struct Succeeding<T>(pub T)
 where
     T: ParseNodePolicy;
