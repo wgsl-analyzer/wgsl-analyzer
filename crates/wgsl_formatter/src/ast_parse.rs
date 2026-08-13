@@ -291,7 +291,6 @@ impl ParseNodePolicy for UntilNewline {
         node: &NodeOrToken<SyntaxNode, SyntaxToken>,
     ) -> Option<PolicyAction> {
         match read_blankspace(node) {
-            // TODO Most IgnoreBlankspace cases should be handled this way - linebreaks and empty lines will most often stop parsing trivia
             Some(LineSpacing::LineBreak(_) | LineSpacing::EmptyLine(_)) => {
                 Some(PolicyAction::IgnoreAndStop)
             },
@@ -438,7 +437,16 @@ where
                             },
                         }
                     } else if let Some(comment) = read_comment(&node) {
-                        // TODO Think about if this can be handled in any other way...
+                        // TODO(MonaMayrhofer,outdated) This is okay - a different way of doing it wouldl be
+                        // to keep linebreaks around in trivia - which would require thinking about this in every
+                        // place where we IgnoreBlankspace.
+                        // Also in these places we have good reason to IgnoreBlankspace (including newlines) - what
+                        // we really want to say is "IgnoreBlankspace but only keep linebreaks after comments".
+                        // And that we want to keep linebreaks after comments is a general thing,
+                        // according to "if the programmer wants them there, they" can have it.
+                        //
+                        // Which means we want this to always be here, and we don't want to think about it everywhere - so it belongs exactly here.
+
                         // Hacky special handling to remember if a comment was followed by a newline
 
                         let is_newlined = if let Some(next_item) = syntax.next() {

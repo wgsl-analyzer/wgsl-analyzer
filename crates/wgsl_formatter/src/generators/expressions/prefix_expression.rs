@@ -15,7 +15,7 @@ pub fn gen_prefix_expression(
     // ==== Parse ====
     let mut syntax = syntax_iter(infix_expression.syntax());
 
-    let item_operator = parse_node_with(&mut syntax, NoTrivia); // TODO Expect this to be an operator
+    let item_operator = parse_node_with(&mut syntax, NoTrivia); // TODO(MonaMayrhofer,outdated) its fine - nothing surprising will appear here
     let item_expr =
         parse_node_with(&mut syntax, IgnoreBlankspace).expect_ast_node::<ast::Expression>()?;
     parse_end(&mut syntax)?;

@@ -13,7 +13,8 @@ use rowan::{TextLen as _, TextRange};
 use crate::{FormattingOptions, IndentStyle, format::format_tree, format_range};
 
 //Taken from expect_test
-// TODO This can be removed once expect_test exposes the trimmed data
+// TODO(MonaMayrhofer,blocked) This can be removed once expect_test exposes the trimmed data
+// https://github.com/rust-analyzer/expect-test/issues/60
 mod strip_indent {
     pub(crate) fn trim_indent(mut text: &str) -> String {
         if text.starts_with('\n') {
