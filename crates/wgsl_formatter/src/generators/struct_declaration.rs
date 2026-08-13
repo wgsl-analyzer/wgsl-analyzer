@@ -6,7 +6,10 @@ use syntax::{
 };
 
 use crate::{
-    ast_parse::{IgnoreBlankspace, IgnoreBraces, IgnoreComma, Succeeding, UntilEmptyLine},
+    ast_parse::{
+        IgnoreBlankspace, IgnoreBraces, IgnoreComma, Succeeding, UntilEmptyLine,
+        parse_many_nodes_with,
+    },
     generators::node::gen_node_with_trivia,
 };
 use crate::{
@@ -17,7 +20,6 @@ use crate::{
         spacing_request::{Request, RequestItem, RequestItemSet},
     },
     reporting::FormatDocumentResult,
-    trivia::NodeWithTriviaContent,
 };
 
 pub fn gen_struct_declaration(
@@ -53,23 +55,13 @@ pub fn gen_struct_body(body: &ast::StructBody) -> FormatDocumentResult<PrintItem
 
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::BraceLeft)?;
 
-    let mut item_members = Vec::new();
-
-    loop {
-        let item = parse_node_with(
-            &mut syntax,
-            (Succeeding(UntilEmptyLine), IgnoreComma, IgnoreBraces),
-        )
-        .expect_kind_optional(SyntaxKind::StructMember)?;
-
-        let is_end = item.is_end();
-        if !item.is_whitespace() {
-            item_members.push(item);
-        }
-        if is_end {
-            break;
-        }
-    }
+    let item_members = parse_many_nodes_with(
+        &mut syntax,
+        (Succeeding(UntilEmptyLine), IgnoreComma, IgnoreBraces),
+    )
+    .filter(|node| !node.is_whitespace())
+    .map(|node| node.expect_kind_optional(SyntaxKind::StructMember))
+    .collect::<Result<Vec<_>, _>>()?;
 
     parse_end(&mut syntax)?;
 

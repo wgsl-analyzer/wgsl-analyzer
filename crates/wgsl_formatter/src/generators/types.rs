@@ -7,7 +7,7 @@ use syntax::{AstNode as _, ast};
 use crate::{
     ast_parse::{
         IgnoreBlankspace, IgnoreComma, IgnoreTemplateDelimiters, NoTrivia, Succeeding,
-        UntilNewline, parse_end, parse_node_with, syntax_iter,
+        UntilNewline, parse_end, parse_many_nodes_with, parse_node_with, syntax_iter,
     },
     generators::node::{
         gen_node_content, gen_node_preceding_trivia, gen_node_succeeding_trivia,
@@ -19,7 +19,6 @@ use crate::{
         spacing_request::{Request, RequestItem},
     },
     reporting::FormatDocumentResult,
-    trivia::NodeWithTriviaContent,
 };
 
 pub fn gen_type_specifier(
@@ -51,26 +50,19 @@ pub fn gen_template_list(
     let mut syntax = syntax_iter(template_list.syntax());
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::TemplateStart)?;
 
-    let mut item_arguments = Vec::new();
-    loop {
-        let item = parse_node_with(
-            &mut syntax,
-            (
-                Succeeding(UntilNewline),
-                IgnoreBlankspace,
-                IgnoreComma,
-                IgnoreTemplateDelimiters,
-            ),
-        );
+    let item_arguments = parse_many_nodes_with(
+        &mut syntax,
+        (
+            Succeeding(UntilNewline),
+            IgnoreBlankspace,
+            IgnoreComma,
+            IgnoreTemplateDelimiters,
+        ),
+    )
+    .filter(|node| !node.is_whitespace())
+    .map(|node| node.expect_ast_node_optional::<ast::Expression>())
+    .collect::<Result<Vec<_>, _>>()?;
 
-        let is_end = item.is_end();
-        if !item.is_whitespace() {
-            item_arguments.push(item);
-        }
-        if is_end {
-            break;
-        }
-    }
     parse_end(&mut syntax)?;
 
     // ==== Format ====

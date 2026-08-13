@@ -8,7 +8,7 @@ use syntax::{
 
 use crate::{
     ast_parse::{
-        IgnoreBlankspace, IgnoreComma, IgnoreSemicolon, MarkEndOnSemicolon, NoTrivia, parse_end,
+        IgnoreBlankspace, IgnoreComma, IgnoreSemicolon, NoTrivia, parse_end, parse_many_nodes_with,
         parse_node_with, syntax_iter,
     },
     generators::node::gen_node_with_trivia,
@@ -18,7 +18,6 @@ use crate::{
         spacing_request::{Request, RequestItem},
     },
     reporting::FormatDocumentResult,
-    trivia::NodeWithTriviaContent,
 };
 pub fn gen_enable_extension_name(
     node: &ast::EnableExtensionName
@@ -39,22 +38,12 @@ pub fn gen_enable_directive(node: &ast::EnableDirective) -> FormatDocumentResult
 
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::Enable)?;
 
-    let mut items = Vec::new();
-
-    loop {
-        let item = parse_node_with(
-            &mut syntax,
-            (IgnoreBlankspace, IgnoreComma, IgnoreSemicolon),
-        );
-
-        let is_end = item.is_end();
-        if !item.is_whitespace() {
-            items.push(item);
-        }
-        if is_end {
-            break;
-        }
-    }
+    let items = parse_many_nodes_with(
+        &mut syntax,
+        (IgnoreBlankspace, IgnoreComma, IgnoreSemicolon),
+    )
+    .filter(|node| !node.is_whitespace())
+    .collect::<Vec<_>>();
 
     parse_end(&mut syntax)?;
 
@@ -105,23 +94,12 @@ pub fn gen_requires_directive(
 
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::Requires)?;
 
-    let mut items = Vec::new();
-
-    loop {
-        let item = parse_node_with(
-            &mut syntax,
-            (IgnoreBlankspace, IgnoreComma, IgnoreSemicolon),
-        );
-        //.expect_kind_optional(SyntaxKind::LanguageExtensionName)?;
-
-        let is_end = item.is_end();
-        if !item.is_whitespace() {
-            items.push(item);
-        }
-        if is_end {
-            break;
-        }
-    }
+    let items = parse_many_nodes_with(
+        &mut syntax,
+        (IgnoreBlankspace, IgnoreComma, IgnoreSemicolon),
+    )
+    .filter(|node| !node.is_whitespace())
+    .collect::<Vec<_>>();
 
     parse_end(&mut syntax)?;
 

@@ -10,7 +10,7 @@ use syntax::{
 use crate::{
     ast_parse::{
         IgnoreBlankspace, IgnoreBraces, IgnoreComma, NoTrivia, Succeeding, UntilNewline, parse_end,
-        parse_node_with, syntax_iter,
+        parse_many_nodes_with, parse_node_with, syntax_iter,
     },
     context_policies::statement_needs_semicolon_policy,
     generators::node::gen_node_with_trivia,
@@ -20,7 +20,6 @@ use crate::{
         spacing_request::{Request, RequestItem},
     },
     reporting::FormatDocumentResult,
-    trivia::NodeWithTriviaContent,
 };
 
 // TODO(MonaMayrhofer,post-1.0) Collapse imports
@@ -53,31 +52,12 @@ pub fn gen_import_super_relative(
     // ==== Parse ====
     let mut syntax = syntax_iter(node.syntax());
 
-    let mut items = Vec::new();
-
-    loop {
-        let item = parse_node_with(&mut syntax, IgnoreBlankspace)
-            .expect_kind_optional(SyntaxKind::Super)?;
-
-        let is_end = item.is_end();
-        if !item.is_whitespace() {
-            items.push(item);
-        }
-        if is_end {
-            break;
-        }
-
-        let item =
-            parse_node_with(&mut syntax, NoTrivia).expect_kind_optional(SyntaxKind::ColonColon)?;
-
-        let is_end = item.is_end();
-        if !item.is_whitespace() {
-            items.push(item);
-        }
-        if is_end {
-            break;
-        }
-    }
+    let items = parse_many_nodes_with(
+        &mut syntax,
+        (IgnoreBlankspace, IgnoreComma, IgnoreBlankspace),
+    )
+    .filter(|node| !node.is_whitespace())
+    .collect::<Vec<_>>();
 
     parse_end(&mut syntax)?;
 
@@ -220,36 +200,29 @@ pub fn gen_import_collection(
     // ==== Parse ====
     let mut syntax = syntax_iter(node.syntax());
 
-    let mut items = Vec::new();
-
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::BraceLeft)?;
 
-    loop {
-        let item = parse_node_with(
-            &mut syntax,
-            (
-                Succeeding(UntilNewline),
-                IgnoreBlankspace,
-                IgnoreComma,
-                IgnoreBraces,
-            ),
-        );
-
-        let is_end = item.is_end();
-        if !item.is_whitespace() {
-            let import_tree = item
-                .content()
-                .and_then(|node_or_token| match node_or_token {
-                    rowan::NodeOrToken::Node(node) => Some(node),
-                    rowan::NodeOrToken::Token(_) => None,
-                })
-                .and_then(ImportTree::cast);
-            items.push((item, import_tree));
-        }
-        if is_end {
-            break;
-        }
-    }
+    let mut items = parse_many_nodes_with(
+        &mut syntax,
+        (
+            Succeeding(UntilNewline),
+            IgnoreBlankspace,
+            IgnoreComma,
+            IgnoreBraces,
+        ),
+    )
+    .filter(|item| !item.is_whitespace())
+    .map(|item| {
+        let import_tree = item
+            .content()
+            .and_then(|node_or_token| match node_or_token {
+                rowan::NodeOrToken::Node(node) => Some(node),
+                rowan::NodeOrToken::Token(_) => None,
+            })
+            .and_then(ImportTree::cast);
+        (item, import_tree)
+    })
+    .collect::<Vec<_>>();
 
     parse_end(&mut syntax)?;
 

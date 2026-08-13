@@ -1,4 +1,5 @@
 use dprint_core_macros::sc;
+use itertools::Itertools as _;
 use parser::{SyntaxKind, SyntaxNode};
 use syntax::{
     AstNode as _,
@@ -6,14 +7,16 @@ use syntax::{
 };
 
 use crate::{
-    ast_parse::{IgnoreBlankspace, NoTrivia, parse_end, parse_node_with, syntax_iter},
+    ast_parse::{
+        Filter, IgnoreBlankspace, NoTrivia, PolicyAction, parse_end, parse_many_nodes_with,
+        parse_node_with, syntax_iter,
+    },
     generators::node::gen_node_with_trivia,
     print_item_buffer::{
         PrintItemBuffer,
         spacing_request::{Request, RequestItem, RequestItemSet},
     },
     reporting::FormatDocumentResult,
-    trivia::NodeWithTriviaContent,
 };
 
 pub fn gen_if_statement(statement: &ast::IfStatement) -> FormatDocumentResult<PrintItemBuffer> {
@@ -23,26 +26,17 @@ pub fn gen_if_statement(statement: &ast::IfStatement) -> FormatDocumentResult<Pr
     let item_if_clause =
         parse_node_with(&mut syntax, IgnoreBlankspace).expect_kind(SyntaxKind::IfClause)?;
 
-    let mut else_if_clauses = Vec::new();
-    loop {
-        let mut item = parse_node_with(&mut syntax, IgnoreBlankspace);
-
-        if item
-            .kind()
-            .is_some_and(|item| item != SyntaxKind::ElseIfClause)
-        {
-            let old_node = std::mem::replace(&mut item.node, NodeWithTriviaContent::End);
-            syntax.put_back(old_node.into_option().unwrap()); //TODO
-        }
-
-        let is_end = item.is_end();
-        if !item.is_whitespace() {
-            else_if_clauses.push(item);
-        }
-        if is_end {
-            break;
-        }
-    }
+    let else_if_clauses = parse_many_nodes_with(
+        &mut syntax,
+        (
+            IgnoreBlankspace,
+            Filter(|node| {
+                (!matches!(node.kind(), SyntaxKind::ElseIfClause)).then_some(PolicyAction::MarkEnd)
+            }),
+        ),
+    )
+    .filter(|node| !node.is_whitespace())
+    .collect_vec();
 
     let item_else_clause = parse_node_with(&mut syntax, IgnoreBlankspace)
         .expect_kind_optional(SyntaxKind::ElseClause)?;

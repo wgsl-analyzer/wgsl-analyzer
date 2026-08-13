@@ -8,7 +8,7 @@ use syntax::{
 
 use crate::{
     ast_parse::{
-        Filter, IgnoreBraces, IgnoreParenthesis, NoTrivia, PolicyAction, parse_end,
+        Filter, IgnoreBraces, NoTrivia, PolicyAction, parse_end, parse_many_nodes_with,
         parse_node_with, syntax_iter,
     },
     context_policies::collapse_one_liner_compound_statement_policy,
@@ -20,7 +20,7 @@ use crate::{
         spacing_request::{Request, RequestItem},
     },
     reporting::FormatDocumentResult,
-    trivia::{NodeTriviaItem, NodeWithTrivia, NodeWithTriviaContent},
+    trivia::{NodeTriviaItem, NodeWithTrivia},
 };
 
 pub fn gen_compound_statement(
@@ -33,21 +33,18 @@ pub fn gen_compound_statement(
     let mut syntax = syntax_iter(node.syntax());
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::BraceLeft)?;
 
-    let mut items = Vec::new();
-
-    loop {
-        let mut item = parse_node_with(
-            &mut syntax,
-            (
-                IgnoreBraces,
-                Filter(|node| match read_blankspace(node) {
-                    Some(LineSpacing::OnelineBlankspace(_)) => Some(PolicyAction::Ignored),
-                    _ => None,
-                }),
-            ),
-        );
-
-        // We only care about newlines if they are somewhere within the trivia, not at the start or end
+    let items = parse_many_nodes_with(
+        &mut syntax,
+        (
+            IgnoreBraces,
+            Filter(|node| match read_blankspace(node) {
+                Some(LineSpacing::OnelineBlankspace(_)) => Some(PolicyAction::Ignored),
+                _ => None,
+            }),
+        ),
+    )
+    // Trim off starting linebreaks - we don't care about those
+    .map(|mut item| {
         let first_interesting_item = item.preceding_trivia.iter().position(|node| {
             !matches!(node, NodeTriviaItem::LineSpacing(LineSpacing::LineBreak(_)))
         });
@@ -56,6 +53,10 @@ pub fn gen_compound_statement(
         } else {
             item.preceding_trivia = Vec::new();
         }
+        item
+    })
+    // Trim off ending linebreaks - we don't care about those
+    .map(|mut item| {
         let last_interesting_item = item.succeeding_trivia.iter().rev().position(|node| {
             !matches!(node, NodeTriviaItem::LineSpacing(LineSpacing::LineBreak(_)))
         });
@@ -65,15 +66,11 @@ pub fn gen_compound_statement(
         } else {
             item.succeeding_trivia = Vec::new();
         }
+        item
+    })
+    .filter(|item| !item.is_whitespace())
+    .collect_vec();
 
-        let is_end = item.is_end();
-        if !item.is_whitespace() {
-            items.push(item);
-        }
-        if is_end {
-            break;
-        }
-    }
     parse_end(&mut syntax)?;
 
     let body_empty = items.iter().all(NodeWithTrivia::is_whitespace);

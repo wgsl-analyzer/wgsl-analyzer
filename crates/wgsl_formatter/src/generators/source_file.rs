@@ -1,4 +1,4 @@
-use parser::SyntaxKind;
+use itertools::Itertools as _;
 use syntax::{
     AstNode as _,
     ast::{self},
@@ -6,8 +6,8 @@ use syntax::{
 
 use crate::{
     ast_parse::{
-        IgnoreBlankspace, Succeeding, UntilEmptyLine, UntilNewline, parse_end, parse_node_with,
-        syntax_iter,
+        IgnoreBlankspace, IgnoreSemicolon, Succeeding, UntilEmptyLine, UntilNewline, parse_end,
+        parse_many_nodes_with, syntax_iter,
     },
     generators::node::gen_node_with_trivia,
     print_item_buffer::{
@@ -15,7 +15,6 @@ use crate::{
         spacing_request::{Request, RequestItem, RequestItemSet},
     },
     reporting::FormatDocumentResult,
-    trivia::NodeWithTriviaContent,
 };
 
 pub fn gen_source_file(node: &ast::SourceFile) -> FormatDocumentResult<PrintItemBuffer> {
@@ -23,29 +22,17 @@ pub fn gen_source_file(node: &ast::SourceFile) -> FormatDocumentResult<PrintItem
 
     let mut syntax = syntax_iter(node.syntax());
 
-    let mut items = Vec::new();
-
-    loop {
-        let mut item = parse_node_with(
-            &mut syntax,
-            Succeeding((UntilEmptyLine, UntilNewline, IgnoreBlankspace)),
-        );
-
-        if item
-            .kind()
-            .is_some_and(|item| item == SyntaxKind::Semicolon)
-        {
-            item.node = NodeWithTriviaContent::NoContent;
-        }
-
-        let is_end = item.is_end();
-        if !item.is_whitespace() {
-            items.push(item);
-        }
-        if is_end {
-            break;
-        }
-    }
+    let items = parse_many_nodes_with(
+        &mut syntax,
+        Succeeding((
+            UntilEmptyLine,
+            UntilNewline,
+            IgnoreBlankspace,
+            IgnoreSemicolon,
+        )),
+    )
+    .filter(|item| !item.is_whitespace())
+    .collect_vec();
 
     parse_end(&mut syntax)?;
 
