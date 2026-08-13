@@ -380,7 +380,7 @@ pub fn gen_node(
 
         SyntaxKind::Error |
         SyntaxKind::Reserved => {
-            //TODO(MonaMayrhofer,now)
+            // We don't won't format a source that contains errors, or reserved keywords
             Err(FormatDocumentError::UnsupportedNodeOrToken  { received: node.clone() })
         },
 
