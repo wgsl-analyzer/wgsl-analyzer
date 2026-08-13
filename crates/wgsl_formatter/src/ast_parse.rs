@@ -619,7 +619,7 @@ impl<TPolicy: ParseNodePolicy> Iterator for ManyNodesIterator<'_, TPolicy> {
 ///
 /// let items = parse_many_nodes_with(
 ///     &mut syntax,
-///     todo!("Your policies")
+///     YourPolicies
 /// )
 /// .filter(|item| !item.is_whitespace())
 /// .collect_vec();
@@ -630,7 +630,7 @@ impl<TPolicy: ParseNodePolicy> Iterator for ManyNodesIterator<'_, TPolicy> {
 /// loop {
 ///    let item = parse_node_with(
 ///        &mut syntax,
-///        todo!("Your policies")
+///        YourPolicies
 ///    );
 ///
 ///    let is_end = item.is_end();

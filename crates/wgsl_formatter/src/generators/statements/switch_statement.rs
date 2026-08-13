@@ -138,8 +138,6 @@ pub fn gen_switch_body_case(
         }
     };
 
-    //let item_comments_after_selectors = parse_many_comments_and_blankspace(&mut syntax)?; TODO Verify this is unneeded
-
     let item_colon =
         parse_node_with(&mut syntax, NoTrivia).only_if_kind(SyntaxKind::Colon, &mut syntax);
     let item_body = parse_node_with(&mut syntax, IgnoreBlankspace)
