@@ -140,6 +140,10 @@ impl PartialEq for CmpImportTree<'_> {
 }
 impl Eq for CmpImportTree<'_> {}
 impl PartialOrd for CmpImportTree<'_> {
+    #[expect(
+        clippy::min_ident_chars,
+        reason = "A and B are good names for comparing things and keep code terse"
+    )]
     fn partial_cmp(
         &self,
         other: &Self,

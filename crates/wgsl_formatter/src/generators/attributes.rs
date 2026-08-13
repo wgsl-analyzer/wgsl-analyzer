@@ -23,7 +23,7 @@ use crate::{
         PrintItemBuffer,
         spacing_request::{Request, RequestItem},
     },
-    reporting::FormatDocumentResult,
+    reporting::{FormatDocumentError, FormatDocumentResult},
     trivia::NodeWithTrivia,
 };
 
@@ -37,7 +37,7 @@ pub enum AttributeLayout {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 // The order of the variants determines the order of the attribute groups in the output
-enum AttributeGroup {
+pub(crate) enum AttributeGroup {
     Conditional,
     Diagnostics,
     BlendSrc,
@@ -52,7 +52,7 @@ enum AttributeGroup {
     Fragment,
     Vertex,
 }
-enum AttributeCategorization {
+pub(crate) enum AttributeCategorization {
     Ungrouped(String),
     Grouped(AttributeGroup, usize),
     Inline(usize),
@@ -83,12 +83,59 @@ where
     Ok(formatted)
 }
 
+pub(crate) fn categorize_attribute(attribute: &Attribute) -> AttributeCategorization {
+    use AttributeCategorization::{Grouped, Inline, Ungrouped};
+    match &attribute {
+        Attribute::DiagnosticAttribute(_) => Grouped(AttributeGroup::Diagnostics, 0),
+        Attribute::SizeAttribute(_) => Grouped(AttributeGroup::OffsetAlignSize, 2),
+        Attribute::AlignAttribute(_) => Grouped(AttributeGroup::OffsetAlignSize, 1),
+        Attribute::GroupAttribute(_) => Grouped(AttributeGroup::BindingGroup, 0),
+        Attribute::BindingAttribute(_) => Grouped(AttributeGroup::BindingGroup, 1),
+        Attribute::ComputeAttribute(_) => Grouped(AttributeGroup::ComputeWorkgroup, 0),
+        Attribute::WorkgroupSizeAttribute(_) => Grouped(AttributeGroup::ComputeWorkgroup, 1),
+        Attribute::VertexAttribute(_) => Grouped(AttributeGroup::Vertex, 0),
+        Attribute::FragmentAttribute(_) => Grouped(AttributeGroup::Fragment, 0),
+        Attribute::BlendSrcAttribute(_) => Grouped(AttributeGroup::BlendSrc, 0),
+        Attribute::IdAttribute(_) => Grouped(AttributeGroup::Id, 0),
+        Attribute::InterpolateAttribute(_) => Grouped(AttributeGroup::Interpolate, 0),
+        Attribute::InvariantAttribute(_) => Grouped(AttributeGroup::Invariant, 0),
+        Attribute::LocationAttribute(_) => Grouped(AttributeGroup::Location, 0),
+
+        Attribute::OtherAttribute(attrib) => {
+            let name = attrib.name().map(|identifier| identifier.text().to_owned());
+            let name = name.as_deref();
+            match name {
+                Some("offset") => Grouped(AttributeGroup::OffsetAlignSize, 0),
+                Some(name) => Ungrouped(name.to_owned()),
+                None => Ungrouped(String::new()),
+            }
+        },
+        Attribute::BuiltinAttribute(_) => Inline(2),
+        Attribute::MustUseAttribute(_) => Inline(1),
+        Attribute::ConstantAttribute(_) => Inline(0),
+        Attribute::IfAttribute(_) => Grouped(AttributeGroup::Conditional, 0),
+        Attribute::ElifAttribute(_) => Grouped(AttributeGroup::Conditional, 1),
+        Attribute::ElseAttribute(_) => Grouped(AttributeGroup::Conditional, 2),
+        Attribute::EarlyDepthTestAttribute(_) => Grouped(AttributeGroup::EarlyDepthTest, 0),
+    }
+}
+
 pub fn gen_attribute_list(attribute_list: &AttributeList) -> FormatDocumentResult<PrintItemBuffer> {
     let mut syntax = syntax_iter(attribute_list.syntax());
 
     let attributes = parse_many_nodes_with(&mut syntax, IgnoreBlankspace)
         .filter(|node| !node.is_whitespace())
         .map(NodeWithTrivia::expect_ast_node_optional::<Attribute>)
+        .map(|item| {
+            let item = item?;
+            let content = item.content();
+            let attribute = content
+                .as_ref()
+                .and_then(|node_or_token| node_or_token.clone().into_node())
+                .and_then(Attribute::cast)
+                .ok_or(FormatDocumentError::UnexpectedNodeOrToken { received: content })?;
+            Ok((item, attribute))
+        })
         .collect::<Result<Vec<_>, _>>()?;
 
     parse_end(&mut syntax)?;
@@ -104,51 +151,18 @@ pub fn gen_attribute_list(attribute_list: &AttributeList) -> FormatDocumentResul
     // Attributes that are inline with the target (like @const fn main()...)
     let mut attribute_group_inlined_with_target = Vec::new();
 
-    for attribute_item in &attributes {
-        use AttributeCategorization::{Grouped, Inline, Ungrouped};
-        let attribute =
-            Attribute::cast(attribute_item.content().unwrap().into_node().unwrap()).unwrap(); //TODO(MonaMayrhofer,now)
-        let cat = match &attribute {
-            Attribute::DiagnosticAttribute(_) => Grouped(AttributeGroup::Diagnostics, 0),
-            Attribute::SizeAttribute(_) => Grouped(AttributeGroup::OffsetAlignSize, 2),
-            Attribute::AlignAttribute(_) => Grouped(AttributeGroup::OffsetAlignSize, 1),
-            Attribute::GroupAttribute(_) => Grouped(AttributeGroup::BindingGroup, 0),
-            Attribute::BindingAttribute(_) => Grouped(AttributeGroup::BindingGroup, 1),
-            Attribute::ComputeAttribute(_) => Grouped(AttributeGroup::ComputeWorkgroup, 0),
-            Attribute::WorkgroupSizeAttribute(_) => Grouped(AttributeGroup::ComputeWorkgroup, 1),
-            Attribute::VertexAttribute(_) => Grouped(AttributeGroup::Vertex, 0),
-            Attribute::FragmentAttribute(_) => Grouped(AttributeGroup::Fragment, 0),
-            Attribute::BlendSrcAttribute(_) => Grouped(AttributeGroup::BlendSrc, 0),
-            Attribute::IdAttribute(_) => Grouped(AttributeGroup::Id, 0),
-            Attribute::InterpolateAttribute(_) => Grouped(AttributeGroup::Interpolate, 0),
-            Attribute::InvariantAttribute(_) => Grouped(AttributeGroup::Invariant, 0),
-            Attribute::LocationAttribute(_) => Grouped(AttributeGroup::Location, 0),
-
-            Attribute::OtherAttribute(attrib) => {
-                let name = attrib.name().map(|identifier| identifier.text().to_owned());
-                let name = name.as_deref();
-                match name {
-                    Some("offset") => Grouped(AttributeGroup::OffsetAlignSize, 0),
-                    Some(name) => Ungrouped(name.to_owned()),
-                    None => Ungrouped(String::new()),
-                }
+    for (attribute_item, attribute) in &attributes {
+        match categorize_attribute(attribute) {
+            AttributeCategorization::Ungrouped(order) => {
+                ungrouped_attributes.push((order, attribute_item));
             },
-            Attribute::BuiltinAttribute(_) => Inline(2),
-            Attribute::MustUseAttribute(_) => Inline(1),
-            Attribute::ConstantAttribute(_) => Inline(0),
-            Attribute::IfAttribute(_) => Grouped(AttributeGroup::Conditional, 0),
-            Attribute::ElifAttribute(_) => Grouped(AttributeGroup::Conditional, 1),
-            Attribute::ElseAttribute(_) => Grouped(AttributeGroup::Conditional, 2),
-            Attribute::EarlyDepthTestAttribute(_) => Grouped(AttributeGroup::EarlyDepthTest, 0),
-        };
-
-        match cat {
-            Ungrouped(order) => ungrouped_attributes.push((order, attribute_item)),
-            Grouped(attribute_group, order) => grouped_attributes
+            AttributeCategorization::Grouped(attribute_group, order) => grouped_attributes
                 .entry(attribute_group)
                 .or_default()
                 .push((order, attribute_item)),
-            Inline(order) => attribute_group_inlined_with_target.push((order, attribute_item)),
+            AttributeCategorization::Inline(order) => {
+                attribute_group_inlined_with_target.push((order, attribute_item));
+            },
         }
     }
 
