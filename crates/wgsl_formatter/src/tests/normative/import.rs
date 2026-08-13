@@ -242,3 +242,14 @@ pub fn format_import_path_single_simple_long_items() {
         parser::Edition::LATEST
     );
 }
+
+#[test]
+pub fn format_import_collection_in_collection_stays_the_same() {
+    // The logic for sorting imports relies on this not parsing.
+    assert_out_of_scope(
+        "
+        import a::{{a::a, b::b}, {c::c, d::d}};
+        ",
+        "ImportCollections immediately within ImportCollections are not supported.",
+    );
+}

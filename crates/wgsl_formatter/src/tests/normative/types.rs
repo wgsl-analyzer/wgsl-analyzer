@@ -2,7 +2,7 @@ use expect_test::expect;
 
 use crate::{
     FormattingOptions,
-    test_util::{CheckOptions, check, check_with_options},
+    test_util::{check, check_with_options},
 };
 
 #[test]
