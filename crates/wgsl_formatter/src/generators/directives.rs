@@ -7,7 +7,10 @@ use syntax::{
 };
 
 use crate::{
-    ast_parse::{IgnoreBlankspace, IgnoreComma, NoTrivia, parse_end, parse_node_with, syntax_iter},
+    ast_parse::{
+        IgnoreBlankspace, IgnoreComma, IgnoreSemicolon, MarkEndOnSemicolon, NoTrivia, parse_end,
+        parse_node_with, syntax_iter,
+    },
     generators::node::gen_node_with_trivia,
     multiline_group::MultilineGroup,
     print_item_buffer::{
@@ -39,14 +42,10 @@ pub fn gen_enable_directive(node: &ast::EnableDirective) -> FormatDocumentResult
     let mut items = Vec::new();
 
     loop {
-        let mut item = parse_node_with(&mut syntax, (IgnoreBlankspace, IgnoreComma));
-        //.expect_kind_optional(SyntaxKind::EnableExtensionName)?;
-
-        // TODO This needs to be absorbed into parse_node..
-        if matches!(item.kind(), Some(SyntaxKind::Semicolon)) {
-            let old_node = std::mem::replace(&mut item.node, NodeWithTriviaContent::End);
-            syntax.put_back(old_node.into_option().unwrap()); //TODO
-        }
+        let item = parse_node_with(
+            &mut syntax,
+            (IgnoreBlankspace, IgnoreComma, IgnoreSemicolon),
+        );
 
         let is_end = item.is_end();
         if !item.is_whitespace() {
@@ -57,7 +56,6 @@ pub fn gen_enable_directive(node: &ast::EnableDirective) -> FormatDocumentResult
         }
     }
 
-    parse_node_with(&mut syntax, NoTrivia).expect_kind_optional(SyntaxKind::Semicolon)?;
     parse_end(&mut syntax)?;
 
     // ==== Format ====
@@ -110,14 +108,11 @@ pub fn gen_requires_directive(
     let mut items = Vec::new();
 
     loop {
-        let mut item = parse_node_with(&mut syntax, (IgnoreBlankspace, IgnoreComma));
+        let item = parse_node_with(
+            &mut syntax,
+            (IgnoreBlankspace, IgnoreComma, IgnoreSemicolon),
+        );
         //.expect_kind_optional(SyntaxKind::LanguageExtensionName)?;
-
-        // TODO This needs to be absorbed into parse_node..
-        if matches!(item.kind(), Some(SyntaxKind::Semicolon)) {
-            let old_node = std::mem::replace(&mut item.node, NodeWithTriviaContent::End);
-            syntax.put_back(old_node.into_option().unwrap()); //TODO
-        }
 
         let is_end = item.is_end();
         if !item.is_whitespace() {
@@ -128,7 +123,6 @@ pub fn gen_requires_directive(
         }
     }
 
-    parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::Semicolon)?; //Optionalize
     parse_end(&mut syntax)?;
 
     // ==== Format ====

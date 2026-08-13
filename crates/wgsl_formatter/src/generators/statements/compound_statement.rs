@@ -7,7 +7,10 @@ use syntax::{
 };
 
 use crate::{
-    ast_parse::{Filter, NoTrivia, PolicyAction, parse_end, parse_node_with, syntax_iter},
+    ast_parse::{
+        Filter, IgnoreBraces, IgnoreParenthesis, NoTrivia, PolicyAction, parse_end,
+        parse_node_with, syntax_iter,
+    },
     context_policies::collapse_one_liner_compound_statement_policy,
     generators::node::gen_node_with_trivia,
     helpers::{LineSpacing, read_blankspace},
@@ -35,10 +38,13 @@ pub fn gen_compound_statement(
     loop {
         let mut item = parse_node_with(
             &mut syntax,
-            Filter(|node| match read_blankspace(node) {
-                Some(LineSpacing::OnelineBlankspace(_)) => Some(PolicyAction::Ignored),
-                _ => None,
-            }),
+            (
+                IgnoreBraces,
+                Filter(|node| match read_blankspace(node) {
+                    Some(LineSpacing::OnelineBlankspace(_)) => Some(PolicyAction::Ignored),
+                    _ => None,
+                }),
+            ),
         );
 
         // We only care about newlines if they are somewhere within the trivia, not at the start or end
@@ -60,12 +66,6 @@ pub fn gen_compound_statement(
             item.succeeding_trivia = Vec::new();
         }
 
-        // TODO This needs to be absorbed into parse_node..
-        if matches!(item.kind(), Some(SyntaxKind::BraceRight)) {
-            let old_node = std::mem::replace(&mut item.node, NodeWithTriviaContent::End);
-            syntax.put_back(old_node.into_option().unwrap()); //TODO
-        }
-
         let is_end = item.is_end();
         if !item.is_whitespace() {
             items.push(item);
@@ -74,7 +74,6 @@ pub fn gen_compound_statement(
             break;
         }
     }
-    parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::BraceRight)?;
     parse_end(&mut syntax)?;
 
     let body_empty = items.iter().all(NodeWithTrivia::is_whitespace);

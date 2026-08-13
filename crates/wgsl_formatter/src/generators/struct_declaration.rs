@@ -6,7 +6,7 @@ use syntax::{
 };
 
 use crate::{
-    ast_parse::{IgnoreBlankspace, Succeeding, UntilEmptyLine},
+    ast_parse::{IgnoreBlankspace, IgnoreBraces, IgnoreComma, Succeeding, UntilEmptyLine},
     generators::node::gen_node_with_trivia,
 };
 use crate::{
@@ -56,24 +56,11 @@ pub fn gen_struct_body(body: &ast::StructBody) -> FormatDocumentResult<PrintItem
     let mut item_members = Vec::new();
 
     loop {
-        let mut item = parse_node_with(&mut syntax, Succeeding(UntilEmptyLine));
-
-        // TODO This should be absorbed into the parse_node
-        if item
-            .kind()
-            .is_some_and(|item| item == SyntaxKind::BraceRight)
-        {
-            let old_node = std::mem::replace(&mut item.node, NodeWithTriviaContent::End);
-            syntax.put_back(old_node.into_option().unwrap()); //TODO
-        }
-
-        // TODO This should be absorbed into the parse_node
-        if item
-            .kind()
-            .is_some_and(|item| item != SyntaxKind::StructMember)
-        {
-            item.node = NodeWithTriviaContent::NoContent;
-        }
+        let item = parse_node_with(
+            &mut syntax,
+            (Succeeding(UntilEmptyLine), IgnoreComma, IgnoreBraces),
+        )
+        .expect_kind_optional(SyntaxKind::StructMember)?;
 
         let is_end = item.is_end();
         if !item.is_whitespace() {
@@ -84,7 +71,6 @@ pub fn gen_struct_body(body: &ast::StructBody) -> FormatDocumentResult<PrintItem
         }
     }
 
-    parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::BraceRight)?;
     parse_end(&mut syntax)?;
 
     // === Format ===

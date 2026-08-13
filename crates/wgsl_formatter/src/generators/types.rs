@@ -6,8 +6,8 @@ use syntax::{AstNode as _, ast};
 
 use crate::{
     ast_parse::{
-        IgnoreBlankspace, IgnoreComma, NoTrivia, Succeeding, UntilNewline, parse_end,
-        parse_node_with, syntax_iter,
+        IgnoreBlankspace, IgnoreComma, IgnoreTemplateDelimiters, NoTrivia, Succeeding,
+        UntilNewline, parse_end, parse_node_with, syntax_iter,
     },
     generators::node::{
         gen_node_content, gen_node_preceding_trivia, gen_node_succeeding_trivia,
@@ -53,16 +53,15 @@ pub fn gen_template_list(
 
     let mut item_arguments = Vec::new();
     loop {
-        let mut item = parse_node_with(
+        let item = parse_node_with(
             &mut syntax,
-            (Succeeding(UntilNewline), IgnoreBlankspace, IgnoreComma),
+            (
+                Succeeding(UntilNewline),
+                IgnoreBlankspace,
+                IgnoreComma,
+                IgnoreTemplateDelimiters,
+            ),
         );
-
-        // TODO This needs to be absorbed into parse_node..
-        if matches!(item.kind(), Some(SyntaxKind::TemplateEnd)) {
-            let old_node = std::mem::replace(&mut item.node, NodeWithTriviaContent::End);
-            syntax.put_back(old_node.into_option().unwrap()); //TODO
-        }
 
         let is_end = item.is_end();
         if !item.is_whitespace() {
@@ -72,7 +71,6 @@ pub fn gen_template_list(
             break;
         }
     }
-    parse_node_with(&mut syntax, NoTrivia).expect_kind(parser::SyntaxKind::TemplateEnd)?;
     parse_end(&mut syntax)?;
 
     // ==== Format ====

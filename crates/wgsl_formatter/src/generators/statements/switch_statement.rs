@@ -11,8 +11,8 @@ use syntax::{
 
 use crate::{
     ast_parse::{
-        Filter, IgnoreBlankspace, NoTrivia, PolicyAction, Succeeding, UntilNewline, parse_end,
-        parse_node_with, syntax_iter,
+        Filter, IgnoreBlankspace, IgnoreBraces, NoTrivia, PolicyAction, Succeeding, UntilNewline,
+        parse_end, parse_node_with, syntax_iter,
     },
     generators::node::gen_node_with_trivia,
     print_item_buffer::{
@@ -57,16 +57,10 @@ pub fn gen_switch_body(statement: &SwitchBody) -> Result<PrintItemBuffer, Format
     let mut item_cases = Vec::new();
 
     loop {
-        let mut item = parse_node_with(&mut syntax, (Succeeding(UntilNewline), IgnoreBlankspace));
-
-        // TODO Absorb this into the parse_node_filter...
-        if item
-            .kind()
-            .is_some_and(|item| item == SyntaxKind::BraceRight)
-        {
-            let old_node = std::mem::replace(&mut item.node, NodeWithTriviaContent::End);
-            syntax.put_back(old_node.into_option().unwrap()); //TODO
-        }
+        let item = parse_node_with(
+            &mut syntax,
+            (Succeeding(UntilNewline), IgnoreBlankspace, IgnoreBraces),
+        );
 
         let is_end = item.is_end();
         if !item.is_whitespace() {
@@ -77,7 +71,6 @@ pub fn gen_switch_body(statement: &SwitchBody) -> Result<PrintItemBuffer, Format
         }
     }
 
-    parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::BraceRight)?;
     parse_end(&mut syntax)?;
 
     // ==== Format ====

@@ -9,8 +9,8 @@ use syntax::{
 
 use crate::{
     ast_parse::{
-        IgnoreBlankspace, IgnoreComma, NoTrivia, Succeeding, UntilNewline, parse_end,
-        parse_node_with, syntax_iter,
+        IgnoreBlankspace, IgnoreComma, IgnoreParenthesis, NoTrivia, Succeeding, UntilNewline,
+        parse_end, parse_node_with, syntax_iter,
     },
     generators::node::{
         gen_node_content, gen_node_preceding_trivia, gen_node_succeeding_trivia,
@@ -91,22 +91,15 @@ pub fn gen_fn_parameters(node: &ast::FunctionParameters) -> FormatDocumentResult
     // we define "strategies" - one for each application, and then look for those that are
     // the same, and type alias between them.
     loop {
-        let mut item = parse_node_with(
+        let item = parse_node_with(
             &mut syntax,
-            (Succeeding(UntilNewline), IgnoreBlankspace, IgnoreComma),
+            (
+                Succeeding(UntilNewline),
+                IgnoreBlankspace,
+                IgnoreComma,
+                IgnoreParenthesis,
+            ),
         );
-
-        // TODO Do I want to move this logicto trivia_filter too?
-        if matches!(item.kind(), Some(SyntaxKind::ParenthesisRight)) {
-            let old_node = std::mem::replace(&mut item.node, NodeWithTriviaContent::End);
-            syntax.put_back(old_node.into_option().unwrap()); //TODO
-        }
-
-        // TODO Move any code that looks like this to trivia_filter
-        // if matches!(item.kind(), Some(SyntaxKind::Comma)) {
-        //     // We throw away any information about commas
-        //     item.node = NodeWithTriviaContent::NoContent;
-        // }
 
         let is_end = item.is_end();
         if !item.is_whitespace() {
@@ -117,7 +110,6 @@ pub fn gen_fn_parameters(node: &ast::FunctionParameters) -> FormatDocumentResult
         }
     }
 
-    parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::ParenthesisRight)?;
     parse_end(&mut syntax)?;
 
     // ==== Format ====
