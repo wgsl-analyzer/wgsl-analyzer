@@ -57,6 +57,11 @@ impl PrintItemBuffer {
         incoming_request: Request,
     ) {
         let request_tracker = if self.items.is_empty() {
+            // PERFORMANCE: With the current implementation of the gen_ functions this path is a lot less likely - usually spacing requests
+            // are issued between printitems.
+            // A simple benchmark on large_file.rs yielded at 0.3ms speedup (2%) on my machine.
+            std::hint::cold_path();
+
             &mut self.start_request
         } else {
             &mut self.end_request
