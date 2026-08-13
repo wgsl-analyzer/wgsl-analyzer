@@ -150,7 +150,7 @@ impl NodeWithTrivia {
         if self.node.as_ref().is_some_and(|node| node.kind() != kind) {
             //TODO Better error here
             Err(FormatDocumentError::UnexpectedNodeOrToken {
-                received: self.node.into_option().unwrap(),
+                received: self.node.into_option(),
             })
             .expect_if_prefer_crash()
         } else {
@@ -169,7 +169,7 @@ impl NodeWithTrivia {
         } else {
             //TODO Better error here
             Err(FormatDocumentError::UnexpectedNodeOrToken {
-                received: self.node.into_option().unwrap(),
+                received: self.node.into_option(),
             })
             .expect_if_prefer_crash()
         }
@@ -187,7 +187,7 @@ impl NodeWithTrivia {
         }
         //TODO Better error here
         Err(FormatDocumentError::UnexpectedNodeOrToken {
-            received: self.node.into_option().unwrap(),
+            received: self.node.into_option(),
         })
         .expect_if_prefer_crash()
     }
@@ -206,7 +206,7 @@ impl NodeWithTrivia {
                     Ok(self)
                 } else {
                     Err(FormatDocumentError::UnexpectedNodeOrToken {
-                        received: self.node.into_option().unwrap(),
+                        received: self.node.into_option(),
                     })
                     .expect_if_prefer_crash()
                 }
@@ -226,7 +226,7 @@ impl NodeWithTrivia {
         }
         //TODO Better error here
         Err(FormatDocumentError::UnexpectedNodeOrToken {
-            received: self.node.into_option().unwrap(),
+            received: self.node.into_option(),
         })
         .expect_if_prefer_crash()
     }

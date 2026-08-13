@@ -70,7 +70,9 @@ mod syntax_iter_asserting {
                 None => Ok(()),
                 Some(other) => {
                     self.inner.put_back(other.clone());
-                    Err(FormatDocumentError::UnexpectedNodeOrToken { received: other })
+                    Err(FormatDocumentError::UnexpectedNodeOrToken {
+                        received: Some(other),
+                    })
                 },
             }
             .expect_if_prefer_crash()
@@ -116,7 +118,9 @@ pub fn parse_end(syntax: &mut SyntaxIter) -> FormatDocumentResult<()> {
             None => Ok(()),
             Some(other) => {
                 syntax.put_back(other.clone());
-                Err(FormatDocumentError::UnexpectedNodeOrToken { received: other })
+                Err(FormatDocumentError::UnexpectedNodeOrToken {
+                    received: Some(other),
+                })
             },
         }
         .expect_if_prefer_crash()
