@@ -7,9 +7,7 @@ use syntax::{
 };
 
 use crate::{
-    ast_parse::{
-        Chain, IgnoreBlankspace, IgnoreComma, NoTrivia, parse_end, parse_node_with, syntax_iter,
-    },
+    ast_parse::{IgnoreBlankspace, IgnoreComma, NoTrivia, parse_end, parse_node_with, syntax_iter},
     generators::node::gen_node_with_trivia,
     multiline_group::MultilineGroup,
     print_item_buffer::{
@@ -41,7 +39,7 @@ pub fn gen_enable_directive(node: &ast::EnableDirective) -> FormatDocumentResult
     let mut items = Vec::new();
 
     loop {
-        let mut item = parse_node_with(&mut syntax, Chain(IgnoreBlankspace, IgnoreComma));
+        let mut item = parse_node_with(&mut syntax, (IgnoreBlankspace, IgnoreComma));
         //.expect_kind_optional(SyntaxKind::EnableExtensionName)?;
 
         // TODO This needs to be absorbed into parse_node..
@@ -112,7 +110,7 @@ pub fn gen_requires_directive(
     let mut items = Vec::new();
 
     loop {
-        let mut item = parse_node_with(&mut syntax, Chain(IgnoreBlankspace, IgnoreComma));
+        let mut item = parse_node_with(&mut syntax, (IgnoreBlankspace, IgnoreComma));
         //.expect_kind_optional(SyntaxKind::LanguageExtensionName)?;
 
         // TODO This needs to be absorbed into parse_node..

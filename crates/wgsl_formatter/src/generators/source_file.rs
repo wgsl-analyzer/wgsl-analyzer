@@ -6,8 +6,8 @@ use syntax::{
 
 use crate::{
     ast_parse::{
-        Chain, IgnoreBlankspace, Succeeding, UntilEmptyLine, UntilNewline, parse_end,
-        parse_node_with, syntax_iter,
+        IgnoreBlankspace, Succeeding, UntilEmptyLine, UntilNewline, parse_end, parse_node_with,
+        syntax_iter,
     },
     generators::node::gen_node_with_trivia,
     print_item_buffer::{
@@ -28,7 +28,7 @@ pub fn gen_source_file(node: &ast::SourceFile) -> FormatDocumentResult<PrintItem
     loop {
         let mut item = parse_node_with(
             &mut syntax,
-            Succeeding(Chain(Chain(UntilEmptyLine, UntilNewline), IgnoreBlankspace)),
+            Succeeding((UntilEmptyLine, UntilNewline, IgnoreBlankspace)),
         );
 
         if item
