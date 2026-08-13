@@ -73,11 +73,6 @@ pub fn gen_fn_parameters(node: &ast::FunctionParameters) -> FormatDocumentResult
 
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::ParenthesisLeft)?;
 
-    // TODO Recreate something akin to parse_separated_items
-    // However i think it would be better to have a central space where
-    // we define "strategies" - one for each application, and then look for those that are
-    // the same, and type alias between them.
-
     // This
     let items = parse_many_nodes_with(
         &mut syntax,

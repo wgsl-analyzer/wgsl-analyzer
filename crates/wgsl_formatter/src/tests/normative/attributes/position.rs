@@ -453,8 +453,7 @@ pub fn format_attrs_on_while_statement() {
 }
 
 #[test]
-//TODO Rename to import
-pub fn format_attrs_on_input_statement() {
+pub fn format_attrs_on_import_statement() {
     check(
         "
         @if(THING)
