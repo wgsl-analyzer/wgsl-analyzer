@@ -12,11 +12,60 @@ use rowan::{TextLen as _, TextRange};
 
 use crate::{FormattingOptions, IndentStyle, format::format_tree, format_range};
 
+//Taken from expect_test
+// TODO This can be removed once expect_test exposes the trimmed data
+mod strip_indent {
+    pub(crate) fn trim_indent(mut text: &str) -> String {
+        if text.starts_with('\n') {
+            text = &text[1..];
+        }
+        let indent = text
+            .lines()
+            .filter(|it| !it.trim().is_empty())
+            .map(|it| it.len() - it.trim_start().len())
+            .min()
+            .unwrap_or(0);
+
+        lines_with_ends(text)
+            .map(|line| {
+                if line.len() <= indent {
+                    line.trim_start_matches(' ')
+                } else {
+                    &line[indent..]
+                }
+            })
+            .collect()
+    }
+
+    fn lines_with_ends(text: &str) -> LinesWithEnds<'_> {
+        LinesWithEnds { text }
+    }
+
+    struct LinesWithEnds<'text> {
+        text: &'text str,
+    }
+
+    impl<'text> Iterator for LinesWithEnds<'text> {
+        type Item = &'text str;
+        fn next(&mut self) -> Option<&'text str> {
+            if self.text.is_empty() {
+                return None;
+            }
+            let index = self.text.find('\n').map_or(self.text.len(), |it| it + 1);
+            let (result, next) = self.text.split_at(index);
+            self.text = next;
+            Some(result)
+        }
+    }
+}
+
 pub trait ExpectAssertEq: Debug {
     fn assert_eq(
         &self,
         other: &str,
     );
+
+    fn trimmed_data(&self) -> String;
 }
 
 #[cfg(test)]
@@ -26,6 +75,10 @@ impl ExpectAssertEq for expect_test::Expect {
         other: &str,
     ) {
         self.assert_eq(other);
+    }
+
+    fn trimmed_data(&self) -> String {
+        strip_indent::trim_indent(self.data())
     }
 }
 
@@ -37,6 +90,10 @@ impl ExpectAssertEq for expect_test::ExpectFile {
     ) {
         self.assert_eq(other);
     }
+
+    fn trimmed_data(&self) -> String {
+        self.data()
+    }
 }
 
 impl ExpectAssertEq for &str {
@@ -45,6 +102,10 @@ impl ExpectAssertEq for &str {
         other: &str,
     ) {
         assert_eq!(*self, other);
+    }
+
+    fn trimmed_data(&self) -> String {
+        self.to_string()
     }
 }
 
@@ -66,22 +127,6 @@ where
         &FormattingOptions::default().into(),
         Edition::LATEST,
     )
-}
-
-// TODO(MonaMayrhofer,discuss) Phase this api out, and find a proper replacement, or retire tab tests completely
-#[expect(clippy::needless_pass_by_value, reason = "intentional API")]
-pub fn check_tabs<E>(
-    before: &str,
-    after: E,
-) where
-    E: ExpectAssertEq,
-{
-    let options = FormattingOptions {
-        max_line_width: 80,
-        indent_style: IndentStyle::Tabs,
-        ..Default::default()
-    };
-    check_with_options(before, &after, &options.into(), Edition::LATEST);
 }
 
 /// Checks that the given source raises parsing diagnostics and is
@@ -182,12 +227,9 @@ where
     let formatted_twice = format_tree(&syntax, &options.formatting)
         .expect("Formatting already formatted sources should never fail with an error");
     let position = panic::Location::caller();
-    if formatted == formatted_twice {
-        return formatted;
-    }
-
-    println!(
-        "\n
+    if formatted != formatted_twice {
+        println!(
+            "\n
 \x1b[1m\x1b[91merror\x1b[97m: Formatting Idempotence check failed. Expected output to after two formatting passes to equal the output after just one.\x1b[0m
 \x1b[1m\x1b[34m-->\x1b[0m {position}
 \x1b[1mAfter one formatting pass\x1b[0m:
@@ -201,21 +243,57 @@ where
 ----
 "
     );
-    #[cfg(test)]
-    {
-        let diff = dissimilar::diff(&formatted, &formatted_twice);
-        println!(
-            "
+        #[cfg(test)]
+        {
+            let diff = dissimilar::diff(&formatted, &formatted_twice);
+            println!(
+                "
 \x1b[1mDiff\x1b[0m:
 ----
 {}
 ----
-",
-            format_chunks(diff)
-        );
+    ",
+                format_chunks(diff)
+            );
+        }
+        // Use resume_unwind instead of panic!() to prevent a backtrace, which is unnecessary noise.
+        panic::resume_unwind(Box::new(()));
     }
-    // Use resume_unwind instead of panic!() to prevent a backtrace, which is unnecessary noise.
-    panic::resume_unwind(Box::new(()));
+
+    //Check tabs
+    if options.formatting.indent_style != IndentStyle::Tabs {
+        let tab_source = before.replace("    ", "\t");
+
+        let parse = syntax::parse(tab_source.trim_start(), edition);
+        let syntax = parse.tree();
+
+        assert!(
+            parse.errors().is_empty(),
+            "Parsing the source after inserting tabs failed with errors: {:#?} \n Source: {:#?}",
+            parse.errors(),
+            parse.syntax()
+        );
+
+        // dbg!(&parse.errors());
+        let formatted = match format_tree(
+            &syntax,
+            &FormattingOptions {
+                indent_style: IndentStyle::Tabs,
+                ..options.formatting
+            },
+        ) {
+            Ok(formatted) => formatted,
+            Err(format_error) => {
+                println!("Formatting returned an unexpected error: {format_error:?}");
+                panic::resume_unwind(Box::new(()));
+            },
+        };
+
+        let after_trimmed = strip_indent::trim_indent(&after.trimmed_data()).replace("    ", "\t");
+        assert_eq!(after_trimmed, formatted, "Formatting with tabs should work");
+    }
+
+    formatted
 }
 
 #[cfg(test)]

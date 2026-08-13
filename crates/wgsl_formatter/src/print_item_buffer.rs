@@ -111,9 +111,18 @@ impl PrintItemBuffer {
             if string.contains("\n") {
                 panic!("Cannot push string with newlines to PrintItemBuffer {string:?}");
             }
+            if string.contains("\t") {
+                panic!("Cannot push string with tabs to PrintItemBuffer {string:?}");
+            }
         }
         self.apply_end_request();
         self.items.push_string(string);
+    }
+
+    /// Pushes a literal tab character to the buffer.
+    /// Do not use this for indentation, use [`Self::start_indent_before_request`] instead.
+    pub fn push_tab(&mut self) {
+        self.items.push_signal(Signal::Tab);
     }
 
     pub fn push_sc(
