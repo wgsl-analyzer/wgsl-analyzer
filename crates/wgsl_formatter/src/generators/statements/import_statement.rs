@@ -275,7 +275,7 @@ pub fn gen_import_statement(node: &ast::ImportStatement) -> FormatDocumentResult
     let item_super_relative = parse_node_with(&mut syntax, IgnoreBlankspace)
         .only_if_kind(SyntaxKind::ImportSuperRelative, &mut syntax);
     let item_entity =
-        parse_node_with(&mut syntax, IgnoreBlankspace).expect_castable_kind::<ast::ImportTree>()?;
+        parse_node_with(&mut syntax, IgnoreBlankspace).expect_ast_node::<ast::ImportTree>()?;
 
     parse_node_with(&mut syntax, NoTrivia).expect_kind(ast::SyntaxKind::Semicolon)?;
     parse_end(&mut syntax)?;

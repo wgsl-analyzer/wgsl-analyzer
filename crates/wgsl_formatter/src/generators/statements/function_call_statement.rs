@@ -255,7 +255,7 @@ pub fn gen_function_call_statement(
     // ==== Parse ====
     let mut syntax = syntax_iter(function_call_statement.syntax());
     let function_call =
-        parse_node_with(&mut syntax, IgnoreBlankspace).expect_castable_kind::<FunctionCall>()?;
+        parse_node_with(&mut syntax, IgnoreBlankspace).expect_ast_node::<FunctionCall>()?;
     parse_node_with(&mut syntax, NoTrivia).expect_kind_optional(SyntaxKind::Semicolon)?;
     parse_end(&mut syntax)?;
 

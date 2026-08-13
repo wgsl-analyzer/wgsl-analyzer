@@ -23,7 +23,7 @@ pub fn gen_increment_decrement_statement(
     let mut syntax = syntax_iter(increment_decrement_statement.syntax());
 
     let item_ident =
-        parse_node_with(&mut syntax, IgnoreBlankspace).expect_castable_kind::<Expression>()?;
+        parse_node_with(&mut syntax, IgnoreBlankspace).expect_ast_node::<Expression>()?;
     let item_operator = parse_node_with(&mut syntax, IgnoreBlankspace); //TODO Expect PlusPlus or MinusMinus
     parse_node_with(&mut syntax, NoTrivia).expect_kind_optional(SyntaxKind::Semicolon)?;
     parse_end(&mut syntax)?;

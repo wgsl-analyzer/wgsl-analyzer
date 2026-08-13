@@ -14,9 +14,10 @@ pub fn gen_field_expression(
     field_expression: &ast::FieldExpression
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
+
     let mut syntax = syntax_iter(field_expression.syntax());
     let item_expression =
-        parse_node_with(&mut syntax, IgnoreBlankspace).expect_castable_kind::<ast::Expression>()?;
+        parse_node_with(&mut syntax, IgnoreBlankspace).expect_ast_node::<ast::Expression>()?;
     let item_period =
         parse_node_with(&mut syntax, NoTrivia).expect_kind(parser::SyntaxKind::Period)?;
     let item_target_ident = parse_node_with(&mut syntax, IgnoreBlankspace)

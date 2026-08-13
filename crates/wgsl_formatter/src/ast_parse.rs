@@ -172,32 +172,54 @@ impl ParseNodePolicy for MatchKind {
     }
 }
 
-// TODO I think the default should be to ignore blankspace and *including* it should be explicit (in struct body and compound statements)
-
-#[expect(non_upper_case_globals, reason = "TODO")]
+#[expect(
+    non_upper_case_globals,
+    reason = "Keep struct based policies and constants looking the same"
+)]
 pub const IgnoreBlankspace: MatchKind = MatchKind(SyntaxKind::Blankspace, PolicyAction::Ignored);
-#[expect(non_upper_case_globals, reason = "TODO")]
+#[expect(
+    non_upper_case_globals,
+    reason = "Keep struct based policies and constants looking the same"
+)]
 pub const IgnoreComma: MatchKind = MatchKind(SyntaxKind::Comma, PolicyAction::Ignored);
-#[expect(non_upper_case_globals, reason = "TODO")]
+#[expect(
+    non_upper_case_globals,
+    reason = "Keep struct based policies and constants looking the same"
+)]
 pub const IgnoreColonColon: MatchKind = MatchKind(SyntaxKind::ColonColon, PolicyAction::Ignored);
-#[expect(non_upper_case_globals, reason = "TODO")]
+#[expect(
+    non_upper_case_globals,
+    reason = "Keep struct based policies and constants looking the same"
+)]
 pub const IgnoreSemicolon: MatchKind = MatchKind(SyntaxKind::Semicolon, PolicyAction::Ignored);
-#[expect(non_upper_case_globals, reason = "TODO")]
+#[expect(
+    non_upper_case_globals,
+    reason = "Keep struct based policies and constants looking the same"
+)]
 pub const IgnoreTemplateDelimiters: (MatchKind, MatchKind) = (
     MatchKind(SyntaxKind::TemplateStart, PolicyAction::Ignored),
     MatchKind(SyntaxKind::TemplateEnd, PolicyAction::Ignored),
 );
-#[expect(non_upper_case_globals, reason = "TODO")]
+#[expect(
+    non_upper_case_globals,
+    reason = "Keep struct based policies and constants looking the same"
+)]
 pub const IgnoreBraces: (MatchKind, MatchKind) = (
     MatchKind(SyntaxKind::BraceLeft, PolicyAction::Ignored),
     MatchKind(SyntaxKind::BraceRight, PolicyAction::Ignored),
 );
-#[expect(non_upper_case_globals, reason = "TODO")]
+#[expect(
+    non_upper_case_globals,
+    reason = "Keep struct based policies and constants looking the same"
+)]
 pub const IgnoreParenthesis: (MatchKind, MatchKind) = (
     MatchKind(SyntaxKind::ParenthesisLeft, PolicyAction::Ignored),
     MatchKind(SyntaxKind::ParenthesisRight, PolicyAction::Ignored),
 );
-#[expect(non_upper_case_globals, reason = "TODO")]
+#[expect(
+    non_upper_case_globals,
+    reason = "Keep struct based policies and constants looking the same"
+)]
 pub const MarkEndOnSemicolon: MatchKind = MatchKind(SyntaxKind::Semicolon, PolicyAction::MarkEnd);
 
 pub struct NoTrivia;

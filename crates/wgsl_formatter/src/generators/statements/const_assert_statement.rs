@@ -23,7 +23,7 @@ pub fn gen_const_assert_statement(
     let mut syntax = syntax_iter(statement.syntax());
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::ConstantAssert)?;
     let item_condition =
-        parse_node_with(&mut syntax, IgnoreBlankspace).expect_castable_kind::<Expression>()?;
+        parse_node_with(&mut syntax, IgnoreBlankspace).expect_ast_node::<Expression>()?;
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::Semicolon)?;
     parse_end(&mut syntax)?;
 

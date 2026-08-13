@@ -28,10 +28,10 @@ pub fn gen_assignment_statement(
     // ==== Parse ====
     let mut syntax = syntax_iter(assignment_statement.syntax());
     let item_target =
-        parse_node_with(&mut syntax, IgnoreBlankspace).expect_castable_kind::<Expression>()?;
+        parse_node_with(&mut syntax, IgnoreBlankspace).expect_ast_node::<Expression>()?;
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::Equal)?;
     let item_value =
-        parse_node_with(&mut syntax, IgnoreBlankspace).expect_castable_kind::<Expression>()?;
+        parse_node_with(&mut syntax, IgnoreBlankspace).expect_ast_node::<Expression>()?;
     parse_node_with(&mut syntax, NoTrivia).expect_kind_optional(SyntaxKind::Semicolon)?;
     parse_end(&mut syntax)?;
 
@@ -66,7 +66,7 @@ pub fn gen_phony_assignment_statement(
         parse_node_with(&mut syntax, IgnoreBlankspace).expect_kind(SyntaxKind::Underscore)?;
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::Equal)?;
     let item_value =
-        parse_node_with(&mut syntax, IgnoreBlankspace).expect_castable_kind::<Expression>()?;
+        parse_node_with(&mut syntax, IgnoreBlankspace).expect_ast_node::<Expression>()?;
     parse_node_with(&mut syntax, NoTrivia).expect_kind_optional(SyntaxKind::Semicolon)?;
     parse_end(&mut syntax)?;
 
@@ -98,11 +98,11 @@ pub fn gen_compound_assignment_statement(
     // ==== Parse ====
     let mut syntax = syntax_iter(compound_assignment_statement.syntax());
     let item_target =
-        parse_node_with(&mut syntax, IgnoreBlankspace).expect_castable_kind::<Expression>()?;
+        parse_node_with(&mut syntax, IgnoreBlankspace).expect_ast_node::<Expression>()?;
     let item_operator =
         parse_node_with(&mut syntax, NoTrivia).expect_ast_token::<CompoundAssignmentOperator>()?;
     let item_value =
-        parse_node_with(&mut syntax, IgnoreBlankspace).expect_castable_kind::<Expression>()?;
+        parse_node_with(&mut syntax, IgnoreBlankspace).expect_ast_node::<Expression>()?;
     parse_node_with(&mut syntax, NoTrivia).expect_kind_optional(SyntaxKind::Semicolon)?;
     parse_end(&mut syntax)?;
 

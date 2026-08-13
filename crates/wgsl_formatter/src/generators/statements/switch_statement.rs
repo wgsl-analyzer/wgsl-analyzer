@@ -30,9 +30,9 @@ pub fn gen_switch_statement(
     let mut syntax = syntax_iter(statement.syntax());
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::Switch)?;
     let item_expression =
-        parse_node_with(&mut syntax, IgnoreBlankspace).expect_castable_kind::<Expression>()?;
+        parse_node_with(&mut syntax, IgnoreBlankspace).expect_ast_node::<Expression>()?;
     let item_body =
-        parse_node_with(&mut syntax, IgnoreBlankspace).expect_castable_kind::<SwitchBody>()?;
+        parse_node_with(&mut syntax, IgnoreBlankspace).expect_ast_node::<SwitchBody>()?;
     parse_end(&mut syntax)?;
 
     // ==== Format ====
@@ -140,8 +140,8 @@ pub fn gen_switch_body_case(
 
     let item_colon =
         parse_node_with(&mut syntax, NoTrivia).only_if_kind(SyntaxKind::Colon, &mut syntax);
-    let item_body = parse_node_with(&mut syntax, IgnoreBlankspace)
-        .expect_castable_kind::<CompoundStatement>()?;
+    let item_body =
+        parse_node_with(&mut syntax, IgnoreBlankspace).expect_ast_node::<CompoundStatement>()?;
     parse_end(&mut syntax)?;
 
     // ==== Format ====
