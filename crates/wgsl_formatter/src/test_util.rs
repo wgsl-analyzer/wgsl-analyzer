@@ -22,8 +22,8 @@ mod strip_indent {
         }
         let indent = text
             .lines()
-            .filter(|it| !it.trim().is_empty())
-            .map(|it| it.len() - it.trim_start().len())
+            .filter(|line| !line.trim().is_empty())
+            .map(|line| line.len() - line.trim_start().len())
             .min()
             .unwrap_or(0);
 
@@ -38,7 +38,7 @@ mod strip_indent {
             .collect()
     }
 
-    fn lines_with_ends(text: &str) -> LinesWithEnds<'_> {
+    const fn lines_with_ends(text: &str) -> LinesWithEnds<'_> {
         LinesWithEnds { text }
     }
 
@@ -52,7 +52,10 @@ mod strip_indent {
             if self.text.is_empty() {
                 return None;
             }
-            let index = self.text.find('\n').map_or(self.text.len(), |it| it + 1);
+            let index = self
+                .text
+                .find('\n')
+                .map_or(self.text.len(), |position| position + 1);
             let (result, next) = self.text.split_at(index);
             self.text = next;
             Some(result)
