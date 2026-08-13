@@ -17,7 +17,7 @@ pub fn gen_prefix_expression(
 
     let item_operator = parse_node_with(&mut syntax, NoTrivia); // TODO Expect this to be an operator
     let item_expr =
-        parse_node_with(&mut syntax, IgnoreBlankspace).expect_castable_kind::<ast::Expression>()?;
+        parse_node_with(&mut syntax, IgnoreBlankspace).expect_ast_node::<ast::Expression>()?;
     parse_end(&mut syntax)?;
 
     // ==== Format ====

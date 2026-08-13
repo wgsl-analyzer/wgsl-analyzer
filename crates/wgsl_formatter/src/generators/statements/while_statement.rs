@@ -22,9 +22,9 @@ pub fn gen_while_statement(
     let mut syntax = syntax_iter(statement.syntax());
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::While)?;
     let item_condition =
-        parse_node_with(&mut syntax, IgnoreBlankspace).expect_castable_kind::<Expression>()?;
-    let item_body = parse_node_with(&mut syntax, IgnoreBlankspace)
-        .expect_castable_kind::<CompoundStatement>()?;
+        parse_node_with(&mut syntax, IgnoreBlankspace).expect_ast_node::<Expression>()?;
+    let item_body =
+        parse_node_with(&mut syntax, IgnoreBlankspace).expect_ast_node::<CompoundStatement>()?;
     parse_end(&mut syntax)?;
 
     // ==== Format ====

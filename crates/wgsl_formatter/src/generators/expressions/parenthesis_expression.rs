@@ -24,7 +24,7 @@ pub fn gen_parenthesis_expression(
 
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::ParenthesisLeft)?;
     let item_content =
-        parse_node_with(&mut syntax, IgnoreBlankspace).expect_castable_kind::<ast::Expression>()?;
+        parse_node_with(&mut syntax, IgnoreBlankspace).expect_ast_node::<ast::Expression>()?;
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::ParenthesisRight)?;
     parse_end(&mut syntax)?;
 

@@ -33,8 +33,8 @@ pub fn gen_for_statement(statement: &ast::ForStatement) -> FormatDocumentResult<
         .only_if_kind(SyntaxKind::ForContinuingPart, &mut syntax);
 
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::ParenthesisRight)?;
-    let item_body = parse_node_with(&mut syntax, IgnoreBlankspace)
-        .expect_castable_kind::<CompoundStatement>()?;
+    let item_body =
+        parse_node_with(&mut syntax, IgnoreBlankspace).expect_ast_node::<CompoundStatement>()?;
     parse_end(&mut syntax)?;
 
     // ==== Format ====
@@ -94,7 +94,7 @@ pub fn gen_for_statement_initializer(
     // === Parse ===
     let mut syntax = syntax_iter(node.syntax());
     let item_statement =
-        parse_node_with(&mut syntax, IgnoreBlankspace).expect_castable_kind::<Statement>()?;
+        parse_node_with(&mut syntax, IgnoreBlankspace).expect_ast_node::<Statement>()?;
     parse_end(&mut syntax)?;
 
     // === Format ===
@@ -107,7 +107,7 @@ pub fn gen_for_statement_condition(
     // === Parse ===
     let mut sub_syntax = syntax_iter(node.syntax());
     let item_condition =
-        parse_node_with(&mut sub_syntax, IgnoreBlankspace).expect_castable_kind::<Expression>()?;
+        parse_node_with(&mut sub_syntax, IgnoreBlankspace).expect_ast_node::<Expression>()?;
     parse_end(&mut sub_syntax)?;
 
     // === Format ===
@@ -119,7 +119,7 @@ pub fn gen_for_statement_continuing_part(
 ) -> FormatDocumentResult<PrintItemBuffer> {
     let mut sub_syntax = syntax_iter(node.syntax());
     let item_continuing =
-        parse_node_with(&mut sub_syntax, IgnoreBlankspace).expect_castable_kind::<Statement>()?;
+        parse_node_with(&mut sub_syntax, IgnoreBlankspace).expect_ast_node::<Statement>()?;
     parse_end(&mut sub_syntax)?;
 
     gen_node_with_trivia(&item_continuing)

@@ -102,8 +102,8 @@ fn gen_var_let_const_override_statement(
         parse_node_with(&mut syntax, NoTrivia).only_if_kind(SyntaxKind::Equal, &mut syntax);
 
     let assignment = if item_equal.is_some() {
-        let value = parse_node_with(&mut syntax, IgnoreBlankspace)
-            .expect_castable_kind::<ast::Expression>()?;
+        let value =
+            parse_node_with(&mut syntax, IgnoreBlankspace).expect_ast_node::<ast::Expression>()?;
         Some(value)
     } else {
         None

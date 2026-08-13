@@ -110,7 +110,6 @@ impl NodeWithTrivia {
         }
     }
 
-    // TODO This api is suboptimal
     pub fn only_if_kind(
         self,
         kind: SyntaxKind,
@@ -124,7 +123,6 @@ impl NodeWithTrivia {
         }
     }
 
-    // TODO This api is suboptimal
     pub fn only_if_ast_node<T>(
         self,
         syntax: &mut SyntaxIter,
@@ -177,9 +175,8 @@ impl NodeWithTrivia {
         }
     }
 
-    // TODO Rename to expect_ast_node
     #[track_caller]
-    pub fn expect_castable_kind<T>(self) -> FormatDocumentResult<Self>
+    pub fn expect_ast_node<T>(self) -> FormatDocumentResult<Self>
     where
         T: AstNode,
     {
