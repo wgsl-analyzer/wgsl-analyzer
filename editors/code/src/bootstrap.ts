@@ -1,5 +1,5 @@
-import { exec } from "child_process";
-import * as os from "os";
+import { exec } from "node:child_process";
+import * as os from "node:os";
 import * as vscode from "vscode";
 
 import type { Config } from "./config";
@@ -46,6 +46,7 @@ async function getServer(
 	} = context.extension.packageJSON;
 
 	// check if the server path is configured explicitly
+	// biome-ignore lint/complexity/useLiteralKeys: conflicting lint
 	const explicitPath = process.env["__WA_LSP_SERVER_DEBUG"] ?? config.serverPath;
 	if (explicitPath) {
 		if (explicitPath.startsWith("~/")) {
@@ -169,7 +170,7 @@ async function patchelf(destination: vscode.Uri): Promise<void> {
                     '';
                 }
             `;
-			const originalFile = vscode.Uri.file(destination.fsPath + "-orig");
+			const originalFile = vscode.Uri.file(`${destination.fsPath}-orig`);
 			await vscode.workspace.fs.rename(destination, originalFile, {
 				overwrite: true,
 			});

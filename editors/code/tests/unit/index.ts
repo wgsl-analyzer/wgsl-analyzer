@@ -1,7 +1,7 @@
 import * as assert from "node:assert/strict";
-import { readdir } from "fs/promises";
-import * as path from "path";
-import { pathToFileURL } from "url";
+import { readdir } from "node:fs/promises";
+import * as path from "node:path";
+import { pathToFileURL } from "node:url";
 
 class Test {
 	readonly name: string;

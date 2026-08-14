@@ -60,9 +60,9 @@ export class Context implements WgslAnalyzerExtensionApi {
 
 	private _client: lc.LanguageClient | undefined;
 	private _serverPath: string | undefined;
-	private traceOutputChannel: vscode.OutputChannel | undefined;
+	private traceOutputChannel: vscode.LogOutputChannel | undefined;
 	private testController: vscode.TestController | undefined;
-	private outputChannel: vscode.OutputChannel | undefined;
+	private outputChannel: vscode.LogOutputChannel | undefined;
 	private clientSubscriptions: Disposable[];
 	private state: PersistentState;
 	private commandFactories: Record<string, CommandFactory>;
@@ -221,15 +221,17 @@ export class Context implements WgslAnalyzerExtensionApi {
 		return this._client;
 	}
 
-	private getOutputChannel(): vscode.OutputChannel {
+	private getOutputChannel(): vscode.LogOutputChannel {
 		if (!this.outputChannel) {
-			this.outputChannel = vscode.window.createOutputChannel("wgsl-analyzer Language Server");
+			this.outputChannel = vscode.window.createOutputChannel("wgsl-analyzer Language Server", {
+				log: true,
+			});
 			this.pushExtCleanup(this.outputChannel);
 		}
 		return this.outputChannel;
 	}
 
-	private getTraceOutputChannel(): vscode.OutputChannel {
+	private getTraceOutputChannel(): vscode.LogOutputChannel {
 		if (!this.traceOutputChannel) {
 			this.traceOutputChannel = new LazyOutputChannel("wgsl-analyzer Language Server Trace");
 			this.pushExtCleanup(this.traceOutputChannel);
@@ -378,9 +380,7 @@ export class Context implements WgslAnalyzerExtensionApi {
 		this.commandDisposables = [];
 
 		const clientRunning = (!forceDisable && this._client?.isRunning()) ?? false;
-		const isClientRunning = function (_ctx: Context): _ctx is InitializedContext {
-			return clientRunning;
-		};
+		const isClientRunning = (_ctx: Context): _ctx is InitializedContext => clientRunning;
 
 		for (const [name, factory] of Object.entries(this.commandFactories)) {
 			const fullName = `wgsl-analyzer.${name}`;
