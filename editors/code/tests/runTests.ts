@@ -1,9 +1,9 @@
-import { runTests, TestOptions } from "@vscode/test-electron";
+import * as fs from "node:fs";
+import * as path from "node:path";
+import { runTests, type TestOptions } from "@vscode/test-electron";
 import { fold } from "fp-ts/Either";
 import { pipe } from "fp-ts/function";
-import * as fs from "fs";
 import * as Decoder from "io-ts/Decoder";
-import * as path from "path";
 
 const PackageJson = Decoder.struct({
 	engines: Decoder.struct({ vscode: Decoder.string }),

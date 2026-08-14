@@ -45,7 +45,7 @@ function getRenderedDiagnostic(context: Context, uri: vscode.Uri): string {
 		return "Unable to find original diagnostic";
 	}
 
-	const diagnostic = diagnostics[parseInt(uri.query)];
+	const diagnostic = diagnostics[parseInt(uri.query, 10)];
 	if (!diagnostic) {
 		return "Unable to find original diagnostic";
 	}
@@ -211,7 +211,7 @@ export class AnsiDecorationProvider implements vscode.Disposable {
 
 		const themeColor = AnsiDecorationProvider._anserToThemeColor[color];
 		if (themeColor) {
-			return new ThemeColor("terminal." + themeColor.id);
+			return new ThemeColor(`terminal.${themeColor.id}`);
 		}
 		return undefined;
 	}

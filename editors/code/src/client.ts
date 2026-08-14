@@ -1,19 +1,18 @@
+import { sep as pathSeparator } from "node:path"; // spellchecker:disable-line
 import anser from "anser";
-import { sep as pathSeparator } from "path"; // spellchecker:disable-line
 import * as vscode from "vscode";
 import { WorkspaceEdit } from "vscode";
-import * as Is from "vscode-languageclient/lib/common/utils/is";
 import * as lc from "vscode-languageclient/node";
-
 import { type Config, prepareVSCodeConfig } from "./config";
 import * as diagnostics from "./diagnostics";
+import * as Is from "./is";
 import { WaLanguageClient } from "./lang_client";
 import * as wa from "./lsp_ext";
 import { assert } from "./utilities";
 
 export function createClient(
-	traceOutputChannel: vscode.OutputChannel,
-	outputChannel: vscode.OutputChannel,
+	traceOutputChannel: vscode.LogOutputChannel,
+	outputChannel: vscode.LogOutputChannel,
 	initializationOptions: vscode.WorkspaceConfiguration,
 	serverOptions: lc.ServerOptions,
 	config: Config,
@@ -70,11 +69,11 @@ export function createClient(
 						unlinkedFiles.push(uri);
 						const folder = vscode.workspace.getWorkspaceFolder(uri)?.uri.fsPath;
 						if (folder) {
-							const parentBackslash = uri.fsPath.lastIndexOf(pathSeparator + "src");
+							const parentBackslash = uri.fsPath.lastIndexOf(`${pathSeparator}src`);
 							const parent = uri.fsPath.substring(0, parentBackslash);
 
 							if (parent.startsWith(folder)) {
-								const path = vscode.Uri.file(parent + pathSeparator + "wesl.toml");
+								const path = vscode.Uri.file(`${parent}${pathSeparator}wesl.toml`);
 								void vscode.workspace.fs.stat(path).then(async () => {
 									const choice = await vscode.window.showInformationMessage(
 										`This file does not belong to a loaded project. It looks like it might belong to the workspace at ${path.path}, do you want to add it to the linked projects?`,
@@ -88,8 +87,7 @@ export function createClient(
 										case "No":
 											break;
 										case "Yes": {
-											const pathToInsert =
-												"." + parent.substring(folder.length) + pathSeparator + "wesl.toml";
+											const pathToInsert = `.${parent.substring(folder.length)}${pathSeparator}wesl.toml`;
 											const value = config
 												// biome-ignore lint/suspicious/noExplicitAny: Signature comes from upstream
 												.get<any[]>("linkedProjects")
@@ -235,7 +233,7 @@ export function createClient(
 						const args = [
 							{
 								label: primary.title,
-								arguments: primary.command!.arguments![0],
+								arguments: primary.command?.arguments?.[0],
 							},
 							...items,
 						];
@@ -403,7 +401,7 @@ function renderHoverActions(actions: wa.CommandLinkGroup[]): vscode.MarkdownStri
 	const text = actions
 		.map(
 			(group) =>
-				(group.title ? group.title + " " : "") + group.commands.map(renderCommand).join(" | "),
+				(group.title ? `${group.title} ` : "") + group.commands.map(renderCommand).join(" | "),
 		)
 		.join(" | ");
 
