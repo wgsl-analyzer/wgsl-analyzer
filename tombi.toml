@@ -1,7 +1,7 @@
-toml-version = "v1.0.0"  # config file for tombi, the toml formatter. https://tombi-toml.github.io/tombi/
+# Config file for tombi, the toml formatter.
+# https://tombi-toml.github.io/tombi/
+toml-version = "v1.0.0"
 
 [format]
 [format.rules]
 indent-style = "tab"
-indent-sub-tables = false
-indent-table-key-value-pairs = false
