@@ -1,11 +1,11 @@
-import { strict as nativeAssert } from "assert";
+import { strict as nativeAssert } from "node:assert";
 import {
 	type ExecOptionsWithStringEncoding,
 	exec,
 	type SpawnOptionsWithoutStdio,
 	spawn,
-} from "child_process";
-import { inspect } from "util";
+} from "node:child_process";
+import { inspect } from "node:util";
 import * as vscode from "vscode";
 
 export function assert(condition: boolean, explanation: string): asserts condition {
@@ -177,22 +177,27 @@ export class LazyOutputChannel implements vscode.LogOutputChannel {
 		return this.channel.onDidChangeLogLevel;
 	}
 
+	// biome-ignore lint/suspicious/noExplicitAny: Signature comes from upstream
 	trace(message: string, ...args: any[]): void {
 		this.channel.trace(message, ...args);
 	}
 
+	// biome-ignore lint/suspicious/noExplicitAny: Signature comes from upstream
 	debug(message: string, ...args: any[]): void {
 		this.channel.debug(message, ...args);
 	}
 
+	// biome-ignore lint/suspicious/noExplicitAny: Signature comes from upstream
 	info(message: string, ...args: any[]): void {
 		this.channel.info(message, ...args);
 	}
 
+	// biome-ignore lint/suspicious/noExplicitAny: Signature comes from upstream
 	warn(message: string, ...args: any[]): void {
 		this.channel.warn(message, ...args);
 	}
 
+	// biome-ignore lint/suspicious/noExplicitAny: Signature comes from upstream
 	error(error: string | Error, ...args: any[]): void {
 		this.channel.error(error, ...args);
 	}

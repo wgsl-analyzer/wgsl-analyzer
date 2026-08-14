@@ -1,5 +1,5 @@
-import * as os from "os";
-import * as path from "path";
+import * as os from "node:os";
+import * as path from "node:path";
 import type { Disposable } from "vscode";
 import * as vscode from "vscode";
 import * as Is from "./is";
@@ -229,9 +229,9 @@ export class Config {
 		const config = this.cfg.inspect<boolean>("checkOnSave") ?? {
 			key: "checkOnSave",
 		};
-		let overrideInLanguage;
-		let target;
-		let value;
+		let overrideInLanguage: boolean | undefined;
+		let target: number | undefined;
+		let value: boolean | undefined;
 		if (
 			config.workspaceFolderValue !== undefined
 			|| config.workspaceFolderLanguageValue !== undefined
@@ -274,6 +274,7 @@ export class Config {
 		let sourceFileMap = this.get<Record<string, string> | "auto">("debug.sourceFileMap");
 		if (sourceFileMap !== "auto") {
 			// "/wesl/<id>" used by suggestions only.
+			// biome-ignore lint/complexity/useLiteralKeys: conflicting lint
 			const { ["/wesl/<id>"]: _, ...trimmed } =
 				this.get<Record<string, string>>("debug.sourceFileMap") ?? {};
 			sourceFileMap = trimmed;
@@ -354,8 +355,9 @@ export function substituteVariablesInEnv(env: Env): Env {
 		Object.entries(env).map(([key, value]) => {
 			const dependencies = new Set<string>();
 			const depRe = new RegExp(/\$\{(?<depName>.+?)\}/g);
-			let match = undefined;
-			while ((match = depRe.exec(value))) {
+			let match: RegExpExecArray | null = depRe.exec(value);
+			while (match) {
+				// biome-ignore lint/complexity/useLiteralKeys: conflicting lint
 				const depName = unwrapUndefinable(match.groups?.["depName"]);
 				dependencies.add(depName);
 				// `depName` at this point can have a form of `expression` or
@@ -363,6 +365,7 @@ export function substituteVariablesInEnv(env: Env): Env {
 				if (!definedEnvKeys.has(depName)) {
 					missingDeps.add(depName);
 				}
+				match = depRe.exec(value);
 			}
 			return [`env:${key}`, { dependencies: [...dependencies], value }];
 		}),
@@ -385,14 +388,14 @@ export function substituteVariablesInEnv(env: Env): Env {
 				// we cannot handle other prefixes at the moment
 				// leave values as is, but still mark them as resolved
 				envWithDeps[dep] = {
-					value: "${" + dep + "}",
+					value: `\${${dep}}`,
 					dependencies: [],
 				};
 				resolved.add(dep);
 			}
 		} else {
 			envWithDeps[dep] = {
-				value: computeVscodeVar(dep) || "${" + dep + "}",
+				value: computeVscodeVar(dep) || `\${${dep}}`,
 				dependencies: [],
 			};
 		}
@@ -466,6 +469,7 @@ function computeVscodeVar(varName: string): string | null {
 		// https://github.com/microsoft/vscode/blob/08ac1bb67ca2459496b272d8f4a908757f24f56f/src/vs/workbench/api/common/extHostVariableResolverService.ts#L81
 		// or
 		// https://github.com/microsoft/vscode/blob/29eb316bb9f154b7870eb5204ec7f2e7cf649bec/src/vs/server/node/remoteTerminalChannel.ts#L56
+		// biome-ignore lint/complexity/useLiteralKeys: conflicting lint
 		execPath: () => process.env["VSCODE_EXEC_PATH"] ?? process.execPath,
 
 		pathSeparator: () => path.sep, // spellchecker:disable-line

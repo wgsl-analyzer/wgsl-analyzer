@@ -380,9 +380,7 @@ export class Context implements WgslAnalyzerExtensionApi {
 		this.commandDisposables = [];
 
 		const clientRunning = (!forceDisable && this._client?.isRunning()) ?? false;
-		const isClientRunning = function (_ctx: Context): _ctx is InitializedContext {
-			return clientRunning;
-		};
+		const isClientRunning = (_ctx: Context): _ctx is InitializedContext => clientRunning;
 
 		for (const [name, factory] of Object.entries(this.commandFactories)) {
 			const fullName = `wgsl-analyzer.${name}`;

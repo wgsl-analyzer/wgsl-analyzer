@@ -1,4 +1,4 @@
-import * as path from "path";
+import * as path from "node:path";
 import * as vscode from "vscode";
 import * as lc from "vscode-languageclient";
 import type { LanguageClient } from "vscode-languageclient/node";
@@ -63,7 +63,7 @@ export function memoryUsage(context: InitializedContext): Cmd {
 			}
 
 			return context.client.sendRequest(wa.memoryUsage).then((memory: string) => {
-				return "Per-query memory usage:\n" + memory + "\n(note: database has been cleared)";
+				return `Per-query memory usage:\n${memory}\n(note: database has been cleared)`;
 			});
 		}
 
@@ -168,7 +168,7 @@ export function moveItem(context: InitializedContext, direction: wa.Direction): 
 			direction,
 		});
 
-		if (lcEdits.length == 0) {
+		if (lcEdits.length === 0) {
 			return;
 		}
 
@@ -1047,7 +1047,7 @@ export function toggleLSPLogs(context: Context): Cmd {
 			config.get<string | undefined>("trace.server") === "verbose" ? undefined : "verbose";
 
 		await config.update("trace.server", targetValue, vscode.ConfigurationTarget.Workspace);
-		if (targetValue && context.client && context.client.traceOutputChannel) {
+		if (targetValue && context.client?.traceOutputChannel) {
 			context.client.traceOutputChannel.show();
 		}
 	};
