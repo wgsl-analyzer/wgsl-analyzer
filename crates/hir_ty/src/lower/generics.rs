@@ -17,6 +17,7 @@ pub enum TemplateParameter {
     Enumerant(Enumerant),
 }
 
+#[derive(Clone, Debug, PartialEq)]
 pub struct TemplateParameters {
     container: TypeContainer,
     inner: VecDeque<(TemplateParameter, ExpressionId)>,

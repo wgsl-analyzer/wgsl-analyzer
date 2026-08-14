@@ -167,8 +167,8 @@ pub enum Lowered {
     Override(OverrideId),
     Local(BindingId),
     Enumerant(Enumerant),
-    BuiltinFunction(Name),
-    // BuiltinConstructor(Name),
+    BuiltinFunction(Name, Option<TemplateParameters>),
+    // BuiltinConstructor(Name, Option<TemplateParameters>),
 }
 
 impl Lowered {
@@ -176,11 +176,11 @@ impl Lowered {
     pub const fn kind(&self) -> LoweredKind {
         match self {
             Self::Type(_) | Self::TypeWithoutTemplate(_)
-            // | Self::BuiltinConstructor(_)
+            // | Self::BuiltinConstructor(_, _)
             => {
                 LoweredKind::Type
             },
-            Self::Function(_) | Self::BuiltinFunction(_) => LoweredKind::Function,
+            Self::Function(_) | Self::BuiltinFunction(_, _) => LoweredKind::Function,
             Self::GlobalConstant(_) => LoweredKind::Constant,
             Self::GlobalVariable(_) => LoweredKind::Variable,
             Self::Override(_) => LoweredKind::Override,
@@ -278,8 +278,9 @@ impl<'db> TypeLoweringContext<'db> {
     ) -> Result<Lowered, TypeLoweringError> {
         let resolved_type = self.resolver.resolve(self.db, path);
 
+        let template_parameters = self.eval_template_args(type_container, template_parameters);
         if resolved_type.is_ok() {
-            self.expect_no_template(template_parameters);
+            self.expect_no_template(&template_parameters);
         }
 
         match resolved_type {
@@ -290,12 +291,14 @@ impl<'db> TypeLoweringContext<'db> {
             Ok(ResolveKind::GlobalVariable(id)) => Ok(Lowered::GlobalVariable(id)),
             Ok(ResolveKind::Override(id)) => Ok(Lowered::Override(id)),
             Ok(ResolveKind::Local(local, _)) => Ok(Lowered::Local(local)),
-            Ok(ResolveKind::BuiltinFunction(name)) => Ok(Lowered::BuiltinFunction(name)),
+            Ok(ResolveKind::BuiltinFunction(name)) => {
+                Ok(Lowered::BuiltinFunction(name, Some(template_parameters)))
+            },
             Err(diagnostic)
                 if path.mod_path().kind() == PathKind::Plain && path.mod_path().len() == 1 =>
             {
                 let predeclared_name = &path.mod_path().segments()[0];
-                self.lower_if_predeclared(type_container, predeclared_name, template_parameters)
+                self.lower_if_predeclared(predeclared_name, template_parameters)
                     .ok_or_else(|| TypeLoweringError {
                         container: type_container,
                         kind: TypeLoweringErrorKind::Resolution(diagnostic),
@@ -310,14 +313,15 @@ impl<'db> TypeLoweringContext<'db> {
 
     fn expect_no_template(
         &mut self,
-        template_parameters: &[ExpressionId],
+        template_parameters: &TemplateParameters,
     ) {
-        if template_parameters.is_empty() {
+        if template_parameters.len() == 0 {
             return;
         }
-        for template_expression in template_parameters {
+        let mut iter = template_parameters.clone();
+        while let Some((_, template_expression)) = iter.take_next() {
             self.diagnostics.push(TypeLoweringError {
-                container: TypeContainer::Expression(*template_expression),
+                container: TypeContainer::Expression(template_expression),
                 kind: TypeLoweringErrorKind::UnexpectedTemplateArgument("nothing".to_owned()),
             });
         }
@@ -365,8 +369,8 @@ impl<'db> TypeLoweringContext<'db> {
             Ok(
                 Lowered::Enumerant(_)
                 | Lowered::Function(_)
-                | Lowered::BuiltinFunction(_)
-                // | Lowered::BuiltinConstructor(_)
+                | Lowered::BuiltinFunction(_, _)
+                // | Lowered::BuiltinConstructor(_, _)
                 | Lowered::GlobalConstant(_)
                 | Lowered::GlobalVariable(_)
                 | Lowered::Override(_)
@@ -397,6 +401,36 @@ impl<'db> WgslTypeConverter<'db> {
             db,
             interned_structs: Vec::default(),
         }
+    }
+
+    #[expect(
+        clippy::wrong_self_convention,
+        reason = "naming things is hard and this is probably changing in the future"
+    )]
+    pub fn to_maybe_vec_template(
+        &mut self,
+        template_parameters: Option<TemplateParameters>,
+    ) -> Result<Option<Vec<wgsl_types::tplt::TpltParam>>, ()> {
+        match self.to_wgsl_template_parameters(template_parameters) {
+            Ok(items) if items.is_empty() => Ok(None),
+            Ok(items) => Ok(Some(items)),
+            Err(()) => Err(()),
+        }
+    }
+
+    #[expect(
+        clippy::wrong_self_convention,
+        reason = "naming things is hard and this is probably changing in the future"
+    )]
+    pub fn to_wt_vec(
+        &mut self,
+        argument_types: &[Type],
+    ) -> Vec<wgsl_types::Type> {
+        argument_types
+            .iter()
+            .copied()
+            .map(|r#type| self.to_wgsl_types(r#type))
+            .collect()
     }
 
     #[expect(
@@ -881,6 +915,27 @@ impl<'db> WgslTypeConverter<'db> {
             | TypeKind::Reference(_)
             | TypeKind::Pointer(_)) => panic!("invalid sampled type {kind:?}"),
         }
+    }
+
+    #[expect(
+        clippy::wrong_self_convention,
+        reason = "naming things is hard and this is probably changing in the future"
+    )]
+    pub fn to_wgsl_template_parameters(
+        &mut self,
+        template_parameters: Option<TemplateParameters>,
+    ) -> Result<Vec<wgsl_types::tplt::TpltParam>, ()> {
+        let Some(mut template_parameters) = template_parameters else {
+            return Ok(vec![]);
+        };
+        let mut template_args = vec![];
+        while let Some((template_parameter, _)) = template_parameters.take_next() {
+            let template_parameter = self
+                .template_parameter_to_wgsl_types(template_parameter)
+                .ok_or(())?;
+            template_args.push(template_parameter);
+        }
+        Ok(template_args)
     }
 }
 

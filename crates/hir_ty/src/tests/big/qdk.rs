@@ -6549,7 +6549,7 @@ fn execute(
             62583..62649 'fuse_1...term))': [error]
             62613..62621 'shot_idx': u32
             62623..62637 'survivor_is_q2': [error]
-            62639..62648 'u32(term)': [error]
+            62639..62648 'u32(term)': u32
             62643..62647 'term': [error]
             62910..62914 'term': [error]
             62910..62919 'term == 1': [error]
@@ -7637,27 +7637,27 @@ fn execute(
             80096..80098 '0u': u32
             80100..80102 '0u': u32
             80104..80106 '0u': u32
-            80207..80212 'start': [error]
-            80215..80238 'i32(ta...ffset)': [error]
+            80207..80212 'start': i32
+            80215..80238 'i32(ta...ffset)': i32
             80219..80224 'table': [error]
             80219..80237 'table....offset': [error]
-            80248..80253 'count': [error]
-            80256..80278 'i32(ta...count)': [error]
+            80248..80253 'count': i32
+            80256..80278 'i32(ta...count)': i32
             80260..80265 'table': [error]
             80260..80277 'table...._count': [error]
             80288..80297 'entry_idx': i32
             80300..80357 'binary...count)': i32
             80326..80333 'rand_lo': u32
             80335..80342 'rand_hi': u32
-            80344..80349 'start': [error]
-            80351..80356 'count': [error]
+            80344..80349 'start': i32
+            80351..80356 'count': i32
             80367..80372 'entry': [error]
             80375..80430 '&batch...y_idx]': [error]
             80376..80386 'batch_data': ref<storage, BatchData, read>
             80376..80411 'batch_...ntries': ref<storage, [error], read>
             80376..80430 'batch_...y_idx]': [error]
-            80412..80417 'start': [error]
-            80412..80429 'start ...ry_idx': [error]
+            80412..80417 'start': i32
+            80412..80429 'start ...ry_idx': i32
             80420..80429 'entry_idx': i32
             80444..80503 'Correl...is_hi)': CorrelatedNoiseSample
             80466..80468 '1u': u32
@@ -7665,7 +7665,6 @@ fn execute(
             80470..80485 'entry.paulis_lo': [error]
             80487..80492 'entry': [error]
             80487..80502 'entry.paulis_hi': [error]
-            80412..80429 'start ...ry_idx': expected i32 or u32 but got [error]
             80922..80931 'paulis_lo': u32
             80938..80947 'paulis_hi': u32
             80954..80965 'qubit_count': u32

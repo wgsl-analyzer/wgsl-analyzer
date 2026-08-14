@@ -1,7 +1,7 @@
 use std::{num::NonZeroU32, str::FromStr as _};
 
 use base_db::{CapabilitiesInput, Intern as _};
-use hir_def::{expression::ExpressionId, item_tree::Name};
+use hir_def::item_tree::Name;
 use wgsl_types::{
     Instance,
     inst::LiteralInstance,
@@ -22,21 +22,26 @@ use crate::{
 impl TypeLoweringContext<'_> {
     pub fn lower_if_predeclared(
         &mut self,
-        type_container: TypeContainer,
         name: &Name,
-        template_parameters: &[ExpressionId],
+        template_parameters: TemplateParameters,
     ) -> Option<Lowered> {
         // If lowering the predeclared type failed, we should return a error type
         // As opposed to ignoring it when it's not a predeclared type
-        match self.lower_predeclared_type(type_container, name, template_parameters) {
+        match self.lower_predeclared_type(name, &template_parameters) {
             Ok(Some(lowered)) => Some(lowered),
             Ok(None) => {
                 if wgsl_types::idents::BUILTIN_FUNCTION_NAMES.contains(&name.as_str()) {
-                    Some(Lowered::BuiltinFunction(name.clone()))
+                    Some(Lowered::BuiltinFunction(
+                        name.clone(),
+                        Some(template_parameters),
+                    ))
                 // } else if wgsl_types::idents::BUILTIN_CONSTRUCTOR_NAMES.contains(&name.as_str()) {
-                //     Some(Lowered::BuiltinConstructor(name.clone()))
+                //     Some(Lowered::BuiltinConstructor(
+                //         name.clone(),
+                //         Some(template_parameters),
+                //     ))
                 } else if let Ok(enum_value) = Enumerant::from_str(name.as_str()) {
-                    self.expect_no_template(template_parameters);
+                    self.expect_no_template(&template_parameters);
                     Some(Lowered::Enumerant(enum_value))
                 } else {
                     None
@@ -55,11 +60,9 @@ impl TypeLoweringContext<'_> {
     )]
     fn lower_predeclared_type(
         &mut self,
-        type_container: TypeContainer,
         name: &Name,
-        template_parameters: &[ExpressionId],
+        template_parameters: &TemplateParameters,
     ) -> Result<Option<Lowered>, TypeLoweringError> {
-        let evaluated_parameters = self.eval_template_args(type_container, template_parameters);
         let type_kind = match name.as_str() {
             "bool" => {
                 self.expect_no_template(template_parameters);
@@ -90,7 +93,7 @@ impl TypeLoweringContext<'_> {
                 TypeKind::Scalar(ScalarType::F16)
             },
             "array" => {
-                if template_parameters.is_empty() {
+                if !template_parameters.has_next() {
                     return Ok(Some(Lowered::TypeWithoutTemplate(
                         TypeKind::Array(ArrayType {
                             inner: TypeKind::Error.intern(self.db),
@@ -100,7 +103,7 @@ impl TypeLoweringContext<'_> {
                         .intern(self.db),
                     )));
                 }
-                let array_template = self.array_template(evaluated_parameters)?;
+                let array_template = self.array_template(template_parameters)?;
                 TypeKind::Array(ArrayType {
                     inner: array_template.r#type,
                     binding_array: false,
@@ -108,7 +111,7 @@ impl TypeLoweringContext<'_> {
                 })
             },
             "binding_array" => {
-                if template_parameters.is_empty() {
+                if !template_parameters.has_next() {
                     return Ok(Some(Lowered::TypeWithoutTemplate(
                         TypeKind::Array(ArrayType {
                             inner: TypeKind::Error.intern(self.db),
@@ -118,7 +121,7 @@ impl TypeLoweringContext<'_> {
                         .intern(self.db),
                     )));
                 }
-                let array_template = self.array_template(evaluated_parameters)?;
+                let array_template = self.array_template(template_parameters)?;
                 TypeKind::Array(ArrayType {
                     inner: array_template.r#type,
                     binding_array: true,
@@ -126,7 +129,7 @@ impl TypeLoweringContext<'_> {
                 })
             },
             "vec2" => {
-                if template_parameters.is_empty() {
+                if !template_parameters.has_next() {
                     return Ok(Some(Lowered::TypeWithoutTemplate(
                         TypeKind::Vector(VectorType {
                             size: VecSize::Two,
@@ -135,14 +138,14 @@ impl TypeLoweringContext<'_> {
                         .intern(self.db),
                     )));
                 }
-                let component_type = self.vector_template(evaluated_parameters);
+                let component_type = self.vector_template(template_parameters);
                 TypeKind::Vector(VectorType {
                     size: VecSize::Two,
                     component_type,
                 })
             },
             "vec3" => {
-                if template_parameters.is_empty() {
+                if !template_parameters.has_next() {
                     return Ok(Some(Lowered::TypeWithoutTemplate(
                         TypeKind::Vector(VectorType {
                             size: VecSize::Three,
@@ -151,14 +154,14 @@ impl TypeLoweringContext<'_> {
                         .intern(self.db),
                     )));
                 }
-                let component_type = self.vector_template(evaluated_parameters);
+                let component_type = self.vector_template(template_parameters);
                 TypeKind::Vector(VectorType {
                     size: VecSize::Three,
                     component_type,
                 })
             },
             "vec4" => {
-                if template_parameters.is_empty() {
+                if !template_parameters.has_next() {
                     return Ok(Some(Lowered::TypeWithoutTemplate(
                         TypeKind::Vector(VectorType {
                             size: VecSize::Four,
@@ -167,7 +170,7 @@ impl TypeLoweringContext<'_> {
                         .intern(self.db),
                     )));
                 }
-                let component_type = self.vector_template(evaluated_parameters);
+                let component_type = self.vector_template(template_parameters);
                 TypeKind::Vector(VectorType {
                     size: VecSize::Four,
                     component_type,
@@ -278,7 +281,7 @@ impl TypeLoweringContext<'_> {
                     _ => unreachable!(),
                 };
 
-                if template_parameters.is_empty() {
+                if !template_parameters.has_next() {
                     return Ok(Some(Lowered::TypeWithoutTemplate(
                         TypeKind::Matrix(MatrixType {
                             columns,
@@ -288,7 +291,7 @@ impl TypeLoweringContext<'_> {
                         .intern(self.db),
                     )));
                 }
-                let inner = self.matrix_template(evaluated_parameters);
+                let inner = self.matrix_template(template_parameters);
                 TypeKind::Matrix(MatrixType {
                     columns,
                     rows,
@@ -440,7 +443,7 @@ impl TypeLoweringContext<'_> {
                 })
             },
             "ptr" => {
-                let pointer_template = self.pointer_template(evaluated_parameters)?;
+                let pointer_template = self.pointer_template(template_parameters)?;
                 TypeKind::Pointer(Pointer {
                     address_space: pointer_template.address_space,
                     inner: pointer_template.inner,
@@ -448,11 +451,11 @@ impl TypeLoweringContext<'_> {
                 })
             },
             "atomic" => {
-                let inner = self.atomic_template(evaluated_parameters);
+                let inner = self.atomic_template(template_parameters);
                 TypeKind::Atomic(AtomicType { inner })
             },
             "texture_1d" => {
-                let sampled = self.texture_sampled_template(evaluated_parameters)?;
+                let sampled = self.texture_sampled_template(template_parameters)?;
                 TypeKind::Texture(TextureType {
                     kind: TextureKind::from_sampled(sampled, self.db),
                     dimension: TextureDimensionality::D1,
@@ -461,7 +464,7 @@ impl TypeLoweringContext<'_> {
                 })
             },
             "texture_2d" => {
-                let sampled = self.texture_sampled_template(evaluated_parameters)?;
+                let sampled = self.texture_sampled_template(template_parameters)?;
                 TypeKind::Texture(TextureType {
                     kind: TextureKind::from_sampled(sampled, self.db),
                     dimension: TextureDimensionality::D2,
@@ -470,7 +473,7 @@ impl TypeLoweringContext<'_> {
                 })
             },
             "texture_2d_array" => {
-                let sampled = self.texture_sampled_template(evaluated_parameters)?;
+                let sampled = self.texture_sampled_template(template_parameters)?;
                 TypeKind::Texture(TextureType {
                     kind: TextureKind::from_sampled(sampled, self.db),
                     dimension: TextureDimensionality::D2,
@@ -479,7 +482,7 @@ impl TypeLoweringContext<'_> {
                 })
             },
             "texture_3d" => {
-                let sampled = self.texture_sampled_template(evaluated_parameters)?;
+                let sampled = self.texture_sampled_template(template_parameters)?;
                 TypeKind::Texture(TextureType {
                     kind: TextureKind::from_sampled(sampled, self.db),
                     dimension: TextureDimensionality::D3,
@@ -488,7 +491,7 @@ impl TypeLoweringContext<'_> {
                 })
             },
             "texture_cube" => {
-                let sampled = self.texture_sampled_template(evaluated_parameters)?;
+                let sampled = self.texture_sampled_template(template_parameters)?;
                 TypeKind::Texture(TextureType {
                     kind: TextureKind::from_sampled(sampled, self.db),
                     dimension: TextureDimensionality::Cube,
@@ -497,7 +500,7 @@ impl TypeLoweringContext<'_> {
                 })
             },
             "texture_cube_array" => {
-                let sampled = self.texture_sampled_template(evaluated_parameters)?;
+                let sampled = self.texture_sampled_template(template_parameters)?;
                 TypeKind::Texture(TextureType {
                     kind: TextureKind::from_sampled(sampled, self.db),
                     dimension: TextureDimensionality::Cube,
@@ -506,7 +509,7 @@ impl TypeLoweringContext<'_> {
                 })
             },
             "texture_multisampled_2d" => {
-                let sampled = self.texture_sampled_template(evaluated_parameters)?;
+                let sampled = self.texture_sampled_template(template_parameters)?;
                 TypeKind::Texture(TextureType {
                     kind: TextureKind::from_sampled(sampled, self.db),
                     dimension: TextureDimensionality::D2,
@@ -515,7 +518,7 @@ impl TypeLoweringContext<'_> {
                 })
             },
             "texture_storage_1d" => {
-                let storage_template = self.storage_texture_template(evaluated_parameters)?;
+                let storage_template = self.storage_texture_template(template_parameters)?;
                 TypeKind::Texture(TextureType {
                     kind: TextureKind::Storage(
                         storage_template.texel_format,
@@ -527,7 +530,7 @@ impl TypeLoweringContext<'_> {
                 })
             },
             "texture_storage_2d" => {
-                let storage_template = self.storage_texture_template(evaluated_parameters)?;
+                let storage_template = self.storage_texture_template(template_parameters)?;
                 TypeKind::Texture(TextureType {
                     kind: TextureKind::Storage(
                         storage_template.texel_format,
@@ -539,7 +542,7 @@ impl TypeLoweringContext<'_> {
                 })
             },
             "texture_storage_2d_array" => {
-                let storage_template = self.storage_texture_template(evaluated_parameters)?;
+                let storage_template = self.storage_texture_template(template_parameters)?;
                 TypeKind::Texture(TextureType {
                     kind: TextureKind::Storage(
                         storage_template.texel_format,
@@ -551,7 +554,7 @@ impl TypeLoweringContext<'_> {
                 })
             },
             "texture_storage_3d" => {
-                let storage_template = self.storage_texture_template(evaluated_parameters)?;
+                let storage_template = self.storage_texture_template(template_parameters)?;
                 TypeKind::Texture(TextureType {
                     kind: TextureKind::Storage(
                         storage_template.texel_format,
@@ -633,9 +636,10 @@ impl TypeLoweringContext<'_> {
 
     fn array_template(
         &mut self,
-        mut template_parameters: TemplateParameters,
+        template_parameters: &TemplateParameters,
     ) -> Result<ArrayTemplate, TypeLoweringError> {
-        self.expect_n_templates(&template_parameters, 1..=2);
+        self.expect_n_templates(template_parameters, 1..=2);
+        let mut template_parameters = template_parameters.clone();
         let r#type = match template_parameters.next_as_type() {
             Ok((r#type, _)) => r#type,
             Err(error) => {
@@ -693,9 +697,10 @@ impl TypeLoweringContext<'_> {
 
     fn vector_template(
         &mut self,
-        mut template_parameters: TemplateParameters,
+        template_parameters: &TemplateParameters,
     ) -> Type {
-        self.expect_n_templates(&template_parameters, 1..=1);
+        self.expect_n_templates(template_parameters, 1..=1);
+        let mut template_parameters = template_parameters.clone();
 
         match template_parameters.next_as_type() {
             Ok((r#type, expression)) => {
@@ -721,9 +726,10 @@ impl TypeLoweringContext<'_> {
 
     fn matrix_template(
         &mut self,
-        mut template_parameters: TemplateParameters,
+        template_parameters: &TemplateParameters,
     ) -> Type {
-        self.expect_n_templates(&template_parameters, 1..=1);
+        self.expect_n_templates(template_parameters, 1..=1);
+        let mut template_parameters = template_parameters.clone();
 
         match template_parameters.next_as_type() {
             Ok((r#type, expression)) => {
@@ -752,9 +758,10 @@ impl TypeLoweringContext<'_> {
 
     fn pointer_template(
         &mut self,
-        mut template_parameters: TemplateParameters,
+        template_parameters: &TemplateParameters,
     ) -> Result<PointerTemplate, TypeLoweringError> {
-        self.expect_n_templates(&template_parameters, 2..=3);
+        self.expect_n_templates(template_parameters, 2..=3);
+        let mut template_parameters = template_parameters.clone();
         let address_space = match template_parameters.next_as_enumerant() {
             Ok((Enumerant::AddressSpace(address_space), _)) => address_space,
             Ok((_, expression)) => {
@@ -830,9 +837,10 @@ impl TypeLoweringContext<'_> {
 
     fn atomic_template(
         &mut self,
-        mut template_parameters: TemplateParameters,
+        template_parameters: &TemplateParameters,
     ) -> Type {
-        self.expect_n_templates(&template_parameters, 1..=1);
+        self.expect_n_templates(template_parameters, 1..=1);
+        let mut template_parameters = template_parameters.clone();
 
         match template_parameters.next_as_type() {
             Ok((r#type, expression)) => {
@@ -870,9 +878,10 @@ impl TypeLoweringContext<'_> {
 
     fn texture_sampled_template(
         &mut self,
-        mut template_parameters: TemplateParameters,
+        template_parameters: &TemplateParameters,
     ) -> Result<SampledType, TypeLoweringError> {
-        self.expect_n_templates(&template_parameters, 1..=1);
+        self.expect_n_templates(template_parameters, 1..=1);
+        let mut template_parameters = template_parameters.clone();
 
         match template_parameters.next_as_type() {
             Ok((r#type, expression)) => {
@@ -910,9 +919,10 @@ impl TypeLoweringContext<'_> {
 
     fn storage_texture_template(
         &mut self,
-        mut template_parameters: TemplateParameters,
+        template_parameters: &TemplateParameters,
     ) -> Result<StorageTextureTemplate, TypeLoweringError> {
-        self.expect_n_templates(&template_parameters, 1..=2);
+        self.expect_n_templates(template_parameters, 1..=2);
+        let mut template_parameters = template_parameters.clone();
         let texel_format = match template_parameters.next_as_enumerant() {
             Ok((Enumerant::TexelFormat(texel_format), _)) => texel_format,
             Ok((_, expression)) => {

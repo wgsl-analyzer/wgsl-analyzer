@@ -146,9 +146,9 @@ impl TypeLoweringContext<'_> {
                     },
                     Lowered::Enumerant(enumerant) => TemplateParameter::Enumerant(enumerant),
                     Lowered::Function(_)
-                    | Lowered::BuiltinFunction(_)
-                    // | Lowered::BuiltinConstructor(_)
-                     => {
+                    | Lowered::BuiltinFunction(_, _)
+                    // | Lowered::BuiltinConstructor(_, _)
+                    => {
                         // function<another_function>()
                         self.diagnostics.push(TypeLoweringError {
                             container: TypeContainer::Expression(template_argument),

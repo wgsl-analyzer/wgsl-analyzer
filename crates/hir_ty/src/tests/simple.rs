@@ -2082,8 +2082,8 @@ fn foo() {
             19..20 'y': [error]
             23..25 '&0': [error]
             24..25 '0': integer
-            35..36 'x': [error]
-            39..51 'vec2<f32>(y)': [error]
+            35..36 'x': vec2<f32>
+            39..51 'vec2<f32>(y)': vec2<f32>
             49..50 'y': [error]
             [EditionedFileId(Id(300))] WgslError { expression: Idx::<Expression>(0), message: "cannot use unary operator `&` on type `AbstractInt`" } in Body
         "#]],
@@ -2103,8 +2103,8 @@ fn foo() {
             19..20 'y': [error]
             23..25 '&0': [error]
             24..25 '0': integer
-            35..36 'x': [error]
-            39..46 'vec2(y)': [error]
+            35..36 'x': vec2<[error]>
+            39..46 'vec2(y)': vec2<[error]>
             44..45 'y': [error]
             [EditionedFileId(Id(300))] WgslError { expression: Idx::<Expression>(0), message: "cannot use unary operator `&` on type `AbstractInt`" } in Body
         "#]],
@@ -2255,8 +2255,8 @@ fn foo() {
 }
         ",
         expect![[r#"
-            19..20 'y': array<[error], 2>
-            23..37 'array(bool, 1)': array<[error], 2>
+            19..20 'y': array<[error]>
+            23..37 'array(bool, 1)': array<[error]>
             29..33 'bool': [error]
             35..36 '1': integer
             29..33 'bool': expected variable, but got type `bool`
