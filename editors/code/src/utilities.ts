@@ -166,7 +166,7 @@ export class LazyOutputChannel implements vscode.LogOutputChannel {
 
 	get channel(): vscode.LogOutputChannel {
 		if (!this._channel) {
-			this._channel = vscode.window.createOutputChannel(this.name, { log:true });
+			this._channel = vscode.window.createOutputChannel(this.name, { log: true });
 		}
 		return this._channel;
 	}

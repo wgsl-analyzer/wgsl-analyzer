@@ -223,7 +223,9 @@ export class Context implements WgslAnalyzerExtensionApi {
 
 	private getOutputChannel(): vscode.LogOutputChannel {
 		if (!this.outputChannel) {
-			this.outputChannel = vscode.window.createOutputChannel("wgsl-analyzer Language Server", { log:true });
+			this.outputChannel = vscode.window.createOutputChannel("wgsl-analyzer Language Server", {
+				log: true,
+			});
 			this.pushExtCleanup(this.outputChannel);
 		}
 		return this.outputChannel;

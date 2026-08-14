@@ -5,10 +5,7 @@ import type { LanguageClient } from "vscode-languageclient/node";
 import { HOVER_REFERENCE_COMMAND } from "./client";
 import type { Cmd, Context, InitializedContext } from "./context";
 import * as wa from "./lsp_ext";
-import {
-	applySnippetTextEdits,
-	applySnippetWorkspaceEdit,
-} from "./snippets";
+import { applySnippetTextEdits, applySnippetWorkspaceEdit } from "./snippets";
 import type { SyntaxElement } from "./syntax_tree_provider";
 import {
 	isWeslDocument,
