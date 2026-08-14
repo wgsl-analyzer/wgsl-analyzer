@@ -60,26 +60,26 @@
 		"watch": "pnpm run build-base --sourcemap --watch"
 	},
 	"dependencies": {
-		"@hpcc-js/wasm": "^2.34.7",
+		"@hpcc-js/wasm": "^2.35.0",
 		"anser": "^2.3.5",
 		"d3": "^7.9.0",
 		"d3-graphviz": "^5.6.0",
 		"fp-ts": "^2.16.11",
 		"io-ts": "^2.2.22",
 		"jiti": "^2.7.0",
-		"vscode-languageclient": "^10.0.0"
+		"vscode-languageclient": "^10.1.0"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "^2.5.4",
+		"@biomejs/biome": "^2.5.8",
 		"@tsconfig/node-ts": "^23.6.4",
 		"@tsconfig/node22": "^22.0.5",
 		"@tsconfig/strictest": "^2.0.8",
-		"@types/node": "^26.1.1",
-		"@types/vscode": "^1.120.0",
-		"@vscode/test-electron": "^3.0.0",
+		"@types/node": "^25.9.5",
+		"@types/vscode": "^1.125.0",
+		"@vscode/test-electron": "^3.1.0",
 		"@vscode/vsce": "^3.9.2",
-		"esbuild": "^0.28.1",
-		"ovsx": "^1.0.2",
+		"esbuild": "^0.28.2",
+		"ovsx": "^1.1.1",
 		"tslib": "^2.8.1",
 		"typescript": "^6.0.3"
 	},

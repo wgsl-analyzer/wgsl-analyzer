@@ -157,19 +157,44 @@ export function execute(command: string, options: ExecOptionsWithStringEncoding)
 	});
 }
 
-export class LazyOutputChannel implements vscode.OutputChannel {
+export class LazyOutputChannel implements vscode.LogOutputChannel {
 	constructor(name: string) {
 		this.name = name;
 	}
-
 	name: string;
-	_channel: vscode.OutputChannel | undefined;
+	_channel: vscode.LogOutputChannel | undefined;
 
-	get channel(): vscode.OutputChannel {
+	get channel(): vscode.LogOutputChannel {
 		if (!this._channel) {
-			this._channel = vscode.window.createOutputChannel(this.name);
+			this._channel = vscode.window.createOutputChannel(this.name, { log:true });
 		}
 		return this._channel;
+	}
+	get logLevel(): vscode.LogLevel {
+		return this.channel.logLevel;
+	}
+	get onDidChangeLogLevel(): vscode.Event<vscode.LogLevel> {
+		return this.channel.onDidChangeLogLevel;
+	}
+
+	trace(message: string, ...args: any[]): void {
+		this.channel.trace(message, ...args);
+	}
+
+	debug(message: string, ...args: any[]): void {
+		this.channel.debug(message, ...args);
+	}
+
+	info(message: string, ...args: any[]): void {
+		this.channel.info(message, ...args);
+	}
+
+	warn(message: string, ...args: any[]): void {
+		this.channel.warn(message, ...args);
+	}
+
+	error(error: string | Error, ...args: any[]): void {
+		this.channel.error(error, ...args);
 	}
 
 	append(value: string): void {

@@ -12,8 +12,8 @@ import * as wa from "./lsp_ext";
 import { assert } from "./utilities";
 
 export function createClient(
-	traceOutputChannel: vscode.OutputChannel,
-	outputChannel: vscode.OutputChannel,
+	traceOutputChannel: vscode.LogOutputChannel,
+	outputChannel: vscode.LogOutputChannel,
 	initializationOptions: vscode.WorkspaceConfiguration,
 	serverOptions: lc.ServerOptions,
 	config: Config,
