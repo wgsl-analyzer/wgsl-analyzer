@@ -18,11 +18,12 @@ use lsp_types::{
     DidChangeTextDocumentNotification, DidChangeWatchedFilesNotification,
     DidChangeWorkspaceFoldersNotification, DidCloseTextDocumentNotification,
     DidOpenTextDocumentNotification, DidSaveTextDocumentNotification, DocumentDiagnosticRequest,
-    DocumentFilter, DocumentFormattingRequest, ExitNotification, FoldingRangeRequest,
-    InlayHintRefreshRequest, InlayHintRequest, MessageType, Notification as _, Registration,
-    RegistrationParams, RegistrationRequest, SaveOptions, SemanticTokensRefreshRequest,
-    ShutdownRequest, SignatureHelpRequest, TextDocumentFilter, TextDocumentFilterPattern,
-    TextDocumentRegistrationOptions, TextDocumentSaveRegistrationOptions, Uri,
+    DocumentFilter, DocumentFormattingRequest, DocumentRangeFormattingRequest, ExitNotification,
+    FoldingRangeRequest, InlayHintRefreshRequest, InlayHintRequest, MessageType, Notification as _,
+    Registration, RegistrationParams, RegistrationRequest, SaveOptions,
+    SemanticTokensRefreshRequest, ShutdownRequest, SignatureHelpRequest, TextDocumentFilter,
+    TextDocumentFilterPattern, TextDocumentRegistrationOptions,
+    TextDocumentSaveRegistrationOptions, Uri,
 };
 use project_model::{PackageKey, ProjectManifest};
 use salsa::{Cancelled, Durability};
@@ -958,7 +959,7 @@ impl GlobalState {
             .on::<NO_RETRY, DefinitionRequest>(handlers::request::handle_goto_definition)
             .on::<RETRY, CompletionRequest>(handlers::request::handle_completion)
             .on_fmt_thread::<DocumentFormattingRequest>(handlers::request::handle_formatting)
-            .on_fmt_thread::<lt::request::RangeFormatting>(
+            .on_fmt_thread::<DocumentRangeFormattingRequest>(
                 handlers::request::handle_range_formatting,
             )
             .on::<RETRY, FoldingRangeRequest>(handlers::request::handle_folding_range)
