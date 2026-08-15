@@ -381,6 +381,11 @@ pub fn gen_node(
             Ok(formatted)
         },
 
+        SyntaxKind::GlobalCompoundDeclaration => {
+            // TODO(MonaMayrhofer, post-1.0) Still experimental
+            Err(FormatDocumentError::UnsupportedNodeOrToken { received: node.clone() })
+        },
+
         SyntaxKind::Error |
         SyntaxKind::Reserved => {
             // We don't won't format a source that contains errors, or reserved keywords
