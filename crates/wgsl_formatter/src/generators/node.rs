@@ -9,10 +9,10 @@ use syntax::{AstNode as _, ast};
 use crate::{
     generators::{
         attributes::{
-            gen_align_attribute, gen_attribute, gen_attribute_list, gen_binding_attribute,
-            gen_blend_src_attribute, gen_builtin_attribute, gen_builtin_value_name,
-            gen_compute_attribute, gen_const_attribute, gen_diagnostic_attribute,
-            gen_early_depth_test_attribute, gen_early_depth_test_mode, gen_elif_attribute,
+            gen_align_attribute, gen_attr_standard_with_args, gen_attribute, gen_attribute_list,
+            gen_binding_attribute, gen_blend_src_attribute, gen_builtin_attribute,
+            gen_builtin_value_name, gen_compute_attribute, gen_const_attribute,
+            gen_diagnostic_attribute, gen_early_depth_test_mode, gen_elif_attribute,
             gen_else_attribute, gen_fragment_attribute, gen_group_attribute, gen_id_attribute,
             gen_if_attribute, gen_interpolate_attribute, gen_interpolate_sampling_name,
             gen_interpolate_type_name, gen_invariant_attribute, gen_location_attribute,
@@ -218,7 +218,16 @@ pub fn gen_node(
         SyntaxKind::IfAttribute => with_cast!(gen_if_attribute, ast::IfAttribute, node),
         SyntaxKind::ElifAttribute => with_cast!(gen_elif_attribute, ast::ElifAttribute, node),
         SyntaxKind::ElseAttribute => with_cast!(gen_else_attribute, ast::ElseAttribute, node),
-        SyntaxKind::EarlyDepthTestAttribute => with_cast!(gen_early_depth_test_attribute, ast::EarlyDepthTestAttribute, node),
+        SyntaxKind::EarlyDepthTestAttribute => {
+            gen_attr_standard_with_args(
+                &node
+                    .as_node()
+                    .expect("We just matched on the SyntaxKind")
+                    .clone(),
+                SyntaxKind::EarlyDepthTest,
+                dprint_core_macros::sc!("early_depth_test")
+            )
+        }
         SyntaxKind::AttributeList => with_cast!(gen_attribute_list, ast::AttributeList, node),
         SyntaxKind::SizeAttribute => with_cast!(gen_size_attribute, ast::SizeAttribute, node),
         SyntaxKind::WorkgroupSizeAttribute => with_cast!(gen_workgroup_size_attribute, ast::WorkgroupSizeAttribute, node),

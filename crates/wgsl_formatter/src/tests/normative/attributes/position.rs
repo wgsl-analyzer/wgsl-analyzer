@@ -503,6 +503,21 @@ pub fn format_all_attribute_order() {
     );
 }
 
+// TODO (MonaMayrhofer, post-1.0)
+#[test]
+#[ignore = "TODO - we support this once #1381 lands"]
+pub fn format_early_depth_test() {
+    check(
+        "
+            enable EARLY_DEPTH_TEST;
+
+            @early_depth_test(greater_equal)
+            fn a() {}
+        ",
+        expect![[""]],
+    );
+}
+
 #[test]
 pub fn format_attribute_suboptimal_comment_positioning_1() {
     // This test exists to demonstrate pretty suboptimal positioning of comments between attributes and functions
