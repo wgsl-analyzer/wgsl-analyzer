@@ -110,11 +110,21 @@ impl Type {
         }
     }
 
-    #[expect(clippy::doc_paragraphs_missing_punctuation, reason = "false positive")]
+    pub fn contains_struct(
+        self,
+        db: &dyn HirDatabase,
+        r#struct: StructId,
+    ) -> bool {
+        self.kind(db).contains_struct(db, r#struct)
+    }
+}
+
+#[salsa::tracked]
+impl Type {
     /// Apply the load rule.
     ///
     /// Reference: <https://www.w3.org/TR/WGSL/#load-rule>
-    #[must_use]
+    #[salsa::tracked(cycle_result = |_, _, _| false)]
     pub fn is_constructible(
         self,
         db: &dyn HirDatabase,
@@ -127,11 +137,11 @@ impl Type {
                 .field_types(struct_id)
                 .0
                 .iter()
-                .all(|(_, field_type)| field_type.is_constructible(db)),
+                .all(|(_, field_type)| *field_type.is_constructible(db)),
             TypeKind::BuiltinStruct(builtin_struct) => builtin_struct
                 .fields
                 .iter()
-                .all(|(_, field_type)| field_type.is_constructible(db)),
+                .all(|(_, field_type)| *field_type.is_constructible(db)),
             TypeKind::Array(array_type) => array_type.is_constructible(db),
             TypeKind::Atomic(_)
             | TypeKind::Texture(_)
@@ -141,14 +151,6 @@ impl Type {
             | TypeKind::StorageTypeOfTexelFormat(_)
             | TypeKind::BoundVariable(_) => false,
         }
-    }
-
-    pub fn contains_struct(
-        self,
-        db: &dyn HirDatabase,
-        r#struct: StructId,
-    ) -> bool {
-        self.kind(db).contains_struct(db, r#struct)
     }
 }
 
@@ -740,7 +742,7 @@ impl ArrayType {
         &self,
         db: &dyn HirDatabase,
     ) -> bool {
-        self.size != ArraySize::Dynamic && self.inner.is_constructible(db)
+        self.size != ArraySize::Dynamic && *self.inner.is_constructible(db)
     }
 }
 
