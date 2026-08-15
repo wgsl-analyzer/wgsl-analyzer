@@ -1,15 +1,11 @@
 use std::{fmt, panic};
 
 use base_db::{
-    EditionedFileId, FileSourceRootInput, FileText, Nonce, Package, SourceDatabase, SourceRootId,
-    SourceRootInput, all_packages, change::Change, input::SourceRoot,
-    set_all_packages_with_durability,
+    FileSourceRootInput, FileText, Nonce, Package, SourceDatabase, SourceRootId, SourceRootInput,
+    all_packages, input::SourceRoot, set_all_packages_with_durability,
 };
 use salsa::{Durability, Storage};
-use syntax::Edition;
-use test_fixture::WithFixture;
 use triomphe::Arc;
-use vfs::{AnchoredPath, FileId, VfsPath, file_set::FileSet};
 
 #[salsa_macros::db]
 pub(crate) struct TestDatabase {

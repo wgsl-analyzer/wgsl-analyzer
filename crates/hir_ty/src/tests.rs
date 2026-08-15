@@ -8,13 +8,13 @@ mod incremental;
 mod layout;
 mod operators;
 mod simple;
-use std::{fmt::Write as _, ops::ControlFlow};
+use std::fmt::Write as _;
 
 use base_db::{EditionedFileId, ExtensionsConfigInput, Intern as _, Lookup as _};
 use expect_test::Expect;
 use hir_def::{
     HasSource as _,
-    body::{Body, BodySourceMap},
+    body::Body,
     db::{DefinitionWithBodyId, Location, ModuleDefinitionId},
     expression::ExpressionId,
     expression_store::{
@@ -23,23 +23,23 @@ use hir_def::{
     },
     item_tree::{ItemTree, ModuleItemId, Name},
     signature::{StructSignature, TypeAliasSignature},
-    type_specifier::{self, TypeSpecifierId},
+    type_specifier::TypeSpecifierId,
 };
 use itertools::Itertools as _;
 use syntax::{AstNode as _, Diagnostic, ExtensionsConfig, SyntaxNode};
 use test_fixture::WithFixture as _;
-use triomphe::Arc;
 
 use crate::{
     db::HirDatabase as _,
-    diagnostics::{self, InferenceDiagnostic, InferenceDiagnosticKind},
+    diagnostics::{InferenceDiagnostic, InferenceDiagnosticKind},
     infer::{InferenceResult, TypeExpectation},
     lower::{LoweredKind, TypeContainer, TypeLoweringError},
     test_db::TestDatabase,
     ty::{
         Type,
         pretty::{
-            TypeVerbosity, pretty_type_expectation_with_verbosity, pretty_type_with_verbosity,
+            TypeVerbosity, pretty_type, pretty_type_expectation_with_verbosity,
+            pretty_type_with_verbosity,
         },
     },
 };
@@ -202,20 +202,28 @@ impl<'db> InferPrinter<'db> {
             },
             IDK::AssignmentNotAReference { .. }
             | IDK::AddressOfNotReference { .. }
-            | IDK::AddressOfNotReference { .. }
             | IDK::DerefNotAPointer { .. }
             | IDK::CyclicType { .. }
-            | IDK::UnexpectedTemplateArgument { .. }
             | IDK::WgslError { .. } => {
                 self.print_todo_bad_diagnostic(diagnostic, buffer);
             },
+            IDK::UnexpectedTemplateArgument { expression } => {
+                self.print_unexpected_template_argument(source_map, buffer, *expression);
+            },
+
             IDK::NoBuiltinOverload {
-                builtin,
+                builtin: _,
                 expression,
                 name,
                 parameters,
             } => {
-                self.print_no_builtin_overload(source_map, buffer, *expression, *name, parameters);
+                self.print_no_builtin_overload(
+                    source_map,
+                    buffer,
+                    *expression,
+                    name.as_ref(),
+                    parameters,
+                );
             },
             IDK::UnexpectedLoweredKind {
                 actual,
@@ -241,7 +249,14 @@ impl<'db> InferPrinter<'db> {
                 parameters,
                 r#type,
             } => {
-                self.print_no_constructor(source_map, buffer, *builtins, *expression, parameters);
+                self.print_no_constructor(
+                    source_map,
+                    buffer,
+                    *builtins,
+                    *expression,
+                    parameters,
+                    *r#type,
+                );
             },
             IDK::NoSuchField {
                 expression,
@@ -278,12 +293,29 @@ impl<'db> InferPrinter<'db> {
         }
     }
 
+    fn print_unexpected_template_argument(
+        &self,
+        source_map: &ExpressionSourceMap,
+        buffer: &mut String,
+        expression: ExpressionId,
+    ) {
+        let Some((range, text)) = self.get_expression_range_text(source_map, expression) else {
+            return;
+        };
+        writeln!(
+            buffer,
+            "{range:?} '{}': unexpected template argument `{text}`",
+            ellipsize(text.clone(), 15),
+        )
+        .unwrap();
+    }
+
     fn print_no_builtin_overload(
         &self,
         source_map: &ExpressionSourceMap,
         buffer: &mut String,
         expression: ExpressionId,
-        name: Option<&'static str>,
+        name: Option<&Name>,
         parameters: &[Type],
     ) {
         let Some((range, text)) = self.get_expression_range_text(source_map, expression) else {
@@ -293,7 +325,11 @@ impl<'db> InferPrinter<'db> {
             buffer,
             "{range:?} '{}': no built-in overload of `{}` with parameters: ({})",
             ellipsize(text, 15),
-            name.unwrap_or("<missing>"),
+            if let Some(name) = name {
+                name.as_str()
+            } else {
+                "<missing>"
+            },
             parameters
                 .iter()
                 .map(|r#type| pretty_type_with_verbosity(self.db, *r#type, TypeVerbosity::Full))
@@ -376,15 +412,17 @@ impl<'db> InferPrinter<'db> {
         builtins: crate::builtins::BuiltinId,
         expression: ExpressionId,
         parameters: &[Type],
+        r#type: Type,
     ) {
         let Some((range, text)) = self.get_expression_range_text(source_map, expression) else {
             return;
         };
         writeln!(
             buffer,
-            "{range:?} '{}': no constructor for builtin `{}` with parameters `{}`",
+            "{range:?} '{}': no constructor for builtin `{}` of type `{}` with parameters `{}`",
             ellipsize(text, 15),
             builtins.lookup(self.db).name(),
+            pretty_type(self.db, r#type),
             join_display(
                 parameters
                     .iter()
@@ -655,7 +693,7 @@ fn module_definitions(
                 ModuleItemId::Struct(id) => {
                     ModuleDefinitionId::Struct(Location::new(file_id, *id).intern(db))
                 },
-                ModuleItemId::ImportStatement(id) => return None,
+                ModuleItemId::ImportStatement(_) => return None,
             })
         })
         .collect()

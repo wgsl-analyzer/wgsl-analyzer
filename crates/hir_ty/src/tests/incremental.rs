@@ -6,9 +6,7 @@ use hir_def::{
 };
 use test_fixture::WithFixture as _;
 
-use crate::{
-    db::HirDatabase as _, infer::InferenceResult, test_db::TestDatabase, tests::module_definitions,
-};
+use crate::{infer::InferenceResult, test_db::TestDatabase, tests::module_definitions};
 
 #[test]
 fn typing_whitespace_inside_a_function_should_not_invalidate_types() {

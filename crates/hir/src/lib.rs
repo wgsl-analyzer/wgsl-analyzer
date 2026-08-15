@@ -1,4 +1,5 @@
 //! A high-level object-oriented access to code.
+#![warn(unused)]
 
 pub mod db;
 pub mod definition;
@@ -15,20 +16,16 @@ use hir_def::{
         GlobalVariableId, ImportId, Location, OverrideId, StructId, TypeAliasId,
     },
     expression::{ExpressionId, StatementId},
-    expression_store::{
-        ExpressionStore, ExpressionStoreOwnerId, ExpressionStoreSource, path::Path,
-    },
+    expression_store::{ExpressionStore, ExpressionStoreOwnerId, ExpressionStoreSource},
     item_scope::ItemScope,
-    item_tree::{self, ItemTree, ModuleItemId, Name},
-    mod_path::PathKind,
-    resolver::{ResolveKind, Resolver},
+    item_tree::{ItemTree, ModuleItemId},
+    resolver::Resolver,
     signature::{FieldId, FunctionSignature, ParameterId, StructSignature, TypeAliasSignature},
 };
 use hir_ty::{infer::InferenceResult, ty::Type};
 use smallvec::SmallVec;
 use stdx::impl_from;
 use syntax::{AstNode as _, HasName as _, SyntaxNode, ast, pointer::AstPointer};
-use triomphe::Arc;
 
 pub use hir_ty::{AddressSpace, db::HirDatabase};
 
@@ -168,9 +165,7 @@ impl<'db> Semantics<'db> {
     ) -> Resolver<'db> {
         if let Some(definition) = self.find_container(file_id, source) {
             match definition {
-                ChildContainer::DefinitionWithBodyId(
-                    id @ DefinitionWithBodyId::Function(function_id),
-                ) => {
+                ChildContainer::DefinitionWithBodyId(id @ DefinitionWithBodyId::Function(_)) => {
                     if let Some(nearest_scope) = nearest_scope(source) {
                         self.analyze(id).resolver_for(nearest_scope)
                     } else {
@@ -819,7 +814,7 @@ impl Module {
                 ModuleDef::Struct(r#struct) => {
                     let file = r#struct.id.lookup(db).file_id;
                     let (_, signature_map) = StructSignature::with_source_map(db, r#struct.id);
-                    let (fields, diagnostics) = &*db.field_types(r#struct.id);
+                    let (_, diagnostics) = &*db.field_types(r#struct.id);
                     for diagnostic in diagnostics {
                         if diagnostic.source != ExpressionStoreSource::Signature {
                             tracing::warn!(
@@ -869,11 +864,7 @@ impl Module {
         }
 
         for diagnostic in &ItemScope::of(db, self.file_id).diagnostics {
-            accumulator.push(diagnostics::any_diag_from_def_diagnostic(
-                db,
-                diagnostic,
-                self.file_id,
-            ));
+            accumulator.push(diagnostics::any_diag_from_def_diagnostic(db, diagnostic));
         }
     }
 }

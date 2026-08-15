@@ -23,7 +23,6 @@ smallvec.workspace = true
 syntax.workspace = true
 tracing.workspace = true
 triomphe.workspace = true
-vfs.workspace = true
 wgsl-types.workspace = true
 
 # These moved to dev deps if `setup_tracing` was a macro and dependents also

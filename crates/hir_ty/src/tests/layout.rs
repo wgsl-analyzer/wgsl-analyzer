@@ -4,7 +4,6 @@ use hir_def::{db::ModuleDefinitionId, item_tree::ItemTree, signature::StructSign
 use std::fmt::Write as _;
 use syntax::ExtensionsConfig;
 use test_fixture::WithFixture as _;
-use vfs::FileId;
 use wgsl_types::syntax::AddressSpace;
 
 use crate::{

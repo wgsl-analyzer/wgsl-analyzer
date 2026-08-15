@@ -4,7 +4,6 @@ use base_db::SourceDatabase;
 use either::Either;
 use la_arena::{Arena, Idx};
 use rustc_hash::FxHashMap;
-use triomphe::Arc;
 
 use super::{BindingId, Body};
 use crate::{

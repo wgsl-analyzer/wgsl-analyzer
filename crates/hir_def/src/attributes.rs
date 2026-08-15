@@ -70,7 +70,8 @@ impl AttributeList {
         )
     }
 
-    fn empty() -> (Self, ExpressionSourceMap) {
+    #[must_use]
+    pub fn empty() -> (Self, ExpressionSourceMap) {
         (
             Self {
                 attributes: Vec::new(),
@@ -87,8 +88,6 @@ fn get_attribute_parameters(
     attribute: ast::Attribute,
 ) -> Vec<la_arena::Idx<crate::expression::Expression>> {
     match attribute {
-        ast::Attribute::ConstantAttribute(inner) => Vec::new(),
-        ast::Attribute::DiagnosticAttribute(inner) => Vec::new(), // these controls are not expressions
         ast::Attribute::OtherAttribute(inner) => inner
             .parameters()
             .map(|p| p.arguments().map(|e| collector.collect_expression(e)))
@@ -109,7 +108,6 @@ fn get_attribute_parameters(
             .into_iter()
             .map(|e| collector.collect_expression(e))
             .collect(),
-        ast::Attribute::BuiltinAttribute(inner) => Vec::new(), // these arguments are not expressions
         ast::Attribute::GroupAttribute(inner) => inner
             .parameter()
             .into_iter()
@@ -120,14 +118,11 @@ fn get_attribute_parameters(
             .into_iter()
             .map(|e| collector.collect_expression(e))
             .collect(),
-        ast::Attribute::InterpolateAttribute(inner) => Vec::new(), // these arguments are not expressions
-        ast::Attribute::InvariantAttribute(inner) => Vec::new(),   // has no arguments
         ast::Attribute::LocationAttribute(inner) => inner
             .parameter()
             .into_iter()
             .map(|e| collector.collect_expression(e))
             .collect(),
-        ast::Attribute::MustUseAttribute(inner) => Vec::new(),
         ast::Attribute::SizeAttribute(inner) => inner
             .parameter()
             .into_iter()
@@ -137,20 +132,26 @@ fn get_attribute_parameters(
             .parameters()
             .map(|e| collector.collect_expression(e))
             .collect(),
-        ast::Attribute::VertexAttribute(inner) => Vec::new(),
-        ast::Attribute::FragmentAttribute(inner) => Vec::new(),
-        ast::Attribute::ComputeAttribute(inner) => Vec::new(),
         ast::Attribute::ElifAttribute(inner) => inner
             .parameter()
             .into_iter()
             .map(|e| collector.collect_expression(e))
             .collect(),
-        ast::Attribute::ElseAttribute(inner) => Vec::new(),
         ast::Attribute::IfAttribute(inner) => inner
             .parameter()
             .into_iter()
             .map(|e| collector.collect_expression(e))
             .collect(),
+        ast::Attribute::ConstantAttribute(_)
+        | ast::Attribute::DiagnosticAttribute(_)
+        | ast::Attribute::BuiltinAttribute(_)
+        | ast::Attribute::InterpolateAttribute(_)
+        | ast::Attribute::InvariantAttribute(_)
+        | ast::Attribute::MustUseAttribute(_)
+        | ast::Attribute::VertexAttribute(_)
+        | ast::Attribute::FragmentAttribute(_)
+        | ast::Attribute::ComputeAttribute(_)
+        | ast::Attribute::ElseAttribute(_) => Vec::new(),
     }
 }
 

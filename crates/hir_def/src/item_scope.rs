@@ -1,7 +1,7 @@
 use crate::{
     db::{ImportId, ModuleDefinitionId},
     item_tree::Name,
-    mod_path::{AbsoluteModPath, ModPath},
+    mod_path::AbsoluteModPath,
     name_resolution::{DefDiagnostic, DefDiagnosticKind, collect_module},
     visibility::Visibility,
 };

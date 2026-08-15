@@ -1,9 +1,8 @@
 use base_db::{EditionedFileId, SourceDatabase};
 use syntax::{
     HasName as _,
-    ast::{Directive, Item, SourceFile},
+    ast::{Item, SourceFile},
 };
-use triomphe::Arc;
 
 use super::{GlobalConstant, GlobalVariable, Override, Struct, TypeAlias};
 use crate::{
@@ -12,7 +11,7 @@ use crate::{
         self, BigModItem, Function, GlobalAssertStatement, ImportStatement, ImportTree, ItemTree,
         ItemTreeAstId, ModuleItemId, SmallModItem,
     },
-    mod_path::{ModPath, PathKind},
+    mod_path::PathKind,
 };
 
 pub(crate) struct Ctx<'db> {

@@ -1,20 +1,12 @@
-use base_db::{
-    EditionedFileId, Intern as _, Package, SourceDatabase, file_package, input::PackageData,
-};
-use itertools::Itertools as _;
+use base_db::{EditionedFileId, Intern as _, Package, SourceDatabase, file_package};
 use syntax::ast;
-use vfs::VfsPath;
 
 use crate::{
     db::{Location, ModuleDefinitionId},
     item_scope::{ItemScope, ModuleImportPath, ModuleItem},
     item_tree::{FlatImport, ImportStatement, ItemTree, ModuleItemId, Name},
-    mod_path::{AbsoluteModPath, ModPath, PathKind},
-    name_resolution::{
-        ModulesMap,
-        diagnostics::{self, DefDiagnostic},
-        resolve_module,
-    },
+    mod_path::{AbsoluteModPath, PathKind},
+    name_resolution::{ModulesMap, diagnostics::DefDiagnostic, resolve_module},
     visibility::Visibility,
 };
 
@@ -166,7 +158,7 @@ impl ModCollector<'_> {
     ) {
         let previous = self.item_scope.push_item(name.clone(), item);
 
-        if let Some(previous) = previous {
+        if previous.is_some() {
             self.item_scope
                 .push_diagnostic(DefDiagnostic::name_conflict(
                     self.file_id,
@@ -184,7 +176,7 @@ impl ModCollector<'_> {
     ) {
         let previous = self.item_scope.push_import_path(name.clone(), path);
 
-        if let Some(previous) = previous {
+        if previous.is_some() {
             self.item_scope
                 .push_diagnostic(DefDiagnostic::name_conflict(
                     self.file_id,

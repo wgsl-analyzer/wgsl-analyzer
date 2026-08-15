@@ -318,15 +318,16 @@ pub fn diagnostics(
                         .map(|(_, overload)| pretty_fn(db, overload.r#type.lookup(db)))
                         .join("\n");
 
-                    let name = name.unwrap_or_else(|| builtin.name());
+                    let name = name.unwrap_or_else(|| builtin.name().into());
 
                     let frange = original_file_range(db, expression.file_id, source.syntax());
                     Diagnostic::new(
                         DiagnosticCode("8"),
                         format!(
-                            "no overload of `{name}` found for given arguments.\
-                        Found ({parameters}), expected one of:\n{possible}"
-                        ),
+                            "no overload of `{}` found for given arguments.\
+                            ),
+                            Found ({parameters}), expected one of:\n{possible}",
+                            name.as_str()),
                         frange.range,
                     )
                 },

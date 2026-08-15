@@ -1,7 +1,7 @@
 use base_db::{impl_intern_key, impl_intern_lookup};
 use hir_def::item_tree::Name;
 
-use crate::{db::HirDatabase, ty::Type};
+use crate::ty::Type;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct FunctionDetails {
