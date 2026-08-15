@@ -37,6 +37,7 @@ use crate::{
         function_declaration::{
             gen_fn_parameter, gen_fn_parameters, gen_fn_return_type, gen_function_declaration,
         },
+        global_compound_declaration::gen_global_compound_declaration,
         name::gen_name,
         path::gen_path,
         source_file::gen_source_file,
@@ -135,6 +136,7 @@ pub fn gen_node(
 ) -> FormatDocumentResult<PrintItemBuffer> {
     match node.kind() {
         SyntaxKind::SourceFile => with_cast!(gen_source_file, ast::SourceFile, node),
+        SyntaxKind::GlobalCompoundDeclaration => with_cast!(gen_global_compound_declaration, ast::GlobalCompoundDeclaration, node),
         SyntaxKind::FunctionDeclaration => with_cast!(gen_function_declaration, ast::FunctionDeclaration, node),
         SyntaxKind::TemplateList => with_cast!(gen_template_list, ast::TemplateList, node),
         SyntaxKind::FunctionParameters => with_cast!(gen_fn_parameters, ast::FunctionParameters, node),
@@ -381,10 +383,6 @@ pub fn gen_node(
             Ok(formatted)
         },
 
-        SyntaxKind::GlobalCompoundDeclaration => {
-            // TODO(MonaMayrhofer, post-1.0) Still experimental
-            Err(FormatDocumentError::UnsupportedNodeOrToken { received: node.clone() })
-        },
 
         SyntaxKind::Error |
         SyntaxKind::Reserved => {

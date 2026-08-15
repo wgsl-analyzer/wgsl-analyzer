@@ -4,6 +4,7 @@ pub mod diagnostic_directive;
 pub mod directives;
 pub mod expressions;
 pub mod function_declaration;
+pub mod global_compound_declaration;
 pub mod name;
 pub mod node;
 pub mod path;
