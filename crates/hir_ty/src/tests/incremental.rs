@@ -32,13 +32,13 @@ fn foo() {
                 }
             }
         },
-        &[("InferenceResult::of", 1)],
+        &[("infer_query", 1)],
         expect_test::expect![[r#"
             [
                 "ItemTree::of_",
                 "EditionedFileId::parse_",
                 "AstIdMap::of_",
-                "InferenceResult::of_",
+                "infer_query",
                 "ItemScope::of_",
                 "Body::of_",
                 "Body::with_source_map_",
@@ -71,7 +71,7 @@ fn foo() {
                 }
             }
         },
-        &[("InferenceResult::of", 0)],
+        &[("infer_query", 0)],
         expect_test::expect![[r#"
             [
                 "EditionedFileId::parse_",
@@ -114,26 +114,26 @@ fn baz() -> i32 {
                 }
             }
         },
-        &[("InferenceResult::of", 3)],
+        &[("infer_query", 3)],
         expect_test::expect![[r#"
             [
                 "ItemTree::of_",
                 "EditionedFileId::parse_",
                 "AstIdMap::of_",
-                "InferenceResult::of_",
+                "infer_query",
                 "ItemScope::of_",
                 "Body::of_",
                 "Body::with_source_map_",
                 "FunctionSignature::of_",
                 "FunctionSignature::with_source_map_",
                 "ExprScopes::of_",
-                "InferenceResult::of_",
+                "infer_query",
                 "Body::of_",
                 "Body::with_source_map_",
                 "FunctionSignature::of_",
                 "FunctionSignature::with_source_map_",
                 "ExprScopes::of_",
-                "InferenceResult::of_",
+                "infer_query",
                 "Body::of_",
                 "Body::with_source_map_",
                 "FunctionSignature::of_",
@@ -169,7 +169,7 @@ fn baz() -> i32 {
                 }
             }
         },
-        &[("InferenceResult::of", 0)],
+        &[("infer_query", 0)],
         expect_test::expect![[r#"
             [
                 "EditionedFileId::parse_",
