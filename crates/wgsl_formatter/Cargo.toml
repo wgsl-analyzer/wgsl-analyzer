@@ -1,30 +1,31 @@
 [package]
 name = "wgsl-formatter"
 version = "0.0.0"
-repository.workspace = true
-description = "API for formatting WGSL code."
 edition.workspace = true
-license.workspace = true
 rust-version.workspace = true
+description = "API for formatting WGSL code."
+repository.workspace = true
+license.workspace = true
+
+[[bench]]
+harness = false
+name = "large_file"
 
 [dependencies]
-syntax.workspace = true
-parser.workspace = true
-rowan = "0.16.1"
-serde = { workspace = true, optional = true }
 dprint-core = { version = "0.67.4", features = ["tracing"] }
 dprint-core-macros = "0.1.0"
 itertools = "0.14.0"
+parser.workspace = true
+rowan = "0.16.1"
+serde = { workspace = true, optional = true }
+syntax.workspace = true
 
 [dev-dependencies]
+criterion = "0.8.2"
+dissimilar = "1.0.10"
 # anyhow = "1.0.99"
 expect-test = "1.5.1"
-dissimilar = "1.0.10"
-criterion = "0.8.2"
 sha2 = "0.11.0"
-
-[lints]
-workspace = true
 
 [features]
 # Prefer to crash at strategic places instead of returning errors.
@@ -34,9 +35,8 @@ workspace = true
 prefer-immediate-crash = []
 serde = ["dep:serde"]
 
-[[bench]]
-name = "large_file"
-harness = false
+[lints]
+workspace = true
 
 [profile.dev]
 opt-level = 0
