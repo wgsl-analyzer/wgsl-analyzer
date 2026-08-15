@@ -5,9 +5,10 @@ use syntax::{AstNode as _, Parse, ast};
 
 use crate::{
     FormattingOptions, IndentStyle,
-    generators::node::{gen_node, gen_node_no_newlines},
+    generators::node::{gen_node_with_trivia, gen_node_with_trivia_no_newlines},
     print_item_buffer::PrintItemBuffer,
     reporting::{FormatDocumentError, FormatDocumentResult},
+    trivia::{NodeWithTrivia, NodeWithTriviaContent},
 };
 
 #[derive(Clone, Debug)]
@@ -62,18 +63,26 @@ pub fn format_tree(
     syntax: &ast::SourceFile,
     options: &FormattingOptions,
 ) -> FormatDocumentResult<String> {
-    format(options, || {
-        gen_node(&NodeOrToken::Node(syntax.syntax().clone()))
-    })
+    let trivia = NodeWithTrivia {
+        preceding_trivia: Vec::new(),
+        node: NodeWithTriviaContent::Content(NodeOrToken::Node(syntax.syntax().clone())),
+        succeeding_trivia: Vec::new(),
+    };
+
+    format(options, || gen_node_with_trivia(&trivia))
 }
 
 pub fn format_node(
     syntax: &SyntaxNode,
     options: &FormattingOptions,
 ) -> FormatDocumentResult<String> {
-    format(options, || {
-        gen_node_no_newlines(&NodeOrToken::Node(syntax.clone()))
-    })
+    let trivia = NodeWithTrivia {
+        preceding_trivia: Vec::new(),
+        node: NodeWithTriviaContent::Content(NodeOrToken::Node(syntax.clone())),
+        succeeding_trivia: Vec::new(),
+    };
+
+    format(options, || gen_node_with_trivia_no_newlines(&trivia))
 }
 
 pub fn format<F>(
