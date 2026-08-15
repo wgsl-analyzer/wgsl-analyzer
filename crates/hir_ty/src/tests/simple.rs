@@ -2125,3 +2125,34 @@ fn foo() {
         "#]],
     );
 }
+
+// TODO https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1389
+#[test]
+fn function_cycle() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+fn foo() {
+    foo();
+}
+        ",
+        expect![[r#"
+            15..20 'foo()': [error]
+        "#]],
+    );
+}
+
+#[test]
+fn alias_cycle() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+alias Foo = Bar;
+alias Bar = Foo;
+        ",
+        expect![[r#"
+            [EditionedFileId(Id(300))] CyclicType { name: Name("Foo"), range: 0..16 } in Signature
+            [EditionedFileId(Id(300))] CyclicType { name: Name("Bar"), range: 17..33 } in Signature
+        "#]],
+    );
+}
