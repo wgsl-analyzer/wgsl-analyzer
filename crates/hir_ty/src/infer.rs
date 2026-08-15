@@ -1693,6 +1693,7 @@ impl<'db> InferenceContext<'db> {
                 store.store_source,
                 InferenceDiagnosticKind::NotConstructible { expression, r#type },
             );
+            return r#type;
         }
         match r#type.kind(self.db) {
             TypeKind::Scalar(scalar_type) => {
@@ -1781,13 +1782,19 @@ impl<'db> InferenceContext<'db> {
             | TypeKind::Atomic(_)
             | TypeKind::BuiltinStruct(_)
             | TypeKind::Reference(_) => {
-                self.push_diagnostic(
-                    store.store_source,
-                    InferenceDiagnosticKind::NotConstructible { expression, r#type },
+                debug_assert!(
+                    false,
+                    "these should hit the early return since they are not constructible"
                 );
                 self.error_type()
             },
-            TypeKind::Error => r#type,
+            TypeKind::Error => {
+                debug_assert!(
+                    !self.result.diagnostics.is_empty(),
+                    "there should already be a diagnostic if we have an error"
+                );
+                r#type
+            },
         }
     }
 
@@ -1895,6 +1902,10 @@ impl<'db> InferenceContext<'db> {
                 }
             },
             TypeKind::Struct(struct_id) => {
+                debug_assert!(
+                    false,
+                    "the only structs with templates are builtin and can't be written"
+                );
                 self.validate_struct_constructor(store, struct_id, expression, r#type, arguments)
             },
             // Never constructible

@@ -522,13 +522,9 @@ fn foo() {
             217..229 wgsl-analyzer Error 6: type `array<f32>` is not constructible
             256..268 wgsl-analyzer Error 6: type `array<f16>` is not constructible
             306..319 wgsl-analyzer Error 6: type `atomic<i32>` is not constructible
-            306..319 wgsl-analyzer Error 6: type `atomic<i32>` is not constructible
-            358..371 wgsl-analyzer Error 6: type `atomic<u32>` is not constructible
             358..371 wgsl-analyzer Error 6: type `atomic<u32>` is not constructible
             394..399 wgsl-analyzer Error 6: type `Foo` is not constructible
             420..446 wgsl-analyzer Error 6: type `ptr<u32>` is not constructible
-            420..446 wgsl-analyzer Error 6: type `ptr<u32>` is not constructible
-            513..553 wgsl-analyzer Error 6: type `texture_storage_2d<rgba16float,write>` is not constructible
             513..553 wgsl-analyzer Error 6: type `texture_storage_2d<rgba16float,write>` is not constructible
         "#]],
     );
