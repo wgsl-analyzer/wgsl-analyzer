@@ -15,7 +15,7 @@ use hir_def::{
     signature::StructSignature,
     type_specifier::TypeSpecifierId,
 };
-use wgsl_types::syntax::Enumerant;
+use wgsl_types::{Instance, syntax::Enumerant};
 
 use crate::{
     db::HirDatabase,
@@ -23,7 +23,7 @@ use crate::{
     ty::{
         ArraySize, ArrayType, AtomicType, BuiltinStruct, MatrixType, Pointer, Reference,
         ScalarType, TextureDimensionality, TextureKind, TextureType, Type, TypeKind, VecSize,
-        VectorType,
+        VectorType, pretty::pretty_type,
     },
 };
 
@@ -50,9 +50,57 @@ pub struct TypeLoweringError {
 }
 
 #[derive(PartialEq, Eq, Debug, Clone)]
+pub enum UnexpectedTemplateArgumentValue {
+    Type(Type),
+    Instance(String),
+    Enumerant(Enumerant),
+}
+
+impl From<TemplateParameter> for UnexpectedTemplateArgumentValue {
+    fn from(value: TemplateParameter) -> Self {
+        match value {
+            TemplateParameter::Type(r#type) => r#type.into(),
+            TemplateParameter::Instance(instance) => instance.into(),
+            TemplateParameter::Enumerant(enumerant) => enumerant.into(),
+        }
+    }
+}
+
+impl From<Type> for UnexpectedTemplateArgumentValue {
+    fn from(value: Type) -> Self {
+        Self::Type(value)
+    }
+}
+
+impl From<Option<Instance>> for UnexpectedTemplateArgumentValue {
+    fn from(value: Option<Instance>) -> Self {
+        Self::Instance(value.map_or_else(|| "[error]".to_owned(), |instance| instance.to_string()))
+    }
+}
+
+impl From<Enumerant> for UnexpectedTemplateArgumentValue {
+    fn from(value: Enumerant) -> Self {
+        Self::Enumerant(value)
+    }
+}
+
+impl UnexpectedTemplateArgumentValue {
+    fn display(
+        &self,
+        db: &dyn HirDatabase,
+    ) -> impl fmt::Display {
+        match self {
+            Self::Type(r#type) => pretty_type(db, *r#type),
+            Self::Instance(instance) => instance.clone(),
+            Self::Enumerant(enumerant) => enumerant.to_string(),
+        }
+    }
+}
+
+#[derive(PartialEq, Eq, Debug, Clone)]
 pub enum TypeLoweringErrorKind {
     Resolution(ResolutionDiagnostic),
-    UnexpectedTemplateArgument(String),
+    UnexpectedTemplateArgument(String, UnexpectedTemplateArgumentValue),
     UnexpectedModule(Path),
     MissingTemplateArgument(String),
     MissingTemplate,
@@ -73,84 +121,73 @@ pub enum TypeLoweringErrorKind {
     WgslError(String),
 }
 
-impl fmt::Display for TypeLoweringErrorKind {
-    fn fmt(
+impl TypeLoweringErrorKind {
+    pub fn display(
         &self,
-        formatter: &mut fmt::Formatter<'_>,
-    ) -> fmt::Result {
+        db: &dyn HirDatabase,
+    ) -> impl fmt::Display {
         match self {
             Self::Resolution(ResolutionDiagnostic::UnresolvedName { name }) => {
-                write!(formatter, "`{}` not found in scope", name.as_str())
+                format!("`{}` not found in scope", name.as_str())
             },
             Self::Resolution(ResolutionDiagnostic::UnresolvedFile { .. }) => {
-                write!(formatter, "could not find file")
+                "could not find file".to_owned()
             },
             Self::Resolution(ResolutionDiagnostic::DetachedFile) => {
-                write!(formatter, "current file is detached")
+                "current file is detached".to_owned()
             },
             Self::Resolution(ResolutionDiagnostic::MissingName) => {
-                write!(formatter, "path is missing a name")
+                "path is missing a name".to_owned()
             },
             Self::Resolution(ResolutionDiagnostic::PrivateItem { name, .. }) => {
-                write!(formatter, "`{}` is private", name.as_str())
+                format!("`{}` is private", name.as_str())
             },
             Self::Resolution(ResolutionDiagnostic::TooManySupers) => {
-                write!(formatter, "too many `super::`s")
+                "too many `super::`s".to_owned()
             },
             Self::Resolution(ResolutionDiagnostic::UnresolvedItem { name, .. }) => {
-                write!(formatter, "`{}` not found in other file", name.as_str())
+                format!("`{}` not found in other file", name.as_str())
             },
             Self::Resolution(ResolutionDiagnostic::UnresolvedPackage { name }) => {
-                write!(formatter, "package `{}` not found", name.as_str())
+                format!("package `{}` not found", name.as_str())
             },
-            Self::WgslError(error) => {
-                write!(formatter, "{error}")
-            },
-            Self::UnexpectedTemplateArgument(expected) => {
-                write!(
-                    formatter,
-                    "unexpected template argument, expected {expected}"
+            Self::WgslError(error) => error.clone(),
+            Self::UnexpectedTemplateArgument(expected, actual) => {
+                format!(
+                    "unexpected template argument, expected {expected}, actual: {}",
+                    actual.display(db)
                 )
             },
             Self::UnexpectedModule(path) => {
-                write!(
-                    formatter,
+                format!(
                     "`{}` is a module, not a type or expression",
                     path.mod_path()
                 )
             },
             Self::MissingTemplateArgument(expected) => {
-                write!(formatter, "missing template argument, expected {expected}")
+                format!("missing template argument, expected {expected}")
             },
-            Self::MissingTemplate => {
-                write!(formatter, "missing template arguments")
-            },
+            Self::MissingTemplate => "missing template arguments".to_owned(),
             Self::WrongNumberOfTemplateArguments { expected, actual }
                 if expected.start() == expected.end() =>
             {
-                write!(
-                    formatter,
+                format!(
                     "expected {} template arguments, but got {actual}",
                     expected.start()
                 )
             },
             Self::WrongNumberOfTemplateArguments { expected, actual } => {
-                write!(
-                    formatter,
+                format!(
                     "expected {} to {} template arguments, but got {actual}",
                     expected.start(),
                     expected.end()
                 )
             },
             Self::ExpectedType(path) => {
-                write!(formatter, "{} is not a type", path.mod_path())
+                format!("{} is not a type", path.mod_path())
             },
             Self::ExpectedFunctionToBeCalled(path) => {
-                write!(
-                    formatter,
-                    "{0:} was written, write {0:}() instead",
-                    path.mod_path()
-                )
+                format!("{0:} was written, write {0:}() instead", path.mod_path())
             },
         }
     }
@@ -319,10 +356,13 @@ impl<'db> TypeLoweringContext<'db> {
             return;
         }
         let mut iter = template_parameters.clone();
-        while let Some((_, template_expression)) = iter.take_next() {
+        while let Some((parameter, template_expression)) = iter.take_next() {
             self.diagnostics.push(TypeLoweringError {
                 container: TypeContainer::Expression(template_expression),
-                kind: TypeLoweringErrorKind::UnexpectedTemplateArgument("nothing".to_owned()),
+                kind: TypeLoweringErrorKind::UnexpectedTemplateArgument(
+                    "nothing".to_owned(),
+                    parameter.into(),
+                ),
             });
         }
     }

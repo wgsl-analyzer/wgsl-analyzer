@@ -3924,23 +3924,23 @@ fn execute(
             9600..9602 '15': integer
             9692..9703 'VOID_RETURN': u32
             9718..9728 '0xFFFFFFFF': integer
-            9863..9878 'MAX_QUBIT_COUNT': unexpected template argument, expected a `u32` or a `i32` greater than `0`
-            10006..10034 'MAX_WO...ITIONS': unexpected template argument, expected a `u32` or a `i32` greater than `0`
-            11207..11224 'INSTRU...S_SIZE': unexpected template argument, expected a `u32` or a `i32` greater than `0`
-            11299..11315 'BLOCK_...E_SIZE': unexpected template argument, expected a `u32` or a `i32` greater than `0`
-            11378..11397 'FUNCTI...E_SIZE': unexpected template argument, expected a `u32` or a `i32` greater than `0`
-            11512..11526 'PHI_TABLE_SIZE': unexpected template argument, expected a `u32` or a `i32` greater than `0`
-            11632..11649 'SWITCH...S_SIZE': unexpected template argument, expected a `u32` or a `i32` greater than `0`
-            11723..11737 'CALL_ARGS_SIZE': unexpected template argument, expected a `u32` or a `i32` greater than `0`
-            11832..11850 'CONSTA...A_SIZE': unexpected template argument, expected a `u32` or a `i32` greater than `0`
-            12850..12863 'MAX_REGISTERS': unexpected template argument, expected a `u32` or a `i32` greater than `0`
-            12948..12958 'MAX_MEMORY': unexpected template argument, expected a `u32` or a `i32` greater than `0`
-            14713..14728 'MAX_QUBIT_COUNT': unexpected template argument, expected a `u32` or a `i32` greater than `0`
-            17289..17306 'NOISE_..._COUNT': unexpected template argument, expected a `u32` or a `i32` greater than `0`
-            17362..17379 'NOISE_..._COUNT': unexpected template argument, expected a `u32` or a `i32` greater than `0`
-            17908..17923 'MAX_QUBIT_COUNT': unexpected template argument, expected a `u32` or a `i32` greater than `0`
-            17946..17961 'MAX_QUBIT_COUNT': unexpected template argument, expected a `u32` or a `i32` greater than `0`
-            18480..18501 'THREAD...KGROUP': unexpected template argument, expected a `u32` or a `i32` greater than `0`
+            9863..9878 'MAX_QUBIT_COUNT': unexpected template argument, expected a `u32` or a `i32` greater than `0`, actual: [error]
+            10006..10034 'MAX_WO...ITIONS': unexpected template argument, expected a `u32` or a `i32` greater than `0`, actual: [error]
+            11207..11224 'INSTRU...S_SIZE': unexpected template argument, expected a `u32` or a `i32` greater than `0`, actual: [error]
+            11299..11315 'BLOCK_...E_SIZE': unexpected template argument, expected a `u32` or a `i32` greater than `0`, actual: [error]
+            11378..11397 'FUNCTI...E_SIZE': unexpected template argument, expected a `u32` or a `i32` greater than `0`, actual: [error]
+            11512..11526 'PHI_TABLE_SIZE': unexpected template argument, expected a `u32` or a `i32` greater than `0`, actual: [error]
+            11632..11649 'SWITCH...S_SIZE': unexpected template argument, expected a `u32` or a `i32` greater than `0`, actual: [error]
+            11723..11737 'CALL_ARGS_SIZE': unexpected template argument, expected a `u32` or a `i32` greater than `0`, actual: [error]
+            11832..11850 'CONSTA...A_SIZE': unexpected template argument, expected a `u32` or a `i32` greater than `0`, actual: [error]
+            12850..12863 'MAX_REGISTERS': unexpected template argument, expected a `u32` or a `i32` greater than `0`, actual: [error]
+            12948..12958 'MAX_MEMORY': unexpected template argument, expected a `u32` or a `i32` greater than `0`, actual: [error]
+            14713..14728 'MAX_QUBIT_COUNT': unexpected template argument, expected a `u32` or a `i32` greater than `0`, actual: [error]
+            17289..17306 'NOISE_..._COUNT': unexpected template argument, expected a `u32` or a `i32` greater than `0`, actual: [error]
+            17362..17379 'NOISE_..._COUNT': unexpected template argument, expected a `u32` or a `i32` greater than `0`, actual: [error]
+            17908..17923 'MAX_QUBIT_COUNT': unexpected template argument, expected a `u32` or a `i32` greater than `0`, actual: [error]
+            17946..17961 'MAX_QUBIT_COUNT': unexpected template argument, expected a `u32` or a `i32` greater than `0`, actual: [error]
+            18480..18501 'THREAD...KGROUP': unexpected template argument, expected a `u32` or a `i32` greater than `0`, actual: [error]
             18849..18868 'workgr...lation': ref<storage, WorkgroupCollationBuffer, read_write>
             19020..19025 'shots': ref<storage, array<ShotData>, read_write>
             19086..19089 'ops': ref<storage, array<Op>, read>
@@ -3950,7 +3950,7 @@ fn execute(
             19504..19512 'uniforms': ref<uniform, Uniforms, read>
             19566..19576 'batch_data': ref<storage, BatchData, read>
             19605..19623 'qubitP...lities': ref<workgroup, [error], read_write>
-            19658..19679 'THREAD...KGROUP': unexpected template argument, expected a `u32` or a `i32` greater than `0`
+            19658..19679 'THREAD...KGROUP': unexpected template argument, expected a `u32` or a `i32` greater than `0`, actual: [error]
             19866..19867 'a': vec2<f32>
             19897..19898 'a': vec2<f32>
             19897..19900 'a.x': f32

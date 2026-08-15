@@ -356,12 +356,12 @@ pub fn diagnostics(
                     let source = type_specifier.value.to_node(&root);
                     let frange =
                         original_file_range(db, type_specifier.file_id, source.syntax());
-                    Diagnostic::new(DiagnosticCode("13"), format!("{error}"), frange.range)
+                    Diagnostic::new(DiagnosticCode("13"), format!("{}", error.display(db)), frange.range)
                 },
                 AnyDiagnostic::InvalidIdentExpression { expression, error } => {
                     let source = expression.value.to_node(&root);
                     let frange = original_file_range(db, expression.file_id, source.syntax());
-                    Diagnostic::new(DiagnosticCode("14"), format!("{error}"), frange.range)
+                    Diagnostic::new(DiagnosticCode("14"), format!("{}", error.display(db)), frange.range)
                 },
                 AnyDiagnostic::NagaValidationError {
                     message,

@@ -839,7 +839,7 @@ fn const_u32_as_array_size() {
             6..15 'maxLayers': u32
             18..21 '12u': u32
             27..33 'layers': ref<handle, [error], read>
-            46..55 'maxLayers': unexpected template argument, expected a `u32` or a `i32` greater than `0`
+            46..55 'maxLayers': unexpected template argument, expected a `u32` or a `i32` greater than `0`, actual: [error]
         "#]],
     );
 }
@@ -1856,7 +1856,7 @@ fn sampler_comparison_no_template() {
         expect![[r#"
             4..5 'x': ref<handle, sampler_comparison, read>
             26..31 'wrong': `wrong` not found in scope
-            26..31 'wrong': unexpected template argument, expected nothing
+            26..31 'wrong': unexpected template argument, expected nothing, actual: [error]
         "#]],
     );
 }
@@ -1872,11 +1872,11 @@ fn ptr_template_not_enumerant() {
         ",
         expect![[r#"
             8..12 'bar1': [error]
-            18..28 'rgba8unorm': unexpected template argument, expected an address space
+            18..28 'rgba8unorm': unexpected template argument, expected an address space, actual: rgba8unorm
             60..64 'bar2': ptr<storage, [error], read_write>
-            79..83 '123i': unexpected template argument, expected a type
+            79..83 '123i': unexpected template argument, expected a type, actual: 123i
             110..114 'bar3': [error]
-            134..144 'rgba8unorm': unexpected template argument, expected one of: (read, read_write, write)
+            134..144 'rgba8unorm': unexpected template argument, expected one of: (read, read_write, write), actual: rgba8unorm
             159..163 'bar4': ptr<storage, i32, read>
         "#]],
     );
@@ -2064,7 +2064,6 @@ fn foo() {
             34..35 'x': [error]
             38..49 'sqrt<&y>(y)': [error]
             47..48 'y': i32
-            [EditionedFileId(Id(300))] WgslError { expression: Idx::<Expression>(4), message: "internal error: wgsl-types did not align with wgsl-analyzer's type system" } in Body
         "#]],
     );
 }

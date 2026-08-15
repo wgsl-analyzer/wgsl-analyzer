@@ -369,7 +369,7 @@ impl<'db> InferPrinter<'db> {
             buffer,
             "{range:?} '{}': {}",
             ellipsize(text, 15),
-            error.kind,
+            error.kind.display(self.db),
         )
         .unwrap();
     }
