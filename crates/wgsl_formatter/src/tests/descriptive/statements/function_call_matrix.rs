@@ -7,23 +7,35 @@ fn format_mat2xn() {
     check(
         "
 fn main() {
-    let x = mat2x2(a,b,c,d);
-    let y = mat2x3(a,b,c,d,e,f);
-    let z = mat2x4(a,b,c,d,g,h,i,j);
+    let x = mat2x2<f32>(a,b,c,d);
+    let y = mat2x3<f32>(a,b,c,d,e,f);
+    let z = mat2x4<f32>(a,b,c,d,g,h,i,j);
+
+    let h = mat2x2f(a,b,c,d);
+    let f = mat2x2h(a,b,c,d);
 }",
         expect![[r#"
             fn main() {
-                let x = mat2x2(
+                let x = mat2x2<f32>(
                         a, b,
                         c, d,
                     );
-                let y = mat2x3(
+                let y = mat2x3<f32>(
                         a, b, c,
                         d, e, f,
                     );
-                let z = mat2x4(
+                let z = mat2x4<f32>(
                         a, b, c, d,
                         g, h, i, j,
+                    );
+
+                let h = mat2x2f(
+                        a, b,
+                        c, d,
+                    );
+                let f = mat2x2h(
+                        a, b,
+                        c, d,
                     );
             }
         "#]],
@@ -35,26 +47,40 @@ fn format_mat3xn() {
     check(
         "
 fn main() {
-    let x = mat3x2(a,b,c,d,e,f);
-    let y = mat3x3(a,b,c,d,e,f,g,h,i);
-    let z = mat3x4(a,b,c,d,g,h,i,j,i,j,k,l);
+    let x = mat3x2<f32>(a,b,c,d,e,f);
+    let y = mat3x3<f32>(a,b,c,d,e,f,g,h,i);
+    let z = mat3x4<f32>(a,b,c,d,g,h,i,j,i,j,k,l);
+
+    let h = mat3x2h(a,b,c,d,e,f);
+    let f = mat3x2f(a,b,c,d,e,f);
 }",
         expect![[r#"
             fn main() {
-                let x = mat3x2(
+                let x = mat3x2<f32>(
                         a, b,
                         c, d,
                         e, f,
                     );
-                let y = mat3x3(
+                let y = mat3x3<f32>(
                         a, b, c,
                         d, e, f,
                         g, h, i,
                     );
-                let z = mat3x4(
+                let z = mat3x4<f32>(
                         a, b, c, d,
                         g, h, i, j,
                         i, j, k, l,
+                    );
+
+                let h = mat3x2h(
+                        a, b,
+                        c, d,
+                        e, f,
+                    );
+                let f = mat3x2f(
+                        a, b,
+                        c, d,
+                        e, f,
                     );
             }
         "#]],
@@ -66,29 +92,45 @@ fn format_mat4xn() {
     check(
         "
 fn main() {
-    let x = mat4x2(a,b,c,d,e,f,g,h);
-    let y = mat4x3(a,b,c,d,e,f,g,h,i,j,k,l);
-    let z = mat4x4(a,b,c,d,g,h,i,j,i,j,k,l,m,n,o,p);
+    let x = mat4x2<f32>(a,b,c,d,e,f,g,h);
+    let y = mat4x3<f32>(a,b,c,d,e,f,g,h,i,j,k,l);
+    let z = mat4x4<f32>(a,b,c,d,g,h,i,j,i,j,k,l,m,n,o,p);
+
+    let h = mat4x2h(a,b,c,d,e,f,g,h);
+    let f = mat4x2f(a,b,c,d,e,f,g,h);
 }",
         expect![[r#"
             fn main() {
-                let x = mat4x2(
+                let x = mat4x2<f32>(
                         a, b,
                         c, d,
                         e, f,
                         g, h,
                     );
-                let y = mat4x3(
+                let y = mat4x3<f32>(
                         a, b, c,
                         d, e, f,
                         g, h, i,
                         j, k, l,
                     );
-                let z = mat4x4(
+                let z = mat4x4<f32>(
                         a, b, c, d,
                         g, h, i, j,
                         i, j, k, l,
                         m, n, o, p,
+                    );
+
+                let h = mat4x2h(
+                        a, b,
+                        c, d,
+                        e, f,
+                        g, h,
+                    );
+                let f = mat4x2f(
+                        a, b,
+                        c, d,
+                        e, f,
+                        g, h,
                     );
             }
         "#]],

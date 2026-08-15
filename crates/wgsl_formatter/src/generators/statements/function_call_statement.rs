@@ -64,39 +64,39 @@ pub fn determine_function_call_argument_style(
         && segments.next().is_none()
     {
         match segment.text() {
-            "mat2x2" => FunctionCallArgumentStyle::Tabular {
+            "mat2x2" | "mat2x2h" | "mat2x2f" => FunctionCallArgumentStyle::Tabular {
                 width: 2,
                 height: 2,
             },
-            "mat2x3" => FunctionCallArgumentStyle::Tabular {
+            "mat2x3" | "mat2x3h" | "mat2x3f" => FunctionCallArgumentStyle::Tabular {
                 width: 3,
                 height: 2,
             },
-            "mat2x4" => FunctionCallArgumentStyle::Tabular {
+            "mat2x4" | "mat2x4h" | "mat2x4f" => FunctionCallArgumentStyle::Tabular {
                 width: 4,
                 height: 2,
             },
-            "mat3x2" => FunctionCallArgumentStyle::Tabular {
+            "mat3x2" | "mat3x2h" | "mat3x2f" => FunctionCallArgumentStyle::Tabular {
                 width: 2,
                 height: 3,
             },
-            "mat3x3" => FunctionCallArgumentStyle::Tabular {
+            "mat3x3" | "mat3x3h" | "mat3x3f" => FunctionCallArgumentStyle::Tabular {
                 width: 3,
                 height: 3,
             },
-            "mat3x4" => FunctionCallArgumentStyle::Tabular {
+            "mat3x4" | "mat3x4h" | "mat3x4f" => FunctionCallArgumentStyle::Tabular {
                 width: 4,
                 height: 3,
             },
-            "mat4x2" => FunctionCallArgumentStyle::Tabular {
+            "mat4x2" | "mat4x2h" | "mat4x2f" => FunctionCallArgumentStyle::Tabular {
                 width: 2,
                 height: 4,
             },
-            "mat4x3" => FunctionCallArgumentStyle::Tabular {
+            "mat4x3" | "mat4x3h" | "mat4x3f" => FunctionCallArgumentStyle::Tabular {
                 width: 3,
                 height: 4,
             },
-            "mat4x4" => FunctionCallArgumentStyle::Tabular {
+            "mat4x4" | "mat4x4h" | "mat4x4f" => FunctionCallArgumentStyle::Tabular {
                 width: 4,
                 height: 4,
             },
