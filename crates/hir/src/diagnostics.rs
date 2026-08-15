@@ -409,7 +409,6 @@ pub(crate) fn any_diag_from_infer_diagnostic(
 pub(crate) fn any_diag_from_def_diagnostic(
     db: &dyn HirDatabase,
     def_diagnostic: &DefDiagnostic,
-    file_id: EditionedFileId,
 ) -> AnyDiagnostic {
     match &def_diagnostic.kind {
         DefDiagnosticKind::UnnamedImport { id } => {

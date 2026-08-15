@@ -3,7 +3,7 @@ use hir_def::{expression_store::path::Path, mod_path::ModPath, resolver::Resolve
 use syntax::{AstNode as _, SyntaxNode, SyntaxToken, ast, match_ast};
 
 use crate::{
-    Field, Function, GlobalConstant, GlobalVariable, Local, Module, ModuleDef, Override, Semantics,
+    Field, Function, GlobalConstant, GlobalVariable, Local, ModuleDef, Override, Semantics,
     Struct, TypeAlias,
 };
 
