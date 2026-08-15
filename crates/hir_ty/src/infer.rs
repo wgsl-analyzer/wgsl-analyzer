@@ -118,7 +118,7 @@ fn infer_cycle_result(
     inference_result
 }
 
-fn get_name_and_range(
+pub fn get_name_and_range(
     db: &dyn HirDatabase,
     definition: ModuleDefinitionId,
 ) -> (Name, base_db::TextRange) {
