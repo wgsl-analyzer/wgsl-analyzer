@@ -1552,14 +1552,14 @@ impl<'db> InferenceContext<'db> {
                     // cancel inference if an error is already known
                     return r#type; // we know what it *should* be
                 }
-                self.infer_templated_type_constructor(store, expression, r#type, arguments)
+                self.infer_type_constructor(store, expression, r#type, arguments)
             },
             Lowered::TypeWithoutTemplate(r#type) => {
                 debug_assert!(
                     r#type.is_err(self.db),
                     "the type is only half-constructed and we have to fill in the blanks (the missing template) using arguments"
                 );
-                self.infer_type_without_template_constructor(store, expression, r#type, arguments)
+                self.infer_type_generator_missing_template(store, expression, r#type, arguments)
             },
             // Lowered::BuiltinConstructor(name, template) => {
             //     if argument_types
@@ -1680,7 +1680,7 @@ impl<'db> InferenceContext<'db> {
     }
 
     /// Constructor for a type with a fully specified template.
-    fn infer_templated_type_constructor(
+    fn infer_type_constructor(
         &mut self,
         store: &ExpressionStore,
         expression: ExpressionId,
@@ -1799,7 +1799,7 @@ impl<'db> InferenceContext<'db> {
     }
 
     /// Constructor for just a type name.
-    fn infer_type_without_template_constructor(
+    fn infer_type_generator_missing_template(
         &mut self,
         store: &ExpressionStore,
         expression: ExpressionId,
