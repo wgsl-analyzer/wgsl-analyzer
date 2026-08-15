@@ -10,13 +10,13 @@ use crate::RootDatabase;
 /// Note, that range that will actually be formatted is dependent on the syntax tree and may be larger than the given range.
 /// The returned [`FormattedRange`] contains the actual range that the formatted text should replace.
 pub(crate) fn format(
-    database: &RootDatabase,
+    db: &RootDatabase,
     config: &FormattingOptions,
     file_id: FileId,
     range: Option<TextRange>,
 ) -> Option<FormattedRange> {
-    let file_id = EditionedFileId::from_file(database, file_id);
-    let parsed = file_id.parse(database).tree();
+    let file_id = EditionedFileId::from_file(db, file_id);
+    let parsed = file_id.parse(db);
 
     // Refuse to format documents with syntax errors
     if !parsed.errors().is_empty() {
