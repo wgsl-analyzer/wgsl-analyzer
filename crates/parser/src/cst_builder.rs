@@ -144,6 +144,7 @@ impl CstBuilder<'_, '_> {
             | Rule::CompoundAssignmentOperator
             | Rule::ExprTemplateList
             | Rule::GlobalItem
+            | Rule::GlobalCompoundDeclarationItem
             | Rule::IdentOrFunction
             | Rule::LetDeclarationSemi
             | Rule::OverrideDeclarationSemi
@@ -199,6 +200,10 @@ impl CstBuilder<'_, '_> {
             Rule::IfAttr => self.start_node(SyntaxKind::IfAttribute),
             Rule::ElifAttr => self.start_node(SyntaxKind::ElifAttribute),
             Rule::ElseAttr => self.start_node(SyntaxKind::ElseAttribute),
+            // experimental WESL
+            Rule::GlobalCompoundDeclaration => {
+                self.start_node(SyntaxKind::GlobalCompoundDeclaration);
+            },
         }
     }
 

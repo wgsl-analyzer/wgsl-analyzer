@@ -669,7 +669,6 @@ dependencies = [
  "stdx",
  "syntax",
  "tracing",
- "triomphe",
 ]
 
 [[package]]
@@ -692,7 +691,6 @@ dependencies = [
  "syntax",
  "test-fixture",
  "triomphe",
- "vfs",
 ]
 
 [[package]]
@@ -715,7 +713,6 @@ dependencies = [
  "tracing-subscriber",
  "tracing-tree",
  "triomphe",
- "vfs",
  "wgsl-types",
 ]
 

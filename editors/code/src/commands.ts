@@ -1,15 +1,11 @@
-import * as path from "path";
+import * as path from "node:path";
 import * as vscode from "vscode";
 import * as lc from "vscode-languageclient";
 import type { LanguageClient } from "vscode-languageclient/node";
 import { HOVER_REFERENCE_COMMAND } from "./client";
 import type { Cmd, Context, InitializedContext } from "./context";
 import * as wa from "./lsp_ext";
-import {
-	applySnippetTextEdits,
-	applySnippetWorkspaceEdit,
-	type SnippetTextDocumentEdit,
-} from "./snippets";
+import { applySnippetTextEdits, applySnippetWorkspaceEdit } from "./snippets";
 import type { SyntaxElement } from "./syntax_tree_provider";
 import {
 	isWeslDocument,
@@ -67,7 +63,7 @@ export function memoryUsage(context: InitializedContext): Cmd {
 			}
 
 			return context.client.sendRequest(wa.memoryUsage).then((memory: string) => {
-				return "Per-query memory usage:\n" + memory + "\n(note: database has been cleared)";
+				return `Per-query memory usage:\n${memory}\n(note: database has been cleared)`;
 			});
 		}
 
@@ -172,7 +168,7 @@ export function moveItem(context: InitializedContext, direction: wa.Direction): 
 			direction,
 		});
 
-		if (lcEdits.length == 0) {
+		if (lcEdits.length === 0) {
 			return;
 		}
 
@@ -734,72 +730,13 @@ export function resolveCodeAction(context: InitializedContext): Cmd {
 		if (!item?.edit) {
 			return;
 		}
-		const itemEdit = item.edit;
-		// filter out all text edits and recreate the WorkspaceEdit without them so we can apply
-		// snippet edits on our own
-		const lcFileSystemEdit = {
-			...itemEdit,
-			documentChanges: itemEdit.documentChanges?.filter((change) => "kind" in change),
-		};
-		const fileSystemEdit = await client.protocol2CodeConverter.asWorkspaceEdit(lcFileSystemEdit);
-		await vscode.workspace.applyEdit(fileSystemEdit);
+		const workspaceEdit = await client.protocol2CodeConverter.asWorkspaceEdit(item.edit);
+		await vscode.workspace.applyEdit(workspaceEdit);
 
-		// replace all text edits so that we can convert snippet text edits into `vscode.SnippetTextEdit`s
-		// FIXME: this is a workaround until vscode-languageclient supports doing the SnippeTextEdit conversion itself
-		// also need to carry the snippetTextDocumentEdits separately, since we cannot retrieve them again using WorkspaceEdit.entries
-		const [workspaceTextEdit, snippetTextDocumentEdits] = asWorkspaceSnippetEdit(context, itemEdit);
-		await applySnippetWorkspaceEdit(workspaceTextEdit, snippetTextDocumentEdits);
 		if (item.command != null) {
 			await vscode.commands.executeCommand(item.command.command, item.command.arguments);
 		}
 	};
-}
-
-function asWorkspaceSnippetEdit(
-	context: InitializedContext,
-	item: lc.WorkspaceEdit,
-): [vscode.WorkspaceEdit, SnippetTextDocumentEdit[]] {
-	const client = context.client;
-
-	// partially borrowed from https://github.com/microsoft/vscode-languageserver-node/blob/295aaa393fda8ecce110c38880a00466b9320e63/client/src/common/protocolConverter.ts#L1060-L1101
-	const result = new vscode.WorkspaceEdit();
-
-	if (item.documentChanges) {
-		const snippetTextDocumentEdits: SnippetTextDocumentEdit[] = [];
-
-		for (const change of item.documentChanges) {
-			if (lc.TextDocumentEdit.is(change)) {
-				const uri = client.protocol2CodeConverter.asUri(change.textDocument.uri);
-				const snippetTextEdits: (vscode.TextEdit | vscode.SnippetTextEdit)[] = [];
-
-				for (const edit of change.edits) {
-					if ("insertTextFormat" in edit && edit.insertTextFormat === lc.InsertTextFormat.Snippet) {
-						// is a snippet text edit
-						snippetTextEdits.push(
-							new vscode.SnippetTextEdit(
-								client.protocol2CodeConverter.asRange(edit.range),
-								new vscode.SnippetString(edit.newText),
-							),
-						);
-					} else {
-						// always as a text document edit
-						snippetTextEdits.push(
-							vscode.TextEdit.replace(
-								client.protocol2CodeConverter.asRange(edit.range),
-								edit.newText,
-							),
-						);
-					}
-				}
-
-				snippetTextDocumentEdits.push([uri, snippetTextEdits]);
-			}
-		}
-		return [result, snippetTextDocumentEdits];
-	} else {
-		// we do not handle WorkspaceEdit.changes since it is not relevant for code actions
-		return [result, []];
-	}
 }
 
 export function applySnippetWorkspaceEditCommand(_ctx: InitializedContext): Cmd {
@@ -1110,7 +1047,7 @@ export function toggleLSPLogs(context: Context): Cmd {
 			config.get<string | undefined>("trace.server") === "verbose" ? undefined : "verbose";
 
 		await config.update("trace.server", targetValue, vscode.ConfigurationTarget.Workspace);
-		if (targetValue && context.client && context.client.traceOutputChannel) {
+		if (targetValue && context.client?.traceOutputChannel) {
 			context.client.traceOutputChannel.show();
 		}
 	};

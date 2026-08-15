@@ -70,6 +70,9 @@ pub enum Statement {
     Compound {
         statements: Vec<StatementId>,
     },
+    ConditionalCompound {
+        statements: Vec<StatementId>,
+    },
     Let {
         binding_id: BindingId,
         type_ref: Option<TypeSpecifierId>,

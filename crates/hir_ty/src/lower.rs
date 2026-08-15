@@ -9,7 +9,6 @@ use hir_def::{
         UnaryOperator,
     },
     expression_store::{ExpressionStore, path::Path},
-    item_tree::Name,
     mod_path::PathKind,
     resolver::{ResolutionDiagnostic, ResolveKind, Resolver},
     signature::StructSignature,

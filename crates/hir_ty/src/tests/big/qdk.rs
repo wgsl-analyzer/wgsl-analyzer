@@ -6700,7 +6700,7 @@ fn execute(
             60866..60886 'shot.q...te[q1]': cannot index into type ref<storage, [error], read_write>
             60920..60940 'shot.q...te[q2]': cannot index into type ref<storage, [error], read_write>
             62208..62222 '1u << survivor': expected u32 but got [error]
-            62639..62648 'u32(term)': no constructor for builtin `op_u32_constructor` with parameters `[error]`
+            62639..62648 'u32(term)': no constructor for builtin `op_u32_constructor` of type `u32` with parameters `[error]`
             62623..62637 'survivor_is_q2': expected bool but got [error]
             62639..62648 'u32(term)': expected u32 but got [error]
             62980..62994 'survivor_is_q2': expected bool but got [error]
@@ -7760,8 +7760,8 @@ fn execute(
             80487..80492 'entry': [error]
             80487..80502 'entry.paulis_hi': [error]
             79154..79205 'batch_...e_idx]': cannot index into type ref<storage, [error], read>
-            80215..80238 'i32(ta...ffset)': no constructor for builtin `op_i32_constructor` with parameters `[error]`
-            80256..80278 'i32(ta...count)': no constructor for builtin `op_i32_constructor` with parameters `[error]`
+            80215..80238 'i32(ta...ffset)': no constructor for builtin `op_i32_constructor` of type `i32` with parameters `[error]`
+            80256..80278 'i32(ta...count)': no constructor for builtin `op_i32_constructor` of type `i32` with parameters `[error]`
             80344..80349 'start': expected i32 but got [error]
             80351..80356 'count': expected i32 but got [error]
             80412..80429 'start ...ry_idx': expected i32 or u32 but got [error]

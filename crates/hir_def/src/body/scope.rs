@@ -4,7 +4,6 @@ use base_db::SourceDatabase;
 use either::Either;
 use la_arena::{Arena, Idx};
 use rustc_hash::FxHashMap;
-use triomphe::Arc;
 
 use super::{BindingId, Body};
 use crate::{
@@ -194,15 +193,17 @@ impl ExprScopes {
     }
 }
 
+#[must_use]
 fn compute_compound_statement_scopes(
     statements: &[StatementId],
     body: &Body,
     scopes: &mut ExprScopes,
     mut scope: ScopeId,
-) {
+) -> ScopeId {
     for statement in statements {
         scope = compute_statement_scopes(*statement, body, scopes, scope);
     }
+    scope
 }
 
 #[expect(clippy::too_many_lines, reason = "Long but simple match")]
@@ -210,7 +211,7 @@ fn compute_statement_scopes(
     statement_id: StatementId,
     body: &Body,
     scopes: &mut ExprScopes,
-    scope: ScopeId,
+    mut scope: ScopeId,
 ) -> ScopeId {
     scopes.set_scope_statement(statement_id, scope);
 
@@ -220,7 +221,10 @@ fn compute_statement_scopes(
         Statement::Compound { statements } => {
             let new_scope = scopes.new_block_scope(scope);
             scopes.set_scope_statement(statement_id, new_scope);
-            compute_compound_statement_scopes(statements, body, scopes, new_scope);
+            scope = compute_compound_statement_scopes(statements, body, scopes, new_scope);
+        },
+        Statement::ConditionalCompound { statements } => {
+            scope = compute_compound_statement_scopes(statements, body, scopes, scope);
         },
         Statement::Variable {
             binding_id,

@@ -98,9 +98,9 @@ impl Type {
         db: &dyn HirDatabase,
     ) -> Self {
         if let TypeKind::Reference(Reference {
-            address_space,
+            address_space: _,
             inner,
-            access_mode,
+            access_mode: _,
         }) = self.kind(db)
         {
             debug_assert!(!matches!(inner.kind(db), TypeKind::Reference(_)));
@@ -127,11 +127,11 @@ impl Type {
                 .field_types(struct_id)
                 .0
                 .iter()
-                .all(|(field, field_type)| field_type.is_constructible(db)),
+                .all(|(_, field_type)| field_type.is_constructible(db)),
             TypeKind::BuiltinStruct(builtin_struct) => builtin_struct
                 .fields
                 .iter()
-                .all(|(field, field_type)| field_type.is_constructible(db)),
+                .all(|(_, field_type)| field_type.is_constructible(db)),
             TypeKind::Array(array_type) => array_type.is_constructible(db),
             TypeKind::Atomic(_)
             | TypeKind::Texture(_)

@@ -1,24 +1,20 @@
 mod unify;
 
-use std::{fmt, ops::Index};
+use std::ops::Index;
 
-use base_db::{Intern as _, Lookup as _, TextRange, TextSize};
+use base_db::{Intern as _, Lookup as _};
 use either::Either;
 use hir_def::{
     HasSource as _,
     body::{BindingId, Body, scope::ExprScopes},
-    db::{
-        DefinitionWithBodyId, GlobalConstantId, GlobalVariableId, ModuleDefinitionId, OverrideId,
-        StructId,
-    },
+    db::{DefinitionWithBodyId, ModuleDefinitionId, StructId},
     expression::{
-        ArithmeticOperation, BinaryOperation, ComparisonOperation, Expression, ExpressionId,
-        Statement, StatementId, SwitchCaseSelector, UnaryOperator,
+        BinaryOperation, Expression, ExpressionId, Statement, StatementId, SwitchCaseSelector,
+        UnaryOperator,
     },
-    expression_store::{ExpressionStore, ExpressionStoreSource, path::Path},
+    expression_store::{ExpressionStore, ExpressionStoreSource},
     item_tree::Name,
-    mod_path::PathKind,
-    resolver::{ResolveKind, Resolver},
+    resolver::Resolver,
     signature::{
         ConstantSignature, FieldId, FunctionSignature, OverrideSignature, StructSignature,
         TypeAliasSignature, VariableSignature,
@@ -34,7 +30,7 @@ use crate::{
     builtins::{Builtin, BuiltinId, BuiltinOverload, BuiltinOverloadId},
     db::HirDatabase,
     diagnostics::{InferenceDiagnostic, InferenceDiagnosticKind},
-    function::{FunctionDetails, ResolvedFunctionId},
+    function::FunctionDetails,
     infer::unify::{UnificationTable, unify},
     lower::{
         Lowered, LoweredKind, ResolvedCall, TemplateParameter, TemplateParameters, TypeContainer,
@@ -42,9 +38,8 @@ use crate::{
         to_wgsl_unary_operator,
     },
     ty::{
-        ArraySize, ArrayType, AtomicType, BuiltinStruct, MatrixType, Pointer, Reference,
-        ScalarType, TextureDimensionality, TextureKind, TextureType, Type, TypeKind, VecSize,
-        VectorType,
+        ArraySize, ArrayType, BuiltinStruct, Pointer, Reference, ScalarType, Type, TypeKind,
+        VecSize, VectorType,
     },
 };
 
@@ -347,7 +342,7 @@ impl<'db> InferenceContext<'db> {
 
     fn push_lowering_diagnostics(
         &mut self,
-        mut diagnostics: Vec<TypeLoweringError>,
+        diagnostics: Vec<TypeLoweringError>,
         store: &ExpressionStore,
     ) {
         for diagnostic in diagnostics {
@@ -588,7 +583,7 @@ impl<'db> InferenceContext<'db> {
         let resolver = self.resolver_for_statement(statement);
 
         match &body.statements[statement] {
-            Statement::Compound { statements } => {
+            Statement::Compound { statements } | Statement::ConditionalCompound { statements } => {
                 for statement in statements {
                     self.infer_statement(*statement, body, return_type);
                 }
@@ -661,7 +656,7 @@ impl<'db> InferenceContext<'db> {
                 (Some(expression), Some(return_type)) => {
                     self.infer_expression_expect(
                         *expression,
-                        TypeExpectation::from_type(self.return_type),
+                        TypeExpectation::from_type(return_type),
                         body,
                     );
                 },
@@ -1249,7 +1244,6 @@ impl<'db> InferenceContext<'db> {
         function: &FunctionDetails,
         arguments: &[(ExpressionId, Type)],
         store: &ExpressionStore,
-        callee: ExpressionId,
         expression: ExpressionId,
     ) -> Type {
         if function.parameters.len() == arguments.len() {
@@ -1273,7 +1267,7 @@ impl<'db> InferenceContext<'db> {
             self.push_diagnostic(
                 store.store_source,
                 InferenceDiagnosticKind::FunctionCallArgCountMismatch {
-                    expression: callee,
+                    expression,
                     n_expected: function.parameters.len(),
                     n_actual: arguments.len(),
                 },
@@ -1556,50 +1550,6 @@ impl<'db> InferenceContext<'db> {
         }
     }
 
-    fn call_builtin(
-        &mut self,
-        store: &ExpressionStore,
-        expression: ExpressionId,
-        builtin_id: BuiltinId,
-        arguments: &[(ExpressionId, Type)],
-        name: Option<&'static str>,
-    ) -> Type {
-        self.call_builtin_inner(store, expression, builtin_id, arguments, name)
-    }
-
-    fn call_builtin_inner(
-        &mut self,
-        store: &ExpressionStore,
-        expression: ExpressionId,
-        builtin_id: BuiltinId,
-        arguments: &[(ExpressionId, Type)],
-        name: Option<&'static str>,
-    ) -> Type {
-        if let Ok((return_type, overload_id)) = self.try_call_builtin(builtin_id, arguments) {
-            let builtin = builtin_id.lookup(self.db);
-            let resolved = builtin.overload(overload_id).r#type;
-            self.result
-                .call_resolutions
-                .insert(expression, ResolvedCall::Function(resolved));
-            return_type
-        } else {
-            self.push_diagnostic(
-                store.store_source,
-                InferenceDiagnosticKind::NoBuiltinOverload {
-                    expression,
-                    builtin: builtin_id,
-                    name,
-                    parameters: arguments
-                        .iter()
-                        .copied()
-                        .map(|(_, r#type)| r#type)
-                        .collect(),
-                },
-            );
-            self.error_type()
-        }
-    }
-
     fn try_call_builtin(
         &self,
         builtin_id: BuiltinId,
@@ -1668,7 +1618,7 @@ impl<'db> InferenceContext<'db> {
                 self.result
                     .call_resolutions
                     .insert(expression, ResolvedCall::Function(id));
-                self.validate_function_call(details, &arguments, store, expression, expression)
+                self.validate_function_call(details, &arguments, store, expression)
             },
             Lowered::BuiltinFunction => {
                 let template_args = context.eval_template_args(
@@ -1805,7 +1755,7 @@ impl<'db> InferenceContext<'db> {
         }
 
         // https://www.w3.org/TR/WGSL/#zero-value-builtin-function
-        if (arguments.is_empty() && !r#type.is_constructible(self.db)) {
+        if arguments.is_empty() && !r#type.is_constructible(self.db) {
             self.push_diagnostic(
                 store.store_source,
                 InferenceDiagnosticKind::NotConstructible { expression, r#type },
@@ -1952,7 +1902,7 @@ impl<'db> InferenceContext<'db> {
         }
 
         // https://www.w3.org/TR/WGSL/#zero-value-builtin-function
-        if (arguments.is_empty() && !r#type.is_constructible(self.db)) {
+        if arguments.is_empty() && !r#type.is_constructible(self.db) {
             self.push_diagnostic(
                 store.store_source,
                 InferenceDiagnosticKind::NotConstructible { expression, r#type },
@@ -2187,7 +2137,7 @@ impl<'db> InferenceContext<'db> {
 
         let field_types = &self.db.field_types(struct_id).0;
         let mut has_errors = false;
-        for ((field_data, field_type), (argument_expression, argument_type)) in
+        for ((_, field_type), (argument_expression, argument_type)) in
             field_types.iter().zip(arguments.iter())
         {
             if !argument_type.is_convertible_to(*field_type, self.db) {
@@ -2243,13 +2193,6 @@ pub enum TypeExpectation {
 }
 
 impl TypeExpectation {
-    const fn from_option(option: Option<Type>) -> Self {
-        match option {
-            Some(r#type) => Self::Type(TypeExpectationInner::Exact(r#type)),
-            None => Self::Any,
-        }
-    }
-
     const fn from_type(r#type: Type) -> Self {
         Self::Type(TypeExpectationInner::Exact(r#type))
     }
@@ -2270,30 +2213,6 @@ impl InferenceContext<'_> {
             address_space,
             inner: r#type,
             access_mode,
-        })
-        .intern(self.db)
-    }
-
-    fn ref_to_pointer(
-        &self,
-        reference: &Reference,
-    ) -> Type {
-        TypeKind::Pointer(Pointer {
-            address_space: reference.address_space,
-            inner: reference.inner,
-            access_mode: reference.access_mode,
-        })
-        .intern(self.db)
-    }
-
-    fn ptr_to_ref(
-        &self,
-        pointer: &Pointer,
-    ) -> Type {
-        TypeKind::Reference(Reference {
-            address_space: pointer.address_space,
-            inner: pointer.inner,
-            access_mode: pointer.access_mode,
         })
         .intern(self.db)
     }

@@ -1,28 +1,9 @@
 use std::fmt::Debug;
 
 use base_db::{EditionedFileId, Lookup as _, SourceDatabase, impl_intern_key, impl_intern_lookup};
-use salsa::plumbing::AsId as _;
-use syntax::{ExtensionsConfig, Parse, ast};
-use triomphe::Arc;
-use vfs::VfsPath;
+use syntax::ast;
 
-use crate::{
-    FileAstId, InFile,
-    ast_id::AstIdMap,
-    attributes::{AttributeDefId, AttributesWithOwner},
-    body::{Body, BodySourceMap, scope::ExprScopes},
-    expression_store::{ExpressionSourceMap, ExpressionStore},
-    item_scope::ItemScope,
-    item_tree::{
-        Directive, Function, GlobalAssertStatement, GlobalConstant, GlobalVariable,
-        ImportStatement, ItemTree, ModuleItemId, Override, Struct, TypeAlias,
-    },
-    resolver::Resolver,
-    signature::{
-        AssertStatementSignature, ConstantSignature, FunctionSignature, OverrideSignature,
-        StructSignature, TypeAliasSignature, VariableSignature,
-    },
-};
+use crate::{FileAstId, InFile, item_scope::ItemScope, resolver::Resolver};
 
 /// `Location` points to an AST node in any file. Corresponds to `AstId` in Rust-Analyzer.
 ///

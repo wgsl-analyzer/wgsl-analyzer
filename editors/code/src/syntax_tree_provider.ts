@@ -90,7 +90,15 @@ export class SyntaxTreeProvider implements vscode.TreeDataProvider<SyntaxElement
 					end: end_offset,
 				};
 
-				let inner;
+				let inner:
+					| {
+							offsets: {
+								start: number;
+								end: number;
+							};
+							range: vscode.Range;
+					  }
+					| undefined;
 				if (value.start_index && value.end_index) {
 					const [start_offset, start_line, start_column] = value.start_index;
 					const [end_offset, end_line, end_column] = value.end_index;

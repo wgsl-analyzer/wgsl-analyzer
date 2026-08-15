@@ -1,4 +1,5 @@
-import * as assert from "assert";
+// biome-ignore-all lint/suspicious/noTemplateCurlyInString: intentional
+import * as assert from "node:assert";
 import { substituteVariablesInEnv } from "../../src/config";
 import type { Context } from ".";
 
@@ -39,6 +40,7 @@ export async function getTests(context: Context) {
 		});
 
 		suite.addSyncTest("Should support external variables", () => {
+			// biome-ignore lint/complexity/useLiteralKeys: conflicting lint
 			process.env["TEST_VARIABLE"] = "test";
 			const envJson = {
 				USING_EXTERNAL_VAR: "${env:TEST_VARIABLE} test ${env:TEST_VARIABLE}",
@@ -49,6 +51,7 @@ export async function getTests(context: Context) {
 
 			const actualEnv = substituteVariablesInEnv(envJson);
 			assert.deepStrictEqual(actualEnv, expectedEnv);
+			// biome-ignore lint/complexity/useLiteralKeys: conflicting lint
 			delete process.env["TEST_VARIABLE"];
 		});
 
@@ -57,6 +60,7 @@ export async function getTests(context: Context) {
 				USING_VSCODE_VAR: "${workspaceFolderBasename}",
 			};
 			const actualEnv = substituteVariablesInEnv(envJson);
+			// biome-ignore lint/complexity/useLiteralKeys: conflicting lint
 			assert.deepStrictEqual(actualEnv["USING_VSCODE_VAR"], "code");
 		});
 	});

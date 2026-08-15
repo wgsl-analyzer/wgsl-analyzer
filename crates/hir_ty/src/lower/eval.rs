@@ -2,17 +2,14 @@ use std::collections::VecDeque;
 
 use base_db::Intern as _;
 use hir_def::expression::{BinaryOperation, Expression, ExpressionId, UnaryOperator};
-use wgsl_types::{
-    inst::{Instance, LiteralInstance},
-    syntax::Enumerant,
-};
+use wgsl_types::inst::{Instance, LiteralInstance};
 
 use crate::{
     lower::{
         Lowered, TypeContainer, TypeLoweringContext, TypeLoweringError, TypeLoweringErrorKind,
         generics::{TemplateParameter, TemplateParameters},
     },
-    ty::{Type, TypeKind},
+    ty::TypeKind,
 };
 
 impl TypeLoweringContext<'_> {

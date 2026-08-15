@@ -19,7 +19,6 @@ smallvec.workspace = true
 stdx.workspace = true
 syntax.workspace = true
 tracing.workspace = true
-triomphe.workspace = true
 
 [lints]
 workspace = true

@@ -37,16 +37,8 @@ wgsl-formatter = { path = "./crates/wgsl_formatter", version = "0.0.0" }
 edition = { path = "./crates/edition", version = "0.0.0" }
 #
 # rust-analyzer crates
-stdx = {
-	git = "https://github.com/rust-lang/rust-analyzer",
-	rev = "b42b63f390a4dab14e6efa34a70e67f5b087cc62",
-	version = "0.0.0"
-}
-paths = {
-	git = "https://github.com/rust-lang/rust-analyzer",
-	rev = "b42b63f390a4dab14e6efa34a70e67f5b087cc62",
-	version = "0.0.0"
-}
+stdx = { git = "https://github.com/rust-lang/rust-analyzer", rev = "b42b63f390a4dab14e6efa34a70e67f5b087cc62", version = "0.0.0" }
+paths = { git = "https://github.com/rust-lang/rust-analyzer", rev = "b42b63f390a4dab14e6efa34a70e67f5b087cc62", version = "0.0.0" }
 #
 # crates from rust-analyzer that are published separately
 line-index = "0.1.2"
@@ -74,42 +66,16 @@ rowan = "0.16.1"
 rustc-hash = "2.1.2"
 # Ideally we'd not enable the macros feature but unfortunately the `tracked` attribute does not work
 # on impls without it
-salsa = {
-	version = "0.28.2",
-	default-features = false,
-	features = ["inventory", "macros", "rayon", "salsa_unstable", "triomphe"]
-}
+salsa = { version = "0.28.2", default-features = false, features = ["inventory", "macros", "rayon", "salsa_unstable", "triomphe"] }
 salsa-macros = "0.28.2"
 semver = "1.0.27"
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.150"
-smallvec = {
-	version = "1.15.1",
-	features = [
-		"const_generics",
-		"const_new",
-		"union",
-	]
-}
+smallvec = { version = "1.15.1", features = ["const_generics", "const_new", "union"] }
 smol_str = { version = "0.3.5", default-features = false }
 text-size = "1.1.1"
-tracing = {
-	version = "0.1.44",
-	default-features = false,
-	features = ["attributes", "std"]
-}
-tracing-subscriber = {
-	version = "0.3.23",
-	default-features = false,
-	features = [
-		"fmt",
-		"local-time",
-		"registry",
-		"std",
-		"time",
-		"tracing-log",
-	]
-}
+tracing = { version = "0.1.44", default-features = false, features = ["attributes", "std"] }
+tracing-subscriber = { version = "0.3.23", default-features = false, features = ["fmt", "local-time", "registry", "std", "time", "tracing-log"] }
 tracing-tree = "0.4.0"
 triomphe = { version = "0.1.15", default-features = false, features = ["std"] }
 wgsl-types = { version = "0.4.2", features = ["naga-ext"] }

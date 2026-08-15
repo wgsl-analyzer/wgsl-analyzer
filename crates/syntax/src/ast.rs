@@ -292,6 +292,13 @@ impl HasName for FunctionDeclaration {}
 impl HasAttributes for FunctionDeclaration {}
 
 ast_node! {
+    GlobalCompoundDeclaration:
+    left_brace_token: Option<SyntaxToken BraceLeft>;
+    right_brace_token: Option<SyntaxToken BraceRight>;
+    items: AstChildren<Item>;
+}
+
+ast_node! {
     StructDeclaration:
     struct_token: Option<SyntaxToken Struct>;
     body: Option<StructBody>;
@@ -393,6 +400,7 @@ ast_enum! {
         TypeAliasDeclaration,
         StructDeclaration,
         AssertStatement,
+        GlobalCompoundDeclaration,
     }
 }
 
@@ -778,6 +786,14 @@ impl Attribute {
             Self::ElseAttribute(inner) => inner.name(),
             Self::EarlyDepthTestAttribute(inner) => inner.name(),
         }
+    }
+
+    #[must_use]
+    pub const fn is_conditional_compilation(&self) -> bool {
+        matches!(
+            self,
+            Self::IfAttribute(_) | Self::ElifAttribute(_) | Self::ElseAttribute(_)
+        )
     }
 }
 
@@ -1408,5 +1424,26 @@ impl PrefixExpression {
             PrefixOperatorKind::And(_) => UnaryOperator::AddressOf,
         };
         Some(operator)
+    }
+}
+
+impl Item {
+    pub fn flatten_global_compound_declarations(self) -> Vec<Self> {
+        match self {
+            Self::GlobalCompoundDeclaration(global_compound_declaration) => {
+                global_compound_declaration
+                    .items()
+                    .flat_map(Self::flatten_global_compound_declarations)
+                    .collect()
+            },
+            Self::ImportStatement(_)
+            | Self::FunctionDeclaration(_)
+            | Self::VariableDeclaration(_)
+            | Self::ConstantDeclaration(_)
+            | Self::OverrideDeclaration(_)
+            | Self::TypeAliasDeclaration(_)
+            | Self::StructDeclaration(_)
+            | Self::AssertStatement(_) => vec![self],
+        }
     }
 }

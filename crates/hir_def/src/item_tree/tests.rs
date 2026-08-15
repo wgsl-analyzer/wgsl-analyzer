@@ -1,7 +1,5 @@
-use base_db::EditionedFileId;
 use expect_test::{Expect, expect};
 use test_fixture::WithFixture as _;
-use triomphe::Arc;
 
 use crate::{item_tree::ItemTree, test_db::TestDatabase};
 

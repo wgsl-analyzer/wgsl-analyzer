@@ -223,7 +223,7 @@ fn foo(){}
                   BraceRight@44..45 "}"
               Blankspace@45..54 "\n        "
 
-            error at 27..28: invalid syntax, expected one of: 'alias', 'const', 'const_assert', 'diagnostic', 'enable', 'fn', 'import', 'let', 'override', 'requires', 'struct', 'var'"#]],
+            error at 27..28: invalid syntax, expected one of: 'alias', '{', 'const', 'const_assert', 'diagnostic', 'enable', 'fn', 'import', 'let', 'override', 'requires', 'struct', 'var'"#]],
     );
 }
 

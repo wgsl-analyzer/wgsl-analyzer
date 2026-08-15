@@ -1,4 +1,6 @@
-import { InlayHint } from "vscode";
+// biome-ignore-all lint/complexity/noBannedTypes: intentional
+
+import type { InlayHint } from "vscode";
 import * as lc from "vscode-languageclient";
 
 // wgsl-analyzer overrides
@@ -109,7 +111,7 @@ export type AnalyzerStatusParameters = {
 	textDocument?: lc.TextDocumentIdentifier;
 };
 
-export interface FetchDependencyListParameters {}
+export type FetchDependencyListParameters = {};
 
 export interface FetchDependencyListResult {
 	crates: {
@@ -125,7 +127,7 @@ export const fetchDependencyList = new lc.RequestType<
 	void
 >("wgsl-analyzer/fetchDependencyList");
 
-export interface FetchModuleGraphParameters {}
+export type FetchModuleGraphParameters = {};
 
 export interface FetchModuleGraphResult {
 	modules: {
@@ -140,7 +142,7 @@ export const fetchModuleGraph = new lc.RequestType<
 	void
 >("wgsl-analyzer/fetchModuleGraph");
 
-export interface FetchPackageGraphParameters {}
+export type FetchPackageGraphParameters = {};
 
 export interface FetchPackageGraphResult {
 	packages: {

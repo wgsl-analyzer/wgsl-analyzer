@@ -1199,7 +1199,7 @@ fn global_var_function_address_space_error() {
         "var<function> not_allowed_at_module_level: u32;",
         expect![[r#"
             14..41 'not_al..._level': ref<function, u32, read_write>
-            [EditionedFileId(Id(300))] UnexpectedTemplateArgument { expression: Idx::<Expression>(0) } in Signature
+            4..12 'function': unexpected template argument `function`
         "#]],
     );
 }
@@ -1701,7 +1701,7 @@ fn no_constructor() {
             14..15 '1': integer
             17..18 '2': integer
             20..21 '3': integer
-            8..22 'vec2f(1, 2, 3)': no constructor for builtin `op_vec2_constructor` with parameters `integer, integer, integer`
+            8..22 'vec2f(1, 2, 3)': no constructor for builtin `op_vec2_constructor` of type `vec2<f32>` with parameters `integer, integer, integer`
         "#]],
     );
 }
@@ -2028,10 +2028,27 @@ fn main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
             81..82 'x': ref<function, f32, read_write>
             122..123 'x': ref<function, i32, read_write>
             126..128 '1i': i32
-            147..163 'vec4(v...x), 1)': vec4<f32>
-            152..159 'vec3(x)': vec3<f32>
-            157..158 'x': ref<function, f32, read_write>
+            147..163 'vec4(v...x), 1)': vec4<i32>
+            152..159 'vec3(x)': vec3<i32>
+            157..158 'x': ref<function, i32, read_write>
             161..162 '1': integer
+            147..163 'vec4(v...x), 1)': expected vec4<f32> but got vec4<i32>
+        "#]],
+    );
+}
+
+#[test]
+fn override_declaration() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+        override LEVELS: f32 = 4.0;
+        fn foo() -> f32 { return LEVELS; }
+        ",
+        expect![[r#"
+            9..15 'LEVELS': f32
+            23..26 '4.0': float
+            53..59 'LEVELS': f32
         "#]],
     );
 }

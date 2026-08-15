@@ -125,7 +125,8 @@ export async function targetToExecution(
 	},
 	cargo?: string,
 ): Promise<vscode.ProcessExecution | vscode.ShellExecution> {
-	let command, args;
+	let command: string | undefined;
+	let args: string[] | undefined;
 	if (isWeslTask(definition)) {
 		// FIXME: The server should provide wesl-rs
 		command = cargo || (await toolchain.weslPath(options?.env));
