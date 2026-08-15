@@ -6,11 +6,7 @@ use itertools::Itertools as _;
 use std::fmt::Write as _;
 use test_fixture::WithFixture as _;
 
-use crate::{
-    item_scope::ItemScope,
-    name_resolution::ModulesMap,
-    test_db::TestDatabase,
-};
+use crate::{item_scope::ItemScope, name_resolution::ModulesMap, test_db::TestDatabase};
 
 fn render_modules_map_with_items(wa_fixture: &str) -> String {
     let db = TestDatabase::with_files(wa_fixture);

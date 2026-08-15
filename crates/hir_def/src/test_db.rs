@@ -1,9 +1,8 @@
 use std::{fmt, panic};
 
 use base_db::{
-    FileSourceRootInput, FileText, Nonce, Package, SourceDatabase, SourceRootId,
-    SourceRootInput, all_packages, input::SourceRoot,
-    set_all_packages_with_durability,
+    FileSourceRootInput, FileText, Nonce, Package, SourceDatabase, SourceRootId, SourceRootInput,
+    all_packages, input::SourceRoot, set_all_packages_with_durability,
 };
 use salsa::{Durability, Storage};
 use triomphe::Arc;

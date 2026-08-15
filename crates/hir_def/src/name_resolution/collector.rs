@@ -1,6 +1,4 @@
-use base_db::{
-    EditionedFileId, Intern as _, Package, SourceDatabase, file_package,
-};
+use base_db::{EditionedFileId, Intern as _, Package, SourceDatabase, file_package};
 use syntax::ast;
 
 use crate::{
@@ -8,11 +6,7 @@ use crate::{
     item_scope::{ItemScope, ModuleImportPath, ModuleItem},
     item_tree::{FlatImport, ImportStatement, ItemTree, ModuleItemId, Name},
     mod_path::{AbsoluteModPath, PathKind},
-    name_resolution::{
-        ModulesMap,
-        diagnostics::DefDiagnostic,
-        resolve_module,
-    },
+    name_resolution::{ModulesMap, diagnostics::DefDiagnostic, resolve_module},
     visibility::Visibility,
 };
 

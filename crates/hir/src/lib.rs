@@ -16,9 +16,7 @@ use hir_def::{
         GlobalVariableId, ImportId, Location, OverrideId, StructId, TypeAliasId,
     },
     expression::{ExpressionId, StatementId},
-    expression_store::{
-        ExpressionStore, ExpressionStoreOwnerId, ExpressionStoreSource,
-    },
+    expression_store::{ExpressionStore, ExpressionStoreOwnerId, ExpressionStoreSource},
     item_scope::ItemScope,
     item_tree::{ItemTree, ModuleItemId},
     resolver::Resolver,
@@ -157,9 +155,7 @@ impl<'db> Semantics<'db> {
     ) -> Resolver<'db> {
         if let Some(definition) = self.find_container(file_id, source) {
             match definition {
-                ChildContainer::DefinitionWithBodyId(
-                    id @ DefinitionWithBodyId::Function(_),
-                ) => {
+                ChildContainer::DefinitionWithBodyId(id @ DefinitionWithBodyId::Function(_)) => {
                     if let Some(nearest_scope) = nearest_scope(source) {
                         self.analyze(id).resolver_for(nearest_scope)
                     } else {
@@ -871,10 +867,7 @@ impl Module {
         }
 
         for diagnostic in &ItemScope::of(db, self.file_id).diagnostics {
-            accumulator.push(diagnostics::any_diag_from_def_diagnostic(
-                db,
-                diagnostic,
-            ));
+            accumulator.push(diagnostics::any_diag_from_def_diagnostic(db, diagnostic));
         }
     }
 }

@@ -3,11 +3,7 @@ use std::fmt::Debug;
 use base_db::{EditionedFileId, Lookup as _, SourceDatabase, impl_intern_key, impl_intern_lookup};
 use syntax::ast;
 
-use crate::{
-    FileAstId, InFile,
-    item_scope::ItemScope,
-    resolver::Resolver,
-};
+use crate::{FileAstId, InFile, item_scope::ItemScope, resolver::Resolver};
 
 /// `Location` points to an AST node in any file. Corresponds to `AstId` in Rust-Analyzer.
 ///
