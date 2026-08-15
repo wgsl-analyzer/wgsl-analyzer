@@ -94,13 +94,6 @@ impl RequestItemSet {
         #[expect(clippy::as_conversions, reason = "keep it const")]
         RequestItem::from_index(log as u8)
     }
-    #[must_use]
-    pub const fn extended_by(
-        self,
-        other: RequestItem,
-    ) -> Self {
-        self.union(&Self::from(other))
-    }
 
     #[must_use]
     pub const fn contains(

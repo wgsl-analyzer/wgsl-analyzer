@@ -122,10 +122,7 @@ pub fn gen_switch_body_case(
             if selectors
                 .node
                 .as_ref()
-                .and_then(|selectors| match selectors {
-                    rowan::NodeOrToken::Node(node) => Some(node),
-                    rowan::NodeOrToken::Token(_) => None,
-                })
+                .and_then(|selectors| selectors.as_node())
                 .is_some_and(is_case_default)
             {
                 item_case_keyword.node = NodeWithTriviaContent::NoContent;

@@ -27,3 +27,9 @@ fn a() {
         "#]],
     );
 }
+
+#[test]
+fn format_comments_with_tabs() {
+    check("// Hello\tTab", "// Hello\tTab\n");
+    check("/* Hello\tTab */", "/* Hello\tTab */\n");
+}

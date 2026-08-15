@@ -113,10 +113,6 @@ impl ExpectAssertEq for &str {
     }
 }
 
-pub fn assert_is_formatted(source: &str) {
-    check(source, source);
-}
-
 #[expect(clippy::needless_pass_by_value, reason = "intentional API")]
 pub fn check<E>(
     before: &str,
