@@ -63,8 +63,9 @@ pub fn server_capabilities(config: &Config) -> ServerCapabilities {
         workspace_symbol_provider: None, // TODO https://github.com/wgsl-analyzer/wgsl-analyzer/issues/350
         code_action_provider: None, // TODO https://github.com/wgsl-analyzer/wgsl-analyzer/issues/351
         code_lens_provider: None, // TODO https://github.com/wgsl-analyzer/wgsl-analyzer/issues/352
-        document_formatting_provider: Some(OneOf::Left(true)),
-        document_range_formatting_provider: Some(OneOf::Left(true)),
+        document_formatting_provider: Some(DocumentFormattingProvider::Bool(true)),
+        document_range_formatting_provider: Some(DocumentRangeFormattingProvider::Bool(true)),
+        // TODO https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1095
         document_on_type_formatting_provider: Some({
             let mut characters = ide::Analysis::SUPPORTED_TRIGGER_CHARS.iter();
             DocumentOnTypeFormattingOptions {
