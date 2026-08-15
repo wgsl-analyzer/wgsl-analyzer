@@ -181,6 +181,8 @@ pub struct Config {
     validation_errors: ConfigErrors,
 
     detached_files: Vec<AbsPathBuf>,
+
+    wgslfmt_option: FormattingOptions,
 }
 
 impl Config {
@@ -285,6 +287,7 @@ impl Config {
             validation_errors: ConfigErrors::default(),
             detached_files: Vec::default(),
             // watoml_file: Default::default(),
+            wgslfmt_option: FormattingOptions::default(),
         }
     }
 
@@ -561,11 +564,11 @@ impl Config {
     }
 
     #[must_use]
-    pub fn wgslfmt(
+    pub const fn wgslfmt(
         &self,
         source_root_id: Option<SourceRootId>,
-    ) -> FormattingOptions {
-        FormattingOptions::default()
+    ) -> &FormattingOptions {
+        &self.wgslfmt_option
     }
 
     #[must_use]
