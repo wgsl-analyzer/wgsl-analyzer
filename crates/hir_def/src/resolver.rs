@@ -13,7 +13,7 @@ use crate::{
     expression_store::path::Path,
     item_scope::ItemScope,
     item_tree::Name,
-    mod_path::{AbsoluteModPath, ModPath, PathKind},
+    mod_path::{AbsoluteModPath, PathKind},
     name_resolution::resolve_module,
     visibility::Visibility,
 };
@@ -159,7 +159,7 @@ impl<'db> Resolver<'db> {
                     .module_info
                     .import_paths
                     .iter()
-                    .for_each(|(name, item)| {
+                    .for_each(|(name, _item)| {
                         callback(name, ScopeDef::Module);
                     });
             },
@@ -219,7 +219,7 @@ impl<'db> Resolver<'db> {
                 let mut mod_path = AbsoluteModPath::for_file(db, package, self.file_id)
                     .ok_or(ResolutionDiagnostic::DetachedFile)?;
 
-                for level in 0..levels {
+                for _ in 0..levels {
                     if mod_path.pop_segment().is_none() {
                         return Err(ResolutionDiagnostic::TooManySupers);
                     }

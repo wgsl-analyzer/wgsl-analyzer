@@ -1,7 +1,6 @@
 mod imports;
 mod item_scopes;
 
-use base_db::EditionedFileId;
 use expect_test::{Expect, expect};
 use itertools::Itertools as _;
 use std::fmt::Write as _;
@@ -9,7 +8,6 @@ use test_fixture::WithFixture as _;
 
 use crate::{
     item_scope::ItemScope,
-    mod_path::{AbsoluteModPath, ModPath},
     name_resolution::ModulesMap,
     test_db::TestDatabase,
 };

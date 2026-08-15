@@ -1,7 +1,6 @@
 use base_db::{EditionedFileId, FileExtension, Package, SourceDatabase};
-use indexmap::map::Entry;
 
-use crate::{FxIndexMap, item_scope::ItemScope, item_tree::Name, mod_path::AbsoluteModPath};
+use crate::{FxIndexMap, mod_path::AbsoluteModPath};
 
 /// A map of all modules and their children in a package.
 ///
@@ -54,7 +53,7 @@ fn modules_map_query(
         })
         .collect();
 
-    /// Invariant: If a module path exists, then the parent module path exists.
+    // Invariant: If a module path exists, then the parent module path exists.
     let mut modules = FxIndexMap::default();
     modules.insert(AbsoluteModPath::new_root(), ModuleData { file: None });
 

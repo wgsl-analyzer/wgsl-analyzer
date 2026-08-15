@@ -5,8 +5,6 @@ mod pretty;
 #[cfg(test)]
 mod tests;
 
-use std::{hash, marker::PhantomData};
-
 use base_db::{EditionedFileId, SourceDatabase};
 use rustc_hash::FxHashMap;
 use smol_str::SmolStr;
@@ -14,11 +12,9 @@ use syntax::{
     AstNode, TokenText,
     ast::{self, StructDeclaration},
 };
-use triomphe::Arc;
 
 use crate::{
     ast_id::FileAstId,
-    db::ModuleDefinitionId,
     mod_path::{ModPath, PathKind},
 };
 
