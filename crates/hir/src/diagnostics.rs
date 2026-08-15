@@ -204,7 +204,7 @@ impl AnyDiagnostic {
 }
 
 #[expect(clippy::too_many_lines, reason = "long but simple match")]
-pub(crate) fn any_diag_from_infer_diagnostic(
+pub(crate) fn to_any_diagnostic(
     infer_diagnostic: &InferenceDiagnosticKind,
     source_map: &ExpressionSourceMap,
     file_id: EditionedFileId,

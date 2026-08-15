@@ -823,11 +823,8 @@ impl Module {
                             );
                             continue;
                         }
-                        match diagnostics::any_diag_from_infer_diagnostic(
-                            &diagnostic.kind,
-                            signature_map,
-                            file,
-                        ) {
+                        match diagnostics::to_any_diagnostic(&diagnostic.kind, signature_map, file)
+                        {
                             Some(diagnostic) => accumulator.push(diagnostic),
                             None => {
                                 tracing::warn!("could not create diagnostic from {:?}", diagnostic);
@@ -847,11 +844,8 @@ impl Module {
                             );
                             continue;
                         }
-                        match diagnostics::any_diag_from_infer_diagnostic(
-                            &diagnostic.kind,
-                            signature_map,
-                            file,
-                        ) {
+                        match diagnostics::to_any_diagnostic(&diagnostic.kind, signature_map, file)
+                        {
                             Some(diagnostic) => accumulator.push(diagnostic),
                             None => {
                                 tracing::warn!("could not create diagnostic from {:?}", diagnostic);
@@ -943,7 +937,7 @@ fn check_type_errors(
         let (_, source_map) = Body::with_source_map(db, definition);
         let infer = InferenceResult::of(db, definition);
         for diagnostic in infer.diagnostics() {
-            match diagnostics::any_diag_from_infer_diagnostic(
+            match diagnostics::to_any_diagnostic(
                 &diagnostic.kind,
                 match diagnostic.source {
                     ExpressionStoreSource::Body => source_map.expression_source_map(),

@@ -27,12 +27,12 @@ impl Type {
         db: &dyn HirDatabase,
     ) -> bool {
         match self.lookup(db) {
+            TypeKind::Error => true,
             TypeKind::Scalar(_)
             | TypeKind::Struct(_)
             | TypeKind::BuiltinStruct(_)
             | TypeKind::Texture(_)
             | TypeKind::Sampler(_) => false,
-            TypeKind::Error => true,
             TypeKind::Atomic(atomic_type) => atomic_type.inner.is_err(db),
             TypeKind::Vector(vector_type) => vector_type.component_type.is_err(db),
             TypeKind::Matrix(matrix_type) => matrix_type.inner.is_err(db),

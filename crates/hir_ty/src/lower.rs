@@ -1030,11 +1030,11 @@ fn from_wgsl_array_size(size: Option<usize>) -> ArraySize {
     match size.map(|size| u32::try_from(size).map(NonZeroU32::try_from)) {
         Some(Ok(Ok(size))) => ArraySize::Constant(size),
         None => ArraySize::Dynamic,
-        Some(Ok(Err(_))) => {
-            panic!("size cannot be 0");
+        Some(Ok(Err(error))) => {
+            panic!("size cannot be 0, error: {error}, got: {size:?}");
         },
-        Some(Err(_)) => {
-            panic!("size must not be > u32::MAX");
+        Some(Err(error)) => {
+            panic!("size must not be > u32::MAX, error: {error}, got: {size:?}");
         },
     }
 }
