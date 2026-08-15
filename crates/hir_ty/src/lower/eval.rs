@@ -164,6 +164,9 @@ impl TypeLoweringContext<'_> {
                     | Lowered::Local(_) => {
                         TemplateParameter::Instance(self.eval_expression(template_argument))
                     },
+                    Lowered::BuiltinDeclaration(_, value) => {
+                        TemplateParameter::Instance(Some(value))
+                    },
                 }
             },
             Expression::Missing

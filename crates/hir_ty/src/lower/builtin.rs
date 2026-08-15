@@ -1,7 +1,7 @@
-use std::{num::NonZeroU32, str::FromStr as _};
+use std::{num::NonZeroU32, str::FromStr};
 
 use base_db::{CapabilitiesInput, Intern as _};
-use hir_def::item_tree::Name;
+use hir_def::{item_tree::Name, resolver::ResolutionDiagnostic};
 use wgsl_types::{
     Instance,
     inst::LiteralInstance,
@@ -20,78 +20,225 @@ use crate::{
 };
 
 impl TypeLoweringContext<'_> {
-    pub fn lower_if_predeclared(
-        &mut self,
+    #[expect(
+        clippy::too_many_lines,
+        reason = "it is just a big match and each arm is not complex at all"
+    )]
+    #[must_use]
+    pub fn lower_builtin_type(
+        &self,
         name: &Name,
-        template_parameters: TemplateParameters,
     ) -> Option<Lowered> {
-        // If lowering the predeclared type failed, we should return a error type
-        // As opposed to ignoring it when it's not a predeclared type
-        match self.lower_predeclared_type(name, &template_parameters) {
-            Ok(Some(lowered)) => Some(lowered),
-            Ok(None) => {
-                if wgsl_types::idents::BUILTIN_FUNCTION_NAMES.contains(&name.as_str()) {
-                    Some(Lowered::BuiltinFunction(
-                        name.clone(),
-                        Some(template_parameters),
-                    ))
-                // } else if wgsl_types::idents::BUILTIN_CONSTRUCTOR_NAMES.contains(&name.as_str()) {
-                //     Some(Lowered::BuiltinConstructor(
-                //         name.clone(),
-                //         Some(template_parameters),
-                //     ))
-                } else if let Ok(enum_value) = Enumerant::from_str(name.as_str()) {
-                    self.expect_no_template(&template_parameters);
-                    Some(Lowered::Enumerant(enum_value))
-                } else {
-                    None
-                }
+        let type_kind = match name.as_str() {
+            "bool" => TypeKind::Scalar(ScalarType::Bool),
+            "i32" => TypeKind::Scalar(ScalarType::I32),
+            "u32" => TypeKind::Scalar(ScalarType::U32),
+            "i64" if CapabilitiesInput::get_capabilities(self.db).shader_int64 => {
+                TypeKind::Scalar(ScalarType::I64)
             },
-            Err(error) => {
-                self.diagnostics.push(error);
-                Some(Lowered::Type(TypeKind::Error.intern(self.db)))
+            "u64" if CapabilitiesInput::get_capabilities(self.db).shader_int64 => {
+                TypeKind::Scalar(ScalarType::U64)
             },
-        }
+            "f32" => TypeKind::Scalar(ScalarType::F32),
+            "f16" => TypeKind::Scalar(ScalarType::F16),
+            // TODO: Move those aliases to a separate file
+            // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/559
+            "vec2i" => TypeKind::Vector(VectorType {
+                size: VecSize::Two,
+                component_type: TypeKind::Scalar(ScalarType::I32).intern(self.db),
+            }),
+            "vec3i" => TypeKind::Vector(VectorType {
+                size: VecSize::Three,
+                component_type: TypeKind::Scalar(ScalarType::I32).intern(self.db),
+            }),
+            "vec4i" => TypeKind::Vector(VectorType {
+                size: VecSize::Four,
+                component_type: TypeKind::Scalar(ScalarType::I32).intern(self.db),
+            }),
+            "vec2u" => TypeKind::Vector(VectorType {
+                size: VecSize::Two,
+                component_type: TypeKind::Scalar(ScalarType::U32).intern(self.db),
+            }),
+            "vec3u" => TypeKind::Vector(VectorType {
+                size: VecSize::Three,
+                component_type: TypeKind::Scalar(ScalarType::U32).intern(self.db),
+            }),
+            "vec4u" => TypeKind::Vector(VectorType {
+                size: VecSize::Four,
+                component_type: TypeKind::Scalar(ScalarType::U32).intern(self.db),
+            }),
+            "vec2f" => TypeKind::Vector(VectorType {
+                size: VecSize::Two,
+                component_type: TypeKind::Scalar(ScalarType::F32).intern(self.db),
+            }),
+            "vec3f" => TypeKind::Vector(VectorType {
+                size: VecSize::Three,
+                component_type: TypeKind::Scalar(ScalarType::F32).intern(self.db),
+            }),
+            "vec4f" => TypeKind::Vector(VectorType {
+                size: VecSize::Four,
+                component_type: TypeKind::Scalar(ScalarType::F32).intern(self.db),
+            }),
+
+            "vec2h" => TypeKind::Vector(VectorType {
+                size: VecSize::Two,
+                component_type: TypeKind::Scalar(ScalarType::F16).intern(self.db),
+            }),
+            "vec3h" => TypeKind::Vector(VectorType {
+                size: VecSize::Three,
+                component_type: TypeKind::Scalar(ScalarType::F16).intern(self.db),
+            }),
+            "vec4h" => TypeKind::Vector(VectorType {
+                size: VecSize::Four,
+                component_type: TypeKind::Scalar(ScalarType::F16).intern(self.db),
+            }),
+            "mat2x2f" => TypeKind::Matrix(MatrixType {
+                columns: VecSize::Two,
+                rows: VecSize::Two,
+                inner: TypeKind::Scalar(ScalarType::F32).intern(self.db),
+            }),
+            "mat2x3f" => TypeKind::Matrix(MatrixType {
+                columns: VecSize::Two,
+                rows: VecSize::Three,
+                inner: TypeKind::Scalar(ScalarType::F32).intern(self.db),
+            }),
+            "mat2x4f" => TypeKind::Matrix(MatrixType {
+                columns: VecSize::Two,
+                rows: VecSize::Four,
+                inner: TypeKind::Scalar(ScalarType::F32).intern(self.db),
+            }),
+            "mat3x2f" => TypeKind::Matrix(MatrixType {
+                columns: VecSize::Three,
+                rows: VecSize::Two,
+                inner: TypeKind::Scalar(ScalarType::F32).intern(self.db),
+            }),
+            "mat3x3f" => TypeKind::Matrix(MatrixType {
+                columns: VecSize::Three,
+                rows: VecSize::Three,
+                inner: TypeKind::Scalar(ScalarType::F32).intern(self.db),
+            }),
+            "mat3x4f" => TypeKind::Matrix(MatrixType {
+                columns: VecSize::Three,
+                rows: VecSize::Four,
+                inner: TypeKind::Scalar(ScalarType::F32).intern(self.db),
+            }),
+            "mat4x2f" => TypeKind::Matrix(MatrixType {
+                columns: VecSize::Four,
+                rows: VecSize::Two,
+                inner: TypeKind::Scalar(ScalarType::F32).intern(self.db),
+            }),
+            "mat4x3f" => TypeKind::Matrix(MatrixType {
+                columns: VecSize::Four,
+                rows: VecSize::Three,
+                inner: TypeKind::Scalar(ScalarType::F32).intern(self.db),
+            }),
+            "mat4x4f" => TypeKind::Matrix(MatrixType {
+                columns: VecSize::Four,
+                rows: VecSize::Four,
+                inner: TypeKind::Scalar(ScalarType::F32).intern(self.db),
+            }),
+            "mat2x2h" => TypeKind::Matrix(MatrixType {
+                columns: VecSize::Two,
+                rows: VecSize::Two,
+                inner: TypeKind::Scalar(ScalarType::F16).intern(self.db),
+            }),
+            "mat2x3h" => TypeKind::Matrix(MatrixType {
+                columns: VecSize::Two,
+                rows: VecSize::Three,
+                inner: TypeKind::Scalar(ScalarType::F16).intern(self.db),
+            }),
+            "mat2x4h" => TypeKind::Matrix(MatrixType {
+                columns: VecSize::Two,
+                rows: VecSize::Four,
+                inner: TypeKind::Scalar(ScalarType::F16).intern(self.db),
+            }),
+            "mat3x2h" => TypeKind::Matrix(MatrixType {
+                columns: VecSize::Three,
+                rows: VecSize::Two,
+                inner: TypeKind::Scalar(ScalarType::F16).intern(self.db),
+            }),
+            "mat3x3h" => TypeKind::Matrix(MatrixType {
+                columns: VecSize::Three,
+                rows: VecSize::Three,
+                inner: TypeKind::Scalar(ScalarType::F16).intern(self.db),
+            }),
+            "mat3x4h" => TypeKind::Matrix(MatrixType {
+                columns: VecSize::Three,
+                rows: VecSize::Four,
+                inner: TypeKind::Scalar(ScalarType::F16).intern(self.db),
+            }),
+            "mat4x2h" => TypeKind::Matrix(MatrixType {
+                columns: VecSize::Four,
+                rows: VecSize::Two,
+                inner: TypeKind::Scalar(ScalarType::F16).intern(self.db),
+            }),
+            "mat4x3h" => TypeKind::Matrix(MatrixType {
+                columns: VecSize::Four,
+                rows: VecSize::Three,
+                inner: TypeKind::Scalar(ScalarType::F16).intern(self.db),
+            }),
+            "mat4x4h" => TypeKind::Matrix(MatrixType {
+                columns: VecSize::Four,
+                rows: VecSize::Four,
+                inner: TypeKind::Scalar(ScalarType::F16).intern(self.db),
+            }),
+            "texture_depth_multisampled_2d" => TypeKind::Texture(TextureType {
+                kind: TextureKind::Depth,
+                dimension: TextureDimensionality::D2,
+                arrayed: false,
+                multisampled: true,
+            }),
+            "texture_external" => TypeKind::Texture(TextureType {
+                kind: TextureKind::External,
+                dimension: TextureDimensionality::D2,
+                arrayed: false,
+                multisampled: false,
+            }),
+            "texture_depth_2d" => TypeKind::Texture(TextureType {
+                kind: TextureKind::Depth,
+                dimension: TextureDimensionality::D2,
+                arrayed: false,
+                multisampled: false,
+            }),
+            "texture_depth_2d_array" => TypeKind::Texture(TextureType {
+                kind: TextureKind::Depth,
+                dimension: TextureDimensionality::D2,
+                arrayed: true,
+                multisampled: false,
+            }),
+            "texture_depth_cube" => TypeKind::Texture(TextureType {
+                kind: TextureKind::Depth,
+                dimension: TextureDimensionality::Cube,
+                arrayed: false,
+                multisampled: false,
+            }),
+            "texture_depth_cube_array" => TypeKind::Texture(TextureType {
+                kind: TextureKind::Depth,
+                dimension: TextureDimensionality::Cube,
+                arrayed: true,
+                multisampled: false,
+            }),
+            "sampler" => TypeKind::Sampler(wgsl_types::ty::SamplerType::Sampler),
+            "sampler_comparison" => {
+                TypeKind::Sampler(wgsl_types::ty::SamplerType::SamplerComparison)
+            },
+            _ => {
+                return None;
+            },
+        };
+        Some(Lowered::Type(type_kind.intern(self.db)))
     }
 
     #[expect(
         clippy::too_many_lines,
         reason = "it is just a big match and each arm is not complex at all"
     )]
-    fn lower_predeclared_type(
+    pub fn lower_builtin_type_generator(
         &mut self,
         name: &Name,
         template_parameters: &TemplateParameters,
     ) -> Result<Option<Lowered>, TypeLoweringError> {
         let type_kind = match name.as_str() {
-            "bool" => {
-                self.expect_no_template(template_parameters);
-                TypeKind::Scalar(ScalarType::Bool)
-            },
-            "i32" => {
-                self.expect_no_template(template_parameters);
-                TypeKind::Scalar(ScalarType::I32)
-            },
-            "u32" => {
-                self.expect_no_template(template_parameters);
-                TypeKind::Scalar(ScalarType::U32)
-            },
-            "i64" if CapabilitiesInput::get_capabilities(self.db).shader_int64 => {
-                self.expect_no_template(template_parameters);
-                TypeKind::Scalar(ScalarType::I64)
-            },
-            "u64" if CapabilitiesInput::get_capabilities(self.db).shader_int64 => {
-                self.expect_no_template(template_parameters);
-                TypeKind::Scalar(ScalarType::U64)
-            },
-            "f32" => {
-                self.expect_no_template(template_parameters);
-                TypeKind::Scalar(ScalarType::F32)
-            },
-            "f16" => {
-                self.expect_no_template(template_parameters);
-                TypeKind::Scalar(ScalarType::F16)
-            },
             "array" => {
                 if !template_parameters.has_next() {
                     return Ok(Some(Lowered::TypeWithoutTemplate(
@@ -176,93 +323,6 @@ impl TypeLoweringContext<'_> {
                     component_type,
                 })
             },
-            // TODO: Move those aliases to a separate file
-            // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/559
-            "vec2i" => {
-                self.expect_no_template(template_parameters);
-                TypeKind::Vector(VectorType {
-                    size: VecSize::Two,
-                    component_type: TypeKind::Scalar(ScalarType::I32).intern(self.db),
-                })
-            },
-            "vec3i" => {
-                self.expect_no_template(template_parameters);
-                TypeKind::Vector(VectorType {
-                    size: VecSize::Three,
-                    component_type: TypeKind::Scalar(ScalarType::I32).intern(self.db),
-                })
-            },
-            "vec4i" => {
-                self.expect_no_template(template_parameters);
-                TypeKind::Vector(VectorType {
-                    size: VecSize::Four,
-                    component_type: TypeKind::Scalar(ScalarType::I32).intern(self.db),
-                })
-            },
-            "vec2u" => {
-                self.expect_no_template(template_parameters);
-                TypeKind::Vector(VectorType {
-                    size: VecSize::Two,
-                    component_type: TypeKind::Scalar(ScalarType::U32).intern(self.db),
-                })
-            },
-            "vec3u" => {
-                self.expect_no_template(template_parameters);
-                TypeKind::Vector(VectorType {
-                    size: VecSize::Three,
-                    component_type: TypeKind::Scalar(ScalarType::U32).intern(self.db),
-                })
-            },
-            "vec4u" => {
-                self.expect_no_template(template_parameters);
-                TypeKind::Vector(VectorType {
-                    size: VecSize::Four,
-                    component_type: TypeKind::Scalar(ScalarType::U32).intern(self.db),
-                })
-            },
-            "vec2f" => {
-                self.expect_no_template(template_parameters);
-                TypeKind::Vector(VectorType {
-                    size: VecSize::Two,
-                    component_type: TypeKind::Scalar(ScalarType::F32).intern(self.db),
-                })
-            },
-            "vec3f" => {
-                self.expect_no_template(template_parameters);
-                TypeKind::Vector(VectorType {
-                    size: VecSize::Three,
-                    component_type: TypeKind::Scalar(ScalarType::F32).intern(self.db),
-                })
-            },
-            "vec4f" => {
-                self.expect_no_template(template_parameters);
-                TypeKind::Vector(VectorType {
-                    size: VecSize::Four,
-                    component_type: TypeKind::Scalar(ScalarType::F32).intern(self.db),
-                })
-            },
-
-            "vec2h" => {
-                self.expect_no_template(template_parameters);
-                TypeKind::Vector(VectorType {
-                    size: VecSize::Two,
-                    component_type: TypeKind::Scalar(ScalarType::F16).intern(self.db),
-                })
-            },
-            "vec3h" => {
-                self.expect_no_template(template_parameters);
-                TypeKind::Vector(VectorType {
-                    size: VecSize::Three,
-                    component_type: TypeKind::Scalar(ScalarType::F16).intern(self.db),
-                })
-            },
-            "vec4h" => {
-                self.expect_no_template(template_parameters);
-                TypeKind::Vector(VectorType {
-                    size: VecSize::Four,
-                    component_type: TypeKind::Scalar(ScalarType::F16).intern(self.db),
-                })
-            },
             name @ ("mat2x2" | "mat2x3" | "mat2x4" | "mat3x2" | "mat3x3" | "mat3x4" | "mat4x2"
             | "mat4x3" | "mat4x4") => {
                 let (columns, rows) = match name {
@@ -296,150 +356,6 @@ impl TypeLoweringContext<'_> {
                     columns,
                     rows,
                     inner,
-                })
-            },
-            "mat2x2f" => {
-                self.expect_no_template(template_parameters);
-                TypeKind::Matrix(MatrixType {
-                    columns: VecSize::Two,
-                    rows: VecSize::Two,
-                    inner: TypeKind::Scalar(ScalarType::F32).intern(self.db),
-                })
-            },
-            "mat2x3f" => {
-                self.expect_no_template(template_parameters);
-                TypeKind::Matrix(MatrixType {
-                    columns: VecSize::Two,
-                    rows: VecSize::Three,
-                    inner: TypeKind::Scalar(ScalarType::F32).intern(self.db),
-                })
-            },
-            "mat2x4f" => {
-                self.expect_no_template(template_parameters);
-                TypeKind::Matrix(MatrixType {
-                    columns: VecSize::Two,
-                    rows: VecSize::Four,
-                    inner: TypeKind::Scalar(ScalarType::F32).intern(self.db),
-                })
-            },
-            "mat3x2f" => {
-                self.expect_no_template(template_parameters);
-                TypeKind::Matrix(MatrixType {
-                    columns: VecSize::Three,
-                    rows: VecSize::Two,
-                    inner: TypeKind::Scalar(ScalarType::F32).intern(self.db),
-                })
-            },
-            "mat3x3f" => {
-                self.expect_no_template(template_parameters);
-                TypeKind::Matrix(MatrixType {
-                    columns: VecSize::Three,
-                    rows: VecSize::Three,
-                    inner: TypeKind::Scalar(ScalarType::F32).intern(self.db),
-                })
-            },
-            "mat3x4f" => {
-                self.expect_no_template(template_parameters);
-                TypeKind::Matrix(MatrixType {
-                    columns: VecSize::Three,
-                    rows: VecSize::Four,
-                    inner: TypeKind::Scalar(ScalarType::F32).intern(self.db),
-                })
-            },
-            "mat4x2f" => {
-                self.expect_no_template(template_parameters);
-                TypeKind::Matrix(MatrixType {
-                    columns: VecSize::Four,
-                    rows: VecSize::Two,
-                    inner: TypeKind::Scalar(ScalarType::F32).intern(self.db),
-                })
-            },
-            "mat4x3f" => {
-                self.expect_no_template(template_parameters);
-                TypeKind::Matrix(MatrixType {
-                    columns: VecSize::Four,
-                    rows: VecSize::Three,
-                    inner: TypeKind::Scalar(ScalarType::F32).intern(self.db),
-                })
-            },
-            "mat4x4f" => {
-                self.expect_no_template(template_parameters);
-                TypeKind::Matrix(MatrixType {
-                    columns: VecSize::Four,
-                    rows: VecSize::Four,
-                    inner: TypeKind::Scalar(ScalarType::F32).intern(self.db),
-                })
-            },
-            "mat2x2h" => {
-                self.expect_no_template(template_parameters);
-                TypeKind::Matrix(MatrixType {
-                    columns: VecSize::Two,
-                    rows: VecSize::Two,
-                    inner: TypeKind::Scalar(ScalarType::F16).intern(self.db),
-                })
-            },
-            "mat2x3h" => {
-                self.expect_no_template(template_parameters);
-                TypeKind::Matrix(MatrixType {
-                    columns: VecSize::Two,
-                    rows: VecSize::Three,
-                    inner: TypeKind::Scalar(ScalarType::F16).intern(self.db),
-                })
-            },
-            "mat2x4h" => {
-                self.expect_no_template(template_parameters);
-                TypeKind::Matrix(MatrixType {
-                    columns: VecSize::Two,
-                    rows: VecSize::Four,
-                    inner: TypeKind::Scalar(ScalarType::F16).intern(self.db),
-                })
-            },
-            "mat3x2h" => {
-                self.expect_no_template(template_parameters);
-                TypeKind::Matrix(MatrixType {
-                    columns: VecSize::Three,
-                    rows: VecSize::Two,
-                    inner: TypeKind::Scalar(ScalarType::F16).intern(self.db),
-                })
-            },
-            "mat3x3h" => {
-                self.expect_no_template(template_parameters);
-                TypeKind::Matrix(MatrixType {
-                    columns: VecSize::Three,
-                    rows: VecSize::Three,
-                    inner: TypeKind::Scalar(ScalarType::F16).intern(self.db),
-                })
-            },
-            "mat3x4h" => {
-                self.expect_no_template(template_parameters);
-                TypeKind::Matrix(MatrixType {
-                    columns: VecSize::Three,
-                    rows: VecSize::Four,
-                    inner: TypeKind::Scalar(ScalarType::F16).intern(self.db),
-                })
-            },
-            "mat4x2h" => {
-                self.expect_no_template(template_parameters);
-                TypeKind::Matrix(MatrixType {
-                    columns: VecSize::Four,
-                    rows: VecSize::Two,
-                    inner: TypeKind::Scalar(ScalarType::F16).intern(self.db),
-                })
-            },
-            "mat4x3h" => {
-                self.expect_no_template(template_parameters);
-                TypeKind::Matrix(MatrixType {
-                    columns: VecSize::Four,
-                    rows: VecSize::Three,
-                    inner: TypeKind::Scalar(ScalarType::F16).intern(self.db),
-                })
-            },
-            "mat4x4h" => {
-                self.expect_no_template(template_parameters);
-                TypeKind::Matrix(MatrixType {
-                    columns: VecSize::Four,
-                    rows: VecSize::Four,
-                    inner: TypeKind::Scalar(ScalarType::F16).intern(self.db),
                 })
             },
             "ptr" => {
@@ -565,68 +481,15 @@ impl TypeLoweringContext<'_> {
                     multisampled: false,
                 })
             },
-            "texture_depth_multisampled_2d" => {
-                self.expect_no_template(template_parameters);
-                TypeKind::Texture(TextureType {
-                    kind: TextureKind::Depth,
-                    dimension: TextureDimensionality::D2,
-                    arrayed: false,
-                    multisampled: true,
-                })
-            },
-            "texture_external" => {
-                self.expect_no_template(template_parameters);
-                TypeKind::Texture(TextureType {
-                    kind: TextureKind::External,
-                    dimension: TextureDimensionality::D2,
-                    arrayed: false,
-                    multisampled: false,
-                })
-            },
-            "texture_depth_2d" => {
-                self.expect_no_template(template_parameters);
-                TypeKind::Texture(TextureType {
-                    kind: TextureKind::Depth,
-                    dimension: TextureDimensionality::D2,
-                    arrayed: false,
-                    multisampled: false,
-                })
-            },
-            "texture_depth_2d_array" => {
-                self.expect_no_template(template_parameters);
-                TypeKind::Texture(TextureType {
-                    kind: TextureKind::Depth,
-                    dimension: TextureDimensionality::D2,
-                    arrayed: true,
-                    multisampled: false,
-                })
-            },
-            "texture_depth_cube" => {
-                self.expect_no_template(template_parameters);
-                TypeKind::Texture(TextureType {
-                    kind: TextureKind::Depth,
-                    dimension: TextureDimensionality::Cube,
-                    arrayed: false,
-                    multisampled: false,
-                })
-            },
-            "texture_depth_cube_array" => {
-                self.expect_no_template(template_parameters);
-                TypeKind::Texture(TextureType {
-                    kind: TextureKind::Depth,
-                    dimension: TextureDimensionality::Cube,
-                    arrayed: true,
-                    multisampled: false,
-                })
-            },
-            "sampler" => {
-                self.expect_no_template(template_parameters);
-                TypeKind::Sampler(wgsl_types::ty::SamplerType::Sampler)
-            },
-            "sampler_comparison" => {
-                self.expect_no_template(template_parameters);
-                TypeKind::Sampler(wgsl_types::ty::SamplerType::SamplerComparison)
-            },
+            // "texture_1d_array" => {
+            //     unimplemented!()
+            // },
+            // "texture_storage_1d_array" => {
+            //     unimplemented!()
+            // },
+            // "texture_multisampled_2d_array" => {
+            //     unimplemented!()
+            // },
             _ => {
                 return Ok(None);
             },
@@ -971,6 +834,58 @@ impl TypeLoweringContext<'_> {
             texel_format,
             access_mode,
         })
+    }
+
+    #[expect(clippy::unused_self, reason = "intended API")]
+    pub fn lower_builtin_enumerant(
+        &self,
+        name: &Name,
+    ) -> Result<Lowered, <Enumerant as FromStr>::Err> {
+        match Enumerant::from_str(name.as_str()) {
+            Ok(enumerant) => Ok(Lowered::Enumerant(enumerant)),
+            Err(()) => Err(()),
+        }
+    }
+
+    #[expect(
+        clippy::match_same_arms,
+        reason = "better to write it this way because they are unrelated"
+    )]
+    #[expect(clippy::unused_self, reason = "intended API")]
+    pub fn lower_builtin_declaration(
+        &self,
+        type_container: TypeContainer,
+        name: Name,
+    ) -> Result<Lowered, TypeLoweringError> {
+        let literal_instance = match name.as_str() {
+            "RAY_FLAG_NONE" => LiteralInstance::U32(0x0),
+            "RAY_FLAG_FORCE_OPAQUE" => LiteralInstance::U32(0x1),
+            "RAY_FLAG_FORCE_NO_OPAQUE" => LiteralInstance::U32(0x2),
+            "RAY_FLAG_TERMINATE_ON_FIRST_HIT" => LiteralInstance::U32(0x4),
+            "RAY_FLAG_SKIP_CLOSEST_HIT_SHADER" => LiteralInstance::U32(0x8),
+            "RAY_FLAG_CULL_BACK_FACING" => LiteralInstance::U32(0x10),
+            "RAY_FLAG_CULL_FRONT_FACING" => LiteralInstance::U32(0x20),
+            "RAY_FLAG_CULL_OPAQUE" => LiteralInstance::U32(0x40),
+            "RAY_FLAG_CULL_NO_OPAQUE" => LiteralInstance::U32(0x80),
+            "RAY_FLAG_SKIP_TRIANGLES" => LiteralInstance::U32(0x100),
+            "RAY_FLAG_SKIP_AABBS" => LiteralInstance::U32(0x200),
+            "RAY_QUERY_INTERSECTION_NONE" => LiteralInstance::U32(0),
+            "RAY_QUERY_INTERSECTION_TRIANGLE" => LiteralInstance::U32(1),
+            "RAY_QUERY_INTERSECTION_GENERATED" => LiteralInstance::U32(2),
+            "RAY_QUERY_INTERSECTION_AABB" => LiteralInstance::U32(3),
+            _ => {
+                return Err(TypeLoweringError {
+                    container: type_container,
+                    kind: TypeLoweringErrorKind::Resolution(ResolutionDiagnostic::UnresolvedName {
+                        name,
+                    }),
+                });
+            },
+        };
+        Ok(Lowered::BuiltinDeclaration(
+            name,
+            Instance::Literal(literal_instance),
+        ))
     }
 }
 

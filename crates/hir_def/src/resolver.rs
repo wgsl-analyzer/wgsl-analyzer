@@ -52,7 +52,11 @@ pub enum ResolveKind {
     Override(OverrideId),
     Function(FunctionId),
     BuiltinFunction(Name),
-    // BuiltinType(Name),
+    BuiltinType(Name),
+    BuiltinTypeGenerator(Name),
+    // BuiltinTypeConstructor(Name),
+    BuiltinEnumerant(Name),
+    BuiltinDeclaration(Name),
 }
 
 impl TryFrom<ModuleDefinitionId> for ResolveKind {
@@ -179,8 +183,6 @@ impl<'db> Resolver<'db> {
                     });
             },
             Scope::Builtin => {
-                // TODO: Match against "name.as_str()" and then point at a "builtin" file
-                // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/559
                 for name in wgsl_types::idents::BUILTIN_ALIAS_NAMES {
                     callback(
                         &(*name).into(),
@@ -322,16 +324,34 @@ impl<'db> Resolver<'db> {
                     ResolveKind::try_from(item.definition).ok()
                 },
                 Scope::Builtin => {
-                    // TODO: Match against the first name segment and then point at a "builtin" file
-                    // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/559
-                    None
+                    if wgsl_types::idents::BUILTIN_FUNCTION_NAMES.contains(&name.as_str()) {
+                        Some(ResolveKind::BuiltinFunction(name.clone()))
+                    } else if wgsl_types::idents::BUILTIN_TYPE_NAMES.contains(&name.as_str())
+                        || wgsl_types::idents::BUILTIN_ALIAS_NAMES.contains(&name.as_str())
+                    {
+                        Some(ResolveKind::BuiltinType(name.clone()))
+                    } else if wgsl_types::idents::BUILTIN_TYPE_GENERATOR_NAMES
+                        .contains(&name.as_str())
+                    {
+                        Some(ResolveKind::BuiltinTypeGenerator(name.clone()))
+                    } else if wgsl_types::idents::BUILTIN_CONSTRUCTOR_NAMES.contains(&name.as_str())
+                    {
+                        debug_assert!(
+                            false,
+                            "builtin constructor `{}` is unimplemented in wgsl-analyzer",
+                            name.as_str()
+                        );
+                        None
+                        // Some(ResolveKind::BuiltinTypeConstructor(name.clone()))
+                    } else if wgsl_types::idents::BUILTIN_ENUMERANT_NAMES.contains(&name.as_str()) {
+                        Some(ResolveKind::BuiltinEnumerant(name.clone()))
+                    } else if wgsl_types::idents::BUILTIN_DECLARATION_NAMES.contains(&name.as_str())
+                    {
+                        Some(ResolveKind::BuiltinDeclaration(name.clone()))
+                    } else {
+                        None
+                    }
                 },
-                // Scope::Builtin => wgsl_types::idents::BUILTIN_FUNCTION_NAMES
-                //     .contains(&name.as_str())
-                //     .then(|| ResolveKind::BuiltinFunction(name.clone())),
-                // Scope::Builtin => wgsl_types::idents::BUILTIN_TYPE_NAMES
-                //     .contains(&name.as_str())
-                //     .then(|| ResolveKind::BuiltinType(name.clone())),
             })
             .ok_or(ResolutionDiagnostic::UnresolvedName { name: name.clone() })
     }

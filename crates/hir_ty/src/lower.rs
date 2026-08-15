@@ -10,7 +10,6 @@ use hir_def::{
     },
     expression_store::{ExpressionStore, path::Path},
     item_tree::Name,
-    mod_path::PathKind,
     resolver::{ResolutionDiagnostic, ResolveKind, Resolver},
     signature::StructSignature,
     type_specifier::TypeSpecifierId,
@@ -206,6 +205,7 @@ pub enum Lowered {
     Enumerant(Enumerant),
     BuiltinFunction(Name, Option<TemplateParameters>),
     // BuiltinConstructor(Name, Option<TemplateParameters>),
+    BuiltinDeclaration(Name, Instance),
 }
 
 impl Lowered {
@@ -218,7 +218,7 @@ impl Lowered {
                 LoweredKind::Type
             },
             Self::Function(_) | Self::BuiltinFunction(_, _) => LoweredKind::Function,
-            Self::GlobalConstant(_) => LoweredKind::Constant,
+            Self::GlobalConstant(_) | Self::BuiltinDeclaration(_, _) => LoweredKind::Constant,
             Self::GlobalVariable(_) => LoweredKind::Variable,
             Self::Override(_) => LoweredKind::Override,
             Self::Local(_) => LoweredKind::Local,
@@ -314,32 +314,78 @@ impl<'db> TypeLoweringContext<'db> {
         template_parameters: &[ExpressionId],
     ) -> Result<Lowered, TypeLoweringError> {
         let resolved_type = self.resolver.resolve(self.db, path);
-
         let template_parameters = self.eval_template_args(type_container, template_parameters);
-        if resolved_type.is_ok() {
-            self.expect_no_template(&template_parameters);
-        }
-
         match resolved_type {
-            Ok(ResolveKind::TypeAlias(id)) => Ok(Lowered::Type(self.db.type_alias_type(id).0)),
-            Ok(ResolveKind::Struct(id)) => Ok(Lowered::Type(TypeKind::Struct(id).intern(self.db))),
-            Ok(ResolveKind::Function(id)) => Ok(Lowered::Function(self.db.function_type(id))),
-            Ok(ResolveKind::GlobalConstant(id)) => Ok(Lowered::GlobalConstant(id)),
-            Ok(ResolveKind::GlobalVariable(id)) => Ok(Lowered::GlobalVariable(id)),
-            Ok(ResolveKind::Override(id)) => Ok(Lowered::Override(id)),
-            Ok(ResolveKind::Local(local, _)) => Ok(Lowered::Local(local)),
+            Ok(ResolveKind::TypeAlias(id)) => {
+                self.expect_no_template(&template_parameters);
+                Ok(Lowered::Type(self.db.type_alias_type(id).0))
+            },
+            Ok(ResolveKind::Struct(id)) => {
+                self.expect_no_template(&template_parameters);
+                Ok(Lowered::Type(TypeKind::Struct(id).intern(self.db)))
+            },
+            Ok(ResolveKind::Function(id)) => {
+                self.expect_no_template(&template_parameters);
+                Ok(Lowered::Function(self.db.function_type(id)))
+            },
+            Ok(ResolveKind::GlobalConstant(id)) => {
+                self.expect_no_template(&template_parameters);
+                Ok(Lowered::GlobalConstant(id))
+            },
+            Ok(ResolveKind::GlobalVariable(id)) => {
+                self.expect_no_template(&template_parameters);
+                Ok(Lowered::GlobalVariable(id))
+            },
+            Ok(ResolveKind::Override(id)) => {
+                self.expect_no_template(&template_parameters);
+                Ok(Lowered::Override(id))
+            },
+            Ok(ResolveKind::Local(local, _function_parent)) => {
+                self.expect_no_template(&template_parameters);
+                Ok(Lowered::Local(local))
+            },
             Ok(ResolveKind::BuiltinFunction(name)) => {
                 Ok(Lowered::BuiltinFunction(name, Some(template_parameters)))
             },
-            Err(diagnostic)
-                if path.mod_path().kind() == PathKind::Plain && path.mod_path().len() == 1 =>
-            {
-                let predeclared_name = &path.mod_path().segments()[0];
-                self.lower_if_predeclared(predeclared_name, template_parameters)
+            Ok(ResolveKind::BuiltinType(name)) => {
+                self.expect_no_template(&template_parameters);
+                self.lower_builtin_type(&name)
                     .ok_or_else(|| TypeLoweringError {
                         container: type_container,
-                        kind: TypeLoweringErrorKind::Resolution(diagnostic),
+                        kind: TypeLoweringErrorKind::Resolution(
+                            ResolutionDiagnostic::UnresolvedName { name },
+                        ),
                     })
+            },
+            Ok(ResolveKind::BuiltinTypeGenerator(name)) => self
+                .lower_builtin_type_generator(&name, &template_parameters)?
+                .ok_or_else(|| TypeLoweringError {
+                    container: type_container,
+                    kind: TypeLoweringErrorKind::Resolution(ResolutionDiagnostic::UnresolvedName {
+                        name,
+                    }),
+                }),
+            // Ok(ResolveKind::BuiltinTypeConstructor(name)) => self
+            //     .lower_builtin_type(type_container, &name, &template_parameters)?
+            //     .ok_or_else(|| TypeLoweringError {
+            //         container: type_container,
+            //         kind: TypeLoweringErrorKind::Resolution(ResolutionDiagnostic::UnresolvedName {
+            //             name,
+            //         }),
+            //     }),
+            Ok(ResolveKind::BuiltinEnumerant(name)) => {
+                self.expect_no_template(&template_parameters);
+                self.lower_builtin_enumerant(&name)
+                    .map_err(|()| TypeLoweringError {
+                        container: type_container,
+                        kind: TypeLoweringErrorKind::Resolution(
+                            ResolutionDiagnostic::UnresolvedName { name },
+                        ),
+                    })
+            },
+            Ok(ResolveKind::BuiltinDeclaration(name)) => {
+                self.expect_no_template(&template_parameters);
+                self.lower_builtin_declaration(type_container, name)
             },
             Err(diagnostic) => Err(TypeLoweringError {
                 container: type_container,
@@ -412,6 +458,7 @@ impl<'db> TypeLoweringContext<'db> {
                 | Lowered::BuiltinFunction(_, _)
                 // | Lowered::BuiltinConstructor(_, _)
                 | Lowered::GlobalConstant(_)
+                | Lowered::BuiltinDeclaration(_, _)
                 | Lowered::GlobalVariable(_)
                 | Lowered::Override(_)
                 | Lowered::Local(_),

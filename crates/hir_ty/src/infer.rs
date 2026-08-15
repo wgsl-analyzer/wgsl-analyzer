@@ -25,6 +25,7 @@ use rustc_hash::FxHashMap;
 use wgsl_types::{
     syntax::{AccessMode, AddressSpace, Enumerant},
     tplt::TpltParam,
+    ty::Ty as _,
 };
 
 use crate::{
@@ -1377,6 +1378,7 @@ impl<'db> InferenceContext<'db> {
                 InferenceResult::of(self.db, DefinitionWithBodyId::Override(id)).return_type
             },
             Lowered::Local(id) => self.result.type_of_binding[id],
+            Lowered::BuiltinDeclaration(_, value) => self.converter.from_wgsl_types(value.ty()),
             Lowered::Type(_)
             | Lowered::TypeWithoutTemplate(_)
             | Lowered::Function(_)
@@ -1553,13 +1555,10 @@ impl<'db> InferenceContext<'db> {
                 self.infer_templated_type_constructor(store, expression, r#type, arguments)
             },
             Lowered::TypeWithoutTemplate(r#type) => {
-                if argument_types
-                    .iter()
-                    .any(|r#type| r#type.kind(self.db).is_error())
-                {
-                    // cancel inference if an error is already known
-                    return r#type; // we know what it *should* be
-                }
+                debug_assert!(
+                    r#type.is_err(self.db),
+                    "the type is only half-constructed and we have to fill in the blanks (the missing template) using arguments"
+                );
                 self.infer_type_without_template_constructor(store, expression, r#type, arguments)
             },
             // Lowered::BuiltinConstructor(name, template) => {
@@ -1591,6 +1590,7 @@ impl<'db> InferenceContext<'db> {
             },
             Lowered::Enumerant(_)
             | Lowered::GlobalConstant(_)
+            | Lowered::BuiltinDeclaration(_, _)
             | Lowered::GlobalVariable(_)
             | Lowered::Override(_)
             | Lowered::Local(_) => {

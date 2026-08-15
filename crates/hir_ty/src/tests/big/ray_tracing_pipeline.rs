@@ -70,10 +70,8 @@ fn foo() {
 }
         ",
         expect![[r#"
-            19..20 'x': [error]
-            23..36 'RAY_FLAG_NONE': [error]
-            23..36 'RAY_FLAG_NONE': `RAY_FLAG_NONE` not found in scope
-            23..36 'RAY_FLAG_NONE': expected variable, but got type `RAY_FLAG_NONE`
+            19..20 'x': u32
+            23..36 'RAY_FLAG_NONE': u32
         "#]],
     );
 }
