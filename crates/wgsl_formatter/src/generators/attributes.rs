@@ -47,7 +47,6 @@ pub(crate) enum AttributeGroup {
     Location,
     OffsetAlignSize,
     BindingGroup,
-    EarlyDepthTest,
     ComputeWorkgroup,
     Fragment,
     Vertex,
@@ -116,7 +115,6 @@ pub(crate) fn categorize_attribute(attribute: &Attribute) -> AttributeCategoriza
         Attribute::IfAttribute(_) => Grouped(AttributeGroup::Conditional, 0),
         Attribute::ElifAttribute(_) => Grouped(AttributeGroup::Conditional, 1),
         Attribute::ElseAttribute(_) => Grouped(AttributeGroup::Conditional, 2),
-        Attribute::EarlyDepthTestAttribute(_) => Grouped(AttributeGroup::EarlyDepthTest, 0),
     }
 }
 
@@ -225,10 +223,10 @@ pub fn gen_attribute_list(attribute_list: &AttributeList) -> FormatDocumentResul
 pub fn gen_attribute(attribute: &Attribute) -> FormatDocumentResult<PrintItemBuffer> {
     use Attribute::{
         AlignAttribute, BindingAttribute, BlendSrcAttribute, BuiltinAttribute, ComputeAttribute,
-        ConstantAttribute, DiagnosticAttribute, EarlyDepthTestAttribute, ElifAttribute,
-        ElseAttribute, FragmentAttribute, GroupAttribute, IdAttribute, IfAttribute,
-        InterpolateAttribute, InvariantAttribute, LocationAttribute, MustUseAttribute,
-        OtherAttribute, SizeAttribute, VertexAttribute, WorkgroupSizeAttribute,
+        ConstantAttribute, DiagnosticAttribute, ElifAttribute, ElseAttribute, FragmentAttribute,
+        GroupAttribute, IdAttribute, IfAttribute, InterpolateAttribute, InvariantAttribute,
+        LocationAttribute, MustUseAttribute, OtherAttribute, SizeAttribute, VertexAttribute,
+        WorkgroupSizeAttribute,
     };
     match attribute {
         OtherAttribute(other_attribute) => gen_other_attribute(other_attribute),
@@ -257,9 +255,6 @@ pub fn gen_attribute(attribute: &Attribute) -> FormatDocumentResult<PrintItemBuf
         IfAttribute(if_attribute) => gen_if_attribute(if_attribute),
         ElifAttribute(elif_attribute) => gen_elif_attribute(elif_attribute),
         ElseAttribute(else_attribute) => gen_else_attribute(else_attribute),
-        EarlyDepthTestAttribute(early_depth_test_attribute) => {
-            gen_early_depth_test_attribute(early_depth_test_attribute)
-        },
     }
 }
 
@@ -448,9 +443,6 @@ mod standard_attributes {
     pub fn gen_fragment_attribute(attribute: &ast::FragmentAttribute ) -> FormatDocumentResult<PrintItemBuffer>            { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::Fragment, sc!("fragment")) }
     pub fn gen_compute_attribute(attribute: &ast::ComputeAttribute ) -> FormatDocumentResult<PrintItemBuffer>              { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::Compute, sc!("compute")) }
 
-    // Naga
-    pub fn gen_early_depth_test_attribute(attribute: &ast::EarlyDepthTestAttribute ) -> FormatDocumentResult<PrintItemBuffer> { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::EarlyDepthTest, sc!("early_depth_test")) }
-
     // WESL
     pub fn gen_if_attribute(attribute: &ast::IfAttribute ) -> FormatDocumentResult<PrintItemBuffer>                        { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::If, sc!("if")) }
     pub fn gen_elif_attribute(attribute: &ast::ElifAttribute ) -> FormatDocumentResult<PrintItemBuffer>                    { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::Elif, sc!("elif")) }
@@ -459,7 +451,7 @@ mod standard_attributes {
 
 /// Attributes of the form:
 /// `'expected_token' '(' expression [','] ')'`.
-fn gen_attr_standard_with_args(
+pub fn gen_attr_standard_with_args(
     syntax: &SyntaxNode,
     expected_token: SyntaxKind,
     _attribute_name: &'static StringContainer,
