@@ -17,7 +17,6 @@ fn check(
 
 #[test]
 fn function_call_statement() {
-    //TODO This is currently producing a parser error
     check(
         "my_function(1);",
         expect![[r#"
@@ -25,7 +24,7 @@ fn function_call_statement() {
               FunctionCallStatement@0..15
                 FunctionCall@0..14
                   IdentExpression@0..11
-                    NameReference@0..11
+                    Path@0..11
                       Identifier@0..11 "my_function"
                   Arguments@11..14
                     ParenthesisLeft@11..12 "("
@@ -38,7 +37,26 @@ fn function_call_statement() {
 
 #[test]
 fn template_elaborated_function_call_statement() {
-    //TODO This is currently producing a parser error but should be allowed by wgsl
-    //https://www.w3.org/TR/WGSL/#recursive-descent-syntax-statement
-    check("my_template_elaborated_function<f32>(1);", expect![[]]);
+    check(
+        "my_template_elaborated_function<f32>(1);",
+        expect![[r#"
+        SourceFile@0..40
+          FunctionCallStatement@0..40
+            FunctionCall@0..39
+              IdentExpression@0..36
+                Path@0..31
+                  Identifier@0..31 "my_template_elaborate ..."
+                TemplateList@31..36
+                  TemplateStart@31..32 "<"
+                  IdentExpression@32..35
+                    Path@32..35
+                      Identifier@32..35 "f32"
+                  TemplateEnd@35..36 ">"
+              Arguments@36..39
+                ParenthesisLeft@36..37 "("
+                Literal@37..38
+                  IntLiteral@37..38 "1"
+                ParenthesisRight@38..39 ")"
+            Semicolon@39..40 ";""#]],
+    );
 }

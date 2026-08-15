@@ -1818,20 +1818,20 @@ fn parse_compute_workgroup_size_attrs() {
         expect![[r#"
             SourceFile@0..72
               Blankspace@0..9 "\n        "
-              FunctionDeclaration@9..63
+              AttributeList@9..44
                 ComputeAttribute@9..17
                   AttributeOperator@9..10 "@"
                   Compute@10..17 "compute"
                 Blankspace@17..26 "\n        "
                 WorkgroupSizeAttribute@26..44
                   AttributeOperator@26..27 "@"
-                  WorkgroupSizeAttribute@27..44
-                    WorkgroupSize@27..41 "workgroup_size"
-                    ParenthesisLeft@41..42 "("
-                    Literal@42..43
-                      IntLiteral@42..43 "1"
-                    ParenthesisRight@43..44 ")"
-                Blankspace@44..53 "\n        "
+                  WorkgroupSize@27..41 "workgroup_size"
+                  ParenthesisLeft@41..42 "("
+                  Literal@42..43
+                    IntLiteral@42..43 "1"
+                  ParenthesisRight@43..44 ")"
+              Blankspace@44..53 "\n        "
+              FunctionDeclaration@53..63
                 Fn@53..55 "fn"
                 Blankspace@55..56 " "
                 Name@56..58
