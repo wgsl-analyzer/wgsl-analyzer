@@ -7,7 +7,12 @@ fn check(
     input: &str,
     expected_tree: Expect,
 ) {
-    crate::check_entrypoint(input, ParseEntryPoint::Statement, &expected_tree);
+    crate::check_entrypoint(
+        input,
+        ParseEntryPoint::Statement,
+        &expected_tree,
+        edition::Edition::LATEST,
+    );
 }
 
 #[test]
