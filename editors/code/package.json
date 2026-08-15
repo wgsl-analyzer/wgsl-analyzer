@@ -16,6 +16,7 @@
 	"license": "MIT OR Apache-2.0",
 	"keywords": [
 		"shading",
+		"shader",
 		"web",
 		"wesl",
 		"wgsl"
