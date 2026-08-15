@@ -2138,7 +2138,6 @@ dependencies = [
  "serde",
  "sha2",
  "syntax",
- "thiserror",
 ]
 
 [[package]]
@@ -2159,11 +2158,9 @@ dependencies = [
  "anyhow",
  "clap",
  "glob",
- "line-index",
  "prettydiff",
  "serde",
  "serde_json",
- "syntax",
  "wgsl-formatter",
 ]
 
