@@ -1,6 +1,7 @@
 # TODOs
 - [Some more thoughts](https://discord.com/channels/1289346613185351722/1341941812675481680/1475555853066047549)
 - Ignoring Code [Issue](https://github.com/wgsl-analyzer/wgsl-analyzer/issues/93)
+- Should we throw away the snapshot tests? they are kinda unnecessary
 
 
 # Opinions

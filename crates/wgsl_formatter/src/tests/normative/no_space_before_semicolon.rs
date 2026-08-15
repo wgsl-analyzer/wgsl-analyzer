@@ -36,7 +36,7 @@ pub fn format_const_declaration_has_no_space_before_semicolon() {
 }
 
 #[test]
-pub fn format_let_decl_has_no_space_before_semicolon() {
+pub fn format_let_declaration_has_no_space_before_semicolon() {
     check(
         "fn main() {
 

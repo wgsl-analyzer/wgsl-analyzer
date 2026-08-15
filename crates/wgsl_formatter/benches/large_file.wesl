@@ -1475,7 +1475,7 @@ let y = 4;
         override a_multiline_binding = 1 // The thing
                 + 1 // The other thing
                 + 7 // The other thing
-                // Seperate
+                // Separate
                 ;
 
 
@@ -1689,7 +1689,7 @@ let y = 4;
         let a_multiline_binding = 1 // The thing
                 + 1 // The other thing
                 + 7 // The other thing
-                // Seperate
+                // Separate
                 ;
 
         }
@@ -2067,7 +2067,7 @@ return 1 + 2 + (47 * get_the_number() - a ) >> 18 - 2;
         var a_multiline_binding = 1 // The thing
                 + 1 // The other thing
                 + 7 // The other thing
-                // Seperate
+                // Separate
                 ;
 
         }

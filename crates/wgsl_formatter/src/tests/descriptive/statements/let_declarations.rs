@@ -3,7 +3,7 @@ use expect_test::expect;
 use crate::test_util::{check, check_comments};
 
 #[test]
-pub fn format_let_decl_simple_literal_1() {
+pub fn format_let_declaration_simple_literal_1() {
     check(
         "fn main() {
         let
@@ -21,7 +21,7 @@ pub fn format_let_decl_simple_literal_1() {
 }
 
 #[test]
-pub fn format_let_decl_simple_statement_1() {
+pub fn format_let_declaration_simple_statement_1() {
     check(
         "fn main() {
         let
@@ -43,13 +43,13 @@ pub fn format_let_decl_simple_statement_1() {
 }
 
 #[test]
-pub fn format_let_decl_simple_statement_with_trailing_comment() {
+pub fn format_let_declaration_simple_statement_with_trailing_comment() {
     check(
         "fn main() {
         let a_multiline_binding = 1 // The thing
                 + 1 // The other thing
                 + 7 // The other thing
-                // Seperate
+                // Separate
                 ;
 
         }",
@@ -58,7 +58,7 @@ pub fn format_let_decl_simple_statement_with_trailing_comment() {
                 let a_multiline_binding = 1 // The thing
                     + 1 // The other thing
                     + 7 // The other thing
-                    // Seperate
+                    // Separate
                     ;
             }
         "]],
@@ -66,7 +66,7 @@ pub fn format_let_decl_simple_statement_with_trailing_comment() {
 }
 
 #[test]
-pub fn format_comment_in_let_decl() {
+pub fn format_comment_in_let_declaration() {
     check_comments(
         "fn main() {
         ## let ## a ## = ## 1 ## ; ##
@@ -90,7 +90,7 @@ pub fn format_comment_in_let_decl() {
 }
 
 #[test]
-pub fn format_let_decl_keeps_line_comment_in_same_place_same_line() {
+pub fn format_let_declaration_keeps_line_comment_in_same_place_same_line() {
     check(
         "fn main() {
 

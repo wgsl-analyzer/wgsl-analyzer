@@ -54,7 +54,7 @@ pub fn format_while_statement_single_statement() {
 
 #[test]
 pub fn format_while_statement_continue_statement() {
-    // This is just a very simple smoke test for completeness, more fine grained tests are in stmt_continue.rs
+    // This is just a very simple smoke test for completeness, more fine grained tests are in continue.rs
     check(
         "fn main() {
         while(true) {

@@ -10,7 +10,7 @@ use crate::print_item_buffer::spacing_request::Request;
 // 3. There should not be a space after the opening parenthesis of a function, even if the next token is a block comment
 // 4. There should not be a space before the closing parenthesis of a function, even if the preceding token is a block comment
 //
-// Example formattings: fn main /*aaa*/ (/*bbb*/ param: u32, param2: u32 /*ccc*/)
+// Example formatting: fn main /*aaa*/ (/*bbb*/ param: u32, param2: u32 /*ccc*/)
 //
 // Considered alternatives:
 // * Track if the last pushed item is a space, and branch on that everytime you would add a space

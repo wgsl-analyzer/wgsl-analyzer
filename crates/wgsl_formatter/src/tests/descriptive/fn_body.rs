@@ -35,7 +35,7 @@ pub fn format_fn_body_retains_block_comment_1() {
 }
 
 #[test]
-pub fn format_fn_body_spacing_statements_sep_by_newline_1() {
+pub fn format_fn_body_spacing_statements_separated_by_newline_1() {
     check(
         "fn main() {let a = 1;let b = 2;}",
         expect![["

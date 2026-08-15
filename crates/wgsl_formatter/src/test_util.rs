@@ -146,7 +146,7 @@ where
 ///
 /// These assertions also exist, to help document certain design decisions,
 /// and prevent people from doing futile work, trying to "complete holes
-/// in the functionality of the formatter", while not realising that there a
+/// in the functionality of the formatter", while not realizing that there a
 /// reason certain things are intentionally not supported.
 #[track_caller]
 pub fn assert_out_of_scope(

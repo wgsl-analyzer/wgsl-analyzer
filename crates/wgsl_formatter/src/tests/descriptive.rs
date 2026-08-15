@@ -68,9 +68,9 @@ fn snapshots() {
                     Edition::LATEST,
                 );
             });
-            result.unwrap_or_else(|err| {
+            result.unwrap_or_else(|error| {
                 panic!(
-                    "Smoke test failed: {}\n{err:?}",
+                    "Smoke test failed: {}\n{error:?}",
                     smoke_test_source_path.display(),
                 )
             });
