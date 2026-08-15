@@ -82,7 +82,7 @@ pub enum AnyDiagnostic {
     NoBuiltinOverload {
         expression: InFile<AstPointer<ast::Expression>>,
         builtin: BuiltinId,
-        name: Option<&'static str>,
+        name: Option<Name>,
         parameters: Vec<Type>,
     },
     AddressOfNotReference {
@@ -308,7 +308,7 @@ pub(crate) fn any_diag_from_infer_diagnostic(
             AnyDiagnostic::NoBuiltinOverload {
                 expression: source,
                 builtin: *builtin,
-                name: *name,
+                name: name.clone(),
                 parameters: parameters.clone(),
             }
         },

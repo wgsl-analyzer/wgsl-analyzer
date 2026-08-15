@@ -1,26 +1,21 @@
 //! The home of `HirDatabase`, which is the Salsa database containing all the
 //! type inference-related queries.
 
-use std::fmt;
-
 use base_db::{EditionedFileId, Intern as _, Lookup as _, SourceDatabase};
 use hir_def::db::Location;
 use hir_def::signature::{StructSignature, TypeAliasSignature};
 use hir_def::{
-    InFile,
-    db::{DefinitionWithBodyId, FunctionId, ModuleDefinitionId, StructId, TypeAliasId},
+    db::{DefinitionWithBodyId, FunctionId, StructId, TypeAliasId},
     item_scope::ItemScope,
     item_tree::ItemTree,
     resolver::Resolver,
     signature::{FieldId, FunctionSignature, LocalFieldId},
 };
 use la_arena::ArenaMap;
-use salsa::plumbing::AsId as _;
 use triomphe::Arc;
 use wgsl_types::syntax::AddressSpace;
 
 use crate::{
-    builtins::{Builtin, BuiltinId},
     diagnostics::{InferenceDiagnostic, InferenceDiagnosticKind},
     function::{FunctionDetails, ResolvedFunctionId},
     infer::InferenceResult,

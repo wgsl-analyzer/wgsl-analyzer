@@ -49,7 +49,7 @@ pub enum InferenceDiagnosticKind {
     NoBuiltinOverload {
         expression: ExpressionId,
         builtin: BuiltinId,
-        name: Option<&'static str>,
+        name: Option<Name>,
         parameters: Vec<Type>,
     },
     NoConstructor {

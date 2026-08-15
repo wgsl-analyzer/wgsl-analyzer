@@ -2,7 +2,6 @@ use std::str::FromStr as _;
 
 use base_db::{ExtensionsConfigInput, Intern as _};
 use hir_def::{expression::ExpressionId, item_tree::Name};
-use itertools::Itertools as _;
 use wgsl_types::{
     Instance,
     inst::LiteralInstance,
@@ -789,7 +788,7 @@ impl TypeLoweringContext<'_> {
             },
         };
         let inner = match template_parameters.next_as_type() {
-            Ok((inner, expression)) if inner.kind(self.db).is_storable() => inner,
+            Ok((inner, _)) if inner.kind(self.db).is_storable() => inner,
             Ok((_, expression)) => {
                 self.diagnostics.push(TypeLoweringError {
                     container: TypeContainer::Expression(expression),

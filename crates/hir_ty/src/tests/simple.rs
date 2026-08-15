@@ -1199,7 +1199,7 @@ fn global_var_function_address_space_error() {
         "var<function> not_allowed_at_module_level: u32;",
         expect![[r#"
             14..41 'not_al..._level': ref<function, u32, read_write>
-            [EditionedFileId(Id(300))] UnexpectedTemplateArgument { expression: Idx::<Expression>(0) } in Signature
+            4..12 'function': unexpected template argument `function`
         "#]],
     );
 }
@@ -1701,7 +1701,7 @@ fn no_constructor() {
             14..15 '1': integer
             17..18 '2': integer
             20..21 '3': integer
-            8..22 'vec2f(1, 2, 3)': no constructor for builtin `op_vec2_constructor` with parameters `integer, integer, integer`
+            8..22 'vec2f(1, 2, 3)': no constructor for builtin `op_vec2_constructor` of type `vec2<f32>` with parameters `integer, integer, integer`
         "#]],
     );
 }

@@ -1,3 +1,4 @@
+#![warn(unused)]
 //! The type system. We currently use this to infer types for completion, hover
 //! information and various assists.
 
@@ -20,8 +21,6 @@ mod test_db;
 mod tests;
 
 pub fn setup_tracing() -> tracing::subscriber::DefaultGuard {
-    use std::env;
-    use std::sync::LazyLock;
     use tracing_subscriber::{Registry, layer::SubscriberExt as _};
     use tracing_tree::HierarchicalLayer;
 
