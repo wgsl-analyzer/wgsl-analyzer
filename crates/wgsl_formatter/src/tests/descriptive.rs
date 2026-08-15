@@ -19,6 +19,7 @@ mod types;
 mod bevy_reference;
 mod directives;
 mod expressions;
+mod global_compound_declaration;
 mod import;
 mod statements;
 

@@ -40,3 +40,14 @@ are simply the bindings we have in scope.
 As we still have to keep all the parent nodes in memory (because this procedure is recursive), there will be problematic situations where
 a stack-overflow will occur, when the AST is particularly deeply nested. 
 As far as I can tell the highly structured approach to the gen_ functions should make converting this to an iterative approach relatively straight forward, however I don't think such deeply nested ASTs will ever occur in practice.
+
+# Parse functions
+TODO
+
+# NodeWithTrivia
+TODO
+
+# Expecting SyntaxKinds
+TODO
+
+# Requests

@@ -193,6 +193,7 @@ where
 {
     let parse = syntax::parse(before.trim_start(), edition);
     let syntax = parse.tree();
+    //dbg!(&syntax);
 
     assert!(
         parse.errors().is_empty(),
