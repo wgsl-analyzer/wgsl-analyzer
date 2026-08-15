@@ -52,12 +52,6 @@ checksum = "330a5ed07fa54e4702c9d6c4174f74427fc0ef6e214bbd677ae50a5099946470"
 
 [[package]]
 name = "arrayvec"
-version = "0.5.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "23b62fc65de8e4e7f52534fb52b0f3ed04746ae267519eef2a83941e8085068b"
-
-[[package]]
-name = "arrayvec"
 version = "0.7.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d3fb67a6e08acf24fdeccbac2cb6ac4305825bd1f117462e0e6f2f193345ad56"
@@ -1029,7 +1023,7 @@ version = "27.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "066cf25f0e8b11ee0df221219010f213ad429855f57c494f995590c861a9a7d8"
 dependencies = [
- "arrayvec 0.7.8",
+ "arrayvec",
  "bit-set 0.8.0",
  "bitflags",
  "cfg-if",
@@ -1054,7 +1048,7 @@ version = "28.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "618f667225063219ddfc61251087db8a9aec3c3f0950c916b614e403486f1135"
 dependencies = [
- "arrayvec 0.7.8",
+ "arrayvec",
  "bit-set 0.8.0",
  "bitflags",
  "cfg-if",
@@ -1078,7 +1072,7 @@ name = "naga"
 version = "29.0.0"
 source = "git+https://github.com/gfx-rs/wgpu?rev=ff438f3cadb8a25e0f36409566a6fb50f6707e02#ff438f3cadb8a25e0f36409566a6fb50f6707e02"
 dependencies = [
- "arrayvec 0.7.8",
+ "arrayvec",
  "bit-set 0.10.0",
  "bitflags",
  "cfg-if",
@@ -1102,7 +1096,7 @@ version = "29.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b2bf919621e7975acb27d881bae2fb993e0d45c8e0446e85e6272971e00dc8df"
 dependencies = [
- "arrayvec 0.7.8",
+ "arrayvec",
  "bit-set 0.9.1",
  "bitflags",
  "cfg-if",
@@ -1303,17 +1297,6 @@ name = "powerfmt"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "439ee305def115ba05938db6eb1644ff94165c5ab5e9420d1c1bcedbba909391"
-
-[[package]]
-name = "pretty"
-version = "0.12.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0d22152487193190344590e4f30e219cf3fe140d9e7a3fdb683d82aa2c5f4156"
-dependencies = [
- "arrayvec 0.5.2",
- "typed-arena",
- "unicode-width",
-]
 
 [[package]]
 name = "prettydiff"
@@ -1958,12 +1941,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "typed-arena"
-version = "2.0.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6af6ae20167a9ece4bcb41af5b80f8a1f1df981f6391189ce00fd257af04126a"
-
-[[package]]
 name = "typed-path"
 version = "0.12.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2133,7 +2110,6 @@ dependencies = [
  "expect-test",
  "itertools 0.14.0",
  "parser",
- "pretty",
  "rowan",
  "serde",
  "sha2",

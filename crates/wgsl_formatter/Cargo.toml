@@ -7,20 +7,23 @@ description = "API for formatting WGSL code."
 repository.workspace = true
 license.workspace = true
 
+[[bench]]
+harness = false
+name = "large_file"
+
 [dependencies]
-rowan = "0.16.1"
-serde = { workspace = true, optional = true }
-syntax.workspace = true
-parser.workspace = true
-pretty = "0.12.4"
 dprint-core = { version = "0.67.4", features = ["tracing"] }
 dprint-core-macros = "0.1.0"
 itertools = "0.14.0"
+parser.workspace = true
+rowan = "0.16.1"
+serde = { workspace = true, optional = true }
+syntax.workspace = true
 
 [dev-dependencies]
-# anyhow = "1.0.99"
 criterion = "0.8.2"
-dissimilar = "1.0.11"
+dissimilar = "1.0.10"
+# anyhow = "1.0.99"
 expect-test = "1.5.1"
 sha2 = "0.11.0"
 
@@ -34,10 +37,6 @@ serde = ["dep:serde"]
 
 [lints]
 workspace = true
-
-[[bench]]
-name = "large_file"
-harness = false
 
 [profile.dev]
 opt-level = 0
