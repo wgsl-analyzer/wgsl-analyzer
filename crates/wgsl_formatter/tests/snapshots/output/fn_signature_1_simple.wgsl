@@ -1,10 +1,16 @@
-fn fn_sig_args_zerog() -> vec4f {}
-fn fn_sig_args_one(a: vec3f) -> vec4f {}
-fn fn_sig_args_two(a: vec3f, b: u32) -> vec4f {}
-fn fn_sig_args_three(a: vec3f, b: u32, c: bool) -> vec4f {}
-fn fn_sig_args_four(a: vec3f, b: u32, c: bool, d: bool) -> vec4f {}
-fn fn_sig_args_five(a: vec3f, b: u32, c: bool, d: mat3x3, e: f32) -> vec4f {}
-fn fn_sig_args_six(
+fn fn_signature_args_zerog() -> vec4f {}
+fn fn_signature_args_one(a: vec3f) -> vec4f {}
+fn fn_signature_args_two(a: vec3f, b: u32) -> vec4f {}
+fn fn_signature_args_three(a: vec3f, b: u32, c: bool) -> vec4f {}
+fn fn_signature_args_four(a: vec3f, b: u32, c: bool, d: bool) -> vec4f {}
+fn fn_signature_args_five(
+    a: vec3f,
+    b: u32,
+    c: bool,
+    d: mat3x3,
+    e: f32,
+) -> vec4f {}
+fn fn_signature_args_six(
     a: vec3f,
     b: u32,
     c: bool,
@@ -12,7 +18,7 @@ fn fn_sig_args_six(
     e: f32,
     f: vec3<f32>,
 ) -> vec4f {}
-fn fn_sig_args_seven(
+fn fn_signature_args_seven(
     a: vec3f,
     b: u32,
     c: bool,
@@ -21,7 +27,7 @@ fn fn_sig_args_seven(
     f: vec3<f32>,
     g: bool,
 ) -> vec4f {}
-fn fn_sig_args_eight(
+fn fn_signature_args_eight(
     a: vec3f,
     b: u32,
     c: bool,
@@ -31,7 +37,7 @@ fn fn_sig_args_eight(
     g: bool,
     h: bool,
 ) -> vec4f {}
-fn fn_sig_args_nine(
+fn fn_signature_args_nine(
     a: vec3f,
     b: u32,
     c: bool,
@@ -42,7 +48,7 @@ fn fn_sig_args_nine(
     h: bool,
     i: bool,
 ) -> vec4f {}
-fn fn_sig_args_ten(
+fn fn_signature_args_ten(
     a: vec3f,
     b: u32,
     c: bool,
@@ -54,7 +60,7 @@ fn fn_sig_args_ten(
     i: bool,
     j: bool,
 ) -> vec4f {}
-fn fn_sig_args_eleven(
+fn fn_signature_args_eleven(
     a: vec3f,
     b: u32,
     c: bool,
@@ -67,4 +73,4 @@ fn fn_sig_args_eleven(
     j: bool,
     k: bool,
 ) -> vec4f {}
-fn fn_sig_args_comma(a: vec3f) -> vec4f {}
+fn fn_signature_args_comma(a: vec3f) -> vec4f {}

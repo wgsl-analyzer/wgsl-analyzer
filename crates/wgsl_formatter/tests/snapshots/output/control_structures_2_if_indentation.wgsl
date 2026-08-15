@@ -6,7 +6,7 @@ fn horizontal() {
     }
 }
 
-fn seperated_horizontal() {
+fn separated_horizontal() {
     if a == b {
         b = 5;
     } else {

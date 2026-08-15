@@ -20,7 +20,7 @@ my_function /* Here */ (
 ) /* Here */ -> /* Here */
 u32 /* Here */ /* Here */ {}
 
-fn wheres_the_return_type_at(thing: MyStruct) {}
+fn where_is_the_return_type_at(thing: MyStruct) {}
 
 fn main(a: b) -> f32 {}
 fn main(a: b, c: d) -> f32 {}

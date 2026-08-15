@@ -1,7 +1,7 @@
 
 fn horizontal() {if a==b {b=5;}else{c=6;}}
 
-fn seperated_horizontal() {
+fn separated_horizontal() {
 if a==b {b=5;}else{c=6;}
 }
 

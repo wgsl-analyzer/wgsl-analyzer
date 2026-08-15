@@ -45,7 +45,7 @@ pub fn format_override_declaration_simple_statement_with_trailing_comment() {
         override a_multiline_binding = 1 // The thing
                 + 1 // The other thing
                 + 7 // The other thing
-                // Seperate
+                // Separate
                 ;
 
         ",
@@ -53,7 +53,7 @@ pub fn format_override_declaration_simple_statement_with_trailing_comment() {
                 override a_multiline_binding = 1 // The thing
                     + 1 // The other thing
                     + 7 // The other thing
-                    // Seperate
+                    // Separate
                     ;
         "]],
     );

@@ -1,11 +1,11 @@
-fn fn_sig_args_generic(
+fn fn_signature_args_generic(
     b: array<
         array<array<array<array<array<array<u32, 10>, 1>, 5>, 1>, 2>, 3>,
         4,
     >,
 ) -> vec4f {}
 
-fn fn_sig_ret_generic() -> array<
+fn fn_signature_ret_generic() -> array<
     array<array<array<array<array<array<u32, 10>, 1>, 5>, 3>, 2>, 3>,
     4,
 > {}
@@ -14,7 +14,7 @@ fn super_long_fn_name_that_is_very_long_and_has_many_parts_and_might_be_too_long
 ) {}
 
 @compute @workgroup_size(1, 1, 1)
-fn fn_sig_attributes(
+fn fn_signature_attributes(
     @location(1)
     thing: vec3f,
     @location(2)

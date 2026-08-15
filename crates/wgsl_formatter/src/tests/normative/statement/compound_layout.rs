@@ -78,7 +78,7 @@ pub fn format_fn_body_spacing_preserves_one_empty_line_line_1() {
 }
 
 #[test]
-pub fn format_fn_body_spacing_statements_sep_by_newline_2() {
+pub fn format_fn_body_spacing_statements_separated_by_newline_2() {
     check(
         "fn main() {
 
@@ -133,7 +133,7 @@ pub fn format_fn_body_spacing_no_trailing_empty_line_1() {
 }
 
 #[test]
-pub fn format_let_decl_keeps_line_comment_in_same_place_before() {
+pub fn format_let_declaration_keeps_line_comment_in_same_place_before() {
     check(
         "fn main() {
 
@@ -152,7 +152,7 @@ pub fn format_let_decl_keeps_line_comment_in_same_place_before() {
 }
 
 #[test]
-pub fn format_let_decl_keeps_line_comment_in_same_place_after() {
+pub fn format_let_declaration_keeps_line_comment_in_same_place_after() {
     check(
         "fn main() {
 
@@ -171,7 +171,7 @@ pub fn format_let_decl_keeps_line_comment_in_same_place_after() {
 }
 
 #[test]
-pub fn format_let_decl_keeps_line_comment_in_same_place_empty_line_before() {
+pub fn format_let_declaration_keeps_line_comment_in_same_place_empty_line_before() {
     check(
         "fn main() {
 
@@ -192,7 +192,7 @@ pub fn format_let_decl_keeps_line_comment_in_same_place_empty_line_before() {
 }
 
 #[test]
-pub fn format_let_decl_keeps_line_comment_in_same_place_empty_line_after() {
+pub fn format_let_declaration_keeps_line_comment_in_same_place_empty_line_after() {
     check(
         "fn main() {
 
@@ -213,7 +213,7 @@ pub fn format_let_decl_keeps_line_comment_in_same_place_empty_line_after() {
 }
 
 #[test]
-pub fn format_let_decl_keeps_block_comment_in_same_place_same_line() {
+pub fn format_let_declaration_keeps_block_comment_in_same_place_same_line() {
     check(
         "fn main() {
 
@@ -230,7 +230,7 @@ pub fn format_let_decl_keeps_block_comment_in_same_place_same_line() {
 }
 
 #[test]
-pub fn format_let_decl_keeps_block_comment_in_same_place_before() {
+pub fn format_let_declaration_keeps_block_comment_in_same_place_before() {
     check(
         "fn main() {
 
@@ -249,7 +249,7 @@ pub fn format_let_decl_keeps_block_comment_in_same_place_before() {
 }
 
 #[test]
-pub fn format_let_decl_keeps_block_comment_in_same_place_after() {
+pub fn format_let_declaration_keeps_block_comment_in_same_place_after() {
     check(
         "fn main() {
 
@@ -268,7 +268,7 @@ pub fn format_let_decl_keeps_block_comment_in_same_place_after() {
 }
 
 #[test]
-pub fn format_let_decl_keeps_block_comment_in_same_place_empty_line_before() {
+pub fn format_let_declaration_keeps_block_comment_in_same_place_empty_line_before() {
     check(
         "fn main() {
 
@@ -289,7 +289,7 @@ pub fn format_let_decl_keeps_block_comment_in_same_place_empty_line_before() {
 }
 
 #[test]
-pub fn format_let_decl_keeps_block_comment_in_same_place_empty_line_after() {
+pub fn format_let_declaration_keeps_block_comment_in_same_place_empty_line_after() {
     check(
         "fn main() {
 
