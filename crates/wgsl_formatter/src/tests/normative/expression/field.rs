@@ -1,6 +1,6 @@
 use expect_test::expect;
 
-use crate::test_util::{assert_out_of_scope, check};
+use crate::test_util::check;
 
 #[test]
 pub fn format_field_expr_prefer_breaking_other_stuff() {

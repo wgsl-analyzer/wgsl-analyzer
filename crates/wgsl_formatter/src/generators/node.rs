@@ -93,16 +93,6 @@ use crate::{
     trivia::{NodeTriviaItem, NodeWithTrivia, NodeWithTriviaContent},
 };
 
-pub fn gen_node_no_newlines(
-    node: &NodeOrToken<SyntaxNode, SyntaxToken>
-) -> FormatDocumentResult<PrintItemBuffer> {
-    let mut formatted = PrintItemBuffer::default();
-    formatted.request(Request::discourage(RequestItem::EmptyLine));
-    formatted.extend(gen_node(node)?);
-    formatted.request(Request::discourage(RequestItem::LineBreak));
-    Ok(formatted)
-}
-
 macro_rules! with_sc {
     ($text:expr) => {{
         let mut buffer = PrintItemBuffer::default();
@@ -140,6 +130,7 @@ macro_rules! with_node {
 )]
 #[rustfmt::skip]
 pub fn gen_node(
+    with_trivia: &NodeWithTrivia,
     node: &NodeOrToken<SyntaxNode, SyntaxToken>
 ) -> FormatDocumentResult<PrintItemBuffer> {
     match node.kind() {
@@ -150,7 +141,10 @@ pub fn gen_node(
         SyntaxKind::Parameter => with_cast!(gen_fn_parameter, ast::Parameter, node),
         SyntaxKind::ReturnType => with_cast!(gen_fn_return_type, ast::ReturnType, node),
         SyntaxKind::AssertStatement => with_cast!(gen_const_assert_statement, ast::AssertStatement, node),
-        SyntaxKind::CompoundStatement => with_cast!(gen_compound_statement, ast::CompoundStatement, node),
+        SyntaxKind::CompoundStatement => gen_compound_statement(
+            with_trivia,
+            &node.clone().into_node().and_then(<ast::CompoundStatement>::cast).expect("We just matched on the SyntaxKind"),
+        ),
         SyntaxKind::AssignmentStatement => with_cast!(gen_assignment_statement, ast::AssignmentStatement, node),
         SyntaxKind::PhonyAssignmentStatement => with_cast!(gen_phony_assignment_statement, ast::PhonyAssignmentStatement, node),
         SyntaxKind::CompoundAssignmentStatement => with_cast!(gen_compound_assignment_statement, ast::CompoundAssignmentStatement, node),
@@ -417,7 +411,7 @@ pub fn gen_node_content(node: &NodeWithTrivia) -> FormatDocumentResult<PrintItem
     let mut formatted = PrintItemBuffer::default();
     match &node.node {
         NodeWithTriviaContent::Content(node_or_token) => {
-            formatted.extend(gen_node(node_or_token)?);
+            formatted.extend(gen_node(node, node_or_token)?);
         },
         NodeWithTriviaContent::NoContent | NodeWithTriviaContent::End => {},
     }
@@ -452,5 +446,15 @@ pub fn gen_node_with_trivia(node: &NodeWithTrivia) -> FormatDocumentResult<Print
     formatted.extend(gen_node_content(node)?);
     formatted.extend(gen_node_succeeding_trivia(node)?);
 
+    Ok(formatted)
+}
+
+pub fn gen_node_with_trivia_no_newlines(
+    trivia: &NodeWithTrivia
+) -> FormatDocumentResult<PrintItemBuffer> {
+    let mut formatted = PrintItemBuffer::default();
+    formatted.request(Request::discourage(RequestItem::EmptyLine));
+    formatted.extend(gen_node_with_trivia(trivia)?);
+    formatted.request(Request::discourage(RequestItem::LineBreak));
     Ok(formatted)
 }

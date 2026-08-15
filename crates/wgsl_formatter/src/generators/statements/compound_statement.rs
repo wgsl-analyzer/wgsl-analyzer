@@ -24,9 +24,27 @@ use crate::{
 };
 
 pub fn gen_compound_statement(
-    node: &ast::CompoundStatement
+    with_trivia: &NodeWithTrivia,
+    node: &ast::CompoundStatement,
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Context ====
+
+    let is_conditional = with_trivia
+        .preceding_trivia
+        .iter()
+        .any(|trivia| match trivia {
+            NodeTriviaItem::LineSpacing(_)
+            | NodeTriviaItem::Comment(_)
+            | NodeTriviaItem::NewlinedComment(_) => false,
+            NodeTriviaItem::AttributeList(attribute_list) => {
+                attribute_list.attributes().any(|attribute| {
+                    matches!(
+                        attribute.name().as_ref().map(rowan::SyntaxToken::text),
+                        Some("if" | "else" | "elif")
+                    )
+                })
+            },
+        });
 
     // ==== Parse ====
 
@@ -85,7 +103,9 @@ pub fn gen_compound_statement(
     multiline_group.push_sc(sc!("{"));
 
     if !body_empty {
-        multiline_group.start_indent_before_requests();
+        if !is_conditional {
+            multiline_group.start_indent_before_requests();
+        }
 
         if collapse_one_liner_compound_statement_policy(node.syntax()) {
             multiline_group.grouped_newline_or_space();
@@ -94,14 +114,27 @@ pub fn gen_compound_statement(
             multiline_group.request(Request::expect(RequestItem::LineBreak));
         }
 
-        for (pos, item) in items.iter().with_position() {
-            if !matches!(pos, Position::Only | Position::First) {
-                multiline_group.request(Request::expect(RequestItem::LineBreak));
-            }
+        if is_conditional
+            && items.len() == 1
+            && let Some(item) = items.first()
+            && matches!(item.kind(), Some(SyntaxKind::CompoundStatement))
+        {
+            multiline_group.request(Request::discourage(RequestItem::LineBreak));
             multiline_group.extend(gen_node_with_trivia(item)?);
+            multiline_group.request(Request::discourage(RequestItem::LineBreak));
+        } else {
+            for (pos, item) in items.iter().with_position() {
+                if !matches!(pos, Position::Only | Position::First) {
+                    multiline_group.request(Request::expect(RequestItem::LineBreak));
+                }
+
+                multiline_group.extend(gen_node_with_trivia(item)?);
+            }
         }
 
-        multiline_group.finish_indent();
+        if !is_conditional {
+            multiline_group.finish_indent();
+        }
 
         if collapse_one_liner_compound_statement_policy(node.syntax()) {
             multiline_group.grouped_newline_or_space();
