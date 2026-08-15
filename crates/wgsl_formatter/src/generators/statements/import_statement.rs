@@ -1,7 +1,7 @@
 use dprint_core_macros::sc;
 use itertools::{Itertools as _, Position};
 use parser::SyntaxKind;
-use rowan::SyntaxToken;
+use rowan::{NodeOrToken, SyntaxToken};
 use syntax::{
     AstNode as _,
     ast::{self, ImportTree},
@@ -208,10 +208,7 @@ pub fn gen_import_collection(
     .map(|item| {
         let import_tree = item
             .content()
-            .and_then(|node_or_token| match node_or_token {
-                rowan::NodeOrToken::Node(node) => Some(node),
-                rowan::NodeOrToken::Token(_) => None,
-            })
+            .and_then(NodeOrToken::into_node)
             .and_then(ImportTree::cast);
         (item, import_tree)
     })
