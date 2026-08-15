@@ -1,8 +1,7 @@
-use anyhow::Result;
 use dprint_core::{
     configuration::{ConfigKeyMap, GlobalConfiguration},
     plugins::{
-        CheckConfigUpdatesMessage, ConfigChange, FormatResult, PluginInfo,
+        CheckConfigUpdatesMessage, ConfigChange, FormatError, FormatResult, PluginInfo,
         PluginResolveConfigurationResult, SyncFormatRequest, SyncHostFormatRequest,
         SyncPluginHandler,
     },
@@ -51,7 +50,7 @@ impl SyncPluginHandler<FormattingOptions> for WgslPluginHandler {
     fn check_config_updates(
         &self,
         _: CheckConfigUpdatesMessage,
-    ) -> Result<Vec<ConfigChange>> {
+    ) -> Result<Vec<ConfigChange>, FormatError> {
         Ok(Vec::new())
     }
 
@@ -63,11 +62,11 @@ impl SyncPluginHandler<FormattingOptions> for WgslPluginHandler {
         let config = request.config;
 
         // TODO(MonaMayrhofer) Better error handling here
-        let formatted = format_file(std::str::from_utf8(&request.file_bytes)?, config);
+        let source = std::str::from_utf8(&request.file_bytes).map_err(FormatError::new)?;
+        let formatted = format_file(source, config)
+            .map_err(|error| format!("wgslfmt encountered an error. This is a bug in wgslfmt, feel free to report this: {error:?}"))?;
 
-        formatted
-            .map(|formatted| Some(formatted.into_bytes()))
-            .map_err(|error| anyhow::anyhow!("Formatter encountered an error. This is a bug in the formatter. Feel free to report this. {error:?}"))
+        Ok(Some(formatted.into_bytes()))
     }
 }
 
