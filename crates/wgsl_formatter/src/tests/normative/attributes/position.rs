@@ -485,9 +485,13 @@ pub fn format_all_attribute_order() {
         @vertex
         @fragment
         @compute
+        @if(true)
+        @elif(false)
+        @else
         fn a() {}
         ",
         expect![[r#"
+            @if(true) @elif(false) @else
             @blend_src(1)
             @id(1)
             @interpolate(flat)
