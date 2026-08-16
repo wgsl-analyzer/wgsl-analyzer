@@ -81,7 +81,8 @@ export async function run(): Promise<void> {
 	);
 	for (const testFile of testFiles) {
 		try {
-			const testModule = await import(pathToFileURL(path.resolve(__dirname, testFile)).href);
+			const moduleUrl = pathToFileURL(path.resolve(__dirname, testFile)).href;
+			const testModule = await import(moduleUrl);
 			await testModule.getTests(context);
 		} catch (exception) {
 			assert.ok(exception instanceof Error);
