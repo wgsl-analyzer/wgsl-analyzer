@@ -53,7 +53,6 @@ impl FunctionSignature {
     }
 
     #[salsa::tracked(returns(ref))]
-
     pub fn with_source_map(
         db: &dyn SourceDatabase,
         id: FunctionId,

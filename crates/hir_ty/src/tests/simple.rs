@@ -2052,3 +2052,107 @@ fn override_declaration() {
         "#]],
     );
 }
+
+#[test]
+fn function_call_argument_type_mismatch() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+fn foo(x: i32, y: u32) {
+    foo(y, x);
+}
+        ",
+        expect![[r#"
+            7..8 'x': i32
+            15..16 'y': u32
+            29..38 'foo(y, x)': [error]
+            33..34 'y': u32
+            36..37 'x': i32
+            33..34 'y': expected i32 but got u32
+            36..37 'x': expected u32 but got i32
+        "#]],
+    );
+}
+
+#[test]
+fn ident_override_inference() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+override bar: u32;
+fn foo() {
+    let x = bar;
+}
+        ",
+        expect![[r#"
+            9..12 'bar': u32
+            38..39 'x': u32
+            42..45 'bar': u32
+        "#]],
+    );
+}
+
+#[test]
+fn var_cycle() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+var x = y;
+var y = x;
+        ",
+        expect![[r#"
+            [EditionedFileId(Id(300))] CyclicType { name: Name("x"), range: 0..10 } in Body
+            [EditionedFileId(Id(300))] CyclicType { name: Name("y"), range: 11..21 } in Body
+        "#]],
+    );
+}
+
+#[test]
+fn struct_cycle() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+struct Foo { foo: Bar }
+struct Bar { foo: Foo }
+fn foo() {
+    let x = Foo();
+}
+        ",
+        expect![[r#"
+            67..68 'x': Foo
+            71..76 'Foo()': Foo
+            71..76 'Foo()': type `Foo` is not constructible
+        "#]],
+    );
+}
+
+// TODO https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1389
+#[test]
+fn function_cycle() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+fn foo() {
+    foo();
+}
+        ",
+        expect![[r#"
+            15..20 'foo()': [error]
+        "#]],
+    );
+}
+
+#[test]
+fn alias_cycle() {
+    check_infer(
+        ExtensionsConfig::default(),
+        "
+alias Foo = Bar;
+alias Bar = Foo;
+        ",
+        expect![[r#"
+            [EditionedFileId(Id(300))] CyclicType { name: Name("Foo"), range: 0..16 } in Signature
+            [EditionedFileId(Id(300))] CyclicType { name: Name("Bar"), range: 17..33 } in Signature
+        "#]],
+    );
+}
