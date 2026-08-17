@@ -4501,13 +4501,13 @@ fn execute(
             26089..26090 'i': ref<function, i32, read_write>
             26105..26108 '0.0': float
             25929..25948 'shot.q...ate[i]': cannot index into type ref<storage, [error], read_write>
-            [EditionedFileId(Id(300))] AssignmentNotAReference { left_side: Idx::<Expression>(111), actual: Type(0600) } in Body
+            25929..25965 'shot.q...bility': cannot assign to non-reference `[error]`
             25981..26000 'shot.q...ate[i]': cannot index into type ref<storage, [error], read_write>
-            [EditionedFileId(Id(300))] AssignmentNotAReference { left_side: Idx::<Expression>(117), actual: Type(0600) } in Body
+            25981..26016 'shot.q...bility': cannot assign to non-reference `[error]`
             26032..26051 'shot.q...ate[i]': cannot index into type ref<storage, [error], read_write>
-            [EditionedFileId(Id(300))] AssignmentNotAReference { left_side: Idx::<Expression>(123), actual: Type(0600) } in Body
+            26032..26056 'shot.q...].heat': cannot assign to non-reference `[error]`
             26072..26091 'shot.q...ate[i]': cannot index into type ref<storage, [error], read_write>
-            [EditionedFileId(Id(300))] AssignmentNotAReference { left_side: Idx::<Expression>(129), actual: Type(0600) } in Body
+            26072..26102 'shot.q..._since': cannot assign to non-reference `[error]`
             26235..26243 'shot_idx': u32
             26260..26264 'shot': ptr<storage, ShotData, read_write>
             26267..26283 '&shots...t_idx]': ptr<storage, ShotData, read_write>
@@ -4705,9 +4705,9 @@ fn execute(
             27783..27802 'shot.q...ate[q]': cannot index into type ref<storage, [error], read_write>
             27849..27868 'shot.q...ate[q]': cannot index into type ref<storage, [error], read_write>
             28366..28385 'shot.q...ate[q]': cannot index into type ref<storage, [error], read_write>
-            [EditionedFileId(Id(300))] AssignmentNotAReference { left_side: Idx::<Expression>(92), actual: Type(0600) } in Body
+            28366..28402 'shot.q...bility': cannot assign to non-reference `[error]`
             28429..28448 'shot.q...ate[q]': cannot index into type ref<storage, [error], read_write>
-            [EditionedFileId(Id(300))] AssignmentNotAReference { left_side: Idx::<Expression>(98), actual: Type(0600) } in Body
+            28429..28464 'shot.q...bility': cannot assign to non-reference `[error]`
             30488..30504 'stateV...rIndex': u32
             30511..30520 'amplitude': vec2<f32>
             30529..30532 'tid': u32
@@ -4749,10 +4749,10 @@ fn execute(
             30894..30904 'mask << 1u': u32
             30902..30904 '1u': u32
             30759..30782 'qubitP...s[tid]': cannot index into type ref<workgroup, [error], read_write>
-            [EditionedFileId(Id(300))] AssignmentNotAReference { left_side: Idx::<Expression>(20), actual: Type(0600) } in Body
+            30759..30789 'qubitP...one[q]': cannot assign to non-reference `[error]`
             30759..30782 'qubitP...s[tid]': cannot index into type ref<workgroup, [error], read_write>
             30828..30851 'qubitP...s[tid]': cannot index into type ref<workgroup, [error], read_write>
-            [EditionedFileId(Id(300))] AssignmentNotAReference { left_side: Idx::<Expression>(27), actual: Type(0600) } in Body
+            30828..30859 'qubitP...ero[q]': cannot assign to non-reference `[error]`
             30828..30851 'qubitP...s[tid]': cannot index into type ref<workgroup, [error], read_write>
             30944..30945 'q': u32
             30952..30960 'shot_idx': i32
@@ -4875,11 +4875,11 @@ fn execute(
             31182..31203 'qubitP...ies[j]': cannot index into type ref<workgroup, [error], read_write>
             31182..31210 'qubitP...one[q]': expected f32 but got [error]
             31351..31394 'workgr...n_idx]': cannot index into type ref<storage, [error], read_write>
-            [EditionedFileId(Id(300))] AssignmentNotAReference { left_side: Idx::<Expression>(30), actual: Type(0600) } in Body
+            31351..31404 'workgr...its[q]': cannot assign to non-reference `[error]`
             32685..32715 'shots[...ate[q]': cannot index into type ref<storage, [error], read_write>
-            [EditionedFileId(Id(300))] AssignmentNotAReference { left_side: Idx::<Expression>(96), actual: Type(0600) } in Body
+            32685..32732 'shots[...bility': cannot assign to non-reference `[error]`
             32759..32789 'shots[...ate[q]': cannot index into type ref<storage, [error], read_write>
-            [EditionedFileId(Id(300))] AssignmentNotAReference { left_side: Idx::<Expression>(104), actual: Type(0600) } in Body
+            32759..32805 'shots[...bility': cannot assign to non-reference `[error]`
             33298..33306 'shot_idx': u32
             33313..33318 'qubit': u32
             33325..33331 'result': u32
@@ -5124,11 +5124,11 @@ fn execute(
             37550..37562 'OPID_MRESETZ': u32
             35887..35910 'shot.q...qubit]': cannot index into type ref<storage, [error], read_write>
             36666..36689 'shot.q...qubit]': cannot index into type ref<storage, [error], read_write>
-            [EditionedFileId(Id(300))] AssignmentNotAReference { left_side: Idx::<Expression>(46), actual: Type(0600) } in Body
+            36666..36694 'shot.q...].heat': cannot assign to non-reference `[error]`
             36364..36387 'shot.q...qubit]': cannot index into type ref<storage, [error], read_write>
             37045..37068 'shot.q...qubit]': cannot index into type ref<storage, [error], read_write>
             37231..37254 'shot.q...qubit]': cannot index into type ref<storage, [error], read_write>
-            [EditionedFileId(Id(300))] AssignmentNotAReference { left_side: Idx::<Expression>(76), actual: Type(0600) } in Body
+            37231..37259 'shot.q...].heat': cannot assign to non-reference `[error]`
             37326..37332 'result': expected u32 but got [error]
             37981..37989 'shot_idx': u32
             37996..38008 'target_is_q2': bool
@@ -5456,7 +5456,7 @@ fn execute(
             41452..41475 'shot.q...qubit]': cannot index into type ref<storage, [error], read_write>
             41514..41537 'shot.q...qubit]': cannot index into type ref<storage, [error], read_write>
             41691..41714 'shot.q...qubit]': cannot index into type ref<storage, [error], read_write>
-            [EditionedFileId(Id(300))] AssignmentNotAReference { left_side: Idx::<Expression>(77), actual: Type(0600) } in Body
+            41691..41719 'shot.q...].heat': cannot assign to non-reference `[error]`
             42393..42401 'shot_idx': u32
             42408..42414 'op_idx': u32
             42421..42423 'q1': u32
@@ -5816,16 +5816,16 @@ fn execute(
             44410..44418 'lost_row': expected u32 but got [error]
             44592..44612 'shot.q...te[q1]': cannot index into type ref<storage, [error], read_write>
             44635..44655 'shot.q...te[q1]': cannot index into type ref<storage, [error], read_write>
-            [EditionedFileId(Id(300))] AssignmentNotAReference { left_side: Idx::<Expression>(83), actual: Type(0600) } in Body
+            44635..44660 'shot.q...].heat': cannot assign to non-reference `[error]`
             44663..44683 'shot.q...te[q2]': cannot index into type ref<storage, [error], read_write>
             44706..44726 'shot.q...te[q2]': cannot index into type ref<storage, [error], read_write>
-            [EditionedFileId(Id(300))] AssignmentNotAReference { left_side: Idx::<Expression>(93), actual: Type(0600) } in Body
+            44706..44731 'shot.q...].heat': cannot assign to non-reference `[error]`
             45508..45528 'shot.q...te[q1]': cannot index into type ref<storage, [error], read_write>
             45551..45571 'shot.q...te[q1]': cannot index into type ref<storage, [error], read_write>
-            [EditionedFileId(Id(300))] AssignmentNotAReference { left_side: Idx::<Expression>(136), actual: Type(0600) } in Body
+            45551..45576 'shot.q...].heat': cannot assign to non-reference `[error]`
             45579..45599 'shot.q...te[q2]': cannot index into type ref<storage, [error], read_write>
             45622..45642 'shot.q...te[q2]': cannot index into type ref<storage, [error], read_write>
-            [EditionedFileId(Id(300))] AssignmentNotAReference { left_side: Idx::<Expression>(146), actual: Type(0600) } in Body
+            45622..45647 'shot.q...].heat': cannot assign to non-reference `[error]`
             47365..47373 'survivor': expected u32 but got [error]
             47573..47587 'survivor_is_q2': expected bool but got [error]
             48445..48459 'survivor_is_q2': expected bool but got [error]
@@ -7012,9 +7012,9 @@ fn execute(
             69028..69043 'summed_probs[1]': ref<function, f32, read_write>
             69041..69042 '1': integer
             68933..68956 'qubitP...s[tid]': cannot index into type ref<workgroup, [error], read_write>
-            [EditionedFileId(Id(300))] AssignmentNotAReference { left_side: Idx::<Expression>(211), actual: Type(0600) } in Body
+            68933..68965 'qubitP...ro[q1]': cannot assign to non-reference `[error]`
             68993..69016 'qubitP...s[tid]': cannot index into type ref<workgroup, [error], read_write>
-            [EditionedFileId(Id(300))] AssignmentNotAReference { left_side: Idx::<Expression>(220), actual: Type(0600) } in Body
+            68993..69024 'qubitP...ne[q1]': cannot assign to non-reference `[error]`
             69069..69080 'workgroupId': u32
             69087..69090 'tid': u32
             69097..69099 'q1': u32
@@ -7533,13 +7533,13 @@ fn execute(
             75909..75924 'summed_probs[3]': ref<function, f32, read_write>
             75922..75923 '3': integer
             75694..75717 'qubitP...s[tid]': cannot index into type ref<workgroup, [error], read_write>
-            [EditionedFileId(Id(300))] AssignmentNotAReference { left_side: Idx::<Expression>(449), actual: Type(0600) } in Body
+            75694..75726 'qubitP...ro[q1]': cannot assign to non-reference `[error]`
             75754..75777 'qubitP...s[tid]': cannot index into type ref<workgroup, [error], read_write>
-            [EditionedFileId(Id(300))] AssignmentNotAReference { left_side: Idx::<Expression>(458), actual: Type(0600) } in Body
+            75754..75785 'qubitP...ne[q1]': cannot assign to non-reference `[error]`
             75814..75837 'qubitP...s[tid]': cannot index into type ref<workgroup, [error], read_write>
-            [EditionedFileId(Id(300))] AssignmentNotAReference { left_side: Idx::<Expression>(467), actual: Type(0600) } in Body
+            75814..75846 'qubitP...ro[q2]': cannot assign to non-reference `[error]`
             75874..75897 'qubitP...s[tid]': cannot index into type ref<workgroup, [error], read_write>
-            [EditionedFileId(Id(300))] AssignmentNotAReference { left_side: Idx::<Expression>(476), actual: Type(0600) } in Body
+            75874..75905 'qubitP...ne[q2]': cannot assign to non-reference `[error]`
             75961..75972 'workgroupId': u32
             75979..75982 'tid': u32
             75999..76005 'params': ShotParams
@@ -7910,10 +7910,10 @@ fn execute(
             83721..83723 '0u': u32
             82769..82788 'shot.q...ate[q]': cannot index into type ref<storage, [error], read_write>
             82819..82838 'shot.q...ate[q]': cannot index into type ref<storage, [error], read_write>
-            [EditionedFileId(Id(300))] AssignmentNotAReference { left_side: Idx::<Expression>(41), actual: Type(0600) } in Body
+            82819..82855 'shot.q...bility': cannot assign to non-reference `[error]`
             82858..82877 'shot.q...ate[q]': cannot index into type ref<storage, [error], read_write>
             82907..82926 'shot.q...ate[q]': cannot index into type ref<storage, [error], read_write>
-            [EditionedFileId(Id(300))] AssignmentNotAReference { left_side: Idx::<Expression>(51), actual: Type(0600) } in Body
+            82907..82942 'shot.q...bility': cannot assign to non-reference `[error]`
             84485..84492 'rand_lo': u32
             84499..84506 'rand_hi': u32
             84513..84518 'start': i32
@@ -8095,7 +8095,7 @@ fn execute(
             87284..87287 'reg': u32
             87291..87294 'val': u32
             87251..87288 'shots[...s[reg]': cannot index into type ref<storage, [error], read_write>
-            [EditionedFileId(Id(300))] AssignmentNotAReference { left_side: Idx::<Expression>(6), actual: Type(0600) } in Body
+            87251..87288 'shots[...s[reg]': cannot assign to non-reference `[error]`
             87315..87323 'shot_idx': u32
             87330..87333 'reg': u32
             87360..87397 'bitcas... reg))': i32
@@ -8350,7 +8350,7 @@ fn execute(
             91290..91305 'OPID_LOSS_NOISE': u32
             91031..91054 'shot.q...qubit]': cannot index into type ref<storage, [error], read_write>
             91078..91101 'shot.q...qubit]': cannot index into type ref<storage, [error], read_write>
-            [EditionedFileId(Id(300))] AssignmentNotAReference { left_side: Idx::<Expression>(19), actual: Type(0600) } in Body
+            91078..91106 'shot.q...].heat': cannot assign to non-reference `[error]`
             91166..91172 'result': expected u32 but got [error]
             91516..91524 'shot_idx': u32
             91531..91537 'op_idx': u32
@@ -8847,10 +8847,10 @@ fn execute(
             102799..102800 'm': ref<function, u32, read_write>
             102804..102806 '0u': u32
             102544..102583 'shots[...ory[m]': cannot index into type ref<storage, [error], read_write>
-            [EditionedFileId(Id(300))] AssignmentNotAReference { left_side: Idx::<Expression>(43), actual: Type(0600) } in Body
+            102544..102583 'shots[...ory[m]': cannot assign to non-reference `[error]`
             102586..102621 'batch_...ata[m]': cannot index into type ref<storage, [error], read>
             102762..102801 'shots[...ory[m]': cannot index into type ref<storage, [error], read_write>
-            [EditionedFileId(Id(300))] AssignmentNotAReference { left_side: Idx::<Expression>(61), actual: Type(0600) } in Body
+            102762..102801 'shots[...ory[m]': cannot assign to non-reference `[error]`
             105427..105430 'gid': vec3<u32>
             105567..105575 'shot_idx': u32
             105578..105581 'gid': vec3<u32>
@@ -10542,7 +10542,7 @@ fn execute(
             142908..142943 'shots[...[addr]': cannot index into type ref<storage, [error], read_write>
             142992..142995 'val': expected u32 but got [error]
             143868..143903 'shots[...[addr]': cannot index into type ref<storage, [error], read_write>
-            [EditionedFileId(Id(300))] AssignmentNotAReference { left_side: Idx::<Expression>(1529), actual: Type(0600) } in Body
+            143868..143903 'shots[...[addr]': cannot assign to non-reference `[error]`
             145649..145657 'shot_idx': u32
             145674..145678 'shot': ptr<storage, ShotData, read_write>
             145681..145697 '&shots...t_idx]': ptr<storage, ShotData, read_write>

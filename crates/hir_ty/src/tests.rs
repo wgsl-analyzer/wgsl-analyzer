@@ -5,6 +5,7 @@ mod builtins;
 mod conditional_compilation;
 mod imports;
 mod incremental;
+mod language_extensions;
 mod layout;
 mod operators;
 mod simple;
@@ -191,27 +192,27 @@ impl<'db> InferPrinter<'db> {
         source_map: &ExpressionSourceMap,
         buffer: &mut String,
     ) {
-        use InferenceDiagnosticKind as IDK;
         match &diagnostic.kind {
-            IDK::TypeMismatch {
+            InferenceDiagnosticKind::TypeMismatch {
                 expression,
                 expected,
                 actual,
             } => {
                 self.print_type_mismatch(source_map, buffer, *expression, *expected, *actual);
             },
-            IDK::AssignmentNotAReference { .. }
-            | IDK::AddressOfNotReference { .. }
-            | IDK::DerefNotAPointer { .. }
-            | IDK::CyclicType { .. }
-            | IDK::WgslError { .. } => {
+            InferenceDiagnosticKind::AssignmentNotAReference { actual, left_side } => {
+                self.print_assignment_not_a_reference(source_map, buffer, *actual, *left_side);
+            },
+            InferenceDiagnosticKind::AddressOfNotReference { .. }
+            | InferenceDiagnosticKind::DerefNotAPointer { .. }
+            | InferenceDiagnosticKind::CyclicType { .. }
+            | InferenceDiagnosticKind::WgslError { .. } => {
                 self.print_todo_bad_diagnostic(diagnostic, buffer);
             },
-            IDK::UnexpectedTemplateArgument { expression } => {
+            InferenceDiagnosticKind::UnexpectedTemplateArgument { expression } => {
                 self.print_unexpected_template_argument(source_map, buffer, *expression);
             },
-
-            IDK::NoBuiltinOverload {
+            InferenceDiagnosticKind::NoBuiltinOverload {
                 builtin: _,
                 expression,
                 name,
@@ -225,7 +226,7 @@ impl<'db> InferPrinter<'db> {
                     parameters,
                 );
             },
-            IDK::UnexpectedLoweredKind {
+            InferenceDiagnosticKind::UnexpectedLoweredKind {
                 actual,
                 expected,
                 expression,
@@ -240,10 +241,10 @@ impl<'db> InferPrinter<'db> {
                     path,
                 );
             },
-            IDK::InvalidType { error } => {
+            InferenceDiagnosticKind::InvalidType { error } => {
                 self.print_invalid_type(source_map, buffer, error);
             },
-            IDK::NoConstructor {
+            InferenceDiagnosticKind::NoConstructor {
                 builtins,
                 expression,
                 parameters,
@@ -258,26 +259,26 @@ impl<'db> InferPrinter<'db> {
                     *r#type,
                 );
             },
-            IDK::NoSuchField {
+            InferenceDiagnosticKind::NoSuchField {
                 expression,
                 name,
                 r#type,
             } => {
                 self.print_no_such_field(source_map, buffer, *expression, name, *r#type);
             },
-            IDK::StoreTypeMustBeStorable { actual, expression } => {
+            InferenceDiagnosticKind::StoreTypeMustBeStorable { actual, expression } => {
                 self.print_store_type_must_be_storable(source_map, buffer, *actual, *expression);
             },
-            IDK::ArrayAccessInvalidType { expression, r#type } => {
+            InferenceDiagnosticKind::ArrayAccessInvalidType { expression, r#type } => {
                 self.print_array_access_invalid(source_map, buffer, *expression, *r#type);
             },
-            IDK::UnexpectedReturnValue { actual, expression } => {
+            InferenceDiagnosticKind::UnexpectedReturnValue { actual, expression } => {
                 self.print_unexpected_return_value(source_map, buffer, *actual, *expression);
             },
-            IDK::NotConstructible { expression, r#type } => {
+            InferenceDiagnosticKind::NotConstructible { expression, r#type } => {
                 self.print_not_constructible(source_map, buffer, *expression, *r#type);
             },
-            IDK::FunctionCallArgCountMismatch {
+            InferenceDiagnosticKind::FunctionCallArgCountMismatch {
                 expression,
                 n_actual,
                 n_expected,
@@ -291,6 +292,25 @@ impl<'db> InferPrinter<'db> {
                 );
             },
         }
+    }
+
+    fn print_assignment_not_a_reference(
+        &self,
+        source_map: &ExpressionSourceMap,
+        buffer: &mut String,
+        actual: Type,
+        left_side: ExpressionId,
+    ) {
+        let Some((range, text)) = self.get_expression_range_text(source_map, left_side) else {
+            return;
+        };
+        writeln!(
+            buffer,
+            "{range:?} '{}': cannot assign to non-reference `{}`",
+            ellipsize(text, 15),
+            pretty_type(self.db, actual),
+        )
+        .unwrap();
     }
 
     fn print_unexpected_template_argument(
