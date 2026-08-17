@@ -1,8 +1,9 @@
 // #![expect(non_snake_case, reason = "name based on WGSL builtins")]
 
 use expect_test::expect;
+use syntax::Capabilities;
 
-use crate::tests::check_infer;
+use crate::tests::{check_infer, check_infer_with_capabilities};
 
 #[test]
 fn zero_value_constructors() {
@@ -83,6 +84,42 @@ fn foo() {
 }
 
 #[test]
+fn naga() {
+    check_infer_with_capabilities(
+        Capabilities {
+            shader_int64: true,
+            ..Default::default()
+        },
+        "
+fn foo() {
+    let signed_integer_64 = i64();
+    let unsigned_integer_64 = u64();
+
+    let signed_integer_64_vector = vec2<i64>();
+    let unsigned_integer_64_vector = vec2<u64>();
+
+    let signed_integer_64_array = array<i64, 1>();
+    let unsigned_integer_64_array = array<u64, 1>();
+}
+",
+        expect![[r#"
+            19..36 'signed...ger_64': i64
+            39..44 'i64()': i64
+            54..73 'unsign...ger_64': u64
+            76..81 'u64()': u64
+            92..116 'signed...vector': vec2<i64>
+            119..130 'vec2<i64>()': vec2<i64>
+            140..166 'unsign...vector': vec2<u64>
+            169..180 'vec2<u64>()': vec2<u64>
+            191..214 'signed..._array': array<i64, 1>
+            217..232 'array<i64, 1>()': array<i64, 1>
+            242..267 'unsign..._array': array<u64, 1>
+            270..285 'array<u64, 1>()': array<u64, 1>
+        "#]],
+    );
+}
+
+#[test]
 fn not_constructible() {
     check_infer(
         "
@@ -104,6 +141,13 @@ fn foo() {
     // ref doesn't even parse
     // let reference = ref<function, u32, read>();
     let tex = texture_storage_2d<rgba16float, write>();
+
+    let _array = array();
+    let _atomic = atomic();
+    let pointer = ptr();
+    // ref doesn't even parse
+    // let reference = ref();
+    let tex = texture_storage_2d();
 }
 ",
         expect![[r#"
@@ -127,6 +171,14 @@ fn foo() {
             420..446 'ptr<fu...ead>()': [error]
             537..540 'tex': [error]
             543..583 'textur...ite>()': [error]
+            594..600 '_array': array<[error]>
+            603..610 'array()': array<[error]>
+            620..627 '_atomic': [error]
+            630..638 'atomic()': [error]
+            648..655 'pointer': [error]
+            658..663 'ptr()': [error]
+            733..736 'tex': [error]
+            739..759 'textur...e_2d()': [error]
             79..92 'array<bool>()': type `array<bool>` is not constructible
             128..140 'array<i32>()': type `array<i32>` is not constructible
             178..190 'array<u32>()': type `array<u32>` is not constructible
@@ -141,6 +193,15 @@ fn foo() {
             420..446 'ptr<fu...ead>()': type `ptr<function, u32, read>` is not constructible
             543..583 'textur...ite>()': type `texture_storage_2d<rgba16float,write>` is not constructible
             543..583 'textur...ite>()': type `texture_storage_2d<rgba16float,write>` is not constructible
+            603..610 'array()': type `array<[error]>` is not constructible
+            630..638 'atomic()': type `atomic<[error]>` is not constructible
+            630..638 'atomic()': type `atomic<[error]>` is not constructible
+            630..638 'atomic()': expected 1 template arguments, but got 0
+            630..638 'atomic()': missing template argument, expected a type
+            658..663 'ptr()': expected 2 to 3 template arguments, but got 0
+            658..663 'ptr()': missing template argument, expected an enum
+            739..759 'textur...e_2d()': expected 1 to 2 template arguments, but got 0
+            739..759 'textur...e_2d()': missing template argument, expected an enum
         "#]],
     );
 }

@@ -118,8 +118,8 @@ fn no_builtin_overload() {
     check_diagnostics(
         "fn foo() { var x = 1f + mat2x2f(); }",
         expect![[r#"
-        19..33 wesl-rs Error 22: cannot use binary operator `+` with operands `f32` and `mat2x2<f32>`
-    "#]],
+            19..33 wesl-rs Error 22: cannot use binary operator `+` with operands `f32` and `mat2x2<f32>`
+        "#]],
     );
 }
 
@@ -331,6 +331,19 @@ fn binding_array_validates() {
 }
 
 #[test]
+fn binding_array_invalid() {
+    check_diagnostics(
+        "
+@group(0) @binding(0) var textures: binding_array;
+",
+        expect![[r#"
+            22..25 wgsl-analyzer Error 12: address space is only valid for handle or texture types
+            36..49 wgsl-analyzer Error 13: missing template arguments
+        "#]],
+    );
+}
+
+#[test]
 fn invalid_translate_attribute_function_return_type() {
     check_diagnostics(
         "
@@ -525,18 +538,11 @@ fn foo() {
     let structure = Foo();
 
     let pointer = ptr<function, u32, read>();
-    let reference = ref<function, u32, read>();
+    // let reference = ref<function, u32, read>();
     let tex = texture_storage_2d<rgba16float, write>();
 }
 ",
         expect![[r#"
-            468..471 wgsl-analyzer Error 16: 'ref' is a reserved word in WGSL
-            468..471 wgsl-analyzer Error 16: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '-', 'package', '(', '*', 'super', '~', 'true'
-            480..481 wgsl-analyzer Error 16: invalid syntax, expected one of: '&=', '/=', '=', '-=', '--', '%=', '|=', '+=', '++', '<<=', '>>=', '*=', '^='
-            485..486 wgsl-analyzer Error 16: invalid syntax, expected one of: '&=', '/=', '=', '-=', '--', '%=', '|=', '+=', '++', '<<=', '>>=', '*=', '^='
-            491..492 wgsl-analyzer Error 16: invalid syntax, expected one of: '&=', '/=', '=', '-=', '--', '%=', '|=', '+=', '++', '<<=', '>>=', '*=', '^='
-            493..494 wgsl-analyzer Error 16: invalid syntax, expected one of: '&', <identifier>, 'package', '(', '*', 'super'
-            494..495 wgsl-analyzer Error 16: invalid syntax, expected one of: '&=', '/=', '=', '-=', '--', '%=', '|=', '+=', '++', '<<=', '>>=', '*=', '^='
             79..92 wgsl-analyzer Error 6: type `array<bool>` is not constructible
             128..140 wgsl-analyzer Error 6: type `array<i32>` is not constructible
             178..190 wgsl-analyzer Error 6: type `array<u32>` is not constructible
@@ -549,14 +555,8 @@ fn foo() {
             394..399 wgsl-analyzer Error 6: type `Foo` is not constructible
             420..446 wgsl-analyzer Error 6: type `ptr<u32>` is not constructible
             420..446 wgsl-analyzer Error 6: type `ptr<u32>` is not constructible
-            472..480 wgsl-analyzer Error 23: enumerant function is not a variable
-            472..480 wgsl-analyzer Error 1: left hand side of assignment should be a reference, found [error]
-            482..485 wgsl-analyzer Error 23: type u32 is not a variable
-            482..485 wgsl-analyzer Error 1: left hand side of assignment should be a reference, found [error]
-            487..491 wgsl-analyzer Error 23: enumerant read is not a variable
-            487..491 wgsl-analyzer Error 1: left hand side of assignment should be a reference, found [error]
-            510..550 wgsl-analyzer Error 6: type `texture_storage_2d<rgba16float,write>` is not constructible
-            510..550 wgsl-analyzer Error 6: type `texture_storage_2d<rgba16float,write>` is not constructible
+            513..553 wgsl-analyzer Error 6: type `texture_storage_2d<rgba16float,write>` is not constructible
+            513..553 wgsl-analyzer Error 6: type `texture_storage_2d<rgba16float,write>` is not constructible
         "#]],
     );
 }
@@ -566,11 +566,54 @@ fn arg_count_mismatch() {
     check_diagnostics(
         "
 fn foo() {
+    let x = foo(1);
+}
+",
+        expect![[r#"
+            15..30 wgsl-analyzer Error 7: expected 0 parameters, found 1
+        "#]],
+    );
+}
+
+#[test]
+fn arg_count_mismatch_no_type() {
+    check_diagnostics(
+        "
+fn foo() {
     let x = foo(foo());
 }
 ",
         expect![[r#"
             15..34 wgsl-analyzer Error 7: expected 0 parameters, found 1
+        "#]],
+    );
+}
+
+#[test]
+fn expected_template_builtin() {
+    check_diagnostics(
+        "
+fn foo() {
+    let x = bitcast(1f);
+}
+",
+        expect![[r#"
+            23..34 wgsl-analyzer Error 14: `bitcast` not found in scope
+        "#]],
+    );
+}
+
+#[test]
+// https://github.com/webgpu-tools/wesl-rs/pull/255
+fn unexpected_template_builtin() {
+    check_diagnostics(
+        "
+fn foo() {
+    let x = sqrt<f32>(1f);
+}
+",
+        expect![[r#"
+            23..36 wgsl-analyzer Error 14: `sqrt` not found in scope
         "#]],
     );
 }

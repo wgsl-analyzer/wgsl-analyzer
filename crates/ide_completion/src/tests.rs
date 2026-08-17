@@ -160,33 +160,51 @@ fn render_completion_list(mut completions: Vec<CompletionItem>) -> String {
     completions.sort_by(|first, other| first.label.cmp(&other.label));
     let label_width = completions
         .iter()
-        .map(|it| {
-            monospace_width(&it.label.primary)
-                + monospace_width(it.label.detail_left.as_deref().unwrap_or_default())
-                + monospace_width(it.label.detail_right.as_deref().unwrap_or_default())
-                + usize::from(it.label.detail_left.is_some())
-                + usize::from(it.label.detail_right.is_some())
+        .map(|completion_item| {
+            monospace_width(&completion_item.label.primary)
+                + monospace_width(
+                    completion_item
+                        .label
+                        .detail_left
+                        .as_deref()
+                        .unwrap_or_default(),
+                )
+                + monospace_width(
+                    completion_item
+                        .label
+                        .detail_right
+                        .as_deref()
+                        .unwrap_or_default(),
+                )
+                + usize::from(completion_item.label.detail_left.is_some())
+                + usize::from(completion_item.label.detail_right.is_some())
         })
         .max()
         .unwrap_or_default();
     completions
         .into_iter()
-        .map(|it| {
-            let tag = it.kind.tag();
-            let mut buffer = format!("{tag} {}", it.label.primary);
-            if let Some(label_detail) = &it.label.detail_left {
+        .map(|completion_item| {
+            let tag = completion_item.kind.tag();
+            let mut buffer = format!("{tag} {}", completion_item.label.primary);
+            if let Some(label_detail) = &completion_item.label.detail_left {
                 format_to!(buffer, " {label_detail}");
             }
-            if let Some(detail_right) = it.label.detail_right {
+            if let Some(detail_right) = completion_item.label.detail_right {
                 let pad_with = label_width.saturating_sub(
-                    monospace_width(&it.label.primary)
-                        + monospace_width(it.label.detail_left.as_deref().unwrap_or_default())
+                    monospace_width(&completion_item.label.primary)
+                        + monospace_width(
+                            completion_item
+                                .label
+                                .detail_left
+                                .as_deref()
+                                .unwrap_or_default(),
+                        )
                         + monospace_width(&detail_right)
-                        + usize::from(it.label.detail_left.is_some()),
+                        + usize::from(completion_item.label.detail_left.is_some()),
                 );
                 format_to!(buffer, "{:pad_with$}{detail_right}", "",);
             }
-            if it.deprecated {
+            if completion_item.deprecated {
                 format_to!(buffer, " DEPRECATED");
             }
             format_to!(buffer, "\n");

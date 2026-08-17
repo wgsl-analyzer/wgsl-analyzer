@@ -645,7 +645,7 @@ fn vec_xy_is_not_ref() {
             39..43 'v.xy': vec2<i32>
             46..47 'v': ref<function, vec2<i32>, read_write>
             46..50 'v.yx': vec2<i32>
-            [EditionedFileId(Id(300))] AssignmentNotAReference { left_side: Idx::<Expression>(4), actual: Type(0409) } in Body
+            39..43 'v.xy': cannot assign to non-reference `vec2<i32>`
         "#]],
     );
 }
@@ -1185,26 +1185,25 @@ fn f() {
 }
 
 #[test]
-
 fn array_index_is_i32() {
     check_infer(
         "
         const index = 1i;
-        const arr = array<i32>(1, 2, 3);
+        const arr = array<i32, 3>(1, 2, 3);
         const a = arr[index];
         ",
         expect![[r#"
             6..11 'index': i32
             14..16 '1i': i32
-            24..27 'arr': array<i32>
-            30..49 'array<... 2, 3)': array<i32>
-            41..42 '1': integer
-            44..45 '2': integer
-            47..48 '3': integer
-            57..58 'a': i32
-            61..64 'arr': array<i32>
-            61..71 'arr[index]': i32
-            65..70 'index': i32
+            24..27 'arr': array<i32, 3>
+            30..52 'array<... 2, 3)': array<i32, 3>
+            44..45 '1': integer
+            47..48 '2': integer
+            50..51 '3': integer
+            60..61 'a': i32
+            64..67 'arr': array<i32, 3>
+            64..74 'arr[index]': i32
+            68..73 'index': i32
         "#]],
     );
 }
@@ -1214,21 +1213,21 @@ fn array_index_is_u32() {
     check_infer(
         "
         const index = 1u;
-        const arr = array<i32>(1, 2, 3);
+        const arr = array<i32, 3>(1, 2, 3);
         const a = arr[index];
         ",
         expect![[r#"
             6..11 'index': u32
             14..16 '1u': u32
-            24..27 'arr': array<i32>
-            30..49 'array<... 2, 3)': array<i32>
-            41..42 '1': integer
-            44..45 '2': integer
-            47..48 '3': integer
-            57..58 'a': i32
-            61..64 'arr': array<i32>
-            61..71 'arr[index]': i32
-            65..70 'index': u32
+            24..27 'arr': array<i32, 3>
+            30..52 'array<... 2, 3)': array<i32, 3>
+            44..45 '1': integer
+            47..48 '2': integer
+            50..51 '3': integer
+            60..61 'a': i32
+            64..67 'arr': array<i32, 3>
+            64..74 'arr[index]': i32
+            68..73 'index': u32
         "#]],
     );
 }
@@ -1238,21 +1237,21 @@ fn array_index_is_abstract_int() {
     check_infer(
         "
         const index = 1;
-        const arr = array<i32>(1, 2, 3);
+        const arr = array<i32, 3>(1, 2, 3);
         const a = arr[index];
         ",
         expect![[r#"
             6..11 'index': integer
             14..15 '1': integer
-            23..26 'arr': array<i32>
-            29..48 'array<... 2, 3)': array<i32>
-            40..41 '1': integer
-            43..44 '2': integer
-            46..47 '3': integer
-            56..57 'a': i32
-            60..63 'arr': array<i32>
-            60..70 'arr[index]': i32
-            64..69 'index': integer
+            23..26 'arr': array<i32, 3>
+            29..51 'array<... 2, 3)': array<i32, 3>
+            43..44 '1': integer
+            46..47 '2': integer
+            49..50 '3': integer
+            59..60 'a': i32
+            63..66 'arr': array<i32, 3>
+            63..73 'arr[index]': i32
+            67..72 'index': integer
         "#]],
     );
 }
@@ -1262,22 +1261,22 @@ fn array_index_is_not_f32() {
     check_infer(
         "
         const index = 1.0f;
-        const arr = array<i32>(1, 2, 3);
+        const arr = array<i32, 3>(1, 2, 3);
         const a = arr[index];
         ",
         expect![[r#"
             6..11 'index': f32
             14..18 '1.0f': f32
-            26..29 'arr': array<i32>
-            32..51 'array<... 2, 3)': array<i32>
-            43..44 '1': integer
-            46..47 '2': integer
-            49..50 '3': integer
-            59..60 'a': i32
-            63..66 'arr': array<i32>
-            63..73 'arr[index]': i32
-            67..72 'index': f32
-            67..72 'index': expected i32 or u32 but got f32
+            26..29 'arr': array<i32, 3>
+            32..54 'array<... 2, 3)': array<i32, 3>
+            46..47 '1': integer
+            49..50 '2': integer
+            52..53 '3': integer
+            62..63 'a': i32
+            66..69 'arr': array<i32, 3>
+            66..76 'arr[index]': i32
+            70..75 'index': f32
+            70..75 'index': expected i32 or u32 but got f32
         "#]],
     );
 }
@@ -1330,22 +1329,22 @@ fn array_index_is_not_abstract_float() {
     check_infer(
         "
         const index = 1.0;
-        const arr = array<i32>(1, 2, 3);
+        const arr = array<i32, 3>(1, 2, 3);
         const a = arr[index];
         ",
         expect![[r#"
             6..11 'index': float
             14..17 '1.0': float
-            25..28 'arr': array<i32>
-            31..50 'array<... 2, 3)': array<i32>
-            42..43 '1': integer
-            45..46 '2': integer
-            48..49 '3': integer
-            58..59 'a': i32
-            62..65 'arr': array<i32>
-            62..72 'arr[index]': i32
-            66..71 'index': float
-            66..71 'index': expected i32 or u32 but got float
+            25..28 'arr': array<i32, 3>
+            31..53 'array<... 2, 3)': array<i32, 3>
+            45..46 '1': integer
+            48..49 '2': integer
+            51..52 '3': integer
+            61..62 'a': i32
+            65..68 'arr': array<i32, 3>
+            65..75 'arr[index]': i32
+            69..74 'index': float
+            69..74 'index': expected i32 or u32 but got float
         "#]],
     );
 }
@@ -1355,22 +1354,22 @@ fn array_index_is_not_bool() {
     check_infer(
         "
         const index = true;
-        const arr = array<i32>(1, 2, 3);
+        const arr = array<i32, 3>(1, 2, 3);
         const a = arr[index];
         ",
         expect![[r#"
             6..11 'index': bool
             14..18 'true': bool
-            26..29 'arr': array<i32>
-            32..51 'array<... 2, 3)': array<i32>
-            43..44 '1': integer
-            46..47 '2': integer
-            49..50 '3': integer
-            59..60 'a': i32
-            63..66 'arr': array<i32>
-            63..73 'arr[index]': i32
-            67..72 'index': bool
-            67..72 'index': expected i32 or u32 but got bool
+            26..29 'arr': array<i32, 3>
+            32..54 'array<... 2, 3)': array<i32, 3>
+            46..47 '1': integer
+            49..50 '2': integer
+            52..53 '3': integer
+            62..63 'a': i32
+            66..69 'arr': array<i32, 3>
+            66..76 'arr[index]': i32
+            70..75 'index': bool
+            70..75 'index': expected i32 or u32 but got bool
         "#]],
     );
 }
@@ -1526,55 +1525,6 @@ fn mat_index_j_is_not_f32() {
             79..80 '0': integer
             82..87 'index': f32
             82..87 'index': expected i32 or u32 but got f32
-        "#]],
-    );
-}
-
-#[test]
-fn bitcast_builtin() {
-    check_infer(
-        "
-fn main() {
-    let a = bitcast<f32>(1u);
-    let b = bitcast<u32>(1.0f);
-    let c = bitcast<i32>(1u);
-    let d = bitcast<vec2<f32>>(vec2<u32>(1u, 2u));
-    let e = bitcast<vec4<i32>>(vec4<f32>(1.0f, 2.0f, 3.0f, 4.0f));
-    let f = bitcast<f32>(1u) + 1.0f;
-    let g = bitcast<u32>(bitcast<f32>(42u));
-}
-    ",
-        expect![[r#"
-            20..21 'a': f32
-            24..40 'bitcas...2>(1u)': f32
-            37..39 '1u': u32
-            50..51 'b': u32
-            54..72 'bitcas...(1.0f)': u32
-            67..71 '1.0f': f32
-            82..83 'c': i32
-            86..102 'bitcas...2>(1u)': i32
-            99..101 '1u': u32
-            112..113 'd': vec2<f32>
-            116..153 'bitcas..., 2u))': vec2<f32>
-            135..152 'vec2<u...u, 2u)': vec2<u32>
-            145..147 '1u': u32
-            149..151 '2u': u32
-            163..164 'e': vec4<i32>
-            167..220 'bitcas...4.0f))': vec4<i32>
-            186..219 'vec4<f... 4.0f)': vec4<f32>
-            196..200 '1.0f': f32
-            202..206 '2.0f': f32
-            208..212 '3.0f': f32
-            214..218 '4.0f': f32
-            230..231 'f': f32
-            234..250 'bitcas...2>(1u)': f32
-            234..257 'bitcas...+ 1.0f': f32
-            247..249 '1u': u32
-            253..257 '1.0f': f32
-            267..268 'g': u32
-            271..302 'bitcas...(42u))': u32
-            284..301 'bitcas...>(42u)': f32
-            297..300 '42u': u32
         "#]],
     );
 }
@@ -1833,14 +1783,14 @@ fn lower_function_as_template_argument() {
     check_infer(
         "
         fn foo() {
-            let y = array<foo>(1.0);
+            let y = array<foo, 1>(1.0);
         }
         ",
         expect![[r#"
-            19..20 'y': array<[error]>
-            23..38 'array<foo>(1.0)': array<[error]>
-            34..37 '1.0': float
-            34..37 '1.0': expected [error] but got float
+            19..20 'y': array<[error], 1>
+            23..41 'array<...>(1.0)': array<[error], 1>
+            37..40 '1.0': float
+            37..40 '1.0': expected [error] but got float
             29..32 'foo': foo was written, write foo() instead
         "#]],
     );
@@ -2070,6 +2020,325 @@ alias Bar = Foo;
         expect![[r#"
             [EditionedFileId(Id(300))] CyclicType { name: Name("Foo"), range: 0..16 } in Signature
             [EditionedFileId(Id(300))] CyclicType { name: Name("Bar"), range: 17..33 } in Signature
+        "#]],
+    );
+}
+
+#[test]
+fn not_a_reference() {
+    check_infer(
+        "
+fn foo() {
+    let x = 1;
+    x = 2;
+    x++;
+    x += 1;
+}
+        ",
+        expect![[r#"
+            19..20 'x': i32
+            23..24 '1': integer
+            30..31 'x': i32
+            34..35 '2': integer
+            41..42 'x': i32
+            50..51 'x': i32
+            55..56 '1': integer
+            30..31 'x': cannot assign to non-reference `i32`
+            41..42 'x': cannot assign to non-reference `i32`
+            50..51 'x': cannot assign to non-reference `i32`
+            55..56 '1': expected [error] but got i32
+        "#]],
+    );
+}
+
+#[test]
+fn error_in_template() {
+    check_infer(
+        "
+fn foo() {
+    let y = 0;
+    let x = sqrt<&y>(y);
+}
+        ",
+        expect![[r#"
+            19..20 'y': i32
+            23..24 '0': integer
+            34..35 'x': [error]
+            38..49 'sqrt<&y>(y)': [error]
+            47..48 'y': i32
+            38..49 'sqrt<&y>(y)': `sqrt` not found in scope
+        "#]],
+    );
+}
+
+#[test]
+fn construct_templated_but_argument_is_error_no_second_diagnostic() {
+    check_infer(
+        "
+fn foo() {
+    let y = &0;
+    let x = vec2<f32>(y);
+}
+        ",
+        expect![[r#"
+            19..20 'y': [error]
+            23..25 '&0': [error]
+            24..25 '0': integer
+            35..36 'x': [error]
+            39..51 'vec2<f32>(y)': [error]
+            49..50 'y': [error]
+            [EditionedFileId(Id(300))] WgslError { expression: Idx::<Expression>(0), message: "cannot use unary operator `&` on type `AbstractInt`" } in Body
+            39..51 'vec2<f32>(y)': no constructor for builtin `op_vec2_constructor` of type `vec2<f32>` with parameters `[error]`
+        "#]],
+    );
+}
+
+#[test]
+fn construct_untemplated_but_argument_is_error_no_second_diagnostic() {
+    check_infer(
+        "
+fn foo() {
+    let y = &0;
+    let x = vec2(y);
+}
+        ",
+        expect![[r#"
+            19..20 'y': [error]
+            23..25 '&0': [error]
+            24..25 '0': integer
+            35..36 'x': [error]
+            39..46 'vec2(y)': [error]
+            44..45 'y': [error]
+            [EditionedFileId(Id(300))] WgslError { expression: Idx::<Expression>(0), message: "cannot use unary operator `&` on type `AbstractInt`" } in Body
+            39..46 'vec2(y)': no constructor for builtin `op_vec2_constructor` of type `vec2<[error]>` with parameters `[error]`
+        "#]],
+    );
+}
+
+#[test]
+fn matrix_no_constructor() {
+    check_infer(
+        "
+fn foo() {
+    let y = mat2x2f(true);
+}
+        ",
+        expect![[r#"
+            19..20 'y': [error]
+            23..36 'mat2x2f(true)': [error]
+            31..35 'true': bool
+            23..36 'mat2x2f(true)': no constructor for builtin `op_mat2x2_constructor` of type `mat2x2<f32>` with parameters `bool`
+        "#]],
+    );
+}
+
+#[test]
+fn vector_no_constructor() {
+    check_infer(
+        "
+fn foo() {
+    let y = vec2(true, true, true);
+}
+        ",
+        expect![[r#"
+            19..20 'y': [error]
+            23..45 'vec2(t... true)': [error]
+            28..32 'true': bool
+            34..38 'true': bool
+            40..44 'true': bool
+            23..45 'vec2(t... true)': no constructor for builtin `op_vec2_constructor` of type `vec2<[error]>` with parameters `bool, bool, bool`
+        "#]],
+    );
+}
+
+#[test]
+fn array_zero_arguments() {
+    check_infer(
+        "
+fn foo() {
+    let y = array();
+}
+        ",
+        expect![[r#"
+            19..20 'y': array<[error]>
+            23..30 'array()': array<[error]>
+            23..30 'array()': type `array<[error]>` is not constructible
+        "#]],
+    );
+}
+
+#[test]
+fn vector_zero_arguments() {
+    check_infer(
+        "
+fn foo() {
+    let y = vec2();
+}
+        ",
+        expect![[r#"
+            19..20 'y': vec2<i32>
+            23..29 'vec2()': vec2<integer>
+        "#]],
+    );
+}
+
+#[test]
+fn matrix_zero_arguments() {
+    check_infer(
+        "
+fn foo() {
+    let y = mat2x2();
+}
+        ",
+        expect![[r#"
+            19..20 'y': [error]
+            23..31 'mat2x2()': [error]
+            23..31 'mat2x2()': expected `1` arguments, but received `0`
+        "#]],
+    );
+}
+
+#[test]
+fn matrix_missing_template_no_constructor() {
+    check_infer(
+        "
+fn foo() {
+    let y = mat2x2(true);
+}
+        ",
+        expect![[r#"
+            19..20 'y': [error]
+            23..35 'mat2x2(true)': [error]
+            30..34 'true': bool
+            23..35 'mat2x2(true)': no constructor for builtin `op_mat2x2_constructor` of type `mat2x2<[error]>` with parameters `bool`
+        "#]],
+    );
+}
+
+#[test]
+fn array_templated_not_convertible() {
+    check_infer(
+        "
+fn foo() {
+    let y = array<bool, 1>(1);
+}
+        ",
+        expect![[r#"
+            19..20 'y': array<bool, 1>
+            23..40 'array<... 1>(1)': array<bool, 1>
+            38..39 '1': integer
+            38..39 '1': expected bool but got integer
+        "#]],
+    );
+}
+
+#[test]
+fn array_templated_wrong_number_arguments() {
+    check_infer(
+        "
+fn foo() {
+    let y = array<i32, 1>(1, 2);
+}
+        ",
+        expect![[r#"
+            19..20 'y': array<i32, 1>
+            23..42 'array<...(1, 2)': array<i32, 1>
+            37..38 '1': integer
+            40..41 '2': integer
+            23..42 'array<...(1, 2)': expected `1` arguments, but received `2`
+        "#]],
+    );
+}
+
+#[test]
+fn array_untemplated_not_convertible() {
+    check_infer(
+        "
+fn foo() {
+    let y = array(bool, 1);
+}
+        ",
+        expect![[r#"
+            19..20 'y': array<[error], 2>
+            23..37 'array(bool, 1)': array<[error], 2>
+            29..33 'bool': [error]
+            35..36 '1': integer
+            29..33 'bool': expected variable, but got type `bool`
+            35..36 '1': expected [error] but got integer
+        "#]],
+    );
+}
+
+#[test]
+fn array_untemplated_wrong_number_arguments() {
+    check_infer(
+        "
+fn foo() {
+    let y = array(1, 2);
+}
+        ",
+        expect![[r#"
+            19..20 'y': array<i32, 2>
+            23..34 'array(1, 2)': array<integer, 2>
+            29..30 '1': integer
+            32..33 '2': integer
+        "#]],
+    );
+}
+
+#[test]
+fn atomic_assignment() {
+    check_infer(
+        "
+struct Foo {
+    y: atomic<u32>,
+}
+var<storage, read_write> x: array<Foo>;
+fn foo() {
+    x[0].y = 0u;
+}
+        ",
+        expect![[r#"
+            60..61 'x': ref<storage, array<Foo>, read_write>
+            90..91 'x': ref<storage, array<Foo>, read_write>
+            90..94 'x[0]': ref<storage, Foo, read_write>
+            90..96 'x[0].y': ref<storage, atomic<u32>, read_write>
+            92..93 '0': integer
+            99..101 '0u': u32
+            99..101 '0u': expected atomic<u32> but got u32
+        "#]],
+    );
+}
+
+#[test]
+fn atomic_assignment2() {
+    check_infer(
+        "
+@fragment
+fn shade_it() -> @location(0) vec4<f32> {
+  _ = &buf;
+  atomicStore(&buf.counter, 1u);
+  return vec4<f32>();
+}
+
+struct BufferContents {
+    counter: atomic<u32>,
+    data: array<vec4<f32>>
+}
+
+@group(0) @binding(0) var<storage, read_write> buf: BufferContents;
+
+        ",
+        expect![[r#"
+            58..62 '&buf': ptr<storage, BufferContents, read_write>
+            59..62 'buf': ref<storage, BufferContents, read_write>
+            66..95 'atomic...r, 1u)': [error]
+            78..90 '&buf.counter': ptr<storage, atomic<u32>, read_write>
+            79..82 'buf': ref<storage, BufferContents, read_write>
+            79..90 'buf.counter': ref<storage, atomic<u32>, read_write>
+            92..94 '1u': u32
+            106..117 'vec4<f32>()': vec4<f32>
+            249..252 'buf': ref<storage, BufferContents, read_write>
         "#]],
     );
 }

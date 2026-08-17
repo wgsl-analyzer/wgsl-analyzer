@@ -93,11 +93,12 @@ fn u64() {
         },
         "
 fn foo() {
-    u64();
+    u64(1);
 }
 ",
         expect![[r#"
-            15..20 'u64()': u64
+            15..21 'u64(1)': u64
+            19..20 '1': integer
         "#]],
     );
 }
@@ -2062,3 +2063,95 @@ fn foo() {
 // op_vec4_constructor(e1: u32, v1: vec3<u32>) -> vec4<u32>
 // op_vec4_constructor(e1: f32, v1: vec3<f32>) -> vec4<f32>
 // op_vec4_constructor(e1: f16, v1: vec3<f16>) -> vec4<f16>
+
+#[test]
+fn aliases() {
+    check_infer(
+        "
+fn f() {
+    let _mat2x2f = mat2x2f();
+    let _mat2x3f = mat2x3f();
+    let _mat2x4f = mat2x4f();
+    let _mat3x2f = mat3x2f();
+    let _mat3x3f = mat3x3f();
+    let _mat3x4f = mat3x4f();
+    let _mat4x2f = mat4x2f();
+    let _mat4x3f = mat4x3f();
+    let _mat4x4f = mat4x4f();
+
+    let _mat2x2h = mat2x2h();
+    let _mat2x3h = mat2x3h();
+    let _mat2x4h = mat2x4h();
+    let _mat3x2h = mat3x2h();
+    let _mat3x3h = mat3x3h();
+    let _mat3x4h = mat3x4h();
+    let _mat4x2h = mat4x2h();
+    let _mat4x3h = mat4x3h();
+    let _mat4x4h = mat4x4h();
+}
+",
+        expect![[r#"
+            17..25 '_mat2x2f': mat2x2<f32>
+            28..37 'mat2x2f()': mat2x2<f32>
+            47..55 '_mat2x3f': mat2x3<f32>
+            58..67 'mat2x3f()': mat2x3<f32>
+            77..85 '_mat2x4f': mat2x4<f32>
+            88..97 'mat2x4f()': mat2x4<f32>
+            107..115 '_mat3x2f': mat3x2<f32>
+            118..127 'mat3x2f()': mat3x2<f32>
+            137..145 '_mat3x3f': mat3x3<f32>
+            148..157 'mat3x3f()': mat3x3<f32>
+            167..175 '_mat3x4f': mat3x4<f32>
+            178..187 'mat3x4f()': mat3x4<f32>
+            197..205 '_mat4x2f': mat4x2<f32>
+            208..217 'mat4x2f()': mat4x2<f32>
+            227..235 '_mat4x3f': mat4x3<f32>
+            238..247 'mat4x3f()': mat4x3<f32>
+            257..265 '_mat4x4f': mat4x4<f32>
+            268..277 'mat4x4f()': mat4x4<f32>
+            288..296 '_mat2x2h': mat2x2<f16>
+            299..308 'mat2x2h()': mat2x2<f16>
+            318..326 '_mat2x3h': mat2x3<f16>
+            329..338 'mat2x3h()': mat2x3<f16>
+            348..356 '_mat2x4h': mat2x4<f16>
+            359..368 'mat2x4h()': mat2x4<f16>
+            378..386 '_mat3x2h': mat3x2<f16>
+            389..398 'mat3x2h()': mat3x2<f16>
+            408..416 '_mat3x3h': mat3x3<f16>
+            419..428 'mat3x3h()': mat3x3<f16>
+            438..446 '_mat3x4h': mat3x4<f16>
+            449..458 'mat3x4h()': mat3x4<f16>
+            468..476 '_mat4x2h': mat4x2<f16>
+            479..488 'mat4x2h()': mat4x2<f16>
+            498..506 '_mat4x3h': mat4x3<f16>
+            509..518 'mat4x3h()': mat4x3<f16>
+            528..536 '_mat4x4h': mat4x4<f16>
+            539..548 'mat4x4h()': mat4x4<f16>
+        "#]],
+    );
+}
+
+#[test]
+fn arrays() {
+    check_infer(
+        "
+var texture_array: array<texture_2d<f32>>;
+var texture_array_unbounded: binding_array<texture_2d<f32>, 1>;
+
+fn f() {
+    let _array = array(1);
+    let _binding_array = binding_array(1);
+}
+",
+        expect![[r#"
+            4..17 'texture_array': ref<handle, array<texture_2d<f32>>, read>
+            47..70 'textur...ounded': ref<handle, binding_array<texture_2d<f32>, 1>, read>
+            125..131 '_array': array<i32, 1>
+            134..142 'array(1)': array<integer, 1>
+            140..141 '1': integer
+            152..166 '_binding_array': binding_array<i32, 1>
+            169..185 'bindin...ray(1)': binding_array<integer, 1>
+            183..184 '1': integer
+        "#]],
+    );
+}
