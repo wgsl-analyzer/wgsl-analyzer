@@ -49,7 +49,7 @@ fn infer(
     wa_fixture: &str,
 ) -> String {
     let (mut db, files) = TestDatabase::with_many_files(wa_fixture);
-    CapabilitiesInput::update_capabilties(&mut db, capabilities);
+    CapabilitiesInput::update_capabilities(&mut db, capabilities);
     let mut buffer = String::new();
 
     for (index, file_id) in files.into_iter().enumerate() {

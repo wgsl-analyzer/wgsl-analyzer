@@ -33,7 +33,7 @@ impl Default for TestDatabase {
             events,
             nonce: Nonce::new(),
         };
-        CapabilitiesInput::update_capabilties(&mut db, Capabilities::default());
+        CapabilitiesInput::update_capabilities(&mut db, Capabilities::default());
         // This needs to be here otherwise the first `Change` will panic.
         set_all_packages_with_durability(&mut db, [], Durability::LOW);
         db

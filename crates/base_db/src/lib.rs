@@ -360,11 +360,11 @@ pub struct CapabilitiesInput {
 
 impl CapabilitiesInput {
     #[must_use]
-    pub fn get_capabilties(db: &dyn SourceDatabase) -> &Capabilities {
+    pub fn get_capabilities(db: &dyn SourceDatabase) -> &Capabilities {
         Self::get(db).capabilities(db)
     }
 
-    pub fn update_capabilties(
+    pub fn update_capabilities(
         db: &mut dyn SourceDatabase,
         capabilities: Capabilities,
     ) {

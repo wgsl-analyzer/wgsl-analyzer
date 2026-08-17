@@ -52,7 +52,7 @@ impl GlobalState {
 
         if self.config.capabilities() != old_config.capabilities() {
             self.analysis_host
-                .update_capabilties(self.config.capabilities());
+                .update_capabilities(self.config.capabilities());
         }
     }
 

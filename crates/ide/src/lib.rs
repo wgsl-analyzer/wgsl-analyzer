@@ -150,11 +150,11 @@ impl AnalysisHost {
         self.db.update_lru_capacities(lru_capacities);
     }
 
-    pub fn update_capabilties(
+    pub fn update_capabilities(
         &mut self,
         capabilities: Capabilities,
     ) {
-        CapabilitiesInput::update_capabilties(&mut self.db, capabilities);
+        CapabilitiesInput::update_capabilities(&mut self.db, capabilities);
     }
 
     /// Returns a snapshot of the current state, which you can query for

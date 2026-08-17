@@ -21,7 +21,7 @@ fn check_layout(
     expect: Expect,
 ) {
     let (mut db, file_id) = TestDatabase::with_single_file(wa_fixture);
-    CapabilitiesInput::update_capabilties(&mut db, capabilities);
+    CapabilitiesInput::update_capabilities(&mut db, capabilities);
     let mut buffer = String::new();
     LayoutPrinter::new(&db, EditionedFileId::from_file(&db, file_id.file_id(&db)))
         .infer_layout(&mut buffer);

@@ -85,11 +85,11 @@ impl TypeLoweringContext<'_> {
                 self.expect_no_template(template_parameters);
                 TypeKind::Scalar(ScalarType::U32)
             },
-            "i64" if CapabilitiesInput::get_capabilties(self.db).shader_int64 => {
+            "i64" if CapabilitiesInput::get_capabilities(self.db).shader_int64 => {
                 self.expect_no_template(template_parameters);
                 TypeKind::Scalar(ScalarType::I64)
             },
-            "u64" if CapabilitiesInput::get_capabilties(self.db).shader_int64 => {
+            "u64" if CapabilitiesInput::get_capabilities(self.db).shader_int64 => {
                 self.expect_no_template(template_parameters);
                 TypeKind::Scalar(ScalarType::U64)
             },
@@ -865,7 +865,7 @@ impl TypeLoweringContext<'_> {
                     // TODO: improve the error message and support naga atomics
                     // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/677
                     // Naga supports more types (f32, i64, u64) here
-                    let possible_types = if CapabilitiesInput::get_capabilties(self.db).shader_int64
+                    let possible_types = if CapabilitiesInput::get_capabilities(self.db).shader_int64
                     {
                         "i32, u32, i64, or u64".to_owned()
                     } else {

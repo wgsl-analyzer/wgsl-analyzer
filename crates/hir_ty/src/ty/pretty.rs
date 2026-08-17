@@ -61,7 +61,7 @@ fn write_type_expectation_inner(
         },
         TypeExpectationInner::IntegerScalar => {
             write!(buffer, "i32 or u32")?;
-            if CapabilitiesInput::get_capabilties(db).shader_int64 {
+            if CapabilitiesInput::get_capabilities(db).shader_int64 {
                 write!(buffer, " or i64 or u64")?;
             }
         },

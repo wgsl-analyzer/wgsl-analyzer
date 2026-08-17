@@ -141,7 +141,7 @@ impl RootDatabase {
         // database.set_proc_macros_with_durability(Default::default(), Durability::MEDIUM);
         // database.set_local_roots_with_durability(Default::default(), Durability::MEDIUM);
         // database.set_library_roots_with_durability(Default::default(), Durability::MEDIUM);
-        CapabilitiesInput::update_capabilties(&mut db, Capabilities::default());
+        CapabilitiesInput::update_capabilities(&mut db, Capabilities::default());
         db.update_base_query_lru_capacities(lru_capacity);
         db
     }
