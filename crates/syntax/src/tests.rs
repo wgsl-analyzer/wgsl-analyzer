@@ -426,9 +426,11 @@ fn no_attributes() {
 fn enable_extension_names() {
     let parsed = check_errors(
         "
-        enable f16, clip_distances, dual_source_blending, subgroups, primitive_index, unknown_nonsense;
+        enable f16, clip_distances, dual_source_blending, subgroups, primitive_index, subgroup_size_control;
+        enable wgpu_mesh_shader, wgpu_ray_query, wgpu_ray_query_vertex_return, wgpu_ray_tracing_pipelines, wgpu_int16, wgpu_cooperative_matrix, per_vertex, draw_index, wgpu_binding_array;
+        enable unknown_nonsense;
         ",
-        expect!["error at 87..103: unknown extension: `unknown_nonsense`"],
+        expect!["error at 313..329: unknown extension: `unknown_nonsense`"],
     );
     let items = vec![
         Ok(EnableExtension::F16),
@@ -436,6 +438,16 @@ fn enable_extension_names() {
         Ok(EnableExtension::DualSourceBlending),
         Ok(EnableExtension::Subgroups),
         Ok(EnableExtension::PrimitiveIndex),
+        Ok(EnableExtension::SubgroupSizeControl),
+        Ok(EnableExtension::WgpuMeshShader),
+        Ok(EnableExtension::WgpuRayQuery),
+        Ok(EnableExtension::WgpuRayQueryVertexReturn),
+        Ok(EnableExtension::WgpuRayTracingPipelines),
+        Ok(EnableExtension::WgpuInt16),
+        Ok(EnableExtension::WgpuCooperativeMatrix),
+        Ok(EnableExtension::PerVertex),
+        Ok(EnableExtension::DrawIndex),
+        Ok(EnableExtension::WgpuBindingArray),
         Err(UnknownExtension),
     ];
     let map = parsed
