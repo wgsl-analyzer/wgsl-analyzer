@@ -865,12 +865,12 @@ impl TypeLoweringContext<'_> {
                     // TODO: improve the error message and support naga atomics
                     // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/677
                     // Naga supports more types (f32, i64, u64) here
-                    let possible_types = if CapabilitiesInput::get_capabilities(self.db).shader_int64
-                    {
-                        "i32, u32, i64, or u64".to_owned()
-                    } else {
-                        "i32 or u32".to_owned()
-                    };
+                    let possible_types =
+                        if CapabilitiesInput::get_capabilities(self.db).shader_int64 {
+                            "i32, u32, i64, or u64".to_owned()
+                        } else {
+                            "i32 or u32".to_owned()
+                        };
                     self.diagnostics.push(TypeLoweringError {
                         container: TypeContainer::Expression(expression),
                         kind: TypeLoweringErrorKind::UnexpectedTemplateArgument(possible_types),
