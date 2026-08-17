@@ -2073,3 +2073,27 @@ alias Bar = Foo;
         "#]],
     );
 }
+
+#[test]
+fn atomic_assignment() {
+    check_infer(
+        "
+struct Foo {
+    y: atomic<u32>,
+}
+var<storage, read_write> x: array<Foo>;
+fn foo() {
+    x[0].y = 0u;
+}
+        ",
+        expect![[r#"
+            60..61 'x': ref<storage, array<Foo>, read_write>
+            90..91 'x': ref<storage, array<Foo>, read_write>
+            90..94 'x[0]': ref<storage, Foo, read_write>
+            90..96 'x[0].y': ref<storage, atomic<u32>, read_write>
+            92..93 '0': integer
+            99..101 '0u': u32
+            99..101 '0u': expected atomic<u32> but got u32
+        "#]],
+    );
+}
