@@ -21,7 +21,7 @@ use salsa::{Durability, Setter as _};
 use triomphe::Arc;
 
 pub use crate::editioned_file_id::{
-    EditionedFileId, ExtensionsConfig, FileExtension, RawEditionedFileId,
+    Capabilities, EditionedFileId, FileExtension, RawEditionedFileId,
 };
 pub use input::{SourceRoot, SourceRootId};
 pub use salsa;
@@ -353,26 +353,26 @@ impl PackageDisplayName {
 }
 
 #[salsa::input(singleton, debug)]
-pub struct ExtensionsConfigInput {
+pub struct CapabilitiesInput {
     #[returns(ref)]
-    pub extensions: ExtensionsConfig,
+    pub capabilities: Capabilities,
 }
 
-impl ExtensionsConfigInput {
+impl CapabilitiesInput {
     #[must_use]
-    pub fn get_extensions(db: &dyn SourceDatabase) -> &ExtensionsConfig {
-        Self::get(db).extensions(db)
+    pub fn get_capabilties(db: &dyn SourceDatabase) -> &Capabilities {
+        Self::get(db).capabilities(db)
     }
 
-    pub fn update_extensions(
+    pub fn update_capabilties(
         db: &mut dyn SourceDatabase,
-        extensions: ExtensionsConfig,
+        capabilities: Capabilities,
     ) {
         Self::try_get(db)
-            .unwrap_or_else(|| Self::new(db, ExtensionsConfig::default()))
-            .set_extensions(db)
+            .unwrap_or_else(|| Self::new(db, Capabilities::default()))
+            .set_capabilities(db)
             .with_durability(Durability::MEDIUM)
-            .to(extensions);
+            .to(capabilities);
     }
 }
 

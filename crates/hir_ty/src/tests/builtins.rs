@@ -11,14 +11,12 @@ mod value_constructor;
 mod zero_value;
 
 use expect_test::expect;
-use syntax::ExtensionsConfig;
 
 use crate::tests::check_infer;
 
 #[test]
 fn textureSampleBaseClampToEdge() {
     check_infer(
-        ExtensionsConfig::default(),
         "
 var x: texture_2d<f32>;
 var y: texture_external;

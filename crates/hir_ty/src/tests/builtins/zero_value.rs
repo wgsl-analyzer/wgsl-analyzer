@@ -1,17 +1,12 @@
 // #![expect(non_snake_case, reason = "name based on WGSL builtins")]
 
 use expect_test::expect;
-use syntax::ExtensionsConfig;
 
 use crate::tests::check_infer;
 
 #[test]
 fn zero_value_constructors() {
     check_infer(
-        ExtensionsConfig {
-            f16: true,
-            ..Default::default()
-        },
         "
 enable f16;
 struct Foo { bar: bool }
@@ -90,10 +85,6 @@ fn foo() {
 #[test]
 fn not_constructible() {
     check_infer(
-        ExtensionsConfig {
-            f16: true,
-            ..Default::default()
-        },
         "
 enable f16;
 struct Foo { bar: atomic<u32> }
@@ -157,7 +148,6 @@ fn foo() {
 #[test]
 fn not_constructible_no_template() {
     check_infer(
-        ExtensionsConfig::default(),
         "
 fn foo() {
     let structure = array();

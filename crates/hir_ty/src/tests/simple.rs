@@ -1,12 +1,11 @@
 use expect_test::expect;
-use syntax::ExtensionsConfig;
+use syntax::Capabilities;
 
-use crate::tests::check_infer;
+use crate::tests::{check_infer, check_infer_with_capabilities};
 
 #[test]
 fn type_alias_in_struct() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         alias Foo = u32;
         struct S { x: Foo }
@@ -32,7 +31,6 @@ fn type_alias_in_struct() {
 #[test]
 fn field_expression_on_error_type() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         fn foo() {
             let x = Nonsense();
@@ -53,7 +51,6 @@ fn field_expression_on_error_type() {
 #[test]
 fn index_expression_on_error_type() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         fn foo() {
             let x = Nonsense();
@@ -75,7 +72,6 @@ fn index_expression_on_error_type() {
 #[test]
 fn ident_expression_infers_ref() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         struct Bar { baz: u32 }
 
@@ -100,7 +96,6 @@ fn ident_expression_infers_ref() {
 #[test]
 fn automatic_ptr_dereference() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         struct MyData {
             alpha: f32,
@@ -139,7 +134,6 @@ fn automatic_ptr_dereference() {
 #[test]
 fn ptr_deref_is_ref() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         fn foo() {
             var v = vec2(1, 2);
@@ -165,7 +159,6 @@ fn ptr_deref_is_ref() {
 #[test]
 fn vec_x_is_ref() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         fn foo() {
             var v = vec2(1, 2);
@@ -188,7 +181,6 @@ fn vec_x_is_ref() {
 #[test]
 fn vec_field_is_not_ref() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         fn foo() {
             let not_ref = vec2(1, 2).x;
@@ -207,7 +199,6 @@ fn vec_field_is_not_ref() {
 #[test]
 fn struct_field_is_not_ref() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         struct Bar { baz: u32 }
         fn foo() {
@@ -226,7 +217,6 @@ fn struct_field_is_not_ref() {
 #[test]
 fn no_such_field_on_struct_ref() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         struct Bar { baz: u32 }
         fn foo() {
@@ -249,7 +239,6 @@ fn no_such_field_on_struct_ref() {
 #[test]
 fn no_such_field_on_struct_ptr() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         struct Bar { baz: u32 }
         fn foo() {
@@ -276,7 +265,6 @@ fn no_such_field_on_struct_ptr() {
 #[test]
 fn store_type_must_be_storable() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         fn foo() {
             var bar = 1;
@@ -297,7 +285,6 @@ fn store_type_must_be_storable() {
 #[test]
 fn no_such_field_on_struct() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         struct Bar { baz: u32 }
         fn foo() {
@@ -317,7 +304,6 @@ fn no_such_field_on_struct() {
 #[test]
 fn no_such_field_on_vec() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         fn foo() {
             let xyz = vec2(0, 0).xyz;
@@ -337,7 +323,6 @@ fn no_such_field_on_vec() {
 #[test]
 fn no_such_field_on_vec_ref() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         fn foo() {
             var v = vec2(0, 0);
@@ -360,7 +345,6 @@ fn no_such_field_on_vec_ref() {
 #[test]
 fn no_such_field_on_vec_ptr() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         fn foo() {
             var v = vec2(0, 0);
@@ -387,7 +371,6 @@ fn no_such_field_on_vec_ptr() {
 #[test]
 fn address_of_not_reference() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         fn foo() {
             let x = 1;
@@ -409,7 +392,6 @@ fn address_of_not_reference() {
 fn component_reference_from_a_composite_reference() {
     // From example in spec: <https://www.w3.org/TR/WGSL/#example-5aaac12b>
     check_infer(
-        ExtensionsConfig::default(),
         "
 struct S {
     age: i32,
@@ -648,7 +630,6 @@ fn f() {
 #[test]
 fn vec_xy_is_not_ref() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         fn foo() {
             var v = vec2(1, 2);
@@ -672,7 +653,6 @@ fn vec_xy_is_not_ref() {
 #[test]
 fn struct_constructor_is_empty() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         struct S { u: u32, a: array<f32, 3> };
 
@@ -690,7 +670,6 @@ fn struct_constructor_is_empty() {
 #[test]
 fn struct_constructor_is_correct() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         struct S { u: u32, a: array<f32, 3> };
 
@@ -713,7 +692,6 @@ fn struct_constructor_is_correct() {
 #[test]
 fn struct_constructor_unrefs() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         struct S { u: u32, a: array<f32, 3> };
 
@@ -742,7 +720,6 @@ fn struct_constructor_unrefs() {
 #[test]
 fn struct_constructor_not_enough_args() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         struct S { u: u32, a: array<f32, 3> };
 
@@ -762,7 +739,6 @@ fn struct_constructor_not_enough_args() {
 #[test]
 fn struct_constructor_incorrect_types() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         struct S { u: u32, a: array<f32, 3> };
 
@@ -787,7 +763,6 @@ fn struct_constructor_incorrect_types() {
 #[test]
 fn const_array() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         const a: array<f32, 1> = array(1);
         const b = array(1,2,3);
@@ -808,7 +783,6 @@ fn const_array() {
 #[test]
 fn const_vec() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         const a: vec3<u32> = vec3(1);
         const b = vec2f();
@@ -829,7 +803,6 @@ fn const_vec() {
 #[test]
 fn const_array_of_vec() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         const pos = array(vec2(1.0,  1.0), vec2(1.0, -1.0));
         const pos_explicit = array<vec2f, 1>(vec2(-1.0, -1.0));
@@ -858,7 +831,6 @@ fn const_array_of_vec() {
 #[test]
 fn const_u32_as_array_size() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         const maxLayers = 12u;
         var layers: array<f32, maxLayers>;
@@ -875,7 +847,6 @@ fn const_u32_as_array_size() {
 #[test]
 fn multiply_with_minus_one() {
     check_infer(
-        ExtensionsConfig::default(),
         r#"
     const x: i32 = 1;
     const y = x * -1;
@@ -895,7 +866,6 @@ fn multiply_with_minus_one() {
 #[test]
 fn var_array() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         @group(0) @binding(0) var<storage, read_write> data: array<f32>;
         ",
@@ -908,7 +878,6 @@ fn var_array() {
 #[test]
 fn break_if_bool() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         fn foo() {
             let a = 3;
@@ -928,7 +897,6 @@ fn break_if_bool() {
 #[test]
 fn abstract_number_for_const() {
     check_infer(
-        ExtensionsConfig::default(),
         "
 const some_integer = 1;
 const some_i32: i32 = 1;
@@ -945,7 +913,6 @@ const some_i32: i32 = 1;
 #[test]
 fn assign_abstract_number() {
     check_infer(
-        ExtensionsConfig::default(),
         "
 var i32_from_type : i32 = 3;
 
@@ -974,7 +941,6 @@ var f32_promotion : f32 = 5;
 #[test]
 fn negate_abstract_number() {
     check_infer(
-        ExtensionsConfig::default(),
         "
 const a = -4;
 const b: f32 = -3.5;
@@ -993,7 +959,6 @@ const b: f32 = -3.5;
 #[test]
 fn add_abstract_integers() {
     check_infer(
-        ExtensionsConfig::default(),
         "
 fn main() {
 var u32_expr1 = 6 + 1u;
@@ -1018,7 +983,6 @@ var u32_expr2 = 1u + (1 + 2);
 #[test]
 fn add_abstract_floats() {
     check_infer(
-        ExtensionsConfig::default(),
         "
 fn main() {
 let f32_promotion1 = 1.0 + 2 + 3;
@@ -1063,7 +1027,6 @@ let f32_promotion4 = ((2 + (3 + 1f)) + 4);
 #[test]
 fn call_with_abstract_numbers() {
     check_infer(
-        ExtensionsConfig::default(),
         "
 fn main() {
 let i32_clamp = clamp(1, -5, 5);
@@ -1095,7 +1058,6 @@ let f32_clamp = clamp(0, 1f, 1);
 #[test]
 fn call_user_defined_with_abstract_numbers() {
     check_infer(
-        ExtensionsConfig::default(),
         "
 fn make_one(x: f32) -> u32 {
   return 1u;
@@ -1120,7 +1082,6 @@ fn main() {
 #[test]
 fn vec_constructors() {
     check_infer(
-        ExtensionsConfig::default(),
         "
 const a = vec3(1f, 2f, 3f);
 fn main() {
@@ -1145,7 +1106,6 @@ let b = vec4(vec3f(1f), 1f);
 #[test]
 fn texture_storage_2d_template() {
     check_infer(
-        ExtensionsConfig::default(),
         "
 var framebuffer : texture_storage_2d<rgba16float, write>;
     ",
@@ -1158,7 +1118,6 @@ var framebuffer : texture_storage_2d<rgba16float, write>;
 #[test]
 fn global_assert_statement_correct() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         const a = 29;
         const_assert 27 < a;
@@ -1176,7 +1135,6 @@ fn global_assert_statement_correct() {
 #[test]
 fn global_assert_statement_wrong() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         const a = 29;
         const_assert 27 + a;
@@ -1195,7 +1153,6 @@ fn global_assert_statement_wrong() {
 #[test]
 fn global_var_function_address_space_error() {
     check_infer(
-        ExtensionsConfig::default(),
         "var<function> not_allowed_at_module_level: u32;",
         expect![[r#"
             14..41 'not_al..._level': ref<function, u32, read_write>
@@ -1208,7 +1165,6 @@ fn global_var_function_address_space_error() {
 fn no_crash_on_hex_int() {
     // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/826
     check_infer(
-        ExtensionsConfig::default(),
         "
 fn f() {
     let i2 = 0u;
@@ -1232,7 +1188,6 @@ fn f() {
 
 fn array_index_is_i32() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         const index = 1i;
         const arr = array<i32>(1, 2, 3);
@@ -1257,7 +1212,6 @@ fn array_index_is_i32() {
 #[test]
 fn array_index_is_u32() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         const index = 1u;
         const arr = array<i32>(1, 2, 3);
@@ -1282,7 +1236,6 @@ fn array_index_is_u32() {
 #[test]
 fn array_index_is_abstract_int() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         const index = 1;
         const arr = array<i32>(1, 2, 3);
@@ -1307,7 +1260,6 @@ fn array_index_is_abstract_int() {
 #[test]
 fn array_index_is_not_f32() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         const index = 1.0f;
         const arr = array<i32>(1, 2, 3);
@@ -1333,7 +1285,6 @@ fn array_index_is_not_f32() {
 #[test]
 fn array_index_is_ref_i32() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         fn test(arr: array<i32>) {
             var index = 1i;
@@ -1355,7 +1306,6 @@ fn array_index_is_ref_i32() {
 #[test]
 fn array_index_is_not_ref_f32() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         fn test(arr: array<i32>) {
             var index = 1.0f;
@@ -1378,7 +1328,6 @@ fn array_index_is_not_ref_f32() {
 #[test]
 fn array_index_is_not_abstract_float() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         const index = 1.0;
         const arr = array<i32>(1, 2, 3);
@@ -1404,7 +1353,6 @@ fn array_index_is_not_abstract_float() {
 #[test]
 fn array_index_is_not_bool() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         const index = true;
         const arr = array<i32>(1, 2, 3);
@@ -1430,7 +1378,6 @@ fn array_index_is_not_bool() {
 #[test]
 fn vec_index_is_int() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         const index = 1i;
         const vec = vec3<f32>(1.0, 2.0, 3.0);
@@ -1455,7 +1402,6 @@ fn vec_index_is_int() {
 #[test]
 fn vec_index_is_not_f32() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         const index = 1.0f;
         const vec = vec3<f32>(1.0, 2.0, 3.0);
@@ -1481,7 +1427,6 @@ fn vec_index_is_not_f32() {
 #[test]
 fn mat_index_is_int() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         const index = 1i;
         const mat = mat2x2<f32>(1.0, 2.0, 3.0, 4.0);
@@ -1509,7 +1454,6 @@ fn mat_index_is_int() {
 #[test]
 fn concretize_matrix() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         fn foo() {
             let x = bar(mat2x2(0, 0, 0, 0));
@@ -1533,7 +1477,6 @@ fn concretize_matrix() {
 #[test]
 fn mat_index_i_is_not_f32() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         const index = 1.0f;
         const mat = mat2x2<f32>(1.0, 2.0, 3.0, 4.0);
@@ -1562,7 +1505,6 @@ fn mat_index_i_is_not_f32() {
 #[test]
 fn mat_index_j_is_not_f32() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         const index = 1.0f;
         const mat = mat2x2<f32>(1.0, 2.0, 3.0, 4.0);
@@ -1591,7 +1533,6 @@ fn mat_index_j_is_not_f32() {
 #[test]
 fn bitcast_builtin() {
     check_infer(
-        ExtensionsConfig::default(),
         "
 fn main() {
     let a = bitcast<f32>(1u);
@@ -1640,8 +1581,8 @@ fn main() {
 
 #[test]
 fn naga_shader_int64() {
-    check_infer(
-        ExtensionsConfig {
+    check_infer_with_capabilities(
+        Capabilities {
             shader_int64: true,
             ..Default::default()
         },
@@ -1658,7 +1599,6 @@ fn foo(bar: i64, baz: u64) {}
 #[test]
 fn no_builtin_overload() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         var x = 1f + mat2x2f();
         ",
@@ -1675,7 +1615,6 @@ fn no_builtin_overload() {
 #[test]
 fn deref_not_a_pointer() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         var x = *1f;
         ",
@@ -1691,7 +1630,6 @@ fn deref_not_a_pointer() {
 #[test]
 fn no_constructor() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         var x = vec2f(1, 2, 3);
         ",
@@ -1709,7 +1647,6 @@ fn no_constructor() {
 #[test]
 fn add_refs_and_ptrs() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         struct MyData {
             a: u32,
@@ -1784,7 +1721,6 @@ fn add_refs_and_ptrs() {
 #[test]
 fn unexpected_return_type() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         fn foo() {
             return 0;
@@ -1800,7 +1736,6 @@ fn unexpected_return_type() {
 #[test]
 fn wrong_return_type() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         fn foo() -> bool {
             return 0;
@@ -1816,7 +1751,6 @@ fn wrong_return_type() {
 #[test]
 fn shift_operator_inference() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         fn bit_repro() {
             let x = 1 << 4;
@@ -1842,7 +1776,6 @@ fn shift_operator_inference() {
 #[test]
 fn lowering_type_missing_template_arguments() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         var x: mat4x4;
         const m: mat4x4 = mat2x2(0, 1, 2, 3);
@@ -1864,7 +1797,6 @@ fn lowering_type_missing_template_arguments() {
 #[test]
 fn lowering_type_missing_expected_type() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         var x: modf;
         ",
@@ -1878,7 +1810,6 @@ fn lowering_type_missing_expected_type() {
 #[test]
 fn to_wgsl_types_builtin_struct() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         fn foo() {
             let x = modf(1.0);
@@ -1900,7 +1831,6 @@ fn to_wgsl_types_builtin_struct() {
 #[test]
 fn lower_function_as_template_argument() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         fn foo() {
             let y = array<foo>(1.0);
@@ -1919,7 +1849,6 @@ fn lower_function_as_template_argument() {
 #[test]
 fn builtin_struct_not_constructible() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         fn foo() {
             let y = __modf_result_abstract(1.0, 0.1);
@@ -1938,7 +1867,6 @@ fn builtin_struct_not_constructible() {
 #[test]
 fn lower_call_uncallable_diagnostic() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         fn foo() {
             let y = rgba16float();
@@ -1955,7 +1883,6 @@ fn lower_call_uncallable_diagnostic() {
 #[test]
 fn not_convertible() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         fn foo() {
             let x = 1i * 1.0f;
@@ -1974,7 +1901,6 @@ fn not_convertible() {
 #[test]
 fn sampler_comparison_no_template() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         var x: sampler_comparison<wrong>;
         ",
@@ -1989,7 +1915,6 @@ fn sampler_comparison_no_template() {
 #[test]
 fn ptr_template_not_enumerant() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         fn foo1(bar1: ptr<rgba8unorm, i32, read_write>) { }
         fn foo2(bar2: ptr<storage, 123i, read_write>) { }
@@ -2011,7 +1936,6 @@ fn ptr_template_not_enumerant() {
 #[test]
 fn small_fragment_shader() {
     check_infer(
-        ExtensionsConfig::default(),
         "
 @fragment
 fn main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
@@ -2040,7 +1964,6 @@ fn main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
 #[test]
 fn override_declaration() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         override LEVELS: f32 = 4.0;
         fn foo() -> f32 { return LEVELS; }
@@ -2056,7 +1979,6 @@ fn override_declaration() {
 #[test]
 fn function_call_argument_type_mismatch() {
     check_infer(
-        ExtensionsConfig::default(),
         "
 fn foo(x: i32, y: u32) {
     foo(y, x);
@@ -2077,7 +1999,6 @@ fn foo(x: i32, y: u32) {
 #[test]
 fn ident_override_inference() {
     check_infer(
-        ExtensionsConfig::default(),
         "
 override bar: u32;
 fn foo() {
@@ -2095,7 +2016,6 @@ fn foo() {
 #[test]
 fn var_cycle() {
     check_infer(
-        ExtensionsConfig::default(),
         "
 var x = y;
 var y = x;
@@ -2110,7 +2030,6 @@ var y = x;
 #[test]
 fn struct_cycle() {
     check_infer(
-        ExtensionsConfig::default(),
         "
 struct Foo { foo: Bar }
 struct Bar { foo: Foo }
@@ -2130,7 +2049,6 @@ fn foo() {
 #[test]
 fn function_cycle() {
     check_infer(
-        ExtensionsConfig::default(),
         "
 fn foo() {
     foo();
@@ -2145,7 +2063,6 @@ fn foo() {
 #[test]
 fn alias_cycle() {
     check_infer(
-        ExtensionsConfig::default(),
         "
 alias Foo = Bar;
 alias Bar = Foo;

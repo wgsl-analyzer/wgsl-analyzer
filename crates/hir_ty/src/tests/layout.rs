@@ -1,8 +1,8 @@
-use base_db::{EditionedFileId, ExtensionsConfigInput};
+use base_db::{CapabilitiesInput, EditionedFileId};
 use expect_test::{Expect, expect};
 use hir_def::{db::ModuleDefinitionId, item_tree::ItemTree, signature::StructSignature};
 use std::fmt::Write as _;
-use syntax::ExtensionsConfig;
+use syntax::Capabilities;
 use test_fixture::WithFixture as _;
 use wgsl_types::syntax::AddressSpace;
 
@@ -16,12 +16,12 @@ use crate::{
 
 #[expect(clippy::needless_pass_by_value, reason = "Matches expect! macro")]
 fn check_layout(
-    extensions: ExtensionsConfig,
+    capabilities: Capabilities,
     wa_fixture: &str,
     expect: Expect,
 ) {
     let (mut db, file_id) = TestDatabase::with_single_file(wa_fixture);
-    ExtensionsConfigInput::update_extensions(&mut db, extensions);
+    CapabilitiesInput::update_capabilties(&mut db, capabilities);
     let mut buffer = String::new();
     LayoutPrinter::new(&db, EditionedFileId::from_file(&db, file_id.file_id(&db)))
         .infer_layout(&mut buffer);
@@ -119,7 +119,7 @@ impl<'db> LayoutPrinter<'db> {
 #[test]
 fn example_layout_of_structures_using_implicit_member_sizes_and_alignments() {
     check_layout(
-        ExtensionsConfig::default(),
+        Capabilities::default(),
         "
             struct A {                                     //             align(8)  size(24)
                 u: f32,                                    // offset(0)   align(4)  size(4)

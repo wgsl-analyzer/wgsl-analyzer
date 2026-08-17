@@ -2,8 +2,8 @@
 //! is interned (so queries can take it) and stores only the underlying `span::EditionedFileId`.
 
 use salsa::Database;
+pub use syntax::{Capabilities, Edition};
 use syntax::{Diagnostic, ast};
-pub use syntax::{Edition, ExtensionsConfig};
 use vfs::FileId;
 
 use crate::{SourceDatabase, SourceRoot, file_package};

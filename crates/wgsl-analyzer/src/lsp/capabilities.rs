@@ -26,7 +26,7 @@ use crate::{
 #[must_use]
 pub fn server_capabilities(config: &Config) -> ServerCapabilities {
     ServerCapabilities {
-        position_encoding: match config.capabilities().negotiated_encoding() {
+        position_encoding: match config.client_capabilities().negotiated_encoding() {
             PositionEncoding::Utf8 => Some(PositionEncodingKind::UTF8),
             PositionEncoding::Wide(wide) => match wide {
                 WideEncoding::Utf16 => Some(PositionEncodingKind::UTF16),
@@ -45,7 +45,9 @@ pub fn server_capabilities(config: &Config) -> ServerCapabilities {
         completion_provider: Some(CompletionOptions {
             completion_item: Some(ServerCompletionItemOptions {
                 label_details_support: Some(
-                    config.capabilities().completion_label_details_support(),
+                    config
+                        .client_capabilities()
+                        .completion_label_details_support(),
                 ),
             }),
             resolve_provider: None,
@@ -131,7 +133,7 @@ pub fn server_capabilities(config: &Config) -> ServerCapabilities {
             work_done_progress_options: WorkDoneProgressOptions {
                 work_done_progress: None,
             },
-            resolve_provider: Some(config.capabilities().inlay_hints_resolve_provider()),
+            resolve_provider: Some(config.client_capabilities().inlay_hints_resolve_provider()),
         })),
         inline_value_provider: None, // Not relevant
         experimental: None, // TODO https://github.com/wgsl-analyzer/wgsl-analyzer/issues/344

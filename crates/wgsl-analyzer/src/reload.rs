@@ -50,9 +50,9 @@ impl GlobalState {
         let _p = tracing::info_span!("GlobalState::update_configuration").entered();
         let old_config = mem::replace(&mut self.config, Arc::new(config));
 
-        if self.config.extensions() != old_config.extensions() {
+        if self.config.capabilities() != old_config.capabilities() {
             self.analysis_host
-                .update_extensions(self.config.extensions());
+                .update_capabilties(self.config.capabilities());
         }
     }
 

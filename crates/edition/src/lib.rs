@@ -132,11 +132,6 @@ pub struct ExtensionsConfig {
     /// The attribute `subgroup_size` is valid to use in the WGSL module. Otherwise, using `subgroup_size` will result in a shader-creation error. The subgroups will be automatically enabled when `subgroup_size_control` is enabled.
     pub subgroup_size_control: bool,
 
-    // naga capabilities
-    // TODO: capabilities do not belong here https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1421
-    pub shader_int64: bool,
-    pub early_depth_test: bool,
-
     // naga enable extensions
     // TODO: actually implement https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1360
     /// Enables the `wgpu_mesh_shader` extension, native only.
@@ -231,6 +226,14 @@ pub struct ExtensionsConfig {
     pub buffer_view: bool,
 }
 
+// TODO: implement this in the frontend and add more https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1421
+#[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
+pub struct Capabilities {
+    // naga capabilities
+    pub shader_int64: bool,
+    pub early_depth_test: bool,
+}
+
 impl ExtensionsConfig {
     #[must_use]
     pub fn none() -> Self {
@@ -246,11 +249,8 @@ impl ExtensionsConfig {
             subgroups: true,
             primitive_index: true,
             subgroup_size_control: true,
-            shader_int64: true,
 
-            early_depth_test: true,
             wgpu_mesh_shader: true,
-
             wgpu_ray_query: true,
             wgpu_ray_query_vertex_return: true,
             wgpu_ray_tracing_pipelines: true,

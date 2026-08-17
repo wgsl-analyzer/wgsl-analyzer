@@ -1,10 +1,12 @@
+use edition::Capabilities;
 use expect_test::expect;
 
-use crate::tests::check;
+use crate::{check_entrypoint_with_capabilities, tests::check_with_capabilities};
 
 #[test]
-fn extension_not_enabled() {
-    check(
+fn capability_not_present() {
+    check_with_capabilities(
+        Capabilities::default(),
         "
         @fragment
         @early_depth_test(force)
@@ -77,323 +79,308 @@ fn extension_not_enabled() {
 
 #[test]
 fn parse_early_depth_test_force() {
-    check(
+    check_with_capabilities(
+        Capabilities {
+            early_depth_test: true,
+            ..Default::default()
+        },
         "
-        enable EARLY_DEPTH_TEST;
         @fragment
         @early_depth_test(force)
         fn fragment(in: FragmentInput) -> @location(0) vec4<f32> { }
         ",
         expect![[r#"
-            SourceFile@0..162
+            SourceFile@0..129
               Blankspace@0..9 "\n        "
-              EnableDirective@9..33
-                Enable@9..15 "enable"
-                Blankspace@15..16 " "
-                EnableExtensionName@16..32
-                  Identifier@16..32 "EARLY_DEPTH_TEST"
-                Semicolon@32..33 ";"
-              Blankspace@33..42 "\n        "
-              AttributeList@42..84
-                FragmentAttribute@42..51
-                  AttributeOperator@42..43 "@"
-                  Fragment@43..51 "fragment"
-                Blankspace@51..60 "\n        "
-                EarlyDepthTestAttribute@60..84
-                  AttributeOperator@60..61 "@"
-                  EarlyDepthTest@61..77 "early_depth_test"
-                  ParenthesisLeft@77..78 "("
-                  EarlyDepthTestMode@78..83
-                    Force@78..83 "force"
-                  ParenthesisRight@83..84 ")"
-              Blankspace@84..93 "\n        "
-              FunctionDeclaration@93..153
-                Fn@93..95 "fn"
-                Blankspace@95..96 " "
-                Name@96..104
-                  Identifier@96..104 "fragment"
-                FunctionParameters@104..123
-                  ParenthesisLeft@104..105 "("
-                  Parameter@105..122
-                    Name@105..107
-                      Identifier@105..107 "in"
-                    Colon@107..108 ":"
-                    Blankspace@108..109 " "
-                    TypeSpecifier@109..122
-                      Path@109..122
-                        Identifier@109..122 "FragmentInput"
-                  ParenthesisRight@122..123 ")"
-                Blankspace@123..124 " "
-                ReturnType@124..149
-                  Arrow@124..126 "->"
-                  Blankspace@126..127 " "
-                  AttributeList@127..139
-                    LocationAttribute@127..139
-                      AttributeOperator@127..128 "@"
-                      Location@128..136 "location"
-                      ParenthesisLeft@136..137 "("
-                      Literal@137..138
-                        IntLiteral@137..138 "0"
-                      ParenthesisRight@138..139 ")"
-                  Blankspace@139..140 " "
-                  TypeSpecifier@140..149
-                    Path@140..144
-                      Identifier@140..144 "vec4"
-                    TemplateList@144..149
-                      TemplateStart@144..145 "<"
-                      IdentExpression@145..148
-                        Path@145..148
-                          Identifier@145..148 "f32"
-                      TemplateEnd@148..149 ">"
-                Blankspace@149..150 " "
-                CompoundStatement@150..153
-                  BraceLeft@150..151 "{"
-                  Blankspace@151..152 " "
-                  BraceRight@152..153 "}"
-              Blankspace@153..162 "\n        ""#]],
+              AttributeList@9..51
+                FragmentAttribute@9..18
+                  AttributeOperator@9..10 "@"
+                  Fragment@10..18 "fragment"
+                Blankspace@18..27 "\n        "
+                EarlyDepthTestAttribute@27..51
+                  AttributeOperator@27..28 "@"
+                  EarlyDepthTest@28..44 "early_depth_test"
+                  ParenthesisLeft@44..45 "("
+                  EarlyDepthTestMode@45..50
+                    Force@45..50 "force"
+                  ParenthesisRight@50..51 ")"
+              Blankspace@51..60 "\n        "
+              FunctionDeclaration@60..120
+                Fn@60..62 "fn"
+                Blankspace@62..63 " "
+                Name@63..71
+                  Identifier@63..71 "fragment"
+                FunctionParameters@71..90
+                  ParenthesisLeft@71..72 "("
+                  Parameter@72..89
+                    Name@72..74
+                      Identifier@72..74 "in"
+                    Colon@74..75 ":"
+                    Blankspace@75..76 " "
+                    TypeSpecifier@76..89
+                      Path@76..89
+                        Identifier@76..89 "FragmentInput"
+                  ParenthesisRight@89..90 ")"
+                Blankspace@90..91 " "
+                ReturnType@91..116
+                  Arrow@91..93 "->"
+                  Blankspace@93..94 " "
+                  AttributeList@94..106
+                    LocationAttribute@94..106
+                      AttributeOperator@94..95 "@"
+                      Location@95..103 "location"
+                      ParenthesisLeft@103..104 "("
+                      Literal@104..105
+                        IntLiteral@104..105 "0"
+                      ParenthesisRight@105..106 ")"
+                  Blankspace@106..107 " "
+                  TypeSpecifier@107..116
+                    Path@107..111
+                      Identifier@107..111 "vec4"
+                    TemplateList@111..116
+                      TemplateStart@111..112 "<"
+                      IdentExpression@112..115
+                        Path@112..115
+                          Identifier@112..115 "f32"
+                      TemplateEnd@115..116 ">"
+                Blankspace@116..117 " "
+                CompoundStatement@117..120
+                  BraceLeft@117..118 "{"
+                  Blankspace@118..119 " "
+                  BraceRight@119..120 "}"
+              Blankspace@120..129 "\n        ""#]],
     );
 }
 
 #[test]
 fn parse_early_depth_test_greater_equal() {
-    check(
+    check_with_capabilities(
+        Capabilities {
+            early_depth_test: true,
+            ..Default::default()
+        },
         "
-        enable EARLY_DEPTH_TEST;
         @fragment
         @early_depth_test(greater_equal)
         fn fragment(in: FragmentInput) -> @location(0) vec4<f32> { }
         ",
         expect![[r#"
-            SourceFile@0..170
+            SourceFile@0..137
               Blankspace@0..9 "\n        "
-              EnableDirective@9..33
-                Enable@9..15 "enable"
-                Blankspace@15..16 " "
-                EnableExtensionName@16..32
-                  Identifier@16..32 "EARLY_DEPTH_TEST"
-                Semicolon@32..33 ";"
-              Blankspace@33..42 "\n        "
-              AttributeList@42..92
-                FragmentAttribute@42..51
-                  AttributeOperator@42..43 "@"
-                  Fragment@43..51 "fragment"
-                Blankspace@51..60 "\n        "
-                EarlyDepthTestAttribute@60..92
-                  AttributeOperator@60..61 "@"
-                  EarlyDepthTest@61..77 "early_depth_test"
-                  ParenthesisLeft@77..78 "("
-                  EarlyDepthTestMode@78..91
-                    GreaterEqual@78..91 "greater_equal"
-                  ParenthesisRight@91..92 ")"
-              Blankspace@92..101 "\n        "
-              FunctionDeclaration@101..161
-                Fn@101..103 "fn"
-                Blankspace@103..104 " "
-                Name@104..112
-                  Identifier@104..112 "fragment"
-                FunctionParameters@112..131
-                  ParenthesisLeft@112..113 "("
-                  Parameter@113..130
-                    Name@113..115
-                      Identifier@113..115 "in"
-                    Colon@115..116 ":"
-                    Blankspace@116..117 " "
-                    TypeSpecifier@117..130
-                      Path@117..130
-                        Identifier@117..130 "FragmentInput"
-                  ParenthesisRight@130..131 ")"
-                Blankspace@131..132 " "
-                ReturnType@132..157
-                  Arrow@132..134 "->"
-                  Blankspace@134..135 " "
-                  AttributeList@135..147
-                    LocationAttribute@135..147
-                      AttributeOperator@135..136 "@"
-                      Location@136..144 "location"
-                      ParenthesisLeft@144..145 "("
-                      Literal@145..146
-                        IntLiteral@145..146 "0"
-                      ParenthesisRight@146..147 ")"
-                  Blankspace@147..148 " "
-                  TypeSpecifier@148..157
-                    Path@148..152
-                      Identifier@148..152 "vec4"
-                    TemplateList@152..157
-                      TemplateStart@152..153 "<"
-                      IdentExpression@153..156
-                        Path@153..156
-                          Identifier@153..156 "f32"
-                      TemplateEnd@156..157 ">"
-                Blankspace@157..158 " "
-                CompoundStatement@158..161
-                  BraceLeft@158..159 "{"
-                  Blankspace@159..160 " "
-                  BraceRight@160..161 "}"
-              Blankspace@161..170 "\n        ""#]],
+              AttributeList@9..59
+                FragmentAttribute@9..18
+                  AttributeOperator@9..10 "@"
+                  Fragment@10..18 "fragment"
+                Blankspace@18..27 "\n        "
+                EarlyDepthTestAttribute@27..59
+                  AttributeOperator@27..28 "@"
+                  EarlyDepthTest@28..44 "early_depth_test"
+                  ParenthesisLeft@44..45 "("
+                  EarlyDepthTestMode@45..58
+                    GreaterEqual@45..58 "greater_equal"
+                  ParenthesisRight@58..59 ")"
+              Blankspace@59..68 "\n        "
+              FunctionDeclaration@68..128
+                Fn@68..70 "fn"
+                Blankspace@70..71 " "
+                Name@71..79
+                  Identifier@71..79 "fragment"
+                FunctionParameters@79..98
+                  ParenthesisLeft@79..80 "("
+                  Parameter@80..97
+                    Name@80..82
+                      Identifier@80..82 "in"
+                    Colon@82..83 ":"
+                    Blankspace@83..84 " "
+                    TypeSpecifier@84..97
+                      Path@84..97
+                        Identifier@84..97 "FragmentInput"
+                  ParenthesisRight@97..98 ")"
+                Blankspace@98..99 " "
+                ReturnType@99..124
+                  Arrow@99..101 "->"
+                  Blankspace@101..102 " "
+                  AttributeList@102..114
+                    LocationAttribute@102..114
+                      AttributeOperator@102..103 "@"
+                      Location@103..111 "location"
+                      ParenthesisLeft@111..112 "("
+                      Literal@112..113
+                        IntLiteral@112..113 "0"
+                      ParenthesisRight@113..114 ")"
+                  Blankspace@114..115 " "
+                  TypeSpecifier@115..124
+                    Path@115..119
+                      Identifier@115..119 "vec4"
+                    TemplateList@119..124
+                      TemplateStart@119..120 "<"
+                      IdentExpression@120..123
+                        Path@120..123
+                          Identifier@120..123 "f32"
+                      TemplateEnd@123..124 ">"
+                Blankspace@124..125 " "
+                CompoundStatement@125..128
+                  BraceLeft@125..126 "{"
+                  Blankspace@126..127 " "
+                  BraceRight@127..128 "}"
+              Blankspace@128..137 "\n        ""#]],
     );
 }
 
 #[test]
 fn parse_early_depth_test_less_equal() {
-    check(
+    check_with_capabilities(
+        Capabilities {
+            early_depth_test: true,
+            ..Default::default()
+        },
         "
-        enable EARLY_DEPTH_TEST;
         @fragment
         @early_depth_test(less_equal)
         fn fragment(in: FragmentInput) -> @location(0) vec4<f32> { }
         ",
         expect![[r#"
-            SourceFile@0..167
+            SourceFile@0..134
               Blankspace@0..9 "\n        "
-              EnableDirective@9..33
-                Enable@9..15 "enable"
-                Blankspace@15..16 " "
-                EnableExtensionName@16..32
-                  Identifier@16..32 "EARLY_DEPTH_TEST"
-                Semicolon@32..33 ";"
-              Blankspace@33..42 "\n        "
-              AttributeList@42..89
-                FragmentAttribute@42..51
-                  AttributeOperator@42..43 "@"
-                  Fragment@43..51 "fragment"
-                Blankspace@51..60 "\n        "
-                EarlyDepthTestAttribute@60..89
-                  AttributeOperator@60..61 "@"
-                  EarlyDepthTest@61..77 "early_depth_test"
-                  ParenthesisLeft@77..78 "("
-                  EarlyDepthTestMode@78..88
-                    LessEqual@78..88 "less_equal"
-                  ParenthesisRight@88..89 ")"
-              Blankspace@89..98 "\n        "
-              FunctionDeclaration@98..158
-                Fn@98..100 "fn"
-                Blankspace@100..101 " "
-                Name@101..109
-                  Identifier@101..109 "fragment"
-                FunctionParameters@109..128
-                  ParenthesisLeft@109..110 "("
-                  Parameter@110..127
-                    Name@110..112
-                      Identifier@110..112 "in"
-                    Colon@112..113 ":"
-                    Blankspace@113..114 " "
-                    TypeSpecifier@114..127
-                      Path@114..127
-                        Identifier@114..127 "FragmentInput"
-                  ParenthesisRight@127..128 ")"
-                Blankspace@128..129 " "
-                ReturnType@129..154
-                  Arrow@129..131 "->"
-                  Blankspace@131..132 " "
-                  AttributeList@132..144
-                    LocationAttribute@132..144
-                      AttributeOperator@132..133 "@"
-                      Location@133..141 "location"
-                      ParenthesisLeft@141..142 "("
-                      Literal@142..143
-                        IntLiteral@142..143 "0"
-                      ParenthesisRight@143..144 ")"
-                  Blankspace@144..145 " "
-                  TypeSpecifier@145..154
-                    Path@145..149
-                      Identifier@145..149 "vec4"
-                    TemplateList@149..154
-                      TemplateStart@149..150 "<"
-                      IdentExpression@150..153
-                        Path@150..153
-                          Identifier@150..153 "f32"
-                      TemplateEnd@153..154 ">"
-                Blankspace@154..155 " "
-                CompoundStatement@155..158
-                  BraceLeft@155..156 "{"
-                  Blankspace@156..157 " "
-                  BraceRight@157..158 "}"
-              Blankspace@158..167 "\n        ""#]],
+              AttributeList@9..56
+                FragmentAttribute@9..18
+                  AttributeOperator@9..10 "@"
+                  Fragment@10..18 "fragment"
+                Blankspace@18..27 "\n        "
+                EarlyDepthTestAttribute@27..56
+                  AttributeOperator@27..28 "@"
+                  EarlyDepthTest@28..44 "early_depth_test"
+                  ParenthesisLeft@44..45 "("
+                  EarlyDepthTestMode@45..55
+                    LessEqual@45..55 "less_equal"
+                  ParenthesisRight@55..56 ")"
+              Blankspace@56..65 "\n        "
+              FunctionDeclaration@65..125
+                Fn@65..67 "fn"
+                Blankspace@67..68 " "
+                Name@68..76
+                  Identifier@68..76 "fragment"
+                FunctionParameters@76..95
+                  ParenthesisLeft@76..77 "("
+                  Parameter@77..94
+                    Name@77..79
+                      Identifier@77..79 "in"
+                    Colon@79..80 ":"
+                    Blankspace@80..81 " "
+                    TypeSpecifier@81..94
+                      Path@81..94
+                        Identifier@81..94 "FragmentInput"
+                  ParenthesisRight@94..95 ")"
+                Blankspace@95..96 " "
+                ReturnType@96..121
+                  Arrow@96..98 "->"
+                  Blankspace@98..99 " "
+                  AttributeList@99..111
+                    LocationAttribute@99..111
+                      AttributeOperator@99..100 "@"
+                      Location@100..108 "location"
+                      ParenthesisLeft@108..109 "("
+                      Literal@109..110
+                        IntLiteral@109..110 "0"
+                      ParenthesisRight@110..111 ")"
+                  Blankspace@111..112 " "
+                  TypeSpecifier@112..121
+                    Path@112..116
+                      Identifier@112..116 "vec4"
+                    TemplateList@116..121
+                      TemplateStart@116..117 "<"
+                      IdentExpression@117..120
+                        Path@117..120
+                          Identifier@117..120 "f32"
+                      TemplateEnd@120..121 ">"
+                Blankspace@121..122 " "
+                CompoundStatement@122..125
+                  BraceLeft@122..123 "{"
+                  Blankspace@123..124 " "
+                  BraceRight@124..125 "}"
+              Blankspace@125..134 "\n        ""#]],
     );
 }
 
 #[test]
 fn parse_early_depth_test_unchanged() {
-    check(
+    check_with_capabilities(
+        Capabilities {
+            early_depth_test: true,
+            ..Default::default()
+        },
         "
-        enable EARLY_DEPTH_TEST;
         @fragment
         @early_depth_test(unchanged)
         fn fragment(in: FragmentInput) -> @location(0) vec4<f32> { }
         ",
         expect![[r#"
-            SourceFile@0..166
+            SourceFile@0..133
               Blankspace@0..9 "\n        "
-              EnableDirective@9..33
-                Enable@9..15 "enable"
-                Blankspace@15..16 " "
-                EnableExtensionName@16..32
-                  Identifier@16..32 "EARLY_DEPTH_TEST"
-                Semicolon@32..33 ";"
-              Blankspace@33..42 "\n        "
-              AttributeList@42..88
-                FragmentAttribute@42..51
-                  AttributeOperator@42..43 "@"
-                  Fragment@43..51 "fragment"
-                Blankspace@51..60 "\n        "
-                EarlyDepthTestAttribute@60..88
-                  AttributeOperator@60..61 "@"
-                  EarlyDepthTest@61..77 "early_depth_test"
-                  ParenthesisLeft@77..78 "("
-                  EarlyDepthTestMode@78..87
-                    Unchanged@78..87 "unchanged"
-                  ParenthesisRight@87..88 ")"
-              Blankspace@88..97 "\n        "
-              FunctionDeclaration@97..157
-                Fn@97..99 "fn"
-                Blankspace@99..100 " "
-                Name@100..108
-                  Identifier@100..108 "fragment"
-                FunctionParameters@108..127
-                  ParenthesisLeft@108..109 "("
-                  Parameter@109..126
-                    Name@109..111
-                      Identifier@109..111 "in"
-                    Colon@111..112 ":"
-                    Blankspace@112..113 " "
-                    TypeSpecifier@113..126
-                      Path@113..126
-                        Identifier@113..126 "FragmentInput"
-                  ParenthesisRight@126..127 ")"
-                Blankspace@127..128 " "
-                ReturnType@128..153
-                  Arrow@128..130 "->"
-                  Blankspace@130..131 " "
-                  AttributeList@131..143
-                    LocationAttribute@131..143
-                      AttributeOperator@131..132 "@"
-                      Location@132..140 "location"
-                      ParenthesisLeft@140..141 "("
-                      Literal@141..142
-                        IntLiteral@141..142 "0"
-                      ParenthesisRight@142..143 ")"
-                  Blankspace@143..144 " "
-                  TypeSpecifier@144..153
-                    Path@144..148
-                      Identifier@144..148 "vec4"
-                    TemplateList@148..153
-                      TemplateStart@148..149 "<"
-                      IdentExpression@149..152
-                        Path@149..152
-                          Identifier@149..152 "f32"
-                      TemplateEnd@152..153 ">"
-                Blankspace@153..154 " "
-                CompoundStatement@154..157
-                  BraceLeft@154..155 "{"
-                  Blankspace@155..156 " "
-                  BraceRight@156..157 "}"
-              Blankspace@157..166 "\n        ""#]],
+              AttributeList@9..55
+                FragmentAttribute@9..18
+                  AttributeOperator@9..10 "@"
+                  Fragment@10..18 "fragment"
+                Blankspace@18..27 "\n        "
+                EarlyDepthTestAttribute@27..55
+                  AttributeOperator@27..28 "@"
+                  EarlyDepthTest@28..44 "early_depth_test"
+                  ParenthesisLeft@44..45 "("
+                  EarlyDepthTestMode@45..54
+                    Unchanged@45..54 "unchanged"
+                  ParenthesisRight@54..55 ")"
+              Blankspace@55..64 "\n        "
+              FunctionDeclaration@64..124
+                Fn@64..66 "fn"
+                Blankspace@66..67 " "
+                Name@67..75
+                  Identifier@67..75 "fragment"
+                FunctionParameters@75..94
+                  ParenthesisLeft@75..76 "("
+                  Parameter@76..93
+                    Name@76..78
+                      Identifier@76..78 "in"
+                    Colon@78..79 ":"
+                    Blankspace@79..80 " "
+                    TypeSpecifier@80..93
+                      Path@80..93
+                        Identifier@80..93 "FragmentInput"
+                  ParenthesisRight@93..94 ")"
+                Blankspace@94..95 " "
+                ReturnType@95..120
+                  Arrow@95..97 "->"
+                  Blankspace@97..98 " "
+                  AttributeList@98..110
+                    LocationAttribute@98..110
+                      AttributeOperator@98..99 "@"
+                      Location@99..107 "location"
+                      ParenthesisLeft@107..108 "("
+                      Literal@108..109
+                        IntLiteral@108..109 "0"
+                      ParenthesisRight@109..110 ")"
+                  Blankspace@110..111 " "
+                  TypeSpecifier@111..120
+                    Path@111..115
+                      Identifier@111..115 "vec4"
+                    TemplateList@115..120
+                      TemplateStart@115..116 "<"
+                      IdentExpression@116..119
+                        Path@116..119
+                          Identifier@116..119 "f32"
+                      TemplateEnd@119..120 ">"
+                Blankspace@120..121 " "
+                CompoundStatement@121..124
+                  BraceLeft@121..122 "{"
+                  Blankspace@122..123 " "
+                  BraceRight@123..124 "}"
+              Blankspace@124..133 "\n        ""#]],
     );
 }
 
 #[test]
 fn parse_words() {
-    check(
+    check_with_capabilities(
+        Capabilities::default(),
         "
         var early_depth_test: i32 = 0;
         var less_equal: i32 = 0;

@@ -1,15 +1,10 @@
 use expect_test::expect;
-use syntax::ExtensionsConfig;
 
 use crate::tests::check_infer;
 
 #[test]
 fn determinant() {
     check_infer(
-        ExtensionsConfig {
-            f16: true,
-            ..Default::default()
-        },
         "
 enable f16;
 fn foo() {
@@ -56,7 +51,6 @@ fn foo() {
 #[test]
 fn sign() {
     check_infer(
-        ExtensionsConfig::default(),
         "
 fn foo() {
     let unsigned_integer_32 = sign(1u);
