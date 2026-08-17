@@ -10,7 +10,7 @@ mod operators;
 mod simple;
 use std::fmt::Write as _;
 
-use base_db::{EditionedFileId, ExtensionsConfigInput, Intern as _, Lookup as _};
+use base_db::{CapabilitiesInput, EditionedFileId, Intern as _, Lookup as _};
 use expect_test::Expect;
 use hir_def::{
     HasSource as _,
@@ -26,7 +26,7 @@ use hir_def::{
     type_specifier::TypeSpecifierId,
 };
 use itertools::Itertools as _;
-use syntax::{AstNode as _, Diagnostic, ExtensionsConfig, SyntaxNode};
+use syntax::{AstNode as _, Capabilities, Diagnostic, SyntaxNode};
 use test_fixture::WithFixture as _;
 
 use crate::{
@@ -45,11 +45,11 @@ use crate::{
 };
 
 fn infer(
-    extensions: ExtensionsConfig,
+    capabilities: Capabilities,
     wa_fixture: &str,
 ) -> String {
     let (mut db, files) = TestDatabase::with_many_files(wa_fixture);
-    ExtensionsConfigInput::update_extensions(&mut db, extensions);
+    CapabilitiesInput::update_capabilities(&mut db, capabilities);
     let mut buffer = String::new();
 
     for (index, file_id) in files.into_iter().enumerate() {
@@ -721,13 +721,21 @@ fn ellipsize(
     text
 }
 
-#[expect(clippy::needless_pass_by_value, reason = "Matches expect! macro")]
+#[expect(clippy::semicolon_if_nothing_returned, reason = "wrapper")]
 fn check_infer(
-    extensions: ExtensionsConfig,
     wa_fixture: &str,
     expect: Expect,
 ) {
-    let mut actual = infer(extensions, wa_fixture);
+    check_infer_with_capabilities(Capabilities::default(), wa_fixture, expect)
+}
+
+#[expect(clippy::needless_pass_by_value, reason = "Matches expect! macro")]
+fn check_infer_with_capabilities(
+    capabilities: Capabilities,
+    wa_fixture: &str,
+    expect: Expect,
+) {
+    let mut actual = infer(capabilities, wa_fixture);
     actual.push('\n');
     expect.assert_eq(&actual);
 }

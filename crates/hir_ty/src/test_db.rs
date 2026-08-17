@@ -1,11 +1,11 @@
 use std::{fmt, panic, sync::Mutex};
 
 use base_db::{
-    ExtensionsConfigInput, FileSourceRootInput, FileText, Nonce, SourceDatabase, SourceRootId,
+    CapabilitiesInput, FileSourceRootInput, FileText, Nonce, SourceDatabase, SourceRootId,
     SourceRootInput, input::SourceRoot, set_all_packages_with_durability,
 };
 use salsa::{Database as _, Durability};
-use syntax::ExtensionsConfig;
+use syntax::Capabilities;
 use triomphe::Arc;
 
 #[salsa_macros::db]
@@ -33,7 +33,7 @@ impl Default for TestDatabase {
             events,
             nonce: Nonce::new(),
         };
-        ExtensionsConfigInput::update_extensions(&mut db, ExtensionsConfig::none());
+        CapabilitiesInput::update_capabilities(&mut db, Capabilities::default());
         // This needs to be here otherwise the first `Change` will panic.
         set_all_packages_with_durability(&mut db, [], Durability::LOW);
         db

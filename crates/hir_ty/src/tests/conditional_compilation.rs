@@ -1,12 +1,10 @@
 use expect_test::expect;
-use syntax::ExtensionsConfig;
 
 use crate::tests::check_infer;
 
 #[test]
 fn module_compound_if_true() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         fn f() {} @if(true) { const_assert true; fn foo() {} struct bar { x: u32 } }
         ",
@@ -19,7 +17,6 @@ fn module_compound_if_true() {
 #[test]
 fn module_compound_if_false() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         fn f() {} @if(false) { const_assert true; fn foo() {} struct bar { x: u32 } }
         ",
@@ -32,7 +29,6 @@ fn module_compound_if_false() {
 #[test]
 fn module_compound_if_false_elif_true() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         @if(false) { const foo: u32 = 0; } @elif(true) { const bar: u32 = 0; }
         ",
@@ -48,7 +44,6 @@ fn module_compound_if_false_elif_true() {
 #[test]
 fn module_compound_if_true_compound_elif_true() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         @if(true) { const foo: u32 = 0; } @elif(true) { const bar: u32 = 0; }
         ",
@@ -64,7 +59,6 @@ fn module_compound_if_true_compound_elif_true() {
 #[test]
 fn function_compound_nested() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         fn foo() { @if(true) { var x = 0; { @if(true) x++; } @if(true) { x--; } } }
         ",
@@ -80,7 +74,6 @@ fn function_compound_nested() {
 #[test]
 fn module_if_false_compound_elif_true() {
     check_infer(
-        ExtensionsConfig::default(),
         "@if(false) const foo: u32 = 0; @elif(true) { const bar: u32 = 0; }",
         expect![[r#"
             17..20 'foo': u32
@@ -94,7 +87,6 @@ fn module_if_false_compound_elif_true() {
 #[test]
 fn module_if_true_compound_elif_true() {
     check_infer(
-        ExtensionsConfig::default(),
         "@if(true) const foo: u32 = 0; @elif(true) { const bar: u32 = 0; }",
         expect![[r#"
             16..19 'foo': u32
@@ -108,7 +100,6 @@ fn module_if_true_compound_elif_true() {
 #[test]
 fn module_compound_else_hit() {
     check_infer(
-        ExtensionsConfig::default(),
         "@if(false) { const foo: u32 = 0; } @elif(false) { const bar: u32 = 0; } @else { const baz: u32 = 0; }",
         expect![[r#"
             19..22 'foo': u32
@@ -124,7 +115,6 @@ fn module_compound_else_hit() {
 #[test]
 fn module_compound_else_skipped() {
     check_infer(
-        ExtensionsConfig::default(),
         "@if(false) { const foo: u32 = 0; } @elif(true) { const bar: u32 = 0; } @else { const baz: u32 = 0; }",
         expect![[r#"
             19..22 'foo': u32
@@ -140,7 +130,6 @@ fn module_compound_else_skipped() {
 #[test]
 fn module_compound_noop() {
     check_infer(
-        ExtensionsConfig::default(),
         "{ fn foo() {} }",
         expect![[r#"
 
@@ -151,7 +140,6 @@ fn module_compound_noop() {
 #[test]
 fn module_compound_nested_noop() {
     check_infer(
-        ExtensionsConfig::default(),
         "@if (true) { fn foo() {} { @if(true) fn bar() {} } }",
         expect![[r#"
 
@@ -162,7 +150,6 @@ fn module_compound_nested_noop() {
 #[test]
 fn module_compound_nested_if() {
     check_infer(
-        ExtensionsConfig::default(),
         "@if(true) { fn foo() {} @if(true) { fn bar() {} } }",
         expect![[r#"
 
@@ -173,7 +160,6 @@ fn module_compound_nested_if() {
 #[test]
 fn module_compound_nested_elif_hit() {
     check_infer(
-        ExtensionsConfig::default(),
         "@if(true) { @if(false) const foo: u32 = 0; @elif(true) { const bar: u32 = 0; } } @else { const baz: u32 = 0; }",
         expect![[r#"
             29..32 'foo': u32
@@ -189,7 +175,6 @@ fn module_compound_nested_elif_hit() {
 #[test]
 fn module_compound_nested_elif_skipped() {
     check_infer(
-        ExtensionsConfig::default(),
         "@if(true) { @if(true) const foo: u32 = 0; @elif(true) { const bar: u32 = 0; } } @else { const baz: u32 = 0; }",
         expect![[r#"
             28..31 'foo': u32
@@ -205,7 +190,6 @@ fn module_compound_nested_elif_skipped() {
 #[test]
 fn module_compound_nested_else_hit() {
     check_infer(
-        ExtensionsConfig::default(),
         "@if(true) { @if(false) const foo: u32 = 0; @else { const bar: u32 = 0; } } @else { const baz: u32 = 0; }",
         expect![[r#"
             29..32 'foo': u32
@@ -221,7 +205,6 @@ fn module_compound_nested_else_hit() {
 #[test]
 fn module_compound_nested_else_skipped() {
     check_infer(
-        ExtensionsConfig::default(),
         "@if(true) { @if(true) const foo: u32 = 0; @else { const bar: u32 = 0; } } @else { const baz: u32 = 0; }",
         expect![[r#"
             28..31 'foo': u32
@@ -237,7 +220,6 @@ fn module_compound_nested_else_skipped() {
 #[test]
 fn module_compound_shadow() {
     check_infer(
-        ExtensionsConfig::default(),
         "{ const foo: u32 = 0; } const foo: u32 = 1;",
         expect![[r#"
             8..11 'foo': u32
@@ -251,7 +233,6 @@ fn module_compound_shadow() {
 #[test]
 fn function_compound_if_true() {
     check_infer(
-        ExtensionsConfig::default(),
         "fn f() { @if(true) { const_assert true; const x: u32 = 0; } }",
         expect![[r#"
             34..38 'true': bool
@@ -264,7 +245,6 @@ fn function_compound_if_true() {
 #[test]
 fn function_compound_if_false() {
     check_infer(
-        ExtensionsConfig::default(),
         "fn f() { @if(false) { const_assert true; const x: u32 = 0; } }",
         expect![[r#"
             35..39 'true': bool
@@ -277,7 +257,6 @@ fn function_compound_if_false() {
 #[test]
 fn function_compound_if_false_compound_elif_true() {
     check_infer(
-        ExtensionsConfig::default(),
         "fn f() { @if(false) { const foo: u32 = 0; } @elif(true) { const bar: u32 = 0; } }",
         expect![[r#"
             28..31 'foo': u32
@@ -291,7 +270,6 @@ fn function_compound_if_false_compound_elif_true() {
 #[test]
 fn function_compound_if_true_compound_elif_true() {
     check_infer(
-        ExtensionsConfig::default(),
         "fn f() { @if(true) { const foo: u32 = 0; } @elif(true) { const bar: u32 = 0; } }",
         expect![[r#"
             27..30 'foo': u32
@@ -305,7 +283,6 @@ fn function_compound_if_true_compound_elif_true() {
 #[test]
 fn function_if_false_compound_elif_true() {
     check_infer(
-        ExtensionsConfig::default(),
         "fn f() { @if(false) const foo: u32 = 0; @elif(true) { const bar: u32 = 0; } }",
         expect![[r#"
             26..29 'foo': u32
@@ -319,7 +296,6 @@ fn function_if_false_compound_elif_true() {
 #[test]
 fn function_if_true_compound_elif_true() {
     check_infer(
-        ExtensionsConfig::default(),
         "fn f() { @if(true) const foo: u32 = 0; @elif(true) { const bar: u32 = 0; } }",
         expect![[r#"
             25..28 'foo': u32
@@ -333,7 +309,6 @@ fn function_if_true_compound_elif_true() {
 #[test]
 fn function_compound_else_hit() {
     check_infer(
-        ExtensionsConfig::default(),
         "fn f() { @if(false) { const foo: u32 = 0; } @elif(false) { const bar: u32 = 0; } @else { const baz: u32 = 0; } }",
         expect![[r#"
             28..31 'foo': u32
@@ -349,7 +324,6 @@ fn function_compound_else_hit() {
 #[test]
 fn function_compound_else_skipped() {
     check_infer(
-        ExtensionsConfig::default(),
         "fn f() { @if(false) { const foo: u32 = 0; } @elif(true) { const bar: u32 = 0; } @else { const baz: u32 = 0; } }",
         expect![[r#"
             28..31 'foo': u32
@@ -365,7 +339,6 @@ fn function_compound_else_skipped() {
 #[test]
 fn function_compound_nested_if() {
     check_infer(
-        ExtensionsConfig::default(),
         "fn f() { @if(true) { const foo: u32 = 0; @if(true) { const bar: u32 = 0; } } }",
         expect![[r#"
             27..30 'foo': u32
@@ -379,7 +352,6 @@ fn function_compound_nested_if() {
 #[test]
 fn function_compound_nested_elif_hit() {
     check_infer(
-        ExtensionsConfig::default(),
         "fn f() { @if(true) { @if(false) const foo: u32 = 0; @elif(true) { const bar: u32 = 0; } } @else { const baz: u32 = 0; } }",
         expect![[r#"
             38..41 'foo': u32
@@ -395,7 +367,6 @@ fn function_compound_nested_elif_hit() {
 #[test]
 fn function_compound_nested_elif_skipped() {
     check_infer(
-        ExtensionsConfig::default(),
         "fn f() { @if(true) { @if(true) const foo: u32 = 0; @elif(true) { const bar: u32 = 0; } } @else { const baz: u32 = 0; } }",
         expect![[r#"
             37..40 'foo': u32
@@ -411,7 +382,6 @@ fn function_compound_nested_elif_skipped() {
 #[test]
 fn function_compound_nested_else_hit() {
     check_infer(
-        ExtensionsConfig::default(),
         "fn f() { @if(true) { @if(false) const foo: u32 = 0; @else { const bar: u32 = 0; } } @else { const baz: u32 = 0; } }",
         expect![[r#"
             38..41 'foo': u32
@@ -427,7 +397,6 @@ fn function_compound_nested_else_hit() {
 #[test]
 fn function_compound_nested_else_skipped() {
     check_infer(
-        ExtensionsConfig::default(),
         "fn f() { @if(true) { @if(true) const foo: u32 = 0; @else { const bar: u32 = 0; } } @else { const baz: u32 = 0; } }",
         expect![[r#"
             37..40 'foo': u32

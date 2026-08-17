@@ -244,7 +244,11 @@ pub(crate) fn handle_signature_help(
         &snap,
         &parameters.text_document_position_params
     )?);
-    let active_signature = if snap.config.capabilities().signature_help_context_support() {
+    let active_signature = if snap
+        .config
+        .client_capabilities()
+        .signature_help_context_support()
+    {
         parameters
             .context
             .expect("we checked that it is supported")

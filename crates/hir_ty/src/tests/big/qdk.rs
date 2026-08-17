@@ -1,5 +1,4 @@
 use expect_test::expect;
-use syntax::ExtensionsConfig;
 
 use crate::tests::check_infer;
 
@@ -11,7 +10,6 @@ use crate::tests::check_infer;
 )]
 fn microsoft_qdk() {
     check_infer(
-        ExtensionsConfig::default(),
         r#"
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.

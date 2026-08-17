@@ -1,12 +1,10 @@
 use expect_test::expect;
-use syntax::ExtensionsConfig;
 
 use crate::tests::check_infer;
 
 #[test]
 fn minus() {
     check_infer(
-        ExtensionsConfig::default(),
         "
 fn foo() {
     let t = 1-1;

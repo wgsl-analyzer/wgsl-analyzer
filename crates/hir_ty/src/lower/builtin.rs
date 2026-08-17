@@ -1,6 +1,6 @@
 use std::str::FromStr as _;
 
-use base_db::{ExtensionsConfigInput, Intern as _};
+use base_db::{CapabilitiesInput, Intern as _};
 use hir_def::{expression::ExpressionId, item_tree::Name};
 use wgsl_types::{
     Instance,
@@ -85,11 +85,11 @@ impl TypeLoweringContext<'_> {
                 self.expect_no_template(template_parameters);
                 TypeKind::Scalar(ScalarType::U32)
             },
-            "i64" if ExtensionsConfigInput::get_extensions(self.db).shader_int64 => {
+            "i64" if CapabilitiesInput::get_capabilities(self.db).shader_int64 => {
                 self.expect_no_template(template_parameters);
                 TypeKind::Scalar(ScalarType::I64)
             },
-            "u64" if ExtensionsConfigInput::get_extensions(self.db).shader_int64 => {
+            "u64" if CapabilitiesInput::get_capabilities(self.db).shader_int64 => {
                 self.expect_no_template(template_parameters);
                 TypeKind::Scalar(ScalarType::U64)
             },
@@ -866,7 +866,7 @@ impl TypeLoweringContext<'_> {
                     // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/677
                     // Naga supports more types (f32, i64, u64) here
                     let possible_types =
-                        if ExtensionsConfigInput::get_extensions(self.db).shader_int64 {
+                        if CapabilitiesInput::get_capabilities(self.db).shader_int64 {
                             "i32, u32, i64, or u64".to_owned()
                         } else {
                             "i32 or u32".to_owned()

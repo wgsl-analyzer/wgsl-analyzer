@@ -1,17 +1,13 @@
 #![expect(clippy::too_many_lines, reason = "snapshot test data")]
 
 use expect_test::expect;
-use syntax::ExtensionsConfig;
+use syntax::Capabilities;
 
-use crate::tests::check_infer;
+use crate::tests::{check_infer, check_infer_with_capabilities};
 
 #[test]
 fn bitcast_16() {
     check_infer(
-        ExtensionsConfig {
-            f16: true,
-            ..Default::default()
-        },
         "
 enable f16;
 fn foo() {
@@ -29,10 +25,6 @@ fn foo() {
 #[test]
 fn bitcast_32() {
     check_infer(
-        ExtensionsConfig {
-            f16: true,
-            ..Default::default()
-        },
         "
 enable f16;
 fn foo() {
@@ -107,9 +99,8 @@ fn foo() {
 
 #[test]
 fn bitcast_N() {
-    check_infer(
-        ExtensionsConfig {
-            f16: true,
+    check_infer_with_capabilities(
+        Capabilities {
             shader_int64: true,
             ..Default::default()
         },
@@ -293,9 +284,8 @@ fn foo() {
 
 #[test]
 fn bitcast_64() {
-    check_infer(
-        ExtensionsConfig {
-            f16: true,
+    check_infer_with_capabilities(
+        Capabilities {
             shader_int64: true,
             ..Default::default()
         },
@@ -419,8 +409,8 @@ fn foo() {
 
 #[test]
 fn bitcast_concretization() {
-    check_infer(
-        ExtensionsConfig {
+    check_infer_with_capabilities(
+        Capabilities {
             shader_int64: true,
             ..Default::default()
         },
@@ -459,8 +449,8 @@ fn foo() {
 
 #[test]
 fn bitcast_128() {
-    check_infer(
-        ExtensionsConfig {
+    check_infer_with_capabilities(
+        Capabilities {
             shader_int64: true,
             ..Default::default()
         },

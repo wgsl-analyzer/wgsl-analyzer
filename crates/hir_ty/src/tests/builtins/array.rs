@@ -1,16 +1,12 @@
 use expect_test::expect;
-use syntax::ExtensionsConfig;
 
 use crate::tests::check_infer;
 
 #[test]
 fn arrayLength() {
     check_infer(
-        ExtensionsConfig {
-            f16: true,
-            ..Default::default()
-        },
         "
+enable f16;
 struct S {
     data: array<vec4<f32>>,
 };
@@ -33,18 +29,18 @@ fn f() {
 }
 ",
         expect![[r#"
-            84..96 'storage_read': ref<storage, S, read>
-            149..159 'storage_rw': ref<storage, S, read_write>
-            182..198 'runtim...adonly': u32
-            201..232 'arrayL....data)': u32
-            213..231 '&stora...d.data': ptr<storage, array<vec4<f32>>, read>
-            214..226 'storage_read': ref<storage, S, read>
-            214..231 'storag...d.data': ref<storage, array<vec4<f32>>, read>
-            242..259 'runtim...dwrite': u32
-            262..291 'arrayL....data)': u32
-            274..290 '&stora...w.data': ptr<storage, array<vec4<f32>>, read_write>
-            275..285 'storage_rw': ref<storage, S, read_write>
-            275..290 'storage_rw.data': ref<storage, array<vec4<f32>>, read_write>
+            96..108 'storage_read': ref<storage, S, read>
+            161..171 'storage_rw': ref<storage, S, read_write>
+            194..210 'runtim...adonly': u32
+            213..244 'arrayL....data)': u32
+            225..243 '&stora...d.data': ptr<storage, array<vec4<f32>>, read>
+            226..238 'storage_read': ref<storage, S, read>
+            226..243 'storag...d.data': ref<storage, array<vec4<f32>>, read>
+            254..271 'runtim...dwrite': u32
+            274..303 'arrayL....data)': u32
+            286..302 '&stora...w.data': ptr<storage, array<vec4<f32>>, read_write>
+            287..297 'storage_rw': ref<storage, S, read_write>
+            287..302 'storage_rw.data': ref<storage, array<vec4<f32>>, read_write>
         "#]],
     );
 }

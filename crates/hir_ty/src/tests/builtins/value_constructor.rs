@@ -1,14 +1,13 @@
 #![expect(clippy::too_many_lines, reason = "snapshot test data")]
 
 use expect_test::expect;
-use syntax::ExtensionsConfig;
+use syntax::Capabilities;
 
-use crate::tests::check_infer;
+use crate::tests::{check_infer, check_infer_with_capabilities};
 
 #[test]
 fn array() {
     check_infer(
-        ExtensionsConfig::default(),
         "
 fn foo() {
     array<i32, 1>(1);
@@ -27,7 +26,6 @@ fn foo() {
 #[test]
 fn bool() {
     check_infer(
-        ExtensionsConfig::default(),
         "
 fn foo() {
     bool(1);
@@ -43,10 +41,6 @@ fn foo() {
 #[test]
 fn f16() {
     check_infer(
-        ExtensionsConfig {
-            f16: true,
-            ..Default::default()
-        },
         "
 enable f16;
 fn foo() {
@@ -63,7 +57,6 @@ fn foo() {
 #[test]
 fn f32() {
     check_infer(
-        ExtensionsConfig::default(),
         "
 fn foo() {
     f32(1);
@@ -79,7 +72,6 @@ fn foo() {
 #[test]
 fn i32() {
     check_infer(
-        ExtensionsConfig::default(),
         "
 fn foo() {
     i32(1);
@@ -94,8 +86,8 @@ fn foo() {
 
 #[test]
 fn u64() {
-    check_infer(
-        ExtensionsConfig {
+    check_infer_with_capabilities(
+        Capabilities {
             shader_int64: true,
             ..Default::default()
         },
@@ -112,8 +104,8 @@ fn foo() {
 
 #[test]
 fn i64() {
-    check_infer(
-        ExtensionsConfig {
+    check_infer_with_capabilities(
+        Capabilities {
             shader_int64: true,
             ..Default::default()
         },
@@ -132,7 +124,6 @@ fn foo() {
 #[test]
 fn mat2x2() {
     check_infer(
-        ExtensionsConfig::default(),
         "
 fn foo() {
     let abs_abs_abs_abs = mat2x2(1, 2, 3, 4);
@@ -262,7 +253,6 @@ fn foo() {
 #[test]
 fn mat2x3() {
     check_infer(
-        ExtensionsConfig::default(),
         "
 fn foo() {
     let abs_abs_abs_abs_abs_abs = mat2x3(1, 2, 3, 4, 5, 6);
@@ -413,7 +403,6 @@ fn foo() {
 #[test]
 fn mat2x4() {
     check_infer(
-        ExtensionsConfig::default(),
         "
 fn foo() {
     let abs_abs_abs_abs_abs_abs_abs_abs = mat2x4(1, 2, 3, 4, 5, 6, 7, 8);
@@ -584,7 +573,6 @@ fn foo() {
 #[test]
 fn mat3x2() {
     check_infer(
-        ExtensionsConfig::default(),
         "
 fn foo() {
     let abs_abs_abs_abs_abs_abs = mat3x2(1, 2, 3, 4, 5, 6);
@@ -740,7 +728,6 @@ fn foo() {
 #[test]
 fn mat3x3() {
     check_infer(
-        ExtensionsConfig::default(),
         "
 fn foo() {
     let abs_abs_abs_abs_abs_abs_abs_abs_abs = mat3x3(1, 2, 3, 4, 5, 6, 7, 8, 9);
@@ -926,7 +913,6 @@ fn foo() {
 #[test]
 fn mat3x4() {
     check_infer(
-        ExtensionsConfig::default(),
         "
 fn foo() {
     let abs_abs_abs_abs_abs_abs_abs_abs_abs_abs_abs_abs = mat3x4(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12);
@@ -1142,7 +1128,6 @@ fn foo() {
 #[test]
 fn mat4x2() {
     check_infer(
-        ExtensionsConfig::default(),
         "
 fn foo() {
     let abs_abs_abs_abs_abs_abs_abs_abs = mat4x2(1, 2, 3, 4, 5, 6, 7, 8);
@@ -1323,7 +1308,6 @@ fn foo() {
 #[test]
 fn mat4x3() {
     check_infer(
-        ExtensionsConfig::default(),
         "
 fn foo() {
     let abs_abs_abs_abs_abs_abs_abs_abs_abs_abs_abs_abs = mat4x3(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12);
@@ -1544,7 +1528,6 @@ fn foo() {
 #[test]
 fn mat4x4() {
     check_infer(
-        ExtensionsConfig::default(),
         "
 fn foo() {
     let abs_abs_abs_abs_abs_abs_abs_abs_abs_abs_abs_abs_abs_abs_abs_abs = mat4x4(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
@@ -1805,7 +1788,6 @@ fn foo() {
 #[test]
 fn vec2() {
     check_infer(
-        ExtensionsConfig::default(),
         "
 fn foo() {
     let vec2_abstract_float = vec2(1.0);
@@ -1825,9 +1807,8 @@ fn foo() {
 
 #[test]
 fn vec2t() {
-    check_infer(
-        ExtensionsConfig {
-            f16: true,
+    check_infer_with_capabilities(
+        Capabilities {
             shader_int64: true,
             ..Default::default()
         },

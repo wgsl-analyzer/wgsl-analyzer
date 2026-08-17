@@ -5,9 +5,8 @@ use std::{fmt, panic};
 pub use base_db;
 pub use base_db::FileId;
 use base_db::{
-    ExtensionsConfig, ExtensionsConfigInput, FileSourceRootInput, FileText, Files, Nonce,
-    SourceDatabase, SourceRoot, SourceRootId, SourceRootInput, change::Change,
-    set_all_packages_with_durability,
+    Capabilities, CapabilitiesInput, FileSourceRootInput, FileText, Files, Nonce, SourceDatabase,
+    SourceRoot, SourceRootId, SourceRootInput, change::Change, set_all_packages_with_durability,
 };
 use line_index::LineIndex;
 pub use rustc_hash::{FxHashMap, FxHashSet, FxHasher};
@@ -142,7 +141,7 @@ impl RootDatabase {
         // database.set_proc_macros_with_durability(Default::default(), Durability::MEDIUM);
         // database.set_local_roots_with_durability(Default::default(), Durability::MEDIUM);
         // database.set_library_roots_with_durability(Default::default(), Durability::MEDIUM);
-        ExtensionsConfigInput::update_extensions(&mut db, ExtensionsConfig::default());
+        CapabilitiesInput::update_capabilities(&mut db, Capabilities::default());
         db.update_base_query_lru_capacities(lru_capacity);
         db
     }

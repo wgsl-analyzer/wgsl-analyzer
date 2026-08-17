@@ -1,17 +1,10 @@
-#![expect(clippy::too_many_lines, reason = "snapshot test data")]
-
 use expect_test::expect;
-use syntax::ExtensionsConfig;
 
 use crate::tests::check_infer;
 
 #[test]
 fn abs() {
     check_infer(
-        ExtensionsConfig {
-            f16: true,
-            ..Default::default()
-        },
         "
 enable f16;
 fn foo() {
@@ -80,10 +73,6 @@ fn foo() {
 #[test]
 fn acos() {
     check_infer(
-        ExtensionsConfig {
-            f16: true,
-            ..Default::default()
-        },
         "
 enable f16;
 fn foo() {
@@ -125,10 +114,6 @@ fn foo() {
 #[test]
 fn acosh() {
     check_infer(
-        ExtensionsConfig {
-            f16: true,
-            ..Default::default()
-        },
         "
 enable f16;
 fn foo() {
@@ -170,10 +155,6 @@ fn foo() {
 #[test]
 fn asin() {
     check_infer(
-        ExtensionsConfig {
-            f16: true,
-            ..Default::default()
-        },
         "
 enable f16;
 fn foo() {
@@ -215,10 +196,6 @@ fn foo() {
 #[test]
 fn asinh() {
     check_infer(
-        ExtensionsConfig {
-            f16: true,
-            ..Default::default()
-        },
         "
 enable f16;
 fn foo() {
@@ -260,10 +237,6 @@ fn foo() {
 #[test]
 fn atan() {
     check_infer(
-        ExtensionsConfig {
-            f16: true,
-            ..Default::default()
-        },
         "
 enable f16;
 fn foo() {
@@ -305,10 +278,6 @@ fn foo() {
 #[test]
 fn atanh() {
     check_infer(
-        ExtensionsConfig {
-            f16: true,
-            ..Default::default()
-        },
         "
 enable f16;
 fn foo() {
@@ -350,10 +319,6 @@ fn foo() {
 #[test]
 fn atan2() {
     check_infer(
-        ExtensionsConfig {
-            f16: true,
-            ..Default::default()
-        },
         "
 enable f16;
 fn foo() {
@@ -404,10 +369,6 @@ fn foo() {
 #[test]
 fn ceil() {
     check_infer(
-        ExtensionsConfig {
-            f16: true,
-            ..Default::default()
-        },
         "
 enable f16;
 fn foo() {
@@ -449,10 +410,6 @@ fn foo() {
 #[test]
 fn clamp() {
     check_infer(
-        ExtensionsConfig {
-            f16: true,
-            ..Default::default()
-        },
         "
 enable f16;
 fn foo() {
@@ -557,10 +514,6 @@ fn foo() {
 #[test]
 fn cos() {
     check_infer(
-        ExtensionsConfig {
-            f16: true,
-            ..Default::default()
-        },
         "
 enable f16;
 fn foo() {
@@ -602,10 +555,6 @@ fn foo() {
 #[test]
 fn cosh() {
     check_infer(
-        ExtensionsConfig {
-            f16: true,
-            ..Default::default()
-        },
         "
 enable f16;
 fn foo() {
@@ -647,7 +596,6 @@ fn foo() {
 #[test]
 fn countLeadingZeros() {
     check_infer(
-        ExtensionsConfig::default(),
         "
 fn foo() {
     let signed_integer_32 = countLeadingZeros(1i);
@@ -679,7 +627,6 @@ fn foo() {
 #[test]
 fn countOneBits() {
     check_infer(
-        ExtensionsConfig::default(),
         "
 fn foo() {
     let signed_integer_32 = countOneBits(1i);
@@ -711,7 +658,6 @@ fn foo() {
 #[test]
 fn countTrailingZeros() {
     check_infer(
-        ExtensionsConfig::default(),
         "
 fn foo() {
     let signed_integer_32 = countTrailingZeros(1i);
@@ -743,10 +689,6 @@ fn foo() {
 #[test]
 fn cross() {
     check_infer(
-        ExtensionsConfig {
-            f16: true,
-            ..Default::default()
-        },
         "
 enable f16;
 fn foo() {
@@ -781,10 +723,6 @@ fn foo() {
 #[test]
 fn degrees() {
     check_infer(
-        ExtensionsConfig {
-            f16: true,
-            ..Default::default()
-        },
         "
 enable f16;
 fn foo() {
@@ -826,10 +764,6 @@ fn foo() {
 #[test]
 fn determinant() {
     check_infer(
-        ExtensionsConfig {
-            f16: true,
-            ..Default::default()
-        },
         "
 enable f16;
 fn foo() {
@@ -867,10 +801,6 @@ fn foo() {
 #[test]
 fn distance() {
     check_infer(
-        ExtensionsConfig {
-            f16: true,
-            ..Default::default()
-        },
         "
 enable f16;
 fn foo() {
@@ -921,10 +851,6 @@ fn foo() {
 #[test]
 fn dot4U8Packed() {
     check_infer(
-        ExtensionsConfig {
-            f16: true,
-            ..Default::default()
-        },
         "
 enable f16;
 fn foo() {
@@ -943,7 +869,6 @@ fn foo() {
 #[test]
 fn dot4I8Packed() {
     check_infer(
-        ExtensionsConfig::default(),
         "
 fn foo() {
     let signed_integer_32 = dot4I8Packed(1u, 1u);
@@ -961,10 +886,6 @@ fn foo() {
 #[test]
 fn exp() {
     check_infer(
-        ExtensionsConfig {
-            f16: true,
-            ..Default::default()
-        },
         "
 enable f16;
 fn foo() {
@@ -1006,10 +927,6 @@ fn foo() {
 #[test]
 fn exp2() {
     check_infer(
-        ExtensionsConfig {
-            f16: true,
-            ..Default::default()
-        },
         "
 enable f16;
 fn foo() {
@@ -1051,7 +968,6 @@ fn foo() {
 #[test]
 fn extractBits_signed() {
     check_infer(
-        ExtensionsConfig::default(),
         "
 fn foo() {
     let signed_integer_32 = extractBits(1i, 0, 0);
@@ -1077,7 +993,6 @@ fn foo() {
 #[test]
 fn extractBits_unsigned() {
     check_infer(
-        ExtensionsConfig::default(),
         "
 fn foo() {
     let unsigned_integer_32 = extractBits(1u, 0, 0);
@@ -1103,10 +1018,6 @@ fn foo() {
 #[test]
 fn faceForward() {
     check_infer(
-        ExtensionsConfig {
-            f16: true,
-            ..Default::default()
-        },
         "
 enable f16;
 fn foo() {
@@ -1147,7 +1058,6 @@ fn foo() {
 #[test]
 fn firstLeadingBit_signed() {
     check_infer(
-        ExtensionsConfig::default(),
         "
 fn foo() {
     let signed_integer_32 = firstLeadingBit(1i);
@@ -1169,7 +1079,6 @@ fn foo() {
 #[test]
 fn firstLeadingBit_unsigned() {
     check_infer(
-        ExtensionsConfig::default(),
         "
 fn foo() {
     let unsigned_integer_32 = firstLeadingBit(1u);
@@ -1191,7 +1100,6 @@ fn foo() {
 #[test]
 fn firstTrailingBit_signed() {
     check_infer(
-        ExtensionsConfig::default(),
         "
 fn foo() {
     let signed_integer_32 = firstTrailingBit(1i);
@@ -1213,7 +1121,6 @@ fn foo() {
 #[test]
 fn firstTrailingBit_unsigned() {
     check_infer(
-        ExtensionsConfig::default(),
         "
 fn foo() {
     let unsigned_integer_32 = firstTrailingBit(1u);
@@ -1235,10 +1142,6 @@ fn foo() {
 #[test]
 fn floor() {
     check_infer(
-        ExtensionsConfig {
-            f16: true,
-            ..Default::default()
-        },
         "
 enable f16;
 fn foo() {
@@ -1280,10 +1183,6 @@ fn foo() {
 #[test]
 fn fma() {
     check_infer(
-        ExtensionsConfig {
-            f16: true,
-            ..Default::default()
-        },
         "
 enable f16;
 fn foo() {
@@ -1343,10 +1242,6 @@ fn foo() {
 #[test]
 fn fract() {
     check_infer(
-        ExtensionsConfig {
-            f16: true,
-            ..Default::default()
-        },
         "
 enable f16;
 fn foo() {
@@ -1388,10 +1283,6 @@ fn foo() {
 #[test]
 fn frexp() {
     check_infer(
-        ExtensionsConfig {
-            f16: true,
-            ..Default::default()
-        },
         "
 enable f16;
 fn foo() {
@@ -1481,7 +1372,6 @@ fn foo() {
 #[test]
 fn insertBits() {
     check_infer(
-        ExtensionsConfig::default(),
         "
 fn foo() {
     let signed_integer_32 = insertBits(1i, 1i, 0u, 0u);
@@ -1527,10 +1417,6 @@ fn foo() {
 #[test]
 fn inverseSqrt() {
     check_infer(
-        ExtensionsConfig {
-            f16: true,
-            ..Default::default()
-        },
         "
 enable f16;
 fn foo() {
@@ -1572,10 +1458,6 @@ fn foo() {
 #[test]
 fn ldexp() {
     check_infer(
-        ExtensionsConfig {
-            f16: true,
-            ..Default::default()
-        },
         "
 enable f16;
 fn foo() {
@@ -1639,10 +1521,6 @@ fn foo() {
 #[test]
 fn length() {
     check_infer(
-        ExtensionsConfig {
-            f16: true,
-            ..Default::default()
-        },
         "
 enable f16;
 fn foo() {
@@ -1684,10 +1562,6 @@ fn foo() {
 #[test]
 fn log() {
     check_infer(
-        ExtensionsConfig {
-            f16: true,
-            ..Default::default()
-        },
         "
 enable f16;
 fn foo() {
@@ -1729,10 +1603,6 @@ fn foo() {
 #[test]
 fn log2() {
     check_infer(
-        ExtensionsConfig {
-            f16: true,
-            ..Default::default()
-        },
         "
 enable f16;
 fn foo() {
@@ -1774,10 +1644,6 @@ fn foo() {
 #[test]
 fn modf() {
     check_infer(
-        ExtensionsConfig {
-            f16: true,
-            ..Default::default()
-        },
         "
 enable f16;
 fn foo() {
@@ -1867,10 +1733,6 @@ fn foo() {
 #[test]
 fn max() {
     check_infer(
-        ExtensionsConfig {
-            f16: true,
-            ..Default::default()
-        },
         "
 enable f16;
 fn foo() {
@@ -1957,10 +1819,6 @@ fn foo() {
 #[test]
 fn min() {
     check_infer(
-        ExtensionsConfig {
-            f16: true,
-            ..Default::default()
-        },
         "
 enable f16;
 fn foo() {
@@ -2047,10 +1905,6 @@ fn foo() {
 #[test]
 fn mix() {
     check_infer(
-        ExtensionsConfig {
-            f16: true,
-            ..Default::default()
-        },
         "
 enable f16;
 fn foo() {
@@ -2110,10 +1964,6 @@ fn foo() {
 #[test]
 fn normalize() {
     check_infer(
-        ExtensionsConfig {
-            f16: true,
-            ..Default::default()
-        },
         "
 enable f16;
 fn foo() {
@@ -2142,10 +1992,6 @@ fn foo() {
 #[test]
 fn pow() {
     check_infer(
-        ExtensionsConfig {
-            f16: true,
-            ..Default::default()
-        },
         "
 enable f16;
 fn foo() {
@@ -2196,7 +2042,6 @@ fn foo() {
 #[test]
 fn quantizeToF16() {
     check_infer(
-        ExtensionsConfig::default(),
         "
 fn foo() {
     let float_32 = quantizeToF16(1.0f);
@@ -2218,10 +2063,6 @@ fn foo() {
 #[test]
 fn radians() {
     check_infer(
-        ExtensionsConfig {
-            f16: true,
-            ..Default::default()
-        },
         "
 enable f16;
 fn foo() {
@@ -2263,10 +2104,6 @@ fn foo() {
 #[test]
 fn reflect() {
     check_infer(
-        ExtensionsConfig {
-            f16: true,
-            ..Default::default()
-        },
         "
 enable f16;
 fn foo() {
@@ -2301,10 +2138,6 @@ fn foo() {
 #[test]
 fn refract() {
     check_infer(
-        ExtensionsConfig {
-            f16: true,
-            ..Default::default()
-        },
         "
 enable f16;
 fn foo() {
@@ -2342,7 +2175,6 @@ fn foo() {
 #[test]
 fn reverseBits() {
     check_infer(
-        ExtensionsConfig::default(),
         "
 fn foo() {
     let signed_integer_32 = reverseBits(1i);
@@ -2374,10 +2206,6 @@ fn foo() {
 #[test]
 fn round() {
     check_infer(
-        ExtensionsConfig {
-            f16: true,
-            ..Default::default()
-        },
         "
 enable f16;
 fn foo() {
@@ -2419,10 +2247,6 @@ fn foo() {
 #[test]
 fn saturate() {
     check_infer(
-        ExtensionsConfig {
-            f16: true,
-            ..Default::default()
-        },
         "
 enable f16;
 fn foo() {
@@ -2464,10 +2288,6 @@ fn foo() {
 #[test]
 fn sign() {
     check_infer(
-        ExtensionsConfig {
-            f16: true,
-            ..Default::default()
-        },
         "
 enable f16;
 fn foo() {
@@ -2527,10 +2347,6 @@ fn foo() {
 #[test]
 fn sin() {
     check_infer(
-        ExtensionsConfig {
-            f16: true,
-            ..Default::default()
-        },
         "
 enable f16;
 fn foo() {
@@ -2572,10 +2388,6 @@ fn foo() {
 #[test]
 fn sinh() {
     check_infer(
-        ExtensionsConfig {
-            f16: true,
-            ..Default::default()
-        },
         "
 enable f16;
 fn foo() {
@@ -2617,10 +2429,6 @@ fn foo() {
 #[test]
 fn smoothstep() {
     check_infer(
-        ExtensionsConfig {
-            f16: true,
-            ..Default::default()
-        },
         "
 enable f16;
 fn foo() {
@@ -2680,10 +2488,6 @@ fn foo() {
 #[test]
 fn sqrt() {
     check_infer(
-        ExtensionsConfig {
-            f16: true,
-            ..Default::default()
-        },
         "
 enable f16;
 fn foo() {
@@ -2725,10 +2529,6 @@ fn foo() {
 #[test]
 fn step() {
     check_infer(
-        ExtensionsConfig {
-            f16: true,
-            ..Default::default()
-        },
         "
 enable f16;
 fn foo() {
@@ -2779,10 +2579,6 @@ fn foo() {
 #[test]
 fn tan() {
     check_infer(
-        ExtensionsConfig {
-            f16: true,
-            ..Default::default()
-        },
         "
 enable f16;
 fn foo() {
@@ -2824,10 +2620,6 @@ fn foo() {
 #[test]
 fn tanh() {
     check_infer(
-        ExtensionsConfig {
-            f16: true,
-            ..Default::default()
-        },
         "
 enable f16;
 fn foo() {
@@ -2869,10 +2661,6 @@ fn foo() {
 #[test]
 fn transpose() {
     check_infer(
-        ExtensionsConfig {
-            f16: true,
-            ..Default::default()
-        },
         "
 enable f16;
 fn foo() {
@@ -2910,10 +2698,6 @@ fn foo() {
 #[test]
 fn trunc() {
     check_infer(
-        ExtensionsConfig {
-            f16: true,
-            ..Default::default()
-        },
         "
 enable f16;
 fn foo() {

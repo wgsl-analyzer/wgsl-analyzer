@@ -1,12 +1,10 @@
 use expect_test::expect;
-use syntax::ExtensionsConfig;
 
 use crate::tests::check_infer;
 
 #[test]
 fn atomicCompareExchangeWeak() {
     check_infer(
-        ExtensionsConfig::default(),
         "
 var<storage, read_write> buffer: atomic<bool>;
 fn foo() {

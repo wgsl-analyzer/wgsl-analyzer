@@ -1,12 +1,10 @@
 use expect_test::expect;
-use syntax::ExtensionsConfig;
 
 use crate::tests::check_infer;
 
 #[test]
 fn import_statement_simple() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         //- /package.wesl edition:2026_pre
         import package::foo::bar;
@@ -35,7 +33,6 @@ fn import_statement_simple() {
 #[test]
 fn inline_import_simple() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         //- /package.wesl edition:2026_pre
         const bar = true;
@@ -61,7 +58,6 @@ fn inline_import_simple() {
 #[test]
 fn import_super() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         //- /package.wesl edition:2026_pre
         const foo = 4;
@@ -97,7 +93,6 @@ fn import_super() {
 #[test]
 fn import_statement_cycle_allowed() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         //- /package.wesl edition:2026_pre
         import package::foo::bar;
@@ -120,7 +115,6 @@ fn import_statement_cycle_allowed() {
 #[test]
 fn import_statement_cycle_error() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         //- /package.wesl edition:2026_pre
         import package::foo::bar;
@@ -141,7 +135,6 @@ fn import_statement_cycle_error() {
 #[test]
 fn import_statement_inline() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         //- /package.wesl edition:2026_pre
         fn main() {
@@ -170,7 +163,6 @@ fn import_statement_inline() {
 #[test]
 fn cannot_import_imported_item() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         //- /package.wesl edition:2026_pre
         const b = package::foo::A; // this should fail, because A is not public
@@ -197,7 +189,6 @@ fn cannot_import_imported_item() {
 #[test]
 fn import_statement_multiple_items() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         //- /package.wesl edition:2026_pre
         import package::{foo, foo::bar, foo::utils::bar as boolBar};
@@ -232,7 +223,6 @@ fn import_statement_multiple_items() {
 #[test]
 fn import_statement_self_shadowing() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         //- /package.wesl edition:2026_pre
         import package::shadows;
@@ -258,7 +248,6 @@ fn import_statement_self_shadowing() {
 #[test]
 fn import_statement_package_and_local_same_name() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         //- /package.wesl edition:2026_pre
         import package::foo;
@@ -285,7 +274,6 @@ fn import_statement_package_and_local_same_name() {
 #[test]
 fn import_statement_local_shadows() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         //- /package.wesl edition:2026_pre
         import package::foo::bar;
@@ -315,7 +303,6 @@ fn import_statement_local_shadows() {
 #[test]
 fn import_statement_local_uses_and_shadows() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         //- /package.wesl edition:2026_pre
         import package::foo::bar;
@@ -344,7 +331,6 @@ fn import_statement_local_uses_and_shadows() {
 #[test]
 fn import_statement_shadows_submodule() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         //- /package.wesl edition:2026_pre
         import package::foo::bar;
@@ -372,7 +358,6 @@ fn import_statement_shadows_submodule() {
 #[test]
 fn import_statement_shadows_predeclared() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         //- /package.wesl edition:2026_pre
         import package::foo::{bar as vec2f, vec3f};
@@ -395,7 +380,6 @@ fn import_statement_shadows_predeclared() {
 #[test]
 fn import_escapes_root() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         //- /foo.wesl edition:2026_pre
         const_assert(super::super::MyType(3) == true);
@@ -413,7 +397,6 @@ fn import_escapes_root() {
 #[test]
 fn import_nonexistent_module() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         //- /foo.wesl edition:2026_pre
         struct Bar {
@@ -434,7 +417,6 @@ fn import_nonexistent_module() {
 #[test]
 fn invalid_import_starting_with_item() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         //- /foo.wesl edition:2026_pre
         const bar = 5;
@@ -456,7 +438,6 @@ fn invalid_import_starting_with_item() {
 #[test]
 fn mod_path_super_display() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         //- /package.wesl edition:2026_pre
         const Foo = f32(1.0);
@@ -481,7 +462,6 @@ fn mod_path_super_display() {
 #[test]
 fn import_with_basic_dependency() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         //- /bar/package.wesl package:bar edition:2026_pre
         const myValue = 3;
@@ -502,7 +482,6 @@ fn import_with_basic_dependency() {
 #[test]
 fn import_with_nested_dependency() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         //- /package.wesl package:my_shaders edition:2026_pre dependencies:nested
         import nested;
