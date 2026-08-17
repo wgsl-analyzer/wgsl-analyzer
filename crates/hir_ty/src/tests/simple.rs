@@ -2097,3 +2097,36 @@ fn foo() {
         "#]],
     );
 }
+
+#[test]
+fn atomic_assignment2() {
+    check_infer(
+        "
+@fragment
+fn shade_it() -> @location(0) vec4<f32> {
+  _ = &buf;
+  atomicStore(&buf.counter, 1u);
+  return vec4<f32>();
+}
+
+struct BufferContents {
+    counter: atomic<u32>,
+    data: array<vec4<f32>>
+}
+
+@group(0) @binding(0) var<storage, read_write> buf: BufferContents;
+
+        ",
+        expect![[r#"
+            58..62 '&buf': ptr<storage, BufferContents, read_write>
+            59..62 'buf': ref<storage, BufferContents, read_write>
+            66..95 'atomic...r, 1u)': [error]
+            78..90 '&buf.counter': ptr<storage, atomic<u32>, read_write>
+            79..82 'buf': ref<storage, BufferContents, read_write>
+            79..90 'buf.counter': ref<storage, atomic<u32>, read_write>
+            92..94 '1u': u32
+            106..117 'vec4<f32>()': vec4<f32>
+            249..252 'buf': ref<storage, BufferContents, read_write>
+        "#]],
+    );
+}
