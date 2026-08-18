@@ -2332,7 +2332,7 @@ fn foo() {
 }
 
 #[test]
-fn array_mising_template() {
+fn array_missing_template() {
     check_infer(
         "
 fn foo() {
