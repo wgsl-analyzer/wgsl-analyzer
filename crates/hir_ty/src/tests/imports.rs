@@ -125,9 +125,9 @@ fn import_statement_cycle_error() {
         const bar = output;
         ",
         expect![[r#"
-            [EditionedFileId(Id(380))] CyclicType { name: Name("output"), range: 26..45 } in Body
+            26..45: cyclic definition for type `output`
             ---
-            [EditionedFileId(Id(381))] CyclicType { name: Name("bar"), range: 24..43 } in Body
+            24..43: cyclic definition for type `bar`
         "#]],
     );
 }

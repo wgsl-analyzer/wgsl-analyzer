@@ -11,7 +11,7 @@ mod operators;
 mod simple;
 use std::fmt::Write as _;
 
-use base_db::{CapabilitiesInput, EditionedFileId, Intern as _, Lookup as _};
+use base_db::{CapabilitiesInput, EditionedFileId, Intern as _, Lookup as _, TextRange};
 use expect_test::Expect;
 use hir_def::{
     HasSource as _,
@@ -202,9 +202,14 @@ impl<'db> InferPrinter<'db> {
             InferenceDiagnosticKind::AssignmentNotAReference { actual, left_side } => {
                 self.print_assignment_not_a_reference(source_map, buffer, *actual, *left_side);
             },
-            InferenceDiagnosticKind::CyclicType { .. }
-            | InferenceDiagnosticKind::WgslError { .. } => {
-                self.print_todo_bad_diagnostic(diagnostic, buffer);
+            InferenceDiagnosticKind::CyclicType { name, range } => {
+                self.print_cyclic_type(buffer, name, *range);
+            },
+            InferenceDiagnosticKind::WgslError {
+                expression,
+                message,
+            } => {
+                self.print_wgsl_error(source_map, buffer, *expression, message);
             },
             InferenceDiagnosticKind::UnexpectedTemplateArgument { expression } => {
                 self.print_unexpected_template_argument(source_map, buffer, *expression);
@@ -401,17 +406,37 @@ impl<'db> InferPrinter<'db> {
         .unwrap();
     }
 
-    fn print_todo_bad_diagnostic(
+    #[expect(clippy::unused_self, reason = "intended API")]
+    fn print_cyclic_type(
         &self,
-        diagnostic: &InferenceDiagnostic,
         buffer: &mut String,
+        name: &Name,
+        range: TextRange,
     ) {
         writeln!(
             buffer,
-            "[{:?}] {:?} in {:?}",
-            self.file_id, diagnostic.kind, diagnostic.source
+            "{range:?}: cyclic definition for type `{}`",
+            name.as_str()
         )
         .unwrap();
+    }
+
+    fn print_wgsl_error(
+        &self,
+        source_map: &ExpressionSourceMap,
+        buffer: &mut String,
+        expression: ExpressionId,
+        message: &str,
+    ) {
+        let node = match source_map.expression_to_source(expression) {
+            Ok(sp) => sp.to_node(&self.root).syntax().clone(),
+            Err(SyntheticSyntax) => return,
+        };
+        let (range, text) = (
+            node.text_range(),
+            node.text().to_string().replace('\n', " "),
+        );
+        writeln!(buffer, "{range:?} '{}': {message}", ellipsize(text, 15)).unwrap();
     }
 
     fn print_no_such_field(

@@ -383,7 +383,7 @@ fn address_of_not_reference() {
             34..39 'x_ptr': [error]
             42..44 '&x': [error]
             43..44 'x': i32
-            [EditionedFileId(Id(300))] WgslError { expression: Idx::<Expression>(1), message: "cannot use unary operator `&` on type `i32`" } in Body
+            43..44 'x': cannot use unary operator `&` on type `i32`
         "#]],
     );
 }
@@ -1557,7 +1557,7 @@ fn no_builtin_overload() {
             8..10 '1f': f32
             8..22 '1f + mat2x2f()': [error]
             13..22 'mat2x2f()': mat2x2<f32>
-            [EditionedFileId(Id(300))] WgslError { expression: Idx::<Expression>(2), message: "cannot use binary operator `+` with operands `f32` and `mat2x2<f32>`" } in Body
+            8..22 '1f + mat2x2f()': cannot use binary operator `+` with operands `f32` and `mat2x2<f32>`
         "#]],
     );
 }
@@ -1572,7 +1572,7 @@ fn deref_not_a_pointer() {
             4..5 'x': ref<handle, [error], read>
             8..11 '*1f': [error]
             9..11 '1f': f32
-            [EditionedFileId(Id(300))] WgslError { expression: Idx::<Expression>(0), message: "cannot use unary operator `*` on type `f32`" } in Body
+            9..11 '1f': cannot use unary operator `*` on type `f32`
         "#]],
     );
 }
@@ -1662,8 +1662,8 @@ fn add_refs_and_ptrs() {
             398..403 'a_ptr': ptr<function, i32, read_write>
             398..411 'a_ptr + b_ref': [error]
             406..411 'b_ref': ref<function, i32, read_write>
-            [EditionedFileId(Id(300))] WgslError { expression: Idx::<Expression>(11), message: "cannot use binary operator `+` with operands `ptr<function, i32, read_write>` and `ptr<function, i32, read_write>`" } in Body
-            [EditionedFileId(Id(300))] WgslError { expression: Idx::<Expression>(14), message: "cannot use binary operator `+` with operands `ptr<function, i32, read_write>` and `i32`" } in Body
+            367..380 'a_ptr + b_ptr': cannot use binary operator `+` with operands `ptr<function, i32, read_write>` and `ptr<function, i32, read_write>`
+            398..411 'a_ptr + b_ref': cannot use binary operator `+` with operands `ptr<function, i32, read_write>` and `i32`
         "#]],
     );
 }
@@ -1773,7 +1773,7 @@ fn to_wgsl_types_builtin_struct() {
             42..43 'y': [error]
             46..53 'modf(x)': [error]
             51..52 'x': __modf_result_abstract
-            [EditionedFileId(Id(300))] WgslError { expression: Idx::<Expression>(3), message: "`modf` expects a float scalar or vector argument" } in Body
+            46..53 'modf(x)': `modf` expects a float scalar or vector argument
         "#]],
     );
 }
@@ -1842,7 +1842,7 @@ fn not_convertible() {
             23..25 '1i': i32
             23..32 '1i * 1.0f': [error]
             28..32 '1.0f': f32
-            [EditionedFileId(Id(300))] WgslError { expression: Idx::<Expression>(2), message: "cannot use binary operator `*` with operands `i32` and `f32`" } in Body
+            23..32 '1i * 1.0f': cannot use binary operator `*` with operands `i32` and `f32`
         "#]],
     );
 }
@@ -1970,8 +1970,8 @@ var x = y;
 var y = x;
         ",
         expect![[r#"
-            [EditionedFileId(Id(300))] CyclicType { name: Name("x"), range: 0..10 } in Body
-            [EditionedFileId(Id(300))] CyclicType { name: Name("y"), range: 11..21 } in Body
+            0..10: cyclic definition for type `x`
+            11..21: cyclic definition for type `y`
         "#]],
     );
 }
@@ -2017,8 +2017,8 @@ alias Foo = Bar;
 alias Bar = Foo;
         ",
         expect![[r#"
-            [EditionedFileId(Id(300))] CyclicType { name: Name("Foo"), range: 0..16 } in Signature
-            [EditionedFileId(Id(300))] CyclicType { name: Name("Bar"), range: 17..33 } in Signature
+            0..16: cyclic definition for type `Foo`
+            17..33: cyclic definition for type `Bar`
         "#]],
     );
 }
@@ -2084,7 +2084,7 @@ fn foo() {
             35..36 'x': vec2<f32>
             39..51 'vec2<f32>(y)': vec2<f32>
             49..50 'y': [error]
-            [EditionedFileId(Id(300))] WgslError { expression: Idx::<Expression>(0), message: "cannot use unary operator `&` on type `AbstractInt`" } in Body
+            24..25 '0': cannot use unary operator `&` on type `AbstractInt`
         "#]],
     );
 }
@@ -2105,7 +2105,7 @@ fn foo() {
             35..36 'x': [error]
             39..46 'vec2(y)': [error]
             44..45 'y': [error]
-            [EditionedFileId(Id(300))] WgslError { expression: Idx::<Expression>(0), message: "cannot use unary operator `&` on type `AbstractInt`" } in Body
+            24..25 '0': cannot use unary operator `&` on type `AbstractInt`
         "#]],
     );
 }
