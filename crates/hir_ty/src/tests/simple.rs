@@ -2294,3 +2294,75 @@ struct BufferContents {
         "#]],
     );
 }
+
+#[test]
+fn array_i32_template_parameter() {
+    check_infer(
+        "
+fn foo() {
+    let x = array<f32, 1i>(1);
+}
+
+
+        ",
+        expect![[r#"
+            19..20 'x': array<f32, 1>
+            23..40 'array<...1i>(1)': array<f32, 1>
+            38..39 '1': integer
+        "#]],
+    );
+}
+
+#[test]
+fn array_u32_template_parameter() {
+    check_infer(
+        "
+fn foo() {
+    let x = array<f32, 1u>(1);
+}
+
+
+        ",
+        expect![[r#"
+            19..20 'x': array<f32, 1>
+            23..40 'array<...1u>(1)': array<f32, 1>
+            38..39 '1': integer
+        "#]],
+    );
+}
+
+#[test]
+fn array_mising_template() {
+    check_infer(
+        "
+fn foo() {
+    let x = array<1>(1);
+}
+        ",
+        expect![[r#"
+            19..20 'x': array<[error]>
+            23..34 'array<1>(1)': array<[error]>
+            32..33 '1': integer
+            29..30 '1': unexpected template argument, expected a type, actual: 1
+            23..34 'array<1>(1)': type `array<[error]>` is not constructible
+        "#]],
+    );
+}
+
+#[test]
+fn array_template_second_not_instance() {
+    check_infer(
+        "
+fn foo() {
+    let x = array<1, f32>(1);
+}
+        ",
+        expect![[r#"
+            19..20 'x': [error]
+            23..39 'array<...32>(1)': [error]
+            37..38 '1': integer
+            29..30 '1': unexpected template argument, expected a type, actual: 1
+            32..35 'f32': unexpected template argument, expected an instance, actual: f32
+        "#]],
+    );
+}
