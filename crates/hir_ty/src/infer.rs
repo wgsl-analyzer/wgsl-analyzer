@@ -1693,7 +1693,7 @@ impl<'db> InferenceContext<'db> {
         r#type: Type,
         arguments: &[(ExpressionId, Type)],
     ) -> Type {
-        if !r#type.is_constructible(self.db) {
+        if !r#type.is_constructible(self.db) && !r#type.is_err(self.db) {
             self.push_diagnostic(
                 store.store_source,
                 InferenceDiagnosticKind::NotConstructible { expression, r#type },

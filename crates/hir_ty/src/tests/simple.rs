@@ -2344,7 +2344,6 @@ fn foo() {
             23..34 'array<1>(1)': array<[error]>
             32..33 '1': integer
             29..30 '1': unexpected template argument, expected a type, actual: 1
-            23..34 'array<1>(1)': type `array<[error]>` is not constructible
         "#]],
     );
 }

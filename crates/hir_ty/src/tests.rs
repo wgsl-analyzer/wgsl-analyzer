@@ -186,6 +186,7 @@ impl<'db> InferPrinter<'db> {
         writeln!(buffer, "{range:?} '{}': {pretty}", ellipsize(text, 15)).unwrap();
     }
 
+    #[expect(clippy::too_many_lines, reason = "long match")]
     fn print_diagnostic(
         &self,
         diagnostic: &InferenceDiagnostic,
@@ -198,9 +199,17 @@ impl<'db> InferPrinter<'db> {
                 expected,
                 actual,
             } => {
+                debug_assert!(
+                    !actual.is_err(self.db),
+                    "don't give a diagnostic for downstream issues"
+                );
                 self.print_type_mismatch(source_map, buffer, *expression, *expected, *actual);
             },
             InferenceDiagnosticKind::AssignmentNotAReference { actual, left_side } => {
+                debug_assert!(
+                    !actual.is_err(self.db),
+                    "don't give a diagnostic for downstream issues"
+                );
                 self.print_assignment_not_a_reference(source_map, buffer, *actual, *left_side);
             },
             InferenceDiagnosticKind::CyclicType { name, range } => {
@@ -238,6 +247,10 @@ impl<'db> InferPrinter<'db> {
                 parameters,
                 r#type,
             } => {
+                debug_assert!(
+                    !r#type.is_err(self.db),
+                    "don't give a diagnostic for downstream issues"
+                );
                 self.print_no_constructor(source_map, buffer, *expression, parameters, *r#type);
             },
             InferenceDiagnosticKind::NoOverload {
@@ -252,18 +265,34 @@ impl<'db> InferPrinter<'db> {
                 name,
                 r#type,
             } => {
+                debug_assert!(
+                    !r#type.is_err(self.db),
+                    "don't give a diagnostic for downstream issues"
+                );
                 self.print_no_such_field(source_map, buffer, *expression, name, *r#type);
             },
             InferenceDiagnosticKind::StoreTypeMustBeStorable { actual, expression } => {
+                debug_assert!(
+                    !actual.is_err(self.db),
+                    "don't give a diagnostic for downstream issues"
+                );
                 self.print_store_type_must_be_storable(source_map, buffer, *actual, *expression);
             },
             InferenceDiagnosticKind::ArrayAccessInvalidType { expression, r#type } => {
+                debug_assert!(
+                    !r#type.is_err(self.db),
+                    "don't give a diagnostic for downstream issues"
+                );
                 self.print_array_access_invalid(source_map, buffer, *expression, *r#type);
             },
             InferenceDiagnosticKind::UnexpectedReturnValue { actual, expression } => {
                 self.print_unexpected_return_value(source_map, buffer, *actual, *expression);
             },
             InferenceDiagnosticKind::NotConstructible { expression, r#type } => {
+                debug_assert!(
+                    !r#type.is_err(self.db),
+                    "don't give a diagnostic for downstream issues"
+                );
                 self.print_not_constructible(source_map, buffer, *expression, *r#type);
             },
             InferenceDiagnosticKind::FunctionCallArgCountMismatch {

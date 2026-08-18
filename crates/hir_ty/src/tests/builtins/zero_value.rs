@@ -192,7 +192,6 @@ fn foo() {
             603..610 'array()': no overload of function `array` found that takes no arguments
             630..638 'atomic()': expected 1 template arguments, but got 0
             630..638 'atomic()': missing template argument, expected a type
-            630..638 'atomic()': type `atomic<[error]>` is not constructible
             658..663 'ptr()': expected 2 to 3 template arguments, but got 0
             658..663 'ptr()': missing template argument, expected an enum
             739..759 'textur...e_2d()': expected 1 to 2 template arguments, but got 0
