@@ -694,7 +694,8 @@ impl<'db> InferenceContext<'db> {
                             },
                         );
                     }
-                    self.error_type()
+                    // helpful instead of full error
+                    left_type
                 };
 
                 self.infer_expression_expect(
@@ -723,7 +724,8 @@ impl<'db> InferenceContext<'db> {
                             },
                         );
                     }
-                    self.error_type()
+                    // helpful instead of full error
+                    left_type
                 };
 
                 let r#type = self.infer_binary_op(
@@ -766,7 +768,8 @@ impl<'db> InferenceContext<'db> {
                             },
                         );
                     }
-                    self.error_type()
+                    // helpful instead of full error
+                    left_type
                 };
 
                 if self
@@ -871,8 +874,9 @@ impl<'db> InferenceContext<'db> {
                     body,
                 );
             },
-            Statement::Expression { expression } => {
+            Statement::FunctionCall { expression } => {
                 self.infer_expression(*expression, body);
+                // check must_use and report diagnostic here
             },
         }
     }
@@ -1127,6 +1131,7 @@ impl<'db> InferenceContext<'db> {
                                 r#type: left_side,
                             },
                         );
+                        // nothing we can return here is useful
                         self.error_type()
                     },
                     // No need to create extra diagnostics for problems upstream
@@ -1169,6 +1174,8 @@ impl<'db> InferenceContext<'db> {
     ) -> Type {
         let expression_type = self.infer_expression(field_expression, store);
         if expression_type.is_err(self.db) {
+            // the problem is upstream, so do not push a superfluous diagnostic
+            // no more useful type to return here
             return self.error_type();
         }
         let (kind, ref_info) = match expression_type.kind(self.db) {
@@ -1237,6 +1244,7 @@ impl<'db> InferenceContext<'db> {
                         r#type: expression_type,
                     },
                 );
+                // no more useful type to return here
                 return self.error_type();
             },
         };
@@ -1247,7 +1255,7 @@ impl<'db> InferenceContext<'db> {
         }
     }
 
-    fn validate_function_call(
+    fn infer_function_call(
         &mut self,
         function: &FunctionDetails,
         arguments: &[(ExpressionId, Type)],
@@ -1269,7 +1277,7 @@ impl<'db> InferenceContext<'db> {
                     );
                 }
             }
-
+            // if the function being called does not have a return type, that is a full-on error to try to use it as an expression
             function.return_type.unwrap_or_else(|| self.error_type())
         } else {
             self.push_diagnostic(
@@ -1581,7 +1589,7 @@ impl<'db> InferenceContext<'db> {
                 self.result
                     .call_resolutions
                     .insert(expression, ResolvedCall::Function(id));
-                self.validate_function_call(details, arguments, store, expression)
+                self.infer_function_call(details, arguments, store, expression)
             },
             Lowered::BuiltinFunction(name, template) => {
                 if argument_types.iter().any(|r#type| r#type.is_err(self.db)) {
@@ -1841,8 +1849,8 @@ impl<'db> InferenceContext<'db> {
                     .collect_vec();
 
                 if argument_types.iter().any(|r#type| r#type.is_err(self.db)) {
-                    // don't give unnecessary extra diagnostics
-                    return self.error_type();
+                    // give half-useful type info and no unnecessary extra diagnostics
+                    return r#type;
                 }
                 let wgsl_arguments = self.converter.to_wt_vec(&argument_types);
                 if let Ok(inferred_type) =
@@ -1872,14 +1880,15 @@ impl<'db> InferenceContext<'db> {
                             n_actual: arguments.len(),
                         },
                     );
-                    return self.error_type();
+                    // give half-useful type info
+                    return r#type;
                 }
                 let name = matrix.name();
                 let argument_types = arguments.iter().map(|(_, r#type)| r#type).collect_vec();
 
                 if argument_types.iter().any(|r#type| r#type.is_err(self.db)) {
-                    // don't give unnecessary extra diagnostics
-                    return self.error_type();
+                    // give half-useful type info and no unnecessary extra diagnostics
+                    return r#type;
                 }
 
                 let wgsl_arguments = argument_types
@@ -1899,7 +1908,8 @@ impl<'db> InferenceContext<'db> {
                             parameters: argument_types.iter().map(|r#type| **r#type).collect(),
                         },
                     );
-                    self.error_type()
+                    // give half-useful type info
+                    r#type
                 }
             },
             TypeKind::Struct(struct_id) => {
@@ -1920,7 +1930,8 @@ impl<'db> InferenceContext<'db> {
                     store.store_source,
                     InferenceDiagnosticKind::NotConstructible { expression, r#type },
                 );
-                self.error_type()
+                // give half-useful type info
+                r#type
             },
             TypeKind::Error => r#type,
         }

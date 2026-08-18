@@ -2102,8 +2102,8 @@ fn foo() {
             19..20 'y': [error]
             23..25 '&0': [error]
             24..25 '0': integer
-            35..36 'x': [error]
-            39..46 'vec2(y)': [error]
+            35..36 'x': vec2<[error]>
+            39..46 'vec2(y)': vec2<[error]>
             44..45 'y': [error]
             23..25 '&0': cannot use unary operator `&` on type `AbstractInt`
         "#]],
@@ -2186,8 +2186,8 @@ fn foo() {
 }
         ",
         expect![[r#"
-            19..20 'y': [error]
-            23..31 'mat2x2()': [error]
+            19..20 'y': mat2x2<[error]>
+            23..31 'mat2x2()': mat2x2<[error]>
             23..31 'mat2x2()': expected `1` arguments, but received `0`
         "#]],
     );
@@ -2202,8 +2202,8 @@ fn foo() {
 }
         ",
         expect![[r#"
-            19..20 'y': [error]
-            23..35 'mat2x2(true)': [error]
+            19..20 'y': mat2x2<[error]>
+            23..35 'mat2x2(true)': mat2x2<[error]>
             30..34 'true': bool
             23..35 'mat2x2(true)': no constructor found for type `mat2x2<[error]>` with parameters `bool`
         "#]],

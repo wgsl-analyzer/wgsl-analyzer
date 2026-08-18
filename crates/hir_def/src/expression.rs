@@ -143,7 +143,7 @@ pub enum Statement {
     Assert {
         expression: ExpressionId,
     },
-    Expression {
+    FunctionCall {
         expression: ExpressionId,
     },
 }
