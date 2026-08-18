@@ -1798,7 +1798,13 @@ impl<'db> InferenceContext<'db> {
             self.converter.to_wgsl_types(vec.component_type),
         )];
         let argument_types = arguments.iter().map(|(_, r#type)| *r#type).collect_vec();
-
+        if argument_types.iter().any(|r#type| r#type.is_err(self.db)) {
+            debug_assert!(
+                !self.result.diagnostics.is_empty(),
+                "an error type should have a diagnostic already"
+            );
+            return r#type;
+        }
         let wgsl_arguments = self.converter.to_wt_vec(&argument_types);
         let construction_result =
             wgsl_types::builtin::type_ctor(vec.name(), Some(template), &wgsl_arguments);
@@ -1830,7 +1836,13 @@ impl<'db> InferenceContext<'db> {
         }
         let template = &[TpltParam::Type(self.converter.to_wgsl_types(matrix.inner))];
         let argument_types = arguments.iter().map(|(_, r#type)| *r#type).collect_vec();
-
+        if argument_types.iter().any(|r#type| r#type.is_err(self.db)) {
+            debug_assert!(
+                !self.result.diagnostics.is_empty(),
+                "an error type should have a diagnostic already"
+            );
+            return r#type;
+        }
         let wgsl_arguments = self.converter.to_wt_vec(&argument_types);
         let construction_result =
             wgsl_types::builtin::type_ctor(matrix.name(), Some(template), &wgsl_arguments);
