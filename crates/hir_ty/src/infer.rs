@@ -1706,7 +1706,7 @@ impl<'db> InferenceContext<'db> {
         }
         match r#type.kind(self.db) {
             TypeKind::Scalar(scalar_type) => {
-                self.call_scalar_constructor(store, scalar_type, expression, r#type, arguments)
+                self.call_scalar_constructor(store, expression, r#type, arguments, scalar_type)
             },
             TypeKind::Array(array_type) => self.infer_templated_array_constructor(
                 store,
@@ -1825,49 +1825,13 @@ impl<'db> InferenceContext<'db> {
 
         match r#type.kind(self.db) {
             TypeKind::Scalar(scalar_type) => {
-                self.call_scalar_constructor(store, scalar_type, expression, r#type, arguments)
+                self.call_scalar_constructor(store, expression, r#type, arguments, scalar_type)
             },
             TypeKind::Array(array_type) => {
                 self.infer_array_constructor(store, expression, r#type, arguments, &array_type)
             },
-            TypeKind::Vector(vec) => {
-                // See note in WGSL reference:
-                // Note: Zero-filled vectors of AbstractInt can be written as vec2(), vec3(), and vec4().
-                // https://www.w3.org/TR/WGSL/#zero-value-builtin-function
-                if arguments.is_empty() {
-                    return TypeKind::Vector(VectorType {
-                        size: vec.size,
-                        component_type: TypeKind::Scalar(ScalarType::AbstractInt).intern(self.db),
-                    })
-                    .intern(self.db);
-                }
-                let name = vec.name();
-                let argument_types = arguments
-                    .iter()
-                    .copied()
-                    .map(|(_expression, r#type)| r#type)
-                    .collect_vec();
-
-                if argument_types.iter().any(|r#type| r#type.is_err(self.db)) {
-                    // give half-useful type info and no unnecessary extra diagnostics
-                    return r#type;
-                }
-                let wgsl_arguments = self.converter.to_wt_vec(&argument_types);
-                if let Ok(inferred_type) =
-                    wgsl_types::builtin::type_ctor(name, None, &wgsl_arguments)
-                {
-                    self.converter.from_wgsl_types(inferred_type)
-                } else {
-                    self.push_diagnostic(
-                        store.store_source,
-                        InferenceDiagnosticKind::NoConstructor {
-                            expression,
-                            r#type,
-                            parameters: argument_types,
-                        },
-                    );
-                    self.error_type()
-                }
+            TypeKind::Vector(vector_type) => {
+                self.infer_vector_constructor(store, expression, r#type, arguments, &vector_type)
             },
             TypeKind::Matrix(matrix) => {
                 // https://www.w3.org/TR/WGSL/#zero-value-builtin-function
@@ -1934,6 +1898,51 @@ impl<'db> InferenceContext<'db> {
                 r#type
             },
             TypeKind::Error => r#type,
+        }
+    }
+
+    fn infer_vector_constructor(
+        &mut self,
+        store: &ExpressionStore,
+        expression: la_arena::Idx<Expression>,
+        r#type: Type,
+        arguments: &[(la_arena::Idx<Expression>, Type)],
+        vec: &VectorType,
+    ) -> Type {
+        // See note in WGSL reference:
+        // Note: Zero-filled vectors of AbstractInt can be written as vec2(), vec3(), and vec4().
+        // https://www.w3.org/TR/WGSL/#zero-value-builtin-function
+        if arguments.is_empty() {
+            return TypeKind::Vector(VectorType {
+                size: vec.size,
+                component_type: TypeKind::Scalar(ScalarType::AbstractInt).intern(self.db),
+            })
+            .intern(self.db);
+        }
+        let name = vec.name();
+        let argument_types = arguments
+            .iter()
+            .copied()
+            .map(|(_expression, r#type)| r#type)
+            .collect_vec();
+
+        if argument_types.iter().any(|r#type| r#type.is_err(self.db)) {
+            // give half-useful type info and no unnecessary extra diagnostics
+            return r#type;
+        }
+        let wgsl_arguments = self.converter.to_wt_vec(&argument_types);
+        if let Ok(inferred_type) = wgsl_types::builtin::type_ctor(name, None, &wgsl_arguments) {
+            self.converter.from_wgsl_types(inferred_type)
+        } else {
+            self.push_diagnostic(
+                store.store_source,
+                InferenceDiagnosticKind::NoConstructor {
+                    expression,
+                    r#type,
+                    parameters: argument_types,
+                },
+            );
+            self.error_type()
         }
     }
 
@@ -2044,10 +2053,10 @@ impl<'db> InferenceContext<'db> {
     fn call_scalar_constructor(
         &mut self,
         store: &ExpressionStore,
-        scalar_type: ScalarType,
         expression: ExpressionId,
         r#type: Type,
         arguments: &[(ExpressionId, Type)],
+        scalar_type: ScalarType,
     ) -> Type {
         // https://www.w3.org/TR/WGSL/#zero-value-builtin-function
         if arguments.is_empty() {
