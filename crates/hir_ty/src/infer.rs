@@ -1693,39 +1693,19 @@ impl<'db> InferenceContext<'db> {
         }
         match r#type.kind(self.db) {
             TypeKind::Scalar(scalar_type) => {
-                self.infer_scalar_constructor(store, scalar_type, expression, r#type, arguments)
+                self.infer_scalar_constructor(store, expression, r#type, arguments, scalar_type)
             },
             TypeKind::Array(array_type) => {
                 self.infer_array_constructor(store, expression, r#type, arguments, &array_type)
             },
-            TypeKind::Vector(vec) => {
-                self.infer_vector_constructor(store, expression, r#type, arguments, vec)
+            TypeKind::Vector(vector_type) => {
+                self.infer_vector_constructor(store, expression, r#type, arguments, &vector_type)
             },
-            TypeKind::Matrix(matrix) => {
-                // https://www.w3.org/TR/WGSL/#zero-value-builtin-function
-                if arguments.is_empty() {
-                    return r#type;
-                }
-                let template = &[TpltParam::Type(self.converter.to_wgsl_types(matrix.inner))];
-                let argument_types = arguments.iter().map(|(_, r#type)| *r#type).collect_vec();
-
-                let wgsl_arguments = self.converter.to_wt_vec(&argument_types);
-                let construction_result =
-                    wgsl_types::builtin::type_ctor(matrix.name(), Some(template), &wgsl_arguments);
-                if construction_result.is_err() {
-                    self.push_diagnostic(
-                        store.store_source,
-                        InferenceDiagnosticKind::NoConstructor {
-                            expression,
-                            r#type,
-                            parameters: argument_types,
-                        },
-                    );
-                }
-                r#type
+            TypeKind::Matrix(matrix_type) => {
+                self.infer_matrix_constructor(store, expression, r#type, arguments, &matrix_type)
             },
             TypeKind::Struct(struct_id) => {
-                self.infer_struct_constructor(store, struct_id, expression, r#type, arguments)
+                self.infer_struct_constructor(store, expression, r#type, arguments, struct_id)
             },
 
             // Never constructible
@@ -1803,7 +1783,7 @@ impl<'db> InferenceContext<'db> {
         expression: la_arena::Idx<Expression>,
         r#type: Type,
         arguments: &[(la_arena::Idx<Expression>, Type)],
-        vec: VectorType,
+        vec: &VectorType,
     ) -> Type {
         let template = &[TpltParam::Type(
             self.converter.to_wgsl_types(vec.component_type),
@@ -1821,6 +1801,37 @@ impl<'db> InferenceContext<'db> {
                     expression,
                     r#type,
                     parameters: arguments.iter().map(|(_, r#type)| *r#type).collect(),
+                },
+            );
+        }
+        r#type
+    }
+
+    fn infer_matrix_constructor(
+        &mut self,
+        store: &ExpressionStore,
+        expression: la_arena::Idx<Expression>,
+        r#type: Type,
+        arguments: &[(la_arena::Idx<Expression>, Type)],
+        matrix: &MatrixType,
+    ) -> Type {
+        // https://www.w3.org/TR/WGSL/#zero-value-builtin-function
+        if arguments.is_empty() {
+            return r#type;
+        }
+        let template = &[TpltParam::Type(self.converter.to_wgsl_types(matrix.inner))];
+        let argument_types = arguments.iter().map(|(_, r#type)| *r#type).collect_vec();
+
+        let wgsl_arguments = self.converter.to_wt_vec(&argument_types);
+        let construction_result =
+            wgsl_types::builtin::type_ctor(matrix.name(), Some(template), &wgsl_arguments);
+        if construction_result.is_err() {
+            self.push_diagnostic(
+                store.store_source,
+                InferenceDiagnosticKind::NoConstructor {
+                    expression,
+                    r#type,
+                    parameters: argument_types,
                 },
             );
         }
@@ -2008,10 +2019,10 @@ impl<'db> InferenceContext<'db> {
     fn infer_scalar_constructor(
         &mut self,
         store: &ExpressionStore,
-        scalar_type: ScalarType,
         expression: ExpressionId,
         r#type: Type,
         arguments: &[(ExpressionId, Type)],
+        scalar_type: ScalarType,
     ) -> Type {
         // https://www.w3.org/TR/WGSL/#zero-value-builtin-function
         if arguments.is_empty() {
@@ -2046,10 +2057,10 @@ impl<'db> InferenceContext<'db> {
     fn infer_struct_constructor(
         &mut self,
         store: &ExpressionStore,
-        struct_id: StructId,
         expression: ExpressionId,
         r#type: Type,
         arguments: &[(ExpressionId, Type)],
+        struct_id: StructId,
     ) -> Type {
         // https://www.w3.org/TR/WGSL/#zero-value-builtin-function
         if arguments.is_empty() {

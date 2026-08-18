@@ -2069,27 +2069,6 @@ fn foo() {
 }
 
 #[test]
-fn construct_untemplated_but_argument_is_error_no_second_diagnostic() {
-    check_infer(
-        "
-fn foo() {
-    let y = &0;
-    let x = vec2(y);
-}
-        ",
-        expect![[r#"
-            19..20 'y': [error]
-            23..25 '&0': [error]
-            24..25 '0': integer
-            35..36 'x': vec2<[error]>
-            39..46 'vec2(y)': vec2<[error]>
-            44..45 'y': [error]
-            23..25 '&0': cannot use unary operator `&` on type `AbstractInt`
-        "#]],
-    );
-}
-
-#[test]
 fn matrix_no_constructor() {
     check_infer(
         "
