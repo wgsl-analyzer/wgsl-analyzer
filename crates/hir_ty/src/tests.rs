@@ -202,9 +202,7 @@ impl<'db> InferPrinter<'db> {
             InferenceDiagnosticKind::AssignmentNotAReference { actual, left_side } => {
                 self.print_assignment_not_a_reference(source_map, buffer, *actual, *left_side);
             },
-            InferenceDiagnosticKind::AddressOfNotReference { .. }
-            | InferenceDiagnosticKind::DerefNotAPointer { .. }
-            | InferenceDiagnosticKind::CyclicType { .. }
+            InferenceDiagnosticKind::CyclicType { .. }
             | InferenceDiagnosticKind::WgslError { .. } => {
                 self.print_todo_bad_diagnostic(diagnostic, buffer);
             },

@@ -50,14 +50,6 @@ pub enum InferenceDiagnosticKind {
         r#type: Type,
         parameters: Vec<Type>,
     },
-    AddressOfNotReference {
-        expression: ExpressionId,
-        actual: Type,
-    },
-    DerefNotAPointer {
-        expression: ExpressionId,
-        actual: Type,
-    },
     StoreTypeMustBeStorable {
         expression: ExpressionId,
         actual: Type,

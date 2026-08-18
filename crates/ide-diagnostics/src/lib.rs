@@ -304,28 +304,6 @@ pub fn diagnostics(
                         frange.range,
                     )
                 },
-                AnyDiagnostic::AddressOfNotReference { expression, actual } => {
-                    debug_assert!(!actual.is_err(db));
-                    let source = expression.value.to_node(&root);
-                    let r#type = ty::pretty::pretty_type(db, actual);
-                    let frange = original_file_range(db, expression.file_id, source.syntax());
-                    Diagnostic::new(
-                        DiagnosticCode("9"),
-                        format!("expected a reference, found {type}"),
-                        frange.range,
-                    )
-                },
-                AnyDiagnostic::DerefNotAPointer { expression, actual } => {
-                    debug_assert!(!actual.is_err(db));
-                    let source = expression.value.to_node(&root);
-                    let r#type = ty::pretty::pretty_type(db, actual);
-                    let frange = original_file_range(db, expression.file_id, source.syntax());
-                    Diagnostic::new(
-                        DiagnosticCode("10"),
-                        format!("cannot dereference expression of type {type}"),
-                        frange.range,
-                    )
-                },
                 AnyDiagnostic::MissingAddressSpace { variable } => {
                     let variable_declaration = variable.value.to_node(&root);
                     let source = variable_declaration.var_token().map_or_else(

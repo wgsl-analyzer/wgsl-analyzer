@@ -78,15 +78,7 @@ pub enum AnyDiagnostic {
         n_expected: usize,
         n_actual: usize,
     },
-    AddressOfNotReference {
-        expression: InFile<AstPointer<ast::Expression>>,
-        actual: Type,
-    },
     StoreTypeMustBeStorable {
-        expression: InFile<AstPointer<ast::Expression>>,
-        actual: Type,
-    },
-    DerefNotAPointer {
         expression: InFile<AstPointer<ast::Expression>>,
         actual: Type,
     },
@@ -175,8 +167,6 @@ impl AnyDiagnostic {
             | Self::NotConstructible { expression, .. }
             | Self::FunctionCallArgCountMismatch { expression, .. }
             | Self::StoreTypeMustBeStorable { expression, .. }
-            | Self::AddressOfNotReference { expression, .. }
-            | Self::DerefNotAPointer { expression, .. }
             | Self::NoConstructor { expression, .. }
             | Self::PrecedenceParensRequired { expression, .. }
             | Self::UnexpectedTemplateArgument { expression, .. }
@@ -284,22 +274,6 @@ pub(crate) fn to_any_diagnostic(
                 expression: source,
                 n_expected: *n_expected,
                 n_actual: *n_actual,
-            }
-        },
-        InferenceDiagnosticKind::AddressOfNotReference { expression, actual } => {
-            let pointer = source_map.expression_to_source(*expression).ok()?.clone();
-            let source = InFile::new(file_id, pointer);
-            AnyDiagnostic::AddressOfNotReference {
-                expression: source,
-                actual: *actual,
-            }
-        },
-        InferenceDiagnosticKind::DerefNotAPointer { expression, actual } => {
-            let pointer = source_map.expression_to_source(*expression).ok()?.clone();
-            let source = InFile::new(file_id, pointer);
-            AnyDiagnostic::DerefNotAPointer {
-                expression: source,
-                actual: *actual,
             }
         },
         InferenceDiagnosticKind::InvalidType {
