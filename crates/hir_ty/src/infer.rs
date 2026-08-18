@@ -48,16 +48,15 @@ impl InferenceResult {
     /// Infers the type of a global item.
     /// For `const`s and co, it first uses the specified type,
     /// and then uses the body (expression) to infer the return type.
-    #[salsa::tracked(returns(ref), cycle_result = infer_cycle_result)]
     pub fn of(
         db: &dyn HirDatabase,
         definition: DefinitionWithBodyId,
-    ) -> Self {
+    ) -> &Self {
         infer_query(db, definition)
     }
 }
 
-// TODO load rule somewhere in here
+#[salsa::tracked(returns(ref), cycle_result = infer_cycle_result)]
 fn infer_query(
     db: &dyn HirDatabase,
     definition: DefinitionWithBodyId,
