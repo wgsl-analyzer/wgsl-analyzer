@@ -216,3 +216,19 @@ fn foo() {
         "#]],
     );
 }
+
+#[test]
+fn not_constructible_type_expectation() {
+    check_infer(
+        "
+fn foo() {
+    const b: array<u32, 3> = array();
+}
+",
+        expect![[r#"
+            21..22 'b': array<u32, 3>
+            40..47 'array()': array<[error]>
+            40..47 'array()': type `array<[error]>` is not constructible
+        "#]],
+    );
+}
