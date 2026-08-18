@@ -73,9 +73,7 @@ pub(crate) fn complete_dot(
         | TypeKind::Texture(_)
         | TypeKind::Sampler(_)
         | TypeKind::Reference(_)
-        | TypeKind::Pointer(_)
-        | TypeKind::BoundVariable(_)
-        | TypeKind::StorageTypeOfTexelFormat(_) => None,
+        | TypeKind::Pointer(_) => None,
     }
 }
 

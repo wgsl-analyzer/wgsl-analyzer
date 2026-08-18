@@ -1,6 +1,6 @@
 use std::{fmt, sync::OnceLock};
 
-use base_db::{ExtensionsConfig, input::SourceRootId};
+use base_db::{Capabilities, input::SourceRootId};
 use hir_ty::ty::pretty::TypeVerbosity;
 use ide::{
     HoverConfig, HoverDocFormat, MemoryLayoutHoverRenderKind,
@@ -156,7 +156,7 @@ pub enum TraceServer {
 pub struct Config {
     /// The workspace roots as registered by the LSP client.
     workspace_roots: Vec<AbsPathBuf>,
-    capabilities: ClientCapabilities,
+    client_capabilities: ClientCapabilities,
     /// The LSP root path, deprecated in favor of `workspace_roots`.
     root_path: AbsPathBuf,
     // TODO: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/921
@@ -209,7 +209,7 @@ impl std::ops::Deref for Config {
     type Target = ClientCapabilities;
 
     fn deref(&self) -> &Self::Target {
-        &self.capabilities
+        &self.client_capabilities
     }
 }
 
@@ -275,7 +275,7 @@ impl Config {
 
         Self {
             workspace_roots,
-            capabilities: ClientCapabilities::new(capabilities),
+            client_capabilities: ClientCapabilities::new(capabilities),
             // snippets: Default::default(),
             root_path,
             client_info,
@@ -416,8 +416,8 @@ impl Config {
     }
 
     #[must_use]
-    pub const fn capabilities(&self) -> &ClientCapabilities {
-        &self.capabilities
+    pub const fn client_capabilities(&self) -> &ClientCapabilities {
+        &self.client_capabilities
     }
 
     #[must_use]
@@ -484,7 +484,7 @@ impl Config {
 
     #[must_use]
     pub fn hover_actions(&self) -> HoverActionsConfig {
-        let enable = self.capabilities.hover_actions();
+        let enable = self.client_capabilities.hover_actions();
         HoverActionsConfig {
             implementations: enable,
             references: enable,
@@ -547,8 +547,8 @@ impl Config {
     }
 
     #[must_use]
-    pub fn extensions(&self) -> ExtensionsConfig {
-        ExtensionsConfig {
+    pub fn capabilities(&self) -> Capabilities {
+        Capabilities {
             shader_int64: *self.extensions_shaderInt64(),
             ..Default::default()
         }

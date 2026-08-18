@@ -1,6 +1,6 @@
 use std::fmt::{self, Write as _};
 
-use base_db::{ExtensionsConfigInput, TextRange, TextSize};
+use base_db::{CapabilitiesInput, TextRange, TextSize};
 use hir_def::signature::StructSignature;
 use wgsl_types::ty::SamplerType;
 
@@ -61,7 +61,7 @@ fn write_type_expectation_inner(
         },
         TypeExpectationInner::IntegerScalar => {
             write!(buffer, "i32 or u32")?;
-            if ExtensionsConfigInput::get_extensions(db).shader_int64 {
+            if CapabilitiesInput::get_capabilities(db).shader_int64 {
                 write!(buffer, " or i64 or u64")?;
             }
         },
@@ -297,16 +297,6 @@ fn write_type(
                 write_type(db, pointer.inner, formatter, verbosity)?;
                 write!(formatter, ">")
             },
-        },
-        TypeKind::BoundVariable(variable) => {
-            write!(formatter, "{}", ('T'..).nth(variable.index).unwrap())
-        },
-        TypeKind::StorageTypeOfTexelFormat(variable) => {
-            write!(
-                formatter,
-                "{}::StorageType",
-                ('F'..).nth(variable.index).unwrap()
-            )
         },
     }
 }

@@ -264,7 +264,7 @@ fn compute_statement_scopes(
             compute_expression_scopes(*right_side, body, scopes, scope);
         },
         Statement::IncrDecr { expression, .. }
-        | Statement::Expression { expression }
+        | Statement::FunctionCall { expression }
         | Statement::Assert { expression } => {
             compute_expression_scopes(*expression, body, scopes, scope);
         },

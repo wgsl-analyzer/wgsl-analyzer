@@ -430,6 +430,16 @@ pub(crate) const fn completion_item_kind(
         IdeCompletionItemKind::TypeAlias | IdeCompletionItemKind::Struct => {
             LspCompletionItemKind::Struct
         },
+        IdeCompletionItemKind::Builtin(kind) => match kind {
+            ide_completion::item::BuiltInKind::Declaration => LspCompletionItemKind::Value,
+            ide_completion::item::BuiltInKind::Enumerant => LspCompletionItemKind::EnumMember,
+            ide_completion::item::BuiltInKind::Constructor
+            | ide_completion::item::BuiltInKind::Function => LspCompletionItemKind::Function,
+            ide_completion::item::BuiltInKind::Alias
+            | ide_completion::item::BuiltInKind::Struct
+            | ide_completion::item::BuiltInKind::TypeGenerator
+            | ide_completion::item::BuiltInKind::Type => LspCompletionItemKind::Struct,
+        },
     }
 }
 

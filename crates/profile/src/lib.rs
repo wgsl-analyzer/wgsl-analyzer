@@ -1,6 +1,6 @@
 //! A collection of tools for profiling wgsl-analyzer.
 
-#[cfg(feature = "cpu_profiler")]
+#[cfg(feature = "cpu-profiler")]
 mod google_cpu_profiler;
 mod memory_usage;
 mod stop_watch;
@@ -53,23 +53,23 @@ pub struct CpuSpan {
 
 #[must_use]
 pub fn cpu_span() -> CpuSpan {
-    #[cfg(feature = "cpu_profiler")]
+    #[cfg(feature = "cpu-profiler")]
     {
         google_cpu_profiler::start("./out.profile".as_ref());
     }
 
-    #[cfg(not(feature = "cpu_profiler"))]
+    #[cfg(not(feature = "cpu-profiler"))]
     #[expect(clippy::print_stderr, reason = "CLI tool")]
     {
         eprintln!(
-            r#"cpu profiling is disabled, uncomment `default = [ "cpu_profiler" ]` in Cargo.toml to enable."#
+            r#"cpu profiling is disabled, uncomment `default = [ "cpu-profiler" ]` in Cargo.toml to enable."#
         );
     }
 
     CpuSpan { _private: () }
 }
 
-#[cfg(feature = "cpu_profiler")]
+#[cfg(feature = "cpu-profiler")]
 impl Drop for CpuSpan {
     #[expect(clippy::print_stderr, reason = "this is a debugging utility")]
     fn drop(&mut self) {

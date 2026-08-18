@@ -78,7 +78,7 @@ tracing = { version = "0.1.44", default-features = false, features = ["attribute
 tracing-subscriber = { version = "0.3.23", default-features = false, features = ["fmt", "local-time", "registry", "std", "time", "tracing-log"] }
 tracing-tree = "0.4.0"
 triomphe = { version = "0.1.15", default-features = false, features = ["std"] }
-wgsl-types = { version = "0.4.2", features = ["naga-ext"] }
+wgsl-types = { version = "0.4.3", features = ["naga-ext"] }
 indexmap = { version = "2.14.0" }
 
 # idna_adapter does not use semantic versioning

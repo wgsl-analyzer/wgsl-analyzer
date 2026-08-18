@@ -7,7 +7,7 @@
 use std::{borrow::ToOwned, fmt::Debug, panic};
 
 use itertools::Itertools as _;
-use parser::{Edition, ParseEntryPoint};
+use parser::{Capabilities, Edition, ParseEntryPoint};
 use rowan::{TextLen as _, TextRange};
 
 use crate::{FormattingOptions, IndentStyle, format::format_tree, format_range};
@@ -452,7 +452,12 @@ pub fn check_range<E>(
         (raw_text, range_to_format)
     };
 
-    let parse = parser::parse_entrypoint(&raw_text, ParseEntryPoint::File, Edition::LATEST);
+    let parse = parser::parse_entrypoint_with_capabilities(
+        &raw_text,
+        ParseEntryPoint::File,
+        Edition::LATEST,
+        Capabilities::default(),
+    );
     assert!(parse.errors().is_empty());
 
     let formatted = format_range(

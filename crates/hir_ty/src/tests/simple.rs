@@ -1,12 +1,11 @@
 use expect_test::expect;
-use syntax::ExtensionsConfig;
+use syntax::Capabilities;
 
-use crate::tests::check_infer;
+use crate::tests::{check_infer, check_infer_with_capabilities};
 
 #[test]
 fn type_alias_in_struct() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         alias Foo = u32;
         struct S { x: Foo }
@@ -32,7 +31,6 @@ fn type_alias_in_struct() {
 #[test]
 fn field_expression_on_error_type() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         fn foo() {
             let x = Nonsense();
@@ -53,7 +51,6 @@ fn field_expression_on_error_type() {
 #[test]
 fn index_expression_on_error_type() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         fn foo() {
             let x = Nonsense();
@@ -75,7 +72,6 @@ fn index_expression_on_error_type() {
 #[test]
 fn ident_expression_infers_ref() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         struct Bar { baz: u32 }
 
@@ -100,7 +96,6 @@ fn ident_expression_infers_ref() {
 #[test]
 fn automatic_ptr_dereference() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         struct MyData {
             alpha: f32,
@@ -139,7 +134,6 @@ fn automatic_ptr_dereference() {
 #[test]
 fn ptr_deref_is_ref() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         fn foo() {
             var v = vec2(1, 2);
@@ -165,7 +159,6 @@ fn ptr_deref_is_ref() {
 #[test]
 fn vec_x_is_ref() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         fn foo() {
             var v = vec2(1, 2);
@@ -188,7 +181,6 @@ fn vec_x_is_ref() {
 #[test]
 fn vec_field_is_not_ref() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         fn foo() {
             let not_ref = vec2(1, 2).x;
@@ -207,7 +199,6 @@ fn vec_field_is_not_ref() {
 #[test]
 fn struct_field_is_not_ref() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         struct Bar { baz: u32 }
         fn foo() {
@@ -226,7 +217,6 @@ fn struct_field_is_not_ref() {
 #[test]
 fn no_such_field_on_struct_ref() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         struct Bar { baz: u32 }
         fn foo() {
@@ -249,7 +239,6 @@ fn no_such_field_on_struct_ref() {
 #[test]
 fn no_such_field_on_struct_ptr() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         struct Bar { baz: u32 }
         fn foo() {
@@ -276,7 +265,6 @@ fn no_such_field_on_struct_ptr() {
 #[test]
 fn store_type_must_be_storable() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         fn foo() {
             var bar = 1;
@@ -297,7 +285,6 @@ fn store_type_must_be_storable() {
 #[test]
 fn no_such_field_on_struct() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         struct Bar { baz: u32 }
         fn foo() {
@@ -317,7 +304,6 @@ fn no_such_field_on_struct() {
 #[test]
 fn no_such_field_on_vec() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         fn foo() {
             let xyz = vec2(0, 0).xyz;
@@ -337,7 +323,6 @@ fn no_such_field_on_vec() {
 #[test]
 fn no_such_field_on_vec_ref() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         fn foo() {
             var v = vec2(0, 0);
@@ -360,7 +345,6 @@ fn no_such_field_on_vec_ref() {
 #[test]
 fn no_such_field_on_vec_ptr() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         fn foo() {
             var v = vec2(0, 0);
@@ -387,7 +371,6 @@ fn no_such_field_on_vec_ptr() {
 #[test]
 fn address_of_not_reference() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         fn foo() {
             let x = 1;
@@ -400,7 +383,7 @@ fn address_of_not_reference() {
             34..39 'x_ptr': [error]
             42..44 '&x': [error]
             43..44 'x': i32
-            [EditionedFileId(Id(300))] WgslError { expression: Idx::<Expression>(1), message: "cannot use unary operator `&` on type `i32`" } in Body
+            42..44 '&x': cannot use unary operator `&` on type `i32`
         "#]],
     );
 }
@@ -409,7 +392,6 @@ fn address_of_not_reference() {
 fn component_reference_from_a_composite_reference() {
     // From example in spec: <https://www.w3.org/TR/WGSL/#example-5aaac12b>
     check_infer(
-        ExtensionsConfig::default(),
         "
 struct S {
     age: i32,
@@ -648,7 +630,6 @@ fn f() {
 #[test]
 fn vec_xy_is_not_ref() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         fn foo() {
             var v = vec2(1, 2);
@@ -664,7 +645,7 @@ fn vec_xy_is_not_ref() {
             39..43 'v.xy': vec2<i32>
             46..47 'v': ref<function, vec2<i32>, read_write>
             46..50 'v.yx': vec2<i32>
-            [EditionedFileId(Id(300))] AssignmentNotAReference { left_side: Idx::<Expression>(4), actual: Type(0409) } in Body
+            39..43 'v.xy': cannot assign to non-reference `vec2<i32>`
         "#]],
     );
 }
@@ -672,7 +653,6 @@ fn vec_xy_is_not_ref() {
 #[test]
 fn struct_constructor_is_empty() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         struct S { u: u32, a: array<f32, 3> };
 
@@ -690,7 +670,6 @@ fn struct_constructor_is_empty() {
 #[test]
 fn struct_constructor_is_correct() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         struct S { u: u32, a: array<f32, 3> };
 
@@ -713,7 +692,6 @@ fn struct_constructor_is_correct() {
 #[test]
 fn struct_constructor_unrefs() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         struct S { u: u32, a: array<f32, 3> };
 
@@ -742,7 +720,6 @@ fn struct_constructor_unrefs() {
 #[test]
 fn struct_constructor_not_enough_args() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         struct S { u: u32, a: array<f32, 3> };
 
@@ -762,7 +739,6 @@ fn struct_constructor_not_enough_args() {
 #[test]
 fn struct_constructor_incorrect_types() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         struct S { u: u32, a: array<f32, 3> };
 
@@ -787,7 +763,6 @@ fn struct_constructor_incorrect_types() {
 #[test]
 fn const_array() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         const a: array<f32, 1> = array(1);
         const b = array(1,2,3);
@@ -808,7 +783,6 @@ fn const_array() {
 #[test]
 fn const_vec() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         const a: vec3<u32> = vec3(1);
         const b = vec2f();
@@ -829,7 +803,6 @@ fn const_vec() {
 #[test]
 fn const_array_of_vec() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         const pos = array(vec2(1.0,  1.0), vec2(1.0, -1.0));
         const pos_explicit = array<vec2f, 1>(vec2(-1.0, -1.0));
@@ -858,7 +831,6 @@ fn const_array_of_vec() {
 #[test]
 fn const_u32_as_array_size() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         const maxLayers = 12u;
         var layers: array<f32, maxLayers>;
@@ -867,7 +839,7 @@ fn const_u32_as_array_size() {
             6..15 'maxLayers': u32
             18..21 '12u': u32
             27..33 'layers': ref<handle, [error], read>
-            46..55 'maxLayers': unexpected template argument, expected a `u32` or a `i32` greater than `0`
+            46..55 'maxLayers': unexpected template argument, expected a `u32` or a `i32` greater than `0`, actual: [error]
         "#]],
     );
 }
@@ -875,7 +847,6 @@ fn const_u32_as_array_size() {
 #[test]
 fn multiply_with_minus_one() {
     check_infer(
-        ExtensionsConfig::default(),
         r#"
     const x: i32 = 1;
     const y = x * -1;
@@ -895,7 +866,6 @@ fn multiply_with_minus_one() {
 #[test]
 fn var_array() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         @group(0) @binding(0) var<storage, read_write> data: array<f32>;
         ",
@@ -908,7 +878,6 @@ fn var_array() {
 #[test]
 fn break_if_bool() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         fn foo() {
             let a = 3;
@@ -928,7 +897,6 @@ fn break_if_bool() {
 #[test]
 fn abstract_number_for_const() {
     check_infer(
-        ExtensionsConfig::default(),
         "
 const some_integer = 1;
 const some_i32: i32 = 1;
@@ -945,7 +913,6 @@ const some_i32: i32 = 1;
 #[test]
 fn assign_abstract_number() {
     check_infer(
-        ExtensionsConfig::default(),
         "
 var i32_from_type : i32 = 3;
 
@@ -974,7 +941,6 @@ var f32_promotion : f32 = 5;
 #[test]
 fn negate_abstract_number() {
     check_infer(
-        ExtensionsConfig::default(),
         "
 const a = -4;
 const b: f32 = -3.5;
@@ -993,7 +959,6 @@ const b: f32 = -3.5;
 #[test]
 fn add_abstract_integers() {
     check_infer(
-        ExtensionsConfig::default(),
         "
 fn main() {
 var u32_expr1 = 6 + 1u;
@@ -1018,7 +983,6 @@ var u32_expr2 = 1u + (1 + 2);
 #[test]
 fn add_abstract_floats() {
     check_infer(
-        ExtensionsConfig::default(),
         "
 fn main() {
 let f32_promotion1 = 1.0 + 2 + 3;
@@ -1063,7 +1027,6 @@ let f32_promotion4 = ((2 + (3 + 1f)) + 4);
 #[test]
 fn call_with_abstract_numbers() {
     check_infer(
-        ExtensionsConfig::default(),
         "
 fn main() {
 let i32_clamp = clamp(1, -5, 5);
@@ -1095,7 +1058,6 @@ let f32_clamp = clamp(0, 1f, 1);
 #[test]
 fn call_user_defined_with_abstract_numbers() {
     check_infer(
-        ExtensionsConfig::default(),
         "
 fn make_one(x: f32) -> u32 {
   return 1u;
@@ -1120,7 +1082,6 @@ fn main() {
 #[test]
 fn vec_constructors() {
     check_infer(
-        ExtensionsConfig::default(),
         "
 const a = vec3(1f, 2f, 3f);
 fn main() {
@@ -1145,7 +1106,6 @@ let b = vec4(vec3f(1f), 1f);
 #[test]
 fn texture_storage_2d_template() {
     check_infer(
-        ExtensionsConfig::default(),
         "
 var framebuffer : texture_storage_2d<rgba16float, write>;
     ",
@@ -1158,7 +1118,6 @@ var framebuffer : texture_storage_2d<rgba16float, write>;
 #[test]
 fn global_assert_statement_correct() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         const a = 29;
         const_assert 27 < a;
@@ -1176,7 +1135,6 @@ fn global_assert_statement_correct() {
 #[test]
 fn global_assert_statement_wrong() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         const a = 29;
         const_assert 27 + a;
@@ -1195,7 +1153,6 @@ fn global_assert_statement_wrong() {
 #[test]
 fn global_var_function_address_space_error() {
     check_infer(
-        ExtensionsConfig::default(),
         "var<function> not_allowed_at_module_level: u32;",
         expect![[r#"
             14..41 'not_al..._level': ref<function, u32, read_write>
@@ -1208,7 +1165,6 @@ fn global_var_function_address_space_error() {
 fn no_crash_on_hex_int() {
     // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/826
     check_infer(
-        ExtensionsConfig::default(),
         "
 fn f() {
     let i2 = 0u;
@@ -1229,27 +1185,25 @@ fn f() {
 }
 
 #[test]
-
 fn array_index_is_i32() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         const index = 1i;
-        const arr = array<i32>(1, 2, 3);
+        const arr = array<i32, 3>(1, 2, 3);
         const a = arr[index];
         ",
         expect![[r#"
             6..11 'index': i32
             14..16 '1i': i32
-            24..27 'arr': array<i32>
-            30..49 'array<... 2, 3)': array<i32>
-            41..42 '1': integer
-            44..45 '2': integer
-            47..48 '3': integer
-            57..58 'a': i32
-            61..64 'arr': array<i32>
-            61..71 'arr[index]': i32
-            65..70 'index': i32
+            24..27 'arr': array<i32, 3>
+            30..52 'array<... 2, 3)': array<i32, 3>
+            44..45 '1': integer
+            47..48 '2': integer
+            50..51 '3': integer
+            60..61 'a': i32
+            64..67 'arr': array<i32, 3>
+            64..74 'arr[index]': i32
+            68..73 'index': i32
         "#]],
     );
 }
@@ -1257,24 +1211,23 @@ fn array_index_is_i32() {
 #[test]
 fn array_index_is_u32() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         const index = 1u;
-        const arr = array<i32>(1, 2, 3);
+        const arr = array<i32, 3>(1, 2, 3);
         const a = arr[index];
         ",
         expect![[r#"
             6..11 'index': u32
             14..16 '1u': u32
-            24..27 'arr': array<i32>
-            30..49 'array<... 2, 3)': array<i32>
-            41..42 '1': integer
-            44..45 '2': integer
-            47..48 '3': integer
-            57..58 'a': i32
-            61..64 'arr': array<i32>
-            61..71 'arr[index]': i32
-            65..70 'index': u32
+            24..27 'arr': array<i32, 3>
+            30..52 'array<... 2, 3)': array<i32, 3>
+            44..45 '1': integer
+            47..48 '2': integer
+            50..51 '3': integer
+            60..61 'a': i32
+            64..67 'arr': array<i32, 3>
+            64..74 'arr[index]': i32
+            68..73 'index': u32
         "#]],
     );
 }
@@ -1282,24 +1235,23 @@ fn array_index_is_u32() {
 #[test]
 fn array_index_is_abstract_int() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         const index = 1;
-        const arr = array<i32>(1, 2, 3);
+        const arr = array<i32, 3>(1, 2, 3);
         const a = arr[index];
         ",
         expect![[r#"
             6..11 'index': integer
             14..15 '1': integer
-            23..26 'arr': array<i32>
-            29..48 'array<... 2, 3)': array<i32>
-            40..41 '1': integer
-            43..44 '2': integer
-            46..47 '3': integer
-            56..57 'a': i32
-            60..63 'arr': array<i32>
-            60..70 'arr[index]': i32
-            64..69 'index': integer
+            23..26 'arr': array<i32, 3>
+            29..51 'array<... 2, 3)': array<i32, 3>
+            43..44 '1': integer
+            46..47 '2': integer
+            49..50 '3': integer
+            59..60 'a': i32
+            63..66 'arr': array<i32, 3>
+            63..73 'arr[index]': i32
+            67..72 'index': integer
         "#]],
     );
 }
@@ -1307,25 +1259,24 @@ fn array_index_is_abstract_int() {
 #[test]
 fn array_index_is_not_f32() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         const index = 1.0f;
-        const arr = array<i32>(1, 2, 3);
+        const arr = array<i32, 3>(1, 2, 3);
         const a = arr[index];
         ",
         expect![[r#"
             6..11 'index': f32
             14..18 '1.0f': f32
-            26..29 'arr': array<i32>
-            32..51 'array<... 2, 3)': array<i32>
-            43..44 '1': integer
-            46..47 '2': integer
-            49..50 '3': integer
-            59..60 'a': i32
-            63..66 'arr': array<i32>
-            63..73 'arr[index]': i32
-            67..72 'index': f32
-            67..72 'index': expected i32 or u32 but got f32
+            26..29 'arr': array<i32, 3>
+            32..54 'array<... 2, 3)': array<i32, 3>
+            46..47 '1': integer
+            49..50 '2': integer
+            52..53 '3': integer
+            62..63 'a': i32
+            66..69 'arr': array<i32, 3>
+            66..76 'arr[index]': i32
+            70..75 'index': f32
+            70..75 'index': expected i32 or u32 but got f32
         "#]],
     );
 }
@@ -1333,7 +1284,6 @@ fn array_index_is_not_f32() {
 #[test]
 fn array_index_is_ref_i32() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         fn test(arr: array<i32>) {
             var index = 1i;
@@ -1355,7 +1305,6 @@ fn array_index_is_ref_i32() {
 #[test]
 fn array_index_is_not_ref_f32() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         fn test(arr: array<i32>) {
             var index = 1.0f;
@@ -1378,25 +1327,24 @@ fn array_index_is_not_ref_f32() {
 #[test]
 fn array_index_is_not_abstract_float() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         const index = 1.0;
-        const arr = array<i32>(1, 2, 3);
+        const arr = array<i32, 3>(1, 2, 3);
         const a = arr[index];
         ",
         expect![[r#"
             6..11 'index': float
             14..17 '1.0': float
-            25..28 'arr': array<i32>
-            31..50 'array<... 2, 3)': array<i32>
-            42..43 '1': integer
-            45..46 '2': integer
-            48..49 '3': integer
-            58..59 'a': i32
-            62..65 'arr': array<i32>
-            62..72 'arr[index]': i32
-            66..71 'index': float
-            66..71 'index': expected i32 or u32 but got float
+            25..28 'arr': array<i32, 3>
+            31..53 'array<... 2, 3)': array<i32, 3>
+            45..46 '1': integer
+            48..49 '2': integer
+            51..52 '3': integer
+            61..62 'a': i32
+            65..68 'arr': array<i32, 3>
+            65..75 'arr[index]': i32
+            69..74 'index': float
+            69..74 'index': expected i32 or u32 but got float
         "#]],
     );
 }
@@ -1404,25 +1352,24 @@ fn array_index_is_not_abstract_float() {
 #[test]
 fn array_index_is_not_bool() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         const index = true;
-        const arr = array<i32>(1, 2, 3);
+        const arr = array<i32, 3>(1, 2, 3);
         const a = arr[index];
         ",
         expect![[r#"
             6..11 'index': bool
             14..18 'true': bool
-            26..29 'arr': array<i32>
-            32..51 'array<... 2, 3)': array<i32>
-            43..44 '1': integer
-            46..47 '2': integer
-            49..50 '3': integer
-            59..60 'a': i32
-            63..66 'arr': array<i32>
-            63..73 'arr[index]': i32
-            67..72 'index': bool
-            67..72 'index': expected i32 or u32 but got bool
+            26..29 'arr': array<i32, 3>
+            32..54 'array<... 2, 3)': array<i32, 3>
+            46..47 '1': integer
+            49..50 '2': integer
+            52..53 '3': integer
+            62..63 'a': i32
+            66..69 'arr': array<i32, 3>
+            66..76 'arr[index]': i32
+            70..75 'index': bool
+            70..75 'index': expected i32 or u32 but got bool
         "#]],
     );
 }
@@ -1430,7 +1377,6 @@ fn array_index_is_not_bool() {
 #[test]
 fn vec_index_is_int() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         const index = 1i;
         const vec = vec3<f32>(1.0, 2.0, 3.0);
@@ -1455,7 +1401,6 @@ fn vec_index_is_int() {
 #[test]
 fn vec_index_is_not_f32() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         const index = 1.0f;
         const vec = vec3<f32>(1.0, 2.0, 3.0);
@@ -1481,7 +1426,6 @@ fn vec_index_is_not_f32() {
 #[test]
 fn mat_index_is_int() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         const index = 1i;
         const mat = mat2x2<f32>(1.0, 2.0, 3.0, 4.0);
@@ -1509,7 +1453,6 @@ fn mat_index_is_int() {
 #[test]
 fn concretize_matrix() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         fn foo() {
             let x = bar(mat2x2(0, 0, 0, 0));
@@ -1533,7 +1476,6 @@ fn concretize_matrix() {
 #[test]
 fn mat_index_i_is_not_f32() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         const index = 1.0f;
         const mat = mat2x2<f32>(1.0, 2.0, 3.0, 4.0);
@@ -1562,7 +1504,6 @@ fn mat_index_i_is_not_f32() {
 #[test]
 fn mat_index_j_is_not_f32() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         const index = 1.0f;
         const mat = mat2x2<f32>(1.0, 2.0, 3.0, 4.0);
@@ -1589,59 +1530,9 @@ fn mat_index_j_is_not_f32() {
 }
 
 #[test]
-fn bitcast_builtin() {
-    check_infer(
-        ExtensionsConfig::default(),
-        "
-fn main() {
-    let a = bitcast<f32>(1u);
-    let b = bitcast<u32>(1.0f);
-    let c = bitcast<i32>(1u);
-    let d = bitcast<vec2<f32>>(vec2<u32>(1u, 2u));
-    let e = bitcast<vec4<i32>>(vec4<f32>(1.0f, 2.0f, 3.0f, 4.0f));
-    let f = bitcast<f32>(1u) + 1.0f;
-    let g = bitcast<u32>(bitcast<f32>(42u));
-}
-    ",
-        expect![[r#"
-            20..21 'a': f32
-            24..40 'bitcas...2>(1u)': f32
-            37..39 '1u': u32
-            50..51 'b': u32
-            54..72 'bitcas...(1.0f)': u32
-            67..71 '1.0f': f32
-            82..83 'c': i32
-            86..102 'bitcas...2>(1u)': i32
-            99..101 '1u': u32
-            112..113 'd': vec2<f32>
-            116..153 'bitcas..., 2u))': vec2<f32>
-            135..152 'vec2<u...u, 2u)': vec2<u32>
-            145..147 '1u': u32
-            149..151 '2u': u32
-            163..164 'e': vec4<i32>
-            167..220 'bitcas...4.0f))': vec4<i32>
-            186..219 'vec4<f... 4.0f)': vec4<f32>
-            196..200 '1.0f': f32
-            202..206 '2.0f': f32
-            208..212 '3.0f': f32
-            214..218 '4.0f': f32
-            230..231 'f': f32
-            234..250 'bitcas...2>(1u)': f32
-            234..257 'bitcas...+ 1.0f': f32
-            247..249 '1u': u32
-            253..257 '1.0f': f32
-            267..268 'g': u32
-            271..302 'bitcas...(42u))': u32
-            284..301 'bitcas...>(42u)': f32
-            297..300 '42u': u32
-        "#]],
-    );
-}
-
-#[test]
 fn naga_shader_int64() {
-    check_infer(
-        ExtensionsConfig {
+    check_infer_with_capabilities(
+        Capabilities {
             shader_int64: true,
             ..Default::default()
         },
@@ -1658,7 +1549,6 @@ fn foo(bar: i64, baz: u64) {}
 #[test]
 fn no_builtin_overload() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         var x = 1f + mat2x2f();
         ",
@@ -1667,7 +1557,7 @@ fn no_builtin_overload() {
             8..10 '1f': f32
             8..22 '1f + mat2x2f()': [error]
             13..22 'mat2x2f()': mat2x2<f32>
-            [EditionedFileId(Id(300))] WgslError { expression: Idx::<Expression>(2), message: "cannot use binary operator `+` with operands `f32` and `mat2x2<f32>`" } in Body
+            8..22 '1f + mat2x2f()': cannot use binary operator `+` with operands `f32` and `mat2x2<f32>`
         "#]],
     );
 }
@@ -1675,7 +1565,6 @@ fn no_builtin_overload() {
 #[test]
 fn deref_not_a_pointer() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         var x = *1f;
         ",
@@ -1683,7 +1572,7 @@ fn deref_not_a_pointer() {
             4..5 'x': ref<handle, [error], read>
             8..11 '*1f': [error]
             9..11 '1f': f32
-            [EditionedFileId(Id(300))] WgslError { expression: Idx::<Expression>(0), message: "cannot use unary operator `*` on type `f32`" } in Body
+            8..11 '*1f': cannot use unary operator `*` on type `f32`
         "#]],
     );
 }
@@ -1691,17 +1580,16 @@ fn deref_not_a_pointer() {
 #[test]
 fn no_constructor() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         var x = vec2f(1, 2, 3);
         ",
         expect![[r#"
-            4..5 'x': ref<handle, [error], read>
-            8..22 'vec2f(1, 2, 3)': [error]
+            4..5 'x': ref<handle, vec2<f32>, read>
+            8..22 'vec2f(1, 2, 3)': vec2<f32>
             14..15 '1': integer
             17..18 '2': integer
             20..21 '3': integer
-            8..22 'vec2f(1, 2, 3)': no constructor for builtin `op_vec2_constructor` of type `vec2<f32>` with parameters `integer, integer, integer`
+            8..22 'vec2f(1, 2, 3)': no overload of constructor `vec2<f32>` found for arguments of type (integer, integer, integer)
         "#]],
     );
 }
@@ -1709,7 +1597,6 @@ fn no_constructor() {
 #[test]
 fn add_refs_and_ptrs() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         struct MyData {
             a: u32,
@@ -1775,8 +1662,8 @@ fn add_refs_and_ptrs() {
             398..403 'a_ptr': ptr<function, i32, read_write>
             398..411 'a_ptr + b_ref': [error]
             406..411 'b_ref': ref<function, i32, read_write>
-            [EditionedFileId(Id(300))] WgslError { expression: Idx::<Expression>(11), message: "cannot use binary operator `+` with operands `ptr<function, i32, read_write>` and `ptr<function, i32, read_write>`" } in Body
-            [EditionedFileId(Id(300))] WgslError { expression: Idx::<Expression>(14), message: "cannot use binary operator `+` with operands `ptr<function, i32, read_write>` and `i32`" } in Body
+            367..380 'a_ptr + b_ptr': cannot use binary operator `+` with operands `ptr<function, i32, read_write>` and `ptr<function, i32, read_write>`
+            398..411 'a_ptr + b_ref': cannot use binary operator `+` with operands `ptr<function, i32, read_write>` and `i32`
         "#]],
     );
 }
@@ -1784,7 +1671,6 @@ fn add_refs_and_ptrs() {
 #[test]
 fn unexpected_return_type() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         fn foo() {
             return 0;
@@ -1800,7 +1686,6 @@ fn unexpected_return_type() {
 #[test]
 fn wrong_return_type() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         fn foo() -> bool {
             return 0;
@@ -1816,7 +1701,6 @@ fn wrong_return_type() {
 #[test]
 fn shift_operator_inference() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         fn bit_repro() {
             let x = 1 << 4;
@@ -1842,7 +1726,6 @@ fn shift_operator_inference() {
 #[test]
 fn lowering_type_missing_template_arguments() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         var x: mat4x4;
         const m: mat4x4 = mat2x2(0, 1, 2, 3);
@@ -1864,7 +1747,6 @@ fn lowering_type_missing_template_arguments() {
 #[test]
 fn lowering_type_missing_expected_type() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         var x: modf;
         ",
@@ -1878,7 +1760,6 @@ fn lowering_type_missing_expected_type() {
 #[test]
 fn to_wgsl_types_builtin_struct() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         fn foo() {
             let x = modf(1.0);
@@ -1892,7 +1773,7 @@ fn to_wgsl_types_builtin_struct() {
             42..43 'y': [error]
             46..53 'modf(x)': [error]
             51..52 'x': __modf_result_abstract
-            [EditionedFileId(Id(300))] WgslError { expression: Idx::<Expression>(3), message: "`modf` expects a float scalar or vector argument" } in Body
+            46..53 'modf(x)': `modf` expects a float scalar or vector argument
         "#]],
     );
 }
@@ -1900,17 +1781,15 @@ fn to_wgsl_types_builtin_struct() {
 #[test]
 fn lower_function_as_template_argument() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         fn foo() {
-            let y = array<foo>(1.0);
+            let y = array<foo, 1>(1.0);
         }
         ",
         expect![[r#"
-            19..20 'y': array<[error]>
-            23..38 'array<foo>(1.0)': array<[error]>
-            34..37 '1.0': float
-            34..37 '1.0': expected [error] but got float
+            19..20 'y': array<[error], 1>
+            23..41 'array<...>(1.0)': array<[error], 1>
+            37..40 '1.0': float
             29..32 'foo': foo was written, write foo() instead
         "#]],
     );
@@ -1919,7 +1798,6 @@ fn lower_function_as_template_argument() {
 #[test]
 fn builtin_struct_not_constructible() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         fn foo() {
             let y = __modf_result_abstract(1.0, 0.1);
@@ -1938,7 +1816,6 @@ fn builtin_struct_not_constructible() {
 #[test]
 fn lower_call_uncallable_diagnostic() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         fn foo() {
             let y = rgba16float();
@@ -1955,7 +1832,6 @@ fn lower_call_uncallable_diagnostic() {
 #[test]
 fn not_convertible() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         fn foo() {
             let x = 1i * 1.0f;
@@ -1966,7 +1842,7 @@ fn not_convertible() {
             23..25 '1i': i32
             23..32 '1i * 1.0f': [error]
             28..32 '1.0f': f32
-            [EditionedFileId(Id(300))] WgslError { expression: Idx::<Expression>(2), message: "cannot use binary operator `*` with operands `i32` and `f32`" } in Body
+            23..32 '1i * 1.0f': cannot use binary operator `*` with operands `i32` and `f32`
         "#]],
     );
 }
@@ -1974,14 +1850,13 @@ fn not_convertible() {
 #[test]
 fn sampler_comparison_no_template() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         var x: sampler_comparison<wrong>;
         ",
         expect![[r#"
             4..5 'x': ref<handle, sampler_comparison, read>
             26..31 'wrong': `wrong` not found in scope
-            26..31 'wrong': unexpected template argument, expected nothing
+            26..31 'wrong': unexpected template argument, expected nothing, actual: [error]
         "#]],
     );
 }
@@ -1989,7 +1864,6 @@ fn sampler_comparison_no_template() {
 #[test]
 fn ptr_template_not_enumerant() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         fn foo1(bar1: ptr<rgba8unorm, i32, read_write>) { }
         fn foo2(bar2: ptr<storage, 123i, read_write>) { }
@@ -1998,11 +1872,11 @@ fn ptr_template_not_enumerant() {
         ",
         expect![[r#"
             8..12 'bar1': [error]
-            18..28 'rgba8unorm': unexpected template argument, expected an address space
+            18..28 'rgba8unorm': unexpected template argument, expected an address space, actual: rgba8unorm
             60..64 'bar2': ptr<storage, [error], read_write>
-            79..83 '123i': unexpected template argument, expected a type
+            79..83 '123i': unexpected template argument, expected a type, actual: 123i
             110..114 'bar3': [error]
-            134..144 'rgba8unorm': unexpected template argument, expected one of: (read, read_write, write)
+            134..144 'rgba8unorm': unexpected template argument, expected one of: (read, read_write, write), actual: rgba8unorm
             159..163 'bar4': ptr<storage, i32, read>
         "#]],
     );
@@ -2011,7 +1885,6 @@ fn ptr_template_not_enumerant() {
 #[test]
 fn small_fragment_shader() {
     check_infer(
-        ExtensionsConfig::default(),
         "
 @fragment
 fn main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
@@ -2040,7 +1913,6 @@ fn main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
 #[test]
 fn override_declaration() {
     check_infer(
-        ExtensionsConfig::default(),
         "
         override LEVELS: f32 = 4.0;
         fn foo() -> f32 { return LEVELS; }
@@ -2049,6 +1921,447 @@ fn override_declaration() {
             9..15 'LEVELS': f32
             23..26 '4.0': float
             53..59 'LEVELS': f32
+        "#]],
+    );
+}
+
+#[test]
+fn function_call_argument_type_mismatch() {
+    check_infer(
+        "
+fn foo(x: i32, y: u32) {
+    foo(y, x);
+}
+        ",
+        expect![[r#"
+            7..8 'x': i32
+            15..16 'y': u32
+            29..38 'foo(y, x)': [error]
+            33..34 'y': u32
+            36..37 'x': i32
+            33..34 'y': expected i32 but got u32
+            36..37 'x': expected u32 but got i32
+        "#]],
+    );
+}
+
+#[test]
+fn ident_override_inference() {
+    check_infer(
+        "
+override bar: u32;
+fn foo() {
+    let x = bar;
+}
+        ",
+        expect![[r#"
+            9..12 'bar': u32
+            38..39 'x': u32
+            42..45 'bar': u32
+        "#]],
+    );
+}
+
+#[test]
+fn var_cycle() {
+    check_infer(
+        "
+var x = y;
+var y = x;
+        ",
+        expect![[r#"
+            0..10: cyclic definition for type `x`
+            11..21: cyclic definition for type `y`
+        "#]],
+    );
+}
+
+#[test]
+fn struct_cycle() {
+    check_infer(
+        "
+struct Foo { foo: Bar }
+struct Bar { foo: Foo }
+fn foo() {
+    let x = Foo();
+}
+        ",
+        expect![[r#"
+            67..68 'x': Foo
+            71..76 'Foo()': Foo
+            71..76 'Foo()': type `Foo` is not constructible
+        "#]],
+    );
+}
+
+// TODO https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1389
+#[test]
+fn function_cycle() {
+    check_infer(
+        "
+fn foo() {
+    foo();
+}
+        ",
+        expect![[r#"
+            15..20 'foo()': [error]
+        "#]],
+    );
+}
+
+#[test]
+fn alias_cycle() {
+    check_infer(
+        "
+alias Foo = Bar;
+alias Bar = Foo;
+        ",
+        expect![[r#"
+            0..16: cyclic definition for type `Foo`
+            17..33: cyclic definition for type `Bar`
+        "#]],
+    );
+}
+
+#[test]
+fn not_a_reference() {
+    check_infer(
+        "
+fn foo() {
+    let x = 1;
+    x = 2;
+    x++;
+    x += 1;
+}
+        ",
+        expect![[r#"
+            19..20 'x': i32
+            23..24 '1': integer
+            30..31 'x': i32
+            34..35 '2': integer
+            41..42 'x': i32
+            50..51 'x': i32
+            55..56 '1': integer
+            30..31 'x': cannot assign to non-reference `i32`
+            41..42 'x': cannot assign to non-reference `i32`
+            50..51 'x': cannot assign to non-reference `i32`
+        "#]],
+    );
+}
+
+#[test]
+fn error_in_template() {
+    check_infer(
+        "
+fn foo() {
+    let y = 0;
+    let x = sqrt<&y>(y);
+}
+        ",
+        expect![[r#"
+            19..20 'y': i32
+            23..24 '0': integer
+            34..35 'x': [error]
+            38..49 'sqrt<&y>(y)': [error]
+            47..48 'y': i32
+        "#]],
+    );
+}
+
+#[test]
+fn matrix_no_constructor() {
+    check_infer(
+        "
+fn foo() {
+    let y = mat2x2f(true);
+}
+        ",
+        expect![[r#"
+            19..20 'y': mat2x2<f32>
+            23..36 'mat2x2f(true)': mat2x2<f32>
+            31..35 'true': bool
+            23..36 'mat2x2f(true)': no overload of constructor `mat2x2<f32>` found for arguments of type (bool)
+        "#]],
+    );
+}
+
+#[test]
+fn vector_no_constructor() {
+    check_infer(
+        "
+fn foo() {
+    let y = vec2(true, true, true);
+}
+        ",
+        expect![[r#"
+            19..20 'y': vec2<[error]>
+            23..45 'vec2(t... true)': vec2<[error]>
+            28..32 'true': bool
+            34..38 'true': bool
+            40..44 'true': bool
+            23..45 'vec2(t... true)': no overload of function `vec2` found for arguments of type (bool, bool, bool)
+        "#]],
+    );
+}
+
+#[test]
+fn array_zero_arguments() {
+    check_infer(
+        "
+fn foo() {
+    let y = array();
+}
+        ",
+        expect![[r#"
+            19..20 'y': array<[error]>
+            23..30 'array()': array<[error]>
+            23..30 'array()': no overload of function `array` found that takes no arguments
+        "#]],
+    );
+}
+
+#[test]
+fn vector_zero_arguments() {
+    check_infer(
+        "
+fn foo() {
+    let y = vec2();
+}
+        ",
+        expect![[r#"
+            19..20 'y': vec2<i32>
+            23..29 'vec2()': vec2<integer>
+        "#]],
+    );
+}
+
+#[test]
+fn matrix_zero_arguments() {
+    check_infer(
+        "
+fn foo() {
+    let y = mat2x2();
+}
+        ",
+        expect![[r#"
+            19..20 'y': mat2x2<[error]>
+            23..31 'mat2x2()': mat2x2<[error]>
+            23..31 'mat2x2()': no overload of function `mat2x2` found that takes no arguments
+        "#]],
+    );
+}
+
+#[test]
+fn matrix_missing_template_no_constructor() {
+    check_infer(
+        "
+fn foo() {
+    let y = mat2x2(true);
+}
+        ",
+        expect![[r#"
+            19..20 'y': mat2x2<[error]>
+            23..35 'mat2x2(true)': mat2x2<[error]>
+            30..34 'true': bool
+            23..35 'mat2x2(true)': no overload of function `mat2x2` found for arguments of type (bool)
+        "#]],
+    );
+}
+
+#[test]
+fn array_templated_not_convertible() {
+    check_infer(
+        "
+fn foo() {
+    let y = array<bool, 1>(1);
+}
+        ",
+        expect![[r#"
+            19..20 'y': array<bool, 1>
+            23..40 'array<... 1>(1)': array<bool, 1>
+            38..39 '1': integer
+            38..39 '1': expected bool but got integer
+        "#]],
+    );
+}
+
+#[test]
+fn array_templated_wrong_number_arguments() {
+    check_infer(
+        "
+fn foo() {
+    let y = array<i32, 1>(1, 2);
+}
+        ",
+        expect![[r#"
+            19..20 'y': array<i32, 1>
+            23..42 'array<...(1, 2)': array<i32, 1>
+            37..38 '1': integer
+            40..41 '2': integer
+            23..42 'array<...(1, 2)': expected `1` arguments, but received `2`
+        "#]],
+    );
+}
+
+#[test]
+fn array_untemplated_not_convertible() {
+    check_infer(
+        "
+fn foo() {
+    let y = array(bool, 1);
+}
+        ",
+        expect![[r#"
+            19..20 'y': array<[error], 2>
+            23..37 'array(bool, 1)': array<[error], 2>
+            29..33 'bool': [error]
+            35..36 '1': integer
+            29..33 'bool': expected variable, but got type `bool`
+        "#]],
+    );
+}
+
+#[test]
+fn array_untemplated_wrong_number_arguments() {
+    check_infer(
+        "
+fn foo() {
+    let y = array(1, 2);
+}
+        ",
+        expect![[r#"
+            19..20 'y': array<i32, 2>
+            23..34 'array(1, 2)': array<integer, 2>
+            29..30 '1': integer
+            32..33 '2': integer
+        "#]],
+    );
+}
+
+#[test]
+fn atomic_assignment() {
+    check_infer(
+        "
+struct Foo {
+    y: atomic<u32>,
+}
+var<storage, read_write> x: array<Foo>;
+fn foo() {
+    x[0].y = 0u;
+}
+        ",
+        expect![[r#"
+            60..61 'x': ref<storage, array<Foo>, read_write>
+            90..91 'x': ref<storage, array<Foo>, read_write>
+            90..94 'x[0]': ref<storage, Foo, read_write>
+            90..96 'x[0].y': ref<storage, atomic<u32>, read_write>
+            92..93 '0': integer
+            99..101 '0u': u32
+            99..101 '0u': expected atomic<u32> but got u32
+        "#]],
+    );
+}
+
+#[test]
+fn atomic_assignment2() {
+    check_infer(
+        "
+@fragment
+fn shade_it() -> @location(0) vec4<f32> {
+  _ = &buf;
+  atomicStore(&buf.counter, 1u);
+  return vec4<f32>();
+}
+
+struct BufferContents {
+    counter: atomic<u32>,
+    data: array<vec4<f32>>
+}
+
+@group(0) @binding(0) var<storage, read_write> buf: BufferContents;
+
+        ",
+        expect![[r#"
+            58..62 '&buf': ptr<storage, BufferContents, read_write>
+            59..62 'buf': ref<storage, BufferContents, read_write>
+            66..95 'atomic...r, 1u)': [error]
+            78..90 '&buf.counter': ptr<storage, atomic<u32>, read_write>
+            79..82 'buf': ref<storage, BufferContents, read_write>
+            79..90 'buf.counter': ref<storage, atomic<u32>, read_write>
+            92..94 '1u': u32
+            106..117 'vec4<f32>()': vec4<f32>
+            249..252 'buf': ref<storage, BufferContents, read_write>
+        "#]],
+    );
+}
+
+#[test]
+fn array_i32_template_parameter() {
+    check_infer(
+        "
+fn foo() {
+    let x = array<f32, 1i>(1);
+}
+
+
+        ",
+        expect![[r#"
+            19..20 'x': array<f32, 1>
+            23..40 'array<...1i>(1)': array<f32, 1>
+            38..39 '1': integer
+        "#]],
+    );
+}
+
+#[test]
+fn array_u32_template_parameter() {
+    check_infer(
+        "
+fn foo() {
+    let x = array<f32, 1u>(1);
+}
+
+
+        ",
+        expect![[r#"
+            19..20 'x': array<f32, 1>
+            23..40 'array<...1u>(1)': array<f32, 1>
+            38..39 '1': integer
+        "#]],
+    );
+}
+
+#[test]
+fn array_missing_template() {
+    check_infer(
+        "
+fn foo() {
+    let x = array<1>(1);
+}
+        ",
+        expect![[r#"
+            19..20 'x': array<[error]>
+            23..34 'array<1>(1)': array<[error]>
+            32..33 '1': integer
+            29..30 '1': unexpected template argument, expected a type, actual: 1
+        "#]],
+    );
+}
+
+#[test]
+fn array_template_second_not_instance() {
+    check_infer(
+        "
+fn foo() {
+    let x = array<1, f32>(1);
+}
+        ",
+        expect![[r#"
+            19..20 'x': [error]
+            23..39 'array<...32>(1)': [error]
+            37..38 '1': integer
+            29..30 '1': unexpected template argument, expected a type, actual: 1
+            32..35 'f32': unexpected template argument, expected an instance, actual: f32
         "#]],
     );
 }

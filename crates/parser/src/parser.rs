@@ -8,7 +8,7 @@
 )]
 use std::fmt;
 
-use edition::{Edition, ExtensionsConfig};
+use edition::{Capabilities, Edition, ExtensionsConfig};
 use logos::Logos as _;
 use rowan::GreenNodeBuilder;
 
@@ -30,6 +30,7 @@ pub struct ParserContext {
     edition: Edition,
     translation_unit_state: TranslationUnitState,
     extensions: ExtensionsConfig,
+    capabilities: Capabilities,
 
     /// The most recently completed `attribute_list`.
     /// Set by `create_node_attribute_list`.
@@ -65,10 +66,11 @@ pub(crate) fn to_range(span: Span) -> rowan::TextRange {
 }
 
 #[must_use]
-pub fn parse_entrypoint(
+pub fn parse_entrypoint_with_capabilities(
     input: &str,
     entrypoint: ParseEntryPoint,
     edition: Edition,
+    capabilities: Capabilities,
 ) -> Parse {
     let mut diagnostics = Vec::new();
     let parser = Parser::new_with_context(
@@ -78,6 +80,7 @@ pub fn parse_entrypoint(
             edition,
             translation_unit_state: TranslationUnitState::default(),
             extensions: ExtensionsConfig::default(),
+            capabilities,
             last_attribute_list: None,
         },
     );
@@ -332,8 +335,19 @@ impl<'source> ParserCallbacks<'source> for Parser<'source> {
             "primitive_index" => self.context.extensions.primitive_index = true,
             "subgroup_size_control" => self.context.extensions.subgroup_size_control = true,
 
-            "SHADER_INT64" => self.context.extensions.shader_int64 = true,
-            "EARLY_DEPTH_TEST" => self.context.extensions.early_depth_test = true,
+            "wgpu_mesh_shader" => self.context.extensions.wgpu_mesh_shader = true,
+            "wgpu_ray_query" => self.context.extensions.wgpu_ray_query = true,
+            "wgpu_ray_query_vertex_return" => {
+                self.context.extensions.wgpu_ray_query_vertex_return = true
+            },
+            "wgpu_ray_tracing_pipelines" => {
+                self.context.extensions.wgpu_ray_tracing_pipelines = true
+            },
+            "wgpu_int16" => self.context.extensions.wgpu_int16 = true,
+            "wgpu_cooperative_matrix" => self.context.extensions.wgpu_cooperative_matrix = true,
+            "per_vertex" => self.context.extensions.per_vertex = true,
+            "draw_index" => self.context.extensions.draw_index = true,
+            "wgpu_binding_array" => self.context.extensions.wgpu_binding_array = true,
             _ => {
                 diagnostics.push(self.create_diagnostic(
                     self.cst.span(node_ref),
@@ -386,7 +400,7 @@ impl<'source> ParserCallbacks<'source> for Parser<'source> {
         node_ref: NodeRef,
         diagnostics: &mut Vec<Self::Diagnostic>,
     ) {
-        if !self.context.extensions.early_depth_test {
+        if !self.context.capabilities.early_depth_test {
             diagnostics.push(self.create_diagnostic(
                 self.cst.span(node_ref),
                 "the extension EARLY_DEPTH_TEST is not enabled".to_owned(),

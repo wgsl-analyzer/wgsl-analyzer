@@ -14,7 +14,6 @@ pub mod resolver;
 pub mod signature;
 #[cfg(test)]
 mod test_db;
-pub mod type_ref;
 pub mod type_specifier;
 pub mod visibility;
 pub use ast_id::*;

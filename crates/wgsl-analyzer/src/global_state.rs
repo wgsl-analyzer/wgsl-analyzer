@@ -154,7 +154,7 @@ impl GlobalState {
         // if let Some(capacities) = config.lru_query_capacities_config() {
         //     analysis_host.update_lru_capacities(capacities);
         // }
-        analysis_host.update_extensions(config.extensions());
+        analysis_host.update_capabilities(config.capabilities());
 
         // let (flycheck_sender, flycheck_receiver) = unbounded();
         // let (test_run_sender, test_run_receiver) = unbounded();
@@ -569,7 +569,7 @@ impl GlobalStateSnapshot {
         let result = LineIndex {
             index,
             endings,
-            encoding: self.config.capabilities().negotiated_encoding(),
+            encoding: self.config.client_capabilities().negotiated_encoding(),
         };
         Ok(result)
     }

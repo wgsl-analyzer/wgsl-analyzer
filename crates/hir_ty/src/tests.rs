@@ -5,12 +5,14 @@ mod builtins;
 mod conditional_compilation;
 mod imports;
 mod incremental;
+mod language_extensions;
 mod layout;
 mod operators;
 mod simple;
+mod single_diagnostics_on_errors;
 use std::fmt::Write as _;
 
-use base_db::{EditionedFileId, ExtensionsConfigInput, Intern as _, Lookup as _};
+use base_db::{CapabilitiesInput, EditionedFileId, Intern as _, Lookup as _, TextRange};
 use expect_test::Expect;
 use hir_def::{
     HasSource as _,
@@ -25,8 +27,7 @@ use hir_def::{
     signature::{StructSignature, TypeAliasSignature},
     type_specifier::TypeSpecifierId,
 };
-use itertools::Itertools as _;
-use syntax::{AstNode as _, Diagnostic, ExtensionsConfig, SyntaxNode};
+use syntax::{AstNode as _, Capabilities, Diagnostic, SyntaxNode};
 use test_fixture::WithFixture as _;
 
 use crate::{
@@ -45,11 +46,11 @@ use crate::{
 };
 
 fn infer(
-    extensions: ExtensionsConfig,
+    capabilities: Capabilities,
     wa_fixture: &str,
 ) -> String {
     let (mut db, files) = TestDatabase::with_many_files(wa_fixture);
-    ExtensionsConfigInput::update_extensions(&mut db, extensions);
+    CapabilitiesInput::update_capabilities(&mut db, capabilities);
     let mut buffer = String::new();
 
     for (index, file_id) in files.into_iter().enumerate() {
@@ -185,47 +186,45 @@ impl<'db> InferPrinter<'db> {
         writeln!(buffer, "{range:?} '{}': {pretty}", ellipsize(text, 15)).unwrap();
     }
 
+    #[expect(clippy::too_many_lines, reason = "long match")]
     fn print_diagnostic(
         &self,
         diagnostic: &InferenceDiagnostic,
         source_map: &ExpressionSourceMap,
         buffer: &mut String,
     ) {
-        use InferenceDiagnosticKind as IDK;
         match &diagnostic.kind {
-            IDK::TypeMismatch {
+            InferenceDiagnosticKind::TypeMismatch {
                 expression,
                 expected,
                 actual,
             } => {
+                debug_assert!(
+                    !actual.is_err(self.db),
+                    "don't give a diagnostic for downstream issues"
+                );
                 self.print_type_mismatch(source_map, buffer, *expression, *expected, *actual);
             },
-            IDK::AssignmentNotAReference { .. }
-            | IDK::AddressOfNotReference { .. }
-            | IDK::DerefNotAPointer { .. }
-            | IDK::CyclicType { .. }
-            | IDK::WgslError { .. } => {
-                self.print_todo_bad_diagnostic(diagnostic, buffer);
+            InferenceDiagnosticKind::AssignmentNotAReference { actual, left_side } => {
+                debug_assert!(
+                    !actual.is_err(self.db),
+                    "don't give a diagnostic for downstream issues"
+                );
+                self.print_assignment_not_a_reference(source_map, buffer, *actual, *left_side);
             },
-            IDK::UnexpectedTemplateArgument { expression } => {
+            InferenceDiagnosticKind::CyclicType { name, range } => {
+                self.print_cyclic_type(buffer, name, *range);
+            },
+            InferenceDiagnosticKind::WgslError {
+                expression,
+                message,
+            } => {
+                self.print_wgsl_error(source_map, buffer, *expression, message);
+            },
+            InferenceDiagnosticKind::UnexpectedTemplateArgument { expression } => {
                 self.print_unexpected_template_argument(source_map, buffer, *expression);
             },
-
-            IDK::NoBuiltinOverload {
-                builtin: _,
-                expression,
-                name,
-                parameters,
-            } => {
-                self.print_no_builtin_overload(
-                    source_map,
-                    buffer,
-                    *expression,
-                    name.as_ref(),
-                    parameters,
-                );
-            },
-            IDK::UnexpectedLoweredKind {
+            InferenceDiagnosticKind::UnexpectedLoweredKind {
                 actual,
                 expected,
                 expression,
@@ -240,44 +239,63 @@ impl<'db> InferPrinter<'db> {
                     path,
                 );
             },
-            IDK::InvalidType { error } => {
+            InferenceDiagnosticKind::InvalidType { error } => {
                 self.print_invalid_type(source_map, buffer, error);
             },
-            IDK::NoConstructor {
-                builtins,
+            InferenceDiagnosticKind::NoConstructor {
                 expression,
                 parameters,
                 r#type,
             } => {
-                self.print_no_constructor(
-                    source_map,
-                    buffer,
-                    *builtins,
-                    *expression,
-                    parameters,
-                    *r#type,
+                debug_assert!(
+                    !r#type.is_err(self.db),
+                    "don't give a diagnostic for downstream issues"
                 );
+                self.print_no_constructor(source_map, buffer, *expression, parameters, *r#type);
             },
-            IDK::NoSuchField {
+            InferenceDiagnosticKind::NoOverload {
+                expression,
+                parameters,
+                name,
+            } => {
+                self.print_no_overload(source_map, buffer, *expression, parameters, name);
+            },
+            InferenceDiagnosticKind::NoSuchField {
                 expression,
                 name,
                 r#type,
             } => {
+                debug_assert!(
+                    !r#type.is_err(self.db),
+                    "don't give a diagnostic for downstream issues"
+                );
                 self.print_no_such_field(source_map, buffer, *expression, name, *r#type);
             },
-            IDK::StoreTypeMustBeStorable { actual, expression } => {
+            InferenceDiagnosticKind::StoreTypeMustBeStorable { actual, expression } => {
+                debug_assert!(
+                    !actual.is_err(self.db),
+                    "don't give a diagnostic for downstream issues"
+                );
                 self.print_store_type_must_be_storable(source_map, buffer, *actual, *expression);
             },
-            IDK::ArrayAccessInvalidType { expression, r#type } => {
+            InferenceDiagnosticKind::ArrayAccessInvalidType { expression, r#type } => {
+                debug_assert!(
+                    !r#type.is_err(self.db),
+                    "don't give a diagnostic for downstream issues"
+                );
                 self.print_array_access_invalid(source_map, buffer, *expression, *r#type);
             },
-            IDK::UnexpectedReturnValue { actual, expression } => {
+            InferenceDiagnosticKind::UnexpectedReturnValue { actual, expression } => {
                 self.print_unexpected_return_value(source_map, buffer, *actual, *expression);
             },
-            IDK::NotConstructible { expression, r#type } => {
+            InferenceDiagnosticKind::NotConstructible { expression, r#type } => {
+                debug_assert!(
+                    !r#type.is_err(self.db),
+                    "don't give a diagnostic for downstream issues"
+                );
                 self.print_not_constructible(source_map, buffer, *expression, *r#type);
             },
-            IDK::FunctionCallArgCountMismatch {
+            InferenceDiagnosticKind::FunctionCallArgCountMismatch {
                 expression,
                 n_actual,
                 n_expected,
@@ -293,6 +311,25 @@ impl<'db> InferPrinter<'db> {
         }
     }
 
+    fn print_assignment_not_a_reference(
+        &self,
+        source_map: &ExpressionSourceMap,
+        buffer: &mut String,
+        actual: Type,
+        left_side: ExpressionId,
+    ) {
+        let Some((range, text)) = self.get_expression_range_text(source_map, left_side) else {
+            return;
+        };
+        writeln!(
+            buffer,
+            "{range:?} '{}': cannot assign to non-reference `{}`",
+            ellipsize(text, 15),
+            pretty_type(self.db, actual),
+        )
+        .unwrap();
+    }
+
     fn print_unexpected_template_argument(
         &self,
         source_map: &ExpressionSourceMap,
@@ -306,34 +343,6 @@ impl<'db> InferPrinter<'db> {
             buffer,
             "{range:?} '{}': unexpected template argument `{text}`",
             ellipsize(text.clone(), 15),
-        )
-        .unwrap();
-    }
-
-    fn print_no_builtin_overload(
-        &self,
-        source_map: &ExpressionSourceMap,
-        buffer: &mut String,
-        expression: ExpressionId,
-        name: Option<&Name>,
-        parameters: &[Type],
-    ) {
-        let Some((range, text)) = self.get_expression_range_text(source_map, expression) else {
-            return;
-        };
-        writeln!(
-            buffer,
-            "{range:?} '{}': no built-in overload of `{}` with parameters: ({})",
-            ellipsize(text, 15),
-            if let Some(name) = name {
-                name.as_str()
-            } else {
-                "<missing>"
-            },
-            parameters
-                .iter()
-                .map(|r#type| pretty_type_with_verbosity(self.db, *r#type, TypeVerbosity::Full))
-                .join(", ")
         )
         .unwrap();
     }
@@ -400,7 +409,7 @@ impl<'db> InferPrinter<'db> {
             buffer,
             "{range:?} '{}': {}",
             ellipsize(text, 15),
-            error.kind,
+            error.kind.display(self.db),
         )
         .unwrap();
     }
@@ -409,7 +418,6 @@ impl<'db> InferPrinter<'db> {
         &self,
         source_map: &ExpressionSourceMap,
         buffer: &mut String,
-        builtins: crate::builtins::BuiltinId,
         expression: ExpressionId,
         parameters: &[Type],
         r#type: Type,
@@ -417,36 +425,92 @@ impl<'db> InferPrinter<'db> {
         let Some((range, text)) = self.get_expression_range_text(source_map, expression) else {
             return;
         };
+        if parameters.is_empty() {
+            writeln!(
+                buffer,
+                "{range:?} '{}': no overload of constructor `{}` found that takes no arguments",
+                ellipsize(text, 15),
+                pretty_type(self.db, r#type),
+            )
+            .unwrap();
+        } else {
+            let parameters = join_display(parameters.iter().map(|parameter| {
+                pretty_type_with_verbosity(self.db, *parameter, TypeVerbosity::Full)
+            }));
+            writeln!(
+                buffer,
+                "{range:?} '{}': no overload of constructor `{}` found for arguments of type ({parameters})",
+                ellipsize(text, 15),
+                pretty_type(self.db, r#type),
+            )
+            .unwrap();
+        }
+    }
+
+    fn print_no_overload(
+        &self,
+        source_map: &ExpressionSourceMap,
+        buffer: &mut String,
+        expression: ExpressionId,
+        parameters: &[Type],
+        name: &Name,
+    ) {
+        let Some((range, text)) = self.get_expression_range_text(source_map, expression) else {
+            return;
+        };
+        if parameters.is_empty() {
+            writeln!(
+                buffer,
+                "{range:?} '{}': no overload of function `{}` found that takes no arguments",
+                ellipsize(text, 15),
+                name.as_str(),
+            )
+            .unwrap();
+        } else {
+            let parameters = join_display(parameters.iter().map(|parameter| {
+                pretty_type_with_verbosity(self.db, *parameter, TypeVerbosity::Full)
+            }));
+            writeln!(
+                buffer,
+                "{range:?} '{}': no overload of function `{}` found for arguments of type ({parameters})",
+                ellipsize(text, 15),
+                name.as_str(),
+            )
+            .unwrap();
+        }
+    }
+
+    #[expect(clippy::unused_self, reason = "intended API")]
+    fn print_cyclic_type(
+        &self,
+        buffer: &mut String,
+        name: &Name,
+        range: TextRange,
+    ) {
         writeln!(
             buffer,
-            "{range:?} '{}': no constructor for builtin `{}` of type `{}` with parameters `{}`",
-            ellipsize(text, 15),
-            builtins.lookup(self.db).name(),
-            pretty_type(self.db, r#type),
-            join_display(
-                parameters
-                    .iter()
-                    .map(|parameter| pretty_type_with_verbosity(
-                        self.db,
-                        *parameter,
-                        TypeVerbosity::Full
-                    ))
-            ),
+            "{range:?}: cyclic definition for type `{}`",
+            name.as_str()
         )
         .unwrap();
     }
 
-    fn print_todo_bad_diagnostic(
+    fn print_wgsl_error(
         &self,
-        diagnostic: &InferenceDiagnostic,
+        source_map: &ExpressionSourceMap,
         buffer: &mut String,
+        expression: ExpressionId,
+        message: &str,
     ) {
-        writeln!(
-            buffer,
-            "[{:?}] {:?} in {:?}",
-            self.file_id, diagnostic.kind, diagnostic.source
-        )
-        .unwrap();
+        let node = match source_map.expression_to_source(expression) {
+            Ok(sp) => sp.to_node(&self.root).syntax().clone(),
+            Err(SyntheticSyntax) => return,
+        };
+        let (range, text) = (
+            node.text_range(),
+            node.text().to_string().replace('\n', " "),
+        );
+        writeln!(buffer, "{range:?} '{}': {message}", ellipsize(text, 15)).unwrap();
     }
 
     fn print_no_such_field(
@@ -721,13 +785,21 @@ fn ellipsize(
     text
 }
 
-#[expect(clippy::needless_pass_by_value, reason = "Matches expect! macro")]
+#[expect(clippy::semicolon_if_nothing_returned, reason = "wrapper")]
 fn check_infer(
-    extensions: ExtensionsConfig,
     wa_fixture: &str,
     expect: Expect,
 ) {
-    let mut actual = infer(extensions, wa_fixture);
+    check_infer_with_capabilities(Capabilities::default(), wa_fixture, expect)
+}
+
+#[expect(clippy::needless_pass_by_value, reason = "Matches expect! macro")]
+fn check_infer_with_capabilities(
+    capabilities: Capabilities,
+    wa_fixture: &str,
+    expect: Expect,
+) {
+    let mut actual = infer(capabilities, wa_fixture);
     actual.push('\n');
     expect.assert_eq(&actual);
 }

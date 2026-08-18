@@ -34,9 +34,5 @@ tracing-tree.workspace = true
 expect-test.workspace = true
 test-fixture.workspace = true
 
-[build-dependencies]
-itertools.workspace = true
-rustc-hash.workspace = true
-
 [lints]
 workspace = true

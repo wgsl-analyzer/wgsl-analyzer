@@ -8,8 +8,8 @@ use std::{marker::PhantomData, ops::Deref};
 
 use either::Either;
 pub use parser::{
-    Diagnostic, Edition, ExtensionsConfig, ParseEntryPoint, SyntaxElement, SyntaxKind, SyntaxNode,
-    SyntaxNodeChildren, SyntaxToken,
+    Capabilities, Diagnostic, Edition, ExtensionsConfig, ParseEntryPoint, SyntaxElement,
+    SyntaxKind, SyntaxNode, SyntaxNodeChildren, SyntaxToken,
 };
 pub use rowan::Direction;
 use smol_str::SmolStr;
@@ -68,8 +68,13 @@ pub fn parse(
     input: &str,
     edition: Edition,
 ) -> Parse {
-    let (green_node, errors) =
-        parser::parse_entrypoint(input, ParseEntryPoint::File, edition).into_parts();
+    let (green_node, errors) = parser::parse_entrypoint_with_capabilities(
+        input,
+        ParseEntryPoint::File,
+        edition,
+        Capabilities::default(),
+    )
+    .into_parts();
     Parse {
         green_node,
         errors: Arc::from(errors),

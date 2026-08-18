@@ -1,6 +1,7 @@
-use std::fmt;
+use std::{fmt, num::NonZeroU32};
 
 use base_db::Intern as _;
+use either::Either;
 use hir_def::{
     body::BindingId,
     db::{GlobalConstantId, GlobalVariableId, OverrideId, StructId},
@@ -9,12 +10,12 @@ use hir_def::{
         UnaryOperator,
     },
     expression_store::{ExpressionStore, path::Path},
-    mod_path::PathKind,
+    item_tree::Name,
     resolver::{ResolutionDiagnostic, ResolveKind, Resolver},
     signature::StructSignature,
     type_specifier::TypeSpecifierId,
 };
-use wgsl_types::syntax::Enumerant;
+use wgsl_types::{Instance, syntax::Enumerant};
 
 use crate::{
     db::HirDatabase,
@@ -22,7 +23,7 @@ use crate::{
     ty::{
         ArraySize, ArrayType, AtomicType, BuiltinStruct, MatrixType, Pointer, Reference,
         ScalarType, TextureDimensionality, TextureKind, TextureType, Type, TypeKind, VecSize,
-        VectorType,
+        VectorType, pretty::pretty_type,
     },
 };
 
@@ -49,9 +50,57 @@ pub struct TypeLoweringError {
 }
 
 #[derive(PartialEq, Eq, Debug, Clone)]
+pub enum UnexpectedTemplateArgumentValue {
+    Type(Type),
+    Instance(String),
+    Enumerant(Enumerant),
+}
+
+impl From<TemplateParameter> for UnexpectedTemplateArgumentValue {
+    fn from(value: TemplateParameter) -> Self {
+        match value {
+            TemplateParameter::Type(r#type) => r#type.into(),
+            TemplateParameter::Instance(instance) => instance.into(),
+            TemplateParameter::Enumerant(enumerant) => enumerant.into(),
+        }
+    }
+}
+
+impl From<Type> for UnexpectedTemplateArgumentValue {
+    fn from(value: Type) -> Self {
+        Self::Type(value)
+    }
+}
+
+impl From<Option<Instance>> for UnexpectedTemplateArgumentValue {
+    fn from(value: Option<Instance>) -> Self {
+        Self::Instance(value.map_or_else(|| "[error]".to_owned(), |instance| instance.to_string()))
+    }
+}
+
+impl From<Enumerant> for UnexpectedTemplateArgumentValue {
+    fn from(value: Enumerant) -> Self {
+        Self::Enumerant(value)
+    }
+}
+
+impl UnexpectedTemplateArgumentValue {
+    fn display(
+        &self,
+        db: &dyn HirDatabase,
+    ) -> impl fmt::Display {
+        match self {
+            Self::Type(r#type) => pretty_type(db, *r#type),
+            Self::Instance(instance) => instance.clone(),
+            Self::Enumerant(enumerant) => enumerant.to_string(),
+        }
+    }
+}
+
+#[derive(PartialEq, Eq, Debug, Clone)]
 pub enum TypeLoweringErrorKind {
     Resolution(ResolutionDiagnostic),
-    UnexpectedTemplateArgument(String),
+    UnexpectedTemplateArgument(String, UnexpectedTemplateArgumentValue),
     UnexpectedModule(Path),
     MissingTemplateArgument(String),
     MissingTemplate,
@@ -72,84 +121,73 @@ pub enum TypeLoweringErrorKind {
     WgslError(String),
 }
 
-impl fmt::Display for TypeLoweringErrorKind {
-    fn fmt(
+impl TypeLoweringErrorKind {
+    pub fn display(
         &self,
-        formatter: &mut fmt::Formatter<'_>,
-    ) -> fmt::Result {
+        db: &dyn HirDatabase,
+    ) -> impl fmt::Display {
         match self {
             Self::Resolution(ResolutionDiagnostic::UnresolvedName { name }) => {
-                write!(formatter, "`{}` not found in scope", name.as_str())
+                format!("`{}` not found in scope", name.as_str())
             },
             Self::Resolution(ResolutionDiagnostic::UnresolvedFile { .. }) => {
-                write!(formatter, "could not find file")
+                "could not find file".to_owned()
             },
             Self::Resolution(ResolutionDiagnostic::DetachedFile) => {
-                write!(formatter, "current file is detached")
+                "current file is detached".to_owned()
             },
             Self::Resolution(ResolutionDiagnostic::MissingName) => {
-                write!(formatter, "path is missing a name")
+                "path is missing a name".to_owned()
             },
             Self::Resolution(ResolutionDiagnostic::PrivateItem { name, .. }) => {
-                write!(formatter, "`{}` is private", name.as_str())
+                format!("`{}` is private", name.as_str())
             },
             Self::Resolution(ResolutionDiagnostic::TooManySupers) => {
-                write!(formatter, "too many `super::`s")
+                "too many `super::`s".to_owned()
             },
             Self::Resolution(ResolutionDiagnostic::UnresolvedItem { name, .. }) => {
-                write!(formatter, "`{}` not found in other file", name.as_str())
+                format!("`{}` not found in other file", name.as_str())
             },
             Self::Resolution(ResolutionDiagnostic::UnresolvedPackage { name }) => {
-                write!(formatter, "package `{}` not found", name.as_str())
+                format!("package `{}` not found", name.as_str())
             },
-            Self::WgslError(error) => {
-                write!(formatter, "{error}")
-            },
-            Self::UnexpectedTemplateArgument(expected) => {
-                write!(
-                    formatter,
-                    "unexpected template argument, expected {expected}"
+            Self::WgslError(error) => error.clone(),
+            Self::UnexpectedTemplateArgument(expected, actual) => {
+                format!(
+                    "unexpected template argument, expected {expected}, actual: {}",
+                    actual.display(db)
                 )
             },
             Self::UnexpectedModule(path) => {
-                write!(
-                    formatter,
+                format!(
                     "`{}` is a module, not a type or expression",
                     path.mod_path()
                 )
             },
             Self::MissingTemplateArgument(expected) => {
-                write!(formatter, "missing template argument, expected {expected}")
+                format!("missing template argument, expected {expected}")
             },
-            Self::MissingTemplate => {
-                write!(formatter, "missing template arguments")
-            },
+            Self::MissingTemplate => "missing template arguments".to_owned(),
             Self::WrongNumberOfTemplateArguments { expected, actual }
                 if expected.start() == expected.end() =>
             {
-                write!(
-                    formatter,
+                format!(
                     "expected {} template arguments, but got {actual}",
                     expected.start()
                 )
             },
             Self::WrongNumberOfTemplateArguments { expected, actual } => {
-                write!(
-                    formatter,
+                format!(
                     "expected {} to {} template arguments, but got {actual}",
                     expected.start(),
                     expected.end()
                 )
             },
             Self::ExpectedType(path) => {
-                write!(formatter, "{} is not a type", path.mod_path())
+                format!("{} is not a type", path.mod_path())
             },
             Self::ExpectedFunctionToBeCalled(path) => {
-                write!(
-                    formatter,
-                    "{0:} was written, write {0:}() instead",
-                    path.mod_path()
-                )
+                format!("{0:} was written, write {0:}() instead", path.mod_path())
             },
         }
     }
@@ -159,23 +197,36 @@ impl fmt::Display for TypeLoweringErrorKind {
 /// Also covers built-ins.
 pub enum Lowered {
     Type(Type),
-    TypeWithoutTemplate(Type),
+    ConstructibleTypeGenerator(ConstructibleTypeGenerator),
     Function(ResolvedFunctionId),
     GlobalConstant(GlobalConstantId),
     GlobalVariable(GlobalVariableId),
     Override(OverrideId),
     Local(BindingId),
     Enumerant(Enumerant),
-    BuiltinFunction,
+    BuiltinFunction(Name, Option<TemplateParameters>),
+    // BuiltinConstructor(Name, Option<TemplateParameters>),
+    BuiltinDeclaration(Name, Instance),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum ConstructibleTypeGenerator {
+    Vector(VectorType),
+    Matrix(MatrixType),
+    Array(ArrayType),
 }
 
 impl Lowered {
     #[must_use]
     pub const fn kind(&self) -> LoweredKind {
         match self {
-            Self::Type(_) | Self::TypeWithoutTemplate(_) => LoweredKind::Type,
-            Self::Function(_) | Self::BuiltinFunction => LoweredKind::Function,
-            Self::GlobalConstant(_) => LoweredKind::Constant,
+            Self::Type(_) | Self::ConstructibleTypeGenerator(_)
+            // | Self::BuiltinConstructor(_, _)
+            => {
+                LoweredKind::Type
+            },
+            Self::Function(_) | Self::BuiltinFunction(_, _) => LoweredKind::Function,
+            Self::GlobalConstant(_) | Self::BuiltinDeclaration(_, _) => LoweredKind::Constant,
             Self::GlobalVariable(_) => LoweredKind::Variable,
             Self::Override(_) => LoweredKind::Override,
             Self::Local(_) => LoweredKind::Local,
@@ -271,28 +322,80 @@ impl<'db> TypeLoweringContext<'db> {
         template_parameters: &[ExpressionId],
     ) -> Result<Lowered, TypeLoweringError> {
         let resolved_type = self.resolver.resolve(self.db, path);
-
-        if resolved_type.is_ok() {
-            self.expect_no_template(template_parameters);
-        }
-
+        let template_parameters = self.eval_template_args(type_container, template_parameters);
         match resolved_type {
-            Ok(ResolveKind::TypeAlias(id)) => Ok(Lowered::Type(self.db.type_alias_type(id).0)),
-            Ok(ResolveKind::Struct(id)) => Ok(Lowered::Type(TypeKind::Struct(id).intern(self.db))),
-            Ok(ResolveKind::Function(id)) => Ok(Lowered::Function(self.db.function_type(id))),
-            Ok(ResolveKind::GlobalConstant(id)) => Ok(Lowered::GlobalConstant(id)),
-            Ok(ResolveKind::GlobalVariable(id)) => Ok(Lowered::GlobalVariable(id)),
-            Ok(ResolveKind::Override(id)) => Ok(Lowered::Override(id)),
-            Ok(ResolveKind::Local(local, _)) => Ok(Lowered::Local(local)),
-            Err(diagnostic)
-                if path.mod_path().kind() == PathKind::Plain && path.mod_path().len() == 1 =>
-            {
-                let predeclared_name = &path.mod_path().segments()[0];
-                self.lower_if_predeclared(type_container, predeclared_name, template_parameters)
+            Ok(ResolveKind::TypeAlias(id)) => {
+                self.expect_no_template(&template_parameters);
+                Ok(Lowered::Type(self.db.type_alias_type(id).0))
+            },
+            Ok(ResolveKind::Struct(id)) => {
+                self.expect_no_template(&template_parameters);
+                Ok(Lowered::Type(TypeKind::Struct(id).intern(self.db)))
+            },
+            Ok(ResolveKind::Function(id)) => {
+                self.expect_no_template(&template_parameters);
+                Ok(Lowered::Function(self.db.function_type(id)))
+            },
+            Ok(ResolveKind::GlobalConstant(id)) => {
+                self.expect_no_template(&template_parameters);
+                Ok(Lowered::GlobalConstant(id))
+            },
+            Ok(ResolveKind::GlobalVariable(id)) => {
+                self.expect_no_template(&template_parameters);
+                Ok(Lowered::GlobalVariable(id))
+            },
+            Ok(ResolveKind::Override(id)) => {
+                self.expect_no_template(&template_parameters);
+                Ok(Lowered::Override(id))
+            },
+            Ok(ResolveKind::Local(local, _function_parent)) => {
+                self.expect_no_template(&template_parameters);
+                Ok(Lowered::Local(local))
+            },
+            Ok(ResolveKind::BuiltinFunction(name)) => {
+                Ok(Lowered::BuiltinFunction(name, Some(template_parameters)))
+            },
+            Ok(ResolveKind::BuiltinType(name)) => {
+                self.expect_no_template(&template_parameters);
+                self.lower_builtin_type(&name)
                     .ok_or_else(|| TypeLoweringError {
                         container: type_container,
-                        kind: TypeLoweringErrorKind::Resolution(diagnostic),
+                        kind: TypeLoweringErrorKind::Resolution(
+                            ResolutionDiagnostic::UnresolvedName { name },
+                        ),
                     })
+            },
+            Ok(ResolveKind::BuiltinTypeGenerator(name)) => {
+                match self.lower_builtin_type_generator(
+                    type_container,
+                    &name,
+                    &template_parameters,
+                )? {
+                    Either::Left(generator) => Ok(Lowered::ConstructibleTypeGenerator(generator)),
+                    Either::Right(r#type) => Ok(Lowered::Type(r#type)),
+                }
+            },
+            // Ok(ResolveKind::BuiltinTypeConstructor(name)) => self
+            //     .lower_builtin_type(type_container, &name, &template_parameters)?
+            //     .ok_or_else(|| TypeLoweringError {
+            //         container: type_container,
+            //         kind: TypeLoweringErrorKind::Resolution(ResolutionDiagnostic::UnresolvedName {
+            //             name,
+            //         }),
+            //     }),
+            Ok(ResolveKind::BuiltinEnumerant(name)) => {
+                self.expect_no_template(&template_parameters);
+                self.lower_builtin_enumerant(&name)
+                    .map_err(|()| TypeLoweringError {
+                        container: type_container,
+                        kind: TypeLoweringErrorKind::Resolution(
+                            ResolutionDiagnostic::UnresolvedName { name },
+                        ),
+                    })
+            },
+            Ok(ResolveKind::BuiltinDeclaration(name)) => {
+                self.expect_no_template(&template_parameters);
+                self.lower_builtin_declaration(type_container, name)
             },
             Err(diagnostic) => Err(TypeLoweringError {
                 container: type_container,
@@ -303,15 +406,19 @@ impl<'db> TypeLoweringContext<'db> {
 
     fn expect_no_template(
         &mut self,
-        template_parameters: &[ExpressionId],
+        template_parameters: &TemplateParameters,
     ) {
-        if template_parameters.is_empty() {
+        if template_parameters.len() == 0 {
             return;
         }
-        for template_expression in template_parameters {
+        let mut iter = template_parameters.clone();
+        while let Some((parameter, template_expression)) = iter.take_next() {
             self.diagnostics.push(TypeLoweringError {
-                container: TypeContainer::Expression(*template_expression),
-                kind: TypeLoweringErrorKind::UnexpectedTemplateArgument("nothing".to_owned()),
+                container: TypeContainer::Expression(template_expression),
+                kind: TypeLoweringErrorKind::UnexpectedTemplateArgument(
+                    "nothing".to_owned(),
+                    parameter.into(),
+                ),
             });
         }
     }
@@ -320,10 +427,8 @@ impl<'db> TypeLoweringContext<'db> {
         &mut self,
         template_parameters: &TemplateParameters,
         expected: std::ops::RangeInclusive<usize>,
-    ) -> bool {
-        if expected.contains(&template_parameters.len()) {
-            true
-        } else {
+    ) {
+        if !expected.contains(&template_parameters.len()) {
             self.diagnostics.push(TypeLoweringError {
                 container: *template_parameters.container(),
                 kind: TypeLoweringErrorKind::WrongNumberOfTemplateArguments {
@@ -331,8 +436,6 @@ impl<'db> TypeLoweringContext<'db> {
                     actual: template_parameters.len(),
                 },
             });
-
-            false
         }
     }
 
@@ -348,7 +451,7 @@ impl<'db> TypeLoweringContext<'db> {
         );
         match lowered {
             Ok(Lowered::Type(r#type)) => r#type,
-            Ok(Lowered::TypeWithoutTemplate(_)) => {
+            Ok(Lowered::ConstructibleTypeGenerator(_)) => {
                 self.diagnostics.push(TypeLoweringError {
                     container: TypeContainer::TypeSpecifier(type_specifier_id),
                     kind: TypeLoweringErrorKind::MissingTemplate,
@@ -358,8 +461,10 @@ impl<'db> TypeLoweringContext<'db> {
             Ok(
                 Lowered::Enumerant(_)
                 | Lowered::Function(_)
-                | Lowered::BuiltinFunction
+                | Lowered::BuiltinFunction(_, _)
+                // | Lowered::BuiltinConstructor(_, _)
                 | Lowered::GlobalConstant(_)
+                | Lowered::BuiltinDeclaration(_, _)
                 | Lowered::GlobalVariable(_)
                 | Lowered::Override(_)
                 | Lowered::Local(_),
@@ -395,20 +500,42 @@ impl<'db> WgslTypeConverter<'db> {
         clippy::wrong_self_convention,
         reason = "naming things is hard and this is probably changing in the future"
     )]
+    pub fn to_maybe_vec_template(
+        &mut self,
+        template_parameters: Option<TemplateParameters>,
+    ) -> Result<Option<Vec<wgsl_types::tplt::TpltParam>>, ()> {
+        match self.to_wgsl_template_parameters(template_parameters) {
+            Ok(items) if items.is_empty() => Ok(None),
+            Ok(items) => Ok(Some(items)),
+            Err(()) => Err(()),
+        }
+    }
+
     #[expect(
-        clippy::too_many_lines,
-        reason = "long match, not a good candidate for refactoring"
+        clippy::wrong_self_convention,
+        reason = "naming things is hard and this is probably changing in the future"
+    )]
+    pub fn to_wt_vec(
+        &mut self,
+        argument_types: &[Type],
+    ) -> Vec<wgsl_types::Type> {
+        argument_types
+            .iter()
+            .copied()
+            .map(|r#type| self.to_wgsl_types(r#type))
+            .collect()
+    }
+
+    #[expect(
+        clippy::wrong_self_convention,
+        reason = "naming things is hard and this is probably changing in the future"
     )]
     pub fn to_wgsl_types(
         &mut self,
         r#type: Type,
     ) -> wgsl_types::Type {
         match r#type.kind(self.db) {
-            // TODO: This should not be necessary because the types should align 1:1
-            // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/672
-            TypeKind::Error
-            | TypeKind::BoundVariable(_)
-            | TypeKind::StorageTypeOfTexelFormat(_) => wgsl_types::Type::Unknown,
+            TypeKind::Error => wgsl_types::Type::Unknown,
             TypeKind::Scalar(ScalarType::AbstractFloat) => wgsl_types::Type::AbstractFloat,
             TypeKind::Scalar(ScalarType::AbstractInt) => wgsl_types::Type::AbstractInt,
             TypeKind::Scalar(ScalarType::Bool) => wgsl_types::Type::Bool,
@@ -435,25 +562,8 @@ impl<'db> WgslTypeConverter<'db> {
                 Box::new(self.to_wgsl_types(inner)),
             ),
             TypeKind::Struct(struct_id) => {
-                let data = StructSignature::of(self.db, struct_id);
-                let fields = &self.db.field_types(struct_id).0;
-                let name = self.intern_struct(struct_id);
-                wgsl_types::Type::Struct(Box::new(wgsl_types::ty::StructType {
-                    name,
-                    members: data
-                        .fields
-                        .iter()
-                        .map(|(id, data)| {
-                            wgsl_types::ty::StructMemberType {
-                                name: data.name.as_str().to_owned(),
-                                ty: self.to_wgsl_types(fields[id]),
-                                // Don't bother reconstructing the correct layout
-                                size: None,
-                                align: None,
-                            }
-                        })
-                        .collect::<Vec<_>>(),
-                }))
+                let struct_type = self.to_wgsl_struct(struct_id);
+                wgsl_types::Type::Struct(Box::new(struct_type))
             },
             TypeKind::BuiltinStruct(builtin_struct) => {
                 wgsl_types::Type::Struct(Box::new(wgsl_types::ty::StructType {
@@ -481,7 +591,7 @@ impl<'db> WgslTypeConverter<'db> {
                 Box::new(self.to_wgsl_types(inner)),
                 match size {
                     #[expect(clippy::as_conversions, reason = "externally defined")]
-                    ArraySize::Constant(size) => Some(size as usize),
+                    ArraySize::Constant(size) => Some(size.get() as usize),
                     ArraySize::Dynamic => None,
                 },
             ),
@@ -493,7 +603,7 @@ impl<'db> WgslTypeConverter<'db> {
                 Box::new(self.to_wgsl_types(inner)),
                 match size {
                     #[expect(clippy::as_conversions, reason = "externally defined")]
-                    ArraySize::Constant(size) => Some(size as usize),
+                    ArraySize::Constant(size) => Some(size.get() as usize),
                     ArraySize::Dynamic => None,
                 },
             ),
@@ -522,6 +632,35 @@ impl<'db> WgslTypeConverter<'db> {
         }
     }
 
+    #[expect(
+        clippy::wrong_self_convention,
+        reason = "naming things is hard and this is probably changing in the future"
+    )]
+    pub fn to_wgsl_struct(
+        &mut self,
+        struct_id: StructId,
+    ) -> wgsl_types::ty::StructType {
+        let data = StructSignature::of(self.db, struct_id);
+        let fields = &self.db.field_types(struct_id).0;
+        let name = self.intern_struct(struct_id);
+        wgsl_types::ty::StructType {
+            name,
+            members: data
+                .fields
+                .iter()
+                .map(|(id, data)| {
+                    wgsl_types::ty::StructMemberType {
+                        name: data.name.as_str().to_owned(),
+                        ty: self.to_wgsl_types(fields[id]),
+                        // Don't bother reconstructing the correct layout
+                        size: None,
+                        align: None,
+                    }
+                })
+                .collect::<Vec<_>>(),
+        }
+    }
+
     /// Returns `None` if it is an error type.
     pub fn template_parameter_to_wgsl_types(
         &mut self,
@@ -543,10 +682,6 @@ impl<'db> WgslTypeConverter<'db> {
     #[expect(
         clippy::wrong_self_convention,
         reason = "naming things is hard and this is probably changing in the future"
-    )]
-    #[expect(
-        clippy::too_many_lines,
-        reason = "long match, bad candidate for refactor"
     )]
     pub fn from_wgsl_types(
         &self,
@@ -592,35 +727,13 @@ impl<'db> WgslTypeConverter<'db> {
             wgsl_types::Type::Array(r#type, size) => TypeKind::Array(ArrayType {
                 inner: self.from_wgsl_types(*r#type),
                 binding_array: false,
-                size: match size {
-                    Some(size) => {
-                        debug_assert!(u32::try_from(size).is_ok());
-                        #[expect(
-                            clippy::cast_possible_truncation,
-                            clippy::as_conversions,
-                            reason = "externally defined"
-                        )]
-                        ArraySize::Constant(size as u32)
-                    },
-                    None => ArraySize::Dynamic,
-                },
+                size: from_wgsl_array_size(size),
             })
             .intern(self.db),
             wgsl_types::Type::BindingArray(r#type, size) => TypeKind::Array(ArrayType {
                 inner: self.from_wgsl_types(*r#type),
                 binding_array: true,
-                size: match size {
-                    Some(size) => {
-                        debug_assert!(u32::try_from(size).is_ok());
-                        #[expect(
-                            clippy::cast_possible_truncation,
-                            clippy::as_conversions,
-                            reason = "externally defined"
-                        )]
-                        ArraySize::Constant(size as u32)
-                    },
-                    None => ArraySize::Dynamic,
-                },
+                size: from_wgsl_array_size(size),
             })
             .intern(self.db),
             wgsl_types::Type::Vec(size, r#type) => TypeKind::Vector(VectorType {
@@ -743,31 +856,31 @@ impl<'db> WgslTypeConverter<'db> {
                 multisampled: false,
             },
             wgsl_types::ty::TextureType::Storage1D(texel_format, access_mode) => TextureType {
-                kind: TextureKind::Storage(from_wgsl_texel_format(texel_format), access_mode),
+                kind: TextureKind::Storage(texel_format, access_mode),
                 dimension: TextureDimensionality::D1,
                 arrayed: false,
                 multisampled: false,
             },
             wgsl_types::ty::TextureType::Storage1DArray(texel_format, access_mode) => TextureType {
-                kind: TextureKind::Storage(from_wgsl_texel_format(texel_format), access_mode),
+                kind: TextureKind::Storage(texel_format, access_mode),
                 dimension: TextureDimensionality::D1,
                 arrayed: true,
                 multisampled: false,
             },
             wgsl_types::ty::TextureType::Storage2D(texel_format, access_mode) => TextureType {
-                kind: TextureKind::Storage(from_wgsl_texel_format(texel_format), access_mode),
+                kind: TextureKind::Storage(texel_format, access_mode),
                 dimension: TextureDimensionality::D2,
                 arrayed: false,
                 multisampled: false,
             },
             wgsl_types::ty::TextureType::Storage2DArray(texel_format, access_mode) => TextureType {
-                kind: TextureKind::Storage(from_wgsl_texel_format(texel_format), access_mode),
+                kind: TextureKind::Storage(texel_format, access_mode),
                 dimension: TextureDimensionality::D2,
                 arrayed: true,
                 multisampled: false,
             },
             wgsl_types::ty::TextureType::Storage3D(texel_format, access_mode) => TextureType {
-                kind: TextureKind::Storage(from_wgsl_texel_format(texel_format), access_mode),
+                kind: TextureKind::Storage(texel_format, access_mode),
                 dimension: TextureDimensionality::D3,
                 arrayed: false,
                 multisampled: false,
@@ -826,34 +939,19 @@ impl<'db> WgslTypeConverter<'db> {
                 wgsl_types::ty::TextureType::SampledCubeArray(self.to_wgsl_sampled(sampled))
             },
             (TextureKind::Storage(texel_format, access_mode), TextureDimensionality::D1, false) => {
-                wgsl_types::ty::TextureType::Storage1D(
-                    to_wgsl_texel_format(texel_format),
-                    access_mode,
-                )
+                wgsl_types::ty::TextureType::Storage1D(texel_format, access_mode)
             },
             (TextureKind::Storage(texel_format, access_mode), TextureDimensionality::D1, true) => {
-                wgsl_types::ty::TextureType::Storage1DArray(
-                    to_wgsl_texel_format(texel_format),
-                    access_mode,
-                )
+                wgsl_types::ty::TextureType::Storage1DArray(texel_format, access_mode)
             },
             (TextureKind::Storage(texel_format, access_mode), TextureDimensionality::D2, false) => {
-                wgsl_types::ty::TextureType::Storage2D(
-                    to_wgsl_texel_format(texel_format),
-                    access_mode,
-                )
+                wgsl_types::ty::TextureType::Storage2D(texel_format, access_mode)
             },
             (TextureKind::Storage(texel_format, access_mode), TextureDimensionality::D2, true) => {
-                wgsl_types::ty::TextureType::Storage2DArray(
-                    to_wgsl_texel_format(texel_format),
-                    access_mode,
-                )
+                wgsl_types::ty::TextureType::Storage2DArray(texel_format, access_mode)
             },
             (TextureKind::Storage(texel_format, access_mode), TextureDimensionality::D3, false) => {
-                wgsl_types::ty::TextureType::Storage3D(
-                    to_wgsl_texel_format(texel_format),
-                    access_mode,
-                )
+                wgsl_types::ty::TextureType::Storage3D(texel_format, access_mode)
             },
             (TextureKind::Depth, TextureDimensionality::D2, false) => {
                 wgsl_types::ty::TextureType::Depth2D
@@ -908,105 +1006,42 @@ impl<'db> WgslTypeConverter<'db> {
             | TypeKind::Texture(_)
             | TypeKind::Sampler(_)
             | TypeKind::Reference(_)
-            | TypeKind::Pointer(_)
-            | TypeKind::BoundVariable(_)
-            | TypeKind::StorageTypeOfTexelFormat(_)) => panic!("invalid sampled type {kind:?}"),
+            | TypeKind::Pointer(_)) => panic!("invalid sampled type {kind:?}"),
         }
     }
-}
 
-#[must_use]
-pub fn from_wgsl_texel_format(
-    texel_format: wgsl_types::syntax::TexelFormat
-) -> crate::ty::TexelFormat {
-    match texel_format {
-        wgsl_types::syntax::TexelFormat::Rgba8Unorm => crate::ty::TexelFormat::Rgba8unorm,
-        wgsl_types::syntax::TexelFormat::Rgba8Snorm => crate::ty::TexelFormat::Rgba8snorm,
-        wgsl_types::syntax::TexelFormat::Rgba8Uint => crate::ty::TexelFormat::Rgba8uint,
-        wgsl_types::syntax::TexelFormat::Rgba8Sint => crate::ty::TexelFormat::Rgba8sint,
-        wgsl_types::syntax::TexelFormat::Rgba16Uint => crate::ty::TexelFormat::Rgba16uint,
-        wgsl_types::syntax::TexelFormat::Rgba16Sint => crate::ty::TexelFormat::Rgba16sint,
-        wgsl_types::syntax::TexelFormat::Rgba16Float => crate::ty::TexelFormat::Rgba16float,
-        wgsl_types::syntax::TexelFormat::R32Uint => crate::ty::TexelFormat::R32uint,
-        wgsl_types::syntax::TexelFormat::R32Sint => crate::ty::TexelFormat::R32sint,
-        wgsl_types::syntax::TexelFormat::R32Float => crate::ty::TexelFormat::R32float,
-        wgsl_types::syntax::TexelFormat::Rg32Uint => crate::ty::TexelFormat::Rg32uint,
-        wgsl_types::syntax::TexelFormat::Rg32Sint => crate::ty::TexelFormat::Rg32sint,
-        wgsl_types::syntax::TexelFormat::Rg32Float => crate::ty::TexelFormat::Rg32float,
-        wgsl_types::syntax::TexelFormat::Rgba32Uint => crate::ty::TexelFormat::Rgba32uint,
-        wgsl_types::syntax::TexelFormat::Rgba32Sint => crate::ty::TexelFormat::Rgba32sint,
-        wgsl_types::syntax::TexelFormat::Rgba32Float => crate::ty::TexelFormat::Rgba32float,
-        wgsl_types::syntax::TexelFormat::Bgra8Unorm => crate::ty::TexelFormat::Bgra8unorm,
-        wgsl_types::syntax::TexelFormat::R8Unorm
-        | wgsl_types::syntax::TexelFormat::R8Snorm
-        | wgsl_types::syntax::TexelFormat::R8Uint
-        | wgsl_types::syntax::TexelFormat::R8Sint
-        | wgsl_types::syntax::TexelFormat::R16Unorm
-        | wgsl_types::syntax::TexelFormat::R16Snorm
-        | wgsl_types::syntax::TexelFormat::R16Uint
-        | wgsl_types::syntax::TexelFormat::R16Sint
-        | wgsl_types::syntax::TexelFormat::R16Float
-        | wgsl_types::syntax::TexelFormat::Rg8Unorm
-        | wgsl_types::syntax::TexelFormat::Rg8Snorm
-        | wgsl_types::syntax::TexelFormat::Rg8Uint
-        | wgsl_types::syntax::TexelFormat::Rg8Sint
-        | wgsl_types::syntax::TexelFormat::Rg16Unorm
-        | wgsl_types::syntax::TexelFormat::Rg16Snorm
-        | wgsl_types::syntax::TexelFormat::Rg16Uint
-        | wgsl_types::syntax::TexelFormat::Rg16Sint
-        | wgsl_types::syntax::TexelFormat::Rg16Float
-        | wgsl_types::syntax::TexelFormat::Rgb10a2Uint
-        | wgsl_types::syntax::TexelFormat::Rgb10a2Unorm
-        | wgsl_types::syntax::TexelFormat::Rg11b10Float
-        | wgsl_types::syntax::TexelFormat::R64Uint
-        | wgsl_types::syntax::TexelFormat::Rgba16Unorm
-        | wgsl_types::syntax::TexelFormat::Rgba16Snorm => {
-            #[expect(
-                clippy::unimplemented,
-                reason = "TODO: support naga texture formats, see: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/675"
-            )]
-            {
-                unimplemented!("not yet supported naga extension")
-            }
-        },
+    #[expect(
+        clippy::wrong_self_convention,
+        reason = "naming things is hard and this is probably changing in the future"
+    )]
+    pub fn to_wgsl_template_parameters(
+        &mut self,
+        template_parameters: Option<TemplateParameters>,
+    ) -> Result<Vec<wgsl_types::tplt::TpltParam>, ()> {
+        let Some(mut template_parameters) = template_parameters else {
+            return Ok(vec![]);
+        };
+        let mut template_args = vec![];
+        while let Some((template_parameter, _)) = template_parameters.take_next() {
+            let template_parameter = self
+                .template_parameter_to_wgsl_types(template_parameter)
+                .ok_or(())?;
+            template_args.push(template_parameter);
+        }
+        Ok(template_args)
     }
 }
 
-/// Convert a [`crate::ty::TexelFormat`] into a [`wgsl_types::syntax::TexelFormat`].
-///
-/// # Panics
-///
-/// Panics if `texel_format` is `BoundVariable` or `Any`.
-#[expect(
-    deprecated,
-    reason = "TODO: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/559"
-)]
-#[must_use]
-pub fn to_wgsl_texel_format(
-    texel_format: crate::ty::TexelFormat
-) -> wgsl_types::syntax::TexelFormat {
-    match texel_format {
-        crate::ty::TexelFormat::Rgba8unorm => wgsl_types::syntax::TexelFormat::Rgba8Unorm,
-        crate::ty::TexelFormat::Rgba8snorm => wgsl_types::syntax::TexelFormat::Rgba8Snorm,
-        crate::ty::TexelFormat::Rgba8uint => wgsl_types::syntax::TexelFormat::Rgba8Uint,
-        crate::ty::TexelFormat::Rgba8sint => wgsl_types::syntax::TexelFormat::Rgba8Sint,
-        crate::ty::TexelFormat::Rgba16uint => wgsl_types::syntax::TexelFormat::Rgba16Uint,
-        crate::ty::TexelFormat::Rgba16sint => wgsl_types::syntax::TexelFormat::Rgba16Sint,
-        crate::ty::TexelFormat::Rgba16float => wgsl_types::syntax::TexelFormat::Rgba16Float,
-        crate::ty::TexelFormat::R32uint => wgsl_types::syntax::TexelFormat::R32Uint,
-        crate::ty::TexelFormat::R32sint => wgsl_types::syntax::TexelFormat::R32Sint,
-        crate::ty::TexelFormat::R32float => wgsl_types::syntax::TexelFormat::R32Float,
-        crate::ty::TexelFormat::Rg32uint => wgsl_types::syntax::TexelFormat::Rg32Uint,
-        crate::ty::TexelFormat::Rg32sint => wgsl_types::syntax::TexelFormat::Rg32Sint,
-        crate::ty::TexelFormat::Rg32float => wgsl_types::syntax::TexelFormat::Rg32Float,
-        crate::ty::TexelFormat::Rgba32uint => wgsl_types::syntax::TexelFormat::Rgba32Uint,
-        crate::ty::TexelFormat::Rgba32sint => wgsl_types::syntax::TexelFormat::Rgba32Sint,
-        crate::ty::TexelFormat::Rgba32float => wgsl_types::syntax::TexelFormat::Rgba32Float,
-        crate::ty::TexelFormat::Bgra8unorm => wgsl_types::syntax::TexelFormat::Bgra8Unorm,
-        crate::ty::TexelFormat::BoundVariable(_) => {
-            panic!("bound var is not a valid texel format to convert")
+fn from_wgsl_array_size(size: Option<usize>) -> ArraySize {
+    match size.map(|size| u32::try_from(size).map(NonZeroU32::try_from)) {
+        Some(Ok(Ok(size))) => ArraySize::Constant(size),
+        None => ArraySize::Dynamic,
+        Some(Ok(Err(error))) => {
+            panic!("size cannot be 0, error: {error}, got: {size:?}");
         },
-        crate::ty::TexelFormat::Any => panic!("any is not a valid texel format to convert"),
+        Some(Err(error)) => {
+            panic!("size must not be > u32::MAX, error: {error}, got: {size:?}");
+        },
     }
 }
 

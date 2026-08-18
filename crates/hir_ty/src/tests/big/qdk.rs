@@ -1,5 +1,4 @@
 use expect_test::expect;
-use syntax::ExtensionsConfig;
 
 use crate::tests::check_infer;
 
@@ -11,7 +10,6 @@ use crate::tests::check_infer;
 )]
 fn microsoft_qdk() {
     check_infer(
-        ExtensionsConfig::default(),
         r#"
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
@@ -3926,23 +3924,23 @@ fn execute(
             9600..9602 '15': integer
             9692..9703 'VOID_RETURN': u32
             9718..9728 '0xFFFFFFFF': integer
-            9863..9878 'MAX_QUBIT_COUNT': unexpected template argument, expected a `u32` or a `i32` greater than `0`
-            10006..10034 'MAX_WO...ITIONS': unexpected template argument, expected a `u32` or a `i32` greater than `0`
-            11207..11224 'INSTRU...S_SIZE': unexpected template argument, expected a `u32` or a `i32` greater than `0`
-            11299..11315 'BLOCK_...E_SIZE': unexpected template argument, expected a `u32` or a `i32` greater than `0`
-            11378..11397 'FUNCTI...E_SIZE': unexpected template argument, expected a `u32` or a `i32` greater than `0`
-            11512..11526 'PHI_TABLE_SIZE': unexpected template argument, expected a `u32` or a `i32` greater than `0`
-            11632..11649 'SWITCH...S_SIZE': unexpected template argument, expected a `u32` or a `i32` greater than `0`
-            11723..11737 'CALL_ARGS_SIZE': unexpected template argument, expected a `u32` or a `i32` greater than `0`
-            11832..11850 'CONSTA...A_SIZE': unexpected template argument, expected a `u32` or a `i32` greater than `0`
-            12850..12863 'MAX_REGISTERS': unexpected template argument, expected a `u32` or a `i32` greater than `0`
-            12948..12958 'MAX_MEMORY': unexpected template argument, expected a `u32` or a `i32` greater than `0`
-            14713..14728 'MAX_QUBIT_COUNT': unexpected template argument, expected a `u32` or a `i32` greater than `0`
-            17289..17306 'NOISE_..._COUNT': unexpected template argument, expected a `u32` or a `i32` greater than `0`
-            17362..17379 'NOISE_..._COUNT': unexpected template argument, expected a `u32` or a `i32` greater than `0`
-            17908..17923 'MAX_QUBIT_COUNT': unexpected template argument, expected a `u32` or a `i32` greater than `0`
-            17946..17961 'MAX_QUBIT_COUNT': unexpected template argument, expected a `u32` or a `i32` greater than `0`
-            18480..18501 'THREAD...KGROUP': unexpected template argument, expected a `u32` or a `i32` greater than `0`
+            9863..9878 'MAX_QUBIT_COUNT': unexpected template argument, expected a `u32` or a `i32` greater than `0`, actual: [error]
+            10006..10034 'MAX_WO...ITIONS': unexpected template argument, expected a `u32` or a `i32` greater than `0`, actual: [error]
+            11207..11224 'INSTRU...S_SIZE': unexpected template argument, expected a `u32` or a `i32` greater than `0`, actual: [error]
+            11299..11315 'BLOCK_...E_SIZE': unexpected template argument, expected a `u32` or a `i32` greater than `0`, actual: [error]
+            11378..11397 'FUNCTI...E_SIZE': unexpected template argument, expected a `u32` or a `i32` greater than `0`, actual: [error]
+            11512..11526 'PHI_TABLE_SIZE': unexpected template argument, expected a `u32` or a `i32` greater than `0`, actual: [error]
+            11632..11649 'SWITCH...S_SIZE': unexpected template argument, expected a `u32` or a `i32` greater than `0`, actual: [error]
+            11723..11737 'CALL_ARGS_SIZE': unexpected template argument, expected a `u32` or a `i32` greater than `0`, actual: [error]
+            11832..11850 'CONSTA...A_SIZE': unexpected template argument, expected a `u32` or a `i32` greater than `0`, actual: [error]
+            12850..12863 'MAX_REGISTERS': unexpected template argument, expected a `u32` or a `i32` greater than `0`, actual: [error]
+            12948..12958 'MAX_MEMORY': unexpected template argument, expected a `u32` or a `i32` greater than `0`, actual: [error]
+            14713..14728 'MAX_QUBIT_COUNT': unexpected template argument, expected a `u32` or a `i32` greater than `0`, actual: [error]
+            17289..17306 'NOISE_..._COUNT': unexpected template argument, expected a `u32` or a `i32` greater than `0`, actual: [error]
+            17362..17379 'NOISE_..._COUNT': unexpected template argument, expected a `u32` or a `i32` greater than `0`, actual: [error]
+            17908..17923 'MAX_QUBIT_COUNT': unexpected template argument, expected a `u32` or a `i32` greater than `0`, actual: [error]
+            17946..17961 'MAX_QUBIT_COUNT': unexpected template argument, expected a `u32` or a `i32` greater than `0`, actual: [error]
+            18480..18501 'THREAD...KGROUP': unexpected template argument, expected a `u32` or a `i32` greater than `0`, actual: [error]
             18849..18868 'workgr...lation': ref<storage, WorkgroupCollationBuffer, read_write>
             19020..19025 'shots': ref<storage, array<ShotData>, read_write>
             19086..19089 'ops': ref<storage, array<Op>, read>
@@ -3952,7 +3950,7 @@ fn execute(
             19504..19512 'uniforms': ref<uniform, Uniforms, read>
             19566..19576 'batch_data': ref<storage, BatchData, read>
             19605..19623 'qubitP...lities': ref<workgroup, [error], read_write>
-            19658..19679 'THREAD...KGROUP': unexpected template argument, expected a `u32` or a `i32` greater than `0`
+            19658..19679 'THREAD...KGROUP': unexpected template argument, expected a `u32` or a `i32` greater than `0`, actual: [error]
             19866..19867 'a': vec2<f32>
             19897..19898 'a': vec2<f32>
             19897..19900 'a.x': f32
@@ -4502,14 +4500,6 @@ fn execute(
             26072..26102 'shot.q..._since': [error]
             26089..26090 'i': ref<function, i32, read_write>
             26105..26108 '0.0': float
-            25929..25948 'shot.q...ate[i]': cannot index into type ref<storage, [error], read_write>
-            [EditionedFileId(Id(300))] AssignmentNotAReference { left_side: Idx::<Expression>(111), actual: Type(0600) } in Body
-            25981..26000 'shot.q...ate[i]': cannot index into type ref<storage, [error], read_write>
-            [EditionedFileId(Id(300))] AssignmentNotAReference { left_side: Idx::<Expression>(117), actual: Type(0600) } in Body
-            26032..26051 'shot.q...ate[i]': cannot index into type ref<storage, [error], read_write>
-            [EditionedFileId(Id(300))] AssignmentNotAReference { left_side: Idx::<Expression>(123), actual: Type(0600) } in Body
-            26072..26091 'shot.q...ate[i]': cannot index into type ref<storage, [error], read_write>
-            [EditionedFileId(Id(300))] AssignmentNotAReference { left_side: Idx::<Expression>(129), actual: Type(0600) } in Body
             26235..26243 'shot_idx': u32
             26260..26264 'shot': ptr<storage, ShotData, read_write>
             26267..26283 '&shots...t_idx]': ptr<storage, ShotData, read_write>
@@ -4703,13 +4693,6 @@ fn execute(
             30316..30325 'total_one': ref<function, f32, read_write>
             30316..30332 'total_...== 1.0': bool
             30329..30332 '1.0': float
-            27460..27502 'workgr...ffset]': cannot index into type ref<storage, [error], read_write>
-            27783..27802 'shot.q...ate[q]': cannot index into type ref<storage, [error], read_write>
-            27849..27868 'shot.q...ate[q]': cannot index into type ref<storage, [error], read_write>
-            28366..28385 'shot.q...ate[q]': cannot index into type ref<storage, [error], read_write>
-            [EditionedFileId(Id(300))] AssignmentNotAReference { left_side: Idx::<Expression>(92), actual: Type(0600) } in Body
-            28429..28448 'shot.q...ate[q]': cannot index into type ref<storage, [error], read_write>
-            [EditionedFileId(Id(300))] AssignmentNotAReference { left_side: Idx::<Expression>(98), actual: Type(0600) } in Body
             30488..30504 'stateV...rIndex': u32
             30511..30520 'amplitude': vec2<f32>
             30529..30532 'tid': u32
@@ -4750,12 +4733,6 @@ fn execute(
             30894..30898 'mask': ref<function, u32, read_write>
             30894..30904 'mask << 1u': u32
             30902..30904 '1u': u32
-            30759..30782 'qubitP...s[tid]': cannot index into type ref<workgroup, [error], read_write>
-            [EditionedFileId(Id(300))] AssignmentNotAReference { left_side: Idx::<Expression>(20), actual: Type(0600) } in Body
-            30759..30782 'qubitP...s[tid]': cannot index into type ref<workgroup, [error], read_write>
-            30828..30851 'qubitP...s[tid]': cannot index into type ref<workgroup, [error], read_write>
-            [EditionedFileId(Id(300))] AssignmentNotAReference { left_side: Idx::<Expression>(27), actual: Type(0600) } in Body
-            30828..30851 'qubitP...s[tid]': cannot index into type ref<workgroup, [error], read_write>
             30944..30945 'q': u32
             30952..30960 'shot_idx': i32
             30967..30984 'wkg_co...on_idx': i32
@@ -4872,16 +4849,6 @@ fn execute(
             32765..32773 'shot_idx': i32
             32787..32788 'q': u32
             32808..32817 'total_one': ref<function, f32, read_write>
-            31130..31151 'qubitP...ies[j]': cannot index into type ref<workgroup, [error], read_write>
-            31130..31159 'qubitP...ero[q]': expected f32 but got [error]
-            31182..31203 'qubitP...ies[j]': cannot index into type ref<workgroup, [error], read_write>
-            31182..31210 'qubitP...one[q]': expected f32 but got [error]
-            31351..31394 'workgr...n_idx]': cannot index into type ref<storage, [error], read_write>
-            [EditionedFileId(Id(300))] AssignmentNotAReference { left_side: Idx::<Expression>(30), actual: Type(0600) } in Body
-            32685..32715 'shots[...ate[q]': cannot index into type ref<storage, [error], read_write>
-            [EditionedFileId(Id(300))] AssignmentNotAReference { left_side: Idx::<Expression>(96), actual: Type(0600) } in Body
-            32759..32789 'shots[...ate[q]': cannot index into type ref<storage, [error], read_write>
-            [EditionedFileId(Id(300))] AssignmentNotAReference { left_side: Idx::<Expression>(104), actual: Type(0600) } in Body
             33298..33306 'shot_idx': u32
             33313..33318 'qubit': u32
             33325..33331 'result': u32
@@ -5023,8 +4990,6 @@ fn execute(
             35308..35351 'shot.q...1_mask': u32
             35331..35335 'shot': ptr<storage, ShotData, read_write>
             35331..35351 'shot.q...1_mask': ref<storage, u32, read_write>
-            34465..34488 'shot.q...qubit]': cannot index into type ref<storage, [error], read_write>
-            34527..34550 'shot.q...qubit]': cannot index into type ref<storage, [error], read_write>
             35605..35613 'shot_idx': u32
             35620..35626 'op_idx': u32
             35633..35638 'qubit': u32
@@ -5124,14 +5089,6 @@ fn execute(
             37535..37539 'shot': ptr<storage, ShotData, read_write>
             37535..37547 'shot.op_type': ref<storage, u32, read_write>
             37550..37562 'OPID_MRESETZ': u32
-            35887..35910 'shot.q...qubit]': cannot index into type ref<storage, [error], read_write>
-            36666..36689 'shot.q...qubit]': cannot index into type ref<storage, [error], read_write>
-            [EditionedFileId(Id(300))] AssignmentNotAReference { left_side: Idx::<Expression>(46), actual: Type(0600) } in Body
-            36364..36387 'shot.q...qubit]': cannot index into type ref<storage, [error], read_write>
-            37045..37068 'shot.q...qubit]': cannot index into type ref<storage, [error], read_write>
-            37231..37254 'shot.q...qubit]': cannot index into type ref<storage, [error], read_write>
-            [EditionedFileId(Id(300))] AssignmentNotAReference { left_side: Idx::<Expression>(76), actual: Type(0600) } in Body
-            37326..37332 'result': expected u32 but got [error]
             37981..37989 'shot_idx': u32
             37996..38008 'target_is_q2': bool
             38042..38045 'm00': vec2<f32>
@@ -5335,8 +5292,6 @@ fn execute(
             40201..40203 'q2': u32
             40213..40217 '-1.0': float
             40214..40217 '1.0': float
-            40065..40085 'shot.q...te[q1]': cannot index into type ref<storage, [error], read_write>
-            40184..40204 'shot.q...te[q2]': cannot index into type ref<storage, [error], read_write>
             40698..40706 'shot_idx': u32
             40713..40719 'op_idx': u32
             40726..40728 'q1': u32
@@ -5452,13 +5407,6 @@ fn execute(
             41897..41903 'op_idx': u32
             41905..41907 'q1': u32
             41909..41911 'q2': u32
-            40844..40867 'shot.q...qubit]': cannot index into type ref<storage, [error], read_write>
-            41325..41328 'm00': expected vec2<f32> but got [error]
-            41330..41333 'm01': expected vec2<f32> but got [error]
-            41452..41475 'shot.q...qubit]': cannot index into type ref<storage, [error], read_write>
-            41514..41537 'shot.q...qubit]': cannot index into type ref<storage, [error], read_write>
-            41691..41714 'shot.q...qubit]': cannot index into type ref<storage, [error], read_write>
-            [EditionedFileId(Id(300))] AssignmentNotAReference { left_side: Idx::<Expression>(77), actual: Type(0600) } in Body
             42393..42401 'shot_idx': u32
             42408..42414 'op_idx': u32
             42421..42423 'q1': u32
@@ -5812,27 +5760,6 @@ fn execute(
             49507..49511 'shot': ptr<storage, ShotData, read_write>
             49507..49518 'shot.op_idx': ref<storage, u32, read_write>
             49521..49527 'op_idx': u32
-            42824..42844 'shot.q...te[q1]': cannot index into type ref<storage, [error], read_write>
-            42887..42907 'shot.q...te[q2]': cannot index into type ref<storage, [error], read_write>
-            43514..43522 'survivor': expected u32 but got [error]
-            44410..44418 'lost_row': expected u32 but got [error]
-            44592..44612 'shot.q...te[q1]': cannot index into type ref<storage, [error], read_write>
-            44635..44655 'shot.q...te[q1]': cannot index into type ref<storage, [error], read_write>
-            [EditionedFileId(Id(300))] AssignmentNotAReference { left_side: Idx::<Expression>(83), actual: Type(0600) } in Body
-            44663..44683 'shot.q...te[q2]': cannot index into type ref<storage, [error], read_write>
-            44706..44726 'shot.q...te[q2]': cannot index into type ref<storage, [error], read_write>
-            [EditionedFileId(Id(300))] AssignmentNotAReference { left_side: Idx::<Expression>(93), actual: Type(0600) } in Body
-            45508..45528 'shot.q...te[q1]': cannot index into type ref<storage, [error], read_write>
-            45551..45571 'shot.q...te[q1]': cannot index into type ref<storage, [error], read_write>
-            [EditionedFileId(Id(300))] AssignmentNotAReference { left_side: Idx::<Expression>(136), actual: Type(0600) } in Body
-            45579..45599 'shot.q...te[q2]': cannot index into type ref<storage, [error], read_write>
-            45622..45642 'shot.q...te[q2]': cannot index into type ref<storage, [error], read_write>
-            [EditionedFileId(Id(300))] AssignmentNotAReference { left_side: Idx::<Expression>(146), actual: Type(0600) } in Body
-            47365..47373 'survivor': expected u32 but got [error]
-            47573..47587 'survivor_is_q2': expected bool but got [error]
-            48445..48459 'survivor_is_q2': expected bool but got [error]
-            48795..48809 'survivor_is_q2': expected bool but got [error]
-            49167..49181 'survivor_is_q2': expected bool but got [error]
             49871..49879 'shot_idx': u32
             49886..49890 'code': u32
             49903..49963 'atomic... code)': __atomic_compare_exchange_result
@@ -6622,7 +6549,7 @@ fn execute(
             62583..62649 'fuse_1...term))': [error]
             62613..62621 'shot_idx': u32
             62623..62637 'survivor_is_q2': [error]
-            62639..62648 'u32(term)': [error]
+            62639..62648 'u32(term)': u32
             62643..62647 'term': [error]
             62910..62914 'term': [error]
             62910..62919 'term == 1': [error]
@@ -6697,15 +6624,6 @@ fn execute(
             63958..63960 '1u': u32
             63958..63972 '1u << survivor': [error]
             63964..63972 'survivor': [error]
-            60866..60886 'shot.q...te[q1]': cannot index into type ref<storage, [error], read_write>
-            60920..60940 'shot.q...te[q2]': cannot index into type ref<storage, [error], read_write>
-            62208..62222 '1u << survivor': expected u32 but got [error]
-            62639..62648 'u32(term)': no constructor for builtin `op_u32_constructor` of type `u32` with parameters `[error]`
-            62623..62637 'survivor_is_q2': expected bool but got [error]
-            62639..62648 'u32(term)': expected u32 but got [error]
-            62980..62994 'survivor_is_q2': expected bool but got [error]
-            63202..63216 'survivor_is_q2': expected bool but got [error]
-            63402..63416 'survivor_is_q2': expected bool but got [error]
             64054..64065 'workgroupId': u32
             64080..64083 'tid': u32
             64098..64112 'op_qubit_count': i32
@@ -7013,10 +6931,6 @@ fn execute(
             69028..69040 'summed_probs': ref<function, vec4<f32>, read_write>
             69028..69043 'summed_probs[1]': ref<function, f32, read_write>
             69041..69042 '1': integer
-            68933..68956 'qubitP...s[tid]': cannot index into type ref<workgroup, [error], read_write>
-            [EditionedFileId(Id(300))] AssignmentNotAReference { left_side: Idx::<Expression>(211), actual: Type(0600) } in Body
-            68993..69016 'qubitP...s[tid]': cannot index into type ref<workgroup, [error], read_write>
-            [EditionedFileId(Id(300))] AssignmentNotAReference { left_side: Idx::<Expression>(220), actual: Type(0600) } in Body
             69069..69080 'workgroupId': u32
             69087..69090 'tid': u32
             69097..69099 'q1': u32
@@ -7534,14 +7448,6 @@ fn execute(
             75909..75921 'summed_probs': ref<function, vec4<f32>, read_write>
             75909..75924 'summed_probs[3]': ref<function, f32, read_write>
             75922..75923 '3': integer
-            75694..75717 'qubitP...s[tid]': cannot index into type ref<workgroup, [error], read_write>
-            [EditionedFileId(Id(300))] AssignmentNotAReference { left_side: Idx::<Expression>(449), actual: Type(0600) } in Body
-            75754..75777 'qubitP...s[tid]': cannot index into type ref<workgroup, [error], read_write>
-            [EditionedFileId(Id(300))] AssignmentNotAReference { left_side: Idx::<Expression>(458), actual: Type(0600) } in Body
-            75814..75837 'qubitP...s[tid]': cannot index into type ref<workgroup, [error], read_write>
-            [EditionedFileId(Id(300))] AssignmentNotAReference { left_side: Idx::<Expression>(467), actual: Type(0600) } in Body
-            75874..75897 'qubitP...s[tid]': cannot index into type ref<workgroup, [error], read_write>
-            [EditionedFileId(Id(300))] AssignmentNotAReference { left_side: Idx::<Expression>(476), actual: Type(0600) } in Body
             75961..75972 'workgroupId': u32
             75979..75982 'tid': u32
             75999..76005 'params': ShotParams
@@ -7731,43 +7637,34 @@ fn execute(
             80096..80098 '0u': u32
             80100..80102 '0u': u32
             80104..80106 '0u': u32
-            80207..80212 'start': [error]
-            80215..80238 'i32(ta...ffset)': [error]
+            80207..80212 'start': i32
+            80215..80238 'i32(ta...ffset)': i32
             80219..80224 'table': [error]
             80219..80237 'table....offset': [error]
-            80248..80253 'count': [error]
-            80256..80278 'i32(ta...count)': [error]
+            80248..80253 'count': i32
+            80256..80278 'i32(ta...count)': i32
             80260..80265 'table': [error]
             80260..80277 'table...._count': [error]
             80288..80297 'entry_idx': i32
             80300..80357 'binary...count)': i32
             80326..80333 'rand_lo': u32
             80335..80342 'rand_hi': u32
-            80344..80349 'start': [error]
-            80351..80356 'count': [error]
+            80344..80349 'start': i32
+            80351..80356 'count': i32
             80367..80372 'entry': [error]
             80375..80430 '&batch...y_idx]': [error]
             80376..80386 'batch_data': ref<storage, BatchData, read>
             80376..80411 'batch_...ntries': ref<storage, [error], read>
             80376..80430 'batch_...y_idx]': [error]
-            80412..80417 'start': [error]
-            80412..80429 'start ...ry_idx': [error]
+            80412..80417 'start': i32
+            80412..80429 'start ...ry_idx': i32
             80420..80429 'entry_idx': i32
-            80444..80503 'Correl...is_hi)': [error]
+            80444..80503 'Correl...is_hi)': CorrelatedNoiseSample
             80466..80468 '1u': u32
             80470..80475 'entry': [error]
             80470..80485 'entry.paulis_lo': [error]
             80487..80492 'entry': [error]
             80487..80502 'entry.paulis_hi': [error]
-            79154..79205 'batch_...e_idx]': cannot index into type ref<storage, [error], read>
-            80215..80238 'i32(ta...ffset)': no constructor for builtin `op_i32_constructor` of type `i32` with parameters `[error]`
-            80256..80278 'i32(ta...count)': no constructor for builtin `op_i32_constructor` of type `i32` with parameters `[error]`
-            80344..80349 'start': expected i32 but got [error]
-            80351..80356 'count': expected i32 but got [error]
-            80412..80429 'start ...ry_idx': expected i32 or u32 but got [error]
-            80376..80430 'batch_...y_idx]': cannot index into type ref<storage, [error], read>
-            80470..80485 'entry.paulis_lo': expected u32 but got [error]
-            80487..80502 'entry.paulis_hi': expected u32 but got [error]
             80922..80931 'paulis_lo': u32
             80938..80947 'paulis_hi': u32
             80954..80965 'qubit_count': u32
@@ -7910,12 +7807,6 @@ fn execute(
             83686..83690 'shot': ptr<storage, ShotData, read_write>
             83686..83718 'shot.q...p_mask': ref<storage, u32, read_write>
             83721..83723 '0u': u32
-            82769..82788 'shot.q...ate[q]': cannot index into type ref<storage, [error], read_write>
-            82819..82838 'shot.q...ate[q]': cannot index into type ref<storage, [error], read_write>
-            [EditionedFileId(Id(300))] AssignmentNotAReference { left_side: Idx::<Expression>(41), actual: Type(0600) } in Body
-            82858..82877 'shot.q...ate[q]': cannot index into type ref<storage, [error], read_write>
-            82907..82926 'shot.q...ate[q]': cannot index into type ref<storage, [error], read_write>
-            [EditionedFileId(Id(300))] AssignmentNotAReference { left_side: Idx::<Expression>(51), actual: Type(0600) } in Body
             84485..84492 'rand_lo': u32
             84499..84506 'rand_hi': u32
             84513..84518 'start': i32
@@ -7969,8 +7860,6 @@ fn execute(
             84965..84972 'mid + 1': i32
             84971..84972 '1': integer
             85001..85004 'low': ref<function, i32, read_write>
-            84687..84735 'batch_...+ mid]': cannot index into type ref<storage, [error], read>
-            84771..84819 'batch_...+ mid]': cannot index into type ref<storage, [error], read>
             85190..85196 'op_idx': u32
             85203..85208 'index': u32
             85335..85342 'vec_idx': u32
@@ -8084,7 +7973,6 @@ fn execute(
             87155..87192 'shots[...s[reg]': [error]
             87161..87169 'shot_idx': u32
             87188..87191 'reg': u32
-            87155..87192 'shots[...s[reg]': cannot index into type ref<storage, [error], read_write>
             87210..87218 'shot_idx': u32
             87225..87228 'reg': u32
             87235..87238 'val': u32
@@ -8096,8 +7984,6 @@ fn execute(
             87257..87265 'shot_idx': u32
             87284..87287 'reg': u32
             87291..87294 'val': u32
-            87251..87288 'shots[...s[reg]': cannot index into type ref<storage, [error], read_write>
-            [EditionedFileId(Id(300))] AssignmentNotAReference { left_side: Idx::<Expression>(6), actual: Type(0600) } in Body
             87315..87323 'shot_idx': u32
             87330..87333 'reg': u32
             87360..87397 'bitcas... reg))': i32
@@ -8132,7 +8018,6 @@ fn execute(
             88000..88031 'batch_...ctions': ref<storage, [error], read>
             88000..88035 'batch_...ns[pc]': [error]
             88032..88034 'pc': u32
-            88000..88035 'batch_...ns[pc]': cannot index into type ref<storage, [error], read>
             88054..88060 'packed': u32
             88085..88091 'packed': u32
             88085..88099 'packed & 0xFFu': u32
@@ -8350,10 +8235,6 @@ fn execute(
             91275..91279 'shot': ptr<storage, ShotData, read_write>
             91275..91287 'shot.op_type': ref<storage, u32, read_write>
             91290..91305 'OPID_LOSS_NOISE': u32
-            91031..91054 'shot.q...qubit]': cannot index into type ref<storage, [error], read_write>
-            91078..91101 'shot.q...qubit]': cannot index into type ref<storage, [error], read_write>
-            [EditionedFileId(Id(300))] AssignmentNotAReference { left_side: Idx::<Expression>(19), actual: Type(0600) } in Body
-            91166..91172 'result': expected u32 but got [error]
             91516..91524 'shot_idx': u32
             91531..91537 'op_idx': u32
             91544..91555 'qubit_count': u32
@@ -8433,8 +8314,6 @@ fn execute(
             92614..92627 'bit_flip_mask': ref<function, u32, read_write>
             92629..92644 'phase_flip_mask': ref<function, u32, read_write>
             92646..92655 'loss_mask': ref<function, u32, read_write>
-            92111..92160 'batch_...t + i]': cannot index into type ref<storage, [error], read>
-            92212..92219 'arg_reg': expected u32 but got [error]
             92977..92983 'params': ShotParams
             93208..93209 'i': ref<function, i32, read_write>
             93212..93213 '0': integer
@@ -8848,11 +8727,6 @@ fn execute(
             102768..102783 'params.shot_idx': i32
             102799..102800 'm': ref<function, u32, read_write>
             102804..102806 '0u': u32
-            102544..102583 'shots[...ory[m]': cannot index into type ref<storage, [error], read_write>
-            [EditionedFileId(Id(300))] AssignmentNotAReference { left_side: Idx::<Expression>(43), actual: Type(0600) } in Body
-            102586..102621 'batch_...ata[m]': cannot index into type ref<storage, [error], read>
-            102762..102801 'shots[...ory[m]': cannot index into type ref<storage, [error], read_write>
-            [EditionedFileId(Id(300))] AssignmentNotAReference { left_side: Idx::<Expression>(61), actual: Type(0600) } in Body
             105427..105430 'gid': vec3<u32>
             105567..105575 'shot_idx': u32
             105578..105581 'gid': vec3<u32>
@@ -10529,22 +10403,6 @@ fn execute(
             145144..145184 'shots[...ock_id': ref<storage, u32, read_write>
             145150..145158 'shot_idx': u32
             145187..145197 'prev_block': ref<function, u32, read_write>
-            111723..111764 'batch_...r.dst]': cannot index into type ref<storage, [error], read>
-            112417..112459 'batch_....aux0]': cannot index into type ref<storage, [error], read>
-            112567..112609 'batch_....aux1]': cannot index into type ref<storage, [error], read>
-            113550..113598 'batch_...t + i]': cannot index into type ref<storage, [error], read>
-            113878..113922 'batch_...block]': cannot index into type ref<storage, [error], read>
-            115073..115115 'batch_...nc_id]': cannot index into type ref<storage, [error], read>
-            116453..116502 'batch_...t + i]': cannot index into type ref<storage, [error], read>
-            116579..116586 'arg_reg': expected u32 but got [error]
-            116544..116558 'param_base + i': expected u32 but got [error]
-            116741..116781 'batch_...ck_id]': cannot index into type ref<storage, [error], read>
-            139328..139368 'batch_...t + i]': cannot index into type ref<storage, [error], read>
-            139498..139511 'entry.val_reg': expected u32 but got [error]
-            142908..142943 'shots[...[addr]': cannot index into type ref<storage, [error], read_write>
-            142992..142995 'val': expected u32 but got [error]
-            143868..143903 'shots[...[addr]': cannot index into type ref<storage, [error], read_write>
-            [EditionedFileId(Id(300))] AssignmentNotAReference { left_side: Idx::<Expression>(1529), actual: Type(0600) } in Body
             145649..145657 'shot_idx': u32
             145674..145678 'shot': ptr<storage, ShotData, read_write>
             145681..145697 '&shots...t_idx]': ptr<storage, ShotData, read_write>

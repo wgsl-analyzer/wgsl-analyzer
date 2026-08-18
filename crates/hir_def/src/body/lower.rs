@@ -428,7 +428,7 @@ impl Collector<'_> {
                         .expression()
                         .map(ast::Expression::FunctionCall),
                 );
-                Statement::Expression { expression }
+                Statement::FunctionCall { expression }
             },
             ast::Statement::LoopStatement(statement) => {
                 let body = self.collect_compound_statement_opt(statement.block());

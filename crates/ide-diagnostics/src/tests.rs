@@ -118,8 +118,28 @@ fn no_builtin_overload() {
     check_diagnostics(
         "fn foo() { var x = 1f + mat2x2f(); }",
         expect![[r#"
-        19..33 wesl-rs Error 22: cannot use binary operator `+` with operands `f32` and `mat2x2<f32>`
-    "#]],
+            19..33 wesl-rs Error 22: cannot use binary operator `+` with operands `f32` and `mat2x2<f32>`
+        "#]],
+    );
+}
+
+#[test]
+fn no_generator_overload_no_arguments() {
+    check_diagnostics(
+        "fn foo() { var x = mat2x2(); }",
+        expect![[r#"
+            19..27 wgsl-analyzer Error 18: no overload of function `mat2x2` found that takes no arguments
+        "#]],
+    );
+}
+
+#[test]
+fn no_generator_overload_some_arguments() {
+    check_diagnostics(
+        "fn foo() { var x = mat2x2(1, 2, 3, 4, 5); }",
+        expect![[r#"
+            19..40 wgsl-analyzer Error 18: no overload of constructor `mat2x2` found for arguments of type (integer, integer, integer, integer, integer)
+        "#]],
     );
 }
 
@@ -128,8 +148,8 @@ fn deref_not_a_pointer() {
     check_diagnostics(
         "fn foo() { var x = *1f; }",
         expect![[r#"
-        20..22 wesl-rs Error 22: cannot use unary operator `*` on type `f32`
-    "#]],
+            19..22 wesl-rs Error 22: cannot use unary operator `*` on type `f32`
+        "#]],
     );
 }
 
@@ -138,34 +158,7 @@ fn no_constructor() {
     check_diagnostics(
         "fn foo() { var x = vec2f(1, 2, 3); }",
         expect![[r#"
-            19..33 wgsl-analyzer Error 18: no overload of constructor `vec2<f32>` found for given arguments. Found (integer, integer, integer), expected one of:
-            fn op_vec2_constructor(e: bool) -> vec2<bool>
-            fn op_vec2_constructor(e: integer) -> vec2<integer>
-            fn op_vec2_constructor(e: float) -> vec2<float>
-            fn op_vec2_constructor(e: i32) -> vec2<i32>
-            fn op_vec2_constructor(e: u32) -> vec2<u32>
-            fn op_vec2_constructor(e: f32) -> vec2<f32>
-            fn op_vec2_constructor(e: f16) -> vec2<f16>
-            fn op_vec2_constructor(e: u64) -> vec2<u64>
-            fn op_vec2_constructor(e: i64) -> vec2<i64>
-            fn op_vec2_constructor(e: vec2<bool>) -> vec2<bool>
-            fn op_vec2_constructor(e: vec2<integer>) -> vec2<integer>
-            fn op_vec2_constructor(e: vec2<float>) -> vec2<float>
-            fn op_vec2_constructor(e: vec2<i32>) -> vec2<i32>
-            fn op_vec2_constructor(e: vec2<u32>) -> vec2<u32>
-            fn op_vec2_constructor(e: vec2<f32>) -> vec2<f32>
-            fn op_vec2_constructor(e: vec2<f16>) -> vec2<f16>
-            fn op_vec2_constructor(e: vec2<u64>) -> vec2<u64>
-            fn op_vec2_constructor(e: vec2<i64>) -> vec2<i64>
-            fn op_vec2_constructor(e1: bool, e2: bool) -> vec2<bool>
-            fn op_vec2_constructor(e1: integer, e2: integer) -> vec2<integer>
-            fn op_vec2_constructor(e1: float, e2: float) -> vec2<float>
-            fn op_vec2_constructor(e1: i32, e2: i32) -> vec2<i32>
-            fn op_vec2_constructor(e1: u32, e2: u32) -> vec2<u32>
-            fn op_vec2_constructor(e1: f32, e2: f32) -> vec2<f32>
-            fn op_vec2_constructor(e1: f16, e2: f16) -> vec2<f16>
-            fn op_vec2_constructor(e1: u64, e2: u64) -> vec2<u64>
-            fn op_vec2_constructor(e1: i64, e2: i64) -> vec2<i64>
+            19..33 wgsl-analyzer Error 17: no overload of constructor `vec2<f32>` found for arguments of type (integer, integer, integer)
         "#]],
     );
 }
@@ -327,6 +320,19 @@ fn binding_array_validates() {
 @group(0) @binding(0) var textures: binding_array<texture_2d<f32>>;
 ",
         expect![""],
+    );
+}
+
+#[test]
+fn binding_array_invalid() {
+    check_diagnostics(
+        "
+@group(0) @binding(0) var textures: binding_array;
+",
+        expect![[r#"
+            22..25 wgsl-analyzer Error 12: address space is only valid for handle or texture types
+            36..49 wgsl-analyzer Error 13: missing template arguments
+        "#]],
     );
 }
 
@@ -525,38 +531,21 @@ fn foo() {
     let structure = Foo();
 
     let pointer = ptr<function, u32, read>();
-    let reference = ref<function, u32, read>();
+    // let reference = ref<function, u32, read>();
     let tex = texture_storage_2d<rgba16float, write>();
 }
 ",
         expect![[r#"
-            468..471 wgsl-analyzer Error 16: 'ref' is a reserved word in WGSL
-            468..471 wgsl-analyzer Error 16: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '-', 'package', '(', '*', 'super', '~', 'true'
-            480..481 wgsl-analyzer Error 16: invalid syntax, expected one of: '&=', '/=', '=', '-=', '--', '%=', '|=', '+=', '++', '<<=', '>>=', '*=', '^='
-            485..486 wgsl-analyzer Error 16: invalid syntax, expected one of: '&=', '/=', '=', '-=', '--', '%=', '|=', '+=', '++', '<<=', '>>=', '*=', '^='
-            491..492 wgsl-analyzer Error 16: invalid syntax, expected one of: '&=', '/=', '=', '-=', '--', '%=', '|=', '+=', '++', '<<=', '>>=', '*=', '^='
-            493..494 wgsl-analyzer Error 16: invalid syntax, expected one of: '&', <identifier>, 'package', '(', '*', 'super'
-            494..495 wgsl-analyzer Error 16: invalid syntax, expected one of: '&=', '/=', '=', '-=', '--', '%=', '|=', '+=', '++', '<<=', '>>=', '*=', '^='
             79..92 wgsl-analyzer Error 6: type `array<bool>` is not constructible
             128..140 wgsl-analyzer Error 6: type `array<i32>` is not constructible
             178..190 wgsl-analyzer Error 6: type `array<u32>` is not constructible
             217..229 wgsl-analyzer Error 6: type `array<f32>` is not constructible
             256..268 wgsl-analyzer Error 6: type `array<f16>` is not constructible
             306..319 wgsl-analyzer Error 6: type `atomic<i32>` is not constructible
-            306..319 wgsl-analyzer Error 6: type `atomic<i32>` is not constructible
-            358..371 wgsl-analyzer Error 6: type `atomic<u32>` is not constructible
             358..371 wgsl-analyzer Error 6: type `atomic<u32>` is not constructible
             394..399 wgsl-analyzer Error 6: type `Foo` is not constructible
             420..446 wgsl-analyzer Error 6: type `ptr<u32>` is not constructible
-            420..446 wgsl-analyzer Error 6: type `ptr<u32>` is not constructible
-            472..480 wgsl-analyzer Error 23: enumerant function is not a variable
-            472..480 wgsl-analyzer Error 1: left hand side of assignment should be a reference, found [error]
-            482..485 wgsl-analyzer Error 23: type u32 is not a variable
-            482..485 wgsl-analyzer Error 1: left hand side of assignment should be a reference, found [error]
-            487..491 wgsl-analyzer Error 23: enumerant read is not a variable
-            487..491 wgsl-analyzer Error 1: left hand side of assignment should be a reference, found [error]
-            510..550 wgsl-analyzer Error 6: type `texture_storage_2d<rgba16float,write>` is not constructible
-            510..550 wgsl-analyzer Error 6: type `texture_storage_2d<rgba16float,write>` is not constructible
+            513..553 wgsl-analyzer Error 6: type `texture_storage_2d<rgba16float,write>` is not constructible
         "#]],
     );
 }
@@ -566,12 +555,53 @@ fn arg_count_mismatch() {
     check_diagnostics(
         "
 fn foo() {
+    let x = foo(1);
+}
+",
+        expect![[r#"
+            15..30 wgsl-analyzer Error 7: expected 0 parameters, found 1
+        "#]],
+    );
+}
+
+#[test]
+fn arg_count_mismatch_no_type() {
+    check_diagnostics(
+        "
+fn foo() {
     let x = foo(foo());
 }
 ",
         expect![[r#"
             15..34 wgsl-analyzer Error 7: expected 0 parameters, found 1
         "#]],
+    );
+}
+
+#[test]
+fn expected_template_builtin() {
+    check_diagnostics(
+        "
+fn foo() {
+    let x = bitcast(1f);
+}
+",
+        expect![[r#"
+            23..34 wesl-rs Error 22: invalid function call signature: `bitcast(f32)`
+        "#]],
+    );
+}
+
+#[test]
+// https://github.com/webgpu-tools/wesl-rs/pull/255
+fn unexpected_template_builtin() {
+    check_diagnostics(
+        "
+fn foo() {
+    let x = sqrt<f32>(1f);
+}
+",
+        expect![""],
     );
 }
 

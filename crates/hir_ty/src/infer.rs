@@ -1,6 +1,4 @@
-mod unify;
-
-use std::ops::Index;
+use std::{num::NonZeroU32, ops::Index};
 
 use base_db::{Intern as _, Lookup as _};
 use either::Either;
@@ -19,27 +17,29 @@ use hir_def::{
         ConstantSignature, FieldId, FunctionSignature, OverrideSignature, StructSignature,
         TypeAliasSignature, VariableSignature,
     },
-    type_ref::{self, VecDimensionality},
     type_specifier::{IdentExpression, TypeSpecifierId},
 };
+use itertools::Itertools as _;
 use la_arena::ArenaMap;
 use rustc_hash::FxHashMap;
-use wgsl_types::syntax::{AccessMode, AddressSpace, Enumerant};
+use wgsl_types::{
+    syntax::{AccessMode, AddressSpace, Enumerant},
+    tplt::TpltParam,
+    ty::Ty as _,
+};
 
 use crate::{
-    builtins::{Builtin, BuiltinId, BuiltinOverload, BuiltinOverloadId},
     db::HirDatabase,
     diagnostics::{InferenceDiagnostic, InferenceDiagnosticKind},
     function::FunctionDetails,
-    infer::unify::{UnificationTable, unify},
     lower::{
-        Lowered, LoweredKind, ResolvedCall, TemplateParameter, TemplateParameters, TypeContainer,
-        TypeLoweringContext, TypeLoweringError, WgslTypeConverter, to_wgsl_binary_operator,
-        to_wgsl_unary_operator,
+        ConstructibleTypeGenerator, Lowered, LoweredKind, ResolvedCall, TemplateParameter,
+        TemplateParameters, TypeLoweringContext, TypeLoweringError, WgslTypeConverter,
+        to_wgsl_binary_operator, to_wgsl_unary_operator,
     },
     ty::{
-        ArraySize, ArrayType, BuiltinStruct, Pointer, Reference, ScalarType, Type, TypeKind,
-        VecSize, VectorType,
+        ArraySize, ArrayType, BuiltinStruct, MatrixType, Pointer, Reference, ScalarType, Type,
+        TypeKind, VectorType,
     },
 };
 
@@ -48,16 +48,15 @@ impl InferenceResult {
     /// Infers the type of a global item.
     /// For `const`s and co, it first uses the specified type,
     /// and then uses the body (expression) to infer the return type.
-    #[salsa::tracked(returns(ref), cycle_result = infer_cycle_result)]
     pub fn of(
         db: &dyn HirDatabase,
         definition: DefinitionWithBodyId,
-    ) -> Self {
+    ) -> &Self {
         infer_query(db, definition)
     }
 }
 
-// TODO load rule somewhere in here
+#[salsa::tracked(returns(ref), cycle_result = infer_cycle_result)]
 fn infer_query(
     db: &dyn HirDatabase,
     definition: DefinitionWithBodyId,
@@ -118,7 +117,7 @@ fn infer_cycle_result(
     inference_result
 }
 
-fn get_name_and_range(
+pub fn get_name_and_range(
     db: &dyn HirDatabase,
     definition: ModuleDefinitionId,
 ) -> (Name, base_db::TextRange) {
@@ -599,7 +598,7 @@ impl<'db> InferenceContext<'db> {
                     self.get_effective_value_type(body, &resolver, *type_ref, *initializer);
                 if let Some(initializer_expression) = initializer
                     && !r#type.kind(self.db).is_storable()
-                    && !r#type.kind(self.db).is_error()
+                    && !r#type.is_err(self.db)
                 {
                     self.push_diagnostic(
                         body.store_source,
@@ -686,14 +685,17 @@ impl<'db> InferenceContext<'db> {
                 let left_inner = if let TypeKind::Reference(reference) = kind {
                     reference.inner
                 } else {
-                    self.push_diagnostic(
-                        body.store_source,
-                        InferenceDiagnosticKind::AssignmentNotAReference {
-                            left_side: *left_side,
-                            actual: left_type,
-                        },
-                    );
-                    self.error_type()
+                    if !left_type.is_err(self.db) {
+                        self.push_diagnostic(
+                            body.store_source,
+                            InferenceDiagnosticKind::AssignmentNotAReference {
+                                left_side: *left_side,
+                                actual: left_type,
+                            },
+                        );
+                    }
+                    // helpful instead of full error
+                    left_type
                 };
 
                 self.infer_expression_expect(
@@ -713,14 +715,17 @@ impl<'db> InferenceContext<'db> {
                 let left_inner = if let TypeKind::Reference(reference) = left_kind {
                     reference.inner
                 } else {
-                    self.push_diagnostic(
-                        body.store_source,
-                        InferenceDiagnosticKind::AssignmentNotAReference {
-                            left_side: *left_side,
-                            actual: left_type,
-                        },
-                    );
-                    self.error_type()
+                    if !left_type.is_err(self.db) {
+                        self.push_diagnostic(
+                            body.store_source,
+                            InferenceDiagnosticKind::AssignmentNotAReference {
+                                left_side: *left_side,
+                                actual: left_type,
+                            },
+                        );
+                    }
+                    // helpful instead of full error
+                    left_type
                 };
 
                 let r#type = self.infer_binary_op(
@@ -754,14 +759,17 @@ impl<'db> InferenceContext<'db> {
                 let left_inner = if let TypeKind::Reference(reference) = left_kind {
                     reference.inner
                 } else {
-                    self.push_diagnostic(
-                        body.store_source,
-                        InferenceDiagnosticKind::AssignmentNotAReference {
-                            left_side: *expression,
-                            actual: left_type,
-                        },
-                    );
-                    self.error_type()
+                    if !left_type.is_err(self.db) {
+                        self.push_diagnostic(
+                            body.store_source,
+                            InferenceDiagnosticKind::AssignmentNotAReference {
+                                left_side: *expression,
+                                actual: left_type,
+                            },
+                        );
+                    }
+                    // helpful instead of full error
+                    left_type
                 };
 
                 if self
@@ -866,8 +874,9 @@ impl<'db> InferenceContext<'db> {
                     body,
                 );
             },
-            Statement::Expression { expression } => {
+            Statement::FunctionCall { expression } => {
                 self.infer_expression(*expression, body);
+                // check must_use and report diagnostic here
             },
         }
     }
@@ -977,7 +986,9 @@ impl<'db> InferenceContext<'db> {
 
         match expected {
             TypeExpectation::Type(expected_type) => {
-                if self.expect_type_inner(r#type, expected_type) != Ok(()) {
+                if !r#type.is_err(self.db)
+                    && self.expect_type_inner(r#type, expected_type) != Ok(())
+                {
                     self.push_diagnostic(
                         store.store_source,
                         InferenceDiagnosticKind::TypeMismatch {
@@ -1007,9 +1018,9 @@ impl<'db> InferenceContext<'db> {
                 operation,
             } => self.infer_binary_op(expression, *left_side, *right_side, *operation, store),
             Expression::UnaryOperator {
-                expression,
+                expression: inner_expression,
                 operator,
-            } => self.infer_unary_op(*expression, *operator, store),
+            } => self.infer_unary_op(expression, *inner_expression, *operator, store),
             Expression::Field {
                 expression: field_expression,
                 name,
@@ -1027,7 +1038,7 @@ impl<'db> InferenceContext<'db> {
                         )
                     })
                     .collect();
-                self.infer_call(expression, ident_expression, arguments, store)
+                self.infer_call(expression, ident_expression, &arguments, store)
             },
             Expression::Index { left_side, index } => {
                 let left_side = self.infer_expression(*left_side, store);
@@ -1095,6 +1106,16 @@ impl<'db> InferenceContext<'db> {
                         self.make_ref(array.inner, address_space, access_mode)
                     },
                     TypeKind::Array(array) => array.inner,
+                    TypeKind::Reference(Reference {
+                        address_space: _,
+                        inner,
+                        access_mode: _,
+                    })
+                    | TypeKind::Pointer(Pointer {
+                        address_space: _,
+                        inner,
+                        access_mode: _,
+                    }) if inner.kind(self.db) == TypeKind::Error => self.error_type(),
                     TypeKind::Scalar(_)
                     | TypeKind::Atomic(_)
                     | TypeKind::Struct(_)
@@ -1102,9 +1123,7 @@ impl<'db> InferenceContext<'db> {
                     | TypeKind::Texture(_)
                     | TypeKind::Sampler(_)
                     | TypeKind::Reference(_)
-                    | TypeKind::Pointer(_)
-                    | TypeKind::BoundVariable(_)
-                    | TypeKind::StorageTypeOfTexelFormat(_) => {
+                    | TypeKind::Pointer(_) => {
                         self.push_diagnostic(
                             store.store_source,
                             InferenceDiagnosticKind::ArrayAccessInvalidType {
@@ -1112,13 +1131,11 @@ impl<'db> InferenceContext<'db> {
                                 r#type: left_side,
                             },
                         );
+                        // nothing we can return here is useful
                         self.error_type()
                     },
                     // No need to create extra diagnostics for problems upstream
-                    TypeKind::Error => {
-                        debug_assert!(!self.result.diagnostics.is_empty());
-                        self.error_type()
-                    },
+                    TypeKind::Error => self.error_type(),
                 }
             },
             Expression::Literal(literal) => {
@@ -1157,6 +1174,8 @@ impl<'db> InferenceContext<'db> {
     ) -> Type {
         let expression_type = self.infer_expression(field_expression, store);
         if expression_type.is_err(self.db) {
+            // the problem is upstream, so do not push a superfluous diagnostic
+            // no more useful type to return here
             return self.error_type();
         }
         let (kind, ref_info) = match expression_type.kind(self.db) {
@@ -1179,9 +1198,7 @@ impl<'db> InferenceContext<'db> {
             | TypeKind::BuiltinStruct(_)
             | TypeKind::Array(_)
             | TypeKind::Texture(_)
-            | TypeKind::Sampler(_)
-            | TypeKind::BoundVariable(_)
-            | TypeKind::StorageTypeOfTexelFormat(_)) => (kind, None),
+            | TypeKind::Sampler(_)) => (kind, None),
         };
 
         let r#type = match kind {
@@ -1218,9 +1235,7 @@ impl<'db> InferenceContext<'db> {
             | TypeKind::Texture(_)
             | TypeKind::Sampler(_)
             | TypeKind::Reference(_)
-            | TypeKind::Pointer(_)
-            | TypeKind::BoundVariable(_)
-            | TypeKind::StorageTypeOfTexelFormat(_) => {
+            | TypeKind::Pointer(_) => {
                 self.push_diagnostic(
                     store.store_source,
                     InferenceDiagnosticKind::NoSuchField {
@@ -1229,6 +1244,7 @@ impl<'db> InferenceContext<'db> {
                         r#type: expression_type,
                     },
                 );
+                // no more useful type to return here
                 return self.error_type();
             },
         };
@@ -1239,7 +1255,7 @@ impl<'db> InferenceContext<'db> {
         }
     }
 
-    fn validate_function_call(
+    fn infer_function_call(
         &mut self,
         function: &FunctionDetails,
         arguments: &[(ExpressionId, Type)],
@@ -1261,7 +1277,7 @@ impl<'db> InferenceContext<'db> {
                     );
                 }
             }
-
+            // if the function being called does not have a return type, that is a full-on error to try to use it as an expression
             function.return_type.unwrap_or_else(|| self.error_type())
         } else {
             self.push_diagnostic(
@@ -1279,18 +1295,19 @@ impl<'db> InferenceContext<'db> {
     fn infer_unary_op(
         &mut self,
         expression: ExpressionId,
+        operand: ExpressionId,
         operator: UnaryOperator,
         store: &ExpressionStore,
     ) -> Type {
-        let expression_type = self.infer_expression(expression, store);
-        if expression_type.is_err(self.db) {
+        let operand_type = self.infer_expression(operand, store);
+        if operand_type.is_err(self.db) {
             return self.error_type();
         }
         // Load rule does not apply to this specific operator because it has precondition `r: ref<AS,T,AM>`
         let expression_type = if operator == UnaryOperator::AddressOf {
-            expression_type
+            operand_type
         } else {
-            expression_type.loaded(self.db)
+            operand_type.loaded(self.db)
         };
         match wgsl_types::builtin::type_unary_op(
             to_wgsl_unary_operator(operator),
@@ -1322,6 +1339,11 @@ impl<'db> InferenceContext<'db> {
         let right_type = self.infer_expression(right_side, store);
 
         if left_type.is_err(self.db) || right_type.is_err(self.db) {
+            // debug_assert!(
+            //     !self.result.diagnostics.is_empty(),
+            //     "there should already be a diagnostic"
+            // );
+            // no more useful type to return here
             return self.error_type();
         }
         match wgsl_types::builtin::type_binary_op(
@@ -1370,10 +1392,12 @@ impl<'db> InferenceContext<'db> {
                 InferenceResult::of(self.db, DefinitionWithBodyId::Override(id)).return_type
             },
             Lowered::Local(id) => self.result.type_of_binding[id],
+            Lowered::BuiltinDeclaration(_, value) => self.converter.from_wgsl_types(value.ty()),
             Lowered::Type(_)
-            | Lowered::TypeWithoutTemplate(_)
+            | Lowered::ConstructibleTypeGenerator(_)
             | Lowered::Function(_)
-            | Lowered::BuiltinFunction
+            | Lowered::BuiltinFunction(_, _)
+            // | Lowered::BuiltinConstructor(_, _)
             | Lowered::Enumerant(_) => {
                 self.push_diagnostic(
                     store.store_source,
@@ -1387,39 +1411,6 @@ impl<'db> InferenceContext<'db> {
                 self.error_type()
             },
         }
-    }
-
-    fn builtin_vector_inferred_constructor(
-        &self,
-        size: VecDimensionality,
-    ) -> BuiltinId {
-        match size {
-            VecDimensionality::Two => Builtin::builtin_op_vec2_constructor(self.db),
-            VecDimensionality::Three => Builtin::builtin_op_vec3_constructor(self.db),
-            VecDimensionality::Four => Builtin::builtin_op_vec4_constructor(self.db),
-        }
-        .intern(self.db)
-    }
-
-    // TODO: should we use the more specific overloads such as `builtin_op_mat2x2_constructor_T`?
-    fn builtin_matrix_inferred_constructor(
-        &self,
-        columns: VecDimensionality,
-        rows: VecDimensionality,
-    ) -> BuiltinId {
-        use type_ref::VecDimensionality::{Four, Three, Two};
-        match (columns, rows) {
-            (Two, Two) => Builtin::builtin_op_mat2x2_constructor(self.db),
-            (Two, Three) => Builtin::builtin_op_mat2x3_constructor(self.db),
-            (Two, Four) => Builtin::builtin_op_mat2x4_constructor(self.db),
-            (Three, Two) => Builtin::builtin_op_mat3x2_constructor(self.db),
-            (Three, Three) => Builtin::builtin_op_mat3x3_constructor(self.db),
-            (Three, Four) => Builtin::builtin_op_mat3x4_constructor(self.db),
-            (Four, Two) => Builtin::builtin_op_mat4x2_constructor(self.db),
-            (Four, Three) => Builtin::builtin_op_mat4x3_constructor(self.db),
-            (Four, Four) => Builtin::builtin_op_mat4x4_constructor(self.db),
-        }
-        .intern(self.db)
     }
 
     fn type_from_vec_size(
@@ -1550,55 +1541,11 @@ impl<'db> InferenceContext<'db> {
         }
     }
 
-    fn try_call_builtin(
-        &self,
-        builtin_id: BuiltinId,
-        arguments: &[(ExpressionId, Type)],
-    ) -> Result<(Type, BuiltinOverloadId), ()> {
-        let builtin = builtin_id.lookup(self.db);
-        for (overload_id, overload) in builtin.overloads() {
-            // Hack: overload resolution algorithm is not implemented here or used
-            // here because it is the same as just picking the first valid overload.
-            if let Ok((r#type, _conversion_rank)) = self.call_builtin_overload(overload, arguments)
-            {
-                return Ok((r#type, overload_id));
-            }
-        }
-        Err(())
-    }
-
-    fn call_builtin_overload(
-        &self,
-        signature: &BuiltinOverload,
-        arguments: &[(ExpressionId, Type)],
-    ) -> Result<(Type, u32), ()> {
-        let function_type = signature.r#type.lookup(self.db);
-
-        if function_type.parameters.len() != arguments.len() {
-            return Err(());
-        }
-
-        let conversion_rank = 0;
-        let mut unification_table = UnificationTable::default();
-        for (expected, &found) in function_type.parameters().zip(arguments.iter()) {
-            unify(self.db, &mut unification_table, expected, found.1)?;
-        }
-
-        let return_type = function_type
-            .return_type
-            .map(|r#type| unification_table.resolve(self.db, r#type));
-
-        Ok((
-            return_type.unwrap_or_else(|| self.error_type()),
-            conversion_rank,
-        ))
-    }
-
     fn infer_call(
         &mut self,
         expression: ExpressionId,
         callee: &IdentExpression,
-        arguments: Vec<(ExpressionId, Type)>,
+        arguments: &[(ExpressionId, Type)],
         store: &ExpressionStore,
     ) -> Type {
         let resolver = self
@@ -1606,29 +1553,50 @@ impl<'db> InferenceContext<'db> {
             .unwrap_or_else(|| self.resolver.clone());
         let mut context = TypeLoweringContext::new(self.db, &resolver, store);
         let lowered = context.lower(expression, &callee.path, &callee.template_parameters);
-        let inferred = match lowered {
+        self.push_lowering_diagnostics(context.diagnostics, store);
+        let argument_types = arguments.iter().map(|(_, r#type)| *r#type).collect_vec();
+
+        match lowered {
             Lowered::Type(r#type) => {
-                self.call_templated_type_constructor(store, expression, r#type, arguments)
+                self.infer_type_constructor(store, expression, r#type, arguments)
             },
-            Lowered::TypeWithoutTemplate(r#type) => {
-                self.call_type_without_template_constructor(store, expression, r#type, arguments)
+            Lowered::ConstructibleTypeGenerator(generator) => {
+                self.infer_type_generator(store, expression, generator, arguments)
             },
+            // Lowered::BuiltinConstructor(name, template) => {
+            //     if argument_types
+            //         .iter()
+            //         .any(|r#type| r#type.is_err(self.db))
+            //     {
+            //         // cancel inference if an error is already known
+            //         debug_assert!(
+            //             !self.result.diagnostics.is_empty(),
+            //             "if an argument is an [error], then there should be a diagnostic already"
+            //         );
+            //         return self.error_type();
+            //     }
+            //     self.infer_builtin_constructor(expression, argument_types, store, template, name)
+            // },
             Lowered::Function(id) => {
                 let details = id.lookup(self.db);
                 self.result
                     .call_resolutions
                     .insert(expression, ResolvedCall::Function(id));
-                self.validate_function_call(details, &arguments, store, expression)
+                self.infer_function_call(details, arguments, store, expression)
             },
-            Lowered::BuiltinFunction => {
-                let template_args = context.eval_template_args(
-                    TypeContainer::Expression(expression),
-                    &callee.template_parameters,
-                );
-                self.call_builtin_function(store, expression, callee, template_args, &arguments)
+            Lowered::BuiltinFunction(name, template) => {
+                if argument_types.iter().any(|r#type| r#type.is_err(self.db)) {
+                    // debug_assert!(
+                    //     !self.result.diagnostics().is_empty(),
+                    //     "error instance should have a diagnostic associated with it already"
+                    // );
+                    return self.error_type();
+                }
+                self.infer_builtin_function(expression, &argument_types, store, template, &name)
             },
             Lowered::Enumerant(_)
             | Lowered::GlobalConstant(_)
+            | Lowered::BuiltinDeclaration(_, _)
             | Lowered::GlobalVariable(_)
             | Lowered::Override(_)
             | Lowered::Local(_) => {
@@ -1643,77 +1611,67 @@ impl<'db> InferenceContext<'db> {
                 );
                 self.error_type()
             },
-        };
-        self.push_lowering_diagnostics(context.diagnostics, store);
-        inferred
+        }
     }
 
-    fn call_builtin_function(
+    // fn infer_builtin_constructor(
+    //     &mut self,
+    //     expression: ExpressionId,
+    //     argument_types: Vec<Type>,
+    //     store: &ExpressionStore,
+    //     template_parameters: Option<TemplateParameters>,
+    //     name: Name,
+    // ) -> Type {
+    //     let wgsl_arguments = self.converter.to_wt_vec(&argument_types);
+    //     let Ok(template) = self.converter.to_maybe_vec_template(template_parameters) else {
+    //         debug_assert!(
+    //             !self.result.diagnostics().is_empty(),
+    //             "error instance should have a diagnostic associated with it already"
+    //         );
+    //         return self.error_type();
+    //     };
+    //     if let Ok(value) =
+    //         wgsl_types::builtin::type_ctor(name.as_str(), template.as_deref(), &wgsl_arguments)
+    //     {
+    //         self.converter.from_wgsl_types(value)
+    //     } else {
+    //         self.push_diagnostic(
+    //             store.store_source,
+    //             InferenceDiagnosticKind::NoBuiltinOverload {
+    //                 expression,
+    //                 name: Some(name),
+    //                 parameters: argument_types,
+    //             },
+    //         );
+    //         self.error_type()
+    //     }
+    // }
+
+    fn infer_builtin_function(
         &mut self,
-        store: &ExpressionStore,
         expression: ExpressionId,
-        callee: &IdentExpression,
-        mut template_parameters: TemplateParameters,
-        arguments: &[(ExpressionId, Type)],
+        argument_types: &[Type],
+        store: &ExpressionStore,
+        template_parameters: Option<TemplateParameters>,
+        name: &Name,
     ) -> Type {
-        let Some(name) = callee.path.mod_path().as_ident() else {
-            self.push_diagnostic(
-                store.store_source,
-                InferenceDiagnosticKind::WgslError {
-                    expression,
-                    message: format!("invalid builtin {}", callee.path.mod_path()),
-                },
-            );
+        let wgsl_arguments = self.converter.to_wt_vec(argument_types);
+        let Ok(template) = self.converter.to_maybe_vec_template(template_parameters) else {
+            // assert fails with something like `sqrt<&y>(1)`
+            // debug_assert!(
+            //     !self.result.diagnostics().is_empty(),
+            //     "error instance should have a diagnostic associated with it already"
+            // );
             return self.error_type();
         };
-
-        let mut template_args = vec![];
-        while let Some((template_parameter, _)) = template_parameters.take_next() {
-            if let Some(template_parameter) = self
-                .converter
-                .template_parameter_to_wgsl_types(template_parameter)
-            {
-                template_args.push(template_parameter);
-            } else {
-                self.push_diagnostic(
-                    store.store_source,
-                    InferenceDiagnosticKind::WgslError {
-                    expression,
-                    message:
-                        "internal error: wgsl-types did not align with wgsl-analyzer's type system"
-                            .to_owned(),
-                });
-                return self.error_type();
-            }
-        }
-        let template_args = if template_args.is_empty() {
-            None
-        } else {
-            Some(template_args.as_slice())
-        };
-
-        let converted_arguments: Vec<_> = arguments
-            .iter()
-            .map(|(_, r#type)| self.converter.to_wgsl_types(*r#type))
-            .collect();
-
-        if converted_arguments
-            .iter()
-            .any(|argument| matches!(argument, wgsl_types::Type::Unknown))
-        {
-            // One of the arguments had an error type
-            return self.error_type();
-        }
-
         let return_type = wgsl_types::builtin::type_builtin_fn(
             name.as_str(),
-            template_args,
-            &converted_arguments,
+            template.as_deref(),
+            &wgsl_arguments,
         );
-
         match return_type {
             Ok(Some(r#type)) => self.converter.from_wgsl_types(r#type),
-            Ok(None) => self.error_type(),
+            Ok(None) => self.error_type(), // just a function that doesn't have a return value
             Err(error) => {
                 self.push_diagnostic(
                     store.store_source,
@@ -1727,396 +1685,403 @@ impl<'db> InferenceContext<'db> {
         }
     }
 
-    #[expect(
-        clippy::too_many_lines,
-        reason = "large bug not complex match expression"
-    )]
     /// Constructor for a type with a fully specified template.
-    fn call_templated_type_constructor(
+    fn infer_type_constructor(
         &mut self,
         store: &ExpressionStore,
         expression: ExpressionId,
         r#type: Type,
-        arguments: Vec<(ExpressionId, Type)>,
+        arguments: &[(ExpressionId, Type)],
     ) -> Type {
-        fn size_to_dimension(size: VecSize) -> VecDimensionality {
-            match size {
-                VecSize::Two => VecDimensionality::Two,
-                VecSize::Three => VecDimensionality::Three,
-                VecSize::Four => VecDimensionality::Four,
-                #[expect(
-                    clippy::unreachable,
-                    reason = "this is by far the easiest way to handle it, at least for now"
-                )]
-                VecSize::BoundVariable(_) => {
-                    unreachable!("Can never have unbound type at this point")
-                },
-            }
-        }
-
-        // https://www.w3.org/TR/WGSL/#zero-value-builtin-function
-        if arguments.is_empty() && !r#type.is_constructible(self.db) {
+        if !r#type.is_constructible(self.db) && !r#type.is_err(self.db) {
             self.push_diagnostic(
                 store.store_source,
                 InferenceDiagnosticKind::NotConstructible { expression, r#type },
             );
+            // continue with inference just to give me helpful diagnostics and types
         }
         match r#type.kind(self.db) {
             TypeKind::Scalar(scalar_type) => {
-                self.call_scalar_constructor(store, scalar_type, expression, r#type, arguments)
+                self.infer_scalar_constructor(store, expression, r#type, arguments, scalar_type)
             },
             TypeKind::Array(array_type) => {
-                if arguments.is_empty() {
-                    return r#type;
-                }
-                for (argument_expression, argument_type) in &arguments {
-                    if !argument_type.is_convertible_to(array_type.inner, self.db) {
-                        self.push_diagnostic(
-                            store.store_source,
-                            InferenceDiagnosticKind::TypeMismatch {
-                                expression: *argument_expression,
-                                expected: TypeExpectation::Type(TypeExpectationInner::Exact(
-                                    array_type.inner,
-                                )),
-                                actual: *argument_type,
-                            },
-                        );
-                    }
-                }
-                #[expect(
-                    clippy::as_conversions,
-                    reason = "constructing an array with too many parameters is an error anyway"
-                )]
-                if let ArraySize::Constant(size) = array_type.size
-                    && arguments.len() != size as usize
-                {
-                    self.push_diagnostic(
-                        store.store_source,
-                        InferenceDiagnosticKind::FunctionCallArgCountMismatch {
-                            expression,
-                            n_expected: size as usize,
-                            n_actual: arguments.len(),
-                        },
-                    );
-                }
+                self.infer_array_constructor(store, expression, r#type, arguments, &array_type)
+            },
+            TypeKind::Vector(vector_type) => {
+                self.infer_vector_constructor(store, expression, r#type, arguments, &vector_type)
+            },
+            TypeKind::Matrix(matrix_type) => {
+                self.infer_matrix_constructor(store, expression, r#type, arguments, &matrix_type)
+            },
+            TypeKind::Struct(struct_id) => {
+                self.infer_struct_constructor(store, expression, r#type, arguments, struct_id)
+            },
+
+            // Never constructible
+            TypeKind::Texture(_)
+            | TypeKind::Sampler(_)
+            | TypeKind::Pointer(_)
+            | TypeKind::Atomic(_)
+            | TypeKind::BuiltinStruct(_)
+            | TypeKind::Reference(_) => {
+                debug_assert!(
+                    !self.result.diagnostics.is_empty(),
+                    "there is already a diagnostic above"
+                );
+                r#type // doesn't hurt to be helpful
+            },
+            TypeKind::Error => {
+                debug_assert!(
+                    !self.result.diagnostics.is_empty(),
+                    "there should already be a diagnostic if we have an error"
+                );
                 r#type
             },
-            TypeKind::Vector(vec) => {
-                if arguments.is_empty() {
-                    return r#type;
-                }
-                let construction_builtin_id =
-                    self.builtin_vector_inferred_constructor(size_to_dimension(vec.size));
-                let construction_result =
-                    self.try_call_builtin(construction_builtin_id, &arguments);
-
-                if construction_result.is_ok() {
-                    r#type
-                } else {
-                    self.push_diagnostic(
-                        store.store_source,
-                        InferenceDiagnosticKind::NoConstructor {
-                            expression,
-                            builtins: construction_builtin_id,
-                            r#type,
-                            parameters: arguments.into_iter().map(|(_, r#type)| r#type).collect(),
-                        },
-                    );
-                    self.error_type()
-                }
-            },
-            TypeKind::Matrix(matrix) => {
-                // https://www.w3.org/TR/WGSL/#zero-value-builtin-function
-                if arguments.is_empty() {
-                    return r#type;
-                }
-                let construction_builtin_id = self.builtin_matrix_inferred_constructor(
-                    size_to_dimension(matrix.columns),
-                    size_to_dimension(matrix.rows),
-                );
-                let construction_result =
-                    self.try_call_builtin(construction_builtin_id, &arguments);
-                if construction_result.is_ok() {
-                    r#type
-                } else {
-                    self.push_diagnostic(
-                        store.store_source,
-                        InferenceDiagnosticKind::NoConstructor {
-                            expression,
-                            builtins: construction_builtin_id,
-                            r#type,
-                            parameters: arguments.into_iter().map(|(_, r#type)| r#type).collect(),
-                        },
-                    );
-                    self.error_type()
-                }
-            },
-            TypeKind::Struct(struct_id) => {
-                self.validate_struct_constructor(store, struct_id, expression, r#type, &arguments)
-            },
-
-            // Never constructible
-            TypeKind::Texture(_)
-            | TypeKind::Sampler(_)
-            | TypeKind::Pointer(_)
-            | TypeKind::Atomic(_)
-            | TypeKind::BuiltinStruct(_)
-            | TypeKind::StorageTypeOfTexelFormat(_)
-            | TypeKind::BoundVariable(_)
-            | TypeKind::Reference(_) => {
-                self.push_diagnostic(
-                    store.store_source,
-                    InferenceDiagnosticKind::NotConstructible { expression, r#type },
-                );
-                self.error_type()
-            },
-            TypeKind::Error => r#type,
         }
     }
 
-    #[expect(
-        clippy::too_many_lines,
-        reason = "large bug not complex match expression"
-    )]
-    /// Constructor for just a type name.
-    fn call_type_without_template_constructor(
+    fn infer_array_constructor(
         &mut self,
         store: &ExpressionStore,
-        expression: ExpressionId,
+        expression: la_arena::Idx<Expression>,
         r#type: Type,
-        arguments: Vec<(ExpressionId, Type)>,
+        arguments: &[(ExpressionId, Type)],
+        array_type: &ArrayType,
     ) -> Type {
-        fn size_to_dimension(size: VecSize) -> VecDimensionality {
-            #[expect(
-                clippy::unreachable,
-                reason = "this is by far the easiest way to handle it, at least for now"
-            )]
-            match size {
-                VecSize::Two => VecDimensionality::Two,
-                VecSize::Three => VecDimensionality::Three,
-                VecSize::Four => VecDimensionality::Four,
-                VecSize::BoundVariable(_) => {
-                    unreachable!("Can never have unbound type at this point")
-                },
+        if arguments.is_empty() {
+            return r#type;
+        }
+        // validate types
+        for (argument_expression, argument_type) in arguments {
+            if !argument_type.is_convertible_to(array_type.inner, self.db) {
+                self.push_diagnostic(
+                    store.store_source,
+                    InferenceDiagnosticKind::TypeMismatch {
+                        expression: *argument_expression,
+                        expected: TypeExpectation::Type(TypeExpectationInner::Exact(
+                            array_type.inner,
+                        )),
+                        actual: *argument_type,
+                    },
+                );
             }
         }
-
-        // https://www.w3.org/TR/WGSL/#zero-value-builtin-function
-        if arguments.is_empty() && !r#type.is_constructible(self.db) {
+        // validate arity
+        #[expect(
+            clippy::as_conversions,
+            reason = "constructing an array with too many parameters is an error anyway"
+        )]
+        if let ArraySize::Constant(size) = array_type.size
+            && arguments.len() != size.get() as usize
+        {
             self.push_diagnostic(
                 store.store_source,
-                InferenceDiagnosticKind::NotConstructible { expression, r#type },
+                InferenceDiagnosticKind::FunctionCallArgCountMismatch {
+                    expression,
+                    n_expected: size.get() as usize,
+                    n_actual: arguments.len(),
+                },
             );
         }
-
-        match r#type.kind(self.db) {
-            TypeKind::Scalar(scalar_type) => {
-                self.call_scalar_constructor(store, scalar_type, expression, r#type, arguments)
-            },
-            TypeKind::Array(array_type) => {
-                if arguments.is_empty() {
-                    return r#type;
-                }
-                let Some((_, mut first_argument_type)) = arguments.first().copied() else {
-                    self.push_diagnostic(
-                        store.store_source,
-                        InferenceDiagnosticKind::FunctionCallArgCountMismatch {
-                            expression,
-                            n_expected: 1,
-                            n_actual: arguments.len(),
-                        },
-                    );
-                    return self.error_type();
-                };
-
-                // all of the following arguments must be the same type as the first argument
-                for (argument_expression, argument_type) in &arguments[1..] {
-                    if argument_type.is_convertible_to(first_argument_type, self.db) {
-                        // Everything is as intended
-                    } else if first_argument_type.is_convertible_to(*argument_type, self.db) {
-                        // Narrowing the expected type
-                        first_argument_type = *argument_type;
-                    } else {
-                        self.push_diagnostic(
-                            store.store_source,
-                            InferenceDiagnosticKind::TypeMismatch {
-                                expression: *argument_expression,
-                                expected: TypeExpectation::Type(TypeExpectationInner::Exact(
-                                    first_argument_type,
-                                )),
-                                actual: *argument_type,
-                            },
-                        );
-                    }
-                }
-                if let Ok(validated_length) = u32::try_from(arguments.len()) {
-                    TypeKind::Array(ArrayType {
-                        inner: first_argument_type,
-                        binding_array: array_type.binding_array,
-                        size: ArraySize::Constant(validated_length),
-                    })
-                    .intern(self.db)
-                } else {
-                    self.push_diagnostic(
-                        store.store_source,
-                        InferenceDiagnosticKind::FunctionCallArgCountMismatch {
-                            expression,
-                            #[expect(clippy::as_conversions, reason = "usize always holds a u32")]
-                            n_expected: ArraySize::MAX as usize,
-                            n_actual: arguments.len(),
-                        },
-                    );
-                    TypeKind::Array(ArrayType {
-                        inner: first_argument_type,
-                        binding_array: array_type.binding_array,
-                        size: ArraySize::Constant(ArraySize::MAX),
-                    })
-                    .intern(self.db)
-                }
-            },
-            TypeKind::Vector(vec) => {
-                // See note in WGSL reference:
-                // Note: Zero-filled vectors of AbstractInt can be written as vec2(), vec3(), and vec4().
-                // https://www.w3.org/TR/WGSL/#zero-value-builtin-function
-                if arguments.is_empty() {
-                    return TypeKind::Vector(VectorType {
-                        size: vec.size,
-                        component_type: TypeKind::Scalar(ScalarType::AbstractInt).intern(self.db),
-                    })
-                    .intern(self.db);
-                }
-                let construction_builtin_id =
-                    self.builtin_vector_inferred_constructor(size_to_dimension(vec.size));
-                let construction_result =
-                    self.try_call_builtin(construction_builtin_id, &arguments);
-
-                if let Ok((r#type, _)) = construction_result {
-                    r#type
-                } else {
-                    self.push_diagnostic(
-                        store.store_source,
-                        InferenceDiagnosticKind::NoConstructor {
-                            expression,
-                            builtins: construction_builtin_id,
-                            r#type,
-                            parameters: arguments.into_iter().map(|(_, r#type)| r#type).collect(),
-                        },
-                    );
-                    self.error_type()
-                }
-            },
-            TypeKind::Matrix(matrix) => {
-                // https://www.w3.org/TR/WGSL/#zero-value-builtin-function
-                if arguments.is_empty() {
-                    self.push_diagnostic(
-                        store.store_source,
-                        InferenceDiagnosticKind::FunctionCallArgCountMismatch {
-                            expression,
-                            n_expected: 1,
-                            n_actual: arguments.len(),
-                        },
-                    );
-                    return self.error_type();
-                }
-                let construction_builtin_id = self.builtin_matrix_inferred_constructor(
-                    size_to_dimension(matrix.columns),
-                    size_to_dimension(matrix.rows),
-                );
-                let construction_result =
-                    self.try_call_builtin(construction_builtin_id, &arguments);
-                if let Ok((r#type, _)) = construction_result {
-                    r#type
-                } else {
-                    self.push_diagnostic(
-                        store.store_source,
-                        InferenceDiagnosticKind::NoConstructor {
-                            expression,
-                            builtins: construction_builtin_id,
-                            r#type,
-                            parameters: arguments.into_iter().map(|(_, r#type)| r#type).collect(),
-                        },
-                    );
-                    self.error_type()
-                }
-            },
-            TypeKind::Struct(struct_id) => {
-                self.validate_struct_constructor(store, struct_id, expression, r#type, &arguments)
-            },
-            // Never constructible
-            TypeKind::Texture(_)
-            | TypeKind::Sampler(_)
-            | TypeKind::Pointer(_)
-            | TypeKind::Atomic(_)
-            | TypeKind::BuiltinStruct(_)
-            | TypeKind::StorageTypeOfTexelFormat(_)
-            | TypeKind::BoundVariable(_)
-            | TypeKind::Reference(_) => {
-                self.push_diagnostic(
-                    store.store_source,
-                    InferenceDiagnosticKind::NotConstructible { expression, r#type },
-                );
-                self.error_type()
-            },
-            TypeKind::Error => r#type,
-        }
+        r#type
     }
 
-    fn call_scalar_constructor(
+    fn infer_vector_constructor(
         &mut self,
         store: &ExpressionStore,
-        scalar_type: ScalarType,
-        expression: ExpressionId,
+        expression: la_arena::Idx<Expression>,
         r#type: Type,
-        arguments: Vec<(ExpressionId, Type)>,
+        arguments: &[(la_arena::Idx<Expression>, Type)],
+        vec: &VectorType,
+    ) -> Type {
+        let template = &[TpltParam::Type(
+            self.converter.to_wgsl_types(vec.component_type),
+        )];
+        let argument_types = arguments.iter().map(|(_, r#type)| *r#type).collect_vec();
+        if argument_types.iter().any(|r#type| r#type.is_err(self.db)) {
+            debug_assert!(
+                !self.result.diagnostics.is_empty(),
+                "an error type should have a diagnostic already"
+            );
+            return r#type;
+        }
+        let wgsl_arguments = self.converter.to_wt_vec(&argument_types);
+        let construction_result =
+            wgsl_types::builtin::type_ctor(vec.name(), Some(template), &wgsl_arguments);
+
+        if construction_result.is_err() {
+            self.push_diagnostic(
+                store.store_source,
+                InferenceDiagnosticKind::NoConstructor {
+                    expression,
+                    r#type,
+                    parameters: arguments.iter().map(|(_, r#type)| *r#type).collect(),
+                },
+            );
+        }
+        r#type
+    }
+
+    fn infer_matrix_constructor(
+        &mut self,
+        store: &ExpressionStore,
+        expression: la_arena::Idx<Expression>,
+        r#type: Type,
+        arguments: &[(la_arena::Idx<Expression>, Type)],
+        matrix: &MatrixType,
     ) -> Type {
         // https://www.w3.org/TR/WGSL/#zero-value-builtin-function
         if arguments.is_empty() {
             return r#type;
         }
-        let construction_builtin_id = match scalar_type {
-            ScalarType::Bool => Builtin::builtin_op_bool_constructor(self.db).intern(self.db),
-            ScalarType::I32 => Builtin::builtin_op_i32_constructor(self.db).intern(self.db),
-            ScalarType::U32 => Builtin::builtin_op_u32_constructor(self.db).intern(self.db),
-            ScalarType::F32 => Builtin::builtin_op_f32_constructor(self.db).intern(self.db),
-            ScalarType::F16 => Builtin::builtin_op_f16_constructor(self.db).intern(self.db),
-            ScalarType::AbstractInt | ScalarType::AbstractFloat => {
-                // Panic is correct here, since it should be impossible to enter this branch
-                #[expect(
-                    clippy::unreachable,
-                    reason = "TODO: Refactor to make this not representable"
-                )]
-                {
-                    unreachable!("cannot construct abstract types")
-                }
+        let template = &[TpltParam::Type(self.converter.to_wgsl_types(matrix.inner))];
+        let argument_types = arguments.iter().map(|(_, r#type)| *r#type).collect_vec();
+        if argument_types.iter().any(|r#type| r#type.is_err(self.db)) {
+            debug_assert!(
+                !self.result.diagnostics.is_empty(),
+                "an error type should have a diagnostic already"
+            );
+            return r#type;
+        }
+        let wgsl_arguments = self.converter.to_wt_vec(&argument_types);
+        let construction_result =
+            wgsl_types::builtin::type_ctor(matrix.name(), Some(template), &wgsl_arguments);
+        if construction_result.is_err() {
+            self.push_diagnostic(
+                store.store_source,
+                InferenceDiagnosticKind::NoConstructor {
+                    expression,
+                    r#type,
+                    parameters: argument_types,
+                },
+            );
+        }
+        r#type
+    }
+
+    /// Constructor for just a type name.
+    fn infer_type_generator(
+        &mut self,
+        store: &ExpressionStore,
+        expression: ExpressionId,
+        generator: ConstructibleTypeGenerator,
+        arguments: &[(ExpressionId, Type)],
+    ) -> Type {
+        match generator {
+            ConstructibleTypeGenerator::Array(array) => {
+                self.infer_array_generator(store, expression, arguments, &array)
             },
-            ScalarType::I64 => Builtin::builtin_op_i64_constructor(self.db).intern(self.db),
-            ScalarType::U64 => Builtin::builtin_op_u64_constructor(self.db).intern(self.db),
+            ConstructibleTypeGenerator::Vector(vector) => {
+                self.infer_vector_generator(store, expression, arguments, &vector)
+            },
+            ConstructibleTypeGenerator::Matrix(matrix) => {
+                self.infer_matrix_generator(store, expression, arguments, &matrix)
+            },
+        }
+    }
+
+    fn infer_array_generator(
+        &mut self,
+        store: &ExpressionStore,
+        expression: la_arena::Idx<Expression>,
+        arguments: &[(ExpressionId, Type)],
+        array_type: &ArrayType,
+    ) -> Type {
+        let incomplete_type = || TypeKind::Array(array_type.clone()).intern(self.db);
+        let Some((_, mut first_argument_type)) = arguments.first().copied() else {
+            self.push_diagnostic(
+                store.store_source,
+                InferenceDiagnosticKind::NoOverload {
+                    expression,
+                    name: array_type.name().into(),
+                    parameters: vec![],
+                },
+            );
+            return incomplete_type();
         };
 
-        let construction_result = self.try_call_builtin(construction_builtin_id, &arguments);
-        if let Ok((r#type, _)) = construction_result {
-            r#type
+        // all of the following arguments must be the same type as the first argument
+        for (argument_expression, argument_type) in &arguments[1..] {
+            if argument_type.is_convertible_to(first_argument_type, self.db) {
+                // Everything is as intended
+            } else if first_argument_type.is_convertible_to(*argument_type, self.db) {
+                // Narrowing the expected type
+                first_argument_type = *argument_type;
+            } else {
+                self.push_diagnostic(
+                    store.store_source,
+                    InferenceDiagnosticKind::TypeMismatch {
+                        expression: *argument_expression,
+                        expected: TypeExpectation::Type(TypeExpectationInner::Exact(
+                            first_argument_type,
+                        )),
+                        actual: *argument_type,
+                    },
+                );
+            }
+        }
+        if let Ok(length) = u32::try_from(arguments.len())
+            && let Ok(array_size) = NonZeroU32::try_from(length)
+        {
+            TypeKind::Array(ArrayType {
+                inner: first_argument_type,
+                binding_array: false,
+                size: ArraySize::Constant(array_size),
+            })
+            .intern(self.db)
+        } else {
+            self.push_diagnostic(
+                store.store_source,
+                InferenceDiagnosticKind::FunctionCallArgCountMismatch {
+                    expression,
+                    #[expect(clippy::as_conversions, reason = "usize always holds a u32")]
+                    n_expected: ArraySize::MAX.get() as usize,
+                    n_actual: arguments.len(),
+                },
+            );
+            TypeKind::Array(ArrayType {
+                inner: first_argument_type,
+                binding_array: false,
+                size: ArraySize::Constant(ArraySize::MAX),
+            })
+            .intern(self.db)
+        }
+    }
+
+    fn infer_vector_generator(
+        &mut self,
+        store: &ExpressionStore,
+        expression: la_arena::Idx<Expression>,
+        arguments: &[(ExpressionId, Type)],
+        vector_type: &VectorType,
+    ) -> Type {
+        let incomplete_type = || TypeKind::Vector(vector_type.clone()).intern(self.db);
+        // See note in WGSL reference:
+        // Note: Zero-filled vectors of AbstractInt can be written as vec2(), vec3(), and vec4().
+        // https://www.w3.org/TR/WGSL/#zero-value-builtin-function
+        if arguments.is_empty() {
+            return TypeKind::Vector(VectorType {
+                size: vector_type.size,
+                component_type: TypeKind::Scalar(ScalarType::AbstractInt).intern(self.db),
+            })
+            .intern(self.db);
+        }
+        let argument_types = arguments.iter().map(|(_, r#type)| *r#type).collect_vec();
+        if argument_types.iter().any(|r#type| r#type.is_err(self.db)) {
+            // debug_assert!(
+            //     !self.result.diagnostics.is_empty(),
+            //     "an error type should have a diagnostic already"
+            // );
+            return incomplete_type();
+        }
+        let wgsl_arguments = self.converter.to_wt_vec(&argument_types);
+        if let Ok(inferred_type) =
+            wgsl_types::builtin::type_ctor(vector_type.name(), None, &wgsl_arguments)
+        {
+            self.converter.from_wgsl_types(inferred_type)
+        } else {
+            self.push_diagnostic(
+                store.store_source,
+                InferenceDiagnosticKind::NoOverload {
+                    expression,
+                    name: vector_type.name().into(),
+                    parameters: argument_types,
+                },
+            );
+            incomplete_type()
+        }
+    }
+
+    fn infer_matrix_generator(
+        &mut self,
+        store: &ExpressionStore,
+        expression: la_arena::Idx<Expression>,
+        arguments: &[(ExpressionId, Type)],
+        matrix_type: &MatrixType,
+    ) -> Type {
+        let incomplete_type = || TypeKind::Matrix(matrix_type.clone()).intern(self.db);
+        // using the zero-value constructor is impossible because the template wasn't written
+        if arguments.is_empty() {
+            self.push_diagnostic(
+                store.store_source,
+                InferenceDiagnosticKind::NoOverload {
+                    expression,
+                    name: matrix_type.name().into(),
+                    parameters: vec![],
+                },
+            );
+            return incomplete_type();
+        }
+        let name = matrix_type.name();
+        let argument_types = arguments.iter().map(|(_, r#type)| *r#type).collect_vec();
+        if argument_types.iter().any(|r#type| r#type.is_err(self.db)) {
+            // debug_assert!(
+            //     !self.result.diagnostics.is_empty(),
+            //     "an error type should have a diagnostic already"
+            // );
+            return incomplete_type();
+        }
+        let wgsl_arguments = self.converter.to_wt_vec(&argument_types);
+        if let Ok(inferred_type) = wgsl_types::builtin::type_ctor(name, None, &wgsl_arguments) {
+            self.converter.from_wgsl_types(inferred_type)
+        } else {
+            self.push_diagnostic(
+                store.store_source,
+                InferenceDiagnosticKind::NoOverload {
+                    expression,
+                    name: matrix_type.name().into(),
+                    parameters: argument_types,
+                },
+            );
+            incomplete_type()
+        }
+    }
+
+    fn infer_scalar_constructor(
+        &mut self,
+        store: &ExpressionStore,
+        expression: ExpressionId,
+        r#type: Type,
+        arguments: &[(ExpressionId, Type)],
+        scalar_type: ScalarType,
+    ) -> Type {
+        // https://www.w3.org/TR/WGSL/#zero-value-builtin-function
+        if arguments.is_empty() {
+            return r#type;
+        }
+        let argument_types = arguments.iter().map(|(_, r#type)| *r#type).collect_vec();
+        if argument_types.iter().any(|r#type| r#type.is_err(self.db)) {
+            // debug_assert!(
+            //     !self.result.diagnostics.is_empty(),
+            //     "an error type should have a diagnostic already"
+            // );
+            return r#type;
+        }
+        let wgsl_arguments = self.converter.to_wt_vec(&argument_types);
+        if let Ok(inferred_type) =
+            wgsl_types::builtin::type_ctor(scalar_type.name(), None, &wgsl_arguments)
+        {
+            self.converter.from_wgsl_types(inferred_type)
         } else {
             self.push_diagnostic(
                 store.store_source,
                 InferenceDiagnosticKind::NoConstructor {
                     expression,
-                    builtins: construction_builtin_id,
                     r#type,
-                    parameters: arguments.into_iter().map(|(_, r#type)| r#type).collect(),
+                    parameters: argument_types,
                 },
             );
-            self.error_type()
+            r#type
         }
     }
 
-    fn validate_struct_constructor(
+    fn infer_struct_constructor(
         &mut self,
         store: &ExpressionStore,
-        struct_id: StructId,
         expression: ExpressionId,
         r#type: Type,
         arguments: &[(ExpressionId, Type)],
+        struct_id: StructId,
     ) -> Type {
         // https://www.w3.org/TR/WGSL/#zero-value-builtin-function
         if arguments.is_empty() {
@@ -2133,6 +2098,14 @@ impl<'db> InferenceContext<'db> {
                 },
             );
             return self.error_type();
+        }
+        let argument_types = arguments.iter().map(|(_, r#type)| *r#type).collect_vec();
+        if argument_types.iter().any(|r#type| r#type.is_err(self.db)) {
+            // debug_assert!(
+            //     !self.result.diagnostics.is_empty(),
+            //     "an error type should have a diagnostic already"
+            // );
+            return r#type;
         }
 
         let field_types = &self.db.field_types(struct_id).0;

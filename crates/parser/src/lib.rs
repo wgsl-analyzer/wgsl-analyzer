@@ -7,8 +7,8 @@ mod syntax_kind;
 
 use std::fmt::{self, Debug, Write as _};
 
-pub use edition::{Edition, ExtensionsConfig};
-pub use parser::{Diagnostic, parse_entrypoint};
+pub use edition::{Capabilities, Edition, ExtensionsConfig};
+pub use parser::{Diagnostic, parse_entrypoint_with_capabilities};
 use rowan::GreenNode;
 
 #[derive(Debug)]
@@ -98,6 +98,31 @@ pub enum ParseEntryPoint {
 }
 
 #[cfg(test)]
+fn check_entrypoint_with_capabilities(
+    input: &str,
+    entry_point: ParseEntryPoint,
+    expected_tree: &expect_test::Expect,
+    edition: Edition,
+    capabilities: Capabilities,
+) {
+    use rowan::TextSize;
+
+    let parse = crate::parser::parse_entrypoint_with_capabilities(
+        input,
+        entry_point,
+        edition,
+        capabilities,
+    );
+    assert_eq!(parse.syntax().text_range().start(), TextSize::new(0));
+    assert_eq!(
+        parse.syntax().text_range().end(),
+        TextSize::try_from(input.len()).unwrap(),
+        "Syntax tree should cover entire file"
+    );
+    expected_tree.assert_eq(&parse.debug_tree());
+}
+
+#[cfg(test)]
 fn check_entrypoint(
     input: &str,
     entry_point: ParseEntryPoint,
@@ -106,7 +131,12 @@ fn check_entrypoint(
 ) {
     use rowan::TextSize;
 
-    let parse = crate::parser::parse_entrypoint(input, entry_point, edition);
+    let parse = crate::parser::parse_entrypoint_with_capabilities(
+        input,
+        entry_point,
+        edition,
+        Capabilities::default(),
+    );
     assert_eq!(parse.syntax().text_range().start(), TextSize::new(0));
     assert_eq!(
         parse.syntax().text_range().end(),

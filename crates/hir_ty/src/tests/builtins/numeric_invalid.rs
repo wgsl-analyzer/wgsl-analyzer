@@ -1,15 +1,10 @@
 use expect_test::expect;
-use syntax::ExtensionsConfig;
 
 use crate::tests::check_infer;
 
 #[test]
 fn determinant() {
     check_infer(
-        ExtensionsConfig {
-            f16: true,
-            ..Default::default()
-        },
         "
 enable f16;
 fn foo() {
@@ -46,9 +41,9 @@ fn foo() {
             201..203 '4h': f16
             205..207 '5h': f16
             209..211 '6h': f16
-            [EditionedFileId(Id(300))] WgslError { expression: Idx::<Expression>(7), message: "`determinant` expects a square matrix argument" } in Body
-            [EditionedFileId(Id(300))] WgslError { expression: Idx::<Expression>(15), message: "`determinant` expects a square matrix argument" } in Body
-            [EditionedFileId(Id(300))] WgslError { expression: Idx::<Expression>(23), message: "`determinant` expects a square matrix argument" } in Body
+            48..85 'determ...5, 6))': `determinant` expects a square matrix argument
+            106..149 'determ..., 6f))': `determinant` expects a square matrix argument
+            170..213 'determ..., 6h))': `determinant` expects a square matrix argument
         "#]],
     );
 }
@@ -56,7 +51,6 @@ fn foo() {
 #[test]
 fn sign() {
     check_infer(
-        ExtensionsConfig::default(),
         "
 fn foo() {
     let unsigned_integer_32 = sign(1u);
@@ -71,8 +65,8 @@ fn foo() {
             85..99 'sign(vec2(1u))': [error]
             90..98 'vec2(1u)': vec2<u32>
             95..97 '1u': u32
-            [EditionedFileId(Id(300))] WgslError { expression: Idx::<Expression>(1), message: "`sign` argument must be a signed numeric scalar or vector" } in Body
-            [EditionedFileId(Id(300))] WgslError { expression: Idx::<Expression>(4), message: "`sign` argument must be a signed numeric scalar or vector" } in Body
+            41..49 'sign(1u)': `sign` argument must be a signed numeric scalar or vector
+            85..99 'sign(vec2(1u))': `sign` argument must be a signed numeric scalar or vector
         "#]],
     );
 }

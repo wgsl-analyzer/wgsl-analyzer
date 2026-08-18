@@ -1,5 +1,7 @@
 use base_db::EditionedFileId;
-use hir_def::{expression_store::path::Path, mod_path::ModPath, resolver::ResolveKind};
+use hir_def::{
+    expression_store::path::Path, item_tree::Name, mod_path::ModPath, resolver::ResolveKind,
+};
 use syntax::{AstNode as _, SyntaxNode, SyntaxToken, ast, match_ast};
 
 use crate::{
@@ -12,6 +14,12 @@ pub enum Definition {
     Local(Local),
     Field(Field),
     ModuleDef(ModuleDef),
+    BuiltinFunction(Name),
+    BuiltinType(Name),
+    BuiltinTypeGenerator(Name),
+    // BuiltinTypeConstructor(Name),
+    BuiltinEnumerant(Name),
+    BuiltinDeclaration(Name),
 }
 
 impl Definition {
@@ -61,6 +69,12 @@ impl From<ResolveKind> for Definition {
             ResolveKind::Struct(id) => Self::ModuleDef(ModuleDef::Struct(Struct { id })),
             ResolveKind::TypeAlias(id) => Self::ModuleDef(ModuleDef::TypeAlias(TypeAlias { id })),
             ResolveKind::Function(id) => Self::ModuleDef(ModuleDef::Function(Function { id })),
+            ResolveKind::BuiltinFunction(name) => Self::BuiltinFunction(name),
+            ResolveKind::BuiltinType(name) => Self::BuiltinType(name),
+            ResolveKind::BuiltinTypeGenerator(name) => Self::BuiltinTypeGenerator(name),
+            // ResolveKind::BuiltinTypeConstructor(name) => Self::BuiltinTypeConstructor(name),
+            ResolveKind::BuiltinEnumerant(name) => Self::BuiltinEnumerant(name),
+            ResolveKind::BuiltinDeclaration(name) => Self::BuiltinDeclaration(name),
         }
     }
 }

@@ -1,17 +1,13 @@
 // #![expect(non_snake_case, reason = "name based on WGSL builtins")]
 
 use expect_test::expect;
-use syntax::ExtensionsConfig;
+use syntax::Capabilities;
 
-use crate::tests::check_infer;
+use crate::tests::{check_infer, check_infer_with_capabilities};
 
 #[test]
 fn zero_value_constructors() {
     check_infer(
-        ExtensionsConfig {
-            f16: true,
-            ..Default::default()
-        },
         "
 enable f16;
 struct Foo { bar: bool }
@@ -88,12 +84,44 @@ fn foo() {
 }
 
 #[test]
-fn not_constructible() {
-    check_infer(
-        ExtensionsConfig {
-            f16: true,
+fn naga() {
+    check_infer_with_capabilities(
+        Capabilities {
+            shader_int64: true,
             ..Default::default()
         },
+        "
+fn foo() {
+    let signed_integer_64 = i64();
+    let unsigned_integer_64 = u64();
+
+    let signed_integer_64_vector = vec2<i64>();
+    let unsigned_integer_64_vector = vec2<u64>();
+
+    let signed_integer_64_array = array<i64, 1>();
+    let unsigned_integer_64_array = array<u64, 1>();
+}
+",
+        expect![[r#"
+            19..36 'signed...ger_64': i64
+            39..44 'i64()': i64
+            54..73 'unsign...ger_64': u64
+            76..81 'u64()': u64
+            92..116 'signed...vector': vec2<i64>
+            119..130 'vec2<i64>()': vec2<i64>
+            140..166 'unsign...vector': vec2<u64>
+            169..180 'vec2<u64>()': vec2<u64>
+            191..214 'signed..._array': array<i64, 1>
+            217..232 'array<i64, 1>()': array<i64, 1>
+            242..267 'unsign..._array': array<u64, 1>
+            270..285 'array<u64, 1>()': array<u64, 1>
+        "#]],
+    );
+}
+
+#[test]
+fn not_constructible() {
+    check_infer(
         "
 enable f16;
 struct Foo { bar: atomic<u32> }
@@ -113,6 +141,13 @@ fn foo() {
     // ref doesn't even parse
     // let reference = ref<function, u32, read>();
     let tex = texture_storage_2d<rgba16float, write>();
+
+    let _array = array();
+    let _atomic = atomic();
+    let pointer = ptr();
+    // ref doesn't even parse
+    // let reference = ref();
+    let tex = texture_storage_2d();
 }
 ",
         expect![[r#"
@@ -126,30 +161,41 @@ fn foo() {
             217..229 'array<f32>()': array<f32>
             239..253 'float_16_array': array<f16>
             256..268 'array<f16>()': array<f16>
-            279..303 'signed...atomic': [error]
-            306..319 'atomic<i32>()': [error]
-            329..355 'unsign...atomic': [error]
-            358..371 'atomic<u32>()': [error]
+            279..303 'signed...atomic': atomic<i32>
+            306..319 'atomic<i32>()': atomic<i32>
+            329..355 'unsign...atomic': atomic<u32>
+            358..371 'atomic<u32>()': atomic<u32>
             382..391 'structure': Foo
             394..399 'Foo()': Foo
-            410..417 'pointer': [error]
-            420..446 'ptr<fu...ead>()': [error]
-            537..540 'tex': [error]
-            543..583 'textur...ite>()': [error]
+            410..417 'pointer': ptr<function, u32, read>
+            420..446 'ptr<fu...ead>()': ptr<function, u32, read>
+            537..540 'tex': texture_storage_2d<rgba16float,write>
+            543..583 'textur...ite>()': texture_storage_2d<rgba16float,write>
+            594..600 '_array': array<[error]>
+            603..610 'array()': array<[error]>
+            620..627 '_atomic': atomic<[error]>
+            630..638 'atomic()': atomic<[error]>
+            648..655 'pointer': [error]
+            658..663 'ptr()': [error]
+            733..736 'tex': [error]
+            739..759 'textur...e_2d()': [error]
             79..92 'array<bool>()': type `array<bool>` is not constructible
             128..140 'array<i32>()': type `array<i32>` is not constructible
             178..190 'array<u32>()': type `array<u32>` is not constructible
             217..229 'array<f32>()': type `array<f32>` is not constructible
             256..268 'array<f16>()': type `array<f16>` is not constructible
             306..319 'atomic<i32>()': type `atomic<i32>` is not constructible
-            306..319 'atomic<i32>()': type `atomic<i32>` is not constructible
-            358..371 'atomic<u32>()': type `atomic<u32>` is not constructible
             358..371 'atomic<u32>()': type `atomic<u32>` is not constructible
             394..399 'Foo()': type `Foo` is not constructible
             420..446 'ptr<fu...ead>()': type `ptr<function, u32, read>` is not constructible
-            420..446 'ptr<fu...ead>()': type `ptr<function, u32, read>` is not constructible
             543..583 'textur...ite>()': type `texture_storage_2d<rgba16float,write>` is not constructible
-            543..583 'textur...ite>()': type `texture_storage_2d<rgba16float,write>` is not constructible
+            603..610 'array()': no overload of function `array` found that takes no arguments
+            630..638 'atomic()': expected 1 template arguments, but got 0
+            630..638 'atomic()': missing template argument, expected a type
+            658..663 'ptr()': expected 2 to 3 template arguments, but got 0
+            658..663 'ptr()': missing template argument, expected an enum
+            739..759 'textur...e_2d()': expected 1 to 2 template arguments, but got 0
+            739..759 'textur...e_2d()': missing template argument, expected an enum
         "#]],
     );
 }
@@ -157,7 +203,6 @@ fn foo() {
 #[test]
 fn not_constructible_no_template() {
     check_infer(
-        ExtensionsConfig::default(),
         "
 fn foo() {
     let structure = array();
@@ -166,7 +211,23 @@ fn foo() {
         expect![[r#"
             19..28 'structure': array<[error]>
             31..38 'array()': array<[error]>
-            31..38 'array()': type `array<[error]>` is not constructible
+            31..38 'array()': no overload of function `array` found that takes no arguments
+        "#]],
+    );
+}
+
+#[test]
+fn not_constructible_type_expectation() {
+    check_infer(
+        "
+fn foo() {
+    const b: array<u32, 3> = array();
+}
+",
+        expect![[r#"
+            21..22 'b': array<u32, 3>
+            40..47 'array()': array<[error]>
+            40..47 'array()': no overload of function `array` found that takes no arguments
         "#]],
     );
 }

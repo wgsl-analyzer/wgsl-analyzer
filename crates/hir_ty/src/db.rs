@@ -2,7 +2,7 @@
 //! type inference-related queries.
 
 use base_db::{EditionedFileId, Intern as _, Lookup as _, SourceDatabase};
-use hir_def::db::Location;
+use hir_def::db::{Location, ModuleDefinitionId};
 use hir_def::signature::{StructSignature, TypeAliasSignature};
 use hir_def::{
     db::{DefinitionWithBodyId, FunctionId, StructId, TypeAliasId},
@@ -15,6 +15,7 @@ use la_arena::ArenaMap;
 use triomphe::Arc;
 use wgsl_types::syntax::AddressSpace;
 
+use crate::infer::get_name_and_range;
 use crate::{
     diagnostics::{InferenceDiagnostic, InferenceDiagnosticKind},
     function::{FunctionDetails, ResolvedFunctionId},
@@ -68,7 +69,7 @@ impl<T: SourceDatabase> HirDatabase for T {
     }
 }
 
-#[derive(PartialEq, Eq, Debug)]
+#[derive(Debug)]
 pub struct FieldInferenceDiagnostic {
     pub field: FieldId,
     pub error: TypeLoweringError,
@@ -107,7 +108,7 @@ fn field_types(
     Arc::new((map, diagnostics))
 }
 
-#[salsa::tracked(returns(clone))]
+#[salsa::tracked(returns(clone), cycle_result = type_alias_type_cycle_result)]
 fn type_alias_type(
     db: &dyn HirDatabase,
     type_alias: TypeAliasId,
@@ -199,4 +200,18 @@ fn struct_is_used_in_uniform(
             | hir_def::item_tree::ModuleItemId::TypeAlias(_)
             | hir_def::item_tree::ModuleItemId::ImportStatement(_) => false,
         })
+}
+
+fn type_alias_type_cycle_result(
+    db: &dyn HirDatabase,
+    _: salsa::Id,
+    type_alias: TypeAliasId,
+) -> Arc<(Type, Vec<InferenceDiagnostic>)> {
+    let data = TypeAliasSignature::of(db, type_alias);
+    let (name, range) = get_name_and_range(db, ModuleDefinitionId::TypeAlias(type_alias));
+    let error = InferenceDiagnostic {
+        source: data.store.store_source,
+        kind: InferenceDiagnosticKind::CyclicType { name, range },
+    };
+    Arc::new((TypeKind::Error.intern(db), vec![error]))
 }

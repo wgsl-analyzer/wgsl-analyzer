@@ -1,14 +1,13 @@
 #![expect(clippy::too_many_lines, reason = "snapshot test data")]
 
 use expect_test::expect;
-use syntax::ExtensionsConfig;
+use syntax::Capabilities;
 
-use crate::tests::check_infer;
+use crate::tests::{check_infer, check_infer_with_capabilities};
 
 #[test]
 fn all() {
     check_infer(
-        ExtensionsConfig::default(),
         "
 fn foo() {
     let vec = all(vec2<bool>());
@@ -29,7 +28,6 @@ fn foo() {
 #[test]
 fn any() {
     check_infer(
-        ExtensionsConfig::default(),
         "
 fn foo() {
     let vec = any(vec2<bool>());
@@ -49,9 +47,8 @@ fn foo() {
 
 #[test]
 fn select() {
-    check_infer(
-        ExtensionsConfig {
-            f16: true,
+    check_infer_with_capabilities(
+        Capabilities {
             shader_int64: true,
             ..Default::default()
         },

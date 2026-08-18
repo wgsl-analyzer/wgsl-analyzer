@@ -11,7 +11,7 @@ mod keywords;
 mod naga;
 mod statement;
 
-use edition::Edition;
+use edition::{Capabilities, Edition};
 use expect_test::{Expect, expect};
 
 use crate::ParseEntryPoint;
@@ -22,6 +22,36 @@ fn check(
     expected_tree: Expect,
 ) {
     crate::check_entrypoint(input, ParseEntryPoint::File, &expected_tree, Edition::Wgsl);
+}
+
+#[expect(clippy::needless_pass_by_value, reason = "intended API")]
+fn check_with_capabilities(
+    capabilities: Capabilities,
+    input: &str,
+    expected_tree: Expect,
+) {
+    crate::check_entrypoint_with_capabilities(
+        input,
+        ParseEntryPoint::File,
+        &expected_tree,
+        Edition::Wgsl,
+        capabilities,
+    );
+}
+
+#[expect(clippy::needless_pass_by_value, reason = "intended API")]
+fn check_with_extensions_and_capabilities(
+    input: &str,
+    expected_tree: Expect,
+    capabilities: Capabilities,
+) {
+    crate::check_entrypoint_with_capabilities(
+        input,
+        ParseEntryPoint::File,
+        &expected_tree,
+        Edition::Wgsl,
+        capabilities,
+    );
 }
 
 #[expect(clippy::needless_pass_by_value, reason = "intended API")]

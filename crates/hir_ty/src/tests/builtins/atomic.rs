@@ -1,36 +1,32 @@
 use expect_test::expect;
-use syntax::ExtensionsConfig;
 
 use crate::tests::check_infer;
 
 #[test]
 fn atomicCompareExchangeWeak() {
     check_infer(
-        ExtensionsConfig::default(),
         "
-var<storage, read_write> buffer: atomic<bool>;
+var<storage, read_write> buffer: atomic<u32>;
 fn foo() {
-    let result = atomicCompareExchangeWeak(&buffer, true, false);
+    let result = atomicCompareExchangeWeak(&buffer, 1, 2);
     let old_value = result.old_value;
     let exchanged = result.exchanged;
 }
 ",
         expect![[r#"
-            25..31 'buffer': ref<storage, atomic<[error]>, read_write>
-            40..44 'bool': unexpected template argument, expected i32 or u32
-            66..72 'result': [error]
-            75..122 'atomic...false)': [error]
-            101..108 '&buffer': ptr<storage, atomic<[error]>, read_write>
-            102..108 'buffer': ref<storage, atomic<[error]>, read_write>
-            110..114 'true': bool
-            116..121 'false': bool
-            132..141 'old_value': [error]
-            144..150 'result': [error]
-            144..160 'result..._value': [error]
-            170..179 'exchanged': [error]
-            182..188 'result': [error]
-            182..198 'result...hanged': [error]
-            [EditionedFileId(Id(300))] WgslError { expression: Idx::<Expression>(4), message: "`atomicCompareExchangeWeak` 2nd and 3rd arguments are incompatible with the atomic pointer type" } in Body
+            25..31 'buffer': ref<storage, atomic<u32>, read_write>
+            65..71 'result': __atomic_compare_exchange_result
+            74..114 'atomic... 1, 2)': __atomic_compare_exchange_result
+            100..107 '&buffer': ptr<storage, atomic<u32>, read_write>
+            101..107 'buffer': ref<storage, atomic<u32>, read_write>
+            109..110 '1': integer
+            112..113 '2': integer
+            124..133 'old_value': u32
+            136..142 'result': __atomic_compare_exchange_result
+            136..152 'result..._value': u32
+            162..171 'exchanged': bool
+            174..180 'result': __atomic_compare_exchange_result
+            174..190 'result...hanged': bool
         "#]],
     );
 }

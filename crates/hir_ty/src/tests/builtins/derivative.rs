@@ -1,12 +1,10 @@
 use expect_test::expect;
-use syntax::ExtensionsConfig;
 
 use crate::tests::check_infer;
 
 #[test]
 fn dpdx() {
     check_infer(
-        ExtensionsConfig::default(),
         "
 fn foo() {
     let _f32 = dpdx(f32());
@@ -27,7 +25,6 @@ fn foo() {
 #[test]
 fn dpdxCoarse() {
     check_infer(
-        ExtensionsConfig::default(),
         "
 fn foo() {
     let _f32 = dpdxCoarse(f32());
@@ -48,7 +45,6 @@ fn foo() {
 #[test]
 fn dpdxFine() {
     check_infer(
-        ExtensionsConfig::default(),
         "
 fn foo() {
     let _f32 = dpdxFine(f32());
@@ -69,7 +65,6 @@ fn foo() {
 #[test]
 fn dpdy() {
     check_infer(
-        ExtensionsConfig::default(),
         "
 fn foo() {
     let _f32 = dpdy(f32());
@@ -90,7 +85,6 @@ fn foo() {
 #[test]
 fn dpdyCoarse() {
     check_infer(
-        ExtensionsConfig::default(),
         "
 fn foo() {
     let _f32 = dpdyCoarse(f32());
@@ -111,7 +105,6 @@ fn foo() {
 #[test]
 fn dpdyFine() {
     check_infer(
-        ExtensionsConfig::default(),
         "
 fn foo() {
     let _f32 = dpdyFine(f32());
@@ -132,7 +125,6 @@ fn foo() {
 #[test]
 fn fwidth() {
     check_infer(
-        ExtensionsConfig::default(),
         "
 fn foo() {
     let _f32 = fwidth(f32());
@@ -153,7 +145,6 @@ fn foo() {
 #[test]
 fn fwidthCoarse() {
     check_infer(
-        ExtensionsConfig::default(),
         "
 fn foo() {
     let _f32 = fwidthCoarse(f32());
@@ -174,7 +165,6 @@ fn foo() {
 #[test]
 fn fwidthFine() {
     check_infer(
-        ExtensionsConfig::default(),
         "
 fn foo() {
     let _f32 = fwidthFine(f32());
