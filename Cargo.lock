@@ -519,6 +519,7 @@ dependencies = [
  "syntax",
  "test-fixture",
  "triomphe",
+ "wgsl-types",
 ]
 
 [[package]]

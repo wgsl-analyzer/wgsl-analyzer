@@ -125,9 +125,9 @@ fn import_statement_cycle_error() {
         const bar = output;
         ",
         expect![[r#"
-            [EditionedFileId(Id(380))] CyclicType { name: Name("output"), range: 26..45 } in Body
+            26..45: cyclic definition for type `output`
             ---
-            [EditionedFileId(Id(381))] CyclicType { name: Name("bar"), range: 24..43 } in Body
+            24..43: cyclic definition for type `bar`
         "#]],
     );
 }
@@ -406,10 +406,9 @@ fn import_nonexistent_module() {
         ",
         expect![[r#"
             20..37 'not_a_...e::foo': package `not_a_module` not found
-            47..48 'a': [error]
-            51..57 'Bar(2)': [error]
+            47..48 'a': Bar
+            51..57 'Bar(2)': Bar
             55..56 '2': integer
-            55..56 '2': expected [error] but got integer
         "#]],
     );
 }

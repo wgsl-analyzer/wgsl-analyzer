@@ -383,7 +383,7 @@ fn address_of_not_reference() {
             34..39 'x_ptr': [error]
             42..44 '&x': [error]
             43..44 'x': i32
-            [EditionedFileId(Id(300))] WgslError { expression: Idx::<Expression>(1), message: "cannot use unary operator `&` on type `i32`" } in Body
+            42..44 '&x': cannot use unary operator `&` on type `i32`
         "#]],
     );
 }
@@ -839,7 +839,7 @@ fn const_u32_as_array_size() {
             6..15 'maxLayers': u32
             18..21 '12u': u32
             27..33 'layers': ref<handle, [error], read>
-            46..55 'maxLayers': unexpected template argument, expected a `u32` or a `i32` greater than `0`
+            46..55 'maxLayers': unexpected template argument, expected a `u32` or a `i32` greater than `0`, actual: [error]
         "#]],
     );
 }
@@ -1557,7 +1557,7 @@ fn no_builtin_overload() {
             8..10 '1f': f32
             8..22 '1f + mat2x2f()': [error]
             13..22 'mat2x2f()': mat2x2<f32>
-            [EditionedFileId(Id(300))] WgslError { expression: Idx::<Expression>(2), message: "cannot use binary operator `+` with operands `f32` and `mat2x2<f32>`" } in Body
+            8..22 '1f + mat2x2f()': cannot use binary operator `+` with operands `f32` and `mat2x2<f32>`
         "#]],
     );
 }
@@ -1572,7 +1572,7 @@ fn deref_not_a_pointer() {
             4..5 'x': ref<handle, [error], read>
             8..11 '*1f': [error]
             9..11 '1f': f32
-            [EditionedFileId(Id(300))] WgslError { expression: Idx::<Expression>(0), message: "cannot use unary operator `*` on type `f32`" } in Body
+            8..11 '*1f': cannot use unary operator `*` on type `f32`
         "#]],
     );
 }
@@ -1589,7 +1589,7 @@ fn no_constructor() {
             14..15 '1': integer
             17..18 '2': integer
             20..21 '3': integer
-            8..22 'vec2f(1, 2, 3)': no constructor for builtin `op_vec2_constructor` of type `vec2<f32>` with parameters `integer, integer, integer`
+            8..22 'vec2f(1, 2, 3)': no constructor found for type `vec2<f32>` with parameters `integer, integer, integer`
         "#]],
     );
 }
@@ -1662,8 +1662,8 @@ fn add_refs_and_ptrs() {
             398..403 'a_ptr': ptr<function, i32, read_write>
             398..411 'a_ptr + b_ref': [error]
             406..411 'b_ref': ref<function, i32, read_write>
-            [EditionedFileId(Id(300))] WgslError { expression: Idx::<Expression>(11), message: "cannot use binary operator `+` with operands `ptr<function, i32, read_write>` and `ptr<function, i32, read_write>`" } in Body
-            [EditionedFileId(Id(300))] WgslError { expression: Idx::<Expression>(14), message: "cannot use binary operator `+` with operands `ptr<function, i32, read_write>` and `i32`" } in Body
+            367..380 'a_ptr + b_ptr': cannot use binary operator `+` with operands `ptr<function, i32, read_write>` and `ptr<function, i32, read_write>`
+            398..411 'a_ptr + b_ref': cannot use binary operator `+` with operands `ptr<function, i32, read_write>` and `i32`
         "#]],
     );
 }
@@ -1773,7 +1773,7 @@ fn to_wgsl_types_builtin_struct() {
             42..43 'y': [error]
             46..53 'modf(x)': [error]
             51..52 'x': __modf_result_abstract
-            [EditionedFileId(Id(300))] WgslError { expression: Idx::<Expression>(3), message: "`modf` expects a float scalar or vector argument" } in Body
+            46..53 'modf(x)': `modf` expects a float scalar or vector argument
         "#]],
     );
 }
@@ -1790,7 +1790,6 @@ fn lower_function_as_template_argument() {
             19..20 'y': array<[error], 1>
             23..41 'array<...>(1.0)': array<[error], 1>
             37..40 '1.0': float
-            37..40 '1.0': expected [error] but got float
             29..32 'foo': foo was written, write foo() instead
         "#]],
     );
@@ -1843,7 +1842,7 @@ fn not_convertible() {
             23..25 '1i': i32
             23..32 '1i * 1.0f': [error]
             28..32 '1.0f': f32
-            [EditionedFileId(Id(300))] WgslError { expression: Idx::<Expression>(2), message: "cannot use binary operator `*` with operands `i32` and `f32`" } in Body
+            23..32 '1i * 1.0f': cannot use binary operator `*` with operands `i32` and `f32`
         "#]],
     );
 }
@@ -1857,7 +1856,7 @@ fn sampler_comparison_no_template() {
         expect![[r#"
             4..5 'x': ref<handle, sampler_comparison, read>
             26..31 'wrong': `wrong` not found in scope
-            26..31 'wrong': unexpected template argument, expected nothing
+            26..31 'wrong': unexpected template argument, expected nothing, actual: [error]
         "#]],
     );
 }
@@ -1873,11 +1872,11 @@ fn ptr_template_not_enumerant() {
         ",
         expect![[r#"
             8..12 'bar1': [error]
-            18..28 'rgba8unorm': unexpected template argument, expected an address space
+            18..28 'rgba8unorm': unexpected template argument, expected an address space, actual: rgba8unorm
             60..64 'bar2': ptr<storage, [error], read_write>
-            79..83 '123i': unexpected template argument, expected a type
+            79..83 '123i': unexpected template argument, expected a type, actual: 123i
             110..114 'bar3': [error]
-            134..144 'rgba8unorm': unexpected template argument, expected one of: (read, read_write, write)
+            134..144 'rgba8unorm': unexpected template argument, expected one of: (read, read_write, write), actual: rgba8unorm
             159..163 'bar4': ptr<storage, i32, read>
         "#]],
     );
@@ -1971,8 +1970,8 @@ var x = y;
 var y = x;
         ",
         expect![[r#"
-            [EditionedFileId(Id(300))] CyclicType { name: Name("x"), range: 0..10 } in Body
-            [EditionedFileId(Id(300))] CyclicType { name: Name("y"), range: 11..21 } in Body
+            0..10: cyclic definition for type `x`
+            11..21: cyclic definition for type `y`
         "#]],
     );
 }
@@ -2018,8 +2017,8 @@ alias Foo = Bar;
 alias Bar = Foo;
         ",
         expect![[r#"
-            [EditionedFileId(Id(300))] CyclicType { name: Name("Foo"), range: 0..16 } in Signature
-            [EditionedFileId(Id(300))] CyclicType { name: Name("Bar"), range: 17..33 } in Signature
+            0..16: cyclic definition for type `Foo`
+            17..33: cyclic definition for type `Bar`
         "#]],
     );
 }
@@ -2046,7 +2045,6 @@ fn foo() {
             30..31 'x': cannot assign to non-reference `i32`
             41..42 'x': cannot assign to non-reference `i32`
             50..51 'x': cannot assign to non-reference `i32`
-            55..56 '1': expected [error] but got i32
         "#]],
     );
 }
@@ -2066,7 +2064,6 @@ fn foo() {
             34..35 'x': [error]
             38..49 'sqrt<&y>(y)': [error]
             47..48 'y': i32
-            38..49 'sqrt<&y>(y)': `sqrt` not found in scope
         "#]],
     );
 }
@@ -2084,11 +2081,10 @@ fn foo() {
             19..20 'y': [error]
             23..25 '&0': [error]
             24..25 '0': integer
-            35..36 'x': [error]
-            39..51 'vec2<f32>(y)': [error]
+            35..36 'x': vec2<f32>
+            39..51 'vec2<f32>(y)': vec2<f32>
             49..50 'y': [error]
-            [EditionedFileId(Id(300))] WgslError { expression: Idx::<Expression>(0), message: "cannot use unary operator `&` on type `AbstractInt`" } in Body
-            39..51 'vec2<f32>(y)': no constructor for builtin `op_vec2_constructor` of type `vec2<f32>` with parameters `[error]`
+            23..25 '&0': cannot use unary operator `&` on type `AbstractInt`
         "#]],
     );
 }
@@ -2106,11 +2102,10 @@ fn foo() {
             19..20 'y': [error]
             23..25 '&0': [error]
             24..25 '0': integer
-            35..36 'x': [error]
-            39..46 'vec2(y)': [error]
+            35..36 'x': vec2<[error]>
+            39..46 'vec2(y)': vec2<[error]>
             44..45 'y': [error]
-            [EditionedFileId(Id(300))] WgslError { expression: Idx::<Expression>(0), message: "cannot use unary operator `&` on type `AbstractInt`" } in Body
-            39..46 'vec2(y)': no constructor for builtin `op_vec2_constructor` of type `vec2<[error]>` with parameters `[error]`
+            23..25 '&0': cannot use unary operator `&` on type `AbstractInt`
         "#]],
     );
 }
@@ -2127,7 +2122,7 @@ fn foo() {
             19..20 'y': [error]
             23..36 'mat2x2f(true)': [error]
             31..35 'true': bool
-            23..36 'mat2x2f(true)': no constructor for builtin `op_mat2x2_constructor` of type `mat2x2<f32>` with parameters `bool`
+            23..36 'mat2x2f(true)': no constructor found for type `mat2x2<f32>` with parameters `bool`
         "#]],
     );
 }
@@ -2146,7 +2141,7 @@ fn foo() {
             28..32 'true': bool
             34..38 'true': bool
             40..44 'true': bool
-            23..45 'vec2(t... true)': no constructor for builtin `op_vec2_constructor` of type `vec2<[error]>` with parameters `bool, bool, bool`
+            23..45 'vec2(t... true)': no constructor found for type `vec2<[error]>` with parameters `bool, bool, bool`
         "#]],
     );
 }
@@ -2191,8 +2186,8 @@ fn foo() {
 }
         ",
         expect![[r#"
-            19..20 'y': [error]
-            23..31 'mat2x2()': [error]
+            19..20 'y': mat2x2<[error]>
+            23..31 'mat2x2()': mat2x2<[error]>
             23..31 'mat2x2()': expected `1` arguments, but received `0`
         "#]],
     );
@@ -2207,10 +2202,10 @@ fn foo() {
 }
         ",
         expect![[r#"
-            19..20 'y': [error]
-            23..35 'mat2x2(true)': [error]
+            19..20 'y': mat2x2<[error]>
+            23..35 'mat2x2(true)': mat2x2<[error]>
             30..34 'true': bool
-            23..35 'mat2x2(true)': no constructor for builtin `op_mat2x2_constructor` of type `mat2x2<[error]>` with parameters `bool`
+            23..35 'mat2x2(true)': no constructor found for type `mat2x2<[error]>` with parameters `bool`
         "#]],
     );
 }
@@ -2264,7 +2259,6 @@ fn foo() {
             29..33 'bool': [error]
             35..36 '1': integer
             29..33 'bool': expected variable, but got type `bool`
-            35..36 '1': expected [error] but got integer
         "#]],
     );
 }

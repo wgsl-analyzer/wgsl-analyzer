@@ -37,6 +37,7 @@ test-fixture.workspace = true
 [build-dependencies]
 itertools.workspace = true
 rustc-hash.workspace = true
+wgsl-types.workspace = true
 
 [lints]
 workspace = true

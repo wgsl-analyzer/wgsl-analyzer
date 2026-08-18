@@ -69,7 +69,7 @@ impl<T: SourceDatabase> HirDatabase for T {
     }
 }
 
-#[derive(PartialEq, Eq, Debug)]
+#[derive(Debug)]
 pub struct FieldInferenceDiagnostic {
     pub field: FieldId,
     pub error: TypeLoweringError,

@@ -17,6 +17,7 @@ pub enum TemplateParameter {
     Enumerant(Enumerant),
 }
 
+#[derive(Clone, Debug, PartialEq)]
 pub struct TemplateParameters {
     container: TypeContainer,
     inner: VecDeque<(TemplateParameter, ExpressionId)>,
@@ -50,9 +51,12 @@ impl TemplateParameters {
     pub fn next_as_type(&mut self) -> Result<(Type, ExpressionId), TypeLoweringError> {
         match self.take_next() {
             Some((TemplateParameter::Type(r#type), id)) => Ok((r#type, id)),
-            Some((_, id)) => Err(TypeLoweringError {
+            Some((parameter, id)) => Err(TypeLoweringError {
                 container: TypeContainer::Expression(id),
-                kind: TypeLoweringErrorKind::UnexpectedTemplateArgument("a type".to_owned()),
+                kind: TypeLoweringErrorKind::UnexpectedTemplateArgument(
+                    "a type".to_owned(),
+                    parameter.into(),
+                ),
             }),
             None => Err(TypeLoweringError {
                 container: self.container,
@@ -66,9 +70,12 @@ impl TemplateParameters {
     ) -> Result<(Option<Instance>, ExpressionId), TypeLoweringError> {
         match self.take_next() {
             Some((TemplateParameter::Instance(instance), id)) => Ok((instance, id)),
-            Some((_, id)) => Err(TypeLoweringError {
+            Some((parameter, id)) => Err(TypeLoweringError {
                 container: TypeContainer::Expression(id),
-                kind: TypeLoweringErrorKind::UnexpectedTemplateArgument("an instance".to_owned()),
+                kind: TypeLoweringErrorKind::UnexpectedTemplateArgument(
+                    "an instance".to_owned(),
+                    parameter.into(),
+                ),
             }),
             None => Err(TypeLoweringError {
                 container: self.container,
@@ -80,9 +87,12 @@ impl TemplateParameters {
     pub fn next_as_enumerant(&mut self) -> Result<(Enumerant, ExpressionId), TypeLoweringError> {
         match self.take_next() {
             Some((TemplateParameter::Enumerant(enumerant), id)) => Ok((enumerant, id)),
-            Some((_, id)) => Err(TypeLoweringError {
+            Some((parameter, id)) => Err(TypeLoweringError {
                 container: TypeContainer::Expression(id),
-                kind: TypeLoweringErrorKind::UnexpectedTemplateArgument("an enum".to_owned()),
+                kind: TypeLoweringErrorKind::UnexpectedTemplateArgument(
+                    "an enum".to_owned(),
+                    parameter.into(),
+                ),
             }),
             None => Err(TypeLoweringError {
                 container: self.container,

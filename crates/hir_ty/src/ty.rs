@@ -1,15 +1,11 @@
 pub mod pretty;
 
-use std::{
-    borrow::Cow,
-    fmt::{self, Write as _},
-    str::FromStr,
-};
+use std::{borrow::Cow, fmt, num::NonZeroU32};
 
 use base_db::{Intern as _, Lookup as _, impl_intern_key, impl_intern_lookup};
-use hir_def::{db::StructId, type_ref::VecDimensionality};
+use hir_def::db::StructId;
 use wgsl_types::{
-    syntax::{AccessMode, AddressSpace},
+    syntax::{AccessMode, AddressSpace, TexelFormat},
     ty::SamplerType,
 };
 
@@ -30,7 +26,20 @@ impl Type {
         self,
         db: &dyn HirDatabase,
     ) -> bool {
-        matches!(self.kind(db), TypeKind::Error)
+        match self.lookup(db) {
+            TypeKind::Error => true,
+            TypeKind::Scalar(_)
+            | TypeKind::Struct(_)
+            | TypeKind::BuiltinStruct(_)
+            | TypeKind::Texture(_)
+            | TypeKind::Sampler(_) => false,
+            TypeKind::Atomic(atomic_type) => atomic_type.inner.is_err(db),
+            TypeKind::Vector(vector_type) => vector_type.component_type.is_err(db),
+            TypeKind::Matrix(matrix_type) => matrix_type.inner.is_err(db),
+            TypeKind::Array(array_type) => array_type.inner.is_err(db),
+            TypeKind::Reference(reference) => reference.inner.is_err(db),
+            TypeKind::Pointer(pointer) => pointer.inner.is_err(db),
+        }
     }
 
     #[expect(clippy::doc_paragraphs_missing_punctuation, reason = "false positive")]
@@ -52,9 +61,7 @@ impl Type {
             | TypeKind::Array(_)
             | TypeKind::Texture(_)
             | TypeKind::Sampler(_)
-            | TypeKind::Pointer(_)
-            | TypeKind::BoundVariable(_)
-            | TypeKind::StorageTypeOfTexelFormat(_) => self,
+            | TypeKind::Pointer(_) => self,
         }
     }
 
@@ -147,9 +154,7 @@ impl Type {
             | TypeKind::Texture(_)
             | TypeKind::Sampler(_)
             | TypeKind::Reference(_)
-            | TypeKind::Pointer(_)
-            | TypeKind::StorageTypeOfTexelFormat(_)
-            | TypeKind::BoundVariable(_) => false,
+            | TypeKind::Pointer(_) => false,
         }
     }
 }
@@ -177,13 +182,6 @@ pub enum TypeKind {
     Sampler(SamplerType),
     Reference(Reference),
     Pointer(Pointer),
-    BoundVariable(BoundVariable),            // used for builtins?
-    StorageTypeOfTexelFormat(BoundVariable), // for example, rgba8unorm -> vec4<f32>
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct BoundVariable {
-    pub index: usize,
 }
 
 impl TypeKind {
@@ -211,9 +209,7 @@ impl TypeKind {
             | Self::Array(_)
             | Self::Texture(_)
             | Self::Sampler(_)
-            | Self::Pointer(_)
-            | Self::BoundVariable(_)
-            | Self::StorageTypeOfTexelFormat(_) => Cow::Borrowed(self),
+            | Self::Pointer(_) => Cow::Borrowed(self),
         }
     }
 
@@ -258,9 +254,7 @@ impl TypeKind {
             | Self::Texture(_)
             | Self::Sampler(_)
             | Self::Reference(_)
-            | Self::Pointer(_)
-            | Self::BoundVariable(_)
-            | Self::StorageTypeOfTexelFormat(_) => return None,
+            | Self::Pointer(_) => return None,
         })
     }
 
@@ -278,9 +272,7 @@ impl TypeKind {
             | Self::Texture(_)
             | Self::Sampler(_)
             | Self::Reference(_)
-            | Self::Pointer(_)
-            | Self::BoundVariable(_)
-            | Self::StorageTypeOfTexelFormat(_) => false,
+            | Self::Pointer(_) => false,
         }
     }
 
@@ -298,9 +290,7 @@ impl TypeKind {
             | Self::Texture(_)
             | Self::Sampler(_)
             | Self::Reference(_)
-            | Self::Pointer(_)
-            | Self::BoundVariable(_)
-            | Self::StorageTypeOfTexelFormat(_) => false,
+            | Self::Pointer(_) => false,
         }
     }
 
@@ -325,9 +315,7 @@ impl TypeKind {
             | Self::Texture(_)
             | Self::Sampler(_)
             | Self::Reference(_)
-            | Self::Pointer(_)
-            | Self::BoundVariable(_)
-            | Self::StorageTypeOfTexelFormat(_) => false,
+            | Self::Pointer(_) => false,
         }
     }
 
@@ -400,9 +388,7 @@ impl TypeKind {
             | Self::Texture(_)
             | Self::Sampler(_)
             | Self::Reference(_)
-            | Self::Pointer(_)
-            | Self::BoundVariable(_)
-            | Self::StorageTypeOfTexelFormat(_) => false,
+            | Self::Pointer(_) => false,
         }
     }
 
@@ -430,9 +416,7 @@ impl TypeKind {
             | Self::Texture(_)
             | Self::Sampler(_)
             | Self::Reference(_)
-            | Self::Pointer(_)
-            | Self::BoundVariable(_)
-            | Self::StorageTypeOfTexelFormat(_) => false,
+            | Self::Pointer(_) => false,
         }
     }
 
@@ -461,9 +445,7 @@ impl TypeKind {
             | Self::Matrix(_)
             | Self::BuiltinStruct(_)
             | Self::Texture(_)
-            | Self::Sampler(_)
-            | Self::BoundVariable(_)
-            | Self::StorageTypeOfTexelFormat(_) => false,
+            | Self::Sampler(_) => false,
         }
     }
 }
@@ -536,6 +518,9 @@ fn conversion_rank(
                 inner: ty2,
             }),
         ) if c1 == c2 && r1 == r2 => conversion_rank(&ty1.kind(db), &ty2.kind(db), db),
+        // optimistically assume that whatever went wrong, the intention was for it to work
+        // prevents extra diagnostics from being emitted
+        (TypeKind::Error, _) | (_, TypeKind::Error) => Some(0),
         _ => None,
     }
 }
@@ -574,6 +559,21 @@ pub enum ScalarType {
 }
 
 impl ScalarType {
+    #[must_use]
+    pub const fn name(self) -> &'static str {
+        match self {
+            Self::Bool => "bool",
+            Self::AbstractInt => "__abstract_int",
+            Self::AbstractFloat => "__abstract_float",
+            Self::I32 => "i32",
+            Self::U32 => "u32",
+            Self::F32 => "f32",
+            Self::F16 => "f16",
+            Self::I64 => "i64",
+            Self::U64 => "u64",
+        }
+    }
+
     #[must_use]
     #[expect(clippy::doc_paragraphs_missing_punctuation, reason = "false positive")]
     /// The numeric scalar types are [`AbstractInt`], [`AbstractFloat`], [`i32`], [`u32`], [`f32`], and [`f16`].
@@ -629,9 +629,6 @@ pub enum VecSize {
     Two,
     Three,
     Four,
-    // TODO: Maybe clean this up during builtin refactor
-    // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/559
-    BoundVariable(BoundVariable),
 }
 
 impl TryFrom<u8> for VecSize {
@@ -647,16 +644,6 @@ impl TryFrom<u8> for VecSize {
     }
 }
 
-impl From<VecDimensionality> for VecSize {
-    fn from(dimensionality: VecDimensionality) -> Self {
-        match dimensionality {
-            VecDimensionality::Two => Self::Two,
-            VecDimensionality::Three => Self::Three,
-            VecDimensionality::Four => Self::Four,
-        }
-    }
-}
-
 impl fmt::Display for VecSize {
     fn fmt(
         &self,
@@ -666,10 +653,6 @@ impl fmt::Display for VecSize {
             Self::Two => formatter.write_str("2"),
             Self::Three => formatter.write_str("3"),
             Self::Four => formatter.write_str("4"),
-            Self::BoundVariable(variable) => {
-                let mut names = "NMOPQRS".chars();
-                write!(formatter, "{}", names.nth(variable.index).unwrap())
-            },
         }
     }
 }
@@ -681,12 +664,11 @@ impl VecSize {
     ///
     /// Panics if self is the [`BoundVariable`] variant.
     #[must_use]
-    pub fn as_u8(self) -> u8 {
+    pub const fn as_u8(self) -> u8 {
         match self {
             Self::Two => 2,
             Self::Three => 3,
             Self::Four => 4,
-            Self::BoundVariable(_) => panic!("VecSize::BoundVariable cannot be made into an u8"),
         }
     }
 }
@@ -704,9 +686,14 @@ pub struct VectorType {
 }
 
 impl VectorType {
-    // fn is_numeric(&self) -> bool {
-    //     self.component_type.is_numeric()
-    // }
+    #[must_use]
+    pub const fn name(&self) -> &'static str {
+        match self.size {
+            VecSize::Two => "vec2",
+            VecSize::Three => "vec3",
+            VecSize::Four => "vec4",
+        }
+    }
 }
 
 #[expect(clippy::doc_paragraphs_missing_punctuation, reason = "false positive")]
@@ -725,6 +712,23 @@ pub struct MatrixType {
     pub inner: Type,
 }
 
+impl MatrixType {
+    #[must_use]
+    pub const fn name(&self) -> &'static str {
+        match (self.columns, self.rows) {
+            (VecSize::Two, VecSize::Two) => "mat2x2",
+            (VecSize::Two, VecSize::Three) => "mat2x3",
+            (VecSize::Two, VecSize::Four) => "mat2x4",
+            (VecSize::Three, VecSize::Two) => "mat3x2",
+            (VecSize::Three, VecSize::Three) => "mat3x3",
+            (VecSize::Three, VecSize::Four) => "mat3x4",
+            (VecSize::Four, VecSize::Two) => "mat4x2",
+            (VecSize::Four, VecSize::Three) => "mat4x3",
+            (VecSize::Four, VecSize::Four) => "mat4x4",
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct AtomicType {
     pub inner: Type,
@@ -738,6 +742,11 @@ pub struct ArrayType {
 }
 
 impl ArrayType {
+    #[must_use]
+    pub const fn name() -> &'static str {
+        "array"
+    }
+
     fn is_constructible(
         &self,
         db: &dyn HirDatabase,
@@ -748,12 +757,12 @@ impl ArrayType {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum ArraySize {
-    Constant(u32),
+    Constant(NonZeroU32),
     Dynamic,
 }
 
 impl ArraySize {
-    pub const MAX: u32 = u32::MAX;
+    pub const MAX: NonZeroU32 = NonZeroU32::MAX;
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -824,101 +833,5 @@ impl fmt::Display for TextureDimensionality {
             Self::D3 => formatter.write_str("3d"),
             Self::Cube => formatter.write_str("cube"),
         }
-    }
-}
-
-#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
-pub enum TexelFormat {
-    Rgba8unorm,
-    Rgba8snorm,
-    Rgba8uint,
-    Rgba8sint,
-    Rgba16uint,
-    Rgba16sint,
-    Rgba16float,
-    Rgba32uint,
-    Rgba32sint,
-    Rgba32float,
-
-    R32uint,
-    R32sint,
-    R32float,
-    Rg32uint,
-    Rg32sint,
-    Rg32float,
-
-    Bgra8unorm,
-
-    #[deprecated(
-        note = "Intended to be refactored and removed in https://github.com/wgsl-analyzer/wgsl-analyzer/issues/559"
-    )]
-    /// This is only used for builtins which care a little bit about the format.
-    BoundVariable(BoundVariable),
-    /// This is only used for builtins which do not care about the format.
-    #[deprecated(
-        note = "Intended to be refactored and removed in https://github.com/wgsl-analyzer/wgsl-analyzer/issues/559"
-    )]
-    Any,
-}
-
-impl fmt::Display for TexelFormat {
-    fn fmt(
-        &self,
-        formatter: &mut fmt::Formatter<'_>,
-    ) -> fmt::Result {
-        #[expect(
-            deprecated,
-            reason = "TODO: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/559"
-        )]
-        let str = match self {
-            Self::Rgba8unorm => "rgba8unorm",
-            Self::Rgba8snorm => "rgba8snorm",
-            Self::Rgba8uint => "rgba8uint",
-            Self::Rgba8sint => "rgba8sint",
-            Self::Rgba16uint => "rgba16uint",
-            Self::Rgba16sint => "rgba16sint",
-            Self::Rgba16float => "rgba16float",
-            Self::Rgba32uint => "rgba32uint",
-            Self::Rgba32sint => "rgba32sint",
-            Self::Rgba32float => "rgba32float",
-            Self::R32uint => "r32uint",
-            Self::R32sint => "r32sint",
-            Self::R32float => "r32float",
-            Self::Rg32uint => "rg32uint",
-            Self::Rg32sint => "rg32sint",
-            Self::Rg32float => "rg32float",
-            Self::Bgra8unorm => "bgra8unorm",
-            Self::BoundVariable(variable) => {
-                return formatter.write_char(('F'..).nth(variable.index).unwrap());
-            },
-            Self::Any => "_",
-        };
-        formatter.write_str(str)
-    }
-}
-
-impl FromStr for TexelFormat {
-    type Err = ();
-
-    fn from_str(string: &str) -> Result<Self, Self::Err> {
-        Ok(match string {
-            "rgba8unorm" => Self::Rgba8unorm,
-            "rgba8snorm" => Self::Rgba8snorm,
-            "rgba8uint" => Self::Rgba8uint,
-            "rgba8sint" => Self::Rgba8sint,
-            "rgba16uint" => Self::Rgba16uint,
-            "rgba16sint" => Self::Rgba16sint,
-            "rgba16float" => Self::Rgba16float,
-            "rgba32uint" => Self::Rgba32uint,
-            "rgba32sint" => Self::Rgba32sint,
-            "rgba32float" => Self::Rgba32float,
-            "r32uint" => Self::R32uint,
-            "r32sint" => Self::R32sint,
-            "r32float" => Self::R32float,
-            "rg32uint" => Self::Rg32uint,
-            "rg32sint" => Self::Rg32sint,
-            "rg32float" => Self::Rg32float,
-            _ => return Err(()),
-        })
     }
 }

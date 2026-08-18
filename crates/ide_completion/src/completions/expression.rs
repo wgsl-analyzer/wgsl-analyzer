@@ -1,3 +1,5 @@
+use std::fmt::format;
+
 use base_db::Lookup as _;
 use hir::HirDatabase as _;
 use hir_def::{
@@ -6,7 +8,6 @@ use hir_def::{
     resolver::ScopeDef,
 };
 use hir_ty::{
-    builtins::Builtin,
     infer::InferenceResult,
     ty::pretty::{
         TypeVerbosity, pretty_fn_with_verbosity, pretty_type, pretty_type_with_verbosity,
@@ -32,7 +33,7 @@ pub(crate) fn complete_names_in_scope(
         if name == &Name::missing() {
             return;
         }
-        let kind = match item {
+        let kind = match &item {
             ScopeDef::Module => CompletionItemKind::Module,
             ScopeDef::ModuleDefinition(ModuleDefinitionId::Function(_)) => {
                 CompletionItemKind::Function
@@ -49,6 +50,26 @@ pub(crate) fn complete_names_in_scope(
             ScopeDef::ModuleDefinition(ModuleDefinitionId::GlobalAssertStatement(_)) => {
                 return;
             },
+            ScopeDef::BuiltIn(kind) => CompletionItemKind::Builtin(match kind {
+                hir_def::resolver::BuiltInKind::Alias(name) => crate::item::BuiltInKind::Alias,
+                hir_def::resolver::BuiltInKind::Constructor(name) => {
+                    crate::item::BuiltInKind::Constructor
+                },
+                hir_def::resolver::BuiltInKind::Declaration(name) => {
+                    crate::item::BuiltInKind::Declaration
+                },
+                hir_def::resolver::BuiltInKind::Enumerant(name) => {
+                    crate::item::BuiltInKind::Enumerant
+                },
+                hir_def::resolver::BuiltInKind::Function(name) => {
+                    crate::item::BuiltInKind::Function
+                },
+                hir_def::resolver::BuiltInKind::Struct(name) => crate::item::BuiltInKind::Struct,
+                hir_def::resolver::BuiltInKind::TypeGenerator(name) => {
+                    crate::item::BuiltInKind::TypeGenerator
+                },
+                hir_def::resolver::BuiltInKind::Type(name) => crate::item::BuiltInKind::Type,
+            }),
         };
 
         let detail = match item {
@@ -65,6 +86,7 @@ pub(crate) fn complete_names_in_scope(
                 Some(detail)
             },
             ScopeDef::Module => Some(format!("path {}", name.as_str())),
+            ScopeDef::BuiltIn(_) => None,
         };
 
         let mut completion = CompletionItem::new(kind, context.source_range(), name.as_str());
@@ -83,19 +105,6 @@ pub(crate) fn complete_names_in_scope(
         completion.set_detail(detail);
         completion.add_to(accumulator, context.db);
     });
-    accumulator.add_all(Builtin::ALL_BUILTINS.iter().map(|name| {
-        let mut builder =
-            CompletionItem::new(CompletionItemKind::Function, context.source_range(), *name);
-        builder.with_relevance(|relevance| CompletionRelevance {
-            exact_name_match: false,
-            type_match: None,
-            is_local: false,
-            postfix_match: None,
-            is_builtin: true,
-            ..relevance
-        });
-        builder.build(context.db)
-    }));
     None
 }
 

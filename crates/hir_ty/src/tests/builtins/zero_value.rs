@@ -161,20 +161,20 @@ fn foo() {
             217..229 'array<f32>()': array<f32>
             239..253 'float_16_array': array<f16>
             256..268 'array<f16>()': array<f16>
-            279..303 'signed...atomic': [error]
-            306..319 'atomic<i32>()': [error]
-            329..355 'unsign...atomic': [error]
-            358..371 'atomic<u32>()': [error]
+            279..303 'signed...atomic': atomic<i32>
+            306..319 'atomic<i32>()': atomic<i32>
+            329..355 'unsign...atomic': atomic<u32>
+            358..371 'atomic<u32>()': atomic<u32>
             382..391 'structure': Foo
             394..399 'Foo()': Foo
-            410..417 'pointer': [error]
-            420..446 'ptr<fu...ead>()': [error]
-            537..540 'tex': [error]
-            543..583 'textur...ite>()': [error]
+            410..417 'pointer': ptr<function, u32, read>
+            420..446 'ptr<fu...ead>()': ptr<function, u32, read>
+            537..540 'tex': texture_storage_2d<rgba16float,write>
+            543..583 'textur...ite>()': texture_storage_2d<rgba16float,write>
             594..600 '_array': array<[error]>
             603..610 'array()': array<[error]>
-            620..627 '_atomic': [error]
-            630..638 'atomic()': [error]
+            620..627 '_atomic': atomic<[error]>
+            630..638 'atomic()': atomic<[error]>
             648..655 'pointer': [error]
             658..663 'ptr()': [error]
             733..736 'tex': [error]
@@ -185,19 +185,14 @@ fn foo() {
             217..229 'array<f32>()': type `array<f32>` is not constructible
             256..268 'array<f16>()': type `array<f16>` is not constructible
             306..319 'atomic<i32>()': type `atomic<i32>` is not constructible
-            306..319 'atomic<i32>()': type `atomic<i32>` is not constructible
-            358..371 'atomic<u32>()': type `atomic<u32>` is not constructible
             358..371 'atomic<u32>()': type `atomic<u32>` is not constructible
             394..399 'Foo()': type `Foo` is not constructible
             420..446 'ptr<fu...ead>()': type `ptr<function, u32, read>` is not constructible
-            420..446 'ptr<fu...ead>()': type `ptr<function, u32, read>` is not constructible
-            543..583 'textur...ite>()': type `texture_storage_2d<rgba16float,write>` is not constructible
             543..583 'textur...ite>()': type `texture_storage_2d<rgba16float,write>` is not constructible
             603..610 'array()': type `array<[error]>` is not constructible
-            630..638 'atomic()': type `atomic<[error]>` is not constructible
-            630..638 'atomic()': type `atomic<[error]>` is not constructible
             630..638 'atomic()': expected 1 template arguments, but got 0
             630..638 'atomic()': missing template argument, expected a type
+            630..638 'atomic()': type `atomic<[error]>` is not constructible
             658..663 'ptr()': expected 2 to 3 template arguments, but got 0
             658..663 'ptr()': missing template argument, expected an enum
             739..759 'textur...e_2d()': expected 1 to 2 template arguments, but got 0
@@ -218,6 +213,22 @@ fn foo() {
             19..28 'structure': array<[error]>
             31..38 'array()': array<[error]>
             31..38 'array()': type `array<[error]>` is not constructible
+        "#]],
+    );
+}
+
+#[test]
+fn not_constructible_type_expectation() {
+    check_infer(
+        "
+fn foo() {
+    const b: array<u32, 3> = array();
+}
+",
+        expect![[r#"
+            21..22 'b': array<u32, 3>
+            40..47 'array()': array<[error]>
+            40..47 'array()': type `array<[error]>` is not constructible
         "#]],
     );
 }
