@@ -1697,7 +1697,7 @@ impl<'db> InferenceContext<'db> {
         arguments: &[(ExpressionId, Type)],
     ) -> Type {
         // https://www.w3.org/TR/WGSL/#zero-value-builtin-function
-        if arguments.is_empty() && !r#type.is_constructible(self.db) {
+        if arguments.is_empty() && !r#type.is_constructible(self.db) && !r#type.is_err(self.db) {
             self.push_diagnostic(
                 store.store_source,
                 InferenceDiagnosticKind::NotConstructible { expression, r#type },
@@ -1783,7 +1783,13 @@ impl<'db> InferenceContext<'db> {
             TypeKind::Struct(struct_id) => {
                 self.validate_struct_constructor(store, struct_id, expression, r#type, arguments)
             },
-
+            _ if r#type.is_err(self.db) => {
+                debug_assert!(
+                    !self.result.diagnostics.is_empty(),
+                    "there should already be a diagnostic if we have an error"
+                );
+                r#type
+            },
             // Never constructible
             TypeKind::Texture(_)
             | TypeKind::Sampler(_)
