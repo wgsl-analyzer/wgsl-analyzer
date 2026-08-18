@@ -747,7 +747,7 @@ impl ArrayType {
         "array"
     }
 
-    fn is_constructible(
+    pub fn is_constructible(
         &self,
         db: &dyn HirDatabase,
     ) -> bool {

@@ -1,6 +1,7 @@
 use std::{num::NonZeroU32, str::FromStr};
 
 use base_db::{CapabilitiesInput, Intern as _};
+use either::Either;
 use hir_def::{item_tree::Name, resolver::ResolutionDiagnostic};
 use wgsl_types::{
     Instance,
@@ -10,8 +11,8 @@ use wgsl_types::{
 
 use crate::{
     lower::{
-        Lowered, TypeContainer, TypeLoweringContext, TypeLoweringError, TypeLoweringErrorKind,
-        generics::TemplateParameters,
+        ConstructibleTypeGenerator, Lowered, TypeContainer, TypeLoweringContext, TypeLoweringError,
+        TypeLoweringErrorKind, generics::TemplateParameters,
     },
     ty::{
         ArraySize, ArrayType, AtomicType, MatrixType, Pointer, ScalarType, TextureDimensionality,
@@ -237,91 +238,101 @@ impl TypeLoweringContext<'_> {
         &mut self,
         name: &Name,
         template_parameters: &TemplateParameters,
-    ) -> Result<Option<Lowered>, TypeLoweringError> {
-        let type_kind = match name.as_str() {
+    ) -> Result<Option<Either<ConstructibleTypeGenerator, Type>>, TypeLoweringError> {
+        match name.as_str() {
             "array" => {
                 if !template_parameters.has_next() {
-                    return Ok(Some(Lowered::TypeWithoutTemplate(
-                        TypeKind::Array(ArrayType {
+                    return Ok(Some(Either::Left(ConstructibleTypeGenerator::Array(
+                        ArrayType {
                             inner: TypeKind::Error.intern(self.db),
                             binding_array: false,
                             size: ArraySize::Dynamic,
-                        })
-                        .intern(self.db),
-                    )));
+                        },
+                    ))));
                 }
                 let array_template = self.array_template(template_parameters)?;
-                TypeKind::Array(ArrayType {
-                    inner: array_template.r#type,
-                    binding_array: false,
-                    size: array_template.size,
-                })
+                Ok(Some(Either::Right(
+                    TypeKind::Array(ArrayType {
+                        inner: array_template.r#type,
+                        binding_array: false,
+                        size: array_template.size,
+                    })
+                    .intern(self.db),
+                )))
             },
             "binding_array" => {
                 if !template_parameters.has_next() {
-                    return Ok(Some(Lowered::TypeWithoutTemplate(
-                        TypeKind::Array(ArrayType {
+                    return Ok(Some(Either::Left(ConstructibleTypeGenerator::Array(
+                        ArrayType {
                             inner: TypeKind::Error.intern(self.db),
                             binding_array: true,
                             size: ArraySize::Dynamic,
-                        })
-                        .intern(self.db),
-                    )));
+                        },
+                    ))));
                 }
                 let array_template = self.array_template(template_parameters)?;
-                TypeKind::Array(ArrayType {
-                    inner: array_template.r#type,
-                    binding_array: true,
-                    size: array_template.size,
-                })
+                Ok(Some(Either::Right(
+                    TypeKind::Array(ArrayType {
+                        inner: array_template.r#type,
+                        binding_array: true,
+                        size: array_template.size,
+                    })
+                    .intern(self.db),
+                )))
             },
             "vec2" => {
                 if !template_parameters.has_next() {
-                    return Ok(Some(Lowered::TypeWithoutTemplate(
-                        TypeKind::Vector(VectorType {
+                    return Ok(Some(Either::Left(ConstructibleTypeGenerator::Vector(
+                        VectorType {
                             size: VecSize::Two,
                             component_type: TypeKind::Error.intern(self.db),
-                        })
-                        .intern(self.db),
-                    )));
+                        },
+                    ))));
                 }
                 let component_type = self.vector_template(template_parameters);
-                TypeKind::Vector(VectorType {
-                    size: VecSize::Two,
-                    component_type,
-                })
+                Ok(Some(Either::Right(
+                    TypeKind::Vector(VectorType {
+                        size: VecSize::Two,
+                        component_type,
+                    })
+                    .intern(self.db),
+                )))
             },
             "vec3" => {
                 if !template_parameters.has_next() {
-                    return Ok(Some(Lowered::TypeWithoutTemplate(
-                        TypeKind::Vector(VectorType {
+                    return Ok(Some(Either::Left(ConstructibleTypeGenerator::Vector(
+                        VectorType {
                             size: VecSize::Three,
                             component_type: TypeKind::Error.intern(self.db),
-                        })
-                        .intern(self.db),
-                    )));
+                        },
+                    ))));
                 }
                 let component_type = self.vector_template(template_parameters);
-                TypeKind::Vector(VectorType {
-                    size: VecSize::Three,
-                    component_type,
-                })
+                Ok(Some(Either::Right(
+                    TypeKind::Vector(VectorType {
+                        size: VecSize::Three,
+                        component_type,
+                    })
+                    .intern(self.db),
+                )))
             },
             "vec4" => {
                 if !template_parameters.has_next() {
-                    return Ok(Some(Lowered::TypeWithoutTemplate(
-                        TypeKind::Vector(VectorType {
+                    return Ok(Some(Either::Left(ConstructibleTypeGenerator::Vector(
+                        VectorType {
                             size: VecSize::Four,
                             component_type: TypeKind::Error.intern(self.db),
-                        })
-                        .intern(self.db),
-                    )));
+                        },
+                    ))));
                 }
                 let component_type = self.vector_template(template_parameters);
-                TypeKind::Vector(VectorType {
-                    size: VecSize::Four,
-                    component_type,
-                })
+                Ok(Some(Either::Right(
+                    TypeKind::Vector(VectorType {
+                        size: VecSize::Four,
+                        component_type,
+                    })
+                    .intern(self.db),
+                )))
             },
             name @ ("mat2x2" | "mat2x3" | "mat2x4" | "mat3x2" | "mat3x3" | "mat3x4" | "mat4x2"
             | "mat4x3" | "mat4x4") => {
@@ -342,144 +353,186 @@ impl TypeLoweringContext<'_> {
                 };
 
                 if !template_parameters.has_next() {
-                    return Ok(Some(Lowered::TypeWithoutTemplate(
-                        TypeKind::Matrix(MatrixType {
+                    return Ok(Some(Either::Left(ConstructibleTypeGenerator::Matrix(
+                        MatrixType {
                             columns,
                             rows,
                             inner: TypeKind::Error.intern(self.db),
-                        })
-                        .intern(self.db),
-                    )));
+                        },
+                    ))));
                 }
                 let inner = self.matrix_template(template_parameters);
-                TypeKind::Matrix(MatrixType {
-                    columns,
-                    rows,
-                    inner,
-                })
+                Ok(Some(Either::Right(
+                    TypeKind::Matrix(MatrixType {
+                        columns,
+                        rows,
+                        inner,
+                    })
+                    .intern(self.db),
+                )))
             },
+
+            // not constructible
             "ptr" => {
                 let pointer_template = self.pointer_template(template_parameters)?;
-                TypeKind::Pointer(Pointer {
-                    address_space: pointer_template.address_space,
-                    inner: pointer_template.inner,
-                    access_mode: pointer_template.access_mode,
-                })
+                Ok(Some(Either::Right(
+                    TypeKind::Pointer(Pointer {
+                        address_space: pointer_template.address_space,
+                        inner: pointer_template.inner,
+                        access_mode: pointer_template.access_mode,
+                    })
+                    .intern(self.db),
+                )))
             },
             "atomic" => {
                 let inner = self.atomic_template(template_parameters);
-                TypeKind::Atomic(AtomicType { inner })
+                Ok(Some(Either::Right(
+                    TypeKind::Atomic(AtomicType { inner }).intern(self.db),
+                )))
             },
             "texture_1d" => {
                 let sampled = self.texture_sampled_template(template_parameters)?;
-                TypeKind::Texture(TextureType {
-                    kind: TextureKind::from_sampled(sampled, self.db),
-                    dimension: TextureDimensionality::D1,
-                    arrayed: false,
-                    multisampled: false,
-                })
+                Ok(Some(Either::Right(
+                    TypeKind::Texture(TextureType {
+                        kind: TextureKind::from_sampled(sampled, self.db),
+                        dimension: TextureDimensionality::D1,
+                        arrayed: false,
+                        multisampled: false,
+                    })
+                    .intern(self.db),
+                )))
             },
             "texture_2d" => {
                 let sampled = self.texture_sampled_template(template_parameters)?;
-                TypeKind::Texture(TextureType {
-                    kind: TextureKind::from_sampled(sampled, self.db),
-                    dimension: TextureDimensionality::D2,
-                    arrayed: false,
-                    multisampled: false,
-                })
+                Ok(Some(Either::Right(
+                    TypeKind::Texture(TextureType {
+                        kind: TextureKind::from_sampled(sampled, self.db),
+                        dimension: TextureDimensionality::D2,
+                        arrayed: false,
+                        multisampled: false,
+                    })
+                    .intern(self.db),
+                )))
             },
             "texture_2d_array" => {
                 let sampled = self.texture_sampled_template(template_parameters)?;
-                TypeKind::Texture(TextureType {
-                    kind: TextureKind::from_sampled(sampled, self.db),
-                    dimension: TextureDimensionality::D2,
-                    arrayed: true,
-                    multisampled: false,
-                })
+                Ok(Some(Either::Right(
+                    TypeKind::Texture(TextureType {
+                        kind: TextureKind::from_sampled(sampled, self.db),
+                        dimension: TextureDimensionality::D2,
+                        arrayed: true,
+                        multisampled: false,
+                    })
+                    .intern(self.db),
+                )))
             },
             "texture_3d" => {
                 let sampled = self.texture_sampled_template(template_parameters)?;
-                TypeKind::Texture(TextureType {
-                    kind: TextureKind::from_sampled(sampled, self.db),
-                    dimension: TextureDimensionality::D3,
-                    arrayed: false,
-                    multisampled: false,
-                })
+                Ok(Some(Either::Right(
+                    TypeKind::Texture(TextureType {
+                        kind: TextureKind::from_sampled(sampled, self.db),
+                        dimension: TextureDimensionality::D3,
+                        arrayed: false,
+                        multisampled: false,
+                    })
+                    .intern(self.db),
+                )))
             },
             "texture_cube" => {
                 let sampled = self.texture_sampled_template(template_parameters)?;
-                TypeKind::Texture(TextureType {
-                    kind: TextureKind::from_sampled(sampled, self.db),
-                    dimension: TextureDimensionality::Cube,
-                    arrayed: false,
-                    multisampled: false,
-                })
+                Ok(Some(Either::Right(
+                    TypeKind::Texture(TextureType {
+                        kind: TextureKind::from_sampled(sampled, self.db),
+                        dimension: TextureDimensionality::Cube,
+                        arrayed: false,
+                        multisampled: false,
+                    })
+                    .intern(self.db),
+                )))
             },
             "texture_cube_array" => {
                 let sampled = self.texture_sampled_template(template_parameters)?;
-                TypeKind::Texture(TextureType {
-                    kind: TextureKind::from_sampled(sampled, self.db),
-                    dimension: TextureDimensionality::Cube,
-                    arrayed: true,
-                    multisampled: false,
-                })
+                Ok(Some(Either::Right(
+                    TypeKind::Texture(TextureType {
+                        kind: TextureKind::from_sampled(sampled, self.db),
+                        dimension: TextureDimensionality::Cube,
+                        arrayed: true,
+                        multisampled: false,
+                    })
+                    .intern(self.db),
+                )))
             },
             "texture_multisampled_2d" => {
                 let sampled = self.texture_sampled_template(template_parameters)?;
-                TypeKind::Texture(TextureType {
-                    kind: TextureKind::from_sampled(sampled, self.db),
-                    dimension: TextureDimensionality::D2,
-                    arrayed: false,
-                    multisampled: true,
-                })
+                Ok(Some(Either::Right(
+                    TypeKind::Texture(TextureType {
+                        kind: TextureKind::from_sampled(sampled, self.db),
+                        dimension: TextureDimensionality::D2,
+                        arrayed: false,
+                        multisampled: true,
+                    })
+                    .intern(self.db),
+                )))
             },
             "texture_storage_1d" => {
                 let storage_template = self.storage_texture_template(template_parameters)?;
-                TypeKind::Texture(TextureType {
-                    kind: TextureKind::Storage(
-                        storage_template.texel_format,
-                        storage_template.access_mode,
-                    ),
-                    dimension: TextureDimensionality::D1,
-                    arrayed: false,
-                    multisampled: false,
-                })
+                Ok(Some(Either::Right(
+                    TypeKind::Texture(TextureType {
+                        kind: TextureKind::Storage(
+                            storage_template.texel_format,
+                            storage_template.access_mode,
+                        ),
+                        dimension: TextureDimensionality::D1,
+                        arrayed: false,
+                        multisampled: false,
+                    })
+                    .intern(self.db),
+                )))
             },
             "texture_storage_2d" => {
                 let storage_template = self.storage_texture_template(template_parameters)?;
-                TypeKind::Texture(TextureType {
-                    kind: TextureKind::Storage(
-                        storage_template.texel_format,
-                        storage_template.access_mode,
-                    ),
-                    dimension: TextureDimensionality::D2,
-                    arrayed: false,
-                    multisampled: false,
-                })
+                Ok(Some(Either::Right(
+                    TypeKind::Texture(TextureType {
+                        kind: TextureKind::Storage(
+                            storage_template.texel_format,
+                            storage_template.access_mode,
+                        ),
+                        dimension: TextureDimensionality::D2,
+                        arrayed: false,
+                        multisampled: false,
+                    })
+                    .intern(self.db),
+                )))
             },
             "texture_storage_2d_array" => {
                 let storage_template = self.storage_texture_template(template_parameters)?;
-                TypeKind::Texture(TextureType {
-                    kind: TextureKind::Storage(
-                        storage_template.texel_format,
-                        storage_template.access_mode,
-                    ),
-                    dimension: TextureDimensionality::D2,
-                    arrayed: true,
-                    multisampled: false,
-                })
+                Ok(Some(Either::Right(
+                    TypeKind::Texture(TextureType {
+                        kind: TextureKind::Storage(
+                            storage_template.texel_format,
+                            storage_template.access_mode,
+                        ),
+                        dimension: TextureDimensionality::D2,
+                        arrayed: true,
+                        multisampled: false,
+                    })
+                    .intern(self.db),
+                )))
             },
             "texture_storage_3d" => {
                 let storage_template = self.storage_texture_template(template_parameters)?;
-                TypeKind::Texture(TextureType {
-                    kind: TextureKind::Storage(
-                        storage_template.texel_format,
-                        storage_template.access_mode,
-                    ),
-                    dimension: TextureDimensionality::D3,
-                    arrayed: false,
-                    multisampled: false,
-                })
+                Ok(Some(Either::Right(
+                    TypeKind::Texture(TextureType {
+                        kind: TextureKind::Storage(
+                            storage_template.texel_format,
+                            storage_template.access_mode,
+                        ),
+                        dimension: TextureDimensionality::D3,
+                        arrayed: false,
+                        multisampled: false,
+                    })
+                    .intern(self.db),
+                )))
             },
             // "texture_1d_array" => {
             //     unimplemented!()
@@ -490,11 +543,8 @@ impl TypeLoweringContext<'_> {
             // "texture_multisampled_2d_array" => {
             //     unimplemented!()
             // },
-            _ => {
-                return Ok(None);
-            },
-        };
-        Ok(Some(Lowered::Type(type_kind.intern(self.db))))
+            _ => Ok(None),
+        }
     }
 
     fn array_template(
@@ -510,7 +560,6 @@ impl TypeLoweringContext<'_> {
                 TypeKind::Error.intern(self.db)
             },
         };
-
         let size = if template_parameters.has_next() {
             match template_parameters.next_as_instance() {
                 Ok((Some(Instance::Literal(LiteralInstance::I32(number))), _))
@@ -565,7 +614,6 @@ impl TypeLoweringContext<'_> {
     ) -> Type {
         self.expect_n_templates(template_parameters, 1..=1);
         let mut template_parameters = template_parameters.clone();
-
         match template_parameters.next_as_type() {
             Ok((r#type, expression)) => {
                 let type_kind = r#type.kind(self.db);
@@ -712,7 +760,6 @@ impl TypeLoweringContext<'_> {
     ) -> Type {
         self.expect_n_templates(template_parameters, 1..=1);
         let mut template_parameters = template_parameters.clone();
-
         match template_parameters.next_as_type() {
             Ok((r#type, expression)) => {
                 let type_kind = r#type.kind(self.db);

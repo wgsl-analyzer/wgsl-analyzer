@@ -1584,8 +1584,8 @@ fn no_constructor() {
         var x = vec2f(1, 2, 3);
         ",
         expect![[r#"
-            4..5 'x': ref<handle, [error], read>
-            8..22 'vec2f(1, 2, 3)': [error]
+            4..5 'x': ref<handle, vec2<f32>, read>
+            8..22 'vec2f(1, 2, 3)': vec2<f32>
             14..15 '1': integer
             17..18 '2': integer
             20..21 '3': integer
@@ -2069,27 +2069,6 @@ fn foo() {
 }
 
 #[test]
-fn construct_templated_but_argument_is_error_no_second_diagnostic() {
-    check_infer(
-        "
-fn foo() {
-    let y = &0;
-    let x = vec2<f32>(y);
-}
-        ",
-        expect![[r#"
-            19..20 'y': [error]
-            23..25 '&0': [error]
-            24..25 '0': integer
-            35..36 'x': vec2<f32>
-            39..51 'vec2<f32>(y)': vec2<f32>
-            49..50 'y': [error]
-            23..25 '&0': cannot use unary operator `&` on type `AbstractInt`
-        "#]],
-    );
-}
-
-#[test]
 fn construct_untemplated_but_argument_is_error_no_second_diagnostic() {
     check_infer(
         "
@@ -2119,8 +2098,8 @@ fn foo() {
 }
         ",
         expect![[r#"
-            19..20 'y': [error]
-            23..36 'mat2x2f(true)': [error]
+            19..20 'y': mat2x2<f32>
+            23..36 'mat2x2f(true)': mat2x2<f32>
             31..35 'true': bool
             23..36 'mat2x2f(true)': no constructor found for type `mat2x2<f32>` with parameters `bool`
         "#]],
@@ -2136,8 +2115,8 @@ fn foo() {
 }
         ",
         expect![[r#"
-            19..20 'y': [error]
-            23..45 'vec2(t... true)': [error]
+            19..20 'y': vec2<[error]>
+            23..45 'vec2(t... true)': vec2<[error]>
             28..32 'true': bool
             34..38 'true': bool
             40..44 'true': bool
@@ -2157,7 +2136,7 @@ fn foo() {
         expect![[r#"
             19..20 'y': array<[error]>
             23..30 'array()': array<[error]>
-            23..30 'array()': type `array<[error]>` is not constructible
+            23..30 'array()': no constructor found for type `array<[error]>` with parameters ``
         "#]],
     );
 }

@@ -9,6 +9,7 @@ mod language_extensions;
 mod layout;
 mod operators;
 mod simple;
+mod single_diagnostics_on_errors;
 use std::fmt::Write as _;
 
 use base_db::{CapabilitiesInput, EditionedFileId, Intern as _, Lookup as _, TextRange};
