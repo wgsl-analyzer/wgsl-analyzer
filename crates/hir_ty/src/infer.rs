@@ -1891,9 +1891,9 @@ impl<'db> InferenceContext<'db> {
         let Some((_, mut first_argument_type)) = arguments.first().copied() else {
             self.push_diagnostic(
                 store.store_source,
-                InferenceDiagnosticKind::NoConstructor {
+                InferenceDiagnosticKind::NoOverload {
                     expression,
-                    r#type: incomplete_type(),
+                    name: array_type.name().into(),
                     parameters: vec![],
                 },
             );
@@ -1982,9 +1982,9 @@ impl<'db> InferenceContext<'db> {
         } else {
             self.push_diagnostic(
                 store.store_source,
-                InferenceDiagnosticKind::NoConstructor {
+                InferenceDiagnosticKind::NoOverload {
                     expression,
-                    r#type: incomplete_type(),
+                    name: vector_type.name().into(),
                     parameters: argument_types,
                 },
             );
@@ -2004,10 +2004,10 @@ impl<'db> InferenceContext<'db> {
         if arguments.is_empty() {
             self.push_diagnostic(
                 store.store_source,
-                InferenceDiagnosticKind::FunctionCallArgCountMismatch {
+                InferenceDiagnosticKind::NoOverload {
                     expression,
-                    n_expected: 1,
-                    n_actual: arguments.len(),
+                    name: matrix_type.name().into(),
+                    parameters: vec![],
                 },
             );
             return incomplete_type();
@@ -2027,9 +2027,9 @@ impl<'db> InferenceContext<'db> {
         } else {
             self.push_diagnostic(
                 store.store_source,
-                InferenceDiagnosticKind::NoConstructor {
+                InferenceDiagnosticKind::NoOverload {
                     expression,
-                    r#type: incomplete_type(),
+                    name: matrix_type.name().into(),
                     parameters: argument_types,
                 },
             );

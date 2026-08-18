@@ -1589,7 +1589,7 @@ fn no_constructor() {
             14..15 '1': integer
             17..18 '2': integer
             20..21 '3': integer
-            8..22 'vec2f(1, 2, 3)': no constructor found for type `vec2<f32>` with parameters `integer, integer, integer`
+            8..22 'vec2f(1, 2, 3)': no overload of constructor `vec2<f32>` found for arguments of type (integer, integer, integer)
         "#]],
     );
 }
@@ -2080,7 +2080,7 @@ fn foo() {
             19..20 'y': mat2x2<f32>
             23..36 'mat2x2f(true)': mat2x2<f32>
             31..35 'true': bool
-            23..36 'mat2x2f(true)': no constructor found for type `mat2x2<f32>` with parameters `bool`
+            23..36 'mat2x2f(true)': no overload of constructor `mat2x2<f32>` found for arguments of type (bool)
         "#]],
     );
 }
@@ -2099,7 +2099,7 @@ fn foo() {
             28..32 'true': bool
             34..38 'true': bool
             40..44 'true': bool
-            23..45 'vec2(t... true)': no constructor found for type `vec2<[error]>` with parameters `bool, bool, bool`
+            23..45 'vec2(t... true)': no overload of function `vec2` found for arguments of type (bool, bool, bool)
         "#]],
     );
 }
@@ -2115,7 +2115,7 @@ fn foo() {
         expect![[r#"
             19..20 'y': array<[error]>
             23..30 'array()': array<[error]>
-            23..30 'array()': no constructor found for type `array<[error]>` with parameters ``
+            23..30 'array()': no overload of function `array` found that takes no arguments
         "#]],
     );
 }
@@ -2146,7 +2146,7 @@ fn foo() {
         expect![[r#"
             19..20 'y': mat2x2<[error]>
             23..31 'mat2x2()': mat2x2<[error]>
-            23..31 'mat2x2()': expected `1` arguments, but received `0`
+            23..31 'mat2x2()': no overload of function `mat2x2` found that takes no arguments
         "#]],
     );
 }
@@ -2163,7 +2163,7 @@ fn foo() {
             19..20 'y': mat2x2<[error]>
             23..35 'mat2x2(true)': mat2x2<[error]>
             30..34 'true': bool
-            23..35 'mat2x2(true)': no constructor found for type `mat2x2<[error]>` with parameters `bool`
+            23..35 'mat2x2(true)': no overload of function `mat2x2` found for arguments of type (bool)
         "#]],
     );
 }

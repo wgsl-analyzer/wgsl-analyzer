@@ -240,6 +240,13 @@ impl<'db> InferPrinter<'db> {
             } => {
                 self.print_no_constructor(source_map, buffer, *expression, parameters, *r#type);
             },
+            InferenceDiagnosticKind::NoOverload {
+                expression,
+                parameters,
+                name,
+            } => {
+                self.print_no_overload(source_map, buffer, *expression, parameters, name);
+            },
             InferenceDiagnosticKind::NoSuchField {
                 expression,
                 name,
@@ -389,22 +396,59 @@ impl<'db> InferPrinter<'db> {
         let Some((range, text)) = self.get_expression_range_text(source_map, expression) else {
             return;
         };
-        writeln!(
-            buffer,
-            "{range:?} '{}': no constructor found for type `{}` with parameters `{}`",
-            ellipsize(text, 15),
-            pretty_type(self.db, r#type),
-            join_display(
-                parameters
-                    .iter()
-                    .map(|parameter| pretty_type_with_verbosity(
-                        self.db,
-                        *parameter,
-                        TypeVerbosity::Full
-                    ))
-            ),
-        )
-        .unwrap();
+        if parameters.is_empty() {
+            writeln!(
+                buffer,
+                "{range:?} '{}': no overload of constructor `{}` found that takes no arguments",
+                ellipsize(text, 15),
+                pretty_type(self.db, r#type),
+            )
+            .unwrap();
+        } else {
+            let parameters = join_display(parameters.iter().map(|parameter| {
+                pretty_type_with_verbosity(self.db, *parameter, TypeVerbosity::Full)
+            }));
+            writeln!(
+                buffer,
+                "{range:?} '{}': no overload of constructor `{}` found for arguments of type ({parameters})",
+                ellipsize(text, 15),
+                pretty_type(self.db, r#type),
+            )
+            .unwrap();
+        }
+    }
+
+    fn print_no_overload(
+        &self,
+        source_map: &ExpressionSourceMap,
+        buffer: &mut String,
+        expression: ExpressionId,
+        parameters: &[Type],
+        name: &Name,
+    ) {
+        let Some((range, text)) = self.get_expression_range_text(source_map, expression) else {
+            return;
+        };
+        if parameters.is_empty() {
+            writeln!(
+                buffer,
+                "{range:?} '{}': no overload of function `{}` found that takes no arguments",
+                ellipsize(text, 15),
+                name.as_str(),
+            )
+            .unwrap();
+        } else {
+            let parameters = join_display(parameters.iter().map(|parameter| {
+                pretty_type_with_verbosity(self.db, *parameter, TypeVerbosity::Full)
+            }));
+            writeln!(
+                buffer,
+                "{range:?} '{}': no overload of function `{}` found for arguments of type ({parameters})",
+                ellipsize(text, 15),
+                name.as_str(),
+            )
+            .unwrap();
+        }
     }
 
     #[expect(clippy::unused_self, reason = "intended API")]

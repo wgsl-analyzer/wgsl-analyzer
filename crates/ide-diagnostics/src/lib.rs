@@ -386,11 +386,47 @@ pub fn diagnostics(
                     Diagnostic::new(
                         DiagnosticCode("18"),
                         format!(
-                            "no overload of constructor `{}` found for arguments of type ({parameters})",
+                            "no overload of constructor `{}` found for arguments of type ({})",
                             pretty_type(db, r#type),
+                            if parameters.is_empty() { "<none>" } else { &parameters }
                         ),
                         frange.range,
                     )
+                },
+                AnyDiagnostic::NoOverload {
+                    expression,
+                    name,
+                    parameters,
+                } => {
+                    let source = expression.value.to_node(&root).syntax().clone();
+                    let frange = original_file_range(db, expression.file_id, source.syntax());
+                    if parameters.is_empty() {
+                        Diagnostic::new(
+                            DiagnosticCode("18"),
+                            format!(
+                                "no overload of function `{}` found that takes no arguments",
+                                name.as_str()
+                            ),
+                            frange.range,
+                        )
+                    } else {
+                    let parameters = parameters
+                        .iter()
+                        .map(|r#type| {
+                            debug_assert!(!r#type.is_err(db));
+                            ty::pretty::pretty_type(db, *r#type)
+                        })
+                        .join(", ");
+
+                    Diagnostic::new(
+                        DiagnosticCode("18"),
+                        format!(
+                            "no overload of constructor `{}` found for arguments of type ({})",
+                            name.as_str(),
+                            if parameters.is_empty() { "<none>" } else { &parameters }
+                        ),
+                        frange.range,
+                    )}
                 },
                 AnyDiagnostic::PrecedenceParensRequired {
                     expression,

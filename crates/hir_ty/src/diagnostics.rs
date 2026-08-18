@@ -50,6 +50,11 @@ pub enum InferenceDiagnosticKind {
         r#type: Type,
         parameters: Vec<Type>,
     },
+    NoOverload {
+        expression: ExpressionId,
+        name: Name,
+        parameters: Vec<Type>,
+    },
     StoreTypeMustBeStorable {
         expression: ExpressionId,
         actual: Type,

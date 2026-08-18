@@ -119,6 +119,11 @@ pub enum AnyDiagnostic {
         r#type: Type,
         parameters: Vec<Type>,
     },
+    NoOverload {
+        expression: InFile<AstPointer<ast::Expression>>,
+        parameters: Vec<Type>,
+        name: Name,
+    },
     CyclicType {
         file_id: EditionedFileId,
         name: Name,
@@ -168,6 +173,7 @@ impl AnyDiagnostic {
             | Self::FunctionCallArgCountMismatch { expression, .. }
             | Self::StoreTypeMustBeStorable { expression, .. }
             | Self::NoConstructor { expression, .. }
+            | Self::NoOverload { expression, .. }
             | Self::PrecedenceParensRequired { expression, .. }
             | Self::UnexpectedTemplateArgument { expression, .. }
             | Self::WgslError { expression, .. }
@@ -260,6 +266,19 @@ pub(crate) fn to_any_diagnostic(
             AnyDiagnostic::NoConstructor {
                 expression: source,
                 r#type: *r#type,
+                parameters: parameters.clone(),
+            }
+        },
+        InferenceDiagnosticKind::NoOverload {
+            expression,
+            parameters,
+            name,
+        } => {
+            let pointer = source_map.expression_to_source(*expression).ok()?.clone();
+            let source = InFile::new(file_id, pointer);
+            AnyDiagnostic::NoOverload {
+                expression: source,
+                name: name.clone(),
                 parameters: parameters.clone(),
             }
         },

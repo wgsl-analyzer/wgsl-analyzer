@@ -189,7 +189,7 @@ fn foo() {
             394..399 'Foo()': type `Foo` is not constructible
             420..446 'ptr<fu...ead>()': type `ptr<function, u32, read>` is not constructible
             543..583 'textur...ite>()': type `texture_storage_2d<rgba16float,write>` is not constructible
-            603..610 'array()': no constructor found for type `array<[error]>` with parameters ``
+            603..610 'array()': no overload of function `array` found that takes no arguments
             630..638 'atomic()': expected 1 template arguments, but got 0
             630..638 'atomic()': missing template argument, expected a type
             630..638 'atomic()': type `atomic<[error]>` is not constructible
@@ -212,7 +212,7 @@ fn foo() {
         expect![[r#"
             19..28 'structure': array<[error]>
             31..38 'array()': array<[error]>
-            31..38 'array()': no constructor found for type `array<[error]>` with parameters ``
+            31..38 'array()': no overload of function `array` found that takes no arguments
         "#]],
     );
 }
@@ -228,7 +228,7 @@ fn foo() {
         expect![[r#"
             21..22 'b': array<u32, 3>
             40..47 'array()': array<[error]>
-            40..47 'array()': no constructor found for type `array<[error]>` with parameters ``
+            40..47 'array()': no overload of function `array` found that takes no arguments
         "#]],
     );
 }
