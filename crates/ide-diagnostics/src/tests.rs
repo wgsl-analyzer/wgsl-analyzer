@@ -124,6 +124,26 @@ fn no_builtin_overload() {
 }
 
 #[test]
+fn no_generator_overload_no_arguments() {
+    check_diagnostics(
+        "fn foo() { var x = mat2x2(); }",
+        expect![[r#"
+            19..27 wgsl-analyzer Error 18: no overload of function `mat2x2` found that takes no arguments
+        "#]],
+    );
+}
+
+#[test]
+fn no_generator_overload_some_arguments() {
+    check_diagnostics(
+        "fn foo() { var x = mat2x2(1, 2, 3, 4, 5); }",
+        expect![[r#"
+            19..40 wgsl-analyzer Error 18: no overload of constructor `mat2x2` found for arguments of type (integer, integer, integer, integer, integer)
+        "#]],
+    );
+}
+
+#[test]
 fn deref_not_a_pointer() {
     check_diagnostics(
         "fn foo() { var x = *1f; }",
@@ -138,7 +158,7 @@ fn no_constructor() {
     check_diagnostics(
         "fn foo() { var x = vec2f(1, 2, 3); }",
         expect![[r#"
-            19..33 wgsl-analyzer Error 18: no overload of constructor `vec2<f32>` found for arguments of type (integer, integer, integer)
+            19..33 wgsl-analyzer Error 17: no overload of constructor `vec2<f32>` found for arguments of type (integer, integer, integer)
         "#]],
     );
 }

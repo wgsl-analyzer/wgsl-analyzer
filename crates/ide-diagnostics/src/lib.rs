@@ -384,7 +384,7 @@ pub fn diagnostics(
 
                     let frange = original_file_range(db, expression.file_id, source.syntax());
                     Diagnostic::new(
-                        DiagnosticCode("18"),
+                        DiagnosticCode("17"),
                         format!(
                             "no overload of constructor `{}` found for arguments of type ({})",
                             pretty_type(db, r#type),
