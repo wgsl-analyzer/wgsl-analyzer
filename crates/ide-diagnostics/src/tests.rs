@@ -128,8 +128,8 @@ fn deref_not_a_pointer() {
     check_diagnostics(
         "fn foo() { var x = *1f; }",
         expect![[r#"
-        20..22 wesl-rs Error 22: cannot use unary operator `*` on type `f32`
-    "#]],
+            19..22 wesl-rs Error 22: cannot use unary operator `*` on type `f32`
+        "#]],
     );
 }
 

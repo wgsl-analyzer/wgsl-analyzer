@@ -383,7 +383,7 @@ fn address_of_not_reference() {
             34..39 'x_ptr': [error]
             42..44 '&x': [error]
             43..44 'x': i32
-            43..44 'x': cannot use unary operator `&` on type `i32`
+            42..44 '&x': cannot use unary operator `&` on type `i32`
         "#]],
     );
 }
@@ -1572,7 +1572,7 @@ fn deref_not_a_pointer() {
             4..5 'x': ref<handle, [error], read>
             8..11 '*1f': [error]
             9..11 '1f': f32
-            9..11 '1f': cannot use unary operator `*` on type `f32`
+            8..11 '*1f': cannot use unary operator `*` on type `f32`
         "#]],
     );
 }
@@ -2084,7 +2084,7 @@ fn foo() {
             35..36 'x': vec2<f32>
             39..51 'vec2<f32>(y)': vec2<f32>
             49..50 'y': [error]
-            24..25 '0': cannot use unary operator `&` on type `AbstractInt`
+            23..25 '&0': cannot use unary operator `&` on type `AbstractInt`
         "#]],
     );
 }
@@ -2105,7 +2105,7 @@ fn foo() {
             35..36 'x': [error]
             39..46 'vec2(y)': [error]
             44..45 'y': [error]
-            24..25 '0': cannot use unary operator `&` on type `AbstractInt`
+            23..25 '&0': cannot use unary operator `&` on type `AbstractInt`
         "#]],
     );
 }

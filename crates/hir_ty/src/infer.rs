@@ -1014,9 +1014,9 @@ impl<'db> InferenceContext<'db> {
                 operation,
             } => self.infer_binary_op(expression, *left_side, *right_side, *operation, store),
             Expression::UnaryOperator {
-                expression,
+                expression: inner_expression,
                 operator,
-            } => self.infer_unary_op(*expression, *operator, store),
+            } => self.infer_unary_op(expression, *inner_expression, *operator, store),
             Expression::Field {
                 expression: field_expression,
                 name,
@@ -1287,18 +1287,19 @@ impl<'db> InferenceContext<'db> {
     fn infer_unary_op(
         &mut self,
         expression: ExpressionId,
+        operand: ExpressionId,
         operator: UnaryOperator,
         store: &ExpressionStore,
     ) -> Type {
-        let expression_type = self.infer_expression(expression, store);
-        if expression_type.is_err(self.db) {
+        let operand_type = self.infer_expression(operand, store);
+        if operand_type.is_err(self.db) {
             return self.error_type();
         }
         // Load rule does not apply to this specific operator because it has precondition `r: ref<AS,T,AM>`
         let expression_type = if operator == UnaryOperator::AddressOf {
-            expression_type
+            operand_type
         } else {
-            expression_type.loaded(self.db)
+            operand_type.loaded(self.db)
         };
         match wgsl_types::builtin::type_unary_op(
             to_wgsl_unary_operator(operator),
