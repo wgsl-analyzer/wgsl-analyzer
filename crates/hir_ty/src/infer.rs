@@ -1339,6 +1339,11 @@ impl<'db> InferenceContext<'db> {
         let right_type = self.infer_expression(right_side, store);
 
         if left_type.is_err(self.db) || right_type.is_err(self.db) {
+            // debug_assert!(
+            //     !self.result.diagnostics.is_empty(),
+            //     "there should already be a diagnostic"
+            // );
+            // no more useful type to return here
             return self.error_type();
         }
         match wgsl_types::builtin::type_binary_op(
@@ -1581,6 +1586,10 @@ impl<'db> InferenceContext<'db> {
             },
             Lowered::BuiltinFunction(name, template) => {
                 if argument_types.iter().any(|r#type| r#type.is_err(self.db)) {
+                    // debug_assert!(
+                    //     !self.result.diagnostics().is_empty(),
+                    //     "error instance should have a diagnostic associated with it already"
+                    // );
                     return self.error_type();
                 }
                 self.infer_builtin_function(expression, &argument_types, store, template, &name)

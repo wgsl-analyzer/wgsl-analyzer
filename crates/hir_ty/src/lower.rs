@@ -216,16 +216,6 @@ pub enum ConstructibleTypeGenerator {
     Array(ArrayType),
 }
 
-impl From<ConstructibleTypeGenerator> for TypeKind {
-    fn from(value: ConstructibleTypeGenerator) -> Self {
-        match value {
-            ConstructibleTypeGenerator::Vector(vector_type) => Self::Vector(vector_type),
-            ConstructibleTypeGenerator::Matrix(matrix_type) => Self::Matrix(matrix_type),
-            ConstructibleTypeGenerator::Array(array_type) => Self::Array(array_type),
-        }
-    }
-}
-
 impl Lowered {
     #[must_use]
     pub const fn kind(&self) -> LoweredKind {
@@ -376,17 +366,13 @@ impl<'db> TypeLoweringContext<'db> {
                     })
             },
             Ok(ResolveKind::BuiltinTypeGenerator(name)) => {
-                match self.lower_builtin_type_generator(&name, &template_parameters)? {
-                    Some(Either::Left(generator)) => {
-                        Ok(Lowered::ConstructibleTypeGenerator(generator))
-                    },
-                    Some(Either::Right(r#type)) => Ok(Lowered::Type(r#type)),
-                    None => Err(TypeLoweringError {
-                        container: type_container,
-                        kind: TypeLoweringErrorKind::Resolution(
-                            ResolutionDiagnostic::UnresolvedName { name },
-                        ),
-                    }),
+                match self.lower_builtin_type_generator(
+                    type_container,
+                    &name,
+                    &template_parameters,
+                )? {
+                    Either::Left(generator) => Ok(Lowered::ConstructibleTypeGenerator(generator)),
+                    Either::Right(r#type) => Ok(Lowered::Type(r#type)),
                 }
             },
             // Ok(ResolveKind::BuiltinTypeConstructor(name)) => self
