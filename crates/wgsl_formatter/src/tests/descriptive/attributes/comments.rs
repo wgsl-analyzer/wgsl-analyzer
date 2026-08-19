@@ -1,6 +1,6 @@
 use expect_test::expect;
 
-use crate::test_util::check_comments;
+use crate::test_util::{check, check_comments};
 
 #[test]
 pub fn format_comments_in_attrs_on_struct_members() {
@@ -61,9 +61,8 @@ pub fn format_comments_in_attrs_on_function_return_type() {
     check_comments(
         "fn thing() ## -> ## @attr(0) ## @attr(1) ## vec4<f32> ## {}",
         expect![[r#"
-            fn thing() /* 0 */ -> /* 1 */ @attr(0) /* 2 */ @attr(1) /* 3 */ vec4<
-                f32,
-            > /* 4 */ {}
+            fn thing() /* 0 */ -> /* 1 */ @attr(0) /* 2 */ @attr(1)
+            /* 3 */ vec4<f32> /* 4 */ {}
         "#]],
         expect![[r#"
             fn thing() // 0
@@ -585,6 +584,175 @@ pub fn format_comments_in_attr_simple() {
             // 2
             fn // 3
             main() {}
+        "#]],
+    );
+}
+
+#[test]
+pub fn format_attribute_comment_positioning_between_unordered_attrs_first_inline() {
+    check(
+        "
+        @must_use /* bla */ @fragment fn a() {}
+
+        @must_use /* bla */
+        @fragment fn a() {}
+
+        @must_use
+        /* bla */
+        @fragment fn a() {}
+
+        @must_use
+        /* bla */ @fragment fn a() {}
+        ",
+        expect![[r#"
+            @fragment
+            @must_use /* bla */ fn a() {}
+
+            @fragment
+            @must_use /* bla */ fn a() {}
+
+            /* bla */
+            @fragment
+            @must_use fn a() {}
+
+            /* bla */ @fragment
+            @must_use fn a() {}
+        "#]],
+    );
+}
+
+#[test]
+pub fn format_attribute_comment_positioning_between_unordered_both_inline() {
+    check(
+        "
+        @must_use /* bla */ @must_use fn a() {}
+
+        @must_use /* bla */
+        @must_use fn a() {}
+
+        @must_use
+        /* bla */
+        @must_use fn a() {}
+
+        @must_use
+        /* bla */ @must_use fn a() {}
+        ",
+        expect![[r#"
+            @must_use /* bla */ @must_use fn a() {}
+
+            @must_use /* bla */ @must_use fn a() {}
+
+            @must_use /* bla */
+            @must_use fn a() {}
+
+            @must_use /* bla */ @must_use fn a() {}
+        "#]],
+    );
+}
+
+#[test]
+pub fn format_attribute_comment_positioning_between_unordered_second_inline() {
+    check(
+        "
+        @fragment /* bla */ @must_use fn a() {}
+
+        @fragment /* bla */
+        @must_use fn a() {}
+
+        @fragment
+        /* bla */
+        @must_use fn a() {}
+
+        @fragment
+        /* bla */ @must_use fn a() {}
+        ",
+        expect![[r#"
+            @fragment /* bla */
+            @must_use fn a() {}
+
+            @fragment /* bla */
+            @must_use fn a() {}
+
+            @fragment
+            /* bla */
+            @must_use fn a() {}
+
+            @fragment
+            /* bla */ @must_use fn a() {}
+        "#]],
+    );
+}
+
+#[test]
+pub fn format_attribute_comment_positioning_between_unordered_none_inline() {
+    check(
+        "
+        @compute /* bla */ @if(true) fn a() {}
+
+        @compute /* bla */
+        @if(true) fn a() {}
+
+        @compute
+        /* bla */
+        @if(true) fn a() {}
+
+        @compute
+        /* bla */ @if(true) fn a() {}
+        ",
+        expect![[r#"
+            @if(true)
+            @compute /* bla */
+            fn a() {}
+
+            @if(true)
+            @compute /* bla */
+            fn a() {}
+
+            /* bla */
+            @if(true)
+            @compute
+            fn a() {}
+
+            /* bla */ @if(true)
+            @compute
+            fn a() {}
+        "#]],
+    );
+}
+
+#[test]
+pub fn format_attribute_comment_positioning_between_ordered_none_inline() {
+    check(
+        "
+        @if(true) /* bla */ @compute fn a() {}
+
+        @if(true) /* bla */
+        @compute fn a() {}
+
+        @if(true)
+        /* bla */
+        @compute fn a() {}
+
+        @if(true)
+        /* bla */ @compute fn a() {}
+        ",
+        expect![[r#"
+            @if(true) /* bla */
+            @compute
+            fn a() {}
+
+            @if(true) /* bla */
+            @compute
+            fn a() {}
+
+            @if(true)
+            /* bla */
+            @compute
+            fn a() {}
+
+            @if(true)
+            /* bla */ @compute
+            fn a() {}
         "#]],
     );
 }
