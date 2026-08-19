@@ -34,8 +34,10 @@ pub fn gen_while_statement(
     //     AttributeLayout::Multiline,
     // )?);
     formatted.push_sc(sc!("while"));
+    formatted.start_indent_before_requests();
     formatted.request(Request::expect(RequestItem::Space));
     formatted.extend(gen_node_with_trivia(&item_condition)?);
+    formatted.finish_indent_before_requests();
     formatted.request(Request::expect(RequestItem::Space));
     formatted.extend(gen_node_with_trivia(&item_body)?);
     formatted.request(Request::expect(RequestItem::LineBreak));
