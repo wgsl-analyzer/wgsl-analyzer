@@ -7,16 +7,15 @@ pub fn format_comments_in_import_single_line() {
     check_comments(
         "## import ## a ## :: ## b ## :: ## c ## as ## d ## ; ##",
         expect![[r#"
-            /* 0 */ import /* 1 */ a /* 2 */ :: /* 3 */ b /* 4 */
-                :: /* 5 */ c /* 6 */ as /* 7 */ d /* 8 */; /* 9 */
+            /* 0 */ import /* 1 */ a /* 2 */ :: /* 3 */ b /* 4 */ :: /* 5 */ c /* 6 */ as /* 7 */ d /* 8 */; /* 9 */
         "#]],
         expect![[r#"
             // 0
             import // 1
             a // 2
-                :: // 3
+            :: // 3
             b // 4
-                :: // 5
+            :: // 5
             c // 6
             as // 7
             d // 8
@@ -39,15 +38,15 @@ pub fn format_comments_in_import_collection() {
             // 0
             import // 1
             a // 2
-                :: // 3
+            :: // 3
             b // 4
-                :: // 5
+            :: // 5
             {
                 // 6
                 a // 7
                 , // 8
                 b // 9
-                    :: // 10
+                :: // 10
                 d // 11
                 as // 12
                 e // 13

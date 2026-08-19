@@ -17,6 +17,7 @@ mod r#loop;
 mod r#return;
 mod r#switch;
 mod unscoped_compound;
+mod var_declaration;
 mod r#while;
 
 #[test]
