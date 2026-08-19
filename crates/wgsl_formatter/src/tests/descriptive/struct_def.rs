@@ -107,8 +107,8 @@ fn format_comments_in_struct_def_members_with_attributes() {
                 }",
         expect![[r#"
             /* 0 */ struct /* 1 */ Test /* 2 */ {
-                /* 3 */ @attr /* 4 */ (/* 5 */ 0 /* 6 */) /* 7 */
-                @location /* 8 */ (/* 9 */ 1 /* 10 */)
+                /* 3 */ @attr /* 4 */ (/* 5 */ 0 /* 6 */)
+                /* 7 */ @location /* 8 */ (/* 9 */ 1 /* 10 */)
                 /* 11 */ x /* 12 */ : /* 13 */ i32, /* 14 */ /* 15 */
                 a /* 16 */ : /* 17 */ i32, /* 18 */ /* 19 */
                 b /* 20 */ : /* 21 */ f32, /* 22 */
@@ -124,7 +124,8 @@ fn format_comments_in_struct_def_members_with_attributes() {
                 (
                     // 5
                     0, // 6
-                ) // 7
+                )
+                // 7
                 @location // 8
                 (
                     // 9
