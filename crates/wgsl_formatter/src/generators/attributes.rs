@@ -14,6 +14,7 @@ use crate::{
         IgnoreBlankspace, IgnoreComma, IgnoreParenthesis, NoTrivia, Succeeding, UntilNewline,
         parse_end, parse_many_nodes_with, parse_node_with, syntax_iter,
     },
+    format::format,
     generators::node::{
         gen_node_content, gen_node_preceding_trivia, gen_node_succeeding_trivia,
         gen_node_with_trivia,
@@ -24,7 +25,7 @@ use crate::{
         spacing_request::{Request, RequestItem},
     },
     reporting::{FormatDocumentError, FormatDocumentResult},
-    trivia::NodeWithTrivia,
+    trivia::{NodeTriviaItem, NodeWithTrivia},
 };
 
 pub use standard_attributes::*;
@@ -121,7 +122,19 @@ pub(crate) fn categorize_attribute(attribute: &Attribute) -> AttributeCategoriza
 pub fn gen_attribute_list(attribute_list: &AttributeList) -> FormatDocumentResult<PrintItemBuffer> {
     let mut syntax = syntax_iter(attribute_list.syntax());
 
-    let attributes = parse_many_nodes_with(&mut syntax, IgnoreBlankspace)
+    let attributes = parse_many_nodes_with(&mut syntax, (Succeeding(NoTrivia)))
+        .map(|mut node| {
+            // We only preserve blankspaces if there is a comment as context.
+            // otherwise we discard it.
+            if node
+                .preceding_trivia
+                .iter()
+                .all(|trivia| matches!(trivia, NodeTriviaItem::LineSpacing(_)))
+            {
+                node.preceding_trivia = vec![];
+            }
+            node
+        })
         .filter(|node| !node.is_whitespace())
         .map(NodeWithTrivia::expect_ast_node_optional::<Attribute>)
         .map(|item| {
@@ -206,16 +219,18 @@ pub fn gen_attribute_list(attribute_list: &AttributeList) -> FormatDocumentResul
             &expect_space_or_linebreak,
         )?);
         formatted.request(expect_space_or_linebreak);
+        // formatted.request(Request::discourage(RequestItem::LineBreak));
+        // formatted.request(Request::discourage(RequestItem::EmptyLine));
     }
 
     // No final line break, these should be inline with the target
-    formatted.apply_end_request();
+    //formatted.apply_end_request();
     formatted.finish_new_line_group_before_requests();
 
-    // We can discourage NewLines and Emptylines because we applied them beforehand
-    formatted.request(Request::discourage(RequestItem::LineBreak));
-    formatted.request(Request::discourage(RequestItem::EmptyLine));
-    formatted.request(Request::discourage(RequestItem::Space));
+    // // We can discourage NewLines and Emptylines because we applied them beforehand
+    // formatted.request(Request::discourage(RequestItem::LineBreak));
+    // formatted.request(Request::discourage(RequestItem::EmptyLine));
+    // formatted.request(Request::discourage(RequestItem::Space));
 
     Ok(formatted)
 }

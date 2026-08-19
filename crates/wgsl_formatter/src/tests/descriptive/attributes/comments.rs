@@ -8,23 +8,25 @@ pub fn format_comments_in_attrs_on_struct_members() {
         "struct VertexOutput { ## @attr(0) ## @attr(1) ## position ## : vec4<f32>, ## @attr(0) ## @attr(1) ## uv ## : vec2<f32>}",
         expect![[r#"
             struct VertexOutput {
-                /* 0 */ @attr(0) /* 1 */
-                @attr(1)
+                /* 0 */ @attr(0)
+                /* 1 */ @attr(1)
                 /* 2 */ position /* 3 */ : vec4<f32>, /* 4 */
-                @attr(0) /* 5 */
-                @attr(1)
+                @attr(0)
+                /* 5 */ @attr(1)
                 /* 6 */ uv /* 7 */ : vec2<f32>,
             }
         "#]],
         expect![[r#"
             struct VertexOutput {
                 // 0
-                @attr(0) // 1
+                @attr(0)
+                // 1
                 @attr(1)
                 // 2
                 position // 3
                 : vec4<f32>, // 4
-                @attr(0) // 5
+                @attr(0)
+                // 5
                 @attr(1)
                 // 6
                 uv // 7
@@ -41,13 +43,14 @@ pub fn format_comments_in_attrs_on_functions() {
         ) {
         }",
         expect![[r#"
-            /* 0 */ @attr(0) /* 1 */
-            @attr(1)
+            /* 0 */ @attr(0)
+            /* 1 */ @attr(1)
             /* 2 */ fn /* 3 */ main() {}
         "#]],
         expect![[r#"
             // 0
-            @attr(0) // 1
+            @attr(0)
+            // 1
             @attr(1)
             // 2
             fn // 3
@@ -81,11 +84,11 @@ pub fn format_comments_in_attrs_on_function_parameter() {
         "fn thing ## ( ## @attr(0) ## @attr(1) ## position: vec4<f32>, ## @attr(0) ## @attr(1) ## uv: vec2<f32>, ) -> vec4<f32> {}",
         expect![[r#"
             fn thing /* 0 */ (
-                /* 1 */ @attr(0) /* 2 */
-                @attr(1)
+                /* 1 */ @attr(0)
+                /* 2 */ @attr(1)
                 /* 3 */ position: vec4<f32>, /* 4 */
-                @attr(0) /* 5 */
-                @attr(1)
+                @attr(0)
+                /* 5 */ @attr(1)
                 /* 6 */ uv: vec2<f32>,
             ) -> vec4<f32> {}
         "#]],
@@ -93,11 +96,13 @@ pub fn format_comments_in_attrs_on_function_parameter() {
             fn thing // 0
             (
                 // 1
-                @attr(0) // 2
+                @attr(0)
+                // 2
                 @attr(1)
                 // 3
                 position: vec4<f32>, // 4
-                @attr(0) // 5
+                @attr(0)
+                // 5
                 @attr(1)
                 // 6
                 uv: vec2<f32>,
@@ -134,13 +139,14 @@ pub fn format_comments_in_attrs_on_global_variable() {
         ## @attr(0) ## @attr(1) ## var<uniform> ## material: CustomMaterial;
         ",
         expect![[r#"
-            /* 0 */ @attr(0) /* 1 */
-            @attr(1)
+            /* 0 */ @attr(0)
+            /* 1 */ @attr(1)
             /* 2 */ var<uniform> /* 3 */ material: CustomMaterial;
         "#]],
         expect![[r#"
             // 0
-            @attr(0) // 1
+            @attr(0)
+            // 1
             @attr(1)
             // 2
             var<uniform> // 3
@@ -156,13 +162,14 @@ pub fn format_comments_in_attrs_on_override() {
         ## @attr(0) ## @attr(1) ## override amount: u64 = 0;
         ",
         expect![[r#"
-            /* 0 */ @attr(0) /* 1 */
-            @attr(1)
+            /* 0 */ @attr(0)
+            /* 1 */ @attr(1)
             /* 2 */ override amount: u64 = 0;
         "#]],
         expect![[r#"
             // 0
-            @attr(0) // 1
+            @attr(0)
+            // 1
             @attr(1)
             // 2
             override amount: u64 = 0;
@@ -176,13 +183,13 @@ pub fn format_comments_in_attrs_on_compound_statement() {
         " fn main() { ## @attr(0) ## @attr(1) ## { ## } ## if ## true ## @attr(0) ## @attr(1) ## { ## } } ",
         expect![[r#"
             fn main() {
-                /* 0 */ @attr(0) /* 1 */
-                @attr(1)
+                /* 0 */ @attr(0)
+                /* 1 */ @attr(1)
                 /* 2 */ {
                     /* 3 */
                 } /* 4 */
-                if /* 5 */ true /* 6 */ @attr(0) /* 7 */
-                @attr(1)
+                if /* 5 */ true /* 6 */ @attr(0)
+                /* 7 */ @attr(1)
                 /* 8 */ {
                     /* 9 */
                 }
@@ -191,7 +198,8 @@ pub fn format_comments_in_attrs_on_compound_statement() {
         expect![[r#"
             fn main() {
                 // 0
-                @attr(0) // 1
+                @attr(0)
+                // 1
                 @attr(1)
                 // 2
                 {
@@ -199,7 +207,8 @@ pub fn format_comments_in_attrs_on_compound_statement() {
                 } // 4
                 if // 5
                     true // 6
-                @attr(0) // 7
+                @attr(0)
+                // 7
                 @attr(1)
                 // 8
                 {
@@ -220,15 +229,16 @@ pub fn format_comments_in_attrs_on_if_statement() {
         ",
         expect![[r#"
             fn main() {
-                /* 0 */ @attr(0) /* 1 */
-                @attr(1)
+                /* 0 */ @attr(0)
+                /* 1 */ @attr(1)
                 /* 2 */ if /* 3 */ true {}
             }
         "#]],
         expect![[r#"
             fn main() {
                 // 0
-                @attr(0) // 1
+                @attr(0)
+                // 1
                 @attr(1)
                 // 2
                 if // 3
@@ -248,9 +258,9 @@ pub fn format_comments_in_attrs_on_switch_statement_and_body() {
         ",
         expect![[r#"
             fn main() {
-                /* 0 */ @attr(0) /* 1 */
-                @attr(1) /* 2 */
-                @attr(3)
+                /* 0 */ @attr(0)
+                /* 1 */ @attr(1)
+                /* 2 */ @attr(3)
                 /* 3 */ switch a /* 4 */ @attr(0) /* 5 */ @attr(1) /* 6 */ {
                     /* 7 */
                 }
@@ -259,8 +269,10 @@ pub fn format_comments_in_attrs_on_switch_statement_and_body() {
         expect![[r#"
             fn main() {
                 // 0
-                @attr(0) // 1
-                @attr(1) // 2
+                @attr(0)
+                // 1
+                @attr(1)
+                // 2
                 @attr(3)
                 // 3
                 switch a // 4
@@ -284,10 +296,10 @@ pub fn format_comments_in_attrs_on_loop_statement_and_body() {
         ",
         expect![[r#"
             fn main() {
-                /* 0 */ @attr(0) /* 1 */
-                @attr(1)
-                /* 2 */ loop /* 3 */ @attr(0) /* 4 */
-                @attr(1)
+                /* 0 */ @attr(0)
+                /* 1 */ @attr(1)
+                /* 2 */ loop /* 3 */ @attr(0)
+                /* 4 */ @attr(1)
                 /* 5 */ {
                     /* 6 */
                 }
@@ -296,11 +308,13 @@ pub fn format_comments_in_attrs_on_loop_statement_and_body() {
         expect![[r#"
             fn main() {
                 // 0
-                @attr(0) // 1
+                @attr(0)
+                // 1
                 @attr(1)
                 // 2
                 loop // 3
-                @attr(0) // 4
+                @attr(0)
+                // 4
                 @attr(1)
                 // 5
                 {
@@ -317,15 +331,16 @@ pub fn format_comments_in_attrs_on_for_statement() {
         " fn main() { ## @attr(0) ## @attr(1) ## for ## (var i = 0; i < 10; i++) {} } ",
         expect![[r#"
             fn main() {
-                /* 0 */ @attr(0) /* 1 */
-                @attr(1)
+                /* 0 */ @attr(0)
+                /* 1 */ @attr(1)
                 /* 2 */ for /* 3 */ (var i = 0; i < 10; i++) {}
             }
         "#]],
         expect![[r#"
             fn main() {
                 // 0
-                @attr(0) // 1
+                @attr(0)
+                // 1
                 @attr(1)
                 // 2
                 for // 3
@@ -384,15 +399,16 @@ pub fn format_comments_in_attrs_on_while_statement() {
         ",
         expect![[r#"
             fn main() {
-                /* 0 */ @attr(0) /* 1 */
-                @attr(1)
+                /* 0 */ @attr(0)
+                /* 1 */ @attr(1)
                 /* 2 */ while /* 3 */ true {}
             }
         "#]],
         expect![[r#"
             fn main() {
                 // 0
-                @attr(0) // 1
+                @attr(0)
+                // 1
                 @attr(1)
                 // 2
                 while // 3
@@ -589,7 +605,7 @@ pub fn format_comments_in_attr_simple() {
 }
 
 #[test]
-pub fn format_attribute_comment_positioning_between_unordered_attrs_first_inline() {
+pub fn format_attribute_comment_positioning_between_unordered_first_inline() {
     check(
         "
         @must_use /* bla */ @fragment fn a() {}
@@ -605,11 +621,12 @@ pub fn format_attribute_comment_positioning_between_unordered_attrs_first_inline
         /* bla */ @fragment fn a() {}
         ",
         expect![[r#"
-            @fragment
-            @must_use /* bla */ fn a() {}
+            /* bla */ @fragment
+            @must_use fn a() {}
 
+            /* bla */
             @fragment
-            @must_use /* bla */ fn a() {}
+            @must_use fn a() {}
 
             /* bla */
             @fragment
@@ -640,12 +657,15 @@ pub fn format_attribute_comment_positioning_between_unordered_both_inline() {
         expect![[r#"
             @must_use /* bla */ @must_use fn a() {}
 
-            @must_use /* bla */ @must_use fn a() {}
-
             @must_use /* bla */
             @must_use fn a() {}
 
-            @must_use /* bla */ @must_use fn a() {}
+            @must_use
+            /* bla */
+            @must_use fn a() {}
+
+            @must_use
+            /* bla */ @must_use fn a() {}
         "#]],
     );
 }
@@ -667,10 +687,11 @@ pub fn format_attribute_comment_positioning_between_unordered_second_inline() {
         /* bla */ @must_use fn a() {}
         ",
         expect![[r#"
-            @fragment /* bla */
-            @must_use fn a() {}
+            @fragment
+            /* bla */ @must_use fn a() {}
 
-            @fragment /* bla */
+            @fragment
+            /* bla */
             @must_use fn a() {}
 
             @fragment
@@ -700,12 +721,13 @@ pub fn format_attribute_comment_positioning_between_unordered_none_inline() {
         /* bla */ @if(true) fn a() {}
         ",
         expect![[r#"
-            @if(true)
-            @compute /* bla */
+            /* bla */ @if(true)
+            @compute
             fn a() {}
 
+            /* bla */
             @if(true)
-            @compute /* bla */
+            @compute
             fn a() {}
 
             /* bla */
@@ -737,11 +759,12 @@ pub fn format_attribute_comment_positioning_between_ordered_none_inline() {
         /* bla */ @compute fn a() {}
         ",
         expect![[r#"
-            @if(true) /* bla */
-            @compute
+            @if(true)
+            /* bla */ @compute
             fn a() {}
 
-            @if(true) /* bla */
+            @if(true)
+            /* bla */
             @compute
             fn a() {}
 
