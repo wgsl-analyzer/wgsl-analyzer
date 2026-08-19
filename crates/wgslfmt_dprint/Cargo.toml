@@ -1,9 +1,9 @@
 [package]
-name = "dprint_plugin_wgslfmt"
+name = "dprint-plugin-wgslfmt"
 version = "0.0.0"
 edition.workspace = true
 rust-version.workspace = true
-description = "dprint plugin for wgsl_formatter"
+description = "dprint plugin for wgsl-formatter"
 repository.workspace = true
 license.workspace = true
 publish = false
