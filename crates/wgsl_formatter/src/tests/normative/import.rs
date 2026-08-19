@@ -2,7 +2,7 @@ use expect_test::expect;
 
 use crate::{
     FormattingOptions,
-    test_util::{assert_out_of_scope, check, check_with_options},
+    test_util::{CheckOptions, assert_out_of_scope, check, check_with_options},
 };
 
 #[test]
@@ -224,7 +224,9 @@ pub fn format_import_collection_long_items_prefer_break_in_collection() {
     );
 }
 #[test]
-pub fn format_import_path_single_simple_long_items() {
+pub fn format_import_path_does_not_get_broken_into_lines() {
+    // We decided that paths should not be broken up.
+    // https://discord.com/channels/1289346613185351722/1341941812675481680/1540082081240064040
     check_with_options(
         "
         //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
@@ -232,13 +234,15 @@ pub fn format_import_path_single_simple_long_items() {
         ",
         &expect![[r#"
             //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
-            import aaaaaaaaaaaa::bbbbbbbbbbbbbbbbb::cccccccccccc::ddddddddddddd
-                ::eeeeeeeeeeee::fffffffffffff::gggggggggg;
+            import aaaaaaaaaaaa::bbbbbbbbbbbbbbbbb::cccccccccccc::ddddddddddddd::eeeeeeeeeeee::fffffffffffff::gggggggggg;
         "#]],
-        &FormattingOptions {
-            max_line_width: 80,
-            ..Default::default()
-        }.into(),
+        &CheckOptions {
+            assert_line_width: None,
+            formatting: FormattingOptions {
+                max_line_width: 80,
+                ..Default::default()
+            },
+        },
         parser::Edition::LATEST
     );
 }

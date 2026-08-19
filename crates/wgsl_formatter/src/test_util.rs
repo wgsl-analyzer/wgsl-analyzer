@@ -355,7 +355,15 @@ pub fn check_comments<E>(
             },
         )
         .join("");
-        let formatted = check(&commented, after_line);
+        let formatted = check_with_options(
+            &commented,
+            &after_line,
+            &CheckOptions {
+                assert_line_width: None,
+                formatting: FormattingOptions::default(),
+            },
+            Edition::LATEST,
+        );
 
         //Check that all the comments are still present after formatting
         let mut remainder = formatted.as_str();
@@ -391,7 +399,15 @@ pub fn check_comments<E>(
             },
         )
         .join("");
-        let formatted = check(&commented, after_block);
+        let formatted = check_with_options(
+            &commented,
+            &after_block,
+            &CheckOptions {
+                assert_line_width: None,
+                formatting: FormattingOptions::default(),
+            },
+            Edition::LATEST,
+        );
 
         //Check that all the comments are still present after formatting
         let mut remainder = formatted.as_str();

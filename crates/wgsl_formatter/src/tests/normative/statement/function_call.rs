@@ -252,10 +252,7 @@ pub fn format_long_function_call_prefer_to_break_arguments_over_path() {
 }
 
 #[test]
-pub fn format_long_function_call_break_path_if_necessary_but_keep_arguments_alone() {
-    // Please note that the amount of "aaaa" in this test is carefully chosen to play with the line lengths.
-    // This the amount of aaa is such that, breaking the inner argument would still not satisfy the line width
-    // requirement.
+pub fn format_long_function_call_dont_break_path() {
     check_with_options(
         "
         //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
@@ -266,14 +263,21 @@ pub fn format_long_function_call_break_path_if_necessary_but_keep_arguments_alon
         &expect![[r#"
             //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
             fn main() {
-                let a = thing::blaaaaa::thing::blaaa::thing::blaaaaaaaaaaaaaaaaaaaa::thing
-                        ::loooong::paaath(aaaa, bbbb, ccc, ddd);
+                let a = thing::blaaaaa::thing::blaaa::thing::blaaaaaaaaaaaaaaaaaaaa::thing::loooong::paaath(
+                        aaaa,
+                        bbbb,
+                        ccc,
+                        ddd,
+                    );
             }
         "#]],
-        &FormattingOptions {
-            max_line_width: 80,
-            ..Default::default()
-        }.into(),
+        &CheckOptions {
+            assert_line_width: None,
+            formatting: FormattingOptions {
+                max_line_width: 80,
+                ..Default::default()
+            },
+        },
         parser::Edition::LATEST
     );
 }
