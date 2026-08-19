@@ -470,6 +470,20 @@ where
         }
     };
 
+    // Hacky special handling to make sure there is no line-spacing if attributes are immediately followed by their target
+    {
+        let mut items = preceding_trivia
+            .iter()
+            .rev()
+            .skip_while(|trivia| matches!(trivia, NodeTriviaItem::LineSpacing(_)));
+        if matches!(items.next(), Some(NodeTriviaItem::AttributeList(_))) {
+            while preceding_trivia
+                .pop_if(|item| matches!(item, NodeTriviaItem::LineSpacing(_)))
+                .is_some()
+            {}
+        }
+    }
+
     while let Some(node) = syntax.next() {
         let action = policy.handle_succeeding(&node);
         match action {
