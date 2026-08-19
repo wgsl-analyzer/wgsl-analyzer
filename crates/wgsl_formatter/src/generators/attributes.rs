@@ -14,7 +14,6 @@ use crate::{
         IgnoreBlankspace, IgnoreComma, IgnoreParenthesis, NoTrivia, Succeeding, UntilNewline,
         parse_end, parse_many_nodes_with, parse_node_with, syntax_iter,
     },
-    format::format,
     generators::node::{
         gen_node_content, gen_node_preceding_trivia, gen_node_succeeding_trivia,
         gen_node_with_trivia,
@@ -122,7 +121,7 @@ pub(crate) fn categorize_attribute(attribute: &Attribute) -> AttributeCategoriza
 pub fn gen_attribute_list(attribute_list: &AttributeList) -> FormatDocumentResult<PrintItemBuffer> {
     let mut syntax = syntax_iter(attribute_list.syntax());
 
-    let attributes = parse_many_nodes_with(&mut syntax, (Succeeding(NoTrivia)))
+    let attributes = parse_many_nodes_with(&mut syntax, Succeeding(NoTrivia))
         .map(|mut node| {
             // We only preserve blankspaces if there is a comment as context.
             // otherwise we discard it.

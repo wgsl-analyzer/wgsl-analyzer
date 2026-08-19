@@ -396,6 +396,10 @@ pub enum PolicyAction {
 
 // TODO(MonaMayrhofer,now) Tests and docs for this
 /// Parses a node with surrounding trivia, based on the given strategy.
+#[expect(
+    clippy::too_many_lines,
+    reason = "Splitting this up makes it less readable than it is now."
+)]
 pub fn parse_node_with<TPolicy>(
     syntax: &mut SyntaxIter,
     policy: TPolicy,

@@ -1,7 +1,5 @@
 pub mod spacing_request;
 
-use std::sync::Arc;
-
 use dprint_core::formatting::{Anchor, Info, PrintItem, PrintItems, Signal};
 
 use crate::print_item_buffer::spacing_request::Request;
