@@ -135,3 +135,24 @@ pub fn format_switch_statement_collapse_to_one_line() {
         "#]],
     );
 }
+
+#[test]
+pub fn format_switch_statement_indent_long_condition() {
+    check(
+        "fn main() {
+            switch (aaaaaaaaaaaaaaaaaa+ bbbbbbbbbbbbbbbbbbbb + ccccccccccccccccc + ddddddddddddddddddd + eeeeeeeeeeeeeeeeee) {
+                case 1 {
+                    let a = 1;
+                }
+            }
+        }",
+        expect![[r#"
+            fn main() {
+                switch aaaaaaaaaaaaaaaaaa + bbbbbbbbbbbbbbbbbbbb + ccccccccccccccccc
+                    + ddddddddddddddddddd + eeeeeeeeeeeeeeeeee {
+                    case 1 { let a = 1; }
+                }
+            }
+        "#]],
+    );
+}

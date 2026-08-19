@@ -84,9 +84,11 @@ pub fn gen_if_statement_if_clause(statement: &IfClause) -> FormatDocumentResult<
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
     formatted.push_sc(sc!("if"));
+    formatted.start_indent_before_requests();
     formatted.request(Request::expect(RequestItem::Space));
     formatted.request(Request::discourage(RequestItem::LineBreak));
     formatted.extend(gen_node_with_trivia(&item_condition)?);
+    formatted.finish_indent_before_requests();
     formatted.request(Request::discourage(RequestItem::LineBreak));
     formatted.request(Request::expect(RequestItem::Space));
     formatted.extend(gen_node_with_trivia(&item_body)?);
@@ -139,9 +141,11 @@ pub fn gen_if_statement_else_if_clause(
     formatted.request(Request::discourage(RequestItem::LineBreak));
     formatted.request(Request::expect(RequestItem::Space));
     formatted.extend(gen_node_with_trivia(&item_if)?);
+    formatted.start_indent_before_requests();
     formatted.request(Request::discourage(RequestItem::LineBreak));
     formatted.request(Request::expect(RequestItem::Space));
     formatted.extend(gen_node_with_trivia(&item_condition)?);
+    formatted.finish_indent_before_requests();
     formatted.request(Request::discourage(RequestItem::LineBreak));
     formatted.request(Request::expect(RequestItem::Space));
     formatted.extend(gen_node_with_trivia(&item_body)?);

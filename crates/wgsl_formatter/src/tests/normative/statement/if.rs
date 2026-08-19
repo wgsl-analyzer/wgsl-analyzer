@@ -60,3 +60,52 @@ pub fn format_if_else_statement_empty_if_nonempy_else() {
         "#]],
     );
 }
+
+#[test]
+pub fn format_if_statement_indent_multiline_condition() {
+    check(
+        "
+        fn main() {
+        if blaaa < aaaaaaaaaaaaaaa + bbbbbbbbbbbbb + ccccccccccccc + ddddddddddddddd + eeeeeeeeeeeeee
+        {
+            return d;
+        }
+        }
+        ",
+        expect![[r#"
+            fn main() {
+                if blaaa < aaaaaaaaaaaaaaa + bbbbbbbbbbbbb + ccccccccccccc + ddddddddddddddd
+                    + eeeeeeeeeeeeee {
+                    return d;
+                }
+            }
+        "#]],
+    );
+}
+
+#[test]
+pub fn format_else_if_statement_indent_multiline_condition() {
+    check(
+        "
+        fn main() {
+        if a {
+        return a;
+        }
+        else if blaaa < aaaaaaaaaaaaaaa + bbbbbbbbbbbbb + ccccccccccccc + ddddddddddddddd + eeeeeeeeeeeeee
+        {
+            return d;
+        }
+        }
+        ",
+        expect![[r#"
+            fn main() {
+                if a {
+                    return a;
+                } else if blaaa < aaaaaaaaaaaaaaa + bbbbbbbbbbbbb + ccccccccccccc
+                    + ddddddddddddddd + eeeeeeeeeeeeee {
+                    return d;
+                }
+            }
+        "#]],
+    );
+}

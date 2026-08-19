@@ -39,9 +39,11 @@ pub fn gen_switch_statement(
     let mut formatted = PrintItemBuffer::default();
 
     formatted.push_sc(sc!("switch"));
+    formatted.start_indent_before_requests();
     formatted.request(Request::expect(RequestItem::Space)); // We trim out the parens, so we expect a space
     formatted.request(Request::discourage(RequestItem::LineBreak));
     formatted.extend(gen_node_with_trivia(&item_expression)?);
+    formatted.finish_indent_before_requests();
     formatted.request(Request::expect(RequestItem::Space)); // We trim out the parens, so we expect a space
     formatted.request(Request::discourage(RequestItem::LineBreak));
     formatted.extend(gen_node_with_trivia(&item_body)?);
