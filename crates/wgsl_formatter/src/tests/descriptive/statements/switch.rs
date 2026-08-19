@@ -212,9 +212,9 @@ pub fn format_switch_statement_comments_in_average_switch() {
             fn main() {
                 // 0
                 switch // 1
-                // 2
-                a // 3
-                // 4
+                    // 2
+                    a // 3
+                    // 4
                 {
                     // 5
                     case // 6

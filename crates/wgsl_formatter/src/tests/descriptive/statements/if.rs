@@ -236,13 +236,13 @@ pub fn format_comments_in_if_elseif_else_statement() {
             fn main() {
                 // 0
                 if // 1
-                a // 2
+                    a // 2
                 {
                     // 3
                 } // 4
                 else // 5
                 if // 6
-                a // 7
+                    a // 7
                 {
                     // 8
                 } // 9
@@ -274,7 +274,7 @@ pub fn format_comments_in_if_else_statement() {
             fn main() {
                 // 0
                 if // 1
-                a // 2
+                    a // 2
                 {
                     // 3
                 } // 4
