@@ -1,6 +1,7 @@
 use std::{fmt, num::NonZeroU32};
 
 use base_db::Intern as _;
+use either::Either;
 use hir_def::{
     body::BindingId,
     db::{GlobalConstantId, GlobalVariableId, OverrideId, StructId},
@@ -196,7 +197,7 @@ impl TypeLoweringErrorKind {
 /// Also covers built-ins.
 pub enum Lowered {
     Type(Type),
-    TypeWithoutTemplate(Type),
+    ConstructibleTypeGenerator(ConstructibleTypeGenerator),
     Function(ResolvedFunctionId),
     GlobalConstant(GlobalConstantId),
     GlobalVariable(GlobalVariableId),
@@ -208,11 +209,18 @@ pub enum Lowered {
     BuiltinDeclaration(Name, Instance),
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum ConstructibleTypeGenerator {
+    Vector(VectorType),
+    Matrix(MatrixType),
+    Array(ArrayType),
+}
+
 impl Lowered {
     #[must_use]
     pub const fn kind(&self) -> LoweredKind {
         match self {
-            Self::Type(_) | Self::TypeWithoutTemplate(_)
+            Self::Type(_) | Self::ConstructibleTypeGenerator(_)
             // | Self::BuiltinConstructor(_, _)
             => {
                 LoweredKind::Type
@@ -357,14 +365,16 @@ impl<'db> TypeLoweringContext<'db> {
                         ),
                     })
             },
-            Ok(ResolveKind::BuiltinTypeGenerator(name)) => self
-                .lower_builtin_type_generator(&name, &template_parameters)?
-                .ok_or_else(|| TypeLoweringError {
-                    container: type_container,
-                    kind: TypeLoweringErrorKind::Resolution(ResolutionDiagnostic::UnresolvedName {
-                        name,
-                    }),
-                }),
+            Ok(ResolveKind::BuiltinTypeGenerator(name)) => {
+                match self.lower_builtin_type_generator(
+                    type_container,
+                    &name,
+                    &template_parameters,
+                )? {
+                    Either::Left(generator) => Ok(Lowered::ConstructibleTypeGenerator(generator)),
+                    Either::Right(r#type) => Ok(Lowered::Type(r#type)),
+                }
+            },
             // Ok(ResolveKind::BuiltinTypeConstructor(name)) => self
             //     .lower_builtin_type(type_container, &name, &template_parameters)?
             //     .ok_or_else(|| TypeLoweringError {
@@ -417,10 +427,8 @@ impl<'db> TypeLoweringContext<'db> {
         &mut self,
         template_parameters: &TemplateParameters,
         expected: std::ops::RangeInclusive<usize>,
-    ) -> bool {
-        if expected.contains(&template_parameters.len()) {
-            true
-        } else {
+    ) {
+        if !expected.contains(&template_parameters.len()) {
             self.diagnostics.push(TypeLoweringError {
                 container: *template_parameters.container(),
                 kind: TypeLoweringErrorKind::WrongNumberOfTemplateArguments {
@@ -428,8 +436,6 @@ impl<'db> TypeLoweringContext<'db> {
                     actual: template_parameters.len(),
                 },
             });
-
-            false
         }
     }
 
@@ -445,7 +451,7 @@ impl<'db> TypeLoweringContext<'db> {
         );
         match lowered {
             Ok(Lowered::Type(r#type)) => r#type,
-            Ok(Lowered::TypeWithoutTemplate(_)) => {
+            Ok(Lowered::ConstructibleTypeGenerator(_)) => {
                 self.diagnostics.push(TypeLoweringError {
                     container: TypeContainer::TypeSpecifier(type_specifier_id),
                     kind: TypeLoweringErrorKind::MissingTemplate,

@@ -137,7 +137,7 @@ impl TypeLoweringContext<'_> {
                 );
                 match resolved_type {
                     Lowered::Type(r#type) => TemplateParameter::Type(r#type),
-                    Lowered::TypeWithoutTemplate(_) => {
+                    Lowered::ConstructibleTypeGenerator(_) => {
                         self.diagnostics.push(TypeLoweringError {
                             container: TypeContainer::Expression(template_argument),
                             kind: TypeLoweringErrorKind::MissingTemplate,

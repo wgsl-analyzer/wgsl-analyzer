@@ -742,12 +742,13 @@ pub struct ArrayType {
 }
 
 impl ArrayType {
+    #[expect(clippy::unused_self, reason = "intended API")]
     #[must_use]
-    pub const fn name() -> &'static str {
+    pub const fn name(&self) -> &'static str {
         "array"
     }
 
-    fn is_constructible(
+    pub fn is_constructible(
         &self,
         db: &dyn HirDatabase,
     ) -> bool {

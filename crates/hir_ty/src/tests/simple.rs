@@ -1584,12 +1584,12 @@ fn no_constructor() {
         var x = vec2f(1, 2, 3);
         ",
         expect![[r#"
-            4..5 'x': ref<handle, [error], read>
-            8..22 'vec2f(1, 2, 3)': [error]
+            4..5 'x': ref<handle, vec2<f32>, read>
+            8..22 'vec2f(1, 2, 3)': vec2<f32>
             14..15 '1': integer
             17..18 '2': integer
             20..21 '3': integer
-            8..22 'vec2f(1, 2, 3)': no constructor found for type `vec2<f32>` with parameters `integer, integer, integer`
+            8..22 'vec2f(1, 2, 3)': no overload of constructor `vec2<f32>` found for arguments of type (integer, integer, integer)
         "#]],
     );
 }
@@ -2069,48 +2069,6 @@ fn foo() {
 }
 
 #[test]
-fn construct_templated_but_argument_is_error_no_second_diagnostic() {
-    check_infer(
-        "
-fn foo() {
-    let y = &0;
-    let x = vec2<f32>(y);
-}
-        ",
-        expect![[r#"
-            19..20 'y': [error]
-            23..25 '&0': [error]
-            24..25 '0': integer
-            35..36 'x': vec2<f32>
-            39..51 'vec2<f32>(y)': vec2<f32>
-            49..50 'y': [error]
-            23..25 '&0': cannot use unary operator `&` on type `AbstractInt`
-        "#]],
-    );
-}
-
-#[test]
-fn construct_untemplated_but_argument_is_error_no_second_diagnostic() {
-    check_infer(
-        "
-fn foo() {
-    let y = &0;
-    let x = vec2(y);
-}
-        ",
-        expect![[r#"
-            19..20 'y': [error]
-            23..25 '&0': [error]
-            24..25 '0': integer
-            35..36 'x': vec2<[error]>
-            39..46 'vec2(y)': vec2<[error]>
-            44..45 'y': [error]
-            23..25 '&0': cannot use unary operator `&` on type `AbstractInt`
-        "#]],
-    );
-}
-
-#[test]
 fn matrix_no_constructor() {
     check_infer(
         "
@@ -2119,10 +2077,10 @@ fn foo() {
 }
         ",
         expect![[r#"
-            19..20 'y': [error]
-            23..36 'mat2x2f(true)': [error]
+            19..20 'y': mat2x2<f32>
+            23..36 'mat2x2f(true)': mat2x2<f32>
             31..35 'true': bool
-            23..36 'mat2x2f(true)': no constructor found for type `mat2x2<f32>` with parameters `bool`
+            23..36 'mat2x2f(true)': no overload of constructor `mat2x2<f32>` found for arguments of type (bool)
         "#]],
     );
 }
@@ -2136,12 +2094,12 @@ fn foo() {
 }
         ",
         expect![[r#"
-            19..20 'y': [error]
-            23..45 'vec2(t... true)': [error]
+            19..20 'y': vec2<[error]>
+            23..45 'vec2(t... true)': vec2<[error]>
             28..32 'true': bool
             34..38 'true': bool
             40..44 'true': bool
-            23..45 'vec2(t... true)': no constructor found for type `vec2<[error]>` with parameters `bool, bool, bool`
+            23..45 'vec2(t... true)': no overload of function `vec2` found for arguments of type (bool, bool, bool)
         "#]],
     );
 }
@@ -2157,7 +2115,7 @@ fn foo() {
         expect![[r#"
             19..20 'y': array<[error]>
             23..30 'array()': array<[error]>
-            23..30 'array()': type `array<[error]>` is not constructible
+            23..30 'array()': no overload of function `array` found that takes no arguments
         "#]],
     );
 }
@@ -2188,7 +2146,7 @@ fn foo() {
         expect![[r#"
             19..20 'y': mat2x2<[error]>
             23..31 'mat2x2()': mat2x2<[error]>
-            23..31 'mat2x2()': expected `1` arguments, but received `0`
+            23..31 'mat2x2()': no overload of function `mat2x2` found that takes no arguments
         "#]],
     );
 }
@@ -2205,7 +2163,7 @@ fn foo() {
             19..20 'y': mat2x2<[error]>
             23..35 'mat2x2(true)': mat2x2<[error]>
             30..34 'true': bool
-            23..35 'mat2x2(true)': no constructor found for type `mat2x2<[error]>` with parameters `bool`
+            23..35 'mat2x2(true)': no overload of function `mat2x2` found for arguments of type (bool)
         "#]],
     );
 }
@@ -2333,6 +2291,77 @@ struct BufferContents {
             92..94 '1u': u32
             106..117 'vec4<f32>()': vec4<f32>
             249..252 'buf': ref<storage, BufferContents, read_write>
+        "#]],
+    );
+}
+
+#[test]
+fn array_i32_template_parameter() {
+    check_infer(
+        "
+fn foo() {
+    let x = array<f32, 1i>(1);
+}
+
+
+        ",
+        expect![[r#"
+            19..20 'x': array<f32, 1>
+            23..40 'array<...1i>(1)': array<f32, 1>
+            38..39 '1': integer
+        "#]],
+    );
+}
+
+#[test]
+fn array_u32_template_parameter() {
+    check_infer(
+        "
+fn foo() {
+    let x = array<f32, 1u>(1);
+}
+
+
+        ",
+        expect![[r#"
+            19..20 'x': array<f32, 1>
+            23..40 'array<...1u>(1)': array<f32, 1>
+            38..39 '1': integer
+        "#]],
+    );
+}
+
+#[test]
+fn array_missing_template() {
+    check_infer(
+        "
+fn foo() {
+    let x = array<1>(1);
+}
+        ",
+        expect![[r#"
+            19..20 'x': array<[error]>
+            23..34 'array<1>(1)': array<[error]>
+            32..33 '1': integer
+            29..30 '1': unexpected template argument, expected a type, actual: 1
+        "#]],
+    );
+}
+
+#[test]
+fn array_template_second_not_instance() {
+    check_infer(
+        "
+fn foo() {
+    let x = array<1, f32>(1);
+}
+        ",
+        expect![[r#"
+            19..20 'x': [error]
+            23..39 'array<...32>(1)': [error]
+            37..38 '1': integer
+            29..30 '1': unexpected template argument, expected a type, actual: 1
+            32..35 'f32': unexpected template argument, expected an instance, actual: f32
         "#]],
     );
 }

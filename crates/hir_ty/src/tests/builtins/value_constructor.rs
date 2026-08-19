@@ -2149,8 +2149,8 @@ fn f() {
             125..131 '_array': array<i32, 1>
             134..142 'array(1)': array<integer, 1>
             140..141 '1': integer
-            152..166 '_binding_array': binding_array<i32, 1>
-            169..185 'bindin...ray(1)': binding_array<integer, 1>
+            152..166 '_binding_array': array<i32, 1>
+            169..185 'bindin...ray(1)': array<integer, 1>
             183..184 '1': integer
         "#]],
     );

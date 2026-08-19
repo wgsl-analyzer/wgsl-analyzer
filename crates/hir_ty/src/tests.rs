@@ -9,6 +9,7 @@ mod language_extensions;
 mod layout;
 mod operators;
 mod simple;
+mod single_diagnostics_on_errors;
 use std::fmt::Write as _;
 
 use base_db::{CapabilitiesInput, EditionedFileId, Intern as _, Lookup as _, TextRange};
@@ -185,6 +186,7 @@ impl<'db> InferPrinter<'db> {
         writeln!(buffer, "{range:?} '{}': {pretty}", ellipsize(text, 15)).unwrap();
     }
 
+    #[expect(clippy::too_many_lines, reason = "long match")]
     fn print_diagnostic(
         &self,
         diagnostic: &InferenceDiagnostic,
@@ -197,9 +199,17 @@ impl<'db> InferPrinter<'db> {
                 expected,
                 actual,
             } => {
+                debug_assert!(
+                    !actual.is_err(self.db),
+                    "don't give a diagnostic for downstream issues"
+                );
                 self.print_type_mismatch(source_map, buffer, *expression, *expected, *actual);
             },
             InferenceDiagnosticKind::AssignmentNotAReference { actual, left_side } => {
+                debug_assert!(
+                    !actual.is_err(self.db),
+                    "don't give a diagnostic for downstream issues"
+                );
                 self.print_assignment_not_a_reference(source_map, buffer, *actual, *left_side);
             },
             InferenceDiagnosticKind::CyclicType { name, range } => {
@@ -237,25 +247,52 @@ impl<'db> InferPrinter<'db> {
                 parameters,
                 r#type,
             } => {
+                debug_assert!(
+                    !r#type.is_err(self.db),
+                    "don't give a diagnostic for downstream issues"
+                );
                 self.print_no_constructor(source_map, buffer, *expression, parameters, *r#type);
+            },
+            InferenceDiagnosticKind::NoOverload {
+                expression,
+                parameters,
+                name,
+            } => {
+                self.print_no_overload(source_map, buffer, *expression, parameters, name);
             },
             InferenceDiagnosticKind::NoSuchField {
                 expression,
                 name,
                 r#type,
             } => {
+                debug_assert!(
+                    !r#type.is_err(self.db),
+                    "don't give a diagnostic for downstream issues"
+                );
                 self.print_no_such_field(source_map, buffer, *expression, name, *r#type);
             },
             InferenceDiagnosticKind::StoreTypeMustBeStorable { actual, expression } => {
+                debug_assert!(
+                    !actual.is_err(self.db),
+                    "don't give a diagnostic for downstream issues"
+                );
                 self.print_store_type_must_be_storable(source_map, buffer, *actual, *expression);
             },
             InferenceDiagnosticKind::ArrayAccessInvalidType { expression, r#type } => {
+                debug_assert!(
+                    !r#type.is_err(self.db),
+                    "don't give a diagnostic for downstream issues"
+                );
                 self.print_array_access_invalid(source_map, buffer, *expression, *r#type);
             },
             InferenceDiagnosticKind::UnexpectedReturnValue { actual, expression } => {
                 self.print_unexpected_return_value(source_map, buffer, *actual, *expression);
             },
             InferenceDiagnosticKind::NotConstructible { expression, r#type } => {
+                debug_assert!(
+                    !r#type.is_err(self.db),
+                    "don't give a diagnostic for downstream issues"
+                );
                 self.print_not_constructible(source_map, buffer, *expression, *r#type);
             },
             InferenceDiagnosticKind::FunctionCallArgCountMismatch {
@@ -388,22 +425,59 @@ impl<'db> InferPrinter<'db> {
         let Some((range, text)) = self.get_expression_range_text(source_map, expression) else {
             return;
         };
-        writeln!(
-            buffer,
-            "{range:?} '{}': no constructor found for type `{}` with parameters `{}`",
-            ellipsize(text, 15),
-            pretty_type(self.db, r#type),
-            join_display(
-                parameters
-                    .iter()
-                    .map(|parameter| pretty_type_with_verbosity(
-                        self.db,
-                        *parameter,
-                        TypeVerbosity::Full
-                    ))
-            ),
-        )
-        .unwrap();
+        if parameters.is_empty() {
+            writeln!(
+                buffer,
+                "{range:?} '{}': no overload of constructor `{}` found that takes no arguments",
+                ellipsize(text, 15),
+                pretty_type(self.db, r#type),
+            )
+            .unwrap();
+        } else {
+            let parameters = join_display(parameters.iter().map(|parameter| {
+                pretty_type_with_verbosity(self.db, *parameter, TypeVerbosity::Full)
+            }));
+            writeln!(
+                buffer,
+                "{range:?} '{}': no overload of constructor `{}` found for arguments of type ({parameters})",
+                ellipsize(text, 15),
+                pretty_type(self.db, r#type),
+            )
+            .unwrap();
+        }
+    }
+
+    fn print_no_overload(
+        &self,
+        source_map: &ExpressionSourceMap,
+        buffer: &mut String,
+        expression: ExpressionId,
+        parameters: &[Type],
+        name: &Name,
+    ) {
+        let Some((range, text)) = self.get_expression_range_text(source_map, expression) else {
+            return;
+        };
+        if parameters.is_empty() {
+            writeln!(
+                buffer,
+                "{range:?} '{}': no overload of function `{}` found that takes no arguments",
+                ellipsize(text, 15),
+                name.as_str(),
+            )
+            .unwrap();
+        } else {
+            let parameters = join_display(parameters.iter().map(|parameter| {
+                pretty_type_with_verbosity(self.db, *parameter, TypeVerbosity::Full)
+            }));
+            writeln!(
+                buffer,
+                "{range:?} '{}': no overload of function `{}` found for arguments of type ({parameters})",
+                ellipsize(text, 15),
+                name.as_str(),
+            )
+            .unwrap();
+        }
     }
 
     #[expect(clippy::unused_self, reason = "intended API")]
