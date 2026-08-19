@@ -35,11 +35,11 @@ windows-sys = {
 }
 
 [features]
-cpu_profiler = []
+cpu-profiler = []
 jemalloc = ["jemalloc-ctl"]
 
 # Uncomment to enable for the whole crate graph
-# default = [ "cpu_profiler" ]
+# default = [ "cpu-profiler" ]
 
 [lints]
 workspace = true

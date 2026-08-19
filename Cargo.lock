@@ -306,7 +306,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "dprint_plugin_wgslfmt"
+name = "dprint-plugin-wgslfmt"
 version = "0.0.0"
 dependencies = [
  "dprint-core",
