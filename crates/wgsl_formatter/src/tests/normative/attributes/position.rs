@@ -582,6 +582,14 @@ pub fn format_attribute_suboptimal_comment_positioning_2() {
 
         @fragment /* Hello */
         fn b() {}
+
+        @must_use
+        /* Hello */
+        fn a() {}
+
+        @fragment
+        /* Hello */
+        fn b() {}
         ",
         expect![[r#"
             @must_use /* Hello */
@@ -590,6 +598,36 @@ pub fn format_attribute_suboptimal_comment_positioning_2() {
             @fragment
             /* Hello */
             fn b() {}
+
+            @must_use
+            /* Hello */
+            fn a() {}
+
+            @fragment
+            /* Hello */
+            fn b() {}
+        "#]],
+    );
+}
+
+#[test]
+pub fn format_attribute_comment_positioning_2() {
+    check(
+        "
+@if(true)
+/**
+ * Doc comment that should probably go between @if and @fragment
+ */
+@fragment
+fn a() {}
+        ",
+        expect![[r#"
+            @if(true)
+            /**
+             * Doc comment that should probably go between @if and @fragment
+             */
+            @fragment
+            fn a() {}
         "#]],
     );
 }
