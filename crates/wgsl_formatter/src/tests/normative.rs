@@ -3,6 +3,7 @@ mod comment_layout;
 mod expression;
 mod function;
 mod global_compound_declaration;
+pub mod ignoring;
 mod import;
 mod module_items;
 mod no_space_before_semicolon;

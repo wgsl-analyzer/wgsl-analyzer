@@ -13,3 +13,4 @@ pub mod statements;
 pub mod struct_declaration;
 pub mod type_alias_declaration;
 pub mod types;
+pub mod verbatim;

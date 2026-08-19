@@ -415,6 +415,7 @@ where
         // NOTE: Make sure node is either put_back onto syntax or consumed in a meaningful way
         if let Some(node) = syntax.next() {
             let action = policy.handle_preceding(&node);
+            eprintln!("Preceding {:?} {:?}", node, action);
             match action {
                 Some(PolicyAction::Ignored) => {},
                 Some(PolicyAction::Content) => {
@@ -490,6 +491,7 @@ where
 
     while let Some(node) = syntax.next() {
         let action = policy.handle_succeeding(&node);
+        eprintln!("Succeeding {:?} {:?}", node, action);
         match action {
             Some(PolicyAction::Ignored) => {},
             Some(PolicyAction::Content) => {

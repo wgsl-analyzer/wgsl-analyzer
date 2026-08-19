@@ -37,6 +37,3 @@ serde = ["dep:serde"]
 
 [lints]
 workspace = true
-
-[profile.dev]
-opt-level = 0

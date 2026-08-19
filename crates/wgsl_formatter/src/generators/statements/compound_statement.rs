@@ -8,8 +8,8 @@ use syntax::{
 
 use crate::{
     ast_parse::{
-        Filter, IgnoreBraces, MatchKind, NoTrivia, PolicyAction, parse_end, parse_many_nodes_with,
-        parse_node_with, syntax_iter,
+        Filter, IgnoreBraces, MatchKind, NoTrivia, PolicyAction, Succeeding, parse_end,
+        parse_many_nodes_with, parse_node_with, syntax_iter,
     },
     context_policies::collapse_one_liner_compound_statement_policy,
     generators::node::gen_node_with_trivia,
@@ -60,33 +60,15 @@ pub fn gen_compound_statement(
                 Some(LineSpacing::OnelineBlankspace(_)) => Some(PolicyAction::Ignored),
                 _ => None,
             }),
+            Succeeding(Filter(|node| match read_blankspace(node) {
+                Some(LineSpacing::LineBreak(_) | LineSpacing::EmptyLine(_)) => {
+                    Some(PolicyAction::Stop)
+                },
+                _ => None,
+            })),
         ),
     )
-    // Trim off starting linebreaks - we don't care about those
-    .map(|mut item| {
-        let first_interesting_item = item.preceding_trivia.iter().position(|node| {
-            !matches!(node, NodeTriviaItem::LineSpacing(LineSpacing::LineBreak(_)))
-        });
-        if let Some(first_interesting_item) = first_interesting_item {
-            item.preceding_trivia = item.preceding_trivia.split_off(first_interesting_item);
-        } else {
-            item.preceding_trivia = Vec::new();
-        }
-        item
-    })
-    // Trim off ending linebreaks - we don't care about those
-    .map(|mut item| {
-        let last_interesting_item = item.succeeding_trivia.iter().rev().position(|node| {
-            !matches!(node, NodeTriviaItem::LineSpacing(LineSpacing::LineBreak(_)))
-        });
-        if let Some(last_interesting_item) = last_interesting_item {
-            item.succeeding_trivia
-                .shrink_to(item.succeeding_trivia.len() - last_interesting_item);
-        } else {
-            item.succeeding_trivia = Vec::new();
-        }
-        item
-    })
+    .map(NodeWithTrivia::trim_starting_linebreaks)
     .filter(|item| !item.is_whitespace())
     .collect_vec();
 
