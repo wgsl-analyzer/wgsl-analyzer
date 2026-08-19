@@ -7,6 +7,7 @@ use rowan::NodeOrToken;
 use syntax::{AstNode as _, ast};
 
 use crate::{
+    format::format,
     generators::{
         attributes::{
             gen_align_attribute, gen_attr_standard_with_args, gen_attribute, gen_attribute_list,
@@ -84,8 +85,10 @@ use crate::{
         struct_declaration::{gen_struct_body, gen_struct_declaration, gen_struct_member},
         type_alias_declaration::gen_type_alias_declaration,
         types::{gen_template_list, gen_type_specifier},
+        verbatim::gen_node_syntax_verbatim,
     },
     helpers::{gen_line_spacing, read_blankspace},
+    ignore::is_ignored,
     print_item_buffer::{
         PrintItemBuffer,
         spacing_request::{Request, RequestItem},
@@ -421,12 +424,15 @@ pub fn gen_node_preceding_trivia(node: &NodeWithTrivia) -> FormatDocumentResult<
 }
 pub fn gen_node_content(node: &NodeWithTrivia) -> FormatDocumentResult<PrintItemBuffer> {
     let mut formatted = PrintItemBuffer::default();
-    match &node.node {
-        NodeWithTriviaContent::Content(node_or_token) => {
-            formatted.extend(gen_node(node, node_or_token)?);
-        },
-        NodeWithTriviaContent::NoContent | NodeWithTriviaContent::End => {},
+
+    if is_ignored(node) {
+        if let Some(content) = node.content() {
+            formatted.extend(gen_node_syntax_verbatim(&content)?);
+        }
+    } else if let Some(content) = node.content() {
+        formatted.extend(gen_node(node, &content)?);
     }
+
     Ok(formatted)
 }
 pub fn gen_node_succeeding_trivia(node: &NodeWithTrivia) -> FormatDocumentResult<PrintItemBuffer> {

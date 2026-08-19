@@ -256,4 +256,17 @@ impl NodeWithTrivia {
             NodeWithTriviaContent::NoContent | NodeWithTriviaContent::End => None,
         }
     }
+
+    #[must_use]
+    pub fn trim_starting_linebreaks(mut self) -> Self {
+        let first_interesting_item = self.preceding_trivia.iter().position(|node| {
+            !matches!(node, NodeTriviaItem::LineSpacing(LineSpacing::LineBreak(_)))
+        });
+        if let Some(first_interesting_item) = first_interesting_item {
+            self.preceding_trivia = self.preceding_trivia.split_off(first_interesting_item);
+        } else {
+            self.preceding_trivia = Vec::new();
+        }
+        self
+    }
 }
