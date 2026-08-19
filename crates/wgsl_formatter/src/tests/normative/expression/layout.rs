@@ -200,3 +200,19 @@ pub fn format_index_expr_with_break_inside() {
         "#]],
     );
 }
+
+#[test]
+pub fn format_prefer_breaking_somewhat_according_to_precedence() {
+    check(
+        "fn main() {
+            let hit_a = a_intersection.hit_type != util::HIT_TYPE_MISS && a_intersection.dist_far > start_depth && a_intersection.dist_near < last_result.depth;
+        }",
+        expect![[r#"
+            fn main() {
+                let hit_a = a_intersection.hit_type != util::HIT_TYPE_MISS
+                    && a_intersection.dist_far > start_depth
+                    && a_intersection.dist_near < last_result.depth;
+            }
+        "#]],
+    );
+}
