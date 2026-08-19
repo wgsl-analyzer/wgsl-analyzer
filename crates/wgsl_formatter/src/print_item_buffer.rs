@@ -1,6 +1,8 @@
 pub mod spacing_request;
 
-use dprint_core::formatting::{Anchor, Info, PrintItems, Signal};
+use std::sync::Arc;
+
+use dprint_core::formatting::{Anchor, Info, PrintItem, PrintItems, Signal};
 
 use crate::print_item_buffer::spacing_request::Request;
 
@@ -50,6 +52,7 @@ use crate::print_item_buffer::spacing_request::Request;
 ///
 #[derive(Default)]
 pub struct PrintItemBuffer {
+    pub items_before_start_request: PrintItems,
     pub start_request: Request,
     pub items: PrintItems,
     pub end_request: Request,
@@ -84,6 +87,7 @@ impl PrintItemBuffer {
     #[must_use]
     pub fn finish(self) -> PrintItems {
         let mut pi = PrintItems::default();
+        pi.extend(self.items_before_start_request);
         self.start_request.resolve(&mut pi);
         pi.extend(self.items);
         self.end_request.resolve(&mut pi);
@@ -129,6 +133,12 @@ impl PrintItemBuffer {
         &mut self,
         other: Self,
     ) {
+        if self.items.is_empty() {
+            self.items_before_start_request
+                .extend(other.items_before_start_request);
+        } else {
+            self.items.extend(other.items_before_start_request);
+        }
         // Merge the incoming start_request
         self.request(other.start_request);
 
@@ -140,6 +150,17 @@ impl PrintItemBuffer {
 
         // Merge the incoming end_request
         self.request(other.end_request);
+    }
+
+    fn push_item_before_requests(
+        &mut self,
+        item: PrintItem,
+    ) {
+        if self.items.is_empty() {
+            self.items_before_start_request.push_item(item);
+        } else {
+            self.items.push_item(item);
+        }
     }
 
     /// Applies trailing requests and pushes a string to the buffer whose content is not yet known at compile time.
@@ -198,7 +219,7 @@ impl PrintItemBuffer {
     ) where
         T: Into<Info>,
     {
-        self.items.push_info(info);
+        self.push_item_before_requests(PrintItem::Info(info.into()));
     }
 
     /// Inserts a dprint-anchor into the buffer, before all trailing requests.
@@ -211,7 +232,7 @@ impl PrintItemBuffer {
     ) where
         T: Into<Anchor>,
     {
-        self.items.push_anchor(anchor);
+        self.push_item_before_requests(PrintItem::Anchor(anchor.into()));
     }
 
     /// Inserts a dprint-condition into the buffer, before all trailing requests.
@@ -222,7 +243,11 @@ impl PrintItemBuffer {
         &mut self,
         condition: dprint_core::formatting::Condition,
     ) {
-        self.items.push_condition(condition);
+        if self.items.is_empty() {
+            self.items_before_start_request.push_condition(condition);
+        } else {
+            self.items.push_condition(condition);
+        }
     }
 
     /// Inserts a dprint-reevaluation into the buffer, before all trailing requests.
@@ -233,7 +258,7 @@ impl PrintItemBuffer {
         &mut self,
         reeval: dprint_core::formatting::ConditionReevaluation,
     ) {
-        self.items.push_reevaluation(reeval);
+        self.push_item_before_requests(PrintItem::ConditionReevaluation(reeval));
     }
 
     /// Starts a new indent level at the point before all trailing requests.
@@ -241,7 +266,7 @@ impl PrintItemBuffer {
     /// This does not apply any trailing request, but instead starts the indentation before them.
     /// If you need to start the indentation *after* trailing requests, manually call [`Self::apply_end_request`].
     pub fn start_indent_before_requests(&mut self) {
-        self.items.push_signal(Signal::StartIndent);
+        self.push_item_before_requests(PrintItem::Signal(Signal::StartIndent));
     }
 
     /// Finishes a new indent level at the point before all trailing requests.
@@ -249,7 +274,7 @@ impl PrintItemBuffer {
     /// This does not apply any trailing request, but instead finishes the indentation before them.
     /// If you need to finish the indentation *after* trailing requests, manually call [`Self::apply_end_request`].
     pub fn finish_indent_before_requests(&mut self) {
-        self.items.push_signal(Signal::FinishIndent);
+        self.push_item_before_requests(PrintItem::Signal(Signal::FinishIndent));
     }
 
     /// Starts ignoring indentation at the point before all trailing requests.
@@ -259,7 +284,7 @@ impl PrintItemBuffer {
     /// This does not apply any trailing request, but instead starts ignoring indentation before them.
     /// If you need to do so *after* trailing requests, manually call [`Self::apply_end_request`].
     pub fn start_ignoring_indent_before_requests(&mut self) {
-        self.items.push_signal(Signal::StartIgnoringIndent);
+        self.push_item_before_requests(PrintItem::Signal(Signal::StartIgnoringIndent));
     }
 
     /// Stops ignoring indentation at the point before all trailing requests.
@@ -269,7 +294,7 @@ impl PrintItemBuffer {
     /// This does not apply any trailing request, but instead stops ignoring indentation before them.
     /// If you need to do so *after* trailing requests, manually call [`Self::apply_end_request`].
     pub fn finish_ignoring_indent_before_requests(&mut self) {
-        self.items.push_signal(Signal::FinishIgnoringIndent);
+        self.push_item_before_requests(PrintItem::Signal(Signal::FinishIgnoringIndent));
     }
 
     /// Decreases the precedence of following items getting broken into multiple lines.
@@ -279,7 +304,7 @@ impl PrintItemBuffer {
     /// This does not apply any trailing request, but instead starts the newline group before them.
     /// If you need to do so *after* trailing requests, manually call [`Self::apply_end_request`].
     pub fn start_new_line_group_before_requests(&mut self) {
-        self.items.push_signal(Signal::StartNewLineGroup);
+        self.push_item_before_requests(PrintItem::Signal(Signal::StartNewLineGroup));
     }
 
     /// Increases the precedence of following items getting broken into multiple lines.
@@ -289,6 +314,6 @@ impl PrintItemBuffer {
     /// This does not apply any trailing request, but instead starts the newline group before them.
     /// If you need to do so *after* trailing requests, manually call [`Self::apply_end_request`].
     pub fn finish_new_line_group_before_requests(&mut self) {
-        self.items.push_signal(Signal::FinishNewLineGroup);
+        self.push_item_before_requests(PrintItem::Signal(Signal::FinishNewLineGroup));
     }
 }
