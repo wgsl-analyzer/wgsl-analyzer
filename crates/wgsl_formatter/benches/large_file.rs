@@ -1,4 +1,5 @@
 use criterion::{Criterion, criterion_group, criterion_main};
+use parser::{Capabilities, parse_entrypoint_with_capabilities};
 use sha2::{Digest as _, Sha256};
 use std::{fmt::Write as _, hint::black_box};
 use syntax::{AstNode as _, ast::SourceFile};
@@ -13,10 +14,11 @@ const SOURCE: &str = include_str!("large_file.wesl");
 const SOURCE_SHA256: &str = "49a1280dea669d01314e0e132c793cffc9cedd808ada2ed13f51f30df9d0210f";
 
 fn large_file(criterion: &mut Criterion) {
-    let parse = parser::parse_entrypoint(
+    let parse = parse_entrypoint_with_capabilities(
         SOURCE,
         parser::ParseEntryPoint::File,
         parser::Edition::LATEST,
+        Capabilities::default(),
     );
     assert!(
         parse.errors().is_empty(),
