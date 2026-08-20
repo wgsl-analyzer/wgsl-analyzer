@@ -32,7 +32,7 @@ impl Request for FullSourceRequest {
     type Result = String;
 
     const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
-    const METHOD: LspRequestMethod = LspRequestMethod::new("wgsl-analyzer/fullSource");
+    const METHOD: LspRequestMethod<'_> = LspRequestMethod::new("wgsl-analyzer/fullSource");
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -48,7 +48,7 @@ impl Request for AnalyzerStatusRequest {
     type Result = String;
 
     const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
-    const METHOD: LspRequestMethod = LspRequestMethod::new("wgsl-analyzer/analyzerStatus");
+    const METHOD: LspRequestMethod<'_> = LspRequestMethod::new("wgsl-analyzer/analyzerStatus");
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -72,7 +72,7 @@ impl Request for FetchDependencyListRequest {
     type Result = FetchDependencyListResult;
 
     const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
-    const METHOD: LspRequestMethod = LspRequestMethod::new("wgsl-analyzer/fetchDependencyList");
+    const METHOD: LspRequestMethod<'_> = LspRequestMethod::new("wgsl-analyzer/fetchDependencyList");
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -92,7 +92,7 @@ impl Request for MemoryUsageRequest {
     type Result = String;
 
     const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
-    const METHOD: LspRequestMethod = LspRequestMethod::new("wgsl-analyzer/memoryUsage");
+    const METHOD: LspRequestMethod<'_> = LspRequestMethod::new("wgsl-analyzer/memoryUsage");
 }
 
 pub enum ReloadWorkspaceRequest {}
@@ -102,7 +102,7 @@ impl Request for ReloadWorkspaceRequest {
     type Result = ();
 
     const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
-    const METHOD: LspRequestMethod = LspRequestMethod::new("wgsl-analyzer/reloadWorkspace");
+    const METHOD: LspRequestMethod<'_> = LspRequestMethod::new("wgsl-analyzer/reloadWorkspace");
 }
 
 pub enum ViewSyntaxTreeRequest {}
@@ -112,7 +112,7 @@ impl Request for ViewSyntaxTreeRequest {
     type Result = String;
 
     const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
-    const METHOD: LspRequestMethod = LspRequestMethod::new("wgsl-analyzer/viewSyntaxTree");
+    const METHOD: LspRequestMethod<'_> = LspRequestMethod::new("wgsl-analyzer/viewSyntaxTree");
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -128,7 +128,7 @@ impl Request for ViewWgslRequest {
     type Result = String;
 
     const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
-    const METHOD: LspRequestMethod = LspRequestMethod::new("wgsl-analyzer/viewWgsl");
+    const METHOD: LspRequestMethod<'_> = LspRequestMethod::new("wgsl-analyzer/viewWgsl");
 }
 
 pub enum ViewSpirvRequest {}
@@ -138,7 +138,7 @@ impl Request for ViewSpirvRequest {
     type Result = String;
 
     const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
-    const METHOD: LspRequestMethod = LspRequestMethod::new("wgsl-analyzer/viewSpirv");
+    const METHOD: LspRequestMethod<'_> = LspRequestMethod::new("wgsl-analyzer/viewSpirv");
 }
 
 pub enum InterpretFunctionRequest {}
@@ -148,7 +148,7 @@ impl Request for InterpretFunctionRequest {
     type Result = String;
 
     const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
-    const METHOD: LspRequestMethod = LspRequestMethod::new("wgsl-analyzer/interpretFunction");
+    const METHOD: LspRequestMethod<'_> = LspRequestMethod::new("wgsl-analyzer/interpretFunction");
 }
 
 pub enum ViewFileTextRequest {}
@@ -158,7 +158,7 @@ impl Request for ViewFileTextRequest {
     type Result = String;
 
     const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
-    const METHOD: LspRequestMethod = LspRequestMethod::new("wgsl-analyzer/viewFileText");
+    const METHOD: LspRequestMethod<'_> = LspRequestMethod::new("wgsl-analyzer/viewFileText");
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -181,7 +181,7 @@ impl Request for ViewModuleGraphRequest {
     type Result = Option<String>;
 
     const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
-    const METHOD: LspRequestMethod = LspRequestMethod::new("wgsl-analyzer/viewModuleGraph");
+    const METHOD: LspRequestMethod<'_> = LspRequestMethod::new("wgsl-analyzer/viewModuleGraph");
 }
 
 pub enum ViewPackageGraphRequest {}
@@ -191,7 +191,7 @@ impl Request for ViewPackageGraphRequest {
     type Result = String;
 
     const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
-    const METHOD: LspRequestMethod = LspRequestMethod::new("wgsl-analyzer/viewPackageGraph");
+    const METHOD: LspRequestMethod<'_> = LspRequestMethod::new("wgsl-analyzer/viewPackageGraph");
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -207,7 +207,7 @@ impl Request for ViewItemTreeRequest {
     type Result = String;
 
     const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
-    const METHOD: LspRequestMethod = LspRequestMethod::new("wgsl-analyzer/viewItemTree");
+    const METHOD: LspRequestMethod<'_> = LspRequestMethod::new("wgsl-analyzer/viewItemTree");
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -252,7 +252,7 @@ impl Request for DiscoverTestRequest {
     type Result = DiscoverTestResults;
 
     const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
-    const METHOD: LspRequestMethod = LspRequestMethod::new("experimental/discoverTest");
+    const METHOD: LspRequestMethod<'_> = LspRequestMethod::new("experimental/discoverTest");
 }
 
 pub enum DiscoveredTestsNotification {}
@@ -261,7 +261,7 @@ impl Notification for DiscoveredTestsNotification {
     type Params = DiscoverTestResults;
 
     const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
-    const METHOD: LspNotificationMethod =
+    const METHOD: LspNotificationMethod<'_> =
         LspNotificationMethod::new("experimental/discoveredTests");
 }
 
@@ -279,7 +279,7 @@ impl Request for RunTestRequest {
     type Result = ();
 
     const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
-    const METHOD: LspRequestMethod = LspRequestMethod::new("experimental/runTest");
+    const METHOD: LspRequestMethod<'_> = LspRequestMethod::new("experimental/runTest");
 }
 
 pub enum EndRunTestNotification {}
@@ -288,7 +288,7 @@ impl Notification for EndRunTestNotification {
     type Params = ();
 
     const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
-    const METHOD: LspNotificationMethod = LspNotificationMethod::new("experimental/endRunTest");
+    const METHOD: LspNotificationMethod<'_> = LspNotificationMethod::new("experimental/endRunTest");
 }
 
 pub enum AppendOutputToRunTestNotification {}
@@ -297,7 +297,7 @@ impl Notification for AppendOutputToRunTestNotification {
     type Params = String;
 
     const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
-    const METHOD: LspNotificationMethod =
+    const METHOD: LspNotificationMethod<'_> =
         LspNotificationMethod::new("experimental/appendOutputToRunTest");
 }
 
@@ -307,7 +307,8 @@ impl Notification for AbortRunTestNotification {
     type Params = ();
 
     const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
-    const METHOD: LspNotificationMethod = LspNotificationMethod::new("experimental/abortRunTest");
+    const METHOD: LspNotificationMethod<'_> =
+        LspNotificationMethod::new("experimental/abortRunTest");
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -333,7 +334,7 @@ impl Notification for ChangeTestStateNotification {
     type Params = ChangeTestStateParameters;
 
     const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
-    const METHOD: LspNotificationMethod =
+    const METHOD: LspNotificationMethod<'_> =
         LspNotificationMethod::new("experimental/changeTestState");
 }
 
@@ -344,7 +345,7 @@ impl Request for ViewRecursiveMemoryLayoutRequest {
     type Result = Option<RecursiveMemoryLayout>;
 
     const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
-    const METHOD: LspRequestMethod =
+    const METHOD: LspRequestMethod<'_> =
         LspRequestMethod::new("wgsl-analyzer/viewRecursiveMemoryLayout");
 }
 
@@ -373,7 +374,7 @@ impl Notification for CancelFlycheckNotification {
     type Params = ();
 
     const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
-    const METHOD: LspNotificationMethod =
+    const METHOD: LspNotificationMethod<'_> =
         LspNotificationMethod::new("wgsl-analyzer/cancelFlycheck");
 }
 
@@ -383,7 +384,8 @@ impl Notification for RunFlycheckNotification {
     type Params = RunFlycheckParameters;
 
     const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
-    const METHOD: LspNotificationMethod = LspNotificationMethod::new("wgsl-analyzer/runFlycheck");
+    const METHOD: LspNotificationMethod<'_> =
+        LspNotificationMethod::new("wgsl-analyzer/runFlycheck");
 }
 
 pub enum ClearFlycheckNotification {}
@@ -392,7 +394,8 @@ impl Notification for ClearFlycheckNotification {
     type Params = ();
 
     const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
-    const METHOD: LspNotificationMethod = LspNotificationMethod::new("wgsl-analyzer/clearFlycheck");
+    const METHOD: LspNotificationMethod<'_> =
+        LspNotificationMethod::new("wgsl-analyzer/clearFlycheck");
 }
 
 pub enum OpenServerLogsNotification {}
@@ -401,7 +404,7 @@ impl Notification for OpenServerLogsNotification {
     type Params = ();
 
     const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
-    const METHOD: LspNotificationMethod =
+    const METHOD: LspNotificationMethod<'_> =
         LspNotificationMethod::new("wgsl-analyzer/openServerLogs");
 }
 
@@ -418,7 +421,7 @@ impl Request for MatchingBraceRequest {
     type Result = Vec<Position>;
 
     const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
-    const METHOD: LspRequestMethod = LspRequestMethod::new("experimental/matchingBrace");
+    const METHOD: LspRequestMethod<'_> = LspRequestMethod::new("experimental/matchingBrace");
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -435,7 +438,7 @@ impl Request for ParentModuleRequest {
     type Result = Option<DefinitionResponse>;
 
     const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
-    const METHOD: LspRequestMethod = LspRequestMethod::new("experimental/parentModule");
+    const METHOD: LspRequestMethod<'_> = LspRequestMethod::new("experimental/parentModule");
 }
 
 pub enum JoinLinesRequest {}
@@ -445,7 +448,7 @@ impl Request for JoinLinesRequest {
     type Result = Vec<TextEdit>;
 
     const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
-    const METHOD: LspRequestMethod = LspRequestMethod::new("experimental/joinLines");
+    const METHOD: LspRequestMethod<'_> = LspRequestMethod::new("experimental/joinLines");
 }
 
 #[derive(Deserialize, Serialize, Debug)]
@@ -462,7 +465,7 @@ impl Request for OnEnterRequest {
     type Result = Option<Vec<SnippetTextEdit>>;
 
     const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
-    const METHOD: LspRequestMethod = LspRequestMethod::new("experimental/onEnter");
+    const METHOD: LspRequestMethod<'_> = LspRequestMethod::new("experimental/onEnter");
 }
 
 pub enum RunnablesRequest {}
@@ -472,7 +475,7 @@ impl Request for RunnablesRequest {
     type Result = Vec<Runnable>;
 
     const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
-    const METHOD: LspRequestMethod = LspRequestMethod::new("experimental/runnables");
+    const METHOD: LspRequestMethod<'_> = LspRequestMethod::new("experimental/runnables");
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -541,7 +544,7 @@ impl Request for RelatedTestsRequest {
     type Result = Vec<TestInfo>;
 
     const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
-    const METHOD: LspRequestMethod = LspRequestMethod::new("wgsl-analyzer/relatedTests");
+    const METHOD: LspRequestMethod<'_> = LspRequestMethod::new("wgsl-analyzer/relatedTests");
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -556,7 +559,7 @@ impl Request for SsrRequest {
     type Result = WorkspaceEdit;
 
     const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
-    const METHOD: LspRequestMethod = LspRequestMethod::new("experimental/ssr");
+    const METHOD: LspRequestMethod<'_> = LspRequestMethod::new("experimental/ssr");
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -580,7 +583,8 @@ impl Notification for ServerStatusNotification {
     type Params = ServerStatusParameters;
 
     const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
-    const METHOD: LspNotificationMethod = LspNotificationMethod::new("experimental/serverStatus");
+    const METHOD: LspNotificationMethod<'_> =
+        LspNotificationMethod::new("experimental/serverStatus");
 }
 
 #[derive(Debug, Deserialize, Serialize, PartialEq, Eq, Clone)]
@@ -619,7 +623,7 @@ impl Request for CodeActionRequest {
     type Result = Option<Vec<CodeAction>>;
 
     const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
-    const METHOD: LspRequestMethod = LspRequestMethod::new("textDocument/codeAction");
+    const METHOD: LspRequestMethod<'_> = LspRequestMethod::new("textDocument/codeAction");
 }
 
 pub enum CodeActionResolveRequest {}
@@ -629,7 +633,7 @@ impl Request for CodeActionResolveRequest {
     type Result = CodeAction;
 
     const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
-    const METHOD: LspRequestMethod = LspRequestMethod::new("codeAction/resolve");
+    const METHOD: LspRequestMethod<'_> = LspRequestMethod::new("codeAction/resolve");
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Default, Deserialize, Serialize)]
@@ -704,7 +708,7 @@ impl Request for HoverRequest {
     type Result = Option<HoverResult>;
 
     const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
-    const METHOD: LspRequestMethod = LspHoverRequest::METHOD;
+    const METHOD: LspRequestMethod<'_> = LspHoverRequest::METHOD;
 }
 
 #[derive(Debug, Eq, PartialEq, Clone, Deserialize, Serialize)]
@@ -755,7 +759,7 @@ impl Request for ExternalDocsRequest {
     type Result = ExternalDocsResponse;
 
     const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
-    const METHOD: LspRequestMethod = LspRequestMethod::new("experimental/externalDocs");
+    const METHOD: LspRequestMethod<'_> = LspRequestMethod::new("experimental/externalDocs");
 }
 
 #[derive(Debug, PartialEq, Eq, Serialize, Deserialize, Clone)]
@@ -785,7 +789,7 @@ impl Request for OpenCargoTomlRequest {
     type Result = Option<DefinitionResponse>;
 
     const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
-    const METHOD: LspRequestMethod = LspRequestMethod::new("experimental/openCargoToml");
+    const METHOD: LspRequestMethod<'_> = LspRequestMethod::new("experimental/openCargoToml");
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -816,7 +820,7 @@ impl Request for MoveItemRequest {
     type Result = Vec<SnippetTextEdit>;
 
     const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
-    const METHOD: LspRequestMethod = LspRequestMethod::new("experimental/moveItem");
+    const METHOD: LspRequestMethod<'_> = LspRequestMethod::new("experimental/moveItem");
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -841,7 +845,7 @@ impl Request for WorkspaceSymbolRequest {
     type Result = Option<WorkspaceSymbolResponse>;
 
     const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
-    const METHOD: LspRequestMethod = LspRequestMethod::new("workspace/symbol");
+    const METHOD: LspRequestMethod<'_> = LspRequestMethod::new("workspace/symbol");
 }
 
 #[derive(Debug, Eq, PartialEq, Clone, Default, Deserialize, Serialize)]
@@ -888,7 +892,7 @@ impl Request for OnTypeFormattingRequest {
     type Result = Option<Vec<SnippetTextEdit>>;
 
     const MESSAGE_DIRECTION: MessageDirection = MessageDirection::ClientToServer;
-    const METHOD: LspRequestMethod = LspRequestMethod::new("textDocument/onTypeFormatting");
+    const METHOD: LspRequestMethod<'_> = LspRequestMethod::new("textDocument/onTypeFormatting");
 }
 
 #[derive(Debug, Serialize, Deserialize)]
