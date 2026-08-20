@@ -52,7 +52,7 @@ camino = "1.2.2"
 # wesl_metadata = "0.0.1"
 clap = { version = "4", default-features = false, features = ["help", "std"] }
 # cov-mark = "2.0.0"
-dot = "0.1.4"
+dot = "0.2.0"
 glob = "0.3"
 crossbeam-channel = "0.5.15"
 dissimilar = "1.0.11"

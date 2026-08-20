@@ -289,9 +289,9 @@ checksum = "aeda16ab4059c5fd2a83f2b9c9e9c981327b18aa8e3b313f7e6563799d4f093e"
 
 [[package]]
 name = "dot"
-version = "0.1.4"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a74b6c4d4a1cff5f454164363c16b72fa12463ca6b31f4b5f2035a65fa3d5906"
+checksum = "d0766eaeb39bb5cea1966cdfdf4d322e0d3facdf152f67c647b81e38b08612bb"
 
 [[package]]
 name = "dprint-core"
