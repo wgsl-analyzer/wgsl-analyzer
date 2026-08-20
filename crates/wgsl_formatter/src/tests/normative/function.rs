@@ -1,6 +1,10 @@
 use expect_test::expect;
+use parser::Edition;
 
-use crate::test_util::{CheckOptions, assert_out_of_scope, check, check_with_options};
+use crate::{
+    FormattingOptions,
+    test_util::{CheckOptions, assert_out_of_scope, check, check_with_options},
+};
 
 #[test]
 pub fn format_fn_body_collapses_empty_body() {
@@ -165,7 +169,7 @@ fn format_fn_header_with_linecomment_after_last_parameter() {
 
 #[test]
 fn format_fn_header_parameter_with_long_type_and_name() {
-    check(
+    check_with_options(
         "
         //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
         fn main(
@@ -174,7 +178,7 @@ fn format_fn_header_parameter_with_long_type_and_name() {
             b: u32,
         ) {}
         ",
-        expect![[r#"
+        &expect![[r#"
             //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
             fn main(
                 a: u32,
@@ -184,6 +188,12 @@ fn format_fn_header_parameter_with_long_type_and_name() {
                 b: u32,
             ) {}
         "#]],
+        &FormattingOptions {
+            max_line_width: 80,
+            ..Default::default()
+        }
+        .into(),
+        Edition::LATEST,
     );
 }
 

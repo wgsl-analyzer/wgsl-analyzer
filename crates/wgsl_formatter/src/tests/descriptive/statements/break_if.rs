@@ -1,6 +1,9 @@
 use expect_test::expect;
 
-use crate::test_util::{check, check_comments};
+use crate::{
+    FormattingOptions,
+    test_util::{check, check_comments, check_with_options},
+};
 
 #[test]
 pub fn format_loop_continuing_break_if_statement_empty() {
@@ -78,8 +81,8 @@ pub fn format_loop_continuing_break_if_statement_simple() {
 }
 
 #[test]
-pub fn format_loop_continuing_break_if_statement_complex_expression() {
-    check(
+pub fn format_loop_continuing_break_if_statement_long_expression() {
+    check_with_options(
         "fn main() {
         loop {
         continuing{
@@ -90,7 +93,7 @@ pub fn format_loop_continuing_break_if_statement_complex_expression() {
 
 
         }",
-        expect![["
+        &expect![[r#"
             fn main() {
                 loop {
                     continuing {
@@ -99,7 +102,13 @@ pub fn format_loop_continuing_break_if_statement_complex_expression() {
                     }
                 }
             }
-        "]],
+        "#]],
+        &FormattingOptions {
+            max_line_width: 80,
+            ..Default::default()
+        }
+        .into(),
+        parser::Edition::LATEST,
     );
 }
 
@@ -148,8 +157,7 @@ pub fn format_comments_in_loop_continuing_break_if_with_needless_parens_statemen
             fn main() {
                 /* 0 */ loop /* 1 */ {
                     /* 2 */ continuing /* 3 */ {
-                        /* 4 */ break /* 5 */ if
-                            /* 6 */ /* 7 */ false /* 8 */ /* 9 */; /* 10 */ /* 11 */
+                        /* 4 */ break /* 5 */ if /* 6 */ /* 7 */ false /* 8 */ /* 9 */; /* 10 */ /* 11 */
                     }
                     /* 12 */
                 }

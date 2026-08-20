@@ -45,8 +45,7 @@ pub fn format_comments_in_const_assert_simple() {
         ## const_assert ## ( ## a ## < ## b ## ) ## ; ##
         ",
         expect![[r#"
-            /* 0 */ const_assert /* 1 */ /* 2 */ a /* 3 */
-                < /* 4 */ b /* 5 */ /* 6 */; /* 7 */
+            /* 0 */ const_assert /* 1 */ /* 2 */ a /* 3 */ < /* 4 */ b /* 5 */ /* 6 */; /* 7 */
         "#]],
         expect![[r#"
             // 0

@@ -64,8 +64,7 @@ pub fn format_comments_in_attrs_on_function_return_type() {
     check_comments(
         "fn thing() ## -> ## @attr(0) ## @attr(1) ## vec4<f32> ## {}",
         expect![[r#"
-            fn thing() /* 0 */ -> /* 1 */ @attr(0) /* 2 */ @attr(1)
-            /* 3 */ vec4<f32> /* 4 */ {}
+            fn thing() /* 0 */ -> /* 1 */ @attr(0) /* 2 */ @attr(1) /* 3 */ vec4<f32> /* 4 */ {}
         "#]],
         expect![[r#"
             fn thing() // 0
@@ -426,10 +425,7 @@ pub fn format_comments_in_interpolate_attr() {
         override a: usize = 0;
         ",
         expect![[r#"
-            /* 0 */ @ /* 1 */ interpolate /* 2 */ (
-                /* 3 */ flat /* 4 */ ,
-                /* 5 */ either /* 6 */
-            )
+            /* 0 */ @ /* 1 */ interpolate /* 2 */ (/* 3 */ flat /* 4 */ , /* 5 */ either /* 6 */ )
             /* 7 */ override a: usize = 0;
         "#]],
         expect![[r#"
@@ -501,11 +497,7 @@ pub fn format_comments_in_attr_with_multiple_arguments() {
         ## @ ## attr ## ( ## 0 ## , ## 0 ## , ## 0 ## ) ## fn ## main() {}
         ",
         expect![[r#"
-            /* 0 */ @ /* 1 */ attr /* 2 */ (
-                /* 3 */ 0, /* 4 */ /* 5 */
-                0, /* 6 */ /* 7 */
-                0, /* 8 */
-            )
+            /* 0 */ @ /* 1 */ attr /* 2 */ (/* 3 */ 0, /* 4 */ /* 5 */ 0, /* 6 */ /* 7 */ 0 /* 8 */)
             /* 9 */ fn /* 10 */ main() {}
         "#]],
         expect![[r#"
@@ -559,10 +551,7 @@ pub fn format_comments_in_diagnostic_attr_simple_1() {
     check_comments(
         "## @ ## diagnostic ## ( ## off ## , ## something ## ) ## fn ## main() {}",
         expect![[r#"
-            /* 0 */ @ /* 1 */ diagnostic /* 2 */ (
-                /* 3 */ off /* 4 */ ,
-                /* 5 */ something /* 6 */
-            )
+            /* 0 */ @ /* 1 */ diagnostic /* 2 */ (/* 3 */ off /* 4 */ , /* 5 */ something /* 6 */ )
             /* 7 */ fn /* 8 */ main() {}
         "#]],
         expect![[r#"

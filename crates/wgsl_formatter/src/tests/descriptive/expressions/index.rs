@@ -93,9 +93,7 @@ pub fn format_comments_in_nested_index_expr() {
         }",
         expect![[r#"
             fn main() {
-                let a = /* 0 */ foo /* 1 */ [/* 2 */ 0 /* 3 */] /* 4 */ [
-                        /* 5 */ 1 /* 6 */
-                    ] /* 7 */; /* 8 */
+                let a = /* 0 */ foo /* 1 */ [/* 2 */ 0 /* 3 */] /* 4 */ [/* 5 */ 1 /* 6 */] /* 7 */; /* 8 */
             }
         "#]],
         expect![[r#"

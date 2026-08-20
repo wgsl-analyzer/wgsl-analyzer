@@ -137,9 +137,7 @@ pub fn format_compound_assignment_long_rhs_long_lhs() {
             fn main() {
                 aaaaaaaaaaaaaaaaaaaaa.bbbbbbbbbbbbbbbbbbb.cccccccccccccccccc
                     .ddddddddddddddddddd <<= foooooooooooooooo(
-                        baaaaaaaaaaaaaaar(
-                            111111111111111111111 + 8228282828282882828282828828282,
-                        ),
+                        baaaaaaaaaaaaaaar(111111111111111111111 + 8228282828282882828282828828282),
                     );
             }
         "#]],
