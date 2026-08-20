@@ -5,6 +5,6 @@
   "dependencies": {
     "@actions/core": "^1.6",
     "@actions/github": "^9.0.0",
-    "glob": "^7.1.5"
+    "glob": "^13.0.0"
   }
 }
