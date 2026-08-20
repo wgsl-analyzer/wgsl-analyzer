@@ -1,6 +1,5 @@
 {
 	extends: [
-		"group:allNonMajor",
 		"group:monorepos",
 		"helpers:disableTypesNodeMajor",
 		"helpers:githubDigestChangelogs",
@@ -16,6 +15,19 @@
 	],
 	minimumReleaseAge: "7 days",
 	packageRules: [
+		{
+			"description": "Group not-breaking updates",
+			"matchUpdateTypes": ["minor", "patch", "digest"],
+			"matchJsonata": ["isBreaking != true"],
+			"groupName": "All not-breaking updates"
+		},
+		{
+			"description": "Cargo not-breaking 0.x patches",
+			"matchManagers": ["cargo"],
+			"matchUpdateTypes": ["patch"],
+			"matchCurrentVersion": ">=0.1.0 <1.0.0",
+			"groupName": "All not-breaking updates"
+		},
 		{
 			description: "Rust dependencies",
 			matchManagers: ["cargo"],
