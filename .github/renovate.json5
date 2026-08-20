@@ -92,9 +92,9 @@
 			"enabled": false,
 		},
 		{
-			"description": "Ignore legacy nagas",
+			"description": "Ignore naga",
 			"matchManagers": ["cargo"],
-			"matchPackageNames": ["naga27", "naga28", "naga29"],
+			"matchPackageNames": ["naga"],
 			"enabled": false,
 		}
 	],
