@@ -1,6 +1,10 @@
 use expect_test::expect;
+use parser::Edition;
 
-use crate::test_util::check;
+use crate::{
+    FormattingOptions,
+    test_util::{check, check_with_options},
+};
 
 #[test]
 pub fn format_switch_statement_empty_gets_collapsed() {
@@ -138,7 +142,7 @@ pub fn format_switch_statement_collapse_to_one_line() {
 
 #[test]
 pub fn format_switch_statement_indent_long_condition() {
-    check(
+    check_with_options(
         "fn main() {
             switch (aaaaaaaaaaaaaaaaaa+ bbbbbbbbbbbbbbbbbbbb + ccccccccccccccccc + ddddddddddddddddddd + eeeeeeeeeeeeeeeeee) {
                 case 1 {
@@ -146,7 +150,7 @@ pub fn format_switch_statement_indent_long_condition() {
                 }
             }
         }",
-        expect![[r#"
+        &expect![[r#"
             fn main() {
                 switch aaaaaaaaaaaaaaaaaa + bbbbbbbbbbbbbbbbbbbb + ccccccccccccccccc
                     + ddddddddddddddddddd + eeeeeeeeeeeeeeeeee {
@@ -154,5 +158,10 @@ pub fn format_switch_statement_indent_long_condition() {
                 }
             }
         "#]],
+        &FormattingOptions {
+            max_line_width: 80,
+            ..Default::default()
+        }.into(),
+        Edition::LATEST
     );
 }

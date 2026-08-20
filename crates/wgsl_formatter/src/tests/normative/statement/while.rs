@@ -39,7 +39,8 @@ pub fn format_while_statement_removes_needless_parentheses() {
 pub fn format_while_statement_indent_multiline_condition() {
     check(
         "fn main() {
-        while aaaaaaaaaaaaa + bbbbbbbbbbbbbbbbbb < ccccccccccccccccc + ddddddddddddddd {
+        while aaaaaaaaaaaaa + bbbbbbbbbbbbbbbbbb // Force break
+        < ccccccccccccccccc + ddddddddddddddd {
         a += b;
         }
 
@@ -47,8 +48,8 @@ pub fn format_while_statement_indent_multiline_condition() {
         }",
         expect![[r#"
             fn main() {
-                while aaaaaaaaaaaaa + bbbbbbbbbbbbbbbbbb < ccccccccccccccccc
-                    + ddddddddddddddd {
+                while aaaaaaaaaaaaa + bbbbbbbbbbbbbbbbbb // Force break
+                    < ccccccccccccccccc + ddddddddddddddd {
                     a += b;
                 }
             }

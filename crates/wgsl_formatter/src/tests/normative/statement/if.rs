@@ -66,7 +66,8 @@ pub fn format_if_statement_indent_multiline_condition() {
     check(
         "
         fn main() {
-        if blaaa < aaaaaaaaaaaaaaa + bbbbbbbbbbbbb + ccccccccccccc + ddddddddddddddd + eeeeeeeeeeeeee
+        if blaaa < aaaaaaaaaaaaaaa + bbbbbbbbbbbbb // Force Break
+        + ccccccccccccc + ddddddddddddddd + eeeeeeeeeeeeee
         {
             return d;
         }
@@ -74,8 +75,8 @@ pub fn format_if_statement_indent_multiline_condition() {
         ",
         expect![[r#"
             fn main() {
-                if blaaa < aaaaaaaaaaaaaaa + bbbbbbbbbbbbb + ccccccccccccc + ddddddddddddddd
-                    + eeeeeeeeeeeeee {
+                if blaaa < aaaaaaaaaaaaaaa + bbbbbbbbbbbbb // Force Break
+                    + ccccccccccccc + ddddddddddddddd + eeeeeeeeeeeeee {
                     return d;
                 }
             }
@@ -91,7 +92,8 @@ pub fn format_else_if_statement_indent_multiline_condition() {
         if a {
         return a;
         }
-        else if blaaa < aaaaaaaaaaaaaaa + bbbbbbbbbbbbb + ccccccccccccc + ddddddddddddddd + eeeeeeeeeeeeee
+        else if blaaa < aaaaaaaaaaaaaaa + bbbbbbbbbbbbb // Force Break
+        + ccccccccccccc + ddddddddddddddd + eeeeeeeeeeeeee
         {
             return d;
         }
@@ -101,8 +103,8 @@ pub fn format_else_if_statement_indent_multiline_condition() {
             fn main() {
                 if a {
                     return a;
-                } else if blaaa < aaaaaaaaaaaaaaa + bbbbbbbbbbbbb + ccccccccccccc
-                    + ddddddddddddddd + eeeeeeeeeeeeee {
+                } else if blaaa < aaaaaaaaaaaaaaa + bbbbbbbbbbbbb // Force Break
+                    + ccccccccccccc + ddddddddddddddd + eeeeeeeeeeeeee {
                     return d;
                 }
             }
