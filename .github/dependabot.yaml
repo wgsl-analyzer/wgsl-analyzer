@@ -17,67 +17,130 @@ updates:
   - package-ecosystem: cargo
     directory: /
     patterns: ["*"]
+    update-types:
+      - minor
+      - patch
     multi-ecosystem-group: daily-dependencies
     labels:
       - A-Language-Server
-    cooldown: 
+    cooldown:
       default-days: 7
-    groups:
-      minor-patch:
+
+  - package-ecosystem: cargo
+    directory: /
+    schedule:
+      interval: daily
+    commit-message:
+      prefix: internal
+    labels:
+      - A-Language-Server
+      - C-Dependencies
+      - S-Ready-to-Review
+    cooldown:
+      default-days: 7
+    ignore:
+      - dependency-name: "*"
         update-types:
-          - minor
-          - patch
+          - "version-update:semver-minor"
+          - "version-update:semver-patch"
 
   - package-ecosystem: github-actions
     directory: /
     patterns: ["*"]
+    update-types:
+      - minor
+      - patch
     multi-ecosystem-group: daily-dependencies
     labels:
       - A-Build-System
-    cooldown: 
+    cooldown:
       default-days: 7
     groups:
       codeql:
         patterns:
           - "github/codeql-action/*"
-      minor-patch:
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: daily
+    commit-message:
+      prefix: internal
+    labels:
+      - A-Build-System
+      - C-Dependencies
+      - S-Ready-to-Review
+    cooldown:
+      default-days: 7
+    ignore:
+      - dependency-name: "*"
         update-types:
-          - minor
-          - patch
+          - "version-update:semver-minor"
+          - "version-update:semver-patch"
 
   - package-ecosystem: npm
     directory: /editors/code
     patterns: ["*"]
+    update-types:
+      - minor
+      - patch
     multi-ecosystem-group: daily-dependencies
     labels:
       - A-Editor
     ignore:
       - dependency-name: "@types/vscode"
         update-types:
-          - version-update:semver-minor
-    cooldown: 
+          - "version-update:semver-minor"
+    cooldown:
       default-days: 7
-    groups:
-      minor-patch:
+
+  - package-ecosystem: npm
+    directory: /editors/code
+    schedule:
+      interval: daily
+    commit-message:
+      prefix: internal
+    labels:
+      - A-Editor
+      - C-Dependencies
+      - S-Ready-to-Review
+    cooldown:
+      default-days: 7
+    ignore:
+      - dependency-name: "*"
         update-types:
-          - minor
-          - patch
-        exclude-patterns:
-          - "@types/vscode"
+          - "version-update:semver-minor"
+          - "version-update:semver-patch"
 
   - package-ecosystem: docker
-    directory: /.github
+    directory: /.github/actions/github-release
     patterns: ["*"]
+    update-types:
+      - minor
+      - patch
     multi-ecosystem-group: daily-dependencies
     labels:
       - A-Build-System
-    cooldown: 
+    cooldown:
       default-days: 7
-    groups:
-      minor-patch:
+
+  - package-ecosystem: docker
+    directory: /.github/actions/github-release
+    schedule:
+      interval: daily
+    commit-message:
+      prefix: internal
+    labels:
+      - A-Build-System
+      - C-Dependencies
+      - S-Ready-to-Review
+    cooldown:
+      default-days: 7
+    ignore:
+      - dependency-name: "*"
         update-types:
-          - minor
-          - patch
+          - "version-update:semver-minor"
+          - "version-update:semver-patch"
 
   - package-ecosystem: npm
     directory: /editors/code
