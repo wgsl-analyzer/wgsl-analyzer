@@ -191,29 +191,14 @@ pub fn format_import_collection_break_on_long_items() {
         &expect![[r#"
             //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
             import aaaaaaaaaaaa::{
-                aaaaaaaaaaaa, bbbbbbbbbbbbb, ccccccccccc, ddddddddddddd, eeeeeeeee, fffffff,
-                gggggggg, hhhhhhhhhhh
-            };
-        "#]],
-        &FormattingOptions {
-            max_line_width: 80,
-            ..Default::default()
-        }.into(),
-        parser::Edition::LATEST
-    );
-}
-#[test]
-pub fn format_import_collection_long_items_prefer_break_in_collection() {
-    check_with_options(
-        "
-        //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
-        import aaaaaaaaaaaa::{aaaaaaaaaaaa::bbbbbbbbbbbbbbb::ccccccccccccc::ddddddddddddddd, eeeeeeeee, ffffffff::gggggggggggg};
-        ",
-        &expect![[r#"
-            //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
-            import aaaaaaaaaaaa::{
-                eeeeeeeee, aaaaaaaaaaaa::bbbbbbbbbbbbbbb::ccccccccccccc::ddddddddddddddd,
-                ffffffff::gggggggggggg
+                aaaaaaaaaaaa,
+                bbbbbbbbbbbbb,
+                ccccccccccc,
+                ddddddddddddd,
+                eeeeeeeee,
+                fffffff,
+                gggggggg,
+                hhhhhhhhhhh
             };
         "#]],
         &FormattingOptions {
@@ -255,5 +240,53 @@ pub fn format_import_collection_in_collection_stays_the_same() {
         import a::{{a::a, b::b}, {c::c, d::d}};
         ",
         "ImportCollections immediately within ImportCollections are not supported.",
+    );
+}
+
+#[test]
+pub fn format_import_collection_items_are_all_split_if_multiline() {
+    check(
+        "
+import package::tracer_plugin::renderer::buffers::{
+    a as b, c as d, e as f, ffffffffffffffffff, aaaaaaaaaaaaa,
+    aaaaaaaaaaaaaaa::bbbbbbbbbbbbbbbbbbbbbb as cccccca, gggggggggggg
+};
+        ",
+        expect![[r#"
+            import package::tracer_plugin::renderer::buffers::{
+                a as b,
+                aaaaaaaaaaaaa,
+                c as d,
+                e as f,
+                ffffffffffffffffff,
+                gggggggggggg,
+                aaaaaaaaaaaaaaa::bbbbbbbbbbbbbbbbbbbbbb as cccccca
+            };
+        "#]],
+    );
+}
+
+#[test]
+pub fn format_import_collection_items_are_kept_on_one_line_if_they_fit() {
+    check_with_options(
+        "
+import package::tracer_plugin::renderer::buffers::{
+keeps_inline::{AaaaaAaaa, BbbbbbBbbbbbBbb, CccCcc},
+    aaaaaaaaaaaaaaa::bbbbbbbbbbbbbbbbbbbbbb as cccccca, gggggggggggg
+};
+        ",
+        &expect![[r#"
+            import package::tracer_plugin::renderer::buffers::{
+                gggggggggggg,
+                aaaaaaaaaaaaaaa::bbbbbbbbbbbbbbbbbbbbbb as cccccca,
+                keeps_inline::{AaaaaAaaa, BbbbbbBbbbbbBbb, CccCcc}
+            };
+        "#]],
+        &FormattingOptions {
+            max_line_width: 80,
+            ..Default::default()
+        }
+        .into(),
+        parser::Edition::LATEST,
     );
 }

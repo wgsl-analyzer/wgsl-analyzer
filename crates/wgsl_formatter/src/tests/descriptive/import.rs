@@ -44,7 +44,8 @@ pub fn format_comments_in_import_collection() {
             {
                 // 6
                 a // 7
-                , // 8
+                ,
+                // 8
                 b // 9
                 :: // 10
                 d // 11
