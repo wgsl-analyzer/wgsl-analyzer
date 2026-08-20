@@ -70,6 +70,7 @@ impl GlobalState {
                     message,
                     actions: Some(vec![MessageActionItem {
                         title: "Open server logs".to_owned(),
+                        ..Default::default()
                     }]),
                 },
                 |this, response| {
