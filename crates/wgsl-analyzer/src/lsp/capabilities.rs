@@ -14,11 +14,7 @@ use lsp_types::{
 };
 use rustc_hash::FxHashSet;
 
-use crate::{
-    config::{Config, WgslfmtConfig},
-    line_index::PositionEncoding,
-    lsp::extensions,
-};
+use crate::{config::Config, line_index::PositionEncoding, lsp::extensions};
 
 /// # Panics
 ///
@@ -68,15 +64,7 @@ pub fn server_capabilities(config: &Config) -> ServerCapabilities {
         code_action_provider: None, // TODO https://github.com/wgsl-analyzer/wgsl-analyzer/issues/351
         code_lens_provider: None, // TODO https://github.com/wgsl-analyzer/wgsl-analyzer/issues/352
         document_formatting_provider: Some(DocumentFormattingProvider::Bool(true)),
-        document_range_formatting_provider: match config.wgslfmt(None) {
-            WgslfmtConfig::Wgslfmt {
-                enable_range_formatting: true,
-                ..
-            } => Some(DocumentRangeFormattingProvider::Bool(true)),
-            WgslfmtConfig::CustomCommand { .. } | WgslfmtConfig::Wgslfmt { .. } => {
-                Some(DocumentRangeFormattingProvider::Bool(false))
-            },
-        },
+        document_range_formatting_provider: Some(DocumentRangeFormattingProvider::Bool(true)),
         // TODO https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1095
         document_on_type_formatting_provider: Some({
             let mut characters = ide::Analysis::SUPPORTED_TRIGGER_CHARS.iter();

@@ -3,22 +3,40 @@ name = "wgsl-formatter"
 version = "0.0.0"
 edition.workspace = true
 rust-version.workspace = true
-description = "RPC Api for the `proc-macro-srv` crate of wgsl-analyzer."
+description = "API for formatting WGSL code."
 repository.workspace = true
 license.workspace = true
 
+[[bench]]
+harness = false
+name = "large_file"
+
 [dependencies]
+dprint-core = { version = "0.67.4", features = ["tracing"] }
+dprint-core-macros = "0.1.0"
+itertools = "0.14.0"
+parser.workspace = true
 rowan = "0.16.1"
 serde = { workspace = true, optional = true }
 syntax.workspace = true
 
 [dev-dependencies]
-dissimilar = "1.0.11"
+criterion = "0.8.2"
+dissimilar = "1.0.10"
 # anyhow = "1.0.99"
 expect-test = "1.5.1"
+sha2 = "0.11.0"
 
 [features]
+# Prefer to crash at strategic places instead of returning errors.
+# This, combined with RUST_BACKTRACE=1 is useful for debugging unit-tests
+# when ast-parsing succeeds but the parsing for the formatting fails somewhere.
+# RUST_BACKTRACE=1 cargo test -p wgsl-formatter tests::snapshots::[YOUR TEST] --features prefer-immediate-crash
+prefer-immediate-crash = []
 serde = ["dep:serde"]
 
 [lints]
 workspace = true
+
+[profile.dev]
+opt-level = 0

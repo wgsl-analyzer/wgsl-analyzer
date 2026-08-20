@@ -1,0 +1,781 @@
+use expect_test::expect;
+
+use crate::test_util::{check, check_comments};
+
+#[test]
+pub fn format_comments_in_attrs_on_struct_members() {
+    check_comments(
+        "struct VertexOutput { ## @attr(0) ## @attr(1) ## position ## : vec4<f32>, ## @attr(0) ## @attr(1) ## uv ## : vec2<f32>}",
+        expect![[r#"
+            struct VertexOutput {
+                /* 0 */ @attr(0)
+                /* 1 */ @attr(1)
+                /* 2 */ position /* 3 */ : vec4<f32>, /* 4 */
+                @attr(0)
+                /* 5 */ @attr(1)
+                /* 6 */ uv /* 7 */ : vec2<f32>,
+            }
+        "#]],
+        expect![[r#"
+            struct VertexOutput {
+                // 0
+                @attr(0)
+                // 1
+                @attr(1)
+                // 2
+                position // 3
+                : vec4<f32>, // 4
+                @attr(0)
+                // 5
+                @attr(1)
+                // 6
+                uv // 7
+                : vec2<f32>,
+            }
+        "#]],
+    );
+}
+
+#[test]
+pub fn format_comments_in_attrs_on_functions() {
+    check_comments(
+        "##@attr(0)##@attr(1)##fn##main(
+        ) {
+        }",
+        expect![[r#"
+            /* 0 */ @attr(0)
+            /* 1 */ @attr(1)
+            /* 2 */ fn /* 3 */ main() {}
+        "#]],
+        expect![[r#"
+            // 0
+            @attr(0)
+            // 1
+            @attr(1)
+            // 2
+            fn // 3
+            main() {}
+        "#]],
+    );
+}
+
+#[test]
+pub fn format_comments_in_attrs_on_function_return_type() {
+    check_comments(
+        "fn thing() ## -> ## @attr(0) ## @attr(1) ## vec4<f32> ## {}",
+        expect![[r#"
+            fn thing() /* 0 */ -> /* 1 */ @attr(0) /* 2 */ @attr(1)
+            /* 3 */ vec4<f32> /* 4 */ {}
+        "#]],
+        expect![[r#"
+            fn thing() // 0
+            -> // 1
+            @attr(0) // 2
+            @attr(1) // 3
+            vec4<f32> // 4
+            {}
+        "#]],
+    );
+}
+
+#[test]
+pub fn format_comments_in_attrs_on_function_parameter() {
+    check_comments(
+        "fn thing ## ( ## @attr(0) ## @attr(1) ## position: vec4<f32>, ## @attr(0) ## @attr(1) ## uv: vec2<f32>, ) -> vec4<f32> {}",
+        expect![[r#"
+            fn thing /* 0 */ (
+                /* 1 */ @attr(0)
+                /* 2 */ @attr(1)
+                /* 3 */ position: vec4<f32>, /* 4 */
+                @attr(0)
+                /* 5 */ @attr(1)
+                /* 6 */ uv: vec2<f32>,
+            ) -> vec4<f32> {}
+        "#]],
+        expect![[r#"
+            fn thing // 0
+            (
+                // 1
+                @attr(0)
+                // 2
+                @attr(1)
+                // 3
+                position: vec4<f32>, // 4
+                @attr(0)
+                // 5
+                @attr(1)
+                // 6
+                uv: vec2<f32>,
+            ) -> vec4<f32> {}
+        "#]],
+    );
+}
+
+#[test]
+pub fn format_comments_in_attrs_on_function_body() {
+    check_comments(
+        "fn thing() -> ## vec4<f32> ## @attr(0) ## @attr(1) ## { ## }",
+        expect![[r#"
+            fn thing() -> /* 0 */ vec4<f32> /* 1 */ @attr(0) /* 2 */ @attr(1) /* 3 */ {
+                /* 4 */
+            }
+        "#]],
+        expect![[r#"
+            fn thing() -> // 0
+            vec4<f32> // 1
+            @attr(0) // 2
+            @attr(1) // 3
+            {
+                // 4
+            }
+        "#]],
+    );
+}
+
+#[test]
+pub fn format_comments_in_attrs_on_global_variable() {
+    check_comments(
+        "
+        ## @attr(0) ## @attr(1) ## var<uniform> ## material: CustomMaterial;
+        ",
+        expect![[r#"
+            /* 0 */ @attr(0)
+            /* 1 */ @attr(1)
+            /* 2 */ var<uniform> /* 3 */ material: CustomMaterial;
+        "#]],
+        expect![[r#"
+            // 0
+            @attr(0)
+            // 1
+            @attr(1)
+            // 2
+            var<uniform> // 3
+                material: CustomMaterial;
+        "#]],
+    );
+}
+
+#[test]
+pub fn format_comments_in_attrs_on_override() {
+    check_comments(
+        "
+        ## @attr(0) ## @attr(1) ## override amount: u64 = 0;
+        ",
+        expect![[r#"
+            /* 0 */ @attr(0)
+            /* 1 */ @attr(1)
+            /* 2 */ override amount: u64 = 0;
+        "#]],
+        expect![[r#"
+            // 0
+            @attr(0)
+            // 1
+            @attr(1)
+            // 2
+            override amount: u64 = 0;
+        "#]],
+    );
+}
+
+#[test]
+pub fn format_comments_in_attrs_on_compound_statement() {
+    check_comments(
+        " fn main() { ## @attr(0) ## @attr(1) ## { ## } ## if ## true ## @attr(0) ## @attr(1) ## { ## } } ",
+        expect![[r#"
+            fn main() {
+                /* 0 */ @attr(0)
+                /* 1 */ @attr(1)
+                /* 2 */ {
+                    /* 3 */
+                } /* 4 */
+                if /* 5 */ true /* 6 */ @attr(0)
+                /* 7 */ @attr(1)
+                /* 8 */ {
+                    /* 9 */
+                }
+            }
+        "#]],
+        expect![[r#"
+            fn main() {
+                // 0
+                @attr(0)
+                // 1
+                @attr(1)
+                // 2
+                {
+                    // 3
+                } // 4
+                if // 5
+                    true // 6
+                @attr(0)
+                // 7
+                @attr(1)
+                // 8
+                {
+                    // 9
+                }
+            }
+        "#]],
+    );
+}
+
+#[test]
+pub fn format_comments_in_attrs_on_if_statement() {
+    check_comments(
+        "
+        fn main() {
+            ## @attr(0) ## @attr(1) ## if ## true {}
+        }
+        ",
+        expect![[r#"
+            fn main() {
+                /* 0 */ @attr(0)
+                /* 1 */ @attr(1)
+                /* 2 */ if /* 3 */ true {}
+            }
+        "#]],
+        expect![[r#"
+            fn main() {
+                // 0
+                @attr(0)
+                // 1
+                @attr(1)
+                // 2
+                if // 3
+                    true {}
+            }
+        "#]],
+    );
+}
+
+#[test]
+pub fn format_comments_in_attrs_on_switch_statement_and_body() {
+    check_comments(
+        "
+        fn main() {
+            ## @attr(0) ## @attr(1) ## @attr(3) ## switch a ## @attr(0) ## @attr(1) ## { ## }
+        }
+        ",
+        expect![[r#"
+            fn main() {
+                /* 0 */ @attr(0)
+                /* 1 */ @attr(1)
+                /* 2 */ @attr(3)
+                /* 3 */ switch a /* 4 */ @attr(0) /* 5 */ @attr(1) /* 6 */ {
+                    /* 7 */
+                }
+            }
+        "#]],
+        expect![[r#"
+            fn main() {
+                // 0
+                @attr(0)
+                // 1
+                @attr(1)
+                // 2
+                @attr(3)
+                // 3
+                switch a // 4
+                @attr(0) // 5
+                @attr(1) // 6
+                {
+                    // 7
+                }
+            }
+        "#]],
+    );
+}
+
+#[test]
+pub fn format_comments_in_attrs_on_loop_statement_and_body() {
+    check_comments(
+        "
+        fn main() {
+            ## @attr(0) ## @attr(1) ## loop ## @attr(0) ## @attr(1) ## { ## }
+        }
+        ",
+        expect![[r#"
+            fn main() {
+                /* 0 */ @attr(0)
+                /* 1 */ @attr(1)
+                /* 2 */ loop /* 3 */ @attr(0)
+                /* 4 */ @attr(1)
+                /* 5 */ {
+                    /* 6 */
+                }
+            }
+        "#]],
+        expect![[r#"
+            fn main() {
+                // 0
+                @attr(0)
+                // 1
+                @attr(1)
+                // 2
+                loop // 3
+                @attr(0)
+                // 4
+                @attr(1)
+                // 5
+                {
+                    // 6
+                }
+            }
+        "#]],
+    );
+}
+
+#[test]
+pub fn format_comments_in_attrs_on_for_statement() {
+    check_comments(
+        " fn main() { ## @attr(0) ## @attr(1) ## for ## (var i = 0; i < 10; i++) {} } ",
+        expect![[r#"
+            fn main() {
+                /* 0 */ @attr(0)
+                /* 1 */ @attr(1)
+                /* 2 */ for /* 3 */ (var i = 0; i < 10; i++) {}
+            }
+        "#]],
+        expect![[r#"
+            fn main() {
+                // 0
+                @attr(0)
+                // 1
+                @attr(1)
+                // 2
+                for // 3
+                (var i = 0; i < 10; i++) {}
+            }
+        "#]],
+    );
+}
+
+#[test]
+#[ignore = "TODO Parser Error?"]
+pub fn format_comments_in_attrs_on_loop_continuing_block() {
+    check_comments(
+        "
+        fn main() {
+        loop{
+        ## continuing ## @attr(0) ## @attr(1) ## { ## }
+        }
+        }
+        ",
+        expect![[r#"
+            fn main() {
+                loop {
+                    /* 0 */
+                    continuing /* 1 */ @attr(0) /* 2 */
+                    @attr(1) /* 3 */
+                    {
+                        /* 4 */
+                    }
+                }
+            }
+        "#]],
+        expect![[r#"
+            fn main() {
+                loop {
+                    // 0
+                    continuing // 1
+                    @attr(0) // 2
+                    @attr(1) // 3
+                    {
+                        // 4
+                    }
+                }
+            }
+        "#]],
+    );
+}
+
+#[test]
+pub fn format_comments_in_attrs_on_while_statement() {
+    check_comments(
+        "
+        fn main() {
+        ## @attr(0) ## @attr(1) ## while ## true {}
+        }
+        ",
+        expect![[r#"
+            fn main() {
+                /* 0 */ @attr(0)
+                /* 1 */ @attr(1)
+                /* 2 */ while /* 3 */ true {}
+            }
+        "#]],
+        expect![[r#"
+            fn main() {
+                // 0
+                @attr(0)
+                // 1
+                @attr(1)
+                // 2
+                while // 3
+                    true {}
+            }
+        "#]],
+    );
+}
+
+#[test]
+pub fn format_comments_in_interpolate_attr() {
+    check_comments(
+        "
+        ## @ ## interpolate ## ( ## flat ## , ## either ## ) ##
+        override a: usize = 0;
+        ",
+        expect![[r#"
+            /* 0 */ @ /* 1 */ interpolate /* 2 */ (
+                /* 3 */ flat /* 4 */ ,
+                /* 5 */ either /* 6 */
+            )
+            /* 7 */ override a: usize = 0;
+        "#]],
+        expect![[r#"
+            // 0
+            @ // 1
+            interpolate // 2
+            (
+                // 3
+                flat // 4
+                ,
+                // 5
+                either // 6
+            )
+            // 7
+            override a: usize = 0;
+        "#]],
+    );
+}
+
+#[test]
+pub fn format_comments_in_attr_with_many_parameters() {
+    check_comments(
+        "
+        ## @ ## foo ## ( ## 1 ## , ## 2 ## , ## 3 ## , ## 4 ## , ## 5 ## , ## 6 ## , ## 7 ) ##
+        override a: usize = 0;
+        ",
+        expect![[r#"
+            /* 0 */ @ /* 1 */ foo /* 2 */ (
+                /* 3 */ 1, /* 4 */ /* 5 */
+                2, /* 6 */ /* 7 */
+                3, /* 8 */ /* 9 */
+                4, /* 10 */ /* 11 */
+                5, /* 12 */ /* 13 */
+                6, /* 14 */ /* 15 */
+                7,
+            )
+            /* 16 */ override a: usize = 0;
+        "#]],
+        expect![[r#"
+            // 0
+            @ // 1
+            foo // 2
+            (
+                // 3
+                1, // 4
+                // 5
+                2, // 6
+                // 7
+                3, // 8
+                // 9
+                4, // 10
+                // 11
+                5, // 12
+                // 13
+                6, // 14
+                // 15
+                7,
+            )
+            // 16
+            override a: usize = 0;
+        "#]],
+    );
+}
+
+#[test]
+pub fn format_comments_in_attr_with_multiple_arguments() {
+    check_comments(
+        "
+        ## @ ## attr ## ( ## 0 ## , ## 0 ## , ## 0 ## ) ## fn ## main() {}
+        ",
+        expect![[r#"
+            /* 0 */ @ /* 1 */ attr /* 2 */ (
+                /* 3 */ 0, /* 4 */ /* 5 */
+                0, /* 6 */ /* 7 */
+                0, /* 8 */
+            )
+            /* 9 */ fn /* 10 */ main() {}
+        "#]],
+        expect![[r#"
+            // 0
+            @ // 1
+            attr // 2
+            (
+                // 3
+                0, // 4
+                // 5
+                0, // 6
+                // 7
+                0, // 8
+            )
+            // 9
+            fn // 10
+            main() {}
+        "#]],
+    );
+}
+
+#[test]
+pub fn format_comments_in_attr_with_text_arguments() {
+    check_comments(
+        "
+        ## @ ## thingy ## ( ## magic ## , ## thing ## ) ## fn ## main() {}
+        ",
+        expect![[r#"
+            /* 0 */ @ /* 1 */ thingy /* 2 */ (/* 3 */ magic, /* 4 */ /* 5 */ thing /* 6 */)
+            /* 7 */ fn /* 8 */ main() {}
+        "#]],
+        expect![[r#"
+            // 0
+            @ // 1
+            thingy // 2
+            (
+                // 3
+                magic, // 4
+                // 5
+                thing, // 6
+            )
+            // 7
+            fn // 8
+            main() {}
+        "#]],
+    );
+}
+
+#[test]
+pub fn format_comments_in_diagnostic_attr_simple_1() {
+    check_comments(
+        "## @ ## diagnostic ## ( ## off ## , ## something ## ) ## fn ## main() {}",
+        expect![[r#"
+            /* 0 */ @ /* 1 */ diagnostic /* 2 */ (
+                /* 3 */ off /* 4 */ ,
+                /* 5 */ something /* 6 */
+            )
+            /* 7 */ fn /* 8 */ main() {}
+        "#]],
+        expect![[r#"
+            // 0
+            @ // 1
+            diagnostic // 2
+            (
+                // 3
+                off // 4
+                ,
+                // 5
+                something // 6
+            )
+            // 7
+            fn // 8
+            main() {}
+        "#]],
+    );
+}
+
+#[test]
+pub fn format_comments_in_attr_simple() {
+    check_comments(
+        "
+        ## @ ## fragment ## fn ## main() {}
+        ",
+        expect![[r#"
+            /* 0 */ @ /* 1 */ fragment
+            /* 2 */ fn /* 3 */ main() {}
+        "#]],
+        expect![[r#"
+            // 0
+            @ // 1
+            fragment
+            // 2
+            fn // 3
+            main() {}
+        "#]],
+    );
+}
+
+#[test]
+pub fn format_attribute_comment_positioning_between_unordered_first_inline() {
+    check(
+        "
+        @must_use /* bla */ @fragment fn a() {}
+
+        @must_use /* bla */
+        @fragment fn a() {}
+
+        @must_use
+        /* bla */
+        @fragment fn a() {}
+
+        @must_use
+        /* bla */ @fragment fn a() {}
+        ",
+        expect![[r#"
+            /* bla */ @fragment
+            @must_use fn a() {}
+
+            /* bla */
+            @fragment
+            @must_use fn a() {}
+
+            /* bla */
+            @fragment
+            @must_use fn a() {}
+
+            /* bla */ @fragment
+            @must_use fn a() {}
+        "#]],
+    );
+}
+
+#[test]
+pub fn format_attribute_comment_positioning_between_unordered_both_inline() {
+    check(
+        "
+        @must_use /* bla */ @must_use fn a() {}
+
+        @must_use /* bla */
+        @must_use fn a() {}
+
+        @must_use
+        /* bla */
+        @must_use fn a() {}
+
+        @must_use
+        /* bla */ @must_use fn a() {}
+        ",
+        expect![[r#"
+            @must_use /* bla */ @must_use fn a() {}
+
+            @must_use /* bla */
+            @must_use fn a() {}
+
+            @must_use
+            /* bla */
+            @must_use fn a() {}
+
+            @must_use
+            /* bla */ @must_use fn a() {}
+        "#]],
+    );
+}
+
+#[test]
+pub fn format_attribute_comment_positioning_between_unordered_second_inline() {
+    check(
+        "
+        @fragment /* bla */ @must_use fn a() {}
+
+        @fragment /* bla */
+        @must_use fn a() {}
+
+        @fragment
+        /* bla */
+        @must_use fn a() {}
+
+        @fragment
+        /* bla */ @must_use fn a() {}
+        ",
+        expect![[r#"
+            @fragment
+            /* bla */ @must_use fn a() {}
+
+            @fragment
+            /* bla */
+            @must_use fn a() {}
+
+            @fragment
+            /* bla */
+            @must_use fn a() {}
+
+            @fragment
+            /* bla */ @must_use fn a() {}
+        "#]],
+    );
+}
+
+#[test]
+pub fn format_attribute_comment_positioning_between_unordered_none_inline() {
+    check(
+        "
+        @compute /* bla */ @if(true) fn a() {}
+
+        @compute /* bla */
+        @if(true) fn a() {}
+
+        @compute
+        /* bla */
+        @if(true) fn a() {}
+
+        @compute
+        /* bla */ @if(true) fn a() {}
+        ",
+        expect![[r#"
+            /* bla */ @if(true)
+            @compute
+            fn a() {}
+
+            /* bla */
+            @if(true)
+            @compute
+            fn a() {}
+
+            /* bla */
+            @if(true)
+            @compute
+            fn a() {}
+
+            /* bla */ @if(true)
+            @compute
+            fn a() {}
+        "#]],
+    );
+}
+
+#[test]
+pub fn format_attribute_comment_positioning_between_ordered_none_inline() {
+    check(
+        "
+        @if(true) /* bla */ @compute fn a() {}
+
+        @if(true) /* bla */
+        @compute fn a() {}
+
+        @if(true)
+        /* bla */
+        @compute fn a() {}
+
+        @if(true)
+        /* bla */ @compute fn a() {}
+        ",
+        expect![[r#"
+            @if(true)
+            /* bla */ @compute
+            fn a() {}
+
+            @if(true)
+            /* bla */
+            @compute
+            fn a() {}
+
+            @if(true)
+            /* bla */
+            @compute
+            fn a() {}
+
+            @if(true)
+            /* bla */ @compute
+            fn a() {}
+        "#]],
+    );
+}
