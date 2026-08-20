@@ -63,3 +63,25 @@ fn format_index_expression_brackets_are_broken_up_if_multiline() {
         "#]],
     );
 }
+
+#[test]
+fn prefer_not_breaking_index_expression() {
+    check(
+        "
+        fn main() {
+        aaaaaaaaaaa::bbbbbbbbbbbbbbbbb[
+            curr_idx
+        ] = ccccccc::dddddddddddddddd(
+                trav_result.hit,
+                trav_result.local_position,
+            );
+        }
+        ",
+        expect![[r#"
+            fn main() {
+                aaaaaaaaaaa::bbbbbbbbbbbbbbbbb[curr_idx] =
+                    ccccccc::dddddddddddddddd(trav_result.hit, trav_result.local_position);
+            }
+        "#]],
+    );
+}
