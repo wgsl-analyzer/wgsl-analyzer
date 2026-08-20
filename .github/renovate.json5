@@ -61,5 +61,29 @@
 				executionMode: "branch",
 			},
 		},
+		{
+			"description": "Use @tsconfig/node24",
+			"matchPackageNames": ["@tsconfig/node24"],
+			"replacementName": null,
+			"replacementVersion": null,
+		},
+		{
+			"description": "Use Node.js 24",
+			"matchManagers": ["node"],
+			"matchPackageNames": ["node"],
+			"allowedVersions": "<25"
+		},
+		{
+			"description": "Ignore idna_adapter",
+			"matchManagers": ["cargo"],
+			"matchPackageNames": ["idna_adapter"],
+			"enabled": false,
+		},
+		{
+			"description": "Ignore legacy nagas",
+			"matchManagers": ["cargo"],
+			"matchPackageNames": ["naga27", "naga28", "naga29"],
+			"enabled": false,
+		}
 	],
 }
