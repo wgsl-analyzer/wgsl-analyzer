@@ -236,7 +236,7 @@ pub fn gen_import_collection(
             group.request(Request::discourage(RequestItem::Space));
             if position != Position::Last && position != Position::Only {
                 group.push_sc(sc!(","));
-                group.request(Request::expect(RequestItem::Space).or_newline());
+                group.grouped_newline_or_space();
             }
         }
     }
