@@ -64,13 +64,7 @@ pub fn format_wildly_nested_import_items() {
         expect![[r#"
             import aaaaaaaaa::{
                 bbbbbbbb::{
-                    cdddddd::{
-                        dddddd::{
-                            eeeeeee::{
-                                ffffffff::{gggggg::{hhhhhh::{kkkkkkkk, iiiiii::jjjjjjjjjj}}}
-                            }
-                        }
-                    }
+                    cdddddd::{dddddd::{eeeeeee::{ffffffff::{gggggg::{hhhhhh::{kkkkkkkk, iiiiii::jjjjjjjjjj}}}}}}
                 }
             };
         "#]],
@@ -83,9 +77,7 @@ pub fn format_wildly_nested_import_with_paths() {
         "import aaaaaaaaa::bbbbbbbb::{cdddddd::dddddd::{eeeeeee::ffffffff::{gggggg::hhhhhh::{iiiiii::jjjjjjjjjj, kkkkkkkk}}}};",
         expect![[r#"
             import aaaaaaaaa::bbbbbbbb::{
-                cdddddd::dddddd::{
-                    eeeeeee::ffffffff::{gggggg::hhhhhh::{kkkkkkkk, iiiiii::jjjjjjjjjj}}
-                }
+                cdddddd::dddddd::{eeeeeee::ffffffff::{gggggg::hhhhhh::{kkkkkkkk, iiiiii::jjjjjjjjjj}}}
             };
         "#]],
     );

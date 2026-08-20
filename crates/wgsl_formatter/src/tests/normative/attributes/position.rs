@@ -1,6 +1,10 @@
 use expect_test::expect;
+use parser::Edition;
 
-use crate::test_util::check;
+use crate::{
+    FormattingOptions,
+    test_util::{check, check_with_options},
+};
 
 #[test]
 pub fn format_attribute_offset_size_align_are_grouped() {
@@ -197,30 +201,42 @@ pub fn format_attrs_on_function_parameter() {
 
 #[test]
 pub fn format_attrs_on_function_body_singleline() {
-    check(
+    check_with_options(
         "
         //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
         fn thing() -> vec4<f32> @attr(0) @attr(1) @diagnostic(bla, off) {
         }",
-        expect![[r#"
+        &expect![[r#"
             //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
             fn thing() -> vec4<f32> @attr(0) @attr(1) @diagnostic(bla, off) {}
         "#]],
+        &FormattingOptions {
+            max_line_width: 80,
+            ..Default::default()
+        }
+        .into(),
+        Edition::LATEST,
     );
 }
 
 #[test]
 pub fn format_attrs_on_function_body_multiline() {
-    check(
+    check_with_options(
         "
         //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
         fn thing() -> vec4<f32> @aaaaaaaa(3) @bbbbbbb(1) @ccccccccccccc(4,3) @dddddddddd(28) @eeeeeeeeeeee(11,11,11) {
         }",
-        expect![[r#"
+        &expect![[r#"
             //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
             fn thing() -> vec4<f32> @aaaaaaaa(3) @bbbbbbb(1) @ccccccccccccc(4, 3)
             @dddddddddd(28) @eeeeeeeeeeee(11, 11, 11) {}
         "#]],
+        &FormattingOptions {
+            max_line_width: 80,
+            ..Default::default()
+        }
+        .into(),
+        Edition::LATEST,
     );
 }
 

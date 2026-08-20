@@ -93,9 +93,7 @@ pub fn format_comments_in_enable_1() {
     check_comments(
         "enable ## subgroups ## , ## primitive_index ## , ## ; ##",
         expect![[r#"
-            enable
-                /* 0 */ subgroups /* 1 */ /* 2 */ ,
-                primitive_index /* 3 */ /* 4 */; /* 5 */
+            enable /* 0 */ subgroups /* 1 */ /* 2 */ , primitive_index /* 3 */ /* 4 */; /* 5 */
         "#]],
         expect![[r#"
             enable
@@ -154,9 +152,7 @@ pub fn format_comments_in_requires_1() {
     check_comments(
         "requires ## linear_indexing ## , ## buffer_view ## , ## ; ##",
         expect![[r#"
-            requires
-                /* 0 */ linear_indexing /* 1 */ /* 2 */ ,
-                buffer_view /* 3 */ /* 4 */; /* 5 */
+            requires /* 0 */ linear_indexing /* 1 */ /* 2 */ , buffer_view /* 3 */ /* 4 */; /* 5 */
         "#]],
         expect![[r#"
             requires

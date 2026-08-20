@@ -129,8 +129,7 @@ pub fn format_comments_in_prefix_expr_in_complex_expr() {
         "fn main() {let a = ## 1 ## + ## 2 ## - ## ~ ## 1 ## ; ##}",
         expect![[r#"
             fn main() {
-                let a = /* 0 */ 1 /* 1 */ + /* 2 */ 2 /* 3 */
-                    - /* 4 */ ~ /* 5 */ 1 /* 6 */; /* 7 */
+                let a = /* 0 */ 1 /* 1 */ + /* 2 */ 2 /* 3 */ - /* 4 */ ~ /* 5 */ 1 /* 6 */; /* 7 */
             }
         "#]],
         expect![[r#"

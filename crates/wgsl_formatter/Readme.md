@@ -10,7 +10,7 @@
 - Increase default line width to 100
 - Consider only allowing breaks before arithmetic expressions if both sides are not (function calls, paren-exprs, etc...) 
   in order to avoid lonely + 1.0; broken on the next line
-
+- Group expression newlinegroups by operator precedence https://discord.com/channels/1289346613185351722/1341941812675481680/1540094874739802243
 
 ## Opinions
 

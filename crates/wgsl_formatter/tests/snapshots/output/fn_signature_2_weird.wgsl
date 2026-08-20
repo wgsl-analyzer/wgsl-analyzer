@@ -1,8 +1,5 @@
 fn fn_signature_args_generic(
-    b: array<
-        array<array<array<array<array<array<u32, 10>, 1>, 5>, 1>, 2>, 3>,
-        4,
-    >,
+    b: array<array<array<array<array<array<array<u32, 10>, 1>, 5>, 1>, 2>, 3>, 4>,
 ) -> vec4f {}
 
 fn fn_signature_ret_generic() -> array<
@@ -10,8 +7,7 @@ fn fn_signature_ret_generic() -> array<
     4,
 > {}
 
-fn super_long_fn_name_that_is_very_long_and_has_many_parts_and_might_be_too_long_to_comprehend(
-) {}
+fn super_long_fn_name_that_is_very_long_and_has_many_parts_and_might_be_too_long_to_comprehend() {}
 
 @compute @workgroup_size(1, 1, 1)
 fn fn_signature_attributes(

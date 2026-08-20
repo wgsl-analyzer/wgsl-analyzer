@@ -336,6 +336,7 @@ fn format_chunks(chunks: Vec<dissimilar::Chunk<'_>>) -> String {
 /// ```compile_fail
 /// /* 0 */ a /* 1 */ b
 /// ```
+#[expect(clippy::needless_pass_by_value, reason = "Intentional API")]
 pub fn check_comments<E>(
     before: &str,
     after_block: E,
