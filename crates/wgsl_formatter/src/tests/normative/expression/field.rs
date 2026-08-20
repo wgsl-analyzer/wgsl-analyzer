@@ -1,6 +1,9 @@
 use expect_test::expect;
 
-use crate::test_util::check;
+use crate::{
+    FormattingOptions,
+    test_util::{check, check_with_options},
+};
 
 #[test]
 pub fn format_field_expr_prefer_breaking_other_stuff() {
@@ -37,5 +40,29 @@ pub fn format_field_expr_prefer_breaking_from_the_back() {
                         .eeeeeeeeeeee.fffffffffff.ggggggggggg;
             }
         "#]],
+    );
+}
+
+#[test]
+fn prefer_not_breaking_field_expression() {
+    check_with_options(
+        "
+        fn main() {
+
+        aaaaaaaaaa::bbbbbbbbbbbbbbbbbb[cccccc::dddddddddddddddddddddddddd] = ffffff.gggggggggggg;
+                }
+        ",
+        &expect![[r#"
+            fn main() {
+                aaaaaaaaaa::bbbbbbbbbbbbbbbbbb[cccccc::dddddddddddddddddddddddddd] =
+                    ffffff.gggggggggggg;
+            }
+        "#]],
+        &FormattingOptions {
+            max_line_width: 80,
+            ..Default::default()
+        }
+        .into(),
+        parser::Edition::LATEST,
     );
 }
