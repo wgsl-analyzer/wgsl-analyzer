@@ -19,14 +19,14 @@
 			"description": "Group not-breaking updates",
 			"matchUpdateTypes": ["minor", "patch", "digest"],
 			"matchJsonata": ["isBreaking != true"],
-			"groupName": "All not-breaking updates"
+			"groupName": "not-breaking"
 		},
 		{
 			"description": "Cargo not-breaking 0.x patches",
 			"matchManagers": ["cargo"],
 			"matchUpdateTypes": ["patch"],
 			"matchCurrentVersion": ">=0.1.0 <1.0.0",
-			"groupName": "All not-breaking updates"
+			"groupName": "not-breaking"
 		},
 		{
 			description: "Rust dependencies",
@@ -92,9 +92,9 @@
 			"enabled": false,
 		},
 		{
-			"description": "Ignore legacy nagas",
+			"description": "Ignore naga",
 			"matchManagers": ["cargo"],
-			"matchPackageNames": ["naga27", "naga28", "naga29"],
+			"matchPackageNames": ["naga"],
 			"enabled": false,
 		}
 	],
