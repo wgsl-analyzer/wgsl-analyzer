@@ -218,7 +218,7 @@ jobs:
           cargo build --release -p dprint-plugin-wgslfmt --target wasm32-unknown-unknown
           mkdir -p dist
           # dprint plugins have to be named `plugin.wasm`.
-          cp target/wasm32-unknown-unknown/release/dprint-plugin-wgslfmt.wasm dist/plugin.wasm
+          cp target/wasm32-unknown-unknown/release/dprint_plugin_wgslfmt.wasm dist/plugin.wasm
           cp crates/wgslfmt_dprint/deployment/dprint_plugin_wgslfmt_schema.json dist/dprint_plugin_wgslfmt_schema.json
 
       - name: Upload artifacts
