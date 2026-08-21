@@ -7,5 +7,53 @@ dist = "run --package xtask --bin xtask -- dist"
 [target.x86_64-pc-windows-msvc]
 linker = "rust-lld"
 
+# The shipped rust-std for this target is built with `singlethread: true`
+# (no wasm `atomics` feature), so -pthread cannot link against it. Requires
+# `cargo +nightly -Z build-std=std,panic_unwind`.
+[target.wasm32-unknown-emscripten]
+rustflags = [
+	"-Ctarget-feature=+atomics,+bulk-memory,+mutable-globals",
+	"-Clink-arg=-pthread",
+	# links libc++abi, which provides __cpp_exception / _Unwind_* for panic=unwind
+	"-Clink-arg=-sDEFAULT_TO_CXX",
+	# main() runs on a pthread so we need this to avoid deadlocks when a thread is spawned.
+	"-Clink-arg=-sPROXY_TO_PTHREAD=1",
+	"-Clink-arg=-sPTHREAD_POOL_SIZE=8",
+	"-Clink-arg=-sPTHREAD_POOL_SIZE_STRICT=0",
+	# matches STACK_SIZE in crates/wgsl-analyzer/src/bin/main.rs
+	"-Clink-arg=-sSTACK_SIZE=16MB",
+	"-Clink-arg=-sINITIAL_MEMORY=512MB",
+	"-Clink-arg=-sMAXIMUM_MEMORY=4GB",
+	"-Clink-arg=-sALLOW_MEMORY_GROWTH=1",
+	"-Clink-arg=-sEXIT_RUNTIME=1",
+	"-Clink-arg=-sWASM_BIGINT=1",
+	# Without this main() would run on load.
+	"-Clink-arg=-sMODULARIZE=1",
+	"-Clink-arg=-sEXPORT_ES6=1",
+	"-Clink-arg=-sEXPORT_NAME=createWgslAnalyzer",
+	# WasmFS is wasm-side and multithreaded, so it is preferred over the legacy JS filesystem.
+	# fd 0 and fd 1 bypass it entirely via the --wrap bridge below.
+	"-Clink-arg=-sWASMFS=1",
+	# WasmFS only emits the JS filesystem API it can prove it needs, and seeding
+	# the workspace calls it directly. Without this, Module.FS arrives missing
+	# mkdir/writeFile/unlink and boot fails.
+	"-Clink-arg=-sFORCE_FILESYSTEM=1",
+	# Seed the filesystem before main() runs, then callMain([]).
+	"-Clink-arg=-sINVOKE_RUN=0",
+	# Redirect libc stdio into the emscripten-stdio crate. `read` becomes
+	# `__wrap_read`, and the genuine libc entry point stays reachable as
+	# `__real_read`. The vectored pair is not optional: Rust reports
+	# is_read_vectored/is_write_vectored as true on emscripten, so its buffered
+	# stdio really does call readv/writev.
+	"-Clink-arg=-Wl,--wrap=read",
+	"-Clink-arg=-Wl,--wrap=readv",
+	"-Clink-arg=-Wl,--wrap=write",
+	"-Clink-arg=-Wl,--wrap=writev",
+	# HEAPU8 lets the host copy byte arrays in and out of wasm memory.
+	"-Clink-arg=-sEXPORTED_RUNTIME_METHODS=FS,callMain,HEAPU8",
+	# _malloc/_free back the temporary buffers the host copies through.
+	"-Clink-arg=-sEXPORTED_FUNCTIONS=_main,_malloc,_free,_lsp_stdin_push,_lsp_stdin_close,_lsp_stdout_pop,_lsp_stdout_signal_ptr",
+]
+
 [env]
 CARGO_WORKSPACE_DIR = { value = "", relative = true }
