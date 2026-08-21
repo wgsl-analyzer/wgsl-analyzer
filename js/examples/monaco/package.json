@@ -1,0 +1,22 @@
+{
+	"name": "wgsl-analyzer-monaco-example",
+	"version": "0.0.0",
+	"private": true,
+	"description": "Minimal Monaco editor backed by wgsl-analyzer in a Web Worker",
+	"type": "module",
+	"scripts": {
+		"dev": "vite",
+		"build": "vite build",
+		"preview": "vite preview",
+		"typecheck": "tsc --noEmit"
+	},
+	"dependencies": {
+		"monaco-editor": "^0.56.0",
+		"wgsl-analyzer-web": "workspace:*"
+	},
+	"devDependencies": {
+		"@tsconfig/strictest": "^2.0.8",
+		"typescript": "^7.0.2",
+		"vite": "^8.2.2"
+	}
+}
