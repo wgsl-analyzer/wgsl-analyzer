@@ -48,7 +48,6 @@ pub fn gen_function_declaration(
     formatted.request(Request::expect(RequestItem::Space));
 
     // Name
-    formatted.request(Request::expect(RequestItem::Space));
     formatted.extend(gen_node_with_trivia(&item_name)?);
 
     // Params
