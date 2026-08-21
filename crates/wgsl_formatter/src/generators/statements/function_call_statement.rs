@@ -65,40 +65,40 @@ pub fn determine_function_call_argument_style(
     {
         match segment.text() {
             "mat2x2" | "mat2x2h" | "mat2x2f" => FunctionCallArgumentStyle::Tabular {
-                width: 2,
-                height: 2,
+                columns: 2,
+                rows: 2,
             },
             "mat2x3" | "mat2x3h" | "mat2x3f" => FunctionCallArgumentStyle::Tabular {
-                width: 3,
-                height: 2,
+                columns: 2,
+                rows: 3,
             },
             "mat2x4" | "mat2x4h" | "mat2x4f" => FunctionCallArgumentStyle::Tabular {
-                width: 4,
-                height: 2,
+                columns: 2,
+                rows: 4,
             },
             "mat3x2" | "mat3x2h" | "mat3x2f" => FunctionCallArgumentStyle::Tabular {
-                width: 2,
-                height: 3,
+                columns: 3,
+                rows: 2,
             },
             "mat3x3" | "mat3x3h" | "mat3x3f" => FunctionCallArgumentStyle::Tabular {
-                width: 3,
-                height: 3,
+                columns: 3,
+                rows: 3,
             },
             "mat3x4" | "mat3x4h" | "mat3x4f" => FunctionCallArgumentStyle::Tabular {
-                width: 4,
-                height: 3,
+                columns: 3,
+                rows: 4,
             },
             "mat4x2" | "mat4x2h" | "mat4x2f" => FunctionCallArgumentStyle::Tabular {
-                width: 2,
-                height: 4,
+                columns: 4,
+                rows: 2,
             },
             "mat4x3" | "mat4x3h" | "mat4x3f" => FunctionCallArgumentStyle::Tabular {
-                width: 3,
-                height: 4,
+                columns: 4,
+                rows: 3,
             },
             "mat4x4" | "mat4x4h" | "mat4x4f" => FunctionCallArgumentStyle::Tabular {
-                width: 4,
-                height: 4,
+                columns: 4,
+                rows: 4,
             },
             _ => FunctionCallArgumentStyle::Standard,
         }
@@ -109,7 +109,7 @@ pub fn determine_function_call_argument_style(
 
 pub enum FunctionCallArgumentStyle {
     Standard,
-    Tabular { width: usize, height: usize },
+    Tabular { columns: usize, rows: usize },
 }
 
 pub fn parse_function_call_arguments(
@@ -139,8 +139,8 @@ pub fn gen_function_call_arguments(
     let style = determine_function_call_argument_style(arguments.syntax().parent());
     match style {
         FunctionCallArgumentStyle::Standard => gen_function_call_arguments_standard(arguments),
-        FunctionCallArgumentStyle::Tabular { width, height } => {
-            gen_function_call_arguments_tabular(arguments, width, height)
+        FunctionCallArgumentStyle::Tabular { columns, rows } => {
+            gen_function_call_arguments_tabular(arguments, columns, rows)
         },
     }
 }
