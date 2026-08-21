@@ -4,7 +4,8 @@ use crate::generators::{
     expressions::{index_expression, parenthesis_expression},
     statements::{
         assignment_statement, break_if_statement, const_assert_statement, for_statement,
-        if_statement, return_statement, switch_statement, while_statement,
+        if_statement, return_statement, switch_statement, var_let_const_override_statement,
+        while_statement,
     },
 };
 
@@ -29,4 +30,9 @@ pub fn expression_parens_are_irrelevant_policy(node: &SyntaxNode) -> bool {
 #[must_use]
 pub fn collapse_one_liner_compound_statement_policy(node: &SyntaxNode) -> bool {
     switch_statement::collapse_one_liner_case_body_rule(node)
+}
+
+#[must_use]
+pub fn template_must_be_one_line_policy(node: &SyntaxNode) -> bool {
+    var_let_const_override_statement::template_must_be_on_one_line_rule(node)
 }
