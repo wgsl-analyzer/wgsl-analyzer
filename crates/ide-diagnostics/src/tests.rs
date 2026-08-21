@@ -619,3 +619,19 @@ fn foo() {
         "#]],
     );
 }
+
+#[test]
+fn mat_times_vec() {
+    check_diagnostics(
+        "
+fn foo() {
+    let x = mat3x4f(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12);
+    let y = vec3f(1, 2, 3);
+    let z = x * y;
+}
+        ",
+        expect![[r#"
+            111..116 wesl-rs Error 22: cannot use binary operator `*` with operands `mat3x4<f32>` and `vec3<f32>`
+        "#]],
+    );
+}
