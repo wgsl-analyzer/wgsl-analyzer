@@ -18,6 +18,7 @@ result
 
 # Other build artifacts
 
+node_modules/
 /dist/
 /out/
 docs/book/book
