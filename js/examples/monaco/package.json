@@ -1,0 +1,30 @@
+{
+	"name": "wgsl-analyzer-monaco-example",
+	"version": "0.0.0",
+	"private": true,
+	"description": "Minimal Monaco editor backed by wgsl-analyzer in a Web Worker",
+	"type": "module",
+	"scripts": {
+		"predev": "node scripts/copy-assets.mjs",
+		"dev": "vite",
+		"prebuild": "node scripts/copy-assets.mjs",
+		"build": "vite build",
+		"preview": "vite preview",
+		"typecheck": "tsc --noEmit"
+	},
+	"dependencies": {
+		"@codingame/monaco-vscode-api": "^25.1.2",
+		"monaco-editor": "npm:@codingame/monaco-vscode-editor-api@^25.1.2",
+		"monaco-languageclient": "^10.7.0",
+		"vscode": "npm:@codingame/monaco-vscode-extension-api@^25.1.2",
+		"vscode-languageclient": "~9.0.1",
+		"wgsl-analyzer-web": "workspace:*"
+	},
+	"devDependencies": {
+		"@codingame/esbuild-import-meta-url-plugin": "^1.0.3",
+		"@tsconfig/strictest": "^2.0.8",
+		"@types/node": "^25.9.5",
+		"typescript": "^7.0.2",
+		"vite": "^7.1.5"
+	}
+}
