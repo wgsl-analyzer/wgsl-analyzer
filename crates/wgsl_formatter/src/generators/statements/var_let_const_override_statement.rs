@@ -134,7 +134,7 @@ fn gen_var_let_const_override_statement(
     if let Some(value) = assignment {
         formatted.request(Request::expect(RequestItem::Space));
         formatted.push_sc(sc!("="));
-        formatted.request(Request::expect(RequestItem::Space));
+        formatted.request(Request::expect(RequestItem::Space).or_newline());
         formatted.extend(gen_node_with_trivia(&value)?);
     }
 

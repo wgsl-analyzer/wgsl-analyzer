@@ -40,7 +40,7 @@ pub fn gen_assignment_statement(
     formatted.extend(gen_node_with_trivia(&item_target)?);
     formatted.request(Request::expect(RequestItem::Space));
     formatted.push_sc(sc!("="));
-    formatted.request(Request::expect(RequestItem::Space));
+    formatted.request(Request::expect(RequestItem::Space).or_newline());
     formatted.start_indent_before_requests();
     formatted.extend(gen_node_with_trivia(&item_value)?);
     if statement_needs_semicolon_policy(assignment_statement.syntax()) {
