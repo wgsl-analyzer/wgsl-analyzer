@@ -208,9 +208,13 @@ pub fn gen_function_call_arguments_tabular(
 
     let item_count = item_arguments.len();
 
-    if item_count != table_columns * table_rows {
+    let (table_columns, _table_rows) = if item_count == table_columns * table_rows {
+        (table_columns, table_rows)
+    } else if item_count == table_rows {
+        (1, table_rows)
+    } else {
         return gen_function_call_arguments_standard(arguments);
-    }
+    };
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
