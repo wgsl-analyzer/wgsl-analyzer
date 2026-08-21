@@ -3,7 +3,7 @@ use expect_test::expect;
 use crate::test_util::check;
 
 #[test]
-pub fn format_var_declaration_prefer_break_type_instead_of_path() {
+pub fn format_var_declaration_dont_break_var_template_args() {
     check(
         "
         @group(constants::BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB) @binding(0)

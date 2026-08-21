@@ -263,7 +263,8 @@ pub fn format_long_function_call_dont_break_path() {
         &expect![[r#"
             //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
             fn main() {
-                let a = thing::blaaaaa::thing::blaaa::thing::blaaaaaaaaaaaaaaaaaaaa::thing::loooong::paaath(
+                let a =
+                    thing::blaaaaa::thing::blaaa::thing::blaaaaaaaaaaaaaaaaaaaa::thing::loooong::paaath(
                         aaaa,
                         bbbb,
                         ccc,
@@ -293,14 +294,15 @@ pub fn format_function_call_with_field_expr_prefer_breaking_fncall() {
         "
         //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
         fn main() {
-            let a = thing(aaaaaaaaaaaaa, bbbbbbbbbbbbbbbbbbbb, ccccccccccccccccc, ddddd).x;
+            let a = thing(aaaaaaaaaaaaa, bbbbbbbbbbbbbbbbbbbb, ccccccccccccccccc, ddddd).xxxxxxxxxx;
         }
         ",
         expect![[r#"
             //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
             fn main() {
-                let a = thing(aaaaaaaaaaaaa, bbbbbbbbbbbbbbbbbbbb, ccccccccccccccccc, ddddd)
-                        .x;
+                let a =
+                    thing(aaaaaaaaaaaaa, bbbbbbbbbbbbbbbbbbbb, ccccccccccccccccc, ddddd)
+                        .xxxxxxxxxx;
             }
         "#]],
     );
