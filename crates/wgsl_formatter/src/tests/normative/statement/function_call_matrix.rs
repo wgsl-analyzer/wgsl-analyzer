@@ -7,6 +7,28 @@ use crate::{
 };
 
 #[test]
+fn format_nonsquare_matrix_as_cols_rows() {
+    // https://gpuweb.github.io/gpuweb/wgsl/#matrix-types
+    // "matCxR<T> 	Matrix of C columns and R rows..."
+    check(
+        "
+fn main() {
+    let z = mat2x4<f32>(a,b,c,d,g,h,i,j);
+}",
+        expect![[r#"
+            fn main() {
+                let z = mat2x4<f32>(
+                        a, b,
+                        c, d,
+                        g, h,
+                        i, j,
+                    );
+            }
+        "#]],
+    );
+}
+
+#[test]
 fn format_matrix_if_correct_number_of_args() {
     check(
         "
@@ -179,23 +201,44 @@ fn main() {
 }
 
 #[test]
-fn format_matrix_dont_if_incorrect_number_of_args_vecs() {
+fn format_matrix_if_number_of_args_equals_rows() {
     check(
         "
 fn main() {
-    let x = mat3x3(
-    vec3(0.0, 0.0, 0.0),
-    vec3(0.0, 0.0, 0.0),
-    vec3(0.0, 0.0, 0.0),
+    let x = mat2x4<f32>(
+    vec2(0.0, 0.0),
+    vec2(0.0, 0.0),
+    vec2(0.0, 0.0),
+    vec2(0.0, 0.0),
     );
 }",
         expect![[r#"
             fn main() {
-                let x = mat3x3(
-                        vec3(0.0, 0.0, 0.0),
-                        vec3(0.0, 0.0, 0.0),
-                        vec3(0.0, 0.0, 0.0),
+                let x = mat2x4<f32>(
+                        vec2(0.0, 0.0),
+                        vec2(0.0, 0.0),
+                        vec2(0.0, 0.0),
+                        vec2(0.0, 0.0),
                     );
+            }
+        "#]],
+    );
+}
+
+#[test]
+fn format_matrix_dont_if_incorrect_number_of_args_equals_rows() {
+    check(
+        "
+fn main() {
+    let x = mat2x4<f32>(
+    0.0, 0.0,
+    1.0, 1.0,
+    0.1
+    );
+}",
+        expect![[r#"
+            fn main() {
+                let x = mat2x4<f32>(0.0, 0.0, 1.0, 1.0, 0.1);
             }
         "#]],
     );

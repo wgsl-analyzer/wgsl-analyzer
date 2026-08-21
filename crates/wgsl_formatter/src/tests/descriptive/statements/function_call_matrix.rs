@@ -21,12 +21,15 @@ fn main() {
                         c, d,
                     );
                 let y = mat2x3<f32>(
-                        a, b, c,
-                        d, e, f,
+                        a, b,
+                        c, d,
+                        e, f,
                     );
                 let z = mat2x4<f32>(
-                        a, b, c, d,
-                        g, h, i, j,
+                        a, b,
+                        c, d,
+                        g, h,
+                        i, j,
                     );
 
                 let h = mat2x2f(
@@ -57,9 +60,8 @@ fn main() {
         expect![[r#"
             fn main() {
                 let x = mat3x2<f32>(
-                        a, b,
-                        c, d,
-                        e, f,
+                        a, b, c,
+                        d, e, f,
                     );
                 let y = mat3x3<f32>(
                         a, b, c,
@@ -67,20 +69,19 @@ fn main() {
                         g, h, i,
                     );
                 let z = mat3x4<f32>(
-                        a, b, c, d,
-                        g, h, i, j,
-                        i, j, k, l,
+                        a, b, c,
+                        d, g, h,
+                        i, j, i,
+                        j, k, l,
                     );
 
                 let h = mat3x2h(
-                        a, b,
-                        c, d,
-                        e, f,
+                        a, b, c,
+                        d, e, f,
                     );
                 let f = mat3x2f(
-                        a, b,
-                        c, d,
-                        e, f,
+                        a, b, c,
+                        d, e, f,
                     );
             }
         "#]],
@@ -102,16 +103,13 @@ fn main() {
         expect![[r#"
             fn main() {
                 let x = mat4x2<f32>(
-                        a, b,
-                        c, d,
-                        e, f,
-                        g, h,
+                        a, b, c, d,
+                        e, f, g, h,
                     );
                 let y = mat4x3<f32>(
-                        a, b, c,
-                        d, e, f,
-                        g, h, i,
-                        j, k, l,
+                        a, b, c, d,
+                        e, f, g, h,
+                        i, j, k, l,
                     );
                 let z = mat4x4<f32>(
                         a, b, c, d,
@@ -121,16 +119,12 @@ fn main() {
                     );
 
                 let h = mat4x2h(
-                        a, b,
-                        c, d,
-                        e, f,
-                        g, h,
+                        a, b, c, d,
+                        e, f, g, h,
                     );
                 let f = mat4x2f(
-                        a, b,
-                        c, d,
-                        e, f,
-                        g, h,
+                        a, b, c, d,
+                        e, f, g, h,
                     );
             }
         "#]],
