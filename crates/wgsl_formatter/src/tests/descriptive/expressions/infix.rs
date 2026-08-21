@@ -1,6 +1,9 @@
 use expect_test::expect;
 
-use crate::test_util::{assert_out_of_scope, check, check_comments};
+use crate::{
+    FormattingOptions,
+    test_util::{CheckOptions, assert_out_of_scope, check, check_comments, check_with_options},
+};
 
 #[test]
 pub fn format_naked_infix_exprs_out_of_scope() {
@@ -104,5 +107,74 @@ fn format_infix_expr_shl() {
                 let x = 1u << 3u;
             }
         "]],
+    );
+}
+
+#[test]
+fn format_infix_break_with_precedence_boolean_vs_arithmetic() {
+    check_with_options(
+        "
+        //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
+        fn main() {
+            let break_me = aaaaaa + bbbbbb && xxxxxxxxxx;
+            let break_me = aaaaaaaaaa + bbbbbbbbbb && xxxxxxxxxx;
+            let break_me = xxxxxxxxxx && aaaaaaaaaa + bbbbbbbbbb;
+
+            let break_me = aaaaaa + bbbbbb || xxxxxxxxxx;
+            let break_me = aaaaaaaaaa + bbbbbbbbbb || xxxxxxxxxx;
+            let break_me = xxxxxxxxxx || aaaaaaaaaa + bbbbbbbbbb;
+
+            let break_me = aaaaaa + bbbbbb | xxxxxxxxxx;
+            let break_me = aaaaaaaaaa + bbbbbbbbbb | xxxxxxxxxx;
+            let break_me = xxxxxxxxxx | aaaaaaaaaa + bbbbbbbbbb;
+
+            let break_me = aaaaaa + bbbbbb & xxxxxxxxxx;
+            let break_me = aaaaaaaaaa + bbbbbbbbbb & xxxxxxxxxx;
+            let break_me = xxxxxxxxxx & aaaaaaaaaa + bbbbbbbbbb;
+        }",
+        &expect![[r#"
+            //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
+            fn main() {
+                let break_me = aaaaaa + bbbbbb
+                    && xxxxxxxxxx;
+                let break_me =
+                    aaaaaaaaaa + bbbbbbbbbb
+                    && xxxxxxxxxx;
+                let break_me = xxxxxxxxxx
+                    && aaaaaaaaaa + bbbbbbbbbb;
+
+                let break_me = aaaaaa + bbbbbb
+                    || xxxxxxxxxx;
+                let break_me =
+                    aaaaaaaaaa + bbbbbbbbbb
+                    || xxxxxxxxxx;
+                let break_me = xxxxxxxxxx
+                    || aaaaaaaaaa + bbbbbbbbbb;
+
+                let break_me = aaaaaa + bbbbbb
+                    | xxxxxxxxxx;
+                let break_me =
+                    aaaaaaaaaa + bbbbbbbbbb
+                    | xxxxxxxxxx;
+                let break_me = xxxxxxxxxx
+                    | aaaaaaaaaa + bbbbbbbbbb;
+
+                let break_me = aaaaaa + bbbbbb
+                    & xxxxxxxxxx;
+                let break_me =
+                    aaaaaaaaaa + bbbbbbbbbb
+                    & xxxxxxxxxx;
+                let break_me = xxxxxxxxxx
+                    & aaaaaaaaaa + bbbbbbbbbb;
+            }
+        "#]],
+        &CheckOptions {
+            assert_line_width: None,
+            formatting: FormattingOptions {
+                max_line_width: 40,
+                ..Default::default()
+            },
+        },
+        parser::Edition::LATEST,
     );
 }
