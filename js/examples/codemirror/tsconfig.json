@@ -1,0 +1,14 @@
+{
+	"extends": "@tsconfig/strictest/tsconfig.json",
+	"compilerOptions": {
+		"target": "es2022",
+		"lib": ["ES2022", "DOM", "DOM.Iterable"],
+		"module": "esnext",
+		"moduleResolution": "bundler",
+		"noEmit": true,
+		"types": ["vite/client"],
+		"verbatimModuleSyntax": true,
+		"skipLibCheck": true
+	},
+	"include": ["src", "vite.config.ts"]
+}
