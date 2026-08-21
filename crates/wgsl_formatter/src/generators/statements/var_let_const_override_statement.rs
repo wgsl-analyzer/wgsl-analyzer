@@ -146,3 +146,17 @@ fn gen_var_let_const_override_statement(
 
     Ok(formatted)
 }
+
+pub fn template_must_be_on_one_line_rule(node: &parser::SyntaxNode) -> bool {
+    let Some(parent) = node.parent() else {
+        return false;
+    };
+
+    matches!(
+        parent.kind(),
+        SyntaxKind::VariableDeclaration
+            | SyntaxKind::OverrideDeclaration
+            | SyntaxKind::LetDeclaration
+            | SyntaxKind::ConstantDeclaration
+    )
+}

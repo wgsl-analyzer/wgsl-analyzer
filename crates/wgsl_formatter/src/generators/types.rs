@@ -9,6 +9,7 @@ use crate::{
         IgnoreBlankspace, IgnoreComma, IgnoreTemplateDelimiters, NoTrivia, Succeeding,
         UntilNewline, parse_end, parse_many_nodes_with, parse_node_with, syntax_iter,
     },
+    context_policies,
     generators::node::{
         gen_node_content, gen_node_preceding_trivia, gen_node_succeeding_trivia,
         gen_node_with_trivia,
@@ -46,6 +47,9 @@ pub fn gen_type_specifier(
 pub fn gen_template_list(
     template_list: &ast::TemplateList
 ) -> FormatDocumentResult<PrintItemBuffer> {
+    let must_be_oneline =
+        context_policies::template_must_be_one_line_policy(template_list.syntax());
+
     // ==== Parse ====
     let mut syntax = syntax_iter(template_list.syntax());
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::TemplateStart)?;
@@ -78,7 +82,11 @@ pub fn gen_template_list(
         multiline_group.start_indent_before_requests();
 
         for (position, item) in item_arguments.into_iter().with_position() {
-            multiline_group.grouped_newline_or_space();
+            if must_be_oneline {
+                multiline_group.request(Request::expect(RequestItem::Space));
+            } else {
+                multiline_group.grouped_newline_or_space();
+            }
             multiline_group.extend(gen_node_preceding_trivia(&item)?);
             if item.has_content() {
                 multiline_group.extend(gen_node_content(&item)?);
@@ -98,7 +106,9 @@ pub fn gen_template_list(
 
         multiline_group.request(Request::discourage(RequestItem::Space));
         multiline_group.finish_indent();
-        multiline_group.grouped_possible_newline();
+        if !must_be_oneline {
+            multiline_group.grouped_possible_newline();
+        }
     }
     multiline_group.push_sc(sc!(">"));
     multiline_group.end_before_requests();
