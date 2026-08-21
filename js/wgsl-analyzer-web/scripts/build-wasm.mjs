@@ -46,10 +46,40 @@ const cargoArguments = [
 ];
 if (!debug) cargoArguments.push("--release");
 
+const buildEnvironment = { ...process.env };
+
+// RUSTFLAGS in  the environment would override the ones defined in the
+// `[target.wasm32-unknown-emscripten]` section in .cargo/config.toml.
+delete buildEnvironment.RUSTFLAGS;
+delete buildEnvironment.CARGO_ENCODED_RUSTFLAGS;
+
+// Size tuning, release only: `-Oz` slows the link down considerably, and it
+// turns off the emscripten runtime checks that make a debug build worth having.
+if (!debug) {
+	// Mirrors the shell idiom `${VAR:-default}`: a value already in the
+	// environment wins, so any of these can be overridden per invocation.
+	const withDefault = (name, value) => {
+		if (!buildEnvironment[name]) buildEnvironment[name] = value;
+	};
+
+	// Appended rather than defaulted, so flags the caller already set are kept.
+	// emcc applies EMCC_CFLAGS to its link invocation as well as its compile
+	// ones, which is what gets `-Oz` to the linker: there it sets OPT_LEVEL=2
+	// and SHRINK_LEVEL=2, enabling the Binaryen pass, meta-DCE, wasm
+	// import/export minification, and ASSERTIONS=0.
+	buildEnvironment.EMCC_CFLAGS = `${process.env.EMCC_CFLAGS ?? ""} -Oz`.trim();
+
+	withDefault("CARGO_PROFILE_RELEASE_OPT_LEVEL", "z");
+	withDefault("CARGO_PROFILE_RELEASE_LTO", "fat");
+	withDefault("CARGO_PROFILE_RELEASE_CODEGEN_UNITS", "1");
+	withDefault("CARGO_PROFILE_RELEASE_INCREMENTAL", "false");
+}
+
 console.log(`build-wasm: cargo ${cargoArguments.join(" ")}`);
 const build = spawnSync("cargo", cargoArguments, {
 	cwd: WORKSPACE_ROOT,
 	stdio: "inherit",
+	env: buildEnvironment,
 });
 if (build.status !== 0) {
 	fail(`cargo exited with status ${build.status ?? "unknown"}`);
