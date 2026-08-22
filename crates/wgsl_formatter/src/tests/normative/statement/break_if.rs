@@ -11,7 +11,7 @@ pub fn format_loop_continuing_break_if_statement_with_needless_parens() {
         "fn main() {
         loop {
         continuing {
-        break if (false);
+        break if ((((false))));
 
         }
         }

@@ -8,7 +8,7 @@
 - Don't break in paths https://discord.com/channels/1289346613185351722/1341941812675481680/1540061738232455332
 - Don't break before type of variable https://discord.com/channels/1289346613185351722/1341941812675481680/1540061738232455332
 - Increase default line width to 100
-- Consider only allowing breaks before arithmetic expressions if both sides are not (function calls, paren-exprs, etc...) 
+- Consider only allowing breaks before arithmetic expressions if both sides are not (function calls, paren-exprs, etc...)
   in order to avoid lonely + 1.0; broken on the next line
 - Group expression newlinegroups by operator precedence https://discord.com/channels/1289346613185351722/1341941812675481680/1540094874739802243
 
@@ -26,7 +26,7 @@ The formatter should try to detect the programmer's intent
 (i.e what they wanted to comment) and then when
 things shift around during formatting, keep the comment in a place
 where that intent is preserved.
-The formatter should *not* prevent the programmer from putting comments
+The formatter should _not_ prevent the programmer from putting comments
 in strange places and should not impose opinions on where comments should belong.
 
 ### The formatter should fail when it encounters unexpected syntax
@@ -43,17 +43,17 @@ certain `SyntaxKind`, even tho that is not needed for the formatting itself.
 
 The tests in this crate are differentiated into
 **normative** and **descriptive** tests.
-The *descriptive* tests are meant to represent the
+The _descriptive_ tests are meant to represent the
 current state of the formatter, regardless of whether that state is correct or not.
 They are as comprehensive as possible, with as many edge cases present as possible.
 They are noisy and might even cover many cases all at once.
 They enable us to make changes to the formatter internals and be certain
 to not cause accidental formatting changes.
 If changes to the formatter are made and a change of formatting is expected
-(= breaking change), the *descriptive* tests can be updated with relatively
+(= breaking change), the _descriptive_ tests can be updated with relatively
 little thought.
 
-The *normative* tests are meant to represent how the formatter should be.
+The _normative_ tests are meant to represent how the formatter should be.
 They are the result of pondering alternatives, discussion, past issues and
 embody the opinions that flow into the formatter.
 They are documentation about the choices made when implementing
@@ -61,12 +61,12 @@ the formatter in some way.
 They should be terse, purposeful and targeted, and contain documentation
 as to why they are the way they are.
 If changes to the formatter are made that would require changes
-to the *normative* tests, it might be a good idea
+to the _normative_ tests, it might be a good idea
 to gather opinions first, research what the initial intent behind the old state
 was, and decide if the new state is actually a better default.
 
 When issues with the formatter arise, those decisions should be documented
-as a *normative* test in order to prevent regressions.
+as a _normative_ test in order to prevent regressions.
 
 ## Tricks for debugging the crate
 
@@ -94,9 +94,9 @@ RUST_BACKTRACE=1 cargo test --features=prefer-immediate-crash
 ## Guidelines on implementing formatting for new syntax constructs
 
 1. Create normative and descriptive tests. The normative tests should encapsulate
-   ideas and opinions about how code *should* be formatted (e.g where linebreaks
+   ideas and opinions about how code _should_ be formatted (e.g where linebreaks
    should go or if colons after a switch get removed.). The descriptive tests
-   document how code *is* formatted (to make sure we don't accidentally regress
+   document how code _is_ formatted (to make sure we don't accidentally regress
    one part of the formatter wen fixing another). Do not forget to add tests
    using `check_comments` to make sure the formatter never accidentally removes
    or reorders the comments around your syntax construct.

@@ -7,8 +7,15 @@ use dprint_core::formatting::{
 /// A possible kind of whitespace that can be requested and, through [`RequestFolder`], be merged together if multiple requests are issued.
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum RequestItem {
+    /// Request a space.
     Space,
+    /// Request a single line break.
+    ///
+    /// Subsumes requests for [`Self::Space`].
     LineBreak,
+    /// Request a double line break.
+    ///
+    /// Subsumes requests for [`Self::Space`] and [`Self::LineBreak`].
     EmptyLine,
 }
 
@@ -166,6 +173,7 @@ impl Request {
         }
     }
 
+    /// Shorthand to construct an unconditional [`Request`] that expects a specific [`RequestItem`].
     #[must_use]
     pub const fn expect(item: RequestItem) -> Self {
         Self::Unconditional {
@@ -176,6 +184,7 @@ impl Request {
         }
     }
 
+    /// Shorthand to construct an unconditional [`Request`] that discourages a specific [`RequestItem`].
     #[must_use]
     pub const fn discourage(item: RequestItem) -> Self {
         Self::Unconditional {
@@ -186,6 +195,7 @@ impl Request {
         }
     }
 
+    /// Shorthand to construct an unconditional [`Request`] that forces a specific [`RequestItem`].
     #[must_use]
     pub const fn force(item: RequestItem) -> Self {
         Self::Unconditional {
@@ -196,6 +206,8 @@ impl Request {
         }
     }
 
+    /// If this [`Request`] would resolve to a space, inform dprint that instead of the space
+    /// a linebreak could be chosen here - if that aids in fitting the code into the max line width.
     #[must_use]
     pub fn or_newline(self) -> Self {
         match self {
