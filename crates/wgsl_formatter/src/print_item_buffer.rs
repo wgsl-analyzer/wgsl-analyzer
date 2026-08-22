@@ -32,19 +32,39 @@ use crate::print_item_buffer::spacing_request::Request;
 //   we wan't to communicate that we may want separation to adjacent text.
 /// A wrapper for `PrintItem`s which adds the ability to do "item-requests".
 ///
-/// In a lot of places the intent is to have code of a particular shape, depending on its surroundings.
-/// "Add a space, if the previous item was something that we need to separation from".
+/// # Motivation
 ///
-/// All formatting should go through this struct, which keeps track of `PrintItemRequest`s.
-/// Example:
-/// * Snippet A requests that there should be a space after it `AAA|_|`
-/// * Snippet B requests that there should be a space after and in front of it `|_|BBB|_|`
-/// * Snippet C requests that there may never be a space in front of it `|X|CCC`
+/// In many places code gets more terse when we can express that some sort of separation should or should
+/// not be inserted at a point.
+/// Instead of checking "if the previous print item was something we have to be separated from or not" we can
+/// just request that "in the default case insert a space here". If the previous item is something that
+/// does not want separation after it (like the opening parenthesis of a function) we can request
+/// that there should not be a space after it, directly at the point where the parentheses are inserted.
 ///
-/// The `PrintItemBuffer` automatically tracks and resolves these requests, so that the outcome will be
-/// `AAA BBBCCC`, where the two spaces between A and B were collapsed and the space after B was overwritten.
+/// Additionally this request system also allows to solve cases very elegantly, where otherwise we would
+/// need a "look-ahead" in dprint, to determine if a space should be inserted or not.
+/// (At the time of writing this, look-aheads don't seem to be supported by dprint.)
+/// An example of such a case is when we remove needless parentheses - for example around the condition in a `break if`.
+/// Typically we would want spaces around any parenthesis statement that we eliminated, however in the case of a `break if`
+/// we do not want a space after the condition, because a semicolon goes there, and we don't need to be separated from that.
+/// While that could be solved by checking the context of the parenthesis statement, in the case of nested parenthesis statements
+/// this can get needlessly complicated quickly.
 ///
-/// Known downsides to this solution:
+/// Another use case for the request system is that through requests we can guarantee that at no point will there be two spaces
+/// following each other - as consecutive space requests are "combined" into one.
+/// We can also know that a space after a newline is "combined" into just a newline - similarly with empty lines.
+///
+/// # Usage
+///
+/// All formatting should go through this struct, which keeps track of said requests, that can be issued
+/// using [`Self::request`].
+/// Requests are kept in a state where they can be merged with incoming requests until either [`Self::apply_end_request`] is called,
+/// or a non-mergeable item (like a String or [`dprint_core_macros::sc!`]) is pushed, at which point the request is resolved and
+/// its result is pushed to the output.
+///
+/// Take a look at the [`Request`] documentation for more details on how requests are resolved.
+///
+/// # Known downsides to this solution:
 /// * Exponential blowup when using with dprint's conditionals (not a big problem most of the time as not many dprint conditionals are used consecutively)
 /// * Another layer on top of dprint's IR, which doesn't feel like it should be necessary
 ///
