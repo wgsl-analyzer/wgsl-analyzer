@@ -193,9 +193,9 @@ fn foo() {
             630..638 'atomic()': expected 1 template arguments, but got 0
             630..638 'atomic()': missing template argument, expected a type
             658..663 'ptr()': expected 2 to 3 template arguments, but got 0
-            658..663 'ptr()': missing template argument, expected an enum
+            658..663 'ptr()': missing template argument, expected an address space
             739..759 'textur...e_2d()': expected 1 to 2 template arguments, but got 0
-            739..759 'textur...e_2d()': missing template argument, expected an enum
+            739..759 'textur...e_2d()': missing template argument, expected an address space
         "#]],
     );
 }

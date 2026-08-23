@@ -356,14 +356,7 @@ impl<'db> TypeLoweringContext<'db> {
                 Ok(Lowered::BuiltinFunction(name, Some(template_parameters)))
             },
             Ok(ResolveKind::BuiltinType(name)) => {
-                self.expect_no_template(&template_parameters);
-                self.lower_builtin_type(&name)
-                    .ok_or_else(|| TypeLoweringError {
-                        container: type_container,
-                        kind: TypeLoweringErrorKind::Resolution(
-                            ResolutionDiagnostic::UnresolvedName { name },
-                        ),
-                    })
+                self.lower_builtin_type(name, type_container, &template_parameters)
             },
             Ok(ResolveKind::BuiltinTypeGenerator(name)) => {
                 match self.lower_builtin_type_generator(
@@ -629,6 +622,7 @@ impl<'db> WgslTypeConverter<'db> {
                 Box::new(self.to_wgsl_types(inner)),
                 access_mode,
             ),
+            TypeKind::AccelerationStructure(tags) => wgsl_types::Type::AccelerationStructure(tags),
         }
     }
 
@@ -1005,6 +999,7 @@ impl<'db> WgslTypeConverter<'db> {
             | TypeKind::Array(_)
             | TypeKind::Texture(_)
             | TypeKind::Sampler(_)
+            | TypeKind::AccelerationStructure(_)
             | TypeKind::Reference(_)
             | TypeKind::Pointer(_)) => panic!("invalid sampled type {kind:?}"),
         }

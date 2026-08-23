@@ -5,7 +5,7 @@ use std::{borrow::Cow, fmt, num::NonZeroU32};
 use base_db::{Intern as _, Lookup as _, impl_intern_key, impl_intern_lookup};
 use hir_def::db::StructId;
 use wgsl_types::{
-    syntax::{AccessMode, AddressSpace, TexelFormat},
+    syntax::{AccelerationStructureFlags, AccessMode, AddressSpace, TexelFormat},
     ty::SamplerType,
 };
 
@@ -32,6 +32,7 @@ impl Type {
             | TypeKind::Struct(_)
             | TypeKind::BuiltinStruct(_)
             | TypeKind::Texture(_)
+            | TypeKind::AccelerationStructure(_)
             | TypeKind::Sampler(_) => false,
             TypeKind::Atomic(atomic_type) => atomic_type.inner.is_err(db),
             TypeKind::Vector(vector_type) => vector_type.component_type.is_err(db),
@@ -60,6 +61,7 @@ impl Type {
             | TypeKind::BuiltinStruct(_)
             | TypeKind::Array(_)
             | TypeKind::Texture(_)
+            | TypeKind::AccelerationStructure(_)
             | TypeKind::Sampler(_)
             | TypeKind::Pointer(_) => self,
         }
@@ -154,6 +156,7 @@ impl Type {
             | TypeKind::Texture(_)
             | TypeKind::Sampler(_)
             | TypeKind::Reference(_)
+            | TypeKind::AccelerationStructure(_)
             | TypeKind::Pointer(_) => false,
         }
     }
@@ -182,6 +185,7 @@ pub enum TypeKind {
     Sampler(SamplerType),
     Reference(Reference),
     Pointer(Pointer),
+    AccelerationStructure(Option<AccelerationStructureFlags>),
 }
 
 impl TypeKind {
@@ -208,6 +212,7 @@ impl TypeKind {
             | Self::BuiltinStruct(_)
             | Self::Array(_)
             | Self::Texture(_)
+            | Self::AccelerationStructure(_)
             | Self::Sampler(_)
             | Self::Pointer(_) => Cow::Borrowed(self),
         }
@@ -254,6 +259,7 @@ impl TypeKind {
             | Self::Texture(_)
             | Self::Sampler(_)
             | Self::Reference(_)
+            | Self::AccelerationStructure(_)
             | Self::Pointer(_) => return None,
         })
     }
@@ -272,6 +278,7 @@ impl TypeKind {
             | Self::Texture(_)
             | Self::Sampler(_)
             | Self::Reference(_)
+            | Self::AccelerationStructure(_)
             | Self::Pointer(_) => false,
         }
     }
@@ -290,6 +297,7 @@ impl TypeKind {
             | Self::Texture(_)
             | Self::Sampler(_)
             | Self::Reference(_)
+            | Self::AccelerationStructure(_)
             | Self::Pointer(_) => false,
         }
     }
@@ -315,6 +323,7 @@ impl TypeKind {
             | Self::Texture(_)
             | Self::Sampler(_)
             | Self::Reference(_)
+            | Self::AccelerationStructure(_)
             | Self::Pointer(_) => false,
         }
     }
@@ -388,6 +397,7 @@ impl TypeKind {
             | Self::Texture(_)
             | Self::Sampler(_)
             | Self::Reference(_)
+            | Self::AccelerationStructure(_)
             | Self::Pointer(_) => false,
         }
     }
@@ -416,6 +426,7 @@ impl TypeKind {
             | Self::Texture(_)
             | Self::Sampler(_)
             | Self::Reference(_)
+            | Self::AccelerationStructure(_)
             | Self::Pointer(_) => false,
         }
     }
@@ -445,6 +456,7 @@ impl TypeKind {
             | Self::Matrix(_)
             | Self::BuiltinStruct(_)
             | Self::Texture(_)
+            | Self::AccelerationStructure(_)
             | Self::Sampler(_) => false,
         }
     }

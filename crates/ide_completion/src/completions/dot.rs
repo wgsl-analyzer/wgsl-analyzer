@@ -72,6 +72,7 @@ pub(crate) fn complete_dot(
         | TypeKind::Array(_)
         | TypeKind::Texture(_)
         | TypeKind::Sampler(_)
+        | TypeKind::AccelerationStructure(_)
         | TypeKind::Reference(_)
         | TypeKind::Pointer(_) => None,
     }
