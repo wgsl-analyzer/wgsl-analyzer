@@ -67,6 +67,7 @@ pub fn format_tree(
         preceding_trivia: Vec::new(),
         node: NodeWithTriviaContent::Content(NodeOrToken::Node(syntax.syntax().clone())),
         succeeding_trivia: Vec::new(),
+        format: true,
     };
 
     format(options, || gen_node_with_trivia(&trivia))
@@ -80,6 +81,7 @@ pub fn format_node(
         preceding_trivia: Vec::new(),
         node: NodeWithTriviaContent::Content(NodeOrToken::Node(syntax.clone())),
         succeeding_trivia: Vec::new(),
+        format: true,
     };
 
     format(options, || gen_node_with_trivia_no_newlines(&trivia))

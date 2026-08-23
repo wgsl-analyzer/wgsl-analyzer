@@ -6,7 +6,10 @@ use syntax::{
 };
 
 use crate::{
-    ast_parse::{IgnoreBlankspace, NoTrivia, Oneline, parse_end, parse_node_with, syntax_iter},
+    ast_parse::{
+        IgnoreBlankspace, NoTrivia, Succeeding, UntilNewlineStop, parse_end, parse_node_with,
+        syntax_iter,
+    },
     generators::node::gen_node_with_trivia,
     multiline_group::MultilineGroup,
     print_item_buffer::{
@@ -23,12 +26,12 @@ pub fn gen_for_statement(statement: &ast::ForStatement) -> FormatDocumentResult<
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::ParenthesisLeft)?;
     let item_initializer = parse_node_with(&mut syntax, IgnoreBlankspace)
         .only_if_kind(SyntaxKind::ForInitializer, &mut syntax);
-    let item_semicolon_1 =
-        parse_node_with(&mut syntax, Oneline).expect_kind(SyntaxKind::Semicolon)?;
+    let item_semicolon_1 = parse_node_with(&mut syntax, Succeeding(UntilNewlineStop))
+        .expect_kind(SyntaxKind::Semicolon)?;
     let item_condition = parse_node_with(&mut syntax, IgnoreBlankspace)
         .only_if_kind(SyntaxKind::ForCondition, &mut syntax);
-    let item_semicolon_2 =
-        parse_node_with(&mut syntax, Oneline).expect_kind(SyntaxKind::Semicolon)?;
+    let item_semicolon_2 = parse_node_with(&mut syntax, Succeeding(UntilNewlineStop))
+        .expect_kind(SyntaxKind::Semicolon)?;
     let item_continuing = parse_node_with(&mut syntax, IgnoreBlankspace)
         .only_if_kind(SyntaxKind::ForContinuingPart, &mut syntax);
 

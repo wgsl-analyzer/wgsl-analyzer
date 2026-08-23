@@ -1,13 +1,15 @@
 //! A minimal parser toolbox used by the formatter
 //! to parse the AST into a structure usable for the formatter itself.
 
+use std::option::Option;
+
 use itertools::PutBackN;
 use parser::{SyntaxElementChildren, SyntaxKind, SyntaxNode, SyntaxToken};
 use rowan::NodeOrToken;
 use syntax::{AstNode as _, ast::AttributeList};
 
 use crate::{
-    generators::comments::read_comment,
+    generators::comments::{Comment, read_comment},
     helpers::{LineSpacing, read_blankspace},
     reporting::FormatDocumentResult,
     trivia::{NodeTriviaItem, NodeWithTrivia, NodeWithTriviaContent},
@@ -243,25 +245,6 @@ impl ParseNodePolicy for NoTrivia {
     }
 }
 
-pub struct Oneline;
-impl ParseNodePolicy for Oneline {
-    fn handle_preceding(
-        &self,
-        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
-    ) -> Option<PolicyAction> {
-        match read_blankspace(node) {
-            Some(LineSpacing::EmptyLine(_) | LineSpacing::LineBreak(_)) => Some(PolicyAction::Stop),
-            _ => None,
-        }
-    }
-    fn handle_succeeding(
-        &self,
-        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
-    ) -> Option<PolicyAction> {
-        self.handle_preceding(node)
-    }
-}
-
 pub struct Succeeding<T>(pub T)
 where
     T: ParseNodePolicy;
@@ -284,6 +267,7 @@ where
     }
 }
 
+#[deprecated]
 pub struct UntilNewline;
 impl ParseNodePolicy for UntilNewline {
     fn handle_preceding(
@@ -294,6 +278,27 @@ impl ParseNodePolicy for UntilNewline {
             Some(LineSpacing::LineBreak(_) | LineSpacing::EmptyLine(_)) => {
                 Some(PolicyAction::IgnoreAndStop)
             },
+            _ => None,
+        }
+    }
+
+    fn handle_succeeding(
+        &self,
+        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
+    ) -> Option<PolicyAction> {
+        self.handle_preceding(node)
+    }
+}
+
+// TODO Rename to StopAtNewline
+pub struct UntilNewlineStop;
+impl ParseNodePolicy for UntilNewlineStop {
+    fn handle_preceding(
+        &self,
+        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
+    ) -> Option<PolicyAction> {
+        match read_blankspace(node) {
+            Some(LineSpacing::LineBreak(_) | LineSpacing::EmptyLine(_)) => Some(PolicyAction::Stop),
             _ => None,
         }
     }
@@ -387,10 +392,12 @@ impl_tuple!(TA TB TC TD TE TF);
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum PolicyAction {
+    // TODO Rename to discard
     Ignored,
     Content,
     Stop,
     MarkEnd,
+    // TODO Rename to discard
     IgnoreAndStop,
 }
 
@@ -409,15 +416,34 @@ where
 {
     let mut preceding_trivia = Vec::new();
     let mut succeeding_trivia = Vec::new();
+    let mut enable_formatting = true;
 
     let content = loop {
         // I wish we had linear types...
         // NOTE: Make sure node is either put_back onto syntax or consumed in a meaningful way
         if let Some(node) = syntax.next() {
+            // Check if this is an ignoring directive
+            let as_comment = read_comment(&node);
+            match as_comment {
+                Some(Comment::Block(syntax_token))
+                    if syntax_token.text().trim() == "/* @wgslfmt(ignore) */" =>
+                {
+                    enable_formatting = false;
+                },
+                Some(Comment::LineEnding(syntax_token))
+                    if syntax_token.text().trim() == "// @wgslfmt(ignore)" =>
+                {
+                    enable_formatting = false;
+                },
+                _ => {},
+            }
+
             let action = policy.handle_preceding(&node);
             eprintln!("Preceding {:?} {:?}", node, action);
             match action {
-                Some(PolicyAction::Ignored) => {},
+                Some(PolicyAction::Ignored) => {
+                    preceding_trivia.push(NodeTriviaItem::Discarded(node));
+                },
                 Some(PolicyAction::Content) => {
                     break NodeWithTriviaContent::Content(node);
                 },
@@ -430,13 +456,15 @@ where
                     break NodeWithTriviaContent::End;
                 },
                 Some(PolicyAction::IgnoreAndStop) => {
+                    preceding_trivia.push(NodeTriviaItem::Discarded(node));
                     break NodeWithTriviaContent::NoContent;
                 },
                 None => {
                     if let Some(line_spacing) = read_blankspace(&node) {
                         match line_spacing {
                             LineSpacing::OnelineBlankspace(_) => {
-                                // OnelineBlankspace is *always* ignored as it never carries any formatting information
+                                // OnelineBlankspace is *always* discarded as it never carries any formatting information
+                                preceding_trivia.push(NodeTriviaItem::Discarded(node));
                             },
                             LineSpacing::LineBreak(_) | LineSpacing::EmptyLine(_) => {
                                 preceding_trivia.push(NodeTriviaItem::LineSpacing(line_spacing));
@@ -477,15 +505,31 @@ where
 
     // Hacky special handling to make sure there is no line-spacing if attributes are immediately followed by their target
     {
-        let mut items = preceding_trivia
-            .iter()
-            .rev()
-            .skip_while(|trivia| matches!(trivia, NodeTriviaItem::LineSpacing(_)));
-        if matches!(items.next(), Some(NodeTriviaItem::AttributeList(_))) {
-            while preceding_trivia
-                .pop_if(|item| matches!(item, NodeTriviaItem::LineSpacing(_)))
-                .is_some()
-            {}
+        let mut items = preceding_trivia.iter().rev().skip_while(|trivia| {
+            matches!(
+                trivia,
+                NodeTriviaItem::LineSpacing { .. } | NodeTriviaItem::Discarded { .. }
+            )
+        });
+        if matches!(items.next(), Some(NodeTriviaItem::AttributeList { .. })) {
+            for (item, syntax) in preceding_trivia
+                .iter_mut()
+                .rev()
+                .map(|trivia| {
+                    let syntax = match &trivia {
+                        NodeTriviaItem::LineSpacing(content) => Some(content.syntax()),
+                        NodeTriviaItem::Comment(_)
+                        | NodeTriviaItem::NewlinedComment(_)
+                        | NodeTriviaItem::AttributeList(_)
+                        | NodeTriviaItem::Discarded(_) => None,
+                    };
+                    syntax.map(|syntax| (trivia, syntax))
+                })
+                .take_while(Option::is_some)
+                .flatten()
+            {
+                *item = NodeTriviaItem::Discarded(syntax)
+            }
         }
     }
 
@@ -493,7 +537,9 @@ where
         let action = policy.handle_succeeding(&node);
         eprintln!("Succeeding {:?} {:?}", node, action);
         match action {
-            Some(PolicyAction::Ignored) => {},
+            Some(PolicyAction::Ignored) => {
+                succeeding_trivia.push(NodeTriviaItem::Discarded(node));
+            },
             Some(PolicyAction::Content) => {
                 // This belongs into the "content" of the next call to parse_node_...
                 syntax.put_back(node);
@@ -506,6 +552,7 @@ where
             },
             Some(PolicyAction::IgnoreAndStop) => {
                 // We want to stop parsing succeeding trivia
+                succeeding_trivia.push(NodeTriviaItem::Discarded(node));
                 break;
             },
             None => {
@@ -513,6 +560,7 @@ where
                     match line_spacing {
                         LineSpacing::OnelineBlankspace(_) => {
                             // OnelineBlankspace is *always* ignored as it never carries any formatting information
+                            succeeding_trivia.push(NodeTriviaItem::Discarded(node));
                         },
                         LineSpacing::LineBreak(_) | LineSpacing::EmptyLine(_) => {
                             succeeding_trivia.push(NodeTriviaItem::LineSpacing(line_spacing));
@@ -537,6 +585,7 @@ where
         preceding_trivia,
         node: content,
         succeeding_trivia,
+        format: enable_formatting,
     }
 }
 

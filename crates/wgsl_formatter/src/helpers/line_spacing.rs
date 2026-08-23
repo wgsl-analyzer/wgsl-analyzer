@@ -15,6 +15,17 @@ pub enum LineSpacing {
     EmptyLine(SyntaxToken),
     OnelineBlankspace(SyntaxToken),
 }
+impl LineSpacing {
+    pub fn syntax(&self) -> NodeOrToken<SyntaxNode, SyntaxToken> {
+        match self {
+            LineSpacing::LineBreak(syntax_token) => NodeOrToken::Token(syntax_token.clone()),
+            LineSpacing::EmptyLine(syntax_token) => NodeOrToken::Token(syntax_token.clone()),
+            LineSpacing::OnelineBlankspace(syntax_token) => {
+                NodeOrToken::Token(syntax_token.clone())
+            },
+        }
+    }
+}
 
 #[must_use]
 pub fn read_blankspace(blankspace: &NodeOrToken<SyntaxNode, SyntaxToken>) -> Option<LineSpacing> {

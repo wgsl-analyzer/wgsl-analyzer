@@ -7,7 +7,6 @@ use rowan::NodeOrToken;
 use syntax::{AstNode as _, ast};
 
 use crate::{
-    format::format,
     generators::{
         attributes::{
             gen_align_attribute, gen_attr_standard_with_args, gen_attribute, gen_attribute_list,
@@ -88,7 +87,6 @@ use crate::{
         verbatim::gen_node_syntax_verbatim,
     },
     helpers::{gen_line_spacing, read_blankspace},
-    ignore::is_ignored,
     print_item_buffer::{
         PrintItemBuffer,
         spacing_request::{Request, RequestItem},
@@ -401,59 +399,82 @@ pub fn gen_node(
 }
 
 pub fn gen_node_preceding_trivia(node: &NodeWithTrivia) -> FormatDocumentResult<PrintItemBuffer> {
-    let mut formatted = PrintItemBuffer::default();
-
-    for trivia in &node.preceding_trivia {
-        match trivia {
-            NodeTriviaItem::LineSpacing(line_spacing) => {
-                formatted.extend(gen_line_spacing(line_spacing)?);
-            },
-            NodeTriviaItem::Comment(comment) => {
-                formatted.extend(gen_comment(comment));
-            },
-            NodeTriviaItem::NewlinedComment(comment) => {
-                formatted.extend(gen_comment(comment));
-                formatted.request(Request::expect(RequestItem::LineBreak));
-            },
-            NodeTriviaItem::AttributeList(attribute_list) => {
-                formatted.extend(gen_attribute_list(attribute_list)?);
-            },
-        }
+    if node.format {
+        gen_node_trivia(&node.preceding_trivia)
+    } else {
+        gen_node_trivia_verbatim(&node.preceding_trivia)
     }
-    Ok(formatted)
 }
+
+pub fn gen_node_succeeding_trivia(node: &NodeWithTrivia) -> FormatDocumentResult<PrintItemBuffer> {
+    if node.format {
+        gen_node_trivia(&node.succeeding_trivia)
+    } else {
+        gen_node_trivia_verbatim(&node.succeeding_trivia)
+    }
+}
+
 pub fn gen_node_content(node: &NodeWithTrivia) -> FormatDocumentResult<PrintItemBuffer> {
     let mut formatted = PrintItemBuffer::default();
 
-    if is_ignored(node) {
-        if let Some(content) = node.content() {
-            formatted.extend(gen_node_syntax_verbatim(&content)?);
+    if let NodeWithTriviaContent::Content(content) = &node.node {
+        if node.format {
+            formatted.extend(gen_node(node, content)?);
+        } else {
+            formatted.extend(gen_node_syntax_verbatim(content)?);
         }
-    } else if let Some(content) = node.content() {
-        formatted.extend(gen_node(node, &content)?);
     }
 
     Ok(formatted)
 }
-pub fn gen_node_succeeding_trivia(node: &NodeWithTrivia) -> FormatDocumentResult<PrintItemBuffer> {
+
+pub fn gen_node_trivia_verbatim(
+    trivia: &[NodeTriviaItem]
+) -> FormatDocumentResult<PrintItemBuffer> {
     let mut formatted = PrintItemBuffer::default();
-    for trivia in &node.succeeding_trivia {
+    for trivia in trivia {
         match trivia {
-            NodeTriviaItem::LineSpacing(line_spacing) => {
-                formatted.extend(gen_line_spacing(line_spacing)?);
+            NodeTriviaItem::LineSpacing(content) => {
+                formatted.extend(gen_node_syntax_verbatim(&content.syntax())?);
             },
-            NodeTriviaItem::Comment(comment) => {
-                formatted.extend(gen_comment(comment));
+            NodeTriviaItem::Comment(content) | NodeTriviaItem::NewlinedComment(content) => {
+                formatted.extend(gen_node_syntax_verbatim(&content.syntax())?);
             },
-            NodeTriviaItem::NewlinedComment(comment) => {
-                formatted.extend(gen_comment(comment));
-                formatted.request(Request::expect(RequestItem::LineBreak));
+            NodeTriviaItem::AttributeList(content) => {
+                formatted.extend(gen_node_syntax_verbatim(&NodeOrToken::Node(
+                    content.syntax().clone(),
+                ))?);
             },
-            NodeTriviaItem::AttributeList(attribute_list) => {
-                formatted.extend(gen_attribute_list(attribute_list)?);
+            NodeTriviaItem::Discarded(content) => {
+                formatted.extend(gen_node_syntax_verbatim(&content)?);
             },
         }
     }
+
+    Ok(formatted)
+}
+
+pub fn gen_node_trivia(trivia: &[NodeTriviaItem]) -> FormatDocumentResult<PrintItemBuffer> {
+    let mut formatted = PrintItemBuffer::default();
+    for trivia in trivia {
+        match trivia {
+            NodeTriviaItem::LineSpacing(content) => {
+                formatted.extend(gen_line_spacing(content)?);
+            },
+            NodeTriviaItem::Comment(content) => {
+                formatted.extend(gen_comment(content));
+            },
+            NodeTriviaItem::NewlinedComment(content) => {
+                formatted.extend(gen_comment(content));
+                formatted.request(Request::expect(RequestItem::LineBreak));
+            },
+            NodeTriviaItem::AttributeList(content) => {
+                formatted.extend(gen_attribute_list(content)?);
+            },
+            NodeTriviaItem::Discarded(content) => {},
+        }
+    }
+
     Ok(formatted)
 }
 
