@@ -221,7 +221,7 @@ impl<'db> Resolver<'db> {
                 for name in wgsl_types::idents::BUILTIN_TYPE_GENERATOR_NAMES {
                     callback(
                         &(*name).into(),
-                        ScopeDef::BuiltIn(BuiltInKind::Type((*name).into())),
+                        ScopeDef::BuiltIn(BuiltInKind::TypeGenerator((*name).into())),
                     );
                 }
                 for name in wgsl_types::idents::BUILTIN_TYPE_NAMES
@@ -230,7 +230,7 @@ impl<'db> Resolver<'db> {
                 {
                     callback(
                         &(*name).into(),
-                        ScopeDef::BuiltIn(BuiltInKind::TypeGenerator((*name).into())),
+                        ScopeDef::BuiltIn(BuiltInKind::Type((*name).into())),
                     );
                 }
             },
