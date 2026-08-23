@@ -353,28 +353,29 @@ impl TypeLoweringContext<'_> {
                 TypeKind::Sampler(wgsl_types::ty::SamplerType::SamplerComparison)
             },
             "acceleration_structure" => {
-                if template_parameters.has_next() {
-                    let mut template_parameters = template_parameters.clone();
-                    match template_parameters.next_as_enumerant() {
-                        Ok((Enumerant::AccelerationStructureFlags(tags), _)) => {
-                            TypeKind::AccelerationStructure(Some(tags))
-                        },
-                        Ok((other, expression)) => {
-                            return Err(TypeLoweringError {
-                                container: TypeContainer::Expression(expression),
-                                kind: TypeLoweringErrorKind::UnexpectedTemplateArgument(
-                                    "an acceleration structure tag".to_owned(),
-                                    UnexpectedTemplateArgumentValue::from(other),
-                                ),
-                            });
-                        },
-                        Err(error) => return Err(error),
-                    }
-                } else {
-                    TypeKind::AccelerationStructure(None)
+                let mut template_parameters = template_parameters.clone();
+                match template_parameters.next_as_enumerant() {
+                    Some(Ok((Enumerant::AccelerationStructureFlags(tags), _))) => {
+                        TypeKind::AccelerationStructure(Some(tags))
+                    },
+                    Some(Ok((other, expression))) => {
+                        return Err(TypeLoweringError {
+                            container: TypeContainer::Expression(expression),
+                            kind: TypeLoweringErrorKind::UnexpectedTemplateArgument(
+                                "an acceleration structure tag".to_owned(),
+                                UnexpectedTemplateArgumentValue::from(other),
+                            ),
+                        });
+                    },
+                    Some(Err(error)) => {
+                        return Err(error);
+                    },
+                    None => TypeKind::AccelerationStructure(None),
                 }
             },
             _ => {
+                // if you reached here, then you found something known in wgsl-types that is unknown in wgsl-analyzer
+                // open a feature request!
                 return Err(TypeLoweringError {
                     container: type_container,
                     kind: TypeLoweringErrorKind::Resolution(ResolutionDiagnostic::UnresolvedName {
@@ -841,8 +842,8 @@ impl TypeLoweringContext<'_> {
         self.expect_n_templates(template_parameters, 2..=3);
         let mut template_parameters = template_parameters.clone();
         let address_space = match template_parameters.next_as_enumerant() {
-            Ok((Enumerant::AddressSpace(address_space), _)) => address_space,
-            Ok((enumerant, expression)) => {
+            Some(Ok((Enumerant::AddressSpace(address_space), _))) => address_space,
+            Some(Ok((enumerant, expression))) => {
                 let error = TypeLoweringError {
                     container: TypeContainer::Expression(expression),
                     kind: TypeLoweringErrorKind::UnexpectedTemplateArgument(
@@ -852,8 +853,17 @@ impl TypeLoweringContext<'_> {
                 };
                 return Err(error);
             },
-            Err(error) => {
+            Some(Err(error)) => {
                 return Err(error);
+            },
+            None => {
+                // TODO this is duplicated with expect_n_templates
+                return Err(TypeLoweringError {
+                    container: *template_parameters.container(),
+                    kind: TypeLoweringErrorKind::MissingTemplateArgument(
+                        "an address space".to_owned(),
+                    ),
+                });
             },
         };
         let inner = match template_parameters.next_as_type() {
@@ -874,41 +884,37 @@ impl TypeLoweringContext<'_> {
             },
         };
 
-        let access_mode = if template_parameters.has_next() {
-            match template_parameters.next_as_enumerant() {
-                // uniform address space requires the read access mode
-                Ok((
-                    enumerant
-                    @ Enumerant::AccessMode(AccessMode::ReadWrite | AccessMode::ReadWrite),
-                    expression,
-                )) if address_space == AddressSpace::Uniform => {
-                    self.diagnostics.push(TypeLoweringError {
-                        container: TypeContainer::Expression(expression),
-                        kind: TypeLoweringErrorKind::UnexpectedTemplateArgument(
-                            "`read` access mode for uniforms".to_owned(),
-                            enumerant.into(),
-                        ),
-                    });
-                    AccessMode::Read
-                },
-                // everything else has no such constraints
-                Ok((Enumerant::AccessMode(access_mode), _)) => access_mode,
-                Ok((enumerant, expression)) => {
-                    let error = TypeLoweringError {
-                        container: TypeContainer::Expression(expression),
-                        kind: TypeLoweringErrorKind::UnexpectedTemplateArgument(
-                            "one of: (read, read_write, write)".to_owned(),
-                            enumerant.into(),
-                        ),
-                    };
-                    return Err(error);
-                },
-                Err(error) => {
-                    return Err(error);
-                },
-            }
-        } else {
-            address_space.default_access_mode()
+        let access_mode = match template_parameters.next_as_enumerant() {
+            // uniform address space requires the read access mode
+            Some(Ok((
+                enumerant @ Enumerant::AccessMode(AccessMode::ReadWrite | AccessMode::Write),
+                expression,
+            ))) if address_space == AddressSpace::Uniform => {
+                self.diagnostics.push(TypeLoweringError {
+                    container: TypeContainer::Expression(expression),
+                    kind: TypeLoweringErrorKind::UnexpectedTemplateArgument(
+                        "`read` access mode for uniforms".to_owned(),
+                        enumerant.into(),
+                    ),
+                });
+                AccessMode::Read
+            },
+            // everything else has no such constraints
+            Some(Ok((Enumerant::AccessMode(access_mode), _))) => access_mode,
+            Some(Ok((enumerant, expression))) => {
+                let error = TypeLoweringError {
+                    container: TypeContainer::Expression(expression),
+                    kind: TypeLoweringErrorKind::UnexpectedTemplateArgument(
+                        "one of: (read, read_write, write)".to_owned(),
+                        enumerant.into(),
+                    ),
+                };
+                return Err(error);
+            },
+            Some(Err(error)) => {
+                return Err(error);
+            },
+            None => address_space.default_access_mode(),
         };
 
         Ok(PointerTemplate {
@@ -1011,8 +1017,8 @@ impl TypeLoweringContext<'_> {
         self.expect_n_templates(template_parameters, 1..=2);
         let mut template_parameters = template_parameters.clone();
         let texel_format = match template_parameters.next_as_enumerant() {
-            Ok((Enumerant::TexelFormat(texel_format), _)) => texel_format,
-            Ok((enumerant, expression)) => {
+            Some(Ok((Enumerant::TexelFormat(texel_format), _))) => texel_format,
+            Some(Ok((enumerant, expression))) => {
                 let error = TypeLoweringError {
                     container: TypeContainer::Expression(expression),
                     kind: TypeLoweringErrorKind::UnexpectedTemplateArgument(
@@ -1022,13 +1028,22 @@ impl TypeLoweringContext<'_> {
                 };
                 return Err(error);
             },
-            Err(error) => {
+            Some(Err(error)) => {
                 return Err(error);
+            },
+            None => {
+                // TODO this is duplicated with expect_n_templates
+                return Err(TypeLoweringError {
+                    container: *template_parameters.container(),
+                    kind: TypeLoweringErrorKind::MissingTemplateArgument(
+                        "an address space".to_owned(),
+                    ),
+                });
             },
         };
         let access_mode = match template_parameters.next_as_enumerant() {
-            Ok((Enumerant::AccessMode(access_mode), _)) => access_mode,
-            Ok((enumerant, expression)) => {
+            Some(Ok((Enumerant::AccessMode(access_mode), _))) => access_mode,
+            Some(Ok((enumerant, expression))) => {
                 let error = TypeLoweringError {
                     container: TypeContainer::Expression(expression),
                     kind: TypeLoweringErrorKind::UnexpectedTemplateArgument(
@@ -1038,8 +1053,17 @@ impl TypeLoweringContext<'_> {
                 };
                 return Err(error);
             },
-            Err(error) => {
+            Some(Err(error)) => {
                 return Err(error);
+            },
+            None => {
+                // TODO this is duplicated with expect_n_templates
+                return Err(TypeLoweringError {
+                    container: *template_parameters.container(),
+                    kind: TypeLoweringErrorKind::MissingTemplateArgument(
+                        "an address space".to_owned(),
+                    ),
+                });
             },
         };
         Ok(StorageTextureTemplate {
