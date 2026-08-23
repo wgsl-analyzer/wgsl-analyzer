@@ -2366,15 +2366,19 @@ fn foo() {
     );
 }
 
+// TODO: without the enable extension, this should have an error
+// https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1461
 #[test]
 fn acceleration_structure() {
     check_infer(
         "
+//enable wgpu_ray_query_vertex_return;
 var x: acceleration_structure;
+var x: acceleration_structure<vertex_return>;
         ",
         expect![[r#"
-            4..5 'x': ref<handle, [error], read>
-            7..29 'accele...ucture': `acceleration_structure` not found in scope
+            43..44 'x': ref<handle, acceleration_structure, read>
+            74..75 'x': ref<handle, acceleration_structure<vertex_return>, read>
         "#]],
     );
 }

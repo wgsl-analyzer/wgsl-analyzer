@@ -178,6 +178,7 @@ pub fn validate_address_space<DiagnosticBuilder>(
                 | TypeKind::Struct(_)
                 | TypeKind::BuiltinStruct(_)
                 | TypeKind::Array(_)
+                | TypeKind::AccelerationStructure(_)
                 | TypeKind::Reference(_)
                 | TypeKind::Pointer(_) => {
                     diagnostic_builder(AddressSpaceError::HandleOrTexture);

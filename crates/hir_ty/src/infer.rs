@@ -1122,6 +1122,7 @@ impl<'db> InferenceContext<'db> {
                     | TypeKind::BuiltinStruct(_)
                     | TypeKind::Texture(_)
                     | TypeKind::Sampler(_)
+                    | TypeKind::AccelerationStructure(_)
                     | TypeKind::Reference(_)
                     | TypeKind::Pointer(_) => {
                         self.push_diagnostic(
@@ -1198,6 +1199,7 @@ impl<'db> InferenceContext<'db> {
             | TypeKind::BuiltinStruct(_)
             | TypeKind::Array(_)
             | TypeKind::Texture(_)
+            | TypeKind::AccelerationStructure(_)
             | TypeKind::Sampler(_)) => (kind, None),
         };
 
@@ -1234,6 +1236,7 @@ impl<'db> InferenceContext<'db> {
             | TypeKind::Array(_)
             | TypeKind::Texture(_)
             | TypeKind::Sampler(_)
+            | TypeKind::AccelerationStructure(_)
             | TypeKind::Reference(_)
             | TypeKind::Pointer(_) => {
                 self.push_diagnostic(
@@ -1723,6 +1726,7 @@ impl<'db> InferenceContext<'db> {
             | TypeKind::Pointer(_)
             | TypeKind::Atomic(_)
             | TypeKind::BuiltinStruct(_)
+            | TypeKind::AccelerationStructure(_)
             | TypeKind::Reference(_) => {
                 debug_assert!(
                     !self.result.diagnostics.is_empty(),
