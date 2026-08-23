@@ -13,6 +13,19 @@ pub enum Comment {
     Block(SyntaxToken),
     LineEnding(SyntaxToken),
 }
+impl Comment {
+    pub fn syntax(
+        &self
+    ) -> NodeOrToken<
+        rowan::SyntaxNode<parser::WeslLanguage>,
+        rowan::SyntaxToken<parser::WeslLanguage>,
+    > {
+        match self {
+            Comment::Block(token) => NodeOrToken::Token(token.clone()),
+            Comment::LineEnding(token) => NodeOrToken::Token(token.clone()),
+        }
+    }
+}
 
 pub fn read_comment(item: &NodeOrToken<SyntaxNode, SyntaxToken>) -> Option<Comment> {
     if let NodeOrToken::Token(child) = &item {

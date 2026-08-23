@@ -11,6 +11,7 @@ use crate::{
 
 #[derive(Clone, Debug)]
 pub enum NodeTriviaItem {
+    Discarded(NodeOrToken<SyntaxNode, SyntaxToken>),
     LineSpacing(LineSpacing),
     Comment(Comment),
     NewlinedComment(Comment),
@@ -42,6 +43,9 @@ impl NodeTriviaItem {
             },
             Self::AttributeList(attribute_list) => {
                 syntax.put_back(NodeOrToken::Node(attribute_list.syntax().clone()));
+            },
+            Self::Discarded(content) => {
+                syntax.put_back(content);
             },
         }
     }
@@ -83,6 +87,7 @@ pub struct NodeWithTrivia {
     pub preceding_trivia: Vec<NodeTriviaItem>,
     pub node: NodeWithTriviaContent,
     pub succeeding_trivia: Vec<NodeTriviaItem>,
+    pub format: bool,
 }
 
 impl NodeWithTrivia {
@@ -234,14 +239,18 @@ impl NodeWithTrivia {
     #[must_use]
     pub fn is_whitespace(&self) -> bool {
         self.node.is_empty()
-            && self
-                .preceding_trivia
-                .iter()
-                .all(|trivia| matches!(trivia, NodeTriviaItem::LineSpacing(_)))
-            && self
-                .succeeding_trivia
-                .iter()
-                .all(|trivia| matches!(trivia, NodeTriviaItem::LineSpacing(_)))
+            && self.preceding_trivia.iter().all(|trivia| {
+                matches!(
+                    trivia,
+                    NodeTriviaItem::LineSpacing(_) | NodeTriviaItem::Discarded(_)
+                )
+            })
+            && self.succeeding_trivia.iter().all(|trivia| {
+                matches!(
+                    trivia,
+                    NodeTriviaItem::LineSpacing(_) | NodeTriviaItem::Discarded(_)
+                )
+            })
     }
 
     #[must_use]
@@ -259,13 +268,19 @@ impl NodeWithTrivia {
 
     #[must_use]
     pub fn trim_starting_linebreaks(mut self) -> Self {
-        let first_interesting_item = self.preceding_trivia.iter().position(|node| {
-            !matches!(node, NodeTriviaItem::LineSpacing(LineSpacing::LineBreak(_)))
-        });
-        if let Some(first_interesting_item) = first_interesting_item {
-            self.preceding_trivia = self.preceding_trivia.split_off(first_interesting_item);
-        } else {
-            self.preceding_trivia = Vec::new();
+        for item in &mut self.preceding_trivia {
+            match item {
+                NodeTriviaItem::LineSpacing(LineSpacing::LineBreak(content)) => {
+                    *item = NodeTriviaItem::Discarded(NodeOrToken::Token(content.clone()));
+                },
+                NodeTriviaItem::Discarded(_) => {},
+                NodeTriviaItem::LineSpacing(_)
+                | NodeTriviaItem::Comment(_)
+                | NodeTriviaItem::NewlinedComment(_)
+                | NodeTriviaItem::AttributeList(_) => {
+                    break;
+                },
+            }
         }
         self
     }

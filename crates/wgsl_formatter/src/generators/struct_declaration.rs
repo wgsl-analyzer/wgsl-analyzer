@@ -7,8 +7,8 @@ use syntax::{
 
 use crate::{
     ast_parse::{
-        IgnoreBlankspace, IgnoreBraces, IgnoreComma, Succeeding, UntilEmptyLine,
-        parse_many_nodes_with,
+        IgnoreBlankspace, IgnoreBraces, IgnoreComma, Succeeding, UntilEmptyLine, UntilNewline,
+        UntilNewlineStop, parse_many_nodes_with,
     },
     generators::node::gen_node_with_trivia,
 };
@@ -57,7 +57,7 @@ pub fn gen_struct_body(body: &ast::StructBody) -> FormatDocumentResult<PrintItem
 
     let item_members = parse_many_nodes_with(
         &mut syntax,
-        (Succeeding(UntilEmptyLine), IgnoreComma, IgnoreBraces),
+        (Succeeding(UntilNewlineStop), IgnoreComma, IgnoreBraces),
     )
     .filter(|node| !node.is_whitespace())
     .map(|node| node.expect_kind_optional(SyntaxKind::StructMember))

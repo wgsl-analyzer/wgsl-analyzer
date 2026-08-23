@@ -14,7 +14,6 @@ pub mod ast_parse;
 pub mod context_policies;
 pub mod format;
 pub mod helpers;
-pub mod ignore;
 pub mod multiline_group;
 pub mod print_item_buffer;
 pub mod reporting;
