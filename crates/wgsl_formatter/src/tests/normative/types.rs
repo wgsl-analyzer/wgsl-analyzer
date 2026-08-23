@@ -95,7 +95,7 @@ pub fn format_long_type_alias_linewidth_within_inner_break_outer_arguments_leave
         //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
         alias Test = array<aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,array<2,aaaaaaaaa>>;
         ",
-        &expect![[r#"
+        expect![[r#"
             //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
             alias Test = array<
                 aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,
@@ -120,7 +120,7 @@ pub fn format_long_type_alias_linewidth_outside_inner_break_outer_arguments_leav
         //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
         alias Test = array<aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,array<2,aaaaaaaaa>>;
         ",
-        &expect![[r#"
+        expect![[r#"
             //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
             alias Test = array<
                 aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,

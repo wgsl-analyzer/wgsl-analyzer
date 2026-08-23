@@ -113,7 +113,6 @@ impl ExpectAssertEq for &str {
     }
 }
 
-#[expect(clippy::needless_pass_by_value, reason = "intentional API")]
 pub fn check<E>(
     before: &str,
     after: E,
@@ -123,7 +122,7 @@ where
 {
     check_with_options(
         before,
-        &after,
+        after,
         &FormattingOptions::default().into(),
         Edition::LATEST,
     )
@@ -178,9 +177,10 @@ impl From<FormattingOptions> for CheckOptions {
 }
 
 #[track_caller]
+#[expect(clippy::needless_pass_by_value, reason = "Intentional API")]
 pub fn check_with_options<E>(
     before: &str,
-    after: &E,
+    after: E,
     options: &CheckOptions,
     edition: Edition,
 ) -> String
@@ -336,7 +336,6 @@ fn format_chunks(chunks: Vec<dissimilar::Chunk<'_>>) -> String {
 /// ```compile_fail
 /// /* 0 */ a /* 1 */ b
 /// ```
-#[expect(clippy::needless_pass_by_value, reason = "Intentional API")]
 pub fn check_comments<E>(
     before: &str,
     after_block: E,
@@ -358,7 +357,7 @@ pub fn check_comments<E>(
         .join("");
         let formatted = check_with_options(
             &commented,
-            &after_line,
+            after_line,
             &CheckOptions {
                 assert_line_width: None,
                 formatting: FormattingOptions::default(),
@@ -402,7 +401,7 @@ pub fn check_comments<E>(
         .join("");
         let formatted = check_with_options(
             &commented,
-            &after_block,
+            after_block,
             &CheckOptions {
                 assert_line_width: None,
                 formatting: FormattingOptions::default(),

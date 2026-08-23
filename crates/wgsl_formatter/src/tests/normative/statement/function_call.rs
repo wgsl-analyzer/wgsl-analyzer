@@ -141,7 +141,7 @@ fn format_long_function_call_without_arguments_does_not_break_within_parens() {
         fn main() {
             long_name_function_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa();
         }",
-        &expect![[r#"
+        expect![[r#"
             //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
             fn main() {
                 long_name_function_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa();
@@ -171,7 +171,7 @@ pub fn format_long_function_call_linewidth_within_inner_break_outer_arguments_le
             let a = thing(aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,bla(2,aaaaaaaaa));
         }
         ",
-        &expect![[r#"
+        expect![[r#"
             //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
             fn main() {
                 let a = thing(
@@ -200,7 +200,7 @@ pub fn format_long_function_call_linewidth_outside_inner_break_outer_arguments_l
             let a = thing(carefully_chosen_amount_of_characters_xx_do_not_change_do_not_change,bla(2,aaaaaaaaa));
         }
         ",
-        &expect![[r#"
+        expect![[r#"
             //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
             fn main() {
                 let a = thing(
@@ -232,7 +232,7 @@ pub fn format_long_function_call_prefer_to_break_arguments_over_path() {
             let a = thing::blaaaaa::thing::blaaa::thing::blaaaaaaaaaaaaaaaaaaaa::thing(aaaa,bbbb,ccc,ddd);
         }
         ",
-        &expect![[r#"
+        expect![[r#"
             //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
             fn main() {
                 let a = thing::blaaaaa::thing::blaaa::thing::blaaaaaaaaaaaaaaaaaaaa::thing(
@@ -260,7 +260,7 @@ pub fn format_long_function_call_dont_break_path() {
             let a = thing::blaaaaa::thing::blaaa::thing::blaaaaaaaaaaaaaaaaaaaa::thing::loooong::paaath(aaaa,bbbb,ccc,ddd);
         }
         ",
-        &expect![[r#"
+        expect![[r#"
             //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
             fn main() {
                 let a =
@@ -297,7 +297,7 @@ pub fn format_function_call_with_field_expr_prefer_breaking_fncall() {
             let a = thing(aaaaaaaaaaaaa, bbbbbbbbbbbbbbbbbbbb, ccccccccccccccccc, ddddd).xxxxxxxxxx;
         }
         ",
-        &expect![[r#"
+        expect![[r#"
             //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
             fn main() {
                 let a =

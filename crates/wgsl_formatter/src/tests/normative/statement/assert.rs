@@ -29,7 +29,7 @@ fn format_long_assert_statement_gets_indented_correctly() {
         //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
         const_assert(xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx<yyyyyyyyyyyyyyyyyyyyyyyyyy);
         ",
-        &expect![[r#"
+        expect![[r#"
             //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
             const_assert xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
                 < yyyyyyyyyyyyyyyyyyyyyyyyyy;

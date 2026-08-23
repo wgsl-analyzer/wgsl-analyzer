@@ -28,7 +28,7 @@ fn format_long_assignment_statement_gets_indented_correctly() {
         fn main() {
             a = long_name_function_aaaaaaaaaa() + long_name_function_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa();
         }",
-        &expect![[r#"
+        expect![[r#"
             //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
             fn main() {
                 a = long_name_function_aaaaaaaaaa()
@@ -51,7 +51,7 @@ fn format_long_phony_statement_gets_indented_correctly() {
         fn main() {
             _ = long_name_function_aaaaaaaaaa() + long_name_function_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa();
         }",
-        &expect![[r#"
+        expect![[r#"
             //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
             fn main() {
                 _ = long_name_function_aaaaaaaaaa()

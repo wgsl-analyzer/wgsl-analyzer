@@ -66,7 +66,7 @@ pub fn format_for_statement_long_first_component() {
 
 
         }",
-        &expect![[r#"
+        expect![[r#"
             fn main() {
                 for(
                     let a = 1 + 1 + 1 + 1 + alculate_something_really_long(172832782);

@@ -188,7 +188,7 @@ pub fn format_import_collection_break_on_long_items() {
         //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
         import aaaaaaaaaaaa::{aaaaaaaaaaaa, bbbbbbbbbbbbb, ccccccccccc, ddddddddddddd, eeeeeeeee, fffffff, gggggggg, hhhhhhhhhhh};
         ",
-        &expect![[r#"
+        expect![[r#"
             //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
             import aaaaaaaaaaaa::{
                 aaaaaaaaaaaa,
@@ -217,7 +217,7 @@ pub fn format_import_path_does_not_get_broken_into_lines() {
         //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
         import aaaaaaaaaaaa::bbbbbbbbbbbbbbbbb::cccccccccccc::ddddddddddddd::eeeeeeeeeeee::fffffffffffff::gggggggggg;
         ",
-        &expect![[r#"
+        expect![[r#"
             //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
             import aaaaaaaaaaaa::bbbbbbbbbbbbbbbbb::cccccccccccc::ddddddddddddd::eeeeeeeeeeee::fffffffffffff::gggggggggg;
         "#]],
@@ -275,7 +275,7 @@ keeps_inline::{AaaaaAaaa, BbbbbbBbbbbbBbb, CccCcc},
     aaaaaaaaaaaaaaa::bbbbbbbbbbbbbbbbbbbbbb as cccccca, gggggggggggg
 };
         ",
-        &expect![[r#"
+        expect![[r#"
             import package::tracer_plugin::renderer::buffers::{
                 gggggggggggg,
                 aaaaaaaaaaaaaaa::bbbbbbbbbbbbbbbbbbbbbb as cccccca,
