@@ -2433,12 +2433,15 @@ fn acceleration_structure_bad_template() {
 //enable wgpu_ray_query_vertex_return;
 var x: acceleration_structure<f32>;
 var y: acceleration_structure<r64uint>;
+var y: acceleration_structure<0>;
         ",
         expect![[r#"
             43..44 'x': ref<handle, [error], read>
-            69..72 'f32': unexpected template argument, expected an enumerant, actual: f32
+            46..73 'accele...e<f32>': unexpected template argument, expected an acceleration structure flag, actual: f32
             79..80 'y': ref<handle, [error], read>
-            105..112 'r64uint': unexpected template argument, expected an acceleration structure tag, actual: r64uint
+            82..113 'accele...4uint>': unexpected template argument, expected an acceleration structure flag, actual: r64uint
+            119..120 'y': ref<handle, [error], read>
+            122..147 'accele...ure<0>': unexpected template argument, expected an acceleration structure flag, actual: 0
         "#]],
     );
 }

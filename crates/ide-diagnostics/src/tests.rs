@@ -601,7 +601,9 @@ fn foo() {
     let x = sqrt<f32>(1f);
 }
 ",
-        expect![""],
+        expect![[r#"
+            23..36 wesl-rs Error 22: invalid function call signature: `sqrt<f32>(f32)`
+        "#]],
     );
 }
 

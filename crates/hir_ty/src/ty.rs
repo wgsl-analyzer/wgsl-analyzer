@@ -1,11 +1,12 @@
 pub mod pretty;
 
-use std::{borrow::Cow, fmt, num::NonZeroU32};
+use std::{borrow::Cow, fmt, hash, num::NonZeroU32};
 
 use base_db::{Intern as _, Lookup as _, impl_intern_key, impl_intern_lookup};
 use hir_def::db::StructId;
 use wgsl_types::{
-    syntax::{AccelerationStructureFlags, AccessMode, AddressSpace, TexelFormat},
+    syntax::{AccessMode, AddressSpace, TexelFormat},
+    tplt::AccelerationStructureTags,
     ty::SamplerType,
 };
 
@@ -169,7 +170,7 @@ pub struct BuiltinStruct {
     pub fields: Vec<(String, Type)>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TypeKind {
     Error,
     Scalar(ScalarType),
@@ -185,7 +186,18 @@ pub enum TypeKind {
     Sampler(SamplerType),
     Reference(Reference),
     Pointer(Pointer),
-    AccelerationStructure(Option<AccelerationStructureFlags>),
+    AccelerationStructure(Option<AccelerationStructureTags>),
+}
+
+impl hash::Hash for TypeKind {
+    fn hash<Hasher>(
+        &self,
+        state: &mut Hasher,
+    ) where
+        Hasher: hash::Hasher,
+    {
+        core::mem::discriminant(self).hash(state);
+    }
 }
 
 impl TypeKind {
@@ -822,6 +834,9 @@ impl TextureKind {
             },
             wgsl_types::syntax::SampledType::F32 => {
                 Self::Sampled(TypeKind::Scalar(ScalarType::F32).intern(db))
+            },
+            wgsl_types::syntax::SampledType::U64 => {
+                Self::Sampled(TypeKind::Scalar(ScalarType::U64).intern(db))
             },
         }
     }

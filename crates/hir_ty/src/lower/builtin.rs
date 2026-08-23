@@ -7,12 +7,13 @@ use wgsl_types::{
     Instance,
     inst::LiteralInstance,
     syntax::{AccessMode, AddressSpace, Enumerant, SampledType, TexelFormat},
+    tplt::AccelerationStructureTags,
 };
 
 use crate::{
     lower::{
-        ConstructibleTypeGenerator, Lowered, TypeContainer, TypeLoweringContext, TypeLoweringError,
-        TypeLoweringErrorKind, UnexpectedTemplateArgumentValue, generics::TemplateParameters,
+        ConstructibleTypeGenerator, Lowered, TemplateParameter, TypeContainer, TypeLoweringContext,
+        TypeLoweringError, TypeLoweringErrorKind, generics::TemplateParameters,
     },
     ty::{
         ArraySize, ArrayType, AtomicType, MatrixType, Pointer, ScalarType, TextureDimensionality,
@@ -29,7 +30,7 @@ impl TypeLoweringContext<'_> {
         &mut self,
         name: Name,
         type_container: TypeContainer,
-        template_parameters: &TemplateParameters,
+        template_parameters: &mut TemplateParameters,
     ) -> Result<Lowered, TypeLoweringError> {
         let type_kind = match name.as_str() {
             "bool" => {
@@ -353,24 +354,57 @@ impl TypeLoweringContext<'_> {
                 TypeKind::Sampler(wgsl_types::ty::SamplerType::SamplerComparison)
             },
             "acceleration_structure" => {
-                let mut template_parameters = template_parameters.clone();
-                match template_parameters.next_as_enumerant() {
-                    Some(Ok((Enumerant::AccelerationStructureFlags(tags), _))) => {
-                        TypeKind::AccelerationStructure(Some(tags))
-                    },
-                    Some(Ok((other, expression))) => {
-                        return Err(TypeLoweringError {
-                            container: TypeContainer::Expression(expression),
-                            kind: TypeLoweringErrorKind::UnexpectedTemplateArgument(
-                                "an acceleration structure tag".to_owned(),
-                                UnexpectedTemplateArgumentValue::from(other),
-                            ),
-                        });
-                    },
-                    Some(Err(error)) => {
-                        return Err(error);
-                    },
-                    None => TypeKind::AccelerationStructure(None),
+                if template_parameters.has_next() {
+                    let mut template_args = vec![];
+                    while let Some((template_parameter, _)) = template_parameters.take_next() {
+                        match template_parameter {
+                            TemplateParameter::Type(r#type) => {
+                                return Err(TypeLoweringError {
+                                    container: type_container,
+                                    kind: TypeLoweringErrorKind::UnexpectedTemplateArgument(
+                                        "an acceleration structure flag".to_owned(),
+                                        r#type.into(),
+                                    ),
+                                });
+                            },
+                            TemplateParameter::Instance(instance) => {
+                                return Err(TypeLoweringError {
+                                    container: type_container,
+                                    kind: TypeLoweringErrorKind::UnexpectedTemplateArgument(
+                                        "an acceleration structure flag".to_owned(),
+                                        instance.into(),
+                                    ),
+                                });
+                            },
+                            TemplateParameter::Enumerant(
+                                tag @ Enumerant::AccelerationStructureTag(_),
+                            ) => {
+                                template_args.push(wgsl_types::tplt::TpltParam::Enumerant(tag));
+                            },
+                            TemplateParameter::Enumerant(enumerant) => {
+                                return Err(TypeLoweringError {
+                                    container: type_container,
+                                    kind: TypeLoweringErrorKind::UnexpectedTemplateArgument(
+                                        "an acceleration structure flag".to_owned(),
+                                        enumerant.into(),
+                                    ),
+                                });
+                            },
+                        }
+                    }
+                    let acceleration_structure_tags =
+                        match AccelerationStructureTags::parse(&template_args) {
+                            Ok(tags) => tags,
+                            Err(error) => {
+                                return Err(TypeLoweringError {
+                                    container: type_container,
+                                    kind: TypeLoweringErrorKind::WgslError(error.to_string()),
+                                });
+                            },
+                        };
+                    TypeKind::AccelerationStructure(Some(acceleration_structure_tags))
+                } else {
+                    TypeKind::AccelerationStructure(None)
                 }
             },
             _ => {
