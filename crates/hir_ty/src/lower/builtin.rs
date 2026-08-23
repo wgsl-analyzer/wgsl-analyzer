@@ -354,58 +354,7 @@ impl TypeLoweringContext<'_> {
                 TypeKind::Sampler(wgsl_types::ty::SamplerType::SamplerComparison)
             },
             "acceleration_structure" => {
-                if template_parameters.has_next() {
-                    let mut template_args = vec![];
-                    while let Some((template_parameter, _)) = template_parameters.take_next() {
-                        match template_parameter {
-                            TemplateParameter::Type(r#type) => {
-                                return Err(TypeLoweringError {
-                                    container: type_container,
-                                    kind: TypeLoweringErrorKind::UnexpectedTemplateArgument(
-                                        "an acceleration structure flag".to_owned(),
-                                        r#type.into(),
-                                    ),
-                                });
-                            },
-                            TemplateParameter::Instance(instance) => {
-                                return Err(TypeLoweringError {
-                                    container: type_container,
-                                    kind: TypeLoweringErrorKind::UnexpectedTemplateArgument(
-                                        "an acceleration structure flag".to_owned(),
-                                        instance.into(),
-                                    ),
-                                });
-                            },
-                            TemplateParameter::Enumerant(
-                                tag @ Enumerant::AccelerationStructureTag(_),
-                            ) => {
-                                template_args.push(wgsl_types::tplt::TpltParam::Enumerant(tag));
-                            },
-                            TemplateParameter::Enumerant(enumerant) => {
-                                return Err(TypeLoweringError {
-                                    container: type_container,
-                                    kind: TypeLoweringErrorKind::UnexpectedTemplateArgument(
-                                        "an acceleration structure flag".to_owned(),
-                                        enumerant.into(),
-                                    ),
-                                });
-                            },
-                        }
-                    }
-                    let acceleration_structure_tags =
-                        match AccelerationStructureTags::parse(&template_args) {
-                            Ok(tags) => tags,
-                            Err(error) => {
-                                return Err(TypeLoweringError {
-                                    container: type_container,
-                                    kind: TypeLoweringErrorKind::WgslError(error.to_string()),
-                                });
-                            },
-                        };
-                    TypeKind::AccelerationStructure(Some(acceleration_structure_tags))
-                } else {
-                    TypeKind::AccelerationStructure(None)
-                }
+                lower_acceleration_structure(type_container, template_parameters)?
             },
             _ => {
                 // if you reached here, then you found something known in wgsl-types that is unknown in wgsl-analyzer
@@ -1157,6 +1106,64 @@ impl TypeLoweringContext<'_> {
             Instance::Literal(literal_instance),
         ))
     }
+}
+
+fn lower_acceleration_structure(
+    type_container: TypeContainer,
+    template_parameters: &mut TemplateParameters,
+) -> Result<TypeKind, TypeLoweringError> {
+    if !template_parameters.has_next() {
+        return Ok(TypeKind::AccelerationStructure(None));
+    }
+    let mut acceleration_structure_tags = vec![];
+    while let Some((template_parameter, _)) = template_parameters.take_next() {
+        match template_parameter {
+            TemplateParameter::Type(r#type) => {
+                return Err(TypeLoweringError {
+                    container: type_container,
+                    kind: TypeLoweringErrorKind::UnexpectedTemplateArgument(
+                        "an acceleration structure flag".to_owned(),
+                        r#type.into(),
+                    ),
+                });
+            },
+            TemplateParameter::Instance(instance) => {
+                return Err(TypeLoweringError {
+                    container: type_container,
+                    kind: TypeLoweringErrorKind::UnexpectedTemplateArgument(
+                        "an acceleration structure flag".to_owned(),
+                        instance.into(),
+                    ),
+                });
+            },
+            TemplateParameter::Enumerant(tag @ Enumerant::AccelerationStructureTag(_)) => {
+                acceleration_structure_tags.push(wgsl_types::tplt::TpltParam::Enumerant(tag));
+            },
+            TemplateParameter::Enumerant(enumerant) => {
+                return Err(TypeLoweringError {
+                    container: type_container,
+                    kind: TypeLoweringErrorKind::UnexpectedTemplateArgument(
+                        "an acceleration structure flag".to_owned(),
+                        enumerant.into(),
+                    ),
+                });
+            },
+        }
+    }
+    // FIXME: use constructor after https://github.com/webgpu-tools/wesl-rs/pull/269
+    let acceleration_structure_tags =
+        match AccelerationStructureTags::parse(&acceleration_structure_tags) {
+            Ok(tags) => tags,
+            Err(error) => {
+                return Err(TypeLoweringError {
+                    container: type_container,
+                    kind: TypeLoweringErrorKind::WgslError(error.to_string()),
+                });
+            },
+        };
+    Ok(TypeKind::AccelerationStructure(Some(
+        acceleration_structure_tags,
+    )))
 }
 
 struct ArrayTemplate {
