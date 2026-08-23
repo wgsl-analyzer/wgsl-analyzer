@@ -2365,3 +2365,16 @@ fn foo() {
         "#]],
     );
 }
+
+#[test]
+fn acceleration_structure() {
+    check_infer(
+        "
+var x: acceleration_structure;
+        ",
+        expect![[r#"
+            4..5 'x': ref<handle, [error], read>
+            7..29 'accele...ucture': `acceleration_structure` not found in scope
+        "#]],
+    );
+}
