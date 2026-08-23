@@ -43,7 +43,7 @@ pub fn format_insanely_long_function_call_statement() {
         //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
         foo_efek_felkj_soiu_flejk_lkjef_aoieu_flkejfalk_lkjeifou_flj_lkjsieuf_flkj_Ljklllefjief();
         }",
-        &expect![[r#"
+        expect![[r#"
             fn main() {
                 //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
                 foo_efek_felkj_soiu_flejk_lkjef_aoieu_flkejfalk_lkjeifou_flj_lkjsieuf_flkj_Ljklllefjief();

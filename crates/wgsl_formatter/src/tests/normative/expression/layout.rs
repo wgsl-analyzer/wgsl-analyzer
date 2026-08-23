@@ -34,7 +34,7 @@ pub fn format_infix_grouping_in_very_long_let_statement() {
         let b = 111111111111111111111 + 2222222222222222222222222 + 333333333333333333333333333333 + (44444444444444 +                    55555555555 +                       66666666666666) + 777777777777777777777 + 88888888888888888888 + 999999999999999999999;
         let c = 111111111111111111111 + 2222222222222222222222222 + 333333333333333333333333333333 + (444444444444444444444444444444444 + 555555555555555555555555555555555 + 666666666666666666666666666666666666) + 777777777777777777777 + 88888888888888888888 + 999999999999999999999;
         }",
-        &expect![[r#"
+        expect![[r#"
             fn main() {
                 let a =
                     111111111111111111111 + 2222222222222222222222222
@@ -94,7 +94,7 @@ pub fn format_infix_expr_very_long_break_outer_first() {
         fn main() {
         let aaaaaaaaaaaaa = 1 + 1 + long_function(aaaaaaaaaaa, bbbbbbbbbbb, ccccccccccccc, dddddddddddddd);
         }",
-        &expect![[r#"
+        expect![[r#"
             //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
             fn main() {
                 let aaaaaaaaaaaaa = 1 + 1 + long_function(
@@ -122,7 +122,7 @@ pub fn format_field_expr_deeply_nested() {
         fn main() {
         let a = foo.baaaaaar.booooooooor.buuuuuuuuuuur.biiiiiiiiir.beeeeeeer.buuuuuuuur.boooooooor.baaaaaaaaaaar.biiiiiiiiiiir.beeeeeeeeer;
         }",
-        &expect![[r#"
+        expect![[r#"
             //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
             fn main() {
                 let a =
@@ -147,7 +147,7 @@ pub fn format_index_expr_chained_breaks_in_the_middle() {
         fn main() {
         let thingy = aaaaaaaaa[bbbbbbbbbbbbbbb][cccccccccccc][ddddddddddddd][eeeeeeeeeeeee][ffffffffffffff][ggggggggg];
         }",
-        &expect![[r#"
+        expect![[r#"
             //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
             fn main() {
                 let thingy =
@@ -173,7 +173,7 @@ pub fn format_index_expr_nested_breaks_outside_in() {
         fn main() {
         let thingy = aaaaaaaaa[bbbbbbbbbbbbbbb[cccccccccccc[dddddddddddd[eeeeeeeeeeeeeee[ffffffffffffff]]]]];
         }",
-        &expect![[r#"
+        expect![[r#"
             //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
             fn main() {
                 let thingy = aaaaaaaaa[
@@ -246,7 +246,7 @@ pub fn format_prefer_breaking_somewhat_according_to_precedence() {
         "fn main() {
             let hit_a = a_intersection.hit_type != util::HIT_TYPE_MISS && a_intersection.dist_far > start_depth && a_intersection.dist_near < last_result.depth;
         }",
-        &expect![[r#"
+        expect![[r#"
             fn main() {
                 let hit_a =
                     a_intersection.hit_type != util::HIT_TYPE_MISS

@@ -93,7 +93,7 @@ pub fn format_loop_continuing_break_if_statement_long_expression() {
 
 
         }",
-        &expect![[r#"
+        expect![[r#"
             fn main() {
                 loop {
                     continuing {

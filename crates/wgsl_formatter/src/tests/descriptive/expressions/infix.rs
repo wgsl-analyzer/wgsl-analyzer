@@ -132,7 +132,7 @@ fn format_infix_break_with_precedence_boolean_vs_arithmetic() {
             let break_me = aaaaaaaaaa + bbbbbbbbbb & xxxxxxxxxx;
             let break_me = xxxxxxxxxx & aaaaaaaaaa + bbbbbbbbbb;
         }",
-        &expect![[r#"
+        expect![[r#"
             //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
             fn main() {
                 let break_me = aaaaaa + bbbbbb

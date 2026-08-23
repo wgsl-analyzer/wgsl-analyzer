@@ -144,7 +144,7 @@ fn format_matrix_break_inner_first_if_forced_multiline_by_line_length() {
                 -sinR, 0.0,
             );
         }",
-        &expect![[r#"
+        expect![[r#"
             //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
             fn main() {
                 let x = mat3x3(
@@ -182,7 +182,7 @@ fn main() {
         -sinR, 0.0,
     );
 }",
-        &expect![[r#"
+        expect![[r#"
             //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
             fn main() {
                 let x = mat3x3(

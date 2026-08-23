@@ -178,7 +178,7 @@ fn format_fn_header_parameter_with_long_type_and_name() {
             b: u32,
         ) {}
         ",
-        &expect![[r#"
+        expect![[r#"
             //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
             fn main(
                 a: u32,
@@ -206,7 +206,7 @@ pub fn format_type_next_to_long_parameter_does_not_get_broken_into_multiple_line
         bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb: f32
         ) {}
         ",
-        &expect![[r#"
+        expect![[r#"
             fn a(
                 a: texture_2d<f32>,
                 bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb: f32,

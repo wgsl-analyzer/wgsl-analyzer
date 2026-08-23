@@ -60,7 +60,7 @@ fn snapshots() {
             let result = std::panic::catch_unwind(|| {
                 check_with_options(
                     &source,
-                    &expect_file![smoke_test_output_path],
+                    expect_file![smoke_test_output_path],
                     &CheckOptions {
                         assert_line_width: None, // Smoke tests contain code that cannot be formatted to fit within line width
                         formatting: FormattingOptions::default(),

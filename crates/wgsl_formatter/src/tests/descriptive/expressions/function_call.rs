@@ -197,7 +197,7 @@ pub fn format_expr_function_call_with_sensible_comments() {
         qur()
         );
         }",
-        &expect![["
+        expect![["
             fn main() {
                 let a = foo(
                         foo(), // Comment about foo

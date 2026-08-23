@@ -66,7 +66,7 @@ fn format_long_break_if_statement_gets_indented_correctly() {
             }
         }
         ",
-        &expect![[r#"
+        expect![[r#"
             //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
             fn main() {
                 loop {

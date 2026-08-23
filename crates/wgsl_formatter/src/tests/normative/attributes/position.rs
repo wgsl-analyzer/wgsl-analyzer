@@ -206,7 +206,7 @@ pub fn format_attrs_on_function_body_singleline() {
         //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
         fn thing() -> vec4<f32> @attr(0) @attr(1) @diagnostic(bla, off) {
         }",
-        &expect![[r#"
+        expect![[r#"
             //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
             fn thing() -> vec4<f32> @attr(0) @attr(1) @diagnostic(bla, off) {}
         "#]],
@@ -226,7 +226,7 @@ pub fn format_attrs_on_function_body_multiline() {
         //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
         fn thing() -> vec4<f32> @aaaaaaaa(3) @bbbbbbb(1) @ccccccccccccc(4,3) @dddddddddd(28) @eeeeeeeeeeee(11,11,11) {
         }",
-        &expect![[r#"
+        expect![[r#"
             //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
             fn thing() -> vec4<f32> @aaaaaaaa(3) @bbbbbbb(1) @ccccccccccccc(4, 3)
             @dddddddddd(28) @eeeeeeeeeeee(11, 11, 11) {}

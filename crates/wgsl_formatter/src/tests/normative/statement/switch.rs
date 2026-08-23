@@ -150,7 +150,7 @@ pub fn format_switch_statement_indent_long_condition() {
                 }
             }
         }",
-        &expect![[r#"
+        expect![[r#"
             fn main() {
                 switch aaaaaaaaaaaaaaaaaa + bbbbbbbbbbbbbbbbbbbb + ccccccccccccccccc
                     + ddddddddddddddddddd + eeeeeeeeeeeeeeeeee {
