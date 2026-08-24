@@ -286,6 +286,7 @@ fn complete_variable() {
             builtin constructor i64
             builtin type i64
             builtin enumerant immediate
+            builtin enumerant incoming_ray_payload
             builtin function insertBits
             builtin function inverseSqrt
             builtin function ldexp
@@ -389,6 +390,7 @@ fn complete_variable() {
             builtin function rayQueryInitialize
             builtin function rayQueryProceed
             builtin function rayQueryTerminate
+            builtin enumerant ray_payload
             builtin type ray_query
             builtin enumerant read
             builtin enumerant read_write
@@ -497,6 +499,7 @@ fn complete_variable() {
             builtin type generator texture_storage_2d
             builtin type generator texture_storage_2d_array
             builtin type generator texture_storage_3d
+            builtin function traceRay
             builtin function transpose
             builtin function trunc
             builtin constructor u32
@@ -655,6 +658,7 @@ fn complete_keyword() {
             builtin constructor i64
             builtin type i64
             builtin enumerant immediate
+            builtin enumerant incoming_ray_payload
             builtin function insertBits
             builtin function inverseSqrt
             builtin function ldexp
@@ -758,6 +762,7 @@ fn complete_keyword() {
             builtin function rayQueryInitialize
             builtin function rayQueryProceed
             builtin function rayQueryTerminate
+            builtin enumerant ray_payload
             builtin type ray_query
             builtin enumerant read
             builtin enumerant read_write
@@ -865,6 +870,7 @@ fn complete_keyword() {
             builtin type generator texture_storage_2d
             builtin type generator texture_storage_2d_array
             builtin type generator texture_storage_3d
+            builtin function traceRay
             builtin function transpose
             builtin function trunc
             builtin constructor u32
@@ -1023,6 +1029,7 @@ fn complete_snippet() {
             builtin constructor i64
             builtin type i64
             builtin enumerant immediate
+            builtin enumerant incoming_ray_payload
             builtin function insertBits
             builtin function inverseSqrt
             builtin function ldexp
@@ -1126,6 +1133,7 @@ fn complete_snippet() {
             builtin function rayQueryInitialize
             builtin function rayQueryProceed
             builtin function rayQueryTerminate
+            builtin enumerant ray_payload
             builtin type ray_query
             builtin enumerant read
             builtin enumerant read_write
@@ -1233,6 +1241,7 @@ fn complete_snippet() {
             builtin type generator texture_storage_2d
             builtin type generator texture_storage_2d_array
             builtin type generator texture_storage_3d
+            builtin function traceRay
             builtin function transpose
             builtin function trunc
             builtin constructor u32
@@ -1392,6 +1401,7 @@ fn complete_constant() {
             builtin constructor i64
             builtin type i64
             builtin enumerant immediate
+            builtin enumerant incoming_ray_payload
             builtin function insertBits
             builtin function inverseSqrt
             builtin function ldexp
@@ -1495,6 +1505,7 @@ fn complete_constant() {
             builtin function rayQueryInitialize
             builtin function rayQueryProceed
             builtin function rayQueryTerminate
+            builtin enumerant ray_payload
             builtin type ray_query
             builtin enumerant read
             builtin enumerant read_write
@@ -1602,6 +1613,7 @@ fn complete_constant() {
             builtin type generator texture_storage_2d
             builtin type generator texture_storage_2d_array
             builtin type generator texture_storage_3d
+            builtin function traceRay
             builtin function transpose
             builtin function trunc
             builtin constructor u32
@@ -1761,6 +1773,7 @@ fn complete_struct() {
             builtin constructor i64
             builtin type i64
             builtin enumerant immediate
+            builtin enumerant incoming_ray_payload
             builtin function insertBits
             builtin function inverseSqrt
             builtin function ldexp
@@ -1864,6 +1877,7 @@ fn complete_struct() {
             builtin function rayQueryInitialize
             builtin function rayQueryProceed
             builtin function rayQueryTerminate
+            builtin enumerant ray_payload
             builtin type ray_query
             builtin enumerant read
             builtin enumerant read_write
@@ -1971,6 +1985,7 @@ fn complete_struct() {
             builtin type generator texture_storage_2d
             builtin type generator texture_storage_2d_array
             builtin type generator texture_storage_3d
+            builtin function traceRay
             builtin function transpose
             builtin function trunc
             builtin constructor u32
@@ -2132,6 +2147,7 @@ fn complete_type_alias() {
             builtin constructor i64
             builtin type i64
             builtin enumerant immediate
+            builtin enumerant incoming_ray_payload
             builtin function insertBits
             builtin function inverseSqrt
             builtin function ldexp
@@ -2235,6 +2251,7 @@ fn complete_type_alias() {
             builtin function rayQueryInitialize
             builtin function rayQueryProceed
             builtin function rayQueryTerminate
+            builtin enumerant ray_payload
             builtin type ray_query
             builtin enumerant read
             builtin enumerant read_write
@@ -2342,6 +2359,7 @@ fn complete_type_alias() {
             builtin type generator texture_storage_2d
             builtin type generator texture_storage_2d_array
             builtin type generator texture_storage_3d
+            builtin function traceRay
             builtin function transpose
             builtin function trunc
             builtin constructor u32

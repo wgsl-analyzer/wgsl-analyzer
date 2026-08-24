@@ -7,6 +7,7 @@ mod derivative;
 mod logical;
 mod numeric;
 mod numeric_invalid;
+mod operators;
 mod value_constructor;
 mod zero_value;
 

@@ -322,7 +322,7 @@ impl<'db> TypeLoweringContext<'db> {
         template_parameters: &[ExpressionId],
     ) -> Result<Lowered, TypeLoweringError> {
         let resolved_type = self.resolver.resolve(self.db, path);
-        let template_parameters = self.eval_template_args(type_container, template_parameters);
+        let mut template_parameters = self.eval_template_args(type_container, template_parameters);
         match resolved_type {
             Ok(ResolveKind::TypeAlias(id)) => {
                 self.expect_no_template(&template_parameters);
@@ -356,7 +356,7 @@ impl<'db> TypeLoweringContext<'db> {
                 Ok(Lowered::BuiltinFunction(name, Some(template_parameters)))
             },
             Ok(ResolveKind::BuiltinType(name)) => {
-                self.lower_builtin_type(name, type_container, &template_parameters)
+                self.lower_builtin_type(name, type_container, &mut template_parameters)
             },
             Ok(ResolveKind::BuiltinTypeGenerator(name)) => {
                 match self.lower_builtin_type_generator(
@@ -989,6 +989,7 @@ impl<'db> WgslTypeConverter<'db> {
             TypeKind::Scalar(ScalarType::I32) => wgsl_types::syntax::SampledType::I32,
             TypeKind::Scalar(ScalarType::U32) => wgsl_types::syntax::SampledType::U32,
             TypeKind::Scalar(ScalarType::F32) => wgsl_types::syntax::SampledType::F32,
+            TypeKind::Scalar(ScalarType::U64) => wgsl_types::syntax::SampledType::U64,
             kind @ (TypeKind::Error
             | TypeKind::Scalar(_)
             | TypeKind::Atomic(_)

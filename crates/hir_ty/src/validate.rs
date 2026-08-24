@@ -185,10 +185,10 @@ pub fn validate_address_space<DiagnosticBuilder>(
                 },
             }
         },
-        AddressSpace::Immediate => {
-            // TODO: validate immediates
-            // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/682
-        },
+        // TODO: validate Immediate https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1419
+        // TODO: validate RayPayload
+        // TODO: validate IncomingRayPayload
+        AddressSpace::Immediate | AddressSpace::RayPayload | AddressSpace::IncomingRayPayload => {},
         AddressSpace::TaskPayload => {
             if !matches!(scope, Scope::Module) {
                 diagnostic_builder(AddressSpaceError::Scope(Scope::Module));

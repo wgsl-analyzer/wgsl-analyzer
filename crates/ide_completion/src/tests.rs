@@ -377,6 +377,7 @@ fn no_completions_in_comments() {
             builtin constructor i64
             builtin type i64
             builtin enumerant immediate
+            builtin enumerant incoming_ray_payload
             builtin function insertBits
             builtin function inverseSqrt
             builtin function ldexp
@@ -480,6 +481,7 @@ fn no_completions_in_comments() {
             builtin function rayQueryInitialize
             builtin function rayQueryProceed
             builtin function rayQueryTerminate
+            builtin enumerant ray_payload
             builtin type ray_query
             builtin enumerant read
             builtin enumerant read_write
@@ -587,6 +589,7 @@ fn no_completions_in_comments() {
             builtin type generator texture_storage_2d
             builtin type generator texture_storage_2d_array
             builtin type generator texture_storage_3d
+            builtin function traceRay
             builtin function transpose
             builtin function trunc
             builtin constructor u32
@@ -742,6 +745,7 @@ fn no_completions_in_comments() {
             builtin constructor i64
             builtin type i64
             builtin enumerant immediate
+            builtin enumerant incoming_ray_payload
             builtin function insertBits
             builtin function inverseSqrt
             builtin function ldexp
@@ -845,6 +849,7 @@ fn no_completions_in_comments() {
             builtin function rayQueryInitialize
             builtin function rayQueryProceed
             builtin function rayQueryTerminate
+            builtin enumerant ray_payload
             builtin type ray_query
             builtin enumerant read
             builtin enumerant read_write
@@ -952,6 +957,7 @@ fn no_completions_in_comments() {
             builtin type generator texture_storage_2d
             builtin type generator texture_storage_2d_array
             builtin type generator texture_storage_3d
+            builtin function traceRay
             builtin function transpose
             builtin function trunc
             builtin constructor u32
@@ -1106,6 +1112,7 @@ fn no_completions_in_comments() {
             builtin constructor i64
             builtin type i64
             builtin enumerant immediate
+            builtin enumerant incoming_ray_payload
             builtin function insertBits
             builtin function inverseSqrt
             builtin function ldexp
@@ -1209,6 +1216,7 @@ fn no_completions_in_comments() {
             builtin function rayQueryInitialize
             builtin function rayQueryProceed
             builtin function rayQueryTerminate
+            builtin enumerant ray_payload
             builtin type ray_query
             builtin enumerant read
             builtin enumerant read_write
@@ -1316,6 +1324,7 @@ fn no_completions_in_comments() {
             builtin type generator texture_storage_2d
             builtin type generator texture_storage_2d_array
             builtin type generator texture_storage_3d
+            builtin function traceRay
             builtin function transpose
             builtin function trunc
             builtin constructor u32
