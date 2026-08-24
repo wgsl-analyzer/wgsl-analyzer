@@ -1019,7 +1019,7 @@ impl TypeLoweringContext<'_> {
                 return Err(TypeLoweringError {
                     container: *template_parameters.container(),
                     kind: TypeLoweringErrorKind::MissingTemplateArgument(
-                        "an address space".to_owned(),
+                        "a texel format".to_owned(),
                     ),
                 });
             },
@@ -1044,7 +1044,7 @@ impl TypeLoweringContext<'_> {
                 return Err(TypeLoweringError {
                     container: *template_parameters.container(),
                     kind: TypeLoweringErrorKind::MissingTemplateArgument(
-                        "an address space".to_owned(),
+                        "an access mode".to_owned(),
                     ),
                 });
             },
