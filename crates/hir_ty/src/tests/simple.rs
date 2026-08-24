@@ -1914,9 +1914,9 @@ fn storage_texture_template() {
             166..169 'i32': unexpected template argument, expected an enumerant, actual: i32
             176..188 'tex_storage4': ref<handle, [error], read>
             190..208 'textur...age_2d': expected 1 to 2 template arguments, but got 0
-            190..208 'textur...age_2d': missing template argument, expected an address space
+            190..208 'textur...age_2d': missing template argument, expected a texel format
             214..226 'tex_storage5': ref<handle, [error], read>
-            228..258 'textur...unorm>': missing template argument, expected an address space
+            228..258 'textur...unorm>': missing template argument, expected an access mode
             264..276 'tex_storage5': ref<handle, [error], read>
             297..307 'read_write': unexpected template argument, expected a texel format (`rgba8unorm`, `rgba8snorm`, ...), actual: read_write
             314..326 'tex_storage3': ref<handle, [error], read>
