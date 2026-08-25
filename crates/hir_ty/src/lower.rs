@@ -301,7 +301,7 @@ impl<'db> TypeLoweringContext<'db> {
         path: &Path,
         template_parameters: &[ExpressionId],
     ) -> Lowered {
-        match self.try_lower(
+        match self.lower_expression(
             TypeContainer::Expression(expression),
             path,
             template_parameters,
@@ -315,7 +315,7 @@ impl<'db> TypeLoweringContext<'db> {
     }
 
     /// Will lower types, and resolve the definition of other items.
-    pub fn try_lower(
+    pub fn lower_expression(
         &mut self,
         type_container: TypeContainer,
         path: &Path,
@@ -437,7 +437,7 @@ impl<'db> TypeLoweringContext<'db> {
         type_specifier_id: TypeSpecifierId,
     ) -> Type {
         let type_specifier = &self.store[type_specifier_id];
-        let lowered = self.try_lower(
+        let lowered = self.lower_expression(
             TypeContainer::TypeSpecifier(type_specifier_id),
             &type_specifier.path,
             &type_specifier.template_parameters,

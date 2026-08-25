@@ -177,7 +177,6 @@ fn cannot_import_imported_item() {
             6..7 'b': [error]
             10..25 'package::foo::A': [error]
             10..25 'package::foo::A': `A` is private
-            10..25 'package::foo::A': expected variable, but got type `package::foo::A`
             ---
             ---
             6..7 'A': integer
@@ -429,7 +428,6 @@ fn invalid_import_starting_with_item() {
             81..86 'fails': [error]
             89..97 'bar::nya': [error]
             89..97 'bar::nya': package `bar` not found
-            89..97 'bar::nya': expected variable, but got type `bar::nya`
         "#]],
     );
 }
@@ -453,7 +451,6 @@ fn mod_path_super_display() {
             6..11 'fails': [error]
             14..36 'super:...o::nya': [error]
             14..36 'super:...o::nya': could not find file
-            14..36 'super:...o::nya': expected variable, but got type `super::super::Foo::nya`
         "#]],
     );
 }
