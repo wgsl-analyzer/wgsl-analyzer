@@ -1581,15 +1581,24 @@ impl<'db> InferenceContext<'db> {
                 return TypeKind::Error.intern(self.db);
             },
         };
-        let argument_types = argument_value_expressions.iter().map(|(_, r#type)| *r#type).collect_vec();
+        let argument_types = argument_value_expressions
+            .iter()
+            .map(|(_, r#type)| *r#type)
+            .collect_vec();
 
         match lowered {
-            Lowered::Type(r#type) => {
-                self.infer_type_constructor(store, function_call_expression, r#type, argument_value_expressions)
-            },
-            Lowered::ConstructibleTypeGenerator(generator) => {
-                self.infer_type_generator(store, function_call_expression, generator, argument_value_expressions)
-            },
+            Lowered::Type(r#type) => self.infer_type_constructor(
+                store,
+                function_call_expression,
+                r#type,
+                argument_value_expressions,
+            ),
+            Lowered::ConstructibleTypeGenerator(generator) => self.infer_type_generator(
+                store,
+                function_call_expression,
+                generator,
+                argument_value_expressions,
+            ),
             // Lowered::BuiltinConstructor(name, template) => {
             //     if argument_types
             //         .iter()
@@ -1609,7 +1618,12 @@ impl<'db> InferenceContext<'db> {
                 self.result
                     .call_resolutions
                     .insert(function_call_expression, ResolvedCall::Function(id));
-                self.infer_function(details, argument_value_expressions, store, function_call_expression)
+                self.infer_function(
+                    details,
+                    argument_value_expressions,
+                    store,
+                    function_call_expression,
+                )
             },
             Lowered::BuiltinFunction(name, template) => {
                 if argument_types.iter().any(|r#type| r#type.is_err(self.db)) {
@@ -1619,7 +1633,13 @@ impl<'db> InferenceContext<'db> {
                     // );
                     return self.error_type();
                 }
-                self.infer_builtin_function(function_call_expression, &argument_types, store, template, &name)
+                self.infer_builtin_function(
+                    function_call_expression,
+                    &argument_types,
+                    store,
+                    template,
+                    &name,
+                )
             },
             // uncallable as `identifier()`
             Lowered::Enumerant(_)
