@@ -77,6 +77,11 @@ test-utils.workspace = true
 # test-fixture.workspace = true
 # syntax-bridge.workspace = true
 
+# Redirects fd 0 and fd 1 to the host at link time, so `Connection::stdio()`
+# works unchanged inside a Web Worker. See crates/emscripten-stdio.
+[target."cfg(target_os = \"emscripten\")".dependencies]
+emscripten-stdio.workspace = true
+
 [target."cfg(windows)".dependencies]
 windows-sys = {
 	version = "0.61",
