@@ -34,8 +34,8 @@ use crate::{
     function::FunctionDetails,
     lower::{
         ConstructibleTypeGenerator, Lowered, LoweredKind, ResolvedCall, TemplateParameter,
-        TemplateParameters, TypeLoweringContext, TypeLoweringError, WgslTypeConverter,
-        to_wgsl_binary_operator, to_wgsl_unary_operator,
+        TemplateParameters, TypeContainer, TypeLoweringContext, TypeLoweringError,
+        WgslTypeConverter, to_wgsl_binary_operator, to_wgsl_unary_operator,
     },
     ty::{
         ArraySize, ArrayType, BuiltinStruct, MatrixType, Pointer, Reference, ScalarType, Type,
@@ -89,7 +89,6 @@ fn infer_query(
         },
         DefinitionWithBodyId::GlobalAssertStatement(_global_assert_statement) => {
             let expression = body.root.and_then(Either::right);
-
             if let Some(expression) = expression {
                 let expected_type =
                     TypeExpectation::from_type(TypeKind::Scalar(ScalarType::Bool).intern(db));
@@ -1038,7 +1037,7 @@ impl<'db> InferenceContext<'db> {
                         )
                     })
                     .collect();
-                self.infer_call(expression, ident_expression, &arguments, store)
+                self.infer_function_call(expression, ident_expression, &arguments, store)
             },
             Expression::Index { left_side, index } => {
                 let left_side = self.infer_expression(*left_side, store);
@@ -1159,7 +1158,7 @@ impl<'db> InferenceContext<'db> {
                 type_kind.intern(self.db)
             },
             Expression::IdentExpression(ident_expression) => {
-                self.infer_ident_expression(expression, ident_expression, store)
+                self.infer_identifier_expression(expression, ident_expression, store)
             },
         };
         self.set_expression_type(expression, r#type);
@@ -1258,7 +1257,7 @@ impl<'db> InferenceContext<'db> {
         }
     }
 
-    fn infer_function_call(
+    fn infer_function(
         &mut self,
         function: &FunctionDetails,
         arguments: &[(ExpressionId, Type)],
@@ -1368,7 +1367,7 @@ impl<'db> InferenceContext<'db> {
         }
     }
 
-    fn infer_ident_expression(
+    fn infer_identifier_expression(
         &mut self,
         expression: ExpressionId,
         ident_expression: &IdentExpression,
@@ -1377,13 +1376,21 @@ impl<'db> InferenceContext<'db> {
         let resolver = self.resolver_for_expression(expression);
         let mut context =
             TypeLoweringContext::new(self.db, resolver.as_ref().unwrap_or(&self.resolver), store);
-        let lowered = context.lower(
-            expression,
+        let lowered = match context.lower_expression(
+            TypeContainer::Expression(expression),
             &ident_expression.path,
             &ident_expression.template_parameters,
-        );
-        self.push_lowering_diagnostics(context.diagnostics, store);
-
+        ) {
+            Ok(lowered) => {
+                self.push_lowering_diagnostics(context.diagnostics, store);
+                lowered
+            },
+            Err(error) => {
+                context.diagnostics.push(error);
+                self.push_lowering_diagnostics(context.diagnostics, store);
+                return self.error_type();
+            },
+        };
         match lowered {
             Lowered::GlobalConstant(id) => {
                 InferenceResult::of(self.db, DefinitionWithBodyId::GlobalConstant(id)).return_type
@@ -1490,6 +1497,7 @@ impl<'db> InferenceContext<'db> {
         self.error_type()
     }
 
+    /// Lowers the field expression: `struct_value.name`.
     fn infer_struct_field_expression(
         &mut self,
         expression: ExpressionId,
@@ -1517,6 +1525,7 @@ impl<'db> InferenceContext<'db> {
         }
     }
 
+    /// Lowers the field expression: `builtin_struct_value.name`.
     fn infer_builtin_struct_field_expression(
         &mut self,
         store: &ExpressionStore,
@@ -1544,28 +1553,52 @@ impl<'db> InferenceContext<'db> {
         }
     }
 
-    fn infer_call(
+    /// Lowers the function call expression: `identifier(arguments)`.
+    fn infer_function_call(
         &mut self,
-        expression: ExpressionId,
+        function_call_expression: ExpressionId,
+        // https://www.w3.org/TR/WGSL/#callee
         callee: &IdentExpression,
-        arguments: &[(ExpressionId, Type)],
+        argument_value_expressions: &[(ExpressionId, Type)],
         store: &ExpressionStore,
     ) -> Type {
         let resolver = self
-            .resolver_for_expression(expression)
+            .resolver_for_expression(function_call_expression)
             .unwrap_or_else(|| self.resolver.clone());
         let mut context = TypeLoweringContext::new(self.db, &resolver, store);
-        let lowered = context.lower(expression, &callee.path, &callee.template_parameters);
-        self.push_lowering_diagnostics(context.diagnostics, store);
-        let argument_types = arguments.iter().map(|(_, r#type)| *r#type).collect_vec();
+        let lowered = match context.lower_expression(
+            TypeContainer::Expression(function_call_expression),
+            &callee.path,
+            &callee.template_parameters,
+        ) {
+            Ok(lowered) => {
+                self.push_lowering_diagnostics(context.diagnostics, store);
+                lowered
+            },
+            Err(error) => {
+                context.diagnostics.push(error);
+                self.push_lowering_diagnostics(context.diagnostics, store);
+                return TypeKind::Error.intern(self.db);
+            },
+        };
+        let argument_types = argument_value_expressions
+            .iter()
+            .map(|(_, r#type)| *r#type)
+            .collect_vec();
 
         match lowered {
-            Lowered::Type(r#type) => {
-                self.infer_type_constructor(store, expression, r#type, arguments)
-            },
-            Lowered::ConstructibleTypeGenerator(generator) => {
-                self.infer_type_generator(store, expression, generator, arguments)
-            },
+            Lowered::Type(r#type) => self.infer_type_constructor(
+                store,
+                function_call_expression,
+                r#type,
+                argument_value_expressions,
+            ),
+            Lowered::ConstructibleTypeGenerator(generator) => self.infer_type_generator(
+                store,
+                function_call_expression,
+                generator,
+                argument_value_expressions,
+            ),
             // Lowered::BuiltinConstructor(name, template) => {
             //     if argument_types
             //         .iter()
@@ -1584,8 +1617,13 @@ impl<'db> InferenceContext<'db> {
                 let details = id.lookup(self.db);
                 self.result
                     .call_resolutions
-                    .insert(expression, ResolvedCall::Function(id));
-                self.infer_function_call(details, arguments, store, expression)
+                    .insert(function_call_expression, ResolvedCall::Function(id));
+                self.infer_function(
+                    details,
+                    argument_value_expressions,
+                    store,
+                    function_call_expression,
+                )
             },
             Lowered::BuiltinFunction(name, template) => {
                 if argument_types.iter().any(|r#type| r#type.is_err(self.db)) {
@@ -1595,8 +1633,15 @@ impl<'db> InferenceContext<'db> {
                     // );
                     return self.error_type();
                 }
-                self.infer_builtin_function(expression, &argument_types, store, template, &name)
+                self.infer_builtin_function(
+                    function_call_expression,
+                    &argument_types,
+                    store,
+                    template,
+                    &name,
+                )
             },
+            // uncallable as `identifier()`
             Lowered::Enumerant(_)
             | Lowered::GlobalConstant(_)
             | Lowered::BuiltinDeclaration(_, _)
@@ -1606,7 +1651,7 @@ impl<'db> InferenceContext<'db> {
                 self.push_diagnostic(
                     store.store_source,
                     InferenceDiagnosticKind::UnexpectedLoweredKind {
-                        expression,
+                        expression: function_call_expression,
                         expected: LoweredKind::Function,
                         actual: lowered.kind(),
                         path: callee.path.clone(),
