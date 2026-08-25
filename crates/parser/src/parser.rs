@@ -385,6 +385,7 @@ impl<'source> ParserCallbacks<'source> for Parser<'source> {
             "linear_indexing" => self.context.extensions.linear_indexing = true,
             "immediate_address_space" => self.context.extensions.immediate_address_space = true,
             "buffer_view" => self.context.extensions.buffer_view = true,
+            "swizzle_assignment" => self.context.extensions.swizzle_assignment = true,
             _ => {
                 diagnostics.push(self.create_diagnostic(
                     self.cst.span(node_ref),

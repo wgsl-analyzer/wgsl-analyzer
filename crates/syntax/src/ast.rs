@@ -491,6 +491,7 @@ impl LanguageExtensionName {
             "linear_indexing" => LE::LinearIndexing,
             "immediate_address_space" => LE::ImmediateAddressSpace,
             "buffer_view" => LE::BufferView,
+            "swizzle_assignment" => LE::SwizzleAssignment,
             _ => return Err(UnknownExtension),
         })
     }
@@ -557,6 +558,12 @@ pub enum LanguageExtension {
     /// Enables the use of buffer types and the `buffer_view` built-in functions.
     /// Allow the declaration of variables with an opaque store type that can be reinterpreted as other host-shareable types.
     BufferView,
+
+    /// Supports swizzle view types.
+    ///
+    /// This enables swizzle assignments:
+    /// a single assignment statement can update multiple components of a vector without having to update the entire vector.
+    SwizzleAssignment,
 }
 
 impl HasAttributes for Directive {}
