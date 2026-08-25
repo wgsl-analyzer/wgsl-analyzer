@@ -31,6 +31,12 @@ fn get_cwd_as_abs_path() -> Result<AbsPathBuf, std::io::Error> {
 }
 
 fn main() -> Result<ExitCode> {
+    // Anchors the stdio bridge into the link so that `Connection::stdio()`
+    // below talks to the browser host instead of a real terminal. No-op
+    // everywhere else. See crates/emscripten-stdio.
+    #[cfg(target_os = "emscripten")]
+    emscripten_stdio::force_link();
+
     let flags = flags::WgslAnalyzer::from_env_or_exit();
 
     #[cfg(debug_assertions)]
