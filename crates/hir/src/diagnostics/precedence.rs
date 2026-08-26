@@ -33,22 +33,26 @@ pub fn collect<Function>(
 
         let not_parenthesis = |index| !body.store.parenthesis_expressions.contains(index);
 
-        let left_hand_side_operator =
-            if let hir_def::expression::Expression::BinaryOperation { operation, .. } =
-                body.store[*left_side]
-            {
-                not_parenthesis(left_side).then_some(operation)
-            } else {
-                None
-            };
-        let right_hand_side_operator =
-            if let hir_def::expression::Expression::BinaryOperation { operation, .. } =
-                body.store[*right_side]
-            {
-                not_parenthesis(right_side).then_some(operation)
-            } else {
-                None
-            };
+        let left_hand_side_operator = if let hir_def::expression::Expression::BinaryOperation {
+            operation,
+            left_side: _,
+            right_side: _,
+        } = body.store[*left_side]
+        {
+            not_parenthesis(left_side).then_some(operation)
+        } else {
+            None
+        };
+        let right_hand_side_operator = if let hir_def::expression::Expression::BinaryOperation {
+            operation,
+            left_side: _,
+            right_side: _,
+        } = body.store[*right_side]
+        {
+            not_parenthesis(right_side).then_some(operation)
+        } else {
+            None
+        };
         let operation = *operation;
         // We have validation for the following cases:
         // - &, | and ^ having (different) binary children

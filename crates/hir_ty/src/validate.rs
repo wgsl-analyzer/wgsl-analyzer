@@ -168,7 +168,8 @@ pub fn validate_address_space<DiagnosticBuilder>(
                 | TypeKind::Texture(_)
                 | TypeKind::Array(ArrayType {
                     binding_array: true,
-                    ..
+                    inner: _,
+                    size: _,
                 }) => {},
                 TypeKind::Error
                 | TypeKind::Scalar(_)

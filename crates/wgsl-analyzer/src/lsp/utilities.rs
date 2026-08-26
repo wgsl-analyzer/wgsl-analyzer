@@ -76,7 +76,7 @@ impl GlobalState {
                 |this, response| {
                     let Response {
                         response_result: Ok(result),
-                        ..
+                        id: _,
                     } = response
                     else {
                         return;

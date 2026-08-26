@@ -24,7 +24,7 @@ pub fn collect<Function>(
     if let TypeKind::Reference(Reference {
         address_space,
         access_mode,
-        ..
+        inner: _,
     }) = type_kind
     {
         hir_ty::validate::validate_address_space(
@@ -42,7 +42,8 @@ pub fn collect<Function>(
             | TypeKind::Texture(_)
             | TypeKind::Array(ArrayType {
                 binding_array: true,
-                ..
+                inner: _,
+                size: _
             })
     ) {
         diagnostic_builder(GlobalVariableDiagnostic::MissingAddressSpace);

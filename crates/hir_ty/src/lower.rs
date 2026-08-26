@@ -130,22 +130,26 @@ impl TypeLoweringErrorKind {
             Self::Resolution(ResolutionDiagnostic::UnresolvedName { name }) => {
                 format!("`{}` not found in scope", name.as_str())
             },
-            Self::Resolution(ResolutionDiagnostic::UnresolvedFile { .. }) => {
-                "could not find file".to_owned()
-            },
+            Self::Resolution(ResolutionDiagnostic::UnresolvedFile {
+                package: _,
+                path: _,
+            }) => "could not find file".to_owned(),
             Self::Resolution(ResolutionDiagnostic::DetachedFile) => {
                 "current file is detached".to_owned()
             },
             Self::Resolution(ResolutionDiagnostic::MissingName) => {
                 "path is missing a name".to_owned()
             },
-            Self::Resolution(ResolutionDiagnostic::PrivateItem { name, .. }) => {
+            Self::Resolution(ResolutionDiagnostic::PrivateItem {
+                name,
+                visibility: _,
+            }) => {
                 format!("`{}` is private", name.as_str())
             },
             Self::Resolution(ResolutionDiagnostic::TooManySupers) => {
                 "too many `super::`s".to_owned()
             },
-            Self::Resolution(ResolutionDiagnostic::UnresolvedItem { name, .. }) => {
+            Self::Resolution(ResolutionDiagnostic::UnresolvedItem { name, file_id: _ }) => {
                 format!("`{}` not found in other file", name.as_str())
             },
             Self::Resolution(ResolutionDiagnostic::UnresolvedPackage { name }) => {
