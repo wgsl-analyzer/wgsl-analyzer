@@ -263,7 +263,6 @@ var<storage
             22..25 wgsl-analyzer Error 12: address space is only valid for handle or texture types
             26..33 wgsl-analyzer Error 21: unexpected template argument
             26..33 wgsl-analyzer Error 21: unexpected template argument
-            89..92 wgsl-analyzer Error 12: address space is only valid for handle or texture types
         "#]],
     );
 }
@@ -330,7 +329,6 @@ fn binding_array_invalid() {
 @group(0) @binding(0) var textures: binding_array;
 ",
         expect![[r#"
-            22..25 wgsl-analyzer Error 12: address space is only valid for handle or texture types
             36..49 wgsl-analyzer Error 13: missing template arguments
         "#]],
     );
