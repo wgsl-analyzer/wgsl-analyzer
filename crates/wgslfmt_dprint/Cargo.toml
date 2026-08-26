@@ -20,7 +20,7 @@ serde_json.workspace = true
 wgsl-formatter = { workspace = true, features = ["serde"] }
 
 [dependencies.dprint-core]
-version = "0.68"
+version = "0.69"
 default-features = false
 features = ["wasm"]
 
