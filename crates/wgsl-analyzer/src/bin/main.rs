@@ -134,7 +134,12 @@ fn run_server() -> anyhow::Result<()> {
         workspace_folders_initialize_params,
         initialization_options,
         client_info,
-        ..
+        process_id: _,
+        locale: _,
+        #[expect(deprecated, reason = "unused")]
+            root_path: _,
+        trace: _,
+        work_done_progress_params: _,
     } = from_json::<InitializeParams, _>("InitializeParameters", &initialize_parameters)?;
 
     let root_path = if let Some(path) = root_uri

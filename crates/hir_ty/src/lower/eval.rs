@@ -38,9 +38,18 @@ impl TypeLoweringContext<'_> {
                 clippy::match_same_arms,
                 reason = "TODO: const evaluation not implemented, see https://github.com/wgsl-analyzer/wgsl-analyzer/issues/670"
             )]
-            Expression::Field { .. }
-            | Expression::Index { .. }
-            | Expression::Call { .. }
+            Expression::Field {
+                expression: _,
+                name: _,
+            }
+            | Expression::Index {
+                left_side: _,
+                index: _,
+            }
+            | Expression::Call {
+                ident_expression: _,
+                arguments: _,
+            }
             | Expression::IdentExpression(_) => {
                 return None;
             },
@@ -170,11 +179,27 @@ impl TypeLoweringContext<'_> {
                 }
             },
             Expression::Missing
-            | Expression::BinaryOperation { .. }
-            | Expression::UnaryOperator { .. }
-            | Expression::Field { .. }
-            | Expression::Call { .. }
-            | Expression::Index { .. }
+            | Expression::BinaryOperation {
+                left_side: _,
+                right_side: _,
+                operation: _,
+            }
+            | Expression::UnaryOperator {
+                expression: _,
+                operator: _,
+            }
+            | Expression::Field {
+                expression: _,
+                name: _,
+            }
+            | Expression::Call {
+                ident_expression: _,
+                arguments: _,
+            }
+            | Expression::Index {
+                left_side: _,
+                index: _,
+            }
             | Expression::Literal(_) => {
                 TemplateParameter::Instance(self.eval_expression(template_argument))
             },

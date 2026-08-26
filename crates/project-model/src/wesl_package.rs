@@ -62,7 +62,7 @@ impl PackageDependency {
             reason = "See https://github.com/wgsl-analyzer/wgsl-analyzer/issues/976"
         )]
         match self {
-            Self::Path { path, .. } => PackageKey::from_manifest_path(path.clone()),
+            Self::Path { path, name: _ } => PackageKey::from_manifest_path(path.clone()),
             Self::Library { name, package } => {
                 todo!("Library dependencies are still unsupported")
             },

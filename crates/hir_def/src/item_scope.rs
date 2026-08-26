@@ -128,18 +128,18 @@ impl ItemScope {
         for diagnostic in &self.diagnostics {
             buffer.push_str("error: ");
             match &diagnostic.kind {
-                DefDiagnosticKind::UnnamedImport { .. } => {
+                DefDiagnosticKind::UnnamedImport { id: _ } => {
                     writeln!(buffer, "import without a name")
                 },
-                DefDiagnosticKind::UnresolvedPackage { name, .. } => {
+                DefDiagnosticKind::UnresolvedPackage { name, id: _ } => {
                     writeln!(buffer, "unresolved package {}", name.as_str())
                 },
-                DefDiagnosticKind::UnresolvedImport { .. } => {
+                DefDiagnosticKind::UnresolvedImport { id: _ } => {
                     writeln!(buffer, "import resolved to neither a module nor an item")
                 },
-                DefDiagnosticKind::TooManySupers { .. } => writeln!(buffer, "too many supers"),
-                DefDiagnosticKind::DetachedFile { .. } => writeln!(buffer, "detached file"),
-                DefDiagnosticKind::NameConflict { previous, .. } => {
+                DefDiagnosticKind::TooManySupers { id: _ } => writeln!(buffer, "too many supers"),
+                DefDiagnosticKind::DetachedFile { id: _ } => writeln!(buffer, "detached file"),
+                DefDiagnosticKind::NameConflict { previous, item: _ } => {
                     writeln!(buffer, "name conflict for {}", previous.as_str())
                 },
             };

@@ -255,7 +255,7 @@ fn parse_hex_float(hex: &str) -> f64 {
     let mut place = 1.0_f64 / 16.0;
     for ch in frac_str.chars() {
         let digit = ch.to_digit(16).expect("invalid hex float fraction digit");
-        frac += f64::from(digit) * place;
+        frac = f64::mul_add(f64::from(digit), place, frac);
         place /= 16.0;
     }
 
@@ -273,18 +273,24 @@ impl Expression {
             Self::BinaryOperation {
                 left_side,
                 right_side,
-                ..
+                operation: _,
             } => {
                 function(*left_side);
                 function(*right_side);
             },
-            Self::UnaryOperator { expression, .. } | Self::Field { expression, .. } => {
+            Self::UnaryOperator {
+                expression,
+                operator: _,
+            }
+            | Self::Field {
+                expression,
+                name: _,
+            } => {
                 function(*expression);
             },
             Self::Call {
                 ident_expression,
                 arguments,
-                ..
             } => {
                 ident_expression
                     .template_parameters
@@ -299,7 +305,7 @@ impl Expression {
             },
             Self::IdentExpression(IdentExpression {
                 template_parameters,
-                ..
+                path: _,
             }) => {
                 template_parameters.iter().copied().for_each(function);
             },

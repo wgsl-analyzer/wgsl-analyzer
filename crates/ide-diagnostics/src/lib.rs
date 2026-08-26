@@ -345,7 +345,7 @@ pub fn diagnostics(
                     message,
                     range,
                     related,
-                    ..
+                    file_id: _
                 } => {
                     let mut message = Diagnostic::new(DiagnosticCode("15"), message, range);
                     message.related = related;
@@ -363,7 +363,7 @@ pub fn diagnostics(
                     message.source = DiagnosticSource::Tint;
                     message
                 },
-                AnyDiagnostic::ParseError { message, range, .. } => {
+                AnyDiagnostic::ParseError { message, range, file_id: _ } => {
                     Diagnostic::new(DiagnosticCode("16"), message, range)
                 },
                 AnyDiagnostic::NoConstructor {
@@ -447,7 +447,7 @@ pub fn diagnostics(
                     };
                     Diagnostic::new(DiagnosticCode("19"), message, frange.range)
                 },
-                AnyDiagnostic::CyclicType { name, range, .. } => Diagnostic::new(
+                AnyDiagnostic::CyclicType { name, range, file_id: _ } => Diagnostic::new(
                     DiagnosticCode("20"),
                     format!("cyclic type {}", name.as_str()),
                     range,
@@ -485,7 +485,7 @@ pub fn diagnostics(
                         frange.range,
                     )
                 },
-                AnyDiagnostic::InvalidIdentifier { name, range, .. } => Diagnostic::new(
+                AnyDiagnostic::InvalidIdentifier { name, range, file_id: _ } => Diagnostic::new(
                     DiagnosticCode("24"),
                     format!("`{}` is not a valid name for an identifier", name.as_str()),
                     range,

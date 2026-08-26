@@ -274,7 +274,7 @@ pub trait HasAttributes: AstNode {
 
 #[macro_export]
 macro_rules! match_ast {
-    (match $node:ident { $($tt:tt)* }) => { match_ast!(match ($node) { $($tt)* }) };
+    (match $node:ident { $($tt:tt)* }) => { match_ast!{match ($node) { $($tt)* }} };
 
     (match ($node:expr) {
         $( ast::$ast:ident($it:ident) => $result:expr, )*

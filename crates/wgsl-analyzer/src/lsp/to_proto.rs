@@ -577,11 +577,16 @@ fn inlay_hint_label(
     let (label, tooltip) = if let [
         IdeInlayHintLabelPart {
             linked_location: None,
-            ..
+            text: _,
+            tooltip: _,
         },
     ] = &*label.parts
     {
-        let IdeInlayHintLabelPart { text, tooltip, .. } = label.parts.pop().unwrap();
+        let IdeInlayHintLabelPart {
+            text,
+            tooltip,
+            linked_location: _,
+        } = label.parts.pop().unwrap();
         let tooltip = tooltip.and_then(|inlay_tooltip| match inlay_tooltip {
             LazyProperty::Computed(inlay_tooltip) => Some(inlay_tooltip),
             LazyProperty::Lazy => {

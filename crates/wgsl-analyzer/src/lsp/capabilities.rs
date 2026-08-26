@@ -71,11 +71,16 @@ pub fn server_capabilities(config: &Config) -> ServerCapabilities {
         document_range_formatting_provider: match config.wgslfmt(None) {
             WgslfmtConfig::Wgslfmt {
                 enable_range_formatting: true,
-                ..
+                extra_arguments: _,
             } => Some(DocumentRangeFormattingProvider::Bool(true)),
-            WgslfmtConfig::CustomCommand { .. } | WgslfmtConfig::Wgslfmt { .. } => {
-                Some(DocumentRangeFormattingProvider::Bool(false))
-            },
+            WgslfmtConfig::CustomCommand {
+                command: _,
+                arguments: _,
+            }
+            | WgslfmtConfig::Wgslfmt {
+                extra_arguments: _,
+                enable_range_formatting: _,
+            } => Some(DocumentRangeFormattingProvider::Bool(false)),
         },
         // TODO https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1095
         document_on_type_formatting_provider: Some({

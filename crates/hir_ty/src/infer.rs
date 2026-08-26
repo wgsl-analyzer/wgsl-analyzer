@@ -628,7 +628,6 @@ impl<'db> InferenceContext<'db> {
                 binding_id,
                 type_ref,
                 initializer,
-                ..
             } => {
                 let r#type = type_ref.map(|r#type| self.lower_type(r#type, &resolver, body));
                 let r#type =
@@ -751,7 +750,10 @@ impl<'db> InferenceContext<'db> {
             Statement::PhonyAssignment { right_side } => {
                 self.infer_expression(*right_side, body);
             },
-            Statement::IncrDecr { expression, .. } => {
+            Statement::IncrDecr {
+                expression,
+                operator: _,
+            } => {
                 let left_type = self.infer_expression(*expression, body);
 
                 let left_kind = left_type.kind(self.db);

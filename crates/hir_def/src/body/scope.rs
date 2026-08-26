@@ -229,17 +229,18 @@ fn compute_statement_scopes(
         Statement::Variable {
             binding_id,
             initializer,
-            ..
+            type_ref: _,
+            template_parameters: _,
         }
         | Statement::Const {
             binding_id,
             initializer,
-            ..
+            type_ref: _,
         }
         | Statement::Let {
             binding_id,
             initializer,
-            ..
+            type_ref: _,
         } => {
             if let Some(init) = initializer {
                 compute_expression_scopes(*init, body, scopes, scope);
@@ -255,7 +256,7 @@ fn compute_statement_scopes(
         | Statement::CompoundAssignment {
             left_side,
             right_side,
-            ..
+            operator: _,
         } => {
             compute_expression_scopes(*left_side, body, scopes, scope);
             compute_expression_scopes(*right_side, body, scopes, scope);
@@ -263,7 +264,10 @@ fn compute_statement_scopes(
         Statement::PhonyAssignment { right_side } => {
             compute_expression_scopes(*right_side, body, scopes, scope);
         },
-        Statement::IncrDecr { expression, .. }
+        Statement::IncrDecr {
+            expression,
+            operator: _,
+        }
         | Statement::FunctionCall { expression }
         | Statement::Assert { expression } => {
             compute_expression_scopes(*expression, body, scopes, scope);

@@ -321,12 +321,20 @@ impl TypeKind {
     ) -> bool {
         match self {
             Self::Scalar(ScalarType::AbstractInt | ScalarType::AbstractFloat) => true,
-            Self::Array(ArrayType { inner, .. })
+            Self::Array(ArrayType {
+                inner,
+                binding_array: _,
+                size: _,
+            })
             | Self::Vector(VectorType {
                 component_type: inner,
-                ..
+                size: _,
             })
-            | Self::Matrix(MatrixType { inner, .. }) => inner.kind(db).is_abstract(db),
+            | Self::Matrix(MatrixType {
+                inner,
+                columns: _,
+                rows: _,
+            }) => inner.kind(db).is_abstract(db),
             Self::Scalar(_)
             | Self::Error
             | Self::Atomic(_)
@@ -368,7 +376,8 @@ impl TypeKind {
                 | Self::Matrix(_)
                 | Self::Array(ArrayType {
                     size: ArraySize::Constant(_),
-                    ..
+                    inner: _,
+                    binding_array: _
                 })
                 | Self::Struct(_)
         )
@@ -421,7 +430,8 @@ impl TypeKind {
         match self {
             Self::Array(ArrayType {
                 size: ArraySize::Dynamic,
-                ..
+                inner: _,
+                binding_array: _,
             }) => true,
             Self::Struct(r#struct) => db
                 .field_types(*r#struct)
@@ -488,7 +498,7 @@ fn conversion_rank(
             TypeKind::Reference(Reference {
                 inner: ty1,
                 access_mode: AccessMode::Read | AccessMode::ReadWrite,
-                ..
+                address_space: _,
             }),
             ty2,
         ) if &ty1.kind(db) == ty2 => Some(0),
@@ -512,12 +522,12 @@ fn conversion_rank(
             TypeKind::Array(ArrayType {
                 inner: ty1,
                 size: n1,
-                ..
+                binding_array: _,
             }),
             TypeKind::Array(ArrayType {
                 inner: ty2,
                 size: n2,
-                ..
+                binding_array: _,
             }),
         ) if n1 == n2 => conversion_rank(&ty1.kind(db), &ty2.kind(db), db),
         (
