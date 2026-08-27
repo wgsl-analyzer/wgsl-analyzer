@@ -59,7 +59,7 @@ impl fmt::Display for AddressSpaceError {
             },
             Self::Constructable => formatter.write_str("type is not constructable"),
             Self::HostShareable => formatter.write_str("type is not host-shareable"),
-            Self::WorkgroupCompatible => formatter.write_str(""),
+            Self::WorkgroupCompatible => formatter.write_str("type is not workgroup compatible"),
             Self::HandleOrTexture => {
                 formatter.write_str("address space is only valid for handle or texture types")
             },

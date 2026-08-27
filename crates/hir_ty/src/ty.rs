@@ -45,31 +45,6 @@ impl Type {
         }
     }
 
-    #[expect(clippy::doc_paragraphs_missing_punctuation, reason = "false positive")]
-    /// `T` -> `T`, `vecN<T>` -> `T`
-    #[must_use]
-    pub fn this_or_vec_inner(
-        self,
-        db: &dyn HirDatabase,
-    ) -> Self {
-        match self.kind(db) {
-            TypeKind::Vector(vector) => vector.component_type,
-            TypeKind::Reference(reference) => reference.inner.this_or_vec_inner(db),
-            TypeKind::Error
-            | TypeKind::Scalar(_)
-            | TypeKind::Atomic(_)
-            | TypeKind::Matrix(_)
-            | TypeKind::Struct(_)
-            | TypeKind::BuiltinStruct(_)
-            | TypeKind::Array(_)
-            | TypeKind::Texture(_)
-            | TypeKind::RayQuery(_)
-            | TypeKind::AccelerationStructure(_)
-            | TypeKind::Sampler(_)
-            | TypeKind::Pointer(_) => self,
-        }
-    }
-
     pub fn is_convertible_to(
         self,
         r#type: Self,
@@ -296,6 +271,8 @@ impl TypeKind {
     pub const fn is_numeric_scalar(&self) -> bool {
         match self {
             Self::Scalar(scalar) => scalar.is_numeric(),
+            // be optimistic about errors
+            Self::Error => true,
             Self::Atomic(_)
             | Self::Vector(_)
             | Self::Matrix(_)
@@ -307,8 +284,7 @@ impl TypeKind {
             | Self::Reference(_)
             | Self::Pointer(_)
             | Self::RayQuery(_)
-            | Self::AccelerationStructure(_)
-            | Self::Error => false,
+            | Self::AccelerationStructure(_) => false,
         }
     }
 
@@ -316,6 +292,8 @@ impl TypeKind {
     pub const fn is_index(&self) -> bool {
         match self {
             Self::Scalar(scalar) => scalar.is_index(),
+            // be optimistic about errors
+            Self::Error => true,
             Self::Pointer(_)
             | Self::Atomic(_)
             | Self::BuiltinStruct(_)
@@ -327,8 +305,7 @@ impl TypeKind {
             | Self::Sampler(_)
             | Self::Reference(_)
             | Self::RayQuery(_)
-            | Self::AccelerationStructure(_)
-            | Self::Error => false,
+            | Self::AccelerationStructure(_) => false,
         }
     }
 
@@ -412,6 +389,7 @@ impl TypeKind {
                 | Self::Atomic(_)
                 | Self::Array(_)
                 | Self::Struct(_)
+                | Self::BuiltinStruct(_)
                 | Self::Texture(_)
                 | Self::Sampler(_)
         )

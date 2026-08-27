@@ -619,3 +619,76 @@ fn foo() {
         "#]],
     );
 }
+
+#[test]
+fn not_host_shareable() {
+    check_diagnostics(
+        "
+@group(0) @binding(0)
+var<storage> x: ray_query;
+
+@group(0) @binding(0)
+var<storage> y: vec2<bool>;
+        ",
+        expect![[r#"
+            22..25 wgsl-analyzer Error 12: type is not host-shareable
+            72..75 wgsl-analyzer Error 12: type is not host-shareable
+        "#]],
+    );
+}
+
+#[test]
+fn not_index_scalar() {
+    check_diagnostics(
+        "
+@group(0) @binding(0)
+var<storage> x: u32 = vec2(1, 2)[1.0];
+        ",
+        expect![[r#"
+            55..58 wgsl-analyzer Error 2: expected i32 or u32, found float
+        "#]],
+    );
+}
+
+#[test]
+fn not_index_other() {
+    check_diagnostics(
+        "
+@group(0) @binding(0)
+var<storage> y: u32 = 1;
+
+@group(0) @binding(0)
+var<storage> x: u32 = vec2(1, 2)[&y];
+        ",
+        expect![[r#"
+            103..105 wgsl-analyzer Error 2: expected i32 or u32, found ptr<u32>
+        "#]],
+    );
+}
+
+#[test]
+fn indeterminate_index() {
+    check_diagnostics(
+        "
+@group(0) @binding(0)
+var<storage> x: u32 = vec2(1, 2)[y];
+        ",
+        expect![[r#"
+            55..56 wgsl-analyzer Error 14: `y` not found in scope
+        "#]],
+    );
+}
+
+#[test]
+fn workgroup_runtime_sized_array() {
+    check_diagnostics(
+        "
+struct Foo { foo: array<u32> }
+
+var<workgroup> x: Foo;
+        ",
+        expect![[r#"
+            32..35 wgsl-analyzer Error 12: type is not workgroup compatible
+        "#]],
+    );
+}

@@ -11,12 +11,12 @@ pub enum GlobalVariableDiagnostic {
     AddressSpaceError(AddressSpaceError),
 }
 
-pub fn collect<Function>(
+pub fn collect<DiagnosticsBuilder>(
     db: &dyn HirDatabase,
     variable: GlobalVariableId,
-    mut diagnostic_builder: Function,
+    mut diagnostic_builder: DiagnosticsBuilder,
 ) where
-    Function: FnMut(GlobalVariableDiagnostic),
+    DiagnosticsBuilder: FnMut(GlobalVariableDiagnostic),
 {
     let inference = InferenceResult::of(db, DefinitionWithBodyId::GlobalVariable(variable));
     let type_kind = inference.return_type().kind(db);
