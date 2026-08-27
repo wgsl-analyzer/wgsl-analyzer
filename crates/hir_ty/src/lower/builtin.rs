@@ -357,6 +357,59 @@ impl TypeLoweringContext<'_> {
             "acceleration_structure" => {
                 lower_acceleration_structure(type_container, template_parameters)?
             },
+
+            // struct RayDesc {
+            //     // Contains flags to use for this ray (e.g. consider all `Blas`es opaque)
+            //     flags: u32,
+            //     // If the bitwise and of this and any `TlasInstance`'s `mask` is not zero then the object inside
+            //     // the `Blas` contained within that `TlasInstance` may be hit.
+            //     cull_mask: u32,
+            //     // Only points on the ray whose t is greater than this may be hit.
+            //     t_min: f32,
+            //     // Only points on the ray whose t is less than this may be hit.
+            //     t_max: f32,
+            //     // The origin of the ray.
+            //     origin: vec3<f32>,
+            //     // The direction of the ray, t is calculated as the length down the ray divided by the length of `dir`.
+            //     dir: vec3<f32>,
+            // }
+            "RayDesc" => TypeKind::BuiltinStruct(BuiltinStruct {
+                name: "RayDesc".to_owned(),
+                fields: vec![
+                    (
+                        "flags".to_owned(),
+                        TypeKind::Scalar(ScalarType::U32).intern(self.db),
+                    ),
+                    (
+                        "cull_mask".to_owned(),
+                        TypeKind::Scalar(ScalarType::U32).intern(self.db),
+                    ),
+                    (
+                        "t_min".to_owned(),
+                        TypeKind::Scalar(ScalarType::F32).intern(self.db),
+                    ),
+                    (
+                        "t_max".to_owned(),
+                        TypeKind::Scalar(ScalarType::F32).intern(self.db),
+                    ),
+                    (
+                        "origin".to_owned(),
+                        TypeKind::Vector(VectorType {
+                            size: VecSize::Three,
+                            component_type: TypeKind::Scalar(ScalarType::F32).intern(self.db),
+                        })
+                        .intern(self.db),
+                    ),
+                    (
+                        "dir".to_owned(),
+                        TypeKind::Vector(VectorType {
+                            size: VecSize::Three,
+                            component_type: TypeKind::Scalar(ScalarType::F32).intern(self.db),
+                        })
+                        .intern(self.db),
+                    ),
+                ],
+            }),
             _ => {
                 // if you reached here, then you found something known in wgsl-types that is unknown in wgsl-analyzer
                 // open a feature request!
