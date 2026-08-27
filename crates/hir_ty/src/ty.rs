@@ -460,6 +460,9 @@ impl TypeKind {
     ) -> bool {
         match self {
             Self::Atomic(atomic) => atomic.inner.contains_struct(db, r#struct),
+            Self::BuiltinStruct(BuiltinStruct { name: _, fields }) => fields
+                .iter()
+                .any(|(_, r#type)| r#type.contains_struct(db, r#struct)),
             Self::Struct(id) => {
                 if *id == r#struct {
                     return true;
@@ -469,15 +472,25 @@ impl TypeKind {
                     .values()
                     .any(|r#type| r#type.contains_struct(db, r#struct))
             },
-            Self::Array(array) => array.inner.contains_struct(db, r#struct),
-            Self::Reference(reference) => reference.inner.contains_struct(db, r#struct),
-            Self::Pointer(pointer) => pointer.inner.contains_struct(db, r#struct),
-
+            Self::Array(ArrayType {
+                inner,
+                binding_array: _,
+                size: _,
+            })
+            | Self::Reference(Reference {
+                address_space: _,
+                inner,
+                access_mode: _,
+            })
+            | Self::Pointer(Pointer {
+                address_space: _,
+                inner,
+                access_mode: _,
+            }) => inner.contains_struct(db, r#struct),
             Self::Scalar(_)
             | Self::Vector(_)
             | Self::Matrix(_)
             | Self::Sampler(_)
-            | Self::BuiltinStruct(_)
             | Self::Texture(_)
             | Self::RayQuery(_)
             | Self::AccelerationStructure(_)
