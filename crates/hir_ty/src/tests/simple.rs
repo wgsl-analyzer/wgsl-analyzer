@@ -2525,9 +2525,9 @@ fn foo() {
 }
         ",
         expect![[r#"
-            19..22 'r_i': [error]
-            25..56 'textur...rray()': [error]
-            25..56 'textur...rray()': builtin type `texture_multisampled_2d_array` not yet supported in wgsl-analyzer
+            19..20 't': [error]
+            23..54 'textur...rray()': [error]
+            23..54 'textur...rray()': builtin type `texture_multisampled_2d_array` not yet supported in wgsl-analyzer
         "#]],
     );
 }
