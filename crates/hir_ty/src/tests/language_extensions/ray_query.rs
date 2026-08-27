@@ -4,25 +4,35 @@ use expect_test::expect;
 
 use crate::tests::check_infer;
 
-// TODO support wgpu_ray_query
 #[test]
 fn rayQueryInitialize() {
     check_infer(
         "
+//enable wgpu_ray_query;
 //enable wgpu_ray_query_vertex_return;
-var x: acceleration_structure;
+var a_s: acceleration_structure;
+var r_q: ray_query;
 fn foo() {
-    let z = rayQueryInitialize(1, x, 2);
+    let r_d = todo();
+    rayQueryInitialize(&r_q, a_s, r_d);
+
 }
         ",
         expect![[r#"
-            43..44 'x': ref<handle, acceleration_structure, read>
-            89..90 'z': [error]
-            93..120 'rayQue... x, 2)': [error]
-            112..113 '1': integer
-            115..116 'x': ref<handle, acceleration_structure, read>
-            118..119 '2': integer
-            93..120 'rayQue... x, 2)': `rayQueryInitialize` expects a pointer to `ray_query`, an acceleration structure and a `RayDesc` argument
+            68..71 'a_s': ref<handle, acceleration_structure, read>
+            101..104 'r_q': ref<handle, ray_query, read>
+            136..139 'r_d': [error]
+            142..148 'todo()': [error]
+            154..188 'rayQue..., r_d)': [error]
+            173..177 '&r_q': [error]
+            174..177 'r_q': ref<handle, ray_query, read>
+            179..182 'a_s': ref<handle, acceleration_structure, read>
+            184..187 'r_d': [error]
+            142..148 'todo()': `todo` not found in scope
+            173..177 '&r_q': cannot create a pointer in `handle` address space
         "#]],
     );
 }
+
+// rayQueryInitialize(rq: ptr<function, ray_query>, acceleration_structure: acceleration_structure, ray_desc: RayDesc)
+// rayQueryInitialize(rq: ptr<function, ray_query<vertex_return>>, acceleration_structure: acceleration_structure<vertex_return>, ray_desc: RayDesc)

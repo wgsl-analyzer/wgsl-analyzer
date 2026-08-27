@@ -626,6 +626,7 @@ impl<'db> WgslTypeConverter<'db> {
                 Box::new(self.to_wgsl_types(inner)),
                 access_mode,
             ),
+            TypeKind::RayQuery(tags) => wgsl_types::Type::RayQuery(tags),
             TypeKind::AccelerationStructure(tags) => wgsl_types::Type::AccelerationStructure(tags),
         }
     }
@@ -771,7 +772,7 @@ impl<'db> WgslTypeConverter<'db> {
             wgsl_types::Type::Sampler(sampler_type) => {
                 TypeKind::Sampler(sampler_type).intern(self.db)
             },
-            wgsl_types::Type::RayQuery(_) => todo!("naga extension"),
+            wgsl_types::Type::RayQuery(tags) => TypeKind::RayQuery(tags).intern(self.db),
             wgsl_types::Type::AccelerationStructure(tags) => {
                 TypeKind::AccelerationStructure(tags).intern(self.db)
             },
@@ -1006,6 +1007,7 @@ impl<'db> WgslTypeConverter<'db> {
             | TypeKind::Array(_)
             | TypeKind::Texture(_)
             | TypeKind::Sampler(_)
+            | TypeKind::RayQuery(_)
             | TypeKind::AccelerationStructure(_)
             | TypeKind::Reference(_)
             | TypeKind::Pointer(_)) => panic!("invalid sampled type {kind:?}"),

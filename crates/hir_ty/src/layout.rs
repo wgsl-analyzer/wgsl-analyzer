@@ -152,6 +152,7 @@ impl TypeKind {
             | Self::BuiltinStruct(_)
             | Self::Texture(_)
             | Self::Sampler(_)
+            | Self::RayQuery(_)
             | Self::AccelerationStructure(_)
             | Self::Reference(_)
             | Self::Pointer(_) => None,
@@ -252,6 +253,7 @@ impl TypeKind {
             | Self::Vector(_)
             | Self::Texture(_)
             | Self::Sampler(_)
+            | Self::RayQuery(_)
             | Self::AccelerationStructure(_)
             | Self::Reference(_)
             | Self::Pointer(_) => None,

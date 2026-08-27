@@ -65,16 +65,18 @@ pub(crate) fn complete_dot(
             builtin_struct_completions(accumulator, context, &builtin_struct);
             Some(())
         },
-        TypeKind::Error
-        | TypeKind::Scalar(_)
+
+        TypeKind::Scalar(_)
         | TypeKind::Atomic(_)
         | TypeKind::Matrix(_)
         | TypeKind::Array(_)
         | TypeKind::Texture(_)
         | TypeKind::Sampler(_)
-        | TypeKind::AccelerationStructure(_)
         | TypeKind::Reference(_)
-        | TypeKind::Pointer(_) => None,
+        | TypeKind::Pointer(_)
+        | TypeKind::RayQuery(_)
+        | TypeKind::AccelerationStructure(_)
+        | TypeKind::Error => None,
     }
 }
 

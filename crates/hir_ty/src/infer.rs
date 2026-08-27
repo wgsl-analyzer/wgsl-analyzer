@@ -1123,6 +1123,7 @@ impl<'db> InferenceContext<'db> {
                     | TypeKind::BuiltinStruct(_)
                     | TypeKind::Texture(_)
                     | TypeKind::Sampler(_)
+                    | TypeKind::RayQuery(_)
                     | TypeKind::AccelerationStructure(_)
                     | TypeKind::Reference(_)
                     | TypeKind::Pointer(_) => {
@@ -1200,6 +1201,7 @@ impl<'db> InferenceContext<'db> {
             | TypeKind::BuiltinStruct(_)
             | TypeKind::Array(_)
             | TypeKind::Texture(_)
+            | TypeKind::RayQuery(_)
             | TypeKind::AccelerationStructure(_)
             | TypeKind::Sampler(_)) => (kind, None),
         };
@@ -1237,6 +1239,7 @@ impl<'db> InferenceContext<'db> {
             | TypeKind::Array(_)
             | TypeKind::Texture(_)
             | TypeKind::Sampler(_)
+            | TypeKind::RayQuery(_)
             | TypeKind::AccelerationStructure(_)
             | TypeKind::Reference(_)
             | TypeKind::Pointer(_) => {
@@ -1773,6 +1776,7 @@ impl<'db> InferenceContext<'db> {
             | TypeKind::Pointer(_)
             | TypeKind::Atomic(_)
             | TypeKind::BuiltinStruct(_)
+            | TypeKind::RayQuery(_)
             | TypeKind::AccelerationStructure(_)
             | TypeKind::Reference(_) => {
                 debug_assert!(

@@ -3,7 +3,8 @@ use expect_test::expect;
 use crate::tests::check_infer;
 
 #[test]
-#[ignore = "https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1388"]
+#[should_panic = "assertion `left == right` failed\n  left: []\n right: [Diagnostic { message: \"unknown extension: `wgpu_ray_tracing_pipeline`\", range: 7..32 }]"]
+// TODO: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1388
 fn ray_tracing_pipeline() {
     check_infer(
         "
