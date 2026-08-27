@@ -33,9 +33,9 @@ use crate::{
     diagnostics::{InferenceDiagnostic, InferenceDiagnosticKind},
     function::FunctionDetails,
     lower::{
-        ConstructibleTypeGenerator, Lowered, LoweredKind, ResolvedCall, TemplateParameter,
-        TemplateParameters, TypeContainer, TypeLoweringContext, TypeLoweringError,
-        WgslTypeConverter, to_wgsl_binary_operator, to_wgsl_unary_operator,
+        ConstructibleTypeGenerator, DefaultTypes, Lowered, LoweredKind, ResolvedCall,
+        TemplateParameter, TemplateParameters, TypeContainer, TypeLoweringContext,
+        TypeLoweringError, WgslTypeConverter, to_wgsl_binary_operator, to_wgsl_unary_operator,
     },
     ty::{
         ArraySize, ArrayType, BuiltinStruct, MatrixType, Pointer, Reference, ScalarType, Type,
@@ -105,7 +105,7 @@ fn infer_cycle_result(
     _: salsa::Id,
     definition: DefinitionWithBodyId,
 ) -> InferenceResult {
-    let mut inference_result = InferenceResult::new(db);
+    let mut inference_result = InferenceResult::new(TypeKind::Error.intern(db));
     let (name, range) = get_name_and_range(db, ModuleDefinitionId::from(definition));
 
     inference_result.diagnostics.push(InferenceDiagnostic {
@@ -152,19 +152,6 @@ pub fn get_name_and_range(
     }
 }
 
-#[derive(Clone, PartialEq, Eq, Debug)]
-struct InternedStandardTypes {
-    unknown: Type,
-}
-
-impl InternedStandardTypes {
-    fn new(db: &dyn HirDatabase) -> Self {
-        Self {
-            unknown: TypeKind::Error.intern(db),
-        }
-    }
-}
-
 #[derive(PartialEq, Eq, Debug)]
 pub struct InferenceResult {
     pub(crate) type_of_expression: ArenaMap<ExpressionId, Type>,
@@ -173,19 +160,19 @@ pub struct InferenceResult {
     return_type: Type,
     call_resolutions: FxHashMap<ExpressionId, ResolvedCall>,
     field_resolutions: FxHashMap<ExpressionId, FieldId>,
-    standard_types: InternedStandardTypes,
+    error_type: Type,
 }
 
 impl InferenceResult {
-    fn new(db: &dyn HirDatabase) -> Self {
+    fn new(error_type: Type) -> Self {
         Self {
             type_of_expression: ArenaMap::default(),
             type_of_binding: ArenaMap::default(),
             diagnostics: Vec::default(),
-            return_type: TypeKind::Error.intern(db),
+            return_type: error_type,
             call_resolutions: FxHashMap::default(),
             field_resolutions: FxHashMap::default(),
-            standard_types: InternedStandardTypes::new(db),
+            error_type,
         }
     }
 
@@ -234,7 +221,7 @@ impl Index<ExpressionId> for InferenceResult {
     ) -> &Type {
         self.type_of_expression
             .get(index)
-            .unwrap_or(&self.standard_types.unknown)
+            .unwrap_or(&self.error_type)
     }
 }
 
@@ -245,9 +232,7 @@ impl Index<BindingId> for InferenceResult {
         &self,
         index: BindingId,
     ) -> &Type {
-        self.type_of_binding
-            .get(index)
-            .unwrap_or(&self.standard_types.unknown)
+        self.type_of_binding.get(index).unwrap_or(&self.error_type)
     }
 }
 
@@ -268,12 +253,13 @@ impl<'db> InferenceContext<'db> {
         owner: ModuleDefinitionId,
         resolver: Resolver<'db>,
     ) -> Self {
+        let types = DefaultTypes::new(db);
         Self {
             db,
             owner,
             resolver,
-            result: InferenceResult::new(db),
-            return_type: TypeKind::Error.intern(db),
+            result: InferenceResult::new(types.error),
+            return_type: types.error,
             converter: WgslTypeConverter::new(db),
         }
     }
@@ -2308,7 +2294,7 @@ impl InferenceContext<'_> {
     }
 
     const fn error_type(&self) -> Type {
-        self.result.standard_types.unknown
+        self.result.error_type
     }
 
     fn bool_type(&self) -> Type {

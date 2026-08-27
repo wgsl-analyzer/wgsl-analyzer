@@ -39,8 +39,121 @@ pub struct TypeLoweringContext<'db> {
     /// Make sure to set the correct resolver when going into function scopes.
     resolver: &'db Resolver<'db>,
     store: &'db ExpressionStore,
+    types: DefaultTypes,
 
     pub(crate) diagnostics: Vec<TypeLoweringError>,
+}
+
+#[derive(PartialEq, Eq, Debug)]
+pub struct DefaultTypes {
+    pub error: Type,
+    pub ray_desc: BuiltinStruct,
+    pub ray_intersection: BuiltinStruct,
+}
+
+impl DefaultTypes {
+    pub fn new(db: &dyn HirDatabase) -> Self {
+        Self {
+            error: TypeKind::Error.intern(db),
+            ray_desc: BuiltinStruct {
+                name: "RayDesc".to_owned(),
+                fields: vec![
+                    (
+                        "flags".to_owned(),
+                        TypeKind::Scalar(ScalarType::U32).intern(db),
+                    ),
+                    (
+                        "cull_mask".to_owned(),
+                        TypeKind::Scalar(ScalarType::U32).intern(db),
+                    ),
+                    (
+                        "t_min".to_owned(),
+                        TypeKind::Scalar(ScalarType::F32).intern(db),
+                    ),
+                    (
+                        "t_max".to_owned(),
+                        TypeKind::Scalar(ScalarType::F32).intern(db),
+                    ),
+                    (
+                        "origin".to_owned(),
+                        TypeKind::Vector(VectorType {
+                            size: VecSize::Three,
+                            component_type: TypeKind::Scalar(ScalarType::F32).intern(db),
+                        })
+                        .intern(db),
+                    ),
+                    (
+                        "dir".to_owned(),
+                        TypeKind::Vector(VectorType {
+                            size: VecSize::Three,
+                            component_type: TypeKind::Scalar(ScalarType::F32).intern(db),
+                        })
+                        .intern(db),
+                    ),
+                ],
+            },
+            ray_intersection: BuiltinStruct {
+                name: "RayIntersection".to_owned(),
+                fields: vec![
+                    (
+                        "kind".to_owned(),
+                        TypeKind::Scalar(ScalarType::U32).intern(db),
+                    ),
+                    ("t".to_owned(), TypeKind::Scalar(ScalarType::F32).intern(db)),
+                    (
+                        "instance_custom_data".to_owned(),
+                        TypeKind::Scalar(ScalarType::U32).intern(db),
+                    ),
+                    (
+                        "instance_index".to_owned(),
+                        TypeKind::Scalar(ScalarType::U32).intern(db),
+                    ),
+                    (
+                        "sbt_record_offset".to_owned(),
+                        TypeKind::Scalar(ScalarType::U32).intern(db),
+                    ),
+                    (
+                        "geometry_index".to_owned(),
+                        TypeKind::Scalar(ScalarType::U32).intern(db),
+                    ),
+                    (
+                        "primitive_index".to_owned(),
+                        TypeKind::Scalar(ScalarType::U32).intern(db),
+                    ),
+                    (
+                        "barycentrics".to_owned(),
+                        TypeKind::Vector(VectorType {
+                            size: VecSize::Two,
+                            component_type: TypeKind::Scalar(ScalarType::F32).intern(db),
+                        })
+                        .intern(db),
+                    ),
+                    (
+                        "front_face".to_owned(),
+                        TypeKind::Scalar(ScalarType::Bool).intern(db),
+                    ),
+                    (
+                        "object_to_world".to_owned(),
+                        TypeKind::Matrix(MatrixType {
+                            columns: VecSize::Four,
+                            rows: VecSize::Three,
+                            inner: TypeKind::Scalar(ScalarType::F32).intern(db),
+                        })
+                        .intern(db),
+                    ),
+                    (
+                        "world_to_object".to_owned(),
+                        TypeKind::Matrix(MatrixType {
+                            columns: VecSize::Four,
+                            rows: VecSize::Three,
+                            inner: TypeKind::Scalar(ScalarType::F32).intern(db),
+                        })
+                        .intern(db),
+                    ),
+                ],
+            },
+        }
+    }
 }
 
 #[derive(PartialEq, Eq, Debug)]
@@ -301,6 +414,7 @@ impl<'db> TypeLoweringContext<'db> {
             db,
             resolver,
             store,
+            types: DefaultTypes::new(db),
             diagnostics: Vec::new(),
         }
     }

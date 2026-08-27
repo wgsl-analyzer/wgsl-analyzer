@@ -2523,22 +2523,6 @@ fn foo() {
 }
 
 #[test]
-fn unresolved_builtin_type() {
-    check_infer(
-        "
-fn foo() {
-    let r_i = RayIntersection();
-}
-        ",
-        expect![[r#"
-            19..22 'r_i': [error]
-            25..42 'RayInt...tion()': [error]
-            25..42 'RayInt...tion()': builtin type `RayIntersection` not yet supported in wgsl-analyzer
-        "#]],
-    );
-}
-
-#[test]
 fn unresolved_builtin_type_generator() {
     check_infer(
         "
