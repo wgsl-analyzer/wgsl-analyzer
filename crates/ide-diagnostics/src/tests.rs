@@ -625,14 +625,19 @@ fn not_host_shareable() {
     check_diagnostics(
         "
 @group(0) @binding(0)
-var<storage> x: ray_query;
+var<storage> a: ray_query;
 
 @group(0) @binding(0)
-var<storage> y: vec2<bool>;
+var<storage> b: vec2<bool>;
+
+@group(0) @binding(0)
+var<storage> c: vec2<Foo>; // error = optimistic
         ",
         expect![[r#"
             22..25 wgsl-analyzer Error 12: type is not host-shareable
             72..75 wgsl-analyzer Error 12: type is not host-shareable
+            144..147 wgsl-analyzer Error 14: `Foo` not found in scope
+            144..147 wgsl-analyzer Error 14: unexpected template argument, expected a scalar, actual: [error]
         "#]],
     );
 }
@@ -680,7 +685,7 @@ var<storage> x: u32 = vec2(1, 2)[y];
 }
 
 #[test]
-fn workgroup_runtime_sized_array() {
+fn workgroup_runtime_sized_array_struct() {
     check_diagnostics(
         "
 struct Foo { foo: array<u32> }
@@ -689,6 +694,21 @@ var<workgroup> x: Foo;
         ",
         expect![[r#"
             32..35 wgsl-analyzer Error 12: type is not workgroup compatible
+        "#]],
+    );
+}
+
+#[test]
+fn workgroup_runtime_sized_other() {
+    check_diagnostics(
+        "
+var<workgroup> a: array<u32>;
+var<workgroup> b: u32;
+var<workgroup> c: Foo;
+        ",
+        expect![[r#"
+            0..3 wgsl-analyzer Error 12: type is not workgroup compatible
+            71..74 wgsl-analyzer Error 13: `Foo` not found in scope
         "#]],
     );
 }
