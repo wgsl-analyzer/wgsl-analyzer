@@ -2501,6 +2501,28 @@ fn foo() {
 }
 
 #[test]
+fn builtin_struct_arguments_error() {
+    check_infer(
+        "
+fn foo() {
+    let r_d = RayDesc(NONE, 0, 0, 0, vec3f(), vec3f());
+}
+        ",
+        expect![[r#"
+            19..22 'r_d': RayDesc
+            25..65 'RayDes...c3f())': RayDesc
+            33..37 'NONE': [error]
+            39..40 '0': integer
+            42..43 '0': integer
+            45..46 '0': integer
+            48..55 'vec3f()': vec3<f32>
+            57..64 'vec3f()': vec3<f32>
+            33..37 'NONE': `NONE` not found in scope
+        "#]],
+    );
+}
+
+#[test]
 fn unresolved_builtin_type() {
     check_infer(
         "
