@@ -772,7 +772,9 @@ impl<'db> WgslTypeConverter<'db> {
                 TypeKind::Sampler(sampler_type).intern(self.db)
             },
             wgsl_types::Type::RayQuery(_) => todo!("naga extension"),
-            wgsl_types::Type::AccelerationStructure(_) => todo!("naga extension"),
+            wgsl_types::Type::AccelerationStructure(tags) => {
+                TypeKind::AccelerationStructure(tags).intern(self.db)
+            },
             wgsl_types::Type::Unknown => TypeKind::Error.intern(self.db),
         }
     }
