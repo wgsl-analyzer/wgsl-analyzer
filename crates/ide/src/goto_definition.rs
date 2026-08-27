@@ -70,7 +70,7 @@ impl TryToNavigationTarget for Definition {
                 Self::BuiltinFunction(name) => None?,
                 Self::BuiltinType(name) => None?,
                 Self::BuiltinTypeGenerator(name) => None?,
-                // Self::BuiltinTypeConstructor(name) => None?,
+                Self::BuiltinTypeConstructor(name) => None?,
                 Self::BuiltinEnumerant(name) => None?,
                 Self::BuiltinDeclaration(name) => None?,
                 Self::Local(local) => local.try_to_navigation_target(db)?,

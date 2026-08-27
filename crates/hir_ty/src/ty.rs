@@ -150,10 +150,15 @@ impl Type {
                 .0
                 .iter()
                 .all(|(_, field_type)| *field_type.is_constructible(db)),
-            TypeKind::BuiltinStruct(builtin_struct) => builtin_struct
-                .fields
-                .iter()
-                .all(|(_, field_type)| *field_type.is_constructible(db)),
+            TypeKind::BuiltinStruct(builtin_struct) => {
+                // This implementation matches naga.
+                // Builtin structs like __atomic_compare_exchange_result are "not constructible" because they are impossible to write in source code.
+                // The reason is that two underscores "__" may not begin an identifier.
+                builtin_struct
+                    .fields
+                    .iter()
+                    .all(|(_, field_type)| *field_type.is_constructible(db))
+            },
             TypeKind::Array(array_type) => array_type.is_constructible(db),
             TypeKind::Atomic(_)
             | TypeKind::Texture(_)

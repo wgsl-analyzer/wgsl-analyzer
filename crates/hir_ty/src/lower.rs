@@ -155,6 +155,12 @@ impl TypeLoweringErrorKind {
             Self::Resolution(ResolutionDiagnostic::UnresolvedPackage { name }) => {
                 format!("package `{}` not found", name.as_str())
             },
+            Self::Resolution(ResolutionDiagnostic::UnsupportedBuiltin { name }) => {
+                format!(
+                    "builtin type `{}` not yet supported in wgsl-analyzer",
+                    name.as_str()
+                )
+            },
             Self::WgslError(error) => error.clone(),
             Self::UnexpectedTemplateArgument(expected, actual) => {
                 format!(
@@ -359,7 +365,7 @@ impl<'db> TypeLoweringContext<'db> {
             Ok(ResolveKind::BuiltinFunction(name)) => {
                 Ok(Lowered::BuiltinFunction(name, Some(template_parameters)))
             },
-            Ok(ResolveKind::BuiltinType(name)) => {
+            Ok(ResolveKind::BuiltinType(name) | ResolveKind::BuiltinTypeConstructor(name)) => {
                 self.lower_builtin_type(name, type_container, &mut template_parameters)
             },
             Ok(ResolveKind::BuiltinTypeGenerator(name)) => {
@@ -372,14 +378,6 @@ impl<'db> TypeLoweringContext<'db> {
                     Either::Right(r#type) => Ok(Lowered::Type(r#type)),
                 }
             },
-            // Ok(ResolveKind::BuiltinTypeConstructor(name)) => self
-            //     .lower_builtin_type(type_container, &name, &template_parameters)?
-            //     .ok_or_else(|| TypeLoweringError {
-            //         container: type_container,
-            //         kind: TypeLoweringErrorKind::Resolution(ResolutionDiagnostic::UnresolvedName {
-            //             name,
-            //         }),
-            //     }),
             Ok(ResolveKind::BuiltinEnumerant(name)) => {
                 self.expect_no_template(&template_parameters);
                 self.lower_builtin_enumerant(&name)

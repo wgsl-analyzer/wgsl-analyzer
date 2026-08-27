@@ -1769,13 +1769,19 @@ impl<'db> InferenceContext<'db> {
             TypeKind::Struct(struct_id) => {
                 self.infer_struct_constructor(store, expression, r#type, arguments, struct_id)
             },
+            TypeKind::BuiltinStruct(builtin_struct) => self.infer_builtin_struct_constructor(
+                store,
+                expression,
+                r#type,
+                arguments,
+                &builtin_struct,
+            ),
 
             // Never constructible
             TypeKind::Texture(_)
             | TypeKind::Sampler(_)
             | TypeKind::Pointer(_)
             | TypeKind::Atomic(_)
-            | TypeKind::BuiltinStruct(_)
             | TypeKind::RayQuery(_)
             | TypeKind::AccelerationStructure(_)
             | TypeKind::Reference(_) => {
@@ -2167,6 +2173,62 @@ impl<'db> InferenceContext<'db> {
         let mut has_errors = false;
         for ((_, field_type), (argument_expression, argument_type)) in
             field_types.iter().zip(arguments.iter())
+        {
+            if !argument_type.is_convertible_to(*field_type, self.db) {
+                self.push_diagnostic(
+                    store.store_source,
+                    InferenceDiagnosticKind::TypeMismatch {
+                        expression: *argument_expression,
+                        expected: TypeExpectation::from_type(*field_type),
+                        actual: *argument_type,
+                    },
+                );
+                has_errors = true;
+            }
+        }
+
+        if has_errors {
+            self.error_type()
+        } else {
+            r#type
+        }
+    }
+
+    fn infer_builtin_struct_constructor(
+        &mut self,
+        store: &ExpressionStore,
+        expression: ExpressionId,
+        r#type: Type,
+        arguments: &[(ExpressionId, Type)],
+        builtin_struct: &BuiltinStruct,
+    ) -> Type {
+        // https://www.w3.org/TR/WGSL/#zero-value-builtin-function
+        if arguments.is_empty() {
+            return r#type;
+        }
+        if arguments.len() != builtin_struct.fields.len() {
+            self.push_diagnostic(
+                store.store_source,
+                InferenceDiagnosticKind::FunctionCallArgCountMismatch {
+                    expression,
+                    n_expected: builtin_struct.fields.len(),
+                    n_actual: arguments.len(),
+                },
+            );
+            return self.error_type();
+        }
+        let argument_types = arguments.iter().map(|(_, r#type)| *r#type).collect_vec();
+        if argument_types.iter().any(|r#type| r#type.is_err(self.db)) {
+            // debug_assert!(
+            //     !self.result.diagnostics.is_empty(),
+            //     "an error type should have a diagnostic already"
+            // );
+            return r#type;
+        }
+
+        let mut has_errors = false;
+        for ((_, field_type), (argument_expression, argument_type)) in
+            builtin_struct.fields.iter().zip(arguments.iter())
         {
             if !argument_type.is_convertible_to(*field_type, self.db) {
                 self.push_diagnostic(

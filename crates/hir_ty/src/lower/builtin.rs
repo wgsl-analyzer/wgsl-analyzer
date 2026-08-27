@@ -16,8 +16,8 @@ use crate::{
         TypeLoweringError, TypeLoweringErrorKind, generics::TemplateParameters,
     },
     ty::{
-        ArraySize, ArrayType, AtomicType, MatrixType, Pointer, ScalarType, TextureDimensionality,
-        TextureKind, TextureType, Type, TypeKind, VecSize, VectorType,
+        ArraySize, ArrayType, AtomicType, BuiltinStruct, MatrixType, Pointer, ScalarType,
+        TextureDimensionality, TextureKind, TextureType, Type, TypeKind, VecSize, VectorType,
     },
 };
 
@@ -362,9 +362,9 @@ impl TypeLoweringContext<'_> {
                 // open a feature request!
                 return Err(TypeLoweringError {
                     container: type_container,
-                    kind: TypeLoweringErrorKind::Resolution(ResolutionDiagnostic::UnresolvedName {
-                        name,
-                    }),
+                    kind: TypeLoweringErrorKind::Resolution(
+                        ResolutionDiagnostic::UnsupportedBuiltin { name },
+                    ),
                 });
             },
         };
@@ -682,15 +682,13 @@ impl TypeLoweringContext<'_> {
             //     unimplemented!()
             // },
             _ => {
-                debug_assert!(
-                    false,
-                    "reaching this means that this function needs to be updated to handle a new builtin defined in wgsl-types"
-                );
+                // if you reached here, then you found something known in wgsl-types that is unknown in wgsl-analyzer
+                // open a feature request!
                 Err(TypeLoweringError {
                     container: type_container,
-                    kind: TypeLoweringErrorKind::Resolution(ResolutionDiagnostic::UnresolvedName {
-                        name: name.clone(),
-                    }),
+                    kind: TypeLoweringErrorKind::Resolution(
+                        ResolutionDiagnostic::UnsupportedBuiltin { name: name.clone() },
+                    ),
                 })
             },
         }
