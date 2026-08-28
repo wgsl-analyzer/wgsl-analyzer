@@ -40,7 +40,7 @@
 		"pnpm": "^11.15.1"
 	},
 	"engineStrict": true,
-	"packageManager": "pnpm@11.15.1+sha512.81350b07e53c9538a02f1f2303b4290fa2d7be04e56e2a970c4cc4b417dc761de196edabd49d55c7dc9580db81007c44143e4e3d7e462b3000d23c255122d065",
+	"packageManager": "pnpm@11.22.0+sha512.1ff870c4c6133dfd88fb2afc46dd13d47f09c9794b438c6fdb47ca98caf3bc16381ee0be93a091b8e3824cf01f889f46d7d9e20910fb0be1ab0fb5baa80dd621",
 	"enabledApiProposals": [],
 	"extensionKind": [
 		"workspace"
@@ -73,7 +73,7 @@
 	"devDependencies": {
 		"@biomejs/biome": "^2.5.8",
 		"@tsconfig/node-ts": "^23.6.4",
-		"@tsconfig/node22": "^22.0.5",
+		"@tsconfig/node24": "^24.0.0",
 		"@tsconfig/strictest": "^2.0.8",
 		"@types/node": "^25.9.5",
 		"@types/vscode": "^1.125.0",

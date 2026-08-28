@@ -141,7 +141,6 @@ pub struct ExtensionsConfig {
     /// Enables the `wgpu_ray_query` extension, native only.
     pub wgpu_ray_query: bool,
 
-    // TODO: actually implement https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1405
     /// Enables the `wgpu_ray_query_vertex_return` extension, native only.
     pub wgpu_ray_query_vertex_return: bool,
 

@@ -209,20 +209,20 @@ fn complete_variable() {
             builtin constructor RayDesc
             builtin constructor RayIntersection
             builtin function abs
-            builtin type generator acceleration_structure
+            builtin type acceleration_structure
             builtin function acos
             builtin function acosh
             builtin function all
             builtin function any
             builtin constructor array
-            builtin type array
+            builtin type generator array
             builtin function arrayLength
             builtin function asin
             builtin function asinh
             builtin function atan
             builtin function atan2
             builtin function atanh
-            builtin type atomic
+            builtin type generator atomic
             builtin function atomicAdd
             builtin function atomicAnd
             builtin function atomicCompareExchangeWeak
@@ -235,10 +235,10 @@ fn complete_variable() {
             builtin function atomicSub
             builtin function atomicXor
             builtin enumerant bgra8unorm
-            builtin type binding_array
+            builtin type generator binding_array
             builtin function bitcast
             builtin constructor bool
-            builtin type generator bool
+            builtin type bool
             builtin function ceil
             builtin function clamp
             builtin function cos
@@ -263,11 +263,11 @@ fn complete_variable() {
             builtin function exp2
             builtin function extractBits
             builtin constructor f16
-            builtin type generator f16
+            builtin type f16
             builtin constructor f32
-            builtin type generator f32
+            builtin type f32
             builtin constructor f64
-            builtin type generator f64
+            builtin type f64
             builtin function faceForward
             builtin function firstLeadingBit
             builtin function firstTrailingBit
@@ -282,10 +282,11 @@ fn complete_variable() {
             builtin function getCandidateHitVertexPositions
             builtin function getCommittedHitVertexPositions
             builtin constructor i32
-            builtin type generator i32
+            builtin type i32
             builtin constructor i64
-            builtin type generator i64
+            builtin type i64
             builtin enumerant immediate
+            builtin enumerant incoming_ray_payload
             builtin function insertBits
             builtin function inverseSqrt
             builtin function ldexp
@@ -293,55 +294,55 @@ fn complete_variable() {
             builtin function log
             builtin function log2
             builtin constructor mat2x2
-            builtin type mat2x2
+            builtin type generator mat2x2
             builtin alias mat2x2f
             builtin constructor mat2x2f
             builtin alias mat2x2h
             builtin constructor mat2x2h
             builtin constructor mat2x3
-            builtin type mat2x3
+            builtin type generator mat2x3
             builtin alias mat2x3f
             builtin constructor mat2x3f
             builtin alias mat2x3h
             builtin constructor mat2x3h
             builtin constructor mat2x4
-            builtin type mat2x4
+            builtin type generator mat2x4
             builtin alias mat2x4f
             builtin constructor mat2x4f
             builtin alias mat2x4h
             builtin constructor mat2x4h
             builtin constructor mat3x2
-            builtin type mat3x2
+            builtin type generator mat3x2
             builtin alias mat3x2f
             builtin constructor mat3x2f
             builtin alias mat3x2h
             builtin constructor mat3x2h
             builtin constructor mat3x3
-            builtin type mat3x3
+            builtin type generator mat3x3
             builtin alias mat3x3f
             builtin constructor mat3x3f
             builtin alias mat3x3h
             builtin constructor mat3x3h
             builtin constructor mat3x4
-            builtin type mat3x4
+            builtin type generator mat3x4
             builtin alias mat3x4f
             builtin constructor mat3x4f
             builtin alias mat3x4h
             builtin constructor mat3x4h
             builtin constructor mat4x2
-            builtin type mat4x2
+            builtin type generator mat4x2
             builtin alias mat4x2f
             builtin constructor mat4x2f
             builtin alias mat4x2h
             builtin constructor mat4x2h
             builtin constructor mat4x3
-            builtin type mat4x3
+            builtin type generator mat4x3
             builtin alias mat4x3f
             builtin constructor mat4x3f
             builtin alias mat4x3h
             builtin constructor mat4x3h
             builtin constructor mat4x4
-            builtin type mat4x4
+            builtin type generator mat4x4
             builtin alias mat4x4f
             builtin constructor mat4x4f
             builtin alias mat4x4h
@@ -362,7 +363,7 @@ fn complete_variable() {
             builtin function pack4xU8Clamp
             builtin function pow
             builtin enumerant private
-            builtin type ptr
+            builtin type generator ptr
             builtin function quadBroadcast
             builtin function quadSwapDiagonal
             builtin function quadSwapX
@@ -389,7 +390,8 @@ fn complete_variable() {
             builtin function rayQueryInitialize
             builtin function rayQueryProceed
             builtin function rayQueryTerminate
-            builtin type generator ray_query
+            builtin enumerant ray_payload
+            builtin type ray_query
             builtin enumerant read
             builtin enumerant read_write
             builtin function reflect
@@ -423,8 +425,8 @@ fn complete_variable() {
             builtin enumerant rgba8uint
             builtin enumerant rgba8unorm
             builtin function round
-            builtin type generator sampler
-            builtin type generator sampler_comparison
+            builtin type sampler
+            builtin type sampler_comparison
             builtin function saturate
             builtin function select
             builtin function sign
@@ -477,32 +479,33 @@ fn complete_variable() {
             builtin function textureSampleGrad
             builtin function textureSampleLevel
             builtin function textureStore
-            builtin type texture_1d
-            builtin type texture_1d_array
-            builtin type texture_2d
-            builtin type texture_2d_array
-            builtin type texture_3d
-            builtin type texture_cube
-            builtin type texture_cube_array
-            builtin type generator texture_depth_2d
-            builtin type generator texture_depth_2d_array
-            builtin type generator texture_depth_cube
-            builtin type generator texture_depth_cube_array
-            builtin type generator texture_depth_multisampled_2d
-            builtin type generator texture_external
-            builtin type texture_multisampled_2d
-            builtin type texture_multisampled_2d_array
-            builtin type texture_storage_1d
-            builtin type texture_storage_1d_array
-            builtin type texture_storage_2d
-            builtin type texture_storage_2d_array
-            builtin type texture_storage_3d
+            builtin type generator texture_1d
+            builtin type generator texture_1d_array
+            builtin type generator texture_2d
+            builtin type generator texture_2d_array
+            builtin type generator texture_3d
+            builtin type generator texture_cube
+            builtin type generator texture_cube_array
+            builtin type texture_depth_2d
+            builtin type texture_depth_2d_array
+            builtin type texture_depth_cube
+            builtin type texture_depth_cube_array
+            builtin type texture_depth_multisampled_2d
+            builtin type texture_external
+            builtin type generator texture_multisampled_2d
+            builtin type generator texture_multisampled_2d_array
+            builtin type generator texture_storage_1d
+            builtin type generator texture_storage_1d_array
+            builtin type generator texture_storage_2d
+            builtin type generator texture_storage_2d_array
+            builtin type generator texture_storage_3d
+            builtin function traceRay
             builtin function transpose
             builtin function trunc
             builtin constructor u32
-            builtin type generator u32
+            builtin type u32
             builtin constructor u64
-            builtin type generator u64
+            builtin type u64
             builtin enumerant uniform
             builtin function unpack2x16float
             builtin function unpack2x16snorm
@@ -512,7 +515,7 @@ fn complete_variable() {
             builtin function unpack4xI8
             builtin function unpack4xU8
             builtin constructor vec2
-            builtin type vec2
+            builtin type generator vec2
             builtin alias vec2f
             builtin constructor vec2f
             builtin alias vec2h
@@ -522,7 +525,7 @@ fn complete_variable() {
             builtin alias vec2u
             builtin constructor vec2u
             builtin constructor vec3
-            builtin type vec3
+            builtin type generator vec3
             builtin alias vec3f
             builtin constructor vec3f
             builtin alias vec3h
@@ -532,7 +535,7 @@ fn complete_variable() {
             builtin alias vec3u
             builtin constructor vec3u
             builtin constructor vec4
-            builtin type vec4
+            builtin type generator vec4
             builtin alias vec4f
             builtin constructor vec4f
             builtin alias vec4h
@@ -578,20 +581,20 @@ fn complete_keyword() {
             builtin constructor RayDesc
             builtin constructor RayIntersection
             builtin function abs
-            builtin type generator acceleration_structure
+            builtin type acceleration_structure
             builtin function acos
             builtin function acosh
             builtin function all
             builtin function any
             builtin constructor array
-            builtin type array
+            builtin type generator array
             builtin function arrayLength
             builtin function asin
             builtin function asinh
             builtin function atan
             builtin function atan2
             builtin function atanh
-            builtin type atomic
+            builtin type generator atomic
             builtin function atomicAdd
             builtin function atomicAnd
             builtin function atomicCompareExchangeWeak
@@ -604,10 +607,10 @@ fn complete_keyword() {
             builtin function atomicSub
             builtin function atomicXor
             builtin enumerant bgra8unorm
-            builtin type binding_array
+            builtin type generator binding_array
             builtin function bitcast
             builtin constructor bool
-            builtin type generator bool
+            builtin type bool
             builtin function ceil
             builtin function clamp
             builtin function cos
@@ -632,11 +635,11 @@ fn complete_keyword() {
             builtin function exp2
             builtin function extractBits
             builtin constructor f16
-            builtin type generator f16
+            builtin type f16
             builtin constructor f32
-            builtin type generator f32
+            builtin type f32
             builtin constructor f64
-            builtin type generator f64
+            builtin type f64
             builtin function faceForward
             builtin function firstLeadingBit
             builtin function firstTrailingBit
@@ -651,10 +654,11 @@ fn complete_keyword() {
             builtin function getCandidateHitVertexPositions
             builtin function getCommittedHitVertexPositions
             builtin constructor i32
-            builtin type generator i32
+            builtin type i32
             builtin constructor i64
-            builtin type generator i64
+            builtin type i64
             builtin enumerant immediate
+            builtin enumerant incoming_ray_payload
             builtin function insertBits
             builtin function inverseSqrt
             builtin function ldexp
@@ -662,55 +666,55 @@ fn complete_keyword() {
             builtin function log
             builtin function log2
             builtin constructor mat2x2
-            builtin type mat2x2
+            builtin type generator mat2x2
             builtin alias mat2x2f
             builtin constructor mat2x2f
             builtin alias mat2x2h
             builtin constructor mat2x2h
             builtin constructor mat2x3
-            builtin type mat2x3
+            builtin type generator mat2x3
             builtin alias mat2x3f
             builtin constructor mat2x3f
             builtin alias mat2x3h
             builtin constructor mat2x3h
             builtin constructor mat2x4
-            builtin type mat2x4
+            builtin type generator mat2x4
             builtin alias mat2x4f
             builtin constructor mat2x4f
             builtin alias mat2x4h
             builtin constructor mat2x4h
             builtin constructor mat3x2
-            builtin type mat3x2
+            builtin type generator mat3x2
             builtin alias mat3x2f
             builtin constructor mat3x2f
             builtin alias mat3x2h
             builtin constructor mat3x2h
             builtin constructor mat3x3
-            builtin type mat3x3
+            builtin type generator mat3x3
             builtin alias mat3x3f
             builtin constructor mat3x3f
             builtin alias mat3x3h
             builtin constructor mat3x3h
             builtin constructor mat3x4
-            builtin type mat3x4
+            builtin type generator mat3x4
             builtin alias mat3x4f
             builtin constructor mat3x4f
             builtin alias mat3x4h
             builtin constructor mat3x4h
             builtin constructor mat4x2
-            builtin type mat4x2
+            builtin type generator mat4x2
             builtin alias mat4x2f
             builtin constructor mat4x2f
             builtin alias mat4x2h
             builtin constructor mat4x2h
             builtin constructor mat4x3
-            builtin type mat4x3
+            builtin type generator mat4x3
             builtin alias mat4x3f
             builtin constructor mat4x3f
             builtin alias mat4x3h
             builtin constructor mat4x3h
             builtin constructor mat4x4
-            builtin type mat4x4
+            builtin type generator mat4x4
             builtin alias mat4x4f
             builtin constructor mat4x4f
             builtin alias mat4x4h
@@ -731,7 +735,7 @@ fn complete_keyword() {
             builtin function pack4xU8Clamp
             builtin function pow
             builtin enumerant private
-            builtin type ptr
+            builtin type generator ptr
             builtin function quadBroadcast
             builtin function quadSwapDiagonal
             builtin function quadSwapX
@@ -758,7 +762,8 @@ fn complete_keyword() {
             builtin function rayQueryInitialize
             builtin function rayQueryProceed
             builtin function rayQueryTerminate
-            builtin type generator ray_query
+            builtin enumerant ray_payload
+            builtin type ray_query
             builtin enumerant read
             builtin enumerant read_write
             builtin function reflect
@@ -792,8 +797,8 @@ fn complete_keyword() {
             builtin enumerant rgba8uint
             builtin enumerant rgba8unorm
             builtin function round
-            builtin type generator sampler
-            builtin type generator sampler_comparison
+            builtin type sampler
+            builtin type sampler_comparison
             builtin function saturate
             builtin function select
             builtin function sign
@@ -845,32 +850,33 @@ fn complete_keyword() {
             builtin function textureSampleGrad
             builtin function textureSampleLevel
             builtin function textureStore
-            builtin type texture_1d
-            builtin type texture_1d_array
-            builtin type texture_2d
-            builtin type texture_2d_array
-            builtin type texture_3d
-            builtin type texture_cube
-            builtin type texture_cube_array
-            builtin type generator texture_depth_2d
-            builtin type generator texture_depth_2d_array
-            builtin type generator texture_depth_cube
-            builtin type generator texture_depth_cube_array
-            builtin type generator texture_depth_multisampled_2d
-            builtin type generator texture_external
-            builtin type texture_multisampled_2d
-            builtin type texture_multisampled_2d_array
-            builtin type texture_storage_1d
-            builtin type texture_storage_1d_array
-            builtin type texture_storage_2d
-            builtin type texture_storage_2d_array
-            builtin type texture_storage_3d
+            builtin type generator texture_1d
+            builtin type generator texture_1d_array
+            builtin type generator texture_2d
+            builtin type generator texture_2d_array
+            builtin type generator texture_3d
+            builtin type generator texture_cube
+            builtin type generator texture_cube_array
+            builtin type texture_depth_2d
+            builtin type texture_depth_2d_array
+            builtin type texture_depth_cube
+            builtin type texture_depth_cube_array
+            builtin type texture_depth_multisampled_2d
+            builtin type texture_external
+            builtin type generator texture_multisampled_2d
+            builtin type generator texture_multisampled_2d_array
+            builtin type generator texture_storage_1d
+            builtin type generator texture_storage_1d_array
+            builtin type generator texture_storage_2d
+            builtin type generator texture_storage_2d_array
+            builtin type generator texture_storage_3d
+            builtin function traceRay
             builtin function transpose
             builtin function trunc
             builtin constructor u32
-            builtin type generator u32
+            builtin type u32
             builtin constructor u64
-            builtin type generator u64
+            builtin type u64
             builtin enumerant uniform
             builtin function unpack2x16float
             builtin function unpack2x16snorm
@@ -880,7 +886,7 @@ fn complete_keyword() {
             builtin function unpack4xI8
             builtin function unpack4xU8
             builtin constructor vec2
-            builtin type vec2
+            builtin type generator vec2
             builtin alias vec2f
             builtin constructor vec2f
             builtin alias vec2h
@@ -890,7 +896,7 @@ fn complete_keyword() {
             builtin alias vec2u
             builtin constructor vec2u
             builtin constructor vec3
-            builtin type vec3
+            builtin type generator vec3
             builtin alias vec3f
             builtin constructor vec3f
             builtin alias vec3h
@@ -900,7 +906,7 @@ fn complete_keyword() {
             builtin alias vec3u
             builtin constructor vec3u
             builtin constructor vec4
-            builtin type vec4
+            builtin type generator vec4
             builtin alias vec4f
             builtin constructor vec4f
             builtin alias vec4h
@@ -946,20 +952,20 @@ fn complete_snippet() {
             builtin constructor RayDesc
             builtin constructor RayIntersection
             builtin function abs
-            builtin type generator acceleration_structure
+            builtin type acceleration_structure
             builtin function acos
             builtin function acosh
             builtin function all
             builtin function any
             builtin constructor array
-            builtin type array
+            builtin type generator array
             builtin function arrayLength
             builtin function asin
             builtin function asinh
             builtin function atan
             builtin function atan2
             builtin function atanh
-            builtin type atomic
+            builtin type generator atomic
             builtin function atomicAdd
             builtin function atomicAnd
             builtin function atomicCompareExchangeWeak
@@ -972,10 +978,10 @@ fn complete_snippet() {
             builtin function atomicSub
             builtin function atomicXor
             builtin enumerant bgra8unorm
-            builtin type binding_array
+            builtin type generator binding_array
             builtin function bitcast
             builtin constructor bool
-            builtin type generator bool
+            builtin type bool
             builtin function ceil
             builtin function clamp
             builtin function cos
@@ -1000,11 +1006,11 @@ fn complete_snippet() {
             builtin function exp2
             builtin function extractBits
             builtin constructor f16
-            builtin type generator f16
+            builtin type f16
             builtin constructor f32
-            builtin type generator f32
+            builtin type f32
             builtin constructor f64
-            builtin type generator f64
+            builtin type f64
             builtin function faceForward
             builtin function firstLeadingBit
             builtin function firstTrailingBit
@@ -1019,10 +1025,11 @@ fn complete_snippet() {
             builtin function getCandidateHitVertexPositions
             builtin function getCommittedHitVertexPositions
             builtin constructor i32
-            builtin type generator i32
+            builtin type i32
             builtin constructor i64
-            builtin type generator i64
+            builtin type i64
             builtin enumerant immediate
+            builtin enumerant incoming_ray_payload
             builtin function insertBits
             builtin function inverseSqrt
             builtin function ldexp
@@ -1030,55 +1037,55 @@ fn complete_snippet() {
             builtin function log
             builtin function log2
             builtin constructor mat2x2
-            builtin type mat2x2
+            builtin type generator mat2x2
             builtin alias mat2x2f
             builtin constructor mat2x2f
             builtin alias mat2x2h
             builtin constructor mat2x2h
             builtin constructor mat2x3
-            builtin type mat2x3
+            builtin type generator mat2x3
             builtin alias mat2x3f
             builtin constructor mat2x3f
             builtin alias mat2x3h
             builtin constructor mat2x3h
             builtin constructor mat2x4
-            builtin type mat2x4
+            builtin type generator mat2x4
             builtin alias mat2x4f
             builtin constructor mat2x4f
             builtin alias mat2x4h
             builtin constructor mat2x4h
             builtin constructor mat3x2
-            builtin type mat3x2
+            builtin type generator mat3x2
             builtin alias mat3x2f
             builtin constructor mat3x2f
             builtin alias mat3x2h
             builtin constructor mat3x2h
             builtin constructor mat3x3
-            builtin type mat3x3
+            builtin type generator mat3x3
             builtin alias mat3x3f
             builtin constructor mat3x3f
             builtin alias mat3x3h
             builtin constructor mat3x3h
             builtin constructor mat3x4
-            builtin type mat3x4
+            builtin type generator mat3x4
             builtin alias mat3x4f
             builtin constructor mat3x4f
             builtin alias mat3x4h
             builtin constructor mat3x4h
             builtin constructor mat4x2
-            builtin type mat4x2
+            builtin type generator mat4x2
             builtin alias mat4x2f
             builtin constructor mat4x2f
             builtin alias mat4x2h
             builtin constructor mat4x2h
             builtin constructor mat4x3
-            builtin type mat4x3
+            builtin type generator mat4x3
             builtin alias mat4x3f
             builtin constructor mat4x3f
             builtin alias mat4x3h
             builtin constructor mat4x3h
             builtin constructor mat4x4
-            builtin type mat4x4
+            builtin type generator mat4x4
             builtin alias mat4x4f
             builtin constructor mat4x4f
             builtin alias mat4x4h
@@ -1099,7 +1106,7 @@ fn complete_snippet() {
             builtin function pack4xU8Clamp
             builtin function pow
             builtin enumerant private
-            builtin type ptr
+            builtin type generator ptr
             builtin function quadBroadcast
             builtin function quadSwapDiagonal
             builtin function quadSwapX
@@ -1126,7 +1133,8 @@ fn complete_snippet() {
             builtin function rayQueryInitialize
             builtin function rayQueryProceed
             builtin function rayQueryTerminate
-            builtin type generator ray_query
+            builtin enumerant ray_payload
+            builtin type ray_query
             builtin enumerant read
             builtin enumerant read_write
             builtin function reflect
@@ -1160,8 +1168,8 @@ fn complete_snippet() {
             builtin enumerant rgba8uint
             builtin enumerant rgba8unorm
             builtin function round
-            builtin type generator sampler
-            builtin type generator sampler_comparison
+            builtin type sampler
+            builtin type sampler_comparison
             builtin function saturate
             builtin function select
             builtin function sign
@@ -1213,32 +1221,33 @@ fn complete_snippet() {
             builtin function textureSampleGrad
             builtin function textureSampleLevel
             builtin function textureStore
-            builtin type texture_1d
-            builtin type texture_1d_array
-            builtin type texture_2d
-            builtin type texture_2d_array
-            builtin type texture_3d
-            builtin type texture_cube
-            builtin type texture_cube_array
-            builtin type generator texture_depth_2d
-            builtin type generator texture_depth_2d_array
-            builtin type generator texture_depth_cube
-            builtin type generator texture_depth_cube_array
-            builtin type generator texture_depth_multisampled_2d
-            builtin type generator texture_external
-            builtin type texture_multisampled_2d
-            builtin type texture_multisampled_2d_array
-            builtin type texture_storage_1d
-            builtin type texture_storage_1d_array
-            builtin type texture_storage_2d
-            builtin type texture_storage_2d_array
-            builtin type texture_storage_3d
+            builtin type generator texture_1d
+            builtin type generator texture_1d_array
+            builtin type generator texture_2d
+            builtin type generator texture_2d_array
+            builtin type generator texture_3d
+            builtin type generator texture_cube
+            builtin type generator texture_cube_array
+            builtin type texture_depth_2d
+            builtin type texture_depth_2d_array
+            builtin type texture_depth_cube
+            builtin type texture_depth_cube_array
+            builtin type texture_depth_multisampled_2d
+            builtin type texture_external
+            builtin type generator texture_multisampled_2d
+            builtin type generator texture_multisampled_2d_array
+            builtin type generator texture_storage_1d
+            builtin type generator texture_storage_1d_array
+            builtin type generator texture_storage_2d
+            builtin type generator texture_storage_2d_array
+            builtin type generator texture_storage_3d
+            builtin function traceRay
             builtin function transpose
             builtin function trunc
             builtin constructor u32
-            builtin type generator u32
+            builtin type u32
             builtin constructor u64
-            builtin type generator u64
+            builtin type u64
             builtin enumerant uniform
             builtin function unpack2x16float
             builtin function unpack2x16snorm
@@ -1248,7 +1257,7 @@ fn complete_snippet() {
             builtin function unpack4xI8
             builtin function unpack4xU8
             builtin constructor vec2
-            builtin type vec2
+            builtin type generator vec2
             builtin alias vec2f
             builtin constructor vec2f
             builtin alias vec2h
@@ -1258,7 +1267,7 @@ fn complete_snippet() {
             builtin alias vec2u
             builtin constructor vec2u
             builtin constructor vec3
-            builtin type vec3
+            builtin type generator vec3
             builtin alias vec3f
             builtin constructor vec3f
             builtin alias vec3h
@@ -1268,7 +1277,7 @@ fn complete_snippet() {
             builtin alias vec3u
             builtin constructor vec3u
             builtin constructor vec4
-            builtin type vec4
+            builtin type generator vec4
             builtin alias vec4f
             builtin constructor vec4f
             builtin alias vec4h
@@ -1315,20 +1324,20 @@ fn complete_constant() {
             builtin constructor RayDesc
             builtin constructor RayIntersection
             builtin function abs
-            builtin type generator acceleration_structure
+            builtin type acceleration_structure
             builtin function acos
             builtin function acosh
             builtin function all
             builtin function any
             builtin constructor array
-            builtin type array
+            builtin type generator array
             builtin function arrayLength
             builtin function asin
             builtin function asinh
             builtin function atan
             builtin function atan2
             builtin function atanh
-            builtin type atomic
+            builtin type generator atomic
             builtin function atomicAdd
             builtin function atomicAnd
             builtin function atomicCompareExchangeWeak
@@ -1341,10 +1350,10 @@ fn complete_constant() {
             builtin function atomicSub
             builtin function atomicXor
             builtin enumerant bgra8unorm
-            builtin type binding_array
+            builtin type generator binding_array
             builtin function bitcast
             builtin constructor bool
-            builtin type generator bool
+            builtin type bool
             builtin function ceil
             builtin function clamp
             builtin function cos
@@ -1369,11 +1378,11 @@ fn complete_constant() {
             builtin function exp2
             builtin function extractBits
             builtin constructor f16
-            builtin type generator f16
+            builtin type f16
             builtin constructor f32
-            builtin type generator f32
+            builtin type f32
             builtin constructor f64
-            builtin type generator f64
+            builtin type f64
             builtin function faceForward
             builtin function firstLeadingBit
             builtin function firstTrailingBit
@@ -1388,10 +1397,11 @@ fn complete_constant() {
             builtin function getCandidateHitVertexPositions
             builtin function getCommittedHitVertexPositions
             builtin constructor i32
-            builtin type generator i32
+            builtin type i32
             builtin constructor i64
-            builtin type generator i64
+            builtin type i64
             builtin enumerant immediate
+            builtin enumerant incoming_ray_payload
             builtin function insertBits
             builtin function inverseSqrt
             builtin function ldexp
@@ -1399,55 +1409,55 @@ fn complete_constant() {
             builtin function log
             builtin function log2
             builtin constructor mat2x2
-            builtin type mat2x2
+            builtin type generator mat2x2
             builtin alias mat2x2f
             builtin constructor mat2x2f
             builtin alias mat2x2h
             builtin constructor mat2x2h
             builtin constructor mat2x3
-            builtin type mat2x3
+            builtin type generator mat2x3
             builtin alias mat2x3f
             builtin constructor mat2x3f
             builtin alias mat2x3h
             builtin constructor mat2x3h
             builtin constructor mat2x4
-            builtin type mat2x4
+            builtin type generator mat2x4
             builtin alias mat2x4f
             builtin constructor mat2x4f
             builtin alias mat2x4h
             builtin constructor mat2x4h
             builtin constructor mat3x2
-            builtin type mat3x2
+            builtin type generator mat3x2
             builtin alias mat3x2f
             builtin constructor mat3x2f
             builtin alias mat3x2h
             builtin constructor mat3x2h
             builtin constructor mat3x3
-            builtin type mat3x3
+            builtin type generator mat3x3
             builtin alias mat3x3f
             builtin constructor mat3x3f
             builtin alias mat3x3h
             builtin constructor mat3x3h
             builtin constructor mat3x4
-            builtin type mat3x4
+            builtin type generator mat3x4
             builtin alias mat3x4f
             builtin constructor mat3x4f
             builtin alias mat3x4h
             builtin constructor mat3x4h
             builtin constructor mat4x2
-            builtin type mat4x2
+            builtin type generator mat4x2
             builtin alias mat4x2f
             builtin constructor mat4x2f
             builtin alias mat4x2h
             builtin constructor mat4x2h
             builtin constructor mat4x3
-            builtin type mat4x3
+            builtin type generator mat4x3
             builtin alias mat4x3f
             builtin constructor mat4x3f
             builtin alias mat4x3h
             builtin constructor mat4x3h
             builtin constructor mat4x4
-            builtin type mat4x4
+            builtin type generator mat4x4
             builtin alias mat4x4f
             builtin constructor mat4x4f
             builtin alias mat4x4h
@@ -1468,7 +1478,7 @@ fn complete_constant() {
             builtin function pack4xU8Clamp
             builtin function pow
             builtin enumerant private
-            builtin type ptr
+            builtin type generator ptr
             builtin function quadBroadcast
             builtin function quadSwapDiagonal
             builtin function quadSwapX
@@ -1495,7 +1505,8 @@ fn complete_constant() {
             builtin function rayQueryInitialize
             builtin function rayQueryProceed
             builtin function rayQueryTerminate
-            builtin type generator ray_query
+            builtin enumerant ray_payload
+            builtin type ray_query
             builtin enumerant read
             builtin enumerant read_write
             builtin function reflect
@@ -1529,8 +1540,8 @@ fn complete_constant() {
             builtin enumerant rgba8uint
             builtin enumerant rgba8unorm
             builtin function round
-            builtin type generator sampler
-            builtin type generator sampler_comparison
+            builtin type sampler
+            builtin type sampler_comparison
             builtin function saturate
             builtin function select
             builtin function sign
@@ -1582,32 +1593,33 @@ fn complete_constant() {
             builtin function textureSampleGrad
             builtin function textureSampleLevel
             builtin function textureStore
-            builtin type texture_1d
-            builtin type texture_1d_array
-            builtin type texture_2d
-            builtin type texture_2d_array
-            builtin type texture_3d
-            builtin type texture_cube
-            builtin type texture_cube_array
-            builtin type generator texture_depth_2d
-            builtin type generator texture_depth_2d_array
-            builtin type generator texture_depth_cube
-            builtin type generator texture_depth_cube_array
-            builtin type generator texture_depth_multisampled_2d
-            builtin type generator texture_external
-            builtin type texture_multisampled_2d
-            builtin type texture_multisampled_2d_array
-            builtin type texture_storage_1d
-            builtin type texture_storage_1d_array
-            builtin type texture_storage_2d
-            builtin type texture_storage_2d_array
-            builtin type texture_storage_3d
+            builtin type generator texture_1d
+            builtin type generator texture_1d_array
+            builtin type generator texture_2d
+            builtin type generator texture_2d_array
+            builtin type generator texture_3d
+            builtin type generator texture_cube
+            builtin type generator texture_cube_array
+            builtin type texture_depth_2d
+            builtin type texture_depth_2d_array
+            builtin type texture_depth_cube
+            builtin type texture_depth_cube_array
+            builtin type texture_depth_multisampled_2d
+            builtin type texture_external
+            builtin type generator texture_multisampled_2d
+            builtin type generator texture_multisampled_2d_array
+            builtin type generator texture_storage_1d
+            builtin type generator texture_storage_1d_array
+            builtin type generator texture_storage_2d
+            builtin type generator texture_storage_2d_array
+            builtin type generator texture_storage_3d
+            builtin function traceRay
             builtin function transpose
             builtin function trunc
             builtin constructor u32
-            builtin type generator u32
+            builtin type u32
             builtin constructor u64
-            builtin type generator u64
+            builtin type u64
             builtin enumerant uniform
             builtin function unpack2x16float
             builtin function unpack2x16snorm
@@ -1617,7 +1629,7 @@ fn complete_constant() {
             builtin function unpack4xI8
             builtin function unpack4xU8
             builtin constructor vec2
-            builtin type vec2
+            builtin type generator vec2
             builtin alias vec2f
             builtin constructor vec2f
             builtin alias vec2h
@@ -1627,7 +1639,7 @@ fn complete_constant() {
             builtin alias vec2u
             builtin constructor vec2u
             builtin constructor vec3
-            builtin type vec3
+            builtin type generator vec3
             builtin alias vec3f
             builtin constructor vec3f
             builtin alias vec3h
@@ -1637,7 +1649,7 @@ fn complete_constant() {
             builtin alias vec3u
             builtin constructor vec3u
             builtin constructor vec4
-            builtin type vec4
+            builtin type generator vec4
             builtin alias vec4f
             builtin constructor vec4f
             builtin alias vec4h
@@ -1684,20 +1696,20 @@ fn complete_struct() {
             builtin constructor RayDesc
             builtin constructor RayIntersection
             builtin function abs
-            builtin type generator acceleration_structure
+            builtin type acceleration_structure
             builtin function acos
             builtin function acosh
             builtin function all
             builtin function any
             builtin constructor array
-            builtin type array
+            builtin type generator array
             builtin function arrayLength
             builtin function asin
             builtin function asinh
             builtin function atan
             builtin function atan2
             builtin function atanh
-            builtin type atomic
+            builtin type generator atomic
             builtin function atomicAdd
             builtin function atomicAnd
             builtin function atomicCompareExchangeWeak
@@ -1710,10 +1722,10 @@ fn complete_struct() {
             builtin function atomicSub
             builtin function atomicXor
             builtin enumerant bgra8unorm
-            builtin type binding_array
+            builtin type generator binding_array
             builtin function bitcast
             builtin constructor bool
-            builtin type generator bool
+            builtin type bool
             builtin function ceil
             builtin function clamp
             builtin function cos
@@ -1738,11 +1750,11 @@ fn complete_struct() {
             builtin function exp2
             builtin function extractBits
             builtin constructor f16
-            builtin type generator f16
+            builtin type f16
             builtin constructor f32
-            builtin type generator f32
+            builtin type f32
             builtin constructor f64
-            builtin type generator f64
+            builtin type f64
             builtin function faceForward
             builtin function firstLeadingBit
             builtin function firstTrailingBit
@@ -1757,10 +1769,11 @@ fn complete_struct() {
             builtin function getCandidateHitVertexPositions
             builtin function getCommittedHitVertexPositions
             builtin constructor i32
-            builtin type generator i32
+            builtin type i32
             builtin constructor i64
-            builtin type generator i64
+            builtin type i64
             builtin enumerant immediate
+            builtin enumerant incoming_ray_payload
             builtin function insertBits
             builtin function inverseSqrt
             builtin function ldexp
@@ -1768,55 +1781,55 @@ fn complete_struct() {
             builtin function log
             builtin function log2
             builtin constructor mat2x2
-            builtin type mat2x2
+            builtin type generator mat2x2
             builtin alias mat2x2f
             builtin constructor mat2x2f
             builtin alias mat2x2h
             builtin constructor mat2x2h
             builtin constructor mat2x3
-            builtin type mat2x3
+            builtin type generator mat2x3
             builtin alias mat2x3f
             builtin constructor mat2x3f
             builtin alias mat2x3h
             builtin constructor mat2x3h
             builtin constructor mat2x4
-            builtin type mat2x4
+            builtin type generator mat2x4
             builtin alias mat2x4f
             builtin constructor mat2x4f
             builtin alias mat2x4h
             builtin constructor mat2x4h
             builtin constructor mat3x2
-            builtin type mat3x2
+            builtin type generator mat3x2
             builtin alias mat3x2f
             builtin constructor mat3x2f
             builtin alias mat3x2h
             builtin constructor mat3x2h
             builtin constructor mat3x3
-            builtin type mat3x3
+            builtin type generator mat3x3
             builtin alias mat3x3f
             builtin constructor mat3x3f
             builtin alias mat3x3h
             builtin constructor mat3x3h
             builtin constructor mat3x4
-            builtin type mat3x4
+            builtin type generator mat3x4
             builtin alias mat3x4f
             builtin constructor mat3x4f
             builtin alias mat3x4h
             builtin constructor mat3x4h
             builtin constructor mat4x2
-            builtin type mat4x2
+            builtin type generator mat4x2
             builtin alias mat4x2f
             builtin constructor mat4x2f
             builtin alias mat4x2h
             builtin constructor mat4x2h
             builtin constructor mat4x3
-            builtin type mat4x3
+            builtin type generator mat4x3
             builtin alias mat4x3f
             builtin constructor mat4x3f
             builtin alias mat4x3h
             builtin constructor mat4x3h
             builtin constructor mat4x4
-            builtin type mat4x4
+            builtin type generator mat4x4
             builtin alias mat4x4f
             builtin constructor mat4x4f
             builtin alias mat4x4h
@@ -1837,7 +1850,7 @@ fn complete_struct() {
             builtin function pack4xU8Clamp
             builtin function pow
             builtin enumerant private
-            builtin type ptr
+            builtin type generator ptr
             builtin function quadBroadcast
             builtin function quadSwapDiagonal
             builtin function quadSwapX
@@ -1864,7 +1877,8 @@ fn complete_struct() {
             builtin function rayQueryInitialize
             builtin function rayQueryProceed
             builtin function rayQueryTerminate
-            builtin type generator ray_query
+            builtin enumerant ray_payload
+            builtin type ray_query
             builtin enumerant read
             builtin enumerant read_write
             builtin function reflect
@@ -1898,8 +1912,8 @@ fn complete_struct() {
             builtin enumerant rgba8uint
             builtin enumerant rgba8unorm
             builtin function round
-            builtin type generator sampler
-            builtin type generator sampler_comparison
+            builtin type sampler
+            builtin type sampler_comparison
             builtin function saturate
             builtin function select
             builtin function sign
@@ -1951,32 +1965,33 @@ fn complete_struct() {
             builtin function textureSampleGrad
             builtin function textureSampleLevel
             builtin function textureStore
-            builtin type texture_1d
-            builtin type texture_1d_array
-            builtin type texture_2d
-            builtin type texture_2d_array
-            builtin type texture_3d
-            builtin type texture_cube
-            builtin type texture_cube_array
-            builtin type generator texture_depth_2d
-            builtin type generator texture_depth_2d_array
-            builtin type generator texture_depth_cube
-            builtin type generator texture_depth_cube_array
-            builtin type generator texture_depth_multisampled_2d
-            builtin type generator texture_external
-            builtin type texture_multisampled_2d
-            builtin type texture_multisampled_2d_array
-            builtin type texture_storage_1d
-            builtin type texture_storage_1d_array
-            builtin type texture_storage_2d
-            builtin type texture_storage_2d_array
-            builtin type texture_storage_3d
+            builtin type generator texture_1d
+            builtin type generator texture_1d_array
+            builtin type generator texture_2d
+            builtin type generator texture_2d_array
+            builtin type generator texture_3d
+            builtin type generator texture_cube
+            builtin type generator texture_cube_array
+            builtin type texture_depth_2d
+            builtin type texture_depth_2d_array
+            builtin type texture_depth_cube
+            builtin type texture_depth_cube_array
+            builtin type texture_depth_multisampled_2d
+            builtin type texture_external
+            builtin type generator texture_multisampled_2d
+            builtin type generator texture_multisampled_2d_array
+            builtin type generator texture_storage_1d
+            builtin type generator texture_storage_1d_array
+            builtin type generator texture_storage_2d
+            builtin type generator texture_storage_2d_array
+            builtin type generator texture_storage_3d
+            builtin function traceRay
             builtin function transpose
             builtin function trunc
             builtin constructor u32
-            builtin type generator u32
+            builtin type u32
             builtin constructor u64
-            builtin type generator u64
+            builtin type u64
             builtin enumerant uniform
             builtin function unpack2x16float
             builtin function unpack2x16snorm
@@ -1986,7 +2001,7 @@ fn complete_struct() {
             builtin function unpack4xI8
             builtin function unpack4xU8
             builtin constructor vec2
-            builtin type vec2
+            builtin type generator vec2
             builtin alias vec2f
             builtin constructor vec2f
             builtin alias vec2h
@@ -1996,7 +2011,7 @@ fn complete_struct() {
             builtin alias vec2u
             builtin constructor vec2u
             builtin constructor vec3
-            builtin type vec3
+            builtin type generator vec3
             builtin alias vec3f
             builtin constructor vec3f
             builtin alias vec3h
@@ -2006,7 +2021,7 @@ fn complete_struct() {
             builtin alias vec3u
             builtin constructor vec3u
             builtin constructor vec4
-            builtin type vec4
+            builtin type generator vec4
             builtin alias vec4f
             builtin constructor vec4f
             builtin alias vec4h
@@ -2055,20 +2070,20 @@ fn complete_type_alias() {
             builtin constructor RayDesc
             builtin constructor RayIntersection
             builtin function abs
-            builtin type generator acceleration_structure
+            builtin type acceleration_structure
             builtin function acos
             builtin function acosh
             builtin function all
             builtin function any
             builtin constructor array
-            builtin type array
+            builtin type generator array
             builtin function arrayLength
             builtin function asin
             builtin function asinh
             builtin function atan
             builtin function atan2
             builtin function atanh
-            builtin type atomic
+            builtin type generator atomic
             builtin function atomicAdd
             builtin function atomicAnd
             builtin function atomicCompareExchangeWeak
@@ -2081,10 +2096,10 @@ fn complete_type_alias() {
             builtin function atomicSub
             builtin function atomicXor
             builtin enumerant bgra8unorm
-            builtin type binding_array
+            builtin type generator binding_array
             builtin function bitcast
             builtin constructor bool
-            builtin type generator bool
+            builtin type bool
             builtin function ceil
             builtin function clamp
             builtin function cos
@@ -2109,11 +2124,11 @@ fn complete_type_alias() {
             builtin function exp2
             builtin function extractBits
             builtin constructor f16
-            builtin type generator f16
+            builtin type f16
             builtin constructor f32
-            builtin type generator f32
+            builtin type f32
             builtin constructor f64
-            builtin type generator f64
+            builtin type f64
             builtin function faceForward
             builtin function firstLeadingBit
             builtin function firstTrailingBit
@@ -2128,10 +2143,11 @@ fn complete_type_alias() {
             builtin function getCandidateHitVertexPositions
             builtin function getCommittedHitVertexPositions
             builtin constructor i32
-            builtin type generator i32
+            builtin type i32
             builtin constructor i64
-            builtin type generator i64
+            builtin type i64
             builtin enumerant immediate
+            builtin enumerant incoming_ray_payload
             builtin function insertBits
             builtin function inverseSqrt
             builtin function ldexp
@@ -2139,55 +2155,55 @@ fn complete_type_alias() {
             builtin function log
             builtin function log2
             builtin constructor mat2x2
-            builtin type mat2x2
+            builtin type generator mat2x2
             builtin alias mat2x2f
             builtin constructor mat2x2f
             builtin alias mat2x2h
             builtin constructor mat2x2h
             builtin constructor mat2x3
-            builtin type mat2x3
+            builtin type generator mat2x3
             builtin alias mat2x3f
             builtin constructor mat2x3f
             builtin alias mat2x3h
             builtin constructor mat2x3h
             builtin constructor mat2x4
-            builtin type mat2x4
+            builtin type generator mat2x4
             builtin alias mat2x4f
             builtin constructor mat2x4f
             builtin alias mat2x4h
             builtin constructor mat2x4h
             builtin constructor mat3x2
-            builtin type mat3x2
+            builtin type generator mat3x2
             builtin alias mat3x2f
             builtin constructor mat3x2f
             builtin alias mat3x2h
             builtin constructor mat3x2h
             builtin constructor mat3x3
-            builtin type mat3x3
+            builtin type generator mat3x3
             builtin alias mat3x3f
             builtin constructor mat3x3f
             builtin alias mat3x3h
             builtin constructor mat3x3h
             builtin constructor mat3x4
-            builtin type mat3x4
+            builtin type generator mat3x4
             builtin alias mat3x4f
             builtin constructor mat3x4f
             builtin alias mat3x4h
             builtin constructor mat3x4h
             builtin constructor mat4x2
-            builtin type mat4x2
+            builtin type generator mat4x2
             builtin alias mat4x2f
             builtin constructor mat4x2f
             builtin alias mat4x2h
             builtin constructor mat4x2h
             builtin constructor mat4x3
-            builtin type mat4x3
+            builtin type generator mat4x3
             builtin alias mat4x3f
             builtin constructor mat4x3f
             builtin alias mat4x3h
             builtin constructor mat4x3h
             builtin constructor mat4x4
-            builtin type mat4x4
+            builtin type generator mat4x4
             builtin alias mat4x4f
             builtin constructor mat4x4f
             builtin alias mat4x4h
@@ -2208,7 +2224,7 @@ fn complete_type_alias() {
             builtin function pack4xU8Clamp
             builtin function pow
             builtin enumerant private
-            builtin type ptr
+            builtin type generator ptr
             builtin function quadBroadcast
             builtin function quadSwapDiagonal
             builtin function quadSwapX
@@ -2235,7 +2251,8 @@ fn complete_type_alias() {
             builtin function rayQueryInitialize
             builtin function rayQueryProceed
             builtin function rayQueryTerminate
-            builtin type generator ray_query
+            builtin enumerant ray_payload
+            builtin type ray_query
             builtin enumerant read
             builtin enumerant read_write
             builtin function reflect
@@ -2269,8 +2286,8 @@ fn complete_type_alias() {
             builtin enumerant rgba8uint
             builtin enumerant rgba8unorm
             builtin function round
-            builtin type generator sampler
-            builtin type generator sampler_comparison
+            builtin type sampler
+            builtin type sampler_comparison
             builtin function saturate
             builtin function select
             builtin function sign
@@ -2322,32 +2339,33 @@ fn complete_type_alias() {
             builtin function textureSampleGrad
             builtin function textureSampleLevel
             builtin function textureStore
-            builtin type texture_1d
-            builtin type texture_1d_array
-            builtin type texture_2d
-            builtin type texture_2d_array
-            builtin type texture_3d
-            builtin type texture_cube
-            builtin type texture_cube_array
-            builtin type generator texture_depth_2d
-            builtin type generator texture_depth_2d_array
-            builtin type generator texture_depth_cube
-            builtin type generator texture_depth_cube_array
-            builtin type generator texture_depth_multisampled_2d
-            builtin type generator texture_external
-            builtin type texture_multisampled_2d
-            builtin type texture_multisampled_2d_array
-            builtin type texture_storage_1d
-            builtin type texture_storage_1d_array
-            builtin type texture_storage_2d
-            builtin type texture_storage_2d_array
-            builtin type texture_storage_3d
+            builtin type generator texture_1d
+            builtin type generator texture_1d_array
+            builtin type generator texture_2d
+            builtin type generator texture_2d_array
+            builtin type generator texture_3d
+            builtin type generator texture_cube
+            builtin type generator texture_cube_array
+            builtin type texture_depth_2d
+            builtin type texture_depth_2d_array
+            builtin type texture_depth_cube
+            builtin type texture_depth_cube_array
+            builtin type texture_depth_multisampled_2d
+            builtin type texture_external
+            builtin type generator texture_multisampled_2d
+            builtin type generator texture_multisampled_2d_array
+            builtin type generator texture_storage_1d
+            builtin type generator texture_storage_1d_array
+            builtin type generator texture_storage_2d
+            builtin type generator texture_storage_2d_array
+            builtin type generator texture_storage_3d
+            builtin function traceRay
             builtin function transpose
             builtin function trunc
             builtin constructor u32
-            builtin type generator u32
+            builtin type u32
             builtin constructor u64
-            builtin type generator u64
+            builtin type u64
             builtin enumerant uniform
             builtin function unpack2x16float
             builtin function unpack2x16snorm
@@ -2357,7 +2375,7 @@ fn complete_type_alias() {
             builtin function unpack4xI8
             builtin function unpack4xU8
             builtin constructor vec2
-            builtin type vec2
+            builtin type generator vec2
             builtin alias vec2f
             builtin constructor vec2f
             builtin alias vec2h
@@ -2367,7 +2385,7 @@ fn complete_type_alias() {
             builtin alias vec2u
             builtin constructor vec2u
             builtin constructor vec3
-            builtin type vec3
+            builtin type generator vec3
             builtin alias vec3f
             builtin constructor vec3f
             builtin alias vec3h
@@ -2377,7 +2395,7 @@ fn complete_type_alias() {
             builtin alias vec3u
             builtin constructor vec3u
             builtin constructor vec4
-            builtin type vec4
+            builtin type generator vec4
             builtin alias vec4f
             builtin constructor vec4f
             builtin alias vec4h

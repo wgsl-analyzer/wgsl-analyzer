@@ -2,6 +2,7 @@ use std::fmt::{self, Write as _};
 
 use base_db::{CapabilitiesInput, TextRange, TextSize};
 use hir_def::signature::StructSignature;
+use itertools::Itertools as _;
 use wgsl_types::ty::SamplerType;
 
 use super::{Type, TypeKind};
@@ -194,12 +195,14 @@ fn write_type(
         TypeKind::Atomic(atomic) => {
             write!(formatter, "atomic<")?;
             write_type(db, atomic.inner, formatter, verbosity)?;
-            write!(formatter, ">")
+            write!(formatter, ">")?;
+            Ok(())
         },
         TypeKind::Vector(vector_type) => {
             write!(formatter, "vec{}<", vector_type.size)?;
             write_type(db, vector_type.component_type, formatter, verbosity)?;
-            write!(formatter, ">")
+            write!(formatter, ">")?;
+            Ok(())
         },
         TypeKind::Matrix(matrix_type) => {
             write!(
@@ -208,7 +211,8 @@ fn write_type(
                 matrix_type.columns, matrix_type.rows
             )?;
             write_type(db, matrix_type.inner, formatter, verbosity)?;
-            write!(formatter, ">")
+            write!(formatter, ">")?;
+            Ok(())
         },
         TypeKind::Struct(r#struct) => {
             let data = StructSignature::of(db, r#struct);
@@ -265,19 +269,23 @@ fn write_type(
                 ),
                 TextureKind::External => "texture_external".into(),
             };
-            write!(formatter, "{value}")
+            write!(formatter, "{value}")?;
+            Ok(())
         },
         TypeKind::Sampler(SamplerType::Sampler) => {
-            write!(formatter, "sampler")
+            write!(formatter, "sampler")?;
+            Ok(())
         },
         TypeKind::Sampler(SamplerType::SamplerComparison) => {
-            write!(formatter, "sampler_comparison")
+            write!(formatter, "sampler_comparison")?;
+            Ok(())
         },
         TypeKind::Reference(reference) => match verbosity {
             TypeVerbosity::Full => {
                 write!(formatter, "ref<{}, ", reference.address_space)?;
                 write_type(db, reference.inner, formatter, verbosity)?;
-                write!(formatter, ", {}>", reference.access_mode)
+                write!(formatter, ", {}>", reference.access_mode)?;
+                Ok(())
             },
             TypeVerbosity::Compact => {
                 write!(formatter, "ref<")?;
@@ -297,6 +305,25 @@ fn write_type(
                 write_type(db, pointer.inner, formatter, verbosity)?;
                 write!(formatter, ">")
             },
+        },
+        TypeKind::AccelerationStructure(tags) => {
+            write!(formatter, "acceleration_structure")?;
+            if let Some(tags) = tags {
+                write!(formatter, "<")?;
+                write!(
+                    formatter,
+                    "{}",
+                    tags.tags()
+                        .iter()
+                        .map(|tag| match tag {
+                            wgsl_types::syntax::AccelerationStructureTag::VertexReturn =>
+                                "vertex_return",
+                        })
+                        .join(", ")
+                )?;
+                write!(formatter, ">")?;
+            }
+            Ok(())
         },
     }
 }

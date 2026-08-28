@@ -130,22 +130,26 @@ impl TypeLoweringErrorKind {
             Self::Resolution(ResolutionDiagnostic::UnresolvedName { name }) => {
                 format!("`{}` not found in scope", name.as_str())
             },
-            Self::Resolution(ResolutionDiagnostic::UnresolvedFile { .. }) => {
-                "could not find file".to_owned()
-            },
+            Self::Resolution(ResolutionDiagnostic::UnresolvedFile {
+                package: _,
+                path: _,
+            }) => "could not find file".to_owned(),
             Self::Resolution(ResolutionDiagnostic::DetachedFile) => {
                 "current file is detached".to_owned()
             },
             Self::Resolution(ResolutionDiagnostic::MissingName) => {
                 "path is missing a name".to_owned()
             },
-            Self::Resolution(ResolutionDiagnostic::PrivateItem { name, .. }) => {
+            Self::Resolution(ResolutionDiagnostic::PrivateItem {
+                name,
+                visibility: _,
+            }) => {
                 format!("`{}` is private", name.as_str())
             },
             Self::Resolution(ResolutionDiagnostic::TooManySupers) => {
                 "too many `super::`s".to_owned()
             },
-            Self::Resolution(ResolutionDiagnostic::UnresolvedItem { name, .. }) => {
+            Self::Resolution(ResolutionDiagnostic::UnresolvedItem { name, file_id: _ }) => {
                 format!("`{}` not found in other file", name.as_str())
             },
             Self::Resolution(ResolutionDiagnostic::UnresolvedPackage { name }) => {
@@ -301,7 +305,7 @@ impl<'db> TypeLoweringContext<'db> {
         path: &Path,
         template_parameters: &[ExpressionId],
     ) -> Lowered {
-        match self.try_lower(
+        match self.lower_expression(
             TypeContainer::Expression(expression),
             path,
             template_parameters,
@@ -315,14 +319,14 @@ impl<'db> TypeLoweringContext<'db> {
     }
 
     /// Will lower types, and resolve the definition of other items.
-    pub fn try_lower(
+    pub fn lower_expression(
         &mut self,
         type_container: TypeContainer,
         path: &Path,
         template_parameters: &[ExpressionId],
     ) -> Result<Lowered, TypeLoweringError> {
         let resolved_type = self.resolver.resolve(self.db, path);
-        let template_parameters = self.eval_template_args(type_container, template_parameters);
+        let mut template_parameters = self.eval_template_args(type_container, template_parameters);
         match resolved_type {
             Ok(ResolveKind::TypeAlias(id)) => {
                 self.expect_no_template(&template_parameters);
@@ -356,14 +360,7 @@ impl<'db> TypeLoweringContext<'db> {
                 Ok(Lowered::BuiltinFunction(name, Some(template_parameters)))
             },
             Ok(ResolveKind::BuiltinType(name)) => {
-                self.expect_no_template(&template_parameters);
-                self.lower_builtin_type(&name)
-                    .ok_or_else(|| TypeLoweringError {
-                        container: type_container,
-                        kind: TypeLoweringErrorKind::Resolution(
-                            ResolutionDiagnostic::UnresolvedName { name },
-                        ),
-                    })
+                self.lower_builtin_type(name, type_container, &mut template_parameters)
             },
             Ok(ResolveKind::BuiltinTypeGenerator(name)) => {
                 match self.lower_builtin_type_generator(
@@ -444,7 +441,7 @@ impl<'db> TypeLoweringContext<'db> {
         type_specifier_id: TypeSpecifierId,
     ) -> Type {
         let type_specifier = &self.store[type_specifier_id];
-        let lowered = self.try_lower(
+        let lowered = self.lower_expression(
             TypeContainer::TypeSpecifier(type_specifier_id),
             &type_specifier.path,
             &type_specifier.template_parameters,
@@ -629,6 +626,7 @@ impl<'db> WgslTypeConverter<'db> {
                 Box::new(self.to_wgsl_types(inner)),
                 access_mode,
             ),
+            TypeKind::AccelerationStructure(tags) => wgsl_types::Type::AccelerationStructure(tags),
         }
     }
 
@@ -774,7 +772,9 @@ impl<'db> WgslTypeConverter<'db> {
                 TypeKind::Sampler(sampler_type).intern(self.db)
             },
             wgsl_types::Type::RayQuery(_) => todo!("naga extension"),
-            wgsl_types::Type::AccelerationStructure(_) => todo!("naga extension"),
+            wgsl_types::Type::AccelerationStructure(tags) => {
+                TypeKind::AccelerationStructure(tags).intern(self.db)
+            },
             wgsl_types::Type::Unknown => TypeKind::Error.intern(self.db),
         }
     }
@@ -995,6 +995,7 @@ impl<'db> WgslTypeConverter<'db> {
             TypeKind::Scalar(ScalarType::I32) => wgsl_types::syntax::SampledType::I32,
             TypeKind::Scalar(ScalarType::U32) => wgsl_types::syntax::SampledType::U32,
             TypeKind::Scalar(ScalarType::F32) => wgsl_types::syntax::SampledType::F32,
+            TypeKind::Scalar(ScalarType::U64) => wgsl_types::syntax::SampledType::U64,
             kind @ (TypeKind::Error
             | TypeKind::Scalar(_)
             | TypeKind::Atomic(_)
@@ -1005,6 +1006,7 @@ impl<'db> WgslTypeConverter<'db> {
             | TypeKind::Array(_)
             | TypeKind::Texture(_)
             | TypeKind::Sampler(_)
+            | TypeKind::AccelerationStructure(_)
             | TypeKind::Reference(_)
             | TypeKind::Pointer(_)) => panic!("invalid sampled type {kind:?}"),
         }

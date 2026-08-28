@@ -111,7 +111,8 @@ pub(crate) fn handle_completion(
     CompletionParams {
         text_document_position_params,
         context,
-        ..
+        work_done_progress_params: _,
+        partial_result_params: _,
     }: CompletionParams,
 ) -> anyhow::Result<Option<CompletionResponse>> {
     let _p = tracing::info_span!("handle_completion").entered();

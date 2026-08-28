@@ -9,7 +9,7 @@ exclude = []
 
 [workspace.package]
 edition = "2024"
-rust-version = "1.97.1"
+rust-version = "1.98.0"
 repository = "https://github.com/wgsl-analyzer/wgsl-analyzer"
 license = "MIT OR Apache-2.0"
 
@@ -52,7 +52,7 @@ camino = "1.2.2"
 # wesl_metadata = "0.0.1"
 clap = { version = "4", default-features = false, features = ["error-context", "help", "std", "usage"] }
 # cov-mark = "2.0.0"
-dot = "0.1.4"
+dot = "0.2.0"
 glob = "0.3"
 crossbeam-channel = "0.5.15"
 dissimilar = "1.0.11"
@@ -78,7 +78,7 @@ tracing = { version = "0.1.44", default-features = false, features = ["attribute
 tracing-subscriber = { version = "0.3.23", default-features = false, features = ["fmt", "local-time", "registry", "std", "time", "tracing-log"] }
 tracing-tree = "0.4.0"
 triomphe = { version = "0.1.15", default-features = false, features = ["std"] }
-wgsl-types = { version = "0.4.3", features = ["naga-ext"] }
+wgsl-types = { version = "0.4.4", features = ["naga-ext"] }
 indexmap = { version = "2.14.0" }
 
 # idna_adapter does not use semantic versioning

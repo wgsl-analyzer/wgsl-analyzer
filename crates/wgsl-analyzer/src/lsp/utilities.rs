@@ -70,12 +70,13 @@ impl GlobalState {
                     message,
                     actions: Some(vec![MessageActionItem {
                         title: "Open server logs".to_owned(),
+                        ..Default::default()
                     }]),
                 },
                 |this, response| {
                     let Response {
                         response_result: Ok(result),
-                        ..
+                        id: _,
                     } = response
                     else {
                         return;

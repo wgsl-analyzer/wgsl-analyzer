@@ -26,6 +26,7 @@ enum TranslationUnitState {
     Declarations,
 }
 
+#[derive(Default)]
 pub struct ParserContext {
     edition: Edition,
     translation_unit_state: TranslationUnitState,

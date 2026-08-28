@@ -223,7 +223,7 @@ impl GlobalState {
             };
             if matches!(
                 &event,
-                Event::Lsp(lsp_server::Message::Notification(Notification { method, .. }))
+                Event::Lsp(lsp_server::Message::Notification(Notification { method, params: _ }))
                 if method.as_str() == ExitNotification::METHOD.as_str()
             ) {
                 return Ok(());
@@ -737,7 +737,7 @@ impl GlobalState {
                         _ => prime_caches_progress.push(progress),
                     }
                 },
-                PrimeCachesProgress::End { .. } => prime_caches_progress.push(progress),
+                PrimeCachesProgress::End { cancelled: _ } => prime_caches_progress.push(progress),
             },
             Task::DiscoverProject(argument) => {
                 if let Some(load_task) =
@@ -755,7 +755,7 @@ impl GlobalState {
         last_progress_report: &mut Option<(String, f64)>,
     ) {
         let _p = tracing::info_span!("GlobalState::handle_vfs_message").entered();
-        let is_changed = matches!(message, vfs::loader::Message::Changed { .. });
+        let is_changed = matches!(message, vfs::loader::Message::Changed { files: _ });
         match message {
             vfs::loader::Message::Changed { files } | vfs::loader::Message::Loaded { files } => {
                 let _p =

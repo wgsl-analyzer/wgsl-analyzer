@@ -84,20 +84,19 @@ impl TemplateParameters {
         }
     }
 
-    pub fn next_as_enumerant(&mut self) -> Result<(Enumerant, ExpressionId), TypeLoweringError> {
+    pub fn next_as_enumerant(
+        &mut self
+    ) -> Option<Result<(Enumerant, ExpressionId), TypeLoweringError>> {
         match self.take_next() {
-            Some((TemplateParameter::Enumerant(enumerant), id)) => Ok((enumerant, id)),
-            Some((parameter, id)) => Err(TypeLoweringError {
+            Some((TemplateParameter::Enumerant(enumerant), id)) => Some(Ok((enumerant, id))),
+            Some((parameter, id)) => Some(Err(TypeLoweringError {
                 container: TypeContainer::Expression(id),
                 kind: TypeLoweringErrorKind::UnexpectedTemplateArgument(
-                    "an enum".to_owned(),
+                    "an enumerant".to_owned(),
                     parameter.into(),
                 ),
-            }),
-            None => Err(TypeLoweringError {
-                container: self.container,
-                kind: TypeLoweringErrorKind::MissingTemplateArgument("an enum".to_owned()),
-            }),
+            })),
+            None => None,
         }
     }
 

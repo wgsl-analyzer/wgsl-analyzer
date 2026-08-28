@@ -184,7 +184,11 @@ fn struct_is_used_in_uniform(
                     InferenceResult::of(db, DefinitionWithBodyId::GlobalVariable(declaration));
                 let type_kind = inference.return_type().kind(db);
 
-                if let TypeKind::Reference(crate::ty::Reference { address_space, .. }) = type_kind
+                if let TypeKind::Reference(crate::ty::Reference {
+                    address_space,
+                    inner: _,
+                    access_mode: _,
+                }) = type_kind
                     && !matches!(address_space, AddressSpace::Uniform)
                 {
                     return false;

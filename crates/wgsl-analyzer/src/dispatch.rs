@@ -124,7 +124,11 @@ impl<'global_state> RequestDispatcher<'global_state> {
             > + 'static,
     {
         if !self.global_state.vfs_done {
-            if let Some(ServerRequest { id, .. }) = self
+            if let Some(ServerRequest {
+                id,
+                method: _,
+                params: _,
+            }) = self
                 .request
                 .take_if(|request| request.method.as_str() == Request::METHOD.as_str())
             {
@@ -156,7 +160,11 @@ impl<'global_state> RequestDispatcher<'global_state> {
         GetDefault: FnOnce() -> Request::Result,
     {
         if !self.global_state.vfs_done {
-            if let Some(ServerRequest { id, .. }) = self
+            if let Some(ServerRequest {
+                id,
+                method: _,
+                params: _,
+            }) = self
                 .request
                 .take_if(|request| request.method.as_str() == Request::METHOD.as_str())
             {

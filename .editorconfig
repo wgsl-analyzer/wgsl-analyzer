@@ -26,7 +26,7 @@ tab_width = 2
 quote_type = single
 spaces_around_brackets = both
 
-[*.{json,jsonc}]
+[*.{json,jsonc,json5}]
 indent_style = tab
 
 [*.{wgsl,wesl}]

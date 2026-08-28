@@ -9,7 +9,7 @@ use crossbeam_channel::{Receiver, Sender, unbounded};
 use ide::{Analysis, AnalysisHost, Cancellable};
 use lsp_server::{Notification as ServerNotification, Request as ServerRequest};
 use lsp_types::{
-    Diagnostic, Notification as LspNotification, PublishDiagnosticsNotification,
+    Diagnostic, MarkupContent, Notification as LspNotification, PublishDiagnosticsNotification,
     PublishDiagnosticsParams, Request as LspRequest, Uri,
 };
 use parking_lot::{MappedRwLockReadGuard, RwLock, RwLockReadGuard, RwLockWriteGuard};
@@ -18,10 +18,7 @@ use rustc_hash::FxHashMap;
 use salsa::Revision;
 use tracing::Level;
 use triomphe::Arc;
-use vfs::{
-    AbsPathBuf, Change as VfsChange, FileExcluded, FileId, Vfs, VfsPath,
-    loader::{Handle, Message},
-};
+use vfs::{AbsPathBuf, Change as VfsChange, FileExcluded, FileId, Vfs, VfsPath, loader::Handle};
 use vfs_notify::NotifyHandle;
 
 use crate::{
@@ -71,7 +68,7 @@ pub(crate) struct GlobalState {
     pub(crate) load_package_jobs_active: u32,
 
     // VFS
-    pub(crate) loader: HandleReceiver<Box<dyn Handle>, Receiver<Message>>,
+    pub(crate) loader: HandleReceiver<Box<dyn Handle>, Receiver<vfs::loader::Message>>,
     pub(crate) vfs: Arc<RwLock<(Vfs, FxHashMap<FileId, LineEndings>)>>,
     pub(crate) vfs_config_version: u32,
     pub(crate) vfs_progress_config_version: u32,
@@ -127,7 +124,7 @@ impl GlobalState {
         config: Config,
     ) -> Self {
         let loader = {
-            let (sender, receiver) = unbounded::<Message>();
+            let (sender, receiver) = unbounded::<vfs::loader::Message>();
             let handle: NotifyHandle = Handle::spawn(sender);
             #[expect(clippy::as_conversions, reason = "tested to be valid")]
             let handle = Box::new(handle) as Box<dyn Handle>;
@@ -505,17 +502,28 @@ impl GlobalState {
 
                     // See https://github.com/rust-lang/rust-analyzer/issues/11404
                     // See https://github.com/rust-lang/rust-analyzer/issues/13130
-                    let patch_empty = |message: &mut String| {
-                        if message.is_empty() {
+                    let patch_empty = |message: &mut lsp_types::Message| match message {
+                        lsp_types::Message::String(message) if message.is_empty() => {
                             " ".clone_into(message);
-                        }
+                        },
+                        lsp_types::Message::MarkupContent(lsp_types::MarkupContent {
+                            value,
+                            kind: _,
+                        }) if value.is_empty() => {
+                            " ".clone_into(value);
+                        },
+                        lsp_types::Message::String(_) | lsp_types::Message::MarkupContent(_) => {},
                     };
 
                     for diagnostic in &mut diagnostics {
                         patch_empty(&mut diagnostic.message);
                         if let Some(dri) = &mut diagnostic.related_information {
                             for dri in dri {
-                                patch_empty(&mut dri.message);
+                                // The LSP does not (yet?) specify that related diagnostic messages can
+                                // be in Markdown format (in addition to plain text).
+                                if dri.message.is_empty() {
+                                    " ".clone_into(&mut dri.message);
+                                }
                             }
                         }
                     }

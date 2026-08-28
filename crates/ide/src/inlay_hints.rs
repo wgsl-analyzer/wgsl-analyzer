@@ -386,7 +386,11 @@ fn get_struct_layout_hints(
             semantics.db,
             address_space,
             |field, _, field_layout| {
-                let FieldLayout { offset, .. } = field_layout;
+                let FieldLayout {
+                    offset,
+                    align: _,
+                    size: _,
+                } = field_layout;
                 let field = Field {
                     id: FieldId { r#struct, field },
                 };

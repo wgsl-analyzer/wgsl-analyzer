@@ -163,38 +163,58 @@ pub enum Severity {
 
 impl AnyDiagnostic {
     #[must_use]
+    #[rustfmt::skip]
     pub const fn file_id(&self) -> EditionedFileId {
         match self {
-            Self::AssignmentNotAReference { left_side, .. } => left_side.file_id,
-            Self::TypeMismatch { expression, .. }
-            | Self::NoSuchField { expression, .. }
-            | Self::ArrayAccessInvalidType { expression, .. }
-            | Self::NotConstructible { expression, .. }
-            | Self::FunctionCallArgCountMismatch { expression, .. }
-            | Self::StoreTypeMustBeStorable { expression, .. }
-            | Self::NoConstructor { expression, .. }
-            | Self::NoOverload { expression, .. }
-            | Self::PrecedenceParensRequired { expression, .. }
-            | Self::UnexpectedTemplateArgument { expression, .. }
-            | Self::WgslError { expression, .. }
-            | Self::InvalidIdentExpression { expression, .. }
-            | Self::UnexpectedReturnValue { expression, .. }
-            | Self::ExpectedLoweredKind { expression, .. } => expression.file_id,
-            Self::MissingAddressSpace { variable } | Self::InvalidAddressSpace { variable, .. } => {
+            Self::AssignmentNotAReference { left_side, actual: _  } => {
+                left_side.file_id
+            },
+
+            Self::TypeMismatch { expression, expected: _, actual: _  }
+            | Self::NoSuchField { expression, name: _, r#type: _  }
+            | Self::ArrayAccessInvalidType { expression, r#type: _  }
+            | Self::NotConstructible { expression, r#type: _ }
+            | Self::FunctionCallArgCountMismatch { expression, n_expected: _, n_actual: _  }
+            | Self::StoreTypeMustBeStorable { expression, actual: _  }
+            | Self::NoConstructor { expression, r#type: _, parameters: _  }
+            | Self::NoOverload { expression, name: _, parameters: _ }
+            | Self::PrecedenceParensRequired { expression, operation: _, sequence_permitted: _ }
+            | Self::UnexpectedTemplateArgument { expression }
+            | Self::WgslError { expression, message: _ }
+            | Self::InvalidIdentExpression { expression, error: _ }
+            | Self::UnexpectedReturnValue { expression, actual: _ }
+            | Self::ExpectedLoweredKind { expression, actual: _, expected: _, path: _  } => {
+                expression.file_id
+            },
+
+            Self::MissingAddressSpace { variable }
+            | Self::InvalidAddressSpace { variable, error: _ } => {
                 variable.file_id
             },
-            Self::InvalidTypeSpecifier { type_specifier, .. } => type_specifier.file_id,
-            Self::NagaValidationError { file_id, .. }
-            | Self::TintValidationError { file_id, .. }
-            | Self::ParseError { file_id, .. }
-            | Self::CyclicType { file_id, .. }
-            | Self::InvalidIdentifier { file_id, .. } => *file_id,
-            Self::UnnamedImport { id, .. }
-            | Self::UnresolvedPackage { id, .. }
-            | Self::UnresolvedImport { id, .. }
+
+            Self::InvalidTypeSpecifier { type_specifier, error: _ } => {
+                type_specifier.file_id
+            },
+
+            Self::NagaValidationError { file_id, range: _, message: _, related: _  }
+            | Self::TintValidationError { file_id, range: _, message: _, severity: _  }
+            | Self::ParseError { file_id, message: _, range: _ }
+            | Self::CyclicType { file_id, name: _, range: _ }
+            | Self::InvalidIdentifier { file_id, name: _, range: _ } => {
+                *file_id
+            },
+
+            Self::UnnamedImport { id }
+            | Self::UnresolvedPackage { id, name: _ }
+            | Self::UnresolvedImport { id }
             | Self::TooManySupers { id }
-            | Self::DetachedFile { id } => id.file_id,
-            Self::NameConflict { item, .. } => item.file_id,
+            | Self::DetachedFile { id } => {
+                id.file_id
+            },
+
+            Self::NameConflict { item, name: _ } => {
+                item.file_id
+            },
         }
     }
 }

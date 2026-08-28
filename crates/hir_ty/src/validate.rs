@@ -164,30 +164,33 @@ pub fn validate_address_space<DiagnosticBuilder>(
                 ]));
             }
             match r#type.as_ref() {
-                TypeKind::Sampler(_)
+                // optimistic about using errors
+                TypeKind::Error
+                | TypeKind::Sampler(_)
                 | TypeKind::Texture(_)
                 | TypeKind::Array(ArrayType {
                     binding_array: true,
-                    ..
+                    inner: _,
+                    size: _,
                 }) => {},
-                TypeKind::Error
-                | TypeKind::Scalar(_)
+                TypeKind::Scalar(_)
                 | TypeKind::Atomic(_)
                 | TypeKind::Vector(_)
                 | TypeKind::Matrix(_)
                 | TypeKind::Struct(_)
                 | TypeKind::BuiltinStruct(_)
                 | TypeKind::Array(_)
+                | TypeKind::AccelerationStructure(_)
                 | TypeKind::Reference(_)
                 | TypeKind::Pointer(_) => {
                     diagnostic_builder(AddressSpaceError::HandleOrTexture);
                 },
             }
         },
-        AddressSpace::Immediate => {
-            // TODO: validate immediates
-            // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/682
-        },
+        // TODO: validate Immediate https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1419
+        // TODO: validate RayPayload
+        // TODO: validate IncomingRayPayload
+        AddressSpace::Immediate | AddressSpace::RayPayload | AddressSpace::IncomingRayPayload => {},
         AddressSpace::TaskPayload => {
             if !matches!(scope, Scope::Module) {
                 diagnostic_builder(AddressSpaceError::Scope(Scope::Module));

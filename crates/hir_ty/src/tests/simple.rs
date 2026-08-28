@@ -1862,13 +1862,17 @@ fn sampler_comparison_no_template() {
 }
 
 #[test]
-fn ptr_template_not_enumerant() {
+fn ptr_template() {
     check_infer(
         "
         fn foo1(bar1: ptr<rgba8unorm, i32, read_write>) { }
         fn foo2(bar2: ptr<storage, 123i, read_write>) { }
         fn foo3(bar3: ptr<storage, i32, rgba8unorm>) { }
         fn foo4(bar4: ptr<storage, i32>) { }
+        fn foo5(bar5: ptr<f32, i32>) { }
+        fn foo6(bar6: ptr<storage, acceleration_structure>) { }
+        fn foo7(bar7: ptr<uniform, i32, write>) { }
+        fn foo8(bar8: ptr<uniform, i32, 1u>) { }
         ",
         expect![[r#"
             8..12 'bar1': [error]
@@ -1878,6 +1882,45 @@ fn ptr_template_not_enumerant() {
             110..114 'bar3': [error]
             134..144 'rgba8unorm': unexpected template argument, expected one of: (read, read_write, write), actual: rgba8unorm
             159..163 'bar4': ptr<storage, i32, read>
+            196..200 'bar5': [error]
+            206..209 'f32': unexpected template argument, expected an enumerant, actual: f32
+            229..233 'bar6': ptr<storage, [error], read>
+            248..270 'accele...ucture': unexpected template argument, expected a storable type, actual: acceleration_structure
+            285..289 'bar7': ptr<uniform, i32, read>
+            309..314 'write': unexpected template argument, expected `read` access mode for uniforms, actual: write
+            329..333 'bar8': [error]
+            353..355 '1u': unexpected template argument, expected an enumerant, actual: 1u
+        "#]],
+    );
+}
+
+#[test]
+fn storage_texture_template() {
+    check_infer(
+        "
+        var tex_storage1: texture_storage_2d<rgba8unorm, read_write>;
+        var tex_storage2: texture_storage_2d<i32, read_write>;
+        var tex_storage3: texture_storage_2d<rgba8unorm, i32>;
+        var tex_storage4: texture_storage_2d;
+        var tex_storage5: texture_storage_2d<rgba8unorm>;
+        var tex_storage5: texture_storage_2d<read_write>;
+        var tex_storage3: texture_storage_2d<rgba8unorm, rgba8unorm>;
+        ",
+        expect![[r#"
+            4..16 'tex_storage1': ref<handle, texture_storage_2d<rgba8unorm,read_write>, read>
+            66..78 'tex_storage2': ref<handle, [error], read>
+            99..102 'i32': unexpected template argument, expected an enumerant, actual: i32
+            121..133 'tex_storage3': ref<handle, [error], read>
+            166..169 'i32': unexpected template argument, expected an enumerant, actual: i32
+            176..188 'tex_storage4': ref<handle, [error], read>
+            190..208 'textur...age_2d': expected 1 to 2 template arguments, but got 0
+            190..208 'textur...age_2d': missing template argument, expected a texel format
+            214..226 'tex_storage5': ref<handle, [error], read>
+            228..258 'textur...unorm>': missing template argument, expected an access mode
+            264..276 'tex_storage5': ref<handle, [error], read>
+            297..307 'read_write': unexpected template argument, expected a texel format (`rgba8unorm`, `rgba8snorm`, ...), actual: read_write
+            314..326 'tex_storage3': ref<handle, [error], read>
+            359..369 'rgba8unorm': unexpected template argument, expected one of: read, write, read_write, actual: rgba8unorm
         "#]],
     );
 }
@@ -2362,6 +2405,43 @@ fn foo() {
             37..38 '1': integer
             29..30 '1': unexpected template argument, expected a type, actual: 1
             32..35 'f32': unexpected template argument, expected an instance, actual: f32
+        "#]],
+    );
+}
+
+// TODO: without the enable extension, this should have an error
+// https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1461
+#[test]
+fn acceleration_structure() {
+    check_infer(
+        "
+//enable wgpu_ray_query_vertex_return;
+var x: acceleration_structure;
+var x: acceleration_structure<vertex_return>;
+        ",
+        expect![[r#"
+            43..44 'x': ref<handle, acceleration_structure, read>
+            74..75 'x': ref<handle, acceleration_structure<vertex_return>, read>
+        "#]],
+    );
+}
+
+#[test]
+fn acceleration_structure_bad_template() {
+    check_infer(
+        "
+//enable wgpu_ray_query_vertex_return;
+var x: acceleration_structure<f32>;
+var y: acceleration_structure<r64uint>;
+var y: acceleration_structure<0>;
+        ",
+        expect![[r#"
+            43..44 'x': ref<handle, [error], read>
+            46..73 'accele...e<f32>': unexpected template argument, expected an acceleration structure flag, actual: f32
+            79..80 'y': ref<handle, [error], read>
+            82..113 'accele...4uint>': unexpected template argument, expected an acceleration structure flag, actual: r64uint
+            119..120 'y': ref<handle, [error], read>
+            122..147 'accele...ure<0>': unexpected template argument, expected an acceleration structure flag, actual: 0
         "#]],
     );
 }

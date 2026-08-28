@@ -1,8 +1,9 @@
 #![expect(clippy::too_many_lines, reason = "snapshot tests")]
 
 use expect_test::expect;
+use syntax::Capabilities;
 
-use crate::tests::check_infer;
+use crate::tests::{check_infer, check_infer_with_capabilities};
 
 #[test]
 fn texture_storage_1d() {
@@ -316,6 +317,27 @@ fn main() {
             220..228 'vec2i(0)': vec2<i32>
             226..227 '0': integer
             230..236 'loaded': vec4<f32>
+        "#]],
+    );
+}
+
+#[test]
+fn sample_u64() {
+    check_infer_with_capabilities(
+        Capabilities {
+            shader_int64: false,
+            ..Default::default()
+        },
+        "
+var x: texture_storage_2d<r64uint, read>;
+fn foo() { let y = textureLoad(x, 0); }
+",
+        expect![[r#"
+            4..5 'x': ref<handle, texture_storage_2d<r64uint,read>, read>
+            57..58 'y': vec4<u64>
+            61..78 'textur...(x, 0)': vec4<u64>
+            73..74 'x': ref<handle, texture_storage_2d<r64uint,read>, read>
+            76..77 '0': integer
         "#]],
     );
 }

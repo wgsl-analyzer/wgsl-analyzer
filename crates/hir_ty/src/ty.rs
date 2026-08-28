@@ -1,11 +1,12 @@
 pub mod pretty;
 
-use std::{borrow::Cow, fmt, num::NonZeroU32};
+use std::{borrow::Cow, fmt, hash, num::NonZeroU32};
 
 use base_db::{Intern as _, Lookup as _, impl_intern_key, impl_intern_lookup};
 use hir_def::db::StructId;
 use wgsl_types::{
     syntax::{AccessMode, AddressSpace, TexelFormat},
+    tplt::AccelerationStructureTags,
     ty::SamplerType,
 };
 
@@ -32,6 +33,7 @@ impl Type {
             | TypeKind::Struct(_)
             | TypeKind::BuiltinStruct(_)
             | TypeKind::Texture(_)
+            | TypeKind::AccelerationStructure(_)
             | TypeKind::Sampler(_) => false,
             TypeKind::Atomic(atomic_type) => atomic_type.inner.is_err(db),
             TypeKind::Vector(vector_type) => vector_type.component_type.is_err(db),
@@ -60,6 +62,7 @@ impl Type {
             | TypeKind::BuiltinStruct(_)
             | TypeKind::Array(_)
             | TypeKind::Texture(_)
+            | TypeKind::AccelerationStructure(_)
             | TypeKind::Sampler(_)
             | TypeKind::Pointer(_) => self,
         }
@@ -154,6 +157,7 @@ impl Type {
             | TypeKind::Texture(_)
             | TypeKind::Sampler(_)
             | TypeKind::Reference(_)
+            | TypeKind::AccelerationStructure(_)
             | TypeKind::Pointer(_) => false,
         }
     }
@@ -166,7 +170,7 @@ pub struct BuiltinStruct {
     pub fields: Vec<(String, Type)>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TypeKind {
     Error,
     Scalar(ScalarType),
@@ -182,6 +186,18 @@ pub enum TypeKind {
     Sampler(SamplerType),
     Reference(Reference),
     Pointer(Pointer),
+    AccelerationStructure(Option<AccelerationStructureTags>),
+}
+
+impl hash::Hash for TypeKind {
+    fn hash<Hasher>(
+        &self,
+        state: &mut Hasher,
+    ) where
+        Hasher: hash::Hasher,
+    {
+        core::mem::discriminant(self).hash(state);
+    }
 }
 
 impl TypeKind {
@@ -208,6 +224,7 @@ impl TypeKind {
             | Self::BuiltinStruct(_)
             | Self::Array(_)
             | Self::Texture(_)
+            | Self::AccelerationStructure(_)
             | Self::Sampler(_)
             | Self::Pointer(_) => Cow::Borrowed(self),
         }
@@ -254,6 +271,7 @@ impl TypeKind {
             | Self::Texture(_)
             | Self::Sampler(_)
             | Self::Reference(_)
+            | Self::AccelerationStructure(_)
             | Self::Pointer(_) => return None,
         })
     }
@@ -272,6 +290,7 @@ impl TypeKind {
             | Self::Texture(_)
             | Self::Sampler(_)
             | Self::Reference(_)
+            | Self::AccelerationStructure(_)
             | Self::Pointer(_) => false,
         }
     }
@@ -290,6 +309,7 @@ impl TypeKind {
             | Self::Texture(_)
             | Self::Sampler(_)
             | Self::Reference(_)
+            | Self::AccelerationStructure(_)
             | Self::Pointer(_) => false,
         }
     }
@@ -301,12 +321,20 @@ impl TypeKind {
     ) -> bool {
         match self {
             Self::Scalar(ScalarType::AbstractInt | ScalarType::AbstractFloat) => true,
-            Self::Array(ArrayType { inner, .. })
+            Self::Array(ArrayType {
+                inner,
+                binding_array: _,
+                size: _,
+            })
             | Self::Vector(VectorType {
                 component_type: inner,
-                ..
+                size: _,
             })
-            | Self::Matrix(MatrixType { inner, .. }) => inner.kind(db).is_abstract(db),
+            | Self::Matrix(MatrixType {
+                inner,
+                columns: _,
+                rows: _,
+            }) => inner.kind(db).is_abstract(db),
             Self::Scalar(_)
             | Self::Error
             | Self::Atomic(_)
@@ -315,6 +343,7 @@ impl TypeKind {
             | Self::Texture(_)
             | Self::Sampler(_)
             | Self::Reference(_)
+            | Self::AccelerationStructure(_)
             | Self::Pointer(_) => false,
         }
     }
@@ -347,7 +376,8 @@ impl TypeKind {
                 | Self::Matrix(_)
                 | Self::Array(ArrayType {
                     size: ArraySize::Constant(_),
-                    ..
+                    inner: _,
+                    binding_array: _
                 })
                 | Self::Struct(_)
         )
@@ -388,6 +418,7 @@ impl TypeKind {
             | Self::Texture(_)
             | Self::Sampler(_)
             | Self::Reference(_)
+            | Self::AccelerationStructure(_)
             | Self::Pointer(_) => false,
         }
     }
@@ -399,7 +430,8 @@ impl TypeKind {
         match self {
             Self::Array(ArrayType {
                 size: ArraySize::Dynamic,
-                ..
+                inner: _,
+                binding_array: _,
             }) => true,
             Self::Struct(r#struct) => db
                 .field_types(*r#struct)
@@ -416,6 +448,7 @@ impl TypeKind {
             | Self::Texture(_)
             | Self::Sampler(_)
             | Self::Reference(_)
+            | Self::AccelerationStructure(_)
             | Self::Pointer(_) => false,
         }
     }
@@ -445,6 +478,7 @@ impl TypeKind {
             | Self::Matrix(_)
             | Self::BuiltinStruct(_)
             | Self::Texture(_)
+            | Self::AccelerationStructure(_)
             | Self::Sampler(_) => false,
         }
     }
@@ -464,7 +498,7 @@ fn conversion_rank(
             TypeKind::Reference(Reference {
                 inner: ty1,
                 access_mode: AccessMode::Read | AccessMode::ReadWrite,
-                ..
+                address_space: _,
             }),
             ty2,
         ) if &ty1.kind(db) == ty2 => Some(0),
@@ -488,12 +522,12 @@ fn conversion_rank(
             TypeKind::Array(ArrayType {
                 inner: ty1,
                 size: n1,
-                ..
+                binding_array: _,
             }),
             TypeKind::Array(ArrayType {
                 inner: ty2,
                 size: n2,
-                ..
+                binding_array: _,
             }),
         ) if n1 == n2 => conversion_rank(&ty1.kind(db), &ty2.kind(db), db),
         (
@@ -810,6 +844,9 @@ impl TextureKind {
             },
             wgsl_types::syntax::SampledType::F32 => {
                 Self::Sampled(TypeKind::Scalar(ScalarType::F32).intern(db))
+            },
+            wgsl_types::syntax::SampledType::U64 => {
+                Self::Sampled(TypeKind::Scalar(ScalarType::U64).intern(db))
             },
         }
     }
