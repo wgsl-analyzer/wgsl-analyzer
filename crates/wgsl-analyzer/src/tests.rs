@@ -9,6 +9,8 @@ use project_model::{ManifestPath, ProjectManifest, WeslPackage, WeslPackageRoot}
 use test_utils::project_root;
 use vfs::AbsPathBuf;
 
+mod bevy;
+
 use crate::{
     discover::{LoadPackageMessage, LoadPackageTask},
     reload::to_load_and_source_root_config,
