@@ -3,7 +3,7 @@ use std::collections::BTreeMap;
 use serde::Deserialize;
 
 #[derive(Deserialize)]
-pub struct WeslToml {
+pub struct WeslManifest {
     /// WESL edition (required).
     pub edition: String,
     pub package_manager: Option<String>,
@@ -15,9 +15,13 @@ pub struct WeslToml {
     pub dependencies: BTreeMap<String, WeslDependency>,
 }
 
-impl WeslToml {
+impl WeslManifest {
     pub fn from_slice(bytes: &[u8]) -> Result<Self, toml::de::Error> {
         toml::from_slice(bytes)
+    }
+
+    pub fn from_json(value: serde_json::Value) -> Result<Self, serde_json::Error> {
+        serde_json::from_value(value)
     }
 }
 

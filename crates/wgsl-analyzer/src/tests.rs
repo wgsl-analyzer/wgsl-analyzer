@@ -62,14 +62,15 @@ fn check_load_project(
                     actual,
                     "{project_name} at {}",
                     print_path(&project.manifest.into(), &test_directory)
-                );
-                writeln!(actual, "edition: {}", project.edition);
+                )
+                .unwrap();
+                writeln!(actual, "edition: {}", project.edition).unwrap();
                 writeln!(
                     actual,
                     "root: {}",
                     print_path(&project.root, &test_directory)
                 );
-                writeln!(actual, "dependencies:");
+                writeln!(actual, "dependencies:").unwrap();
                 for dependency in project.dependencies {
                     writeln!(actual, "- {}", dependency.name());
                 }
@@ -77,7 +78,8 @@ fn check_load_project(
             LoadPackageMessage::Error { error, source } => {
                 writeln!(actual, "{error} - {source:?}");
             },
-            LoadPackageMessage::Dependency { .. } | LoadPackageMessage::Progress { .. } => (),
+            LoadPackageMessage::Dependency { task } => {},
+            LoadPackageMessage::Progress { message } => {},
         }
     }
 
@@ -213,6 +215,56 @@ fn wesl_with_dependencies() {
             extensions: wgsl, wesl, toml
             include: wesl_with_dependencies
             file: wesl_with_dependencies/wesl.toml
+        "#]],
+    );
+}
+
+#[test]
+fn simple_cargo() {
+    check_load_project(
+        "simple_cargo/Cargo.toml",
+        PackageOrigin::Local,
+        expect![[r#"
+            Project simple_cargo at simple_cargo/Cargo.toml
+            edition: WESL 2025 (Unstable)
+            root: simple_cargo/src
+            dependencies:
+        "#]],
+    );
+
+    check_load_project_files(
+        "simple_cargo/Cargo.toml",
+        PackageOrigin::Local,
+        expect![[r#"
+            extensions: wgsl, wesl, toml
+            include: simple_cargo/src
+            file: simple_cargo/Cargo.toml
+        "#]],
+    );
+}
+
+#[test]
+fn wesl_with_dependencies_cargo() {
+    check_load_project(
+        "wesl_with_dependencies_cargo/Cargo.toml",
+        PackageOrigin::Local,
+        expect![[r#"
+            Project wesl_with_dependencies_cargo at wesl_with_dependencies_cargo/Cargo.toml
+            edition: WESL 2025 (Unstable)
+            root: wesl_with_dependencies_cargo
+            dependencies:
+            - nested
+            - simple_wesl
+        "#]],
+    );
+
+    check_load_project_files(
+        "wesl_with_dependencies_cargo/Cargo.toml",
+        PackageOrigin::Local,
+        expect![[r#"
+            extensions: wgsl, wesl, toml
+            include: wesl_with_dependencies_cargo
+            file: wesl_with_dependencies_cargo/Cargo.toml
         "#]],
     );
 }
