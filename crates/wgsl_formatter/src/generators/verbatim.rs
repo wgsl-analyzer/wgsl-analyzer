@@ -1,3 +1,4 @@
+use itertools::{Itertools, Position};
 use parser::{SyntaxNode, SyntaxToken};
 use rowan::NodeOrToken;
 
@@ -19,13 +20,19 @@ pub fn gen_node_syntax_verbatim(
     formatted.start_ignoring_indent_before_requests();
     formatted.apply_end_request();
 
-    for line in verbatim_text.split_inclusive('\n') {
-        if let Some(line) = line.strip_suffix('\n') {
-            let line = line.strip_suffix('\r').unwrap_or(line);
-            formatted.push_string(line.to_owned());
+    for (position, line) in verbatim_text.split_inclusive('\n').with_position() {
+        let (line, has_break) = line.strip_suffix('\n').map_or((line, false), |line| {
+            (line.strip_suffix('\r').unwrap_or(line), true)
+        });
+        if !line.is_empty() || position == Position::Middle {
+            push_string_with_tabs(&mut formatted, line);
+        }
+        if has_break {
             formatted.request(Request::force(RequestItem::LineBreak));
-        } else {
-            formatted.push_string(line.to_owned());
+            if position != Position::Last && position != Position::Only {
+                formatted.apply_end_request();
+                formatted.push_sc(dprint_core_macros::sc!("")); //TODO Why is this necessary? This should absolutely not be needed here??
+            }
         }
     }
 
@@ -33,4 +40,18 @@ pub fn gen_node_syntax_verbatim(
     formatted.finish_ignoring_indent_before_requests();
 
     Ok(formatted)
+}
+
+fn push_string_with_tabs(
+    formatted: &mut PrintItemBuffer,
+    text: &str,
+) {
+    for part in text.split_inclusive('\t') {
+        if let Some(part) = part.strip_suffix('\t') {
+            formatted.push_string(part.to_owned());
+            formatted.push_tab();
+        } else {
+            formatted.push_string(part.to_owned());
+        }
+    }
 }
