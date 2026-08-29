@@ -925,11 +925,6 @@ impl<'db> InferenceContext<'db> {
         r#type: Type,
         expectation: TypeExpectationInner,
     ) -> Result<(), ()> {
-        let type_kind = r#type.kind(self.db);
-        if type_kind == TypeKind::Error {
-            return Ok(());
-        }
-
         match expectation {
             TypeExpectationInner::Exact(expected_type) => {
                 if expected_type.kind(self.db) == TypeKind::Error
@@ -970,7 +965,6 @@ impl<'db> InferenceContext<'db> {
         store: &ExpressionStore,
     ) -> Type {
         let r#type = self.infer_expression(expression, store);
-
         match expected {
             TypeExpectation::Type(expected_type) => {
                 if !r#type.is_err(self.db)

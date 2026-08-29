@@ -47,6 +47,7 @@ use crate::{
 
 fn infer(
     capabilities: Capabilities,
+    verbosity: TypeVerbosity,
     wa_fixture: &str,
 ) -> String {
     let (mut db, files) = TestDatabase::with_many_files(wa_fixture);
@@ -57,7 +58,7 @@ fn infer(
         if index > 0 {
             buffer.push_str("---\n");
         }
-        InferPrinter::new(&db, file_id).infer_file(&mut buffer);
+        InferPrinter::new(&db, file_id, verbosity).infer_file(&mut buffer);
     }
     buffer.truncate(buffer.trim_end().len());
     buffer
@@ -67,17 +68,24 @@ struct InferPrinter<'db> {
     db: &'db TestDatabase,
     file_id: EditionedFileId,
     root: SyntaxNode,
+    verbosity: TypeVerbosity,
 }
 
 impl<'db> InferPrinter<'db> {
     fn new(
         db: &'db TestDatabase,
         file_id: EditionedFileId,
+        verbosity: TypeVerbosity,
     ) -> Self {
         let parse = file_id.parse(db);
         assert_eq!(<&[Diagnostic]>::default(), parse.errors());
         let root = parse.syntax();
-        Self { db, file_id, root }
+        Self {
+            db,
+            file_id,
+            root,
+            verbosity,
+        }
     }
 
     fn infer_file(
@@ -182,7 +190,7 @@ impl<'db> InferPrinter<'db> {
             node.text_range(),
             node.text().to_string().replace('\n', " "),
         );
-        let pretty = pretty_type_with_verbosity(self.db, r#type, TypeVerbosity::Full);
+        let pretty = pretty_type_with_verbosity(self.db, r#type, self.verbosity);
         writeln!(buffer, "{range:?} '{}': {pretty}", ellipsize(text, 15)).unwrap();
     }
 
@@ -383,8 +391,8 @@ impl<'db> InferPrinter<'db> {
             buffer,
             "{range:?} '{}': expected {} but got {}",
             ellipsize(text, 15),
-            pretty_type_expectation_with_verbosity(self.db, expected, TypeVerbosity::Full),
-            pretty_type_with_verbosity(self.db, actual, TypeVerbosity::Full)
+            pretty_type_expectation_with_verbosity(self.db, expected, self.verbosity),
+            pretty_type_with_verbosity(self.db, actual, self.verbosity)
         )
         .unwrap();
     }
@@ -434,9 +442,10 @@ impl<'db> InferPrinter<'db> {
             )
             .unwrap();
         } else {
-            let parameters = join_display(parameters.iter().map(|parameter| {
-                pretty_type_with_verbosity(self.db, *parameter, TypeVerbosity::Full)
-            }));
+            let parameters =
+                join_display(parameters.iter().map(|parameter| {
+                    pretty_type_with_verbosity(self.db, *parameter, self.verbosity)
+                }));
             writeln!(
                 buffer,
                 "{range:?} '{}': no overload of constructor `{}` found for arguments of type ({parameters})",
@@ -467,9 +476,10 @@ impl<'db> InferPrinter<'db> {
             )
             .unwrap();
         } else {
-            let parameters = join_display(parameters.iter().map(|parameter| {
-                pretty_type_with_verbosity(self.db, *parameter, TypeVerbosity::Full)
-            }));
+            let parameters =
+                join_display(parameters.iter().map(|parameter| {
+                    pretty_type_with_verbosity(self.db, *parameter, self.verbosity)
+                }));
             writeln!(
                 buffer,
                 "{range:?} '{}': no overload of function `{}` found for arguments of type ({parameters})",
@@ -534,7 +544,7 @@ impl<'db> InferPrinter<'db> {
             "{range:?} '{}': no such field `{}` on type `{}`",
             ellipsize(text, 15),
             name.as_str(),
-            pretty_type_with_verbosity(self.db, r#type, TypeVerbosity::Full),
+            pretty_type_with_verbosity(self.db, r#type, self.verbosity),
         )
         .unwrap();
     }
@@ -553,7 +563,7 @@ impl<'db> InferPrinter<'db> {
             buffer,
             "{range:?} '{}': expected storable type but got `{}`",
             ellipsize(text, 15),
-            pretty_type_with_verbosity(self.db, actual, TypeVerbosity::Full),
+            pretty_type_with_verbosity(self.db, actual, self.verbosity),
         )
         .unwrap();
     }
@@ -572,7 +582,7 @@ impl<'db> InferPrinter<'db> {
             buffer,
             "{range:?} '{}': cannot index into type {}",
             ellipsize(text, 15),
-            pretty_type_with_verbosity(self.db, r#type, TypeVerbosity::Full),
+            pretty_type_with_verbosity(self.db, r#type, self.verbosity),
         )
         .unwrap();
     }
@@ -591,7 +601,7 @@ impl<'db> InferPrinter<'db> {
             buffer,
             "{range:?} '{}': unexpected return value of type `{}` in function with no return type",
             ellipsize(text, 15),
-            pretty_type_with_verbosity(self.db, actual, TypeVerbosity::Full),
+            pretty_type_with_verbosity(self.db, actual, self.verbosity),
         )
         .unwrap();
     }
@@ -610,7 +620,7 @@ impl<'db> InferPrinter<'db> {
             buffer,
             "{range:?} '{}': type `{}` is not constructible",
             ellipsize(text, 15),
-            pretty_type_with_verbosity(self.db, r#type, TypeVerbosity::Full),
+            pretty_type_with_verbosity(self.db, r#type, self.verbosity),
         )
         .unwrap();
     }
@@ -790,7 +800,16 @@ fn check_infer(
     wa_fixture: &str,
     expect: Expect,
 ) {
-    check_infer_with_capabilities(Capabilities::default(), wa_fixture, expect)
+    check_infer_with_verbosity(TypeVerbosity::Full, wa_fixture, expect)
+}
+
+#[expect(clippy::semicolon_if_nothing_returned, reason = "wrapper")]
+fn check_infer_with_verbosity(
+    verbosity: TypeVerbosity,
+    wa_fixture: &str,
+    expect: Expect,
+) {
+    check_infer_with_capabilities_verbosity(Capabilities::default(), verbosity, wa_fixture, expect)
 }
 
 #[expect(clippy::needless_pass_by_value, reason = "Matches expect! macro")]
@@ -799,7 +818,18 @@ fn check_infer_with_capabilities(
     wa_fixture: &str,
     expect: Expect,
 ) {
-    let mut actual = infer(capabilities, wa_fixture);
+    let mut actual = infer(capabilities, TypeVerbosity::Full, wa_fixture);
+    actual.push('\n');
+    expect.assert_eq(&actual);
+}
+#[expect(clippy::needless_pass_by_value, reason = "Matches expect! macro")]
+fn check_infer_with_capabilities_verbosity(
+    capabilities: Capabilities,
+    verbosity: TypeVerbosity,
+    wa_fixture: &str,
+    expect: Expect,
+) {
+    let mut actual = infer(capabilities, verbosity, wa_fixture);
     actual.push('\n');
     expect.assert_eq(&actual);
 }
