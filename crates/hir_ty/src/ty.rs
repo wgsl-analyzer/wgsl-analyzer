@@ -3,7 +3,7 @@ pub mod pretty;
 use std::{borrow::Cow, fmt, hash, num::NonZeroU32};
 
 use base_db::{Intern as _, Lookup as _, impl_intern_key, impl_intern_lookup};
-use hir_def::db::StructId;
+use hir_def::{db::StructId, item_tree::Name};
 use wgsl_types::{
     syntax::{AccessMode, AddressSpace, TexelFormat},
     tplt::AccelerationStructureTags,
@@ -35,6 +35,7 @@ impl Type {
             | TypeKind::Texture(_)
             | TypeKind::RayQuery(_)
             | TypeKind::AccelerationStructure(_)
+            | TypeKind::SwizzleView(_)
             | TypeKind::Sampler(_) => false,
             TypeKind::Atomic(atomic_type) => atomic_type.inner.is_err(db),
             TypeKind::Vector(vector_type) => vector_type.component_type.is_err(db),
@@ -139,9 +140,10 @@ impl Type {
             | TypeKind::Texture(_)
             | TypeKind::Sampler(_)
             | TypeKind::Reference(_)
+            | TypeKind::Pointer(_)
             | TypeKind::RayQuery(_)
-            | TypeKind::AccelerationStructure(_)
-            | TypeKind::Pointer(_) => false,
+            | TypeKind::SwizzleView(_)
+            | TypeKind::AccelerationStructure(_) => false,
         }
     }
 }
@@ -172,6 +174,7 @@ pub enum TypeKind {
     Sampler(SamplerType),
     Reference(Reference),
     Pointer(Pointer),
+    SwizzleView(SwizzleView),
     RayQuery(Option<AccelerationStructureTags>),
     AccelerationStructure(Option<AccelerationStructureTags>),
     // internal
@@ -208,6 +211,7 @@ impl TypeKind {
             | Self::Scalar(_)
             | Self::Atomic(_)
             | Self::Vector(_)
+            | Self::SwizzleView(_)
             | Self::Matrix(_)
             | Self::Struct(_)
             | Self::BuiltinStruct(_)
@@ -254,6 +258,8 @@ impl TypeKind {
                 inner: inner.kind(db).concretize(db)?.intern(db),
             }),
             Self::Error
+            // `S` is a concrete scalar type
+            | Self::SwizzleView(_)
             | Self::Scalar(_)
             | Self::Atomic(_)
             | Self::Struct(_)
@@ -275,6 +281,7 @@ impl TypeKind {
             Self::Error => true,
             Self::Atomic(_)
             | Self::Vector(_)
+            | Self::SwizzleView(_)
             | Self::Matrix(_)
             | Self::Struct(_)
             | Self::BuiltinStruct(_)
@@ -288,6 +295,7 @@ impl TypeKind {
         }
     }
 
+    /// The index expression must be of integer scalar type.
     #[must_use]
     pub const fn is_index(&self) -> bool {
         match self {
@@ -298,6 +306,7 @@ impl TypeKind {
             | Self::Atomic(_)
             | Self::BuiltinStruct(_)
             | Self::Vector(_)
+            | Self::SwizzleView(_)
             | Self::Matrix(_)
             | Self::Struct(_)
             | Self::Array(_)
@@ -339,6 +348,7 @@ impl TypeKind {
             | Self::Reference(_)
             | Self::Pointer(_)
             | Self::RayQuery(_)
+            | Self::SwizzleView(_)
             | Self::AccelerationStructure(_)
             | Self::Error => false,
         }
@@ -416,6 +426,7 @@ impl TypeKind {
             | Self::Sampler(_)
             | Self::Reference(_)
             | Self::Pointer(_)
+            | Self::SwizzleView(_)
             | Self::RayQuery(_)
             | Self::AccelerationStructure(_) => false,
         }
@@ -440,6 +451,7 @@ impl TypeKind {
             Self::Scalar(_)
             | Self::Atomic(_)
             | Self::Vector(_)
+            | Self::SwizzleView(_)
             | Self::Matrix(_)
             | Self::Array(_)
             | Self::BuiltinStruct(_)
@@ -489,6 +501,7 @@ impl TypeKind {
             }) => inner.contains_struct(db, r#struct),
             Self::Scalar(_)
             | Self::Vector(_)
+            | Self::SwizzleView(_)
             | Self::Matrix(_)
             | Self::Sampler(_)
             | Self::Texture(_)

@@ -22,8 +22,8 @@ use crate::{
     function::ResolvedFunctionId,
     ty::{
         ArraySize, ArrayType, AtomicType, BuiltinStruct, MatrixType, Pointer, Reference,
-        ScalarType, TextureDimensionality, TextureKind, TextureType, Type, TypeKind, VecSize,
-        VectorType, pretty::pretty_type,
+        ScalarType, SwizzleView, TextureDimensionality, TextureKind, TextureType, Type, TypeKind,
+        VecSize, VectorType, pretty::pretty_type,
     },
 };
 
@@ -639,6 +639,7 @@ impl<'db> WgslTypeConverter<'db> {
         clippy::wrong_self_convention,
         reason = "naming things is hard and this is probably changing in the future"
     )]
+    #[expect(clippy::too_many_lines, reason = "just a long but simple match")]
     pub fn to_wgsl_types(
         &mut self,
         r#type: Type,
@@ -1113,6 +1114,7 @@ impl<'db> WgslTypeConverter<'db> {
             | TypeKind::Scalar(_)
             | TypeKind::Atomic(_)
             | TypeKind::Vector(_)
+            | TypeKind::SwizzleView(_)
             | TypeKind::Matrix(_)
             | TypeKind::Struct(_)
             | TypeKind::BuiltinStruct(_)

@@ -204,6 +204,38 @@ fn write_type(
             write!(formatter, ">")?;
             Ok(())
         },
+        TypeKind::SwizzleView(swizzle_type) => {
+            match verbosity {
+                TypeVerbosity::Full => {
+                    write!(
+                        formatter,
+                        "swizzle<{}, {}, {}, {}>",
+                        swizzle_type.address_space,
+                        pretty_type_with_verbosity(db, swizzle_type.component_type, verbosity),
+                        swizzle_type.vector_size,
+                        swizzle_type.index_list.length,
+                    )?;
+                },
+                TypeVerbosity::Compact => {
+                    write!(
+                        formatter,
+                        "swizzle<vec{}<{}>, {}>",
+                        swizzle_type.vector_size,
+                        pretty_type_with_verbosity(db, swizzle_type.component_type, verbosity),
+                        swizzle_type.index_list.length,
+                    )?;
+                },
+                TypeVerbosity::Inner => {
+                    write!(
+                        formatter,
+                        "vec{}<{}>",
+                        swizzle_type.index_list.length,
+                        pretty_type_with_verbosity(db, swizzle_type.component_type, verbosity),
+                    )?;
+                },
+            }
+            Ok(())
+        },
         TypeKind::Matrix(matrix_type) => {
             write!(
                 formatter,
