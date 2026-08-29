@@ -18,56 +18,56 @@ path = "src/bin/main.rs"
 
 # tombi: format.rules.table-keys-order.disabled = true
 [dependencies]
-anyhow.workspace = true
-# base64 = "0.22"
-crossbeam-channel.workspace = true
-# dirs = "5.0.1"
-dissimilar.workspace = true
-ide-completion.workspace = true
-itertools.workspace = true
-# scip = "0.5.2"
-lsp-types = { package = "gen-lsp-types", version = "0.11.0", features = ["url"] }
-parking_lot = "0.12.5"
-xflags = "0.3.2"
-# threadpool = "1.8.1"
-salsa.workspace = true
-rustc-hash.workspace = true
-serde_json = { workspace = true, features = ["preserve_order"] }
-serde.workspace = true
-# tenthash = "1.0.0"
-num_cpus = "1.17.0"
-# mimalloc = { version = "0.1.48", default-features = false, optional = true }
-lsp-server.workspace = true
-tracing.workspace = true
-tracing-subscriber.workspace = true
-triomphe.workspace = true
-# toml = "0.8.8"
-nohash-hasher.workspace = true
-semver.workspace = true
-memchr = "2.8.1"
-# process-wrap = { version = "8.2.0", features = ["std"] }
-# cfg.workspace = true
-hir-ty.workspace = true
-hir.workspace = true
-ide-db.workspace = true
-ide-diagnostics.workspace = true
+# ide-ssr.workspace = true
 # intern.workspace = true
 # This should only be used in CLI
-# ide-ssr.workspace = true
-ide.workspace = true
-# load-wesl.workspace = true
 # profile.workspace = true
-project-model.workspace = true
-stdx.workspace = true
-# toolchain.workspace = true
-vfs.workspace = true
-vfs-notify.workspace = true
-paths.workspace = true
-camino.workspace = true
 base-db.workspace = true
-line-index.workspace = true
 edition.workspace = true
+hir-ty.workspace = true
+hir.workspace = true
+ide-completion.workspace = true
+ide-db.workspace = true
+ide-diagnostics.workspace = true
+ide.workspace = true
+paths.workspace = true
+stdx.workspace = true
+vfs-notify.workspace = true
+vfs.workspace = true
+
+# base64 = "0.22"
+# dirs = "5.0.1"
+# mimalloc = { version = "0.1.48", default-features = false, optional = true }
+# process-wrap = { version = "8.2.0", features = ["std"] }
+# scip = "0.5.2"
+# tenthash = "1.0.0"
+# threadpool = "1.8.1"
+# toml = "0.8.8"
+anyhow.workspace = true
+camino.workspace = true
+cargo_metadata.workspace = true
+crossbeam-channel.workspace = true
+dissimilar.workspace = true
 idna_adapter.workspace = true
+itertools.workspace = true
+line-index.workspace = true
+lsp-server.workspace = true
+lsp-types = { package = "gen-lsp-types", version = "0.11.0", features = ["url"] }
+memchr = "2.8.1"
+nohash-hasher.workspace = true
+num_cpus = "1.17.0"
+parking_lot = "0.12.5"
+project-model.workspace = true
+rustc-hash.workspace = true
+salsa.workspace = true
+semver.workspace = true
+serde_json = { workspace = true, features = ["preserve_order"] }
+serde.workspace = true
+toolchain.workspace = true
+tracing-subscriber.workspace = true
+tracing.workspace = true
+triomphe.workspace = true
+xflags = "0.3.2"
 
 [dev-dependencies]
 expect-test.workspace = true

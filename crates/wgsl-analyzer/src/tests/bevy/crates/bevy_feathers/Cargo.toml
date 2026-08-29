@@ -1,0 +1,40 @@
+[package]
+name = "bevy_feathers"
+version = "0.20.0-dev"
+edition = "2024"
+description = "A collection of UI widgets for building editors and utilities in Bevy"
+homepage = "https://bevy.org"
+repository = "https://github.com/bevyengine/bevy"
+license = "MIT OR Apache-2.0"
+keywords = ["bevy"]
+
+[dependencies]
+# bevy
+bevy_render = { path = "../bevy_render", version = "0.20.0-dev" }
+bevy_ui_render = { path = "../bevy_ui_render", version = "0.20.0-dev" }
+
+smol_str = { version = "0.2", default-features = false }
+
+# other
+accesskit = "0.24"
+
+[features]
+default = []
+webgl = []
+webgpu = []
+
+[package.metadata.docs.rs]
+rustdoc-args = [
+  "-Zunstable-options",
+  "--generate-link-to-definition",
+  "--generate-macro-expansion",
+]
+all-features = true
+
+[package.metadata.wgsl-analyzer]
+edition = "2026_pre"
+root = "src"
+
+[package.metadata.wgsl-analyzer.dependencies]
+bevy_render = { path = "../bevy_render" }
+bevy_ui_render = { path = "../bevy_ui_render" }

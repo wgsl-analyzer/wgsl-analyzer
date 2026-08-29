@@ -370,6 +370,9 @@
 									"pattern": "**/wesl.toml"
 								},
 								{
+									"pattern": "**/Cargo.toml"
+								},
+								{
 									"scheme": "output",
 									"pattern": "extension-output-wgsl-analyzer.wgsl-analyzer*"
 								}

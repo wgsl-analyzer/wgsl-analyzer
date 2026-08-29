@@ -6,6 +6,7 @@ extend-exclude = [
 	"clippy.toml",  # Intentional typos
 	"flake.nix",  # Out of scope
 	"**/big/*.rs",  # vendored source code test data
+	"crates/wgsl-analyzer/src/tests/bevy/**",  # vendored source code test data
 ]
 ignore-hidden = false
 

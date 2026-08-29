@@ -30,6 +30,7 @@ pub enum Tool {
     Wesl,
     Wgslfmt,
     Tint,
+    Cargo,
 }
 
 impl Tool {
@@ -115,6 +116,7 @@ impl Tool {
             Self::Wesl => "wesl",
             Self::Wgslfmt => "wgslfmt",
             Self::Tint => "tint",
+            Self::Cargo => "cargo",
         }
     }
 }

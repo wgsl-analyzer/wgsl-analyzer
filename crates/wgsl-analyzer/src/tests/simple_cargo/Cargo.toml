@@ -1,0 +1,13 @@
+[package]
+name = "simple-cargo"
+version = "0.0.0"
+edition = "2024"
+description = "testing that a WESL project can be loaded from Cargo metadata"
+
+[package.metadata.wgsl-analyzer]
+edition = "2026_pre"
+root = "src"
+
+[package.metadata.wgsl-analyzer.dependencies]
+
+[workspace]

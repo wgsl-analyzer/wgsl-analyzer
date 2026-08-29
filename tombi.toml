@@ -2,6 +2,8 @@
 # https://tombi-toml.github.io/tombi/
 toml-version = "v1.0.0"
 
+files.exclude = ["crates/wgsl-analyzer/src/tests/bevy/**"]
+
 [format]
 [format.rules]
 indent-style = "tab"
