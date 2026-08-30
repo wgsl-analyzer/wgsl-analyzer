@@ -568,6 +568,20 @@ fn conversion_rank(
                 component_type: ty2,
             }),
         ) if n1 == n2 => conversion_rank(&ty1.kind(db), &ty2.kind(db), db),
+        // Apply the Swizzle View Load Rule to load a vector value from a swizzle view.
+        // https://www.w3.org/TR/WGSL/#swizzle-view-load-rule
+        (
+            TypeKind::SwizzleView(SwizzleView {
+                address_space,
+                component_type: ty1,
+                vector_size,
+                index_list: IndexList { indices, length },
+            }),
+            TypeKind::Vector(VectorType {
+                size: n2,
+                component_type: ty2,
+            }),
+        ) if length == n2 && ty1.kind(db) == ty2.kind(db) => Some(0),
         (
             TypeKind::Matrix(MatrixType {
                 columns: c1,
@@ -727,6 +741,20 @@ impl VecSize {
     /// Panics if self is the [`BoundVariable`] variant.
     #[must_use]
     pub const fn as_u8(self) -> u8 {
+        match self {
+            Self::Two => 2,
+            Self::Three => 3,
+            Self::Four => 4,
+        }
+    }
+
+    /// Get the dimensionality of the vector (can be `2`, `3`, or `4`) as a [`usize`].
+    ///
+    /// # Panics
+    ///
+    /// Panics if self is the [`BoundVariable`] variant.
+    #[must_use]
+    pub const fn as_usize(self) -> usize {
         match self {
             Self::Two => 2,
             Self::Three => 3,
@@ -899,5 +927,149 @@ impl fmt::Display for TextureDimensionality {
             Self::D3 => formatter.write_str("3d"),
             Self::Cube => formatter.write_str("cube"),
         }
+    }
+}
+
+#[expect(clippy::doc_paragraphs_missing_punctuation, reason = "false positive")]
+/// <https://www.w3.org/TR/WGSL/#swizzle-view-types>
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SwizzleView {
+    /// `ptr<AS,vecN<S>,read_write>` is a valid pointer type.
+    pub address_space: AddressSpace,
+    /// `S` is a concrete scalar type.
+    pub component_type: Type,
+    /// `N` and `K` are integers such that both `vecN<S>` and `vecK<S>` are valid vector types.
+    pub vector_size: VecSize,
+    /// `IndexList = « Idx0, ..., IdxK−1 »`
+    pub index_list: IndexList,
+}
+
+impl SwizzleView {
+    #[must_use]
+    pub const fn vector(&self) -> VectorType {
+        VectorType {
+            size: self.index_list.length,
+            component_type: self.component_type,
+        }
+    }
+
+    #[expect(clippy::doc_paragraphs_missing_punctuation, reason = "false positive")]
+    /// <https://www.w3.org/TR/WGSL/#swizzle-view-load-rule>
+    #[must_use]
+    pub fn loaded(
+        &self,
+        db: &dyn HirDatabase,
+    ) -> Type {
+        TypeKind::Vector(self.vector()).intern(db)
+    }
+}
+
+#[expect(
+    clippy::upper_case_acronyms,
+    reason = "edge case where this is more readable"
+)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum VecIndex {
+    RX,
+    GY,
+    BZ,
+    AW,
+}
+
+impl VecIndex {
+    /// Get the dimensionality of the vector (can be `2`, `3`, or `4`) as a [`u8`].
+    ///
+    /// # Panics
+    ///
+    /// Panics if self is the [`BoundVariable`] variant.
+    #[must_use]
+    pub const fn as_u8(self) -> u8 {
+        match self {
+            Self::RX => 1,
+            Self::GY => 2,
+            Self::BZ => 3,
+            Self::AW => 4,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct IndexList {
+    pub indices: [VecIndex; 4],
+    pub length: VecSize,
+}
+
+impl<'il> IntoIterator for &'il IndexList {
+    type Item = &'il VecIndex;
+    type IntoIter = std::slice::Iter<'il, VecIndex>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum SwizzleSet {
+    Rgba,
+    Xyzw,
+}
+
+const fn parse_component(character: char) -> Option<(SwizzleSet, VecIndex)> {
+    match character {
+        'r' => Some((SwizzleSet::Rgba, VecIndex::RX)),
+        'g' => Some((SwizzleSet::Rgba, VecIndex::GY)),
+        'b' => Some((SwizzleSet::Rgba, VecIndex::BZ)),
+        'a' => Some((SwizzleSet::Rgba, VecIndex::AW)),
+
+        'x' => Some((SwizzleSet::Xyzw, VecIndex::RX)),
+        'y' => Some((SwizzleSet::Xyzw, VecIndex::GY)),
+        'z' => Some((SwizzleSet::Xyzw, VecIndex::BZ)),
+        'w' => Some((SwizzleSet::Xyzw, VecIndex::AW)),
+
+        _ => None,
+    }
+}
+
+pub enum ParseIndexListError {
+    One(VecIndex),
+    MoreThanFour,
+    InvalidLetter,
+    MixingSwizzles,
+}
+
+impl IndexList {
+    pub fn parse_name(value: &Name) -> Result<Self, ParseIndexListError> {
+        let characters: Vec<_> = value.as_str().chars().collect();
+
+        let (set, first) =
+            parse_component(characters[0]).ok_or(ParseIndexListError::InvalidLetter)?;
+
+        let length = match characters.len() {
+            1 => return Err(ParseIndexListError::One(first)),
+            2 => VecSize::Two,
+            3 => VecSize::Three,
+            4 => VecSize::Four,
+            _ => return Err(ParseIndexListError::MoreThanFour),
+        };
+
+        let mut indices = [VecIndex::RX; 4];
+        indices[0] = first;
+
+        for (destination, &source) in indices[1..].iter_mut().zip(&characters[1..]) {
+            let (other_set, index) =
+                parse_component(source).ok_or(ParseIndexListError::InvalidLetter)?;
+
+            if other_set != set {
+                return Err(ParseIndexListError::MixingSwizzles);
+            }
+
+            *destination = index;
+        }
+
+        Ok(Self { indices, length })
+    }
+
+    pub fn iter(&self) -> std::slice::Iter<'_, VecIndex> {
+        self.indices[..self.length.as_usize()].iter()
     }
 }

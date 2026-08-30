@@ -662,6 +662,16 @@ impl<'db> WgslTypeConverter<'db> {
                 size,
                 component_type,
             }) => wgsl_types::Type::Vec(size.as_u8(), Box::new(self.to_wgsl_types(component_type))),
+            // TODO: wgsl-types should have swizzle views eventually
+            TypeKind::SwizzleView(SwizzleView {
+                address_space: _,
+                component_type,
+                vector_size,
+                index_list: _,
+            }) => wgsl_types::Type::Vec(
+                vector_size.as_u8(),
+                Box::new(self.to_wgsl_types(component_type)),
+            ),
             TypeKind::Matrix(MatrixType {
                 columns,
                 rows,
