@@ -1,10 +1,7 @@
 use expect_test::expect;
 use syntax::Capabilities;
 
-use crate::{
-    tests::{check_infer, check_infer_with_capabilities, check_infer_with_verbosity},
-    ty::pretty::TypeVerbosity,
-};
+use crate::tests::{check_infer, check_infer_with_capabilities};
 
 #[test]
 fn type_alias_in_struct() {

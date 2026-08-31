@@ -257,9 +257,8 @@ impl TypeKind {
                 rows: *rows,
                 inner: inner.kind(db).concretize(db)?.intern(db),
             }),
+            Self::SwizzleView(swizzle_view) => swizzle_view.loaded(),
             Self::Error
-            // `S` is a concrete scalar type
-            | Self::SwizzleView(_)
             | Self::Scalar(_)
             | Self::Atomic(_)
             | Self::Struct(_)
@@ -956,11 +955,8 @@ impl SwizzleView {
     #[expect(clippy::doc_paragraphs_missing_punctuation, reason = "false positive")]
     /// <https://www.w3.org/TR/WGSL/#swizzle-view-load-rule>
     #[must_use]
-    pub fn loaded(
-        &self,
-        db: &dyn HirDatabase,
-    ) -> Type {
-        TypeKind::Vector(self.vector()).intern(db)
+    pub const fn loaded(&self) -> TypeKind {
+        TypeKind::Vector(self.vector())
     }
 }
 

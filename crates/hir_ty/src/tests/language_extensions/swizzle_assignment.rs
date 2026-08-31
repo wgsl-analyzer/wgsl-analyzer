@@ -1,6 +1,9 @@
 use expect_test::expect;
 
-use crate::{tests::{check_infer, check_infer_with_verbosity}, ty::pretty::TypeVerbosity};
+use crate::{
+    tests::{check_infer, check_infer_with_verbosity},
+    ty::pretty::TypeVerbosity,
+};
 
 #[test]
 fn reading_and_writing_via_swizzle_views_on_references() {
@@ -44,7 +47,7 @@ fn swizzle_read_and_write() {
             211..221 'vec2u(1,2)': vec2<u32>
             217..218 '1': integer
             219..220 '2': integer
-            568..569 'u': swizzle<function, u32, 4, 3>
+            568..569 'u': vec3<u32>
             572..573 'v': ref<function, vec4<u32>, read_write>
             572..577 'v.agb': swizzle<function, u32, 4, 3>
             653..654 'v': ref<function, vec4<u32>, read_write>
@@ -102,7 +105,7 @@ fn swizzle_read_and_write_via_pointer(p: ptr<function,vec4u>) {
             175..185 'vec2u(1,2)': vec2<u32>
             181..182 '1': integer
             183..184 '2': integer
-            250..251 'u': swizzle<function, u32, 4, 3>
+            250..251 'u': vec3<u32>
             254..255 'p': ptr<function, vec4<u32>, read_write>
             254..259 'p.agb': swizzle<function, u32, 4, 3>
             335..336 'p': ptr<function, vec4<u32>, read_write>
@@ -160,7 +163,7 @@ fn swizzle_read_and_write_via_pointer(p: ptr<function,vec4u>) {
             175..185 'vec2u(1,2)': vec2<u32>
             181..182 '1': integer
             183..184 '2': integer
-            250..251 'u': swizzle<function, u32, 4, 3>
+            250..251 'u': vec3<u32>
             254..255 'p': ptr<function, vec4<u32>, read_write>
             254..259 'p.agb': swizzle<function, u32, 4, 3>
             335..336 'p': ptr<function, vec4<u32>, read_write>
@@ -232,7 +235,7 @@ fn foo() {
         expect![[r#"
             51..52 'v': ref<function, vec2<i32>, read_write>
             55..61 'vec2()': vec2<integer>
-            71..72 's': swizzle<function, i32, 2, 2>
+            71..72 's': vec2<i32>
             75..76 'v': ref<function, vec2<i32>, read_write>
             75..79 'v.yx': swizzle<function, i32, 2, 2>
             75..82 'v.yx.xy': swizzle<function, i32, 2, 2>
@@ -273,13 +276,13 @@ fn foo() {
 }
         ",
         expect![[r#"
-            19..20 'v': ref<function, vec2<i32>, read_write>
-            23..29 'vec2()': vec2<integer>
-            39..40 's': [error]
-            43..44 'v': ref<function, vec2<i32>, read_write>
-            43..47 'v.yx': swizzle<function, i32, 2, 2>
-            43..50 'v.yx.zz': [error]
-            43..50 'v.yx.zz': no such field `zz` on type `swizzle<function, i32, 2, 2>`
+            51..52 'v': ref<function, vec2<i32>, read_write>
+            55..61 'vec2()': vec2<integer>
+            71..72 's': [error]
+            75..76 'v': ref<function, vec2<i32>, read_write>
+            75..79 'v.yx': swizzle<function, i32, 2, 2>
+            75..82 'v.yx.zz': [error]
+            75..82 'v.yx.zz': no such field `zz` on type `swizzle<function, i32, 2, 2>`
         "#]],
     );
 }
@@ -320,9 +323,8 @@ fn foo() {
         expect![[r#"
             61..66 'robuf': ref<storage, vec4<u32>, read>
             91..96 'robuf': ref<storage, vec4<u32>, read>
-            91..99 'robuf.xz': vec2<u32>
+            91..99 'robuf.xz': ref<storage, vec2<u32>, read>
             102..109 'vec2u()': vec2<u32>
-            91..99 'robuf.xz': cannot assign to non-reference `vec2<u32>`
         "#]],
     );
 }
@@ -340,7 +342,7 @@ fn foo() {
         expect![[r#"
             19..20 'v': ref<vec2<i32>>
             23..29 'vec2()': vec2<integer>
-            39..40 's': swizzle<vec2<i32>, 2>
+            39..40 's': vec2<i32>
             43..44 'v': ref<vec2<i32>>
             43..47 'v.yx': swizzle<vec2<i32>, 2>
         "#]],
@@ -408,6 +410,23 @@ fn foo() {
             180..185 'robuf': ref<storage, vec4<u32>, read>
             180..188 'robuf.xz': ref<storage, vec2<u32>, read>
             191..198 'vec2u()': vec2<u32>
+        "#]],
+    );
+}
+
+#[test]
+fn concrete_swizzle() {
+    check_infer(
+        "
+// enable swizzle_assignment;
+fn foo() {
+    let v = vec2().xy;
+}
+        ",
+        expect![[r#"
+            49..50 'v': vec2<i32>
+            53..59 'vec2()': vec2<integer>
+            53..62 'vec2().xy': vec2<integer>
         "#]],
     );
 }

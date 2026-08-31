@@ -668,7 +668,7 @@ impl<'db> InferenceContext<'db> {
                     // apply the load rule
                     TypeKind::Reference(reference) => reference.inner,
                     // apply the swizzle load rule
-                    TypeKind::SwizzleView(swizzle_view) => swizzle_view.loaded(self.db),
+                    TypeKind::SwizzleView(swizzle_view) => swizzle_view.loaded().intern(self.db),
                     TypeKind::Error
                     | TypeKind::Scalar(_)
                     | TypeKind::Atomic(_)
