@@ -124,7 +124,7 @@ impl LoadPackageTask {
         wesl_toml: &WeslManifest,
     ) -> Result<WeslPackage, anyhow::Error> {
         let root = manifest_path.parent().join(&wesl_toml.root);
-        if std::fs::metadata(&root)?.is_file() {
+        if std::fs::metadata(&dbg!(&root))?.is_file() {
             return Err(std::io::Error::new(
                 std::io::ErrorKind::InvalidInput,
                 "wesl.toml root must point at a folder",
@@ -134,12 +134,12 @@ impl LoadPackageTask {
         let dependencies = wesl_toml
             .dependencies
             .iter()
-            .map(|(name, dependency)| {
+            .filter_map(|(name, dependency)| {
                 let Ok(name) = PackageName::new(name) else {
-                    return Err(DependencyError::InvalidName(name.clone()));
+                    return Some(Err(DependencyError::InvalidName(name.clone())));
                 };
 
-                Ok(
+                Some(Ok(
                     match (dependency.path.clone(), dependency.package.clone()) {
                         (None, None) => PackageDependency::Library {
                             name: name.clone(),
@@ -155,17 +155,18 @@ impl LoadPackageTask {
                             let dot_project_json = base.join(".wesl-project.json");
                             let manifest = [wesl_toml, cargo_toml, project_json, dot_project_json]
                                 .into_iter()
-                                .find(|candidate| fs::metadata(candidate).is_ok())
-                                .ok_or_else(|| DependencyError::InvalidPath(name.clone()))?;
-                            let path = ManifestPath::try_from(manifest)
-                                .map_err(|_path| DependencyError::InvalidPath(name.clone()))?;
-                            PackageDependency::Path { name, path }
+                                .find(|candidate| fs::metadata(dbg!(candidate)).is_ok())?;
+                            let manifest_path = ManifestPath::try_from(dbg!(manifest)).ok()?;
+                            PackageDependency::Path {
+                                name,
+                                path: manifest_path,
+                            }
                         },
                         (Some(path), Some(package)) => {
-                            return Err(DependencyError::Ambiguous(name));
+                            return Some(Err(DependencyError::Ambiguous(name)));
                         },
                     },
-                )
+                ))
             })
             .collect::<Result<Vec<_>, DependencyError>>()?;
         for dependency in &dependencies {

@@ -9,6 +9,23 @@ fn bevy() {
         "bevy/Cargo.toml",
         PackageOrigin::Local,
         expect![[r#"
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_animation/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_asset/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_core_pipeline/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_dylib/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_ecs/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_extract/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_gizmos/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_image/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_internal/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_pbr/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_reflect/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_render/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_scene/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_settings/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_sprite_render/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_state/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_ui_render/Cargo.toml
             Project bevy at bevy/Cargo.toml
             edition: WESL 2025 (Unstable)
             root: bevy/assets/shaders
@@ -73,6 +90,20 @@ fn bevy_anti_alias() {
         "bevy/crates/bevy_anti_alias/Cargo.toml",
         PackageOrigin::Local,
         expect![[r#"
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_app/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_asset/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_camera/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_core_pipeline/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_derive/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_diagnostic/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_ecs/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_extract/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_image/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_math/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_reflect/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_render/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_shader/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_utils/Cargo.toml
             Project bevy_anti_alias at bevy/crates/bevy_anti_alias/Cargo.toml
             edition: WESL 2025 (Unstable)
             root: bevy/crates/bevy_anti_alias/src
@@ -114,6 +145,27 @@ fn bevy_core_pipeline() {
         "bevy/crates/bevy_core_pipeline/Cargo.toml",
         PackageOrigin::Local,
         expect![[r#"
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_app/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_asset/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_camera/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_color/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_derive/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_diagnostic/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_ecs/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_extract/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_image/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_light/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_log/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_math/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_pbr/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_platform/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_reflect/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_render/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_shader/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_transform/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_utils/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_window/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/constants/wesl.toml
             Project bevy_core_pipeline at bevy/crates/bevy_core_pipeline/Cargo.toml
             edition: WESL 2025 (Unstable)
             root: bevy/crates/bevy_core_pipeline/src
@@ -162,6 +214,39 @@ fn bevy_dev_tools() {
         "bevy/crates/bevy_dev_tools/Cargo.toml",
         PackageOrigin::Local,
         expect![[r#"
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_animation/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_app/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_asset/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_audio/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_camera/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_color/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_core_pipeline/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_diagnostic/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_ecs/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_extract/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_image/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_input/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_light/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_log/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_math/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_mesh/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_pbr/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_picking/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_platform/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_reflect/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_render/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_shader/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_sprite/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_state/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_text/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_time/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_transform/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_ui/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_ui_render/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_ui_widgets/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_utils/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_window/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_world_serialization/Cargo.toml
             Project bevy_dev_tools at bevy/crates/bevy_dev_tools/Cargo.toml
             edition: WESL 2025 (Unstable)
             root: bevy/crates/bevy_dev_tools/src
@@ -224,6 +309,28 @@ fn bevy_feathers() {
         "bevy/crates/bevy_feathers/Cargo.toml",
         PackageOrigin::Local,
         expect![[r#"
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_a11y/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_app/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_asset/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_camera/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_color/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_derive/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_ecs/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_input/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_input_focus/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_log/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_math/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_picking/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_platform/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_reflect/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_render/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_scene/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_shader/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_text/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_ui/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_ui_render/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_ui_widgets/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_window/Cargo.toml
             Project bevy_feathers at bevy/crates/bevy_feathers/Cargo.toml
             edition: WESL 2025 (Unstable)
             root: bevy/crates/bevy_feathers/src
@@ -272,6 +379,26 @@ fn bevy_gizmos_render() {
         "bevy/crates/bevy_gizmos_render/Cargo.toml",
         PackageOrigin::Local,
         expect![[r#"
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_app/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_asset/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_camera/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_color/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_core_pipeline/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_ecs/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_extract/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_gizmos/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_image/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_log/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_material/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_math/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_mesh/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_pbr/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_reflect/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_render/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_shader/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_sprite_render/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_transform/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_utils/Cargo.toml
             Project bevy_gizmos_render at bevy/crates/bevy_gizmos_render/Cargo.toml
             edition: WESL 2025 (Unstable)
             root: bevy/crates/bevy_gizmos_render/src
@@ -318,6 +445,30 @@ fn bevy_pbr() {
         "bevy/crates/bevy_pbr/Cargo.toml",
         PackageOrigin::Local,
         expect![[r#"
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_app/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_asset/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_camera/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_color/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_core_pipeline/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_derive/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_diagnostic/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_ecs/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_extract/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_gltf/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_image/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_light/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_log/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_material/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_math/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_mesh/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_platform/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_reflect/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_render/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_shader/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_tasks/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_transform/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_utils/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/constants/wesl.toml
             Project bevy_pbr at bevy/crates/bevy_pbr/Cargo.toml
             edition: WESL 2025 (Unstable)
             root: bevy/crates/bevy_pbr/src
@@ -385,6 +536,22 @@ fn bevy_post_process() {
         "bevy/crates/bevy_post_process/Cargo.toml",
         PackageOrigin::Local,
         expect![[r#"
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_app/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_asset/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_camera/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_color/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_core_pipeline/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_derive/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_ecs/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_extract/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_image/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_math/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_pbr/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_platform/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_reflect/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_render/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_shader/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_utils/Cargo.toml
             Project bevy_post_process at bevy/crates/bevy_post_process/Cargo.toml
             edition: WESL 2025 (Unstable)
             root: bevy/crates/bevy_post_process/src
@@ -428,6 +595,32 @@ fn bevy_render() {
         "bevy/crates/bevy_render/Cargo.toml",
         PackageOrigin::Local,
         expect![[r#"
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_app/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_asset/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_camera/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_color/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_core_pipeline/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_derive/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_diagnostic/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_ecs/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_encase_derive/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_extract/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_extract/macros/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_image/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_log/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_material/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_material/macros/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_math/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_mesh/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_platform/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_reflect/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_render/macros/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_shader/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_tasks/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_time/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_transform/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_utils/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_window/Cargo.toml
             Project bevy_render at bevy/crates/bevy_render/Cargo.toml
             edition: WESL 2025 (Unstable)
             root: bevy/crates/bevy_render/src
@@ -506,6 +699,26 @@ fn bevy_solari() {
         "bevy/crates/bevy_solari/Cargo.toml",
         PackageOrigin::Local,
         expect![[r#"
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_anti_alias/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_app/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_asset/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_camera/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_color/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_core_pipeline/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_derive/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_diagnostic/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_ecs/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_image/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_math/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_mesh/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_pbr/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_platform/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_reflect/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_render/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_shader/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_transform/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_utils/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/constants/wesl.toml
             Project bevy_solari at bevy/crates/bevy_solari/Cargo.toml
             edition: WESL 2025 (Unstable)
             root: bevy/crates/bevy_solari/src
@@ -553,6 +766,26 @@ fn bevy_sprite_render() {
         "bevy/crates/bevy_sprite_render/Cargo.toml",
         PackageOrigin::Local,
         expect![[r#"
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_app/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_asset/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_camera/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_color/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_core_pipeline/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_derive/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_ecs/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_extract/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_image/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_material/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_math/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_mesh/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_platform/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_reflect/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_render/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_shader/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_sprite/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_text/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_transform/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_utils/Cargo.toml
             Project bevy_sprite_render at bevy/crates/bevy_sprite_render/Cargo.toml
             edition: WESL 2025 (Unstable)
             root: bevy/crates/bevy_sprite_render/src
@@ -605,6 +838,30 @@ fn bevy_ui_render() {
         "bevy/crates/bevy_ui_render/Cargo.toml",
         PackageOrigin::Local,
         expect![[r#"
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_a11y/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_app/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_asset/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_camera/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_color/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_core_pipeline/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_derive/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_ecs/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_extract/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_image/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_input_focus/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_math/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_mesh/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_platform/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_reflect/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_render/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_shader/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_sprite/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_sprite_render/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_text/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_transform/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_ui/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/crates/bevy_utils/Cargo.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/bevy/constants/wesl.toml
             Project bevy_ui_render at bevy/crates/bevy_ui_render/Cargo.toml
             edition: WESL 2025 (Unstable)
             root: bevy/crates/bevy_ui_render/src
