@@ -22,6 +22,9 @@ pub enum InferenceDiagnosticKind {
         left_side: ExpressionId,
         actual: Type,
     },
+    AssignmentNotWritable {
+        left_side: ExpressionId,
+    },
     TypeMismatch {
         expression: ExpressionId,
         expected: TypeExpectation,

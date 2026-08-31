@@ -55,6 +55,9 @@ pub enum AnyDiagnostic {
         left_side: InFile<AstPointer<ast::Expression>>,
         actual: Type,
     },
+    AssignmentNotWritable {
+        left_side: InFile<AstPointer<ast::Expression>>,
+    },
     TypeMismatch {
         expression: InFile<AstPointer<ast::Expression>>,
         expected: TypeExpectation,
@@ -166,7 +169,7 @@ impl AnyDiagnostic {
     #[rustfmt::skip]
     pub const fn file_id(&self) -> EditionedFileId {
         match self {
-            Self::AssignmentNotAReference { left_side, actual: _  } => {
+            Self::AssignmentNotAReference { left_side, actual: _  } | Self::AssignmentNotWritable { left_side  } => {
                 left_side.file_id
             },
 
@@ -233,6 +236,11 @@ pub(crate) fn to_any_diagnostic(
                 left_side: source,
                 actual: *actual,
             }
+        },
+        InferenceDiagnosticKind::AssignmentNotWritable { left_side } => {
+            let pointer = source_map.expression_to_source(*left_side).ok()?.clone();
+            let source = InFile::new(file_id, pointer);
+            AnyDiagnostic::AssignmentNotWritable { left_side: source }
         },
         InferenceDiagnosticKind::TypeMismatch {
             expression,

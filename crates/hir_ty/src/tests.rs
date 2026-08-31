@@ -220,6 +220,9 @@ impl<'db> InferPrinter<'db> {
                 );
                 self.print_assignment_not_a_reference(source_map, buffer, *actual, *left_side);
             },
+            InferenceDiagnosticKind::AssignmentNotWritable { left_side } => {
+                self.print_assignment_not_writable(source_map, buffer, *left_side);
+            },
             InferenceDiagnosticKind::CyclicType { name, range } => {
                 self.print_cyclic_type(buffer, name, *range);
             },
@@ -334,6 +337,23 @@ impl<'db> InferPrinter<'db> {
             "{range:?} '{}': cannot assign to non-reference `{}`",
             ellipsize(text, 15),
             pretty_type(self.db, actual),
+        )
+        .unwrap();
+    }
+
+    fn print_assignment_not_writable(
+        &self,
+        source_map: &ExpressionSourceMap,
+        buffer: &mut String,
+        left_side: ExpressionId,
+    ) {
+        let Some((range, text)) = self.get_expression_range_text(source_map, left_side) else {
+            return;
+        };
+        writeln!(
+            buffer,
+            "{range:?} '{}': cannot assign to value with `read` access mode",
+            ellipsize(text, 15),
         )
         .unwrap();
     }

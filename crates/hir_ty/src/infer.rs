@@ -666,7 +666,21 @@ impl<'db> InferenceContext<'db> {
                 let left_type = self.infer_expression(*left_side, body);
                 let left_loaded = match left_type.kind(self.db) {
                     // apply the load rule
-                    TypeKind::Reference(reference) => reference.inner,
+                    TypeKind::Reference(Reference {
+                        address_space: _,
+                        inner,
+                        access_mode,
+                    }) => {
+                        if !access_mode.is_write() {
+                            self.push_diagnostic(
+                                body.store_source,
+                                InferenceDiagnosticKind::AssignmentNotWritable {
+                                    left_side: *left_side,
+                                },
+                            );
+                        }
+                        inner
+                    },
                     // apply the swizzle load rule
                     TypeKind::SwizzleView(swizzle_view) => swizzle_view.loaded().intern(self.db),
                     TypeKind::Error

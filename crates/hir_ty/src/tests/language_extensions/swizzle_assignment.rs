@@ -309,6 +309,7 @@ fn foo() {
     );
 }
 
+// TODO: once support for the enable extension is actually added, do this test but with read_write
 #[test]
 fn readonly_ref_vec_is_not_swizzle() {
     check_infer(
@@ -325,6 +326,7 @@ fn foo() {
             91..96 'robuf': ref<storage, vec4<u32>, read>
             91..99 'robuf.xz': ref<storage, vec2<u32>, read>
             102..109 'vec2u()': vec2<u32>
+            91..99 'robuf.xz': cannot assign to value with `read` access mode
         "#]],
     );
 }
@@ -410,6 +412,7 @@ fn foo() {
             180..185 'robuf': ref<storage, vec4<u32>, read>
             180..188 'robuf.xz': ref<storage, vec2<u32>, read>
             191..198 'vec2u()': vec2<u32>
+            180..188 'robuf.xz': cannot assign to value with `read` access mode
         "#]],
     );
 }

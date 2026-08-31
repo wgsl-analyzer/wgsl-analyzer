@@ -781,17 +781,17 @@ fn bad_swizzle_assignment() {
 fn assign_to_error() {
     check_infer(
         "
-        var x: Foo;
+        var<workgroup> x: Foo;
 
         fn foo() {
             x = x;
         }
         ",
         expect![[r#"
-            4..5 'x': ref<handle, [error], read>
-            7..10 'Foo': `Foo` not found in scope
-            28..29 'x': ref<handle, [error], read>
-            32..33 'x': ref<handle, [error], read>
+            15..16 'x': ref<workgroup, [error], read_write>
+            18..21 'Foo': `Foo` not found in scope
+            39..40 'x': ref<workgroup, [error], read_write>
+            43..44 'x': ref<workgroup, [error], read_write>
         "#]],
     );
 }
