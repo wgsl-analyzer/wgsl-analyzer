@@ -430,7 +430,7 @@ impl EnableExtensionName {
             "wgpu_mesh_shader" => Ok(EnableExtension::WgpuMeshShader),
             "wgpu_ray_query" => Ok(EnableExtension::WgpuRayQuery),
             "wgpu_ray_query_vertex_return" => Ok(EnableExtension::WgpuRayQueryVertexReturn),
-            "wgpu_ray_tracing_pipelines" => Ok(EnableExtension::WgpuRayTracingPipelines),
+            "wgpu_ray_tracing_pipeline" => Ok(EnableExtension::WgpuRayTracingPipelines),
             "wgpu_int16" => Ok(EnableExtension::WgpuInt16),
             "wgpu_cooperative_matrix" => Ok(EnableExtension::WgpuCooperativeMatrix),
             "per_vertex" => Ok(EnableExtension::PerVertex),

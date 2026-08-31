@@ -146,7 +146,7 @@ pub struct ExtensionsConfig {
 
     // TODO: actually implement https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1388
     /// Enables the `wgpu_ray_tracing_pipeline` extension, native only.
-    pub wgpu_ray_tracing_pipelines: bool,
+    pub wgpu_ray_tracing_pipeline: bool,
 
     // TODO: actually implement https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1406
     /// Enables the `wgpu_cooperative_matrix` extension, native only.

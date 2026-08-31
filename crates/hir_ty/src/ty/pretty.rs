@@ -3,7 +3,7 @@ use std::fmt::{self, Write as _};
 use base_db::{CapabilitiesInput, TextRange, TextSize};
 use hir_def::signature::StructSignature;
 use itertools::Itertools as _;
-use wgsl_types::ty::SamplerType;
+use wgsl_types::{tplt::AccelerationStructureTags, ty::SamplerType};
 
 use super::{Type, TypeKind};
 use crate::{
@@ -309,21 +309,25 @@ fn write_type(
         TypeKind::AccelerationStructure(tags) => {
             write!(formatter, "acceleration_structure")?;
             if let Some(tags) = tags {
-                write!(formatter, "<")?;
-                write!(
-                    formatter,
-                    "{}",
-                    tags.tags()
-                        .iter()
-                        .map(|tag| match tag {
-                            wgsl_types::syntax::AccelerationStructureTag::VertexReturn =>
-                                "vertex_return",
-                        })
-                        .join(", ")
-                )?;
-                write!(formatter, ">")?;
+                write!(formatter, "<{}>", display_tags(&tags))?;
+            }
+            Ok(())
+        },
+        TypeKind::RayQuery(tags) => {
+            write!(formatter, "ray_query")?;
+            if let Some(tags) = tags {
+                write!(formatter, "<{}>", display_tags(&tags))?;
             }
             Ok(())
         },
     }
+}
+
+fn display_tags(tags: &AccelerationStructureTags) -> String {
+    tags.tags()
+        .iter()
+        .map(|tag| match tag {
+            wgsl_types::syntax::AccelerationStructureTag::VertexReturn => "vertex_return",
+        })
+        .join(", ")
 }

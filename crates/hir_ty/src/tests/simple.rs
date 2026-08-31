@@ -2445,3 +2445,108 @@ var y: acceleration_structure<0>;
         "#]],
     );
 }
+
+#[test]
+fn builtin_struct_zero_value() {
+    check_infer(
+        "
+fn foo() {
+    let r_d = RayDesc();
+}
+        ",
+        expect![[r#"
+            19..22 'r_d': RayDesc
+            25..34 'RayDesc()': RayDesc
+        "#]],
+    );
+}
+
+#[test]
+fn builtin_struct_arguments_len() {
+    check_infer(
+        "
+fn foo() {
+    let r_d = RayDesc(0);
+}
+        ",
+        expect![[r#"
+            19..22 'r_d': [error]
+            25..35 'RayDesc(0)': [error]
+            33..34 '0': integer
+            25..35 'RayDesc(0)': expected `6` arguments, but received `1`
+        "#]],
+    );
+}
+
+#[test]
+fn builtin_struct_arguments_mismatch() {
+    check_infer(
+        "
+fn foo() {
+    let r_d = RayDesc(0i, 0, 0, 0, vec3f(), vec3f());
+}
+        ",
+        expect![[r#"
+            19..22 'r_d': [error]
+            25..63 'RayDes...c3f())': [error]
+            33..35 '0i': i32
+            37..38 '0': integer
+            40..41 '0': integer
+            43..44 '0': integer
+            46..53 'vec3f()': vec3<f32>
+            55..62 'vec3f()': vec3<f32>
+            33..35 '0i': expected u32 but got i32
+        "#]],
+    );
+}
+
+#[test]
+fn builtin_struct_arguments_error() {
+    check_infer(
+        "
+fn foo() {
+    let r_d = RayDesc(NONE, 0, 0, 0, vec3f(), vec3f());
+}
+        ",
+        expect![[r#"
+            19..22 'r_d': RayDesc
+            25..65 'RayDes...c3f())': RayDesc
+            33..37 'NONE': [error]
+            39..40 '0': integer
+            42..43 '0': integer
+            45..46 '0': integer
+            48..55 'vec3f()': vec3<f32>
+            57..64 'vec3f()': vec3<f32>
+            33..37 'NONE': `NONE` not found in scope
+        "#]],
+    );
+}
+
+#[test]
+fn unresolved_builtin_type_generator() {
+    check_infer(
+        "
+fn foo() {
+    let t = texture_multisampled_2d_array();
+}
+        ",
+        expect![[r#"
+            19..20 't': [error]
+            23..54 'textur...rray()': [error]
+            23..54 'textur...rray()': builtin type `texture_multisampled_2d_array` not yet supported in wgsl-analyzer
+        "#]],
+    );
+}
+
+#[test]
+fn abstract_constant() {
+    check_infer(
+        "
+const NONE = 0x0;
+        ",
+        expect![[r#"
+            6..10 'NONE': integer
+            13..16 '0x0': integer
+        "#]],
+    );
+}

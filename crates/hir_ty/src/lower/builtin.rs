@@ -353,17 +353,20 @@ impl TypeLoweringContext<'_> {
                 self.expect_no_template(template_parameters);
                 TypeKind::Sampler(wgsl_types::ty::SamplerType::SamplerComparison)
             },
+            "ray_query" => lower_ray_query(type_container, template_parameters)?,
             "acceleration_structure" => {
                 lower_acceleration_structure(type_container, template_parameters)?
             },
+            "RayDesc" => TypeKind::BuiltinStruct(self.types.ray_desc.clone()),
+            "RayIntersection" => TypeKind::BuiltinStruct(self.types.ray_intersection.clone()),
             _ => {
                 // if you reached here, then you found something known in wgsl-types that is unknown in wgsl-analyzer
                 // open a feature request!
                 return Err(TypeLoweringError {
                     container: type_container,
-                    kind: TypeLoweringErrorKind::Resolution(ResolutionDiagnostic::UnresolvedName {
-                        name,
-                    }),
+                    kind: TypeLoweringErrorKind::Resolution(
+                        ResolutionDiagnostic::UnsupportedBuiltin { name },
+                    ),
                 });
             },
         };
@@ -681,15 +684,13 @@ impl TypeLoweringContext<'_> {
             //     unimplemented!()
             // },
             _ => {
-                debug_assert!(
-                    false,
-                    "reaching this means that this function needs to be updated to handle a new builtin defined in wgsl-types"
-                );
+                // if you reached here, then you found something known in wgsl-types that is unknown in wgsl-analyzer
+                // open a feature request!
                 Err(TypeLoweringError {
                     container: type_container,
-                    kind: TypeLoweringErrorKind::Resolution(ResolutionDiagnostic::UnresolvedName {
-                        name: name.clone(),
-                    }),
+                    kind: TypeLoweringErrorKind::Resolution(
+                        ResolutionDiagnostic::UnsupportedBuiltin { name: name.clone() },
+                    ),
                 })
             },
         }
@@ -974,6 +975,7 @@ impl TypeLoweringContext<'_> {
                     | TypeKind::Array(_)
                     | TypeKind::Texture(_)
                     | TypeKind::Sampler(_)
+                    | TypeKind::RayQuery(_)
                     | TypeKind::AccelerationStructure(_)
                     | TypeKind::Reference(_)
                     | TypeKind::Pointer(_) => {
@@ -1108,6 +1110,17 @@ impl TypeLoweringContext<'_> {
     }
 }
 
+fn lower_ray_query(
+    type_container: TypeContainer,
+    template_parameters: &mut TemplateParameters,
+) -> Result<TypeKind, TypeLoweringError> {
+    if !template_parameters.has_next() {
+        return Ok(TypeKind::RayQuery(None));
+    }
+    let acceleration_structure_tags = lower_tags_template(type_container, template_parameters)?;
+    Ok(TypeKind::RayQuery(Some(acceleration_structure_tags)))
+}
+
 fn lower_acceleration_structure(
     type_container: TypeContainer,
     template_parameters: &mut TemplateParameters,
@@ -1115,6 +1128,16 @@ fn lower_acceleration_structure(
     if !template_parameters.has_next() {
         return Ok(TypeKind::AccelerationStructure(None));
     }
+    let acceleration_structure_tags = lower_tags_template(type_container, template_parameters)?;
+    Ok(TypeKind::AccelerationStructure(Some(
+        acceleration_structure_tags,
+    )))
+}
+
+fn lower_tags_template(
+    type_container: TypeContainer,
+    template_parameters: &mut TemplateParameters,
+) -> Result<AccelerationStructureTags, TypeLoweringError> {
     let mut acceleration_structure_tags = vec![];
     while let Some((template_parameter, _)) = template_parameters.take_next() {
         match template_parameter {
@@ -1161,9 +1184,7 @@ fn lower_acceleration_structure(
                 });
             },
         };
-    Ok(TypeKind::AccelerationStructure(Some(
-        acceleration_structure_tags,
-    )))
+    Ok(acceleration_structure_tags)
 }
 
 struct ArrayTemplate {

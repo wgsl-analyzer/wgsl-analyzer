@@ -33,9 +33,9 @@ use crate::{
     diagnostics::{InferenceDiagnostic, InferenceDiagnosticKind},
     function::FunctionDetails,
     lower::{
-        ConstructibleTypeGenerator, Lowered, LoweredKind, ResolvedCall, TemplateParameter,
-        TemplateParameters, TypeContainer, TypeLoweringContext, TypeLoweringError,
-        WgslTypeConverter, to_wgsl_binary_operator, to_wgsl_unary_operator,
+        ConstructibleTypeGenerator, DefaultTypes, Lowered, LoweredKind, ResolvedCall,
+        TemplateParameter, TemplateParameters, TypeContainer, TypeLoweringContext,
+        TypeLoweringError, WgslTypeConverter, to_wgsl_binary_operator, to_wgsl_unary_operator,
     },
     ty::{
         ArraySize, ArrayType, BuiltinStruct, MatrixType, Pointer, Reference, ScalarType, Type,
@@ -105,7 +105,7 @@ fn infer_cycle_result(
     _: salsa::Id,
     definition: DefinitionWithBodyId,
 ) -> InferenceResult {
-    let mut inference_result = InferenceResult::new(db);
+    let mut inference_result = InferenceResult::new(TypeKind::Error.intern(db));
     let (name, range) = get_name_and_range(db, ModuleDefinitionId::from(definition));
 
     inference_result.diagnostics.push(InferenceDiagnostic {
@@ -152,19 +152,6 @@ pub fn get_name_and_range(
     }
 }
 
-#[derive(Clone, PartialEq, Eq, Debug)]
-struct InternedStandardTypes {
-    unknown: Type,
-}
-
-impl InternedStandardTypes {
-    fn new(db: &dyn HirDatabase) -> Self {
-        Self {
-            unknown: TypeKind::Error.intern(db),
-        }
-    }
-}
-
 #[derive(PartialEq, Eq, Debug)]
 pub struct InferenceResult {
     pub(crate) type_of_expression: ArenaMap<ExpressionId, Type>,
@@ -173,19 +160,19 @@ pub struct InferenceResult {
     return_type: Type,
     call_resolutions: FxHashMap<ExpressionId, ResolvedCall>,
     field_resolutions: FxHashMap<ExpressionId, FieldId>,
-    standard_types: InternedStandardTypes,
+    error_type: Type,
 }
 
 impl InferenceResult {
-    fn new(db: &dyn HirDatabase) -> Self {
+    fn new(error_type: Type) -> Self {
         Self {
             type_of_expression: ArenaMap::default(),
             type_of_binding: ArenaMap::default(),
             diagnostics: Vec::default(),
-            return_type: TypeKind::Error.intern(db),
+            return_type: error_type,
             call_resolutions: FxHashMap::default(),
             field_resolutions: FxHashMap::default(),
-            standard_types: InternedStandardTypes::new(db),
+            error_type,
         }
     }
 
@@ -234,7 +221,7 @@ impl Index<ExpressionId> for InferenceResult {
     ) -> &Type {
         self.type_of_expression
             .get(index)
-            .unwrap_or(&self.standard_types.unknown)
+            .unwrap_or(&self.error_type)
     }
 }
 
@@ -245,9 +232,7 @@ impl Index<BindingId> for InferenceResult {
         &self,
         index: BindingId,
     ) -> &Type {
-        self.type_of_binding
-            .get(index)
-            .unwrap_or(&self.standard_types.unknown)
+        self.type_of_binding.get(index).unwrap_or(&self.error_type)
     }
 }
 
@@ -268,12 +253,13 @@ impl<'db> InferenceContext<'db> {
         owner: ModuleDefinitionId,
         resolver: Resolver<'db>,
     ) -> Self {
+        let types = DefaultTypes::new(db);
         Self {
             db,
             owner,
             resolver,
-            result: InferenceResult::new(db),
-            return_type: TypeKind::Error.intern(db),
+            result: InferenceResult::new(types.error),
+            return_type: types.error,
             converter: WgslTypeConverter::new(db),
         }
     }
@@ -1123,6 +1109,7 @@ impl<'db> InferenceContext<'db> {
                     | TypeKind::BuiltinStruct(_)
                     | TypeKind::Texture(_)
                     | TypeKind::Sampler(_)
+                    | TypeKind::RayQuery(_)
                     | TypeKind::AccelerationStructure(_)
                     | TypeKind::Reference(_)
                     | TypeKind::Pointer(_) => {
@@ -1200,6 +1187,7 @@ impl<'db> InferenceContext<'db> {
             | TypeKind::BuiltinStruct(_)
             | TypeKind::Array(_)
             | TypeKind::Texture(_)
+            | TypeKind::RayQuery(_)
             | TypeKind::AccelerationStructure(_)
             | TypeKind::Sampler(_)) => (kind, None),
         };
@@ -1237,6 +1225,7 @@ impl<'db> InferenceContext<'db> {
             | TypeKind::Array(_)
             | TypeKind::Texture(_)
             | TypeKind::Sampler(_)
+            | TypeKind::RayQuery(_)
             | TypeKind::AccelerationStructure(_)
             | TypeKind::Reference(_)
             | TypeKind::Pointer(_) => {
@@ -1766,13 +1755,20 @@ impl<'db> InferenceContext<'db> {
             TypeKind::Struct(struct_id) => {
                 self.infer_struct_constructor(store, expression, r#type, arguments, struct_id)
             },
+            TypeKind::BuiltinStruct(builtin_struct) => self.infer_builtin_struct_constructor(
+                store,
+                expression,
+                r#type,
+                arguments,
+                &builtin_struct,
+            ),
 
             // Never constructible
             TypeKind::Texture(_)
             | TypeKind::Sampler(_)
             | TypeKind::Pointer(_)
             | TypeKind::Atomic(_)
-            | TypeKind::BuiltinStruct(_)
+            | TypeKind::RayQuery(_)
             | TypeKind::AccelerationStructure(_)
             | TypeKind::Reference(_) => {
                 debug_assert!(
@@ -2184,6 +2180,62 @@ impl<'db> InferenceContext<'db> {
         }
     }
 
+    fn infer_builtin_struct_constructor(
+        &mut self,
+        store: &ExpressionStore,
+        expression: ExpressionId,
+        r#type: Type,
+        arguments: &[(ExpressionId, Type)],
+        builtin_struct: &BuiltinStruct,
+    ) -> Type {
+        // https://www.w3.org/TR/WGSL/#zero-value-builtin-function
+        if arguments.is_empty() {
+            return r#type;
+        }
+        if arguments.len() != builtin_struct.fields.len() {
+            self.push_diagnostic(
+                store.store_source,
+                InferenceDiagnosticKind::FunctionCallArgCountMismatch {
+                    expression,
+                    n_expected: builtin_struct.fields.len(),
+                    n_actual: arguments.len(),
+                },
+            );
+            return self.error_type();
+        }
+        let argument_types = arguments.iter().map(|(_, r#type)| *r#type).collect_vec();
+        if argument_types.iter().any(|r#type| r#type.is_err(self.db)) {
+            // debug_assert!(
+            //     !self.result.diagnostics.is_empty(),
+            //     "an error type should have a diagnostic already"
+            // );
+            return r#type;
+        }
+
+        let mut has_errors = false;
+        for ((_, field_type), (argument_expression, argument_type)) in
+            builtin_struct.fields.iter().zip(arguments.iter())
+        {
+            if !argument_type.is_convertible_to(*field_type, self.db) {
+                self.push_diagnostic(
+                    store.store_source,
+                    InferenceDiagnosticKind::TypeMismatch {
+                        expression: *argument_expression,
+                        expected: TypeExpectation::from_type(*field_type),
+                        actual: *argument_type,
+                    },
+                );
+                has_errors = true;
+            }
+        }
+
+        if has_errors {
+            self.error_type()
+        } else {
+            r#type
+        }
+    }
+
     fn lower_type(
         &mut self,
         type_ref: TypeSpecifierId,
@@ -2242,7 +2294,7 @@ impl InferenceContext<'_> {
     }
 
     const fn error_type(&self) -> Type {
-        self.result.standard_types.unknown
+        self.result.error_type
     }
 
     fn bool_type(&self) -> Type {

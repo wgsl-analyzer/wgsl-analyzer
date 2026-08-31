@@ -33,6 +33,7 @@ impl Type {
             | TypeKind::Struct(_)
             | TypeKind::BuiltinStruct(_)
             | TypeKind::Texture(_)
+            | TypeKind::RayQuery(_)
             | TypeKind::AccelerationStructure(_)
             | TypeKind::Sampler(_) => false,
             TypeKind::Atomic(atomic_type) => atomic_type.inner.is_err(db),
@@ -41,30 +42,6 @@ impl Type {
             TypeKind::Array(array_type) => array_type.inner.is_err(db),
             TypeKind::Reference(reference) => reference.inner.is_err(db),
             TypeKind::Pointer(pointer) => pointer.inner.is_err(db),
-        }
-    }
-
-    #[expect(clippy::doc_paragraphs_missing_punctuation, reason = "false positive")]
-    /// `T` -> `T`, `vecN<T>` -> `T`
-    #[must_use]
-    pub fn this_or_vec_inner(
-        self,
-        db: &dyn HirDatabase,
-    ) -> Self {
-        match self.kind(db) {
-            TypeKind::Vector(vector) => vector.component_type,
-            TypeKind::Reference(reference) => reference.inner.this_or_vec_inner(db),
-            TypeKind::Error
-            | TypeKind::Scalar(_)
-            | TypeKind::Atomic(_)
-            | TypeKind::Matrix(_)
-            | TypeKind::Struct(_)
-            | TypeKind::BuiltinStruct(_)
-            | TypeKind::Array(_)
-            | TypeKind::Texture(_)
-            | TypeKind::AccelerationStructure(_)
-            | TypeKind::Sampler(_)
-            | TypeKind::Pointer(_) => self,
         }
     }
 
@@ -148,15 +125,21 @@ impl Type {
                 .0
                 .iter()
                 .all(|(_, field_type)| *field_type.is_constructible(db)),
-            TypeKind::BuiltinStruct(builtin_struct) => builtin_struct
-                .fields
-                .iter()
-                .all(|(_, field_type)| *field_type.is_constructible(db)),
+            TypeKind::BuiltinStruct(builtin_struct) => {
+                // This implementation matches naga.
+                // Builtin structs like __atomic_compare_exchange_result are "not constructible" because they are impossible to write in source code.
+                // The reason is that two underscores "__" may not begin an identifier.
+                builtin_struct
+                    .fields
+                    .iter()
+                    .all(|(_, field_type)| *field_type.is_constructible(db))
+            },
             TypeKind::Array(array_type) => array_type.is_constructible(db),
             TypeKind::Atomic(_)
             | TypeKind::Texture(_)
             | TypeKind::Sampler(_)
             | TypeKind::Reference(_)
+            | TypeKind::RayQuery(_)
             | TypeKind::AccelerationStructure(_)
             | TypeKind::Pointer(_) => false,
         }
@@ -170,23 +153,29 @@ pub struct BuiltinStruct {
     pub fields: Vec<(String, Type)>,
 }
 
+#[expect(clippy::doc_paragraphs_missing_punctuation, reason = "false positive")]
+/// <https://www.w3.org/TR/WGSL/#types>
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TypeKind {
-    Error,
+    #[expect(clippy::doc_paragraphs_missing_punctuation, reason = "false positive")]
+    /// <https://www.w3.org/TR/WGSL/#scalar-types>
     Scalar(ScalarType),
-    Atomic(AtomicType),
     #[expect(clippy::doc_paragraphs_missing_punctuation, reason = "false positive")]
     /// <https://www.w3.org/TR/WGSL/#vector-types>
     Vector(VectorType),
     Matrix(MatrixType),
+    Atomic(AtomicType),
+    Array(ArrayType),
     Struct(StructId),
     BuiltinStruct(BuiltinStruct),
-    Array(ArrayType),
     Texture(TextureType),
     Sampler(SamplerType),
     Reference(Reference),
     Pointer(Pointer),
+    RayQuery(Option<AccelerationStructureTags>),
     AccelerationStructure(Option<AccelerationStructureTags>),
+    // internal
+    Error,
 }
 
 impl hash::Hash for TypeKind {
@@ -224,6 +213,7 @@ impl TypeKind {
             | Self::BuiltinStruct(_)
             | Self::Array(_)
             | Self::Texture(_)
+            | Self::RayQuery(_)
             | Self::AccelerationStructure(_)
             | Self::Sampler(_)
             | Self::Pointer(_) => Cow::Borrowed(self),
@@ -271,8 +261,9 @@ impl TypeKind {
             | Self::Texture(_)
             | Self::Sampler(_)
             | Self::Reference(_)
-            | Self::AccelerationStructure(_)
-            | Self::Pointer(_) => return None,
+            | Self::Pointer(_)
+            | Self::RayQuery(_)
+            | Self::AccelerationStructure(_) => return None,
         })
     }
 
@@ -280,8 +271,9 @@ impl TypeKind {
     pub const fn is_numeric_scalar(&self) -> bool {
         match self {
             Self::Scalar(scalar) => scalar.is_numeric(),
-            Self::Error
-            | Self::Atomic(_)
+            // be optimistic about errors
+            Self::Error => true,
+            Self::Atomic(_)
             | Self::Vector(_)
             | Self::Matrix(_)
             | Self::Struct(_)
@@ -290,8 +282,9 @@ impl TypeKind {
             | Self::Texture(_)
             | Self::Sampler(_)
             | Self::Reference(_)
-            | Self::AccelerationStructure(_)
-            | Self::Pointer(_) => false,
+            | Self::Pointer(_)
+            | Self::RayQuery(_)
+            | Self::AccelerationStructure(_) => false,
         }
     }
 
@@ -299,7 +292,9 @@ impl TypeKind {
     pub const fn is_index(&self) -> bool {
         match self {
             Self::Scalar(scalar) => scalar.is_index(),
-            Self::Error
+            // be optimistic about errors
+            Self::Error => true,
+            Self::Pointer(_)
             | Self::Atomic(_)
             | Self::BuiltinStruct(_)
             | Self::Vector(_)
@@ -309,8 +304,8 @@ impl TypeKind {
             | Self::Texture(_)
             | Self::Sampler(_)
             | Self::Reference(_)
-            | Self::AccelerationStructure(_)
-            | Self::Pointer(_) => false,
+            | Self::RayQuery(_)
+            | Self::AccelerationStructure(_) => false,
         }
     }
 
@@ -336,15 +331,16 @@ impl TypeKind {
                 rows: _,
             }) => inner.kind(db).is_abstract(db),
             Self::Scalar(_)
-            | Self::Error
             | Self::Atomic(_)
             | Self::Struct(_)
             | Self::BuiltinStruct(_)
             | Self::Texture(_)
             | Self::Sampler(_)
             | Self::Reference(_)
+            | Self::Pointer(_)
+            | Self::RayQuery(_)
             | Self::AccelerationStructure(_)
-            | Self::Pointer(_) => false,
+            | Self::Error => false,
         }
     }
 
@@ -393,6 +389,7 @@ impl TypeKind {
                 | Self::Atomic(_)
                 | Self::Array(_)
                 | Self::Struct(_)
+                | Self::BuiltinStruct(_)
                 | Self::Texture(_)
                 | Self::Sampler(_)
         )
@@ -418,8 +415,9 @@ impl TypeKind {
             | Self::Texture(_)
             | Self::Sampler(_)
             | Self::Reference(_)
-            | Self::AccelerationStructure(_)
-            | Self::Pointer(_) => false,
+            | Self::Pointer(_)
+            | Self::RayQuery(_)
+            | Self::AccelerationStructure(_) => false,
         }
     }
 
@@ -438,8 +436,8 @@ impl TypeKind {
                 .0
                 .iter()
                 .any(|(_, r#type)| r#type.kind(db).contains_runtime_sized_array(db)),
-            Self::Error
-            | Self::Scalar(_)
+
+            Self::Scalar(_)
             | Self::Atomic(_)
             | Self::Vector(_)
             | Self::Matrix(_)
@@ -448,8 +446,10 @@ impl TypeKind {
             | Self::Texture(_)
             | Self::Sampler(_)
             | Self::Reference(_)
+            | Self::Pointer(_)
+            | Self::RayQuery(_)
             | Self::AccelerationStructure(_)
-            | Self::Pointer(_) => false,
+            | Self::Error => false,
         }
     }
 
@@ -460,6 +460,9 @@ impl TypeKind {
     ) -> bool {
         match self {
             Self::Atomic(atomic) => atomic.inner.contains_struct(db, r#struct),
+            Self::BuiltinStruct(BuiltinStruct { name: _, fields }) => fields
+                .iter()
+                .any(|(_, r#type)| r#type.contains_struct(db, r#struct)),
             Self::Struct(id) => {
                 if *id == r#struct {
                     return true;
@@ -469,17 +472,29 @@ impl TypeKind {
                     .values()
                     .any(|r#type| r#type.contains_struct(db, r#struct))
             },
-            Self::Array(array) => array.inner.contains_struct(db, r#struct),
-            Self::Reference(reference) => reference.inner.contains_struct(db, r#struct),
-            Self::Pointer(pointer) => pointer.inner.contains_struct(db, r#struct),
-            Self::Error
-            | Self::Scalar(_)
+            Self::Array(ArrayType {
+                inner,
+                binding_array: _,
+                size: _,
+            })
+            | Self::Reference(Reference {
+                address_space: _,
+                inner,
+                access_mode: _,
+            })
+            | Self::Pointer(Pointer {
+                address_space: _,
+                inner,
+                access_mode: _,
+            }) => inner.contains_struct(db, r#struct),
+            Self::Scalar(_)
             | Self::Vector(_)
             | Self::Matrix(_)
-            | Self::BuiltinStruct(_)
+            | Self::Sampler(_)
             | Self::Texture(_)
+            | Self::RayQuery(_)
             | Self::AccelerationStructure(_)
-            | Self::Sampler(_) => false,
+            | Self::Error => false,
         }
     }
 }

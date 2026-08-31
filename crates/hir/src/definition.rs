@@ -17,7 +17,7 @@ pub enum Definition {
     BuiltinFunction(Name),
     BuiltinType(Name),
     BuiltinTypeGenerator(Name),
-    // BuiltinTypeConstructor(Name),
+    BuiltinTypeConstructor(Name),
     BuiltinEnumerant(Name),
     BuiltinDeclaration(Name),
 }
@@ -72,7 +72,7 @@ impl From<ResolveKind> for Definition {
             ResolveKind::BuiltinFunction(name) => Self::BuiltinFunction(name),
             ResolveKind::BuiltinType(name) => Self::BuiltinType(name),
             ResolveKind::BuiltinTypeGenerator(name) => Self::BuiltinTypeGenerator(name),
-            // ResolveKind::BuiltinTypeConstructor(name) => Self::BuiltinTypeConstructor(name),
+            ResolveKind::BuiltinTypeConstructor(name) => Self::BuiltinTypeConstructor(name),
             ResolveKind::BuiltinEnumerant(name) => Self::BuiltinEnumerant(name),
             ResolveKind::BuiltinDeclaration(name) => Self::BuiltinDeclaration(name),
         }

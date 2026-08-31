@@ -70,3 +70,4 @@ extend-ignore-identifiers-re = []
 "sep" = "separator"
 "tok" = "token"
 # "expr" = "expression" # rust macro keyword
+"sharable" = "shareable"
