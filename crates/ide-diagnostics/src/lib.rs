@@ -280,6 +280,15 @@ pub fn diagnostics(
                         frange.range,
                     )
                 },
+                AnyDiagnostic::AssignmentNotWritable { left_side } => {
+                    let source = left_side.value.to_node(&root);
+                    let frange = original_file_range(db, left_side.file_id, source.syntax());
+                    Diagnostic::new(
+                        DiagnosticCode("1"),
+                        "cannot assign to value with `read` access mode".to_owned(),
+                        frange.range,
+                    )
+                },
                 AnyDiagnostic::NotConstructible { expression, r#type } => {
                     debug_assert!(!r#type.is_err(db));
                     let source = expression.value.to_node(&root);

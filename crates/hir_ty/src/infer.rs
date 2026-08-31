@@ -38,8 +38,8 @@ use crate::{
         TypeLoweringError, WgslTypeConverter, to_wgsl_binary_operator, to_wgsl_unary_operator,
     },
     ty::{
-        ArraySize, ArrayType, BuiltinStruct, MatrixType, Pointer, Reference, ScalarType, Type,
-        TypeKind, VectorType,
+        ArraySize, ArrayType, BuiltinStruct, IndexList, MatrixType, ParseIndexListError, Pointer,
+        Reference, ScalarType, SwizzleView, Type, TypeKind, VecIndex, VectorType,
     },
 };
 
@@ -664,27 +664,54 @@ impl<'db> InferenceContext<'db> {
                 right_side,
             } => {
                 let left_type = self.infer_expression(*left_side, body);
-
-                let kind = left_type.kind(self.db);
-                let left_inner = if let TypeKind::Reference(reference) = kind {
-                    reference.inner
-                } else {
-                    if !left_type.is_err(self.db) {
-                        self.push_diagnostic(
-                            body.store_source,
-                            InferenceDiagnosticKind::AssignmentNotAReference {
-                                left_side: *left_side,
-                                actual: left_type,
-                            },
-                        );
-                    }
-                    // helpful instead of full error
-                    left_type
+                let left_loaded = match left_type.kind(self.db) {
+                    // apply the load rule
+                    TypeKind::Reference(Reference {
+                        address_space: _,
+                        inner,
+                        access_mode,
+                    }) => {
+                        if !access_mode.is_write() {
+                            self.push_diagnostic(
+                                body.store_source,
+                                InferenceDiagnosticKind::AssignmentNotWritable {
+                                    left_side: *left_side,
+                                },
+                            );
+                        }
+                        inner
+                    },
+                    // apply the swizzle load rule
+                    TypeKind::SwizzleView(swizzle_view) => swizzle_view.loaded().intern(self.db),
+                    TypeKind::Error
+                    | TypeKind::Scalar(_)
+                    | TypeKind::Atomic(_)
+                    | TypeKind::Vector(_)
+                    | TypeKind::Matrix(_)
+                    | TypeKind::Struct(_)
+                    | TypeKind::BuiltinStruct(_)
+                    | TypeKind::Array(_)
+                    | TypeKind::Texture(_)
+                    | TypeKind::Sampler(_)
+                    | TypeKind::Pointer(_)
+                    | TypeKind::RayQuery(_)
+                    | TypeKind::AccelerationStructure(_) => {
+                        if !left_type.is_err(self.db) {
+                            self.push_diagnostic(
+                                body.store_source,
+                                InferenceDiagnosticKind::AssignmentNotAReference {
+                                    left_side: *left_side,
+                                    actual: left_type,
+                                },
+                            );
+                        }
+                        // helpful instead of full error
+                        left_type
+                    },
                 };
-
                 self.infer_expression_expect(
                     *right_side,
-                    TypeExpectation::from_type(left_inner),
+                    TypeExpectation::from_type(left_loaded),
                     body,
                 );
             },
@@ -925,11 +952,6 @@ impl<'db> InferenceContext<'db> {
         r#type: Type,
         expectation: TypeExpectationInner,
     ) -> Result<(), ()> {
-        let type_kind = r#type.kind(self.db);
-        if type_kind == TypeKind::Error {
-            return Ok(());
-        }
-
         match expectation {
             TypeExpectationInner::Exact(expected_type) => {
                 if expected_type.kind(self.db) == TypeKind::Error
@@ -970,7 +992,6 @@ impl<'db> InferenceContext<'db> {
         store: &ExpressionStore,
     ) -> Type {
         let r#type = self.infer_expression(expression, store);
-
         match expected {
             TypeExpectation::Type(expected_type) => {
                 if !r#type.is_err(self.db)
@@ -1043,6 +1064,7 @@ impl<'db> InferenceContext<'db> {
                         },
                     );
                 }
+                // The base may be a vector, matrix, or fixed-size array type, or a memory view to a vector, matrix, fixed-size array, or runtime-sized array type.
                 match left_kind {
                     TypeKind::Reference(Reference {
                         address_space,
@@ -1103,6 +1125,27 @@ impl<'db> InferenceContext<'db> {
                         inner,
                         access_mode: _,
                     }) if inner.kind(self.db) == TypeKind::Error => self.error_type(),
+                    TypeKind::SwizzleView(SwizzleView {
+                        address_space,
+                        component_type,
+                        vector_size: _,
+                        index_list: _,
+                    }) => {
+                        // Swizzle views do not directly support indexing expressions.
+                        // When an indexing expression clause appears after a swizzle view,
+                        // the Swizzle View Load Rule is applied first to yield a vector value,
+                        // and then the indexing expression is applied to that vector value.
+
+                        // HOWEVER, we can shortcut that here since we know how that will go.
+                        // Also, the spec implies that this returns a vector type rather than a reference to a vector.
+                        self.make_ref(
+                            component_type,
+                            address_space,
+                            // https://www.w3.org/TR/WGSL/#swizzle-view
+                            // `p` is of type `ptr<AS,vecN<S>,read_write>`
+                            AccessMode::ReadWrite,
+                        )
+                    },
                     TypeKind::Scalar(_)
                     | TypeKind::Atomic(_)
                     | TypeKind::Struct(_)
@@ -1182,6 +1225,7 @@ impl<'db> InferenceContext<'db> {
             | TypeKind::Scalar(_)
             | TypeKind::Atomic(_)
             | TypeKind::Vector(_)
+            | TypeKind::SwizzleView(_)
             | TypeKind::Matrix(_)
             | TypeKind::Struct(_)
             | TypeKind::BuiltinStruct(_)
@@ -1192,15 +1236,24 @@ impl<'db> InferenceContext<'db> {
             | TypeKind::Sampler(_)) => (kind, None),
         };
 
-        let r#type = match kind {
-            TypeKind::Struct(r#struct) => self.infer_struct_field_expression(
-                expression,
-                store,
-                field_expression,
-                name,
-                expression_type,
-                r#struct,
-            ),
+        match kind {
+            TypeKind::Struct(r#struct) => {
+                let r#type = self.infer_struct_field_expression(
+                    expression,
+                    store,
+                    field_expression,
+                    name,
+                    expression_type,
+                    r#struct,
+                );
+                match ref_info {
+                    Some((address_space, access_mode)) => {
+                        self.make_ref(r#type, address_space, access_mode)
+                    },
+                    None => r#type,
+                }
+            },
+            // there are no storable builtin structs
             TypeKind::BuiltinStruct(builtin_struct) => self.infer_builtin_struct_field_expression(
                 store,
                 field_expression,
@@ -1208,16 +1261,22 @@ impl<'db> InferenceContext<'db> {
                 expression_type,
                 builtin_struct,
             ),
-            TypeKind::Vector(vector_type) => {
-                return self.infer_vec_swizzle_expression(
-                    store,
-                    field_expression,
-                    name,
-                    expression_type,
-                    &vector_type,
-                    ref_info,
-                );
-            },
+            TypeKind::Vector(vector_type) => self.infer_vector_access_expression(
+                store,
+                field_expression,
+                name,
+                expression_type,
+                &vector_type,
+                ref_info,
+            ),
+            // swizzling a swizzle is allowed!
+            TypeKind::SwizzleView(swizzle_view) => self.infer_swizzle_view_expression(
+                store,
+                field_expression,
+                name,
+                expression_type,
+                &swizzle_view,
+            ),
             TypeKind::Error
             | TypeKind::Scalar(_)
             | TypeKind::Atomic(_)
@@ -1238,13 +1297,8 @@ impl<'db> InferenceContext<'db> {
                     },
                 );
                 // no more useful type to return here
-                return self.error_type();
+                self.error_type()
             },
-        };
-
-        match ref_info {
-            Some((address_space, access_mode)) => self.make_ref(r#type, address_space, access_mode),
-            None => r#type,
         }
     }
 
@@ -1414,25 +1468,7 @@ impl<'db> InferenceContext<'db> {
         }
     }
 
-    fn type_from_vec_size(
-        &self,
-        inner: Type,
-        vec_size: u8,
-    ) -> Type {
-        if vec_size == 1 {
-            inner
-        } else {
-            let kind = vec_size.try_into().map_or(TypeKind::Error, |size| {
-                TypeKind::Vector(VectorType {
-                    size,
-                    component_type: inner,
-                })
-            });
-            kind.intern(self.db)
-        }
-    }
-
-    fn infer_vec_swizzle_expression(
+    fn infer_vector_access_expression(
         &mut self,
         store: &ExpressionStore,
         field_expression: ExpressionId,
@@ -1441,11 +1477,8 @@ impl<'db> InferenceContext<'db> {
         vector_type: &VectorType,
         is_ref: Option<(AddressSpace, AccessMode)>,
     ) -> Type {
-        const SWIZZLES: [[char; 4]; 2] = [['x', 'y', 'z', 'w'], ['r', 'g', 'b', 'a']];
-        let max_size = 4;
-        let max_swizzle_index = vector_type.size.as_u8();
-
-        if name.as_str().len() > max_size {
+        let index_out_of_bounds = |index: VecIndex| index.as_u8() > vector_type.size.as_u8();
+        let mut error = || {
             self.push_diagnostic(
                 store.store_source,
                 InferenceDiagnosticKind::NoSuchField {
@@ -1454,38 +1487,99 @@ impl<'db> InferenceContext<'db> {
                     r#type: expression_type,
                 },
             );
-            return self.error_type();
-        }
-
-        for swizzle in &SWIZZLES {
-            let allowed_chars = &swizzle[..(usize::from(max_swizzle_index))];
-            if name
-                .as_str()
-                .chars()
-                .all(|character| allowed_chars.contains(&character))
-            {
-                let r#type = self.type_from_vec_size(
-                    vector_type.component_type,
-                    u8::try_from(name.as_str().len()).unwrap(),
-                );
-                if let Some((address_space, access_mode)) = is_ref
-                // proposal to remove this length check: https://github.com/gpuweb/gpuweb/pull/5268
-                    && name.as_str().len() == 1
-                {
-                    return self.make_ref(r#type, address_space, access_mode);
+            self.error_type()
+        };
+        match IndexList::parse_name(name) {
+            Err(
+                crate::ty::ParseIndexListError::InvalidLetter
+                | crate::ty::ParseIndexListError::MixingSwizzles
+                | crate::ty::ParseIndexListError::MoreThanFour,
+            ) => error(),
+            Err(ParseIndexListError::One(index)) => {
+                if index_out_of_bounds(index) {
+                    error()
+                } else if let Some((address_space, access_mode)) = is_ref {
+                    self.make_ref(vector_type.component_type, address_space, access_mode)
+                } else {
+                    vector_type.component_type
                 }
-                return r#type;
-            }
-        }
-        self.push_diagnostic(
-            store.store_source,
-            InferenceDiagnosticKind::NoSuchField {
-                expression: field_expression,
-                name: name.clone(),
-                r#type: expression_type,
             },
-        );
-        self.error_type()
+            Ok(index_list) => {
+                if index_list.iter().copied().any(index_out_of_bounds) {
+                    error()
+                } else if let Some((address_space, AccessMode::ReadWrite)) = is_ref {
+                    // TODO: gate behind enable extension
+                    TypeKind::SwizzleView(SwizzleView {
+                        address_space,
+                        component_type: vector_type.component_type,
+                        vector_size: vector_type.size,
+                        index_list,
+                    })
+                    .intern(self.db)
+                } else {
+                    TypeKind::Vector(VectorType {
+                        size: index_list.length,
+                        component_type: vector_type.component_type,
+                    })
+                    .intern(self.db)
+                }
+            },
+        }
+    }
+
+    fn infer_swizzle_view_expression(
+        &mut self,
+        store: &ExpressionStore,
+        field_expression: ExpressionId,
+        name: &Name,
+        expression_type: Type,
+        swizzle_view: &SwizzleView,
+    ) -> Type {
+        let index_out_of_bounds =
+            |index: VecIndex| index.as_u8() > swizzle_view.vector_size.as_u8();
+        let mut error = || {
+            self.push_diagnostic(
+                store.store_source,
+                InferenceDiagnosticKind::NoSuchField {
+                    expression: field_expression,
+                    name: name.clone(),
+                    r#type: expression_type,
+                },
+            );
+            self.error_type()
+        };
+        match IndexList::parse_name(name) {
+            Err(
+                crate::ty::ParseIndexListError::InvalidLetter
+                | crate::ty::ParseIndexListError::MixingSwizzles
+                | crate::ty::ParseIndexListError::MoreThanFour,
+            ) => error(),
+            Err(ParseIndexListError::One(index)) => {
+                if index_out_of_bounds(index) {
+                    return error();
+                }
+                self.make_ref(
+                    swizzle_view.component_type,
+                    swizzle_view.address_space,
+                    AccessMode::ReadWrite,
+                )
+            },
+            Ok(index_list) => {
+                if index_list.iter().copied().any(index_out_of_bounds) {
+                    return error();
+                }
+                TypeKind::SwizzleView(SwizzleView {
+                    address_space: swizzle_view.address_space,
+                    component_type: swizzle_view.component_type,
+                    vector_size: u8::try_from(name.as_str().len())
+                        .unwrap()
+                        .try_into()
+                        .unwrap(),
+                    index_list,
+                })
+                .intern(self.db)
+            },
+        }
     }
 
     /// Lowers the field expression: `struct_value.name`.
@@ -1770,6 +1864,7 @@ impl<'db> InferenceContext<'db> {
             | TypeKind::Atomic(_)
             | TypeKind::RayQuery(_)
             | TypeKind::AccelerationStructure(_)
+            | TypeKind::SwizzleView(_)
             | TypeKind::Reference(_) => {
                 debug_assert!(
                     !self.result.diagnostics.is_empty(),

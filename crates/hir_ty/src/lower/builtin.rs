@@ -969,6 +969,7 @@ impl TypeLoweringContext<'_> {
                     | TypeKind::Scalar(_)
                     | TypeKind::Atomic(_)
                     | TypeKind::Vector(_)
+                    | TypeKind::SwizzleView(_)
                     | TypeKind::Matrix(_)
                     | TypeKind::Struct(_)
                     | TypeKind::BuiltinStruct(_)

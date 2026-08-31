@@ -1,7 +1,7 @@
 use std::iter;
 
 use hir_def::signature::StructSignature;
-use hir_ty::ty::TypeKind;
+use hir_ty::ty::{SwizzleView, TypeKind, VectorType};
 
 use super::Completions;
 use crate::{
@@ -15,7 +15,7 @@ pub(crate) fn complete_dot(
 ) -> Option<()> {
     let _p = tracing::info_span!("complete_dot").entered();
     let Some(ImmediateLocation::FieldAccess { expression }) = &context.completion_location else {
-        return Some(());
+        return None;
     };
     match context
         .semantics
@@ -27,8 +27,17 @@ pub(crate) fn complete_dot(
         .type_of_expression(&expression.expression()?)?
         .kind(context.db)
     {
-        TypeKind::Vector(vector) => {
-            vector_completions(accumulator, context, expression, &vector);
+        TypeKind::Vector(VectorType {
+            size,
+            component_type: _,
+        })
+        | TypeKind::SwizzleView(SwizzleView {
+            vector_size: size,
+            address_space: _,
+            component_type: _,
+            index_list: _,
+        }) => {
+            vector_completions(accumulator, context, expression, size);
             Some(())
         },
         TypeKind::Struct(r#struct) => {
@@ -44,8 +53,18 @@ pub(crate) fn complete_dot(
             address_space,
             inner,
             access_mode,
-        }) if let TypeKind::Vector(vector) = inner.kind(context.db) => {
-            vector_completions(accumulator, context, expression, &vector);
+        }) if let TypeKind::Vector(VectorType {
+            size,
+            component_type: _,
+        })
+        | TypeKind::SwizzleView(SwizzleView {
+            vector_size: size,
+            address_space: _,
+            component_type: _,
+            index_list: _,
+        }) = inner.kind(context.db) =>
+        {
+            vector_completions(accumulator, context, expression, size);
             Some(())
         },
         TypeKind::Reference(hir_ty::ty::Reference {
@@ -121,7 +140,7 @@ fn vector_completions(
     accumulator: &mut Completions,
     context: &CompletionContext<'_>,
     expression: &syntax::ast::FieldExpression,
-    vector_type: &hir_ty::ty::VectorType,
+    size: hir_ty::ty::VecSize,
 ) {
     let field_text = expression
         .field()
@@ -130,7 +149,7 @@ fn vector_completions(
         .unwrap_or_default();
 
     if is_swizzleable(&field_text) {
-        let size: usize = vector_type.size.as_u8().into();
+        let size: usize = size.as_u8().into();
         debug_assert!(
             (MIN_VECTOR_SIZE..=MAX_VECTOR_SIZE).contains(&size),
             "Invalid vector size: {size}"

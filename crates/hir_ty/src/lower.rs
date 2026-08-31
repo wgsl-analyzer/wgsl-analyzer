@@ -22,8 +22,8 @@ use crate::{
     function::ResolvedFunctionId,
     ty::{
         ArraySize, ArrayType, AtomicType, BuiltinStruct, MatrixType, Pointer, Reference,
-        ScalarType, TextureDimensionality, TextureKind, TextureType, Type, TypeKind, VecSize,
-        VectorType, pretty::pretty_type,
+        ScalarType, SwizzleView, TextureDimensionality, TextureKind, TextureType, Type, TypeKind,
+        VecSize, VectorType, pretty::pretty_type,
     },
 };
 
@@ -639,6 +639,7 @@ impl<'db> WgslTypeConverter<'db> {
         clippy::wrong_self_convention,
         reason = "naming things is hard and this is probably changing in the future"
     )]
+    #[expect(clippy::too_many_lines, reason = "just a long but simple match")]
     pub fn to_wgsl_types(
         &mut self,
         r#type: Type,
@@ -661,6 +662,16 @@ impl<'db> WgslTypeConverter<'db> {
                 size,
                 component_type,
             }) => wgsl_types::Type::Vec(size.as_u8(), Box::new(self.to_wgsl_types(component_type))),
+            // TODO: wgsl-types should have swizzle views eventually
+            TypeKind::SwizzleView(SwizzleView {
+                address_space: _,
+                component_type,
+                vector_size,
+                index_list: _,
+            }) => wgsl_types::Type::Vec(
+                vector_size.as_u8(),
+                Box::new(self.to_wgsl_types(component_type)),
+            ),
             TypeKind::Matrix(MatrixType {
                 columns,
                 rows,
@@ -1113,6 +1124,7 @@ impl<'db> WgslTypeConverter<'db> {
             | TypeKind::Scalar(_)
             | TypeKind::Atomic(_)
             | TypeKind::Vector(_)
+            | TypeKind::SwizzleView(_)
             | TypeKind::Matrix(_)
             | TypeKind::Struct(_)
             | TypeKind::BuiltinStruct(_)

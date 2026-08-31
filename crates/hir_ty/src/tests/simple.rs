@@ -628,24 +628,170 @@ fn f() {
 }
 
 #[test]
-fn vec_xy_is_not_ref() {
+fn vec_swizzle_too_high_one() {
     check_infer(
         "
         fn foo() {
-            var v = vec2(1, 2);
-            v.xy = v.yx;
+            let x = vec2();
+            let s = x.z;
         }
         ",
         expect![[r#"
-            19..20 'v': ref<function, vec2<i32>, read_write>
-            23..33 'vec2(1, 2)': vec2<integer>
-            28..29 '1': integer
-            31..32 '2': integer
-            39..40 'v': ref<function, vec2<i32>, read_write>
-            39..43 'v.xy': vec2<i32>
-            46..47 'v': ref<function, vec2<i32>, read_write>
-            46..50 'v.yx': vec2<i32>
-            39..43 'v.xy': cannot assign to non-reference `vec2<i32>`
+            19..20 'x': vec2<i32>
+            23..29 'vec2()': vec2<integer>
+            39..40 's': [error]
+            43..44 'x': vec2<i32>
+            43..46 'x.z': [error]
+            43..46 'x.z': no such field `z` on type `vec2<i32>`
+        "#]],
+    );
+}
+
+#[test]
+fn vec_swizzle_too_high_multiple() {
+    check_infer(
+        "
+        fn foo() {
+            let x = vec2();
+            let s = x.zz;
+        }
+        ",
+        expect![[r#"
+            19..20 'x': vec2<i32>
+            23..29 'vec2()': vec2<integer>
+            39..40 's': [error]
+            43..44 'x': vec2<i32>
+            43..47 'x.zz': [error]
+            43..47 'x.zz': no such field `zz` on type `vec2<i32>`
+        "#]],
+    );
+}
+
+#[test]
+fn vec_swizzle_bad() {
+    check_infer(
+        "
+        fn foo() {
+            let v = vec2();
+            let s = v.c;
+        }
+        ",
+        expect![[r#"
+            19..20 'v': vec2<i32>
+            23..29 'vec2()': vec2<integer>
+            39..40 's': [error]
+            43..44 'v': vec2<i32>
+            43..46 'v.c': [error]
+            43..46 'v.c': no such field `c` on type `vec2<i32>`
+        "#]],
+    );
+}
+
+#[test]
+fn mixing_swizzles() {
+    check_infer(
+        "
+fn foo() {
+    let v = vec2().rx;
+}
+        ",
+        expect![[r#"
+            19..20 'v': [error]
+            23..29 'vec2()': vec2<integer>
+            23..32 'vec2().rx': [error]
+            23..32 'vec2().rx': no such field `rx` on type `vec2<integer>`
+        "#]],
+    );
+}
+
+#[test]
+fn more_than_four_swizzle_components() {
+    check_infer(
+        "
+fn foo() {
+    let v = vec2().rrrrr;
+}
+        ",
+        expect![[r#"
+            19..20 'v': [error]
+            23..29 'vec2()': vec2<integer>
+            23..35 'vec2().rrrrr': [error]
+            23..35 'vec2().rrrrr': no such field `rrrrr` on type `vec2<integer>`
+        "#]],
+    );
+}
+
+#[test]
+fn coverage_vec4_r() {
+    check_infer(
+        "
+        fn foo() {
+            let v = vec4().rrrr;
+        }
+        ",
+        expect![[r#"
+            19..20 'v': vec4<i32>
+            23..29 'vec4()': vec4<integer>
+            23..34 'vec4().rrrr': vec4<integer>
+        "#]],
+    );
+}
+
+#[test]
+fn ref_vec_read_swizzle() {
+    check_infer(
+        "
+        @group(0) @binding(0)
+        var<storage, read> v: vec3<f32>;
+
+        fn foo() {
+            let x = v.yx;
+        }
+        ",
+        expect![[r#"
+            41..42 'v': ref<storage, vec3<f32>, read>
+            75..76 'x': vec2<f32>
+            79..80 'v': ref<storage, vec3<f32>, read>
+            79..83 'v.yx': vec2<f32>
+        "#]],
+    );
+}
+
+#[test]
+fn bad_swizzle_assignment() {
+    check_infer(
+        "
+        fn foo() {
+            var x = vec2();
+            x.xy = true;
+        }
+        ",
+        expect![[r#"
+            19..20 'x': ref<function, vec2<i32>, read_write>
+            23..29 'vec2()': vec2<integer>
+            35..36 'x': ref<function, vec2<i32>, read_write>
+            35..39 'x.xy': swizzle<function, i32, 2, 2>
+            42..46 'true': bool
+            42..46 'true': expected vec2<i32> but got bool
+        "#]],
+    );
+}
+
+#[test]
+fn assign_to_error() {
+    check_infer(
+        "
+        var<workgroup> x: Foo;
+
+        fn foo() {
+            x = x;
+        }
+        ",
+        expect![[r#"
+            15..16 'x': ref<workgroup, [error], read_write>
+            18..21 'Foo': `Foo` not found in scope
+            39..40 'x': ref<workgroup, [error], read_write>
+            43..44 'x': ref<workgroup, [error], read_write>
         "#]],
     );
 }
@@ -2547,6 +2693,25 @@ const NONE = 0x0;
         expect![[r#"
             6..10 'NONE': integer
             13..16 '0x0': integer
+        "#]],
+    );
+}
+
+#[test]
+fn assignment_not_writable() {
+    check_infer(
+        "
+@group(0) @binding(0) var<storage> x: vec2u;
+
+fn foo() {
+    x = vec2u();
+}
+",
+        expect![[r#"
+            35..36 'x': ref<storage, vec2<u32>, read>
+            61..62 'x': ref<storage, vec2<u32>, read>
+            65..72 'vec2u()': vec2<u32>
+            61..62 'x': cannot assign to value with `read` access mode
         "#]],
     );
 }

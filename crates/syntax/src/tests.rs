@@ -470,9 +470,9 @@ fn enable_extension_names() {
 fn language_extension_names() {
     let parsed = check_errors(
         "
-        requires readonly_and_readwrite_storage_textures, packed_4x8_integer_dot_product, unrestricted_pointer_parameters, pointer_composite_access, uniform_buffer_standard_layout, subgroup_id, subgroup_uniformity, texture_and_sampler_let, texture_formats_tier1, linear_indexing, immediate_address_space, buffer_view, the_extension_does_not_exist;
+        requires readonly_and_readwrite_storage_textures, packed_4x8_integer_dot_product, unrestricted_pointer_parameters, pointer_composite_access, uniform_buffer_standard_layout, subgroup_id, subgroup_uniformity, texture_and_sampler_let, texture_formats_tier1, linear_indexing, immediate_address_space, buffer_view, swizzle_assignment, the_extension_does_not_exist;
         ",
-        expect!["error at 319..347: unknown extension: `the_extension_does_not_exist`"],
+        expect!["error at 339..367: unknown extension: `the_extension_does_not_exist`"],
     );
     let items = vec![
         Ok(LanguageExtension::ReadonlyAndReadwriteStorageTextures),
@@ -487,6 +487,7 @@ fn language_extension_names() {
         Ok(LanguageExtension::LinearIndexing),
         Ok(LanguageExtension::ImmediateAddressSpace),
         Ok(LanguageExtension::BufferView),
+        Ok(LanguageExtension::SwizzleAssignment),
         Err(UnknownExtension),
     ];
     let map = parsed

@@ -67,10 +67,12 @@ pub fn completions(
     let (context) = &CompletionContext::new(db, position, config, trigger_character)?;
     let mut completions = Completions::default();
 
-    completions::dot::complete_dot(&mut completions, context);
-    // TODO: make completions context-sensitive
-    // https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1321
-    completions::expression::complete_names_in_scope(&mut completions, context);
+    let dot = completions::dot::complete_dot(&mut completions, context);
+    if dot.is_none() {
+        // TODO: make completions context-sensitive
+        // https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1321
+        completions::expression::complete_names_in_scope(&mut completions, context);
+    }
 
     Some(completions.into())
 }
