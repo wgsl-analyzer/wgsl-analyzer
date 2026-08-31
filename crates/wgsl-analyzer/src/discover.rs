@@ -124,7 +124,7 @@ impl LoadPackageTask {
         wesl_toml: &WeslManifest,
     ) -> Result<WeslPackage, anyhow::Error> {
         let root = manifest_path.parent().join(&wesl_toml.root);
-        if !std::fs::metadata(&root)?.is_dir() {
+        if std::fs::metadata(&root)?.is_file() {
             return Err(std::io::Error::new(
                 std::io::ErrorKind::InvalidInput,
                 "wesl.toml root must point at a folder",
