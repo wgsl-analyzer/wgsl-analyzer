@@ -285,7 +285,7 @@ pub fn diagnostics(
                     let frange = original_file_range(db, left_side.file_id, source.syntax());
                     Diagnostic::new(
                         DiagnosticCode("1"),
-                        "cannot assign to value with access mode `read`".to_owned(),
+                        "cannot assign to value with `read` access mode".to_owned(),
                         frange.range,
                     )
                 },

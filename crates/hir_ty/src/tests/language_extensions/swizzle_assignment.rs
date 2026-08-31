@@ -324,9 +324,9 @@ fn foo() {
         expect![[r#"
             61..66 'robuf': ref<storage, vec4<u32>, read>
             91..96 'robuf': ref<storage, vec4<u32>, read>
-            91..99 'robuf.xz': ref<storage, vec2<u32>, read>
+            91..99 'robuf.xz': vec2<u32>
             102..109 'vec2u()': vec2<u32>
-            91..99 'robuf.xz': cannot assign to value with `read` access mode
+            91..99 'robuf.xz': cannot assign to non-reference `vec2<u32>`
         "#]],
     );
 }
@@ -410,9 +410,9 @@ fn foo() {
         expect![[r#"
             150..155 'robuf': ref<storage, vec4<u32>, read>
             180..185 'robuf': ref<storage, vec4<u32>, read>
-            180..188 'robuf.xz': ref<storage, vec2<u32>, read>
+            180..188 'robuf.xz': vec2<u32>
             191..198 'vec2u()': vec2<u32>
-            180..188 'robuf.xz': cannot assign to value with `read` access mode
+            180..188 'robuf.xz': cannot assign to non-reference `vec2<u32>`
         "#]],
     );
 }

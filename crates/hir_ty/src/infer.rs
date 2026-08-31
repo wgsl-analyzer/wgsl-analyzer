@@ -694,6 +694,7 @@ impl<'db> InferenceContext<'db> {
                     | TypeKind::Texture(_)
                     | TypeKind::Sampler(_)
                     | TypeKind::Pointer(_)
+                    | TypeKind::RayQuery(_)
                     | TypeKind::AccelerationStructure(_) => {
                         if !left_type.is_err(self.db) {
                             self.push_diagnostic(
@@ -1506,32 +1507,15 @@ impl<'db> InferenceContext<'db> {
             Ok(index_list) => {
                 if index_list.iter().copied().any(index_out_of_bounds) {
                     error()
-                } else if let Some((address_space, access_mode)) = is_ref {
-                    if access_mode == AccessMode::ReadWrite {
-                        TypeKind::SwizzleView(SwizzleView {
-                            address_space,
-                            component_type: vector_type.component_type,
-                            vector_size: vector_type.size,
-                            index_list,
-                        })
-                        .intern(self.db)
-                    } else if let Some((address_space, access_mode)) = is_ref {
-                        self.make_ref(
-                            TypeKind::Vector(VectorType {
-                                size: index_list.length,
-                                component_type: vector_type.component_type,
-                            })
-                            .intern(self.db),
-                            address_space,
-                            access_mode,
-                        )
-                    } else {
-                        TypeKind::Vector(VectorType {
-                            size: index_list.length,
-                            component_type: vector_type.component_type,
-                        })
-                        .intern(self.db)
-                    }
+                } else if let Some((address_space, AccessMode::ReadWrite)) = is_ref {
+                    // TODO: gate behind enable extension
+                    TypeKind::SwizzleView(SwizzleView {
+                        address_space,
+                        component_type: vector_type.component_type,
+                        vector_size: vector_type.size,
+                        index_list,
+                    })
+                    .intern(self.db)
                 } else {
                     TypeKind::Vector(VectorType {
                         size: index_list.length,

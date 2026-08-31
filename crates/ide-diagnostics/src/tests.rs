@@ -712,3 +712,19 @@ var<workgroup> c: Foo;
         "#]],
     );
 }
+
+#[test]
+fn assignment_not_writable() {
+    check_diagnostics(
+        "
+@group(0) @binding(0) var<storage> x: vec2u;
+
+fn foo() {
+    x = vec2u();
+}
+",
+        expect![[r#"
+            61..62 wgsl-analyzer Error 1: cannot assign to value with `read` access mode
+        "#]],
+    );
+}

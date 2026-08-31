@@ -752,7 +752,7 @@ fn ref_vec_read_swizzle() {
             41..42 'v': ref<storage, vec3<f32>, read>
             75..76 'x': vec2<f32>
             79..80 'v': ref<storage, vec3<f32>, read>
-            79..83 'v.yx': ref<storage, vec2<f32>, read>
+            79..83 'v.yx': vec2<f32>
         "#]],
     );
 }
@@ -2693,6 +2693,25 @@ const NONE = 0x0;
         expect![[r#"
             6..10 'NONE': integer
             13..16 '0x0': integer
+        "#]],
+    );
+}
+
+#[test]
+fn assignment_not_writable() {
+    check_infer(
+        "
+@group(0) @binding(0) var<storage> x: vec2u;
+
+fn foo() {
+    x = vec2u();
+}
+",
+        expect![[r#"
+            35..36 'x': ref<storage, vec2<u32>, read>
+            61..62 'x': ref<storage, vec2<u32>, read>
+            65..72 'vec2u()': vec2<u32>
+            61..62 'x': cannot assign to value with `read` access mode
         "#]],
     );
 }
