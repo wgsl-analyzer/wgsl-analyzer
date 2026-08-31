@@ -8,6 +8,9 @@
 		"schedule:daily",
 		"workarounds:all",
 	],
+	ignorePaths: [
+		"crates/wgsl-analyzer/src/tests/bevy/**"
+	],
 	labels: [
 		"C-Dependencies",
 		"D-Trivial",
