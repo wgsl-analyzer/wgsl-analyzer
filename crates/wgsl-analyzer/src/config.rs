@@ -36,7 +36,7 @@ use lsp_types::{ClientCapabilities as LspClientCapabilities, ClientInfo};
 use paths::Utf8PathBuf;
 use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
-use stdx::format_to_acc;
+use stdx::format_to_accumulator;
 use triomphe::Arc;
 use vfs::{AbsPath, AbsPathBuf};
 
@@ -113,13 +113,13 @@ config_data! {
     Clone, Copy, Debug, Serialize, Deserialize, Default, Hash, PartialEq, Eq, PartialOrd, Ord,
 )]
 pub enum NagaVersionConfig {
-    #[serde(rename = "0.27")]
-    Naga27,
     #[serde(rename = "0.28")]
     Naga28,
     #[default]
     #[serde(rename = "0.29")]
     Naga29,
+    #[serde(rename = "0.30")]
+    Naga30,
     #[serde(rename = "main")]
     NagaMain,
 }
@@ -598,9 +598,9 @@ impl Config {
             naga_parsing_enabled: *self.diagnostics_external_naga_parsing(),
             naga_validation_enabled: *self.diagnostics_external_naga_validation_errors(),
             naga_version: match self.diagnostics_external_naga_version() {
-                NagaVersionConfig::Naga27 => NagaVersion::Naga27,
                 NagaVersionConfig::Naga28 => NagaVersion::Naga28,
                 NagaVersionConfig::Naga29 => NagaVersion::Naga29,
+                NagaVersionConfig::Naga30 => NagaVersion::Naga30,
                 NagaVersionConfig::NagaMain => NagaVersion::NagaMain,
             },
             tint_enabled: *self.diagnostics_external_tintErrors(),
@@ -962,7 +962,7 @@ fn field_props(
         },
         "NagaVersionConfig" => set! {
             "type": "string",
-            "enum": ["0.27", "0.28", "0.29", "main"],
+            "enum": ["0.28", "0.29", "0.30", "main"],
             "enumDescriptions": [
                 "Naga version 27",
                 "Naga version 28",
@@ -1218,12 +1218,12 @@ fn manual(fields: &[SchemaField]) -> String {
             let name = format!("wgsl-analyzer.{id}");
             let doc = doc_comment_to_string(documentation);
             if default.contains('\n') {
-                format_to_acc!(
+                format_to_accumulator!(
                     accumulator,
                     "## {name} \n\nDefault:\n```json\n{default}\n```\n\n{doc}\n"
                 )
             } else {
-                format_to_acc!(accumulator, "## {name}\n\nDefault: `{default}`\n\n{doc}\n")
+                format_to_accumulator!(accumulator, "## {name}\n\nDefault: `{default}`\n\n{doc}\n")
             }
         },
     )
@@ -1233,7 +1233,7 @@ fn doc_comment_to_string(doc: &[&str]) -> String {
     doc.iter()
         .map(|iterator| iterator.strip_prefix(' ').unwrap_or(iterator))
         .fold(String::new(), |mut out, line| {
-            format_to_acc!(out, "{line}\n")
+            format_to_accumulator!(out, "{line}\n")
         })
 }
 
