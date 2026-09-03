@@ -1,6 +1,6 @@
 use std::hash::BuildHasherDefault;
 
-use base_db::{input::PackageId, VirtualPath};
+use base_db::{VirtualPath, input::PackageId};
 use indexmap::IndexMap;
 use rustc_hash::{FxHashMap, FxHashSet, FxHasher};
 
@@ -42,23 +42,36 @@ pub enum PackageChange {
 impl PackageGraph {
     /// Id of the given package if it exists and is not deleted.
     #[must_use]
-    pub fn package_id(&self, key: &PackageKey) -> Option<PackageId> {
+    pub fn package_id(
+        &self,
+        key: &PackageKey,
+    ) -> Option<PackageId> {
         let package_id = self.interner.get(key)?;
         self.contains(package_id).then_some(package_id)
     }
 
     /// Id of the given package if it exists and is not deleted.
     #[must_use]
-    pub fn package_key(&self, id: PackageId) -> &PackageKey {
+    pub fn package_key(
+        &self,
+        id: PackageId,
+    ) -> &PackageKey {
         self.interner.lookup(id)
     }
 
     #[must_use]
-    pub fn contains(&self, id: PackageId) -> bool {
+    pub fn contains(
+        &self,
+        id: PackageId,
+    ) -> bool {
         self.packages.contains_key(&id)
     }
 
-    pub fn set(&mut self, key: PackageKey, data: WeslPackage) {
+    pub fn set(
+        &mut self,
+        key: PackageKey,
+        data: WeslPackage,
+    ) {
         let package_id = self.interner.intern(key);
 
         self.changes.insert(package_id, PackageChange::Set);
@@ -67,13 +80,19 @@ impl PackageGraph {
 
     /// Removes a package from the graph, returning the [`WeslPackage`] corresponding
     /// to the `id` if the `id` was previously in the [`PackageGraph`].
-    pub fn remove(&mut self, id: PackageId) -> Option<WeslPackage> {
+    pub fn remove(
+        &mut self,
+        id: PackageId,
+    ) -> Option<WeslPackage> {
         self.changes.insert(id, PackageChange::Delete);
         self.packages.remove(&id)
     }
 
     #[must_use]
-    pub fn get(&self, id: PackageId) -> Option<&WeslPackage> {
+    pub fn get(
+        &self,
+        id: PackageId,
+    ) -> Option<&WeslPackage> {
         self.packages.get(&id)
     }
 
@@ -88,14 +107,16 @@ impl PackageGraph {
     }
 
     pub fn take_changes(
-        &mut self,
+        &mut self
     ) -> IndexMap<PackageId, PackageChange, BuildHasherDefault<FxHasher>> {
         std::mem::take(&mut self.changes)
     }
 
     /// Cleans up the set of discovered projects.
-    pub fn retain<F>(&mut self, filter: F)
-    where
+    pub fn retain<F>(
+        &mut self,
+        filter: F,
+    ) where
         F: Fn(PackageId, &WeslPackage) -> bool,
     {
         self.packages.retain(|id, package| {
@@ -107,7 +128,10 @@ impl PackageGraph {
         });
     }
 
-    pub fn retain_referenced(&mut self, roots: Vec<PackageId>) {
+    pub fn retain_referenced(
+        &mut self,
+        roots: Vec<PackageId>,
+    ) {
         let mut seen = FxHashSet::default();
         let mut stack: Vec<PackageId> = roots;
         while let Some(id) = stack.pop() {

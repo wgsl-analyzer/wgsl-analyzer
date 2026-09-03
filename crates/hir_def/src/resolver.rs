@@ -201,12 +201,7 @@ impl<'db> Resolver<'db> {
                     });
             },
             Scope::Builtin => {
-                for name in wgsl_types::idents::BUILTIN_ALIAS_NAMES {
-                    callback(
-                        &(*name).into(),
-                        ScopeDef::BuiltIn(BuiltInKind::Alias((*name).into())),
-                    );
-                }
+                // Aliases are in the wgsl_std crate, so we don't need to add them here.
                 for name in wgsl_types::idents::BUILTIN_CONSTRUCTOR_NAMES {
                     callback(
                         &(*name).into(),
@@ -344,9 +339,7 @@ impl<'db> Resolver<'db> {
                 Scope::Builtin => {
                     if wgsl_types::idents::BUILTIN_FUNCTION_NAMES.contains(&name.as_str()) {
                         Some(ResolveKind::BuiltinFunction(name.clone()))
-                    } else if wgsl_types::idents::BUILTIN_TYPE_NAMES.contains(&name.as_str())
-                        || wgsl_types::idents::BUILTIN_ALIAS_NAMES.contains(&name.as_str())
-                    {
+                    } else if wgsl_types::idents::BUILTIN_TYPE_NAMES.contains(&name.as_str()) {
                         Some(ResolveKind::BuiltinType(name.clone()))
                     } else if wgsl_types::idents::BUILTIN_TYPE_GENERATOR_NAMES
                         .contains(&name.as_str())
