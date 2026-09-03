@@ -46,8 +46,8 @@ macro_rules! phantom_type {
         impl<T> fmt::Debug for $name<T>
             where T: ?Sized
         {
-            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-                write!(f, "{}<{}>", stringify!($name), type_name::<T>())
+            fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+                write!(formatter, "{}<{}>", stringify!($name), type_name::<T>())
             }
         }
 
@@ -120,8 +120,8 @@ macro_rules! phantom_lifetime {
         impl Variance for $name<'_> {}
 
         impl fmt::Debug for $name<'_> {
-            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-                write!(f, "{}", stringify!($name))
+            fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+                write!(formatter, "{}", stringify!($name))
             }
         }
     )*};
