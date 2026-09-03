@@ -19,10 +19,10 @@ jod-thread = "1.0.0"
 tracing.workspace = true
 # Think twice before adding anything here
 
-[target.'cfg(unix)'.dependencies]
+[target."cfg(unix)".dependencies]
 libc.workspace = true
 
-[target.'cfg(windows)'.dependencies]
+[target."cfg(windows)".dependencies]
 miow = "0.6.1"
 windows-sys = { version = "0.61.2", features = ["Win32_Foundation"] }
 
