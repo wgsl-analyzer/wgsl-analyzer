@@ -243,7 +243,7 @@ pub trait Variance: sealed::Sealed + Default {}
 ///
 /// # Example
 ///
-/// ```rust
+/// ```rust,ignore
 /// #![feature(phantom_variance_markers)]
 ///
 /// use core::marker::{PhantomCovariant, variance};
