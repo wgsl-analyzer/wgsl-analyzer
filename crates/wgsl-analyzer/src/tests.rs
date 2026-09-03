@@ -3,7 +3,7 @@
 use std::fmt::{self, Write as _};
 
 use base_db::input::PackageOrigin;
-use expect_test::{expect, Expect};
+use expect_test::{Expect, expect};
 use itertools::Itertools as _;
 use project_model::{ProjectManifest, WeslPackage};
 use test_utils::project_root;
@@ -22,7 +22,10 @@ fn get_test_directory() -> AbsPathBuf {
         .join("src/tests")
 }
 
-fn print_path(path: &AbsPath, base: &AbsPath) -> String {
+fn print_path(
+    path: &AbsPath,
+    base: &AbsPath,
+) -> String {
     let relative_path = path.strip_prefix(base).unwrap().as_utf8_path();
     relative_path
         .components()
@@ -31,7 +34,11 @@ fn print_path(path: &AbsPath, base: &AbsPath) -> String {
 }
 
 #[expect(clippy::needless_pass_by_value, reason = "matches expect! macro")]
-fn check_load_project(manifest: &str, origin: PackageOrigin, expect: Expect) {
+fn check_load_project(
+    manifest: &str,
+    origin: PackageOrigin,
+    expect: Expect,
+) {
     let mut actual = String::new();
 
     let test_directory = get_test_directory();
@@ -67,12 +74,12 @@ fn check_load_project(manifest: &str, origin: PackageOrigin, expect: Expect) {
                 for dependency in project.dependencies {
                     writeln!(actual, "- {}", dependency.name());
                 }
-            }
+            },
             LoadPackageMessage::Error { error, source } => {
                 writeln!(actual, "{error} - {source:?}");
-            }
-            LoadPackageMessage::Dependency { task } => {}
-            LoadPackageMessage::Progress { message } => {}
+            },
+            LoadPackageMessage::Dependency { task } => {},
+            LoadPackageMessage::Progress { message } => {},
         }
     }
 
@@ -80,7 +87,11 @@ fn check_load_project(manifest: &str, origin: PackageOrigin, expect: Expect) {
 }
 
 #[expect(clippy::needless_pass_by_value, reason = "matches expect! macro")]
-fn check_load_project_files(manifest: &str, origin: PackageOrigin, expect: Expect) {
+fn check_load_project_files(
+    manifest: &str,
+    origin: PackageOrigin,
+    expect: Expect,
+) {
     let mut actual = String::new();
 
     let test_directory = get_test_directory();
@@ -111,7 +122,7 @@ fn check_load_project_files(manifest: &str, origin: PackageOrigin, expect: Expec
                 for file_path in paths {
                     writeln!(actual, "file: {}", print_path(&file_path, &test_directory));
                 }
-            }
+            },
             vfs::loader::Entry::Directories(directories) => {
                 writeln!(actual, "extensions: {}", directories.extensions.join(", "));
                 for directory_path in directories.include {
@@ -128,7 +139,7 @@ fn check_load_project_files(manifest: &str, origin: PackageOrigin, expect: Expec
                         print_path(&directory_path, &test_directory)
                     );
                 }
-            }
+            },
         }
     }
     expect.assert_eq(&actual);

@@ -17,13 +17,17 @@ impl GlobalState {
                 Some(file.contents.to_vec()),
             );
         }
+        vfs.set_file_contents(
+            VfsPath::new_virtual_path(std_library.manifest.path.clone()),
+            Some(std_library.manifest.contents.to_vec()),
+        );
         std::mem::drop(guard);
 
         let mut packages = self.packages.write();
         packages.set(
-            PackageKey::VirtualManifest(VirtualPath::new(std_library.manifest_path.clone())),
+            PackageKey::VirtualManifest(VirtualPath::new(std_library.manifest.path.clone())),
             WeslPackage {
-                manifest: VfsPath::new_virtual_path(std_library.manifest_path),
+                manifest: VfsPath::new_virtual_path(std_library.manifest.path),
                 display_name: Some("std".to_owned()),
                 root: VfsPath::new_virtual_path("/std".to_owned()),
                 origin: PackageOrigin::Language,
