@@ -1,7 +1,9 @@
 [alias]
+c = "clippy --all-targets --all-features -- --cap-lints warn"
 codegen = "run --package xtask --bin xtask -- codegen"
 dist = "run --package xtask --bin xtask -- dist"
-lint = "clippy --all-targets -- --cap-lints warn"
+l = "llvm-cov --lcov --output-path lcov.info"
+lint = "clippy --all-targets --all-features -- --cap-lints warn"
 xtask = "run --package xtask --bin xtask --"
 
 [env]
