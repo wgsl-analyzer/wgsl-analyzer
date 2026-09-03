@@ -1,5 +1,7 @@
 //! Missing batteries for standard libraries.
 
+#![warn(unused)]
+
 use std::borrow::Cow;
 use std::process::Command;
 use std::{cmp::Ordering, ops, time::Instant};

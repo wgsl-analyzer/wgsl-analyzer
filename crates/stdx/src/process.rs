@@ -229,7 +229,7 @@ mod implementation {
                 if status.token() == 0 {
                     // SAFETY: TODO
                     unsafe {
-                        out_pipe.complete(*status);
+                        out_pipe.complete(status);
                     }
                     data(true, out_pipe.dst, out_pipe.done);
                     // SAFETY: TODO
@@ -239,7 +239,7 @@ mod implementation {
                 } else {
                     // SAFETY: TODO
                     unsafe {
-                        error_pipe.complete(*status);
+                        error_pipe.complete(status);
                     }
                     data(false, error_pipe.dst, error_pipe.done);
                     // SAFETY: TODO

@@ -1,5 +1,7 @@
 //! Thin wrappers around [`camino::Utf8PathBuf`], distinguishing between absolute and relative paths.
 
+#![warn(unused)]
+
 use std::{
     borrow::Borrow,
     ffi::OsStr,
