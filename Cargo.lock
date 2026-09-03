@@ -2216,8 +2216,6 @@ name = "wgsl-std"
 version = "0.0.0"
 dependencies = [
  "edition",
- "expect-test",
- "paths",
 ]
 
 [[package]]

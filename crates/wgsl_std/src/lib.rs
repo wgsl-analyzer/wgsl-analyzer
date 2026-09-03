@@ -1,4 +1,7 @@
+use edition::Edition;
+
 pub struct StdLibrary {
+    pub edition: Edition,
     pub manifest: File,
     pub files: Vec<File>,
 }
@@ -35,6 +38,7 @@ impl StdLibrary {
             include_bytes!("../std/package.wesl"),
         )];
         Self {
+            edition: Edition::Wesl2025Unstable,
             manifest: File::new("/std/wesl.toml", include_bytes!("../std/wesl.toml")),
             files,
         }

@@ -375,6 +375,9 @@ pub struct Components<'path> {
 
 impl<'path> Components<'path> {
     fn new(path: &'path VirtualPath) -> Self {
+        if path.0.is_empty() {
+            return Self { path: "" };
+        }
         assert!(path.0.starts_with('/'));
         Self { path: &path.0[1..] }
     }

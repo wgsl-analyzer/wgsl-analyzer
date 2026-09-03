@@ -1,8 +1,8 @@
 use crate::global_state::GlobalState;
-use base_db::{change::Change as BaseDbChange, input::PackageOrigin};
+use base_db::input::PackageOrigin;
 use edition::Edition;
-use project_model::{ManifestPath, PackageKey, WeslPackage};
-use vfs::{AbsPathBuf, VfsPath, VirtualPath};
+use project_model::{PackageKey, WeslPackage};
+use vfs::{VfsPath, VirtualPath};
 use wgsl_std::StdLibrary;
 
 impl GlobalState {
@@ -32,7 +32,7 @@ impl GlobalState {
                 root: VfsPath::new_virtual_path("/std".to_owned()),
                 origin: PackageOrigin::Language,
                 dependencies: Vec::new(),
-                edition: Edition::LATEST,
+                edition: std_library.edition,
             },
         );
         std::mem::drop(packages);

@@ -143,7 +143,7 @@ impl ChangeFixture {
             let package = PackageData {
                 manifest_file_id,
                 root: VfsPath::new_virtual_path("/std".to_owned()),
-                edition: Edition::LATEST,
+                edition: std_library.edition,
                 display_name: Some("std".to_owned()),
                 dependencies: Vec::new(),
                 origin: PackageOrigin::Language,

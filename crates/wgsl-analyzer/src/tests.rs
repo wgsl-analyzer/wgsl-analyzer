@@ -68,7 +68,7 @@ fn check_load_project(
                 writeln!(
                     actual,
                     "root: {}",
-                    print_path(&project.root.as_path().unwrap(), &test_directory),
+                    print_path(project.root.as_path().unwrap(), &test_directory),
                 );
                 writeln!(actual, "dependencies:").unwrap();
                 for dependency in project.dependencies {
