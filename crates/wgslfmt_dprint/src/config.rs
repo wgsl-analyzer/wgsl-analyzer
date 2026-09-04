@@ -5,7 +5,7 @@ use dprint_core::{
     },
     plugins::{FileMatchingInfo, PluginResolveConfigurationResult},
 };
-use wgsl_formatter::{FormattingOptions, Policy};
+use wgsl_formatter::FormattingOptions;
 
 pub(crate) fn resolve_config(
     mut config: ConfigKeyMap,
