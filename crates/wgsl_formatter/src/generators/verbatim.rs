@@ -1,4 +1,4 @@
-use itertools::{Itertools, Position};
+use itertools::{Itertools as _, Position};
 use parser::{SyntaxNode, SyntaxToken};
 use rowan::NodeOrToken;
 
@@ -10,6 +10,7 @@ use crate::{
     reporting::FormatDocumentResult,
 };
 
+#[expect(clippy::unnecessary_wraps, reason = "Intentional api for generators")]
 pub fn gen_node_syntax_verbatim(
     node: &NodeOrToken<SyntaxNode, SyntaxToken>
 ) -> FormatDocumentResult<PrintItemBuffer> {

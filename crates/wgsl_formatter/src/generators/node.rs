@@ -448,7 +448,7 @@ pub fn gen_node_trivia_verbatim(
                 ))?);
             },
             NodeTriviaItem::Discarded(content) => {
-                formatted.extend(gen_node_syntax_verbatim(&content)?);
+                formatted.extend(gen_node_syntax_verbatim(content)?);
             },
         }
     }
