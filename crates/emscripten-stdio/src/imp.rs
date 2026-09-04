@@ -278,3 +278,67 @@ unsafe fn checked_iovecs<'iov>(
     }
     Ok((iovecs, total))
 }
+
+// ---------------------------------------------------------------------------
+// Exported to JavaScript
+// ---------------------------------------------------------------------------
+
+/// Queue bytes for the server to read, already LSP-framed by the host.
+///
+/// Copies before returning, so the caller may reuse its buffer immediately.
+/// Returns `0` on success, `-1` for an invalid pointer, `-2` if stdin is
+/// closed.
+///
+/// # Safety
+///
+/// `ptr` must point to `len` readable bytes.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn lsp_stdin_push(
+    ptr: *const u8,
+    len: usize,
+) -> c_int {
+    // SAFETY: the caller promises `len` readable bytes at `ptr`.
+    let Ok(bytes) = (unsafe { as_slice(ptr, len) }) else {
+        return -1;
+    };
+    if STDIN.push(bytes) { 0 } else { -2 }
+}
+
+/// Close stdin, so a blocked read finishes instead of hanging at shutdown.
+///
+/// Queued bytes stay readable; the reader sees end of input once it drains
+/// them.
+#[unsafe(no_mangle)]
+pub extern "C" fn lsp_stdin_close() {
+    STDIN.close();
+}
+
+/// Address of the counter the host waits on for output.
+///
+/// This is a `static`, so the address is stable for the life of the program and
+/// aligned for a JavaScript `Int32Array`.
+#[unsafe(no_mangle)]
+pub extern "C" fn lsp_stdout_signal_ptr() -> *const i32 {
+    (&raw const STDOUT.writes).cast::<i32>()
+}
+
+/// Move up to `capacity` bytes of the server's output into `dst`.
+///
+/// Returns the number copied, or `-1` for an invalid pointer. Zero means
+/// nothing is pending. Never blocks, because the host calls this from the
+/// runtime thread's event loop.
+///
+/// # Safety
+///
+/// `dst` must point to `capacity` writable bytes.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn lsp_stdout_pop(
+    dst: *mut u8,
+    capacity: usize,
+) -> isize {
+    // SAFETY: the caller promises `capacity` writable bytes at `dst`.
+    let Ok(destination) = (unsafe { as_slice_mut(dst, capacity) }) else {
+        return -1;
+    };
+    transferred(STDOUT.pop_into(destination))
+}
