@@ -42,7 +42,9 @@ pub fn gen_function_call(
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
+    formatted.start_new_line_group_after_requests();
     formatted.extend(gen_node_with_trivia(&item_identifier)?);
+    formatted.finish_new_line_group_before_requests();
     formatted.extend(gen_node_with_trivia(&item_arguments)?);
     Ok(formatted)
 }
@@ -159,14 +161,24 @@ pub fn gen_function_call_arguments_standard(
     let mut multiline_group = MultilineGroup::new_before_requests(&mut formatted);
 
     multiline_group.push_sc(sc!("("));
+    multiline_group.request(Request::discourage(RequestItem::Space));
 
     // If its blank we do not give the formatter the option to break within the ()
     if !item_arguments.is_empty() {
         multiline_group.start_indent_before_requests();
-        multiline_group.request(Request::discourage(RequestItem::Space));
+
+        // Really discourage a newline here - but break into newlines if we are multiline anyways.
+        // This keeps single-argument functions as one line. We could simply not offer a newline,
+        // but then a long chain of one-arg functions would overflow
+
+        multiline_group.start_new_line_group_before_requests();
+        multiline_group.grouped_newline_or_space();
+        multiline_group.finish_new_line_group_after_requests();
 
         for (position, item) in item_arguments.into_iter().with_position() {
-            multiline_group.grouped_newline_or_space();
+            if position != Position::First && position != Position::Only {
+                multiline_group.grouped_newline_or_space();
+            }
             multiline_group.extend(gen_node_preceding_trivia(&item)?);
             if item.has_content() {
                 multiline_group.extend(gen_node_content(&item)?);
@@ -184,11 +196,14 @@ pub fn gen_function_call_arguments_standard(
             multiline_group.extend(gen_node_succeeding_trivia(&item)?);
         }
 
-        multiline_group.request(Request::discourage(RequestItem::Space));
-        multiline_group.grouped_possible_newline();
+        // Do not offer a newline here - but break into newlines if we are multiline anyways.
+        // This keeps single-argument functions as one line.
+        multiline_group.grouped_request(Request::expect(RequestItem::LineBreak), Request::empty());
+
         multiline_group.finish_indent();
     }
 
+    multiline_group.request(Request::discourage(RequestItem::Space));
     multiline_group.push_sc(sc!(")"));
 
     multiline_group.end_before_requests();

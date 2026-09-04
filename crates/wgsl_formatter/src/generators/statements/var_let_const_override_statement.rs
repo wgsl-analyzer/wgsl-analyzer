@@ -85,7 +85,8 @@ fn gen_var_let_const_override_statement(
     parse_node_with(&mut syntax, NoTrivia).expect_kind(kind.syntax_kind())?;
     let item_template_list = parse_node_with(&mut syntax, DiscardBlankspace)
         .only_if_kind(SyntaxKind::TemplateList, &mut syntax);
-    let item_name = parse_node_with(&mut syntax, DiscardBlankspace).expect_kind(SyntaxKind::Name)?;
+    let item_name =
+        parse_node_with(&mut syntax, DiscardBlankspace).expect_kind(SyntaxKind::Name)?;
 
     let item_colon =
         parse_node_with(&mut syntax, NoTrivia).only_if_kind(SyntaxKind::Colon, &mut syntax);
@@ -132,9 +133,11 @@ fn gen_var_let_const_override_statement(
     }
 
     if let Some(value) = assignment {
+        formatted.start_new_line_group_before_requests();
         formatted.request(Request::expect(RequestItem::Space));
         formatted.push_sc(sc!("="));
         formatted.request(Request::expect(RequestItem::Space).or_newline());
+        formatted.finish_new_line_group_after_requests();
         formatted.extend(gen_node_with_trivia(&value)?);
     }
 

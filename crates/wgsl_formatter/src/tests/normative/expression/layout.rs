@@ -122,9 +122,8 @@ pub fn format_field_expr_deeply_nested() {
         expect![[r#"
             //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
             fn main() {
-                let a =
-                    foo.baaaaaar.booooooooor.buuuuuuuuuuur.biiiiiiiiir.beeeeeeer.buuuuuuuur
-                        .boooooooor.baaaaaaaaaaar.biiiiiiiiiiir.beeeeeeeeer;
+                let a = foo.baaaaaar.booooooooor.buuuuuuuuuuur.biiiiiiiiir.beeeeeeer
+                        .buuuuuuuur.boooooooor.baaaaaaaaaaar.biiiiiiiiiiir.beeeeeeeeer;
             }
         "#]],
         &FormattingOptions {
@@ -146,10 +145,9 @@ pub fn format_index_expr_chained_breaks_in_the_middle() {
         expect![[r#"
             //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
             fn main() {
-                let thingy =
-                    aaaaaaaaa[bbbbbbbbbbbbbbb][cccccccccccc][ddddddddddddd][eeeeeeeeeeeee][
-                        ffffffffffffff
-                    ][ggggggggg];
+                let thingy = aaaaaaaaa[bbbbbbbbbbbbbbb][cccccccccccc][ddddddddddddd][
+                        eeeeeeeeeeeee
+                    ][ffffffffffffff][ggggggggg];
             }
         "#]],
         &FormattingOptions {

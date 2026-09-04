@@ -282,7 +282,7 @@ pub fn format_long_function_call_dont_break_path() {
 }
 
 #[test]
-pub fn format_function_call_with_field_expr_prefer_breaking_fncall() {
+pub fn format_function_call_with_field_expr_prefer_breaking_field_expr() {
     // This tests exists to document this behavior
     // This is the easier way to do it - i think its fine this way, it follows
     // the way how function chains would be expected to be formatted
@@ -298,9 +298,62 @@ pub fn format_function_call_with_field_expr_prefer_breaking_fncall() {
         expect![[r#"
             //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
             fn main() {
-                let a =
-                    thing(aaaaaaaaaaaaa, bbbbbbbbbbbbbbbbbbbb, ccccccccccccccccc, ddddd)
+                let a = thing(aaaaaaaaaaaaa, bbbbbbbbbbbbbbbbbbbb, ccccccccccccccccc, ddddd)
                         .xxxxxxxxxx;
+            }
+        "#]],
+        &FormattingOptions {
+            max_line_width: 80,
+            ..Default::default()
+        }
+        .into(),
+    );
+}
+
+#[test]
+fn format_function_call_dont_break_single_arg_functions_with_singleline_content() {
+    check_with_options(
+        "
+        //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
+        fn main() {
+            let aaaaaaaaaaaaaaaaa =
+                i32(bbb_bbbb_bbbbb(cccccc.cccccccccccccc).fffffffffffffffffffffffffff);
+            let aaaaaaaaaaaaaaaaa =
+                i32(bbb_bbbb_bbbbbffffffffffffffffffffffffffff(cccccc.cccccccccccccc));
+        }",
+        expect![[r#"
+            //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
+            fn main() {
+                let aaaaaaaaaaaaaaaaa =
+                    i32(bbb_bbbb_bbbbb(cccccc.cccccccccccccc).fffffffffffffffffffffffffff);
+                let aaaaaaaaaaaaaaaaa =
+                    i32(bbb_bbbb_bbbbbffffffffffffffffffffffffffff(cccccc.cccccccccccccc));
+            }
+        "#]],
+        &FormattingOptions {
+            max_line_width: 80,
+            ..Default::default()
+        }
+        .into(),
+    );
+}
+
+#[test]
+fn format_function_call_do_break_single_arg_function_if_contents_are_multiline() {
+    check_with_options(
+        "
+        //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
+        fn main() {
+            let aaaaaaaaaaaaaaaaa =
+                i32(bbb_bbbb_bbbbb(cccccc.cccccccccccccc, ffffffffff).fffffffffffffffffffffffffff.xxxxxxxxxxxxx.zzzzzzzzzzzz);
+        }",
+        expect![[r#"
+            //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
+            fn main() {
+                let aaaaaaaaaaaaaaaaa = i32(
+                        bbb_bbbb_bbbbb(cccccc.cccccccccccccc, ffffffffff)
+                            .fffffffffffffffffffffffffff.xxxxxxxxxxxxx.zzzzzzzzzzzz,
+                    );
             }
         "#]],
         &FormattingOptions {

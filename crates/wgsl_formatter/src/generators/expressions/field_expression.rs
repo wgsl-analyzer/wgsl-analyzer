@@ -27,12 +27,12 @@ pub fn gen_field_expression(
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
     formatted.extend(gen_node_with_trivia(&item_expression)?);
-    formatted.start_new_line_group_before_requests();
     formatted.start_indent_before_requests();
+    formatted.start_new_line_group_before_requests();
     formatted.request(Request::empty().or_newline());
+    formatted.finish_new_line_group_after_requests();
     formatted.extend(gen_node_with_trivia(&item_period)?);
     formatted.extend(gen_node_with_trivia(&item_target_ident)?);
     formatted.finish_indent_before_requests();
-    formatted.finish_new_line_group_before_requests();
     Ok(formatted)
 }
