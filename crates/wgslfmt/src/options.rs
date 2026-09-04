@@ -31,22 +31,32 @@ pub struct WgslFmtOptions {
     reason = "These should be colocated with the WgslFmtOptions struct"
 )]
 mod defaults {
+    use wgsl_formatter::FormattingOptions;
+
     use crate::options::{IndentStyle, LineBreakStyle};
 
     pub const fn indent_style() -> IndentStyle {
-        IndentStyle::Spaces
+        match FormattingOptions::const_default().indent_style {
+            wgsl_formatter::IndentStyle::Spaces => IndentStyle::Spaces,
+            wgsl_formatter::IndentStyle::Tabs => IndentStyle::Tabs,
+        }
     }
 
     pub const fn indent_width() -> u8 {
-        4
+        FormattingOptions::const_default().indent_width
     }
 
     pub const fn max_line_width() -> u32 {
-        80
+        FormattingOptions::const_default().max_line_width
     }
 
     pub const fn line_break_style() -> LineBreakStyle {
-        LineBreakStyle::LineFeed
+        match FormattingOptions::const_default().line_break_style {
+            wgsl_formatter::LineBreakStyle::LineFeed => LineBreakStyle::LineFeed,
+            wgsl_formatter::LineBreakStyle::CarriageReturnLineFeed => {
+                LineBreakStyle::CarriageReturnLineFeed
+            },
+        }
     }
 }
 

@@ -88,13 +88,20 @@ impl FromStr for LineBreakStyle {
     }
 }
 
-impl Default for FormattingOptions {
-    fn default() -> Self {
+impl FormattingOptions {
+    #[must_use]
+    pub const fn const_default() -> Self {
         Self {
             max_line_width: 100,
             indent_width: 4,
             indent_style: IndentStyle::Spaces,
             line_break_style: LineBreakStyle::LineFeed,
         }
+    }
+}
+
+impl Default for FormattingOptions {
+    fn default() -> Self {
+        Self::const_default()
     }
 }
