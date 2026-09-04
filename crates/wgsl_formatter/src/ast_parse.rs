@@ -404,7 +404,10 @@ where
             }
 
             let action = policy.handle_preceding(&node);
-            eprintln!("Preceding {:?} {:?}", node, action);
+
+            // When debugging tests, its useful to insert
+            // eprintln!("Preceding {:?} {:?}", node, action);
+
             match action {
                 Some(PolicyAction::Ignored) => {
                     preceding_trivia.push(NodeTriviaItem::Discarded(node));
@@ -499,14 +502,17 @@ where
                 .take_while(Option::is_some)
                 .flatten()
             {
-                *item = NodeTriviaItem::Discarded(syntax)
+                *item = NodeTriviaItem::Discarded(syntax);
             }
         }
     }
 
     while let Some(node) = syntax.next() {
         let action = policy.handle_succeeding(&node);
-        eprintln!("Succeeding {:?} {:?}", node, action);
+
+        // When debugging tests, its useful to insert
+        // eprintln!("Succeeding {:?} {:?}", node, action);
+
         match action {
             Some(PolicyAction::Ignored) => {
                 succeeding_trivia.push(NodeTriviaItem::Discarded(node));
@@ -626,6 +632,7 @@ where
     }
 }
 
+#[must_use]
 pub fn is_ignored_from_within(content: &SyntaxNode) -> bool {
     content
         .children_with_tokens()
@@ -636,8 +643,9 @@ pub fn is_ignored_from_within(content: &SyntaxNode) -> bool {
         .any(|child| is_ignore_parent_pragma_comment(&child))
 }
 
+#[must_use]
 pub fn is_ignore_next_pragma_comment(node: &NodeOrToken<SyntaxNode, SyntaxToken>) -> bool {
-    let as_comment = read_comment(&node);
+    let as_comment = read_comment(node);
     match as_comment {
         Some(Comment::Block(syntax_token))
             if syntax_token.text().trim() == "/* @wgslfmt(ignore) */" =>
@@ -653,8 +661,9 @@ pub fn is_ignore_next_pragma_comment(node: &NodeOrToken<SyntaxNode, SyntaxToken>
     }
 }
 
+#[must_use]
 pub fn is_ignore_parent_pragma_comment(node: &NodeOrToken<SyntaxNode, SyntaxToken>) -> bool {
-    let as_comment = read_comment(&node);
+    let as_comment = read_comment(node);
     match as_comment {
         Some(Comment::Block(syntax_token))
             if syntax_token.text().trim() == "/* @!wgslfmt(ignore) */" =>
