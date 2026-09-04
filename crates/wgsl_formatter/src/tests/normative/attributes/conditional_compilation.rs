@@ -3,6 +3,36 @@ use expect_test::expect;
 use crate::test_util::check;
 
 #[test]
+fn format_condcomp_if_attribute_following_global_compound_declaration_does_not_get_merged() {
+    check(
+        "
+        @if(true)
+        {
+        fn a() {}
+        }
+        @if(false)
+        {
+        fn a() {}
+        }
+        @else
+        {
+        fn a() {}
+        }
+        ",
+        expect![[r#"
+            @if(true) {
+            fn a() {}
+            }
+            @if(false) {
+            fn a() {}
+            } @else {
+            fn a() {}
+            }
+        "#]],
+    );
+}
+
+#[test]
 fn format_condcomp_attribute_with_global_compound_declaration_gets_merged() {
     check(
         "
@@ -26,6 +56,42 @@ fn format_condcomp_attribute_with_global_compound_declaration_gets_merged() {
             fn a() {}
             } @else {
             fn a() {}
+            }
+        "#]],
+    );
+}
+
+#[test]
+fn format_condcomp_if_attribute_following_compound_does_not_get_merged() {
+    check(
+        "
+        fn main() {
+        @if(true)
+        {
+            var x: u32;
+        }
+        @if(false)
+        {
+            var x: u32;
+        }
+        @else
+        {
+            var x: u32;
+        }
+            return x;
+        }
+        ",
+        expect![[r#"
+            fn main() {
+            @if(true) {
+                var x: u32;
+            }
+            @if(false) {
+                var x: u32;
+            } @else {
+                var x: u32;
+            }
+                return x;
             }
         "#]],
     );
