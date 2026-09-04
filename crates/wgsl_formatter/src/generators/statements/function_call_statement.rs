@@ -181,7 +181,9 @@ pub fn gen_function_call_arguments_standard(
             }
             multiline_group.extend(gen_node_preceding_trivia(&item)?);
             if item.has_content() {
+                multiline_group.start_new_line_group_after_requests();
                 multiline_group.extend(gen_node_content(&item)?);
+                multiline_group.finish_new_line_group_before_requests();
                 multiline_group.request(Request::discourage(RequestItem::Space));
                 if position == Position::Last || position == Position::Only {
                     multiline_group.extend_if_multi_line({

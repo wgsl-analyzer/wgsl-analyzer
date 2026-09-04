@@ -219,6 +219,39 @@ pub fn format_long_function_call_linewidth_outside_inner_break_outer_arguments_l
     );
 }
 
+// TODO
+#[test]
+fn format_long_function_call_leave_arguments_alone_if_breaking_at_commas_suffices() {
+    check_with_options(
+        "
+        //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
+        fn fragment() -> vec4<f32> {
+            return vec2<f32>(
+                    fooooooobarrr(
+                        aa.bb,
+                        vec2<f32>(fooooo_barr, -offset_strength)
+                    ).r,
+                    fooooooobarrr(aa.bb, vec2<f32>(-offset_strength, 0.0)).g,
+                );
+        }
+        ",
+        expect![[r#"
+            //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
+            fn fragment() -> vec4<f32> {
+                return vec2<f32>(
+                        fooooooobarrr(aa.bb, vec2<f32>(fooooo_barr, -offset_strength)).r,
+                        fooooooobarrr(aa.bb, vec2<f32>(-offset_strength, 0.0)).g,
+                    );
+            }
+        "#]],
+        &FormattingOptions {
+            max_line_width: 80,
+            ..Default::default()
+        }
+        .into(),
+    );
+}
+
 #[test]
 pub fn format_long_function_call_prefer_to_break_arguments_over_path() {
     // Please note that the amount of "aaaa" in this test is carefully chosen to play with the line lengths.
