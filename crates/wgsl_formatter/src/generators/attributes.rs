@@ -470,6 +470,7 @@ pub fn gen_attr_condcomp_with_args(
     syntax: &SyntaxNode,
     expected_token: SyntaxKind,
 ) -> FormatDocumentResult<PrintItemBuffer> {
+    // ==== Context
     let follows_compound = if let Some(parent) = syntax.parent()
         && let Some(previous) = parent.prev_sibling()
         && matches!(previous.kind(), SyntaxKind::CompoundStatement)
@@ -479,6 +480,17 @@ pub fn gen_attr_condcomp_with_args(
         false
     };
 
+    let precedes_compound = if let Some(parent) = syntax.parent()
+        && let Some(previous) = parent.next_sibling()
+        && matches!(previous.kind(), SyntaxKind::CompoundStatement)
+    {
+        true
+    } else {
+        false
+    };
+
+    // ==== Format
+
     let mut formatted = PrintItemBuffer::default();
 
     if follows_compound {
@@ -487,9 +499,14 @@ pub fn gen_attr_condcomp_with_args(
         formatted.request(Request::discourage(RequestItem::EmptyLine));
     }
 
-    formatted.start_ignoring_indent_before_requests();
+    if precedes_compound {
+        formatted.start_ignoring_indent_before_requests();
+    }
     formatted.extend(gen_attr_standard_with_args(syntax, expected_token)?);
-    formatted.finish_ignoring_indent_before_requests();
+
+    if precedes_compound {
+        formatted.finish_ignoring_indent_before_requests();
+    }
 
     Ok(formatted)
 }
