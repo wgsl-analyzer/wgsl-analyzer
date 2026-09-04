@@ -6,7 +6,7 @@ use syntax::{
 
 use crate::{
     ast_parse::{
-        IgnoreBlankspace, IgnoreSemicolon, ParseNodePolicy, StopAtNewline, Succeeding,
+        DiscardBlankspace, DiscardSemicolon, ParseNodePolicy, StopAtNewline, Succeeding,
         UntilEmptyLine, parse_end, parse_many_nodes_with, syntax_iter,
     },
     generators::node::gen_node_with_trivia,
@@ -21,8 +21,8 @@ pub const fn source_file_item_policy() -> impl ParseNodePolicy {
     Succeeding((
         UntilEmptyLine,
         StopAtNewline,
-        IgnoreBlankspace,
-        IgnoreSemicolon,
+        DiscardBlankspace,
+        DiscardSemicolon,
     ))
 }
 

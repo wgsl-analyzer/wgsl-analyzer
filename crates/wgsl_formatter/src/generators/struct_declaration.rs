@@ -7,7 +7,7 @@ use syntax::{
 
 use crate::{
     ast_parse::{
-        IgnoreBlankspace, IgnoreBraces, IgnoreComma, StopAtNewline, Succeeding,
+        DiscardBlankspace, DiscardBraces, DiscardComma, StopAtNewline, Succeeding,
         parse_many_nodes_with,
     },
     generators::node::gen_node_with_trivia,
@@ -29,9 +29,10 @@ pub fn gen_struct_declaration(
     let mut syntax = syntax_iter(node.syntax());
 
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::Struct)?;
-    let item_name = parse_node_with(&mut syntax, IgnoreBlankspace).expect_kind(SyntaxKind::Name)?;
+    let item_name =
+        parse_node_with(&mut syntax, DiscardBlankspace).expect_kind(SyntaxKind::Name)?;
     let item_body =
-        parse_node_with(&mut syntax, IgnoreBlankspace).expect_kind(SyntaxKind::StructBody)?;
+        parse_node_with(&mut syntax, DiscardBlankspace).expect_kind(SyntaxKind::StructBody)?;
     parse_end(&mut syntax)?;
 
     // === Format ===
@@ -57,7 +58,7 @@ pub fn gen_struct_body(body: &ast::StructBody) -> FormatDocumentResult<PrintItem
 
     let item_members = parse_many_nodes_with(
         &mut syntax,
-        (Succeeding(StopAtNewline), IgnoreComma, IgnoreBraces),
+        (Succeeding(StopAtNewline), DiscardComma, DiscardBraces),
     )
     .filter(|node| !node.is_whitespace())
     .map(|node| node.expect_kind_optional(SyntaxKind::StructMember))
@@ -109,10 +110,11 @@ pub fn gen_struct_member(member: &ast::StructMember) -> FormatDocumentResult<Pri
     // === Parse ===
     let mut syntax = syntax_iter(member.syntax());
 
-    let item_name = parse_node_with(&mut syntax, IgnoreBlankspace).expect_kind(SyntaxKind::Name)?;
+    let item_name =
+        parse_node_with(&mut syntax, DiscardBlankspace).expect_kind(SyntaxKind::Name)?;
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::Colon)?;
     let item_type_specifier =
-        parse_node_with(&mut syntax, IgnoreBlankspace).expect_kind(SyntaxKind::TypeSpecifier)?;
+        parse_node_with(&mut syntax, DiscardBlankspace).expect_kind(SyntaxKind::TypeSpecifier)?;
     parse_end(&mut syntax)?;
 
     // === Format ===

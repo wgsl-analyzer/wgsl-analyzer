@@ -8,8 +8,8 @@ use syntax::{
 
 use crate::{
     ast_parse::{
-        IgnoreBlankspace, IgnoreComma, IgnoreSemicolon, NoTrivia, parse_end, parse_many_nodes_with,
-        parse_node_with, syntax_iter,
+        DiscardBlankspace, DiscardComma, DiscardSemicolon, NoTrivia, parse_end,
+        parse_many_nodes_with, parse_node_with, syntax_iter,
     },
     generators::node::gen_node_with_trivia,
     multiline_group::MultilineGroup,
@@ -24,7 +24,7 @@ pub fn gen_enable_extension_name(
 ) -> FormatDocumentResult<PrintItemBuffer> {
     let mut syntax = syntax_iter(node.syntax());
     let identifier =
-        parse_node_with(&mut syntax, IgnoreBlankspace).expect_kind(SyntaxKind::Identifier)?;
+        parse_node_with(&mut syntax, DiscardBlankspace).expect_kind(SyntaxKind::Identifier)?;
     parse_end(&mut syntax)?;
 
     // ==== Format ====
@@ -40,7 +40,7 @@ pub fn gen_enable_directive(node: &ast::EnableDirective) -> FormatDocumentResult
 
     let items = parse_many_nodes_with(
         &mut syntax,
-        (IgnoreBlankspace, IgnoreComma, IgnoreSemicolon),
+        (DiscardBlankspace, DiscardComma, DiscardSemicolon),
     )
     .filter(|node| !node.is_whitespace())
     .collect::<Vec<_>>();
@@ -78,7 +78,7 @@ pub fn gen_language_extension_name(
 ) -> FormatDocumentResult<PrintItemBuffer> {
     let mut syntax = syntax_iter(node.syntax());
     let identifier =
-        parse_node_with(&mut syntax, IgnoreBlankspace).expect_kind(SyntaxKind::Identifier)?;
+        parse_node_with(&mut syntax, DiscardBlankspace).expect_kind(SyntaxKind::Identifier)?;
     parse_end(&mut syntax)?;
 
     // ==== Format ====
@@ -96,7 +96,7 @@ pub fn gen_requires_directive(
 
     let items = parse_many_nodes_with(
         &mut syntax,
-        (IgnoreBlankspace, IgnoreComma, IgnoreSemicolon),
+        (DiscardBlankspace, DiscardComma, DiscardSemicolon),
     )
     .filter(|node| !node.is_whitespace())
     .collect::<Vec<_>>();
@@ -136,7 +136,7 @@ pub fn gen_diagnostic_directive(
     let mut syntax = syntax_iter(node.syntax());
 
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::Diagnostic)?;
-    let item_control = parse_node_with(&mut syntax, IgnoreBlankspace)
+    let item_control = parse_node_with(&mut syntax, DiscardBlankspace)
         .expect_kind(SyntaxKind::DiagnosticControl)?;
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::Semicolon)?; //Make optional
     parse_end(&mut syntax)?;

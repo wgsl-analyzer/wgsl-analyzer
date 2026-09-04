@@ -8,7 +8,7 @@ use syntax::{
 
 use crate::{
     ast_parse::{
-        Filter, IgnoreBraces, MatchKind, NoTrivia, PolicyAction, Succeeding, parse_end,
+        DiscardBraces, Filter, MatchKind, NoTrivia, PolicyAction, Succeeding, parse_end,
         parse_many_nodes_with, parse_node_with, syntax_iter,
     },
     context_policies::collapse_one_liner_compound_statement_policy,
@@ -55,10 +55,10 @@ pub fn gen_compound_statement(
     let items = parse_many_nodes_with(
         &mut syntax,
         (
-            IgnoreBraces,
-            MatchKind(SyntaxKind::EmptyStatement, PolicyAction::Ignored),
+            DiscardBraces,
+            MatchKind(SyntaxKind::EmptyStatement, PolicyAction::Discard),
             Filter(|node| match read_blankspace(node) {
-                Some(LineSpacing::OnelineBlankspace(_)) => Some(PolicyAction::Ignored),
+                Some(LineSpacing::OnelineBlankspace(_)) => Some(PolicyAction::Discard),
                 _ => None,
             }),
             Succeeding(Filter(|node| match read_blankspace(node) {

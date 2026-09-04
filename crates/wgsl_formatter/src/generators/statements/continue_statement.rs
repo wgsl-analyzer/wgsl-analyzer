@@ -3,7 +3,7 @@ use parser::SyntaxKind;
 use syntax::{AstNode as _, ast};
 
 use crate::{
-    ast_parse::{IgnoreBlankspace, NoTrivia, parse_end, parse_node_with, syntax_iter},
+    ast_parse::{DiscardBlankspace, NoTrivia, parse_end, parse_node_with, syntax_iter},
     context_policies::statement_needs_semicolon_policy,
     generators::node::gen_node_with_trivia,
     print_item_buffer::{
@@ -22,7 +22,7 @@ pub fn gen_continue_statement(
     // user's code should future changes to wgsl allow more complex continue statements.
     let mut syntax = syntax_iter(node.syntax());
     let item_continue =
-        parse_node_with(&mut syntax, IgnoreBlankspace).expect_kind(SyntaxKind::Continue)?;
+        parse_node_with(&mut syntax, DiscardBlankspace).expect_kind(SyntaxKind::Continue)?;
     parse_node_with(&mut syntax, NoTrivia).expect_kind_optional(SyntaxKind::Semicolon)?;
     parse_end(&mut syntax)?;
 

@@ -11,8 +11,8 @@ use syntax::{
 
 use crate::{
     ast_parse::{
-        Filter, IgnoreBlankspace, IgnoreBraces, NoTrivia, PolicyAction, StopAtNewline, Succeeding,
-        parse_end, parse_many_nodes_with, parse_node_with, syntax_iter,
+        DiscardBlankspace, DiscardBraces, Filter, NoTrivia, PolicyAction, StopAtNewline,
+        Succeeding, parse_end, parse_many_nodes_with, parse_node_with, syntax_iter,
     },
     generators::node::gen_node_with_trivia,
     print_item_buffer::{
@@ -30,9 +30,9 @@ pub fn gen_switch_statement(
     let mut syntax = syntax_iter(statement.syntax());
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::Switch)?;
     let item_expression =
-        parse_node_with(&mut syntax, IgnoreBlankspace).expect_ast_node::<Expression>()?;
+        parse_node_with(&mut syntax, DiscardBlankspace).expect_ast_node::<Expression>()?;
     let item_body =
-        parse_node_with(&mut syntax, IgnoreBlankspace).expect_ast_node::<SwitchBody>()?;
+        parse_node_with(&mut syntax, DiscardBlankspace).expect_ast_node::<SwitchBody>()?;
     parse_end(&mut syntax)?;
 
     // ==== Format ====
@@ -58,7 +58,7 @@ pub fn gen_switch_body(statement: &SwitchBody) -> Result<PrintItemBuffer, Format
 
     let item_cases = parse_many_nodes_with(
         &mut syntax,
-        (Succeeding(StopAtNewline), IgnoreBlankspace, IgnoreBraces),
+        (Succeeding(StopAtNewline), DiscardBlankspace, DiscardBraces),
     )
     .filter(|node| !node.is_whitespace())
     .map(|node| node.expect_kind_optional(SyntaxKind::SwitchBodyCase))
@@ -107,7 +107,7 @@ pub fn gen_switch_body_case(
     let mut syntax = syntax_iter(statement.syntax());
 
     // Either default or case
-    let item_case_keyword = parse_node_with(&mut syntax, IgnoreBlankspace);
+    let item_case_keyword = parse_node_with(&mut syntax, DiscardBlankspace);
     let kind = {
         if item_case_keyword
             .kind()
@@ -117,7 +117,7 @@ pub fn gen_switch_body_case(
                 item_default: item_case_keyword,
             }
         } else {
-            let selectors = parse_node_with(&mut syntax, IgnoreBlankspace);
+            let selectors = parse_node_with(&mut syntax, DiscardBlankspace);
 
             let mut item_case_keyword = item_case_keyword;
 
@@ -140,7 +140,7 @@ pub fn gen_switch_body_case(
     let item_colon =
         parse_node_with(&mut syntax, NoTrivia).only_if_kind(SyntaxKind::Colon, &mut syntax);
     let item_body =
-        parse_node_with(&mut syntax, IgnoreBlankspace).expect_ast_node::<CompoundStatement>()?;
+        parse_node_with(&mut syntax, DiscardBlankspace).expect_ast_node::<CompoundStatement>()?;
     parse_end(&mut syntax)?;
 
     // ==== Format ====
@@ -203,9 +203,9 @@ pub fn gen_switch_case_selectors(
     let item_selectors = parse_many_nodes_with(
         &mut syntax,
         (
-            IgnoreBlankspace,
+            DiscardBlankspace,
             Filter(|node| {
-                matches!(node.kind(), SyntaxKind::Comma).then_some(PolicyAction::IgnoreAndStop)
+                matches!(node.kind(), SyntaxKind::Comma).then_some(PolicyAction::DiscardAndStop)
             }),
         ),
     )

@@ -5,7 +5,7 @@ use syntax::{
 };
 
 use crate::{
-    ast_parse::{IgnoreBlankspace, NoTrivia, parse_end, parse_node_with, syntax_iter},
+    ast_parse::{DiscardBlankspace, NoTrivia, parse_end, parse_node_with, syntax_iter},
     generators::node::gen_node_with_trivia,
     multiline_group::MultilineGroup,
     print_item_buffer::{
@@ -21,11 +21,11 @@ pub fn gen_index_expression(
     // ==== Parse ====
     let mut syntax = syntax_iter(index_expression.syntax());
     let item_array_expr =
-        parse_node_with(&mut syntax, IgnoreBlankspace).expect_ast_node::<ast::Expression>()?;
+        parse_node_with(&mut syntax, DiscardBlankspace).expect_ast_node::<ast::Expression>()?;
     let item_bracket_left =
         parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::BracketLeft)?;
     let item_actual_index =
-        parse_node_with(&mut syntax, IgnoreBlankspace).expect_ast_node::<ast::Expression>()?;
+        parse_node_with(&mut syntax, DiscardBlankspace).expect_ast_node::<ast::Expression>()?;
     let item_bracket_right =
         parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::BracketRight)?;
     parse_end(&mut syntax)?;

@@ -11,7 +11,7 @@ use syntax::{
 
 use crate::{
     ast_parse::{
-        IgnoreBlankspace, IgnoreComma, IgnoreParenthesis, NoTrivia, StopAtNewline, Succeeding,
+        DiscardBlankspace, DiscardComma, DiscardParenthesis, NoTrivia, StopAtNewline, Succeeding,
         parse_end, parse_many_nodes_with, parse_node_with, syntax_iter,
     },
     generators::node::{
@@ -278,9 +278,9 @@ pub fn gen_diagnostic_attribute(
     let mut syntax = syntax_iter(attribute.syntax());
 
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::AttributeOperator)?;
-    let item_diagnostic = parse_node_with(&mut syntax, IgnoreBlankspace)
+    let item_diagnostic = parse_node_with(&mut syntax, DiscardBlankspace)
         .expect_kind(parser::SyntaxKind::Diagnostic)?;
-    let item_control = parse_node_with(&mut syntax, IgnoreBlankspace)
+    let item_control = parse_node_with(&mut syntax, DiscardBlankspace)
         .expect_kind(SyntaxKind::DiagnosticControl)?;
     parse_end(&mut syntax)?;
 
@@ -295,7 +295,7 @@ pub fn gen_interpolate_type_name(
     attribute: &ast::InterpolateTypeName
 ) -> FormatDocumentResult<PrintItemBuffer> {
     let mut syntax = syntax_iter(attribute.syntax());
-    let content = parse_node_with(&mut syntax, IgnoreBlankspace);
+    let content = parse_node_with(&mut syntax, DiscardBlankspace);
     parse_end(&mut syntax)?;
 
     let mut formatted = PrintItemBuffer::default();
@@ -305,7 +305,7 @@ pub fn gen_interpolate_type_name(
 
 pub fn gen_early_depth_test_mode(attribute: &SyntaxNode) -> FormatDocumentResult<PrintItemBuffer> {
     let mut syntax = syntax_iter(attribute.syntax());
-    let content = parse_node_with(&mut syntax, IgnoreBlankspace);
+    let content = parse_node_with(&mut syntax, DiscardBlankspace);
     parse_end(&mut syntax)?;
 
     let mut formatted = PrintItemBuffer::default();
@@ -317,7 +317,7 @@ pub fn gen_interpolate_sampling_name(
     attribute: &ast::InterpolateSamplingName
 ) -> FormatDocumentResult<PrintItemBuffer> {
     let mut syntax = syntax_iter(attribute.syntax());
-    let content = parse_node_with(&mut syntax, IgnoreBlankspace);
+    let content = parse_node_with(&mut syntax, DiscardBlankspace);
     parse_end(&mut syntax)?;
 
     let mut formatted = PrintItemBuffer::default();
@@ -331,17 +331,17 @@ pub fn gen_interpolate_attribute(
 
     let item_attr_operator =
         parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::AttributeOperator)?;
-    let item_interpolate = parse_node_with(&mut syntax, IgnoreBlankspace)
+    let item_interpolate = parse_node_with(&mut syntax, DiscardBlankspace)
         .expect_kind(parser::SyntaxKind::Interpolate)?;
     let item_paren_left =
         parse_node_with(&mut syntax, NoTrivia).expect_kind(parser::SyntaxKind::ParenthesisLeft)?;
-    let interpolate_type_name = parse_node_with(&mut syntax, IgnoreBlankspace)
+    let interpolate_type_name = parse_node_with(&mut syntax, DiscardBlankspace)
         .expect_kind(SyntaxKind::InterpolateTypeName)?;
 
     let item_comma =
         parse_node_with(&mut syntax, NoTrivia).only_if_kind(SyntaxKind::Comma, &mut syntax);
     let sampling = if item_comma.is_some() {
-        let interpolate_sampling_name = parse_node_with(&mut syntax, IgnoreBlankspace)
+        let interpolate_sampling_name = parse_node_with(&mut syntax, DiscardBlankspace)
             .expect_kind(SyntaxKind::InterpolateSamplingName)?;
         Some(interpolate_sampling_name)
     } else {
@@ -379,7 +379,7 @@ pub fn gen_builtin_value_name(
     attribute: &ast::BuiltinValueName
 ) -> FormatDocumentResult<PrintItemBuffer> {
     let mut syntax = syntax_iter(attribute.syntax());
-    let content = parse_node_with(&mut syntax, IgnoreBlankspace);
+    let content = parse_node_with(&mut syntax, DiscardBlankspace);
     parse_end(&mut syntax)?;
 
     let mut formatted = PrintItemBuffer::default();
@@ -394,10 +394,10 @@ pub fn gen_builtin_attribute(
     let item_attr_operator =
         parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::AttributeOperator)?;
     let item_builtin =
-        parse_node_with(&mut syntax, IgnoreBlankspace).expect_kind(parser::SyntaxKind::Builtin)?;
+        parse_node_with(&mut syntax, DiscardBlankspace).expect_kind(parser::SyntaxKind::Builtin)?;
     parse_node_with(&mut syntax, NoTrivia).expect_kind(parser::SyntaxKind::ParenthesisLeft)?;
-    let item_builtin_value_name =
-        parse_node_with(&mut syntax, IgnoreBlankspace).expect_kind(SyntaxKind::BuiltinValueName)?;
+    let item_builtin_value_name = parse_node_with(&mut syntax, DiscardBlankspace)
+        .expect_kind(SyntaxKind::BuiltinValueName)?;
     parse_node_with(&mut syntax, NoTrivia).only_if_kind(SyntaxKind::Comma, &mut syntax);
     parse_node_with(&mut syntax, NoTrivia).expect_kind(parser::SyntaxKind::ParenthesisRight)?;
     parse_end(&mut syntax)?;
@@ -417,9 +417,9 @@ pub fn gen_other_attribute(
     let mut syntax = syntax_iter(attribute.syntax());
 
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::AttributeOperator)?;
-    let item_identifier = parse_node_with(&mut syntax, IgnoreBlankspace)
+    let item_identifier = parse_node_with(&mut syntax, DiscardBlankspace)
         .expect_kind(parser::SyntaxKind::Identifier)?;
-    let item_arguments = parse_node_with(&mut syntax, IgnoreBlankspace)
+    let item_arguments = parse_node_with(&mut syntax, DiscardBlankspace)
         .only_if_kind(SyntaxKind::Arguments, &mut syntax);
     parse_end(&mut syntax)?;
 
@@ -474,7 +474,7 @@ pub fn gen_attr_standard_with_args(
 
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::AttributeOperator)?;
     let item_attribute_name =
-        parse_node_with(&mut syntax, IgnoreBlankspace).expect_kind(expected_token)?;
+        parse_node_with(&mut syntax, DiscardBlankspace).expect_kind(expected_token)?;
 
     let item_paren_left = parse_node_with(&mut syntax, NoTrivia)
         .only_if_kind(SyntaxKind::ParenthesisLeft, &mut syntax);
@@ -483,9 +483,9 @@ pub fn gen_attr_standard_with_args(
             &mut syntax,
             (
                 Succeeding(StopAtNewline),
-                IgnoreBlankspace,
-                IgnoreComma,
-                IgnoreParenthesis,
+                DiscardBlankspace,
+                DiscardComma,
+                DiscardParenthesis,
             ),
         )
         .filter(|node| !node.is_whitespace())
