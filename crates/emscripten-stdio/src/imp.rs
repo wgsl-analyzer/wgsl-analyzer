@@ -221,3 +221,60 @@ unsafe fn as_slice<'bytes>(
     // SAFETY: the caller promises `len` readable bytes at `ptr`.
     Ok(unsafe { std::slice::from_raw_parts(ptr, len) })
 }
+
+/// [`as_slice`] for a writable buffer.
+///
+/// # Safety
+///
+/// `ptr` must point to `len` writable bytes.
+unsafe fn as_slice_mut<'bytes>(
+    ptr: *mut u8,
+    len: usize,
+) -> Result<&'bytes mut [u8], c_int> {
+    if len == 0 {
+        return Ok(&mut []);
+    }
+    if ptr.is_null() {
+        return Err(libc::EFAULT);
+    }
+    if len > isize::MAX as usize {
+        return Err(libc::EINVAL);
+    }
+    // SAFETY: the caller promises `len` writable bytes at `ptr`.
+    Ok(unsafe { std::slice::from_raw_parts_mut(ptr, len) })
+}
+
+/// Validate an iovec array and total its lengths.
+///
+/// Both vectored wrappers check up front rather than as they go, so a bad
+/// argument can never surface as a short transfer or, worse, as end of input.
+///
+/// # Safety
+///
+/// `iov` must point to `iovcnt` readable `iovec` values.
+unsafe fn checked_iovecs<'iov>(
+    iov: *const libc::iovec,
+    iovcnt: c_int,
+) -> Result<(&'iov [libc::iovec], usize), c_int> {
+    let count = usize::try_from(iovcnt).map_err(|_| libc::EINVAL)?;
+    if count == 0 {
+        return Ok((&[], 0));
+    }
+    if iov.is_null() {
+        return Err(libc::EFAULT);
+    }
+    // SAFETY: the caller promises `iovcnt` readable iovec values at `iov`.
+    let iovecs = unsafe { std::slice::from_raw_parts(iov, count) };
+
+    let mut total: usize = 0;
+    for entry in iovecs {
+        if entry.iov_len != 0 && entry.iov_base.is_null() {
+            return Err(libc::EFAULT);
+        }
+        total = match total.checked_add(entry.iov_len) {
+            Some(sum) if sum <= isize::MAX as usize => sum,
+            _ => return Err(libc::EINVAL),
+        };
+    }
+    Ok((iovecs, total))
+}
