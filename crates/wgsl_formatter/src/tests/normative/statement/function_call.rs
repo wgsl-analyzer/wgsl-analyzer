@@ -153,8 +153,8 @@ fn format_long_function_call_without_arguments_does_not_break_within_parens() {
                 max_line_width: 80,
                 ..Default::default()
             },
+            ..Default::default()
         },
-        parser::Edition::LATEST,
     );
 }
 
@@ -184,7 +184,6 @@ pub fn format_long_function_call_linewidth_within_inner_break_outer_arguments_le
             max_line_width: 80,
             ..Default::default()
         }.into(),
-        parser::Edition::LATEST,
     );
 }
 
@@ -215,8 +214,8 @@ pub fn format_long_function_call_linewidth_outside_inner_break_outer_arguments_l
                 max_line_width: 80,
                 ..Default::default()
             },
+            ..Default::default()
         },
-        parser::Edition::LATEST
     );
 }
 
@@ -247,7 +246,6 @@ pub fn format_long_function_call_prefer_to_break_arguments_over_path() {
             max_line_width: 80,
             ..Default::default()
         }.into(),
-        parser::Edition::LATEST
     );
 }
 
@@ -278,8 +276,8 @@ pub fn format_long_function_call_dont_break_path() {
                 max_line_width: 80,
                 ..Default::default()
             },
+            ..Default::default()
         },
-        parser::Edition::LATEST
     );
 }
 
@@ -310,6 +308,5 @@ pub fn format_function_call_with_field_expr_prefer_breaking_fncall() {
             ..Default::default()
         }
         .into(),
-        parser::Edition::LATEST,
     );
 }

@@ -42,6 +42,5 @@ fn format_long_return_statement_gets_indented_correctly() {
             ..Default::default()
         }
         .into(),
-        parser::Edition::LATEST,
     );
 }

@@ -39,6 +39,5 @@ fn format_long_assert_statement_gets_indented_correctly() {
             ..Default::default()
         }
         .into(),
-        parser::Edition::LATEST,
     );
 }

@@ -1,5 +1,4 @@
 use expect_test::expect;
-use parser::Edition;
 
 use crate::test_util::{
     CheckOptions, assert_out_of_scope, check, check_comments, check_with_options,
@@ -72,7 +71,6 @@ pub fn format_paren_expr_deep_right_associated() {
             assert_line_width: None,
             ..Default::default()
         },
-        Edition::LATEST
     );
 }
 
@@ -95,7 +93,6 @@ pub fn format_paren_expr_deep_left_associated() {
             assert_line_width: None,
             ..Default::default()
         },
-        Edition::LATEST
     );
 }
 

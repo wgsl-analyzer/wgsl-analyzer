@@ -108,7 +108,6 @@ pub fn format_loop_continuing_break_if_statement_long_expression() {
             ..Default::default()
         }
         .into(),
-        parser::Edition::LATEST,
     );
 }
 

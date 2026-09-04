@@ -5,7 +5,6 @@
 - Should we throw away the snapshot tests? they are kinda unnecessary
 - Consider only allowing breaks before arithmetic expressions if both sides are not (function calls, paren-exprs, etc...)
   in order to avoid lonely + 1.0; broken on the next line
-- Move Edition into formatoptions
 
 ## Opinions
 
@@ -67,23 +66,23 @@ as a _normative_ test in order to prevent regressions.
 
 When compiled with the `prefer-immediate-crash` feature, the formatter
 will crash immediately when encountering a formatting error. This can be useful
-for debugging the tests, as a proper backtrace can be enabled with `RUST_BACKTRACE=1`.
+for debugging the tests, as a proper backtrace can be enabled with `RUST*BACKTRACE=1`.
 
 ```bash
-RUST_BACKTRACE=1 cargo test --features=prefer-immediate-crash
+RUST*BACKTRACE=1 cargo test --features=prefer-immediate-crash
 ```
 
-- If you insert a strategic `dbg!(&syntax)` call into `check_with_options`
-  inside `test_util.rs` code, you can see the AST nodes being processed at runtime.
+- If you insert a strategic `dbg!(&syntax)` call into `check*with*options`
+  inside `test*util.rs` code, you can see the AST nodes being processed at runtime.
 - When the formatter errors, you can see the source position of the problematic
   AST nodes and can then locate that within the printed ast (see above).
   From there on you might want to look for the responsible
-  `gen_...` function (see `generators/node.rs`).
+  `gen*...` function (see `generators/node.rs`).
 - `NodeWithTrivia` implements `Debug`, so it's very useful to just
-  `dbg!(&items)` the items that were returned by `parse_node_with`
+  `dbg!(&items)` the items that were returned by `parse*node*with`
   to see what trivia (comments etc) gets attached to which nodes.
-- Strategically inserting `formatted.push_sc(sc!("|"))` calls into
-  the `==== Format` section of the `gen_` functions can help you visualize which
+- Strategically inserting `formatted.push*sc(sc!("|"))` calls into
+  the `==== Format` section of the `gen*` functions can help you visualize which
   part of the code is responsible for which part of the formatted output.
 
 ## Guidelines on implementing formatting for new syntax constructs
@@ -93,10 +92,10 @@ RUST_BACKTRACE=1 cargo test --features=prefer-immediate-crash
    should go or if colons after a switch get removed.). The descriptive tests
    document how code _is_ formatted (to make sure we don't accidentally regress
    one part of the formatter wen fixing another). Do not forget to add tests
-   using `check_comments` to make sure the formatter never accidentally removes
+   using `check*comments` to make sure the formatter never accidentally removes
    or reorders the comments around your syntax construct.
 2. Create a generator function in `generators::` - the function should be
-   called `gen_`, take either a `NodeWithTrivia`, `SyntaxNode` or
+   called `gen*`, take either a `NodeWithTrivia`, `SyntaxNode` or
    `ast::TheNewSyntaxConstruct` and usually return a `FormatDocumentResult`.
    The generator function is split up in a "Parse" and a "Format" region (see [Patterns.md](Patterns.md)).
 3. Register the new syntax construct in the big `match` within `generators/node.rs`.

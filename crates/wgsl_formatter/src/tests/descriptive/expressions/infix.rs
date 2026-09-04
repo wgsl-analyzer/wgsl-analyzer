@@ -175,7 +175,7 @@ fn format_infix_break_with_precedence_boolean_vs_arithmetic() {
                 max_line_width: 40,
                 ..Default::default()
             },
+            ..Default::default()
         },
-        parser::Edition::LATEST,
     );
 }

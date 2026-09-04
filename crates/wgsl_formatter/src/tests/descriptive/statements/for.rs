@@ -1,5 +1,4 @@
 use expect_test::expect;
-use parser::Edition;
 
 use crate::{
     FormattingOptions,
@@ -80,7 +79,6 @@ pub fn format_for_statement_long_first_component() {
             ..Default::default()
         }
         .into(),
-        Edition::LATEST,
     );
 }
 

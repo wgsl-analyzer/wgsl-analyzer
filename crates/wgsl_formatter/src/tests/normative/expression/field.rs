@@ -1,5 +1,4 @@
 use expect_test::expect;
-use parser::Edition;
 
 use crate::{FormattingOptions, test_util::check_with_options};
 
@@ -24,7 +23,6 @@ pub fn format_field_expr_prefer_breaking_other_stuff() {
             ..Default::default()
         }
         .into(),
-        Edition::LATEST,
     );
 }
 
@@ -50,7 +48,6 @@ pub fn format_field_expr_prefer_breaking_from_the_back() {
             ..Default::default()
         }
         .into(),
-        Edition::LATEST,
     );
 }
 
@@ -74,6 +71,5 @@ fn prefer_not_breaking_field_expression() {
             ..Default::default()
         }
         .into(),
-        parser::Edition::LATEST,
     );
 }

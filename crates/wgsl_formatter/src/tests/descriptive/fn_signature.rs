@@ -1,7 +1,6 @@
 #![cfg(test)]
 
 use expect_test::expect;
-use parser::Edition;
 
 use crate::{
     FormattingOptions,
@@ -48,8 +47,7 @@ fn format_fn_header_long_name() {
                 c: d,
             ) -> f32 {}
             "]],
-        &CheckOptions { assert_line_width: None, formatting: FormattingOptions::default() },
-        Edition::LATEST
+        &CheckOptions { assert_line_width: None, formatting: FormattingOptions::default(), ..Default::default() },
     );
 }
 
@@ -78,7 +76,6 @@ fn format_fn_header_comma_multiline_wide() {
             ..Default::default()
         }
         .into(),
-        Edition::LATEST,
     );
 }
 
@@ -98,8 +95,8 @@ fn format_fn_header_comma_multiline_narrow() {
                 max_line_width: 4, //Just shy of what the fn would be laid out as on a single line
                 ..Default::default()
             },
+            ..Default::default()
         },
-        Edition::LATEST,
     );
 }
 

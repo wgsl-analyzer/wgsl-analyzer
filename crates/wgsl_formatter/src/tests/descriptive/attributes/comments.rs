@@ -350,7 +350,8 @@ pub fn format_comments_in_attrs_on_for_statement() {
 }
 
 #[test]
-#[ignore = "TODO Parser Error?"]
+// TODO (MonaMayrhofer, post-1.0)
+#[ignore = "TODO https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1380"]
 pub fn format_comments_in_attrs_on_loop_continuing_block() {
     check_comments(
         "

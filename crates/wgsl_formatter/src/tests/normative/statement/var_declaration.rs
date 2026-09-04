@@ -24,8 +24,8 @@ pub fn format_var_declaration_dont_break_var_template_args() {
                 max_line_width: 80,
                 ..Default::default()
             },
+            ..Default::default()
         },
-        parser::Edition::LATEST,
     );
 }
 
@@ -51,7 +51,7 @@ pub fn format_var_declaration_do_break_type_template_args() {
                 max_line_width: 80,
                 ..Default::default()
             },
+            ..Default::default()
         },
-        parser::Edition::LATEST,
     );
 }

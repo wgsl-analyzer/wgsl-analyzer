@@ -1,5 +1,4 @@
 use expect_test::expect;
-use parser::Edition;
 
 use crate::{
     FormattingOptions,
@@ -59,7 +58,6 @@ pub fn format_infix_grouping_in_very_long_let_statement() {
             ..Default::default()
         }
         .into(),
-        Edition::LATEST,
     );
 }
 
@@ -110,7 +108,6 @@ pub fn format_infix_expr_very_long_break_outer_first() {
             ..Default::default()
         }
         .into(),
-        Edition::LATEST,
     );
 }
 
@@ -135,7 +132,6 @@ pub fn format_field_expr_deeply_nested() {
             ..Default::default()
         }
         .into(),
-        Edition::LATEST,
     );
 }
 
@@ -161,7 +157,6 @@ pub fn format_index_expr_chained_breaks_in_the_middle() {
             ..Default::default()
         }
         .into(),
-        Edition::LATEST,
     );
 }
 
@@ -188,7 +183,6 @@ pub fn format_index_expr_nested_breaks_outside_in() {
             ..Default::default()
         }
         .into(),
-        Edition::LATEST,
     );
 }
 
@@ -260,6 +254,5 @@ pub fn format_prefer_breaking_somewhat_according_to_precedence() {
             ..Default::default()
         }
         .into(),
-        Edition::LATEST,
     );
 }
