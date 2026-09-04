@@ -223,6 +223,20 @@ impl<'path> TryFrom<&'path Utf8Path> for &'path AbsPath {
 }
 
 impl AbsPath {
+    #[must_use]
+    pub fn root() -> &'static Self {
+        #[cfg(windows)]
+        {
+            // SAFETY: static value known to be safe
+            unsafe { Self::new_unchecked(r#"C:\"#.into()) }
+        }
+        #[cfg(not(windows))]
+        {
+            // SAFETY: static value known to be safe
+            unsafe { Self::new_unchecked("/".into()) }
+        }
+    }
+
     /// Creates a new [`AbsPath`] from `path`.
     pub fn new(path: &Utf8Path) -> Result<&Self, &Utf8Path> {
         if !path.is_absolute() {
@@ -273,12 +287,12 @@ impl AbsPath {
     }
 
     /// Equivalent of [`Utf8Path::join`] for [`AbsPath`].
-    pub fn join<Path>(
+    pub fn join<Pathy>(
         &self,
-        path: Path,
+        path: Pathy,
     ) -> AbsPathBuf
     where
-        Path: AsRef<Utf8Path>,
+        Pathy: AsRef<Utf8Path>,
     {
         AbsPathBuf(Utf8Path::join(self.as_ref(), path))
     }
@@ -425,9 +439,13 @@ mod tests {
     use super::*;
     use std::{ffi::OsStr, path::PathBuf};
 
+    fn root_utf8() -> &'static Utf8Path {
+        super::AbsPath::root().as_utf8_path()
+    }
+
     #[test]
     fn utf_from_absbuf() {
-        let path: PathBuf = "/".into();
+        let path: PathBuf = root_utf8().into();
         let absbuf = AbsPathBuf::assert_utf8(path.clone());
         let utf8: Utf8PathBuf = absbuf.into();
         assert_eq!(path, utf8);
@@ -435,7 +453,7 @@ mod tests {
 
     #[test]
     fn path_from_absbuf() {
-        let path: PathBuf = "/".into();
+        let path: PathBuf = root_utf8().into();
         let absbuf = AbsPathBuf::assert_utf8(path.clone());
         let utf8: PathBuf = absbuf.into();
         assert_eq!(path, utf8);
@@ -443,31 +461,31 @@ mod tests {
 
     #[test]
     fn absbuf_asref_utf8() {
-        let utf8_expect: &Utf8Path = "/".into();
-        let absbuf = AbsPathBuf::assert("/".into());
+        let utf8_expect: &Utf8Path = root_utf8();
+        let absbuf = AbsPathBuf::assert(root_utf8().into());
         let utf8: &Utf8Path = absbuf.as_ref();
         assert_eq!(utf8_expect, utf8);
     }
 
     #[test]
     fn absbuf_asref_abs() {
-        let abs_expect: &AbsPath = AbsPath::new("/".into()).unwrap();
-        let absbuf = AbsPathBuf::assert("/".into());
+        let abs_expect: &AbsPath = &AbsPath::root().join("");
+        let absbuf = AbsPathBuf::assert(root_utf8().into());
         let abs: &AbsPath = absbuf.as_ref();
         assert_eq!(abs_expect, abs);
     }
 
     #[test]
     fn absbuf_borrow_abs() {
-        let owned = AbsPathBuf::assert("/".into());
+        let owned = AbsPathBuf::assert(root_utf8().into());
         let borrowed: &AbsPath = owned.borrow();
-        assert_eq!(AbsPath::new("/".into()).unwrap(), borrowed);
+        assert_eq!(AbsPath::root().join(""), borrowed);
     }
 
     #[test]
     fn absbuf_partialeq() {
-        let path: PathBuf = "/".into();
-        let absbuf = AbsPathBuf::assert("/".into());
+        let path: PathBuf = root_utf8().into();
+        let absbuf = AbsPathBuf::assert(root_utf8().into());
         assert_eq!(absbuf, path);
     }
 
@@ -480,63 +498,70 @@ mod tests {
 
     #[test]
     fn absbuf_pop() {
-        let mut absbuf = AbsPathBuf::assert("/test".into());
-        let expected = AbsPathBuf::assert("/".into());
+        let mut absbuf = AbsPathBuf::assert(root_utf8().join("test"));
+        let expected = AbsPathBuf::assert(root_utf8().into());
         absbuf.pop();
         assert_eq!(expected, absbuf);
     }
 
     #[test]
     fn absbuf_push() {
-        let mut absbuf = AbsPathBuf::assert("/test".into());
-        let expected = AbsPathBuf::assert("/test/push".into());
+        let mut absbuf = AbsPathBuf::assert(root_utf8().join("test"));
+        let expected = AbsPathBuf::assert(root_utf8().join("test/push"));
         absbuf.push("push");
         assert_eq!(expected, absbuf);
     }
 
     #[test]
     fn absbuf_display() {
-        let absbuf = AbsPathBuf::assert("/test".into());
+        let absbuf = AbsPathBuf::assert(root_utf8().join("test"));
         let display = format!("{absbuf:#}");
         assert_eq!("/test", display);
     }
 
     #[test]
     fn abs_toowned() {
-        let abs = AbsPath::new("/test".into()).unwrap();
-        let absbuf = AbsPathBuf::assert("/test".into());
+        let abs: &AbsPath = &AbsPath::root().join("test");
+        let absbuf = AbsPathBuf::assert(root_utf8().join("test"));
         let owned: AbsPathBuf = abs.to_owned();
         assert_eq!(absbuf, owned);
     }
 
     #[test]
     fn absolutize_works() {
-        let abs1 = AbsPath::new("/test".into()).unwrap();
+        let abs1 = AbsPath::root().join("test");
         let abs2 = abs1.absolutize("relative");
-        let expect = AbsPath::new("/test/relative".into()).unwrap();
+        let expect = AbsPath::root().join("test/relative");
         assert_eq!(expect, &abs2);
+    }
+
+    #[test]
+    fn abs_as_utf8_path() {
+        let abs1 = AbsPath::root().join("test");
+        let utf8 = Utf8Path::new(root_utf8()).join("test");
+        assert_eq!(utf8, abs1.as_utf8_path());
     }
 
     #[test]
     #[should_panic = "We explicitly do not provide canonicalization API, as that is almost always a wrong solution, see #14430"]
     #[expect(clippy::diverging_sub_expression, deprecated, reason = "test")]
     fn canonicalize_panics() {
-        let abs1 = AbsPath::new("/test".into()).unwrap();
+        let abs1 = AbsPath::root().join("test");
         _ = abs1.canonicalize();
     }
 
     #[test]
     fn abs_starts_with() {
-        let abs1 = AbsPath::new("/test/path".into()).unwrap();
-        let abs2 = AbsPath::new("/test".into()).unwrap();
-        let abs3 = AbsPath::new("/wrong".into()).unwrap();
+        let abs1: &AbsPath = &AbsPath::root().join("test/path");
+        let abs2: &AbsPath = &AbsPath::root().join("test");
+        let abs3: &AbsPath = &AbsPath::root().join("wrong");
         assert!(abs1.starts_with(abs2));
         assert!(!abs1.starts_with(abs3));
     }
 
     #[test]
     fn abs_ends_with() {
-        let abs = AbsPath::new("/test/path".into()).unwrap();
+        let abs: &AbsPath = &AbsPath::root().join("test/path");
         let rel1 = RelPath::new("path".into()).unwrap();
         let rel2 = RelPath::new("wrong".into()).unwrap();
         assert!(abs.ends_with(rel1));
@@ -545,15 +570,15 @@ mod tests {
 
     #[test]
     fn abs_asref_abs() {
-        let absbuf: &AbsPath = AbsPath::new("/".into()).unwrap();
+        let absbuf: &AbsPath = &AbsPath::root().join("");
         let osstr: &OsStr = absbuf.as_ref();
-        assert_eq!(OsStr::new("/"), osstr);
+        assert_eq!(OsStr::new(root_utf8()), osstr);
     }
 
     #[test]
     fn abs_tryfrom_utf8() {
-        let expect: &AbsPath = AbsPath::new("/".into()).unwrap();
-        let abs: &AbsPath = Utf8Path::new("/").try_into().unwrap();
+        let expect: &AbsPath = &AbsPath::root().join("");
+        let abs: &AbsPath = Utf8Path::new(root_utf8()).try_into().unwrap();
         assert_eq!(expect, abs);
     }
 
@@ -566,7 +591,7 @@ mod tests {
 
     #[test]
     fn abs_name_and_extension() {
-        let abs = AbsPath::new("/name.extension".into()).unwrap();
+        let abs: &AbsPath = &AbsPath::root().join("name.extension");
         let (name, extension) = abs.name_and_extension().unwrap();
         assert_eq!("name", name);
         assert_eq!(Some("extension"), extension);
@@ -576,7 +601,7 @@ mod tests {
     #[should_panic = "not implemented: use Display instead"]
     #[expect(clippy::diverging_sub_expression, deprecated, reason = "test")]
     fn abs_display_panics() {
-        let abs = AbsPath::new("/name.extension".into()).unwrap();
+        let abs: &AbsPath = &AbsPath::root().join("name.extension");
         _ = abs.display();
     }
 
@@ -584,22 +609,22 @@ mod tests {
     #[should_panic = "not implemented: use std::fs::metadata().is_ok() instead"]
     #[expect(clippy::diverging_sub_expression, deprecated, reason = "test")]
     fn abs_exists() {
-        let abs = AbsPath::new("/name.extension".into()).unwrap();
+        let abs: &AbsPath = &AbsPath::root().join("name.extension");
         _ = abs.exists();
     }
 
     #[test]
     fn abs_components() {
-        let abs = AbsPath::new("/name.extension".into()).unwrap();
+        let abs: &AbsPath = &AbsPath::root().join("name.extension");
         let components = abs.components();
         let vec: Vec<_> = components.map(|component| component.to_string()).collect();
-        assert_eq!(vec!["/", "name.extension"], vec);
+        assert_eq!(vec![root_utf8().as_str(), "name.extension"], vec);
     }
 
     #[test]
     fn abs_display() {
-        let abs = AbsPath::new("/test".into()).unwrap();
+        let abs: &AbsPath = &AbsPath::root().join("test");
         let display = format!("{abs:#}");
-        assert_eq!("/test", display);
+        assert_eq!(format!("{}test", root_utf8()), display);
     }
 }

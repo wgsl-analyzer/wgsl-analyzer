@@ -397,6 +397,10 @@ mod tests {
     use super::*;
     use std::{ffi::OsStr, path::PathBuf};
 
+    fn root_utf8() -> &'static Utf8Path {
+        crate::AbsPath::root().as_utf8_path()
+    }
+
     #[test]
     fn utf_from_relbuf() {
         let path: PathBuf = "test".into();
@@ -445,7 +449,7 @@ mod tests {
 
     #[test]
     fn relbuf_try_from_utf8_fail() {
-        let path: Utf8PathBuf = "/".into();
+        let path: Utf8PathBuf = root_utf8().to_owned();
         let relbuf = RelPathBuf::try_from(path.clone());
         assert_eq!(Err(path), relbuf);
     }
@@ -523,7 +527,7 @@ mod tests {
 
     #[test]
     fn rel_tryfrom_utf8_err() {
-        let utf8 = Utf8Path::new("/");
+        let utf8 = root_utf8();
         let result: Result<&RelPath, _> = utf8.try_into();
         assert_eq!(Err(utf8), result);
     }
