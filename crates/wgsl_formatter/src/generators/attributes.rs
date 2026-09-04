@@ -474,7 +474,8 @@ pub fn gen_attr_condcomp_with_args(
     expected_token: SyntaxKind,
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Context
-    let follows_compound = if let Some(parent) = syntax.parent()
+    let merge_with_preceding_compound = if !matches!(syntax.kind(), SyntaxKind::IfAttribute)
+        && let Some(parent) = syntax.parent()
         && let Some(previous) = parent.prev_sibling()
         && matches!(
             previous.kind(),
@@ -500,7 +501,7 @@ pub fn gen_attr_condcomp_with_args(
 
     let mut formatted = PrintItemBuffer::default();
 
-    if follows_compound {
+    if merge_with_preceding_compound {
         formatted.request(Request::expect(RequestItem::Space));
         formatted.request(Request::discourage(RequestItem::LineBreak));
         formatted.request(Request::discourage(RequestItem::EmptyLine));
