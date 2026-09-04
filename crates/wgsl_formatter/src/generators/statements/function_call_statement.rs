@@ -12,8 +12,8 @@ use syntax::{
 
 use crate::{
     ast_parse::{
-        IgnoreBlankspace, IgnoreComma, IgnoreParenthesis, NoTrivia, Succeeding, SyntaxIter,
-        UntilNewline, parse_end, parse_many_nodes_with, parse_node_with, syntax_iter,
+        IgnoreBlankspace, IgnoreComma, IgnoreParenthesis, NoTrivia, StopAtNewline, Succeeding,
+        SyntaxIter, parse_end, parse_many_nodes_with, parse_node_with, syntax_iter,
     },
     context_policies::statement_needs_semicolon_policy,
     generators::node::{
@@ -120,7 +120,7 @@ pub fn parse_function_call_arguments(
     let item_arguments = parse_many_nodes_with(
         syntax,
         (
-            Succeeding(UntilNewline),
+            Succeeding(StopAtNewline),
             IgnoreBlankspace,
             IgnoreComma,
             IgnoreParenthesis,

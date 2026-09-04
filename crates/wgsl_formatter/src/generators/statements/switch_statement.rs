@@ -11,7 +11,7 @@ use syntax::{
 
 use crate::{
     ast_parse::{
-        Filter, IgnoreBlankspace, IgnoreBraces, NoTrivia, PolicyAction, Succeeding, UntilNewline,
+        Filter, IgnoreBlankspace, IgnoreBraces, NoTrivia, PolicyAction, StopAtNewline, Succeeding,
         parse_end, parse_many_nodes_with, parse_node_with, syntax_iter,
     },
     generators::node::gen_node_with_trivia,
@@ -58,7 +58,7 @@ pub fn gen_switch_body(statement: &SwitchBody) -> Result<PrintItemBuffer, Format
 
     let item_cases = parse_many_nodes_with(
         &mut syntax,
-        (Succeeding(UntilNewline), IgnoreBlankspace, IgnoreBraces),
+        (Succeeding(StopAtNewline), IgnoreBlankspace, IgnoreBraces),
     )
     .filter(|node| !node.is_whitespace())
     .map(|node| node.expect_kind_optional(SyntaxKind::SwitchBodyCase))
