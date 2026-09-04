@@ -182,14 +182,10 @@ pub fn format_comments_in_attrs_on_compound_statement() {
         " fn main() { ## @attr(0) ## @attr(1) ## { ## } ## if ## true ## @attr(0) ## @attr(1) ## { ## } } ",
         expect![[r#"
             fn main() {
-                /* 0 */ @attr(0)
-                /* 1 */ @attr(1)
-                /* 2 */ {
+                /* 0 */ @attr(0) /* 1 */ @attr(1) /* 2 */ {
                     /* 3 */
                 } /* 4 */
-                if /* 5 */ true /* 6 */ @attr(0)
-                /* 7 */ @attr(1)
-                /* 8 */ {
+                if /* 5 */ true /* 6 */ @attr(0) /* 7 */ @attr(1) /* 8 */ {
                     /* 9 */
                 }
             }
@@ -197,19 +193,15 @@ pub fn format_comments_in_attrs_on_compound_statement() {
         expect![[r#"
             fn main() {
                 // 0
-                @attr(0)
-                // 1
-                @attr(1)
-                // 2
+                @attr(0) // 1
+                @attr(1) // 2
                 {
                     // 3
                 } // 4
                 if // 5
                     true // 6
-                @attr(0)
-                // 7
-                @attr(1)
-                // 8
+                @attr(0) // 7
+                @attr(1) // 8
                 {
                     // 9
                 }
@@ -297,9 +289,7 @@ pub fn format_comments_in_attrs_on_loop_statement_and_body() {
             fn main() {
                 /* 0 */ @attr(0)
                 /* 1 */ @attr(1)
-                /* 2 */ loop /* 3 */ @attr(0)
-                /* 4 */ @attr(1)
-                /* 5 */ {
+                /* 2 */ loop /* 3 */ @attr(0) /* 4 */ @attr(1) /* 5 */ {
                     /* 6 */
                 }
             }
@@ -312,10 +302,8 @@ pub fn format_comments_in_attrs_on_loop_statement_and_body() {
                 @attr(1)
                 // 2
                 loop // 3
-                @attr(0)
-                // 4
-                @attr(1)
-                // 5
+                @attr(0) // 4
+                @attr(1) // 5
                 {
                     // 6
                 }

@@ -26,18 +26,13 @@ fn format_condcomp_statement_without_indentation() {
         ",
         expect![[r#"
             fn main() {
-                @if(true)
-                {
+            @if(true) {
                 var x: u32;
-                }
-                @elif(false)
-                {
+            } @elif(false) {
                 var x: u32;
-                }
-                @else
-                {
+            } @else {
                 var x: u32;
-                }
+            }
                 return x;
             }
         "#]],
@@ -68,18 +63,19 @@ fn format_condcomp_statement_nested_one_level_indentation() {
         ",
         expect![[r#"
             fn main() {
-                @if(true)
-                {{
+            @if(true) {
+                {
                     var x: u32;
-                }}
-                @elif(false)
-                {{
+                }
+            } @elif(false) {
+                {
                     var x: u32;
-                }}
-                @else
-                {{
+                }
+            } @else {
+                {
                     var x: u32;
-                }}
+                }
+            }
                 return x;
             }
         "#]],

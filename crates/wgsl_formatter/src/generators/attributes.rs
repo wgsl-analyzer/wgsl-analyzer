@@ -1,6 +1,6 @@
 use std::{collections::BTreeMap, string::String};
 
-use dprint_core::formatting::{PrintItems, StringContainer};
+use dprint_core::formatting::PrintItems;
 use dprint_core_macros::sc;
 use itertools::{Itertools as _, Position};
 use parser::{SyntaxKind, SyntaxNode};
@@ -118,6 +118,23 @@ pub(crate) fn categorize_attribute(attribute: &Attribute) -> AttributeCategoriza
     }
 }
 
+fn get_attribute_layout(attribute_list: &AttributeList) -> AttributeLayout {
+    if let Some(parent) = attribute_list.syntax().parent()
+        && matches!(
+            parent.kind(),
+            SyntaxKind::FunctionDeclaration | SyntaxKind::SwitchStatement | SyntaxKind::ReturnType
+        )
+    {
+        AttributeLayout::Inline
+    } else if let Some(sibling) = attribute_list.syntax().next_sibling()
+        && matches!(sibling.kind(), SyntaxKind::CompoundStatement)
+    {
+        AttributeLayout::Inline
+    } else {
+        AttributeLayout::Multiline
+    }
+}
+
 pub fn gen_attribute_list(attribute_list: &AttributeList) -> FormatDocumentResult<PrintItemBuffer> {
     let mut syntax = syntax_iter(attribute_list.syntax());
 
@@ -178,20 +195,7 @@ pub fn gen_attribute_list(attribute_list: &AttributeList) -> FormatDocumentResul
 
     let expect_space_or_linebreak = Request::expect(RequestItem::Space).or_newline();
 
-    let layout = if let Some(parent) = attribute_list.syntax().parent() {
-        if matches!(
-            parent.kind(),
-            SyntaxKind::FunctionDeclaration | SyntaxKind::SwitchStatement | SyntaxKind::ReturnType
-        ) {
-            AttributeLayout::Inline
-        } else {
-            AttributeLayout::Multiline
-        }
-    } else {
-        AttributeLayout::Multiline
-    };
-
-    let group_separator = match layout {
+    let group_separator = match get_attribute_layout(attribute_list) {
         AttributeLayout::Inline => expect_space_or_linebreak.clone(),
         AttributeLayout::Multiline => Request::expect(RequestItem::LineBreak),
     };
@@ -435,32 +439,59 @@ pub fn gen_other_attribute(
 #[expect(clippy::inline_modules, reason = "Its much neater this way, simply grouping them together.")]
 mod standard_attributes {
     use super::gen_attr_standard_with_args;
-    use dprint_core_macros::sc;
     use parser::{SyntaxKind};
     use syntax::{AstNode as _, ast};
 
-    use crate::{print_item_buffer::PrintItemBuffer, reporting::FormatDocumentResult};
+    use crate::{generators::attributes::gen_attr_condcomp_with_args, print_item_buffer::PrintItemBuffer, reporting::FormatDocumentResult};
 
 
-    pub fn gen_align_attribute(attribute: &ast::AlignAttribute) -> FormatDocumentResult<PrintItemBuffer>                   { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::Align, sc!("align")) }
-    pub fn gen_const_attribute(attribute: &ast::ConstantAttribute ) -> FormatDocumentResult<PrintItemBuffer>               { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::Const, sc!("const")) }
-    pub fn gen_binding_attribute(attribute: &ast::BindingAttribute ) -> FormatDocumentResult<PrintItemBuffer>              { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::Binding, sc!("binding")) }
-    pub fn gen_blend_src_attribute(attribute: &ast::BlendSrcAttribute ) -> FormatDocumentResult<PrintItemBuffer>           { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::BlendSrc, sc!("blend_src")) }
-    pub fn gen_group_attribute(attribute: &ast::GroupAttribute ) -> FormatDocumentResult<PrintItemBuffer>                  { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::Group, sc!("group")) }
-    pub fn gen_id_attribute(attribute: &ast::IdAttribute) -> FormatDocumentResult<PrintItemBuffer>                         { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::Id, sc!("id")) }
-    pub fn gen_invariant_attribute(attribute: &ast::InvariantAttribute ) -> FormatDocumentResult<PrintItemBuffer>          { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::Invariant, sc!("invariant")) }
-    pub fn gen_location_attribute(attribute: &ast::LocationAttribute ) -> FormatDocumentResult<PrintItemBuffer>            { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::Location, sc!("location")) }
-    pub fn gen_must_use_attribute(attribute: &ast::MustUseAttribute ) -> FormatDocumentResult<PrintItemBuffer>             { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::MustUse, sc!("must_use")) }
-    pub fn gen_size_attribute(attribute: &ast::SizeAttribute ) -> FormatDocumentResult<PrintItemBuffer>                    { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::Size, sc!("size")) }
-    pub fn gen_workgroup_size_attribute(attribute: &ast::WorkgroupSizeAttribute ) -> FormatDocumentResult<PrintItemBuffer> { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::WorkgroupSize, sc!("workgroup_size"), ) }
-    pub fn gen_vertex_attribute(attribute: &ast::VertexAttribute ) -> FormatDocumentResult<PrintItemBuffer>                { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::Vertex, sc!("vertex")) }
-    pub fn gen_fragment_attribute(attribute: &ast::FragmentAttribute ) -> FormatDocumentResult<PrintItemBuffer>            { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::Fragment, sc!("fragment")) }
-    pub fn gen_compute_attribute(attribute: &ast::ComputeAttribute ) -> FormatDocumentResult<PrintItemBuffer>              { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::Compute, sc!("compute")) }
+    pub fn gen_align_attribute(attribute: &ast::AlignAttribute) -> FormatDocumentResult<PrintItemBuffer>                   { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::Align) }
+    pub fn gen_const_attribute(attribute: &ast::ConstantAttribute ) -> FormatDocumentResult<PrintItemBuffer>               { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::Const) }
+    pub fn gen_binding_attribute(attribute: &ast::BindingAttribute ) -> FormatDocumentResult<PrintItemBuffer>              { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::Binding) }
+    pub fn gen_blend_src_attribute(attribute: &ast::BlendSrcAttribute ) -> FormatDocumentResult<PrintItemBuffer>           { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::BlendSrc) }
+    pub fn gen_group_attribute(attribute: &ast::GroupAttribute ) -> FormatDocumentResult<PrintItemBuffer>                  { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::Group) }
+    pub fn gen_id_attribute(attribute: &ast::IdAttribute) -> FormatDocumentResult<PrintItemBuffer>                         { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::Id) }
+    pub fn gen_invariant_attribute(attribute: &ast::InvariantAttribute ) -> FormatDocumentResult<PrintItemBuffer>          { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::Invariant) }
+    pub fn gen_location_attribute(attribute: &ast::LocationAttribute ) -> FormatDocumentResult<PrintItemBuffer>            { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::Location) }
+    pub fn gen_must_use_attribute(attribute: &ast::MustUseAttribute ) -> FormatDocumentResult<PrintItemBuffer>             { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::MustUse) }
+    pub fn gen_size_attribute(attribute: &ast::SizeAttribute ) -> FormatDocumentResult<PrintItemBuffer>                    { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::Size) }
+    pub fn gen_workgroup_size_attribute(attribute: &ast::WorkgroupSizeAttribute ) -> FormatDocumentResult<PrintItemBuffer> { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::WorkgroupSize, ) }
+    pub fn gen_vertex_attribute(attribute: &ast::VertexAttribute ) -> FormatDocumentResult<PrintItemBuffer>                { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::Vertex) }
+    pub fn gen_fragment_attribute(attribute: &ast::FragmentAttribute ) -> FormatDocumentResult<PrintItemBuffer>            { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::Fragment) }
+    pub fn gen_compute_attribute(attribute: &ast::ComputeAttribute ) -> FormatDocumentResult<PrintItemBuffer>              { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::Compute) }
 
     // WESL
-    pub fn gen_if_attribute(attribute: &ast::IfAttribute ) -> FormatDocumentResult<PrintItemBuffer>                        { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::If, sc!("if")) }
-    pub fn gen_elif_attribute(attribute: &ast::ElifAttribute ) -> FormatDocumentResult<PrintItemBuffer>                    { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::Elif, sc!("elif")) }
-    pub fn gen_else_attribute(attribute: &ast::ElseAttribute ) -> FormatDocumentResult<PrintItemBuffer>                    { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::Else, sc!("else")) }
+    pub fn gen_if_attribute(attribute: &ast::IfAttribute ) -> FormatDocumentResult<PrintItemBuffer>                        { gen_attr_condcomp_with_args(attribute.syntax(), SyntaxKind::If) }
+    pub fn gen_elif_attribute(attribute: &ast::ElifAttribute ) -> FormatDocumentResult<PrintItemBuffer>                    { gen_attr_condcomp_with_args(attribute.syntax(), SyntaxKind::Elif) }
+    pub fn gen_else_attribute(attribute: &ast::ElseAttribute ) -> FormatDocumentResult<PrintItemBuffer>                    { gen_attr_condcomp_with_args(attribute.syntax(), SyntaxKind::Else) }
+}
+
+pub fn gen_attr_condcomp_with_args(
+    syntax: &SyntaxNode,
+    expected_token: SyntaxKind,
+) -> FormatDocumentResult<PrintItemBuffer> {
+    let follows_compound = if let Some(parent) = syntax.parent()
+        && let Some(previous) = parent.prev_sibling()
+        && matches!(previous.kind(), SyntaxKind::CompoundStatement)
+    {
+        true
+    } else {
+        false
+    };
+
+    let mut formatted = PrintItemBuffer::default();
+
+    if follows_compound {
+        formatted.request(Request::expect(RequestItem::Space));
+        formatted.request(Request::discourage(RequestItem::LineBreak));
+        formatted.request(Request::discourage(RequestItem::EmptyLine));
+    }
+
+    formatted.start_ignoring_indent_before_requests();
+    formatted.extend(gen_attr_standard_with_args(syntax, expected_token)?);
+    formatted.finish_ignoring_indent_before_requests();
+
+    Ok(formatted)
 }
 
 /// Attributes of the form:
@@ -468,7 +499,6 @@ mod standard_attributes {
 pub fn gen_attr_standard_with_args(
     syntax: &SyntaxNode,
     expected_token: SyntaxKind,
-    _attribute_name: &'static StringContainer,
 ) -> FormatDocumentResult<PrintItemBuffer> {
     let mut syntax = syntax_iter(syntax);
 

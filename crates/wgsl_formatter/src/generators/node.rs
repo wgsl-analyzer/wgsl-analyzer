@@ -137,7 +137,6 @@ pub fn gen_node(
 ) -> FormatDocumentResult<PrintItemBuffer> {
     match node.kind() {
         SyntaxKind::SourceFile => with_cast!(gen_source_file, ast::SourceFile, node),
-        SyntaxKind::GlobalCompoundDeclaration => with_cast!(gen_global_compound_declaration, ast::GlobalCompoundDeclaration, node),
         SyntaxKind::FunctionDeclaration => with_cast!(gen_function_declaration, ast::FunctionDeclaration, node),
         SyntaxKind::TemplateList => with_cast!(gen_template_list, ast::TemplateList, node),
         SyntaxKind::FunctionParameters => with_cast!(gen_fn_parameters, ast::FunctionParameters, node),
@@ -147,6 +146,10 @@ pub fn gen_node(
         SyntaxKind::CompoundStatement => gen_compound_statement(
             with_trivia,
             &node.clone().into_node().and_then(<ast::CompoundStatement>::cast).expect("We just matched on the SyntaxKind"),
+        ),
+        SyntaxKind::GlobalCompoundDeclaration => gen_global_compound_declaration(
+            with_trivia,
+            &node.clone().into_node().and_then(<ast::GlobalCompoundDeclaration>::cast).expect("We just matched on the SyntaxKind"),
         ),
         SyntaxKind::AssignmentStatement => with_cast!(gen_assignment_statement, ast::AssignmentStatement, node),
         SyntaxKind::PhonyAssignmentStatement => with_cast!(gen_phony_assignment_statement, ast::PhonyAssignmentStatement, node),
@@ -228,7 +231,6 @@ pub fn gen_node(
                     .expect("We just matched on the SyntaxKind")
                     .clone(),
                 SyntaxKind::EarlyDepthTest,
-                dprint_core_macros::sc!("early_depth_test")
             )
         }
         SyntaxKind::AttributeList => with_cast!(gen_attribute_list, ast::AttributeList, node),
