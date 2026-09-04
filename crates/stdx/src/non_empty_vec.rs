@@ -44,3 +44,35 @@ impl<T> NonEmptyVec<T> {
         self.rest.pop().unwrap_or(self.first)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::NonEmptyVec;
+
+    #[test]
+    fn non_empty_vec() {
+        let mut vec = NonEmptyVec::new(1);
+        assert_eq!(vec.len(), 1);
+        assert_eq!(*vec.last_mut(), 1);
+        assert_eq!(vec.pop(), None);
+        assert_eq!(vec.into_last(), 1);
+
+        let mut vec = NonEmptyVec::new(1);
+        vec.push(2);
+        vec.push(3);
+
+        assert_eq!(vec.len(), 3);
+        assert_eq!(*vec.last_mut(), 3);
+        assert_eq!(vec.pop(), Some(3));
+        assert_eq!(vec.len(), 2);
+        assert_eq!(*vec.last_mut(), 2);
+        assert_eq!(vec.into_last(), 2);
+
+        let mut vec = NonEmptyVec::new(1);
+        vec.push(2);
+        assert_eq!(vec.pop(), Some(2));
+        assert_eq!(*vec.last_mut(), 1);
+        assert_eq!(vec.pop(), None);
+        assert_eq!(vec.into_last(), 1);
+    }
+}

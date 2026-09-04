@@ -2,9 +2,8 @@
 
 #![warn(unused)]
 
-use std::borrow::Cow;
 use std::process::Command;
-use std::{cmp::Ordering, ops, time::Instant};
+use std::{cmp::Ordering, ops};
 use std::{hash, io as sio};
 
 mod macros;
@@ -37,28 +36,13 @@ where
     hash::BuildHasher::hash_one(&hash::BuildHasherDefault::<Hasher>::default(), thing)
 }
 
+#[cfg(test)]
 #[must_use]
 #[expect(clippy::print_stderr, reason = "only visible to developers")]
 pub fn timeit(label: &'static str) -> impl Drop {
+    use std::time::Instant;
     let start = Instant::now();
     defer(move || eprintln!("{label}: {:.2}", start.elapsed().as_nanos()))
-}
-
-/// Prints backtrace to stderr, useful for debugging.
-#[expect(clippy::print_stderr, reason = "only visible to developers")]
-pub fn print_backtrace() {
-    #[cfg(feature = "backtrace")]
-    #[expect(clippy::use_debug, reason = "only visible to developers")]
-    {
-        eprintln!("{:?}", backtrace::Backtrace::new());
-    }
-
-    #[cfg(not(feature = "backtrace"))]
-    eprintln!(
-        r#"Enable the backtrace feature.
-Uncomment `default = [ "backtrace" ]` in `crates/stdx/Cargo.toml`.
-"#
-    );
 }
 
 pub trait TupleExt {
@@ -220,13 +204,6 @@ pub const fn char_has_case(character: char) -> bool {
     character.is_lowercase() || character.is_uppercase()
 }
 
-#[must_use]
-pub fn is_upper_snake_case(string: &str) -> bool {
-    string
-        .chars()
-        .all(|character| character.is_uppercase() || character == '_' || character.is_numeric())
-}
-
 pub fn replace(
     buffer: &mut String,
     from: char,
@@ -285,28 +262,6 @@ pub fn dedent_by(
                 trimmed
             } else {
                 &line[spaces..]
-            }
-        })
-        .collect()
-}
-
-/// Indent non empty lines, including the first line.
-#[must_use]
-pub fn indent_string(
-    string: &str,
-    indent_level: u8,
-) -> String {
-    if indent_level == 0 || string.is_empty() {
-        return string.to_owned();
-    }
-    let indent_str = "    ".repeat(indent_level.into());
-    string
-        .split_inclusive('\n')
-        .map(|line| {
-            if line.trim_end().is_empty() {
-                Cow::Borrowed(line)
-            } else {
-                format!("{indent_str}{line}").into()
             }
         })
         .collect()
@@ -422,6 +377,26 @@ mod tests {
     use super::*;
 
     #[test]
+    fn to_camel_case_works() {
+        assert_eq!(to_camel_case("___"), "");
+        assert_eq!(to_camel_case("hello_world"), "HelloWorld");
+        assert_eq!(to_camel_case("camelCase"), "CamelCase");
+        assert_eq!(to_camel_case("XML_http"), "XmlHttp");
+        assert_eq!(to_camel_case("123_456"), "123_456");
+        assert_eq!(to_camel_case("__foo___bar__"), "FooBar");
+    }
+
+    #[test]
+    fn to_snake_case_works() {
+        assert_eq!(to_lower_snake_case("_"), "");
+        assert_eq!(to_lower_snake_case("HelloWorld"), "hello_world");
+        assert_eq!(to_lower_snake_case("_FooBar"), "_foo_bar");
+        assert_eq!(to_upper_snake_case("_"), "");
+        assert_eq!(to_upper_snake_case("HelloWorld"), "HELLO_WORLD");
+        assert_eq!(to_upper_snake_case("_FooBar"), "_FOO_BAR");
+    }
+
+    #[test]
     fn trim_indent_works() {
         assert_eq!(trim_indent(""), "");
         assert_eq!(
@@ -519,5 +494,31 @@ mod tests {
         test_replace("a.b.c", '.', "😀😀", "a😀😀b😀😀c");
         test_replace(".a.b.c.", '.', "()", "()a()b()c()");
         test_replace(".a.b.c.", '.', "", "abc");
+    }
+
+    #[test]
+    fn equal_range_by_edge_cases() {
+        assert_eq!(equal_range_by(&[], |_: &i32| Ordering::Equal), 0..0);
+        assert_eq!(equal_range_by(&[2, 2, 3], |index| index.cmp(&2)), 0..2);
+        assert_eq!(
+            equal_range_by(&[1, 2, 2, 2, 3], |index| index.cmp(&2)),
+            1..4
+        );
+        assert_eq!(equal_range_by(&[1, 2, 2], |index| index.cmp(&2)), 1..3);
+        assert_eq!(equal_range_by(&[1, 3], |index| index.cmp(&2)), 1..1);
+        assert_eq!(equal_range_by(&[2, 3], |index| index.cmp(&1)), 0..0);
+        assert_eq!(equal_range_by(&[1, 2], |index| index.cmp(&3)), 2..2);
+        assert_eq!(equal_range_by(&[2, 2, 2], |index| index.cmp(&2)), 0..3);
+    }
+
+    #[test]
+    fn defer_works() {
+        let data = std::rc::Rc::new(std::cell::RefCell::new(String::new()));
+        {
+            let _to_drop = defer(|| data.borrow_mut().push('a'));
+            data.borrow_mut().push('b');
+        }
+        data.borrow_mut().push('c');
+        assert_eq!(data.take(), "bac");
     }
 }
