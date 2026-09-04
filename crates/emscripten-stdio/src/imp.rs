@@ -342,3 +342,177 @@ pub unsafe extern "C" fn lsp_stdout_pop(
     };
     transferred(STDOUT.pop_into(destination))
 }
+
+// ---------------------------------------------------------------------------
+// The wrappers, and the libc entry points they displace
+// ---------------------------------------------------------------------------
+
+// SAFETY: each signature matches the libc function the linker binds it to.
+// `--wrap=read` renames the original `read` to `__real_read`, and so on for the
+// other three.
+unsafe extern "C" {
+    #[link_name = "__real_read"]
+    fn real_read(
+        fd: c_int,
+        buf: *mut c_void,
+        count: usize,
+    ) -> isize;
+
+    #[link_name = "__real_readv"]
+    fn real_readv(
+        fd: c_int,
+        iov: *const libc::iovec,
+        iovcnt: c_int,
+    ) -> isize;
+
+    #[link_name = "__real_write"]
+    fn real_write(
+        fd: c_int,
+        buf: *const c_void,
+        count: usize,
+    ) -> isize;
+
+    #[link_name = "__real_writev"]
+    fn real_writev(
+        fd: c_int,
+        iov: *const libc::iovec,
+        iovcnt: c_int,
+    ) -> isize;
+}
+
+/// Intercepts libc `read`. Handles fd 0 and forwards every other descriptor.
+///
+/// # Safety
+///
+/// Same contract as `read(2)`.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn __wrap_read(
+    fd: c_int,
+    buf: *mut c_void,
+    count: usize,
+) -> isize {
+    if fd != libc::STDIN_FILENO {
+        // SAFETY: forwarded unchanged, with the exact libc ABI.
+        return unsafe { real_read(fd, buf, count) };
+    }
+    // SAFETY: the caller promises `count` writable bytes at `buf`.
+    let destination = match unsafe { as_slice_mut(buf.cast::<u8>(), count) } {
+        Ok(destination) => destination,
+        Err(error) => return fail(error),
+    };
+    transferred(STDIN.read_with(|queue| drain_into(queue, destination)))
+}
+
+/// Intercepts libc `readv`.
+///
+/// Wrapping this is not optional: `is_read_vectored()` is true on emscripten,
+/// so Rust's buffered readers really do take this path, and wrapping only
+/// `read` would lose data.
+///
+/// # Safety
+///
+/// Same contract as `readv(2)`.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn __wrap_readv(
+    fd: c_int,
+    iov: *const libc::iovec,
+    iovcnt: c_int,
+) -> isize {
+    if fd != libc::STDIN_FILENO {
+        // SAFETY: forwarded unchanged, with the exact libc ABI.
+        return unsafe { real_readv(fd, iov, iovcnt) };
+    }
+    // SAFETY: the caller promises `iovcnt` readable iovec values at `iov`.
+    let (iovecs, capacity) = match unsafe { checked_iovecs(iov, iovcnt) } {
+        Ok(checked) => checked,
+        Err(error) => return fail(error),
+    };
+    // No room means no wait. Blocking on a zero-byte request would hang for
+    // good, because no amount of incoming data can ever satisfy it.
+    if capacity == 0 {
+        return 0;
+    }
+
+    transferred(STDIN.read_with(|queue| {
+        let mut total = 0;
+        for entry in iovecs {
+            if queue.is_empty() {
+                break;
+            }
+            // SAFETY: checked_iovecs rejected every null base with a non-zero
+            // length, so this buffer is writable for `iov_len` bytes.
+            let Ok(destination) =
+                (unsafe { as_slice_mut(entry.iov_base.cast::<u8>(), entry.iov_len) })
+            else {
+                break;
+            };
+            total += drain_into(queue, destination);
+        }
+        total
+    }))
+}
+
+/// Intercepts libc `write`. Captures fd 1 and forwards every other descriptor.
+///
+/// fd 2 is left alone on purpose, so tracing, panics and other diagnostics keep
+/// reaching the browser console. That matches the native convention: stdout
+/// carries the protocol, stderr carries everything else. It also means any
+/// stray write to stdout corrupts the LSP stream.
+///
+/// # Safety
+///
+/// Same contract as `write(2)`.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn __wrap_write(
+    fd: c_int,
+    buf: *const c_void,
+    count: usize,
+) -> isize {
+    if fd != libc::STDOUT_FILENO {
+        // SAFETY: forwarded unchanged, with the exact libc ABI.
+        return unsafe { real_write(fd, buf, count) };
+    }
+    // SAFETY: the caller promises `count` readable bytes at `buf`.
+    let bytes = match unsafe { as_slice(buf.cast::<u8>(), count) } {
+        Ok(bytes) => bytes,
+        Err(error) => return fail(error),
+    };
+    STDOUT.append(bytes.len(), |queue| queue.extend(bytes));
+    transferred(bytes.len())
+}
+
+/// Intercepts libc `writev`.
+///
+/// Rust's `Stdout` is a `LineWriter` and `is_write_vectored()` is true on
+/// emscripten, so this is the path most LSP responses take.
+///
+/// # Safety
+///
+/// Same contract as `writev(2)`.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn __wrap_writev(
+    fd: c_int,
+    iov: *const libc::iovec,
+    iovcnt: c_int,
+) -> isize {
+    if fd != libc::STDOUT_FILENO {
+        // SAFETY: forwarded unchanged, with the exact libc ABI.
+        return unsafe { real_writev(fd, iov, iovcnt) };
+    }
+    // SAFETY: the caller promises `iovcnt` readable iovec values at `iov`.
+    let (iovecs, total) = match unsafe { checked_iovecs(iov, iovcnt) } {
+        Ok(checked) => checked,
+        Err(error) => return fail(error),
+    };
+
+    STDOUT.append(total, |queue| {
+        for entry in iovecs {
+            // SAFETY: checked_iovecs rejected every null base with a non-zero
+            // length, so this buffer is readable for `iov_len` bytes.
+            if let Ok(bytes) = unsafe { as_slice(entry.iov_base.cast::<u8>(), entry.iov_len) } {
+                queue.extend(bytes);
+            }
+        }
+    });
+    transferred(total)
+}
