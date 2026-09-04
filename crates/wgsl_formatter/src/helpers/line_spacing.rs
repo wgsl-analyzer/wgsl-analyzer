@@ -16,13 +16,12 @@ pub enum LineSpacing {
     OnelineBlankspace(SyntaxToken),
 }
 impl LineSpacing {
+    #[must_use]
     pub fn syntax(&self) -> NodeOrToken<SyntaxNode, SyntaxToken> {
         match self {
-            LineSpacing::LineBreak(syntax_token) => NodeOrToken::Token(syntax_token.clone()),
-            LineSpacing::EmptyLine(syntax_token) => NodeOrToken::Token(syntax_token.clone()),
-            LineSpacing::OnelineBlankspace(syntax_token) => {
-                NodeOrToken::Token(syntax_token.clone())
-            },
+            Self::LineBreak(syntax_token)
+            | Self::EmptyLine(syntax_token)
+            | Self::OnelineBlankspace(syntax_token) => NodeOrToken::Token(syntax_token.clone()),
         }
     }
 }

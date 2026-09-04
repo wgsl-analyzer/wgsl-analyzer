@@ -21,8 +21,7 @@ impl Comment {
         rowan::SyntaxToken<parser::WeslLanguage>,
     > {
         match self {
-            Comment::Block(token) => NodeOrToken::Token(token.clone()),
-            Comment::LineEnding(token) => NodeOrToken::Token(token.clone()),
+            Self::Block(token) | Self::LineEnding(token) => NodeOrToken::Token(token.clone()),
         }
     }
 }
