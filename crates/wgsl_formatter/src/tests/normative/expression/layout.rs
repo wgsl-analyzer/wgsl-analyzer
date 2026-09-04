@@ -242,6 +242,7 @@ pub fn format_index_expr_with_break_inside() {
 
 #[test]
 pub fn format_prefer_breaking_somewhat_according_to_precedence() {
+    // https://discord.com/channels/1289346613185351722/1341941812675481680/1540094874739802243
     check_with_options(
         "fn main() {
             let hit_a = a_intersection.hit_type != util::HIT_TYPE_MISS && a_intersection.dist_far > start_depth && a_intersection.dist_near < last_result.depth;
