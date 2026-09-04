@@ -37,14 +37,9 @@ pub fn gen_compound_statement(
             | NodeTriviaItem::Comment(_)
             | NodeTriviaItem::Discarded(_)
             | NodeTriviaItem::NewlinedComment(_) => false,
-            NodeTriviaItem::AttributeList(attribute_list) => {
-                attribute_list.attributes().any(|attribute| {
-                    matches!(
-                        attribute.name().as_ref().map(rowan::SyntaxToken::text),
-                        Some("if" | "else" | "elif")
-                    )
-                })
-            },
+            NodeTriviaItem::AttributeList(attribute_list) => attribute_list
+                .attributes()
+                .any(|attribute| attribute.is_conditional_compilation()),
         });
 
     // ==== Parse ====
@@ -83,7 +78,13 @@ pub fn gen_compound_statement(
 
     let mut multiline_group = MultilineGroup::new_before_requests(&mut formatted);
 
+    if is_conditional {
+        multiline_group.start_ignoring_indent_before_requests();
+    }
     multiline_group.push_sc(sc!("{"));
+    if is_conditional {
+        multiline_group.finish_ignoring_indent_before_requests();
+    }
 
     if !body_empty {
         if !is_conditional {
@@ -97,23 +98,27 @@ pub fn gen_compound_statement(
             multiline_group.request(Request::expect(RequestItem::LineBreak));
         }
 
-        if is_conditional
-            && items.len() == 1
-            && let Some(item) = items.first()
-            && matches!(item.kind(), Some(SyntaxKind::CompoundStatement))
-        {
-            multiline_group.request(Request::discourage(RequestItem::LineBreak));
-            multiline_group.extend(gen_node_with_trivia(item)?);
-            multiline_group.request(Request::discourage(RequestItem::LineBreak));
-        } else {
-            for (pos, item) in items.iter().with_position() {
-                if !matches!(pos, Position::Only | Position::First) {
-                    multiline_group.request(Request::expect(RequestItem::LineBreak));
-                }
-
-                multiline_group.extend(gen_node_with_trivia(item)?);
+        // When we inevitably have to make the condcomp compound statements configurable - here
+        // is some code to save you a few minutes.
+        // This is the condition i used to collapse nested compound statements into "{{" and "}}"
+        //
+        // if is_conditional
+        //     && items.len() == 1
+        //     && let Some(item) = items.first()
+        //     && matches!(item.kind(), Some(SyntaxKind::CompoundStatement))
+        // {
+        //     multiline_group.request(Request::discourage(RequestItem::LineBreak));
+        //     multiline_group.extend(gen_node_with_trivia(item)?);
+        //     multiline_group.request(Request::discourage(RequestItem::LineBreak));
+        // } else {
+        for (pos, item) in items.iter().with_position() {
+            if !matches!(pos, Position::Only | Position::First) {
+                multiline_group.request(Request::expect(RequestItem::LineBreak));
             }
+
+            multiline_group.extend(gen_node_with_trivia(item)?);
         }
+        // }
 
         if !is_conditional {
             multiline_group.finish_indent();
@@ -127,7 +132,13 @@ pub fn gen_compound_statement(
         multiline_group.request(Request::discourage(RequestItem::EmptyLine));
     }
 
+    if is_conditional {
+        multiline_group.start_ignoring_indent_before_requests();
+    }
     multiline_group.push_sc(sc!("}"));
+    if is_conditional {
+        multiline_group.finish_ignoring_indent_before_requests();
+    }
 
     multiline_group.end_before_requests();
 

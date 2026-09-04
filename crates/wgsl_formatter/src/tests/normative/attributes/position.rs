@@ -276,12 +276,8 @@ pub fn format_attrs_on_compound_statement() {
         ",
         expect![[r#"
             fn main() {
-                @attr(0)
-                @attr(1)
-                {}
-                if true @attr(0)
-                @attr(1)
-                {}
+                @attr(0) @attr(1) {}
+                if true @attr(0) @attr(1) {}
             }
         "#]],
     );
@@ -302,14 +298,10 @@ pub fn format_attrs_on_nonempty_compound_statement() {
         ",
         expect![[r#"
             fn main() {
-                @attr(0)
-                @attr(1)
-                {
+                @attr(0) @attr(1) {
                     let a = 0;
                 }
-                if true @attr(0)
-                @attr(1)
-                {
+                if true @attr(0) @attr(1) {
                     let a = 0;
                 }
             }
@@ -388,7 +380,7 @@ pub fn format_attrs_on_loop_statement() {
 }
 
 #[test]
-pub fn format_attrs_on_loop_statement_body() {
+pub fn format_attrs_on_loop_body() {
     check(
         "
         fn main() {
@@ -397,9 +389,7 @@ pub fn format_attrs_on_loop_statement_body() {
         ",
         expect![[r#"
             fn main() {
-                loop @attr(0)
-                @attr(1)
-                {}
+                loop @attr(0) @attr(1) {}
             }
         "#]],
     );
