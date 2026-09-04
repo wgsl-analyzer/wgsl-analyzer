@@ -5,7 +5,11 @@
 use std::{
     collections::VecDeque,
     ffi::{c_int, c_void},
-    sync::{Condvar, Mutex, MutexGuard},
+    hint::black_box,
+    sync::{
+        Condvar, Mutex, MutexGuard,
+        atomic::{AtomicI32, Ordering},
+    },
 };
 
 use crate::queue::drain_into;
@@ -261,6 +265,11 @@ unsafe fn checked_iovecs<'iov>(
         };
     }
     Ok((iovecs, total))
+}
+
+/// See [`crate::force_link`].
+pub(crate) fn force_link() {
+    black_box(lsp_stdout_signal_ptr());
 }
 
 /// Queue bytes for the server to read, already LSP-framed by the host.
