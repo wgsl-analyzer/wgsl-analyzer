@@ -254,15 +254,33 @@ fn bla(/* @wgslfmt(ignore) */ a:             u32          ,          b: u32) {}
 }
 
 #[test]
-pub fn ignore_within_source_file() {
+pub fn ignore_within_source_file_simple() {
+    check(
+        "
+        // @!wgslfmt(ignore)
+fn bla(a:             u32          ,          b: u32) {}",
+        expect![[r#"
+            // @!wgslfmt(ignore)
+            fn bla(a:             u32          ,          b: u32) {}"#]],
+    );
+}
+
+#[test]
+pub fn ignore_within_source_file_trailing_newlines() {
     check(
         "
         // @!wgslfmt(ignore)
 fn bla(a:             u32          ,          b: u32) {}
-        ",
+
+
+
+",
         expect![[r#"
             // @!wgslfmt(ignore)
-            fn bla(a: u32, b: u32) {}
+            fn bla(a:             u32          ,          b: u32) {}
+
+
+
         "#]],
     );
 }
@@ -294,23 +312,15 @@ a=1
 }
         ",
         expect![[r#"
-            // @wgslfmt(ignore)
-            fn
-            a
-            (
-            u: u32
-            ) {
+            fn a(u: u32) {
+            // @!wgslfmt(ignore)
             let
             a=1
             ;
             }
 
-            /* @wgslfmt(ignore) */
-            fn
-            a
-            (
-            u: u32
-            ) {
+            fn a(u: u32) {
+            /* @!wgslfmt(ignore) */
             let
             a=1
             ;
