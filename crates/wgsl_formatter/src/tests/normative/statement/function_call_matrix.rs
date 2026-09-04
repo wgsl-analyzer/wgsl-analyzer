@@ -1,5 +1,4 @@
 use expect_test::expect;
-use parser::Edition;
 
 use crate::{
     FormattingOptions,
@@ -164,7 +163,6 @@ fn format_matrix_break_inner_first_if_forced_multiline_by_line_length() {
             ..Default::default()
         }
         .into(),
-        parser::Edition::LATEST,
     );
 }
 
@@ -199,10 +197,9 @@ fn main() {
             formatting: FormattingOptions {
                 max_line_width: 80,
                 ..Default::default()
-            }
-            ,
+            },
+            ..Default::default()
         },
-        Edition::default(),
     );
 }
 

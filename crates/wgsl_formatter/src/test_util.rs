@@ -120,12 +120,7 @@ pub fn check<E>(
 where
     E: ExpectAssertEq,
 {
-    check_with_options(
-        before,
-        after,
-        &FormattingOptions::default().into(),
-        Edition::LATEST,
-    )
+    check_with_options(before, after, &FormattingOptions::default().into())
 }
 
 /// Checks that the given source raises parsing diagnostics and is
@@ -160,11 +155,18 @@ pub fn assert_out_of_scope(
     }
 }
 
-#[derive(Default)]
 pub struct CheckOptions {
     pub assert_line_width: Option<usize>,
     pub formatting: FormattingOptions,
+    pub edition: Edition,
 }
+impl Default for CheckOptions {
+    fn default() -> Self {
+        let formatting = FormattingOptions::default();
+        formatting.into()
+    }
+}
+
 impl From<FormattingOptions> for CheckOptions {
     fn from(value: FormattingOptions) -> Self {
         Self {
@@ -172,6 +174,7 @@ impl From<FormattingOptions> for CheckOptions {
                 usize::try_from(value.max_line_width).expect("max_line_width must fit into usize"),
             ),
             formatting: value,
+            edition: Edition::LATEST,
         }
     }
 }
@@ -182,12 +185,11 @@ pub fn check_with_options<E>(
     before: &str,
     after: E,
     options: &CheckOptions,
-    edition: Edition,
 ) -> String
 where
     E: ExpectAssertEq,
 {
-    let parse = syntax::parse(before.trim_start(), edition);
+    let parse = syntax::parse(before.trim_start(), options.edition);
     let syntax = parse.tree();
 
     // For debugging tests its very useful to
@@ -224,7 +226,7 @@ where
     println!("==Idempodence check==");
 
     // Check for idempotence
-    let syntax = syntax::parse(formatted.trim_start(), edition).tree();
+    let syntax = syntax::parse(formatted.trim_start(), options.edition).tree();
 
     let formatted_twice = format_tree(&syntax, &options.formatting)
         .expect("Formatting already formatted sources should never fail with an error");
@@ -266,7 +268,7 @@ where
     if options.formatting.indent_style != IndentStyle::Tabs {
         let tab_source = before.replace("    ", "\t");
 
-        let parse = syntax::parse(tab_source.trim_start(), edition);
+        let parse = syntax::parse(tab_source.trim_start(), options.edition);
         let syntax = parse.tree();
 
         assert!(
@@ -361,8 +363,8 @@ pub fn check_comments<E>(
             &CheckOptions {
                 assert_line_width: None,
                 formatting: FormattingOptions::default(),
+                ..Default::default()
             },
-            Edition::LATEST,
         );
 
         //Check that all the comments are still present after formatting
@@ -405,8 +407,8 @@ pub fn check_comments<E>(
             &CheckOptions {
                 assert_line_width: None,
                 formatting: FormattingOptions::default(),
+                edition: Edition::LATEST,
             },
-            Edition::LATEST,
         );
 
         //Check that all the comments are still present after formatting

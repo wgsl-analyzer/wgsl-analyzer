@@ -205,7 +205,6 @@ pub fn format_import_collection_break_on_long_items() {
             max_line_width: 80,
             ..Default::default()
         }.into(),
-        parser::Edition::LATEST
     );
 }
 #[test]
@@ -227,8 +226,8 @@ pub fn format_import_path_does_not_get_broken_into_lines() {
                 max_line_width: 80,
                 ..Default::default()
             },
+            ..Default::default()
         },
-        parser::Edition::LATEST
     );
 }
 
@@ -287,6 +286,5 @@ keeps_inline::{AaaaaAaaa, BbbbbbBbbbbbBbb, CccCcc},
             ..Default::default()
         }
         .into(),
-        parser::Edition::LATEST,
     );
 }

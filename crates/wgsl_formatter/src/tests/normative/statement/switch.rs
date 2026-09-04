@@ -1,5 +1,4 @@
 use expect_test::expect;
-use parser::Edition;
 
 use crate::{
     FormattingOptions,
@@ -162,6 +161,5 @@ pub fn format_switch_statement_indent_long_condition() {
             max_line_width: 80,
             ..Default::default()
         }.into(),
-        Edition::LATEST
     );
 }

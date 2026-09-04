@@ -82,6 +82,5 @@ fn format_long_break_if_statement_gets_indented_correctly() {
             ..Default::default()
         }
         .into(),
-        parser::Edition::LATEST,
     );
 }

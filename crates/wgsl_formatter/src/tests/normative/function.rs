@@ -1,5 +1,4 @@
 use expect_test::expect;
-use parser::Edition;
 
 use crate::{
     FormattingOptions,
@@ -193,7 +192,6 @@ fn format_fn_header_parameter_with_long_type_and_name() {
             ..Default::default()
         }
         .into(),
-        Edition::LATEST,
     );
 }
 
@@ -222,8 +220,8 @@ pub fn format_type_next_to_long_parameter_does_not_get_broken_into_multiple_line
             formatting:FormattingOptions {
                 max_line_width: 80,
                 ..Default::default()
-            }
+            },
+            ..Default::default()
         },
-        Edition::LATEST,
     );
 }

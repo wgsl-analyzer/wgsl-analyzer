@@ -1,5 +1,4 @@
 use expect_test::expect;
-use parser::Edition;
 
 use crate::{
     FormattingOptions,
@@ -55,8 +54,8 @@ pub fn format_insanely_long_function_call_statement() {
                 max_line_width: 80,
                 ..Default::default()
             },
+            ..Default::default()
         },
-        Edition::LATEST,
     );
 }
 

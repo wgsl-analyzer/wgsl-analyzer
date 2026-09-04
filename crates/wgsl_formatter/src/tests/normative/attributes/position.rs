@@ -1,5 +1,4 @@
 use expect_test::expect;
-use parser::Edition;
 
 use crate::{
     FormattingOptions,
@@ -215,7 +214,6 @@ pub fn format_attrs_on_function_body_singleline() {
             ..Default::default()
         }
         .into(),
-        Edition::LATEST,
     );
 }
 
@@ -236,7 +234,6 @@ pub fn format_attrs_on_function_body_multiline() {
             ..Default::default()
         }
         .into(),
-        Edition::LATEST,
     );
 }
 
@@ -426,9 +423,9 @@ pub fn format_attrs_on_for_statement() {
     );
 }
 
-//TODO Look at these cases a bit more closely
+// TODO (MonaMayrhofer, post-1.0)
 #[test]
-#[ignore = "TODO Parser Error?"]
+#[ignore = "TODO https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1380"]
 pub fn format_attrs_on_loop_continuing_block() {
     check(
         "

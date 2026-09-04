@@ -1,7 +1,6 @@
 use std::{ffi::OsString, path::Path};
 
 use expect_test::{expect, expect_file};
-use parser::Edition;
 
 use crate::{
     FormattingOptions,
@@ -64,8 +63,8 @@ fn snapshots() {
                     &CheckOptions {
                         assert_line_width: None, // Smoke tests contain code that cannot be formatted to fit within line width
                         formatting: FormattingOptions::default(),
+                        ..Default::default()
                     },
-                    Edition::LATEST,
                 );
             });
             result.unwrap_or_else(|error| {
