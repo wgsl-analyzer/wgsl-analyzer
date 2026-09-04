@@ -8,7 +8,7 @@ use syntax::{
 
 use crate::{
     ast_parse::{
-        Filter, IgnoreBlankspace, NoTrivia, PolicyAction, parse_end, parse_many_nodes_with,
+        Filter, DiscardBlankspace, NoTrivia, PolicyAction, parse_end, parse_many_nodes_with,
         parse_node_with, syntax_iter,
     },
     generators::node::gen_node_with_trivia,
@@ -24,12 +24,12 @@ pub fn gen_if_statement(statement: &ast::IfStatement) -> FormatDocumentResult<Pr
     let mut syntax = syntax_iter(statement.syntax());
 
     let item_if_clause =
-        parse_node_with(&mut syntax, IgnoreBlankspace).expect_kind(SyntaxKind::IfClause)?;
+        parse_node_with(&mut syntax, DiscardBlankspace).expect_kind(SyntaxKind::IfClause)?;
 
     let else_if_clauses = parse_many_nodes_with(
         &mut syntax,
         (
-            IgnoreBlankspace,
+            DiscardBlankspace,
             Filter(|node| {
                 (!matches!(node.kind(), SyntaxKind::ElseIfClause)).then_some(PolicyAction::MarkEnd)
             }),
@@ -38,7 +38,7 @@ pub fn gen_if_statement(statement: &ast::IfStatement) -> FormatDocumentResult<Pr
     .filter(|node| !node.is_whitespace())
     .collect_vec();
 
-    let item_else_clause = parse_node_with(&mut syntax, IgnoreBlankspace)
+    let item_else_clause = parse_node_with(&mut syntax, DiscardBlankspace)
         .expect_kind_optional(SyntaxKind::ElseClause)?;
     parse_end(&mut syntax)?;
 
@@ -76,9 +76,9 @@ pub fn gen_if_statement_if_clause(statement: &IfClause) -> FormatDocumentResult<
     let mut syntax = syntax_iter(statement.syntax());
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::If)?;
     let item_condition =
-        parse_node_with(&mut syntax, IgnoreBlankspace).expect_ast_node::<Expression>()?;
+        parse_node_with(&mut syntax, DiscardBlankspace).expect_ast_node::<Expression>()?;
     let item_body =
-        parse_node_with(&mut syntax, IgnoreBlankspace).expect_ast_node::<CompoundStatement>()?;
+        parse_node_with(&mut syntax, DiscardBlankspace).expect_ast_node::<CompoundStatement>()?;
     parse_end(&mut syntax)?;
 
     // ==== Format ====
@@ -106,7 +106,7 @@ pub fn gen_if_statement_else_clause(
     let mut syntax = syntax_iter(statement.syntax());
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::Else)?;
     let item_body =
-        parse_node_with(&mut syntax, IgnoreBlankspace).expect_ast_node::<CompoundStatement>()?;
+        parse_node_with(&mut syntax, DiscardBlankspace).expect_ast_node::<CompoundStatement>()?;
     parse_end(&mut syntax)?;
 
     // ==== Format ====
@@ -127,12 +127,12 @@ pub fn gen_if_statement_else_if_clause(
 
     // ==== Parse ====
     let mut syntax = syntax_iter(statement.syntax());
-    let item_else = parse_node_with(&mut syntax, IgnoreBlankspace).expect_kind(SyntaxKind::Else)?;
-    let item_if = parse_node_with(&mut syntax, IgnoreBlankspace).expect_kind(SyntaxKind::If)?;
+    let item_else = parse_node_with(&mut syntax, DiscardBlankspace).expect_kind(SyntaxKind::Else)?;
+    let item_if = parse_node_with(&mut syntax, DiscardBlankspace).expect_kind(SyntaxKind::If)?;
     let item_condition =
-        parse_node_with(&mut syntax, IgnoreBlankspace).expect_ast_node::<Expression>()?;
+        parse_node_with(&mut syntax, DiscardBlankspace).expect_ast_node::<Expression>()?;
     let item_body =
-        parse_node_with(&mut syntax, IgnoreBlankspace).expect_ast_node::<CompoundStatement>()?;
+        parse_node_with(&mut syntax, DiscardBlankspace).expect_ast_node::<CompoundStatement>()?;
     parse_end(&mut syntax)?;
 
     // ==== Format ====

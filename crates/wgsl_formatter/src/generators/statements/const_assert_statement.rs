@@ -6,7 +6,7 @@ use syntax::{
 };
 
 use crate::{
-    ast_parse::{IgnoreBlankspace, NoTrivia, parse_end, parse_node_with, syntax_iter},
+    ast_parse::{DiscardBlankspace, NoTrivia, parse_end, parse_node_with, syntax_iter},
     context_policies::statement_needs_semicolon_policy,
     generators::node::gen_node_with_trivia,
     print_item_buffer::{
@@ -23,7 +23,7 @@ pub fn gen_const_assert_statement(
     let mut syntax = syntax_iter(statement.syntax());
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::ConstantAssert)?;
     let item_condition =
-        parse_node_with(&mut syntax, IgnoreBlankspace).expect_ast_node::<Expression>()?;
+        parse_node_with(&mut syntax, DiscardBlankspace).expect_ast_node::<Expression>()?;
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::Semicolon)?;
     parse_end(&mut syntax)?;
 

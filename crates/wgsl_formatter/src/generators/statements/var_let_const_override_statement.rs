@@ -7,7 +7,7 @@ use syntax::{
 };
 
 use crate::{
-    ast_parse::{IgnoreBlankspace, NoTrivia, parse_end, parse_node_with, syntax_iter},
+    ast_parse::{DiscardBlankspace, NoTrivia, parse_end, parse_node_with, syntax_iter},
     context_policies::statement_needs_semicolon_policy,
     generators::node::gen_node_with_trivia,
     print_item_buffer::{
@@ -83,15 +83,15 @@ fn gen_var_let_const_override_statement(
     let mut syntax = syntax_iter(syntax_node);
 
     parse_node_with(&mut syntax, NoTrivia).expect_kind(kind.syntax_kind())?;
-    let item_template_list = parse_node_with(&mut syntax, IgnoreBlankspace)
+    let item_template_list = parse_node_with(&mut syntax, DiscardBlankspace)
         .only_if_kind(SyntaxKind::TemplateList, &mut syntax);
-    let item_name = parse_node_with(&mut syntax, IgnoreBlankspace).expect_kind(SyntaxKind::Name)?;
+    let item_name = parse_node_with(&mut syntax, DiscardBlankspace).expect_kind(SyntaxKind::Name)?;
 
     let item_colon =
         parse_node_with(&mut syntax, NoTrivia).only_if_kind(SyntaxKind::Colon, &mut syntax);
 
     let items_type = if item_colon.is_some() {
-        let item_type_specifier = parse_node_with(&mut syntax, IgnoreBlankspace)
+        let item_type_specifier = parse_node_with(&mut syntax, DiscardBlankspace)
             .expect_kind(SyntaxKind::TypeSpecifier)?;
         Some(item_type_specifier)
     } else {
@@ -103,7 +103,7 @@ fn gen_var_let_const_override_statement(
 
     let assignment = if item_equal.is_some() {
         let value =
-            parse_node_with(&mut syntax, IgnoreBlankspace).expect_ast_node::<ast::Expression>()?;
+            parse_node_with(&mut syntax, DiscardBlankspace).expect_ast_node::<ast::Expression>()?;
         Some(value)
     } else {
         None

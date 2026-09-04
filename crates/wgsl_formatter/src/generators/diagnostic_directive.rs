@@ -3,7 +3,7 @@ use parser::SyntaxKind;
 use syntax::{AstNode as _, ast};
 
 use crate::{
-    ast_parse::{IgnoreBlankspace, NoTrivia, parse_end, parse_node_with, syntax_iter},
+    ast_parse::{DiscardBlankspace, NoTrivia, parse_end, parse_node_with, syntax_iter},
     generators::node::gen_node_with_trivia,
     multiline_group::MultilineGroup,
     print_item_buffer::{
@@ -19,10 +19,10 @@ pub fn gen_diagnostic_control(
     let mut syntax = syntax_iter(node.syntax());
 
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::ParenthesisLeft)?;
-    let item_control_name = parse_node_with(&mut syntax, IgnoreBlankspace)
+    let item_control_name = parse_node_with(&mut syntax, DiscardBlankspace)
         .expect_kind(SyntaxKind::SeverityControlName)?;
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::Comma)?;
-    let item_rule_name = parse_node_with(&mut syntax, IgnoreBlankspace)
+    let item_rule_name = parse_node_with(&mut syntax, DiscardBlankspace)
         .expect_kind(SyntaxKind::DiagnosticRuleName)?;
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::ParenthesisRight)?;
     parse_end(&mut syntax)?;
@@ -50,7 +50,7 @@ pub fn gen_severity_control_name(
 ) -> FormatDocumentResult<PrintItemBuffer> {
     let mut syntax = syntax_iter(node.syntax());
     let item_identifier =
-        parse_node_with(&mut syntax, IgnoreBlankspace).expect_kind(SyntaxKind::Identifier)?;
+        parse_node_with(&mut syntax, DiscardBlankspace).expect_kind(SyntaxKind::Identifier)?;
     parse_end(&mut syntax)?;
 
     let mut formatted = PrintItemBuffer::default();
@@ -64,14 +64,14 @@ pub fn gen_diagnostic_rule_name(
     let mut syntax = syntax_iter(node.syntax());
 
     let item_control_first =
-        parse_node_with(&mut syntax, IgnoreBlankspace).expect_kind(SyntaxKind::Identifier)?;
+        parse_node_with(&mut syntax, DiscardBlankspace).expect_kind(SyntaxKind::Identifier)?;
 
     let item_period =
         parse_node_with(&mut syntax, NoTrivia).only_if_kind(SyntaxKind::Period, &mut syntax);
 
     let item_control_second = if item_period.is_some() {
         let item_control_second =
-            parse_node_with(&mut syntax, IgnoreBlankspace).expect_kind(SyntaxKind::Identifier)?;
+            parse_node_with(&mut syntax, DiscardBlankspace).expect_kind(SyntaxKind::Identifier)?;
         Some(item_control_second)
     } else {
         None

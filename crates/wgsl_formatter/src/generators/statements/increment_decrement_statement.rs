@@ -6,7 +6,7 @@ use syntax::{
 };
 
 use crate::{
-    ast_parse::{IgnoreBlankspace, NoTrivia, parse_end, parse_node_with, syntax_iter},
+    ast_parse::{DiscardBlankspace, NoTrivia, parse_end, parse_node_with, syntax_iter},
     context_policies::statement_needs_semicolon_policy,
     generators::node::gen_node_with_trivia,
     print_item_buffer::{
@@ -23,8 +23,8 @@ pub fn gen_increment_decrement_statement(
     let mut syntax = syntax_iter(increment_decrement_statement.syntax());
 
     let item_ident =
-        parse_node_with(&mut syntax, IgnoreBlankspace).expect_ast_node::<Expression>()?;
-    let item_operator = parse_node_with(&mut syntax, IgnoreBlankspace);
+        parse_node_with(&mut syntax, DiscardBlankspace).expect_ast_node::<Expression>()?;
+    let item_operator = parse_node_with(&mut syntax, DiscardBlankspace);
     parse_node_with(&mut syntax, NoTrivia).expect_kind_optional(SyntaxKind::Semicolon)?;
     parse_end(&mut syntax)?;
 

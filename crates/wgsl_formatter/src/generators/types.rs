@@ -6,7 +6,7 @@ use syntax::{AstNode as _, ast};
 
 use crate::{
     ast_parse::{
-        IgnoreBlankspace, IgnoreComma, IgnoreTemplateDelimiters, NoTrivia, StopAtNewline,
+        DiscardBlankspace, DiscardComma, DiscardTemplateDelimiters, NoTrivia, StopAtNewline,
         Succeeding, parse_end, parse_many_nodes_with, parse_node_with, syntax_iter,
     },
     context_policies,
@@ -28,9 +28,10 @@ pub fn gen_type_specifier(
     // ==== Parse ====
     let mut syntax = syntax_iter(type_specifier.syntax());
 
-    let item_path = parse_node_with(&mut syntax, IgnoreBlankspace).expect_kind(SyntaxKind::Path)?;
+    let item_path =
+        parse_node_with(&mut syntax, DiscardBlankspace).expect_kind(SyntaxKind::Path)?;
 
-    let item_template = parse_node_with(&mut syntax, IgnoreBlankspace)
+    let item_template = parse_node_with(&mut syntax, DiscardBlankspace)
         .only_if_kind(SyntaxKind::TemplateList, &mut syntax);
 
     parse_end(&mut syntax)?;
@@ -58,9 +59,9 @@ pub fn gen_template_list(
         &mut syntax,
         (
             Succeeding(StopAtNewline),
-            IgnoreBlankspace,
-            IgnoreComma,
-            IgnoreTemplateDelimiters,
+            DiscardBlankspace,
+            DiscardComma,
+            DiscardTemplateDelimiters,
         ),
     )
     .filter(|node| !node.is_whitespace())

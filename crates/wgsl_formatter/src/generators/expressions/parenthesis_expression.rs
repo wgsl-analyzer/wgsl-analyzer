@@ -6,7 +6,7 @@ use syntax::{
 };
 
 use crate::{
-    ast_parse::{IgnoreBlankspace, NoTrivia, parse_end, parse_node_with, syntax_iter},
+    ast_parse::{DiscardBlankspace, NoTrivia, parse_end, parse_node_with, syntax_iter},
     context_policies::expression_parens_are_irrelevant_policy,
     generators::node::gen_node_with_trivia,
     print_item_buffer::{
@@ -24,7 +24,7 @@ pub fn gen_parenthesis_expression(
 
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::ParenthesisLeft)?;
     let item_content =
-        parse_node_with(&mut syntax, IgnoreBlankspace).expect_ast_node::<ast::Expression>()?;
+        parse_node_with(&mut syntax, DiscardBlankspace).expect_ast_node::<ast::Expression>()?;
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::ParenthesisRight)?;
     parse_end(&mut syntax)?;
 

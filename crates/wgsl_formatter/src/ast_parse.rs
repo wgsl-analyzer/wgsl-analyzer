@@ -182,45 +182,40 @@ impl ParseNodePolicy for MatchKind {
     non_upper_case_globals,
     reason = "Keep struct based policies and constants looking the same"
 )]
-pub const IgnoreBlankspace: MatchKind = MatchKind(SyntaxKind::Blankspace, PolicyAction::Ignored);
+pub const DiscardBlankspace: MatchKind = MatchKind(SyntaxKind::Blankspace, PolicyAction::Discard);
 #[expect(
     non_upper_case_globals,
     reason = "Keep struct based policies and constants looking the same"
 )]
-pub const IgnoreComma: MatchKind = MatchKind(SyntaxKind::Comma, PolicyAction::Ignored);
+pub const DiscardComma: MatchKind = MatchKind(SyntaxKind::Comma, PolicyAction::Discard);
 #[expect(
     non_upper_case_globals,
     reason = "Keep struct based policies and constants looking the same"
 )]
-pub const IgnoreColonColon: MatchKind = MatchKind(SyntaxKind::ColonColon, PolicyAction::Ignored);
+pub const DiscardSemicolon: MatchKind = MatchKind(SyntaxKind::Semicolon, PolicyAction::Discard);
 #[expect(
     non_upper_case_globals,
     reason = "Keep struct based policies and constants looking the same"
 )]
-pub const IgnoreSemicolon: MatchKind = MatchKind(SyntaxKind::Semicolon, PolicyAction::Ignored);
-#[expect(
-    non_upper_case_globals,
-    reason = "Keep struct based policies and constants looking the same"
-)]
-pub const IgnoreTemplateDelimiters: (MatchKind, MatchKind) = (
-    MatchKind(SyntaxKind::TemplateStart, PolicyAction::Ignored),
-    MatchKind(SyntaxKind::TemplateEnd, PolicyAction::Ignored),
+pub const DiscardTemplateDelimiters: (MatchKind, MatchKind) = (
+    MatchKind(SyntaxKind::TemplateStart, PolicyAction::Discard),
+    MatchKind(SyntaxKind::TemplateEnd, PolicyAction::Discard),
 );
 #[expect(
     non_upper_case_globals,
     reason = "Keep struct based policies and constants looking the same"
 )]
-pub const IgnoreBraces: (MatchKind, MatchKind) = (
-    MatchKind(SyntaxKind::BraceLeft, PolicyAction::Ignored),
-    MatchKind(SyntaxKind::BraceRight, PolicyAction::Ignored),
+pub const DiscardBraces: (MatchKind, MatchKind) = (
+    MatchKind(SyntaxKind::BraceLeft, PolicyAction::Discard),
+    MatchKind(SyntaxKind::BraceRight, PolicyAction::Discard),
 );
 #[expect(
     non_upper_case_globals,
     reason = "Keep struct based policies and constants looking the same"
 )]
-pub const IgnoreParenthesis: (MatchKind, MatchKind) = (
-    MatchKind(SyntaxKind::ParenthesisLeft, PolicyAction::Ignored),
-    MatchKind(SyntaxKind::ParenthesisRight, PolicyAction::Ignored),
+pub const DiscardParenthesis: (MatchKind, MatchKind) = (
+    MatchKind(SyntaxKind::ParenthesisLeft, PolicyAction::Discard),
+    MatchKind(SyntaxKind::ParenthesisRight, PolicyAction::Discard),
 );
 #[expect(
     non_upper_case_globals,
@@ -368,13 +363,11 @@ impl_tuple!(TA TB TC TD TE TF);
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum PolicyAction {
-    // TODO Rename to discard
-    Ignored,
+    Discard,
     Content,
     Stop,
     MarkEnd,
-    // TODO Rename to discard
-    IgnoreAndStop,
+    DiscardAndStop,
 }
 
 // TODO(MonaMayrhofer,now) Tests and docs for this
@@ -409,7 +402,7 @@ where
             // eprintln!("Preceding {:?} {:?}", node, action);
 
             match action {
-                Some(PolicyAction::Ignored) => {
+                Some(PolicyAction::Discard) => {
                     preceding_trivia.push(NodeTriviaItem::Discarded(node));
                 },
                 Some(PolicyAction::Content) => {
@@ -423,7 +416,7 @@ where
                     syntax.put_back(node);
                     break NodeWithTriviaContent::End;
                 },
-                Some(PolicyAction::IgnoreAndStop) => {
+                Some(PolicyAction::DiscardAndStop) => {
                     preceding_trivia.push(NodeTriviaItem::Discarded(node));
                     break NodeWithTriviaContent::NoContent;
                 },
@@ -514,7 +507,7 @@ where
         // eprintln!("Succeeding {:?} {:?}", node, action);
 
         match action {
-            Some(PolicyAction::Ignored) => {
+            Some(PolicyAction::Discard) => {
                 succeeding_trivia.push(NodeTriviaItem::Discarded(node));
             },
             Some(PolicyAction::Content) => {
@@ -527,7 +520,7 @@ where
                 syntax.put_back(node);
                 break;
             },
-            Some(PolicyAction::IgnoreAndStop) => {
+            Some(PolicyAction::DiscardAndStop) => {
                 // We want to stop parsing succeeding trivia
                 succeeding_trivia.push(NodeTriviaItem::Discarded(node));
                 break;
@@ -536,7 +529,7 @@ where
                 if let Some(line_spacing) = read_blankspace(&node) {
                     match line_spacing {
                         LineSpacing::OnelineBlankspace(_) => {
-                            // OnelineBlankspace is *always* ignored as it never carries any formatting information
+                            // OnelineBlankspace is *always* discarded as it never carries any formatting information
                             succeeding_trivia.push(NodeTriviaItem::Discarded(node));
                         },
                         LineSpacing::LineBreak(_) | LineSpacing::EmptyLine(_) => {

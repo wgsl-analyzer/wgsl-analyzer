@@ -9,7 +9,7 @@ use syntax::{
 
 use crate::{
     ast_parse::{
-        IgnoreBlankspace, IgnoreComma, IgnoreParenthesis, NoTrivia, StopAtNewline, Succeeding,
+        DiscardBlankspace, DiscardComma, DiscardParenthesis, NoTrivia, StopAtNewline, Succeeding,
         parse_end, parse_many_nodes_with, parse_node_with, syntax_iter,
     },
     generators::node::{
@@ -30,13 +30,14 @@ pub fn gen_function_declaration(
     let mut syntax = syntax_iter(node.syntax());
 
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::Fn)?;
-    let item_name = parse_node_with(&mut syntax, IgnoreBlankspace).expect_kind(SyntaxKind::Name)?;
-    let item_params = parse_node_with(&mut syntax, IgnoreBlankspace)
+    let item_name =
+        parse_node_with(&mut syntax, DiscardBlankspace).expect_kind(SyntaxKind::Name)?;
+    let item_params = parse_node_with(&mut syntax, DiscardBlankspace)
         .expect_kind(SyntaxKind::FunctionParameters)?;
 
-    let item_return = parse_node_with(&mut syntax, IgnoreBlankspace)
+    let item_return = parse_node_with(&mut syntax, DiscardBlankspace)
         .only_if_kind(SyntaxKind::ReturnType, &mut syntax);
-    let item_body = parse_node_with(&mut syntax, IgnoreBlankspace)
+    let item_body = parse_node_with(&mut syntax, DiscardBlankspace)
         .expect_kind(SyntaxKind::CompoundStatement)?;
 
     parse_end(&mut syntax)?;
@@ -77,9 +78,9 @@ pub fn gen_fn_parameters(node: &ast::FunctionParameters) -> FormatDocumentResult
         &mut syntax,
         (
             Succeeding(StopAtNewline),
-            IgnoreBlankspace,
-            IgnoreComma,
-            IgnoreParenthesis,
+            DiscardBlankspace,
+            DiscardComma,
+            DiscardParenthesis,
         ),
     )
     .filter(|node| !node.is_whitespace())
@@ -137,10 +138,11 @@ pub fn gen_fn_parameter(syntax: &ast::Parameter) -> FormatDocumentResult<PrintIt
     // ==== Parse ====
     let mut syntax = syntax_iter(syntax.syntax());
 
-    let item_name = parse_node_with(&mut syntax, IgnoreBlankspace).expect_kind(SyntaxKind::Name)?;
+    let item_name =
+        parse_node_with(&mut syntax, DiscardBlankspace).expect_kind(SyntaxKind::Name)?;
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::Colon)?;
     let item_type_specifier =
-        parse_node_with(&mut syntax, IgnoreBlankspace).expect_kind(SyntaxKind::TypeSpecifier)?;
+        parse_node_with(&mut syntax, DiscardBlankspace).expect_kind(SyntaxKind::TypeSpecifier)?;
     parse_end(&mut syntax)?;
 
     // ==== Format ====
@@ -159,7 +161,7 @@ pub fn gen_fn_return_type(syntax: &ast::ReturnType) -> FormatDocumentResult<Prin
 
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::Arrow)?;
     let item_type_specifier =
-        parse_node_with(&mut syntax, IgnoreBlankspace).expect_kind(SyntaxKind::TypeSpecifier)?;
+        parse_node_with(&mut syntax, DiscardBlankspace).expect_kind(SyntaxKind::TypeSpecifier)?;
     parse_end(&mut syntax)?;
 
     // ==== Format ====

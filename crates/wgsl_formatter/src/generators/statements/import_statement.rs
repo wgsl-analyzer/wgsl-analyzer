@@ -9,7 +9,7 @@ use syntax::{
 
 use crate::{
     ast_parse::{
-        IgnoreBlankspace, IgnoreBraces, IgnoreComma, NoTrivia, StopAtNewline, Succeeding,
+        DiscardBlankspace, DiscardBraces, DiscardComma, NoTrivia, StopAtNewline, Succeeding,
         parse_end, parse_many_nodes_with, parse_node_with, syntax_iter,
     },
     context_policies::statement_needs_semicolon_policy,
@@ -54,7 +54,7 @@ pub fn gen_import_super_relative(
 
     let items = parse_many_nodes_with(
         &mut syntax,
-        (IgnoreBlankspace, IgnoreComma, IgnoreBlankspace),
+        (DiscardBlankspace, DiscardComma, DiscardBlankspace),
     )
     .filter(|node| !node.is_whitespace())
     .collect::<Vec<_>>();
@@ -72,10 +72,11 @@ pub fn gen_import_super_relative(
 pub fn gen_import_item(node: &ast::ImportItem) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = syntax_iter(node.syntax());
-    let item_name = parse_node_with(&mut syntax, IgnoreBlankspace).expect_kind(SyntaxKind::Name)?;
+    let item_name =
+        parse_node_with(&mut syntax, DiscardBlankspace).expect_kind(SyntaxKind::Name)?;
     let item_as = parse_node_with(&mut syntax, NoTrivia).only_if_kind(SyntaxKind::As, &mut syntax);
     let item_alias = if item_as.is_some() {
-        Some(parse_node_with(&mut syntax, IgnoreBlankspace).expect_kind(SyntaxKind::Name)?)
+        Some(parse_node_with(&mut syntax, DiscardBlankspace).expect_kind(SyntaxKind::Name)?)
     } else {
         None
     };
@@ -95,13 +96,14 @@ pub fn gen_import_item(node: &ast::ImportItem) -> FormatDocumentResult<PrintItem
 pub fn gen_import_path(node: &ast::ImportPath) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = syntax_iter(node.syntax());
-    let item_name = parse_node_with(&mut syntax, IgnoreBlankspace).expect_kind(SyntaxKind::Name)?;
+    let item_name =
+        parse_node_with(&mut syntax, DiscardBlankspace).expect_kind(SyntaxKind::Name)?;
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::ColonColon)?;
-    let item_path_rest = parse_node_with(&mut syntax, IgnoreBlankspace)
+    let item_path_rest = parse_node_with(&mut syntax, DiscardBlankspace)
         .only_if_kind(SyntaxKind::ImportPath, &mut syntax);
-    let item_collection_rest = parse_node_with(&mut syntax, IgnoreBlankspace)
+    let item_collection_rest = parse_node_with(&mut syntax, DiscardBlankspace)
         .only_if_kind(SyntaxKind::ImportCollection, &mut syntax);
-    let item_item = parse_node_with(&mut syntax, IgnoreBlankspace)
+    let item_item = parse_node_with(&mut syntax, DiscardBlankspace)
         .only_if_kind(SyntaxKind::ImportItem, &mut syntax);
     parse_end(&mut syntax)?;
 
@@ -194,9 +196,9 @@ pub fn gen_import_collection(
         &mut syntax,
         (
             Succeeding(StopAtNewline),
-            IgnoreBlankspace,
-            IgnoreComma,
-            IgnoreBraces,
+            DiscardBlankspace,
+            DiscardComma,
+            DiscardBraces,
         ),
     )
     .filter(|item| !item.is_whitespace())
@@ -257,12 +259,12 @@ pub fn gen_import_statement(node: &ast::ImportStatement) -> FormatDocumentResult
     let mut syntax = syntax_iter(node.syntax());
     parse_node_with(&mut syntax, NoTrivia).expect_kind(ast::SyntaxKind::Import)?;
 
-    let item_package_relative = parse_node_with(&mut syntax, IgnoreBlankspace)
+    let item_package_relative = parse_node_with(&mut syntax, DiscardBlankspace)
         .only_if_kind(SyntaxKind::ImportPackageRelative, &mut syntax);
-    let item_super_relative = parse_node_with(&mut syntax, IgnoreBlankspace)
+    let item_super_relative = parse_node_with(&mut syntax, DiscardBlankspace)
         .only_if_kind(SyntaxKind::ImportSuperRelative, &mut syntax);
     let item_entity =
-        parse_node_with(&mut syntax, IgnoreBlankspace).expect_ast_node::<ast::ImportTree>()?;
+        parse_node_with(&mut syntax, DiscardBlankspace).expect_ast_node::<ast::ImportTree>()?;
 
     parse_node_with(&mut syntax, NoTrivia).expect_kind(ast::SyntaxKind::Semicolon)?;
     parse_end(&mut syntax)?;

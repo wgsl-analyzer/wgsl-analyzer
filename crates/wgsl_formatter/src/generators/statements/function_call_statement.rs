@@ -12,7 +12,7 @@ use syntax::{
 
 use crate::{
     ast_parse::{
-        IgnoreBlankspace, IgnoreComma, IgnoreParenthesis, NoTrivia, StopAtNewline, Succeeding,
+        DiscardBlankspace, DiscardComma, DiscardParenthesis, NoTrivia, StopAtNewline, Succeeding,
         SyntaxIter, parse_end, parse_many_nodes_with, parse_node_with, syntax_iter,
     },
     context_policies::statement_needs_semicolon_policy,
@@ -35,9 +35,9 @@ pub fn gen_function_call(
     // ==== Parse ====
     let mut syntax = syntax_iter(function_call.syntax());
     let item_identifier =
-        parse_node_with(&mut syntax, IgnoreBlankspace).expect_kind(SyntaxKind::IdentExpression)?;
+        parse_node_with(&mut syntax, DiscardBlankspace).expect_kind(SyntaxKind::IdentExpression)?;
     let item_arguments =
-        parse_node_with(&mut syntax, IgnoreBlankspace).expect_kind(SyntaxKind::Arguments)?;
+        parse_node_with(&mut syntax, DiscardBlankspace).expect_kind(SyntaxKind::Arguments)?;
     parse_end(&mut syntax)?;
 
     // ==== Format ====
@@ -121,9 +121,9 @@ pub fn parse_function_call_arguments(
         syntax,
         (
             Succeeding(StopAtNewline),
-            IgnoreBlankspace,
-            IgnoreComma,
-            IgnoreParenthesis,
+            DiscardBlankspace,
+            DiscardComma,
+            DiscardParenthesis,
         ),
     )
     .filter(|item| !item.is_whitespace())
@@ -259,7 +259,7 @@ pub fn gen_function_call_statement(
     // ==== Parse ====
     let mut syntax = syntax_iter(function_call_statement.syntax());
     let function_call =
-        parse_node_with(&mut syntax, IgnoreBlankspace).expect_ast_node::<FunctionCall>()?;
+        parse_node_with(&mut syntax, DiscardBlankspace).expect_ast_node::<FunctionCall>()?;
     parse_node_with(&mut syntax, NoTrivia).expect_kind_optional(SyntaxKind::Semicolon)?;
     parse_end(&mut syntax)?;
 

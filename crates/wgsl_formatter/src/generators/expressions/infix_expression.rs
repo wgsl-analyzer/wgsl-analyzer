@@ -4,7 +4,7 @@ use syntax::{
 };
 
 use crate::{
-    ast_parse::{IgnoreBlankspace, NoTrivia, parse_end, parse_node_with, syntax_iter},
+    ast_parse::{DiscardBlankspace, NoTrivia, parse_end, parse_node_with, syntax_iter},
     generators::node::gen_node_with_trivia,
     print_item_buffer::{
         PrintItemBuffer,
@@ -19,9 +19,9 @@ pub fn gen_infix_expression(
     // ==== Parse ====
     let mut syntax = syntax_iter(infix_expression.syntax());
 
-    let item_left = parse_node_with(&mut syntax, IgnoreBlankspace);
+    let item_left = parse_node_with(&mut syntax, DiscardBlankspace);
     let item_operator = parse_node_with(&mut syntax, NoTrivia);
-    let item_right = parse_node_with(&mut syntax, IgnoreBlankspace);
+    let item_right = parse_node_with(&mut syntax, DiscardBlankspace);
     parse_end(&mut syntax)?;
 
     // ==== Format ====

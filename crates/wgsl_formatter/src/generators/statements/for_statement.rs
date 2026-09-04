@@ -7,7 +7,7 @@ use syntax::{
 
 use crate::{
     ast_parse::{
-        IgnoreBlankspace, NoTrivia, StopAtNewline, Succeeding, parse_end, parse_node_with,
+        DiscardBlankspace, NoTrivia, StopAtNewline, Succeeding, parse_end, parse_node_with,
         syntax_iter,
     },
     generators::node::gen_node_with_trivia,
@@ -22,22 +22,22 @@ use crate::{
 pub fn gen_for_statement(statement: &ast::ForStatement) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = syntax_iter(statement.syntax());
-    let item_for = parse_node_with(&mut syntax, IgnoreBlankspace).expect_kind(SyntaxKind::For)?;
+    let item_for = parse_node_with(&mut syntax, DiscardBlankspace).expect_kind(SyntaxKind::For)?;
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::ParenthesisLeft)?;
-    let item_initializer = parse_node_with(&mut syntax, IgnoreBlankspace)
+    let item_initializer = parse_node_with(&mut syntax, DiscardBlankspace)
         .only_if_kind(SyntaxKind::ForInitializer, &mut syntax);
     let item_semicolon_1 = parse_node_with(&mut syntax, Succeeding(StopAtNewline))
         .expect_kind(SyntaxKind::Semicolon)?;
-    let item_condition = parse_node_with(&mut syntax, IgnoreBlankspace)
+    let item_condition = parse_node_with(&mut syntax, DiscardBlankspace)
         .only_if_kind(SyntaxKind::ForCondition, &mut syntax);
     let item_semicolon_2 = parse_node_with(&mut syntax, Succeeding(StopAtNewline))
         .expect_kind(SyntaxKind::Semicolon)?;
-    let item_continuing = parse_node_with(&mut syntax, IgnoreBlankspace)
+    let item_continuing = parse_node_with(&mut syntax, DiscardBlankspace)
         .only_if_kind(SyntaxKind::ForContinuingPart, &mut syntax);
 
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::ParenthesisRight)?;
     let item_body =
-        parse_node_with(&mut syntax, IgnoreBlankspace).expect_ast_node::<CompoundStatement>()?;
+        parse_node_with(&mut syntax, DiscardBlankspace).expect_ast_node::<CompoundStatement>()?;
     parse_end(&mut syntax)?;
 
     // ==== Format ====
@@ -97,7 +97,7 @@ pub fn gen_for_statement_initializer(
     // === Parse ===
     let mut syntax = syntax_iter(node.syntax());
     let item_statement =
-        parse_node_with(&mut syntax, IgnoreBlankspace).expect_ast_node::<Statement>()?;
+        parse_node_with(&mut syntax, DiscardBlankspace).expect_ast_node::<Statement>()?;
     parse_end(&mut syntax)?;
 
     // === Format ===
@@ -110,7 +110,7 @@ pub fn gen_for_statement_condition(
     // === Parse ===
     let mut sub_syntax = syntax_iter(node.syntax());
     let item_condition =
-        parse_node_with(&mut sub_syntax, IgnoreBlankspace).expect_ast_node::<Expression>()?;
+        parse_node_with(&mut sub_syntax, DiscardBlankspace).expect_ast_node::<Expression>()?;
     parse_end(&mut sub_syntax)?;
 
     // === Format ===
@@ -122,7 +122,7 @@ pub fn gen_for_statement_continuing_part(
 ) -> FormatDocumentResult<PrintItemBuffer> {
     let mut sub_syntax = syntax_iter(node.syntax());
     let item_continuing =
-        parse_node_with(&mut sub_syntax, IgnoreBlankspace).expect_ast_node::<Statement>()?;
+        parse_node_with(&mut sub_syntax, DiscardBlankspace).expect_ast_node::<Statement>()?;
     parse_end(&mut sub_syntax)?;
 
     gen_node_with_trivia(&item_continuing)
