@@ -64,7 +64,7 @@ pub fn format_enable_long_1() {
     check(
         "
         //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
-        enable f16, clip_distances, dual_source_blending, subgroups, primitive_index, subgroup_size_control, wgpu_mesh_shader, wgpu_ray_query, wgpu_ray_query_vertex_return, wgpu_ray_tracing_pipelines, wgpu_int16, wgpu_cooperative_matrix, per_vertex, draw_index, wgpu_binding_array;
+        enable f16, clip_distances, dual_source_blending, subgroups, primitive_index, subgroup_size_control, wgpu_mesh_shader, wgpu_ray_query, wgpu_ray_query_vertex_return, wgpu_ray_tracing_pipeline, wgpu_int16, wgpu_cooperative_matrix, per_vertex, draw_index, wgpu_binding_array;
        ",
         expect![[r#"
             //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
@@ -78,7 +78,7 @@ pub fn format_enable_long_1() {
                 wgpu_mesh_shader,
                 wgpu_ray_query,
                 wgpu_ray_query_vertex_return,
-                wgpu_ray_tracing_pipelines,
+                wgpu_ray_tracing_pipeline,
                 wgpu_int16,
                 wgpu_cooperative_matrix,
                 per_vertex,
