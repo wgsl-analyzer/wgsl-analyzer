@@ -228,7 +228,7 @@ impl AbsPath {
         #[cfg(windows)]
         {
             // SAFETY: static value known to be safe
-            unsafe { Self::new_unchecked(r#"C:\"#.into()) }
+            unsafe { Self::new_unchecked(r#"C:"#.into()) }
         }
         #[cfg(not(windows))]
         {
@@ -516,7 +516,7 @@ mod tests {
     fn absbuf_display() {
         let absbuf = AbsPathBuf::assert(root_utf8().join("test"));
         let display = format!("{absbuf:#}");
-        assert_eq!("/test", display);
+        assert_eq!(root_utf8().join("test"), display);
     }
 
     #[test]
@@ -625,6 +625,6 @@ mod tests {
     fn abs_display() {
         let abs: &AbsPath = &AbsPath::root().join("test");
         let display = format!("{abs:#}");
-        assert_eq!(format!("{}test", root_utf8()), display);
+        assert_eq!(root_utf8().join("test"), display);
     }
 }
