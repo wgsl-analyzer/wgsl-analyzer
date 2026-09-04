@@ -3,6 +3,35 @@ use expect_test::expect;
 use crate::test_util::check;
 
 #[test]
+fn format_condcomp_attribute_with_global_compound_declaration_gets_merged() {
+    check(
+        "
+        @if(true)
+        {
+        fn a() {}
+        }
+        @elif(false)
+        {
+        fn a() {}
+        }
+        @else
+        {
+        fn a() {}
+        }
+        ",
+        expect![[r#"
+            @if(true) {
+            fn a() {}
+            } @elif(false) {
+            fn a() {}
+            } @else {
+            fn a() {}
+            }
+        "#]],
+    );
+}
+
+#[test]
 fn format_condcomp_attribute_with_compound_gets_merged() {
     check(
         "

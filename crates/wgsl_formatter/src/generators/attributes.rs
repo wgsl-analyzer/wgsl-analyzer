@@ -127,7 +127,10 @@ fn get_attribute_layout(attribute_list: &AttributeList) -> AttributeLayout {
     {
         AttributeLayout::Inline
     } else if let Some(sibling) = attribute_list.syntax().next_sibling()
-        && matches!(sibling.kind(), SyntaxKind::CompoundStatement)
+        && matches!(
+            sibling.kind(),
+            SyntaxKind::CompoundStatement | SyntaxKind::GlobalCompoundDeclaration
+        )
     {
         AttributeLayout::Inline
     } else {
@@ -473,8 +476,10 @@ pub fn gen_attr_condcomp_with_args(
     // ==== Context
     let follows_compound = if let Some(parent) = syntax.parent()
         && let Some(previous) = parent.prev_sibling()
-        && matches!(previous.kind(), SyntaxKind::CompoundStatement)
-    {
+        && matches!(
+            previous.kind(),
+            SyntaxKind::CompoundStatement | SyntaxKind::GlobalCompoundDeclaration
+        ) {
         true
     } else {
         false
@@ -482,8 +487,10 @@ pub fn gen_attr_condcomp_with_args(
 
     let precedes_compound = if let Some(parent) = syntax.parent()
         && let Some(previous) = parent.next_sibling()
-        && matches!(previous.kind(), SyntaxKind::CompoundStatement)
-    {
+        && matches!(
+            previous.kind(),
+            SyntaxKind::CompoundStatement | SyntaxKind::GlobalCompoundDeclaration
+        ) {
         true
     } else {
         false

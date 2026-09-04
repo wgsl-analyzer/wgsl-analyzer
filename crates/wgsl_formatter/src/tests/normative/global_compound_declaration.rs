@@ -119,14 +119,12 @@ fn format_global_compdec_work_with_attributes() {
         ",
         expect![[r#"
             fn a() {}
-            @if(true)
-            {
+            @if(true) {
             fn b() {}
             }
             fn c() {}
 
-            @else
-            {
+            @else {
             fn b() {}
             }
         "#]],
