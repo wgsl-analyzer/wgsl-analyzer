@@ -112,6 +112,7 @@ fn format_infix_expr_shl() {
 
 #[test]
 fn format_infix_break_with_precedence_boolean_vs_arithmetic() {
+    // https://discord.com/channels/1289346613185351722/1341941812675481680/1540094874739802243
     check_with_options(
         "
         //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|

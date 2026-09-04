@@ -199,23 +199,31 @@ fn format_fn_header_parameter_with_long_type_and_name() {
 
 #[test]
 pub fn format_type_next_to_long_parameter_does_not_get_broken_into_multiple_lines() {
+    // https://discord.com/channels/1289346613185351722/1341941812675481680/1540061738232455332
     check_with_options(
         "
+        //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
         fn a(
-        a: texture_2d<f32>,
-        bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb: f32
+            a: texture_2d<f32>,
+            this_would_work_if_the_type_got_broken_upccccccccccccccccccccccccccccc: dddddddddddddd,
+            this_would_not_work_if_type_got_broken_upbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb: f32
         ) {}
         ",
         expect![[r#"
+            //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
             fn a(
                 a: texture_2d<f32>,
-                bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb: f32,
+                this_would_work_if_the_type_got_broken_upccccccccccccccccccccccccccccc: dddddddddddddd,
+                this_would_not_work_if_type_got_broken_upbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb: f32,
             ) {}
         "#]],
         &CheckOptions {
             assert_line_width: None,
-            ..Default::default()
+            formatting:FormattingOptions {
+                max_line_width: 80,
+                ..Default::default()
+            }
         },
-        parser::Edition::LATEST
+        Edition::LATEST,
     );
 }

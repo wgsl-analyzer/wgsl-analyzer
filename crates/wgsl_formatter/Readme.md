@@ -2,15 +2,10 @@
 
 ## TODOs
 
-- [Some more thoughts](https://discord.com/channels/1289346613185351722/1341941812675481680/1475555853066047549)
-- Ignoring Code [Issue](https://github.com/wgsl-analyzer/wgsl-analyzer/issues/93)
 - Should we throw away the snapshot tests? they are kinda unnecessary
-- Don't break in paths https://discord.com/channels/1289346613185351722/1341941812675481680/1540061738232455332
-- Don't break before type of variable https://discord.com/channels/1289346613185351722/1341941812675481680/1540061738232455332
-- Increase default line width to 100
 - Consider only allowing breaks before arithmetic expressions if both sides are not (function calls, paren-exprs, etc...)
   in order to avoid lonely + 1.0; broken on the next line
-- Group expression newlinegroups by operator precedence https://discord.com/channels/1289346613185351722/1341941812675481680/1540094874739802243
+- Move Edition into formatoptions
 
 ## Opinions
 
