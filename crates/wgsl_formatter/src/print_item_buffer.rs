@@ -377,4 +377,16 @@ impl PrintItemBuffer {
         //self.push_item_before_requests(PrintItem::String(dprint_core_macros::sc!("]")));
         self.push_item_before_requests(PrintItem::Signal(Signal::FinishNewLineGroup));
     }
+
+    /// Increases the precedence of following items getting broken into multiple lines.
+    ///
+    /// Linebreaks can happen at points where a [`Request::or_newline()`] was inserted.
+    ///
+    /// This does not apply any trailing request, but instead queues the newline group to
+    /// be started as soon as trailing requests are applied (either by pushing a concrete item
+    /// or by calling [`Self::apply_end_request`]).
+    pub fn finish_new_line_group_after_requests(&mut self) {
+        //self.push_item_after_requests(PrintItem::String(dprint_core_macros::sc!("]")));
+        self.push_item_after_requests(PrintItem::Signal(Signal::FinishNewLineGroup));
+    }
 }

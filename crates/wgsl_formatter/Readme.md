@@ -99,3 +99,32 @@ RUST*BACKTRACE=1 cargo test --features=prefer-immediate-crash
    `ast::TheNewSyntaxConstruct` and usually return a `FormatDocumentResult`.
    The generator function is split up in a "Parse" and a "Format" region (see [Patterns.md](Patterns.md)).
 3. Register the new syntax construct in the big `match` within `generators/node.rs`.
+
+## Future Improvements
+
+### Newlinegroups
+
+Currently the handling of new-line-groups is a bit annoying.
+Newline-groups are a way of increasing and decreasing precedence of
+inserting a linebreak at a particular point.
+dprint only offers "start newlinegroup" and "finish newlinegroup" which
+works fine in many cases, but leads to a few places where we start 5 newlinegroups
+just to artificially discourage a linebreak at that point.
+
+Many parts of the formatting currently are a delicate balance between where newlinegroups are
+started and finished. The semantics of what code breaks where is not defined anywhere but instead
+are spread throughout the whole codebase and there is a great deal of spooky action at a distance.
+
+An ideal solution would probably look something like this:
+
+- Have a way of specifying precedence of possible "parallel" breaks.
+  This would be used to set precedence of things like chains of infix operators
+  in a "flat" manner, without affecting the layout of lower down in the hierarchy.
+  These "precedences" would be attached to points where we offer a linebreak using `.or*newline()`.
+  Possibly the API would look like `.or*newline(linebreak::OPERATOR*ADD)`
+- Have a way of specifying a "hierarchy" of linebreaks - just like the current newlinegroup api.
+  This would be used to set precedence between "inside" function call args and "outside" them.
+  This hierarchy would always be more important than the parallel break precedences.
+- Possibly the parallel linebreak api could also be used to express things like
+  "all possible newlines with `linebreak::OPERATOR*ADD` that exist parallel to each other
+  always break together". This could obsolete the `MultilineGroup` api.

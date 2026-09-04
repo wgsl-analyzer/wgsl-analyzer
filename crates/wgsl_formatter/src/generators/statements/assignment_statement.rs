@@ -39,8 +39,10 @@ pub fn gen_assignment_statement(
     let mut formatted = PrintItemBuffer::default();
     formatted.extend(gen_node_with_trivia(&item_target)?);
     formatted.request(Request::expect(RequestItem::Space));
+    formatted.start_new_line_group_before_requests();
     formatted.push_sc(sc!("="));
     formatted.request(Request::expect(RequestItem::Space).or_newline());
+    formatted.finish_new_line_group_after_requests();
     formatted.start_indent_before_requests();
     formatted.extend(gen_node_with_trivia(&item_value)?);
     if statement_needs_semicolon_policy(assignment_statement.syntax()) {

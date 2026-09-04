@@ -79,8 +79,10 @@ fn prefer_not_breaking_index_expression() {
         ",
         expect![[r#"
             fn main() {
-                aaaaaaaaaaa::bbbbbbbbbbbbbbbbb[curr_idx] =
-                    ccccccc::dddddddddddddddd(trav_result.hit, trav_result.local_position);
+                aaaaaaaaaaa::bbbbbbbbbbbbbbbbb[curr_idx] = ccccccc::dddddddddddddddd(
+                        trav_result.hit,
+                        trav_result.local_position,
+                    );
             }
         "#]],
     );
