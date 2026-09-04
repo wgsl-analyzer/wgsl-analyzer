@@ -481,6 +481,7 @@ pub fn gen_node_trivia(trivia: &[NodeTriviaItem]) -> FormatDocumentResult<PrintI
 }
 
 pub fn gen_node_with_trivia(node: &NodeWithTrivia) -> FormatDocumentResult<PrintItemBuffer> {
+    dbg!(&node);
     let mut formatted = PrintItemBuffer::default();
 
     formatted.extend(gen_node_preceding_trivia(node)?);

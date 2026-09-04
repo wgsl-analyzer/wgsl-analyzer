@@ -5,6 +5,7 @@ use syntax::{AstNode as _, Parse, ast};
 
 use crate::{
     FormattingOptions, IndentStyle,
+    ast_parse::is_ignored_from_within,
     generators::node::{gen_node_with_trivia, gen_node_with_trivia_no_newlines},
     print_item_buffer::PrintItemBuffer,
     reporting::{FormatDocumentError, FormatDocumentResult},
@@ -67,7 +68,7 @@ pub fn format_tree(
         preceding_trivia: Vec::new(),
         node: NodeWithTriviaContent::Content(NodeOrToken::Node(syntax.syntax().clone())),
         succeeding_trivia: Vec::new(),
-        format: true,
+        format: !is_ignored_from_within(syntax.syntax()),
     };
 
     format(options, || gen_node_with_trivia(&trivia))
@@ -81,7 +82,7 @@ pub fn format_node(
         preceding_trivia: Vec::new(),
         node: NodeWithTriviaContent::Content(NodeOrToken::Node(syntax.clone())),
         succeeding_trivia: Vec::new(),
-        format: true,
+        format: !is_ignored_from_within(syntax.syntax()),
     };
 
     format(options, || gen_node_with_trivia_no_newlines(&trivia))
