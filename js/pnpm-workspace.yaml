@@ -1,0 +1,4 @@
+packages:
+  - 'wgsl-analyzer-web'
+allowBuilds:
+  esbuild: true
