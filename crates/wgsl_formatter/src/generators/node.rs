@@ -407,11 +407,13 @@ pub fn gen_node_preceding_trivia(node: &NodeWithTrivia) -> FormatDocumentResult<
 }
 
 pub fn gen_node_succeeding_trivia(node: &NodeWithTrivia) -> FormatDocumentResult<PrintItemBuffer> {
-    if node.format {
-        gen_node_trivia(&node.succeeding_trivia)
-    } else {
-        gen_node_trivia_verbatim(&node.succeeding_trivia)
-    }
+    // We intentionally ignore `node.format` on succeeding trivia
+    // Yes this is not a beautiful solution, but it turns a lot of
+    // head-scratcher problems into nonproblems.
+    // Users don't usually expect succeeding_trivia to be "part" of the item that they ignored -
+    // while preserving trailing double spaces after an ignored item might be correct, its unexpected.
+    // So... this solution is fine for now.
+    gen_node_trivia(&node.succeeding_trivia)
 }
 
 pub fn gen_node_content(node: &NodeWithTrivia) -> FormatDocumentResult<PrintItemBuffer> {
