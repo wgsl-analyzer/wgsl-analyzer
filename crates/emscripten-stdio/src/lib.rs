@@ -66,4 +66,6 @@
 // this costs nothing there, and the attribute is absent everywhere else.
 #![cfg_attr(target_os = "emscripten", feature(stdarch_wasm_atomic_wait))]
 
+#[cfg(target_os = "emscripten")]
+mod imp;
 mod queue;
