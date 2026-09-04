@@ -1,5 +1,6 @@
 packages:
   - 'editors/code'
+  - 'js/wgsl-analyzer-web'
 allowBuilds:
   '@vscode/vsce-sign': true
   esbuild: true
