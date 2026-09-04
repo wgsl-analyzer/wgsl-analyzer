@@ -189,7 +189,10 @@ where
 {
     let parse = syntax::parse(before.trim_start(), edition);
     let syntax = parse.tree();
-    //dbg!(&syntax);
+
+    // For debugging tests its very useful to
+    // dbg!(&syntax);
+    // here
 
     assert!(
         parse.errors().is_empty(),
@@ -198,7 +201,6 @@ where
         parse.syntax()
     );
 
-    // dbg!(&parse.errors());
     let formatted = match format_tree(&syntax, &options.formatting) {
         Ok(formatted) => formatted,
         Err(format_error) => {
@@ -223,7 +225,6 @@ where
 
     // Check for idempotence
     let syntax = syntax::parse(formatted.trim_start(), edition).tree();
-    //dbg!(&syntax);
 
     let formatted_twice = format_tree(&syntax, &options.formatting)
         .expect("Formatting already formatted sources should never fail with an error");
@@ -275,7 +276,6 @@ where
             parse.syntax()
         );
 
-        // dbg!(&parse.errors());
         let formatted = match format_tree(
             &syntax,
             &FormattingOptions {
