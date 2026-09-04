@@ -146,7 +146,7 @@ pub struct ExtensionsConfig {
 
     // TODO: actually implement https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1388
     /// Enables the `wgpu_ray_tracing_pipeline` extension, native only.
-    pub wgpu_ray_tracing_pipelines: bool,
+    pub wgpu_ray_tracing_pipeline: bool,
 
     // TODO: actually implement https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1406
     /// Enables the `wgpu_cooperative_matrix` extension, native only.
@@ -223,6 +223,18 @@ pub struct ExtensionsConfig {
     ///
     /// Allow the declaration of variables with an opaque store type that can be reinterpreted as other host-shareable types.
     pub buffer_view: bool,
+
+    /// Supports swizzle view types.
+    ///
+    /// This enables swizzle assignments:
+    /// a single assignment statement can update multiple components of a vector without having to update the entire vector.
+    ///
+    /// For example, if variable `v` is a 4-element vector, then `v.xz = vec2(1,2);` is
+    /// a shorthand way of writing `v.x = 1; v.z = 2;`, while performing one read and one write.
+    ///
+    /// If `pointer_composite_access` is also supported, then this also works on pointers.
+    /// If `p` is a pointer to a vector of at least 3 elements, then `p.xz = vec2(1,2);` is shorthand for `(*p).x = 1; (*p).z = 2;`.
+    pub swizzle_assignment: bool,
 }
 
 // TODO: implement this in the frontend and add more https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1421

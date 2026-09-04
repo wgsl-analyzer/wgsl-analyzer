@@ -56,6 +56,41 @@ fn complete_vec_field() {
 }
 
 #[test]
+fn complete_swizzle_field() {
+    check(
+        "
+        fn test() {
+            var test = vec2(0);
+            let x = test.xy.r$0;
+        }
+        ",
+        expect![[r#"
+            field r
+            field rg
+            field rr
+        "#]],
+    );
+}
+
+#[test]
+fn complete_ptr_swizzle_field() {
+    check(
+        "
+        fn test() {
+            var test = vec2(0);
+            let p = &test;
+            let x = p.z$0;
+        }
+        ",
+        expect![[r#"
+            field z
+            field zx
+            field zy
+        "#]],
+    );
+}
+
+#[test]
 fn complete_function() {
     (
         completion_list(

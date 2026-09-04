@@ -1,4 +1,4 @@
-FROM node:24.19-slim@sha256:65932751ed4073ed02f5c04e494e4b2572a891b7dbea0568a863dc80341bf848
+FROM node:24.20-slim@sha256:6642ef280aebc09c4541bee0b15c9f89f0f3f3c247ddee79ae1d37eddfdcbbaa
 
 COPY . /action
 WORKDIR /action

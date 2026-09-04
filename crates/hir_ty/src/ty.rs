@@ -3,7 +3,7 @@ pub mod pretty;
 use std::{borrow::Cow, fmt, hash, num::NonZeroU32};
 
 use base_db::{Intern as _, Lookup as _, impl_intern_key, impl_intern_lookup};
-use hir_def::db::StructId;
+use hir_def::{db::StructId, item_tree::Name};
 use wgsl_types::{
     syntax::{AccessMode, AddressSpace, TexelFormat},
     tplt::AccelerationStructureTags,
@@ -33,7 +33,9 @@ impl Type {
             | TypeKind::Struct(_)
             | TypeKind::BuiltinStruct(_)
             | TypeKind::Texture(_)
+            | TypeKind::RayQuery(_)
             | TypeKind::AccelerationStructure(_)
+            | TypeKind::SwizzleView(_)
             | TypeKind::Sampler(_) => false,
             TypeKind::Atomic(atomic_type) => atomic_type.inner.is_err(db),
             TypeKind::Vector(vector_type) => vector_type.component_type.is_err(db),
@@ -41,30 +43,6 @@ impl Type {
             TypeKind::Array(array_type) => array_type.inner.is_err(db),
             TypeKind::Reference(reference) => reference.inner.is_err(db),
             TypeKind::Pointer(pointer) => pointer.inner.is_err(db),
-        }
-    }
-
-    #[expect(clippy::doc_paragraphs_missing_punctuation, reason = "false positive")]
-    /// `T` -> `T`, `vecN<T>` -> `T`
-    #[must_use]
-    pub fn this_or_vec_inner(
-        self,
-        db: &dyn HirDatabase,
-    ) -> Self {
-        match self.kind(db) {
-            TypeKind::Vector(vector) => vector.component_type,
-            TypeKind::Reference(reference) => reference.inner.this_or_vec_inner(db),
-            TypeKind::Error
-            | TypeKind::Scalar(_)
-            | TypeKind::Atomic(_)
-            | TypeKind::Matrix(_)
-            | TypeKind::Struct(_)
-            | TypeKind::BuiltinStruct(_)
-            | TypeKind::Array(_)
-            | TypeKind::Texture(_)
-            | TypeKind::AccelerationStructure(_)
-            | TypeKind::Sampler(_)
-            | TypeKind::Pointer(_) => self,
         }
     }
 
@@ -148,17 +126,24 @@ impl Type {
                 .0
                 .iter()
                 .all(|(_, field_type)| *field_type.is_constructible(db)),
-            TypeKind::BuiltinStruct(builtin_struct) => builtin_struct
-                .fields
-                .iter()
-                .all(|(_, field_type)| *field_type.is_constructible(db)),
+            TypeKind::BuiltinStruct(builtin_struct) => {
+                // This implementation matches naga.
+                // Builtin structs like __atomic_compare_exchange_result are "not constructible" because they are impossible to write in source code.
+                // The reason is that two underscores "__" may not begin an identifier.
+                builtin_struct
+                    .fields
+                    .iter()
+                    .all(|(_, field_type)| *field_type.is_constructible(db))
+            },
             TypeKind::Array(array_type) => array_type.is_constructible(db),
             TypeKind::Atomic(_)
             | TypeKind::Texture(_)
             | TypeKind::Sampler(_)
             | TypeKind::Reference(_)
-            | TypeKind::AccelerationStructure(_)
-            | TypeKind::Pointer(_) => false,
+            | TypeKind::Pointer(_)
+            | TypeKind::RayQuery(_)
+            | TypeKind::SwizzleView(_)
+            | TypeKind::AccelerationStructure(_) => false,
         }
     }
 }
@@ -170,23 +155,30 @@ pub struct BuiltinStruct {
     pub fields: Vec<(String, Type)>,
 }
 
+#[expect(clippy::doc_paragraphs_missing_punctuation, reason = "false positive")]
+/// <https://www.w3.org/TR/WGSL/#types>
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TypeKind {
-    Error,
+    #[expect(clippy::doc_paragraphs_missing_punctuation, reason = "false positive")]
+    /// <https://www.w3.org/TR/WGSL/#scalar-types>
     Scalar(ScalarType),
-    Atomic(AtomicType),
     #[expect(clippy::doc_paragraphs_missing_punctuation, reason = "false positive")]
     /// <https://www.w3.org/TR/WGSL/#vector-types>
     Vector(VectorType),
     Matrix(MatrixType),
+    Atomic(AtomicType),
+    Array(ArrayType),
     Struct(StructId),
     BuiltinStruct(BuiltinStruct),
-    Array(ArrayType),
     Texture(TextureType),
     Sampler(SamplerType),
     Reference(Reference),
     Pointer(Pointer),
+    SwizzleView(SwizzleView),
+    RayQuery(Option<AccelerationStructureTags>),
     AccelerationStructure(Option<AccelerationStructureTags>),
+    // internal
+    Error,
 }
 
 impl hash::Hash for TypeKind {
@@ -219,11 +211,13 @@ impl TypeKind {
             | Self::Scalar(_)
             | Self::Atomic(_)
             | Self::Vector(_)
+            | Self::SwizzleView(_)
             | Self::Matrix(_)
             | Self::Struct(_)
             | Self::BuiltinStruct(_)
             | Self::Array(_)
             | Self::Texture(_)
+            | Self::RayQuery(_)
             | Self::AccelerationStructure(_)
             | Self::Sampler(_)
             | Self::Pointer(_) => Cow::Borrowed(self),
@@ -263,6 +257,7 @@ impl TypeKind {
                 rows: *rows,
                 inner: inner.kind(db).concretize(db)?.intern(db),
             }),
+            Self::SwizzleView(swizzle_view) => swizzle_view.loaded(),
             Self::Error
             | Self::Scalar(_)
             | Self::Atomic(_)
@@ -271,8 +266,9 @@ impl TypeKind {
             | Self::Texture(_)
             | Self::Sampler(_)
             | Self::Reference(_)
-            | Self::AccelerationStructure(_)
-            | Self::Pointer(_) => return None,
+            | Self::Pointer(_)
+            | Self::RayQuery(_)
+            | Self::AccelerationStructure(_) => return None,
         })
     }
 
@@ -280,9 +276,11 @@ impl TypeKind {
     pub const fn is_numeric_scalar(&self) -> bool {
         match self {
             Self::Scalar(scalar) => scalar.is_numeric(),
-            Self::Error
-            | Self::Atomic(_)
+            // be optimistic about errors
+            Self::Error => true,
+            Self::Atomic(_)
             | Self::Vector(_)
+            | Self::SwizzleView(_)
             | Self::Matrix(_)
             | Self::Struct(_)
             | Self::BuiltinStruct(_)
@@ -290,27 +288,32 @@ impl TypeKind {
             | Self::Texture(_)
             | Self::Sampler(_)
             | Self::Reference(_)
-            | Self::AccelerationStructure(_)
-            | Self::Pointer(_) => false,
+            | Self::Pointer(_)
+            | Self::RayQuery(_)
+            | Self::AccelerationStructure(_) => false,
         }
     }
 
+    /// The index expression must be of integer scalar type.
     #[must_use]
     pub const fn is_index(&self) -> bool {
         match self {
             Self::Scalar(scalar) => scalar.is_index(),
-            Self::Error
+            // be optimistic about errors
+            Self::Error => true,
+            Self::Pointer(_)
             | Self::Atomic(_)
             | Self::BuiltinStruct(_)
             | Self::Vector(_)
+            | Self::SwizzleView(_)
             | Self::Matrix(_)
             | Self::Struct(_)
             | Self::Array(_)
             | Self::Texture(_)
             | Self::Sampler(_)
             | Self::Reference(_)
-            | Self::AccelerationStructure(_)
-            | Self::Pointer(_) => false,
+            | Self::RayQuery(_)
+            | Self::AccelerationStructure(_) => false,
         }
     }
 
@@ -336,15 +339,17 @@ impl TypeKind {
                 rows: _,
             }) => inner.kind(db).is_abstract(db),
             Self::Scalar(_)
-            | Self::Error
             | Self::Atomic(_)
             | Self::Struct(_)
             | Self::BuiltinStruct(_)
             | Self::Texture(_)
             | Self::Sampler(_)
             | Self::Reference(_)
+            | Self::Pointer(_)
+            | Self::RayQuery(_)
+            | Self::SwizzleView(_)
             | Self::AccelerationStructure(_)
-            | Self::Pointer(_) => false,
+            | Self::Error => false,
         }
     }
 
@@ -393,6 +398,7 @@ impl TypeKind {
                 | Self::Atomic(_)
                 | Self::Array(_)
                 | Self::Struct(_)
+                | Self::BuiltinStruct(_)
                 | Self::Texture(_)
                 | Self::Sampler(_)
         )
@@ -418,8 +424,10 @@ impl TypeKind {
             | Self::Texture(_)
             | Self::Sampler(_)
             | Self::Reference(_)
-            | Self::AccelerationStructure(_)
-            | Self::Pointer(_) => false,
+            | Self::Pointer(_)
+            | Self::SwizzleView(_)
+            | Self::RayQuery(_)
+            | Self::AccelerationStructure(_) => false,
         }
     }
 
@@ -438,18 +446,21 @@ impl TypeKind {
                 .0
                 .iter()
                 .any(|(_, r#type)| r#type.kind(db).contains_runtime_sized_array(db)),
-            Self::Error
-            | Self::Scalar(_)
+
+            Self::Scalar(_)
             | Self::Atomic(_)
             | Self::Vector(_)
+            | Self::SwizzleView(_)
             | Self::Matrix(_)
             | Self::Array(_)
             | Self::BuiltinStruct(_)
             | Self::Texture(_)
             | Self::Sampler(_)
             | Self::Reference(_)
+            | Self::Pointer(_)
+            | Self::RayQuery(_)
             | Self::AccelerationStructure(_)
-            | Self::Pointer(_) => false,
+            | Self::Error => false,
         }
     }
 
@@ -460,6 +471,9 @@ impl TypeKind {
     ) -> bool {
         match self {
             Self::Atomic(atomic) => atomic.inner.contains_struct(db, r#struct),
+            Self::BuiltinStruct(BuiltinStruct { name: _, fields }) => fields
+                .iter()
+                .any(|(_, r#type)| r#type.contains_struct(db, r#struct)),
             Self::Struct(id) => {
                 if *id == r#struct {
                     return true;
@@ -469,17 +483,30 @@ impl TypeKind {
                     .values()
                     .any(|r#type| r#type.contains_struct(db, r#struct))
             },
-            Self::Array(array) => array.inner.contains_struct(db, r#struct),
-            Self::Reference(reference) => reference.inner.contains_struct(db, r#struct),
-            Self::Pointer(pointer) => pointer.inner.contains_struct(db, r#struct),
-            Self::Error
-            | Self::Scalar(_)
+            Self::Array(ArrayType {
+                inner,
+                binding_array: _,
+                size: _,
+            })
+            | Self::Reference(Reference {
+                address_space: _,
+                inner,
+                access_mode: _,
+            })
+            | Self::Pointer(Pointer {
+                address_space: _,
+                inner,
+                access_mode: _,
+            }) => inner.contains_struct(db, r#struct),
+            Self::Scalar(_)
             | Self::Vector(_)
+            | Self::SwizzleView(_)
             | Self::Matrix(_)
-            | Self::BuiltinStruct(_)
+            | Self::Sampler(_)
             | Self::Texture(_)
+            | Self::RayQuery(_)
             | Self::AccelerationStructure(_)
-            | Self::Sampler(_) => false,
+            | Self::Error => false,
         }
     }
 }
@@ -540,6 +567,20 @@ fn conversion_rank(
                 component_type: ty2,
             }),
         ) if n1 == n2 => conversion_rank(&ty1.kind(db), &ty2.kind(db), db),
+        // Apply the Swizzle View Load Rule to load a vector value from a swizzle view.
+        // https://www.w3.org/TR/WGSL/#swizzle-view-load-rule
+        (
+            TypeKind::SwizzleView(SwizzleView {
+                address_space,
+                component_type: ty1,
+                vector_size,
+                index_list: IndexList { indices, length },
+            }),
+            TypeKind::Vector(VectorType {
+                size: n2,
+                component_type: ty2,
+            }),
+        ) if length == n2 && ty1.kind(db) == ty2.kind(db) => Some(0),
         (
             TypeKind::Matrix(MatrixType {
                 columns: c1,
@@ -699,6 +740,20 @@ impl VecSize {
     /// Panics if self is the [`BoundVariable`] variant.
     #[must_use]
     pub const fn as_u8(self) -> u8 {
+        match self {
+            Self::Two => 2,
+            Self::Three => 3,
+            Self::Four => 4,
+        }
+    }
+
+    /// Get the dimensionality of the vector (can be `2`, `3`, or `4`) as a [`usize`].
+    ///
+    /// # Panics
+    ///
+    /// Panics if self is the [`BoundVariable`] variant.
+    #[must_use]
+    pub const fn as_usize(self) -> usize {
         match self {
             Self::Two => 2,
             Self::Three => 3,
@@ -871,5 +926,146 @@ impl fmt::Display for TextureDimensionality {
             Self::D3 => formatter.write_str("3d"),
             Self::Cube => formatter.write_str("cube"),
         }
+    }
+}
+
+#[expect(clippy::doc_paragraphs_missing_punctuation, reason = "false positive")]
+/// <https://www.w3.org/TR/WGSL/#swizzle-view-types>
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SwizzleView {
+    /// `ptr<AS,vecN<S>,read_write>` is a valid pointer type.
+    pub address_space: AddressSpace,
+    /// `S` is a concrete scalar type.
+    pub component_type: Type,
+    /// `N` and `K` are integers such that both `vecN<S>` and `vecK<S>` are valid vector types.
+    pub vector_size: VecSize,
+    /// `IndexList = « Idx0, ..., IdxK−1 »`
+    pub index_list: IndexList,
+}
+
+impl SwizzleView {
+    #[must_use]
+    pub const fn vector(&self) -> VectorType {
+        VectorType {
+            size: self.index_list.length,
+            component_type: self.component_type,
+        }
+    }
+
+    #[expect(clippy::doc_paragraphs_missing_punctuation, reason = "false positive")]
+    /// <https://www.w3.org/TR/WGSL/#swizzle-view-load-rule>
+    #[must_use]
+    pub const fn loaded(&self) -> TypeKind {
+        TypeKind::Vector(self.vector())
+    }
+}
+
+#[expect(
+    clippy::upper_case_acronyms,
+    reason = "edge case where this is more readable"
+)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum VecIndex {
+    RX,
+    GY,
+    BZ,
+    AW,
+}
+
+impl VecIndex {
+    /// Get the dimensionality of the vector (can be `2`, `3`, or `4`) as a [`u8`].
+    ///
+    /// # Panics
+    ///
+    /// Panics if self is the [`BoundVariable`] variant.
+    #[must_use]
+    pub const fn as_u8(self) -> u8 {
+        match self {
+            Self::RX => 1,
+            Self::GY => 2,
+            Self::BZ => 3,
+            Self::AW => 4,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct IndexList {
+    pub indices: [VecIndex; 4],
+    pub length: VecSize,
+}
+
+impl<'il> IntoIterator for &'il IndexList {
+    type Item = &'il VecIndex;
+    type IntoIter = std::slice::Iter<'il, VecIndex>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum SwizzleSet {
+    Rgba,
+    Xyzw,
+}
+
+const fn parse_component(character: char) -> Option<(SwizzleSet, VecIndex)> {
+    match character {
+        'r' => Some((SwizzleSet::Rgba, VecIndex::RX)),
+        'g' => Some((SwizzleSet::Rgba, VecIndex::GY)),
+        'b' => Some((SwizzleSet::Rgba, VecIndex::BZ)),
+        'a' => Some((SwizzleSet::Rgba, VecIndex::AW)),
+
+        'x' => Some((SwizzleSet::Xyzw, VecIndex::RX)),
+        'y' => Some((SwizzleSet::Xyzw, VecIndex::GY)),
+        'z' => Some((SwizzleSet::Xyzw, VecIndex::BZ)),
+        'w' => Some((SwizzleSet::Xyzw, VecIndex::AW)),
+
+        _ => None,
+    }
+}
+
+pub enum ParseIndexListError {
+    One(VecIndex),
+    MoreThanFour,
+    InvalidLetter,
+    MixingSwizzles,
+}
+
+impl IndexList {
+    pub fn parse_name(value: &Name) -> Result<Self, ParseIndexListError> {
+        let characters: Vec<_> = value.as_str().chars().collect();
+
+        let (set, first) =
+            parse_component(characters[0]).ok_or(ParseIndexListError::InvalidLetter)?;
+
+        let length = match characters.len() {
+            1 => return Err(ParseIndexListError::One(first)),
+            2 => VecSize::Two,
+            3 => VecSize::Three,
+            4 => VecSize::Four,
+            _ => return Err(ParseIndexListError::MoreThanFour),
+        };
+
+        let mut indices = [VecIndex::RX; 4];
+        indices[0] = first;
+
+        for (destination, &source) in indices[1..].iter_mut().zip(&characters[1..]) {
+            let (other_set, index) =
+                parse_component(source).ok_or(ParseIndexListError::InvalidLetter)?;
+
+            if other_set != set {
+                return Err(ParseIndexListError::MixingSwizzles);
+            }
+
+            *destination = index;
+        }
+
+        Ok(Self { indices, length })
+    }
+
+    pub fn iter(&self) -> std::slice::Iter<'_, VecIndex> {
+        self.indices[..self.length.as_usize()].iter()
     }
 }

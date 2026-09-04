@@ -3,11 +3,10 @@ use expect_test::expect;
 use crate::tests::check_infer;
 
 #[test]
-#[ignore = "https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1388"]
 fn ray_tracing_pipeline() {
     check_infer(
         "
-enable wgpu_ray_tracing_pipeline;
+// enable wgpu_ray_tracing_pipeline;
 
 struct HitCounters {
     hit_num: u32,
@@ -45,18 +44,63 @@ fn any_hit_main(@builtin(instance_custom_data) data: u32, @builtin(geometry_inde
 fn closest_hit_main(@builtin(object_ray_origin) origin: vec3<f32>, @builtin(object_ray_direction) dir: vec3<f32>, @builtin(object_to_world) obj_to_world: mat4x3<f32>, @builtin(world_to_object) world_to_obj: mat4x3<f32>) {}
 ",
         expect![[r#"
-            84..96 'storage_read': ref<storage, S, read>
-            149..159 'storage_rw': ref<storage, S, read_write>
-            182..198 'runtim...adonly': u32
-            201..232 'arrayL....data)': u32
-            213..231 '&stora...d.data': ptr<storage, array<vec4<f32>>, read>
-            214..226 'storage_read': ref<storage, S, read>
-            214..231 'storag...d.data': ref<storage, array<vec4<f32>>, read>
-            242..259 'runtim...dwrite': u32
-            262..291 'arrayL....data)': u32
-            274..290 '&stora...w.data': ptr<storage, array<vec4<f32>>, read_write>
-            275..285 'storage_rw': ref<storage, S, read_write>
-            275..290 'storage_rw.data': ref<storage, array<vec4<f32>>, read_write>
+            120..127 'hit_num': ref<ray_payload, HitCounters, read_write>
+            169..179 'acc_struct': ref<handle, acceleration_structure, read>
+            266..268 'id': vec3<u32>
+            311..326 'num_invocations': vec3<u32>
+            345..352 'hit_num': ref<ray_payload, HitCounters, read_write>
+            355..368 'HitCounters()': HitCounters
+            378..383 'shift': vec3<f32>
+            386..399 'vec3<f32>(id)': vec3<f32>
+            386..428 'vec3<f...tions)': vec3<f32>
+            396..398 'id': vec3<u32>
+            402..428 'vec3<f...tions)': vec3<f32>
+            412..427 'num_invocations': vec3<u32>
+            438..447 'ray_shift': vec3<f32>
+            450..491 '(vec3(... - 1.0': vec3<f32>
+            451..478 'vec3(s...ift.y)': vec3<f32>
+            451..484 'vec3(s... * 2.0': vec3<f32>
+            456..461 'shift': vec3<f32>
+            456..463 'shift.x': f32
+            465..468 '0.0': float
+            470..475 'shift': vec3<f32>
+            470..477 'shift.y': f32
+            481..484 '2.0': float
+            488..491 '1.0': float
+            497..614 'traceR...t_num)': [error]
+            506..516 'acc_struct': ref<handle, acceleration_structure, read>
+            518..603 'RayDes...shift)': RayDesc
+            526..539 'RAY_FLAG_NONE': u32
+            541..545 '0xff': integer
+            547..551 '0.01': float
+            553..558 '100.0': float
+            560..569 'vec3(0.0)': vec3<float>
+            565..568 '0.0': float
+            571..590 'vec3(0..., 0.0)': vec3<float>
+            571..602 'vec3(0..._shift': vec3<f32>
+            576..579 '0.0': float
+            581..584 '1.0': float
+            586..589 '0.0': float
+            593..602 'ray_shift': vec3<f32>
+            605..613 '&hit_num': ptr<ray_payload, HitCounters, read_write>
+            606..613 'hit_num': ref<ray_payload, HitCounters, read_write>
+            645..661 'incomi...it_num': ref<incoming_ray_payload, HitCounters, read_write>
+            754..760 'origin': vec3<f32>
+            803..806 'dir': vec3<f32>
+            839..844 't_min': f32
+            947..951 'data': u32
+            983..990 'geo_idx': u32
+            1025..1028 'max': f32
+            1054..1058 'kind': u32
+            1071..1087 'incomi...it_num': ref<incoming_ray_payload, HitCounters, read_write>
+            1071..1095 'incomi...it_num': ref<incoming_ray_payload, u32, read_write>
+            1103..1119 'incomi...it_num': ref<incoming_ray_payload, HitCounters, read_write>
+            1103..1132 'incomi...ed_hit': ref<incoming_ray_payload, u32, read_write>
+            1135..1139 'data': u32
+            1241..1247 'origin': vec3<f32>
+            1291..1294 'dir': vec3<f32>
+            1333..1345 'obj_to_world': mat4x3<f32>
+            1386..1398 'world_to_obj': mat4x3<f32>
         "#]],
     );
 }

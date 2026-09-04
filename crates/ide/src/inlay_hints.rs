@@ -24,6 +24,7 @@ use syntax::{AstChildren, AstNode as _, HasName as _, SyntaxNode, ast};
 
 use crate::RootDatabase;
 
+#[derive(Clone, Debug, Default)]
 pub struct InlayHintsConfig {
     pub render_colons: bool,
     pub enabled: bool,
@@ -712,7 +713,7 @@ fn get_string_representation(expression: &AstExpression) -> Option<String> {
     }
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Default)]
 pub struct InlayFieldsToResolve {
     pub resolve_text_edits: bool,
     pub resolve_hint_tooltip: bool,
@@ -742,5 +743,69 @@ impl InlayFieldsToResolve {
             resolve_label_location: false,
             resolve_label_command: false,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use base_db::EditionedFileId;
+    use expect_test::expect;
+    use hir::Semantics;
+    use stdx::itertools::Itertools as _;
+
+    use crate::{
+        InlayHintsConfig, fixture,
+        inlay_hints::{StructLayoutHints, get_struct_layout_hints},
+    };
+
+    #[expect(
+        clippy::needless_pass_by_value,
+        reason = "easier to use with expect! macro"
+    )]
+    fn check(
+        source: &str,
+        expect: expect_test::Expect,
+    ) {
+        let (analysis, file_id) = fixture::single_file_db(source);
+        let mut buffer = Vec::new();
+        let semantics = Semantics::new(&analysis.db);
+        let file_id = EditionedFileId::from_file(&analysis.db, file_id);
+        get_struct_layout_hints(
+            &mut buffer,
+            file_id,
+            &semantics,
+            &InlayHintsConfig {
+                struct_layout_hints: Some(StructLayoutHints::Offset),
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        let lines = buffer
+            .iter()
+            .map(|inlay_hint| format!("{inlay_hint:?}"))
+            .join("\n");
+        expect.assert_eq(&lines);
+    }
+
+    #[test]
+    fn struct_layout_hints() {
+        check(
+            "
+struct Foo { foo1: bool, foo2: array<u32, 3>, foo3: bool, foo4: bool }
+var<uniform> x: Foo;
+
+struct Bar { bar1: bool, bar2: array<u32, 3>, bar3: bool, bar4: bool }
+var<storage> x: Bar;
+            ",
+            expect![[r#"
+                InlayHint { range: 13..23, position: After, pad_left: false, pad_right: false, kind: StructLayout, label: ["0"], text_edit: None, resolve_parent: Some(13..23) }
+                InlayHint { range: 25..44, position: After, pad_left: false, pad_right: false, kind: StructLayout, label: ["4"], text_edit: None, resolve_parent: Some(25..44) }
+                InlayHint { range: 46..56, position: After, pad_left: false, pad_right: false, kind: StructLayout, label: ["64"], text_edit: None, resolve_parent: Some(46..56) }
+                InlayHint { range: 58..68, position: After, pad_left: false, pad_right: false, kind: StructLayout, label: ["68"], text_edit: None, resolve_parent: Some(58..68) }
+                InlayHint { range: 106..116, position: After, pad_left: false, pad_right: false, kind: StructLayout, label: ["0"], text_edit: None, resolve_parent: Some(106..116) }
+                InlayHint { range: 118..137, position: After, pad_left: false, pad_right: false, kind: StructLayout, label: ["4"], text_edit: None, resolve_parent: Some(118..137) }
+                InlayHint { range: 139..149, position: After, pad_left: false, pad_right: false, kind: StructLayout, label: ["16"], text_edit: None, resolve_parent: Some(139..149) }
+                InlayHint { range: 151..161, position: After, pad_left: false, pad_right: false, kind: StructLayout, label: ["20"], text_edit: None, resolve_parent: Some(151..161) }"#]],
+        );
     }
 }

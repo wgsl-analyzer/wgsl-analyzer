@@ -22,8 +22,8 @@ use crate::{
     function::ResolvedFunctionId,
     ty::{
         ArraySize, ArrayType, AtomicType, BuiltinStruct, MatrixType, Pointer, Reference,
-        ScalarType, TextureDimensionality, TextureKind, TextureType, Type, TypeKind, VecSize,
-        VectorType, pretty::pretty_type,
+        ScalarType, SwizzleView, TextureDimensionality, TextureKind, TextureType, Type, TypeKind,
+        VecSize, VectorType, pretty::pretty_type,
     },
 };
 
@@ -39,8 +39,121 @@ pub struct TypeLoweringContext<'db> {
     /// Make sure to set the correct resolver when going into function scopes.
     resolver: &'db Resolver<'db>,
     store: &'db ExpressionStore,
+    types: DefaultTypes,
 
     pub(crate) diagnostics: Vec<TypeLoweringError>,
+}
+
+#[derive(PartialEq, Eq, Debug)]
+pub struct DefaultTypes {
+    pub error: Type,
+    pub ray_desc: BuiltinStruct,
+    pub ray_intersection: BuiltinStruct,
+}
+
+impl DefaultTypes {
+    pub fn new(db: &dyn HirDatabase) -> Self {
+        Self {
+            error: TypeKind::Error.intern(db),
+            ray_desc: BuiltinStruct {
+                name: "RayDesc".to_owned(),
+                fields: vec![
+                    (
+                        "flags".to_owned(),
+                        TypeKind::Scalar(ScalarType::U32).intern(db),
+                    ),
+                    (
+                        "cull_mask".to_owned(),
+                        TypeKind::Scalar(ScalarType::U32).intern(db),
+                    ),
+                    (
+                        "t_min".to_owned(),
+                        TypeKind::Scalar(ScalarType::F32).intern(db),
+                    ),
+                    (
+                        "t_max".to_owned(),
+                        TypeKind::Scalar(ScalarType::F32).intern(db),
+                    ),
+                    (
+                        "origin".to_owned(),
+                        TypeKind::Vector(VectorType {
+                            size: VecSize::Three,
+                            component_type: TypeKind::Scalar(ScalarType::F32).intern(db),
+                        })
+                        .intern(db),
+                    ),
+                    (
+                        "dir".to_owned(),
+                        TypeKind::Vector(VectorType {
+                            size: VecSize::Three,
+                            component_type: TypeKind::Scalar(ScalarType::F32).intern(db),
+                        })
+                        .intern(db),
+                    ),
+                ],
+            },
+            ray_intersection: BuiltinStruct {
+                name: "RayIntersection".to_owned(),
+                fields: vec![
+                    (
+                        "kind".to_owned(),
+                        TypeKind::Scalar(ScalarType::U32).intern(db),
+                    ),
+                    ("t".to_owned(), TypeKind::Scalar(ScalarType::F32).intern(db)),
+                    (
+                        "instance_custom_data".to_owned(),
+                        TypeKind::Scalar(ScalarType::U32).intern(db),
+                    ),
+                    (
+                        "instance_index".to_owned(),
+                        TypeKind::Scalar(ScalarType::U32).intern(db),
+                    ),
+                    (
+                        "sbt_record_offset".to_owned(),
+                        TypeKind::Scalar(ScalarType::U32).intern(db),
+                    ),
+                    (
+                        "geometry_index".to_owned(),
+                        TypeKind::Scalar(ScalarType::U32).intern(db),
+                    ),
+                    (
+                        "primitive_index".to_owned(),
+                        TypeKind::Scalar(ScalarType::U32).intern(db),
+                    ),
+                    (
+                        "barycentrics".to_owned(),
+                        TypeKind::Vector(VectorType {
+                            size: VecSize::Two,
+                            component_type: TypeKind::Scalar(ScalarType::F32).intern(db),
+                        })
+                        .intern(db),
+                    ),
+                    (
+                        "front_face".to_owned(),
+                        TypeKind::Scalar(ScalarType::Bool).intern(db),
+                    ),
+                    (
+                        "object_to_world".to_owned(),
+                        TypeKind::Matrix(MatrixType {
+                            columns: VecSize::Four,
+                            rows: VecSize::Three,
+                            inner: TypeKind::Scalar(ScalarType::F32).intern(db),
+                        })
+                        .intern(db),
+                    ),
+                    (
+                        "world_to_object".to_owned(),
+                        TypeKind::Matrix(MatrixType {
+                            columns: VecSize::Four,
+                            rows: VecSize::Three,
+                            inner: TypeKind::Scalar(ScalarType::F32).intern(db),
+                        })
+                        .intern(db),
+                    ),
+                ],
+            },
+        }
+    }
 }
 
 #[derive(PartialEq, Eq, Debug)]
@@ -154,6 +267,12 @@ impl TypeLoweringErrorKind {
             },
             Self::Resolution(ResolutionDiagnostic::UnresolvedPackage { name }) => {
                 format!("package `{}` not found", name.as_str())
+            },
+            Self::Resolution(ResolutionDiagnostic::UnsupportedBuiltin { name }) => {
+                format!(
+                    "builtin type `{}` not yet supported in wgsl-analyzer",
+                    name.as_str()
+                )
             },
             Self::WgslError(error) => error.clone(),
             Self::UnexpectedTemplateArgument(expected, actual) => {
@@ -295,6 +414,7 @@ impl<'db> TypeLoweringContext<'db> {
             db,
             resolver,
             store,
+            types: DefaultTypes::new(db),
             diagnostics: Vec::new(),
         }
     }
@@ -359,7 +479,7 @@ impl<'db> TypeLoweringContext<'db> {
             Ok(ResolveKind::BuiltinFunction(name)) => {
                 Ok(Lowered::BuiltinFunction(name, Some(template_parameters)))
             },
-            Ok(ResolveKind::BuiltinType(name)) => {
+            Ok(ResolveKind::BuiltinType(name) | ResolveKind::BuiltinTypeConstructor(name)) => {
                 self.lower_builtin_type(name, type_container, &mut template_parameters)
             },
             Ok(ResolveKind::BuiltinTypeGenerator(name)) => {
@@ -372,14 +492,6 @@ impl<'db> TypeLoweringContext<'db> {
                     Either::Right(r#type) => Ok(Lowered::Type(r#type)),
                 }
             },
-            // Ok(ResolveKind::BuiltinTypeConstructor(name)) => self
-            //     .lower_builtin_type(type_container, &name, &template_parameters)?
-            //     .ok_or_else(|| TypeLoweringError {
-            //         container: type_container,
-            //         kind: TypeLoweringErrorKind::Resolution(ResolutionDiagnostic::UnresolvedName {
-            //             name,
-            //         }),
-            //     }),
             Ok(ResolveKind::BuiltinEnumerant(name)) => {
                 self.expect_no_template(&template_parameters);
                 self.lower_builtin_enumerant(&name)
@@ -527,6 +639,7 @@ impl<'db> WgslTypeConverter<'db> {
         clippy::wrong_self_convention,
         reason = "naming things is hard and this is probably changing in the future"
     )]
+    #[expect(clippy::too_many_lines, reason = "just a long but simple match")]
     pub fn to_wgsl_types(
         &mut self,
         r#type: Type,
@@ -549,6 +662,16 @@ impl<'db> WgslTypeConverter<'db> {
                 size,
                 component_type,
             }) => wgsl_types::Type::Vec(size.as_u8(), Box::new(self.to_wgsl_types(component_type))),
+            // TODO: wgsl-types should have swizzle views eventually
+            TypeKind::SwizzleView(SwizzleView {
+                address_space: _,
+                component_type,
+                vector_size,
+                index_list: _,
+            }) => wgsl_types::Type::Vec(
+                vector_size.as_u8(),
+                Box::new(self.to_wgsl_types(component_type)),
+            ),
             TypeKind::Matrix(MatrixType {
                 columns,
                 rows,
@@ -626,6 +749,7 @@ impl<'db> WgslTypeConverter<'db> {
                 Box::new(self.to_wgsl_types(inner)),
                 access_mode,
             ),
+            TypeKind::RayQuery(tags) => wgsl_types::Type::RayQuery(tags),
             TypeKind::AccelerationStructure(tags) => wgsl_types::Type::AccelerationStructure(tags),
         }
     }
@@ -771,7 +895,7 @@ impl<'db> WgslTypeConverter<'db> {
             wgsl_types::Type::Sampler(sampler_type) => {
                 TypeKind::Sampler(sampler_type).intern(self.db)
             },
-            wgsl_types::Type::RayQuery(_) => todo!("naga extension"),
+            wgsl_types::Type::RayQuery(tags) => TypeKind::RayQuery(tags).intern(self.db),
             wgsl_types::Type::AccelerationStructure(tags) => {
                 TypeKind::AccelerationStructure(tags).intern(self.db)
             },
@@ -1000,12 +1124,14 @@ impl<'db> WgslTypeConverter<'db> {
             | TypeKind::Scalar(_)
             | TypeKind::Atomic(_)
             | TypeKind::Vector(_)
+            | TypeKind::SwizzleView(_)
             | TypeKind::Matrix(_)
             | TypeKind::Struct(_)
             | TypeKind::BuiltinStruct(_)
             | TypeKind::Array(_)
             | TypeKind::Texture(_)
             | TypeKind::Sampler(_)
+            | TypeKind::RayQuery(_)
             | TypeKind::AccelerationStructure(_)
             | TypeKind::Reference(_)
             | TypeKind::Pointer(_)) => panic!("invalid sampled type {kind:?}"),

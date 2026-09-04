@@ -54,7 +54,7 @@ pub enum ResolveKind {
     BuiltinFunction(Name),
     BuiltinType(Name),
     BuiltinTypeGenerator(Name),
-    // BuiltinTypeConstructor(Name),
+    BuiltinTypeConstructor(Name),
     BuiltinEnumerant(Name),
     BuiltinDeclaration(Name),
 }
@@ -336,13 +336,7 @@ impl<'db> Resolver<'db> {
                         Some(ResolveKind::BuiltinTypeGenerator(name.clone()))
                     } else if wgsl_types::idents::BUILTIN_CONSTRUCTOR_NAMES.contains(&name.as_str())
                     {
-                        debug_assert!(
-                            false,
-                            "builtin constructor `{}` is unimplemented in wgsl-analyzer",
-                            name.as_str()
-                        );
-                        None
-                        // Some(ResolveKind::BuiltinTypeConstructor(name.clone()))
+                        Some(ResolveKind::BuiltinTypeConstructor(name.clone()))
                     } else if wgsl_types::idents::BUILTIN_ENUMERANT_NAMES.contains(&name.as_str()) {
                         Some(ResolveKind::BuiltinEnumerant(name.clone()))
                     } else if wgsl_types::idents::BUILTIN_DECLARATION_NAMES.contains(&name.as_str())
@@ -418,4 +412,7 @@ pub enum ResolutionDiagnostic {
     /// Cannot resolve an import statement, because the current file is not a part of a package.
     DetachedFile,
     MissingName,
+    UnsupportedBuiltin {
+        name: Name,
+    },
 }

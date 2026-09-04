@@ -13,7 +13,7 @@ use crate::{
 /// We request the dependencies for each package with cargo/npm.
 /// From there, we get something that uniquely identifies the package.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct PackageKey(ManifestPath);
+pub struct PackageKey(pub ManifestPath);
 
 impl PackageKey {
     #[must_use]

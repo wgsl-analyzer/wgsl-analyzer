@@ -1,0 +1,34 @@
+[package]
+name = "bevy_anti_alias"
+version = "0.20.0-dev"
+edition = "2024"
+description = "Provides various anti-aliasing implementations for Bevy Engine"
+homepage = "https://bevy.org"
+repository = "https://github.com/bevyengine/bevy"
+license = "MIT OR Apache-2.0"
+keywords = ["bevy"]
+
+[dependencies]
+# bevy
+bevy_render = { path = "../bevy_render", version = "0.20.0-dev" }
+bevy_core_pipeline = { path = "../bevy_core_pipeline", version = "0.20.0-dev" }
+
+# other
+tracing = { version = "0.1", default-features = false, features = ["std"] }
+dlss_wgpu = { version = "5.0.0", optional = true }
+uuid = { version = "1.21.0", optional = true }
+
+[package.metadata.docs.rs]
+rustdoc-args = [
+  "-Zunstable-options",
+  "--generate-link-to-definition",
+  "--generate-macro-expansion",
+]
+all-features = true
+
+[package.metadata.wgsl-analyzer]
+edition = "2026_pre"
+root = "src"
+
+[package.metadata.wgsl-analyzer.dependencies]
+bevy_core_pipeline = { path = "../bevy_core_pipeline" }

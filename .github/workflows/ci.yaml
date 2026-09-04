@@ -115,7 +115,7 @@ jobs:
       #       ./crates/proc-macro-srv/proc-macro-test/imp -> target
 
       - name: Install nextest
-        uses: taiki-e/install-action@a2a5f6e99e1a31540baa0468acfa302cff0f359f # v2.86.4
+        uses: taiki-e/install-action@37f7c5781271959fb65b6b35224e28652ff2b63d # v2.87.0
         with:
           tool: nextest
 
@@ -229,7 +229,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Install Tombi
-        uses: tombi-toml/setup-tombi@23af0f0e4fcad609f048a37fb312714cd6b07741 # v1.4.0
+        uses: tombi-toml/setup-tombi@603c3e90bc4382f3dd5c44573484db1c664102dd # v1.4.1
 
       - name: Lint TOML files
         run: tombi lint
@@ -256,7 +256,7 @@ jobs:
           persist-credentials: false
 
       - name: Check for typos
-        uses: crate-ci/typos@8a48f81b6c64dcfea44b3633223084c4be58ac5f # v1.49.0
+        uses: crate-ci/typos@a8168dc2984a9e2352f183ffe788f0f23a300389 # v1.49.1
 
       - name: Typos info
         if: failure()
@@ -294,7 +294,7 @@ jobs:
           RUSTFLAGS: -C debuginfo=0 -D warnings
 
       - name: Install cargo-binstall
-        uses: cargo-bins/cargo-binstall@e00d2c94cc0067b77737821097a62d91c0301baa # v1.21.1
+        uses: cargo-bins/cargo-binstall@75b4bfae1b2c753a6806bbce6e6cb89b602de33c # v1.22.0
 
       - name: Install cargo-deadlinks
         run: cargo binstall --no-confirm cargo-deadlinks
@@ -314,7 +314,7 @@ jobs:
           persist-credentials: false
 
       - name: Install cargo-binstall
-        uses: cargo-bins/cargo-binstall@e00d2c94cc0067b77737821097a62d91c0301baa # v1.21.1
+        uses: cargo-bins/cargo-binstall@75b4bfae1b2c753a6806bbce6e6cb89b602de33c # v1.22.0
 
       - name: Install cargo-shear
         run: cargo binstall --no-confirm cargo-shear

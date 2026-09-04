@@ -427,10 +427,10 @@ fn enable_extension_names() {
     let parsed = check_errors(
         "
         enable f16, clip_distances, dual_source_blending, subgroups, primitive_index, subgroup_size_control;
-        enable wgpu_mesh_shader, wgpu_ray_query, wgpu_ray_query_vertex_return, wgpu_ray_tracing_pipelines, wgpu_int16, wgpu_cooperative_matrix, per_vertex, draw_index, wgpu_binding_array;
+        enable wgpu_mesh_shader, wgpu_ray_query, wgpu_ray_query_vertex_return, wgpu_ray_tracing_pipeline, wgpu_int16, wgpu_cooperative_matrix, per_vertex, draw_index, wgpu_binding_array;
         enable unknown_nonsense;
         ",
-        expect!["error at 313..329: unknown extension: `unknown_nonsense`"],
+        expect!["error at 312..328: unknown extension: `unknown_nonsense`"],
     );
     let items = vec![
         Ok(EnableExtension::F16),
@@ -470,9 +470,9 @@ fn enable_extension_names() {
 fn language_extension_names() {
     let parsed = check_errors(
         "
-        requires readonly_and_readwrite_storage_textures, packed_4x8_integer_dot_product, unrestricted_pointer_parameters, pointer_composite_access, uniform_buffer_standard_layout, subgroup_id, subgroup_uniformity, texture_and_sampler_let, texture_formats_tier1, linear_indexing, immediate_address_space, buffer_view, the_extension_does_not_exist;
+        requires readonly_and_readwrite_storage_textures, packed_4x8_integer_dot_product, unrestricted_pointer_parameters, pointer_composite_access, uniform_buffer_standard_layout, subgroup_id, subgroup_uniformity, texture_and_sampler_let, texture_formats_tier1, linear_indexing, immediate_address_space, buffer_view, swizzle_assignment, the_extension_does_not_exist;
         ",
-        expect!["error at 319..347: unknown extension: `the_extension_does_not_exist`"],
+        expect!["error at 339..367: unknown extension: `the_extension_does_not_exist`"],
     );
     let items = vec![
         Ok(LanguageExtension::ReadonlyAndReadwriteStorageTextures),
@@ -487,6 +487,7 @@ fn language_extension_names() {
         Ok(LanguageExtension::LinearIndexing),
         Ok(LanguageExtension::ImmediateAddressSpace),
         Ok(LanguageExtension::BufferView),
+        Ok(LanguageExtension::SwizzleAssignment),
         Err(UnknownExtension),
     ];
     let map = parsed

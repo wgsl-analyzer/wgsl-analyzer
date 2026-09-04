@@ -35,7 +35,7 @@ pub enum AddressSpaceError {
     HostShareable,
     /// Plain type, excluding runtime-sized arrays.
     WorkgroupCompatible,
-    HandleOrTexture,
+    HandleCompatible,
     TaskPayloadCompatible,
 }
 
@@ -59,8 +59,8 @@ impl fmt::Display for AddressSpaceError {
             },
             Self::Constructable => formatter.write_str("type is not constructable"),
             Self::HostShareable => formatter.write_str("type is not host-shareable"),
-            Self::WorkgroupCompatible => formatter.write_str(""),
-            Self::HandleOrTexture => {
+            Self::WorkgroupCompatible => formatter.write_str("type is not workgroup compatible"),
+            Self::HandleCompatible => {
                 formatter.write_str("address space is only valid for handle or texture types")
             },
             Self::TaskPayloadCompatible => {
@@ -168,6 +168,7 @@ pub fn validate_address_space<DiagnosticBuilder>(
                 TypeKind::Error
                 | TypeKind::Sampler(_)
                 | TypeKind::Texture(_)
+                | TypeKind::AccelerationStructure(_)
                 | TypeKind::Array(ArrayType {
                     binding_array: true,
                     inner: _,
@@ -176,14 +177,15 @@ pub fn validate_address_space<DiagnosticBuilder>(
                 TypeKind::Scalar(_)
                 | TypeKind::Atomic(_)
                 | TypeKind::Vector(_)
+                | TypeKind::SwizzleView(_)
                 | TypeKind::Matrix(_)
+                | TypeKind::Array(_)
                 | TypeKind::Struct(_)
                 | TypeKind::BuiltinStruct(_)
-                | TypeKind::Array(_)
-                | TypeKind::AccelerationStructure(_)
                 | TypeKind::Reference(_)
-                | TypeKind::Pointer(_) => {
-                    diagnostic_builder(AddressSpaceError::HandleOrTexture);
+                | TypeKind::Pointer(_)
+                | TypeKind::RayQuery(_) => {
+                    diagnostic_builder(AddressSpaceError::HandleCompatible);
                 },
             }
         },

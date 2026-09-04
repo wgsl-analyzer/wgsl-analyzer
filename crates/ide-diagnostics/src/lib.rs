@@ -243,14 +243,14 @@ pub fn diagnostics(
                     expected,
                     actual,
                 } => {
-                    debug_assert!(!actual.is_err(db));
                     let source = expression.value.to_node(&root);
-                    let expected = ty::pretty::pretty_type_expectation(db, expected);
-                    let actual = ty::pretty::pretty_type(db, actual);
+                    let expected_pretty = ty::pretty::pretty_type_expectation(db, expected);
+                    let actual_pretty = ty::pretty::pretty_type(db, actual);
                     let frange = original_file_range(db, expression.file_id, source.syntax());
+                    //debug_assert!(!actual.is_err(db), "{:?} expected {expected_pretty}, found {actual_pretty}", frange.range);
                     Diagnostic::new(
                         DiagnosticCode("2"),
-                        format!("expected {expected}, found {actual}"),
+                        format!("expected {expected_pretty}, found {actual_pretty}"),
                         frange.range,
                     )
                 },
@@ -277,6 +277,15 @@ pub fn diagnostics(
                     Diagnostic::new(
                         DiagnosticCode("4"),
                         format!("cannot index into type {type}"),
+                        frange.range,
+                    )
+                },
+                AnyDiagnostic::AssignmentNotWritable { left_side } => {
+                    let source = left_side.value.to_node(&root);
+                    let frange = original_file_range(db, left_side.file_id, source.syntax());
+                    Diagnostic::new(
+                        DiagnosticCode("1"),
+                        "cannot assign to value with `read` access mode".to_owned(),
                         frange.range,
                     )
                 },

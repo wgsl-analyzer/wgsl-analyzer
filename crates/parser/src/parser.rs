@@ -341,9 +341,7 @@ impl<'source> ParserCallbacks<'source> for Parser<'source> {
             "wgpu_ray_query_vertex_return" => {
                 self.context.extensions.wgpu_ray_query_vertex_return = true
             },
-            "wgpu_ray_tracing_pipelines" => {
-                self.context.extensions.wgpu_ray_tracing_pipelines = true
-            },
+            "wgpu_ray_tracing_pipeline" => self.context.extensions.wgpu_ray_tracing_pipeline = true,
             "wgpu_int16" => self.context.extensions.wgpu_int16 = true,
             "wgpu_cooperative_matrix" => self.context.extensions.wgpu_cooperative_matrix = true,
             "per_vertex" => self.context.extensions.per_vertex = true,
@@ -387,6 +385,7 @@ impl<'source> ParserCallbacks<'source> for Parser<'source> {
             "linear_indexing" => self.context.extensions.linear_indexing = true,
             "immediate_address_space" => self.context.extensions.immediate_address_space = true,
             "buffer_view" => self.context.extensions.buffer_view = true,
+            "swizzle_assignment" => self.context.extensions.swizzle_assignment = true,
             _ => {
                 diagnostics.push(self.create_diagnostic(
                     self.cst.span(node_ref),

@@ -149,9 +149,11 @@ impl TypeKind {
             Self::Error
             | Self::Scalar(ScalarType::AbstractFloat | ScalarType::AbstractInt)
             | Self::Vector(_)
+            | Self::SwizzleView(_)
             | Self::BuiltinStruct(_)
             | Self::Texture(_)
             | Self::Sampler(_)
+            | Self::RayQuery(_)
             | Self::AccelerationStructure(_)
             | Self::Reference(_)
             | Self::Pointer(_) => None,
@@ -250,8 +252,10 @@ impl TypeKind {
             | Self::Scalar(ScalarType::AbstractFloat | ScalarType::AbstractInt)
             | Self::BuiltinStruct(_)
             | Self::Vector(_)
+            | Self::SwizzleView(_)
             | Self::Texture(_)
             | Self::Sampler(_)
+            | Self::RayQuery(_)
             | Self::AccelerationStructure(_)
             | Self::Reference(_)
             | Self::Pointer(_) => None,
