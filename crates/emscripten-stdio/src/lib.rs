@@ -73,3 +73,21 @@
 #[cfg(target_os = "emscripten")]
 mod imp;
 mod queue;
+
+/// Ensure this crate takes part in the final link.
+///
+/// A dependency with no referenced symbols can be dropped before the linker
+/// ever sees it, which would quietly leave the real libc `read` and `write` in
+/// place. Calling this once from `main` gives rustc an ordinary Rust-level
+/// reference to the crate.
+///
+/// Does nothing on targets other than emscripten.
+#[inline(never)]
+#[expect(
+    clippy::missing_const_for_fn,
+    reason = "a const fn could be evaluated away at compile time, which is exactly what this call must not allow"
+)]
+pub fn force_link() {
+    #[cfg(target_os = "emscripten")]
+    imp::force_link();
+}
