@@ -11,6 +11,7 @@ use std::{
     },
 };
 
+use crate::queue::drain_into;
 
 // ---------------------------------------------------------------------------
 // fd 0
@@ -88,6 +89,69 @@ impl StdinPipe {
         fill(&mut state.bytes)
     }
 }
+
+// ---------------------------------------------------------------------------
+// fd 1
+// ---------------------------------------------------------------------------
+
+/// A non-blocking queue, filled by `write` and drained from JavaScript.
+struct StdoutPipe {
+    queue: Mutex<VecDeque<u8>>,
+    /// Counts writes. The host waits on this address for a change instead of
+    /// polling; see [`lsp_stdout_signal_ptr`].
+    writes: AtomicI32,
+}
+
+static STDOUT: StdoutPipe = StdoutPipe {
+    queue: Mutex::new(VecDeque::new()),
+    writes: AtomicI32::new(0),
+};
+
+impl StdoutPipe {
+    /// Append `total` bytes through `fill`, then wake the host once.
+    ///
+    /// This never waits for the host to drain. The caller is `lsp_server`'s
+    /// writer thread, and stalling it backs up through a zero-capacity channel
+    /// and wedges the server, so the queue is allowed to grow instead.
+    fn append(
+        &self,
+        total: usize,
+        fill: impl FnOnce(&mut VecDeque<u8>),
+    ) {
+        if total == 0 {
+            return;
+        }
+        let mut queue = lock(&self.queue);
+        queue.reserve(total);
+        fill(&mut queue);
+        drop(queue);
+        self.wake();
+    }
+
+    /// Move up to `dst.len()` bytes out. Never blocks.
+    fn pop_into(
+        &self,
+        dst: &mut [u8],
+    ) -> usize {
+        drain_into(&mut lock(&self.queue), dst)
+    }
+
+    /// Publish that output is waiting, waking an `Atomics.waitAsync` waiter.
+    fn wake(&self) {
+        self.writes.fetch_add(1, Ordering::Release);
+
+        // SAFETY: the address of a `static AtomicI32` is valid, four-byte
+        // aligned and lives for the whole program. Waking every waiter is
+        // correct because the host keeps at most one.
+        unsafe {
+            core::arch::wasm32::memory_atomic_notify(
+                (&raw const self.writes).cast_mut().cast::<i32>(),
+                u32::MAX,
+            );
+        }
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Shared helpers
 // ---------------------------------------------------------------------------
