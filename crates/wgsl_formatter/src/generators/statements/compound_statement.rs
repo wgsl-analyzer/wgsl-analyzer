@@ -15,6 +15,7 @@ use crate::{
     generators::node::gen_node_with_trivia,
     helpers::{LineSpacing, read_blankspace},
     multiline_group::MultilineGroup,
+    options::TEMP_EXPERIMENTAL_CONDCOMP_MODE,
     print_item_buffer::{
         PrintItemBuffer,
         spacing_request::{Request, RequestItem},
@@ -41,6 +42,10 @@ pub fn gen_compound_statement(
                 .attributes()
                 .any(|attribute| attribute.is_conditional_compilation()),
         });
+
+    let dedent_braces = is_conditional && TEMP_EXPERIMENTAL_CONDCOMP_MODE.dedent_condcomp_with_body;
+    let creates_indentation = !is_conditional
+        || TEMP_EXPERIMENTAL_CONDCOMP_MODE.unscope_compound_statements_create_indent;
 
     // ==== Parse ====
 
@@ -78,16 +83,16 @@ pub fn gen_compound_statement(
 
     let mut multiline_group = MultilineGroup::new_before_requests(&mut formatted);
 
-    if is_conditional {
+    if dedent_braces {
         multiline_group.start_ignoring_indent_before_requests();
     }
     multiline_group.push_sc(sc!("{"));
-    if is_conditional {
+    if dedent_braces {
         multiline_group.finish_ignoring_indent_before_requests();
     }
 
     if !body_empty {
-        if !is_conditional {
+        if creates_indentation {
             multiline_group.start_indent_before_requests();
         }
 
@@ -120,7 +125,7 @@ pub fn gen_compound_statement(
         }
         // }
 
-        if !is_conditional {
+        if creates_indentation {
             multiline_group.finish_indent();
         }
 
@@ -132,11 +137,11 @@ pub fn gen_compound_statement(
         multiline_group.request(Request::discourage(RequestItem::EmptyLine));
     }
 
-    if is_conditional {
+    if dedent_braces {
         multiline_group.start_ignoring_indent_before_requests();
     }
     multiline_group.push_sc(sc!("}"));
-    if is_conditional {
+    if dedent_braces {
         multiline_group.finish_ignoring_indent_before_requests();
     }
 

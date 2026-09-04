@@ -15,6 +15,7 @@ pub mod context_policies;
 pub mod format;
 pub mod helpers;
 pub mod multiline_group;
+pub mod options;
 pub mod print_item_buffer;
 pub mod reporting;
 pub mod test_util;
