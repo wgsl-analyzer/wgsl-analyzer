@@ -6,8 +6,8 @@ use syntax::{AstNode as _, ast};
 
 use crate::{
     ast_parse::{
-        IgnoreBlankspace, IgnoreComma, IgnoreTemplateDelimiters, NoTrivia, Succeeding,
-        UntilNewline, parse_end, parse_many_nodes_with, parse_node_with, syntax_iter,
+        IgnoreBlankspace, IgnoreComma, IgnoreTemplateDelimiters, NoTrivia, StopAtNewline,
+        Succeeding, parse_end, parse_many_nodes_with, parse_node_with, syntax_iter,
     },
     context_policies,
     generators::node::{
@@ -57,7 +57,7 @@ pub fn gen_template_list(
     let item_arguments = parse_many_nodes_with(
         &mut syntax,
         (
-            Succeeding(UntilNewline),
+            Succeeding(StopAtNewline),
             IgnoreBlankspace,
             IgnoreComma,
             IgnoreTemplateDelimiters,

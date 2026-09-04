@@ -9,7 +9,7 @@ use syntax::{
 
 use crate::{
     ast_parse::{
-        IgnoreBlankspace, IgnoreComma, IgnoreParenthesis, NoTrivia, Succeeding, UntilNewline,
+        IgnoreBlankspace, IgnoreComma, IgnoreParenthesis, NoTrivia, StopAtNewline, Succeeding,
         parse_end, parse_many_nodes_with, parse_node_with, syntax_iter,
     },
     generators::node::{
@@ -76,7 +76,7 @@ pub fn gen_fn_parameters(node: &ast::FunctionParameters) -> FormatDocumentResult
     let items = parse_many_nodes_with(
         &mut syntax,
         (
-            Succeeding(UntilNewline),
+            Succeeding(StopAtNewline),
             IgnoreBlankspace,
             IgnoreComma,
             IgnoreParenthesis,

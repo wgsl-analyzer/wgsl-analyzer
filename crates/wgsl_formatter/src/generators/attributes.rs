@@ -11,7 +11,7 @@ use syntax::{
 
 use crate::{
     ast_parse::{
-        IgnoreBlankspace, IgnoreComma, IgnoreParenthesis, NoTrivia, Succeeding, UntilNewline,
+        IgnoreBlankspace, IgnoreComma, IgnoreParenthesis, NoTrivia, StopAtNewline, Succeeding,
         parse_end, parse_many_nodes_with, parse_node_with, syntax_iter,
     },
     generators::node::{
@@ -482,7 +482,7 @@ pub fn gen_attr_standard_with_args(
         parse_many_nodes_with(
             &mut syntax,
             (
-                Succeeding(UntilNewline),
+                Succeeding(StopAtNewline),
                 IgnoreBlankspace,
                 IgnoreComma,
                 IgnoreParenthesis,

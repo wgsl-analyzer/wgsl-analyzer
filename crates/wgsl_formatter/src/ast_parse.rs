@@ -267,32 +267,8 @@ where
     }
 }
 
-#[deprecated]
-pub struct UntilNewline;
-impl ParseNodePolicy for UntilNewline {
-    fn handle_preceding(
-        &self,
-        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
-    ) -> Option<PolicyAction> {
-        match read_blankspace(node) {
-            Some(LineSpacing::LineBreak(_) | LineSpacing::EmptyLine(_)) => {
-                Some(PolicyAction::IgnoreAndStop)
-            },
-            _ => None,
-        }
-    }
-
-    fn handle_succeeding(
-        &self,
-        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
-    ) -> Option<PolicyAction> {
-        self.handle_preceding(node)
-    }
-}
-
-// TODO Rename to StopAtNewline
-pub struct UntilNewlineStop;
-impl ParseNodePolicy for UntilNewlineStop {
+pub struct StopAtNewline;
+impl ParseNodePolicy for StopAtNewline {
     fn handle_preceding(
         &self,
         node: &NodeOrToken<SyntaxNode, SyntaxToken>,

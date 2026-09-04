@@ -9,8 +9,8 @@ use syntax::{
 
 use crate::{
     ast_parse::{
-        IgnoreBlankspace, IgnoreBraces, IgnoreComma, NoTrivia, Succeeding, UntilNewline, parse_end,
-        parse_many_nodes_with, parse_node_with, syntax_iter,
+        IgnoreBlankspace, IgnoreBraces, IgnoreComma, NoTrivia, StopAtNewline, Succeeding,
+        parse_end, parse_many_nodes_with, parse_node_with, syntax_iter,
     },
     context_policies::statement_needs_semicolon_policy,
     generators::node::gen_node_with_trivia,
@@ -193,7 +193,7 @@ pub fn gen_import_collection(
     let mut items = parse_many_nodes_with(
         &mut syntax,
         (
-            Succeeding(UntilNewline),
+            Succeeding(StopAtNewline),
             IgnoreBlankspace,
             IgnoreComma,
             IgnoreBraces,
