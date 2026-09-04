@@ -473,7 +473,7 @@ pub fn gen_node_trivia(trivia: &[NodeTriviaItem]) -> FormatDocumentResult<PrintI
             NodeTriviaItem::AttributeList(content) => {
                 formatted.extend(gen_attribute_list(content)?);
             },
-            NodeTriviaItem::Discarded(content) => {},
+            NodeTriviaItem::Discarded(_) => {},
         }
     }
 
@@ -481,7 +481,6 @@ pub fn gen_node_trivia(trivia: &[NodeTriviaItem]) -> FormatDocumentResult<PrintI
 }
 
 pub fn gen_node_with_trivia(node: &NodeWithTrivia) -> FormatDocumentResult<PrintItemBuffer> {
-    dbg!(&node);
     let mut formatted = PrintItemBuffer::default();
 
     formatted.extend(gen_node_preceding_trivia(node)?);

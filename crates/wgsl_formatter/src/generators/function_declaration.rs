@@ -106,7 +106,6 @@ pub fn gen_fn_parameters(node: &ast::FunctionParameters) -> FormatDocumentResult
         multiline_group.grouped_newline_or_space();
 
         multiline_group.request(Request::discourage(RequestItem::EmptyLine));
-        dbg!(&item);
         multiline_group.extend(gen_node_preceding_trivia(&item)?);
         multiline_group.extend(gen_node_content(&item)?);
         if item.has_content() {
