@@ -70,6 +70,7 @@ impl<'buffer> MultilineGroup<'buffer> {
         }
     }
 
+    // TODO we don't need this. this can be just transparently start_indent
     pub fn start_indent_before_requests(&mut self) {
         #[cfg(debug_assertions)]
         {
@@ -124,6 +125,7 @@ impl<'buffer> MultilineGroup<'buffer> {
             ));
     }
 
+    // TODO we don't need this. this can be just transparently finish_indent
     pub fn finish_indent(&mut self) {
         #[cfg(debug_assertions)]
         {

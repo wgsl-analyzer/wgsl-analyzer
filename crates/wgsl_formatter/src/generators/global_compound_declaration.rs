@@ -7,6 +7,7 @@ use crate::{
         parse_node_with, syntax_iter,
     },
     generators::{node::gen_node_with_trivia, source_file::source_file_item_policy},
+    options::TEMP_EXPERIMENTAL_CONDCOMP_MODE,
     print_item_buffer::{
         PrintItemBuffer,
         spacing_request::{Request, RequestItem},
@@ -19,7 +20,8 @@ pub fn gen_global_compound_declaration(
     with_trivia: &NodeWithTrivia,
     node: &GlobalCompoundDeclaration,
 ) -> FormatDocumentResult<PrintItemBuffer> {
-    // ==== Parse ====
+    // ==== Context ====
+
     let is_condcomp = with_trivia
         .preceding_trivia
         .iter()
@@ -32,6 +34,12 @@ pub fn gen_global_compound_declaration(
             | NodeTriviaItem::Comment(_)
             | NodeTriviaItem::NewlinedComment(_) => false,
         });
+
+    let dedent_braces = is_condcomp && TEMP_EXPERIMENTAL_CONDCOMP_MODE.dedent_condcomp_with_body;
+    let creates_indentation =
+        !is_condcomp || TEMP_EXPERIMENTAL_CONDCOMP_MODE.unscope_compound_statements_create_indent;
+
+    // ==== Parse ====
 
     let mut syntax = syntax_iter(node.syntax());
 
@@ -48,31 +56,39 @@ pub fn gen_global_compound_declaration(
 
     let mut formatted = PrintItemBuffer::default();
 
-    if is_condcomp {
+    if dedent_braces {
         formatted.start_ignoring_indent_before_requests();
     }
     formatted.extend(gen_node_with_trivia(&item_open_brace)?);
-    if is_condcomp {
+    if dedent_braces {
         formatted.finish_ignoring_indent_before_requests();
     }
 
     formatted.request(Request::discourage(RequestItem::EmptyLine));
     formatted.request(Request::discourage(RequestItem::Space));
 
+    if creates_indentation {
+        formatted.start_indent_before_requests();
+    }
+
     for item in items {
         formatted.request(Request::expect(RequestItem::LineBreak));
         formatted.extend(gen_node_with_trivia(&item)?);
+    }
+
+    if creates_indentation {
+        formatted.finish_indent_before_requests();
     }
 
     formatted.request(Request::expect(RequestItem::LineBreak));
     formatted.request(Request::discourage(RequestItem::EmptyLine));
     formatted.request(Request::discourage(RequestItem::Space));
 
-    if is_condcomp {
+    if dedent_braces {
         formatted.start_ignoring_indent_before_requests();
     }
     formatted.push_sc(dprint_core_macros::sc!("}"));
-    if is_condcomp {
+    if dedent_braces {
         formatted.finish_ignoring_indent_before_requests();
     }
 

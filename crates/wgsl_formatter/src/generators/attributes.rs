@@ -19,6 +19,7 @@ use crate::{
         gen_node_with_trivia,
     },
     multiline_group::MultilineGroup,
+    options::TEMP_EXPERIMENTAL_CONDCOMP_MODE,
     print_item_buffer::{
         PrintItemBuffer,
         spacing_request::{Request, RequestItem},
@@ -132,7 +133,17 @@ fn get_attribute_layout(attribute_list: &AttributeList) -> AttributeLayout {
             SyntaxKind::CompoundStatement | SyntaxKind::GlobalCompoundDeclaration
         )
     {
-        AttributeLayout::Inline
+        if let Some(last) = attribute_list.attributes().last()
+            && last.is_conditional_compilation()
+        {
+            if TEMP_EXPERIMENTAL_CONDCOMP_MODE.condcomp_body_braces_on_same_line {
+                AttributeLayout::Inline
+            } else {
+                AttributeLayout::Multiline
+            }
+        } else {
+            AttributeLayout::Inline
+        }
     } else {
         AttributeLayout::Multiline
     }
@@ -474,7 +485,9 @@ pub fn gen_attr_condcomp_with_args(
     expected_token: SyntaxKind,
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Context
-    let merge_with_preceding_compound = if !matches!(syntax.kind(), SyntaxKind::IfAttribute)
+    let merge_with_preceding_compound = if TEMP_EXPERIMENTAL_CONDCOMP_MODE
+        .condcomp_body_braces_on_same_line
+        && !matches!(syntax.kind(), SyntaxKind::IfAttribute)
         && let Some(parent) = syntax.parent()
         && let Some(previous) = parent.prev_sibling()
         && matches!(
@@ -486,15 +499,15 @@ pub fn gen_attr_condcomp_with_args(
         false
     };
 
-    let precedes_compound = if let Some(parent) = syntax.parent()
+    let dedent = if let Some(parent) = syntax.parent()
         && let Some(previous) = parent.next_sibling()
         && matches!(
             previous.kind(),
             SyntaxKind::CompoundStatement | SyntaxKind::GlobalCompoundDeclaration
         ) {
-        true
+        TEMP_EXPERIMENTAL_CONDCOMP_MODE.dedent_condcomp_with_body
     } else {
-        false
+        TEMP_EXPERIMENTAL_CONDCOMP_MODE.dedent_condcomp_without_body
     };
 
     // ==== Format
@@ -507,12 +520,12 @@ pub fn gen_attr_condcomp_with_args(
         formatted.request(Request::discourage(RequestItem::EmptyLine));
     }
 
-    if precedes_compound {
+    if dedent {
         formatted.start_ignoring_indent_before_requests();
     }
     formatted.extend(gen_attr_standard_with_args(syntax, expected_token)?);
 
-    if precedes_compound {
+    if dedent {
         formatted.finish_ignoring_indent_before_requests();
     }
 
