@@ -32,13 +32,13 @@ impl TryFrom<AbsPathBuf> for ManifestPath {
     }
 }
 
-impl From<ManifestPath> for AbsPathBuf {
-    fn from(manifest_path: ManifestPath) -> Self {
-        manifest_path.file
-    }
-}
-
 impl ManifestPath {
+    /// Reads the manifest path as an absolute path that exists on disk.
+    #[must_use]
+    pub fn as_abs_path(&self) -> AbsPathBuf {
+        self.file.clone()
+    }
+
     // Shadow `parent` from `Deref`.
     /// # Panics
     ///

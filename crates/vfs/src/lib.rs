@@ -55,7 +55,7 @@ use crate::path_interner::PathInterner;
 
 pub use crate::{
     anchored_path::{AnchoredPath, AnchoredPathBuf},
-    vfs_path::VfsPath,
+    vfs_path::{VfsPath, VirtualPath},
 };
 use indexmap::{IndexMap, map::Entry};
 pub use paths::{AbsPath, AbsPathBuf};

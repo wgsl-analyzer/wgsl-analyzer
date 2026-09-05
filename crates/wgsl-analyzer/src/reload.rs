@@ -148,7 +148,12 @@ impl GlobalState {
         let roots = packages
             .iter()
             .filter(|(_, package)| {
-                package.origin.is_local() && self.config.is_in_workspace(&package.manifest)
+                (package.origin.is_local()
+                    && package
+                        .manifest
+                        .as_path()
+                        .is_some_and(|path| self.config.is_in_workspace(path)))
+                    || package.origin.is_lang()
             })
             .map(|(id, _)| id)
             .collect();
@@ -171,7 +176,7 @@ impl GlobalState {
             let package_graph = self.packages.read();
             package_graph
                 .iter()
-                .map(|(_, package)| package.to_root())
+                .filter_map(|(_, package)| package.to_root())
                 .collect::<Vec<_>>()
         };
 
@@ -225,7 +230,7 @@ pub(crate) fn to_load_and_source_root_config(
         if root.origin.is_local() {
             local_filesets.push(fsc.len());
         }
-        fsc.add_file_set([VfsPath::from(root.manifest.parent().to_path_buf())].to_vec());
+        fsc.add_file_set([VfsPath::from(root.directory)].to_vec());
     }
     let source_root_config = SourceRootConfig {
         fsc: fsc.build(),

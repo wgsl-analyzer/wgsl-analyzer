@@ -6,7 +6,6 @@ use hir_def::db::{Location, ModuleDefinitionId};
 use hir_def::signature::{StructSignature, TypeAliasSignature};
 use hir_def::{
     db::{DefinitionWithBodyId, FunctionId, StructId, TypeAliasId},
-    item_scope::ItemScope,
     item_tree::ItemTree,
     resolver::Resolver,
     signature::{FieldId, FunctionSignature, LocalFieldId},
@@ -83,8 +82,7 @@ fn field_types(
     let data = StructSignature::of(db, r#struct);
 
     let file_id = r#struct.lookup(db).file_id;
-    let module_info = ItemScope::of(db, file_id);
-    let resolver = Resolver::new(file_id, module_info);
+    let resolver = Resolver::new(db, file_id);
 
     let mut type_context = TypeLoweringContext::new(db, &resolver, &data.store);
 
@@ -116,8 +114,7 @@ fn type_alias_type(
     let data = TypeAliasSignature::of(db, type_alias);
 
     let file_id = type_alias.lookup(db).file_id;
-    let module_info = ItemScope::of(db, file_id);
-    let resolver = Resolver::new(file_id, module_info);
+    let resolver = Resolver::new(db, file_id);
 
     let mut type_context = TypeLoweringContext::new(db, &resolver, &data.store);
     let result = type_context.lower_type(data.r#type);
@@ -141,8 +138,7 @@ fn function_type(
     let data = FunctionSignature::of(db, function);
 
     let file_id = function.lookup(db).file_id;
-    let module_info = ItemScope::of(db, file_id);
-    let resolver = Resolver::new(file_id, module_info);
+    let resolver = Resolver::new(db, file_id);
 
     let mut type_context = TypeLoweringContext::new(db, &resolver, &data.store);
 

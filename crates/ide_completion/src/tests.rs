@@ -386,58 +386,58 @@ fn no_completions_in_comments() {
             builtin function log2
             builtin constructor mat2x2
             builtin type generator mat2x2
-            builtin alias mat2x2f
             builtin constructor mat2x2f
-            builtin alias mat2x2h
+            type alias mat2x2f            alias mat2x2f
             builtin constructor mat2x2h
+            type alias mat2x2h            alias mat2x2h
             builtin constructor mat2x3
             builtin type generator mat2x3
-            builtin alias mat2x3f
             builtin constructor mat2x3f
-            builtin alias mat2x3h
+            type alias mat2x3f            alias mat2x3f
             builtin constructor mat2x3h
+            type alias mat2x3h            alias mat2x3h
             builtin constructor mat2x4
             builtin type generator mat2x4
-            builtin alias mat2x4f
             builtin constructor mat2x4f
-            builtin alias mat2x4h
+            type alias mat2x4f            alias mat2x4f
             builtin constructor mat2x4h
+            type alias mat2x4h            alias mat2x4h
             builtin constructor mat3x2
             builtin type generator mat3x2
-            builtin alias mat3x2f
             builtin constructor mat3x2f
-            builtin alias mat3x2h
+            type alias mat3x2f            alias mat3x2f
             builtin constructor mat3x2h
+            type alias mat3x2h            alias mat3x2h
             builtin constructor mat3x3
             builtin type generator mat3x3
-            builtin alias mat3x3f
             builtin constructor mat3x3f
-            builtin alias mat3x3h
+            type alias mat3x3f            alias mat3x3f
             builtin constructor mat3x3h
+            type alias mat3x3h            alias mat3x3h
             builtin constructor mat3x4
             builtin type generator mat3x4
-            builtin alias mat3x4f
             builtin constructor mat3x4f
-            builtin alias mat3x4h
+            type alias mat3x4f            alias mat3x4f
             builtin constructor mat3x4h
+            type alias mat3x4h            alias mat3x4h
             builtin constructor mat4x2
             builtin type generator mat4x2
-            builtin alias mat4x2f
             builtin constructor mat4x2f
-            builtin alias mat4x2h
+            type alias mat4x2f            alias mat4x2f
             builtin constructor mat4x2h
+            type alias mat4x2h            alias mat4x2h
             builtin constructor mat4x3
             builtin type generator mat4x3
-            builtin alias mat4x3f
             builtin constructor mat4x3f
-            builtin alias mat4x3h
+            type alias mat4x3f            alias mat4x3f
             builtin constructor mat4x3h
+            type alias mat4x3h            alias mat4x3h
             builtin constructor mat4x4
             builtin type generator mat4x4
-            builtin alias mat4x4f
             builtin constructor mat4x4f
-            builtin alias mat4x4h
+            type alias mat4x4f            alias mat4x4f
             builtin constructor mat4x4h
+            type alias mat4x4h            alias mat4x4h
             builtin function max
             builtin function min
             builtin function mix
@@ -606,34 +606,34 @@ fn no_completions_in_comments() {
             builtin function unpack4xU8
             builtin constructor vec2
             builtin type generator vec2
-            builtin alias vec2f
             builtin constructor vec2f
-            builtin alias vec2h
+            type alias vec2f                alias vec2f
             builtin constructor vec2h
-            builtin alias vec2i
+            type alias vec2h                alias vec2h
             builtin constructor vec2i
-            builtin alias vec2u
+            type alias vec2i                alias vec2i
             builtin constructor vec2u
+            type alias vec2u                alias vec2u
             builtin constructor vec3
             builtin type generator vec3
-            builtin alias vec3f
             builtin constructor vec3f
-            builtin alias vec3h
+            type alias vec3f                alias vec3f
             builtin constructor vec3h
-            builtin alias vec3i
+            type alias vec3h                alias vec3h
             builtin constructor vec3i
-            builtin alias vec3u
+            type alias vec3i                alias vec3i
             builtin constructor vec3u
+            type alias vec3u                alias vec3u
             builtin constructor vec4
             builtin type generator vec4
-            builtin alias vec4f
             builtin constructor vec4f
-            builtin alias vec4h
+            type alias vec4f                alias vec4f
             builtin constructor vec4h
-            builtin alias vec4i
+            type alias vec4h                alias vec4h
             builtin constructor vec4i
-            builtin alias vec4u
+            type alias vec4i                alias vec4i
             builtin constructor vec4u
+            type alias vec4u                alias vec4u
             builtin enumerant vertex_return
             builtin enumerant workgroup
             builtin function workgroupBarrier
@@ -754,58 +754,58 @@ fn no_completions_in_comments() {
             builtin function log2
             builtin constructor mat2x2
             builtin type generator mat2x2
-            builtin alias mat2x2f
             builtin constructor mat2x2f
-            builtin alias mat2x2h
+            type alias mat2x2f            alias mat2x2f
             builtin constructor mat2x2h
+            type alias mat2x2h            alias mat2x2h
             builtin constructor mat2x3
             builtin type generator mat2x3
-            builtin alias mat2x3f
             builtin constructor mat2x3f
-            builtin alias mat2x3h
+            type alias mat2x3f            alias mat2x3f
             builtin constructor mat2x3h
+            type alias mat2x3h            alias mat2x3h
             builtin constructor mat2x4
             builtin type generator mat2x4
-            builtin alias mat2x4f
             builtin constructor mat2x4f
-            builtin alias mat2x4h
+            type alias mat2x4f            alias mat2x4f
             builtin constructor mat2x4h
+            type alias mat2x4h            alias mat2x4h
             builtin constructor mat3x2
             builtin type generator mat3x2
-            builtin alias mat3x2f
             builtin constructor mat3x2f
-            builtin alias mat3x2h
+            type alias mat3x2f            alias mat3x2f
             builtin constructor mat3x2h
+            type alias mat3x2h            alias mat3x2h
             builtin constructor mat3x3
             builtin type generator mat3x3
-            builtin alias mat3x3f
             builtin constructor mat3x3f
-            builtin alias mat3x3h
+            type alias mat3x3f            alias mat3x3f
             builtin constructor mat3x3h
+            type alias mat3x3h            alias mat3x3h
             builtin constructor mat3x4
             builtin type generator mat3x4
-            builtin alias mat3x4f
             builtin constructor mat3x4f
-            builtin alias mat3x4h
+            type alias mat3x4f            alias mat3x4f
             builtin constructor mat3x4h
+            type alias mat3x4h            alias mat3x4h
             builtin constructor mat4x2
             builtin type generator mat4x2
-            builtin alias mat4x2f
             builtin constructor mat4x2f
-            builtin alias mat4x2h
+            type alias mat4x2f            alias mat4x2f
             builtin constructor mat4x2h
+            type alias mat4x2h            alias mat4x2h
             builtin constructor mat4x3
             builtin type generator mat4x3
-            builtin alias mat4x3f
             builtin constructor mat4x3f
-            builtin alias mat4x3h
+            type alias mat4x3f            alias mat4x3f
             builtin constructor mat4x3h
+            type alias mat4x3h            alias mat4x3h
             builtin constructor mat4x4
             builtin type generator mat4x4
-            builtin alias mat4x4f
             builtin constructor mat4x4f
-            builtin alias mat4x4h
+            type alias mat4x4f            alias mat4x4f
             builtin constructor mat4x4h
+            type alias mat4x4h            alias mat4x4h
             builtin function max
             builtin function min
             builtin function mix
@@ -974,34 +974,34 @@ fn no_completions_in_comments() {
             builtin function unpack4xU8
             builtin constructor vec2
             builtin type generator vec2
-            builtin alias vec2f
             builtin constructor vec2f
-            builtin alias vec2h
+            type alias vec2f                alias vec2f
             builtin constructor vec2h
-            builtin alias vec2i
+            type alias vec2h                alias vec2h
             builtin constructor vec2i
-            builtin alias vec2u
+            type alias vec2i                alias vec2i
             builtin constructor vec2u
+            type alias vec2u                alias vec2u
             builtin constructor vec3
             builtin type generator vec3
-            builtin alias vec3f
             builtin constructor vec3f
-            builtin alias vec3h
+            type alias vec3f                alias vec3f
             builtin constructor vec3h
-            builtin alias vec3i
+            type alias vec3h                alias vec3h
             builtin constructor vec3i
-            builtin alias vec3u
+            type alias vec3i                alias vec3i
             builtin constructor vec3u
+            type alias vec3u                alias vec3u
             builtin constructor vec4
             builtin type generator vec4
-            builtin alias vec4f
             builtin constructor vec4f
-            builtin alias vec4h
+            type alias vec4f                alias vec4f
             builtin constructor vec4h
-            builtin alias vec4i
+            type alias vec4h                alias vec4h
             builtin constructor vec4i
-            builtin alias vec4u
+            type alias vec4i                alias vec4i
             builtin constructor vec4u
+            type alias vec4u                alias vec4u
             builtin enumerant vertex_return
             builtin enumerant workgroup
             builtin function workgroupBarrier
@@ -1121,58 +1121,58 @@ fn no_completions_in_comments() {
             builtin function log2
             builtin constructor mat2x2
             builtin type generator mat2x2
-            builtin alias mat2x2f
             builtin constructor mat2x2f
-            builtin alias mat2x2h
+            type alias mat2x2f            alias mat2x2f
             builtin constructor mat2x2h
+            type alias mat2x2h            alias mat2x2h
             builtin constructor mat2x3
             builtin type generator mat2x3
-            builtin alias mat2x3f
             builtin constructor mat2x3f
-            builtin alias mat2x3h
+            type alias mat2x3f            alias mat2x3f
             builtin constructor mat2x3h
+            type alias mat2x3h            alias mat2x3h
             builtin constructor mat2x4
             builtin type generator mat2x4
-            builtin alias mat2x4f
             builtin constructor mat2x4f
-            builtin alias mat2x4h
+            type alias mat2x4f            alias mat2x4f
             builtin constructor mat2x4h
+            type alias mat2x4h            alias mat2x4h
             builtin constructor mat3x2
             builtin type generator mat3x2
-            builtin alias mat3x2f
             builtin constructor mat3x2f
-            builtin alias mat3x2h
+            type alias mat3x2f            alias mat3x2f
             builtin constructor mat3x2h
+            type alias mat3x2h            alias mat3x2h
             builtin constructor mat3x3
             builtin type generator mat3x3
-            builtin alias mat3x3f
             builtin constructor mat3x3f
-            builtin alias mat3x3h
+            type alias mat3x3f            alias mat3x3f
             builtin constructor mat3x3h
+            type alias mat3x3h            alias mat3x3h
             builtin constructor mat3x4
             builtin type generator mat3x4
-            builtin alias mat3x4f
             builtin constructor mat3x4f
-            builtin alias mat3x4h
+            type alias mat3x4f            alias mat3x4f
             builtin constructor mat3x4h
+            type alias mat3x4h            alias mat3x4h
             builtin constructor mat4x2
             builtin type generator mat4x2
-            builtin alias mat4x2f
             builtin constructor mat4x2f
-            builtin alias mat4x2h
+            type alias mat4x2f            alias mat4x2f
             builtin constructor mat4x2h
+            type alias mat4x2h            alias mat4x2h
             builtin constructor mat4x3
             builtin type generator mat4x3
-            builtin alias mat4x3f
             builtin constructor mat4x3f
-            builtin alias mat4x3h
+            type alias mat4x3f            alias mat4x3f
             builtin constructor mat4x3h
+            type alias mat4x3h            alias mat4x3h
             builtin constructor mat4x4
             builtin type generator mat4x4
-            builtin alias mat4x4f
             builtin constructor mat4x4f
-            builtin alias mat4x4h
+            type alias mat4x4f            alias mat4x4f
             builtin constructor mat4x4h
+            type alias mat4x4h            alias mat4x4h
             builtin function max
             builtin function min
             builtin function mix
@@ -1341,34 +1341,34 @@ fn no_completions_in_comments() {
             builtin function unpack4xU8
             builtin constructor vec2
             builtin type generator vec2
-            builtin alias vec2f
             builtin constructor vec2f
-            builtin alias vec2h
+            type alias vec2f                alias vec2f
             builtin constructor vec2h
-            builtin alias vec2i
+            type alias vec2h                alias vec2h
             builtin constructor vec2i
-            builtin alias vec2u
+            type alias vec2i                alias vec2i
             builtin constructor vec2u
+            type alias vec2u                alias vec2u
             builtin constructor vec3
             builtin type generator vec3
-            builtin alias vec3f
             builtin constructor vec3f
-            builtin alias vec3h
+            type alias vec3f                alias vec3f
             builtin constructor vec3h
-            builtin alias vec3i
+            type alias vec3h                alias vec3h
             builtin constructor vec3i
-            builtin alias vec3u
+            type alias vec3i                alias vec3i
             builtin constructor vec3u
+            type alias vec3u                alias vec3u
             builtin constructor vec4
             builtin type generator vec4
-            builtin alias vec4f
             builtin constructor vec4f
-            builtin alias vec4h
+            type alias vec4f                alias vec4f
             builtin constructor vec4h
-            builtin alias vec4i
+            type alias vec4h                alias vec4h
             builtin constructor vec4i
-            builtin alias vec4u
+            type alias vec4i                alias vec4i
             builtin constructor vec4u
+            type alias vec4u                alias vec4u
             builtin enumerant vertex_return
             builtin enumerant workgroup
             builtin function workgroupBarrier

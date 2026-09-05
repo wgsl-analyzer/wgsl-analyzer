@@ -182,13 +182,11 @@ impl<'db> Semantics<'db> {
                 | ChildContainer::GlobalAssertStatementId(_)
                 | ChildContainer::TypeAliasId(_) => {
                     let file_id = definition.file_id(self.db);
-                    let module_info = ItemScope::of(self.db, file_id);
-                    Resolver::new(file_id, module_info)
+                    Resolver::new(self.db, file_id)
                 },
             }
         } else {
-            let module_info = ItemScope::of(self.db, file_id);
-            Resolver::new(file_id, module_info)
+            Resolver::new(self.db, file_id)
         }
     }
 

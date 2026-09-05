@@ -13,7 +13,8 @@ use lsp_types::{
     DiagnosticTag, DocumentDiagnosticParams, DocumentDiagnosticReport, DocumentFormattingParams,
     FoldingRange, FoldingRangeParams, FullDocumentDiagnosticReport, Hover, InlayHint,
     InlayHintParams, MarkupContent, MarkupKind, Range, RelatedFullDocumentDiagnosticReport,
-    SignatureHelp, SignatureHelpParams, TextDocumentIdentifier, TextEdit,
+    SignatureHelp, SignatureHelpParams, TextDocumentContentParams, TextDocumentContentResult,
+    TextDocumentIdentifier, TextEdit,
 };
 use stdx::format_to;
 use vfs::{AbsPath, FileId};
@@ -405,6 +406,28 @@ pub(crate) fn publish_diagnostics(
             Ok(lsp_diagnostic)
         })
         .collect()
+}
+
+pub(crate) fn handle_text_document_content(
+    snap: GlobalStateSnapshot,
+    parameters: TextDocumentContentParams,
+) -> anyhow::Result<TextDocumentContentResult> {
+    let _p = tracing::info_span!("handle_text_document_content").entered();
+    let document_uri = &parameters.uri;
+
+    match document_uri.scheme() {
+        vfs::VirtualPath::SCHEME => {
+            let file_id = try_default!(from_proto::file_id(&snap, document_uri)?);
+            let text = snap.analysis.file_text(file_id)?;
+            Ok(TextDocumentContentResult {
+                text: text.to_string(),
+            })
+        },
+        _ => Err(anyhow::anyhow!(
+            "Unsupported scheme for TextDocumentContent: {}",
+            document_uri.scheme()
+        )),
+    }
 }
 
 fn prepare_hover_actions(

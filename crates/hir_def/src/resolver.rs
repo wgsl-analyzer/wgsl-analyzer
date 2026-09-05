@@ -1,4 +1,6 @@
-use base_db::{EditionedFileId, Package, SourceDatabase, file_package, input::PackageId};
+use base_db::{
+    EditionedFileId, Package, SourceDatabase, builtin_package, file_package, input::PackageId,
+};
 use triomphe::Arc;
 
 use crate::{
@@ -102,17 +104,33 @@ pub struct Resolver<'db> {
 impl<'db> Resolver<'db> {
     #[must_use]
     pub fn new(
+        db: &'db dyn SourceDatabase,
         file_id: EditionedFileId,
-        module_info: Arc<ItemScope>,
     ) -> Self {
-        let module_scope = ModuleScope {
+        let mut scopes = Vec::with_capacity(3);
+        scopes.push(Scope::Builtin);
+
+        #[expect(
+            clippy::missing_panics_doc,
+            reason = "The builtin module is always present and should not cause panics"
+        )]
+        if let Some(package) = builtin_package(db) {
+            let root_file_id = resolve_module(db, package, &[])
+                .expect("Builtin package should have a root module");
+            let module_info = ItemScope::of(db, root_file_id);
+            scopes.push(Scope::Module(ModuleScope {
+                module_info,
+                file_id: root_file_id,
+            }));
+        }
+
+        let module_info = ItemScope::of(db, file_id);
+        scopes.push(Scope::Module(ModuleScope {
             module_info,
             file_id,
-        };
-        Self {
-            file_id,
-            scopes: vec![Scope::Builtin, Scope::Module(module_scope)],
-        }
+        }));
+
+        Self { file_id, scopes }
     }
 
     #[must_use]
@@ -183,12 +201,7 @@ impl<'db> Resolver<'db> {
                     });
             },
             Scope::Builtin => {
-                for name in wgsl_types::idents::BUILTIN_ALIAS_NAMES {
-                    callback(
-                        &(*name).into(),
-                        ScopeDef::BuiltIn(BuiltInKind::Alias((*name).into())),
-                    );
-                }
+                // Aliases are in the wgsl_std crate, so we don't need to add them here.
                 for name in wgsl_types::idents::BUILTIN_CONSTRUCTOR_NAMES {
                     callback(
                         &(*name).into(),
@@ -326,9 +339,7 @@ impl<'db> Resolver<'db> {
                 Scope::Builtin => {
                     if wgsl_types::idents::BUILTIN_FUNCTION_NAMES.contains(&name.as_str()) {
                         Some(ResolveKind::BuiltinFunction(name.clone()))
-                    } else if wgsl_types::idents::BUILTIN_TYPE_NAMES.contains(&name.as_str())
-                        || wgsl_types::idents::BUILTIN_ALIAS_NAMES.contains(&name.as_str())
-                    {
+                    } else if wgsl_types::idents::BUILTIN_TYPE_NAMES.contains(&name.as_str()) {
                         Some(ResolveKind::BuiltinType(name.clone()))
                     } else if wgsl_types::idents::BUILTIN_TYPE_GENERATOR_NAMES
                         .contains(&name.as_str())

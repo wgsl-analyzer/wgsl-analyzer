@@ -10,6 +10,7 @@ use base_db::{
 };
 use edition::Edition;
 use test_utils::{CURSOR_MARKER, ESCAPED_CURSOR_MARKER, RangeOrOffset, extract_range_or_offset};
+use wgsl_std::StdLibrary;
 
 pub use crate::fixture::{Fixture, FixtureWithProjectMeta};
 
@@ -94,7 +95,6 @@ pub struct ChangeFixture {
     pub file_position: Option<(FileId, RangeOrOffset)>,
     pub file_lines: Vec<usize>,
     pub files: Vec<FileId>,
-    pub manifest_files: Vec<FileId>,
     pub change: Change,
 }
 
@@ -109,14 +109,63 @@ impl ChangeFixture {
         let FixtureWithProjectMeta { fixture } = FixtureWithProjectMeta::parse(wa_fixture);
         let mut source_change = Change::default();
 
+        let mut next_file_id = {
+            let mut file_id = 0;
+            move || {
+                let id = file_id;
+                file_id += 1;
+                FileId::from_raw_usize(id)
+            }
+        };
+
         let mut files = Vec::new();
-        let mut manifest_files = Vec::new();
-        let mut next_file_id = (0..).map(FileId::from_raw);
         let mut file_lines = Vec::new();
         let mut packages = FxIndexMap::default();
         let mut package_dependencies = Vec::new();
 
         let mut roots: Vec<(FileSet, PackageOrigin)> = Vec::new();
+
+        // Add the standard library.
+        // Don't add it to the files array, since that's for user files only.
+        let std_file_set = {
+            let std_library = StdLibrary::new();
+            let mut file_set = FileSet::default();
+
+            let manifest_file_id = next_file_id();
+            source_change.change_file(
+                manifest_file_id,
+                Some(String::from_utf8(std_library.manifest.contents.to_vec()).unwrap()),
+            );
+            let path = VfsPath::new_virtual_path(std_library.manifest.path.clone());
+            file_set.insert(manifest_file_id, path);
+
+            let package_id = PackageId::from_raw_usize(packages.len());
+            let package = PackageData {
+                manifest_file_id,
+                root: VfsPath::new_virtual_path("/std".to_owned()),
+                edition: std_library.edition,
+                display_name: Some("std".to_owned()),
+                dependencies: Vec::new(),
+                origin: PackageOrigin::Language,
+            };
+            let previous = packages.insert(
+                PackageName::normalize_dashes("wa_test_std"),
+                (package_id, package),
+            );
+            assert!(previous.is_none(), "multiple std packages");
+
+            for file in std_library.files {
+                let file_id = next_file_id();
+                source_change.change_file(
+                    file_id,
+                    Some(String::from_utf8(file.contents.to_vec()).unwrap()),
+                );
+                let path = VfsPath::new_virtual_path(file.path);
+                file_set.insert(file_id, path);
+            }
+
+            file_set
+        };
 
         let mut file_position = None;
 
@@ -157,8 +206,7 @@ impl ChangeFixture {
                         .unwrap(),
                 };
 
-                let manifest_file_id = next_file_id.next().unwrap();
-                manifest_files.push(manifest_file_id);
+                let manifest_file_id = next_file_id();
                 source_change.change_file(manifest_file_id, Some(String::new()));
 
                 let package = PackageData {
@@ -173,7 +221,7 @@ impl ChangeFixture {
                 file_set.insert(manifest_file_id, root.join("wesl.toml").unwrap());
                 roots.push((file_set, package.origin));
 
-                let package_id = PackageId::from_raw(u32::try_from(packages.len()).unwrap());
+                let package_id = PackageId::from_raw_usize(packages.len());
                 let previous = packages.insert(package_name.clone(), (package_id, package));
                 assert!(
                     previous.is_none(),
@@ -186,7 +234,7 @@ impl ChangeFixture {
             }
 
             // We use raw file IDs here and then let the packages determine the editions.
-            let file_id = next_file_id.next().unwrap();
+            let file_id = next_file_id();
             files.push(file_id);
 
             source_change.change_file(file_id, Some(text));
@@ -213,6 +261,9 @@ impl ChangeFixture {
             source_change.change_package(package_id, Some(package_data));
         }
 
+        // Push the root later, so that it doesn't mess with the user created files.
+        roots.push((std_file_set, PackageOrigin::Language));
+
         source_change.set_roots(
             roots
                 .into_iter()
@@ -229,7 +280,6 @@ impl ChangeFixture {
             file_position,
             file_lines,
             files,
-            manifest_files,
             change: source_change,
         }
     }

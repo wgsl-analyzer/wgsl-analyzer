@@ -1,4 +1,5 @@
 //! Abstract-ish representation of paths for VFS.
+
 use std::fmt;
 
 use paths::{AbsPath, AbsPathBuf, RelPath};
@@ -16,17 +17,9 @@ impl VfsPath {
     /// Creates an "in-memory" path from `/`-separated string.
     ///
     /// This is most useful for testing, to avoid windows/linux differences.
-    ///
-    /// The root path is an empty string, every other path starts with `/`.
-    ///
-    /// # Panics
-    ///
-    /// Panics if `path` is invalid.
     #[must_use]
     pub fn new_virtual_path(path: String) -> Self {
-        assert!(path.is_empty() || path.starts_with('/'));
-        assert!(!path.ends_with('/'));
-        Self(VfsPathRepr::VirtualPath(VirtualPath(path)))
+        Self(VfsPathRepr::VirtualPath(VirtualPath::new(path)))
     }
 
     /// Create a path from string. Input should be a string representation of
@@ -42,6 +35,15 @@ impl VfsPath {
         match &self.0 {
             VfsPathRepr::PathBuf(it) => Some(it.as_path()),
             VfsPathRepr::VirtualPath(_) => None,
+        }
+    }
+
+    /// Returns the `VirtualPath` representation of `self` if `self` is a virtual path.
+    #[must_use]
+    pub const fn as_virtual_path(&self) -> Option<&VirtualPath> {
+        match &self.0 {
+            VfsPathRepr::PathBuf(_) => None,
+            VfsPathRepr::VirtualPath(path) => Some(path),
         }
     }
 
@@ -155,188 +157,31 @@ impl VfsPath {
         buffer.push(tag);
         match &self.0 {
             VfsPathRepr::PathBuf(path) => {
-                #[cfg(windows)]
-                {
-                    use windows_paths::Encode as _;
-                    let path: &std::path::Path = path.as_ref();
-                    let components = path.components();
-                    let mut add_separator = false;
-                    for component in components {
-                        if add_separator {
-                            windows_paths::SEPARATOR.encode(buffer);
-                        }
-                        let len_before = buffer.len();
-                        match component {
-                            std::path::Component::Prefix(prefix) => {
-                                // kind() returns a normalized and comparable path prefix.
-                                prefix.kind().encode(buffer);
-                            },
-                            std::path::Component::RootDir => {
-                                if !add_separator {
-                                    component.as_os_str().encode(buffer);
-                                }
-                            },
-                            std::path::Component::CurDir
-                            | std::path::Component::ParentDir
-                            | std::path::Component::Normal(_) => {
-                                component.as_os_str().encode(buffer);
-                            },
-                        }
-
-                        // some components may be encoded empty
-                        add_separator = len_before != buffer.len();
-                    }
-                }
-                #[cfg(unix)]
-                {
-                    use std::os::unix::ffi::OsStrExt as _;
-                    buffer.extend(path.as_os_str().as_bytes());
-                }
-                #[cfg(not(any(windows, unix)))]
-                {
-                    buffer.extend(path.as_os_str().to_string_lossy().as_bytes());
-                }
+                buffer.extend(path.as_str().as_bytes());
             },
             VfsPathRepr::VirtualPath(VirtualPath(s)) => buffer.extend(s.as_bytes()),
         }
     }
 }
 
-#[cfg(windows)]
-mod windows_paths {
-    #![expect(clippy::little_endian_bytes, reason = "vfs is vendored in")]
-
-    pub(crate) trait Encode {
-        fn encode(
-            &self,
-            buf: &mut Vec<u8>,
-        );
-    }
-
-    impl Encode for std::ffi::OsStr {
-        fn encode(
-            &self,
-            buf: &mut Vec<u8>,
-        ) {
-            use std::os::windows::ffi::OsStrExt as _;
-            for wchar in self.encode_wide() {
-                buf.extend(wchar.to_le_bytes().iter().copied());
-            }
-        }
-    }
-
-    impl Encode for u8 {
-        fn encode(
-            &self,
-            buf: &mut Vec<u8>,
-        ) {
-            let wide = u16::from(*self);
-            buf.extend(wide.to_le_bytes().iter().copied());
-        }
-    }
-
-    impl Encode for &str {
-        fn encode(
-            &self,
-            buf: &mut Vec<u8>,
-        ) {
-            debug_assert!(self.is_ascii());
-            for b in self.as_bytes() {
-                b.encode(buf);
-            }
-        }
-    }
-
-    pub(crate) const SEPARATOR: &str = "\\";
-    const VERBATIM: &str = "\\\\?\\";
-    const UNC: &str = "UNC";
-    const DEVICE: &str = "\\\\.\\";
-    const COLON: &str = ":";
-
-    impl Encode for std::path::Prefix<'_> {
-        fn encode(
-            &self,
-            buf: &mut Vec<u8>,
-        ) {
-            match self {
-                std::path::Prefix::Verbatim(c) => {
-                    VERBATIM.encode(buf);
-                    c.encode(buf);
-                },
-                std::path::Prefix::VerbatimUNC(server, share) => {
-                    VERBATIM.encode(buf);
-                    UNC.encode(buf);
-                    SEPARATOR.encode(buf);
-                    server.encode(buf);
-                    SEPARATOR.encode(buf);
-                    share.encode(buf);
-                },
-                std::path::Prefix::VerbatimDisk(d) => {
-                    VERBATIM.encode(buf);
-                    d.encode(buf);
-                    COLON.encode(buf);
-                },
-                std::path::Prefix::DeviceNS(device) => {
-                    DEVICE.encode(buf);
-                    device.encode(buf);
-                },
-                std::path::Prefix::UNC(server, share) => {
-                    SEPARATOR.encode(buf);
-                    SEPARATOR.encode(buf);
-                    server.encode(buf);
-                    SEPARATOR.encode(buf);
-                    share.encode(buf);
-                },
-                std::path::Prefix::Disk(d) => {
-                    d.encode(buf);
-                    COLON.encode(buf);
-                },
-            }
-        }
-    }
-    #[test]
-    fn paths_encoding() {
-        // drive letter casing agnostic
-        test_eq("C:/x.rs", "c:/x.rs");
-        // separator agnostic
-        test_eq("C:/x/y.rs", "C:\\x\\y.rs");
-
-        fn test_eq(
-            a: &str,
-            b: &str,
-        ) {
-            let mut b1 = Vec::new();
-            let mut b2 = Vec::new();
-            vfs(a).encode(&mut b1);
-            vfs(b).encode(&mut b2);
-            assert_eq!(b1, b2);
-        }
-    }
-
-    #[test]
-    fn test_separator_root_dir_encoding() {
-        let mut buf = Vec::new();
-        vfs("C:/x/y").encode(&mut buf);
-        assert_eq!(&buf, &[0, 67, 0, 58, 0, 92, 0, 120, 0, 92, 0, 121, 0])
-    }
-
-    #[cfg(test)]
-    fn vfs(str: &str) -> super::VfsPath {
-        use super::{AbsPathBuf, VfsPath};
-        VfsPath::from(AbsPathBuf::try_from(str).unwrap())
-    }
-}
-
 /// Internal, private representation of [`VfsPath`].
 #[derive(Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
 enum VfsPathRepr {
+    /// Path on the file system.
     PathBuf(AbsPathBuf),
+    /// Virtual paths.
     VirtualPath(VirtualPath),
 }
 
 impl From<AbsPathBuf> for VfsPath {
     fn from(value: AbsPathBuf) -> Self {
         Self(VfsPathRepr::PathBuf(value.normalize()))
+    }
+}
+
+impl From<VirtualPath> for VfsPath {
+    fn from(value: VirtualPath) -> Self {
+        Self(VfsPathRepr::VirtualPath(value))
     }
 }
 
@@ -397,9 +242,22 @@ impl PartialEq<VfsPath> for AbsPath {
 ///
 /// This is used to describe files that do not reside on the file system.
 #[derive(Debug, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
-struct VirtualPath(String);
+pub struct VirtualPath(String);
 
 impl VirtualPath {
+    pub const SCHEME: &str = "wgsl";
+
+    /// Creates a new virtual path.
+    /// The root path is an empty string, every other path starts with `/`.
+    ///
+    /// # Panics
+    /// Panics if `path` is invalid.
+    #[must_use]
+    pub fn new(path: String) -> Self {
+        assert!(path.is_empty() || path.starts_with('/'));
+        assert!(!path.ends_with('/'));
+        Self(path)
+    }
     /// Returns `true` if `other` is a prefix of `self` (as strings).
     fn starts_with(
         &self,
@@ -501,6 +359,45 @@ impl VirtualPath {
                 (None | Some(""), Some(_)) => Some((file_name, None)),
                 (Some(file_stem), extension) => Some((file_stem, extension)),
             }
+        }
+    }
+
+    #[must_use]
+    pub fn components(&self) -> Components<'_> {
+        Components::new(self)
+    }
+}
+
+pub struct Components<'path> {
+    /// Invariant: Always points at the next segment, without the leading `/`.
+    path: &'path str,
+}
+
+impl<'path> Components<'path> {
+    fn new(path: &'path VirtualPath) -> Self {
+        if path.0.is_empty() {
+            return Self { path: "" };
+        }
+        assert!(path.0.starts_with('/'));
+        Self { path: &path.0[1..] }
+    }
+}
+
+impl<'path> Iterator for Components<'path> {
+    type Item = &'path str;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.path.is_empty() {
+            return None;
+        }
+
+        if let Some((value, new_path)) = self.path.split_once('/') {
+            self.path = new_path;
+            Some(value)
+        } else {
+            let value = self.path;
+            self.path = "";
+            Some(value)
         }
     }
 }
