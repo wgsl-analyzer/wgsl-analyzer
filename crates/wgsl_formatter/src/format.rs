@@ -1,5 +1,7 @@
 //! The entry points to the formatter.
 
+use std::{error::Error, fmt::Display};
+
 use dprint_core::formatting::{PrintItems, PrintOptions};
 use parser::{Edition, SyntaxNode};
 use rowan::{NodeOrToken, TextRange};
@@ -53,6 +55,38 @@ pub fn format_range(
 pub enum FormatStringError {
     FormatDocumentError { error: FormatDocumentError },
     ParserErrors { parse: Parse },
+}
+
+impl Error for FormatStringError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match self {
+            Self::FormatDocumentError { error } => Some(error),
+            Self::ParserErrors { .. } => None,
+        }
+    }
+}
+
+impl Display for FormatStringError {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+    ) -> std::fmt::Result {
+        match self {
+            Self::FormatDocumentError { error } => {
+                write!(
+                    f,
+                    "Could not format source: {error}. This is a bug in the formatter - feel free to open an issue."
+                )?;
+            },
+            Self::ParserErrors { parse } => {
+                writeln!(f, "Could not parse source:")?;
+                for error in parse.errors() {
+                    writeln!(f, "{error}")?;
+                }
+            },
+        }
+        Ok(())
+    }
 }
 
 /// Format the whole string, as if it were a complete source file.

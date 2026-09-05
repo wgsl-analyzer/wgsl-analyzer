@@ -1,5 +1,5 @@
 //! Various bare-bones error handling.
-use std::fmt::Display;
+use std::{error::Error, fmt::Display};
 
 use parser::{SyntaxNode, SyntaxToken};
 use rowan::NodeOrToken;
@@ -14,6 +14,8 @@ pub enum FormatDocumentError {
     },
     MissingNode,
 }
+
+impl Error for FormatDocumentError {}
 
 impl Display for FormatDocumentError {
     fn fmt(
