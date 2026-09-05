@@ -89,7 +89,7 @@ use crate::{
         types::{gen_template_list, gen_type_specifier},
         verbatim::gen_node_syntax_verbatim,
     },
-    helpers::{gen_line_spacing, read_blankspace},
+    helpers::{gen_blankspace, read_blankspace},
     print_item_buffer::{
         PrintItemBuffer,
         spacing_request::{Request, RequestItem},
@@ -372,7 +372,7 @@ fn gen_node(
         },
         SyntaxKind::Blankspace => {
             let blankspace = read_blankspace(node).expect("We just matched on the SyntaxKind");
-            gen_line_spacing(&blankspace)
+            gen_blankspace(&blankspace)
         },
         SyntaxKind::Identifier
         | SyntaxKind::FloatLiteral
@@ -479,7 +479,7 @@ pub fn gen_node_trivia(trivia: &[NodeTriviaItem]) -> FormatDocumentResult<PrintI
     for trivia in trivia {
         match trivia {
             NodeTriviaItem::LineSpacing(content) => {
-                formatted.extend(gen_line_spacing(content)?);
+                formatted.extend(gen_blankspace(content)?);
             },
             NodeTriviaItem::Comment(content) => {
                 formatted.extend(gen_comment(content));

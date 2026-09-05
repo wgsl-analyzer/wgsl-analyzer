@@ -13,7 +13,7 @@ use crate::{
     },
     context_policies::collapse_one_liner_compound_statement_policy,
     generators::node::gen_node_with_trivia,
-    helpers::{LineSpacing, read_blankspace},
+    helpers::{Blankspace, read_blankspace},
     multiline_group::MultilineGroup,
     options::TEMP_EXPERIMENTAL_CONDCOMP_MODE,
     print_item_buffer::{
@@ -58,11 +58,11 @@ pub fn gen_compound_statement(
             DiscardBraces,
             MatchKind(SyntaxKind::EmptyStatement, PolicyAction::Discard),
             Filter(|node| match read_blankspace(node) {
-                Some(LineSpacing::OnelineBlankspace(_)) => Some(PolicyAction::Discard),
+                Some(Blankspace::Inline(_)) => Some(PolicyAction::Discard),
                 _ => None,
             }),
             Succeeding(Filter(|node| match read_blankspace(node) {
-                Some(LineSpacing::LineBreak(_) | LineSpacing::EmptyLine(_)) => {
+                Some(Blankspace::LineBreak(_) | Blankspace::EmptyLine(_)) => {
                     Some(PolicyAction::Stop)
                 },
                 _ => None,

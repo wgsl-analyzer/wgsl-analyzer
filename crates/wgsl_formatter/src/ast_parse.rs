@@ -10,7 +10,7 @@ use syntax::{AstNode as _, ast::AttributeList};
 
 use crate::{
     generators::comments::read_comment,
-    helpers::{LineSpacing, read_blankspace},
+    helpers::{Blankspace, read_blankspace},
     ignore::{is_ignore_next_pragma_comment, is_ignored_from_within},
     reporting::FormatDocumentResult,
     trivia::{NodeTriviaItem, NodeWithTrivia, NodeWithTriviaContent},
@@ -274,7 +274,7 @@ impl ParseNodePolicy for StopAtNewline {
         node: &NodeOrToken<SyntaxNode, SyntaxToken>,
     ) -> Option<PolicyAction> {
         match read_blankspace(node) {
-            Some(LineSpacing::LineBreak(_) | LineSpacing::EmptyLine(_)) => Some(PolicyAction::Stop),
+            Some(Blankspace::LineBreak(_) | Blankspace::EmptyLine(_)) => Some(PolicyAction::Stop),
             _ => None,
         }
     }
@@ -461,14 +461,14 @@ where
                     break NodeWithTriviaContent::NoContent;
                 },
                 None => {
-                    if let Some(line_spacing) = read_blankspace(&node) {
-                        match line_spacing {
-                            LineSpacing::OnelineBlankspace(_) => {
+                    if let Some(blankspace) = read_blankspace(&node) {
+                        match blankspace {
+                            Blankspace::Inline(_) => {
                                 // OnelineBlankspace is *always* discarded as it never carries any formatting information
                                 preceding_trivia.push(NodeTriviaItem::Discarded(node));
                             },
-                            LineSpacing::LineBreak(_) | LineSpacing::EmptyLine(_) => {
-                                preceding_trivia.push(NodeTriviaItem::LineSpacing(line_spacing));
+                            Blankspace::LineBreak(_) | Blankspace::EmptyLine(_) => {
+                                preceding_trivia.push(NodeTriviaItem::LineSpacing(blankspace));
                             },
                         }
                     } else if let Some(comment) = read_comment(&node) {
@@ -477,7 +477,7 @@ where
                         let is_newlined = if let Some(next_item) = syntax.next() {
                             let is_newlined = matches!(
                                 read_blankspace(&next_item),
-                                Some(LineSpacing::EmptyLine(_) | LineSpacing::LineBreak(_))
+                                Some(Blankspace::EmptyLine(_) | Blankspace::LineBreak(_))
                             );
                             syntax.put_back(next_item);
                             is_newlined
@@ -566,14 +566,14 @@ where
                 break;
             },
             None => {
-                if let Some(line_spacing) = read_blankspace(&node) {
-                    match line_spacing {
-                        LineSpacing::OnelineBlankspace(_) => {
+                if let Some(blankspace) = read_blankspace(&node) {
+                    match blankspace {
+                        Blankspace::Inline(_) => {
                             // OnelineBlankspace is *always* discarded as it never carries any formatting information
                             succeeding_trivia.push(NodeTriviaItem::Discarded(node));
                         },
-                        LineSpacing::LineBreak(_) | LineSpacing::EmptyLine(_) => {
-                            succeeding_trivia.push(NodeTriviaItem::LineSpacing(line_spacing));
+                        Blankspace::LineBreak(_) | Blankspace::EmptyLine(_) => {
+                            succeeding_trivia.push(NodeTriviaItem::LineSpacing(blankspace));
                         },
                     }
                 } else if let Some(comment) = read_comment(&node) {
