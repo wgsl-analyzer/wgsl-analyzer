@@ -19,9 +19,9 @@ mod tests;
 //This cannot be gated, as we depend on it in doctests and the doctests are
 // run against the public api.
 pub mod ast_parse;
+pub mod blankspace;
 pub mod context_policies;
 pub mod format;
-pub mod helpers;
 pub mod ignore;
 pub mod multiline_group;
 pub mod options;

@@ -1,3 +1,4 @@
+//! Various helpers to classify blankspaces into their types.
 use parser::{SyntaxKind, SyntaxNode, SyntaxToken};
 use rowan::NodeOrToken;
 
@@ -9,11 +10,16 @@ use crate::{
     reporting::FormatDocumentResult,
 };
 
-// TODO Rename to Blankspace
+/// A `SyntaxToken` containing only blank space.
+///
+/// ... and newlines, and tabs, and similar stuff.
 #[derive(Clone, Debug)]
 pub enum Blankspace {
+    /// A blankspace that contains exactly one newline (and possibly spaces and tabs).
     LineBreak(SyntaxToken),
+    /// A blankspace that contains exactly two newlines (and possibly spaces and tabs).
     EmptyLine(SyntaxToken),
+    /// A blankspace that contains no newlines (but possibly spaces and tabs).
     Inline(SyntaxToken),
 }
 impl Blankspace {

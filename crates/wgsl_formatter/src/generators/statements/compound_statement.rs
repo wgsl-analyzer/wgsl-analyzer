@@ -11,9 +11,9 @@ use crate::{
         DiscardBraces, Filter, MatchKind, NoTrivia, PolicyAction, Succeeding, parse_end,
         parse_many_nodes_with, parse_node_with, syntax_iter,
     },
+    blankspace::{Blankspace, read_blankspace},
     context_policies::collapse_one_liner_compound_statement_policy,
     generators::node::gen_node_with_trivia,
-    helpers::{Blankspace, read_blankspace},
     multiline_group::MultilineGroup,
     options::TEMP_EXPERIMENTAL_CONDCOMP_MODE,
     print_item_buffer::{

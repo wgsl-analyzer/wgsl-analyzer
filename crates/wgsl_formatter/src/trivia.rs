@@ -5,8 +5,8 @@ use syntax::{AstNode, AstToken, ast::AttributeList};
 
 use crate::{
     ast_parse::SyntaxIter,
+    blankspace::Blankspace,
     generators::comments::Comment,
-    helpers::Blankspace,
     reporting::{FormatDocumentError, FormatDocumentResult, UnwrapIfPreferCrash as _},
 };
 
