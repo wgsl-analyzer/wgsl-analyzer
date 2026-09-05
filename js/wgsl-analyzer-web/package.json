@@ -1,0 +1,77 @@
+{
+	"name": "wgsl-analyzer-web",
+	"version": "0.0.0",
+	"description": "Run the wgsl-analyzer language server in a Web Worker",
+	"license": "MIT OR Apache-2.0",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/wgsl-analyzer/wgsl-analyzer"
+	},
+	"keywords": [
+		"wgsl",
+		"wesl",
+		"language-server",
+		"lsp",
+		"wasm",
+		"web-worker"
+	],
+	"type": "module",
+	"engines": {
+		"node": ">=24.15.0"
+	},
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"default": "./dist/index.js"
+		},
+		"./jsonrpc": {
+			"types": "./dist/jsonrpc.d.ts",
+			"default": "./dist/jsonrpc.js"
+		},
+		"./codemirror": {
+			"types": "./dist/codemirror.d.ts",
+			"default": "./dist/codemirror.js"
+		},
+		"./package.json": "./package.json",
+		"./assets/*": "./dist/*"
+	},
+	"files": [
+		"dist"
+	],
+	"scripts": {
+		"build": "pnpm run build:lib && pnpm run build:worker",
+		"build:lib": "tsc",
+		"build:worker": "esbuild src/worker.ts --bundle --format=esm --target=es2022 --external:./wgsl_analyzer.js --outfile=dist/worker.js",
+		"build:wasm": "node scripts/build-wasm.mjs",
+		"build:wasm:debug": "node scripts/build-wasm.mjs --debug",
+		"check": "pnpm exec biome check",
+		"ci": "pnpm exec biome ci && pnpm run typecheck",
+		"fix": "pnpm exec biome check --write",
+		"format": "pnpm exec biome format --write",
+		"lint": "pnpm exec biome lint",
+		"test": "node --test \"tests/unit/*.test.mjs\"",
+		"test:smoke": "node --test --test-force-exit \"tests/smoke/*.test.mjs\"",
+		"typecheck": "tsc --noEmit"
+	},
+	"peerDependencies": {
+		"@marimo-team/codemirror-languageserver": "^2.0.0",
+		"vscode-jsonrpc": "^8.2.0 || ^9.0.0"
+	},
+	"peerDependenciesMeta": {
+		"@marimo-team/codemirror-languageserver": {
+			"optional": true
+		},
+		"vscode-jsonrpc": {
+			"optional": true
+		}
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.5.8",
+		"@marimo-team/codemirror-languageserver": "^2.0.0",
+		"@tsconfig/strictest": "^2.0.8",
+		"@types/node": "^25.9.5",
+		"esbuild": "^0.28.2",
+		"typescript": "^7.0.2",
+		"vscode-jsonrpc": "^8.2.0 || ^9.0.0"
+	}
+}

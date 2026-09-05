@@ -21,6 +21,8 @@ env:
   RUSTFLAGS: -D warnings
   # If nightly is breaking CI, modify this variable to target a specific nightly version.
   NIGHTLY_TOOLCHAIN: nightly
+  # Pinned so an emsdk release cannot change what the emscripten job links.
+  EMSDK_VERSION: 6.0.6
 
 concurrency:
   group: ${{github.workflow}}-${{github.ref}}
@@ -38,6 +40,8 @@ jobs:
       pull-requests: read
     outputs:
       typescript: ${{ steps.filter.outputs.typescript }}
+      javascript: ${{ steps.filter.outputs.javascript }}
+      emscripten: ${{ steps.filter.outputs.emscripten }}
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -52,6 +56,22 @@ jobs:
           filters: |
             typescript:
               - 'editors/code/**'
+            javascript:
+              - 'js/**'
+              - 'package.json'
+              - 'pnpm-workspace.yaml'
+              - 'pnpm-lock.yaml'
+            # Subdirectories rather than 'js/wgsl-analyzer-web/**', so a README
+            # or biome-config edit does not trigger a full emscripten build.
+            emscripten:
+              - 'crates/**'
+              - 'Cargo.toml'
+              - 'Cargo.lock'
+              - '.cargo/config.toml'
+              - 'js/wgsl-analyzer-web/scripts/**'
+              - 'js/wgsl-analyzer-web/src/**'
+              - 'js/wgsl-analyzer-web/tests/**'
+              - 'js/examples/**'
 
   no-ai-commits:
     runs-on: ubuntu-latest
@@ -398,6 +418,175 @@ jobs:
         run: pnpm run package
         working-directory: ./editors/code
 
+  # Everything in `js/` that does not need a toolchain. `build:lib`,
+  # `build:worker`, biome and the unit tests all work without the wasm ever
+  # existing: `src/wgsl_analyzer.d.ts` is what lets `worker.ts` typecheck
+  # against glue that only appears in `dist/` after `build:wasm`.
+  javascript:
+    needs: changes
+    if: needs.changes.outputs.javascript == 'true'
+    name: JavaScript
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: ./package.json
+
+      # Resolves the root `packageManager` field, so this must not run in
+      # ./editors/code the way the `typescript` job does.
+      - name: Enable Corepack
+        run: |
+          corepack enable
+          corepack prepare --activate
+
+      - name: Set up pnpm cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.local/share/pnpm/store
+            ~/AppData/Local/pnpm/store
+          key: pnpm-root-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: pnpm-root-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # `ci` is biome plus `tsc --noEmit`.
+      - name: Run biome checks and typecheck
+        run: pnpm --filter wgsl-analyzer-web run ci
+
+      - name: Build
+        run: pnpm --filter wgsl-analyzer-web run build
+
+      - name: Check the build produced what consumers import
+        run: |
+          for artifact in index.js index.d.ts worker.js; do
+            if [[ ! -f "js/wgsl-analyzer-web/dist/${artifact}" ]]; then
+              echo "::error::dist/${artifact} is missing after a successful build"
+              exit 1
+            fi
+          done
+
+      - name: Unit tests
+        run: pnpm --filter wgsl-analyzer-web run test
+
+      # Both examples import all three public entry points, so these fail if the
+      # `exports` map or the declaration emit breaks. They need `build` above,
+      # but not the wasm.
+      - name: Typecheck the monaco example
+        run: pnpm --filter wgsl-analyzer-monaco-example run typecheck
+
+      - name: Typecheck the codemirror example
+        run: pnpm --filter wgsl-analyzer-codemirror-example run typecheck
+
+  # Links the LSP server for wasm32-unknown-emscripten and runs it. A debug
+  # build is used here because it skips `lto = "fat"`, `opt-level = "z"` and
+  # `codegen-units = 1`; the release configuration that actually ships is
+  # covered by emscripten-release.yaml.
+  emscripten:
+    needs: changes
+    if: needs.changes.outputs.emscripten == 'true'
+    name: Emscripten
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # rust-src, because the shipped rust-std for this target is built without
+      # the wasm `atomics` feature and so cannot link with -pthread. See the
+      # comment in .cargo/config.toml.
+      - name: Install nightly Rust toolchain
+        uses: dtolnay/rust-toolchain@2c7215f132e9ebf062739d9130488b56d53c060c
+        with:
+          toolchain: ${{ env.NIGHTLY_TOOLCHAIN }}
+          components: rust-src
+          target: wasm32-unknown-emscripten
+
+      - name: Install the emscripten SDK
+        uses: emscripten-core/setup-emsdk@6ab9eb1bda2574c4ddb79809fc9247783eaf9021 # v14
+        with:
+          version: ${{ env.EMSDK_VERSION }}
+          actions-cache-folder: emsdk-cache
+
+      # A self-contained cache: ci.yaml's shared restore-keys are
+      # `${{ runner.os }}-stable-`, while update-caches.yaml saves under
+      # `${{ runner.os }}-<hash>-<hash>`, so those never match and this job
+      # cannot rely on them. The wasm target directory is disjoint from the
+      # host-target one anyway.
+      - name: Cache the emscripten build
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/wasm32-unknown-emscripten/
+          key: emscripten-${{ runner.os }}-${{ hashFiles('Cargo.lock', '.cargo/config.toml') }}
+          restore-keys: emscripten-${{ runner.os }}-
+
+      - name: Install Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: ./package.json
+
+      - name: Enable Corepack
+        run: |
+          corepack enable
+          corepack prepare --activate
+
+      - name: Set up pnpm cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.local/share/pnpm/store
+            ~/AppData/Local/pnpm/store
+          key: pnpm-root-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: pnpm-root-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build the wasm module
+        run: pnpm --filter wgsl-analyzer-web run build:wasm:debug
+
+      - name: Build the package
+        run: pnpm --filter wgsl-analyzer-web run build
+
+      # The glue must be named wgsl_analyzer.js: it spawns its pthread pool with
+      # `new Worker(new URL("wgsl_analyzer.js", import.meta.url))`, so cargo's
+      # bin-name artifact would 404 every pthread.
+      - name: Check the staged artifacts
+        run: |
+          for artifact in index.js index.d.ts worker.js wgsl_analyzer.js wgsl_analyzer.wasm; do
+            if [[ ! -f "js/wgsl-analyzer-web/dist/${artifact}" ]]; then
+              echo "::error::dist/${artifact} is missing after build:wasm + build"
+              exit 1
+            fi
+          done
+
+      - name: Boot the module and round trip LSP
+        run: pnpm --filter wgsl-analyzer-web run test:smoke
+
+      # `prebuild` runs copy-assets.mjs, which exits 1 unless all three staged
+      # files are present under those exact names, then vite bundles for real.
+      - name: Build the monaco example
+        run: pnpm --filter wgsl-analyzer-monaco-example run build
+
+      - name: Build the codemirror example
+        run: pnpm --filter wgsl-analyzer-codemirror-example run build
+
   conclusion:
     needs:
       [
@@ -412,6 +601,8 @@ jobs:
         rustdoc,
         check-unused-dependencies,
         typescript,
+        javascript,
+        emscripten,
         wgslfmt-dprint-wasm,
       ]
     # We need to ensure this job does *not* get skipped if its dependencies fail,
