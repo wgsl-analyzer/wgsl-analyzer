@@ -9,14 +9,14 @@ fn format_comments_around_global_compdec() {
         expect![[r#"
             fn a() {} /* 0 */
             { /* 1 */
-            fn b() {} /* 2 */
+                fn b() {} /* 2 */
             } /* 3 */
             fn c() {}
         "#]],
         expect![[r#"
             fn a() {} // 0
             { // 1
-            fn b() {} // 2
+                fn b() {} // 2
             } // 3
             fn c() {}
         "#]],

@@ -21,12 +21,12 @@ fn format_condcomp_if_attribute_following_global_compound_declaration_does_not_g
         ",
         expect![[r#"
             @if(true) {
-            fn a() {}
+                fn a() {}
             }
             @if(false) {
-            fn a() {}
+                fn a() {}
             } @else {
-            fn a() {}
+                fn a() {}
             }
         "#]],
     );
@@ -51,11 +51,11 @@ fn format_condcomp_attribute_with_global_compound_declaration_gets_merged() {
         ",
         expect![[r#"
             @if(true) {
-            fn a() {}
+                fn a() {}
             } @elif(false) {
-            fn a() {}
+                fn a() {}
             } @else {
-            fn a() {}
+                fn a() {}
             }
         "#]],
     );
@@ -83,14 +83,14 @@ fn format_condcomp_if_attribute_following_compound_does_not_get_merged() {
         ",
         expect![[r#"
             fn main() {
-            @if(true) {
-                var x: u32;
-            }
-            @if(false) {
-                var x: u32;
-            } @else {
-                var x: u32;
-            }
+                @if(true) {
+                    var x: u32;
+                }
+                @if(false) {
+                    var x: u32;
+                } @else {
+                    var x: u32;
+                }
                 return x;
             }
         "#]],
@@ -119,13 +119,13 @@ fn format_condcomp_attribute_with_compound_gets_merged() {
         ",
         expect![[r#"
             fn main() {
-            @if(true) {
-                var x: u32;
-            } @elif(false) {
-                var x: u32;
-            } @else {
-                var x: u32;
-            }
+                @if(true) {
+                    var x: u32;
+                } @elif(false) {
+                    var x: u32;
+                } @else {
+                    var x: u32;
+                }
                 return x;
             }
         "#]],
@@ -133,7 +133,7 @@ fn format_condcomp_attribute_with_compound_gets_merged() {
 }
 
 #[test]
-fn format_condcomp_attribute_with_compound_gets_detented() {
+fn format_condcomp_attribute_with_compound_does_not_get_detented() {
     check(
         "
         fn main() {
@@ -149,13 +149,13 @@ fn format_condcomp_attribute_with_compound_gets_detented() {
         ",
         expect![[r#"
             fn main() {
-            @if(true) {
-                var x: u32;
-            } @elif(false) {
-                var x: u32;
-            } @else {
-                var x: u32;
-            }
+                @if(true) {
+                    var x: u32;
+                } @elif(false) {
+                    var x: u32;
+                } @else {
+                    var x: u32;
+                }
                 return x;
             }
         "#]],
@@ -163,9 +163,7 @@ fn format_condcomp_attribute_with_compound_gets_detented() {
 }
 
 #[test]
-fn format_condcomp_attribute_without_compound_gets_indetented() {
-    // Conditional compound statements do not create a scope - and as such should not be indented
-    //https://discord.com/channels/1289346613185351722/1341941812675481680/1537181486279557160
+fn format_condcomp_attribute_without_compound_does_not_get_indetented() {
     check(
         "
         fn main() {
