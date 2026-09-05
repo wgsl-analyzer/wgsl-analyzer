@@ -1,5 +1,3 @@
-//! [dprint](https://dprint.dev/) plugin for formatting WGSL code.
-
 use dprint_core::{
     configuration::{ConfigKeyMap, GlobalConfiguration},
     plugins::{
@@ -8,7 +6,7 @@ use dprint_core::{
         SyncPluginHandler,
     },
 };
-use wgsl_formatter::{FormattingOptions, format_str};
+use wgsl_formatter::{FormattingOptions, format_file};
 
 use crate::config::resolve_config;
 
@@ -63,9 +61,10 @@ impl SyncPluginHandler<FormattingOptions> for WgslPluginHandler {
     ) -> FormatResult {
         let config = request.config;
 
-        let file_text =
-            std::str::from_utf8(&request.file_bytes).map_err(|error| error.to_string())?;
-        let formatted = format_str(file_text, config);
+        // TODO(MonaMayrhofer) Better error handling here
+        let source = std::str::from_utf8(&request.file_bytes).map_err(FormatError::new)?;
+        let formatted = format_file(source, config)
+            .map_err(|error| format!("wgslfmt encountered an error. This is a bug in wgslfmt, feel free to report this: {error:?}"))?;
 
         Ok(Some(formatted.into_bytes()))
     }

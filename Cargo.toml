@@ -50,7 +50,7 @@ anyhow = "1.0.103"
 camino = "1.2.2"
 cargo_metadata = "0.23.1"
 # wesl_metadata = "0.0.1"
-clap = { version = "4", default-features = false, features = ["help", "std"] }
+clap = { version = "4", default-features = false, features = ["error-context", "help", "std", "usage"] }
 # cov-mark = "2.0.0"
 dot = "0.2.0"
 glob = "0.3"
