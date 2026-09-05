@@ -9,8 +9,8 @@ use rowan::NodeOrToken;
 use syntax::{AstNode as _, ast::AttributeList};
 
 use crate::{
+    blankspace::{Blankspace, read_blankspace},
     generators::comments::read_comment,
-    helpers::{Blankspace, read_blankspace},
     ignore::{is_ignore_next_pragma_comment, is_ignored_from_within},
     reporting::FormatDocumentResult,
     trivia::{NodeTriviaItem, NodeWithTrivia, NodeWithTriviaContent},

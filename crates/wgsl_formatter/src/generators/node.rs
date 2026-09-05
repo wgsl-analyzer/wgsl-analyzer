@@ -10,6 +10,7 @@ use rowan::NodeOrToken;
 use syntax::{AstNode as _, ast};
 
 use crate::{
+    blankspace::{gen_blankspace, read_blankspace},
     generators::{
         attributes::{
             gen_align_attribute, gen_attr_standard_with_args, gen_attribute, gen_attribute_list,
@@ -89,7 +90,6 @@ use crate::{
         types::{gen_template_list, gen_type_specifier},
         verbatim::gen_node_syntax_verbatim,
     },
-    helpers::{gen_blankspace, read_blankspace},
     print_item_buffer::{
         PrintItemBuffer,
         spacing_request::{Request, RequestItem},
