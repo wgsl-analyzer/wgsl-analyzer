@@ -241,6 +241,7 @@ pub fn gen_switch_case_default_selector(
     Ok(formatted)
 }
 
+#[must_use]
 pub fn collapse_one_liner_case_body_rule(node: &SyntaxNode) -> bool {
     let Some(parent) = node.parent() else {
         return false;
@@ -248,6 +249,7 @@ pub fn collapse_one_liner_case_body_rule(node: &SyntaxNode) -> bool {
     matches!(parent.kind(), SyntaxKind::SwitchBodyCase)
 }
 
+#[must_use]
 pub fn remove_switch_subject_parens_rule(node: &SyntaxNode) -> bool {
     let Some(parent) = node.parent() else {
         return false;

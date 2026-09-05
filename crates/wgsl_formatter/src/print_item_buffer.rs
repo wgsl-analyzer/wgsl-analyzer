@@ -1,3 +1,4 @@
+//! The working structure that the generator functions emit formatted text into.
 pub mod spacing_request;
 
 use dprint_core::formatting::{Anchor, Info, PrintItem, PrintItems, Signal};

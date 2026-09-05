@@ -43,6 +43,7 @@ pub fn gen_const_assert_statement(
     Ok(formatted)
 }
 
+#[must_use]
 pub fn remove_const_assert_condition_parens_rule(node: &SyntaxNode) -> bool {
     let Some(parent) = node.parent() else {
         return false;

@@ -17,7 +17,7 @@ pub struct ExperimentalCondCompMode {
 /// }
 /// }
 /// ```
-const MONA_AWFUL_SETTINGS: ExperimentalCondCompMode = ExperimentalCondCompMode {
+const AWFUL_SETTINGS: ExperimentalCondCompMode = ExperimentalCondCompMode {
     unscope_compound_statements_create_indent: false,
     dedent_condcomp_with_body: true,
     dedent_condcomp_without_body: false,
@@ -27,7 +27,7 @@ const MONA_AWFUL_SETTINGS: ExperimentalCondCompMode = ExperimentalCondCompMode {
 /// These are very basic and in my (Mona's) opinion most readable and beautiful.
 /// The only weirdness with them is that we get
 /// indented global declarations at points like
-/// ```
+/// ```wesl
 /// @group(2) @binding(1)
 /// var aa: bb;
 /// @if (true) {
@@ -50,7 +50,7 @@ const CONVENTIONAL_BORING_SETTINGS: ExperimentalCondCompMode = ExperimentalCondC
 /// Looks quite nice on its own, however once code gets a bit more
 /// involved, and there are fors or ifs present, this gets very
 /// hard to glance.
-/// ```wgsl
+/// ```wesl
 /// @elif(MULTISAMPLE)
 /// {
 /// let aaaaaaaaaa = aaaababeaf * vec2<f32>(falkjsekjf);
@@ -68,7 +68,7 @@ const CONVENTIONAL_BORING_SETTINGS: ExperimentalCondCompMode = ExperimentalCondC
 /// ```
 /// See bevy's `downsample_dept.wesl`.
 /// See bevy's `debug_overlay.wesl`.
-const BENJAMIN_ORIGINAL_PROPOSAL_SETTINGS: ExperimentalCondCompMode = ExperimentalCondCompMode {
+const ORIGINAL_PROPOSAL_SETTINGS: ExperimentalCondCompMode = ExperimentalCondCompMode {
     unscope_compound_statements_create_indent: false,
     dedent_condcomp_with_body: false,
     dedent_condcomp_without_body: false,

@@ -1,10 +1,18 @@
+//! # WGSL-Formatter
+//!
+//! A library designed to format (pretty-print) wesl/wgsl source code.
+//!
+//! ## Entrypoints
+//!
+//! The entry points that actually format code are [`format_file`], [`format_range`] [`format_node`] and [`format_tree`].
+#![cfg_attr(doc, doc = include_str!("../Architecture.md"))]
 // We re-enable a warn lint within the formatter because it is very easy to parse an item within a gen_*-function and
 // then forget to print it to the PrintItemBuffer.
 // Also it is very easy to forget a "?" after a parse_*-function, that would be caught by
 // "unused std::result::Result that must be used"
 #![warn(unused)]
 
-mod generators;
+pub mod generators;
 #[cfg(test)]
 mod tests;
 
@@ -14,6 +22,7 @@ pub mod ast_parse;
 pub mod context_policies;
 pub mod format;
 pub mod helpers;
+pub mod ignore;
 pub mod multiline_group;
 pub mod options;
 pub mod print_item_buffer;
@@ -25,7 +34,9 @@ use std::str::FromStr;
 
 use dprint_core::configuration::ParseConfigurationError;
 
-pub use format::{FormatStringError, FormattedRange, format_file, format_range, format_tree};
+pub use format::{
+    FormatStringError, FormattedRange, format_file, format_node, format_range, format_tree,
+};
 
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
