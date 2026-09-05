@@ -17,8 +17,6 @@ use super::print_item_buffer::spacing_request::RequestItem;
 #[derive(Debug)]
 enum MultilineGroupState {
     New,
-    StartedIndent,
-    FinishedIndent,
     Ended,
 }
 
@@ -81,21 +79,6 @@ impl<'buffer> MultilineGroup<'buffer> {
         }
     }
 
-    // TODO we don't need this. this can be just transparently start_indent
-    pub fn start_indent_before_requests(&mut self) {
-        #[cfg(debug_assertions)]
-        {
-            core::assert_matches!(
-                self.state,
-                MultilineGroupState::New,
-                "MultilineGroup was in wrong state"
-            );
-            self.state = MultilineGroupState::StartedIndent;
-        }
-
-        self.buffer.start_indent_before_requests();
-    }
-
     pub fn grouped_newline_or_space(&mut self) {
         self.buffer.request(Request::Conditional {
             condition: Rc::clone(&self.is_multiple_lines),
@@ -136,27 +119,12 @@ impl<'buffer> MultilineGroup<'buffer> {
             ));
     }
 
-    // TODO we don't need this. this can be just transparently finish_indent
-    pub fn finish_indent(&mut self) {
+    pub fn end_before_requests(mut self) {
         #[cfg(debug_assertions)]
         {
             core::assert_matches!(
                 self.state,
-                MultilineGroupState::StartedIndent,
-                "MultilineGroup was in wrong state"
-            );
-            self.state = MultilineGroupState::FinishedIndent;
-        }
-
-        self.buffer.finish_indent_before_requests();
-    }
-
-    pub fn end_before_requests(&mut self) {
-        #[cfg(debug_assertions)]
-        {
-            core::assert_matches!(
-                self.state,
-                MultilineGroupState::FinishedIndent | MultilineGroupState::New,
+                MultilineGroupState::New,
                 "MultilineGroup was in wrong state"
             );
             self.state = MultilineGroupState::Ended;
@@ -183,5 +151,19 @@ impl Deref for MultilineGroup<'_> {
 impl DerefMut for MultilineGroup<'_> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         self.buffer
+    }
+}
+
+#[cfg(debug_assertions)]
+impl Drop for MultilineGroup<'_> {
+    fn drop(&mut self) {
+        // Come on we need linear types, please...
+        if !::std::thread::panicking() {
+            core::assert_matches!(
+                self.state,
+                MultilineGroupState::Ended,
+                "MultilineGroup was dropped without end_before_requests having been called"
+            );
+        }
     }
 }

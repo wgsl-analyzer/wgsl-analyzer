@@ -125,7 +125,7 @@ pub fn gen_fn_parameters(node: &ast::FunctionParameters) -> FormatDocumentResult
 
     multiline_group.request(Request::discourage(RequestItem::Space));
     multiline_group.grouped_possible_newline();
-    multiline_group.finish_indent();
+    multiline_group.finish_indent_before_requests();
 
     multiline_group.push_sc(sc!(")"));
 
