@@ -62,5 +62,12 @@ pub fn remove_index_expression_nested_parens_rule(node: &SyntaxNode) -> bool {
         return false;
     };
 
-    matches!(parent.kind(), SyntaxKind::IndexExpression)
+    if !matches!(parent.kind(), SyntaxKind::IndexExpression) {
+        return false;
+    }
+
+    // If we do not have a next sibling but do have a previous sibling,
+    // then we are in the index, and not in the expression, and thus can
+    // safely remove the parens
+    node.next_sibling().is_none() && node.prev_sibling().is_some()
 }
