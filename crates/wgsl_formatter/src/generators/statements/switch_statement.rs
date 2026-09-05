@@ -122,12 +122,12 @@ pub fn gen_switch_body_case(
             let mut item_case_keyword = item_case_keyword;
 
             if selectors
-                .node
+                .content
                 .as_ref()
                 .and_then(|selectors| selectors.as_node())
                 .is_some_and(is_case_default)
             {
-                item_case_keyword.node = NodeWithTriviaContent::NoContent;
+                item_case_keyword.content = NodeWithTriviaContent::NoContent;
             }
 
             SwitchBodyCaseKind::Case {

@@ -113,9 +113,8 @@ impl NodeWithTriviaContent {
 pub struct NodeWithTrivia {
     /// Any trivia associated with the content, that preceded it in the source.
     pub preceding_trivia: Vec<NodeTriviaItem>,
-    //TODO rename to content
     /// The content that the trivia is associated with.
-    pub node: NodeWithTriviaContent,
+    pub content: NodeWithTriviaContent,
     /// Any trivia associated with the content, that succeeded it in the source.
     pub succeeding_trivia: Vec<NodeTriviaItem>,
     /// Whether this [`NodeWithTrivia`] wants to be formatted.
@@ -128,7 +127,7 @@ pub struct NodeWithTrivia {
 impl NodeWithTrivia {
     /// Get the `SyntaxKind` of self, or [`None`] if self did not contain a content node.
     pub fn kind(&self) -> Option<SyntaxKind> {
-        self.node
+        self.content
             .as_ref()
             .map(NodeOrToken::<SyntaxNode, SyntaxToken>::kind)
     }
@@ -141,7 +140,7 @@ impl NodeWithTrivia {
         for item in self.succeeding_trivia.into_iter().rev() {
             item.put_back(syntax);
         }
-        match self.node {
+        match self.content {
             NodeWithTriviaContent::Content(node_or_token) => {
                 syntax.put_back(node_or_token);
             },
@@ -178,7 +177,7 @@ impl NodeWithTrivia {
         T: AstNode,
     {
         if self
-            .node
+            .content
             .as_ref()
             .is_some_and(|node| !T::can_cast(node.kind()))
         {
@@ -195,9 +194,13 @@ impl NodeWithTrivia {
         self,
         kind: SyntaxKind,
     ) -> FormatDocumentResult<Self> {
-        if self.node.as_ref().is_some_and(|node| node.kind() != kind) {
+        if self
+            .content
+            .as_ref()
+            .is_some_and(|node| node.kind() != kind)
+        {
             Err(FormatDocumentError::UnexpectedNodeOrToken {
-                received: self.node.into_option(),
+                received: self.content.into_option(),
             })
             .expect_if_prefer_crash()
         } else {
@@ -212,11 +215,15 @@ impl NodeWithTrivia {
         self,
         kind: SyntaxKind,
     ) -> FormatDocumentResult<Self> {
-        if self.node.as_ref().is_some_and(|node| node.kind() == kind) {
+        if self
+            .content
+            .as_ref()
+            .is_some_and(|node| node.kind() == kind)
+        {
             Ok(self)
         } else {
             Err(FormatDocumentError::UnexpectedNodeOrToken {
-                received: self.node.into_option(),
+                received: self.content.into_option(),
             })
             .expect_if_prefer_crash()
         }
@@ -229,13 +236,13 @@ impl NodeWithTrivia {
     where
         T: AstNode,
     {
-        if let NodeWithTriviaContent::Content(NodeOrToken::Node(node)) = &self.node
+        if let NodeWithTriviaContent::Content(NodeOrToken::Node(node)) = &self.content
             && T::cast(node.clone()).is_some()
         {
             return Ok(self);
         }
         Err(FormatDocumentError::UnexpectedNodeOrToken {
-            received: self.node.into_option(),
+            received: self.content.into_option(),
         })
         .expect_if_prefer_crash()
     }
@@ -246,7 +253,7 @@ impl NodeWithTrivia {
     where
         T: AstNode,
     {
-        match &self.node {
+        match &self.content {
             NodeWithTriviaContent::NoContent | NodeWithTriviaContent::End => Ok(self),
             NodeWithTriviaContent::Content(node_or_token) => {
                 if let NodeOrToken::Node(node) = node_or_token
@@ -255,7 +262,7 @@ impl NodeWithTrivia {
                     Ok(self)
                 } else {
                     Err(FormatDocumentError::UnexpectedNodeOrToken {
-                        received: self.node.into_option(),
+                        received: self.content.into_option(),
                     })
                     .expect_if_prefer_crash()
                 }
@@ -270,13 +277,13 @@ impl NodeWithTrivia {
     where
         T: AstToken,
     {
-        if let NodeWithTriviaContent::Content(NodeOrToken::Token(node)) = &self.node
+        if let NodeWithTriviaContent::Content(NodeOrToken::Token(node)) = &self.content
             && T::cast(node.clone()).is_some()
         {
             return Ok(self);
         }
         Err(FormatDocumentError::UnexpectedNodeOrToken {
-            received: self.node.into_option(),
+            received: self.content.into_option(),
         })
         .expect_if_prefer_crash()
     }
@@ -284,13 +291,13 @@ impl NodeWithTrivia {
     /// Is the content of this node [`NodeWithTriviaContent::End`].
     #[must_use]
     pub const fn is_end(&self) -> bool {
-        matches!(self.node, NodeWithTriviaContent::End)
+        matches!(self.content, NodeWithTriviaContent::End)
     }
 
     /// Is the content of this node and any associated trivia purely made up of whitespace?
     #[must_use]
     pub fn is_whitespace(&self) -> bool {
-        self.node.is_empty()
+        self.content.is_empty()
             && self.preceding_trivia.iter().all(|trivia| {
                 matches!(
                     trivia,
@@ -308,12 +315,12 @@ impl NodeWithTrivia {
     /// Does this node have a nonempty content?
     #[must_use]
     pub const fn has_content(&self) -> bool {
-        matches!(self.node, NodeWithTriviaContent::Content(_))
+        matches!(self.content, NodeWithTriviaContent::Content(_))
     }
 
     #[must_use]
     pub fn content(&self) -> Option<NodeOrToken<SyntaxNode, SyntaxToken>> {
-        match &self.node {
+        match &self.content {
             NodeWithTriviaContent::Content(node_or_token) => Some(node_or_token.clone()),
             NodeWithTriviaContent::NoContent | NodeWithTriviaContent::End => None,
         }

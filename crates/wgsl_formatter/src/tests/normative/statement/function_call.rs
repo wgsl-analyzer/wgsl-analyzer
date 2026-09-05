@@ -219,7 +219,6 @@ pub fn format_long_function_call_linewidth_outside_inner_break_outer_arguments_l
     );
 }
 
-// TODO
 #[test]
 fn format_long_function_call_leave_arguments_alone_if_breaking_at_commas_suffices() {
     check_with_options(

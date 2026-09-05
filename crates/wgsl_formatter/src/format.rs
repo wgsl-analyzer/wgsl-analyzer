@@ -77,7 +77,7 @@ pub fn format_tree(
 ) -> FormatDocumentResult<String> {
     let trivia = NodeWithTrivia {
         preceding_trivia: Vec::new(),
-        node: NodeWithTriviaContent::Content(NodeOrToken::Node(syntax.syntax().clone())),
+        content: NodeWithTriviaContent::Content(NodeOrToken::Node(syntax.syntax().clone())),
         succeeding_trivia: Vec::new(),
         format: !is_ignored_from_within(syntax.syntax()),
     };
@@ -94,7 +94,7 @@ pub fn format_node(
 ) -> FormatDocumentResult<String> {
     let trivia = NodeWithTrivia {
         preceding_trivia: Vec::new(),
-        node: NodeWithTriviaContent::Content(NodeOrToken::Node(syntax.clone())),
+        content: NodeWithTriviaContent::Content(NodeOrToken::Node(syntax.clone())),
         succeeding_trivia: Vec::new(),
         format: !is_ignored_from_within(syntax.syntax()),
     };
