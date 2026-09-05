@@ -15,7 +15,8 @@ pub fn gen_ident_expression(
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = syntax_iter(ident_expression.syntax());
-    let item_path = parse_node_with(&mut syntax, DiscardBlankspace).expect_kind(SyntaxKind::Path)?;
+    let item_path =
+        parse_node_with(&mut syntax, DiscardBlankspace).expect_kind(SyntaxKind::Path)?;
     let item_template = {
         let item = parse_node_with(&mut syntax, DiscardBlankspace);
         (item.kind() == Some(SyntaxKind::TemplateList)).then_some(item)
