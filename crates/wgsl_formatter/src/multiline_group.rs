@@ -24,7 +24,7 @@ enum MultilineGroupState {
 ///
 /// To use this helper (and to keep the api small), a few rules do need to be manually followed.
 ///
-/// The [`MultilineGroup::end`] method needs to be called before it is dropped.
+/// The [`MultilineGroup::end_before_requests`] method needs to be called before it is dropped.
 ///
 pub struct MultilineGroup<'buffer> {
     buffer: &'buffer mut PrintItemBuffer,

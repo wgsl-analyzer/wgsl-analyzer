@@ -4,7 +4,7 @@ use dprint_core::formatting::{
     Condition, ConditionProperties, ConditionResolver, PrintItems, Signal,
 };
 
-/// A possible kind of whitespace that can be requested and, through [`RequestFolder`], be merged together if multiple requests are issued.
+/// A possible kind of whitespace that can be requested and, through [`Request`], be merged together if multiple requests are issued.
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum RequestItem {
     /// Request a space.
@@ -43,7 +43,7 @@ impl RequestItem {
     }
 }
 
-/// A Set holding [`RequestItems`], implemented via a bitmap.
+/// A Set holding [`RequestItem`]s, implemented via a bitmap.
 #[derive(Clone)]
 pub struct RequestItemSet(u8);
 
@@ -119,7 +119,7 @@ impl RequestItemSet {
 /// only the "biggest" one (the one that subsumes all the other ones) is actually put into the output.
 ///
 /// Optionally a request can also "suggest" a newline, which means that if a space or nothing at all would be put into the output,
-/// and a newline is not "discouraged" at this point, then either a [`SpaceOrNewline`] or a [`PossibleNewline`] is output.
+/// and a newline is not "discouraged" at this point, then either a `SpaceOrNewline` or a `PossibleNewline` dprint `Signal` is output.
 #[derive(Clone)]
 pub enum Request {
     Unconditional {

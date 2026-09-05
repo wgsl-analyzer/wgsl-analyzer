@@ -1,6 +1,6 @@
-## Architecture of the Formatter
+# Architecture of the Formatter
 
-### Generator Functions
+## Generator Functions
 
 Most of the heavy lifting is done via the `gen_`-functions in the [`generators`] module.
 
@@ -65,7 +65,7 @@ Usually one will only touch the "parse" section when fixing bugs where the
 formatter doesn't recognize some syntax, and
 one will only touch the "format" section when changing how the output will look.
 
-#### Sidenote
+### Sidenote
 
 Conceptually we could split the parsing and formatting into separate functions
 The "parse" functions would consist of just the "parse" sections
@@ -89,14 +89,14 @@ As far as I can tell the highly structured approach to the gen_ functions
 should make converting this to an iterative approach relatively straight
 forward, however I don't think such deeply nested ASTs will ever occur in practice.
 
-### The "Parse" Section
+## The "Parse" Section
 
-#### SyntaxIter
+### SyntaxIter
 
 The [`SyntaxIter`](ast_parse::SyntaxIter) is just a wrapper around `itertools::put_back_n(node.children_with_tokens())`, with the added benefit that
 on development builds it checks if [`ast_parse::parse_end`] was called on it.
 
-#### Parse functions & NodeWithTrivia
+### Parse functions & NodeWithTrivia
 
 The main parsing function is [`ast_parse::parse_node_with`], which retrieves the next "interesting"
 node from the syntax iterator, and associates it with trivia, like attributes or comments.
@@ -117,7 +117,7 @@ policies can be composed together via tuples (in which case they get applied in 
 gets applied), or they can be specified if they apply to only preceding trivia, only succeeding trivia or both.
 The most commonly used Policies are defined in [`ast_parse`], and in edge cases a function can be turned into one too.
 
-#### Expecting SyntaxKinds
+### Expecting SyntaxKinds
 
 We take no special care to "validate" the AST - that is the job of the parser.
 However oftentimes deciding on how a node should be formatted makes certain assumptions about the shape of the AST.
@@ -129,9 +129,9 @@ Even though they are named "expect", they do not panic, but instead gracefully f
 This error is not meant to show the user if they wrote wrong wgsl (again, that is the job of the parser), but contain just enough
 information to give us a starting point when debugging issues.
 
-### The "Format" Section
+## The "Format" Section
 
-#### [`PrintItemBuffer`] and [`Request`]s
+### [`PrintItemBuffer`] and [`Request`]s
 
 In order to keep the generator functions as streamlined as possible, and cut down on repetitive noise,
 things like making sure that there are no spaces between the indentation and the code, or that
@@ -147,15 +147,16 @@ starts with a newline or emits its own space due to e.g a block comment.
 
 [`PrintItemBuffer`]: print_item_buffer::PrintItemBuffer
 [`PrintItemBuffer::extend`]: print_item_buffer::PrintItemBuffer::extend
+[`PrintItemBuffer::request`]: print_item_buffer::PrintItemBuffer::request
 [`Request`]: print_item_buffer::spacing_request::Request
 
-### [`gen_node_with_trivia`](generators::node::gen_node_with_trivia)
+## [`gen_node_with_trivia`](generators::node::gen_node_with_trivia)
 
 This is more or less the internal entrypoint for formatting any node, it takes care of emitting any applicable
 trivia around the node, dispatching to the correct `gen_` function, and emitting the source code verbatim, if it
 was ignored using `// @wgslfmt(ignore)`
 
-### The "Context" Section
+## The "Context" Section
 
 Because generator function need to work on their own (without relying on other generator functions calling them and providing
 helpful arguments), they do not know anything about the context that the node is in.
