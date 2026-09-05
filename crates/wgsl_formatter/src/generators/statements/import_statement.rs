@@ -184,6 +184,15 @@ impl PartialOrd for CmpImportTree<'_> {
     }
 }
 
+/// Generate an import collection.
+///
+/// # Panics
+/// If there are two import collections immediately nested within another import collection.
+/// ```wgsl
+/// import aa::bb::{{a}, {b}};
+/// ```
+///
+/// This should be enforced by the unit test below.
 pub fn gen_import_collection(
     node: &ast::ImportCollection
 ) -> FormatDocumentResult<PrintItemBuffer> {
@@ -288,4 +297,27 @@ pub fn gen_import_statement(node: &ast::ImportStatement) -> FormatDocumentResult
     }
 
     Ok(formatted)
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::test_util::assert_out_of_scope;
+
+    #[test]
+    pub fn immediately_nested_import_collections_dont_parse() {
+        // The logic for sorting imports relies on this not parsing.
+        assert_out_of_scope(
+            "
+            import a::{{a::a, b::b}, {c::c, d::d}};
+            ",
+            "ImportCollections immediately within ImportCollections are not supported.",
+        );
+
+        assert_out_of_scope(
+            "
+            import a::{{b}, {c}};
+            ",
+            "ImportCollections immediately within ImportCollections are not supported.",
+        );
+    }
 }
