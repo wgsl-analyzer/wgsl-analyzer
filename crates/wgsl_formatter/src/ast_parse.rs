@@ -265,8 +265,6 @@ impl ParseNodePolicy for MatchKind {
 }
 
 /// A policy for [`parse_node_with`] that [stops][PolicyAction::Stop] parsing when at least one newline is encountered.
-///
-/// Also see [`UntilEmptyLine`].
 pub struct StopAtNewline;
 impl ParseNodePolicy for StopAtNewline {
     fn handle_preceding(

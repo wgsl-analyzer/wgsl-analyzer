@@ -7,9 +7,9 @@
 //! "is this statement inside a for initializer" question colocated with the statement logic - utterly disconnected from the implementation
 //! detail in the `for`-generator that was the reason for it.
 //!
-//! In such a case, we re-route the logic through [`context_policies`] that answer neutral statements about some code.
+//! In such a case, we re-route the logic through [`context_policies`](self) that answer neutral statements about some code.
 //! The logic for generating statements can very generally ask:
-//! [Is it the case that a statement needs a semicolon](context_policies::statement_needs_semicolon_policy)?
+//! [Is it the case that a statement needs a semicolon](statement_needs_semicolon_policy)?
 //! And if yes, generate the semicolon and otherwise omit it.
 //!
 //! The [`statement_needs_semicolon_policy`] can then delegate to the [`for_statement::skip_semicolons_rule`] to answer that question,
@@ -18,8 +18,8 @@
 //! If some other generator now also requires semicolon-less statements, a new rule is easily added to the policy, and as such everything is neat and tidy
 //! and the spaghetti monster stays hungry.
 //!
-//! [`statement_needs_semicolon_policy`]: context_policies::statement_needs_semicolon_policy
-//! [`for_statement::skip_semicolons_rule`]: generators::statements::for_statement::skip_semicolons_rule
+//! [`statement_needs_semicolon_policy`]: statement_needs_semicolon_policy
+//! [`for_statement::skip_semicolons_rule`]: crate::generators::statements::for_statement::skip_semicolons_rule
 use parser::SyntaxNode;
 
 use crate::generators::{

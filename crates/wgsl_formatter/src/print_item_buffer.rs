@@ -239,7 +239,7 @@ impl PrintItemBuffer {
 
     /// Applies trailing requests and pushes a literal tab character to the buffer.
     ///
-    /// Do not use this for indentation, use [`Self::start_indent_before_request`] instead.
+    /// Do not use this for indentation, use [`Self::start_indent_before_requests`] instead.
     pub fn push_tab(&mut self) {
         self.apply_end_request();
         self.items.push_signal(Signal::Tab);
