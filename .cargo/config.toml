@@ -1,8 +1,10 @@
 [alias]
 xtask = "run --package xtask --bin xtask --"
-lint = "clippy --all-targets -- --cap-lints warn"
+lint = "clippy --all-targets --all-features -- --cap-lints warn"
 codegen = "run --package xtask --bin xtask -- codegen"
 dist = "run --package xtask --bin xtask -- dist"
+l = "llvm-cov --lcov --output-path lcov.info"
+c = "clippy --all-targets --all-features -- --cap-lints warn"
 
 [target.x86_64-pc-windows-msvc]
 linker = "rust-lld"

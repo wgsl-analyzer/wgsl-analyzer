@@ -1,16 +1,16 @@
-mod naga27;
 mod naga28;
 mod naga29;
+mod naga30;
 mod naga_main;
 
-use std::{error, range::Range};
+use std::{error, ops::Deref, range::Range};
 
 use base_db::{EditionedFileId, FileRange};
 use hir::{HirDatabase, diagnostics::AnyDiagnostic};
 pub(crate) use naga_main::NagaMain;
-pub(crate) use naga27::Naga27;
 pub(crate) use naga28::Naga28;
 pub(crate) use naga29::Naga29;
+pub(crate) use naga30::Naga30;
 use rowan::{TextRange, TextSize};
 
 use crate::DiagnosticsConfig;
@@ -21,7 +21,7 @@ pub(crate) trait Naga {
     type ValidationError: NagaError;
 
     fn parse(source: &str) -> Result<Self::Module, Self::ParseError>;
-    fn validate(module: &Self::Module) -> Result<(), Self::ValidationError>;
+    fn validate(module: &Self::Module) -> Result<(), Box<Self::ValidationError>>;
 }
 
 pub(crate) trait NagaError: error::Error {
@@ -89,7 +89,7 @@ pub(crate) fn naga_diagnostics<Naga>(
                 return;
             }
             if let Err(error) = Naga::validate(&module) {
-                emit(db, &error, file_id, full_range, accumulator);
+                emit(db, &*error, file_id, full_range, accumulator);
             }
         },
         Err(error) => {

@@ -23,16 +23,16 @@ use syntax::{AstNode as _, Edition};
 use vfs::FileId;
 
 use crate::{
-    naga::{Naga27, Naga28, Naga29, NagaMain, naga_diagnostics},
+    naga::{Naga28, Naga29, Naga30, NagaMain, naga_diagnostics},
     tint::tint_diagnostics,
 };
 
 #[derive(Clone, Copy, Debug, Default)]
 pub enum NagaVersion {
-    Naga27,
     Naga28,
-    #[default]
     Naga29,
+    #[default]
+    Naga30,
     NagaMain,
 }
 
@@ -197,14 +197,14 @@ pub fn diagnostics(
     let edition = file_id.edition(db);
     if edition == Edition::Wgsl && (config.naga_parsing_enabled || config.naga_validation_enabled) {
         match &config.naga_version {
-            NagaVersion::Naga27 => {
-                naga_diagnostics::<Naga27>(db, file_id, config, &mut diagnostics);
-            },
             NagaVersion::Naga28 => {
                 naga_diagnostics::<Naga28>(db, file_id, config, &mut diagnostics);
             },
             NagaVersion::Naga29 => {
                 naga_diagnostics::<Naga29>(db, file_id, config, &mut diagnostics);
+            },
+            NagaVersion::Naga30 => {
+                naga_diagnostics::<Naga30>(db, file_id, config, &mut diagnostics);
             },
             NagaVersion::NagaMain => {
                 naga_diagnostics::<NagaMain>(db, file_id, config, &mut diagnostics);
