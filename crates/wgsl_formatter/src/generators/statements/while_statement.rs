@@ -45,6 +45,7 @@ pub fn gen_while_statement(
     Ok(formatted)
 }
 
+#[must_use]
 pub fn remove_while_condition_parens_rule(node: &SyntaxNode) -> bool {
     let Some(parent) = node.parent() else {
         return false;

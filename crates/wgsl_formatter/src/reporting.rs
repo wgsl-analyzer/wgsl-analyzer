@@ -1,3 +1,4 @@
+//! Various bare-bones error handling.
 use std::fmt::Display;
 
 use parser::{SyntaxNode, SyntaxToken};

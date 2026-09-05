@@ -8,7 +8,7 @@ use syntax::{
 
 use crate::{
     ast_parse::{
-        Filter, DiscardBlankspace, NoTrivia, PolicyAction, parse_end, parse_many_nodes_with,
+        DiscardBlankspace, Filter, NoTrivia, PolicyAction, parse_end, parse_many_nodes_with,
         parse_node_with, syntax_iter,
     },
     generators::node::gen_node_with_trivia,
@@ -127,7 +127,8 @@ pub fn gen_if_statement_else_if_clause(
 
     // ==== Parse ====
     let mut syntax = syntax_iter(statement.syntax());
-    let item_else = parse_node_with(&mut syntax, DiscardBlankspace).expect_kind(SyntaxKind::Else)?;
+    let item_else =
+        parse_node_with(&mut syntax, DiscardBlankspace).expect_kind(SyntaxKind::Else)?;
     let item_if = parse_node_with(&mut syntax, DiscardBlankspace).expect_kind(SyntaxKind::If)?;
     let item_condition =
         parse_node_with(&mut syntax, DiscardBlankspace).expect_ast_node::<Expression>()?;
@@ -152,6 +153,7 @@ pub fn gen_if_statement_else_if_clause(
     Ok(formatted)
 }
 
+#[must_use]
 pub fn remove_if_condition_parens_rule(node: &SyntaxNode) -> bool {
     let Some(parent) = node.parent() else {
         return false;

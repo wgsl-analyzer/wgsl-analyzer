@@ -1,16 +1,15 @@
+//! Helper for the generator functions to generate items that should break together.
 use std::{
     ops::{Deref, DerefMut},
     rc::Rc,
 };
 
 use dprint_core::formatting::{
-    ConditionReevaluation, ConditionResolver, LineNumber, LineNumberAnchor, PrintItems, conditions,
+    ConditionReevaluation, ConditionResolver, ConditionResolverContext, LineNumber,
+    LineNumberAnchor, PrintItems, condition_helpers, conditions,
 };
 
-use crate::{
-    helpers::create_is_multiple_lines_resolver,
-    print_item_buffer::{PrintItemBuffer, spacing_request::Request},
-};
+use crate::print_item_buffer::{PrintItemBuffer, spacing_request::Request};
 
 use super::print_item_buffer::spacing_request::RequestItem;
 
@@ -37,6 +36,18 @@ pub struct MultilineGroup<'buffer> {
 
     #[cfg(debug_assertions)]
     state: MultilineGroupState,
+}
+
+#[must_use]
+pub fn create_is_multiple_lines_resolver(
+    start_ln: LineNumber,
+    end_ln: LineNumber,
+) -> ConditionResolver {
+    Rc::new(
+        move |condition_context: &mut ConditionResolverContext<'_, '_>| {
+            condition_helpers::is_multiple_lines(condition_context, start_ln, end_ln)
+        },
+    )
 }
 
 impl<'buffer> MultilineGroup<'buffer> {

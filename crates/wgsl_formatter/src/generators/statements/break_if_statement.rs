@@ -46,6 +46,7 @@ pub fn gen_break_if_statement(
     Ok(formatted)
 }
 
+#[must_use]
 pub fn remove_break_if_condition_parens_rule(node: &SyntaxNode) -> bool {
     let Some(parent) = node.parent() else {
         return false;

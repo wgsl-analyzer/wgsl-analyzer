@@ -17,6 +17,7 @@ use crate::{
     reporting::FormatDocumentResult,
 };
 
+#[must_use]
 pub const fn source_file_item_policy() -> impl ParseNodePolicy {
     Succeeding((
         UntilEmptyLine,

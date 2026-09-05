@@ -1,3 +1,5 @@
+//! The entry points to the formatter.
+
 use dprint_core::formatting::{PrintItems, PrintOptions};
 use parser::{Edition, SyntaxNode};
 use rowan::{NodeOrToken, TextRange};
@@ -5,13 +7,16 @@ use syntax::{AstNode as _, Parse, ast};
 
 use crate::{
     FormattingOptions, IndentStyle,
-    ast_parse::is_ignored_from_within,
     generators::node::{gen_node_with_trivia, gen_node_with_trivia_no_newlines},
+    ignore::is_ignored_from_within,
     print_item_buffer::PrintItemBuffer,
     reporting::{FormatDocumentError, FormatDocumentResult},
     trivia::{NodeWithTrivia, NodeWithTriviaContent},
 };
 
+/// A piece of formatted code, together with info about its covering range.
+///
+/// See [`format_range`] for details.
 #[derive(Clone, Debug)]
 pub struct FormattedRange {
     /// The actual range that the formatted text should replace.
@@ -21,12 +26,10 @@ pub struct FormattedRange {
     pub formatted: String,
 }
 
-#[derive(Debug)]
-pub enum FormatStringError {
-    FormatDocumentError { error: FormatDocumentError },
-    ParserErrors { parse: Parse },
-}
-
+/// Format only the given `range` within the `file`.
+///
+/// This may conservatively also format a little bit of context around the
+/// provided range, as the formatter can only format whole `SyntaxNode`s.
 pub fn format_range(
     file: &SyntaxNode,
     range: Option<TextRange>,
@@ -46,6 +49,13 @@ pub fn format_range(
     })
 }
 
+#[derive(Debug)]
+pub enum FormatStringError {
+    FormatDocumentError { error: FormatDocumentError },
+    ParserErrors { parse: Parse },
+}
+
+/// Format the whole string, as if it were a complete source file.
 pub fn format_file(
     input: &str,
     options: &FormattingOptions,
@@ -60,6 +70,7 @@ pub fn format_file(
     format_tree(&file, options).map_err(|error| FormatStringError::FormatDocumentError { error })
 }
 
+/// Format the whole given `SourceFile`.
 pub fn format_tree(
     syntax: &ast::SourceFile,
     options: &FormattingOptions,
@@ -74,6 +85,9 @@ pub fn format_tree(
     format(options, || gen_node_with_trivia(&trivia))
 }
 
+/// Format the given `SyntaxNode`.
+///
+/// This strips any surrounding newlines out of the formatted result.
 pub fn format_node(
     syntax: &SyntaxNode,
     options: &FormattingOptions,
@@ -88,7 +102,7 @@ pub fn format_node(
     format(options, || gen_node_with_trivia_no_newlines(&trivia))
 }
 
-pub fn format<F>(
+fn format<F>(
     options: &FormattingOptions,
     format: F,
 ) -> FormatDocumentResult<String>

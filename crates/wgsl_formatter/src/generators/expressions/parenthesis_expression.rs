@@ -52,6 +52,7 @@ pub fn gen_parenthesis_expression(
     Ok(formatted)
 }
 
+#[must_use]
 pub fn remove_nested_parens_rule(node: &SyntaxNode) -> bool {
     let Some(parent) = node.parent() else {
         return false;

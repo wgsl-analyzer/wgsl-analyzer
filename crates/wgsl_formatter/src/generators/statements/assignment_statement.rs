@@ -124,6 +124,7 @@ pub fn gen_compound_assignment_statement(
     Ok(formatted)
 }
 
+#[must_use]
 pub fn remove_assignment_statement_parens_rule(node: &SyntaxNode) -> bool {
     let Some(parent) = node.parent() else {
         return false;

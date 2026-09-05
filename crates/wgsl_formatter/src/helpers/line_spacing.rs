@@ -9,6 +9,7 @@ use crate::{
     reporting::FormatDocumentResult,
 };
 
+// TODO Rename to Blankspace
 #[derive(Clone, Debug)]
 pub enum LineSpacing {
     LineBreak(SyntaxToken),

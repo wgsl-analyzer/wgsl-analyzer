@@ -56,6 +56,7 @@ pub fn gen_index_expression(
     Ok(formatted)
 }
 
+#[must_use]
 pub fn remove_index_expression_nested_parens_rule(node: &SyntaxNode) -> bool {
     let Some(parent) = node.parent() else {
         return false;

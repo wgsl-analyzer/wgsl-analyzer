@@ -128,6 +128,7 @@ pub fn gen_for_statement_continuing_part(
     gen_node_with_trivia(&item_continuing)
 }
 
+#[must_use]
 pub fn skip_semicolons_rule(node: &SyntaxNode) -> bool {
     let Some(parent) = node.parent() else {
         return false;

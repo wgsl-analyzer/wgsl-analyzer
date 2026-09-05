@@ -9,8 +9,9 @@ use rowan::NodeOrToken;
 use syntax::{AstNode as _, ast::AttributeList};
 
 use crate::{
-    generators::comments::{Comment, read_comment},
+    generators::comments::read_comment,
     helpers::{LineSpacing, read_blankspace},
+    ignore::{is_ignore_next_pragma_comment, is_ignored_from_within},
     reporting::FormatDocumentResult,
     trivia::{NodeTriviaItem, NodeWithTrivia, NodeWithTriviaContent},
 };
@@ -106,6 +107,11 @@ mod syntax_iter_asserting {
 #[cfg(debug_assertions)]
 pub use syntax_iter_asserting::{SyntaxIter, syntax_iter};
 
+/// Expect the [`SyntaxIter`] to have ended and not have any more unhandled
+/// syntax nodes.
+///
+/// Consequently calling this in all generator functions ensures that we don't accidentally "loose"
+/// and source code that got submitted for formatting, but not consumed by a parser function.
 pub fn parse_end(syntax: &mut SyntaxIter) -> FormatDocumentResult<()> {
     #[cfg(debug_assertions)]
     {
@@ -129,6 +135,7 @@ pub fn parse_end(syntax: &mut SyntaxIter) -> FormatDocumentResult<()> {
     }
 }
 
+/// A policy that tells [`parse_node_with`] how to handle trivia or content.
 pub trait ParseNodePolicy {
     fn handle_preceding(
         &self,
@@ -140,59 +147,28 @@ pub trait ParseNodePolicy {
     ) -> Option<PolicyAction>;
 }
 
-pub struct UntilEmptyLine;
-
-impl ParseNodePolicy for UntilEmptyLine {
-    fn handle_preceding(
-        &self,
-        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
-    ) -> Option<PolicyAction> {
-        match read_blankspace(node) {
-            Some(LineSpacing::EmptyLine(_)) => Some(PolicyAction::Stop),
-            _ => None,
-        }
-    }
-
-    fn handle_succeeding(
-        &self,
-        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
-    ) -> Option<PolicyAction> {
-        self.handle_preceding(node)
-    }
-}
-
-pub struct MatchKind(pub SyntaxKind, pub PolicyAction);
-impl ParseNodePolicy for MatchKind {
-    fn handle_preceding(
-        &self,
-        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
-    ) -> Option<PolicyAction> {
-        (node.kind() == self.0).then_some(self.1)
-    }
-
-    fn handle_succeeding(
-        &self,
-        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
-    ) -> Option<PolicyAction> {
-        self.handle_preceding(node)
-    }
-}
-
+/// A policy for [`parse_node_with`] that [discards][PolicyAction::Discard] any blankspace.
 #[expect(
     non_upper_case_globals,
     reason = "Keep struct based policies and constants looking the same"
 )]
 pub const DiscardBlankspace: MatchKind = MatchKind(SyntaxKind::Blankspace, PolicyAction::Discard);
+
+/// A policy for [`parse_node_with`] that [discards][PolicyAction::Discard] any comma.
 #[expect(
     non_upper_case_globals,
     reason = "Keep struct based policies and constants looking the same"
 )]
 pub const DiscardComma: MatchKind = MatchKind(SyntaxKind::Comma, PolicyAction::Discard);
+
+/// A policy for [`parse_node_with`] that [discards][PolicyAction::Discard] any semicolon.
 #[expect(
     non_upper_case_globals,
     reason = "Keep struct based policies and constants looking the same"
 )]
 pub const DiscardSemicolon: MatchKind = MatchKind(SyntaxKind::Semicolon, PolicyAction::Discard);
+
+/// A policy for [`parse_node_with`] that [discards][PolicyAction::Discard] template delimiters (`<`, `>`).
 #[expect(
     non_upper_case_globals,
     reason = "Keep struct based policies and constants looking the same"
@@ -201,6 +177,8 @@ pub const DiscardTemplateDelimiters: (MatchKind, MatchKind) = (
     MatchKind(SyntaxKind::TemplateStart, PolicyAction::Discard),
     MatchKind(SyntaxKind::TemplateEnd, PolicyAction::Discard),
 );
+
+/// A policy for [`parse_node_with`] that [discards][PolicyAction::Discard] braces (`{`, `}`).
 #[expect(
     non_upper_case_globals,
     reason = "Keep struct based policies and constants looking the same"
@@ -209,6 +187,8 @@ pub const DiscardBraces: (MatchKind, MatchKind) = (
     MatchKind(SyntaxKind::BraceLeft, PolicyAction::Discard),
     MatchKind(SyntaxKind::BraceRight, PolicyAction::Discard),
 );
+
+/// A policy for [`parse_node_with`] that [discards][PolicyAction::Discard] parentheses (`(`, `)`).
 #[expect(
     non_upper_case_globals,
     reason = "Keep struct based policies and constants looking the same"
@@ -217,12 +197,15 @@ pub const DiscardParenthesis: (MatchKind, MatchKind) = (
     MatchKind(SyntaxKind::ParenthesisLeft, PolicyAction::Discard),
     MatchKind(SyntaxKind::ParenthesisRight, PolicyAction::Discard),
 );
+
+/// A policy for [`parse_node_with`] that marks a semicolon as an [end][PolicyAction::Discard].
 #[expect(
     non_upper_case_globals,
     reason = "Keep struct based policies and constants looking the same"
 )]
 pub const MarkEndOnSemicolon: MatchKind = MatchKind(SyntaxKind::Semicolon, PolicyAction::MarkEnd);
 
+/// A policy for [`parse_node_with`] that does not admit any trivia associated with the node.
 pub struct NoTrivia;
 impl ParseNodePolicy for NoTrivia {
     fn handle_preceding(
@@ -240,6 +223,7 @@ impl ParseNodePolicy for NoTrivia {
     }
 }
 
+/// A policy modifier for [`parse_node_with`] that only activates a given policy on nodes *succeeding* the content of the parsed [`NodeWithTrivia`].
 pub struct Succeeding<T>(pub T)
 where
     T: ParseNodePolicy;
@@ -262,6 +246,49 @@ where
     }
 }
 
+// TODO Rename to StopAtEmptyLine
+/// A policy for [`parse_node_with`] that [stops][PolicyAction::Stop] when at least two consecutive newlines are encountered.
+pub struct UntilEmptyLine;
+impl ParseNodePolicy for UntilEmptyLine {
+    fn handle_preceding(
+        &self,
+        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
+    ) -> Option<PolicyAction> {
+        match read_blankspace(node) {
+            Some(LineSpacing::EmptyLine(_)) => Some(PolicyAction::Stop),
+            _ => None,
+        }
+    }
+
+    fn handle_succeeding(
+        &self,
+        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
+    ) -> Option<PolicyAction> {
+        self.handle_preceding(node)
+    }
+}
+
+/// A policy for [`parse_node_with`] that yields a certain [`PolicyAction`] if the parsed node matches a certain `SyntaxKind`.
+pub struct MatchKind(pub SyntaxKind, pub PolicyAction);
+impl ParseNodePolicy for MatchKind {
+    fn handle_preceding(
+        &self,
+        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
+    ) -> Option<PolicyAction> {
+        (node.kind() == self.0).then_some(self.1)
+    }
+
+    fn handle_succeeding(
+        &self,
+        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
+    ) -> Option<PolicyAction> {
+        self.handle_preceding(node)
+    }
+}
+
+/// A policy for [`parse_node_with`] that [stops][PolicyAction::Stop] parsing when at least one newline is encountered.
+///
+/// Also see [`UntilEmptyLine`].
 pub struct StopAtNewline;
 impl ParseNodePolicy for StopAtNewline {
     fn handle_preceding(
@@ -282,6 +309,7 @@ impl ParseNodePolicy for StopAtNewline {
     }
 }
 
+/// A policy for [`parse_node_with`] that runs a user provided function.
 #[derive(Clone)]
 pub struct Filter<T>(pub T)
 where
@@ -361,17 +389,51 @@ impl_tuple!(TA TB TC TD);
 impl_tuple!(TA TB TC TD TE);
 impl_tuple!(TA TB TC TD TE TF);
 
+/// Used by [Policies](ParseNodePolicy) to instruct [`parse_node_with`] on how to proceed after encountering a node.
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum PolicyAction {
+    /// Discard this node. It will not be part of the result and not be included in any other [`NodeWithTrivia`]s.
     Discard,
+    /// Mark this node as content and continue to parse its succeeding trivia.
     Content,
+    /// Stop parsing this run of trivia.
+    ///
+    /// If this node would have been part of the preceding trivia, try to parse this node again as succeeding trivia.
+    /// If this node would have been part of the succeeding trivia, stop parsing trivia and return. This node
+    /// will be parsed again by the next call to [`parse_node_with`].
     Stop,
+    /// Stop parsing and return. This node will be parsed again by the next call to [`parse_node_with`].
     MarkEnd,
+    /// Like [`PolicyAction::Stop`], but the node will be discarded and not be parsed by any other call to [`parse_node_with`].
     DiscardAndStop,
 }
 
-// TODO(MonaMayrhofer,now) Tests and docs for this
-/// Parses a node with surrounding trivia, based on the given strategy.
+/// Parses a node with surrounding trivia, based on the given policy.
+///
+/// Per default this will put any blankspace, attribute and comments into the "preceding trivia" until it encounters
+/// anything else.
+/// After marking that other thing as the "content", continue parsing any following blankspace and comments into the "succeeding trivia".
+///
+/// A [`ParseNodePolicy`] can be specified to customize that behavior. (e.g to specify that trivia should only be associated with this
+/// node up to the next newline, after which it belongs to the next one.)
+/// Many common policies can be found in [`crate::ast_parse`].
+///
+/// This also consults [`crate::ignore`] to determine if the returned [`NodeWithTrivia`] "wants" to be exempt from being
+/// formatted, due to ignore pragmas.
+///
+/// Example:
+/// ```rust
+/// # use wgsl_formatter::ast_parse::{DiscardBlankspace, parse_node_with, syntax_iter, Succeeding, StopAtNewline};
+/// # pub fn foo(node: &parser::SyntaxNode) {
+///     let mut syntax = syntax_iter(node);
+///     let item = parse_node_with(&mut syntax, DiscardBlankspace);
+///     let item = parse_node_with(&mut syntax, (Succeeding(StopAtNewline), DiscardBlankspace));
+/// # }
+/// ```
+///
+/// Note that when composing policies using tuples, the order very much matters, as they are applied in order.
+/// If you first [`DiscardBlankspace`], and then [`StopAtNewline`], the blankspaces will be discarded before they reach
+/// the second policy.
 #[expect(
     clippy::too_many_lines,
     reason = "Splitting this up makes it less readable than it is now."
@@ -581,11 +643,36 @@ impl<TPolicy: ParseNodePolicy> Iterator for ManyNodesIterator<'_, TPolicy> {
 }
 
 /// Create a [`ManyNodesIterator`] that parses many nodes according to the given policy until
-/// it encounters the end of the [`SyntaxIter`] or a policy returns [`MarkEnd`].
+/// it encounters the end.
+///
+/// The iterator parses until either the end of the [`SyntaxIter`] is reached or a policy returns
+/// [`PolicyAction::MarkEnd`] (and thus we would yield a [`NodeWithTrivia`] that has
+/// [`NodeWithTriviaContent::End`] as its content).
+///
+/// Example:
+/// ```rust
+/// # use syntax::ast;
+/// # use wgsl_formatter::{ast_parse::*, reporting::*};
+/// # pub fn foo(node: &parser::SyntaxNode) -> FormatDocumentResult<()> {
+///     let mut syntax = syntax_iter(node);
+///     let item_arguments = parse_many_nodes_with(
+///         &mut syntax,
+///         (
+///             Succeeding(StopAtNewline),
+///             DiscardBlankspace,
+///             DiscardComma,
+///             DiscardParenthesis,
+///         ),
+///     )
+///     .filter(|item| !item.is_whitespace())
+///     .map(|item| item.expect_ast_node_optional::<ast::Expression>())
+///     .collect::<Result<Vec<_>, _>>()?;
+/// #    Ok(())
+/// # }
+/// ```
 ///
 /// If some application needs more control over parsing nodes, you can write a pretty much equivalent loop like
 /// ```rust, ignore
-///
 /// let items = parse_many_nodes_with(
 ///     &mut syntax,
 ///     YourPolicies
@@ -622,52 +709,5 @@ where
         syntax,
         policy,
         reached_end: false,
-    }
-}
-
-#[must_use]
-pub fn is_ignored_from_within(content: &SyntaxNode) -> bool {
-    content
-        .children_with_tokens()
-        .take_while(|child| match child {
-            NodeOrToken::Node(_) => false,
-            NodeOrToken::Token(_) => true,
-        })
-        .any(|child| is_ignore_parent_pragma_comment(&child))
-}
-
-#[must_use]
-pub fn is_ignore_next_pragma_comment(node: &NodeOrToken<SyntaxNode, SyntaxToken>) -> bool {
-    let as_comment = read_comment(node);
-    match as_comment {
-        Some(Comment::Block(syntax_token))
-            if syntax_token.text().trim() == "/* @wgslfmt(ignore) */" =>
-        {
-            true
-        },
-        Some(Comment::LineEnding(syntax_token))
-            if syntax_token.text().trim() == "// @wgslfmt(ignore)" =>
-        {
-            true
-        },
-        _ => false,
-    }
-}
-
-#[must_use]
-pub fn is_ignore_parent_pragma_comment(node: &NodeOrToken<SyntaxNode, SyntaxToken>) -> bool {
-    let as_comment = read_comment(node);
-    match as_comment {
-        Some(Comment::Block(syntax_token))
-            if syntax_token.text().trim() == "/* @!wgslfmt(ignore) */" =>
-        {
-            true
-        },
-        Some(Comment::LineEnding(syntax_token))
-            if syntax_token.text().trim() == "// @!wgslfmt(ignore)" =>
-        {
-            true
-        },
-        _ => false,
     }
 }

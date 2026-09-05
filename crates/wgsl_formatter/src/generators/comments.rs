@@ -14,6 +14,7 @@ pub enum Comment {
     LineEnding(SyntaxToken),
 }
 impl Comment {
+    #[must_use]
     pub fn syntax(
         &self
     ) -> NodeOrToken<
@@ -26,6 +27,7 @@ impl Comment {
     }
 }
 
+#[must_use]
 pub fn read_comment(item: &NodeOrToken<SyntaxNode, SyntaxToken>) -> Option<Comment> {
     if let NodeOrToken::Token(child) = &item {
         #[expect(
@@ -42,6 +44,7 @@ pub fn read_comment(item: &NodeOrToken<SyntaxNode, SyntaxToken>) -> Option<Comme
     }
 }
 
+#[must_use]
 pub fn gen_comment(item: &Comment) -> PrintItemBuffer {
     let mut formatted = PrintItemBuffer::default();
     match item {

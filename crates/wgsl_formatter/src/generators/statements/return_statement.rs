@@ -45,6 +45,7 @@ pub fn gen_return_statement(
     Ok(formatted)
 }
 
+#[must_use]
 pub fn remove_return_value_parens_rule(node: &SyntaxNode) -> bool {
     let Some(parent) = node.parent() else {
         return false;
