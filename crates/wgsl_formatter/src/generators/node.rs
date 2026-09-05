@@ -435,7 +435,7 @@ pub fn gen_node_succeeding_trivia(node: &NodeWithTrivia) -> FormatDocumentResult
 pub fn gen_node_content(node: &NodeWithTrivia) -> FormatDocumentResult<PrintItemBuffer> {
     let mut formatted = PrintItemBuffer::default();
 
-    if let NodeWithTriviaContent::Content(content) = &node.node {
+    if let NodeWithTriviaContent::Content(content) = &node.content {
         if node.format {
             formatted.extend(gen_node(node, content)?);
         } else {

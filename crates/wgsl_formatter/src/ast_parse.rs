@@ -593,7 +593,7 @@ where
 
     NodeWithTrivia {
         preceding_trivia,
-        node: content,
+        content,
         succeeding_trivia,
         format: enable_formatting,
     }
