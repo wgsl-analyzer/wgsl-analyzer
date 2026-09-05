@@ -246,28 +246,6 @@ where
     }
 }
 
-// TODO Rename to StopAtEmptyLine
-/// A policy for [`parse_node_with`] that [stops][PolicyAction::Stop] when at least two consecutive newlines are encountered.
-pub struct UntilEmptyLine;
-impl ParseNodePolicy for UntilEmptyLine {
-    fn handle_preceding(
-        &self,
-        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
-    ) -> Option<PolicyAction> {
-        match read_blankspace(node) {
-            Some(LineSpacing::EmptyLine(_)) => Some(PolicyAction::Stop),
-            _ => None,
-        }
-    }
-
-    fn handle_succeeding(
-        &self,
-        node: &NodeOrToken<SyntaxNode, SyntaxToken>,
-    ) -> Option<PolicyAction> {
-        self.handle_preceding(node)
-    }
-}
-
 /// A policy for [`parse_node_with`] that yields a certain [`PolicyAction`] if the parsed node matches a certain `SyntaxKind`.
 pub struct MatchKind(pub SyntaxKind, pub PolicyAction);
 impl ParseNodePolicy for MatchKind {

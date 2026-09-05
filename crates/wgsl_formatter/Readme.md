@@ -2,7 +2,6 @@
 
 ## TODOs
 
-- Should we throw away the snapshot tests? they are kinda unnecessary
 - Consider only allowing breaks before arithmetic expressions if both sides are not (function calls, paren-exprs, etc...)
   in order to avoid lonely + 1.0; broken on the next line
 
