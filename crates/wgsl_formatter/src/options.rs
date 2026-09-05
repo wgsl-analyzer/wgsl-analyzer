@@ -17,6 +17,11 @@ pub struct ExperimentalCondCompMode {
 /// }
 /// }
 /// ```
+#[expect(
+    unused,
+    // TODO Make a decision
+    reason = "This is experimental, remove these once we settled on a decision"
+)]
 const AWFUL_SETTINGS: ExperimentalCondCompMode = ExperimentalCondCompMode {
     unscope_compound_statements_create_indent: false,
     dedent_condcomp_with_body: true,
@@ -68,6 +73,11 @@ const CONVENTIONAL_BORING_SETTINGS: ExperimentalCondCompMode = ExperimentalCondC
 /// ```
 /// See bevy's `downsample_dept.wesl`.
 /// See bevy's `debug_overlay.wesl`.
+#[expect(
+    unused,
+    // TODO Make a decision
+    reason = "This is experimental, remove these once we settled on a decision"
+)]
 const ORIGINAL_PROPOSAL_SETTINGS: ExperimentalCondCompMode = ExperimentalCondCompMode {
     unscope_compound_statements_create_indent: false,
     dedent_condcomp_with_body: false,
@@ -81,6 +91,11 @@ const ORIGINAL_PROPOSAL_SETTINGS: ExperimentalCondCompMode = ExperimentalCondCom
 /// See bevy's `meshlet_mesh_material.wesl`.
 /// See bevy's `pbr_fragment.wesl`.
 /// See bevy's `pbr_prepass_functions.wesl`.
+#[expect(
+    unused,
+    // TODO Make a decision
+    reason = "This is experimental, remove these once we settled on a decision"
+)]
 const DEDENTATION_OVERLOAD: ExperimentalCondCompMode = ExperimentalCondCompMode {
     unscope_compound_statements_create_indent: false,
     dedent_condcomp_with_body: true,

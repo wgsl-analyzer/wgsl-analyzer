@@ -17,8 +17,8 @@ fn format_global_compdec_simple() {
             fn a() {}
             fn b() {}
             {
-            fn c() {}
-            fn d() {}
+                fn c() {}
+                fn d() {}
             }
             fn e() {}
         "#]],
@@ -38,8 +38,8 @@ fn format_global_compdec_is_unfolded() {
             fn a() {}
             fn b() {}
             {
-            fn c() {}
-            fn d() {}
+                fn c() {}
+                fn d() {}
             }
             fn e() {}
         "#]],
@@ -47,7 +47,7 @@ fn format_global_compdec_is_unfolded() {
 }
 
 #[test]
-fn format_global_compdec_does_not_indent() {
+fn format_global_compdec_gets_indent() {
     check(
         "
         fn a() {}
@@ -61,8 +61,8 @@ fn format_global_compdec_does_not_indent() {
             fn a() {}
             fn b() {}
             {
-            fn c() {}
-            fn d() {}
+                fn c() {}
+                fn d() {}
             }
             fn e() {}
         "#]],
@@ -87,17 +87,17 @@ fn format_global_compdec_respects_spacing_around() {
         expect![[r#"
             fn a() {}
             {
-            fn b() {}
+                fn b() {}
             }
             fn c() {}
 
             {
-            fn d() {}
+                fn d() {}
             }
             fn e() {}
 
             {
-            fn f() {}
+                fn f() {}
             }
 
             fn g() {}
@@ -120,12 +120,12 @@ fn format_global_compdec_work_with_attributes() {
         expect![[r#"
             fn a() {}
             @if(true) {
-            fn b() {}
+                fn b() {}
             }
             fn c() {}
 
             @else {
-            fn b() {}
+                fn b() {}
             }
         "#]],
     );
@@ -150,10 +150,10 @@ fn format_global_compdec_removes_extra_lines_at_start_and_end() {
         ",
         expect![[r#"
             {
-            fn a() {}
-            fn b() {}
+                fn a() {}
+                fn b() {}
 
-            fn c() {}
+                fn c() {}
             }
         "#]],
     );
@@ -181,12 +181,12 @@ fn format_global_compdec_leaves_line_comments_alone() {
         ",
         expect![[r#"
             { // Same Line
-            fn a() {}
+                fn a() {}
             }
 
             {
-            // Next
-            fn a() {}
+                // Next
+                fn a() {}
             }
 
             {
@@ -221,12 +221,12 @@ fn format_global_compdec_leaves_block_comments_alone() {
         ",
         expect![[r#"
             { /* Same Line */
-            fn a() {}
+                fn a() {}
             }
 
             {
-            /* Next */
-            fn a() {}
+                /* Next */
+                fn a() {}
             }
 
             {
@@ -251,11 +251,11 @@ fn format_global_compdec_does_not_beautify_nested_compdecs() {
         ",
         expect![[r#"
             {
-            {
-            {
-            fn a() {}
-            }
-            }
+                {
+                    {
+                        fn a() {}
+                    }
+                }
             }
         "#]],
     );
