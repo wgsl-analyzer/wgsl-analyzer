@@ -407,6 +407,7 @@ fn gen_node(
 ///
 /// If the [`NodeWithTrivia`] is ignored via a pragma, the trivia
 /// is output verbatim.
+#[inline]
 pub fn gen_node_preceding_trivia(node: &NodeWithTrivia) -> FormatDocumentResult<PrintItemBuffer> {
     if node.format {
         gen_node_trivia(&node.preceding_trivia)
@@ -424,6 +425,7 @@ pub fn gen_node_preceding_trivia(node: &NodeWithTrivia) -> FormatDocumentResult<
 /// Users don't usually expect the items in [`NodeWithTrivia::succeeding_trivia`] to be "part" of the item that they ignored.
 /// e.g preserving trailing double spaces after an ignored item might be correct, but unexpected.
 /// So... this solution is fine for now.
+#[inline]
 pub fn gen_node_succeeding_trivia(node: &NodeWithTrivia) -> FormatDocumentResult<PrintItemBuffer> {
     gen_node_trivia(&node.succeeding_trivia)
 }
@@ -432,6 +434,7 @@ pub fn gen_node_succeeding_trivia(node: &NodeWithTrivia) -> FormatDocumentResult
 ///
 /// If the [`NodeWithTrivia`] is ignored via a pragma, the content
 /// is output verbatim.
+#[inline]
 pub fn gen_node_content(node: &NodeWithTrivia) -> FormatDocumentResult<PrintItemBuffer> {
     let mut formatted = PrintItemBuffer::default();
 
@@ -447,6 +450,7 @@ pub fn gen_node_content(node: &NodeWithTrivia) -> FormatDocumentResult<PrintItem
 }
 
 /// Generate [`NodeTriviaItem`]s verbatim - ignoring all formatting.
+#[inline]
 pub fn gen_node_trivia_verbatim(
     trivia: &[NodeTriviaItem]
 ) -> FormatDocumentResult<PrintItemBuffer> {
@@ -474,6 +478,7 @@ pub fn gen_node_trivia_verbatim(
 }
 
 /// Format [`NodeTriviaItem`]s.
+#[inline]
 pub fn gen_node_trivia(trivia: &[NodeTriviaItem]) -> FormatDocumentResult<PrintItemBuffer> {
     let mut formatted = PrintItemBuffer::default();
     for trivia in trivia {
