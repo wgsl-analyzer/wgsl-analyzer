@@ -11,24 +11,24 @@ use crate::{
 
 // TODO Rename to Blankspace
 #[derive(Clone, Debug)]
-pub enum LineSpacing {
+pub enum Blankspace {
     LineBreak(SyntaxToken),
     EmptyLine(SyntaxToken),
-    OnelineBlankspace(SyntaxToken),
+    Inline(SyntaxToken),
 }
-impl LineSpacing {
+impl Blankspace {
     #[must_use]
     pub fn syntax(&self) -> NodeOrToken<SyntaxNode, SyntaxToken> {
         match self {
             Self::LineBreak(syntax_token)
             | Self::EmptyLine(syntax_token)
-            | Self::OnelineBlankspace(syntax_token) => NodeOrToken::Token(syntax_token.clone()),
+            | Self::Inline(syntax_token) => NodeOrToken::Token(syntax_token.clone()),
         }
     }
 }
 
 #[must_use]
-pub fn read_blankspace(blankspace: &NodeOrToken<SyntaxNode, SyntaxToken>) -> Option<LineSpacing> {
+pub fn read_blankspace(blankspace: &NodeOrToken<SyntaxNode, SyntaxToken>) -> Option<Blankspace> {
     let NodeOrToken::Token(blankspace) = blankspace else {
         return None;
     };
@@ -43,9 +43,9 @@ pub fn read_blankspace(blankspace: &NodeOrToken<SyntaxNode, SyntaxToken>) -> Opt
         .filter(|item| *item == '\n')
         .count();
     match newlines {
-        0 => Some(LineSpacing::OnelineBlankspace(blankspace.clone())),
-        1 => Some(LineSpacing::LineBreak(blankspace.clone())),
-        _ => Some(LineSpacing::EmptyLine(blankspace.clone())),
+        0 => Some(Blankspace::Inline(blankspace.clone())),
+        1 => Some(Blankspace::LineBreak(blankspace.clone())),
+        _ => Some(Blankspace::EmptyLine(blankspace.clone())),
     }
 }
 
@@ -53,18 +53,18 @@ pub fn read_blankspace(blankspace: &NodeOrToken<SyntaxNode, SyntaxToken>) -> Opt
     clippy::unnecessary_wraps,
     reason = "Keep the API homogeneous with all gen_* functions"
 )]
-pub fn gen_line_spacing(line_spacing: &LineSpacing) -> FormatDocumentResult<PrintItemBuffer> {
+pub fn gen_blankspace(blankspace: &Blankspace) -> FormatDocumentResult<PrintItemBuffer> {
     let mut formatted = PrintItemBuffer::default();
-    match line_spacing {
-        LineSpacing::EmptyLine(_) => {
+    match blankspace {
+        Blankspace::EmptyLine(_) => {
             //There was an empty line in the source
             formatted.request(Request::expect(RequestItem::EmptyLine));
         },
-        LineSpacing::LineBreak(_) => {
+        Blankspace::LineBreak(_) => {
             //There was a newline in the source
             formatted.request(Request::expect(RequestItem::LineBreak));
         },
-        LineSpacing::OnelineBlankspace(_) => {
+        Blankspace::Inline(_) => {
             // There was blankspace in the source which we ignore
         },
     }

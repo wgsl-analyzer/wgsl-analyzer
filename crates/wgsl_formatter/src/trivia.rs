@@ -6,7 +6,7 @@ use syntax::{AstNode, AstToken, ast::AttributeList};
 use crate::{
     ast_parse::SyntaxIter,
     generators::comments::Comment,
-    helpers::LineSpacing,
+    helpers::Blankspace,
     reporting::{FormatDocumentError, FormatDocumentResult, UnwrapIfPreferCrash as _},
 };
 
@@ -16,7 +16,7 @@ pub enum NodeTriviaItem {
     /// A piece of the AST that should not be included in the formatted output.
     Discarded(NodeOrToken<SyntaxNode, SyntaxToken>),
     /// Some amount of blank space.
-    LineSpacing(LineSpacing),
+    LineSpacing(Blankspace),
     /// A comment that was not followed by a newline in the source.
     Comment(Comment),
     /// A comment that was followed by a newline in the source.
@@ -34,10 +34,10 @@ impl NodeTriviaItem {
         syntax: &mut SyntaxIter,
     ) {
         match self {
-            Self::LineSpacing(next_gen_line_spacing) => match next_gen_line_spacing {
-                LineSpacing::LineBreak(syntax_token)
-                | LineSpacing::EmptyLine(syntax_token)
-                | LineSpacing::OnelineBlankspace(syntax_token) => {
+            Self::LineSpacing(blankspace) => match blankspace {
+                Blankspace::LineBreak(syntax_token)
+                | Blankspace::EmptyLine(syntax_token)
+                | Blankspace::Inline(syntax_token) => {
                     syntax.put_back(NodeOrToken::Token(syntax_token));
                 },
             },
@@ -324,7 +324,7 @@ impl NodeWithTrivia {
     pub fn trim_starting_linebreaks(mut self) -> Self {
         for item in &mut self.preceding_trivia {
             match item {
-                NodeTriviaItem::LineSpacing(LineSpacing::LineBreak(content)) => {
+                NodeTriviaItem::LineSpacing(Blankspace::LineBreak(content)) => {
                     *item = NodeTriviaItem::Discarded(NodeOrToken::Token(content.clone()));
                 },
                 NodeTriviaItem::Discarded(_) => {},
