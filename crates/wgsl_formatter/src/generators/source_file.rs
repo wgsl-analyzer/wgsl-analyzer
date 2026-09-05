@@ -6,8 +6,8 @@ use syntax::{
 
 use crate::{
     ast_parse::{
-        DiscardBlankspace, DiscardSemicolon, ParseNodePolicy, StopAtNewline, Succeeding,
-        UntilEmptyLine, parse_end, parse_many_nodes_with, syntax_iter,
+        DiscardBlankspace, DiscardSemicolon, ParseNodePolicy, StopAtNewline, Succeeding, parse_end,
+        parse_many_nodes_with, syntax_iter,
     },
     generators::node::gen_node_with_trivia,
     print_item_buffer::{
@@ -19,12 +19,7 @@ use crate::{
 
 #[must_use]
 pub const fn source_file_item_policy() -> impl ParseNodePolicy {
-    Succeeding((
-        UntilEmptyLine,
-        StopAtNewline,
-        DiscardBlankspace,
-        DiscardSemicolon,
-    ))
+    Succeeding((StopAtNewline, DiscardBlankspace, DiscardSemicolon))
 }
 
 pub fn gen_source_file(node: &ast::SourceFile) -> FormatDocumentResult<PrintItemBuffer> {
