@@ -34,3 +34,51 @@ fn format_parenthesized_literal_does_not_get_collapsed() {
         "#]],
     );
 }
+
+#[test]
+fn format_parentheses_do_get_removed_in_index_index() {
+    check(
+        "
+        fn main() {
+        aaaaaaaaaaaaa(bbbbbbbbbbbbb[(*ccccccccc)]);
+        }
+        ",
+        expect![[r#"
+            fn main() {
+                aaaaaaaaaaaaa(bbbbbbbbbbbbb[*ccccccccc]);
+            }
+        "#]],
+    );
+}
+
+#[test]
+fn format_parentheses_do_not_get_removed_in_index_array() {
+    check(
+        "
+        fn main() {
+        aaaaaaaaaaaaa((*bbbbbbbbbbbbb)[ccccccccc]);
+        }
+        ",
+        expect![[r#"
+            fn main() {
+                aaaaaaaaaaaaa((*bbbbbbbbbbbbb)[ccccccccc]);
+            }
+        "#]],
+    );
+}
+
+#[test]
+fn format_parentheses_do_not_get_removed_in_field_expression() {
+    check(
+        "
+        fn main() {
+        aaaaaaaaaaaaa((*bbbbbbbbbbbbb).aaaa);
+        }
+        ",
+        expect![[r#"
+            fn main() {
+                aaaaaaaaaaaaa((*bbbbbbbbbbbbb).aaaa);
+            }
+        "#]],
+    );
+}
