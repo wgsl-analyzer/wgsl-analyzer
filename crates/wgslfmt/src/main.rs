@@ -34,7 +34,7 @@ struct FileResult {
 #[derive(Debug)]
 enum FileStatus {
     Unchanged,
-    Errors,
+    Errors(FormatStringError),
     Changed { source: String, formatted: String },
 }
 
@@ -111,7 +111,7 @@ fn format_file(
         Err(error) => FileResult {
             file,
             duration: Instant::now().duration_since(start),
-            status: FileStatus::Errors,
+            status: FileStatus::Errors(error),
         },
     }
 }
@@ -150,7 +150,7 @@ fn check_file_results<S>(
             FileStatus::Unchanged => {
                 passed_paths.push(result.file.clone());
             },
-            FileStatus::Errors => {
+            FileStatus::Errors(errors) => {
                 errored_paths.push(result.file.clone());
             },
             FileStatus::Changed { source, formatted } => {
@@ -187,7 +187,7 @@ fn write_file_results<S>(
             FileStatus::Unchanged => {
                 unchanged_count.push(result.file.clone());
             },
-            FileStatus::Errors => {
+            FileStatus::Errors(_) => {
                 errored_count.push(result.file.clone());
             },
             FileStatus::Changed { source, formatted } => {

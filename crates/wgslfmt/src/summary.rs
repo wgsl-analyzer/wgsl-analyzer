@@ -116,7 +116,11 @@ impl Summary for TextSummary {
         print!("[{}]: ", file_result.file);
         match &file_result.status {
             crate::FileStatus::Unchanged => println!("Unchanged"),
-            crate::FileStatus::Errors => println!("Errors"),
+            crate::FileStatus::Errors(error) => {
+                println!("Errored:");
+                println!("{error}");
+                println!();
+            },
             crate::FileStatus::Changed { source, formatted } => {
                 println!("Formatted");
             },
@@ -133,7 +137,11 @@ impl Summary for TextSummary {
         print!("[{}]: ", file_result.file);
         match &file_result.status {
             crate::FileStatus::Unchanged => println!("Pass"),
-            crate::FileStatus::Errors => println!("Errors"),
+            crate::FileStatus::Errors(error) => {
+                println!("Errored:");
+                println!("{error}");
+                println!();
+            },
             crate::FileStatus::Changed { source, formatted } => {
                 println!("Failed");
             },
@@ -266,9 +274,11 @@ impl Summary for JsonSummary {
                 self.begin_field("status");
                 self.string_literal("unchanged");
             },
-            crate::FileStatus::Errors => {
+            crate::FileStatus::Errors(error) => {
                 self.begin_field("status");
                 self.string_literal("errors");
+                self.begin_field("error");
+                self.string_literal(&format!("{error}"));
             },
             crate::FileStatus::Changed { source, formatted } => {
                 self.begin_field("status");
@@ -291,9 +301,11 @@ impl Summary for JsonSummary {
                 self.begin_field("status");
                 self.string_literal("pass");
             },
-            crate::FileStatus::Errors => {
+            crate::FileStatus::Errors(error) => {
                 self.begin_field("status");
                 self.string_literal("errors");
+                self.begin_field("error");
+                self.string_literal(&format!("{error}"));
             },
             crate::FileStatus::Changed { source, formatted } => {
                 self.begin_field("status");
