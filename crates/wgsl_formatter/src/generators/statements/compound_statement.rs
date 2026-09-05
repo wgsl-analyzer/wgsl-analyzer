@@ -126,7 +126,7 @@ pub fn gen_compound_statement(
         // }
 
         if creates_indentation {
-            multiline_group.finish_indent();
+            multiline_group.finish_indent_before_requests();
         }
 
         if collapse_one_liner_compound_statement_policy(node.syntax()) {

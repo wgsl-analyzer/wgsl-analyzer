@@ -67,7 +67,7 @@ pub fn gen_enable_directive(node: &ast::EnableDirective) -> FormatDocumentResult
     multiline_group.request(Request::discourage(RequestItem::Space));
     multiline_group.push_sc(sc!(";"));
 
-    multiline_group.finish_indent();
+    multiline_group.finish_indent_before_requests();
     multiline_group.end_before_requests();
 
     Ok(formatted)
@@ -124,7 +124,7 @@ pub fn gen_requires_directive(
     multiline_group.request(Request::discourage(RequestItem::Space));
     multiline_group.push_sc(sc!(";"));
 
-    multiline_group.finish_indent();
+    multiline_group.finish_indent_before_requests();
     multiline_group.end_before_requests();
 
     Ok(formatted)

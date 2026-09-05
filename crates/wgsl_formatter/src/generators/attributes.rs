@@ -386,7 +386,7 @@ pub fn gen_interpolate_attribute(
         multiline_group.extend(gen_node_with_trivia(&sampling)?);
     }
 
-    multiline_group.finish_indent();
+    multiline_group.finish_indent_before_requests();
     multiline_group.grouped_possible_newline();
     multiline_group.push_sc(sc!(")"));
     multiline_group.end_before_requests();
@@ -599,7 +599,7 @@ pub fn gen_attr_standard_with_args(
 
             multiline_group.request(Request::discourage(RequestItem::Space));
             multiline_group.grouped_possible_newline();
-            multiline_group.finish_indent();
+            multiline_group.finish_indent_before_requests();
         }
 
         multiline_group.push_sc(sc!(")"));

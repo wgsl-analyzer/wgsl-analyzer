@@ -38,7 +38,7 @@ pub fn gen_diagnostic_control(
     multiline_group.push_sc(sc!(","));
     multiline_group.grouped_newline_or_space();
     multiline_group.extend(gen_node_with_trivia(&item_rule_name)?);
-    multiline_group.finish_indent();
+    multiline_group.finish_indent_before_requests();
     multiline_group.grouped_possible_newline();
     multiline_group.push_sc(sc!(")"));
     multiline_group.end_before_requests();

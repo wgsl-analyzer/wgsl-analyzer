@@ -202,7 +202,7 @@ pub fn gen_function_call_arguments_standard(
         // This keeps single-argument functions as one line.
         multiline_group.grouped_request(Request::expect(RequestItem::LineBreak), Request::empty());
 
-        multiline_group.finish_indent();
+        multiline_group.finish_indent_before_requests();
     }
 
     multiline_group.request(Request::discourage(RequestItem::Space));

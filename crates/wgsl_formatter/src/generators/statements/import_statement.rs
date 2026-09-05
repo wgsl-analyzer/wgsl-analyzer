@@ -243,7 +243,7 @@ pub fn gen_import_collection(
         }
     }
 
-    group.finish_indent();
+    group.finish_indent_before_requests();
     group.request(Request::discourage(RequestItem::Space));
     group.grouped_possible_newline();
 

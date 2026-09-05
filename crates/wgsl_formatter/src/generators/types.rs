@@ -106,7 +106,7 @@ pub fn gen_template_list(
         }
 
         multiline_group.request(Request::discourage(RequestItem::Space));
-        multiline_group.finish_indent();
+        multiline_group.finish_indent_before_requests();
         if !must_be_oneline {
             multiline_group.grouped_possible_newline();
         }
