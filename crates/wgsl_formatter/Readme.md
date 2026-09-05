@@ -19,7 +19,7 @@ The formatter should try to detect the programmer's intent
 (i.e what they wanted to comment) and then when
 things shift around during formatting, keep the comment in a place
 where that intent is preserved.
-The formatter should _not_ prevent the programmer from putting comments
+The formatter should **not** prevent the programmer from putting comments
 in strange places and should not impose opinions on where comments should belong.
 
 ### The formatter should fail when it encounters unexpected syntax
@@ -87,17 +87,17 @@ a single specific source format that would get turned into `B`.
 
 The tests in this crate are differentiated into
 **normative** and **descriptive** tests.
-The _descriptive_ tests are meant to represent the
+The **descriptive** tests are meant to represent the
 current state of the formatter, regardless of whether that state is correct or not.
 They are as comprehensive as possible, with as many edge cases present as possible.
 They are noisy and might even cover many cases all at once.
 They enable us to make changes to the formatter internals and be certain
 to not cause accidental formatting changes.
 If changes to the formatter are made and a change of formatting is expected
-(= breaking change), the _descriptive_ tests can be updated with relatively
+(= breaking change), the **descriptive** tests can be updated with relatively
 little thought.
 
-The _normative_ tests are meant to represent how the formatter should be.
+The **normative** tests are meant to represent how the formatter should be.
 They are the result of pondering alternatives, discussion, past issues and
 embody the opinions that flow into the formatter.
 They are documentation about the choices made when implementing
@@ -105,12 +105,12 @@ the formatter in some way.
 They should be terse, purposeful and targeted, and contain documentation
 as to why they are the way they are.
 If changes to the formatter are made that would require changes
-to the _normative_ tests, it might be a good idea
+to the **normative** tests, it might be a good idea
 to gather opinions first, research what the initial intent behind the old state
 was, and decide if the new state is actually a better default.
 
 When issues with the formatter arise, those decisions should be documented
-as a _normative_ test in order to prevent regressions.
+as a **normative** test in order to prevent regressions.
 
 ## Tricks for debugging the crate
 
@@ -138,9 +138,9 @@ RUST*BACKTRACE=1 cargo test --features=prefer-immediate-crash
 ## Guidelines on implementing formatting for new syntax constructs
 
 1. Create normative and descriptive tests. The normative tests should encapsulate
-   ideas and opinions about how code _should_ be formatted (e.g where linebreaks
+   ideas and opinions about how code **should** be formatted (e.g where linebreaks
    should go or if colons after a switch get removed.). The descriptive tests
-   document how code _is_ formatted (to make sure we don't accidentally regress
+   document how code **is** formatted (to make sure we don't accidentally regress
    one part of the formatter wen fixing another). Do not forget to add tests
    using `check*comments` to make sure the formatter never accidentally removes
    or reorders the comments around your syntax construct.

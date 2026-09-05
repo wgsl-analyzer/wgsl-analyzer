@@ -126,7 +126,7 @@ However oftentimes deciding on how a node should be formatted makes certain assu
 assert the kind of parsed nodes with [`expect_kind`](trivia::NodeWithTrivia::expect_kind) and similar functions.
 
 Even though they are named "expect", they do not panic, but instead gracefully fail with a [`reporting::FormatDocumentError`].
-This error is not meant to show the user if they wrote wrong wgsl (again, that is the job of the parser), but contain just enough
+This error is not meant to show the user if they wrote wrong WGSL (again, that is the job of the parser), but contain just enough
 information to give us a starting point when debugging issues.
 
 ## The "Format" Section
