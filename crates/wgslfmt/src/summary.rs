@@ -17,15 +17,15 @@ pub trait Summary {
     fn end_files(&mut self);
     fn write_summary(
         &mut self,
-        formatted_files: usize,
-        unchanged_files: usize,
-        errored_files: usize,
+        formatted_files: &[FormattingSource],
+        unchanged_files: &[FormattingSource],
+        errored_files: &[FormattingSource],
     );
     fn check_summary(
         &mut self,
-        failed_files: usize,
-        passed_files: usize,
-        errored_files: usize,
+        failed_files: &[FormattingSource],
+        passed_files: &[FormattingSource],
+        errored_files: &[FormattingSource],
     );
 }
 
@@ -53,17 +53,17 @@ impl Summary for SilentSummary {
 
     fn write_summary(
         &mut self,
-        formatted_files: usize,
-        unchanged_files: usize,
-        errored_files: usize,
+        formatted_files: &[FormattingSource],
+        unchanged_files: &[FormattingSource],
+        errored_files: &[FormattingSource],
     ) {
     }
 
     fn check_summary(
         &mut self,
-        failed_files: usize,
-        passed_files: usize,
-        errored_files: usize,
+        failed_files: &[FormattingSource],
+        passed_files: &[FormattingSource],
+        errored_files: &[FormattingSource],
     ) {
     }
 }
@@ -147,22 +147,44 @@ impl Summary for TextSummary {
 
     fn write_summary(
         &mut self,
-        formatted_files: usize,
-        unchanged_files: usize,
-        errored_files: usize,
+        formatted_files: &[FormattingSource],
+        unchanged_files: &[FormattingSource],
+        errored_files: &[FormattingSource],
     ) {
+        println!("\n=====\n");
+        for file in errored_files {
+            println!("Error in: {file}");
+        }
+
+        println!();
+
         println!(
-            "Formatted: {formatted_files}, Errors: {errored_files}, Unchanged: {unchanged_files}"
+            "Formatted: {}, Errors: {}, Unchanged: {}",
+            formatted_files.len(),
+            errored_files.len(),
+            unchanged_files.len()
         );
     }
 
     fn check_summary(
         &mut self,
-        failed_files: usize,
-        passed_files: usize,
-        errored_files: usize,
+        failed_files: &[FormattingSource],
+        passed_files: &[FormattingSource],
+        errored_files: &[FormattingSource],
     ) {
-        println!("Failed: {failed_files}, Errors: {errored_files}, Passed: {passed_files}");
+        println!("\n=====\n");
+        for file in errored_files {
+            println!("Error in: {file}");
+        }
+
+        println!();
+
+        println!(
+            "Failed: {}, Errors: {}, Passed: {}",
+            failed_files.len(),
+            errored_files.len(),
+            passed_files.len()
+        );
     }
 }
 
@@ -284,18 +306,18 @@ impl Summary for JsonSummary {
 
     fn write_summary(
         &mut self,
-        formatted_files: usize,
-        unchanged_files: usize,
-        errored_files: usize,
+        formatted_files: &[FormattingSource],
+        unchanged_files: &[FormattingSource],
+        errored_files: &[FormattingSource],
     ) {
         self.begin_field("summary");
         self.begin_struct();
         self.begin_field("formatted");
-        self.usize_literal(formatted_files);
+        self.usize_literal(formatted_files.len());
         self.begin_field("unchanged");
-        self.usize_literal(unchanged_files);
+        self.usize_literal(unchanged_files.len());
         self.begin_field("errors");
-        self.usize_literal(errored_files);
+        self.usize_literal(errored_files.len());
         self.end_struct();
     }
 
@@ -314,18 +336,18 @@ impl Summary for JsonSummary {
 
     fn check_summary(
         &mut self,
-        failed_files: usize,
-        passed_files: usize,
-        errored_files: usize,
+        failed_files: &[FormattingSource],
+        passed_files: &[FormattingSource],
+        errored_files: &[FormattingSource],
     ) {
         self.begin_field("summary");
         self.begin_struct();
         self.begin_field("failed");
-        self.usize_literal(failed_files);
+        self.usize_literal(failed_files.len());
         self.begin_field("passed");
-        self.usize_literal(passed_files);
+        self.usize_literal(passed_files.len());
         self.begin_field("errors");
-        self.usize_literal(errored_files);
+        self.usize_literal(errored_files.len());
         self.end_struct();
     }
 }

@@ -140,31 +140,31 @@ fn check_file_results<S>(
     S: Summary,
 {
     summary.begin();
-    let mut passed_count = 0;
-    let mut failed_count = 0;
-    let mut errored_count = 0;
+    let mut passed_paths = Vec::new();
+    let mut failed_paths = Vec::new();
+    let mut errored_paths = Vec::new();
 
     summary.start_files();
     for result in results {
         match &result.status {
             FileStatus::Unchanged => {
-                passed_count += 1;
+                passed_paths.push(result.file.clone());
             },
             FileStatus::Errors => {
-                errored_count += 1;
+                errored_paths.push(result.file.clone());
             },
             FileStatus::Changed { source, formatted } => {
-                failed_count += 1;
+                failed_paths.push(result.file.clone());
             },
         }
         summary.file_result_checked(&result);
     }
     summary.end_files();
 
-    summary.check_summary(failed_count, passed_count, errored_count);
+    summary.check_summary(&failed_paths, &passed_paths, &errored_paths);
     summary.end();
 
-    if failed_count > 0 || errored_count > 0 {
+    if !failed_paths.is_empty() | !errored_paths.is_empty() {
         exit(1);
     }
 }
@@ -177,21 +177,21 @@ fn write_file_results<S>(
 {
     summary.begin();
 
-    let mut formatted_count = 0;
-    let mut unchanged_count = 0;
-    let mut errored_count = 0;
+    let mut formatted_count = Vec::new();
+    let mut unchanged_count = Vec::new();
+    let mut errored_count = Vec::new();
 
     summary.start_files();
     for result in results {
         match &result.status {
             FileStatus::Unchanged => {
-                unchanged_count += 1;
+                unchanged_count.push(result.file.clone());
             },
             FileStatus::Errors => {
-                errored_count += 1;
+                errored_count.push(result.file.clone());
             },
             FileStatus::Changed { source, formatted } => {
-                formatted_count += 1;
+                formatted_count.push(result.file.clone());
                 let mut writer = result.file.write().unwrap();
                 writer.write_all(formatted.as_bytes()).unwrap();
             },
@@ -200,7 +200,7 @@ fn write_file_results<S>(
     }
     summary.end_files();
 
-    summary.write_summary(formatted_count, unchanged_count, errored_count);
+    summary.write_summary(&formatted_count, &unchanged_count, &errored_count);
     summary.end();
 }
 
