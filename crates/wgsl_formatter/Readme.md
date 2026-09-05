@@ -33,6 +33,57 @@ instead of accidentally destroying the programmer's code.
 In many places the formatter expects certain items to be of a
 certain `SyntaxKind`, even tho that is not needed for the formatting itself.
 
+### The formatter should not rely on unstable equilibriums
+
+When the formatter makes decisions based on existing formatting, the effort required
+to "convince" the formatter to to reach either possible formatting should be comparably equal.
+
+Example of an acceptable rule that takes existing formatting into account:
+
+```wesl
+// Those stick together
+fn a() {}
+fn b() {}
+
+// Those stay apart
+fn a() {}
+
+fn b() {}
+```
+
+The effort to reach either possible formatting is comparable - its inserting or deleting a single newline
+
+Example of an hypothetical unacceptable rule that would take existing formatting into account:
+
+```wesl
+struct A {
+  a: u32,                // These comments stay aligned
+  b: u32,                // The b
+  long_name_blaaaa: u32, // The c
+}
+
+// This would get turned into B
+struct A1 {
+  a: u32,               // These comments stay snugly fit to the fields
+  b: u32,               // The b
+  long_name: u32, // The c
+}
+
+struct B {
+  a: u32, // These comments stay snugly fit to the fields
+  b: u32, // The b
+  long_name_blaaaa: u32, // The c
+}
+```
+
+The formatting in `struct A` is "unstable", because if the programmer changes the length of a single variable.
+(Possibly even via a refactor-rename action from a distance)
+suddenly the whole format collapses and gets turned into a different one `B`.
+Restoring the new format back to how it was, takes a lot of effort, manually aligning the
+comments - which is frustrating.
+It is unstable because there are many source formats that get turned into `A` but only
+a single specific source format that would get turned into `B`.
+
 ## Tests
 
 The tests in this crate are differentiated into
