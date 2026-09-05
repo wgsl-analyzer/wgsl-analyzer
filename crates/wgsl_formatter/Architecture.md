@@ -145,10 +145,16 @@ automatically takes care of all of these weird edge-cases, like merging consecut
 When we request a space, before generating another node, we don't have to worry about if that other node possibly
 starts with a newline or emits its own space due to e.g a block comment.
 
+Additionally the [`PrintItemBuffer`] also allows some basic re-ordering of emitted items - for example if
+one generator function generates an item that always wants to be indented, this function can start with
+[`PrintItemBuffer::start_indent_before_requests`], to make sure that the indent starts before any newlines that
+might have been issued by the generator function that generated its parent.
+
 [`PrintItemBuffer`]: print_item_buffer::PrintItemBuffer
 [`PrintItemBuffer::extend`]: print_item_buffer::PrintItemBuffer::extend
 [`PrintItemBuffer::request`]: print_item_buffer::PrintItemBuffer::request
 [`Request`]: print_item_buffer::spacing_request::Request
+[`PrintItemBuffer::start_indent_before_requests`]: print_item_buffer::PrintItemBuffer::start_indent_before_requests
 
 ## [`gen_node_with_trivia`](generators::node::gen_node_with_trivia)
 
