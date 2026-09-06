@@ -4,7 +4,6 @@ pub mod change;
 pub mod input;
 
 mod editioned_file_id;
-mod package;
 mod util_types;
 
 use std::{
@@ -28,12 +27,11 @@ pub use vfs::{AnchoredPath, AnchoredPathBuf, FileId, VfsPath, file_set::FileSet}
 pub use crate::editioned_file_id::{
     Capabilities, EditionedFileId, FileExtension, RawEditionedFileId,
 };
-use crate::input::{PackageData, PackageId, PackageName};
-pub use input::{SourceRoot, SourceRootId};
-pub use package::{
-    ExtraPackageData, Package, PackageDisplayName, all_packages, builtin_package, file_package,
-    set_all_packages_with_durability,
+pub use input::{
+    ExtraPackageData, Package, PackageDisplayName, SourceRoot, SourceRootId, all_packages,
+    builtin_package, file_package, set_all_packages_with_durability,
 };
+
 pub use salsa;
 pub use salsa_macros;
 pub use util_types::*;

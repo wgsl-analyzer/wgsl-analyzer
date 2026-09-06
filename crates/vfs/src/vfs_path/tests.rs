@@ -55,7 +55,7 @@ fn virtual_path_components() {
 
 #[test]
 fn empty_virtual_path_components() {
-    let path = VirtualPath::new("".to_owned());
+    let path = VirtualPath::new(String::new());
     let mut components = path.components();
     assert_eq!(components.next(), None);
 }

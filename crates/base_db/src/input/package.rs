@@ -6,7 +6,6 @@ use syntax::{Edition, ExtensionsConfig};
 use crate::{
     SourceDatabase, SourceRootId,
     input::{PackageData, PackageId, PackageName, PackageOrigin},
-    package,
 };
 
 #[salsa::input(debug)]
