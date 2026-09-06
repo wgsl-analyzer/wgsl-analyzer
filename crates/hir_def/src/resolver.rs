@@ -252,7 +252,10 @@ impl<'db> Resolver<'db> {
 
     /// Resolve an *inline* path. Import statements are already resolved.
     /// Corresponds to `resolve_path_in_type_ns` in rust-analyzer.
-    pub fn resolve(
+    ///
+    /// TODO: refactor into `DefMap`
+    /// See `rust-analyzer::hir-def::nameres::path_resolution::resolve_path_fp_with_macro_single`.
+    pub fn resolve_path(
         &self,
         db: &dyn SourceDatabase,
         path: &Path,

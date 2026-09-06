@@ -1,3 +1,5 @@
+#![expect(clippy::too_many_lines, reason = "snapshots can be long")]
+
 use base_db::{EditionedFileId, SourceDatabase as _};
 use expect_test::{Expect, expect};
 use hir_def::{
