@@ -14,6 +14,7 @@
 
 mod flags;
 
+mod build_web;
 mod changelog;
 mod codegen;
 mod dist;
@@ -55,6 +56,7 @@ fn main() -> anyhow::Result<()> {
             Ok(())
         },
         flags::XtaskCmd::Tidy(command) => command.run(shell),
+        flags::XtaskCmd::BuildWeb(command) => command.run(shell),
     }
 }
 

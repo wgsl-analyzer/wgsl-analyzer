@@ -89,6 +89,12 @@ xflags::xflags! {
         cmd changelog {
             optional since: String
         }
+
+        /// Builds the javascript package.
+        cmd build-web {
+            /// Build release configuration
+            optional --release
+        }
     }
 }
 
@@ -102,7 +108,6 @@ pub struct Xtask {
 
 #[derive(Debug)]
 pub enum XtaskCmd {
-    Changelog(Changelog),
     Install(Install),
     FuzzTests(FuzzTests),
     Release(Release),
@@ -111,11 +116,8 @@ pub enum XtaskCmd {
     Bb(Bb),
     Codegen(Codegen),
     Tidy(Tidy),
-}
-
-#[derive(Debug)]
-pub struct Changelog {
-    pub since: Option<String>,
+    Changelog(Changelog),
+    BuildWeb(BuildWeb),
 }
 
 #[derive(Debug)]
@@ -161,11 +163,22 @@ pub struct Bb {
 #[derive(Debug)]
 pub struct Codegen {
     pub rtype: Option<CodegenType>,
+
     pub check: bool,
 }
 
 #[derive(Debug)]
 pub struct Tidy;
+
+#[derive(Debug)]
+pub struct Changelog {
+    pub since: Option<String>,
+}
+
+#[derive(Debug)]
+pub struct BuildWeb {
+    pub release: bool,
+}
 
 impl Xtask {
     pub fn from_env_or_exit() -> Self {
@@ -176,8 +189,8 @@ impl Xtask {
         Self::from_env_()
     }
 
-    pub fn from_vec(arguments: Vec<std::ffi::OsString>) -> xflags::Result<Self> {
-        Self::from_vec_(arguments)
+    pub fn from_vec(args: Vec<std::ffi::OsString>) -> xflags::Result<Self> {
+        Self::from_vec_(args)
     }
 }
 // generated end
