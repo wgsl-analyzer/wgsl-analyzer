@@ -79,13 +79,12 @@ pub fn format_paren_expr_deep_left_associated() {
     //TODO(MonaMayrhofer,discuss) This is beyond awful. Have another look at how this should be formatted, once more test cases for more common parenthesized expressions are there
     check_with_options(
         "fn main() {
-        let a = 1+ ((((((((((((((((((((((((((((1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1);
+        let a = 1+ (((((((((((((((((((((((1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1)+1);
         }",
         expect![[r#"
             fn main() {
                 let a = 1
-                    + ((((((((((((((((((((((((((((1) + 1) + 1) + 1) + 1) + 1) + 1) + 1) + 1) + 1) + 1) + 1) + 1)
-                                                                                + 1) + 1) + 1) + 1) + 1) + 1)
+                    + (((((((((((((((((((((((1) + 1) + 1) + 1) + 1) + 1) + 1) + 1) + 1) + 1) + 1) + 1) + 1) + 1)
                                                         + 1) + 1) + 1) + 1) + 1) + 1) + 1) + 1) + 1);
             }
         "#]],
