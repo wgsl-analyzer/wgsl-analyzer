@@ -40,19 +40,10 @@ rustflags = [
 	"-Clink-arg=-sFORCE_FILESYSTEM=1",
 	# Seed the filesystem before main() runs, then callMain([]).
 	"-Clink-arg=-sINVOKE_RUN=0",
-	# Redirect libc stdio into the emscripten-stdio crate. `read` becomes
-	# `__wrap_read`, and the genuine libc entry point stays reachable as
-	# `__real_read`. The vectored pair is not optional: Rust reports
-	# is_read_vectored/is_write_vectored as true on emscripten, so its buffered
-	# stdio really does call readv/writev.
-	"-Clink-arg=-Wl,--wrap=read",
-	"-Clink-arg=-Wl,--wrap=readv",
-	"-Clink-arg=-Wl,--wrap=write",
-	"-Clink-arg=-Wl,--wrap=writev",
 	# HEAPU8 lets the host copy byte arrays in and out of wasm memory.
 	"-Clink-arg=-sEXPORTED_RUNTIME_METHODS=FS,callMain,HEAPU8",
 	# _malloc/_free back the temporary buffers the host copies through.
-	"-Clink-arg=-sEXPORTED_FUNCTIONS=_main,_malloc,_free,_lsp_stdin_push,_lsp_stdin_close,_lsp_stdout_pop,_lsp_stdout_signal_ptr",
+	"-Clink-arg=-sEXPORTED_FUNCTIONS=_main,_malloc,_free",
 ]
 
 [env]
