@@ -67,7 +67,7 @@
 #![cfg_attr(target_os = "emscripten", feature(stdarch_wasm_atomic_wait))]
 
 #[cfg(target_os = "emscripten")]
-mod imp;
+mod detail;
 mod queue;
 
 /// Ensure this crate takes part in the final link.
@@ -85,5 +85,5 @@ mod queue;
 )]
 pub fn force_link() {
     #[cfg(target_os = "emscripten")]
-    imp::force_link();
+    detail::force_link();
 }
