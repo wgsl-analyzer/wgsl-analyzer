@@ -71,10 +71,28 @@ use crate::print_item_buffer::spacing_request::Request;
 ///
 #[derive(Default)]
 pub struct PrintItemBuffer {
+    /// Items that are emitted before [`Self::start_request`] gets applied.
+    ///
+    /// If this [`PrintItemBuffer`] is passed to [`PrintItemBuffer::extend`], these
+    /// items get moved before the other buffer's [`Self::end_request`].
     pub items_before_start_request: PrintItems,
+
+    /// The request that will be emitted before [`Self::items`].
     pub start_request: Request,
-    pub items: PrintItems,
+
+    /// The items contained in this buffer.
+    ///
+    /// If this is `Some` (even if the `PrintItems` themselves are empty) this
+    /// signals to us that no incoming requests can be merged with [`Self::start_request`].
+    pub items: Option<PrintItems>,
+
+    /// The request that will be emitted after [`Self::items`].
     pub end_request: Request,
+
+    /// Items that are emitted before [`Self::start_request`] gets applied.
+    ///
+    /// If this [`PrintItemBuffer`] is passed to [`PrintItemBuffer::extend`], these
+    /// items get moved after the other buffer's [`Self::start_request`].
     pub items_after_end_request: PrintItems,
 }
 
@@ -90,7 +108,7 @@ impl PrintItemBuffer {
         &mut self,
         incoming_request: Request,
     ) {
-        let request_tracker = if self.items.is_empty() {
+        let request_tracker = if self.items.is_none() {
             // PERFORMANCE: With the current implementation of the gen_ functions this path is a lot less likely - usually spacing requests
             // are issued between printitems.
             // A simple benchmark on large_file.rs yielded at 0.3ms speedup (2%) on my machine.
@@ -109,8 +127,11 @@ impl PrintItemBuffer {
         let mut pi = PrintItems::default();
         pi.extend(self.items_before_start_request);
         self.start_request.resolve(&mut pi);
-        pi.extend(self.items);
+        if let Some(items) = self.items {
+            pi.extend(items);
+        }
         self.end_request.resolve(&mut pi);
+        pi.extend(self.items_after_end_request);
         pi
     }
 
@@ -145,9 +166,12 @@ impl PrintItemBuffer {
     /// assert_eq!(formatted, "| |  |")
     /// ```
     pub fn apply_end_request(&mut self) {
-        std::mem::take(&mut self.end_request).resolve(&mut self.items);
         let items_after_end_requests = std::mem::take(&mut self.items_after_end_request);
-        self.items.extend(items_after_end_requests);
+
+        let items = self.items.get_or_insert_default();
+
+        std::mem::take(&mut self.end_request).resolve(items);
+        items.extend(items_after_end_requests);
     }
 
     /// Appends another [`PrintItemBuffer`] onto this one.
@@ -164,9 +188,9 @@ impl PrintItemBuffer {
         self.request(other.start_request);
 
         // If there are incoming items, apply the current end request and add the items
-        if !other.items.is_empty() {
+        if let Some(items) = other.items {
             self.apply_end_request();
-            self.items.extend(other.items);
+            self.items.get_or_insert_default().extend(items);
         }
 
         // Merge the incoming end_request
@@ -179,10 +203,10 @@ impl PrintItemBuffer {
         &mut self,
         items: PrintItems,
     ) {
-        if self.items.is_empty() {
-            self.items_before_start_request.extend(items);
+        if let Some(self_items) = &mut self.items {
+            self_items.extend(items);
         } else {
-            self.items.extend(items);
+            self.items_before_start_request.extend(items);
         }
     }
 
@@ -234,7 +258,7 @@ impl PrintItemBuffer {
             );
         }
         self.apply_end_request();
-        self.items.push_string(string);
+        self.items.get_or_insert_default().push_string(string);
     }
 
     /// Applies trailing requests and pushes a literal tab character to the buffer.
@@ -242,7 +266,7 @@ impl PrintItemBuffer {
     /// Do not use this for indentation, use [`Self::start_indent_before_requests`] instead.
     pub fn push_tab(&mut self) {
         self.apply_end_request();
-        self.items.push_signal(Signal::Tab);
+        self.items.get_or_insert_default().push_signal(Signal::Tab);
     }
 
     /// Applies trailing requests and pushes a string to the buffer whose content is known at compile time.
@@ -254,7 +278,7 @@ impl PrintItemBuffer {
         sc: &'static dprint_core::formatting::StringContainer,
     ) {
         self.apply_end_request();
-        self.items.push_sc(sc);
+        self.items.get_or_insert_default().push_sc(sc);
     }
 
     /// Inserts a dprint-info into the buffer, before all trailing requests.
@@ -291,10 +315,10 @@ impl PrintItemBuffer {
         &mut self,
         condition: dprint_core::formatting::Condition,
     ) {
-        if self.items.is_empty() {
-            self.items_before_start_request.push_condition(condition);
+        if let Some(self_items) = &mut self.items {
+            self_items.push_condition(condition);
         } else {
-            self.items.push_condition(condition);
+            self.items_before_start_request.push_condition(condition);
         }
     }
 
@@ -389,5 +413,96 @@ impl PrintItemBuffer {
     pub fn finish_new_line_group_after_requests(&mut self) {
         //self.push_item_after_requests(PrintItem::String(dprint_core_macros::sc!("]")));
         self.push_item_after_requests(PrintItem::Signal(Signal::FinishNewLineGroup));
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use dprint_core::formatting::PrintItems;
+
+    use crate::print_item_buffer::{
+        PrintItemBuffer,
+        spacing_request::{Request, RequestItem},
+    };
+
+    fn format(items: PrintItems) -> String {
+        dprint_core::formatting::format(
+            || items,
+            dprint_core::formatting::PrintOptions {
+                max_width: 100,
+                indent_width: 4,
+                use_tabs: false,
+                new_line_text: "\n",
+            },
+        )
+    }
+
+    #[test]
+    pub fn finish_empty_pib() {
+        let pib = PrintItemBuffer::default();
+
+        let items = pib.finish();
+
+        assert_eq!(format(items), "");
+    }
+
+    #[test]
+    pub fn request_apply_and_nothing_else() {
+        let mut pib = PrintItemBuffer::default();
+        pib.request(Request::expect(RequestItem::LineBreak));
+        pib.apply_end_request();
+        pib.request(Request::expect(RequestItem::LineBreak));
+        pib.apply_end_request();
+        pib.request(Request::expect(RequestItem::LineBreak));
+        pib.apply_end_request();
+
+        let items = pib.finish();
+
+        assert_eq!(format(items), "\n\n\n");
+    }
+
+    #[test]
+    pub fn segmented_request_apply_and_nothing_else() {
+        let mut pib = PrintItemBuffer::default();
+        pib.extend({
+            let mut inner = PrintItemBuffer::default();
+            inner.request(Request::expect(RequestItem::LineBreak));
+            inner.apply_end_request();
+            inner
+        });
+        pib.extend({
+            let mut inner = PrintItemBuffer::default();
+            inner.request(Request::expect(RequestItem::LineBreak));
+            inner.apply_end_request();
+            inner
+        });
+        pib.extend({
+            let mut inner = PrintItemBuffer::default();
+            inner.request(Request::expect(RequestItem::LineBreak));
+            inner.apply_end_request();
+            inner
+        });
+
+        let items = pib.finish();
+
+        assert_eq!(format(items), "\n\n\n");
+    }
+
+    #[test]
+    pub fn segmented_request_apply_merge_with_outer() {
+        let mut pib = PrintItemBuffer::default();
+        pib.request(Request::expect(RequestItem::LineBreak));
+        pib.extend({
+            let mut inner = PrintItemBuffer::default();
+            // This one should get merged with the outer one
+            inner.request(Request::expect(RequestItem::LineBreak));
+            inner.apply_end_request();
+            inner
+        });
+        pib.request(Request::expect(RequestItem::LineBreak));
+
+        let items = pib.finish();
+
+        assert_eq!(format(items), "\n\n");
     }
 }

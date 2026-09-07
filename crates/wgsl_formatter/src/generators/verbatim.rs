@@ -32,7 +32,6 @@ pub fn gen_node_syntax_verbatim(
             formatted.request(Request::force(RequestItem::LineBreak));
             if position != Position::Last && position != Position::Only {
                 formatted.apply_end_request();
-                formatted.push_sc(dprint_core_macros::sc!("")); //TODO Why is this necessary? This should absolutely not be needed here??
             }
         }
     }

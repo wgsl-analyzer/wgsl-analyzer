@@ -156,6 +156,37 @@ pub enum Request {
     },
 }
 
+impl Debug for Request {
+    fn fmt(
+        &self,
+        f: &mut std::fmt::Formatter<'_>,
+    ) -> std::fmt::Result {
+        match self {
+            Self::Unconditional {
+                expected,
+                discouraged,
+                forced,
+                suggest_linebreak,
+            } => f
+                .debug_struct("Unconditional")
+                .field("expected", expected)
+                .field("discouraged", discouraged)
+                .field("forced", forced)
+                .field("suggest_linebreak", suggest_linebreak)
+                .finish(),
+            Self::Conditional {
+                condition: _,
+                on_true,
+                on_false,
+            } => f
+                .debug_struct("Conditional")
+                .field("on_true", on_true)
+                .field("on_false", on_false)
+                .finish(),
+        }
+    }
+}
+
 impl Default for Request {
     fn default() -> Self {
         Self::empty()
