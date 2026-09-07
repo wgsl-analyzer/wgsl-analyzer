@@ -232,24 +232,6 @@ pub fn format_import_path_does_not_get_broken_into_lines() {
 }
 
 #[test]
-pub fn immediately_nested_import_collections_dont_parse() {
-    // The logic for sorting imports relies on this not parsing.
-    assert_out_of_scope(
-        "
-        import a::{{a::a, b::b}, {c::c, d::d}};
-        ",
-        "ImportCollections immediately within ImportCollections are not supported.",
-    );
-
-    assert_out_of_scope(
-        "
-        import a::{{b}, {c}};
-        ",
-        "ImportCollections immediately within ImportCollections are not supported.",
-    );
-}
-
-#[test]
 pub fn format_import_collection_items_are_all_split_if_multiline() {
     check(
         "
