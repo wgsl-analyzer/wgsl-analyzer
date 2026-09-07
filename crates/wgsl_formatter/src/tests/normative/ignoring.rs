@@ -329,3 +329,37 @@ a=1
         "#]],
     );
 }
+
+#[test]
+pub fn ignore_on_fn_with_attr_before_pragma() {
+    check(
+        "
+        @compute @workgroup_size(    1,2,
+5
+        )
+        // @wgslfmt(ignore)
+fn     main     (
+
+
+    ) {
+    let
+a                   =
+    1;
+
+}
+        ",
+        expect![[r#"
+            @compute @workgroup_size(1, 2, 5)
+            // @wgslfmt(ignore)
+            fn     main     (
+
+
+                ) {
+                let
+            a                   =
+                1;
+
+            }
+        "#]],
+    );
+}
