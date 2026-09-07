@@ -428,12 +428,16 @@ pub fn gen_node_content(node: &NodeWithTrivia) -> FormatDocumentResult<PrintItem
         },
         NodeWithTriviaContent::IgnoredContent {
             ignore_pragma,
-            content,
+            ignored_preceding_trivia,
+            ignored_content,
         } => {
             if let Some(ignore_pragma) = ignore_pragma {
                 formatted.extend(gen_ignore_pragma(ignore_pragma));
             }
-            for content in content {
+            for content in ignored_preceding_trivia {
+                formatted.extend(gen_node_syntax_verbatim(&content.syntax())?);
+            }
+            if let Some(content) = ignored_content.as_content() {
                 formatted.extend(gen_node_syntax_verbatim(content)?);
             }
         },

@@ -30,23 +30,27 @@ pub enum NodeTriviaItem {
 
 impl NodeTriviaItem {
     #[must_use]
-    pub fn syntax(self) -> NodeOrToken<SyntaxNode, SyntaxToken> {
+    pub fn syntax(&self) -> NodeOrToken<SyntaxNode, SyntaxToken> {
         match self {
             Self::LineSpacing(blankspace) => match blankspace {
                 Blankspace::LineBreak(syntax_token)
                 | Blankspace::EmptyLine(syntax_token)
-                | Blankspace::Inline(syntax_token) => NodeOrToken::Token(syntax_token),
+                | Blankspace::Inline(syntax_token) => NodeOrToken::Token(syntax_token.clone()),
             },
             Self::Comment(comment) => match comment {
-                Comment::Block(node) | Comment::LineEnding(node) => NodeOrToken::Token(node),
+                Comment::Block(node) | Comment::LineEnding(node) => {
+                    NodeOrToken::Token(node.clone())
+                },
             },
             Self::NewlinedComment(comment) => match comment {
-                Comment::Block(node) | Comment::LineEnding(node) => NodeOrToken::Token(node),
+                Comment::Block(node) | Comment::LineEnding(node) => {
+                    NodeOrToken::Token(node.clone())
+                },
             },
             Self::AttributeList(attribute_list) => {
                 NodeOrToken::Node(attribute_list.syntax().clone())
             },
-            Self::Discarded(content) => content,
+            Self::Discarded(content) => content.clone(),
         }
     }
 
@@ -76,7 +80,8 @@ pub enum NodeWithTriviaContent {
         /// This can be `None` if the content was ignored from within with a
         /// ignore-parent pragma.
         ignore_pragma: Option<IgnorePragma>,
-        content: Vec<NodeOrToken<SyntaxNode, SyntaxToken>>,
+        ignored_preceding_trivia: Vec<NodeTriviaItem>,
+        ignored_content: Box<Self>,
     },
 
     /// The content is the "end".
@@ -98,7 +103,10 @@ impl NodeWithTriviaContent {
     pub const fn as_content(&self) -> Option<&NodeOrToken<SyntaxNode, SyntaxToken>> {
         match self {
             Self::Content(node_or_token) => Some(node_or_token),
-            Self::NoContent | Self::End | Self::IgnoredContent { .. } => None,
+            Self::NoContent | Self::End => None,
+            Self::IgnoredContent {
+                ignored_content, ..
+            } => ignored_content.as_content(),
         }
     }
 
@@ -106,7 +114,35 @@ impl NodeWithTriviaContent {
     pub fn into_content(self) -> Option<NodeOrToken<SyntaxNode, SyntaxToken>> {
         match self {
             Self::Content(node_or_token) => Some(node_or_token),
-            Self::NoContent | Self::End | Self::IgnoredContent { .. } => None,
+            Self::NoContent | Self::End => None,
+            Self::IgnoredContent {
+                ignored_content, ..
+            } => ignored_content.into_content(),
+        }
+    }
+
+    pub fn put_back(
+        self,
+        syntax: &mut SyntaxIter,
+    ) {
+        match self {
+            Self::Content(node_or_token) => {
+                syntax.put_back(node_or_token);
+            },
+            Self::NoContent | Self::End => {},
+            Self::IgnoredContent {
+                ignore_pragma,
+                ignored_preceding_trivia,
+                ignored_content,
+            } => {
+                if let Some(ignore_pragma) = ignore_pragma {
+                    syntax.put_back(NodeOrToken::Token(ignore_pragma.token));
+                }
+                for trivia in ignored_preceding_trivia {
+                    trivia.put_back(syntax);
+                }
+                ignored_content.put_back(syntax);
+            },
         }
     }
 }
@@ -142,23 +178,7 @@ impl NodeWithTrivia {
         for item in self.succeeding_trivia.into_iter().rev() {
             item.put_back(syntax);
         }
-        match self.content {
-            NodeWithTriviaContent::Content(node_or_token) => {
-                syntax.put_back(node_or_token);
-            },
-            NodeWithTriviaContent::NoContent | NodeWithTriviaContent::End => {},
-            NodeWithTriviaContent::IgnoredContent {
-                ignore_pragma,
-                content,
-            } => {
-                if let Some(ignore_pragma) = ignore_pragma {
-                    syntax.put_back(NodeOrToken::Token(ignore_pragma.token));
-                }
-                for content in content {
-                    syntax.put_back(content);
-                }
-            },
-        }
+        self.content.put_back(syntax);
         for item in self.preceding_trivia.into_iter().rev() {
             item.put_back(syntax);
         }
@@ -221,7 +241,6 @@ impl NodeWithTrivia {
         }
     }
 
-    // TODO Deprecate non-optional expects
     /// Returns a [`FormatDocumentError`] if self did not have a content node or that node
     /// did not match the given `SyntaxKind`.
     #[track_caller]

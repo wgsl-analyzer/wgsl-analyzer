@@ -109,14 +109,15 @@ pub fn format_tree(
     syntax: &ast::SourceFile,
     options: &FormattingOptions,
 ) -> FormatDocumentResult<String> {
-    let content = if is_ignored_from_within(syntax.syntax()) {
-        NodeWithTriviaContent::IgnoredContent {
+    let mut content = NodeWithTriviaContent::Content(NodeOrToken::Node(syntax.syntax().clone()));
+    if is_ignored_from_within(syntax.syntax()) {
+        content = NodeWithTriviaContent::IgnoredContent {
             ignore_pragma: None,
-            content: vec![NodeOrToken::Node(syntax.syntax().clone())],
+            ignored_preceding_trivia: vec![],
+            ignored_content: Box::new(content),
         }
-    } else {
-        NodeWithTriviaContent::Content(NodeOrToken::Node(syntax.syntax().clone()))
-    };
+    }
+
     let trivia = NodeWithTrivia {
         preceding_trivia: Vec::new(),
         content,
@@ -133,14 +134,14 @@ pub fn format_node(
     syntax: &SyntaxNode,
     options: &FormattingOptions,
 ) -> FormatDocumentResult<String> {
-    let content = if is_ignored_from_within(syntax) {
-        NodeWithTriviaContent::IgnoredContent {
+    let mut content = NodeWithTriviaContent::Content(NodeOrToken::Node(syntax.syntax().clone()));
+    if is_ignored_from_within(syntax.syntax()) {
+        content = NodeWithTriviaContent::IgnoredContent {
             ignore_pragma: None,
-            content: vec![NodeOrToken::Node(syntax.clone())],
+            ignored_preceding_trivia: vec![],
+            ignored_content: Box::new(content),
         }
-    } else {
-        NodeWithTriviaContent::Content(NodeOrToken::Node(syntax.clone()))
-    };
+    }
 
     let trivia = NodeWithTrivia {
         preceding_trivia: Vec::new(),

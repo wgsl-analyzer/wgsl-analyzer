@@ -506,18 +506,14 @@ where
 
     // Replace with ignore
     if let Some((ignore, actual_preceding_trivia)) = ignore_data {
-        let content_a = std::mem::replace(&mut preceding_trivia, actual_preceding_trivia);
-        let old_content = std::mem::replace(&mut content, NodeWithTriviaContent::End);
-
-        let ignored_content = content_a
-            .into_iter()
-            .map(NodeTriviaItem::syntax)
-            .chain(old_content.into_content())
-            .collect();
+        let ignored_preceding_trivia =
+            std::mem::replace(&mut preceding_trivia, actual_preceding_trivia);
+        let ignored_content = std::mem::replace(&mut content, NodeWithTriviaContent::End);
 
         content = NodeWithTriviaContent::IgnoredContent {
             ignore_pragma: Some(ignore),
-            content: ignored_content,
+            ignored_preceding_trivia,
+            ignored_content: Box::new(ignored_content),
         };
     }
 
@@ -527,11 +523,10 @@ where
     {
         let old_content = std::mem::replace(&mut content, NodeWithTriviaContent::End);
 
-        let ignored_content = old_content.into_content().into_iter().collect();
-
         content = NodeWithTriviaContent::IgnoredContent {
             ignore_pragma: None,
-            content: ignored_content,
+            ignored_preceding_trivia: vec![],
+            ignored_content: Box::new(old_content),
         };
     }
 
