@@ -123,7 +123,7 @@ pub fn gen_switch_body_case(
 
             if selectors
                 .content
-                .as_ref()
+                .as_content()
                 .and_then(|selectors| selectors.as_node())
                 .is_some_and(is_case_default)
             {

@@ -512,7 +512,7 @@ where
         let ignored_content = content_a
             .into_iter()
             .map(NodeTriviaItem::syntax)
-            .chain(old_content.into_option())
+            .chain(old_content.into_content())
             .collect();
 
         content = NodeWithTriviaContent::IgnoredContent {
@@ -527,7 +527,7 @@ where
     {
         let old_content = std::mem::replace(&mut content, NodeWithTriviaContent::End);
 
-        let ignored_content = old_content.into_option().into_iter().collect();
+        let ignored_content = old_content.into_content().into_iter().collect();
 
         content = NodeWithTriviaContent::IgnoredContent {
             ignore_pragma: None,

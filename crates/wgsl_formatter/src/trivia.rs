@@ -94,18 +94,16 @@ impl NodeWithTriviaContent {
         matches!(self, Self::NoContent | Self::End)
     }
 
-    // TODO Rename to as_content
     #[must_use]
-    pub const fn as_ref(&self) -> Option<&NodeOrToken<SyntaxNode, SyntaxToken>> {
+    pub const fn as_content(&self) -> Option<&NodeOrToken<SyntaxNode, SyntaxToken>> {
         match self {
             Self::Content(node_or_token) => Some(node_or_token),
             Self::NoContent | Self::End | Self::IgnoredContent { .. } => None,
         }
     }
 
-    // TODO Rename to into_content
     #[must_use]
-    pub fn into_option(self) -> Option<NodeOrToken<SyntaxNode, SyntaxToken>> {
+    pub fn into_content(self) -> Option<NodeOrToken<SyntaxNode, SyntaxToken>> {
         match self {
             Self::Content(node_or_token) => Some(node_or_token),
             Self::NoContent | Self::End | Self::IgnoredContent { .. } => None,
@@ -132,7 +130,7 @@ impl NodeWithTrivia {
     /// Get the `SyntaxKind` of self, or [`None`] if self did not contain a content node.
     pub fn kind(&self) -> Option<SyntaxKind> {
         self.content
-            .as_ref()
+            .as_content()
             .map(NodeOrToken::<SyntaxNode, SyntaxToken>::kind)
     }
 
@@ -193,7 +191,7 @@ impl NodeWithTrivia {
     {
         if self
             .content
-            .as_ref()
+            .as_content()
             .is_some_and(|node| !T::can_cast(node.kind()))
         {
             self.put_back(syntax);
@@ -211,11 +209,11 @@ impl NodeWithTrivia {
     ) -> FormatDocumentResult<Self> {
         if self
             .content
-            .as_ref()
+            .as_content()
             .is_some_and(|node| node.kind() != kind)
         {
             Err(FormatDocumentError::UnexpectedNodeOrToken {
-                received: self.content.into_option(),
+                received: self.content.into_content(),
             })
             .expect_if_prefer_crash()
         } else {
@@ -233,13 +231,13 @@ impl NodeWithTrivia {
     ) -> FormatDocumentResult<Self> {
         if self
             .content
-            .as_ref()
+            .as_content()
             .is_some_and(|node| node.kind() == kind)
         {
             Ok(self)
         } else {
             Err(FormatDocumentError::UnexpectedNodeOrToken {
-                received: self.content.into_option(),
+                received: self.content.into_content(),
             })
             .expect_if_prefer_crash()
         }
@@ -258,7 +256,7 @@ impl NodeWithTrivia {
             return Ok(self);
         }
         Err(FormatDocumentError::UnexpectedNodeOrToken {
-            received: self.content.into_option(),
+            received: self.content.into_content(),
         })
         .expect_if_prefer_crash()
     }
@@ -280,7 +278,7 @@ impl NodeWithTrivia {
                     Ok(self)
                 } else {
                     Err(FormatDocumentError::UnexpectedNodeOrToken {
-                        received: self.content.into_option(),
+                        received: self.content.into_content(),
                     })
                     .expect_if_prefer_crash()
                 }
@@ -301,7 +299,7 @@ impl NodeWithTrivia {
             return Ok(self);
         }
         Err(FormatDocumentError::UnexpectedNodeOrToken {
-            received: self.content.into_option(),
+            received: self.content.into_content(),
         })
         .expect_if_prefer_crash()
     }
