@@ -1,9 +1,31 @@
 //! Code responsible for detecting ignore-pragmas.
 
+use dprint_core_macros::sc;
 use parser::{SyntaxNode, SyntaxToken};
 use rowan::NodeOrToken;
 
-use crate::generators::comments::{Comment, read_comment};
+use crate::{
+    generators::comments::{Comment, read_comment},
+    print_item_buffer::PrintItemBuffer,
+};
+
+#[derive(Debug, Clone)]
+pub struct IgnorePragma {
+    pub block: bool,
+    pub token: SyntaxToken,
+}
+
+impl IgnorePragma {
+    #[must_use]
+    pub fn syntax(
+        &self
+    ) -> NodeOrToken<
+        rowan::SyntaxNode<parser::WeslLanguage>,
+        rowan::SyntaxToken<parser::WeslLanguage>,
+    > {
+        NodeOrToken::Token(self.token.clone())
+    }
+}
 
 /// Whether the `SyntaxNode`'s first interesting child is a [ignore-parent-pragma](`is_ignore_parent_pragma_comment`).
 #[must_use]
@@ -19,20 +41,28 @@ pub fn is_ignored_from_within(content: &SyntaxNode) -> bool {
 
 /// Whether the given item is a comment with `@wgslfmt(ignore)`.
 #[must_use]
-pub fn is_ignore_next_pragma_comment(node: &NodeOrToken<SyntaxNode, SyntaxToken>) -> bool {
+pub fn read_ignore_next_pragma_comment(
+    node: &NodeOrToken<SyntaxNode, SyntaxToken>
+) -> Option<IgnorePragma> {
     let as_comment = read_comment(node);
     match as_comment {
         Some(Comment::Block(syntax_token))
             if syntax_token.text().trim() == "/* @wgslfmt(ignore) */" =>
         {
-            true
+            Some(IgnorePragma {
+                block: true,
+                token: syntax_token,
+            })
         },
         Some(Comment::LineEnding(syntax_token))
             if syntax_token.text().trim() == "// @wgslfmt(ignore)" =>
         {
-            true
+            Some(IgnorePragma {
+                block: false,
+                token: syntax_token,
+            })
         },
-        _ => false,
+        _ => None,
     }
 }
 
@@ -53,4 +83,18 @@ pub fn is_ignore_parent_pragma_comment(node: &NodeOrToken<SyntaxNode, SyntaxToke
         },
         _ => false,
     }
+}
+
+#[must_use]
+pub fn gen_ignore_pragma(ignore_pragma: &IgnorePragma) -> PrintItemBuffer {
+    let mut formatted = PrintItemBuffer::default();
+
+    if ignore_pragma.block {
+        formatted.push_sc(sc!("/* @wgslfmt(ignore) */"));
+    } else {
+        formatted.push_sc(sc!("// @wgslfmt(ignore)"));
+    }
+    // No newline - that is contained in the ignored code
+
+    formatted
 }

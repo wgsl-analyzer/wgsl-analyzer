@@ -33,12 +33,12 @@ pub fn gen_function_declaration(
     let item_name =
         parse_node_with(&mut syntax, DiscardBlankspace).expect_kind(SyntaxKind::Name)?;
     let item_params = parse_node_with(&mut syntax, DiscardBlankspace)
-        .expect_kind(SyntaxKind::FunctionParameters)?;
+        .expect_kind_optional(SyntaxKind::FunctionParameters)?;
 
     let item_return = parse_node_with(&mut syntax, DiscardBlankspace)
         .only_if_kind(SyntaxKind::ReturnType, &mut syntax);
     let item_body = parse_node_with(&mut syntax, DiscardBlankspace)
-        .expect_kind(SyntaxKind::CompoundStatement)?;
+        .expect_kind_optional(SyntaxKind::CompoundStatement)?;
 
     parse_end(&mut syntax)?;
 

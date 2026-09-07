@@ -7,6 +7,7 @@ use crate::{
     ast_parse::SyntaxIter,
     blankspace::Blankspace,
     generators::comments::Comment,
+    ignore::IgnorePragma,
     reporting::{FormatDocumentError, FormatDocumentResult, UnwrapIfPreferCrash as _},
 };
 
@@ -28,36 +29,33 @@ pub enum NodeTriviaItem {
 }
 
 impl NodeTriviaItem {
+    #[must_use]
+    pub fn syntax(self) -> NodeOrToken<SyntaxNode, SyntaxToken> {
+        match self {
+            Self::LineSpacing(blankspace) => match blankspace {
+                Blankspace::LineBreak(syntax_token)
+                | Blankspace::EmptyLine(syntax_token)
+                | Blankspace::Inline(syntax_token) => NodeOrToken::Token(syntax_token),
+            },
+            Self::Comment(comment) => match comment {
+                Comment::Block(node) | Comment::LineEnding(node) => NodeOrToken::Token(node),
+            },
+            Self::NewlinedComment(comment) => match comment {
+                Comment::Block(node) | Comment::LineEnding(node) => NodeOrToken::Token(node),
+            },
+            Self::AttributeList(attribute_list) => {
+                NodeOrToken::Node(attribute_list.syntax().clone())
+            },
+            Self::Discarded(content) => content,
+        }
+    }
+
     /// Add this item back onto the provided [`SyntaxIter`].
     pub fn put_back(
         self,
         syntax: &mut SyntaxIter,
     ) {
-        match self {
-            Self::LineSpacing(blankspace) => match blankspace {
-                Blankspace::LineBreak(syntax_token)
-                | Blankspace::EmptyLine(syntax_token)
-                | Blankspace::Inline(syntax_token) => {
-                    syntax.put_back(NodeOrToken::Token(syntax_token));
-                },
-            },
-            Self::Comment(comment) => match comment {
-                Comment::Block(node) | Comment::LineEnding(node) => {
-                    syntax.put_back(NodeOrToken::Token(node));
-                },
-            },
-            Self::NewlinedComment(comment) => match comment {
-                Comment::Block(node) | Comment::LineEnding(node) => {
-                    syntax.put_back(NodeOrToken::Token(node));
-                },
-            },
-            Self::AttributeList(attribute_list) => {
-                syntax.put_back(NodeOrToken::Node(attribute_list.syntax().clone()));
-            },
-            Self::Discarded(content) => {
-                syntax.put_back(content);
-            },
-        }
+        syntax.put_back(self.syntax());
     }
 }
 
@@ -71,6 +69,15 @@ pub enum NodeWithTriviaContent {
 
     /// The content is some piece of the AST.
     Content(NodeOrToken<SyntaxNode, SyntaxToken>),
+
+    /// Content that has been exempt from being formatted due to the use
+    /// of a ignore-pragma.
+    IgnoredContent {
+        /// This can be `None` if the content was ignored from within with a
+        /// ignore-parent pragma.
+        ignore_pragma: Option<IgnorePragma>,
+        content: Vec<NodeOrToken<SyntaxNode, SyntaxToken>>,
+    },
 
     /// The content is the "end".
     ///
@@ -87,19 +94,21 @@ impl NodeWithTriviaContent {
         matches!(self, Self::NoContent | Self::End)
     }
 
+    // TODO Rename to as_content
     #[must_use]
     pub const fn as_ref(&self) -> Option<&NodeOrToken<SyntaxNode, SyntaxToken>> {
         match self {
             Self::Content(node_or_token) => Some(node_or_token),
-            Self::NoContent | Self::End => None,
+            Self::NoContent | Self::End | Self::IgnoredContent { .. } => None,
         }
     }
 
+    // TODO Rename to into_content
     #[must_use]
     pub fn into_option(self) -> Option<NodeOrToken<SyntaxNode, SyntaxToken>> {
         match self {
             Self::Content(node_or_token) => Some(node_or_token),
-            Self::NoContent | Self::End => None,
+            Self::NoContent | Self::End | Self::IgnoredContent { .. } => None,
         }
     }
 }
@@ -117,11 +126,6 @@ pub struct NodeWithTrivia {
     pub content: NodeWithTriviaContent,
     /// Any trivia associated with the content, that succeeded it in the source.
     pub succeeding_trivia: Vec<NodeTriviaItem>,
-    /// Whether this [`NodeWithTrivia`] wants to be formatted.
-    ///
-    /// This tells us if the content was preceded by, or contains a ignore-pragma that
-    /// would exempt it from being formatted. See [`crate::ignore`] for details.
-    pub format: bool,
 }
 
 impl NodeWithTrivia {
@@ -145,6 +149,17 @@ impl NodeWithTrivia {
                 syntax.put_back(node_or_token);
             },
             NodeWithTriviaContent::NoContent | NodeWithTriviaContent::End => {},
+            NodeWithTriviaContent::IgnoredContent {
+                ignore_pragma,
+                content,
+            } => {
+                if let Some(ignore_pragma) = ignore_pragma {
+                    syntax.put_back(NodeOrToken::Token(ignore_pragma.token));
+                }
+                for content in content {
+                    syntax.put_back(content);
+                }
+            },
         }
         for item in self.preceding_trivia.into_iter().rev() {
             item.put_back(syntax);
@@ -208,6 +223,7 @@ impl NodeWithTrivia {
         }
     }
 
+    // TODO Deprecate non-optional expects
     /// Returns a [`FormatDocumentError`] if self did not have a content node or that node
     /// did not match the given `SyntaxKind`.
     #[track_caller]
@@ -254,7 +270,9 @@ impl NodeWithTrivia {
         T: AstNode,
     {
         match &self.content {
-            NodeWithTriviaContent::NoContent | NodeWithTriviaContent::End => Ok(self),
+            NodeWithTriviaContent::NoContent
+            | NodeWithTriviaContent::End
+            | NodeWithTriviaContent::IgnoredContent { .. } => Ok(self),
             NodeWithTriviaContent::Content(node_or_token) => {
                 if let NodeOrToken::Node(node) = node_or_token
                     && T::can_cast(node.kind())
@@ -315,14 +333,19 @@ impl NodeWithTrivia {
     /// Does this node have a nonempty content?
     #[must_use]
     pub const fn has_content(&self) -> bool {
-        matches!(self.content, NodeWithTriviaContent::Content(_))
+        matches!(
+            self.content,
+            NodeWithTriviaContent::Content(_) | NodeWithTriviaContent::IgnoredContent { .. }
+        )
     }
 
     #[must_use]
     pub fn content(&self) -> Option<NodeOrToken<SyntaxNode, SyntaxToken>> {
         match &self.content {
             NodeWithTriviaContent::Content(node_or_token) => Some(node_or_token.clone()),
-            NodeWithTriviaContent::NoContent | NodeWithTriviaContent::End => None,
+            NodeWithTriviaContent::NoContent
+            | NodeWithTriviaContent::End
+            | NodeWithTriviaContent::IgnoredContent { .. } => None,
         }
     }
 

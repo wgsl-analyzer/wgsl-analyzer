@@ -90,6 +90,7 @@ use crate::{
         types::{gen_template_list, gen_type_specifier},
         verbatim::gen_node_syntax_verbatim,
     },
+    ignore::gen_ignore_pragma,
     print_item_buffer::{
         PrintItemBuffer,
         spacing_request::{Request, RequestItem},
@@ -404,74 +405,38 @@ fn gen_node(
 }
 
 /// Generate only the preceding trivia of a [`NodeWithTrivia`].
-///
-/// If the [`NodeWithTrivia`] is ignored via a pragma, the trivia
-/// is output verbatim.
 #[inline]
 pub fn gen_node_preceding_trivia(node: &NodeWithTrivia) -> FormatDocumentResult<PrintItemBuffer> {
-    if node.format {
-        gen_node_trivia(&node.preceding_trivia)
-    } else {
-        gen_node_trivia_verbatim(&node.preceding_trivia)
-    }
+    gen_node_trivia(&node.preceding_trivia)
 }
 
 /// Generate only the succeeding trivia of a [`NodeWithTrivia`].
-///
-/// This always formats, regardless of [`NodeWithTrivia::format`].
-///
-/// Yes this is not a beautiful solution, but it turns a lot of
-/// head-scratcher problems into nonproblems.
-/// Users don't usually expect the items in [`NodeWithTrivia::succeeding_trivia`] to be "part" of the item that they ignored.
-/// e.g preserving trailing double spaces after an ignored item might be correct, but unexpected.
-/// So... this solution is fine for now.
 #[inline]
 pub fn gen_node_succeeding_trivia(node: &NodeWithTrivia) -> FormatDocumentResult<PrintItemBuffer> {
     gen_node_trivia(&node.succeeding_trivia)
 }
 
 /// Generate only the content of a [`NodeWithTrivia`].
-///
-/// If the [`NodeWithTrivia`] is ignored via a pragma, the content
-/// is output verbatim.
 #[inline]
 pub fn gen_node_content(node: &NodeWithTrivia) -> FormatDocumentResult<PrintItemBuffer> {
     let mut formatted = PrintItemBuffer::default();
 
-    if let NodeWithTriviaContent::Content(content) = &node.content {
-        if node.format {
+    match &node.content {
+        NodeWithTriviaContent::NoContent | NodeWithTriviaContent::End => {},
+        NodeWithTriviaContent::Content(content) => {
             formatted.extend(gen_node(node, content)?);
-        } else {
-            formatted.extend(gen_node_syntax_verbatim(content)?);
-        }
-    }
-
-    Ok(formatted)
-}
-
-/// Generate [`NodeTriviaItem`]s verbatim - ignoring all formatting.
-#[inline]
-pub fn gen_node_trivia_verbatim(
-    trivia: &[NodeTriviaItem]
-) -> FormatDocumentResult<PrintItemBuffer> {
-    let mut formatted = PrintItemBuffer::default();
-    for trivia in trivia {
-        match trivia {
-            NodeTriviaItem::LineSpacing(content) => {
-                formatted.extend(gen_node_syntax_verbatim(&content.syntax())?);
-            },
-            NodeTriviaItem::Comment(content) | NodeTriviaItem::NewlinedComment(content) => {
-                formatted.extend(gen_node_syntax_verbatim(&content.syntax())?);
-            },
-            NodeTriviaItem::AttributeList(content) => {
-                formatted.extend(gen_node_syntax_verbatim(&NodeOrToken::Node(
-                    content.syntax().clone(),
-                ))?);
-            },
-            NodeTriviaItem::Discarded(content) => {
+        },
+        NodeWithTriviaContent::IgnoredContent {
+            ignore_pragma,
+            content,
+        } => {
+            if let Some(ignore_pragma) = ignore_pragma {
+                formatted.extend(gen_ignore_pragma(ignore_pragma));
+            }
+            for content in content {
                 formatted.extend(gen_node_syntax_verbatim(content)?);
-            },
-        }
+            }
+        },
     }
 
     Ok(formatted)

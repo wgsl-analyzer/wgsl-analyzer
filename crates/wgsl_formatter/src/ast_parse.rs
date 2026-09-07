@@ -11,7 +11,7 @@ use syntax::{AstNode as _, ast::AttributeList};
 use crate::{
     blankspace::{Blankspace, read_blankspace},
     generators::comments::read_comment,
-    ignore::{is_ignore_next_pragma_comment, is_ignored_from_within},
+    ignore::{is_ignored_from_within, read_ignore_next_pragma_comment},
     reporting::FormatDocumentResult,
     trivia::{NodeTriviaItem, NodeWithTrivia, NodeWithTriviaContent},
 };
@@ -421,17 +421,19 @@ pub fn parse_node_with<TPolicy>(
 where
     TPolicy: ParseNodePolicy,
 {
+    let mut ignore_data = None;
+
     let mut preceding_trivia = Vec::new();
     let mut succeeding_trivia = Vec::new();
-    let mut enable_formatting = true;
 
-    let content = loop {
+    let mut content = loop {
         // I wish we had linear types...
         // NOTE: Make sure node is either put_back onto syntax or consumed in a meaningful way
         if let Some(node) = syntax.next() {
             // Check if this is an ignoring directive
-            if is_ignore_next_pragma_comment(&node) {
-                enable_formatting = false;
+            if let Some(ignore) = read_ignore_next_pragma_comment(&node) {
+                ignore_data = Some((ignore, std::mem::take(&mut preceding_trivia)));
+                continue;
             }
 
             let action = policy.handle_preceding(&node);
@@ -502,10 +504,35 @@ where
         }
     };
 
-    if let NodeWithTriviaContent::Content(NodeOrToken::Node(content)) = &content
-        && is_ignored_from_within(content)
+    // Replace with ignore
+    if let Some((ignore, actual_preceding_trivia)) = ignore_data {
+        let content_a = std::mem::replace(&mut preceding_trivia, actual_preceding_trivia);
+        let old_content = std::mem::replace(&mut content, NodeWithTriviaContent::End);
+
+        let ignored_content = content_a
+            .into_iter()
+            .map(NodeTriviaItem::syntax)
+            .chain(old_content.into_option())
+            .collect();
+
+        content = NodeWithTriviaContent::IgnoredContent {
+            ignore_pragma: Some(ignore),
+            content: ignored_content,
+        };
+    }
+
+    // Handle ignore from within
+    if let NodeWithTriviaContent::Content(NodeOrToken::Node(old_content)) = &content
+        && is_ignored_from_within(old_content)
     {
-        enable_formatting = false;
+        let old_content = std::mem::replace(&mut content, NodeWithTriviaContent::End);
+
+        let ignored_content = old_content.into_option().into_iter().collect();
+
+        content = NodeWithTriviaContent::IgnoredContent {
+            ignore_pragma: None,
+            content: ignored_content,
+        };
     }
 
     // Hacky special handling to make sure there is no line-spacing if attributes are immediately followed by their target
@@ -593,7 +620,6 @@ where
         preceding_trivia,
         content,
         succeeding_trivia,
-        format: enable_formatting,
     }
 }
 

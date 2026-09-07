@@ -141,7 +141,8 @@ pub fn ignore_on_if_with_emptyline() {
 fn main() {
 
     // @wgslfmt(ignore)
-    if ( vec3<   f32>(0.0)  >1.0 ) {
+    if ( vec3<   f32>
+    (0.0)  >1.0 ) {
 
     }
 
@@ -149,9 +150,9 @@ fn main() {
         ",
         expect![[r#"
             fn main() {
-
                 // @wgslfmt(ignore)
-                if ( vec3<   f32>(0.0)  >1.0 ) {
+                if ( vec3<   f32>
+                (0.0)  >1.0 ) {
 
                 }
             }
@@ -167,7 +168,8 @@ fn main() {
 
 
     // @wgslfmt(ignore)
-    if ( vec3<   f32>(0.0)  >1.0 ) {
+    if ( vec3 < f32
+        >(0.0)  >1.0 ) {
 
 
     }
@@ -177,10 +179,9 @@ fn main() {
         ",
         expect![[r#"
             fn main() {
-
-
                 // @wgslfmt(ignore)
-                if ( vec3<   f32>(0.0)  >1.0 ) {
+                if ( vec3 < f32
+                    >(0.0)  >1.0 ) {
 
 
                 }
@@ -231,7 +232,7 @@ let a = thing(
                 let a = thing(
                         1,
                         2,
-            /* @wgslfmt(ignore) */ vec3<   f32>(1.0,
+                        /* @wgslfmt(ignore) */ vec3<   f32>(1.0,
             0.0,
             1.0),
                         3,
