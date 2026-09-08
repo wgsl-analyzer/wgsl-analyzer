@@ -83,3 +83,34 @@ fn format_range_in_for_statement() {
         "#]],
     );
 }
+
+#[test]
+fn format_whole_document_range() {
+    check_range(
+        &strip_leading_indentation(
+            "#|#
+            fn          main()
+
+            {
+                for(var i      =  0; i < 7;  i  +=                  1) {}
+            }#|#
+            ",
+        ),
+        expect![[r#"
+            fn main() {
+                for(var i = 0; i < 7; i += 1) {}
+            }
+        "#]],
+    );
+}
+
+#[test]
+fn format_empty_document_range() {
+    check_range(
+        &strip_leading_indentation(
+            "#|##|#
+            ",
+        ),
+        expect![""],
+    );
+}

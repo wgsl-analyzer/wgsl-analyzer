@@ -40,12 +40,14 @@ pub fn gen_source_file(node: &ast::SourceFile) -> FormatDocumentResult<PrintItem
     formatted.request(Request::discourage(RequestItem::LineBreak));
     formatted.request(Request::discourage(RequestItem::Space));
 
-    for item in items {
+    for item in &items {
         formatted.request(Request::expect(RequestItem::LineBreak));
-        formatted.extend(gen_node_with_trivia(&item)?);
+        formatted.extend(gen_node_with_trivia(item)?);
     }
 
-    formatted.request(Request::expect(RequestItem::LineBreak));
+    if !items.is_empty() {
+        formatted.request(Request::force(RequestItem::LineBreak));
+    }
     formatted.request(Request::discourage(RequestItem::EmptyLine));
     formatted.request(Request::discourage(RequestItem::Space));
 
