@@ -38,7 +38,6 @@ pub use format::{
     FormatStringError, FormattedRange, format_file, format_node, format_range, format_tree,
 };
 
-/// Configuration options for the WGSL formatter.
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct FormattingOptions {

@@ -32,7 +32,7 @@ use rustc_hash::FxHashMap;
 use salsa::{Cancelled, Database as _};
 use syntax::{Capabilities, ExtensionsConfig, Parse, SyntaxNode};
 use triomphe::Arc;
-use vfs::FileId;
+use vfs::{FileId, VfsPath};
 use wgsl_formatter::FormattingOptions;
 
 use crate::signature_help::SignatureHelp;
@@ -393,7 +393,7 @@ impl Analysis {
         file_id: FileId,
         range: Option<TextRange>,
     ) -> Cancellable<Option<wgsl_formatter::FormattedRange>> {
-        self.with_db(|database| formatting::format(database, config, file_id, range))
+        self.with_db(|db| formatting::format(db, config, file_id, range))
     }
 
     /// Returns a short text describing element at position.

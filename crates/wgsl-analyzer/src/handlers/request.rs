@@ -5,8 +5,8 @@
 )]
 
 use base_db::{FilePosition, FileRange, TextLen as _, TextRange};
-use hir::diagnostics::DiagnosticsConfig;
-use ide::{Cancellable, HoverAction, HoverGotoTypeData, diagnostics::Severity};
+use ide::{Cancellable, HoverAction, HoverGotoTypeData};
+use ide_diagnostics::DiagnosticsConfig;
 use lsp_types::{
     CompletionList, CompletionParams, CompletionResponse, Contents, Definition, DefinitionParams,
     DefinitionResponse, Diagnostic, DiagnosticRelatedInformation, DiagnosticSeverity,

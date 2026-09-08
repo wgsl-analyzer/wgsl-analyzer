@@ -962,7 +962,7 @@ impl GlobalState {
             .on_fmt_thread::<DocumentRangeFormattingRequest>(
                 handlers::request::handle_range_formatting,
             )
-            .on::<RETRY, lt::request::FoldingRangeRequest>(handlers::request::handle_folding_range)
+            .on::<RETRY, FoldingRangeRequest>(handlers::request::handle_folding_range)
             .on::<NO_RETRY, lsp::extensions::HoverRequest>(handlers::request::handle_hover)
             .on::<NO_RETRY, ShutdownRequest>(handlers::request::handle_shutdown)
             .on::<NO_RETRY, InlayHintRequest>(handlers::request::handle_inlay_hints)

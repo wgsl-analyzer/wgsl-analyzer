@@ -6,6 +6,8 @@ use ide::{
     HoverConfig, HoverDocFormat, MemoryLayoutHoverRenderKind,
     inlay_hints::{self, StructLayoutHints},
 };
+use wgsl_formatter::FormattingOptions;
+
 use ide::{
     // AssistConfig,
     // CallHierarchyConfig,
@@ -38,8 +40,7 @@ use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
 use stdx::format_to_acc;
 use triomphe::Arc;
-use vfs::AbsPathBuf;
-use wgsl_formatter::FormattingOptions;
+use vfs::{AbsPath, AbsPathBuf};
 
 use crate::lsp::capabilities::ClientCapabilities;
 
