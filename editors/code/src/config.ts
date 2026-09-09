@@ -82,8 +82,8 @@ export class Config {
 	}
 
 	/**
-	 * Sets up additional language configuration that is impossible to do via a
-	 * separate language-configuration.json file. See [1] for more information.
+	 * Sets up additional language configuration that is impossible to do using a
+	 * separate `language-configuration.json` file. See [1] for more information.
 	 *
 	 * [1]: https://github.com/Microsoft/vscode/issues/11514#issuecomment-244707076
 	 */

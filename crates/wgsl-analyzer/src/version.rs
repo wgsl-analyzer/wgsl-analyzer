@@ -13,13 +13,10 @@ pub struct CommitInfo {
 pub struct VersionInfo {
     /// wgsl-analyzer's version, such as "1.57.0", "1.58.0-beta.1", "1.59.0-nightly", etc.
     pub version: &'static str,
-    /// The release channel we were built for (stable/beta/nightly/dev).
-    ///
-    /// `None` if not built via bootstrap.
-    pub release_channel: Option<&'static str>,
+
     /// Information about the Git repository we may have been built from.
     ///
-    /// `None` if not built from a git repo.
+    /// [`None`] if not built from a git repo.
     pub commit_info: Option<CommitInfo>,
 }
 
@@ -45,7 +42,6 @@ pub const fn version() -> VersionInfo {
         None => "0.0.0",
     };
 
-    let release_channel = option_env!("CFG_RELEASE_CHANNEL");
     let commit_info = match (
         option_env!("WA_COMMIT_SHORT_HASH"),
         option_env!("WA_COMMIT_HASH"),
@@ -61,7 +57,6 @@ pub const fn version() -> VersionInfo {
 
     VersionInfo {
         version,
-        release_channel,
         commit_info,
     }
 }

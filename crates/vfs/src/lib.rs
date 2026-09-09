@@ -1,10 +1,9 @@
 //! # Virtual File System
 //!
-//! VFS records all file changes pushed to it via [`set_file_contents`].
+//! VFS records all file changes pushed to it using [`set_file_contents`].
 //! As such it only ever stores changes, not the actual content of a file at any given moment.
-//! All file changes are logged, and can be retrieved via
-//! [`take_changes`] method. The pack of changes is then pushed to `salsa` and
-//! triggers incremental recomputation.
+//! All file changes are logged, and can be retrieved using [`take_changes`] method.
+//! The pack of changes is then pushed to `salsa` and triggers incremental recomputation.
 //!
 //! Files in VFS are identified with [`FileId`]s -- interned paths. The notion of
 //! the path, [`VfsPath`] is somewhat abstract: at the moment, it is represented
@@ -15,7 +14,7 @@
 //! loading and file watching. [`Handle`] is dynamically configured with a set of
 //! directory entries which should be scanned and watched. [`Handle`] then
 //! asynchronously pushes file changes. Directory entries are configured in
-//! free-form via list of globs, it's up to the [`Handle`] to interpret the globs
+//! free-form using lists of globs, it's up to the [`Handle`] to interpret the globs
 //! in any specific way.
 //!
 //! VFS stores a flat list of files. [`file_set::FileSet`] can partition this list
@@ -51,18 +50,17 @@ mod vfs_path;
 
 use std::{fmt, hash::BuildHasherDefault, mem};
 
-use crate::path_interner::PathInterner;
+use indexmap::{IndexMap, map::Entry};
+pub use paths::{AbsPath, AbsPathBuf};
+use rustc_hash::FxHasher;
+use stdx::hash_once;
+use tracing::{Level, span};
 
+use crate::path_interner::PathInterner;
 pub use crate::{
     anchored_path::{AnchoredPath, AnchoredPathBuf},
     vfs_path::VfsPath,
 };
-use indexmap::{IndexMap, map::Entry};
-pub use paths::{AbsPath, AbsPathBuf};
-
-use rustc_hash::FxHasher;
-use stdx::hash_once;
-use tracing::{Level, span};
 
 /// Handle to a file in [`Vfs`].
 ///
@@ -369,8 +367,8 @@ impl Vfs {
         self.data[file_id.index_usize()]
     }
 
-    /// We cannot ignore excluded files, because this will lead to errors when the client
-    /// requests semantic information for them, so we instead mark them specially.
+    /// We cannot ignore excluded files because this will lead to errors when the client requests semantic information for them.
+    /// Therefore, mark them specially.
     pub fn insert_excluded_file(
         &mut self,
         path: VfsPath,
@@ -383,9 +381,10 @@ impl Vfs {
 impl fmt::Debug for Vfs {
     fn fmt(
         &self,
-        f: &mut fmt::Formatter<'_>,
+        formatter: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
-        f.debug_struct("Vfs")
+        formatter
+            .debug_struct("Vfs")
             .field("n_files", &self.data.len())
             .finish_non_exhaustive()
     }

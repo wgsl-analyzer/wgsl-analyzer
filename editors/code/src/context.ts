@@ -19,9 +19,9 @@ import {
 	type WeslEditor,
 } from "./utilities";
 
-// We only support local folders, not eg. Live Share (`vlsl:` scheme), so do not activate if
-// only those are in use. We use "Empty" to represent these scenarios.
-// (w-a still somewhat works with Live Share, because commands are tunneled to the host)
+// We only support local folders, not, for example, Live Share (`vlsl:` scheme), so do not activate if only those are in use.
+// We use "Empty" to represent these scenarios.
+// (w-a still somewhat works with Live Share because commands are tunneled to the host)
 
 export type Workspace =
 	| { kind: "Empty" }

@@ -14,7 +14,7 @@ https://github.com/DavidAnson/markdownlint/blob/main/doc/md036.md
 This document describes LSP extensions used by wgsl-analyzer.
 It is a best-effort document; when in doubt, consult the source (and send a PR with clarification).
 We aim to upstream all non-WESL-specific extensions to the protocol, but this is not a top priority.
-All capabilities are enabled via the `experimental` field of `ClientCapabilities` or `ServerCapabilities`.
+All capabilities are enabled through the `experimental` field of `ClientCapabilities` or `ServerCapabilities`.
 Requests which we hope to upstream live under the `experimental/` namespace.
 Requests, which are likely to always remain specific to `wgsl-analyzer`, are under the `wgsl-analyzer/` namespace.
 
@@ -188,7 +188,7 @@ fn foo() {
 ### Unresolved Question
 
 - What is the position of the cursor after `joinLines`?
-  Currently, this is left to editor's discretion, but it might be useful to specify on the server via snippets.
+  Currently, this is left to editor's discretion, but it might be useful to specify on the server by using snippets.
   However, it then becomes unclear how it works with multi cursor.
 
 ## On Enter
@@ -280,7 +280,7 @@ WorkspaceEdit
 
 ### Example
 
-SSR with query `foo($a, $b) ==>> ($a).foo($b)` will transform, eg `foo(y + 5, z)` into `(y + 5).foo(z)`.
+SSR with query `foo($a, $b) ==>> ($a).foo($b)` will transform, for example, `foo(y + 5, z)` into `(y + 5).foo(z)`.
 
 ### Unresolved Question
 
@@ -420,7 +420,7 @@ Clients are discouraged from but are allowed to use the `health` status to decid
 
 ## Controlling Flycheck
 
-The flycheck/checkOnSave feature can be controlled via notifications sent by the client to the server.
+The flycheck/checkOnSave feature can be controlled by using notifications sent by the client to the server.
 
 **Method:** `wgsl-analyzer/runFlycheck`
 

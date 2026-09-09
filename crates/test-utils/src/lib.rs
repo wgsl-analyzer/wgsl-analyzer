@@ -195,9 +195,9 @@ pub fn extract_tags(
                 result.push_str(text);
                 break;
             },
-            Some(i) => {
-                result.push_str(&text[..i]);
-                text = &text[i..];
+            Some(index) => {
+                result.push_str(&text[..index]);
+                text = &text[index..];
                 if text.starts_with(&open) {
                     let close_open = text.find('>').unwrap();
                     let attribute = text[open.len()..close_open].trim();

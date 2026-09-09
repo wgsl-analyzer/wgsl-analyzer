@@ -3,7 +3,7 @@
 **Source:** [config.rs](https://github.com/wgsl-analyzer/wgsl-analyzer/blob/main/crates/wgsl-analyzer/src/config.rs)
 
 The [Installation](./installation.md) section contains details on configuration for some of the editors.
-In general, `wgsl-analyzer` is configured via LSP messages, which means that it is up to the editor to decide on the exact format and location of configuration files.
+In general, `wgsl-analyzer` is configured by using LSP messages, which means that it is up to the editor to decide on the exact format and location of configuration files.
 
 Some editors, such as [VS Code](./vs_code.md) or [COC plugin in Vim](./other_editors.md#coc-wgsl-analyzer), provide `wgsl-analyzer`-specific configuration UIs.
 Other editors may require you to know a bit more about the interaction with `wgsl-analyzer`.

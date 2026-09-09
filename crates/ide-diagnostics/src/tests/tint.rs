@@ -4,9 +4,8 @@ use expect_test::expect;
 use toolchain::{Tool, require_tool};
 use vfs::{AbsPath, AbsPathBuf};
 
-use crate::DiagnosticsConfig;
-
 use super::check_diagnostics_with_config;
+use crate::DiagnosticsConfig;
 
 #[test]
 fn store_type_must_be_storable() {

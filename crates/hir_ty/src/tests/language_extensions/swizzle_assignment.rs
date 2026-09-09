@@ -6,7 +6,7 @@ use crate::{
 };
 
 #[test]
-fn reading_and_writing_via_swizzle_views_on_references() {
+fn reading_and_writing_through_swizzle_views_on_references() {
     check_infer(
         "
 // requires swizzle_assignment;
@@ -70,12 +70,12 @@ fn swizzle_read_and_write() {
 }
 
 #[test]
-fn reading_and_writing_via_swizzle_views_on_pointers() {
+fn reading_and_writing_through_swizzle_views_on_pointers() {
     check_infer(
         "
 // requires pointer_composite_access, swizzle_assignment;
 
-fn swizzle_read_and_write_via_pointer(p: ptr<function,vec4u>) {
+fn swizzle_read_and_write_through_pointer(p: ptr<function,vec4u>) {
     // Same as:  (*p).y = 1; (*p).z = 2;
     p.yz = vec2u(1,2);
 
@@ -99,30 +99,30 @@ fn swizzle_read_and_write_via_pointer(p: ptr<function,vec4u>) {
 }
         ",
         expect![[r#"
-            97..98 'p': ptr<function, vec4<u32>, read_write>
-            168..169 'p': ptr<function, vec4<u32>, read_write>
-            168..172 'p.yz': swizzle<function, u32, 4, 2>
-            175..185 'vec2u(1,2)': vec2<u32>
-            181..182 '1': integer
-            183..184 '2': integer
-            250..251 'u': vec3<u32>
-            254..255 'p': ptr<function, vec4<u32>, read_write>
-            254..259 'p.agb': swizzle<function, u32, 4, 3>
-            335..336 'p': ptr<function, vec4<u32>, read_write>
-            335..339 'p.yz': swizzle<function, u32, 4, 2>
-            335..342 'p.yz.yx': swizzle<function, u32, 2, 2>
-            345..357 'vec2(99,100)': vec2<integer>
-            350..352 '99': integer
-            353..356 '100': integer
-            574..575 'p': ptr<function, vec4<u32>, read_write>
-            574..578 'p.yz': swizzle<function, u32, 4, 2>
-            574..580 'p.yz.y': ref<function, u32, read_write>
-            583..585 '99': integer
-            809..810 'p': ptr<function, vec4<u32>, read_write>
-            809..813 'p.zy': swizzle<function, u32, 4, 2>
-            809..816 'p.zy[1]': ref<function, u32, read_write>
-            814..815 '1': integer
-            819..821 '50': integer
+            101..102 'p': ptr<function, vec4<u32>, read_write>
+            172..173 'p': ptr<function, vec4<u32>, read_write>
+            172..176 'p.yz': swizzle<function, u32, 4, 2>
+            179..189 'vec2u(1,2)': vec2<u32>
+            185..186 '1': integer
+            187..188 '2': integer
+            254..255 'u': vec3<u32>
+            258..259 'p': ptr<function, vec4<u32>, read_write>
+            258..263 'p.agb': swizzle<function, u32, 4, 3>
+            339..340 'p': ptr<function, vec4<u32>, read_write>
+            339..343 'p.yz': swizzle<function, u32, 4, 2>
+            339..346 'p.yz.yx': swizzle<function, u32, 2, 2>
+            349..361 'vec2(99,100)': vec2<integer>
+            354..356 '99': integer
+            357..360 '100': integer
+            578..579 'p': ptr<function, vec4<u32>, read_write>
+            578..582 'p.yz': swizzle<function, u32, 4, 2>
+            578..584 'p.yz.y': ref<function, u32, read_write>
+            587..589 '99': integer
+            813..814 'p': ptr<function, vec4<u32>, read_write>
+            813..817 'p.zy': swizzle<function, u32, 4, 2>
+            813..820 'p.zy[1]': ref<function, u32, read_write>
+            818..819 '1': integer
+            823..825 '50': integer
         "#]],
     );
 }
@@ -133,7 +133,7 @@ fn invalid_swizzle_views() {
         "
 // requires pointer_composite_access, swizzle_assignment;
 
-fn swizzle_read_and_write_via_pointer(p: ptr<function,vec4u>) {
+fn swizzle_read_and_write_through_pointer(p: ptr<function,vec4u>) {
     // Same as:  (*p).y = 1; (*p).z = 2;
     p.yz = vec2u(1,2);
 
@@ -157,30 +157,30 @@ fn swizzle_read_and_write_via_pointer(p: ptr<function,vec4u>) {
 }
         ",
         expect![[r#"
-            97..98 'p': ptr<function, vec4<u32>, read_write>
-            168..169 'p': ptr<function, vec4<u32>, read_write>
-            168..172 'p.yz': swizzle<function, u32, 4, 2>
-            175..185 'vec2u(1,2)': vec2<u32>
-            181..182 '1': integer
-            183..184 '2': integer
-            250..251 'u': vec3<u32>
-            254..255 'p': ptr<function, vec4<u32>, read_write>
-            254..259 'p.agb': swizzle<function, u32, 4, 3>
-            335..336 'p': ptr<function, vec4<u32>, read_write>
-            335..339 'p.yz': swizzle<function, u32, 4, 2>
-            335..342 'p.yz.yx': swizzle<function, u32, 2, 2>
-            345..357 'vec2(99,100)': vec2<integer>
-            350..352 '99': integer
-            353..356 '100': integer
-            574..575 'p': ptr<function, vec4<u32>, read_write>
-            574..578 'p.yz': swizzle<function, u32, 4, 2>
-            574..580 'p.yz.y': ref<function, u32, read_write>
-            583..585 '99': integer
-            809..810 'p': ptr<function, vec4<u32>, read_write>
-            809..813 'p.zy': swizzle<function, u32, 4, 2>
-            809..816 'p.zy[1]': ref<function, u32, read_write>
-            814..815 '1': integer
-            819..821 '50': integer
+            101..102 'p': ptr<function, vec4<u32>, read_write>
+            172..173 'p': ptr<function, vec4<u32>, read_write>
+            172..176 'p.yz': swizzle<function, u32, 4, 2>
+            179..189 'vec2u(1,2)': vec2<u32>
+            185..186 '1': integer
+            187..188 '2': integer
+            254..255 'u': vec3<u32>
+            258..259 'p': ptr<function, vec4<u32>, read_write>
+            258..263 'p.agb': swizzle<function, u32, 4, 3>
+            339..340 'p': ptr<function, vec4<u32>, read_write>
+            339..343 'p.yz': swizzle<function, u32, 4, 2>
+            339..346 'p.yz.yx': swizzle<function, u32, 2, 2>
+            349..361 'vec2(99,100)': vec2<integer>
+            354..356 '99': integer
+            357..360 '100': integer
+            578..579 'p': ptr<function, vec4<u32>, read_write>
+            578..582 'p.yz': swizzle<function, u32, 4, 2>
+            578..584 'p.yz.y': ref<function, u32, read_write>
+            587..589 '99': integer
+            813..814 'p': ptr<function, vec4<u32>, read_write>
+            813..817 'p.zy': swizzle<function, u32, 4, 2>
+            813..820 'p.zy[1]': ref<function, u32, read_write>
+            818..819 '1': integer
+            823..825 '50': integer
         "#]],
     );
 }

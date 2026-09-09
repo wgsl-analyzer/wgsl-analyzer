@@ -26,7 +26,7 @@ pub enum DefDiagnosticKind {
     TooManySupers {
         id: Location<ast::ImportStatement>,
     },
-    /// Cannot resolve an import statement, because the current file is not a part of a package.
+    /// Cannot resolve an import statement because the current file is not a part of a package.
     DetachedFile {
         id: Location<ast::ImportStatement>,
     },
@@ -87,6 +87,7 @@ impl DefDiagnostic {
             kind: DefDiagnosticKind::DetachedFile { id },
         }
     }
+
     pub(crate) const fn name_conflict(
         container: EditionedFileId,
         item: Location<ast::Item>,

@@ -443,7 +443,7 @@ struct Op {
     pad1: u32,
     pad2: u32,
     // Entries in the unitary are: 00, 01, 02, 03, 10, 11, 12, 13, 20, ..., 32, 33
-    // 1q matrix elements are stored in: 00, 01, 10, 11 (i.e., indices 0, 1, 4, and 5)
+    // 1q matrix elements are stored in: 00, 01, 10, 11 (in other words, indices 0, 1, 4, and 5)
     unitary: array<vec2f, 16>,
 } // Struct size: 4 * 4 + 16 * 8 = 160 bytes (which is aligned to 16 bytes)
 
@@ -459,7 +459,7 @@ struct ShotParams {
 }
 
 struct NoiseTableMetadata {
-    /// The total probability of any noise (i.e. sum of all noise entries) in `Q1.63` format
+    /// The total probability of any noise (in other words, sum of all noise entries) in `Q1.63` format
     noise_probability_lo: u32,
     noise_probability_hi: u32,
     /// The start offset of this table's entries in the global `NoiseTableEntry` array
@@ -470,7 +470,7 @@ struct NoiseTableMetadata {
 
 struct NoiseTableEntry {
     /// The correlated pauli string as bits (2 bits per qubit). If bit 0 is set, then it has bit-flip
-    /// noise, and if bit 1 is set then it has phase-flip noise. e.g., `110001 == "YIX"`
+    /// noise, and if bit 1 is set then it has phase-flip noise. For example, `110001 == "YIX"`.
     paulis_lo: u32,
     paulis_hi: u32,
     /// The probability of the noise occurring in `Q1_63` format. This is a float format where the high
@@ -630,7 +630,7 @@ fn setUnitaryRow(shot_idx: u32, row: u32, newRow: array<vec2f, 4>) {
 //#region Hash and random number generation
 
 // See https://www.reedbeta.com/blog/hash-functions-for-gpu-rendering/
-// Use PCG hash function to generate a well-distributed hash from a simple integer input (e.g., shot id)
+// Use PCG hash function to generate a well-distributed hash from a simple integer input (for example, shot id)
 fn hash_pcg(input: u32) -> u32 {
     var state = input * 747796405u + 2891336453u;
     var word = ((state >> ((state >> 28u) + 4u)) ^ state) * 277803737u;
@@ -692,8 +692,8 @@ fn is_1q_op(op_id: u32) -> bool {
 fn shot_init_per_op(shot_idx: u32) {
     let shot = &shots[shot_idx];
 
-    // Default to 1.0 renormalization (i.e., no renormalization needed). MResetZ or noise affecting the
-    // overall probability distribution (e.g. loss or amplitude damping) will update this if needed.
+    // Default to 1.0 renormalization (in other words, no renormalization needed). MResetZ or noise affecting the
+    // overall probability distribution (for example, loss or amplitude damping) will update this if needed.
     shot.renormalize = 1.0;
     shot.qubits_updated_last_op_mask = 0u;
 
@@ -977,7 +977,7 @@ fn prep_measure_reset(shot_idx: u32, op_idx: u32, qubit: u32, result_id: u32, is
                 atomicStore(&results[(shot_idx * RESULT_COUNT) + result_id], result);
             }
         } else {
-            // No result to store (e.g. ResetZ). If the qubit is lost, it's already in the zero
+            // No result to store (for example, ResetZ). If the qubit is lost, it's already in the zero
             // state so nothing to update. Just set to ID and return.
             if shot.qubit_state[qubit].heat == -1.0 {
                 shot.op_type = OPID_ID;
@@ -1188,7 +1188,7 @@ fn handle_lost_operand_policy(shot_idx: u32, op_idx: u32, q1: u32, q2: u32) {
             }
             default {
                 // SWAP only supports SKIP, PROPAGATE, RESIDUAL_S_DAGGER, and
-                // APPLY_ANYWAY. Any other policy (e.g. DEGRADE) is rejected by
+                // APPLY_ANYWAY. Any other policy (for example, DEGRADE) is rejected by
                 // the host, so reaching here indicates a bug.
                 report_shot_error(shot_idx, ERR_UNSUPPORTED_LOSS_POLICY);
                 shot.op_type = OPID_ID;
@@ -1264,8 +1264,8 @@ fn handle_lost_operand_policy(shot_idx: u32, op_idx: u32, q1: u32, q2: u32) {
 
 // Records an error `code` for `shot_idx` in both the diagnostics buffer and the
 // shot's result-code slot, mirroring the reporting done elsewhere in this file.
-// Used for conditions the host guarantees never occur (e.g. a loss policy that
-// is not valid for a given gate).
+// Used for conditions the host guarantees never occur.
+// For example, a loss policy that is not valid for a given gate.
 fn report_shot_error(shot_idx: u32, code: u32) {
     atomicCompareExchangeWeak(&diagnostics.error_code, 0u, code);
     let err_index = (shot_idx + 1u) * RESULT_COUNT - 1u;
@@ -1474,7 +1474,7 @@ fn apply_2q_pauli_noise(shot_idx: u32, op_idx: u32, noise_idx: u32, q1: u32, q2:
 // Pauli (term: X=1, Z=2, Y=3) acting on `target_is_q2 ? q2 : q1`. This is the
 // same row permutation/negation that `apply_2q_pauli_noise` fuses, just applied
 // to the policy-degraded gate rather than the original op. Note the Y branch
-// uses real signs (i.e. -i*Y), matching `apply_2q_pauli_noise`; the resulting
+// uses real signs (in other words, `-i*Y`), matching `apply_2q_pauli_noise`; the resulting
 // global phase is unobservable for a Pauli noise channel.
 fn fuse_1q_pauli_on_pair_unitary(shot_idx: u32, target_is_q2: bool, term: u32) {
     let si = i32(shot_idx);
@@ -1534,7 +1534,7 @@ fn apply_2q_pauli_noise_on_survivor(shot_idx: u32, op_idx: u32, noise_idx: u32, 
     // Surviving operand(s) after the policy ran (alive => heat != -1.0).
     let q1_alive = shot.qubit_state[q1].heat != -1.0;
     let q2_alive = shot.qubit_state[q2].heat != -1.0;
-    // Both lost (e.g. PROPAGATE collapsed the survivor): nothing to apply.
+    // Both lost (for example, PROPAGATE collapsed the survivor): nothing to apply.
     if (!q1_alive && !q2_alive) {
         return;
     }
@@ -1591,7 +1591,7 @@ fn apply_2q_pauli_noise_on_survivor(shot_idx: u32, op_idx: u32, noise_idx: u32, 
             set_1q_on_pair_unitary(shot_idx, survivor_is_q2,
                 vec2f(0.0, 0.0), vec2f(1.0, 0.0),
                 vec2f(1.0, 0.0), vec2f(0.0, 0.0));
-        } else if (term == 3) { // Y (real-sign, i.e. -i*Y)
+        } else if (term == 3) { // Y (real-sign, in other words, `-i*Y`)
             set_1q_on_pair_unitary(shot_idx, survivor_is_q2,
                 vec2f(0.0, 0.0), vec2f(-1.0, 0.0),
                 vec2f(1.0, 0.0), vec2f(0.0, 0.0));
@@ -1674,7 +1674,7 @@ fn apply_1q_op(workgroupId: u32, tid: u32, q1: u32) {
         let offset0: i32 = (entry_index & lowMask) | ((entry_index & highMask) << 1);
         let offset1: i32 = offset0 | (1 << q1);
 
-        // See if we can skip doing any work for this pair, because the state vector entries to processes
+        // See if we can skip doing any work for this pair because the state vector entries to processes
         // are both definitely 0.0, as we know they are for states where other qubits are in definite opposite state.
         let skip_processing = ((offset0 & qubit_is_0_mask) != 0) || ((~offset1 & qubit_is_1_mask) != 0);
 
@@ -1993,9 +1993,9 @@ fn commit_correlated_noise(shot_idx: u32, op_idx: u32, bit_flip_mask: u32, phase
 // - 'start' is the offset into the buffer array where this table's entries begin
 // - 'count' is the number of entries in this table
 // - 'rand_lo' and 'rand_hi' form a Q1.63 format random number in [0.0, 1.0) to use for the search
-// - This will only called if a result should be found, i.e.,
-//   - count > 0
-//   - rand < table[start + count - 1].probability
+// - This will only called if a result should be found. In other words:
+//   - `count > 0`
+//   - `rand < table[start + count - 1].probability`
 //
 // Returns the index of the found entry relative to 'start', which is the smallest index where "rand < table[start + index].probability"
 fn binary_search_noise_table(rand_lo: u32, rand_hi: u32, start: i32, count: i32) -> i32 {
@@ -2463,8 +2463,7 @@ fn initialize(
 // executes classical (non-quantum) instructions on the GPU, one thread per
 // shot. Each shot has its own independent interpreter state (program counter,
 // registers, call stack) allowing many shots to run in parallel with
-// potentially divergent control flow paths (e.g., after mid-circuit
-// measurements).
+// potentially divergent control flow paths (for example, after mid-circuit measurements).
 //
 // ## Execution Model
 //
@@ -2491,7 +2490,7 @@ fn initialize(
 //   dst    : destination register index (or immediate for RET)
 //   src0   : first source operand (register index or immediate)
 //   src1   : second source operand (register index or immediate)
-//   aux0–3 : auxiliary fields whose meaning varies per opcode (e.g., block
+//   aux0–3 : auxiliary fields whose meaning varies per opcode (for example, block
 //            IDs, function IDs, qubit indices, phi-table offsets, etc.)
 //
 // The `resolve_u32` / `resolve_i32` helpers read an operand as either a
@@ -2911,7 +2910,7 @@ fn interpret_classical(@builtin(global_invocation_id) gid: vec3<u32>) {
 
             // SREM: Signed integer remainder.
             // Computes a - b * trunc(a/b) manually rather than using the %
-            // operator, because WGSL i32 division truncates toward zero but
+            // operator because WGSL i32 division truncates toward zero but
             // the built-in % may not preserve the sign of the dividend on
             // all GPU backends. This matches LLVM's srem semantics.
             case OP_SREM {
@@ -3098,7 +3097,7 @@ fn interpret_classical(@builtin(global_invocation_id) gid: vec3<u32>) {
             }
 
             // SEXT: Sign-extend from a narrower bit width to i32.
-            // aux0 encodes the source bit width (e.g., 1 for i1→i32).
+            // aux0 encodes the source bit width (for example, 1 for i1→i32).
             // The shift-left then arithmetic-shift-right trick propagates
             // the sign bit from position (src_bits-1) into all higher bits.
             case OP_SEXT {
@@ -3119,13 +3118,13 @@ fn interpret_classical(@builtin(global_invocation_id) gid: vec3<u32>) {
                 pc++;
             }
 
-            // FPEXT: Float widen (e.g., f32→f64) — identity since GPU only uses f32.
+            // FPEXT: Float widen (for example, f32→f64) — identity since GPU only uses f32.
             case OP_FPEXT {
                 write_reg_f32(shot_idx, instr.dst, resolve_f32(shot_idx, instr.src0, flags, 0u));
                 pc++;
             }
 
-            // FPTRUNC: Float narrow (e.g., f64→f32) — identity since GPU only uses f32.
+            // FPTRUNC: Float narrow (for example, f64→f32) — identity since GPU only uses f32.
             case OP_FPTRUNC {
                 write_reg_f32(shot_idx, instr.dst, resolve_f32(shot_idx, instr.src0, flags, 0u));
                 pc++;

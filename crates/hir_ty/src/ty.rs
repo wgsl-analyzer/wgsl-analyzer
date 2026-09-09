@@ -996,8 +996,8 @@ pub struct IndexList {
 }
 
 impl<'il> IntoIterator for &'il IndexList {
-    type Item = &'il VecIndex;
     type IntoIter = std::slice::Iter<'il, VecIndex>;
+    type Item = &'il VecIndex;
 
     fn into_iter(self) -> Self::IntoIter {
         self.iter()

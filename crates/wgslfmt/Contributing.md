@@ -187,4 +187,4 @@ All handling of configuration options is done in [src/config/mod.rs](src/config/
 Look for the `create_config!` macro at the end of the file for all the options.
 The rest of the file defines a bunch of enums used for options and the machinery to produce the config struct and parse a config file.
 Checking an option is done by accessing the correct field on the config struct, for example, `config.max_width()`.
-Most functions have a `Config`, or one can be accessed via a visitor or context of some kind.
+Most functions have a `Config`, or one can be accessed with a visitor or context of some kind.

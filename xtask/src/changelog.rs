@@ -56,7 +56,7 @@ struct Change {
     pr_number: u16,
 }
 
-/// Fetch a pull request via `gh api`, retrying on failure with exponential
+/// Fetch a pull request using `gh api`, retrying on failure with exponential
 /// backoff. Authentication is handled by the `gh` CLI.
 fn fetch_labels_with_retry(
     shell: &Shell,

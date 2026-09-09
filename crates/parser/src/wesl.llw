@@ -335,11 +335,11 @@ argument_expression_list: '(' [expression (?1 ',' expression)* [',']] ')' @argum
 argument_expression_list_expr: '(' [expression (?1 ',' expression)* [',']] ')' @arguments;
 
 statement:
-	// NOTE: The WGSL spec (§9.4.1) requires `if_clause (else_if_clause)* [else_clause]`,
-	// i.e. at most one trailing else and no else-if after else. We accept the more
-	// permissive form here so the parser produces a valid AST for malformed input
-	// (e.g. `if { } else { } else if (...) { }`), enabling the formatter and IDE
-	// features to operate on it.
+	// NOTE: The WGSL spec (§9.4.1) requires `if_clause (else_if_clause)* [else_clause]`.
+	// In other words, at most one trailing else and no else-if after else.
+	// We accept the more permissive form here so the parser produces a valid AST for malformed input.
+	// For example: `if { } else { } else if (...) { }`
+	// This enables the formatter and IDE features to operate on it - best effort is good.
 	// A parser-level diagnostic in `create_node_if_statement` reports the error.
 	if_clause (?1 else_if_clause | else_clause)* @if_statement // §9.4.1
 	| 'switch' expression attribute_list !0 switch_body @switch_statement // §9.4.2

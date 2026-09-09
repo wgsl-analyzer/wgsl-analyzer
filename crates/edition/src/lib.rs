@@ -215,7 +215,7 @@ pub struct ExtensionsConfig {
     pub linear_indexing: bool,
 
     // TODO: actually implement https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1419
-    /// Enables the immediate address space, allowing variables to be declared with var<immediate> and bound to small amounts of frequently updated data passed directly from the command encoder via the WebGPU API.
+    /// Enables the immediate address space, allowing variables to be declared with `var<immediate>` and bound to small amounts of frequently updated data passed directly from the command encoder using the WebGPU API.
     pub immediate_address_space: bool,
 
     // TODO: actually implement https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1420
