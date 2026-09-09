@@ -75,7 +75,7 @@ impl Display for FormatStringError {
             Self::FormatDocumentError { error } => {
                 write!(
                     f,
-                    "Could not format source: {error}. This is a bug in the formatter - feel free to open an issue."
+                    "Could not format source. This is a bug in the formatter - feel free to open an issue.\nOriginal Error:\n{error}"
                 )?;
             },
             Self::ParserErrors { parse } => {
@@ -186,5 +186,74 @@ where
     match error {
         Some(error) => Err(error),
         None => Ok(formatted_if_ok),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::error::Error;
+
+    use expect_test::expect;
+    use syntax::parse;
+
+    use crate::{FormatStringError, reporting::FormatDocumentError};
+
+    #[test]
+    pub fn format_string_error_display_on_parser_error() {
+        let source = "
+            notValidWgsl::String
+            notValidWgsl = 'What??'
+            ";
+        let parse = parse(source, parser::Edition::Wgsl);
+        let error = FormatStringError::ParserErrors { parse };
+
+        expect![[r#"
+            Could not parse source:
+            error at 61..62: unexpected tokens
+            error at 66..67: unexpected tokens
+            error at 67..68: unexpected tokens
+            error at 68..69: unexpected tokens
+            error at 13..25: invalid syntax, expected one of: 'alias', '@', '{', 'const', 'const_assert', 'diagnostic', <end of file>, 'enable', 'fn', 'import', 'let', 'override', 'requires', ';', 'struct', 'var'
+        "#]].assert_eq(&format!("{error}"));
+    }
+
+    #[test]
+    pub fn format_string_error_display_on_formatter_error() {
+        let error = FormatStringError::FormatDocumentError {
+            error: FormatDocumentError::MissingNode,
+        };
+
+        expect![[r#"
+            Could not format source. This is a bug in the formatter - feel free to open an issue.
+            Original Error:
+            Expected to find a node but found none"#]]
+        .assert_eq(&format!("{error}"));
+    }
+
+    #[test]
+    pub fn format_string_error_source_format_document_error() {
+        let source = FormatDocumentError::MissingNode;
+        let error = FormatStringError::FormatDocumentError {
+            error: source.clone(),
+        };
+
+        assert_eq!(
+            error
+                .source()
+                .and_then(|error| error.downcast_ref::<FormatDocumentError>()),
+            Some(source).as_ref()
+        );
+    }
+
+    #[test]
+    pub fn format_string_error_source_parser_error() {
+        let source = "
+            notValidWgsl::String
+            notValidWgsl = 'What??'
+            ";
+        let parse = parse(source, parser::Edition::Wgsl);
+        let error = FormatStringError::ParserErrors { parse };
+
+        assert!(error.source().is_none());
     }
 }
