@@ -190,7 +190,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use std::error::Error;
+    use std::error::Error as _;
 
     use expect_test::expect;
     use syntax::parse;
