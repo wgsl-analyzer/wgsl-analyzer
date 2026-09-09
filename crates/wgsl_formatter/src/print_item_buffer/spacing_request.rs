@@ -47,23 +47,6 @@ impl RequestItem {
 #[derive(Clone)]
 pub struct RequestItemSet(u8);
 
-impl Debug for RequestItemSet {
-    fn fmt(
-        &self,
-        f: &mut std::fmt::Formatter<'_>,
-    ) -> std::fmt::Result {
-        let mut set = f.debug_set();
-        for index in 0..7 {
-            let bit = 1_u8 << index;
-            if self.0 & bit != 0 {
-                set.entry(&RequestItem::from_index(index));
-            }
-        }
-        set.finish()?;
-        Ok(())
-    }
-}
-
 impl RequestItemSet {
     #[must_use]
     pub const fn empty() -> Self {
@@ -154,37 +137,6 @@ pub enum Request {
         on_true: Box<Self>,
         on_false: Box<Self>,
     },
-}
-
-impl Debug for Request {
-    fn fmt(
-        &self,
-        f: &mut std::fmt::Formatter<'_>,
-    ) -> std::fmt::Result {
-        match self {
-            Self::Unconditional {
-                expected,
-                discouraged,
-                forced,
-                suggest_linebreak,
-            } => f
-                .debug_struct("Unconditional")
-                .field("expected", expected)
-                .field("discouraged", discouraged)
-                .field("forced", forced)
-                .field("suggest_linebreak", suggest_linebreak)
-                .finish(),
-            Self::Conditional {
-                condition: _,
-                on_true,
-                on_false,
-            } => f
-                .debug_struct("Conditional")
-                .field("on_true", on_true)
-                .field("on_false", on_false)
-                .finish(),
-        }
-    }
 }
 
 impl Default for Request {
