@@ -6,10 +6,6 @@
 //!
 //! The entry points that actually format code are [`format_file`], [`format_range`] [`format_node`] and [`format_tree`].
 #![cfg_attr(doc, doc = include_str!("../Architecture.md"))]
-// We re-enable a warn lint within the formatter because it is very easy to parse an item within a gen_*-function and
-// then forget to print it to the PrintItemBuffer.
-// Also it is very easy to forget a "?" after a parse_*-function, that would be caught by
-// "unused std::result::Result that must be used"
 #![warn(unused)]
 
 pub mod generators;
@@ -18,6 +14,8 @@ mod tests;
 
 //This cannot be gated, as we depend on it in doctests and the doctests are
 // run against the public api.
+pub mod test_util;
+
 pub mod ast_parse;
 pub mod blankspace;
 pub mod context_policies;
@@ -27,7 +25,6 @@ pub mod multiline_group;
 pub mod options;
 pub mod print_item_buffer;
 pub mod reporting;
-pub mod test_util;
 pub mod trivia;
 
 use std::str::FromStr;
