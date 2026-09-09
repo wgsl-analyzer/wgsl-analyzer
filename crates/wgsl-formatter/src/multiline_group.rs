@@ -118,6 +118,7 @@ impl<'buffer> MultilineGroup<'buffer> {
             ));
     }
 
+    #[cfg_attr(not(debug_assertions), expect(unused_mut, reason = "state not modified"))]
     pub(crate) fn end_before_requests(mut self) {
         #[cfg(debug_assertions)]
         {
