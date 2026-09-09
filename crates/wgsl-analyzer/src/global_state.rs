@@ -595,12 +595,9 @@ pub(crate) fn file_id_to_url(
     id: FileId,
 ) -> Uri {
     let path = vfs.file_path(id);
-    if let Some(path) = path.as_path() {
-        to_proto::url_from_abs_path(path)
-    } else if let Some(path) = path.as_virtual_path() {
-        to_proto::url_from_virtual_path(path)
-    } else {
-        panic!("file_id_to_url: file_id {id:?} has no path");
+    match path.as_inner() {
+        itertools::Either::Left(path) => to_proto::url_from_abs_path(path),
+        itertools::Either::Right(path) => to_proto::url_from_virtual_path(path),
     }
 }
 

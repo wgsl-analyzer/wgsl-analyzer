@@ -26,13 +26,6 @@ impl File {
 
 impl Default for StdLibrary {
     fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl StdLibrary {
-    #[must_use]
-    pub fn new() -> Self {
         let files = vec![File::new(
             "/std/package.wesl",
             include_bytes!("../std/package.wesl"),

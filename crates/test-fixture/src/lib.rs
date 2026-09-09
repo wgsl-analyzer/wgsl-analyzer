@@ -128,7 +128,7 @@ impl ChangeFixture {
         // Add the standard library.
         // Don't add it to the files array, since that's for user files only.
         let std_file_set = {
-            let std_library = StdLibrary::new();
+            let std_library = StdLibrary::default();
             let mut file_set = FileSet::default();
 
             let manifest_file_id = next_file_id();

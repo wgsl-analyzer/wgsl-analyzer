@@ -3,6 +3,7 @@
 use std::fmt;
 
 use paths::{AbsPath, AbsPathBuf, RelPath};
+use stdx::itertools::Either;
 
 /// Path in [`Vfs`].
 ///
@@ -44,6 +45,14 @@ impl VfsPath {
         match &self.0 {
             VfsPathRepr::PathBuf(_) => None,
             VfsPathRepr::VirtualPath(path) => Some(path),
+        }
+    }
+
+    #[must_use]
+    pub fn as_inner(&self) -> Either<&AbsPath, &VirtualPath> {
+        match &self.0 {
+            VfsPathRepr::PathBuf(path) => Either::Left(path.as_path()),
+            VfsPathRepr::VirtualPath(path) => Either::Right(path),
         }
     }
 
