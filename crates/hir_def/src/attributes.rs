@@ -17,14 +17,14 @@ use crate::{
 
 // TODO: Properly model the attributes (not all of them have expressions)
 // https://github.com/wgsl-analyzer/wgsl-analyzer/issues/614
-// e.g `@builtin(position)`, `@compute`
+// For example, `@builtin(position)`, `@compute`
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub struct Attribute {
     pub name: Name,
     pub parameters: Vec<ExpressionId>,
 }
 
-// for example, @group(0) @location(0)
+// For example, @group(0) @location(0)
 #[derive(PartialEq, Eq, Debug)]
 pub struct AttributeList {
     pub attributes: Vec<Attribute>,

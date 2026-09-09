@@ -231,7 +231,7 @@ fn emit_text_result(
 /// Each pattern is interpreted as:
 /// - `"-"` → stdin
 /// - A directory path → recursively walk for `.wgsl` files
-/// - A glob pattern (contains `*`, `?`, or `[`) → expand via glob
+/// - A glob pattern (contains `*`, `?`, or `[`) → expand using [`glob::glob`]
 /// - Otherwise → a literal file path
 fn resolve_patterns(patterns: &[String]) -> Result<Vec<PathBuf>, anyhow::Error> {
     let mut files = Vec::new();

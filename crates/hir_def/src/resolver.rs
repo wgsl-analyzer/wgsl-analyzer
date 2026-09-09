@@ -409,7 +409,7 @@ pub enum ResolutionDiagnostic {
         visibility: Visibility,
     },
     TooManySupers,
-    /// Cannot resolve an import statement, because the current file is not a part of a package.
+    /// Cannot resolve an import statement because the current file is not a part of a package.
     DetachedFile,
     MissingName,
     UnsupportedBuiltin {

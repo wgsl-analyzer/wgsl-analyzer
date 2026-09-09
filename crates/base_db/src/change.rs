@@ -228,8 +228,7 @@ impl PackageGraph {
         }
     }
 
-    /// Returns all packages, sorted in topological order (ie. dependencies of a package
-    /// come before the package itself).
+    /// Returns all packages, sorted in topological order. In other words, the dependencies of a package come before the package itself.
     ///
     /// Also uses [a coloring algorithm to find and remove cycles](https://en.wikipedia.org/wiki/Cycle_(graph_theory)#Algorithm).
     fn to_topological_order(&self) -> (Vec<PackageId>, Vec<CyclicDependenciesError>) {

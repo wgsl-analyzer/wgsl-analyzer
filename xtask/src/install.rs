@@ -141,7 +141,7 @@ fn install_client(
         bail!(
             "Could not install the Visual Studio Code extension. \
             Please make sure you have the correct Node.js and pnpm (see https://github.com/wgsl-analyzer/wgsl-analyzer/tree/main/editors/code/package.json#L36) together with the latest version of VS Code installed and try again. \
-            Note that installing via xtask install does not work for VS Code Remote, instead you will need to install the .vsix manually."
+            Note that installing by using xtask install does not work for VS Code Remote, instead you will need to install the .vsix manually."
         );
     }
 

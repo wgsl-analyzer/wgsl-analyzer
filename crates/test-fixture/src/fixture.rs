@@ -80,7 +80,7 @@ pub struct Fixture {
     /// This is implied if this file belongs to a library source root.
     ///
     /// Use this if you want to test something that checks if a package is a workspace
-    /// member via [`base_db::input::PackageOrigin`].
+    /// member using [`base_db::input::PackageOrigin`].
     ///
     /// Syntax: `library`.
     pub library: bool,

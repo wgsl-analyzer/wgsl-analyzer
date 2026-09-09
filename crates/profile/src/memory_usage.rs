@@ -56,8 +56,12 @@ impl MemoryUsage {
                 // approximate that by using the Commit Charge value.
 
                 use std::mem::MaybeUninit;
+
                 use windows_sys::Win32::System::{
-                    ProcessStatus::{GetProcessMemoryInfo, PROCESS_MEMORY_COUNTERS},
+                    ProcessStatus::{
+                        GetProcessMemoryInfo,
+                        PROCESS_MEMORY_COUNTERS,
+                    },
                     Threading::GetCurrentProcess,
                 };
 

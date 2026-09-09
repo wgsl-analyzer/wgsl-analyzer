@@ -22,13 +22,13 @@ Add the following to your init.el
 
 [Eglot] is the more minimalistic and lightweight LSP client for Emacs, integrates well with existing Emacs functionality and is built into Emacs starting from release 29.
 
-After installing [Eglot], for example, via `M-x package-install` (not needed from Emacs 29), you can enable it via the `M-x eglot` command or load it automatically in `wgsl-mode` via
+After installing [Eglot], for example, using `M-x package-install` (not needed from Emacs 29), you can enable it using the `M-x eglot` command or load it automatically in `wgsl-mode` using
 
 ```emacs-lisp
 (add-hook 'wgsl-mode-hook 'eglot-ensure)
 ```
 
-For more detailed instructions and options see the [Eglot manual](https://joaotavora.github.io/eglot) (also available from Emacs via `M-x info`) and the [Eglot readme](https://github.com/joaotavora/eglot/blob/master/README.md).
+For more detailed instructions and options see the [Eglot manual](https://joaotavora.github.io/eglot) (also available from Emacs using `M-x info`) and the [Eglot readme](https://github.com/joaotavora/eglot/blob/master/README.md).
 
 Eglot does not support the `wgsl-analyzer` extensions to the language-server protocol and does not aim to do so in the future.
 The [eglot-x](https://github.com/nemethf/eglot-x#wgsl-analyzer-extensions) package adds experimental support for those LSP extensions.
@@ -42,7 +42,7 @@ Compared to Eglot it has a larger codebase and supports more features, like LSP 
 With extension packages like [LSP UI](https://github.com/emacs-lsp/lsp-mode) it offers a lot of visual eyecandy.
 Further it integrates well with [DAP mode](https://github.com/emacs-lsp/dap-mode) for support of the Debug Adapter Protocol.
 
-You can install LSP-mode via `M-x package-install` and then run it via the `M-x lsp` command or load it automatically in WGSL/WESL buffers with
+You can install LSP-mode using `M-x package-install` and then run it using the `M-x lsp` command or load it automatically in WGSL/WESL buffers with
 
 ```emacs-lisp
 (add-hook 'wgsl-mode-hook 'lsp-deferred)
@@ -194,7 +194,7 @@ lspconfig.wgsl_analyzer.setup({
 EOF
 ```
 
-If you are running Neovim 0.10 or later, you can enable inlay hints via `on_attach`:
+If you are running Neovim 0.10 or later, you can enable inlay hints using `on_attach`:
 
 ```lua
 lspconfig.wgsl_analyzer.setup({

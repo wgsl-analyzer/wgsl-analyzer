@@ -1,7 +1,8 @@
+use std::fmt::Write as _;
+
 use base_db::{CapabilitiesInput, EditionedFileId};
 use expect_test::{Expect, expect};
 use hir_def::{db::ModuleDefinitionId, item_tree::ItemTree, signature::StructSignature};
-use std::fmt::Write as _;
 use syntax::Capabilities;
 use test_fixture::WithFixture as _;
 use wgsl_types::syntax::AddressSpace;

@@ -36,9 +36,8 @@ impl GlobalState {
 
     /// Is the server ready to respond to analysis dependent LSP requests?
     ///
-    /// Unlike `is_quiescent`, this returns false when we're indexing
-    /// the project, because we're holding the salsa lock and cannot
-    /// respond to LSP requests that depend on salsa data.
+    /// Unlike `is_quiescent`, this returns `false` when we're indexing the project.
+    /// While indexing, the salsa lock is held, meaning the server cannot respond to LSP requests that depend on salsa data.
     const fn is_fully_ready(&self) -> bool {
         self.is_quiescent() && !self.prime_caches_queue.operation_in_progress()
     }

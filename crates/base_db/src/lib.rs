@@ -14,20 +14,20 @@ use std::{
     sync::{Once, atomic::AtomicUsize},
 };
 
-use crate::input::{PackageData, PackageId, PackageName};
 use dashmap::{DashMap, Entry};
+pub use input::{SourceRoot, SourceRootId};
 use rustc_hash::FxHasher;
+pub use salsa;
 use salsa::{Durability, Setter as _};
+pub use salsa_macros;
 use triomphe::Arc;
+pub use util_types::*;
+pub use vfs::{AnchoredPath, AnchoredPathBuf, FileId, VfsPath, file_set::FileSet};
 
 pub use crate::editioned_file_id::{
     Capabilities, EditionedFileId, FileExtension, RawEditionedFileId,
 };
-pub use input::{SourceRoot, SourceRootId};
-pub use salsa;
-pub use salsa_macros;
-pub use util_types::*;
-pub use vfs::{AnchoredPath, AnchoredPathBuf, FileId, VfsPath, file_set::FileSet};
+use crate::input::{PackageData, PackageId, PackageName};
 
 #[macro_export]
 macro_rules! impl_intern_key {
@@ -58,6 +58,7 @@ macro_rules! impl_intern_lookup {
     ($id:ident, $loc:ty) => {
         impl base_db::Intern for $loc {
             type ID = $id;
+
             fn intern(
                 self,
                 db: &dyn ::base_db::SourceDatabase,

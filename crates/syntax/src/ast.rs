@@ -552,7 +552,7 @@ pub enum LanguageExtension {
 
     /// Enables the immediate address space, allowing variables to be declared with `var<immediate>`
     /// and bound to small amounts of frequently updated data passed directly from the command encoder
-    /// via the WebGPU API.
+    /// through the WebGPU API.
     ImmediateAddressSpace,
 
     /// Enables the use of buffer types and the `buffer_view` built-in functions.

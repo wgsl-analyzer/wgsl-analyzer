@@ -338,7 +338,7 @@ impl GlobalState {
         let vfs = &self.vfs.read().0;
         let changed_packages = packages.take_changes();
         for (id, package_change) in changed_packages {
-            // TODO: Report the tracing::errors via diagnostics instead
+            // TODO: Report the tracing::errors through diagnostics instead
             // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1373
 
             let package_data = packages.get(id).and_then(|package| {

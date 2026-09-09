@@ -19,8 +19,8 @@ On the highest possible level, rust-analyzer is a stateful component.
 A client may apply changes to the analyzer (new contents of `foo.rs` file is "`fn main() {}`") and it may ask semantic questions about the current state (what is the definition of the identifier with offset 92 in file `bar.rs`?).
 Two important properties hold:
 
-- Analyzer does not do any I/O.
-  It starts in an empty state and all input data is provided via `apply_change` API.
+- `Analyzer` does not do any I/O.
+  It starts in an empty state and all input data is provided through the `apply_change` API.
 
 - Only queries about the current state are supported.
   One can, of course, simulate undo and redo by keeping a log of changes and inverse changes respectively.
@@ -58,7 +58,7 @@ Next, the inputs to the `Analysis` are discussed in detail.
 ## Inputs
 
 rust-analyzer never does any I/O itself.
-All inputs get passed explicitly via the `AnalysisHost::apply_change` method, which accepts a single argument, a `Change`.
+All inputs get passed explicitly using the `AnalysisHost::apply_change` method, which accepts a single argument, a `Change`.
 [`Change`] is a wrapper for `FileChange` that adds proc-macro knowledge.
 [`FileChange`] is a builder for a single change "transaction," so it suffices to study its methods to understand all the input data.
 
@@ -117,7 +117,7 @@ It is of course possible to explicitly add extra files to the source root, even 
 
 ## Language Server Protocol
 
-The `Analysis` API is exposed via the JSON RPC-based language server protocol.
+The `Analysis` API is exposed through the [JSON RPC](https://en.wikipedia.org/wiki/JSON-RPC)-based [language server protocol](https://microsoft.github.io/language-server-protocol).
 The hard part here is managing changes (which can come either from the file system or from the editor) and concurrency (we want to spawn background jobs for things like syntax highlighting).
 We use the event loop pattern to manage the zoo, and the loop is the [`GlobalState::run`] function initiated by [`main_loop`](https://github.com/rust-lang/rust-analyzer/blob/2024-01-01/crates/rust-analyzer/src/main_loop.rs#L31-L54) after [`GlobalState::new`] does a one-time initialization and tearing down of the resources.
 
@@ -375,7 +375,7 @@ Due to an obscure edge case in completion, the IDE needs to know the syntax node
 We cannot just store the syntax node as a part of name resolution: this will break incrementality, due to the fact that syntax changes after every file modification.
 
 We solve this problem during the lowering step of name resolution.
-Along with the [`ItemTree`] output, the lowering query additionally produces an [`AstIdMap`] via an [`ast_id_map`](https://github.com/rust-lang/rust-analyzer/blob/2024-01-01/crates/hir-def/src/item_tree/lower.rs#L32) query.
+Along with the [`ItemTree`] output, the lowering query additionally produces an [`AstIdMap`] using an [`ast_id_map`](https://github.com/rust-lang/rust-analyzer/blob/2024-01-01/crates/hir-def/src/item_tree/lower.rs#L32) query.
 The `ItemTree` contains [imports](https://github.com/rust-lang/rust-analyzer/blob/2024-01-01/crates/hir-def/src/item_tree.rs#L559-L563), but in a position-independent form based on [`AstId`].
 The `AstIdMap` contains a mapping from position-independent `AstId`s to (position-dependent) syntax nodes.
 

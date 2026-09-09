@@ -163,7 +163,7 @@ Finally, `#[should_panic]` hides the "current state" (it panics, but where?), ma
 Do not `#[ignore]` tests.
 If the test currently does not work, assert the wrong behavior and add a fixme explaining why it is wrong.
 
-**Rationale:** noticing when the behavior is fixed, making sure that even the wrong behavior is acceptable (i.e., not a panic).
+**Rationale:** noticing when the behavior is fixed, making sure that even the wrong behavior is acceptable (in other words, not a panic).
 
 ### Function Preconditions
 
