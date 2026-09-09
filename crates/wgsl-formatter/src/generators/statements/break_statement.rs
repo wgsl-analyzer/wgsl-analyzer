@@ -27,6 +27,7 @@ pub fn gen_break_statement(node: &ast::BreakStatement) -> FormatDocumentResult<P
     let mut formatted = PrintItemBuffer::default();
     formatted.extend(gen_node_with_trivia(&item_break)?);
     if statement_needs_semicolon_policy(node.syntax()) {
+        formatted.request(Request::discourage(RequestItem::Space));
         formatted.push_sc(sc!(";"));
     }
     formatted.request(Request::expect(RequestItem::LineBreak));

@@ -4,6 +4,7 @@ use crate::test_util::check;
 
 mod assert;
 mod assignment;
+mod r#break;
 mod break_if;
 mod compound_assignment;
 mod compound_layout;
