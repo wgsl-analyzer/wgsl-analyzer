@@ -221,8 +221,8 @@ pub fn gen_attribute_list(attribute_list: &AttributeList) -> FormatDocumentResul
         formatted.request(group_separator.clone());
     }
 
-    // The grouped attributes in order
-    // (They are ordered by the AttributeGroup enum's discriminator, because of the BTreeMap)
+    // The grouped attributes in-order.
+    // They are ordered by the `AttributeGroup`'s discriminator because of the `BTreeMap`.
     for (_, attribute) in grouped_attributes {
         formatted.extend(gen_attribute_group(attribute, &expect_space_or_linebreak)?);
         formatted.request(group_separator.clone());

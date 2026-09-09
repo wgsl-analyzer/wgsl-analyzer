@@ -14,7 +14,7 @@ use crate::{
 
 pub fn gen_break_statement(node: &ast::BreakStatement) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
-    // We still parse through the break syntax even tho there is no information for
+    // We still parse through the break syntax even though there is no information for
     // the formatter to get out of it. This exists to ensure we don't accidentally delete
     // user's code should future changes to wgsl allow more complex break statements.
     let mut syntax = syntax_iter(node.syntax());

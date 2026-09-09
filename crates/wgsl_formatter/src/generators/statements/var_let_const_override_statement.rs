@@ -46,7 +46,7 @@ enum BindingKind {
     Let,
     Const,
 
-    // For now we have this here, because the override syntax is basically equivalent to a global const.
+    // For now we have this here because the override syntax is basically equivalent to a global const.
     // If the override should diverge from that, extract it into its own file instead of branching around.
     Override,
 }
@@ -109,7 +109,7 @@ fn gen_var_let_const_override_statement(
         None
     };
 
-    parse_node_with(&mut syntax, NoTrivia).expect_kind_optional(SyntaxKind::Semicolon)?; //Not all var-statements have a semicolon (e.g for loop)
+    parse_node_with(&mut syntax, NoTrivia).expect_kind_optional(SyntaxKind::Semicolon)?; //Not all var-statements have a semicolon (for example, `for` loop)
     parse_end(&mut syntax)?;
 
     // ==== Format ====

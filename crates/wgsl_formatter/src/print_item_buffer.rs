@@ -47,7 +47,7 @@ use crate::print_item_buffer::spacing_request::Request;
 /// (At the time of writing this, look-aheads don't seem to be supported by dprint.)
 /// An example of such a case is when we remove needless parentheses - for example around the condition in a `break if`.
 /// Typically we would want spaces around any parenthesis statement that we eliminated, however in the case of a `break if`
-/// we do not want a space after the condition, because a semicolon goes there, and we don't need to be separated from that.
+/// we do not want a space after the condition because a semicolon goes there and we don't need to be separated from that.
 /// While that could be solved by checking the context of the parenthesis statement, in the case of nested parenthesis statements
 /// this can get needlessly complicated quickly.
 ///

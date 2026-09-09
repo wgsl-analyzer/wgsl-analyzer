@@ -21,7 +21,7 @@ pub enum RequestItem {
 
 impl RequestItem {
     /// Converts the [`RequestItem`] to its index in the [`RequestItemSet`]s that store expected, discouraged, and forced requests.
-    /// If multiple request items are requested at a stage (e.g expect space & line break), the request item with
+    /// If multiple request items are requested at a stage (for example, expect space & line break), the request item with
     /// the highest index is used.
     #[must_use]
     pub const fn to_index(self) -> u8 {

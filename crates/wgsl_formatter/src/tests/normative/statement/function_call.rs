@@ -162,7 +162,7 @@ fn format_long_function_call_without_arguments_does_not_break_within_parens() {
 pub fn format_long_function_call_linewidth_within_inner_break_outer_arguments_leave_inner_alone() {
     // Please note that the amount of "aaaa" in this test is carefully chosen to play with the line lengths.
     // This the amount of aaa is such that, breaking the inner argument would satisfy the line width requirement.
-    // The formatter should prefer breaking the outer argument list, even tho breaking the inner one
+    // The formatter should prefer breaking the outer argument list, even though breaking the inner one
     // would be enough
     check_with_options(
         "
@@ -316,8 +316,8 @@ pub fn format_long_function_call_dont_break_path() {
 #[test]
 pub fn format_function_call_with_field_expr_prefer_breaking_field_expr() {
     // This tests exists to document this behavior
-    // This is the easier way to do it - i think its fine this way, it follows
-    // the way how function chains would be expected to be formatted
+    // This is the easier way to do it - I think its fine this way.
+    // It follows the way how function chains would be expected to be formatted
     //
     // However there was no discussion about this behavior, so this can be changed.
     check_with_options(

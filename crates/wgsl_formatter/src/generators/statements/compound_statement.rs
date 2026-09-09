@@ -104,7 +104,7 @@ pub fn gen_compound_statement(
 
         // When we inevitably have to make the condcomp compound statements configurable - here
         // is some code to save you a few minutes.
-        // This is the condition i used to collapse nested compound statements into "{{" and "}}"
+        // This is the condition that I used to collapse nested compound statements into "{{" and "}}"
         //
         // if is_conditional
         //     && items.len() == 1

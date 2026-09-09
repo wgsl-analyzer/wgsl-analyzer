@@ -16,7 +16,7 @@ pub fn gen_continue_statement(
     node: &ast::ContinueStatement
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
-    // We still parse through the discard syntax even tho there is no information for
+    // We still parse through the discard syntax even though there is no information for
     // the formatter to get out of it. This exists to ensure we don't accidentally delete
     // user's code should future changes to wgsl allow more complex continue statements.
     let mut syntax = syntax_iter(node.syntax());

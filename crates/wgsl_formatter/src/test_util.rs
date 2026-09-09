@@ -129,7 +129,7 @@ where
 ///
 /// Code that is out of scope would just be left untouched by the formatter.
 ///
-/// Even tho these tests only test the behavior of the parser,
+/// Even though these tests only test the behavior of the parser,
 /// they are useful to be included in the formatter unit tests,
 /// in order to keep track of the boundaries of what the
 /// formatter is supposed to deal with and to "get notified"
@@ -321,13 +321,14 @@ fn format_chunks(chunks: Vec<dissimilar::Chunk<'_>>) -> String {
 /// If exact positioning with regard to line-breaks and spaces is important,
 /// write an explicit test instead.
 ///
-/// The `before` string should be a one-liner, because for line-comments the newlines
-/// will get inserted, and if its multiline already, then there might be cases
-/// where there are two newlines after one another, which could lead to unexpected
-/// empty lines.
+/// The before string should be a one-liner.
+/// For line comments, the newlines will be inserted automatically.
+/// If before is already multiline, there may be cases where two newlines appear consecutively.
+/// This could lead to unexpected empty lines.
 ///
 /// For line comments, `##` gets replaced with line comments of an increasing number.
 /// `## a ## b` would become:
+///
 /// ```compile_fail
 /// // 0
 /// a // 1
@@ -336,6 +337,7 @@ fn format_chunks(chunks: Vec<dissimilar::Chunk<'_>>) -> String {
 ///
 /// For block comments, `##` gets replaced with block comments of an increasing number.
 /// `## a ## b` would become:
+///
 /// ```compile_fail
 /// /* 0 */ a /* 1 */ b
 /// ```

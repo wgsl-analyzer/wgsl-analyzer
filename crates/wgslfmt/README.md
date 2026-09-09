@@ -65,7 +65,7 @@ single JSON object containing per-file results and a summary.
 
 Both `.wgsl` and `.wesl` files are supported. The formatter recognizes all
 WESL syntax extensions — including `import` statements and qualified paths
-(e.g. `package::utils::math`) — regardless of file extension.
+(for example, `package::utils::math`) — regardless of file extension.
 
 ## Running wgslfmt from your editor
 

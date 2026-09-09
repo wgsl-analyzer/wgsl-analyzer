@@ -16,7 +16,7 @@ pub fn gen_discard_statement(
     node: &ast::DiscardStatement
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
-    // We still parse through the discard syntax even tho there is no information for
+    // We still parse through the discard syntax even though there is no information for
     // the formatter to get out of it. This exists to ensure we don't accidentally delete
     // user's code should future changes to wgsl allow more complex discard statements.
     let mut syntax = syntax_iter(node.syntax());

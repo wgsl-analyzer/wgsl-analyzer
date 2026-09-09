@@ -63,7 +63,7 @@ pub fn format_ident_expr_int_literals() {
 #[test]
 pub fn format_ident_expr_zero_padded_int_literals_out_of_scope() {
     // https://www.w3.org/TR/WGSL/#numeric-literals
-    // "A leading zero on a non-zero integer literal (e.g. 012) is forbidden, so as to avoid confusion with other languages' leading-zero-means-octal notation."
+    // "A leading zero on a non-zero integer literal (for example, `012`) is forbidden, so as to avoid confusion with other languages' leading-zero-means-octal notation."
     //
     // This should be raised as a syntax error, instead of being truncated by the parser, to more clearly communicate to the user
     // that leading zeros are not valid wgsl.

@@ -391,8 +391,8 @@ pub enum PolicyAction {
 /// anything else.
 /// After marking that other thing as the "content", continue parsing any following blankspace and comments into the "succeeding trivia".
 ///
-/// A [`ParseNodePolicy`] can be specified to customize that behavior. (e.g to specify that trivia should only be associated with this
-/// node up to the next newline, after which it belongs to the next one.)
+/// A [`ParseNodePolicy`] can be specified to customize that behavior.
+/// For example, specifying that trivia should only be associated with this node up to the next newline, after which it belongs to the next one.
 /// Many common policies can be found in [`crate::ast_parse`].
 ///
 /// This also consults [`crate::ignore`] to determine if the returned [`NodeWithTrivia`] "wants" to be exempt from being

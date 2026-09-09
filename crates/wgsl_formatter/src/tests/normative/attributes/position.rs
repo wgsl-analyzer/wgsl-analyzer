@@ -533,7 +533,7 @@ pub fn format_attribute_suboptimal_comment_positioning_1() {
     //
     // Ideally we could have "// Hello" placed at the same position no matter what attribute is preceding it.
     //
-    // This is a tradeoff, because I don't think these cases will occur very frequently, and even if they do, i doubt this will annoy people.
+    // This is a tradeoff. I don't think these cases will occur very frequently, and even if they do, I doubt this will annoy people.
     // Supporting this without breaking other things would introduce a nontrivial amount of complexity into the code
     // because of how the formatter currently works (the comments are attached to the function as trivia, just as the attributes.)
     // A starting point of how to support this would be "trivia on trivia" so that comments can be attached to the attribute as trivia, which in turn
@@ -570,7 +570,7 @@ pub fn format_attribute_suboptimal_comment_positioning_2() {
     // That position would probably be on the same line as the attribute (for consistency), but on a different line than the function (in order
     // to preserve the intent of "there was a newline after the block comment in the source")
     //
-    // This is a tradeoff, because I don't think these cases will occur very frequently, and even if they do, i doubt this will annoy people.
+    // This is a tradeoff. I don't think these cases will occur very frequently, and even if they do, I doubt this will annoy people.
     // Supporting this without breaking other things would introduce a nontrivial amount of complexity into the code
     // because of how the formatter currently works (the comments are attached to the function as trivia, just as the attributes.)
     // A starting point of how to support this would be "trivia on trivia" so that comments can be attached to the attribute as trivia, which in turn

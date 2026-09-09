@@ -267,19 +267,19 @@ fn spacing_between_nonempty_struct_defs() {
 
 #[test]
 fn no_newlines_at_at_start_of_file() {
-    //Do not use expect! here, because it trims newlines and tabs and as such obscures the test case.
+    // Do not use `expect!` here because it trims newlines and tabs, obscuring the test case.
     check("\n\n\nfn a() {}\n", "fn a() {}\n");
 }
 
 #[test]
 fn one_newline_at_end_of_file_when_missing() {
-    //Do not use expect! here, because it trims newlines and tabs and as such obscures the test case.
+    // Do not use `expect!` here because it trims newlines and tabs, obscuring the test case.
     check("fn a() {}", "fn a() {}\n");
 }
 
 #[test]
 fn one_newline_at_end_of_file_when_too_much() {
-    //Do not use expect! here, because it trims newlines and tabs and as such obscures the test case.
+    // Do not use `expect!` here because it trims newlines and tabs, obscuring the test case.
     check("fn a() {}\n\n", "fn a() {}\n");
 }
 

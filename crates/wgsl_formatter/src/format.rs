@@ -79,20 +79,21 @@ where
 {
     let mut error = None;
 
-    // This will contain the actual formatted, but only if output if error is None
-    let formatted_if_ok = dprint_core::formatting::format(
-        || match format() {
-            Ok(items) => items.finish(),
-            Err(gen_error) => {
-                //We seem to have to do it this weird way, because
-                // a) We can't return the error from the closure because of dprint's api
-                // b) We can't call gen_source_file outside of the closure because
-                //    dprint requires the gen_items to be allocated using a thread local
-                //    allocator that only exists within the closure.
-                error = Some(gen_error);
-                PrintItems::new()
-            },
+    let get_print_items = || match format() {
+        Ok(items) => items.finish(),
+        Err(format_error) => {
+            // We have to do it this unintuitive way because:
+            // - `dprint`'s API does not expose the error.
+            // - Calling `gen_source_file` outside of the closure is invalid.
+            //   `dprint` requires that `gen_items` be allocated using a thread-local allocator,
+            //    but the allocator only exists within the closure.
+            error = Some(format_error);
+            PrintItems::new()
         },
+    };
+    // This will contain the formatted string, but only if error is `None`.
+    let formatted_or_empty = dprint_core::formatting::format(
+        get_print_items,
         PrintOptions {
             max_width: options.max_line_width,
             indent_width: options.indent_width,
@@ -103,6 +104,6 @@ where
 
     match error {
         Some(error) => Err(error),
-        None => Ok(formatted_if_ok),
+        None => Ok(formatted_or_empty),
     }
 }

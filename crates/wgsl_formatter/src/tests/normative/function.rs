@@ -142,8 +142,7 @@ fn format_fn_header_with_parameters_inline_line_comments() {
 
 #[test]
 fn format_fn_header_with_blockcomment_after_last_parameter() {
-    // This unit check exists, because at some point the formatter mistakenly put
-    // commas after the last parameter
+    // This unit check exists because at some point the formatter mistakenly put commas after the last parameter.
     // fn main(a: b, /*fff*/) -> f32 {}
     check(
         "fn main (a: b /*fff*/) -> f32 {}",

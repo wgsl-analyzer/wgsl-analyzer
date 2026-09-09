@@ -67,7 +67,7 @@ impl NodeTriviaItem {
 pub enum NodeWithTriviaContent {
     /// There is no content, just trivia.
     ///
-    /// This is useful e.g for freestanding comments that aren't attached to anything.
+    /// This is useful for (for example) freestanding comments that are not attached to anything.
     NoContent,
 
     /// The content is some piece of the AST.
