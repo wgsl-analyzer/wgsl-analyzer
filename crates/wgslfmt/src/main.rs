@@ -13,10 +13,11 @@ use std::{
 };
 
 use anyhow::{Context as _, bail};
+use parser::Diagnostic;
 use prettydiff::text::ContextConfig;
 use serde::Serialize;
 use summary::{JsonSummary, SilentSummary, Summary, TextSummary};
-use wgsl_formatter::{FormatStringError, FormattingOptions, IndentStyle};
+use wgsl_formatter::{FormatDocumentError, FormattingOptions, IndentStyle};
 
 use crate::{
     cli::{Args, ConfigOverride, OutputFormat, WgslFmtMode},
@@ -34,7 +35,8 @@ struct FileResult {
 #[derive(Debug)]
 enum FileStatus {
     Unchanged,
-    Errors(FormatStringError),
+    FormatterErrors(FormatDocumentError),
+    ParserErrors { errors: Vec<Diagnostic> },
     Changed { source: String, formatted: String },
 }
 
@@ -90,7 +92,24 @@ fn format_file(
     let start = Instant::now();
     let options = wgslfmt_options.to_formatting_options();
 
-    let result = wgsl_formatter::format_file(&source, &options);
+    let parsed = parser::parse_entrypoint_with_capabilities(
+        &source,
+        parser::ParseEntryPoint::File,
+        parser::Edition::LATEST,
+        parser::Capabilities::default(),
+    );
+
+    if !parsed.errors().is_empty() {
+        return FileResult {
+            file,
+            duration: Instant::now().duration_since(start),
+            status: FileStatus::ParserErrors {
+                errors: parsed.errors().into(),
+            },
+        };
+    }
+
+    let result = wgsl_formatter::format_node(&parsed.syntax(), &options);
 
     match result {
         Ok(formatted) => {
@@ -111,7 +130,7 @@ fn format_file(
         Err(error) => FileResult {
             file,
             duration: Instant::now().duration_since(start),
-            status: FileStatus::Errors(error),
+            status: FileStatus::FormatterErrors(error),
         },
     }
 }
@@ -150,7 +169,7 @@ fn check_file_results<S>(
             FileStatus::Unchanged => {
                 passed_paths.push(result.file.clone());
             },
-            FileStatus::Errors(errors) => {
+            FileStatus::FormatterErrors(_) | FileStatus::ParserErrors { .. } => {
                 errored_paths.push(result.file.clone());
             },
             FileStatus::Changed { source, formatted } => {
@@ -187,7 +206,7 @@ fn write_file_results<S>(
             FileStatus::Unchanged => {
                 unchanged_count.push(result.file.clone());
             },
-            FileStatus::Errors(_) => {
+            FileStatus::FormatterErrors(_) | FileStatus::ParserErrors { .. } => {
                 errored_count.push(result.file.clone());
             },
             FileStatus::Changed { source, formatted } => {

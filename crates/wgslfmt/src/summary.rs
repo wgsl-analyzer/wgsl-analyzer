@@ -116,8 +116,15 @@ impl Summary for TextSummary {
         print!("[{}]: ", file_result.file);
         match &file_result.status {
             crate::FileStatus::Unchanged => println!("Unchanged"),
-            crate::FileStatus::Errors(error) => {
-                println!("Errored:");
+            crate::FileStatus::ParserErrors { errors } => {
+                println!("Could not parse:");
+                for error in errors {
+                    println!("{error}");
+                }
+                println!();
+            },
+            crate::FileStatus::FormatterErrors(error) => {
+                println!("Could not format. This is a bug in wgslfmt, please open an issue.");
                 println!("{error}");
                 println!();
             },
@@ -137,8 +144,15 @@ impl Summary for TextSummary {
         print!("[{}]: ", file_result.file);
         match &file_result.status {
             crate::FileStatus::Unchanged => println!("Pass"),
-            crate::FileStatus::Errors(error) => {
-                println!("Errored:");
+            crate::FileStatus::ParserErrors { errors } => {
+                println!("Could not parse:");
+                for error in errors {
+                    println!("{error}");
+                }
+                println!();
+            },
+            crate::FileStatus::FormatterErrors(error) => {
+                println!("Could not format. This is a bug in wgslfmt, please open an issue.");
                 println!("{error}");
                 println!();
             },
@@ -281,9 +295,19 @@ impl Summary for JsonSummary {
                 self.begin_field("status");
                 self.string_literal("unchanged");
             },
-            crate::FileStatus::Errors(error) => {
+            crate::FileStatus::ParserErrors { errors } => {
                 self.begin_field("status");
-                self.string_literal("errors");
+                self.string_literal("parser_error");
+                self.begin_field("errors");
+                self.begin_array();
+                for error in errors {
+                    self.string_literal(&format!("{error}"));
+                }
+                self.end_array();
+            },
+            crate::FileStatus::FormatterErrors(error) => {
+                self.begin_field("status");
+                self.string_literal("formatter_bug");
                 self.begin_field("error");
                 self.string_literal(&format!("{error}"));
             },
@@ -308,9 +332,19 @@ impl Summary for JsonSummary {
                 self.begin_field("status");
                 self.string_literal("pass");
             },
-            crate::FileStatus::Errors(error) => {
+            crate::FileStatus::ParserErrors { errors } => {
                 self.begin_field("status");
-                self.string_literal("errors");
+                self.string_literal("parser_error");
+                self.begin_field("errors");
+                self.begin_array();
+                for error in errors {
+                    self.string_literal(&format!("{error}"));
+                }
+                self.end_array();
+            },
+            crate::FileStatus::FormatterErrors(error) => {
+                self.begin_field("status");
+                self.string_literal("formatter_bug");
                 self.begin_field("error");
                 self.string_literal(&format!("{error}"));
             },

@@ -2236,6 +2236,7 @@ dependencies = [
  "anyhow",
  "clap",
  "glob",
+ "parser",
  "prettydiff",
  "serde",
  "serde_json",

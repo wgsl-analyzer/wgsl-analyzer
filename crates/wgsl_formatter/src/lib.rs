@@ -30,9 +30,8 @@ pub mod trivia;
 use std::str::FromStr;
 
 use dprint_core::configuration::ParseConfigurationError;
-pub use format::{
-    FormatStringError, FormattedRange, format_file, format_node, format_range, format_tree,
-};
+pub use format::{FormattedRange, format_node, format_range};
+pub use reporting::FormatDocumentError;
 
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]

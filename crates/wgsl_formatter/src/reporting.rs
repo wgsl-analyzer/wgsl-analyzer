@@ -71,3 +71,50 @@ impl<T> UnwrapIfPreferCrash for FormatDocumentResult<T> {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+
+    use expect_test::expect;
+    use parser::{SyntaxKind, SyntaxNode};
+    use rowan::GreenNodeBuilder;
+
+    use crate::reporting::FormatDocumentError;
+
+    #[test]
+    pub fn format_string_error_display_on_formatter_error_missing_node() {
+        let error = FormatDocumentError::MissingNode;
+
+        expect!["Expected to find a node but found none"].assert_eq(&format!("{error}"));
+    }
+
+    #[test]
+    pub fn format_string_error_display_on_formatter_error_unexpected_not() {
+        let mut builder = GreenNodeBuilder::new();
+        builder.start_node(SyntaxKind::SourceFile.into());
+        builder.finish_node();
+        let syntax = SyntaxNode::new_root(builder.finish());
+
+        let error = FormatDocumentError::UnexpectedNodeOrToken {
+            received: Some(rowan::NodeOrToken::Node(syntax)),
+        };
+
+        expect!["Unexpected node or token SourceFile at 0..0. Node(SourceFile@0..0)"]
+            .assert_eq(&format!("{error}"));
+    }
+
+    #[test]
+    pub fn format_string_error_display_on_formatter_error_unsupported() {
+        let mut builder = GreenNodeBuilder::new();
+        builder.start_node(SyntaxKind::SourceFile.into());
+        builder.finish_node();
+        let syntax = SyntaxNode::new_root(builder.finish());
+
+        let error = FormatDocumentError::UnsupportedNodeOrToken {
+            received: rowan::NodeOrToken::Node(syntax),
+        };
+
+        expect!["Encountered unsupported Node or Token: Node(SourceFile@0..0)"]
+            .assert_eq(&format!("{error}"));
+    }
+}

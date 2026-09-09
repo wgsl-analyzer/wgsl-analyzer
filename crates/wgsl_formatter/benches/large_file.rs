@@ -45,7 +45,7 @@ fn large_file(criterion: &mut Criterion) {
     let source = SourceFile::cast(tree).expect("The file should parse into a SourceFile");
 
     criterion.bench_function("large_file_default", |bench| {
-        bench.iter(|| format_tree(&source, &FormattingOptions::default()));
+        bench.iter(|| format_node(&source, &FormattingOptions::default()));
     });
 }
 

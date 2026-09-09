@@ -10,7 +10,7 @@ use itertools::Itertools as _;
 use rowan::{TextLen as _, TextRange};
 use syntax::{Capabilities, Edition, ParseEntryPoint};
 
-use crate::{FormattingOptions, IndentStyle, format::format_tree, format_range};
+use crate::{FormattingOptions, IndentStyle, format::format_node, format_range};
 
 //Taken from expect_test
 // TODO(MonaMayrhofer,blocked) This can be removed once expect_test exposes the trimmed data
@@ -191,7 +191,7 @@ where
     E: ExpectAssertEq,
 {
     let parse = syntax::parse(before.trim_start(), options.edition);
-    let syntax = parse.tree();
+    let syntax = parse.syntax();
 
     // For debugging tests its very useful to
     // dbg!(&syntax);
@@ -204,7 +204,7 @@ where
         parse.syntax()
     );
 
-    let formatted = match format_tree(&syntax, &options.formatting) {
+    let formatted = match format_node(&syntax, &options.formatting) {
         Ok(formatted) => formatted,
         Err(format_error) => {
             println!("Formatting returned an unexpected error: {format_error:?}");
@@ -227,9 +227,9 @@ where
     println!("==Idempodence check==");
 
     // Check for idempotence
-    let syntax = syntax::parse(formatted.trim_start(), options.edition).tree();
+    let syntax = syntax::parse(formatted.trim_start(), options.edition).syntax();
 
-    let formatted_twice = format_tree(&syntax, &options.formatting)
+    let formatted_twice = format_node(&syntax, &options.formatting)
         .expect("Formatting already formatted sources should never fail with an error");
     let position = panic::Location::caller();
     if formatted != formatted_twice {
@@ -270,7 +270,7 @@ where
         let tab_source = before.replace("    ", "\t");
 
         let parse = syntax::parse(tab_source.trim_start(), options.edition);
-        let syntax = parse.tree();
+        let syntax = parse.syntax();
 
         assert!(
             parse.errors().is_empty(),
@@ -279,7 +279,7 @@ where
             parse.syntax()
         );
 
-        let formatted = match format_tree(
+        let formatted = match format_node(
             &syntax,
             &FormattingOptions {
                 indent_style: IndentStyle::Tabs,
