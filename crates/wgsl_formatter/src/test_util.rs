@@ -485,7 +485,7 @@ pub fn check_range<E>(
 
     let formatted = format_range(
         &parse.syntax(),
-        Some(range_to_format),
+        range_to_format,
         &FormattingOptions::default(),
     )
     .unwrap();

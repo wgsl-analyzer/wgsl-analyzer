@@ -24,7 +24,17 @@ pub(crate) fn format(
         return None;
     }
 
-    match wgsl_formatter::format_range(&parsed.syntax(), range, config) {
+    let result = match range {
+        Some(range) => wgsl_formatter::format_range(&parsed.syntax(), range, config),
+        None => {
+            wgsl_formatter::format_node(&parsed.syntax(), config).map(|formatted| FormattedRange {
+                range: parsed.syntax().text_range(),
+                formatted,
+            })
+        },
+    };
+
+    match result {
         Ok(formatted) => Some(formatted),
         Err(error) => {
             // TODO: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1505

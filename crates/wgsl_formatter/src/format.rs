@@ -31,15 +31,12 @@ pub struct FormattedRange {
 /// provided range, as the formatter can only format whole `SyntaxNode`s.
 pub fn format_range(
     file: &SyntaxNode,
-    range: Option<TextRange>,
+    range: TextRange,
     config: &FormattingOptions,
 ) -> FormatDocumentResult<FormattedRange> {
-    let node = match range {
-        None => file.syntax().clone(),
-        Some(range) => match file.syntax().covering_element(range) {
-            NodeOrToken::Node(node) => node,
-            NodeOrToken::Token(token) => token.parent().ok_or(FormatDocumentError::MissingNode)?,
-        },
+    let node = match file.syntax().covering_element(range) {
+        NodeOrToken::Node(node) => node,
+        NodeOrToken::Token(token) => token.parent().ok_or(FormatDocumentError::MissingNode)?,
     };
 
     format_node(&node, config).map(|formatted| FormattedRange {

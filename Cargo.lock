@@ -489,6 +489,7 @@ name = "dprint-plugin-wgslfmt"
 version = "0.0.0"
 dependencies = [
  "dprint-core 0.69.1",
+ "parser",
  "serde",
  "serde_json",
  "wgsl-formatter",
