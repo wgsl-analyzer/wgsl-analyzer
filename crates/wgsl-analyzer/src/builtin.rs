@@ -10,7 +10,7 @@ impl GlobalState {
         // I need to add them to the vfs here, so that self.source_root_config.partition(vfs) continues to work.
         let mut guard = self.vfs.write();
         let (vfs, line_endings_map) = &mut *guard;
-        let std_library = StdLibrary::new();
+        let std_library = StdLibrary::default();
         for file in std_library.files {
             vfs.set_file_contents(
                 VfsPath::new_virtual_path(file.path),
