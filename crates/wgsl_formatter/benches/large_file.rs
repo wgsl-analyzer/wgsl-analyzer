@@ -4,7 +4,7 @@ use criterion::{Criterion, criterion_group, criterion_main};
 use parser::parse_entrypoint_with_capabilities;
 use sha2::{Digest as _, Sha256};
 use syntax::{AstNode as _, Capabilities, ast::SourceFile};
-use wgsl_formatter::{FormattingOptions, format_tree};
+use wgsl_formatter::{FormattingOptions, format_node};
 
 const SOURCE: &str = include_str!("large_file.wesl");
 // DO NOT CHANGE!!
@@ -41,8 +41,7 @@ fn large_file(criterion: &mut Criterion) {
         );
     }
 
-    let tree = parse.syntax();
-    let source = SourceFile::cast(tree).expect("The file should parse into a SourceFile");
+    let source = parse.syntax();
 
     criterion.bench_function("large_file_default", |bench| {
         bench.iter(|| format_node(&source, &FormattingOptions::default()));

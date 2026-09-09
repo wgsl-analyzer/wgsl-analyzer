@@ -712,8 +712,8 @@ where
 
 #[cfg(test)]
 mod tests {
-    use parser::SyntaxKind;
     use rowan::{GreenNodeBuilder, SyntaxNode};
+    use syntax::SyntaxKind;
 
     use crate::{
         ast_parse::{MatchKind, parse_end, parse_node_with, syntax_iter},

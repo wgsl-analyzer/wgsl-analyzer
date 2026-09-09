@@ -76,8 +76,8 @@ impl<T> UnwrapIfPreferCrash for FormatDocumentResult<T> {
 mod tests {
 
     use expect_test::expect;
-    use parser::{SyntaxKind, SyntaxNode};
     use rowan::GreenNodeBuilder;
+    use syntax::{SyntaxKind, SyntaxNode};
 
     use crate::reporting::FormatDocumentError;
 
