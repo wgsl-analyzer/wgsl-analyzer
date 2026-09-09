@@ -474,7 +474,7 @@ pub fn gen_node_trivia(trivia: &[NodeTriviaItem]) -> FormatDocumentResult<PrintI
 
 /// Generate a whole [`NodeWithTrivia`] including all trivia and content.
 ///
-/// This respects ignore-pragmas via [`NodeWithTrivia::format`], and will
+/// This respects ignore-pragmas by using [`NodeWithTrivia::format`], and will
 /// output the node with all of its trivia verbatim, if the node is not supposed
 /// to be formatted.
 ///

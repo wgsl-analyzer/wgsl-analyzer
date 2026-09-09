@@ -76,7 +76,7 @@ struct B {
 ```
 
 The formatting in `struct A` is "unstable", because if the programmer changes the length of a single variable.
-(Possibly even via a refactor-rename action from a distance)
+(Possibly even by doing a refactor-rename action from a distance)
 suddenly the whole format collapses and gets turned into a different one `B`.
 Restoring the new format back to how it was, takes a lot of effort, manually aligning the
 comments - which is frustrating.

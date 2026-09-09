@@ -2,7 +2,7 @@
 
 ## Generator Functions
 
-Most of the heavy lifting is done via the `gen_`-functions in the [`generators`] module.
+Most of the heavy lifting is done using the `gen_`-functions in the [`generators`] module.
 
 They are split into a "context", a "parse" and a "format" section.
 
@@ -71,7 +71,7 @@ Conceptually we could split the parsing and formatting into separate functions
 The "parse" functions would consist of just the "parse" sections
 (pretty much unchanged) and return some clever structs that would form a sort of
 "Formatter-Syntax-Tree".
-Then we would recursively iterate this "Formatter-Syntax-Tree" via the
+Then we would recursively iterate this "Formatter-Syntax-Tree" using the
 "formatter" functions, which would consist of just the "format" sections.
 Through this iteration we would collapse the FST into the PrintItemBuffer.
 
@@ -113,7 +113,7 @@ but using policies we can adapt the behavior and decide what nodes are treated a
 if a node signals to us to stop consuming from the `SyntaxIter`, regardless of if we found content already.
 
 Policies can be thought of as functions, that get a reference to the newly parsed node, and return an action. Multiple
-policies can be composed together via tuples (in which case they get applied in order, and the first one to return an action
+policies can be composed together using tuples (in which case they get applied in order, and the first one to return an action
 gets applied), or they can be specified if they apply to only preceding trivia, only succeeding trivia or both.
 The most commonly used Policies are defined in [`ast_parse`], and in edge cases a function can be turned into one too.
 

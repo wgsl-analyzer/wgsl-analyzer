@@ -7,9 +7,10 @@ use crate::FormattingSource;
 /// Resolves a list of patterns into concrete file paths.
 ///
 /// Each pattern is interpreted as:
+///
 /// - `"-"` → stdin
 /// - A directory path → recursively walk for `.wgsl` files
-/// - A glob pattern (contains `*`, `?`, or `[`) → expand via glob
+/// - A glob pattern (contains `*`, `?`, or `[`) → expand using [`glob::glob`]
 /// - Otherwise → a literal file path
 pub fn resolve_patterns(patterns: &[String]) -> Result<Vec<FormattingSource>, anyhow::Error> {
     let mut files = Vec::new();

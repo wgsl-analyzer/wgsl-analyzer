@@ -43,7 +43,7 @@ impl RequestItem {
     }
 }
 
-/// A Set holding [`RequestItem`]s, implemented via a bitmap.
+/// A Set holding [`RequestItem`]s, implemented using a bitmap.
 #[derive(Clone)]
 pub struct RequestItemSet(u8);
 

@@ -237,7 +237,7 @@ impl PrintItemBuffer {
 
     /// Applies trailing requests and pushes a string to the buffer whose content is not yet known at compile time.
     ///
-    /// The string may not contain newlines or tabs - those need to be pushed separately via [`Self::push_tab`] or [`Self::request`].
+    /// The string may not contain newlines or tabs - those need to be pushed separately using [`Self::push_tab`] or [`Self::request`].
     /// Prefer using [`Self::push_sc`] whenever possible.
     ///
     /// # Panics
