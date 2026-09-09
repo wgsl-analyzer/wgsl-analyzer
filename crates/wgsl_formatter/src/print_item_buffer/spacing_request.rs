@@ -388,3 +388,136 @@ impl Request {
         }
     }
 }
+
+#[cfg(test)]
+pub mod tests {
+
+    use dprint_core::formatting::condition_resolvers;
+    use expect_test::expect;
+
+    use crate::print_item_buffer::{PrintItemBuffer, spacing_request::Request};
+
+    use super::RequestItem;
+
+    fn format_width(
+        pib: PrintItemBuffer,
+        width: u32,
+    ) -> String {
+        dprint_core::formatting::format(
+            || pib.finish(),
+            dprint_core::formatting::PrintOptions {
+                max_width: width,
+                indent_width: 4,
+                use_tabs: false,
+                new_line_text: "\n",
+            },
+        )
+    }
+
+    #[test]
+    pub fn or_newline_simple() {
+        let mut pib = PrintItemBuffer::default();
+        pib.push_sc(dprint_core_macros::sc!("1234567"));
+        pib.request(Request::empty().or_newline());
+        pib.push_sc(dprint_core_macros::sc!("1234567"));
+
+        pib.request(Request::expect(RequestItem::EmptyLine));
+        pib.push_sc(dprint_core_macros::sc!("abc"));
+        pib.request(Request::empty().or_newline());
+        pib.push_sc(dprint_core_macros::sc!("abc"));
+        expect![[r#"
+            1234567
+            1234567
+
+            abcabc"#]]
+        .assert_eq(&format_width(pib, 10));
+    }
+
+    #[test]
+    pub fn or_newline_conditional_false() {
+        let mut pib = PrintItemBuffer::default();
+
+        pib.push_sc(dprint_core_macros::sc!("1234567"));
+        pib.request(
+            Request::Conditional {
+                condition: condition_resolvers::false_resolver(),
+                on_true: Box::new(Request::expect(RequestItem::EmptyLine)),
+                on_false: Box::new(Request::expect(RequestItem::Space)),
+            }
+            .or_newline(),
+        );
+        pib.push_sc(dprint_core_macros::sc!("1234567"));
+        pib.request(Request::expect(RequestItem::EmptyLine));
+
+        pib.push_sc(dprint_core_macros::sc!("abc"));
+        pib.request(
+            Request::Conditional {
+                condition: condition_resolvers::false_resolver(),
+                on_true: Box::new(Request::expect(RequestItem::EmptyLine)),
+                on_false: Box::new(Request::expect(RequestItem::Space)),
+            }
+            .or_newline(),
+        );
+        pib.push_sc(dprint_core_macros::sc!("def"));
+
+        expect![[r#"
+            1234567
+            1234567
+
+            abc def"#]]
+        .assert_eq(&format_width(pib, 10));
+    }
+
+    #[test]
+    pub fn or_newline_conditional_true() {
+        let mut pib = PrintItemBuffer::default();
+
+        pib.push_sc(dprint_core_macros::sc!("1234567"));
+        pib.request(
+            Request::Conditional {
+                condition: condition_resolvers::true_resolver(),
+                on_false: Box::new(Request::expect(RequestItem::EmptyLine)),
+                on_true: Box::new(Request::expect(RequestItem::Space)),
+            }
+            .or_newline(),
+        );
+        pib.push_sc(dprint_core_macros::sc!("1234567"));
+        pib.request(Request::expect(RequestItem::EmptyLine));
+
+        pib.push_sc(dprint_core_macros::sc!("abc"));
+        pib.request(
+            Request::Conditional {
+                condition: condition_resolvers::true_resolver(),
+                on_false: Box::new(Request::expect(RequestItem::EmptyLine)),
+                on_true: Box::new(Request::expect(RequestItem::Space)),
+            }
+            .or_newline(),
+        );
+        pib.push_sc(dprint_core_macros::sc!("def"));
+
+        expect![[r#"
+            1234567
+            1234567
+
+            abc def"#]]
+        .assert_eq(&format_width(pib, 10));
+    }
+
+    #[test]
+    fn request_item_index() {
+        let max_request_index = 2;
+
+        for request_index in 0..=max_request_index {
+            let request_item = RequestItem::from_index(request_index).unwrap_or_else(|| {
+                panic!("There should be a RequestItem with index {request_index}")
+            });
+
+            let actual_index = request_item.to_index();
+            assert_eq!(
+                request_index, actual_index,
+                "RequestItem::from_index() and RequestItem::to_index() should be inverse"
+            );
+        }
+        assert_eq!(RequestItem::from_index(max_request_index + 1), None);
+    }
+}
