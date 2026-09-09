@@ -43,7 +43,6 @@ pub(crate) enum AttributeGroup {
     Id,
     Interpolate,
     Invariant,
-    Location,
     OffsetAlignSize,
     BindingGroup,
     ComputeWorkgroup,
@@ -97,7 +96,6 @@ pub(crate) fn categorize_attribute(attribute: &Attribute) -> AttributeCategoriza
         Attribute::IdAttribute(_) => Grouped(AttributeGroup::Id, 0),
         Attribute::InterpolateAttribute(_) => Grouped(AttributeGroup::Interpolate, 0),
         Attribute::InvariantAttribute(_) => Grouped(AttributeGroup::Invariant, 0),
-        Attribute::LocationAttribute(_) => Grouped(AttributeGroup::Location, 0),
 
         Attribute::OtherAttribute(attrib) => {
             let name = attrib.name().map(|identifier| identifier.text().to_owned());
@@ -108,6 +106,7 @@ pub(crate) fn categorize_attribute(attribute: &Attribute) -> AttributeCategoriza
                 None => Ungrouped(String::new()),
             }
         },
+        Attribute::LocationAttribute(_) => Inline(3),
         Attribute::BuiltinAttribute(_) => Inline(2),
         Attribute::MustUseAttribute(_) => Inline(1),
         Attribute::ConstantAttribute(_) => Inline(0),

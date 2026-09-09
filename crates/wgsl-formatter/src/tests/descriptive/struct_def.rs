@@ -61,8 +61,7 @@ fn format_struct_def_members_with_attributes() {
         expect![[r#"
             struct Test {
                 @attr(1)
-                @location(0)
-                x: i32,
+                @location(0) x: i32,
                 a: i32,
                 b: f32,
             }
@@ -131,8 +130,7 @@ fn format_comments_in_struct_def_members_with_attributes() {
                 (
                     // 9
                     1, // 10
-                )
-                // 11
+                ) // 11
                 x // 12
                 : // 13
                 i32, // 14

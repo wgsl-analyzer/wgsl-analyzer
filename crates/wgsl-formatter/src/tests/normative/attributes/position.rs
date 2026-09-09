@@ -29,9 +29,8 @@ pub(crate) fn format_attribute_offset_size_align_are_grouped() {
             struct VertexOutput {
                 @offset(28) @align(7) @size(9)
                 a: u32,
-                @location(1)
                 @offset(28) @align(7) @size(9)
-                b: u32,
+                @location(1) b: u32,
             }
         "#]],
     );
@@ -499,13 +498,12 @@ pub(crate) fn format_all_attribute_order() {
             @id(1)
             @interpolate(flat)
             @invariant
-            @location(0)
             @align(1) @size(1)
             @group(1) @binding(1)
             @compute @workgroup_size(1, 2, 3)
             @fragment
             @vertex
-            @const @must_use @builtin(position) fn a() {}
+            @const @must_use @builtin(position) @location(0) fn a() {}
         "#]],
     );
 }
