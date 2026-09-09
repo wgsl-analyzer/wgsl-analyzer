@@ -198,13 +198,6 @@ pub(crate) const DiscardParenthesis: (MatchKind, MatchKind) = (
     MatchKind(SyntaxKind::ParenthesisRight, PolicyAction::Discard),
 );
 
-/// A policy for [`parse_node_with`] that marks a semicolon as an [end][PolicyAction::Discard].
-#[expect(
-    non_upper_case_globals,
-    reason = "Keep struct based policies and constants looking the same"
-)]
-pub(crate) const MarkEndOnSemicolon: MatchKind = MatchKind(SyntaxKind::Semicolon, PolicyAction::MarkEnd);
-
 /// A policy for [`parse_node_with`] that does not admit any trivia associated with the node.
 pub(crate) struct NoTrivia;
 impl ParseNodePolicy for NoTrivia {

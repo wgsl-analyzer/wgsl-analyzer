@@ -15,18 +15,6 @@ pub(crate) struct IgnorePragma {
     pub(crate) token: SyntaxToken,
 }
 
-impl IgnorePragma {
-    #[must_use]
-    pub(crate) fn syntax(
-        &self
-    ) -> NodeOrToken<
-        rowan::SyntaxNode<syntax::WeslLanguage>,
-        rowan::SyntaxToken<syntax::WeslLanguage>,
-    > {
-        NodeOrToken::Token(self.token.clone())
-    }
-}
-
 /// Whether the `SyntaxNode`'s first interesting child is a [ignore-parent-pragma](`is_ignore_parent_pragma_comment`).
 #[must_use]
 pub(crate) fn is_ignored_from_within(content: &SyntaxNode) -> bool {
