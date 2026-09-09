@@ -1,7 +1,7 @@
 //! This file was generated from all the unit tests through a `ripgrep` search.
 //!
 //! ```bash
-//! cd crates/wgsl_formatter/src/tests
+//! cd crates/wgsl-formatter/src/tests
 //! rg -U 'check\([\s\n]*"(([^"\\]*\n*)+)",' -r '$1' -I . > ../../benches/large_file.wesl
 //! ```
 //!

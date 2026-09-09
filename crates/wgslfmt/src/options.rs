@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use crate::cli::ConfigOverride;
 
 // We do not expose the `wgsl_formatter::FormattingOptions` directly because `wgslfmt.toml` is intended to be more stable than `FormattingOptions`.
-// `wgslfmt.toml` is the interface of `wgslfmt`, not of `wgsl_formatter`.
+// `wgslfmt.toml` is the interface of `wgslfmt`, not of `wgsl-formatter`.
 
 /// The struct representing the contents of a wgslfmt.toml.
 #[derive(Serialize, Deserialize, Debug)]
