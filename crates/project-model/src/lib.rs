@@ -6,7 +6,7 @@
 //! In this crate, we are concerned with "real world" project models.
 //!
 //! Specifically, here we have a representation for a `wesl-rs` project
-//! ([`WeslToml`]) and for manually specified layout ([`ProjectManifest::ProjectJson`]).
+//! ([`WeslManifest`]) and for manually specified layout ([`ProjectManifest::ProjectJson`]).
 //!
 //! Roughly, the things we do here are:
 //!

@@ -112,7 +112,7 @@ impl<'global_state> RequestDispatcher<'global_state> {
     }
 
     /// Dispatches a non-latency-sensitive request onto the thread pool. When the VFS is marked not
-    /// ready this will return a default constructed [`R::Result`].
+    /// ready this will return a default constructed [`lsp_types::Request::Result`].
     pub(crate) fn on<const ALLOW_RETRYING: bool, Request>(
         &mut self,
         function: fn(GlobalStateSnapshot, Request::Params) -> anyhow::Result<Request::Result>,
@@ -145,7 +145,7 @@ impl<'global_state> RequestDispatcher<'global_state> {
     }
 
     /// Dispatches a non-latency-sensitive request onto the thread pool. When the VFS is marked not
-    /// ready this will return a `default` constructed [`R::Result`].
+    /// ready this will return a `default` constructed [`lsp_types::Request::Result`].
     pub(crate) fn on_with_vfs_default<Request, GetDefault>(
         &mut self,
         function: fn(GlobalStateSnapshot, Request::Params) -> anyhow::Result<Request::Result>,

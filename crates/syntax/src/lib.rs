@@ -9,7 +9,7 @@ use std::{marker::PhantomData, ops::Deref};
 use either::Either;
 pub use parser::{
     Capabilities, Diagnostic, Edition, ExtensionsConfig, ParseEntryPoint, SyntaxElement,
-    SyntaxKind, SyntaxNode, SyntaxNodeChildren, SyntaxToken,
+    SyntaxElementChildren, SyntaxKind, SyntaxNode, SyntaxNodeChildren, SyntaxToken, WeslLanguage,
 };
 pub use rowan::Direction;
 use smol_str::SmolStr;
