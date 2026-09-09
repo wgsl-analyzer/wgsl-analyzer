@@ -506,3 +506,18 @@ pub fn strip_leading_indentation(text: &str) -> String {
         .map(|line| line.strip_prefix(&indentation).unwrap_or(line))
         .join("\n")
 }
+
+#[cfg(test)]
+mod tests {
+    use super::assert_out_of_scope;
+
+    #[test]
+    fn assert_out_of_scope_panics_if_in_scope() {
+        assert!(
+            std::panic::catch_unwind(|| {
+                assert_out_of_scope("fn this_actually_does_parse() {}", "");
+            })
+            .is_err()
+        );
+    }
+}
