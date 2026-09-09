@@ -476,7 +476,11 @@ pub fn check_range<E>(
         Edition::LATEST,
         Capabilities::default(),
     );
-    assert!(parse.errors().is_empty());
+    assert!(
+        parse.errors().is_empty(),
+        "Encountered parse errors in benchmark input: {:#?}",
+        parse.errors()
+    );
 
     let formatted = format_range(
         &parse.syntax(),

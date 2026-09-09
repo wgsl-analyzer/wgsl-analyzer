@@ -1,6 +1,6 @@
 use expect_test::expect;
 
-use crate::test_util::check;
+use crate::test_util::{check, check_range};
 
 #[test]
 pub fn ignore_on_function_simple() {
@@ -325,6 +325,29 @@ a=1
             let
             a=1
             ;
+            }
+        "#]],
+    );
+}
+
+#[test]
+pub fn ignore_within_format_range() {
+    check_range(
+        "
+fn a() {
+    // @!wgslfmt(ignore)
+#|#
+    let b = 1;
+#|#
+}
+",
+        expect![[r#"
+
+            fn a() {
+                // @!wgslfmt(ignore)
+
+                let b = 1;
+
             }
         "#]],
     );
