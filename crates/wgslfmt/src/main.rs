@@ -1,3 +1,5 @@
+//! Source code formatter for the WebGPU Shader Language.
+
 mod cli;
 pub mod options;
 mod patterns;

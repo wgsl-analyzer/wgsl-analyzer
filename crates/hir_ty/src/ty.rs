@@ -734,10 +734,6 @@ impl fmt::Display for VecSize {
 
 impl VecSize {
     /// Get the dimensionality of the vector (can be `2`, `3`, or `4`) as a [`u8`].
-    ///
-    /// # Panics
-    ///
-    /// Panics if self is the [`BoundVariable`] variant.
     #[must_use]
     pub const fn as_u8(self) -> u8 {
         match self {
@@ -748,10 +744,6 @@ impl VecSize {
     }
 
     /// Get the dimensionality of the vector (can be `2`, `3`, or `4`) as a [`usize`].
-    ///
-    /// # Panics
-    ///
-    /// Panics if self is the [`BoundVariable`] variant.
     #[must_use]
     pub const fn as_usize(self) -> usize {
         match self {
@@ -974,10 +966,6 @@ pub enum VecIndex {
 
 impl VecIndex {
     /// Get the dimensionality of the vector (can be `2`, `3`, or `4`) as a [`u8`].
-    ///
-    /// # Panics
-    ///
-    /// Panics if self is the [`BoundVariable`] variant.
     #[must_use]
     pub const fn as_u8(self) -> u8 {
         match self {

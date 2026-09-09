@@ -4,7 +4,7 @@
 //!
 //! ## Entrypoints
 //!
-//! The entry points that actually format code are [`format_file`], [`format_range`] [`format_node`] and [`format_tree`].
+//! The entry points that actually format code are [`format_range`] [`format_node`] and [`format_tree`].
 #![cfg_attr(doc, doc = include_str!("../architecture.md"))]
 #![warn(unused)]
 

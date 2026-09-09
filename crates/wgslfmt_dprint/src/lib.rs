@@ -1,3 +1,5 @@
+//! `dprint` plugin with [`wgsl_formatter`] as the backend for formatting WebGPU Shader Language source code.
+
 use dprint_core::{
     configuration::{ConfigKeyMap, GlobalConfiguration},
     plugins::{
