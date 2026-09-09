@@ -19,7 +19,7 @@ fn format_if_statement_remove_parens() {
 }
 
 #[test]
-pub fn format_if_else_statement_empty_gets_collapsed() {
+pub(crate) fn format_if_else_statement_empty_gets_collapsed() {
     check(
         "fn main() {
         if
@@ -39,7 +39,7 @@ pub fn format_if_else_statement_empty_gets_collapsed() {
 }
 
 #[test]
-pub fn format_if_else_statement_empty_if_nonempy_else() {
+pub(crate) fn format_if_else_statement_empty_if_nonempy_else() {
     check(
         "fn main() {
         if
@@ -62,7 +62,7 @@ pub fn format_if_else_statement_empty_if_nonempy_else() {
 }
 
 #[test]
-pub fn format_if_statement_indent_multiline_condition() {
+pub(crate) fn format_if_statement_indent_multiline_condition() {
     check(
         "
         fn main() {
@@ -85,7 +85,7 @@ pub fn format_if_statement_indent_multiline_condition() {
 }
 
 #[test]
-pub fn format_else_if_statement_indent_multiline_condition() {
+pub(crate) fn format_else_if_statement_indent_multiline_condition() {
     check(
         "
         fn main() {

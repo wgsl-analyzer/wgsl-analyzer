@@ -5,19 +5,19 @@
 //! See [`node::gen_node_with_trivia`] for the dispatcher that decides how to
 //! format a given `SyntaxNode` and takes care of trivia and ignore pragmas.
 
-pub mod attributes;
-pub mod comments;
-pub mod diagnostic_directive;
-pub mod directives;
-pub mod expressions;
-pub mod function_declaration;
-pub mod global_compound_declaration;
-pub mod name;
-pub mod node;
-pub mod path;
-pub mod source_file;
-pub mod statements;
-pub mod struct_declaration;
-pub mod type_alias_declaration;
-pub mod types;
-pub mod verbatim;
+pub(crate) mod attributes;
+pub(crate) mod comments;
+pub(crate) mod diagnostic_directive;
+pub(crate) mod directives;
+pub(crate) mod expressions;
+pub(crate) mod function_declaration;
+pub(crate) mod global_compound_declaration;
+pub(crate) mod name;
+pub(crate) mod node;
+pub(crate) mod path;
+pub(crate) mod source_file;
+pub(crate) mod statements;
+pub(crate) mod struct_declaration;
+pub(crate) mod type_alias_declaration;
+pub(crate) mod types;
+pub(crate) mod verbatim;

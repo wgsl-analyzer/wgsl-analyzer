@@ -3,7 +3,7 @@ use expect_test::expect;
 use crate::test_util::check_comments;
 
 #[test]
-pub fn format_comments_in_break() {
+pub(crate) fn format_comments_in_break() {
     check_comments(
         "fn main() { loop { ##break##;## } }",
         expect![[r#"

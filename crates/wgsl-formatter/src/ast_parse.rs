@@ -26,13 +26,13 @@ mod syntax_iter {
 
     use crate::ast_parse::SyntaxIterInner;
 
-    pub type SyntaxIter = SyntaxIterInner;
-    pub fn syntax_iter(syntax: &SyntaxNode) -> SyntaxIter {
+    pub(crate) type SyntaxIter = SyntaxIterInner;
+    pub(crate) fn syntax_iter(syntax: &SyntaxNode) -> SyntaxIter {
         put_back_n(syntax.children_with_tokens())
     }
 }
 #[cfg(not(debug_assertions))]
-pub use syntax_iter::{SyntaxIter, syntax_iter};
+pub(crate) use syntax_iter::{SyntaxIter, syntax_iter};
 
 #[cfg(debug_assertions)]
 mod syntax_iter_asserting {
@@ -44,7 +44,7 @@ mod syntax_iter_asserting {
         reporting::{FormatDocumentError, FormatDocumentResult, UnwrapIfPreferCrash as _},
     };
 
-    pub struct SyntaxIter {
+    pub(crate) struct SyntaxIter {
         inner: SyntaxIterInner,
 
         #[cfg(debug_assertions)]
@@ -60,14 +60,14 @@ mod syntax_iter_asserting {
     }
 
     impl SyntaxIter {
-        pub fn put_back(
+        pub(crate) fn put_back(
             &mut self,
             item: <Self as Iterator>::Item,
         ) {
             self.inner.put_back(item);
         }
 
-        pub fn expect_end(&mut self) -> FormatDocumentResult<()> {
+        pub(crate) fn expect_end(&mut self) -> FormatDocumentResult<()> {
             self.had_end_expected = true;
 
             match self.inner.next() {
@@ -96,7 +96,7 @@ mod syntax_iter_asserting {
     }
 
     #[must_use]
-    pub fn syntax_iter(syntax: &SyntaxNode) -> SyntaxIter {
+    pub(crate) fn syntax_iter(syntax: &SyntaxNode) -> SyntaxIter {
         let iterator = put_back_n(syntax.children_with_tokens());
 
         SyntaxIter {
@@ -106,14 +106,14 @@ mod syntax_iter_asserting {
     }
 }
 #[cfg(debug_assertions)]
-pub use syntax_iter_asserting::{SyntaxIter, syntax_iter};
+pub(crate) use syntax_iter_asserting::{SyntaxIter, syntax_iter};
 
 /// Expect the [`SyntaxIter`] to have ended and not have any more unhandled
 /// syntax nodes.
 ///
 /// Consequently calling this in all generator functions ensures that we don't accidentally "loose"
 /// and source code that got submitted for formatting, but not consumed by a parser function.
-pub fn parse_end(syntax: &mut SyntaxIter) -> FormatDocumentResult<()> {
+pub(crate) fn parse_end(syntax: &mut SyntaxIter) -> FormatDocumentResult<()> {
     #[cfg(debug_assertions)]
     {
         syntax.expect_end()
@@ -136,7 +136,7 @@ pub fn parse_end(syntax: &mut SyntaxIter) -> FormatDocumentResult<()> {
 }
 
 /// A policy that tells [`parse_node_with`] how to handle trivia or content.
-pub trait ParseNodePolicy {
+pub(crate) trait ParseNodePolicy {
     fn handle_preceding(
         &self,
         node: &NodeOrToken<SyntaxNode, SyntaxToken>,
@@ -152,28 +152,28 @@ pub trait ParseNodePolicy {
     non_upper_case_globals,
     reason = "Keep struct based policies and constants looking the same"
 )]
-pub const DiscardBlankspace: MatchKind = MatchKind(SyntaxKind::Blankspace, PolicyAction::Discard);
+pub(crate) const DiscardBlankspace: MatchKind = MatchKind(SyntaxKind::Blankspace, PolicyAction::Discard);
 
 /// A policy for [`parse_node_with`] that [discards][PolicyAction::Discard] any comma.
 #[expect(
     non_upper_case_globals,
     reason = "Keep struct based policies and constants looking the same"
 )]
-pub const DiscardComma: MatchKind = MatchKind(SyntaxKind::Comma, PolicyAction::Discard);
+pub(crate) const DiscardComma: MatchKind = MatchKind(SyntaxKind::Comma, PolicyAction::Discard);
 
 /// A policy for [`parse_node_with`] that [discards][PolicyAction::Discard] any semicolon.
 #[expect(
     non_upper_case_globals,
     reason = "Keep struct based policies and constants looking the same"
 )]
-pub const DiscardSemicolon: MatchKind = MatchKind(SyntaxKind::Semicolon, PolicyAction::Discard);
+pub(crate) const DiscardSemicolon: MatchKind = MatchKind(SyntaxKind::Semicolon, PolicyAction::Discard);
 
 /// A policy for [`parse_node_with`] that [discards][PolicyAction::Discard] template delimiters (`<`, `>`).
 #[expect(
     non_upper_case_globals,
     reason = "Keep struct based policies and constants looking the same"
 )]
-pub const DiscardTemplateDelimiters: (MatchKind, MatchKind) = (
+pub(crate) const DiscardTemplateDelimiters: (MatchKind, MatchKind) = (
     MatchKind(SyntaxKind::TemplateStart, PolicyAction::Discard),
     MatchKind(SyntaxKind::TemplateEnd, PolicyAction::Discard),
 );
@@ -183,7 +183,7 @@ pub const DiscardTemplateDelimiters: (MatchKind, MatchKind) = (
     non_upper_case_globals,
     reason = "Keep struct based policies and constants looking the same"
 )]
-pub const DiscardBraces: (MatchKind, MatchKind) = (
+pub(crate) const DiscardBraces: (MatchKind, MatchKind) = (
     MatchKind(SyntaxKind::BraceLeft, PolicyAction::Discard),
     MatchKind(SyntaxKind::BraceRight, PolicyAction::Discard),
 );
@@ -193,7 +193,7 @@ pub const DiscardBraces: (MatchKind, MatchKind) = (
     non_upper_case_globals,
     reason = "Keep struct based policies and constants looking the same"
 )]
-pub const DiscardParenthesis: (MatchKind, MatchKind) = (
+pub(crate) const DiscardParenthesis: (MatchKind, MatchKind) = (
     MatchKind(SyntaxKind::ParenthesisLeft, PolicyAction::Discard),
     MatchKind(SyntaxKind::ParenthesisRight, PolicyAction::Discard),
 );
@@ -203,10 +203,10 @@ pub const DiscardParenthesis: (MatchKind, MatchKind) = (
     non_upper_case_globals,
     reason = "Keep struct based policies and constants looking the same"
 )]
-pub const MarkEndOnSemicolon: MatchKind = MatchKind(SyntaxKind::Semicolon, PolicyAction::MarkEnd);
+pub(crate) const MarkEndOnSemicolon: MatchKind = MatchKind(SyntaxKind::Semicolon, PolicyAction::MarkEnd);
 
 /// A policy for [`parse_node_with`] that does not admit any trivia associated with the node.
-pub struct NoTrivia;
+pub(crate) struct NoTrivia;
 impl ParseNodePolicy for NoTrivia {
     fn handle_preceding(
         &self,
@@ -224,7 +224,7 @@ impl ParseNodePolicy for NoTrivia {
 }
 
 /// A policy modifier for [`parse_node_with`] that only activates a given policy on nodes *succeeding* the content of the parsed [`NodeWithTrivia`].
-pub struct Succeeding<T>(pub T)
+pub(crate) struct Succeeding<T>(pub(crate) T)
 where
     T: ParseNodePolicy;
 impl<T> ParseNodePolicy for Succeeding<T>
@@ -247,7 +247,7 @@ where
 }
 
 /// A policy for [`parse_node_with`] that yields a certain [`PolicyAction`] if the parsed node matches a certain `SyntaxKind`.
-pub struct MatchKind(pub SyntaxKind, pub PolicyAction);
+pub(crate) struct MatchKind(pub(crate) SyntaxKind, pub(crate) PolicyAction);
 impl ParseNodePolicy for MatchKind {
     fn handle_preceding(
         &self,
@@ -265,7 +265,7 @@ impl ParseNodePolicy for MatchKind {
 }
 
 /// A policy for [`parse_node_with`] that [stops][PolicyAction::Stop] parsing when at least one newline is encountered.
-pub struct StopAtNewline;
+pub(crate) struct StopAtNewline;
 impl ParseNodePolicy for StopAtNewline {
     fn handle_preceding(
         &self,
@@ -287,7 +287,7 @@ impl ParseNodePolicy for StopAtNewline {
 
 /// A policy for [`parse_node_with`] that runs a user provided function.
 #[derive(Clone)]
-pub struct Filter<T>(pub T)
+pub(crate) struct Filter<T>(pub(crate) T)
 where
     T: Fn(&NodeOrToken<SyntaxNode, SyntaxToken>) -> Option<PolicyAction>;
 impl<T> ParseNodePolicy for Filter<T>
@@ -368,7 +368,7 @@ impl_tuple!(TA TB TC TD TE TF);
 
 /// Used by [Policies](ParseNodePolicy) to instruct [`parse_node_with`] on how to proceed after encountering a node.
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
-pub enum PolicyAction {
+pub(crate) enum PolicyAction {
     /// Discard this node. It will not be part of the result and not be included in any other [`NodeWithTrivia`]s.
     Discard,
     /// Mark this node as content and continue to parse its succeeding trivia.
@@ -401,7 +401,7 @@ pub enum PolicyAction {
 /// Example:
 /// ```rust
 /// # use wgsl_formatter::ast_parse::{DiscardBlankspace, parse_node_with, syntax_iter, Succeeding, StopAtNewline};
-/// # pub fn foo(node: &syntax::SyntaxNode) {
+/// # pub(crate) fn foo(node: &syntax::SyntaxNode) {
 ///     let mut syntax = syntax_iter(node);
 ///     let item = parse_node_with(&mut syntax, DiscardBlankspace);
 ///     let item = parse_node_with(&mut syntax, (Succeeding(StopAtNewline), DiscardBlankspace));
@@ -415,7 +415,7 @@ pub enum PolicyAction {
     clippy::too_many_lines,
     reason = "Splitting this up makes it less readable than it is now."
 )]
-pub fn parse_node_with<TPolicy>(
+pub(crate) fn parse_node_with<TPolicy>(
     syntax: &mut SyntaxIter,
     policy: TPolicy,
 ) -> NodeWithTrivia
@@ -619,7 +619,7 @@ where
     }
 }
 
-pub struct ManyNodesIterator<'syntaxiter, TPolicy: ParseNodePolicy> {
+pub(crate) struct ManyNodesIterator<'syntaxiter, TPolicy: ParseNodePolicy> {
     syntax: &'syntaxiter mut SyntaxIter,
     policy: TPolicy,
     reached_end: bool,
@@ -651,7 +651,7 @@ impl<TPolicy: ParseNodePolicy> Iterator for ManyNodesIterator<'_, TPolicy> {
 /// ```rust
 /// # use syntax::ast;
 /// # use wgsl_formatter::{ast_parse::*, reporting::*};
-/// # pub fn foo(node: &syntax::SyntaxNode) -> FormatDocumentResult<()> {
+/// # pub(crate) fn foo(node: &syntax::SyntaxNode) -> FormatDocumentResult<()> {
 ///     let mut syntax = syntax_iter(node);
 ///     let item_arguments = parse_many_nodes_with(
 ///         &mut syntax,
@@ -696,7 +696,7 @@ impl<TPolicy: ParseNodePolicy> Iterator for ManyNodesIterator<'_, TPolicy> {
 ///    }
 /// }
 /// ```
-pub const fn parse_many_nodes_with<TPolicy>(
+pub(crate) const fn parse_many_nodes_with<TPolicy>(
     syntax: &mut SyntaxIter,
     policy: TPolicy,
 ) -> ManyNodesIterator<'_, TPolicy>
@@ -723,7 +723,7 @@ mod tests {
     use super::PolicyAction;
 
     #[test]
-    pub fn syntax_iter_panics_if_not_parsed_end() {
+    pub(crate) fn syntax_iter_panics_if_not_parsed_end() {
         let make_node = || {
             let mut builder = GreenNodeBuilder::new();
             builder.start_node(SyntaxKind::SourceFile.into());
@@ -750,7 +750,7 @@ mod tests {
     }
 
     #[test]
-    pub fn parse_end_errors_if_not_end() {
+    pub(crate) fn parse_end_errors_if_not_end() {
         let mut builder = GreenNodeBuilder::new();
         builder.start_node(SyntaxKind::SourceFile.into());
         builder.token(SyntaxKind::Struct.into(), "struct");
@@ -764,7 +764,7 @@ mod tests {
     }
 
     #[test]
-    pub fn parse_node_with_immediate_stop() {
+    pub(crate) fn parse_node_with_immediate_stop() {
         let mut builder = GreenNodeBuilder::new();
         builder.start_node(SyntaxKind::SourceFile.into());
         builder.token(SyntaxKind::LineEndingComment.into(), "// Hello");
@@ -792,7 +792,7 @@ mod tests {
     }
 
     #[test]
-    pub fn parse_node_with_immediate_discard() {
+    pub(crate) fn parse_node_with_immediate_discard() {
         let mut builder = GreenNodeBuilder::new();
         builder.start_node(SyntaxKind::SourceFile.into());
         builder.token(SyntaxKind::Struct.into(), "struct");
@@ -821,7 +821,7 @@ mod tests {
     }
 
     #[test]
-    pub fn parse_node_with_immediate_discard_and_stop() {
+    pub(crate) fn parse_node_with_immediate_discard_and_stop() {
         let mut builder = GreenNodeBuilder::new();
         builder.start_node(SyntaxKind::SourceFile.into());
         builder.token(SyntaxKind::Struct.into(), "struct");
@@ -852,7 +852,7 @@ mod tests {
     }
 
     #[test]
-    pub fn parse_node_keeps_linebreaks_around_per_default() {
+    pub(crate) fn parse_node_keeps_linebreaks_around_per_default() {
         let mut builder = GreenNodeBuilder::new();
         builder.start_node(SyntaxKind::SourceFile.into());
         builder.token(SyntaxKind::Blankspace.into(), "\n\n");

@@ -6,7 +6,7 @@ use crate::{
 };
 
 #[test]
-pub fn format_return_statement_removes_needless_parens() {
+pub(crate) fn format_return_statement_removes_needless_parens() {
     check(
         "fn main() {
 return (1);

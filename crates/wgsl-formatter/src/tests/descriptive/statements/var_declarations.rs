@@ -3,7 +3,7 @@ use expect_test::expect;
 use crate::test_util::{check, check_comments};
 
 #[test]
-pub fn format_var_declaration_simple_literal_1() {
+pub(crate) fn format_var_declaration_simple_literal_1() {
     check(
         "fn main() {
         var
@@ -21,7 +21,7 @@ pub fn format_var_declaration_simple_literal_1() {
 }
 
 #[test]
-pub fn format_var_declaration_simple_statement_1() {
+pub(crate) fn format_var_declaration_simple_statement_1() {
     check(
         "fn main() {
         var
@@ -55,7 +55,7 @@ fn format_var_declaration_with_simple_type() {
 }
 
 #[test]
-pub fn format_var_declaration_simple_statement_with_trailing_comment() {
+pub(crate) fn format_var_declaration_simple_statement_with_trailing_comment() {
     check(
         "fn main() {
         var a_multiline_binding = 1 // The thing
@@ -78,7 +78,7 @@ pub fn format_var_declaration_simple_statement_with_trailing_comment() {
 }
 
 #[test]
-pub fn format_comments_in_var_declaration() {
+pub(crate) fn format_comments_in_var_declaration() {
     check_comments(
         "fn main() {
         ## var ## a ## = ## 1 ## ; ##
@@ -102,7 +102,7 @@ pub fn format_comments_in_var_declaration() {
 }
 
 #[test]
-pub fn format_var_declaration_keeps_line_comment_in_same_place_same_line() {
+pub(crate) fn format_var_declaration_keeps_line_comment_in_same_place_same_line() {
     check(
         "fn main() {
 
@@ -119,7 +119,7 @@ pub fn format_var_declaration_keeps_line_comment_in_same_place_same_line() {
 }
 
 #[test]
-pub fn format_global_var_declaration_simple_literal_1() {
+pub(crate) fn format_global_var_declaration_simple_literal_1() {
     check(
         "
         var
@@ -135,7 +135,7 @@ pub fn format_global_var_declaration_simple_literal_1() {
 }
 
 #[test]
-pub fn format_global_var_declaration_with_type_1() {
+pub(crate) fn format_global_var_declaration_with_type_1() {
     check(
         "
         var
@@ -151,7 +151,7 @@ pub fn format_global_var_declaration_with_type_1() {
 }
 
 #[test]
-pub fn format_global_var_declaration_with_address_space_and_type_1() {
+pub(crate) fn format_global_var_declaration_with_address_space_and_type_1() {
     check(
         "
         var<workgroup>
@@ -165,7 +165,7 @@ pub fn format_global_var_declaration_with_address_space_and_type_1() {
 }
 
 #[test]
-pub fn format_global_var_declaration_with_address_space_and_type_2() {
+pub(crate) fn format_global_var_declaration_with_address_space_and_type_2() {
     check(
         "
         var<storage,read_write>

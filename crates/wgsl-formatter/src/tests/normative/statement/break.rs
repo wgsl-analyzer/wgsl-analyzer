@@ -3,7 +3,7 @@ use expect_test::expect;
 use crate::test_util::check;
 
 #[test]
-pub fn format_break() {
+pub(crate) fn format_break() {
     check(
         "fn main() {
             loop {

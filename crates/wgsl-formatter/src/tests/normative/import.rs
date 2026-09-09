@@ -6,7 +6,7 @@ use crate::{
 };
 
 #[test]
-pub fn format_import_whole_module() {
+pub(crate) fn format_import_whole_module() {
     check(
         "
         import a;
@@ -18,7 +18,7 @@ pub fn format_import_whole_module() {
 }
 
 #[test]
-pub fn assert_trailing_colcol_is_parse_error() {
+pub(crate) fn assert_trailing_colcol_is_parse_error() {
     assert_out_of_scope(
         "import a::b::;",
         "The formatter does not care about stripping trailing colcols because it should be a parse error.",
@@ -26,7 +26,7 @@ pub fn assert_trailing_colcol_is_parse_error() {
 }
 
 #[test]
-pub fn format_import_path_single_simple_() {
+pub(crate) fn format_import_path_single_simple_() {
     check(
         "
         import a::b::c::d::e::f;
@@ -37,7 +37,7 @@ pub fn format_import_path_single_simple_() {
     );
 }
 #[test]
-pub fn format_import_relative_package_single_simple() {
+pub(crate) fn format_import_relative_package_single_simple() {
     check(
         "
         import package::b::c;
@@ -48,7 +48,7 @@ pub fn format_import_relative_package_single_simple() {
     );
 }
 #[test]
-pub fn format_import_relative_super_single_simple() {
+pub(crate) fn format_import_relative_super_single_simple() {
     check(
         "
         import super::b::c;
@@ -59,7 +59,7 @@ pub fn format_import_relative_super_single_simple() {
     );
 }
 #[test]
-pub fn format_import_relative_super_multilevel_single_simple() {
+pub(crate) fn format_import_relative_super_multilevel_single_simple() {
     check(
         "
         import super::super::super::super::c;
@@ -70,7 +70,7 @@ pub fn format_import_relative_super_multilevel_single_simple() {
     );
 }
 #[test]
-pub fn format_import_path_multiple_same_prefix_does_not_get_collapsed() {
+pub(crate) fn format_import_path_multiple_same_prefix_does_not_get_collapsed() {
     check(
         "
         import a::b::c;
@@ -83,7 +83,7 @@ pub fn format_import_path_multiple_same_prefix_does_not_get_collapsed() {
     );
 }
 #[test]
-pub fn format_import_path_multiple_different_prefix() {
+pub(crate) fn format_import_path_multiple_different_prefix() {
     check(
         "
         import a::b::c;
@@ -96,7 +96,7 @@ pub fn format_import_path_multiple_different_prefix() {
     );
 }
 #[test]
-pub fn format_import_path_single_with_rename() {
+pub(crate) fn format_import_path_single_with_rename() {
     check(
         "
         import a::b::c as d;
@@ -107,7 +107,7 @@ pub fn format_import_path_single_with_rename() {
     );
 }
 #[test]
-pub fn format_import_collection_simple_gets_ordered() {
+pub(crate) fn format_import_collection_simple_gets_ordered() {
     check(
         "
         import a::{ZZZ,
@@ -121,7 +121,7 @@ pub fn format_import_collection_simple_gets_ordered() {
 }
 
 #[test]
-pub fn format_import_collection_order_items_alphabetical() {
+pub(crate) fn format_import_collection_order_items_alphabetical() {
     check(
         "
         import a::{a::x, a::m, a::a};
@@ -133,7 +133,7 @@ pub fn format_import_collection_order_items_alphabetical() {
 }
 
 #[test]
-pub fn format_import_collection_order_paths_alphabetical() {
+pub(crate) fn format_import_collection_order_paths_alphabetical() {
     check(
         "
         import a::{a::x::a, a::m::a, a::a::a};
@@ -145,7 +145,7 @@ pub fn format_import_collection_order_paths_alphabetical() {
 }
 
 #[test]
-pub fn format_import_collection_order_item_before_path() {
+pub(crate) fn format_import_collection_order_item_before_path() {
     check(
         "
         import a::{a::x, a::a, a::m::a};
@@ -157,7 +157,7 @@ pub fn format_import_collection_order_item_before_path() {
 }
 
 #[test]
-pub fn format_import_collection_order_path_before_collection() {
+pub(crate) fn format_import_collection_order_path_before_collection() {
     check(
         "
         import a::{a::x::a, a::a::a, a::{b,c}};
@@ -169,7 +169,7 @@ pub fn format_import_collection_order_path_before_collection() {
 }
 
 #[test]
-pub fn format_import_collection_remove_trailing_comma_when_singleline() {
+pub(crate) fn format_import_collection_remove_trailing_comma_when_singleline() {
     check(
         "
         import a::{b,
@@ -182,7 +182,7 @@ pub fn format_import_collection_remove_trailing_comma_when_singleline() {
     );
 }
 #[test]
-pub fn format_import_collection_break_on_long_items() {
+pub(crate) fn format_import_collection_break_on_long_items() {
     check_with_options(
         "
         //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
@@ -208,7 +208,7 @@ pub fn format_import_collection_break_on_long_items() {
     );
 }
 #[test]
-pub fn format_import_path_does_not_get_broken_into_lines() {
+pub(crate) fn format_import_path_does_not_get_broken_into_lines() {
     // We decided that paths should not be broken up.
     // https://discord.com/channels/1289346613185351722/1341941812675481680/1540082081240064040
     check_with_options(
@@ -232,7 +232,7 @@ pub fn format_import_path_does_not_get_broken_into_lines() {
 }
 
 #[test]
-pub fn format_import_collection_items_are_all_split_if_multiline() {
+pub(crate) fn format_import_collection_items_are_all_split_if_multiline() {
     check(
         "
 import package::tracer_plugin::renderer::buffers::{
@@ -255,7 +255,7 @@ import package::tracer_plugin::renderer::buffers::{
 }
 
 #[test]
-pub fn format_import_collection_items_are_kept_on_one_line_if_they_fit() {
+pub(crate) fn format_import_collection_items_are_kept_on_one_line_if_they_fit() {
     check_with_options(
         "
 import package::tracer_plugin::renderer::buffers::{

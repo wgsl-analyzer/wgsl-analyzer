@@ -10,7 +10,7 @@ use crate::{
     reporting::FormatDocumentResult,
 };
 
-pub fn gen_field_expression(
+pub(crate) fn gen_field_expression(
     field_expression: &ast::FieldExpression
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====

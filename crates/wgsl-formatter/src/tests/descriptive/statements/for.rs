@@ -6,7 +6,7 @@ use crate::{
 };
 
 #[test]
-pub fn format_for_statement_no_initializer() {
+pub(crate) fn format_for_statement_no_initializer() {
     check(
         "fn main() {
         for(;i<4;i++) {
@@ -23,7 +23,7 @@ pub fn format_for_statement_no_initializer() {
 }
 
 #[test]
-pub fn format_for_statement_no_condition() {
+pub(crate) fn format_for_statement_no_condition() {
     check(
         "fn main() {
         for(var a = 0;;i++) {
@@ -40,7 +40,7 @@ pub fn format_for_statement_no_condition() {
 }
 
 #[test]
-pub fn format_for_statement_no_continuing() {
+pub(crate) fn format_for_statement_no_continuing() {
     check(
         "fn main() {
         for(var a = 0;a<4;) {
@@ -57,7 +57,7 @@ pub fn format_for_statement_no_continuing() {
 }
 
 #[test]
-pub fn format_for_statement_long_first_component() {
+pub(crate) fn format_for_statement_long_first_component() {
     check_with_options(
         "fn main() {
         for(let a = 1+1+1+1+alculate_something_really_long(172832782);a<3;a+=1) {
@@ -83,7 +83,7 @@ pub fn format_for_statement_long_first_component() {
 }
 
 #[test]
-pub fn format_for_statement_long_components() {
+pub(crate) fn format_for_statement_long_components() {
     check(
         "fn main() {
         for(let a = 1+1+1+1+alculate_something_really_long(172832782);compute_some_value(a % 12847248 * 1827348 + 182748) < A_LONG_CONSTANT;a = increment_but_fancy(a)) {
@@ -104,7 +104,7 @@ pub fn format_for_statement_long_components() {
 }
 
 #[test]
-pub fn format_for_statement_super_long_components() {
+pub(crate) fn format_for_statement_super_long_components() {
     check(
         "fn main() {
         for(let a = 1+1+1+1+1+1+calculate_something_really_long(172832782, 1827387428, 3487348342);compute_some_value_that_has_a_long_name_from(a % 12847248 * 1827348 + 182748) < AN_INCONVENIENTLY_LONG_CONSTANT_DECLARED_SOMEWHERE_ELSE;a = increment_but_in_a_very_fancy_manner(a)) {
@@ -127,7 +127,7 @@ pub fn format_for_statement_super_long_components() {
 }
 
 #[test]
-pub fn format_for_statement_simple_empty() {
+pub(crate) fn format_for_statement_simple_empty() {
     check(
         "fn main() {
         for(var i = 0; i < 4; i++) {
@@ -158,7 +158,7 @@ fn format_for_statement_average() {
 }
 
 #[test]
-pub fn format_comments_in_for_statement() {
+pub(crate) fn format_comments_in_for_statement() {
     check_comments(
         "fn main() {
         ## for ## ( ## var ## i ## = ## 0 ## ; ## i ## < ## 4 ## ; ## i ## ++ ##) ## { ## } ##

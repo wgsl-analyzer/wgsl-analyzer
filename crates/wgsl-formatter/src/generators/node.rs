@@ -406,19 +406,19 @@ fn gen_node(
 
 /// Generate only the preceding trivia of a [`NodeWithTrivia`].
 #[inline]
-pub fn gen_node_preceding_trivia(node: &NodeWithTrivia) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_node_preceding_trivia(node: &NodeWithTrivia) -> FormatDocumentResult<PrintItemBuffer> {
     gen_node_trivia(&node.preceding_trivia)
 }
 
 /// Generate only the succeeding trivia of a [`NodeWithTrivia`].
 #[inline]
-pub fn gen_node_succeeding_trivia(node: &NodeWithTrivia) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_node_succeeding_trivia(node: &NodeWithTrivia) -> FormatDocumentResult<PrintItemBuffer> {
     gen_node_trivia(&node.succeeding_trivia)
 }
 
 /// Generate only the content of a [`NodeWithTrivia`].
 #[inline]
-pub fn gen_node_content(node: &NodeWithTrivia) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_node_content(node: &NodeWithTrivia) -> FormatDocumentResult<PrintItemBuffer> {
     let mut formatted = PrintItemBuffer::default();
 
     match &node.content {
@@ -448,7 +448,7 @@ pub fn gen_node_content(node: &NodeWithTrivia) -> FormatDocumentResult<PrintItem
 
 /// Format [`NodeTriviaItem`]s.
 #[inline]
-pub fn gen_node_trivia(trivia: &[NodeTriviaItem]) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_node_trivia(trivia: &[NodeTriviaItem]) -> FormatDocumentResult<PrintItemBuffer> {
     let mut formatted = PrintItemBuffer::default();
     for trivia in trivia {
         match trivia {
@@ -480,7 +480,7 @@ pub fn gen_node_trivia(trivia: &[NodeTriviaItem]) -> FormatDocumentResult<PrintI
 ///
 /// Depending on the `SyntaxKind` of the content, this delegates the actual formatting to
 /// one of the many [`generators`](crate::generators).
-pub fn gen_node_with_trivia(node: &NodeWithTrivia) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_node_with_trivia(node: &NodeWithTrivia) -> FormatDocumentResult<PrintItemBuffer> {
     let mut formatted = PrintItemBuffer::default();
 
     formatted.extend(gen_node_preceding_trivia(node)?);
@@ -491,7 +491,7 @@ pub fn gen_node_with_trivia(node: &NodeWithTrivia) -> FormatDocumentResult<Print
 }
 
 /// Like [`gen_node_with_trivia`] but strips surrounding newlines.
-pub fn gen_node_with_trivia_no_newlines(
+pub(crate) fn gen_node_with_trivia_no_newlines(
     trivia: &NodeWithTrivia
 ) -> FormatDocumentResult<PrintItemBuffer> {
     let mut formatted = PrintItemBuffer::default();

@@ -9,13 +9,13 @@ use crate::print_item_buffer::{
 
 // We don't have a Comment SyntaxNode in the AST yet, so we use a custom enum and parser function
 #[derive(Clone, Debug)]
-pub enum Comment {
+pub(crate) enum Comment {
     Block(SyntaxToken),
     LineEnding(SyntaxToken),
 }
 
 #[must_use]
-pub fn read_comment(item: &NodeOrToken<SyntaxNode, SyntaxToken>) -> Option<Comment> {
+pub(crate) fn read_comment(item: &NodeOrToken<SyntaxNode, SyntaxToken>) -> Option<Comment> {
     if let NodeOrToken::Token(child) = &item {
         #[expect(
             clippy::wildcard_enum_match_arm,
@@ -32,7 +32,7 @@ pub fn read_comment(item: &NodeOrToken<SyntaxNode, SyntaxToken>) -> Option<Comme
 }
 
 #[must_use]
-pub fn gen_comment(item: &Comment) -> PrintItemBuffer {
+pub(crate) fn gen_comment(item: &Comment) -> PrintItemBuffer {
     let mut formatted = PrintItemBuffer::default();
     match item {
         Comment::Block(content) => {

@@ -3,7 +3,7 @@ use expect_test::expect;
 use crate::test_util::{check, check_comments};
 
 #[test]
-pub fn format_diagnostic_simple_1() {
+pub(crate) fn format_diagnostic_simple_1() {
     check(
         "
        diagnostic
@@ -16,7 +16,7 @@ pub fn format_diagnostic_simple_1() {
 }
 
 #[test]
-pub fn format_diagnostic_with_dot_simple_1() {
+pub(crate) fn format_diagnostic_with_dot_simple_1() {
     check(
         "
        diagnostic
@@ -29,7 +29,7 @@ pub fn format_diagnostic_with_dot_simple_1() {
 }
 
 #[test]
-pub fn format_diagnostic_with_dot_and_newline() {
+pub(crate) fn format_diagnostic_with_dot_and_newline() {
     check(
         "
        diagnostic
@@ -44,7 +44,7 @@ pub fn format_diagnostic_with_dot_and_newline() {
 }
 
 #[test]
-pub fn format_enable_simple_1() {
+pub(crate) fn format_enable_simple_1() {
     check(
         "
        enable f16,
@@ -58,7 +58,7 @@ pub fn format_enable_simple_1() {
 }
 
 #[test]
-pub fn format_enable_long_1() {
+pub(crate) fn format_enable_long_1() {
     check(
         "
         //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
@@ -87,7 +87,7 @@ pub fn format_enable_long_1() {
 }
 
 #[test]
-pub fn format_comments_in_enable_1() {
+pub(crate) fn format_comments_in_enable_1() {
     check_comments(
         "enable ## subgroups ## , ## primitive_index ## , ## ; ##",
         expect![[r#"
@@ -107,7 +107,7 @@ pub fn format_comments_in_enable_1() {
 }
 
 #[test]
-pub fn format_requires_simple_1() {
+pub(crate) fn format_requires_simple_1() {
     check(
         "
         requires
@@ -122,7 +122,7 @@ pub fn format_requires_simple_1() {
 }
 
 #[test]
-pub fn format_requires_long_1() {
+pub(crate) fn format_requires_long_1() {
     check(
         "
         //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
@@ -146,7 +146,7 @@ pub fn format_requires_long_1() {
 }
 
 #[test]
-pub fn format_comments_in_requires_1() {
+pub(crate) fn format_comments_in_requires_1() {
     check_comments(
         "requires ## linear_indexing ## , ## buffer_view ## , ## ; ##",
         expect![[r#"

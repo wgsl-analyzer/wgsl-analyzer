@@ -14,7 +14,7 @@ use crate::{
 ///
 /// ... and newlines, and tabs, and similar stuff.
 #[derive(Clone, Debug)]
-pub enum Blankspace {
+pub(crate) enum Blankspace {
     /// A blankspace that contains exactly one newline (and possibly spaces and tabs).
     LineBreak(SyntaxToken),
     /// A blankspace that contains exactly two newlines (and possibly spaces and tabs).
@@ -24,7 +24,7 @@ pub enum Blankspace {
 }
 impl Blankspace {
     #[must_use]
-    pub fn syntax(&self) -> NodeOrToken<SyntaxNode, SyntaxToken> {
+    pub(crate) fn syntax(&self) -> NodeOrToken<SyntaxNode, SyntaxToken> {
         match self {
             Self::LineBreak(syntax_token)
             | Self::EmptyLine(syntax_token)
@@ -34,7 +34,7 @@ impl Blankspace {
 }
 
 #[must_use]
-pub fn read_blankspace(blankspace: &NodeOrToken<SyntaxNode, SyntaxToken>) -> Option<Blankspace> {
+pub(crate) fn read_blankspace(blankspace: &NodeOrToken<SyntaxNode, SyntaxToken>) -> Option<Blankspace> {
     let NodeOrToken::Token(blankspace) = blankspace else {
         return None;
     };
@@ -59,7 +59,7 @@ pub fn read_blankspace(blankspace: &NodeOrToken<SyntaxNode, SyntaxToken>) -> Opt
     clippy::unnecessary_wraps,
     reason = "Keep the API homogeneous with all gen_* functions"
 )]
-pub fn gen_blankspace(blankspace: &Blankspace) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_blankspace(blankspace: &Blankspace) -> FormatDocumentResult<PrintItemBuffer> {
     let mut formatted = PrintItemBuffer::default();
     match blankspace {
         Blankspace::EmptyLine(_) => {

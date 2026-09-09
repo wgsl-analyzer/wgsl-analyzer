@@ -21,7 +21,7 @@ use crate::{
     reporting::FormatDocumentResult,
 };
 
-pub fn gen_type_specifier(
+pub(crate) fn gen_type_specifier(
     type_specifier: &ast::TypeSpecifier
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
@@ -44,7 +44,7 @@ pub fn gen_type_specifier(
     Ok(formatted)
 }
 
-pub fn gen_template_list(
+pub(crate) fn gen_template_list(
     template_list: &ast::TemplateList
 ) -> FormatDocumentResult<PrintItemBuffer> {
     let must_be_oneline =

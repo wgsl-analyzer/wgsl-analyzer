@@ -10,7 +10,7 @@ use crate::{
     reporting::FormatDocumentResult,
 };
 
-pub fn gen_ident_expression(
+pub(crate) fn gen_ident_expression(
     ident_expression: &ast::IdentExpression
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====

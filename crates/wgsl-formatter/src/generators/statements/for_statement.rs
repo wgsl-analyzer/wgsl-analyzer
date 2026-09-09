@@ -18,7 +18,7 @@ use crate::{
     reporting::FormatDocumentResult,
 };
 
-pub fn gen_for_statement(statement: &ast::ForStatement) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_for_statement(statement: &ast::ForStatement) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = syntax_iter(statement.syntax());
     let item_for = parse_node_with(&mut syntax, DiscardBlankspace).expect_kind(SyntaxKind::For)?;
@@ -90,7 +90,7 @@ pub fn gen_for_statement(statement: &ast::ForStatement) -> FormatDocumentResult<
     Ok(formatted)
 }
 
-pub fn gen_for_statement_initializer(
+pub(crate) fn gen_for_statement_initializer(
     node: &ast::SyntaxNode
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // === Parse ===
@@ -103,7 +103,7 @@ pub fn gen_for_statement_initializer(
     gen_node_with_trivia(&item_statement)
 }
 
-pub fn gen_for_statement_condition(
+pub(crate) fn gen_for_statement_condition(
     node: &ast::SyntaxNode
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // === Parse ===
@@ -116,7 +116,7 @@ pub fn gen_for_statement_condition(
     gen_node_with_trivia(&item_condition)
 }
 
-pub fn gen_for_statement_continuing_part(
+pub(crate) fn gen_for_statement_continuing_part(
     node: &ast::SyntaxNode
 ) -> FormatDocumentResult<PrintItemBuffer> {
     let mut sub_syntax = syntax_iter(node.syntax());
@@ -128,7 +128,7 @@ pub fn gen_for_statement_continuing_part(
 }
 
 #[must_use]
-pub fn skip_semicolons_rule(node: &SyntaxNode) -> bool {
+pub(crate) fn skip_semicolons_rule(node: &SyntaxNode) -> bool {
     let Some(parent) = node.parent() else {
         return false;
     };

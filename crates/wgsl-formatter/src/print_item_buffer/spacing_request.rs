@@ -6,7 +6,7 @@ use dprint_core::formatting::{
 
 /// A possible kind of whitespace that can be requested and, through [`Request`], be merged together if multiple requests are issued.
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
-pub enum RequestItem {
+pub(crate) enum RequestItem {
     /// Request a space.
     Space,
     /// Request a single line break.
@@ -24,7 +24,7 @@ impl RequestItem {
     /// If multiple request items are requested at a stage (for example, expect space & line break), the request item with
     /// the highest index is used.
     #[must_use]
-    pub const fn to_index(self) -> u8 {
+    pub(crate) const fn to_index(self) -> u8 {
         match self {
             Self::Space => 0,
             Self::LineBreak => 1,
@@ -33,7 +33,7 @@ impl RequestItem {
     }
 
     #[must_use]
-    pub const fn from_index(index: u8) -> Option<Self> {
+    pub(crate) const fn from_index(index: u8) -> Option<Self> {
         match index {
             0 => Some(Self::Space),
             1 => Some(Self::LineBreak),
@@ -45,21 +45,21 @@ impl RequestItem {
 
 /// A Set holding [`RequestItem`]s, implemented using a bitmap.
 #[derive(Clone)]
-pub struct RequestItemSet(u8);
+pub(crate) struct RequestItemSet(u8);
 
 impl RequestItemSet {
     #[must_use]
-    pub const fn empty() -> Self {
+    pub(crate) const fn empty() -> Self {
         Self(0)
     }
 
     #[must_use]
-    pub const fn from(item: RequestItem) -> Self {
+    pub(crate) const fn from(item: RequestItem) -> Self {
         Self(1 << item.to_index())
     }
 
     #[must_use]
-    pub const fn union(
+    pub(crate) const fn union(
         &self,
         other: &Self,
     ) -> Self {
@@ -67,7 +67,7 @@ impl RequestItemSet {
     }
 
     #[must_use]
-    pub const fn difference(
+    pub(crate) const fn difference(
         &self,
         other: &Self,
     ) -> Self {
@@ -75,7 +75,7 @@ impl RequestItemSet {
     }
 
     #[must_use]
-    pub const fn highest_index(&self) -> Option<RequestItem> {
+    pub(crate) const fn highest_index(&self) -> Option<RequestItem> {
         if self.0 == 0 {
             return None;
         }
@@ -90,7 +90,7 @@ impl RequestItemSet {
     }
 
     #[must_use]
-    pub const fn contains(
+    pub(crate) const fn contains(
         self,
         item: RequestItem,
     ) -> bool {
@@ -108,7 +108,7 @@ impl RequestItemSet {
 /// Optionally a request can also "suggest" a newline, which means that if a space or nothing at all would be put into the output,
 /// and a newline is not "discouraged" at this point, then either a `SpaceOrNewline` or a `PossibleNewline` dprint `Signal` is output.
 #[derive(Clone)]
-pub enum Request {
+pub(crate) enum Request {
     Unconditional {
         expected: RequestItemSet,
         discouraged: RequestItemSet,
@@ -151,7 +151,7 @@ impl Default for Request {
 
 impl Request {
     #[must_use]
-    pub const fn empty() -> Self {
+    pub(crate) const fn empty() -> Self {
         Self::Unconditional {
             expected: RequestItemSet::empty(),
             discouraged: RequestItemSet::empty(),
@@ -162,7 +162,7 @@ impl Request {
 
     /// Shorthand to construct an unconditional [`Request`] that expects a specific [`RequestItem`].
     #[must_use]
-    pub const fn expect(item: RequestItem) -> Self {
+    pub(crate) const fn expect(item: RequestItem) -> Self {
         Self::Unconditional {
             expected: RequestItemSet::from(item),
             discouraged: RequestItemSet::empty(),
@@ -173,7 +173,7 @@ impl Request {
 
     /// Shorthand to construct an unconditional [`Request`] that discourages a specific [`RequestItem`].
     #[must_use]
-    pub const fn discourage(item: RequestItem) -> Self {
+    pub(crate) const fn discourage(item: RequestItem) -> Self {
         Self::Unconditional {
             expected: RequestItemSet::empty(),
             discouraged: RequestItemSet::from(item),
@@ -184,7 +184,7 @@ impl Request {
 
     /// Shorthand to construct an unconditional [`Request`] that forces a specific [`RequestItem`].
     #[must_use]
-    pub const fn force(item: RequestItem) -> Self {
+    pub(crate) const fn force(item: RequestItem) -> Self {
         Self::Unconditional {
             expected: RequestItemSet::empty(),
             discouraged: RequestItemSet::empty(),
@@ -196,7 +196,7 @@ impl Request {
     /// If this [`Request`] would resolve to a space, inform dprint that instead of the space
     /// a linebreak could be chosen here - if that aids in fitting the code into the max line width.
     #[must_use]
-    pub fn or_newline(self) -> Self {
+    pub(crate) fn or_newline(self) -> Self {
         match self {
             Self::Unconditional {
                 expected,
@@ -228,7 +228,7 @@ impl Request {
     /// However - when using Conditional Requests, order of left and right will determine how the conditions are combined
     /// (but in practice that should not have any implications).
     #[must_use]
-    pub fn combine(
+    pub(crate) fn combine(
         left: Self,
         right: Self,
     ) -> Self {
@@ -316,7 +316,7 @@ impl Request {
     }
 
     /// Evaluate this [`Request`] and append its output to the given [`PrintItems`].
-    pub fn resolve(
+    pub(crate) fn resolve(
         self,
         target: &mut PrintItems,
     ) {
@@ -390,7 +390,7 @@ impl Request {
 }
 
 #[cfg(test)]
-pub mod tests {
+pub(crate) mod tests {
 
     use dprint_core::formatting::condition_resolvers;
     use expect_test::expect;
@@ -415,7 +415,7 @@ pub mod tests {
     }
 
     #[test]
-    pub fn or_newline_simple() {
+    pub(crate) fn or_newline_simple() {
         let mut pib = PrintItemBuffer::default();
         pib.push_sc(dprint_core_macros::sc!("1234567"));
         pib.request(Request::empty().or_newline());
@@ -434,7 +434,7 @@ pub mod tests {
     }
 
     #[test]
-    pub fn or_newline_conditional_false() {
+    pub(crate) fn or_newline_conditional_false() {
         let mut pib = PrintItemBuffer::default();
 
         pib.push_sc(dprint_core_macros::sc!("1234567"));
@@ -469,7 +469,7 @@ pub mod tests {
     }
 
     #[test]
-    pub fn or_newline_conditional_true() {
+    pub(crate) fn or_newline_conditional_true() {
         let mut pib = PrintItemBuffer::default();
 
         pib.push_sc(dprint_core_macros::sc!("1234567"));

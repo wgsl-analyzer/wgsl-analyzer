@@ -23,7 +23,7 @@ use crate::{
     reporting::FormatDocumentResult,
 };
 
-pub fn gen_function_declaration(
+pub(crate) fn gen_function_declaration(
     node: &ast::FunctionDeclaration
 ) -> FormatDocumentResult<PrintItemBuffer> {
     let mut syntax = syntax_iter(node.syntax());
@@ -65,7 +65,7 @@ pub fn gen_function_declaration(
     Ok(formatted)
 }
 
-pub fn gen_fn_parameters(node: &ast::FunctionParameters) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_fn_parameters(node: &ast::FunctionParameters) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
 
     let mut syntax = syntax_iter(node.syntax());
@@ -133,7 +133,7 @@ pub fn gen_fn_parameters(node: &ast::FunctionParameters) -> FormatDocumentResult
     Ok(formatted)
 }
 
-pub fn gen_fn_parameter(syntax: &ast::Parameter) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_fn_parameter(syntax: &ast::Parameter) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = syntax_iter(syntax.syntax());
 
@@ -154,7 +154,7 @@ pub fn gen_fn_parameter(syntax: &ast::Parameter) -> FormatDocumentResult<PrintIt
     Ok(formatted)
 }
 
-pub fn gen_fn_return_type(syntax: &ast::ReturnType) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_fn_return_type(syntax: &ast::ReturnType) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = syntax_iter(syntax.syntax());
 

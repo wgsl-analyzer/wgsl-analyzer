@@ -1,9 +1,6 @@
 #![expect(clippy::print_stdout, reason = "useful in tests")]
 #![expect(clippy::use_debug, reason = "useful in tests")]
-#![expect(
-    clippy::missing_panics_doc,
-    reason = "we want to be able to use assert!"
-)]
+
 use std::{borrow::ToOwned, fmt::Debug, panic};
 
 use itertools::Itertools as _;
@@ -64,7 +61,7 @@ mod strip_indent {
     }
 }
 
-pub trait ExpectAssertEq: Debug {
+pub(crate) trait ExpectAssertEq: Debug {
     fn assert_eq(
         &self,
         other: &str,
@@ -114,7 +111,7 @@ impl ExpectAssertEq for &str {
     }
 }
 
-pub fn check<E>(
+pub(crate) fn check<E>(
     before: &str,
     after: E,
 ) -> String
@@ -140,7 +137,7 @@ where
 /// in the functionality of the formatter", while not realizing that there a
 /// reason certain things are intentionally not supported.
 #[track_caller]
-pub fn assert_out_of_scope(
+pub(crate) fn assert_out_of_scope(
     before: &str,
     reason: &str,
 ) {
@@ -156,10 +153,10 @@ pub fn assert_out_of_scope(
     }
 }
 
-pub struct CheckOptions {
-    pub assert_line_width: Option<usize>,
-    pub formatting: FormattingOptions,
-    pub edition: Edition,
+pub(crate) struct CheckOptions {
+    pub(crate) assert_line_width: Option<usize>,
+    pub(crate) formatting: FormattingOptions,
+    pub(crate) edition: Edition,
 }
 impl Default for CheckOptions {
     fn default() -> Self {
@@ -182,7 +179,7 @@ impl From<FormattingOptions> for CheckOptions {
 
 #[track_caller]
 #[expect(clippy::needless_pass_by_value, reason = "Intentional API")]
-pub fn check_with_options<E>(
+pub(crate) fn check_with_options<E>(
     before: &str,
     after: E,
     options: &CheckOptions,
@@ -341,7 +338,7 @@ fn format_chunks(chunks: Vec<dissimilar::Chunk<'_>>) -> String {
 /// ```compile_fail
 /// /* 0 */ a /* 1 */ b
 /// ```
-pub fn check_comments<E>(
+pub(crate) fn check_comments<E>(
     before: &str,
     after_block: E,
     after_line: E,
@@ -447,7 +444,7 @@ pub fn check_comments<E>(
 /// Note that the range formatting works on the level of syntax nodes, so the node that will be formatted might
 /// be larger than the range specified by the markers.
 #[expect(clippy::needless_pass_by_value, reason = "intentional API")]
-pub fn check_range<E>(
+pub(crate) fn check_range<E>(
     source: &str,
     expected: E,
 ) where
@@ -499,7 +496,7 @@ pub fn check_range<E>(
 }
 
 #[must_use]
-pub fn strip_leading_indentation(text: &str) -> String {
+pub(crate) fn strip_leading_indentation(text: &str) -> String {
     let Some(first_line) = text.lines().find(|line| !line.is_empty()) else {
         return text.to_owned();
     };

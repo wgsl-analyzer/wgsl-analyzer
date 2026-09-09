@@ -3,7 +3,7 @@ use expect_test::expect;
 use crate::test_util::{check, check_comments};
 
 #[test]
-pub fn format_return_statement_without_expr() {
+pub(crate) fn format_return_statement_without_expr() {
     check(
         "fn main() {
 return;
@@ -19,7 +19,7 @@ return;
 }
 
 #[test]
-pub fn format_return_statement_with_simple_expr() {
+pub(crate) fn format_return_statement_with_simple_expr() {
     check(
         "fn main() {
 return 1;
@@ -35,7 +35,7 @@ return 1;
 }
 
 #[test]
-pub fn format_return_statement_with_complex_expr() {
+pub(crate) fn format_return_statement_with_complex_expr() {
     check(
         "fn main() {
 return 1 + 2 + (47 * get_the_number() - a ) >> 18 - 2;
@@ -51,7 +51,7 @@ return 1 + 2 + (47 * get_the_number() - a ) >> 18 - 2;
 }
 
 #[test]
-pub fn format_comment_in_return_statement_with_simple_expr() {
+pub(crate) fn format_comment_in_return_statement_with_simple_expr() {
     check_comments(
         "fn main() {
         ## return ## 1 ## ; ##
@@ -73,7 +73,7 @@ pub fn format_comment_in_return_statement_with_simple_expr() {
 }
 
 #[test]
-pub fn format_comment_in_return_statement_without_expr() {
+pub(crate) fn format_comment_in_return_statement_without_expr() {
     check_comments(
         "fn main() {
         ## return ## ; ##

@@ -6,7 +6,7 @@ use crate::{
 };
 
 #[test]
-pub fn format_type_multiline_template_gets_broken_into_multiple_lines() {
+pub(crate) fn format_type_multiline_template_gets_broken_into_multiple_lines() {
     check(
         "
         alias Test =
@@ -24,7 +24,7 @@ pub fn format_type_multiline_template_gets_broken_into_multiple_lines() {
 }
 
 #[test]
-pub fn format_type_nested_multiline_template_gets_broken_into_multiple_lines() {
+pub(crate) fn format_type_nested_multiline_template_gets_broken_into_multiple_lines() {
     check(
         "
         alias Test =
@@ -46,7 +46,7 @@ pub fn format_type_nested_multiline_template_gets_broken_into_multiple_lines() {
 }
 
 #[test]
-pub fn format_type_multiline_arguments_keep_comments_in_position() {
+pub(crate) fn format_type_multiline_arguments_keep_comments_in_position() {
     // Following "the formatter should not unnecessarily move comments around" - if programmer wants them there, we will let them have it.
     check(
         "
@@ -85,7 +85,7 @@ pub fn format_type_multiline_arguments_keep_comments_in_position() {
 }
 
 #[test]
-pub fn format_long_type_alias_linewidth_within_inner_break_outer_arguments_leave_inner_alone() {
+pub(crate) fn format_long_type_alias_linewidth_within_inner_break_outer_arguments_leave_inner_alone() {
     // Please note that the amount of "aaaa" in this test is carefully chosen to play with the line lengths.
     // This the amount of aaa is such that, breaking the inner argument would satisfy the line width requirement.
     // The formatter should prefer breaking the outer argument list, even though breaking the inner one
@@ -110,7 +110,7 @@ pub fn format_long_type_alias_linewidth_within_inner_break_outer_arguments_leave
 }
 
 #[test]
-pub fn format_long_type_alias_linewidth_outside_inner_break_outer_arguments_leave_inner_alone() {
+pub(crate) fn format_long_type_alias_linewidth_outside_inner_break_outer_arguments_leave_inner_alone() {
     // Please note that the amount of "aaaa" in this test is carefully chosen to play with the line lengths.
     // This the amount of aaa is such that, breaking the inner argument would still not satisfy the line width
     // requirement.

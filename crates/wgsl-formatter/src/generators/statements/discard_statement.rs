@@ -12,7 +12,7 @@ use crate::{
     reporting::FormatDocumentResult,
 };
 
-pub fn gen_discard_statement(
+pub(crate) fn gen_discard_statement(
     node: &ast::DiscardStatement
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====

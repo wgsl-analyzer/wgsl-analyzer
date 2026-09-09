@@ -3,7 +3,7 @@ use expect_test::expect;
 use crate::test_util::{check, check_comments};
 
 #[test]
-pub fn format_comments_in_import_single_line() {
+pub(crate) fn format_comments_in_import_single_line() {
     check_comments(
         "## import ## a ## :: ## b ## :: ## c ## as ## d ## ; ##",
         expect![[r#"
@@ -25,7 +25,7 @@ pub fn format_comments_in_import_single_line() {
 }
 
 #[test]
-pub fn format_comments_in_import_collection() {
+pub(crate) fn format_comments_in_import_collection() {
     check_comments(
         "## import ## a ## :: ## b ## :: ## { ## a ## , ## b ## :: ## d ## as ## e ## } ## ;",
         expect![[r#"
@@ -58,7 +58,7 @@ pub fn format_comments_in_import_collection() {
 }
 
 #[test]
-pub fn format_wildly_nested_import_items() {
+pub(crate) fn format_wildly_nested_import_items() {
     check(
         "import aaaaaaaaa::{bbbbbbbb::{cdddddd::{dddddd::{eeeeeee::{ffffffff::{gggggg::{hhhhhh::{iiiiii::jjjjjjjjjj, kkkkkkkk}}}}}}}};",
         expect![[r#"
@@ -72,7 +72,7 @@ pub fn format_wildly_nested_import_items() {
 }
 
 #[test]
-pub fn format_wildly_nested_import_with_paths() {
+pub(crate) fn format_wildly_nested_import_with_paths() {
     check(
         "import aaaaaaaaa::bbbbbbbb::{cdddddd::dddddd::{eeeeeee::ffffffff::{gggggg::hhhhhh::{iiiiii::jjjjjjjjjj, kkkkkkkk}}}};",
         expect![[r#"

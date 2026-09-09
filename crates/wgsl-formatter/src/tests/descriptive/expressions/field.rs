@@ -3,7 +3,7 @@ use expect_test::expect;
 use crate::test_util::{assert_out_of_scope, check, check_comments};
 
 #[test]
-pub fn format_naked_field_exprs_out_of_scope() {
+pub(crate) fn format_naked_field_exprs_out_of_scope() {
     assert_out_of_scope(
         "fn main() {
         a
@@ -16,7 +16,7 @@ pub fn format_naked_field_exprs_out_of_scope() {
 }
 
 #[test]
-pub fn format_field_expr_simple() {
+pub(crate) fn format_field_expr_simple() {
     check(
         "fn main() {
         let a =
@@ -34,7 +34,7 @@ pub fn format_field_expr_simple() {
 }
 
 #[test]
-pub fn format_field_nested_within_fields() {
+pub(crate) fn format_field_nested_within_fields() {
     check(
         "fn main() {
         let a =
@@ -58,7 +58,7 @@ pub fn format_field_nested_within_fields() {
 }
 
 #[test]
-pub fn format_field_nested_within_indices() {
+pub(crate) fn format_field_nested_within_indices() {
     check(
         "fn main() {
         let a =
@@ -78,7 +78,7 @@ pub fn format_field_nested_within_indices() {
 }
 
 #[test]
-pub fn format_field_nested_within_various_things() {
+pub(crate) fn format_field_nested_within_various_things() {
     check(
         "fn main() {
         let a =
@@ -96,7 +96,7 @@ pub fn format_field_nested_within_various_things() {
 }
 
 #[test]
-pub fn format_comments_in_field_expr() {
+pub(crate) fn format_comments_in_field_expr() {
     check_comments(
         "fn main() {
         let a = ## foo ## . ## bar ## ; ##
@@ -119,7 +119,7 @@ pub fn format_comments_in_field_expr() {
 }
 
 #[test]
-pub fn format_comments_in_nested_field_expr() {
+pub(crate) fn format_comments_in_nested_field_expr() {
     check_comments(
         "fn main() {
         let a = ## foo ## . ## bar ## . ## baz ## ; ##

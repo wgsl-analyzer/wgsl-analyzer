@@ -22,7 +22,7 @@ use crate::{
     trivia::{NodeWithTrivia, NodeWithTriviaContent},
 };
 
-pub fn gen_switch_statement(
+pub(crate) fn gen_switch_statement(
     statement: &SwitchStatement
 ) -> Result<PrintItemBuffer, FormatDocumentError> {
     // ==== Parse ====
@@ -50,7 +50,7 @@ pub fn gen_switch_statement(
     Ok(formatted)
 }
 
-pub fn gen_switch_body(statement: &SwitchBody) -> Result<PrintItemBuffer, FormatDocumentError> {
+pub(crate) fn gen_switch_body(statement: &SwitchBody) -> Result<PrintItemBuffer, FormatDocumentError> {
     // ==== Parse ====
     let mut syntax = syntax_iter(statement.syntax());
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::BraceLeft)?;
@@ -89,7 +89,7 @@ pub fn gen_switch_body(statement: &SwitchBody) -> Result<PrintItemBuffer, Format
 }
 
 #[derive(Debug)]
-pub enum SwitchBodyCaseKind {
+pub(crate) enum SwitchBodyCaseKind {
     Default {
         item_default: NodeWithTrivia,
     },
@@ -99,7 +99,7 @@ pub enum SwitchBodyCaseKind {
     },
 }
 
-pub fn gen_switch_body_case(
+pub(crate) fn gen_switch_body_case(
     statement: &SwitchBodyCase
 ) -> Result<PrintItemBuffer, FormatDocumentError> {
     // ==== Parse ====
@@ -185,7 +185,7 @@ fn is_case_default(item_selectors: &SyntaxNode) -> bool {
     ) && exprs.next().is_none())
 }
 
-pub fn gen_switch_case_selectors(
+pub(crate) fn gen_switch_case_selectors(
     statement: &SwitchCaseSelectors
 ) -> Result<PrintItemBuffer, FormatDocumentError> {
     // ==== Parse ====
@@ -218,7 +218,7 @@ pub fn gen_switch_case_selectors(
     Ok(formatted)
 }
 
-pub fn gen_switch_case_default_selector(
+pub(crate) fn gen_switch_case_default_selector(
     statement: &SwitchDefaultSelector
 ) -> Result<PrintItemBuffer, FormatDocumentError> {
     // ==== Parse ====
@@ -233,7 +233,7 @@ pub fn gen_switch_case_default_selector(
 }
 
 #[must_use]
-pub fn collapse_one_liner_case_body_rule(node: &SyntaxNode) -> bool {
+pub(crate) fn collapse_one_liner_case_body_rule(node: &SyntaxNode) -> bool {
     let Some(parent) = node.parent() else {
         return false;
     };
@@ -241,7 +241,7 @@ pub fn collapse_one_liner_case_body_rule(node: &SyntaxNode) -> bool {
 }
 
 #[must_use]
-pub fn remove_switch_subject_parens_rule(node: &SyntaxNode) -> bool {
+pub(crate) fn remove_switch_subject_parens_rule(node: &SyntaxNode) -> bool {
     let Some(parent) = node.parent() else {
         return false;
     };

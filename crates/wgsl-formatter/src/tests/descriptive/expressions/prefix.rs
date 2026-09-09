@@ -5,7 +5,7 @@ use crate::test_util::{assert_out_of_scope, check, check_comments};
 // https://www.w3.org/TR/WGSL/#recursive-descent-syntax-unary_expression
 
 #[test]
-pub fn format_naked_prefix_exprs_out_of_scope() {
+pub(crate) fn format_naked_prefix_exprs_out_of_scope() {
     assert_out_of_scope(
         "fn main() {
         -
@@ -17,7 +17,7 @@ pub fn format_naked_prefix_exprs_out_of_scope() {
 }
 
 #[test]
-pub fn format_prefix_expr_simple_negative() {
+pub(crate) fn format_prefix_expr_simple_negative() {
     check(
         "fn main() {
         let a = -
@@ -33,7 +33,7 @@ pub fn format_prefix_expr_simple_negative() {
 }
 
 #[test]
-pub fn format_prefix_expr_simple_ref() {
+pub(crate) fn format_prefix_expr_simple_ref() {
     check(
         "fn main() {
         let a = &
@@ -49,7 +49,7 @@ pub fn format_prefix_expr_simple_ref() {
 }
 
 #[test]
-pub fn format_prefix_expr_simple_ptr() {
+pub(crate) fn format_prefix_expr_simple_ptr() {
     check(
         "fn main() {
         let a = *
@@ -65,7 +65,7 @@ pub fn format_prefix_expr_simple_ptr() {
 }
 
 #[test]
-pub fn format_prefix_expr_simple_invert() {
+pub(crate) fn format_prefix_expr_simple_invert() {
     check(
         "fn main() {
         let a = ~
@@ -81,7 +81,7 @@ pub fn format_prefix_expr_simple_invert() {
 }
 
 #[test]
-pub fn format_prefix_expr_with_block_comment() {
+pub(crate) fn format_prefix_expr_with_block_comment() {
     check(
         "fn main() {
         let a = ~
@@ -102,7 +102,7 @@ pub fn format_prefix_expr_with_block_comment() {
 }
 
 #[test]
-pub fn format_comments_in_prefix_expr_with() {
+pub(crate) fn format_comments_in_prefix_expr_with() {
     check_comments(
         "fn main() {
         let a = ## ~ ## 1 ## ; ##
@@ -124,7 +124,7 @@ pub fn format_comments_in_prefix_expr_with() {
 }
 
 #[test]
-pub fn format_comments_in_prefix_expr_in_complex_expr() {
+pub(crate) fn format_comments_in_prefix_expr_in_complex_expr() {
     check_comments(
         "fn main() {let a = ## 1 ## + ## 2 ## - ## ~ ## 1 ## ; ##}",
         expect![[r#"
@@ -148,7 +148,7 @@ pub fn format_comments_in_prefix_expr_in_complex_expr() {
 }
 
 #[test]
-pub fn format_prefix_expr_simple_positive() {
+pub(crate) fn format_prefix_expr_simple_positive() {
     assert_out_of_scope(
         "fn main() {
         let a = +1;

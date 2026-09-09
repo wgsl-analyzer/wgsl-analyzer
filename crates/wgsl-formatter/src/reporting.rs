@@ -20,7 +20,7 @@ impl Error for FormatDocumentError {}
 impl Display for FormatDocumentError {
     fn fmt(
         &self,
-        f: &mut std::fmt::Formatter<'_>,
+        formatter: &mut std::fmt::Formatter<'_>,
     ) -> std::fmt::Result {
         #[expect(
             clippy::use_debug,
@@ -31,26 +31,26 @@ impl Display for FormatDocumentError {
                 received: Some(received),
             } => {
                 write!(
-                    f,
+                    formatter,
                     "Unexpected node or token {:?} at {:?}. {received:?}",
                     received.kind(),
                     received.text_range()
                 )
             },
             Self::UnexpectedNodeOrToken { received: None } => {
-                write!(f, "Expected node or token but found None")
+                write!(formatter, "Expected node or token but found None")
             },
             Self::UnsupportedNodeOrToken { received } => {
-                write!(f, "Encountered unsupported Node or Token: {received:?}")
+                write!(formatter, "Encountered unsupported Node or Token: {received:?}")
             },
-            Self::MissingNode => write!(f, "Expected to find a node but found none"),
+            Self::MissingNode => write!(formatter, "Expected to find a node but found none"),
         }
     }
 }
 
-pub type FormatDocumentResult<T> = Result<T, FormatDocumentError>;
+pub(crate) type FormatDocumentResult<T> = Result<T, FormatDocumentError>;
 
-pub trait UnwrapIfPreferCrash {
+pub(crate) trait UnwrapIfPreferCrash {
     #[must_use]
     fn expect_if_prefer_crash(self) -> Self;
 }
@@ -82,14 +82,14 @@ mod tests {
     use crate::reporting::FormatDocumentError;
 
     #[test]
-    pub fn format_string_error_display_on_formatter_error_missing_node() {
+    pub(crate) fn format_string_error_display_on_formatter_error_missing_node() {
         let error = FormatDocumentError::MissingNode;
 
         expect!["Expected to find a node but found none"].assert_eq(&format!("{error}"));
     }
 
     #[test]
-    pub fn format_string_error_display_on_formatter_error_unexpected_not() {
+    pub(crate) fn format_string_error_display_on_formatter_error_unexpected_not() {
         let mut builder = GreenNodeBuilder::new();
         builder.start_node(SyntaxKind::SourceFile.into());
         builder.finish_node();
@@ -104,7 +104,7 @@ mod tests {
     }
 
     #[test]
-    pub fn format_string_error_display_on_formatter_error_unsupported() {
+    pub(crate) fn format_string_error_display_on_formatter_error_unsupported() {
         let mut builder = GreenNodeBuilder::new();
         builder.start_node(SyntaxKind::SourceFile.into());
         builder.finish_node();

@@ -3,7 +3,7 @@ use expect_test::expect;
 use crate::test_util::{check, check_comments};
 
 #[test]
-pub fn format_const_declaration_simple_literal_1() {
+pub(crate) fn format_const_declaration_simple_literal_1() {
     check(
         "fn main() {
         const
@@ -21,7 +21,7 @@ pub fn format_const_declaration_simple_literal_1() {
 }
 
 #[test]
-pub fn format_const_declaration_simple_statement_1() {
+pub(crate) fn format_const_declaration_simple_statement_1() {
     check(
         "fn main() {
         const
@@ -43,7 +43,7 @@ pub fn format_const_declaration_simple_statement_1() {
 }
 
 #[test]
-pub fn format_comment_in_const_declaration() {
+pub(crate) fn format_comment_in_const_declaration() {
     check_comments(
         "fn main() {
         ## const ## a ## = ## 1 ## ; ##
@@ -67,7 +67,7 @@ pub fn format_comment_in_const_declaration() {
 }
 
 #[test]
-pub fn format_const_declaration_keeps_line_comment_in_same_place_same_line() {
+pub(crate) fn format_const_declaration_keeps_line_comment_in_same_place_same_line() {
     check(
         "fn main() {
 
@@ -84,7 +84,7 @@ pub fn format_const_declaration_keeps_line_comment_in_same_place_same_line() {
 }
 
 #[test]
-pub fn format_const_declaration_with_type() {
+pub(crate) fn format_const_declaration_with_type() {
     check(
         "fn main() {
 
@@ -105,7 +105,7 @@ pub fn format_const_declaration_with_type() {
 }
 
 #[test]
-pub fn format_const_declaration_with_complex_type() {
+pub(crate) fn format_const_declaration_with_complex_type() {
     check(
         "fn main() {
 
@@ -130,7 +130,7 @@ pub fn format_const_declaration_with_complex_type() {
 }
 
 #[test]
-pub fn format_const_declaration_with_comments_in_complex_type() {
+pub(crate) fn format_const_declaration_with_comments_in_complex_type() {
     check_comments(
         "fn main() {
             ## const ## a ## : ## array ## < ## u32 ## , ## 28 ## > ## = ## 1 ## ; ##
@@ -165,7 +165,7 @@ pub fn format_const_declaration_with_comments_in_complex_type() {
 }
 
 #[test]
-pub fn format_global_const_declaration_simple_literal_1() {
+pub(crate) fn format_global_const_declaration_simple_literal_1() {
     check(
         "
         const
@@ -181,7 +181,7 @@ pub fn format_global_const_declaration_simple_literal_1() {
 }
 
 #[test]
-pub fn format_global_const_declaration_with_type_1() {
+pub(crate) fn format_global_const_declaration_with_type_1() {
     check(
         "
         const

@@ -10,14 +10,14 @@ use crate::{
 };
 
 #[derive(Debug, Clone)]
-pub struct IgnorePragma {
-    pub block: bool,
-    pub token: SyntaxToken,
+pub(crate) struct IgnorePragma {
+    pub(crate) block: bool,
+    pub(crate) token: SyntaxToken,
 }
 
 impl IgnorePragma {
     #[must_use]
-    pub fn syntax(
+    pub(crate) fn syntax(
         &self
     ) -> NodeOrToken<
         rowan::SyntaxNode<syntax::WeslLanguage>,
@@ -29,7 +29,7 @@ impl IgnorePragma {
 
 /// Whether the `SyntaxNode`'s first interesting child is a [ignore-parent-pragma](`is_ignore_parent_pragma_comment`).
 #[must_use]
-pub fn is_ignored_from_within(content: &SyntaxNode) -> bool {
+pub(crate) fn is_ignored_from_within(content: &SyntaxNode) -> bool {
     content
         .children_with_tokens()
         .take_while(|child| match child {
@@ -41,7 +41,7 @@ pub fn is_ignored_from_within(content: &SyntaxNode) -> bool {
 
 /// Whether the given item is a comment with `@wgslfmt(ignore)`.
 #[must_use]
-pub fn read_ignore_next_pragma_comment(
+pub(crate) fn read_ignore_next_pragma_comment(
     node: &NodeOrToken<SyntaxNode, SyntaxToken>
 ) -> Option<IgnorePragma> {
     let as_comment = read_comment(node);
@@ -68,7 +68,7 @@ pub fn read_ignore_next_pragma_comment(
 
 /// Whether the given item is a comment with `@!wgslfmt(ignore)`.
 #[must_use]
-pub fn is_ignore_parent_pragma_comment(node: &NodeOrToken<SyntaxNode, SyntaxToken>) -> bool {
+pub(crate) fn is_ignore_parent_pragma_comment(node: &NodeOrToken<SyntaxNode, SyntaxToken>) -> bool {
     let as_comment = read_comment(node);
     match as_comment {
         Some(Comment::Block(syntax_token))
@@ -86,7 +86,7 @@ pub fn is_ignore_parent_pragma_comment(node: &NodeOrToken<SyntaxNode, SyntaxToke
 }
 
 #[must_use]
-pub fn gen_ignore_pragma(ignore_pragma: &IgnorePragma) -> PrintItemBuffer {
+pub(crate) fn gen_ignore_pragma(ignore_pragma: &IgnorePragma) -> PrintItemBuffer {
     let mut formatted = PrintItemBuffer::default();
 
     if ignore_pragma.block {

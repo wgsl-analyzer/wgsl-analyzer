@@ -8,7 +8,7 @@ use crate::{print_item_buffer::PrintItemBuffer, reporting::FormatDocumentResult}
     clippy::unnecessary_wraps,
     reason = "Keep API uniform with other gen functions"
 )]
-pub fn gen_literal_expression(
+pub(crate) fn gen_literal_expression(
     literal_expression: &ast::Literal
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Format ====

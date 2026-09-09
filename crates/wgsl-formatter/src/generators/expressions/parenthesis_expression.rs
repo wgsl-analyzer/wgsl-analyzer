@@ -15,7 +15,7 @@ use crate::{
     reporting::FormatDocumentResult,
 };
 
-pub fn gen_parenthesis_expression(
+pub(crate) fn gen_parenthesis_expression(
     parenthesis_expression: &ast::ParenthesisExpression
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
@@ -52,7 +52,7 @@ pub fn gen_parenthesis_expression(
 }
 
 #[must_use]
-pub fn remove_nested_parens_rule(node: &SyntaxNode) -> bool {
+pub(crate) fn remove_nested_parens_rule(node: &SyntaxNode) -> bool {
     let Some(parent) = node.parent() else {
         return false;
     };

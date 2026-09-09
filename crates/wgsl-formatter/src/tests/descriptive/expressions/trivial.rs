@@ -3,7 +3,7 @@ use expect_test::expect;
 use crate::test_util::{assert_out_of_scope, check};
 
 #[test]
-pub fn format_ident_expr_1() {
+pub(crate) fn format_ident_expr_1() {
     check(
         "fn main() {
         let a = other_thing;
@@ -21,7 +21,7 @@ pub fn format_ident_expr_1() {
     clippy::non_ascii_literal,
     reason = "This is more readable and demonstrates the test better. I don't think not being able to open up this test file will be much trouble to editors that don't support unicode"
 )]
-pub fn format_ident_expr_unicode_fun_2() {
+pub(crate) fn format_ident_expr_unicode_fun_2() {
     check(
         "fn main() {
         let a = ΔέλταréflexionКызыл𐰓𐰏𐰇朝焼けسلام검정שָׁלוֹםगुलाփիրուզ𓃞𓃢𓆣;
@@ -35,7 +35,7 @@ pub fn format_ident_expr_unicode_fun_2() {
 }
 
 #[test]
-pub fn format_ident_expr_int_literals() {
+pub(crate) fn format_ident_expr_int_literals() {
     check(
         "fn main() {
         let a = 0;
@@ -61,7 +61,7 @@ pub fn format_ident_expr_int_literals() {
 }
 
 #[test]
-pub fn format_ident_expr_zero_padded_int_literals_out_of_scope() {
+pub(crate) fn format_ident_expr_zero_padded_int_literals_out_of_scope() {
     // https://www.w3.org/TR/WGSL/#numeric-literals
     // "A leading zero on a non-zero integer literal (for example, `012`) is forbidden, so as to avoid confusion with other languages' leading-zero-means-octal notation."
     //
@@ -90,7 +90,7 @@ pub fn format_ident_expr_zero_padded_int_literals_out_of_scope() {
 }
 
 #[test]
-pub fn format_ident_expr_namespaced_1() {
+pub(crate) fn format_ident_expr_namespaced_1() {
     check(
         "fn main() {
         let a = my_module::MY_CONSTANT;

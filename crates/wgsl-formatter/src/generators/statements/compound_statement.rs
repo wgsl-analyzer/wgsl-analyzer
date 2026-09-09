@@ -23,7 +23,7 @@ use crate::{
     trivia::{NodeTriviaItem, NodeWithTrivia},
 };
 
-pub fn gen_compound_statement(
+pub(crate) fn gen_compound_statement(
     with_trivia: &NodeWithTrivia,
     node: &ast::CompoundStatement,
 ) -> FormatDocumentResult<PrintItemBuffer> {

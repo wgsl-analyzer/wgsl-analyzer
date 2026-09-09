@@ -3,7 +3,7 @@ use expect_test::expect;
 use crate::test_util::{check, check_comments};
 
 #[test]
-pub fn format_comments_in_attrs_on_struct_members() {
+pub(crate) fn format_comments_in_attrs_on_struct_members() {
     check_comments(
         "struct VertexOutput { ## @attr(0) ## @attr(1) ## position ## : vec4<f32>, ## @attr(0) ## @attr(1) ## uv ## : vec2<f32>}",
         expect![[r#"
@@ -37,7 +37,7 @@ pub fn format_comments_in_attrs_on_struct_members() {
 }
 
 #[test]
-pub fn format_comments_in_attrs_on_functions() {
+pub(crate) fn format_comments_in_attrs_on_functions() {
     check_comments(
         "##@attr(0)##@attr(1)##fn##main(
         ) {
@@ -60,7 +60,7 @@ pub fn format_comments_in_attrs_on_functions() {
 }
 
 #[test]
-pub fn format_comments_in_attrs_on_function_return_type() {
+pub(crate) fn format_comments_in_attrs_on_function_return_type() {
     check_comments(
         "fn thing() ## -> ## @attr(0) ## @attr(1) ## vec4<f32> ## {}",
         expect![[r#"
@@ -78,7 +78,7 @@ pub fn format_comments_in_attrs_on_function_return_type() {
 }
 
 #[test]
-pub fn format_comments_in_attrs_on_function_parameter() {
+pub(crate) fn format_comments_in_attrs_on_function_parameter() {
     check_comments(
         "fn thing ## ( ## @attr(0) ## @attr(1) ## position: vec4<f32>, ## @attr(0) ## @attr(1) ## uv: vec2<f32>, ) -> vec4<f32> {}",
         expect![[r#"
@@ -111,7 +111,7 @@ pub fn format_comments_in_attrs_on_function_parameter() {
 }
 
 #[test]
-pub fn format_comments_in_attrs_on_function_body() {
+pub(crate) fn format_comments_in_attrs_on_function_body() {
     check_comments(
         "fn thing() -> ## vec4<f32> ## @attr(0) ## @attr(1) ## { ## }",
         expect![[r#"
@@ -132,7 +132,7 @@ pub fn format_comments_in_attrs_on_function_body() {
 }
 
 #[test]
-pub fn format_comments_in_attrs_on_global_variable() {
+pub(crate) fn format_comments_in_attrs_on_global_variable() {
     check_comments(
         "
         ## @attr(0) ## @attr(1) ## var<uniform> ## material: CustomMaterial;
@@ -155,7 +155,7 @@ pub fn format_comments_in_attrs_on_global_variable() {
 }
 
 #[test]
-pub fn format_comments_in_attrs_on_override() {
+pub(crate) fn format_comments_in_attrs_on_override() {
     check_comments(
         "
         ## @attr(0) ## @attr(1) ## override amount: u64 = 0;
@@ -177,7 +177,7 @@ pub fn format_comments_in_attrs_on_override() {
 }
 
 #[test]
-pub fn format_comments_in_attrs_on_compound_statement() {
+pub(crate) fn format_comments_in_attrs_on_compound_statement() {
     check_comments(
         " fn main() { ## @attr(0) ## @attr(1) ## { ## } ## if ## true ## @attr(0) ## @attr(1) ## { ## } } ",
         expect![[r#"
@@ -211,7 +211,7 @@ pub fn format_comments_in_attrs_on_compound_statement() {
 }
 
 #[test]
-pub fn format_comments_in_attrs_on_if_statement() {
+pub(crate) fn format_comments_in_attrs_on_if_statement() {
     check_comments(
         "
         fn main() {
@@ -240,7 +240,7 @@ pub fn format_comments_in_attrs_on_if_statement() {
 }
 
 #[test]
-pub fn format_comments_in_attrs_on_switch_statement_and_body() {
+pub(crate) fn format_comments_in_attrs_on_switch_statement_and_body() {
     check_comments(
         "
         fn main() {
@@ -278,7 +278,7 @@ pub fn format_comments_in_attrs_on_switch_statement_and_body() {
 }
 
 #[test]
-pub fn format_comments_in_attrs_on_loop_statement_and_body() {
+pub(crate) fn format_comments_in_attrs_on_loop_statement_and_body() {
     check_comments(
         "
         fn main() {
@@ -313,7 +313,7 @@ pub fn format_comments_in_attrs_on_loop_statement_and_body() {
 }
 
 #[test]
-pub fn format_comments_in_attrs_on_for_statement() {
+pub(crate) fn format_comments_in_attrs_on_for_statement() {
     check_comments(
         " fn main() { ## @attr(0) ## @attr(1) ## for ## (var i = 0; i < 10; i++) {} } ",
         expect![[r#"
@@ -340,7 +340,7 @@ pub fn format_comments_in_attrs_on_for_statement() {
 #[test]
 // TODO (MonaMayrhofer, post-1.0)
 #[ignore = "TODO https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1380"]
-pub fn format_comments_in_attrs_on_loop_continuing_block() {
+pub(crate) fn format_comments_in_attrs_on_loop_continuing_block() {
     check_comments(
         "
         fn main() {
@@ -378,7 +378,7 @@ pub fn format_comments_in_attrs_on_loop_continuing_block() {
 }
 
 #[test]
-pub fn format_comments_in_attrs_on_while_statement() {
+pub(crate) fn format_comments_in_attrs_on_while_statement() {
     check_comments(
         "
         fn main() {
@@ -407,7 +407,7 @@ pub fn format_comments_in_attrs_on_while_statement() {
 }
 
 #[test]
-pub fn format_comments_in_interpolate_attr() {
+pub(crate) fn format_comments_in_interpolate_attr() {
     check_comments(
         "
         ## @ ## interpolate ## ( ## flat ## , ## either ## ) ##
@@ -435,7 +435,7 @@ pub fn format_comments_in_interpolate_attr() {
 }
 
 #[test]
-pub fn format_comments_in_attr_with_many_parameters() {
+pub(crate) fn format_comments_in_attr_with_many_parameters() {
     check_comments(
         "
         ## @ ## foo ## ( ## 1 ## , ## 2 ## , ## 3 ## , ## 4 ## , ## 5 ## , ## 6 ## , ## 7 ) ##
@@ -480,7 +480,7 @@ pub fn format_comments_in_attr_with_many_parameters() {
 }
 
 #[test]
-pub fn format_comments_in_attr_with_multiple_arguments() {
+pub(crate) fn format_comments_in_attr_with_multiple_arguments() {
     check_comments(
         "
         ## @ ## attr ## ( ## 0 ## , ## 0 ## , ## 0 ## ) ## fn ## main() {}
@@ -509,7 +509,7 @@ pub fn format_comments_in_attr_with_multiple_arguments() {
 }
 
 #[test]
-pub fn format_comments_in_attr_with_text_arguments() {
+pub(crate) fn format_comments_in_attr_with_text_arguments() {
     check_comments(
         "
         ## @ ## thingy ## ( ## magic ## , ## thing ## ) ## fn ## main() {}
@@ -536,7 +536,7 @@ pub fn format_comments_in_attr_with_text_arguments() {
 }
 
 #[test]
-pub fn format_comments_in_diagnostic_attr_simple_1() {
+pub(crate) fn format_comments_in_diagnostic_attr_simple_1() {
     check_comments(
         "## @ ## diagnostic ## ( ## off ## , ## something ## ) ## fn ## main() {}",
         expect![[r#"
@@ -562,7 +562,7 @@ pub fn format_comments_in_diagnostic_attr_simple_1() {
 }
 
 #[test]
-pub fn format_comments_in_attr_simple() {
+pub(crate) fn format_comments_in_attr_simple() {
     check_comments(
         "
         ## @ ## fragment ## fn ## main() {}
@@ -583,7 +583,7 @@ pub fn format_comments_in_attr_simple() {
 }
 
 #[test]
-pub fn format_attribute_comment_positioning_between_unordered_first_inline() {
+pub(crate) fn format_attribute_comment_positioning_between_unordered_first_inline() {
     check(
         "
         @must_use /* bla */ @fragment fn a() {}
@@ -617,7 +617,7 @@ pub fn format_attribute_comment_positioning_between_unordered_first_inline() {
 }
 
 #[test]
-pub fn format_attribute_comment_positioning_between_unordered_both_inline() {
+pub(crate) fn format_attribute_comment_positioning_between_unordered_both_inline() {
     check(
         "
         @must_use /* bla */ @must_use fn a() {}
@@ -649,7 +649,7 @@ pub fn format_attribute_comment_positioning_between_unordered_both_inline() {
 }
 
 #[test]
-pub fn format_attribute_comment_positioning_between_unordered_second_inline() {
+pub(crate) fn format_attribute_comment_positioning_between_unordered_second_inline() {
     check(
         "
         @fragment /* bla */ @must_use fn a() {}
@@ -683,7 +683,7 @@ pub fn format_attribute_comment_positioning_between_unordered_second_inline() {
 }
 
 #[test]
-pub fn format_attribute_comment_positioning_between_unordered_none_inline() {
+pub(crate) fn format_attribute_comment_positioning_between_unordered_none_inline() {
     check(
         "
         @compute /* bla */ @if(true) fn a() {}
@@ -721,7 +721,7 @@ pub fn format_attribute_comment_positioning_between_unordered_none_inline() {
 }
 
 #[test]
-pub fn format_attribute_comment_positioning_between_ordered_none_inline() {
+pub(crate) fn format_attribute_comment_positioning_between_ordered_none_inline() {
     check(
         "
         @if(true) /* bla */ @compute fn a() {}

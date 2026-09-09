@@ -30,7 +30,7 @@ use crate::{
 // then a ParsedImports::simplify that collapses them.
 // Vec<Comment> are either attached to after import items (or a the end of an import collection {a, b, /*hi*/})
 
-pub fn gen_import_package_relative(
+pub(crate) fn gen_import_package_relative(
     node: &ast::ImportPackageRelative
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
@@ -45,7 +45,7 @@ pub fn gen_import_package_relative(
     formatted.push_sc(sc!("::"));
     Ok(formatted)
 }
-pub fn gen_import_super_relative(
+pub(crate) fn gen_import_super_relative(
     node: &ast::ImportSuperRelative
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
@@ -68,7 +68,7 @@ pub fn gen_import_super_relative(
     }
     Ok(formatted)
 }
-pub fn gen_import_item(node: &ast::ImportItem) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_import_item(node: &ast::ImportItem) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = syntax_iter(node.syntax());
     let item_name =
@@ -92,7 +92,7 @@ pub fn gen_import_item(node: &ast::ImportItem) -> FormatDocumentResult<PrintItem
     }
     Ok(formatted)
 }
-pub fn gen_import_path(node: &ast::ImportPath) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_import_path(node: &ast::ImportPath) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = syntax_iter(node.syntax());
     let item_name =
@@ -125,7 +125,7 @@ pub fn gen_import_path(node: &ast::ImportPath) -> FormatDocumentResult<PrintItem
     Ok(formatted)
 }
 
-pub struct CmpImportTree<'tree>(pub &'tree ImportTree);
+pub(crate) struct CmpImportTree<'tree>(pub(crate) &'tree ImportTree);
 impl PartialEq for CmpImportTree<'_> {
     fn eq(
         &self,
@@ -192,7 +192,7 @@ impl PartialOrd for CmpImportTree<'_> {
 /// ```
 ///
 /// This should be enforced by the unit test below.
-pub fn gen_import_collection(
+pub(crate) fn gen_import_collection(
     node: &ast::ImportCollection
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
@@ -262,7 +262,7 @@ pub fn gen_import_collection(
     Ok(formatted)
 }
 
-pub fn gen_import_statement(node: &ast::ImportStatement) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_import_statement(node: &ast::ImportStatement) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = syntax_iter(node.syntax());
     parse_node_with(&mut syntax, NoTrivia).expect_kind(ast::SyntaxKind::Import)?;
@@ -303,7 +303,7 @@ mod tests {
     use crate::test_util::assert_out_of_scope;
 
     #[test]
-    pub fn immediately_nested_import_collections_dont_parse() {
+    pub(crate) fn immediately_nested_import_collections_dont_parse() {
         // The logic for sorting imports relies on this not parsing.
         assert_out_of_scope(
             "

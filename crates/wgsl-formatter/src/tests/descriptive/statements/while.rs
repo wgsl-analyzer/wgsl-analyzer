@@ -33,7 +33,7 @@ fn format_while_statement_with_required_parens() {
 }
 
 #[test]
-pub fn format_while_statement_single_statement() {
+pub(crate) fn format_while_statement_single_statement() {
     check(
         "fn main() {
         while(true) {
@@ -53,7 +53,7 @@ pub fn format_while_statement_single_statement() {
 }
 
 #[test]
-pub fn format_while_statement_continue_statement() {
+pub(crate) fn format_while_statement_continue_statement() {
     // This is just a very simple smoke test for completeness, more fine grained tests are in continue.rs
     check(
         "fn main() {
@@ -78,7 +78,7 @@ pub fn format_while_statement_continue_statement() {
 }
 
 #[test]
-pub fn format_comments_in_while_statement_simple() {
+pub(crate) fn format_comments_in_while_statement_simple() {
     check_comments(
         "fn main() {
         ## while ## ( ## true ## ) ## { ## }##

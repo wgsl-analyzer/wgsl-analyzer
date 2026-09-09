@@ -3,7 +3,7 @@ use expect_test::expect;
 use crate::test_util::check;
 
 #[test]
-pub fn format_for_statement_no_anything() {
+pub(crate) fn format_for_statement_no_anything() {
     check(
         "fn main() {
         for(;;) {
@@ -20,7 +20,7 @@ pub fn format_for_statement_no_anything() {
 }
 
 #[test]
-pub fn format_for_statement_multiline_parts() {
+pub(crate) fn format_for_statement_multiline_parts() {
     check(
         "fn main() {
         for(var i = 0; // A

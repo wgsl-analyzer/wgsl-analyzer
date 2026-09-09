@@ -18,11 +18,11 @@ use crate::{
 };
 
 #[must_use]
-pub const fn source_file_item_policy() -> impl ParseNodePolicy {
+pub(crate) const fn source_file_item_policy() -> impl ParseNodePolicy {
     Succeeding((StopAtNewline, DiscardBlankspace, DiscardSemicolon))
 }
 
-pub fn gen_source_file(node: &ast::SourceFile) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_source_file(node: &ast::SourceFile) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
 
     let mut syntax = syntax_iter(node.syntax());

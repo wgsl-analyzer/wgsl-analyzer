@@ -15,7 +15,7 @@ use crate::{
     reporting::FormatDocumentResult,
 };
 
-pub fn gen_break_if_statement(
+pub(crate) fn gen_break_if_statement(
     statement: &ast::BreakIfStatement
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
@@ -46,7 +46,7 @@ pub fn gen_break_if_statement(
 }
 
 #[must_use]
-pub fn remove_break_if_condition_parens_rule(node: &SyntaxNode) -> bool {
+pub(crate) fn remove_break_if_condition_parens_rule(node: &SyntaxNode) -> bool {
     let Some(parent) = node.parent() else {
         return false;
     };

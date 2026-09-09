@@ -4,7 +4,7 @@ use crate::test_util::check;
 
 /// Various tests that all make sure that there is no space before semicolons.
 #[test]
-pub fn format_override_declaration_without_assignment_removes_space_before_semicolon() {
+pub(crate) fn format_override_declaration_without_assignment_removes_space_before_semicolon() {
     check(
         "
 
@@ -19,7 +19,7 @@ pub fn format_override_declaration_without_assignment_removes_space_before_semic
 }
 
 #[test]
-pub fn format_const_declaration_has_no_space_before_semicolon() {
+pub(crate) fn format_const_declaration_has_no_space_before_semicolon() {
     check(
         "fn main() {
 
@@ -36,7 +36,7 @@ pub fn format_const_declaration_has_no_space_before_semicolon() {
 }
 
 #[test]
-pub fn format_let_declaration_has_no_space_before_semicolon() {
+pub(crate) fn format_let_declaration_has_no_space_before_semicolon() {
     check(
         "fn main() {
 
@@ -53,7 +53,7 @@ pub fn format_let_declaration_has_no_space_before_semicolon() {
 }
 
 #[test]
-pub fn format_override_declaration_has_no_space_before_semicolon() {
+pub(crate) fn format_override_declaration_has_no_space_before_semicolon() {
     check(
         "
 
@@ -68,7 +68,7 @@ pub fn format_override_declaration_has_no_space_before_semicolon() {
 }
 
 #[test]
-pub fn format_var_declaration_has_no_space_before_semicolon() {
+pub(crate) fn format_var_declaration_has_no_space_before_semicolon() {
     check(
         "fn main() {
 

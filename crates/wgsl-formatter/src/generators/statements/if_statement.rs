@@ -18,7 +18,7 @@ use crate::{
     reporting::FormatDocumentResult,
 };
 
-pub fn gen_if_statement(statement: &ast::IfStatement) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_if_statement(statement: &ast::IfStatement) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = syntax_iter(statement.syntax());
 
@@ -66,7 +66,7 @@ pub fn gen_if_statement(statement: &ast::IfStatement) -> FormatDocumentResult<Pr
     Ok(formatted)
 }
 
-pub fn gen_if_statement_if_clause(statement: &IfClause) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_if_statement_if_clause(statement: &IfClause) -> FormatDocumentResult<PrintItemBuffer> {
     // NOTE: When editing this function, ensure that gen_if_statement_else_clause and gen_if_statement_else_if_clause
     // reflect the changes as well.
     // This is not very DRY, but abstraction here would introduce more complexity and probably be a leaky abstraction.
@@ -94,7 +94,7 @@ pub fn gen_if_statement_if_clause(statement: &IfClause) -> FormatDocumentResult<
     Ok(formatted)
 }
 
-pub fn gen_if_statement_else_clause(
+pub(crate) fn gen_if_statement_else_clause(
     statement: &ElseClause
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // NOTE: When editing this function, ensure that gen_if_statement_if_clause and gen_if_statement_else_if_clause
@@ -117,7 +117,7 @@ pub fn gen_if_statement_else_clause(
     Ok(formatted)
 }
 
-pub fn gen_if_statement_else_if_clause(
+pub(crate) fn gen_if_statement_else_if_clause(
     statement: &ElseIfClause
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // NOTE: When editing this function, ensure that gen_if_statement_if_clause and gen_if_statement_else_clause
@@ -153,7 +153,7 @@ pub fn gen_if_statement_else_if_clause(
 }
 
 #[must_use]
-pub fn remove_if_condition_parens_rule(node: &SyntaxNode) -> bool {
+pub(crate) fn remove_if_condition_parens_rule(node: &SyntaxNode) -> bool {
     let Some(parent) = node.parent() else {
         return false;
     };

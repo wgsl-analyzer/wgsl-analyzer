@@ -6,7 +6,7 @@ use crate::{
 };
 
 #[test]
-pub fn format_function_call_statement_trailing_comma_with_multiline_arguments() {
+pub(crate) fn format_function_call_statement_trailing_comma_with_multiline_arguments() {
     check(
         "fn main() {
         bla(12, // Force break
@@ -25,7 +25,7 @@ pub fn format_function_call_statement_trailing_comma_with_multiline_arguments() 
 }
 
 #[test]
-pub fn format_function_call_statement_no_trailing_comma_with_singleline_arguments() {
+pub(crate) fn format_function_call_statement_no_trailing_comma_with_singleline_arguments() {
     check(
         "fn main() {
         bla(12, bar(), 1 + vubble, );
@@ -80,7 +80,7 @@ fn format_template_elaborated_function_call_statement() {
 }
 
 #[test]
-pub fn format_function_call_statement_with_comment_has_no_trailing_whitespace() {
+pub(crate) fn format_function_call_statement_with_comment_has_no_trailing_whitespace() {
     check(
         "fn main() {
         bla(12, bar() /* a */    );
@@ -94,7 +94,7 @@ pub fn format_function_call_statement_with_comment_has_no_trailing_whitespace() 
 }
 
 #[test]
-pub fn format_function_call_multiline_arguments_keeps_comments_in_position() {
+pub(crate) fn format_function_call_multiline_arguments_keeps_comments_in_position() {
     // Following "the formatter should not unnecessarily move comments around" - if programmer wants them there, we will let them have it.
     check(
         "fn main() {
@@ -159,7 +159,7 @@ fn format_long_function_call_without_arguments_does_not_break_within_parens() {
 }
 
 #[test]
-pub fn format_long_function_call_linewidth_within_inner_break_outer_arguments_leave_inner_alone() {
+pub(crate) fn format_long_function_call_linewidth_within_inner_break_outer_arguments_leave_inner_alone() {
     // Please note that the amount of "aaaa" in this test is carefully chosen to play with the line lengths.
     // This the amount of aaa is such that, breaking the inner argument would satisfy the line width requirement.
     // The formatter should prefer breaking the outer argument list, even though breaking the inner one
@@ -188,7 +188,7 @@ pub fn format_long_function_call_linewidth_within_inner_break_outer_arguments_le
 }
 
 #[test]
-pub fn format_long_function_call_linewidth_outside_inner_break_outer_arguments_leave_inner_alone() {
+pub(crate) fn format_long_function_call_linewidth_outside_inner_break_outer_arguments_leave_inner_alone() {
     // Please note that the amount of characters in this test is carefully chosen to play with the line lengths.
     // This the amount of aaa is such that, breaking the inner argument would still not satisfy the line width
     // requirement.
@@ -252,7 +252,7 @@ fn format_long_function_call_leave_arguments_alone_if_breaking_at_commas_suffice
 }
 
 #[test]
-pub fn format_long_function_call_prefer_to_break_arguments_over_path() {
+pub(crate) fn format_long_function_call_prefer_to_break_arguments_over_path() {
     // Please note that the amount of "aaaa" in this test is carefully chosen to play with the line lengths.
     // This the amount of aaa is such that, breaking the inner argument would still not satisfy the line width
     // requirement.
@@ -282,7 +282,7 @@ pub fn format_long_function_call_prefer_to_break_arguments_over_path() {
 }
 
 #[test]
-pub fn format_long_function_call_dont_break_path() {
+pub(crate) fn format_long_function_call_dont_break_path() {
     check_with_options(
         "
         //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
@@ -314,7 +314,7 @@ pub fn format_long_function_call_dont_break_path() {
 }
 
 #[test]
-pub fn format_function_call_with_field_expr_prefer_breaking_field_expr() {
+pub(crate) fn format_function_call_with_field_expr_prefer_breaking_field_expr() {
     // This tests exists to document this behavior
     // This is the easier way to do it - I think its fine this way.
     // It follows the way how function chains would be expected to be formatted

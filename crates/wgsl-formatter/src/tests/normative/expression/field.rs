@@ -3,7 +3,7 @@ use expect_test::expect;
 use crate::{FormattingOptions, test_util::check_with_options};
 
 #[test]
-pub fn format_field_expr_prefer_breaking_other_stuff() {
+pub(crate) fn format_field_expr_prefer_breaking_other_stuff() {
     check_with_options(
         "
         //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
@@ -27,7 +27,7 @@ pub fn format_field_expr_prefer_breaking_other_stuff() {
 }
 
 #[test]
-pub fn format_field_expr_prefer_breaking_from_the_back() {
+pub(crate) fn format_field_expr_prefer_breaking_from_the_back() {
     check_with_options(
         "
         //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|

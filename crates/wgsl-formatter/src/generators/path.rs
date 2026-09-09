@@ -7,7 +7,7 @@ use crate::{
     reporting::FormatDocumentResult,
 };
 
-pub fn gen_path(path: &ast::Path) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_path(path: &ast::Path) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = syntax_iter(path.syntax());
 

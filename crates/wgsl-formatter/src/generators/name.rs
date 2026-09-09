@@ -7,7 +7,7 @@ use crate::{
     reporting::FormatDocumentResult,
 };
 
-pub fn gen_name(name: &ast::Name) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_name(name: &ast::Name) -> FormatDocumentResult<PrintItemBuffer> {
     let mut syntax = syntax_iter(name.syntax());
     let identifier =
         parse_node_with(&mut syntax, DiscardBlankspace).expect_kind(ast::SyntaxKind::Identifier)?;

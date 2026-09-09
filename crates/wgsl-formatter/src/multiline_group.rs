@@ -25,7 +25,7 @@ enum MultilineGroupState {
 ///
 /// The [`MultilineGroup::end_before_requests`] method needs to be called before it is dropped.
 ///
-pub struct MultilineGroup<'buffer> {
+pub(crate) struct MultilineGroup<'buffer> {
     buffer: &'buffer mut PrintItemBuffer,
     pub(crate) is_multiple_lines: ConditionResolver,
     end_ln: LineNumber,
@@ -36,7 +36,7 @@ pub struct MultilineGroup<'buffer> {
 }
 
 #[must_use]
-pub fn create_is_multiple_lines_resolver(
+pub(crate) fn create_is_multiple_lines_resolver(
     start_ln: LineNumber,
     end_ln: LineNumber,
 ) -> ConditionResolver {
@@ -48,7 +48,7 @@ pub fn create_is_multiple_lines_resolver(
 }
 
 impl<'buffer> MultilineGroup<'buffer> {
-    pub fn new_before_requests(formatted: &'buffer mut PrintItemBuffer) -> Self {
+    pub(crate) fn new_before_requests(formatted: &'buffer mut PrintItemBuffer) -> Self {
         let start_ln = LineNumber::new("start");
         let end_ln = LineNumber::new("end");
         let is_multiple_lines = create_is_multiple_lines_resolver(start_ln, end_ln);
@@ -78,7 +78,7 @@ impl<'buffer> MultilineGroup<'buffer> {
         }
     }
 
-    pub fn grouped_newline_or_space(&mut self) {
+    pub(crate) fn grouped_newline_or_space(&mut self) {
         self.buffer.request(Request::Conditional {
             condition: Rc::clone(&self.is_multiple_lines),
             on_true: Box::new(Request::expect(RequestItem::LineBreak)),
@@ -86,7 +86,7 @@ impl<'buffer> MultilineGroup<'buffer> {
         });
     }
 
-    pub fn grouped_request(
+    pub(crate) fn grouped_request(
         &mut self,
         request_on_multiline: Request,
         request_on_single_line: Request,
@@ -98,14 +98,14 @@ impl<'buffer> MultilineGroup<'buffer> {
         });
     }
 
-    pub fn grouped_possible_newline(&mut self) {
+    pub(crate) fn grouped_possible_newline(&mut self) {
         self.grouped_request(
             Request::expect(RequestItem::LineBreak),
             Request::empty().or_newline(),
         );
     }
 
-    pub fn extend_if_multi_line(
+    pub(crate) fn extend_if_multi_line(
         &mut self,
         items: PrintItems,
     ) {
@@ -118,7 +118,7 @@ impl<'buffer> MultilineGroup<'buffer> {
             ));
     }
 
-    pub fn end_before_requests(mut self) {
+    pub(crate) fn end_before_requests(mut self) {
         #[cfg(debug_assertions)]
         {
             core::assert_matches!(

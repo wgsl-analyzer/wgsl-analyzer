@@ -5,7 +5,7 @@ use crate::test_util::{check, check_comments};
 // TODO (MonaMayrhofer, post-1.0)
 #[test]
 #[ignore = "TODO https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1380"]
-pub fn format_loop_continuing_statement_empty() {
+pub(crate) fn format_loop_continuing_statement_empty() {
     check(
         "fn main() {
         loop {
@@ -29,7 +29,7 @@ pub fn format_loop_continuing_statement_empty() {
 // TODO (MonaMayrhofer, post-1.0)
 #[test]
 #[ignore = "TODO https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1380"]
-pub fn format_loop_continuing_statement_single_statement() {
+pub(crate) fn format_loop_continuing_statement_single_statement() {
     check(
         "fn main() {
         loop {
@@ -56,7 +56,7 @@ pub fn format_loop_continuing_statement_single_statement() {
 // TODO (MonaMayrhofer, post-1.0)
 #[test]
 #[ignore = "TODO https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1380"]
-pub fn format_loop_statement_continue_statement() {
+pub(crate) fn format_loop_statement_continue_statement() {
     // This is just a very simple smoke test for completeness, more fine grained tests are in continue.rs
     check(
         "fn main() {
@@ -90,7 +90,7 @@ pub fn format_loop_statement_continue_statement() {
 // TODO (MonaMayrhofer, post-1.0)
 #[test]
 #[ignore = "TODO https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1380"]
-pub fn format_loop_continuing_statement_block_comments() {
+pub(crate) fn format_loop_continuing_statement_block_comments() {
     check_comments(
         "fn main() {
         ## loop ## {

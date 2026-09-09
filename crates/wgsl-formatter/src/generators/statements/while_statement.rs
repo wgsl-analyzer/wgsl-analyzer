@@ -14,7 +14,7 @@ use crate::{
     reporting::FormatDocumentResult,
 };
 
-pub fn gen_while_statement(
+pub(crate) fn gen_while_statement(
     statement: &ast::WhileStatement
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
@@ -41,7 +41,7 @@ pub fn gen_while_statement(
 }
 
 #[must_use]
-pub fn remove_while_condition_parens_rule(node: &SyntaxNode) -> bool {
+pub(crate) fn remove_while_condition_parens_rule(node: &SyntaxNode) -> bool {
     let Some(parent) = node.parent() else {
         return false;
     };

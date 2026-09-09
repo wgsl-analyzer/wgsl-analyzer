@@ -5,7 +5,7 @@ use crate::test_util::check;
 // TODO (MonaMayrhofer, post-1.0)
 #[ignore = "TODO"]
 #[test]
-pub fn format_vec3f_as_vec3x3f() {
+pub(crate) fn format_vec3f_as_vec3x3f() {
     // Before this gets implemented we should have a long think about whether this wouldn't more belong into a clippy-like tool
     // instead of the formatter.
     //

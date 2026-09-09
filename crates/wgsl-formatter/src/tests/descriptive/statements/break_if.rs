@@ -6,7 +6,7 @@ use crate::{
 };
 
 #[test]
-pub fn format_loop_continuing_break_if_statement_empty() {
+pub(crate) fn format_loop_continuing_break_if_statement_empty() {
     check(
         "fn main() {
         loop {
@@ -31,7 +31,7 @@ pub fn format_loop_continuing_break_if_statement_empty() {
 }
 
 #[test]
-pub fn format_loop_continuing_break_if_statement_with_important_parens() {
+pub(crate) fn format_loop_continuing_break_if_statement_with_important_parens() {
     check(
         "fn main() {
         loop {
@@ -56,7 +56,7 @@ pub fn format_loop_continuing_break_if_statement_with_important_parens() {
 }
 
 #[test]
-pub fn format_loop_continuing_break_if_statement_simple() {
+pub(crate) fn format_loop_continuing_break_if_statement_simple() {
     check(
         "fn main() {
         loop {
@@ -81,7 +81,7 @@ pub fn format_loop_continuing_break_if_statement_simple() {
 }
 
 #[test]
-pub fn format_loop_continuing_break_if_statement_long_expression() {
+pub(crate) fn format_loop_continuing_break_if_statement_long_expression() {
     check_with_options(
         "fn main() {
         loop {
@@ -112,7 +112,7 @@ pub fn format_loop_continuing_break_if_statement_long_expression() {
 }
 
 #[test]
-pub fn format_comments_in_loop_continuing_break_if_statement() {
+pub(crate) fn format_comments_in_loop_continuing_break_if_statement() {
     check_comments(
         "fn main() { ## loop ## { ## continuing ## { ## break ## if ## false ## ; ## } ## } ## }",
         expect![[r#"
@@ -149,7 +149,7 @@ pub fn format_comments_in_loop_continuing_break_if_statement() {
 }
 
 #[test]
-pub fn format_comments_in_loop_continuing_break_if_with_needless_parens_statement() {
+pub(crate) fn format_comments_in_loop_continuing_break_if_with_needless_parens_statement() {
     check_comments(
         "fn main() { ## loop ## { ## continuing ## { ## break ## if ## ( ## false ## ) ## ; ## ## } ## } ## }",
         expect![[r#"

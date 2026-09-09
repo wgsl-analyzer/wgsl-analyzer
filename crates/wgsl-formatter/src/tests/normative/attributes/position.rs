@@ -6,7 +6,7 @@ use crate::{
 };
 
 #[test]
-pub fn format_attribute_offset_size_align_are_grouped() {
+pub(crate) fn format_attribute_offset_size_align_are_grouped() {
     // @align @size @offset should not be on the same line as the field,
     // but on the line beforehand (on the same line, but on separate lines to other fields)
     //
@@ -38,7 +38,7 @@ pub fn format_attribute_offset_size_align_are_grouped() {
 }
 
 #[test]
-pub fn format_attribute_group_binding_are_grouped() {
+pub(crate) fn format_attribute_group_binding_are_grouped() {
     // @group @binding should be on the line before the binding,
     // sharing the same line, but on separate lines to other fields
     check(
@@ -57,7 +57,7 @@ pub fn format_attribute_group_binding_are_grouped() {
 }
 
 #[test]
-pub fn format_attribute_workgroup_size_compute() {
+pub(crate) fn format_attribute_workgroup_size_compute() {
     // @compute @workgroup_size should be on the line before the fn,
     // sharing the same line, but on separate lines to other fields
     //
@@ -77,7 +77,7 @@ pub fn format_attribute_workgroup_size_compute() {
 }
 
 #[test]
-pub fn format_attribute_const_is_inline_with_function() {
+pub(crate) fn format_attribute_const_is_inline_with_function() {
     // Following the WGSL spec, we keep @const inlined with the function
     check(
         "
@@ -95,7 +95,7 @@ pub fn format_attribute_const_is_inline_with_function() {
 }
 
 #[test]
-pub fn format_attribute_must_use_is_inline_with_function() {
+pub(crate) fn format_attribute_must_use_is_inline_with_function() {
     // Following the WGSL spec, we keep @must_use inlined with the function
     check(
         "
@@ -113,7 +113,7 @@ pub fn format_attribute_must_use_is_inline_with_function() {
 }
 
 #[test]
-pub fn format_attribute_const_must_use_order() {
+pub(crate) fn format_attribute_const_must_use_order() {
     // Following the WGSL spec, we order @const before @must_use
     check(
         "
@@ -128,7 +128,7 @@ pub fn format_attribute_const_must_use_order() {
 }
 
 #[test]
-pub fn format_attrs_on_struct_members() {
+pub(crate) fn format_attrs_on_struct_members() {
     check(
         "struct VertexOutput {
             @attr(0) @attr(1) position: vec4<f32>,
@@ -148,7 +148,7 @@ pub fn format_attrs_on_struct_members() {
 }
 
 #[test]
-pub fn format_attrs_on_functions() {
+pub(crate) fn format_attrs_on_functions() {
     check(
         "@attr(0)
         @attr(1)
@@ -164,7 +164,7 @@ pub fn format_attrs_on_functions() {
 }
 
 #[test]
-pub fn format_attrs_on_function_return_type() {
+pub(crate) fn format_attrs_on_function_return_type() {
     check(
         "
         fn thing(
@@ -177,7 +177,7 @@ pub fn format_attrs_on_function_return_type() {
 }
 
 #[test]
-pub fn format_attrs_on_function_parameter() {
+pub(crate) fn format_attrs_on_function_parameter() {
     check(
         "
         fn thing(
@@ -199,7 +199,7 @@ pub fn format_attrs_on_function_parameter() {
 }
 
 #[test]
-pub fn format_attrs_on_function_body_singleline() {
+pub(crate) fn format_attrs_on_function_body_singleline() {
     check_with_options(
         "
         //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
@@ -218,7 +218,7 @@ pub fn format_attrs_on_function_body_singleline() {
 }
 
 #[test]
-pub fn format_attrs_on_function_body_multiline() {
+pub(crate) fn format_attrs_on_function_body_multiline() {
     check_with_options(
         "
         //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
@@ -238,7 +238,7 @@ pub fn format_attrs_on_function_body_multiline() {
 }
 
 #[test]
-pub fn format_attrs_on_global_variable() {
+pub(crate) fn format_attrs_on_global_variable() {
     check(
         "
         @attr(0) @attr(1) var<uniform> material: CustomMaterial;
@@ -252,7 +252,7 @@ pub fn format_attrs_on_global_variable() {
 }
 
 #[test]
-pub fn format_attrs_on_override() {
+pub(crate) fn format_attrs_on_override() {
     check(
         "
         @attr(0) @attr(1) override amount: u64 = 0;
@@ -266,7 +266,7 @@ pub fn format_attrs_on_override() {
 }
 
 #[test]
-pub fn format_attrs_on_compound_statement() {
+pub(crate) fn format_attrs_on_compound_statement() {
     check(
         "
         fn main() {
@@ -284,7 +284,7 @@ pub fn format_attrs_on_compound_statement() {
 }
 
 #[test]
-pub fn format_attrs_on_nonempty_compound_statement() {
+pub(crate) fn format_attrs_on_nonempty_compound_statement() {
     check(
         "
         fn main() {
@@ -310,7 +310,7 @@ pub fn format_attrs_on_nonempty_compound_statement() {
 }
 
 #[test]
-pub fn format_attrs_on_if_statement() {
+pub(crate) fn format_attrs_on_if_statement() {
     check(
         "
         fn main() {
@@ -328,7 +328,7 @@ pub fn format_attrs_on_if_statement() {
 }
 
 #[test]
-pub fn format_attrs_on_switch_statement() {
+pub(crate) fn format_attrs_on_switch_statement() {
     check(
         "
         fn main() {
@@ -346,7 +346,7 @@ pub fn format_attrs_on_switch_statement() {
 }
 
 #[test]
-pub fn format_attrs_on_switch_statement_body() {
+pub(crate) fn format_attrs_on_switch_statement_body() {
     check(
         "
         fn main() {
@@ -362,7 +362,7 @@ pub fn format_attrs_on_switch_statement_body() {
 }
 
 #[test]
-pub fn format_attrs_on_loop_statement() {
+pub(crate) fn format_attrs_on_loop_statement() {
     check(
         "
         fn main() {
@@ -380,7 +380,7 @@ pub fn format_attrs_on_loop_statement() {
 }
 
 #[test]
-pub fn format_attrs_on_loop_body() {
+pub(crate) fn format_attrs_on_loop_body() {
     check(
         "
         fn main() {
@@ -396,7 +396,7 @@ pub fn format_attrs_on_loop_body() {
 }
 
 #[test]
-pub fn format_attrs_on_for_statement() {
+pub(crate) fn format_attrs_on_for_statement() {
     check(
         "
         fn main() {
@@ -416,7 +416,7 @@ pub fn format_attrs_on_for_statement() {
 // TODO (MonaMayrhofer, post-1.0)
 #[test]
 #[ignore = "TODO https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1380"]
-pub fn format_attrs_on_loop_continuing_block() {
+pub(crate) fn format_attrs_on_loop_continuing_block() {
     check(
         "
         fn main() {
@@ -437,7 +437,7 @@ pub fn format_attrs_on_loop_continuing_block() {
 }
 
 #[test]
-pub fn format_attrs_on_while_statement() {
+pub(crate) fn format_attrs_on_while_statement() {
     check(
         "
         fn main() {
@@ -456,7 +456,7 @@ pub fn format_attrs_on_while_statement() {
 }
 
 #[test]
-pub fn format_attrs_on_import_statement() {
+pub(crate) fn format_attrs_on_import_statement() {
     check(
         "
         @if(THING)
@@ -469,7 +469,7 @@ pub fn format_attrs_on_import_statement() {
     );
 }
 #[test]
-pub fn format_all_attribute_order() {
+pub(crate) fn format_all_attribute_order() {
     check(
         "
         @const
@@ -513,7 +513,7 @@ pub fn format_all_attribute_order() {
 // TODO (MonaMayrhofer, post-1.0)
 #[test]
 #[ignore = "TODO - we support this once #1381 lands"]
-pub fn format_early_depth_test() {
+pub(crate) fn format_early_depth_test() {
     check(
         "
             enable EARLY_DEPTH_TEST;
@@ -526,7 +526,7 @@ pub fn format_early_depth_test() {
 }
 
 #[test]
-pub fn format_attribute_suboptimal_comment_positioning_1() {
+pub(crate) fn format_attribute_suboptimal_comment_positioning_1() {
     // This test exists to demonstrate pretty suboptimal positioning of comments between attributes and functions
     // The issue in question is that comments get placed differently depending on if the attribute is an inline attribute (@must_use) or a
     // non-inline attribute (@fragment).
@@ -561,7 +561,7 @@ pub fn format_attribute_suboptimal_comment_positioning_1() {
 }
 
 #[test]
-pub fn format_attribute_suboptimal_comment_positioning_2() {
+pub(crate) fn format_attribute_suboptimal_comment_positioning_2() {
     // This test exists to demonstrate pretty suboptimal positioning of comments between attributes and functions
     // The issue in question is that comments get placed differently depending on if the attribute is an inline attribute (@must_use) or a
     // non-inline attribute (@fragment).
@@ -614,7 +614,7 @@ pub fn format_attribute_suboptimal_comment_positioning_2() {
 }
 
 #[test]
-pub fn format_attribute_comment_positioning_2() {
+pub(crate) fn format_attribute_comment_positioning_2() {
     check(
         "
 @if(true)
@@ -636,7 +636,7 @@ fn a() {}
 }
 
 #[test]
-pub fn format_attribute_comment_positioning() {
+pub(crate) fn format_attribute_comment_positioning() {
     // This test exists to demonstrate optimal behavior of block comments between attributes and functions.
     // In contrast to the suboptimal behavior demonstrated in `format_attribute_suboptimal_comment_positioning_1` and `format_attribute_suboptimal_comment_positioning_2`
     // this behavior seems optimal and consistent with the behavior of comments across the formatter.

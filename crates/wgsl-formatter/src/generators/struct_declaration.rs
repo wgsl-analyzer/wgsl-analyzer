@@ -20,7 +20,7 @@ use crate::{
     reporting::FormatDocumentResult,
 };
 
-pub fn gen_struct_declaration(
+pub(crate) fn gen_struct_declaration(
     node: &ast::StructDeclaration
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // === Parse ===
@@ -48,7 +48,7 @@ pub fn gen_struct_declaration(
     Ok(formatted)
 }
 
-pub fn gen_struct_body(body: &ast::StructBody) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_struct_body(body: &ast::StructBody) -> FormatDocumentResult<PrintItemBuffer> {
     // === Parse ===
     let mut syntax = syntax_iter(body.syntax());
 
@@ -104,7 +104,7 @@ pub fn gen_struct_body(body: &ast::StructBody) -> FormatDocumentResult<PrintItem
     Ok(formatted)
 }
 
-pub fn gen_struct_member(member: &ast::StructMember) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_struct_member(member: &ast::StructMember) -> FormatDocumentResult<PrintItemBuffer> {
     // === Parse ===
     let mut syntax = syntax_iter(member.syntax());
 

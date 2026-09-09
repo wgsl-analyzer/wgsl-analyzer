@@ -14,7 +14,7 @@ use crate::{
     reporting::FormatDocumentResult,
 };
 
-pub fn gen_index_expression(
+pub(crate) fn gen_index_expression(
     index_expression: &ast::IndexExpression
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
@@ -56,7 +56,7 @@ pub fn gen_index_expression(
 }
 
 #[must_use]
-pub fn remove_index_expression_nested_parens_rule(node: &SyntaxNode) -> bool {
+pub(crate) fn remove_index_expression_nested_parens_rule(node: &SyntaxNode) -> bool {
     let Some(parent) = node.parent() else {
         return false;
     };

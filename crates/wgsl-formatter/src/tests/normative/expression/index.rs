@@ -3,7 +3,7 @@ use expect_test::expect;
 use crate::test_util::{assert_out_of_scope, check};
 
 #[test]
-pub fn format_naked_index_exprs_out_of_scope() {
+pub(crate) fn format_naked_index_exprs_out_of_scope() {
     assert_out_of_scope(
         "fn main() {
         a[0];

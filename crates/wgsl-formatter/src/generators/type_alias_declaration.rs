@@ -12,7 +12,7 @@ use crate::{
     reporting::FormatDocumentError,
 };
 
-pub fn gen_type_alias_declaration(
+pub(crate) fn gen_type_alias_declaration(
     statement: &TypeAliasDeclaration
 ) -> Result<PrintItemBuffer, FormatDocumentError> {
     // ==== Parse ====

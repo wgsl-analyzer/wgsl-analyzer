@@ -3,7 +3,7 @@ use expect_test::expect;
 use crate::test_util::{check, check_comments};
 
 #[test]
-pub fn format_continue_statement_1() {
+pub(crate) fn format_continue_statement_1() {
     check(
         "fn main() {
         while(true) {
@@ -24,7 +24,7 @@ pub fn format_continue_statement_1() {
 }
 
 #[test]
-pub fn format_comment_in_continue_statement() {
+pub(crate) fn format_comment_in_continue_statement() {
     check_comments(
         "fn main() {
         while(true) {

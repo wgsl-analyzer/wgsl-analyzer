@@ -15,7 +15,7 @@ use crate::{
     reporting::FormatDocumentError,
 };
 
-pub fn gen_assignment_statement(
+pub(crate) fn gen_assignment_statement(
     assignment_statement: &ast::AssignmentStatement
 ) -> Result<PrintItemBuffer, FormatDocumentError> {
     // NOTE!! - When updating this function, keep in mind to
@@ -52,7 +52,7 @@ pub fn gen_assignment_statement(
     Ok(formatted)
 }
 
-pub fn gen_phony_assignment_statement(
+pub(crate) fn gen_phony_assignment_statement(
     phony_assignment_statement: &ast::PhonyAssignmentStatement
 ) -> Result<PrintItemBuffer, FormatDocumentError> {
     // NOTE!! - When updating this function, keep in mind to
@@ -87,7 +87,7 @@ pub fn gen_phony_assignment_statement(
     Ok(formatted)
 }
 
-pub fn gen_compound_assignment_statement(
+pub(crate) fn gen_compound_assignment_statement(
     compound_assignment_statement: &ast::CompoundAssignmentStatement
 ) -> Result<PrintItemBuffer, FormatDocumentError> {
     // NOTE!! - When updating this function, keep in mind to
@@ -124,7 +124,7 @@ pub fn gen_compound_assignment_statement(
 }
 
 #[must_use]
-pub fn remove_assignment_statement_parens_rule(node: &SyntaxNode) -> bool {
+pub(crate) fn remove_assignment_statement_parens_rule(node: &SyntaxNode) -> bool {
     let Some(parent) = node.parent() else {
         return false;
     };

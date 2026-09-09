@@ -9,7 +9,7 @@ use crate::{
     print_item_buffer::PrintItemBuffer,
     reporting::FormatDocumentResult,
 };
-pub fn gen_prefix_expression(
+pub(crate) fn gen_prefix_expression(
     infix_expression: &ast::PrefixExpression
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====

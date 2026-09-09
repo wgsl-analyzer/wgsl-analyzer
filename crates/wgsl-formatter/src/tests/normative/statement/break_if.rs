@@ -6,7 +6,7 @@ use crate::{
 };
 
 #[test]
-pub fn format_loop_continuing_break_if_statement_with_needless_parens() {
+pub(crate) fn format_loop_continuing_break_if_statement_with_needless_parens() {
     check(
         "fn main() {
         loop {
@@ -31,7 +31,7 @@ pub fn format_loop_continuing_break_if_statement_with_needless_parens() {
 }
 
 #[test]
-pub fn format_break_if_statement_without_loop() {
+pub(crate) fn format_break_if_statement_without_loop() {
     assert_out_of_scope(
         "fn main() {
         break if false;
@@ -41,7 +41,7 @@ pub fn format_break_if_statement_without_loop() {
 }
 
 #[test]
-pub fn format_break_if_statement_without_continuing() {
+pub(crate) fn format_break_if_statement_without_continuing() {
     assert_out_of_scope(
         "fn main() {
         loop{

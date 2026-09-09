@@ -5,7 +5,7 @@ use crate::test_util::{
 };
 
 #[test]
-pub fn format_naked_paren_exprs_out_of_scope() {
+pub(crate) fn format_naked_paren_exprs_out_of_scope() {
     assert_out_of_scope(
         "fn main() {
         (
@@ -20,7 +20,7 @@ pub fn format_naked_paren_exprs_out_of_scope() {
 }
 
 #[test]
-pub fn format_paren_expr_simple() {
+pub(crate) fn format_paren_expr_simple() {
     check(
         "fn main() {
         let a = 1 + (1+1);
@@ -34,7 +34,7 @@ pub fn format_paren_expr_simple() {
 }
 
 #[test]
-pub fn format_paren_expr_deep_right_associated() {
+pub(crate) fn format_paren_expr_deep_right_associated() {
     //TODO(MonaMayrhofer,discuss) This is awful. Have another look at how this should be formatted, once more test cases for more common parenthesized expressions are there
     check_with_options(
         "fn main() {
@@ -75,7 +75,7 @@ pub fn format_paren_expr_deep_right_associated() {
 }
 
 #[test]
-pub fn format_paren_expr_deep_left_associated() {
+pub(crate) fn format_paren_expr_deep_left_associated() {
     //TODO(MonaMayrhofer,discuss) This is beyond awful. Have another look at how this should be formatted, once more test cases for more common parenthesized expressions are there
     check_with_options(
         "fn main() {
@@ -97,7 +97,7 @@ pub fn format_paren_expr_deep_left_associated() {
 
 #[test]
 #[ignore = "This currently causes a stack overflow. There is no obvious 'quick fix' for that, we need to investigate further."]
-pub fn format_paren_expr_very_deep() {
+pub(crate) fn format_paren_expr_very_deep() {
     check(
         "fn main() {
         let a = 1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+(1+1))))))))))))))))))))))))))))))))))))))))))))))))));
@@ -108,7 +108,7 @@ pub fn format_paren_expr_very_deep() {
 }
 
 #[test]
-pub fn format_comments_in_paren_expr() {
+pub(crate) fn format_comments_in_paren_expr() {
     check_comments(
         "fn main() {
         let a = 1 + ## ( ## 1 ## + ## ( ## 1 ## + ## 27 ## ) ## ) ## ; ##

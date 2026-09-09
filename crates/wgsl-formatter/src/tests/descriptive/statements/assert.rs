@@ -3,7 +3,7 @@ use expect_test::expect;
 use crate::test_util::{check, check_comments};
 
 #[test]
-pub fn format_assert_statement_simple() {
+pub(crate) fn format_assert_statement_simple() {
     check(
         "
         const_assert
@@ -19,7 +19,7 @@ pub fn format_assert_statement_simple() {
 }
 
 #[test]
-pub fn format_assert_statement_within_function() {
+pub(crate) fn format_assert_statement_within_function() {
     check(
         "
         fn main() {
@@ -39,7 +39,7 @@ pub fn format_assert_statement_within_function() {
 }
 
 #[test]
-pub fn format_comments_in_const_assert_simple() {
+pub(crate) fn format_comments_in_const_assert_simple() {
     check_comments(
         "
         ## const_assert ## ( ## a ## < ## b ## ) ## ; ##

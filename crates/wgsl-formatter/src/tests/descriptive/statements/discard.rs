@@ -3,7 +3,7 @@ use expect_test::expect;
 use crate::test_util::{check, check_comments};
 
 #[test]
-pub fn format_discard_statement_1() {
+pub(crate) fn format_discard_statement_1() {
     check(
         "fn main() {
 discard;
@@ -19,7 +19,7 @@ discard;
 }
 
 #[test]
-pub fn format_discard_statement_with_weird_comment() {
+pub(crate) fn format_discard_statement_with_weird_comment() {
     // Following "the formatter should not unnecessarily move comments around" - if programmer wants them there, we will let them have it.
     check_comments(
         "fn main() {

@@ -6,7 +6,7 @@ use crate::{
 };
 
 #[test]
-pub fn format_expr_function_call_simple() {
+pub(crate) fn format_expr_function_call_simple() {
     check(
         "fn main() {
         let a =
@@ -25,7 +25,7 @@ pub fn format_expr_function_call_simple() {
 }
 
 #[test]
-pub fn format_expr_function_call_one_arg() {
+pub(crate) fn format_expr_function_call_one_arg() {
     check(
         "fn main() {
         let a =
@@ -45,7 +45,7 @@ pub fn format_expr_function_call_one_arg() {
 }
 
 #[test]
-pub fn format_expr_function_call_two_arg() {
+pub(crate) fn format_expr_function_call_two_arg() {
     check(
         "fn main() {
         let a =
@@ -66,7 +66,7 @@ pub fn format_expr_function_call_two_arg() {
 }
 
 #[test]
-pub fn format_expr_function_call_many_args() {
+pub(crate) fn format_expr_function_call_many_args() {
     check(
         "fn main() {
         let a = foo(1,2,3,4,5,6,7,8,9,10,1,2,3,4,5,6,7,8,9,10,1,2,3,4,5,6,7,8,9)
@@ -160,7 +160,7 @@ fn format_comments_in_expr_function_call_bitcast() {
 }
 
 #[test]
-pub fn format_comments_in_expr_function_call() {
+pub(crate) fn format_comments_in_expr_function_call() {
     check_comments(
         "fn main() {
         let a = ## foo ## ( ## 3 ## , ## 2 ## ) ## ; ##
@@ -187,7 +187,7 @@ pub fn format_comments_in_expr_function_call() {
 }
 
 #[test]
-pub fn format_expr_function_call_with_sensible_comments() {
+pub(crate) fn format_expr_function_call_with_sensible_comments() {
     check_with_options(
         "fn main() {
         let a = foo(

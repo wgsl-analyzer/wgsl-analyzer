@@ -15,7 +15,7 @@ use crate::{
     reporting::FormatDocumentError,
 };
 
-pub fn gen_increment_decrement_statement(
+pub(crate) fn gen_increment_decrement_statement(
     increment_decrement_statement: &ast::IncrementDecrementStatement
 ) -> Result<PrintItemBuffer, FormatDocumentError> {
     // ==== Parse ====

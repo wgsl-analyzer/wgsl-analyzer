@@ -27,7 +27,7 @@ use crate::{
     trivia::NodeWithTrivia,
 };
 
-pub fn gen_function_call(
+pub(crate) fn gen_function_call(
     function_call: &ast::FunctionCall
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
@@ -47,7 +47,7 @@ pub fn gen_function_call(
     Ok(formatted)
 }
 
-pub fn determine_function_call_argument_style(
+pub(crate) fn determine_function_call_argument_style(
     function_call: Option<SyntaxNode>
 ) -> FunctionCallArgumentStyle {
     let Some(path) = function_call
@@ -107,12 +107,12 @@ pub fn determine_function_call_argument_style(
     }
 }
 
-pub enum FunctionCallArgumentStyle {
+pub(crate) enum FunctionCallArgumentStyle {
     Standard,
     Tabular { columns: usize, rows: usize },
 }
 
-pub fn parse_function_call_arguments(
+pub(crate) fn parse_function_call_arguments(
     syntax: &mut SyntaxIter
 ) -> FormatDocumentResult<Vec<NodeWithTrivia>> {
     parse_node_with(syntax, NoTrivia).expect_kind(SyntaxKind::ParenthesisLeft)?;
@@ -133,7 +133,7 @@ pub fn parse_function_call_arguments(
     Ok(item_arguments)
 }
 
-pub fn gen_function_call_arguments(
+pub(crate) fn gen_function_call_arguments(
     arguments: &ast::Arguments
 ) -> FormatDocumentResult<PrintItemBuffer> {
     let style = determine_function_call_argument_style(arguments.syntax().parent());
@@ -145,7 +145,7 @@ pub fn gen_function_call_arguments(
     }
 }
 
-pub fn gen_function_call_arguments_standard(
+pub(crate) fn gen_function_call_arguments_standard(
     arguments: &ast::Arguments
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
@@ -211,7 +211,7 @@ pub fn gen_function_call_arguments_standard(
     Ok(formatted)
 }
 
-pub fn gen_function_call_arguments_tabular(
+pub(crate) fn gen_function_call_arguments_tabular(
     arguments: &ast::Arguments,
     table_columns: usize,
     table_rows: usize,
@@ -268,7 +268,7 @@ pub fn gen_function_call_arguments_tabular(
     Ok(formatted)
 }
 
-pub fn gen_function_call_statement(
+pub(crate) fn gen_function_call_statement(
     function_call_statement: &ast::FunctionCallStatement
 ) -> Result<PrintItemBuffer, FormatDocumentError> {
     // ==== Parse ====

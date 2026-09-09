@@ -12,7 +12,7 @@ use crate::{
     reporting::FormatDocumentResult,
 };
 
-pub fn gen_diagnostic_control(
+pub(crate) fn gen_diagnostic_control(
     node: &ast::DiagnosticControl
 ) -> FormatDocumentResult<PrintItemBuffer> {
     let mut syntax = syntax_iter(node.syntax());
@@ -44,7 +44,7 @@ pub fn gen_diagnostic_control(
     Ok(formatted)
 }
 
-pub fn gen_severity_control_name(
+pub(crate) fn gen_severity_control_name(
     node: &ast::SeverityControlName
 ) -> FormatDocumentResult<PrintItemBuffer> {
     let mut syntax = syntax_iter(node.syntax());
@@ -57,7 +57,7 @@ pub fn gen_severity_control_name(
     Ok(formatted)
 }
 
-pub fn gen_diagnostic_rule_name(
+pub(crate) fn gen_diagnostic_rule_name(
     node: &ast::DiagnosticRuleName
 ) -> FormatDocumentResult<PrintItemBuffer> {
     let mut syntax = syntax_iter(node.syntax());

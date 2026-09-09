@@ -11,7 +11,7 @@ use crate::{
 };
 
 #[expect(clippy::unnecessary_wraps, reason = "Intentional api for generators")]
-pub fn gen_node_syntax_verbatim(
+pub(crate) fn gen_node_syntax_verbatim(
     node: &NodeOrToken<SyntaxNode, SyntaxToken>
 ) -> FormatDocumentResult<PrintItemBuffer> {
     let verbatim_text = node.to_string();

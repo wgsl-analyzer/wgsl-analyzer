@@ -3,7 +3,7 @@ use expect_test::expect;
 use crate::test_util::{check, check_range};
 
 #[test]
-pub fn ignore_on_function_simple() {
+pub(crate) fn ignore_on_function_simple() {
     check(
         "
 // @wgslfmt(ignore)
@@ -55,7 +55,7 @@ a=1
 }
 
 #[test]
-pub fn ignore_on_assignment_mat3x3() {
+pub(crate) fn ignore_on_assignment_mat3x3() {
     check(
         "
 fn main() {
@@ -83,7 +83,7 @@ fn main() {
 }
 
 #[test]
-pub fn ignore_on_assignment_array() {
+pub(crate) fn ignore_on_assignment_array() {
     check(
         "
 fn main() {
@@ -111,7 +111,7 @@ fn main() {
 }
 
 #[test]
-pub fn ignore_on_if_simple() {
+pub(crate) fn ignore_on_if_simple() {
     check(
         "
 fn main() {
@@ -135,7 +135,7 @@ fn main() {
 }
 
 #[test]
-pub fn ignore_on_if_with_emptyline() {
+pub(crate) fn ignore_on_if_with_emptyline() {
     check(
         "
 fn main() {
@@ -161,7 +161,7 @@ fn main() {
 }
 
 #[test]
-pub fn ignore_on_if_with_double_emptyline() {
+pub(crate) fn ignore_on_if_with_double_emptyline() {
     check(
         "
 fn main() {
@@ -191,7 +191,7 @@ fn main() {
 }
 
 #[test]
-pub fn ignore_on_statement() {
+pub(crate) fn ignore_on_statement() {
     check(
         "
 fn main() {
@@ -211,7 +211,7 @@ fn main() {
 }
 
 #[test]
-pub fn ignore_on_fn_param() {
+pub(crate) fn ignore_on_fn_param() {
     check(
         "
 fn main() {
@@ -243,7 +243,7 @@ let a = thing(
 }
 
 #[test]
-pub fn ignore_on_fn_arg() {
+pub(crate) fn ignore_on_fn_arg() {
     check(
         "
 fn bla(/* @wgslfmt(ignore) */ a:             u32          ,          b: u32) {}
@@ -255,7 +255,7 @@ fn bla(/* @wgslfmt(ignore) */ a:             u32          ,          b: u32) {}
 }
 
 #[test]
-pub fn ignore_within_source_file_simple() {
+pub(crate) fn ignore_within_source_file_simple() {
     check(
         "
         // @!wgslfmt(ignore)
@@ -267,7 +267,7 @@ fn bla(a:             u32          ,          b: u32) {}",
 }
 
 #[test]
-pub fn ignore_within_source_file_trailing_newlines() {
+pub(crate) fn ignore_within_source_file_trailing_newlines() {
     check(
         "
         // @!wgslfmt(ignore)
@@ -287,7 +287,7 @@ fn bla(a:             u32          ,          b: u32) {}
 }
 
 #[test]
-pub fn ignore_within_compound_statement() {
+pub(crate) fn ignore_within_compound_statement() {
     check(
         "
 fn
@@ -331,7 +331,7 @@ a=1
 }
 
 #[test]
-pub fn ignore_within_format_range() {
+pub(crate) fn ignore_within_format_range() {
     check_range(
         "
 fn a() {
@@ -354,7 +354,7 @@ fn a() {
 }
 
 #[test]
-pub fn ignore_on_fn_with_attr_before_pragma() {
+pub(crate) fn ignore_on_fn_with_attr_before_pragma() {
     check(
         "
         @compute @workgroup_size(    1,2,

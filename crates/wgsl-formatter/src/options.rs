@@ -1,8 +1,8 @@
-pub struct ExperimentalCondCompMode {
-    pub unscope_compound_statements_create_indent: bool,
-    pub dedent_condcomp_with_body: bool,
-    pub dedent_condcomp_without_body: bool,
-    pub condcomp_body_braces_on_same_line: bool,
+pub(crate) struct ExperimentalCondCompMode {
+    pub(crate) unscope_compound_statements_create_indent: bool,
+    pub(crate) dedent_condcomp_with_body: bool,
+    pub(crate) dedent_condcomp_without_body: bool,
+    pub(crate) condcomp_body_braces_on_same_line: bool,
 }
 
 /// These are awful settings because as condcomps with and without body are indented differently, this leads to
@@ -103,4 +103,4 @@ const DEDENTATION_OVERLOAD: ExperimentalCondCompMode = ExperimentalCondCompMode 
     condcomp_body_braces_on_same_line: true,
 };
 
-pub const TEMP_EXPERIMENTAL_CONDCOMP_MODE: ExperimentalCondCompMode = CONVENTIONAL_BORING_SETTINGS;
+pub(crate) const TEMP_EXPERIMENTAL_CONDCOMP_MODE: ExperimentalCondCompMode = CONVENTIONAL_BORING_SETTINGS;

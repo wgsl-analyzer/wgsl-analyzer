@@ -6,7 +6,7 @@ use crate::{
 };
 
 #[test]
-pub fn format_var_declaration_dont_break_var_template_args() {
+pub(crate) fn format_var_declaration_dont_break_var_template_args() {
     check_with_options(
         "
         //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
@@ -30,7 +30,7 @@ pub fn format_var_declaration_dont_break_var_template_args() {
 }
 
 #[test]
-pub fn format_var_declaration_do_break_type_template_args() {
+pub(crate) fn format_var_declaration_do_break_type_template_args() {
     check_with_options(
         "
         //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|

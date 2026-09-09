@@ -12,7 +12,7 @@ use crate::{
     reporting::FormatDocumentResult,
 };
 
-pub fn gen_continue_statement(
+pub(crate) fn gen_continue_statement(
     node: &ast::ContinueStatement
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====

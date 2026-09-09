@@ -12,7 +12,7 @@ use crate::{
 
 /// A piece of "trivia" that is associated to a content inside a [`NodeWithTrivia`].
 #[derive(Clone, Debug)]
-pub enum NodeTriviaItem {
+pub(crate) enum NodeTriviaItem {
     /// A piece of the AST that should not be included in the formatted output.
     Discarded(NodeOrToken<SyntaxNode, SyntaxToken>),
     /// Some amount of blank space.
@@ -29,7 +29,7 @@ pub enum NodeTriviaItem {
 
 impl NodeTriviaItem {
     #[must_use]
-    pub fn syntax(&self) -> NodeOrToken<SyntaxNode, SyntaxToken> {
+    pub(crate) fn syntax(&self) -> NodeOrToken<SyntaxNode, SyntaxToken> {
         match self {
             Self::LineSpacing(blankspace) => match blankspace {
                 Blankspace::LineBreak(syntax_token)
@@ -54,7 +54,7 @@ impl NodeTriviaItem {
     }
 
     /// Add this item back onto the provided [`SyntaxIter`].
-    pub fn put_back(
+    pub(crate) fn put_back(
         self,
         syntax: &mut SyntaxIter,
     ) {
@@ -64,7 +64,7 @@ impl NodeTriviaItem {
 
 /// The "content" that is associated with trivia inside a [`NodeWithTrivia`].
 #[derive(Clone, Debug)]
-pub enum NodeWithTriviaContent {
+pub(crate) enum NodeWithTriviaContent {
     /// There is no content, just trivia.
     ///
     /// This is useful for (for example) freestanding comments that are not attached to anything.
@@ -94,12 +94,12 @@ pub enum NodeWithTriviaContent {
 
 impl NodeWithTriviaContent {
     #[must_use]
-    pub const fn is_empty(&self) -> bool {
+    pub(crate) const fn is_empty(&self) -> bool {
         matches!(self, Self::NoContent | Self::End)
     }
 
     #[must_use]
-    pub const fn as_content(&self) -> Option<&NodeOrToken<SyntaxNode, SyntaxToken>> {
+    pub(crate) const fn as_content(&self) -> Option<&NodeOrToken<SyntaxNode, SyntaxToken>> {
         match self {
             Self::Content(node_or_token) => Some(node_or_token),
             Self::NoContent | Self::End => None,
@@ -110,7 +110,7 @@ impl NodeWithTriviaContent {
     }
 
     #[must_use]
-    pub fn into_content(self) -> Option<NodeOrToken<SyntaxNode, SyntaxToken>> {
+    pub(crate) fn into_content(self) -> Option<NodeOrToken<SyntaxNode, SyntaxToken>> {
         match self {
             Self::Content(node_or_token) => Some(node_or_token),
             Self::NoContent | Self::End => None,
@@ -120,7 +120,7 @@ impl NodeWithTriviaContent {
         }
     }
 
-    pub fn put_back(
+    pub(crate) fn put_back(
         self,
         syntax: &mut SyntaxIter,
     ) {
@@ -152,25 +152,25 @@ impl NodeWithTriviaContent {
 ///
 /// See [`crate::ast_parse::parse_node_with`] for details on how trivia gets associated with content.
 #[derive(Clone, Debug)]
-pub struct NodeWithTrivia {
+pub(crate) struct NodeWithTrivia {
     /// Any trivia associated with the content, that preceded it in the source.
-    pub preceding_trivia: Vec<NodeTriviaItem>,
+    pub(crate) preceding_trivia: Vec<NodeTriviaItem>,
     /// The content that the trivia is associated with.
-    pub content: NodeWithTriviaContent,
+    pub(crate) content: NodeWithTriviaContent,
     /// Any trivia associated with the content, that succeeded it in the source.
-    pub succeeding_trivia: Vec<NodeTriviaItem>,
+    pub(crate) succeeding_trivia: Vec<NodeTriviaItem>,
 }
 
 impl NodeWithTrivia {
     /// Get the `SyntaxKind` of self, or [`None`] if self did not contain a content node.
-    pub fn kind(&self) -> Option<SyntaxKind> {
+    pub(crate) fn kind(&self) -> Option<SyntaxKind> {
         self.content
             .as_content()
             .map(NodeOrToken::<SyntaxNode, SyntaxToken>::kind)
     }
 
     /// Adds any syntax-nodes within self back onto the [`SyntaxIter`].
-    pub fn put_back(
+    pub(crate) fn put_back(
         self,
         syntax: &mut SyntaxIter,
     ) {
@@ -185,7 +185,7 @@ impl NodeWithTrivia {
 
     /// Returns `None` and [puts self back](Self::put_back) onto the
     /// [`SyntaxIter`] if [`Self::kind`] did not match the provided `SyntaxKind`.
-    pub fn only_if_kind(
+    pub(crate) fn only_if_kind(
         self,
         kind: SyntaxKind,
         syntax: &mut SyntaxIter,
@@ -201,7 +201,7 @@ impl NodeWithTrivia {
     /// Returns `None` and [puts self back](Self::put_back) onto the
     /// [`SyntaxIter`] if the content node of self cannot be cast into the
     /// specified `AstNode`.
-    pub fn only_if_ast_node<T>(
+    pub(crate) fn only_if_ast_node<T>(
         self,
         syntax: &mut SyntaxIter,
     ) -> Option<Self>
@@ -222,7 +222,7 @@ impl NodeWithTrivia {
 
     /// Like [`Self::expect_kind`] but does not error if self does not have content.
     #[track_caller]
-    pub fn expect_kind_optional(
+    pub(crate) fn expect_kind_optional(
         self,
         kind: SyntaxKind,
     ) -> FormatDocumentResult<Self> {
@@ -243,7 +243,7 @@ impl NodeWithTrivia {
     /// Returns a [`FormatDocumentError`] if self did not have a content node or that node
     /// did not match the given `SyntaxKind`.
     #[track_caller]
-    pub fn expect_kind(
+    pub(crate) fn expect_kind(
         self,
         kind: SyntaxKind,
     ) -> FormatDocumentResult<Self> {
@@ -264,7 +264,7 @@ impl NodeWithTrivia {
     /// Returns a [`FormatDocumentError`] if self did not have a content node or that node
     /// could not be cast into the given `AstNode`.
     #[track_caller]
-    pub fn expect_ast_node<T>(self) -> FormatDocumentResult<Self>
+    pub(crate) fn expect_ast_node<T>(self) -> FormatDocumentResult<Self>
     where
         T: AstNode,
     {
@@ -281,7 +281,7 @@ impl NodeWithTrivia {
 
     /// Like [`Self::expect_ast_node`] but does not error if self does not have content.
     #[track_caller]
-    pub fn expect_ast_node_optional<T>(self) -> FormatDocumentResult<Self>
+    pub(crate) fn expect_ast_node_optional<T>(self) -> FormatDocumentResult<Self>
     where
         T: AstNode,
     {
@@ -307,7 +307,7 @@ impl NodeWithTrivia {
     /// Returns a [`FormatDocumentError`] if self did not have a content node or that node
     /// could not be cast into the given `AstToken`.
     #[track_caller]
-    pub fn expect_ast_token<T>(self) -> FormatDocumentResult<Self>
+    pub(crate) fn expect_ast_token<T>(self) -> FormatDocumentResult<Self>
     where
         T: AstToken,
     {
@@ -324,13 +324,13 @@ impl NodeWithTrivia {
 
     /// Is the content of this node [`NodeWithTriviaContent::End`].
     #[must_use]
-    pub const fn is_end(&self) -> bool {
+    pub(crate) const fn is_end(&self) -> bool {
         matches!(self.content, NodeWithTriviaContent::End)
     }
 
     /// Is the content of this node and any associated trivia purely made up of whitespace?
     #[must_use]
-    pub fn is_whitespace(&self) -> bool {
+    pub(crate) fn is_whitespace(&self) -> bool {
         self.content.is_empty()
             && self.preceding_trivia.iter().all(|trivia| {
                 matches!(
@@ -348,7 +348,7 @@ impl NodeWithTrivia {
 
     /// Does this node have a nonempty content?
     #[must_use]
-    pub const fn has_content(&self) -> bool {
+    pub(crate) const fn has_content(&self) -> bool {
         matches!(
             self.content,
             NodeWithTriviaContent::Content(_) | NodeWithTriviaContent::IgnoredContent { .. }
@@ -356,7 +356,7 @@ impl NodeWithTrivia {
     }
 
     #[must_use]
-    pub fn content(&self) -> Option<NodeOrToken<SyntaxNode, SyntaxToken>> {
+    pub(crate) fn content(&self) -> Option<NodeOrToken<SyntaxNode, SyntaxToken>> {
         match &self.content {
             NodeWithTriviaContent::Content(node_or_token) => Some(node_or_token.clone()),
             NodeWithTriviaContent::NoContent
@@ -367,7 +367,7 @@ impl NodeWithTrivia {
 
     /// Trims off any linebreaks that would be at the beginning of the preceding trivia.
     #[must_use]
-    pub fn trim_starting_linebreaks(mut self) -> Self {
+    pub(crate) fn trim_starting_linebreaks(mut self) -> Self {
         for item in &mut self.preceding_trivia {
             match item {
                 NodeTriviaItem::LineSpacing(Blankspace::LineBreak(content)) => {

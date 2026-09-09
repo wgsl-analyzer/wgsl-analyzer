@@ -3,7 +3,7 @@ use expect_test::expect;
 use crate::test_util::{check, check_comments};
 
 #[test]
-pub fn format_increment_decrement_statement_simple() {
+pub(crate) fn format_increment_decrement_statement_simple() {
     check(
         "fn main() {
         a
@@ -23,7 +23,7 @@ pub fn format_increment_decrement_statement_simple() {
 }
 
 #[test]
-pub fn format_increment_decrement_statement_indexed() {
+pub(crate) fn format_increment_decrement_statement_indexed() {
     check(
         "fn main() {
         a[0]
@@ -43,7 +43,7 @@ pub fn format_increment_decrement_statement_indexed() {
 }
 
 #[test]
-pub fn format_increment_decrement_statement_within_for() {
+pub(crate) fn format_increment_decrement_statement_within_for() {
     check(
         "fn main() {
         for(var a = 0; a < 17; a++) {}
@@ -59,7 +59,7 @@ pub fn format_increment_decrement_statement_within_for() {
 }
 
 #[test]
-pub fn format_comments_in_increment_decrement_statement_simple() {
+pub(crate) fn format_comments_in_increment_decrement_statement_simple() {
     check_comments(
         "fn main() { ## a ## ++ ## ; ## ## b ## -- ## ; ## }",
         expect![[r#"
@@ -84,7 +84,7 @@ pub fn format_comments_in_increment_decrement_statement_simple() {
 }
 
 #[test]
-pub fn format_comments_in_increment_decrement_statement_index() {
+pub(crate) fn format_comments_in_increment_decrement_statement_index() {
     check_comments(
         "fn main() { ## a ## [ ## 0 ## ] ## ++ ## ; ## ## b ## [ ## 0 ## ] ## -- ## ; ## }",
         expect![[r#"

@@ -6,7 +6,7 @@ use crate::{
 };
 
 #[test]
-pub fn format_infix_expr_very_long_let_statement() {
+pub(crate) fn format_infix_expr_very_long_let_statement() {
     check(
         "fn main() {
         let a = 111111111111111111111 + 2222222222222222222222222 + 3333333333333333333333333333 + 4444444444444444444444 + 555555555555555555555 + 666666666666666666666666 + 777777777777777777777 + 88888888888888888888 + 999999999999999999999;
@@ -23,7 +23,7 @@ pub fn format_infix_expr_very_long_let_statement() {
 }
 
 #[test]
-pub fn format_infix_grouping_in_very_long_let_statement() {
+pub(crate) fn format_infix_grouping_in_very_long_let_statement() {
     // a: The lines get split up between the short number groupings, as our control.
     // b: Now the short number groupings are within parens and should have a lower precedence of being split up
     // c: But if the short number groupings would be too long, they again get split up.
@@ -62,7 +62,7 @@ pub fn format_infix_grouping_in_very_long_let_statement() {
 }
 
 #[test]
-pub fn format_comment_position_in_multiline_expression() {
+pub(crate) fn format_comment_position_in_multiline_expression() {
     check(
         "fn main() {
         const a_multiline_binding = 1 // The thing
@@ -85,7 +85,7 @@ pub fn format_comment_position_in_multiline_expression() {
 }
 
 #[test]
-pub fn format_infix_expr_very_long_break_outer_first() {
+pub(crate) fn format_infix_expr_very_long_break_outer_first() {
     check_with_options(
         "
         //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
@@ -112,7 +112,7 @@ pub fn format_infix_expr_very_long_break_outer_first() {
 }
 
 #[test]
-pub fn format_field_expr_deeply_nested() {
+pub(crate) fn format_field_expr_deeply_nested() {
     check_with_options(
         "
         //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
@@ -135,7 +135,7 @@ pub fn format_field_expr_deeply_nested() {
 }
 
 #[test]
-pub fn format_index_expr_chained_breaks_in_the_middle() {
+pub(crate) fn format_index_expr_chained_breaks_in_the_middle() {
     check_with_options(
         "
         //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
@@ -159,7 +159,7 @@ pub fn format_index_expr_chained_breaks_in_the_middle() {
 }
 
 #[test]
-pub fn format_index_expr_nested_breaks_outside_in() {
+pub(crate) fn format_index_expr_nested_breaks_outside_in() {
     check_with_options(
         "
         //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
@@ -185,7 +185,7 @@ pub fn format_index_expr_nested_breaks_outside_in() {
 }
 
 #[test]
-pub fn format_prefix_expr_no_space_after_prefix() {
+pub(crate) fn format_prefix_expr_no_space_after_prefix() {
     check(
         "fn main() {
         let a = - aaaa;
@@ -199,7 +199,7 @@ pub fn format_prefix_expr_no_space_after_prefix() {
 }
 
 #[test]
-pub fn format_paren_expr_with_break_inside() {
+pub(crate) fn format_paren_expr_with_break_inside() {
     check(
         "fn main() {
         let a = 1+(1 + // Hi
@@ -215,7 +215,7 @@ pub fn format_paren_expr_with_break_inside() {
 }
 
 #[test]
-pub fn format_index_expr_with_break_inside() {
+pub(crate) fn format_index_expr_with_break_inside() {
     check(
         "fn main() {
         let a = a[1 + // Hi
@@ -233,7 +233,7 @@ pub fn format_index_expr_with_break_inside() {
 }
 
 #[test]
-pub fn format_prefer_breaking_somewhat_according_to_precedence() {
+pub(crate) fn format_prefer_breaking_somewhat_according_to_precedence() {
     // https://discord.com/channels/1289346613185351722/1341941812675481680/1540094874739802243
     check_with_options(
         "fn main() {

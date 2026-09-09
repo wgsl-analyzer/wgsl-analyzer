@@ -3,7 +3,7 @@ use expect_test::expect;
 use crate::test_util::{check, check_comments};
 
 #[test]
-pub fn format_switch_statement_case_without_colon() {
+pub(crate) fn format_switch_statement_case_without_colon() {
     check(
         "fn main() {
             switch(a) {
@@ -23,7 +23,7 @@ pub fn format_switch_statement_case_without_colon() {
 }
 
 #[test]
-pub fn format_switch_statement_default_amidst_other_options_in_one_case() {
+pub(crate) fn format_switch_statement_default_amidst_other_options_in_one_case() {
     check(
         "fn main() {
             switch(a) {
@@ -43,7 +43,7 @@ pub fn format_switch_statement_default_amidst_other_options_in_one_case() {
 }
 
 #[test]
-pub fn format_switch_statement_case_default_only() {
+pub(crate) fn format_switch_statement_case_default_only() {
     check(
         "fn main() {
             switch(a) {
@@ -63,7 +63,7 @@ pub fn format_switch_statement_case_default_only() {
 }
 
 #[test]
-pub fn format_comments_in_switch_statement_case_default_only() {
+pub(crate) fn format_comments_in_switch_statement_case_default_only() {
     check(
         "fn main() {
             switch(a) {
@@ -103,7 +103,7 @@ pub fn format_comments_in_switch_statement_case_default_only() {
 }
 
 #[test]
-pub fn format_switch_statement_trailing_comma() {
+pub(crate) fn format_switch_statement_trailing_comma() {
     check(
         "fn main() {
             switch(a) {
@@ -123,7 +123,7 @@ pub fn format_switch_statement_trailing_comma() {
 }
 
 #[test]
-pub fn format_switch_statement_comma_and_colon() {
+pub(crate) fn format_switch_statement_comma_and_colon() {
     check(
         "fn main() {
             switch(a) {
@@ -143,7 +143,7 @@ pub fn format_switch_statement_comma_and_colon() {
 }
 
 #[test]
-pub fn format_switch_statement_const_expression() {
+pub(crate) fn format_switch_statement_const_expression() {
     check(
         "fn main() {
             switch(a) {
@@ -163,7 +163,7 @@ pub fn format_switch_statement_const_expression() {
 }
 
 #[test]
-pub fn format_switch_statement_block_comments_in_case_default_only() {
+pub(crate) fn format_switch_statement_block_comments_in_case_default_only() {
     check_comments(
         "fn main() {
             switch(a) {
@@ -194,7 +194,7 @@ pub fn format_switch_statement_block_comments_in_case_default_only() {
 }
 
 #[test]
-pub fn format_switch_statement_comments_in_average_switch() {
+pub(crate) fn format_switch_statement_comments_in_average_switch() {
     check_comments(
         "fn main() { ## switch ## ( ## a ## ) ## { ## case ## 1 ## , ## default ## { ## let a = 1; ## } ## case ## 3 ## { ## let a = 1; ## } ## case ## default ## { ## let a = 1; ## } } }",
         expect![[r#"
@@ -244,7 +244,7 @@ pub fn format_switch_statement_comments_in_average_switch() {
 }
 
 #[test]
-pub fn format_block_comments_around_empty_switch_statement() {
+pub(crate) fn format_block_comments_around_empty_switch_statement() {
     check(
         "
         fn main() {
@@ -263,7 +263,7 @@ pub fn format_block_comments_around_empty_switch_statement() {
     );
 }
 #[test]
-pub fn format_block_comments_around_nonempty_switch_statement() {
+pub(crate) fn format_block_comments_around_nonempty_switch_statement() {
     check(
         "
         fn main() {

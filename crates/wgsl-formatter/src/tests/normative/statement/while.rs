@@ -3,7 +3,7 @@ use expect_test::expect;
 use crate::test_util::check;
 
 #[test]
-pub fn format_while_statement_empty_gets_collapsed() {
+pub(crate) fn format_while_statement_empty_gets_collapsed() {
     check(
         "fn main() {
         while true {
@@ -20,7 +20,7 @@ pub fn format_while_statement_empty_gets_collapsed() {
 }
 
 #[test]
-pub fn format_while_statement_removes_needless_parentheses() {
+pub(crate) fn format_while_statement_removes_needless_parentheses() {
     check(
         "fn main() {
         while (1+2==3) {}
@@ -36,7 +36,7 @@ pub fn format_while_statement_removes_needless_parentheses() {
 }
 
 #[test]
-pub fn format_while_statement_indent_multiline_condition() {
+pub(crate) fn format_while_statement_indent_multiline_condition() {
     check(
         "fn main() {
         while aaaaaaaaaaaaa + bbbbbbbbbbbbbbbbbb // Force break

@@ -16,7 +16,7 @@ use crate::{
     trivia::{NodeTriviaItem, NodeWithTrivia},
 };
 
-pub fn gen_global_compound_declaration(
+pub(crate) fn gen_global_compound_declaration(
     with_trivia: &NodeWithTrivia,
     node: &GlobalCompoundDeclaration,
 ) -> FormatDocumentResult<PrintItemBuffer> {

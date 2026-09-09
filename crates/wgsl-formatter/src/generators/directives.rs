@@ -18,7 +18,7 @@ use crate::{
     },
     reporting::FormatDocumentResult,
 };
-pub fn gen_enable_extension_name(
+pub(crate) fn gen_enable_extension_name(
     node: &ast::EnableExtensionName
 ) -> FormatDocumentResult<PrintItemBuffer> {
     let mut syntax = syntax_iter(node.syntax());
@@ -32,7 +32,7 @@ pub fn gen_enable_extension_name(
     Ok(formatted)
 }
 
-pub fn gen_enable_directive(node: &ast::EnableDirective) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_enable_directive(node: &ast::EnableDirective) -> FormatDocumentResult<PrintItemBuffer> {
     let mut syntax = syntax_iter(node.syntax());
 
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::Enable)?;
@@ -72,7 +72,7 @@ pub fn gen_enable_directive(node: &ast::EnableDirective) -> FormatDocumentResult
     Ok(formatted)
 }
 
-pub fn gen_language_extension_name(
+pub(crate) fn gen_language_extension_name(
     node: &ast::LanguageExtensionName
 ) -> FormatDocumentResult<PrintItemBuffer> {
     let mut syntax = syntax_iter(node.syntax());
@@ -86,7 +86,7 @@ pub fn gen_language_extension_name(
     Ok(formatted)
 }
 
-pub fn gen_requires_directive(
+pub(crate) fn gen_requires_directive(
     node: &ast::RequiresDirective
 ) -> FormatDocumentResult<PrintItemBuffer> {
     let mut syntax = syntax_iter(node.syntax());
@@ -129,7 +129,7 @@ pub fn gen_requires_directive(
     Ok(formatted)
 }
 
-pub fn gen_diagnostic_directive(
+pub(crate) fn gen_diagnostic_directive(
     node: &ast::DiagnosticDirective
 ) -> FormatDocumentResult<PrintItemBuffer> {
     let mut syntax = syntax_iter(node.syntax());

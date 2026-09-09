@@ -6,7 +6,7 @@ use crate::{
 };
 
 #[test]
-pub fn format_naked_infix_exprs_out_of_scope() {
+pub(crate) fn format_naked_infix_exprs_out_of_scope() {
     assert_out_of_scope(
         "fn main() {
         1
@@ -19,7 +19,7 @@ pub fn format_naked_infix_exprs_out_of_scope() {
 }
 
 #[test]
-pub fn format_infix_expr_simple() {
+pub(crate) fn format_infix_expr_simple() {
     check(
         "fn main() {
         let a = 1+1;
@@ -33,7 +33,7 @@ pub fn format_infix_expr_simple() {
 }
 
 #[test]
-pub fn format_infix_expr_long() {
+pub(crate) fn format_infix_expr_long() {
     check(
         "fn main() {
         let a = 1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1+1;
@@ -49,7 +49,7 @@ pub fn format_infix_expr_long() {
 }
 
 #[test]
-pub fn format_comments_in_infix_expr() {
+pub(crate) fn format_comments_in_infix_expr() {
     check_comments(
         "fn main() {
         let a = ## 1 ## + ## 1 ## ; ##

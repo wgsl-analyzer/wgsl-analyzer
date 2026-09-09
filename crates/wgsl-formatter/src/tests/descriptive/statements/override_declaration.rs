@@ -3,7 +3,7 @@ use expect_test::expect;
 use crate::test_util::{check, check_comments};
 
 #[test]
-pub fn format_override_declaration_simple_literal_1() {
+pub(crate) fn format_override_declaration_simple_literal_1() {
     check(
         "
         override
@@ -19,7 +19,7 @@ pub fn format_override_declaration_simple_literal_1() {
 }
 
 #[test]
-pub fn format_override_declaration_simple_statement_1() {
+pub(crate) fn format_override_declaration_simple_statement_1() {
     check(
         "
         override
@@ -39,7 +39,7 @@ pub fn format_override_declaration_simple_statement_1() {
 }
 
 #[test]
-pub fn format_override_declaration_simple_statement_with_trailing_comment() {
+pub(crate) fn format_override_declaration_simple_statement_with_trailing_comment() {
     check(
         "
         override a_multiline_binding = 1 // The thing
@@ -60,7 +60,7 @@ pub fn format_override_declaration_simple_statement_with_trailing_comment() {
 }
 
 #[test]
-pub fn format_comment_in_override_declaration() {
+pub(crate) fn format_comment_in_override_declaration() {
     check_comments(
         "
         ## override ## a ## = ## 1 ## ; ##
@@ -80,7 +80,7 @@ pub fn format_comment_in_override_declaration() {
 }
 
 #[test]
-pub fn format_override_declaration_keeps_line_comment_in_same_place_same_line() {
+pub(crate) fn format_override_declaration_keeps_line_comment_in_same_place_same_line() {
     check(
         "
 
@@ -95,7 +95,7 @@ pub fn format_override_declaration_keeps_line_comment_in_same_place_same_line() 
 }
 
 #[test]
-pub fn format_override_declaration_with_type() {
+pub(crate) fn format_override_declaration_with_type() {
     check(
         "
 
@@ -114,7 +114,7 @@ pub fn format_override_declaration_with_type() {
 }
 
 #[test]
-pub fn format_override_declaration_with_complex_type() {
+pub(crate) fn format_override_declaration_with_complex_type() {
     check(
         "
 
@@ -137,7 +137,7 @@ pub fn format_override_declaration_with_complex_type() {
 }
 
 #[test]
-pub fn format_override_declaration_with_comments_in_complex_type() {
+pub(crate) fn format_override_declaration_with_comments_in_complex_type() {
     check_comments(
         "
             ## override ## a ## : ## array ## < ## u32 ## , ## 28 ## > ## = ## 1 ## ; ##

@@ -8,23 +8,23 @@
 #![cfg_attr(doc, doc = include_str!("../architecture.md"))]
 #![warn(unused)]
 
-pub mod generators;
+pub(crate) mod generators;
 #[cfg(test)]
 mod tests;
 
 #[cfg(test)]
-pub mod test_util;
+pub(crate) mod test_util;
 
-pub mod ast_parse;
-pub mod blankspace;
-pub mod context_policies;
-pub mod format;
-pub mod ignore;
-pub mod multiline_group;
-pub mod options;
-pub mod print_item_buffer;
-pub mod reporting;
-pub mod trivia;
+pub(crate) mod ast_parse;
+pub(crate) mod blankspace;
+pub(crate) mod context_policies;
+pub(crate) mod format;
+pub(crate) mod ignore;
+pub(crate) mod multiline_group;
+pub(crate) mod options;
+pub(crate) mod print_item_buffer;
+pub(crate) mod reporting;
+pub(crate) mod trivia;
 
 use std::str::FromStr;
 
@@ -74,7 +74,7 @@ pub enum LineBreakStyle {
 
 impl LineBreakStyle {
     #[must_use]
-    pub const fn text(self) -> &'static str {
+    pub(crate) const fn text(self) -> &'static str {
         match self {
             Self::LineFeed => "\n",
             Self::CarriageReturnLineFeed => "\r\n",

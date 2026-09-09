@@ -1,5 +1,5 @@
 //! The working structure that the generator functions emit formatted text into.
-pub mod spacing_request;
+pub(crate) mod spacing_request;
 
 use dprint_core::formatting::{Anchor, Info, PrintItem, PrintItems, Signal};
 
@@ -70,30 +70,30 @@ use crate::print_item_buffer::spacing_request::Request;
 /// * Another layer on top of dprint's IR, which doesn't feel like it should be necessary
 ///
 #[derive(Default)]
-pub struct PrintItemBuffer {
+pub(crate) struct PrintItemBuffer {
     /// Items that are emitted before [`Self::start_request`] gets applied.
     ///
     /// If this [`PrintItemBuffer`] is passed to [`PrintItemBuffer::extend`], these
     /// items get moved before the other buffer's [`Self::end_request`].
-    pub items_before_start_request: PrintItems,
+    pub(crate) items_before_start_request: PrintItems,
 
     /// The request that will be emitted before [`Self::items`].
-    pub start_request: Request,
+    pub(crate) start_request: Request,
 
     /// The items contained in this buffer.
     ///
     /// If this is `Some` (even if the `PrintItems` themselves are empty) this
     /// signals to us that no incoming requests can be merged with [`Self::start_request`].
-    pub items: Option<PrintItems>,
+    pub(crate) items: Option<PrintItems>,
 
     /// The request that will be emitted after [`Self::items`].
-    pub end_request: Request,
+    pub(crate) end_request: Request,
 
     /// Items that are emitted before [`Self::start_request`] gets applied.
     ///
     /// If this [`PrintItemBuffer`] is passed to [`PrintItemBuffer::extend`], these
     /// items get moved after the other buffer's [`Self::start_request`].
-    pub items_after_end_request: PrintItems,
+    pub(crate) items_after_end_request: PrintItems,
 }
 
 impl PrintItemBuffer {
@@ -104,7 +104,7 @@ impl PrintItemBuffer {
     /// Generally you don't need to worry about when Requests are combined, as that
     /// procedure is commutative - so conceptually Requests only get combined once
     /// all the Buffers get combined together (with [`Self::extend`]).
-    pub fn request(
+    pub(crate) fn request(
         &mut self,
         incoming_request: Request,
     ) {
@@ -123,7 +123,7 @@ impl PrintItemBuffer {
     }
 
     #[must_use]
-    pub fn finish(self) -> PrintItems {
+    pub(crate) fn finish(self) -> PrintItems {
         let mut pi = PrintItems::default();
         pi.extend(self.items_before_start_request);
         self.start_request.resolve(&mut pi);
@@ -165,7 +165,7 @@ impl PrintItemBuffer {
     /// );
     /// assert_eq!(formatted, "| |  |")
     /// ```
-    pub fn apply_end_request(&mut self) {
+    pub(crate) fn apply_end_request(&mut self) {
         let items_after_end_requests = std::mem::take(&mut self.items_after_end_request);
 
         let items = self.items.get_or_insert_default();
@@ -175,7 +175,7 @@ impl PrintItemBuffer {
     }
 
     /// Appends another [`PrintItemBuffer`] onto this one.
-    pub fn extend(
+    pub(crate) fn extend(
         &mut self,
         other: Self,
     ) {
@@ -242,7 +242,7 @@ impl PrintItemBuffer {
     ///
     /// # Panics
     /// If compiled with prefer-immediate-crash this function will panic if the string contains newlines or tabs.
-    pub fn push_string(
+    pub(crate) fn push_string(
         &mut self,
         string: String,
     ) {
@@ -264,7 +264,7 @@ impl PrintItemBuffer {
     /// Applies trailing requests and pushes a literal tab character to the buffer.
     ///
     /// Do not use this for indentation, use [`Self::start_indent_before_requests`] instead.
-    pub fn push_tab(&mut self) {
+    pub(crate) fn push_tab(&mut self) {
         self.apply_end_request();
         self.items.get_or_insert_default().push_signal(Signal::Tab);
     }
@@ -273,7 +273,7 @@ impl PrintItemBuffer {
     ///
     /// To obtain a [`dprint_core::formatting::StringContainer`] use [`dprint_core_macros::sc!`].
     /// If you need to push a string whose content is not known at compile time, use [`Self::push_string`].
-    pub fn push_sc(
+    pub(crate) fn push_sc(
         &mut self,
         sc: &'static dprint_core::formatting::StringContainer,
     ) {
@@ -285,7 +285,7 @@ impl PrintItemBuffer {
     ///
     /// This does not apply any trailing request, but instead inserts the info before them.
     /// If you need to add the info *after* trailing requests, manually call [`Self::apply_end_request`].
-    pub fn push_info_before_requests<T>(
+    pub(crate) fn push_info_before_requests<T>(
         &mut self,
         info: T,
     ) where
@@ -298,7 +298,7 @@ impl PrintItemBuffer {
     ///
     /// This does not apply any trailing request, but instead inserts the anchor before them.
     /// If you need to add the anchor *after* trailing requests, manually call [`Self::apply_end_request`].
-    pub fn push_anchor_before_requests<T>(
+    pub(crate) fn push_anchor_before_requests<T>(
         &mut self,
         anchor: T,
     ) where
@@ -311,7 +311,7 @@ impl PrintItemBuffer {
     ///
     /// This does not apply any trailing request, but instead inserts the condition before them.
     /// If you need to add the condition *after* trailing requests, manually call [`Self::apply_end_request`].
-    pub fn push_condition_before_requests(
+    pub(crate) fn push_condition_before_requests(
         &mut self,
         condition: dprint_core::formatting::Condition,
     ) {
@@ -326,7 +326,7 @@ impl PrintItemBuffer {
     ///
     /// This does not apply any trailing request, but instead inserts the reevaluation before them.
     /// If you need to add the reevaluation *after* trailing requests, manually call [`Self::apply_end_request`].
-    pub fn push_reevaluation_before_requests(
+    pub(crate) fn push_reevaluation_before_requests(
         &mut self,
         reeval: dprint_core::formatting::ConditionReevaluation,
     ) {
@@ -337,7 +337,7 @@ impl PrintItemBuffer {
     ///
     /// This does not apply any trailing request, but instead starts the indentation before them.
     /// If you need to start the indentation *after* trailing requests, manually call [`Self::apply_end_request`].
-    pub fn start_indent_before_requests(&mut self) {
+    pub(crate) fn start_indent_before_requests(&mut self) {
         self.push_item_before_requests(PrintItem::Signal(Signal::StartIndent));
     }
 
@@ -345,7 +345,7 @@ impl PrintItemBuffer {
     ///
     /// This does not apply any trailing request, but instead finishes the indentation before them.
     /// If you need to finish the indentation *after* trailing requests, manually call [`Self::apply_end_request`].
-    pub fn finish_indent_before_requests(&mut self) {
+    pub(crate) fn finish_indent_before_requests(&mut self) {
         self.push_item_before_requests(PrintItem::Signal(Signal::FinishIndent));
     }
 
@@ -355,7 +355,7 @@ impl PrintItemBuffer {
     ///
     /// This does not apply any trailing request, but instead starts ignoring indentation before them.
     /// If you need to do so *after* trailing requests, manually call [`Self::apply_end_request`].
-    pub fn start_ignoring_indent_before_requests(&mut self) {
+    pub(crate) fn start_ignoring_indent_before_requests(&mut self) {
         self.push_item_before_requests(PrintItem::Signal(Signal::StartIgnoringIndent));
     }
 
@@ -365,7 +365,7 @@ impl PrintItemBuffer {
     ///
     /// This does not apply any trailing request, but instead stops ignoring indentation before them.
     /// If you need to do so *after* trailing requests, manually call [`Self::apply_end_request`].
-    pub fn finish_ignoring_indent_before_requests(&mut self) {
+    pub(crate) fn finish_ignoring_indent_before_requests(&mut self) {
         self.push_item_before_requests(PrintItem::Signal(Signal::FinishIgnoringIndent));
     }
 
@@ -375,7 +375,7 @@ impl PrintItemBuffer {
     ///
     /// This does not apply any trailing request, but instead starts the newline group before them.
     /// If you need to do so *after* trailing requests, manually call [`Self::apply_end_request`].
-    pub fn start_new_line_group_before_requests(&mut self) {
+    pub(crate) fn start_new_line_group_before_requests(&mut self) {
         self.push_item_before_requests(PrintItem::Signal(Signal::StartNewLineGroup));
     }
 
@@ -386,7 +386,7 @@ impl PrintItemBuffer {
     /// This does not apply any trailing request, but instead queues the newline group to
     /// be started as soon as trailing requests are applied (either by pushing a concrete item
     /// or by calling [`Self::apply_end_request`]).
-    pub fn start_new_line_group_after_requests(&mut self) {
+    pub(crate) fn start_new_line_group_after_requests(&mut self) {
         self.push_item_after_requests(PrintItem::Signal(Signal::StartNewLineGroup));
     }
 
@@ -396,7 +396,7 @@ impl PrintItemBuffer {
     ///
     /// This does not apply any trailing request, but instead starts the newline group before them.
     /// If you need to do so *after* trailing requests, manually call [`Self::apply_end_request`].
-    pub fn finish_new_line_group_before_requests(&mut self) {
+    pub(crate) fn finish_new_line_group_before_requests(&mut self) {
         self.push_item_before_requests(PrintItem::Signal(Signal::FinishNewLineGroup));
     }
 
@@ -407,7 +407,7 @@ impl PrintItemBuffer {
     /// This does not apply any trailing request, but instead queues the newline group to
     /// be started as soon as trailing requests are applied (either by pushing a concrete item
     /// or by calling [`Self::apply_end_request`]).
-    pub fn finish_new_line_group_after_requests(&mut self) {
+    pub(crate) fn finish_new_line_group_after_requests(&mut self) {
         self.push_item_after_requests(PrintItem::Signal(Signal::FinishNewLineGroup));
     }
 }
@@ -434,7 +434,7 @@ mod tests {
     }
 
     #[test]
-    pub fn finish_empty_pib() {
+    pub(crate) fn finish_empty_pib() {
         let pib = PrintItemBuffer::default();
 
         let items = pib.finish();
@@ -443,7 +443,7 @@ mod tests {
     }
 
     #[test]
-    pub fn request_apply_and_nothing_else() {
+    pub(crate) fn request_apply_and_nothing_else() {
         let mut pib = PrintItemBuffer::default();
         pib.request(Request::expect(RequestItem::LineBreak));
         pib.apply_end_request();
@@ -458,7 +458,7 @@ mod tests {
     }
 
     #[test]
-    pub fn segmented_request_apply_and_nothing_else() {
+    pub(crate) fn segmented_request_apply_and_nothing_else() {
         let mut pib = PrintItemBuffer::default();
         pib.extend({
             let mut inner = PrintItemBuffer::default();
@@ -485,7 +485,7 @@ mod tests {
     }
 
     #[test]
-    pub fn segmented_request_apply_merge_with_outer() {
+    pub(crate) fn segmented_request_apply_merge_with_outer() {
         let mut pib = PrintItemBuffer::default();
         pib.request(Request::expect(RequestItem::LineBreak));
         pib.extend({

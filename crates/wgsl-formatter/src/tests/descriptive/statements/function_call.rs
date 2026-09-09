@@ -6,7 +6,7 @@ use crate::{
 };
 
 #[test]
-pub fn format_function_call_statement() {
+pub(crate) fn format_function_call_statement() {
     check(
         "fn main() {
         foo();
@@ -20,7 +20,7 @@ pub fn format_function_call_statement() {
 }
 
 #[test]
-pub fn format_2_function_call_statements() {
+pub(crate) fn format_2_function_call_statements() {
     check(
         "fn main() {
         foo();
@@ -36,7 +36,7 @@ pub fn format_2_function_call_statements() {
 }
 
 #[test]
-pub fn format_insanely_long_function_call_statement() {
+pub(crate) fn format_insanely_long_function_call_statement() {
     check_with_options(
         "fn main() {
         //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
@@ -60,7 +60,7 @@ pub fn format_insanely_long_function_call_statement() {
 }
 
 #[test]
-pub fn format_function_call_statement_with_arguments() {
+pub(crate) fn format_function_call_statement_with_arguments() {
     check(
         "fn main() {
         bla(12, bar(), 1 + vubble);
@@ -74,7 +74,7 @@ pub fn format_function_call_statement_with_arguments() {
 }
 
 #[test]
-pub fn format_comment_in_function_call_statement() {
+pub(crate) fn format_comment_in_function_call_statement() {
     check_comments(
         "fn main() {
         ## bla ## ( ## 12 ## , ## bar ## ( ## ) ## , ## 1 ## + ## vubble ## ) ## ; ##

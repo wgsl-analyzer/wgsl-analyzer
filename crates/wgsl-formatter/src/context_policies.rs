@@ -32,12 +32,12 @@ use crate::generators::{
 };
 
 #[must_use]
-pub fn statement_needs_semicolon_policy(node: &SyntaxNode) -> bool {
+pub(crate) fn statement_needs_semicolon_policy(node: &SyntaxNode) -> bool {
     !for_statement::skip_semicolons_rule(node)
 }
 
 #[must_use]
-pub fn expression_parens_are_irrelevant_policy(node: &SyntaxNode) -> bool {
+pub(crate) fn expression_parens_are_irrelevant_policy(node: &SyntaxNode) -> bool {
     if_statement::remove_if_condition_parens_rule(node)
         || switch_statement::remove_switch_subject_parens_rule(node)
         || while_statement::remove_while_condition_parens_rule(node)
@@ -50,11 +50,11 @@ pub fn expression_parens_are_irrelevant_policy(node: &SyntaxNode) -> bool {
 }
 
 #[must_use]
-pub fn collapse_one_liner_compound_statement_policy(node: &SyntaxNode) -> bool {
+pub(crate) fn collapse_one_liner_compound_statement_policy(node: &SyntaxNode) -> bool {
     switch_statement::collapse_one_liner_case_body_rule(node)
 }
 
 #[must_use]
-pub fn template_must_be_one_line_policy(node: &SyntaxNode) -> bool {
+pub(crate) fn template_must_be_one_line_policy(node: &SyntaxNode) -> bool {
     var_let_const_override_statement::template_must_be_on_one_line_rule(node)
 }

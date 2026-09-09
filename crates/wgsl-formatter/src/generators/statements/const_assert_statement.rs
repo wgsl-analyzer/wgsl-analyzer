@@ -15,7 +15,7 @@ use crate::{
     reporting::FormatDocumentResult,
 };
 
-pub fn gen_const_assert_statement(
+pub(crate) fn gen_const_assert_statement(
     statement: &ast::AssertStatement
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
@@ -43,7 +43,7 @@ pub fn gen_const_assert_statement(
 }
 
 #[must_use]
-pub fn remove_const_assert_condition_parens_rule(node: &SyntaxNode) -> bool {
+pub(crate) fn remove_const_assert_condition_parens_rule(node: &SyntaxNode) -> bool {
     let Some(parent) = node.parent() else {
         return false;
     };

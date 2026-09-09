@@ -6,7 +6,7 @@ use crate::{
 };
 
 #[test]
-pub fn format_fn_body_collapses_empty_body() {
+pub(crate) fn format_fn_body_collapses_empty_body() {
     check(
         "fn main() {
 
@@ -21,7 +21,7 @@ pub fn format_fn_body_collapses_empty_body() {
 
 /// This is debatable. For now it seems like a sane way to do it this way, and it causes less edge cases.
 #[test]
-pub fn format_fn_body_puts_block_comment_on_separate_line() {
+pub(crate) fn format_fn_body_puts_block_comment_on_separate_line() {
     check(
         "fn main() {/* Hello */}",
         expect![["
@@ -79,7 +79,7 @@ fn format_fn_header_with_parameters_spacing() {
 }
 
 #[test]
-pub fn format_fn_header_keep_comments_in_position() {
+pub(crate) fn format_fn_header_keep_comments_in_position() {
     // Following "the formatter should not unnecessarily move comments around" - if programmer wants them there, we will let them have it.
     check(
         "
@@ -194,7 +194,7 @@ fn format_fn_header_parameter_with_long_type_and_name() {
 }
 
 #[test]
-pub fn format_type_next_to_long_parameter_does_not_get_broken_into_multiple_lines() {
+pub(crate) fn format_type_next_to_long_parameter_does_not_get_broken_into_multiple_lines() {
     // https://discord.com/channels/1289346613185351722/1341941812675481680/1540061738232455332
     check_with_options(
         "

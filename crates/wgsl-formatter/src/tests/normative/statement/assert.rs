@@ -6,7 +6,7 @@ use crate::{
 };
 
 #[test]
-pub fn format_assert_statement_remove_parens() {
+pub(crate) fn format_assert_statement_remove_parens() {
     check(
         "
         const_assert(x<y);

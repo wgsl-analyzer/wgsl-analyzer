@@ -3,7 +3,7 @@ use expect_test::expect;
 use crate::test_util::{check, check_comments};
 
 #[test]
-pub fn format_index_expr_simple() {
+pub(crate) fn format_index_expr_simple() {
     check(
         "fn main() {
         let a =
@@ -22,7 +22,7 @@ pub fn format_index_expr_simple() {
 }
 
 #[test]
-pub fn format_index_expr_nested() {
+pub(crate) fn format_index_expr_nested() {
     check(
         "fn main() {
         let a =
@@ -40,7 +40,7 @@ pub fn format_index_expr_nested() {
 }
 
 #[test]
-pub fn format_index_expr_with_sensible_line_comments() {
+pub(crate) fn format_index_expr_with_sensible_line_comments() {
     check(
         "fn main() {
         let a =
@@ -61,7 +61,7 @@ pub fn format_index_expr_with_sensible_line_comments() {
 }
 
 #[test]
-pub fn format_comments_in_index_expr() {
+pub(crate) fn format_comments_in_index_expr() {
     check_comments(
         "fn main() {
         let a = ## foo ## [ ## 0 ## ] ## ; ##
@@ -86,7 +86,7 @@ pub fn format_comments_in_index_expr() {
 }
 
 #[test]
-pub fn format_comments_in_nested_index_expr() {
+pub(crate) fn format_comments_in_nested_index_expr() {
     check_comments(
         "fn main() {
         let a = ## foo ## [ ## 0 ## ] ## [ ## 1 ## ] ## ; ##

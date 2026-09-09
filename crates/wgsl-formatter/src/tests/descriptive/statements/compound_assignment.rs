@@ -3,7 +3,7 @@ use expect_test::expect;
 use crate::test_util::{check, check_comments};
 
 #[test]
-pub fn format_compound_assignment_simple_1() {
+pub(crate) fn format_compound_assignment_simple_1() {
     // See https://gpuweb.github.io/gpuweb/wgsl/#compound-assignment-sec for a list of possible operators.
     check(
         "fn main() {
@@ -35,7 +35,7 @@ fn format_compound_assignment_simple_2() {
 }
 
 #[test]
-pub fn format_compound_assignment_all_operators() {
+pub(crate) fn format_compound_assignment_all_operators() {
     // See https://gpuweb.github.io/gpuweb/wgsl/#compound-assignment-sec for a list of possible operators.
     check(
         "fn main() {
@@ -78,7 +78,7 @@ pub fn format_compound_assignment_all_operators() {
 }
 
 #[test]
-pub fn format_compound_assignment_to_index() {
+pub(crate) fn format_compound_assignment_to_index() {
     check(
         "fn main() {
         a[1] <<= 728;
@@ -96,7 +96,7 @@ pub fn format_compound_assignment_to_index() {
 }
 
 #[test]
-pub fn format_compound_assignment_to_field() {
+pub(crate) fn format_compound_assignment_to_field() {
     check(
         "fn main() {
         a.b <<= 728;
@@ -116,7 +116,7 @@ pub fn format_compound_assignment_to_field() {
 }
 
 #[test]
-pub fn format_compound_assignment_long_rhs_long_lhs() {
+pub(crate) fn format_compound_assignment_long_rhs_long_lhs() {
     check(
         "
         //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
@@ -145,7 +145,7 @@ pub fn format_compound_assignment_long_rhs_long_lhs() {
 }
 
 #[test]
-pub fn format_comments_in_compound_assignment_statement_simple() {
+pub(crate) fn format_comments_in_compound_assignment_statement_simple() {
     check_comments(
         "fn main() {
         ## a ## <<= ## b ## ; ##
@@ -168,7 +168,7 @@ pub fn format_comments_in_compound_assignment_statement_simple() {
 }
 
 #[test]
-pub fn format_comments_around_compound_assignment_statement() {
+pub(crate) fn format_comments_around_compound_assignment_statement() {
     check(
         "
         fn a() {let a = 1;} // A

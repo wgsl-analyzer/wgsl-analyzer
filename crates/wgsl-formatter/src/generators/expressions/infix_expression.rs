@@ -13,7 +13,7 @@ use crate::{
     reporting::FormatDocumentResult,
 };
 
-pub fn gen_infix_expression(
+pub(crate) fn gen_infix_expression(
     infix_expression: &ast::InfixExpression
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====

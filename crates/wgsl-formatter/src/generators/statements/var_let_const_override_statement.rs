@@ -16,25 +16,25 @@ use crate::{
     reporting::FormatDocumentResult,
 };
 
-pub fn gen_const_declaration_statement(
+pub(crate) fn gen_const_declaration_statement(
     statement: &ast::ConstantDeclaration
 ) -> FormatDocumentResult<PrintItemBuffer> {
     gen_var_let_const_override_statement(BindingKind::Const, statement.syntax())
 }
 
-pub fn gen_let_declaration_statement(
+pub(crate) fn gen_let_declaration_statement(
     statement: &ast::LetDeclaration
 ) -> FormatDocumentResult<PrintItemBuffer> {
     gen_var_let_const_override_statement(BindingKind::Let, statement.syntax())
 }
 
-pub fn gen_var_declaration_statement(
+pub(crate) fn gen_var_declaration_statement(
     statement: &ast::VariableDeclaration
 ) -> FormatDocumentResult<PrintItemBuffer> {
     gen_var_let_const_override_statement(BindingKind::Var, statement.syntax())
 }
 
-pub fn gen_override_declaration_statement(
+pub(crate) fn gen_override_declaration_statement(
     statement: &ast::OverrideDeclaration
 ) -> FormatDocumentResult<PrintItemBuffer> {
     gen_var_let_const_override_statement(BindingKind::Override, statement.syntax())
@@ -150,7 +150,7 @@ fn gen_var_let_const_override_statement(
 }
 
 #[must_use]
-pub fn template_must_be_on_one_line_rule(node: &syntax::SyntaxNode) -> bool {
+pub(crate) fn template_must_be_on_one_line_rule(node: &syntax::SyntaxNode) -> bool {
     let Some(parent) = node.parent() else {
         return false;
     };

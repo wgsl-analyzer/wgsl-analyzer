@@ -1,11 +1,11 @@
-pub mod comments;
+pub(crate) mod comments;
 
 use expect_test::expect;
 
 use crate::test_util::check;
 
 #[test]
-pub fn format_attr_simple() {
+pub(crate) fn format_attr_simple() {
     check(
         "
         @
@@ -20,7 +20,7 @@ pub fn format_attr_simple() {
 }
 
 #[test]
-pub fn format_attr_with_argument() {
+pub(crate) fn format_attr_with_argument() {
     check(
         "
         @
@@ -38,7 +38,7 @@ pub fn format_attr_with_argument() {
 }
 
 #[test]
-pub fn format_attr_with_multiple_arguments() {
+pub(crate) fn format_attr_with_multiple_arguments() {
     check(
         "
         @
@@ -58,7 +58,7 @@ pub fn format_attr_with_multiple_arguments() {
 }
 
 #[test]
-pub fn format_attr_with_text_arguments() {
+pub(crate) fn format_attr_with_text_arguments() {
     check(
         "
         @
@@ -77,7 +77,7 @@ pub fn format_attr_with_text_arguments() {
 }
 
 #[test]
-pub fn format_diagnostic_attr_simple_1() {
+pub(crate) fn format_diagnostic_attr_simple_1() {
     check(
         "
        @bla
@@ -97,7 +97,7 @@ pub fn format_diagnostic_attr_simple_1() {
 }
 
 #[test]
-pub fn format_forced_linebreak_in_attribute_arguments() {
+pub(crate) fn format_forced_linebreak_in_attribute_arguments() {
     check(
         "
         @foo(12, // Force break

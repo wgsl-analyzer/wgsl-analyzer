@@ -3,7 +3,7 @@ use expect_test::expect;
 use crate::test_util::check;
 
 #[test]
-pub fn format_type_simple() {
+pub(crate) fn format_type_simple() {
     check(
         "
         alias Test =
@@ -17,7 +17,7 @@ pub fn format_type_simple() {
 }
 
 #[test]
-pub fn format_type_with_template_simple() {
+pub(crate) fn format_type_with_template_simple() {
     check(
         "
         alias Test =
@@ -31,7 +31,7 @@ pub fn format_type_with_template_simple() {
 }
 
 #[test]
-pub fn format_type_with_template_nested_array() {
+pub(crate) fn format_type_with_template_nested_array() {
     check(
         "
         alias Test =
@@ -49,7 +49,7 @@ pub fn format_type_with_template_nested_array() {
 }
 
 #[test]
-pub fn format_type_with_template_nested_multiline_array() {
+pub(crate) fn format_type_with_template_nested_multiline_array() {
     check(
         "
         alias Test =

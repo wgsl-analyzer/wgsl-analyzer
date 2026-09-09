@@ -3,7 +3,7 @@ use expect_test::expect;
 use crate::test_util::{check, check_comments};
 
 #[test]
-pub fn format_if_statement_empty() {
+pub(crate) fn format_if_statement_empty() {
     check(
         "fn main() {
         if
@@ -39,7 +39,7 @@ fn format_if_statement_average() {
 }
 
 #[test]
-pub fn format_if_statement_simple_expr() {
+pub(crate) fn format_if_statement_simple_expr() {
     check(
         "fn main() {
         if
@@ -59,7 +59,7 @@ pub fn format_if_statement_simple_expr() {
 }
 
 #[test]
-pub fn format_if_else_statement_simple_expr() {
+pub(crate) fn format_if_else_statement_simple_expr() {
     check(
         "fn main() {
         if
@@ -85,7 +85,7 @@ pub fn format_if_else_statement_simple_expr() {
 }
 
 #[test]
-pub fn format_if_elseif_else_statement_empty() {
+pub(crate) fn format_if_elseif_else_statement_empty() {
     check(
         "fn main() {
         if
@@ -110,7 +110,7 @@ pub fn format_if_elseif_else_statement_empty() {
 }
 
 #[test]
-pub fn format_if_elseif_else_statement_simple_expr() {
+pub(crate) fn format_if_elseif_else_statement_simple_expr() {
     check(
         "fn main() {
         if
@@ -144,7 +144,7 @@ pub fn format_if_elseif_else_statement_simple_expr() {
 }
 
 #[test]
-pub fn format_if_elseif_elseif_else_statement_empty() {
+pub(crate) fn format_if_elseif_elseif_else_statement_empty() {
     check(
         "fn main() {
         if
@@ -174,7 +174,7 @@ pub fn format_if_elseif_elseif_else_statement_empty() {
 }
 
 #[test]
-pub fn format_if_elseif_elseif_else_statement_simple_expr() {
+pub(crate) fn format_if_elseif_elseif_else_statement_simple_expr() {
     check(
         "fn main() {
         if
@@ -216,7 +216,7 @@ pub fn format_if_elseif_elseif_else_statement_simple_expr() {
 }
 
 #[test]
-pub fn format_comments_in_if_elseif_else_statement() {
+pub(crate) fn format_comments_in_if_elseif_else_statement() {
     check_comments(
         "fn main() {
         ## if ## a ## { ## } ## else ## if ## a ## { ## } ## else ## { ## } ##
@@ -256,7 +256,7 @@ pub fn format_comments_in_if_elseif_else_statement() {
 }
 
 #[test]
-pub fn format_comments_in_if_else_statement() {
+pub(crate) fn format_comments_in_if_else_statement() {
     check_comments(
         "fn main() {
         ## if ## a ## { ## } ## else ## { ## } ##
