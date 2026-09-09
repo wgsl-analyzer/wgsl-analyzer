@@ -12,8 +12,7 @@ pub mod generators;
 #[cfg(test)]
 mod tests;
 
-//This cannot be gated, as we depend on it in doctests and the doctests are
-// run against the public api.
+#[cfg(test)]
 pub mod test_util;
 
 pub mod ast_parse;
