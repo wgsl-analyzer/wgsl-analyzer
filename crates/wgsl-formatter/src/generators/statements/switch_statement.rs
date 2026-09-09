@@ -50,7 +50,9 @@ pub(crate) fn gen_switch_statement(
     Ok(formatted)
 }
 
-pub(crate) fn gen_switch_body(statement: &SwitchBody) -> Result<PrintItemBuffer, FormatDocumentError> {
+pub(crate) fn gen_switch_body(
+    statement: &SwitchBody
+) -> Result<PrintItemBuffer, FormatDocumentError> {
     // ==== Parse ====
     let mut syntax = syntax_iter(statement.syntax());
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::BraceLeft)?;

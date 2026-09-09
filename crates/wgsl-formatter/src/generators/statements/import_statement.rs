@@ -262,7 +262,9 @@ pub(crate) fn gen_import_collection(
     Ok(formatted)
 }
 
-pub(crate) fn gen_import_statement(node: &ast::ImportStatement) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_import_statement(
+    node: &ast::ImportStatement
+) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = syntax_iter(node.syntax());
     parse_node_with(&mut syntax, NoTrivia).expect_kind(ast::SyntaxKind::Import)?;

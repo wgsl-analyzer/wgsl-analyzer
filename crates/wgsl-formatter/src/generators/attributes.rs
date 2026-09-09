@@ -147,7 +147,9 @@ fn get_attribute_layout(attribute_list: &AttributeList) -> AttributeLayout {
     }
 }
 
-pub(crate) fn gen_attribute_list(attribute_list: &AttributeList) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_attribute_list(
+    attribute_list: &AttributeList
+) -> FormatDocumentResult<PrintItemBuffer> {
     let mut syntax = syntax_iter(attribute_list.syntax());
 
     let attributes = parse_many_nodes_with(&mut syntax, Succeeding(NoTrivia))
@@ -312,7 +314,9 @@ pub(crate) fn gen_interpolate_type_name(
     Ok(formatted)
 }
 
-pub(crate) fn gen_early_depth_test_mode(attribute: &SyntaxNode) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_early_depth_test_mode(
+    attribute: &SyntaxNode
+) -> FormatDocumentResult<PrintItemBuffer> {
     let mut syntax = syntax_iter(attribute.syntax());
     let content = parse_node_with(&mut syntax, DiscardBlankspace);
     parse_end(&mut syntax)?;

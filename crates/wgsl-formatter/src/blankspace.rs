@@ -34,7 +34,9 @@ impl Blankspace {
 }
 
 #[must_use]
-pub(crate) fn read_blankspace(blankspace: &NodeOrToken<SyntaxNode, SyntaxToken>) -> Option<Blankspace> {
+pub(crate) fn read_blankspace(
+    blankspace: &NodeOrToken<SyntaxNode, SyntaxToken>
+) -> Option<Blankspace> {
     let NodeOrToken::Token(blankspace) = blankspace else {
         return None;
     };

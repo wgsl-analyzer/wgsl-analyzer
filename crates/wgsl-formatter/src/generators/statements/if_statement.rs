@@ -18,7 +18,9 @@ use crate::{
     reporting::FormatDocumentResult,
 };
 
-pub(crate) fn gen_if_statement(statement: &ast::IfStatement) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_if_statement(
+    statement: &ast::IfStatement
+) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = syntax_iter(statement.syntax());
 
@@ -66,7 +68,9 @@ pub(crate) fn gen_if_statement(statement: &ast::IfStatement) -> FormatDocumentRe
     Ok(formatted)
 }
 
-pub(crate) fn gen_if_statement_if_clause(statement: &IfClause) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_if_statement_if_clause(
+    statement: &IfClause
+) -> FormatDocumentResult<PrintItemBuffer> {
     // NOTE: When editing this function, ensure that gen_if_statement_else_clause and gen_if_statement_else_if_clause
     // reflect the changes as well.
     // This is not very DRY, but abstraction here would introduce more complexity and probably be a leaky abstraction.

@@ -14,7 +14,9 @@ use crate::{
     reporting::FormatDocumentResult,
 };
 
-pub(crate) fn gen_loop_statement(statement: &ast::LoopStatement) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_loop_statement(
+    statement: &ast::LoopStatement
+) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = syntax_iter(statement.syntax());
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::Loop)?;

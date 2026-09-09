@@ -104,7 +104,9 @@ pub(crate) fn gen_struct_body(body: &ast::StructBody) -> FormatDocumentResult<Pr
     Ok(formatted)
 }
 
-pub(crate) fn gen_struct_member(member: &ast::StructMember) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_struct_member(
+    member: &ast::StructMember
+) -> FormatDocumentResult<PrintItemBuffer> {
     // === Parse ===
     let mut syntax = syntax_iter(member.syntax());
 

@@ -103,4 +103,5 @@ const DEDENTATION_OVERLOAD: ExperimentalCondCompMode = ExperimentalCondCompMode 
     condcomp_body_braces_on_same_line: true,
 };
 
-pub(crate) const TEMP_EXPERIMENTAL_CONDCOMP_MODE: ExperimentalCondCompMode = CONVENTIONAL_BORING_SETTINGS;
+pub(crate) const TEMP_EXPERIMENTAL_CONDCOMP_MODE: ExperimentalCondCompMode =
+    CONVENTIONAL_BORING_SETTINGS;

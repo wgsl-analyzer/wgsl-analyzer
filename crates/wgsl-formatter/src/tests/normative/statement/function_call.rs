@@ -159,7 +159,8 @@ fn format_long_function_call_without_arguments_does_not_break_within_parens() {
 }
 
 #[test]
-pub(crate) fn format_long_function_call_linewidth_within_inner_break_outer_arguments_leave_inner_alone() {
+pub(crate) fn format_long_function_call_linewidth_within_inner_break_outer_arguments_leave_inner_alone()
+ {
     // Please note that the amount of "aaaa" in this test is carefully chosen to play with the line lengths.
     // This the amount of aaa is such that, breaking the inner argument would satisfy the line width requirement.
     // The formatter should prefer breaking the outer argument list, even though breaking the inner one
@@ -188,7 +189,8 @@ pub(crate) fn format_long_function_call_linewidth_within_inner_break_outer_argum
 }
 
 #[test]
-pub(crate) fn format_long_function_call_linewidth_outside_inner_break_outer_arguments_leave_inner_alone() {
+pub(crate) fn format_long_function_call_linewidth_outside_inner_break_outer_arguments_leave_inner_alone()
+ {
     // Please note that the amount of characters in this test is carefully chosen to play with the line lengths.
     // This the amount of aaa is such that, breaking the inner argument would still not satisfy the line width
     // requirement.

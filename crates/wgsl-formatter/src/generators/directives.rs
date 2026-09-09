@@ -32,7 +32,9 @@ pub(crate) fn gen_enable_extension_name(
     Ok(formatted)
 }
 
-pub(crate) fn gen_enable_directive(node: &ast::EnableDirective) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_enable_directive(
+    node: &ast::EnableDirective
+) -> FormatDocumentResult<PrintItemBuffer> {
     let mut syntax = syntax_iter(node.syntax());
 
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::Enable)?;

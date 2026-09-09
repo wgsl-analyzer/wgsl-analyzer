@@ -18,7 +18,9 @@ use crate::{
     reporting::FormatDocumentResult,
 };
 
-pub(crate) fn gen_for_statement(statement: &ast::ForStatement) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_for_statement(
+    statement: &ast::ForStatement
+) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = syntax_iter(statement.syntax());
     let item_for = parse_node_with(&mut syntax, DiscardBlankspace).expect_kind(SyntaxKind::For)?;

@@ -41,7 +41,10 @@ impl Display for FormatDocumentError {
                 write!(formatter, "Expected node or token but found None")
             },
             Self::UnsupportedNodeOrToken { received } => {
-                write!(formatter, "Encountered unsupported Node or Token: {received:?}")
+                write!(
+                    formatter,
+                    "Encountered unsupported Node or Token: {received:?}"
+                )
             },
             Self::MissingNode => write!(formatter, "Expected to find a node but found none"),
         }

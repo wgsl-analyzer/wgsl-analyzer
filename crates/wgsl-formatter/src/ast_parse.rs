@@ -152,7 +152,8 @@ pub(crate) trait ParseNodePolicy {
     non_upper_case_globals,
     reason = "Keep struct based policies and constants looking the same"
 )]
-pub(crate) const DiscardBlankspace: MatchKind = MatchKind(SyntaxKind::Blankspace, PolicyAction::Discard);
+pub(crate) const DiscardBlankspace: MatchKind =
+    MatchKind(SyntaxKind::Blankspace, PolicyAction::Discard);
 
 /// A policy for [`parse_node_with`] that [discards][PolicyAction::Discard] any comma.
 #[expect(
@@ -166,7 +167,8 @@ pub(crate) const DiscardComma: MatchKind = MatchKind(SyntaxKind::Comma, PolicyAc
     non_upper_case_globals,
     reason = "Keep struct based policies and constants looking the same"
 )]
-pub(crate) const DiscardSemicolon: MatchKind = MatchKind(SyntaxKind::Semicolon, PolicyAction::Discard);
+pub(crate) const DiscardSemicolon: MatchKind =
+    MatchKind(SyntaxKind::Semicolon, PolicyAction::Discard);
 
 /// A policy for [`parse_node_with`] that [discards][PolicyAction::Discard] template delimiters (`<`, `>`).
 #[expect(

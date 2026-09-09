@@ -12,7 +12,9 @@ use crate::{
     reporting::FormatDocumentResult,
 };
 
-pub(crate) fn gen_break_statement(node: &ast::BreakStatement) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_break_statement(
+    node: &ast::BreakStatement
+) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     // We still parse through the break syntax even though there is no information for
     // the formatter to get out of it. This exists to ensure we don't accidentally delete

@@ -406,13 +406,17 @@ fn gen_node(
 
 /// Generate only the preceding trivia of a [`NodeWithTrivia`].
 #[inline]
-pub(crate) fn gen_node_preceding_trivia(node: &NodeWithTrivia) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_node_preceding_trivia(
+    node: &NodeWithTrivia
+) -> FormatDocumentResult<PrintItemBuffer> {
     gen_node_trivia(&node.preceding_trivia)
 }
 
 /// Generate only the succeeding trivia of a [`NodeWithTrivia`].
 #[inline]
-pub(crate) fn gen_node_succeeding_trivia(node: &NodeWithTrivia) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_node_succeeding_trivia(
+    node: &NodeWithTrivia
+) -> FormatDocumentResult<PrintItemBuffer> {
     gen_node_trivia(&node.succeeding_trivia)
 }
 
