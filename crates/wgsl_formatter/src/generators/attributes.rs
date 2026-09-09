@@ -3,9 +3,9 @@ use std::{collections::BTreeMap, string::String};
 use dprint_core::formatting::PrintItems;
 use dprint_core_macros::sc;
 use itertools::{Itertools as _, Position};
-use parser::{SyntaxKind, SyntaxNode};
+pub use standard_attributes::*;
 use syntax::{
-    AstNode as _,
+    AstNode as _, SyntaxKind, SyntaxNode,
     ast::{self, Attribute, AttributeList},
 };
 
@@ -27,8 +27,6 @@ use crate::{
     reporting::{FormatDocumentError, FormatDocumentResult},
     trivia::{NodeTriviaItem, NodeWithTrivia},
 };
-
-pub use standard_attributes::*;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum AttributeLayout {
@@ -297,7 +295,7 @@ pub fn gen_diagnostic_attribute(
 
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::AttributeOperator)?;
     let item_diagnostic = parse_node_with(&mut syntax, DiscardBlankspace)
-        .expect_kind(parser::SyntaxKind::Diagnostic)?;
+        .expect_kind(syntax::SyntaxKind::Diagnostic)?;
     let item_control = parse_node_with(&mut syntax, DiscardBlankspace)
         .expect_kind(SyntaxKind::DiagnosticControl)?;
     parse_end(&mut syntax)?;
@@ -350,9 +348,9 @@ pub fn gen_interpolate_attribute(
     let item_attr_operator =
         parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::AttributeOperator)?;
     let item_interpolate = parse_node_with(&mut syntax, DiscardBlankspace)
-        .expect_kind(parser::SyntaxKind::Interpolate)?;
+        .expect_kind(syntax::SyntaxKind::Interpolate)?;
     let item_paren_left =
-        parse_node_with(&mut syntax, NoTrivia).expect_kind(parser::SyntaxKind::ParenthesisLeft)?;
+        parse_node_with(&mut syntax, NoTrivia).expect_kind(syntax::SyntaxKind::ParenthesisLeft)?;
     let interpolate_type_name = parse_node_with(&mut syntax, DiscardBlankspace)
         .expect_kind(SyntaxKind::InterpolateTypeName)?;
 
@@ -366,7 +364,7 @@ pub fn gen_interpolate_attribute(
         None
     };
     parse_node_with(&mut syntax, NoTrivia).only_if_kind(SyntaxKind::Comma, &mut syntax);
-    parse_node_with(&mut syntax, NoTrivia).expect_kind(parser::SyntaxKind::ParenthesisRight)?;
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(syntax::SyntaxKind::ParenthesisRight)?;
     parse_end(&mut syntax)?;
 
     let mut formatted = PrintItemBuffer::default();
@@ -412,12 +410,12 @@ pub fn gen_builtin_attribute(
     let item_attr_operator =
         parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::AttributeOperator)?;
     let item_builtin =
-        parse_node_with(&mut syntax, DiscardBlankspace).expect_kind(parser::SyntaxKind::Builtin)?;
-    parse_node_with(&mut syntax, NoTrivia).expect_kind(parser::SyntaxKind::ParenthesisLeft)?;
+        parse_node_with(&mut syntax, DiscardBlankspace).expect_kind(syntax::SyntaxKind::Builtin)?;
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(syntax::SyntaxKind::ParenthesisLeft)?;
     let item_builtin_value_name = parse_node_with(&mut syntax, DiscardBlankspace)
         .expect_kind(SyntaxKind::BuiltinValueName)?;
     parse_node_with(&mut syntax, NoTrivia).only_if_kind(SyntaxKind::Comma, &mut syntax);
-    parse_node_with(&mut syntax, NoTrivia).expect_kind(parser::SyntaxKind::ParenthesisRight)?;
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(syntax::SyntaxKind::ParenthesisRight)?;
     parse_end(&mut syntax)?;
 
     let mut formatted = PrintItemBuffer::default();
@@ -436,7 +434,7 @@ pub fn gen_other_attribute(
 
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::AttributeOperator)?;
     let item_identifier = parse_node_with(&mut syntax, DiscardBlankspace)
-        .expect_kind(parser::SyntaxKind::Identifier)?;
+        .expect_kind(syntax::SyntaxKind::Identifier)?;
     let item_arguments = parse_node_with(&mut syntax, DiscardBlankspace)
         .only_if_kind(SyntaxKind::Arguments, &mut syntax);
     parse_end(&mut syntax)?;
@@ -453,7 +451,7 @@ pub fn gen_other_attribute(
 #[expect(clippy::inline_modules, reason = "Its much neater this way, simply grouping them together.")]
 mod standard_attributes {
     use super::gen_attr_standard_with_args;
-    use parser::{SyntaxKind};
+    use syntax::{SyntaxKind};
     use syntax::{AstNode as _, ast};
 
     use crate::{generators::attributes::gen_attr_condcomp_with_args, print_item_buffer::PrintItemBuffer, reporting::FormatDocumentResult};

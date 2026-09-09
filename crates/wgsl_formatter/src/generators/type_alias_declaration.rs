@@ -17,13 +17,13 @@ pub fn gen_type_alias_declaration(
 ) -> Result<PrintItemBuffer, FormatDocumentError> {
     // ==== Parse ====
     let mut syntax = syntax_iter(statement.syntax());
-    parse_node_with(&mut syntax, NoTrivia).expect_kind(parser::SyntaxKind::Alias)?;
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(syntax::SyntaxKind::Alias)?;
     let item_name =
-        parse_node_with(&mut syntax, DiscardBlankspace).expect_kind(parser::SyntaxKind::Name)?;
-    parse_node_with(&mut syntax, NoTrivia).expect_kind(parser::SyntaxKind::Equal)?;
+        parse_node_with(&mut syntax, DiscardBlankspace).expect_kind(syntax::SyntaxKind::Name)?;
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(syntax::SyntaxKind::Equal)?;
     let item_type = parse_node_with(&mut syntax, DiscardBlankspace)
-        .expect_kind(parser::SyntaxKind::TypeSpecifier)?;
-    parse_node_with(&mut syntax, NoTrivia).expect_kind(parser::SyntaxKind::Semicolon)?; //Optional?
+        .expect_kind(syntax::SyntaxKind::TypeSpecifier)?;
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(syntax::SyntaxKind::Semicolon)?; //Optional?
     parse_end(&mut syntax)?;
 
     // ==== Format ====

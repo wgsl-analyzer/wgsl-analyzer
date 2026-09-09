@@ -1,8 +1,8 @@
 //! Code responsible for detecting ignore-pragmas.
 
 use dprint_core_macros::sc;
-use parser::{SyntaxNode, SyntaxToken};
 use rowan::NodeOrToken;
+use syntax::{SyntaxNode, SyntaxToken};
 
 use crate::{
     generators::comments::{Comment, read_comment},
@@ -20,8 +20,8 @@ impl IgnorePragma {
     pub fn syntax(
         &self
     ) -> NodeOrToken<
-        rowan::SyntaxNode<parser::WeslLanguage>,
-        rowan::SyntaxToken<parser::WeslLanguage>,
+        rowan::SyntaxNode<syntax::WeslLanguage>,
+        rowan::SyntaxToken<syntax::WeslLanguage>,
     > {
         NodeOrToken::Token(self.token.clone())
     }

@@ -30,7 +30,6 @@ pub mod trivia;
 use std::str::FromStr;
 
 use dprint_core::configuration::ParseConfigurationError;
-
 pub use format::{
     FormatStringError, FormattedRange, format_file, format_node, format_range, format_tree,
 };

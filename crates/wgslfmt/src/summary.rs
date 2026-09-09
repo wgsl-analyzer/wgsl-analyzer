@@ -212,6 +212,7 @@ impl JsonSummary {
         print!("\"{name}\":");
         self.need_semicolon = false;
     }
+
     fn string_literal(
         &mut self,
         value: &str,
@@ -219,6 +220,7 @@ impl JsonSummary {
         print!("\"{value}\"");
         self.need_semicolon = true;
     }
+
     fn usize_literal(
         &mut self,
         value: usize,
@@ -226,6 +228,7 @@ impl JsonSummary {
         print!("\"{value}\"");
         self.need_semicolon = true;
     }
+
     fn end_field(
         &mut self,
         name: &str,
@@ -233,6 +236,7 @@ impl JsonSummary {
         print!("\"{name}\"");
         self.need_semicolon = true;
     }
+
     fn begin_struct(&mut self) {
         if self.need_semicolon {
             print!(",");
@@ -240,10 +244,12 @@ impl JsonSummary {
         print!("{{");
         self.need_semicolon = false;
     }
+
     fn end_struct(&mut self) {
         print!("}}");
         self.need_semicolon = true;
     }
+
     fn begin_array(&mut self) {
         if self.need_semicolon {
             print!(",");
@@ -251,6 +257,7 @@ impl JsonSummary {
         print!("[");
         self.need_semicolon = false;
     }
+
     fn end_array(&mut self) {
         print!("]");
         self.need_semicolon = true;

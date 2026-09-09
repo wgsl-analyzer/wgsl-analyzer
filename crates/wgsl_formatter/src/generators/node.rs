@@ -2,12 +2,12 @@
 //!
 //! The entry point to formatting [`NodeWithTrivia`]s is [`gen_node_with_trivia`].
 use dprint_core_macros::sc;
-use parser::{
-    SyntaxKind::{self},
-    SyntaxNode, SyntaxToken,
-};
 use rowan::NodeOrToken;
-use syntax::{AstNode as _, ast};
+use syntax::{
+    AstNode as _,
+    SyntaxKind::{self},
+    SyntaxNode, SyntaxToken, ast,
+};
 
 use crate::{
     blankspace::{gen_blankspace, read_blankspace},

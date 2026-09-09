@@ -4,9 +4,10 @@
 use std::option::Option;
 
 use itertools::PutBackN;
-use parser::{SyntaxElementChildren, SyntaxKind, SyntaxNode, SyntaxToken};
 use rowan::NodeOrToken;
-use syntax::{AstNode as _, ast::AttributeList};
+use syntax::{
+    AstNode as _, SyntaxElementChildren, SyntaxKind, SyntaxNode, SyntaxToken, ast::AttributeList,
+};
 
 use crate::{
     blankspace::{Blankspace, read_blankspace},
@@ -21,7 +22,7 @@ type SyntaxIterInner = PutBackN<SyntaxElementChildren>;
 #[cfg(not(debug_assertions))]
 mod syntax_iter {
     use itertools::put_back_n;
-    use parser::SyntaxNode;
+    use syntax::SyntaxNode;
 
     use crate::ast_parse::SyntaxIterInner;
 
@@ -36,7 +37,7 @@ pub use syntax_iter::{SyntaxIter, syntax_iter};
 #[cfg(debug_assertions)]
 mod syntax_iter_asserting {
     use itertools::put_back_n;
-    use parser::SyntaxNode;
+    use syntax::SyntaxNode;
 
     use crate::{
         ast_parse::SyntaxIterInner,
@@ -119,8 +120,7 @@ pub fn parse_end(syntax: &mut SyntaxIter) -> FormatDocumentResult<()> {
     }
     #[cfg(not(debug_assertions))]
     {
-        use crate::reporting::FormatDocumentError;
-        use crate::reporting::UnwrapIfPreferCrash as _;
+        use crate::reporting::{FormatDocumentError, UnwrapIfPreferCrash as _};
 
         match syntax.next() {
             None => Ok(()),
@@ -300,6 +300,7 @@ where
     ) -> Option<PolicyAction> {
         self.0(node)
     }
+
     fn handle_succeeding(
         &self,
         node: &NodeOrToken<SyntaxNode, SyntaxToken>,
@@ -400,7 +401,7 @@ pub enum PolicyAction {
 /// Example:
 /// ```rust
 /// # use wgsl_formatter::ast_parse::{DiscardBlankspace, parse_node_with, syntax_iter, Succeeding, StopAtNewline};
-/// # pub fn foo(node: &parser::SyntaxNode) {
+/// # pub fn foo(node: &syntax::SyntaxNode) {
 ///     let mut syntax = syntax_iter(node);
 ///     let item = parse_node_with(&mut syntax, DiscardBlankspace);
 ///     let item = parse_node_with(&mut syntax, (Succeeding(StopAtNewline), DiscardBlankspace));
@@ -650,7 +651,7 @@ impl<TPolicy: ParseNodePolicy> Iterator for ManyNodesIterator<'_, TPolicy> {
 /// ```rust
 /// # use syntax::ast;
 /// # use wgsl_formatter::{ast_parse::*, reporting::*};
-/// # pub fn foo(node: &parser::SyntaxNode) -> FormatDocumentResult<()> {
+/// # pub fn foo(node: &syntax::SyntaxNode) -> FormatDocumentResult<()> {
 ///     let mut syntax = syntax_iter(node);
 ///     let item_arguments = parse_many_nodes_with(
 ///         &mut syntax,

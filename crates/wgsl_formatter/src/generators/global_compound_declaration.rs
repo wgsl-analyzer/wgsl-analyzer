@@ -44,7 +44,7 @@ pub fn gen_global_compound_declaration(
     let mut syntax = syntax_iter(node.syntax());
 
     let item_open_brace = parse_node_with(&mut syntax, Succeeding(StopAtNewline))
-        .expect_kind(parser::SyntaxKind::BraceLeft)?;
+        .expect_kind(syntax::SyntaxKind::BraceLeft)?;
 
     let items = parse_many_nodes_with(&mut syntax, (source_file_item_policy(), DiscardBraces))
         .filter(|item| !item.is_whitespace())

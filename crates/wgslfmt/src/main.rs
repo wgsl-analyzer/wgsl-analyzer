@@ -217,6 +217,7 @@ impl FormattingSource {
             Self::Stdin => Ok(Box::new(std::io::stdin())),
         }
     }
+
     pub fn write(&self) -> Result<Box<dyn std::io::Write>, anyhow::Error> {
         match self {
             Self::File(path) => Ok(Box::new(std::fs::File::create(path)?)),

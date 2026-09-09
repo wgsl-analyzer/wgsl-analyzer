@@ -9,9 +9,8 @@ use dprint_core::formatting::{
     LineNumberAnchor, PrintItems, condition_helpers, conditions,
 };
 
-use crate::print_item_buffer::{PrintItemBuffer, spacing_request::Request};
-
 use super::print_item_buffer::spacing_request::RequestItem;
+use crate::print_item_buffer::{PrintItemBuffer, spacing_request::Request};
 
 #[cfg(debug_assertions)]
 #[derive(Debug)]

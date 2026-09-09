@@ -1,20 +1,18 @@
 use dprint_core_macros::sc;
-use parser::SyntaxKind;
 use syntax::{
-    AstNode as _,
+    AstNode as _, SyntaxKind,
     ast::{self},
 };
 
 use crate::{
     ast_parse::{
-        DiscardBlankspace, DiscardBraces, DiscardComma, StopAtNewline, Succeeding,
-        parse_many_nodes_with,
+        DiscardBlankspace, DiscardBraces, DiscardComma, NoTrivia, StopAtNewline, Succeeding,
+        parse_end, parse_many_nodes_with, parse_node_with, syntax_iter,
     },
-    generators::node::gen_node_with_trivia,
-};
-use crate::{
-    ast_parse::{NoTrivia, parse_end, parse_node_with, syntax_iter},
-    generators::node::{gen_node_content, gen_node_preceding_trivia, gen_node_succeeding_trivia},
+    generators::node::{
+        gen_node_content, gen_node_preceding_trivia, gen_node_succeeding_trivia,
+        gen_node_with_trivia,
+    },
     print_item_buffer::{
         PrintItemBuffer,
         spacing_request::{Request, RequestItem, RequestItemSet},

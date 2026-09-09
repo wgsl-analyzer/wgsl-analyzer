@@ -1,6 +1,6 @@
 use itertools::{Itertools as _, Position};
-use parser::{SyntaxKind, SyntaxNode, SyntaxToken};
 use rowan::NodeOrToken;
+use syntax::{SyntaxKind, SyntaxNode, SyntaxToken};
 
 use crate::print_item_buffer::{
     PrintItemBuffer,
@@ -18,8 +18,8 @@ impl Comment {
     pub fn syntax(
         &self
     ) -> NodeOrToken<
-        rowan::SyntaxNode<parser::WeslLanguage>,
-        rowan::SyntaxToken<parser::WeslLanguage>,
+        rowan::SyntaxNode<syntax::WeslLanguage>,
+        rowan::SyntaxToken<syntax::WeslLanguage>,
     > {
         match self {
             Self::Block(token) | Self::LineEnding(token) => NodeOrToken::Token(token.clone()),

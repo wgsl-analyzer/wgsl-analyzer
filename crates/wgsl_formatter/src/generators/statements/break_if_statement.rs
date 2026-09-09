@@ -1,7 +1,6 @@
 use dprint_core_macros::sc;
-use parser::{SyntaxKind, SyntaxNode};
 use syntax::{
-    AstNode as _,
+    AstNode as _, SyntaxKind, SyntaxNode,
     ast::{self, Expression},
 };
 

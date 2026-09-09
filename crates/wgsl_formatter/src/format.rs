@@ -3,9 +3,8 @@
 use std::{error::Error, fmt::Display};
 
 use dprint_core::formatting::{PrintItems, PrintOptions};
-use parser::{Edition, SyntaxNode};
 use rowan::{NodeOrToken, TextRange};
-use syntax::{AstNode as _, Parse, ast};
+use syntax::{AstNode as _, Edition, Parse, SyntaxNode, ast};
 
 use crate::{
     FormattingOptions, IndentStyle,

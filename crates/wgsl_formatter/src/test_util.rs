@@ -7,8 +7,8 @@
 use std::{borrow::ToOwned, fmt::Debug, panic};
 
 use itertools::Itertools as _;
-use parser::{Capabilities, Edition, ParseEntryPoint};
 use rowan::{TextLen as _, TextRange};
+use syntax::{Capabilities, Edition, ParseEntryPoint};
 
 use crate::{FormattingOptions, IndentStyle, format::format_tree, format_range};
 
@@ -48,6 +48,7 @@ mod strip_indent {
 
     impl<'text> Iterator for LinesWithEnds<'text> {
         type Item = &'text str;
+
         fn next(&mut self) -> Option<&'text str> {
             if self.text.is_empty() {
                 return None;

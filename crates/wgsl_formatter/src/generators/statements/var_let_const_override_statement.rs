@@ -1,8 +1,7 @@
 use dprint_core::formatting::StringContainer;
 use dprint_core_macros::sc;
-use parser::{SyntaxKind, SyntaxNode};
 use syntax::{
-    AstNode as _,
+    AstNode as _, SyntaxKind, SyntaxNode,
     ast::{self},
 };
 
@@ -151,7 +150,7 @@ fn gen_var_let_const_override_statement(
 }
 
 #[must_use]
-pub fn template_must_be_on_one_line_rule(node: &parser::SyntaxNode) -> bool {
+pub fn template_must_be_on_one_line_rule(node: &syntax::SyntaxNode) -> bool {
     let Some(parent) = node.parent() else {
         return false;
     };

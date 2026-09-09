@@ -52,10 +52,12 @@ impl RequestItemSet {
     pub const fn empty() -> Self {
         Self(0)
     }
+
     #[must_use]
     pub const fn from(item: RequestItem) -> Self {
         Self(1 << item.to_index())
     }
+
     #[must_use]
     pub const fn union(
         &self,
@@ -63,6 +65,7 @@ impl RequestItemSet {
     ) -> Self {
         Self(self.0 | other.0)
     }
+
     #[must_use]
     pub const fn difference(
         &self,
@@ -70,6 +73,7 @@ impl RequestItemSet {
     ) -> Self {
         Self(self.0 & !(other.0))
     }
+
     #[must_use]
     pub const fn highest_index(&self) -> Option<RequestItem> {
         if self.0 == 0 {

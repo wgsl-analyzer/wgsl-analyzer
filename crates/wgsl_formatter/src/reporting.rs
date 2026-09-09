@@ -1,8 +1,8 @@
 //! Various bare-bones error handling.
 use std::{error::Error, fmt::Display};
 
-use parser::{SyntaxNode, SyntaxToken};
 use rowan::NodeOrToken;
+use syntax::{SyntaxNode, SyntaxToken};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum FormatDocumentError {

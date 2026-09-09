@@ -1,5 +1,6 @@
-use crate::test_util::{check, check_comments};
 use expect_test::expect;
+
+use crate::test_util::{check, check_comments};
 
 #[test]
 fn format_struct_def_members_1() {

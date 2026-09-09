@@ -1,8 +1,8 @@
-use criterion::{Criterion, criterion_group, criterion_main};
-use parser::{Capabilities, parse_entrypoint_with_capabilities};
-use sha2::{Digest as _, Sha256};
 use std::{fmt::Write as _, hint::black_box};
-use syntax::{AstNode as _, ast::SourceFile};
+
+use criterion::{Criterion, criterion_group, criterion_main};
+use sha2::{Digest as _, Sha256};
+use syntax::{AstNode as _, Capabilities, ast::SourceFile, parse_entrypoint_with_capabilities};
 use wgsl_formatter::{FormattingOptions, format_tree};
 
 const SOURCE: &str = include_str!("large_file.wesl");
@@ -16,8 +16,8 @@ const SOURCE_SHA256: &str = "88933e0fbed667f218b22eff2d31d3a7db33ede640e727f4cbb
 fn large_file(criterion: &mut Criterion) {
     let parse = parse_entrypoint_with_capabilities(
         SOURCE,
-        parser::ParseEntryPoint::File,
-        parser::Edition::LATEST,
+        syntax::ParseEntryPoint::File,
+        syntax::Edition::LATEST,
         Capabilities::default(),
     );
     assert!(

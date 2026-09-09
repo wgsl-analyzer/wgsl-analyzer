@@ -1,6 +1,6 @@
 use itertools::{Itertools as _, Position};
-use parser::{SyntaxNode, SyntaxToken};
 use rowan::NodeOrToken;
+use syntax::{SyntaxNode, SyntaxToken};
 
 use crate::{
     print_item_buffer::{

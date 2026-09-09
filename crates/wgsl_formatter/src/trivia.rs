@@ -1,7 +1,6 @@
 //! Utils to deal with trivia (comments, attributes and blank space).
-use parser::{SyntaxKind, SyntaxNode, SyntaxToken};
 use rowan::NodeOrToken;
-use syntax::{AstNode, AstToken, ast::AttributeList};
+use syntax::{AstNode, AstToken, SyntaxKind, SyntaxNode, SyntaxToken, ast::AttributeList};
 
 use crate::{
     ast_parse::SyntaxIter,

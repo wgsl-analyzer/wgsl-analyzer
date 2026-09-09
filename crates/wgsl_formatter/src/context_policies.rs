@@ -20,7 +20,7 @@
 //!
 //! [`statement_needs_semicolon_policy`]: statement_needs_semicolon_policy
 //! [`for_statement::skip_semicolons_rule`]: crate::generators::statements::for_statement::skip_semicolons_rule
-use parser::SyntaxNode;
+use syntax::SyntaxNode;
 
 use crate::generators::{
     expressions::{index_expression, parenthesis_expression},

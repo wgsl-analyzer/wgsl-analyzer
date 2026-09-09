@@ -1,9 +1,8 @@
 use dprint_core::formatting::PrintItems;
 use dprint_core_macros::sc;
 use itertools::{Itertools as _, Position};
-use parser::SyntaxKind;
 use syntax::{
-    AstNode as _,
+    AstNode as _, SyntaxKind,
     ast::{self},
 };
 

@@ -19,7 +19,7 @@ An example of a `gen_` function:
 
 ```rust
 # use dprint_core_macros::sc;
-# use parser::SyntaxKind;
+# use syntax::SyntaxKind;
 # use syntax::{AstNode as _, ast};
 # use wgsl_formatter::{
 #    ast_parse::{DiscardBlankspace, NoTrivia, parse_end, parse_node_with, syntax_iter},
@@ -31,7 +31,7 @@ An example of a `gen_` function:
 #    },
 #    reporting::FormatDocumentResult,
 # };
-# pub fn belongs_to_clown(node: &parser::SyntaxNode) -> bool { false }
+# pub fn belongs_to_clown(node: &syntax::SyntaxNode) -> bool { false }
 pub fn gen_example(
     node: &ast::DiscardStatement
 ) -> FormatDocumentResult<PrintItemBuffer> {

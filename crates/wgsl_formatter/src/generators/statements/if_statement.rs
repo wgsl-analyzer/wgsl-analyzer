@@ -1,8 +1,7 @@
 use dprint_core_macros::sc;
 use itertools::Itertools as _;
-use parser::{SyntaxKind, SyntaxNode};
 use syntax::{
-    AstNode as _,
+    AstNode as _, SyntaxKind, SyntaxNode,
     ast::{self, CompoundStatement, ElseClause, ElseIfClause, Expression, IfClause},
 };
 

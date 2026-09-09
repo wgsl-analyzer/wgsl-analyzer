@@ -1,6 +1,6 @@
 //! Various helpers to classify blankspaces into their types.
-use parser::{SyntaxKind, SyntaxNode, SyntaxToken};
 use rowan::NodeOrToken;
+use syntax::{SyntaxKind, SyntaxNode, SyntaxToken};
 
 use crate::{
     print_item_buffer::{
