@@ -1,8 +1,9 @@
 use std::{fmt::Write as _, hint::black_box};
 
 use criterion::{Criterion, criterion_group, criterion_main};
+use parser::parse_entrypoint_with_capabilities;
 use sha2::{Digest as _, Sha256};
-use syntax::{AstNode as _, Capabilities, ast::SourceFile, parse_entrypoint_with_capabilities};
+use syntax::{AstNode as _, Capabilities, ast::SourceFile};
 use wgsl_formatter::{FormattingOptions, format_tree};
 
 const SOURCE: &str = include_str!("large_file.wesl");
