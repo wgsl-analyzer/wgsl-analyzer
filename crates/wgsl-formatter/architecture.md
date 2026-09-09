@@ -16,20 +16,20 @@ They are split into a "context", a "parse" and a "format" section.
 An example of a `gen_*` function:
 
 ```rust
-# use dprint_core_macros::sc;
-# use syntax::SyntaxKind;
-# use syntax::{AstNode as _, ast};
-# use wgsl_formatter::{
-#    ast_parse::{DiscardBlankspace, NoTrivia, parse_end, parse_node_with, syntax_iter},
-#    context_policies::statement_needs_semicolon_policy,
-#    generators::node::gen_node_with_trivia,
-#    print_item_buffer::{
-#        PrintItemBuffer,
-#        spacing_request::{Request, RequestItem},
-#    },
-#    reporting::FormatDocumentResult,
-# };
-# pub fn belongs_to_clown(node: &syntax::SyntaxNode) -> bool { false }
+use dprint_core_macros::sc;
+use syntax::SyntaxKind;
+use syntax::{AstNode as _, ast};
+use wgsl_formatter::{
+    ast_parse::{DiscardBlankspace, NoTrivia, parse_end, parse_node_with, syntax_iter},
+    context_policies::statement_needs_semicolon_policy,
+    generators::node::gen_node_with_trivia,
+    print_item_buffer::{
+        PrintItemBuffer,
+        spacing_request::{Request, RequestItem},
+    },
+    reporting::FormatDocumentResult,
+};
+pub fn belongs_to_clown(node: &syntax::SyntaxNode) -> bool { false }
 pub fn gen_example(
     node: &ast::DiscardStatement
 ) -> FormatDocumentResult<PrintItemBuffer> {
