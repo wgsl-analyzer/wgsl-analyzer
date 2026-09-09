@@ -27,7 +27,7 @@ pub(crate) fn format(
     match wgsl_formatter::format_range(&parsed.syntax(), range, config) {
         Ok(formatted) => Some(formatted),
         Err(error) => {
-            // TODO: Properly display this error
+            // TODO: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1505
             tracing::warn!("Failed to format: {error:?}");
             None
         },
