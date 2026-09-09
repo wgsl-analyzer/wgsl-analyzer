@@ -100,6 +100,9 @@ pub(crate) fn folding_range(
     }
 }
 
+pub const PATH_SCHEME: &str = "file";
+pub const VIRTUAL_PATH_SCHEME: &str = "wgsl";
+
 /// Returns a [`Uri`] object from a given path, will lowercase drive letters if present.
 /// This will only happen when processing windows paths.
 ///
@@ -151,7 +154,7 @@ const SPECIAL_PATH_SEGMENT: &percent_encoding::AsciiSet = &percent_encoding::CON
     .add(b'\\');
 
 pub(crate) fn url_from_virtual_path(path: &VirtualPath) -> lsp_types::Uri {
-    let mut uri = format!("{}://", VirtualPath::SCHEME);
+    let mut uri = format!("{VIRTUAL_PATH_SCHEME}://");
 
     let mut empty = true;
     for component in path.components() {

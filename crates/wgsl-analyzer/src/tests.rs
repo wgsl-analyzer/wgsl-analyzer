@@ -68,7 +68,13 @@ fn check_load_project(
                 writeln!(
                     actual,
                     "root: {}",
-                    print_path(project.root.as_path().unwrap(), &test_directory),
+                    print_path(
+                        project
+                            .root
+                            .as_path()
+                            .expect("a loaded package has a root on disk"),
+                        &test_directory
+                    ),
                 );
                 writeln!(actual, "dependencies:").unwrap();
                 for dependency in project.dependencies {
@@ -114,7 +120,12 @@ fn check_load_project_files(
         .exactly_one()
         .unwrap();
 
-    let (load, _) = to_load_and_source_root_config([project.to_root().unwrap()].to_vec());
+    let (load, _) = to_load_and_source_root_config(
+        [project
+            .to_root()
+            .expect("a loaded package has a root on disk (not a virtual root)")]
+        .to_vec(),
+    );
 
     for entry in load {
         match entry {
