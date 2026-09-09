@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 
 use anyhow::Context as _;
+use ignore::Walk;
 
 use crate::FormattingSource;
 
@@ -43,19 +44,8 @@ fn collect_wgsl_files(
     directory: &PathBuf,
     out: &mut Vec<FormattingSource>,
 ) -> Result<(), anyhow::Error> {
-    for entry in std::fs::read_dir(directory)
-        .with_context(|| format!("failed to read directory: {}", directory.display()))?
-    {
-        let entry = entry?;
-        let path = entry.path();
-        if path.is_dir() {
-            collect_wgsl_files(&path, out)?;
-        } else if path
-            .extension()
-            .is_some_and(|ext| ext == "wgsl" || ext == "wesl")
-        {
-            out.push(FormattingSource::File(path));
-        }
+    for result in Walk::new(directory) {
+        // TODO Do the stuff
     }
     Ok(())
 }
