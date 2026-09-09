@@ -12,6 +12,7 @@ use crate::{
     Result,
     global_state::GlobalStateSnapshot,
     line_index::{LineIndex, PositionEncoding},
+    lsp::to_proto,
     try_default,
 };
 
@@ -31,11 +32,14 @@ pub(crate) fn url_to_virtual_path(url: &Uri) -> anyhow::Result<VirtualPath> {
         return Err(format_err!("url for virtual path cannot have a host"));
     }
 
+    // The path segments are empty if the URL only has the root path (e.g., "wgsl://localhost/")
+    // We assume non hostile clients and do not perform additional validation on the path segments.
     let estimated_capacity = url.as_str().len();
     let mut path = String::with_capacity(estimated_capacity);
     for segment in segments {
         path.push('/');
         let decoded = percent_decode(segment.as_bytes()).decode_utf8()?;
+        assert!(!decoded.is_empty());
         path.push_str(&decoded);
     }
     Ok(VirtualPath::new(path))
@@ -43,8 +47,8 @@ pub(crate) fn url_to_virtual_path(url: &Uri) -> anyhow::Result<VirtualPath> {
 
 pub(crate) fn vfs_path(url: &Uri) -> Result<vfs::VfsPath> {
     match url.scheme() {
-        "file" => Ok(vfs::VfsPath::from(url_to_absolute_path(url)?)),
-        VirtualPath::SCHEME => Ok(vfs::VfsPath::from(url_to_virtual_path(url)?)),
+        to_proto::PATH_SCHEME => Ok(vfs::VfsPath::from(url_to_absolute_path(url)?)),
+        to_proto::VIRTUAL_PATH_SCHEME => Ok(vfs::VfsPath::from(url_to_virtual_path(url)?)),
         _ => Err(format_err!("url has unsupported scheme: {}", url.scheme())),
     }
 }

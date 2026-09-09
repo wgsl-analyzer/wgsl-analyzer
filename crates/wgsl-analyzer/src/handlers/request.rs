@@ -416,7 +416,7 @@ pub(crate) fn handle_text_document_content(
     let document_uri = &parameters.uri;
 
     match document_uri.scheme() {
-        vfs::VirtualPath::SCHEME => {
+        to_proto::VIRTUAL_PATH_SCHEME => {
             let file_id = try_default!(from_proto::file_id(&snap, document_uri)?);
             let text = snap.analysis.file_text(file_id)?;
             Ok(TextDocumentContentResult {

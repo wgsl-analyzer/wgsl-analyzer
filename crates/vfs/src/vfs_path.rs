@@ -245,8 +245,6 @@ impl PartialEq<VfsPath> for AbsPath {
 pub struct VirtualPath(String);
 
 impl VirtualPath {
-    pub const SCHEME: &str = "wgsl";
-
     /// Creates a new virtual path.
     /// The root path is an empty string, every other path starts with `/`.
     ///
