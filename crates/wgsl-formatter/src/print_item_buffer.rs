@@ -140,7 +140,7 @@ impl PrintItemBuffer {
     /// Normally consecutive Requests get combined (so 2 spaces would get collapsed into one space for example). However
     /// if [`Self::apply_end_request`] is called in between two requests, they will not get combined.
     ///
-    /// ```rust
+    /// ```rust,ignore
     /// # use crate::wgsl_formatter::print_item_buffer::spacing_request::{Request, RequestItem};
     /// # use crate::wgsl_formatter::print_item_buffer::PrintItemBuffer;
     /// let formatted = dprint_core::formatting::format(

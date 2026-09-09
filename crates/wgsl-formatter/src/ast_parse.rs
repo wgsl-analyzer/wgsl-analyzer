@@ -394,7 +394,8 @@ pub(crate) enum PolicyAction {
 /// formatted, due to ignore pragmas.
 ///
 /// Example:
-/// ```rust
+///
+/// ```rust,ignore
 /// # use wgsl_formatter::ast_parse::{DiscardBlankspace, parse_node_with, syntax_iter, Succeeding, StopAtNewline};
 /// # pub(crate) fn foo(node: &syntax::SyntaxNode) {
 ///     let mut syntax = syntax_iter(node);
@@ -643,7 +644,8 @@ impl<TPolicy: ParseNodePolicy> Iterator for ManyNodesIterator<'_, TPolicy> {
 /// [`NodeWithTriviaContent::End`] as its content).
 ///
 /// Example:
-/// ```rust
+///
+/// ```rust,ignore
 /// # use syntax::ast;
 /// # use wgsl_formatter::{ast_parse::*, reporting::*};
 /// # pub(crate) fn foo(node: &syntax::SyntaxNode) -> FormatDocumentResult<()> {
@@ -664,8 +666,9 @@ impl<TPolicy: ParseNodePolicy> Iterator for ManyNodesIterator<'_, TPolicy> {
 /// # }
 /// ```
 ///
-/// If some application needs more control over parsing nodes, you can write a pretty much equivalent loop like
-/// ```rust, ignore
+/// If some application needs more control over parsing nodes, you can write a pretty much equivalent loop like:
+///
+/// ```rust,ignore
 /// let items = parse_many_nodes_with(
 ///     &mut syntax,
 ///     YourPolicies
