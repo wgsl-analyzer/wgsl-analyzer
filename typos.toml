@@ -72,4 +72,4 @@ extend-ignore-identifiers-re = []
 # "expr" = "expression" # rust macro keyword
 "sharable" = "shareable"
 "via" = "using"
-"tho" = "though" # sorry, English sucks
+"tho" = "though"  # sorry, English sucks
