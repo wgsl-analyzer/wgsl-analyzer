@@ -43,8 +43,6 @@ pub fn format_diagnostic_with_dot_and_newline() {
     );
 }
 
-//pub fn format_comments_in_diagnostic_1() { ... } already exists in attribute::comments::format_comments_in_diagnostic_attr_simple_1
-
 #[test]
 pub fn format_enable_simple_1() {
     check(

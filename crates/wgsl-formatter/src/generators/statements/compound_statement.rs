@@ -102,19 +102,6 @@ pub fn gen_compound_statement(
             multiline_group.request(Request::expect(RequestItem::LineBreak));
         }
 
-        // When we inevitably have to make the condcomp compound statements configurable - here
-        // is some code to save you a few minutes.
-        // This is the condition that I used to collapse nested compound statements into "{{" and "}}"
-        //
-        // if is_conditional
-        //     && items.len() == 1
-        //     && let Some(item) = items.first()
-        //     && matches!(item.kind(), Some(SyntaxKind::CompoundStatement))
-        // {
-        //     multiline_group.request(Request::discourage(RequestItem::LineBreak));
-        //     multiline_group.extend(gen_node_with_trivia(item)?);
-        //     multiline_group.request(Request::discourage(RequestItem::LineBreak));
-        // } else {
         for (pos, item) in items.iter().with_position() {
             if !matches!(pos, Position::Only | Position::First) {
                 multiline_group.request(Request::expect(RequestItem::LineBreak));
@@ -122,7 +109,6 @@ pub fn gen_compound_statement(
 
             multiline_group.extend(gen_node_with_trivia(item)?);
         }
-        // }
 
         if creates_indentation {
             multiline_group.finish_indent_before_requests();

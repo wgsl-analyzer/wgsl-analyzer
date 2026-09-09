@@ -234,18 +234,11 @@ pub fn gen_attribute_list(attribute_list: &AttributeList) -> FormatDocumentResul
             &expect_space_or_linebreak,
         )?);
         formatted.request(expect_space_or_linebreak);
-        // formatted.request(Request::discourage(RequestItem::LineBreak));
-        // formatted.request(Request::discourage(RequestItem::EmptyLine));
     }
 
     // No final line break, these should be inline with the target
-    //formatted.apply_end_request();
-    formatted.finish_new_line_group_before_requests();
 
-    // // We can discourage NewLines and Emptylines because we applied them beforehand
-    // formatted.request(Request::discourage(RequestItem::LineBreak));
-    // formatted.request(Request::discourage(RequestItem::EmptyLine));
-    // formatted.request(Request::discourage(RequestItem::Space));
+    formatted.finish_new_line_group_before_requests();
 
     Ok(formatted)
 }

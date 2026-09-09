@@ -376,7 +376,6 @@ impl PrintItemBuffer {
     /// This does not apply any trailing request, but instead starts the newline group before them.
     /// If you need to do so *after* trailing requests, manually call [`Self::apply_end_request`].
     pub fn start_new_line_group_before_requests(&mut self) {
-        //self.push_item_before_requests(PrintItem::String(dprint_core_macros::sc!("[")));
         self.push_item_before_requests(PrintItem::Signal(Signal::StartNewLineGroup));
     }
 
@@ -388,7 +387,6 @@ impl PrintItemBuffer {
     /// be started as soon as trailing requests are applied (either by pushing a concrete item
     /// or by calling [`Self::apply_end_request`]).
     pub fn start_new_line_group_after_requests(&mut self) {
-        //self.push_item_after_requests(PrintItem::String(dprint_core_macros::sc!("[")));
         self.push_item_after_requests(PrintItem::Signal(Signal::StartNewLineGroup));
     }
 
@@ -399,7 +397,6 @@ impl PrintItemBuffer {
     /// This does not apply any trailing request, but instead starts the newline group before them.
     /// If you need to do so *after* trailing requests, manually call [`Self::apply_end_request`].
     pub fn finish_new_line_group_before_requests(&mut self) {
-        //self.push_item_before_requests(PrintItem::String(dprint_core_macros::sc!("]")));
         self.push_item_before_requests(PrintItem::Signal(Signal::FinishNewLineGroup));
     }
 
@@ -411,7 +408,6 @@ impl PrintItemBuffer {
     /// be started as soon as trailing requests are applied (either by pushing a concrete item
     /// or by calling [`Self::apply_end_request`]).
     pub fn finish_new_line_group_after_requests(&mut self) {
-        //self.push_item_after_requests(PrintItem::String(dprint_core_macros::sc!("]")));
         self.push_item_after_requests(PrintItem::Signal(Signal::FinishNewLineGroup));
     }
 }

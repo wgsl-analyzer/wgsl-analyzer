@@ -28,10 +28,6 @@ pub fn gen_while_statement(
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
-    // formatted.extend(gen_attributes(
-    //     &item_attributes,
-    //     AttributeLayout::Multiline,
-    // )?);
     formatted.push_sc(sc!("while"));
     formatted.start_indent_before_requests();
     formatted.request(Request::expect(RequestItem::Space));

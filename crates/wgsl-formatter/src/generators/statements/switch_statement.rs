@@ -162,17 +162,9 @@ pub fn gen_switch_body_case(
         },
     }
 
-    //formatted.extend(gen_comments(&item_comments_after_selectors));
-
-    // For now we opted for option a) because we like it more. Its easy to add support for a wgslfmt.toml later
-    // Option a) Always trim colon
+    // Always trim the colon
     drop(item_colon);
-    // Option b) Use colon whenever the user has it
-    // if let Some(item_colon) = item_colon {
-    //     formatted.push_sc(sc!(":"));
-    // }
-    // Option b) Force colon
-    // formatted.push_sc(sc!(":"));
+
     formatted.request(Request::expect(RequestItem::Space));
     formatted.request(Request::discourage(RequestItem::LineBreak));
     formatted.extend(gen_node_with_trivia(&item_body)?);
