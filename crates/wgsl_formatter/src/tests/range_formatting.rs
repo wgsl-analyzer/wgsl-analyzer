@@ -114,3 +114,26 @@ fn format_empty_document_range() {
         expect![""],
     );
 }
+
+#[test]
+fn format_document_range_in_comment() {
+    check_range(
+        &strip_leading_indentation(
+            "// Hello this #|#is #|#a comment!!
+            ",
+        ),
+        expect![[r#"
+            // Hello this is a comment!!
+        "#]],
+    );
+
+    check_range(
+        &strip_leading_indentation(
+            "/* Hello this #|#is #|#a comment!! */
+            ",
+        ),
+        expect![[r#"
+            /* Hello this is a comment!! */
+        "#]],
+    );
+}

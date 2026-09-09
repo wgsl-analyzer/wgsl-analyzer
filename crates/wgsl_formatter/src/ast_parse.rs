@@ -709,3 +709,178 @@ where
         reached_end: false,
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use parser::SyntaxKind;
+    use rowan::{GreenNodeBuilder, SyntaxNode};
+
+    use crate::{
+        ast_parse::{MatchKind, parse_end, parse_node_with, syntax_iter},
+        trivia::NodeTriviaItem,
+    };
+
+    use super::PolicyAction;
+
+    #[test]
+    pub fn syntax_iter_panics_if_not_parsed_end() {
+        let make_node = || {
+            let mut builder = GreenNodeBuilder::new();
+            builder.start_node(SyntaxKind::SourceFile.into());
+            builder.finish_node();
+            SyntaxNode::new_root(builder.finish())
+        };
+
+        // First test that parsing end does not panic
+        {
+            let syntax = make_node();
+            let mut iter = syntax_iter(&syntax);
+            drop(parse_end(&mut iter));
+            drop(iter);
+        }
+
+        assert!(
+            std::panic::catch_unwind(move || {
+                let syntax = make_node();
+                let iter = syntax_iter(&syntax);
+                drop(iter);
+            })
+            .is_err()
+        );
+    }
+
+    #[test]
+    pub fn parse_end_errors_if_not_end() {
+        let mut builder = GreenNodeBuilder::new();
+        builder.start_node(SyntaxKind::SourceFile.into());
+        builder.token(SyntaxKind::Struct.into(), "struct");
+        builder.finish_node();
+        let syntax = SyntaxNode::new_root(builder.finish());
+
+        let mut iter = syntax_iter(&syntax);
+        let result = parse_end(&mut iter);
+
+        assert!(result.is_err());
+    }
+
+    #[test]
+    pub fn parse_node_with_immediate_stop() {
+        let mut builder = GreenNodeBuilder::new();
+        builder.start_node(SyntaxKind::SourceFile.into());
+        builder.token(SyntaxKind::LineEndingComment.into(), "// Hello");
+        builder.token(SyntaxKind::Struct.into(), "struct");
+        builder.finish_node();
+        let syntax = SyntaxNode::new_root(builder.finish());
+
+        let mut iter = syntax_iter(&syntax);
+
+        let immediate_stop = parse_node_with(
+            &mut iter,
+            MatchKind(SyntaxKind::LineEndingComment, PolicyAction::Stop),
+        );
+
+        assert!(!immediate_stop.has_content());
+
+        let actual_node = parse_node_with(
+            &mut iter,
+            MatchKind(SyntaxKind::Struct, PolicyAction::Content),
+        );
+
+        assert!(actual_node.has_content());
+
+        parse_end(&mut iter).unwrap();
+    }
+
+    #[test]
+    pub fn parse_node_with_immediate_discard() {
+        let mut builder = GreenNodeBuilder::new();
+        builder.start_node(SyntaxKind::SourceFile.into());
+        builder.token(SyntaxKind::Struct.into(), "struct");
+        builder.token(SyntaxKind::Identifier.into(), "A");
+        builder.finish_node();
+        let syntax = SyntaxNode::new_root(builder.finish());
+
+        let mut iter = syntax_iter(&syntax);
+
+        let discarded_struct = parse_node_with(
+            &mut iter,
+            MatchKind(SyntaxKind::Struct, PolicyAction::Discard),
+        );
+
+        assert_eq!(
+            discarded_struct
+                .content()
+                .unwrap()
+                .as_token()
+                .unwrap()
+                .text(),
+            "A"
+        );
+
+        parse_end(&mut iter).unwrap();
+    }
+
+    #[test]
+    pub fn parse_node_with_immediate_discard_and_stop() {
+        let mut builder = GreenNodeBuilder::new();
+        builder.start_node(SyntaxKind::SourceFile.into());
+        builder.token(SyntaxKind::Struct.into(), "struct");
+        builder.token(SyntaxKind::Identifier.into(), "A");
+        builder.finish_node();
+        let syntax = SyntaxNode::new_root(builder.finish());
+
+        let mut iter = syntax_iter(&syntax);
+
+        let immediate_stop = parse_node_with(
+            &mut iter,
+            MatchKind(SyntaxKind::Struct, PolicyAction::DiscardAndStop),
+        );
+
+        assert!(!immediate_stop.has_content());
+
+        let contains_a = parse_node_with(
+            &mut iter,
+            MatchKind(SyntaxKind::Identifier, PolicyAction::Content),
+        );
+
+        assert_eq!(
+            contains_a.content().unwrap().as_token().unwrap().text(),
+            "A"
+        );
+
+        parse_end(&mut iter).unwrap();
+    }
+
+    #[test]
+    pub fn parse_node_keeps_linebreaks_around_per_default() {
+        let mut builder = GreenNodeBuilder::new();
+        builder.start_node(SyntaxKind::SourceFile.into());
+        builder.token(SyntaxKind::Blankspace.into(), "\n\n");
+        builder.token(SyntaxKind::Struct.into(), "struct");
+        builder.token(SyntaxKind::Blankspace.into(), "\n\n");
+        builder.finish_node();
+        let syntax = SyntaxNode::new_root(builder.finish());
+
+        let mut iter = syntax_iter(&syntax);
+        let immediate_stop = parse_node_with(
+            &mut iter,
+            MatchKind(SyntaxKind::Struct, PolicyAction::Content),
+        );
+        parse_end(&mut iter).unwrap();
+
+        assert_eq!(
+            immediate_stop.content().unwrap().as_token().unwrap().text(),
+            "struct"
+        );
+
+        assert!(matches!(
+            &*immediate_stop.preceding_trivia,
+            [NodeTriviaItem::LineSpacing(_)]
+        ));
+
+        assert!(matches!(
+            &*immediate_stop.succeeding_trivia,
+            [NodeTriviaItem::LineSpacing(_)]
+        ));
+    }
+}
