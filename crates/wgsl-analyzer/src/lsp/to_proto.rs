@@ -842,6 +842,8 @@ mod tests {
     use test_utils::extract_offset;
     use triomphe::Arc;
 
+    use crate::lsp::from_proto::url_to_virtual_path;
+
     use super::*;
 
     #[test]
@@ -935,5 +937,29 @@ fn bar(x: u32, y: bool) -> f32 { 0.0f }
                 }
             ])
         );
+    }
+
+    #[test]
+    fn virtual_path_conversion() {
+        let virtual_path = VirtualPath::new("/some/file.wesl".to_owned());
+
+        let url = url_from_virtual_path(&virtual_path);
+        let expected_url = expect!["wgsl:///some/file.wesl"];
+        expected_url.assert_eq(&url.to_string());
+
+        let decoded_path = url_to_virtual_path(&url).unwrap();
+        assert_eq!(virtual_path, decoded_path);
+    }
+
+    #[test]
+    fn empty_virtual_path_conversion() {
+        let virtual_path = VirtualPath::new("".to_owned());
+
+        let url = url_from_virtual_path(&virtual_path);
+        let expected_url = expect!["wgsl:///"];
+        expected_url.assert_eq(&url.to_string());
+
+        let decoded_path = url_to_virtual_path(&url).unwrap();
+        assert_eq!(virtual_path, decoded_path);
     }
 }
