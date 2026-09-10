@@ -39,8 +39,11 @@ pub(crate) fn url_to_virtual_path(url: &Uri) -> anyhow::Result<VirtualPath> {
     for segment in segments {
         path.push('/');
         let decoded = percent_decode(segment.as_bytes()).decode_utf8()?;
-        assert!(!decoded.is_empty());
         path.push_str(&decoded);
+    }
+    // Special case the root URL
+    if path == "/" {
+        path.clear();
     }
     Ok(VirtualPath::new(path))
 }
