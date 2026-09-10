@@ -1,7 +1,11 @@
 #![expect(clippy::print_stdout, reason = "useful in tests")]
 #![expect(clippy::use_debug, reason = "useful in tests")]
 
-use std::{borrow::ToOwned, fmt::Debug, panic};
+use std::{
+    borrow::ToOwned,
+    fmt::{Debug, Write as _},
+    panic,
+};
 
 use itertools::Itertools as _;
 use rowan::{TextLen as _, TextRange};
@@ -509,6 +513,53 @@ pub(crate) fn strip_leading_indentation(text: &str) -> String {
         .skip_while(|line| line.is_empty())
         .map(|line| line.strip_prefix(&indentation).unwrap_or(line))
         .join("\n")
+}
+
+#[expect(clippy::needless_pass_by_value, reason = "intentional API")]
+pub fn check_sweep<E>(
+    input: &str,
+    output: E,
+) where
+    E: ExpectAssertEq,
+{
+    let max_len: usize = input.lines().map(str::len).max().unwrap_or(0);
+
+    let mut summary = String::new();
+
+    let parse = parser::parse_entrypoint_with_capabilities(
+        input,
+        ParseEntryPoint::File,
+        Edition::LATEST,
+        Capabilities::default(),
+    );
+
+    let mut last_result = String::new();
+    for length in (0..max_len).rev() {
+        let formatted = format_node(
+            &parse.syntax(),
+            &FormattingOptions {
+                max_line_width: length.try_into().expect("Width should fit into u32"),
+                indent_width: 4,
+                indent_style: IndentStyle::Tabs,
+                line_break_style: crate::LineBreakStyle::LineFeed,
+            },
+        );
+        let formatted = formatted.unwrap_or_else(|_| {
+            panic!("Formatting should not fail for a max line length of {length}")
+        });
+        let formatted = formatted.trim();
+
+        if formatted != last_result {
+            let label = format!("// max_length: {length} ");
+
+            writeln!(&mut summary, "{label:-<length$}").unwrap();
+            writeln!(&mut summary, "{formatted}").unwrap();
+            writeln!(&mut summary).unwrap();
+            last_result = formatted.to_owned();
+        }
+    }
+
+    output.assert_eq(&summary);
 }
 
 #[cfg(test)]

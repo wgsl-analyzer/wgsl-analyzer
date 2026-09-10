@@ -350,8 +350,9 @@ fn format_function_call_dont_break_single_arg_functions_with_singleline_content(
         "
         //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
         fn main() {
-            let aaaaaaaaaaaaaaaaa =
-                i32(bbb_bbbb_bbbbb(cccccc.cccccccccccccc).fffffffffffffffffffffffffff);
+            let aaaaaaaaaaaaaaaaa = i32(
+                bbb_bbbb_bbbbb(cccccc.cccccccccccccc).fffffffffffffffffffffffffff
+                );
             let aaaaaaaaaaaaaaaaa =
                 i32(bbb_bbbb_bbbbbffffffffffffffffffffffffffff(cccccc.cccccccccccccc));
         }",
