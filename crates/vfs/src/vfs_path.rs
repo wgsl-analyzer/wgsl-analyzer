@@ -255,7 +255,7 @@ pub struct VirtualPath(String);
 
 impl VirtualPath {
     /// Creates a new virtual path.
-    /// The root path is an empty string, every other path starts with `/`.
+    /// The root path is an empty string. Every other path starts with `/`.
     ///
     /// # Panics
     /// Panics if `path` is invalid.
@@ -265,6 +265,13 @@ impl VirtualPath {
         assert!(!path.ends_with('/'));
         Self(path)
     }
+
+    /// Creates a new empty virtual path.
+    #[must_use]
+    pub const fn empty() -> Self {
+        Self(String::new())
+    }
+
     /// Returns `true` if `other` is a prefix of `self` (as strings).
     fn starts_with(
         &self,
