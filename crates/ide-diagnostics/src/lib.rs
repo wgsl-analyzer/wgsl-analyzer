@@ -1,3 +1,5 @@
+//! Diagnostics rendering and fixits.
+
 mod naga;
 #[cfg(test)]
 mod tests;

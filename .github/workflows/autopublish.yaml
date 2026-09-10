@@ -61,7 +61,7 @@ jobs:
           cargo workspaces rename --from toolchain wgsl-analyzer-toolchain
           cargo workspaces rename --from vfs wgsl-analyzer-vfs
           cargo workspaces rename --from vfs-notify wgsl-analyzer-vfs-notify
-          cargo workspaces rename --from wgsl_formatter wgsl-formatter
+          # cargo workspaces rename --from wgsl-formatter wgsl-formatter
           # cargo workspaces rename --from wgsl-analyzer wgsl-analyzer
           # cargo workspaces rename --from wgslfmt wgslfmt
           cargo workspaces rename --from wgslfmt_dprint wgslfmt-dprint

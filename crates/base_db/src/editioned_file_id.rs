@@ -52,7 +52,7 @@ impl EditionedFileId {
 }
 
 impl EditionedFileId {
-    /// Warning: Prefer [`from_file`] to get the correct edition for WGSL and WESL files.
+    /// Warning: Prefer [`EditionedFileId::from_file`] to get the correct edition for WGSL and WESL files.
     #[inline]
     pub fn new_unchecked(
         db: &dyn Database,
