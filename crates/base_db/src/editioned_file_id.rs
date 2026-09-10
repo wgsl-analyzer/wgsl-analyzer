@@ -9,7 +9,7 @@ use vfs::FileId;
 use crate::{SourceDatabase, SourceRoot, file_package};
 
 /// File together with an edition.
-/// Simpler than Rust-Analyzer, because we do not macros.
+/// Simpler than Rust-Analyzer because we do not macros.
 /// We only track the editions at a file level, as opposed to tracking it per span.
 #[derive(Copy, Clone, Debug, Ord, PartialOrd, Eq, PartialEq, Hash)]
 pub struct RawEditionedFileId {

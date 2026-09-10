@@ -290,7 +290,7 @@ export type WeslRunnableArgs = CommonRunnableArgs & {
 	/**
 	 * Command to execute instead of `cargo`.
 	 */
-	// This is supplied by the user via config. We could pull this through the client config in the
+	// This is supplied by the user through config. We could pull this through the client config in the
 	// extension directly, but that would prevent us from honoring the wgsl-analyzer.toml for it.
 	overrideCargo?: string;
 };

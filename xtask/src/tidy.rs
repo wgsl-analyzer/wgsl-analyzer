@@ -155,13 +155,13 @@ fn find_marks(
 mod tests {
     #![expect(clippy::disallowed_methods, clippy::print_stdout, reason = "Test code")]
 
-    use super::*;
-
     use std::{
         env,
         path::{Path, PathBuf},
         process::{Command, Stdio},
     };
+
+    use super::*;
 
     #[test]
     fn test() {

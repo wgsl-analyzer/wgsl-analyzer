@@ -77,7 +77,7 @@ We use required CI checks and merge queues to abide by the [not rocket science](
 ### Launching wgsl-analyzer
 
 Debugging the language server can be tricky.
-LSP is rather chatty, so driving it from the command line is not really feasible, driving it via VS Code requires interacting with two processes.
+LSP is rather chatty, so driving it from the command line is not really feasible, driving it with VS Code requires interacting with two processes.
 
 For this reason, the best way to see how `wgsl-analyzer` works is to **find a relevant test and execute it**.
 
@@ -86,7 +86,7 @@ There is **"Run Extension (Debug Build)"** launch configuration for this in VS C
 
 In general, I use one of the following workflows for fixing bugs and implementing features:
 
-If the problem concerns only internal parts of `wgsl-analyzer` (i.e. I do not need to touch the `wgsl-analyzer` crate or TypeScript code), there is a unit-test for it.
+If the problem concerns only internal parts of `wgsl-analyzer` (in other words, I do not need to touch the `wgsl-analyzer` crate or TypeScript code), there is a unit-test for it.
 So, I use **wgsl-analyzer: Run** action in VS Code to run this single test, and then just do printf-driven development/debugging.
 As a sanity check after I am done, I use `cargo xtask install --server` and **Reload Window** action in VS Code to verify that the thing works as I expect.
 
@@ -104,8 +104,8 @@ After I am done with the fix, I use `cargo xtask install --client` to try the ne
 
 If I need to fix something in the `wgsl-analyzer` crate, I feel sad because it is on the boundary between the two processes, and working there is slow.
 I usually just `cargo xtask install --server` and poke changes from my live environment.
-Note that this uses `--release`, which is usually faster overall, because loading stdlib into debug version of `wgsl-analyzer` takes a lot of time.
-Note that you should only use the `eprint!` family of macros for debugging: stdout is used for LSP communication, and `print!` would break it.
+Note that this uses `--release`, which is usually faster.
+Note that you should only use the `eprint!` family of macros for debugging: stdout is used for LSP communication and `print!` would break it.
 
 If I need to fix something simultaneously in the server and in the client, I feel even more sad.
 I do not have a specific workflow for this case.

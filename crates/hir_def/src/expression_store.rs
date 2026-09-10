@@ -101,6 +101,7 @@ impl ExpressionStore {
             ExpressionStoreOwnerId::Body(definition) => &Body::of(db, definition).store,
         }
     }
+
     pub fn with_source_map(
         db: &dyn SourceDatabase,
         owner: ExpressionStoreOwnerId,

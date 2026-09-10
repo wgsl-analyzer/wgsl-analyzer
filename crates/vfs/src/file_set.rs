@@ -256,21 +256,25 @@ impl<'data> PrefixOf<'data> {
 
 impl fst::Automaton for PrefixOf<'_> {
     type State = usize;
+
     fn start(&self) -> usize {
         0
     }
+
     fn is_match(
         &self,
         &state: &usize,
     ) -> bool {
         state != !0
     }
+
     fn can_match(
         &self,
         &state: &usize,
     ) -> bool {
         state != !0
     }
+
     fn accept(
         &self,
         &state: &usize,

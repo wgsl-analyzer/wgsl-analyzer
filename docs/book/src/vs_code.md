@@ -34,7 +34,7 @@ Alternatively, download a VSIX corresponding to your platform from the [releases
 
 [releases]: <https://github.com/wgsl-analyzer/wgsl-analyzer/releases>
 
-Install the extension with the `Extensions: Install from VSIX` command within VS Code, or from the command line via:
+Install the extension with the `Extensions: Install from VSIX` command within VS Code, or from command-line:
 
 ```bash
 code --install-extension /path/to/wgsl-analyzer.vsix
@@ -64,7 +64,7 @@ You will need [Cargo], [Node.js] (matching a supported version of VS Code) and [
 [Node.js]: <https://nodejs.org/>
 [pnpm]: <https://pnpm.io/installation>
 
-Note that installing via `xtask install` does not work for VS Code Remote.
+Note that installing by using `xtask install` does not work for VS Code Remote.
 Instead, you will need to install the `.vsix` manually.
 
 If you are not using Code, you can compile and install only the LSP

@@ -186,11 +186,12 @@ impl Display for TintCommandError {
 
 #[cfg(test)]
 mod tests {
+    use core::assert_matches;
+    use std::fmt::Write as _;
+
     use expect_test::{Expect, expect};
 
     use super::*;
-    use core::assert_matches;
-    use std::fmt::Write as _;
 
     #[expect(clippy::needless_pass_by_value, reason = "Matches expect! macro")]
     #[expect(clippy::use_debug, reason = "useful in tests")]

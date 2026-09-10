@@ -17,6 +17,7 @@ use hir_def::{
 };
 use wgsl_types::{Instance, syntax::Enumerant};
 
+pub use crate::lower::generics::{TemplateParameter, TemplateParameters};
 use crate::{
     db::HirDatabase,
     function::ResolvedFunctionId,
@@ -26,8 +27,6 @@ use crate::{
         VecSize, VectorType, pretty::pretty_type,
     },
 };
-
-pub use crate::lower::generics::{TemplateParameter, TemplateParameters};
 
 mod builtin;
 mod eval;
@@ -225,12 +224,11 @@ pub enum TypeLoweringErrorKind {
     ExpectedType(Path),
     /// A function was provided but not called.
     ExpectedFunctionToBeCalled(Path),
-    // TODO: Change this to a strongly typed wgsl_types::Error
-    // The challenge here is that wgsl_types::Error doesn't implement Eq,
-    // However the inference result keeps track of all the diagnostics and is cached
-    // wgsl_types::Error cannot trivially implement Eq, because the `Instance` would
-    // need to implement Eq. And it would have to be eq where "floating point NaNs" are
-    // prooobably equal, if their bits are equal?
+    // TODO: Change this to a strongly typed `wgsl_types::Error`.
+    // The challenge here is that `wgsl_types::Error` doesn't implement `Eq`;
+    // however, the inference result keeps track of all the diagnostics and is cached.
+    // `wgsl_types::Error` cannot trivially implement `Eq` because the `Instance` would need to implement `Eq`.
+    // There is the classic issue of how to define equality between subnormals and `NaN`s.
     WgslError(String),
 }
 

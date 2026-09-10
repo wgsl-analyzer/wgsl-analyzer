@@ -24,9 +24,8 @@ pub enum PackageKey {
 ///
 /// Packages inside of the editor are local packages.
 ///
-/// Is separate from the workspace roots, because LSP clients can open
-/// nested folders as separate workspaces. So a project can dynamically
-/// be a part of multiple workspaces.
+/// This is separate from the workspace roots because LSP clients can open nested folders as separate workspaces;
+/// a project can be a member of multiple workspaces.
 #[derive(Default)]
 pub struct PackageGraph {
     interner: PackageInterner,

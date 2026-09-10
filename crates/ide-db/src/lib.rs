@@ -2,8 +2,7 @@
 
 use std::{fmt, panic};
 
-pub use base_db;
-pub use base_db::FileId;
+pub use base_db::{self, FileId};
 use base_db::{
     Capabilities, CapabilitiesInput, FileSourceRootInput, FileText, Files, Nonce, SourceDatabase,
     SourceRoot, SourceRootId, SourceRootInput, change::Change, set_all_packages_with_durability,

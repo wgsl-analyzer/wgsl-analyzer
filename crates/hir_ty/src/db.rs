@@ -2,23 +2,20 @@
 //! type inference-related queries.
 
 use base_db::{EditionedFileId, Intern as _, Lookup as _, SourceDatabase};
-use hir_def::db::{Location, ModuleDefinitionId};
-use hir_def::signature::{StructSignature, TypeAliasSignature};
 use hir_def::{
-    db::{DefinitionWithBodyId, FunctionId, StructId, TypeAliasId},
+    db::{DefinitionWithBodyId, FunctionId, Location, ModuleDefinitionId, StructId, TypeAliasId},
     item_tree::ItemTree,
     resolver::Resolver,
-    signature::{FieldId, FunctionSignature, LocalFieldId},
+    signature::{FieldId, FunctionSignature, LocalFieldId, StructSignature, TypeAliasSignature},
 };
 use la_arena::ArenaMap;
 use triomphe::Arc;
 use wgsl_types::syntax::AddressSpace;
 
-use crate::infer::get_name_and_range;
 use crate::{
     diagnostics::{InferenceDiagnostic, InferenceDiagnosticKind},
     function::{FunctionDetails, ResolvedFunctionId},
-    infer::InferenceResult,
+    infer::{InferenceResult, get_name_and_range},
     lower::{TypeLoweringContext, TypeLoweringError},
     ty::{Type, TypeKind},
 };

@@ -1,3 +1,9 @@
+use std::fmt::Write as _;
+
+use base_db::{EditionedFileId, Package, SourceDatabase};
+use rustc_hash::FxHashMap;
+use triomphe::Arc;
+
 use crate::{
     db::{ImportId, ModuleDefinitionId},
     item_tree::Name,
@@ -5,10 +11,6 @@ use crate::{
     name_resolution::{DefDiagnostic, DefDiagnosticKind, collect_module},
     visibility::Visibility,
 };
-use base_db::{EditionedFileId, Package, SourceDatabase};
-use rustc_hash::FxHashMap;
-use std::fmt::Write as _;
-use triomphe::Arc;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct ModuleItem {

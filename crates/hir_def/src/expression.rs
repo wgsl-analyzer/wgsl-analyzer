@@ -251,8 +251,8 @@ fn parse_hex_float(hex: &str) -> f64 {
     };
 
     // Parse the fractional part: each hex digit is worth 1/16 of the previous
-    let mut frac = 0.0_f64;
-    let mut place = 1.0_f64 / 16.0;
+    let mut frac = 0_f64;
+    let mut place = 1_f64 / 16.0;
     for ch in frac_str.chars() {
         let digit = ch.to_digit(16).expect("invalid hex float fraction digit");
         frac = f64::mul_add(f64::from(digit), place, frac);

@@ -162,7 +162,7 @@ impl NotifyActor {
                                 return false;
                             }
 
-                            // We want to filter out subdirectories that are roots themselves, because they will be visited separately.
+                            // We want to filter out subdirectories that are roots themselves because they will be visited separately.
                             directories.exclude.iter().all(|it| it != path)
                                 && (root == path || directories.include.iter().all(|it| it != path))
                         });

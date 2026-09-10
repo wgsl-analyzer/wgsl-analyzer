@@ -443,7 +443,7 @@ struct Op {
     pad1: u32,
     pad2: u32,
     // Entries in the unitary are: 00, 01, 02, 03, 10, 11, 12, 13, 20, ..., 32, 33
-    // 1q matrix elements are stored in: 00, 01, 10, 11 (i.e., indices 0, 1, 4, and 5)
+    // 1q matrix elements are stored in: 00, 01, 10, 11 (in other words, indices 0, 1, 4, and 5)
     unitary: array<vec2f, 16>,
 } // Struct size: 4 * 4 + 16 * 8 = 160 bytes (which is aligned to 16 bytes)
 
@@ -459,7 +459,7 @@ struct ShotParams {
 }
 
 struct NoiseTableMetadata {
-    /// The total probability of any noise (i.e. sum of all noise entries) in `Q1.63` format
+    /// The total probability of any noise (in other words, sum of all noise entries) in `Q1.63` format
     noise_probability_lo: u32,
     noise_probability_hi: u32,
     /// The start offset of this table's entries in the global `NoiseTableEntry` array
@@ -470,7 +470,7 @@ struct NoiseTableMetadata {
 
 struct NoiseTableEntry {
     /// The correlated pauli string as bits (2 bits per qubit). If bit 0 is set, then it has bit-flip
-    /// noise, and if bit 1 is set then it has phase-flip noise. e.g., `110001 == "YIX"`
+    /// noise, and if bit 1 is set then it has phase-flip noise. For example, `110001 == "YIX"`.
     paulis_lo: u32,
     paulis_hi: u32,
     /// The probability of the noise occurring in `Q1_63` format. This is a float format where the high
@@ -630,7 +630,7 @@ fn setUnitaryRow(shot_idx: u32, row: u32, newRow: array<vec2f, 4>) {
 //#region Hash and random number generation
 
 // See https://www.reedbeta.com/blog/hash-functions-for-gpu-rendering/
-// Use PCG hash function to generate a well-distributed hash from a simple integer input (e.g., shot id)
+// Use PCG hash function to generate a well-distributed hash from a simple integer input (for example, shot id)
 fn hash_pcg(input: u32) -> u32 {
     var state = input * 747796405u + 2891336453u;
     var word = ((state >> ((state >> 28u) + 4u)) ^ state) * 277803737u;
@@ -692,8 +692,8 @@ fn is_1q_op(op_id: u32) -> bool {
 fn shot_init_per_op(shot_idx: u32) {
     let shot = &shots[shot_idx];
 
-    // Default to 1.0 renormalization (i.e., no renormalization needed). MResetZ or noise affecting the
-    // overall probability distribution (e.g. loss or amplitude damping) will update this if needed.
+    // Default to 1.0 renormalization (in other words, no renormalization needed). MResetZ or noise affecting the
+    // overall probability distribution (for example, loss or amplitude damping) will update this if needed.
     shot.renormalize = 1.0;
     shot.qubits_updated_last_op_mask = 0u;
 
@@ -977,7 +977,7 @@ fn prep_measure_reset(shot_idx: u32, op_idx: u32, qubit: u32, result_id: u32, is
                 atomicStore(&results[(shot_idx * RESULT_COUNT) + result_id], result);
             }
         } else {
-            // No result to store (e.g. ResetZ). If the qubit is lost, it's already in the zero
+            // No result to store (for example, ResetZ). If the qubit is lost, it's already in the zero
             // state so nothing to update. Just set to ID and return.
             if shot.qubit_state[qubit].heat == -1.0 {
                 shot.op_type = OPID_ID;
@@ -1188,7 +1188,7 @@ fn handle_lost_operand_policy(shot_idx: u32, op_idx: u32, q1: u32, q2: u32) {
             }
             default {
                 // SWAP only supports SKIP, PROPAGATE, RESIDUAL_S_DAGGER, and
-                // APPLY_ANYWAY. Any other policy (e.g. DEGRADE) is rejected by
+                // APPLY_ANYWAY. Any other policy (for example, DEGRADE) is rejected by
                 // the host, so reaching here indicates a bug.
                 report_shot_error(shot_idx, ERR_UNSUPPORTED_LOSS_POLICY);
                 shot.op_type = OPID_ID;
@@ -1264,8 +1264,8 @@ fn handle_lost_operand_policy(shot_idx: u32, op_idx: u32, q1: u32, q2: u32) {
 
 // Records an error `code` for `shot_idx` in both the diagnostics buffer and the
 // shot's result-code slot, mirroring the reporting done elsewhere in this file.
-// Used for conditions the host guarantees never occur (e.g. a loss policy that
-// is not valid for a given gate).
+// Used for conditions the host guarantees never occur.
+// For example, a loss policy that is not valid for a given gate.
 fn report_shot_error(shot_idx: u32, code: u32) {
     atomicCompareExchangeWeak(&diagnostics.error_code, 0u, code);
     let err_index = (shot_idx + 1u) * RESULT_COUNT - 1u;
@@ -1474,7 +1474,7 @@ fn apply_2q_pauli_noise(shot_idx: u32, op_idx: u32, noise_idx: u32, q1: u32, q2:
 // Pauli (term: X=1, Z=2, Y=3) acting on `target_is_q2 ? q2 : q1`. This is the
 // same row permutation/negation that `apply_2q_pauli_noise` fuses, just applied
 // to the policy-degraded gate rather than the original op. Note the Y branch
-// uses real signs (i.e. -i*Y), matching `apply_2q_pauli_noise`; the resulting
+// uses real signs (in other words, `-i*Y`), matching `apply_2q_pauli_noise`; the resulting
 // global phase is unobservable for a Pauli noise channel.
 fn fuse_1q_pauli_on_pair_unitary(shot_idx: u32, target_is_q2: bool, term: u32) {
     let si = i32(shot_idx);
@@ -1534,7 +1534,7 @@ fn apply_2q_pauli_noise_on_survivor(shot_idx: u32, op_idx: u32, noise_idx: u32, 
     // Surviving operand(s) after the policy ran (alive => heat != -1.0).
     let q1_alive = shot.qubit_state[q1].heat != -1.0;
     let q2_alive = shot.qubit_state[q2].heat != -1.0;
-    // Both lost (e.g. PROPAGATE collapsed the survivor): nothing to apply.
+    // Both lost (for example, PROPAGATE collapsed the survivor): nothing to apply.
     if (!q1_alive && !q2_alive) {
         return;
     }
@@ -1591,7 +1591,7 @@ fn apply_2q_pauli_noise_on_survivor(shot_idx: u32, op_idx: u32, noise_idx: u32, 
             set_1q_on_pair_unitary(shot_idx, survivor_is_q2,
                 vec2f(0.0, 0.0), vec2f(1.0, 0.0),
                 vec2f(1.0, 0.0), vec2f(0.0, 0.0));
-        } else if (term == 3) { // Y (real-sign, i.e. -i*Y)
+        } else if (term == 3) { // Y (real-sign, in other words, `-i*Y`)
             set_1q_on_pair_unitary(shot_idx, survivor_is_q2,
                 vec2f(0.0, 0.0), vec2f(-1.0, 0.0),
                 vec2f(1.0, 0.0), vec2f(0.0, 0.0));
@@ -1674,7 +1674,7 @@ fn apply_1q_op(workgroupId: u32, tid: u32, q1: u32) {
         let offset0: i32 = (entry_index & lowMask) | ((entry_index & highMask) << 1);
         let offset1: i32 = offset0 | (1 << q1);
 
-        // See if we can skip doing any work for this pair, because the state vector entries to processes
+        // See if we can skip doing any work for this pair because the state vector entries to processes
         // are both definitely 0.0, as we know they are for states where other qubits are in definite opposite state.
         let skip_processing = ((offset0 & qubit_is_0_mask) != 0) || ((~offset1 & qubit_is_1_mask) != 0);
 
@@ -1993,9 +1993,9 @@ fn commit_correlated_noise(shot_idx: u32, op_idx: u32, bit_flip_mask: u32, phase
 // - 'start' is the offset into the buffer array where this table's entries begin
 // - 'count' is the number of entries in this table
 // - 'rand_lo' and 'rand_hi' form a Q1.63 format random number in [0.0, 1.0) to use for the search
-// - This will only called if a result should be found, i.e.,
-//   - count > 0
-//   - rand < table[start + count - 1].probability
+// - This will only called if a result should be found. In other words:
+//   - `count > 0`
+//   - `rand < table[start + count - 1].probability`
 //
 // Returns the index of the found entry relative to 'start', which is the smallest index where "rand < table[start + index].probability"
 fn binary_search_noise_table(rand_lo: u32, rand_hi: u32, start: i32, count: i32) -> i32 {
@@ -2463,8 +2463,7 @@ fn initialize(
 // executes classical (non-quantum) instructions on the GPU, one thread per
 // shot. Each shot has its own independent interpreter state (program counter,
 // registers, call stack) allowing many shots to run in parallel with
-// potentially divergent control flow paths (e.g., after mid-circuit
-// measurements).
+// potentially divergent control flow paths (for example, after mid-circuit measurements).
 //
 // ## Execution Model
 //
@@ -2491,7 +2490,7 @@ fn initialize(
 //   dst    : destination register index (or immediate for RET)
 //   src0   : first source operand (register index or immediate)
 //   src1   : second source operand (register index or immediate)
-//   aux0–3 : auxiliary fields whose meaning varies per opcode (e.g., block
+//   aux0–3 : auxiliary fields whose meaning varies per opcode (for example, block
 //            IDs, function IDs, qubit indices, phi-table offsets, etc.)
 //
 // The `resolve_u32` / `resolve_i32` helpers read an operand as either a
@@ -2911,7 +2910,7 @@ fn interpret_classical(@builtin(global_invocation_id) gid: vec3<u32>) {
 
             // SREM: Signed integer remainder.
             // Computes a - b * trunc(a/b) manually rather than using the %
-            // operator, because WGSL i32 division truncates toward zero but
+            // operator because WGSL i32 division truncates toward zero but
             // the built-in % may not preserve the sign of the dividend on
             // all GPU backends. This matches LLVM's srem semantics.
             case OP_SREM {
@@ -3098,7 +3097,7 @@ fn interpret_classical(@builtin(global_invocation_id) gid: vec3<u32>) {
             }
 
             // SEXT: Sign-extend from a narrower bit width to i32.
-            // aux0 encodes the source bit width (e.g., 1 for i1→i32).
+            // aux0 encodes the source bit width (for example, 1 for i1→i32).
             // The shift-left then arithmetic-shift-right trick propagates
             // the sign bit from position (src_bits-1) into all higher bits.
             case OP_SEXT {
@@ -3119,13 +3118,13 @@ fn interpret_classical(@builtin(global_invocation_id) gid: vec3<u32>) {
                 pc++;
             }
 
-            // FPEXT: Float widen (e.g., f32→f64) — identity since GPU only uses f32.
+            // FPEXT: Float widen (for example, f32→f64) — identity since GPU only uses f32.
             case OP_FPEXT {
                 write_reg_f32(shot_idx, instr.dst, resolve_f32(shot_idx, instr.src0, flags, 0u));
                 pc++;
             }
 
-            // FPTRUNC: Float narrow (e.g., f64→f32) — identity since GPU only uses f32.
+            // FPTRUNC: Float narrow (for example, f64→f32) — identity since GPU only uses f32.
             case OP_FPTRUNC {
                 write_reg_f32(shot_idx, instr.dst, resolve_f32(shot_idx, instr.src0, flags, 0u));
                 pc++;
@@ -3936,7140 +3935,7140 @@ fn execute(
             12850..12863 'MAX_REGISTERS': unexpected template argument, expected a `u32` or a `i32` greater than `0`, actual: [error]
             12948..12958 'MAX_MEMORY': unexpected template argument, expected a `u32` or a `i32` greater than `0`, actual: [error]
             14713..14728 'MAX_QUBIT_COUNT': unexpected template argument, expected a `u32` or a `i32` greater than `0`, actual: [error]
-            17289..17306 'NOISE_..._COUNT': unexpected template argument, expected a `u32` or a `i32` greater than `0`, actual: [error]
-            17362..17379 'NOISE_..._COUNT': unexpected template argument, expected a `u32` or a `i32` greater than `0`, actual: [error]
-            17908..17923 'MAX_QUBIT_COUNT': unexpected template argument, expected a `u32` or a `i32` greater than `0`, actual: [error]
-            17946..17961 'MAX_QUBIT_COUNT': unexpected template argument, expected a `u32` or a `i32` greater than `0`, actual: [error]
-            18480..18501 'THREAD...KGROUP': unexpected template argument, expected a `u32` or a `i32` greater than `0`, actual: [error]
-            18849..18868 'workgr...lation': ref<storage, WorkgroupCollationBuffer, read_write>
-            19020..19025 'shots': ref<storage, array<ShotData>, read_write>
-            19086..19089 'ops': ref<storage, array<Op>, read>
-            19236..19247 'stateVector': ref<storage, array<vec2<f32>>, read_write>
-            19362..19369 'results': ref<storage, array<atomic<u32>>, read_write>
-            19439..19450 'diagnostics': ref<storage, DiagnosticData, read_write>
-            19504..19512 'uniforms': ref<uniform, Uniforms, read>
-            19566..19576 'batch_data': ref<storage, BatchData, read>
-            19605..19623 'qubitP...lities': ref<workgroup, [error], read_write>
-            19658..19679 'THREAD...KGROUP': unexpected template argument, expected a `u32` or a `i32` greater than `0`, actual: [error]
-            19866..19867 'a': vec2<f32>
-            19897..19898 'a': vec2<f32>
-            19897..19900 'a.x': f32
-            19897..19906 'a.x * a.x': f32
-            19897..19918 'a.x * ... * a.y': f32
-            19903..19904 'a': vec2<f32>
-            19903..19906 'a.x': f32
-            19909..19910 'a': vec2<f32>
-            19909..19912 'a.y': f32
-            19909..19918 'a.y * a.y': f32
-            19915..19916 'a': vec2<f32>
-            19915..19918 'a.y': f32
-            19961..19962 'a': vec2<f32>
-            19971..19972 'b': vec2<f32>
-            20003..20076 'vec2f(...     )': vec2<f32>
-            20018..20019 'a': vec2<f32>
-            20018..20021 'a.x': f32
-            20018..20027 'a.x * b.x': f32
-            20018..20039 'a.x * ... * b.y': f32
-            20024..20025 'b': vec2<f32>
-            20024..20027 'b.x': f32
-            20030..20031 'a': vec2<f32>
-            20030..20033 'a.y': f32
-            20030..20039 'a.y * b.y': f32
-            20036..20037 'b': vec2<f32>
-            20036..20039 'b.y': f32
-            20049..20050 'a': vec2<f32>
-            20049..20052 'a.x': f32
-            20049..20058 'a.x * b.y': f32
-            20049..20070 'a.x * ... * b.x': f32
-            20055..20056 'b': vec2<f32>
-            20055..20058 'b.y': f32
-            20061..20062 'a': vec2<f32>
-            20061..20064 'a.y': f32
-            20061..20070 'a.y * b.x': f32
-            20067..20068 'b': vec2<f32>
-            20067..20070 'b.x': f32
-            20112..20113 'a': vec2<f32>
-            20144..20161 'vec2f(... -a.y)': vec2<f32>
-            20150..20154 '-a.x': f32
-            20151..20152 'a': vec2<f32>
-            20151..20154 'a.x': f32
-            20156..20160 '-a.y': f32
-            20157..20158 'a': vec2<f32>
-            20157..20160 'a.y': f32
-            20237..20238 'a': array<vec2<f32>, 4>
-            20289..20397 'array<...a[3]))': array<vec2<f32>, 4>
-            20314..20327 'cplxNeg(a[0])': vec2<f32>
-            20322..20323 'a': array<vec2<f32>, 4>
-            20322..20326 'a[0]': vec2<f32>
-            20324..20325 '0': integer
-            20337..20350 'cplxNeg(a[1])': vec2<f32>
-            20345..20346 'a': array<vec2<f32>, 4>
-            20345..20349 'a[1]': vec2<f32>
-            20347..20348 '1': integer
-            20360..20373 'cplxNeg(a[2])': vec2<f32>
-            20368..20369 'a': array<vec2<f32>, 4>
-            20368..20372 'a[2]': vec2<f32>
-            20370..20371 '2': integer
-            20383..20396 'cplxNeg(a[3])': vec2<f32>
-            20391..20392 'a': array<vec2<f32>, 4>
-            20391..20395 'a[3]': vec2<f32>
-            20393..20394 '3': integer
-            20488..20489 'a': array<vec2<f32>, 4>
-            20508..20509 'b': array<vec2<f32>, 4>
-            20547..20553 'result': ref<function, vec2<f32>, read_write>
-            20563..20578 'vec2f(0.0, 0.0)': vec2<f32>
-            20569..20572 '0.0': float
-            20574..20577 '0.0': float
-            20593..20594 'i': ref<function, u32, read_write>
-            20602..20604 '0u': u32
-            20606..20607 'i': ref<function, u32, read_write>
-            20606..20612 'i < 4u': bool
-            20610..20612 '4u': u32
-            20614..20615 'i': ref<function, u32, read_write>
-            20629..20635 'result': ref<function, vec2<f32>, read_write>
-            20639..20658 'cplxMu... b[i])': vec2<f32>
-            20647..20648 'a': array<vec2<f32>, 4>
-            20647..20651 'a[i]': vec2<f32>
-            20649..20650 'i': ref<function, u32, read_write>
-            20653..20654 'b': array<vec2<f32>, 4>
-            20653..20657 'b[i]': vec2<f32>
-            20655..20656 'i': ref<function, u32, read_write>
-            20677..20683 'result': ref<function, vec2<f32>, read_write>
-            20700..20706 'op_idx': u32
-            20713..20716 'row': u32
-            20752..20754 'op': ptr<storage, Op, read>
-            20757..20769 '&ops[op_idx]': ptr<storage, Op, read>
-            20758..20761 'ops': ref<storage, array<Op>, read>
-            20758..20769 'ops[op_idx]': ref<storage, Op, read>
-            20762..20768 'op_idx': u32
-            20782..20930 'array<... + 3])': array<vec2<f32>, 4>
-            20807..20809 'op': ptr<storage, Op, read>
-            20807..20817 'op.unitary': ref<storage, array<vec2<f32>, 16>, read>
-            20807..20830 'op.uni...4 + 0]': ref<storage, vec2<f32>, read>
-            20818..20821 'row': u32
-            20818..20825 'row * 4': u32
-            20818..20829 'row * 4 + 0': u32
-            20824..20825 '4': integer
-            20828..20829 '0': integer
-            20840..20842 'op': ptr<storage, Op, read>
-            20840..20850 'op.unitary': ref<storage, array<vec2<f32>, 16>, read>
-            20840..20863 'op.uni...4 + 1]': ref<storage, vec2<f32>, read>
-            20851..20854 'row': u32
-            20851..20858 'row * 4': u32
-            20851..20862 'row * 4 + 1': u32
-            20857..20858 '4': integer
-            20861..20862 '1': integer
-            20873..20875 'op': ptr<storage, Op, read>
-            20873..20883 'op.unitary': ref<storage, array<vec2<f32>, 16>, read>
-            20873..20896 'op.uni...4 + 2]': ref<storage, vec2<f32>, read>
-            20884..20887 'row': u32
-            20884..20891 'row * 4': u32
-            20884..20895 'row * 4 + 2': u32
-            20890..20891 '4': integer
-            20894..20895 '2': integer
-            20906..20908 'op': ptr<storage, Op, read>
-            20906..20916 'op.unitary': ref<storage, array<vec2<f32>, 16>, read>
-            20906..20929 'op.uni...4 + 3]': ref<storage, vec2<f32>, read>
-            20917..20920 'row': u32
-            20917..20924 'row * 4': u32
-            20917..20928 'row * 4 + 3': u32
-            20923..20924 '4': integer
-            20927..20928 '3': integer
-            20952..20960 'shot_idx': i32
-            20967..20970 'row': u32
-            21006..21010 'shot': ptr<storage, ShotData, read_write>
-            21013..21029 '&shots...t_idx]': ptr<storage, ShotData, read_write>
-            21014..21019 'shots': ref<storage, array<ShotData>, read_write>
-            21014..21029 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            21020..21028 'shot_idx': i32
-            21042..21198 'array<... + 3])': array<vec2<f32>, 4>
-            21067..21071 'shot': ptr<storage, ShotData, read_write>
-            21067..21079 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            21067..21092 'shot.u...4 + 0]': ref<storage, vec2<f32>, read_write>
-            21080..21083 'row': u32
-            21080..21087 'row * 4': u32
-            21080..21091 'row * 4 + 0': u32
-            21086..21087 '4': integer
-            21090..21091 '0': integer
-            21102..21106 'shot': ptr<storage, ShotData, read_write>
-            21102..21114 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            21102..21127 'shot.u...4 + 1]': ref<storage, vec2<f32>, read_write>
-            21115..21118 'row': u32
-            21115..21122 'row * 4': u32
-            21115..21126 'row * 4 + 1': u32
-            21121..21122 '4': integer
-            21125..21126 '1': integer
-            21137..21141 'shot': ptr<storage, ShotData, read_write>
-            21137..21149 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            21137..21162 'shot.u...4 + 2]': ref<storage, vec2<f32>, read_write>
-            21150..21153 'row': u32
-            21150..21157 'row * 4': u32
-            21150..21161 'row * 4 + 2': u32
-            21156..21157 '4': integer
-            21160..21161 '2': integer
-            21172..21176 'shot': ptr<storage, ShotData, read_write>
-            21172..21184 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            21172..21197 'shot.u...4 + 3]': ref<storage, vec2<f32>, read_write>
-            21185..21188 'row': u32
-            21185..21192 'row * 4': u32
-            21185..21196 'row * 4 + 3': u32
-            21191..21192 '4': integer
-            21195..21196 '3': integer
-            21220..21228 'shot_idx': u32
-            21235..21238 'row': u32
-            21245..21251 'newRow': array<vec2<f32>, 4>
-            21280..21284 'shot': ptr<storage, ShotData, read_write>
-            21287..21303 '&shots...t_idx]': ptr<storage, ShotData, read_write>
-            21288..21293 'shots': ref<storage, array<ShotData>, read_write>
-            21288..21303 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            21294..21302 'shot_idx': u32
+            17318..17335 'NOISE_..._COUNT': unexpected template argument, expected a `u32` or a `i32` greater than `0`, actual: [error]
+            17391..17408 'NOISE_..._COUNT': unexpected template argument, expected a `u32` or a `i32` greater than `0`, actual: [error]
+            17937..17952 'MAX_QUBIT_COUNT': unexpected template argument, expected a `u32` or a `i32` greater than `0`, actual: [error]
+            17975..17990 'MAX_QUBIT_COUNT': unexpected template argument, expected a `u32` or a `i32` greater than `0`, actual: [error]
+            18509..18530 'THREAD...KGROUP': unexpected template argument, expected a `u32` or a `i32` greater than `0`, actual: [error]
+            18878..18897 'workgr...lation': ref<storage, WorkgroupCollationBuffer, read_write>
+            19049..19054 'shots': ref<storage, array<ShotData>, read_write>
+            19115..19118 'ops': ref<storage, array<Op>, read>
+            19265..19276 'stateVector': ref<storage, array<vec2<f32>>, read_write>
+            19391..19398 'results': ref<storage, array<atomic<u32>>, read_write>
+            19468..19479 'diagnostics': ref<storage, DiagnosticData, read_write>
+            19533..19541 'uniforms': ref<uniform, Uniforms, read>
+            19595..19605 'batch_data': ref<storage, BatchData, read>
+            19634..19652 'qubitP...lities': ref<workgroup, [error], read_write>
+            19687..19708 'THREAD...KGROUP': unexpected template argument, expected a `u32` or a `i32` greater than `0`, actual: [error]
+            19895..19896 'a': vec2<f32>
+            19926..19927 'a': vec2<f32>
+            19926..19929 'a.x': f32
+            19926..19935 'a.x * a.x': f32
+            19926..19947 'a.x * ... * a.y': f32
+            19932..19933 'a': vec2<f32>
+            19932..19935 'a.x': f32
+            19938..19939 'a': vec2<f32>
+            19938..19941 'a.y': f32
+            19938..19947 'a.y * a.y': f32
+            19944..19945 'a': vec2<f32>
+            19944..19947 'a.y': f32
+            19990..19991 'a': vec2<f32>
+            20000..20001 'b': vec2<f32>
+            20032..20105 'vec2f(...     )': vec2<f32>
+            20047..20048 'a': vec2<f32>
+            20047..20050 'a.x': f32
+            20047..20056 'a.x * b.x': f32
+            20047..20068 'a.x * ... * b.y': f32
+            20053..20054 'b': vec2<f32>
+            20053..20056 'b.x': f32
+            20059..20060 'a': vec2<f32>
+            20059..20062 'a.y': f32
+            20059..20068 'a.y * b.y': f32
+            20065..20066 'b': vec2<f32>
+            20065..20068 'b.y': f32
+            20078..20079 'a': vec2<f32>
+            20078..20081 'a.x': f32
+            20078..20087 'a.x * b.y': f32
+            20078..20099 'a.x * ... * b.x': f32
+            20084..20085 'b': vec2<f32>
+            20084..20087 'b.y': f32
+            20090..20091 'a': vec2<f32>
+            20090..20093 'a.y': f32
+            20090..20099 'a.y * b.x': f32
+            20096..20097 'b': vec2<f32>
+            20096..20099 'b.x': f32
+            20141..20142 'a': vec2<f32>
+            20173..20190 'vec2f(... -a.y)': vec2<f32>
+            20179..20183 '-a.x': f32
+            20180..20181 'a': vec2<f32>
+            20180..20183 'a.x': f32
+            20185..20189 '-a.y': f32
+            20186..20187 'a': vec2<f32>
+            20186..20189 'a.y': f32
+            20266..20267 'a': array<vec2<f32>, 4>
+            20318..20426 'array<...a[3]))': array<vec2<f32>, 4>
+            20343..20356 'cplxNeg(a[0])': vec2<f32>
+            20351..20352 'a': array<vec2<f32>, 4>
+            20351..20355 'a[0]': vec2<f32>
+            20353..20354 '0': integer
+            20366..20379 'cplxNeg(a[1])': vec2<f32>
+            20374..20375 'a': array<vec2<f32>, 4>
+            20374..20378 'a[1]': vec2<f32>
+            20376..20377 '1': integer
+            20389..20402 'cplxNeg(a[2])': vec2<f32>
+            20397..20398 'a': array<vec2<f32>, 4>
+            20397..20401 'a[2]': vec2<f32>
+            20399..20400 '2': integer
+            20412..20425 'cplxNeg(a[3])': vec2<f32>
+            20420..20421 'a': array<vec2<f32>, 4>
+            20420..20424 'a[3]': vec2<f32>
+            20422..20423 '3': integer
+            20517..20518 'a': array<vec2<f32>, 4>
+            20537..20538 'b': array<vec2<f32>, 4>
+            20576..20582 'result': ref<function, vec2<f32>, read_write>
+            20592..20607 'vec2f(0.0, 0.0)': vec2<f32>
+            20598..20601 '0.0': float
+            20603..20606 '0.0': float
+            20622..20623 'i': ref<function, u32, read_write>
+            20631..20633 '0u': u32
+            20635..20636 'i': ref<function, u32, read_write>
+            20635..20641 'i < 4u': bool
+            20639..20641 '4u': u32
+            20643..20644 'i': ref<function, u32, read_write>
+            20658..20664 'result': ref<function, vec2<f32>, read_write>
+            20668..20687 'cplxMu... b[i])': vec2<f32>
+            20676..20677 'a': array<vec2<f32>, 4>
+            20676..20680 'a[i]': vec2<f32>
+            20678..20679 'i': ref<function, u32, read_write>
+            20682..20683 'b': array<vec2<f32>, 4>
+            20682..20686 'b[i]': vec2<f32>
+            20684..20685 'i': ref<function, u32, read_write>
+            20706..20712 'result': ref<function, vec2<f32>, read_write>
+            20729..20735 'op_idx': u32
+            20742..20745 'row': u32
+            20781..20783 'op': ptr<storage, Op, read>
+            20786..20798 '&ops[op_idx]': ptr<storage, Op, read>
+            20787..20790 'ops': ref<storage, array<Op>, read>
+            20787..20798 'ops[op_idx]': ref<storage, Op, read>
+            20791..20797 'op_idx': u32
+            20811..20959 'array<... + 3])': array<vec2<f32>, 4>
+            20836..20838 'op': ptr<storage, Op, read>
+            20836..20846 'op.unitary': ref<storage, array<vec2<f32>, 16>, read>
+            20836..20859 'op.uni...4 + 0]': ref<storage, vec2<f32>, read>
+            20847..20850 'row': u32
+            20847..20854 'row * 4': u32
+            20847..20858 'row * 4 + 0': u32
+            20853..20854 '4': integer
+            20857..20858 '0': integer
+            20869..20871 'op': ptr<storage, Op, read>
+            20869..20879 'op.unitary': ref<storage, array<vec2<f32>, 16>, read>
+            20869..20892 'op.uni...4 + 1]': ref<storage, vec2<f32>, read>
+            20880..20883 'row': u32
+            20880..20887 'row * 4': u32
+            20880..20891 'row * 4 + 1': u32
+            20886..20887 '4': integer
+            20890..20891 '1': integer
+            20902..20904 'op': ptr<storage, Op, read>
+            20902..20912 'op.unitary': ref<storage, array<vec2<f32>, 16>, read>
+            20902..20925 'op.uni...4 + 2]': ref<storage, vec2<f32>, read>
+            20913..20916 'row': u32
+            20913..20920 'row * 4': u32
+            20913..20924 'row * 4 + 2': u32
+            20919..20920 '4': integer
+            20923..20924 '2': integer
+            20935..20937 'op': ptr<storage, Op, read>
+            20935..20945 'op.unitary': ref<storage, array<vec2<f32>, 16>, read>
+            20935..20958 'op.uni...4 + 3]': ref<storage, vec2<f32>, read>
+            20946..20949 'row': u32
+            20946..20953 'row * 4': u32
+            20946..20957 'row * 4 + 3': u32
+            20952..20953 '4': integer
+            20956..20957 '3': integer
+            20981..20989 'shot_idx': i32
+            20996..20999 'row': u32
+            21035..21039 'shot': ptr<storage, ShotData, read_write>
+            21042..21058 '&shots...t_idx]': ptr<storage, ShotData, read_write>
+            21043..21048 'shots': ref<storage, array<ShotData>, read_write>
+            21043..21058 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            21049..21057 'shot_idx': i32
+            21071..21227 'array<... + 3])': array<vec2<f32>, 4>
+            21096..21100 'shot': ptr<storage, ShotData, read_write>
+            21096..21108 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            21096..21121 'shot.u...4 + 0]': ref<storage, vec2<f32>, read_write>
+            21109..21112 'row': u32
+            21109..21116 'row * 4': u32
+            21109..21120 'row * 4 + 0': u32
+            21115..21116 '4': integer
+            21119..21120 '0': integer
+            21131..21135 'shot': ptr<storage, ShotData, read_write>
+            21131..21143 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            21131..21156 'shot.u...4 + 1]': ref<storage, vec2<f32>, read_write>
+            21144..21147 'row': u32
+            21144..21151 'row * 4': u32
+            21144..21155 'row * 4 + 1': u32
+            21150..21151 '4': integer
+            21154..21155 '1': integer
+            21166..21170 'shot': ptr<storage, ShotData, read_write>
+            21166..21178 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            21166..21191 'shot.u...4 + 2]': ref<storage, vec2<f32>, read_write>
+            21179..21182 'row': u32
+            21179..21186 'row * 4': u32
+            21179..21190 'row * 4 + 2': u32
+            21185..21186 '4': integer
+            21189..21190 '2': integer
+            21201..21205 'shot': ptr<storage, ShotData, read_write>
+            21201..21213 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            21201..21226 'shot.u...4 + 3]': ref<storage, vec2<f32>, read_write>
+            21214..21217 'row': u32
+            21214..21221 'row * 4': u32
+            21214..21225 'row * 4 + 3': u32
+            21220..21221 '4': integer
+            21224..21225 '3': integer
+            21249..21257 'shot_idx': u32
+            21264..21267 'row': u32
+            21274..21280 'newRow': array<vec2<f32>, 4>
             21309..21313 'shot': ptr<storage, ShotData, read_write>
-            21309..21321 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            21309..21334 'shot.u...4 + 0]': ref<storage, vec2<f32>, read_write>
-            21322..21325 'row': u32
-            21322..21329 'row * 4': u32
-            21322..21333 'row * 4 + 0': u32
-            21328..21329 '4': integer
-            21332..21333 '0': integer
-            21337..21343 'newRow': array<vec2<f32>, 4>
-            21337..21346 'newRow[0]': vec2<f32>
-            21344..21345 '0': integer
-            21352..21356 'shot': ptr<storage, ShotData, read_write>
-            21352..21364 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            21352..21377 'shot.u...4 + 1]': ref<storage, vec2<f32>, read_write>
-            21365..21368 'row': u32
-            21365..21372 'row * 4': u32
-            21365..21376 'row * 4 + 1': u32
-            21371..21372 '4': integer
-            21375..21376 '1': integer
-            21380..21386 'newRow': array<vec2<f32>, 4>
-            21380..21389 'newRow[1]': vec2<f32>
-            21387..21388 '1': integer
-            21395..21399 'shot': ptr<storage, ShotData, read_write>
-            21395..21407 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            21395..21420 'shot.u...4 + 2]': ref<storage, vec2<f32>, read_write>
-            21408..21411 'row': u32
-            21408..21415 'row * 4': u32
-            21408..21419 'row * 4 + 2': u32
-            21414..21415 '4': integer
-            21418..21419 '2': integer
-            21423..21429 'newRow': array<vec2<f32>, 4>
-            21423..21432 'newRow[2]': vec2<f32>
-            21430..21431 '2': integer
-            21438..21442 'shot': ptr<storage, ShotData, read_write>
-            21438..21450 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            21438..21463 'shot.u...4 + 3]': ref<storage, vec2<f32>, read_write>
-            21451..21454 'row': u32
-            21451..21458 'row * 4': u32
-            21451..21462 'row * 4 + 3': u32
-            21457..21458 '4': integer
-            21461..21462 '3': integer
-            21466..21472 'newRow': array<vec2<f32>, 4>
-            21466..21475 'newRow[3]': vec2<f32>
-            21473..21474 '3': integer
-            21727..21732 'input': u32
-            21756..21761 'state': ref<function, u32, read_write>
-            21764..21769 'input': u32
-            21764..21782 'input ...96405u': u32
-            21764..21796 'input ...36453u': u32
-            21772..21782 '747796405u': u32
-            21785..21796 '2891336453u': u32
-            21806..21810 'word': ref<function, u32, read_write>
-            21813..21868 '((stat...03737u': u32
-            21814..21854 '(state... state': u32
-            21815..21820 'state': ref<function, u32, read_write>
-            21815..21845 'state ... + 4u)': u32
-            21825..21844 '(state...) + 4u': u32
-            21826..21831 'state': ref<function, u32, read_write>
-            21826..21838 'state >> 28u': u32
-            21835..21838 '28u': u32
-            21842..21844 '4u': u32
-            21849..21854 'state': ref<function, u32, read_write>
-            21858..21868 '277803737u': u32
-            21881..21901 '(word ...^ word': u32
-            21882..21886 'word': ref<function, u32, read_write>
-            21882..21893 'word >> 22u': u32
-            21890..21893 '22u': u32
-            21897..21901 'word': ref<function, u32, read_write>
-            21983..21991 'shot_idx': u32
-            22070..22079 'rng_state': ptr<storage, xorwow_state, read_write>
-            22082..22108 '&shots..._state': ptr<storage, xorwow_state, read_write>
-            22083..22088 'shots': ref<storage, array<ShotData>, read_write>
-            22083..22098 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            22083..22108 'shots[..._state': ref<storage, xorwow_state, read_write>
-            22089..22097 'shot_idx': u32
-            22119..22120 't': u32
-            22128..22137 'rng_state': ptr<storage, xorwow_state, read_write>
-            22128..22139 'rng_state.x': ref<storage, array<u32, 5>, read_write>
-            22128..22142 'rng_state.x[4]': ref<storage, u32, read_write>
-            22140..22141 '4': integer
-            22152..22153 's': u32
-            22161..22170 'rng_state': ptr<storage, xorwow_state, read_write>
-            22161..22172 'rng_state.x': ref<storage, array<u32, 5>, read_write>
-            22161..22175 'rng_state.x[0]': ref<storage, u32, read_write>
-            22173..22174 '0': integer
-            22181..22190 'rng_state': ptr<storage, xorwow_state, read_write>
-            22181..22192 'rng_state.x': ref<storage, array<u32, 5>, read_write>
-            22181..22195 'rng_state.x[4]': ref<storage, u32, read_write>
-            22193..22194 '4': integer
-            22198..22207 'rng_state': ptr<storage, xorwow_state, read_write>
-            22198..22209 'rng_state.x': ref<storage, array<u32, 5>, read_write>
-            22198..22212 'rng_state.x[3]': ref<storage, u32, read_write>
-            22210..22211 '3': integer
-            22218..22227 'rng_state': ptr<storage, xorwow_state, read_write>
-            22218..22229 'rng_state.x': ref<storage, array<u32, 5>, read_write>
-            22218..22232 'rng_state.x[3]': ref<storage, u32, read_write>
-            22230..22231 '3': integer
-            22235..22244 'rng_state': ptr<storage, xorwow_state, read_write>
-            22235..22246 'rng_state.x': ref<storage, array<u32, 5>, read_write>
-            22235..22249 'rng_state.x[2]': ref<storage, u32, read_write>
-            22247..22248 '2': integer
-            22255..22264 'rng_state': ptr<storage, xorwow_state, read_write>
-            22255..22266 'rng_state.x': ref<storage, array<u32, 5>, read_write>
-            22255..22269 'rng_state.x[2]': ref<storage, u32, read_write>
-            22267..22268 '2': integer
-            22272..22281 'rng_state': ptr<storage, xorwow_state, read_write>
-            22272..22283 'rng_state.x': ref<storage, array<u32, 5>, read_write>
-            22272..22286 'rng_state.x[1]': ref<storage, u32, read_write>
-            22284..22285 '1': integer
-            22292..22301 'rng_state': ptr<storage, xorwow_state, read_write>
-            22292..22303 'rng_state.x': ref<storage, array<u32, 5>, read_write>
-            22292..22306 'rng_state.x[1]': ref<storage, u32, read_write>
-            22304..22305 '1': integer
-            22309..22310 's': u32
-            22429..22431 't2': u32
-            22434..22435 't': u32
-            22434..22447 't ^ (t >> 2u)': u32
-            22439..22440 't': u32
-            22439..22446 't >> 2u': u32
-            22444..22446 '2u': u32
-            22457..22459 't3': u32
-            22462..22464 't2': u32
-            22462..22477 't2 ^ (t2 << 1u)': u32
-            22468..22470 't2': u32
-            22468..22476 't2 << 1u': u32
-            22474..22476 '1u': u32
-            22487..22489 't4': u32
-            22492..22494 't3': u32
-            22492..22498 't3 ^ s': u32
-            22492..22510 't3 ^ s...<< 4u)': u32
-            22497..22498 's': u32
-            22502..22503 's': u32
-            22502..22509 's << 4u': u32
-            22507..22509 '4u': u32
-            22516..22525 'rng_state': ptr<storage, xorwow_state, read_write>
-            22516..22527 'rng_state.x': ref<storage, array<u32, 5>, read_write>
-            22516..22530 'rng_state.x[0]': ref<storage, u32, read_write>
-            22528..22529 '0': integer
-            22533..22535 't4': u32
-            22541..22550 'rng_state': ptr<storage, xorwow_state, read_write>
-            22541..22558 'rng_st...ounter': ref<storage, u32, read_write>
-            22561..22570 'rng_state': ptr<storage, xorwow_state, read_write>
-            22561..22578 'rng_st...ounter': ref<storage, u32, read_write>
-            22561..22588 'rng_st...62437u': u32
-            22581..22588 '362437u': u32
-            22601..22603 't4': u32
-            22601..22623 't4 + r...ounter': u32
-            22606..22615 'rng_state': ptr<storage, xorwow_state, read_write>
-            22606..22623 'rng_st...ounter': ref<storage, u32, read_write>
-            22645..22653 'shot_idx': u32
-            22677..22685 'rand_u32': u32
-            22693..22716 'next_r...t_idx)': u32
-            22707..22715 'shot_idx': u32
-            22898..22911 'rand_f32_bits': u32
-            22914..22949 '(rand_...<< 23)': u32
-            22915..22923 'rand_u32': u32
-            22915..22934 'rand_u...7FFFFF': u32
-            22926..22934 '0x7FFFFF': integer
-            22939..22942 '127': integer
-            22939..22948 '127 << 23': integer
-            22946..22948 '23': integer
-            23008..23009 'f': f32
-            23017..23044 'bitcas..._bits)': f32
-            23030..23043 'rand_f32_bits': u32
-            23112..23113 'f': f32
-            23112..23119 'f - 1.0': f32
-            23116..23119 '1.0': float
-            23202..23207 'op_id': u32
-            23236..23241 'op_id': u32
-            23236..23251 'op_id == OPID_S': bool
-            23236..23273 'op_id ...D_SAdj': bool
-            23236..23292 'op_id ...OPID_T': bool
-            23236..23314 'op_id ...D_TAdj': bool
-            23236..23334 'op_id ...PID_RZ': bool
-            23245..23251 'OPID_S': u32
-            23255..23260 'op_id': u32
-            23255..23273 'op_id ...D_SAdj': bool
-            23264..23273 'OPID_SAdj': u32
-            23277..23282 'op_id': u32
-            23277..23292 'op_id == OPID_T': bool
-            23286..23292 'OPID_T': u32
-            23296..23301 'op_id': u32
-            23296..23314 'op_id ...D_TAdj': bool
-            23305..23314 'OPID_TAdj': u32
-            23318..23323 'op_id': u32
-            23318..23334 'op_id ...PID_RZ': bool
-            23327..23334 'OPID_RZ': u32
-            23352..23357 'op_id': u32
-            23386..23452 '(op_id...PID_MZ': bool
-            23386..23477 '(op_id...RESETZ': bool
-            23386..23508 '(op_id..._MAT1Q': bool
-            23386..23538 '(op_id...UFF_1Q': bool
-            23387..23392 'op_id': u32
-            23387..23403 'op_id ...PID_ID': bool
-            23387..23423 'op_id ...PID_RZ': bool
-            23396..23403 'OPID_ID': u32
-            23407..23412 'op_id': u32
-            23407..23423 'op_id ...PID_RZ': bool
-            23416..23423 'OPID_RZ': u32
-            23436..23441 'op_id': u32
-            23436..23452 'op_id ...PID_MZ': bool
-            23445..23452 'OPID_MZ': u32
-            23456..23461 'op_id': u32
-            23456..23477 'op_id ...RESETZ': bool
-            23465..23477 'OPID_MRESETZ': u32
-            23489..23494 'op_id': u32
-            23489..23508 'op_id ..._MAT1Q': bool
-            23498..23508 'OPID_MAT1Q': u32
-            23512..23517 'op_id': u32
-            23512..23538 'op_id ...UFF_1Q': bool
-            23521..23538 'OPID_S...UFF_1Q': u32
-            23614..23622 'shot_idx': u32
-            23639..23643 'shot': ptr<storage, ShotData, read_write>
-            23646..23662 '&shots...t_idx]': ptr<storage, ShotData, read_write>
-            23647..23652 'shots': ref<storage, array<ShotData>, read_write>
-            23647..23662 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            23653..23661 'shot_idx': u32
-            23874..23878 'shot': ptr<storage, ShotData, read_write>
-            23874..23890 'shot.r...malize': ref<storage, f32, read_write>
-            23893..23896 '1.0': float
-            23902..23906 'shot': ptr<storage, ShotData, read_write>
-            23902..23934 'shot.q...p_mask': ref<storage, u32, read_write>
-            23937..23939 '0u': u32
-            24026..24030 'shot': ptr<storage, ShotData, read_write>
-            24026..24041 'shot.rand_pauli': ref<storage, f32, read_write>
-            24044..24067 'next_r...t_idx)': f32
-            24058..24066 'shot_idx': u32
-            24073..24077 'shot': ptr<storage, ShotData, read_write>
-            24073..24090 'shot.r...amping': ref<storage, f32, read_write>
-            24093..24116 'next_r...t_idx)': f32
-            24107..24115 'shot_idx': u32
-            24122..24126 'shot': ptr<storage, ShotData, read_write>
-            24122..24139 'shot.r...ephase': ref<storage, f32, read_write>
-            24142..24165 'next_r...t_idx)': f32
-            24156..24164 'shot_idx': u32
-            24171..24175 'shot': ptr<storage, ShotData, read_write>
-            24171..24188 'shot.r...easure': ref<storage, f32, read_write>
-            24191..24214 'next_r...t_idx)': f32
-            24205..24213 'shot_idx': u32
-            24503..24526 'next_r...t_idx)': f32
-            24517..24525 'shot_idx': u32
-            24631..24639 'shot_idx': i32
-            24656..24660 'shot': ptr<storage, ShotData, read_write>
-            24663..24679 '&shots...t_idx]': ptr<storage, ShotData, read_write>
-            24664..24669 'shots': ref<storage, array<ShotData>, read_write>
-            24664..24679 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            24670..24678 'shot_idx': i32
-            24777..24785 'rng_seed': u32
-            24788..24796 'uniforms': ref<uniform, Uniforms, read>
-            24788..24805 'unifor...g_seed': ref<uniform, u32, read>
-            24815..24822 'shot_id': u32
-            24825..24869 'u32(un...t_idx)': u32
-            24829..24837 'uniforms': ref<uniform, Uniforms, read>
-            24829..24857 'unifor...hot_id': ref<uniform, i32, read>
-            24829..24868 'unifor...ot_idx': i32
-            24860..24868 'shot_idx': i32
-            25002..25007 '*shot': ref<storage, ShotData, read_write>
-            25003..25007 'shot': ptr<storage, ShotData, read_write>
-            25010..25020 'ShotData()': ShotData
-            25048..25052 'shot': ptr<storage, ShotData, read_write>
-            25048..25060 'shot.shot_id': ref<storage, u32, read_write>
-            25063..25070 'shot_id': u32
-            25130..25134 'shot': ptr<storage, ShotData, read_write>
-            25130..25146 'shot.n...op_idx': ref<storage, u32, read_write>
-            25149..25151 '0u': u32
-            25158..25162 'shot': ptr<storage, ShotData, read_write>
-            25158..25172 'shot.rng_state': ref<storage, xorwow_state, read_write>
-            25158..25174 'shot.r...tate.x': ref<storage, array<u32, 5>, read_write>
-            25158..25177 'shot.r...e.x[0]': ref<storage, u32, read_write>
-            25175..25176 '0': integer
-            25180..25188 'rng_seed': u32
-            25180..25208 'rng_se...ot_id)': u32
-            25191..25208 'hash_p...ot_id)': u32
-            25200..25207 'shot_id': u32
-            25214..25218 'shot': ptr<storage, ShotData, read_write>
-            25214..25228 'shot.rng_state': ref<storage, xorwow_state, read_write>
-            25214..25230 'shot.r...tate.x': ref<storage, array<u32, 5>, read_write>
-            25214..25233 'shot.r...e.x[1]': ref<storage, u32, read_write>
-            25231..25232 '1': integer
-            25236..25244 'rng_seed': u32
-            25236..25268 'rng_se...d + 1)': u32
-            25247..25268 'hash_p...d + 1)': u32
-            25256..25263 'shot_id': u32
-            25256..25267 'shot_id + 1': u32
-            25266..25267 '1': integer
-            25274..25278 'shot': ptr<storage, ShotData, read_write>
-            25274..25288 'shot.rng_state': ref<storage, xorwow_state, read_write>
-            25274..25290 'shot.r...tate.x': ref<storage, array<u32, 5>, read_write>
-            25274..25293 'shot.r...e.x[2]': ref<storage, u32, read_write>
-            25291..25292 '2': integer
-            25296..25304 'rng_seed': u32
-            25296..25328 'rng_se...d + 2)': u32
-            25307..25328 'hash_p...d + 2)': u32
-            25316..25323 'shot_id': u32
-            25316..25327 'shot_id + 2': u32
-            25326..25327 '2': integer
-            25334..25338 'shot': ptr<storage, ShotData, read_write>
-            25334..25348 'shot.rng_state': ref<storage, xorwow_state, read_write>
-            25334..25350 'shot.r...tate.x': ref<storage, array<u32, 5>, read_write>
-            25334..25353 'shot.r...e.x[3]': ref<storage, u32, read_write>
-            25351..25352 '3': integer
-            25356..25364 'rng_seed': u32
-            25356..25388 'rng_se...d + 3)': u32
-            25367..25388 'hash_p...d + 3)': u32
-            25376..25383 'shot_id': u32
-            25376..25387 'shot_id + 3': u32
-            25386..25387 '3': integer
-            25394..25398 'shot': ptr<storage, ShotData, read_write>
-            25394..25408 'shot.rng_state': ref<storage, xorwow_state, read_write>
-            25394..25410 'shot.r...tate.x': ref<storage, array<u32, 5>, read_write>
-            25394..25413 'shot.r...e.x[4]': ref<storage, u32, read_write>
-            25411..25412 '4': integer
-            25416..25424 'rng_seed': u32
-            25416..25448 'rng_se...d + 4)': u32
-            25427..25448 'hash_p...d + 4)': u32
-            25436..25443 'shot_id': u32
-            25436..25447 'shot_id + 4': u32
-            25446..25447 '4': integer
-            25455..25459 'shot': ptr<storage, ShotData, read_write>
-            25455..25467 'shot.op_type': ref<storage, u32, read_write>
-            25470..25471 '0': integer
-            25477..25481 'shot': ptr<storage, ShotData, read_write>
-            25477..25488 'shot.op_idx': ref<storage, u32, read_write>
-            25491..25492 '0': integer
-            25581..25585 'shot': ptr<storage, ShotData, read_write>
-            25581..25594 'shot.duration': ref<storage, f32, read_write>
-            25597..25600 '0.0': float
-            25606..25610 'shot': ptr<storage, ShotData, read_write>
-            25606..25622 'shot.r...malize': ref<storage, f32, read_write>
-            25625..25628 '1.0': float
+            21316..21332 '&shots...t_idx]': ptr<storage, ShotData, read_write>
+            21317..21322 'shots': ref<storage, array<ShotData>, read_write>
+            21317..21332 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            21323..21331 'shot_idx': u32
+            21338..21342 'shot': ptr<storage, ShotData, read_write>
+            21338..21350 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            21338..21363 'shot.u...4 + 0]': ref<storage, vec2<f32>, read_write>
+            21351..21354 'row': u32
+            21351..21358 'row * 4': u32
+            21351..21362 'row * 4 + 0': u32
+            21357..21358 '4': integer
+            21361..21362 '0': integer
+            21366..21372 'newRow': array<vec2<f32>, 4>
+            21366..21375 'newRow[0]': vec2<f32>
+            21373..21374 '0': integer
+            21381..21385 'shot': ptr<storage, ShotData, read_write>
+            21381..21393 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            21381..21406 'shot.u...4 + 1]': ref<storage, vec2<f32>, read_write>
+            21394..21397 'row': u32
+            21394..21401 'row * 4': u32
+            21394..21405 'row * 4 + 1': u32
+            21400..21401 '4': integer
+            21404..21405 '1': integer
+            21409..21415 'newRow': array<vec2<f32>, 4>
+            21409..21418 'newRow[1]': vec2<f32>
+            21416..21417 '1': integer
+            21424..21428 'shot': ptr<storage, ShotData, read_write>
+            21424..21436 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            21424..21449 'shot.u...4 + 2]': ref<storage, vec2<f32>, read_write>
+            21437..21440 'row': u32
+            21437..21444 'row * 4': u32
+            21437..21448 'row * 4 + 2': u32
+            21443..21444 '4': integer
+            21447..21448 '2': integer
+            21452..21458 'newRow': array<vec2<f32>, 4>
+            21452..21461 'newRow[2]': vec2<f32>
+            21459..21460 '2': integer
+            21467..21471 'shot': ptr<storage, ShotData, read_write>
+            21467..21479 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            21467..21492 'shot.u...4 + 3]': ref<storage, vec2<f32>, read_write>
+            21480..21483 'row': u32
+            21480..21487 'row * 4': u32
+            21480..21491 'row * 4 + 3': u32
+            21486..21487 '4': integer
+            21490..21491 '3': integer
+            21495..21501 'newRow': array<vec2<f32>, 4>
+            21495..21504 'newRow[3]': vec2<f32>
+            21502..21503 '3': integer
+            21763..21768 'input': u32
+            21792..21797 'state': ref<function, u32, read_write>
+            21800..21805 'input': u32
+            21800..21818 'input ...96405u': u32
+            21800..21832 'input ...36453u': u32
+            21808..21818 '747796405u': u32
+            21821..21832 '2891336453u': u32
+            21842..21846 'word': ref<function, u32, read_write>
+            21849..21904 '((stat...03737u': u32
+            21850..21890 '(state... state': u32
+            21851..21856 'state': ref<function, u32, read_write>
+            21851..21881 'state ... + 4u)': u32
+            21861..21880 '(state...) + 4u': u32
+            21862..21867 'state': ref<function, u32, read_write>
+            21862..21874 'state >> 28u': u32
+            21871..21874 '28u': u32
+            21878..21880 '4u': u32
+            21885..21890 'state': ref<function, u32, read_write>
+            21894..21904 '277803737u': u32
+            21917..21937 '(word ...^ word': u32
+            21918..21922 'word': ref<function, u32, read_write>
+            21918..21929 'word >> 22u': u32
+            21926..21929 '22u': u32
+            21933..21937 'word': ref<function, u32, read_write>
+            22019..22027 'shot_idx': u32
+            22106..22115 'rng_state': ptr<storage, xorwow_state, read_write>
+            22118..22144 '&shots..._state': ptr<storage, xorwow_state, read_write>
+            22119..22124 'shots': ref<storage, array<ShotData>, read_write>
+            22119..22134 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            22119..22144 'shots[..._state': ref<storage, xorwow_state, read_write>
+            22125..22133 'shot_idx': u32
+            22155..22156 't': u32
+            22164..22173 'rng_state': ptr<storage, xorwow_state, read_write>
+            22164..22175 'rng_state.x': ref<storage, array<u32, 5>, read_write>
+            22164..22178 'rng_state.x[4]': ref<storage, u32, read_write>
+            22176..22177 '4': integer
+            22188..22189 's': u32
+            22197..22206 'rng_state': ptr<storage, xorwow_state, read_write>
+            22197..22208 'rng_state.x': ref<storage, array<u32, 5>, read_write>
+            22197..22211 'rng_state.x[0]': ref<storage, u32, read_write>
+            22209..22210 '0': integer
+            22217..22226 'rng_state': ptr<storage, xorwow_state, read_write>
+            22217..22228 'rng_state.x': ref<storage, array<u32, 5>, read_write>
+            22217..22231 'rng_state.x[4]': ref<storage, u32, read_write>
+            22229..22230 '4': integer
+            22234..22243 'rng_state': ptr<storage, xorwow_state, read_write>
+            22234..22245 'rng_state.x': ref<storage, array<u32, 5>, read_write>
+            22234..22248 'rng_state.x[3]': ref<storage, u32, read_write>
+            22246..22247 '3': integer
+            22254..22263 'rng_state': ptr<storage, xorwow_state, read_write>
+            22254..22265 'rng_state.x': ref<storage, array<u32, 5>, read_write>
+            22254..22268 'rng_state.x[3]': ref<storage, u32, read_write>
+            22266..22267 '3': integer
+            22271..22280 'rng_state': ptr<storage, xorwow_state, read_write>
+            22271..22282 'rng_state.x': ref<storage, array<u32, 5>, read_write>
+            22271..22285 'rng_state.x[2]': ref<storage, u32, read_write>
+            22283..22284 '2': integer
+            22291..22300 'rng_state': ptr<storage, xorwow_state, read_write>
+            22291..22302 'rng_state.x': ref<storage, array<u32, 5>, read_write>
+            22291..22305 'rng_state.x[2]': ref<storage, u32, read_write>
+            22303..22304 '2': integer
+            22308..22317 'rng_state': ptr<storage, xorwow_state, read_write>
+            22308..22319 'rng_state.x': ref<storage, array<u32, 5>, read_write>
+            22308..22322 'rng_state.x[1]': ref<storage, u32, read_write>
+            22320..22321 '1': integer
+            22328..22337 'rng_state': ptr<storage, xorwow_state, read_write>
+            22328..22339 'rng_state.x': ref<storage, array<u32, 5>, read_write>
+            22328..22342 'rng_state.x[1]': ref<storage, u32, read_write>
+            22340..22341 '1': integer
+            22345..22346 's': u32
+            22465..22467 't2': u32
+            22470..22471 't': u32
+            22470..22483 't ^ (t >> 2u)': u32
+            22475..22476 't': u32
+            22475..22482 't >> 2u': u32
+            22480..22482 '2u': u32
+            22493..22495 't3': u32
+            22498..22500 't2': u32
+            22498..22513 't2 ^ (t2 << 1u)': u32
+            22504..22506 't2': u32
+            22504..22512 't2 << 1u': u32
+            22510..22512 '1u': u32
+            22523..22525 't4': u32
+            22528..22530 't3': u32
+            22528..22534 't3 ^ s': u32
+            22528..22546 't3 ^ s...<< 4u)': u32
+            22533..22534 's': u32
+            22538..22539 's': u32
+            22538..22545 's << 4u': u32
+            22543..22545 '4u': u32
+            22552..22561 'rng_state': ptr<storage, xorwow_state, read_write>
+            22552..22563 'rng_state.x': ref<storage, array<u32, 5>, read_write>
+            22552..22566 'rng_state.x[0]': ref<storage, u32, read_write>
+            22564..22565 '0': integer
+            22569..22571 't4': u32
+            22577..22586 'rng_state': ptr<storage, xorwow_state, read_write>
+            22577..22594 'rng_st...ounter': ref<storage, u32, read_write>
+            22597..22606 'rng_state': ptr<storage, xorwow_state, read_write>
+            22597..22614 'rng_st...ounter': ref<storage, u32, read_write>
+            22597..22624 'rng_st...62437u': u32
+            22617..22624 '362437u': u32
+            22637..22639 't4': u32
+            22637..22659 't4 + r...ounter': u32
+            22642..22651 'rng_state': ptr<storage, xorwow_state, read_write>
+            22642..22659 'rng_st...ounter': ref<storage, u32, read_write>
+            22681..22689 'shot_idx': u32
+            22713..22721 'rand_u32': u32
+            22729..22752 'next_r...t_idx)': u32
+            22743..22751 'shot_idx': u32
+            22934..22947 'rand_f32_bits': u32
+            22950..22985 '(rand_...<< 23)': u32
+            22951..22959 'rand_u32': u32
+            22951..22970 'rand_u...7FFFFF': u32
+            22962..22970 '0x7FFFFF': integer
+            22975..22978 '127': integer
+            22975..22984 '127 << 23': integer
+            22982..22984 '23': integer
+            23044..23045 'f': f32
+            23053..23080 'bitcas..._bits)': f32
+            23066..23079 'rand_f32_bits': u32
+            23148..23149 'f': f32
+            23148..23155 'f - 1.0': f32
+            23152..23155 '1.0': float
+            23238..23243 'op_id': u32
+            23272..23277 'op_id': u32
+            23272..23287 'op_id == OPID_S': bool
+            23272..23309 'op_id ...D_SAdj': bool
+            23272..23328 'op_id ...OPID_T': bool
+            23272..23350 'op_id ...D_TAdj': bool
+            23272..23370 'op_id ...PID_RZ': bool
+            23281..23287 'OPID_S': u32
+            23291..23296 'op_id': u32
+            23291..23309 'op_id ...D_SAdj': bool
+            23300..23309 'OPID_SAdj': u32
+            23313..23318 'op_id': u32
+            23313..23328 'op_id == OPID_T': bool
+            23322..23328 'OPID_T': u32
+            23332..23337 'op_id': u32
+            23332..23350 'op_id ...D_TAdj': bool
+            23341..23350 'OPID_TAdj': u32
+            23354..23359 'op_id': u32
+            23354..23370 'op_id ...PID_RZ': bool
+            23363..23370 'OPID_RZ': u32
+            23388..23393 'op_id': u32
+            23422..23488 '(op_id...PID_MZ': bool
+            23422..23513 '(op_id...RESETZ': bool
+            23422..23544 '(op_id..._MAT1Q': bool
+            23422..23574 '(op_id...UFF_1Q': bool
+            23423..23428 'op_id': u32
+            23423..23439 'op_id ...PID_ID': bool
+            23423..23459 'op_id ...PID_RZ': bool
+            23432..23439 'OPID_ID': u32
+            23443..23448 'op_id': u32
+            23443..23459 'op_id ...PID_RZ': bool
+            23452..23459 'OPID_RZ': u32
+            23472..23477 'op_id': u32
+            23472..23488 'op_id ...PID_MZ': bool
+            23481..23488 'OPID_MZ': u32
+            23492..23497 'op_id': u32
+            23492..23513 'op_id ...RESETZ': bool
+            23501..23513 'OPID_MRESETZ': u32
+            23525..23530 'op_id': u32
+            23525..23544 'op_id ..._MAT1Q': bool
+            23534..23544 'OPID_MAT1Q': u32
+            23548..23553 'op_id': u32
+            23548..23574 'op_id ...UFF_1Q': bool
+            23557..23574 'OPID_S...UFF_1Q': u32
+            23650..23658 'shot_idx': u32
+            23675..23679 'shot': ptr<storage, ShotData, read_write>
+            23682..23698 '&shots...t_idx]': ptr<storage, ShotData, read_write>
+            23683..23688 'shots': ref<storage, array<ShotData>, read_write>
+            23683..23698 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            23689..23697 'shot_idx': u32
+            23928..23932 'shot': ptr<storage, ShotData, read_write>
+            23928..23944 'shot.r...malize': ref<storage, f32, read_write>
+            23947..23950 '1.0': float
+            23956..23960 'shot': ptr<storage, ShotData, read_write>
+            23956..23988 'shot.q...p_mask': ref<storage, u32, read_write>
+            23991..23993 '0u': u32
+            24080..24084 'shot': ptr<storage, ShotData, read_write>
+            24080..24095 'shot.rand_pauli': ref<storage, f32, read_write>
+            24098..24121 'next_r...t_idx)': f32
+            24112..24120 'shot_idx': u32
+            24127..24131 'shot': ptr<storage, ShotData, read_write>
+            24127..24144 'shot.r...amping': ref<storage, f32, read_write>
+            24147..24170 'next_r...t_idx)': f32
+            24161..24169 'shot_idx': u32
+            24176..24180 'shot': ptr<storage, ShotData, read_write>
+            24176..24193 'shot.r...ephase': ref<storage, f32, read_write>
+            24196..24219 'next_r...t_idx)': f32
+            24210..24218 'shot_idx': u32
+            24225..24229 'shot': ptr<storage, ShotData, read_write>
+            24225..24242 'shot.r...easure': ref<storage, f32, read_write>
+            24245..24268 'next_r...t_idx)': f32
+            24259..24267 'shot_idx': u32
+            24557..24580 'next_r...t_idx)': f32
+            24571..24579 'shot_idx': u32
+            24685..24693 'shot_idx': i32
+            24710..24714 'shot': ptr<storage, ShotData, read_write>
+            24717..24733 '&shots...t_idx]': ptr<storage, ShotData, read_write>
+            24718..24723 'shots': ref<storage, array<ShotData>, read_write>
+            24718..24733 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            24724..24732 'shot_idx': i32
+            24831..24839 'rng_seed': u32
+            24842..24850 'uniforms': ref<uniform, Uniforms, read>
+            24842..24859 'unifor...g_seed': ref<uniform, u32, read>
+            24869..24876 'shot_id': u32
+            24879..24923 'u32(un...t_idx)': u32
+            24883..24891 'uniforms': ref<uniform, Uniforms, read>
+            24883..24911 'unifor...hot_id': ref<uniform, i32, read>
+            24883..24922 'unifor...ot_idx': i32
+            24914..24922 'shot_idx': i32
+            25056..25061 '*shot': ref<storage, ShotData, read_write>
+            25057..25061 'shot': ptr<storage, ShotData, read_write>
+            25064..25074 'ShotData()': ShotData
+            25102..25106 'shot': ptr<storage, ShotData, read_write>
+            25102..25114 'shot.shot_id': ref<storage, u32, read_write>
+            25117..25124 'shot_id': u32
+            25184..25188 'shot': ptr<storage, ShotData, read_write>
+            25184..25200 'shot.n...op_idx': ref<storage, u32, read_write>
+            25203..25205 '0u': u32
+            25212..25216 'shot': ptr<storage, ShotData, read_write>
+            25212..25226 'shot.rng_state': ref<storage, xorwow_state, read_write>
+            25212..25228 'shot.r...tate.x': ref<storage, array<u32, 5>, read_write>
+            25212..25231 'shot.r...e.x[0]': ref<storage, u32, read_write>
+            25229..25230 '0': integer
+            25234..25242 'rng_seed': u32
+            25234..25262 'rng_se...ot_id)': u32
+            25245..25262 'hash_p...ot_id)': u32
+            25254..25261 'shot_id': u32
+            25268..25272 'shot': ptr<storage, ShotData, read_write>
+            25268..25282 'shot.rng_state': ref<storage, xorwow_state, read_write>
+            25268..25284 'shot.r...tate.x': ref<storage, array<u32, 5>, read_write>
+            25268..25287 'shot.r...e.x[1]': ref<storage, u32, read_write>
+            25285..25286 '1': integer
+            25290..25298 'rng_seed': u32
+            25290..25322 'rng_se...d + 1)': u32
+            25301..25322 'hash_p...d + 1)': u32
+            25310..25317 'shot_id': u32
+            25310..25321 'shot_id + 1': u32
+            25320..25321 '1': integer
+            25328..25332 'shot': ptr<storage, ShotData, read_write>
+            25328..25342 'shot.rng_state': ref<storage, xorwow_state, read_write>
+            25328..25344 'shot.r...tate.x': ref<storage, array<u32, 5>, read_write>
+            25328..25347 'shot.r...e.x[2]': ref<storage, u32, read_write>
+            25345..25346 '2': integer
+            25350..25358 'rng_seed': u32
+            25350..25382 'rng_se...d + 2)': u32
+            25361..25382 'hash_p...d + 2)': u32
+            25370..25377 'shot_id': u32
+            25370..25381 'shot_id + 2': u32
+            25380..25381 '2': integer
+            25388..25392 'shot': ptr<storage, ShotData, read_write>
+            25388..25402 'shot.rng_state': ref<storage, xorwow_state, read_write>
+            25388..25404 'shot.r...tate.x': ref<storage, array<u32, 5>, read_write>
+            25388..25407 'shot.r...e.x[3]': ref<storage, u32, read_write>
+            25405..25406 '3': integer
+            25410..25418 'rng_seed': u32
+            25410..25442 'rng_se...d + 3)': u32
+            25421..25442 'hash_p...d + 3)': u32
+            25430..25437 'shot_id': u32
+            25430..25441 'shot_id + 3': u32
+            25440..25441 '3': integer
+            25448..25452 'shot': ptr<storage, ShotData, read_write>
+            25448..25462 'shot.rng_state': ref<storage, xorwow_state, read_write>
+            25448..25464 'shot.r...tate.x': ref<storage, array<u32, 5>, read_write>
+            25448..25467 'shot.r...e.x[4]': ref<storage, u32, read_write>
+            25465..25466 '4': integer
+            25470..25478 'rng_seed': u32
+            25470..25502 'rng_se...d + 4)': u32
+            25481..25502 'hash_p...d + 4)': u32
+            25490..25497 'shot_id': u32
+            25490..25501 'shot_id + 4': u32
+            25500..25501 '4': integer
+            25509..25513 'shot': ptr<storage, ShotData, read_write>
+            25509..25521 'shot.op_type': ref<storage, u32, read_write>
+            25524..25525 '0': integer
+            25531..25535 'shot': ptr<storage, ShotData, read_write>
+            25531..25542 'shot.op_idx': ref<storage, u32, read_write>
+            25545..25546 '0': integer
             25635..25639 'shot': ptr<storage, ShotData, read_write>
-            25635..25655 'shot.q...0_mask': ref<storage, u32, read_write>
-            25658..25687 '(1u <<...) - 1u': u32
-            25659..25661 '1u': u32
-            25659..25681 '1u << ...COUNT)': u32
-            25665..25681 'u32(QU...COUNT)': u32
-            25669..25680 'QUBIT_COUNT': i32
-            25685..25687 '1u': u32
-            25715..25719 'shot': ptr<storage, ShotData, read_write>
-            25715..25735 'shot.q...1_mask': ref<storage, u32, read_write>
-            25738..25740 '0u': u32
-            25746..25750 'shot': ptr<storage, ShotData, read_write>
-            25746..25778 'shot.q...p_mask': ref<storage, u32, read_write>
-            25781..25782 '0': integer
-            25788..25792 'shot': ptr<storage, ShotData, read_write>
-            25788..25810 'shot.p...s_mask': ref<storage, u32, read_write>
-            25813..25815 '0u': u32
-            25885..25886 'i': ref<function, i32, read_write>
-            25894..25895 '0': integer
-            25897..25898 'i': ref<function, i32, read_write>
-            25897..25912 'i < QUBIT_COUNT': bool
-            25901..25912 'QUBIT_COUNT': i32
-            25914..25915 'i': ref<function, i32, read_write>
-            25929..25933 'shot': ptr<storage, ShotData, read_write>
-            25929..25945 'shot.q..._state': ref<storage, [error], read_write>
-            25929..25948 'shot.q...ate[i]': [error]
-            25929..25965 'shot.q...bility': [error]
-            25946..25947 'i': ref<function, i32, read_write>
-            25968..25971 '1.0': float
-            25981..25985 'shot': ptr<storage, ShotData, read_write>
-            25981..25997 'shot.q..._state': ref<storage, [error], read_write>
-            25981..26000 'shot.q...ate[i]': [error]
-            25981..26016 'shot.q...bility': [error]
-            25998..25999 'i': ref<function, i32, read_write>
-            26019..26022 '0.0': float
-            26032..26036 'shot': ptr<storage, ShotData, read_write>
-            26032..26048 'shot.q..._state': ref<storage, [error], read_write>
-            26032..26051 'shot.q...ate[i]': [error]
-            26032..26056 'shot.q...].heat': [error]
-            26049..26050 'i': ref<function, i32, read_write>
-            26059..26062 '0.0': float
-            26072..26076 'shot': ptr<storage, ShotData, read_write>
-            26072..26088 'shot.q..._state': ref<storage, [error], read_write>
-            26072..26091 'shot.q...ate[i]': [error]
-            26072..26102 'shot.q..._since': [error]
-            26089..26090 'i': ref<function, i32, read_write>
-            26105..26108 '0.0': float
-            26235..26243 'shot_idx': u32
-            26260..26264 'shot': ptr<storage, ShotData, read_write>
-            26267..26283 '&shots...t_idx]': ptr<storage, ShotData, read_write>
-            26268..26273 'shots': ref<storage, array<ShotData>, read_write>
-            26268..26283 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            26274..26282 'shot_idx': u32
-            26660..26661 'q': ref<function, u32, read_write>
-            26669..26671 '0u': u32
-            26673..26674 'q': ref<function, u32, read_write>
-            26673..26693 'q < u3...COUNT)': bool
-            26677..26693 'u32(QU...COUNT)': u32
-            26681..26692 'QUBIT_COUNT': i32
-            26695..26696 'q': ref<function, u32, read_write>
-            26714..26724 'qubit_mask': u32
-            26732..26734 '1u': u32
-            26732..26739 '1u << q': u32
-            26738..26739 'q': ref<function, u32, read_write>
-            26753..26806 '(shot.... != 0u': bool
-            26754..26758 'shot': ptr<storage, ShotData, read_write>
-            26754..26786 'shot.q...p_mask': ref<storage, u32, read_write>
-            26754..26799 'shot.q...t_mask': u32
-            26789..26799 'qubit_mask': u32
-            26804..26806 '0u': u32
-            27087..27097 'total_zero': ref<function, f32, read_write>
-            27105..27108 '0.0': float
-            27126..27135 'total_one': ref<function, f32, read_write>
-            27143..27146 '0.0': float
-            27165..27184 'WORKGR...R_SHOT': i32
-            27165..27188 'WORKGR...OT > 1': bool
-            27187..27188 '1': integer
-            27290..27296 'offset': u32
-            27299..27307 'shot_idx': u32
-            27299..27334 'shot_i..._SHOT)': u32
-            27310..27334 'u32(WO..._SHOT)': u32
-            27314..27333 'WORKGR...R_SHOT': i32
-            27361..27368 'wkg_idx': ref<function, u32, read_write>
-            27376..27378 '0u': u32
-            27380..27387 'wkg_idx': ref<function, u32, read_write>
-            27380..27414 'wkg_id..._SHOT)': bool
-            27390..27414 'u32(WO..._SHOT)': u32
-            27394..27413 'WORKGR...R_SHOT': i32
-            27416..27423 'wkg_idx': ref<function, u32, read_write>
-            27453..27457 'sums': [error]
-            27460..27479 'workgr...lation': ref<storage, WorkgroupCollationBuffer, read_write>
-            27460..27484 'workgr...n.sums': ref<storage, [error], read_write>
-            27460..27502 'workgr...ffset]': [error]
-            27485..27492 'wkg_idx': ref<function, u32, read_write>
-            27485..27501 'wkg_id...offset': u32
-            27495..27501 'offset': u32
-            27524..27534 'total_zero': ref<function, f32, read_write>
-            27537..27547 'total_zero': ref<function, f32, read_write>
-            27537..27566 'total_...s[q].x': [error]
-            27550..27554 'sums': [error]
-            27550..27561 'sums.qubits': [error]
-            27550..27564 'sums.qubits[q]': [error]
-            27550..27566 'sums.q...s[q].x': [error]
-            27562..27563 'q': ref<function, u32, read_write>
-            27588..27597 'total_one': ref<function, f32, read_write>
-            27600..27609 'total_one': ref<function, f32, read_write>
-            27600..27628 'total_...s[q].y': [error]
-            27612..27616 'sums': [error]
-            27612..27623 'sums.qubits': [error]
-            27612..27626 'sums.qubits[q]': [error]
-            27612..27628 'sums.q...s[q].y': [error]
-            27624..27625 'q': ref<function, u32, read_write>
-            27770..27780 'total_zero': ref<function, f32, read_write>
-            27783..27787 'shot': ptr<storage, ShotData, read_write>
-            27783..27799 'shot.q..._state': ref<storage, [error], read_write>
-            27783..27802 'shot.q...ate[q]': [error]
-            27783..27819 'shot.q...bility': [error]
-            27800..27801 'q': ref<function, u32, read_write>
-            27837..27846 'total_one': ref<function, f32, read_write>
-            27849..27853 'shot': ptr<storage, ShotData, read_write>
-            27849..27865 'shot.q..._state': ref<storage, [error], read_write>
-            27849..27868 'shot.q...ate[q]': [error]
-            27849..27884 'shot.q...bility': [error]
-            27866..27867 'q': ref<function, u32, read_write>
-            28129..28139 'total_zero': ref<function, f32, read_write>
-            28129..28150 'total_...000001': bool
-            28142..28150 '0.000001': float
-            28154..28164 'total_zero': ref<function, f32, read_write>
-            28167..28170 '0.0': float
-            28190..28199 'total_one': ref<function, f32, read_write>
-            28190..28210 'total_...000001': bool
-            28202..28210 '0.000001': float
-            28214..28223 'total_one': ref<function, f32, read_write>
-            28226..28229 '0.0': float
-            28249..28259 'total_zero': ref<function, f32, read_write>
-            28249..28270 'total_...999999': bool
-            28262..28270 '0.999999': float
-            28274..28284 'total_zero': ref<function, f32, read_write>
-            28287..28290 '1.0': float
-            28310..28319 'total_one': ref<function, f32, read_write>
-            28310..28330 'total_...999999': bool
-            28322..28330 '0.999999': float
-            28334..28343 'total_one': ref<function, f32, read_write>
-            28346..28349 '1.0': float
-            28366..28370 'shot': ptr<storage, ShotData, read_write>
-            28366..28382 'shot.q..._state': ref<storage, [error], read_write>
-            28366..28385 'shot.q...ate[q]': [error]
-            28366..28402 'shot.q...bility': [error]
-            28383..28384 'q': ref<function, u32, read_write>
-            28405..28415 'total_zero': ref<function, f32, read_write>
-            28429..28433 'shot': ptr<storage, ShotData, read_write>
-            28429..28445 'shot.q..._state': ref<storage, [error], read_write>
-            28429..28448 'shot.q...ate[q]': [error]
-            28429..28464 'shot.q...bility': [error]
-            28446..28447 'q': ref<function, u32, read_write>
-            28467..28476 'total_one': ref<function, f32, read_write>
-            28711..28727 'within...eshold': bool
-            28730..28765 'abs(1...._one))': f32
-            28730..28782 'abs(1....ESHOLD': bool
-            28734..28737 '1.0': float
-            28734..28764 '1.0 - ...l_one)': f32
-            28741..28751 'total_zero': ref<function, f32, read_write>
-            28741..28763 'total_...al_one': f32
-            28754..28763 'total_one': ref<function, f32, read_write>
-            28768..28782 'PROB_THRESHOLD': f32
-            28799..28816 '!withi...eshold': bool
-            28800..28816 'within...eshold': bool
-            28910..28919 'old_value': __atomic_compare_exchange_result
-            28922..29056 'atomic...PROBS)': __atomic_compare_exchange_result
-            28969..28992 '&diagn...r_code': ptr<storage, atomic<u32>, read_write>
-            28970..28981 'diagnostics': ref<storage, DiagnosticData, read_write>
-            28970..28992 'diagno...r_code': ref<storage, atomic<u32>, read_write>
-            29014..29016 '0u': u32
-            29038..29055 'ERR_IN..._PROBS': u32
-            29077..29086 'old_value': __atomic_compare_exchange_result
-            29077..29096 'old_va...hanged': bool
-            29188..29199 'diagnostics': ref<storage, DiagnosticData, read_write>
-            29188..29206 'diagno...extra1': ref<storage, u32, read_write>
-            29209..29210 'q': ref<function, u32, read_write>
-            29232..29243 'diagnostics': ref<storage, DiagnosticData, read_write>
-            29232..29250 'diagno...extra2': ref<storage, f32, read_write>
-            29253..29263 'total_zero': ref<function, f32, read_write>
-            29285..29296 'diagnostics': ref<storage, DiagnosticData, read_write>
-            29285..29303 'diagno...extra3': ref<storage, f32, read_write>
-            29306..29315 'total_one': ref<function, f32, read_write>
-            29490..29501 'diagnostics': ref<storage, DiagnosticData, read_write>
-            29490..29506 'diagno...s.shot': ref<storage, ShotData, read_write>
-            29509..29514 '*shot': ref<storage, ShotData, read_write>
-            29510..29514 'shot': ptr<storage, ShotData, read_write>
-            29536..29547 'diagnostics': ref<storage, DiagnosticData, read_write>
-            29536..29550 'diagnostics.op': ref<storage, Op, read_write>
-            29553..29556 'ops': ref<storage, array<Op>, read>
-            29553..29569 'ops[sh...p_idx]': ref<storage, Op, read>
-            29557..29561 'shot': ptr<storage, ShotData, read_write>
-            29557..29568 'shot.op_idx': ref<storage, u32, read_write>
-            29710..29719 'err_index': u32
-            29722..29751 '(shot_..._COUNT': u32
-            29722..29755 '(shot_...NT - 1': u32
-            29723..29731 'shot_idx': u32
-            29723..29735 'shot_idx + 1': u32
-            29734..29735 '1': integer
-            29739..29751 'RESULT_COUNT': u32
-            29754..29755 '1': integer
-            29773..29903 'atomic...PROBS)': __atomic_compare_exchange_result
-            29820..29839 '&resul...index]': ptr<storage, atomic<u32>, read_write>
-            29821..29828 'results': ref<storage, array<atomic<u32>>, read_write>
-            29821..29839 'result...index]': ref<storage, atomic<u32>, read_write>
-            29829..29838 'err_index': u32
-            29861..29863 '0u': u32
-            29885..29902 'ERR_IN..._PROBS': u32
-            29984..29988 'shot': ptr<storage, ShotData, read_write>
-            29984..30004 'shot.q...0_mask': ref<storage, u32, read_write>
-            30007..30152 'select...= 1.0)': u32
-            30031..30035 'shot': ptr<storage, ShotData, read_write>
-            30031..30051 'shot.q...0_mask': ref<storage, u32, read_write>
-            30031..30065 'shot.q...t_mask': u32
-            30054..30065 '~qubit_mask': u32
-            30055..30065 'qubit_mask': u32
-            30083..30087 'shot': ptr<storage, ShotData, read_write>
-            30083..30103 'shot.q...0_mask': ref<storage, u32, read_write>
-            30083..30116 'shot.q...t_mask': u32
-            30106..30116 'qubit_mask': u32
-            30134..30144 'total_zero': ref<function, f32, read_write>
-            30134..30151 'total_...== 1.0': bool
-            30148..30151 '1.0': float
-            30166..30170 'shot': ptr<storage, ShotData, read_write>
-            30166..30186 'shot.q...1_mask': ref<storage, u32, read_write>
-            30189..30333 'select...= 1.0)': u32
-            30213..30217 'shot': ptr<storage, ShotData, read_write>
-            30213..30233 'shot.q...1_mask': ref<storage, u32, read_write>
-            30213..30247 'shot.q...t_mask': u32
-            30236..30247 '~qubit_mask': u32
-            30237..30247 'qubit_mask': u32
-            30265..30269 'shot': ptr<storage, ShotData, read_write>
-            30265..30285 'shot.q...1_mask': ref<storage, u32, read_write>
-            30265..30298 'shot.q...t_mask': u32
-            30288..30298 'qubit_mask': u32
-            30316..30325 'total_one': ref<function, f32, read_write>
-            30316..30332 'total_...== 1.0': bool
-            30329..30332 '1.0': float
-            30488..30504 'stateV...rIndex': u32
-            30511..30520 'amplitude': vec2<f32>
-            30529..30532 'tid': u32
-            30549..30553 'mask': ref<function, u32, read_write>
-            30561..30563 '1u': u32
-            30578..30579 'q': ref<function, u32, read_write>
-            30587..30589 '0u': u32
-            30591..30592 'q': ref<function, u32, read_write>
-            30591..30611 'q < u3...COUNT)': bool
-            30595..30611 'u32(QU...COUNT)': u32
-            30599..30610 'QUBIT_COUNT': i32
-            30613..30614 'q': ref<function, u32, read_write>
-            30632..30638 'is_one': bool
-            30647..30678 '(state... != 0u': bool
-            30648..30664 'stateV...rIndex': u32
-            30648..30671 'stateV...& mask': u32
-            30667..30671 'mask': ref<function, u32, read_write>
-            30676..30678 '0u': u32
-            30692..30696 'prob': f32
-            30704..30723 'cplxMa...itude)': f32
-            30713..30722 'amplitude': vec2<f32>
-            30737..30743 'is_one': bool
-            30759..30777 'qubitP...lities': ref<workgroup, [error], read_write>
-            30759..30782 'qubitP...s[tid]': [error]
-            30759..30786 'qubitP...d].one': [error]
-            30759..30789 'qubitP...one[q]': [error]
-            30778..30781 'tid': u32
-            30787..30788 'q': ref<function, u32, read_write>
-            30793..30797 'prob': f32
-            30828..30846 'qubitP...lities': ref<workgroup, [error], read_write>
-            30828..30851 'qubitP...s[tid]': [error]
-            30828..30856 'qubitP...].zero': [error]
-            30828..30859 'qubitP...ero[q]': [error]
-            30847..30850 'tid': u32
-            30857..30858 'q': ref<function, u32, read_write>
-            30863..30867 'prob': f32
-            30887..30891 'mask': ref<function, u32, read_write>
-            30894..30898 'mask': ref<function, u32, read_write>
-            30894..30904 'mask << 1u': u32
-            30902..30904 '1u': u32
-            30944..30945 'q': u32
-            30952..30960 'shot_idx': i32
-            30967..30984 'wkg_co...on_idx': i32
-            31001..31011 'total_zero': ref<function, f32, read_write>
-            31019..31022 '0.0': float
-            31032..31041 'total_one': ref<function, f32, read_write>
-            31049..31052 '0.0': float
-            31067..31068 'j': ref<function, i32, read_write>
-            31071..31072 '0': integer
-            31074..31075 'j': ref<function, i32, read_write>
-            31074..31099 'j < TH...KGROUP': bool
-            31078..31099 'THREAD...KGROUP': i32
-            31101..31102 'j': ref<function, i32, read_write>
-            31116..31126 'total_zero': ref<function, f32, read_write>
-            31130..31148 'qubitP...lities': ref<workgroup, [error], read_write>
-            31130..31151 'qubitP...ies[j]': [error]
-            31130..31156 'qubitP...].zero': [error]
-            31130..31159 'qubitP...ero[q]': [error]
-            31149..31150 'j': ref<function, i32, read_write>
-            31157..31158 'q': u32
-            31169..31178 'total_one': ref<function, f32, read_write>
-            31182..31200 'qubitP...lities': ref<workgroup, [error], read_write>
-            31182..31203 'qubitP...ies[j]': [error]
-            31182..31207 'qubitP...j].one': [error]
-            31182..31210 'qubitP...one[q]': [error]
-            31201..31202 'j': ref<function, i32, read_write>
-            31208..31209 'q': u32
-            31226..31243 'wkg_co...on_idx': i32
-            31226..31248 'wkg_co...x >= 0': bool
-            31247..31248 '0': integer
-            31351..31370 'workgr...lation': ref<storage, WorkgroupCollationBuffer, read_write>
-            31351..31375 'workgr...n.sums': ref<storage, [error], read_write>
-            31351..31394 'workgr...n_idx]': [error]
-            31351..31401 'workgr...qubits': [error]
-            31351..31404 'workgr...its[q]': [error]
-            31376..31393 'wkg_co...on_idx': i32
-            31402..31403 'q': u32
-            31407..31435 'vec2f(...l_one)': vec2<f32>
-            31413..31423 'total_zero': ref<function, f32, read_write>
-            31425..31434 'total_one': ref<function, f32, read_write>
-            31539..31555 'within...eshold': bool
-            31558..31593 'abs(1...._one))': f32
-            31558..31610 'abs(1....ESHOLD': bool
-            31562..31565 '1.0': float
-            31562..31592 '1.0 - ...l_one)': f32
-            31569..31579 'total_zero': ref<function, f32, read_write>
-            31569..31591 'total_...al_one': f32
-            31582..31591 'total_one': ref<function, f32, read_write>
-            31596..31610 'PROB_THRESHOLD': f32
-            31623..31640 '!withi...eshold': bool
-            31624..31640 'within...eshold': bool
-            31726..31735 'old_value': __atomic_compare_exchange_result
-            31738..31867 'atomic...TOTAL)': __atomic_compare_exchange_result
-            31781..31804 '&diagn...r_code': ptr<storage, atomic<u32>, read_write>
-            31782..31793 'diagnostics': ref<storage, DiagnosticData, read_write>
-            31782..31804 'diagno...r_code': ref<storage, atomic<u32>, read_write>
-            31822..31824 '0u': u32
-            31842..31866 'ERR_IN..._TOTAL': u32
-            31884..31893 'old_value': __atomic_compare_exchange_result
-            31884..31903 'old_va...hanged': bool
-            31991..31995 'shot': ptr<storage, ShotData, read_write>
-            31998..32014 '&shots...t_idx]': ptr<storage, ShotData, read_write>
-            31999..32004 'shots': ref<storage, array<ShotData>, read_write>
-            31999..32014 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            32005..32013 'shot_idx': i32
-            32032..32043 'diagnostics': ref<storage, DiagnosticData, read_write>
-            32032..32050 'diagno...extra1': ref<storage, u32, read_write>
-            32053..32054 'q': u32
-            32072..32083 'diagnostics': ref<storage, DiagnosticData, read_write>
-            32072..32090 'diagno...extra2': ref<storage, f32, read_write>
-            32093..32103 'total_zero': ref<function, f32, read_write>
-            32121..32132 'diagnostics': ref<storage, DiagnosticData, read_write>
-            32121..32139 'diagno...extra3': ref<storage, f32, read_write>
-            32142..32151 'total_one': ref<function, f32, read_write>
-            32312..32323 'diagnostics': ref<storage, DiagnosticData, read_write>
-            32312..32328 'diagno...s.shot': ref<storage, ShotData, read_write>
-            32331..32336 '*shot': ref<storage, ShotData, read_write>
-            32332..32336 'shot': ptr<storage, ShotData, read_write>
-            32354..32365 'diagnostics': ref<storage, DiagnosticData, read_write>
-            32354..32368 'diagnostics.op': ref<storage, Op, read_write>
-            32371..32374 'ops': ref<storage, array<Op>, read>
-            32371..32387 'ops[sh...p_idx]': ref<storage, Op, read>
-            32375..32379 'shot': ptr<storage, ShotData, read_write>
-            32375..32386 'shot.op_idx': ref<storage, u32, read_write>
-            32453..32462 'err_index': i32
-            32465..32499 '(shot_...COUNT)': i32
-            32465..32503 '(shot_...T) - 1': i32
-            32466..32474 'shot_idx': i32
-            32466..32478 'shot_idx + 1': i32
-            32477..32478 '1': integer
-            32482..32499 'i32(RE...COUNT)': i32
-            32486..32498 'RESULT_COUNT': u32
-            32502..32503 '1': integer
-            32517..32654 'atomic...TOTAL)': __atomic_compare_exchange_result
-            32564..32583 '&resul...index]': ptr<storage, atomic<u32>, read_write>
-            32565..32572 'results': ref<storage, array<atomic<u32>>, read_write>
-            32565..32583 'result...index]': ref<storage, atomic<u32>, read_write>
-            32573..32582 'err_index': i32
-            32605..32607 '0u': u32
-            32629..32653 'ERR_IN..._TOTAL': u32
-            32685..32690 'shots': ref<storage, array<ShotData>, read_write>
-            32685..32700 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            32685..32712 'shots[..._state': ref<storage, [error], read_write>
-            32685..32715 'shots[...ate[q]': [error]
-            32685..32732 'shots[...bility': [error]
-            32691..32699 'shot_idx': i32
-            32713..32714 'q': u32
-            32735..32745 'total_zero': ref<function, f32, read_write>
-            32759..32764 'shots': ref<storage, array<ShotData>, read_write>
-            32759..32774 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            32759..32786 'shots[..._state': ref<storage, [error], read_write>
-            32759..32789 'shots[...ate[q]': [error]
-            32759..32805 'shots[...bility': [error]
-            32765..32773 'shot_idx': i32
-            32787..32788 'q': u32
-            32808..32817 'total_one': ref<function, f32, read_write>
-            33298..33306 'shot_idx': u32
-            33313..33318 'qubit': u32
-            33325..33331 'result': u32
-            33338..33352 'resets_to_zero': bool
-            33370..33374 'shot': ptr<storage, ShotData, read_write>
-            33377..33393 '&shots...t_idx]': ptr<storage, ShotData, read_write>
-            33378..33383 'shots': ref<storage, array<ShotData>, read_write>
-            33378..33393 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            33384..33392 'shot_idx': u32
-            33563..33577 'resets_to_zero': bool
-            33777..33781 'shot': ptr<storage, ShotData, read_write>
-            33777..33789 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            33777..33792 'shot.unitary[0]': ref<storage, vec2<f32>, read_write>
-            33790..33791 '0': integer
-            33795..33849 'select...== 1u)': vec2<f32>
-            33802..33817 'vec2f(1.0, 0.0)': vec2<f32>
-            33808..33811 '1.0': float
-            33813..33816 '0.0': float
-            33819..33834 'vec2f(0.0, 0.0)': vec2<f32>
-            33825..33828 '0.0': float
-            33830..33833 '0.0': float
-            33836..33842 'result': u32
-            33836..33848 'result == 1u': bool
-            33846..33848 '1u': u32
-            33859..33863 'shot': ptr<storage, ShotData, read_write>
-            33859..33871 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            33859..33874 'shot.unitary[1]': ref<storage, vec2<f32>, read_write>
-            33872..33873 '1': integer
-            33877..33931 'select...== 1u)': vec2<f32>
-            33884..33899 'vec2f(0.0, 0.0)': vec2<f32>
-            33890..33893 '0.0': float
-            33895..33898 '0.0': float
-            33901..33916 'vec2f(1.0, 0.0)': vec2<f32>
-            33907..33910 '1.0': float
-            33912..33915 '0.0': float
-            33918..33924 'result': u32
-            33918..33930 'result == 1u': bool
-            33928..33930 '1u': u32
-            33941..33945 'shot': ptr<storage, ShotData, read_write>
-            33941..33953 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            33941..33956 'shot.unitary[4]': ref<storage, vec2<f32>, read_write>
-            33954..33955 '4': integer
-            33959..33966 'vec2f()': vec2<f32>
-            33976..33980 'shot': ptr<storage, ShotData, read_write>
-            33976..33988 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            33976..33991 'shot.unitary[5]': ref<storage, vec2<f32>, read_write>
-            33989..33990 '5': integer
-            33994..34001 'vec2f()': vec2<f32>
-            34182..34186 'shot': ptr<storage, ShotData, read_write>
-            34182..34194 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            34182..34197 'shot.unitary[0]': ref<storage, vec2<f32>, read_write>
-            34195..34196 '0': integer
-            34200..34254 'select...== 1u)': vec2<f32>
-            34207..34222 'vec2f(1.0, 0.0)': vec2<f32>
-            34213..34216 '1.0': float
-            34218..34221 '0.0': float
-            34224..34239 'vec2f(0.0, 0.0)': vec2<f32>
-            34230..34233 '0.0': float
-            34235..34238 '0.0': float
-            34241..34247 'result': u32
-            34241..34253 'result == 1u': bool
-            34251..34253 '1u': u32
-            34264..34268 'shot': ptr<storage, ShotData, read_write>
-            34264..34276 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            34264..34279 'shot.unitary[1]': ref<storage, vec2<f32>, read_write>
-            34277..34278 '1': integer
-            34282..34289 'vec2f()': vec2<f32>
-            34299..34303 'shot': ptr<storage, ShotData, read_write>
-            34299..34311 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            34299..34314 'shot.unitary[4]': ref<storage, vec2<f32>, read_write>
-            34312..34313 '4': integer
-            34317..34324 'vec2f()': vec2<f32>
-            34334..34338 'shot': ptr<storage, ShotData, read_write>
-            34334..34346 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            34334..34349 'shot.unitary[5]': ref<storage, vec2<f32>, read_write>
-            34347..34348 '5': integer
-            34352..34406 'select...== 1u)': vec2<f32>
-            34359..34374 'vec2f(0.0, 0.0)': vec2<f32>
-            34365..34368 '0.0': float
-            34370..34373 '0.0': float
-            34376..34391 'vec2f(1.0, 0.0)': vec2<f32>
-            34382..34385 '1.0': float
-            34387..34390 '0.0': float
-            34393..34399 'result': u32
-            34393..34405 'result == 1u': bool
-            34403..34405 '1u': u32
-            34419..34423 'shot': ptr<storage, ShotData, read_write>
-            34419..34435 'shot.r...malize': ref<storage, f32, read_write>
-            34438..34590 'select...== 1u)': [error]
-            34454..34457 '1.0': float
-            34454..34506 '1.0 / ...ility)': [error]
-            34460..34506 'sqrt(s...ility)': [error]
-            34465..34469 'shot': ptr<storage, ShotData, read_write>
-            34465..34481 'shot.q..._state': ref<storage, [error], read_write>
-            34465..34488 'shot.q...qubit]': [error]
-            34465..34505 'shot.q...bility': [error]
-            34482..34487 'qubit': u32
-            34516..34519 '1.0': float
-            34516..34567 '1.0 / ...ility)': [error]
-            34522..34567 'sqrt(s...ility)': [error]
-            34527..34531 'shot': ptr<storage, ShotData, read_write>
-            34527..34543 'shot.q..._state': ref<storage, [error], read_write>
-            34527..34550 'shot.q...qubit]': [error]
-            34527..34566 'shot.q...bility': [error]
-            34544..34549 'qubit': u32
-            34577..34583 'result': u32
-            34577..34589 'result == 1u': bool
-            34587..34589 '1u': u32
-            34713..34717 'shot': ptr<storage, ShotData, read_write>
-            34713..34733 'shot.q...1_mask': ref<storage, u32, read_write>
-            34736..34740 'shot': ptr<storage, ShotData, read_write>
-            34736..34756 'shot.q...1_mask': ref<storage, u32, read_write>
-            34736..34773 'shot.q...qubit)': u32
-            34759..34773 '~(1u << qubit)': u32
-            34761..34763 '1u': u32
-            34761..34772 '1u << qubit': u32
-            34767..34772 'qubit': u32
-            34779..34783 'shot': ptr<storage, ShotData, read_write>
-            34779..34799 'shot.q...0_mask': ref<storage, u32, read_write>
-            34802..34806 'shot': ptr<storage, ShotData, read_write>
-            34802..34822 'shot.q...0_mask': ref<storage, u32, read_write>
-            34802..34839 'shot.q...qubit)': u32
-            34825..34839 '~(1u << qubit)': u32
-            34827..34829 '1u': u32
-            34827..34838 '1u << qubit': u32
-            34833..34838 'qubit': u32
-            35126..35130 'shot': ptr<storage, ShotData, read_write>
-            35126..35158 'shot.q...p_mask': ref<storage, u32, read_write>
-            35207..35352 '((1u <..._mask)': u32
-            35208..35237 '(1u <<...) - 1u': u32
-            35209..35211 '1u': u32
-            35209..35231 '1u << ...COUNT)': u32
-            35215..35231 'u32(QU...COUNT)': u32
-            35219..35230 'QUBIT_COUNT': i32
-            35235..35237 '1u': u32
-            35306..35352 '~(shot..._mask)': u32
-            35308..35312 'shot': ptr<storage, ShotData, read_write>
-            35308..35328 'shot.q...0_mask': ref<storage, u32, read_write>
-            35308..35351 'shot.q...1_mask': u32
-            35331..35335 'shot': ptr<storage, ShotData, read_write>
-            35331..35351 'shot.q...1_mask': ref<storage, u32, read_write>
-            35605..35613 'shot_idx': u32
-            35620..35626 'op_idx': u32
-            35633..35638 'qubit': u32
-            35645..35654 'result_id': u32
-            35661..35668 'is_loss': bool
-            35676..35689 'stores_result': bool
-            35697..35711 'resets_to_zero': bool
-            35729..35733 'shot': ptr<storage, ShotData, read_write>
-            35736..35752 '&shots...t_idx]': ptr<storage, ShotData, read_write>
-            35737..35742 'shots': ref<storage, array<ShotData>, read_write>
-            35737..35752 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            35743..35751 'shot_idx': u32
-            35843..35849 'result': [error]
-            35852..35928 'select...ility)': [error]
-            35859..35861 '1u': u32
-            35863..35865 '0u': u32
-            35867..35871 'shot': ptr<storage, ShotData, read_write>
-            35867..35884 'shot.r...easure': ref<storage, f32, read_write>
-            35867..35927 'shot.r...bility': [error]
-            35887..35891 'shot': ptr<storage, ShotData, read_write>
-            35887..35903 'shot.q..._state': ref<storage, [error], read_write>
-            35887..35910 'shot.q...qubit]': [error]
-            35887..35927 'shot.q...bility': [error]
-            35904..35909 'qubit': u32
-            36108..36116 '!is_loss': bool
-            36109..36116 'is_loss': bool
-            36130..36143 'stores_result': bool
-            36364..36368 'shot': ptr<storage, ShotData, read_write>
-            36364..36380 'shot.q..._state': ref<storage, [error], read_write>
-            36364..36387 'shot.q...qubit]': [error]
-            36364..36392 'shot.q...].heat': [error]
-            36364..36400 'shot.q...= -1.0': [error]
-            36381..36386 'qubit': u32
-            36396..36400 '-1.0': float
-            36397..36400 '1.0': float
-            36419..36483 'atomic...], 2u)': [error]
-            36431..36478 '&resul...lt_id]': ptr<storage, atomic<u32>, read_write>
-            36432..36439 'results': ref<storage, array<atomic<u32>>, read_write>
-            36432..36478 'result...lt_id]': ref<storage, atomic<u32>, read_write>
-            36440..36477 '(shot_...ult_id': u32
-            36441..36449 'shot_idx': u32
-            36441..36464 'shot_i..._COUNT': u32
-            36452..36464 'RESULT_COUNT': u32
-            36468..36477 'result_id': u32
-            36480..36482 '2u': u32
-            36501..36505 'shot': ptr<storage, ShotData, read_write>
-            36501..36513 'shot.op_type': ref<storage, u32, read_write>
-            36516..36523 'OPID_ID': u32
-            36541..36545 'shot': ptr<storage, ShotData, read_write>
-            36541..36552 'shot.op_idx': ref<storage, u32, read_write>
-            36555..36561 'op_idx': u32
-            36666..36670 'shot': ptr<storage, ShotData, read_write>
-            36666..36682 'shot.q..._state': ref<storage, [error], read_write>
-            36666..36689 'shot.q...qubit]': [error]
-            36666..36694 'shot.q...].heat': [error]
-            36683..36688 'qubit': u32
-            36697..36700 '0.0': float
-            36763..36831 'atomic...esult)': [error]
-            36775..36822 '&resul...lt_id]': ptr<storage, atomic<u32>, read_write>
-            36776..36783 'results': ref<storage, array<atomic<u32>>, read_write>
-            36776..36822 'result...lt_id]': ref<storage, atomic<u32>, read_write>
-            36784..36821 '(shot_...ult_id': u32
-            36785..36793 'shot_idx': u32
-            36785..36808 'shot_i..._COUNT': u32
-            36796..36808 'RESULT_COUNT': u32
-            36812..36821 'result_id': u32
-            36824..36830 'result': [error]
-            37045..37049 'shot': ptr<storage, ShotData, read_write>
-            37045..37061 'shot.q..._state': ref<storage, [error], read_write>
-            37045..37068 'shot.q...qubit]': [error]
-            37045..37073 'shot.q...].heat': [error]
-            37045..37081 'shot.q...= -1.0': [error]
-            37062..37067 'qubit': u32
-            37077..37081 '-1.0': float
-            37078..37081 '1.0': float
-            37100..37104 'shot': ptr<storage, ShotData, read_write>
-            37100..37112 'shot.op_type': ref<storage, u32, read_write>
-            37115..37122 'OPID_ID': u32
-            37140..37144 'shot': ptr<storage, ShotData, read_write>
-            37140..37151 'shot.op_idx': ref<storage, u32, read_write>
-            37154..37160 'op_idx': u32
-            37231..37235 'shot': ptr<storage, ShotData, read_write>
-            37231..37247 'shot.q..._state': ref<storage, [error], read_write>
-            37231..37254 'shot.q...qubit]': [error]
-            37231..37259 'shot.q...].heat': [error]
-            37248..37253 'qubit': u32
-            37262..37266 '-1.0': float
-            37263..37266 '1.0': float
-            37279..37349 'prep_m..._zero)': [error]
-            37309..37317 'shot_idx': u32
-            37319..37324 'qubit': u32
-            37326..37332 'result': [error]
-            37334..37348 'resets_to_zero': bool
-            37356..37360 'shot': ptr<storage, ShotData, read_write>
-            37356..37367 'shot.op_idx': ref<storage, u32, read_write>
-            37370..37376 'op_idx': u32
-            37535..37539 'shot': ptr<storage, ShotData, read_write>
-            37535..37547 'shot.op_type': ref<storage, u32, read_write>
-            37550..37562 'OPID_MRESETZ': u32
-            37981..37989 'shot_idx': u32
-            37996..38008 'target_is_q2': bool
-            38042..38045 'm00': vec2<f32>
-            38054..38057 'm01': vec2<f32>
-            38066..38069 'm10': vec2<f32>
-            38078..38081 'm11': vec2<f32>
-            38100..38104 'shot': ptr<storage, ShotData, read_write>
-            38107..38123 '&shots...t_idx]': ptr<storage, ShotData, read_write>
-            38108..38113 'shots': ref<storage, array<ShotData>, read_write>
-            38108..38123 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            38114..38122 'shot_idx': u32
-            38171..38172 'i': ref<function, u32, read_write>
-            38175..38177 '0u': u32
-            38179..38180 'i': ref<function, u32, read_write>
-            38179..38186 'i < 16u': bool
-            38183..38186 '16u': u32
-            38188..38189 'i': ref<function, u32, read_write>
-            38203..38207 'shot': ptr<storage, ShotData, read_write>
-            38203..38215 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            38203..38218 'shot.unitary[i]': ref<storage, vec2<f32>, read_write>
-            38216..38217 'i': ref<function, u32, read_write>
-            38221..38236 'vec2f(0.0, 0.0)': vec2<f32>
-            38227..38230 '0.0': float
-            38232..38235 '0.0': float
-            38251..38263 'target_is_q2': bool
-            38370..38374 'shot': ptr<storage, ShotData, read_write>
-            38370..38382 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            38370..38385 'shot.unitary[0]': ref<storage, vec2<f32>, read_write>
-            38383..38384 '0': integer
-            38389..38392 'm00': vec2<f32>
-            38394..38398 'shot': ptr<storage, ShotData, read_write>
-            38394..38406 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            38394..38409 'shot.unitary[1]': ref<storage, vec2<f32>, read_write>
-            38407..38408 '1': integer
-            38413..38416 'm01': vec2<f32>
-            38426..38430 'shot': ptr<storage, ShotData, read_write>
-            38426..38438 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            38426..38441 'shot.unitary[4]': ref<storage, vec2<f32>, read_write>
-            38439..38440 '4': integer
-            38445..38448 'm10': vec2<f32>
-            38450..38454 'shot': ptr<storage, ShotData, read_write>
-            38450..38462 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            38450..38465 'shot.unitary[5]': ref<storage, vec2<f32>, read_write>
-            38463..38464 '5': integer
-            38469..38472 'm11': vec2<f32>
-            38522..38526 'shot': ptr<storage, ShotData, read_write>
-            38522..38534 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            38522..38538 'shot.u...ry[10]': ref<storage, vec2<f32>, read_write>
-            38535..38537 '10': integer
-            38541..38544 'm00': vec2<f32>
-            38546..38550 'shot': ptr<storage, ShotData, read_write>
-            38546..38558 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            38546..38562 'shot.u...ry[11]': ref<storage, vec2<f32>, read_write>
-            38559..38561 '11': integer
-            38565..38568 'm01': vec2<f32>
-            38578..38582 'shot': ptr<storage, ShotData, read_write>
-            38578..38590 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            38578..38594 'shot.u...ry[14]': ref<storage, vec2<f32>, read_write>
-            38591..38593 '14': integer
-            38597..38600 'm10': vec2<f32>
-            38602..38606 'shot': ptr<storage, ShotData, read_write>
-            38602..38614 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            38602..38618 'shot.u...ry[15]': ref<storage, vec2<f32>, read_write>
-            38615..38617 '15': integer
-            38621..38624 'm11': vec2<f32>
-            38690..38694 'shot': ptr<storage, ShotData, read_write>
-            38690..38702 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            38690..38705 'shot.unitary[0]': ref<storage, vec2<f32>, read_write>
-            38703..38704 '0': integer
-            38709..38712 'm00': vec2<f32>
-            38714..38718 'shot': ptr<storage, ShotData, read_write>
-            38714..38726 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            38714..38729 'shot.unitary[2]': ref<storage, vec2<f32>, read_write>
-            38727..38728 '2': integer
-            38733..38736 'm01': vec2<f32>
-            38746..38750 'shot': ptr<storage, ShotData, read_write>
-            38746..38758 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            38746..38761 'shot.unitary[8]': ref<storage, vec2<f32>, read_write>
-            38759..38760 '8': integer
-            38765..38768 'm10': vec2<f32>
-            38770..38774 'shot': ptr<storage, ShotData, read_write>
-            38770..38782 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            38770..38786 'shot.u...ry[10]': ref<storage, vec2<f32>, read_write>
-            38783..38785 '10': integer
-            38789..38792 'm11': vec2<f32>
-            38802..38806 'shot': ptr<storage, ShotData, read_write>
-            38802..38814 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            38802..38817 'shot.unitary[5]': ref<storage, vec2<f32>, read_write>
-            38815..38816 '5': integer
-            38821..38824 'm00': vec2<f32>
-            38826..38830 'shot': ptr<storage, ShotData, read_write>
-            38826..38838 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            38826..38841 'shot.unitary[7]': ref<storage, vec2<f32>, read_write>
-            38839..38840 '7': integer
-            38845..38848 'm01': vec2<f32>
-            38858..38862 'shot': ptr<storage, ShotData, read_write>
-            38858..38870 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            38858..38874 'shot.u...ry[13]': ref<storage, vec2<f32>, read_write>
-            38871..38873 '13': integer
-            38877..38880 'm10': vec2<f32>
-            38882..38886 'shot': ptr<storage, ShotData, read_write>
-            38882..38894 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            38882..38898 'shot.u...ry[15]': ref<storage, vec2<f32>, read_write>
-            38895..38897 '15': integer
-            38901..38904 'm11': vec2<f32>
-            39223..39231 'shot_idx': u32
-            39238..39241 'row': u32
-            39258..39262 'shot': ptr<storage, ShotData, read_write>
-            39265..39281 '&shots...t_idx]': ptr<storage, ShotData, read_write>
-            39266..39271 'shots': ref<storage, array<ShotData>, read_write>
-            39266..39281 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            39272..39280 'shot_idx': u32
-            39296..39297 'c': ref<function, u32, read_write>
-            39300..39302 '0u': u32
-            39304..39305 'c': ref<function, u32, read_write>
-            39304..39310 'c < 4u': bool
-            39308..39310 '4u': u32
-            39312..39313 'c': ref<function, u32, read_write>
-            39331..39332 'e': vec2<f32>
-            39335..39339 'shot': ptr<storage, ShotData, read_write>
-            39335..39347 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            39335..39361 'shot.u...u + c]': ref<storage, vec2<f32>, read_write>
-            39348..39351 'row': u32
-            39348..39356 'row * 4u': u32
-            39348..39360 'row * 4u + c': u32
-            39354..39356 '4u': u32
-            39359..39360 'c': ref<function, u32, read_write>
-            39371..39375 'shot': ptr<storage, ShotData, read_write>
-            39371..39383 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            39371..39397 'shot.u...u + c]': ref<storage, vec2<f32>, read_write>
-            39384..39387 'row': u32
-            39384..39392 'row * 4u': u32
-            39384..39396 'row * 4u + c': u32
-            39390..39392 '4u': u32
-            39395..39396 'c': ref<function, u32, read_write>
-            39400..39416 'vec2f(... -e.x)': vec2<f32>
-            39406..39407 'e': vec2<f32>
-            39406..39409 'e.y': f32
-            39411..39415 '-e.x': f32
-            39412..39413 'e': vec2<f32>
-            39412..39415 'e.x': f32
-            39532..39540 'shot_idx': u32
-            39547..39553 'op_idx': u32
-            39560..39562 'q1': u32
-            39569..39571 'q2': u32
-            39588..39592 'shot': ptr<storage, ShotData, read_write>
-            39595..39611 '&shots...t_idx]': ptr<storage, ShotData, read_write>
-            39596..39601 'shots': ref<storage, array<ShotData>, read_write>
-            39596..39611 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            39602..39610 'shot_idx': u32
-            39617..39621 'shot': ptr<storage, ShotData, read_write>
-            39617..39628 'shot.op_idx': ref<storage, u32, read_write>
-            39631..39637 'op_idx': u32
-            39643..39647 'shot': ptr<storage, ShotData, read_write>
-            39643..39655 'shot.op_type': ref<storage, u32, read_write>
-            39658..39675 'OPID_S...UFF_2Q': u32
-            39681..39685 'shot': ptr<storage, ShotData, read_write>
-            39681..39713 'shot.q...p_mask': ref<storage, u32, read_write>
-            39716..39739 '(1u <<...<< q2)': u32
-            39717..39719 '1u': u32
-            39717..39725 '1u << q1': u32
-            39723..39725 'q1': u32
-            39730..39732 '1u': u32
-            39730..39738 '1u << q2': u32
-            39736..39738 'q2': u32
-            39941..39949 'shot_idx': u32
-            39956..39962 'op_idx': u32
-            39969..39971 'q1': u32
-            39978..39980 'q2': u32
-            40005..40009 'shot': ptr<storage, ShotData, read_write>
-            40012..40028 '&shots...t_idx]': ptr<storage, ShotData, read_write>
-            40013..40018 'shots': ref<storage, array<ShotData>, read_write>
-            40013..40028 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            40019..40027 'shot_idx': u32
-            40038..40040 'op': ptr<storage, Op, read>
-            40043..40055 '&ops[op_idx]': ptr<storage, Op, read>
-            40044..40047 'ops': ref<storage, array<Op>, read>
-            40044..40055 'ops[op_idx]': ref<storage, Op, read>
-            40048..40054 'op_idx': u32
-            40065..40069 'shot': ptr<storage, ShotData, read_write>
-            40065..40081 'shot.q..._state': ref<storage, [error], read_write>
-            40065..40085 'shot.q...te[q1]': [error]
-            40065..40090 'shot.q...].heat': [error]
-            40065..40098 'shot.q...= -1.0': [error]
-            40082..40084 'q1': u32
-            40094..40098 '-1.0': float
-            40095..40098 '1.0': float
-            40117..40121 'true': bool
-            40137..40142 'is_2q': bool
-            40145..40161 '!is_1q...op.id)': bool
-            40146..40161 'is_1q_op(op.id)': bool
-            40155..40157 'op': ptr<storage, Op, read>
-            40155..40160 'op.id': ref<storage, u32, read>
-            40174..40179 'is_2q': bool
-            40174..40218 'is_2q ... -1.0)': [error]
-            40184..40188 'shot': ptr<storage, ShotData, read_write>
-            40184..40200 'shot.q..._state': ref<storage, [error], read_write>
-            40184..40204 'shot.q...te[q2]': [error]
-            40184..40209 'shot.q...].heat': [error]
-            40184..40217 'shot.q...= -1.0': [error]
-            40201..40203 'q2': u32
-            40213..40217 '-1.0': float
-            40214..40217 '1.0': float
-            40698..40706 'shot_idx': u32
-            40713..40719 'op_idx': u32
-            40726..40728 'q1': u32
-            40735..40737 'q2': u32
-            40744..40749 'qubit': u32
-            40766..40770 'shot': ptr<storage, ShotData, read_write>
-            40773..40789 '&shots...t_idx]': ptr<storage, ShotData, read_write>
-            40774..40779 'shots': ref<storage, array<ShotData>, read_write>
-            40774..40789 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            40780..40788 'shot_idx': u32
-            40800..40806 'result': [error]
-            40809..40885 'select...ility)': [error]
-            40816..40818 '1u': u32
-            40820..40822 '0u': u32
-            40824..40828 'shot': ptr<storage, ShotData, read_write>
-            40824..40841 'shot.r...easure': ref<storage, f32, read_write>
-            40824..40884 'shot.r...bility': [error]
-            40844..40848 'shot': ptr<storage, ShotData, read_write>
-            40844..40860 'shot.q..._state': ref<storage, [error], read_write>
-            40844..40867 'shot.q...qubit]': [error]
-            40844..40884 'shot.q...bility': [error]
-            40861..40866 'qubit': u32
-            41041..41044 'm00': [error]
-            41047..41101 'select...== 1u)': [error]
-            41054..41069 'vec2f(1.0, 0.0)': vec2<f32>
-            41060..41063 '1.0': float
-            41065..41068 '0.0': float
-            41071..41086 'vec2f(0.0, 0.0)': vec2<f32>
-            41077..41080 '0.0': float
-            41082..41085 '0.0': float
-            41088..41094 'result': [error]
-            41088..41100 'result == 1u': [error]
-            41098..41100 '1u': u32
-            41111..41114 'm01': [error]
-            41117..41171 'select...== 1u)': [error]
-            41124..41139 'vec2f(0.0, 0.0)': vec2<f32>
-            41130..41133 '0.0': float
-            41135..41138 '0.0': float
-            41141..41156 'vec2f(1.0, 0.0)': vec2<f32>
-            41147..41150 '1.0': float
-            41152..41155 '0.0': float
-            41158..41164 'result': [error]
-            41158..41170 'result == 1u': [error]
-            41168..41170 '1u': u32
-            41181..41184 'm10': vec2<f32>
-            41187..41202 'vec2f(0.0, 0.0)': vec2<f32>
-            41193..41196 '0.0': float
-            41198..41201 '0.0': float
-            41212..41215 'm11': vec2<f32>
-            41218..41233 'vec2f(0.0, 0.0)': vec2<f32>
-            41224..41227 '0.0': float
-            41229..41232 '0.0': float
-            41244..41256 'target_is_q2': bool
-            41260..41265 'qubit': u32
-            41260..41271 'qubit == q2': bool
-            41269..41271 'q2': u32
-            41278..41344 'set_1q..., m11)': [error]
-            41301..41309 'shot_idx': u32
-            41311..41323 'target_is_q2': bool
-            41325..41328 'm00': [error]
-            41330..41333 'm01': [error]
-            41335..41338 'm10': vec2<f32>
-            41340..41343 'm11': vec2<f32>
-            41406..41410 'shot': ptr<storage, ShotData, read_write>
-            41406..41422 'shot.r...malize': ref<storage, f32, read_write>
-            41425..41577 'select...== 1u)': [error]
-            41441..41444 '1.0': float
-            41441..41493 '1.0 / ...ility)': [error]
-            41447..41493 'sqrt(s...ility)': [error]
-            41452..41456 'shot': ptr<storage, ShotData, read_write>
-            41452..41468 'shot.q..._state': ref<storage, [error], read_write>
-            41452..41475 'shot.q...qubit]': [error]
-            41452..41492 'shot.q...bility': [error]
-            41469..41474 'qubit': u32
+            25635..25648 'shot.duration': ref<storage, f32, read_write>
+            25651..25654 '0.0': float
+            25660..25664 'shot': ptr<storage, ShotData, read_write>
+            25660..25676 'shot.r...malize': ref<storage, f32, read_write>
+            25679..25682 '1.0': float
+            25689..25693 'shot': ptr<storage, ShotData, read_write>
+            25689..25709 'shot.q...0_mask': ref<storage, u32, read_write>
+            25712..25741 '(1u <<...) - 1u': u32
+            25713..25715 '1u': u32
+            25713..25735 '1u << ...COUNT)': u32
+            25719..25735 'u32(QU...COUNT)': u32
+            25723..25734 'QUBIT_COUNT': i32
+            25739..25741 '1u': u32
+            25769..25773 'shot': ptr<storage, ShotData, read_write>
+            25769..25789 'shot.q...1_mask': ref<storage, u32, read_write>
+            25792..25794 '0u': u32
+            25800..25804 'shot': ptr<storage, ShotData, read_write>
+            25800..25832 'shot.q...p_mask': ref<storage, u32, read_write>
+            25835..25836 '0': integer
+            25842..25846 'shot': ptr<storage, ShotData, read_write>
+            25842..25864 'shot.p...s_mask': ref<storage, u32, read_write>
+            25867..25869 '0u': u32
+            25939..25940 'i': ref<function, i32, read_write>
+            25948..25949 '0': integer
+            25951..25952 'i': ref<function, i32, read_write>
+            25951..25966 'i < QUBIT_COUNT': bool
+            25955..25966 'QUBIT_COUNT': i32
+            25968..25969 'i': ref<function, i32, read_write>
+            25983..25987 'shot': ptr<storage, ShotData, read_write>
+            25983..25999 'shot.q..._state': ref<storage, [error], read_write>
+            25983..26002 'shot.q...ate[i]': [error]
+            25983..26019 'shot.q...bility': [error]
+            26000..26001 'i': ref<function, i32, read_write>
+            26022..26025 '1.0': float
+            26035..26039 'shot': ptr<storage, ShotData, read_write>
+            26035..26051 'shot.q..._state': ref<storage, [error], read_write>
+            26035..26054 'shot.q...ate[i]': [error]
+            26035..26070 'shot.q...bility': [error]
+            26052..26053 'i': ref<function, i32, read_write>
+            26073..26076 '0.0': float
+            26086..26090 'shot': ptr<storage, ShotData, read_write>
+            26086..26102 'shot.q..._state': ref<storage, [error], read_write>
+            26086..26105 'shot.q...ate[i]': [error]
+            26086..26110 'shot.q...].heat': [error]
+            26103..26104 'i': ref<function, i32, read_write>
+            26113..26116 '0.0': float
+            26126..26130 'shot': ptr<storage, ShotData, read_write>
+            26126..26142 'shot.q..._state': ref<storage, [error], read_write>
+            26126..26145 'shot.q...ate[i]': [error]
+            26126..26156 'shot.q..._since': [error]
+            26143..26144 'i': ref<function, i32, read_write>
+            26159..26162 '0.0': float
+            26289..26297 'shot_idx': u32
+            26314..26318 'shot': ptr<storage, ShotData, read_write>
+            26321..26337 '&shots...t_idx]': ptr<storage, ShotData, read_write>
+            26322..26327 'shots': ref<storage, array<ShotData>, read_write>
+            26322..26337 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            26328..26336 'shot_idx': u32
+            26714..26715 'q': ref<function, u32, read_write>
+            26723..26725 '0u': u32
+            26727..26728 'q': ref<function, u32, read_write>
+            26727..26747 'q < u3...COUNT)': bool
+            26731..26747 'u32(QU...COUNT)': u32
+            26735..26746 'QUBIT_COUNT': i32
+            26749..26750 'q': ref<function, u32, read_write>
+            26768..26778 'qubit_mask': u32
+            26786..26788 '1u': u32
+            26786..26793 '1u << q': u32
+            26792..26793 'q': ref<function, u32, read_write>
+            26807..26860 '(shot.... != 0u': bool
+            26808..26812 'shot': ptr<storage, ShotData, read_write>
+            26808..26840 'shot.q...p_mask': ref<storage, u32, read_write>
+            26808..26853 'shot.q...t_mask': u32
+            26843..26853 'qubit_mask': u32
+            26858..26860 '0u': u32
+            27141..27151 'total_zero': ref<function, f32, read_write>
+            27159..27162 '0.0': float
+            27180..27189 'total_one': ref<function, f32, read_write>
+            27197..27200 '0.0': float
+            27219..27238 'WORKGR...R_SHOT': i32
+            27219..27242 'WORKGR...OT > 1': bool
+            27241..27242 '1': integer
+            27344..27350 'offset': u32
+            27353..27361 'shot_idx': u32
+            27353..27388 'shot_i..._SHOT)': u32
+            27364..27388 'u32(WO..._SHOT)': u32
+            27368..27387 'WORKGR...R_SHOT': i32
+            27415..27422 'wkg_idx': ref<function, u32, read_write>
+            27430..27432 '0u': u32
+            27434..27441 'wkg_idx': ref<function, u32, read_write>
+            27434..27468 'wkg_id..._SHOT)': bool
+            27444..27468 'u32(WO..._SHOT)': u32
+            27448..27467 'WORKGR...R_SHOT': i32
+            27470..27477 'wkg_idx': ref<function, u32, read_write>
+            27507..27511 'sums': [error]
+            27514..27533 'workgr...lation': ref<storage, WorkgroupCollationBuffer, read_write>
+            27514..27538 'workgr...n.sums': ref<storage, [error], read_write>
+            27514..27556 'workgr...ffset]': [error]
+            27539..27546 'wkg_idx': ref<function, u32, read_write>
+            27539..27555 'wkg_id...offset': u32
+            27549..27555 'offset': u32
+            27578..27588 'total_zero': ref<function, f32, read_write>
+            27591..27601 'total_zero': ref<function, f32, read_write>
+            27591..27620 'total_...s[q].x': [error]
+            27604..27608 'sums': [error]
+            27604..27615 'sums.qubits': [error]
+            27604..27618 'sums.qubits[q]': [error]
+            27604..27620 'sums.q...s[q].x': [error]
+            27616..27617 'q': ref<function, u32, read_write>
+            27642..27651 'total_one': ref<function, f32, read_write>
+            27654..27663 'total_one': ref<function, f32, read_write>
+            27654..27682 'total_...s[q].y': [error]
+            27666..27670 'sums': [error]
+            27666..27677 'sums.qubits': [error]
+            27666..27680 'sums.qubits[q]': [error]
+            27666..27682 'sums.q...s[q].y': [error]
+            27678..27679 'q': ref<function, u32, read_write>
+            27824..27834 'total_zero': ref<function, f32, read_write>
+            27837..27841 'shot': ptr<storage, ShotData, read_write>
+            27837..27853 'shot.q..._state': ref<storage, [error], read_write>
+            27837..27856 'shot.q...ate[q]': [error]
+            27837..27873 'shot.q...bility': [error]
+            27854..27855 'q': ref<function, u32, read_write>
+            27891..27900 'total_one': ref<function, f32, read_write>
+            27903..27907 'shot': ptr<storage, ShotData, read_write>
+            27903..27919 'shot.q..._state': ref<storage, [error], read_write>
+            27903..27922 'shot.q...ate[q]': [error]
+            27903..27938 'shot.q...bility': [error]
+            27920..27921 'q': ref<function, u32, read_write>
+            28183..28193 'total_zero': ref<function, f32, read_write>
+            28183..28204 'total_...000001': bool
+            28196..28204 '0.000001': float
+            28208..28218 'total_zero': ref<function, f32, read_write>
+            28221..28224 '0.0': float
+            28244..28253 'total_one': ref<function, f32, read_write>
+            28244..28264 'total_...000001': bool
+            28256..28264 '0.000001': float
+            28268..28277 'total_one': ref<function, f32, read_write>
+            28280..28283 '0.0': float
+            28303..28313 'total_zero': ref<function, f32, read_write>
+            28303..28324 'total_...999999': bool
+            28316..28324 '0.999999': float
+            28328..28338 'total_zero': ref<function, f32, read_write>
+            28341..28344 '1.0': float
+            28364..28373 'total_one': ref<function, f32, read_write>
+            28364..28384 'total_...999999': bool
+            28376..28384 '0.999999': float
+            28388..28397 'total_one': ref<function, f32, read_write>
+            28400..28403 '1.0': float
+            28420..28424 'shot': ptr<storage, ShotData, read_write>
+            28420..28436 'shot.q..._state': ref<storage, [error], read_write>
+            28420..28439 'shot.q...ate[q]': [error]
+            28420..28456 'shot.q...bility': [error]
+            28437..28438 'q': ref<function, u32, read_write>
+            28459..28469 'total_zero': ref<function, f32, read_write>
+            28483..28487 'shot': ptr<storage, ShotData, read_write>
+            28483..28499 'shot.q..._state': ref<storage, [error], read_write>
+            28483..28502 'shot.q...ate[q]': [error]
+            28483..28518 'shot.q...bility': [error]
+            28500..28501 'q': ref<function, u32, read_write>
+            28521..28530 'total_one': ref<function, f32, read_write>
+            28765..28781 'within...eshold': bool
+            28784..28819 'abs(1...._one))': f32
+            28784..28836 'abs(1....ESHOLD': bool
+            28788..28791 '1.0': float
+            28788..28818 '1.0 - ...l_one)': f32
+            28795..28805 'total_zero': ref<function, f32, read_write>
+            28795..28817 'total_...al_one': f32
+            28808..28817 'total_one': ref<function, f32, read_write>
+            28822..28836 'PROB_THRESHOLD': f32
+            28853..28870 '!withi...eshold': bool
+            28854..28870 'within...eshold': bool
+            28964..28973 'old_value': __atomic_compare_exchange_result
+            28976..29110 'atomic...PROBS)': __atomic_compare_exchange_result
+            29023..29046 '&diagn...r_code': ptr<storage, atomic<u32>, read_write>
+            29024..29035 'diagnostics': ref<storage, DiagnosticData, read_write>
+            29024..29046 'diagno...r_code': ref<storage, atomic<u32>, read_write>
+            29068..29070 '0u': u32
+            29092..29109 'ERR_IN..._PROBS': u32
+            29131..29140 'old_value': __atomic_compare_exchange_result
+            29131..29150 'old_va...hanged': bool
+            29242..29253 'diagnostics': ref<storage, DiagnosticData, read_write>
+            29242..29260 'diagno...extra1': ref<storage, u32, read_write>
+            29263..29264 'q': ref<function, u32, read_write>
+            29286..29297 'diagnostics': ref<storage, DiagnosticData, read_write>
+            29286..29304 'diagno...extra2': ref<storage, f32, read_write>
+            29307..29317 'total_zero': ref<function, f32, read_write>
+            29339..29350 'diagnostics': ref<storage, DiagnosticData, read_write>
+            29339..29357 'diagno...extra3': ref<storage, f32, read_write>
+            29360..29369 'total_one': ref<function, f32, read_write>
+            29544..29555 'diagnostics': ref<storage, DiagnosticData, read_write>
+            29544..29560 'diagno...s.shot': ref<storage, ShotData, read_write>
+            29563..29568 '*shot': ref<storage, ShotData, read_write>
+            29564..29568 'shot': ptr<storage, ShotData, read_write>
+            29590..29601 'diagnostics': ref<storage, DiagnosticData, read_write>
+            29590..29604 'diagnostics.op': ref<storage, Op, read_write>
+            29607..29610 'ops': ref<storage, array<Op>, read>
+            29607..29623 'ops[sh...p_idx]': ref<storage, Op, read>
+            29611..29615 'shot': ptr<storage, ShotData, read_write>
+            29611..29622 'shot.op_idx': ref<storage, u32, read_write>
+            29764..29773 'err_index': u32
+            29776..29805 '(shot_..._COUNT': u32
+            29776..29809 '(shot_...NT - 1': u32
+            29777..29785 'shot_idx': u32
+            29777..29789 'shot_idx + 1': u32
+            29788..29789 '1': integer
+            29793..29805 'RESULT_COUNT': u32
+            29808..29809 '1': integer
+            29827..29957 'atomic...PROBS)': __atomic_compare_exchange_result
+            29874..29893 '&resul...index]': ptr<storage, atomic<u32>, read_write>
+            29875..29882 'results': ref<storage, array<atomic<u32>>, read_write>
+            29875..29893 'result...index]': ref<storage, atomic<u32>, read_write>
+            29883..29892 'err_index': u32
+            29915..29917 '0u': u32
+            29939..29956 'ERR_IN..._PROBS': u32
+            30038..30042 'shot': ptr<storage, ShotData, read_write>
+            30038..30058 'shot.q...0_mask': ref<storage, u32, read_write>
+            30061..30206 'select...= 1.0)': u32
+            30085..30089 'shot': ptr<storage, ShotData, read_write>
+            30085..30105 'shot.q...0_mask': ref<storage, u32, read_write>
+            30085..30119 'shot.q...t_mask': u32
+            30108..30119 '~qubit_mask': u32
+            30109..30119 'qubit_mask': u32
+            30137..30141 'shot': ptr<storage, ShotData, read_write>
+            30137..30157 'shot.q...0_mask': ref<storage, u32, read_write>
+            30137..30170 'shot.q...t_mask': u32
+            30160..30170 'qubit_mask': u32
+            30188..30198 'total_zero': ref<function, f32, read_write>
+            30188..30205 'total_...== 1.0': bool
+            30202..30205 '1.0': float
+            30220..30224 'shot': ptr<storage, ShotData, read_write>
+            30220..30240 'shot.q...1_mask': ref<storage, u32, read_write>
+            30243..30387 'select...= 1.0)': u32
+            30267..30271 'shot': ptr<storage, ShotData, read_write>
+            30267..30287 'shot.q...1_mask': ref<storage, u32, read_write>
+            30267..30301 'shot.q...t_mask': u32
+            30290..30301 '~qubit_mask': u32
+            30291..30301 'qubit_mask': u32
+            30319..30323 'shot': ptr<storage, ShotData, read_write>
+            30319..30339 'shot.q...1_mask': ref<storage, u32, read_write>
+            30319..30352 'shot.q...t_mask': u32
+            30342..30352 'qubit_mask': u32
+            30370..30379 'total_one': ref<function, f32, read_write>
+            30370..30386 'total_...== 1.0': bool
+            30383..30386 '1.0': float
+            30542..30558 'stateV...rIndex': u32
+            30565..30574 'amplitude': vec2<f32>
+            30583..30586 'tid': u32
+            30603..30607 'mask': ref<function, u32, read_write>
+            30615..30617 '1u': u32
+            30632..30633 'q': ref<function, u32, read_write>
+            30641..30643 '0u': u32
+            30645..30646 'q': ref<function, u32, read_write>
+            30645..30665 'q < u3...COUNT)': bool
+            30649..30665 'u32(QU...COUNT)': u32
+            30653..30664 'QUBIT_COUNT': i32
+            30667..30668 'q': ref<function, u32, read_write>
+            30686..30692 'is_one': bool
+            30701..30732 '(state... != 0u': bool
+            30702..30718 'stateV...rIndex': u32
+            30702..30725 'stateV...& mask': u32
+            30721..30725 'mask': ref<function, u32, read_write>
+            30730..30732 '0u': u32
+            30746..30750 'prob': f32
+            30758..30777 'cplxMa...itude)': f32
+            30767..30776 'amplitude': vec2<f32>
+            30791..30797 'is_one': bool
+            30813..30831 'qubitP...lities': ref<workgroup, [error], read_write>
+            30813..30836 'qubitP...s[tid]': [error]
+            30813..30840 'qubitP...d].one': [error]
+            30813..30843 'qubitP...one[q]': [error]
+            30832..30835 'tid': u32
+            30841..30842 'q': ref<function, u32, read_write>
+            30847..30851 'prob': f32
+            30882..30900 'qubitP...lities': ref<workgroup, [error], read_write>
+            30882..30905 'qubitP...s[tid]': [error]
+            30882..30910 'qubitP...].zero': [error]
+            30882..30913 'qubitP...ero[q]': [error]
+            30901..30904 'tid': u32
+            30911..30912 'q': ref<function, u32, read_write>
+            30917..30921 'prob': f32
+            30941..30945 'mask': ref<function, u32, read_write>
+            30948..30952 'mask': ref<function, u32, read_write>
+            30948..30958 'mask << 1u': u32
+            30956..30958 '1u': u32
+            30998..30999 'q': u32
+            31006..31014 'shot_idx': i32
+            31021..31038 'wkg_co...on_idx': i32
+            31055..31065 'total_zero': ref<function, f32, read_write>
+            31073..31076 '0.0': float
+            31086..31095 'total_one': ref<function, f32, read_write>
+            31103..31106 '0.0': float
+            31121..31122 'j': ref<function, i32, read_write>
+            31125..31126 '0': integer
+            31128..31129 'j': ref<function, i32, read_write>
+            31128..31153 'j < TH...KGROUP': bool
+            31132..31153 'THREAD...KGROUP': i32
+            31155..31156 'j': ref<function, i32, read_write>
+            31170..31180 'total_zero': ref<function, f32, read_write>
+            31184..31202 'qubitP...lities': ref<workgroup, [error], read_write>
+            31184..31205 'qubitP...ies[j]': [error]
+            31184..31210 'qubitP...].zero': [error]
+            31184..31213 'qubitP...ero[q]': [error]
+            31203..31204 'j': ref<function, i32, read_write>
+            31211..31212 'q': u32
+            31223..31232 'total_one': ref<function, f32, read_write>
+            31236..31254 'qubitP...lities': ref<workgroup, [error], read_write>
+            31236..31257 'qubitP...ies[j]': [error]
+            31236..31261 'qubitP...j].one': [error]
+            31236..31264 'qubitP...one[q]': [error]
+            31255..31256 'j': ref<function, i32, read_write>
+            31262..31263 'q': u32
+            31280..31297 'wkg_co...on_idx': i32
+            31280..31302 'wkg_co...x >= 0': bool
+            31301..31302 '0': integer
+            31405..31424 'workgr...lation': ref<storage, WorkgroupCollationBuffer, read_write>
+            31405..31429 'workgr...n.sums': ref<storage, [error], read_write>
+            31405..31448 'workgr...n_idx]': [error]
+            31405..31455 'workgr...qubits': [error]
+            31405..31458 'workgr...its[q]': [error]
+            31430..31447 'wkg_co...on_idx': i32
+            31456..31457 'q': u32
+            31461..31489 'vec2f(...l_one)': vec2<f32>
+            31467..31477 'total_zero': ref<function, f32, read_write>
+            31479..31488 'total_one': ref<function, f32, read_write>
+            31593..31609 'within...eshold': bool
+            31612..31647 'abs(1...._one))': f32
+            31612..31664 'abs(1....ESHOLD': bool
+            31616..31619 '1.0': float
+            31616..31646 '1.0 - ...l_one)': f32
+            31623..31633 'total_zero': ref<function, f32, read_write>
+            31623..31645 'total_...al_one': f32
+            31636..31645 'total_one': ref<function, f32, read_write>
+            31650..31664 'PROB_THRESHOLD': f32
+            31677..31694 '!withi...eshold': bool
+            31678..31694 'within...eshold': bool
+            31780..31789 'old_value': __atomic_compare_exchange_result
+            31792..31921 'atomic...TOTAL)': __atomic_compare_exchange_result
+            31835..31858 '&diagn...r_code': ptr<storage, atomic<u32>, read_write>
+            31836..31847 'diagnostics': ref<storage, DiagnosticData, read_write>
+            31836..31858 'diagno...r_code': ref<storage, atomic<u32>, read_write>
+            31876..31878 '0u': u32
+            31896..31920 'ERR_IN..._TOTAL': u32
+            31938..31947 'old_value': __atomic_compare_exchange_result
+            31938..31957 'old_va...hanged': bool
+            32045..32049 'shot': ptr<storage, ShotData, read_write>
+            32052..32068 '&shots...t_idx]': ptr<storage, ShotData, read_write>
+            32053..32058 'shots': ref<storage, array<ShotData>, read_write>
+            32053..32068 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            32059..32067 'shot_idx': i32
+            32086..32097 'diagnostics': ref<storage, DiagnosticData, read_write>
+            32086..32104 'diagno...extra1': ref<storage, u32, read_write>
+            32107..32108 'q': u32
+            32126..32137 'diagnostics': ref<storage, DiagnosticData, read_write>
+            32126..32144 'diagno...extra2': ref<storage, f32, read_write>
+            32147..32157 'total_zero': ref<function, f32, read_write>
+            32175..32186 'diagnostics': ref<storage, DiagnosticData, read_write>
+            32175..32193 'diagno...extra3': ref<storage, f32, read_write>
+            32196..32205 'total_one': ref<function, f32, read_write>
+            32366..32377 'diagnostics': ref<storage, DiagnosticData, read_write>
+            32366..32382 'diagno...s.shot': ref<storage, ShotData, read_write>
+            32385..32390 '*shot': ref<storage, ShotData, read_write>
+            32386..32390 'shot': ptr<storage, ShotData, read_write>
+            32408..32419 'diagnostics': ref<storage, DiagnosticData, read_write>
+            32408..32422 'diagnostics.op': ref<storage, Op, read_write>
+            32425..32428 'ops': ref<storage, array<Op>, read>
+            32425..32441 'ops[sh...p_idx]': ref<storage, Op, read>
+            32429..32433 'shot': ptr<storage, ShotData, read_write>
+            32429..32440 'shot.op_idx': ref<storage, u32, read_write>
+            32507..32516 'err_index': i32
+            32519..32553 '(shot_...COUNT)': i32
+            32519..32557 '(shot_...T) - 1': i32
+            32520..32528 'shot_idx': i32
+            32520..32532 'shot_idx + 1': i32
+            32531..32532 '1': integer
+            32536..32553 'i32(RE...COUNT)': i32
+            32540..32552 'RESULT_COUNT': u32
+            32556..32557 '1': integer
+            32571..32708 'atomic...TOTAL)': __atomic_compare_exchange_result
+            32618..32637 '&resul...index]': ptr<storage, atomic<u32>, read_write>
+            32619..32626 'results': ref<storage, array<atomic<u32>>, read_write>
+            32619..32637 'result...index]': ref<storage, atomic<u32>, read_write>
+            32627..32636 'err_index': i32
+            32659..32661 '0u': u32
+            32683..32707 'ERR_IN..._TOTAL': u32
+            32739..32744 'shots': ref<storage, array<ShotData>, read_write>
+            32739..32754 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            32739..32766 'shots[..._state': ref<storage, [error], read_write>
+            32739..32769 'shots[...ate[q]': [error]
+            32739..32786 'shots[...bility': [error]
+            32745..32753 'shot_idx': i32
+            32767..32768 'q': u32
+            32789..32799 'total_zero': ref<function, f32, read_write>
+            32813..32818 'shots': ref<storage, array<ShotData>, read_write>
+            32813..32828 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            32813..32840 'shots[..._state': ref<storage, [error], read_write>
+            32813..32843 'shots[...ate[q]': [error]
+            32813..32859 'shots[...bility': [error]
+            32819..32827 'shot_idx': i32
+            32841..32842 'q': u32
+            32862..32871 'total_one': ref<function, f32, read_write>
+            33352..33360 'shot_idx': u32
+            33367..33372 'qubit': u32
+            33379..33385 'result': u32
+            33392..33406 'resets_to_zero': bool
+            33424..33428 'shot': ptr<storage, ShotData, read_write>
+            33431..33447 '&shots...t_idx]': ptr<storage, ShotData, read_write>
+            33432..33437 'shots': ref<storage, array<ShotData>, read_write>
+            33432..33447 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            33438..33446 'shot_idx': u32
+            33617..33631 'resets_to_zero': bool
+            33831..33835 'shot': ptr<storage, ShotData, read_write>
+            33831..33843 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            33831..33846 'shot.unitary[0]': ref<storage, vec2<f32>, read_write>
+            33844..33845 '0': integer
+            33849..33903 'select...== 1u)': vec2<f32>
+            33856..33871 'vec2f(1.0, 0.0)': vec2<f32>
+            33862..33865 '1.0': float
+            33867..33870 '0.0': float
+            33873..33888 'vec2f(0.0, 0.0)': vec2<f32>
+            33879..33882 '0.0': float
+            33884..33887 '0.0': float
+            33890..33896 'result': u32
+            33890..33902 'result == 1u': bool
+            33900..33902 '1u': u32
+            33913..33917 'shot': ptr<storage, ShotData, read_write>
+            33913..33925 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            33913..33928 'shot.unitary[1]': ref<storage, vec2<f32>, read_write>
+            33926..33927 '1': integer
+            33931..33985 'select...== 1u)': vec2<f32>
+            33938..33953 'vec2f(0.0, 0.0)': vec2<f32>
+            33944..33947 '0.0': float
+            33949..33952 '0.0': float
+            33955..33970 'vec2f(1.0, 0.0)': vec2<f32>
+            33961..33964 '1.0': float
+            33966..33969 '0.0': float
+            33972..33978 'result': u32
+            33972..33984 'result == 1u': bool
+            33982..33984 '1u': u32
+            33995..33999 'shot': ptr<storage, ShotData, read_write>
+            33995..34007 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            33995..34010 'shot.unitary[4]': ref<storage, vec2<f32>, read_write>
+            34008..34009 '4': integer
+            34013..34020 'vec2f()': vec2<f32>
+            34030..34034 'shot': ptr<storage, ShotData, read_write>
+            34030..34042 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            34030..34045 'shot.unitary[5]': ref<storage, vec2<f32>, read_write>
+            34043..34044 '5': integer
+            34048..34055 'vec2f()': vec2<f32>
+            34236..34240 'shot': ptr<storage, ShotData, read_write>
+            34236..34248 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            34236..34251 'shot.unitary[0]': ref<storage, vec2<f32>, read_write>
+            34249..34250 '0': integer
+            34254..34308 'select...== 1u)': vec2<f32>
+            34261..34276 'vec2f(1.0, 0.0)': vec2<f32>
+            34267..34270 '1.0': float
+            34272..34275 '0.0': float
+            34278..34293 'vec2f(0.0, 0.0)': vec2<f32>
+            34284..34287 '0.0': float
+            34289..34292 '0.0': float
+            34295..34301 'result': u32
+            34295..34307 'result == 1u': bool
+            34305..34307 '1u': u32
+            34318..34322 'shot': ptr<storage, ShotData, read_write>
+            34318..34330 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            34318..34333 'shot.unitary[1]': ref<storage, vec2<f32>, read_write>
+            34331..34332 '1': integer
+            34336..34343 'vec2f()': vec2<f32>
+            34353..34357 'shot': ptr<storage, ShotData, read_write>
+            34353..34365 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            34353..34368 'shot.unitary[4]': ref<storage, vec2<f32>, read_write>
+            34366..34367 '4': integer
+            34371..34378 'vec2f()': vec2<f32>
+            34388..34392 'shot': ptr<storage, ShotData, read_write>
+            34388..34400 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            34388..34403 'shot.unitary[5]': ref<storage, vec2<f32>, read_write>
+            34401..34402 '5': integer
+            34406..34460 'select...== 1u)': vec2<f32>
+            34413..34428 'vec2f(0.0, 0.0)': vec2<f32>
+            34419..34422 '0.0': float
+            34424..34427 '0.0': float
+            34430..34445 'vec2f(1.0, 0.0)': vec2<f32>
+            34436..34439 '1.0': float
+            34441..34444 '0.0': float
+            34447..34453 'result': u32
+            34447..34459 'result == 1u': bool
+            34457..34459 '1u': u32
+            34473..34477 'shot': ptr<storage, ShotData, read_write>
+            34473..34489 'shot.r...malize': ref<storage, f32, read_write>
+            34492..34644 'select...== 1u)': [error]
+            34508..34511 '1.0': float
+            34508..34560 '1.0 / ...ility)': [error]
+            34514..34560 'sqrt(s...ility)': [error]
+            34519..34523 'shot': ptr<storage, ShotData, read_write>
+            34519..34535 'shot.q..._state': ref<storage, [error], read_write>
+            34519..34542 'shot.q...qubit]': [error]
+            34519..34559 'shot.q...bility': [error]
+            34536..34541 'qubit': u32
+            34570..34573 '1.0': float
+            34570..34621 '1.0 / ...ility)': [error]
+            34576..34621 'sqrt(s...ility)': [error]
+            34581..34585 'shot': ptr<storage, ShotData, read_write>
+            34581..34597 'shot.q..._state': ref<storage, [error], read_write>
+            34581..34604 'shot.q...qubit]': [error]
+            34581..34620 'shot.q...bility': [error]
+            34598..34603 'qubit': u32
+            34631..34637 'result': u32
+            34631..34643 'result == 1u': bool
+            34641..34643 '1u': u32
+            34767..34771 'shot': ptr<storage, ShotData, read_write>
+            34767..34787 'shot.q...1_mask': ref<storage, u32, read_write>
+            34790..34794 'shot': ptr<storage, ShotData, read_write>
+            34790..34810 'shot.q...1_mask': ref<storage, u32, read_write>
+            34790..34827 'shot.q...qubit)': u32
+            34813..34827 '~(1u << qubit)': u32
+            34815..34817 '1u': u32
+            34815..34826 '1u << qubit': u32
+            34821..34826 'qubit': u32
+            34833..34837 'shot': ptr<storage, ShotData, read_write>
+            34833..34853 'shot.q...0_mask': ref<storage, u32, read_write>
+            34856..34860 'shot': ptr<storage, ShotData, read_write>
+            34856..34876 'shot.q...0_mask': ref<storage, u32, read_write>
+            34856..34893 'shot.q...qubit)': u32
+            34879..34893 '~(1u << qubit)': u32
+            34881..34883 '1u': u32
+            34881..34892 '1u << qubit': u32
+            34887..34892 'qubit': u32
+            35180..35184 'shot': ptr<storage, ShotData, read_write>
+            35180..35212 'shot.q...p_mask': ref<storage, u32, read_write>
+            35261..35406 '((1u <..._mask)': u32
+            35262..35291 '(1u <<...) - 1u': u32
+            35263..35265 '1u': u32
+            35263..35285 '1u << ...COUNT)': u32
+            35269..35285 'u32(QU...COUNT)': u32
+            35273..35284 'QUBIT_COUNT': i32
+            35289..35291 '1u': u32
+            35360..35406 '~(shot..._mask)': u32
+            35362..35366 'shot': ptr<storage, ShotData, read_write>
+            35362..35382 'shot.q...0_mask': ref<storage, u32, read_write>
+            35362..35405 'shot.q...1_mask': u32
+            35385..35389 'shot': ptr<storage, ShotData, read_write>
+            35385..35405 'shot.q...1_mask': ref<storage, u32, read_write>
+            35659..35667 'shot_idx': u32
+            35674..35680 'op_idx': u32
+            35687..35692 'qubit': u32
+            35699..35708 'result_id': u32
+            35715..35722 'is_loss': bool
+            35730..35743 'stores_result': bool
+            35751..35765 'resets_to_zero': bool
+            35783..35787 'shot': ptr<storage, ShotData, read_write>
+            35790..35806 '&shots...t_idx]': ptr<storage, ShotData, read_write>
+            35791..35796 'shots': ref<storage, array<ShotData>, read_write>
+            35791..35806 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            35797..35805 'shot_idx': u32
+            35897..35903 'result': [error]
+            35906..35982 'select...ility)': [error]
+            35913..35915 '1u': u32
+            35917..35919 '0u': u32
+            35921..35925 'shot': ptr<storage, ShotData, read_write>
+            35921..35938 'shot.r...easure': ref<storage, f32, read_write>
+            35921..35981 'shot.r...bility': [error]
+            35941..35945 'shot': ptr<storage, ShotData, read_write>
+            35941..35957 'shot.q..._state': ref<storage, [error], read_write>
+            35941..35964 'shot.q...qubit]': [error]
+            35941..35981 'shot.q...bility': [error]
+            35958..35963 'qubit': u32
+            36162..36170 '!is_loss': bool
+            36163..36170 'is_loss': bool
+            36184..36197 'stores_result': bool
+            36418..36422 'shot': ptr<storage, ShotData, read_write>
+            36418..36434 'shot.q..._state': ref<storage, [error], read_write>
+            36418..36441 'shot.q...qubit]': [error]
+            36418..36446 'shot.q...].heat': [error]
+            36418..36454 'shot.q...= -1.0': [error]
+            36435..36440 'qubit': u32
+            36450..36454 '-1.0': float
+            36451..36454 '1.0': float
+            36473..36537 'atomic...], 2u)': [error]
+            36485..36532 '&resul...lt_id]': ptr<storage, atomic<u32>, read_write>
+            36486..36493 'results': ref<storage, array<atomic<u32>>, read_write>
+            36486..36532 'result...lt_id]': ref<storage, atomic<u32>, read_write>
+            36494..36531 '(shot_...ult_id': u32
+            36495..36503 'shot_idx': u32
+            36495..36518 'shot_i..._COUNT': u32
+            36506..36518 'RESULT_COUNT': u32
+            36522..36531 'result_id': u32
+            36534..36536 '2u': u32
+            36555..36559 'shot': ptr<storage, ShotData, read_write>
+            36555..36567 'shot.op_type': ref<storage, u32, read_write>
+            36570..36577 'OPID_ID': u32
+            36595..36599 'shot': ptr<storage, ShotData, read_write>
+            36595..36606 'shot.op_idx': ref<storage, u32, read_write>
+            36609..36615 'op_idx': u32
+            36720..36724 'shot': ptr<storage, ShotData, read_write>
+            36720..36736 'shot.q..._state': ref<storage, [error], read_write>
+            36720..36743 'shot.q...qubit]': [error]
+            36720..36748 'shot.q...].heat': [error]
+            36737..36742 'qubit': u32
+            36751..36754 '0.0': float
+            36817..36885 'atomic...esult)': [error]
+            36829..36876 '&resul...lt_id]': ptr<storage, atomic<u32>, read_write>
+            36830..36837 'results': ref<storage, array<atomic<u32>>, read_write>
+            36830..36876 'result...lt_id]': ref<storage, atomic<u32>, read_write>
+            36838..36875 '(shot_...ult_id': u32
+            36839..36847 'shot_idx': u32
+            36839..36862 'shot_i..._COUNT': u32
+            36850..36862 'RESULT_COUNT': u32
+            36866..36875 'result_id': u32
+            36878..36884 'result': [error]
+            37107..37111 'shot': ptr<storage, ShotData, read_write>
+            37107..37123 'shot.q..._state': ref<storage, [error], read_write>
+            37107..37130 'shot.q...qubit]': [error]
+            37107..37135 'shot.q...].heat': [error]
+            37107..37143 'shot.q...= -1.0': [error]
+            37124..37129 'qubit': u32
+            37139..37143 '-1.0': float
+            37140..37143 '1.0': float
+            37162..37166 'shot': ptr<storage, ShotData, read_write>
+            37162..37174 'shot.op_type': ref<storage, u32, read_write>
+            37177..37184 'OPID_ID': u32
+            37202..37206 'shot': ptr<storage, ShotData, read_write>
+            37202..37213 'shot.op_idx': ref<storage, u32, read_write>
+            37216..37222 'op_idx': u32
+            37293..37297 'shot': ptr<storage, ShotData, read_write>
+            37293..37309 'shot.q..._state': ref<storage, [error], read_write>
+            37293..37316 'shot.q...qubit]': [error]
+            37293..37321 'shot.q...].heat': [error]
+            37310..37315 'qubit': u32
+            37324..37328 '-1.0': float
+            37325..37328 '1.0': float
+            37341..37411 'prep_m..._zero)': [error]
+            37371..37379 'shot_idx': u32
+            37381..37386 'qubit': u32
+            37388..37394 'result': [error]
+            37396..37410 'resets_to_zero': bool
+            37418..37422 'shot': ptr<storage, ShotData, read_write>
+            37418..37429 'shot.op_idx': ref<storage, u32, read_write>
+            37432..37438 'op_idx': u32
+            37597..37601 'shot': ptr<storage, ShotData, read_write>
+            37597..37609 'shot.op_type': ref<storage, u32, read_write>
+            37612..37624 'OPID_MRESETZ': u32
+            38043..38051 'shot_idx': u32
+            38058..38070 'target_is_q2': bool
+            38104..38107 'm00': vec2<f32>
+            38116..38119 'm01': vec2<f32>
+            38128..38131 'm10': vec2<f32>
+            38140..38143 'm11': vec2<f32>
+            38162..38166 'shot': ptr<storage, ShotData, read_write>
+            38169..38185 '&shots...t_idx]': ptr<storage, ShotData, read_write>
+            38170..38175 'shots': ref<storage, array<ShotData>, read_write>
+            38170..38185 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            38176..38184 'shot_idx': u32
+            38233..38234 'i': ref<function, u32, read_write>
+            38237..38239 '0u': u32
+            38241..38242 'i': ref<function, u32, read_write>
+            38241..38248 'i < 16u': bool
+            38245..38248 '16u': u32
+            38250..38251 'i': ref<function, u32, read_write>
+            38265..38269 'shot': ptr<storage, ShotData, read_write>
+            38265..38277 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            38265..38280 'shot.unitary[i]': ref<storage, vec2<f32>, read_write>
+            38278..38279 'i': ref<function, u32, read_write>
+            38283..38298 'vec2f(0.0, 0.0)': vec2<f32>
+            38289..38292 '0.0': float
+            38294..38297 '0.0': float
+            38313..38325 'target_is_q2': bool
+            38432..38436 'shot': ptr<storage, ShotData, read_write>
+            38432..38444 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            38432..38447 'shot.unitary[0]': ref<storage, vec2<f32>, read_write>
+            38445..38446 '0': integer
+            38451..38454 'm00': vec2<f32>
+            38456..38460 'shot': ptr<storage, ShotData, read_write>
+            38456..38468 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            38456..38471 'shot.unitary[1]': ref<storage, vec2<f32>, read_write>
+            38469..38470 '1': integer
+            38475..38478 'm01': vec2<f32>
+            38488..38492 'shot': ptr<storage, ShotData, read_write>
+            38488..38500 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            38488..38503 'shot.unitary[4]': ref<storage, vec2<f32>, read_write>
+            38501..38502 '4': integer
+            38507..38510 'm10': vec2<f32>
+            38512..38516 'shot': ptr<storage, ShotData, read_write>
+            38512..38524 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            38512..38527 'shot.unitary[5]': ref<storage, vec2<f32>, read_write>
+            38525..38526 '5': integer
+            38531..38534 'm11': vec2<f32>
+            38584..38588 'shot': ptr<storage, ShotData, read_write>
+            38584..38596 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            38584..38600 'shot.u...ry[10]': ref<storage, vec2<f32>, read_write>
+            38597..38599 '10': integer
+            38603..38606 'm00': vec2<f32>
+            38608..38612 'shot': ptr<storage, ShotData, read_write>
+            38608..38620 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            38608..38624 'shot.u...ry[11]': ref<storage, vec2<f32>, read_write>
+            38621..38623 '11': integer
+            38627..38630 'm01': vec2<f32>
+            38640..38644 'shot': ptr<storage, ShotData, read_write>
+            38640..38652 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            38640..38656 'shot.u...ry[14]': ref<storage, vec2<f32>, read_write>
+            38653..38655 '14': integer
+            38659..38662 'm10': vec2<f32>
+            38664..38668 'shot': ptr<storage, ShotData, read_write>
+            38664..38676 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            38664..38680 'shot.u...ry[15]': ref<storage, vec2<f32>, read_write>
+            38677..38679 '15': integer
+            38683..38686 'm11': vec2<f32>
+            38752..38756 'shot': ptr<storage, ShotData, read_write>
+            38752..38764 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            38752..38767 'shot.unitary[0]': ref<storage, vec2<f32>, read_write>
+            38765..38766 '0': integer
+            38771..38774 'm00': vec2<f32>
+            38776..38780 'shot': ptr<storage, ShotData, read_write>
+            38776..38788 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            38776..38791 'shot.unitary[2]': ref<storage, vec2<f32>, read_write>
+            38789..38790 '2': integer
+            38795..38798 'm01': vec2<f32>
+            38808..38812 'shot': ptr<storage, ShotData, read_write>
+            38808..38820 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            38808..38823 'shot.unitary[8]': ref<storage, vec2<f32>, read_write>
+            38821..38822 '8': integer
+            38827..38830 'm10': vec2<f32>
+            38832..38836 'shot': ptr<storage, ShotData, read_write>
+            38832..38844 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            38832..38848 'shot.u...ry[10]': ref<storage, vec2<f32>, read_write>
+            38845..38847 '10': integer
+            38851..38854 'm11': vec2<f32>
+            38864..38868 'shot': ptr<storage, ShotData, read_write>
+            38864..38876 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            38864..38879 'shot.unitary[5]': ref<storage, vec2<f32>, read_write>
+            38877..38878 '5': integer
+            38883..38886 'm00': vec2<f32>
+            38888..38892 'shot': ptr<storage, ShotData, read_write>
+            38888..38900 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            38888..38903 'shot.unitary[7]': ref<storage, vec2<f32>, read_write>
+            38901..38902 '7': integer
+            38907..38910 'm01': vec2<f32>
+            38920..38924 'shot': ptr<storage, ShotData, read_write>
+            38920..38932 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            38920..38936 'shot.u...ry[13]': ref<storage, vec2<f32>, read_write>
+            38933..38935 '13': integer
+            38939..38942 'm10': vec2<f32>
+            38944..38948 'shot': ptr<storage, ShotData, read_write>
+            38944..38956 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            38944..38960 'shot.u...ry[15]': ref<storage, vec2<f32>, read_write>
+            38957..38959 '15': integer
+            38963..38966 'm11': vec2<f32>
+            39285..39293 'shot_idx': u32
+            39300..39303 'row': u32
+            39320..39324 'shot': ptr<storage, ShotData, read_write>
+            39327..39343 '&shots...t_idx]': ptr<storage, ShotData, read_write>
+            39328..39333 'shots': ref<storage, array<ShotData>, read_write>
+            39328..39343 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            39334..39342 'shot_idx': u32
+            39358..39359 'c': ref<function, u32, read_write>
+            39362..39364 '0u': u32
+            39366..39367 'c': ref<function, u32, read_write>
+            39366..39372 'c < 4u': bool
+            39370..39372 '4u': u32
+            39374..39375 'c': ref<function, u32, read_write>
+            39393..39394 'e': vec2<f32>
+            39397..39401 'shot': ptr<storage, ShotData, read_write>
+            39397..39409 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            39397..39423 'shot.u...u + c]': ref<storage, vec2<f32>, read_write>
+            39410..39413 'row': u32
+            39410..39418 'row * 4u': u32
+            39410..39422 'row * 4u + c': u32
+            39416..39418 '4u': u32
+            39421..39422 'c': ref<function, u32, read_write>
+            39433..39437 'shot': ptr<storage, ShotData, read_write>
+            39433..39445 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            39433..39459 'shot.u...u + c]': ref<storage, vec2<f32>, read_write>
+            39446..39449 'row': u32
+            39446..39454 'row * 4u': u32
+            39446..39458 'row * 4u + c': u32
+            39452..39454 '4u': u32
+            39457..39458 'c': ref<function, u32, read_write>
+            39462..39478 'vec2f(... -e.x)': vec2<f32>
+            39468..39469 'e': vec2<f32>
+            39468..39471 'e.y': f32
+            39473..39477 '-e.x': f32
+            39474..39475 'e': vec2<f32>
+            39474..39477 'e.x': f32
+            39594..39602 'shot_idx': u32
+            39609..39615 'op_idx': u32
+            39622..39624 'q1': u32
+            39631..39633 'q2': u32
+            39650..39654 'shot': ptr<storage, ShotData, read_write>
+            39657..39673 '&shots...t_idx]': ptr<storage, ShotData, read_write>
+            39658..39663 'shots': ref<storage, array<ShotData>, read_write>
+            39658..39673 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            39664..39672 'shot_idx': u32
+            39679..39683 'shot': ptr<storage, ShotData, read_write>
+            39679..39690 'shot.op_idx': ref<storage, u32, read_write>
+            39693..39699 'op_idx': u32
+            39705..39709 'shot': ptr<storage, ShotData, read_write>
+            39705..39717 'shot.op_type': ref<storage, u32, read_write>
+            39720..39737 'OPID_S...UFF_2Q': u32
+            39743..39747 'shot': ptr<storage, ShotData, read_write>
+            39743..39775 'shot.q...p_mask': ref<storage, u32, read_write>
+            39778..39801 '(1u <<...<< q2)': u32
+            39779..39781 '1u': u32
+            39779..39787 '1u << q1': u32
+            39785..39787 'q1': u32
+            39792..39794 '1u': u32
+            39792..39800 '1u << q2': u32
+            39798..39800 'q2': u32
+            40003..40011 'shot_idx': u32
+            40018..40024 'op_idx': u32
+            40031..40033 'q1': u32
+            40040..40042 'q2': u32
+            40067..40071 'shot': ptr<storage, ShotData, read_write>
+            40074..40090 '&shots...t_idx]': ptr<storage, ShotData, read_write>
+            40075..40080 'shots': ref<storage, array<ShotData>, read_write>
+            40075..40090 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            40081..40089 'shot_idx': u32
+            40100..40102 'op': ptr<storage, Op, read>
+            40105..40117 '&ops[op_idx]': ptr<storage, Op, read>
+            40106..40109 'ops': ref<storage, array<Op>, read>
+            40106..40117 'ops[op_idx]': ref<storage, Op, read>
+            40110..40116 'op_idx': u32
+            40127..40131 'shot': ptr<storage, ShotData, read_write>
+            40127..40143 'shot.q..._state': ref<storage, [error], read_write>
+            40127..40147 'shot.q...te[q1]': [error]
+            40127..40152 'shot.q...].heat': [error]
+            40127..40160 'shot.q...= -1.0': [error]
+            40144..40146 'q1': u32
+            40156..40160 '-1.0': float
+            40157..40160 '1.0': float
+            40179..40183 'true': bool
+            40199..40204 'is_2q': bool
+            40207..40223 '!is_1q...op.id)': bool
+            40208..40223 'is_1q_op(op.id)': bool
+            40217..40219 'op': ptr<storage, Op, read>
+            40217..40222 'op.id': ref<storage, u32, read>
+            40236..40241 'is_2q': bool
+            40236..40280 'is_2q ... -1.0)': [error]
+            40246..40250 'shot': ptr<storage, ShotData, read_write>
+            40246..40262 'shot.q..._state': ref<storage, [error], read_write>
+            40246..40266 'shot.q...te[q2]': [error]
+            40246..40271 'shot.q...].heat': [error]
+            40246..40279 'shot.q...= -1.0': [error]
+            40263..40265 'q2': u32
+            40275..40279 '-1.0': float
+            40276..40279 '1.0': float
+            40760..40768 'shot_idx': u32
+            40775..40781 'op_idx': u32
+            40788..40790 'q1': u32
+            40797..40799 'q2': u32
+            40806..40811 'qubit': u32
+            40828..40832 'shot': ptr<storage, ShotData, read_write>
+            40835..40851 '&shots...t_idx]': ptr<storage, ShotData, read_write>
+            40836..40841 'shots': ref<storage, array<ShotData>, read_write>
+            40836..40851 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            40842..40850 'shot_idx': u32
+            40862..40868 'result': [error]
+            40871..40947 'select...ility)': [error]
+            40878..40880 '1u': u32
+            40882..40884 '0u': u32
+            40886..40890 'shot': ptr<storage, ShotData, read_write>
+            40886..40903 'shot.r...easure': ref<storage, f32, read_write>
+            40886..40946 'shot.r...bility': [error]
+            40906..40910 'shot': ptr<storage, ShotData, read_write>
+            40906..40922 'shot.q..._state': ref<storage, [error], read_write>
+            40906..40929 'shot.q...qubit]': [error]
+            40906..40946 'shot.q...bility': [error]
+            40923..40928 'qubit': u32
+            41103..41106 'm00': [error]
+            41109..41163 'select...== 1u)': [error]
+            41116..41131 'vec2f(1.0, 0.0)': vec2<f32>
+            41122..41125 '1.0': float
+            41127..41130 '0.0': float
+            41133..41148 'vec2f(0.0, 0.0)': vec2<f32>
+            41139..41142 '0.0': float
+            41144..41147 '0.0': float
+            41150..41156 'result': [error]
+            41150..41162 'result == 1u': [error]
+            41160..41162 '1u': u32
+            41173..41176 'm01': [error]
+            41179..41233 'select...== 1u)': [error]
+            41186..41201 'vec2f(0.0, 0.0)': vec2<f32>
+            41192..41195 '0.0': float
+            41197..41200 '0.0': float
+            41203..41218 'vec2f(1.0, 0.0)': vec2<f32>
+            41209..41212 '1.0': float
+            41214..41217 '0.0': float
+            41220..41226 'result': [error]
+            41220..41232 'result == 1u': [error]
+            41230..41232 '1u': u32
+            41243..41246 'm10': vec2<f32>
+            41249..41264 'vec2f(0.0, 0.0)': vec2<f32>
+            41255..41258 '0.0': float
+            41260..41263 '0.0': float
+            41274..41277 'm11': vec2<f32>
+            41280..41295 'vec2f(0.0, 0.0)': vec2<f32>
+            41286..41289 '0.0': float
+            41291..41294 '0.0': float
+            41306..41318 'target_is_q2': bool
+            41322..41327 'qubit': u32
+            41322..41333 'qubit == q2': bool
+            41331..41333 'q2': u32
+            41340..41406 'set_1q..., m11)': [error]
+            41363..41371 'shot_idx': u32
+            41373..41385 'target_is_q2': bool
+            41387..41390 'm00': [error]
+            41392..41395 'm01': [error]
+            41397..41400 'm10': vec2<f32>
+            41402..41405 'm11': vec2<f32>
+            41468..41472 'shot': ptr<storage, ShotData, read_write>
+            41468..41484 'shot.r...malize': ref<storage, f32, read_write>
+            41487..41639 'select...== 1u)': [error]
             41503..41506 '1.0': float
-            41503..41554 '1.0 / ...ility)': [error]
-            41509..41554 'sqrt(s...ility)': [error]
+            41503..41555 '1.0 / ...ility)': [error]
+            41509..41555 'sqrt(s...ility)': [error]
             41514..41518 'shot': ptr<storage, ShotData, read_write>
             41514..41530 'shot.q..._state': ref<storage, [error], read_write>
             41514..41537 'shot.q...qubit]': [error]
-            41514..41553 'shot.q...bility': [error]
+            41514..41554 'shot.q...bility': [error]
             41531..41536 'qubit': u32
-            41564..41570 'result': [error]
-            41564..41576 'result == 1u': [error]
-            41574..41576 '1u': u32
-            41691..41695 'shot': ptr<storage, ShotData, read_write>
-            41691..41707 'shot.q..._state': ref<storage, [error], read_write>
-            41691..41714 'shot.q...qubit]': [error]
-            41691..41719 'shot.q...].heat': [error]
-            41708..41713 'qubit': u32
-            41722..41726 '-1.0': float
-            41723..41726 '1.0': float
-            41732..41736 'shot': ptr<storage, ShotData, read_write>
-            41732..41752 'shot.q...0_mask': ref<storage, u32, read_write>
-            41755..41759 'shot': ptr<storage, ShotData, read_write>
-            41755..41775 'shot.q...0_mask': ref<storage, u32, read_write>
-            41755..41792 'shot.q...qubit)': u32
-            41778..41792 '~(1u << qubit)': u32
-            41780..41782 '1u': u32
-            41780..41791 '1u << qubit': u32
-            41786..41791 'qubit': u32
-            41798..41802 'shot': ptr<storage, ShotData, read_write>
-            41798..41818 'shot.q...1_mask': ref<storage, u32, read_write>
-            41821..41825 'shot': ptr<storage, ShotData, read_write>
-            41821..41841 'shot.q...1_mask': ref<storage, u32, read_write>
-            41821..41858 'shot.q...qubit)': u32
-            41844..41858 '~(1u << qubit)': u32
-            41846..41848 '1u': u32
-            41846..41857 '1u << qubit': u32
-            41852..41857 'qubit': u32
-            41865..41912 'finish...1, q2)': [error]
-            41887..41895 'shot_idx': u32
-            41897..41903 'op_idx': u32
-            41905..41907 'q1': u32
-            41909..41911 'q2': u32
-            42393..42401 'shot_idx': u32
-            42408..42414 'op_idx': u32
-            42421..42423 'q1': u32
-            42430..42432 'q2': u32
-            42449..42453 'shot': ptr<storage, ShotData, read_write>
-            42456..42472 '&shots...t_idx]': ptr<storage, ShotData, read_write>
-            42457..42462 'shots': ref<storage, array<ShotData>, read_write>
-            42457..42472 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            42463..42471 'shot_idx': u32
-            42482..42484 'op': ptr<storage, Op, read>
-            42487..42499 '&ops[op_idx]': ptr<storage, Op, read>
-            42488..42491 'ops': ref<storage, array<Op>, read>
-            42488..42499 'ops[op_idx]': ref<storage, Op, read>
-            42492..42498 'op_idx': u32
-            42509..42514 'is_1q': bool
-            42517..42532 'is_1q_op(op.id)': bool
-            42526..42528 'op': ptr<storage, Op, read>
-            42526..42531 'op.id': ref<storage, u32, read>
-            42542..42547 'is_2q': bool
-            42550..42556 '!is_1q': bool
-            42551..42556 'is_1q': bool
-            42566..42572 'policy': u32
-            42575..42577 'op': ptr<storage, Op, read>
-            42575..42584 'op.policy': ref<storage, u32, read>
-            42712..42717 'is_1q': bool
-            42729..42733 'shot': ptr<storage, ShotData, read_write>
-            42729..42741 'shot.op_type': ref<storage, u32, read_write>
-            42744..42751 'OPID_ID': u32
-            42761..42765 'shot': ptr<storage, ShotData, read_write>
-            42761..42772 'shot.op_idx': ref<storage, u32, read_write>
-            42775..42781 'op_idx': u32
-            42814..42821 'q1_lost': [error]
-            42824..42828 'shot': ptr<storage, ShotData, read_write>
-            42824..42840 'shot.q..._state': ref<storage, [error], read_write>
-            42824..42844 'shot.q...te[q1]': [error]
-            42824..42849 'shot.q...].heat': [error]
-            42824..42857 'shot.q...= -1.0': [error]
-            42841..42843 'q1': u32
-            42853..42857 '-1.0': float
-            42854..42857 '1.0': float
-            42867..42874 'q2_lost': [error]
-            42877..42882 'is_2q': bool
-            42877..42921 'is_2q ... -1.0)': [error]
-            42887..42891 'shot': ptr<storage, ShotData, read_write>
-            42887..42903 'shot.q..._state': ref<storage, [error], read_write>
-            42887..42907 'shot.q...te[q2]': [error]
-            42887..42912 'shot.q...].heat': [error]
-            42887..42920 'shot.q...= -1.0': [error]
-            42904..42906 'q2': u32
-            42916..42920 '-1.0': float
-            42917..42920 '1.0': float
-            42931..42943 'has_survivor': [error]
-            42946..42951 'is_2q': bool
-            42946..42976 'is_2q ..._lost)': [error]
-            42955..42976 '!(q1_l..._lost)': [error]
-            42957..42964 'q1_lost': [error]
-            42957..42975 'q1_los...2_lost': [error]
-            42968..42975 'q2_lost': [error]
-            43060..43068 'survivor': [error]
-            43071..43094 'select..._lost)': [error]
-            43078..43080 'q1': u32
-            43082..43084 'q2': u32
-            43086..43093 'q1_lost': [error]
-            43104..43118 'survivor_is_q2': [error]
-            43121..43128 'q1_lost': [error]
-            43361..43363 'op': ptr<storage, Op, read>
-            43361..43366 'op.id': ref<storage, u32, read>
-            43361..43379 'op.id ...D_SWAP': bool
-            43370..43379 'OPID_SWAP': u32
-            43398..43404 'policy': u32
-            43424..43445 'LOSS_P...PAGATE': u32
-            43464..43523 'propag...vivor)': [error]
-            43488..43496 'shot_idx': u32
-            43498..43504 'op_idx': u32
-            43506..43508 'q1': u32
-            43510..43512 'q2': u32
-            43514..43522 'survivor': [error]
-            43580..43609 'LOSS_P...DAGGER': u32
-            44316..44324 'lost_row': [error]
-            44327..44350 'select..._lost)': [error]
-            44334..44336 '1u': u32
-            44338..44340 '2u': u32
-            44342..44349 'q1_lost': [error]
-            44368..44419 'scale_...t_row)': [error]
-            44400..44408 'shot_idx': u32
-            44410..44418 'lost_row': [error]
-            44437..44482 'scale_...x, 3u)': [error]
-            44469..44477 'shot_idx': u32
-            44479..44481 '3u': u32
-            44584..44589 'heat1': [error]
-            44592..44596 'shot': ptr<storage, ShotData, read_write>
-            44592..44608 'shot.q..._state': ref<storage, [error], read_write>
-            44592..44612 'shot.q...te[q1]': [error]
-            44592..44617 'shot.q...].heat': [error]
-            44609..44611 'q1': u32
-            44635..44639 'shot': ptr<storage, ShotData, read_write>
-            44635..44651 'shot.q..._state': ref<storage, [error], read_write>
-            44635..44655 'shot.q...te[q1]': [error]
-            44635..44660 'shot.q...].heat': [error]
-            44652..44654 'q1': u32
-            44663..44667 'shot': ptr<storage, ShotData, read_write>
-            44663..44679 'shot.q..._state': ref<storage, [error], read_write>
-            44663..44683 'shot.q...te[q2]': [error]
-            44663..44688 'shot.q...].heat': [error]
-            44680..44682 'q2': u32
-            44706..44710 'shot': ptr<storage, ShotData, read_write>
-            44706..44722 'shot.q..._state': ref<storage, [error], read_write>
-            44706..44726 'shot.q...te[q2]': [error]
-            44706..44731 'shot.q...].heat': [error]
-            44723..44725 'q2': u32
-            44734..44739 'heat1': [error]
-            45020..45024 'shot': ptr<storage, ShotData, read_write>
-            45020..45040 'shot.q...0_mask': ref<storage, u32, read_write>
-            45043..45047 'shot': ptr<storage, ShotData, read_write>
-            45043..45063 'shot.q...0_mask': ref<storage, u32, read_write>
-            45043..45092 'shot.q...< q2))': u32
-            45066..45092 '~((1u ...< q2))': u32
-            45068..45091 '(1u <<...<< q2)': u32
-            45069..45071 '1u': u32
-            45069..45077 '1u << q1': u32
-            45075..45077 'q1': u32
-            45082..45084 '1u': u32
-            45082..45090 '1u << q2': u32
-            45088..45090 'q2': u32
-            45110..45114 'shot': ptr<storage, ShotData, read_write>
-            45110..45130 'shot.q...1_mask': ref<storage, u32, read_write>
-            45133..45137 'shot': ptr<storage, ShotData, read_write>
-            45133..45153 'shot.q...1_mask': ref<storage, u32, read_write>
-            45133..45182 'shot.q...< q2))': u32
-            45156..45182 '~((1u ...< q2))': u32
-            45158..45181 '(1u <<...<< q2)': u32
-            45159..45161 '1u': u32
-            45159..45167 '1u << q1': u32
-            45165..45167 'q1': u32
-            45172..45174 '1u': u32
-            45172..45180 '1u << q2': u32
-            45178..45180 'q2': u32
-            45269..45316 'finish...1, q2)': [error]
-            45291..45299 'shot_idx': u32
-            45301..45307 'op_idx': u32
-            45309..45311 'q1': u32
-            45313..45315 'q2': u32
-            45373..45397 'LOSS_P...ANYWAY': u32
-            45500..45505 'heat1': [error]
-            45508..45512 'shot': ptr<storage, ShotData, read_write>
-            45508..45524 'shot.q..._state': ref<storage, [error], read_write>
-            45508..45528 'shot.q...te[q1]': [error]
-            45508..45533 'shot.q...].heat': [error]
-            45525..45527 'q1': u32
-            45551..45555 'shot': ptr<storage, ShotData, read_write>
-            45551..45567 'shot.q..._state': ref<storage, [error], read_write>
-            45551..45571 'shot.q...te[q1]': [error]
-            45551..45576 'shot.q...].heat': [error]
-            45568..45570 'q1': u32
-            45579..45583 'shot': ptr<storage, ShotData, read_write>
-            45579..45595 'shot.q..._state': ref<storage, [error], read_write>
-            45579..45599 'shot.q...te[q2]': [error]
-            45579..45604 'shot.q...].heat': [error]
-            45596..45598 'q2': u32
-            45622..45626 'shot': ptr<storage, ShotData, read_write>
-            45622..45638 'shot.q..._state': ref<storage, [error], read_write>
-            45622..45642 'shot.q...te[q2]': [error]
-            45622..45647 'shot.q...].heat': [error]
-            45639..45641 'q2': u32
-            45650..45655 'heat1': [error]
-            45936..45940 'shot': ptr<storage, ShotData, read_write>
-            45936..45956 'shot.q...0_mask': ref<storage, u32, read_write>
-            45959..45963 'shot': ptr<storage, ShotData, read_write>
-            45959..45979 'shot.q...0_mask': ref<storage, u32, read_write>
-            45959..46008 'shot.q...< q2))': u32
-            45982..46008 '~((1u ...< q2))': u32
-            45984..46007 '(1u <<...<< q2)': u32
-            45985..45987 '1u': u32
-            45985..45993 '1u << q1': u32
-            45991..45993 'q1': u32
-            45998..46000 '1u': u32
-            45998..46006 '1u << q2': u32
-            46004..46006 'q2': u32
-            46026..46030 'shot': ptr<storage, ShotData, read_write>
-            46026..46046 'shot.q...1_mask': ref<storage, u32, read_write>
-            46049..46053 'shot': ptr<storage, ShotData, read_write>
-            46049..46069 'shot.q...1_mask': ref<storage, u32, read_write>
-            46049..46098 'shot.q...< q2))': u32
-            46072..46098 '~((1u ...< q2))': u32
-            46074..46097 '(1u <<...<< q2)': u32
-            46075..46077 '1u': u32
-            46075..46083 '1u << q1': u32
-            46081..46083 'q1': u32
-            46088..46090 '1u': u32
-            46088..46096 '1u << q2': u32
-            46094..46096 'q2': u32
-            46199..46246 'finish...1, q2)': [error]
-            46221..46229 'shot_idx': u32
-            46231..46237 'op_idx': u32
-            46239..46241 'q1': u32
-            46243..46245 'q2': u32
-            46303..46319 'LOSS_P...Y_SKIP': u32
-            46338..46342 'shot': ptr<storage, ShotData, read_write>
-            46338..46350 'shot.op_type': ref<storage, u32, read_write>
-            46353..46360 'OPID_ID': u32
-            46378..46382 'shot': ptr<storage, ShotData, read_write>
-            46378..46389 'shot.op_idx': ref<storage, u32, read_write>
-            46392..46398 'op_idx': u32
-            46697..46753 'report...OLICY)': [error]
-            46715..46723 'shot_idx': u32
-            46725..46752 'ERR_UN...POLICY': u32
-            46771..46775 'shot': ptr<storage, ShotData, read_write>
-            46771..46783 'shot.op_type': ref<storage, u32, read_write>
-            46786..46793 'OPID_ID': u32
-            46811..46815 'shot': ptr<storage, ShotData, read_write>
-            46811..46822 'shot.op_idx': ref<storage, u32, read_write>
-            46825..46831 'op_idx': u32
-            47059..47065 'policy': u32
-            47059..47093 'policy...ANYWAY': bool
-            47069..47093 'LOSS_P...ANYWAY': u32
-            47105..47161 'report...OLICY)': [error]
-            47123..47131 'shot_idx': u32
-            47133..47160 'ERR_UN...POLICY': u32
-            47171..47175 'shot': ptr<storage, ShotData, read_write>
-            47171..47183 'shot.op_type': ref<storage, u32, read_write>
-            47186..47193 'OPID_ID': u32
-            47203..47207 'shot': ptr<storage, ShotData, read_write>
-            47203..47214 'shot.op_idx': ref<storage, u32, read_write>
-            47217..47223 'op_idx': u32
-            47256..47262 'policy': u32
-            47256..47287 'policy...PAGATE': bool
-            47256..47303 'policy...rvivor': [error]
-            47266..47287 'LOSS_P...PAGATE': u32
-            47291..47303 'has_survivor': [error]
-            47315..47374 'propag...vivor)': [error]
-            47339..47347 'shot_idx': u32
-            47349..47355 'op_idx': u32
-            47357..47359 'q1': u32
-            47361..47363 'q2': u32
-            47365..47373 'survivor': [error]
-            47407..47413 'policy': u32
-            47407..47446 'policy...DAGGER': bool
-            47407..47462 'policy...rvivor': [error]
-            47417..47446 'LOSS_P...DAGGER': u32
-            47450..47462 'has_survivor': [error]
-            47540..47681 'set_1q...-1.0))': [error]
-            47563..47571 'shot_idx': u32
-            47573..47587 'survivor_is_q2': [error]
-            47601..47616 'vec2f(1.0, 0.0)': vec2<f32>
-            47607..47610 '1.0': float
-            47612..47615 '0.0': float
-            47618..47633 'vec2f(0.0, 0.0)': vec2<f32>
-            47624..47627 '0.0': float
-            47629..47632 '0.0': float
-            47647..47662 'vec2f(0.0, 0.0)': vec2<f32>
-            47653..47656 '0.0': float
-            47658..47661 '0.0': float
-            47664..47680 'vec2f(... -1.0)': vec2<f32>
-            47670..47673 '0.0': float
-            47675..47679 '-1.0': float
-            47676..47679 '1.0': float
-            47691..47738 'finish...1, q2)': [error]
-            47713..47721 'shot_idx': u32
-            47723..47729 'op_idx': u32
-            47731..47733 'q1': u32
-            47735..47737 'q2': u32
-            47916..47922 'policy': u32
-            47916..47945 'policy...EGRADE': bool
-            47916..47961 'policy...rvivor': [error]
-            47926..47945 'LOSS_P...EGRADE': u32
-            47949..47961 'has_survivor': [error]
-            48194..48202 'cos_half': f32
-            48205..48207 'op': ptr<storage, Op, read>
-            48205..48215 'op.unitary': ref<storage, array<vec2<f32>, 16>, read>
-            48205..48218 'op.unitary[0]': ref<storage, vec2<f32>, read>
-            48205..48220 'op.unitary[0].x': ref<storage, f32, read>
-            48216..48217 '0': integer
-            48234..48236 'op': ptr<storage, Op, read>
-            48234..48239 'op.id': ref<storage, u32, read>
-            48234..48251 'op.id ...ID_RXX': bool
-            48243..48251 'OPID_RXX': u32
-            48340..48341 's': f32
-            48344..48346 'op': ptr<storage, Op, read>
-            48344..48354 'op.unitary': ref<storage, array<vec2<f32>, 16>, read>
-            48344..48357 'op.unitary[3]': ref<storage, vec2<f32>, read>
-            48344..48359 'op.unitary[3].y': ref<storage, f32, read>
-            48344..48366 'op.uni...* -1.0': f32
-            48355..48356 '3': integer
-            48362..48366 '-1.0': float
-            48363..48366 '1.0': float
-            48412..48568 'set_1q... 0.0))': [error]
-            48435..48443 'shot_idx': u32
-            48445..48459 'survivor_is_q2': [error]
-            48477..48497 'vec2f(..., 0.0)': vec2<f32>
-            48483..48491 'cos_half': f32
-            48493..48496 '0.0': float
-            48499..48513 'vec2f(0.0, -s)': vec2<f32>
-            48505..48508 '0.0': float
-            48510..48512 '-s': f32
-            48511..48512 's': f32
-            48531..48545 'vec2f(0.0, -s)': vec2<f32>
-            48537..48540 '0.0': float
-            48542..48544 '-s': f32
-            48543..48544 's': f32
+            41565..41568 '1.0': float
+            41565..41616 '1.0 / ...ility)': [error]
+            41571..41616 'sqrt(s...ility)': [error]
+            41576..41580 'shot': ptr<storage, ShotData, read_write>
+            41576..41592 'shot.q..._state': ref<storage, [error], read_write>
+            41576..41599 'shot.q...qubit]': [error]
+            41576..41615 'shot.q...bility': [error]
+            41593..41598 'qubit': u32
+            41626..41632 'result': [error]
+            41626..41638 'result == 1u': [error]
+            41636..41638 '1u': u32
+            41753..41757 'shot': ptr<storage, ShotData, read_write>
+            41753..41769 'shot.q..._state': ref<storage, [error], read_write>
+            41753..41776 'shot.q...qubit]': [error]
+            41753..41781 'shot.q...].heat': [error]
+            41770..41775 'qubit': u32
+            41784..41788 '-1.0': float
+            41785..41788 '1.0': float
+            41794..41798 'shot': ptr<storage, ShotData, read_write>
+            41794..41814 'shot.q...0_mask': ref<storage, u32, read_write>
+            41817..41821 'shot': ptr<storage, ShotData, read_write>
+            41817..41837 'shot.q...0_mask': ref<storage, u32, read_write>
+            41817..41854 'shot.q...qubit)': u32
+            41840..41854 '~(1u << qubit)': u32
+            41842..41844 '1u': u32
+            41842..41853 '1u << qubit': u32
+            41848..41853 'qubit': u32
+            41860..41864 'shot': ptr<storage, ShotData, read_write>
+            41860..41880 'shot.q...1_mask': ref<storage, u32, read_write>
+            41883..41887 'shot': ptr<storage, ShotData, read_write>
+            41883..41903 'shot.q...1_mask': ref<storage, u32, read_write>
+            41883..41920 'shot.q...qubit)': u32
+            41906..41920 '~(1u << qubit)': u32
+            41908..41910 '1u': u32
+            41908..41919 '1u << qubit': u32
+            41914..41919 'qubit': u32
+            41927..41974 'finish...1, q2)': [error]
+            41949..41957 'shot_idx': u32
+            41959..41965 'op_idx': u32
+            41967..41969 'q1': u32
+            41971..41973 'q2': u32
+            42455..42463 'shot_idx': u32
+            42470..42476 'op_idx': u32
+            42483..42485 'q1': u32
+            42492..42494 'q2': u32
+            42511..42515 'shot': ptr<storage, ShotData, read_write>
+            42518..42534 '&shots...t_idx]': ptr<storage, ShotData, read_write>
+            42519..42524 'shots': ref<storage, array<ShotData>, read_write>
+            42519..42534 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            42525..42533 'shot_idx': u32
+            42544..42546 'op': ptr<storage, Op, read>
+            42549..42561 '&ops[op_idx]': ptr<storage, Op, read>
+            42550..42553 'ops': ref<storage, array<Op>, read>
+            42550..42561 'ops[op_idx]': ref<storage, Op, read>
+            42554..42560 'op_idx': u32
+            42571..42576 'is_1q': bool
+            42579..42594 'is_1q_op(op.id)': bool
+            42588..42590 'op': ptr<storage, Op, read>
+            42588..42593 'op.id': ref<storage, u32, read>
+            42604..42609 'is_2q': bool
+            42612..42618 '!is_1q': bool
+            42613..42618 'is_1q': bool
+            42628..42634 'policy': u32
+            42637..42639 'op': ptr<storage, Op, read>
+            42637..42646 'op.policy': ref<storage, u32, read>
+            42774..42779 'is_1q': bool
+            42791..42795 'shot': ptr<storage, ShotData, read_write>
+            42791..42803 'shot.op_type': ref<storage, u32, read_write>
+            42806..42813 'OPID_ID': u32
+            42823..42827 'shot': ptr<storage, ShotData, read_write>
+            42823..42834 'shot.op_idx': ref<storage, u32, read_write>
+            42837..42843 'op_idx': u32
+            42876..42883 'q1_lost': [error]
+            42886..42890 'shot': ptr<storage, ShotData, read_write>
+            42886..42902 'shot.q..._state': ref<storage, [error], read_write>
+            42886..42906 'shot.q...te[q1]': [error]
+            42886..42911 'shot.q...].heat': [error]
+            42886..42919 'shot.q...= -1.0': [error]
+            42903..42905 'q1': u32
+            42915..42919 '-1.0': float
+            42916..42919 '1.0': float
+            42929..42936 'q2_lost': [error]
+            42939..42944 'is_2q': bool
+            42939..42983 'is_2q ... -1.0)': [error]
+            42949..42953 'shot': ptr<storage, ShotData, read_write>
+            42949..42965 'shot.q..._state': ref<storage, [error], read_write>
+            42949..42969 'shot.q...te[q2]': [error]
+            42949..42974 'shot.q...].heat': [error]
+            42949..42982 'shot.q...= -1.0': [error]
+            42966..42968 'q2': u32
+            42978..42982 '-1.0': float
+            42979..42982 '1.0': float
+            42993..43005 'has_survivor': [error]
+            43008..43013 'is_2q': bool
+            43008..43038 'is_2q ..._lost)': [error]
+            43017..43038 '!(q1_l..._lost)': [error]
+            43019..43026 'q1_lost': [error]
+            43019..43037 'q1_los...2_lost': [error]
+            43030..43037 'q2_lost': [error]
+            43122..43130 'survivor': [error]
+            43133..43156 'select..._lost)': [error]
+            43140..43142 'q1': u32
+            43144..43146 'q2': u32
+            43148..43155 'q1_lost': [error]
+            43166..43180 'survivor_is_q2': [error]
+            43183..43190 'q1_lost': [error]
+            43423..43425 'op': ptr<storage, Op, read>
+            43423..43428 'op.id': ref<storage, u32, read>
+            43423..43441 'op.id ...D_SWAP': bool
+            43432..43441 'OPID_SWAP': u32
+            43460..43466 'policy': u32
+            43486..43507 'LOSS_P...PAGATE': u32
+            43526..43585 'propag...vivor)': [error]
+            43550..43558 'shot_idx': u32
+            43560..43566 'op_idx': u32
+            43568..43570 'q1': u32
+            43572..43574 'q2': u32
+            43576..43584 'survivor': [error]
+            43642..43671 'LOSS_P...DAGGER': u32
+            44378..44386 'lost_row': [error]
+            44389..44412 'select..._lost)': [error]
+            44396..44398 '1u': u32
+            44400..44402 '2u': u32
+            44404..44411 'q1_lost': [error]
+            44430..44481 'scale_...t_row)': [error]
+            44462..44470 'shot_idx': u32
+            44472..44480 'lost_row': [error]
+            44499..44544 'scale_...x, 3u)': [error]
+            44531..44539 'shot_idx': u32
+            44541..44543 '3u': u32
+            44646..44651 'heat1': [error]
+            44654..44658 'shot': ptr<storage, ShotData, read_write>
+            44654..44670 'shot.q..._state': ref<storage, [error], read_write>
+            44654..44674 'shot.q...te[q1]': [error]
+            44654..44679 'shot.q...].heat': [error]
+            44671..44673 'q1': u32
+            44697..44701 'shot': ptr<storage, ShotData, read_write>
+            44697..44713 'shot.q..._state': ref<storage, [error], read_write>
+            44697..44717 'shot.q...te[q1]': [error]
+            44697..44722 'shot.q...].heat': [error]
+            44714..44716 'q1': u32
+            44725..44729 'shot': ptr<storage, ShotData, read_write>
+            44725..44741 'shot.q..._state': ref<storage, [error], read_write>
+            44725..44745 'shot.q...te[q2]': [error]
+            44725..44750 'shot.q...].heat': [error]
+            44742..44744 'q2': u32
+            44768..44772 'shot': ptr<storage, ShotData, read_write>
+            44768..44784 'shot.q..._state': ref<storage, [error], read_write>
+            44768..44788 'shot.q...te[q2]': [error]
+            44768..44793 'shot.q...].heat': [error]
+            44785..44787 'q2': u32
+            44796..44801 'heat1': [error]
+            45082..45086 'shot': ptr<storage, ShotData, read_write>
+            45082..45102 'shot.q...0_mask': ref<storage, u32, read_write>
+            45105..45109 'shot': ptr<storage, ShotData, read_write>
+            45105..45125 'shot.q...0_mask': ref<storage, u32, read_write>
+            45105..45154 'shot.q...< q2))': u32
+            45128..45154 '~((1u ...< q2))': u32
+            45130..45153 '(1u <<...<< q2)': u32
+            45131..45133 '1u': u32
+            45131..45139 '1u << q1': u32
+            45137..45139 'q1': u32
+            45144..45146 '1u': u32
+            45144..45152 '1u << q2': u32
+            45150..45152 'q2': u32
+            45172..45176 'shot': ptr<storage, ShotData, read_write>
+            45172..45192 'shot.q...1_mask': ref<storage, u32, read_write>
+            45195..45199 'shot': ptr<storage, ShotData, read_write>
+            45195..45215 'shot.q...1_mask': ref<storage, u32, read_write>
+            45195..45244 'shot.q...< q2))': u32
+            45218..45244 '~((1u ...< q2))': u32
+            45220..45243 '(1u <<...<< q2)': u32
+            45221..45223 '1u': u32
+            45221..45229 '1u << q1': u32
+            45227..45229 'q1': u32
+            45234..45236 '1u': u32
+            45234..45242 '1u << q2': u32
+            45240..45242 'q2': u32
+            45331..45378 'finish...1, q2)': [error]
+            45353..45361 'shot_idx': u32
+            45363..45369 'op_idx': u32
+            45371..45373 'q1': u32
+            45375..45377 'q2': u32
+            45435..45459 'LOSS_P...ANYWAY': u32
+            45562..45567 'heat1': [error]
+            45570..45574 'shot': ptr<storage, ShotData, read_write>
+            45570..45586 'shot.q..._state': ref<storage, [error], read_write>
+            45570..45590 'shot.q...te[q1]': [error]
+            45570..45595 'shot.q...].heat': [error]
+            45587..45589 'q1': u32
+            45613..45617 'shot': ptr<storage, ShotData, read_write>
+            45613..45629 'shot.q..._state': ref<storage, [error], read_write>
+            45613..45633 'shot.q...te[q1]': [error]
+            45613..45638 'shot.q...].heat': [error]
+            45630..45632 'q1': u32
+            45641..45645 'shot': ptr<storage, ShotData, read_write>
+            45641..45657 'shot.q..._state': ref<storage, [error], read_write>
+            45641..45661 'shot.q...te[q2]': [error]
+            45641..45666 'shot.q...].heat': [error]
+            45658..45660 'q2': u32
+            45684..45688 'shot': ptr<storage, ShotData, read_write>
+            45684..45700 'shot.q..._state': ref<storage, [error], read_write>
+            45684..45704 'shot.q...te[q2]': [error]
+            45684..45709 'shot.q...].heat': [error]
+            45701..45703 'q2': u32
+            45712..45717 'heat1': [error]
+            45998..46002 'shot': ptr<storage, ShotData, read_write>
+            45998..46018 'shot.q...0_mask': ref<storage, u32, read_write>
+            46021..46025 'shot': ptr<storage, ShotData, read_write>
+            46021..46041 'shot.q...0_mask': ref<storage, u32, read_write>
+            46021..46070 'shot.q...< q2))': u32
+            46044..46070 '~((1u ...< q2))': u32
+            46046..46069 '(1u <<...<< q2)': u32
+            46047..46049 '1u': u32
+            46047..46055 '1u << q1': u32
+            46053..46055 'q1': u32
+            46060..46062 '1u': u32
+            46060..46068 '1u << q2': u32
+            46066..46068 'q2': u32
+            46088..46092 'shot': ptr<storage, ShotData, read_write>
+            46088..46108 'shot.q...1_mask': ref<storage, u32, read_write>
+            46111..46115 'shot': ptr<storage, ShotData, read_write>
+            46111..46131 'shot.q...1_mask': ref<storage, u32, read_write>
+            46111..46160 'shot.q...< q2))': u32
+            46134..46160 '~((1u ...< q2))': u32
+            46136..46159 '(1u <<...<< q2)': u32
+            46137..46139 '1u': u32
+            46137..46145 '1u << q1': u32
+            46143..46145 'q1': u32
+            46150..46152 '1u': u32
+            46150..46158 '1u << q2': u32
+            46156..46158 'q2': u32
+            46261..46308 'finish...1, q2)': [error]
+            46283..46291 'shot_idx': u32
+            46293..46299 'op_idx': u32
+            46301..46303 'q1': u32
+            46305..46307 'q2': u32
+            46365..46381 'LOSS_P...Y_SKIP': u32
+            46400..46404 'shot': ptr<storage, ShotData, read_write>
+            46400..46412 'shot.op_type': ref<storage, u32, read_write>
+            46415..46422 'OPID_ID': u32
+            46440..46444 'shot': ptr<storage, ShotData, read_write>
+            46440..46451 'shot.op_idx': ref<storage, u32, read_write>
+            46454..46460 'op_idx': u32
+            46767..46823 'report...OLICY)': [error]
+            46785..46793 'shot_idx': u32
+            46795..46822 'ERR_UN...POLICY': u32
+            46841..46845 'shot': ptr<storage, ShotData, read_write>
+            46841..46853 'shot.op_type': ref<storage, u32, read_write>
+            46856..46863 'OPID_ID': u32
+            46881..46885 'shot': ptr<storage, ShotData, read_write>
+            46881..46892 'shot.op_idx': ref<storage, u32, read_write>
+            46895..46901 'op_idx': u32
+            47129..47135 'policy': u32
+            47129..47163 'policy...ANYWAY': bool
+            47139..47163 'LOSS_P...ANYWAY': u32
+            47175..47231 'report...OLICY)': [error]
+            47193..47201 'shot_idx': u32
+            47203..47230 'ERR_UN...POLICY': u32
+            47241..47245 'shot': ptr<storage, ShotData, read_write>
+            47241..47253 'shot.op_type': ref<storage, u32, read_write>
+            47256..47263 'OPID_ID': u32
+            47273..47277 'shot': ptr<storage, ShotData, read_write>
+            47273..47284 'shot.op_idx': ref<storage, u32, read_write>
+            47287..47293 'op_idx': u32
+            47326..47332 'policy': u32
+            47326..47357 'policy...PAGATE': bool
+            47326..47373 'policy...rvivor': [error]
+            47336..47357 'LOSS_P...PAGATE': u32
+            47361..47373 'has_survivor': [error]
+            47385..47444 'propag...vivor)': [error]
+            47409..47417 'shot_idx': u32
+            47419..47425 'op_idx': u32
+            47427..47429 'q1': u32
+            47431..47433 'q2': u32
+            47435..47443 'survivor': [error]
+            47477..47483 'policy': u32
+            47477..47516 'policy...DAGGER': bool
+            47477..47532 'policy...rvivor': [error]
+            47487..47516 'LOSS_P...DAGGER': u32
+            47520..47532 'has_survivor': [error]
+            47610..47751 'set_1q...-1.0))': [error]
+            47633..47641 'shot_idx': u32
+            47643..47657 'survivor_is_q2': [error]
+            47671..47686 'vec2f(1.0, 0.0)': vec2<f32>
+            47677..47680 '1.0': float
+            47682..47685 '0.0': float
+            47688..47703 'vec2f(0.0, 0.0)': vec2<f32>
+            47694..47697 '0.0': float
+            47699..47702 '0.0': float
+            47717..47732 'vec2f(0.0, 0.0)': vec2<f32>
+            47723..47726 '0.0': float
+            47728..47731 '0.0': float
+            47734..47750 'vec2f(... -1.0)': vec2<f32>
+            47740..47743 '0.0': float
+            47745..47749 '-1.0': float
+            47746..47749 '1.0': float
+            47761..47808 'finish...1, q2)': [error]
+            47783..47791 'shot_idx': u32
+            47793..47799 'op_idx': u32
+            47801..47803 'q1': u32
+            47805..47807 'q2': u32
+            47986..47992 'policy': u32
+            47986..48015 'policy...EGRADE': bool
+            47986..48031 'policy...rvivor': [error]
+            47996..48015 'LOSS_P...EGRADE': u32
+            48019..48031 'has_survivor': [error]
+            48264..48272 'cos_half': f32
+            48275..48277 'op': ptr<storage, Op, read>
+            48275..48285 'op.unitary': ref<storage, array<vec2<f32>, 16>, read>
+            48275..48288 'op.unitary[0]': ref<storage, vec2<f32>, read>
+            48275..48290 'op.unitary[0].x': ref<storage, f32, read>
+            48286..48287 '0': integer
+            48304..48306 'op': ptr<storage, Op, read>
+            48304..48309 'op.id': ref<storage, u32, read>
+            48304..48321 'op.id ...ID_RXX': bool
+            48313..48321 'OPID_RXX': u32
+            48410..48411 's': f32
+            48414..48416 'op': ptr<storage, Op, read>
+            48414..48424 'op.unitary': ref<storage, array<vec2<f32>, 16>, read>
+            48414..48427 'op.unitary[3]': ref<storage, vec2<f32>, read>
+            48414..48429 'op.unitary[3].y': ref<storage, f32, read>
+            48414..48436 'op.uni...* -1.0': f32
+            48425..48426 '3': integer
+            48432..48436 '-1.0': float
+            48433..48436 '1.0': float
+            48482..48638 'set_1q... 0.0))': [error]
+            48505..48513 'shot_idx': u32
+            48515..48529 'survivor_is_q2': [error]
             48547..48567 'vec2f(..., 0.0)': vec2<f32>
             48553..48561 'cos_half': f32
             48563..48566 '0.0': float
-            48690..48691 's': f32
-            48694..48696 'op': ptr<storage, Op, read>
-            48694..48704 'op.unitary': ref<storage, array<vec2<f32>, 16>, read>
-            48694..48707 'op.unitary[3]': ref<storage, vec2<f32>, read>
-            48694..48709 'op.unitary[3].y': ref<storage, f32, read>
-            48705..48706 '3': integer
-            48762..48917 'set_1q... 0.0))': [error]
-            48785..48793 'shot_idx': u32
-            48795..48809 'survivor_is_q2': [error]
-            48827..48847 'vec2f(..., 0.0)': vec2<f32>
-            48833..48841 'cos_half': f32
-            48843..48846 '0.0': float
-            48849..48863 'vec2f(-s, 0.0)': vec2<f32>
-            48855..48857 '-s': f32
-            48856..48857 's': f32
-            48859..48862 '0.0': float
-            48881..48894 'vec2f(s, 0.0)': vec2<f32>
-            48887..48888 's': f32
-            48890..48893 '0.0': float
-            48896..48916 'vec2f(..., 0.0)': vec2<f32>
-            48902..48910 'cos_half': f32
-            48912..48915 '0.0': float
-            49099..49104 'phase': vec2<f32>
-            49107..49109 'op': ptr<storage, Op, read>
-            49107..49117 'op.unitary': ref<storage, array<vec2<f32>, 16>, read>
-            49107..49120 'op.unitary[5]': ref<storage, vec2<f32>, read>
-            49118..49119 '5': integer
-            49134..49272 'set_1q...phase)': [error]
-            49157..49165 'shot_idx': u32
-            49167..49181 'survivor_is_q2': [error]
-            49199..49214 'vec2f(1.0, 0.0)': vec2<f32>
-            49205..49208 '1.0': float
-            49210..49213 '0.0': float
-            49216..49231 'vec2f(0.0, 0.0)': vec2<f32>
-            49222..49225 '0.0': float
-            49227..49230 '0.0': float
-            49249..49264 'vec2f(0.0, 0.0)': vec2<f32>
-            49255..49258 '0.0': float
-            49260..49263 '0.0': float
-            49266..49271 'phase': vec2<f32>
-            49292..49339 'finish...1, q2)': [error]
-            49314..49322 'shot_idx': u32
-            49324..49330 'op_idx': u32
-            49332..49334 'q1': u32
-            49336..49338 'q2': u32
-            49479..49483 'shot': ptr<storage, ShotData, read_write>
-            49479..49491 'shot.op_type': ref<storage, u32, read_write>
-            49494..49501 'OPID_ID': u32
-            49507..49511 'shot': ptr<storage, ShotData, read_write>
-            49507..49518 'shot.op_idx': ref<storage, u32, read_write>
-            49521..49527 'op_idx': u32
-            49871..49879 'shot_idx': u32
-            49886..49890 'code': u32
-            49903..49963 'atomic... code)': __atomic_compare_exchange_result
-            49929..49952 '&diagn...r_code': ptr<storage, atomic<u32>, read_write>
-            49930..49941 'diagnostics': ref<storage, DiagnosticData, read_write>
-            49930..49952 'diagno...r_code': ref<storage, atomic<u32>, read_write>
-            49954..49956 '0u': u32
-            49958..49962 'code': u32
-            49973..49982 'err_index': u32
-            49985..50015 '(shot_..._COUNT': u32
-            49985..50020 '(shot_...T - 1u': u32
-            49986..49994 'shot_idx': u32
-            49986..49999 'shot_idx + 1u': u32
-            49997..49999 '1u': u32
-            50003..50015 'RESULT_COUNT': u32
-            50018..50020 '1u': u32
-            50026..50082 'atomic... code)': __atomic_compare_exchange_result
-            50052..50071 '&resul...index]': ptr<storage, atomic<u32>, read_write>
-            50053..50060 'results': ref<storage, array<atomic<u32>>, read_write>
-            50053..50071 'result...index]': ref<storage, atomic<u32>, read_write>
-            50061..50070 'err_index': u32
-            50073..50075 '0u': u32
-            50077..50081 'code': u32
-            50238..50244 'op_idx': u32
-            50268..50285 'arrayL...(&ops)': u32
-            50268..50300 'arrayL...x + 1)': bool
-            50280..50284 '&ops': ptr<storage, array<Op>, read>
-            50281..50284 'ops': ref<storage, array<Op>, read>
-            50289..50295 'op_idx': u32
-            50289..50299 'op_idx + 1': u32
-            50298..50299 '1': integer
-            50316..50318 'op': ptr<storage, Op, read>
-            50321..50337 '&ops[o...x + 1]': ptr<storage, Op, read>
-            50322..50325 'ops': ref<storage, array<Op>, read>
-            50322..50337 'ops[op_idx + 1]': ref<storage, Op, read>
-            50326..50332 'op_idx': u32
-            50326..50336 'op_idx + 1': u32
-            50335..50336 '1': integer
-            50351..50353 'op': ptr<storage, Op, read>
-            50351..50356 'op.id': ref<storage, u32, read>
-            50351..50379 'op.id ...ISE_1Q': bool
-            50351..50411 'op.id ...ISE_2Q': bool
-            50360..50379 'OPID_P...ISE_1Q': u32
-            50383..50385 'op': ptr<storage, Op, read>
-            50383..50388 'op.id': ref<storage, u32, read>
-            50383..50411 'op.id ...ISE_2Q': bool
-            50392..50411 'OPID_P...ISE_2Q': u32
-            50434..50440 'op_idx': u32
-            50434..50445 'op_idx + 1u': u32
-            50443..50445 '1u': u32
-            50474..50476 '0u': u32
-            50505..50513 'shot_idx': u32
-            50520..50526 'op_idx': u32
-            50533..50542 'noise_idx': u32
-            50549..50551 'q1': u32
-            50824..50828 'shot': ptr<storage, ShotData, read_write>
-            50831..50847 '&shots...t_idx]': ptr<storage, ShotData, read_write>
-            50832..50837 'shots': ref<storage, array<ShotData>, read_write>
-            50832..50847 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            50838..50846 'shot_idx': u32
-            50857..50859 'op': ptr<storage, Op, read>
-            50862..50874 '&ops[op_idx]': ptr<storage, Op, read>
-            50863..50866 'ops': ref<storage, array<Op>, read>
-            50863..50874 'ops[op_idx]': ref<storage, Op, read>
-            50867..50873 'op_idx': u32
-            50884..50892 'noise_op': ptr<storage, Op, read>
-            50895..50910 '&ops[noise_idx]': ptr<storage, Op, read>
-            50896..50899 'ops': ref<storage, array<Op>, read>
-            50896..50910 'ops[noise_idx]': ref<storage, Op, read>
-            50900..50909 'noise_idx': u32
-            51112..51115 'p_x': f32
-            51118..51126 'noise_op': ptr<storage, Op, read>
-            51118..51134 'noise_...nitary': ref<storage, array<vec2<f32>, 16>, read>
-            51118..51137 'noise_...ary[0]': ref<storage, vec2<f32>, read>
-            51118..51139 'noise_...y[0].y': ref<storage, f32, read>
-            51135..51136 '0': integer
-            51149..51152 'p_z': f32
-            51155..51163 'noise_op': ptr<storage, Op, read>
-            51155..51171 'noise_...nitary': ref<storage, array<vec2<f32>, 16>, read>
-            51155..51174 'noise_...ary[1]': ref<storage, vec2<f32>, read>
-            51155..51176 'noise_...y[1].x': ref<storage, f32, read>
-            51172..51173 '1': integer
-            51186..51189 'p_y': f32
-            51192..51200 'noise_op': ptr<storage, Op, read>
-            51192..51208 'noise_...nitary': ref<storage, array<vec2<f32>, 16>, read>
-            51192..51211 'noise_...ary[1]': ref<storage, vec2<f32>, read>
-            51192..51213 'noise_...y[1].y': ref<storage, f32, read>
-            51209..51210 '1': integer
-            51223..51229 'p_loss': f32
+            48569..48583 'vec2f(0.0, -s)': vec2<f32>
+            48575..48578 '0.0': float
+            48580..48582 '-s': f32
+            48581..48582 's': f32
+            48601..48615 'vec2f(0.0, -s)': vec2<f32>
+            48607..48610 '0.0': float
+            48612..48614 '-s': f32
+            48613..48614 's': f32
+            48617..48637 'vec2f(..., 0.0)': vec2<f32>
+            48623..48631 'cos_half': f32
+            48633..48636 '0.0': float
+            48760..48761 's': f32
+            48764..48766 'op': ptr<storage, Op, read>
+            48764..48774 'op.unitary': ref<storage, array<vec2<f32>, 16>, read>
+            48764..48777 'op.unitary[3]': ref<storage, vec2<f32>, read>
+            48764..48779 'op.unitary[3].y': ref<storage, f32, read>
+            48775..48776 '3': integer
+            48832..48987 'set_1q... 0.0))': [error]
+            48855..48863 'shot_idx': u32
+            48865..48879 'survivor_is_q2': [error]
+            48897..48917 'vec2f(..., 0.0)': vec2<f32>
+            48903..48911 'cos_half': f32
+            48913..48916 '0.0': float
+            48919..48933 'vec2f(-s, 0.0)': vec2<f32>
+            48925..48927 '-s': f32
+            48926..48927 's': f32
+            48929..48932 '0.0': float
+            48951..48964 'vec2f(s, 0.0)': vec2<f32>
+            48957..48958 's': f32
+            48960..48963 '0.0': float
+            48966..48986 'vec2f(..., 0.0)': vec2<f32>
+            48972..48980 'cos_half': f32
+            48982..48985 '0.0': float
+            49169..49174 'phase': vec2<f32>
+            49177..49179 'op': ptr<storage, Op, read>
+            49177..49187 'op.unitary': ref<storage, array<vec2<f32>, 16>, read>
+            49177..49190 'op.unitary[5]': ref<storage, vec2<f32>, read>
+            49188..49189 '5': integer
+            49204..49342 'set_1q...phase)': [error]
+            49227..49235 'shot_idx': u32
+            49237..49251 'survivor_is_q2': [error]
+            49269..49284 'vec2f(1.0, 0.0)': vec2<f32>
+            49275..49278 '1.0': float
+            49280..49283 '0.0': float
+            49286..49301 'vec2f(0.0, 0.0)': vec2<f32>
+            49292..49295 '0.0': float
+            49297..49300 '0.0': float
+            49319..49334 'vec2f(0.0, 0.0)': vec2<f32>
+            49325..49328 '0.0': float
+            49330..49333 '0.0': float
+            49336..49341 'phase': vec2<f32>
+            49362..49409 'finish...1, q2)': [error]
+            49384..49392 'shot_idx': u32
+            49394..49400 'op_idx': u32
+            49402..49404 'q1': u32
+            49406..49408 'q2': u32
+            49549..49553 'shot': ptr<storage, ShotData, read_write>
+            49549..49561 'shot.op_type': ref<storage, u32, read_write>
+            49564..49571 'OPID_ID': u32
+            49577..49581 'shot': ptr<storage, ShotData, read_write>
+            49577..49588 'shot.op_idx': ref<storage, u32, read_write>
+            49591..49597 'op_idx': u32
+            49948..49956 'shot_idx': u32
+            49963..49967 'code': u32
+            49980..50040 'atomic... code)': __atomic_compare_exchange_result
+            50006..50029 '&diagn...r_code': ptr<storage, atomic<u32>, read_write>
+            50007..50018 'diagnostics': ref<storage, DiagnosticData, read_write>
+            50007..50029 'diagno...r_code': ref<storage, atomic<u32>, read_write>
+            50031..50033 '0u': u32
+            50035..50039 'code': u32
+            50050..50059 'err_index': u32
+            50062..50092 '(shot_..._COUNT': u32
+            50062..50097 '(shot_...T - 1u': u32
+            50063..50071 'shot_idx': u32
+            50063..50076 'shot_idx + 1u': u32
+            50074..50076 '1u': u32
+            50080..50092 'RESULT_COUNT': u32
+            50095..50097 '1u': u32
+            50103..50159 'atomic... code)': __atomic_compare_exchange_result
+            50129..50148 '&resul...index]': ptr<storage, atomic<u32>, read_write>
+            50130..50137 'results': ref<storage, array<atomic<u32>>, read_write>
+            50130..50148 'result...index]': ref<storage, atomic<u32>, read_write>
+            50138..50147 'err_index': u32
+            50150..50152 '0u': u32
+            50154..50158 'code': u32
+            50315..50321 'op_idx': u32
+            50345..50362 'arrayL...(&ops)': u32
+            50345..50377 'arrayL...x + 1)': bool
+            50357..50361 '&ops': ptr<storage, array<Op>, read>
+            50358..50361 'ops': ref<storage, array<Op>, read>
+            50366..50372 'op_idx': u32
+            50366..50376 'op_idx + 1': u32
+            50375..50376 '1': integer
+            50393..50395 'op': ptr<storage, Op, read>
+            50398..50414 '&ops[o...x + 1]': ptr<storage, Op, read>
+            50399..50402 'ops': ref<storage, array<Op>, read>
+            50399..50414 'ops[op_idx + 1]': ref<storage, Op, read>
+            50403..50409 'op_idx': u32
+            50403..50413 'op_idx + 1': u32
+            50412..50413 '1': integer
+            50428..50430 'op': ptr<storage, Op, read>
+            50428..50433 'op.id': ref<storage, u32, read>
+            50428..50456 'op.id ...ISE_1Q': bool
+            50428..50488 'op.id ...ISE_2Q': bool
+            50437..50456 'OPID_P...ISE_1Q': u32
+            50460..50462 'op': ptr<storage, Op, read>
+            50460..50465 'op.id': ref<storage, u32, read>
+            50460..50488 'op.id ...ISE_2Q': bool
+            50469..50488 'OPID_P...ISE_2Q': u32
+            50511..50517 'op_idx': u32
+            50511..50522 'op_idx + 1u': u32
+            50520..50522 '1u': u32
+            50551..50553 '0u': u32
+            50582..50590 'shot_idx': u32
+            50597..50603 'op_idx': u32
+            50610..50619 'noise_idx': u32
+            50626..50628 'q1': u32
+            50901..50905 'shot': ptr<storage, ShotData, read_write>
+            50908..50924 '&shots...t_idx]': ptr<storage, ShotData, read_write>
+            50909..50914 'shots': ref<storage, array<ShotData>, read_write>
+            50909..50924 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            50915..50923 'shot_idx': u32
+            50934..50936 'op': ptr<storage, Op, read>
+            50939..50951 '&ops[op_idx]': ptr<storage, Op, read>
+            50940..50943 'ops': ref<storage, array<Op>, read>
+            50940..50951 'ops[op_idx]': ref<storage, Op, read>
+            50944..50950 'op_idx': u32
+            50961..50969 'noise_op': ptr<storage, Op, read>
+            50972..50987 '&ops[noise_idx]': ptr<storage, Op, read>
+            50973..50976 'ops': ref<storage, array<Op>, read>
+            50973..50987 'ops[noise_idx]': ref<storage, Op, read>
+            50977..50986 'noise_idx': u32
+            51189..51192 'p_x': f32
+            51195..51203 'noise_op': ptr<storage, Op, read>
+            51195..51211 'noise_...nitary': ref<storage, array<vec2<f32>, 16>, read>
+            51195..51214 'noise_...ary[0]': ref<storage, vec2<f32>, read>
+            51195..51216 'noise_...y[0].y': ref<storage, f32, read>
+            51212..51213 '0': integer
+            51226..51229 'p_z': f32
             51232..51240 'noise_op': ptr<storage, Op, read>
             51232..51248 'noise_...nitary': ref<storage, array<vec2<f32>, 16>, read>
-            51232..51251 'noise_...ary[2]': ref<storage, vec2<f32>, read>
-            51232..51253 'noise_...y[2].x': ref<storage, f32, read>
-            51249..51250 '2': integer
-            51260..51264 'shot': ptr<storage, ShotData, read_write>
-            51260..51272 'shot.op_type': ref<storage, u32, read_write>
-            51275..51292 'OPID_S...UFF_1Q': u32
-            51352..51356 'rand': f32
-            51359..51363 'shot': ptr<storage, ShotData, read_write>
-            51359..51374 'shot.rand_pauli': ref<storage, f32, read_write>
-            51384..51388 'rand': f32
-            51384..51394 'rand < p_x': bool
-            51391..51394 'p_x': f32
-            51467..51471 'shot': ptr<storage, ShotData, read_write>
-            51467..51479 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            51467..51482 'shot.unitary[0]': ref<storage, vec2<f32>, read_write>
-            51480..51481 '0': integer
-            51485..51487 'op': ptr<storage, Op, read>
-            51485..51495 'op.unitary': ref<storage, array<vec2<f32>, 16>, read>
-            51485..51498 'op.unitary[4]': ref<storage, vec2<f32>, read>
-            51496..51497 '4': integer
-            51508..51512 'shot': ptr<storage, ShotData, read_write>
-            51508..51520 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            51508..51523 'shot.unitary[1]': ref<storage, vec2<f32>, read_write>
-            51521..51522 '1': integer
-            51526..51528 'op': ptr<storage, Op, read>
-            51526..51536 'op.unitary': ref<storage, array<vec2<f32>, 16>, read>
-            51526..51539 'op.unitary[5]': ref<storage, vec2<f32>, read>
-            51537..51538 '5': integer
-            51549..51553 'shot': ptr<storage, ShotData, read_write>
-            51549..51561 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            51549..51564 'shot.unitary[4]': ref<storage, vec2<f32>, read_write>
-            51562..51563 '4': integer
-            51567..51569 'op': ptr<storage, Op, read>
-            51567..51577 'op.unitary': ref<storage, array<vec2<f32>, 16>, read>
-            51567..51580 'op.unitary[0]': ref<storage, vec2<f32>, read>
-            51578..51579 '0': integer
-            51590..51594 'shot': ptr<storage, ShotData, read_write>
-            51590..51602 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            51590..51605 'shot.unitary[5]': ref<storage, vec2<f32>, read_write>
-            51603..51604 '5': integer
-            51608..51610 'op': ptr<storage, Op, read>
-            51608..51618 'op.unitary': ref<storage, array<vec2<f32>, 16>, read>
-            51608..51621 'op.unitary[1]': ref<storage, vec2<f32>, read>
-            51619..51620 '1': integer
-            51738..51742 'shot': ptr<storage, ShotData, read_write>
-            51738..51750 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            51738..51753 'shot.unitary[0]': ref<storage, vec2<f32>, read_write>
-            51751..51752 '0': integer
-            51756..51778 'cplxNe...ry[4])': vec2<f32>
-            51764..51766 'op': ptr<storage, Op, read>
-            51764..51774 'op.unitary': ref<storage, array<vec2<f32>, 16>, read>
-            51764..51777 'op.unitary[4]': ref<storage, vec2<f32>, read>
-            51775..51776 '4': integer
-            51788..51792 'shot': ptr<storage, ShotData, read_write>
-            51788..51800 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            51788..51803 'shot.unitary[1]': ref<storage, vec2<f32>, read_write>
-            51801..51802 '1': integer
-            51806..51828 'cplxNe...ry[5])': vec2<f32>
-            51814..51816 'op': ptr<storage, Op, read>
-            51814..51824 'op.unitary': ref<storage, array<vec2<f32>, 16>, read>
-            51814..51827 'op.unitary[5]': ref<storage, vec2<f32>, read>
-            51825..51826 '5': integer
-            51838..51842 'shot': ptr<storage, ShotData, read_write>
-            51838..51850 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            51838..51853 'shot.unitary[4]': ref<storage, vec2<f32>, read_write>
-            51851..51852 '4': integer
-            51856..51858 'op': ptr<storage, Op, read>
-            51856..51866 'op.unitary': ref<storage, array<vec2<f32>, 16>, read>
-            51856..51869 'op.unitary[0]': ref<storage, vec2<f32>, read>
-            51867..51868 '0': integer
-            51879..51883 'shot': ptr<storage, ShotData, read_write>
-            51879..51891 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            51879..51894 'shot.unitary[5]': ref<storage, vec2<f32>, read_write>
-            51892..51893 '5': integer
-            51897..51899 'op': ptr<storage, Op, read>
-            51897..51907 'op.unitary': ref<storage, array<vec2<f32>, 16>, read>
-            51897..51910 'op.unitary[1]': ref<storage, vec2<f32>, read>
-            51908..51909 '1': integer
-            52007..52011 'shot': ptr<storage, ShotData, read_write>
-            52007..52019 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            52007..52022 'shot.unitary[0]': ref<storage, vec2<f32>, read_write>
-            52020..52021 '0': integer
-            52025..52027 'op': ptr<storage, Op, read>
-            52025..52035 'op.unitary': ref<storage, array<vec2<f32>, 16>, read>
-            52025..52038 'op.unitary[0]': ref<storage, vec2<f32>, read>
-            52036..52037 '0': integer
-            52048..52052 'shot': ptr<storage, ShotData, read_write>
-            52048..52060 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            52048..52063 'shot.unitary[1]': ref<storage, vec2<f32>, read_write>
-            52061..52062 '1': integer
-            52066..52068 'op': ptr<storage, Op, read>
-            52066..52076 'op.unitary': ref<storage, array<vec2<f32>, 16>, read>
-            52066..52079 'op.unitary[1]': ref<storage, vec2<f32>, read>
-            52077..52078 '1': integer
-            52089..52093 'shot': ptr<storage, ShotData, read_write>
-            52089..52101 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            52089..52104 'shot.unitary[4]': ref<storage, vec2<f32>, read_write>
-            52102..52103 '4': integer
-            52107..52129 'cplxNe...ry[4])': vec2<f32>
-            52115..52117 'op': ptr<storage, Op, read>
-            52115..52125 'op.unitary': ref<storage, array<vec2<f32>, 16>, read>
-            52115..52128 'op.unitary[4]': ref<storage, vec2<f32>, read>
-            52126..52127 '4': integer
-            52139..52143 'shot': ptr<storage, ShotData, read_write>
-            52139..52151 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            52139..52154 'shot.unitary[5]': ref<storage, vec2<f32>, read_write>
-            52152..52153 '5': integer
-            52157..52179 'cplxNe...ry[5])': vec2<f32>
-            52165..52167 'op': ptr<storage, Op, read>
-            52165..52175 'op.unitary': ref<storage, array<vec2<f32>, 16>, read>
-            52165..52178 'op.unitary[5]': ref<storage, vec2<f32>, read>
-            52176..52177 '5': integer
-            52411..52415 'rand': f32
-            52411..52444 'rand <..._loss)': bool
-            52419..52422 'p_x': f32
-            52419..52428 'p_x + p_z': f32
-            52419..52434 'p_x + p_z + p_y': f32
-            52419..52443 'p_x + ...p_loss': f32
-            52425..52428 'p_z': f32
-            52431..52434 'p_y': f32
-            52437..52443 'p_loss': f32
-            52460..52464 'shot': ptr<storage, ShotData, read_write>
-            52460..52482 'shot.p...s_mask': ref<storage, u32, read_write>
-            52487..52489 '1u': u32
-            52487..52495 '1u << q1': u32
-            52493..52495 'q1': u32
-            52661..52663 'op': ptr<storage, Op, read>
-            52661..52666 'op.id': ref<storage, u32, read>
-            52661..52677 'op.id ...PID_ID': bool
-            52661..52702 'op.id ...RESETZ': bool
-            52661..52722 'op.id ...PID_MZ': bool
-            52661..52746 'op.id ...RESETZ': bool
-            52670..52677 'OPID_ID': u32
-            52681..52683 'op': ptr<storage, Op, read>
-            52681..52686 'op.id': ref<storage, u32, read>
-            52681..52702 'op.id ...RESETZ': bool
-            52690..52702 'OPID_MRESETZ': u32
-            52706..52708 'op': ptr<storage, Op, read>
-            52706..52711 'op.id': ref<storage, u32, read>
-            52706..52722 'op.id ...PID_MZ': bool
-            52715..52722 'OPID_MZ': u32
-            52726..52728 'op': ptr<storage, Op, read>
-            52726..52731 'op.id': ref<storage, u32, read>
-            52726..52746 'op.id ...RESETZ': bool
-            52735..52746 'OPID_RESETZ': u32
-            52762..52766 'shot': ptr<storage, ShotData, read_write>
-            52762..52774 'shot.op_type': ref<storage, u32, read_write>
-            52777..52779 'op': ptr<storage, Op, read>
-            52777..52782 'op.id': ref<storage, u32, read>
-            52806..52829 'is_1q_...op.id)': bool
-            52823..52825 'op': ptr<storage, Op, read>
-            52823..52828 'op.id': ref<storage, u32, read>
-            52923..52927 'shot': ptr<storage, ShotData, read_write>
-            52923..52935 'shot.op_type': ref<storage, u32, read_write>
-            52938..52945 'OPID_RZ': u32
-            52968..52972 'shot': ptr<storage, ShotData, read_write>
-            52968..52979 'shot.op_idx': ref<storage, u32, read_write>
-            52982..52988 'op_idx': u32
-            52998..53002 'shot': ptr<storage, ShotData, read_write>
-            52998..53010 'shot.op_type': ref<storage, u32, read_write>
-            52998..53021 'shot.o...PID_ID': bool
-            52998..53048 'shot.o...PID_RZ': bool
-            53014..53021 'OPID_ID': u32
-            53025..53029 'shot': ptr<storage, ShotData, read_write>
-            53025..53037 'shot.op_type': ref<storage, u32, read_write>
-            53025..53048 'shot.o...PID_RZ': bool
-            53041..53048 'OPID_RZ': u32
-            53060..53064 'shot': ptr<storage, ShotData, read_write>
-            53060..53092 'shot.q...p_mask': ref<storage, u32, read_write>
-            53095..53097 '0u': u32
-            53120..53124 'shot': ptr<storage, ShotData, read_write>
-            53120..53152 'shot.q...p_mask': ref<storage, u32, read_write>
-            53155..53157 '1u': u32
-            53155..53163 '1u << q1': u32
-            53161..53163 'q1': u32
-            53199..53207 'shot_idx': u32
-            53214..53220 'op_idx': u32
-            53227..53236 'noise_idx': u32
-            53243..53245 'q1': u32
-            53252..53254 'q2': u32
-            53271..53275 'shot': ptr<storage, ShotData, read_write>
-            53278..53294 '&shots...t_idx]': ptr<storage, ShotData, read_write>
-            53279..53284 'shots': ref<storage, array<ShotData>, read_write>
-            53279..53294 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            53285..53293 'shot_idx': u32
-            53304..53306 'op': ptr<storage, Op, read>
-            53309..53321 '&ops[op_idx]': ptr<storage, Op, read>
-            53310..53313 'ops': ref<storage, array<Op>, read>
-            53310..53321 'ops[op_idx]': ref<storage, Op, read>
-            53314..53320 'op_idx': u32
-            53331..53339 'noise_op': ptr<storage, Op, read>
-            53342..53357 '&ops[noise_idx]': ptr<storage, Op, read>
-            53343..53346 'ops': ref<storage, array<Op>, read>
-            53343..53357 'ops[noise_idx]': ref<storage, Op, read>
-            53347..53356 'noise_idx': u32
-            53664..53668 'rand': ref<function, f32, read_write>
-            53671..53675 'shot': ptr<storage, ShotData, read_write>
-            53671..53686 'shot.rand_pauli': ref<storage, f32, read_write>
-            53696..53703 'q1_term': ref<function, i32, read_write>
-            53706..53707 '0': integer
-            53717..53724 'q2_term': ref<function, i32, read_write>
-            53727..53728 '0': integer
-            53824..53825 'a': ref<function, i32, read_write>
-            53828..53829 '0': integer
-            53831..53832 'a': ref<function, i32, read_write>
-            53831..53836 'a < 5': bool
-            53835..53836 '5': integer
-            53838..53839 'a': ref<function, i32, read_write>
-            53842..53843 'a': ref<function, i32, read_write>
-            53842..53847 'a + 1': i32
-            53846..53847 '1': integer
-            53868..53869 'b': ref<function, i32, read_write>
-            53872..53873 '0': integer
-            53875..53876 'b': ref<function, i32, read_write>
-            53875..53880 'b < 5': bool
-            53879..53880 '5': integer
-            53882..53883 'b': ref<function, i32, read_write>
-            53886..53887 'b': ref<function, i32, read_write>
-            53886..53891 'b + 1': i32
-            53890..53891 '1': integer
-            53911..53912 'k': i32
+            51232..51251 'noise_...ary[1]': ref<storage, vec2<f32>, read>
+            51232..51253 'noise_...y[1].x': ref<storage, f32, read>
+            51249..51250 '1': integer
+            51263..51266 'p_y': f32
+            51269..51277 'noise_op': ptr<storage, Op, read>
+            51269..51285 'noise_...nitary': ref<storage, array<vec2<f32>, 16>, read>
+            51269..51288 'noise_...ary[1]': ref<storage, vec2<f32>, read>
+            51269..51290 'noise_...y[1].y': ref<storage, f32, read>
+            51286..51287 '1': integer
+            51300..51306 'p_loss': f32
+            51309..51317 'noise_op': ptr<storage, Op, read>
+            51309..51325 'noise_...nitary': ref<storage, array<vec2<f32>, 16>, read>
+            51309..51328 'noise_...ary[2]': ref<storage, vec2<f32>, read>
+            51309..51330 'noise_...y[2].x': ref<storage, f32, read>
+            51326..51327 '2': integer
+            51337..51341 'shot': ptr<storage, ShotData, read_write>
+            51337..51349 'shot.op_type': ref<storage, u32, read_write>
+            51352..51369 'OPID_S...UFF_1Q': u32
+            51429..51433 'rand': f32
+            51436..51440 'shot': ptr<storage, ShotData, read_write>
+            51436..51451 'shot.rand_pauli': ref<storage, f32, read_write>
+            51461..51465 'rand': f32
+            51461..51471 'rand < p_x': bool
+            51468..51471 'p_x': f32
+            51544..51548 'shot': ptr<storage, ShotData, read_write>
+            51544..51556 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            51544..51559 'shot.unitary[0]': ref<storage, vec2<f32>, read_write>
+            51557..51558 '0': integer
+            51562..51564 'op': ptr<storage, Op, read>
+            51562..51572 'op.unitary': ref<storage, array<vec2<f32>, 16>, read>
+            51562..51575 'op.unitary[4]': ref<storage, vec2<f32>, read>
+            51573..51574 '4': integer
+            51585..51589 'shot': ptr<storage, ShotData, read_write>
+            51585..51597 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            51585..51600 'shot.unitary[1]': ref<storage, vec2<f32>, read_write>
+            51598..51599 '1': integer
+            51603..51605 'op': ptr<storage, Op, read>
+            51603..51613 'op.unitary': ref<storage, array<vec2<f32>, 16>, read>
+            51603..51616 'op.unitary[5]': ref<storage, vec2<f32>, read>
+            51614..51615 '5': integer
+            51626..51630 'shot': ptr<storage, ShotData, read_write>
+            51626..51638 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            51626..51641 'shot.unitary[4]': ref<storage, vec2<f32>, read_write>
+            51639..51640 '4': integer
+            51644..51646 'op': ptr<storage, Op, read>
+            51644..51654 'op.unitary': ref<storage, array<vec2<f32>, 16>, read>
+            51644..51657 'op.unitary[0]': ref<storage, vec2<f32>, read>
+            51655..51656 '0': integer
+            51667..51671 'shot': ptr<storage, ShotData, read_write>
+            51667..51679 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            51667..51682 'shot.unitary[5]': ref<storage, vec2<f32>, read_write>
+            51680..51681 '5': integer
+            51685..51687 'op': ptr<storage, Op, read>
+            51685..51695 'op.unitary': ref<storage, array<vec2<f32>, 16>, read>
+            51685..51698 'op.unitary[1]': ref<storage, vec2<f32>, read>
+            51696..51697 '1': integer
+            51815..51819 'shot': ptr<storage, ShotData, read_write>
+            51815..51827 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            51815..51830 'shot.unitary[0]': ref<storage, vec2<f32>, read_write>
+            51828..51829 '0': integer
+            51833..51855 'cplxNe...ry[4])': vec2<f32>
+            51841..51843 'op': ptr<storage, Op, read>
+            51841..51851 'op.unitary': ref<storage, array<vec2<f32>, 16>, read>
+            51841..51854 'op.unitary[4]': ref<storage, vec2<f32>, read>
+            51852..51853 '4': integer
+            51865..51869 'shot': ptr<storage, ShotData, read_write>
+            51865..51877 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            51865..51880 'shot.unitary[1]': ref<storage, vec2<f32>, read_write>
+            51878..51879 '1': integer
+            51883..51905 'cplxNe...ry[5])': vec2<f32>
+            51891..51893 'op': ptr<storage, Op, read>
+            51891..51901 'op.unitary': ref<storage, array<vec2<f32>, 16>, read>
+            51891..51904 'op.unitary[5]': ref<storage, vec2<f32>, read>
+            51902..51903 '5': integer
+            51915..51919 'shot': ptr<storage, ShotData, read_write>
+            51915..51927 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            51915..51930 'shot.unitary[4]': ref<storage, vec2<f32>, read_write>
+            51928..51929 '4': integer
+            51933..51935 'op': ptr<storage, Op, read>
+            51933..51943 'op.unitary': ref<storage, array<vec2<f32>, 16>, read>
+            51933..51946 'op.unitary[0]': ref<storage, vec2<f32>, read>
+            51944..51945 '0': integer
+            51956..51960 'shot': ptr<storage, ShotData, read_write>
+            51956..51968 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            51956..51971 'shot.unitary[5]': ref<storage, vec2<f32>, read_write>
+            51969..51970 '5': integer
+            51974..51976 'op': ptr<storage, Op, read>
+            51974..51984 'op.unitary': ref<storage, array<vec2<f32>, 16>, read>
+            51974..51987 'op.unitary[1]': ref<storage, vec2<f32>, read>
+            51985..51986 '1': integer
+            52084..52088 'shot': ptr<storage, ShotData, read_write>
+            52084..52096 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            52084..52099 'shot.unitary[0]': ref<storage, vec2<f32>, read_write>
+            52097..52098 '0': integer
+            52102..52104 'op': ptr<storage, Op, read>
+            52102..52112 'op.unitary': ref<storage, array<vec2<f32>, 16>, read>
+            52102..52115 'op.unitary[0]': ref<storage, vec2<f32>, read>
+            52113..52114 '0': integer
+            52125..52129 'shot': ptr<storage, ShotData, read_write>
+            52125..52137 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            52125..52140 'shot.unitary[1]': ref<storage, vec2<f32>, read_write>
+            52138..52139 '1': integer
+            52143..52145 'op': ptr<storage, Op, read>
+            52143..52153 'op.unitary': ref<storage, array<vec2<f32>, 16>, read>
+            52143..52156 'op.unitary[1]': ref<storage, vec2<f32>, read>
+            52154..52155 '1': integer
+            52166..52170 'shot': ptr<storage, ShotData, read_write>
+            52166..52178 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            52166..52181 'shot.unitary[4]': ref<storage, vec2<f32>, read_write>
+            52179..52180 '4': integer
+            52184..52206 'cplxNe...ry[4])': vec2<f32>
+            52192..52194 'op': ptr<storage, Op, read>
+            52192..52202 'op.unitary': ref<storage, array<vec2<f32>, 16>, read>
+            52192..52205 'op.unitary[4]': ref<storage, vec2<f32>, read>
+            52203..52204 '4': integer
+            52216..52220 'shot': ptr<storage, ShotData, read_write>
+            52216..52228 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            52216..52231 'shot.unitary[5]': ref<storage, vec2<f32>, read_write>
+            52229..52230 '5': integer
+            52234..52256 'cplxNe...ry[5])': vec2<f32>
+            52242..52244 'op': ptr<storage, Op, read>
+            52242..52252 'op.unitary': ref<storage, array<vec2<f32>, 16>, read>
+            52242..52255 'op.unitary[5]': ref<storage, vec2<f32>, read>
+            52253..52254 '5': integer
+            52488..52492 'rand': f32
+            52488..52521 'rand <..._loss)': bool
+            52496..52499 'p_x': f32
+            52496..52505 'p_x + p_z': f32
+            52496..52511 'p_x + p_z + p_y': f32
+            52496..52520 'p_x + ...p_loss': f32
+            52502..52505 'p_z': f32
+            52508..52511 'p_y': f32
+            52514..52520 'p_loss': f32
+            52537..52541 'shot': ptr<storage, ShotData, read_write>
+            52537..52559 'shot.p...s_mask': ref<storage, u32, read_write>
+            52564..52566 '1u': u32
+            52564..52572 '1u << q1': u32
+            52570..52572 'q1': u32
+            52738..52740 'op': ptr<storage, Op, read>
+            52738..52743 'op.id': ref<storage, u32, read>
+            52738..52754 'op.id ...PID_ID': bool
+            52738..52779 'op.id ...RESETZ': bool
+            52738..52799 'op.id ...PID_MZ': bool
+            52738..52823 'op.id ...RESETZ': bool
+            52747..52754 'OPID_ID': u32
+            52758..52760 'op': ptr<storage, Op, read>
+            52758..52763 'op.id': ref<storage, u32, read>
+            52758..52779 'op.id ...RESETZ': bool
+            52767..52779 'OPID_MRESETZ': u32
+            52783..52785 'op': ptr<storage, Op, read>
+            52783..52788 'op.id': ref<storage, u32, read>
+            52783..52799 'op.id ...PID_MZ': bool
+            52792..52799 'OPID_MZ': u32
+            52803..52805 'op': ptr<storage, Op, read>
+            52803..52808 'op.id': ref<storage, u32, read>
+            52803..52823 'op.id ...RESETZ': bool
+            52812..52823 'OPID_RESETZ': u32
+            52839..52843 'shot': ptr<storage, ShotData, read_write>
+            52839..52851 'shot.op_type': ref<storage, u32, read_write>
+            52854..52856 'op': ptr<storage, Op, read>
+            52854..52859 'op.id': ref<storage, u32, read>
+            52883..52906 'is_1q_...op.id)': bool
+            52900..52902 'op': ptr<storage, Op, read>
+            52900..52905 'op.id': ref<storage, u32, read>
+            53000..53004 'shot': ptr<storage, ShotData, read_write>
+            53000..53012 'shot.op_type': ref<storage, u32, read_write>
+            53015..53022 'OPID_RZ': u32
+            53045..53049 'shot': ptr<storage, ShotData, read_write>
+            53045..53056 'shot.op_idx': ref<storage, u32, read_write>
+            53059..53065 'op_idx': u32
+            53075..53079 'shot': ptr<storage, ShotData, read_write>
+            53075..53087 'shot.op_type': ref<storage, u32, read_write>
+            53075..53098 'shot.o...PID_ID': bool
+            53075..53125 'shot.o...PID_RZ': bool
+            53091..53098 'OPID_ID': u32
+            53102..53106 'shot': ptr<storage, ShotData, read_write>
+            53102..53114 'shot.op_type': ref<storage, u32, read_write>
+            53102..53125 'shot.o...PID_RZ': bool
+            53118..53125 'OPID_RZ': u32
+            53137..53141 'shot': ptr<storage, ShotData, read_write>
+            53137..53169 'shot.q...p_mask': ref<storage, u32, read_write>
+            53172..53174 '0u': u32
+            53197..53201 'shot': ptr<storage, ShotData, read_write>
+            53197..53229 'shot.q...p_mask': ref<storage, u32, read_write>
+            53232..53234 '1u': u32
+            53232..53240 '1u << q1': u32
+            53238..53240 'q1': u32
+            53276..53284 'shot_idx': u32
+            53291..53297 'op_idx': u32
+            53304..53313 'noise_idx': u32
+            53320..53322 'q1': u32
+            53329..53331 'q2': u32
+            53348..53352 'shot': ptr<storage, ShotData, read_write>
+            53355..53371 '&shots...t_idx]': ptr<storage, ShotData, read_write>
+            53356..53361 'shots': ref<storage, array<ShotData>, read_write>
+            53356..53371 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            53362..53370 'shot_idx': u32
+            53381..53383 'op': ptr<storage, Op, read>
+            53386..53398 '&ops[op_idx]': ptr<storage, Op, read>
+            53387..53390 'ops': ref<storage, array<Op>, read>
+            53387..53398 'ops[op_idx]': ref<storage, Op, read>
+            53391..53397 'op_idx': u32
+            53408..53416 'noise_op': ptr<storage, Op, read>
+            53419..53434 '&ops[noise_idx]': ptr<storage, Op, read>
+            53420..53423 'ops': ref<storage, array<Op>, read>
+            53420..53434 'ops[noise_idx]': ref<storage, Op, read>
+            53424..53433 'noise_idx': u32
+            53741..53745 'rand': ref<function, f32, read_write>
+            53748..53752 'shot': ptr<storage, ShotData, read_write>
+            53748..53763 'shot.rand_pauli': ref<storage, f32, read_write>
+            53773..53780 'q1_term': ref<function, i32, read_write>
+            53783..53784 '0': integer
+            53794..53801 'q2_term': ref<function, i32, read_write>
+            53804..53805 '0': integer
+            53901..53902 'a': ref<function, i32, read_write>
+            53905..53906 '0': integer
+            53908..53909 'a': ref<function, i32, read_write>
+            53908..53913 'a < 5': bool
+            53912..53913 '5': integer
             53915..53916 'a': ref<function, i32, read_write>
-            53915..53920 'a * 5': i32
-            53915..53924 'a * 5 + b': i32
-            53919..53920 '5': integer
-            53923..53924 'b': ref<function, i32, read_write>
-            53942..53943 'k': i32
-            53942..53948 'k == 0': bool
-            53947..53948 '0': integer
-            54016..54020 'slot': vec2<f32>
-            54023..54031 'noise_op': ptr<storage, Op, read>
-            54023..54039 'noise_...nitary': ref<storage, array<vec2<f32>, 16>, read>
-            54023..54046 'noise_...k / 2]': ref<storage, vec2<f32>, read>
-            54040..54041 'k': i32
-            54040..54045 'k / 2': i32
-            54044..54045 '2': integer
-            54064..54068 'p_ab': f32
-            54071..54107 'select... == 1)': f32
-            54078..54082 'slot': vec2<f32>
-            54078..54084 'slot.x': f32
-            54086..54090 'slot': vec2<f32>
-            54086..54092 'slot.y': f32
-            54094..54106 '(k & 1) == 1': bool
-            54095..54096 'k': i32
-            54095..54100 'k & 1': i32
-            54099..54100 '1': integer
-            54105..54106 '1': integer
-            54125..54129 'rand': ref<function, f32, read_write>
-            54125..54136 'rand < p_ab': bool
-            54132..54136 'p_ab': f32
-            54156..54163 'q1_term': ref<function, i32, read_write>
-            54166..54167 'a': ref<function, i32, read_write>
-            54185..54192 'q2_term': ref<function, i32, read_write>
-            54195..54196 'b': ref<function, i32, read_write>
-            54257..54258 'a': ref<function, i32, read_write>
-            54261..54262 '5': integer
-            54280..54281 'b': ref<function, i32, read_write>
-            54284..54285 '5': integer
-            54324..54328 'rand': ref<function, f32, read_write>
-            54331..54335 'rand': ref<function, f32, read_write>
-            54331..54342 'rand - p_ab': f32
-            54338..54342 'p_ab': f32
-            54526..54533 'q1_term': ref<function, i32, read_write>
-            54526..54538 'q1_term == 4': bool
-            54537..54538 '4': integer
-            54542..54546 'shot': ptr<storage, ShotData, read_write>
-            54542..54564 'shot.p...s_mask': ref<storage, u32, read_write>
-            54569..54571 '1u': u32
-            54569..54577 '1u << q1': u32
-            54575..54577 'q1': u32
-            54590..54597 'q2_term': ref<function, i32, read_write>
-            54590..54602 'q2_term == 4': bool
-            54601..54602 '4': integer
-            54606..54610 'shot': ptr<storage, ShotData, read_write>
-            54606..54628 'shot.p...s_mask': ref<storage, u32, read_write>
-            54633..54635 '1u': u32
-            54633..54641 '1u << q2': u32
-            54639..54641 'q2': u32
-            54817..54825 'q1_pauli': bool
-            54828..54835 'q1_term': ref<function, i32, read_write>
-            54828..54840 'q1_term >= 1': bool
-            54828..54856 'q1_ter...m <= 3': bool
-            54839..54840 '1': integer
-            54844..54851 'q1_term': ref<function, i32, read_write>
-            54844..54856 'q1_term <= 3': bool
-            54855..54856 '3': integer
-            54866..54874 'q2_pauli': bool
-            54877..54884 'q2_term': ref<function, i32, read_write>
-            54877..54889 'q2_term >= 1': bool
-            54877..54905 'q2_ter...m <= 3': bool
-            54888..54889 '1': integer
-            54893..54900 'q2_term': ref<function, i32, read_write>
-            54893..54905 'q2_term <= 3': bool
-            54904..54905 '3': integer
-            54916..54924 'q1_pauli': bool
-            54916..54936 'q1_pau..._pauli': bool
-            54928..54936 'q2_pauli': bool
-            54999..55007 'op_row_0': ref<function, array<vec2<f32>, 4>, read_write>
-            55010..55029 'getOpR...dx, 0)': array<vec2<f32>, 4>
-            55019..55025 'op_idx': u32
-            55027..55028 '0': integer
-            55043..55051 'op_row_1': ref<function, array<vec2<f32>, 4>, read_write>
-            55054..55073 'getOpR...dx, 1)': array<vec2<f32>, 4>
-            55063..55069 'op_idx': u32
-            55071..55072 '1': integer
-            55087..55095 'op_row_2': ref<function, array<vec2<f32>, 4>, read_write>
-            55098..55117 'getOpR...dx, 2)': array<vec2<f32>, 4>
-            55107..55113 'op_idx': u32
-            55115..55116 '2': integer
-            55131..55139 'op_row_3': ref<function, array<vec2<f32>, 4>, read_write>
-            55142..55161 'getOpR...dx, 3)': array<vec2<f32>, 4>
-            55151..55157 'op_idx': u32
-            55159..55160 '3': integer
-            55639..55646 'q1_term': ref<function, i32, read_write>
-            55639..55651 'q1_term == 1': bool
-            55650..55651 '1': integer
-            55710..55719 'old_row_0': array<vec2<f32>, 4>
-            55722..55730 'op_row_0': ref<function, array<vec2<f32>, 4>, read_write>
-            55748..55757 'old_row_1': array<vec2<f32>, 4>
-            55760..55768 'op_row_1': ref<function, array<vec2<f32>, 4>, read_write>
-            55782..55790 'op_row_0': ref<function, array<vec2<f32>, 4>, read_write>
-            55793..55801 'op_row_2': ref<function, array<vec2<f32>, 4>, read_write>
-            55815..55823 'op_row_1': ref<function, array<vec2<f32>, 4>, read_write>
-            55826..55834 'op_row_3': ref<function, array<vec2<f32>, 4>, read_write>
-            55848..55856 'op_row_2': ref<function, array<vec2<f32>, 4>, read_write>
-            55859..55868 'old_row_0': array<vec2<f32>, 4>
-            55882..55890 'op_row_3': ref<function, array<vec2<f32>, 4>, read_write>
-            55893..55902 'old_row_1': array<vec2<f32>, 4>
-            55994..56003 'old_row_0': array<vec2<f32>, 4>
-            56006..56014 'op_row_0': ref<function, array<vec2<f32>, 4>, read_write>
-            56032..56041 'old_row_1': array<vec2<f32>, 4>
-            56044..56052 'op_row_1': ref<function, array<vec2<f32>, 4>, read_write>
-            56066..56074 'op_row_0': ref<function, array<vec2<f32>, 4>, read_write>
-            56077..56093 'rowNeg...row_2)': array<vec2<f32>, 4>
-            56084..56092 'op_row_2': ref<function, array<vec2<f32>, 4>, read_write>
-            56107..56115 'op_row_1': ref<function, array<vec2<f32>, 4>, read_write>
-            56118..56134 'rowNeg...row_3)': array<vec2<f32>, 4>
-            56125..56133 'op_row_3': ref<function, array<vec2<f32>, 4>, read_write>
-            56148..56156 'op_row_2': ref<function, array<vec2<f32>, 4>, read_write>
-            56159..56168 'old_row_0': array<vec2<f32>, 4>
-            56182..56190 'op_row_3': ref<function, array<vec2<f32>, 4>, read_write>
-            56193..56202 'old_row_1': array<vec2<f32>, 4>
-            56286..56294 'op_row_2': ref<function, array<vec2<f32>, 4>, read_write>
-            56297..56313 'rowNeg...row_2)': array<vec2<f32>, 4>
-            56304..56312 'op_row_2': ref<function, array<vec2<f32>, 4>, read_write>
-            56327..56335 'op_row_3': ref<function, array<vec2<f32>, 4>, read_write>
-            56338..56354 'rowNeg...row_3)': array<vec2<f32>, 4>
-            56345..56353 'op_row_3': ref<function, array<vec2<f32>, 4>, read_write>
-            56425..56432 'q2_term': ref<function, i32, read_write>
-            56425..56437 'q2_term == 1': bool
-            56436..56437 '1': integer
-            56496..56505 'old_row_0': array<vec2<f32>, 4>
-            56508..56516 'op_row_0': ref<function, array<vec2<f32>, 4>, read_write>
-            56534..56543 'old_row_2': array<vec2<f32>, 4>
-            56546..56554 'op_row_2': ref<function, array<vec2<f32>, 4>, read_write>
-            56568..56576 'op_row_0': ref<function, array<vec2<f32>, 4>, read_write>
-            56579..56587 'op_row_1': ref<function, array<vec2<f32>, 4>, read_write>
-            56601..56609 'op_row_2': ref<function, array<vec2<f32>, 4>, read_write>
-            56612..56620 'op_row_3': ref<function, array<vec2<f32>, 4>, read_write>
-            56634..56642 'op_row_1': ref<function, array<vec2<f32>, 4>, read_write>
-            56645..56654 'old_row_0': array<vec2<f32>, 4>
-            56668..56676 'op_row_3': ref<function, array<vec2<f32>, 4>, read_write>
-            56679..56688 'old_row_2': array<vec2<f32>, 4>
-            56780..56789 'old_row_0': array<vec2<f32>, 4>
-            56792..56800 'op_row_0': ref<function, array<vec2<f32>, 4>, read_write>
-            56818..56827 'old_row_2': array<vec2<f32>, 4>
-            56830..56838 'op_row_2': ref<function, array<vec2<f32>, 4>, read_write>
-            56852..56860 'op_row_0': ref<function, array<vec2<f32>, 4>, read_write>
-            56863..56879 'rowNeg...row_1)': array<vec2<f32>, 4>
-            56870..56878 'op_row_1': ref<function, array<vec2<f32>, 4>, read_write>
-            56893..56901 'op_row_2': ref<function, array<vec2<f32>, 4>, read_write>
-            56904..56920 'rowNeg...row_3)': array<vec2<f32>, 4>
-            56911..56919 'op_row_3': ref<function, array<vec2<f32>, 4>, read_write>
-            56934..56942 'op_row_1': ref<function, array<vec2<f32>, 4>, read_write>
-            56945..56954 'old_row_0': array<vec2<f32>, 4>
-            56968..56976 'op_row_3': ref<function, array<vec2<f32>, 4>, read_write>
-            56979..56988 'old_row_2': array<vec2<f32>, 4>
-            57072..57080 'op_row_1': ref<function, array<vec2<f32>, 4>, read_write>
-            57083..57099 'rowNeg...row_1)': array<vec2<f32>, 4>
-            57090..57098 'op_row_1': ref<function, array<vec2<f32>, 4>, read_write>
-            57113..57121 'op_row_3': ref<function, array<vec2<f32>, 4>, read_write>
-            57124..57140 'rowNeg...row_3)': array<vec2<f32>, 4>
-            57131..57139 'op_row_3': ref<function, array<vec2<f32>, 4>, read_write>
-            57218..57255 'setUni...row_0)': [error]
-            57232..57240 'shot_idx': u32
-            57242..57244 '0u': u32
-            57246..57254 'op_row_0': ref<function, array<vec2<f32>, 4>, read_write>
-            57265..57302 'setUni...row_1)': [error]
-            57279..57287 'shot_idx': u32
-            57289..57291 '1u': u32
-            57293..57301 'op_row_1': ref<function, array<vec2<f32>, 4>, read_write>
-            57312..57349 'setUni...row_2)': [error]
-            57326..57334 'shot_idx': u32
-            57336..57338 '2u': u32
-            57340..57348 'op_row_2': ref<function, array<vec2<f32>, 4>, read_write>
-            57359..57396 'setUni...row_3)': [error]
-            57373..57381 'shot_idx': u32
-            57383..57385 '3u': u32
-            57387..57395 'op_row_3': ref<function, array<vec2<f32>, 4>, read_write>
-            57406..57410 'shot': ptr<storage, ShotData, read_write>
-            57406..57418 'shot.op_type': ref<storage, u32, read_write>
-            57421..57438 'OPID_S...UFF_2Q': u32
-            57596..57598 'op': ptr<storage, Op, read>
-            57596..57601 'op.id': ref<storage, u32, read>
-            57596..57612 'op.id ...PID_CX': bool
-            57596..57632 'op.id ...PID_CY': bool
-            57596..57652 'op.id ...PID_CZ': bool
-            57596..57673 'op.id ...ID_RZZ': bool
-            57605..57612 'OPID_CX': u32
-            57616..57618 'op': ptr<storage, Op, read>
-            57616..57621 'op.id': ref<storage, u32, read>
-            57616..57632 'op.id ...PID_CY': bool
-            57625..57632 'OPID_CY': u32
-            57636..57638 'op': ptr<storage, Op, read>
-            57636..57641 'op.id': ref<storage, u32, read>
-            57636..57652 'op.id ...PID_CZ': bool
-            57645..57652 'OPID_CZ': u32
-            57656..57658 'op': ptr<storage, Op, read>
-            57656..57661 'op.id': ref<storage, u32, read>
-            57656..57673 'op.id ...ID_RZZ': bool
-            57665..57673 'OPID_RZZ': u32
-            57689..57693 'shot': ptr<storage, ShotData, read_write>
-            57689..57701 'shot.op_type': ref<storage, u32, read_write>
-            57704..57706 'op': ptr<storage, Op, read>
-            57704..57709 'op.id': ref<storage, u32, read>
-            57740..57744 'shot': ptr<storage, ShotData, read_write>
-            57740..57752 'shot.op_type': ref<storage, u32, read_write>
-            57755..57772 'OPID_S...UFF_2Q': u32
-            57794..57798 'shot': ptr<storage, ShotData, read_write>
-            57794..57805 'shot.op_idx': ref<storage, u32, read_write>
-            57808..57814 'op_idx': u32
-            57824..57828 'shot': ptr<storage, ShotData, read_write>
-            57824..57836 'shot.op_type': ref<storage, u32, read_write>
-            57824..57847 'shot.o...PID_CZ': bool
-            57824..57875 'shot.o...ID_RZZ': bool
-            57840..57847 'OPID_CZ': u32
-            57851..57855 'shot': ptr<storage, ShotData, read_write>
-            57851..57863 'shot.op_type': ref<storage, u32, read_write>
-            57851..57875 'shot.o...ID_RZZ': bool
-            57867..57875 'OPID_RZZ': u32
-            57887..57891 'shot': ptr<storage, ShotData, read_write>
-            57887..57919 'shot.q...p_mask': ref<storage, u32, read_write>
-            57922..57924 '0u': u32
-            57948..57952 'shot': ptr<storage, ShotData, read_write>
-            57948..57980 'shot.q...p_mask': ref<storage, u32, read_write>
-            57983..58007 '(1u <<...<< q2)': u32
-            57984..57986 '1u': u32
-            57984..57992 '1u << q1': u32
-            57990..57992 'q1': u32
-            57998..58000 '1u': u32
-            57998..58006 '1u << q2': u32
-            58004..58006 'q2': u32
-            58505..58513 'shot_idx': u32
-            58520..58532 'target_is_q2': bool
-            58540..58544 'term': u32
-            58561..58563 'si': i32
-            58566..58579 'i32(shot_idx)': i32
-            58570..58578 'shot_idx': u32
-            58589..58594 'row_0': ref<function, array<vec2<f32>, 4>, read_write>
-            58597..58618 'getUni...i, 0u)': array<vec2<f32>, 4>
-            58611..58613 'si': i32
-            58615..58617 '0u': u32
-            58628..58633 'row_1': ref<function, array<vec2<f32>, 4>, read_write>
-            58636..58657 'getUni...i, 1u)': array<vec2<f32>, 4>
-            58650..58652 'si': i32
-            58654..58656 '1u': u32
-            58667..58672 'row_2': ref<function, array<vec2<f32>, 4>, read_write>
-            58675..58696 'getUni...i, 2u)': array<vec2<f32>, 4>
-            58689..58691 'si': i32
-            58693..58695 '2u': u32
-            58706..58711 'row_3': ref<function, array<vec2<f32>, 4>, read_write>
-            58714..58735 'getUni...i, 3u)': array<vec2<f32>, 4>
-            58728..58730 'si': i32
-            58732..58734 '3u': u32
-            58746..58759 '!target_is_q2': bool
-            58747..58759 'target_is_q2': bool
-            58833..58837 'term': u32
-            58833..58843 'term == 1u': bool
-            58841..58843 '1u': u32
-            58879..58881 'o0': array<vec2<f32>, 4>
-            58884..58889 'row_0': ref<function, array<vec2<f32>, 4>, read_write>
-            58895..58897 'o1': array<vec2<f32>, 4>
-            58900..58905 'row_1': ref<function, array<vec2<f32>, 4>, read_write>
-            58919..58924 'row_0': ref<function, array<vec2<f32>, 4>, read_write>
-            58927..58932 'row_2': ref<function, array<vec2<f32>, 4>, read_write>
-            58934..58939 'row_1': ref<function, array<vec2<f32>, 4>, read_write>
-            58942..58947 'row_3': ref<function, array<vec2<f32>, 4>, read_write>
-            58961..58966 'row_2': ref<function, array<vec2<f32>, 4>, read_write>
+            53919..53920 'a': ref<function, i32, read_write>
+            53919..53924 'a + 1': i32
+            53923..53924 '1': integer
+            53945..53946 'b': ref<function, i32, read_write>
+            53949..53950 '0': integer
+            53952..53953 'b': ref<function, i32, read_write>
+            53952..53957 'b < 5': bool
+            53956..53957 '5': integer
+            53959..53960 'b': ref<function, i32, read_write>
+            53963..53964 'b': ref<function, i32, read_write>
+            53963..53968 'b + 1': i32
+            53967..53968 '1': integer
+            53988..53989 'k': i32
+            53992..53993 'a': ref<function, i32, read_write>
+            53992..53997 'a * 5': i32
+            53992..54001 'a * 5 + b': i32
+            53996..53997 '5': integer
+            54000..54001 'b': ref<function, i32, read_write>
+            54019..54020 'k': i32
+            54019..54025 'k == 0': bool
+            54024..54025 '0': integer
+            54093..54097 'slot': vec2<f32>
+            54100..54108 'noise_op': ptr<storage, Op, read>
+            54100..54116 'noise_...nitary': ref<storage, array<vec2<f32>, 16>, read>
+            54100..54123 'noise_...k / 2]': ref<storage, vec2<f32>, read>
+            54117..54118 'k': i32
+            54117..54122 'k / 2': i32
+            54121..54122 '2': integer
+            54141..54145 'p_ab': f32
+            54148..54184 'select... == 1)': f32
+            54155..54159 'slot': vec2<f32>
+            54155..54161 'slot.x': f32
+            54163..54167 'slot': vec2<f32>
+            54163..54169 'slot.y': f32
+            54171..54183 '(k & 1) == 1': bool
+            54172..54173 'k': i32
+            54172..54177 'k & 1': i32
+            54176..54177 '1': integer
+            54182..54183 '1': integer
+            54202..54206 'rand': ref<function, f32, read_write>
+            54202..54213 'rand < p_ab': bool
+            54209..54213 'p_ab': f32
+            54233..54240 'q1_term': ref<function, i32, read_write>
+            54243..54244 'a': ref<function, i32, read_write>
+            54262..54269 'q2_term': ref<function, i32, read_write>
+            54272..54273 'b': ref<function, i32, read_write>
+            54334..54335 'a': ref<function, i32, read_write>
+            54338..54339 '5': integer
+            54357..54358 'b': ref<function, i32, read_write>
+            54361..54362 '5': integer
+            54401..54405 'rand': ref<function, f32, read_write>
+            54408..54412 'rand': ref<function, f32, read_write>
+            54408..54419 'rand - p_ab': f32
+            54415..54419 'p_ab': f32
+            54603..54610 'q1_term': ref<function, i32, read_write>
+            54603..54615 'q1_term == 4': bool
+            54614..54615 '4': integer
+            54619..54623 'shot': ptr<storage, ShotData, read_write>
+            54619..54641 'shot.p...s_mask': ref<storage, u32, read_write>
+            54646..54648 '1u': u32
+            54646..54654 '1u << q1': u32
+            54652..54654 'q1': u32
+            54667..54674 'q2_term': ref<function, i32, read_write>
+            54667..54679 'q2_term == 4': bool
+            54678..54679 '4': integer
+            54683..54687 'shot': ptr<storage, ShotData, read_write>
+            54683..54705 'shot.p...s_mask': ref<storage, u32, read_write>
+            54710..54712 '1u': u32
+            54710..54718 '1u << q2': u32
+            54716..54718 'q2': u32
+            54894..54902 'q1_pauli': bool
+            54905..54912 'q1_term': ref<function, i32, read_write>
+            54905..54917 'q1_term >= 1': bool
+            54905..54933 'q1_ter...m <= 3': bool
+            54916..54917 '1': integer
+            54921..54928 'q1_term': ref<function, i32, read_write>
+            54921..54933 'q1_term <= 3': bool
+            54932..54933 '3': integer
+            54943..54951 'q2_pauli': bool
+            54954..54961 'q2_term': ref<function, i32, read_write>
+            54954..54966 'q2_term >= 1': bool
+            54954..54982 'q2_ter...m <= 3': bool
+            54965..54966 '1': integer
+            54970..54977 'q2_term': ref<function, i32, read_write>
+            54970..54982 'q2_term <= 3': bool
+            54981..54982 '3': integer
+            54993..55001 'q1_pauli': bool
+            54993..55013 'q1_pau..._pauli': bool
+            55005..55013 'q2_pauli': bool
+            55076..55084 'op_row_0': ref<function, array<vec2<f32>, 4>, read_write>
+            55087..55106 'getOpR...dx, 0)': array<vec2<f32>, 4>
+            55096..55102 'op_idx': u32
+            55104..55105 '0': integer
+            55120..55128 'op_row_1': ref<function, array<vec2<f32>, 4>, read_write>
+            55131..55150 'getOpR...dx, 1)': array<vec2<f32>, 4>
+            55140..55146 'op_idx': u32
+            55148..55149 '1': integer
+            55164..55172 'op_row_2': ref<function, array<vec2<f32>, 4>, read_write>
+            55175..55194 'getOpR...dx, 2)': array<vec2<f32>, 4>
+            55184..55190 'op_idx': u32
+            55192..55193 '2': integer
+            55208..55216 'op_row_3': ref<function, array<vec2<f32>, 4>, read_write>
+            55219..55238 'getOpR...dx, 3)': array<vec2<f32>, 4>
+            55228..55234 'op_idx': u32
+            55236..55237 '3': integer
+            55716..55723 'q1_term': ref<function, i32, read_write>
+            55716..55728 'q1_term == 1': bool
+            55727..55728 '1': integer
+            55787..55796 'old_row_0': array<vec2<f32>, 4>
+            55799..55807 'op_row_0': ref<function, array<vec2<f32>, 4>, read_write>
+            55825..55834 'old_row_1': array<vec2<f32>, 4>
+            55837..55845 'op_row_1': ref<function, array<vec2<f32>, 4>, read_write>
+            55859..55867 'op_row_0': ref<function, array<vec2<f32>, 4>, read_write>
+            55870..55878 'op_row_2': ref<function, array<vec2<f32>, 4>, read_write>
+            55892..55900 'op_row_1': ref<function, array<vec2<f32>, 4>, read_write>
+            55903..55911 'op_row_3': ref<function, array<vec2<f32>, 4>, read_write>
+            55925..55933 'op_row_2': ref<function, array<vec2<f32>, 4>, read_write>
+            55936..55945 'old_row_0': array<vec2<f32>, 4>
+            55959..55967 'op_row_3': ref<function, array<vec2<f32>, 4>, read_write>
+            55970..55979 'old_row_1': array<vec2<f32>, 4>
+            56071..56080 'old_row_0': array<vec2<f32>, 4>
+            56083..56091 'op_row_0': ref<function, array<vec2<f32>, 4>, read_write>
+            56109..56118 'old_row_1': array<vec2<f32>, 4>
+            56121..56129 'op_row_1': ref<function, array<vec2<f32>, 4>, read_write>
+            56143..56151 'op_row_0': ref<function, array<vec2<f32>, 4>, read_write>
+            56154..56170 'rowNeg...row_2)': array<vec2<f32>, 4>
+            56161..56169 'op_row_2': ref<function, array<vec2<f32>, 4>, read_write>
+            56184..56192 'op_row_1': ref<function, array<vec2<f32>, 4>, read_write>
+            56195..56211 'rowNeg...row_3)': array<vec2<f32>, 4>
+            56202..56210 'op_row_3': ref<function, array<vec2<f32>, 4>, read_write>
+            56225..56233 'op_row_2': ref<function, array<vec2<f32>, 4>, read_write>
+            56236..56245 'old_row_0': array<vec2<f32>, 4>
+            56259..56267 'op_row_3': ref<function, array<vec2<f32>, 4>, read_write>
+            56270..56279 'old_row_1': array<vec2<f32>, 4>
+            56363..56371 'op_row_2': ref<function, array<vec2<f32>, 4>, read_write>
+            56374..56390 'rowNeg...row_2)': array<vec2<f32>, 4>
+            56381..56389 'op_row_2': ref<function, array<vec2<f32>, 4>, read_write>
+            56404..56412 'op_row_3': ref<function, array<vec2<f32>, 4>, read_write>
+            56415..56431 'rowNeg...row_3)': array<vec2<f32>, 4>
+            56422..56430 'op_row_3': ref<function, array<vec2<f32>, 4>, read_write>
+            56502..56509 'q2_term': ref<function, i32, read_write>
+            56502..56514 'q2_term == 1': bool
+            56513..56514 '1': integer
+            56573..56582 'old_row_0': array<vec2<f32>, 4>
+            56585..56593 'op_row_0': ref<function, array<vec2<f32>, 4>, read_write>
+            56611..56620 'old_row_2': array<vec2<f32>, 4>
+            56623..56631 'op_row_2': ref<function, array<vec2<f32>, 4>, read_write>
+            56645..56653 'op_row_0': ref<function, array<vec2<f32>, 4>, read_write>
+            56656..56664 'op_row_1': ref<function, array<vec2<f32>, 4>, read_write>
+            56678..56686 'op_row_2': ref<function, array<vec2<f32>, 4>, read_write>
+            56689..56697 'op_row_3': ref<function, array<vec2<f32>, 4>, read_write>
+            56711..56719 'op_row_1': ref<function, array<vec2<f32>, 4>, read_write>
+            56722..56731 'old_row_0': array<vec2<f32>, 4>
+            56745..56753 'op_row_3': ref<function, array<vec2<f32>, 4>, read_write>
+            56756..56765 'old_row_2': array<vec2<f32>, 4>
+            56857..56866 'old_row_0': array<vec2<f32>, 4>
+            56869..56877 'op_row_0': ref<function, array<vec2<f32>, 4>, read_write>
+            56895..56904 'old_row_2': array<vec2<f32>, 4>
+            56907..56915 'op_row_2': ref<function, array<vec2<f32>, 4>, read_write>
+            56929..56937 'op_row_0': ref<function, array<vec2<f32>, 4>, read_write>
+            56940..56956 'rowNeg...row_1)': array<vec2<f32>, 4>
+            56947..56955 'op_row_1': ref<function, array<vec2<f32>, 4>, read_write>
+            56970..56978 'op_row_2': ref<function, array<vec2<f32>, 4>, read_write>
+            56981..56997 'rowNeg...row_3)': array<vec2<f32>, 4>
+            56988..56996 'op_row_3': ref<function, array<vec2<f32>, 4>, read_write>
+            57011..57019 'op_row_1': ref<function, array<vec2<f32>, 4>, read_write>
+            57022..57031 'old_row_0': array<vec2<f32>, 4>
+            57045..57053 'op_row_3': ref<function, array<vec2<f32>, 4>, read_write>
+            57056..57065 'old_row_2': array<vec2<f32>, 4>
+            57149..57157 'op_row_1': ref<function, array<vec2<f32>, 4>, read_write>
+            57160..57176 'rowNeg...row_1)': array<vec2<f32>, 4>
+            57167..57175 'op_row_1': ref<function, array<vec2<f32>, 4>, read_write>
+            57190..57198 'op_row_3': ref<function, array<vec2<f32>, 4>, read_write>
+            57201..57217 'rowNeg...row_3)': array<vec2<f32>, 4>
+            57208..57216 'op_row_3': ref<function, array<vec2<f32>, 4>, read_write>
+            57295..57332 'setUni...row_0)': [error]
+            57309..57317 'shot_idx': u32
+            57319..57321 '0u': u32
+            57323..57331 'op_row_0': ref<function, array<vec2<f32>, 4>, read_write>
+            57342..57379 'setUni...row_1)': [error]
+            57356..57364 'shot_idx': u32
+            57366..57368 '1u': u32
+            57370..57378 'op_row_1': ref<function, array<vec2<f32>, 4>, read_write>
+            57389..57426 'setUni...row_2)': [error]
+            57403..57411 'shot_idx': u32
+            57413..57415 '2u': u32
+            57417..57425 'op_row_2': ref<function, array<vec2<f32>, 4>, read_write>
+            57436..57473 'setUni...row_3)': [error]
+            57450..57458 'shot_idx': u32
+            57460..57462 '3u': u32
+            57464..57472 'op_row_3': ref<function, array<vec2<f32>, 4>, read_write>
+            57483..57487 'shot': ptr<storage, ShotData, read_write>
+            57483..57495 'shot.op_type': ref<storage, u32, read_write>
+            57498..57515 'OPID_S...UFF_2Q': u32
+            57673..57675 'op': ptr<storage, Op, read>
+            57673..57678 'op.id': ref<storage, u32, read>
+            57673..57689 'op.id ...PID_CX': bool
+            57673..57709 'op.id ...PID_CY': bool
+            57673..57729 'op.id ...PID_CZ': bool
+            57673..57750 'op.id ...ID_RZZ': bool
+            57682..57689 'OPID_CX': u32
+            57693..57695 'op': ptr<storage, Op, read>
+            57693..57698 'op.id': ref<storage, u32, read>
+            57693..57709 'op.id ...PID_CY': bool
+            57702..57709 'OPID_CY': u32
+            57713..57715 'op': ptr<storage, Op, read>
+            57713..57718 'op.id': ref<storage, u32, read>
+            57713..57729 'op.id ...PID_CZ': bool
+            57722..57729 'OPID_CZ': u32
+            57733..57735 'op': ptr<storage, Op, read>
+            57733..57738 'op.id': ref<storage, u32, read>
+            57733..57750 'op.id ...ID_RZZ': bool
+            57742..57750 'OPID_RZZ': u32
+            57766..57770 'shot': ptr<storage, ShotData, read_write>
+            57766..57778 'shot.op_type': ref<storage, u32, read_write>
+            57781..57783 'op': ptr<storage, Op, read>
+            57781..57786 'op.id': ref<storage, u32, read>
+            57817..57821 'shot': ptr<storage, ShotData, read_write>
+            57817..57829 'shot.op_type': ref<storage, u32, read_write>
+            57832..57849 'OPID_S...UFF_2Q': u32
+            57871..57875 'shot': ptr<storage, ShotData, read_write>
+            57871..57882 'shot.op_idx': ref<storage, u32, read_write>
+            57885..57891 'op_idx': u32
+            57901..57905 'shot': ptr<storage, ShotData, read_write>
+            57901..57913 'shot.op_type': ref<storage, u32, read_write>
+            57901..57924 'shot.o...PID_CZ': bool
+            57901..57952 'shot.o...ID_RZZ': bool
+            57917..57924 'OPID_CZ': u32
+            57928..57932 'shot': ptr<storage, ShotData, read_write>
+            57928..57940 'shot.op_type': ref<storage, u32, read_write>
+            57928..57952 'shot.o...ID_RZZ': bool
+            57944..57952 'OPID_RZZ': u32
+            57964..57968 'shot': ptr<storage, ShotData, read_write>
+            57964..57996 'shot.q...p_mask': ref<storage, u32, read_write>
+            57999..58001 '0u': u32
+            58025..58029 'shot': ptr<storage, ShotData, read_write>
+            58025..58057 'shot.q...p_mask': ref<storage, u32, read_write>
+            58060..58084 '(1u <<...<< q2)': u32
+            58061..58063 '1u': u32
+            58061..58069 '1u << q1': u32
+            58067..58069 'q1': u32
+            58075..58077 '1u': u32
+            58075..58083 '1u << q2': u32
+            58081..58083 'q2': u32
+            58595..58603 'shot_idx': u32
+            58610..58622 'target_is_q2': bool
+            58630..58634 'term': u32
+            58651..58653 'si': i32
+            58656..58669 'i32(shot_idx)': i32
+            58660..58668 'shot_idx': u32
+            58679..58684 'row_0': ref<function, array<vec2<f32>, 4>, read_write>
+            58687..58708 'getUni...i, 0u)': array<vec2<f32>, 4>
+            58701..58703 'si': i32
+            58705..58707 '0u': u32
+            58718..58723 'row_1': ref<function, array<vec2<f32>, 4>, read_write>
+            58726..58747 'getUni...i, 1u)': array<vec2<f32>, 4>
+            58740..58742 'si': i32
+            58744..58746 '1u': u32
+            58757..58762 'row_2': ref<function, array<vec2<f32>, 4>, read_write>
+            58765..58786 'getUni...i, 2u)': array<vec2<f32>, 4>
+            58779..58781 'si': i32
+            58783..58785 '2u': u32
+            58796..58801 'row_3': ref<function, array<vec2<f32>, 4>, read_write>
+            58804..58825 'getUni...i, 3u)': array<vec2<f32>, 4>
+            58818..58820 'si': i32
+            58822..58824 '3u': u32
+            58836..58849 '!target_is_q2': bool
+            58837..58849 'target_is_q2': bool
+            58923..58927 'term': u32
+            58923..58933 'term == 1u': bool
+            58931..58933 '1u': u32
             58969..58971 'o0': array<vec2<f32>, 4>
-            58976..58981 'row_3': ref<function, array<vec2<f32>, 4>, read_write>
-            58984..58986 'o1': array<vec2<f32>, 4>
-            59046..59048 'o0': array<vec2<f32>, 4>
-            59051..59056 'row_0': ref<function, array<vec2<f32>, 4>, read_write>
-            59062..59064 'o1': array<vec2<f32>, 4>
-            59067..59072 'row_1': ref<function, array<vec2<f32>, 4>, read_write>
-            59086..59091 'row_0': ref<function, array<vec2<f32>, 4>, read_write>
-            59094..59107 'rowNeg(row_2)': array<vec2<f32>, 4>
-            59101..59106 'row_2': ref<function, array<vec2<f32>, 4>, read_write>
-            59109..59114 'row_1': ref<function, array<vec2<f32>, 4>, read_write>
-            59117..59130 'rowNeg(row_3)': array<vec2<f32>, 4>
-            59124..59129 'row_3': ref<function, array<vec2<f32>, 4>, read_write>
-            59144..59149 'row_2': ref<function, array<vec2<f32>, 4>, read_write>
-            59152..59154 'o0': array<vec2<f32>, 4>
-            59167..59172 'row_3': ref<function, array<vec2<f32>, 4>, read_write>
-            59175..59177 'o1': array<vec2<f32>, 4>
-            59233..59238 'row_2': ref<function, array<vec2<f32>, 4>, read_write>
-            59241..59254 'rowNeg(row_2)': array<vec2<f32>, 4>
-            59248..59253 'row_2': ref<function, array<vec2<f32>, 4>, read_write>
-            59256..59261 'row_3': ref<function, array<vec2<f32>, 4>, read_write>
-            59264..59277 'rowNeg(row_3)': array<vec2<f32>, 4>
-            59271..59276 'row_3': ref<function, array<vec2<f32>, 4>, read_write>
-            59371..59375 'term': u32
-            59371..59381 'term == 1u': bool
-            59379..59381 '1u': u32
-            59417..59419 'o0': array<vec2<f32>, 4>
-            59422..59427 'row_0': ref<function, array<vec2<f32>, 4>, read_write>
-            59433..59435 'o2': array<vec2<f32>, 4>
-            59438..59443 'row_2': ref<function, array<vec2<f32>, 4>, read_write>
-            59457..59462 'row_0': ref<function, array<vec2<f32>, 4>, read_write>
-            59465..59470 'row_1': ref<function, array<vec2<f32>, 4>, read_write>
-            59472..59477 'row_2': ref<function, array<vec2<f32>, 4>, read_write>
-            59480..59485 'row_3': ref<function, array<vec2<f32>, 4>, read_write>
-            59499..59504 'row_1': ref<function, array<vec2<f32>, 4>, read_write>
+            58974..58979 'row_0': ref<function, array<vec2<f32>, 4>, read_write>
+            58985..58987 'o1': array<vec2<f32>, 4>
+            58990..58995 'row_1': ref<function, array<vec2<f32>, 4>, read_write>
+            59009..59014 'row_0': ref<function, array<vec2<f32>, 4>, read_write>
+            59017..59022 'row_2': ref<function, array<vec2<f32>, 4>, read_write>
+            59024..59029 'row_1': ref<function, array<vec2<f32>, 4>, read_write>
+            59032..59037 'row_3': ref<function, array<vec2<f32>, 4>, read_write>
+            59051..59056 'row_2': ref<function, array<vec2<f32>, 4>, read_write>
+            59059..59061 'o0': array<vec2<f32>, 4>
+            59066..59071 'row_3': ref<function, array<vec2<f32>, 4>, read_write>
+            59074..59076 'o1': array<vec2<f32>, 4>
+            59136..59138 'o0': array<vec2<f32>, 4>
+            59141..59146 'row_0': ref<function, array<vec2<f32>, 4>, read_write>
+            59152..59154 'o1': array<vec2<f32>, 4>
+            59157..59162 'row_1': ref<function, array<vec2<f32>, 4>, read_write>
+            59176..59181 'row_0': ref<function, array<vec2<f32>, 4>, read_write>
+            59184..59197 'rowNeg(row_2)': array<vec2<f32>, 4>
+            59191..59196 'row_2': ref<function, array<vec2<f32>, 4>, read_write>
+            59199..59204 'row_1': ref<function, array<vec2<f32>, 4>, read_write>
+            59207..59220 'rowNeg(row_3)': array<vec2<f32>, 4>
+            59214..59219 'row_3': ref<function, array<vec2<f32>, 4>, read_write>
+            59234..59239 'row_2': ref<function, array<vec2<f32>, 4>, read_write>
+            59242..59244 'o0': array<vec2<f32>, 4>
+            59257..59262 'row_3': ref<function, array<vec2<f32>, 4>, read_write>
+            59265..59267 'o1': array<vec2<f32>, 4>
+            59323..59328 'row_2': ref<function, array<vec2<f32>, 4>, read_write>
+            59331..59344 'rowNeg(row_2)': array<vec2<f32>, 4>
+            59338..59343 'row_2': ref<function, array<vec2<f32>, 4>, read_write>
+            59346..59351 'row_3': ref<function, array<vec2<f32>, 4>, read_write>
+            59354..59367 'rowNeg(row_3)': array<vec2<f32>, 4>
+            59361..59366 'row_3': ref<function, array<vec2<f32>, 4>, read_write>
+            59461..59465 'term': u32
+            59461..59471 'term == 1u': bool
+            59469..59471 '1u': u32
             59507..59509 'o0': array<vec2<f32>, 4>
-            59514..59519 'row_3': ref<function, array<vec2<f32>, 4>, read_write>
-            59522..59524 'o2': array<vec2<f32>, 4>
-            59584..59586 'o0': array<vec2<f32>, 4>
-            59589..59594 'row_0': ref<function, array<vec2<f32>, 4>, read_write>
-            59600..59602 'o2': array<vec2<f32>, 4>
-            59605..59610 'row_2': ref<function, array<vec2<f32>, 4>, read_write>
-            59624..59629 'row_0': ref<function, array<vec2<f32>, 4>, read_write>
-            59632..59645 'rowNeg(row_1)': array<vec2<f32>, 4>
-            59639..59644 'row_1': ref<function, array<vec2<f32>, 4>, read_write>
-            59647..59652 'row_2': ref<function, array<vec2<f32>, 4>, read_write>
-            59655..59668 'rowNeg(row_3)': array<vec2<f32>, 4>
-            59662..59667 'row_3': ref<function, array<vec2<f32>, 4>, read_write>
-            59682..59687 'row_1': ref<function, array<vec2<f32>, 4>, read_write>
-            59690..59692 'o0': array<vec2<f32>, 4>
-            59705..59710 'row_3': ref<function, array<vec2<f32>, 4>, read_write>
-            59713..59715 'o2': array<vec2<f32>, 4>
-            59771..59776 'row_1': ref<function, array<vec2<f32>, 4>, read_write>
-            59779..59792 'rowNeg(row_1)': array<vec2<f32>, 4>
-            59786..59791 'row_1': ref<function, array<vec2<f32>, 4>, read_write>
-            59794..59799 'row_3': ref<function, array<vec2<f32>, 4>, read_write>
-            59802..59815 'rowNeg(row_3)': array<vec2<f32>, 4>
-            59809..59814 'row_3': ref<function, array<vec2<f32>, 4>, read_write>
-            59838..59872 'setUni...row_0)': [error]
-            59852..59860 'shot_idx': u32
-            59862..59864 '0u': u32
-            59866..59871 'row_0': ref<function, array<vec2<f32>, 4>, read_write>
-            59878..59912 'setUni...row_1)': [error]
-            59892..59900 'shot_idx': u32
-            59902..59904 '1u': u32
-            59906..59911 'row_1': ref<function, array<vec2<f32>, 4>, read_write>
-            59918..59952 'setUni...row_2)': [error]
-            59932..59940 'shot_idx': u32
-            59942..59944 '2u': u32
-            59946..59951 'row_2': ref<function, array<vec2<f32>, 4>, read_write>
-            59958..59992 'setUni...row_3)': [error]
-            59972..59980 'shot_idx': u32
-            59982..59984 '3u': u32
-            59986..59991 'row_3': ref<function, array<vec2<f32>, 4>, read_write>
-            60639..60647 'shot_idx': u32
-            60654..60660 'op_idx': u32
-            60667..60676 'noise_idx': u32
-            60683..60685 'q1': u32
-            60692..60694 'q2': u32
-            60711..60715 'shot': ptr<storage, ShotData, read_write>
-            60718..60734 '&shots...t_idx]': ptr<storage, ShotData, read_write>
-            60719..60724 'shots': ref<storage, array<ShotData>, read_write>
-            60719..60734 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            60725..60733 'shot_idx': u32
-            60744..60752 'noise_op': ptr<storage, Op, read>
-            60755..60770 '&ops[noise_idx]': ptr<storage, Op, read>
-            60756..60759 'ops': ref<storage, array<Op>, read>
-            60756..60770 'ops[noise_idx]': ref<storage, Op, read>
-            60760..60769 'noise_idx': u32
-            60855..60863 'q1_alive': [error]
-            60866..60870 'shot': ptr<storage, ShotData, read_write>
-            60866..60882 'shot.q..._state': ref<storage, [error], read_write>
-            60866..60886 'shot.q...te[q1]': [error]
-            60866..60891 'shot.q...].heat': [error]
-            60866..60899 'shot.q...= -1.0': [error]
-            60883..60885 'q1': u32
-            60895..60899 '-1.0': float
-            60896..60899 '1.0': float
-            60909..60917 'q2_alive': [error]
-            60920..60924 'shot': ptr<storage, ShotData, read_write>
-            60920..60936 'shot.q..._state': ref<storage, [error], read_write>
-            60920..60940 'shot.q...te[q2]': [error]
-            60920..60945 'shot.q...].heat': [error]
-            60920..60953 'shot.q...= -1.0': [error]
-            60937..60939 'q2': u32
-            60949..60953 '-1.0': float
-            60950..60953 '1.0': float
-            61039..61048 '!q1_alive': [error]
-            61039..61061 '!q1_al..._alive': [error]
-            61040..61048 'q1_alive': [error]
-            61052..61061 '!q2_alive': [error]
-            61053..61061 'q2_alive': [error]
-            61227..61231 'rand': ref<function, f32, read_write>
-            61234..61238 'shot': ptr<storage, ShotData, read_write>
-            61234..61249 'shot.rand_pauli': ref<storage, f32, read_write>
-            61259..61266 'q1_term': ref<function, i32, read_write>
-            61269..61270 '0': integer
-            61280..61287 'q2_term': ref<function, i32, read_write>
-            61290..61291 '0': integer
-            61306..61307 'a': ref<function, i32, read_write>
-            61310..61311 '0': integer
-            61313..61314 'a': ref<function, i32, read_write>
-            61313..61318 'a < 5': bool
-            61317..61318 '5': integer
-            61320..61321 'a': ref<function, i32, read_write>
-            61324..61325 'a': ref<function, i32, read_write>
-            61324..61329 'a + 1': i32
-            61328..61329 '1': integer
-            61350..61351 'b': ref<function, i32, read_write>
-            61354..61355 '0': integer
-            61357..61358 'b': ref<function, i32, read_write>
-            61357..61362 'b < 5': bool
-            61361..61362 '5': integer
-            61364..61365 'b': ref<function, i32, read_write>
-            61368..61369 'b': ref<function, i32, read_write>
-            61368..61373 'b + 1': i32
-            61372..61373 '1': integer
-            61393..61394 'k': i32
-            61397..61398 'a': ref<function, i32, read_write>
-            61397..61402 'a * 5': i32
-            61397..61406 'a * 5 + b': i32
-            61401..61402 '5': integer
-            61405..61406 'b': ref<function, i32, read_write>
-            61424..61425 'k': i32
-            61424..61430 'k == 0': bool
-            61429..61430 '0': integer
-            61462..61466 'slot': vec2<f32>
-            61469..61477 'noise_op': ptr<storage, Op, read>
-            61469..61485 'noise_...nitary': ref<storage, array<vec2<f32>, 16>, read>
-            61469..61492 'noise_...k / 2]': ref<storage, vec2<f32>, read>
-            61486..61487 'k': i32
-            61486..61491 'k / 2': i32
-            61490..61491 '2': integer
-            61510..61514 'p_ab': f32
-            61517..61553 'select... == 1)': f32
-            61524..61528 'slot': vec2<f32>
-            61524..61530 'slot.x': f32
-            61532..61536 'slot': vec2<f32>
-            61532..61538 'slot.y': f32
-            61540..61552 '(k & 1) == 1': bool
-            61541..61542 'k': i32
-            61541..61546 'k & 1': i32
-            61545..61546 '1': integer
-            61551..61552 '1': integer
-            61571..61575 'rand': ref<function, f32, read_write>
-            61571..61582 'rand < p_ab': bool
-            61578..61582 'p_ab': f32
-            61602..61609 'q1_term': ref<function, i32, read_write>
-            61612..61613 'a': ref<function, i32, read_write>
-            61631..61638 'q2_term': ref<function, i32, read_write>
-            61641..61642 'b': ref<function, i32, read_write>
-            61660..61661 'a': ref<function, i32, read_write>
-            61664..61665 '5': integer
-            61683..61684 'b': ref<function, i32, read_write>
-            61687..61688 '5': integer
-            61727..61731 'rand': ref<function, f32, read_write>
-            61734..61738 'rand': ref<function, f32, read_write>
-            61734..61745 'rand - p_ab': f32
-            61741..61745 'p_ab': f32
-            61855..61869 'survivor_is_q2': [error]
-            61872..61881 '!q1_alive': [error]
-            61873..61881 'q1_alive': [error]
-            61891..61899 'survivor': [error]
-            61902..61932 'select...is_q2)': [error]
-            61909..61911 'q1': u32
-            61913..61915 'q2': u32
-            61917..61931 'survivor_is_q2': [error]
-            61942..61946 'term': [error]
-            61949..61989 'select...is_q2)': [error]
-            61956..61963 'q1_term': ref<function, i32, read_write>
-            61965..61972 'q2_term': ref<function, i32, read_write>
-            61974..61988 'survivor_is_q2': [error]
-            62160..62164 'term': [error]
-            62160..62169 'term == 4': [error]
-            62168..62169 '4': integer
-            62181..62185 'shot': ptr<storage, ShotData, read_write>
-            62181..62203 'shot.p...s_mask': ref<storage, u32, read_write>
-            62208..62210 '1u': u32
-            62208..62222 '1u << survivor': [error]
-            62214..62222 'survivor': [error]
-            62330..62334 'term': [error]
-            62330..62339 'term == 0': [error]
-            62338..62339 '0': integer
-            62428..62432 'shot': ptr<storage, ShotData, read_write>
-            62428..62440 'shot.op_type': ref<storage, u32, read_write>
-            62428..62461 'shot.o...UFF_2Q': bool
-            62444..62461 'OPID_S...UFF_2Q': u32
-            62583..62649 'fuse_1...term))': [error]
-            62613..62621 'shot_idx': u32
-            62623..62637 'survivor_is_q2': [error]
-            62639..62648 'u32(term)': u32
-            62643..62647 'term': [error]
-            62910..62914 'term': [error]
-            62910..62919 'term == 1': [error]
-            62918..62919 '1': integer
-            62947..63095 'set_1q... 0.0))': [error]
-            62970..62978 'shot_idx': u32
-            62980..62994 'survivor_is_q2': [error]
-            63012..63027 'vec2f(0.0, 0.0)': vec2<f32>
-            63018..63021 '0.0': float
-            63023..63026 '0.0': float
-            63029..63044 'vec2f(1.0, 0.0)': vec2<f32>
-            63035..63038 '1.0': float
-            63040..63043 '0.0': float
-            63062..63077 'vec2f(1.0, 0.0)': vec2<f32>
-            63068..63071 '1.0': float
-            63073..63076 '0.0': float
-            63079..63094 'vec2f(0.0, 0.0)': vec2<f32>
-            63085..63088 '0.0': float
-            63090..63093 '0.0': float
-            63169..63318 'set_1q... 0.0))': [error]
-            63192..63200 'shot_idx': u32
-            63202..63216 'survivor_is_q2': [error]
-            63234..63249 'vec2f(0.0, 0.0)': vec2<f32>
-            63240..63243 '0.0': float
-            63245..63248 '0.0': float
-            63251..63267 'vec2f(..., 0.0)': vec2<f32>
-            63257..63261 '-1.0': float
-            63258..63261 '1.0': float
-            63263..63266 '0.0': float
-            63285..63300 'vec2f(1.0, 0.0)': vec2<f32>
-            63291..63294 '1.0': float
-            63296..63299 '0.0': float
-            63302..63317 'vec2f(0.0, 0.0)': vec2<f32>
-            63308..63311 '0.0': float
-            63313..63316 '0.0': float
-            63369..63518 'set_1q... 0.0))': [error]
-            63392..63400 'shot_idx': u32
-            63402..63416 'survivor_is_q2': [error]
-            63434..63449 'vec2f(1.0, 0.0)': vec2<f32>
-            63440..63443 '1.0': float
-            63445..63448 '0.0': float
-            63451..63466 'vec2f(0.0, 0.0)': vec2<f32>
-            63457..63460 '0.0': float
-            63462..63465 '0.0': float
-            63484..63499 'vec2f(0.0, 0.0)': vec2<f32>
-            63490..63493 '0.0': float
-            63495..63498 '0.0': float
-            63501..63517 'vec2f(..., 0.0)': vec2<f32>
-            63507..63511 '-1.0': float
-            63508..63511 '1.0': float
-            63513..63516 '0.0': float
-            63538..63585 'finish...1, q2)': [error]
-            63560..63568 'shot_idx': u32
-            63570..63576 'op_idx': u32
-            63578..63580 'q1': u32
-            63582..63584 'q2': u32
-            63841..63845 'shot': ptr<storage, ShotData, read_write>
-            63841..63861 'shot.q...0_mask': ref<storage, u32, read_write>
-            63864..63868 'shot': ptr<storage, ShotData, read_write>
-            63864..63884 'shot.q...0_mask': ref<storage, u32, read_write>
-            63864..63904 'shot.q...vivor)': [error]
-            63887..63904 '~(1u <...vivor)': [error]
-            63889..63891 '1u': u32
-            63889..63903 '1u << survivor': [error]
-            63895..63903 'survivor': [error]
-            63910..63914 'shot': ptr<storage, ShotData, read_write>
-            63910..63930 'shot.q...1_mask': ref<storage, u32, read_write>
-            63933..63937 'shot': ptr<storage, ShotData, read_write>
-            63933..63953 'shot.q...1_mask': ref<storage, u32, read_write>
-            63933..63973 'shot.q...vivor)': [error]
-            63956..63973 '~(1u <...vivor)': [error]
-            63958..63960 '1u': u32
-            63958..63972 '1u << survivor': [error]
-            63964..63972 'survivor': [error]
-            64054..64065 'workgroupId': u32
-            64080..64083 'tid': u32
-            64098..64112 'op_qubit_count': i32
-            64245..64253 'shot_idx': i32
-            64261..64277 'i32(wo...oupId)': i32
-            64261..64299 'i32(wo...R_SHOT': i32
-            64265..64276 'workgroupId': u32
-            64280..64299 'WORKGR...R_SHOT': i32
-            64309..64332 'shot_s..._start': i32
-            64340..64348 'shot_idx': i32
-            64340..64375 'shot_i...OUNT))': i32
-            64352..64354 '1i': i32
-            64352..64374 '1i << ...COUNT)': i32
-            64358..64374 'u32(QU...COUNT)': u32
-            64362..64373 'QUBIT_COUNT': i32
-            64385..64406 'workgr...n_shot': i32
-            64414..64430 'i32(wo...oupId)': i32
-            64414..64452 'i32(wo...R_SHOT': i32
-            64418..64429 'workgroupId': u32
-            64433..64452 'WORKGR...R_SHOT': i32
-            64462..64480 'thread...n_shot': i32
-            64488..64509 'workgr...n_shot': i32
-            64488..64533 'workgr...KGROUP': i32
-            64488..64544 'workgr...2(tid)': i32
-            64512..64533 'THREAD...KGROUP': i32
-            64536..64544 'i32(tid)': i32
-            64540..64543 'tid': u32
-            64554..64576 'total_...r_shot': i32
-            64584..64603 'WORKGR...R_SHOT': i32
-            64584..64627 'WORKGR...KGROUP': i32
-            64606..64627 'THREAD...KGROUP': i32
-            64967..64990 'workgr...on_idx': i32
-            64998..65051 'select...T > 1)': i32
-            65005..65007 '-1': integer
-            65006..65007 '1': integer
-            65009..65025 'i32(wo...oupId)': i32
-            65013..65024 'workgroupId': u32
-            65027..65046 'WORKGR...R_SHOT': i32
-            65027..65050 'WORKGR...OT > 1': bool
-            65049..65050 '1': integer
-            65062..65078 'zero_e..._count': i32
-            65086..65133 '(1i <<...count)': i32
-            65087..65089 '1i': i32
-            65087..65109 '1i << ...COUNT)': i32
-            65093..65109 'u32(QU...COUNT)': u32
-            65097..65108 'QUBIT_COUNT': i32
-            65114..65133 'u32(op...count)': u32
-            65118..65132 'op_qubit_count': i32
-            65143..65156 'op_iterations': i32
-            65164..65180 'zero_e..._count': i32
-            65164..65205 'zero_e...r_shot': i32
-            65183..65205 'total_...r_shot': i32
-            65219..65459 'ShotPa...     )': ShotParams
-            65239..65247 'shot_idx': i32
-            65257..65280 'shot_s..._start': i32
-            65290..65313 'workgr...on_idx': i32
-            65323..65344 'workgr...n_shot': i32
-            65354..65372 'thread...n_shot': i32
-            65382..65404 'total_...r_shot': i32
-            65414..65430 'zero_e..._count': i32
-            65440..65453 'op_iterations': i32
-            65537..65548 'workgroupId': u32
-            65555..65558 'tid': u32
-            65565..65567 'q1': u32
-            65584..65590 'params': ShotParams
-            65593..65649 'get_sh...op */)': ShotParams
-            65609..65620 'workgroupId': u32
-            65622..65625 'tid': u32
-            65627..65628 '1': integer
-            65659..65663 'shot': ptr<storage, ShotData, read_write>
-            65666..65689 '&shots...t_idx]': ptr<storage, ShotData, read_write>
-            65667..65672 'shots': ref<storage, array<ShotData>, read_write>
-            65667..65689 'shots[...t_idx]': ref<storage, ShotData, read_write>
-            65673..65679 'params': ShotParams
-            65673..65688 'params.shot_idx': i32
-            65699..65704 'scale': f32
-            65707..65711 'shot': ptr<storage, ShotData, read_write>
-            65707..65723 'shot.r...malize': ref<storage, f32, read_write>
-            65733..65740 'lowMask': i32
-            65743..65756 '(1 << q1) - 1': integer
-            65744..65745 '1': integer
-            65744..65751 '1 << q1': integer
-            65749..65751 'q1': u32
-            65755..65756 '1': integer
-            65766..65774 'highMask': i32
-            65777..65804 '(1 << ...)) - 1': integer
-            65777..65814 '(1 << ...owMask': i32
-            65778..65779 '1': integer
-            65778..65799 '1 << u...COUNT)': integer
-            65783..65799 'u32(QU...COUNT)': u32
-            65787..65798 'QUBIT_COUNT': i32
-            65803..65804 '1': integer
-            65807..65814 'lowMask': i32
-            65824..65839 'qubit_is_0_mask': i32
-            65842..65885 'i32(sh..._mask)': i32
-            65846..65851 'shots': ref<storage, array<ShotData>, read_write>
-            65846..65868 'shots[...t_idx]': ref<storage, ShotData, read_write>
-            65846..65884 'shots[...0_mask': ref<storage, u32, read_write>
-            65852..65858 'params': ShotParams
-            65852..65867 'params.shot_idx': i32
-            65895..65910 'qubit_is_1_mask': i32
-            65913..65956 'i32(sh..._mask)': i32
-            65917..65922 'shots': ref<storage, array<ShotData>, read_write>
-            65917..65939 'shots[...t_idx]': ref<storage, ShotData, read_write>
-            65917..65955 'shots[...1_mask': ref<storage, u32, read_write>
-            65923..65929 'params': ShotParams
-            65923..65938 'params.shot_idx': i32
-            65967..65979 'summed_probs': ref<function, vec4<f32>, read_write>
-            65989..65996 'vec4f()': vec4<f32>
-            66530..66541 'entry_index': ref<function, i32, read_write>
-            66544..66550 'params': ShotParams
-            66544..66569 'params...n_shot': i32
-            66585..66586 'i': ref<function, i32, read_write>
-            66589..66590 '0': integer
-            66592..66593 'i': ref<function, i32, read_write>
-            66592..66616 'i < pa...ations': bool
-            66596..66602 'params': ShotParams
-            66596..66616 'params...ations': i32
-            66618..66619 'i': ref<function, i32, read_write>
-            66637..66644 'offset0': i32
-            66652..66709 '(entry... << 1)': i32
-            66653..66664 'entry_index': ref<function, i32, read_write>
-            66653..66674 'entry_...owMask': i32
-            66667..66674 'lowMask': i32
-            66679..66708 '(entry...) << 1': i32
-            66680..66691 'entry_index': ref<function, i32, read_write>
-            66680..66702 'entry_...ghMask': i32
-            66694..66702 'highMask': i32
-            66707..66708 '1': integer
-            66723..66730 'offset1': i32
-            66738..66745 'offset0': i32
-            66738..66757 'offset...<< q1)': i32
-            66749..66750 '1': integer
-            66749..66756 '1 << q1': integer
-            66754..66756 'q1': u32
-            66996..67011 'skip_processing': bool
-            67014..67087 '((offs... != 0)': bool
-            67015..67047 '(offse...) != 0': bool
-            67016..67023 'offset0': i32
-            67016..67041 'offset...0_mask': i32
-            67026..67041 'qubit_is_0_mask': i32
-            67046..67047 '0': integer
-            67053..67086 '(~offs...) != 0': bool
-            67054..67062 '~offset1': i32
-            67054..67080 '~offse...1_mask': i32
-            67055..67062 'offset1': i32
-            67065..67080 'qubit_is_1_mask': i32
-            67085..67086 '0': integer
-            67102..67118 '!skip_...essing': bool
-            67103..67118 'skip_processing': bool
-            67137..67141 'shot': ptr<storage, ShotData, read_write>
-            67137..67149 'shot.op_type': ref<storage, u32, read_write>
-            67137..67160 'shot.o...PID_RZ': bool
-            67153..67160 'OPID_RZ': u32
-            67372..67376 'amp1': vec2<f32>
-            67386..67397 'stateVector': ref<storage, array<vec2<f32>>, read_write>
-            67386..67439 'stateV...fset1]': ref<storage, vec2<f32>, read_write>
-            67398..67404 'params': ShotParams
-            67398..67428 'params..._start': i32
-            67398..67438 'params...ffset1': i32
-            67431..67438 'offset1': i32
-            67461..67465 'new1': vec2<f32>
-            67468..67498 'cplxMu...ry[5])': vec2<f32>
-            67476..67480 'amp1': vec2<f32>
-            67482..67486 'shot': ptr<storage, ShotData, read_write>
-            67482..67494 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            67482..67497 'shot.unitary[5]': ref<storage, vec2<f32>, read_write>
-            67495..67496 '5': integer
-            67516..67527 'stateVector': ref<storage, array<vec2<f32>>, read_write>
-            67516..67569 'stateV...fset1]': ref<storage, vec2<f32>, read_write>
-            67528..67534 'params': ShotParams
-            67528..67558 'params..._start': i32
-            67528..67568 'params...ffset1': i32
-            67561..67568 'offset1': i32
-            67572..67576 'new1': vec2<f32>
-            67619..67623 'amp0': vec2<f32>
-            67633..67644 'stateVector': ref<storage, array<vec2<f32>>, read_write>
-            67633..67686 'stateV...fset0]': ref<storage, vec2<f32>, read_write>
-            67645..67651 'params': ShotParams
-            67645..67675 'params..._start': i32
-            67645..67685 'params...ffset0': i32
-            67678..67685 'offset0': i32
-            67708..67712 'amp1': vec2<f32>
-            67722..67733 'stateVector': ref<storage, array<vec2<f32>>, read_write>
-            67722..67775 'stateV...fset1]': ref<storage, vec2<f32>, read_write>
-            67734..67740 'params': ShotParams
-            67734..67764 'params..._start': i32
-            67734..67774 'params...ffset1': i32
-            67767..67774 'offset1': i32
-            67798..67802 'new0': vec2<f32>
-            67805..67810 'scale': f32
-            67805..67878 'scale ...y[1]))': vec2<f32>
-            67814..67844 'cplxMu...ry[0])': vec2<f32>
-            67814..67877 'cplxMu...ry[1])': vec2<f32>
-            67822..67826 'amp0': vec2<f32>
-            67828..67832 'shot': ptr<storage, ShotData, read_write>
-            67828..67840 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            67828..67843 'shot.unitary[0]': ref<storage, vec2<f32>, read_write>
-            67841..67842 '0': integer
-            67847..67877 'cplxMu...ry[1])': vec2<f32>
-            67855..67859 'amp1': vec2<f32>
-            67861..67865 'shot': ptr<storage, ShotData, read_write>
-            67861..67873 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            67861..67876 'shot.unitary[1]': ref<storage, vec2<f32>, read_write>
-            67874..67875 '1': integer
-            67900..67904 'new1': vec2<f32>
-            67907..67912 'scale': f32
-            67907..67980 'scale ...y[5]))': vec2<f32>
-            67916..67946 'cplxMu...ry[4])': vec2<f32>
-            67916..67979 'cplxMu...ry[5])': vec2<f32>
-            67924..67928 'amp0': vec2<f32>
-            67930..67934 'shot': ptr<storage, ShotData, read_write>
-            67930..67942 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            67930..67945 'shot.unitary[4]': ref<storage, vec2<f32>, read_write>
-            67943..67944 '4': integer
-            67949..67979 'cplxMu...ry[5])': vec2<f32>
-            67957..67961 'amp1': vec2<f32>
-            67963..67967 'shot': ptr<storage, ShotData, read_write>
-            67963..67975 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            67963..67978 'shot.unitary[5]': ref<storage, vec2<f32>, read_write>
-            67976..67977 '5': integer
-            67999..68010 'stateVector': ref<storage, array<vec2<f32>>, read_write>
-            67999..68052 'stateV...fset0]': ref<storage, vec2<f32>, read_write>
-            68011..68017 'params': ShotParams
-            68011..68041 'params..._start': i32
-            68011..68051 'params...ffset0': i32
-            68044..68051 'offset0': i32
-            68055..68059 'new0': vec2<f32>
-            68077..68088 'stateVector': ref<storage, array<vec2<f32>>, read_write>
-            68077..68130 'stateV...fset1]': ref<storage, vec2<f32>, read_write>
-            68089..68095 'params': ShotParams
-            68089..68119 'params..._start': i32
-            68089..68129 'params...ffset1': i32
-            68122..68129 'offset1': i32
-            68133..68137 'new1': vec2<f32>
-            68159..68163 'shot': ptr<storage, ShotData, read_write>
-            68159..68171 'shot.op_type': ref<storage, u32, read_write>
-            68159..68187 'shot.o...RESETZ': bool
-            68159..68222 'shot.o..._NOISE': bool
-            68159..68238 'shot.o...!= 1.0': bool
-            68175..68187 'OPID_MRESETZ': u32
-            68191..68195 'shot': ptr<storage, ShotData, read_write>
-            68191..68203 'shot.op_type': ref<storage, u32, read_write>
-            68191..68222 'shot.o..._NOISE': bool
-            68207..68222 'OPID_LOSS_NOISE': u32
-            68226..68231 'scale': f32
-            68226..68238 'scale != 1.0': bool
-            68235..68238 '1.0': float
-            68370..68417 'update..., tid)': [error]
-            68393..68405 'u32(offset0)': u32
-            68397..68404 'offset0': i32
-            68407..68411 'new0': vec2<f32>
-            68413..68416 'tid': u32
-            68439..68486 'update..., tid)': [error]
-            68462..68474 'u32(offset1)': u32
-            68466..68473 'offset1': i32
-            68476..68480 'new1': vec2<f32>
-            68482..68485 'tid': u32
-            68533..68545 'summed_probs': ref<function, vec4<f32>, read_write>
-            68533..68548 'summed_probs[0]': ref<function, f32, read_write>
-            68546..68547 '0': integer
-            68552..68566 'cplxMag2(new0)': f32
-            68561..68565 'new0': vec2<f32>
-            68588..68600 'summed_probs': ref<function, vec4<f32>, read_write>
-            68588..68603 'summed_probs[1]': ref<function, f32, read_write>
-            68601..68602 '1': integer
-            68607..68621 'cplxMag2(new1)': f32
-            68616..68620 'new1': vec2<f32>
-            68673..68684 'entry_index': ref<function, i32, read_write>
-            68688..68694 'params': ShotParams
-            68688..68717 'params...r_shot': i32
-            68733..68738 'scale': f32
-            68733..68745 'scale == 1.0': bool
-            68733..68772 'scale ...PID_RZ': bool
-            68733..68804 'scale ...RESETZ': bool
-            68733..68839 'scale ..._NOISE': bool
-            68742..68745 '1.0': float
-            68749..68753 'shot': ptr<storage, ShotData, read_write>
-            68749..68761 'shot.op_type': ref<storage, u32, read_write>
-            68749..68772 'shot.o...PID_RZ': bool
-            68765..68772 'OPID_RZ': u32
-            68776..68780 'shot': ptr<storage, ShotData, read_write>
-            68776..68788 'shot.op_type': ref<storage, u32, read_write>
-            68776..68804 'shot.o...RESETZ': bool
-            68792..68804 'OPID_MRESETZ': u32
-            68808..68812 'shot': ptr<storage, ShotData, read_write>
-            68808..68820 'shot.op_type': ref<storage, u32, read_write>
-            68808..68839 'shot.o..._NOISE': bool
-            68824..68839 'OPID_LOSS_NOISE': u32
-            68933..68951 'qubitP...lities': ref<workgroup, [error], read_write>
-            68933..68956 'qubitP...s[tid]': [error]
-            68933..68961 'qubitP...].zero': [error]
-            68933..68965 'qubitP...ro[q1]': [error]
-            68952..68955 'tid': u32
-            68962..68964 'q1': u32
-            68968..68980 'summed_probs': ref<function, vec4<f32>, read_write>
-            68968..68983 'summed_probs[0]': ref<function, f32, read_write>
-            68981..68982 '0': integer
-            68993..69011 'qubitP...lities': ref<workgroup, [error], read_write>
-            68993..69016 'qubitP...s[tid]': [error]
-            68993..69020 'qubitP...d].one': [error]
-            68993..69024 'qubitP...ne[q1]': [error]
-            69012..69015 'tid': u32
-            69021..69023 'q1': u32
-            69028..69040 'summed_probs': ref<function, vec4<f32>, read_write>
-            69028..69043 'summed_probs[1]': ref<function, f32, read_write>
-            69041..69042 '1': integer
-            69069..69080 'workgroupId': u32
-            69087..69090 'tid': u32
-            69097..69099 'q1': u32
-            69106..69108 'q2': u32
-            69125..69131 'params': ShotParams
-            69134..69190 'get_sh...op */)': ShotParams
-            69150..69161 'workgroupId': u32
-            69163..69166 'tid': u32
-            69168..69169 '2': integer
-            69200..69204 'shot': ptr<storage, ShotData, read_write>
-            69207..69230 '&shots...t_idx]': ptr<storage, ShotData, read_write>
-            69208..69213 'shots': ref<storage, array<ShotData>, read_write>
-            69208..69230 'shots[...t_idx]': ref<storage, ShotData, read_write>
-            69214..69220 'params': ShotParams
-            69214..69229 'params.shot_idx': i32
-            69240..69252 'update_probs': bool
-            69255..69259 'shot': ptr<storage, ShotData, read_write>
-            69255..69267 'shot.op_type': ref<storage, u32, read_write>
-            69255..69278 'shot.o...PID_CZ': bool
-            69255..69306 'shot.o...ID_RZZ': bool
-            69271..69278 'OPID_CZ': u32
-            69282..69286 'shot': ptr<storage, ShotData, read_write>
-            69282..69294 'shot.op_type': ref<storage, u32, read_write>
-            69282..69306 'shot.o...ID_RZZ': bool
-            69298..69306 'OPID_RZZ': u32
-            69529..69537 'lowQubit': u32
-            69540..69563 'select... > q2)': u32
-            69547..69549 'q1': u32
-            69551..69553 'q2': u32
-            69555..69557 'q1': u32
-            69555..69562 'q1 > q2': bool
-            69560..69562 'q2': u32
-            69573..69580 'hiQubit': u32
-            69583..69606 'select... < q2)': u32
-            69590..69592 'q1': u32
-            69594..69596 'q2': u32
-            69598..69600 'q1': u32
-            69598..69605 'q1 < q2': bool
-            69603..69605 'q2': u32
-            69655..69666 'lowBitCount': u32
-            69669..69677 'lowQubit': u32
-            69687..69698 'midBitCount': u32
-            69701..69708 'hiQubit': u32
-            69701..69719 'hiQubi...wQubit': u32
-            69701..69723 'hiQubi...it - 1': u32
-            69711..69719 'lowQubit': u32
-            69722..69723 '1': integer
-            69733..69743 'hiBitCount': u32
-            69746..69762 'u32(QU...COUNT)': u32
-            69746..69772 'u32(QU...iQubit': u32
-            69746..69776 'u32(QU...it - 1': u32
-            69750..69761 'QUBIT_COUNT': i32
-            69765..69772 'hiQubit': u32
-            69775..69776 '1': integer
-            69907..69914 'lowMask': i32
-            69917..69939 '(1 << ...t) - 1': integer
-            69918..69919 '1': integer
-            69918..69934 '1 << l...tCount': integer
-            69923..69934 'lowBitCount': u32
-            69938..69939 '1': integer
-            69949..69956 'midMask': i32
-            69959..69997 '(1 << ...)) - 1': integer
-            69959..70007 '(1 << ...owMask': i32
-            69960..69961 '1': integer
-            69960..69992 '1 << (...Count)': integer
-            69966..69977 'lowBitCount': u32
-            69966..69991 'lowBit...tCount': u32
-            69980..69991 'midBitCount': u32
-            69996..69997 '1': integer
-            70000..70007 'lowMask': i32
-            70017..70023 'hiMask': i32
-            70026..70053 '(1 << ...)) - 1': integer
-            70026..70063 '(1 << ...idMask': i32
-            70026..70073 '(1 << ...owMask': i32
-            70027..70028 '1': integer
-            70027..70048 '1 << u...COUNT)': integer
-            70032..70048 'u32(QU...COUNT)': u32
-            70036..70047 'QUBIT_COUNT': i32
-            70052..70053 '1': integer
-            70056..70063 'midMask': i32
-            70066..70073 'lowMask': i32
-            70214..70225 'entry_index': ref<function, i32, read_write>
-            70228..70234 'params': ShotParams
-            70228..70253 'params...n_shot': i32
-            70263..70275 'summed_probs': ref<function, vec4<f32>, read_write>
-            70285..70292 'vec4f()': vec4<f32>
-            70308..70309 'i': ref<function, i32, read_write>
-            70312..70313 '0': integer
-            70315..70316 'i': ref<function, i32, read_write>
-            70315..70339 'i < pa...ations': bool
-            70319..70325 'params': ShotParams
-            70319..70339 'params...ations': i32
-            70341..70342 'i': ref<function, i32, read_write>
-            70407..70415 'offset00': i32
-            70423..70479 '(entry... << 1)': i32
-            70423..70511 '(entry... << 2)': i32
-            70424..70435 'entry_index': ref<function, i32, read_write>
-            70424..70445 'entry_...owMask': i32
-            70438..70445 'lowMask': i32
-            70450..70478 '(entry...) << 1': i32
-            70451..70462 'entry_index': ref<function, i32, read_write>
-            70451..70472 'entry_...idMask': i32
-            70465..70472 'midMask': i32
-            70477..70478 '1': integer
-            70483..70510 '(entry...) << 2': i32
-            70484..70495 'entry_index': ref<function, i32, read_write>
-            70484..70504 'entry_...hiMask': i32
-            70498..70504 'hiMask': i32
-            70509..70510 '2': integer
-            70525..70533 'offset01': i32
-            70541..70549 'offset00': i32
-            70541..70561 'offset...<< q2)': i32
-            70553..70554 '1': integer
-            70553..70560 '1 << q2': integer
-            70558..70560 'q2': u32
-            70575..70583 'offset10': i32
-            70591..70599 'offset00': i32
-            70591..70611 'offset...<< q1)': i32
-            70603..70604 '1': integer
-            70603..70610 '1 << q1': integer
-            70608..70610 'q1': u32
-            70625..70633 'offset11': i32
-            70641..70649 'offset10': i32
-            70641..70661 'offset...<< q2)': i32
-            70653..70654 '1': integer
-            70653..70660 '1 << q2': integer
-            70658..70660 'q2': u32
-            70676..70695 'can_sk...essing': bool
-            70711..70820 '((u32(... != 0)': bool
-            70712..70755 '(u32(o...) != 0': bool
-            70713..70726 'u32(offset00)': u32
-            70713..70749 'u32(of...0_mask': u32
-            70717..70725 'offset00': i32
-            70729..70733 'shot': ptr<storage, ShotData, read_write>
-            70729..70749 'shot.q...0_mask': ref<storage, u32, read_write>
-            70754..70755 '0': integer
-            70773..70819 '(~(u32...) != 0': bool
-            70774..70790 '~(u32(...et11))': u32
-            70774..70813 '~(u32(...1_mask': u32
-            70776..70789 'u32(offset11)': u32
-            70780..70788 'offset11': i32
-            70793..70797 'shot': ptr<storage, ShotData, read_write>
-            70793..70813 'shot.q...1_mask': ref<storage, u32, read_write>
-            70818..70819 '0': integer
-            70834..70854 '!can_s...essing': bool
-            70835..70854 'can_sk...essing': bool
-            70876..70880 'shot': ptr<storage, ShotData, read_write>
-            70876..70888 'shot.op_type': ref<storage, u32, read_write>
-            70908..70915 'OPID_CZ': u32
-            70938..70943 'amp11': vec2<f32>
-            70953..70964 'stateVector': ref<storage, array<vec2<f32>>, read_write>
-            70953..71007 'stateV...set11]': ref<storage, vec2<f32>, read_write>
-            70965..70971 'params': ShotParams
-            70965..70995 'params..._start': i32
-            70965..71006 'params...fset11': i32
-            70998..71006 'offset11': i32
-            71025..71036 'stateVector': ref<storage, array<vec2<f32>>, read_write>
-            71025..71079 'stateV...set11]': ref<storage, vec2<f32>, read_write>
-            71037..71043 'params': ShotParams
-            71037..71067 'params..._start': i32
-            71037..71078 'params...fset11': i32
-            71070..71078 'offset11': i32
-            71082..71096 'cplxNeg(amp11)': vec2<f32>
-            71090..71095 'amp11': vec2<f32>
-            71219..71227 'OPID_RZZ': u32
-            71341..71346 'amp01': vec2<f32>
-            71356..71367 'stateVector': ref<storage, array<vec2<f32>>, read_write>
-            71356..71410 'stateV...set01]': ref<storage, vec2<f32>, read_write>
-            71368..71374 'params': ShotParams
-            71368..71398 'params..._start': i32
-            71368..71409 'params...fset01': i32
-            71401..71409 'offset01': i32
-            71432..71437 'amp10': vec2<f32>
-            71447..71458 'stateVector': ref<storage, array<vec2<f32>>, read_write>
-            71447..71501 'stateV...set10]': ref<storage, vec2<f32>, read_write>
-            71459..71465 'params': ShotParams
-            71459..71489 'params..._start': i32
-            71459..71500 'params...fset10': i32
-            71492..71500 'offset10': i32
-            71625..71636 'stateVector': ref<storage, array<vec2<f32>>, read_write>
-            71625..71679 'stateV...set01]': ref<storage, vec2<f32>, read_write>
-            71637..71643 'params': ShotParams
-            71637..71667 'params..._start': i32
-            71637..71678 'params...fset01': i32
-            71670..71678 'offset01': i32
-            71682..71713 'cplxMu...ry[5])': vec2<f32>
-            71690..71695 'amp01': vec2<f32>
-            71697..71701 'shot': ptr<storage, ShotData, read_write>
-            71697..71709 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            71697..71712 'shot.unitary[5]': ref<storage, vec2<f32>, read_write>
-            71710..71711 '5': integer
-            71731..71742 'stateVector': ref<storage, array<vec2<f32>>, read_write>
-            71731..71785 'stateV...set10]': ref<storage, vec2<f32>, read_write>
-            71743..71749 'params': ShotParams
-            71743..71773 'params..._start': i32
-            71743..71784 'params...fset10': i32
-            71776..71784 'offset10': i32
-            71788..71820 'cplxMu...y[10])': vec2<f32>
-            71796..71801 'amp10': vec2<f32>
-            71803..71807 'shot': ptr<storage, ShotData, read_write>
-            71803..71815 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            71803..71819 'shot.u...ry[10]': ref<storage, vec2<f32>, read_write>
-            71816..71818 '10': integer
-            71853..71860 'OPID_CX': u32
-            72000..72005 'amp00': vec2<f32>
-            72015..72026 'stateVector': ref<storage, array<vec2<f32>>, read_write>
-            72015..72069 'stateV...set00]': ref<storage, vec2<f32>, read_write>
-            72027..72033 'params': ShotParams
-            72027..72057 'params..._start': i32
-            72027..72068 'params...fset00': i32
-            72060..72068 'offset00': i32
-            72091..72096 'amp01': vec2<f32>
-            72106..72117 'stateVector': ref<storage, array<vec2<f32>>, read_write>
-            72106..72160 'stateV...set01]': ref<storage, vec2<f32>, read_write>
-            72118..72124 'params': ShotParams
-            72118..72148 'params..._start': i32
-            72118..72159 'params...fset01': i32
-            72151..72159 'offset01': i32
-            72182..72187 'amp10': vec2<f32>
-            72197..72208 'stateVector': ref<storage, array<vec2<f32>>, read_write>
-            72197..72251 'stateV...set10]': ref<storage, vec2<f32>, read_write>
-            72209..72215 'params': ShotParams
-            72209..72239 'params..._start': i32
-            72209..72250 'params...fset10': i32
-            72242..72250 'offset10': i32
-            72273..72278 'amp11': vec2<f32>
-            72288..72299 'stateVector': ref<storage, array<vec2<f32>>, read_write>
-            72288..72342 'stateV...set11]': ref<storage, vec2<f32>, read_write>
-            72300..72306 'params': ShotParams
-            72300..72330 'params..._start': i32
-            72300..72341 'params...fset11': i32
-            72333..72341 'offset11': i32
-            72360..72371 'stateVector': ref<storage, array<vec2<f32>>, read_write>
-            72360..72414 'stateV...set10]': ref<storage, vec2<f32>, read_write>
-            72372..72378 'params': ShotParams
-            72372..72402 'params..._start': i32
-            72372..72413 'params...fset10': i32
-            72405..72413 'offset10': i32
-            72417..72422 'amp11': vec2<f32>
-            72440..72451 'stateVector': ref<storage, array<vec2<f32>>, read_write>
-            72440..72494 'stateV...set11]': ref<storage, vec2<f32>, read_write>
-            72452..72458 'params': ShotParams
-            72452..72482 'params..._start': i32
-            72452..72493 'params...fset11': i32
-            72485..72493 'offset11': i32
-            72497..72502 'amp10': vec2<f32>
-            72520..72532 'summed_probs': ref<function, vec4<f32>, read_write>
-            72520..72535 'summed_probs[0]': ref<function, f32, read_write>
-            72533..72534 '0': integer
-            72540..72555 'cplxMag2(amp00)': f32
-            72540..72573 'cplxMa...amp01)': f32
-            72549..72554 'amp00': vec2<f32>
-            72558..72573 'cplxMag2(amp01)': f32
-            72567..72572 'amp01': vec2<f32>
-            72592..72604 'summed_probs': ref<function, vec4<f32>, read_write>
-            72592..72607 'summed_probs[1]': ref<function, f32, read_write>
-            72605..72606 '1': integer
-            72612..72627 'cplxMag2(amp11)': f32
-            72612..72645 'cplxMa...amp10)': f32
-            72621..72626 'amp11': vec2<f32>
-            72630..72645 'cplxMag2(amp10)': f32
-            72639..72644 'amp10': vec2<f32>
-            72664..72676 'summed_probs': ref<function, vec4<f32>, read_write>
-            72664..72679 'summed_probs[2]': ref<function, f32, read_write>
-            72677..72678 '2': integer
-            72684..72699 'cplxMag2(amp00)': f32
-            72684..72717 'cplxMa...amp11)': f32
-            72693..72698 'amp00': vec2<f32>
-            72702..72717 'cplxMag2(amp11)': f32
-            72711..72716 'amp11': vec2<f32>
-            72736..72748 'summed_probs': ref<function, vec4<f32>, read_write>
-            72736..72751 'summed_probs[3]': ref<function, f32, read_write>
-            72749..72750 '3': integer
-            72756..72771 'cplxMag2(amp01)': f32
-            72756..72789 'cplxMa...amp10)': f32
-            72765..72770 'amp01': vec2<f32>
-            72774..72789 'cplxMag2(amp10)': f32
-            72783..72788 'amp10': vec2<f32>
-            72823..72830 'OPID_CY': u32
-            72923..72928 'amp00': vec2<f32>
-            72938..72949 'stateVector': ref<storage, array<vec2<f32>>, read_write>
-            72938..72992 'stateV...set00]': ref<storage, vec2<f32>, read_write>
-            72950..72956 'params': ShotParams
-            72950..72980 'params..._start': i32
-            72950..72991 'params...fset00': i32
-            72983..72991 'offset00': i32
-            73014..73019 'amp01': vec2<f32>
-            73029..73040 'stateVector': ref<storage, array<vec2<f32>>, read_write>
-            73029..73083 'stateV...set01]': ref<storage, vec2<f32>, read_write>
-            73041..73047 'params': ShotParams
-            73041..73071 'params..._start': i32
-            73041..73082 'params...fset01': i32
-            73074..73082 'offset01': i32
-            73105..73110 'amp10': vec2<f32>
-            73120..73131 'stateVector': ref<storage, array<vec2<f32>>, read_write>
-            73120..73174 'stateV...set10]': ref<storage, vec2<f32>, read_write>
-            73132..73138 'params': ShotParams
-            73132..73162 'params..._start': i32
-            73132..73173 'params...fset10': i32
-            73165..73173 'offset10': i32
-            73196..73201 'amp11': vec2<f32>
-            73211..73222 'stateVector': ref<storage, array<vec2<f32>>, read_write>
-            73211..73265 'stateV...set11]': ref<storage, vec2<f32>, read_write>
-            73223..73229 'params': ShotParams
-            73223..73253 'params..._start': i32
-            73223..73264 'params...fset11': i32
-            73256..73264 'offset11': i32
-            73283..73294 'stateVector': ref<storage, array<vec2<f32>>, read_write>
-            73283..73337 'stateV...set10]': ref<storage, vec2<f32>, read_write>
-            73295..73301 'params': ShotParams
-            73295..73325 'params..._start': i32
-            73295..73336 'params...fset10': i32
-            73328..73336 'offset10': i32
-            73340..73364 'vec2f(...p11.x)': vec2<f32>
-            73346..73351 'amp11': vec2<f32>
-            73346..73353 'amp11.y': f32
-            73355..73363 '-amp11.x': f32
-            73356..73361 'amp11': vec2<f32>
-            73356..73363 'amp11.x': f32
-            73395..73406 'stateVector': ref<storage, array<vec2<f32>>, read_write>
-            73395..73449 'stateV...set11]': ref<storage, vec2<f32>, read_write>
-            73407..73413 'params': ShotParams
-            73407..73437 'params..._start': i32
-            73407..73448 'params...fset11': i32
-            73440..73448 'offset11': i32
-            73452..73476 'vec2f(...p10.x)': vec2<f32>
-            73458..73466 '-amp10.y': f32
-            73459..73464 'amp10': vec2<f32>
-            73459..73466 'amp10.y': f32
-            73468..73473 'amp10': vec2<f32>
-            73468..73475 'amp10.x': f32
-            73506..73518 'summed_probs': ref<function, vec4<f32>, read_write>
-            73506..73521 'summed_probs[0]': ref<function, f32, read_write>
-            73519..73520 '0': integer
-            73526..73541 'cplxMag2(amp00)': f32
-            73526..73559 'cplxMa...amp01)': f32
-            73535..73540 'amp00': vec2<f32>
-            73544..73559 'cplxMag2(amp01)': f32
-            73553..73558 'amp01': vec2<f32>
-            73578..73590 'summed_probs': ref<function, vec4<f32>, read_write>
-            73578..73593 'summed_probs[1]': ref<function, f32, read_write>
-            73591..73592 '1': integer
-            73598..73613 'cplxMag2(amp11)': f32
-            73598..73631 'cplxMa...amp10)': f32
-            73607..73612 'amp11': vec2<f32>
-            73616..73631 'cplxMag2(amp10)': f32
-            73625..73630 'amp10': vec2<f32>
-            73650..73662 'summed_probs': ref<function, vec4<f32>, read_write>
-            73650..73665 'summed_probs[2]': ref<function, f32, read_write>
-            73663..73664 '2': integer
-            73670..73685 'cplxMag2(amp00)': f32
-            73670..73703 'cplxMa...amp11)': f32
-            73679..73684 'amp00': vec2<f32>
-            73688..73703 'cplxMag2(amp11)': f32
-            73697..73702 'amp11': vec2<f32>
-            73722..73734 'summed_probs': ref<function, vec4<f32>, read_write>
-            73722..73737 'summed_probs[3]': ref<function, f32, read_write>
-            73735..73736 '3': integer
-            73742..73757 'cplxMag2(amp01)': f32
-            73742..73775 'cplxMa...amp10)': f32
-            73751..73756 'amp01': vec2<f32>
-            73760..73775 'cplxMag2(amp10)': f32
-            73769..73774 'amp10': vec2<f32>
-            73926..73932 'states': array<vec2<f32>, 4>
-            73935..74271 'array<...     )': array<vec2<f32>, 4>
-            73971..73982 'stateVector': ref<storage, array<vec2<f32>>, read_write>
-            73971..74025 'stateV...set00]': ref<storage, vec2<f32>, read_write>
-            73983..73989 'params': ShotParams
-            73983..74013 'params..._start': i32
-            73983..74024 'params...fset00': i32
-            74016..74024 'offset00': i32
-            74047..74058 'stateVector': ref<storage, array<vec2<f32>>, read_write>
-            74047..74101 'stateV...set01]': ref<storage, vec2<f32>, read_write>
-            74059..74065 'params': ShotParams
-            74059..74089 'params..._start': i32
-            74059..74100 'params...fset01': i32
-            74092..74100 'offset01': i32
-            74123..74134 'stateVector': ref<storage, array<vec2<f32>>, read_write>
-            74123..74177 'stateV...set10]': ref<storage, vec2<f32>, read_write>
-            74135..74141 'params': ShotParams
-            74135..74165 'params..._start': i32
-            74135..74176 'params...fset10': i32
-            74168..74176 'offset10': i32
-            74199..74210 'stateVector': ref<storage, array<vec2<f32>>, read_write>
-            74199..74253 'stateV...set11]': ref<storage, vec2<f32>, read_write>
-            74211..74217 'params': ShotParams
-            74211..74241 'params..._start': i32
-            74211..74252 'params...fset11': i32
-            74244..74252 'offset11': i32
-            74351..74359 'result00': vec2<f32>
-            74362..74417 'innerP...tates)': vec2<f32>
-            74375..74408 'getUni...dx, 0)': array<vec2<f32>, 4>
-            74389..74395 'params': ShotParams
-            74389..74404 'params.shot_idx': i32
-            74406..74407 '0': integer
-            74410..74416 'states': array<vec2<f32>, 4>
-            74439..74447 'result01': vec2<f32>
-            74450..74505 'innerP...tates)': vec2<f32>
-            74463..74496 'getUni...dx, 1)': array<vec2<f32>, 4>
-            74477..74483 'params': ShotParams
-            74477..74492 'params.shot_idx': i32
-            74494..74495 '1': integer
-            74498..74504 'states': array<vec2<f32>, 4>
-            74527..74535 'result10': vec2<f32>
-            74538..74593 'innerP...tates)': vec2<f32>
-            74551..74584 'getUni...dx, 2)': array<vec2<f32>, 4>
-            74565..74571 'params': ShotParams
-            74565..74580 'params.shot_idx': i32
-            74582..74583 '2': integer
-            74586..74592 'states': array<vec2<f32>, 4>
-            74615..74623 'result11': vec2<f32>
-            74626..74681 'innerP...tates)': vec2<f32>
-            74639..74672 'getUni...dx, 3)': array<vec2<f32>, 4>
-            74653..74659 'params': ShotParams
-            74653..74668 'params.shot_idx': i32
-            74670..74671 '3': integer
-            74674..74680 'states': array<vec2<f32>, 4>
-            74741..74752 'stateVector': ref<storage, array<vec2<f32>>, read_write>
-            74741..74795 'stateV...set00]': ref<storage, vec2<f32>, read_write>
-            74753..74759 'params': ShotParams
-            74753..74783 'params..._start': i32
-            74753..74794 'params...fset00': i32
-            74786..74794 'offset00': i32
-            74798..74806 'result00': vec2<f32>
-            74824..74835 'stateVector': ref<storage, array<vec2<f32>>, read_write>
-            74824..74878 'stateV...set01]': ref<storage, vec2<f32>, read_write>
-            74836..74842 'params': ShotParams
-            74836..74866 'params..._start': i32
-            74836..74877 'params...fset01': i32
-            74869..74877 'offset01': i32
-            74881..74889 'result01': vec2<f32>
-            74907..74918 'stateVector': ref<storage, array<vec2<f32>>, read_write>
-            74907..74961 'stateV...set10]': ref<storage, vec2<f32>, read_write>
-            74919..74925 'params': ShotParams
-            74919..74949 'params..._start': i32
-            74919..74960 'params...fset10': i32
-            74952..74960 'offset10': i32
-            74964..74972 'result10': vec2<f32>
-            74990..75001 'stateVector': ref<storage, array<vec2<f32>>, read_write>
-            74990..75044 'stateV...set11]': ref<storage, vec2<f32>, read_write>
-            75002..75008 'params': ShotParams
-            75002..75032 'params..._start': i32
-            75002..75043 'params...fset11': i32
-            75035..75043 'offset11': i32
-            75047..75055 'result11': vec2<f32>
-            75141..75153 'summed_probs': ref<function, vec4<f32>, read_write>
-            75141..75156 'summed_probs[0]': ref<function, f32, read_write>
-            75154..75155 '0': integer
-            75161..75179 'cplxMa...ult00)': f32
-            75161..75200 'cplxMa...ult01)': f32
-            75170..75178 'result00': vec2<f32>
-            75182..75200 'cplxMa...ult01)': f32
-            75191..75199 'result01': vec2<f32>
-            75219..75231 'summed_probs': ref<function, vec4<f32>, read_write>
-            75219..75234 'summed_probs[1]': ref<function, f32, read_write>
-            75232..75233 '1': integer
-            75239..75257 'cplxMa...ult10)': f32
-            75239..75278 'cplxMa...ult11)': f32
-            75248..75256 'result10': vec2<f32>
-            75260..75278 'cplxMa...ult11)': f32
-            75269..75277 'result11': vec2<f32>
-            75297..75309 'summed_probs': ref<function, vec4<f32>, read_write>
-            75297..75312 'summed_probs[2]': ref<function, f32, read_write>
-            75310..75311 '2': integer
-            75317..75335 'cplxMa...ult00)': f32
-            75317..75356 'cplxMa...ult10)': f32
-            75326..75334 'result00': vec2<f32>
-            75338..75356 'cplxMa...ult10)': f32
-            75347..75355 'result10': vec2<f32>
-            75375..75387 'summed_probs': ref<function, vec4<f32>, read_write>
-            75375..75390 'summed_probs[3]': ref<function, f32, read_write>
-            75388..75389 '3': integer
-            75395..75413 'cplxMa...ult01)': f32
-            75395..75434 'cplxMa...ult11)': f32
-            75404..75412 'result01': vec2<f32>
-            75416..75434 'cplxMa...ult11)': f32
-            75425..75433 'result11': vec2<f32>
-            75484..75495 'entry_index': ref<function, i32, read_write>
-            75499..75505 'params': ShotParams
-            75499..75528 'params...r_shot': i32
-            75624..75636 'update_probs': bool
-            75694..75712 'qubitP...lities': ref<workgroup, [error], read_write>
-            75694..75717 'qubitP...s[tid]': [error]
-            75694..75722 'qubitP...].zero': [error]
-            75694..75726 'qubitP...ro[q1]': [error]
-            75713..75716 'tid': u32
-            75723..75725 'q1': u32
-            75729..75741 'summed_probs': ref<function, vec4<f32>, read_write>
-            75729..75744 'summed_probs[0]': ref<function, f32, read_write>
-            75742..75743 '0': integer
-            75754..75772 'qubitP...lities': ref<workgroup, [error], read_write>
-            75754..75777 'qubitP...s[tid]': [error]
-            75754..75781 'qubitP...d].one': [error]
-            75754..75785 'qubitP...ne[q1]': [error]
-            75773..75776 'tid': u32
-            75782..75784 'q1': u32
-            75789..75801 'summed_probs': ref<function, vec4<f32>, read_write>
-            75789..75804 'summed_probs[1]': ref<function, f32, read_write>
-            75802..75803 '1': integer
-            75814..75832 'qubitP...lities': ref<workgroup, [error], read_write>
-            75814..75837 'qubitP...s[tid]': [error]
-            75814..75842 'qubitP...].zero': [error]
-            75814..75846 'qubitP...ro[q2]': [error]
-            75833..75836 'tid': u32
-            75843..75845 'q2': u32
-            75849..75861 'summed_probs': ref<function, vec4<f32>, read_write>
-            75849..75864 'summed_probs[2]': ref<function, f32, read_write>
-            75862..75863 '2': integer
-            75874..75892 'qubitP...lities': ref<workgroup, [error], read_write>
-            75874..75897 'qubitP...s[tid]': [error]
-            75874..75901 'qubitP...d].one': [error]
-            75874..75905 'qubitP...ne[q2]': [error]
-            75893..75896 'tid': u32
-            75902..75904 'q2': u32
-            75909..75921 'summed_probs': ref<function, vec4<f32>, read_write>
-            75909..75924 'summed_probs[3]': ref<function, f32, read_write>
-            75922..75923 '3': integer
-            75961..75972 'workgroupId': u32
-            75979..75982 'tid': u32
-            75999..76005 'params': ShotParams
-            76008..76075 'get_sh...es */)': ShotParams
-            76024..76035 'workgroupId': u32
-            76037..76040 'tid': u32
-            76042..76043 '0': integer
-            76246..76250 'shot': ptr<storage, ShotData, read_write>
-            76253..76276 '&shots...t_idx]': ptr<storage, ShotData, read_write>
-            76254..76259 'shots': ref<storage, array<ShotData>, read_write>
-            76254..76276 'shots[...t_idx]': ref<storage, ShotData, read_write>
-            76260..76266 'params': ShotParams
-            76260..76275 'params.shot_idx': i32
-            76387..76400 'bit_flip_mask': u32
-            76403..76434 'bitcas...[0].x)': u32
-            76416..76420 'shot': ptr<storage, ShotData, read_write>
-            76416..76428 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            76416..76431 'shot.unitary[0]': ref<storage, vec2<f32>, read_write>
-            76416..76433 'shot.u...y[0].x': ref<storage, f32, read_write>
-            76429..76430 '0': integer
-            76444..76459 'phase_flip_mask': u32
-            76462..76493 'bitcas...[0].y)': u32
-            76475..76479 'shot': ptr<storage, ShotData, read_write>
-            76475..76487 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            76475..76490 'shot.unitary[0]': ref<storage, vec2<f32>, read_write>
-            76475..76492 'shot.u...y[0].y': ref<storage, f32, read_write>
-            76488..76489 '0': integer
-            76544..76557 'bit_flip_mask': u32
-            76544..76563 'bit_fl... == 0u': bool
-            76544..76588 'bit_fl... == 0u': bool
-            76561..76563 '0u': u32
-            76567..76582 'phase_flip_mask': u32
-            76567..76588 'phase_... == 0u': bool
-            76586..76588 '0u': u32
-            76623..76634 'entry_index': ref<function, i32, read_write>
-            76637..76643 'params': ShotParams
-            76637..76662 'params...n_shot': i32
-            76678..76679 'i': ref<function, i32, read_write>
-            76682..76683 '0': integer
-            76685..76686 'i': ref<function, i32, read_write>
-            76685..76709 'i < pa...ations': bool
-            76689..76695 'params': ShotParams
-            76689..76709 'params...ations': i32
-            76711..76712 'i': ref<function, i32, read_write>
-            76840..76852 'target_index': i32
-            76855..76866 'entry_index': ref<function, i32, read_write>
-            76855..76887 'entry_..._mask)': i32
-            76869..76887 'i32(bi..._mask)': i32
-            76873..76886 'bit_flip_mask': u32
-            77002..77014 'negate_index': f32
-            77022..77100 'select... != 0)': float
-            77029..77032 '1.0': float
-            77034..77038 '-1.0': float
-            77035..77038 '1.0': float
-            77040..77099 '(count...) != 0': bool
-            77041..77089 'countO...mask))': i32
-            77041..77093 'countO...)) & 1': i32
-            77054..77065 'entry_index': ref<function, i32, read_write>
-            77054..77088 'entry_..._mask)': i32
-            77068..77088 'i32(ph..._mask)': i32
-            77072..77087 'phase_flip_mask': u32
-            77092..77093 '1': integer
-            77098..77099 '0': integer
-            77115..77128 'bit_flip_mask': u32
-            77115..77134 'bit_fl... == 0u': bool
-            77115..77158 'bit_fl...= -1.0': bool
-            77132..77134 '0u': u32
-            77138..77150 'negate_index': f32
-            77138..77158 'negate...= -1.0': bool
-            77154..77158 '-1.0': float
-            77155..77158 '1.0': float
-            77262..77273 'stateVector': ref<storage, array<vec2<f32>>, read_write>
-            77262..77319 'stateV...index]': ref<storage, vec2<f32>, read_write>
-            77274..77280 'params': ShotParams
-            77274..77304 'params..._start': i32
-            77274..77318 'params..._index': i32
-            77307..77318 'entry_index': ref<function, i32, read_write>
-            77322..77388 'cplxNe...ndex])': vec2<f32>
-            77330..77341 'stateVector': ref<storage, array<vec2<f32>>, read_write>
-            77330..77387 'stateV...index]': ref<storage, vec2<f32>, read_write>
-            77342..77348 'params': ShotParams
-            77342..77372 'params..._start': i32
-            77342..77386 'params..._index': i32
-            77375..77386 'entry_index': ref<function, i32, read_write>
-            77711..77720 'amp_entry': vec2<f32>
-            77730..77741 'stateVector': ref<storage, array<vec2<f32>>, read_write>
-            77730..77787 'stateV...index]': ref<storage, vec2<f32>, read_write>
-            77742..77748 'params': ShotParams
-            77742..77772 'params..._start': i32
-            77742..77786 'params..._index': i32
-            77775..77786 'entry_index': ref<function, i32, read_write>
-            77805..77815 'amp_target': vec2<f32>
-            77825..77836 'stateVector': ref<storage, array<vec2<f32>>, read_write>
-            77825..77883 'stateV...index]': ref<storage, vec2<f32>, read_write>
-            77837..77843 'params': ShotParams
-            77837..77867 'params..._start': i32
-            77837..77882 'params..._index': i32
-            77870..77882 'target_index': i32
-            78012..78025 'negate_target': f32
-            78033..78112 'select... != 0)': float
-            78040..78043 '1.0': float
-            78045..78049 '-1.0': float
-            78046..78049 '1.0': float
-            78051..78111 '(count...) != 0': bool
-            78052..78101 'countO...mask))': i32
-            78052..78105 'countO...)) & 1': i32
-            78065..78077 'target_index': i32
-            78065..78100 'target..._mask)': i32
-            78080..78100 'i32(ph..._mask)': i32
-            78084..78099 'phase_flip_mask': u32
-            78104..78105 '1': integer
-            78110..78111 '0': integer
-            78393..78404 'stateVector': ref<storage, array<vec2<f32>>, read_write>
-            78393..78450 'stateV...index]': ref<storage, vec2<f32>, read_write>
-            78405..78411 'params': ShotParams
-            78405..78435 'params..._start': i32
-            78405..78449 'params..._index': i32
-            78438..78449 'entry_index': ref<function, i32, read_write>
-            78453..78498 'cplxMu... 0.0))': vec2<f32>
-            78461..78471 'amp_target': vec2<f32>
-            78473..78497 'vec2f(..., 0.0)': vec2<f32>
-            78479..78491 'negate_index': f32
-            78493..78496 '0.0': float
-            78512..78523 'stateVector': ref<storage, array<vec2<f32>>, read_write>
-            78512..78570 'stateV...index]': ref<storage, vec2<f32>, read_write>
-            78524..78530 'params': ShotParams
-            78524..78554 'params..._start': i32
-            78524..78569 'params..._index': i32
-            78557..78569 'target_index': i32
-            78573..78618 'cplxMu... 0.0))': vec2<f32>
-            78581..78590 'amp_entry': vec2<f32>
-            78592..78617 'vec2f(..., 0.0)': vec2<f32>
-            78598..78611 'negate_target': f32
-            78613..78616 '0.0': float
-            78690..78701 'entry_index': ref<function, i32, read_write>
-            78705..78711 'params': ShotParams
-            78705..78734 'params...r_shot': i32
-            79027..79035 'shot_idx': u32
-            79042..79048 'op_idx': u32
-            79055..79070 'noise_table_idx': u32
-            79112..79116 'shot': ptr<storage, ShotData, read_write>
-            79119..79135 '&shots...t_idx]': ptr<storage, ShotData, read_write>
-            79120..79125 'shots': ref<storage, array<ShotData>, read_write>
-            79120..79135 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            79126..79134 'shot_idx': u32
-            79145..79150 'table': [error]
-            79153..79205 '&batch...e_idx]': [error]
-            79154..79164 'batch_data': ref<storage, BatchData, read>
-            79154..79188 'batch_...tables': ref<storage, [error], read>
-            79154..79205 'batch_...e_idx]': [error]
-            79189..79204 'noise_table_idx': u32
-            79372..79379 'rand_lo': u32
-            79382..79405 'next_r...t_idx)': u32
-            79396..79404 'shot_idx': u32
-            79415..79422 'rand_hi': u32
-            79425..79448 'next_r...t_idx)': u32
-            79425..79462 'next_r...FFFFFu': u32
-            79439..79447 'shot_idx': u32
-            79451..79462 '0x7FFFFFFFu': u32
-            79536..79549 'noise_prob_lo': [error]
-            79552..79557 'table': [error]
-            79552..79578 'table....ity_lo': [error]
-            79588..79601 'noise_prob_hi': [error]
-            79604..79609 'table': [error]
-            79604..79630 'table....ity_hi': [error]
-            79817..79824 'rand_hi': u32
-            79817..79840 'rand_h...rob_hi': [error]
-            79817..79898 'rand_h...ob_lo)': [error]
-            79827..79840 'noise_prob_hi': [error]
-            79845..79852 'rand_hi': u32
-            79845..79869 'rand_h...rob_hi': [error]
-            79845..79897 'rand_h...rob_lo': [error]
-            79856..79869 'noise_prob_hi': [error]
-            79873..79880 'rand_lo': u32
-            79873..79897 'rand_l...rob_lo': [error]
-            79884..79897 'noise_prob_lo': [error]
-            79958..79962 'shot': ptr<storage, ShotData, read_write>
-            79958..79970 'shot.op_type': ref<storage, u32, read_write>
-            79973..79980 'OPID_ID': u32
-            79990..79994 'shot': ptr<storage, ShotData, read_write>
-            79990..80001 'shot.op_idx': ref<storage, u32, read_write>
-            80004..80010 'op_idx': u32
-            80020..80024 'shot': ptr<storage, ShotData, read_write>
-            80020..80052 'shot.q...p_mask': ref<storage, u32, read_write>
-            80055..80057 '0u': u32
-            80074..80107 'Correl...u, 0u)': CorrelatedNoiseSample
-            80096..80098 '0u': u32
-            80100..80102 '0u': u32
-            80104..80106 '0u': u32
-            80207..80212 'start': i32
-            80215..80238 'i32(ta...ffset)': i32
-            80219..80224 'table': [error]
-            80219..80237 'table....offset': [error]
-            80248..80253 'count': i32
-            80256..80278 'i32(ta...count)': i32
-            80260..80265 'table': [error]
-            80260..80277 'table...._count': [error]
-            80288..80297 'entry_idx': i32
-            80300..80357 'binary...count)': i32
-            80326..80333 'rand_lo': u32
-            80335..80342 'rand_hi': u32
-            80344..80349 'start': i32
-            80351..80356 'count': i32
-            80367..80372 'entry': [error]
-            80375..80430 '&batch...y_idx]': [error]
-            80376..80386 'batch_data': ref<storage, BatchData, read>
-            80376..80411 'batch_...ntries': ref<storage, [error], read>
-            80376..80430 'batch_...y_idx]': [error]
-            80412..80417 'start': i32
-            80412..80429 'start ...ry_idx': i32
-            80420..80429 'entry_idx': i32
-            80444..80503 'Correl...is_hi)': CorrelatedNoiseSample
-            80466..80468 '1u': u32
-            80470..80475 'entry': [error]
-            80470..80485 'entry.paulis_lo': [error]
-            80487..80492 'entry': [error]
-            80487..80502 'entry.paulis_hi': [error]
-            80922..80931 'paulis_lo': u32
-            80938..80947 'paulis_hi': u32
-            80954..80965 'qubit_count': u32
-            80972..80973 'i': u32
-            80997..81009 'bit_position': u32
-            81012..81039 '(qubit...) * 3u': u32
-            81013..81024 'qubit_count': u32
-            81013..81029 'qubit_...t - 1u': u32
-            81013..81033 'qubit_...1u - i': u32
-            81027..81029 '1u': u32
-            81032..81033 'i': u32
-            81037..81039 '3u': u32
-            81049..81061 'bit_position': u32
-            81049..81066 'bit_po...n + 3u': u32
-            81049..81073 'bit_po...<= 32u': bool
-            81064..81066 '3u': u32
-            81070..81073 '32u': u32
-            81092..81126 '(pauli...& 0x7u': u32
-            81093..81102 'paulis_lo': u32
-            81093..81118 'paulis...sition': u32
-            81106..81118 'bit_position': u32
-            81122..81126 '0x7u': u32
-            81181..81223 '(pauli...& 0x7u': u32
-            81182..81191 'paulis_hi': u32
-            81182..81215 'paulis...- 32u)': u32
-            81196..81208 'bit_position': u32
-            81196..81214 'bit_po... - 32u': u32
-            81211..81214 '32u': u32
-            81219..81223 '0x7u': u32
-            81328..81336 'low_part': u32
-            81339..81348 'paulis_lo': u32
-            81339..81364 'paulis...sition': u32
-            81352..81364 'bit_position': u32
-            81378..81387 'high_part': u32
-            81390..81399 'paulis_hi': u32
-            81390..81423 'paulis...ition)': u32
-            81404..81407 '32u': u32
-            81404..81422 '32u - ...sition': u32
-            81410..81422 'bit_position': u32
-            81440..81469 '(low_p...& 0x7u': u32
-            81441..81449 'low_part': u32
-            81441..81461 'low_pa...h_part': u32
-            81452..81461 'high_part': u32
-            81465..81469 '0x7u': u32
-            81831..81839 'shot_idx': u32
-            81846..81852 'op_idx': u32
-            81859..81872 'bit_flip_mask': u32
-            81879..81894 'phase_flip_mask': u32
-            81901..81910 'loss_mask': u32
-            81927..81931 'shot': ptr<storage, ShotData, read_write>
-            81934..81950 '&shots...t_idx]': ptr<storage, ShotData, read_write>
-            81935..81940 'shots': ref<storage, array<ShotData>, read_write>
-            81935..81950 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            59512..59517 'row_0': ref<function, array<vec2<f32>, 4>, read_write>
+            59523..59525 'o2': array<vec2<f32>, 4>
+            59528..59533 'row_2': ref<function, array<vec2<f32>, 4>, read_write>
+            59547..59552 'row_0': ref<function, array<vec2<f32>, 4>, read_write>
+            59555..59560 'row_1': ref<function, array<vec2<f32>, 4>, read_write>
+            59562..59567 'row_2': ref<function, array<vec2<f32>, 4>, read_write>
+            59570..59575 'row_3': ref<function, array<vec2<f32>, 4>, read_write>
+            59589..59594 'row_1': ref<function, array<vec2<f32>, 4>, read_write>
+            59597..59599 'o0': array<vec2<f32>, 4>
+            59604..59609 'row_3': ref<function, array<vec2<f32>, 4>, read_write>
+            59612..59614 'o2': array<vec2<f32>, 4>
+            59674..59676 'o0': array<vec2<f32>, 4>
+            59679..59684 'row_0': ref<function, array<vec2<f32>, 4>, read_write>
+            59690..59692 'o2': array<vec2<f32>, 4>
+            59695..59700 'row_2': ref<function, array<vec2<f32>, 4>, read_write>
+            59714..59719 'row_0': ref<function, array<vec2<f32>, 4>, read_write>
+            59722..59735 'rowNeg(row_1)': array<vec2<f32>, 4>
+            59729..59734 'row_1': ref<function, array<vec2<f32>, 4>, read_write>
+            59737..59742 'row_2': ref<function, array<vec2<f32>, 4>, read_write>
+            59745..59758 'rowNeg(row_3)': array<vec2<f32>, 4>
+            59752..59757 'row_3': ref<function, array<vec2<f32>, 4>, read_write>
+            59772..59777 'row_1': ref<function, array<vec2<f32>, 4>, read_write>
+            59780..59782 'o0': array<vec2<f32>, 4>
+            59795..59800 'row_3': ref<function, array<vec2<f32>, 4>, read_write>
+            59803..59805 'o2': array<vec2<f32>, 4>
+            59861..59866 'row_1': ref<function, array<vec2<f32>, 4>, read_write>
+            59869..59882 'rowNeg(row_1)': array<vec2<f32>, 4>
+            59876..59881 'row_1': ref<function, array<vec2<f32>, 4>, read_write>
+            59884..59889 'row_3': ref<function, array<vec2<f32>, 4>, read_write>
+            59892..59905 'rowNeg(row_3)': array<vec2<f32>, 4>
+            59899..59904 'row_3': ref<function, array<vec2<f32>, 4>, read_write>
+            59928..59962 'setUni...row_0)': [error]
+            59942..59950 'shot_idx': u32
+            59952..59954 '0u': u32
+            59956..59961 'row_0': ref<function, array<vec2<f32>, 4>, read_write>
+            59968..60002 'setUni...row_1)': [error]
+            59982..59990 'shot_idx': u32
+            59992..59994 '1u': u32
+            59996..60001 'row_1': ref<function, array<vec2<f32>, 4>, read_write>
+            60008..60042 'setUni...row_2)': [error]
+            60022..60030 'shot_idx': u32
+            60032..60034 '2u': u32
+            60036..60041 'row_2': ref<function, array<vec2<f32>, 4>, read_write>
+            60048..60082 'setUni...row_3)': [error]
+            60062..60070 'shot_idx': u32
+            60072..60074 '3u': u32
+            60076..60081 'row_3': ref<function, array<vec2<f32>, 4>, read_write>
+            60729..60737 'shot_idx': u32
+            60744..60750 'op_idx': u32
+            60757..60766 'noise_idx': u32
+            60773..60775 'q1': u32
+            60782..60784 'q2': u32
+            60801..60805 'shot': ptr<storage, ShotData, read_write>
+            60808..60824 '&shots...t_idx]': ptr<storage, ShotData, read_write>
+            60809..60814 'shots': ref<storage, array<ShotData>, read_write>
+            60809..60824 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            60815..60823 'shot_idx': u32
+            60834..60842 'noise_op': ptr<storage, Op, read>
+            60845..60860 '&ops[noise_idx]': ptr<storage, Op, read>
+            60846..60849 'ops': ref<storage, array<Op>, read>
+            60846..60860 'ops[noise_idx]': ref<storage, Op, read>
+            60850..60859 'noise_idx': u32
+            60945..60953 'q1_alive': [error]
+            60956..60960 'shot': ptr<storage, ShotData, read_write>
+            60956..60972 'shot.q..._state': ref<storage, [error], read_write>
+            60956..60976 'shot.q...te[q1]': [error]
+            60956..60981 'shot.q...].heat': [error]
+            60956..60989 'shot.q...= -1.0': [error]
+            60973..60975 'q1': u32
+            60985..60989 '-1.0': float
+            60986..60989 '1.0': float
+            60999..61007 'q2_alive': [error]
+            61010..61014 'shot': ptr<storage, ShotData, read_write>
+            61010..61026 'shot.q..._state': ref<storage, [error], read_write>
+            61010..61030 'shot.q...te[q2]': [error]
+            61010..61035 'shot.q...].heat': [error]
+            61010..61043 'shot.q...= -1.0': [error]
+            61027..61029 'q2': u32
+            61039..61043 '-1.0': float
+            61040..61043 '1.0': float
+            61137..61146 '!q1_alive': [error]
+            61137..61159 '!q1_al..._alive': [error]
+            61138..61146 'q1_alive': [error]
+            61150..61159 '!q2_alive': [error]
+            61151..61159 'q2_alive': [error]
+            61325..61329 'rand': ref<function, f32, read_write>
+            61332..61336 'shot': ptr<storage, ShotData, read_write>
+            61332..61347 'shot.rand_pauli': ref<storage, f32, read_write>
+            61357..61364 'q1_term': ref<function, i32, read_write>
+            61367..61368 '0': integer
+            61378..61385 'q2_term': ref<function, i32, read_write>
+            61388..61389 '0': integer
+            61404..61405 'a': ref<function, i32, read_write>
+            61408..61409 '0': integer
+            61411..61412 'a': ref<function, i32, read_write>
+            61411..61416 'a < 5': bool
+            61415..61416 '5': integer
+            61418..61419 'a': ref<function, i32, read_write>
+            61422..61423 'a': ref<function, i32, read_write>
+            61422..61427 'a + 1': i32
+            61426..61427 '1': integer
+            61448..61449 'b': ref<function, i32, read_write>
+            61452..61453 '0': integer
+            61455..61456 'b': ref<function, i32, read_write>
+            61455..61460 'b < 5': bool
+            61459..61460 '5': integer
+            61462..61463 'b': ref<function, i32, read_write>
+            61466..61467 'b': ref<function, i32, read_write>
+            61466..61471 'b + 1': i32
+            61470..61471 '1': integer
+            61491..61492 'k': i32
+            61495..61496 'a': ref<function, i32, read_write>
+            61495..61500 'a * 5': i32
+            61495..61504 'a * 5 + b': i32
+            61499..61500 '5': integer
+            61503..61504 'b': ref<function, i32, read_write>
+            61522..61523 'k': i32
+            61522..61528 'k == 0': bool
+            61527..61528 '0': integer
+            61560..61564 'slot': vec2<f32>
+            61567..61575 'noise_op': ptr<storage, Op, read>
+            61567..61583 'noise_...nitary': ref<storage, array<vec2<f32>, 16>, read>
+            61567..61590 'noise_...k / 2]': ref<storage, vec2<f32>, read>
+            61584..61585 'k': i32
+            61584..61589 'k / 2': i32
+            61588..61589 '2': integer
+            61608..61612 'p_ab': f32
+            61615..61651 'select... == 1)': f32
+            61622..61626 'slot': vec2<f32>
+            61622..61628 'slot.x': f32
+            61630..61634 'slot': vec2<f32>
+            61630..61636 'slot.y': f32
+            61638..61650 '(k & 1) == 1': bool
+            61639..61640 'k': i32
+            61639..61644 'k & 1': i32
+            61643..61644 '1': integer
+            61649..61650 '1': integer
+            61669..61673 'rand': ref<function, f32, read_write>
+            61669..61680 'rand < p_ab': bool
+            61676..61680 'p_ab': f32
+            61700..61707 'q1_term': ref<function, i32, read_write>
+            61710..61711 'a': ref<function, i32, read_write>
+            61729..61736 'q2_term': ref<function, i32, read_write>
+            61739..61740 'b': ref<function, i32, read_write>
+            61758..61759 'a': ref<function, i32, read_write>
+            61762..61763 '5': integer
+            61781..61782 'b': ref<function, i32, read_write>
+            61785..61786 '5': integer
+            61825..61829 'rand': ref<function, f32, read_write>
+            61832..61836 'rand': ref<function, f32, read_write>
+            61832..61843 'rand - p_ab': f32
+            61839..61843 'p_ab': f32
+            61953..61967 'survivor_is_q2': [error]
+            61970..61979 '!q1_alive': [error]
+            61971..61979 'q1_alive': [error]
+            61989..61997 'survivor': [error]
+            62000..62030 'select...is_q2)': [error]
+            62007..62009 'q1': u32
+            62011..62013 'q2': u32
+            62015..62029 'survivor_is_q2': [error]
+            62040..62044 'term': [error]
+            62047..62087 'select...is_q2)': [error]
+            62054..62061 'q1_term': ref<function, i32, read_write>
+            62063..62070 'q2_term': ref<function, i32, read_write>
+            62072..62086 'survivor_is_q2': [error]
+            62258..62262 'term': [error]
+            62258..62267 'term == 4': [error]
+            62266..62267 '4': integer
+            62279..62283 'shot': ptr<storage, ShotData, read_write>
+            62279..62301 'shot.p...s_mask': ref<storage, u32, read_write>
+            62306..62308 '1u': u32
+            62306..62320 '1u << survivor': [error]
+            62312..62320 'survivor': [error]
+            62428..62432 'term': [error]
+            62428..62437 'term == 0': [error]
+            62436..62437 '0': integer
+            62526..62530 'shot': ptr<storage, ShotData, read_write>
+            62526..62538 'shot.op_type': ref<storage, u32, read_write>
+            62526..62559 'shot.o...UFF_2Q': bool
+            62542..62559 'OPID_S...UFF_2Q': u32
+            62681..62747 'fuse_1...term))': [error]
+            62711..62719 'shot_idx': u32
+            62721..62735 'survivor_is_q2': [error]
+            62737..62746 'u32(term)': u32
+            62741..62745 'term': [error]
+            63008..63012 'term': [error]
+            63008..63017 'term == 1': [error]
+            63016..63017 '1': integer
+            63045..63193 'set_1q... 0.0))': [error]
+            63068..63076 'shot_idx': u32
+            63078..63092 'survivor_is_q2': [error]
+            63110..63125 'vec2f(0.0, 0.0)': vec2<f32>
+            63116..63119 '0.0': float
+            63121..63124 '0.0': float
+            63127..63142 'vec2f(1.0, 0.0)': vec2<f32>
+            63133..63136 '1.0': float
+            63138..63141 '0.0': float
+            63160..63175 'vec2f(1.0, 0.0)': vec2<f32>
+            63166..63169 '1.0': float
+            63171..63174 '0.0': float
+            63177..63192 'vec2f(0.0, 0.0)': vec2<f32>
+            63183..63186 '0.0': float
+            63188..63191 '0.0': float
+            63280..63429 'set_1q... 0.0))': [error]
+            63303..63311 'shot_idx': u32
+            63313..63327 'survivor_is_q2': [error]
+            63345..63360 'vec2f(0.0, 0.0)': vec2<f32>
+            63351..63354 '0.0': float
+            63356..63359 '0.0': float
+            63362..63378 'vec2f(..., 0.0)': vec2<f32>
+            63368..63372 '-1.0': float
+            63369..63372 '1.0': float
+            63374..63377 '0.0': float
+            63396..63411 'vec2f(1.0, 0.0)': vec2<f32>
+            63402..63405 '1.0': float
+            63407..63410 '0.0': float
+            63413..63428 'vec2f(0.0, 0.0)': vec2<f32>
+            63419..63422 '0.0': float
+            63424..63427 '0.0': float
+            63480..63629 'set_1q... 0.0))': [error]
+            63503..63511 'shot_idx': u32
+            63513..63527 'survivor_is_q2': [error]
+            63545..63560 'vec2f(1.0, 0.0)': vec2<f32>
+            63551..63554 '1.0': float
+            63556..63559 '0.0': float
+            63562..63577 'vec2f(0.0, 0.0)': vec2<f32>
+            63568..63571 '0.0': float
+            63573..63576 '0.0': float
+            63595..63610 'vec2f(0.0, 0.0)': vec2<f32>
+            63601..63604 '0.0': float
+            63606..63609 '0.0': float
+            63612..63628 'vec2f(..., 0.0)': vec2<f32>
+            63618..63622 '-1.0': float
+            63619..63622 '1.0': float
+            63624..63627 '0.0': float
+            63649..63696 'finish...1, q2)': [error]
+            63671..63679 'shot_idx': u32
+            63681..63687 'op_idx': u32
+            63689..63691 'q1': u32
+            63693..63695 'q2': u32
+            63952..63956 'shot': ptr<storage, ShotData, read_write>
+            63952..63972 'shot.q...0_mask': ref<storage, u32, read_write>
+            63975..63979 'shot': ptr<storage, ShotData, read_write>
+            63975..63995 'shot.q...0_mask': ref<storage, u32, read_write>
+            63975..64015 'shot.q...vivor)': [error]
+            63998..64015 '~(1u <...vivor)': [error]
+            64000..64002 '1u': u32
+            64000..64014 '1u << survivor': [error]
+            64006..64014 'survivor': [error]
+            64021..64025 'shot': ptr<storage, ShotData, read_write>
+            64021..64041 'shot.q...1_mask': ref<storage, u32, read_write>
+            64044..64048 'shot': ptr<storage, ShotData, read_write>
+            64044..64064 'shot.q...1_mask': ref<storage, u32, read_write>
+            64044..64084 'shot.q...vivor)': [error]
+            64067..64084 '~(1u <...vivor)': [error]
+            64069..64071 '1u': u32
+            64069..64083 '1u << survivor': [error]
+            64075..64083 'survivor': [error]
+            64165..64176 'workgroupId': u32
+            64191..64194 'tid': u32
+            64209..64223 'op_qubit_count': i32
+            64356..64364 'shot_idx': i32
+            64372..64388 'i32(wo...oupId)': i32
+            64372..64410 'i32(wo...R_SHOT': i32
+            64376..64387 'workgroupId': u32
+            64391..64410 'WORKGR...R_SHOT': i32
+            64420..64443 'shot_s..._start': i32
+            64451..64459 'shot_idx': i32
+            64451..64486 'shot_i...OUNT))': i32
+            64463..64465 '1i': i32
+            64463..64485 '1i << ...COUNT)': i32
+            64469..64485 'u32(QU...COUNT)': u32
+            64473..64484 'QUBIT_COUNT': i32
+            64496..64517 'workgr...n_shot': i32
+            64525..64541 'i32(wo...oupId)': i32
+            64525..64563 'i32(wo...R_SHOT': i32
+            64529..64540 'workgroupId': u32
+            64544..64563 'WORKGR...R_SHOT': i32
+            64573..64591 'thread...n_shot': i32
+            64599..64620 'workgr...n_shot': i32
+            64599..64644 'workgr...KGROUP': i32
+            64599..64655 'workgr...2(tid)': i32
+            64623..64644 'THREAD...KGROUP': i32
+            64647..64655 'i32(tid)': i32
+            64651..64654 'tid': u32
+            64665..64687 'total_...r_shot': i32
+            64695..64714 'WORKGR...R_SHOT': i32
+            64695..64738 'WORKGR...KGROUP': i32
+            64717..64738 'THREAD...KGROUP': i32
+            65078..65101 'workgr...on_idx': i32
+            65109..65162 'select...T > 1)': i32
+            65116..65118 '-1': integer
+            65117..65118 '1': integer
+            65120..65136 'i32(wo...oupId)': i32
+            65124..65135 'workgroupId': u32
+            65138..65157 'WORKGR...R_SHOT': i32
+            65138..65161 'WORKGR...OT > 1': bool
+            65160..65161 '1': integer
+            65173..65189 'zero_e..._count': i32
+            65197..65244 '(1i <<...count)': i32
+            65198..65200 '1i': i32
+            65198..65220 '1i << ...COUNT)': i32
+            65204..65220 'u32(QU...COUNT)': u32
+            65208..65219 'QUBIT_COUNT': i32
+            65225..65244 'u32(op...count)': u32
+            65229..65243 'op_qubit_count': i32
+            65254..65267 'op_iterations': i32
+            65275..65291 'zero_e..._count': i32
+            65275..65316 'zero_e...r_shot': i32
+            65294..65316 'total_...r_shot': i32
+            65330..65570 'ShotPa...     )': ShotParams
+            65350..65358 'shot_idx': i32
+            65368..65391 'shot_s..._start': i32
+            65401..65424 'workgr...on_idx': i32
+            65434..65455 'workgr...n_shot': i32
+            65465..65483 'thread...n_shot': i32
+            65493..65515 'total_...r_shot': i32
+            65525..65541 'zero_e..._count': i32
+            65551..65564 'op_iterations': i32
+            65648..65659 'workgroupId': u32
+            65666..65669 'tid': u32
+            65676..65678 'q1': u32
+            65695..65701 'params': ShotParams
+            65704..65760 'get_sh...op */)': ShotParams
+            65720..65731 'workgroupId': u32
+            65733..65736 'tid': u32
+            65738..65739 '1': integer
+            65770..65774 'shot': ptr<storage, ShotData, read_write>
+            65777..65800 '&shots...t_idx]': ptr<storage, ShotData, read_write>
+            65778..65783 'shots': ref<storage, array<ShotData>, read_write>
+            65778..65800 'shots[...t_idx]': ref<storage, ShotData, read_write>
+            65784..65790 'params': ShotParams
+            65784..65799 'params.shot_idx': i32
+            65810..65815 'scale': f32
+            65818..65822 'shot': ptr<storage, ShotData, read_write>
+            65818..65834 'shot.r...malize': ref<storage, f32, read_write>
+            65844..65851 'lowMask': i32
+            65854..65867 '(1 << q1) - 1': integer
+            65855..65856 '1': integer
+            65855..65862 '1 << q1': integer
+            65860..65862 'q1': u32
+            65866..65867 '1': integer
+            65877..65885 'highMask': i32
+            65888..65915 '(1 << ...)) - 1': integer
+            65888..65925 '(1 << ...owMask': i32
+            65889..65890 '1': integer
+            65889..65910 '1 << u...COUNT)': integer
+            65894..65910 'u32(QU...COUNT)': u32
+            65898..65909 'QUBIT_COUNT': i32
+            65914..65915 '1': integer
+            65918..65925 'lowMask': i32
+            65935..65950 'qubit_is_0_mask': i32
+            65953..65996 'i32(sh..._mask)': i32
+            65957..65962 'shots': ref<storage, array<ShotData>, read_write>
+            65957..65979 'shots[...t_idx]': ref<storage, ShotData, read_write>
+            65957..65995 'shots[...0_mask': ref<storage, u32, read_write>
+            65963..65969 'params': ShotParams
+            65963..65978 'params.shot_idx': i32
+            66006..66021 'qubit_is_1_mask': i32
+            66024..66067 'i32(sh..._mask)': i32
+            66028..66033 'shots': ref<storage, array<ShotData>, read_write>
+            66028..66050 'shots[...t_idx]': ref<storage, ShotData, read_write>
+            66028..66066 'shots[...1_mask': ref<storage, u32, read_write>
+            66034..66040 'params': ShotParams
+            66034..66049 'params.shot_idx': i32
+            66078..66090 'summed_probs': ref<function, vec4<f32>, read_write>
+            66100..66107 'vec4f()': vec4<f32>
+            66641..66652 'entry_index': ref<function, i32, read_write>
+            66655..66661 'params': ShotParams
+            66655..66680 'params...n_shot': i32
+            66696..66697 'i': ref<function, i32, read_write>
+            66700..66701 '0': integer
+            66703..66704 'i': ref<function, i32, read_write>
+            66703..66727 'i < pa...ations': bool
+            66707..66713 'params': ShotParams
+            66707..66727 'params...ations': i32
+            66729..66730 'i': ref<function, i32, read_write>
+            66748..66755 'offset0': i32
+            66763..66820 '(entry... << 1)': i32
+            66764..66775 'entry_index': ref<function, i32, read_write>
+            66764..66785 'entry_...owMask': i32
+            66778..66785 'lowMask': i32
+            66790..66819 '(entry...) << 1': i32
+            66791..66802 'entry_index': ref<function, i32, read_write>
+            66791..66813 'entry_...ghMask': i32
+            66805..66813 'highMask': i32
+            66818..66819 '1': integer
+            66834..66841 'offset1': i32
+            66849..66856 'offset0': i32
+            66849..66868 'offset...<< q1)': i32
+            66860..66861 '1': integer
+            66860..66867 '1 << q1': integer
+            66865..66867 'q1': u32
+            67106..67121 'skip_processing': bool
+            67124..67197 '((offs... != 0)': bool
+            67125..67157 '(offse...) != 0': bool
+            67126..67133 'offset0': i32
+            67126..67151 'offset...0_mask': i32
+            67136..67151 'qubit_is_0_mask': i32
+            67156..67157 '0': integer
+            67163..67196 '(~offs...) != 0': bool
+            67164..67172 '~offset1': i32
+            67164..67190 '~offse...1_mask': i32
+            67165..67172 'offset1': i32
+            67175..67190 'qubit_is_1_mask': i32
+            67195..67196 '0': integer
+            67212..67228 '!skip_...essing': bool
+            67213..67228 'skip_processing': bool
+            67247..67251 'shot': ptr<storage, ShotData, read_write>
+            67247..67259 'shot.op_type': ref<storage, u32, read_write>
+            67247..67270 'shot.o...PID_RZ': bool
+            67263..67270 'OPID_RZ': u32
+            67482..67486 'amp1': vec2<f32>
+            67496..67507 'stateVector': ref<storage, array<vec2<f32>>, read_write>
+            67496..67549 'stateV...fset1]': ref<storage, vec2<f32>, read_write>
+            67508..67514 'params': ShotParams
+            67508..67538 'params..._start': i32
+            67508..67548 'params...ffset1': i32
+            67541..67548 'offset1': i32
+            67571..67575 'new1': vec2<f32>
+            67578..67608 'cplxMu...ry[5])': vec2<f32>
+            67586..67590 'amp1': vec2<f32>
+            67592..67596 'shot': ptr<storage, ShotData, read_write>
+            67592..67604 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            67592..67607 'shot.unitary[5]': ref<storage, vec2<f32>, read_write>
+            67605..67606 '5': integer
+            67626..67637 'stateVector': ref<storage, array<vec2<f32>>, read_write>
+            67626..67679 'stateV...fset1]': ref<storage, vec2<f32>, read_write>
+            67638..67644 'params': ShotParams
+            67638..67668 'params..._start': i32
+            67638..67678 'params...ffset1': i32
+            67671..67678 'offset1': i32
+            67682..67686 'new1': vec2<f32>
+            67729..67733 'amp0': vec2<f32>
+            67743..67754 'stateVector': ref<storage, array<vec2<f32>>, read_write>
+            67743..67796 'stateV...fset0]': ref<storage, vec2<f32>, read_write>
+            67755..67761 'params': ShotParams
+            67755..67785 'params..._start': i32
+            67755..67795 'params...ffset0': i32
+            67788..67795 'offset0': i32
+            67818..67822 'amp1': vec2<f32>
+            67832..67843 'stateVector': ref<storage, array<vec2<f32>>, read_write>
+            67832..67885 'stateV...fset1]': ref<storage, vec2<f32>, read_write>
+            67844..67850 'params': ShotParams
+            67844..67874 'params..._start': i32
+            67844..67884 'params...ffset1': i32
+            67877..67884 'offset1': i32
+            67908..67912 'new0': vec2<f32>
+            67915..67920 'scale': f32
+            67915..67988 'scale ...y[1]))': vec2<f32>
+            67924..67954 'cplxMu...ry[0])': vec2<f32>
+            67924..67987 'cplxMu...ry[1])': vec2<f32>
+            67932..67936 'amp0': vec2<f32>
+            67938..67942 'shot': ptr<storage, ShotData, read_write>
+            67938..67950 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            67938..67953 'shot.unitary[0]': ref<storage, vec2<f32>, read_write>
+            67951..67952 '0': integer
+            67957..67987 'cplxMu...ry[1])': vec2<f32>
+            67965..67969 'amp1': vec2<f32>
+            67971..67975 'shot': ptr<storage, ShotData, read_write>
+            67971..67983 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            67971..67986 'shot.unitary[1]': ref<storage, vec2<f32>, read_write>
+            67984..67985 '1': integer
+            68010..68014 'new1': vec2<f32>
+            68017..68022 'scale': f32
+            68017..68090 'scale ...y[5]))': vec2<f32>
+            68026..68056 'cplxMu...ry[4])': vec2<f32>
+            68026..68089 'cplxMu...ry[5])': vec2<f32>
+            68034..68038 'amp0': vec2<f32>
+            68040..68044 'shot': ptr<storage, ShotData, read_write>
+            68040..68052 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            68040..68055 'shot.unitary[4]': ref<storage, vec2<f32>, read_write>
+            68053..68054 '4': integer
+            68059..68089 'cplxMu...ry[5])': vec2<f32>
+            68067..68071 'amp1': vec2<f32>
+            68073..68077 'shot': ptr<storage, ShotData, read_write>
+            68073..68085 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            68073..68088 'shot.unitary[5]': ref<storage, vec2<f32>, read_write>
+            68086..68087 '5': integer
+            68109..68120 'stateVector': ref<storage, array<vec2<f32>>, read_write>
+            68109..68162 'stateV...fset0]': ref<storage, vec2<f32>, read_write>
+            68121..68127 'params': ShotParams
+            68121..68151 'params..._start': i32
+            68121..68161 'params...ffset0': i32
+            68154..68161 'offset0': i32
+            68165..68169 'new0': vec2<f32>
+            68187..68198 'stateVector': ref<storage, array<vec2<f32>>, read_write>
+            68187..68240 'stateV...fset1]': ref<storage, vec2<f32>, read_write>
+            68199..68205 'params': ShotParams
+            68199..68229 'params..._start': i32
+            68199..68239 'params...ffset1': i32
+            68232..68239 'offset1': i32
+            68243..68247 'new1': vec2<f32>
+            68269..68273 'shot': ptr<storage, ShotData, read_write>
+            68269..68281 'shot.op_type': ref<storage, u32, read_write>
+            68269..68297 'shot.o...RESETZ': bool
+            68269..68332 'shot.o..._NOISE': bool
+            68269..68348 'shot.o...!= 1.0': bool
+            68285..68297 'OPID_MRESETZ': u32
+            68301..68305 'shot': ptr<storage, ShotData, read_write>
+            68301..68313 'shot.op_type': ref<storage, u32, read_write>
+            68301..68332 'shot.o..._NOISE': bool
+            68317..68332 'OPID_LOSS_NOISE': u32
+            68336..68341 'scale': f32
+            68336..68348 'scale != 1.0': bool
+            68345..68348 '1.0': float
+            68480..68527 'update..., tid)': [error]
+            68503..68515 'u32(offset0)': u32
+            68507..68514 'offset0': i32
+            68517..68521 'new0': vec2<f32>
+            68523..68526 'tid': u32
+            68549..68596 'update..., tid)': [error]
+            68572..68584 'u32(offset1)': u32
+            68576..68583 'offset1': i32
+            68586..68590 'new1': vec2<f32>
+            68592..68595 'tid': u32
+            68643..68655 'summed_probs': ref<function, vec4<f32>, read_write>
+            68643..68658 'summed_probs[0]': ref<function, f32, read_write>
+            68656..68657 '0': integer
+            68662..68676 'cplxMag2(new0)': f32
+            68671..68675 'new0': vec2<f32>
+            68698..68710 'summed_probs': ref<function, vec4<f32>, read_write>
+            68698..68713 'summed_probs[1]': ref<function, f32, read_write>
+            68711..68712 '1': integer
+            68717..68731 'cplxMag2(new1)': f32
+            68726..68730 'new1': vec2<f32>
+            68783..68794 'entry_index': ref<function, i32, read_write>
+            68798..68804 'params': ShotParams
+            68798..68827 'params...r_shot': i32
+            68843..68848 'scale': f32
+            68843..68855 'scale == 1.0': bool
+            68843..68882 'scale ...PID_RZ': bool
+            68843..68914 'scale ...RESETZ': bool
+            68843..68949 'scale ..._NOISE': bool
+            68852..68855 '1.0': float
+            68859..68863 'shot': ptr<storage, ShotData, read_write>
+            68859..68871 'shot.op_type': ref<storage, u32, read_write>
+            68859..68882 'shot.o...PID_RZ': bool
+            68875..68882 'OPID_RZ': u32
+            68886..68890 'shot': ptr<storage, ShotData, read_write>
+            68886..68898 'shot.op_type': ref<storage, u32, read_write>
+            68886..68914 'shot.o...RESETZ': bool
+            68902..68914 'OPID_MRESETZ': u32
+            68918..68922 'shot': ptr<storage, ShotData, read_write>
+            68918..68930 'shot.op_type': ref<storage, u32, read_write>
+            68918..68949 'shot.o..._NOISE': bool
+            68934..68949 'OPID_LOSS_NOISE': u32
+            69043..69061 'qubitP...lities': ref<workgroup, [error], read_write>
+            69043..69066 'qubitP...s[tid]': [error]
+            69043..69071 'qubitP...].zero': [error]
+            69043..69075 'qubitP...ro[q1]': [error]
+            69062..69065 'tid': u32
+            69072..69074 'q1': u32
+            69078..69090 'summed_probs': ref<function, vec4<f32>, read_write>
+            69078..69093 'summed_probs[0]': ref<function, f32, read_write>
+            69091..69092 '0': integer
+            69103..69121 'qubitP...lities': ref<workgroup, [error], read_write>
+            69103..69126 'qubitP...s[tid]': [error]
+            69103..69130 'qubitP...d].one': [error]
+            69103..69134 'qubitP...ne[q1]': [error]
+            69122..69125 'tid': u32
+            69131..69133 'q1': u32
+            69138..69150 'summed_probs': ref<function, vec4<f32>, read_write>
+            69138..69153 'summed_probs[1]': ref<function, f32, read_write>
+            69151..69152 '1': integer
+            69179..69190 'workgroupId': u32
+            69197..69200 'tid': u32
+            69207..69209 'q1': u32
+            69216..69218 'q2': u32
+            69235..69241 'params': ShotParams
+            69244..69300 'get_sh...op */)': ShotParams
+            69260..69271 'workgroupId': u32
+            69273..69276 'tid': u32
+            69278..69279 '2': integer
+            69310..69314 'shot': ptr<storage, ShotData, read_write>
+            69317..69340 '&shots...t_idx]': ptr<storage, ShotData, read_write>
+            69318..69323 'shots': ref<storage, array<ShotData>, read_write>
+            69318..69340 'shots[...t_idx]': ref<storage, ShotData, read_write>
+            69324..69330 'params': ShotParams
+            69324..69339 'params.shot_idx': i32
+            69350..69362 'update_probs': bool
+            69365..69369 'shot': ptr<storage, ShotData, read_write>
+            69365..69377 'shot.op_type': ref<storage, u32, read_write>
+            69365..69388 'shot.o...PID_CZ': bool
+            69365..69416 'shot.o...ID_RZZ': bool
+            69381..69388 'OPID_CZ': u32
+            69392..69396 'shot': ptr<storage, ShotData, read_write>
+            69392..69404 'shot.op_type': ref<storage, u32, read_write>
+            69392..69416 'shot.o...ID_RZZ': bool
+            69408..69416 'OPID_RZZ': u32
+            69639..69647 'lowQubit': u32
+            69650..69673 'select... > q2)': u32
+            69657..69659 'q1': u32
+            69661..69663 'q2': u32
+            69665..69667 'q1': u32
+            69665..69672 'q1 > q2': bool
+            69670..69672 'q2': u32
+            69683..69690 'hiQubit': u32
+            69693..69716 'select... < q2)': u32
+            69700..69702 'q1': u32
+            69704..69706 'q2': u32
+            69708..69710 'q1': u32
+            69708..69715 'q1 < q2': bool
+            69713..69715 'q2': u32
+            69765..69776 'lowBitCount': u32
+            69779..69787 'lowQubit': u32
+            69797..69808 'midBitCount': u32
+            69811..69818 'hiQubit': u32
+            69811..69829 'hiQubi...wQubit': u32
+            69811..69833 'hiQubi...it - 1': u32
+            69821..69829 'lowQubit': u32
+            69832..69833 '1': integer
+            69843..69853 'hiBitCount': u32
+            69856..69872 'u32(QU...COUNT)': u32
+            69856..69882 'u32(QU...iQubit': u32
+            69856..69886 'u32(QU...it - 1': u32
+            69860..69871 'QUBIT_COUNT': i32
+            69875..69882 'hiQubit': u32
+            69885..69886 '1': integer
+            70017..70024 'lowMask': i32
+            70027..70049 '(1 << ...t) - 1': integer
+            70028..70029 '1': integer
+            70028..70044 '1 << l...tCount': integer
+            70033..70044 'lowBitCount': u32
+            70048..70049 '1': integer
+            70059..70066 'midMask': i32
+            70069..70107 '(1 << ...)) - 1': integer
+            70069..70117 '(1 << ...owMask': i32
+            70070..70071 '1': integer
+            70070..70102 '1 << (...Count)': integer
+            70076..70087 'lowBitCount': u32
+            70076..70101 'lowBit...tCount': u32
+            70090..70101 'midBitCount': u32
+            70106..70107 '1': integer
+            70110..70117 'lowMask': i32
+            70127..70133 'hiMask': i32
+            70136..70163 '(1 << ...)) - 1': integer
+            70136..70173 '(1 << ...idMask': i32
+            70136..70183 '(1 << ...owMask': i32
+            70137..70138 '1': integer
+            70137..70158 '1 << u...COUNT)': integer
+            70142..70158 'u32(QU...COUNT)': u32
+            70146..70157 'QUBIT_COUNT': i32
+            70162..70163 '1': integer
+            70166..70173 'midMask': i32
+            70176..70183 'lowMask': i32
+            70324..70335 'entry_index': ref<function, i32, read_write>
+            70338..70344 'params': ShotParams
+            70338..70363 'params...n_shot': i32
+            70373..70385 'summed_probs': ref<function, vec4<f32>, read_write>
+            70395..70402 'vec4f()': vec4<f32>
+            70418..70419 'i': ref<function, i32, read_write>
+            70422..70423 '0': integer
+            70425..70426 'i': ref<function, i32, read_write>
+            70425..70449 'i < pa...ations': bool
+            70429..70435 'params': ShotParams
+            70429..70449 'params...ations': i32
+            70451..70452 'i': ref<function, i32, read_write>
+            70517..70525 'offset00': i32
+            70533..70589 '(entry... << 1)': i32
+            70533..70621 '(entry... << 2)': i32
+            70534..70545 'entry_index': ref<function, i32, read_write>
+            70534..70555 'entry_...owMask': i32
+            70548..70555 'lowMask': i32
+            70560..70588 '(entry...) << 1': i32
+            70561..70572 'entry_index': ref<function, i32, read_write>
+            70561..70582 'entry_...idMask': i32
+            70575..70582 'midMask': i32
+            70587..70588 '1': integer
+            70593..70620 '(entry...) << 2': i32
+            70594..70605 'entry_index': ref<function, i32, read_write>
+            70594..70614 'entry_...hiMask': i32
+            70608..70614 'hiMask': i32
+            70619..70620 '2': integer
+            70635..70643 'offset01': i32
+            70651..70659 'offset00': i32
+            70651..70671 'offset...<< q2)': i32
+            70663..70664 '1': integer
+            70663..70670 '1 << q2': integer
+            70668..70670 'q2': u32
+            70685..70693 'offset10': i32
+            70701..70709 'offset00': i32
+            70701..70721 'offset...<< q1)': i32
+            70713..70714 '1': integer
+            70713..70720 '1 << q1': integer
+            70718..70720 'q1': u32
+            70735..70743 'offset11': i32
+            70751..70759 'offset10': i32
+            70751..70771 'offset...<< q2)': i32
+            70763..70764 '1': integer
+            70763..70770 '1 << q2': integer
+            70768..70770 'q2': u32
+            70786..70805 'can_sk...essing': bool
+            70821..70930 '((u32(... != 0)': bool
+            70822..70865 '(u32(o...) != 0': bool
+            70823..70836 'u32(offset00)': u32
+            70823..70859 'u32(of...0_mask': u32
+            70827..70835 'offset00': i32
+            70839..70843 'shot': ptr<storage, ShotData, read_write>
+            70839..70859 'shot.q...0_mask': ref<storage, u32, read_write>
+            70864..70865 '0': integer
+            70883..70929 '(~(u32...) != 0': bool
+            70884..70900 '~(u32(...et11))': u32
+            70884..70923 '~(u32(...1_mask': u32
+            70886..70899 'u32(offset11)': u32
+            70890..70898 'offset11': i32
+            70903..70907 'shot': ptr<storage, ShotData, read_write>
+            70903..70923 'shot.q...1_mask': ref<storage, u32, read_write>
+            70928..70929 '0': integer
+            70944..70964 '!can_s...essing': bool
+            70945..70964 'can_sk...essing': bool
+            70986..70990 'shot': ptr<storage, ShotData, read_write>
+            70986..70998 'shot.op_type': ref<storage, u32, read_write>
+            71018..71025 'OPID_CZ': u32
+            71048..71053 'amp11': vec2<f32>
+            71063..71074 'stateVector': ref<storage, array<vec2<f32>>, read_write>
+            71063..71117 'stateV...set11]': ref<storage, vec2<f32>, read_write>
+            71075..71081 'params': ShotParams
+            71075..71105 'params..._start': i32
+            71075..71116 'params...fset11': i32
+            71108..71116 'offset11': i32
+            71135..71146 'stateVector': ref<storage, array<vec2<f32>>, read_write>
+            71135..71189 'stateV...set11]': ref<storage, vec2<f32>, read_write>
+            71147..71153 'params': ShotParams
+            71147..71177 'params..._start': i32
+            71147..71188 'params...fset11': i32
+            71180..71188 'offset11': i32
+            71192..71206 'cplxNeg(amp11)': vec2<f32>
+            71200..71205 'amp11': vec2<f32>
+            71329..71337 'OPID_RZZ': u32
+            71451..71456 'amp01': vec2<f32>
+            71466..71477 'stateVector': ref<storage, array<vec2<f32>>, read_write>
+            71466..71520 'stateV...set01]': ref<storage, vec2<f32>, read_write>
+            71478..71484 'params': ShotParams
+            71478..71508 'params..._start': i32
+            71478..71519 'params...fset01': i32
+            71511..71519 'offset01': i32
+            71542..71547 'amp10': vec2<f32>
+            71557..71568 'stateVector': ref<storage, array<vec2<f32>>, read_write>
+            71557..71611 'stateV...set10]': ref<storage, vec2<f32>, read_write>
+            71569..71575 'params': ShotParams
+            71569..71599 'params..._start': i32
+            71569..71610 'params...fset10': i32
+            71602..71610 'offset10': i32
+            71735..71746 'stateVector': ref<storage, array<vec2<f32>>, read_write>
+            71735..71789 'stateV...set01]': ref<storage, vec2<f32>, read_write>
+            71747..71753 'params': ShotParams
+            71747..71777 'params..._start': i32
+            71747..71788 'params...fset01': i32
+            71780..71788 'offset01': i32
+            71792..71823 'cplxMu...ry[5])': vec2<f32>
+            71800..71805 'amp01': vec2<f32>
+            71807..71811 'shot': ptr<storage, ShotData, read_write>
+            71807..71819 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            71807..71822 'shot.unitary[5]': ref<storage, vec2<f32>, read_write>
+            71820..71821 '5': integer
+            71841..71852 'stateVector': ref<storage, array<vec2<f32>>, read_write>
+            71841..71895 'stateV...set10]': ref<storage, vec2<f32>, read_write>
+            71853..71859 'params': ShotParams
+            71853..71883 'params..._start': i32
+            71853..71894 'params...fset10': i32
+            71886..71894 'offset10': i32
+            71898..71930 'cplxMu...y[10])': vec2<f32>
+            71906..71911 'amp10': vec2<f32>
+            71913..71917 'shot': ptr<storage, ShotData, read_write>
+            71913..71925 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            71913..71929 'shot.u...ry[10]': ref<storage, vec2<f32>, read_write>
+            71926..71928 '10': integer
+            71963..71970 'OPID_CX': u32
+            72110..72115 'amp00': vec2<f32>
+            72125..72136 'stateVector': ref<storage, array<vec2<f32>>, read_write>
+            72125..72179 'stateV...set00]': ref<storage, vec2<f32>, read_write>
+            72137..72143 'params': ShotParams
+            72137..72167 'params..._start': i32
+            72137..72178 'params...fset00': i32
+            72170..72178 'offset00': i32
+            72201..72206 'amp01': vec2<f32>
+            72216..72227 'stateVector': ref<storage, array<vec2<f32>>, read_write>
+            72216..72270 'stateV...set01]': ref<storage, vec2<f32>, read_write>
+            72228..72234 'params': ShotParams
+            72228..72258 'params..._start': i32
+            72228..72269 'params...fset01': i32
+            72261..72269 'offset01': i32
+            72292..72297 'amp10': vec2<f32>
+            72307..72318 'stateVector': ref<storage, array<vec2<f32>>, read_write>
+            72307..72361 'stateV...set10]': ref<storage, vec2<f32>, read_write>
+            72319..72325 'params': ShotParams
+            72319..72349 'params..._start': i32
+            72319..72360 'params...fset10': i32
+            72352..72360 'offset10': i32
+            72383..72388 'amp11': vec2<f32>
+            72398..72409 'stateVector': ref<storage, array<vec2<f32>>, read_write>
+            72398..72452 'stateV...set11]': ref<storage, vec2<f32>, read_write>
+            72410..72416 'params': ShotParams
+            72410..72440 'params..._start': i32
+            72410..72451 'params...fset11': i32
+            72443..72451 'offset11': i32
+            72470..72481 'stateVector': ref<storage, array<vec2<f32>>, read_write>
+            72470..72524 'stateV...set10]': ref<storage, vec2<f32>, read_write>
+            72482..72488 'params': ShotParams
+            72482..72512 'params..._start': i32
+            72482..72523 'params...fset10': i32
+            72515..72523 'offset10': i32
+            72527..72532 'amp11': vec2<f32>
+            72550..72561 'stateVector': ref<storage, array<vec2<f32>>, read_write>
+            72550..72604 'stateV...set11]': ref<storage, vec2<f32>, read_write>
+            72562..72568 'params': ShotParams
+            72562..72592 'params..._start': i32
+            72562..72603 'params...fset11': i32
+            72595..72603 'offset11': i32
+            72607..72612 'amp10': vec2<f32>
+            72630..72642 'summed_probs': ref<function, vec4<f32>, read_write>
+            72630..72645 'summed_probs[0]': ref<function, f32, read_write>
+            72643..72644 '0': integer
+            72650..72665 'cplxMag2(amp00)': f32
+            72650..72683 'cplxMa...amp01)': f32
+            72659..72664 'amp00': vec2<f32>
+            72668..72683 'cplxMag2(amp01)': f32
+            72677..72682 'amp01': vec2<f32>
+            72702..72714 'summed_probs': ref<function, vec4<f32>, read_write>
+            72702..72717 'summed_probs[1]': ref<function, f32, read_write>
+            72715..72716 '1': integer
+            72722..72737 'cplxMag2(amp11)': f32
+            72722..72755 'cplxMa...amp10)': f32
+            72731..72736 'amp11': vec2<f32>
+            72740..72755 'cplxMag2(amp10)': f32
+            72749..72754 'amp10': vec2<f32>
+            72774..72786 'summed_probs': ref<function, vec4<f32>, read_write>
+            72774..72789 'summed_probs[2]': ref<function, f32, read_write>
+            72787..72788 '2': integer
+            72794..72809 'cplxMag2(amp00)': f32
+            72794..72827 'cplxMa...amp11)': f32
+            72803..72808 'amp00': vec2<f32>
+            72812..72827 'cplxMag2(amp11)': f32
+            72821..72826 'amp11': vec2<f32>
+            72846..72858 'summed_probs': ref<function, vec4<f32>, read_write>
+            72846..72861 'summed_probs[3]': ref<function, f32, read_write>
+            72859..72860 '3': integer
+            72866..72881 'cplxMag2(amp01)': f32
+            72866..72899 'cplxMa...amp10)': f32
+            72875..72880 'amp01': vec2<f32>
+            72884..72899 'cplxMag2(amp10)': f32
+            72893..72898 'amp10': vec2<f32>
+            72933..72940 'OPID_CY': u32
+            73033..73038 'amp00': vec2<f32>
+            73048..73059 'stateVector': ref<storage, array<vec2<f32>>, read_write>
+            73048..73102 'stateV...set00]': ref<storage, vec2<f32>, read_write>
+            73060..73066 'params': ShotParams
+            73060..73090 'params..._start': i32
+            73060..73101 'params...fset00': i32
+            73093..73101 'offset00': i32
+            73124..73129 'amp01': vec2<f32>
+            73139..73150 'stateVector': ref<storage, array<vec2<f32>>, read_write>
+            73139..73193 'stateV...set01]': ref<storage, vec2<f32>, read_write>
+            73151..73157 'params': ShotParams
+            73151..73181 'params..._start': i32
+            73151..73192 'params...fset01': i32
+            73184..73192 'offset01': i32
+            73215..73220 'amp10': vec2<f32>
+            73230..73241 'stateVector': ref<storage, array<vec2<f32>>, read_write>
+            73230..73284 'stateV...set10]': ref<storage, vec2<f32>, read_write>
+            73242..73248 'params': ShotParams
+            73242..73272 'params..._start': i32
+            73242..73283 'params...fset10': i32
+            73275..73283 'offset10': i32
+            73306..73311 'amp11': vec2<f32>
+            73321..73332 'stateVector': ref<storage, array<vec2<f32>>, read_write>
+            73321..73375 'stateV...set11]': ref<storage, vec2<f32>, read_write>
+            73333..73339 'params': ShotParams
+            73333..73363 'params..._start': i32
+            73333..73374 'params...fset11': i32
+            73366..73374 'offset11': i32
+            73393..73404 'stateVector': ref<storage, array<vec2<f32>>, read_write>
+            73393..73447 'stateV...set10]': ref<storage, vec2<f32>, read_write>
+            73405..73411 'params': ShotParams
+            73405..73435 'params..._start': i32
+            73405..73446 'params...fset10': i32
+            73438..73446 'offset10': i32
+            73450..73474 'vec2f(...p11.x)': vec2<f32>
+            73456..73461 'amp11': vec2<f32>
+            73456..73463 'amp11.y': f32
+            73465..73473 '-amp11.x': f32
+            73466..73471 'amp11': vec2<f32>
+            73466..73473 'amp11.x': f32
+            73505..73516 'stateVector': ref<storage, array<vec2<f32>>, read_write>
+            73505..73559 'stateV...set11]': ref<storage, vec2<f32>, read_write>
+            73517..73523 'params': ShotParams
+            73517..73547 'params..._start': i32
+            73517..73558 'params...fset11': i32
+            73550..73558 'offset11': i32
+            73562..73586 'vec2f(...p10.x)': vec2<f32>
+            73568..73576 '-amp10.y': f32
+            73569..73574 'amp10': vec2<f32>
+            73569..73576 'amp10.y': f32
+            73578..73583 'amp10': vec2<f32>
+            73578..73585 'amp10.x': f32
+            73616..73628 'summed_probs': ref<function, vec4<f32>, read_write>
+            73616..73631 'summed_probs[0]': ref<function, f32, read_write>
+            73629..73630 '0': integer
+            73636..73651 'cplxMag2(amp00)': f32
+            73636..73669 'cplxMa...amp01)': f32
+            73645..73650 'amp00': vec2<f32>
+            73654..73669 'cplxMag2(amp01)': f32
+            73663..73668 'amp01': vec2<f32>
+            73688..73700 'summed_probs': ref<function, vec4<f32>, read_write>
+            73688..73703 'summed_probs[1]': ref<function, f32, read_write>
+            73701..73702 '1': integer
+            73708..73723 'cplxMag2(amp11)': f32
+            73708..73741 'cplxMa...amp10)': f32
+            73717..73722 'amp11': vec2<f32>
+            73726..73741 'cplxMag2(amp10)': f32
+            73735..73740 'amp10': vec2<f32>
+            73760..73772 'summed_probs': ref<function, vec4<f32>, read_write>
+            73760..73775 'summed_probs[2]': ref<function, f32, read_write>
+            73773..73774 '2': integer
+            73780..73795 'cplxMag2(amp00)': f32
+            73780..73813 'cplxMa...amp11)': f32
+            73789..73794 'amp00': vec2<f32>
+            73798..73813 'cplxMag2(amp11)': f32
+            73807..73812 'amp11': vec2<f32>
+            73832..73844 'summed_probs': ref<function, vec4<f32>, read_write>
+            73832..73847 'summed_probs[3]': ref<function, f32, read_write>
+            73845..73846 '3': integer
+            73852..73867 'cplxMag2(amp01)': f32
+            73852..73885 'cplxMa...amp10)': f32
+            73861..73866 'amp01': vec2<f32>
+            73870..73885 'cplxMag2(amp10)': f32
+            73879..73884 'amp10': vec2<f32>
+            74036..74042 'states': array<vec2<f32>, 4>
+            74045..74381 'array<...     )': array<vec2<f32>, 4>
+            74081..74092 'stateVector': ref<storage, array<vec2<f32>>, read_write>
+            74081..74135 'stateV...set00]': ref<storage, vec2<f32>, read_write>
+            74093..74099 'params': ShotParams
+            74093..74123 'params..._start': i32
+            74093..74134 'params...fset00': i32
+            74126..74134 'offset00': i32
+            74157..74168 'stateVector': ref<storage, array<vec2<f32>>, read_write>
+            74157..74211 'stateV...set01]': ref<storage, vec2<f32>, read_write>
+            74169..74175 'params': ShotParams
+            74169..74199 'params..._start': i32
+            74169..74210 'params...fset01': i32
+            74202..74210 'offset01': i32
+            74233..74244 'stateVector': ref<storage, array<vec2<f32>>, read_write>
+            74233..74287 'stateV...set10]': ref<storage, vec2<f32>, read_write>
+            74245..74251 'params': ShotParams
+            74245..74275 'params..._start': i32
+            74245..74286 'params...fset10': i32
+            74278..74286 'offset10': i32
+            74309..74320 'stateVector': ref<storage, array<vec2<f32>>, read_write>
+            74309..74363 'stateV...set11]': ref<storage, vec2<f32>, read_write>
+            74321..74327 'params': ShotParams
+            74321..74351 'params..._start': i32
+            74321..74362 'params...fset11': i32
+            74354..74362 'offset11': i32
+            74461..74469 'result00': vec2<f32>
+            74472..74527 'innerP...tates)': vec2<f32>
+            74485..74518 'getUni...dx, 0)': array<vec2<f32>, 4>
+            74499..74505 'params': ShotParams
+            74499..74514 'params.shot_idx': i32
+            74516..74517 '0': integer
+            74520..74526 'states': array<vec2<f32>, 4>
+            74549..74557 'result01': vec2<f32>
+            74560..74615 'innerP...tates)': vec2<f32>
+            74573..74606 'getUni...dx, 1)': array<vec2<f32>, 4>
+            74587..74593 'params': ShotParams
+            74587..74602 'params.shot_idx': i32
+            74604..74605 '1': integer
+            74608..74614 'states': array<vec2<f32>, 4>
+            74637..74645 'result10': vec2<f32>
+            74648..74703 'innerP...tates)': vec2<f32>
+            74661..74694 'getUni...dx, 2)': array<vec2<f32>, 4>
+            74675..74681 'params': ShotParams
+            74675..74690 'params.shot_idx': i32
+            74692..74693 '2': integer
+            74696..74702 'states': array<vec2<f32>, 4>
+            74725..74733 'result11': vec2<f32>
+            74736..74791 'innerP...tates)': vec2<f32>
+            74749..74782 'getUni...dx, 3)': array<vec2<f32>, 4>
+            74763..74769 'params': ShotParams
+            74763..74778 'params.shot_idx': i32
+            74780..74781 '3': integer
+            74784..74790 'states': array<vec2<f32>, 4>
+            74851..74862 'stateVector': ref<storage, array<vec2<f32>>, read_write>
+            74851..74905 'stateV...set00]': ref<storage, vec2<f32>, read_write>
+            74863..74869 'params': ShotParams
+            74863..74893 'params..._start': i32
+            74863..74904 'params...fset00': i32
+            74896..74904 'offset00': i32
+            74908..74916 'result00': vec2<f32>
+            74934..74945 'stateVector': ref<storage, array<vec2<f32>>, read_write>
+            74934..74988 'stateV...set01]': ref<storage, vec2<f32>, read_write>
+            74946..74952 'params': ShotParams
+            74946..74976 'params..._start': i32
+            74946..74987 'params...fset01': i32
+            74979..74987 'offset01': i32
+            74991..74999 'result01': vec2<f32>
+            75017..75028 'stateVector': ref<storage, array<vec2<f32>>, read_write>
+            75017..75071 'stateV...set10]': ref<storage, vec2<f32>, read_write>
+            75029..75035 'params': ShotParams
+            75029..75059 'params..._start': i32
+            75029..75070 'params...fset10': i32
+            75062..75070 'offset10': i32
+            75074..75082 'result10': vec2<f32>
+            75100..75111 'stateVector': ref<storage, array<vec2<f32>>, read_write>
+            75100..75154 'stateV...set11]': ref<storage, vec2<f32>, read_write>
+            75112..75118 'params': ShotParams
+            75112..75142 'params..._start': i32
+            75112..75153 'params...fset11': i32
+            75145..75153 'offset11': i32
+            75157..75165 'result11': vec2<f32>
+            75251..75263 'summed_probs': ref<function, vec4<f32>, read_write>
+            75251..75266 'summed_probs[0]': ref<function, f32, read_write>
+            75264..75265 '0': integer
+            75271..75289 'cplxMa...ult00)': f32
+            75271..75310 'cplxMa...ult01)': f32
+            75280..75288 'result00': vec2<f32>
+            75292..75310 'cplxMa...ult01)': f32
+            75301..75309 'result01': vec2<f32>
+            75329..75341 'summed_probs': ref<function, vec4<f32>, read_write>
+            75329..75344 'summed_probs[1]': ref<function, f32, read_write>
+            75342..75343 '1': integer
+            75349..75367 'cplxMa...ult10)': f32
+            75349..75388 'cplxMa...ult11)': f32
+            75358..75366 'result10': vec2<f32>
+            75370..75388 'cplxMa...ult11)': f32
+            75379..75387 'result11': vec2<f32>
+            75407..75419 'summed_probs': ref<function, vec4<f32>, read_write>
+            75407..75422 'summed_probs[2]': ref<function, f32, read_write>
+            75420..75421 '2': integer
+            75427..75445 'cplxMa...ult00)': f32
+            75427..75466 'cplxMa...ult10)': f32
+            75436..75444 'result00': vec2<f32>
+            75448..75466 'cplxMa...ult10)': f32
+            75457..75465 'result10': vec2<f32>
+            75485..75497 'summed_probs': ref<function, vec4<f32>, read_write>
+            75485..75500 'summed_probs[3]': ref<function, f32, read_write>
+            75498..75499 '3': integer
+            75505..75523 'cplxMa...ult01)': f32
+            75505..75544 'cplxMa...ult11)': f32
+            75514..75522 'result01': vec2<f32>
+            75526..75544 'cplxMa...ult11)': f32
+            75535..75543 'result11': vec2<f32>
+            75594..75605 'entry_index': ref<function, i32, read_write>
+            75609..75615 'params': ShotParams
+            75609..75638 'params...r_shot': i32
+            75734..75746 'update_probs': bool
+            75804..75822 'qubitP...lities': ref<workgroup, [error], read_write>
+            75804..75827 'qubitP...s[tid]': [error]
+            75804..75832 'qubitP...].zero': [error]
+            75804..75836 'qubitP...ro[q1]': [error]
+            75823..75826 'tid': u32
+            75833..75835 'q1': u32
+            75839..75851 'summed_probs': ref<function, vec4<f32>, read_write>
+            75839..75854 'summed_probs[0]': ref<function, f32, read_write>
+            75852..75853 '0': integer
+            75864..75882 'qubitP...lities': ref<workgroup, [error], read_write>
+            75864..75887 'qubitP...s[tid]': [error]
+            75864..75891 'qubitP...d].one': [error]
+            75864..75895 'qubitP...ne[q1]': [error]
+            75883..75886 'tid': u32
+            75892..75894 'q1': u32
+            75899..75911 'summed_probs': ref<function, vec4<f32>, read_write>
+            75899..75914 'summed_probs[1]': ref<function, f32, read_write>
+            75912..75913 '1': integer
+            75924..75942 'qubitP...lities': ref<workgroup, [error], read_write>
+            75924..75947 'qubitP...s[tid]': [error]
+            75924..75952 'qubitP...].zero': [error]
+            75924..75956 'qubitP...ro[q2]': [error]
+            75943..75946 'tid': u32
+            75953..75955 'q2': u32
+            75959..75971 'summed_probs': ref<function, vec4<f32>, read_write>
+            75959..75974 'summed_probs[2]': ref<function, f32, read_write>
+            75972..75973 '2': integer
+            75984..76002 'qubitP...lities': ref<workgroup, [error], read_write>
+            75984..76007 'qubitP...s[tid]': [error]
+            75984..76011 'qubitP...d].one': [error]
+            75984..76015 'qubitP...ne[q2]': [error]
+            76003..76006 'tid': u32
+            76012..76014 'q2': u32
+            76019..76031 'summed_probs': ref<function, vec4<f32>, read_write>
+            76019..76034 'summed_probs[3]': ref<function, f32, read_write>
+            76032..76033 '3': integer
+            76071..76082 'workgroupId': u32
+            76089..76092 'tid': u32
+            76109..76115 'params': ShotParams
+            76118..76185 'get_sh...es */)': ShotParams
+            76134..76145 'workgroupId': u32
+            76147..76150 'tid': u32
+            76152..76153 '0': integer
+            76356..76360 'shot': ptr<storage, ShotData, read_write>
+            76363..76386 '&shots...t_idx]': ptr<storage, ShotData, read_write>
+            76364..76369 'shots': ref<storage, array<ShotData>, read_write>
+            76364..76386 'shots[...t_idx]': ref<storage, ShotData, read_write>
+            76370..76376 'params': ShotParams
+            76370..76385 'params.shot_idx': i32
+            76497..76510 'bit_flip_mask': u32
+            76513..76544 'bitcas...[0].x)': u32
+            76526..76530 'shot': ptr<storage, ShotData, read_write>
+            76526..76538 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            76526..76541 'shot.unitary[0]': ref<storage, vec2<f32>, read_write>
+            76526..76543 'shot.u...y[0].x': ref<storage, f32, read_write>
+            76539..76540 '0': integer
+            76554..76569 'phase_flip_mask': u32
+            76572..76603 'bitcas...[0].y)': u32
+            76585..76589 'shot': ptr<storage, ShotData, read_write>
+            76585..76597 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            76585..76600 'shot.unitary[0]': ref<storage, vec2<f32>, read_write>
+            76585..76602 'shot.u...y[0].y': ref<storage, f32, read_write>
+            76598..76599 '0': integer
+            76654..76667 'bit_flip_mask': u32
+            76654..76673 'bit_fl... == 0u': bool
+            76654..76698 'bit_fl... == 0u': bool
+            76671..76673 '0u': u32
+            76677..76692 'phase_flip_mask': u32
+            76677..76698 'phase_... == 0u': bool
+            76696..76698 '0u': u32
+            76733..76744 'entry_index': ref<function, i32, read_write>
+            76747..76753 'params': ShotParams
+            76747..76772 'params...n_shot': i32
+            76788..76789 'i': ref<function, i32, read_write>
+            76792..76793 '0': integer
+            76795..76796 'i': ref<function, i32, read_write>
+            76795..76819 'i < pa...ations': bool
+            76799..76805 'params': ShotParams
+            76799..76819 'params...ations': i32
+            76821..76822 'i': ref<function, i32, read_write>
+            76950..76962 'target_index': i32
+            76965..76976 'entry_index': ref<function, i32, read_write>
+            76965..76997 'entry_..._mask)': i32
+            76979..76997 'i32(bi..._mask)': i32
+            76983..76996 'bit_flip_mask': u32
+            77112..77124 'negate_index': f32
+            77132..77210 'select... != 0)': float
+            77139..77142 '1.0': float
+            77144..77148 '-1.0': float
+            77145..77148 '1.0': float
+            77150..77209 '(count...) != 0': bool
+            77151..77199 'countO...mask))': i32
+            77151..77203 'countO...)) & 1': i32
+            77164..77175 'entry_index': ref<function, i32, read_write>
+            77164..77198 'entry_..._mask)': i32
+            77178..77198 'i32(ph..._mask)': i32
+            77182..77197 'phase_flip_mask': u32
+            77202..77203 '1': integer
+            77208..77209 '0': integer
+            77225..77238 'bit_flip_mask': u32
+            77225..77244 'bit_fl... == 0u': bool
+            77225..77268 'bit_fl...= -1.0': bool
+            77242..77244 '0u': u32
+            77248..77260 'negate_index': f32
+            77248..77268 'negate...= -1.0': bool
+            77264..77268 '-1.0': float
+            77265..77268 '1.0': float
+            77372..77383 'stateVector': ref<storage, array<vec2<f32>>, read_write>
+            77372..77429 'stateV...index]': ref<storage, vec2<f32>, read_write>
+            77384..77390 'params': ShotParams
+            77384..77414 'params..._start': i32
+            77384..77428 'params..._index': i32
+            77417..77428 'entry_index': ref<function, i32, read_write>
+            77432..77498 'cplxNe...ndex])': vec2<f32>
+            77440..77451 'stateVector': ref<storage, array<vec2<f32>>, read_write>
+            77440..77497 'stateV...index]': ref<storage, vec2<f32>, read_write>
+            77452..77458 'params': ShotParams
+            77452..77482 'params..._start': i32
+            77452..77496 'params..._index': i32
+            77485..77496 'entry_index': ref<function, i32, read_write>
+            77821..77830 'amp_entry': vec2<f32>
+            77840..77851 'stateVector': ref<storage, array<vec2<f32>>, read_write>
+            77840..77897 'stateV...index]': ref<storage, vec2<f32>, read_write>
+            77852..77858 'params': ShotParams
+            77852..77882 'params..._start': i32
+            77852..77896 'params..._index': i32
+            77885..77896 'entry_index': ref<function, i32, read_write>
+            77915..77925 'amp_target': vec2<f32>
+            77935..77946 'stateVector': ref<storage, array<vec2<f32>>, read_write>
+            77935..77993 'stateV...index]': ref<storage, vec2<f32>, read_write>
+            77947..77953 'params': ShotParams
+            77947..77977 'params..._start': i32
+            77947..77992 'params..._index': i32
+            77980..77992 'target_index': i32
+            78122..78135 'negate_target': f32
+            78143..78222 'select... != 0)': float
+            78150..78153 '1.0': float
+            78155..78159 '-1.0': float
+            78156..78159 '1.0': float
+            78161..78221 '(count...) != 0': bool
+            78162..78211 'countO...mask))': i32
+            78162..78215 'countO...)) & 1': i32
+            78175..78187 'target_index': i32
+            78175..78210 'target..._mask)': i32
+            78190..78210 'i32(ph..._mask)': i32
+            78194..78209 'phase_flip_mask': u32
+            78214..78215 '1': integer
+            78220..78221 '0': integer
+            78503..78514 'stateVector': ref<storage, array<vec2<f32>>, read_write>
+            78503..78560 'stateV...index]': ref<storage, vec2<f32>, read_write>
+            78515..78521 'params': ShotParams
+            78515..78545 'params..._start': i32
+            78515..78559 'params..._index': i32
+            78548..78559 'entry_index': ref<function, i32, read_write>
+            78563..78608 'cplxMu... 0.0))': vec2<f32>
+            78571..78581 'amp_target': vec2<f32>
+            78583..78607 'vec2f(..., 0.0)': vec2<f32>
+            78589..78601 'negate_index': f32
+            78603..78606 '0.0': float
+            78622..78633 'stateVector': ref<storage, array<vec2<f32>>, read_write>
+            78622..78680 'stateV...index]': ref<storage, vec2<f32>, read_write>
+            78634..78640 'params': ShotParams
+            78634..78664 'params..._start': i32
+            78634..78679 'params..._index': i32
+            78667..78679 'target_index': i32
+            78683..78728 'cplxMu... 0.0))': vec2<f32>
+            78691..78700 'amp_entry': vec2<f32>
+            78702..78727 'vec2f(..., 0.0)': vec2<f32>
+            78708..78721 'negate_target': f32
+            78723..78726 '0.0': float
+            78800..78811 'entry_index': ref<function, i32, read_write>
+            78815..78821 'params': ShotParams
+            78815..78844 'params...r_shot': i32
+            79137..79145 'shot_idx': u32
+            79152..79158 'op_idx': u32
+            79165..79180 'noise_table_idx': u32
+            79222..79226 'shot': ptr<storage, ShotData, read_write>
+            79229..79245 '&shots...t_idx]': ptr<storage, ShotData, read_write>
+            79230..79235 'shots': ref<storage, array<ShotData>, read_write>
+            79230..79245 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            79236..79244 'shot_idx': u32
+            79255..79260 'table': [error]
+            79263..79315 '&batch...e_idx]': [error]
+            79264..79274 'batch_data': ref<storage, BatchData, read>
+            79264..79298 'batch_...tables': ref<storage, [error], read>
+            79264..79315 'batch_...e_idx]': [error]
+            79299..79314 'noise_table_idx': u32
+            79482..79489 'rand_lo': u32
+            79492..79515 'next_r...t_idx)': u32
+            79506..79514 'shot_idx': u32
+            79525..79532 'rand_hi': u32
+            79535..79558 'next_r...t_idx)': u32
+            79535..79572 'next_r...FFFFFu': u32
+            79549..79557 'shot_idx': u32
+            79561..79572 '0x7FFFFFFFu': u32
+            79646..79659 'noise_prob_lo': [error]
+            79662..79667 'table': [error]
+            79662..79688 'table....ity_lo': [error]
+            79698..79711 'noise_prob_hi': [error]
+            79714..79719 'table': [error]
+            79714..79740 'table....ity_hi': [error]
+            79927..79934 'rand_hi': u32
+            79927..79950 'rand_h...rob_hi': [error]
+            79927..80008 'rand_h...ob_lo)': [error]
+            79937..79950 'noise_prob_hi': [error]
+            79955..79962 'rand_hi': u32
+            79955..79979 'rand_h...rob_hi': [error]
+            79955..80007 'rand_h...rob_lo': [error]
+            79966..79979 'noise_prob_hi': [error]
+            79983..79990 'rand_lo': u32
+            79983..80007 'rand_l...rob_lo': [error]
+            79994..80007 'noise_prob_lo': [error]
+            80068..80072 'shot': ptr<storage, ShotData, read_write>
+            80068..80080 'shot.op_type': ref<storage, u32, read_write>
+            80083..80090 'OPID_ID': u32
+            80100..80104 'shot': ptr<storage, ShotData, read_write>
+            80100..80111 'shot.op_idx': ref<storage, u32, read_write>
+            80114..80120 'op_idx': u32
+            80130..80134 'shot': ptr<storage, ShotData, read_write>
+            80130..80162 'shot.q...p_mask': ref<storage, u32, read_write>
+            80165..80167 '0u': u32
+            80184..80217 'Correl...u, 0u)': CorrelatedNoiseSample
+            80206..80208 '0u': u32
+            80210..80212 '0u': u32
+            80214..80216 '0u': u32
+            80317..80322 'start': i32
+            80325..80348 'i32(ta...ffset)': i32
+            80329..80334 'table': [error]
+            80329..80347 'table....offset': [error]
+            80358..80363 'count': i32
+            80366..80388 'i32(ta...count)': i32
+            80370..80375 'table': [error]
+            80370..80387 'table...._count': [error]
+            80398..80407 'entry_idx': i32
+            80410..80467 'binary...count)': i32
+            80436..80443 'rand_lo': u32
+            80445..80452 'rand_hi': u32
+            80454..80459 'start': i32
+            80461..80466 'count': i32
+            80477..80482 'entry': [error]
+            80485..80540 '&batch...y_idx]': [error]
+            80486..80496 'batch_data': ref<storage, BatchData, read>
+            80486..80521 'batch_...ntries': ref<storage, [error], read>
+            80486..80540 'batch_...y_idx]': [error]
+            80522..80527 'start': i32
+            80522..80539 'start ...ry_idx': i32
+            80530..80539 'entry_idx': i32
+            80554..80613 'Correl...is_hi)': CorrelatedNoiseSample
+            80576..80578 '1u': u32
+            80580..80585 'entry': [error]
+            80580..80595 'entry.paulis_lo': [error]
+            80597..80602 'entry': [error]
+            80597..80612 'entry.paulis_hi': [error]
+            81032..81041 'paulis_lo': u32
+            81048..81057 'paulis_hi': u32
+            81064..81075 'qubit_count': u32
+            81082..81083 'i': u32
+            81107..81119 'bit_position': u32
+            81122..81149 '(qubit...) * 3u': u32
+            81123..81134 'qubit_count': u32
+            81123..81139 'qubit_...t - 1u': u32
+            81123..81143 'qubit_...1u - i': u32
+            81137..81139 '1u': u32
+            81142..81143 'i': u32
+            81147..81149 '3u': u32
+            81159..81171 'bit_position': u32
+            81159..81176 'bit_po...n + 3u': u32
+            81159..81183 'bit_po...<= 32u': bool
+            81174..81176 '3u': u32
+            81180..81183 '32u': u32
+            81202..81236 '(pauli...& 0x7u': u32
+            81203..81212 'paulis_lo': u32
+            81203..81228 'paulis...sition': u32
+            81216..81228 'bit_position': u32
+            81232..81236 '0x7u': u32
+            81291..81333 '(pauli...& 0x7u': u32
+            81292..81301 'paulis_hi': u32
+            81292..81325 'paulis...- 32u)': u32
+            81306..81318 'bit_position': u32
+            81306..81324 'bit_po... - 32u': u32
+            81321..81324 '32u': u32
+            81329..81333 '0x7u': u32
+            81438..81446 'low_part': u32
+            81449..81458 'paulis_lo': u32
+            81449..81474 'paulis...sition': u32
+            81462..81474 'bit_position': u32
+            81488..81497 'high_part': u32
+            81500..81509 'paulis_hi': u32
+            81500..81533 'paulis...ition)': u32
+            81514..81517 '32u': u32
+            81514..81532 '32u - ...sition': u32
+            81520..81532 'bit_position': u32
+            81550..81579 '(low_p...& 0x7u': u32
+            81551..81559 'low_part': u32
+            81551..81571 'low_pa...h_part': u32
+            81562..81571 'high_part': u32
+            81575..81579 '0x7u': u32
             81941..81949 'shot_idx': u32
-            82137..82141 'shot': ptr<storage, ShotData, read_write>
-            82137..82159 'shot.p...s_mask': ref<storage, u32, read_write>
-            82163..82172 'loss_mask': u32
-            82324..82328 'shot': ptr<storage, ShotData, read_write>
-            82324..82336 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            82324..82339 'shot.unitary[0]': ref<storage, vec2<f32>, read_write>
-            82337..82338 '0': integer
-            82342..82407 'vec2f(...mask))': vec2<f32>
-            82348..82375 'bitcas..._mask)': f32
-            82361..82374 'bit_flip_mask': u32
-            82377..82406 'bitcas..._mask)': f32
-            82390..82405 'phase_flip_mask': u32
-            82582..82583 'q': ref<function, u32, read_write>
-            82591..82593 '0u': u32
-            82595..82596 'q': ref<function, u32, read_write>
-            82595..82615 'q < u3...COUNT)': bool
-            82599..82615 'u32(QU...COUNT)': u32
-            82603..82614 'QUBIT_COUNT': i32
-            82617..82618 'q': ref<function, u32, read_write>
-            82636..82646 'qubit_mask': u32
-            82649..82651 '1u': u32
-            82649..82656 '1u << q': u32
-            82655..82656 'q': ref<function, u32, read_write>
-            82670..82704 '(bit_f... != 0u': bool
-            82671..82684 'bit_flip_mask': u32
-            82671..82697 'bit_fl...t_mask': u32
-            82687..82697 'qubit_mask': u32
-            82702..82704 '0u': u32
-            82762..82766 'temp': [error]
-            82769..82773 'shot': ptr<storage, ShotData, read_write>
-            82769..82785 'shot.q..._state': ref<storage, [error], read_write>
-            82769..82788 'shot.q...ate[q]': [error]
-            82769..82805 'shot.q...bility': [error]
-            82786..82787 'q': ref<function, u32, read_write>
-            82819..82823 'shot': ptr<storage, ShotData, read_write>
-            82819..82835 'shot.q..._state': ref<storage, [error], read_write>
-            82819..82838 'shot.q...ate[q]': [error]
-            82819..82855 'shot.q...bility': [error]
-            82836..82837 'q': ref<function, u32, read_write>
-            82858..82862 'shot': ptr<storage, ShotData, read_write>
-            82858..82874 'shot.q..._state': ref<storage, [error], read_write>
-            82858..82877 'shot.q...ate[q]': [error]
-            82858..82893 'shot.q...bility': [error]
-            82875..82876 'q': ref<function, u32, read_write>
-            82907..82911 'shot': ptr<storage, ShotData, read_write>
-            82907..82923 'shot.q..._state': ref<storage, [error], read_write>
-            82907..82926 'shot.q...ate[q]': [error]
-            82907..82942 'shot.q...bility': [error]
-            82924..82925 'q': ref<function, u32, read_write>
-            82945..82949 'temp': [error]
-            83036..83041 'was_0': bool
-            83044..83085 '(shot.... != 0u': bool
-            83045..83049 'shot': ptr<storage, ShotData, read_write>
-            83045..83065 'shot.q...0_mask': ref<storage, u32, read_write>
-            83045..83078 'shot.q...t_mask': u32
-            83068..83078 'qubit_mask': u32
-            83083..83085 '0u': u32
-            83103..83108 'was_1': bool
-            83111..83152 '(shot.... != 0u': bool
-            83112..83116 'shot': ptr<storage, ShotData, read_write>
-            83112..83132 'shot.q...1_mask': ref<storage, u32, read_write>
-            83112..83145 'shot.q...t_mask': u32
-            83135..83145 'qubit_mask': u32
-            83150..83152 '0u': u32
-            83170..83175 'was_0': bool
-            83195..83199 'shot': ptr<storage, ShotData, read_write>
-            83195..83215 'shot.q...0_mask': ref<storage, u32, read_write>
-            83219..83230 '~qubit_mask': u32
-            83220..83230 'qubit_mask': u32
-            83248..83252 'shot': ptr<storage, ShotData, read_write>
-            83248..83268 'shot.q...1_mask': ref<storage, u32, read_write>
-            83272..83282 'qubit_mask': u32
-            83332..83336 'shot': ptr<storage, ShotData, read_write>
-            83332..83352 'shot.q...1_mask': ref<storage, u32, read_write>
-            83356..83367 '~qubit_mask': u32
-            83357..83367 'qubit_mask': u32
-            83385..83389 'shot': ptr<storage, ShotData, read_write>
-            83385..83405 'shot.q...0_mask': ref<storage, u32, read_write>
-            83409..83419 'qubit_mask': u32
-            83520..83524 'shot': ptr<storage, ShotData, read_write>
-            83520..83532 'shot.op_type': ref<storage, u32, read_write>
-            83535..83556 'OPID_C..._NOISE': u32
-            83562..83566 'shot': ptr<storage, ShotData, read_write>
-            83562..83573 'shot.op_idx': ref<storage, u32, read_write>
-            83576..83582 'op_idx': u32
-            83686..83690 'shot': ptr<storage, ShotData, read_write>
-            83686..83718 'shot.q...p_mask': ref<storage, u32, read_write>
-            83721..83723 '0u': u32
-            84485..84492 'rand_lo': u32
-            84499..84506 'rand_hi': u32
-            84513..84518 'start': i32
-            84525..84530 'count': i32
-            84554..84557 'low': ref<function, i32, read_write>
-            84565..84566 '0': integer
-            84576..84580 'high': ref<function, i32, read_write>
-            84588..84593 'count': i32
-            84607..84610 'low': ref<function, i32, read_write>
-            84607..84617 'low < high': bool
-            84613..84617 'high': ref<function, i32, read_write>
-            84633..84636 'mid': i32
-            84644..84647 'low': ref<function, i32, read_write>
-            84644..84666 'low + ...w) / 2': i32
-            84650..84666 '(high ...w) / 2': i32
-            84651..84655 'high': ref<function, i32, read_write>
-            84651..84661 'high - low': i32
-            84658..84661 'low': ref<function, i32, read_write>
-            84665..84666 '2': integer
-            84680..84684 'p_lo': [error]
-            84687..84697 'batch_data': ref<storage, BatchData, read>
-            84687..84722 'batch_...ntries': ref<storage, [error], read>
-            84687..84735 'batch_...+ mid]': [error]
-            84687..84750 'batch_...ity_lo': [error]
-            84723..84728 'start': i32
-            84723..84734 'start + mid': i32
-            84731..84734 'mid': i32
-            84764..84768 'p_hi': [error]
-            84771..84781 'batch_data': ref<storage, BatchData, read>
-            84771..84806 'batch_...ntries': ref<storage, [error], read>
-            84771..84819 'batch_...+ mid]': [error]
-            84771..84834 'batch_...ity_hi': [error]
-            84807..84812 'start': i32
-            84807..84818 'start + mid': i32
-            84815..84818 'mid': i32
-            84849..84856 'rand_hi': u32
-            84849..84863 'rand_hi < p_hi': [error]
-            84849..84902 'rand_h... p_lo)': [error]
-            84859..84863 'p_hi': [error]
-            84868..84875 'rand_hi': u32
-            84868..84883 'rand_hi == p_hi': [error]
-            84868..84901 'rand_h...< p_lo': [error]
-            84879..84883 'p_hi': [error]
-            84887..84894 'rand_lo': u32
-            84887..84901 'rand_lo < p_lo': [error]
-            84897..84901 'p_lo': [error]
-            84918..84922 'high': ref<function, i32, read_write>
-            84925..84928 'mid': i32
-            84959..84962 'low': ref<function, i32, read_write>
-            84965..84968 'mid': i32
-            84965..84972 'mid + 1': i32
-            84971..84972 '1': integer
-            85001..85004 'low': ref<function, i32, read_write>
-            85190..85196 'op_idx': u32
-            85203..85208 'index': u32
-            85335..85342 'vec_idx': u32
-            85345..85350 'index': u32
-            85345..85355 'index / 2u': u32
-            85353..85355 '2u': u32
-            85365..85374 'component': u32
-            85377..85382 'index': u32
-            85377..85387 'index % 2u': u32
-            85385..85387 '2u': u32
-            85397..85406 'component': u32
-            85397..85412 'component == 0u': bool
-            85410..85412 '0u': u32
-            85431..85466 'u32(op...dx].x)': u32
-            85435..85438 'ops': ref<storage, array<Op>, read>
-            85435..85446 'ops[op_idx]': ref<storage, Op, read>
-            85435..85454 'ops[op...nitary': ref<storage, array<vec2<f32>, 16>, read>
-            85435..85463 'ops[op...c_idx]': ref<storage, vec2<f32>, read>
-            85435..85465 'ops[op...idx].x': ref<storage, f32, read>
-            85439..85445 'op_idx': u32
-            85455..85462 'vec_idx': u32
-            85496..85531 'u32(op...dx].y)': u32
-            85500..85503 'ops': ref<storage, array<Op>, read>
-            85500..85511 'ops[op_idx]': ref<storage, Op, read>
-            85500..85519 'ops[op...nitary': ref<storage, array<vec2<f32>, 16>, read>
-            85500..85528 'ops[op...c_idx]': ref<storage, vec2<f32>, read>
-            85500..85530 'ops[op...idx].y': ref<storage, f32, read>
-            85504..85510 'op_idx': u32
-            85520..85527 'vec_idx': u32
-            85741..85749 'shot_idx': u32
-            85756..85762 'op_idx': u32
-            85779..85781 'op': ptr<storage, Op, read>
-            85784..85796 '&ops[op_idx]': ptr<storage, Op, read>
-            85785..85788 'ops': ref<storage, array<Op>, read>
-            85785..85796 'ops[op_idx]': ref<storage, Op, read>
-            85789..85795 'op_idx': u32
-            85806..85821 'noise_table_idx': u32
-            85824..85826 'op': ptr<storage, Op, read>
-            85824..85829 'op.q1': ref<storage, u32, read>
-            85839..85850 'qubit_count': u32
-            85853..85855 'op': ptr<storage, Op, read>
-            85853..85858 'op.q2': ref<storage, u32, read>
-            85869..85875 'sample': CorrelatedNoiseSample
-            85878..85936 'sample...e_idx)': CorrelatedNoiseSample
-            85902..85910 'shot_idx': u32
-            85912..85918 'op_idx': u32
-            85920..85935 'noise_table_idx': u32
-            85946..85952 'sample': CorrelatedNoiseSample
-            85946..85965 'sample..._apply': u32
-            85946..85971 'sample... == 0u': bool
-            85969..85971 '0u': u32
-            86089..86102 'bit_flip_mask': ref<function, u32, read_write>
-            86110..86112 '0u': u32
-            86122..86137 'phase_flip_mask': ref<function, u32, read_write>
-            86145..86147 '0u': u32
-            86157..86166 'loss_mask': ref<function, u32, read_write>
-            86174..86176 '0u': u32
-            86191..86192 'i': ref<function, u32, read_write>
-            86200..86202 '0u': u32
-            86204..86205 'i': ref<function, u32, read_write>
-            86204..86219 'i < qubit_count': bool
-            86208..86219 'qubit_count': u32
-            86221..86222 'i': ref<function, u32, read_write>
-            86240..86250 'pauli_bits': u32
-            86253..86319 'get_pa...nt, i)': u32
-            86268..86274 'sample': CorrelatedNoiseSample
-            86268..86284 'sample...lis_lo': u32
-            86286..86292 'sample': CorrelatedNoiseSample
-            86286..86302 'sample...lis_hi': u32
-            86304..86315 'qubit_count': u32
-            86317..86318 'i': ref<function, u32, read_write>
-            86333..86343 'qubit_mask': u32
-            86346..86348 '1u': u32
-            86346..86389 '1u << ...dx, i)': u32
-            86352..86389 'get_co...dx, i)': u32
-            86379..86385 'op_idx': u32
-            86387..86388 'i': ref<function, u32, read_write>
-            86403..86428 '(pauli... != 0u': bool
-            86404..86414 'pauli_bits': u32
-            86404..86421 'pauli_...& 0x4u': u32
-            86417..86421 '0x4u': u32
-            86426..86428 '0u': u32
-            86524..86533 'loss_mask': ref<function, u32, read_write>
-            86537..86547 'qubit_mask': u32
-            86582..86607 '(pauli... != 0u': bool
-            86583..86593 'pauli_bits': u32
-            86583..86600 'pauli_...& 0x1u': u32
-            86596..86600 '0x1u': u32
-            86605..86607 '0u': u32
-            86611..86624 'bit_flip_mask': ref<function, u32, read_write>
-            86628..86638 'qubit_mask': u32
-            86658..86683 '(pauli... != 0u': bool
-            86659..86669 'pauli_bits': u32
-            86659..86676 'pauli_...& 0x2u': u32
-            86672..86676 '0x2u': u32
-            86681..86683 '0u': u32
-            86687..86702 'phase_flip_mask': ref<function, u32, read_write>
-            86706..86716 'qubit_mask': u32
-            86741..86825 'commit..._mask)': [error]
-            86765..86773 'shot_idx': u32
-            86775..86781 'op_idx': u32
-            86783..86796 'bit_flip_mask': ref<function, u32, read_write>
-            86798..86813 'phase_flip_mask': ref<function, u32, read_write>
-            86815..86824 'loss_mask': ref<function, u32, read_write>
-            87110..87118 'shot_idx': u32
-            87125..87128 'reg': u32
-            87155..87160 'shots': ref<storage, array<ShotData>, read_write>
-            87155..87170 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            87155..87177 'shots[...interp': ref<storage, InterpreterState, read_write>
-            87155..87187 'shots[...isters': ref<storage, [error], read_write>
-            87155..87192 'shots[...s[reg]': [error]
-            87161..87169 'shot_idx': u32
-            87188..87191 'reg': u32
-            87210..87218 'shot_idx': u32
-            87225..87228 'reg': u32
-            87235..87238 'val': u32
-            87251..87256 'shots': ref<storage, array<ShotData>, read_write>
-            87251..87266 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            87251..87273 'shots[...interp': ref<storage, InterpreterState, read_write>
-            87251..87283 'shots[...isters': ref<storage, [error], read_write>
-            87251..87288 'shots[...s[reg]': [error]
-            87257..87265 'shot_idx': u32
-            87284..87287 'reg': u32
-            87291..87294 'val': u32
-            87315..87323 'shot_idx': u32
-            87330..87333 'reg': u32
-            87360..87397 'bitcas... reg))': i32
-            87373..87396 'read_r..., reg)': u32
-            87382..87390 'shot_idx': u32
-            87392..87395 'reg': u32
-            87419..87427 'shot_idx': u32
-            87434..87437 'reg': u32
-            87444..87447 'val': i32
-            87460..87503 'write_...(val))': [error]
-            87470..87478 'shot_idx': u32
-            87480..87483 'reg': u32
-            87485..87502 'bitcas...>(val)': u32
-            87498..87501 'val': i32
-            87524..87532 'shot_idx': u32
-            87539..87542 'reg': u32
-            87569..87606 'bitcas... reg))': f32
-            87582..87605 'read_r..., reg)': u32
-            87591..87599 'shot_idx': u32
-            87601..87604 'reg': u32
-            87628..87636 'shot_idx': u32
-            87643..87646 'reg': u32
-            87653..87656 'val': f32
-            87669..87712 'write_...(val))': [error]
-            87679..87687 'shot_idx': u32
-            87689..87692 'reg': u32
-            87694..87711 'bitcas...>(val)': u32
-            87707..87710 'val': f32
-            87963..87965 'pc': u32
-            88000..88010 'batch_data': ref<storage, BatchData, read>
-            88000..88018 'batch_...rogram': ref<storage, Program, read>
-            88000..88031 'batch_...ctions': ref<storage, [error], read>
-            88000..88035 'batch_...ns[pc]': [error]
-            88032..88034 'pc': u32
-            88054..88060 'packed': u32
-            88085..88091 'packed': u32
-            88085..88099 'packed & 0xFFu': u32
-            88094..88099 '0xFFu': u32
-            88118..88124 'packed': u32
-            88148..88170 '(packe... 0xFFu': u32
-            88149..88155 'packed': u32
-            88149..88161 'packed >> 8u': u32
-            88159..88161 '8u': u32
-            88165..88170 '0xFFu': u32
-            88187..88193 'packed': u32
-            88219..88242 '(packe... 0xFFu': u32
-            88220..88226 'packed': u32
-            88220..88233 'packed >> 16u': u32
-            88230..88233 '16u': u32
-            88237..88242 '0xFFu': u32
-            88262..88270 'shot_idx': u32
-            88277..88284 'operand': u32
-            88291..88296 'flags': u32
-            88303..88314 'operand_idx': u32
-            88337..88372 '(flags... != 0u': bool
-            88338..88343 'flags': u32
-            88338..88365 'flags ...d_idx)': u32
-            88347..88349 '1u': u32
-            88347..88364 '1u << ...nd_idx': u32
-            88353..88364 'operand_idx': u32
-            88370..88372 '0u': u32
-            88390..88411 'bitcas...erand)': i32
-            88403..88410 'operand': u32
-            88444..88475 'read_r...erand)': i32
-            88457..88465 'shot_idx': u32
-            88467..88474 'operand': u32
-            88508..88516 'shot_idx': u32
-            88523..88530 'operand': u32
-            88537..88542 'flags': u32
-            88549..88560 'operand_idx': u32
-            88583..88618 '(flags... != 0u': bool
-            88584..88589 'flags': u32
-            88584..88611 'flags ...d_idx)': u32
-            88593..88595 '1u': u32
-            88593..88610 '1u << ...nd_idx': u32
-            88599..88610 'operand_idx': u32
-            88616..88618 '0u': u32
-            88636..88643 'operand': u32
-            88662..88689 'read_r...erand)': u32
-            88671..88679 'shot_idx': u32
-            88681..88688 'operand': u32
-            88709..88717 'shot_idx': u32
-            88724..88731 'operand': u32
-            88738..88743 'flags': u32
-            88750..88761 'operand_idx': u32
-            88784..88819 '(flags... != 0u': bool
-            88785..88790 'flags': u32
-            88785..88812 'flags ...d_idx)': u32
-            88794..88796 '1u': u32
-            88794..88811 '1u << ...nd_idx': u32
-            88800..88811 'operand_idx': u32
-            88817..88819 '0u': u32
-            88837..88858 'bitcas...erand)': f32
-            88850..88857 'operand': u32
-            88914..88945 'read_r...erand)': f32
-            88927..88935 'shot_idx': u32
-            88937..88944 'operand': u32
-            89016..89024 'shot_idx': u32
-            89048..89053 'state': InterpreterState
-            89056..89061 'shots': ref<storage, array<ShotData>, read_write>
-            89056..89071 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            89056..89078 'shots[...interp': ref<storage, InterpreterState, read_write>
-            89062..89070 'shot_idx': u32
-            89088..89093 'instr': Instruction
-            89096..89121 'fetch_...c - 1)': Instruction
-            89108..89113 'state': InterpreterState
-            89108..89116 'state.pc': u32
-            89108..89120 'state.pc - 1': u32
-            89119..89120 '1': integer
-            89130..89165 '(instr...) != 0': bool
-            89131..89136 'instr': Instruction
-            89131..89143 'instr.opcode': u32
-            89131..89159 'instr....X1_IMM': u32
-            89146..89159 'FLAG_AUX1_IMM': u32
-            89164..89165 '0': integer
-            89183..89188 'instr': Instruction
-            89183..89193 'instr.aux1': u32
-            89212..89242 'read_r....aux1)': u32
-            89221..89229 'shot_idx': u32
-            89231..89236 'instr': Instruction
-            89231..89241 'instr.aux1': u32
-            89313..89321 'shot_idx': u32
-            89345..89350 'state': InterpreterState
-            89353..89358 'shots': ref<storage, array<ShotData>, read_write>
-            89353..89368 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            89353..89375 'shots[...interp': ref<storage, InterpreterState, read_write>
-            89359..89367 'shot_idx': u32
-            89385..89390 'instr': Instruction
-            89393..89418 'fetch_...c - 1)': Instruction
-            89405..89410 'state': InterpreterState
-            89405..89413 'state.pc': u32
-            89405..89417 'state.pc - 1': u32
-            89416..89417 '1': integer
-            89427..89462 '(instr...) != 0': bool
-            89428..89433 'instr': Instruction
-            89428..89440 'instr.opcode': u32
-            89428..89456 'instr....X2_IMM': u32
-            89443..89456 'FLAG_AUX2_IMM': u32
-            89461..89462 '0': integer
-            89480..89485 'instr': Instruction
-            89480..89490 'instr.aux2': u32
-            89509..89539 'read_r....aux2)': u32
-            89518..89526 'shot_idx': u32
-            89528..89533 'instr': Instruction
-            89528..89538 'instr.aux2': u32
-            89714..89722 'shot_idx': u32
-            89746..89751 'state': InterpreterState
-            89754..89759 'shots': ref<storage, array<ShotData>, read_write>
-            89754..89769 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            89754..89776 'shots[...interp': ref<storage, InterpreterState, read_write>
-            89760..89768 'shot_idx': u32
-            89786..89791 'instr': Instruction
-            89794..89819 'fetch_...c - 1)': Instruction
-            89806..89811 'state': InterpreterState
-            89806..89814 'state.pc': u32
-            89806..89818 'state.pc - 1': u32
-            89817..89818 '1': integer
-            89829..89834 'flags': u32
-            89837..89860 'get_fl...pcode)': u32
-            89847..89852 'instr': Instruction
-            89847..89859 'instr.opcode': u32
-            89873..89917 'resolv...s, 0u)': f32
-            89885..89893 'shot_idx': u32
-            89895..89900 'instr': Instruction
-            89895..89905 'instr.src0': u32
-            89907..89912 'flags': u32
-            89914..89916 '0u': u32
-            90089..90097 'shot_idx': u32
-            90104..90113 'result_id': u32
-            90141..90198 'atomic...t_id])': u32
-            90141..90204 'atomic... == 1u': bool
-            90152..90197 '&resul...lt_id]': ptr<storage, atomic<u32>, read_write>
-            90153..90160 'results': ref<storage, array<atomic<u32>>, read_write>
-            90153..90197 'result...lt_id]': ref<storage, atomic<u32>, read_write>
-            90161..90169 'shot_idx': u32
-            90161..90184 'shot_i..._COUNT': u32
-            90161..90196 'shot_i...ult_id': u32
-            90172..90184 'RESULT_COUNT': u32
-            90187..90196 'result_id': u32
-            90202..90204 '1u': u32
-            90286..90288 'id': u32
-            90316..90364 '(12 <=...<= 19)': bool
-            90317..90319 '12': integer
-            90317..90325 '12 <= id': bool
-            90317..90337 '12 <= ... <= 14': bool
-            90323..90325 'id': u32
-            90329..90331 'id': u32
-            90329..90337 'id <= 14': bool
-            90335..90337 '14': integer
-            90343..90345 '17': integer
-            90343..90351 '17 <= id': bool
-            90343..90363 '17 <= ... <= 19': bool
-            90349..90351 'id': u32
-            90355..90357 'id': u32
-            90355..90363 'id <= 19': bool
-            90361..90363 '19': integer
-            90459..90467 'shot_idx': u32
-            90492..90497 'state': InterpreterState
-            90500..90505 'shots': ref<storage, array<ShotData>, read_write>
-            90500..90515 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            90500..90522 'shots[...interp': ref<storage, InterpreterState, read_write>
-            90506..90514 'shot_idx': u32
-            90532..90537 'instr': Instruction
-            90540..90565 'fetch_...c - 1)': Instruction
-            90552..90557 'state': InterpreterState
-            90552..90560 'state.pc': u32
-            90552..90564 'state.pc - 1': u32
-            90563..90564 '1': integer
-            90578..90613 '(instr...) != 0': bool
-            90579..90584 'instr': Instruction
-            90579..90591 'instr.opcode': u32
-            90579..90607 'instr....C0_IMM': u32
-            90594..90607 'FLAG_SRC0_IMM': u32
-            90612..90613 '0': integer
-            90917..90925 'shot_idx': u32
-            90932..90937 'qubit': u32
-            90954..90958 'shot': ptr<storage, ShotData, read_write>
-            90961..90977 '&shots...t_idx]': ptr<storage, ShotData, read_write>
-            90962..90967 'shots': ref<storage, array<ShotData>, read_write>
-            90962..90977 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            90968..90976 'shot_idx': u32
-            90987..90993 'result': [error]
-            90996..91072 'select...ility)': [error]
-            91003..91005 '1u': u32
-            91007..91009 '0u': u32
-            91011..91015 'shot': ptr<storage, ShotData, read_write>
-            91011..91028 'shot.r...easure': ref<storage, f32, read_write>
-            91011..91071 'shot.r...bility': [error]
-            91031..91035 'shot': ptr<storage, ShotData, read_write>
-            91031..91047 'shot.q..._state': ref<storage, [error], read_write>
-            91031..91054 'shot.q...qubit]': [error]
-            91031..91071 'shot.q...bility': [error]
-            91048..91053 'qubit': u32
+            81956..81962 'op_idx': u32
+            81969..81982 'bit_flip_mask': u32
+            81989..82004 'phase_flip_mask': u32
+            82011..82020 'loss_mask': u32
+            82037..82041 'shot': ptr<storage, ShotData, read_write>
+            82044..82060 '&shots...t_idx]': ptr<storage, ShotData, read_write>
+            82045..82050 'shots': ref<storage, array<ShotData>, read_write>
+            82045..82060 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            82051..82059 'shot_idx': u32
+            82247..82251 'shot': ptr<storage, ShotData, read_write>
+            82247..82269 'shot.p...s_mask': ref<storage, u32, read_write>
+            82273..82282 'loss_mask': u32
+            82434..82438 'shot': ptr<storage, ShotData, read_write>
+            82434..82446 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            82434..82449 'shot.unitary[0]': ref<storage, vec2<f32>, read_write>
+            82447..82448 '0': integer
+            82452..82517 'vec2f(...mask))': vec2<f32>
+            82458..82485 'bitcas..._mask)': f32
+            82471..82484 'bit_flip_mask': u32
+            82487..82516 'bitcas..._mask)': f32
+            82500..82515 'phase_flip_mask': u32
+            82692..82693 'q': ref<function, u32, read_write>
+            82701..82703 '0u': u32
+            82705..82706 'q': ref<function, u32, read_write>
+            82705..82725 'q < u3...COUNT)': bool
+            82709..82725 'u32(QU...COUNT)': u32
+            82713..82724 'QUBIT_COUNT': i32
+            82727..82728 'q': ref<function, u32, read_write>
+            82746..82756 'qubit_mask': u32
+            82759..82761 '1u': u32
+            82759..82766 '1u << q': u32
+            82765..82766 'q': ref<function, u32, read_write>
+            82780..82814 '(bit_f... != 0u': bool
+            82781..82794 'bit_flip_mask': u32
+            82781..82807 'bit_fl...t_mask': u32
+            82797..82807 'qubit_mask': u32
+            82812..82814 '0u': u32
+            82872..82876 'temp': [error]
+            82879..82883 'shot': ptr<storage, ShotData, read_write>
+            82879..82895 'shot.q..._state': ref<storage, [error], read_write>
+            82879..82898 'shot.q...ate[q]': [error]
+            82879..82915 'shot.q...bility': [error]
+            82896..82897 'q': ref<function, u32, read_write>
+            82929..82933 'shot': ptr<storage, ShotData, read_write>
+            82929..82945 'shot.q..._state': ref<storage, [error], read_write>
+            82929..82948 'shot.q...ate[q]': [error]
+            82929..82965 'shot.q...bility': [error]
+            82946..82947 'q': ref<function, u32, read_write>
+            82968..82972 'shot': ptr<storage, ShotData, read_write>
+            82968..82984 'shot.q..._state': ref<storage, [error], read_write>
+            82968..82987 'shot.q...ate[q]': [error]
+            82968..83003 'shot.q...bility': [error]
+            82985..82986 'q': ref<function, u32, read_write>
+            83017..83021 'shot': ptr<storage, ShotData, read_write>
+            83017..83033 'shot.q..._state': ref<storage, [error], read_write>
+            83017..83036 'shot.q...ate[q]': [error]
+            83017..83052 'shot.q...bility': [error]
+            83034..83035 'q': ref<function, u32, read_write>
+            83055..83059 'temp': [error]
+            83146..83151 'was_0': bool
+            83154..83195 '(shot.... != 0u': bool
+            83155..83159 'shot': ptr<storage, ShotData, read_write>
+            83155..83175 'shot.q...0_mask': ref<storage, u32, read_write>
+            83155..83188 'shot.q...t_mask': u32
+            83178..83188 'qubit_mask': u32
+            83193..83195 '0u': u32
+            83213..83218 'was_1': bool
+            83221..83262 '(shot.... != 0u': bool
+            83222..83226 'shot': ptr<storage, ShotData, read_write>
+            83222..83242 'shot.q...1_mask': ref<storage, u32, read_write>
+            83222..83255 'shot.q...t_mask': u32
+            83245..83255 'qubit_mask': u32
+            83260..83262 '0u': u32
+            83280..83285 'was_0': bool
+            83305..83309 'shot': ptr<storage, ShotData, read_write>
+            83305..83325 'shot.q...0_mask': ref<storage, u32, read_write>
+            83329..83340 '~qubit_mask': u32
+            83330..83340 'qubit_mask': u32
+            83358..83362 'shot': ptr<storage, ShotData, read_write>
+            83358..83378 'shot.q...1_mask': ref<storage, u32, read_write>
+            83382..83392 'qubit_mask': u32
+            83442..83446 'shot': ptr<storage, ShotData, read_write>
+            83442..83462 'shot.q...1_mask': ref<storage, u32, read_write>
+            83466..83477 '~qubit_mask': u32
+            83467..83477 'qubit_mask': u32
+            83495..83499 'shot': ptr<storage, ShotData, read_write>
+            83495..83515 'shot.q...0_mask': ref<storage, u32, read_write>
+            83519..83529 'qubit_mask': u32
+            83630..83634 'shot': ptr<storage, ShotData, read_write>
+            83630..83642 'shot.op_type': ref<storage, u32, read_write>
+            83645..83666 'OPID_C..._NOISE': u32
+            83672..83676 'shot': ptr<storage, ShotData, read_write>
+            83672..83683 'shot.op_idx': ref<storage, u32, read_write>
+            83686..83692 'op_idx': u32
+            83796..83800 'shot': ptr<storage, ShotData, read_write>
+            83796..83828 'shot.q...p_mask': ref<storage, u32, read_write>
+            83831..83833 '0u': u32
+            84609..84616 'rand_lo': u32
+            84623..84630 'rand_hi': u32
+            84637..84642 'start': i32
+            84649..84654 'count': i32
+            84678..84681 'low': ref<function, i32, read_write>
+            84689..84690 '0': integer
+            84700..84704 'high': ref<function, i32, read_write>
+            84712..84717 'count': i32
+            84731..84734 'low': ref<function, i32, read_write>
+            84731..84741 'low < high': bool
+            84737..84741 'high': ref<function, i32, read_write>
+            84757..84760 'mid': i32
+            84768..84771 'low': ref<function, i32, read_write>
+            84768..84790 'low + ...w) / 2': i32
+            84774..84790 '(high ...w) / 2': i32
+            84775..84779 'high': ref<function, i32, read_write>
+            84775..84785 'high - low': i32
+            84782..84785 'low': ref<function, i32, read_write>
+            84789..84790 '2': integer
+            84804..84808 'p_lo': [error]
+            84811..84821 'batch_data': ref<storage, BatchData, read>
+            84811..84846 'batch_...ntries': ref<storage, [error], read>
+            84811..84859 'batch_...+ mid]': [error]
+            84811..84874 'batch_...ity_lo': [error]
+            84847..84852 'start': i32
+            84847..84858 'start + mid': i32
+            84855..84858 'mid': i32
+            84888..84892 'p_hi': [error]
+            84895..84905 'batch_data': ref<storage, BatchData, read>
+            84895..84930 'batch_...ntries': ref<storage, [error], read>
+            84895..84943 'batch_...+ mid]': [error]
+            84895..84958 'batch_...ity_hi': [error]
+            84931..84936 'start': i32
+            84931..84942 'start + mid': i32
+            84939..84942 'mid': i32
+            84973..84980 'rand_hi': u32
+            84973..84987 'rand_hi < p_hi': [error]
+            84973..85026 'rand_h... p_lo)': [error]
+            84983..84987 'p_hi': [error]
+            84992..84999 'rand_hi': u32
+            84992..85007 'rand_hi == p_hi': [error]
+            84992..85025 'rand_h...< p_lo': [error]
+            85003..85007 'p_hi': [error]
+            85011..85018 'rand_lo': u32
+            85011..85025 'rand_lo < p_lo': [error]
+            85021..85025 'p_lo': [error]
+            85042..85046 'high': ref<function, i32, read_write>
+            85049..85052 'mid': i32
+            85083..85086 'low': ref<function, i32, read_write>
+            85089..85092 'mid': i32
+            85089..85096 'mid + 1': i32
+            85095..85096 '1': integer
+            85125..85128 'low': ref<function, i32, read_write>
+            85314..85320 'op_idx': u32
+            85327..85332 'index': u32
+            85459..85466 'vec_idx': u32
+            85469..85474 'index': u32
+            85469..85479 'index / 2u': u32
+            85477..85479 '2u': u32
+            85489..85498 'component': u32
+            85501..85506 'index': u32
+            85501..85511 'index % 2u': u32
+            85509..85511 '2u': u32
+            85521..85530 'component': u32
+            85521..85536 'component == 0u': bool
+            85534..85536 '0u': u32
+            85555..85590 'u32(op...dx].x)': u32
+            85559..85562 'ops': ref<storage, array<Op>, read>
+            85559..85570 'ops[op_idx]': ref<storage, Op, read>
+            85559..85578 'ops[op...nitary': ref<storage, array<vec2<f32>, 16>, read>
+            85559..85587 'ops[op...c_idx]': ref<storage, vec2<f32>, read>
+            85559..85589 'ops[op...idx].x': ref<storage, f32, read>
+            85563..85569 'op_idx': u32
+            85579..85586 'vec_idx': u32
+            85620..85655 'u32(op...dx].y)': u32
+            85624..85627 'ops': ref<storage, array<Op>, read>
+            85624..85635 'ops[op_idx]': ref<storage, Op, read>
+            85624..85643 'ops[op...nitary': ref<storage, array<vec2<f32>, 16>, read>
+            85624..85652 'ops[op...c_idx]': ref<storage, vec2<f32>, read>
+            85624..85654 'ops[op...idx].y': ref<storage, f32, read>
+            85628..85634 'op_idx': u32
+            85644..85651 'vec_idx': u32
+            85865..85873 'shot_idx': u32
+            85880..85886 'op_idx': u32
+            85903..85905 'op': ptr<storage, Op, read>
+            85908..85920 '&ops[op_idx]': ptr<storage, Op, read>
+            85909..85912 'ops': ref<storage, array<Op>, read>
+            85909..85920 'ops[op_idx]': ref<storage, Op, read>
+            85913..85919 'op_idx': u32
+            85930..85945 'noise_table_idx': u32
+            85948..85950 'op': ptr<storage, Op, read>
+            85948..85953 'op.q1': ref<storage, u32, read>
+            85963..85974 'qubit_count': u32
+            85977..85979 'op': ptr<storage, Op, read>
+            85977..85982 'op.q2': ref<storage, u32, read>
+            85993..85999 'sample': CorrelatedNoiseSample
+            86002..86060 'sample...e_idx)': CorrelatedNoiseSample
+            86026..86034 'shot_idx': u32
+            86036..86042 'op_idx': u32
+            86044..86059 'noise_table_idx': u32
+            86070..86076 'sample': CorrelatedNoiseSample
+            86070..86089 'sample..._apply': u32
+            86070..86095 'sample... == 0u': bool
+            86093..86095 '0u': u32
+            86213..86226 'bit_flip_mask': ref<function, u32, read_write>
+            86234..86236 '0u': u32
+            86246..86261 'phase_flip_mask': ref<function, u32, read_write>
+            86269..86271 '0u': u32
+            86281..86290 'loss_mask': ref<function, u32, read_write>
+            86298..86300 '0u': u32
+            86315..86316 'i': ref<function, u32, read_write>
+            86324..86326 '0u': u32
+            86328..86329 'i': ref<function, u32, read_write>
+            86328..86343 'i < qubit_count': bool
+            86332..86343 'qubit_count': u32
+            86345..86346 'i': ref<function, u32, read_write>
+            86364..86374 'pauli_bits': u32
+            86377..86443 'get_pa...nt, i)': u32
+            86392..86398 'sample': CorrelatedNoiseSample
+            86392..86408 'sample...lis_lo': u32
+            86410..86416 'sample': CorrelatedNoiseSample
+            86410..86426 'sample...lis_hi': u32
+            86428..86439 'qubit_count': u32
+            86441..86442 'i': ref<function, u32, read_write>
+            86457..86467 'qubit_mask': u32
+            86470..86472 '1u': u32
+            86470..86513 '1u << ...dx, i)': u32
+            86476..86513 'get_co...dx, i)': u32
+            86503..86509 'op_idx': u32
+            86511..86512 'i': ref<function, u32, read_write>
+            86527..86552 '(pauli... != 0u': bool
+            86528..86538 'pauli_bits': u32
+            86528..86545 'pauli_...& 0x4u': u32
+            86541..86545 '0x4u': u32
+            86550..86552 '0u': u32
+            86648..86657 'loss_mask': ref<function, u32, read_write>
+            86661..86671 'qubit_mask': u32
+            86706..86731 '(pauli... != 0u': bool
+            86707..86717 'pauli_bits': u32
+            86707..86724 'pauli_...& 0x1u': u32
+            86720..86724 '0x1u': u32
+            86729..86731 '0u': u32
+            86735..86748 'bit_flip_mask': ref<function, u32, read_write>
+            86752..86762 'qubit_mask': u32
+            86782..86807 '(pauli... != 0u': bool
+            86783..86793 'pauli_bits': u32
+            86783..86800 'pauli_...& 0x2u': u32
+            86796..86800 '0x2u': u32
+            86805..86807 '0u': u32
+            86811..86826 'phase_flip_mask': ref<function, u32, read_write>
+            86830..86840 'qubit_mask': u32
+            86865..86949 'commit..._mask)': [error]
+            86889..86897 'shot_idx': u32
+            86899..86905 'op_idx': u32
+            86907..86920 'bit_flip_mask': ref<function, u32, read_write>
+            86922..86937 'phase_flip_mask': ref<function, u32, read_write>
+            86939..86948 'loss_mask': ref<function, u32, read_write>
+            87234..87242 'shot_idx': u32
+            87249..87252 'reg': u32
+            87279..87284 'shots': ref<storage, array<ShotData>, read_write>
+            87279..87294 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            87279..87301 'shots[...interp': ref<storage, InterpreterState, read_write>
+            87279..87311 'shots[...isters': ref<storage, [error], read_write>
+            87279..87316 'shots[...s[reg]': [error]
+            87285..87293 'shot_idx': u32
+            87312..87315 'reg': u32
+            87334..87342 'shot_idx': u32
+            87349..87352 'reg': u32
+            87359..87362 'val': u32
+            87375..87380 'shots': ref<storage, array<ShotData>, read_write>
+            87375..87390 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            87375..87397 'shots[...interp': ref<storage, InterpreterState, read_write>
+            87375..87407 'shots[...isters': ref<storage, [error], read_write>
+            87375..87412 'shots[...s[reg]': [error]
+            87381..87389 'shot_idx': u32
+            87408..87411 'reg': u32
+            87415..87418 'val': u32
+            87439..87447 'shot_idx': u32
+            87454..87457 'reg': u32
+            87484..87521 'bitcas... reg))': i32
+            87497..87520 'read_r..., reg)': u32
+            87506..87514 'shot_idx': u32
+            87516..87519 'reg': u32
+            87543..87551 'shot_idx': u32
+            87558..87561 'reg': u32
+            87568..87571 'val': i32
+            87584..87627 'write_...(val))': [error]
+            87594..87602 'shot_idx': u32
+            87604..87607 'reg': u32
+            87609..87626 'bitcas...>(val)': u32
+            87622..87625 'val': i32
+            87648..87656 'shot_idx': u32
+            87663..87666 'reg': u32
+            87693..87730 'bitcas... reg))': f32
+            87706..87729 'read_r..., reg)': u32
+            87715..87723 'shot_idx': u32
+            87725..87728 'reg': u32
+            87752..87760 'shot_idx': u32
+            87767..87770 'reg': u32
+            87777..87780 'val': f32
+            87793..87836 'write_...(val))': [error]
+            87803..87811 'shot_idx': u32
+            87813..87816 'reg': u32
+            87818..87835 'bitcas...>(val)': u32
+            87831..87834 'val': f32
+            88087..88089 'pc': u32
+            88124..88134 'batch_data': ref<storage, BatchData, read>
+            88124..88142 'batch_...rogram': ref<storage, Program, read>
+            88124..88155 'batch_...ctions': ref<storage, [error], read>
+            88124..88159 'batch_...ns[pc]': [error]
+            88156..88158 'pc': u32
+            88178..88184 'packed': u32
+            88209..88215 'packed': u32
+            88209..88223 'packed & 0xFFu': u32
+            88218..88223 '0xFFu': u32
+            88242..88248 'packed': u32
+            88272..88294 '(packe... 0xFFu': u32
+            88273..88279 'packed': u32
+            88273..88285 'packed >> 8u': u32
+            88283..88285 '8u': u32
+            88289..88294 '0xFFu': u32
+            88311..88317 'packed': u32
+            88343..88366 '(packe... 0xFFu': u32
+            88344..88350 'packed': u32
+            88344..88357 'packed >> 16u': u32
+            88354..88357 '16u': u32
+            88361..88366 '0xFFu': u32
+            88386..88394 'shot_idx': u32
+            88401..88408 'operand': u32
+            88415..88420 'flags': u32
+            88427..88438 'operand_idx': u32
+            88461..88496 '(flags... != 0u': bool
+            88462..88467 'flags': u32
+            88462..88489 'flags ...d_idx)': u32
+            88471..88473 '1u': u32
+            88471..88488 '1u << ...nd_idx': u32
+            88477..88488 'operand_idx': u32
+            88494..88496 '0u': u32
+            88514..88535 'bitcas...erand)': i32
+            88527..88534 'operand': u32
+            88568..88599 'read_r...erand)': i32
+            88581..88589 'shot_idx': u32
+            88591..88598 'operand': u32
+            88632..88640 'shot_idx': u32
+            88647..88654 'operand': u32
+            88661..88666 'flags': u32
+            88673..88684 'operand_idx': u32
+            88707..88742 '(flags... != 0u': bool
+            88708..88713 'flags': u32
+            88708..88735 'flags ...d_idx)': u32
+            88717..88719 '1u': u32
+            88717..88734 '1u << ...nd_idx': u32
+            88723..88734 'operand_idx': u32
+            88740..88742 '0u': u32
+            88760..88767 'operand': u32
+            88786..88813 'read_r...erand)': u32
+            88795..88803 'shot_idx': u32
+            88805..88812 'operand': u32
+            88833..88841 'shot_idx': u32
+            88848..88855 'operand': u32
+            88862..88867 'flags': u32
+            88874..88885 'operand_idx': u32
+            88908..88943 '(flags... != 0u': bool
+            88909..88914 'flags': u32
+            88909..88936 'flags ...d_idx)': u32
+            88918..88920 '1u': u32
+            88918..88935 '1u << ...nd_idx': u32
+            88924..88935 'operand_idx': u32
+            88941..88943 '0u': u32
+            88961..88982 'bitcas...erand)': f32
+            88974..88981 'operand': u32
+            89038..89069 'read_r...erand)': f32
+            89051..89059 'shot_idx': u32
+            89061..89068 'operand': u32
+            89140..89148 'shot_idx': u32
+            89172..89177 'state': InterpreterState
+            89180..89185 'shots': ref<storage, array<ShotData>, read_write>
+            89180..89195 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            89180..89202 'shots[...interp': ref<storage, InterpreterState, read_write>
+            89186..89194 'shot_idx': u32
+            89212..89217 'instr': Instruction
+            89220..89245 'fetch_...c - 1)': Instruction
+            89232..89237 'state': InterpreterState
+            89232..89240 'state.pc': u32
+            89232..89244 'state.pc - 1': u32
+            89243..89244 '1': integer
+            89254..89289 '(instr...) != 0': bool
+            89255..89260 'instr': Instruction
+            89255..89267 'instr.opcode': u32
+            89255..89283 'instr....X1_IMM': u32
+            89270..89283 'FLAG_AUX1_IMM': u32
+            89288..89289 '0': integer
+            89307..89312 'instr': Instruction
+            89307..89317 'instr.aux1': u32
+            89336..89366 'read_r....aux1)': u32
+            89345..89353 'shot_idx': u32
+            89355..89360 'instr': Instruction
+            89355..89365 'instr.aux1': u32
+            89437..89445 'shot_idx': u32
+            89469..89474 'state': InterpreterState
+            89477..89482 'shots': ref<storage, array<ShotData>, read_write>
+            89477..89492 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            89477..89499 'shots[...interp': ref<storage, InterpreterState, read_write>
+            89483..89491 'shot_idx': u32
+            89509..89514 'instr': Instruction
+            89517..89542 'fetch_...c - 1)': Instruction
+            89529..89534 'state': InterpreterState
+            89529..89537 'state.pc': u32
+            89529..89541 'state.pc - 1': u32
+            89540..89541 '1': integer
+            89551..89586 '(instr...) != 0': bool
+            89552..89557 'instr': Instruction
+            89552..89564 'instr.opcode': u32
+            89552..89580 'instr....X2_IMM': u32
+            89567..89580 'FLAG_AUX2_IMM': u32
+            89585..89586 '0': integer
+            89604..89609 'instr': Instruction
+            89604..89614 'instr.aux2': u32
+            89633..89663 'read_r....aux2)': u32
+            89642..89650 'shot_idx': u32
+            89652..89657 'instr': Instruction
+            89652..89662 'instr.aux2': u32
+            89838..89846 'shot_idx': u32
+            89870..89875 'state': InterpreterState
+            89878..89883 'shots': ref<storage, array<ShotData>, read_write>
+            89878..89893 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            89878..89900 'shots[...interp': ref<storage, InterpreterState, read_write>
+            89884..89892 'shot_idx': u32
+            89910..89915 'instr': Instruction
+            89918..89943 'fetch_...c - 1)': Instruction
+            89930..89935 'state': InterpreterState
+            89930..89938 'state.pc': u32
+            89930..89942 'state.pc - 1': u32
+            89941..89942 '1': integer
+            89953..89958 'flags': u32
+            89961..89984 'get_fl...pcode)': u32
+            89971..89976 'instr': Instruction
+            89971..89983 'instr.opcode': u32
+            89997..90041 'resolv...s, 0u)': f32
+            90009..90017 'shot_idx': u32
+            90019..90024 'instr': Instruction
+            90019..90029 'instr.src0': u32
+            90031..90036 'flags': u32
+            90038..90040 '0u': u32
+            90213..90221 'shot_idx': u32
+            90228..90237 'result_id': u32
+            90265..90322 'atomic...t_id])': u32
+            90265..90328 'atomic... == 1u': bool
+            90276..90321 '&resul...lt_id]': ptr<storage, atomic<u32>, read_write>
+            90277..90284 'results': ref<storage, array<atomic<u32>>, read_write>
+            90277..90321 'result...lt_id]': ref<storage, atomic<u32>, read_write>
+            90285..90293 'shot_idx': u32
+            90285..90308 'shot_i..._COUNT': u32
+            90285..90320 'shot_i...ult_id': u32
+            90296..90308 'RESULT_COUNT': u32
+            90311..90320 'result_id': u32
+            90326..90328 '1u': u32
+            90410..90412 'id': u32
+            90440..90488 '(12 <=...<= 19)': bool
+            90441..90443 '12': integer
+            90441..90449 '12 <= id': bool
+            90441..90461 '12 <= ... <= 14': bool
+            90447..90449 'id': u32
+            90453..90455 'id': u32
+            90453..90461 'id <= 14': bool
+            90459..90461 '14': integer
+            90467..90469 '17': integer
+            90467..90475 '17 <= id': bool
+            90467..90487 '17 <= ... <= 19': bool
+            90473..90475 'id': u32
+            90479..90481 'id': u32
+            90479..90487 'id <= 19': bool
+            90485..90487 '19': integer
+            90583..90591 'shot_idx': u32
+            90616..90621 'state': InterpreterState
+            90624..90629 'shots': ref<storage, array<ShotData>, read_write>
+            90624..90639 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            90624..90646 'shots[...interp': ref<storage, InterpreterState, read_write>
+            90630..90638 'shot_idx': u32
+            90656..90661 'instr': Instruction
+            90664..90689 'fetch_...c - 1)': Instruction
+            90676..90681 'state': InterpreterState
+            90676..90684 'state.pc': u32
+            90676..90688 'state.pc - 1': u32
+            90687..90688 '1': integer
+            90702..90737 '(instr...) != 0': bool
+            90703..90708 'instr': Instruction
+            90703..90715 'instr.opcode': u32
+            90703..90731 'instr....C0_IMM': u32
+            90718..90731 'FLAG_SRC0_IMM': u32
+            90736..90737 '0': integer
+            91041..91049 'shot_idx': u32
+            91056..91061 'qubit': u32
             91078..91082 'shot': ptr<storage, ShotData, read_write>
-            91078..91094 'shot.q..._state': ref<storage, [error], read_write>
-            91078..91101 'shot.q...qubit]': [error]
-            91078..91106 'shot.q...].heat': [error]
-            91095..91100 'qubit': u32
-            91109..91113 '-1.0': float
-            91110..91113 '1.0': float
-            91119..91200 'prep_m...ro */)': [error]
-            91149..91157 'shot_idx': u32
-            91159..91164 'qubit': u32
-            91166..91172 'result': [error]
-            91174..91178 'true': bool
-            91206..91210 'shot': ptr<storage, ShotData, read_write>
-            91206..91217 'shot.op_idx': ref<storage, u32, read_write>
-            91220..91225 'qubit': u32
-            91275..91279 'shot': ptr<storage, ShotData, read_write>
-            91275..91287 'shot.op_type': ref<storage, u32, read_write>
-            91290..91305 'OPID_LOSS_NOISE': u32
-            91516..91524 'shot_idx': u32
-            91531..91537 'op_idx': u32
-            91544..91555 'qubit_count': u32
-            91562..91572 'arg_offset': u32
-            91589..91604 'noise_table_idx': u32
-            91607..91610 'ops': ref<storage, array<Op>, read>
-            91607..91618 'ops[op_idx]': ref<storage, Op, read>
-            91607..91621 'ops[op_idx].q1': ref<storage, u32, read>
-            91611..91617 'op_idx': u32
-            91632..91638 'sample': CorrelatedNoiseSample
-            91641..91699 'sample...e_idx)': CorrelatedNoiseSample
-            91665..91673 'shot_idx': u32
-            91675..91681 'op_idx': u32
-            91683..91698 'noise_table_idx': u32
-            91709..91715 'sample': CorrelatedNoiseSample
-            91709..91728 'sample..._apply': u32
-            91709..91734 'sample... == 0u': bool
-            91732..91734 '0u': u32
-            91857..91870 'bit_flip_mask': ref<function, u32, read_write>
-            91878..91880 '0u': u32
-            91890..91905 'phase_flip_mask': ref<function, u32, read_write>
-            91913..91915 '0u': u32
-            91925..91934 'loss_mask': ref<function, u32, read_write>
-            91942..91944 '0u': u32
-            91959..91960 'i': ref<function, u32, read_write>
-            91968..91970 '0u': u32
-            91972..91973 'i': ref<function, u32, read_write>
-            91972..91987 'i < qubit_count': bool
-            91976..91987 'qubit_count': u32
-            91989..91990 'i': ref<function, u32, read_write>
-            92008..92018 'pauli_bits': u32
-            92021..92087 'get_pa...nt, i)': u32
-            92036..92042 'sample': CorrelatedNoiseSample
-            92036..92052 'sample...lis_lo': u32
-            92054..92060 'sample': CorrelatedNoiseSample
-            92054..92070 'sample...lis_hi': u32
-            92072..92083 'qubit_count': u32
-            92085..92086 'i': ref<function, u32, read_write>
-            92101..92108 'arg_reg': [error]
-            92111..92121 'batch_data': ref<storage, BatchData, read>
-            92111..92129 'batch_...rogram': ref<storage, Program, read>
-            92111..92144 'batch_..._table': ref<storage, [error], read>
-            92111..92160 'batch_...t + i]': [error]
-            92145..92155 'arg_offset': u32
-            92145..92159 'arg_offset + i': u32
-            92158..92159 'i': ref<function, u32, read_write>
-            92174..92184 'qubit_mask': u32
-            92187..92189 '1u': u32
-            92187..92220 '1u << ...g_reg)': u32
-            92193..92220 'read_r...g_reg)': u32
-            92202..92210 'shot_idx': u32
-            92212..92219 'arg_reg': [error]
-            92234..92259 '(pauli... != 0u': bool
-            92235..92245 'pauli_bits': u32
-            92235..92252 'pauli_...& 0x4u': u32
-            92248..92252 '0x4u': u32
-            92257..92259 '0u': u32
-            92355..92364 'loss_mask': ref<function, u32, read_write>
-            92368..92378 'qubit_mask': u32
-            92413..92438 '(pauli... != 0u': bool
-            92414..92424 'pauli_bits': u32
-            92414..92431 'pauli_...& 0x1u': u32
-            92427..92431 '0x1u': u32
-            92436..92438 '0u': u32
-            92442..92455 'bit_flip_mask': ref<function, u32, read_write>
-            92459..92469 'qubit_mask': u32
-            92489..92514 '(pauli... != 0u': bool
-            92490..92500 'pauli_bits': u32
-            92490..92507 'pauli_...& 0x2u': u32
-            92503..92507 '0x2u': u32
-            92512..92514 '0u': u32
-            92518..92533 'phase_flip_mask': ref<function, u32, read_write>
-            92537..92547 'qubit_mask': u32
-            92572..92656 'commit..._mask)': [error]
-            92596..92604 'shot_idx': u32
-            92606..92612 'op_idx': u32
-            92614..92627 'bit_flip_mask': ref<function, u32, read_write>
-            92629..92644 'phase_flip_mask': ref<function, u32, read_write>
-            92646..92655 'loss_mask': ref<function, u32, read_write>
-            92977..92983 'params': ShotParams
-            93208..93209 'i': ref<function, i32, read_write>
-            93212..93213 '0': integer
-            93215..93216 'i': ref<function, i32, read_write>
-            93215..93239 'i < pa...ations': bool
-            93219..93225 'params': ShotParams
-            93219..93239 'params...ations': i32
-            93241..93242 'i': ref<function, i32, read_write>
-            93260..93271 'entry_index': i32
-            93279..93285 'params': ShotParams
-            93279..93304 'params...n_shot': i32
-            93279..93340 'params...r_shot': i32
-            93307..93308 'i': ref<function, i32, read_write>
-            93307..93340 'i * pa...r_shot': i32
-            93311..93317 'params': ShotParams
-            93311..93340 'params...r_shot': i32
-            93350..93361 'stateVector': ref<storage, array<vec2<f32>>, read_write>
-            93350..93407 'stateV...index]': ref<storage, vec2<f32>, read_write>
-            93362..93368 'params': ShotParams
-            93362..93392 'params..._start': i32
-            93362..93406 'params..._index': i32
-            93395..93406 'entry_index': i32
-            93410..93425 'vec2f(0.0, 0.0)': vec2<f32>
-            93416..93419 '0.0': float
-            93421..93424 '0.0': float
-            93530..93536 'params': ShotParams
-            93530..93555 'params...n_shot': i32
-            93530..93560 'params...t == 0': bool
-            93559..93560 '0': integer
-            93663..93674 'stateVector': ref<storage, array<vec2<f32>>, read_write>
-            93663..93706 'stateV...start]': ref<storage, vec2<f32>, read_write>
-            93675..93681 'params': ShotParams
-            93675..93705 'params..._start': i32
-            93709..93724 'vec2f(1.0, 0.0)': vec2<f32>
-            93715..93718 '1.0': float
-            93720..93723 '0.0': float
-            93734..93760 'reset_...t_idx)': [error]
-            93744..93750 'params': ShotParams
-            93744..93759 'params.shot_idx': i32
-            94174..94182 'shot_idx': u32
-            94189..94195 'op_idx': u32
-            94202..94204 'q1': u32
-            94211..94213 'q2': u32
-            94230..94234 'shot': ptr<storage, ShotData, read_write>
-            94237..94253 '&shots...t_idx]': ptr<storage, ShotData, read_write>
-            94238..94243 'shots': ref<storage, array<ShotData>, read_write>
-            94238..94253 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            94244..94252 'shot_idx': u32
-            94263..94265 'op': ptr<storage, Op, read>
-            94268..94280 '&ops[op_idx]': ptr<storage, Op, read>
-            94269..94272 'ops': ref<storage, array<Op>, read>
-            94269..94280 'ops[op_idx]': ref<storage, Op, read>
-            94273..94279 'op_idx': u32
-            94287..94291 'shot': ptr<storage, ShotData, read_write>
-            94287..94298 'shot.op_idx': ref<storage, u32, read_write>
-            94301..94307 'op_idx': u32
-            94313..94317 'shot': ptr<storage, ShotData, read_write>
-            94313..94325 'shot.op_type': ref<storage, u32, read_write>
-            94328..94330 'op': ptr<storage, Op, read>
-            94328..94333 'op.id': ref<storage, u32, read>
-            94472..94474 'op': ptr<storage, Op, read>
-            94472..94477 'op.id': ref<storage, u32, read>
-            94472..94489 'op.id ...ID_RXX': bool
-            94472..94510 'op.id ...ID_RYY': bool
-            94472..94533 'op.id ..._MAT2Q': bool
-            94472..94555 'op.id ...D_SWAP': bool
-            94481..94489 'OPID_RXX': u32
-            94493..94495 'op': ptr<storage, Op, read>
-            94493..94498 'op.id': ref<storage, u32, read>
-            94493..94510 'op.id ...ID_RYY': bool
-            94502..94510 'OPID_RYY': u32
-            94514..94516 'op': ptr<storage, Op, read>
-            94514..94519 'op.id': ref<storage, u32, read>
-            94514..94533 'op.id ..._MAT2Q': bool
-            94523..94533 'OPID_MAT2Q': u32
-            94537..94539 'op': ptr<storage, Op, read>
-            94537..94542 'op.id': ref<storage, u32, read>
-            94537..94555 'op.id ...D_SWAP': bool
-            94546..94555 'OPID_SWAP': u32
-            94567..94571 'shot': ptr<storage, ShotData, read_write>
-            94567..94579 'shot.op_type': ref<storage, u32, read_write>
-            94582..94599 'OPID_S...UFF_2Q': u32
-            94665..94667 'op': ptr<storage, Op, read>
-            94665..94670 'op.id': ref<storage, u32, read>
-            94665..94680 'op.id >= OPID_X': bool
-            94665..94699 'op.id ...PID_CX': bool
-            94674..94680 'OPID_X': u32
-            94684..94686 'op': ptr<storage, Op, read>
-            94684..94689 'op.id': ref<storage, u32, read>
-            94684..94699 'op.id < OPID_CX': bool
-            94692..94699 'OPID_CX': u32
-            94711..94715 'shot': ptr<storage, ShotData, read_write>
-            94711..94723 'shot.op_type': ref<storage, u32, read_write>
-            94726..94743 'OPID_S...UFF_1Q': u32
-            94809..94832 'is_1q_...op.id)': bool
-            94826..94828 'op': ptr<storage, Op, read>
-            94826..94831 'op.id': ref<storage, u32, read>
-            94918..94922 'shot': ptr<storage, ShotData, read_write>
-            94918..94930 'shot.op_type': ref<storage, u32, read_write>
-            94933..94940 'OPID_RZ': u32
-            95052..95056 'shot': ptr<storage, ShotData, read_write>
-            95052..95064 'shot.op_type': ref<storage, u32, read_write>
-            95078..95085 'OPID_ID': u32
-            95087..95094 'OPID_CZ': u32
-            95096..95103 'OPID_RZ': u32
-            95105..95113 'OPID_RZZ': u32
-            95124..95128 'shot': ptr<storage, ShotData, read_write>
-            95124..95156 'shot.q...p_mask': ref<storage, u32, read_write>
-            95159..95161 '0u': u32
-            95182..95199 'OPID_S...UFF_1Q': u32
-            95210..95214 'shot': ptr<storage, ShotData, read_write>
-            95210..95242 'shot.q...p_mask': ref<storage, u32, read_write>
-            95245..95247 '1u': u32
-            95245..95253 '1u << q1': u32
-            95251..95253 'q1': u32
-            95274..95281 'OPID_CX': u32
-            95283..95290 'OPID_CY': u32
-            95292..95309 'OPID_S...UFF_2Q': u32
-            95320..95324 'shot': ptr<storage, ShotData, read_write>
-            95320..95352 'shot.q...p_mask': ref<storage, u32, read_write>
-            95355..95378 '(1u <<...<< q2)': u32
-            95356..95358 '1u': u32
-            95356..95364 '1u << q1': u32
-            95362..95364 'q1': u32
+            91085..91101 '&shots...t_idx]': ptr<storage, ShotData, read_write>
+            91086..91091 'shots': ref<storage, array<ShotData>, read_write>
+            91086..91101 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            91092..91100 'shot_idx': u32
+            91111..91117 'result': [error]
+            91120..91196 'select...ility)': [error]
+            91127..91129 '1u': u32
+            91131..91133 '0u': u32
+            91135..91139 'shot': ptr<storage, ShotData, read_write>
+            91135..91152 'shot.r...easure': ref<storage, f32, read_write>
+            91135..91195 'shot.r...bility': [error]
+            91155..91159 'shot': ptr<storage, ShotData, read_write>
+            91155..91171 'shot.q..._state': ref<storage, [error], read_write>
+            91155..91178 'shot.q...qubit]': [error]
+            91155..91195 'shot.q...bility': [error]
+            91172..91177 'qubit': u32
+            91202..91206 'shot': ptr<storage, ShotData, read_write>
+            91202..91218 'shot.q..._state': ref<storage, [error], read_write>
+            91202..91225 'shot.q...qubit]': [error]
+            91202..91230 'shot.q...].heat': [error]
+            91219..91224 'qubit': u32
+            91233..91237 '-1.0': float
+            91234..91237 '1.0': float
+            91243..91324 'prep_m...ro */)': [error]
+            91273..91281 'shot_idx': u32
+            91283..91288 'qubit': u32
+            91290..91296 'result': [error]
+            91298..91302 'true': bool
+            91330..91334 'shot': ptr<storage, ShotData, read_write>
+            91330..91341 'shot.op_idx': ref<storage, u32, read_write>
+            91344..91349 'qubit': u32
+            91399..91403 'shot': ptr<storage, ShotData, read_write>
+            91399..91411 'shot.op_type': ref<storage, u32, read_write>
+            91414..91429 'OPID_LOSS_NOISE': u32
+            91640..91648 'shot_idx': u32
+            91655..91661 'op_idx': u32
+            91668..91679 'qubit_count': u32
+            91686..91696 'arg_offset': u32
+            91713..91728 'noise_table_idx': u32
+            91731..91734 'ops': ref<storage, array<Op>, read>
+            91731..91742 'ops[op_idx]': ref<storage, Op, read>
+            91731..91745 'ops[op_idx].q1': ref<storage, u32, read>
+            91735..91741 'op_idx': u32
+            91756..91762 'sample': CorrelatedNoiseSample
+            91765..91823 'sample...e_idx)': CorrelatedNoiseSample
+            91789..91797 'shot_idx': u32
+            91799..91805 'op_idx': u32
+            91807..91822 'noise_table_idx': u32
+            91833..91839 'sample': CorrelatedNoiseSample
+            91833..91852 'sample..._apply': u32
+            91833..91858 'sample... == 0u': bool
+            91856..91858 '0u': u32
+            91981..91994 'bit_flip_mask': ref<function, u32, read_write>
+            92002..92004 '0u': u32
+            92014..92029 'phase_flip_mask': ref<function, u32, read_write>
+            92037..92039 '0u': u32
+            92049..92058 'loss_mask': ref<function, u32, read_write>
+            92066..92068 '0u': u32
+            92083..92084 'i': ref<function, u32, read_write>
+            92092..92094 '0u': u32
+            92096..92097 'i': ref<function, u32, read_write>
+            92096..92111 'i < qubit_count': bool
+            92100..92111 'qubit_count': u32
+            92113..92114 'i': ref<function, u32, read_write>
+            92132..92142 'pauli_bits': u32
+            92145..92211 'get_pa...nt, i)': u32
+            92160..92166 'sample': CorrelatedNoiseSample
+            92160..92176 'sample...lis_lo': u32
+            92178..92184 'sample': CorrelatedNoiseSample
+            92178..92194 'sample...lis_hi': u32
+            92196..92207 'qubit_count': u32
+            92209..92210 'i': ref<function, u32, read_write>
+            92225..92232 'arg_reg': [error]
+            92235..92245 'batch_data': ref<storage, BatchData, read>
+            92235..92253 'batch_...rogram': ref<storage, Program, read>
+            92235..92268 'batch_..._table': ref<storage, [error], read>
+            92235..92284 'batch_...t + i]': [error]
+            92269..92279 'arg_offset': u32
+            92269..92283 'arg_offset + i': u32
+            92282..92283 'i': ref<function, u32, read_write>
+            92298..92308 'qubit_mask': u32
+            92311..92313 '1u': u32
+            92311..92344 '1u << ...g_reg)': u32
+            92317..92344 'read_r...g_reg)': u32
+            92326..92334 'shot_idx': u32
+            92336..92343 'arg_reg': [error]
+            92358..92383 '(pauli... != 0u': bool
+            92359..92369 'pauli_bits': u32
+            92359..92376 'pauli_...& 0x4u': u32
+            92372..92376 '0x4u': u32
+            92381..92383 '0u': u32
+            92479..92488 'loss_mask': ref<function, u32, read_write>
+            92492..92502 'qubit_mask': u32
+            92537..92562 '(pauli... != 0u': bool
+            92538..92548 'pauli_bits': u32
+            92538..92555 'pauli_...& 0x1u': u32
+            92551..92555 '0x1u': u32
+            92560..92562 '0u': u32
+            92566..92579 'bit_flip_mask': ref<function, u32, read_write>
+            92583..92593 'qubit_mask': u32
+            92613..92638 '(pauli... != 0u': bool
+            92614..92624 'pauli_bits': u32
+            92614..92631 'pauli_...& 0x2u': u32
+            92627..92631 '0x2u': u32
+            92636..92638 '0u': u32
+            92642..92657 'phase_flip_mask': ref<function, u32, read_write>
+            92661..92671 'qubit_mask': u32
+            92696..92780 'commit..._mask)': [error]
+            92720..92728 'shot_idx': u32
+            92730..92736 'op_idx': u32
+            92738..92751 'bit_flip_mask': ref<function, u32, read_write>
+            92753..92768 'phase_flip_mask': ref<function, u32, read_write>
+            92770..92779 'loss_mask': ref<function, u32, read_write>
+            93101..93107 'params': ShotParams
+            93332..93333 'i': ref<function, i32, read_write>
+            93336..93337 '0': integer
+            93339..93340 'i': ref<function, i32, read_write>
+            93339..93363 'i < pa...ations': bool
+            93343..93349 'params': ShotParams
+            93343..93363 'params...ations': i32
+            93365..93366 'i': ref<function, i32, read_write>
+            93384..93395 'entry_index': i32
+            93403..93409 'params': ShotParams
+            93403..93428 'params...n_shot': i32
+            93403..93464 'params...r_shot': i32
+            93431..93432 'i': ref<function, i32, read_write>
+            93431..93464 'i * pa...r_shot': i32
+            93435..93441 'params': ShotParams
+            93435..93464 'params...r_shot': i32
+            93474..93485 'stateVector': ref<storage, array<vec2<f32>>, read_write>
+            93474..93531 'stateV...index]': ref<storage, vec2<f32>, read_write>
+            93486..93492 'params': ShotParams
+            93486..93516 'params..._start': i32
+            93486..93530 'params..._index': i32
+            93519..93530 'entry_index': i32
+            93534..93549 'vec2f(0.0, 0.0)': vec2<f32>
+            93540..93543 '0.0': float
+            93545..93548 '0.0': float
+            93654..93660 'params': ShotParams
+            93654..93679 'params...n_shot': i32
+            93654..93684 'params...t == 0': bool
+            93683..93684 '0': integer
+            93787..93798 'stateVector': ref<storage, array<vec2<f32>>, read_write>
+            93787..93830 'stateV...start]': ref<storage, vec2<f32>, read_write>
+            93799..93805 'params': ShotParams
+            93799..93829 'params..._start': i32
+            93833..93848 'vec2f(1.0, 0.0)': vec2<f32>
+            93839..93842 '1.0': float
+            93844..93847 '0.0': float
+            93858..93884 'reset_...t_idx)': [error]
+            93868..93874 'params': ShotParams
+            93868..93883 'params.shot_idx': i32
+            94298..94306 'shot_idx': u32
+            94313..94319 'op_idx': u32
+            94326..94328 'q1': u32
+            94335..94337 'q2': u32
+            94354..94358 'shot': ptr<storage, ShotData, read_write>
+            94361..94377 '&shots...t_idx]': ptr<storage, ShotData, read_write>
+            94362..94367 'shots': ref<storage, array<ShotData>, read_write>
+            94362..94377 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            94368..94376 'shot_idx': u32
+            94387..94389 'op': ptr<storage, Op, read>
+            94392..94404 '&ops[op_idx]': ptr<storage, Op, read>
+            94393..94396 'ops': ref<storage, array<Op>, read>
+            94393..94404 'ops[op_idx]': ref<storage, Op, read>
+            94397..94403 'op_idx': u32
+            94411..94415 'shot': ptr<storage, ShotData, read_write>
+            94411..94422 'shot.op_idx': ref<storage, u32, read_write>
+            94425..94431 'op_idx': u32
+            94437..94441 'shot': ptr<storage, ShotData, read_write>
+            94437..94449 'shot.op_type': ref<storage, u32, read_write>
+            94452..94454 'op': ptr<storage, Op, read>
+            94452..94457 'op.id': ref<storage, u32, read>
+            94596..94598 'op': ptr<storage, Op, read>
+            94596..94601 'op.id': ref<storage, u32, read>
+            94596..94613 'op.id ...ID_RXX': bool
+            94596..94634 'op.id ...ID_RYY': bool
+            94596..94657 'op.id ..._MAT2Q': bool
+            94596..94679 'op.id ...D_SWAP': bool
+            94605..94613 'OPID_RXX': u32
+            94617..94619 'op': ptr<storage, Op, read>
+            94617..94622 'op.id': ref<storage, u32, read>
+            94617..94634 'op.id ...ID_RYY': bool
+            94626..94634 'OPID_RYY': u32
+            94638..94640 'op': ptr<storage, Op, read>
+            94638..94643 'op.id': ref<storage, u32, read>
+            94638..94657 'op.id ..._MAT2Q': bool
+            94647..94657 'OPID_MAT2Q': u32
+            94661..94663 'op': ptr<storage, Op, read>
+            94661..94666 'op.id': ref<storage, u32, read>
+            94661..94679 'op.id ...D_SWAP': bool
+            94670..94679 'OPID_SWAP': u32
+            94691..94695 'shot': ptr<storage, ShotData, read_write>
+            94691..94703 'shot.op_type': ref<storage, u32, read_write>
+            94706..94723 'OPID_S...UFF_2Q': u32
+            94789..94791 'op': ptr<storage, Op, read>
+            94789..94794 'op.id': ref<storage, u32, read>
+            94789..94804 'op.id >= OPID_X': bool
+            94789..94823 'op.id ...PID_CX': bool
+            94798..94804 'OPID_X': u32
+            94808..94810 'op': ptr<storage, Op, read>
+            94808..94813 'op.id': ref<storage, u32, read>
+            94808..94823 'op.id < OPID_CX': bool
+            94816..94823 'OPID_CX': u32
+            94835..94839 'shot': ptr<storage, ShotData, read_write>
+            94835..94847 'shot.op_type': ref<storage, u32, read_write>
+            94850..94867 'OPID_S...UFF_1Q': u32
+            94933..94956 'is_1q_...op.id)': bool
+            94950..94952 'op': ptr<storage, Op, read>
+            94950..94955 'op.id': ref<storage, u32, read>
+            95042..95046 'shot': ptr<storage, ShotData, read_write>
+            95042..95054 'shot.op_type': ref<storage, u32, read_write>
+            95057..95064 'OPID_RZ': u32
+            95176..95180 'shot': ptr<storage, ShotData, read_write>
+            95176..95188 'shot.op_type': ref<storage, u32, read_write>
+            95202..95209 'OPID_ID': u32
+            95211..95218 'OPID_CZ': u32
+            95220..95227 'OPID_RZ': u32
+            95229..95237 'OPID_RZZ': u32
+            95248..95252 'shot': ptr<storage, ShotData, read_write>
+            95248..95280 'shot.q...p_mask': ref<storage, u32, read_write>
+            95283..95285 '0u': u32
+            95306..95323 'OPID_S...UFF_1Q': u32
+            95334..95338 'shot': ptr<storage, ShotData, read_write>
+            95334..95366 'shot.q...p_mask': ref<storage, u32, read_write>
             95369..95371 '1u': u32
-            95369..95377 '1u << q2': u32
-            95375..95377 'q2': u32
-            96700..96708 'shot_idx': u32
-            96837..96841 'shot': ptr<storage, ShotData, read_write>
-            96844..96860 '&shots...t_idx]': ptr<storage, ShotData, read_write>
-            96845..96850 'shots': ref<storage, array<ShotData>, read_write>
-            96845..96860 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            96851..96859 'shot_idx': u32
-            96988..96994 'op_idx': u32
-            96997..97001 'shot': ptr<storage, ShotData, read_write>
-            96997..97013 'shot.n...op_idx': ref<storage, u32, read_write>
-            97123..97129 'op_idx': u32
-            97123..97155 'op_idx...&ops))': bool
-            97133..97155 'u32(ar...&ops))': u32
-            97137..97154 'arrayL...(&ops)': u32
-            97149..97153 '&ops': ptr<storage, array<Op>, read>
-            97150..97153 'ops': ref<storage, array<Op>, read>
-            97215..97219 'shot': ptr<storage, ShotData, read_write>
-            97215..97227 'shot.op_type': ref<storage, u32, read_write>
-            97230..97237 'OPID_ID': u32
-            97247..97251 'shot': ptr<storage, ShotData, read_write>
-            97247..97263 'shot.r...malize': ref<storage, f32, read_write>
-            97266..97269 '1.0': float
-            97279..97283 'shot': ptr<storage, ShotData, read_write>
-            97279..97311 'shot.q...p_mask': ref<storage, u32, read_write>
-            97314..97316 '0u': u32
-            97349..97351 'op': ptr<storage, Op, read>
-            97354..97366 '&ops[op_idx]': ptr<storage, Op, read>
-            97355..97358 'ops': ref<storage, array<Op>, read>
-            97355..97366 'ops[op_idx]': ref<storage, Op, read>
-            97359..97365 'op_idx': u32
-            97463..97467 'shot': ptr<storage, ShotData, read_write>
-            97463..97495 'shot.q...p_mask': ref<storage, u32, read_write>
-            97463..97500 'shot.q...k != 0': bool
-            97499..97500 '0': integer
-            97512..97540 'update...t_idx)': [error]
-            97531..97539 'shot_idx': u32
-            97553..97579 'shot_i...t_idx)': [error]
-            97570..97578 'shot_idx': u32
-            97585..97589 'shot': ptr<storage, ShotData, read_write>
-            97585..97597 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            97600..97602 'op': ptr<storage, Op, read>
-            97600..97610 'op.unitary': ref<storage, array<vec2<f32>, 16>, read>
-            97744..97746 'op': ptr<storage, Op, read>
-            97744..97749 'op.id': ref<storage, u32, read>
-            97744..97765 'op.id ...RESETZ': bool
-            97753..97765 'OPID_MRESETZ': u32
-            97777..97901 'prep_m...ro */)': [error]
-            97796..97804 'shot_idx': u32
-            97806..97812 'op_idx': u32
-            97814..97816 'op': ptr<storage, Op, read>
-            97814..97819 'op.q1': ref<storage, u32, read>
-            97821..97823 'op': ptr<storage, Op, read>
-            97821..97826 'op.q2': ref<storage, u32, read>
-            97828..97833 'false': bool
-            97849..97853 'true': bool
-            97875..97879 'true': bool
-            97911..97915 'shot': ptr<storage, ShotData, read_write>
-            97911..97927 'shot.n...op_idx': ref<storage, u32, read_write>
+            95369..95377 '1u << q1': u32
+            95375..95377 'q1': u32
+            95398..95405 'OPID_CX': u32
+            95407..95414 'OPID_CY': u32
+            95416..95433 'OPID_S...UFF_2Q': u32
+            95444..95448 'shot': ptr<storage, ShotData, read_write>
+            95444..95476 'shot.q...p_mask': ref<storage, u32, read_write>
+            95479..95502 '(1u <<...<< q2)': u32
+            95480..95482 '1u': u32
+            95480..95488 '1u << q1': u32
+            95486..95488 'q1': u32
+            95493..95495 '1u': u32
+            95493..95501 '1u << q2': u32
+            95499..95501 'q2': u32
+            96824..96832 'shot_idx': u32
+            96961..96965 'shot': ptr<storage, ShotData, read_write>
+            96968..96984 '&shots...t_idx]': ptr<storage, ShotData, read_write>
+            96969..96974 'shots': ref<storage, array<ShotData>, read_write>
+            96969..96984 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            96975..96983 'shot_idx': u32
+            97112..97118 'op_idx': u32
+            97121..97125 'shot': ptr<storage, ShotData, read_write>
+            97121..97137 'shot.n...op_idx': ref<storage, u32, read_write>
+            97247..97253 'op_idx': u32
+            97247..97279 'op_idx...&ops))': bool
+            97257..97279 'u32(ar...&ops))': u32
+            97261..97278 'arrayL...(&ops)': u32
+            97273..97277 '&ops': ptr<storage, array<Op>, read>
+            97274..97277 'ops': ref<storage, array<Op>, read>
+            97339..97343 'shot': ptr<storage, ShotData, read_write>
+            97339..97351 'shot.op_type': ref<storage, u32, read_write>
+            97354..97361 'OPID_ID': u32
+            97371..97375 'shot': ptr<storage, ShotData, read_write>
+            97371..97387 'shot.r...malize': ref<storage, f32, read_write>
+            97390..97393 '1.0': float
+            97403..97407 'shot': ptr<storage, ShotData, read_write>
+            97403..97435 'shot.q...p_mask': ref<storage, u32, read_write>
+            97438..97440 '0u': u32
+            97473..97475 'op': ptr<storage, Op, read>
+            97478..97490 '&ops[op_idx]': ptr<storage, Op, read>
+            97479..97482 'ops': ref<storage, array<Op>, read>
+            97479..97490 'ops[op_idx]': ref<storage, Op, read>
+            97483..97489 'op_idx': u32
+            97587..97591 'shot': ptr<storage, ShotData, read_write>
+            97587..97619 'shot.q...p_mask': ref<storage, u32, read_write>
+            97587..97624 'shot.q...k != 0': bool
+            97623..97624 '0': integer
+            97636..97664 'update...t_idx)': [error]
+            97655..97663 'shot_idx': u32
+            97677..97703 'shot_i...t_idx)': [error]
+            97694..97702 'shot_idx': u32
+            97709..97713 'shot': ptr<storage, ShotData, read_write>
+            97709..97721 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            97724..97726 'op': ptr<storage, Op, read>
+            97724..97734 'op.unitary': ref<storage, array<vec2<f32>, 16>, read>
+            97868..97870 'op': ptr<storage, Op, read>
+            97868..97873 'op.id': ref<storage, u32, read>
+            97868..97889 'op.id ...RESETZ': bool
+            97877..97889 'OPID_MRESETZ': u32
+            97901..98025 'prep_m...ro */)': [error]
+            97920..97928 'shot_idx': u32
             97930..97936 'op_idx': u32
-            97930..97941 'op_idx + 1u': u32
-            97939..97941 '1u': u32
-            98022..98024 'op': ptr<storage, Op, read>
-            98022..98027 'op.id': ref<storage, u32, read>
-            98022..98038 'op.id ...PID_MZ': bool
-            98031..98038 'OPID_MZ': u32
-            98050..98175 'prep_m...ro */)': [error]
-            98069..98077 'shot_idx': u32
-            98079..98085 'op_idx': u32
-            98087..98089 'op': ptr<storage, Op, read>
-            98087..98092 'op.q1': ref<storage, u32, read>
-            98094..98096 'op': ptr<storage, Op, read>
-            98094..98099 'op.q2': ref<storage, u32, read>
-            98101..98106 'false': bool
-            98122..98126 'true': bool
-            98148..98153 'false': bool
-            98185..98189 'shot': ptr<storage, ShotData, read_write>
-            98185..98201 'shot.n...op_idx': ref<storage, u32, read_write>
-            98204..98210 'op_idx': u32
-            98204..98215 'op_idx + 1u': u32
-            98213..98215 '1u': u32
-            98247..98249 'op': ptr<storage, Op, read>
-            98247..98252 'op.id': ref<storage, u32, read>
-            98247..98267 'op.id ...RESETZ': bool
-            98256..98267 'OPID_RESETZ': u32
-            98279..98404 'prep_m...ro */)': [error]
-            98298..98306 'shot_idx': u32
-            98308..98314 'op_idx': u32
-            98316..98318 'op': ptr<storage, Op, read>
-            98316..98321 'op.q1': ref<storage, u32, read>
-            98323..98325 'op': ptr<storage, Op, read>
-            98323..98328 'op.q2': ref<storage, u32, read>
-            98330..98335 'false': bool
-            98351..98356 'false': bool
-            98378..98382 'true': bool
-            98414..98418 'shot': ptr<storage, ShotData, read_write>
-            98414..98430 'shot.n...op_idx': ref<storage, u32, read_write>
-            98433..98439 'op_idx': u32
-            98433..98444 'op_idx + 1u': u32
-            98442..98444 '1u': u32
-            98627..98629 'op': ptr<storage, Op, read>
-            98627..98632 'op.id': ref<storage, u32, read>
-            98627..98651 'op.id ..._NOISE': bool
-            98636..98651 'OPID_LOSS_NOISE': u32
-            98663..98667 'shot': ptr<storage, ShotData, read_write>
-            98663..98679 'shot.n...op_idx': ref<storage, u32, read_write>
-            98682..98688 'op_idx': u32
-            98682..98693 'op_idx + 1u': u32
-            98691..98693 '1u': u32
-            98707..98715 'loss_bit': u32
-            98718..98720 '1u': u32
-            98718..98729 '1u << op.q1': u32
-            98724..98726 'op': ptr<storage, Op, read>
-            98724..98729 'op.q1': ref<storage, u32, read>
-            98743..98784 '(shot.... != 0u': bool
-            98744..98748 'shot': ptr<storage, ShotData, read_write>
-            98744..98766 'shot.p...s_mask': ref<storage, u32, read_write>
-            98744..98777 'shot.p...ss_bit': u32
-            98769..98777 'loss_bit': u32
-            98782..98784 '0u': u32
-            98800..98804 'shot': ptr<storage, ShotData, read_write>
-            98800..98822 'shot.p...s_mask': ref<storage, u32, read_write>
-            98826..98835 '~loss_bit': u32
-            98827..98835 'loss_bit': u32
-            98849..98973 'prep_m...ro */)': [error]
-            98868..98876 'shot_idx': u32
-            98878..98884 'op_idx': u32
-            98886..98888 'op': ptr<storage, Op, read>
-            98886..98891 'op.q1': ref<storage, u32, read>
-            98893..98895 'op': ptr<storage, Op, read>
-            98893..98898 'op.q2': ref<storage, u32, read>
-            98900..98904 'true': bool
-            98920..98925 'false': bool
-            98947..98951 'true': bool
-            99004..99008 'shot': ptr<storage, ShotData, read_write>
-            99004..99016 'shot.op_type': ref<storage, u32, read_write>
-            99019..99026 'OPID_ID': u32
-            99040..99044 'shot': ptr<storage, ShotData, read_write>
-            99040..99051 'shot.op_idx': ref<storage, u32, read_write>
-            99054..99060 'op_idx': u32
-            99074..99078 'shot': ptr<storage, ShotData, read_write>
-            99074..99106 'shot.q...p_mask': ref<storage, u32, read_write>
-            99109..99111 '0u': u32
-            99612..99624 'pauli_op_idx': u32
-            99627..99654 'get_pa...p_idx)': u32
-            99647..99653 'op_idx': u32
-            99822..99826 'shot': ptr<storage, ShotData, read_write>
-            99822..99838 'shot.n...op_idx': ref<storage, u32, read_write>
-            99841..99866 'max(op...p_idx)': u32
-            99841..99871 'max(op...) + 1u': u32
-            99845..99851 'op_idx': u32
-            99853..99865 'pauli_op_idx': u32
-            99869..99871 '1u': u32
-            99924..99926 'op': ptr<storage, Op, read>
-            99924..99929 'op.id': ref<storage, u32, read>
-            99924..99954 'op.id ..._NOISE': bool
-            99933..99954 'OPID_C..._NOISE': u32
-            99966..100005 'prep_c...p_idx)': [error]
-            99988..99996 'shot_idx': u32
-            99998..100004 'op_idx': u32
-            100181..100197 'has_lo...perand': bool
-            100200..100253 'gate_h...op.q2)': bool
-            100222..100230 'shot_idx': u32
-            100232..100238 'op_idx': u32
-            100240..100242 'op': ptr<storage, Op, read>
-            100240..100245 'op.q1': ref<storage, u32, read>
-            100247..100249 'op': ptr<storage, Op, read>
-            100247..100252 'op.q2': ref<storage, u32, read>
-            100263..100279 'has_lo...perand': bool
-            100291..100349 'handle...op.q2)': [error]
-            100318..100326 'shot_idx': u32
-            100328..100334 'op_idx': u32
-            100336..100338 'op': ptr<storage, Op, read>
-            100336..100341 'op.q1': ref<storage, u32, read>
-            100343..100345 'op': ptr<storage, Op, read>
-            100343..100348 'op.q2': ref<storage, u32, read>
-            100365..100377 'pauli_op_idx': u32
-            100365..100382 'pauli_...x != 0': bool
-            100381..100382 '0': integer
-            100396..100399 'ops': ref<storage, array<Op>, read>
-            100396..100413 'ops[pa...p_idx]': ref<storage, Op, read>
-            100396..100416 'ops[pa...dx].id': ref<storage, u32, read>
-            100396..100439 'ops[pa...ISE_1Q': bool
-            100400..100412 'pauli_op_idx': u32
-            100420..100439 'OPID_P...ISE_1Q': u32
-            100610..100627 '!has_l...perand': bool
-            100611..100627 'has_lo...perand': bool
-            100647..100706 'apply_...op.q1)': [error]
-            100668..100676 'shot_idx': u32
-            100678..100684 'op_idx': u32
-            100686..100698 'pauli_op_idx': u32
-            100700..100702 'op': ptr<storage, Op, read>
-            100700..100705 'op.q1': ref<storage, u32, read>
-            100775..100791 'has_lo...perand': bool
-            100973..101051 'apply_...op.q2)': [error]
-            101006..101014 'shot_idx': u32
-            101016..101022 'op_idx': u32
-            101024..101036 'pauli_op_idx': u32
-            101038..101040 'op': ptr<storage, Op, read>
-            101038..101043 'op.q1': ref<storage, u32, read>
-            101045..101047 'op': ptr<storage, Op, read>
-            101045..101050 'op.q2': ref<storage, u32, read>
-            101090..101156 'apply_...op.q2)': [error]
-            101111..101119 'shot_idx': u32
-            101121..101127 'op_idx': u32
-            101129..101141 'pauli_op_idx': u32
-            101143..101145 'op': ptr<storage, Op, read>
-            101143..101148 'op.q1': ref<storage, u32, read>
-            101150..101152 'op': ptr<storage, Op, read>
-            101150..101155 'op.q2': ref<storage, u32, read>
-            101365..101381 'has_lo...perand': bool
-            101483..101531 'finali...op.q2)': [error]
-            101500..101508 'shot_idx': u32
-            101510..101516 'op_idx': u32
-            101518..101520 'op': ptr<storage, Op, read>
-            101518..101523 'op.q1': ref<storage, u32, read>
-            101525..101527 'op': ptr<storage, Op, read>
-            101525..101530 'op.q2': ref<storage, u32, read>
-            101673..101684 'workgroupId': vec3<u32>
-            101738..101741 'tid': u32
-            101780..101786 'params': ShotParams
-            101789..101847 'get_sh...op */)': ShotParams
-            101805..101816 'workgroupId': vec3<u32>
-            101805..101818 'workgroupId.x': u32
-            101820..101823 'tid': u32
-            101825..101826 '0': integer
-            101935..101960 'init_s...arams)': [error]
-            101953..101959 'params': ShotParams
-            102048..102059 'IS_ADAPTIVE': bool
-            102048..102093 'IS_ADA...t == 0': bool
-            102063..102069 'params': ShotParams
-            102063..102088 'params...n_shot': i32
-            102063..102093 'params...t == 0': bool
-            102092..102093 '0': integer
-            102258..102270 'results_base': u32
-            102273..102293 'u32(pa...t_idx)': u32
-            102273..102308 'u32(pa..._COUNT': u32
-            102277..102283 'params': ShotParams
-            102277..102292 'params.shot_idx': i32
-            102296..102308 'RESULT_COUNT': u32
-            102327..102328 'r': ref<function, u32, read_write>
-            102331..102333 '0u': u32
-            102335..102336 'r': ref<function, u32, read_write>
-            102335..102351 'r < RE..._COUNT': bool
-            102339..102351 'RESULT_COUNT': u32
-            102353..102354 'r': ref<function, u32, read_write>
-            102372..102415 'atomic...], 0u)': [error]
-            102384..102410 '&resul...e + r]': ptr<storage, atomic<u32>, read_write>
-            102385..102392 'results': ref<storage, array<atomic<u32>>, read_write>
-            102385..102410 'result...e + r]': ref<storage, atomic<u32>, read_write>
-            102393..102405 'results_base': u32
-            102393..102409 'result...se + r': u32
-            102408..102409 'r': ref<function, u32, read_write>
-            102412..102414 '0u': u32
-            102493..102494 'm': ref<function, u32, read_write>
-            102497..102499 '0u': u32
-            102501..102502 'm': ref<function, u32, read_write>
-            102501..102523 'm < CO...A_SIZE': bool
-            102505..102523 'CONSTA...A_SIZE': u32
-            102525..102526 'm': ref<function, u32, read_write>
-            102544..102549 'shots': ref<storage, array<ShotData>, read_write>
-            102544..102566 'shots[...t_idx]': ref<storage, ShotData, read_write>
-            102544..102573 'shots[...interp': ref<storage, InterpreterState, read_write>
-            102544..102580 'shots[...memory': ref<storage, [error], read_write>
-            102544..102583 'shots[...ory[m]': [error]
-            102550..102556 'params': ShotParams
-            102550..102565 'params.shot_idx': i32
-            102581..102582 'm': ref<function, u32, read_write>
-            102586..102596 'batch_data': ref<storage, BatchData, read>
-            102586..102604 'batch_...rogram': ref<storage, Program, read>
-            102586..102618 'batch_...t_data': ref<storage, [error], read>
-            102586..102621 'batch_...ata[m]': [error]
-            102619..102620 'm': ref<function, u32, read_write>
-            102703..102704 'm': ref<function, u32, read_write>
-            102707..102725 'CONSTA...A_SIZE': u32
-            102727..102728 'm': ref<function, u32, read_write>
-            102727..102741 'm < MAX_MEMORY': bool
-            102731..102741 'MAX_MEMORY': u32
+            97938..97940 'op': ptr<storage, Op, read>
+            97938..97943 'op.q1': ref<storage, u32, read>
+            97945..97947 'op': ptr<storage, Op, read>
+            97945..97950 'op.q2': ref<storage, u32, read>
+            97952..97957 'false': bool
+            97973..97977 'true': bool
+            97999..98003 'true': bool
+            98035..98039 'shot': ptr<storage, ShotData, read_write>
+            98035..98051 'shot.n...op_idx': ref<storage, u32, read_write>
+            98054..98060 'op_idx': u32
+            98054..98065 'op_idx + 1u': u32
+            98063..98065 '1u': u32
+            98146..98148 'op': ptr<storage, Op, read>
+            98146..98151 'op.id': ref<storage, u32, read>
+            98146..98162 'op.id ...PID_MZ': bool
+            98155..98162 'OPID_MZ': u32
+            98174..98299 'prep_m...ro */)': [error]
+            98193..98201 'shot_idx': u32
+            98203..98209 'op_idx': u32
+            98211..98213 'op': ptr<storage, Op, read>
+            98211..98216 'op.q1': ref<storage, u32, read>
+            98218..98220 'op': ptr<storage, Op, read>
+            98218..98223 'op.q2': ref<storage, u32, read>
+            98225..98230 'false': bool
+            98246..98250 'true': bool
+            98272..98277 'false': bool
+            98309..98313 'shot': ptr<storage, ShotData, read_write>
+            98309..98325 'shot.n...op_idx': ref<storage, u32, read_write>
+            98328..98334 'op_idx': u32
+            98328..98339 'op_idx + 1u': u32
+            98337..98339 '1u': u32
+            98371..98373 'op': ptr<storage, Op, read>
+            98371..98376 'op.id': ref<storage, u32, read>
+            98371..98391 'op.id ...RESETZ': bool
+            98380..98391 'OPID_RESETZ': u32
+            98403..98528 'prep_m...ro */)': [error]
+            98422..98430 'shot_idx': u32
+            98432..98438 'op_idx': u32
+            98440..98442 'op': ptr<storage, Op, read>
+            98440..98445 'op.q1': ref<storage, u32, read>
+            98447..98449 'op': ptr<storage, Op, read>
+            98447..98452 'op.q2': ref<storage, u32, read>
+            98454..98459 'false': bool
+            98475..98480 'false': bool
+            98502..98506 'true': bool
+            98538..98542 'shot': ptr<storage, ShotData, read_write>
+            98538..98554 'shot.n...op_idx': ref<storage, u32, read_write>
+            98557..98563 'op_idx': u32
+            98557..98568 'op_idx + 1u': u32
+            98566..98568 '1u': u32
+            98751..98753 'op': ptr<storage, Op, read>
+            98751..98756 'op.id': ref<storage, u32, read>
+            98751..98775 'op.id ..._NOISE': bool
+            98760..98775 'OPID_LOSS_NOISE': u32
+            98787..98791 'shot': ptr<storage, ShotData, read_write>
+            98787..98803 'shot.n...op_idx': ref<storage, u32, read_write>
+            98806..98812 'op_idx': u32
+            98806..98817 'op_idx + 1u': u32
+            98815..98817 '1u': u32
+            98831..98839 'loss_bit': u32
+            98842..98844 '1u': u32
+            98842..98853 '1u << op.q1': u32
+            98848..98850 'op': ptr<storage, Op, read>
+            98848..98853 'op.q1': ref<storage, u32, read>
+            98867..98908 '(shot.... != 0u': bool
+            98868..98872 'shot': ptr<storage, ShotData, read_write>
+            98868..98890 'shot.p...s_mask': ref<storage, u32, read_write>
+            98868..98901 'shot.p...ss_bit': u32
+            98893..98901 'loss_bit': u32
+            98906..98908 '0u': u32
+            98924..98928 'shot': ptr<storage, ShotData, read_write>
+            98924..98946 'shot.p...s_mask': ref<storage, u32, read_write>
+            98950..98959 '~loss_bit': u32
+            98951..98959 'loss_bit': u32
+            98973..99097 'prep_m...ro */)': [error]
+            98992..99000 'shot_idx': u32
+            99002..99008 'op_idx': u32
+            99010..99012 'op': ptr<storage, Op, read>
+            99010..99015 'op.q1': ref<storage, u32, read>
+            99017..99019 'op': ptr<storage, Op, read>
+            99017..99022 'op.q2': ref<storage, u32, read>
+            99024..99028 'true': bool
+            99044..99049 'false': bool
+            99071..99075 'true': bool
+            99128..99132 'shot': ptr<storage, ShotData, read_write>
+            99128..99140 'shot.op_type': ref<storage, u32, read_write>
+            99143..99150 'OPID_ID': u32
+            99164..99168 'shot': ptr<storage, ShotData, read_write>
+            99164..99175 'shot.op_idx': ref<storage, u32, read_write>
+            99178..99184 'op_idx': u32
+            99198..99202 'shot': ptr<storage, ShotData, read_write>
+            99198..99230 'shot.q...p_mask': ref<storage, u32, read_write>
+            99233..99235 '0u': u32
+            99736..99748 'pauli_op_idx': u32
+            99751..99778 'get_pa...p_idx)': u32
+            99771..99777 'op_idx': u32
+            99946..99950 'shot': ptr<storage, ShotData, read_write>
+            99946..99962 'shot.n...op_idx': ref<storage, u32, read_write>
+            99965..99990 'max(op...p_idx)': u32
+            99965..99995 'max(op...) + 1u': u32
+            99969..99975 'op_idx': u32
+            99977..99989 'pauli_op_idx': u32
+            99993..99995 '1u': u32
+            100048..100050 'op': ptr<storage, Op, read>
+            100048..100053 'op.id': ref<storage, u32, read>
+            100048..100078 'op.id ..._NOISE': bool
+            100057..100078 'OPID_C..._NOISE': u32
+            100090..100129 'prep_c...p_idx)': [error]
+            100112..100120 'shot_idx': u32
+            100122..100128 'op_idx': u32
+            100305..100321 'has_lo...perand': bool
+            100324..100377 'gate_h...op.q2)': bool
+            100346..100354 'shot_idx': u32
+            100356..100362 'op_idx': u32
+            100364..100366 'op': ptr<storage, Op, read>
+            100364..100369 'op.q1': ref<storage, u32, read>
+            100371..100373 'op': ptr<storage, Op, read>
+            100371..100376 'op.q2': ref<storage, u32, read>
+            100387..100403 'has_lo...perand': bool
+            100415..100473 'handle...op.q2)': [error]
+            100442..100450 'shot_idx': u32
+            100452..100458 'op_idx': u32
+            100460..100462 'op': ptr<storage, Op, read>
+            100460..100465 'op.q1': ref<storage, u32, read>
+            100467..100469 'op': ptr<storage, Op, read>
+            100467..100472 'op.q2': ref<storage, u32, read>
+            100489..100501 'pauli_op_idx': u32
+            100489..100506 'pauli_...x != 0': bool
+            100505..100506 '0': integer
+            100520..100523 'ops': ref<storage, array<Op>, read>
+            100520..100537 'ops[pa...p_idx]': ref<storage, Op, read>
+            100520..100540 'ops[pa...dx].id': ref<storage, u32, read>
+            100520..100563 'ops[pa...ISE_1Q': bool
+            100524..100536 'pauli_op_idx': u32
+            100544..100563 'OPID_P...ISE_1Q': u32
+            100734..100751 '!has_l...perand': bool
+            100735..100751 'has_lo...perand': bool
+            100771..100830 'apply_...op.q1)': [error]
+            100792..100800 'shot_idx': u32
+            100802..100808 'op_idx': u32
+            100810..100822 'pauli_op_idx': u32
+            100824..100826 'op': ptr<storage, Op, read>
+            100824..100829 'op.q1': ref<storage, u32, read>
+            100899..100915 'has_lo...perand': bool
+            101097..101175 'apply_...op.q2)': [error]
+            101130..101138 'shot_idx': u32
+            101140..101146 'op_idx': u32
+            101148..101160 'pauli_op_idx': u32
+            101162..101164 'op': ptr<storage, Op, read>
+            101162..101167 'op.q1': ref<storage, u32, read>
+            101169..101171 'op': ptr<storage, Op, read>
+            101169..101174 'op.q2': ref<storage, u32, read>
+            101214..101280 'apply_...op.q2)': [error]
+            101235..101243 'shot_idx': u32
+            101245..101251 'op_idx': u32
+            101253..101265 'pauli_op_idx': u32
+            101267..101269 'op': ptr<storage, Op, read>
+            101267..101272 'op.q1': ref<storage, u32, read>
+            101274..101276 'op': ptr<storage, Op, read>
+            101274..101279 'op.q2': ref<storage, u32, read>
+            101489..101505 'has_lo...perand': bool
+            101607..101655 'finali...op.q2)': [error]
+            101624..101632 'shot_idx': u32
+            101634..101640 'op_idx': u32
+            101642..101644 'op': ptr<storage, Op, read>
+            101642..101647 'op.q1': ref<storage, u32, read>
+            101649..101651 'op': ptr<storage, Op, read>
+            101649..101654 'op.q2': ref<storage, u32, read>
+            101797..101808 'workgroupId': vec3<u32>
+            101862..101865 'tid': u32
+            101904..101910 'params': ShotParams
+            101913..101971 'get_sh...op */)': ShotParams
+            101929..101940 'workgroupId': vec3<u32>
+            101929..101942 'workgroupId.x': u32
+            101944..101947 'tid': u32
+            101949..101950 '0': integer
+            102059..102084 'init_s...arams)': [error]
+            102077..102083 'params': ShotParams
+            102172..102183 'IS_ADAPTIVE': bool
+            102172..102217 'IS_ADA...t == 0': bool
+            102187..102193 'params': ShotParams
+            102187..102212 'params...n_shot': i32
+            102187..102217 'params...t == 0': bool
+            102216..102217 '0': integer
+            102382..102394 'results_base': u32
+            102397..102417 'u32(pa...t_idx)': u32
+            102397..102432 'u32(pa..._COUNT': u32
+            102401..102407 'params': ShotParams
+            102401..102416 'params.shot_idx': i32
+            102420..102432 'RESULT_COUNT': u32
+            102451..102452 'r': ref<function, u32, read_write>
+            102455..102457 '0u': u32
+            102459..102460 'r': ref<function, u32, read_write>
+            102459..102475 'r < RE..._COUNT': bool
+            102463..102475 'RESULT_COUNT': u32
+            102477..102478 'r': ref<function, u32, read_write>
+            102496..102539 'atomic...], 0u)': [error]
+            102508..102534 '&resul...e + r]': ptr<storage, atomic<u32>, read_write>
+            102509..102516 'results': ref<storage, array<atomic<u32>>, read_write>
+            102509..102534 'result...e + r]': ref<storage, atomic<u32>, read_write>
+            102517..102529 'results_base': u32
+            102517..102533 'result...se + r': u32
+            102532..102533 'r': ref<function, u32, read_write>
+            102536..102538 '0u': u32
+            102617..102618 'm': ref<function, u32, read_write>
+            102621..102623 '0u': u32
+            102625..102626 'm': ref<function, u32, read_write>
+            102625..102647 'm < CO...A_SIZE': bool
+            102629..102647 'CONSTA...A_SIZE': u32
+            102649..102650 'm': ref<function, u32, read_write>
+            102668..102673 'shots': ref<storage, array<ShotData>, read_write>
+            102668..102690 'shots[...t_idx]': ref<storage, ShotData, read_write>
+            102668..102697 'shots[...interp': ref<storage, InterpreterState, read_write>
+            102668..102704 'shots[...memory': ref<storage, [error], read_write>
+            102668..102707 'shots[...ory[m]': [error]
+            102674..102680 'params': ShotParams
+            102674..102689 'params.shot_idx': i32
+            102705..102706 'm': ref<function, u32, read_write>
+            102710..102720 'batch_data': ref<storage, BatchData, read>
+            102710..102728 'batch_...rogram': ref<storage, Program, read>
+            102710..102742 'batch_...t_data': ref<storage, [error], read>
+            102710..102745 'batch_...ata[m]': [error]
             102743..102744 'm': ref<function, u32, read_write>
-            102762..102767 'shots': ref<storage, array<ShotData>, read_write>
-            102762..102784 'shots[...t_idx]': ref<storage, ShotData, read_write>
-            102762..102791 'shots[...interp': ref<storage, InterpreterState, read_write>
-            102762..102798 'shots[...memory': ref<storage, [error], read_write>
-            102762..102801 'shots[...ory[m]': [error]
-            102768..102774 'params': ShotParams
-            102768..102783 'params.shot_idx': i32
-            102799..102800 'm': ref<function, u32, read_write>
-            102804..102806 '0u': u32
-            105427..105430 'gid': vec3<u32>
-            105567..105575 'shot_idx': u32
-            105578..105581 'gid': vec3<u32>
-            105578..105583 'gid.x': u32
-            105593..105598 'state': InterpreterState
-            105601..105606 'shots': ref<storage, array<ShotData>, read_write>
-            105601..105616 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            105601..105623 'shots[...interp': ref<storage, InterpreterState, read_write>
-            105607..105615 'shot_idx': u32
-            105701..105707 'status': u32
-            105710..105715 'state': InterpreterState
-            105710..105722 'state.status': u32
-            105731..105737 'status': u32
-            105731..105758 'status...INATED': bool
-            105731..105784 'status..._ERROR': bool
-            105741..105758 'STATUS...INATED': u32
-            105762..105768 'status': u32
-            105762..105784 'status..._ERROR': bool
-            105772..105784 'STATUS_ERROR': u32
-            106205..106210 'shots': ref<storage, array<ShotData>, read_write>
-            106205..106220 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            106205..106238 'shots[...s_mask': ref<storage, u32, read_write>
-            106205..106244 'shots[... != 0u': bool
-            106211..106219 'shot_idx': u32
-            106242..106244 '0u': u32
-            106259..106260 'q': u32
-            106263..106314 'firstT..._mask)': u32
-            106280..106285 'shots': ref<storage, array<ShotData>, read_write>
-            106280..106295 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            106280..106313 'shots[...s_mask': ref<storage, u32, read_write>
-            106286..106294 'shot_idx': u32
-            106324..106329 'shots': ref<storage, array<ShotData>, read_write>
-            106324..106339 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            106324..106357 'shots[...s_mask': ref<storage, u32, read_write>
-            106330..106338 'shot_idx': u32
-            106361..106371 '~(1u << q)': u32
-            106363..106365 '1u': u32
-            106363..106370 '1u << q': u32
-            106369..106370 'q': u32
-            106381..106386 'shots': ref<storage, array<ShotData>, read_write>
-            106381..106396 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            106381..106403 'shots[...interp': ref<storage, InterpreterState, read_write>
-            106381..106418 'shots[...op_idx': ref<storage, u32, read_write>
-            106387..106395 'shot_idx': u32
-            106421..106422 'q': u32
-            106432..106437 'shots': ref<storage, array<ShotData>, read_write>
-            106432..106447 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            106432..106454 'shots[...interp': ref<storage, InterpreterState, read_write>
-            106432..106470 'shots[...p_type': ref<storage, u32, read_write>
-            106438..106446 'shot_idx': u32
-            106473..106495 'PENDIN...COMMIT': u32
-            106505..106510 'shots': ref<storage, array<ShotData>, read_write>
-            106505..106520 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            106505..106527 'shots[...interp': ref<storage, InterpreterState, read_write>
-            106505..106534 'shots[...status': ref<storage, u32, read_write>
-            106511..106519 'shot_idx': u32
-            106537..106559 'STATUS...ENDING': u32
-            106806..106812 'status': u32
-            106806..106830 'status...UNNING': bool
-            106816..106830 'STATUS_RUNNING': u32
-            106841..106846 'shots': ref<storage, array<ShotData>, read_write>
-            106841..106856 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            106841..106863 'shots[...interp': ref<storage, InterpreterState, read_write>
-            106841..106870 'shots[...status': ref<storage, u32, read_write>
-            106847..106855 'shot_idx': u32
-            106873..106887 'STATUS_RUNNING': u32
-            107134..107136 'pc': ref<function, u32, read_write>
-            107144..107149 'state': InterpreterState
-            107144..107152 'state.pc': u32
-            107182..107190 'block_id': ref<function, u32, read_write>
-            107198..107203 'state': InterpreterState
-            107198..107220 'state....ock_id': u32
-            107230..107240 'prev_block': ref<function, u32, read_write>
-            107248..107253 'state': InterpreterState
-            107248..107271 'state....ock_id': u32
-            107292..107297 'steps': ref<function, u32, read_write>
-            107305..107307 '0u': u32
-            107375..107387 'should_break': ref<function, bool, read_write>
-            107396..107401 'false': bool
-            107876..107881 'steps': ref<function, u32, read_write>
-            107876..107904 'steps ..._STEPS': bool
-            107885..107904 'MAX_CL..._STEPS': u32
-            108052..108057 'state': InterpreterState
-            108052..108064 'state.status': u32
-            108052..108080 'state...._ERROR': bool
-            108068..108080 'STATUS_ERROR': u32
-            108099..108104 'shots': ref<storage, array<ShotData>, read_write>
-            108099..108114 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            108099..108121 'shots[...interp': ref<storage, InterpreterState, read_write>
-            108099..108128 'shots[...status': ref<storage, u32, read_write>
-            108105..108113 'shot_idx': u32
-            108131..108143 'STATUS_YIELD': u32
-            108333..108338 'instr': Instruction
-            108341..108356 'fetch_instr(pc)': Instruction
-            108353..108355 'pc': ref<function, u32, read_write>
-            108843..108845 'op': u32
-            108848..108872 'get_op...pcode)': u32
-            108859..108864 'instr': Instruction
-            108859..108871 'instr.opcode': u32
-            108886..108893 'subcond': u32
-            108896..108921 'get_su...pcode)': u32
-            108908..108913 'instr': Instruction
-            108908..108920 'instr.opcode': u32
-            108935..108940 'flags': u32
-            108943..108966 'get_fl...pcode)': u32
-            108953..108958 'instr': Instruction
-            108953..108965 'instr.opcode': u32
-            109767..109769 'op': u32
-            110044..110050 'OP_NOP': u32
-            110069..110071 'pc': ref<function, u32, read_write>
-            110649..110655 'OP_RET': u32
-            110678..110687 'exit_code': u32
-            110690..110733 'resolv...s, 2u)': u32
-            110702..110710 'shot_idx': u32
-            110712..110717 'instr': Instruction
-            110712..110721 'instr.dst': u32
-            110723..110728 'flags': u32
-            110730..110732 '2u': u32
-            110751..110756 'shots': ref<storage, array<ShotData>, read_write>
-            110751..110766 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            110751..110773 'shots[...interp': ref<storage, InterpreterState, read_write>
-            110751..110783 'shots[...t_code': ref<storage, u32, read_write>
-            110757..110765 'shot_idx': u32
-            110786..110795 'exit_code': u32
-            110972..110981 'err_index': u32
-            110984..111013 '(shot_..._COUNT': u32
-            110984..111017 '(shot_...NT - 1': u32
-            110985..110993 'shot_idx': u32
-            110985..110997 'shot_idx + 1': u32
-            110996..110997 '1': integer
-            111001..111013 'RESULT_COUNT': u32
-            111016..111017 '1': integer
-            111035..111096 'atomic..._code)': __atomic_compare_exchange_result
-            111061..111080 '&resul...index]': ptr<storage, atomic<u32>, read_write>
-            111062..111069 'results': ref<storage, array<atomic<u32>>, read_write>
-            111062..111080 'result...index]': ref<storage, atomic<u32>, read_write>
-            111070..111079 'err_index': u32
-            111082..111084 '0u': u32
-            111086..111095 'exit_code': u32
-            111114..111119 'shots': ref<storage, array<ShotData>, read_write>
-            111114..111129 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            111114..111136 'shots[...interp': ref<storage, InterpreterState, read_write>
-            111114..111143 'shots[...status': ref<storage, u32, read_write>
+            102827..102828 'm': ref<function, u32, read_write>
+            102831..102849 'CONSTA...A_SIZE': u32
+            102851..102852 'm': ref<function, u32, read_write>
+            102851..102865 'm < MAX_MEMORY': bool
+            102855..102865 'MAX_MEMORY': u32
+            102867..102868 'm': ref<function, u32, read_write>
+            102886..102891 'shots': ref<storage, array<ShotData>, read_write>
+            102886..102908 'shots[...t_idx]': ref<storage, ShotData, read_write>
+            102886..102915 'shots[...interp': ref<storage, InterpreterState, read_write>
+            102886..102922 'shots[...memory': ref<storage, [error], read_write>
+            102886..102925 'shots[...ory[m]': [error]
+            102892..102898 'params': ShotParams
+            102892..102907 'params.shot_idx': i32
+            102923..102924 'm': ref<function, u32, read_write>
+            102928..102930 '0u': u32
+            105562..105565 'gid': vec3<u32>
+            105702..105710 'shot_idx': u32
+            105713..105716 'gid': vec3<u32>
+            105713..105718 'gid.x': u32
+            105728..105733 'state': InterpreterState
+            105736..105741 'shots': ref<storage, array<ShotData>, read_write>
+            105736..105751 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            105736..105758 'shots[...interp': ref<storage, InterpreterState, read_write>
+            105742..105750 'shot_idx': u32
+            105836..105842 'status': u32
+            105845..105850 'state': InterpreterState
+            105845..105857 'state.status': u32
+            105866..105872 'status': u32
+            105866..105893 'status...INATED': bool
+            105866..105919 'status..._ERROR': bool
+            105876..105893 'STATUS...INATED': u32
+            105897..105903 'status': u32
+            105897..105919 'status..._ERROR': bool
+            105907..105919 'STATUS_ERROR': u32
+            106340..106345 'shots': ref<storage, array<ShotData>, read_write>
+            106340..106355 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            106340..106373 'shots[...s_mask': ref<storage, u32, read_write>
+            106340..106379 'shots[... != 0u': bool
+            106346..106354 'shot_idx': u32
+            106377..106379 '0u': u32
+            106394..106395 'q': u32
+            106398..106449 'firstT..._mask)': u32
+            106415..106420 'shots': ref<storage, array<ShotData>, read_write>
+            106415..106430 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            106415..106448 'shots[...s_mask': ref<storage, u32, read_write>
+            106421..106429 'shot_idx': u32
+            106459..106464 'shots': ref<storage, array<ShotData>, read_write>
+            106459..106474 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            106459..106492 'shots[...s_mask': ref<storage, u32, read_write>
+            106465..106473 'shot_idx': u32
+            106496..106506 '~(1u << q)': u32
+            106498..106500 '1u': u32
+            106498..106505 '1u << q': u32
+            106504..106505 'q': u32
+            106516..106521 'shots': ref<storage, array<ShotData>, read_write>
+            106516..106531 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            106516..106538 'shots[...interp': ref<storage, InterpreterState, read_write>
+            106516..106553 'shots[...op_idx': ref<storage, u32, read_write>
+            106522..106530 'shot_idx': u32
+            106556..106557 'q': u32
+            106567..106572 'shots': ref<storage, array<ShotData>, read_write>
+            106567..106582 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            106567..106589 'shots[...interp': ref<storage, InterpreterState, read_write>
+            106567..106605 'shots[...p_type': ref<storage, u32, read_write>
+            106573..106581 'shot_idx': u32
+            106608..106630 'PENDIN...COMMIT': u32
+            106640..106645 'shots': ref<storage, array<ShotData>, read_write>
+            106640..106655 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            106640..106662 'shots[...interp': ref<storage, InterpreterState, read_write>
+            106640..106669 'shots[...status': ref<storage, u32, read_write>
+            106646..106654 'shot_idx': u32
+            106672..106694 'STATUS...ENDING': u32
+            106941..106947 'status': u32
+            106941..106965 'status...UNNING': bool
+            106951..106965 'STATUS_RUNNING': u32
+            106976..106981 'shots': ref<storage, array<ShotData>, read_write>
+            106976..106991 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            106976..106998 'shots[...interp': ref<storage, InterpreterState, read_write>
+            106976..107005 'shots[...status': ref<storage, u32, read_write>
+            106982..106990 'shot_idx': u32
+            107008..107022 'STATUS_RUNNING': u32
+            107269..107271 'pc': ref<function, u32, read_write>
+            107279..107284 'state': InterpreterState
+            107279..107287 'state.pc': u32
+            107317..107325 'block_id': ref<function, u32, read_write>
+            107333..107338 'state': InterpreterState
+            107333..107355 'state....ock_id': u32
+            107365..107375 'prev_block': ref<function, u32, read_write>
+            107383..107388 'state': InterpreterState
+            107383..107406 'state....ock_id': u32
+            107427..107432 'steps': ref<function, u32, read_write>
+            107440..107442 '0u': u32
+            107510..107522 'should_break': ref<function, bool, read_write>
+            107531..107536 'false': bool
+            108011..108016 'steps': ref<function, u32, read_write>
+            108011..108039 'steps ..._STEPS': bool
+            108020..108039 'MAX_CL..._STEPS': u32
+            108187..108192 'state': InterpreterState
+            108187..108199 'state.status': u32
+            108187..108215 'state...._ERROR': bool
+            108203..108215 'STATUS_ERROR': u32
+            108234..108239 'shots': ref<storage, array<ShotData>, read_write>
+            108234..108249 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            108234..108256 'shots[...interp': ref<storage, InterpreterState, read_write>
+            108234..108263 'shots[...status': ref<storage, u32, read_write>
+            108240..108248 'shot_idx': u32
+            108266..108278 'STATUS_YIELD': u32
+            108468..108473 'instr': Instruction
+            108476..108491 'fetch_instr(pc)': Instruction
+            108488..108490 'pc': ref<function, u32, read_write>
+            108978..108980 'op': u32
+            108983..109007 'get_op...pcode)': u32
+            108994..108999 'instr': Instruction
+            108994..109006 'instr.opcode': u32
+            109021..109028 'subcond': u32
+            109031..109056 'get_su...pcode)': u32
+            109043..109048 'instr': Instruction
+            109043..109055 'instr.opcode': u32
+            109070..109075 'flags': u32
+            109078..109101 'get_fl...pcode)': u32
+            109088..109093 'instr': Instruction
+            109088..109100 'instr.opcode': u32
+            109902..109904 'op': u32
+            110179..110185 'OP_NOP': u32
+            110204..110206 'pc': ref<function, u32, read_write>
+            110784..110790 'OP_RET': u32
+            110813..110822 'exit_code': u32
+            110825..110868 'resolv...s, 2u)': u32
+            110837..110845 'shot_idx': u32
+            110847..110852 'instr': Instruction
+            110847..110856 'instr.dst': u32
+            110858..110863 'flags': u32
+            110865..110867 '2u': u32
+            110886..110891 'shots': ref<storage, array<ShotData>, read_write>
+            110886..110901 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            110886..110908 'shots[...interp': ref<storage, InterpreterState, read_write>
+            110886..110918 'shots[...t_code': ref<storage, u32, read_write>
+            110892..110900 'shot_idx': u32
+            110921..110930 'exit_code': u32
+            111107..111116 'err_index': u32
+            111119..111148 '(shot_..._COUNT': u32
+            111119..111152 '(shot_...NT - 1': u32
             111120..111128 'shot_idx': u32
-            111146..111163 'STATUS...INATED': u32
-            111181..111226 'atomic...t, 1u)': u32
-            111191..111221 '&diagn..._count': ptr<storage, atomic<u32>, read_write>
-            111192..111203 'diagnostics': ref<storage, DiagnosticData, read_write>
-            111192..111221 'diagno..._count': ref<storage, atomic<u32>, read_write>
-            111223..111225 '1u': u32
-            111244..111256 'should_break': ref<function, bool, read_write>
-            111259..111263 'true': bool
-            111615..111622 'OP_JUMP': u32
-            111641..111651 'prev_block': ref<function, u32, read_write>
-            111654..111662 'block_id': ref<function, u32, read_write>
-            111680..111688 'block_id': ref<function, u32, read_write>
-            111691..111696 'instr': Instruction
-            111691..111700 'instr.dst': u32
-            111718..111720 'pc': ref<function, u32, read_write>
-            111723..111733 'batch_data': ref<storage, BatchData, read>
-            111723..111741 'batch_...rogram': ref<storage, Program, read>
-            111723..111753 'batch_..._table': ref<storage, [error], read>
-            111723..111764 'batch_...r.dst]': [error]
-            111723..111777 'batch_...offset': [error]
-            111754..111759 'instr': Instruction
-            111754..111763 'instr.dst': u32
-            112193..112202 'OP_BRANCH': u32
-            112225..112229 'cond': bool
-            112232..112276 'resolv...s, 0u)': u32
-            112232..112282 'resolv... != 0u': bool
-            112244..112252 'shot_idx': u32
-            112254..112259 'instr': Instruction
-            112254..112264 'instr.src0': u32
-            112266..112271 'flags': u32
-            112273..112275 '0u': u32
-            112280..112282 '0u': u32
-            112300..112310 'prev_block': ref<function, u32, read_write>
-            112313..112321 'block_id': ref<function, u32, read_write>
-            112342..112346 'cond': bool
-            112369..112377 'block_id': ref<function, u32, read_write>
-            112380..112385 'instr': Instruction
-            112380..112390 'instr.aux0': u32
-            112412..112414 'pc': ref<function, u32, read_write>
-            112417..112427 'batch_data': ref<storage, BatchData, read>
-            112417..112435 'batch_...rogram': ref<storage, Program, read>
-            112417..112447 'batch_..._table': ref<storage, [error], read>
-            112417..112459 'batch_....aux0]': [error]
-            112417..112472 'batch_...offset': [error]
-            112448..112453 'instr': Instruction
-            112448..112458 'instr.aux0': u32
-            112519..112527 'block_id': ref<function, u32, read_write>
-            112530..112535 'instr': Instruction
-            112530..112540 'instr.aux1': u32
-            112562..112564 'pc': ref<function, u32, read_write>
-            112567..112577 'batch_data': ref<storage, BatchData, read>
-            112567..112585 'batch_...rogram': ref<storage, Program, read>
-            112567..112597 'batch_..._table': ref<storage, [error], read>
-            112567..112609 'batch_....aux1]': [error]
-            112567..112622 'batch_...offset': [error]
-            112598..112603 'instr': Instruction
-            112598..112608 'instr.aux1': u32
-            113189..113198 'OP_SWITCH': u32
-            113221..113224 'val': u32
-            113227..113271 'resolv...s, 0u)': u32
-            113239..113247 'shot_idx': u32
-            113249..113254 'instr': Instruction
-            113249..113259 'instr.src0': u32
-            113261..113266 'flags': u32
-            113268..113270 '0u': u32
-            113293..113306 'default_block': u32
-            113309..113314 'instr': Instruction
-            113309..113319 'instr.aux0': u32
-            113341..113352 'case_offset': u32
-            113355..113360 'instr': Instruction
-            113355..113365 'instr.aux1': u32
-            113387..113397 'case_count': u32
-            113400..113405 'instr': Instruction
-            113400..113410 'instr.aux2': u32
-            113432..113444 'target_block': ref<function, u32, read_write>
-            113447..113460 'default_block': u32
-            113487..113488 'i': ref<function, u32, read_write>
-            113491..113493 '0u': u32
-            113495..113496 'i': ref<function, u32, read_write>
-            113495..113509 'i < case_count': bool
-            113499..113509 'case_count': u32
-            113511..113512 'i': ref<function, u32, read_write>
-            113542..113547 'entry': [error]
-            113550..113560 'batch_data': ref<storage, BatchData, read>
-            113550..113568 'batch_...rogram': ref<storage, Program, read>
-            113550..113581 'batch_..._table': ref<storage, [error], read>
-            113550..113598 'batch_...t + i]': [error]
-            113582..113593 'case_offset': u32
-            113582..113597 'case_offset + i': u32
-            113596..113597 'i': ref<function, u32, read_write>
-            113623..113628 'entry': [error]
-            113623..113637 'entry.case_val': [error]
-            113623..113644 'entry....== val': [error]
-            113641..113644 'val': u32
-            113671..113683 'target_block': ref<function, u32, read_write>
-            113686..113691 'entry': [error]
-            113686..113704 'entry...._block': [error]
-            113793..113803 'prev_block': ref<function, u32, read_write>
-            113806..113814 'block_id': ref<function, u32, read_write>
-            113832..113840 'block_id': ref<function, u32, read_write>
-            113843..113855 'target_block': ref<function, u32, read_write>
-            113873..113875 'pc': ref<function, u32, read_write>
-            113878..113888 'batch_data': ref<storage, BatchData, read>
-            113878..113896 'batch_...rogram': ref<storage, Program, read>
-            113878..113908 'batch_..._table': ref<storage, [error], read>
-            113878..113922 'batch_...block]': [error]
-            113878..113935 'batch_...offset': [error]
-            113909..113921 'target_block': ref<function, u32, read_write>
-            114905..114912 'OP_CALL': u32
-            114935..114942 'func_id': u32
-            114945..114950 'instr': Instruction
-            114945..114955 'instr.aux0': u32
-            114977..114986 'arg_count': u32
-            114989..114994 'instr': Instruction
-            114989..114999 'instr.aux1': u32
-            115021..115031 'arg_offset': u32
-            115034..115039 'instr': Instruction
-            115034..115044 'instr.aux2': u32
-            115066..115070 'func': [error]
-            115073..115083 'batch_data': ref<storage, BatchData, read>
-            115073..115091 'batch_...rogram': ref<storage, Program, read>
-            115073..115106 'batch_..._table': ref<storage, [error], read>
-            115073..115115 'batch_...nc_id]': [error]
-            115107..115114 'func_id': u32
-            115193..115195 'sp': u32
-            115198..115203 'shots': ref<storage, array<ShotData>, read_write>
-            115198..115213 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            115198..115220 'shots[...interp': ref<storage, InterpreterState, read_write>
-            115198..115228 'shots[...all_sp': ref<storage, u32, read_write>
-            115204..115212 'shot_idx': u32
-            115318..115320 'sp': u32
-            115318..115326 'sp >= 8u': bool
-            115324..115326 '8u': u32
-            115349..115354 'shots': ref<storage, array<ShotData>, read_write>
-            115349..115364 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            115349..115371 'shots[...interp': ref<storage, InterpreterState, read_write>
-            115349..115381 'shots[...t_code': ref<storage, u32, read_write>
-            115355..115363 'shot_idx': u32
-            115384..115407 'ERR_CA...ERFLOW': u32
-            115433..115440 'err_idx': u32
-            115443..115472 '(shot_..._COUNT': u32
-            115443..115476 '(shot_...NT - 1': u32
-            115444..115452 'shot_idx': u32
-            115444..115456 'shot_idx + 1': u32
-            115455..115456 '1': integer
-            115460..115472 'RESULT_COUNT': u32
-            115475..115476 '1': integer
-            115498..115571 'atomic...RFLOW)': __atomic_compare_exchange_result
-            115524..115541 '&resul...r_idx]': ptr<storage, atomic<u32>, read_write>
-            115525..115532 'results': ref<storage, array<atomic<u32>>, read_write>
-            115525..115541 'result...r_idx]': ref<storage, atomic<u32>, read_write>
-            115533..115540 'err_idx': u32
-            115543..115545 '0u': u32
-            115547..115570 'ERR_CA...ERFLOW': u32
-            115593..115598 'shots': ref<storage, array<ShotData>, read_write>
-            115593..115608 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            115593..115615 'shots[...interp': ref<storage, InterpreterState, read_write>
-            115593..115622 'shots[...status': ref<storage, u32, read_write>
-            115599..115607 'shot_idx': u32
-            115625..115637 'STATUS_ERROR': u32
-            115659..115704 'atomic...t, 1u)': u32
-            115669..115699 '&diagn..._count': ptr<storage, atomic<u32>, read_write>
-            115670..115681 'diagnostics': ref<storage, DiagnosticData, read_write>
-            115670..115699 'diagno..._count': ref<storage, atomic<u32>, read_write>
-            115701..115703 '1u': u32
-            115726..115738 'should_break': ref<function, bool, read_write>
-            115741..115745 'true': bool
-            115808..115813 'shots': ref<storage, array<ShotData>, read_write>
-            115808..115823 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            115808..115830 'shots[...interp': ref<storage, InterpreterState, read_write>
-            115808..115848 'shots[...frames': ref<storage, array<CallStackFrame, 14>, read_write>
-            115808..115852 'shots[...es[sp]': ref<storage, CallStackFrame, read_write>
-            115808..115861 'shots[...ock_id': ref<storage, u32, read_write>
-            115814..115822 'shot_idx': u32
-            115849..115851 'sp': u32
-            115864..115872 'block_id': ref<function, u32, read_write>
-            115935..115940 'shots': ref<storage, array<ShotData>, read_write>
-            115935..115950 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            115935..115957 'shots[...interp': ref<storage, InterpreterState, read_write>
-            115935..115975 'shots[...frames': ref<storage, array<CallStackFrame, 14>, read_write>
-            115935..115979 'shots[...es[sp]': ref<storage, CallStackFrame, read_write>
-            115935..115989 'shots[...urn_pc': ref<storage, u32, read_write>
-            115941..115949 'shot_idx': u32
-            115976..115978 'sp': u32
-            115992..115994 'pc': ref<function, u32, read_write>
-            115992..115999 'pc + 1u': u32
-            115997..115999 '1u': u32
-            116064..116069 'shots': ref<storage, array<ShotData>, read_write>
-            116064..116079 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            116064..116086 'shots[...interp': ref<storage, InterpreterState, read_write>
-            116064..116104 'shots[...frames': ref<storage, array<CallStackFrame, 14>, read_write>
-            116064..116108 'shots[...es[sp]': ref<storage, CallStackFrame, read_write>
-            116064..116119 'shots[...rn_reg': ref<storage, u32, read_write>
-            116070..116078 'shot_idx': u32
-            116105..116107 'sp': u32
-            116122..116127 'instr': Instruction
-            116122..116131 'instr.dst': u32
-            116189..116194 'shots': ref<storage, array<ShotData>, read_write>
-            116189..116204 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            116189..116211 'shots[...interp': ref<storage, InterpreterState, read_write>
-            116189..116219 'shots[...all_sp': ref<storage, u32, read_write>
-            116195..116203 'shot_idx': u32
-            116222..116224 'sp': u32
-            116222..116229 'sp + 1u': u32
-            116227..116229 '1u': u32
-            116330..116340 'param_base': [error]
-            116343..116347 'func': [error]
-            116343..116362 'func.p...se_reg': [error]
-            116389..116390 'i': ref<function, u32, read_write>
-            116393..116395 '0u': u32
-            116397..116398 'i': ref<function, u32, read_write>
-            116397..116410 'i < arg_count': bool
-            116401..116410 'arg_count': u32
-            116412..116413 'i': ref<function, u32, read_write>
-            116443..116450 'arg_reg': [error]
-            116453..116463 'batch_data': ref<storage, BatchData, read>
-            116453..116471 'batch_...rogram': ref<storage, Program, read>
-            116453..116486 'batch_..._table': ref<storage, [error], read>
-            116453..116502 'batch_...t + i]': [error]
-            116487..116497 'arg_offset': u32
-            116487..116501 'arg_offset + i': u32
-            116500..116501 'i': ref<function, u32, read_write>
-            116524..116588 'write_..._reg))': [error]
-            116534..116542 'shot_idx': u32
-            116544..116554 'param_base': [error]
-            116544..116558 'param_base + i': [error]
-            116557..116558 'i': ref<function, u32, read_write>
-            116560..116587 'read_r...g_reg)': u32
-            116569..116577 'shot_idx': u32
-            116579..116586 'arg_reg': [error]
-            116688..116696 'block_id': ref<function, u32, read_write>
-            116699..116703 'func': [error]
-            116699..116718 'func.e...ock_id': [error]
-            116736..116738 'pc': ref<function, u32, read_write>
-            116741..116751 'batch_data': ref<storage, BatchData, read>
-            116741..116759 'batch_...rogram': ref<storage, Program, read>
-            116741..116771 'batch_..._table': ref<storage, [error], read>
-            116741..116781 'batch_...ck_id]': [error]
-            116741..116794 'batch_...offset': [error]
-            116772..116780 'block_id': ref<function, u32, read_write>
-            117233..117247 'OP_CALL_RETURN': u32
-            117269..117274 'shots': ref<storage, array<ShotData>, read_write>
-            117269..117284 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            117269..117291 'shots[...interp': ref<storage, InterpreterState, read_write>
-            117269..117299 'shots[...all_sp': ref<storage, u32, read_write>
-            117269..117305 'shots[... == 0u': bool
-            117275..117283 'shot_idx': u32
-            117303..117305 '0u': u32
-            117328..117333 'shots': ref<storage, array<ShotData>, read_write>
-            117328..117343 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            117328..117350 'shots[...interp': ref<storage, InterpreterState, read_write>
-            117328..117360 'shots[...t_code': ref<storage, u32, read_write>
-            117334..117342 'shot_idx': u32
-            117363..117387 'ERR_CA...ERFLOW': u32
-            117413..117420 'err_idx': u32
-            117423..117452 '(shot_..._COUNT': u32
-            117423..117456 '(shot_...NT - 1': u32
-            117424..117432 'shot_idx': u32
-            117424..117436 'shot_idx + 1': u32
-            117435..117436 '1': integer
-            117440..117452 'RESULT_COUNT': u32
-            117455..117456 '1': integer
-            117478..117552 'atomic...RFLOW)': __atomic_compare_exchange_result
-            117504..117521 '&resul...r_idx]': ptr<storage, atomic<u32>, read_write>
-            117505..117512 'results': ref<storage, array<atomic<u32>>, read_write>
-            117505..117521 'result...r_idx]': ref<storage, atomic<u32>, read_write>
-            117513..117520 'err_idx': u32
-            117523..117525 '0u': u32
-            117527..117551 'ERR_CA...ERFLOW': u32
-            117574..117579 'shots': ref<storage, array<ShotData>, read_write>
-            117574..117589 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            117574..117596 'shots[...interp': ref<storage, InterpreterState, read_write>
-            117574..117603 'shots[...status': ref<storage, u32, read_write>
-            117580..117588 'shot_idx': u32
-            117606..117618 'STATUS_ERROR': u32
-            117640..117685 'atomic...t, 1u)': u32
-            117650..117680 '&diagn..._count': ptr<storage, atomic<u32>, read_write>
-            117651..117662 'diagnostics': ref<storage, DiagnosticData, read_write>
-            117651..117680 'diagno..._count': ref<storage, atomic<u32>, read_write>
-            117682..117684 '1u': u32
-            117707..117719 'should_break': ref<function, bool, read_write>
-            117722..117726 'true': bool
-            117794..117796 'sp': u32
-            117799..117804 'shots': ref<storage, array<ShotData>, read_write>
-            117799..117814 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            117799..117821 'shots[...interp': ref<storage, InterpreterState, read_write>
-            117799..117829 'shots[...all_sp': ref<storage, u32, read_write>
-            117799..117833 'shots[...sp - 1': u32
-            117805..117813 'shot_idx': u32
-            117832..117833 '1': integer
-            117851..117856 'shots': ref<storage, array<ShotData>, read_write>
-            117851..117866 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            117851..117873 'shots[...interp': ref<storage, InterpreterState, read_write>
-            117851..117881 'shots[...all_sp': ref<storage, u32, read_write>
-            117857..117865 'shot_idx': u32
-            117884..117886 'sp': u32
-            117904..117912 'block_id': ref<function, u32, read_write>
-            117915..117920 'shots': ref<storage, array<ShotData>, read_write>
-            117915..117930 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            117915..117937 'shots[...interp': ref<storage, InterpreterState, read_write>
-            117915..117955 'shots[...frames': ref<storage, array<CallStackFrame, 14>, read_write>
-            117915..117959 'shots[...es[sp]': ref<storage, CallStackFrame, read_write>
-            117915..117968 'shots[...ock_id': ref<storage, u32, read_write>
-            117921..117929 'shot_idx': u32
-            117956..117958 'sp': u32
-            117986..117988 'pc': ref<function, u32, read_write>
-            117991..117996 'shots': ref<storage, array<ShotData>, read_write>
-            117991..118006 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            117991..118013 'shots[...interp': ref<storage, InterpreterState, read_write>
-            117991..118031 'shots[...frames': ref<storage, array<CallStackFrame, 14>, read_write>
-            117991..118035 'shots[...es[sp]': ref<storage, CallStackFrame, read_write>
-            117991..118045 'shots[...urn_pc': ref<storage, u32, read_write>
-            117997..118005 'shot_idx': u32
-            118032..118034 'sp': u32
-            118067..118077 'return_reg': u32
-            118080..118085 'shots': ref<storage, array<ShotData>, read_write>
-            118080..118095 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            118080..118102 'shots[...interp': ref<storage, InterpreterState, read_write>
-            118080..118120 'shots[...frames': ref<storage, array<CallStackFrame, 14>, read_write>
-            118080..118124 'shots[...es[sp]': ref<storage, CallStackFrame, read_write>
-            118080..118135 'shots[...rn_reg': ref<storage, u32, read_write>
-            118086..118094 'shot_idx': u32
-            118121..118123 'sp': u32
-            118156..118166 'return_reg': u32
-            118156..118181 'return...RETURN': bool
-            118170..118181 'VOID_RETURN': u32
-            118204..118267 'write_...src0))': [error]
-            118214..118222 'shot_idx': u32
-            118224..118234 'return_reg': u32
-            118236..118266 'read_r....src0)': u32
-            118245..118253 'shot_idx': u32
-            118255..118260 'instr': Instruction
-            118255..118265 'instr.src0': u32
-            119815..119830 'OP_QUANTUM_GATE': u32
-            119849..119854 'shots': ref<storage, array<ShotData>, read_write>
-            119849..119864 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            119849..119871 'shots[...interp': ref<storage, InterpreterState, read_write>
-            119849..119886 'shots[...op_idx': ref<storage, u32, read_write>
-            119855..119863 'shot_idx': u32
-            119889..119894 'instr': Instruction
-            119889..119899 'instr.aux0': u32
-            119917..119922 'shots': ref<storage, array<ShotData>, read_write>
-            119917..119932 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            119917..119939 'shots[...interp': ref<storage, InterpreterState, read_write>
-            119917..119955 'shots[...p_type': ref<storage, u32, read_write>
-            119923..119931 'shot_idx': u32
-            119958..119960 '0u': u32
-            120222..120227 'shots': ref<storage, array<ShotData>, read_write>
-            120222..120237 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            120222..120244 'shots[...interp': ref<storage, InterpreterState, read_write>
-            120222..120251 'shots[...status': ref<storage, u32, read_write>
-            120228..120236 'shot_idx': u32
-            120254..120276 'STATUS...ENDING': u32
-            120294..120296 'pc': ref<function, u32, read_write>
-            120316..120328 'should_break': ref<function, bool, read_write>
-            120331..120335 'true': bool
-            120606..120616 'OP_MEASURE': u32
-            120635..120640 'shots': ref<storage, array<ShotData>, read_write>
-            120635..120650 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            120635..120657 'shots[...interp': ref<storage, InterpreterState, read_write>
-            120635..120672 'shots[...op_idx': ref<storage, u32, read_write>
-            120641..120649 'shot_idx': u32
-            120675..120680 'instr': Instruction
-            120675..120685 'instr.aux0': u32
-            120703..120708 'shots': ref<storage, array<ShotData>, read_write>
-            120703..120718 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            120703..120725 'shots[...interp': ref<storage, InterpreterState, read_write>
-            120703..120741 'shots[...p_type': ref<storage, u32, read_write>
-            120709..120717 'shot_idx': u32
-            120744..120746 '1u': u32
-            120912..120917 'shots': ref<storage, array<ShotData>, read_write>
-            120912..120927 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            120912..120934 'shots[...interp': ref<storage, InterpreterState, read_write>
-            120912..120941 'shots[...status': ref<storage, u32, read_write>
-            120918..120926 'shot_idx': u32
-            120944..120966 'STATUS...ENDING': u32
-            120984..120986 'pc': ref<function, u32, read_write>
-            121006..121018 'should_break': ref<function, bool, read_write>
-            121021..121025 'true': bool
-            121248..121256 'OP_RESET': u32
-            121275..121280 'shots': ref<storage, array<ShotData>, read_write>
-            121275..121290 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            121275..121297 'shots[...interp': ref<storage, InterpreterState, read_write>
-            121275..121312 'shots[...op_idx': ref<storage, u32, read_write>
-            121281..121289 'shot_idx': u32
-            121315..121320 'instr': Instruction
-            121315..121325 'instr.aux0': u32
-            121343..121348 'shots': ref<storage, array<ShotData>, read_write>
-            121343..121358 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            121343..121365 'shots[...interp': ref<storage, InterpreterState, read_write>
-            121343..121381 'shots[...p_type': ref<storage, u32, read_write>
-            121349..121357 'shot_idx': u32
-            121384..121386 '2u': u32
-            121499..121504 'shots': ref<storage, array<ShotData>, read_write>
-            121499..121514 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            121499..121521 'shots[...interp': ref<storage, InterpreterState, read_write>
-            121499..121528 'shots[...status': ref<storage, u32, read_write>
-            121505..121513 'shot_idx': u32
-            121531..121553 'STATUS...ENDING': u32
-            121571..121573 'pc': ref<function, u32, read_write>
-            121593..121605 'should_break': ref<function, bool, read_write>
-            121608..121612 'true': bool
-            122364..122378 'OP_READ_RESULT': u32
-            122401..122410 'result_id': u32
-            122413..122418 'instr': Instruction
-            122413..122423 'instr.src0': u32
-            122445..122455 'result_val': bool
-            122458..122502 'read_m...lt_id)': bool
-            122482..122490 'shot_idx': u32
-            122492..122501 'result_id': u32
-            122520..122578 'write_..._val))': [error]
-            122530..122538 'shot_idx': u32
-            122540..122545 'instr': Instruction
-            122540..122549 'instr.dst': u32
-            122551..122577 'select...t_val)': u32
-            122558..122560 '0u': u32
-            122562..122564 '1u': u32
-            122566..122576 'result_val': bool
-            122596..122598 'pc': ref<function, u32, read_write>
-            122928..122944 'OP_REC...OUTPUT': u32
-            122963..122965 'pc': ref<function, u32, read_write>
-            123335..123347 'OP_READ_LOSS': u32
-            123370..123379 'result_id': u32
-            123382..123387 'instr': Instruction
-            123382..123392 'instr.src0': u32
-            123414..123417 'val': u32
-            123420..123477 'atomic...t_id])': u32
-            123431..123476 '&resul...lt_id]': ptr<storage, atomic<u32>, read_write>
-            123432..123439 'results': ref<storage, array<atomic<u32>>, read_write>
-            123432..123476 'result...lt_id]': ref<storage, atomic<u32>, read_write>
-            123440..123448 'shot_idx': u32
-            123440..123463 'shot_i..._COUNT': u32
-            123440..123475 'shot_i...ult_id': u32
-            123451..123463 'RESULT_COUNT': u32
-            123466..123475 'result_id': u32
-            123495..123552 'write_...= 2u))': [error]
-            123505..123513 'shot_idx': u32
-            123515..123520 'instr': Instruction
-            123515..123524 'instr.dst': u32
-            123526..123551 'select...== 2u)': u32
-            123533..123535 '0u': u32
-            123537..123539 '1u': u32
-            123541..123544 'val': u32
-            123541..123550 'val == 2u': bool
-            123548..123550 '2u': u32
-            123570..123572 'pc': ref<function, u32, read_write>
-            124180..124186 'OP_ADD': u32
-            124209..124210 'a': i32
-            124213..124257 'resolv...s, 0u)': i32
-            124225..124233 'shot_idx': u32
-            124235..124240 'instr': Instruction
-            124235..124245 'instr.src0': u32
-            124247..124252 'flags': u32
-            124254..124256 '0u': u32
-            124279..124280 'b': i32
-            124283..124327 'resolv...s, 1u)': i32
-            124295..124303 'shot_idx': u32
-            124305..124310 'instr': Instruction
-            124305..124315 'instr.src1': u32
-            124317..124322 'flags': u32
-            124324..124326 '1u': u32
-            124345..124386 'write_...a + b)': [error]
-            124359..124367 'shot_idx': u32
-            124369..124374 'instr': Instruction
-            124369..124378 'instr.dst': u32
-            124380..124381 'a': i32
-            124380..124385 'a + b': i32
-            124384..124385 'b': i32
-            124404..124406 'pc': ref<function, u32, read_write>
-            124509..124515 'OP_SUB': u32
-            124538..124539 'a': i32
-            124542..124586 'resolv...s, 0u)': i32
-            124554..124562 'shot_idx': u32
-            124564..124569 'instr': Instruction
-            124564..124574 'instr.src0': u32
-            124576..124581 'flags': u32
-            124583..124585 '0u': u32
-            124608..124609 'b': i32
-            124612..124656 'resolv...s, 1u)': i32
-            124624..124632 'shot_idx': u32
-            124634..124639 'instr': Instruction
-            124634..124644 'instr.src1': u32
-            124646..124651 'flags': u32
-            124653..124655 '1u': u32
-            124674..124715 'write_...a - b)': [error]
-            124688..124696 'shot_idx': u32
-            124698..124703 'instr': Instruction
-            124698..124707 'instr.dst': u32
-            124709..124710 'a': i32
-            124709..124714 'a - b': i32
-            124713..124714 'b': i32
-            124733..124735 'pc': ref<function, u32, read_write>
-            124841..124847 'OP_MUL': u32
-            124870..124871 'a': i32
-            124874..124918 'resolv...s, 0u)': i32
-            124886..124894 'shot_idx': u32
-            124896..124901 'instr': Instruction
-            124896..124906 'instr.src0': u32
-            124908..124913 'flags': u32
-            124915..124917 '0u': u32
-            124940..124941 'b': i32
-            124944..124988 'resolv...s, 1u)': i32
-            124956..124964 'shot_idx': u32
-            124966..124971 'instr': Instruction
-            124966..124976 'instr.src1': u32
-            124978..124983 'flags': u32
-            124985..124987 '1u': u32
-            125006..125047 'write_...a * b)': [error]
-            125020..125028 'shot_idx': u32
-            125030..125035 'instr': Instruction
-            125030..125039 'instr.dst': u32
-            125041..125042 'a': i32
-            125041..125046 'a * b': i32
-            125045..125046 'b': i32
-            125065..125067 'pc': ref<function, u32, read_write>
-            125170..125177 'OP_UDIV': u32
-            125200..125201 'a': u32
-            125204..125248 'resolv...s, 0u)': u32
-            125216..125224 'shot_idx': u32
-            125226..125231 'instr': Instruction
-            125226..125236 'instr.src0': u32
-            125238..125243 'flags': u32
-            125245..125247 '0u': u32
-            125270..125271 'b': u32
-            125274..125318 'resolv...s, 1u)': u32
-            125286..125294 'shot_idx': u32
-            125296..125301 'instr': Instruction
-            125296..125306 'instr.src1': u32
-            125308..125313 'flags': u32
-            125315..125317 '1u': u32
-            125336..125373 'write_...a / b)': [error]
-            125346..125354 'shot_idx': u32
-            125356..125361 'instr': Instruction
-            125356..125365 'instr.dst': u32
-            125367..125368 'a': u32
-            125367..125372 'a / b': u32
-            125371..125372 'b': u32
-            125391..125393 'pc': ref<function, u32, read_write>
-            125518..125525 'OP_SDIV': u32
-            125548..125549 'a': i32
-            125552..125596 'resolv...s, 0u)': i32
-            125564..125572 'shot_idx': u32
-            125574..125579 'instr': Instruction
-            125574..125584 'instr.src0': u32
-            125586..125591 'flags': u32
-            125593..125595 '0u': u32
-            125618..125619 'b': i32
-            125622..125666 'resolv...s, 1u)': i32
-            125634..125642 'shot_idx': u32
-            125644..125649 'instr': Instruction
-            125644..125654 'instr.src1': u32
-            125656..125661 'flags': u32
-            125663..125665 '1u': u32
-            125684..125725 'write_...a / b)': [error]
-            125698..125706 'shot_idx': u32
-            125708..125713 'instr': Instruction
-            125708..125717 'instr.dst': u32
-            125719..125720 'a': i32
-            125719..125724 'a / b': i32
-            125723..125724 'b': i32
-            125743..125745 'pc': ref<function, u32, read_write>
-            125849..125856 'OP_UREM': u32
-            125879..125880 'a': u32
-            125883..125927 'resolv...s, 0u)': u32
-            125895..125903 'shot_idx': u32
-            125905..125910 'instr': Instruction
-            125905..125915 'instr.src0': u32
-            125917..125922 'flags': u32
-            125924..125926 '0u': u32
-            125949..125950 'b': u32
-            125953..125997 'resolv...s, 1u)': u32
-            125965..125973 'shot_idx': u32
-            125975..125980 'instr': Instruction
-            125975..125985 'instr.src1': u32
-            125987..125992 'flags': u32
-            125994..125996 '1u': u32
-            126015..126052 'write_...a % b)': [error]
-            126025..126033 'shot_idx': u32
-            126035..126040 'instr': Instruction
-            126035..126044 'instr.dst': u32
-            126046..126047 'a': u32
-            126046..126051 'a % b': u32
-            126050..126051 'b': u32
-            126070..126072 'pc': ref<function, u32, read_write>
-            126452..126459 'OP_SREM': u32
-            126482..126483 'a': i32
-            126486..126530 'resolv...s, 0u)': i32
-            126498..126506 'shot_idx': u32
-            126508..126513 'instr': Instruction
-            126508..126518 'instr.src0': u32
-            126520..126525 'flags': u32
-            126527..126529 '0u': u32
-            126552..126553 'b': i32
-            126556..126600 'resolv...s, 1u)': i32
-            126568..126576 'shot_idx': u32
-            126578..126583 'instr': Instruction
-            126578..126588 'instr.src1': u32
-            126590..126595 'flags': u32
-            126597..126599 '1u': u32
-            126618..126669 'write_... / b))': [error]
+            111120..111132 'shot_idx + 1': u32
+            111131..111132 '1': integer
+            111136..111148 'RESULT_COUNT': u32
+            111151..111152 '1': integer
+            111170..111231 'atomic..._code)': __atomic_compare_exchange_result
+            111196..111215 '&resul...index]': ptr<storage, atomic<u32>, read_write>
+            111197..111204 'results': ref<storage, array<atomic<u32>>, read_write>
+            111197..111215 'result...index]': ref<storage, atomic<u32>, read_write>
+            111205..111214 'err_index': u32
+            111217..111219 '0u': u32
+            111221..111230 'exit_code': u32
+            111249..111254 'shots': ref<storage, array<ShotData>, read_write>
+            111249..111264 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            111249..111271 'shots[...interp': ref<storage, InterpreterState, read_write>
+            111249..111278 'shots[...status': ref<storage, u32, read_write>
+            111255..111263 'shot_idx': u32
+            111281..111298 'STATUS...INATED': u32
+            111316..111361 'atomic...t, 1u)': u32
+            111326..111356 '&diagn..._count': ptr<storage, atomic<u32>, read_write>
+            111327..111338 'diagnostics': ref<storage, DiagnosticData, read_write>
+            111327..111356 'diagno..._count': ref<storage, atomic<u32>, read_write>
+            111358..111360 '1u': u32
+            111379..111391 'should_break': ref<function, bool, read_write>
+            111394..111398 'true': bool
+            111750..111757 'OP_JUMP': u32
+            111776..111786 'prev_block': ref<function, u32, read_write>
+            111789..111797 'block_id': ref<function, u32, read_write>
+            111815..111823 'block_id': ref<function, u32, read_write>
+            111826..111831 'instr': Instruction
+            111826..111835 'instr.dst': u32
+            111853..111855 'pc': ref<function, u32, read_write>
+            111858..111868 'batch_data': ref<storage, BatchData, read>
+            111858..111876 'batch_...rogram': ref<storage, Program, read>
+            111858..111888 'batch_..._table': ref<storage, [error], read>
+            111858..111899 'batch_...r.dst]': [error]
+            111858..111912 'batch_...offset': [error]
+            111889..111894 'instr': Instruction
+            111889..111898 'instr.dst': u32
+            112328..112337 'OP_BRANCH': u32
+            112360..112364 'cond': bool
+            112367..112411 'resolv...s, 0u)': u32
+            112367..112417 'resolv... != 0u': bool
+            112379..112387 'shot_idx': u32
+            112389..112394 'instr': Instruction
+            112389..112399 'instr.src0': u32
+            112401..112406 'flags': u32
+            112408..112410 '0u': u32
+            112415..112417 '0u': u32
+            112435..112445 'prev_block': ref<function, u32, read_write>
+            112448..112456 'block_id': ref<function, u32, read_write>
+            112477..112481 'cond': bool
+            112504..112512 'block_id': ref<function, u32, read_write>
+            112515..112520 'instr': Instruction
+            112515..112525 'instr.aux0': u32
+            112547..112549 'pc': ref<function, u32, read_write>
+            112552..112562 'batch_data': ref<storage, BatchData, read>
+            112552..112570 'batch_...rogram': ref<storage, Program, read>
+            112552..112582 'batch_..._table': ref<storage, [error], read>
+            112552..112594 'batch_....aux0]': [error]
+            112552..112607 'batch_...offset': [error]
+            112583..112588 'instr': Instruction
+            112583..112593 'instr.aux0': u32
+            112654..112662 'block_id': ref<function, u32, read_write>
+            112665..112670 'instr': Instruction
+            112665..112675 'instr.aux1': u32
+            112697..112699 'pc': ref<function, u32, read_write>
+            112702..112712 'batch_data': ref<storage, BatchData, read>
+            112702..112720 'batch_...rogram': ref<storage, Program, read>
+            112702..112732 'batch_..._table': ref<storage, [error], read>
+            112702..112744 'batch_....aux1]': [error]
+            112702..112757 'batch_...offset': [error]
+            112733..112738 'instr': Instruction
+            112733..112743 'instr.aux1': u32
+            113324..113333 'OP_SWITCH': u32
+            113356..113359 'val': u32
+            113362..113406 'resolv...s, 0u)': u32
+            113374..113382 'shot_idx': u32
+            113384..113389 'instr': Instruction
+            113384..113394 'instr.src0': u32
+            113396..113401 'flags': u32
+            113403..113405 '0u': u32
+            113428..113441 'default_block': u32
+            113444..113449 'instr': Instruction
+            113444..113454 'instr.aux0': u32
+            113476..113487 'case_offset': u32
+            113490..113495 'instr': Instruction
+            113490..113500 'instr.aux1': u32
+            113522..113532 'case_count': u32
+            113535..113540 'instr': Instruction
+            113535..113545 'instr.aux2': u32
+            113567..113579 'target_block': ref<function, u32, read_write>
+            113582..113595 'default_block': u32
+            113622..113623 'i': ref<function, u32, read_write>
+            113626..113628 '0u': u32
+            113630..113631 'i': ref<function, u32, read_write>
+            113630..113644 'i < case_count': bool
+            113634..113644 'case_count': u32
+            113646..113647 'i': ref<function, u32, read_write>
+            113677..113682 'entry': [error]
+            113685..113695 'batch_data': ref<storage, BatchData, read>
+            113685..113703 'batch_...rogram': ref<storage, Program, read>
+            113685..113716 'batch_..._table': ref<storage, [error], read>
+            113685..113733 'batch_...t + i]': [error]
+            113717..113728 'case_offset': u32
+            113717..113732 'case_offset + i': u32
+            113731..113732 'i': ref<function, u32, read_write>
+            113758..113763 'entry': [error]
+            113758..113772 'entry.case_val': [error]
+            113758..113779 'entry....== val': [error]
+            113776..113779 'val': u32
+            113806..113818 'target_block': ref<function, u32, read_write>
+            113821..113826 'entry': [error]
+            113821..113839 'entry...._block': [error]
+            113928..113938 'prev_block': ref<function, u32, read_write>
+            113941..113949 'block_id': ref<function, u32, read_write>
+            113967..113975 'block_id': ref<function, u32, read_write>
+            113978..113990 'target_block': ref<function, u32, read_write>
+            114008..114010 'pc': ref<function, u32, read_write>
+            114013..114023 'batch_data': ref<storage, BatchData, read>
+            114013..114031 'batch_...rogram': ref<storage, Program, read>
+            114013..114043 'batch_..._table': ref<storage, [error], read>
+            114013..114057 'batch_...block]': [error]
+            114013..114070 'batch_...offset': [error]
+            114044..114056 'target_block': ref<function, u32, read_write>
+            115040..115047 'OP_CALL': u32
+            115070..115077 'func_id': u32
+            115080..115085 'instr': Instruction
+            115080..115090 'instr.aux0': u32
+            115112..115121 'arg_count': u32
+            115124..115129 'instr': Instruction
+            115124..115134 'instr.aux1': u32
+            115156..115166 'arg_offset': u32
+            115169..115174 'instr': Instruction
+            115169..115179 'instr.aux2': u32
+            115201..115205 'func': [error]
+            115208..115218 'batch_data': ref<storage, BatchData, read>
+            115208..115226 'batch_...rogram': ref<storage, Program, read>
+            115208..115241 'batch_..._table': ref<storage, [error], read>
+            115208..115250 'batch_...nc_id]': [error]
+            115242..115249 'func_id': u32
+            115328..115330 'sp': u32
+            115333..115338 'shots': ref<storage, array<ShotData>, read_write>
+            115333..115348 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            115333..115355 'shots[...interp': ref<storage, InterpreterState, read_write>
+            115333..115363 'shots[...all_sp': ref<storage, u32, read_write>
+            115339..115347 'shot_idx': u32
+            115453..115455 'sp': u32
+            115453..115461 'sp >= 8u': bool
+            115459..115461 '8u': u32
+            115484..115489 'shots': ref<storage, array<ShotData>, read_write>
+            115484..115499 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            115484..115506 'shots[...interp': ref<storage, InterpreterState, read_write>
+            115484..115516 'shots[...t_code': ref<storage, u32, read_write>
+            115490..115498 'shot_idx': u32
+            115519..115542 'ERR_CA...ERFLOW': u32
+            115568..115575 'err_idx': u32
+            115578..115607 '(shot_..._COUNT': u32
+            115578..115611 '(shot_...NT - 1': u32
+            115579..115587 'shot_idx': u32
+            115579..115591 'shot_idx + 1': u32
+            115590..115591 '1': integer
+            115595..115607 'RESULT_COUNT': u32
+            115610..115611 '1': integer
+            115633..115706 'atomic...RFLOW)': __atomic_compare_exchange_result
+            115659..115676 '&resul...r_idx]': ptr<storage, atomic<u32>, read_write>
+            115660..115667 'results': ref<storage, array<atomic<u32>>, read_write>
+            115660..115676 'result...r_idx]': ref<storage, atomic<u32>, read_write>
+            115668..115675 'err_idx': u32
+            115678..115680 '0u': u32
+            115682..115705 'ERR_CA...ERFLOW': u32
+            115728..115733 'shots': ref<storage, array<ShotData>, read_write>
+            115728..115743 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            115728..115750 'shots[...interp': ref<storage, InterpreterState, read_write>
+            115728..115757 'shots[...status': ref<storage, u32, read_write>
+            115734..115742 'shot_idx': u32
+            115760..115772 'STATUS_ERROR': u32
+            115794..115839 'atomic...t, 1u)': u32
+            115804..115834 '&diagn..._count': ptr<storage, atomic<u32>, read_write>
+            115805..115816 'diagnostics': ref<storage, DiagnosticData, read_write>
+            115805..115834 'diagno..._count': ref<storage, atomic<u32>, read_write>
+            115836..115838 '1u': u32
+            115861..115873 'should_break': ref<function, bool, read_write>
+            115876..115880 'true': bool
+            115943..115948 'shots': ref<storage, array<ShotData>, read_write>
+            115943..115958 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            115943..115965 'shots[...interp': ref<storage, InterpreterState, read_write>
+            115943..115983 'shots[...frames': ref<storage, array<CallStackFrame, 14>, read_write>
+            115943..115987 'shots[...es[sp]': ref<storage, CallStackFrame, read_write>
+            115943..115996 'shots[...ock_id': ref<storage, u32, read_write>
+            115949..115957 'shot_idx': u32
+            115984..115986 'sp': u32
+            115999..116007 'block_id': ref<function, u32, read_write>
+            116070..116075 'shots': ref<storage, array<ShotData>, read_write>
+            116070..116085 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            116070..116092 'shots[...interp': ref<storage, InterpreterState, read_write>
+            116070..116110 'shots[...frames': ref<storage, array<CallStackFrame, 14>, read_write>
+            116070..116114 'shots[...es[sp]': ref<storage, CallStackFrame, read_write>
+            116070..116124 'shots[...urn_pc': ref<storage, u32, read_write>
+            116076..116084 'shot_idx': u32
+            116111..116113 'sp': u32
+            116127..116129 'pc': ref<function, u32, read_write>
+            116127..116134 'pc + 1u': u32
+            116132..116134 '1u': u32
+            116199..116204 'shots': ref<storage, array<ShotData>, read_write>
+            116199..116214 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            116199..116221 'shots[...interp': ref<storage, InterpreterState, read_write>
+            116199..116239 'shots[...frames': ref<storage, array<CallStackFrame, 14>, read_write>
+            116199..116243 'shots[...es[sp]': ref<storage, CallStackFrame, read_write>
+            116199..116254 'shots[...rn_reg': ref<storage, u32, read_write>
+            116205..116213 'shot_idx': u32
+            116240..116242 'sp': u32
+            116257..116262 'instr': Instruction
+            116257..116266 'instr.dst': u32
+            116324..116329 'shots': ref<storage, array<ShotData>, read_write>
+            116324..116339 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            116324..116346 'shots[...interp': ref<storage, InterpreterState, read_write>
+            116324..116354 'shots[...all_sp': ref<storage, u32, read_write>
+            116330..116338 'shot_idx': u32
+            116357..116359 'sp': u32
+            116357..116364 'sp + 1u': u32
+            116362..116364 '1u': u32
+            116465..116475 'param_base': [error]
+            116478..116482 'func': [error]
+            116478..116497 'func.p...se_reg': [error]
+            116524..116525 'i': ref<function, u32, read_write>
+            116528..116530 '0u': u32
+            116532..116533 'i': ref<function, u32, read_write>
+            116532..116545 'i < arg_count': bool
+            116536..116545 'arg_count': u32
+            116547..116548 'i': ref<function, u32, read_write>
+            116578..116585 'arg_reg': [error]
+            116588..116598 'batch_data': ref<storage, BatchData, read>
+            116588..116606 'batch_...rogram': ref<storage, Program, read>
+            116588..116621 'batch_..._table': ref<storage, [error], read>
+            116588..116637 'batch_...t + i]': [error]
+            116622..116632 'arg_offset': u32
+            116622..116636 'arg_offset + i': u32
+            116635..116636 'i': ref<function, u32, read_write>
+            116659..116723 'write_..._reg))': [error]
+            116669..116677 'shot_idx': u32
+            116679..116689 'param_base': [error]
+            116679..116693 'param_base + i': [error]
+            116692..116693 'i': ref<function, u32, read_write>
+            116695..116722 'read_r...g_reg)': u32
+            116704..116712 'shot_idx': u32
+            116714..116721 'arg_reg': [error]
+            116823..116831 'block_id': ref<function, u32, read_write>
+            116834..116838 'func': [error]
+            116834..116853 'func.e...ock_id': [error]
+            116871..116873 'pc': ref<function, u32, read_write>
+            116876..116886 'batch_data': ref<storage, BatchData, read>
+            116876..116894 'batch_...rogram': ref<storage, Program, read>
+            116876..116906 'batch_..._table': ref<storage, [error], read>
+            116876..116916 'batch_...ck_id]': [error]
+            116876..116929 'batch_...offset': [error]
+            116907..116915 'block_id': ref<function, u32, read_write>
+            117368..117382 'OP_CALL_RETURN': u32
+            117404..117409 'shots': ref<storage, array<ShotData>, read_write>
+            117404..117419 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            117404..117426 'shots[...interp': ref<storage, InterpreterState, read_write>
+            117404..117434 'shots[...all_sp': ref<storage, u32, read_write>
+            117404..117440 'shots[... == 0u': bool
+            117410..117418 'shot_idx': u32
+            117438..117440 '0u': u32
+            117463..117468 'shots': ref<storage, array<ShotData>, read_write>
+            117463..117478 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            117463..117485 'shots[...interp': ref<storage, InterpreterState, read_write>
+            117463..117495 'shots[...t_code': ref<storage, u32, read_write>
+            117469..117477 'shot_idx': u32
+            117498..117522 'ERR_CA...ERFLOW': u32
+            117548..117555 'err_idx': u32
+            117558..117587 '(shot_..._COUNT': u32
+            117558..117591 '(shot_...NT - 1': u32
+            117559..117567 'shot_idx': u32
+            117559..117571 'shot_idx + 1': u32
+            117570..117571 '1': integer
+            117575..117587 'RESULT_COUNT': u32
+            117590..117591 '1': integer
+            117613..117687 'atomic...RFLOW)': __atomic_compare_exchange_result
+            117639..117656 '&resul...r_idx]': ptr<storage, atomic<u32>, read_write>
+            117640..117647 'results': ref<storage, array<atomic<u32>>, read_write>
+            117640..117656 'result...r_idx]': ref<storage, atomic<u32>, read_write>
+            117648..117655 'err_idx': u32
+            117658..117660 '0u': u32
+            117662..117686 'ERR_CA...ERFLOW': u32
+            117709..117714 'shots': ref<storage, array<ShotData>, read_write>
+            117709..117724 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            117709..117731 'shots[...interp': ref<storage, InterpreterState, read_write>
+            117709..117738 'shots[...status': ref<storage, u32, read_write>
+            117715..117723 'shot_idx': u32
+            117741..117753 'STATUS_ERROR': u32
+            117775..117820 'atomic...t, 1u)': u32
+            117785..117815 '&diagn..._count': ptr<storage, atomic<u32>, read_write>
+            117786..117797 'diagnostics': ref<storage, DiagnosticData, read_write>
+            117786..117815 'diagno..._count': ref<storage, atomic<u32>, read_write>
+            117817..117819 '1u': u32
+            117842..117854 'should_break': ref<function, bool, read_write>
+            117857..117861 'true': bool
+            117929..117931 'sp': u32
+            117934..117939 'shots': ref<storage, array<ShotData>, read_write>
+            117934..117949 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            117934..117956 'shots[...interp': ref<storage, InterpreterState, read_write>
+            117934..117964 'shots[...all_sp': ref<storage, u32, read_write>
+            117934..117968 'shots[...sp - 1': u32
+            117940..117948 'shot_idx': u32
+            117967..117968 '1': integer
+            117986..117991 'shots': ref<storage, array<ShotData>, read_write>
+            117986..118001 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            117986..118008 'shots[...interp': ref<storage, InterpreterState, read_write>
+            117986..118016 'shots[...all_sp': ref<storage, u32, read_write>
+            117992..118000 'shot_idx': u32
+            118019..118021 'sp': u32
+            118039..118047 'block_id': ref<function, u32, read_write>
+            118050..118055 'shots': ref<storage, array<ShotData>, read_write>
+            118050..118065 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            118050..118072 'shots[...interp': ref<storage, InterpreterState, read_write>
+            118050..118090 'shots[...frames': ref<storage, array<CallStackFrame, 14>, read_write>
+            118050..118094 'shots[...es[sp]': ref<storage, CallStackFrame, read_write>
+            118050..118103 'shots[...ock_id': ref<storage, u32, read_write>
+            118056..118064 'shot_idx': u32
+            118091..118093 'sp': u32
+            118121..118123 'pc': ref<function, u32, read_write>
+            118126..118131 'shots': ref<storage, array<ShotData>, read_write>
+            118126..118141 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            118126..118148 'shots[...interp': ref<storage, InterpreterState, read_write>
+            118126..118166 'shots[...frames': ref<storage, array<CallStackFrame, 14>, read_write>
+            118126..118170 'shots[...es[sp]': ref<storage, CallStackFrame, read_write>
+            118126..118180 'shots[...urn_pc': ref<storage, u32, read_write>
+            118132..118140 'shot_idx': u32
+            118167..118169 'sp': u32
+            118202..118212 'return_reg': u32
+            118215..118220 'shots': ref<storage, array<ShotData>, read_write>
+            118215..118230 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            118215..118237 'shots[...interp': ref<storage, InterpreterState, read_write>
+            118215..118255 'shots[...frames': ref<storage, array<CallStackFrame, 14>, read_write>
+            118215..118259 'shots[...es[sp]': ref<storage, CallStackFrame, read_write>
+            118215..118270 'shots[...rn_reg': ref<storage, u32, read_write>
+            118221..118229 'shot_idx': u32
+            118256..118258 'sp': u32
+            118291..118301 'return_reg': u32
+            118291..118316 'return...RETURN': bool
+            118305..118316 'VOID_RETURN': u32
+            118339..118402 'write_...src0))': [error]
+            118349..118357 'shot_idx': u32
+            118359..118369 'return_reg': u32
+            118371..118401 'read_r....src0)': u32
+            118380..118388 'shot_idx': u32
+            118390..118395 'instr': Instruction
+            118390..118400 'instr.src0': u32
+            119950..119965 'OP_QUANTUM_GATE': u32
+            119984..119989 'shots': ref<storage, array<ShotData>, read_write>
+            119984..119999 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            119984..120006 'shots[...interp': ref<storage, InterpreterState, read_write>
+            119984..120021 'shots[...op_idx': ref<storage, u32, read_write>
+            119990..119998 'shot_idx': u32
+            120024..120029 'instr': Instruction
+            120024..120034 'instr.aux0': u32
+            120052..120057 'shots': ref<storage, array<ShotData>, read_write>
+            120052..120067 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            120052..120074 'shots[...interp': ref<storage, InterpreterState, read_write>
+            120052..120090 'shots[...p_type': ref<storage, u32, read_write>
+            120058..120066 'shot_idx': u32
+            120093..120095 '0u': u32
+            120357..120362 'shots': ref<storage, array<ShotData>, read_write>
+            120357..120372 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            120357..120379 'shots[...interp': ref<storage, InterpreterState, read_write>
+            120357..120386 'shots[...status': ref<storage, u32, read_write>
+            120363..120371 'shot_idx': u32
+            120389..120411 'STATUS...ENDING': u32
+            120429..120431 'pc': ref<function, u32, read_write>
+            120451..120463 'should_break': ref<function, bool, read_write>
+            120466..120470 'true': bool
+            120741..120751 'OP_MEASURE': u32
+            120770..120775 'shots': ref<storage, array<ShotData>, read_write>
+            120770..120785 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            120770..120792 'shots[...interp': ref<storage, InterpreterState, read_write>
+            120770..120807 'shots[...op_idx': ref<storage, u32, read_write>
+            120776..120784 'shot_idx': u32
+            120810..120815 'instr': Instruction
+            120810..120820 'instr.aux0': u32
+            120838..120843 'shots': ref<storage, array<ShotData>, read_write>
+            120838..120853 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            120838..120860 'shots[...interp': ref<storage, InterpreterState, read_write>
+            120838..120876 'shots[...p_type': ref<storage, u32, read_write>
+            120844..120852 'shot_idx': u32
+            120879..120881 '1u': u32
+            121047..121052 'shots': ref<storage, array<ShotData>, read_write>
+            121047..121062 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            121047..121069 'shots[...interp': ref<storage, InterpreterState, read_write>
+            121047..121076 'shots[...status': ref<storage, u32, read_write>
+            121053..121061 'shot_idx': u32
+            121079..121101 'STATUS...ENDING': u32
+            121119..121121 'pc': ref<function, u32, read_write>
+            121141..121153 'should_break': ref<function, bool, read_write>
+            121156..121160 'true': bool
+            121383..121391 'OP_RESET': u32
+            121410..121415 'shots': ref<storage, array<ShotData>, read_write>
+            121410..121425 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            121410..121432 'shots[...interp': ref<storage, InterpreterState, read_write>
+            121410..121447 'shots[...op_idx': ref<storage, u32, read_write>
+            121416..121424 'shot_idx': u32
+            121450..121455 'instr': Instruction
+            121450..121460 'instr.aux0': u32
+            121478..121483 'shots': ref<storage, array<ShotData>, read_write>
+            121478..121493 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            121478..121500 'shots[...interp': ref<storage, InterpreterState, read_write>
+            121478..121516 'shots[...p_type': ref<storage, u32, read_write>
+            121484..121492 'shot_idx': u32
+            121519..121521 '2u': u32
+            121634..121639 'shots': ref<storage, array<ShotData>, read_write>
+            121634..121649 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            121634..121656 'shots[...interp': ref<storage, InterpreterState, read_write>
+            121634..121663 'shots[...status': ref<storage, u32, read_write>
+            121640..121648 'shot_idx': u32
+            121666..121688 'STATUS...ENDING': u32
+            121706..121708 'pc': ref<function, u32, read_write>
+            121728..121740 'should_break': ref<function, bool, read_write>
+            121743..121747 'true': bool
+            122499..122513 'OP_READ_RESULT': u32
+            122536..122545 'result_id': u32
+            122548..122553 'instr': Instruction
+            122548..122558 'instr.src0': u32
+            122580..122590 'result_val': bool
+            122593..122637 'read_m...lt_id)': bool
+            122617..122625 'shot_idx': u32
+            122627..122636 'result_id': u32
+            122655..122713 'write_..._val))': [error]
+            122665..122673 'shot_idx': u32
+            122675..122680 'instr': Instruction
+            122675..122684 'instr.dst': u32
+            122686..122712 'select...t_val)': u32
+            122693..122695 '0u': u32
+            122697..122699 '1u': u32
+            122701..122711 'result_val': bool
+            122731..122733 'pc': ref<function, u32, read_write>
+            123063..123079 'OP_REC...OUTPUT': u32
+            123098..123100 'pc': ref<function, u32, read_write>
+            123470..123482 'OP_READ_LOSS': u32
+            123505..123514 'result_id': u32
+            123517..123522 'instr': Instruction
+            123517..123527 'instr.src0': u32
+            123549..123552 'val': u32
+            123555..123612 'atomic...t_id])': u32
+            123566..123611 '&resul...lt_id]': ptr<storage, atomic<u32>, read_write>
+            123567..123574 'results': ref<storage, array<atomic<u32>>, read_write>
+            123567..123611 'result...lt_id]': ref<storage, atomic<u32>, read_write>
+            123575..123583 'shot_idx': u32
+            123575..123598 'shot_i..._COUNT': u32
+            123575..123610 'shot_i...ult_id': u32
+            123586..123598 'RESULT_COUNT': u32
+            123601..123610 'result_id': u32
+            123630..123687 'write_...= 2u))': [error]
+            123640..123648 'shot_idx': u32
+            123650..123655 'instr': Instruction
+            123650..123659 'instr.dst': u32
+            123661..123686 'select...== 2u)': u32
+            123668..123670 '0u': u32
+            123672..123674 '1u': u32
+            123676..123679 'val': u32
+            123676..123685 'val == 2u': bool
+            123683..123685 '2u': u32
+            123705..123707 'pc': ref<function, u32, read_write>
+            124315..124321 'OP_ADD': u32
+            124344..124345 'a': i32
+            124348..124392 'resolv...s, 0u)': i32
+            124360..124368 'shot_idx': u32
+            124370..124375 'instr': Instruction
+            124370..124380 'instr.src0': u32
+            124382..124387 'flags': u32
+            124389..124391 '0u': u32
+            124414..124415 'b': i32
+            124418..124462 'resolv...s, 1u)': i32
+            124430..124438 'shot_idx': u32
+            124440..124445 'instr': Instruction
+            124440..124450 'instr.src1': u32
+            124452..124457 'flags': u32
+            124459..124461 '1u': u32
+            124480..124521 'write_...a + b)': [error]
+            124494..124502 'shot_idx': u32
+            124504..124509 'instr': Instruction
+            124504..124513 'instr.dst': u32
+            124515..124516 'a': i32
+            124515..124520 'a + b': i32
+            124519..124520 'b': i32
+            124539..124541 'pc': ref<function, u32, read_write>
+            124644..124650 'OP_SUB': u32
+            124673..124674 'a': i32
+            124677..124721 'resolv...s, 0u)': i32
+            124689..124697 'shot_idx': u32
+            124699..124704 'instr': Instruction
+            124699..124709 'instr.src0': u32
+            124711..124716 'flags': u32
+            124718..124720 '0u': u32
+            124743..124744 'b': i32
+            124747..124791 'resolv...s, 1u)': i32
+            124759..124767 'shot_idx': u32
+            124769..124774 'instr': Instruction
+            124769..124779 'instr.src1': u32
+            124781..124786 'flags': u32
+            124788..124790 '1u': u32
+            124809..124850 'write_...a - b)': [error]
+            124823..124831 'shot_idx': u32
+            124833..124838 'instr': Instruction
+            124833..124842 'instr.dst': u32
+            124844..124845 'a': i32
+            124844..124849 'a - b': i32
+            124848..124849 'b': i32
+            124868..124870 'pc': ref<function, u32, read_write>
+            124976..124982 'OP_MUL': u32
+            125005..125006 'a': i32
+            125009..125053 'resolv...s, 0u)': i32
+            125021..125029 'shot_idx': u32
+            125031..125036 'instr': Instruction
+            125031..125041 'instr.src0': u32
+            125043..125048 'flags': u32
+            125050..125052 '0u': u32
+            125075..125076 'b': i32
+            125079..125123 'resolv...s, 1u)': i32
+            125091..125099 'shot_idx': u32
+            125101..125106 'instr': Instruction
+            125101..125111 'instr.src1': u32
+            125113..125118 'flags': u32
+            125120..125122 '1u': u32
+            125141..125182 'write_...a * b)': [error]
+            125155..125163 'shot_idx': u32
+            125165..125170 'instr': Instruction
+            125165..125174 'instr.dst': u32
+            125176..125177 'a': i32
+            125176..125181 'a * b': i32
+            125180..125181 'b': i32
+            125200..125202 'pc': ref<function, u32, read_write>
+            125305..125312 'OP_UDIV': u32
+            125335..125336 'a': u32
+            125339..125383 'resolv...s, 0u)': u32
+            125351..125359 'shot_idx': u32
+            125361..125366 'instr': Instruction
+            125361..125371 'instr.src0': u32
+            125373..125378 'flags': u32
+            125380..125382 '0u': u32
+            125405..125406 'b': u32
+            125409..125453 'resolv...s, 1u)': u32
+            125421..125429 'shot_idx': u32
+            125431..125436 'instr': Instruction
+            125431..125441 'instr.src1': u32
+            125443..125448 'flags': u32
+            125450..125452 '1u': u32
+            125471..125508 'write_...a / b)': [error]
+            125481..125489 'shot_idx': u32
+            125491..125496 'instr': Instruction
+            125491..125500 'instr.dst': u32
+            125502..125503 'a': u32
+            125502..125507 'a / b': u32
+            125506..125507 'b': u32
+            125526..125528 'pc': ref<function, u32, read_write>
+            125653..125660 'OP_SDIV': u32
+            125683..125684 'a': i32
+            125687..125731 'resolv...s, 0u)': i32
+            125699..125707 'shot_idx': u32
+            125709..125714 'instr': Instruction
+            125709..125719 'instr.src0': u32
+            125721..125726 'flags': u32
+            125728..125730 '0u': u32
+            125753..125754 'b': i32
+            125757..125801 'resolv...s, 1u)': i32
+            125769..125777 'shot_idx': u32
+            125779..125784 'instr': Instruction
+            125779..125789 'instr.src1': u32
+            125791..125796 'flags': u32
+            125798..125800 '1u': u32
+            125819..125860 'write_...a / b)': [error]
+            125833..125841 'shot_idx': u32
+            125843..125848 'instr': Instruction
+            125843..125852 'instr.dst': u32
+            125854..125855 'a': i32
+            125854..125859 'a / b': i32
+            125858..125859 'b': i32
+            125878..125880 'pc': ref<function, u32, read_write>
+            125984..125991 'OP_UREM': u32
+            126014..126015 'a': u32
+            126018..126062 'resolv...s, 0u)': u32
+            126030..126038 'shot_idx': u32
+            126040..126045 'instr': Instruction
+            126040..126050 'instr.src0': u32
+            126052..126057 'flags': u32
+            126059..126061 '0u': u32
+            126084..126085 'b': u32
+            126088..126132 'resolv...s, 1u)': u32
+            126100..126108 'shot_idx': u32
+            126110..126115 'instr': Instruction
+            126110..126120 'instr.src1': u32
+            126122..126127 'flags': u32
+            126129..126131 '1u': u32
+            126150..126187 'write_...a % b)': [error]
+            126160..126168 'shot_idx': u32
+            126170..126175 'instr': Instruction
+            126170..126179 'instr.dst': u32
+            126181..126182 'a': u32
+            126181..126186 'a % b': u32
+            126185..126186 'b': u32
+            126205..126207 'pc': ref<function, u32, read_write>
+            126586..126593 'OP_SREM': u32
+            126616..126617 'a': i32
+            126620..126664 'resolv...s, 0u)': i32
             126632..126640 'shot_idx': u32
             126642..126647 'instr': Instruction
-            126642..126651 'instr.dst': u32
-            126653..126654 'a': i32
-            126653..126668 'a - b * (a / b)': i32
-            126657..126658 'b': i32
-            126657..126668 'b * (a / b)': i32
-            126662..126663 'a': i32
-            126662..126667 'a / b': i32
-            126666..126667 'b': i32
-            126687..126689 'pc': ref<function, u32, read_write>
-            127048..127054 'OP_AND': u32
-            127073..127216 'write_..., 1u))': [error]
-            127083..127091 'shot_idx': u32
-            127093..127098 'instr': Instruction
-            127093..127102 'instr.dst': u32
-            127124..127168 'resolv...s, 0u)': u32
-            127124..127215 'resolv...s, 1u)': u32
-            127136..127144 'shot_idx': u32
-            127146..127151 'instr': Instruction
-            127146..127156 'instr.src0': u32
-            127158..127163 'flags': u32
-            127165..127167 '0u': u32
-            127171..127215 'resolv...s, 1u)': u32
-            127183..127191 'shot_idx': u32
-            127193..127198 'instr': Instruction
-            127193..127203 'instr.src1': u32
-            127205..127210 'flags': u32
-            127212..127214 '1u': u32
-            127234..127236 'pc': ref<function, u32, read_write>
-            127322..127327 'OP_OR': u32
-            127346..127489 'write_..., 1u))': [error]
-            127356..127364 'shot_idx': u32
-            127366..127371 'instr': Instruction
-            127366..127375 'instr.dst': u32
-            127397..127441 'resolv...s, 0u)': u32
-            127397..127488 'resolv...s, 1u)': u32
-            127409..127417 'shot_idx': u32
-            127419..127424 'instr': Instruction
-            127419..127429 'instr.src0': u32
-            127431..127436 'flags': u32
-            127438..127440 '0u': u32
-            127444..127488 'resolv...s, 1u)': u32
-            127456..127464 'shot_idx': u32
-            127466..127471 'instr': Instruction
-            127466..127476 'instr.src1': u32
-            127478..127483 'flags': u32
-            127485..127487 '1u': u32
-            127507..127509 'pc': ref<function, u32, read_write>
-            127606..127612 'OP_XOR': u32
-            127631..127774 'write_..., 1u))': [error]
-            127641..127649 'shot_idx': u32
-            127651..127656 'instr': Instruction
-            127651..127660 'instr.dst': u32
-            127682..127726 'resolv...s, 0u)': u32
-            127682..127773 'resolv...s, 1u)': u32
-            127694..127702 'shot_idx': u32
-            127704..127709 'instr': Instruction
-            127704..127714 'instr.src0': u32
-            127716..127721 'flags': u32
-            127723..127725 '0u': u32
-            127729..127773 'resolv...s, 1u)': u32
-            127741..127749 'shot_idx': u32
-            127751..127756 'instr': Instruction
-            127751..127761 'instr.src1': u32
-            127763..127768 'flags': u32
-            127770..127772 '1u': u32
-            127792..127794 'pc': ref<function, u32, read_write>
-            127890..127896 'OP_SHL': u32
-            127915..128059 'write_..., 1u))': [error]
-            127925..127933 'shot_idx': u32
-            127935..127940 'instr': Instruction
-            127935..127944 'instr.dst': u32
-            127966..128010 'resolv...s, 0u)': u32
-            127966..128058 'resolv...s, 1u)': u32
-            127978..127986 'shot_idx': u32
-            127988..127993 'instr': Instruction
-            127988..127998 'instr.src0': u32
-            128000..128005 'flags': u32
-            128007..128009 '0u': u32
-            128014..128058 'resolv...s, 1u)': u32
-            128026..128034 'shot_idx': u32
-            128036..128041 'instr': Instruction
-            128036..128046 'instr.src1': u32
-            128048..128053 'flags': u32
-            128055..128057 '1u': u32
-            128077..128079 'pc': ref<function, u32, read_write>
-            128189..128196 'OP_LSHR': u32
-            128215..128359 'write_..., 1u))': [error]
-            128225..128233 'shot_idx': u32
-            128235..128240 'instr': Instruction
-            128235..128244 'instr.dst': u32
-            128266..128310 'resolv...s, 0u)': u32
-            128266..128358 'resolv...s, 1u)': u32
-            128278..128286 'shot_idx': u32
-            128288..128293 'instr': Instruction
-            128288..128298 'instr.src0': u32
-            128300..128305 'flags': u32
-            128307..128309 '0u': u32
-            128314..128358 'resolv...s, 1u)': u32
-            128326..128334 'shot_idx': u32
-            128336..128341 'instr': Instruction
-            128336..128346 'instr.src1': u32
-            128348..128353 'flags': u32
-            128355..128357 '1u': u32
-            128377..128379 'pc': ref<function, u32, read_write>
-            128564..128571 'OP_ASHR': u32
-            128594..128595 'a': i32
-            128598..128642 'resolv...s, 0u)': i32
-            128610..128618 'shot_idx': u32
-            128620..128625 'instr': Instruction
-            128620..128630 'instr.src0': u32
-            128632..128637 'flags': u32
-            128639..128641 '0u': u32
-            128664..128665 'b': u32
-            128668..128712 'resolv...s, 1u)': u32
-            128680..128688 'shot_idx': u32
-            128690..128695 'instr': Instruction
-            128690..128700 'instr.src1': u32
-            128702..128707 'flags': u32
-            128709..128711 '1u': u32
-            128730..128772 'write_... >> b)': [error]
+            126642..126652 'instr.src0': u32
+            126654..126659 'flags': u32
+            126661..126663 '0u': u32
+            126686..126687 'b': i32
+            126690..126734 'resolv...s, 1u)': i32
+            126702..126710 'shot_idx': u32
+            126712..126717 'instr': Instruction
+            126712..126722 'instr.src1': u32
+            126724..126729 'flags': u32
+            126731..126733 '1u': u32
+            126752..126803 'write_... / b))': [error]
+            126766..126774 'shot_idx': u32
+            126776..126781 'instr': Instruction
+            126776..126785 'instr.dst': u32
+            126787..126788 'a': i32
+            126787..126802 'a - b * (a / b)': i32
+            126791..126792 'b': i32
+            126791..126802 'b * (a / b)': i32
+            126796..126797 'a': i32
+            126796..126801 'a / b': i32
+            126800..126801 'b': i32
+            126821..126823 'pc': ref<function, u32, read_write>
+            127182..127188 'OP_AND': u32
+            127207..127350 'write_..., 1u))': [error]
+            127217..127225 'shot_idx': u32
+            127227..127232 'instr': Instruction
+            127227..127236 'instr.dst': u32
+            127258..127302 'resolv...s, 0u)': u32
+            127258..127349 'resolv...s, 1u)': u32
+            127270..127278 'shot_idx': u32
+            127280..127285 'instr': Instruction
+            127280..127290 'instr.src0': u32
+            127292..127297 'flags': u32
+            127299..127301 '0u': u32
+            127305..127349 'resolv...s, 1u)': u32
+            127317..127325 'shot_idx': u32
+            127327..127332 'instr': Instruction
+            127327..127337 'instr.src1': u32
+            127339..127344 'flags': u32
+            127346..127348 '1u': u32
+            127368..127370 'pc': ref<function, u32, read_write>
+            127456..127461 'OP_OR': u32
+            127480..127623 'write_..., 1u))': [error]
+            127490..127498 'shot_idx': u32
+            127500..127505 'instr': Instruction
+            127500..127509 'instr.dst': u32
+            127531..127575 'resolv...s, 0u)': u32
+            127531..127622 'resolv...s, 1u)': u32
+            127543..127551 'shot_idx': u32
+            127553..127558 'instr': Instruction
+            127553..127563 'instr.src0': u32
+            127565..127570 'flags': u32
+            127572..127574 '0u': u32
+            127578..127622 'resolv...s, 1u)': u32
+            127590..127598 'shot_idx': u32
+            127600..127605 'instr': Instruction
+            127600..127610 'instr.src1': u32
+            127612..127617 'flags': u32
+            127619..127621 '1u': u32
+            127641..127643 'pc': ref<function, u32, read_write>
+            127740..127746 'OP_XOR': u32
+            127765..127908 'write_..., 1u))': [error]
+            127775..127783 'shot_idx': u32
+            127785..127790 'instr': Instruction
+            127785..127794 'instr.dst': u32
+            127816..127860 'resolv...s, 0u)': u32
+            127816..127907 'resolv...s, 1u)': u32
+            127828..127836 'shot_idx': u32
+            127838..127843 'instr': Instruction
+            127838..127848 'instr.src0': u32
+            127850..127855 'flags': u32
+            127857..127859 '0u': u32
+            127863..127907 'resolv...s, 1u)': u32
+            127875..127883 'shot_idx': u32
+            127885..127890 'instr': Instruction
+            127885..127895 'instr.src1': u32
+            127897..127902 'flags': u32
+            127904..127906 '1u': u32
+            127926..127928 'pc': ref<function, u32, read_write>
+            128024..128030 'OP_SHL': u32
+            128049..128193 'write_..., 1u))': [error]
+            128059..128067 'shot_idx': u32
+            128069..128074 'instr': Instruction
+            128069..128078 'instr.dst': u32
+            128100..128144 'resolv...s, 0u)': u32
+            128100..128192 'resolv...s, 1u)': u32
+            128112..128120 'shot_idx': u32
+            128122..128127 'instr': Instruction
+            128122..128132 'instr.src0': u32
+            128134..128139 'flags': u32
+            128141..128143 '0u': u32
+            128148..128192 'resolv...s, 1u)': u32
+            128160..128168 'shot_idx': u32
+            128170..128175 'instr': Instruction
+            128170..128180 'instr.src1': u32
+            128182..128187 'flags': u32
+            128189..128191 '1u': u32
+            128211..128213 'pc': ref<function, u32, read_write>
+            128323..128330 'OP_LSHR': u32
+            128349..128493 'write_..., 1u))': [error]
+            128359..128367 'shot_idx': u32
+            128369..128374 'instr': Instruction
+            128369..128378 'instr.dst': u32
+            128400..128444 'resolv...s, 0u)': u32
+            128400..128492 'resolv...s, 1u)': u32
+            128412..128420 'shot_idx': u32
+            128422..128427 'instr': Instruction
+            128422..128432 'instr.src0': u32
+            128434..128439 'flags': u32
+            128441..128443 '0u': u32
+            128448..128492 'resolv...s, 1u)': u32
+            128460..128468 'shot_idx': u32
+            128470..128475 'instr': Instruction
+            128470..128480 'instr.src1': u32
+            128482..128487 'flags': u32
+            128489..128491 '1u': u32
+            128511..128513 'pc': ref<function, u32, read_write>
+            128698..128705 'OP_ASHR': u32
+            128728..128729 'a': i32
+            128732..128776 'resolv...s, 0u)': i32
             128744..128752 'shot_idx': u32
             128754..128759 'instr': Instruction
-            128754..128763 'instr.dst': u32
-            128765..128766 'a': i32
-            128765..128771 'a >> b': i32
-            128770..128771 'b': u32
-            128790..128792 'pc': ref<function, u32, read_write>
-            129444..129451 'OP_ICMP': u32
-            129474..129475 'a': i32
-            129478..129522 'resolv...s, 0u)': i32
-            129490..129498 'shot_idx': u32
-            129500..129505 'instr': Instruction
-            129500..129510 'instr.src0': u32
-            129512..129517 'flags': u32
-            129519..129521 '0u': u32
-            129544..129545 'b': i32
-            129548..129592 'resolv...s, 1u)': i32
-            129560..129568 'shot_idx': u32
-            129570..129575 'instr': Instruction
-            129570..129580 'instr.src1': u32
-            129582..129587 'flags': u32
-            129589..129591 '1u': u32
-            129614..129620 'result': ref<function, bool, read_write>
-            129629..129634 'false': bool
-            129659..129666 'subcond': u32
-            129694..129701 'ICMP_EQ': u32
-            129705..129711 'result': ref<function, bool, read_write>
-            129715..129716 'a': i32
-            129715..129721 'a == b': bool
-            129720..129721 'b': i32
-            129751..129758 'ICMP_NE': u32
-            129762..129768 'result': ref<function, bool, read_write>
-            129772..129773 'a': i32
-            129772..129778 'a != b': bool
-            129777..129778 'b': i32
-            129808..129816 'ICMP_SLT': u32
-            129819..129825 'result': ref<function, bool, read_write>
-            129829..129830 'a': i32
-            129829..129834 'a < b': bool
-            129833..129834 'b': i32
-            129864..129872 'ICMP_SLE': u32
-            129875..129881 'result': ref<function, bool, read_write>
-            129885..129886 'a': i32
-            129885..129891 'a <= b': bool
-            129890..129891 'b': i32
-            129921..129929 'ICMP_SGT': u32
-            129932..129938 'result': ref<function, bool, read_write>
-            129942..129943 'a': i32
-            129942..129947 'a > b': bool
-            129946..129947 'b': i32
-            129977..129985 'ICMP_SGE': u32
-            129988..129994 'result': ref<function, bool, read_write>
-            129998..129999 'a': i32
-            129998..130004 'a >= b': bool
-            130003..130004 'b': i32
-            130034..130042 'ICMP_ULT': u32
-            130045..130051 'result': ref<function, bool, read_write>
-            130055..130070 'bitcast<u32>(a)': u32
-            130055..130088 'bitcas...32>(b)': bool
-            130068..130069 'a': i32
-            130073..130088 'bitcast<u32>(b)': u32
-            130086..130087 'b': i32
-            130118..130126 'ICMP_ULE': u32
-            130129..130135 'result': ref<function, bool, read_write>
-            130139..130154 'bitcast<u32>(a)': u32
-            130139..130173 'bitcas...32>(b)': bool
-            130152..130153 'a': i32
-            130158..130173 'bitcast<u32>(b)': u32
-            130171..130172 'b': i32
-            130203..130211 'ICMP_UGT': u32
-            130214..130220 'result': ref<function, bool, read_write>
-            130224..130239 'bitcast<u32>(a)': u32
-            130224..130257 'bitcas...32>(b)': bool
-            130237..130238 'a': i32
-            130242..130257 'bitcast<u32>(b)': u32
-            130255..130256 'b': i32
-            130287..130295 'ICMP_UGE': u32
-            130298..130304 'result': ref<function, bool, read_write>
-            130308..130323 'bitcast<u32>(a)': u32
-            130308..130342 'bitcas...32>(b)': bool
-            130321..130322 'a': i32
-            130327..130342 'bitcast<u32>(b)': u32
-            130340..130341 'b': i32
-            130401..130406 'shots': ref<storage, array<ShotData>, read_write>
-            130401..130416 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            130401..130423 'shots[...interp': ref<storage, InterpreterState, read_write>
-            130401..130430 'shots[...status': ref<storage, u32, read_write>
-            130407..130415 'shot_idx': u32
-            130433..130456 'ERR_IN...UCTION': u32
-            130482..130487 'shots': ref<storage, array<ShotData>, read_write>
-            130482..130497 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            130482..130504 'shots[...interp': ref<storage, InterpreterState, read_write>
-            130482..130514 'shots[...t_code': ref<storage, u32, read_write>
-            130488..130496 'shot_idx': u32
-            130517..130540 'ERR_IN...UCTION': u32
-            130570..130577 'err_idx': u32
-            130580..130609 '(shot_..._COUNT': u32
-            130580..130613 '(shot_...NT - 1': u32
-            130581..130589 'shot_idx': u32
-            130581..130593 'shot_idx + 1': u32
-            130592..130593 '1': integer
-            130597..130609 'RESULT_COUNT': u32
-            130612..130613 '1': integer
-            130639..130712 'atomic...CTION)': __atomic_compare_exchange_result
-            130665..130682 '&resul...r_idx]': ptr<storage, atomic<u32>, read_write>
-            130666..130673 'results': ref<storage, array<atomic<u32>>, read_write>
-            130666..130682 'result...r_idx]': ref<storage, atomic<u32>, read_write>
-            130674..130681 'err_idx': u32
-            130684..130686 '0u': u32
-            130688..130711 'ERR_IN...UCTION': u32
-            130738..130743 'shots': ref<storage, array<ShotData>, read_write>
-            130738..130753 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            130738..130760 'shots[...interp': ref<storage, InterpreterState, read_write>
-            130738..130767 'shots[...status': ref<storage, u32, read_write>
-            130744..130752 'shot_idx': u32
-            130770..130782 'STATUS_ERROR': u32
-            130808..130853 'atomic...t, 1u)': u32
-            130818..130848 '&diagn..._count': ptr<storage, atomic<u32>, read_write>
-            130819..130830 'diagnostics': ref<storage, DiagnosticData, read_write>
-            130819..130848 'diagno..._count': ref<storage, atomic<u32>, read_write>
-            130850..130852 '1u': u32
-            130879..130891 'should_break': ref<function, bool, read_write>
-            130894..130898 'true': bool
-            130956..131010 'write_...sult))': [error]
-            130966..130974 'shot_idx': u32
-            130976..130981 'instr': Instruction
-            130976..130985 'instr.dst': u32
-            130987..131009 'select...esult)': u32
-            130994..130996 '0u': u32
-            130998..131000 '1u': u32
-            131002..131008 'result': ref<function, bool, read_write>
-            131028..131030 'pc': ref<function, u32, read_write>
-            131480..131487 'OP_FCMP': u32
-            131510..131511 'a': f32
-            131514..131558 'resolv...s, 0u)': f32
-            131526..131534 'shot_idx': u32
-            131536..131541 'instr': Instruction
-            131536..131546 'instr.src0': u32
-            131548..131553 'flags': u32
-            131555..131557 '0u': u32
-            131580..131581 'b': f32
-            131584..131628 'resolv...s, 1u)': f32
-            131596..131604 'shot_idx': u32
-            131606..131611 'instr': Instruction
-            131606..131616 'instr.src1': u32
-            131618..131623 'flags': u32
-            131625..131627 '1u': u32
-            131650..131656 'result': ref<function, bool, read_write>
-            131665..131670 'false': bool
-            131695..131702 'subcond': u32
-            131730..131738 'FCMP_OEQ': u32
-            131741..131747 'result': ref<function, bool, read_write>
-            131751..131752 'a': f32
-            131751..131757 'a == b': bool
-            131756..131757 'b': f32
-            131787..131795 'FCMP_ONE': u32
-            131798..131804 'result': ref<function, bool, read_write>
-            131808..131809 'a': f32
-            131808..131814 'a != b': bool
-            131813..131814 'b': f32
-            131844..131852 'FCMP_OLT': u32
-            131855..131861 'result': ref<function, bool, read_write>
-            131865..131866 'a': f32
-            131865..131870 'a < b': bool
-            131869..131870 'b': f32
-            131900..131908 'FCMP_OLE': u32
-            131911..131917 'result': ref<function, bool, read_write>
-            131921..131922 'a': f32
-            131921..131927 'a <= b': bool
-            131926..131927 'b': f32
-            131957..131965 'FCMP_OGT': u32
-            131968..131974 'result': ref<function, bool, read_write>
-            131978..131979 'a': f32
-            131978..131983 'a > b': bool
-            131982..131983 'b': f32
-            132013..132021 'FCMP_OGE': u32
-            132024..132030 'result': ref<function, bool, read_write>
-            132034..132035 'a': f32
-            132034..132040 'a >= b': bool
-            132039..132040 'b': f32
-            132099..132104 'shots': ref<storage, array<ShotData>, read_write>
-            132099..132114 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            132099..132121 'shots[...interp': ref<storage, InterpreterState, read_write>
-            132099..132131 'shots[...t_code': ref<storage, u32, read_write>
-            132105..132113 'shot_idx': u32
-            132134..132157 'ERR_IN...UCTION': u32
-            132187..132194 'err_idx': u32
-            132197..132226 '(shot_..._COUNT': u32
-            132197..132230 '(shot_...NT - 1': u32
-            132198..132206 'shot_idx': u32
-            132198..132210 'shot_idx + 1': u32
-            132209..132210 '1': integer
-            132214..132226 'RESULT_COUNT': u32
-            132229..132230 '1': integer
-            132256..132329 'atomic...CTION)': __atomic_compare_exchange_result
-            132282..132299 '&resul...r_idx]': ptr<storage, atomic<u32>, read_write>
-            132283..132290 'results': ref<storage, array<atomic<u32>>, read_write>
-            132283..132299 'result...r_idx]': ref<storage, atomic<u32>, read_write>
-            132291..132298 'err_idx': u32
-            132301..132303 '0u': u32
-            132305..132328 'ERR_IN...UCTION': u32
-            132355..132360 'shots': ref<storage, array<ShotData>, read_write>
-            132355..132370 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            132355..132377 'shots[...interp': ref<storage, InterpreterState, read_write>
-            132355..132384 'shots[...status': ref<storage, u32, read_write>
-            132361..132369 'shot_idx': u32
-            132387..132399 'STATUS_ERROR': u32
-            132425..132470 'atomic...t, 1u)': u32
-            132435..132465 '&diagn..._count': ptr<storage, atomic<u32>, read_write>
-            132436..132447 'diagnostics': ref<storage, DiagnosticData, read_write>
-            132436..132465 'diagno..._count': ref<storage, atomic<u32>, read_write>
-            132467..132469 '1u': u32
-            132496..132508 'should_break': ref<function, bool, read_write>
-            132511..132515 'true': bool
-            132573..132627 'write_...sult))': [error]
-            132583..132591 'shot_idx': u32
-            132593..132598 'instr': Instruction
-            132593..132602 'instr.dst': u32
-            132604..132626 'select...esult)': u32
-            132611..132613 '0u': u32
-            132615..132617 '1u': u32
-            132619..132625 'result': ref<function, bool, read_write>
-            132645..132647 'pc': ref<function, u32, read_write>
-            133103..133110 'OP_FADD': u32
-            133129..133276 'write_..., 1u))': [error]
-            133143..133151 'shot_idx': u32
-            133153..133158 'instr': Instruction
-            133153..133162 'instr.dst': u32
-            133184..133228 'resolv...s, 0u)': f32
-            133184..133275 'resolv...s, 1u)': f32
-            133196..133204 'shot_idx': u32
-            133206..133211 'instr': Instruction
-            133206..133216 'instr.src0': u32
-            133218..133223 'flags': u32
-            133225..133227 '0u': u32
-            133231..133275 'resolv...s, 1u)': f32
-            133243..133251 'shot_idx': u32
-            133253..133258 'instr': Instruction
-            133253..133263 'instr.src1': u32
-            133265..133270 'flags': u32
-            133272..133274 '1u': u32
-            133294..133296 'pc': ref<function, u32, read_write>
-            133391..133398 'OP_FSUB': u32
-            133417..133564 'write_..., 1u))': [error]
-            133431..133439 'shot_idx': u32
-            133441..133446 'instr': Instruction
-            133441..133450 'instr.dst': u32
-            133472..133516 'resolv...s, 0u)': f32
-            133472..133563 'resolv...s, 1u)': f32
-            133484..133492 'shot_idx': u32
-            133494..133499 'instr': Instruction
-            133494..133504 'instr.src0': u32
-            133506..133511 'flags': u32
-            133513..133515 '0u': u32
-            133519..133563 'resolv...s, 1u)': f32
-            133531..133539 'shot_idx': u32
-            133541..133546 'instr': Instruction
-            133541..133551 'instr.src1': u32
-            133553..133558 'flags': u32
-            133560..133562 '1u': u32
-            133582..133584 'pc': ref<function, u32, read_write>
-            133682..133689 'OP_FMUL': u32
-            133708..133855 'write_..., 1u))': [error]
-            133722..133730 'shot_idx': u32
-            133732..133737 'instr': Instruction
-            133732..133741 'instr.dst': u32
-            133763..133807 'resolv...s, 0u)': f32
-            133763..133854 'resolv...s, 1u)': f32
-            133775..133783 'shot_idx': u32
-            133785..133790 'instr': Instruction
-            133785..133795 'instr.src0': u32
-            133797..133802 'flags': u32
-            133804..133806 '0u': u32
-            133810..133854 'resolv...s, 1u)': f32
-            133822..133830 'shot_idx': u32
-            133832..133837 'instr': Instruction
-            133832..133842 'instr.src1': u32
-            133844..133849 'flags': u32
-            133851..133853 '1u': u32
-            133873..133875 'pc': ref<function, u32, read_write>
-            133967..133974 'OP_FDIV': u32
-            133993..134140 'write_..., 1u))': [error]
-            134007..134015 'shot_idx': u32
-            134017..134022 'instr': Instruction
-            134017..134026 'instr.dst': u32
-            134048..134092 'resolv...s, 0u)': f32
-            134048..134139 'resolv...s, 1u)': f32
-            134060..134068 'shot_idx': u32
-            134070..134075 'instr': Instruction
-            134070..134080 'instr.src0': u32
-            134082..134087 'flags': u32
-            134089..134091 '0u': u32
-            134095..134139 'resolv...s, 1u)': f32
-            134107..134115 'shot_idx': u32
-            134117..134122 'instr': Instruction
-            134117..134127 'instr.src1': u32
-            134129..134134 'flags': u32
-            134136..134138 '1u': u32
-            134158..134160 'pc': ref<function, u32, read_write>
-            134393..134400 'OP_FREM': u32
-            134423..134424 'a': f32
-            134427..134471 'resolv...s, 0u)': f32
-            134439..134447 'shot_idx': u32
-            134449..134454 'instr': Instruction
-            134449..134459 'instr.src0': u32
-            134461..134466 'flags': u32
-            134468..134470 '0u': u32
-            134493..134494 'b': f32
-            134497..134541 'resolv...s, 1u)': f32
-            134509..134517 'shot_idx': u32
-            134519..134524 'instr': Instruction
-            134519..134529 'instr.src1': u32
-            134531..134536 'flags': u32
-            134538..134540 '1u': u32
-            134559..134615 'write_...) * b)': [error]
+            128754..128764 'instr.src0': u32
+            128766..128771 'flags': u32
+            128773..128775 '0u': u32
+            128798..128799 'b': u32
+            128802..128846 'resolv...s, 1u)': u32
+            128814..128822 'shot_idx': u32
+            128824..128829 'instr': Instruction
+            128824..128834 'instr.src1': u32
+            128836..128841 'flags': u32
+            128843..128845 '1u': u32
+            128864..128906 'write_... >> b)': [error]
+            128878..128886 'shot_idx': u32
+            128888..128893 'instr': Instruction
+            128888..128897 'instr.dst': u32
+            128899..128900 'a': i32
+            128899..128905 'a >> b': i32
+            128904..128905 'b': u32
+            128924..128926 'pc': ref<function, u32, read_write>
+            129578..129585 'OP_ICMP': u32
+            129608..129609 'a': i32
+            129612..129656 'resolv...s, 0u)': i32
+            129624..129632 'shot_idx': u32
+            129634..129639 'instr': Instruction
+            129634..129644 'instr.src0': u32
+            129646..129651 'flags': u32
+            129653..129655 '0u': u32
+            129678..129679 'b': i32
+            129682..129726 'resolv...s, 1u)': i32
+            129694..129702 'shot_idx': u32
+            129704..129709 'instr': Instruction
+            129704..129714 'instr.src1': u32
+            129716..129721 'flags': u32
+            129723..129725 '1u': u32
+            129748..129754 'result': ref<function, bool, read_write>
+            129763..129768 'false': bool
+            129793..129800 'subcond': u32
+            129828..129835 'ICMP_EQ': u32
+            129839..129845 'result': ref<function, bool, read_write>
+            129849..129850 'a': i32
+            129849..129855 'a == b': bool
+            129854..129855 'b': i32
+            129885..129892 'ICMP_NE': u32
+            129896..129902 'result': ref<function, bool, read_write>
+            129906..129907 'a': i32
+            129906..129912 'a != b': bool
+            129911..129912 'b': i32
+            129942..129950 'ICMP_SLT': u32
+            129953..129959 'result': ref<function, bool, read_write>
+            129963..129964 'a': i32
+            129963..129968 'a < b': bool
+            129967..129968 'b': i32
+            129998..130006 'ICMP_SLE': u32
+            130009..130015 'result': ref<function, bool, read_write>
+            130019..130020 'a': i32
+            130019..130025 'a <= b': bool
+            130024..130025 'b': i32
+            130055..130063 'ICMP_SGT': u32
+            130066..130072 'result': ref<function, bool, read_write>
+            130076..130077 'a': i32
+            130076..130081 'a > b': bool
+            130080..130081 'b': i32
+            130111..130119 'ICMP_SGE': u32
+            130122..130128 'result': ref<function, bool, read_write>
+            130132..130133 'a': i32
+            130132..130138 'a >= b': bool
+            130137..130138 'b': i32
+            130168..130176 'ICMP_ULT': u32
+            130179..130185 'result': ref<function, bool, read_write>
+            130189..130204 'bitcast<u32>(a)': u32
+            130189..130222 'bitcas...32>(b)': bool
+            130202..130203 'a': i32
+            130207..130222 'bitcast<u32>(b)': u32
+            130220..130221 'b': i32
+            130252..130260 'ICMP_ULE': u32
+            130263..130269 'result': ref<function, bool, read_write>
+            130273..130288 'bitcast<u32>(a)': u32
+            130273..130307 'bitcas...32>(b)': bool
+            130286..130287 'a': i32
+            130292..130307 'bitcast<u32>(b)': u32
+            130305..130306 'b': i32
+            130337..130345 'ICMP_UGT': u32
+            130348..130354 'result': ref<function, bool, read_write>
+            130358..130373 'bitcast<u32>(a)': u32
+            130358..130391 'bitcas...32>(b)': bool
+            130371..130372 'a': i32
+            130376..130391 'bitcast<u32>(b)': u32
+            130389..130390 'b': i32
+            130421..130429 'ICMP_UGE': u32
+            130432..130438 'result': ref<function, bool, read_write>
+            130442..130457 'bitcast<u32>(a)': u32
+            130442..130476 'bitcas...32>(b)': bool
+            130455..130456 'a': i32
+            130461..130476 'bitcast<u32>(b)': u32
+            130474..130475 'b': i32
+            130535..130540 'shots': ref<storage, array<ShotData>, read_write>
+            130535..130550 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            130535..130557 'shots[...interp': ref<storage, InterpreterState, read_write>
+            130535..130564 'shots[...status': ref<storage, u32, read_write>
+            130541..130549 'shot_idx': u32
+            130567..130590 'ERR_IN...UCTION': u32
+            130616..130621 'shots': ref<storage, array<ShotData>, read_write>
+            130616..130631 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            130616..130638 'shots[...interp': ref<storage, InterpreterState, read_write>
+            130616..130648 'shots[...t_code': ref<storage, u32, read_write>
+            130622..130630 'shot_idx': u32
+            130651..130674 'ERR_IN...UCTION': u32
+            130704..130711 'err_idx': u32
+            130714..130743 '(shot_..._COUNT': u32
+            130714..130747 '(shot_...NT - 1': u32
+            130715..130723 'shot_idx': u32
+            130715..130727 'shot_idx + 1': u32
+            130726..130727 '1': integer
+            130731..130743 'RESULT_COUNT': u32
+            130746..130747 '1': integer
+            130773..130846 'atomic...CTION)': __atomic_compare_exchange_result
+            130799..130816 '&resul...r_idx]': ptr<storage, atomic<u32>, read_write>
+            130800..130807 'results': ref<storage, array<atomic<u32>>, read_write>
+            130800..130816 'result...r_idx]': ref<storage, atomic<u32>, read_write>
+            130808..130815 'err_idx': u32
+            130818..130820 '0u': u32
+            130822..130845 'ERR_IN...UCTION': u32
+            130872..130877 'shots': ref<storage, array<ShotData>, read_write>
+            130872..130887 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            130872..130894 'shots[...interp': ref<storage, InterpreterState, read_write>
+            130872..130901 'shots[...status': ref<storage, u32, read_write>
+            130878..130886 'shot_idx': u32
+            130904..130916 'STATUS_ERROR': u32
+            130942..130987 'atomic...t, 1u)': u32
+            130952..130982 '&diagn..._count': ptr<storage, atomic<u32>, read_write>
+            130953..130964 'diagnostics': ref<storage, DiagnosticData, read_write>
+            130953..130982 'diagno..._count': ref<storage, atomic<u32>, read_write>
+            130984..130986 '1u': u32
+            131013..131025 'should_break': ref<function, bool, read_write>
+            131028..131032 'true': bool
+            131090..131144 'write_...sult))': [error]
+            131100..131108 'shot_idx': u32
+            131110..131115 'instr': Instruction
+            131110..131119 'instr.dst': u32
+            131121..131143 'select...esult)': u32
+            131128..131130 '0u': u32
+            131132..131134 '1u': u32
+            131136..131142 'result': ref<function, bool, read_write>
+            131162..131164 'pc': ref<function, u32, read_write>
+            131614..131621 'OP_FCMP': u32
+            131644..131645 'a': f32
+            131648..131692 'resolv...s, 0u)': f32
+            131660..131668 'shot_idx': u32
+            131670..131675 'instr': Instruction
+            131670..131680 'instr.src0': u32
+            131682..131687 'flags': u32
+            131689..131691 '0u': u32
+            131714..131715 'b': f32
+            131718..131762 'resolv...s, 1u)': f32
+            131730..131738 'shot_idx': u32
+            131740..131745 'instr': Instruction
+            131740..131750 'instr.src1': u32
+            131752..131757 'flags': u32
+            131759..131761 '1u': u32
+            131784..131790 'result': ref<function, bool, read_write>
+            131799..131804 'false': bool
+            131829..131836 'subcond': u32
+            131864..131872 'FCMP_OEQ': u32
+            131875..131881 'result': ref<function, bool, read_write>
+            131885..131886 'a': f32
+            131885..131891 'a == b': bool
+            131890..131891 'b': f32
+            131921..131929 'FCMP_ONE': u32
+            131932..131938 'result': ref<function, bool, read_write>
+            131942..131943 'a': f32
+            131942..131948 'a != b': bool
+            131947..131948 'b': f32
+            131978..131986 'FCMP_OLT': u32
+            131989..131995 'result': ref<function, bool, read_write>
+            131999..132000 'a': f32
+            131999..132004 'a < b': bool
+            132003..132004 'b': f32
+            132034..132042 'FCMP_OLE': u32
+            132045..132051 'result': ref<function, bool, read_write>
+            132055..132056 'a': f32
+            132055..132061 'a <= b': bool
+            132060..132061 'b': f32
+            132091..132099 'FCMP_OGT': u32
+            132102..132108 'result': ref<function, bool, read_write>
+            132112..132113 'a': f32
+            132112..132117 'a > b': bool
+            132116..132117 'b': f32
+            132147..132155 'FCMP_OGE': u32
+            132158..132164 'result': ref<function, bool, read_write>
+            132168..132169 'a': f32
+            132168..132174 'a >= b': bool
+            132173..132174 'b': f32
+            132233..132238 'shots': ref<storage, array<ShotData>, read_write>
+            132233..132248 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            132233..132255 'shots[...interp': ref<storage, InterpreterState, read_write>
+            132233..132265 'shots[...t_code': ref<storage, u32, read_write>
+            132239..132247 'shot_idx': u32
+            132268..132291 'ERR_IN...UCTION': u32
+            132321..132328 'err_idx': u32
+            132331..132360 '(shot_..._COUNT': u32
+            132331..132364 '(shot_...NT - 1': u32
+            132332..132340 'shot_idx': u32
+            132332..132344 'shot_idx + 1': u32
+            132343..132344 '1': integer
+            132348..132360 'RESULT_COUNT': u32
+            132363..132364 '1': integer
+            132390..132463 'atomic...CTION)': __atomic_compare_exchange_result
+            132416..132433 '&resul...r_idx]': ptr<storage, atomic<u32>, read_write>
+            132417..132424 'results': ref<storage, array<atomic<u32>>, read_write>
+            132417..132433 'result...r_idx]': ref<storage, atomic<u32>, read_write>
+            132425..132432 'err_idx': u32
+            132435..132437 '0u': u32
+            132439..132462 'ERR_IN...UCTION': u32
+            132489..132494 'shots': ref<storage, array<ShotData>, read_write>
+            132489..132504 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            132489..132511 'shots[...interp': ref<storage, InterpreterState, read_write>
+            132489..132518 'shots[...status': ref<storage, u32, read_write>
+            132495..132503 'shot_idx': u32
+            132521..132533 'STATUS_ERROR': u32
+            132559..132604 'atomic...t, 1u)': u32
+            132569..132599 '&diagn..._count': ptr<storage, atomic<u32>, read_write>
+            132570..132581 'diagnostics': ref<storage, DiagnosticData, read_write>
+            132570..132599 'diagno..._count': ref<storage, atomic<u32>, read_write>
+            132601..132603 '1u': u32
+            132630..132642 'should_break': ref<function, bool, read_write>
+            132645..132649 'true': bool
+            132707..132761 'write_...sult))': [error]
+            132717..132725 'shot_idx': u32
+            132727..132732 'instr': Instruction
+            132727..132736 'instr.dst': u32
+            132738..132760 'select...esult)': u32
+            132745..132747 '0u': u32
+            132749..132751 '1u': u32
+            132753..132759 'result': ref<function, bool, read_write>
+            132779..132781 'pc': ref<function, u32, read_write>
+            133237..133244 'OP_FADD': u32
+            133263..133410 'write_..., 1u))': [error]
+            133277..133285 'shot_idx': u32
+            133287..133292 'instr': Instruction
+            133287..133296 'instr.dst': u32
+            133318..133362 'resolv...s, 0u)': f32
+            133318..133409 'resolv...s, 1u)': f32
+            133330..133338 'shot_idx': u32
+            133340..133345 'instr': Instruction
+            133340..133350 'instr.src0': u32
+            133352..133357 'flags': u32
+            133359..133361 '0u': u32
+            133365..133409 'resolv...s, 1u)': f32
+            133377..133385 'shot_idx': u32
+            133387..133392 'instr': Instruction
+            133387..133397 'instr.src1': u32
+            133399..133404 'flags': u32
+            133406..133408 '1u': u32
+            133428..133430 'pc': ref<function, u32, read_write>
+            133525..133532 'OP_FSUB': u32
+            133551..133698 'write_..., 1u))': [error]
+            133565..133573 'shot_idx': u32
+            133575..133580 'instr': Instruction
+            133575..133584 'instr.dst': u32
+            133606..133650 'resolv...s, 0u)': f32
+            133606..133697 'resolv...s, 1u)': f32
+            133618..133626 'shot_idx': u32
+            133628..133633 'instr': Instruction
+            133628..133638 'instr.src0': u32
+            133640..133645 'flags': u32
+            133647..133649 '0u': u32
+            133653..133697 'resolv...s, 1u)': f32
+            133665..133673 'shot_idx': u32
+            133675..133680 'instr': Instruction
+            133675..133685 'instr.src1': u32
+            133687..133692 'flags': u32
+            133694..133696 '1u': u32
+            133716..133718 'pc': ref<function, u32, read_write>
+            133816..133823 'OP_FMUL': u32
+            133842..133989 'write_..., 1u))': [error]
+            133856..133864 'shot_idx': u32
+            133866..133871 'instr': Instruction
+            133866..133875 'instr.dst': u32
+            133897..133941 'resolv...s, 0u)': f32
+            133897..133988 'resolv...s, 1u)': f32
+            133909..133917 'shot_idx': u32
+            133919..133924 'instr': Instruction
+            133919..133929 'instr.src0': u32
+            133931..133936 'flags': u32
+            133938..133940 '0u': u32
+            133944..133988 'resolv...s, 1u)': f32
+            133956..133964 'shot_idx': u32
+            133966..133971 'instr': Instruction
+            133966..133976 'instr.src1': u32
+            133978..133983 'flags': u32
+            133985..133987 '1u': u32
+            134007..134009 'pc': ref<function, u32, read_write>
+            134101..134108 'OP_FDIV': u32
+            134127..134274 'write_..., 1u))': [error]
+            134141..134149 'shot_idx': u32
+            134151..134156 'instr': Instruction
+            134151..134160 'instr.dst': u32
+            134182..134226 'resolv...s, 0u)': f32
+            134182..134273 'resolv...s, 1u)': f32
+            134194..134202 'shot_idx': u32
+            134204..134209 'instr': Instruction
+            134204..134214 'instr.src0': u32
+            134216..134221 'flags': u32
+            134223..134225 '0u': u32
+            134229..134273 'resolv...s, 1u)': f32
+            134241..134249 'shot_idx': u32
+            134251..134256 'instr': Instruction
+            134251..134261 'instr.src1': u32
+            134263..134268 'flags': u32
+            134270..134272 '1u': u32
+            134292..134294 'pc': ref<function, u32, read_write>
+            134527..134534 'OP_FREM': u32
+            134557..134558 'a': f32
+            134561..134605 'resolv...s, 0u)': f32
             134573..134581 'shot_idx': u32
             134583..134588 'instr': Instruction
-            134583..134592 'instr.dst': u32
-            134594..134595 'a': f32
-            134594..134614 'a - tr...b) * b': f32
-            134598..134610 'trunc(a / b)': f32
-            134598..134614 'trunc(...b) * b': f32
-            134604..134605 'a': f32
-            134604..134609 'a / b': f32
-            134608..134609 'b': f32
-            134613..134614 'b': f32
-            134633..134635 'pc': ref<function, u32, read_write>
-            135232..135239 'OP_ZEXT': u32
-            135258..135334 'write_..., 0u))': [error]
-            135268..135276 'shot_idx': u32
-            135278..135283 'instr': Instruction
-            135278..135287 'instr.dst': u32
-            135289..135333 'resolv...s, 0u)': u32
-            135301..135309 'shot_idx': u32
-            135311..135316 'instr': Instruction
-            135311..135321 'instr.src0': u32
-            135323..135328 'flags': u32
-            135330..135332 '0u': u32
-            135352..135354 'pc': ref<function, u32, read_write>
-            135682..135689 'OP_SEXT': u32
-            135712..135715 'val': i32
-            135718..135762 'resolv...s, 0u)': i32
-            135730..135738 'shot_idx': u32
-            135740..135745 'instr': Instruction
-            135740..135750 'instr.src0': u32
-            135752..135757 'flags': u32
-            135759..135761 '0u': u32
-            135784..135792 'src_bits': u32
-            135795..135800 'instr': Instruction
-            135795..135805 'instr.aux0': u32
-            135852..135860 'src_bits': u32
-            135852..135865 'src_bits > 0u': bool
-            135852..135883 'src_bi... < 32u': bool
-            135863..135865 '0u': u32
-            135869..135877 'src_bits': u32
-            135869..135883 'src_bits < 32u': bool
-            135880..135883 '32u': u32
-            135910..135915 'shift': u32
-            135918..135921 '32u': u32
-            135918..135932 '32u - src_bits': u32
-            135924..135932 'src_bits': u32
-            135954..136013 'write_...shift)': [error]
-            135968..135976 'shot_idx': u32
-            135978..135983 'instr': Instruction
-            135978..135987 'instr.dst': u32
-            135989..136012 '(val <... shift': i32
-            135990..135993 'val': i32
-            135990..136002 'val << shift': i32
-            135997..136002 'shift': u32
-            136007..136012 'shift': u32
-            136060..136099 'write_..., val)': [error]
-            136074..136082 'shot_idx': u32
-            136084..136089 'instr': Instruction
-            136084..136093 'instr.dst': u32
-            136095..136098 'val': i32
-            136135..136137 'pc': ref<function, u32, read_write>
-            136259..136267 'OP_TRUNC': u32
-            136286..136362 'write_..., 0u))': [error]
-            136296..136304 'shot_idx': u32
-            136306..136311 'instr': Instruction
-            136306..136315 'instr.dst': u32
-            136317..136361 'resolv...s, 0u)': u32
-            136329..136337 'shot_idx': u32
-            136339..136344 'instr': Instruction
-            136339..136349 'instr.src0': u32
-            136351..136356 'flags': u32
-            136358..136360 '0u': u32
-            136380..136382 'pc': ref<function, u32, read_write>
-            136508..136516 'OP_FPEXT': u32
-            136535..136615 'write_..., 0u))': [error]
-            136549..136557 'shot_idx': u32
-            136559..136564 'instr': Instruction
-            136559..136568 'instr.dst': u32
-            136570..136614 'resolv...s, 0u)': f32
-            136582..136590 'shot_idx': u32
-            136592..136597 'instr': Instruction
-            136592..136602 'instr.src0': u32
-            136604..136609 'flags': u32
-            136611..136613 '0u': u32
-            136633..136635 'pc': ref<function, u32, read_write>
-            136764..136774 'OP_FPTRUNC': u32
-            136793..136873 'write_..., 0u))': [error]
-            136807..136815 'shot_idx': u32
-            136817..136822 'instr': Instruction
-            136817..136826 'instr.dst': u32
-            136828..136872 'resolv...s, 0u)': f32
-            136840..136848 'shot_idx': u32
-            136850..136855 'instr': Instruction
-            136850..136860 'instr.src0': u32
-            136862..136867 'flags': u32
-            136869..136871 '0u': u32
-            136891..136893 'pc': ref<function, u32, read_write>
-            137017..137028 'OP_INTTOPTR': u32
-            137047..137123 'write_..., 0u))': [error]
-            137057..137065 'shot_idx': u32
-            137067..137072 'instr': Instruction
-            137067..137076 'instr.dst': u32
-            137078..137122 'resolv...s, 0u)': u32
-            137090..137098 'shot_idx': u32
-            137100..137105 'instr': Instruction
-            137100..137110 'instr.src0': u32
-            137112..137117 'flags': u32
-            137119..137121 '0u': u32
-            137141..137143 'pc': ref<function, u32, read_write>
-            137255..137264 'OP_FPTOSI': u32
-            137283..137368 'write_... 0u)))': [error]
-            137297..137305 'shot_idx': u32
-            137307..137312 'instr': Instruction
-            137307..137316 'instr.dst': u32
-            137318..137367 'i32(re..., 0u))': i32
-            137322..137366 'resolv...s, 0u)': f32
-            137334..137342 'shot_idx': u32
-            137344..137349 'instr': Instruction
-            137344..137354 'instr.src0': u32
-            137356..137361 'flags': u32
-            137363..137365 '0u': u32
-            137386..137388 'pc': ref<function, u32, read_write>
-            137500..137509 'OP_SITOFP': u32
-            137528..137613 'write_... 0u)))': [error]
-            137542..137550 'shot_idx': u32
-            137552..137557 'instr': Instruction
-            137552..137561 'instr.dst': u32
-            137563..137612 'f32(re..., 0u))': f32
-            137567..137611 'resolv...s, 0u)': i32
-            137579..137587 'shot_idx': u32
-            137589..137594 'instr': Instruction
-            137589..137599 'instr.src0': u32
-            137601..137606 'flags': u32
-            137608..137610 '0u': u32
-            137631..137633 'pc': ref<function, u32, read_write>
-            137747..137756 'OP_FPTOUI': u32
-            137775..137856 'write_... 0u)))': [error]
-            137785..137793 'shot_idx': u32
-            137795..137800 'instr': Instruction
-            137795..137804 'instr.dst': u32
-            137806..137855 'u32(re..., 0u))': u32
-            137810..137854 'resolv...s, 0u)': f32
-            137822..137830 'shot_idx': u32
-            137832..137837 'instr': Instruction
-            137832..137842 'instr.src0': u32
-            137844..137849 'flags': u32
-            137851..137853 '0u': u32
-            137874..137876 'pc': ref<function, u32, read_write>
-            137990..137999 'OP_UITOFP': u32
-            138018..138103 'write_... 0u)))': [error]
-            138032..138040 'shot_idx': u32
-            138042..138047 'instr': Instruction
-            138042..138051 'instr.dst': u32
-            138053..138102 'f32(re..., 0u))': f32
-            138057..138101 'resolv...s, 0u)': u32
-            138069..138077 'shot_idx': u32
-            138079..138084 'instr': Instruction
-            138079..138089 'instr.src0': u32
-            138091..138096 'flags': u32
-            138098..138100 '0u': u32
-            138121..138123 'pc': ref<function, u32, read_write>
-            139155..139161 'OP_PHI': u32
-            139184..139190 'offset': u32
-            139193..139198 'instr': Instruction
-            139193..139203 'instr.aux0': u32
-            139225..139230 'count': u32
-            139233..139238 'instr': Instruction
-            139233..139243 'instr.aux1': u32
-            139270..139271 'i': ref<function, u32, read_write>
-            139274..139276 '0u': u32
-            139278..139279 'i': ref<function, u32, read_write>
-            139278..139287 'i < count': bool
-            139282..139287 'count': u32
-            139289..139290 'i': ref<function, u32, read_write>
-            139320..139325 'entry': [error]
-            139328..139338 'batch_data': ref<storage, BatchData, read>
-            139328..139346 'batch_...rogram': ref<storage, Program, read>
-            139328..139356 'batch_..._table': ref<storage, [error], read>
-            139328..139368 'batch_...t + i]': [error]
-            139357..139363 'offset': u32
-            139357..139367 'offset + i': u32
-            139366..139367 'i': ref<function, u32, read_write>
-            139393..139398 'entry': [error]
-            139393..139407 'entry.block_id': [error]
-            139393..139421 'entry...._block': [error]
-            139411..139421 'prev_block': ref<function, u32, read_write>
-            139448..139513 'write_..._reg))': [error]
-            139458..139466 'shot_idx': u32
-            139468..139473 'instr': Instruction
-            139468..139477 'instr.dst': u32
-            139479..139512 'read_r...l_reg)': u32
-            139488..139496 'shot_idx': u32
-            139498..139503 'entry': [error]
-            139498..139511 'entry.val_reg': [error]
-            139602..139604 'pc': ref<function, u32, read_write>
-            140050..140059 'OP_SELECT': u32
-            140082..140086 'cond': bool
-            140089..140133 'resolv...s, 0u)': u32
-            140089..140139 'resolv... != 0u': bool
-            140101..140109 'shot_idx': u32
-            140111..140116 'instr': Instruction
-            140111..140121 'instr.src0': u32
-            140123..140128 'flags': u32
-            140130..140132 '0u': u32
-            140137..140139 '0u': u32
-            140161..140169 'true_val': u32
-            140172..140216 'resolv...s, 3u)': u32
-            140184..140192 'shot_idx': u32
-            140194..140199 'instr': Instruction
-            140194..140204 'instr.aux0': u32
-            140206..140211 'flags': u32
-            140213..140215 '3u': u32
-            140238..140247 'false_val': u32
-            140250..140294 'resolv...s, 4u)': u32
-            140262..140270 'shot_idx': u32
-            140272..140277 'instr': Instruction
-            140272..140282 'instr.aux1': u32
-            140284..140289 'flags': u32
-            140291..140293 '4u': u32
-            140312..140377 'write_...cond))': [error]
-            140322..140330 'shot_idx': u32
-            140332..140337 'instr': Instruction
-            140332..140341 'instr.dst': u32
-            140343..140376 'select... cond)': u32
-            140350..140359 'false_val': u32
-            140361..140369 'true_val': u32
-            140371..140375 'cond': bool
-            140395..140397 'pc': ref<function, u32, read_write>
-            140593..140599 'OP_MOV': u32
-            140618..140694 'write_..., 0u))': [error]
-            140628..140636 'shot_idx': u32
-            140638..140643 'instr': Instruction
-            140638..140647 'instr.dst': u32
-            140649..140693 'resolv...s, 0u)': u32
-            140661..140669 'shot_idx': u32
-            140671..140676 'instr': Instruction
-            140671..140681 'instr.src0': u32
-            140683..140688 'flags': u32
-            140690..140692 '0u': u32
-            140712..140714 'pc': ref<function, u32, read_write>
-            140895..140903 'OP_CONST': u32
-            140922..140964 'write_....src0)': [error]
-            140932..140940 'shot_idx': u32
-            140942..140947 'instr': Instruction
-            140942..140951 'instr.dst': u32
-            140953..140958 'instr': Instruction
-            140953..140963 'instr.src0': u32
-            140982..140984 'pc': ref<function, u32, read_write>
-            141363..141372 'OP_ALLOCA': u32
-            141395..141404 'num_words': u32
-            141407..141451 'resolv...s, 0u)': u32
-            141419..141427 'shot_idx': u32
-            141429..141434 'instr': Instruction
-            141429..141439 'instr.src0': u32
-            141441..141446 'flags': u32
-            141448..141450 '0u': u32
-            141473..141477 'addr': u32
-            141480..141524 'resolv...s, 1u)': u32
-            141492..141500 'shot_idx': u32
-            141502..141507 'instr': Instruction
-            141502..141512 'instr.src1': u32
-            141514..141519 'flags': u32
-            141521..141523 '1u': u32
-            141545..141549 'addr': u32
-            141545..141561 'addr +..._words': u32
-            141545..141574 'addr +...MEMORY': bool
-            141552..141561 'num_words': u32
-            141564..141574 'MAX_MEMORY': u32
-            141597..141602 'shots': ref<storage, array<ShotData>, read_write>
-            141597..141612 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            141597..141619 'shots[...interp': ref<storage, InterpreterState, read_write>
-            141597..141629 'shots[...t_code': ref<storage, u32, read_write>
-            141603..141611 'shot_idx': u32
-            141632..141656 'ERR_AL...BOUNDS': u32
-            141682..141689 'err_idx': u32
-            141692..141721 '(shot_..._COUNT': u32
-            141692..141725 '(shot_...NT - 1': u32
-            141693..141701 'shot_idx': u32
-            141693..141705 'shot_idx + 1': u32
-            141704..141705 '1': integer
-            141709..141721 'RESULT_COUNT': u32
-            141724..141725 '1': integer
-            141747..141821 'atomic...OUNDS)': __atomic_compare_exchange_result
-            141773..141790 '&resul...r_idx]': ptr<storage, atomic<u32>, read_write>
-            141774..141781 'results': ref<storage, array<atomic<u32>>, read_write>
-            141774..141790 'result...r_idx]': ref<storage, atomic<u32>, read_write>
-            141782..141789 'err_idx': u32
-            141792..141794 '0u': u32
-            141796..141820 'ERR_AL...BOUNDS': u32
-            141843..141848 'shots': ref<storage, array<ShotData>, read_write>
-            141843..141858 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            141843..141865 'shots[...interp': ref<storage, InterpreterState, read_write>
-            141843..141872 'shots[...status': ref<storage, u32, read_write>
-            141849..141857 'shot_idx': u32
-            141875..141887 'STATUS_ERROR': u32
-            141909..141954 'atomic...t, 1u)': u32
-            141919..141949 '&diagn..._count': ptr<storage, atomic<u32>, read_write>
-            141920..141931 'diagnostics': ref<storage, DiagnosticData, read_write>
-            141920..141949 'diagno..._count': ref<storage, atomic<u32>, read_write>
-            141951..141953 '1u': u32
-            141976..141988 'should_break': ref<function, bool, read_write>
-            141991..141995 'true': bool
-            142058..142094 'write_... addr)': [error]
-            142068..142076 'shot_idx': u32
-            142078..142083 'instr': Instruction
-            142078..142087 'instr.dst': u32
-            142089..142093 'addr': u32
-            142112..142114 'pc': ref<function, u32, read_write>
-            142294..142301 'OP_LOAD': u32
-            142324..142328 'addr': u32
-            142331..142375 'resolv...s, 0u)': u32
-            142343..142351 'shot_idx': u32
-            142353..142358 'instr': Instruction
-            142353..142363 'instr.src0': u32
-            142365..142370 'flags': u32
-            142372..142374 '0u': u32
-            142396..142400 'addr': u32
-            142396..142414 'addr >...MEMORY': bool
-            142404..142414 'MAX_MEMORY': u32
-            142437..142442 'shots': ref<storage, array<ShotData>, read_write>
-            142437..142452 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            142437..142459 'shots[...interp': ref<storage, InterpreterState, read_write>
-            142437..142469 'shots[...t_code': ref<storage, u32, read_write>
-            142443..142451 'shot_idx': u32
-            142472..142496 'ERR_ME...BOUNDS': u32
-            142522..142529 'err_idx': u32
-            142532..142561 '(shot_..._COUNT': u32
-            142532..142565 '(shot_...NT - 1': u32
-            142533..142541 'shot_idx': u32
-            142533..142545 'shot_idx + 1': u32
-            142544..142545 '1': integer
-            142549..142561 'RESULT_COUNT': u32
-            142564..142565 '1': integer
-            142587..142661 'atomic...OUNDS)': __atomic_compare_exchange_result
-            142613..142630 '&resul...r_idx]': ptr<storage, atomic<u32>, read_write>
-            142614..142621 'results': ref<storage, array<atomic<u32>>, read_write>
-            142614..142630 'result...r_idx]': ref<storage, atomic<u32>, read_write>
-            142622..142629 'err_idx': u32
-            142632..142634 '0u': u32
-            142636..142660 'ERR_ME...BOUNDS': u32
-            142683..142688 'shots': ref<storage, array<ShotData>, read_write>
-            142683..142698 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            142683..142705 'shots[...interp': ref<storage, InterpreterState, read_write>
-            142683..142712 'shots[...status': ref<storage, u32, read_write>
-            142689..142697 'shot_idx': u32
-            142715..142727 'STATUS_ERROR': u32
-            142749..142794 'atomic...t, 1u)': u32
-            142759..142789 '&diagn..._count': ptr<storage, atomic<u32>, read_write>
-            142760..142771 'diagnostics': ref<storage, DiagnosticData, read_write>
-            142760..142789 'diagno..._count': ref<storage, atomic<u32>, read_write>
-            142791..142793 '1u': u32
-            142816..142828 'should_break': ref<function, bool, read_write>
-            142831..142835 'true': bool
-            142902..142905 'val': [error]
-            142908..142913 'shots': ref<storage, array<ShotData>, read_write>
-            142908..142923 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            142908..142930 'shots[...interp': ref<storage, InterpreterState, read_write>
-            142908..142937 'shots[...memory': ref<storage, [error], read_write>
-            142908..142943 'shots[...[addr]': [error]
-            142914..142922 'shot_idx': u32
-            142938..142942 'addr': u32
-            142961..142996 'write_..., val)': [error]
-            142971..142979 'shot_idx': u32
-            142981..142986 'instr': Instruction
-            142981..142990 'instr.dst': u32
-            142992..142995 'val': [error]
-            143014..143016 'pc': ref<function, u32, read_write>
-            143191..143199 'OP_STORE': u32
-            143222..143225 'val': u32
-            143228..143272 'resolv...s, 0u)': u32
-            143240..143248 'shot_idx': u32
-            143250..143255 'instr': Instruction
-            143250..143260 'instr.src0': u32
-            143262..143267 'flags': u32
-            143269..143271 '0u': u32
-            143294..143298 'addr': u32
-            143301..143345 'resolv...s, 1u)': u32
-            143313..143321 'shot_idx': u32
-            143323..143328 'instr': Instruction
-            143323..143333 'instr.src1': u32
-            143335..143340 'flags': u32
-            143342..143344 '1u': u32
-            143366..143370 'addr': u32
-            143366..143384 'addr >...MEMORY': bool
-            143374..143384 'MAX_MEMORY': u32
-            143407..143412 'shots': ref<storage, array<ShotData>, read_write>
-            143407..143422 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            143407..143429 'shots[...interp': ref<storage, InterpreterState, read_write>
-            143407..143439 'shots[...t_code': ref<storage, u32, read_write>
-            143413..143421 'shot_idx': u32
-            143442..143466 'ERR_ME...BOUNDS': u32
-            143492..143499 'err_idx': u32
-            143502..143531 '(shot_..._COUNT': u32
-            143502..143535 '(shot_...NT - 1': u32
-            143503..143511 'shot_idx': u32
-            143503..143515 'shot_idx + 1': u32
-            143514..143515 '1': integer
-            143519..143531 'RESULT_COUNT': u32
-            143534..143535 '1': integer
-            143557..143631 'atomic...OUNDS)': __atomic_compare_exchange_result
-            143583..143600 '&resul...r_idx]': ptr<storage, atomic<u32>, read_write>
-            143584..143591 'results': ref<storage, array<atomic<u32>>, read_write>
-            143584..143600 'result...r_idx]': ref<storage, atomic<u32>, read_write>
-            143592..143599 'err_idx': u32
-            143602..143604 '0u': u32
-            143606..143630 'ERR_ME...BOUNDS': u32
-            143653..143658 'shots': ref<storage, array<ShotData>, read_write>
-            143653..143668 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            143653..143675 'shots[...interp': ref<storage, InterpreterState, read_write>
-            143653..143682 'shots[...status': ref<storage, u32, read_write>
-            143659..143667 'shot_idx': u32
-            143685..143697 'STATUS_ERROR': u32
-            143719..143764 'atomic...t, 1u)': u32
-            143729..143759 '&diagn..._count': ptr<storage, atomic<u32>, read_write>
-            143730..143741 'diagnostics': ref<storage, DiagnosticData, read_write>
-            143730..143759 'diagno..._count': ref<storage, atomic<u32>, read_write>
-            143761..143763 '1u': u32
-            143786..143798 'should_break': ref<function, bool, read_write>
-            143801..143805 'true': bool
-            143868..143873 'shots': ref<storage, array<ShotData>, read_write>
-            143868..143883 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            143868..143890 'shots[...interp': ref<storage, InterpreterState, read_write>
-            143868..143897 'shots[...memory': ref<storage, [error], read_write>
-            143868..143903 'shots[...[addr]': [error]
-            143874..143882 'shot_idx': u32
-            143898..143902 'addr': u32
-            143906..143909 'val': u32
-            143927..143929 'pc': ref<function, u32, read_write>
-            144137..144143 'OP_GEP': u32
-            144166..144170 'base': u32
-            144173..144217 'resolv...s, 0u)': u32
-            144185..144193 'shot_idx': u32
-            144195..144200 'instr': Instruction
-            144195..144205 'instr.src0': u32
-            144207..144212 'flags': u32
-            144214..144216 '0u': u32
-            144239..144244 'index': u32
-            144247..144291 'resolv...s, 1u)': u32
-            144259..144267 'shot_idx': u32
-            144269..144274 'instr': Instruction
-            144269..144279 'instr.src1': u32
-            144281..144286 'flags': u32
-            144288..144290 '1u': u32
-            144313..144322 'elem_size': u32
-            144325..144369 'resolv...s, 3u)': u32
-            144337..144345 'shot_idx': u32
-            144347..144352 'instr': Instruction
-            144347..144357 'instr.aux0': u32
-            144359..144364 'flags': u32
-            144366..144368 '3u': u32
-            144391..144395 'addr': u32
-            144398..144402 'base': u32
-            144398..144422 'base +...m_size': u32
-            144405..144410 'index': u32
-            144405..144422 'index ...m_size': u32
-            144413..144422 'elem_size': u32
-            144440..144476 'write_... addr)': [error]
-            144450..144458 'shot_idx': u32
-            144460..144465 'instr': Instruction
-            144460..144469 'instr.dst': u32
-            144471..144475 'addr': u32
-            144494..144496 'pc': ref<function, u32, read_write>
-            144613..144618 'shots': ref<storage, array<ShotData>, read_write>
-            144613..144628 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            144613..144635 'shots[...interp': ref<storage, InterpreterState, read_write>
-            144613..144642 'shots[...status': ref<storage, u32, read_write>
-            144619..144627 'shot_idx': u32
-            144645..144657 'STATUS_ERROR': u32
-            144675..144720 'atomic...t, 1u)': u32
-            144685..144715 '&diagn..._count': ptr<storage, atomic<u32>, read_write>
-            144686..144697 'diagnostics': ref<storage, DiagnosticData, read_write>
-            144686..144715 'diagno..._count': ref<storage, atomic<u32>, read_write>
-            144717..144719 '1u': u32
-            144738..144750 'should_break': ref<function, bool, read_write>
-            144753..144757 'true': bool
-            144791..144796 'steps': ref<function, u32, read_write>
-            144811..144823 'should_break': ref<function, bool, read_write>
-            145052..145057 'shots': ref<storage, array<ShotData>, read_write>
-            145052..145067 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            145052..145074 'shots[...interp': ref<storage, InterpreterState, read_write>
-            145052..145077 'shots[...erp.pc': ref<storage, u32, read_write>
-            145058..145066 'shot_idx': u32
-            145080..145082 'pc': ref<function, u32, read_write>
-            145088..145093 'shots': ref<storage, array<ShotData>, read_write>
-            145088..145103 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            145088..145110 'shots[...interp': ref<storage, InterpreterState, read_write>
-            145088..145127 'shots[...ock_id': ref<storage, u32, read_write>
-            145094..145102 'shot_idx': u32
-            145130..145138 'block_id': ref<function, u32, read_write>
-            145144..145149 'shots': ref<storage, array<ShotData>, read_write>
-            145144..145159 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            145144..145166 'shots[...interp': ref<storage, InterpreterState, read_write>
-            145144..145184 'shots[...ock_id': ref<storage, u32, read_write>
-            145150..145158 'shot_idx': u32
-            145187..145197 'prev_block': ref<function, u32, read_write>
-            145649..145657 'shot_idx': u32
-            145674..145678 'shot': ptr<storage, ShotData, read_write>
-            145681..145697 '&shots...t_idx]': ptr<storage, ShotData, read_write>
-            145682..145687 'shots': ref<storage, array<ShotData>, read_write>
-            145682..145697 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            145688..145696 'shot_idx': u32
-            145707..145712 'state': InterpreterState
-            145715..145720 'shots': ref<storage, array<ShotData>, read_write>
-            145715..145730 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            145715..145737 'shots[...interp': ref<storage, InterpreterState, read_write>
-            145721..145729 'shot_idx': u32
-            145747..145753 'status': u32
-            145756..145761 'state': InterpreterState
-            145756..145768 'state.status': u32
-            145829..145835 'status': u32
-            145829..145861 'status...ENDING': bool
-            145839..145861 'STATUS...ENDING': u32
-            145937..145941 'shot': ptr<storage, ShotData, read_write>
-            145937..145949 'shot.op_type': ref<storage, u32, read_write>
-            145952..145959 'OPID_ID': u32
-            145969..145973 'shot': ptr<storage, ShotData, read_write>
-            145969..145985 'shot.r...malize': ref<storage, f32, read_write>
-            145988..145991 '1.0': float
-            146001..146005 'shot': ptr<storage, ShotData, read_write>
-            146001..146033 'shot.q...p_mask': ref<storage, u32, read_write>
-            146036..146038 '0u': u32
-            146119..146123 'shot': ptr<storage, ShotData, read_write>
-            146119..146151 'shot.q...p_mask': ref<storage, u32, read_write>
-            146119..146156 'shot.q...k != 0': bool
-            146155..146156 '0': integer
-            146167..146195 'update...t_idx)': [error]
-            146186..146194 'shot_idx': u32
-            146207..146233 'shot_i...t_idx)': [error]
-            146224..146232 'shot_idx': u32
-            146244..146250 'op_idx': u32
-            146253..146258 'state': InterpreterState
-            146253..146273 'state....op_idx': u32
-            146283..146290 'op_type': u32
-            146293..146298 'state': InterpreterState
-            146293..146314 'state....p_type': u32
-            146481..146488 'op_type': u32
-            146481..146514 'op_typ...COMMIT': bool
-            146492..146514 'PENDIN...COMMIT': u32
-            146525..146559 'prep_l...p_idx)': [error]
-            146542..146550 'shot_idx': u32
-            146552..146558 'op_idx': u32
-            146592..146594 'op': ptr<storage, Op, read>
-            146597..146609 '&ops[op_idx]': ptr<storage, Op, read>
-            146598..146601 'ops': ref<storage, array<Op>, read>
-            146598..146609 'ops[op_idx]': ref<storage, Op, read>
-            146602..146608 'op_idx': u32
-            146817..146824 'op_type': u32
-            146817..146830 'op_type == 0u': bool
-            146817..146864 'op_typ..._NOISE': bool
-            146828..146830 '0u': u32
-            146834..146836 'op': ptr<storage, Op, read>
-            146834..146839 'op.id': ref<storage, u32, read>
-            146834..146864 'op.id ..._NOISE': bool
-            146843..146864 'OPID_C..._NOISE': u32
-            146879..146881 'pc': u32
-            146884..146889 'state': InterpreterState
-            146884..146892 'state.pc': u32
-            146906..146917 'noise_instr': Instruction
-            146920..146940 'fetch_... - 1u)': Instruction
-            146932..146934 'pc': u32
-            146932..146939 'pc - 1u': u32
-            146937..146939 '1u': u32
-            146954..146965 'qubit_count': u32
-            146968..146979 'noise_instr': Instruction
-            146968..146984 'noise_...r.aux1': u32
-            146998..147008 'arg_offset': u32
-            147011..147022 'noise_instr': Instruction
-            147011..147027 'noise_...r.aux2': u32
-            147037..147041 'shot': ptr<storage, ShotData, read_write>
-            147037..147048 'shot.op_idx': ref<storage, u32, read_write>
-            147051..147057 'op_idx': u32
-            147067..147071 'shot': ptr<storage, ShotData, read_write>
-            147067..147079 'shot.op_type': ref<storage, u32, read_write>
-            147082..147084 'op': ptr<storage, Op, read>
-            147082..147087 'op.id': ref<storage, u32, read>
-            147097..147170 'prep_c...ffset)': [error]
-            147128..147136 'shot_idx': u32
-            147138..147144 'op_idx': u32
-            147146..147157 'qubit_count': u32
-            147159..147169 'arg_offset': u32
-            147180..147185 'shots': ref<storage, array<ShotData>, read_write>
-            147180..147195 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            147180..147202 'shots[...interp': ref<storage, InterpreterState, read_write>
-            147180..147209 'shots[...status': ref<storage, u32, read_write>
-            147186..147194 'shot_idx': u32
-            147212..147226 'STATUS_RUNNING': u32
-            147259..147261 'q1': u32
-            147264..147284 'resolv...t_idx)': u32
-            147275..147283 'shot_idx': u32
-            147294..147296 'q2': u32
-            147299..147319 'resolv...t_idx)': u32
-            147310..147318 'shot_idx': u32
-            147326..147330 'shot': ptr<storage, ShotData, read_write>
-            147326..147338 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            147341..147343 'op': ptr<storage, Op, read>
-            147341..147351 'op.unitary': ref<storage, array<vec2<f32>, 16>, read>
-            147365..147372 'op_type': u32
-            147388..147390 '0u': u32
-            147667..147690 'is_rot...op.id)': bool
-            147667..147720 'is_rot...t_idx)': bool
-            147684..147686 'op': ptr<storage, Op, read>
-            147684..147689 'op.id': ref<storage, u32, read>
-            147694..147720 'is_dyn...t_idx)': bool
-            147711..147719 'shot_idx': u32
-            147742..147744 'op': ptr<storage, Op, read>
-            147742..147747 'op.id': ref<storage, u32, read>
-            147742..147758 'op.id ...PID_RX': bool
-            147742..147778 'op.id ...PID_RY': bool
-            147742..147798 'op.id ...PID_RZ': bool
-            147751..147758 'OPID_RX': u32
-            147762..147764 'op': ptr<storage, Op, read>
-            147762..147767 'op.id': ref<storage, u32, read>
-            147762..147778 'op.id ...PID_RY': bool
-            147771..147778 'OPID_RY': u32
-            147782..147784 'op': ptr<storage, Op, read>
-            147782..147787 'op.id': ref<storage, u32, read>
-            147782..147798 'op.id ...PID_RZ': bool
-            147791..147798 'OPID_RZ': u32
-            147825..147830 'angle': f32
-            147833..147861 'resolv...t_idx)': f32
-            147852..147860 'shot_idx': u32
-            147887..147891 'half': f32
-            147894..147899 'angle': f32
-            147894..147905 'angle * 0.5': f32
-            147902..147905 '0.5': float
-            147931..147932 'c': f32
-            147935..147944 'cos(half)': f32
-            147939..147943 'half': f32
-            147970..147971 's': f32
-            147974..147983 'sin(half)': f32
-            147978..147982 'half': f32
-            148008..148010 'op': ptr<storage, Op, read>
-            148008..148013 'op.id': ref<storage, u32, read>
-            148008..148024 'op.id ...PID_RX': bool
-            148017..148024 'OPID_RX': u32
-            148135..148139 'shot': ptr<storage, ShotData, read_write>
-            148135..148147 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            148135..148150 'shot.unitary[0]': ref<storage, vec2<f32>, read_write>
-            148148..148149 '0': integer
-            148153..148166 'vec2f(c, 0.0)': vec2<f32>
-            148159..148160 'c': f32
-            148162..148165 '0.0': float
-            148192..148196 'shot': ptr<storage, ShotData, read_write>
-            148192..148204 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            148192..148207 'shot.unitary[1]': ref<storage, vec2<f32>, read_write>
-            148205..148206 '1': integer
-            148210..148224 'vec2f(0.0, -s)': vec2<f32>
-            148216..148219 '0.0': float
-            148221..148223 '-s': f32
-            148222..148223 's': f32
-            148250..148254 'shot': ptr<storage, ShotData, read_write>
-            148250..148262 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            148250..148265 'shot.unitary[4]': ref<storage, vec2<f32>, read_write>
-            148263..148264 '4': integer
-            148268..148282 'vec2f(0.0, -s)': vec2<f32>
-            148274..148277 '0.0': float
-            148279..148281 '-s': f32
-            148280..148281 's': f32
-            148308..148312 'shot': ptr<storage, ShotData, read_write>
-            148308..148320 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            148308..148323 'shot.unitary[5]': ref<storage, vec2<f32>, read_write>
-            148321..148322 '5': integer
-            148326..148339 'vec2f(c, 0.0)': vec2<f32>
-            148332..148333 'c': f32
-            148335..148338 '0.0': float
-            148491..148495 'shot': ptr<storage, ShotData, read_write>
-            148491..148503 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            148491..148506 'shot.unitary[0]': ref<storage, vec2<f32>, read_write>
-            148504..148505 '0': integer
-            148509..148522 'vec2f(c, 0.0)': vec2<f32>
-            148515..148516 'c': f32
-            148518..148521 '0.0': float
-            148548..148552 'shot': ptr<storage, ShotData, read_write>
-            148548..148560 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            148548..148563 'shot.unitary[1]': ref<storage, vec2<f32>, read_write>
-            148561..148562 '1': integer
-            148566..148580 'vec2f(-s, 0.0)': vec2<f32>
-            148572..148574 '-s': f32
-            148573..148574 's': f32
-            148576..148579 '0.0': float
-            148606..148610 'shot': ptr<storage, ShotData, read_write>
-            148606..148618 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            148606..148621 'shot.unitary[4]': ref<storage, vec2<f32>, read_write>
-            148619..148620 '4': integer
-            148624..148637 'vec2f(s, 0.0)': vec2<f32>
-            148630..148631 's': f32
-            148633..148636 '0.0': float
-            148663..148667 'shot': ptr<storage, ShotData, read_write>
-            148663..148675 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            148663..148678 'shot.unitary[5]': ref<storage, vec2<f32>, read_write>
-            148676..148677 '5': integer
-            148681..148694 'vec2f(c, 0.0)': vec2<f32>
-            148687..148688 'c': f32
-            148690..148693 '0.0': float
-            148803..148807 'shot': ptr<storage, ShotData, read_write>
-            148803..148815 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            148803..148818 'shot.unitary[0]': ref<storage, vec2<f32>, read_write>
-            148816..148817 '0': integer
-            148821..148836 'vec2f(1.0, 0.0)': vec2<f32>
-            148827..148830 '1.0': float
-            148832..148835 '0.0': float
-            148862..148866 'shot': ptr<storage, ShotData, read_write>
-            148862..148874 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            148862..148877 'shot.unitary[1]': ref<storage, vec2<f32>, read_write>
-            148875..148876 '1': integer
-            148880..148895 'vec2f(0.0, 0.0)': vec2<f32>
-            148886..148889 '0.0': float
-            148891..148894 '0.0': float
-            148921..148925 'shot': ptr<storage, ShotData, read_write>
-            148921..148933 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            148921..148936 'shot.unitary[4]': ref<storage, vec2<f32>, read_write>
-            148934..148935 '4': integer
-            148939..148954 'vec2f(0.0, 0.0)': vec2<f32>
-            148945..148948 '0.0': float
-            148950..148953 '0.0': float
-            148980..148984 'shot': ptr<storage, ShotData, read_write>
-            148980..148992 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            148980..148995 'shot.unitary[5]': ref<storage, vec2<f32>, read_write>
-            148993..148994 '5': integer
-            148998..149027 'vec2f(...ngle))': vec2<f32>
-            149004..149014 'cos(angle)': f32
-            149008..149013 'angle': f32
-            149016..149026 'sin(angle)': f32
-            149020..149025 'angle': f32
+            134583..134593 'instr.src0': u32
+            134595..134600 'flags': u32
+            134602..134604 '0u': u32
+            134627..134628 'b': f32
+            134631..134675 'resolv...s, 1u)': f32
+            134643..134651 'shot_idx': u32
+            134653..134658 'instr': Instruction
+            134653..134663 'instr.src1': u32
+            134665..134670 'flags': u32
+            134672..134674 '1u': u32
+            134693..134749 'write_...) * b)': [error]
+            134707..134715 'shot_idx': u32
+            134717..134722 'instr': Instruction
+            134717..134726 'instr.dst': u32
+            134728..134729 'a': f32
+            134728..134748 'a - tr...b) * b': f32
+            134732..134744 'trunc(a / b)': f32
+            134732..134748 'trunc(...b) * b': f32
+            134738..134739 'a': f32
+            134738..134743 'a / b': f32
+            134742..134743 'b': f32
+            134747..134748 'b': f32
+            134767..134769 'pc': ref<function, u32, read_write>
+            135366..135373 'OP_ZEXT': u32
+            135392..135468 'write_..., 0u))': [error]
+            135402..135410 'shot_idx': u32
+            135412..135417 'instr': Instruction
+            135412..135421 'instr.dst': u32
+            135423..135467 'resolv...s, 0u)': u32
+            135435..135443 'shot_idx': u32
+            135445..135450 'instr': Instruction
+            135445..135455 'instr.src0': u32
+            135457..135462 'flags': u32
+            135464..135466 '0u': u32
+            135486..135488 'pc': ref<function, u32, read_write>
+            135823..135830 'OP_SEXT': u32
+            135853..135856 'val': i32
+            135859..135903 'resolv...s, 0u)': i32
+            135871..135879 'shot_idx': u32
+            135881..135886 'instr': Instruction
+            135881..135891 'instr.src0': u32
+            135893..135898 'flags': u32
+            135900..135902 '0u': u32
+            135925..135933 'src_bits': u32
+            135936..135941 'instr': Instruction
+            135936..135946 'instr.aux0': u32
+            135993..136001 'src_bits': u32
+            135993..136006 'src_bits > 0u': bool
+            135993..136024 'src_bi... < 32u': bool
+            136004..136006 '0u': u32
+            136010..136018 'src_bits': u32
+            136010..136024 'src_bits < 32u': bool
+            136021..136024 '32u': u32
+            136051..136056 'shift': u32
+            136059..136062 '32u': u32
+            136059..136073 '32u - src_bits': u32
+            136065..136073 'src_bits': u32
+            136095..136154 'write_...shift)': [error]
+            136109..136117 'shot_idx': u32
+            136119..136124 'instr': Instruction
+            136119..136128 'instr.dst': u32
+            136130..136153 '(val <... shift': i32
+            136131..136134 'val': i32
+            136131..136143 'val << shift': i32
+            136138..136143 'shift': u32
+            136148..136153 'shift': u32
+            136201..136240 'write_..., val)': [error]
+            136215..136223 'shot_idx': u32
+            136225..136230 'instr': Instruction
+            136225..136234 'instr.dst': u32
+            136236..136239 'val': i32
+            136276..136278 'pc': ref<function, u32, read_write>
+            136400..136408 'OP_TRUNC': u32
+            136427..136503 'write_..., 0u))': [error]
+            136437..136445 'shot_idx': u32
+            136447..136452 'instr': Instruction
+            136447..136456 'instr.dst': u32
+            136458..136502 'resolv...s, 0u)': u32
+            136470..136478 'shot_idx': u32
+            136480..136485 'instr': Instruction
+            136480..136490 'instr.src0': u32
+            136492..136497 'flags': u32
+            136499..136501 '0u': u32
+            136521..136523 'pc': ref<function, u32, read_write>
+            136656..136664 'OP_FPEXT': u32
+            136683..136763 'write_..., 0u))': [error]
+            136697..136705 'shot_idx': u32
+            136707..136712 'instr': Instruction
+            136707..136716 'instr.dst': u32
+            136718..136762 'resolv...s, 0u)': f32
+            136730..136738 'shot_idx': u32
+            136740..136745 'instr': Instruction
+            136740..136750 'instr.src0': u32
+            136752..136757 'flags': u32
+            136759..136761 '0u': u32
+            136781..136783 'pc': ref<function, u32, read_write>
+            136919..136929 'OP_FPTRUNC': u32
+            136948..137028 'write_..., 0u))': [error]
+            136962..136970 'shot_idx': u32
+            136972..136977 'instr': Instruction
+            136972..136981 'instr.dst': u32
+            136983..137027 'resolv...s, 0u)': f32
+            136995..137003 'shot_idx': u32
+            137005..137010 'instr': Instruction
+            137005..137015 'instr.src0': u32
+            137017..137022 'flags': u32
+            137024..137026 '0u': u32
+            137046..137048 'pc': ref<function, u32, read_write>
+            137172..137183 'OP_INTTOPTR': u32
+            137202..137278 'write_..., 0u))': [error]
+            137212..137220 'shot_idx': u32
+            137222..137227 'instr': Instruction
+            137222..137231 'instr.dst': u32
+            137233..137277 'resolv...s, 0u)': u32
+            137245..137253 'shot_idx': u32
+            137255..137260 'instr': Instruction
+            137255..137265 'instr.src0': u32
+            137267..137272 'flags': u32
+            137274..137276 '0u': u32
+            137296..137298 'pc': ref<function, u32, read_write>
+            137410..137419 'OP_FPTOSI': u32
+            137438..137523 'write_... 0u)))': [error]
+            137452..137460 'shot_idx': u32
+            137462..137467 'instr': Instruction
+            137462..137471 'instr.dst': u32
+            137473..137522 'i32(re..., 0u))': i32
+            137477..137521 'resolv...s, 0u)': f32
+            137489..137497 'shot_idx': u32
+            137499..137504 'instr': Instruction
+            137499..137509 'instr.src0': u32
+            137511..137516 'flags': u32
+            137518..137520 '0u': u32
+            137541..137543 'pc': ref<function, u32, read_write>
+            137655..137664 'OP_SITOFP': u32
+            137683..137768 'write_... 0u)))': [error]
+            137697..137705 'shot_idx': u32
+            137707..137712 'instr': Instruction
+            137707..137716 'instr.dst': u32
+            137718..137767 'f32(re..., 0u))': f32
+            137722..137766 'resolv...s, 0u)': i32
+            137734..137742 'shot_idx': u32
+            137744..137749 'instr': Instruction
+            137744..137754 'instr.src0': u32
+            137756..137761 'flags': u32
+            137763..137765 '0u': u32
+            137786..137788 'pc': ref<function, u32, read_write>
+            137902..137911 'OP_FPTOUI': u32
+            137930..138011 'write_... 0u)))': [error]
+            137940..137948 'shot_idx': u32
+            137950..137955 'instr': Instruction
+            137950..137959 'instr.dst': u32
+            137961..138010 'u32(re..., 0u))': u32
+            137965..138009 'resolv...s, 0u)': f32
+            137977..137985 'shot_idx': u32
+            137987..137992 'instr': Instruction
+            137987..137997 'instr.src0': u32
+            137999..138004 'flags': u32
+            138006..138008 '0u': u32
+            138029..138031 'pc': ref<function, u32, read_write>
+            138145..138154 'OP_UITOFP': u32
+            138173..138258 'write_... 0u)))': [error]
+            138187..138195 'shot_idx': u32
+            138197..138202 'instr': Instruction
+            138197..138206 'instr.dst': u32
+            138208..138257 'f32(re..., 0u))': f32
+            138212..138256 'resolv...s, 0u)': u32
+            138224..138232 'shot_idx': u32
+            138234..138239 'instr': Instruction
+            138234..138244 'instr.src0': u32
+            138246..138251 'flags': u32
+            138253..138255 '0u': u32
+            138276..138278 'pc': ref<function, u32, read_write>
+            139310..139316 'OP_PHI': u32
+            139339..139345 'offset': u32
+            139348..139353 'instr': Instruction
+            139348..139358 'instr.aux0': u32
+            139380..139385 'count': u32
+            139388..139393 'instr': Instruction
+            139388..139398 'instr.aux1': u32
+            139425..139426 'i': ref<function, u32, read_write>
+            139429..139431 '0u': u32
+            139433..139434 'i': ref<function, u32, read_write>
+            139433..139442 'i < count': bool
+            139437..139442 'count': u32
+            139444..139445 'i': ref<function, u32, read_write>
+            139475..139480 'entry': [error]
+            139483..139493 'batch_data': ref<storage, BatchData, read>
+            139483..139501 'batch_...rogram': ref<storage, Program, read>
+            139483..139511 'batch_..._table': ref<storage, [error], read>
+            139483..139523 'batch_...t + i]': [error]
+            139512..139518 'offset': u32
+            139512..139522 'offset + i': u32
+            139521..139522 'i': ref<function, u32, read_write>
+            139548..139553 'entry': [error]
+            139548..139562 'entry.block_id': [error]
+            139548..139576 'entry...._block': [error]
+            139566..139576 'prev_block': ref<function, u32, read_write>
+            139603..139668 'write_..._reg))': [error]
+            139613..139621 'shot_idx': u32
+            139623..139628 'instr': Instruction
+            139623..139632 'instr.dst': u32
+            139634..139667 'read_r...l_reg)': u32
+            139643..139651 'shot_idx': u32
+            139653..139658 'entry': [error]
+            139653..139666 'entry.val_reg': [error]
+            139757..139759 'pc': ref<function, u32, read_write>
+            140205..140214 'OP_SELECT': u32
+            140237..140241 'cond': bool
+            140244..140288 'resolv...s, 0u)': u32
+            140244..140294 'resolv... != 0u': bool
+            140256..140264 'shot_idx': u32
+            140266..140271 'instr': Instruction
+            140266..140276 'instr.src0': u32
+            140278..140283 'flags': u32
+            140285..140287 '0u': u32
+            140292..140294 '0u': u32
+            140316..140324 'true_val': u32
+            140327..140371 'resolv...s, 3u)': u32
+            140339..140347 'shot_idx': u32
+            140349..140354 'instr': Instruction
+            140349..140359 'instr.aux0': u32
+            140361..140366 'flags': u32
+            140368..140370 '3u': u32
+            140393..140402 'false_val': u32
+            140405..140449 'resolv...s, 4u)': u32
+            140417..140425 'shot_idx': u32
+            140427..140432 'instr': Instruction
+            140427..140437 'instr.aux1': u32
+            140439..140444 'flags': u32
+            140446..140448 '4u': u32
+            140467..140532 'write_...cond))': [error]
+            140477..140485 'shot_idx': u32
+            140487..140492 'instr': Instruction
+            140487..140496 'instr.dst': u32
+            140498..140531 'select... cond)': u32
+            140505..140514 'false_val': u32
+            140516..140524 'true_val': u32
+            140526..140530 'cond': bool
+            140550..140552 'pc': ref<function, u32, read_write>
+            140748..140754 'OP_MOV': u32
+            140773..140849 'write_..., 0u))': [error]
+            140783..140791 'shot_idx': u32
+            140793..140798 'instr': Instruction
+            140793..140802 'instr.dst': u32
+            140804..140848 'resolv...s, 0u)': u32
+            140816..140824 'shot_idx': u32
+            140826..140831 'instr': Instruction
+            140826..140836 'instr.src0': u32
+            140838..140843 'flags': u32
+            140845..140847 '0u': u32
+            140867..140869 'pc': ref<function, u32, read_write>
+            141050..141058 'OP_CONST': u32
+            141077..141119 'write_....src0)': [error]
+            141087..141095 'shot_idx': u32
+            141097..141102 'instr': Instruction
+            141097..141106 'instr.dst': u32
+            141108..141113 'instr': Instruction
+            141108..141118 'instr.src0': u32
+            141137..141139 'pc': ref<function, u32, read_write>
+            141518..141527 'OP_ALLOCA': u32
+            141550..141559 'num_words': u32
+            141562..141606 'resolv...s, 0u)': u32
+            141574..141582 'shot_idx': u32
+            141584..141589 'instr': Instruction
+            141584..141594 'instr.src0': u32
+            141596..141601 'flags': u32
+            141603..141605 '0u': u32
+            141628..141632 'addr': u32
+            141635..141679 'resolv...s, 1u)': u32
+            141647..141655 'shot_idx': u32
+            141657..141662 'instr': Instruction
+            141657..141667 'instr.src1': u32
+            141669..141674 'flags': u32
+            141676..141678 '1u': u32
+            141700..141704 'addr': u32
+            141700..141716 'addr +..._words': u32
+            141700..141729 'addr +...MEMORY': bool
+            141707..141716 'num_words': u32
+            141719..141729 'MAX_MEMORY': u32
+            141752..141757 'shots': ref<storage, array<ShotData>, read_write>
+            141752..141767 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            141752..141774 'shots[...interp': ref<storage, InterpreterState, read_write>
+            141752..141784 'shots[...t_code': ref<storage, u32, read_write>
+            141758..141766 'shot_idx': u32
+            141787..141811 'ERR_AL...BOUNDS': u32
+            141837..141844 'err_idx': u32
+            141847..141876 '(shot_..._COUNT': u32
+            141847..141880 '(shot_...NT - 1': u32
+            141848..141856 'shot_idx': u32
+            141848..141860 'shot_idx + 1': u32
+            141859..141860 '1': integer
+            141864..141876 'RESULT_COUNT': u32
+            141879..141880 '1': integer
+            141902..141976 'atomic...OUNDS)': __atomic_compare_exchange_result
+            141928..141945 '&resul...r_idx]': ptr<storage, atomic<u32>, read_write>
+            141929..141936 'results': ref<storage, array<atomic<u32>>, read_write>
+            141929..141945 'result...r_idx]': ref<storage, atomic<u32>, read_write>
+            141937..141944 'err_idx': u32
+            141947..141949 '0u': u32
+            141951..141975 'ERR_AL...BOUNDS': u32
+            141998..142003 'shots': ref<storage, array<ShotData>, read_write>
+            141998..142013 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            141998..142020 'shots[...interp': ref<storage, InterpreterState, read_write>
+            141998..142027 'shots[...status': ref<storage, u32, read_write>
+            142004..142012 'shot_idx': u32
+            142030..142042 'STATUS_ERROR': u32
+            142064..142109 'atomic...t, 1u)': u32
+            142074..142104 '&diagn..._count': ptr<storage, atomic<u32>, read_write>
+            142075..142086 'diagnostics': ref<storage, DiagnosticData, read_write>
+            142075..142104 'diagno..._count': ref<storage, atomic<u32>, read_write>
+            142106..142108 '1u': u32
+            142131..142143 'should_break': ref<function, bool, read_write>
+            142146..142150 'true': bool
+            142213..142249 'write_... addr)': [error]
+            142223..142231 'shot_idx': u32
+            142233..142238 'instr': Instruction
+            142233..142242 'instr.dst': u32
+            142244..142248 'addr': u32
+            142267..142269 'pc': ref<function, u32, read_write>
+            142449..142456 'OP_LOAD': u32
+            142479..142483 'addr': u32
+            142486..142530 'resolv...s, 0u)': u32
+            142498..142506 'shot_idx': u32
+            142508..142513 'instr': Instruction
+            142508..142518 'instr.src0': u32
+            142520..142525 'flags': u32
+            142527..142529 '0u': u32
+            142551..142555 'addr': u32
+            142551..142569 'addr >...MEMORY': bool
+            142559..142569 'MAX_MEMORY': u32
+            142592..142597 'shots': ref<storage, array<ShotData>, read_write>
+            142592..142607 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            142592..142614 'shots[...interp': ref<storage, InterpreterState, read_write>
+            142592..142624 'shots[...t_code': ref<storage, u32, read_write>
+            142598..142606 'shot_idx': u32
+            142627..142651 'ERR_ME...BOUNDS': u32
+            142677..142684 'err_idx': u32
+            142687..142716 '(shot_..._COUNT': u32
+            142687..142720 '(shot_...NT - 1': u32
+            142688..142696 'shot_idx': u32
+            142688..142700 'shot_idx + 1': u32
+            142699..142700 '1': integer
+            142704..142716 'RESULT_COUNT': u32
+            142719..142720 '1': integer
+            142742..142816 'atomic...OUNDS)': __atomic_compare_exchange_result
+            142768..142785 '&resul...r_idx]': ptr<storage, atomic<u32>, read_write>
+            142769..142776 'results': ref<storage, array<atomic<u32>>, read_write>
+            142769..142785 'result...r_idx]': ref<storage, atomic<u32>, read_write>
+            142777..142784 'err_idx': u32
+            142787..142789 '0u': u32
+            142791..142815 'ERR_ME...BOUNDS': u32
+            142838..142843 'shots': ref<storage, array<ShotData>, read_write>
+            142838..142853 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            142838..142860 'shots[...interp': ref<storage, InterpreterState, read_write>
+            142838..142867 'shots[...status': ref<storage, u32, read_write>
+            142844..142852 'shot_idx': u32
+            142870..142882 'STATUS_ERROR': u32
+            142904..142949 'atomic...t, 1u)': u32
+            142914..142944 '&diagn..._count': ptr<storage, atomic<u32>, read_write>
+            142915..142926 'diagnostics': ref<storage, DiagnosticData, read_write>
+            142915..142944 'diagno..._count': ref<storage, atomic<u32>, read_write>
+            142946..142948 '1u': u32
+            142971..142983 'should_break': ref<function, bool, read_write>
+            142986..142990 'true': bool
+            143057..143060 'val': [error]
+            143063..143068 'shots': ref<storage, array<ShotData>, read_write>
+            143063..143078 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            143063..143085 'shots[...interp': ref<storage, InterpreterState, read_write>
+            143063..143092 'shots[...memory': ref<storage, [error], read_write>
+            143063..143098 'shots[...[addr]': [error]
+            143069..143077 'shot_idx': u32
+            143093..143097 'addr': u32
+            143116..143151 'write_..., val)': [error]
+            143126..143134 'shot_idx': u32
+            143136..143141 'instr': Instruction
+            143136..143145 'instr.dst': u32
+            143147..143150 'val': [error]
+            143169..143171 'pc': ref<function, u32, read_write>
+            143346..143354 'OP_STORE': u32
+            143377..143380 'val': u32
+            143383..143427 'resolv...s, 0u)': u32
+            143395..143403 'shot_idx': u32
+            143405..143410 'instr': Instruction
+            143405..143415 'instr.src0': u32
+            143417..143422 'flags': u32
+            143424..143426 '0u': u32
+            143449..143453 'addr': u32
+            143456..143500 'resolv...s, 1u)': u32
+            143468..143476 'shot_idx': u32
+            143478..143483 'instr': Instruction
+            143478..143488 'instr.src1': u32
+            143490..143495 'flags': u32
+            143497..143499 '1u': u32
+            143521..143525 'addr': u32
+            143521..143539 'addr >...MEMORY': bool
+            143529..143539 'MAX_MEMORY': u32
+            143562..143567 'shots': ref<storage, array<ShotData>, read_write>
+            143562..143577 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            143562..143584 'shots[...interp': ref<storage, InterpreterState, read_write>
+            143562..143594 'shots[...t_code': ref<storage, u32, read_write>
+            143568..143576 'shot_idx': u32
+            143597..143621 'ERR_ME...BOUNDS': u32
+            143647..143654 'err_idx': u32
+            143657..143686 '(shot_..._COUNT': u32
+            143657..143690 '(shot_...NT - 1': u32
+            143658..143666 'shot_idx': u32
+            143658..143670 'shot_idx + 1': u32
+            143669..143670 '1': integer
+            143674..143686 'RESULT_COUNT': u32
+            143689..143690 '1': integer
+            143712..143786 'atomic...OUNDS)': __atomic_compare_exchange_result
+            143738..143755 '&resul...r_idx]': ptr<storage, atomic<u32>, read_write>
+            143739..143746 'results': ref<storage, array<atomic<u32>>, read_write>
+            143739..143755 'result...r_idx]': ref<storage, atomic<u32>, read_write>
+            143747..143754 'err_idx': u32
+            143757..143759 '0u': u32
+            143761..143785 'ERR_ME...BOUNDS': u32
+            143808..143813 'shots': ref<storage, array<ShotData>, read_write>
+            143808..143823 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            143808..143830 'shots[...interp': ref<storage, InterpreterState, read_write>
+            143808..143837 'shots[...status': ref<storage, u32, read_write>
+            143814..143822 'shot_idx': u32
+            143840..143852 'STATUS_ERROR': u32
+            143874..143919 'atomic...t, 1u)': u32
+            143884..143914 '&diagn..._count': ptr<storage, atomic<u32>, read_write>
+            143885..143896 'diagnostics': ref<storage, DiagnosticData, read_write>
+            143885..143914 'diagno..._count': ref<storage, atomic<u32>, read_write>
+            143916..143918 '1u': u32
+            143941..143953 'should_break': ref<function, bool, read_write>
+            143956..143960 'true': bool
+            144023..144028 'shots': ref<storage, array<ShotData>, read_write>
+            144023..144038 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            144023..144045 'shots[...interp': ref<storage, InterpreterState, read_write>
+            144023..144052 'shots[...memory': ref<storage, [error], read_write>
+            144023..144058 'shots[...[addr]': [error]
+            144029..144037 'shot_idx': u32
+            144053..144057 'addr': u32
+            144061..144064 'val': u32
+            144082..144084 'pc': ref<function, u32, read_write>
+            144292..144298 'OP_GEP': u32
+            144321..144325 'base': u32
+            144328..144372 'resolv...s, 0u)': u32
+            144340..144348 'shot_idx': u32
+            144350..144355 'instr': Instruction
+            144350..144360 'instr.src0': u32
+            144362..144367 'flags': u32
+            144369..144371 '0u': u32
+            144394..144399 'index': u32
+            144402..144446 'resolv...s, 1u)': u32
+            144414..144422 'shot_idx': u32
+            144424..144429 'instr': Instruction
+            144424..144434 'instr.src1': u32
+            144436..144441 'flags': u32
+            144443..144445 '1u': u32
+            144468..144477 'elem_size': u32
+            144480..144524 'resolv...s, 3u)': u32
+            144492..144500 'shot_idx': u32
+            144502..144507 'instr': Instruction
+            144502..144512 'instr.aux0': u32
+            144514..144519 'flags': u32
+            144521..144523 '3u': u32
+            144546..144550 'addr': u32
+            144553..144557 'base': u32
+            144553..144577 'base +...m_size': u32
+            144560..144565 'index': u32
+            144560..144577 'index ...m_size': u32
+            144568..144577 'elem_size': u32
+            144595..144631 'write_... addr)': [error]
+            144605..144613 'shot_idx': u32
+            144615..144620 'instr': Instruction
+            144615..144624 'instr.dst': u32
+            144626..144630 'addr': u32
+            144649..144651 'pc': ref<function, u32, read_write>
+            144768..144773 'shots': ref<storage, array<ShotData>, read_write>
+            144768..144783 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            144768..144790 'shots[...interp': ref<storage, InterpreterState, read_write>
+            144768..144797 'shots[...status': ref<storage, u32, read_write>
+            144774..144782 'shot_idx': u32
+            144800..144812 'STATUS_ERROR': u32
+            144830..144875 'atomic...t, 1u)': u32
+            144840..144870 '&diagn..._count': ptr<storage, atomic<u32>, read_write>
+            144841..144852 'diagnostics': ref<storage, DiagnosticData, read_write>
+            144841..144870 'diagno..._count': ref<storage, atomic<u32>, read_write>
+            144872..144874 '1u': u32
+            144893..144905 'should_break': ref<function, bool, read_write>
+            144908..144912 'true': bool
+            144946..144951 'steps': ref<function, u32, read_write>
+            144966..144978 'should_break': ref<function, bool, read_write>
+            145207..145212 'shots': ref<storage, array<ShotData>, read_write>
+            145207..145222 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            145207..145229 'shots[...interp': ref<storage, InterpreterState, read_write>
+            145207..145232 'shots[...erp.pc': ref<storage, u32, read_write>
+            145213..145221 'shot_idx': u32
+            145235..145237 'pc': ref<function, u32, read_write>
+            145243..145248 'shots': ref<storage, array<ShotData>, read_write>
+            145243..145258 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            145243..145265 'shots[...interp': ref<storage, InterpreterState, read_write>
+            145243..145282 'shots[...ock_id': ref<storage, u32, read_write>
+            145249..145257 'shot_idx': u32
+            145285..145293 'block_id': ref<function, u32, read_write>
+            145299..145304 'shots': ref<storage, array<ShotData>, read_write>
+            145299..145314 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            145299..145321 'shots[...interp': ref<storage, InterpreterState, read_write>
+            145299..145339 'shots[...ock_id': ref<storage, u32, read_write>
+            145305..145313 'shot_idx': u32
+            145342..145352 'prev_block': ref<function, u32, read_write>
+            145804..145812 'shot_idx': u32
+            145829..145833 'shot': ptr<storage, ShotData, read_write>
+            145836..145852 '&shots...t_idx]': ptr<storage, ShotData, read_write>
+            145837..145842 'shots': ref<storage, array<ShotData>, read_write>
+            145837..145852 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            145843..145851 'shot_idx': u32
+            145862..145867 'state': InterpreterState
+            145870..145875 'shots': ref<storage, array<ShotData>, read_write>
+            145870..145885 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            145870..145892 'shots[...interp': ref<storage, InterpreterState, read_write>
+            145876..145884 'shot_idx': u32
+            145902..145908 'status': u32
+            145911..145916 'state': InterpreterState
+            145911..145923 'state.status': u32
+            145984..145990 'status': u32
+            145984..146016 'status...ENDING': bool
+            145994..146016 'STATUS...ENDING': u32
+            146092..146096 'shot': ptr<storage, ShotData, read_write>
+            146092..146104 'shot.op_type': ref<storage, u32, read_write>
+            146107..146114 'OPID_ID': u32
+            146124..146128 'shot': ptr<storage, ShotData, read_write>
+            146124..146140 'shot.r...malize': ref<storage, f32, read_write>
+            146143..146146 '1.0': float
+            146156..146160 'shot': ptr<storage, ShotData, read_write>
+            146156..146188 'shot.q...p_mask': ref<storage, u32, read_write>
+            146191..146193 '0u': u32
+            146274..146278 'shot': ptr<storage, ShotData, read_write>
+            146274..146306 'shot.q...p_mask': ref<storage, u32, read_write>
+            146274..146311 'shot.q...k != 0': bool
+            146310..146311 '0': integer
+            146322..146350 'update...t_idx)': [error]
+            146341..146349 'shot_idx': u32
+            146362..146388 'shot_i...t_idx)': [error]
+            146379..146387 'shot_idx': u32
+            146399..146405 'op_idx': u32
+            146408..146413 'state': InterpreterState
+            146408..146428 'state....op_idx': u32
+            146438..146445 'op_type': u32
+            146448..146453 'state': InterpreterState
+            146448..146469 'state....p_type': u32
+            146636..146643 'op_type': u32
+            146636..146669 'op_typ...COMMIT': bool
+            146647..146669 'PENDIN...COMMIT': u32
+            146680..146714 'prep_l...p_idx)': [error]
+            146697..146705 'shot_idx': u32
+            146707..146713 'op_idx': u32
+            146747..146749 'op': ptr<storage, Op, read>
+            146752..146764 '&ops[op_idx]': ptr<storage, Op, read>
+            146753..146756 'ops': ref<storage, array<Op>, read>
+            146753..146764 'ops[op_idx]': ref<storage, Op, read>
+            146757..146763 'op_idx': u32
+            146972..146979 'op_type': u32
+            146972..146985 'op_type == 0u': bool
+            146972..147019 'op_typ..._NOISE': bool
+            146983..146985 '0u': u32
+            146989..146991 'op': ptr<storage, Op, read>
+            146989..146994 'op.id': ref<storage, u32, read>
+            146989..147019 'op.id ..._NOISE': bool
+            146998..147019 'OPID_C..._NOISE': u32
+            147034..147036 'pc': u32
+            147039..147044 'state': InterpreterState
+            147039..147047 'state.pc': u32
+            147061..147072 'noise_instr': Instruction
+            147075..147095 'fetch_... - 1u)': Instruction
+            147087..147089 'pc': u32
+            147087..147094 'pc - 1u': u32
+            147092..147094 '1u': u32
+            147109..147120 'qubit_count': u32
+            147123..147134 'noise_instr': Instruction
+            147123..147139 'noise_...r.aux1': u32
+            147153..147163 'arg_offset': u32
+            147166..147177 'noise_instr': Instruction
+            147166..147182 'noise_...r.aux2': u32
+            147192..147196 'shot': ptr<storage, ShotData, read_write>
+            147192..147203 'shot.op_idx': ref<storage, u32, read_write>
+            147206..147212 'op_idx': u32
+            147222..147226 'shot': ptr<storage, ShotData, read_write>
+            147222..147234 'shot.op_type': ref<storage, u32, read_write>
+            147237..147239 'op': ptr<storage, Op, read>
+            147237..147242 'op.id': ref<storage, u32, read>
+            147252..147325 'prep_c...ffset)': [error]
+            147283..147291 'shot_idx': u32
+            147293..147299 'op_idx': u32
+            147301..147312 'qubit_count': u32
+            147314..147324 'arg_offset': u32
+            147335..147340 'shots': ref<storage, array<ShotData>, read_write>
+            147335..147350 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            147335..147357 'shots[...interp': ref<storage, InterpreterState, read_write>
+            147335..147364 'shots[...status': ref<storage, u32, read_write>
+            147341..147349 'shot_idx': u32
+            147367..147381 'STATUS_RUNNING': u32
+            147414..147416 'q1': u32
+            147419..147439 'resolv...t_idx)': u32
+            147430..147438 'shot_idx': u32
+            147449..147451 'q2': u32
+            147454..147474 'resolv...t_idx)': u32
+            147465..147473 'shot_idx': u32
+            147481..147485 'shot': ptr<storage, ShotData, read_write>
+            147481..147493 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            147496..147498 'op': ptr<storage, Op, read>
+            147496..147506 'op.unitary': ref<storage, array<vec2<f32>, 16>, read>
+            147520..147527 'op_type': u32
+            147543..147545 '0u': u32
+            147822..147845 'is_rot...op.id)': bool
+            147822..147875 'is_rot...t_idx)': bool
+            147839..147841 'op': ptr<storage, Op, read>
+            147839..147844 'op.id': ref<storage, u32, read>
+            147849..147875 'is_dyn...t_idx)': bool
+            147866..147874 'shot_idx': u32
+            147897..147899 'op': ptr<storage, Op, read>
+            147897..147902 'op.id': ref<storage, u32, read>
+            147897..147913 'op.id ...PID_RX': bool
+            147897..147933 'op.id ...PID_RY': bool
+            147897..147953 'op.id ...PID_RZ': bool
+            147906..147913 'OPID_RX': u32
+            147917..147919 'op': ptr<storage, Op, read>
+            147917..147922 'op.id': ref<storage, u32, read>
+            147917..147933 'op.id ...PID_RY': bool
+            147926..147933 'OPID_RY': u32
+            147937..147939 'op': ptr<storage, Op, read>
+            147937..147942 'op.id': ref<storage, u32, read>
+            147937..147953 'op.id ...PID_RZ': bool
+            147946..147953 'OPID_RZ': u32
+            147980..147985 'angle': f32
+            147988..148016 'resolv...t_idx)': f32
+            148007..148015 'shot_idx': u32
+            148042..148046 'half': f32
+            148049..148054 'angle': f32
+            148049..148060 'angle * 0.5': f32
+            148057..148060 '0.5': float
+            148086..148087 'c': f32
+            148090..148099 'cos(half)': f32
+            148094..148098 'half': f32
+            148125..148126 's': f32
+            148129..148138 'sin(half)': f32
+            148133..148137 'half': f32
+            148163..148165 'op': ptr<storage, Op, read>
+            148163..148168 'op.id': ref<storage, u32, read>
+            148163..148179 'op.id ...PID_RX': bool
+            148172..148179 'OPID_RX': u32
+            148290..148294 'shot': ptr<storage, ShotData, read_write>
+            148290..148302 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            148290..148305 'shot.unitary[0]': ref<storage, vec2<f32>, read_write>
+            148303..148304 '0': integer
+            148308..148321 'vec2f(c, 0.0)': vec2<f32>
+            148314..148315 'c': f32
+            148317..148320 '0.0': float
+            148347..148351 'shot': ptr<storage, ShotData, read_write>
+            148347..148359 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            148347..148362 'shot.unitary[1]': ref<storage, vec2<f32>, read_write>
+            148360..148361 '1': integer
+            148365..148379 'vec2f(0.0, -s)': vec2<f32>
+            148371..148374 '0.0': float
+            148376..148378 '-s': f32
+            148377..148378 's': f32
+            148405..148409 'shot': ptr<storage, ShotData, read_write>
+            148405..148417 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            148405..148420 'shot.unitary[4]': ref<storage, vec2<f32>, read_write>
+            148418..148419 '4': integer
+            148423..148437 'vec2f(0.0, -s)': vec2<f32>
+            148429..148432 '0.0': float
+            148434..148436 '-s': f32
+            148435..148436 's': f32
+            148463..148467 'shot': ptr<storage, ShotData, read_write>
+            148463..148475 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            148463..148478 'shot.unitary[5]': ref<storage, vec2<f32>, read_write>
+            148476..148477 '5': integer
+            148481..148494 'vec2f(c, 0.0)': vec2<f32>
+            148487..148488 'c': f32
+            148490..148493 '0.0': float
+            148646..148650 'shot': ptr<storage, ShotData, read_write>
+            148646..148658 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            148646..148661 'shot.unitary[0]': ref<storage, vec2<f32>, read_write>
+            148659..148660 '0': integer
+            148664..148677 'vec2f(c, 0.0)': vec2<f32>
+            148670..148671 'c': f32
+            148673..148676 '0.0': float
+            148703..148707 'shot': ptr<storage, ShotData, read_write>
+            148703..148715 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            148703..148718 'shot.unitary[1]': ref<storage, vec2<f32>, read_write>
+            148716..148717 '1': integer
+            148721..148735 'vec2f(-s, 0.0)': vec2<f32>
+            148727..148729 '-s': f32
+            148728..148729 's': f32
+            148731..148734 '0.0': float
+            148761..148765 'shot': ptr<storage, ShotData, read_write>
+            148761..148773 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            148761..148776 'shot.unitary[4]': ref<storage, vec2<f32>, read_write>
+            148774..148775 '4': integer
+            148779..148792 'vec2f(s, 0.0)': vec2<f32>
+            148785..148786 's': f32
+            148788..148791 '0.0': float
+            148818..148822 'shot': ptr<storage, ShotData, read_write>
+            148818..148830 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            148818..148833 'shot.unitary[5]': ref<storage, vec2<f32>, read_write>
+            148831..148832 '5': integer
+            148836..148849 'vec2f(c, 0.0)': vec2<f32>
+            148842..148843 'c': f32
+            148845..148848 '0.0': float
+            148958..148962 'shot': ptr<storage, ShotData, read_write>
+            148958..148970 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            148958..148973 'shot.unitary[0]': ref<storage, vec2<f32>, read_write>
+            148971..148972 '0': integer
+            148976..148991 'vec2f(1.0, 0.0)': vec2<f32>
+            148982..148985 '1.0': float
+            148987..148990 '0.0': float
+            149017..149021 'shot': ptr<storage, ShotData, read_write>
+            149017..149029 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            149017..149032 'shot.unitary[1]': ref<storage, vec2<f32>, read_write>
+            149030..149031 '1': integer
+            149035..149050 'vec2f(0.0, 0.0)': vec2<f32>
+            149041..149044 '0.0': float
+            149046..149049 '0.0': float
+            149076..149080 'shot': ptr<storage, ShotData, read_write>
+            149076..149088 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            149076..149091 'shot.unitary[4]': ref<storage, vec2<f32>, read_write>
+            149089..149090 '4': integer
+            149094..149109 'vec2f(0.0, 0.0)': vec2<f32>
+            149100..149103 '0.0': float
+            149105..149108 '0.0': float
+            149135..149139 'shot': ptr<storage, ShotData, read_write>
+            149135..149147 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            149135..149150 'shot.unitary[5]': ref<storage, vec2<f32>, read_write>
+            149148..149149 '5': integer
+            149153..149182 'vec2f(...ngle))': vec2<f32>
+            149159..149169 'cos(angle)': f32
             149163..149168 'angle': f32
-            149171..149199 'resolv...t_idx)': f32
-            149190..149198 'shot_idx': u32
-            149225..149229 'half': f32
-            149232..149237 'angle': f32
-            149232..149243 'angle * 0.5': f32
-            149240..149243 '0.5': float
-            149269..149270 'c': f32
-            149273..149282 'cos(half)': f32
-            149277..149281 'half': f32
-            149308..149309 's': f32
-            149312..149321 'sin(half)': f32
-            149316..149320 'half': f32
-            149346..149348 'op': ptr<storage, Op, read>
-            149346..149351 'op.id': ref<storage, u32, read>
-            149346..149363 'op.id ...ID_RXX': bool
-            149355..149363 'OPID_RXX': u32
-            149438..149442 'shot': ptr<storage, ShotData, read_write>
-            149438..149450 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            149438..149453 'shot.unitary[0]': ref<storage, vec2<f32>, read_write>
-            149451..149452 '0': integer
-            149457..149470 'vec2f(c, 0.0)': vec2<f32>
-            149463..149464 'c': f32
-            149466..149469 '0.0': float
-            149496..149500 'shot': ptr<storage, ShotData, read_write>
-            149496..149508 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            149496..149511 'shot.unitary[3]': ref<storage, vec2<f32>, read_write>
-            149509..149510 '3': integer
-            149515..149529 'vec2f(0.0, -s)': vec2<f32>
-            149521..149524 '0.0': float
-            149526..149528 '-s': f32
-            149527..149528 's': f32
-            149555..149559 'shot': ptr<storage, ShotData, read_write>
-            149555..149567 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            149555..149570 'shot.unitary[5]': ref<storage, vec2<f32>, read_write>
-            149568..149569 '5': integer
-            149574..149587 'vec2f(c, 0.0)': vec2<f32>
-            149580..149581 'c': f32
-            149583..149586 '0.0': float
-            149613..149617 'shot': ptr<storage, ShotData, read_write>
-            149613..149625 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            149613..149628 'shot.unitary[6]': ref<storage, vec2<f32>, read_write>
-            149626..149627 '6': integer
-            149632..149646 'vec2f(0.0, -s)': vec2<f32>
-            149638..149641 '0.0': float
-            149643..149645 '-s': f32
-            149644..149645 's': f32
-            149672..149676 'shot': ptr<storage, ShotData, read_write>
-            149672..149684 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            149672..149687 'shot.unitary[9]': ref<storage, vec2<f32>, read_write>
-            149685..149686 '9': integer
-            149691..149705 'vec2f(0.0, -s)': vec2<f32>
-            149697..149700 '0.0': float
-            149702..149704 '-s': f32
-            149703..149704 's': f32
-            149731..149735 'shot': ptr<storage, ShotData, read_write>
-            149731..149743 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            149731..149747 'shot.u...ry[10]': ref<storage, vec2<f32>, read_write>
-            149744..149746 '10': integer
-            149750..149763 'vec2f(c, 0.0)': vec2<f32>
-            149756..149757 'c': f32
-            149759..149762 '0.0': float
-            149789..149793 'shot': ptr<storage, ShotData, read_write>
-            149789..149801 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            149789..149805 'shot.u...ry[12]': ref<storage, vec2<f32>, read_write>
-            149802..149804 '12': integer
-            149808..149822 'vec2f(0.0, -s)': vec2<f32>
-            149814..149817 '0.0': float
-            149819..149821 '-s': f32
-            149820..149821 's': f32
-            149848..149852 'shot': ptr<storage, ShotData, read_write>
-            149848..149860 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            149848..149864 'shot.u...ry[15]': ref<storage, vec2<f32>, read_write>
-            149861..149863 '15': integer
-            149867..149880 'vec2f(c, 0.0)': vec2<f32>
-            149873..149874 'c': f32
-            149876..149879 '0.0': float
-            150004..150008 'shot': ptr<storage, ShotData, read_write>
-            150004..150016 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            150004..150019 'shot.unitary[0]': ref<storage, vec2<f32>, read_write>
-            150017..150018 '0': integer
-            150023..150036 'vec2f(c, 0.0)': vec2<f32>
-            150029..150030 'c': f32
-            150032..150035 '0.0': float
-            150062..150066 'shot': ptr<storage, ShotData, read_write>
-            150062..150074 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            150062..150077 'shot.unitary[3]': ref<storage, vec2<f32>, read_write>
-            150075..150076 '3': integer
-            150081..150094 'vec2f(0.0, s)': vec2<f32>
-            150087..150090 '0.0': float
-            150092..150093 's': f32
-            150120..150124 'shot': ptr<storage, ShotData, read_write>
-            150120..150132 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            150120..150135 'shot.unitary[5]': ref<storage, vec2<f32>, read_write>
-            150133..150134 '5': integer
-            150139..150152 'vec2f(c, 0.0)': vec2<f32>
-            150145..150146 'c': f32
-            150148..150151 '0.0': float
-            150178..150182 'shot': ptr<storage, ShotData, read_write>
-            150178..150190 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            150178..150193 'shot.unitary[6]': ref<storage, vec2<f32>, read_write>
-            150191..150192 '6': integer
-            150197..150211 'vec2f(0.0, -s)': vec2<f32>
-            150203..150206 '0.0': float
-            150208..150210 '-s': f32
-            150209..150210 's': f32
-            150237..150241 'shot': ptr<storage, ShotData, read_write>
-            150237..150249 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            150237..150252 'shot.unitary[9]': ref<storage, vec2<f32>, read_write>
-            150250..150251 '9': integer
-            150256..150270 'vec2f(0.0, -s)': vec2<f32>
-            150262..150265 '0.0': float
-            150267..150269 '-s': f32
-            150268..150269 's': f32
-            150296..150300 'shot': ptr<storage, ShotData, read_write>
-            150296..150308 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            150296..150312 'shot.u...ry[10]': ref<storage, vec2<f32>, read_write>
-            150309..150311 '10': integer
-            150315..150328 'vec2f(c, 0.0)': vec2<f32>
-            150321..150322 'c': f32
-            150324..150327 '0.0': float
-            150354..150358 'shot': ptr<storage, ShotData, read_write>
-            150354..150366 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            150354..150370 'shot.u...ry[12]': ref<storage, vec2<f32>, read_write>
-            150367..150369 '12': integer
-            150373..150386 'vec2f(0.0, s)': vec2<f32>
-            150379..150382 '0.0': float
-            150384..150385 's': f32
-            150412..150416 'shot': ptr<storage, ShotData, read_write>
-            150412..150424 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            150412..150428 'shot.u...ry[15]': ref<storage, vec2<f32>, read_write>
-            150425..150427 '15': integer
-            150431..150444 'vec2f(c, 0.0)': vec2<f32>
-            150437..150438 'c': f32
-            150440..150443 '0.0': float
-            150560..150564 'shot': ptr<storage, ShotData, read_write>
-            150560..150572 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            150560..150575 'shot.unitary[0]': ref<storage, vec2<f32>, read_write>
-            150573..150574 '0': integer
-            150579..150594 'vec2f(1.0, 0.0)': vec2<f32>
-            150585..150588 '1.0': float
-            150590..150593 '0.0': float
-            150620..150624 'shot': ptr<storage, ShotData, read_write>
-            150620..150632 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            150620..150635 'shot.unitary[5]': ref<storage, vec2<f32>, read_write>
-            150633..150634 '5': integer
-            150639..150668 'vec2f(...ngle))': vec2<f32>
-            150645..150655 'cos(angle)': f32
-            150649..150654 'angle': f32
-            150657..150667 'sin(angle)': f32
-            150661..150666 'angle': f32
-            150694..150698 'shot': ptr<storage, ShotData, read_write>
-            150694..150706 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            150694..150710 'shot.u...ry[10]': ref<storage, vec2<f32>, read_write>
-            150707..150709 '10': integer
-            150713..150742 'vec2f(...ngle))': vec2<f32>
-            150719..150729 'cos(angle)': f32
-            150723..150728 'angle': f32
-            150731..150741 'sin(angle)': f32
-            150735..150740 'angle': f32
-            150768..150772 'shot': ptr<storage, ShotData, read_write>
-            150768..150780 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
-            150768..150784 'shot.u...ry[15]': ref<storage, vec2<f32>, read_write>
-            150781..150783 '15': integer
-            150787..150802 'vec2f(1.0, 0.0)': vec2<f32>
-            150793..150796 '1.0': float
-            150798..150801 '0.0': float
-            150871..150875 'shot': ptr<storage, ShotData, read_write>
-            150871..150882 'shot.op_idx': ref<storage, u32, read_write>
-            150885..150891 'op_idx': u32
-            150905..150909 'shot': ptr<storage, ShotData, read_write>
-            150905..150917 'shot.op_type': ref<storage, u32, read_write>
-            150920..150922 'op': ptr<storage, Op, read>
-            150920..150925 'op.id': ref<storage, u32, read>
-            151065..151081 'has_lo...perand': bool
-            151084..151131 'gate_h...1, q2)': bool
-            151106..151114 'shot_idx': u32
-            151116..151122 'op_idx': u32
-            151124..151126 'q1': u32
-            151128..151130 'q2': u32
-            151149..151165 'has_lo...perand': bool
-            151185..151237 'handle...1, q2)': [error]
-            151212..151220 'shot_idx': u32
-            151222..151228 'op_idx': u32
-            151230..151232 'q1': u32
-            151234..151236 'q2': u32
-            151337..151349 'pauli_op_idx': u32
-            151352..151379 'get_pa...p_idx)': u32
-            151372..151378 'op_idx': u32
-            151484..151496 'pauli_op_idx': u32
-            151484..151502 'pauli_... != 0u': bool
-            151500..151502 '0u': u32
-            151524..151527 'ops': ref<storage, array<Op>, read>
-            151524..151541 'ops[pa...p_idx]': ref<storage, Op, read>
-            151524..151544 'ops[pa...dx].id': ref<storage, u32, read>
-            151524..151567 'ops[pa...ISE_1Q': bool
-            151528..151540 'pauli_op_idx': u32
-            151548..151567 'OPID_P...ISE_1Q': u32
-            151743..151760 '!has_l...perand': bool
-            151744..151760 'has_lo...perand': bool
-            151788..151844 'apply_...x, q1)': [error]
-            151809..151817 'shot_idx': u32
-            151819..151825 'op_idx': u32
-            151827..151839 'pauli_op_idx': u32
-            151841..151843 'q1': u32
-            151917..151933 'has_lo...perand': bool
-            152118..152190 'apply_...1, q2)': [error]
-            152151..152159 'shot_idx': u32
-            152161..152167 'op_idx': u32
-            152169..152181 'pauli_op_idx': u32
-            152183..152185 'q1': u32
-            152187..152189 'q2': u32
-            152245..152305 'apply_...1, q2)': [error]
-            152266..152274 'shot_idx': u32
-            152276..152282 'op_idx': u32
-            152284..152296 'pauli_op_idx': u32
-            152298..152300 'q1': u32
-            152302..152304 'q2': u32
-            152363..152368 'shots': ref<storage, array<ShotData>, read_write>
-            152363..152378 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            152363..152385 'shots[...interp': ref<storage, InterpreterState, read_write>
-            152363..152392 'shots[...status': ref<storage, u32, read_write>
-            152369..152377 'shot_idx': u32
-            152395..152409 'STATUS_RUNNING': u32
-            152630..152646 'has_lo...perand': bool
-            152666..152671 'shots': ref<storage, array<ShotData>, read_write>
-            152666..152681 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            152666..152688 'shots[...interp': ref<storage, InterpreterState, read_write>
-            152666..152695 'shots[...status': ref<storage, u32, read_write>
-            152672..152680 'shot_idx': u32
-            152698..152712 'STATUS_RUNNING': u32
-            152821..152863 'finali...1, q2)': [error]
-            152838..152846 'shot_idx': u32
-            152848..152854 'op_idx': u32
-            152856..152858 'q1': u32
-            152860..152862 'q2': u32
-            152888..152890 '1u': u32
-            153077..153089 'pauli_op_idx': u32
-            153092..153119 'get_pa...p_idx)': u32
-            153112..153118 'op_idx': u32
-            153137..153149 'pauli_op_idx': u32
-            153137..153155 'pauli_... != 0u': bool
-            153153..153155 '0u': u32
-            153433..153436 'ops': ref<storage, array<Op>, read>
-            153433..153450 'ops[pa...p_idx]': ref<storage, Op, read>
-            153433..153453 'ops[pa...dx].id': ref<storage, u32, read>
-            153433..153476 'ops[pa...ISE_1Q': bool
-            153437..153449 'pauli_op_idx': u32
-            153457..153476 'OPID_P...ISE_1Q': u32
-            153499..153555 'apply_...x, q1)': [error]
-            153520..153528 'shot_idx': u32
-            153530..153536 'op_idx': u32
-            153538..153550 'pauli_op_idx': u32
-            153552..153554 'q1': u32
-            153602..153662 'apply_...1, q2)': [error]
-            153623..153631 'shot_idx': u32
-            153633..153639 'op_idx': u32
-            153641..153653 'pauli_op_idx': u32
-            153655..153657 'q1': u32
-            153659..153661 'q2': u32
-            153698..153703 'shots': ref<storage, array<ShotData>, read_write>
-            153698..153713 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            153698..153720 'shots[...interp': ref<storage, InterpreterState, read_write>
-            153698..153727 'shots[...status': ref<storage, u32, read_write>
-            153704..153712 'shot_idx': u32
-            153730..153744 'STATUS_RUNNING': u32
-            153846..153852 'resets': bool
-            153855..153857 'op': ptr<storage, Op, read>
-            153855..153860 'op.id': ref<storage, u32, read>
-            153855..153876 'op.id ...RESETZ': bool
-            153864..153876 'OPID_MRESETZ': u32
-            153890..153955 'prep_m...esets)': [error]
-            153909..153917 'shot_idx': u32
-            153919..153925 'op_idx': u32
-            153927..153929 'q1': u32
-            153931..153933 'q2': u32
-            153935..153940 'false': bool
-            153942..153946 'true': bool
-            153948..153954 'resets': bool
-            153980..153982 '2u': u32
-            154006..154070 'prep_m... true)': [error]
-            154025..154033 'shot_idx': u32
-            154035..154041 'op_idx': u32
-            154043..154045 'q1': u32
-            154047..154049 'q2': u32
-            154051..154056 'false': bool
-            154058..154063 'false': bool
-            154065..154069 'true': bool
-            154112..154116 'shot': ptr<storage, ShotData, read_write>
-            154112..154124 'shot.op_type': ref<storage, u32, read_write>
-            154127..154134 'OPID_ID': u32
-            154227..154232 'shots': ref<storage, array<ShotData>, read_write>
-            154227..154242 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            154227..154249 'shots[...interp': ref<storage, InterpreterState, read_write>
-            154227..154256 'shots[...status': ref<storage, u32, read_write>
-            154233..154241 'shot_idx': u32
-            154259..154273 'STATUS_RUNNING': u32
-            154598..154606 'globalId': vec3<u32>
-            154629..154640 'IS_ADAPTIVE': bool
-            154652..154688 'prepar...lId.x)': [error]
-            154677..154685 'globalId': vec3<u32>
-            154677..154687 'globalId.x': u32
-            154711..154743 'prepar...lId.x)': [error]
-            154732..154740 'globalId': vec3<u32>
-            154732..154742 'globalId.x': u32
-            154845..154856 'workgroupId': vec3<u32>
-            154910..154913 'tid': u32
-            154930..154938 'shot_idx': i32
-            154946..154964 'i32(wo...pId.x)': i32
-            154946..154986 'i32(wo...R_SHOT': i32
-            154950..154961 'workgroupId': vec3<u32>
-            154950..154963 'workgroupId.x': u32
-            154967..154986 'WORKGR...R_SHOT': i32
-            154996..155000 'shot': ptr<storage, ShotData, read_write>
-            155003..155019 '&shots...t_idx]': ptr<storage, ShotData, read_write>
-            155004..155009 'shots': ref<storage, array<ShotData>, read_write>
-            155004..155019 'shots[shot_idx]': ref<storage, ShotData, read_write>
-            155010..155018 'shot_idx': i32
-            155226..155238 'update_probs': bool
-            155241..155245 'shot': ptr<storage, ShotData, read_write>
-            155241..155253 'shot.op_type': ref<storage, u32, read_write>
-            155241..155264 'shot.o...PID_ID': bool
-            155241..155305 'shot.o..._NOISE': bool
-            155241..155344 'shot.o...PID_RZ': bool
-            155241..155371 'shot.o...PID_CZ': bool
-            155241..155399 'shot.o...ID_RZZ': bool
-            155257..155264 'OPID_ID': u32
-            155268..155272 'shot': ptr<storage, ShotData, read_write>
-            155268..155280 'shot.op_type': ref<storage, u32, read_write>
-            155268..155305 'shot.o..._NOISE': bool
-            155284..155305 'OPID_C..._NOISE': u32
-            155321..155325 'shot': ptr<storage, ShotData, read_write>
-            155321..155333 'shot.op_type': ref<storage, u32, read_write>
-            155321..155344 'shot.o...PID_RZ': bool
-            155337..155344 'OPID_RZ': u32
-            155348..155352 'shot': ptr<storage, ShotData, read_write>
-            155348..155360 'shot.op_type': ref<storage, u32, read_write>
-            155348..155371 'shot.o...PID_CZ': bool
-            155364..155371 'OPID_CZ': u32
-            155375..155379 'shot': ptr<storage, ShotData, read_write>
-            155375..155387 'shot.op_type': ref<storage, u32, read_write>
-            155375..155399 'shot.o...ID_RZZ': bool
-            155391..155399 'OPID_RZZ': u32
-            155410..155414 'shot': ptr<storage, ShotData, read_write>
-            155410..155422 'shot.op_type': ref<storage, u32, read_write>
-            155410..155433 'shot.o...PID_ID': bool
-            155426..155433 'OPID_ID': u32
-            155519..155561 'apply_..., tid)': [error]
-            155542..155553 'workgroupId': vec3<u32>
-            155542..155555 'workgroupId.x': u32
-            155557..155560 'tid': u32
-            155723..155767 'apply_...p_idx)': [error]
-            155735..155746 'workgroupId': vec3<u32>
-            155735..155748 'workgroupId.x': u32
-            155750..155753 'tid': u32
-            155755..155759 'shot': ptr<storage, ShotData, read_write>
-            155755..155766 'shot.op_idx': ref<storage, u32, read_write>
-            155822..155824 'q1': ref<function, u32, read_write>
-            155843..155854 'IS_ADAPTIVE': bool
-            155870..155872 'q1': ref<function, u32, read_write>
-            155875..155900 'resolv..._idx))': u32
-            155886..155899 'u32(shot_idx)': u32
-            155890..155898 'shot_idx': i32
-            155931..155933 'q1': ref<function, u32, read_write>
-            155936..155939 'ops': ref<storage, array<Op>, read>
-            155936..155952 'ops[sh...p_idx]': ref<storage, Op, read>
-            155936..155955 'ops[sh...dx].q1': ref<storage, u32, read>
-            155940..155944 'shot': ptr<storage, ShotData, read_write>
-            155940..155951 'shot.op_idx': ref<storage, u32, read_write>
-            155975..156010 'apply_...d, q1)': [error]
-            155987..155998 'workgroupId': vec3<u32>
-            155987..156000 'workgroupId.x': u32
-            156002..156005 'tid': u32
-            156007..156009 'q1': ref<function, u32, read_write>
-            156054..156056 'q1': ref<function, u32, read_write>
-            156075..156077 'q2': ref<function, u32, read_write>
-            156096..156107 'IS_ADAPTIVE': bool
-            156123..156125 'q1': ref<function, u32, read_write>
-            156128..156153 'resolv..._idx))': u32
-            156139..156152 'u32(shot_idx)': u32
-            156143..156151 'shot_idx': i32
-            156167..156169 'q2': ref<function, u32, read_write>
-            156172..156197 'resolv..._idx))': u32
-            156183..156196 'u32(shot_idx)': u32
-            156187..156195 'shot_idx': i32
-            156228..156230 'q1': ref<function, u32, read_write>
-            156233..156236 'ops': ref<storage, array<Op>, read>
-            156233..156249 'ops[sh...p_idx]': ref<storage, Op, read>
-            156233..156252 'ops[sh...dx].q1': ref<storage, u32, read>
-            156237..156241 'shot': ptr<storage, ShotData, read_write>
-            156237..156248 'shot.op_idx': ref<storage, u32, read_write>
-            156266..156268 'q2': ref<function, u32, read_write>
-            156271..156274 'ops': ref<storage, array<Op>, read>
-            156271..156287 'ops[sh...p_idx]': ref<storage, Op, read>
-            156271..156290 'ops[sh...dx].q2': ref<storage, u32, read>
-            156275..156279 'shot': ptr<storage, ShotData, read_write>
-            156275..156286 'shot.op_idx': ref<storage, u32, read_write>
-            156310..156349 'apply_...1, q2)': [error]
-            156322..156333 'workgroupId': vec3<u32>
-            156322..156335 'workgroupId.x': u32
-            156337..156340 'tid': u32
-            156342..156344 'q1': ref<function, u32, read_write>
-            156346..156348 'q2': ref<function, u32, read_write>
-            156518..156536 'workgr...rier()': [error]
-            156859..156862 'tid': u32
-            156859..156867 'tid == 0': bool
-            156859..156883 'tid ==..._probs': bool
-            156866..156867 '0': integer
-            156871..156883 'update_probs': bool
-            156899..156922 'workgr...on_idx': i32
-            156930..156985 'select...T > 1)': i32
-            156937..156939 '-1': integer
-            156938..156939 '1': integer
-            156941..156959 'i32(wo...pId.x)': i32
-            156945..156956 'workgroupId': vec3<u32>
-            156945..156958 'workgroupId.x': u32
-            156961..156980 'WORKGR...R_SHOT': i32
-            156961..156984 'WORKGR...OT > 1': bool
-            156983..156984 '1': integer
-            157004..157005 'q': ref<function, u32, read_write>
-            157013..157015 '0u': u32
-            157017..157018 'q': ref<function, u32, read_write>
-            157017..157037 'q < u3...COUNT)': bool
-            157021..157037 'u32(QU...COUNT)': u32
-            157025..157036 'QUBIT_COUNT': i32
-            157039..157040 'q': ref<function, u32, read_write>
-            157061..157113 '(shot.... != 0u': bool
-            157062..157066 'shot': ptr<storage, ShotData, read_write>
-            157062..157094 'shot.q...p_mask': ref<storage, u32, read_write>
-            157062..157106 'shot.q... << q)': u32
-            157098..157100 '1u': u32
-            157098..157105 '1u << q': u32
-            157104..157105 'q': ref<function, u32, read_write>
-            157111..157113 '0u': u32
-            157132..157195 'sum_th...n_idx)': [error]
-            157158..157159 'q': ref<function, u32, read_write>
-            157161..157169 'shot_idx': i32
-            157171..157194 'workgr...on_idx': i32
+            149171..149181 'sin(angle)': f32
+            149175..149180 'angle': f32
+            149318..149323 'angle': f32
+            149326..149354 'resolv...t_idx)': f32
+            149345..149353 'shot_idx': u32
+            149380..149384 'half': f32
+            149387..149392 'angle': f32
+            149387..149398 'angle * 0.5': f32
+            149395..149398 '0.5': float
+            149424..149425 'c': f32
+            149428..149437 'cos(half)': f32
+            149432..149436 'half': f32
+            149463..149464 's': f32
+            149467..149476 'sin(half)': f32
+            149471..149475 'half': f32
+            149501..149503 'op': ptr<storage, Op, read>
+            149501..149506 'op.id': ref<storage, u32, read>
+            149501..149518 'op.id ...ID_RXX': bool
+            149510..149518 'OPID_RXX': u32
+            149593..149597 'shot': ptr<storage, ShotData, read_write>
+            149593..149605 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            149593..149608 'shot.unitary[0]': ref<storage, vec2<f32>, read_write>
+            149606..149607 '0': integer
+            149612..149625 'vec2f(c, 0.0)': vec2<f32>
+            149618..149619 'c': f32
+            149621..149624 '0.0': float
+            149651..149655 'shot': ptr<storage, ShotData, read_write>
+            149651..149663 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            149651..149666 'shot.unitary[3]': ref<storage, vec2<f32>, read_write>
+            149664..149665 '3': integer
+            149670..149684 'vec2f(0.0, -s)': vec2<f32>
+            149676..149679 '0.0': float
+            149681..149683 '-s': f32
+            149682..149683 's': f32
+            149710..149714 'shot': ptr<storage, ShotData, read_write>
+            149710..149722 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            149710..149725 'shot.unitary[5]': ref<storage, vec2<f32>, read_write>
+            149723..149724 '5': integer
+            149729..149742 'vec2f(c, 0.0)': vec2<f32>
+            149735..149736 'c': f32
+            149738..149741 '0.0': float
+            149768..149772 'shot': ptr<storage, ShotData, read_write>
+            149768..149780 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            149768..149783 'shot.unitary[6]': ref<storage, vec2<f32>, read_write>
+            149781..149782 '6': integer
+            149787..149801 'vec2f(0.0, -s)': vec2<f32>
+            149793..149796 '0.0': float
+            149798..149800 '-s': f32
+            149799..149800 's': f32
+            149827..149831 'shot': ptr<storage, ShotData, read_write>
+            149827..149839 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            149827..149842 'shot.unitary[9]': ref<storage, vec2<f32>, read_write>
+            149840..149841 '9': integer
+            149846..149860 'vec2f(0.0, -s)': vec2<f32>
+            149852..149855 '0.0': float
+            149857..149859 '-s': f32
+            149858..149859 's': f32
+            149886..149890 'shot': ptr<storage, ShotData, read_write>
+            149886..149898 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            149886..149902 'shot.u...ry[10]': ref<storage, vec2<f32>, read_write>
+            149899..149901 '10': integer
+            149905..149918 'vec2f(c, 0.0)': vec2<f32>
+            149911..149912 'c': f32
+            149914..149917 '0.0': float
+            149944..149948 'shot': ptr<storage, ShotData, read_write>
+            149944..149956 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            149944..149960 'shot.u...ry[12]': ref<storage, vec2<f32>, read_write>
+            149957..149959 '12': integer
+            149963..149977 'vec2f(0.0, -s)': vec2<f32>
+            149969..149972 '0.0': float
+            149974..149976 '-s': f32
+            149975..149976 's': f32
+            150003..150007 'shot': ptr<storage, ShotData, read_write>
+            150003..150015 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            150003..150019 'shot.u...ry[15]': ref<storage, vec2<f32>, read_write>
+            150016..150018 '15': integer
+            150022..150035 'vec2f(c, 0.0)': vec2<f32>
+            150028..150029 'c': f32
+            150031..150034 '0.0': float
+            150159..150163 'shot': ptr<storage, ShotData, read_write>
+            150159..150171 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            150159..150174 'shot.unitary[0]': ref<storage, vec2<f32>, read_write>
+            150172..150173 '0': integer
+            150178..150191 'vec2f(c, 0.0)': vec2<f32>
+            150184..150185 'c': f32
+            150187..150190 '0.0': float
+            150217..150221 'shot': ptr<storage, ShotData, read_write>
+            150217..150229 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            150217..150232 'shot.unitary[3]': ref<storage, vec2<f32>, read_write>
+            150230..150231 '3': integer
+            150236..150249 'vec2f(0.0, s)': vec2<f32>
+            150242..150245 '0.0': float
+            150247..150248 's': f32
+            150275..150279 'shot': ptr<storage, ShotData, read_write>
+            150275..150287 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            150275..150290 'shot.unitary[5]': ref<storage, vec2<f32>, read_write>
+            150288..150289 '5': integer
+            150294..150307 'vec2f(c, 0.0)': vec2<f32>
+            150300..150301 'c': f32
+            150303..150306 '0.0': float
+            150333..150337 'shot': ptr<storage, ShotData, read_write>
+            150333..150345 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            150333..150348 'shot.unitary[6]': ref<storage, vec2<f32>, read_write>
+            150346..150347 '6': integer
+            150352..150366 'vec2f(0.0, -s)': vec2<f32>
+            150358..150361 '0.0': float
+            150363..150365 '-s': f32
+            150364..150365 's': f32
+            150392..150396 'shot': ptr<storage, ShotData, read_write>
+            150392..150404 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            150392..150407 'shot.unitary[9]': ref<storage, vec2<f32>, read_write>
+            150405..150406 '9': integer
+            150411..150425 'vec2f(0.0, -s)': vec2<f32>
+            150417..150420 '0.0': float
+            150422..150424 '-s': f32
+            150423..150424 's': f32
+            150451..150455 'shot': ptr<storage, ShotData, read_write>
+            150451..150463 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            150451..150467 'shot.u...ry[10]': ref<storage, vec2<f32>, read_write>
+            150464..150466 '10': integer
+            150470..150483 'vec2f(c, 0.0)': vec2<f32>
+            150476..150477 'c': f32
+            150479..150482 '0.0': float
+            150509..150513 'shot': ptr<storage, ShotData, read_write>
+            150509..150521 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            150509..150525 'shot.u...ry[12]': ref<storage, vec2<f32>, read_write>
+            150522..150524 '12': integer
+            150528..150541 'vec2f(0.0, s)': vec2<f32>
+            150534..150537 '0.0': float
+            150539..150540 's': f32
+            150567..150571 'shot': ptr<storage, ShotData, read_write>
+            150567..150579 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            150567..150583 'shot.u...ry[15]': ref<storage, vec2<f32>, read_write>
+            150580..150582 '15': integer
+            150586..150599 'vec2f(c, 0.0)': vec2<f32>
+            150592..150593 'c': f32
+            150595..150598 '0.0': float
+            150715..150719 'shot': ptr<storage, ShotData, read_write>
+            150715..150727 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            150715..150730 'shot.unitary[0]': ref<storage, vec2<f32>, read_write>
+            150728..150729 '0': integer
+            150734..150749 'vec2f(1.0, 0.0)': vec2<f32>
+            150740..150743 '1.0': float
+            150745..150748 '0.0': float
+            150775..150779 'shot': ptr<storage, ShotData, read_write>
+            150775..150787 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            150775..150790 'shot.unitary[5]': ref<storage, vec2<f32>, read_write>
+            150788..150789 '5': integer
+            150794..150823 'vec2f(...ngle))': vec2<f32>
+            150800..150810 'cos(angle)': f32
+            150804..150809 'angle': f32
+            150812..150822 'sin(angle)': f32
+            150816..150821 'angle': f32
+            150849..150853 'shot': ptr<storage, ShotData, read_write>
+            150849..150861 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            150849..150865 'shot.u...ry[10]': ref<storage, vec2<f32>, read_write>
+            150862..150864 '10': integer
+            150868..150897 'vec2f(...ngle))': vec2<f32>
+            150874..150884 'cos(angle)': f32
+            150878..150883 'angle': f32
+            150886..150896 'sin(angle)': f32
+            150890..150895 'angle': f32
+            150923..150927 'shot': ptr<storage, ShotData, read_write>
+            150923..150935 'shot.unitary': ref<storage, array<vec2<f32>, 16>, read_write>
+            150923..150939 'shot.u...ry[15]': ref<storage, vec2<f32>, read_write>
+            150936..150938 '15': integer
+            150942..150957 'vec2f(1.0, 0.0)': vec2<f32>
+            150948..150951 '1.0': float
+            150953..150956 '0.0': float
+            151026..151030 'shot': ptr<storage, ShotData, read_write>
+            151026..151037 'shot.op_idx': ref<storage, u32, read_write>
+            151040..151046 'op_idx': u32
+            151060..151064 'shot': ptr<storage, ShotData, read_write>
+            151060..151072 'shot.op_type': ref<storage, u32, read_write>
+            151075..151077 'op': ptr<storage, Op, read>
+            151075..151080 'op.id': ref<storage, u32, read>
+            151220..151236 'has_lo...perand': bool
+            151239..151286 'gate_h...1, q2)': bool
+            151261..151269 'shot_idx': u32
+            151271..151277 'op_idx': u32
+            151279..151281 'q1': u32
+            151283..151285 'q2': u32
+            151304..151320 'has_lo...perand': bool
+            151340..151392 'handle...1, q2)': [error]
+            151367..151375 'shot_idx': u32
+            151377..151383 'op_idx': u32
+            151385..151387 'q1': u32
+            151389..151391 'q2': u32
+            151492..151504 'pauli_op_idx': u32
+            151507..151534 'get_pa...p_idx)': u32
+            151527..151533 'op_idx': u32
+            151639..151651 'pauli_op_idx': u32
+            151639..151657 'pauli_... != 0u': bool
+            151655..151657 '0u': u32
+            151679..151682 'ops': ref<storage, array<Op>, read>
+            151679..151696 'ops[pa...p_idx]': ref<storage, Op, read>
+            151679..151699 'ops[pa...dx].id': ref<storage, u32, read>
+            151679..151722 'ops[pa...ISE_1Q': bool
+            151683..151695 'pauli_op_idx': u32
+            151703..151722 'OPID_P...ISE_1Q': u32
+            151898..151915 '!has_l...perand': bool
+            151899..151915 'has_lo...perand': bool
+            151943..151999 'apply_...x, q1)': [error]
+            151964..151972 'shot_idx': u32
+            151974..151980 'op_idx': u32
+            151982..151994 'pauli_op_idx': u32
+            151996..151998 'q1': u32
+            152072..152088 'has_lo...perand': bool
+            152273..152345 'apply_...1, q2)': [error]
+            152306..152314 'shot_idx': u32
+            152316..152322 'op_idx': u32
+            152324..152336 'pauli_op_idx': u32
+            152338..152340 'q1': u32
+            152342..152344 'q2': u32
+            152400..152460 'apply_...1, q2)': [error]
+            152421..152429 'shot_idx': u32
+            152431..152437 'op_idx': u32
+            152439..152451 'pauli_op_idx': u32
+            152453..152455 'q1': u32
+            152457..152459 'q2': u32
+            152518..152523 'shots': ref<storage, array<ShotData>, read_write>
+            152518..152533 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            152518..152540 'shots[...interp': ref<storage, InterpreterState, read_write>
+            152518..152547 'shots[...status': ref<storage, u32, read_write>
+            152524..152532 'shot_idx': u32
+            152550..152564 'STATUS_RUNNING': u32
+            152785..152801 'has_lo...perand': bool
+            152821..152826 'shots': ref<storage, array<ShotData>, read_write>
+            152821..152836 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            152821..152843 'shots[...interp': ref<storage, InterpreterState, read_write>
+            152821..152850 'shots[...status': ref<storage, u32, read_write>
+            152827..152835 'shot_idx': u32
+            152853..152867 'STATUS_RUNNING': u32
+            152976..153018 'finali...1, q2)': [error]
+            152993..153001 'shot_idx': u32
+            153003..153009 'op_idx': u32
+            153011..153013 'q1': u32
+            153015..153017 'q2': u32
+            153043..153045 '1u': u32
+            153232..153244 'pauli_op_idx': u32
+            153247..153274 'get_pa...p_idx)': u32
+            153267..153273 'op_idx': u32
+            153292..153304 'pauli_op_idx': u32
+            153292..153310 'pauli_... != 0u': bool
+            153308..153310 '0u': u32
+            153588..153591 'ops': ref<storage, array<Op>, read>
+            153588..153605 'ops[pa...p_idx]': ref<storage, Op, read>
+            153588..153608 'ops[pa...dx].id': ref<storage, u32, read>
+            153588..153631 'ops[pa...ISE_1Q': bool
+            153592..153604 'pauli_op_idx': u32
+            153612..153631 'OPID_P...ISE_1Q': u32
+            153654..153710 'apply_...x, q1)': [error]
+            153675..153683 'shot_idx': u32
+            153685..153691 'op_idx': u32
+            153693..153705 'pauli_op_idx': u32
+            153707..153709 'q1': u32
+            153757..153817 'apply_...1, q2)': [error]
+            153778..153786 'shot_idx': u32
+            153788..153794 'op_idx': u32
+            153796..153808 'pauli_op_idx': u32
+            153810..153812 'q1': u32
+            153814..153816 'q2': u32
+            153853..153858 'shots': ref<storage, array<ShotData>, read_write>
+            153853..153868 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            153853..153875 'shots[...interp': ref<storage, InterpreterState, read_write>
+            153853..153882 'shots[...status': ref<storage, u32, read_write>
+            153859..153867 'shot_idx': u32
+            153885..153899 'STATUS_RUNNING': u32
+            154001..154007 'resets': bool
+            154010..154012 'op': ptr<storage, Op, read>
+            154010..154015 'op.id': ref<storage, u32, read>
+            154010..154031 'op.id ...RESETZ': bool
+            154019..154031 'OPID_MRESETZ': u32
+            154045..154110 'prep_m...esets)': [error]
+            154064..154072 'shot_idx': u32
+            154074..154080 'op_idx': u32
+            154082..154084 'q1': u32
+            154086..154088 'q2': u32
+            154090..154095 'false': bool
+            154097..154101 'true': bool
+            154103..154109 'resets': bool
+            154135..154137 '2u': u32
+            154161..154225 'prep_m... true)': [error]
+            154180..154188 'shot_idx': u32
+            154190..154196 'op_idx': u32
+            154198..154200 'q1': u32
+            154202..154204 'q2': u32
+            154206..154211 'false': bool
+            154213..154218 'false': bool
+            154220..154224 'true': bool
+            154267..154271 'shot': ptr<storage, ShotData, read_write>
+            154267..154279 'shot.op_type': ref<storage, u32, read_write>
+            154282..154289 'OPID_ID': u32
+            154382..154387 'shots': ref<storage, array<ShotData>, read_write>
+            154382..154397 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            154382..154404 'shots[...interp': ref<storage, InterpreterState, read_write>
+            154382..154411 'shots[...status': ref<storage, u32, read_write>
+            154388..154396 'shot_idx': u32
+            154414..154428 'STATUS_RUNNING': u32
+            154753..154761 'globalId': vec3<u32>
+            154784..154795 'IS_ADAPTIVE': bool
+            154807..154843 'prepar...lId.x)': [error]
+            154832..154840 'globalId': vec3<u32>
+            154832..154842 'globalId.x': u32
+            154866..154898 'prepar...lId.x)': [error]
+            154887..154895 'globalId': vec3<u32>
+            154887..154897 'globalId.x': u32
+            155000..155011 'workgroupId': vec3<u32>
+            155065..155068 'tid': u32
+            155085..155093 'shot_idx': i32
+            155101..155119 'i32(wo...pId.x)': i32
+            155101..155141 'i32(wo...R_SHOT': i32
+            155105..155116 'workgroupId': vec3<u32>
+            155105..155118 'workgroupId.x': u32
+            155122..155141 'WORKGR...R_SHOT': i32
+            155151..155155 'shot': ptr<storage, ShotData, read_write>
+            155158..155174 '&shots...t_idx]': ptr<storage, ShotData, read_write>
+            155159..155164 'shots': ref<storage, array<ShotData>, read_write>
+            155159..155174 'shots[shot_idx]': ref<storage, ShotData, read_write>
+            155165..155173 'shot_idx': i32
+            155381..155393 'update_probs': bool
+            155396..155400 'shot': ptr<storage, ShotData, read_write>
+            155396..155408 'shot.op_type': ref<storage, u32, read_write>
+            155396..155419 'shot.o...PID_ID': bool
+            155396..155460 'shot.o..._NOISE': bool
+            155396..155499 'shot.o...PID_RZ': bool
+            155396..155526 'shot.o...PID_CZ': bool
+            155396..155554 'shot.o...ID_RZZ': bool
+            155412..155419 'OPID_ID': u32
+            155423..155427 'shot': ptr<storage, ShotData, read_write>
+            155423..155435 'shot.op_type': ref<storage, u32, read_write>
+            155423..155460 'shot.o..._NOISE': bool
+            155439..155460 'OPID_C..._NOISE': u32
+            155476..155480 'shot': ptr<storage, ShotData, read_write>
+            155476..155488 'shot.op_type': ref<storage, u32, read_write>
+            155476..155499 'shot.o...PID_RZ': bool
+            155492..155499 'OPID_RZ': u32
+            155503..155507 'shot': ptr<storage, ShotData, read_write>
+            155503..155515 'shot.op_type': ref<storage, u32, read_write>
+            155503..155526 'shot.o...PID_CZ': bool
+            155519..155526 'OPID_CZ': u32
+            155530..155534 'shot': ptr<storage, ShotData, read_write>
+            155530..155542 'shot.op_type': ref<storage, u32, read_write>
+            155530..155554 'shot.o...ID_RZZ': bool
+            155546..155554 'OPID_RZZ': u32
+            155565..155569 'shot': ptr<storage, ShotData, read_write>
+            155565..155577 'shot.op_type': ref<storage, u32, read_write>
+            155565..155588 'shot.o...PID_ID': bool
+            155581..155588 'OPID_ID': u32
+            155674..155716 'apply_..., tid)': [error]
+            155697..155708 'workgroupId': vec3<u32>
+            155697..155710 'workgroupId.x': u32
+            155712..155715 'tid': u32
+            155878..155922 'apply_...p_idx)': [error]
+            155890..155901 'workgroupId': vec3<u32>
+            155890..155903 'workgroupId.x': u32
+            155905..155908 'tid': u32
+            155910..155914 'shot': ptr<storage, ShotData, read_write>
+            155910..155921 'shot.op_idx': ref<storage, u32, read_write>
+            155977..155979 'q1': ref<function, u32, read_write>
+            155998..156009 'IS_ADAPTIVE': bool
+            156025..156027 'q1': ref<function, u32, read_write>
+            156030..156055 'resolv..._idx))': u32
+            156041..156054 'u32(shot_idx)': u32
+            156045..156053 'shot_idx': i32
+            156086..156088 'q1': ref<function, u32, read_write>
+            156091..156094 'ops': ref<storage, array<Op>, read>
+            156091..156107 'ops[sh...p_idx]': ref<storage, Op, read>
+            156091..156110 'ops[sh...dx].q1': ref<storage, u32, read>
+            156095..156099 'shot': ptr<storage, ShotData, read_write>
+            156095..156106 'shot.op_idx': ref<storage, u32, read_write>
+            156130..156165 'apply_...d, q1)': [error]
+            156142..156153 'workgroupId': vec3<u32>
+            156142..156155 'workgroupId.x': u32
+            156157..156160 'tid': u32
+            156162..156164 'q1': ref<function, u32, read_write>
+            156209..156211 'q1': ref<function, u32, read_write>
+            156230..156232 'q2': ref<function, u32, read_write>
+            156251..156262 'IS_ADAPTIVE': bool
+            156278..156280 'q1': ref<function, u32, read_write>
+            156283..156308 'resolv..._idx))': u32
+            156294..156307 'u32(shot_idx)': u32
+            156298..156306 'shot_idx': i32
+            156322..156324 'q2': ref<function, u32, read_write>
+            156327..156352 'resolv..._idx))': u32
+            156338..156351 'u32(shot_idx)': u32
+            156342..156350 'shot_idx': i32
+            156383..156385 'q1': ref<function, u32, read_write>
+            156388..156391 'ops': ref<storage, array<Op>, read>
+            156388..156404 'ops[sh...p_idx]': ref<storage, Op, read>
+            156388..156407 'ops[sh...dx].q1': ref<storage, u32, read>
+            156392..156396 'shot': ptr<storage, ShotData, read_write>
+            156392..156403 'shot.op_idx': ref<storage, u32, read_write>
+            156421..156423 'q2': ref<function, u32, read_write>
+            156426..156429 'ops': ref<storage, array<Op>, read>
+            156426..156442 'ops[sh...p_idx]': ref<storage, Op, read>
+            156426..156445 'ops[sh...dx].q2': ref<storage, u32, read>
+            156430..156434 'shot': ptr<storage, ShotData, read_write>
+            156430..156441 'shot.op_idx': ref<storage, u32, read_write>
+            156465..156504 'apply_...1, q2)': [error]
+            156477..156488 'workgroupId': vec3<u32>
+            156477..156490 'workgroupId.x': u32
+            156492..156495 'tid': u32
+            156497..156499 'q1': ref<function, u32, read_write>
+            156501..156503 'q2': ref<function, u32, read_write>
+            156673..156691 'workgr...rier()': [error]
+            157014..157017 'tid': u32
+            157014..157022 'tid == 0': bool
+            157014..157038 'tid ==..._probs': bool
+            157021..157022 '0': integer
+            157026..157038 'update_probs': bool
+            157054..157077 'workgr...on_idx': i32
+            157085..157140 'select...T > 1)': i32
+            157092..157094 '-1': integer
+            157093..157094 '1': integer
+            157096..157114 'i32(wo...pId.x)': i32
+            157100..157111 'workgroupId': vec3<u32>
+            157100..157113 'workgroupId.x': u32
+            157116..157135 'WORKGR...R_SHOT': i32
+            157116..157139 'WORKGR...OT > 1': bool
+            157138..157139 '1': integer
+            157159..157160 'q': ref<function, u32, read_write>
+            157168..157170 '0u': u32
+            157172..157173 'q': ref<function, u32, read_write>
+            157172..157192 'q < u3...COUNT)': bool
+            157176..157192 'u32(QU...COUNT)': u32
+            157180..157191 'QUBIT_COUNT': i32
+            157194..157195 'q': ref<function, u32, read_write>
+            157216..157268 '(shot.... != 0u': bool
+            157217..157221 'shot': ptr<storage, ShotData, read_write>
+            157217..157249 'shot.q...p_mask': ref<storage, u32, read_write>
+            157217..157261 'shot.q... << q)': u32
+            157253..157255 '1u': u32
+            157253..157260 '1u << q': u32
+            157259..157260 'q': ref<function, u32, read_write>
+            157266..157268 '0u': u32
+            157287..157350 'sum_th...n_idx)': [error]
+            157313..157314 'q': ref<function, u32, read_write>
+            157316..157324 'shot_idx': i32
+            157326..157349 'workgr...on_idx': i32
         "#]],
     );
 }

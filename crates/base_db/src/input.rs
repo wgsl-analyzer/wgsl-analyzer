@@ -1,5 +1,5 @@
 //! This module specifies the input to wgsl-analyzer. In some sense, this is
-//! **the** most important module, because all other fancy stuff is strictly
+//! **the** most important module because all other fancy stuff is strictly
 //! derived from this input.
 //!
 //! Note that neither this module, nor any other part of the analyzer's core do
@@ -27,14 +27,11 @@ pub struct SourceRootId(pub u32);
 
 /// The root of the source code.
 ///
-/// Files are grouped into source roots. A source root is a directory on the
-/// file systems which is watched for changes.
+/// Files are grouped into source roots. A source root is a directory on the file systems which is watched for changes.
 /// Typically it corresponds to a WESL package.
-/// Source roots *might* be nested: in this case, a file belongs to
-/// the nearest enclosing source root. Paths to files are always relative to a
-/// source root, and the analyzer does not know the root path of the source root at
-/// all. So, a file from one source root can't refer to a file in another source
-/// root by path.
+/// Source roots *might* be nested; in this case, a file belongs to the nearest enclosing source root.
+/// Paths to files are always relative to a source root, and the analyzer does not know the root path of the source root at all.
+/// Thus, a file from one source root can't refer to a file in another source root by path.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SourceRoot {
     /// Libraries are considered mostly immutable, this assumption is used to
@@ -226,10 +223,6 @@ pub struct PackageData {
     /// (only names in [`Dependency`] matters).
     pub display_name: Option<String>,
     /// The dependencies of this package.
-    ///
-    /// Note that this may contain more dependencies than the package actually uses.
-    /// A common example is the test package which is included but only actually is active when
-    /// declared in source via `extern package test`.
     ///
     /// Dependencies can be cyclic, although wgsl-analyzer will log a warning for that.
     /// Having an accurate package graph is important and code has to account for possible cycles

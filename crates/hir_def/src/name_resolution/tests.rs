@@ -1,9 +1,10 @@
 mod imports;
 mod item_scopes;
 
+use std::fmt::Write as _;
+
 use expect_test::{Expect, expect};
 use itertools::Itertools as _;
-use std::fmt::Write as _;
 use test_fixture::WithFixture as _;
 
 use crate::{item_scope::ItemScope, name_resolution::ModulesMap, test_db::TestDatabase};

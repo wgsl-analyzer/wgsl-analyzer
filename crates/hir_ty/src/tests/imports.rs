@@ -165,7 +165,7 @@ fn cannot_import_imported_item() {
     check_infer(
         "
         //- /package.wesl edition:2026_pre
-        const b = package::foo::A; // this should fail, because A is not public
+        const b = package::foo::A; // this should fail because A is not public
 
         //- /foo.wesl
         import package::foo::utils::A;

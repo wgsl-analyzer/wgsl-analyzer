@@ -14,8 +14,7 @@ mod wesl;
 
 use base_db::{EditionedFileId, FilePosition, SourceDatabase, change};
 use expect_test::{Expect, expect};
-use hir::db::HirDatabase;
-use hir::setup_tracing;
+use hir::{db::HirDatabase, setup_tracing};
 use ide_db::{FileId, RootDatabase, SnippetCapability};
 use itertools::Itertools as _;
 use stdx::{format_to, trim_indent};

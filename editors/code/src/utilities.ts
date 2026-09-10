@@ -73,7 +73,7 @@ export type WeslDocument = vscode.TextDocument & ({ languageId: "wesl" } | { lan
 export type WeslEditor = vscode.TextEditor & { document: WeslDocument };
 
 export function isWeslDocument(document: vscode.TextDocument): document is WeslDocument {
-	// Prevent corrupted text (particularly via inlay hints) in diff views
+	// Prevent corrupted text (particularly when using inlay hints) in diff views
 	// by allowing only `file` schemes.
 	// Unfortunately, extensions that use diff views not always set this
 	// to something different than "file".

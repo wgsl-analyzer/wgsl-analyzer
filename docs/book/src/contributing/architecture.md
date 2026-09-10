@@ -183,7 +183,7 @@ These crates also define various intermediate representations of the core.
 
 **Architecture Invariant:** these crates explicitly care about being incremental.
 The core invariant we maintain is "typing inside a function's body never invalidates global derived data".
-i.e., if you change the body of `foo`, all facts about `bar` should remain intact.
+In other words, if you change the body of `foo`, all facts about `bar` should remain intact.
 
 **Architecture Invariant:** hir exists only in context of particular crate instance with specific CFG flags.
 The same syntax may produce several instances of HIR if the crate participates in the crate graph more than once.
@@ -216,7 +216,7 @@ This is some kind of (yet unnamed) uber-IDE pattern, as it is present in Roslyn 
 
 The `ide` crate builds on top of `hir` semantic model to provide high-level IDE features like completion or goto definition.
 It is an **API Boundary**.
-If you want to use IDE parts of `wgsl-analyzer` via LSP, custom flatbuffers-based protocol or just as a library in your text editor, this is the right API.
+Whether you want to use IDE parts of `wgsl-analyzer` through the LSP, a custom flatbuffers-based protocol, or just as a library in your text editor, this is the right API.
 
 **Architecture Invariant:** `ide` crate's API is build out of POD types with public fields.
 The API uses editor's terminology, it talks about offsets and string labels rather than in terms of definitions or types.
@@ -264,15 +264,15 @@ This is a tricky business.
 **Architecture Invariant:** `wgsl-analyzer` should be partially available even when the build is broken.
 Reloading process should not prevent IDE features from working.
 
-### `crates/toolchain`, `crates/project-model`, `crates/flycheck`
+### `crates/toolchain` and `crates/project-model`
 
-These crates deal with invoking [`wesl`](https://github.com/wgsl-tooling-wg/wesl-rs) to learn about project structure and get compiler errors for the "check on save" feature.
+These crates deal with project structure and tooling on-disk.
 
 A single `wgsl-analyzer` process can serve many projects, so it is important that the server's current working directory does not leak.
 Therefore, these crates especially use `paths` instead of `std::path`.
 
 **Architecture Invariant:** vfs does not assume a single unified file system.
-i.e., a single `wgsl-analyzer` process can act as a remote server for two different machines, where the same `/tmp/foo.rs` path points to different files.
+In other words, a single `wgsl-analyzer` process can act as a remote server for two different machines, where the same `/tmp/foo.rs` path points to different files.
 For this reason, all path APIs generally take some existing path as a "file system witness".
 
 ### `crates/stdx`
@@ -288,7 +288,7 @@ This crate contains utilities for CPU and memory profiling.
 TODO: See https://github.com/wgsl-analyzer/wgsl-analyzer/issues/361
 ### `crates/intern`
 
-This crate contains infrastructure for globally interning things via `Arc`.
+This crate contains infrastructure for globally interning things using `Arc`.
 -->
 
 ### `crates/span`
@@ -353,7 +353,7 @@ wgsl-analyzer has three interesting [system boundaries](https://www.tedinski.com
 
 The outermost boundary is the `wgsl-analyzer` crate, which defines an LSP interface in terms of stdio.
 We do integration testing of this component, by feeding it with a stream of LSP requests and checking responses.
-These tests are known as "heavy", because they interact with Cargo and read real files from disk.
+These tests are known as "heavy" because they interact with Cargo and read real files from disk.
 For this reason, we try to avoid writing too many tests on this boundary: in a statically typed language, it is hard to make an error in the protocol itself if messages are themselves typed.
 Heavy tests are only run when `RUN_SLOW_TESTS` environment variable is set.
 
@@ -376,7 +376,7 @@ All required library code must be a part of the tests.
 This ensures fast test execution.
 
 **Architecture Invariant:** tests are data driven and do not test the API.
-Tests which directly call various API functions are a liability, because they make refactoring the API significantly more complicated.
+Tests which directly call various API functions are a liability because they make refactoring the API significantly more complicated.
 Most of the tests look like this:
 
 ```rust

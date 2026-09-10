@@ -2,8 +2,9 @@
 
 #![expect(clippy::too_many_lines, reason = "snapshot test data")]
 
-use crate::tests::{check, completion_list};
 use expect_test::expect;
+
+use crate::tests::{check, completion_list};
 
 #[test]
 fn complete_struct_field() {

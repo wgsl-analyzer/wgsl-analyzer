@@ -25,6 +25,6 @@ Start with the mdBook [User Guide](https://rust-lang.github.io/mdBook/guide/inst
 
 Four sections are generated dynamically: assists, configuration, diagnostics, and features.
 Their content is found in the `generated.md` files of the respective book section.
-For example, `src/configuration_generated.md`, and are included in the book via mdBook's
+For example, `src/configuration_generated.md`, and are included in the book using mdBook's
 [include](https://rust-lang.github.io/mdBook/format/mdbook.html#including-files) functionality.
 Generated files can be rebuilt by running the various test cases that generate them, or by simply running all of the `wgsl-analyzer` tests with `cargo test` and `cargo xtask codegen`.

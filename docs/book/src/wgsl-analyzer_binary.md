@@ -58,7 +58,7 @@ TODO make this real
 
 <!-- TODO publish to brew -->
 
-The `wgsl-analyzer` binary can be installed via [Homebrew](https://brew.sh).
+The `wgsl-analyzer` binary can be installed through [Homebrew](https://brew.sh).
 
 ```zsh
 brew install wgsl-analyzer
@@ -70,7 +70,7 @@ brew install wgsl-analyzer
 TODO publish to winget
 TODO publish to choco
 
-The `wgsl-analyzer` binary can be installed via [WinGet](https://github.com/microsoft/winget-cli) or [Chocolatey](https://github.com/chocolatey/choco).
+The `wgsl-analyzer` binary can be installed through [WinGet](https://github.com/microsoft/winget-cli) or [Chocolatey](https://github.com/chocolatey/choco).
 
 ```powershell
 winget install wgsl-analyzer

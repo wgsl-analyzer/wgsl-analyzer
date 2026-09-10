@@ -175,7 +175,7 @@ Explicit trivia nodes, like in `rowan`, are used by IntelliJ.
 
 ##### Accessing Children
 
-As noted before, accessing a specific child in the node requires a linear traversal of the children (though we can skip tokens, because the tag is encoded in the pointer itself).
+As noted before, accessing a specific child in the node requires a linear traversal of the children (though we can skip tokens because the tag is encoded in the pointer itself).
 It is possible to recover O(1) access with another representation.
 We explicitly store optional and missing (required by the grammar, but not present) nodes.
 That is, we use `Option<Node>` for children.
@@ -331,7 +331,7 @@ C# combats increased memory usage by using weak references.
 
 ### AST
 
-`GreenTree`s are untyped and homogeneous, because it makes accommodating error nodes, arbitrary whitespace, and comments natural, and because it makes it possible to write generic tree traversals.
+`GreenTree`s are untyped and homogeneous because it makes accommodating error nodes, arbitrary whitespace, and comments natural, and because it makes it possible to write generic tree traversals.
 However, when working with a specific node, like a function definition, one would want a strongly typed API.
 
 This is what is provided by the AST layer. AST nodes are transparent wrappers over untyped syntax nodes:
@@ -395,7 +395,7 @@ impl AstNode for AssocItem {
 }
 ```
 
-Shared AST substructures are modeled via (dynamically compatible) traits:
+Shared AST substructures are modeled using (dyn-compatible) traits:
 
 ```rust
 trait HasVisibility: AstNode {
