@@ -134,3 +134,54 @@ pub(crate) fn format_long_type_alias_linewidth_outside_inner_break_outer_argumen
         }.into(),
     );
 }
+
+#[test]
+pub(crate) fn format_return_type_prefer_not_breaking_single_arg_template() {
+    check_with_options(
+        "
+        //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
+        fn with_long_name_and_long_params(param_a: u32, param_b: u32, par: u32) -> vec<
+            f32,
+        > {}
+        ",
+        expect![[r#"
+            //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
+            fn with_long_name_and_long_params(
+                param_a: u32,
+                param_b: u32,
+                par: u32,
+            ) -> vec<f32> {}
+        "#]],
+        &FormattingOptions {
+            max_line_width: 80,
+            ..Default::default()
+        }
+        .into(),
+    );
+}
+
+#[test]
+pub(crate) fn format_return_type_prefer_breaking_multi_arg_template() {
+    check_with_options(
+        "
+        //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
+        fn with_long_name_and_long_params(pa: u32, par_b: u32, par: u32) -> array<
+            f32,
+            16
+        > {}
+        ",
+        expect![[r#"
+            //Ruler:_|10_____20|_______30|_______40|_______50|_______60|_______70|_______80|
+            fn with_long_name_and_long_params(
+                pa: u32,
+                par_b: u32,
+                par: u32,
+            ) -> array<f32, 16> {}
+        "#]],
+        &FormattingOptions {
+            max_line_width: 80,
+            ..Default::default()
+        }
+        .into(),
+    );
+}

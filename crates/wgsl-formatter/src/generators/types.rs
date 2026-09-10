@@ -74,19 +74,30 @@ pub(crate) fn gen_template_list(
 
     let mut multiline_group = MultilineGroup::new_before_requests(&mut formatted);
     multiline_group.push_sc(sc!("<"));
-    multiline_group.request(Request::discourage(RequestItem::EmptyLine));
     multiline_group.request(Request::discourage(RequestItem::Space));
 
     // If its blank we do not give the formatter the option to break within the <>
     if !item_arguments.is_empty() {
         multiline_group.start_indent_before_requests();
 
+        if !must_be_oneline {
+            // Really discourage a newline here - but break into newlines if we are multiline anyways.
+            // This keeps single-argument templates as one line. We could simply not offer a newline,
+            // but then a long chain of one-arg templates would overflow
+            multiline_group.start_new_line_group_before_requests();
+            multiline_group.grouped_newline_or_space();
+            multiline_group.finish_new_line_group_after_requests();
+        }
+
         for (position, item) in item_arguments.into_iter().with_position() {
-            if must_be_oneline {
-                multiline_group.request(Request::expect(RequestItem::Space));
-            } else {
-                multiline_group.grouped_newline_or_space();
+            if position != Position::First && position != Position::Only {
+                if must_be_oneline {
+                    multiline_group.request(Request::expect(RequestItem::Space));
+                } else {
+                    multiline_group.grouped_newline_or_space();
+                }
             }
+
             multiline_group.extend(gen_node_preceding_trivia(&item)?);
             if item.has_content() {
                 multiline_group.extend(gen_node_content(&item)?);

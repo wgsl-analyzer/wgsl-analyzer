@@ -55,7 +55,12 @@ pub(crate) fn gen_function_declaration(
 
     // Return
     if let Some(item_return) = item_return {
+        // We would much rather break the params than the return type
+        formatted.start_new_line_group_before_requests();
+        formatted.start_new_line_group_before_requests();
         formatted.extend(gen_node_with_trivia(&item_return)?);
+        formatted.finish_new_line_group_after_requests();
+        formatted.finish_new_line_group_after_requests();
     }
 
     // Body
