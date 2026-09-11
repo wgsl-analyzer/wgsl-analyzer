@@ -70,9 +70,9 @@ impl From<PackageName> for PackageDisplayName {
 impl fmt::Display for PackageDisplayName {
     fn fmt(
         &self,
-        f: &mut fmt::Formatter<'_>,
+        formatter: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
-        self.package_name.fmt(f)
+        self.package_name.fmt(formatter)
     }
 }
 
