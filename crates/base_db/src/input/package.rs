@@ -206,3 +206,84 @@ pub(crate) fn package_by_id(
 
     package_by_id(db, InternedPackageId::new(db, id))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn from_package_name_sets_canonical_name_to_display_string() {
+        let package_name = PackageName::normalize_dashes("my_package");
+        let expected = package_name.to_string();
+        let display = PackageDisplayName::from(package_name);
+        assert_eq!(display.canonical_name(), &expected);
+    }
+
+    #[test]
+    fn from_package_name_preserves_package_name() {
+        let package_name = PackageName::normalize_dashes("my_package");
+        let expected = package_name.to_string();
+        let display = PackageDisplayName::from(package_name);
+        assert_eq!(display.package_name().to_string(), expected);
+    }
+
+    #[test]
+    fn from_canonical_name_preserves_raw_input_verbatim() {
+        let raw = "my-package";
+        let display = PackageDisplayName::from_canonical_name(raw);
+        assert_eq!(display.canonical_name(), raw);
+    }
+
+    #[test]
+    fn from_canonical_name_normalizes_package_name() {
+        let raw = "my-package";
+        let expected = PackageName::normalize_dashes(raw).to_string();
+        let display = PackageDisplayName::from_canonical_name(raw);
+        assert_eq!(display.package_name().to_string(), expected);
+    }
+
+    #[test]
+    fn canonical_name_and_package_name_can_diverge() {
+        let raw = "my-package";
+        let display = PackageDisplayName::from_canonical_name(raw);
+        assert_eq!(display.canonical_name(), raw);
+        assert_ne!(
+            display.canonical_name(),
+            &display.package_name().to_string()
+        );
+    }
+
+    #[test]
+    fn display_delegates_to_package_name_not_canonical_name() {
+        let raw = "my-package";
+        let expected = PackageName::normalize_dashes(raw).to_string();
+        let display = PackageDisplayName::from_canonical_name(raw);
+        assert_eq!(display.to_string(), expected);
+        assert_ne!(display.to_string(), raw);
+    }
+
+    #[test]
+    fn display_matches_source_package_name() {
+        let package_name = PackageName::normalize_dashes("my-package");
+        let expected = package_name.to_string();
+        let display = PackageDisplayName::from(package_name);
+        assert_eq!(display.to_string(), expected);
+    }
+
+    #[test]
+    fn deref_yields_underlying_string() {
+        let package_name = PackageName::normalize_dashes("my-package");
+        let expected = package_name.to_string();
+        let display = PackageDisplayName::from(package_name);
+        let deref_result: &String = &display;
+        assert_eq!(deref_result, &expected);
+    }
+
+    #[test]
+    #[expect(clippy::len_zero, reason = "intentional")]
+    fn deref_coercion_allows_string_methods() {
+        let display = PackageDisplayName::from_canonical_name("my-package");
+        assert!(!display.is_empty());
+        assert!(display.len() > 0);
+    }
+}
