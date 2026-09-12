@@ -3,7 +3,7 @@
 use std::{fmt, iter};
 
 use base_db::{EditionedFileId, Package, SourceDatabase};
-use camino::Utf8Component;
+use paths::Utf8Component;
 use smallvec::SmallVec;
 use syntax::ast::{self, ImportRelative};
 

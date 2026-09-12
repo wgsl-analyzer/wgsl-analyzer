@@ -11,11 +11,11 @@ impl Naga for Naga28 {
         naga28::front::wgsl::parse_str(source)
     }
 
-    fn validate(module: &Self::Module) -> Result<(), Self::ValidationError> {
+    fn validate(module: &Self::Module) -> Result<(), Box<Self::ValidationError>> {
         let flags = naga28::valid::ValidationFlags::all();
         let capabilities = naga28::valid::Capabilities::all();
         let mut validator = naga28::valid::Validator::new(flags, capabilities);
-        validator.validate(module).map(drop)
+        Ok(validator.validate(module).map(drop)?)
     }
 }
 

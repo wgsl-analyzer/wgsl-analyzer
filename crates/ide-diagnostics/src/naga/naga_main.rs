@@ -11,7 +11,7 @@ impl Naga for NagaMain {
         nagamain::front::wgsl::parse_str(source)
     }
 
-    fn validate(module: &Self::Module) -> Result<(), Self::ValidationError> {
+    fn validate(module: &Self::Module) -> Result<(), Box<Self::ValidationError>> {
         let flags = nagamain::valid::ValidationFlags::all();
         let capabilities = nagamain::valid::Capabilities::all();
         let mut validator = nagamain::valid::Validator::new(flags, capabilities);
