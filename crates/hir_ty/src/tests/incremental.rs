@@ -1,3 +1,5 @@
+#![expect(clippy::too_many_lines, reason = "snapshots can be long")]
+
 use base_db::{EditionedFileId, SourceDatabase as _};
 use expect_test::{Expect, expect};
 use hir_def::{
@@ -39,6 +41,12 @@ fn foo() {
                 "EditionedFileId::parse_",
                 "AstIdMap::of_",
                 "infer_query",
+                "builtin_package",
+                "file_package",
+                "ItemScope::of_",
+                "ItemTree::of_",
+                "EditionedFileId::parse_",
+                "AstIdMap::of_",
                 "ItemScope::of_",
                 "Body::of_",
                 "Body::with_source_map_",
@@ -121,6 +129,12 @@ fn baz() -> i32 {
                 "EditionedFileId::parse_",
                 "AstIdMap::of_",
                 "infer_query",
+                "builtin_package",
+                "file_package",
+                "ItemScope::of_",
+                "ItemTree::of_",
+                "EditionedFileId::parse_",
+                "AstIdMap::of_",
                 "ItemScope::of_",
                 "Body::of_",
                 "Body::with_source_map_",

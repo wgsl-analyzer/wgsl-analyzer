@@ -29,10 +29,11 @@ use lsp_types::{
     SignatureInformation, TextDocumentPositionParams, TextEdit as LspTextEdit, Tooltip, Uri,
 };
 use paths::{AbsPath, Utf8Component, Utf8Prefix};
+use percent_encoding::percent_encode;
 use rustc_hash::FxHasher;
 use semver::VersionReq; // spellchecker:disable-line
 use serde_json::to_value;
-use vfs::FileId;
+use vfs::{FileId, VirtualPath};
 
 use crate::{
     config::Config,
@@ -99,6 +100,9 @@ pub(crate) fn folding_range(
     }
 }
 
+pub const PATH_SCHEME: &str = "file";
+pub const VIRTUAL_PATH_SCHEME: &str = "wgsl";
+
 /// Returns a [`Uri`] object from a given path, will lowercase drive letters if present.
 /// This will only happen when processing windows paths.
 ///
@@ -132,6 +136,38 @@ pub(crate) fn url_from_abs_path(path: &AbsPath) -> lsp_types::Uri {
     let mut url: String = url.into();
     url[driver_letter_range].make_ascii_lowercase();
     lsp_types::Uri::parse(&url).unwrap()
+}
+
+/// List of symbols as specified by <https://url.spec.whatwg.org/#fragment-percent-encode-set> and <https://url.spec.whatwg.org/#path-percent-encode-set>.
+const SPECIAL_PATH_SEGMENT: &percent_encoding::AsciiSet = &percent_encoding::CONTROLS
+    .add(b' ')
+    .add(b'"')
+    .add(b'<')
+    .add(b'>')
+    .add(b'`')
+    .add(b'#')
+    .add(b'?')
+    .add(b'{')
+    .add(b'}')
+    .add(b'/')
+    .add(b'%')
+    .add(b'\\');
+
+pub(crate) fn url_from_virtual_path(path: &VirtualPath) -> lsp_types::Uri {
+    let mut uri = format!("{VIRTUAL_PATH_SCHEME}://");
+
+    let mut empty = true;
+    for component in path.components() {
+        empty = false;
+        uri.push('/');
+        uri.extend(percent_encode(component.as_bytes(), SPECIAL_PATH_SEGMENT));
+    }
+
+    if empty {
+        uri.push('/');
+    }
+
+    lsp_types::Uri::parse(&uri).unwrap()
 }
 
 pub(crate) fn range(
@@ -806,6 +842,8 @@ mod tests {
     use test_utils::extract_offset;
     use triomphe::Arc;
 
+    use crate::lsp::from_proto::url_to_virtual_path;
+
     use super::*;
 
     #[test]
@@ -899,5 +937,29 @@ fn bar(x: u32, y: bool) -> f32 { 0.0f }
                 }
             ])
         );
+    }
+
+    #[test]
+    fn virtual_path_conversion() {
+        let virtual_path = VirtualPath::new("/some/file.wesl".to_owned());
+
+        let url = url_from_virtual_path(&virtual_path);
+        let expected_url = expect!["wgsl:///some/file.wesl"];
+        expected_url.assert_eq(url.as_ref());
+
+        let decoded_path = url_to_virtual_path(&url).unwrap();
+        assert_eq!(virtual_path, decoded_path);
+    }
+
+    #[test]
+    fn empty_virtual_path_conversion() {
+        let virtual_path = VirtualPath::new(String::new());
+
+        let url = url_from_virtual_path(&virtual_path);
+        let expected_url = expect!["wgsl:///"];
+        expected_url.assert_eq(url.as_ref());
+
+        let decoded_path = url_to_virtual_path(&url).unwrap();
+        assert_eq!(virtual_path, decoded_path);
     }
 }

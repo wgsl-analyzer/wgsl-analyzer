@@ -59,7 +59,7 @@ use tracing::{Level, span};
 use crate::path_interner::PathInterner;
 pub use crate::{
     anchored_path::{AnchoredPath, AnchoredPathBuf},
-    vfs_path::VfsPath,
+    vfs_path::{VfsPath, VirtualPath},
 };
 
 /// Handle to a file in [`Vfs`].

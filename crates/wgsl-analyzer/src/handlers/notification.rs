@@ -288,7 +288,7 @@ pub(crate) fn handle_did_change_watched_files(
         .iter()
         .unique_by(|&file_event| &file_event.uri)
     {
-        if let Ok(path) = from_proto::absolute_path(&change.uri) {
+        if let Ok(path) = from_proto::url_to_absolute_path(&change.uri) {
             state.loader.handle.invalidate(path);
         }
     }

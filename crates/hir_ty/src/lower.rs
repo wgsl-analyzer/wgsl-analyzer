@@ -443,7 +443,7 @@ impl<'db> TypeLoweringContext<'db> {
         path: &Path,
         template_parameters: &[ExpressionId],
     ) -> Result<Lowered, TypeLoweringError> {
-        let resolved_type = self.resolver.resolve(self.db, path);
+        let resolved_type = self.resolver.resolve_path(self.db, path);
         let mut template_parameters = self.eval_template_args(type_container, template_parameters);
         match resolved_type {
             Ok(ResolveKind::TypeAlias(id)) => {

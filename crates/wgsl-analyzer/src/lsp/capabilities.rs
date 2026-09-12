@@ -9,15 +9,16 @@ use lsp_types::{
     FileOperationRegistrationOptions, FoldingRangeProvider, HoverProvider, InlayHintOptions,
     InlayHintProvider, MarkupKind, PositionEncodingKind, ResourceOperationKind, Save, SaveOptions,
     SelectionRangeProvider, ServerCapabilities, ServerCompletionItemOptions, SignatureHelpOptions,
-    TextDocumentSync, TextDocumentSyncKind, TextDocumentSyncOptions, WorkDoneProgressOptions,
-    WorkspaceFoldersServerCapabilities, WorkspaceOptions,
+    TextDocumentContent, TextDocumentContentOptions, TextDocumentSync, TextDocumentSyncKind,
+    TextDocumentSyncOptions, WorkDoneProgressOptions, WorkspaceFoldersServerCapabilities,
+    WorkspaceOptions,
 };
 use rustc_hash::FxHashSet;
 
 use crate::{
     config::{Config, WgslfmtConfig},
     line_index::PositionEncoding,
-    lsp::extensions,
+    lsp::{extensions, to_proto},
 };
 
 /// # Panics
@@ -109,7 +110,7 @@ pub fn server_capabilities(config: &Config) -> ServerCapabilities {
                 will_rename: Some(FileOperationRegistrationOptions {
                     filters: vec![
                         FileOperationFilter {
-                            scheme: Some(String::from("file")),
+                            scheme: Some(String::from(to_proto::PATH_SCHEME)),
                             pattern: FileOperationPattern {
                                 glob: String::from("**/*.{wesl,wgsl}"),
                                 matches: Some(FileOperationPatternKind::File),
@@ -117,7 +118,7 @@ pub fn server_capabilities(config: &Config) -> ServerCapabilities {
                             },
                         },
                         FileOperationFilter {
-                            scheme: Some(String::from("file")),
+                            scheme: Some(String::from(to_proto::PATH_SCHEME)),
                             pattern: FileOperationPattern {
                                 glob: String::from("**"),
                                 matches: Some(FileOperationPatternKind::Folder),
@@ -129,7 +130,9 @@ pub fn server_capabilities(config: &Config) -> ServerCapabilities {
                 did_delete: None,
                 will_delete: None,
             }),
-            text_document_content: None,
+            text_document_content: Some(TextDocumentContent::Options(TextDocumentContentOptions {
+                schemes: vec![to_proto::VIRTUAL_PATH_SCHEME.to_owned()],
+            })),
         }),
         call_hierarchy_provider: None, // TODO https://github.com/wgsl-analyzer/wgsl-analyzer/issues/343
         semantic_tokens_provider: None, // TODO https://github.com/wgsl-analyzer/wgsl-analyzer/issues/342

@@ -131,13 +131,12 @@ impl RootDatabase {
         let mut db = Self {
             storage: salsa::Storage::default(),
             files: Arc::default(),
-            // crates_map: Default::default(),
+            // packages_map: Default::default(),
             nonce: Nonce::new(),
         };
         // This needs to be here otherwise the first `Change` will panic.
         set_all_packages_with_durability(&mut db, [], Durability::HIGH);
-        // CrateGraphBuilder::default().set_in_db(&mut db);
-        // database.set_proc_macros_with_durability(Default::default(), Durability::MEDIUM);
+        // PackageGraphBuilder::default().set_in_db(&mut db);
         // database.set_local_roots_with_durability(Default::default(), Durability::MEDIUM);
         // database.set_library_roots_with_durability(Default::default(), Durability::MEDIUM);
         CapabilitiesInput::update_capabilities(&mut db, Capabilities::default());

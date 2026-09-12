@@ -1496,6 +1496,7 @@ dependencies = [
  "rustc-hash 2.1.3",
  "stdx",
  "test-utils",
+ "wgsl-std",
 ]
 
 [[package]]
@@ -1889,6 +1890,7 @@ dependencies = [
  "num_cpus",
  "parking_lot",
  "paths",
+ "percent-encoding",
  "project-model",
  "rustc-hash 2.1.3",
  "salsa",
@@ -1903,6 +1905,7 @@ dependencies = [
  "triomphe",
  "vfs",
  "vfs-notify",
+ "wgsl-std",
  "windows-sys 0.61.2",
  "xflags",
 ]
@@ -1916,6 +1919,13 @@ dependencies = [
  "rowan",
  "serde",
  "syntax",
+]
+
+[[package]]
+name = "wgsl-std"
+version = "0.0.0"
+dependencies = [
+ "edition",
 ]
 
 [[package]]
