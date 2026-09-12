@@ -5,7 +5,7 @@ use std::fmt::{self, Write as _};
 use base_db::input::PackageOrigin;
 use expect_test::{Expect, expect};
 use itertools::Itertools as _;
-use project_model::{ManifestPath, ProjectManifest, WeslPackage, WeslPackageRoot};
+use project_model::{ManifestPath, ProjectManifest, WeslPackageRoot};
 use test_utils::project_root;
 use vfs::AbsPathBuf;
 
@@ -78,7 +78,9 @@ fn check_load_project(
             LoadPackageMessage::Error { error, source } => {
                 writeln!(actual, "{error} - {source:?}");
             },
-            LoadPackageMessage::Dependency { task } => {},
+            LoadPackageMessage::Dependency { task } => {
+                writeln!(actual, "{}", task.package_key().0);
+            },
             LoadPackageMessage::Progress { message } => {},
         }
     }
@@ -199,6 +201,8 @@ fn wesl_with_dependencies() {
         "wesl_with_dependencies/wesl.toml",
         PackageOrigin::Local,
         expect![[r#"
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/wesl_with_dependencies/nested/wesl.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/simple_wesl/wesl.toml
             Project wesl_with_dependencies at wesl_with_dependencies/wesl.toml
             edition: WESL 2025 (Unstable)
             root: wesl_with_dependencies
@@ -249,6 +253,8 @@ fn wesl_with_dependencies_cargo() {
         "wesl_with_dependencies_cargo/Cargo.toml",
         PackageOrigin::Local,
         expect![[r#"
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/wesl_with_dependencies_cargo/nested/wesl.toml
+            /home/benjamin/source/wgsl-analyzer/crates/wgsl-analyzer/src/tests/simple_wesl/wesl.toml
             Project wesl_with_dependencies_cargo at wesl_with_dependencies_cargo/Cargo.toml
             edition: WESL 2025 (Unstable)
             root: wesl_with_dependencies_cargo
