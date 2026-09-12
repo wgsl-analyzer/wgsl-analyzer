@@ -18,7 +18,6 @@ export interface ArtifactSpec {
 
 // FIXME: The server should provide this
 export function weslPath(env?: Record<string, string>): Promise<string> {
-	// biome-ignore lint/complexity/useLiteralKeys: conflicting lint
 	if (env?.["WESLRS_TOOLCHAIN"]) {
 		return Promise.resolve("wesl");
 	}
@@ -46,7 +45,6 @@ const getPathForExecutable = memoizeAsync(
 );
 
 async function lookupInPath(exec: string): Promise<boolean> {
-	// biome-ignore lint/complexity/useLiteralKeys: conflicting lint
 	const paths = process.env["PATH"] ?? "";
 
 	const candidates = paths.split(path.delimiter).flatMap((directoryInPath) => {
@@ -63,7 +61,6 @@ async function lookupInPath(exec: string): Promise<boolean> {
 }
 
 function getCargoHome(): vscode.Uri | null {
-	// biome-ignore lint/complexity/useLiteralKeys: conflicting lint
 	const envVar = process.env["CARGO_HOME"];
 	if (envVar) return vscode.Uri.file(envVar);
 	try {

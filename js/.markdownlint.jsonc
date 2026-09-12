@@ -1,0 +1,20 @@
+// Markdown under js/ wraps at 100 columns, matching the `lineWidth` biome
+// applies to the TypeScript beside it. The rest of the repository still uses
+// the 200 in ../.markdownlint.jsonc.
+//
+// `line-length` is restated in full rather than patched: a rule's options are
+// replaced wholesale, so naming only `line_length` here would drop the code
+// block and table exemptions along with it.
+{
+	"extends": "../.markdownlint.jsonc",
+	"line-length": {
+		"code_block_line_length": 160,
+		"code_blocks": false,
+		"heading_line_length": 80,
+		"headings": true,
+		"line_length": 100,
+		"stern": false,
+		"strict": false,
+		"tables": false
+	}
+}
