@@ -945,7 +945,7 @@ fn bar(x: u32, y: bool) -> f32 { 0.0f }
 
         let url = url_from_virtual_path(&virtual_path);
         let expected_url = expect!["wgsl:///some/file.wesl"];
-        expected_url.assert_eq(&url.to_string());
+        expected_url.assert_eq(url.as_ref());
 
         let decoded_path = url_to_virtual_path(&url).unwrap();
         assert_eq!(virtual_path, decoded_path);
@@ -953,11 +953,11 @@ fn bar(x: u32, y: bool) -> f32 { 0.0f }
 
     #[test]
     fn empty_virtual_path_conversion() {
-        let virtual_path = VirtualPath::new("".to_owned());
+        let virtual_path = VirtualPath::new(String::new());
 
         let url = url_from_virtual_path(&virtual_path);
         let expected_url = expect!["wgsl:///"];
-        expected_url.assert_eq(&url.to_string());
+        expected_url.assert_eq(url.as_ref());
 
         let decoded_path = url_to_virtual_path(&url).unwrap();
         assert_eq!(virtual_path, decoded_path);
