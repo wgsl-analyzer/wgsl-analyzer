@@ -7,6 +7,7 @@ mod struct_def;
 mod types;
 
 mod bevy_reference;
+mod break_precedence;
 mod directives;
 mod expressions;
 mod global_compound_declaration;

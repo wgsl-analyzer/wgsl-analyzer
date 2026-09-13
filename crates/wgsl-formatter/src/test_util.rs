@@ -550,7 +550,7 @@ pub fn check_sweep<E>(
         let formatted = formatted.trim();
 
         if formatted != last_result {
-            let label = format!("// max_length: {length} ");
+            let label = format!("// max_length: {length}");
 
             writeln!(&mut summary, "{label:-<length$}").unwrap();
             writeln!(&mut summary, "{formatted}").unwrap();
