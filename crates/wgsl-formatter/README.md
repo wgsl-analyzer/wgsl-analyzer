@@ -71,6 +71,11 @@ suddenly the whole format collapses and gets turned into a different one `B`.
 Restoring the new format back to how it was takes a lot of effort (such as manually aligning the comments) - which is frustrating.
 It is unstable because there are many source formats that get turned into `B` but only a single specific source format that would get turned into `A`.
 
+### The formatter only outputs formatted code
+
+After a single pass of formatting all code should be correctly formatted in the eyes of the formatter.
+Formatting already formatted code must not change anything about it.
+
 ## Tests
 
 The tests in this crate are differentiated into **normative** and **descriptive** tests.
