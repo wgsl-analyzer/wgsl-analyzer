@@ -121,10 +121,11 @@ pub(crate) fn gen_for_statement_condition(
 pub(crate) fn gen_for_statement_continuing_part(
     node: &ast::SyntaxNode
 ) -> FormatDocumentResult<PrintItemBuffer> {
-    let mut sub_syntax = syntax_iter(node.syntax());
-    let item_continuing =
-        parse_node_with(&mut sub_syntax, DiscardBlankspace).expect_ast_node::<Statement>()?;
-    parse_end(&mut sub_syntax)?;
+    let mut syntax = syntax_iter(node.syntax());
+
+    // item_continuing is either a ast::Statement or a ast::FunctionCall
+    let item_continuing = parse_node_with(&mut syntax, DiscardBlankspace);
+    parse_end(&mut syntax)?;
 
     gen_node_with_trivia(&item_continuing)
 }
