@@ -5,6 +5,9 @@ pub mod options;
 mod patterns;
 mod summary;
 
+#[cfg(test)]
+mod tests;
+
 use std::{
     fmt::Display,
     io::Read as _,
@@ -225,7 +228,7 @@ fn write_file_results<S>(
     summary.end();
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 enum FormattingSource {
     File(PathBuf),
     Stdin,
