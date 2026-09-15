@@ -204,15 +204,17 @@ pub(crate) fn handle_did_change_configuration(
             tracing::debug!("config update response: '{:?}", response);
             match response.response_result {
                 Ok(mut result) => {
-                    let config = Config::clone(&*this.config);
-                    let mut change = ConfigChange::default();
-                    change.change_client_config(result.take());
+                    if let Some(json) = result.get_mut(0) {
+                        let config = Config::clone(&*this.config);
+                        let mut change = ConfigChange::default();
+                        change.change_client_config(json.take());
 
-                    let (config, errors, _) = config.apply_change(change);
-                    this.config_errors = errors.is_empty().not().then_some(errors);
+                        let (config, errors, _) = config.apply_change(change);
+                        this.config_errors = errors.is_empty().not().then_some(errors);
 
-                    // Client config changes neccesitates .update_config method to be called.
-                    this.update_configuration(config);
+                        // Client config changes neccesitates .update_config method to be called.
+                        this.update_configuration(config);
+                    }
                 },
                 Err(error) => {
                     tracing::error!("failed to fetch the server settings: {:?}", error);
