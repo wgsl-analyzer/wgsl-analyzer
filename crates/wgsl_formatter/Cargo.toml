@@ -8,7 +8,7 @@ repository.workspace = true
 license.workspace = true
 
 [dependencies]
-rowan = "0.16.1"
+rowan = "0.17.0"
 serde = { workspace = true, optional = true }
 syntax.workspace = true
 
