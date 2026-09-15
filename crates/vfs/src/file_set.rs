@@ -84,9 +84,10 @@ impl FileSet {
 impl fmt::Debug for FileSet {
     fn fmt(
         &self,
-        f: &mut fmt::Formatter<'_>,
+        formatter: &mut fmt::Formatter<'_>,
     ) -> fmt::Result {
-        f.debug_struct("FileSet")
+        formatter
+            .debug_struct("FileSet")
             .field("n_files", &self.files.len())
             .finish_non_exhaustive()
     }

@@ -415,7 +415,8 @@ impl VirtualPath {
         <_ as AsRef<paths::Utf8Path>>::as_ref(&self.0)
             .strip_prefix(&base.0)
             .ok()
-            .map(RelPath::new_unchecked)
+            // SAFETY: stripping a non-empty prefix from the beginning of any path yields a relative path
+            .map(|stripped| unsafe { RelPath::new_unchecked(stripped) })
     }
 
     /// Remove the last component of `self`.

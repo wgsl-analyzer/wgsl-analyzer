@@ -1,0 +1,21 @@
+[package]
+name = "paths"
+version = "0.0.0"
+description = "Path wrappers for absolute and relative paths wgsl-analyzer."
+repository.workspace = true
+
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[lib]
+doctest = false
+
+[dependencies]
+camino.workspace = true
+
+[features]
+serde1 = ["camino/serde1"]
+
+[lints]
+workspace = true
