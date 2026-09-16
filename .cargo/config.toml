@@ -1,11 +1,11 @@
 [alias]
-xtask = "run --package xtask --bin xtask --"
-lint = "clippy --all-targets -- --cap-lints warn"
 codegen = "run --package xtask --bin xtask -- codegen"
 dist = "run --package xtask --bin xtask -- dist"
-
-[target.x86_64-pc-windows-msvc]
-linker = "rust-lld"
+lint = "clippy --all-targets -- --cap-lints warn"
+xtask = "run --package xtask --bin xtask --"
 
 [env]
 CARGO_WORKSPACE_DIR = { value = "", relative = true }
+
+[target.x86_64-pc-windows-msvc]
+linker = "rust-lld"
