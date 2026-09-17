@@ -204,9 +204,16 @@ pub(crate) fn handle_did_change_configuration(
             tracing::debug!("config update response: '{:?}", response);
             match response.response_result {
                 Ok(mut result) => {
+                    // Configuration responses contain one array element per requested section.
+                    // We request only "wgsl-analyzer", so expect [{ ...settings... }].
+                    let Some([settings]) = result.as_array_mut().map(Vec::as_mut_slice) else {
+                        tracing::error!("expected one configuration response item: {:?}", result);
+                        return;
+                    };
+
                     let config = Config::clone(&*this.config);
                     let mut change = ConfigChange::default();
-                    change.change_client_config(result.take());
+                    change.change_client_config(settings.take());
 
                     let (config, errors, _) = config.apply_change(change);
                     this.config_errors = errors.is_empty().not().then_some(errors);
