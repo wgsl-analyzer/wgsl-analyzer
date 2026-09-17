@@ -204,6 +204,9 @@ pub(crate) fn handle_did_change_configuration(
             tracing::debug!("config update response: '{:?}", response);
             match response.response_result {
                 Ok(mut result) => {
+                    // workspace/configuration returns one array item per requested section,
+                    // even when we request only one. Apply the settings object inside it:
+                    // parsing the whole array finds no fields and resets settings to defaults.
                     if let Some(json) = result.get_mut(0) {
                         let config = Config::clone(&*this.config);
                         let mut change = ConfigChange::default();
