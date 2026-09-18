@@ -21,8 +21,9 @@ use lsp_types::{
     DocumentFilter, DocumentFormattingRequest, ExitNotification, FoldingRangeRequest,
     InlayHintRefreshRequest, InlayHintRequest, MessageType, Notification as _, Registration,
     RegistrationParams, RegistrationRequest, SaveOptions, SemanticTokensRefreshRequest,
-    ShutdownRequest, SignatureHelpRequest, TextDocumentFilter, TextDocumentFilterPattern,
-    TextDocumentRegistrationOptions, TextDocumentSaveRegistrationOptions, Uri,
+    ShutdownRequest, SignatureHelpRequest, TextDocumentContentRequest, TextDocumentFilter,
+    TextDocumentFilterPattern, TextDocumentRegistrationOptions,
+    TextDocumentSaveRegistrationOptions, Uri,
 };
 use project_model::{PackageKey, ProjectManifest};
 use salsa::{Cancelled, Durability};
@@ -205,6 +206,8 @@ impl GlobalState {
                 .map(|file| format!("**/{file}"));
             self.register_did_save_capability(additional_patterns);
         }
+
+        self.load_builtin_package();
 
         for workspace_root in self.config.workspace_roots() {
             self.request_project_discover(
@@ -864,7 +867,7 @@ impl GlobalState {
     ) {
         let title = "Project loading";
         match message {
-            LoadPackageMessage::Finished { project } => {
+            LoadPackageMessage::Finished { manifest, project } => {
                 self.load_package_jobs_active = self.load_package_jobs_active.strict_sub(1);
                 if self.load_package_jobs_active == 0 {
                     self.report_progress(title, &Progress::End, None, None, None);
@@ -872,7 +875,7 @@ impl GlobalState {
                 }
 
                 let mut packages = self.packages.write();
-                packages.set(PackageKey::from_package(&project), project);
+                packages.set(PackageKey::Manifest(manifest), project);
             },
             LoadPackageMessage::Progress { message } => {
                 if self.load_package_jobs_active > 0 {
@@ -977,6 +980,9 @@ impl GlobalState {
                     })
                     .ok(),
                 },
+            )
+            .on::<RETRY, TextDocumentContentRequest>(
+                handlers::request::handle_text_document_content,
             )
             .on::<NO_RETRY, lsp::extensions::ViewSyntaxTreeRequest>(
                 handlers::request::view_syntax_tree,

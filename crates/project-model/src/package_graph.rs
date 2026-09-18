@@ -1,6 +1,6 @@
 use std::hash::BuildHasherDefault;
 
-use base_db::input::PackageId;
+use base_db::{VirtualPath, input::PackageId};
 use indexmap::IndexMap;
 use rustc_hash::{FxHashMap, FxHashSet, FxHasher};
 
@@ -13,18 +13,11 @@ use crate::{
 /// We request the dependencies for each package with cargo/npm.
 /// From there, we get something that uniquely identifies the package.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct PackageKey(pub ManifestPath);
-
-impl PackageKey {
-    #[must_use]
-    pub fn from_package(package: &WeslPackage) -> Self {
-        Self(package.manifest.clone())
-    }
-
-    #[must_use]
-    pub const fn from_manifest_path(path: ManifestPath) -> Self {
-        Self(path)
-    }
+pub enum PackageKey {
+    /// A package that is identified by a manifest file on disk.
+    Manifest(ManifestPath),
+    /// A package that is identified by virtual manifest file.
+    VirtualManifest(VirtualPath),
 }
 
 /// Keeps track of the packages and their changes.
