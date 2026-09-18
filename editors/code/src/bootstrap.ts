@@ -46,7 +46,6 @@ async function getServer(
 	} = context.extension.packageJSON;
 
 	// check if the server path is configured explicitly
-	// biome-ignore lint/complexity/useLiteralKeys: conflicting lint
 	const explicitPath = process.env["__WA_LSP_SERVER_DEBUG"] ?? config.serverPath;
 	if (explicitPath) {
 		if (explicitPath.startsWith("~/")) {
