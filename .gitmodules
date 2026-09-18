@@ -1,0 +1,4 @@
+[submodule "crates/wgsl-analyzer/src/tests/bevy"]
+	path = crates/wgsl-analyzer/src/tests/bevy
+	url = https://github.com/BenjaminBrienen/bevy.git
+	branch = cargo.toml-metadata.wgsl-analyzer

@@ -15,13 +15,22 @@ pub struct WeslManifest {
     pub dependencies: BTreeMap<String, WeslDependency>,
 }
 
+impl Default for WeslManifest {
+    fn default() -> Self {
+        Self {
+            edition: "2026_pre".to_owned(),
+            package_manager: None,
+            root: default_root(),
+            include: None,
+            exclude: None,
+            dependencies: BTreeMap::new(),
+        }
+    }
+}
+
 impl WeslManifest {
     pub fn from_slice(bytes: &[u8]) -> Result<Self, toml::de::Error> {
         toml::from_slice(bytes)
-    }
-
-    pub fn from_json(value: serde_json::Value) -> Result<Self, serde_json::Error> {
-        serde_json::from_value(value)
     }
 }
 
