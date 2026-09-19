@@ -60,7 +60,7 @@ class ServerMessageWriter extends AbstractMessageWriter implements MessageWriter
 	}
 
 	end(): void {
-		// The ring buffer is closed by `WgslAnalyzerServer.dispose`.
+		// The server's input is closed by `WgslAnalyzerServer.dispose`.
 	}
 }
 
