@@ -7,10 +7,6 @@
  * itself is environment-agnostic because `-sENVIRONMENT` is deliberately unset,
  * so under Node it uses `worker_threads`, `createRequire` and `node:fs`.
  *
- * Framing and seeding are imported from `dist/` rather than reimplemented: a
- * harness carrying its own copy of the `Content-Length` parser would only be
- * testing the copy.
- *
  * Every `dist/` import is dynamic. A static import is hoisted above the module
  * body, so a missing artifact would fail with ERR_MODULE_NOT_FOUND before
  * `preflight` could explain which build step was skipped.
@@ -28,7 +24,7 @@ import { after, before, describe, it } from "node:test";
 import { pathToFileURL } from "node:url";
 
 // Type-only, so these are erased and do not hoist a runtime import of `dist/`.
-import type { EmscriptenModule, ModuleFactory } from "../../dist/emscripten.js";
+import type { EmscriptenModule, LspTransport, ModuleFactory } from "../../dist/emscripten.js";
 import type { EmscriptenFs } from "../../dist/fs.js";
 import type { WorkspaceFiles } from "../../dist/protocol.js";
 
@@ -39,12 +35,6 @@ const BOOT_MS = Number(process.env["WA_SMOKE_BOOT_MS"] ?? 180_000);
 const STEP_MS = Number(process.env["WA_SMOKE_STEP_MS"] ?? 60_000);
 const TOTAL_MS = Number(process.env["WA_SMOKE_TOTAL_MS"] ?? 420_000);
 
-/** Buffer stdout is drained through. `src/worker.ts` uses the same 64 KiB. */
-const OUTPUT_CHUNK = Number(process.env["WA_SMOKE_CHUNK"] ?? 64 * 1024);
-
-/** Backstop drain interval. See the comment on the pump. */
-const SAFETY_POLL_MS = 25;
-
 // The contract with .cargo/config.toml
 
 // Typed as keys rather than plain strings, so dropping a member from
@@ -52,22 +42,16 @@ const SAFETY_POLL_MS = 25;
 // compile error here rather than a silently weaker assertion.
 
 /** `-sEXPORTED_RUNTIME_METHODS`, verbatim. */
-const RUNTIME_METHODS: readonly (keyof EmscriptenModule)[] = ["FS", "callMain", "HEAPU8"];
+const RUNTIME_METHODS: readonly (keyof EmscriptenModule)[] = ["FS", "callMain"];
 
-/**
- * `-sEXPORTED_FUNCTIONS`, verbatim. Deliberately not `keyof EmscriptenModule`:
- * the link flags are a superset of the interface, because `_main` is reached
- * through `callMain` and so the package never names it.
- */
-const WASM_EXPORTS: readonly string[] = [
-	"_main",
-	"_malloc",
-	"_free",
-	"_lsp_stdin_push",
-	"_lsp_stdin_close",
-	"_lsp_stdout_pop",
-	"_lsp_stdout_signal_ptr",
-];
+/** `-sEXPORTED_FUNCTIONS`, verbatim. */
+const WASM_EXPORTS: readonly string[] = ["_main"];
+
+/** What `--pre-js=…/emscripten-io-pre.js` installs on the module. */
+const TRANSPORT_METHODS: readonly (keyof EmscriptenModule)[] = ["lspStart"];
+
+/** What `lspStart` hands back. Asserted separately, since the type is structural. */
+const TRANSPORT_ENDS: readonly (keyof LspTransport)[] = ["pushBytes", "closeInput"];
 
 /**
  * The `FS` members `src/fs.ts` calls. These exist only because of
@@ -208,31 +192,40 @@ async function startServer() {
 	const framingErrors: string[] = [];
 	const exited = Promise.withResolvers<number>();
 
-	let wakeups = 0;
-	let stopPump = () => {};
+	let stopped = false;
 
 	// `EXIT_RUNTIME=1` makes emscripten's Node `quit_` assign the server's status
 	// to `process.exitCode`, which node:test also owns. Left alone that either
 	// masks a failing run or reddens a passing one.
 	const inheritedExitCode = process.exitCode;
 
+	let heapShared: boolean | undefined;
+
+	// The server writes a raw byte stream, so frames are reassembled rather than
+	// parsed per chunk.
+	const decodeChunk = createFrameDecoder(deliver, (reason) => framingErrors.push(reason));
+	const pushChunk = (bytes: Uint8Array): void => {
+		heapShared ??= bytes.buffer instanceof SharedArrayBuffer;
+		decodeChunk(bytes);
+	};
+
 	const module = await createWgslAnalyzer({
 		noInitialRun: true,
-		// fd 2 is left unwrapped, so stderr still arrives through emscripten's
-		// own line-buffered path; pthreads proxy it back to this thread.
 		printErr: (line: string) => {
 			stderr.push(line);
 			if (stderr.length > 500) stderr.shift();
 		},
 		onExit: (code: number) => {
-			// Synchronous inside `proc_exit`, which has already called
-			// `terminateAllThreads()` and is about to set ABORT. No JS turn can
-			// interleave, so this is the only point at which stopping the pump
-			// is guaranteed not to call into a half-dead runtime.
-			stopPump();
+			stopped = true;
 			exited.resolve(code);
 		},
 	});
+
+	// Before `callMain`, which is when the server can first write. `onOutput` runs
+	// on this thread: `lsp_js_write` is proxied here from the server's writer
+	// pthread, so the view into wasm memory is valid for the call and the decoder
+	// copies out of it synchronously.
+	const transport = module.lspStart({ onOutput: pushChunk });
 
 	// Seeded after the factory resolves rather than from `preRun`: `preRun` runs
 	// before `__wasm_call_ctors`, and WasmFS needs its static constructors.
@@ -263,8 +256,6 @@ async function startServer() {
 			"",
 			`stderr (last ${Math.min(stderr.length, 25)} of ${stderr.length}):`,
 			...(stderr.length ? stderr.slice(-25).map((line) => `  ${line}`) : ["  (none)"]),
-			"",
-			`pump: ${wakeups} wakeups through _lsp_stdout_signal_ptr`,
 			...(framingErrors.length
 				? ["", "framing errors:", ...framingErrors.map((r) => `  ${r}`)]
 				: []),
@@ -272,17 +263,10 @@ async function startServer() {
 	}
 
 	function send(message: unknown): void {
-		const bytes = encodeFrame(message);
-		const pointer = module._malloc(bytes.length);
-		assert.notEqual(pointer, 0, "out of memory queuing stdin");
-		try {
-			module.HEAPU8.set(bytes, pointer);
-			// 0 ok, -1 invalid pointer, -2 stdin closed.
-			const status = module._lsp_stdin_push(pointer, bytes.length);
-			assert.equal(status, 0, `_lsp_stdin_push returned ${status}`);
-		} finally {
-			module._free(pointer);
-		}
+		// Queued on this thread; the server's reader pthread picks it up through a
+		// proxied `lsp_js_read`. Silently dropped after `closeInput`, which is only
+		// reached from `dispose`.
+		transport.pushBytes(encodeFrame(message));
 	}
 
 	function deliver(message: unknown): void {
@@ -359,99 +343,46 @@ async function startServer() {
 	const notify = (method: string, params: unknown): void =>
 		send({ jsonrpc: "2.0", method, params });
 
-	// `StdoutPipe::wake` bumps a counter and issues `memory.atomic.notify`. The
-	// counter is read *before* draining, so a write landing at any point during
-	// the drain leaves a different value and `waitAsync` returns synchronously
-	// with "not-equal". Reading it after draining would lose wakeups; do not
-	// "simplify" this ordering.
-	//
-	// `Atomics.waitAsync` does work on Node's main thread, but a pending wait
-	// does not keep the event loop alive, and a harness that hangs instead of
-	// failing is the worst outcome. So the production path runs, an unref'd
-	// interval backstops it, and a test below asserts the production path
-	// actually delivered — a pure poll would pass even with `wake` removed.
-	const outputPointer = module._malloc(OUTPUT_CHUNK);
-	assert.notEqual(outputPointer, 0, "out of memory allocating the stdout buffer");
-	const pushChunk = createFrameDecoder(deliver, (reason) => framingErrors.push(reason));
-	const signalIndex = module._lsp_stdout_signal_ptr() >>> 2;
-	let stopped = false;
-
-	const drain = () => {
-		if (stopped) return;
-		for (;;) {
-			const count = module._lsp_stdout_pop(outputPointer, OUTPUT_CHUNK);
-			if (count < 0) throw new Error(`_lsp_stdout_pop returned ${count}`);
-			if (count === 0) return;
-			// Consumed fully before the next pop overwrites it, so no copy.
-			pushChunk(module.HEAPU8.subarray(outputPointer, outputPointer + count));
-		}
-	};
-
-	const wait = () => {
-		if (stopped) return;
-		const signal = new Int32Array(module.HEAPU8.buffer);
-		const observed = Atomics.load(signal, signalIndex);
-		drain();
-		if (stopped) return;
-		const result = Atomics.waitAsync(signal, signalIndex, observed);
-		if (result.async) {
-			void result.value.then((outcome) => {
-				if (outcome === "ok") wakeups += 1;
-				wait();
-			});
-		} else {
-			// Already changed; yield so this cannot starve the loop.
-			setTimeout(wait, 0);
-		}
-	};
-
-	const safety = setInterval(drain, SAFETY_POLL_MS);
-	// Must not be what holds the process open, or a hang looks like progress.
-	safety.unref();
-	stopPump = () => {
-		stopped = true;
-		clearInterval(safety);
-	};
-	wait();
-
-	// Started only once the pump is live, so the handshake cannot be written
-	// before anything is draining it. Returns immediately under
-	// -sPROXY_TO_PTHREAD=1, which runs main() on a pthread.
+	// Returns immediately under -sPROXY_TO_PTHREAD=1, which runs main() on a
+	// pthread.
 	module.callMain([]);
 
 	return {
 		module,
+		transport,
 		received,
 		request,
 		notify,
 		waitFor,
 		describeState,
-		get wakeups() {
-			return wakeups;
-		},
 		get framingErrors() {
 			return framingErrors;
 		},
+		get heapShared() {
+			return heapShared;
+		},
 
 		/**
-		 * shutdown -> exit -> close stdin, then wait for the runtime to unwind.
+		 * shutdown -> exit -> close the input, then wait for the runtime to
+		 * unwind.
 		 *
-		 * The order matters. The `shutdown` response is the last thing the
-		 * server writes and has to be drained before `proc_exit` terminates the
-		 * threads. Closing stdin is what lets `lsp_server`'s reader finish so
+		 * The order matters. The `shutdown` response is the last thing the server
+		 * writes, and it has to arrive before `proc_exit` terminates the threads.
+		 * Closing the input is what lets `lsp_server`'s reader finish so
 		 * `io_threads.join()` returns: on any path where the main loop bailed
-		 * early the reader is still parked in `read(0)`, and the strong-
-		 * referenced proxied-main worker would keep Node alive indefinitely.
+		 * early the reader is still parked inside a proxied `lsp_js_read`, and the
+		 * strong-referenced proxied-main worker would keep Node alive
+		 * indefinitely.
 		 */
 		async dispose() {
 			if (stopped) return exited.promise;
 			try {
 				await request("shutdown", null);
 			} catch {
-				// Fall through: closing stdin still has to happen.
+				// Fall through: closing the input still has to happen.
 			}
 			notify("exit", null);
-			module._lsp_stdin_close();
+			transport.closeInput();
 			try {
 				return await Promise.race([
 					exited.promise,
@@ -463,7 +394,7 @@ async function startServer() {
 					),
 				]);
 			} finally {
-				stopPump();
+				stopped = true;
 				process.exitCode = inheritedExitCode;
 			}
 		},
@@ -534,16 +465,23 @@ describe("wasm32-unknown-emscripten build", () => {
 					+ "WasmFS emit the JS filesystem API that seeding calls.",
 			);
 		}
-		assert.equal(
-			server.module.HEAPU8.buffer instanceof SharedArrayBuffer,
-			true,
-			"the heap is not shared memory, so -pthread did not reach the link",
-		);
-		assert.notEqual(
-			server.module._lsp_stdout_signal_ptr(),
-			0,
-			"_lsp_stdout_signal_ptr returned a null address",
-		);
+		for (const name of TRANSPORT_METHODS) {
+			assert.equal(
+				typeof server.module[name],
+				"function",
+				`Module.${name} is missing. It is installed by `
+					+ "--pre-js=crates/wgsl-analyzer/src/bin/emscripten-io-pre.js; check that "
+					+ "link-arg, and the --js-library beside it, in "
+					+ "[target.wasm32-unknown-emscripten] in .cargo/config.toml.",
+			);
+		}
+		for (const name of TRANSPORT_ENDS) {
+			assert.equal(
+				typeof server.transport[name],
+				"function",
+				`lspStart did not return ${name}; the --pre-js is stale against ` + "src/emscripten.ts.",
+			);
+		}
 	});
 
 	it("completes an LSP handshake", { timeout: STEP_MS }, async () => {
@@ -578,11 +516,23 @@ describe("wasm32-unknown-emscripten build", () => {
 		});
 	});
 
+	// After the handshake rather than beside the other link-flag assertions:
+	// `heapShared` stays `undefined` until the server's first write, and the
+	// handshake is the first test that guarantees one.
+	it("runs on shared memory", () => {
+		assert.equal(
+			server.heapShared,
+			true,
+			"the server's output was not a view into shared memory, so -pthread "
+				+ "did not reach the link",
+		);
+	});
+
 	it("answers a pull-diagnostics request", { timeout: STEP_MS }, async () => {
 		// Only the shape is asserted: the server returns a well-formed empty
 		// report while the VFS is still loading. That is still worth having —
-		// it proves request routing and a structured response body survive
-		// the writev bridge in both directions.
+		// it proves request routing and a structured response body survive the
+		// transport in both directions.
 		const response = await server.request<DocumentDiagnosticReport>("textDocument/diagnostic", {
 			textDocument: { uri: ENTRY_URI },
 		});
@@ -596,20 +546,6 @@ describe("wasm32-unknown-emscripten build", () => {
 	it("reassembled every frame it received", () => {
 		assert.deepEqual(server.framingErrors, [], "the frame decoder reported errors");
 		assert.notEqual(server.received.length, 0, "no messages arrived at all");
-	});
-
-	it("was woken through _lsp_stdout_signal_ptr", () => {
-		// Without this the safety poll would carry every byte on its own, so a
-		// regression in StdoutPipe::wake would pass unnoticed here and leave the
-		// browser with no wakeup path at all.
-		assert.equal(
-			server.wakeups > 0,
-			true,
-			server.describeState(
-				"stdout never woke the host; every byte arrived through the safety poll. "
-					+ "Suspect StdoutPipe::wake in crates/emscripten-stdio.",
-			),
-		);
 	});
 
 	it("shuts down and exits with 0", { timeout: STEP_MS }, async () => {
