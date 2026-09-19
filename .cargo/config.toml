@@ -1,11 +1,11 @@
 [alias]
-xtask = "run --package xtask --bin xtask --"
-lint = "clippy --all-targets -- --cap-lints warn"
 codegen = "run --package xtask --bin xtask -- codegen"
 dist = "run --package xtask --bin xtask -- dist"
+lint = "clippy --all-targets -- --cap-lints warn"
+xtask = "run --package xtask --bin xtask --"
 
-[target.x86_64-pc-windows-msvc]
-linker = "rust-lld"
+[env]
+CARGO_WORKSPACE_DIR = { value = "", relative = true }
 
 # The shipped rust-std for this target is built with `singlethread: true`
 # (no wasm `atomics` feature), so -pthread cannot link against it. Requires
@@ -32,7 +32,6 @@ rustflags = [
 	"-Clink-arg=-sEXPORT_ES6=1",
 	"-Clink-arg=-sEXPORT_NAME=createWgslAnalyzer",
 	# WasmFS is wasm-side and multithreaded, so it is preferred over the legacy JS filesystem.
-	# fd 0 and fd 1 bypass it entirely via the --wrap bridge below.
 	"-Clink-arg=-sWASMFS=1",
 	# WasmFS only emits the JS filesystem API it can prove it needs, and seeding
 	# the workspace calls it directly. Without this, Module.FS arrives missing
@@ -40,11 +39,12 @@ rustflags = [
 	"-Clink-arg=-sFORCE_FILESYSTEM=1",
 	# Seed the filesystem before main() runs, then callMain([]).
 	"-Clink-arg=-sINVOKE_RUN=0",
-	# HEAPU8 lets the host copy byte arrays in and out of wasm memory.
-	"-Clink-arg=-sEXPORTED_RUNTIME_METHODS=FS,callMain,HEAPU8",
-	# _malloc/_free back the temporary buffers the host copies through.
-	"-Clink-arg=-sEXPORTED_FUNCTIONS=_main,_malloc,_free",
+	# The Rust <-> JavaScript transport. Paths are relative to the directory cargo runs the
+	# linker from, which is the workspace root.
+	"-Clink-arg=--js-library=crates/wgsl-analyzer/src/bin/emscripten-io.js",
+	"-Clink-arg=--pre-js=crates/wgsl-analyzer/src/bin/emscripten-io-pre.js",
+	"-Clink-arg=-sEXPORTED_RUNTIME_METHODS=FS,callMain",
 ]
 
-[env]
-CARGO_WORKSPACE_DIR = { value = "", relative = true }
+[target.x86_64-pc-windows-msvc]
+linker = "rust-lld"
