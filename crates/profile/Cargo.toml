@@ -9,7 +9,7 @@ license.workspace = true
 
 [lib]
 
-[dependencies]
+[target.'cfg(not(target_os = "emscripten"))'.dependencies]
 jemalloc-ctl = {
 	package = "tikv-jemalloc-ctl",
 	version = "0.7.0",
