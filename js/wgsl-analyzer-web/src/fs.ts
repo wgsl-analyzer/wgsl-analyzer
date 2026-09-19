@@ -1,9 +1,8 @@
 /**
  * Seeding the emscripten in-memory filesystem.
  *
- * This runs from `Module.preRun`, which the runtime executes before `FS.init()`
- * and before `main()` exists, so the workspace is already on disk by the time
- * the server's VFS scans it.
+ * This runs once the module factory has resolved, and before `callMain`,
+ * so the workspace is already on disk by the time the server's VFS scans it.
  */
 
 /** The subset of emscripten's `FS` module this package relies on. */
