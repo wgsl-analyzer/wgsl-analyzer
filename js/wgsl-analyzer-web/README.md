@@ -3,8 +3,9 @@
 Runs the `wgsl-analyzer` language server in a Web Worker.
 
 The server is the `wgsl-analyzer` binary compiled to
-`wasm32-unknown-emscripten`, running its ordinary `main_loop` and speaking LSP
-over stdin and stdout. The package hosts it, seeds a workspace into the in-memory
+`wasm32-unknown-emscripten`, running its ordinary `main_loop` over a transport
+that carries the usual `Content-Length` framed LSP stream between wasm and
+JavaScript. The package hosts it, seeds a workspace into the in-memory
 filesystem, and exposes the message stream.
 
 ## Building
@@ -31,6 +32,11 @@ They live in `dist/assets/` rather than beside the module output in `dist/` so
 that the directory holds nothing else: a host can point a static file server
 straight at it. `wgsl-analyzer-web/assets/*` resolves there too, for bundlers
 that would rather ask the package than hardcode a path.
+
+Note `dist/worker.js` also exists and is not the one to serve. `tsc` compiles
+every file under `src/` so that `worker.ts` is typechecked along with the rest,
+and its unbundled output lands there; `dist/assets/worker.js` from esbuild is
+the real artifact.
 
 ## Usage
 
@@ -66,26 +72,42 @@ constructors have run.
 
 ## What the host has to get right
 
-The server keeps using `Connection::stdio()` unchanged. The adaptation happens
-below Rust's `std::io`, where the linker redirects `read`, `readv`, `write` and
-`writev` into the [`emscripten-stdio`](../../crates/emscripten-stdio) crate. Its
-module docs work through why emscripten's own stdin cannot carry an LSP stream,
-which is worth reading before changing either side.
+The server does not use `Connection::stdio()`, and the LSP stream never touches a
+file descriptor. Instead the emscripten build swaps in a transport built out of
+two JavaScript functions the wasm module imports, linked in with `--js-library`
+and `--pre-js`:
+
+| File | Role |
+| --- | --- |
+| [`emscripten_io.rs`](../../crates/wgsl-analyzer/src/bin/emscripten_io.rs) | the Rust `Read`/`Write` endpoints, wrapped in `BufReader`/`BufWriter` |
+| [`emscripten-io.js`](../../crates/wgsl-analyzer/src/bin/emscripten-io.js) | the two imports, proxied to the runtime thread |
+| [`emscripten-io-pre.js`](../../crates/wgsl-analyzer/src/bin/emscripten-io-pre.js) | the queue and the `Module` methods this package calls |
+
+The Rust module's docs work through why, and are worth reading before changing
+either side. The short version: `Read::read` treats a count of zero as end of
+input, so a read has to block until a frame arrives, and emscripten's
+`__proxy: 'sync'` plus `__async` is what lets it do that on a pthread while the
+runtime thread's event loop stays free.
+
+Nothing is exported from wasm, so `-sEXPORTED_FUNCTIONS` names only `_main` and
+this package never handles a pointer.
 
 What that leaves for the host:
 
 - Serve `worker.js`, `wgsl_analyzer.js` and `wgsl_analyzer.wasm` from one
   directory under those exact names, as above.
 - Be cross-origin isolated, or `SharedArrayBuffer` is missing and nothing starts.
-- Drain stdout when the counter at `_lsp_stdout_signal_ptr()` changes. The worker
-  waits on it with `Atomics.waitAsync`, which does not block its event loop.
-  Without `waitAsync` it falls back to a 5 ms poll and says so on stderr.
-- Expect stderr through `printErr`, not the LSP stream. fd 2 is left unwrapped so
-  tracing and panics still reach the console. The flip side is that any stray
-  write to stdout corrupts the protocol.
+- Call `Module.lspStart({ onOutput })` before `callMain`, then drive the server
+  through the `pushBytes` and `closeInput` it returns — `closeInput` at shutdown,
+  so the reader thread unwinds instead of staying parked. `lspStart` is the
+  entire host-facing API, and `WgslAnalyzerServer` drives it for you.
+- Treat `onOutput`'s argument as a byte stream, not a message. One call is not
+  one frame, so it needs a `Content-Length` parser over it — `src/worker.ts`
+  uses the one in `src/framing.ts`. The bytes are a view into wasm memory that is
+  only valid for the duration of the call.
+- Expect stderr through `printErr`, not the LSP stream.
 
 Filesystem access uses `-sWASMFS`, emscripten's wasm-side multithreaded
-filesystem, so file reads from the server's task pools are not proxied to the
-runtime thread the way the legacy JS filesystem would require. It needs
-`-sFORCE_FILESYSTEM` alongside it, because WasmFS emits only the JS filesystem
-API it can prove it needs and seeding the workspace calls that API directly.
+filesystem. It needs `-sFORCE_FILESYSTEM` alongside it, because WasmFS emits
+only the JS filesystem API it can prove it needs and seeding the workspace calls
+that API directly.
