@@ -1,29 +1,43 @@
 /**
  * The emscripten module surface this package drives.
- *
- * Every member here is something the link flags in
- * `[target.wasm32-unknown-emscripten]` in `.cargo/config.toml` have to keep
- * alive: the `_`-prefixed ones come from `-sEXPORTED_FUNCTIONS`, `FS`,
- * `callMain` and `HEAPU8` from `-sEXPORTED_RUNTIME_METHODS`, and the `FS`
- * members from `-sFORCE_FILESYSTEM`. Nothing checks that at compile time —
- * `wgsl_analyzer.js` is generated — so `tests/smoke/lsp.test.ts` asserts each
- * one is really present against a linked build.
  */
 
 import type { EmscriptenFs } from "./fs.js";
 
+export interface LspStartOptions {
+	/**
+	 * Receives the server's output as it is written.
+	 *
+	 * The bytes are a view into wasm memory, valid only for the duration of the
+	 * call, so a handler that does not consume them synchronously has to copy.
+	 * They are also a raw stream rather than messages: one call is not one frame,
+	 * so the handler needs a `Content-Length` parser over them.
+	 */
+	onOutput: (bytes: Uint8Array) => void;
+}
+
+/** The two ends of a started transport. */
+export interface LspTransport {
+	/** Queues one framed message for the server. */
+	pushBytes(bytes: Uint8Array): void;
+	/**
+	 * Reports end of input, so the server's reader thread unwinds rather than
+	 * staying parked on a read and holding the runtime open.
+	 */
+	closeInput(): void;
+}
+
 /** The emscripten module members this package touches. */
 export interface EmscriptenModule {
 	FS: EmscriptenFs;
-	/** Replaced on memory growth, so always read it fresh. */
-	HEAPU8: Uint8Array;
 	callMain(args: readonly string[]): void;
-	_malloc(size: number): number;
-	_free(pointer: number): void;
-	_lsp_stdin_push(pointer: number, length: number): number;
-	_lsp_stdin_close(): void;
-	_lsp_stdout_pop(pointer: number, capacity: number): number;
-	_lsp_stdout_signal_ptr(): number;
+	/**
+	 * Starts the transport and returns its two ends.
+	 *
+	 * Call this before `callMain`, which is when the server can first write.
+	 * Throws if called twice.
+	 */
+	lspStart(options: LspStartOptions): LspTransport;
 }
 
 export interface ModuleOptions {
