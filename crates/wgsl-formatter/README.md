@@ -121,7 +121,7 @@ RUST_BACKTRACE=1 cargo test --features=prefer-immediate-crash
    The descriptive tests document how code **is** formatted (to make sure we don't accidentally regress one part of the formatter wen fixing another).
    Do not forget to add tests using `check_comments` to make sure the formatter never accidentally removes or reorders the comments around your syntax construct.
 2. Create a generator function in `generators::` - the function should be called `gen*`, take either a `NodeWithTrivia`, `SyntaxNode` or `ast::TheNewSyntaxConstruct` and usually return a `FormatDocumentResult`.
-   The generator function is split up in a "Parse" and a "Format" region (see [Patterns.md](Patterns.md)).
+   The generator function is split up in a "Parse" and a "Format" region (see [architecture.md](architecture.md)).
 3. Register the new syntax construct in the big `match` within `generators/node.rs`.
 
 ## Future Improvements
