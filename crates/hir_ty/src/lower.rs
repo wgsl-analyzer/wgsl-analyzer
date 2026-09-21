@@ -478,13 +478,13 @@ impl<'db> TypeLoweringContext<'db> {
                 Ok(Lowered::BuiltinFunction(name, Some(template_parameters)))
             },
             Ok(ResolveKind::BuiltinType(name) | ResolveKind::BuiltinTypeConstructor(name)) => {
-                self.lower_builtin_type(name, type_container, &mut template_parameters)
+                self.lower_builtin_type(name, type_container, &template_parameters)
             },
             Ok(ResolveKind::BuiltinTypeGenerator(name)) => {
                 match self.lower_builtin_type_generator(
                     type_container,
                     &name,
-                    &template_parameters,
+                    &mut template_parameters,
                 )? {
                     Either::Left(generator) => Ok(Lowered::ConstructibleTypeGenerator(generator)),
                     Either::Right(r#type) => Ok(Lowered::Type(r#type)),
