@@ -353,10 +353,6 @@ impl TypeLoweringContext<'_> {
                 self.expect_no_template(template_parameters);
                 TypeKind::Sampler(wgsl_types::ty::SamplerType::SamplerComparison)
             },
-            "ray_query" => lower_ray_query(type_container, template_parameters)?,
-            "acceleration_structure" => {
-                lower_acceleration_structure(type_container, template_parameters)?
-            },
             "RayDesc" => TypeKind::BuiltinStruct(self.types.ray_desc.clone()),
             "RayIntersection" => TypeKind::BuiltinStruct(self.types.ray_intersection.clone()),
             _ => {
@@ -381,7 +377,7 @@ impl TypeLoweringContext<'_> {
         &mut self,
         type_container: TypeContainer,
         name: &Name,
-        template_parameters: &TemplateParameters,
+        template_parameters: &mut TemplateParameters,
     ) -> Result<Either<ConstructibleTypeGenerator, Type>, TypeLoweringError> {
         match name.as_str() {
             "array" => {
@@ -683,6 +679,12 @@ impl TypeLoweringContext<'_> {
             // "texture_multisampled_2d_array" => {
             //     unimplemented!()
             // },
+            "ray_query" => self
+                .lower_ray_query(type_container, template_parameters)
+                .map(Either::Right),
+            "acceleration_structure" => self
+                .lower_acceleration_structure(type_container, template_parameters)
+                .map(Either::Right),
             _ => {
                 // if you reached here, then you found something known in wgsl-types that is unknown in wgsl-analyzer
                 // open a feature request!
@@ -1109,30 +1111,30 @@ impl TypeLoweringContext<'_> {
             Instance::Literal(literal_instance),
         ))
     }
-}
 
-fn lower_ray_query(
-    type_container: TypeContainer,
-    template_parameters: &mut TemplateParameters,
-) -> Result<TypeKind, TypeLoweringError> {
-    if !template_parameters.has_next() {
-        return Ok(TypeKind::RayQuery(None));
+    fn lower_ray_query(
+        &self,
+        type_container: TypeContainer,
+        template_parameters: &mut TemplateParameters,
+    ) -> Result<Type, TypeLoweringError> {
+        if !template_parameters.has_next() {
+            return Ok(TypeKind::RayQuery(None).intern(self.db));
+        }
+        let acceleration_structure_tags = lower_tags_template(type_container, template_parameters)?;
+        Ok(TypeKind::RayQuery(Some(acceleration_structure_tags)).intern(self.db))
     }
-    let acceleration_structure_tags = lower_tags_template(type_container, template_parameters)?;
-    Ok(TypeKind::RayQuery(Some(acceleration_structure_tags)))
-}
 
-fn lower_acceleration_structure(
-    type_container: TypeContainer,
-    template_parameters: &mut TemplateParameters,
-) -> Result<TypeKind, TypeLoweringError> {
-    if !template_parameters.has_next() {
-        return Ok(TypeKind::AccelerationStructure(None));
+    fn lower_acceleration_structure(
+        &self,
+        type_container: TypeContainer,
+        template_parameters: &mut TemplateParameters,
+    ) -> Result<Type, TypeLoweringError> {
+        if !template_parameters.has_next() {
+            return Ok(TypeKind::AccelerationStructure(None).intern(self.db));
+        }
+        let acceleration_structure_tags = lower_tags_template(type_container, template_parameters)?;
+        Ok(TypeKind::AccelerationStructure(Some(acceleration_structure_tags)).intern(self.db))
     }
-    let acceleration_structure_tags = lower_tags_template(type_container, template_parameters)?;
-    Ok(TypeKind::AccelerationStructure(Some(
-        acceleration_structure_tags,
-    )))
 }
 
 fn lower_tags_template(

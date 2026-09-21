@@ -484,7 +484,7 @@ impl<'db> TypeLoweringContext<'db> {
                 match self.lower_builtin_type_generator(
                     type_container,
                     &name,
-                    &template_parameters,
+                    &mut template_parameters,
                 )? {
                     Either::Left(generator) => Ok(Lowered::ConstructibleTypeGenerator(generator)),
                     Either::Right(r#type) => Ok(Lowered::Type(r#type)),
