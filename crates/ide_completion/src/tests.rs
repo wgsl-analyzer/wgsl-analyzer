@@ -299,7 +299,7 @@ fn no_completions_in_comments() {
             builtin constructor RayDesc
             builtin constructor RayIntersection
             builtin function abs
-            builtin type acceleration_structure
+            builtin type generator acceleration_structure
             builtin function acos
             builtin function acosh
             builtin function all
@@ -481,13 +481,13 @@ fn no_completions_in_comments() {
             builtin function rayQueryProceed
             builtin function rayQueryTerminate
             builtin enumerant ray_payload
-            builtin type ray_query
+            builtin type generator ray_query
             builtin enumerant read
             builtin enumerant read_write
             builtin function reflect
             builtin function refract
             builtin function reverseBits
-            builtin enumerant rg11b10float
+            builtin enumerant rg11b10ufloat
             builtin enumerant rg16float
             builtin enumerant rg16sint
             builtin enumerant rg16snorm
@@ -667,7 +667,7 @@ fn no_completions_in_comments() {
             builtin constructor RayDesc
             builtin constructor RayIntersection
             builtin function abs
-            builtin type acceleration_structure
+            builtin type generator acceleration_structure
             builtin function acos
             builtin function acosh
             builtin function all
@@ -849,13 +849,13 @@ fn no_completions_in_comments() {
             builtin function rayQueryProceed
             builtin function rayQueryTerminate
             builtin enumerant ray_payload
-            builtin type ray_query
+            builtin type generator ray_query
             builtin enumerant read
             builtin enumerant read_write
             builtin function reflect
             builtin function refract
             builtin function reverseBits
-            builtin enumerant rg11b10float
+            builtin enumerant rg11b10ufloat
             builtin enumerant rg16float
             builtin enumerant rg16sint
             builtin enumerant rg16snorm
@@ -1034,7 +1034,7 @@ fn no_completions_in_comments() {
             builtin constructor RayDesc
             builtin constructor RayIntersection
             builtin function abs
-            builtin type acceleration_structure
+            builtin type generator acceleration_structure
             builtin function acos
             builtin function acosh
             builtin function all
@@ -1216,13 +1216,13 @@ fn no_completions_in_comments() {
             builtin function rayQueryProceed
             builtin function rayQueryTerminate
             builtin enumerant ray_payload
-            builtin type ray_query
+            builtin type generator ray_query
             builtin enumerant read
             builtin enumerant read_write
             builtin function reflect
             builtin function refract
             builtin function reverseBits
-            builtin enumerant rg11b10float
+            builtin enumerant rg11b10ufloat
             builtin enumerant rg16float
             builtin enumerant rg16sint
             builtin enumerant rg16snorm
