@@ -297,7 +297,7 @@ jobs:
         uses: cargo-bins/cargo-binstall@b874e25ea559687bec77e281e9b271aa1367b624 # v1.23.0
 
       - name: Install cargo-deadlinks
-        run: cargo binstall --no-confirm cargo-deadlinks
+        run: cargo binstall cargo-deadlinks --no-confirm --locked
 
       - name: Checks dead links
         run: cargo deadlinks --dir target/doc
@@ -317,7 +317,7 @@ jobs:
         uses: cargo-bins/cargo-binstall@b874e25ea559687bec77e281e9b271aa1367b624 # v1.23.0
 
       - name: Install cargo-shear
-        run: cargo binstall --no-confirm cargo-shear
+        run: cargo binstall cargo-shear --no-confirm --locked
 
       - name: Run cargo-shear
         run: cargo shear
