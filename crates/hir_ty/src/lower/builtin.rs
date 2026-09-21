@@ -30,7 +30,7 @@ impl TypeLoweringContext<'_> {
         &mut self,
         name: Name,
         type_container: TypeContainer,
-        template_parameters: &mut TemplateParameters,
+        template_parameters: &TemplateParameters,
     ) -> Result<Lowered, TypeLoweringError> {
         let type_kind = match name.as_str() {
             "bool" => {
