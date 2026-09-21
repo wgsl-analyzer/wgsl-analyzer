@@ -115,7 +115,7 @@ jobs:
       #       ./crates/proc-macro-srv/proc-macro-test/imp -> target
 
       - name: Install nextest
-        uses: taiki-e/install-action@fa23953489c080190314742a9b907f8e97c6767c # v2.87.10
+        uses: taiki-e/install-action@3f74d7c16a4242f1c95561e98edc25d36adb4375 # v2.87.12
         with:
           tool: nextest
 
@@ -229,7 +229,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Install Tombi
-        uses: tombi-toml/setup-tombi@0ca8607861bce3508ba79339c7c47acb40a334e1 # v1.5.4
+        uses: tombi-toml/setup-tombi@ea139001852855a7f1cf30a9b60c71ebb6446a99 # v1.5.5
 
       - name: Lint TOML files
         run: tombi lint
@@ -297,7 +297,7 @@ jobs:
         uses: cargo-bins/cargo-binstall@b874e25ea559687bec77e281e9b271aa1367b624 # v1.23.0
 
       - name: Install cargo-deadlinks
-        run: cargo binstall --no-confirm cargo-deadlinks
+        run: cargo binstall cargo-deadlinks --no-confirm --locked
 
       - name: Checks dead links
         run: cargo deadlinks --dir target/doc
@@ -317,7 +317,7 @@ jobs:
         uses: cargo-bins/cargo-binstall@b874e25ea559687bec77e281e9b271aa1367b624 # v1.23.0
 
       - name: Install cargo-shear
-        run: cargo binstall --no-confirm cargo-shear
+        run: cargo binstall cargo-shear --no-confirm --locked
 
       - name: Run cargo-shear
         run: cargo shear
