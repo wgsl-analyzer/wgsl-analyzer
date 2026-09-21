@@ -14,7 +14,7 @@ A tool for formatting [WGSL](https://www.w3.org/TR/WGSL/) and [WESL](https://wes
 To install:
 
 ```bash
-cargo install --git https://github.com/wgsl-analyzer/wgsl-analyzer wgslfmt
+cargo install --git https://github.com/wgsl-analyzer/wgsl-analyzer wgslfmt --locked
 ```
 
 ## Usage

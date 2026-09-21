@@ -43,6 +43,6 @@ jobs:
 
       - name: Build fuzzers
         run: |
-          cargo install cargo-fuzz
+          cargo binstall cargo-fuzz --no-confirm --locked
           cd crates/syntax
           cargo +nightly fuzz build
