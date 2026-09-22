@@ -1,4 +1,4 @@
-//! [dprint](https://dprint.dev/) plugin for formatting WGSL code.
+//! `dprint` plugin with [`wgsl_formatter`] as the backend for formatting WebGPU Shader Language source code.
 
 use dprint_core::{
     configuration::{ConfigKeyMap, GlobalConfiguration},
@@ -8,7 +8,7 @@ use dprint_core::{
         SyncPluginHandler,
     },
 };
-use wgsl_formatter::{FormattingOptions, format_str};
+use wgsl_formatter::FormattingOptions;
 
 use crate::config::resolve_config;
 
@@ -63,9 +63,22 @@ impl SyncPluginHandler<FormattingOptions> for WgslPluginHandler {
     ) -> FormatResult {
         let config = request.config;
 
-        let file_text =
-            std::str::from_utf8(&request.file_bytes).map_err(|error| error.to_string())?;
-        let formatted = format_str(file_text, config);
+        let source = std::str::from_utf8(&request.file_bytes).map_err(FormatError::new)?;
+
+        let parsed = parser::parse_entrypoint_with_capabilities(
+            source,
+            parser::ParseEntryPoint::File,
+            parser::Edition::LATEST,
+            parser::Capabilities::default(),
+        );
+
+        if !parsed.errors().is_empty() {
+            let errors = parsed.errors();
+            return Err(format!("Could not parse the source. {errors:?}").into());
+        }
+
+        let formatted = wgsl_formatter::format_node(&parsed.syntax(), config)
+            .map_err(|error| format!("wgslfmt encountered an error. This is a bug in wgslfmt, feel free to report this: {error:?}"))?;
 
         Ok(Some(formatted.into_bytes()))
     }

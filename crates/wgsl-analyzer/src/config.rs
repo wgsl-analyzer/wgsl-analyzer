@@ -39,6 +39,7 @@ use serde::{Deserialize, Serialize};
 use stdx::format_to_acc;
 use triomphe::Arc;
 use vfs::{AbsPath, AbsPathBuf};
+use wgsl_formatter::FormattingOptions;
 
 use crate::lsp::capabilities::ClientCapabilities;
 
@@ -179,9 +180,8 @@ pub struct Config {
     validation_errors: ConfigErrors,
 
     detached_files: Vec<AbsPathBuf>,
-    wgslfmt_override_command: Option<Vec<String>>,
-    wgslfmt_extra_args: Vec<String>,
-    wgslfmt_range_formatting_enable: bool,
+
+    wgslfmt_option: FormattingOptions,
 }
 
 impl Config {
@@ -286,9 +286,7 @@ impl Config {
             validation_errors: ConfigErrors::default(),
             detached_files: Vec::default(),
             // watoml_file: Default::default(),
-            wgslfmt_override_command: None,
-            wgslfmt_extra_args: vec![],
-            wgslfmt_range_formatting_enable: false,
+            wgslfmt_option: FormattingOptions::default(),
         }
     }
 
@@ -565,21 +563,11 @@ impl Config {
     }
 
     #[must_use]
-    pub fn wgslfmt(
+    pub const fn wgslfmt(
         &self,
         source_root_id: Option<SourceRootId>,
-    ) -> WgslfmtConfig {
-        match &self.wgslfmt_override_command {
-            Some(arguments) if !arguments.is_empty() => {
-                let mut arguments = arguments.clone();
-                let command = arguments.remove(0);
-                WgslfmtConfig::CustomCommand { command, arguments }
-            },
-            Some(_) | None => WgslfmtConfig::Wgslfmt {
-                extra_arguments: self.wgslfmt_extra_args.clone(),
-                enable_range_formatting: self.wgslfmt_range_formatting_enable,
-            },
-        }
+    ) -> &FormattingOptions {
+        &self.wgslfmt_option
     }
 
     #[must_use]
@@ -665,18 +653,6 @@ impl ConfigChange {
         assert!(self.source_map.is_none());
         self.source_map = Some(source_root_map);
     }
-}
-
-#[derive(Debug, Clone)]
-pub enum WgslfmtConfig {
-    Wgslfmt {
-        extra_arguments: Vec<String>,
-        enable_range_formatting: bool,
-    },
-    CustomCommand {
-        command: String,
-        arguments: Vec<String>,
-    },
 }
 
 #[derive(Serialize, Deserialize, Debug, Copy, Clone, PartialEq)]
