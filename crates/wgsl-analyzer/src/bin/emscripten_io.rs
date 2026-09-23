@@ -112,3 +112,30 @@ fn send_body(frame: &[u8]) -> io::Result<()> {
     }
     Ok(())
 }
+
+struct EmscriptenIoRead;
+
+#[expect(clippy::renamed_function_params, reason = "abbreviations")]
+impl Read for EmscriptenIoRead {
+    fn read(
+        &mut self,
+        destination: &mut [u8],
+    ) -> io::Result<usize> {
+        if destination.is_empty() {
+            return Ok(0);
+        }
+
+        // SAFETY: `destination` is uniquely borrowed and writable for `destination.len()` bytes,
+        // which is the most the host is allowed to write.
+        let count = unsafe { lsp_js_read(destination.as_mut_ptr(), destination.len()) };
+
+        let count = usize::try_from(count)
+            .map_err(|_error| io::Error::other("the host failed to read LSP input"))?;
+        if count > destination.len() {
+            // Overrunning the buffer would break the invariants of whatever wraps this, so treat a
+            // host that reports more than it was offered as a failure rather than trusting it.
+            return Err(io::Error::other("the host read past the end of the buffer"));
+        }
+        Ok(count)
+    }
+}
