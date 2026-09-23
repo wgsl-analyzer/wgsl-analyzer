@@ -9,6 +9,15 @@ This guide will assume you have Visual Studio Code and Visual Studio Code Inside
 Since `wgsl-analyzer` is a Rust project, you will need to install Rust.
 You can download and install the latest stable version of [Rust](https://www.rust-lang.org/tools/install).
 
+That is everything you need for ordinary development.
+Building the browser packages with `cargo xtask build-web` additionally requires:
+
+- a nightly toolchain with the `rust-src` component, because the shipped `rust-std` for
+  `wasm32-unknown-emscripten` cannot link with `-pthread` and so has to be rebuilt:
+  `rustup +nightly component add rust-src`
+- the [emscripten SDK](https://emscripten.org/docs/getting_started/downloads.html), sourced into
+  the current shell so that `emcc` is on `PATH`: `source /path/to/emsdk/emsdk_env.sh`
+
 ## Step-by-Step Setup
 
 1. Fork the [`wgsl-analyzer` repository](https://github.com/wgsl-analyzer/wgsl-analyzer) and clone the fork to your local machine.

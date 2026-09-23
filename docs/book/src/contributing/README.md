@@ -125,6 +125,21 @@ pnpm install --frozen-lockfile
 pnpm run ci
 ```
 
+The browser packages under `js` are a separate pnpm workspace, so they have their own checks:
+
+```bash
+cd js
+pnpm install --frozen-lockfile
+pnpm --filter wgsl-analyzer-web run ci     # biome and typecheck
+pnpm --filter wgsl-analyzer-web run test   # unit tests
+pnpm --filter wgsl-analyzer-monaco-example run typecheck
+pnpm --filter wgsl-analyzer-codemirror-example run typecheck
+```
+
+`pnpm --filter wgsl-analyzer-web run test:smoke` is deliberately not in that list.
+It boots the real WebAssembly module, so it needs the artifacts that `cargo xtask build-web`
+stages; see [Setup](setup.md) for what that build requires.
+
 Run `pnpm run` to see all available scripts.
 
 ### How to
