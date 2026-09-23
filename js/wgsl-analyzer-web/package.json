@@ -1,0 +1,55 @@
+{
+	"name": "wgsl-analyzer-web",
+	"version": "0.0.0",
+	"description": "Run the wgsl-analyzer language server in a Web Worker",
+	"license": "MIT OR Apache-2.0",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/wgsl-analyzer/wgsl-analyzer"
+	},
+	"keywords": [
+		"wgsl",
+		"wesl",
+		"language-server",
+		"lsp",
+		"wasm",
+		"web-worker"
+	],
+	"type": "module",
+	"engines": {
+		"node": ">=24.15.0"
+	},
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"default": "./dist/index.js"
+		},
+		"./package.json": "./package.json",
+		"./assets/*": "./dist/assets/*"
+	},
+	"files": [
+		"dist",
+		"src"
+	],
+	"scripts": {
+		"build": "pnpm run build:lib && pnpm run build:worker",
+		"clean": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\"",
+		"build:lib": "pnpm run clean && tsc",
+		"build:worker": "esbuild src/worker.ts --bundle --format=esm --target=es2024 --external:./wgsl_analyzer.js --outfile=dist/assets/worker.js",
+		"check": "pnpm exec biome check",
+		"ci": "pnpm exec biome ci && pnpm run typecheck",
+		"fix": "pnpm exec biome check --write",
+		"format": "pnpm exec biome format --write",
+		"lint": "pnpm exec biome lint",
+		"test": "node --test \"tests/unit/*.test.ts\"",
+		"test:smoke": "node --test --test-force-exit \"tests/smoke/*.test.ts\"",
+		"typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.node.json"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.5.8",
+		"@tsconfig/strictest": "^2.0.8",
+		"@types/node": "^26.4.1",
+		"esbuild": "^0.28.2",
+		"typescript": "^7.0.2"
+	}
+}
