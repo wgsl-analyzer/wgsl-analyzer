@@ -23,7 +23,9 @@ extend-ignore-re = [
 	"(?Rm) .+ ...\"$",  # parser snapshot test data
 	"(?Rm)^\\s+\\d+..\\d+ .*$",  # hir-ty snapshot test data
 ]
-extend-ignore-identifiers-re = []
+extend-ignore-identifiers-re = [
+	"__sig$",  # Emscripten JS library decorator, its name is fixed by the linker.
+]
 
 # Match Whole Word - Case Sensitive
 [default.extend-identifiers]
