@@ -20,14 +20,42 @@ use crate::{
 
 const VERSION_STABLE: &str = "0.11";
 const VERSION_NIGHTLY: &str = "0.12";
-const VERSION_DEV: &str = "0.13"; // keep this one in sync with `package.json`
+/// Keep this one in sync with every `package.json` that `patch_version` patches.
+pub(crate) const VERSION_DEV: &str = "0.13";
+
+pub(crate) fn is_stable(shell: &Shell) -> bool {
+    shell.var("GITHUB_REF").unwrap_or_default().as_str() == "refs/heads/release"
+}
+
+pub(crate) fn client_version(
+    shell: &Shell,
+    patch_version: &str,
+) -> String {
+    if is_stable(shell) {
+        format!("{VERSION_STABLE}.{patch_version}")
+    } else {
+        // A hack to make VS Code prefer nightly over stable.
+        format!("{VERSION_NIGHTLY}.{patch_version}")
+    }
+}
+
+/// Replaces the `VERSION_DEV` placeholder version in a `package.json`.
+pub(crate) fn patch_version<'patch>(
+    patch: &'patch mut Patch,
+    version: &str,
+) -> &'patch mut Patch {
+    patch.replace(
+        &format!(r#""version": "{VERSION_DEV}.0-dev""#),
+        &format!(r#""version": "{version}""#),
+    )
+}
 
 impl flags::Dist {
     pub(crate) fn run(
         self,
         shell: &Shell,
     ) -> anyhow::Result<()> {
-        let stable = shell.var("GITHUB_REF").unwrap_or_default().as_str() == "refs/heads/release";
+        let stable = is_stable(shell);
 
         let project_root = project_root();
         let target = Target::get(&project_root, shell);
@@ -37,12 +65,7 @@ impl flags::Dist {
         shell.create_dir(&dist)?;
 
         if let Some(patch_version) = self.client_patch_version {
-            let version = if stable {
-                format!("{VERSION_STABLE}.{patch_version}")
-            } else {
-                // A hack to make VS Code prefer nightly over stable.
-                format!("{VERSION_NIGHTLY}.{patch_version}")
-            };
+            let version = client_version(shell, &patch_version);
             dist_server(
                 shell,
                 &format!("{version}-standalone"),
@@ -87,11 +110,7 @@ fn dist_client(
     let _d = shell.push_dir("./editors/code");
 
     let mut patch = Patch::new(shell, "./package.json")?;
-    patch
-        .replace(
-            &format!(r#""version": "{VERSION_DEV}.0-dev""#),
-            &format!(r#""version": "{version}""#),
-        )
+    patch_version(&mut patch, version)
         .replace(
             r#""releaseTag": null"#,
             &format!(r#""releaseTag": "{release_tag}""#),
@@ -274,14 +293,14 @@ impl Target {
     }
 }
 
-struct Patch {
+pub(crate) struct Patch {
     path: PathBuf,
     original_contents: String,
     contents: String,
 }
 
 impl Patch {
-    fn new<Path>(
+    pub(crate) fn new<Path>(
         shell: &Shell,
         path: Path,
     ) -> anyhow::Result<Self>
@@ -307,7 +326,7 @@ impl Patch {
         self
     }
 
-    fn commit(
+    pub(crate) fn commit(
         &self,
         shell: &Shell,
     ) -> anyhow::Result<()> {

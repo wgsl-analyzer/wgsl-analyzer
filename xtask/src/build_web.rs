@@ -6,7 +6,11 @@ use std::path::{Path, PathBuf};
 use anyhow::{Context as _, bail};
 use xshell::{Cmd, Shell, cmd};
 
-use crate::{flags::BuildWeb, project_root};
+use crate::{
+    dist::{self, Patch},
+    flags::BuildWeb,
+    project_root,
+};
 
 const TARGET: &str = "wasm32-unknown-emscripten";
 
@@ -40,6 +44,13 @@ impl BuildWeb {
         build_package(shell)?;
         // Staging comes last because `build:lib` clears `dist` first.
         let assets = stage_artifacts(shell, self.release)?;
+
+        if let Some(patch_version) = &self.client_patch_version {
+            let version = dist::client_version(shell, patch_version);
+            let mut patch = Patch::new(shell, Path::new(PACKAGE_ROOT).join("package.json"))?;
+            dist::patch_version(&mut patch, &version).commit(shell)?;
+            println!("build-web: stamped version {version}");
+        }
 
         println!("build-web: staged the web package in {}", assets.display());
         Ok(())

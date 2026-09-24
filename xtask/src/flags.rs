@@ -94,6 +94,8 @@ xflags::xflags! {
         cmd build-web {
             /// Build in release configuration.
             optional --release
+            /// Stamp the package with the version that `dist` gives the client.
+            optional --client-patch-version version: String
         }
     }
 }
@@ -178,6 +180,7 @@ pub struct Changelog {
 #[derive(Debug)]
 pub struct BuildWeb {
     pub release: bool,
+    pub client_patch_version: Option<String>,
 }
 
 impl Xtask {
