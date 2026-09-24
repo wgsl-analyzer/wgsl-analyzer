@@ -1,6 +1,6 @@
 {
 	"name": "wgsl-analyzer-web",
-	"version": "0.0.0",
+	"version": "0.13.0-dev",
 	"description": "Run the wgsl-analyzer language server in a Web Worker",
 	"license": "MIT OR Apache-2.0",
 	"repository": {
@@ -16,9 +16,6 @@
 		"web-worker"
 	],
 	"type": "module",
-	"engines": {
-		"node": ">=24.15.0"
-	},
 	"exports": {
 		".": {
 			"types": "./dist/index.d.ts",
@@ -29,8 +26,14 @@
 	},
 	"files": [
 		"dist",
-		"src"
+		"src",
+		"LICENSE-APACHE",
+		"LICENSE-MIT"
 	],
+	"publishConfig": {
+		"access": "public",
+		"provenance": true
+	},
 	"scripts": {
 		"build": "pnpm run build:lib && pnpm run build:worker",
 		"clean": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\"",
@@ -41,6 +44,7 @@
 		"fix": "pnpm exec biome check --write",
 		"format": "pnpm exec biome format --write",
 		"lint": "pnpm exec biome lint",
+		"prepack": "node -e \"for(const f of ['LICENSE-APACHE','LICENSE-MIT'])require('node:fs').copyFileSync('../../'+f,f)\"",
 		"test": "node --test \"tests/unit/*.test.ts\"",
 		"test:smoke": "node --test --test-force-exit --test-concurrency=1 \"tests/smoke/*.test.ts\"",
 		"typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.node.json"
