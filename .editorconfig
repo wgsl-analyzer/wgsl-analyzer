@@ -36,3 +36,6 @@ indent_style = tab
 
 [.nvmrc]
 insert_final_newline = false
+
+[*.git*]
+indent_style = tab

@@ -34,7 +34,7 @@ pub use wesl_toml::{WeslDependency, WeslManifest};
 pub enum ProjectManifest {
     /// Uses `wesl-project.json`.
     ProjectJson(ManifestPath),
-    /// Uses the `package.metadata.wgsl-analyzer` table as a stand-in for `wesl.toml`.
+    /// Uses the dependencies in `Cargo.toml` and any further metadata in `package.metadata.wgsl-analyzer`.
     CargoToml(ManifestPath),
     /// A `wesl.toml` file.
     WeslToml(ManifestPath),

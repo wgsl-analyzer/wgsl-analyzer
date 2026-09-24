@@ -1,6 +1,7 @@
 //! Infrastructure for lazy project discovery and loading. Currently only support wesl.toml discovery.
 use std::{
-    fs,
+    collections::BTreeMap,
+    fs, io,
     str::{FromStr as _, from_utf8},
 };
 
@@ -11,8 +12,8 @@ use crossbeam_channel::Sender;
 use edition::Edition;
 use paths::AbsPathBuf;
 use project_model::{
-    ManifestPath, PackageDependency, PackageKey, ProjectManifest, WeslManifest, WeslPackage,
-    WeslPackageRoot,
+    ManifestPath, PackageDependency, PackageKey, ProjectManifest, WeslDependency, WeslManifest,
+    WeslPackage, WeslPackageRoot,
 };
 use stdx::process::spawn_with_streaming_output;
 
@@ -54,7 +55,7 @@ impl LoadPackageTask {
         let manifest = ProjectManifest::discover(
             &discover.path,
             discover.search_parents,
-            |manifest| -> bool { find_cargo_metadata_table(manifest).is_ok() },
+            |manifest| -> bool { get_cargo_metadata(manifest).is_ok() },
         )?;
         Some(Self::new(manifest, PackageOrigin::Local, sender))
     }
@@ -91,18 +92,26 @@ impl LoadPackageTask {
             ProjectManifest::WeslToml(manifest_path) => {
                 let bytes = std::fs::read(manifest_path)
                     .with_context(|| format!("failed to read manifest file '{manifest_path}'"))?;
-                let wesl_toml = WeslManifest::from_slice(&bytes).with_context(|| {
+                let manifest = WeslManifest::from_slice(&bytes).with_context(|| {
                     format!("unable to parse contents of manifest '{manifest_path}'")
                 })?;
-                self.parse(manifest_path, &wesl_toml)?
+                self.parse(manifest_path, &manifest)?
             },
             ProjectManifest::CargoToml(manifest_path) => {
-                let table = find_cargo_metadata_table(manifest_path)?;
-                let wesl_toml = WeslManifest::from_json(table)
-                    .with_context(|| format!("failed to read manifest file '{manifest_path}'"))?;
-                self.parse(manifest_path, &wesl_toml)?
+                let manifest = get_cargo_metadata(manifest_path)?;
+                self.parse(manifest_path, &manifest)?
             },
-            ProjectManifest::ProjectJson(manifest_path) => bail!("project json not supported"),
+            ProjectManifest::ProjectJson(manifest_path) => {
+                let file = fs::File::open(manifest_path)?;
+                let reader = io::BufReader::new(file);
+
+                // Read the JSON contents of the file as an instance of `User`.
+                let manifest: WeslManifest =
+                    serde_json::from_reader(reader).with_context(|| {
+                        format!("unable to parse contents of manifest '{manifest_path}'")
+                    })?;
+                self.parse(manifest_path, &manifest)?
+            },
         };
 
         self.send(LoadPackageMessage::Finished { project });
@@ -115,7 +124,7 @@ impl LoadPackageTask {
         wesl_toml: &WeslManifest,
     ) -> Result<WeslPackage, anyhow::Error> {
         let root = manifest_path.parent().join(&wesl_toml.root);
-        if !std::fs::metadata(&root)?.is_dir() {
+        if std::fs::metadata(&dbg!(&root))?.is_file() {
             return Err(std::io::Error::new(
                 std::io::ErrorKind::InvalidInput,
                 "wesl.toml root must point at a folder",
@@ -125,12 +134,12 @@ impl LoadPackageTask {
         let dependencies = wesl_toml
             .dependencies
             .iter()
-            .map(|(name, dependency)| {
+            .filter_map(|(name, dependency)| {
                 let Ok(name) = PackageName::new(name) else {
-                    return Err(DependencyError::InvalidName(name.clone()));
+                    return Some(Err(DependencyError::InvalidName(name.clone())));
                 };
 
-                Ok(
+                Some(Ok(
                     match (dependency.path.clone(), dependency.package.clone()) {
                         (None, None) => PackageDependency::Library {
                             name: name.clone(),
@@ -146,17 +155,18 @@ impl LoadPackageTask {
                             let dot_project_json = base.join(".wesl-project.json");
                             let manifest = [wesl_toml, cargo_toml, project_json, dot_project_json]
                                 .into_iter()
-                                .find(|candidate| fs::metadata(candidate).is_ok())
-                                .ok_or_else(|| DependencyError::InvalidPath(name.clone()))?;
-                            let path = ManifestPath::try_from(manifest)
-                                .map_err(|_path| DependencyError::InvalidPath(name.clone()))?;
-                            PackageDependency::Path { name, path }
+                                .find(|candidate| fs::metadata(dbg!(candidate)).is_ok())?;
+                            let manifest_path = ManifestPath::try_from(dbg!(manifest)).ok()?;
+                            PackageDependency::Path {
+                                name,
+                                path: manifest_path,
+                            }
                         },
                         (Some(path), Some(package)) => {
-                            return Err(DependencyError::Ambiguous(name));
+                            return Some(Err(DependencyError::Ambiguous(name)));
                         },
                     },
-                )
+                ))
             })
             .collect::<Result<Vec<_>, DependencyError>>()?;
         for dependency in &dependencies {
@@ -210,13 +220,10 @@ impl LoadPackageTask {
 }
 
 #[expect(clippy::print_stderr, reason = "tracing not working")]
-fn find_cargo_metadata_table(
-    manifest_path: &ManifestPath
-) -> Result<serde_json::Value, anyhow::Error> {
+fn get_cargo_metadata(manifest_path: &ManifestPath) -> Result<WeslManifest, anyhow::Error> {
     let cargo_path = toolchain::Tool::Cargo.path();
     let mut command = MetadataCommand::new();
     command.cargo_path(cargo_path);
-    command.no_deps();
     command.manifest_path(manifest_path);
     let mut errored = false;
     let output = spawn_with_streaming_output(command.cargo_command(), &mut |_| {}, &mut |line| {
@@ -254,12 +261,43 @@ fn find_cargo_metadata_table(
     let find = binding
         .iter()
         .find(|package| package.manifest_path == manifest_path.as_str());
-    let table = find
+    let partial: WeslManifest = find
         .unwrap()
         .metadata
         .get("wgsl-analyzer")
-        .ok_or_else(|| anyhow!("no wgsl-analyzer table in {manifest_path}"))?;
-    Ok(table.to_owned())
+        .map(|table| serde_json::from_value(table.clone()))
+        .transpose()
+        .with_context(|| anyhow!("no wgsl-analyzer table in {manifest_path}"))?
+        .unwrap_or_default();
+    let cargo_dependencies = find
+        .unwrap()
+        .dependencies
+        .iter()
+        .cloned()
+        .map(|cargo_dependency| {
+            (
+                to_wesl_name(
+                    &cargo_dependency
+                        .rename
+                        .unwrap_or_else(|| cargo_dependency.name.clone()),
+                ),
+                WeslDependency {
+                    package: None,
+                    path: cargo_dependency.path.map(paths::Utf8PathBuf::into_string),
+                },
+            )
+        });
+    let combined = partial.dependencies.into_iter().chain(cargo_dependencies);
+    let manifest = WeslManifest {
+        package_manager: Some("Cargo".to_owned()),
+        dependencies: BTreeMap::from_iter(combined),
+        ..partial
+    };
+    Ok(manifest)
+}
+
+fn to_wesl_name(package_name: &str) -> String {
+    package_name.replace('-', "_")
 }
 
 #[derive(Debug)]
