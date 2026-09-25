@@ -2200,7 +2200,7 @@ dependencies = [
  "dprint-core",
  "dprint-core-macros",
  "expect-test",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "parser",
  "rowan",
  "serde",
