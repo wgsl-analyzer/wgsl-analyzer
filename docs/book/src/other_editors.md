@@ -107,7 +107,7 @@ There are several LSP client implementations for Vim or Neovim:
     lspconfig.wgsl_analyzer.setup({})
     ```
 
-### Using [lazynvim](https://github.com/LazyVim/LazyVim)
+### Using [lazyVim](https://github.com/LazyVim/LazyVim)
 
 1. Install `wgsl-analyzer` nightly binary from [github releases](https://github.com/wgsl-analyzer/wgsl-analyzer/releases/) and make it executable or compile `wgsl-analyzer` yourself.
 
@@ -129,8 +129,6 @@ There are several LSP client implementations for Vim or Neovim:
             opts = {
                 servers = {
                     wgsl_analyzer = {
-                        mason = false, 
-                        cmd = { "/path/to/wgsl-analyzer" },
                         filetypes = { "wgsl", "wesl" },
                         root_markers = { "wesl.toml", ".git" },
                         single_file_support = true,
@@ -146,10 +144,6 @@ There are several LSP client implementations for Vim or Neovim:
     ```
 
 3. Reload nvim.
-
-> [!NOTE]
-> You can remove lines `mason = false,` and `cmd = { "/path/to/wgsl-analyzer" },` and `mason.nvim` will handle `wgsl-analyzer` installation but its version is severely outdated and does not support `wesl` and many other features.
-
 
 ### Using [coc.nvim](<https://github.com/neoclide/coc.nvim>)
 
