@@ -1,7 +1,7 @@
 /**
  * End-to-end smoke test for the `wasm32-unknown-emscripten` build, under Node.
  *
- * This drives the emscripten glue the way `src/worker.ts` does rather than
+ * This drives the emscripten glue through `src/host.ts`, as `src/worker.ts` does, rather than
  * through `WgslAnalyzerServer.start()`, which is unusable here: it resolves
  * against `globalThis.location.href` and constructs a web `Worker`. The glue
  * itself is environment-agnostic because `-sENVIRONMENT` is deliberately unset,
@@ -22,10 +22,23 @@ import { existsSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { after, before, describe, it } from "node:test";
 import { pathToFileURL } from "node:url";
+import {
+	AbstractMessageReader,
+	AbstractMessageWriter,
+	createMessageConnection,
+	type DataCallback,
+	type Disposable,
+	Message,
+	type MessageReader,
+	type MessageWriter,
+	type NotificationMessage,
+	ResponseError,
+} from "vscode-jsonrpc/node";
 
 // Type-only, so these are erased and do not hoist a runtime import of `dist/`.
-import type { EmscriptenModule, LspTransport, ModuleFactory } from "../../dist/emscripten.js";
+import type { EmscriptenModule, ModuleFactory } from "../../dist/emscripten.js";
 import type { EmscriptenFs } from "../../dist/fs.js";
+import type { Host } from "../../dist/host.js";
 import type { WorkspaceFiles } from "../../dist/protocol.js";
 
 const DIST = join(import.meta.dirname, "..", "..", "dist");
@@ -42,16 +55,21 @@ const TOTAL_MS = Number(process.env["WA_SMOKE_TOTAL_MS"] ?? 420_000);
 // compile error here rather than a silently weaker assertion.
 
 /** `-sEXPORTED_RUNTIME_METHODS`, verbatim. */
-const RUNTIME_METHODS: readonly (keyof EmscriptenModule)[] = ["FS", "callMain"];
+const RUNTIME_METHODS: readonly (keyof EmscriptenModule)[] = [
+	"FS",
+	"callMain",
+	"stringToNewUTF8",
+	"UTF8ToString",
+	"addFunction",
+];
 
 /** `-sEXPORTED_FUNCTIONS`, verbatim. */
-const WASM_EXPORTS: readonly string[] = ["_main"];
-
-/** What `--pre-js=…/emscripten-io-pre.js` installs on the module. */
-const TRANSPORT_METHODS: readonly (keyof EmscriptenModule)[] = ["lspStart"];
-
-/** What `lspStart` hands back. Asserted separately, since the type is structural. */
-const TRANSPORT_ENDS: readonly (keyof LspTransport)[] = ["pushBytes", "closeInput"];
+const WASM_EXPORTS: readonly string[] = [
+	"_main",
+	"_free",
+	"_lsp_push_message",
+	"_lsp_set_on_message",
+];
 
 /**
  * The `FS` members `src/fs.ts` calls. These exist only because of
@@ -60,7 +78,7 @@ const TRANSPORT_ENDS: readonly (keyof LspTransport)[] = ["pushBytes", "closeInpu
  * the name `FS` alone would not notice.
  */
 const FS_MEMBERS: readonly (keyof EmscriptenFs)[] = [
-	"mkdir",
+	"mkdirTree",
 	"writeFile",
 	"unlink",
 	"chdir",
@@ -95,8 +113,7 @@ const FILES: WorkspaceFiles = {
 const ARTIFACTS: readonly (readonly [directory: string, name: string, command: string])[] = [
 	[ASSETS, "wgsl_analyzer.js", "cargo xtask build-web"],
 	[ASSETS, "wgsl_analyzer.wasm", "cargo xtask build-web"],
-	[DIST, "framing.js", "pnpm --filter wgsl-analyzer-web run build"],
-	[DIST, "fs.js", "pnpm --filter wgsl-analyzer-web run build"],
+	[DIST, "host.js", "pnpm --filter wgsl-analyzer-web run build"],
 ];
 
 function preflight() {
@@ -117,29 +134,11 @@ function preflight() {
 	);
 }
 
-type JsonRpcId = number | string;
+/** `ServerCancelled`: the request lost a race with a change, typically the workspace load. */
+const SERVER_CANCELLED = -32802;
 
-interface JsonRpcError {
-	readonly code: number;
-	readonly message: string;
-}
-
-/** Server to client, expecting a reply. Distinguished by carrying both an id and a method. */
-interface JsonRpcRequest {
-	readonly id: JsonRpcId;
-	readonly method: string;
-}
-
-interface JsonRpcResponse<T = unknown> {
-	readonly id: JsonRpcId;
-	readonly result?: T;
-	readonly error?: JsonRpcError;
-}
-
-/** Neither a request nor a response: carries a method but no id. */
-interface JsonRpcNotification {
-	readonly method: string;
-}
+/** The id `dispose` sends `shutdown` with. A string, so it cannot collide with the connection's. */
+const SHUTDOWN_ID = "shutdown";
 
 /** The `initialize` result members asserted below. */
 interface InitializeResult {
@@ -156,102 +155,84 @@ interface DocumentDiagnosticReport {
 	readonly items: readonly unknown[];
 }
 
-/** A pending `waitFor`. Each owns its own predicate, so only the outcome is shared. */
-interface Waiter {
-	/** Returns the first matching message not yet taken, or undefined. */
-	readonly scan: () => unknown;
-	resolve(message: unknown): void;
+/** Feeds the connection every message `startHost` delivers. */
+class HostReader extends AbstractMessageReader implements MessageReader {
+	#callback: DataCallback | undefined;
+
+	override listen(callback: DataCallback): Disposable {
+		this.#callback = callback;
+		return {
+			dispose: () => {
+				this.#callback = undefined;
+			},
+		};
+	}
+
+	deliver(message: Message): void {
+		this.#callback?.(message);
+	}
 }
 
-const isObject = (value: unknown): value is Record<string, unknown> =>
-	typeof value === "object" && value !== null;
+/** Sends the connection's messages to the host it is attached to. */
+class HostWriter extends AbstractMessageWriter implements MessageWriter {
+	#host: Host | undefined;
 
-const isResponse = (message: unknown): message is JsonRpcResponse =>
-	isObject(message) && "id" in message && ("result" in message || "error" in message);
+	attach(host: Host): void {
+		this.#host = host;
+	}
 
-const isRequest = (message: unknown): message is JsonRpcRequest =>
-	isObject(message) && "id" in message && "method" in message;
+	write(message: Message): Promise<void> {
+		this.#host?.send(message);
+		return Promise.resolve();
+	}
+
+	end(): void {}
+}
 
 async function startServer() {
 	const load = <T>(directory: string, name: string): Promise<T> =>
 		import(pathToFileURL(join(directory, name)).href) as Promise<T>;
-	const { encodeFrame } = await load<typeof import("../../dist/framing.js")>(DIST, "framing.js");
-	const { seedWorkspace } = await load<typeof import("../../dist/fs.js")>(DIST, "fs.js");
+	const { startHost } = await load<typeof import("../../dist/host.js")>(DIST, "host.js");
 	const { default: createWgslAnalyzer } = await load<{ default: ModuleFactory }>(
 		ASSETS,
 		"wgsl_analyzer.js",
 	);
 
 	const stderr: string[] = [];
-	const received: unknown[] = [];
-	const consumed = new WeakSet<object>();
-	const waiters = new Set<Waiter>();
-	const decodeErrors: string[] = [];
+	const received: Message[] = [];
 	const exited = Promise.withResolvers<number>();
 
 	let stopped = false;
+	/** Whether the `shutdown` response arrived before `onExit`. */
+	let shutdownAnswered = false;
 
 	// `EXIT_RUNTIME=1` makes emscripten's Node `quit_` assign the server's status
 	// to `process.exitCode`, which node:test also owns. Left alone that either
 	// masks a failing run or reddens a passing one.
 	const inheritedExitCode = process.exitCode;
 
-	let heapShared: boolean | undefined;
-
-	// One call is one complete message body: the server accumulates a whole frame,
-	// checks it and strips the header before crossing.
-	//
-	// The probe has to read `bytes.buffer` before the `slice()` below replaces it with
-	// an unshared one.
-	const decoder = new TextDecoder();
-	const pushChunk = (bytes: Uint8Array): void => {
-		heapShared ??= bytes.buffer instanceof SharedArrayBuffer;
-		try {
-			// `slice()` because the view is over shared memory, which `TextDecoder` is
-			// not obliged to accept.
-			deliver(JSON.parse(decoder.decode(bytes.slice())));
-		} catch (error) {
-			decodeErrors.push(`malformed JSON body: ${String(error)}`);
-		}
+	// Captured for the export assertions, which the host does not expose.
+	let module!: EmscriptenModule;
+	const factory: ModuleFactory = async (options) => {
+		module = await createWgslAnalyzer(options);
+		return module;
 	};
 
-	const module = await createWgslAnalyzer({
-		noInitialRun: true,
-		printErr: (line: string) => {
-			stderr.push(line);
-			if (stderr.length > 500) stderr.shift();
-		},
-		onExit: (code: number) => {
-			stopped = true;
-			exited.resolve(code);
-		},
-	});
-
-	// Before `callMain`, which is when the server can first write. `onOutput` runs
-	// on this thread: `lsp_js_write` is proxied here from the server's writer
-	// pthread, so the view into wasm memory is valid for the call and `pushChunk`
-	// copies out of it synchronously.
-	const transport = module.lspStart({ onOutput: pushChunk });
-
-	// Seeded after the factory resolves rather than from `preRun`: `preRun` runs
-	// before `__wasm_call_ctors`, and WasmFS needs its static constructors.
-	// Still comfortably before `main()`.
-	seedWorkspace(module.FS, ROOT, FILES);
-	module.FS.chdir(ROOT);
-	// WasmFS's `chdir` does not go through `FS.handleError`, so a failure here
-	// is otherwise silent.
-	assert.equal(module.FS.cwd(), ROOT, "FS.chdir did not take effect");
+	function recordStderr(line: string): void {
+		stderr.push(line);
+		if (stderr.length > 500) stderr.shift();
+	}
 
 	function describeState(headline: string): string {
-		const summarize = (message: unknown): string => {
-			if (isRequest(message)) return `request  id=${message.id} ${message.method}`;
-			if (isResponse(message)) {
+		const summarize = (message: Message): string => {
+			if (Message.isRequest(message)) return `request  id=${message.id} ${message.method}`;
+			if (Message.isResponse(message)) {
 				const outcome = message.error
 					? `ERROR ${message.error.code} ${message.error.message}`
 					: "ok";
 				return `response id=${message.id} ${outcome}`;
 			}
-			return `notify   ${(message as JsonRpcNotification).method}`;
+			return `notify   ${(message as NotificationMessage).method}`;
 		};
 		const tail = received.slice(-12);
 		return [
@@ -262,141 +243,111 @@ async function startServer() {
 			"",
 			`stderr (last ${Math.min(stderr.length, 25)} of ${stderr.length}):`,
 			...(stderr.length ? stderr.slice(-25).map((line) => `  ${line}`) : ["  (none)"]),
-			...(decodeErrors.length ? ["", "decode errors:", ...decodeErrors.map((r) => `  ${r}`)] : []),
 		].join("\n");
 	}
 
-	function send(message: unknown): void {
-		// Queued on this thread; the server's reader pthread picks it up through a
-		// proxied `lsp_js_read`. Silently dropped after `closeInput`, which is only
-		// reached from `dispose`.
-		transport.pushBytes(encodeFrame(message));
-	}
-
-	function deliver(message: unknown): void {
-		received.push(message);
-		// A message carrying both `id` and `method` is a server-to-client
-		// request. `switch_workspaces` sends `client/registerCapability`
-		// unprompted, and its id comes from the server's own counter, which
-		// collides numerically with ours — hence matching on shape, not just id.
-		if (isRequest(message)) send({ jsonrpc: "2.0", id: message.id, result: null });
-		for (const waiter of [...waiters]) {
-			const match = waiter.scan();
-			if (match !== undefined) {
-				waiters.delete(waiter);
-				waiter.resolve(match);
-			}
+	async function withTimeout<T>(promise: Promise<T>, what: string, ms = STEP_MS): Promise<T> {
+		let timer: ReturnType<typeof setTimeout> | undefined;
+		const timeout = new Promise<never>((_, reject) => {
+			timer = setTimeout(
+				() => reject(new Error(describeState(`timed out after ${ms} ms waiting for ${what}`))),
+				ms,
+			);
+		});
+		try {
+			return await Promise.race([promise, timeout]);
+		} finally {
+			clearTimeout(timer);
 		}
 	}
 
-	/**
-	 * Resolves with the first matching message no earlier call has taken.
-	 * Already-received messages are eligible, so nothing is lost by being
-	 * awaited a turn late.
-	 */
-	function waitFor(
-		predicate: (message: unknown) => boolean,
-		what: string,
-		ms = STEP_MS,
-	): Promise<unknown> {
-		const scan = (): unknown => {
-			for (const message of received) {
-				if (isObject(message) && !consumed.has(message) && predicate(message)) {
-					consumed.add(message);
-					return message;
+	const reader = new HostReader();
+	const writer = new HostWriter();
+	const log = (line: string): void => recordStderr(`[jsonrpc] ${line}`);
+	const connection = createMessageConnection(reader, writer, {
+		error: log,
+		warn: log,
+		info: log,
+		log,
+	});
+	// `switch_workspaces` sends `client/registerCapability` unprompted.
+	connection.onRequest(() => null);
+	// Listening before `startHost`, so nothing the server sends is missed.
+	connection.listen();
+
+	async function request<T>(method: string, params: object, ms = STEP_MS): Promise<T> {
+		// Retriggered as a client would, rather than relying on the request
+		// arriving after the workspace has loaded.
+		for (;;) {
+			try {
+				return await withTimeout(
+					connection.sendRequest<T>(method, params),
+					`the response to ${method}`,
+					ms,
+				);
+			} catch (error) {
+				if (!(error instanceof ResponseError)) throw error;
+				const data = error.data as { retriggerRequest?: boolean } | undefined;
+				if (error.code !== SERVER_CANCELLED || !data?.retriggerRequest) {
+					throw new Error(describeState(`${method} failed: ${error.code} ${error.message}`), {
+						cause: error,
+					});
 				}
 			}
-			return undefined;
-		};
-		const immediate = scan();
-		if (immediate !== undefined) return Promise.resolve(immediate);
-		return new Promise((resolve, reject) => {
-			// Assigned below, before any turn in which the timer or `deliver`
-			// could reach it.
-			let timer!: ReturnType<typeof setTimeout>;
-			const waiter: Waiter = {
-				scan,
-				resolve: (message) => {
-					clearTimeout(timer);
-					resolve(message);
-				},
-			};
-			timer = setTimeout(() => {
-				waiters.delete(waiter);
-				reject(new Error(describeState(`timed out after ${ms} ms waiting for ${what}`)));
-			}, ms);
-			waiters.add(waiter);
-		});
+			await new Promise((resolve) => setTimeout(resolve, 50));
+		}
 	}
 
-	let nextId = 0;
-	async function request<T = unknown>(
-		method: string,
-		params: unknown,
-		ms = STEP_MS,
-	): Promise<JsonRpcResponse<T>> {
-		const id = ++nextId;
-		send({ jsonrpc: "2.0", id, method, params });
-		return (await waitFor(
-			(message) => isResponse(message) && message.id === id,
-			`the response to ${method} (id ${id})`,
-			ms,
-		)) as JsonRpcResponse<T>;
-	}
+	const notify = (method: string, params: object): Promise<void> =>
+		connection.sendNotification(method, params);
 
-	const notify = (method: string, params: unknown): void =>
-		send({ jsonrpc: "2.0", method, params });
-
-	// Returns immediately under -sPROXY_TO_PTHREAD=1, which runs main() on a
-	// pthread.
-	module.callMain([]);
+	const host: Host = await startHost(factory, {
+		root: ROOT,
+		files: FILES,
+		args: [],
+		onMessage: (message) => {
+			received.push(message as Message);
+			reader.deliver(message as Message);
+		},
+		onStderr: recordStderr,
+		onExit: (code) => {
+			shutdownAnswered = received.some(
+				(message) => Message.isResponse(message) && message.id === SHUTDOWN_ID,
+			);
+			stopped = true;
+			exited.resolve(code);
+		},
+	});
+	// Nothing was written before this: the connection answers server requests on a later turn.
+	writer.attach(host);
 
 	return {
 		module,
-		transport,
+		stderr,
 		received,
 		request,
 		notify,
-		waitFor,
 		describeState,
-		get decodeErrors() {
-			return decodeErrors;
-		},
-		get heapShared() {
-			return heapShared;
+		get shutdownAnswered() {
+			return shutdownAnswered;
 		},
 
 		/**
-		 * shutdown -> exit -> close the input, then wait for the runtime to
-		 * unwind.
+		 * shutdown -> exit, back to back, then wait for the runtime to unwind.
 		 *
-		 * The order matters. The `shutdown` response is the last thing the server
-		 * writes, and it has to arrive before `proc_exit` terminates the threads.
-		 * Closing the input is what lets `lsp_server`'s reader finish so
-		 * `io_threads.join()` returns: on any path where the main loop bailed
-		 * early the reader is still parked inside a proxied `lsp_js_read`, and the
-		 * strong-referenced proxied-main worker would keep Node alive
-		 * indefinitely.
+		 * The `shutdown` response is the last thing the server writes, and it is
+		 * not awaited here: `main()` returns only once the host has received every
+		 * message, so the response still arrives before the exit.
+		 *
+		 * Both go straight to the host rather than through the connection, which
+		 * dispatches a response only on a later turn, one the exit may beat.
 		 */
 		async dispose() {
 			if (stopped) return exited.promise;
+			host.send({ jsonrpc: "2.0", id: SHUTDOWN_ID, method: "shutdown" });
+			host.send({ jsonrpc: "2.0", method: "exit" });
 			try {
-				await request("shutdown", null);
-			} catch {
-				// Fall through: closing the input still has to happen.
-			}
-			notify("exit", null);
-			transport.closeInput();
-			try {
-				return await Promise.race([
-					exited.promise,
-					new Promise((_, reject) =>
-						setTimeout(
-							() => reject(new Error(describeState(`no exit within ${STEP_MS} ms`))),
-							STEP_MS,
-						),
-					),
-				]);
+				return await withTimeout(exited.promise, "the exit");
 			} finally {
 				stopped = true;
 				process.exitCode = inheritedExitCode;
@@ -417,7 +368,10 @@ const watchdog = setTimeout(() => {
 }, TOTAL_MS);
 watchdog.unref();
 
-describe("wasm32-unknown-emscripten build", () => {
+/** Tells this run apart from `lsp.no-wait-async.test.ts`, which imports it. */
+const VARIANT = "waitAsync" in Atomics ? "" : " (postMessage fallback)";
+
+describe(`wasm32-unknown-emscripten build${VARIANT}`, () => {
 	// Definitely assigned by `before`; if that throws, node:test fails the suite
 	// rather than running the cases below against an unset value.
 	let server!: Awaited<ReturnType<typeof startServer>>;
@@ -469,27 +423,10 @@ describe("wasm32-unknown-emscripten build", () => {
 					+ "WasmFS emit the JS filesystem API that seeding calls.",
 			);
 		}
-		for (const name of TRANSPORT_METHODS) {
-			assert.equal(
-				typeof server.module[name],
-				"function",
-				`Module.${name} is missing. It is installed by `
-					+ "--pre-js=crates/wgsl-analyzer/src/bin/emscripten-io-pre.js; check that "
-					+ "link-arg, and the --js-library beside it, in "
-					+ "[target.wasm32-unknown-emscripten] in .cargo/config.toml.",
-			);
-		}
-		for (const name of TRANSPORT_ENDS) {
-			assert.equal(
-				typeof server.transport[name],
-				"function",
-				`lspStart did not return ${name}; the --pre-js is stale against ` + "src/emscripten.ts.",
-			);
-		}
 	});
 
 	it("completes an LSP handshake", { timeout: STEP_MS }, async () => {
-		const response = await server.request<InitializeResult>("initialize", {
+		const result = await server.request<InitializeResult>("initialize", {
 			processId: null,
 			clientInfo: { name: "wgsl-analyzer-web smoke test", version: "0" },
 			rootUri: `file://${ROOT}`,
@@ -505,8 +442,6 @@ describe("wasm32-unknown-emscripten build", () => {
 			},
 		});
 
-		assert.equal(response.error, undefined, server.describeState("initialize failed"));
-		const { result } = response;
 		assert.ok(result, server.describeState("initialize returned no result"));
 		assert.equal(typeof result.capabilities, "object");
 		assert.equal(result.serverInfo?.name, "wgsl-analyzer");
@@ -520,40 +455,52 @@ describe("wasm32-unknown-emscripten build", () => {
 		});
 	});
 
-	// After the handshake rather than beside the other link-flag assertions:
-	// `heapShared` stays `undefined` until the server's first write, and the
-	// handshake is the first test that guarantees one.
-	it("runs on shared memory", () => {
-		assert.equal(
-			server.heapShared,
-			true,
-			"the server's output was not a view into shared memory, so -pthread "
-				+ "did not reach the link",
-		);
-	});
-
 	it("answers a pull-diagnostics request", { timeout: STEP_MS }, async () => {
 		// Only the shape is asserted: the server returns a well-formed empty
 		// report while the VFS is still loading. That is still worth having —
 		// it proves request routing and a structured response body survive the
 		// transport in both directions.
-		const response = await server.request<DocumentDiagnosticReport>("textDocument/diagnostic", {
+		const result = await server.request<DocumentDiagnosticReport>("textDocument/diagnostic", {
 			textDocument: { uri: ENTRY_URI },
 		});
-		assert.equal(response.error, undefined, server.describeState("diagnostic failed"));
-		const { result } = response;
 		assert.ok(result, server.describeState("diagnostic returned no result"));
 		assert.equal(result.kind, "full");
 		assert.equal(Array.isArray(result.items), true);
 	});
 
-	it("decoded every message it received", () => {
-		assert.deepEqual(server.decodeErrors, [], "a message body failed to decode");
+	it("carries a large message", { timeout: STEP_MS }, async () => {
+		// Far larger than anything above, so the copy into the module goes through a
+		// fresh `malloc` that may grow the shared heap. A truncated body is not valid
+		// JSON, and the server would drop it.
+		server.notify("textDocument/didOpen", {
+			textDocument: {
+				uri: `file://${ROOT}/oversized.wesl`,
+				languageId: "wesl",
+				version: 1,
+				text: `${ENTRY_SOURCE}// ${"x".repeat(96 * 1024)}\n`,
+			},
+		});
+
+		const result = await server.request<DocumentDiagnosticReport>("textDocument/diagnostic", {
+			textDocument: { uri: ENTRY_URI },
+		});
+		assert.equal(result.kind, "full");
+		assert.ok(
+			!server.stderr.some((line) => line.includes("malformed LSP message")),
+			server.describeState("the server dropped a message as malformed"),
+		);
+	});
+
+	it("received messages", () => {
 		assert.notEqual(server.received.length, 0, "no messages arrived at all");
 	});
 
 	it("shuts down and exits with 0", { timeout: STEP_MS }, async () => {
 		const code = await server.dispose();
 		assert.equal(code, 0, server.describeState(`the server exited with ${code}`));
+		assert.ok(
+			server.shutdownAnswered,
+			server.describeState("the shutdown response did not arrive before the exit"),
+		);
 	});
 });
