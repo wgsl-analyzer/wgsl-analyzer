@@ -3,11 +3,9 @@
 Runs the `wgsl-analyzer` language server in a Web Worker.
 
 The server is the `wgsl-analyzer` binary compiled to
-`wasm32-unknown-emscripten`, running its ordinary `main_loop`. Input crosses into
-wasm as the usual `Content-Length` framed LSP stream; output crosses back one
-complete message body per call, with the framing checked and stripped on the Rust
-side. The package hosts it, seeds a workspace into the in-memory filesystem, and
-exposes the message stream.
+`wasm32-unknown-emscripten`, running its ordinary `main_loop`. One crossing into
+or out of wasm carries exactly one complete message body. The package hosts it,
+seeds a workspace into the in-memory filesystem, and exposes the message stream.
 
 ## Building
 
@@ -41,9 +39,7 @@ the real artifact.
 ## Usage
 
 `WgslAnalyzerServer.sendMessage` and `.onMessage` carry parsed JSON-RPC objects in both
-directions. That is the whole interface, and it is all any LSP client needs — the package ships
-no client adapters, because every client wants a slightly different shape and each one is about
-thirty lines:
+directions. That is the whole interface, there are 2 examples showcasing how to use it:
 
 | Example | Adapts to |
 | --- | --- |
@@ -73,34 +69,11 @@ constructors have run.
 
 ## What the host has to get right
 
-The server does not use `Connection::stdio()`, Instead the emscripten build swaps
-in a transport built out of two JavaScript functions the wasm module imports,
-linked in with `--js-library` and `--pre-js`:
-
-| File | Role |
-| --- | --- |
-| [`emscripten_io.rs`](../../crates/wgsl-analyzer/src/bin/emscripten_io.rs) | the Rust `Read`/`Write` endpoints: a `BufReader` inbound, a frame accumulator outbound |
-| [`emscripten-io.js`](../../crates/wgsl-analyzer/src/bin/emscripten-io.js) | the two imports, proxied to the runtime thread |
-| [`emscripten-io-pre.js`](../../crates/wgsl-analyzer/src/bin/emscripten-io-pre.js) | the queue and the `Module` methods this package calls |
-
-The Rust module's docs work through why, and are worth reading before changing
-either side. The short version: `Read::read` treats a count of zero as end of
-input, so a read has to block until a frame arrives, and emscripten's
-`__proxy: 'sync'` plus `__async` is what lets it do that on a pthread while the
-runtime thread's event loop stays free.
-
-What that leaves for the host:
-
 - Serve `worker.js`, `wgsl_analyzer.js` and `wgsl_analyzer.wasm` from one
   directory under those exact names, as above.
 - Be cross-origin isolated, or `SharedArrayBuffer` is missing and nothing starts.
-- Call `Module.lspStart({ onOutput })` before `callMain`, then drive the server
-  through the `pushBytes` and `closeInput` it returns — `closeInput` at shutdown,
-  so the reader thread unwinds instead of staying parked. `lspStart` is the
-  entire host-facing API, and `WgslAnalyzerServer` drives it for you.
-- Treat `onOutput`'s argument as one complete message body. The bytes are a view
-  into wasm memory that is only valid for the duration of the call, and the view
-  is over shared memory, so decode a `slice()` rather than the view itself.
+- Hand `sendMessage` one complete message body.
+- Treat `onMessage`'s argument as one complete message body.
 - Expect stderr through `printErr`, not the LSP stream.
 
 Filesystem access uses `-sWASMFS`, emscripten's wasm-side multithreaded

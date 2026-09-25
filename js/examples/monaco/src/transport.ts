@@ -4,7 +4,7 @@
  * `monaco.lsp` ships `createTransportToWorker`, which is not usable here: it
  * posts bare JSON-RPC to the worker, while `wgsl-analyzer-web`'s worker speaks
  * an enveloped protocol (`{ type: "lsp", message }` alongside `boot`,
- * `writeFile` and `close`), so bare messages would fall through its switch.
+ * `writeFile` and `deleteFile`), so bare messages would fall through its switch.
  * This goes against `WgslAnalyzerServer` directly instead.
  */
 
