@@ -39,11 +39,11 @@ rustflags = [
 	"-Clink-arg=-sFORCE_FILESYSTEM=1",
 	# Seed the filesystem before main() runs, then callMain([]).
 	"-Clink-arg=-sINVOKE_RUN=0",
-	# The Rust <-> JavaScript transport. Paths are relative to the directory cargo runs the
-	# linker from, which is the workspace root.
-	"-Clink-arg=--js-library=crates/wgsl-analyzer/src/bin/emscripten-io.js",
-	"-Clink-arg=--pre-js=crates/wgsl-analyzer/src/bin/emscripten-io-pre.js",
-	"-Clink-arg=-sEXPORTED_RUNTIME_METHODS=FS,callMain",
+	# addFunction registers the output callback
+	"-Clink-arg=-sALLOW_TABLE_GROWTH=1",
+	# The Rust <-> JavaScript transport.
+	"-Clink-arg=-sEXPORTED_FUNCTIONS=_main,_free,_lsp_push_message,_lsp_set_on_message",
+	"-Clink-arg=-sEXPORTED_RUNTIME_METHODS=FS,callMain,stringToNewUTF8,UTF8ToString,addFunction",
 ]
 
 [target.x86_64-pc-windows-msvc]
