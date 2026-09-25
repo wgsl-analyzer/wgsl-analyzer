@@ -107,6 +107,50 @@ There are several LSP client implementations for Vim or Neovim:
     lspconfig.wgsl_analyzer.setup({})
     ```
 
+### Using [lazynvim](https://github.com/LazyVim/LazyVim)
+
+1. Install `wgsl-analyzer` nightly binary from [github releases](https://github.com/wgsl-analyzer/wgsl-analyzer/releases/) and make it executable or compile `wgsl-analyzer` yourself.
+
+2. Create the file `~/.config/nvim/lua/plugins/wgsl.lua`:
+
+    ```lua
+    return {
+        {
+            "neovim/nvim-lspconfig",
+            init = function()
+                vim.filetype.add({
+                    extension = {
+                        wesl = "wesl",
+                    },
+                })
+                -- Reuse the wgsl treesitter parser for wesl buffers
+                vim.treesitter.language.register("wgsl", "wesl")
+            end,
+            opts = {
+                servers = {
+                    wgsl_analyzer = {
+                        mason = false, 
+                        cmd = { "/path/to/wgsl-analyzer" },
+                        filetypes = { "wgsl", "wesl" },
+                        root_markers = { "wesl.toml", ".git" },
+                        single_file_support = true,
+                    },
+                },
+            },
+        },
+        {
+            "nvim-treesitter/nvim-treesitter",
+            opts = { ensure_installed = { "wgsl" } },
+        },
+    }
+    ```
+
+3. Reload nvim.
+
+> [!NOTE]
+> You can remove lines `mason = false,` and `cmd = { "/path/to/wgsl-analyzer" },` and `mason.nvim` will handle `wgsl-analyzer` installation but its version is severely outdated and does not support `wesl` and many other features.
+
+
 ### Using [coc.nvim](<https://github.com/neoclide/coc.nvim>)
 
 1. open Neovim / Vim and type `:CocConfig` to configure coc.nvim.
