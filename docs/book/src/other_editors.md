@@ -109,9 +109,7 @@ There are several LSP client implementations for Vim or Neovim:
 
 ### Using [lazyVim](https://github.com/LazyVim/LazyVim)
 
-1. Install `wgsl-analyzer` nightly binary from [github releases](https://github.com/wgsl-analyzer/wgsl-analyzer/releases/) and make it executable or compile `wgsl-analyzer` yourself.
-
-2. Create the file `~/.config/nvim/lua/plugins/wgsl.lua`:
+1. Create the file `~/.config/nvim/lua/plugins/wgsl.lua`:
 
     ```lua
     return {
@@ -143,7 +141,7 @@ There are several LSP client implementations for Vim or Neovim:
     }
     ```
 
-3. Reload nvim.
+2. Reload nvim.
 
 ### Using [coc.nvim](<https://github.com/neoclide/coc.nvim>)
 
