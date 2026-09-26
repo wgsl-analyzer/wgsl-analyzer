@@ -844,6 +844,7 @@ impl Attribute {
             "location" => AttributeKind::Location,
             "must_use" => AttributeKind::MustUse,
             "size" => AttributeKind::Size,
+            "subgroup_size" => AttributeKind::SubgroupSize,
             "workgroup_size" => AttributeKind::WorkgroupSize,
             "vertex" => AttributeKind::Entrypoint(EntrypointAttributeKind::Vertex),
             "fragment" => AttributeKind::Entrypoint(EntrypointAttributeKind::Fragment),
