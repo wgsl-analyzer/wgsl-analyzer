@@ -2,5 +2,14 @@
 	"extends": "//",
 	"files": {
 		"includes": ["**", "!**/dist", "!**/node_modules", "!**/public"]
-	}
+	},
+	"overrides": [
+		{
+			// An emscripten JS library, run inside the generated module.
+			"includes": ["emscripten/**"],
+			"javascript": {
+				"globals": ["addToLibrary", "Module", "stringToNewUTF8", "UTF8ToString"]
+			}
+		}
+	]
 }

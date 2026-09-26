@@ -66,9 +66,11 @@ jobs:
               - 'Cargo.lock'
               - '.cargo/config.toml'
               - 'js/wgsl-analyzer-web/package.json'
+              - 'js/wgsl-analyzer-web/emscripten/**'
               - 'js/wgsl-analyzer-web/src/**'
               - 'js/wgsl-analyzer-web/tests/**'
               - 'js/examples/**'
+              - 'xtask/src/build_web.rs'
 
   no-ai-commits:
     runs-on: ubuntu-latest
