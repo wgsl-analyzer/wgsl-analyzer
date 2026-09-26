@@ -713,12 +713,11 @@ mod tests {
     use rowan::{GreenNodeBuilder, SyntaxNode};
     use syntax::SyntaxKind;
 
+    use super::PolicyAction;
     use crate::{
         ast_parse::{MatchKind, parse_end, parse_node_with, syntax_iter},
         trivia::NodeTriviaItem,
     };
-
-    use super::PolicyAction;
 
     #[test]
     pub(crate) fn syntax_iter_panics_if_not_parsed_end() {

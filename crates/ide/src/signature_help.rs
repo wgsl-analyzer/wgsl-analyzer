@@ -100,7 +100,7 @@ pub(crate) fn signature_help(
 
     let resolved = semantics
         .resolver(file_id, syntax)
-        .resolve(
+        .resolve_path(
             db,
             &Path(ModPath::from_src(
                 &function_call.ident_expression()?.path()?,

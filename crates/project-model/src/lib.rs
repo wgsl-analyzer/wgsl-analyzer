@@ -26,7 +26,7 @@ use cargo_metadata::MetadataCommand;
 pub use manifest_path::ManifestPath;
 pub use package_graph::{PackageChange, PackageGraph, PackageKey};
 use paths::{AbsPath, AbsPathBuf};
-pub use wesl_package::{PackageDependency, WeslPackage, WeslPackageRoot};
+pub use wesl_package::{PackageDependency, WeslPackage};
 pub use wesl_toml::{WeslDependency, WeslManifest};
 
 /// Points at a relevant manifest file on disk.
@@ -125,7 +125,8 @@ impl fmt::Display for ProjectManifest {
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct PackageRoot {
     pub origin: PackageOrigin,
-    pub manifest: ManifestPath,
+    /// Main directory of the package. Includes the `wesl.toml` file.
+    pub directory: AbsPathBuf,
     /// Files to include.
     pub include_files: Vec<AbsPathBuf>,
     /// Directories to include.

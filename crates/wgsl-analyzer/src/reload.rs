@@ -7,7 +7,7 @@ use lsp_types::{
     Registration, RegistrationParams, RegistrationRequest, RelativePattern, Uri,
 };
 use paths::AbsPathBuf;
-use project_model::PackageRoot;
+use project_model::{PackageRoot, WeslPackage};
 use salsa::Durability;
 use stdx::thread::ThreadIntent;
 use tracing::info;
@@ -144,11 +144,26 @@ impl GlobalState {
     pub(crate) fn refresh_packages(&self) {
         let mut packages = self.packages.write();
 
+        fn is_root_package(
+            package: &WeslPackage,
+            config: &Config,
+        ) -> bool {
+            match package.origin {
+                // Local packages that are part of the workspace
+                PackageOrigin::Local => package
+                    .manifest
+                    .as_path()
+                    .is_some_and(|path| config.is_in_workspace(path)),
+                // Libraries (from cargo/npm) are fetched on demand
+                PackageOrigin::Library => false,
+                // Language packages are always considered root packages.
+                PackageOrigin::Language => true,
+            }
+        }
+
         let roots = packages
             .iter()
-            .filter(|(_, package)| {
-                package.origin.is_local() && self.config.is_in_workspace(&package.manifest)
-            })
+            .filter(|(_, package)| is_root_package(package, &self.config))
             .map(|(id, _)| id)
             .collect();
         packages.retain_referenced(roots);
@@ -170,7 +185,7 @@ impl GlobalState {
             let package_graph = self.packages.read();
             package_graph
                 .iter()
-                .map(|(_, package)| package.to_root())
+                .filter_map(|(_, package)| package.to_root())
                 .collect::<Vec<_>>()
         };
 
@@ -224,7 +239,7 @@ pub(crate) fn to_load_and_source_root_config(
         if root.origin.is_local() {
             local_filesets.push(fsc.len());
         }
-        fsc.add_file_set([VfsPath::from(root.manifest.parent().to_path_buf())].to_vec());
+        fsc.add_file_set([VfsPath::from(root.directory)].to_vec());
     }
     let source_root_config = SourceRootConfig {
         fsc: fsc.build(),

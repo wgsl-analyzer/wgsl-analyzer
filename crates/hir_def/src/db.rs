@@ -56,8 +56,7 @@ impl DefinitionWithBodyId {
         db: &dyn SourceDatabase,
     ) -> Resolver<'_> {
         let file_id = self.file_id(db);
-        let module_info = ItemScope::of(db, file_id);
-        Resolver::new(file_id, module_info)
+        Resolver::new(db, file_id)
     }
 }
 
@@ -96,8 +95,7 @@ impl ModuleDefinitionId {
         db: &dyn SourceDatabase,
     ) -> Resolver<'_> {
         let file_id = self.file_id(db);
-        let module_info = ItemScope::of(db, file_id);
-        Resolver::new(file_id, module_info)
+        Resolver::new(db, file_id)
     }
 
     #[must_use]
