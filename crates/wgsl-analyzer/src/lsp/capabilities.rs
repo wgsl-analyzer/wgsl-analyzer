@@ -16,7 +16,7 @@ use lsp_types::{
 use rustc_hash::FxHashSet;
 
 use crate::{
-    config::{Config, WgslfmtConfig},
+    config::Config,
     line_index::PositionEncoding,
     lsp::{extensions, to_proto},
 };

@@ -17,25 +17,22 @@ use std::{
 use dashmap::{DashMap, Entry};
 pub use input::{SourceRoot, SourceRootId};
 use rustc_hash::FxHasher;
-pub use salsa;
 use salsa::{Durability, Setter as _};
-pub use salsa_macros;
 use triomphe::Arc;
 pub use util_types::*;
-pub use vfs::{AnchoredPath, AnchoredPathBuf, FileId, VfsPath, file_set::FileSet};
+pub use vfs::{AnchoredPath, AnchoredPathBuf, FileId, VfsPath, VirtualPath, file_set::FileSet};
 
 pub use crate::editioned_file_id::{
     Capabilities, EditionedFileId, FileExtension, RawEditionedFileId,
 };
 pub use input::{
-    ExtraPackageData, Package, PackageDisplayName, SourceRoot, SourceRootId, all_packages,
-    builtin_package, file_package, set_all_packages_with_durability,
+    ExtraPackageData, Package, PackageDisplayName, all_packages, builtin_package, file_package,
+    set_all_packages_with_durability,
 };
 
 pub use salsa;
 pub use salsa_macros;
 pub use util_types::*;
-pub use vfs::{AnchoredPath, AnchoredPathBuf, FileId, VfsPath, VirtualPath, file_set::FileSet};
 
 #[macro_export]
 macro_rules! impl_intern_key {
