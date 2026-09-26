@@ -10,8 +10,6 @@ pub(crate) type Token = SyntaxKind;
 #[derive(Default, Clone)]
 pub struct LexerExtras {
     pub after_at: bool,
-    pub after_interpolate: bool,
-    pub after_early_depth_test: bool,
     pub edition: edition::Edition,
     pub extensions: edition::ExtensionsConfig,
 }
@@ -283,6 +281,7 @@ impl Iterator for WgslLexer<'_, '_> {
                 // Check for all keywords
                 let token_end = self.inner.span().end;
                 let token_type = match &self.inner.source()[token_start..token_end] {
+                    _ if self.inner.extras.after_at => Token::Identifier,
                     "alias" => Token::Alias,
                     "break" => Token::Break,
                     "case" => Token::Case,
@@ -315,51 +314,6 @@ impl Iterator for WgslLexer<'_, '_> {
                     "package" if self.edition.at_least_wesl_0_0_1() => Token::Package,
                     "super" if self.edition.at_least_wesl_0_0_1() => Token::Super,
                     "as" if self.edition.at_least_wesl_0_0_1() => Token::As,
-
-                    // Context-dependent attribute enums and identifiers
-                    "align" if self.inner.extras.after_at => Token::Align,
-                    "binding" if self.inner.extras.after_at => Token::Binding,
-                    "blend_src" if self.inner.extras.after_at => Token::BlendSrc,
-                    "builtin" if self.inner.extras.after_at => Token::Builtin,
-                    "group" if self.inner.extras.after_at => Token::Group,
-                    "id" if self.inner.extras.after_at => Token::Id,
-                    "interpolate" if self.inner.extras.after_at => {
-                        self.inner.extras.after_interpolate = true;
-                        Token::Interpolate
-                    },
-                    "invariant" if self.inner.extras.after_at => Token::Invariant,
-                    "location" if self.inner.extras.after_at => Token::Location,
-                    "must_use" if self.inner.extras.after_at => Token::MustUse,
-                    "size" if self.inner.extras.after_at => Token::Size,
-                    "workgroup_size" if self.inner.extras.after_at => Token::WorkgroupSize,
-                    "vertex" if self.inner.extras.after_at => Token::Vertex,
-                    "fragment" if self.inner.extras.after_at => Token::Fragment,
-                    "compute" if self.inner.extras.after_at => Token::Compute,
-                    "elif" if self.inner.extras.after_at && self.edition.at_least_wesl_0_0_1() => {
-                        Token::Elif
-                    },
-
-                    // Context-dependent attribute arguments
-                    "flat" if self.inner.extras.after_interpolate => Token::Flat,
-                    "linear" if self.inner.extras.after_interpolate => Token::Linear,
-                    "perspective" if self.inner.extras.after_interpolate => Token::Perspective,
-                    "center" if self.inner.extras.after_interpolate => Token::Center,
-                    "centroid" if self.inner.extras.after_interpolate => Token::Centroid,
-                    "sample" if self.inner.extras.after_interpolate => Token::Sample,
-                    "first" if self.inner.extras.after_interpolate => Token::First,
-                    "either" if self.inner.extras.after_interpolate => Token::Either,
-
-                    // naga extensions
-                    "early_depth_test" if self.inner.extras.after_at => {
-                        self.inner.extras.after_early_depth_test = true;
-                        Token::EarlyDepthTest
-                    },
-                    "less_equal" if self.inner.extras.after_early_depth_test => Token::LessEqual,
-                    "greater_equal" if self.inner.extras.after_early_depth_test => {
-                        Token::GreaterEqual
-                    },
-                    "force" if self.inner.extras.after_early_depth_test => Token::Force,
-                    "unchanged" if self.inner.extras.after_early_depth_test => Token::Unchanged,
 
                     word if is_reserved_word(word) => {
                         self.diagnostics.push(Diagnostic {
@@ -399,10 +353,6 @@ impl Iterator for WgslLexer<'_, '_> {
                         return Some((Token::Underscore, token_start..self.inner.span().end));
                     },
                 }
-            },
-            Some(')') => {
-                self.inner.extras.after_interpolate = false;
-                self.inner.extras.after_early_depth_test = false;
             },
             _ => (), // Not an ident
         }

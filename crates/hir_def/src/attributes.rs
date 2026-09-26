@@ -2,7 +2,10 @@ use std::iter;
 
 use base_db::{Lookup as _, SourceDatabase};
 use either::Either;
-use syntax::{HasAttributes, ast};
+use syntax::{
+    HasAttributes,
+    ast::{self, AttributeKind},
+};
 use triomphe::Arc;
 
 use crate::{
@@ -87,71 +90,16 @@ fn get_attribute_parameters(
     collector: &mut ExprCollector<'_>,
     attribute: ast::Attribute,
 ) -> Vec<la_arena::Idx<crate::expression::Expression>> {
-    match attribute {
-        ast::Attribute::OtherAttribute(inner) => inner
-            .parameters()
+    match attribute.kind() {
+        // their arguments are not expressions
+        AttributeKind::Diagnostic | AttributeKind::Builtin | AttributeKind::Interpolate => {
+            Vec::new()
+        },
+        _ => attribute
+            .arguments()
             .map(|p| p.arguments().map(|e| collector.collect_expression(e)))
             .map_or_else(|| Either::Left(iter::empty()), Either::Right)
             .collect(),
-        ast::Attribute::AlignAttribute(inner) => inner
-            .parameter()
-            .into_iter()
-            .map(|e| collector.collect_expression(e))
-            .collect(),
-        ast::Attribute::BindingAttribute(inner) => inner
-            .parameter()
-            .into_iter()
-            .map(|e| collector.collect_expression(e))
-            .collect(),
-        ast::Attribute::BlendSrcAttribute(inner) => inner
-            .parameter()
-            .into_iter()
-            .map(|e| collector.collect_expression(e))
-            .collect(),
-        ast::Attribute::GroupAttribute(inner) => inner
-            .parameter()
-            .into_iter()
-            .map(|e| collector.collect_expression(e))
-            .collect(),
-        ast::Attribute::IdAttribute(inner) => inner
-            .parameter()
-            .into_iter()
-            .map(|e| collector.collect_expression(e))
-            .collect(),
-        ast::Attribute::LocationAttribute(inner) => inner
-            .parameter()
-            .into_iter()
-            .map(|e| collector.collect_expression(e))
-            .collect(),
-        ast::Attribute::SizeAttribute(inner) => inner
-            .parameter()
-            .into_iter()
-            .map(|e| collector.collect_expression(e))
-            .collect(),
-        ast::Attribute::WorkgroupSizeAttribute(inner) => inner
-            .parameters()
-            .map(|e| collector.collect_expression(e))
-            .collect(),
-        ast::Attribute::ElifAttribute(inner) => inner
-            .parameter()
-            .into_iter()
-            .map(|e| collector.collect_expression(e))
-            .collect(),
-        ast::Attribute::IfAttribute(inner) => inner
-            .parameter()
-            .into_iter()
-            .map(|e| collector.collect_expression(e))
-            .collect(),
-        ast::Attribute::ConstantAttribute(_)
-        | ast::Attribute::DiagnosticAttribute(_)
-        | ast::Attribute::BuiltinAttribute(_)
-        | ast::Attribute::InterpolateAttribute(_)
-        | ast::Attribute::InvariantAttribute(_)
-        | ast::Attribute::MustUseAttribute(_)
-        | ast::Attribute::VertexAttribute(_)
-        | ast::Attribute::FragmentAttribute(_)
-        | ast::Attribute::ComputeAttribute(_)
-        | ast::Attribute::ElseAttribute(_) => Vec::new(),
     }
 }
 

@@ -124,8 +124,6 @@ impl Cst<'_> {
     }
 }
 
-const TRANSLATE_TIME_ATTRS: &[Rule] = &[Rule::IfAttr, Rule::ElifAttr, Rule::ElseAttr];
-
 impl Parser<'_> {
     fn is_func_call(&self) -> bool {
         // Skip past paths like `foo::bar::baz()`
@@ -154,12 +152,11 @@ impl Parser<'_> {
         let last_attribute_list = self.context.last_attribute_list?;
         self.cst
             .children(last_attribute_list)
+            .flat_map(|attribute| self.cst.children(attribute))
             .find_map(|child| match self.cst.get(child) {
-                Node::Rule(rule, _) => Some((
-                    match rule {
-                        Rule::IfAttr => "if",
-                        Rule::ElifAttr => "elif",
-                        Rule::ElseAttr => "else",
+                Node::Token(Token::Identifier, index) => Some((
+                    match self.cst.get_text(index) {
+                        name @ ("if" | "elif" | "else") => name,
                         _ => return None,
                     },
                     self.cst.span(child),
@@ -392,19 +389,6 @@ impl<'source> ParserCallbacks<'source> for Parser<'source> {
                     format!("unknown extension: `{text}`"),
                 ));
             },
-        }
-    }
-
-    fn create_node_early_depth_test_attr(
-        &mut self,
-        node_ref: NodeRef,
-        diagnostics: &mut Vec<Self::Diagnostic>,
-    ) {
-        if !self.context.capabilities.early_depth_test {
-            diagnostics.push(self.create_diagnostic(
-                self.cst.span(node_ref),
-                "the extension EARLY_DEPTH_TEST is not enabled".to_owned(),
-            ));
         }
     }
 
