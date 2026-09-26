@@ -343,7 +343,7 @@ fn foo() ->
 { _ = 1; }
 ",
         expect![[r#"
-            12..21 wgsl-analyzer Error 16: translate-time attribute `@if` is not allowed on a function return type
+            13..15 wgsl-analyzer Error 16: translate-time attribute `@if` is not allowed on a function return type
         "#]],
     );
 }
@@ -356,7 +356,7 @@ fn foo()
 @if(true) { _ = 1; }
 ",
         expect![[r#"
-            9..18 wgsl-analyzer Error 16: translate-time attribute `@if` is not allowed on a function body
+            10..12 wgsl-analyzer Error 16: translate-time attribute `@if` is not allowed on a function body
         "#]],
     );
 }
@@ -376,7 +376,7 @@ switch 1
 }
 ",
         expect![[r#"
-            20..29 wgsl-analyzer Error 16: translate-time attribute `@if` is not allowed on a switch body
+            21..23 wgsl-analyzer Error 16: translate-time attribute `@if` is not allowed on a switch body
         "#]],
     );
 }
@@ -394,7 +394,7 @@ switch 1
 }
 ",
         expect![[r#"
-            34..43 wgsl-analyzer Error 16: translate-time attribute `@if` is not allowed on a switch default clause body
+            35..37 wgsl-analyzer Error 16: translate-time attribute `@if` is not allowed on a switch default clause body
         "#]],
     );
 }
@@ -410,7 +410,7 @@ loop
 }
 ",
         expect![[r#"
-            16..25 wgsl-analyzer Error 16: translate-time attribute `@if` is not allowed on a loop body
+            17..19 wgsl-analyzer Error 16: translate-time attribute `@if` is not allowed on a loop body
         "#]],
     );
 }
@@ -426,7 +426,7 @@ for(; ;)
 }
 ",
         expect![[r#"
-            20..29 wgsl-analyzer Error 16: translate-time attribute `@if` is not allowed on a for body
+            21..23 wgsl-analyzer Error 16: translate-time attribute `@if` is not allowed on a for body
         "#]],
     );
 }
@@ -442,7 +442,7 @@ while true
 }
 ",
         expect![[r#"
-            22..31 wgsl-analyzer Error 16: translate-time attribute `@if` is not allowed on a while body
+            23..25 wgsl-analyzer Error 16: translate-time attribute `@if` is not allowed on a while body
         "#]],
     );
 }
@@ -461,8 +461,8 @@ else
 }
 ",
         expect![[r#"
-            19..28 wgsl-analyzer Error 16: translate-time attribute `@if` is not allowed on an if/else body
-            46..55 wgsl-analyzer Error 16: translate-time attribute `@if` is not allowed on an if/else body
+            20..22 wgsl-analyzer Error 16: translate-time attribute `@if` is not allowed on an if/else body
+            47..49 wgsl-analyzer Error 16: translate-time attribute `@if` is not allowed on an if/else body
         "#]],
     );
 }
@@ -480,7 +480,7 @@ loop {
 }
 ",
         expect![[r#"
-            37..46 wgsl-analyzer Error 16: translate-time attribute `@if` is not allowed on a continuing body
+            38..40 wgsl-analyzer Error 16: translate-time attribute `@if` is not allowed on a continuing body
         "#]],
     );
 }
