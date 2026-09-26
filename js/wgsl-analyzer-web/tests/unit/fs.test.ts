@@ -8,34 +8,27 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 
-import { type EmscriptenFs, makeDirectories, seedWorkspace, writeFile } from "../../dist/fs.js";
-
-/** errno for "file exists". WASI/emscripten uses 20 here, not POSIX's 17. */
-const EEXIST = 20;
-/** errno for "no such file or directory", used as a stand-in for a real failure. */
-const ENOENT = 44;
+import { type EmscriptenFs, seedWorkspace, writeFile } from "../../dist/fs.js";
 
 /** One recorded call: the method name followed by the arguments it received. */
 type Call = [method: string, ...args: unknown[]];
 
 interface FakeFs extends EmscriptenFs {
 	readonly calls: Call[];
-	/** Just the paths passed to `mkdir`, in call order. */
+	/** Just the paths passed to `mkdirTree`, in call order. */
 	directories(): unknown[];
 }
 
-/** Records every call, and lets a test make `mkdir` fail on demand. */
-function fakeFs({ mkdirFails }: { mkdirFails?: (path: string) => Error | undefined } = {}): FakeFs {
+/** Records every call. */
+function fakeFs(): FakeFs {
 	const calls: Call[] = [];
 	// The return annotation contextually types the methods below, so their
 	// parameters do not need repeating here.
 	return {
 		calls,
-		directories: () => calls.filter((c) => c[0] === "mkdir").map((c) => c[1]),
-		mkdir(path) {
-			calls.push(["mkdir", path]);
-			const error = mkdirFails?.(path);
-			if (error) throw error;
+		directories: () => calls.filter((c) => c[0] === "mkdirTree").map((c) => c[1]),
+		mkdirTree(path) {
+			calls.push(["mkdirTree", path]);
 		},
 		writeFile(path, data) {
 			calls.push(["writeFile", path, data]);
@@ -55,46 +48,12 @@ function fakeFs({ mkdirFails }: { mkdirFails?: (path: string) => Error | undefin
 	};
 }
 
-const errnoError = (errno: number): Error => Object.assign(new Error(`errno ${errno}`), { errno });
-
-describe("makeDirectories", () => {
-	it("creates every parent in order", () => {
-		const fs = fakeFs();
-		makeDirectories(fs, "/a/b/c");
-		assert.deepEqual(fs.directories(), ["/a", "/a/b", "/a/b/c"]);
-	});
-
-	it("swallows EEXIST", () => {
-		const fs = fakeFs({ mkdirFails: (path) => (path === "/a" ? errnoError(EEXIST) : undefined) });
-		assert.doesNotThrow(() => makeDirectories(fs, "/a/b"));
-		assert.deepEqual(fs.directories(), ["/a", "/a/b"]);
-	});
-
-	it("rethrows any other errno", () => {
-		// This is the test that stops someone "fixing" the constant.
-		const fs = fakeFs({ mkdirFails: () => errnoError(ENOENT) });
-		assert.throws(() => makeDirectories(fs, "/a"), { errno: ENOENT });
-	});
-
-	it("rethrows an error carrying no errno", () => {
-		const fs = fakeFs({ mkdirFails: () => new Error("boom") });
-		assert.throws(() => makeDirectories(fs, "/a"), { message: "boom" });
-	});
-
-	it("collapses empty segments", () => {
-		const fs = fakeFs();
-		makeDirectories(fs, "//a//b/");
-		assert.deepEqual(fs.directories(), ["/a", "/a/b"]);
-	});
-});
-
 describe("writeFile", () => {
 	it("creates parents before writing", () => {
 		const fs = fakeFs();
 		writeFile(fs, "/root/a/b.wgsl", "x");
 		assert.deepEqual(fs.calls, [
-			["mkdir", "/root"],
-			["mkdir", "/root/a"],
+			["mkdirTree", "/root/a"],
 			["writeFile", "/root/a/b.wgsl", "x"],
 		]);
 	});
@@ -117,7 +76,7 @@ describe("seedWorkspace", () => {
 	it("creates the root before any file", () => {
 		const fs = fakeFs();
 		seedWorkspace(fs, "/workspace", { "a.wgsl": "x" });
-		assert.deepEqual(fs.calls[0], ["mkdir", "/workspace"]);
+		assert.deepEqual(fs.calls[0], ["mkdirTree", "/workspace"]);
 	});
 
 	it("strips leading slashes from relative paths", () => {

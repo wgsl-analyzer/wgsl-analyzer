@@ -1,7 +1,7 @@
 /**
  * wgsl-analyzer as a language server in a Web Worker.
  *
- * The server is the real `wgsl-analyzer` binary compiled to
+ * The server is the `wgsl-analyzer` binary compiled to
  * `wasm32-unknown-emscripten`, running its ordinary `main_loop` over a transport.
  * This module hosts it and exposes the message stream.
  *
@@ -158,11 +158,10 @@ export class WgslAnalyzerServer {
 		this.#disposed = true;
 		this.#listeners.clear();
 
-		// Close stdin first so the server's reader thread sees EOF and unwinds
-		// cleanly, then tear the worker down on the next macrotask so that
-		// message actually gets delivered.
-		const close: HostMessage = { type: "close" };
-		this.#worker.postMessage(close);
+		// `exit` ends the server's main loop, if the server reads it before the
+		// worker is terminated on the next macrotask.
+		const exit: HostMessage = { type: "lsp", message: { jsonrpc: "2.0", method: "exit" } };
+		this.#worker.postMessage(exit);
 		setTimeout(() => this.#worker.terminate(), 0);
 	}
 }

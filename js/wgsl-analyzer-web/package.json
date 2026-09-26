@@ -42,7 +42,7 @@
 		"format": "pnpm exec biome format --write",
 		"lint": "pnpm exec biome lint",
 		"test": "node --test \"tests/unit/*.test.ts\"",
-		"test:smoke": "node --test --test-force-exit \"tests/smoke/*.test.ts\"",
+		"test:smoke": "node --test --test-force-exit --test-concurrency=1 \"tests/smoke/*.test.ts\"",
 		"typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.node.json"
 	},
 	"devDependencies": {
@@ -50,6 +50,7 @@
 		"@tsconfig/strictest": "^2.0.8",
 		"@types/node": "^26.4.1",
 		"esbuild": "^0.28.2",
-		"typescript": "^7.0.2"
+		"typescript": "^7.0.2",
+		"vscode-jsonrpc": "^9.0.2"
 	}
 }
