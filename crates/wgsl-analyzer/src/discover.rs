@@ -255,7 +255,7 @@ fn find_cargo_metadata_table(
         .iter()
         .find(|package| package.manifest_path == manifest_path.as_str());
     let table = find
-        .unwrap()
+        .with_context(|| "cargo toml is for the workspace")?
         .metadata
         .get("wgsl-analyzer")
         .ok_or_else(|| anyhow!("no wgsl-analyzer table in {manifest_path}"))?;
