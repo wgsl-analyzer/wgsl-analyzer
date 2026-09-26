@@ -397,6 +397,7 @@ fn main() <fold block>{
         check(
             r#"
 struct Foo <fold block>{
+  a: u32
 }</fold>
 "#,
         );
