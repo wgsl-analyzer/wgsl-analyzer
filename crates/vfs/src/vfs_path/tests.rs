@@ -3,7 +3,7 @@ use super::*;
 #[must_use]
 const fn root() -> &'static str {
     #[cfg(windows)]
-    return "C:";
+    return "C:/";
     #[cfg(not(windows))]
     return "/";
 }
