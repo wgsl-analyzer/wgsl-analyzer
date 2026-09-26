@@ -9,19 +9,20 @@ export interface EmscriptenModule {
 	FS: EmscriptenFs;
 	// Functions provided by emscripten, see https://emscripten.org/docs/api_reference/index.html.
 	callMain(args: readonly string[]): void;
-	_free(pointer: number): void;
-	stringToNewUTF8(text: string): number;
-	UTF8ToString(pointer: number): string;
-	addFunction(fn: (pointer: number) => void, signature: "vp"): number;
-	// Functions provided by the language server, see crates/wgsl-analyzer/src/bin/emscripten_io.rs.
-	_lsp_push_message(message: number): void;
-	_lsp_set_on_message(onMessage: number): void;
 }
 
 export interface ModuleOptions {
 	noInitialRun: boolean;
 	printErr: (line: string) => void;
 	onExit: (code: number) => void;
+	// The transport, called by emscripten/library.js.
+	/**
+	 * Resolves to the next message for the server. It may run inside another call into the
+	 * module, so it must not call into the module itself, and it must never reject.
+	 */
+	lspNextMessage: () => Promise<string>;
+	/** Receives one message from the server, from a microtask. */
+	lspOnMessage: (body: string) => void;
 }
 
 export type ModuleFactory = (options: ModuleOptions) => Promise<EmscriptenModule>;
