@@ -842,9 +842,8 @@ mod tests {
     use test_utils::extract_offset;
     use triomphe::Arc;
 
-    use crate::lsp::from_proto::url_to_virtual_path;
-
     use super::*;
+    use crate::lsp::from_proto::url_to_virtual_path;
 
     #[test]
     fn signature_help_no_label_offsets() {

@@ -395,9 +395,8 @@ pub(crate) mod tests {
     use dprint_core::formatting::condition_resolvers;
     use expect_test::expect;
 
-    use crate::print_item_buffer::{PrintItemBuffer, spacing_request::Request};
-
     use super::RequestItem;
+    use crate::print_item_buffer::{PrintItemBuffer, spacing_request::Request};
 
     fn format_width(
         pib: PrintItemBuffer,

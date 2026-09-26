@@ -1,9 +1,10 @@
-use crate::global_state::GlobalState;
 use base_db::input::PackageOrigin;
 use edition::Edition;
 use project_model::{PackageKey, WeslPackage};
 use vfs::{VfsPath, VirtualPath};
 use wgsl_std::StdLibrary;
+
+use crate::global_state::GlobalState;
 
 impl GlobalState {
     pub(crate) fn load_builtin_package(&self) {

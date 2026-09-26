@@ -145,13 +145,13 @@ pub(crate) fn file_range_uri(
 
 #[cfg(test)]
 mod tests {
-    use crate::line_index::LineEndings;
-
-    use super::*;
     use line_index::WideEncoding;
     use lsp_types::{Position, Range};
     use triomphe::Arc;
     use vfs::VfsPath;
+
+    use super::*;
+    use crate::line_index::LineEndings;
 
     fn line_index_utf8(text: &str) -> LineIndex {
         LineIndex {
