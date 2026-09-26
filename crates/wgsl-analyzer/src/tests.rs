@@ -268,3 +268,26 @@ fn wesl_with_dependencies_cargo() {
         "#]],
     );
 }
+
+#[test]
+fn cargo_workspace() {
+    // Attempting to load the workspace Cargo.toml yields nothing
+    check_load_project(
+        "cargo_workspace/Cargo.toml",
+        PackageOrigin::Local,
+        expect![[r#"
+            cargo toml is for the workspace - None
+        "#]],
+    );
+
+    // But the crate with shaders does result in something
+    check_load_project_files(
+        "cargo_workspace/shaders/Cargo.toml",
+        PackageOrigin::Local,
+        expect![[r#"
+            extensions: wgsl, wesl, toml
+            include: cargo_workspace/shaders/src
+            file: cargo_workspace/shaders/Cargo.toml
+        "#]],
+    );
+}
