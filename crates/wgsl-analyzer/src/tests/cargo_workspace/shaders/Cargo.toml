@@ -1,0 +1,8 @@
+[package]
+name = "shaders"
+version = "0.1.0"
+edition = "2024"
+
+[package.metadata.wgsl-analyzer]
+edition = "2026_pre"
+root = "./src"
