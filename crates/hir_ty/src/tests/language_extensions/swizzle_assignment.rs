@@ -433,3 +433,22 @@ fn foo() {
         "#]],
     );
 }
+
+#[test]
+fn swizzle_roundtrip_wgsl_types() {
+    check_infer(
+        "
+fn sub() -> vec3<f32> { var v = vec4<f32>(1.0); return v.xyz - vec3<f32>(1.0); }
+",
+        expect![[r#"
+            28..29 'v': ref<function, vec4<f32>, read_write>
+            32..46 'vec4<f32>(1.0)': vec4<f32>
+            42..45 '1.0': float
+            55..56 'v': ref<function, vec4<f32>, read_write>
+            55..60 'v.xyz': swizzle<function, f32, 4, 3>
+            55..77 'v.xyz ...>(1.0)': vec3<f32>
+            63..77 'vec3<f32>(1.0)': vec3<f32>
+            73..76 '1.0': float
+        "#]],
+    );
+}

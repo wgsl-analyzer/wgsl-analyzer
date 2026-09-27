@@ -664,10 +664,10 @@ impl<'db> WgslTypeConverter<'db> {
             TypeKind::SwizzleView(SwizzleView {
                 address_space: _,
                 component_type,
-                vector_size,
-                index_list: _,
+                vector_size: _,
+                index_list,
             }) => wgsl_types::Type::Vec(
-                vector_size.as_u8(),
+                index_list.length.as_u8(),
                 Box::new(self.to_wgsl_types(component_type)),
             ),
             TypeKind::Matrix(MatrixType {
