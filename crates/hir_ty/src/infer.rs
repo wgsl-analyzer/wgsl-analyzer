@@ -2389,17 +2389,19 @@ impl<'db> InferenceContext<'db> {
             return false;
         }
 
-        let (Expression::Index { left_side, .. }
-        | Expression::Field {
-            expression: left_side,
-            ..
-        }) = store[expression]
-        else {
-            return false;
+        #[expect(clippy::wildcard_enum_match_arm, reason = "too long")]
+        let left_side = match &store[expression] {
+            Expression::Index { left_side, .. } => left_side,
+            Expression::Field {
+                expression: left_side,
+                name,
+                ..
+            } if name.as_str().len() == 1 => left_side,
+            _ => return false,
         };
 
         matches!(
-            self.infer_expression(left_side, store).kind(self.db),
+            self.infer_expression(*left_side, store).kind(self.db),
             TypeKind::Reference(Reference { inner, .. })
                 if matches!(inner.kind(self.db), TypeKind::Vector(_))
         )

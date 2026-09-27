@@ -2805,6 +2805,26 @@ fn foo1() {
 }
 
 #[test]
+fn address_of_swizzle() {
+    check_infer(
+        "
+var<private> bar: vec3f;
+fn foo1() {
+    let b = &bar.xy;
+}
+",
+        expect![[r#"
+            13..16 'bar': ref<private, vec3<f32>, read_write>
+            45..46 'b': [error]
+            49..56 '&bar.xy': [error]
+            50..53 'bar': ref<private, vec3<f32>, read_write>
+            50..56 'bar.xy': swizzle<private, f32, 3, 2>
+            49..56 '&bar.xy': cannot use unary operator `&` on type `vec2<f32>`
+        "#]],
+    );
+}
+
+#[test]
 fn matrix_vector_pointers() {
     check_infer(
         "fn foo() {
