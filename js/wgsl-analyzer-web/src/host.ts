@@ -37,6 +37,11 @@ export async function startHost(factory: ModuleFactory, options: HostOptions): P
 	const { root } = options;
 	const resolve = (relativePath: string): string => `${root}/${relativePath.replace(/^\/+/, "")}`;
 
+	// Messages for the server, which pulls them one at a time. It never closes.
+	const inbox = new TransformStream<string, string>();
+	const reader = inbox.readable.getReader();
+	const writer = inbox.writable.getWriter();
+
 	// With `-sEXIT_RUNTIME`, calling into the module after `main()` returns is an
 	// error, and the page can still send messages after that.
 	let exited = false;
@@ -45,32 +50,12 @@ export async function startHost(factory: ModuleFactory, options: HostOptions): P
 		printErr: options.onStderr,
 		onExit: (code) => {
 			exited = true;
-			options.onExit(code);
+			// Messages are delivered from microtasks too, so those sent before exiting come first.
+			queueMicrotask(() => options.onExit(code));
 		},
+		lspNextMessage: () => reader.read().then(({ value }) => value as string),
+		lspOnMessage: (body) => options.onMessage(JSON.parse(body)),
 	});
-
-	const withString = <T>(text: string, use: (pointer: number) => T): T => {
-		const pointer = module.stringToNewUTF8(text);
-		try {
-			return use(pointer);
-		} finally {
-			module._free(pointer);
-		}
-	};
-
-	// Runs only from the event. The server's writer thread waits
-	// on this task, so it must not throw while the runtime is alive.
-	const onMessage = module.addFunction((pointer: number) => {
-		try {
-			options.onMessage(JSON.parse(module.UTF8ToString(pointer)));
-		} catch (error) {
-			if (exited) throw error;
-			queueMicrotask(() => {
-				throw error;
-			});
-		}
-	}, "vp");
-	module._lsp_set_on_message(onMessage);
 
 	// Needs to run after WasmFS was iniialized.
 	seedWorkspace(module.FS, root, options.files);
@@ -84,7 +69,7 @@ export async function startHost(factory: ModuleFactory, options: HostOptions): P
 
 	return {
 		send: (message) => {
-			if (!exited) withString(JSON.stringify(message), module._lsp_push_message);
+			if (!exited) void writer.write(JSON.stringify(message));
 		},
 		writeFile: (relativePath, contents) => {
 			if (!exited) writeFile(module.FS, resolve(relativePath), contents);

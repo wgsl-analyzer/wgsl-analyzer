@@ -55,21 +55,10 @@ const TOTAL_MS = Number(process.env["WA_SMOKE_TOTAL_MS"] ?? 420_000);
 // compile error here rather than a silently weaker assertion.
 
 /** `-sEXPORTED_RUNTIME_METHODS`, verbatim. */
-const RUNTIME_METHODS: readonly (keyof EmscriptenModule)[] = [
-	"FS",
-	"callMain",
-	"stringToNewUTF8",
-	"UTF8ToString",
-	"addFunction",
-];
+const RUNTIME_METHODS: readonly (keyof EmscriptenModule)[] = ["FS", "callMain"];
 
 /** `-sEXPORTED_FUNCTIONS`, verbatim. */
-const WASM_EXPORTS: readonly string[] = [
-	"_main",
-	"_free",
-	"_lsp_push_message",
-	"_lsp_set_on_message",
-];
+const WASM_EXPORTS: readonly string[] = ["_main"];
 
 /**
  * The `FS` members `src/fs.ts` calls. These exist only because of

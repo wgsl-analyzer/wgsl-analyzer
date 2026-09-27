@@ -13,6 +13,11 @@ const TARGET: &str = "wasm32-unknown-emscripten";
 /// Relative to the project root.
 const PACKAGE_ROOT: &str = "js/wgsl-analyzer-web";
 
+/// Relative to the project root. Provides the transport that
+/// `crates/wgsl-analyzer/src/bin/emscripten_io.rs` imports, and is linked in by
+/// `crates/wgsl-analyzer/build.rs`.
+const JS_LIBRARY: &str = "js/wgsl-analyzer-web/emscripten/library.js";
+
 /// The glue is renamed from the bin name `wgsl_analyzer.js` back to the crate
 /// name `wgsl-analyzer.js`: emcc emits pthread bootstrap code that does
 /// `new Worker(new URL("wgsl_analyzer.js", import.meta.url))`, so the original
@@ -72,7 +77,8 @@ fn build_wasm(
     // RUSTFLAGS in the environment would override the ones defined in the
     // `[target.wasm32-unknown-emscripten]` section in .cargo/config.toml.
     .env_remove("RUSTFLAGS")
-    .env_remove("CARGO_ENCODED_RUSTFLAGS");
+    .env_remove("CARGO_ENCODED_RUSTFLAGS")
+    .env("WGSL_ANALYZER_JS_LIBRARY", project_root().join(JS_LIBRARY));
 
     if release {
         command = tune_for_size(shell, command);

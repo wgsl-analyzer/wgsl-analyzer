@@ -3,7 +3,7 @@
  * emscripten module.
  */
 
-/** Contents of a workspace, keyed by path relative to the MEMFS root. */
+/** Contents of a workspace, keyed by path relative to its root in the in-memory filesystem. */
 export type WorkspaceFiles = Record<string, string | Uint8Array>;
 
 /** Page to worker. */
