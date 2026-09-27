@@ -367,18 +367,16 @@ fn invalid_translate_attribute_body_switch_statement() {
         "
 fn foo()
 {
-switch true
+switch 1
 @if(true)
 {
-    case true: { return; }
+    case 1: { return; }
     default: { return; }
 }
 }
 ",
         expect![[r#"
-            23..32 wgsl-analyzer Error 16: translate-time attribute `@if` is not allowed on a switch body
-            18..22 wgsl-analyzer Error 2: expected i32 or u32, found bool
-            44..48 wgsl-analyzer Error 2: expected i32 or u32, found bool
+            20..29 wgsl-analyzer Error 16: translate-time attribute `@if` is not allowed on a switch body
         "#]],
     );
 }
@@ -388,17 +386,15 @@ fn invalid_translate_attribute_body_switch_clause() {
     check_diagnostics(
         "
 fn foo() {
-switch true
+switch 1
 {
-    case true: @if(true) { return; }
+    case 1: @if(true) { return; }
     default: { return; }
 }
 }
 ",
         expect![[r#"
-            40..49 wgsl-analyzer Error 16: translate-time attribute `@if` is not allowed on a switch default clause body
-            18..22 wgsl-analyzer Error 2: expected i32 or u32, found bool
-            34..38 wgsl-analyzer Error 2: expected i32 or u32, found bool
+            34..43 wgsl-analyzer Error 16: translate-time attribute `@if` is not allowed on a switch default clause body
         "#]],
     );
 }
