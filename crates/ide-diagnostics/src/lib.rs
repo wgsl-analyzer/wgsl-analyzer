@@ -249,7 +249,6 @@ pub fn diagnostics(
                     let expected_pretty = ty::pretty::pretty_type_expectation(db, expected);
                     let actual_pretty = ty::pretty::pretty_type(db, actual);
                     let frange = original_file_range(db, expression.file_id, source.syntax());
-                    //debug_assert!(!actual.is_err(db), "{:?} expected {expected_pretty}, found {actual_pretty}", frange.range);
                     Diagnostic::new(
                         DiagnosticCode("2"),
                         format!("expected {expected_pretty}, found {actual_pretty}"),
