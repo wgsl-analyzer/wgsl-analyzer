@@ -532,10 +532,10 @@ where
         let mut items = preceding_trivia.iter().rev().skip_while(|trivia| {
             matches!(
                 trivia,
-                NodeTriviaItem::LineSpacing { .. } | NodeTriviaItem::Discarded { .. }
+                NodeTriviaItem::LineSpacing { 0: _ } | NodeTriviaItem::Discarded { 0: _ }
             )
         });
-        if matches!(items.next(), Some(NodeTriviaItem::AttributeList { .. })) {
+        if matches!(items.next(), Some(NodeTriviaItem::AttributeList { 0: _ })) {
             for (item, syntax) in preceding_trivia
                 .iter_mut()
                 .rev()
