@@ -2802,3 +2802,52 @@ fn foo1() {
         "#]],
     );
 }
+
+#[test]
+fn matrix_vector_pointers() {
+    check_infer(
+        "fn foo() {
+            var v: vec2<f32>;
+            let p = &v[0];
+        }",
+        expect![[r#"
+            27..28 'v': ref<function, vec2<f32>, read_write>
+            57..58 'p': ptr<function, f32, read_write>
+            61..66 '&v[0]': ptr<function, f32, read_write>
+            62..63 'v': ref<function, vec2<f32>, read_write>
+            62..66 'v[0]': ref<function, f32, read_write>
+            64..65 '0': integer
+        "#]],
+    );
+
+    check_infer(
+        "fn foo() {
+            var v: vec2<f32>;
+            let p = &v.x;
+        }",
+        expect![[r#"
+            27..28 'v': ref<function, vec2<f32>, read_write>
+            57..58 'p': ptr<function, f32, read_write>
+            61..65 '&v.x': ptr<function, f32, read_write>
+            62..63 'v': ref<function, vec2<f32>, read_write>
+            62..65 'v.x': ref<function, f32, read_write>
+        "#]],
+    );
+
+    check_infer(
+        "fn foo() {
+            var m: mat2x2<f32>;
+            let p = &m[0][0];
+        }",
+        expect![[r#"
+            27..28 'm': ref<function, mat2x2<f32>, read_write>
+            59..60 'p': ptr<function, f32, read_write>
+            63..71 '&m[0][0]': ptr<function, f32, read_write>
+            64..65 'm': ref<function, mat2x2<f32>, read_write>
+            64..68 'm[0]': ref<function, vec2<f32>, read_write>
+            64..71 'm[0][0]': ref<function, f32, read_write>
+            66..67 '0': integer
+            69..70 '0': integer
+        "#]],
+    );
+}
