@@ -377,6 +377,8 @@ switch true
 ",
         expect![[r#"
             23..32 wgsl-analyzer Error 16: translate-time attribute `@if` is not allowed on a switch body
+            18..22 wgsl-analyzer Error 2: expected i32 or u32, found bool
+            44..48 wgsl-analyzer Error 2: expected i32 or u32, found bool
         "#]],
     );
 }
@@ -395,6 +397,8 @@ switch true
 ",
         expect![[r#"
             40..49 wgsl-analyzer Error 16: translate-time attribute `@if` is not allowed on a switch default clause body
+            18..22 wgsl-analyzer Error 2: expected i32 or u32, found bool
+            34..38 wgsl-analyzer Error 2: expected i32 or u32, found bool
         "#]],
     );
 }
