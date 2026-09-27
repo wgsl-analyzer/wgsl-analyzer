@@ -831,16 +831,45 @@ impl<'db> InferenceContext<'db> {
                 expression,
                 case_blocks,
             } => {
-                let r#type = self.infer_expression(*expression, body).loaded(self.db);
+                let selector_type = self
+                    .infer_expression(*expression, body)
+                    .loaded(self.db)
+                    .concretize(self.db);
 
-                for (selectors, case) in case_blocks {
-                    for selector in selectors {
-                        if let SwitchCaseSelector::Expression(selector) = selector {
-                            self.infer_expression_expect(
-                                *selector,
-                                TypeExpectation::from_type(r#type),
+                if !selector_type.kind(self.db).is_numeric_scalar() {
+                    self.push_diagnostic(
+                        body.store_source,
+                        InferenceDiagnosticKind::TypeMismatch {
+                            expression: *expression,
+                            expected: TypeExpectation::Type(TypeExpectationInner::IntegerScalar),
+                            actual: selector_type,
+                        },
+                    );
+                }
+
+                for (case_selectors, case) in case_blocks {
+                    for case_selector in case_selectors {
+                        if let SwitchCaseSelector::Expression(case_selector_expression) =
+                            case_selector
+                        {
+                            let case_selector_type = self.infer_expression_expect(
+                                *case_selector_expression,
+                                TypeExpectation::from_type(selector_type),
                                 body,
                             );
+
+                            if !case_selector_type.kind(self.db).is_numeric_scalar() {
+                                self.push_diagnostic(
+                                    body.store_source,
+                                    InferenceDiagnosticKind::TypeMismatch {
+                                        expression: *case_selector_expression,
+                                        expected: TypeExpectation::Type(
+                                            TypeExpectationInner::IntegerScalar,
+                                        ),
+                                        actual: case_selector_type,
+                                    },
+                                );
+                            }
                         }
                     }
                     self.infer_statement(*case, body, return_type);

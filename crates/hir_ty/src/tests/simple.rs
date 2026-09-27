@@ -2715,3 +2715,62 @@ fn foo() {
         "#]],
     );
 }
+
+#[test]
+fn switch_inference() {
+    check_infer(
+        "
+fn foo() {
+    switch 0 {
+        case 0u: { }
+        case 0: { }
+        case 0i: { }
+        default: { }
+    }
+
+    switch 0i {
+        case 0u: { }
+        case 0: { }
+        case 0i: { }
+        default: { }
+    }
+
+    switch 0u {
+        case 0u: { }
+        case 0: { }
+        case 0i: { }
+        default: { }
+    }
+
+    switch true {
+        case true: { }
+        case false: { }
+        default: { }
+    }
+}
+",
+        expect![[r#"
+            22..23 '0': integer
+            39..41 '0u': u32
+            60..61 '0': integer
+            80..82 '0i': i32
+            127..129 '0i': i32
+            145..147 '0u': u32
+            166..167 '0': integer
+            186..188 '0i': i32
+            233..235 '0u': u32
+            251..253 '0u': u32
+            272..273 '0': integer
+            292..294 '0i': i32
+            339..343 'true': bool
+            359..363 'true': bool
+            382..387 'false': bool
+            39..41 '0u': expected i32 but got u32
+            145..147 '0u': expected i32 but got u32
+            292..294 '0i': expected u32 but got i32
+            339..343 'true': expected i32 or u32 but got bool
+            359..363 'true': expected i32 or u32 but got bool
+            382..387 'false': expected i32 or u32 but got bool
+        "#]],
+    );
+}
