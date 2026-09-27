@@ -272,7 +272,11 @@ impl Request {
             //    if left_cond { combine(left_true, right_false) } else { combine(left_false, right_false) }
             // }
             (
-                request_left @ Self::Conditional { .. },
+                request_left @ Self::Conditional {
+                    condition: _,
+                    on_true: _,
+                    on_false: _,
+                },
                 Self::Conditional {
                     condition,
                     on_true,

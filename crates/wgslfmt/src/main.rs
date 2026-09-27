@@ -171,7 +171,7 @@ fn check_file_results<S>(
             FileStatus::Unchanged => {
                 passed_paths.push(result.file.clone());
             },
-            FileStatus::FormatterErrors(_) | FileStatus::ParserErrors { .. } => {
+            FileStatus::FormatterErrors(_) | FileStatus::ParserErrors { errors: _ } => {
                 errored_paths.push(result.file.clone());
             },
             FileStatus::Changed { source, formatted } => {
@@ -208,7 +208,7 @@ fn write_file_results<S>(
             FileStatus::Unchanged => {
                 unchanged_count.push(result.file.clone());
             },
-            FileStatus::FormatterErrors(_) | FileStatus::ParserErrors { .. } => {
+            FileStatus::FormatterErrors(_) | FileStatus::ParserErrors { errors: _ } => {
                 errored_count.push(result.file.clone());
             },
             FileStatus::Changed { source, formatted } => {

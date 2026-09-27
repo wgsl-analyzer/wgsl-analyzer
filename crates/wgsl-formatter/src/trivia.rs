@@ -104,7 +104,9 @@ impl NodeWithTriviaContent {
             Self::Content(node_or_token) => Some(node_or_token),
             Self::NoContent | Self::End => None,
             Self::IgnoredContent {
-                ignored_content, ..
+                ignored_content,
+                ignore_pragma: _,
+                ignored_preceding_trivia: _,
             } => ignored_content.as_content(),
         }
     }
@@ -115,7 +117,9 @@ impl NodeWithTriviaContent {
             Self::Content(node_or_token) => Some(node_or_token),
             Self::NoContent | Self::End => None,
             Self::IgnoredContent {
-                ignored_content, ..
+                ignored_content,
+                ignore_pragma: _,
+                ignored_preceding_trivia: _,
             } => ignored_content.into_content(),
         }
     }
@@ -288,7 +292,11 @@ impl NodeWithTrivia {
         match &self.content {
             NodeWithTriviaContent::NoContent
             | NodeWithTriviaContent::End
-            | NodeWithTriviaContent::IgnoredContent { .. } => Ok(self),
+            | NodeWithTriviaContent::IgnoredContent {
+                ignore_pragma: _,
+                ignored_preceding_trivia: _,
+                ignored_content: _,
+            } => Ok(self),
             NodeWithTriviaContent::Content(node_or_token) => {
                 if let NodeOrToken::Node(node) = node_or_token
                     && T::can_cast(node.kind())
@@ -351,7 +359,12 @@ impl NodeWithTrivia {
     pub(crate) const fn has_content(&self) -> bool {
         matches!(
             self.content,
-            NodeWithTriviaContent::Content(_) | NodeWithTriviaContent::IgnoredContent { .. }
+            NodeWithTriviaContent::Content(_)
+                | NodeWithTriviaContent::IgnoredContent {
+                    ignore_pragma: _,
+                    ignored_preceding_trivia: _,
+                    ignored_content: _
+                }
         )
     }
 
@@ -361,7 +374,11 @@ impl NodeWithTrivia {
             NodeWithTriviaContent::Content(node_or_token) => Some(node_or_token.clone()),
             NodeWithTriviaContent::NoContent
             | NodeWithTriviaContent::End
-            | NodeWithTriviaContent::IgnoredContent { .. } => None,
+            | NodeWithTriviaContent::IgnoredContent {
+                ignore_pragma: _,
+                ignored_preceding_trivia: _,
+                ignored_content: _,
+            } => None,
         }
     }
 
