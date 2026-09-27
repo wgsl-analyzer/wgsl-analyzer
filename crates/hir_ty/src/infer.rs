@@ -1422,10 +1422,6 @@ impl<'db> InferenceContext<'db> {
         let right_type = self.infer_expression(right_side, store);
 
         if left_type.is_err(self.db) || right_type.is_err(self.db) {
-            // debug_assert!(
-            //     !self.result.diagnostics.is_empty(),
-            //     "there should already be a diagnostic"
-            // );
             // no more useful type to return here
             return self.error_type();
         }
@@ -1726,10 +1722,6 @@ impl<'db> InferenceContext<'db> {
             //         .any(|r#type| r#type.is_err(self.db))
             //     {
             //         // cancel inference if an error is already known
-            //         debug_assert!(
-            //             !self.result.diagnostics.is_empty(),
-            //             "if an argument is an [error], then there should be a diagnostic already"
-            //         );
             //         return self.error_type();
             //     }
             //     self.infer_builtin_constructor(expression, argument_types, store, template, name)
@@ -1748,10 +1740,6 @@ impl<'db> InferenceContext<'db> {
             },
             Lowered::BuiltinFunction(name, template) => {
                 if argument_types.iter().any(|r#type| r#type.is_err(self.db)) {
-                    // debug_assert!(
-                    //     !self.result.diagnostics().is_empty(),
-                    //     "error instance should have a diagnostic associated with it already"
-                    // );
                     return self.error_type();
                 }
                 self.infer_builtin_function(
@@ -1793,10 +1781,6 @@ impl<'db> InferenceContext<'db> {
     // ) -> Type {
     //     let wgsl_arguments = self.converter.to_wt_vec(&argument_types);
     //     let Ok(template) = self.converter.to_maybe_vec_template(template_parameters) else {
-    //         debug_assert!(
-    //             !self.result.diagnostics().is_empty(),
-    //             "error instance should have a diagnostic associated with it already"
-    //         );
     //         return self.error_type();
     //     };
     //     if let Ok(value) =
@@ -1826,11 +1810,6 @@ impl<'db> InferenceContext<'db> {
     ) -> Type {
         let wgsl_arguments = self.converter.to_wt_vec(argument_types);
         let Ok(template) = self.converter.to_maybe_vec_template(template_parameters) else {
-            // assert fails with something like `sqrt<&y>(1)`
-            // debug_assert!(
-            //     !self.result.diagnostics().is_empty(),
-            //     "error instance should have a diagnostic associated with it already"
-            // );
             return self.error_type();
         };
         let return_type = wgsl_types::builtin::type_builtin_fn(
@@ -1908,13 +1887,7 @@ impl<'db> InferenceContext<'db> {
                 );
                 r#type // doesn't hurt to be helpful
             },
-            TypeKind::Error => {
-                debug_assert!(
-                    !self.result.diagnostics.is_empty(),
-                    "there should already be a diagnostic if we have an error"
-                );
-                r#type
-            },
+            TypeKind::Error => r#type,
         }
     }
 
@@ -1977,10 +1950,6 @@ impl<'db> InferenceContext<'db> {
         )];
         let argument_types = arguments.iter().map(|(_, r#type)| *r#type).collect_vec();
         if argument_types.iter().any(|r#type| r#type.is_err(self.db)) {
-            debug_assert!(
-                !self.result.diagnostics.is_empty(),
-                "an error type should have a diagnostic already"
-            );
             return r#type;
         }
         let wgsl_arguments = self.converter.to_wt_vec(&argument_types);
@@ -2015,10 +1984,6 @@ impl<'db> InferenceContext<'db> {
         let template = &[TpltParam::Type(self.converter.to_wgsl_types(matrix.inner))];
         let argument_types = arguments.iter().map(|(_, r#type)| *r#type).collect_vec();
         if argument_types.iter().any(|r#type| r#type.is_err(self.db)) {
-            debug_assert!(
-                !self.result.diagnostics.is_empty(),
-                "an error type should have a diagnostic already"
-            );
             return r#type;
         }
         let wgsl_arguments = self.converter.to_wt_vec(&argument_types);
@@ -2146,10 +2111,6 @@ impl<'db> InferenceContext<'db> {
         }
         let argument_types = arguments.iter().map(|(_, r#type)| *r#type).collect_vec();
         if argument_types.iter().any(|r#type| r#type.is_err(self.db)) {
-            // debug_assert!(
-            //     !self.result.diagnostics.is_empty(),
-            //     "an error type should have a diagnostic already"
-            // );
             return incomplete_type();
         }
         let wgsl_arguments = self.converter.to_wt_vec(&argument_types);
@@ -2193,10 +2154,6 @@ impl<'db> InferenceContext<'db> {
         let name = matrix_type.name();
         let argument_types = arguments.iter().map(|(_, r#type)| *r#type).collect_vec();
         if argument_types.iter().any(|r#type| r#type.is_err(self.db)) {
-            // debug_assert!(
-            //     !self.result.diagnostics.is_empty(),
-            //     "an error type should have a diagnostic already"
-            // );
             return incomplete_type();
         }
         let wgsl_arguments = self.converter.to_wt_vec(&argument_types);
@@ -2229,10 +2186,6 @@ impl<'db> InferenceContext<'db> {
         }
         let argument_types = arguments.iter().map(|(_, r#type)| *r#type).collect_vec();
         if argument_types.iter().any(|r#type| r#type.is_err(self.db)) {
-            // debug_assert!(
-            //     !self.result.diagnostics.is_empty(),
-            //     "an error type should have a diagnostic already"
-            // );
             return r#type;
         }
         let wgsl_arguments = self.converter.to_wt_vec(&argument_types);
@@ -2279,10 +2232,6 @@ impl<'db> InferenceContext<'db> {
         }
         let argument_types = arguments.iter().map(|(_, r#type)| *r#type).collect_vec();
         if argument_types.iter().any(|r#type| r#type.is_err(self.db)) {
-            // debug_assert!(
-            //     !self.result.diagnostics.is_empty(),
-            //     "an error type should have a diagnostic already"
-            // );
             return r#type;
         }
 
@@ -2336,10 +2285,6 @@ impl<'db> InferenceContext<'db> {
         }
         let argument_types = arguments.iter().map(|(_, r#type)| *r#type).collect_vec();
         if argument_types.iter().any(|r#type| r#type.is_err(self.db)) {
-            // debug_assert!(
-            //     !self.result.diagnostics.is_empty(),
-            //     "an error type should have a diagnostic already"
-            // );
             return r#type;
         }
 

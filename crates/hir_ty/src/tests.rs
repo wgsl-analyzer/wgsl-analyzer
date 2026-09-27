@@ -258,10 +258,6 @@ impl<'db> InferPrinter<'db> {
                 parameters,
                 r#type,
             } => {
-                debug_assert!(
-                    !r#type.is_err(self.db),
-                    "don't give a diagnostic for downstream issues"
-                );
                 self.print_no_constructor(source_map, buffer, *expression, parameters, *r#type);
             },
             InferenceDiagnosticKind::NoOverload {
