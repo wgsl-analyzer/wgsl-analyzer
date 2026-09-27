@@ -20,7 +20,7 @@ export interface StartOptions {
 	 * They must sit side by side. Defaults to `"/wgsl-analyzer/"`.
 	 */
 	readonly baseUrl?: string | URL;
-	/** Absolute path of the workspace inside MEMFS. Defaults to `"/workspace"`. */
+	/** Absolute path of the workspace in the in-memory filesystem. Defaults to `"/workspace"`. */
 	readonly root?: string;
 	/** Files to seed, keyed by path relative to {@link StartOptions.root}. */
 	readonly files: WorkspaceFiles;
@@ -134,19 +134,18 @@ export class WgslAnalyzerServer {
 	}
 
 	/**
-	 * Creates or replaces a file in MEMFS.
+	 * Creates or replaces a file in the in-memory filesystem.
 	 *
-	 * Needed only when the set of files changes. The server's filesystem watcher
-	 * cannot observe MEMFS, so follow this with a
-	 * `workspace/didChangeWatchedFiles` notification. Ordinary edits to an open
-	 * document should go through `textDocument/didChange` and leave MEMFS alone.
+	 * The server does not watch the filesystem, so follow this with a
+	 * `workspace/didChangeWatchedFiles` notification for the file. Edits to an
+	 * open document go through `textDocument/didChange` instead.
 	 */
 	writeFile(relativePath: string, contents: string | Uint8Array): void {
 		const message: HostMessage = { type: "writeFile", path: relativePath, contents };
 		this.#worker.postMessage(message);
 	}
 
-	/** Removes a file from MEMFS. See {@link WgslAnalyzerServer.writeFile}. */
+	/** Removes a file from the in-memory filesystem. See {@link WgslAnalyzerServer.writeFile}. */
 	deleteFile(relativePath: string): void {
 		const message: HostMessage = { type: "deleteFile", path: relativePath };
 		this.#worker.postMessage(message);

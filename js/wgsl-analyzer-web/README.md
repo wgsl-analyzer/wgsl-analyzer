@@ -58,9 +58,10 @@ official [docs](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Head
 
 Edits to an open document should go through `textDocument/didChange` as usual.
 
-`writeFile` and `deleteFile` exist for changing the *set* of files. The server's
-filesystem watcher cannot observe the in-memory filesystem, so follow either with
-a `workspace/didChangeWatchedFiles` notification.
+`writeFile` and `deleteFile` change files in the in-memory filesystem, for
+example files that are added, removed, or edited outside the editor. The server
+does not watch the filesystem, so follow either with a
+`workspace/didChangeWatchedFiles` notification for the file.
 
 The worker seeds the workspace after the module is ready but before `main()`
 runs, deliberately not from `preRun`. `preRun` executes before
