@@ -154,6 +154,9 @@ pub enum AnyDiagnostic {
         expression: InFile<AstPointer<ast::Expression>>,
         actual: Type,
     },
+    InvalidAddressOf {
+        expression: InFile<AstPointer<ast::Expression>>,
+    },
 }
 
 #[derive(Clone, Copy)]
@@ -186,6 +189,7 @@ impl AnyDiagnostic {
             | Self::WgslError { expression, message: _ }
             | Self::InvalidIdentExpression { expression, error: _ }
             | Self::UnexpectedReturnValue { expression, actual: _ }
+            | Self::InvalidAddressOf { expression }
             | Self::ExpectedLoweredKind { expression, actual: _, expected: _, path: _  } => {
                 expression.file_id
             },
@@ -397,6 +401,11 @@ pub(crate) fn to_any_diagnostic(
                 expression: source,
                 actual: *actual,
             }
+        },
+        InferenceDiagnosticKind::InvalidAddressOf { expression } => {
+            let pointer = source_map.expression_to_source(*expression).ok()?.clone();
+            let source = InFile::new(file_id, pointer);
+            AnyDiagnostic::InvalidAddressOf { expression: source }
         },
     })
 }

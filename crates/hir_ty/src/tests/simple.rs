@@ -2788,17 +2788,18 @@ fn foo1() {
 ",
         expect![[r#"
             13..16 'foo': ref<private, array<f32, 3>, read_write>
-            46..49 'bar': ref<private, vec3<f32>, read_write>
-            79..80 'a': ptr<private, f32, read_write>
-            83..90 '&foo[2]': ptr<private, f32, read_write>
-            84..87 'foo': ref<private, array<f32, 3>, read_write>
-            84..90 'foo[2]': ref<private, f32, read_write>
-            88..89 '2': integer
-            140..141 'b': ptr<private, f32, read_write>
-            144..151 '&bar[2]': ptr<private, f32, read_write>
-            145..148 'bar': ref<private, vec3<f32>, read_write>
-            145..151 'bar[2]': ref<private, f32, read_write>
-            149..150 '2': integer
+            45..48 'bar': ref<private, vec3<f32>, read_write>
+            77..78 'a': ptr<private, f32, read_write>
+            81..88 '&foo[2]': ptr<private, f32, read_write>
+            82..85 'foo': ref<private, array<f32, 3>, read_write>
+            82..88 'foo[2]': ref<private, f32, read_write>
+            86..87 '2': integer
+            98..99 'b': [error]
+            102..109 '&bar[2]': [error]
+            103..106 'bar': ref<private, vec3<f32>, read_write>
+            103..109 'bar[2]': ref<private, f32, read_write>
+            107..108 '2': integer
+            102..109 '&bar[2]': cannot take the address of a vector component
         "#]],
     );
 }
@@ -2812,11 +2813,12 @@ fn matrix_vector_pointers() {
         }",
         expect![[r#"
             27..28 'v': ref<function, vec2<f32>, read_write>
-            57..58 'p': ptr<function, f32, read_write>
-            61..66 '&v[0]': ptr<function, f32, read_write>
+            57..58 'p': [error]
+            61..66 '&v[0]': [error]
             62..63 'v': ref<function, vec2<f32>, read_write>
             62..66 'v[0]': ref<function, f32, read_write>
             64..65 '0': integer
+            61..66 '&v[0]': cannot take the address of a vector component
         "#]],
     );
 
@@ -2827,10 +2829,11 @@ fn matrix_vector_pointers() {
         }",
         expect![[r#"
             27..28 'v': ref<function, vec2<f32>, read_write>
-            57..58 'p': ptr<function, f32, read_write>
-            61..65 '&v.x': ptr<function, f32, read_write>
+            57..58 'p': [error]
+            61..65 '&v.x': [error]
             62..63 'v': ref<function, vec2<f32>, read_write>
             62..65 'v.x': ref<function, f32, read_write>
+            61..65 '&v.x': cannot take the address of a vector component
         "#]],
     );
 
@@ -2841,13 +2844,14 @@ fn matrix_vector_pointers() {
         }",
         expect![[r#"
             27..28 'm': ref<function, mat2x2<f32>, read_write>
-            59..60 'p': ptr<function, f32, read_write>
-            63..71 '&m[0][0]': ptr<function, f32, read_write>
+            59..60 'p': [error]
+            63..71 '&m[0][0]': [error]
             64..65 'm': ref<function, mat2x2<f32>, read_write>
             64..68 'm[0]': ref<function, vec2<f32>, read_write>
             64..71 'm[0][0]': ref<function, f32, read_write>
             66..67 '0': integer
             69..70 '0': integer
+            63..71 '&m[0][0]': cannot take the address of a vector component
         "#]],
     );
 }

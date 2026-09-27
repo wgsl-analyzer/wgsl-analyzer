@@ -86,4 +86,7 @@ pub enum InferenceDiagnosticKind {
         expression: ExpressionId,
         actual: Type,
     },
+    InvalidAddressOf {
+        expression: ExpressionId,
+    },
 }

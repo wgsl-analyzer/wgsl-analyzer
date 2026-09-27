@@ -1379,6 +1379,13 @@ impl<'db> InferenceContext<'db> {
         if operand_type.is_err(self.db) {
             return self.error_type();
         }
+        if self.is_address_of_vector_component(operand, operator, store) {
+            self.push_diagnostic(
+                store.store_source,
+                InferenceDiagnosticKind::InvalidAddressOf { expression },
+            );
+            return self.error_type();
+        }
         // Load rule does not apply to this specific operator because it has precondition `r: ref<AS,T,AM>`
         let expression_type = if operator == UnaryOperator::AddressOf {
             operand_type
@@ -2370,6 +2377,32 @@ impl<'db> InferenceContext<'db> {
         let r#type = context.lower_type(type_ref);
         self.push_lowering_diagnostics(context.diagnostics, store);
         r#type
+    }
+
+    fn is_address_of_vector_component(
+        &mut self,
+        expression: ExpressionId,
+        operator: UnaryOperator,
+        store: &ExpressionStore,
+    ) -> bool {
+        if operator != UnaryOperator::AddressOf {
+            return false;
+        }
+
+        let (Expression::Index { left_side, .. }
+        | Expression::Field {
+            expression: left_side,
+            ..
+        }) = store[expression]
+        else {
+            return false;
+        };
+
+        matches!(
+            self.infer_expression(left_side, store).kind(self.db),
+            TypeKind::Reference(Reference { inner, .. })
+                if matches!(inner.kind(self.db), TypeKind::Vector(_))
+        )
     }
 }
 
