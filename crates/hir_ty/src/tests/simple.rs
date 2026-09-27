@@ -2825,6 +2825,26 @@ fn foo1() {
 }
 
 #[test]
+fn address_of_struct_field() {
+    check_infer(
+        "
+struct Foo { x: u32 }
+var<private> bar: Foo;
+fn foo1() {
+    let b = &bar.x;
+}
+",
+        expect![[r#"
+            35..38 'bar': ref<private, Foo, read_write>
+            65..66 'b': ptr<private, u32, read_write>
+            69..75 '&bar.x': ptr<private, u32, read_write>
+            70..73 'bar': ref<private, Foo, read_write>
+            70..75 'bar.x': ref<private, u32, read_write>
+        "#]],
+    );
+}
+
+#[test]
 fn matrix_vector_pointers() {
     check_infer(
         "fn foo() {
