@@ -2768,6 +2768,9 @@ fn foo() {
             39..41 '0u': expected i32 but got u32
             145..147 '0u': expected i32 but got u32
             292..294 '0i': expected u32 but got i32
+            339..343 'true': expected i32 or u32 but got bool
+            359..363 'true': expected i32 or u32 but got bool
+            382..387 'false': expected i32 or u32 but got bool
         "#]],
     );
 }
