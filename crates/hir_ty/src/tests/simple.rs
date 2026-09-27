@@ -2715,3 +2715,27 @@ fn foo() {
         "#]],
     );
 }
+
+#[test]
+fn switch_inference() {
+    check_infer(
+        "
+fn foo() {
+    switch 0 {
+        case 0u: { }
+        case 0: { }
+        case 0i: { }
+        default: { }
+    }
+}
+",
+        expect![[r#"
+            22..23 '0': integer
+            39..41 '0u': u32
+            60..61 '0': integer
+            80..82 '0i': i32
+            39..41 '0u': expected integer but got u32
+            80..82 '0i': expected integer but got i32
+        "#]],
+    );
+}
