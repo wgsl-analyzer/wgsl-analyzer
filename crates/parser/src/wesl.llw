@@ -372,9 +372,9 @@ statement:
 
 loop_compound_statement:
 	'{'
-		attribute_list !1
+		attribute_list
 		(
-			statement attribute_list !1
+			statement attribute_list
 		)*
 		[continuing_statement]
 	'}'
@@ -385,9 +385,9 @@ continuing_statement: 'continuing' attribute_list !1 continuing_compound_stateme
 
 continuing_compound_statement:
 	'{'
-		attribute_list !1
+		attribute_list
 		(
-			?1 statement attribute_list !1
+			?1 statement attribute_list
 		)*
 		[break_if_statement]
 	'}'

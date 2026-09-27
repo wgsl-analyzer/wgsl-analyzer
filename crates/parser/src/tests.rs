@@ -1682,9 +1682,7 @@ fn loop_statement_continuing() {
                       BraceLeft@18..19 "{"
                       BraceRight@19..20 "}"
                   Blankspace@20..21 " "
-                  BraceRight@21..22 "}"
-
-            error at 19..20: attributes must precede a statement here"#]],
+                  BraceRight@21..22 "}""#]],
     );
 }
 #[test]

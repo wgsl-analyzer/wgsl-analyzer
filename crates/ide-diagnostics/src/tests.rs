@@ -411,7 +411,6 @@ loop
 ",
         expect![[r#"
             16..25 wgsl-analyzer Error 16: translate-time attribute `@if` is not allowed on a loop body
-            40..41 wgsl-analyzer Error 16: attributes must precede a statement here
         "#]],
     );
 }
@@ -482,7 +481,6 @@ loop {
 ",
         expect![[r#"
             37..46 wgsl-analyzer Error 16: translate-time attribute `@if` is not allowed on a continuing body
-            52..53 wgsl-analyzer Error 16: attributes must precede a statement here
         "#]],
     );
 }
