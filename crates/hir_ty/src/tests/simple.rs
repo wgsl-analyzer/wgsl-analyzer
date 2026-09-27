@@ -2774,3 +2774,31 @@ fn foo() {
         "#]],
     );
 }
+
+#[test]
+fn cannot_take_address_of_vector_component() {
+    check_infer(
+        "
+var<private> foo: array<f32,3>;
+var<private> bar: vec3f;
+fn foo1() {
+    let a = &foo[2];
+    let b = &bar[2];
+}
+",
+        expect![[r#"
+            13..16 'foo': ref<private, array<f32, 3>, read_write>
+            46..49 'bar': ref<private, vec3<f32>, read_write>
+            79..80 'a': ptr<private, f32, read_write>
+            83..90 '&foo[2]': ptr<private, f32, read_write>
+            84..87 'foo': ref<private, array<f32, 3>, read_write>
+            84..90 'foo[2]': ref<private, f32, read_write>
+            88..89 '2': integer
+            140..141 'b': ptr<private, f32, read_write>
+            144..151 '&bar[2]': ptr<private, f32, read_write>
+            145..148 'bar': ref<private, vec3<f32>, read_write>
+            145..151 'bar[2]': ref<private, f32, read_write>
+            149..150 '2': integer
+        "#]],
+    );
+}
