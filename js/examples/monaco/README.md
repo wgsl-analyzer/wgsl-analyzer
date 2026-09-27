@@ -12,7 +12,7 @@ nothing to copy.
 rustup +nightly component add rust-src
 source /path/to/emsdk/emsdk_env.sh
 
-cargo xtask build-web   # --release builds the configuration that ships
+cargo xtask dist-web   # --release builds the configuration that ships
 
 cd js
 pnpm --filter wgsl-analyzer-monaco-example run dev

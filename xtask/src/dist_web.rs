@@ -8,7 +8,7 @@ use xshell::{Cmd, Shell, cmd};
 
 use crate::{
     dist::{self, Patch},
-    flags::BuildWeb,
+    flags::DistWeb,
     project_root,
 };
 
@@ -31,7 +31,7 @@ const ARTIFACTS: &[(&str, &str)] = &[
     ("wgsl_analyzer.wasm", "wgsl_analyzer.wasm"),
 ];
 
-impl BuildWeb {
+impl DistWeb {
     pub(crate) fn run(
         &self,
         shell: &Shell,
@@ -49,10 +49,10 @@ impl BuildWeb {
             let version = dist::client_version(shell, patch_version);
             let mut patch = Patch::new(shell, Path::new(PACKAGE_ROOT).join("package.json"))?;
             dist::patch_version(&mut patch, &version).commit(shell)?;
-            println!("build-web: stamped version {version}");
+            println!("dist-web: stamped version {version}");
         }
 
-        println!("build-web: staged the web package in {}", assets.display());
+        println!("dist-web: staged the web package in {}", assets.display());
         Ok(())
     }
 }
@@ -145,7 +145,7 @@ fn stage_artifacts(
         }
         let destination = assets.join(to);
         shell.copy_file(&source, &destination)?;
-        println!("build-web: {to} ({:.1} MB)", megabytes(&destination)?);
+        println!("dist-web: {to} ({:.1} MB)", megabytes(&destination)?);
     }
 
     Ok(assets)

@@ -2,7 +2,7 @@
 //!
 //! The host provides [`lsp_next_message`] and [`lsp_send_message`] in an emscripten JS library,
 //! which `build.rs` links in from the path in `WGSL_ANALYZER_JS_LIBRARY`. For wgsl-analyzer-web,
-//! that is `js/wgsl-analyzer-web/emscripten/library.js`, which `cargo xtask build-web` sets.
+//! that is `js/wgsl-analyzer-web/emscripten/library.js`, which `cargo xtask dist-web` sets.
 //!
 //! Both are called from pthreads, so the library has to mark them `__proxy: 'sync'` to run them
 //! on the main runtime thread. `lsp_next_message` also has to be `__async: true`, so it can

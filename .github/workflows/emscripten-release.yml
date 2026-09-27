@@ -74,7 +74,7 @@ jobs:
       # No cargo cache: this runs weekly on main, where a cold, faithful build is
       # the point. `lto = "fat"` with `codegen-units = 1` dominates the runtime.
       - name: Build the wasm module and the package
-        run: cargo xtask build-web --release
+        run: cargo xtask dist-web --release
 
       - name: Report the payload size
         run: |

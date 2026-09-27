@@ -91,7 +91,7 @@ xflags::xflags! {
         }
 
         /// Builds the JavaScript package.
-        cmd build-web {
+        cmd dist-web {
             /// Build in release configuration.
             optional --release
             /// Stamp the package with the version that `dist` gives the client.
@@ -119,7 +119,7 @@ pub enum XtaskCmd {
     Codegen(Codegen),
     Tidy(Tidy),
     Changelog(Changelog),
-    BuildWeb(BuildWeb),
+    DistWeb(DistWeb),
 }
 
 #[derive(Debug)]
@@ -178,7 +178,7 @@ pub struct Changelog {
 }
 
 #[derive(Debug)]
-pub struct BuildWeb {
+pub struct DistWeb {
     pub release: bool,
     pub client_patch_version: Option<String>,
 }
