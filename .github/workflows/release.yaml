@@ -9,7 +9,8 @@ on:
     branches:
       - release
 
-permissions: {}
+permissions:
+  id-token: write
 
 env:
   CARGO_TERM_COLOR: always
@@ -339,23 +340,23 @@ jobs:
         if: github.ref == 'refs/heads/release' && github.repository == 'wgsl-analyzer/wgsl-analyzer'
         working-directory: ./editors/code
         # token from https://dev.azure.com/wgsl-analyzer/
-        run: pnpm exec vsce publish --pat ${{ secrets.VSCE_PAT }} --packagePath ../../dist/wgsl-analyzer-*.vsix --no-dependencies
+        run: pnpm exec vsce publish ---oidc --packagePath ../../dist/wgsl-analyzer-*.vsix --no-dependencies
 
       - name: Publish Extension (OpenVSX, release)
         if: github.ref == 'refs/heads/release' && github.repository == 'wgsl-analyzer/wgsl-analyzer'
         working-directory: ./editors/code
-        run: pnpm exec ovsx publish --pat ${{ secrets.OVSX_PAT }} --packagePath ../../dist/wgsl-analyzer-*.vsix --no-dependencies
+        run: pnpm exec ovsx publish --trusted-publishing --packagePath ../../dist/wgsl-analyzer-*.vsix --no-dependencies
         timeout-minutes: 2
 
       - name: Publish Extension (Code Marketplace, nightly)
         if: github.ref != 'refs/heads/release' && github.repository == 'wgsl-analyzer/wgsl-analyzer'
         working-directory: ./editors/code
-        run: pnpm exec vsce publish --pat ${{ secrets.VSCE_PAT }} --packagePath ../../dist/wgsl-analyzer-*.vsix --pre-release --no-dependencies
+        run: pnpm exec vsce publish --oidc --packagePath ../../dist/wgsl-analyzer-*.vsix --pre-release --no-dependencies
 
       - name: Publish Extension (OpenVSX, nightly)
         if: github.ref != 'refs/heads/release' && github.repository == 'wgsl-analyzer/wgsl-analyzer'
         working-directory: ./editors/code
-        run: pnpm exec ovsx publish --pat ${{ secrets.OVSX_PAT }} --packagePath ../../dist/wgsl-analyzer-*.vsix --no-dependencies
+        run: pnpm exec ovsx publish --trusted-publishing --packagePath ../../dist/wgsl-analyzer-*.vsix --no-dependencies
         timeout-minutes: 2
 
   notify-failure:
