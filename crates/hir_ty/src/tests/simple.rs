@@ -2734,8 +2734,7 @@ fn foo() {
             39..41 '0u': u32
             60..61 '0': integer
             80..82 '0i': i32
-            39..41 '0u': expected integer but got u32
-            80..82 '0i': expected integer but got i32
+            39..41 '0u': expected i32 but got u32
         "#]],
     );
 }

@@ -831,7 +831,10 @@ impl<'db> InferenceContext<'db> {
                 expression,
                 case_blocks,
             } => {
-                let r#type = self.infer_expression(*expression, body).loaded(self.db);
+                let r#type = self
+                    .infer_expression(*expression, body)
+                    .loaded(self.db)
+                    .concretize(self.db);
 
                 for (selectors, case) in case_blocks {
                     for selector in selectors {
