@@ -580,6 +580,15 @@ pub fn diagnostics(
                         frange.range,
                     )
                 },
+                AnyDiagnostic::InvalidAddressOf { expression } => {
+                    let source = expression.value.to_node(&root);
+                    let frange = original_file_range(db, expression.file_id, source.syntax());
+                    Diagnostic::new(
+                        DiagnosticCode("34"),
+                        "cannot take the address of a vector component".to_owned(),
+                        frange.range,
+                    )
+                },
             }
         })
         .collect()

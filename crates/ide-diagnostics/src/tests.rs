@@ -726,3 +726,18 @@ fn foo() {
         "#]],
     );
 }
+
+#[test]
+fn address_of_vector_component() {
+    check_diagnostics(
+        "
+var<private> v: vec3f;
+fn foo() {
+    let invalid = &v[2];
+}
+",
+        expect![[r#"
+            52..57 wgsl-analyzer Error 34: cannot take the address of a vector component
+        "#]],
+    );
+}

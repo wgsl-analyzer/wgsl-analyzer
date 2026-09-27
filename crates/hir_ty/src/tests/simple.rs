@@ -2774,3 +2774,124 @@ fn foo() {
         "#]],
     );
 }
+
+#[test]
+fn cannot_take_address_of_vector_component() {
+    check_infer(
+        "
+var<private> foo: array<f32,3>;
+var<private> bar: vec3f;
+fn foo1() {
+    let a = &foo[2];
+    let b = &bar[2];
+}
+",
+        expect![[r#"
+            13..16 'foo': ref<private, array<f32, 3>, read_write>
+            45..48 'bar': ref<private, vec3<f32>, read_write>
+            77..78 'a': ptr<private, f32, read_write>
+            81..88 '&foo[2]': ptr<private, f32, read_write>
+            82..85 'foo': ref<private, array<f32, 3>, read_write>
+            82..88 'foo[2]': ref<private, f32, read_write>
+            86..87 '2': integer
+            98..99 'b': [error]
+            102..109 '&bar[2]': [error]
+            103..106 'bar': ref<private, vec3<f32>, read_write>
+            103..109 'bar[2]': ref<private, f32, read_write>
+            107..108 '2': integer
+            102..109 '&bar[2]': cannot take the address of a vector component
+        "#]],
+    );
+}
+
+#[test]
+fn address_of_swizzle() {
+    check_infer(
+        "
+var<private> bar: vec3f;
+fn foo1() {
+    let b = &bar.xy;
+}
+",
+        expect![[r#"
+            13..16 'bar': ref<private, vec3<f32>, read_write>
+            45..46 'b': [error]
+            49..56 '&bar.xy': [error]
+            50..53 'bar': ref<private, vec3<f32>, read_write>
+            50..56 'bar.xy': swizzle<private, f32, 3, 2>
+            49..56 '&bar.xy': cannot use unary operator `&` on type `vec2<f32>`
+        "#]],
+    );
+}
+
+#[test]
+fn address_of_struct_field() {
+    check_infer(
+        "
+struct Foo { x: u32 }
+var<private> bar: Foo;
+fn foo1() {
+    let b = &bar.x;
+}
+",
+        expect![[r#"
+            35..38 'bar': ref<private, Foo, read_write>
+            65..66 'b': ptr<private, u32, read_write>
+            69..75 '&bar.x': ptr<private, u32, read_write>
+            70..73 'bar': ref<private, Foo, read_write>
+            70..75 'bar.x': ref<private, u32, read_write>
+        "#]],
+    );
+}
+
+#[test]
+fn matrix_vector_pointers() {
+    check_infer(
+        "fn foo() {
+            var v: vec2<f32>;
+            let p = &v[0];
+        }",
+        expect![[r#"
+            27..28 'v': ref<function, vec2<f32>, read_write>
+            57..58 'p': [error]
+            61..66 '&v[0]': [error]
+            62..63 'v': ref<function, vec2<f32>, read_write>
+            62..66 'v[0]': ref<function, f32, read_write>
+            64..65 '0': integer
+            61..66 '&v[0]': cannot take the address of a vector component
+        "#]],
+    );
+
+    check_infer(
+        "fn foo() {
+            var v: vec2<f32>;
+            let p = &v.x;
+        }",
+        expect![[r#"
+            27..28 'v': ref<function, vec2<f32>, read_write>
+            57..58 'p': [error]
+            61..65 '&v.x': [error]
+            62..63 'v': ref<function, vec2<f32>, read_write>
+            62..65 'v.x': ref<function, f32, read_write>
+            61..65 '&v.x': cannot take the address of a vector component
+        "#]],
+    );
+
+    check_infer(
+        "fn foo() {
+            var m: mat2x2<f32>;
+            let p = &m[0][0];
+        }",
+        expect![[r#"
+            27..28 'm': ref<function, mat2x2<f32>, read_write>
+            59..60 'p': [error]
+            63..71 '&m[0][0]': [error]
+            64..65 'm': ref<function, mat2x2<f32>, read_write>
+            64..68 'm[0]': ref<function, vec2<f32>, read_write>
+            64..71 'm[0][0]': ref<function, f32, read_write>
+            66..67 '0': integer
+            69..70 '0': integer
+            63..71 '&m[0][0]': cannot take the address of a vector component
+        "#]],
+    );
+}
