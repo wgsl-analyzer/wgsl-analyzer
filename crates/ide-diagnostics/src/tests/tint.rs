@@ -8,7 +8,7 @@ use super::check_diagnostics_with_config;
 use crate::DiagnosticsConfig;
 
 #[test]
-fn store_type_must_be_storable() {
+fn ambiguous_clamp_call() {
     require_tool!(Tool::Tint);
     check_diagnostics_with_config(
         &DiagnosticsConfig {
