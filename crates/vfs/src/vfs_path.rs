@@ -166,10 +166,149 @@ impl VfsPath {
         buffer.push(tag);
         match &self.0 {
             VfsPathRepr::PathBuf(path) => {
-                buffer.extend(path.as_str().as_bytes());
+                #[cfg(windows)]
+                {
+                    use windows_paths::Encode as _;
+                    let components = path.components();
+                    let mut add_separator = false;
+                    for component in components {
+                        if add_separator {
+                            windows_paths::SEPARATOR.encode(buffer);
+                        }
+                        let len_before = buffer.len();
+                        match component {
+                            paths::Utf8Component::Prefix(prefix) => {
+                                // kind() returns a normalized and comparable path prefix.
+                                prefix.kind().encode(buffer);
+                            },
+                            paths::Utf8Component::RootDir => {
+                                if !add_separator {
+                                    component.as_str().encode(buffer);
+                                }
+                            },
+                            paths::Utf8Component::CurDir
+                            | paths::Utf8Component::ParentDir
+                            | paths::Utf8Component::Normal(_) => component.as_str().encode(buffer),
+                        }
+
+                        // some components may be encoded empty
+                        add_separator = len_before != buffer.len();
+                    }
+                }
+                #[cfg(not(windows))]
+                {
+                    buffer.extend(path.as_str().as_bytes());
+                }
             },
             VfsPathRepr::VirtualPath(VirtualPath(s)) => buffer.extend(s.as_bytes()),
         }
+    }
+}
+
+#[cfg(windows)]
+mod windows_paths {
+    pub(crate) trait Encode {
+        fn encode(
+            &self,
+            buffer: &mut Vec<u8>,
+        );
+    }
+
+    impl Encode for u8 {
+        fn encode(
+            &self,
+            buffer: &mut Vec<u8>,
+        ) {
+            buffer.push(*self);
+        }
+    }
+
+    impl Encode for &str {
+        fn encode(
+            &self,
+            buffer: &mut Vec<u8>,
+        ) {
+            buffer.extend(self.as_bytes());
+        }
+    }
+
+    pub(crate) const SEPARATOR: &str = "\\";
+    const VERBATIM: &str = "\\\\?\\";
+    const UNC: &str = "UNC";
+    const DEVICE: &str = "\\\\.\\";
+    const COLON: &str = ":";
+
+    impl Encode for paths::Utf8Prefix<'_> {
+        fn encode(
+            &self,
+            buffer: &mut Vec<u8>,
+        ) {
+            match self {
+                paths::Utf8Prefix::Verbatim(c) => {
+                    VERBATIM.encode(buffer);
+                    c.encode(buffer);
+                },
+                paths::Utf8Prefix::VerbatimUNC(server, share) => {
+                    VERBATIM.encode(buffer);
+                    UNC.encode(buffer);
+                    SEPARATOR.encode(buffer);
+                    server.encode(buffer);
+                    SEPARATOR.encode(buffer);
+                    share.encode(buffer);
+                },
+                paths::Utf8Prefix::VerbatimDisk(d) => {
+                    VERBATIM.encode(buffer);
+                    d.encode(buffer);
+                    COLON.encode(buffer);
+                },
+                paths::Utf8Prefix::DeviceNS(device) => {
+                    DEVICE.encode(buffer);
+                    device.encode(buffer);
+                },
+                paths::Utf8Prefix::UNC(server, share) => {
+                    SEPARATOR.encode(buffer);
+                    SEPARATOR.encode(buffer);
+                    server.encode(buffer);
+                    SEPARATOR.encode(buffer);
+                    share.encode(buffer);
+                },
+                paths::Utf8Prefix::Disk(d) => {
+                    d.encode(buffer);
+                    COLON.encode(buffer);
+                },
+            }
+        }
+    }
+    #[test]
+    fn paths_encoding() {
+        // drive letter casing agnostic
+        test_eq("C:/x.rs", "c:/x.rs");
+        // separator agnostic
+        test_eq("C:/x/y.rs", "C:\\x\\y.rs");
+
+        fn test_eq(
+            a: &str,
+            b: &str,
+        ) {
+            let mut b1 = Vec::new();
+            let mut b2 = Vec::new();
+            vfs(a).encode(&mut b1);
+            vfs(b).encode(&mut b2);
+            assert_eq!(b1, b2);
+        }
+    }
+
+    #[test]
+    fn test_separator_root_dir_encoding() {
+        let mut buffer = Vec::new();
+        vfs("C:/x/y").encode(&mut buffer);
+        assert_eq!(&buffer, &[0, 67, 58, 92, 120, 92, 121])
+    }
+
+    #[cfg(test)]
+    fn vfs(str: &str) -> super::VfsPath {
+        use super::{AbsPathBuf, VfsPath};
+        VfsPath::from(AbsPathBuf::try_from(str).unwrap())
     }
 }
 
