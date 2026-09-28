@@ -26,6 +26,7 @@ pub(crate) fn view_module_graph(
     file_id: FileId,
 ) -> Option<String> {
     // TODO: This only renders the children. It should render an edge for each import and inline usage of another module.
+    // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1550
     let package = file_package(db, file_id)?;
     let modules_to_render = ModulesMap::of(db, package);
     let graph = DotModuleGraph::new(db, modules_to_render);
