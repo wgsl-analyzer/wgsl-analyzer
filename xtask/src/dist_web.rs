@@ -46,7 +46,7 @@ impl DistWeb {
         let assets = stage_artifacts(shell, self.release)?;
 
         if let Some(patch_version) = &self.client_patch_version {
-            let version = dist::client_version(shell, patch_version);
+            let version = dist::web_version(shell, patch_version);
             let mut patch = Patch::new(shell, Path::new(PACKAGE_ROOT).join("package.json"))?;
             dist::patch_version(&mut patch, &version).commit(shell)?;
             println!("dist-web: stamped version {version}");

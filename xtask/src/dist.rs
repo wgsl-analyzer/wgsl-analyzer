@@ -39,6 +39,19 @@ pub(crate) fn client_version(
     }
 }
 
+/// npm has no pre-release channel, so nightlies are semver prereleases of the
+/// next stable version: semver ranges and update bots then skip them.
+pub(crate) fn web_version(
+    shell: &Shell,
+    patch_version: &str,
+) -> String {
+    if is_stable(shell) {
+        format!("{VERSION_STABLE}.{patch_version}")
+    } else {
+        format!("{VERSION_NIGHTLY}.0-next.{patch_version}")
+    }
+}
+
 /// Replaces the `VERSION_DEV` placeholder version in a `package.json`.
 pub(crate) fn patch_version<'patch>(
     patch: &'patch mut Patch,
