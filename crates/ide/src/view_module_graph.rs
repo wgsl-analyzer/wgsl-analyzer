@@ -26,6 +26,7 @@ pub(crate) fn view_module_graph(
     file_id: FileId,
 ) -> Option<String> {
     // TODO: This only renders the children. It should render an edge for each import and inline usage of another module.
+    // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1550
     let package = file_package(db, file_id)?;
     let modules_to_render = ModulesMap::of(db, package);
     let graph = DotModuleGraph::new(db, modules_to_render);
@@ -41,7 +42,7 @@ struct ModuleData {
 }
 impl ModuleData {
     fn name(&self) -> Option<&Name> {
-        self.mod_path.segments().first()
+        self.mod_path.segments().last()
     }
 }
 
@@ -152,5 +153,9 @@ impl<'edge> dot::Labeller<'edge, ModKey, Edge<'edge>> for DotModuleGraph<'_> {
             .name()
             .map_or("[package]", |name| name.as_str());
         LabelText::LabelStr(name.into())
+    }
+
+    fn rank_dir(&'edge self) -> Option<dot::RankDir> {
+        Some(dot::RankDir::RightLeft)
     }
 }
