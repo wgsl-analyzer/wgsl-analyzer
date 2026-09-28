@@ -42,7 +42,7 @@ struct ModuleData {
 }
 impl ModuleData {
     fn name(&self) -> Option<&Name> {
-        self.mod_path.segments().first()
+        self.mod_path.segments().last()
     }
 }
 
