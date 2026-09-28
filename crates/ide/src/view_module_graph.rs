@@ -153,4 +153,8 @@ impl<'edge> dot::Labeller<'edge, ModKey, Edge<'edge>> for DotModuleGraph<'_> {
             .map_or("[package]", |name| name.as_str());
         LabelText::LabelStr(name.into())
     }
+
+    fn rank_dir(&'edge self) -> Option<dot::RankDir> {
+        Some(dot::RankDir::RightLeft)
+    }
 }
