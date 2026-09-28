@@ -53,8 +53,19 @@ impl DistWeb {
         }
 
         println!("dist-web: staged the web package in {}", assets.display());
-        Ok(())
+        pack(shell)
     }
+}
+
+/// Packs the package into `dist/` at the project root, next to the output of
+/// `cargo xtask dist`.
+fn pack(shell: &Shell) -> anyhow::Result<()> {
+    let destination = shell.create_dir(project_root().join("dist"))?;
+    let _directory = shell.push_dir(PACKAGE_ROOT);
+    pnpm(shell, &["pack", "--pack-destination"])
+        .arg(destination)
+        .run()
+        .context("cannot pack the web package")
 }
 
 fn check_requirements(shell: &Shell) -> anyhow::Result<()> {

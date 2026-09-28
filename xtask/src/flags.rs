@@ -90,11 +90,11 @@ xflags::xflags! {
             optional since: String
         }
 
-        /// Builds the JavaScript package.
+        /// Builds the JavaScript package and packs it into `dist/`.
         cmd dist-web {
             /// Build in release configuration.
             optional --release
-            /// Stamp the package with the version that `dist` gives the client.
+            /// Stamp the package with its release version for this patch version.
             optional --client-patch-version version: String
         }
     }
