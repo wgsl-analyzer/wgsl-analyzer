@@ -116,7 +116,7 @@ async function activateServer(context: Context): Promise<WgslAnalyzerExtensionAp
 			});
 			log.error("Failed to start the wgsl-analyzer server", error);
 			void vscode.window.showErrorMessage(
-				`Cannot start rust-analyzer server: ${error instanceof Error ? error.message : error}. `,
+				`Cannot start wgsl-analyzer server: ${error instanceof Error ? error.message : error}. `,
 			);
 		}
 	}
