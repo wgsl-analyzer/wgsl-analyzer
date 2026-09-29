@@ -136,8 +136,12 @@ impl ItemScope {
                 DefDiagnosticKind::UnresolvedPackage { name, id: _ } => {
                     writeln!(buffer, "unresolved package {}", name.as_str())
                 },
-                DefDiagnosticKind::UnresolvedImport { id: _ } => {
-                    writeln!(buffer, "import resolved to neither a module nor an item")
+                DefDiagnosticKind::UnresolvedImport { name, id: _ } => {
+                    writeln!(
+                        buffer,
+                        "import resolved to neither a module nor an item: {}",
+                        name.as_str()
+                    )
                 },
                 DefDiagnosticKind::TooManySupers { id: _ } => writeln!(buffer, "too many supers"),
                 DefDiagnosticKind::DetachedFile { id: _ } => writeln!(buffer, "detached file"),

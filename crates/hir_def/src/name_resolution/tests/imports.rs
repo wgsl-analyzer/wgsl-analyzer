@@ -223,7 +223,7 @@ import package::bar::foo;
         expect![[r#"
             package
             - path foo (import)
-            error: import resolved to neither a module nor an item
+            error: import resolved to neither a module nor an item: foo
             package::bar
         "#]],
     );

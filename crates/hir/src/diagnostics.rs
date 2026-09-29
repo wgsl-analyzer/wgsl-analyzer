@@ -38,6 +38,7 @@ pub enum AnyDiagnostic {
     },
     UnresolvedImport {
         id: InFile<AstPointer<ast::ImportStatement>>,
+        name: Name,
     },
     TooManySupers {
         id: InFile<AstPointer<ast::ImportStatement>>,
@@ -213,7 +214,7 @@ impl AnyDiagnostic {
 
             Self::UnnamedImport { id }
             | Self::UnresolvedPackage { id, name: _ }
-            | Self::UnresolvedImport { id }
+            | Self::UnresolvedImport { id, name:_ }
             | Self::TooManySupers { id }
             | Self::DetachedFile { id } => {
                 id.file_id
@@ -422,8 +423,9 @@ pub(crate) fn any_diag_from_def_diagnostic(
             id: id.ast_ptr(db),
             name: name.clone(),
         },
-        DefDiagnosticKind::UnresolvedImport { id } => {
-            AnyDiagnostic::UnresolvedImport { id: id.ast_ptr(db) }
+        DefDiagnosticKind::UnresolvedImport { id, name } => AnyDiagnostic::UnresolvedImport {
+            id: id.ast_ptr(db),
+            name: name.clone(),
         },
         DefDiagnosticKind::TooManySupers { id } => {
             AnyDiagnostic::TooManySupers { id: id.ast_ptr(db) }
