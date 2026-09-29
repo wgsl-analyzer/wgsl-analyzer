@@ -112,12 +112,12 @@ impl Pool {
         self.job_sender.send(job).unwrap();
     }
 
-    pub fn scoped<'pool, 'scope, Function, Result>(
+    pub fn scoped<'pool, 'scope, Function, Output>(
         &'pool self,
         function: Function,
-    ) -> Result
+    ) -> Output
     where
-        Function: FnOnce(&Scope<'pool, 'scope>) -> Result,
+        Function: FnOnce(&Scope<'pool, 'scope>) -> Output,
     {
         let wait_group = WaitGroup::new();
         let scope = Scope {
@@ -125,9 +125,9 @@ impl Pool {
             wg: wait_group,
             _marker: PhantomData,
         };
-        let result = function(&scope);
+        let output = function(&scope);
         scope.wg.wait();
-        result
+        output
     }
 
     #[must_use]
