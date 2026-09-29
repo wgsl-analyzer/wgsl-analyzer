@@ -8,6 +8,7 @@ use test_fixture::WithFixture as _;
 
 use crate::{Diagnostic, DiagnosticsConfig, Severity};
 
+mod naga;
 mod tint;
 
 fn check_diagnostics(
