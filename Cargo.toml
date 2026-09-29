@@ -38,8 +38,8 @@ wgsl-std = { path = "./crates/wgsl-std", version = "0.0.0" }
 edition = { path = "./crates/edition", version = "0.0.0" }
 #
 # rust-analyzer crates
-stdx = { git = "https://github.com/rust-lang/rust-analyzer", rev = "b42b63f390a4dab14e6efa34a70e67f5b087cc62", version = "0.0.0" }
-paths = { git = "https://github.com/rust-lang/rust-analyzer", rev = "b42b63f390a4dab14e6efa34a70e67f5b087cc62", version = "0.0.0" }
+stdx = { git = "https://github.com/rust-lang/rust-analyzer", rev = "03fcb77246f2568adb0e9b2fa60d19c6cc1686f4", version = "0.0.0" }
+paths = { git = "https://github.com/rust-lang/rust-analyzer", rev = "03fcb77246f2568adb0e9b2fa60d19c6cc1686f4", version = "0.0.0" }
 #
 # crates from rust-analyzer that are published separately
 line-index = "0.1.2"
@@ -63,6 +63,7 @@ itertools = "0.15.0"
 libc = "0.2.185"
 dashmap = { version = "6.2.1" }
 nohash-hasher = "0.2.0"
+rayon = "1.12.0"
 rowan = "0.16.1"
 rustc-hash = "2.1.2"
 # Ideally we'd not enable the macros feature but unfortunately the `tracked` attribute does not work

@@ -20,8 +20,8 @@ rustflags = [
 	"-Clink-arg=-sPROXY_TO_PTHREAD=1",
 	"-Clink-arg=-sPTHREAD_POOL_SIZE=8",
 	"-Clink-arg=-sPTHREAD_POOL_SIZE_STRICT=0",
-	# matches STACK_SIZE in crates/wgsl-analyzer/src/bin/main.rs
-	"-Clink-arg=-sSTACK_SIZE=16MB",
+	# matches DEFAULT_STACK_SIZE in crates/stdx/src/thread.rs
+	"-Clink-arg=-sSTACK_SIZE=16MB",  # MB is actually MiB
 	"-Clink-arg=-sINITIAL_MEMORY=512MB",
 	"-Clink-arg=-sMAXIMUM_MEMORY=4GB",
 	"-Clink-arg=-sALLOW_MEMORY_GROWTH=1",

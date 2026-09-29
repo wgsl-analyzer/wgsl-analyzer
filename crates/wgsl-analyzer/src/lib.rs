@@ -6,6 +6,8 @@ pub mod config;
 mod diagnostics;
 mod discover;
 mod dispatch;
+#[cfg(target_os = "emscripten")]
+pub mod emscripten_io;
 mod global_state;
 mod in_memory_documents;
 mod line_index;
@@ -13,6 +15,7 @@ pub mod lsp;
 pub mod main_loop;
 mod operation_queue;
 mod reload;
+pub mod session;
 mod task_pool;
 #[cfg(test)]
 mod tests;
