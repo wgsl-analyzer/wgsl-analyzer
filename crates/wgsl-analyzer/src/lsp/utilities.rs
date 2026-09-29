@@ -13,10 +13,9 @@ use lsp_types::{
 use triomphe::Arc;
 
 use crate::{
-    LspError,
     global_state::GlobalState,
     line_index::{LineEndings, LineIndex, PositionEncoding},
-    lsp::from_proto,
+    lsp::{LspError, from_proto},
 };
 
 pub(crate) fn is_cancelled(error: &(dyn Error + 'static)) -> bool {
