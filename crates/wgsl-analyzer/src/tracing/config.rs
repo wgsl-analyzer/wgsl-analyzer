@@ -17,6 +17,7 @@ use crate::tracing::{hprof, json};
 #[derive(Debug)]
 pub struct Config<T> {
     pub writer: T,
+    pub show_timestamps: bool,
     pub filter: String,
     /// Filtering syntax, set in a shell:
     /// ```text
@@ -38,11 +39,6 @@ where
     T: for<'writer> MakeWriter<'writer> + Send + Sync + 'static,
 {
     pub fn init(self) -> anyhow::Result<()> {
-        let targets_filter: Targets = self
-            .filter
-            .parse()
-            .with_context(|| format!("invalid log filter: `{}`", self.filter))?;
-
         let writer = self.writer;
 
         let wa_fmt_layer = tracing_subscriber::fmt::layer()
@@ -50,18 +46,23 @@ where
             .with_ansi(false)
             .with_writer(writer);
 
-        let wa_fmt_layer = match time::OffsetTime::local_rfc_3339() {
-            Ok(timer) => {
-                // If we can get the time offset, format logs with the timezone.
-                wa_fmt_layer.with_timer(timer).boxed()
-            },
-            Err(_) => {
-                // Use system time if we can't get the time offset. This should
-                // never happen on Linux, but can happen on, for example, OpenBSD.
-                wa_fmt_layer.boxed()
-            },
-        }
-        .with_filter(targets_filter);
+        let wa_fmt_layer = if !self.show_timestamps {
+            // Hide timestamps, useful when sending logs to LSP client
+            wa_fmt_layer.without_time().boxed()
+        } else if let Ok(timer) = time::OffsetTime::local_rfc_3339() {
+            // If we can get the time offset, format logs with the timezone.
+            wa_fmt_layer.with_timer(timer).boxed()
+        } else {
+            // Use system time if we can't get the time offset. This should
+            // never happen on Linux, but can happen on, for example, OpenBSD.
+            wa_fmt_layer.boxed()
+        };
+
+        let targets_filter: Targets = self
+            .filter
+            .parse()
+            .with_context(|| format!("invalid log filter: `{}`", self.filter))?;
+        let wa_fmt_layer = wa_fmt_layer.with_filter(targets_filter);
 
         // TODO: remove `.with_filter(LevelFilter::OFF)` on the `None` branch.
         let profiler_layer = match self.profile_filter {
