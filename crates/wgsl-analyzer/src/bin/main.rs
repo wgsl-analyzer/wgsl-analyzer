@@ -22,9 +22,6 @@ use wgsl_analyzer::{
     from_json,
 };
 
-#[cfg(target_os = "emscripten")]
-mod emscripten_io;
-
 fn get_cwd_as_abs_path() -> Result<AbsPathBuf, std::io::Error> {
     info!("Getting current working directory as absolute path");
     let cwd = env::current_dir()?;
@@ -192,7 +189,7 @@ where
 
 fn run_server(startup_notice: Option<String>) -> anyhow::Result<()> {
     #[cfg(target_os = "emscripten")]
-    let (connection, io_threads) = emscripten_io::connection();
+    let (connection, io_threads) = wgsl_analyzer::emscripten_io::connection();
     #[cfg(not(target_os = "emscripten"))]
     let (connection, io_threads) = Connection::stdio();
 

@@ -16,6 +16,9 @@ use crate::{
 /// the session ends to surface transport errors.
 pub enum IoThreads {
     /// The stdio transport of a standalone server.
+    #[cfg(target_os = "emscripten")]
+    Stdio(crate::emscripten_io::IoThreads),
+    #[cfg(not(target_os = "emscripten"))]
     Stdio(lsp_server::IoThreads),
 }
 
