@@ -37,6 +37,7 @@ pub struct Pool {
 struct Job {
     requested_intent: ThreadIntent,
     function: Box<dyn FnOnce() + Send + UnwindSafe + 'static>,
+    wg: Option<WaitGroup>,
 }
 
 impl Pool {
@@ -58,13 +59,19 @@ impl Pool {
                     move || {
                         let mut current_intent = INITIAL_INTENT;
                         for job in job_receiver {
-                            if job.requested_intent != current_intent {
-                                job.requested_intent.apply_to_current_thread();
-                                current_intent = job.requested_intent;
+                            let Job {
+                                requested_intent,
+                                function,
+                                wg,
+                            } = job;
+                            if requested_intent != current_intent {
+                                requested_intent.apply_to_current_thread();
+                                current_intent = requested_intent;
                             }
-                            // discard the panic, we should have logged the backtrace already
-                            drop(panic::catch_unwind(job.function));
+                            // discard the panic, we should've logged the backtrace already
+                            drop(panic::catch_unwind(function));
                             extant_tasks.fetch_sub(1, Ordering::SeqCst);
+                            drop(wg);
                         }
                     }
                 })
@@ -99,6 +106,7 @@ impl Pool {
         let job = Job {
             requested_intent: intent,
             function: boxed_function,
+            wg: None,
         };
         self.extant_tasks.fetch_add(1, Ordering::SeqCst);
         self.job_sender.send(job).unwrap();
@@ -155,6 +163,7 @@ impl<'scope> Scope<'_, 'scope> {
             function();
             drop(wg);
         });
+        let wg = self.wg.clone();
         let job = Job {
             requested_intent: intent,
             // SAFETY: leaking is inherently safe
@@ -164,6 +173,7 @@ impl<'scope> Scope<'_, 'scope> {
                     Box<dyn 'static + FnOnce() + Send + UnwindSafe>,
                 >(boxed_function)
             },
+            wg: Some(wg),
         };
         self.pool.extant_tasks.fetch_add(1, Ordering::SeqCst);
         self.pool.job_sender.send(job).unwrap();
