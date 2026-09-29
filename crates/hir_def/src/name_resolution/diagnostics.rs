@@ -22,6 +22,7 @@ pub enum DefDiagnosticKind {
     },
     UnresolvedImport {
         id: Location<ast::ImportStatement>,
+        name: Name,
     },
     TooManySupers {
         id: Location<ast::ImportStatement>,
@@ -61,10 +62,11 @@ impl DefDiagnostic {
     pub(crate) const fn unresolved_import(
         container: EditionedFileId,
         id: Location<ast::ImportStatement>,
+        name: Name,
     ) -> Self {
         Self {
             in_module: container,
-            kind: DefDiagnosticKind::UnresolvedImport { id },
+            kind: DefDiagnosticKind::UnresolvedImport { id, name },
         }
     }
 

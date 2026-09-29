@@ -518,12 +518,12 @@ pub fn diagnostics(
                         frange.range,
                     )
                 },
-                AnyDiagnostic::UnresolvedImport { id } => {
+                AnyDiagnostic::UnresolvedImport { id, name } => {
                     let source = id.value.to_node(&root);
                     let frange = original_file_range(db, id.file_id, source.syntax());
                     Diagnostic::new(
                         DiagnosticCode("27"),
-                        "could not resolve import".to_owned(),
+                        format!("could not resolve import to `{}`", name.as_str()),
                         frange.range,
                     )
                 },

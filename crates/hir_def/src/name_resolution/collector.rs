@@ -263,7 +263,11 @@ impl ModCollector<'_> {
             if modules_map.modules.contains_key(path) {
                 Ok(None)
             } else {
-                Err(DefDiagnostic::unresolved_import(self.file_id, location))
+                Err(DefDiagnostic::unresolved_import(
+                    self.file_id,
+                    location,
+                    name.clone(),
+                ))
             }
         }
     }
