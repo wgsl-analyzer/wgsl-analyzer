@@ -150,6 +150,7 @@ fn setup_logging(log_file_flag: Option<PathBuf>) -> anyhow::Result<()> {
         None => None,
     };
 
+    let show_timestamps = log_file.is_some();
     let writer = log_file.map_or_else(
         || BoxMakeWriter::new(std::io::stderr),
         |file| BoxMakeWriter::new(Arc::new(file)),
@@ -162,6 +163,7 @@ fn setup_logging(log_file_flag: Option<PathBuf>) -> anyhow::Result<()> {
         filter: env::var("WA_LOG")
             .ok()
             .unwrap_or_else(|| "error".to_owned()),
+        show_timestamps,
         profile_filter: env::var("WA_PROFILE").ok(),
         json_profile_filter: std::env::var("WA_PROFILE_JSON").ok(),
     }
