@@ -4,7 +4,7 @@ import * as lc from "vscode-languageclient/node";
 import * as commands from "./commands";
 import { type CommandFactory, Context, fetchWorkspace } from "./context";
 import * as diagnostics from "./diagnostics";
-import { setContextValue } from "./utilities";
+import { log, setContextValue } from "./utilities";
 
 const WESL_PROJECT_CONTEXT_NAME = "inWeslProject";
 
@@ -106,7 +106,19 @@ async function activateServer(context: Context): Promise<WgslAnalyzerExtensionAp
 			health: "stopped",
 		});
 	} else {
-		await context.start();
+		try {
+			await context.start();
+		} catch (error) {
+			// Continue extension activation with the server stopped, as if the server crashed.
+			await context.stopAndDispose();
+			context.setServerStatus({
+				health: "stopped",
+			});
+			log.error("Failed to start the wgsl-analyzer server", error);
+			void vscode.window.showErrorMessage(
+				`Cannot start rust-analyzer server: ${error instanceof Error ? error.message : error}. `,
+			);
+		}
 	}
 
 	return context;
