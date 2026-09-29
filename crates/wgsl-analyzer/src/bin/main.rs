@@ -173,8 +173,6 @@ fn setup_logging(log_file_flag: Option<PathBuf>) -> anyhow::Result<()> {
     Ok(())
 }
 
-const STACK_SIZE: usize = 1 << 24;
-
 /// Parts of wgsl-analyzer can use a lot of stack space, and some operating systems only give us
 /// 1 MB by default (for example, Windows), so this spawns a new thread with hopefully sufficient stack
 /// space.
