@@ -13,6 +13,7 @@ pub mod lsp;
 pub mod main_loop;
 mod operation_queue;
 mod reload;
+pub mod session;
 mod task_pool;
 #[cfg(test)]
 mod tests;

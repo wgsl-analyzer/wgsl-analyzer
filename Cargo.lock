@@ -2175,6 +2175,7 @@ dependencies = [
  "paths",
  "percent-encoding",
  "project-model",
+ "rayon",
  "rustc-hash 2.1.3",
  "salsa",
  "semver",

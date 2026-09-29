@@ -61,6 +61,7 @@ nohash-hasher.workspace = true
 num_cpus = "1.17.0"
 parking_lot = "0.12.5"
 project-model.workspace = true
+rayon.workspace = true
 rustc-hash.workspace = true
 salsa.workspace = true
 semver.workspace = true
