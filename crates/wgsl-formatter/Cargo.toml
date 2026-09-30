@@ -14,7 +14,7 @@ name = "large_file"
 [dependencies]
 dprint-core = { version = "0.69.0", features = ["tracing"] }
 dprint-core-macros = "0.1.0"
-itertools = "0.14.0"
+itertools = "0.15.0"
 rowan = "0.16.1"
 serde = { workspace = true, optional = true }
 syntax.workspace = true
