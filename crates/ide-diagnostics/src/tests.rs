@@ -11,6 +11,44 @@ use crate::{Diagnostic, DiagnosticsConfig, Severity};
 mod naga;
 mod tint;
 
+#[test]
+fn immediate_numeric_struct() {
+    check_diagnostics(
+        "requires immediate_address_space; struct Params { color: vec4<f32> } var<immediate> params: Params;",
+        expect![[r#""#]],
+    );
+}
+
+#[test]
+fn immediate_not_host_shareable() {
+    check_diagnostics(
+        "requires immediate_address_space; struct Params { enabled: bool } var<immediate> params: Params;",
+        expect![[r#"
+            66..69 wgsl-analyzer Error 12: type is not host-shareable
+        "#]],
+    );
+}
+
+#[test]
+fn immediate_array() {
+    check_diagnostics(
+        "requires immediate_address_space; var<immediate> data: array<u32, 2>;",
+        expect![[r#"
+            34..37 wgsl-analyzer Error 12: type contains an array, which is not allowed in `immediate` address space
+        "#]],
+    );
+}
+
+#[test]
+fn immediate_nested_array() {
+    check_diagnostics(
+        "requires immediate_address_space; struct Inner { data: array<u32, 2> } struct Outer { inner: Inner } var<immediate> params: Outer;",
+        expect![[r#"
+            101..104 wgsl-analyzer Error 12: type contains an array, which is not allowed in `immediate` address space
+        "#]],
+    );
+}
+
 fn check_diagnostics(
     source: &str,
     expect: Expect,
