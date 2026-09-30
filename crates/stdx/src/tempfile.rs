@@ -105,7 +105,7 @@ mod general_imp {
                 INTERNAL_COUNTER.fetch_add(1, Ordering::AcqRel),
             ));
             let mut open_options = OpenOptions::new();
-            open_options.create_new(true);
+            open_options.write(true).create_new(true);
             match create(open_options, &path) {
                 Err(error) if error.kind() == ErrorKind::AlreadyExists => {},
                 Err(error) => {
@@ -216,5 +216,21 @@ mod imp {
             path,
             delete_on_drop: true,
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::fs;
+
+    use super::*;
+
+    #[test]
+    fn named_temp_file_new_creates_file() {
+        let file = NamedTempFile::new("test-").unwrap();
+        assert!(file.path().exists());
+        let path = file.path().as_os_str().to_owned();
+        drop(file);
+        assert!(!fs::exists(path).unwrap());
     }
 }
