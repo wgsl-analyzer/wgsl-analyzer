@@ -431,6 +431,21 @@ impl TypeKind {
         }
     }
 
+    pub fn contains_array(
+        &self,
+        db: &dyn HirDatabase,
+    ) -> bool {
+        match self {
+            Self::Array(_) => true,
+            Self::Struct(r#struct) => db
+                .field_types(*r#struct)
+                .0
+                .iter()
+                .any(|(_, r#type)| r#type.kind(db).contains_array(db)),
+            _ => false,
+        }
+    }
+
     pub fn contains_runtime_sized_array(
         &self,
         db: &dyn HirDatabase,

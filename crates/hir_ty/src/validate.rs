@@ -37,6 +37,7 @@ pub enum AddressSpaceError {
     WorkgroupCompatible,
     HandleCompatible,
     TaskPayloadCompatible,
+    ContainsArray,
 }
 
 impl fmt::Display for AddressSpaceError {
@@ -66,6 +67,9 @@ impl fmt::Display for AddressSpaceError {
             Self::TaskPayloadCompatible => {
                 formatter.write_str("type is not compatible with `task_payload` address space")
             },
+            Self::ContainsArray => formatter.write_str(
+                "type contains an array, which is not allowed in `immediate` address space",
+            ),
         }
     }
 }
@@ -189,10 +193,26 @@ pub fn validate_address_space<DiagnosticBuilder>(
                 },
             }
         },
-        // TODO: validate Immediate https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1419
         // TODO: validate RayPayload
         // TODO: validate IncomingRayPayload
-        AddressSpace::Immediate | AddressSpace::RayPayload | AddressSpace::IncomingRayPayload => {},
+        AddressSpace::RayPayload | AddressSpace::IncomingRayPayload => {},
+        AddressSpace::Immediate => {
+            if !matches!(scope, Scope::Module) {
+                diagnostic_builder(AddressSpaceError::Scope(Scope::Module));
+            }
+            if !matches!(access_mode, AccessMode::Read) {
+                diagnostic_builder(AddressSpaceError::AccessMode(smallvec![AccessMode::Read]));
+            }
+            if !r#type.is_error() && !r#type.is_constructable() {
+                diagnostic_builder(AddressSpaceError::Constructable);
+            }
+            if !r#type.is_error() && !r#type.is_host_shareable(db) {
+                diagnostic_builder(AddressSpaceError::HostShareable);
+            }
+            if !r#type.is_error() && r#type.contains_array(db) {
+                diagnostic_builder(AddressSpaceError::ContainsArray);
+            }
+        },
         AddressSpace::TaskPayload => {
             if !matches!(scope, Scope::Module) {
                 diagnostic_builder(AddressSpaceError::Scope(Scope::Module));
