@@ -431,7 +431,7 @@ impl TypeKind {
         }
     }
 
-    pub fn contains_array(
+    pub fn is_or_contains_array(
         &self,
         db: &dyn HirDatabase,
     ) -> bool {
@@ -441,8 +441,23 @@ impl TypeKind {
                 .field_types(*r#struct)
                 .0
                 .iter()
-                .any(|(_, r#type)| r#type.kind(db).contains_array(db)),
-            _ => false,
+                .any(|(_, r#type)| r#type.kind(db).is_or_contains_array(db)),
+            Self::BuiltinStruct(r#struct) => r#struct
+                .fields
+                .iter()
+                .any(|(_, r#type)| r#type.kind(db).is_or_contains_array(db)),
+            Self::Scalar(_)
+            | Self::Vector(_)
+            | Self::Matrix(_)
+            | Self::Atomic(_)
+            | Self::Texture(_)
+            | Self::Sampler(_)
+            | Self::Reference(_)
+            | Self::Pointer(_)
+            | Self::SwizzleView(_)
+            | Self::RayQuery(_)
+            | Self::AccelerationStructure(_)
+            | Self::Error => false,
         }
     }
 

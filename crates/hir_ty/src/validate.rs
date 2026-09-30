@@ -209,7 +209,7 @@ pub fn validate_address_space<DiagnosticBuilder>(
             if !r#type.is_error() && !r#type.is_host_shareable(db) {
                 diagnostic_builder(AddressSpaceError::HostShareable);
             }
-            if !r#type.is_error() && r#type.contains_array(db) {
+            if !r#type.is_error() && r#type.is_or_contains_array(db) {
                 diagnostic_builder(AddressSpaceError::ContainsArray);
             }
         },
