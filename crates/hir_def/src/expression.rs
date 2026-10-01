@@ -315,7 +315,6 @@ impl Expression {
 }
 
 #[cfg(test)]
-#[expect(clippy::float_cmp, reason = "the whole point")]
 mod hex_float_tests {
     use super::parse_hex_float;
 
