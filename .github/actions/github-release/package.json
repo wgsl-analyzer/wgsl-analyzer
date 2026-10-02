@@ -1,10 +1,11 @@
 {
-  "name": "wasmtime-github-release",
-  "version": "0.0.0",
-  "main": "main.js",
-  "dependencies": {
-    "@actions/core": "^3.0.1",
-    "@actions/github": "^9.1.1",
-    "glob": "^13.0.6"
-  }
+	"name": "wasmtime-github-release",
+	"version": "0.0.0",
+	"main": "main.js",
+	"type": "module",
+	"dependencies": {
+		"@actions/core": "^3.0.1",
+		"@actions/github": "^9.1.1",
+		"glob": "^13.0.6"
+	}
 }
