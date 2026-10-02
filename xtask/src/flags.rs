@@ -59,8 +59,6 @@ xflags::xflags! {
             /// Use jemalloc allocator for server
             optional --jemalloc
             optional --client-patch-version version: String
-            /// Use cargo-zigbuild
-            optional --zig
             /// Apply PGO optimizations
             optional --pgo pgo: PgoTrainingCrate
         }
@@ -146,7 +144,6 @@ pub struct Dist {
     pub mimalloc: bool,
     pub jemalloc: bool,
     pub client_patch_version: Option<String>,
-    pub zig: bool,
     pub pgo: Option<PgoTrainingCrate>,
 }
 

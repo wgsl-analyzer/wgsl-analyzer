@@ -7,6 +7,9 @@ xtask = "run --package xtask --bin xtask --"
 [env]
 CARGO_WORKSPACE_DIR = { value = "", relative = true }
 
+[target.arm-unknown-linux-gnueabihf]
+linker = "arm-linux-gnueabihf-gcc-8"
+
 # The shipped rust-std for this target is built with `singlethread: true`
 # (no wasm `atomics` feature), so -pthread cannot link against it. Requires
 # `cargo +nightly -Z build-std=std,panic_unwind`.
