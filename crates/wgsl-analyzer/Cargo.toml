@@ -56,7 +56,7 @@ line-index.workspace = true
 lsp-server.workspace = true
 lsp-types = { package = "gen-lsp-types", version = "0.11.0", features = ["url"] }
 percent-encoding = "2.3.2"
-memchr = "2.8.1"
+memchr = "2.8.3"
 nohash-hasher.workspace = true
 num_cpus = "1.17.0"
 parking_lot = "0.12.5"
@@ -83,7 +83,7 @@ test-utils.workspace = true
 
 [target."cfg(windows)".dependencies]
 windows-sys = {
-	version = "0.61",
+	version = "0.61.2",
 	features = [
 		"Win32_System_Diagnostics_Debug",
 		"Win32_System_Threading",

@@ -27,7 +27,7 @@ jemalloc-ctl = {
 
 [target."cfg(windows)".dependencies]
 windows-sys = {
-	version = "0.61",
+	version = "0.61.2",
 	features = [
 		"Win32_System_ProcessStatus",
 		"Win32_System_Threading",

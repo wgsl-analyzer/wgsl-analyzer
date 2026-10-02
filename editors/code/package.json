@@ -33,14 +33,14 @@
 		}
 	},
 	"engines": {
-		"vscode": "^1.125.0",
-		"node": "^24.15.0"
+		"vscode": "^1.139.0",
+		"node": "^24.21.0"
 	},
 	"devEngines": {
 		"pnpm": "^11.15.1"
 	},
 	"engineStrict": true,
-	"packageManager": "pnpm@12.5.1+sha512.e3f305bc784a2bc89f5ad3b6138889470fae8d2af5f36b61216ec91c2c3d64089775f9de38aac331044ea40f245cb0d5666392dfdf65824e1907ef6a2c62de5f",
+	"packageManager": "pnpm@12.6.0+sha512.3ef68f951cb111ac204b4a5a16f0b2ddf0da56a96e0413e81d855d9f0b55ef926714709028e1cd00c405c2c5fb7b9e8ec4dc46777c805d0373c2f2ff00fd20ec",
 	"enabledApiProposals": [],
 	"extensionKind": [
 		"workspace"
@@ -61,26 +61,26 @@
 		"watch": "pnpm run build-base --sourcemap --watch"
 	},
 	"dependencies": {
-		"@hpcc-js/wasm": "^2.35.0",
+		"@hpcc-js/wasm": "^2.35.2",
 		"anser": "^2.3.5",
 		"d3": "^7.9.0",
 		"d3-graphviz": "^5.6.0",
 		"fp-ts": "^2.16.11",
 		"io-ts": "^2.2.22",
 		"jiti": "^2.7.0",
-		"vscode-languageclient": "^10.1.0"
+		"vscode-languageclient": "^10.1.1"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "^2.5.8",
+		"@biomejs/biome": "^2.5.14",
 		"@tsconfig/node-ts": "^23.6.4",
-		"@tsconfig/node24": "^24.0.0",
+		"@tsconfig/node24": "^24.0.5",
 		"@tsconfig/strictest": "^2.0.8",
-		"@types/node": "^25.9.5",
+		"@types/node": "^25.9.8",
 		"@types/vscode": "^1.125.0",
 		"@vscode/test-electron": "^3.1.0",
 		"@vscode/vsce": "^4.0.0",
 		"esbuild": "^0.28.2",
-		"ovsx": "^1.1.1",
+		"ovsx": "^1.2.0",
 		"tslib": "^2.8.1",
 		"typescript": "^7.0.2"
 	},
