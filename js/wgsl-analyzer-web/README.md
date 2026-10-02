@@ -7,6 +7,15 @@ The server is the `wgsl-analyzer` binary compiled to
 or out of wasm carries exactly one complete message body. The package hosts it,
 seeds a workspace into the in-memory filesystem, and exposes the message stream.
 
+## Installing
+
+```bash
+npm install wgsl-analyzer-web          # stable
+npm install wgsl-analyzer-web@next     # nightly
+```
+
+Versions match the VS Code extension's.
+
 ## Building
 
 ```bash
@@ -35,6 +44,9 @@ Note `dist/worker.js` also exists and is not the one to serve. `tsc` compiles
 every file under `src/` so that `worker.ts` is typechecked along with the rest,
 and its unbundled output lands there; `dist/assets/worker.js` from esbuild is
 the real artifact.
+
+Finally, the command packs the package into `dist/` at the repository root, which is the
+tarball that the release workflow publishes to npm.
 
 ## Usage
 
