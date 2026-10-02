@@ -79,7 +79,8 @@ fn check_diagnostics_with_config(
         range,
         severity,
         source,
-        ..
+        unused: _,
+        related: _,
     } in diagnostics
     {
         let severity_text = match severity {
