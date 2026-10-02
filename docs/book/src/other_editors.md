@@ -389,7 +389,7 @@ hook global WinSetOption filetype=(wgsl|wesl) %{
 
 [Helix](https://docs.helix-editor.com) supports LSP by default.
 
-## Visual Studio 2022
+## Visual Studio
 
 No support.
 
