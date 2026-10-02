@@ -333,7 +333,7 @@ jobs:
       - name: Publish Extension
         if: github.repository == 'wgsl-analyzer/wgsl-analyzer'
         env:
-          PUBLISH_PAT: ${{ (matrix.cmd == 'vsce' && secrets.MARKETPLACE_TOKEN) || (matrix.cmd == 'ovsx' && secrets.OPENVSX_TOKEN) }}
+          PUBLISH_PAT: ${{ (matrix.cmd == 'vsce' && secrets.VSCE_PAT) || (matrix.cmd == 'ovsx' && secrets.OVSX_PAT) }}
         working-directory: ./editors/code
         run: pnpm exec ${{ matrix.cmd }} publish --skip-duplicate --pat "$PUBLISH_PAT" --packagePath ../../dist/wgsl-analyzer-*.vsix ${{ github.ref != 'refs/heads/release' && '--pre-release' || '' }}
         timeout-minutes: 2
