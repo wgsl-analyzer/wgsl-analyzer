@@ -399,7 +399,8 @@ No support.
 
 ## Zed
 
-No support.
+The project [lucascompython/WGSL-WESL-zed](<https://github.com/lucascompython/wgsl-wesl-zed>) is an extension for Zed.
+It a thin adapter for wgsl-analyzer.
 
 ## IntelliJ IDEs
 
