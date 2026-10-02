@@ -335,7 +335,7 @@ jobs:
         env:
           PUBLISH_PAT: ${{ (matrix.cmd == 'vsce' && secrets.MARKETPLACE_TOKEN) || (matrix.cmd == 'ovsx' && secrets.OPENVSX_TOKEN) }}
         working-directory: ./editors/code
-        run: npx ${{ matrix.cmd }} publish --skip-duplicate --pat "$PUBLISH_PAT" --packagePath ../../dist/wgsl-analyzer-*.vsix ${{ github.ref != 'refs/heads/release' && '--pre-release' || '' }}
+        run: pnpm exec ${{ matrix.cmd }} publish --skip-duplicate --pat "$PUBLISH_PAT" --packagePath ../../dist/wgsl-analyzer-*.vsix ${{ github.ref != 'refs/heads/release' && '--pre-release' || '' }}
         timeout-minutes: 2
 
   notify-failure:
