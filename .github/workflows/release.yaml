@@ -287,6 +287,8 @@ jobs:
     if: ${{ github.repository == 'wgsl-analyzer/wgsl-analyzer' || github.event_name == 'workflow_dispatch' }}
     name: publish-extension (${{ matrix.cmd }})
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     needs: publish
     strategy:
       fail-fast: false
