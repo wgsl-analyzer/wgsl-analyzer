@@ -26,7 +26,11 @@ use wgsl_analyzer::{
 #[global_allocator]
 static ALLOC: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
-#[cfg(all(feature = "jemalloc", not(target_env = "msvc")))]
+#[cfg(all(
+    feature = "jemalloc",
+    not(feature = "mimalloc"),
+    not(target_env = "msvc")
+))]
 #[global_allocator]
 static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
 
