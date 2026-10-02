@@ -61,7 +61,7 @@ There are several LSP client implementations for Vim or Neovim:
 
 2. Run `:CocInstall coc-wgsl-analyzer` to install [`coc-wgsl-analyzer`](https://github.com/wgsl-analyzer/coc-wgsl-analyzer), this extension implements *most* of the features supported in the VS Code extension:
     - automatically install and upgrade stable/nightly releases
-    - same configurations as VS Code extension, `wgsl-analyzer.server.path`, `wgsl-analyzer.cargo.features` etc.
+    - same configurations as VS Code extension. For example, `wgsl-analyzer.server.path`.
     - same commands too, `wgsl-analyzer.analyzerStatus`, `wgsl-analyzer.ssr` etc.
     - inlay hints for variables and method chaining, *Neovim Only*
 
@@ -205,39 +205,42 @@ let g:ale_linters = {'wgsl': ['analyzer'], 'wesl': ['analyzer']}
 
 ### nvim-lsp
 
-Neovim 0.5 has built-in language server support.
-For a quick start configuration of `wgsl-analyzer`, use [neovim/nvim-lspconfig](https://github.com/neovim/nvim-lspconfig#wgsl-analyzer).
-Once `neovim/nvim-lspconfig` is installed, use `lua require'lspconfig'.wgsl_analyzer.setup({})` in your `init.vim`.
+Neovim has built-in support for the Language Server Protocol.
+Most of the heavy lifting is done with "framework" plugins.
+Use the plugin [neovim/nvim-lspconfig] to get the [wgsl-analyzer neovim-lsp config].
 
-You can also pass LSP settings to the server:
+1. Install [neovim/nvim-lspconfig]
+2. Add `lua vim.lsp.enable('wgsl_analyzer')` to your `init.vim`
+3. Customize your setup.
 
 ```lua
 lua << EOF
-local lspconfig = require'lspconfig'
+-- You can pass LSP settings to the server:
+vim.lsp.config("wgsl_analyzer", {
+    settings = {
+        ["wgsl-analyzer"] = {
+            -- add configuration here
+        },
+    },
+})
 
-local on_attach = function(client)
-  require'completion'.on_attach(client)
-end
-
-lspconfig.wgsl_analyzer.setup({
-  on_attach = on_attach,
-  settings = {
-    ["wgsl-analyzer"] = {
-
-    }
-  }
+-- You can enable different LSP features
+vim.api.nvim_create_autocmd("LspAttach", {
+    callback = function(ev)
+        local client = assert(vim.lsp.get_client_by_id(ev.data.client_id))
+        -- Inlay hints display inferred types, etc.
+        if client:supports_method("inlayHint/resolve") then
+            vim.lsp.inlay_hint.enable(true, { bufnr = ev.buf })
+        end
+        -- Completion can be invoked using ctrl+x ctrl+o.
+        -- It displays a list of names inferred from the context.
+        -- For example, functions, variables, and constants.
+        if client:supports_method("textDocument/completion") then
+            vim.lsp.completion.enable(true, client.id, ev.buf, {})
+        end
+    end,
 })
 EOF
-```
-
-If you are running Neovim 0.10 or later, you can enable inlay hints using `on_attach`:
-
-```lua
-lspconfig.wgsl_analyzer.setup({
-  on_attach = function(client, bufnr)
-    vim.lsp.inlay_hint.enable(true, { bufnr = bufnr })
-  end
-})
 ```
 
 Note that the hints are only visible after `wgsl-analyzer` has finished loading **and** you have to edit the file to trigger a re-render.
@@ -265,7 +268,6 @@ endif
 ```
 
 There is no dedicated UI for the server configuration, so you would need to send any options as a value of the `initialization_options` field, as described in the [Configuration](./configuration.md) section.
-Here is an example of how to enable the proc-macro support:
 
 ```vim
 if executable('wgsl-analyzer')
@@ -274,14 +276,6 @@ if executable('wgsl-analyzer')
     \   'cmd': {server_info->['wgsl-analyzer']},
     \   'whitelist': ['wgsl', 'wesl'],
     \   'initialization_options': {
-    \     'cargo': {
-    \       'buildScripts': {
-    \         'enable': v:true,
-    \       },
-    \     },
-    \     'procMacro': {
-    \       'enable': v:true,
-    \     },
     \   },
     \ })
 endif
@@ -291,7 +285,7 @@ endif
 
 ### Sublime Text 4
 
-Follow the instructions in [LSP-rust-analyzer](https://github.com/sublimelsp/LSP-rust-analyzer), but substitute `rust` with `wgsl` where applicable.
+Follow the instructions in [LSP-rust-analyzer](https://github.com/sublimelsp/LSP-rust-analyzer), but substitute `rust` with `wgsl` or `wesl` where applicable.
 
 Install [LSP-file-watcher-chokidar](https://packagecontrol.io/packages/LSP-file-watcher-chokidar) to enable file watching (`workspace/didChangeWatchedFiles`).
 
@@ -374,7 +368,7 @@ hook global WinSetOption filetype=(wgsl|wesl) %{
 
 [Helix](https://docs.helix-editor.com) supports LSP by default.
 
-## Visual Studio 2022
+## Visual Studio
 
 No support.
 
@@ -384,7 +378,8 @@ No support.
 
 ## Zed
 
-No support.
+The project [lucascompython/WGSL-WESL-zed](<https://github.com/lucascompython/wgsl-wesl-zed>) is an extension for Zed.
+It a thin adapter for wgsl-analyzer.
 
 ## IntelliJ IDEs
 
@@ -406,3 +401,6 @@ This includes:
 No support.
 
 See [#207](https://github.com/wgsl-analyzer/wgsl-analyzer/issues/207)
+
+[neovim/nvim-lspconfig]: https://github.com/neovim/nvim-lspconfig
+[wgsl-analyzer neovim-lsp config]: https://github.com/neovim/nvim-lspconfig/blob/master/lsp/wgsl_analyzer.lua

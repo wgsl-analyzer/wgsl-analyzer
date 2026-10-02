@@ -62,16 +62,14 @@
 		"tables": false
 	},
 	"link-image-reference-definitions": {
-		"ignored_definitions": [
-			"//"
-		]
+		"ignored_definitions": ["//"]
 	},
 	"link-image-style": {
 		"autolink": true,
 		"collapsed": true,
 		"full": true,
 		"inline": true,
-		"shortcut": false,
+		"shortcut": true,
 		"url_inline": true
 	},
 	"list-marker-space": {
@@ -151,11 +149,6 @@
 		"style": "dash"
 	},
 	"descriptive-link-text": {
-		"prohibited_texts": [
-			"click here",
-			"here",
-			"link",
-			"more"
-		]
+		"prohibited_texts": ["click here", "here", "link", "more"]
 	}
 }
