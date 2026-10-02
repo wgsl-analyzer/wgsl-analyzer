@@ -113,13 +113,12 @@ fn download_package_for_training(
 /// Helper function to create a build command for wgsl-analyzer.
 pub(crate) fn build_command<'shell>(
     shell: &'shell Shell,
-    command: &str,
     target_name: &str,
     features: &[&str],
 ) -> Cmd<'shell> {
     cmd!(
         shell,
-        "cargo {command} --manifest-path ./crates/wgsl-analyzer/Cargo.toml --bin wgsl-analyzer --target {target_name} {features...} --release"
+        "cargo build --manifest-path ./crates/wgsl-analyzer/Cargo.toml --bin wgsl-analyzer --target {target_name} {features...} --release"
     )
 }
 
