@@ -14,7 +14,11 @@ use crate::MemoryUsage;
 
 pub struct StopWatch {
     time: Instant,
-    #[cfg(all(target_os = "linux", not(target_env = "ohos")))]
+    #[cfg(all(
+        target_os = "linux",
+        not(target_env = "ohos"),
+        any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64")
+    ))]
     counter: Option<perf_event::Counter>,
     memory: MemoryUsage,
 }
@@ -28,7 +32,11 @@ pub struct StopWatchSpan {
 impl StopWatch {
     #[must_use]
     pub fn start() -> Self {
-        #[cfg(all(target_os = "linux", not(target_env = "ohos")))]
+        #[cfg(all(
+            target_os = "linux",
+            not(target_env = "ohos"),
+            any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64")
+        ))]
         let counter = {
             // When debugging wgsl-analyzer using rr, the performance-related syscalls cause it to abort.
             // We allow disabling performance by setting the environment variable `WA_DISABLE_PERFORMANCE`.
@@ -57,7 +65,11 @@ impl StopWatch {
         let time = Instant::now();
         Self {
             time,
-            #[cfg(all(target_os = "linux", not(target_env = "ohos")))]
+            #[cfg(all(
+                target_os = "linux",
+                not(target_env = "ohos"),
+                any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64")
+            ))]
             counter,
             memory,
         }
@@ -70,16 +82,22 @@ impl StopWatch {
     pub fn elapsed(&mut self) -> StopWatchSpan {
         let time = self.time.elapsed();
 
-        #[cfg(all(target_os = "linux", not(target_env = "ohos")))]
+        #[cfg(all(
+            target_os = "linux",
+            not(target_env = "ohos"),
+            any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64")
+        ))]
         let instructions = self.counter.as_mut().and_then(|counter| {
             counter
                 .read()
                 .map_err(|error| eprintln!("Failed to read performance counter: {error}"))
                 .ok()
         });
-        #[cfg(all(target_os = "linux", target_env = "ohos"))]
-        let instructions = None;
-        #[cfg(not(target_os = "linux"))]
+        #[cfg(not(all(
+            target_os = "linux",
+            not(target_env = "ohos"),
+            any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64")
+        )))]
         let instructions = None;
 
         let memory = MemoryUsage::now() - self.memory;
