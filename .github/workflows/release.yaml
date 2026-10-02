@@ -364,7 +364,7 @@ jobs:
         include:
           - cmd: vsce
             # Visual Studio Marketplace currently lacks the UI to create the trusted policy
-            authentication: --pat "${{ secrets.VSCE_PAT }}"
+            authentication: --pat "$VSCE_PAT"
           - cmd: ovsx
             authentication: --trusted-publishing
     steps:
@@ -406,6 +406,8 @@ jobs:
         working-directory: ./editors/code
         run: pnpm exec ${{ matrix.cmd }} publish --skip-duplicate ${{ matrix.authentication }} --packagePath ../../dist/wgsl-analyzer-*.vsix ${{ github.ref != 'refs/heads/release' && '--pre-release' || '' }}
         timeout-minutes: 2
+        env:
+          VSCE_PAT: ${{ matrix.cmd == 'vsce' && secrets.VSCE_PAT || '' }}
 
   publish-web-package:
     if: ${{ github.repository == 'wgsl-analyzer/wgsl-analyzer' || github.event_name == 'workflow_dispatch' }}
