@@ -205,39 +205,54 @@ let g:ale_linters = {'wgsl': ['analyzer'], 'wesl': ['analyzer']}
 
 ### nvim-lsp
 
-Neovim 0.5 has built-in language server support.
-For a quick start configuration of `wgsl-analyzer`, use [neovim/nvim-lspconfig](https://github.com/neovim/nvim-lspconfig#wgsl-analyzer).
-Once `neovim/nvim-lspconfig` is installed, use `lua require'lspconfig'.wgsl_analyzer.setup({})` in your `init.vim`.
+Neovim has built-in support for the Language Server Protocol.
+Most of the heavy lifting is done with "framework" plugins.
+Use the plugin [neovim/nvim-lspconfig] to get the [wgsl-analyzer neovim-lsp config].
 
-You can also pass LSP settings to the server:
+1. Install [neovim/nvim-lspconfig]
+2. Add `lua vim.lsp.enable('wgsl_analyzer')` to your `init.vim`
+3. Customize your setup.
 
 ```lua
 lua << EOF
-local lspconfig = require'lspconfig'
+-- You can pass LSP settings to the server:
+vim.lsp.config("wgsl_analyzer", {
+    settings = {
+        ["wgsl-analyzer"] = {
+            imports = {
+                granularity = {
+                    group = "module",
+                },
+                prefix = "self",
+            },
+            cargo = {
+                buildScripts = {
+                    enable = true,
+                },
+            },
+            procMacro = {
+                enable = true
+            },
+        },
+    },
+})
 
-local on_attach = function(client)
-  require'completion'.on_attach(client)
-end
-
-lspconfig.wgsl_analyzer.setup({
-  on_attach = on_attach,
-  settings = {
-    ["wgsl-analyzer"] = {
-
-    }
-  }
+-- You can enable different LSP features
+vim.api.nvim_create_autocmd("LspAttach", {
+    callback = function(ev)
+        local client = assert(vim.lsp.get_client_by_id(ev.data.client_id))
+        -- Inlay hints display inferred types, etc.
+        if client:supports_method("inlayHint/resolve") then
+            vim.lsp.inlay_hint.enable(true, { bufnr = ev.buf })
+        end
+        -- Completion can be invoked via ctrl+x ctrl+o. It displays a list of
+        -- names inferred from the context (e.g. method names, variables, etc.)
+        if client:supports_method("textDocument/completion") then
+            vim.lsp.completion.enable(true, client.id, ev.buf, {})
+        end
+    end,
 })
 EOF
-```
-
-If you are running Neovim 0.10 or later, you can enable inlay hints using `on_attach`:
-
-```lua
-lspconfig.wgsl_analyzer.setup({
-  on_attach = function(client, bufnr)
-    vim.lsp.inlay_hint.enable(true, { bufnr = bufnr })
-  end
-})
 ```
 
 Note that the hints are only visible after `wgsl-analyzer` has finished loading **and** you have to edit the file to trigger a re-render.
@@ -406,3 +421,6 @@ This includes:
 No support.
 
 See [#207](https://github.com/wgsl-analyzer/wgsl-analyzer/issues/207)
+
+[neovim/nvim-lspconfig]: https://github.com/neovim/nvim-lspconfig
+[wgsl-analyzer neovim-lsp config]: https://github.com/neovim/nvim-lspconfig/blob/master/lsp/wgsl_analyzer.lua
