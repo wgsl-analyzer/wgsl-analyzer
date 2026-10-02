@@ -14,7 +14,7 @@ seeds a workspace into the in-memory filesystem, and exposes the message stream.
 rustup +nightly component add rust-src
 source /path/to/emsdk/emsdk_env.sh
 
-cargo xtask build-web   # add --release for the configuration that ships
+cargo xtask dist-web   # add --release for the configuration that ships
 ```
 
 The command stages three files in `dist/assets/`: `wgsl_analyzer.js` and

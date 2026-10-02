@@ -70,7 +70,7 @@ jobs:
               - 'js/wgsl-analyzer-web/src/**'
               - 'js/wgsl-analyzer-web/tests/**'
               - 'js/examples/**'
-              - 'xtask/src/build_web.rs'
+              - 'xtask/src/dist_web.rs'
 
   no-ai-commits:
     runs-on: ubuntu-latest
@@ -546,7 +546,7 @@ jobs:
         working-directory: ./js
 
       - name: Build the wasm module and the package
-        run: cargo xtask build-web
+        run: cargo xtask dist-web
 
       - name: Boot the module and round trip LSP
         run: pnpm --filter wgsl-analyzer-web run test:smoke

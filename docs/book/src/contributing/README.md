@@ -137,7 +137,7 @@ pnpm --filter wgsl-analyzer-codemirror-example run typecheck
 ```
 
 `pnpm --filter wgsl-analyzer-web run test:smoke` is deliberately not in that list.
-It boots the real WebAssembly module, so it needs the artifacts that `cargo xtask build-web`
+It boots the real WebAssembly module, so it needs the artifacts that `cargo xtask dist-web`
 stages; see [Setup](setup.md) for what that build requires.
 
 Run `pnpm run` to see all available scripts.

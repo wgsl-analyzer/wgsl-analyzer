@@ -10,7 +10,7 @@ Since `wgsl-analyzer` is a Rust project, you will need to install Rust.
 You can download and install the latest stable version of [Rust](https://www.rust-lang.org/tools/install).
 
 That is everything you need for ordinary development.
-Building the browser packages with `cargo xtask build-web` additionally requires:
+Building the browser packages with `cargo xtask dist-web` additionally requires:
 
 - a nightly toolchain with the `rust-src` component, because the shipped `rust-std` for
   `wasm32-unknown-emscripten` cannot link with `-pthread` and so has to be rebuilt:

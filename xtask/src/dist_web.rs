@@ -6,7 +6,11 @@ use std::path::{Path, PathBuf};
 use anyhow::{Context as _, bail};
 use xshell::{Cmd, Shell, cmd};
 
-use crate::{flags::BuildWeb, project_root};
+use crate::{
+    dist::{self, Patch},
+    flags::DistWeb,
+    project_root,
+};
 
 const TARGET: &str = "wasm32-unknown-emscripten";
 
@@ -27,7 +31,7 @@ const ARTIFACTS: &[(&str, &str)] = &[
     ("wgsl_analyzer.wasm", "wgsl_analyzer.wasm"),
 ];
 
-impl BuildWeb {
+impl DistWeb {
     pub(crate) fn run(
         &self,
         shell: &Shell,
@@ -41,9 +45,27 @@ impl BuildWeb {
         // Staging comes last because `build:lib` clears `dist` first.
         let assets = stage_artifacts(shell, self.release)?;
 
-        println!("build-web: staged the web package in {}", assets.display());
-        Ok(())
+        if let Some(patch_version) = &self.client_patch_version {
+            let version = dist::web_version(shell, patch_version);
+            let mut patch = Patch::new(shell, Path::new(PACKAGE_ROOT).join("package.json"))?;
+            dist::patch_version(&mut patch, &version).commit(shell)?;
+            println!("dist-web: stamped version {version}");
+        }
+
+        println!("dist-web: staged the web package in {}", assets.display());
+        pack(shell)
     }
+}
+
+/// Packs the package into `dist/` at the project root, next to the output of
+/// `cargo xtask dist`.
+fn pack(shell: &Shell) -> anyhow::Result<()> {
+    let destination = shell.create_dir(project_root().join("dist"))?;
+    let _directory = shell.push_dir(PACKAGE_ROOT);
+    pnpm(shell, &["pack", "--pack-destination"])
+        .arg(destination)
+        .run()
+        .context("cannot pack the web package")
 }
 
 fn check_requirements(shell: &Shell) -> anyhow::Result<()> {
@@ -134,7 +156,7 @@ fn stage_artifacts(
         }
         let destination = assets.join(to);
         shell.copy_file(&source, &destination)?;
-        println!("build-web: {to} ({:.1} MB)", megabytes(&destination)?);
+        println!("dist-web: {to} ({:.1} MB)", megabytes(&destination)?);
     }
 
     Ok(assets)

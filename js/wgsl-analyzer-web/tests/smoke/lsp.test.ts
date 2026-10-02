@@ -100,8 +100,8 @@ const FILES: WorkspaceFiles = {
 };
 
 const ARTIFACTS: readonly (readonly [directory: string, name: string, command: string])[] = [
-	[ASSETS, "wgsl_analyzer.js", "cargo xtask build-web"],
-	[ASSETS, "wgsl_analyzer.wasm", "cargo xtask build-web"],
+	[ASSETS, "wgsl_analyzer.js", "cargo xtask dist-web"],
+	[ASSETS, "wgsl_analyzer.wasm", "cargo xtask dist-web"],
 	[DIST, "host.js", "pnpm --filter wgsl-analyzer-web run build"],
 ];
 
@@ -114,10 +114,10 @@ function preflight() {
 			`${missing.length} build artifact(s) are missing:`,
 			...missing.map(([directory, name]) => `  - ${join(directory, name)}`),
 			"",
-			"Run `cargo xtask build-web` from the repository root, `pnpm` from js/:",
+			"Run `cargo xtask dist-web` from the repository root, `pnpm` from js/:",
 			...commands.map((command) => `  ${command}`),
 			"",
-			"build-web needs emcc on PATH (source emsdk_env.sh) and a nightly",
+			"dist-web needs emcc on PATH (source emsdk_env.sh) and a nightly",
 			"toolchain with rust-src, because it links with -Zbuild-std.",
 		].join("\n"),
 	);

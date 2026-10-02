@@ -14,10 +14,10 @@
 
 mod flags;
 
-mod build_web;
 mod changelog;
 mod codegen;
 mod dist;
+mod dist_web;
 mod install;
 mod pgo;
 mod publish;
@@ -56,7 +56,7 @@ fn main() -> anyhow::Result<()> {
             Ok(())
         },
         flags::XtaskCmd::Tidy(command) => command.run(shell),
-        flags::XtaskCmd::BuildWeb(command) => command.run(shell),
+        flags::XtaskCmd::DistWeb(command) => command.run(shell),
     }
 }
 
