@@ -11,7 +11,7 @@
 		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
-		"monaco-editor": "^0.56.0",
+		"monaco-editor": "^0.57.0",
 		"wgsl-analyzer-web": "workspace:*"
 	},
 	"devDependencies": {
