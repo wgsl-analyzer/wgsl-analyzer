@@ -144,10 +144,12 @@ fn dist_server(
     let _e = shell.push_env("CARGO_PROFILE_DEV_REL_CODEGEN_UNITS", "1");
 
     let features = allocator.to_features();
+
+    let cmd = build_command(shell, &target.name, features);
     let pgo_profile = if let Some(train_crate) = pgo {
         Some(crate::pgo::gather_pgo_profile(
             shell,
-            crate::pgo::build_command(shell, &target.name, features),
+            cmd,
             &target.name,
             &train_crate,
         )?)
