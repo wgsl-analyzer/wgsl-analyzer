@@ -118,7 +118,9 @@ jobs:
           target: ${{ matrix.target }}
 
       - name: Dist
-        run: cargo xtask dist --client-patch-version ${{ github.run_number }} ${{ env.ALLOCATOR_FLAG }} # ${{ matrix.pgo && format('--pgo {0}', matrix.pgo) || ''}}
+        run: cargo xtask dist --client-patch-version ${{ github.run_number }} ${ALLOCATOR_FLAG} # ${{ matrix.pgo && format('--pgo {0}', matrix.pgo) || ''}}
+        env:
+          ALLOCATOR_FLAG: ${{ env.ALLOCATOR_FLAG }}
 
       - run: pnpm install --frozen-lockfile
         working-directory: editors/code
@@ -245,7 +247,7 @@ jobs:
 
       - name: Set release tag
         run: |
-          if [ "${{ github.ref }}" = "refs/heads/release" ]; then
+          if [ "${GITHUB_REF}" = "refs/heads/release" ]; then
             git fetch --tags
             today=$(date --iso -u)
             last_tag=$(git tag -l "${today}*" | sort -V | tail -n1)
