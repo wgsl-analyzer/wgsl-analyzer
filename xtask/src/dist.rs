@@ -136,15 +136,12 @@ fn dist_server(
     pgo: Option<PgoTrainingCrate>,
 ) -> anyhow::Result<()> {
     let _e = shell.push_env("CFG_RELEASE", release);
+    let _e = shell.push_env("CARGO_PROFILE_RELEASE_DEBUG", "limited");
     let _e = shell.push_env("CARGO_PROFILE_RELEASE_LTO", "thin");
     let _e = shell.push_env("CARGO_PROFILE_RELEASE_CODEGEN_UNITS", "1");
+    let _e = shell.push_env("CARGO_PROFILE_DEV_REL_DEBUG", "limited");
     let _e = shell.push_env("CARGO_PROFILE_DEV_REL_LTO", "thin");
     let _e = shell.push_env("CARGO_PROFILE_DEV_REL_CODEGEN_UNITS", "1");
-
-    // Uncomment to enable debug info for releases. Note that:
-    //   * debug info is split on windows and macs, so it does nothing for those platforms,
-    //   * on Linux, this blows up the binary size from 8MB to 43MB, which is unreasonable.
-    // let _e = sh.push_env("CARGO_PROFILE_RELEASE_DEBUG", "1");
 
     let features = allocator.to_features();
     let pgo_profile = if let Some(train_crate) = pgo {
