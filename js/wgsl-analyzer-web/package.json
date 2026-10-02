@@ -50,9 +50,9 @@
 		"typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.node.json"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "^2.5.8",
+		"@biomejs/biome": "^2.5.14",
 		"@tsconfig/strictest": "^2.0.8",
-		"@types/node": "^26.4.1",
+		"@types/node": "^26.6.2",
 		"esbuild": "^0.28.2",
 		"typescript": "^7.0.2",
 		"vscode-jsonrpc": "^9.0.2"
