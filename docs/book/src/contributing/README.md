@@ -264,6 +264,7 @@ Release steps:
       - runs `cargo xtask dist` to package binaries and VS Code extension
       - makes a GitHub release
       - publishes the VS Code extension to the marketplace
+      - runs `cargo xtask dist-web` and publishes `wgsl-analyzer-web` to npm
       - call the GitHub API for PR details
       - create a new changelog in `wgsl-analyzer.github.io`
 3. While the release is in progress, fill in the changelog.
@@ -275,6 +276,13 @@ If it fails because of something that needs to be fixed, remove the release tag 
 Make sure to remove the new changelog post created when running `cargo xtask release` a second time.
 
 We release "nightly" every night automatically and promote the latest nightly to "stable" manually, every week.
+
+`wgsl-analyzer-web` is published to npm under the dist-tag `latest` for stable, with the same version as the VS Code extension, and under `next` for nightly.
+Nightly versions are prereleases of the next stable version, like `0.12.0-next.<run number>`, so that semver ranges and update bots skip them.
+Keep `VERSION_DEV` in `xtask/src/dist.rs` in sync with the `-dev` placeholder version in both `editors/code/package.json` and `js/wgsl-analyzer-web/package.json`.
+npm publishing uses trusted publishing, so there is no npm token: the package on npmjs.com trusts the `release.yaml` workflow of this repository.
+Re-running a release whose npm publish already succeeded skips the publish rather than failing.
+Two overlapping runs can briefly point a dist-tag at the older version; the next release corrects it.
 
 We do not do "patch" releases, unless something truly egregious comes up.
 To do a patch release, cherry-pick the fix on top of the current `release` branch and push the branch.

@@ -58,12 +58,12 @@ impl DistWeb {
 }
 
 /// Packs the package into `dist/` at the project root, next to the output of
-/// `cargo xtask dist`.
+/// `cargo xtask dist`, unversioned like the other release artifacts.
 fn pack(shell: &Shell) -> anyhow::Result<()> {
     let destination = shell.create_dir(project_root().join("dist"))?;
     let _directory = shell.push_dir(PACKAGE_ROOT);
-    pnpm(shell, &["pack", "--pack-destination"])
-        .arg(destination)
+    pnpm(shell, &["pack", "--out"])
+        .arg(destination.join("%s.tgz"))
         .run()
         .context("cannot pack the web package")
 }
