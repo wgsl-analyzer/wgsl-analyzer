@@ -22,13 +22,13 @@ use wgsl_analyzer::{
     from_json,
 };
 
-fn get_cwd_as_abs_path() -> Result<AbsPathBuf, std::io::Error> {
-    info!("Getting current working directory as absolute path");
-    let cwd = env::current_dir()?;
-    Ok(AbsPathBuf::assert(
-        camino::Utf8Path::new(cwd.to_str().unwrap()).into(),
-    ))
-}
+#[cfg(feature = "mimalloc")]
+#[global_allocator]
+static ALLOC: mimalloc::MiMalloc = mimalloc::MiMalloc;
+
+#[cfg(all(feature = "jemalloc", not(target_env = "msvc")))]
+#[global_allocator]
+static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
 
 fn main() -> Result<ExitCode> {
     let flags = flags::WgslAnalyzer::from_env_or_exit();
