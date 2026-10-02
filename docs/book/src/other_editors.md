@@ -219,20 +219,7 @@ lua << EOF
 vim.lsp.config("wgsl_analyzer", {
     settings = {
         ["wgsl-analyzer"] = {
-            imports = {
-                granularity = {
-                    group = "module",
-                },
-                prefix = "self",
-            },
-            cargo = {
-                buildScripts = {
-                    enable = true,
-                },
-            },
-            procMacro = {
-                enable = true
-            },
+            -- add configuration here
         },
     },
 })
@@ -245,8 +232,9 @@ vim.api.nvim_create_autocmd("LspAttach", {
         if client:supports_method("inlayHint/resolve") then
             vim.lsp.inlay_hint.enable(true, { bufnr = ev.buf })
         end
-        -- Completion can be invoked via ctrl+x ctrl+o. It displays a list of
-        -- names inferred from the context (e.g. method names, variables, etc.)
+        -- Completion can be invoked using ctrl+x ctrl+o.
+        -- It displays a list of names inferred from the context.
+        -- For example, functions, variables, and constants.
         if client:supports_method("textDocument/completion") then
             vim.lsp.completion.enable(true, client.id, ev.buf, {})
         end
