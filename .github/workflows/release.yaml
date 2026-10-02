@@ -356,13 +356,16 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      id-token: write
     needs: publish
     strategy:
       fail-fast: false
       matrix:
         include:
           - cmd: vsce
+            authentication: --oidc
           - cmd: ovsx
+            authentication: --trusted-publishing
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -399,10 +402,8 @@ jobs:
 
       - name: Publish Extension
         if: github.repository == 'wgsl-analyzer/wgsl-analyzer'
-        env:
-          PUBLISH_PAT: ${{ (matrix.cmd == 'vsce' && secrets.VSCE_PAT) || (matrix.cmd == 'ovsx' && secrets.OVSX_PAT) }}
         working-directory: ./editors/code
-        run: pnpm exec ${{ matrix.cmd }} publish --skip-duplicate --pat "$PUBLISH_PAT" --packagePath ../../dist/wgsl-analyzer-*.vsix ${{ github.ref != 'refs/heads/release' && '--pre-release' || '' }}
+        run: pnpm exec ${{ matrix.cmd }} publish --skip-duplicate ${{ matrix.authentication }} --packagePath ../../dist/wgsl-analyzer-*.vsix ${{ github.ref != 'refs/heads/release' && '--pre-release' || '' }}
         timeout-minutes: 2
 
   publish-web-package:
