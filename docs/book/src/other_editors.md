@@ -61,7 +61,7 @@ There are several LSP client implementations for Vim or Neovim:
 
 2. Run `:CocInstall coc-wgsl-analyzer` to install [`coc-wgsl-analyzer`](https://github.com/wgsl-analyzer/coc-wgsl-analyzer), this extension implements *most* of the features supported in the VS Code extension:
     - automatically install and upgrade stable/nightly releases
-    - same configurations as VS Code extension, `wgsl-analyzer.server.path`, `wgsl-analyzer.cargo.features` etc.
+    - same configurations as VS Code extension. For example, `wgsl-analyzer.server.path`.
     - same commands too, `wgsl-analyzer.analyzerStatus`, `wgsl-analyzer.ssr` etc.
     - inlay hints for variables and method chaining, *Neovim Only*
 
@@ -268,7 +268,6 @@ endif
 ```
 
 There is no dedicated UI for the server configuration, so you would need to send any options as a value of the `initialization_options` field, as described in the [Configuration](./configuration.md) section.
-Here is an example of how to enable the proc-macro support:
 
 ```vim
 if executable('wgsl-analyzer')
@@ -277,14 +276,6 @@ if executable('wgsl-analyzer')
     \   'cmd': {server_info->['wgsl-analyzer']},
     \   'whitelist': ['wgsl', 'wesl'],
     \   'initialization_options': {
-    \     'cargo': {
-    \       'buildScripts': {
-    \         'enable': v:true,
-    \       },
-    \     },
-    \     'procMacro': {
-    \       'enable': v:true,
-    \     },
     \   },
     \ })
 endif
@@ -294,7 +285,7 @@ endif
 
 ### Sublime Text 4
 
-Follow the instructions in [LSP-rust-analyzer](https://github.com/sublimelsp/LSP-rust-analyzer), but substitute `rust` with `wgsl` where applicable.
+Follow the instructions in [LSP-rust-analyzer](https://github.com/sublimelsp/LSP-rust-analyzer), but substitute `rust` with `wgsl` or `wesl` where applicable.
 
 Install [LSP-file-watcher-chokidar](https://packagecontrol.io/packages/LSP-file-watcher-chokidar) to enable file watching (`workspace/didChangeWatchedFiles`).
 
