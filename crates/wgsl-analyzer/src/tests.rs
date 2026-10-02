@@ -112,10 +112,16 @@ fn check_load_project_files(
     let project = load_package_receiver
         .iter()
         .filter_map(|message| match message {
-            LoadPackageMessage::Finished { project, .. } => Some(project),
-            LoadPackageMessage::Error { .. }
-            | LoadPackageMessage::Dependency { .. }
-            | LoadPackageMessage::Progress { .. } => None,
+            LoadPackageMessage::Finished {
+                project,
+                manifest: _,
+            } => Some(project),
+            LoadPackageMessage::Error {
+                error: _,
+                source: _,
+            }
+            | LoadPackageMessage::Dependency { task: _ }
+            | LoadPackageMessage::Progress { message: _ } => None,
         })
         .exactly_one()
         .unwrap();

@@ -165,18 +165,42 @@ impl TestDatabase {
                     let ingredient = self.ingredient_debug_name(database_key.ingredient_index());
                     Some(ingredient.to_string())
                 },
-                salsa::EventKind::DidValidateMemoizedValue { .. }
-                | salsa::EventKind::WillBlockOn { .. }
-                | salsa::EventKind::WillIterateCycle { .. }
-                | salsa::EventKind::DidFinalizeCycle { .. }
+                salsa::EventKind::DidValidateMemoizedValue { database_key: _ }
+                | salsa::EventKind::WillBlockOn {
+                    other_thread_id: _,
+                    database_key: _,
+                }
+                | salsa::EventKind::WillIterateCycle {
+                    database_key: _,
+                    iteration: _,
+                }
+                | salsa::EventKind::DidFinalizeCycle {
+                    database_key: _,
+                    iteration: _,
+                }
                 | salsa::EventKind::WillCheckCancellation
                 | salsa::EventKind::DidSetCancellationFlag
-                | salsa::EventKind::WillDiscardStaleOutput { .. }
-                | salsa::EventKind::DidDiscard { .. }
-                | salsa::EventKind::DidDiscardAccumulated { .. }
-                | salsa::EventKind::DidInternValue { .. }
-                | salsa::EventKind::DidReuseInternedValue { .. }
-                | salsa::EventKind::DidValidateInternedValue { .. } => None,
+                | salsa::EventKind::WillDiscardStaleOutput {
+                    execute_key: _,
+                    output_key: _,
+                }
+                | salsa::EventKind::DidDiscard { key: _ }
+                | salsa::EventKind::DidDiscardAccumulated {
+                    executor_key: _,
+                    accumulator: _,
+                }
+                | salsa::EventKind::DidInternValue {
+                    key: _,
+                    revision: _,
+                }
+                | salsa::EventKind::DidReuseInternedValue {
+                    key: _,
+                    revision: _,
+                }
+                | salsa::EventKind::DidValidateInternedValue {
+                    key: _,
+                    revision: _,
+                } => None,
             })
             .collect();
         (executed, events)

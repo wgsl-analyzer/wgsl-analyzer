@@ -30,7 +30,7 @@ fn foo() {
                 if let ModuleDefinitionId::Function(id) = definition {
                     let inference_results =
                         InferenceResult::of(&db, DefinitionWithBodyId::Function(id));
-                    assert!(inference_results.diagnostics().is_empty());
+                    assert_eq!(inference_results.diagnostics(), []);
                 }
             }
         },
@@ -75,7 +75,7 @@ fn foo() {
                 if let ModuleDefinitionId::Function(id) = definition {
                     let inference_results =
                         InferenceResult::of(&db, DefinitionWithBodyId::Function(id));
-                    assert!(inference_results.diagnostics().is_empty());
+                    assert_eq!(inference_results.diagnostics(), []);
                 }
             }
         },
@@ -118,7 +118,7 @@ fn baz() -> i32 {
                 if let ModuleDefinitionId::Function(id) = definition {
                     let inference_results =
                         InferenceResult::of(&db, DefinitionWithBodyId::Function(id));
-                    assert!(inference_results.diagnostics().is_empty());
+                    assert_eq!(inference_results.diagnostics(), []);
                 }
             }
         },
@@ -179,7 +179,7 @@ fn baz() -> i32 {
                 if let ModuleDefinitionId::Function(id) = definition {
                     let inference_results =
                         InferenceResult::of(&db, DefinitionWithBodyId::Function(id));
-                    assert!(inference_results.diagnostics().is_empty());
+                    assert_eq!(inference_results.diagnostics(), []);
                 }
             }
         },

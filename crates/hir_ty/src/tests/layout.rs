@@ -62,7 +62,7 @@ impl<'db> LayoutPrinter<'db> {
                 ModuleDefinitionId::Struct(id) => {
                     let signature = StructSignature::of(self.db, id);
                     let (fields, diagnostics) = &*self.db.field_types(id);
-                    assert!(diagnostics.is_empty());
+                    assert_eq!(diagnostics.as_slice(), []);
                     let mut fields_output = vec![];
                     let Some((align, size)) = struct_member_layout(
                         fields,
