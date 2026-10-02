@@ -88,8 +88,7 @@ fn foo() {
 fn u64() {
     check_infer_with_capabilities(
         Capabilities {
-            shader_int64: true,
-            ..Default::default()
+            native_features: true,
         },
         "
 fn foo() {
@@ -107,8 +106,7 @@ fn foo() {
 fn i64() {
     check_infer_with_capabilities(
         Capabilities {
-            shader_int64: true,
-            ..Default::default()
+            native_features: true,
         },
         "
 fn foo() {
@@ -1810,8 +1808,7 @@ fn foo() {
 fn vec2t() {
     check_infer_with_capabilities(
         Capabilities {
-            shader_int64: true,
-            ..Default::default()
+            native_features: true,
         },
         "
 enable f16;

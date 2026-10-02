@@ -45,11 +45,11 @@ impl TypeLoweringContext<'_> {
                 self.expect_no_template(template_parameters);
                 TypeKind::Scalar(ScalarType::U32)
             },
-            "i64" if CapabilitiesInput::get_capabilities(self.db).shader_int64 => {
+            "i64" if CapabilitiesInput::get_capabilities(self.db).native_features => {
                 self.expect_no_template(template_parameters);
                 TypeKind::Scalar(ScalarType::I64)
             },
-            "u64" if CapabilitiesInput::get_capabilities(self.db).shader_int64 => {
+            "u64" if CapabilitiesInput::get_capabilities(self.db).native_features => {
                 self.expect_no_template(template_parameters);
                 TypeKind::Scalar(ScalarType::U64)
             },
@@ -689,23 +689,25 @@ impl TypeLoweringContext<'_> {
         match template_parameters.next_as_type() {
             Ok((r#type, expression)) => {
                 let type_kind = r#type.kind(self.db);
-                if matches!(
-                    type_kind,
-                    TypeKind::Scalar(
-                        ScalarType::I32 | ScalarType::U32 | ScalarType::I64 | ScalarType::U64
-                    )
-                ) {
+                let capabilities = CapabilitiesInput::get_capabilities(self.db);
+
+                let allowed = match type_kind {
+                    TypeKind::Scalar(ScalarType::I32 | ScalarType::U32) => true,
+                    TypeKind::Scalar(ScalarType::I64 | ScalarType::U64 | ScalarType::F32) => {
+                        capabilities.native_features
+                    },
+                    _ => false,
+                };
+
+                if allowed {
                     r#type
                 } else {
-                    // TODO: improve the error message and support naga atomics
-                    // See: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/677
-                    // Naga supports more types (f32, i64, u64) here
-                    let possible_types =
-                        if CapabilitiesInput::get_capabilities(self.db).shader_int64 {
-                            "i32, u32, i64, or u64".to_owned()
-                        } else {
-                            "i32 or u32".to_owned()
-                        };
+                    let possible_types = if capabilities.native_features {
+                        "i32 or u32 or i64 or u64 or f32".to_owned()
+                    } else {
+                        "i32 or u32".to_owned()
+                    };
+
                     self.diagnostics.push(TypeLoweringError {
                         container: TypeContainer::Expression(expression),
                         kind: TypeLoweringErrorKind::UnexpectedTemplateArgument(

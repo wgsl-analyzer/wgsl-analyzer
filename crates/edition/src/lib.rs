@@ -237,10 +237,7 @@ pub struct ExtensionsConfig {
     pub swizzle_assignment: bool,
 }
 
-// TODO: implement this in the frontend and add more https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1421
 #[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Capabilities {
-    // naga capabilities
-    pub shader_int64: bool,
-    pub early_depth_test: bool,
+    pub native_features: bool,
 }

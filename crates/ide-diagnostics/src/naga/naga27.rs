@@ -11,9 +11,23 @@ impl Naga for Naga27 {
         naga27::front::wgsl::parse_str(source)
     }
 
-    fn validate(module: &Self::Module) -> Result<(), Self::ValidationError> {
+    fn validate(
+        module: &Self::Module,
+        native_features: bool,
+    ) -> Result<(), Self::ValidationError> {
         let flags = naga27::valid::ValidationFlags::all();
-        let capabilities = naga27::valid::Capabilities::all();
+        let mut capabilities = naga27::valid::Capabilities::all();
+        if !native_features {
+            use naga27::valid::Capabilities as Caps;
+
+            capabilities.remove(
+                Caps::SHADER_FLOAT32_ATOMIC
+                    | Caps::SHADER_INT64
+                    | Caps::SHADER_INT64_ATOMIC_MIN_MAX
+                    | Caps::SHADER_INT64_ATOMIC_ALL_OPS
+                    | Caps::FLOAT64,
+            );
+        }
         let mut validator = naga27::valid::Validator::new(flags, capabilities);
         validator.validate(module).map(drop)
     }

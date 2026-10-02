@@ -400,7 +400,7 @@ impl<'source> ParserCallbacks<'source> for Parser<'source> {
         node_ref: NodeRef,
         diagnostics: &mut Vec<Self::Diagnostic>,
     ) {
-        if !self.context.capabilities.early_depth_test {
+        if !self.context.capabilities.native_features {
             diagnostics.push(self.create_diagnostic(
                 self.cst.span(node_ref),
                 "the extension EARLY_DEPTH_TEST is not enabled".to_owned(),
