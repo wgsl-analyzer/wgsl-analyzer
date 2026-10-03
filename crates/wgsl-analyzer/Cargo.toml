@@ -39,7 +39,7 @@ wgsl-std.workspace = true
 
 # base64 = "0.22"
 # dirs = "5.0.1"
-mimalloc = { version = "0.1.48", default-features = false, optional = true }
+mimalloc = { version = "0.1.52", default-features = false, optional = true }
 # process-wrap = { version = "8.2.0", features = ["std"] }
 # scip = "0.5.2"
 # tenthash = "1.0.0"
