@@ -1,25 +1,25 @@
 use super::{Naga, NagaError, Range};
 
-pub struct Naga27;
+pub struct Naga30;
 
-impl Naga for Naga27 {
-    type Module = naga27::Module;
-    type ParseError = naga27::front::wgsl::ParseError;
-    type ValidationError = naga27::WithSpan<naga27::valid::ValidationError>;
+impl Naga for Naga30 {
+    type Module = naga30::Module;
+    type ParseError = naga30::front::wgsl::ParseError;
+    type ValidationError = naga30::WithSpan<naga30::valid::ValidationError>;
 
     fn parse(source: &str) -> Result<Self::Module, Self::ParseError> {
-        naga27::front::wgsl::parse_str(source)
+        naga30::front::wgsl::parse_str(source)
     }
 
-    fn validate(module: &Self::Module) -> Result<(), Self::ValidationError> {
-        let flags = naga27::valid::ValidationFlags::all();
-        let capabilities = naga27::valid::Capabilities::all();
-        let mut validator = naga27::valid::Validator::new(flags, capabilities);
-        validator.validate(module).map(drop)
+    fn validate(module: &Self::Module) -> Result<(), Box<Self::ValidationError>> {
+        let flags = naga30::valid::ValidationFlags::all();
+        let capabilities = naga30::valid::Capabilities::all();
+        let mut validator = naga30::valid::Validator::new(flags, capabilities);
+        Ok(validator.validate(module).map(drop)?)
     }
 }
 
-impl NagaError for naga27::front::wgsl::ParseError {
+impl NagaError for naga30::front::wgsl::ParseError {
     fn spans(&self) -> Box<dyn Iterator<Item = (Option<Range<usize>>, String)> + '_> {
         Box::new(
             self.labels()
@@ -33,7 +33,7 @@ impl NagaError for naga27::front::wgsl::ParseError {
     }
 }
 
-impl NagaError for naga27::WithSpan<naga27::valid::ValidationError> {
+impl NagaError for naga30::WithSpan<naga30::valid::ValidationError> {
     fn spans(&self) -> Box<dyn Iterator<Item = (Option<Range<usize>>, String)> + '_> {
         Box::new(
             self.spans()
@@ -46,6 +46,6 @@ impl NagaError for naga27::WithSpan<naga27::valid::ValidationError> {
     }
 }
 
-fn to_range(span: naga27::Span) -> Option<Range<usize>> {
+fn to_range(span: naga30::Span) -> Option<Range<usize>> {
     span.to_range().map(Range::from)
 }

@@ -1,11 +1,17 @@
 use super::*;
 
 #[must_use]
-const fn root() -> &'static str {
+pub fn root() -> &'static AbsPath {
     #[cfg(windows)]
-    return "C:/";
+    {
+        // SAFETY: static value known to be safe
+        unsafe { AbsPath::new_unchecked(r#"C:\"#.into()) }
+    }
     #[cfg(not(windows))]
-    return "/";
+    {
+        // SAFETY: static value known to be safe
+        unsafe { AbsPath::new_unchecked("/".into()) }
+    }
 }
 
 #[test]
@@ -77,9 +83,9 @@ fn as_path_virtual_path() {
 
 #[test]
 fn as_path_path() {
-    let vfs_path = VfsPath::new_real_path(root().to_owned());
+    let vfs_path = VfsPath::new_real_path(root().to_string());
     let path = vfs_path.as_path();
-    assert_eq!(path, Some(AbsPath::assert(root().into())));
+    assert_eq!(path, Some(root()));
 }
 
 #[test]
@@ -91,16 +97,16 @@ fn as_virtual_path_virtual_path() {
 
 #[test]
 fn as_virtual_path_path() {
-    let vfs_path = VfsPath::new_real_path(root().to_owned());
+    let vfs_path = VfsPath::new_real_path(root().to_string());
     let path = vfs_path.as_virtual_path();
     assert_eq!(path, None);
 }
 
 #[test]
 fn path_as_inner() {
-    let vfs_path = VfsPath::new_real_path(root().to_owned());
+    let vfs_path = VfsPath::new_real_path(root().to_string());
     let path = vfs_path.as_inner();
-    assert_eq!(path, Either::Left(AbsPath::assert(root().into())));
+    assert_eq!(path, Either::Left(root()));
 }
 
 #[test]
@@ -119,7 +125,7 @@ fn into_abs_path_virtual_path() {
 
 #[test]
 fn into_abs_path_path() {
-    let vfs_path = VfsPath::new_real_path(root().to_owned());
+    let vfs_path = VfsPath::new_real_path(root().to_string());
     let path = vfs_path.into_abs_path();
-    assert_eq!(path, Some(AbsPathBuf::assert(root().into())));
+    assert_eq!(path, Some(root().to_owned()));
 }
