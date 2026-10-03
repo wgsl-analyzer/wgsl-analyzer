@@ -79,10 +79,6 @@ config_data! {
         /// Whether to show diagnostics about the code semantics.
         diagnostics_semanticErrors: bool = true,
 
-        // TODO: remove this, this is not config
-        /// Whether to enable u64 and i64 scalar types.
-        extensions_shaderInt64: bool = true,
-
         /// Whether to show inlay hints.
         inlayHints_enabled: bool = true,
         /// Whether to show inlay hints for the names of function parameters.
@@ -96,6 +92,9 @@ config_data! {
         /// Verbosity of type hints: `"full"`, `"compact"`, or `"inner"`.
         inlayHints_typeVerbosity: InlayHintsTypeVerbosity = InlayHintsTypeVerbosity::default(),
 
+        /// Whether to allow native-only WGSL features.
+        native_features: bool = false,
+
         /// Number of worker threads for the main analysis loop.
         /// `null` lets the server choose automatically.
         numThreads: Option<NumThreads> = None,
@@ -107,6 +106,7 @@ config_data! {
         /// Server trace verbosity.
         /// One of: `"off"`, `"messages"`, or `"verbose"`.
         trace_server: TraceServer = TraceServer::Off,
+
     }
 }
 
@@ -548,8 +548,7 @@ impl Config {
     #[must_use]
     pub fn capabilities(&self) -> Capabilities {
         Capabilities {
-            shader_int64: *self.extensions_shaderInt64(),
-            ..Default::default()
+            native_features: *self.native_features(),
         }
     }
 

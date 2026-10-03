@@ -81,8 +81,7 @@ fn capability_not_present() {
 fn parse_early_depth_test_force() {
     check_with_capabilities(
         Capabilities {
-            early_depth_test: true,
-            ..Default::default()
+            native_features: true,
         },
         "
         @fragment
@@ -156,8 +155,7 @@ fn parse_early_depth_test_force() {
 fn parse_early_depth_test_greater_equal() {
     check_with_capabilities(
         Capabilities {
-            early_depth_test: true,
-            ..Default::default()
+            native_features: true,
         },
         "
         @fragment
@@ -231,8 +229,7 @@ fn parse_early_depth_test_greater_equal() {
 fn parse_early_depth_test_less_equal() {
     check_with_capabilities(
         Capabilities {
-            early_depth_test: true,
-            ..Default::default()
+            native_features: true,
         },
         "
         @fragment
@@ -306,8 +303,7 @@ fn parse_early_depth_test_less_equal() {
 fn parse_early_depth_test_unchanged() {
     check_with_capabilities(
         Capabilities {
-            early_depth_test: true,
-            ..Default::default()
+            native_features: true,
         },
         "
         @fragment

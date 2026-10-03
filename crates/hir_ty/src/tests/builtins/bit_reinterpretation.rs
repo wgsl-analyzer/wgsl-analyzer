@@ -101,8 +101,7 @@ fn foo() {
 fn bitcast_N() {
     check_infer_with_capabilities(
         Capabilities {
-            shader_int64: true,
-            ..Default::default()
+            native_features: true,
         },
         "
 enable f16;
@@ -286,8 +285,7 @@ fn foo() {
 fn bitcast_64() {
     check_infer_with_capabilities(
         Capabilities {
-            shader_int64: true,
-            ..Default::default()
+            native_features: true,
         },
         "
 enable f16;
@@ -411,8 +409,7 @@ fn foo() {
 fn bitcast_concretization() {
     check_infer_with_capabilities(
         Capabilities {
-            shader_int64: true,
-            ..Default::default()
+            native_features: true,
         },
         "
 fn foo() {
@@ -451,8 +448,7 @@ fn foo() {
 fn bitcast_128() {
     check_infer_with_capabilities(
         Capabilities {
-            shader_int64: true,
-            ..Default::default()
+            native_features: true,
         },
         "
 fn foo() {

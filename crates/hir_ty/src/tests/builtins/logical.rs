@@ -49,8 +49,7 @@ fn foo() {
 fn select() {
     check_infer_with_capabilities(
         Capabilities {
-            shader_int64: true,
-            ..Default::default()
+            native_features: true,
         },
         "
 enable f16;

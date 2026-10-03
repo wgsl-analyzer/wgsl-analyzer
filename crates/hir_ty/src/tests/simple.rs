@@ -1679,8 +1679,7 @@ fn mat_index_j_is_not_f32() {
 fn naga_shader_int64() {
     check_infer_with_capabilities(
         Capabilities {
-            shader_int64: true,
-            ..Default::default()
+            native_features: true,
         },
         "
 fn foo(bar: i64, baz: u64) {}

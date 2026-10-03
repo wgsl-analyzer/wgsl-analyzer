@@ -87,8 +87,7 @@ fn foo() {
 fn naga() {
     check_infer_with_capabilities(
         Capabilities {
-            shader_int64: true,
-            ..Default::default()
+            native_features: true,
         },
         "
 fn foo() {

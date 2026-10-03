@@ -525,16 +525,6 @@
 				}
 			},
 			{
-				"title": "Extensions",
-				"properties": {
-					"wgsl-analyzer.extensions.shaderInt64": {
-						"markdownDescription": "Whether to enable u64 and i64 scalar types.",
-						"default": true,
-						"type": "boolean"
-					}
-				}
-			},
-			{
 				"title": "Inlay Hints",
 				"properties": {
 					"wgsl-analyzer.inlayHints.enabled": {
@@ -601,6 +591,16 @@
 							"`ref<f32>`",
 							"`f32`"
 						]
+					}
+				}
+			},
+			{
+				"title": "Native",
+				"properties": {
+					"wgsl-analyzer.native.features": {
+						"markdownDescription": "Whether to allow native-only WGSL features.",
+						"default": false,
+						"type": "boolean"
 					}
 				}
 			},

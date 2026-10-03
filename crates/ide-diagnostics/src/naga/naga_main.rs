@@ -11,9 +11,19 @@ impl Naga for NagaMain {
         nagamain::front::wgsl::parse_str(source)
     }
 
-    fn validate(module: &Self::Module) -> Result<(), Self::ValidationError> {
+    fn validate(
+        module: &Self::Module,
+        native_features: bool,
+    ) -> Result<(), Self::ValidationError> {
         let flags = nagamain::valid::ValidationFlags::all();
-        let capabilities = nagamain::valid::Capabilities::all();
+        let mut capabilities = nagamain::valid::Capabilities::all();
+        if !native_features {
+            capabilities.remove(nagamain::valid::Capabilities::SHADER_FLOAT32_ATOMIC);
+            capabilities.remove(nagamain::valid::Capabilities::SHADER_INT64);
+            capabilities.remove(nagamain::valid::Capabilities::SHADER_INT64_ATOMIC_MIN_MAX);
+            capabilities.remove(nagamain::valid::Capabilities::SHADER_INT64_ATOMIC_ALL_OPS);
+            capabilities.remove(nagamain::valid::Capabilities::FLOAT64);
+        }
         let mut validator = nagamain::valid::Validator::new(flags, capabilities);
         validator.validate(module).map(drop)
     }

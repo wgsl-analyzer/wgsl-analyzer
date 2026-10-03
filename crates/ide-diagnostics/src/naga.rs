@@ -5,7 +5,7 @@ mod naga_main;
 
 use std::{error, range::Range};
 
-use base_db::{EditionedFileId, FileRange};
+use base_db::{CapabilitiesInput, EditionedFileId, FileRange};
 use hir::{HirDatabase, diagnostics::AnyDiagnostic};
 pub(crate) use naga_main::NagaMain;
 pub(crate) use naga27::Naga27;
@@ -21,7 +21,10 @@ pub(crate) trait Naga {
     type ValidationError: NagaError;
 
     fn parse(source: &str) -> Result<Self::Module, Self::ParseError>;
-    fn validate(module: &Self::Module) -> Result<(), Self::ValidationError>;
+    fn validate(
+        module: &Self::Module,
+        native_features: bool,
+    ) -> Result<(), Self::ValidationError>;
 }
 
 pub(crate) trait NagaError: error::Error {
@@ -88,7 +91,8 @@ pub(crate) fn naga_diagnostics<Naga>(
             if !config.naga_validation_enabled {
                 return;
             }
-            if let Err(error) = Naga::validate(&module) {
+            let native_features = CapabilitiesInput::get_capabilities(db).native_features;
+            if let Err(error) = Naga::validate(&module, native_features) {
                 emit(db, &error, file_id, full_range, accumulator);
             }
         },

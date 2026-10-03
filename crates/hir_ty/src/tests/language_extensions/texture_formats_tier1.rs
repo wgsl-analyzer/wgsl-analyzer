@@ -325,8 +325,7 @@ fn main() {
 fn sample_u64() {
     check_infer_with_capabilities(
         Capabilities {
-            shader_int64: false,
-            ..Default::default()
+            native_features: false,
         },
         "
 var x: texture_storage_2d<r64uint, read>;

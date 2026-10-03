@@ -3,6 +3,26 @@ use crate::DiagnosticsConfig;
 use expect_test::expect;
 
 #[test]
+fn float_atomics_require_native_features() {
+    fn check<N: crate::naga::Naga>() {
+        let module =
+            N::parse("@group(0) @binding(0) var<storage, read_write> value: atomic<f32>;").unwrap();
+        assert!(N::validate(&module, false).is_err());
+        assert!(N::validate(&module, true).is_ok());
+
+        let module =
+            N::parse("@group(0) @binding(0) var<storage, read_write> value: atomic<u32>;").unwrap();
+        assert!(N::validate(&module, false).is_ok());
+        assert!(N::validate(&module, true).is_ok());
+    }
+
+    check::<crate::naga::Naga27>();
+    check::<crate::naga::Naga28>();
+    check::<crate::naga::Naga29>();
+    check::<crate::naga::NagaMain>();
+}
+
+#[test]
 fn ambiguous_clamp_call() {
     check_diagnostics_with_config(
         &DiagnosticsConfig {

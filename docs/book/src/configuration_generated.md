@@ -41,12 +41,6 @@ Default: `true`
 
 Whether to show diagnostics about the code semantics.
 
-## wgsl-analyzer.extensions.shaderInt64
-
-Default: `true`
-
-Whether to enable u64 and i64 scalar types.
-
 ## wgsl-analyzer.inlayHints.enabled
 
 Default: `true`
@@ -82,6 +76,12 @@ Whether to show inlay hints for types of variable declarations.
 Default: `"compact"`
 
 Verbosity of type hints: `"full"`, `"compact"`, or `"inner"`.
+
+## wgsl-analyzer.native.features
+
+Default: `false`
+
+Whether to allow native-only WGSL features.
 
 ## wgsl-analyzer.numThreads
 
