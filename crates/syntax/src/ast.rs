@@ -218,6 +218,7 @@ ast_node! {
     relative: Option<ImportRelative>;
     item: Option<ImportTree>;
 }
+impl HasAttributes for ImportStatement {}
 
 ast_enum! {
     enum ImportRelative {
@@ -297,6 +298,8 @@ ast_node! {
     right_brace_token: Option<SyntaxToken BraceRight>;
     items: AstChildren<Item>;
 }
+
+impl HasAttributes for GlobalCompoundDeclaration {}
 
 ast_node! {
     StructDeclaration:
@@ -401,6 +404,22 @@ ast_enum! {
         StructDeclaration,
         AssertStatement,
         GlobalCompoundDeclaration,
+    }
+}
+
+impl HasAttributes for Item {
+    fn attributes(&self) -> Option<AstChildren<Attribute>> {
+        match self {
+            Item::ImportStatement(item) => item.attributes(),
+            Item::FunctionDeclaration(item) => item.attributes(),
+            Item::VariableDeclaration(item) => item.attributes(),
+            Item::ConstantDeclaration(item) => item.attributes(),
+            Item::OverrideDeclaration(item) => item.attributes(),
+            Item::TypeAliasDeclaration(item) => item.attributes(),
+            Item::StructDeclaration(item) => item.attributes(),
+            Item::AssertStatement(item) => item.attributes(),
+            Item::GlobalCompoundDeclaration(item) => item.attributes(),
+        }
     }
 }
 
@@ -759,199 +778,87 @@ ast_node! {
     attributes: AstChildren<Attribute>;
 }
 
-ast_enum! {
-    enum Attribute {
-        AlignAttribute,
-        BindingAttribute,
-        BlendSrcAttribute,
-        BuiltinAttribute,
-        ConstantAttribute,
-        DiagnosticAttribute,
-        GroupAttribute,
-        IdAttribute,
-        InterpolateAttribute,
-        InvariantAttribute,
-        LocationAttribute,
-        MustUseAttribute,
-        SizeAttribute,
-        WorkgroupSizeAttribute,
-        VertexAttribute,
-        FragmentAttribute,
-        ComputeAttribute,
-        OtherAttribute,
-        IfAttribute,
-        ElifAttribute,
-        ElseAttribute,
-    }
+ast_node! {
+    Attribute:
+    name: Option<SyntaxToken Identifier>;
+    arguments: Option<Arguments>;
+}
+
+#[derive(PartialEq, Eq, Clone, Debug)]
+pub enum AttributeKind {
+    Align,
+    Binding,
+    BlendSrc,
+    Builtin,
+    Const,
+    Diagnostic,
+    Group,
+    Id,
+    Interpolate,
+    Invariant,
+    Location,
+    MustUse,
+    Size,
+    SubgroupSize,
+    WorkgroupSize,
+    Entrypoint(EntrypointAttributeKind),
+
+    /// WESL specific attributes
+    Conditional(ConditionalAttributeKind),
+
+    /// General attribute
+    Other,
+}
+
+#[derive(PartialEq, Eq, Clone, Debug)]
+pub enum EntrypointAttributeKind {
+    Vertex,
+    Fragment,
+    Compute,
+}
+
+#[derive(PartialEq, Eq, Clone, Debug)]
+pub enum ConditionalAttributeKind {
+    If,
+    Elif,
+    Else,
 }
 
 impl Attribute {
     #[must_use]
-    pub fn name(&self) -> Option<SyntaxToken> {
-        match self {
-            Self::AlignAttribute(inner) => inner.name(),
-            Self::BindingAttribute(inner) => inner.name(),
-            Self::BlendSrcAttribute(inner) => inner.name(),
-            Self::BuiltinAttribute(inner) => inner.name(),
-            Self::ConstantAttribute(inner) => inner.name(),
-            Self::DiagnosticAttribute(inner) => inner.name(),
-            Self::GroupAttribute(inner) => inner.name(),
-            Self::IdAttribute(inner) => inner.name(),
-            Self::InterpolateAttribute(inner) => inner.name(),
-            Self::InvariantAttribute(inner) => inner.name(),
-            Self::LocationAttribute(inner) => inner.name(),
-            Self::MustUseAttribute(inner) => inner.name(),
-            Self::SizeAttribute(inner) => inner.name(),
-            Self::WorkgroupSizeAttribute(inner) => inner.name(),
-            Self::VertexAttribute(inner) => inner.name(),
-            Self::FragmentAttribute(inner) => inner.name(),
-            Self::ComputeAttribute(inner) => inner.name(),
-            Self::OtherAttribute(inner) => inner.name(),
-            Self::IfAttribute(inner) => inner.name(),
-            Self::ElifAttribute(inner) => inner.name(),
-            Self::ElseAttribute(inner) => inner.name(),
+    pub fn kind(&self) -> AttributeKind {
+        let Some(name) = self.name() else {
+            return AttributeKind::Other;
+        };
+        match name.text() {
+            "align" => AttributeKind::Align,
+            "binding" => AttributeKind::Binding,
+            "blend_src" => AttributeKind::BlendSrc,
+            "builtin" => AttributeKind::Builtin,
+            "const" => AttributeKind::Const,
+            "diagnostic" => AttributeKind::Diagnostic,
+            "group" => AttributeKind::Group,
+            "id" => AttributeKind::Id,
+            "interpolate" => AttributeKind::Interpolate,
+            "invariant" => AttributeKind::Invariant,
+            "location" => AttributeKind::Location,
+            "must_use" => AttributeKind::MustUse,
+            "size" => AttributeKind::Size,
+            "workgroup_size" => AttributeKind::WorkgroupSize,
+            "vertex" => AttributeKind::Entrypoint(EntrypointAttributeKind::Vertex),
+            "fragment" => AttributeKind::Entrypoint(EntrypointAttributeKind::Fragment),
+            "compute" => AttributeKind::Entrypoint(EntrypointAttributeKind::Compute),
+            "if" => AttributeKind::Conditional(ConditionalAttributeKind::If),
+            "elif" => AttributeKind::Conditional(ConditionalAttributeKind::Elif),
+            "else" => AttributeKind::Conditional(ConditionalAttributeKind::Else),
+            _ => AttributeKind::Other,
         }
     }
 
     #[must_use]
-    pub const fn is_conditional_compilation(&self) -> bool {
-        matches!(
-            self,
-            Self::IfAttribute(_) | Self::ElifAttribute(_) | Self::ElseAttribute(_)
-        )
+    pub fn is_conditional_compilation(&self) -> bool {
+        matches!(self.kind(), AttributeKind::Conditional(_))
     }
-}
-
-ast_node! {
-    OtherAttribute:
-    name: Option<SyntaxToken Identifier>;
-    parameters: Option<Arguments>;
-}
-
-ast_node! {
-    AlignAttribute:
-    name: Option<SyntaxToken Align>;
-    parameter: Option<Expression>;
-}
-
-ast_node! {
-    BindingAttribute:
-    name: Option<SyntaxToken Binding>;
-    parameter: Option<Expression>;
-}
-
-ast_node! {
-    BlendSrcAttribute:
-    name: Option<SyntaxToken BlendSrc>;
-    parameter: Option<Expression>;
-}
-
-ast_node! {
-    BuiltinAttribute:
-    name: Option<SyntaxToken Builtin>;
-    value_name: Option<BuiltinValueName>;
-}
-
-ast_node! {
-    BuiltinValueName
-}
-
-ast_node! {
-    ConstantAttribute:
-    name: Option<SyntaxToken Const>;
-}
-
-ast_node! {
-    DiagnosticAttribute:
-    name: Option<SyntaxToken Diagnostic>;
-    parameters: Option<DiagnosticControl>;
-}
-
-ast_node! {
-    GroupAttribute:
-    name: Option<SyntaxToken Group>;
-    parameter: Option<Expression>;
-}
-
-ast_node! {
-    IfAttribute:
-    name: Option<SyntaxToken If>;
-    parameter: Option<Expression>;
-}
-
-ast_node! {
-    ElifAttribute:
-    name: Option<SyntaxToken Elif>;
-    parameter: Option<Expression>;
-}
-
-ast_node! {
-    ElseAttribute:
-    name: Option<SyntaxToken Else>;
-}
-
-ast_node! {
-    IdAttribute:
-    name: Option<SyntaxToken Id>;
-    parameter: Option<Expression>;
-}
-
-ast_node! {
-    InterpolateAttribute:
-    name: Option<SyntaxToken Interpolate>;
-    interpolate_type_name: Option<InterpolateTypeName>;
-    interpolate_sampling_name: Option<InterpolateSamplingName>;
-}
-
-ast_node! {
-    InterpolateTypeName
-}
-
-ast_node! {
-    InterpolateSamplingName
-}
-
-ast_node! {
-    InvariantAttribute:
-    name: Option<SyntaxToken Group>;
-}
-
-ast_node! {
-    LocationAttribute:
-    name: Option<SyntaxToken Group>;
-    parameter: Option<Expression>;
-}
-
-ast_node! {
-    MustUseAttribute:
-    name: Option<SyntaxToken MustUse>;
-}
-
-ast_node! {
-    SizeAttribute:
-    name: Option<SyntaxToken Group>;
-    parameter: Option<Expression>;
-}
-
-ast_node! {
-    WorkgroupSizeAttribute:
-    name: Option<SyntaxToken WorkgroupSize>;
-    parameters: AstChildren<Expression>;
-}
-
-ast_node! {
-    VertexAttribute:
-    name: Option<SyntaxToken Vertex>;
-}
-
-ast_node! {
-    FragmentAttribute:
-    name: Option<SyntaxToken Fragment>;
-}
-
-ast_node! {
-    ComputeAttribute:
-    name: Option<SyntaxToken Compute>;
 }
 
 ast_node! {
@@ -1402,7 +1309,7 @@ impl InfixExpression {
     }
 
     #[must_use]
-    pub fn op_kind(&self) -> Option<BinaryOperation> {
+    pub fn operator_kind(&self) -> Option<BinaryOperation> {
         if let Some(kind) = support::child_token::<BinaryOperatorKind>(self.syntax()) {
             #[rustfmt::skip]
             let operation = match kind {

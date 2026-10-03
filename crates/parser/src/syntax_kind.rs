@@ -177,14 +177,6 @@ pub enum SyntaxKind {
     /// A list of imports `{foo, bar, baz}`
     ImportCollection,
 
-    // WESL attributes
-    /// @if
-    IfAttribute,
-    /// @elif
-    ElifAttribute,
-    /// @else
-    ElseAttribute,
-
     // WESL experiment
     GlobalCompoundDeclaration,
 
@@ -233,57 +225,6 @@ pub enum SyntaxKind {
     SeverityControlName,
 
     AttributeList,
-    DiagnosticAttribute,
-    OtherAttribute,
-    EarlyDepthTest,
-    LessEqual,
-    GreaterEqual,
-    Force,
-    Unchanged,
-    EarlyDepthTestAttribute,
-    EarlyDepthTestMode,
-    AlignAttribute,
-    BindingAttribute,
-    BlendSrcAttribute,
-    BuiltinAttribute,
-    ConstantAttribute,
-    GroupAttribute,
-    IdAttribute,
-    InterpolateAttribute,
-    InvariantAttribute,
-    LocationAttribute,
-    MustUseAttribute,
-    SizeAttribute,
-    WorkgroupSizeAttribute,
-    VertexAttribute,
-    FragmentAttribute,
-    ComputeAttribute,
-    Align,
-    Builtin,
-    Binding,
-    BlendSrc,
-    Group,
-    Id,
-    Interpolate,
-    Invariant,
-    Location,
-    MustUse,
-    Size,
-    WorkgroupSize,
-    Vertex,
-    Fragment,
-    Compute,
-    Perspective,
-    Linear,
-    Flat,
-    Center,
-    Centroid,
-    Sample,
-    First,
-    Either,
-    BuiltinValueName,
-    InterpolateSamplingName,
-    InterpolateTypeName,
     Discard,
     Else,
     Enable,
@@ -377,9 +318,6 @@ pub enum SyntaxKind {
     Package,
     Super,
     As,
-
-    // Context-sensitive WESL token
-    Elif,
 
     #[token("+=")]
     PlusEqual,

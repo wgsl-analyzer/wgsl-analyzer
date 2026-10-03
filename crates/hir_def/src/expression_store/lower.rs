@@ -49,7 +49,7 @@ impl ExprCollector<'_> {
                 let right_side = self.collect_expression_opt(expression.right_side());
 
                 expression
-                    .op_kind()
+                    .operator_kind()
                     .map_or(Expression::Missing, |operator| {
                         Expression::BinaryOperation {
                             left_side,

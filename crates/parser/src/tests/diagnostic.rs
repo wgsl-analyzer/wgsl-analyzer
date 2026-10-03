@@ -13,17 +13,19 @@ fn parse_diagnostic_attribute() {
             SourceFile@0..57
               Blankspace@0..9 "\n        "
               AttributeList@9..30
-                DiagnosticAttribute@9..30
+                Attribute@9..30
                   AttributeOperator@9..10 "@"
-                  Diagnostic@10..20 "diagnostic"
-                  DiagnosticControl@20..30
+                  Identifier@10..20 "diagnostic"
+                  Arguments@20..30
                     ParenthesisLeft@20..21 "("
-                    SeverityControlName@21..24
-                      Identifier@21..24 "off"
+                    IdentExpression@21..24
+                      Path@21..24
+                        Identifier@21..24 "off"
                     Comma@24..25 ","
                     Blankspace@25..26 " "
-                    DiagnosticRuleName@26..29
-                      Identifier@26..29 "bla"
+                    IdentExpression@26..29
+                      Path@26..29
+                        Identifier@26..29 "bla"
                     ParenthesisRight@29..30 ")"
               Blankspace@30..39 "\n        "
               FunctionDeclaration@39..48

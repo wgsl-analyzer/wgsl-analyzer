@@ -16,17 +16,19 @@ fn capability_not_present() {
             SourceFile@0..129
               Blankspace@0..9 "\n        "
               AttributeList@9..51
-                FragmentAttribute@9..18
+                Attribute@9..18
                   AttributeOperator@9..10 "@"
-                  Fragment@10..18 "fragment"
+                  Identifier@10..18 "fragment"
                 Blankspace@18..27 "\n        "
-                EarlyDepthTestAttribute@27..51
+                Attribute@27..51
                   AttributeOperator@27..28 "@"
-                  EarlyDepthTest@28..44 "early_depth_test"
-                  ParenthesisLeft@44..45 "("
-                  EarlyDepthTestMode@45..50
-                    Force@45..50 "force"
-                  ParenthesisRight@50..51 ")"
+                  Identifier@28..44 "early_depth_test"
+                  Arguments@44..51
+                    ParenthesisLeft@44..45 "("
+                    IdentExpression@45..50
+                      Path@45..50
+                        Identifier@45..50 "force"
+                    ParenthesisRight@50..51 ")"
               Blankspace@51..60 "\n        "
               FunctionDeclaration@60..120
                 Fn@60..62 "fn"
@@ -49,13 +51,14 @@ fn capability_not_present() {
                   Arrow@91..93 "->"
                   Blankspace@93..94 " "
                   AttributeList@94..106
-                    LocationAttribute@94..106
+                    Attribute@94..106
                       AttributeOperator@94..95 "@"
-                      Location@95..103 "location"
-                      ParenthesisLeft@103..104 "("
-                      Literal@104..105
-                        IntLiteral@104..105 "0"
-                      ParenthesisRight@105..106 ")"
+                      Identifier@95..103 "location"
+                      Arguments@103..106
+                        ParenthesisLeft@103..104 "("
+                        Literal@104..105
+                          IntLiteral@104..105 "0"
+                        ParenthesisRight@105..106 ")"
                   Blankspace@106..107 " "
                   TypeSpecifier@107..116
                     Path@107..111
@@ -71,9 +74,7 @@ fn capability_not_present() {
                   BraceLeft@117..118 "{"
                   Blankspace@118..119 " "
                   BraceRight@119..120 "}"
-              Blankspace@120..129 "\n        "
-
-            error at 27..51: the extension EARLY_DEPTH_TEST is not enabled"#]],
+              Blankspace@120..129 "\n        ""#]],
     );
 }
 
@@ -93,17 +94,19 @@ fn parse_early_depth_test_force() {
             SourceFile@0..129
               Blankspace@0..9 "\n        "
               AttributeList@9..51
-                FragmentAttribute@9..18
+                Attribute@9..18
                   AttributeOperator@9..10 "@"
-                  Fragment@10..18 "fragment"
+                  Identifier@10..18 "fragment"
                 Blankspace@18..27 "\n        "
-                EarlyDepthTestAttribute@27..51
+                Attribute@27..51
                   AttributeOperator@27..28 "@"
-                  EarlyDepthTest@28..44 "early_depth_test"
-                  ParenthesisLeft@44..45 "("
-                  EarlyDepthTestMode@45..50
-                    Force@45..50 "force"
-                  ParenthesisRight@50..51 ")"
+                  Identifier@28..44 "early_depth_test"
+                  Arguments@44..51
+                    ParenthesisLeft@44..45 "("
+                    IdentExpression@45..50
+                      Path@45..50
+                        Identifier@45..50 "force"
+                    ParenthesisRight@50..51 ")"
               Blankspace@51..60 "\n        "
               FunctionDeclaration@60..120
                 Fn@60..62 "fn"
@@ -126,13 +129,14 @@ fn parse_early_depth_test_force() {
                   Arrow@91..93 "->"
                   Blankspace@93..94 " "
                   AttributeList@94..106
-                    LocationAttribute@94..106
+                    Attribute@94..106
                       AttributeOperator@94..95 "@"
-                      Location@95..103 "location"
-                      ParenthesisLeft@103..104 "("
-                      Literal@104..105
-                        IntLiteral@104..105 "0"
-                      ParenthesisRight@105..106 ")"
+                      Identifier@95..103 "location"
+                      Arguments@103..106
+                        ParenthesisLeft@103..104 "("
+                        Literal@104..105
+                          IntLiteral@104..105 "0"
+                        ParenthesisRight@105..106 ")"
                   Blankspace@106..107 " "
                   TypeSpecifier@107..116
                     Path@107..111
@@ -168,17 +172,19 @@ fn parse_early_depth_test_greater_equal() {
             SourceFile@0..137
               Blankspace@0..9 "\n        "
               AttributeList@9..59
-                FragmentAttribute@9..18
+                Attribute@9..18
                   AttributeOperator@9..10 "@"
-                  Fragment@10..18 "fragment"
+                  Identifier@10..18 "fragment"
                 Blankspace@18..27 "\n        "
-                EarlyDepthTestAttribute@27..59
+                Attribute@27..59
                   AttributeOperator@27..28 "@"
-                  EarlyDepthTest@28..44 "early_depth_test"
-                  ParenthesisLeft@44..45 "("
-                  EarlyDepthTestMode@45..58
-                    GreaterEqual@45..58 "greater_equal"
-                  ParenthesisRight@58..59 ")"
+                  Identifier@28..44 "early_depth_test"
+                  Arguments@44..59
+                    ParenthesisLeft@44..45 "("
+                    IdentExpression@45..58
+                      Path@45..58
+                        Identifier@45..58 "greater_equal"
+                    ParenthesisRight@58..59 ")"
               Blankspace@59..68 "\n        "
               FunctionDeclaration@68..128
                 Fn@68..70 "fn"
@@ -201,13 +207,14 @@ fn parse_early_depth_test_greater_equal() {
                   Arrow@99..101 "->"
                   Blankspace@101..102 " "
                   AttributeList@102..114
-                    LocationAttribute@102..114
+                    Attribute@102..114
                       AttributeOperator@102..103 "@"
-                      Location@103..111 "location"
-                      ParenthesisLeft@111..112 "("
-                      Literal@112..113
-                        IntLiteral@112..113 "0"
-                      ParenthesisRight@113..114 ")"
+                      Identifier@103..111 "location"
+                      Arguments@111..114
+                        ParenthesisLeft@111..112 "("
+                        Literal@112..113
+                          IntLiteral@112..113 "0"
+                        ParenthesisRight@113..114 ")"
                   Blankspace@114..115 " "
                   TypeSpecifier@115..124
                     Path@115..119
@@ -243,17 +250,19 @@ fn parse_early_depth_test_less_equal() {
             SourceFile@0..134
               Blankspace@0..9 "\n        "
               AttributeList@9..56
-                FragmentAttribute@9..18
+                Attribute@9..18
                   AttributeOperator@9..10 "@"
-                  Fragment@10..18 "fragment"
+                  Identifier@10..18 "fragment"
                 Blankspace@18..27 "\n        "
-                EarlyDepthTestAttribute@27..56
+                Attribute@27..56
                   AttributeOperator@27..28 "@"
-                  EarlyDepthTest@28..44 "early_depth_test"
-                  ParenthesisLeft@44..45 "("
-                  EarlyDepthTestMode@45..55
-                    LessEqual@45..55 "less_equal"
-                  ParenthesisRight@55..56 ")"
+                  Identifier@28..44 "early_depth_test"
+                  Arguments@44..56
+                    ParenthesisLeft@44..45 "("
+                    IdentExpression@45..55
+                      Path@45..55
+                        Identifier@45..55 "less_equal"
+                    ParenthesisRight@55..56 ")"
               Blankspace@56..65 "\n        "
               FunctionDeclaration@65..125
                 Fn@65..67 "fn"
@@ -276,13 +285,14 @@ fn parse_early_depth_test_less_equal() {
                   Arrow@96..98 "->"
                   Blankspace@98..99 " "
                   AttributeList@99..111
-                    LocationAttribute@99..111
+                    Attribute@99..111
                       AttributeOperator@99..100 "@"
-                      Location@100..108 "location"
-                      ParenthesisLeft@108..109 "("
-                      Literal@109..110
-                        IntLiteral@109..110 "0"
-                      ParenthesisRight@110..111 ")"
+                      Identifier@100..108 "location"
+                      Arguments@108..111
+                        ParenthesisLeft@108..109 "("
+                        Literal@109..110
+                          IntLiteral@109..110 "0"
+                        ParenthesisRight@110..111 ")"
                   Blankspace@111..112 " "
                   TypeSpecifier@112..121
                     Path@112..116
@@ -318,17 +328,19 @@ fn parse_early_depth_test_unchanged() {
             SourceFile@0..133
               Blankspace@0..9 "\n        "
               AttributeList@9..55
-                FragmentAttribute@9..18
+                Attribute@9..18
                   AttributeOperator@9..10 "@"
-                  Fragment@10..18 "fragment"
+                  Identifier@10..18 "fragment"
                 Blankspace@18..27 "\n        "
-                EarlyDepthTestAttribute@27..55
+                Attribute@27..55
                   AttributeOperator@27..28 "@"
-                  EarlyDepthTest@28..44 "early_depth_test"
-                  ParenthesisLeft@44..45 "("
-                  EarlyDepthTestMode@45..54
-                    Unchanged@45..54 "unchanged"
-                  ParenthesisRight@54..55 ")"
+                  Identifier@28..44 "early_depth_test"
+                  Arguments@44..55
+                    ParenthesisLeft@44..45 "("
+                    IdentExpression@45..54
+                      Path@45..54
+                        Identifier@45..54 "unchanged"
+                    ParenthesisRight@54..55 ")"
               Blankspace@55..64 "\n        "
               FunctionDeclaration@64..124
                 Fn@64..66 "fn"
@@ -351,13 +363,14 @@ fn parse_early_depth_test_unchanged() {
                   Arrow@95..97 "->"
                   Blankspace@97..98 " "
                   AttributeList@98..110
-                    LocationAttribute@98..110
+                    Attribute@98..110
                       AttributeOperator@98..99 "@"
-                      Location@99..107 "location"
-                      ParenthesisLeft@107..108 "("
-                      Literal@108..109
-                        IntLiteral@108..109 "0"
-                      ParenthesisRight@109..110 ")"
+                      Identifier@99..107 "location"
+                      Arguments@107..110
+                        ParenthesisLeft@107..108 "("
+                        Literal@108..109
+                          IntLiteral@108..109 "0"
+                        ParenthesisRight@109..110 ")"
                   Blankspace@110..111 " "
                   TypeSpecifier@111..120
                     Path@111..115

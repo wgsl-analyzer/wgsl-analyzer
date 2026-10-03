@@ -27,22 +27,6 @@ token
 	True='true'
 	False='false'
 	Diagnostic='diagnostic'
-	Align='align'
-	Builtin='builtin'
-	Binding='binding'
-	BlendSrc='blend_src'
-	Group='group'
-	Id='id'
-	Interpolate='interpolate'
-	Invariant='invariant'
-	Location='location'
-	MustUse='must_use'
-	Size='size'
-	WorkgroupSize='workgroup_size'
-	Vertex='vertex'
-	Fragment='fragment'
-	Compute='compute'
-	EarlyDepthTest='early_depth_test'
 ;
 
 token
@@ -110,31 +94,6 @@ token
 	IntLiteral='<integer literal>'
 ;
 
-token
-	Perspective='perspective'
-	Linear='linear'
-	Flat='flat'
-;
-
-token
-	Center='center'
-	Centroid='centroid'
-	Sample='sample'
-	First='first'
-	Either='either'
-;
-
-token
-	Force='force'
-	GreaterEqual='greater_equal'
-	LessEqual='less_equal'
-	Unchanged='unchanged'
-;
-
-token
-	Elif='elif'
-;
-
 token Blankspace LineEndingComment BlockComment;
 
 skip Blankspace LineEndingComment BlockComment;
@@ -147,6 +106,7 @@ part expression;
 part statement;
 part type_specifier;
 
+attribute: '@' Identifier [?t argument_expression_list];
 attribute_list: attribute*;
 
 translation_unit: (global_item | ';')*;
@@ -218,68 +178,6 @@ struct_body:
 ;
 
 struct_member: name ':' type_specifier;
-
-// all attributes that do not use keywords have to be parsed generically and separated later
-attribute^:
-	'@'
-	(
-		'align' '(' expression [','] ')' >align_attr
-		| 'binding' '(' expression [','] ')' >binding_attr
-		| 'blend_src' '(' expression [','] ')' >blend_src_attr
-		| 'builtin' '(' builtin_value_name [','] ')' >builtin_attr
-		| 'const' >const_attr
-		| 'diagnostic' diagnostic_control >diagnostic_attr
-		| 'group' '(' expression [','] ')' >group_attr
-		| 'id' '(' expression [','] ')' >id_attr
-		| 'interpolate' '(' interpolate_type_name [ ',' ] [ interpolate_sampling_name [ ',' ] ] ')' >interpolate_attr
-		| 'invariant' >invariant_attr
-		| 'location' '(' expression [','] ')' >location_attr
-		| 'must_use' >must_use_attr
-		| 'size' '(' expression [','] ')'>size_attr
-		| workgroup_size_attr >workgroup_size_attr
-		| 'vertex' >vertex_attr
-		| 'fragment' >fragment_attr
-		| 'compute' >compute_attr
-		| 'early_depth_test' '(' early_depth_test_mode ')' >early_depth_test_attr
-		| 'if' '(' expression [','] ')' >if_attr
-		| 'elif' '(' expression [','] ')' >elif_attr
-		| 'else' >else_attr
-		| Identifier [?t argument_expression_list] >other_attr
-	)
-;
-
-// https://docs.rs/wgpu/latest/wgpu/struct.Features.html#associatedconstant.SHADER_EARLY_DEPTH_TEST
-early_depth_test_mode:
-	'force'
-	| 'greater_equal'
-	| 'less_equal'
-	| 'unchanged'
-;
-
-builtin_value_name: Identifier;
-
-interpolate_type_name:
-	'perspective'
-	| 'linear'
-	| 'flat'
-;
-
-interpolate_sampling_name:
-	'center'
-	| 'centroid'
-	| 'sample'
-	| 'first'
-	| 'either'
-;
-
-workgroup_size_attr^:
-	'workgroup_size' '(' expression
-		[ ',' expression
-			[ ',' expression
-				[ ',' ]
-			]
-		]
-	')' ;
 
 typed_ident^: name (':' type_specifier | ());
 

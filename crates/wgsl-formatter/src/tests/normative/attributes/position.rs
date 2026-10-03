@@ -17,19 +17,17 @@ pub(crate) fn format_attribute_offset_size_align_are_grouped() {
         "struct VertexOutput {
             @align(7)
             @size(9)
-            @offset(28)
             a: u32,
             @align(7)
             @location(1)
             @size(9)
-            @offset(28)
             b: u32,
         }",
         expect![[r#"
             struct VertexOutput {
-                @offset(28) @align(7) @size(9)
+                @align(7) @size(9)
                 a: u32,
-                @offset(28) @align(7) @size(9)
+                @align(7) @size(9)
                 @location(1) b: u32,
             }
         "#]],
