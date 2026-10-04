@@ -4,7 +4,7 @@ struct Particle {
     velocity: vec3<f32>,
     padding2: f32,
     color: vec4<f32>,
-};
+}
 
 struct SimParams {
     delta_time: f32,
@@ -18,7 +18,7 @@ struct SimParams {
     mouse_position_y: f32,
     mouse_position_z: f32,
     is_mouse_dragging: u32,
-};
+}
 
 @group(0) @binding(0)
 var<storage, read_write> particles: array<Particle>;
@@ -40,10 +40,10 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
 
     if params.is_mouse_dragging > 0u {
         let mouse_pos_3d = vec3<f32>(
-            params.mouse_position_x,
-            params.mouse_position_y,
-            params.mouse_position_z
-        );
+                params.mouse_position_x,
+                params.mouse_position_y,
+                params.mouse_position_z,
+            );
 
         let dir = mouse_pos_3d - particle.position;
         let dist = length(dir);
