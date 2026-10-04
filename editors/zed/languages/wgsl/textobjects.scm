@@ -1,7 +1,7 @@
-(function_decl
+(function_declaration
   body: (_) @function.inside) @function.around
 
-(struct_decl
+(struct_declaration
   body: (_) @class.inside) @class.around
 
 (param_list

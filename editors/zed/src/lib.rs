@@ -42,11 +42,11 @@ impl WgslExtension {
             (zed::Os::Mac, _) => "wgsl-analyzer-x86_64-apple-darwin.gz",
             (zed::Os::Linux, zed::Architecture::Aarch64) => {
                 "wgsl-analyzer-aarch64-unknown-linux-gnu.gz"
-            }
+            },
             (zed::Os::Linux, _) => "wgsl-analyzer-x86_64-unknown-linux-gnu.gz",
             (zed::Os::Windows, zed::Architecture::Aarch64) => {
                 "wgsl-analyzer-aarch64-pc-windows-msvc.zip"
-            }
+            },
             (zed::Os::Windows, _) => "wgsl-analyzer-x86_64-pc-windows-msvc.zip",
         };
 
@@ -60,7 +60,7 @@ impl WgslExtension {
         let bin_dir = format!("{}/bin", version_dir);
 
         fs::create_dir_all(&bin_dir)
-            .map_err(|err| format!("failed to create directory '{bin_dir}': {err}"))?;
+            .map_err(|error| format!("failed to create directory '{bin_dir}': {error}"))?;
 
         let binary_name = if platform == zed::Os::Windows {
             "wgsl-analyzer.exe"
@@ -101,7 +101,7 @@ impl WgslExtension {
                             }
                         }
                         exe_path.ok_or_else(|| "Could not find extracted executable".to_string())?
-                    }
+                    },
                     Err(e) => return Err(format!("Failed to read directory: {}", e)),
                 };
 

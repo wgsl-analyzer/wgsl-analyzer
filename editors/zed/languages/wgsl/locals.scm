@@ -1,6 +1,6 @@
 ; Scopes
 [
-  (global_decl)
+  (global_declaration)
   (switch_body)
   (compound_statement)
 ] @local.scope

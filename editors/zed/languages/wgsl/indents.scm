@@ -1,6 +1,6 @@
 [
-  (struct_decl)
-  (function_decl)
+  (struct_declaration)
+  (function_declaration)
   (if_statement)
   ; (else_statement)
   (switch_statement)

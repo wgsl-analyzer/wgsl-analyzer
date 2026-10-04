@@ -1,8 +1,8 @@
-(function_decl
+(function_declaration
   (function_header (identifier) @name)) @item
 
-(struct_decl
+(struct_declaration
   (identifier) @name) @item
 
-(variable_decl
+(variable_declaration
   (identifier) @name) @item
