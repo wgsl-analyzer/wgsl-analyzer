@@ -5,8 +5,8 @@ own LSP client — the `monaco.lsp` namespace, bundled into `monaco-editor` sinc
 
 ## Running
 
-Build the package first. Vite serves its `dist/assets/` directly as `publicDir`, so there is
-nothing to copy.
+Build the package first. Vite picks up its worker, glue and wasm through `import.meta.url`, so
+there is nothing to copy.
 
 ```bash
 rustup +nightly component add rust-src

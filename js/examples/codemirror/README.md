@@ -5,8 +5,8 @@ A minimal CodeMirror 6 editor driven by `wgsl-analyzer` running in a Web Worker,
 
 ## Running
 
-Build the package first. Vite serves its `dist/assets/` directly as `publicDir`, so there is
-nothing to copy.
+Build the package first. Vite picks up its worker, glue and wasm through `import.meta.url`, so
+there is nothing to copy.
 
 ```bash
 rustup +nightly component add rust-src
