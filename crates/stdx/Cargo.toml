@@ -12,7 +12,7 @@ doctest = false
 
 [dependencies]
 crossbeam-channel.workspace = true
-crossbeam-utils = "0.8.21"
+crossbeam-utils = "0.8.23"
 itertools.workspace = true
 jod-thread = "1.0.0"
 tracing.workspace = true
