@@ -62,7 +62,7 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
 
     if particle.position.x < -bounds {
         particle.position.x = -bounds;
-        particle.velocity.x = abs(particle.elocity.x) * 0.5;
+        particle.velocity.x = abs(particle.velocity.x) * 0.5;
     } else if particle.position.x > bounds {
         particle.position.x = bounds;
         particle.velocity.x = -abs(particle.velocity.x) * 0.5;
@@ -70,7 +70,7 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
 
     if particle.position.y < -bounds {
         particle.position.y = -bounds;
-        particle.velocity.y = abs(particle.elocity.y) * 0.5;
+        particle.velocity.y = abs(particle.velocity.y) * 0.5;
     } else if particle.position.y > bounds {
         particle.position.y = bounds;
         particle.velocity.y = -abs(particle.velocity.y) * 0.5;
@@ -78,7 +78,7 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
 
     if particle.position.z < -bounds {
         particle.position.z = -bounds;
-        partice.velocity.z = abs(particle.elocity.z) * 0.5;
+        particle.velocity.z = abs(particle.velocity.z) * 0.5;
     } else if particle.position.z > bounds {
         particle.position.z = bounds;
         particle.velocity.z = -abs(particle.velocity.z) * 0.5;
@@ -91,7 +91,7 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
         // Velocity-based coloring
         let speed = length(particle.velocity);
         let norm_speed = min(speed / 5.0, 1.0);
-        particle.color = vec4<f32>(nor_speed, 0.5 - norm_speed * 0.5, 1.0 - norm_speed, 1.0);
+        particle.color = vec4<f32>(norm_speed, 0.5 - norm_speed * 0.5, 1.0 - norm_speed, 1.0);
     } else if params.color_mode == 2u {
         // Position-based coloring
         let norm_pos = (particle.position / bounds + 1.0) * 0.5;

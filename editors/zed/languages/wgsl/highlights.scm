@@ -27,7 +27,7 @@
   (#match? @type "^[A-Z]"))
 
 ; Struct declarations
-(struct_decl
+(struct_declaration
   name: (_) @type)
 
 ; Constants
@@ -40,7 +40,7 @@
   (#match? @constant "^[A-Z0-9_]+$"))
 
 ; Functions
-(function_decl
+(function_declaration
   (function_header
     (identifier) @function))
 
@@ -54,7 +54,7 @@
 (template_list) @punctuation
 
 ; Storage modifiers - FIXED
-(variable_decl
+(variable_declaration
   (template_list
     (identifier) @keyword
     (#any-of? @keyword "private" "storage" "uniform" "workgroup" "read" "write" "read_write")))
@@ -78,7 +78,7 @@
 (param
   (identifier) @variable.parameter)
 
-(variable_decl
+(variable_declaration
   (identifier) @variable)
 
 (struct_member
