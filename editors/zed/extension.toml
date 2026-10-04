@@ -1,0 +1,18 @@
+id = "wgsl-wesl"
+name = "WGSL/WESL"
+version = "0.0.3"
+schema_version = 1
+authors = ["Lucas de Linhares <lucasdelinhares@gmail.com>"]
+description = "Supports grammar for WGSL, WESL as well as best-effort support for Bevy (naga_oil) extensions and uses the wgsl-analyzer LSP"
+repository = "https://github.com/wgsl-analyzer/wgsl-analyzer"
+path = "editors/zed"
+
+
+[language_servers.wgsl_analyzer]
+name = "wgsl_analyzer"
+# languages = ["wgsl", "wesl"]
+languages = ["WGSL/WESL"]
+
+[grammars.wesl]
+repository = "https://github.com/wgsl-tooling-wg/tree-sitter-wesl"
+commit = "3fa2b96bf5c217dae9bf663e2051fcdad0762c19"
