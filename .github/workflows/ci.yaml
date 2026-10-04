@@ -386,6 +386,10 @@ jobs:
         run: pnpm install --frozen-lockfile
         working-directory: ./editors/code
 
+      - name: Check the lockfile is deduplicated
+        run: pnpm dedupe --check
+        working-directory: ./editors/code
+
       #    - run: pnpm audit || { sleep 10 && pnpm audit; } || { sleep 30 && pnpm audit; }
       #      if: runner.os == 'Linux'
       #      working-directory: ./editors/code
@@ -452,6 +456,10 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+        working-directory: ./js
+
+      - name: Check the lockfile is deduplicated
+        run: pnpm dedupe --check
         working-directory: ./js
 
       - name: Build
