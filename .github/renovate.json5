@@ -17,6 +17,7 @@
 		"S-Ready-to-Review",
 	],
 	minimumReleaseAge: "7 days",
+	postUpdateOptions: ["pnpmDedupe"],
 	packageRules: [
 		{
 			"description": "Group not-breaking updates",
