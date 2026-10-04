@@ -7,7 +7,6 @@ description = "Supports grammar for WGSL, WESL as well as best-effort support fo
 repository = "https://github.com/wgsl-analyzer/wgsl-analyzer"
 path = "editors/zed"
 
-
 [language_servers.wgsl_analyzer]
 name = "wgsl_analyzer"
 # languages = ["wgsl", "wesl"]

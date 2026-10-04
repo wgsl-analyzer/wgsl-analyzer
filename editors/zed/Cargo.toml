@@ -10,7 +10,7 @@ crate-type = ["cdylib"]
 zed_extension_api = "0.7"
 
 [profile.release]
-codegen-units = 1 # Allows LLVM to perform better optimization.
-lto = true        # Enables link-time-optimizations.
-panic = "abort"   # Higher performance by disabling panic handlers.
-strip = true      # Ensures debug symbols are removed.
+strip = true  # Ensures debug symbols are removed.
+lto = true  # Enables link-time-optimizations.
+panic = "abort"  # Higher performance by disabling panic handlers.
+codegen-units = 1  # Allows LLVM to perform better optimization.
