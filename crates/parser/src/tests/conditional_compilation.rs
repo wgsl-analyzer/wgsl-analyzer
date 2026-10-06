@@ -15,7 +15,7 @@ fn module_compound_nested() {
                 Attribute@9..18
                   AttributeOperator@9..10 "@"
                   Identifier@10..12 "if"
-                  Arguments@12..18
+                  AttributeArguments@12..18
                     ParenthesisLeft@12..13 "("
                     Literal@13..17
                       True@13..17 "true"
@@ -59,7 +59,7 @@ fn function_compound_nested() {
                     Attribute@20..29
                       AttributeOperator@20..21 "@"
                       Identifier@21..23 "if"
-                      Arguments@23..29
+                      AttributeArguments@23..29
                         ParenthesisLeft@23..24 "("
                         Literal@24..28
                           True@24..28 "true"

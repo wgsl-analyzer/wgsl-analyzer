@@ -414,7 +414,7 @@ pub(crate) fn format_comments_in_interpolate_attr() {
         override a: usize = 0;
         ",
         expect![[r#"
-            /* 0 */ @ /* 1 */ interpolate /* 2 */ (/* 3 */ flat /* 4 */ , /* 5 */ either /* 6 */ )
+            /* 0 */ @ /* 1 */ interpolate /* 2 */ (/* 3 */ flat, /* 4 */ /* 5 */ either /* 6 */)
             /* 7 */ override a: usize = 0;
         "#]],
         expect![[r#"
@@ -423,10 +423,9 @@ pub(crate) fn format_comments_in_interpolate_attr() {
             interpolate // 2
             (
                 // 3
-                flat // 4
-                ,
+                flat, // 4
                 // 5
-                either // 6
+                either, // 6
             )
             // 7
             override a: usize = 0;
@@ -540,7 +539,7 @@ pub(crate) fn format_comments_in_diagnostic_attr_simple_1() {
     check_comments(
         "## @ ## diagnostic ## ( ## off ## , ## something ## ) ## fn ## main() {}",
         expect![[r#"
-            /* 0 */ @ /* 1 */ diagnostic /* 2 */ (/* 3 */ off /* 4 */ , /* 5 */ something /* 6 */ )
+            /* 0 */ @ /* 1 */ diagnostic /* 2 */ (/* 3 */ off, /* 4 */ /* 5 */ something /* 6 */)
             /* 7 */ fn /* 8 */ main() {}
         "#]],
         expect![[r#"
@@ -549,10 +548,9 @@ pub(crate) fn format_comments_in_diagnostic_attr_simple_1() {
             diagnostic // 2
             (
                 // 3
-                off // 4
-                ,
+                off, // 4
                 // 5
-                something // 6
+                something, // 6
             )
             // 7
             fn // 8

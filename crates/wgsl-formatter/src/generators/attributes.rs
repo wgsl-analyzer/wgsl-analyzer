@@ -1,5 +1,6 @@
 use std::{collections::BTreeMap, string::String};
 
+use dprint_core::formatting::PrintItems;
 use dprint_core_macros::sc;
 use itertools::{Itertools as _, Position};
 use syntax::{
@@ -9,13 +10,14 @@ use syntax::{
 
 use crate::{
     ast_parse::{
-        DiscardBlankspace, NoTrivia, Succeeding, parse_end, parse_many_nodes_with, parse_node_with,
-        syntax_iter,
+        DiscardBlankspace, DiscardComma, DiscardParenthesis, NoTrivia, StopAtNewline, Succeeding,
+        parse_end, parse_many_nodes_with, parse_node_with, syntax_iter,
     },
     generators::node::{
         gen_node_content, gen_node_preceding_trivia, gen_node_succeeding_trivia,
         gen_node_with_trivia,
     },
+    multiline_group::MultilineGroup,
     options::TEMP_EXPERIMENTAL_CONDCOMP_MODE,
     print_item_buffer::{
         PrintItemBuffer,
@@ -256,23 +258,95 @@ pub(crate) fn gen_attribute(attribute: &ast::Attribute) -> FormatDocumentResult<
     if let AttributeKind::Conditional(_) = attribute.kind() {
         gen_attr_condcomp(attribute)
     } else {
-        gen_other_attribute(attribute)
+        gen_attr_standard(attribute)
     }
 }
 
-fn gen_other_attribute(attribute: &ast::Attribute) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_attribute_arguments(
+    arguments: &ast::AttributeArguments
+) -> FormatDocumentResult<PrintItemBuffer> {
+    // ==== Parse ====
+    let mut syntax = syntax_iter(arguments.syntax());
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::ParenthesisLeft)?;
+    let item_arguments: Vec<_> = parse_many_nodes_with(
+        &mut syntax,
+        (
+            Succeeding(StopAtNewline),
+            DiscardBlankspace,
+            DiscardComma,
+            DiscardParenthesis,
+        ),
+    )
+    .filter(|node| !node.is_whitespace())
+    .map(|item| item.expect_ast_node_optional::<ast::Expression>())
+    .try_collect()?;
+
+    parse_end(&mut syntax)?;
+
+    // ==== Format ====
+    let mut formatted = PrintItemBuffer::default();
+
+    let mut multiline_group = MultilineGroup::new_before_requests(&mut formatted);
+    multiline_group.push_sc(sc!("("));
+
+    // If its blank we do not give the formatter the option to break within the ()
+    if !item_arguments.is_empty() {
+        multiline_group.start_indent_before_requests();
+        multiline_group.grouped_possible_newline();
+        multiline_group.request(Request::discourage(RequestItem::EmptyLine));
+        multiline_group.request(Request::discourage(RequestItem::Space));
+
+        for (position, item) in item_arguments.into_iter().with_position() {
+            multiline_group.grouped_newline_or_space();
+            multiline_group.extend(gen_node_preceding_trivia(&item)?);
+            if item.has_content() {
+                multiline_group.extend(gen_node_content(&item)?);
+                multiline_group.request(Request::discourage(RequestItem::Space));
+                if position == Position::Last || position == Position::Only {
+                    multiline_group.extend_if_multi_line({
+                        let mut pi = PrintItems::default();
+                        pi.push_sc(sc!(","));
+                        pi
+                    });
+                } else {
+                    multiline_group.push_sc(sc!(","));
+                }
+            }
+            multiline_group.extend(gen_node_succeeding_trivia(&item)?);
+        }
+
+        multiline_group.request(Request::discourage(RequestItem::Space));
+        multiline_group.grouped_possible_newline();
+        multiline_group.finish_indent_before_requests();
+    }
+
+    multiline_group.push_sc(sc!(")"));
+    multiline_group.end_before_requests();
+    Ok(formatted)
+}
+
+/// Attributes of the form:
+/// `'@' 'expected_token'`
+/// and
+/// `'@' 'expected_token' '(' expression (',' expression)* [','] ')'`.
+pub(crate) fn gen_attr_standard(
+    attribute: &ast::Attribute
+) -> FormatDocumentResult<PrintItemBuffer> {
+    // ==== Parse ====
     let mut syntax = syntax_iter(attribute.syntax());
 
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::AttributeOperator)?;
-    let item_identifier = parse_node_with(&mut syntax, DiscardBlankspace)
+    let item_attribute_name = parse_node_with(&mut syntax, DiscardBlankspace)
         .expect_kind(syntax::SyntaxKind::Identifier)?;
     let item_arguments = parse_node_with(&mut syntax, DiscardBlankspace)
-        .only_if_kind(SyntaxKind::Arguments, &mut syntax);
+        .only_if_kind(SyntaxKind::AttributeArguments, &mut syntax);
     parse_end(&mut syntax)?;
+
+    // ==== Format ====
 
     let mut formatted = PrintItemBuffer::default();
     formatted.push_sc(sc!("@"));
-    formatted.extend(gen_node_with_trivia(&item_identifier)?);
+    formatted.extend(gen_node_with_trivia(&item_attribute_name)?);
     if let Some(item_arguments) = item_arguments {
         formatted.extend(gen_node_with_trivia(&item_arguments)?);
     }
@@ -322,7 +396,7 @@ fn gen_attr_condcomp(attribute: &ast::Attribute) -> FormatDocumentResult<PrintIt
     if dedent {
         formatted.start_ignoring_indent_before_requests();
     }
-    formatted.extend(gen_other_attribute(attribute)?);
+    formatted.extend(gen_attr_standard(attribute)?);
 
     if dedent {
         formatted.finish_ignoring_indent_before_requests();

@@ -821,7 +821,7 @@ fn context_sensitive_keywords() {
                 Attribute@9..18
                   AttributeOperator@9..10 "@"
                   Identifier@10..12 "if"
-                  Arguments@12..18
+                  AttributeArguments@12..18
                     ParenthesisLeft@12..13 "("
                     Literal@13..17
                       True@13..17 "true"
@@ -857,7 +857,7 @@ fn context_sensitive_keywords() {
                 Attribute@62..74
                   AttributeOperator@62..63 "@"
                   Identifier@63..67 "elif"
-                  Arguments@67..74
+                  AttributeArguments@67..74
                     ParenthesisLeft@67..68 "("
                     Literal@68..73
                       False@68..73 "false"

@@ -113,7 +113,7 @@ pub enum SyntaxKind {
     FieldExpression,
     /// `pow(2, 3)`
     FunctionCall,
-    /// Arguments in an attribute or in a function call
+    /// Arguments in a function call
     Arguments,
     /// an identifier with an optional template `foo<bar>`
     /// can refer to a type
@@ -137,6 +137,8 @@ pub enum SyntaxKind {
     TypeSpecifier,
     /// `location(0, 1, 2)`
     Attribute,
+    /// arguments in an attribute
+    AttributeArguments,
     /// the definition of a struct
     StructDeclaration,
     /// the members of a struct definition inside of braces
@@ -217,7 +219,7 @@ pub enum SyntaxKind {
     Continue,
     Continuing,
     Default,
-    // This is a keyword. It could be part of the global directive or an attribute.
+    /// `diagnostic` keyword. Part of the diagnostic directive.
     Diagnostic,
     DiagnosticControl,
     DiagnosticDirective,
@@ -412,13 +414,6 @@ impl SyntaxKind {
                 | Self::EnableDirective
                 | Self::RequiresDirective
                 | Self::DiagnosticDirective
-                | Self::Attribute
-                | Self::ImportStatement
-                | Self::ImportPath
-                | Self::ImportCollection
-                | Self::ImportItem
-                | Self::ImportPackageRelative
-                | Self::ImportSuperRelative
         )
     }
 

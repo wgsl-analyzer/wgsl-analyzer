@@ -19,7 +19,7 @@ fn foo(){}
                 Attribute@1..10
                   AttributeOperator@1..2 "@"
                   Identifier@2..4 "if"
-                  Arguments@4..10
+                  AttributeArguments@4..10
                     ParenthesisLeft@4..5 "("
                     Literal@5..9
                       True@5..9 "true"
@@ -41,7 +41,7 @@ fn foo(){}
                 Attribute@22..34
                   AttributeOperator@22..23 "@"
                   Identifier@23..27 "elif"
-                  Arguments@27..34
+                  AttributeArguments@27..34
                     ParenthesisLeft@27..28 "("
                     Literal@28..33
                       False@28..33 "false"
@@ -129,7 +129,7 @@ fn foo(){}
                 Attribute@1..6
                   AttributeOperator@1..2 "@"
                   Identifier@2..4 "if"
-                  Arguments@4..6
+                  AttributeArguments@4..6
                     ParenthesisLeft@4..5 "("
                     ParenthesisRight@5..6 ")"
               Blankspace@6..7 "\n"
@@ -182,7 +182,7 @@ fn foo(){}
                 Attribute@1..10
                   AttributeOperator@1..2 "@"
                   Identifier@2..4 "if"
-                  Arguments@4..10
+                  AttributeArguments@4..10
                     ParenthesisLeft@4..5 "("
                     Literal@5..9
                       True@5..9 "true"
@@ -204,7 +204,7 @@ fn foo(){}
                 Attribute@22..34
                   AttributeOperator@22..23 "@"
                   Identifier@23..27 "else"
-                  Arguments@27..34
+                  AttributeArguments@27..34
                     ParenthesisLeft@27..28 "("
                     Literal@28..33
                       False@28..33 "false"
@@ -266,7 +266,7 @@ fn foo() {
                         Attribute@38..47
                           AttributeOperator@38..39 "@"
                           Identifier@39..41 "if"
-                          Arguments@41..47
+                          AttributeArguments@41..47
                             ParenthesisLeft@41..42 "("
                             Literal@42..46
                               True@42..46 "true"
@@ -347,7 +347,7 @@ fn main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
                     Attribute@19..37
                       AttributeOperator@19..20 "@"
                       Identifier@20..27 "builtin"
-                      Arguments@27..37
+                      AttributeArguments@27..37
                         ParenthesisLeft@27..28 "("
                         IdentExpression@28..36
                           Path@28..36
@@ -371,7 +371,7 @@ fn main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
                     Attribute@53..65
                       AttributeOperator@53..54 "@"
                       Identifier@54..62 "location"
-                      Arguments@62..65
+                      AttributeArguments@62..65
                         ParenthesisLeft@62..63 "("
                         Literal@63..64
                           IntLiteral@63..64 "0"
@@ -401,7 +401,7 @@ fn main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
                       AttributeOperator@94..95 "@"
                       Identifier@95..97 "if"
                       Blankspace@97..98 " "
-                      Arguments@98..104
+                      AttributeArguments@98..104
                         ParenthesisLeft@98..99 "("
                         Literal@99..103
                           True@99..103 "true"

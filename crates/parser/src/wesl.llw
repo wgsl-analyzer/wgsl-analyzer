@@ -106,7 +106,7 @@ part expression;
 part statement;
 part type_specifier;
 
-attribute: '@' Identifier [?t argument_expression_list];
+attribute: '@' Identifier [?t attribute_arguments];
 attribute_list: attribute*;
 
 translation_unit: (global_item | ';')*;
@@ -218,7 +218,7 @@ expression:
 	| literal @literal;
 
 ident_or_function^:
-	ident_expression [argument_expression_list_expr >function_call];
+	ident_expression [arguments_expr >function_call];
 
 // §8.3
 literal^:
@@ -228,9 +228,12 @@ literal^:
 	| 'false'
 ;
 
-argument_expression_list: '(' [expression (?1 ',' expression)* [',']] ')' @arguments;
+arguments: '(' [expression (?1 ',' expression)* [',']] ')';
 // extra rule for better error handling
-argument_expression_list_expr: '(' [expression (?1 ',' expression)* [',']] ')' @arguments;
+arguments_expr: '(' [expression (?1 ',' expression)* [',']] ')' @arguments;
+
+// attributes are different from function calls
+attribute_arguments: '(' [expression (?1 ',' expression)* [',']] ')';
 
 statement:
 	// NOTE: The WGSL spec (§9.4.1) requires `if_clause (else_if_clause)* [else_clause]`.
@@ -316,7 +319,7 @@ default_case_selector: 'default';
 default_alone_clause: 'default' [':'] attribute_list !1 compound_statement;
 compound_statement: '{' & (attribute_list statement)* '}'; // §9.1
 
-function_call: ident_expression argument_expression_list;
+function_call: ident_expression arguments;
 
 // duplicated so it can be used with and without a semicolon
 variable_declaration: 'var' template_list typed_ident ['=' expression];

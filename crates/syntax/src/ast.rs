@@ -781,7 +781,7 @@ ast_node! {
 ast_node! {
     Attribute:
     name: Option<SyntaxToken Identifier>;
-    arguments: Option<Arguments>;
+    arguments: Option<AttributeArguments>;
 }
 
 #[derive(PartialEq, Eq, Clone, Debug)]
@@ -860,6 +860,13 @@ impl Attribute {
     pub fn is_conditional_compilation(&self) -> bool {
         matches!(self.kind(), AttributeKind::Conditional(_))
     }
+}
+
+ast_node! {
+    AttributeArguments:
+    left_parenthesis_token: Option<SyntaxToken ParenthesisLeft>;
+    right_parenthesis_token: Option<SyntaxToken ParenthesisRight>;
+    arguments: AstChildren<Expression>;
 }
 
 ast_node! {

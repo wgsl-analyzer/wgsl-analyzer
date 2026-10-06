@@ -240,11 +240,15 @@ impl<'source> ParserCallbacks<'source> for Parser<'source> {
         self.peek(1) != Token::TemplateEnd
     }
 
-    fn predicate_argument_expression_list_1(&self) -> bool {
+    fn predicate_attribute_arguments_1(&self) -> bool {
         self.peek(1) != Token::ParenthesisRight
     }
 
-    fn predicate_argument_expression_list_expr_1(&self) -> bool {
+    fn predicate_arguments_1(&self) -> bool {
+        self.peek(1) != Token::ParenthesisRight
+    }
+
+    fn predicate_arguments_expr_1(&self) -> bool {
         self.peek(1) != Token::ParenthesisRight
     }
 

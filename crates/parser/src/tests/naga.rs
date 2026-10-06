@@ -23,7 +23,7 @@ fn capability_not_present() {
                 Attribute@27..51
                   AttributeOperator@27..28 "@"
                   Identifier@28..44 "early_depth_test"
-                  Arguments@44..51
+                  AttributeArguments@44..51
                     ParenthesisLeft@44..45 "("
                     IdentExpression@45..50
                       Path@45..50
@@ -54,7 +54,7 @@ fn capability_not_present() {
                     Attribute@94..106
                       AttributeOperator@94..95 "@"
                       Identifier@95..103 "location"
-                      Arguments@103..106
+                      AttributeArguments@103..106
                         ParenthesisLeft@103..104 "("
                         Literal@104..105
                           IntLiteral@104..105 "0"
@@ -101,7 +101,7 @@ fn parse_early_depth_test_force() {
                 Attribute@27..51
                   AttributeOperator@27..28 "@"
                   Identifier@28..44 "early_depth_test"
-                  Arguments@44..51
+                  AttributeArguments@44..51
                     ParenthesisLeft@44..45 "("
                     IdentExpression@45..50
                       Path@45..50
@@ -132,7 +132,7 @@ fn parse_early_depth_test_force() {
                     Attribute@94..106
                       AttributeOperator@94..95 "@"
                       Identifier@95..103 "location"
-                      Arguments@103..106
+                      AttributeArguments@103..106
                         ParenthesisLeft@103..104 "("
                         Literal@104..105
                           IntLiteral@104..105 "0"
@@ -179,7 +179,7 @@ fn parse_early_depth_test_greater_equal() {
                 Attribute@27..59
                   AttributeOperator@27..28 "@"
                   Identifier@28..44 "early_depth_test"
-                  Arguments@44..59
+                  AttributeArguments@44..59
                     ParenthesisLeft@44..45 "("
                     IdentExpression@45..58
                       Path@45..58
@@ -210,7 +210,7 @@ fn parse_early_depth_test_greater_equal() {
                     Attribute@102..114
                       AttributeOperator@102..103 "@"
                       Identifier@103..111 "location"
-                      Arguments@111..114
+                      AttributeArguments@111..114
                         ParenthesisLeft@111..112 "("
                         Literal@112..113
                           IntLiteral@112..113 "0"
@@ -257,7 +257,7 @@ fn parse_early_depth_test_less_equal() {
                 Attribute@27..56
                   AttributeOperator@27..28 "@"
                   Identifier@28..44 "early_depth_test"
-                  Arguments@44..56
+                  AttributeArguments@44..56
                     ParenthesisLeft@44..45 "("
                     IdentExpression@45..55
                       Path@45..55
@@ -288,7 +288,7 @@ fn parse_early_depth_test_less_equal() {
                     Attribute@99..111
                       AttributeOperator@99..100 "@"
                       Identifier@100..108 "location"
-                      Arguments@108..111
+                      AttributeArguments@108..111
                         ParenthesisLeft@108..109 "("
                         Literal@109..110
                           IntLiteral@109..110 "0"
@@ -335,7 +335,7 @@ fn parse_early_depth_test_unchanged() {
                 Attribute@27..55
                   AttributeOperator@27..28 "@"
                   Identifier@28..44 "early_depth_test"
-                  Arguments@44..55
+                  AttributeArguments@44..55
                     ParenthesisLeft@44..45 "("
                     IdentExpression@45..54
                       Path@45..54
@@ -366,7 +366,7 @@ fn parse_early_depth_test_unchanged() {
                     Attribute@98..110
                       AttributeOperator@98..99 "@"
                       Identifier@99..107 "location"
-                      Arguments@107..110
+                      AttributeArguments@107..110
                         ParenthesisLeft@107..108 "("
                         Literal@108..109
                           IntLiteral@108..109 "0"

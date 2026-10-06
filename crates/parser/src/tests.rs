@@ -2101,7 +2101,7 @@ fn attribute_list_modern() {
               Attribute@0..12
                 AttributeOperator@0..1 "@"
                 Identifier@1..9 "location"
-                Arguments@9..12
+                AttributeArguments@9..12
                   ParenthesisLeft@9..10 "("
                   Literal@10..11
                     IntLiteral@10..11 "0"
@@ -2114,7 +2114,7 @@ fn attribute_list_modern() {
               Attribute@0..18
                 AttributeOperator@0..1 "@"
                 Identifier@1..12 "interpolate"
-                Arguments@12..18
+                AttributeArguments@12..18
                   ParenthesisLeft@12..13 "("
                   IdentExpression@13..17
                     Path@13..17
@@ -2128,7 +2128,7 @@ fn attribute_list_modern() {
               Attribute@0..23
                 AttributeOperator@0..1 "@"
                 Identifier@1..5 "attr"
-                Arguments@5..23
+                AttributeArguments@5..23
                   ParenthesisLeft@5..6 "("
                   Literal@6..7
                     IntLiteral@6..7 "1"
@@ -2490,7 +2490,7 @@ fn annotation_with_invalid_statement_recover() {
                     Attribute@15..33
                       AttributeOperator@15..16 "@"
                       Identifier@16..18 "if"
-                      Arguments@18..33
+                      AttributeArguments@18..33
                         ParenthesisLeft@18..19 "("
                         IdentExpression@19..32
                           Path@19..32
@@ -3876,7 +3876,7 @@ fn attribute_edge_case_else() {
                       AttributeOperator@32..33 "@"
                       Identifier@33..37 "else"
                       Blankspace@37..50 "\n            "
-                      Arguments@50..55
+                      AttributeArguments@50..55
                         ParenthesisLeft@50..51 "("
                         IdentExpression@51..54
                           Path@51..54
@@ -3926,7 +3926,7 @@ fn attribute_edge_case_if() {
                       AttributeOperator@32..33 "@"
                       Identifier@33..35 "if"
                       Blankspace@35..48 "\n            "
-                      Arguments@48..53
+                      AttributeArguments@48..53
                         ParenthesisLeft@48..49 "("
                         IdentExpression@49..52
                           Path@49..52

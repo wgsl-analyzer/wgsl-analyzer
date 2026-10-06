@@ -12,7 +12,7 @@ use syntax::{
 use crate::{
     blankspace::{gen_blankspace, read_blankspace},
     generators::{
-        attributes::{gen_attribute, gen_attribute_list},
+        attributes::{gen_attribute, gen_attribute_arguments, gen_attribute_list},
         comments::{gen_comment, read_comment},
         diagnostic_directive::{
             gen_diagnostic_control, gen_diagnostic_rule_name, gen_severity_control_name,
@@ -176,6 +176,7 @@ fn gen_node(
         SyntaxKind::ParenthesisExpression => with_cast!(gen_parenthesis_expression, ast::ParenthesisExpression, node),
         SyntaxKind::TypeSpecifier => with_cast!(gen_type_specifier, ast::TypeSpecifier, node),
         SyntaxKind::Attribute => with_cast!(gen_attribute, ast::Attribute, node),
+        SyntaxKind::AttributeArguments => with_cast!(gen_attribute_arguments, ast::AttributeArguments, node),
         SyntaxKind::StructDeclaration => with_cast!(gen_struct_declaration, ast::StructDeclaration, node),
         SyntaxKind::StructBody => with_cast!(gen_struct_body, ast::StructBody, node),
         SyntaxKind::StructMember => with_cast!(gen_struct_member, ast::StructMember, node),
@@ -327,7 +328,6 @@ fn gen_node(
         _ => {
             Err(FormatDocumentError::UnsupportedNodeOrToken  { received: node.clone() })
         },
-
     }
 }
 

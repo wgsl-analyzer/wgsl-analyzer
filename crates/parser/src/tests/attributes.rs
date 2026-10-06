@@ -122,7 +122,7 @@ fn diagnostic_attribute() {
                 Attribute@9..30
                   AttributeOperator@9..10 "@"
                   Identifier@10..20 "diagnostic"
-                  Arguments@20..30
+                  AttributeArguments@20..30
                     ParenthesisLeft@20..21 "("
                     IdentExpression@21..24
                       Path@21..24
@@ -227,7 +227,7 @@ fn parse_builtin_attribute() {
                       AttributeOperator@51..52 "@"
                       Blankspace@52..53 " "
                       Identifier@53..60 "builtin"
-                      Arguments@60..70
+                      AttributeArguments@60..70
                         ParenthesisLeft@60..61 "("
                         IdentExpression@61..69
                           Path@61..69
@@ -298,7 +298,7 @@ fn parse_builtin_attribute() {
                     Attribute@150..170
                       AttributeOperator@150..151 "@"
                       Identifier@151..158 "builtin"
-                      Arguments@158..170
+                      AttributeArguments@158..170
                         ParenthesisLeft@158..159 "("
                         Blankspace@159..160 " "
                         IdentExpression@160..168
@@ -347,7 +347,7 @@ fn parse_interpolate_perspective() {
                 Attribute@9..34
                   AttributeOperator@9..10 "@"
                   Identifier@10..21 "interpolate"
-                  Arguments@21..34
+                  AttributeArguments@21..34
                     ParenthesisLeft@21..22 "("
                     IdentExpression@22..33
                       Path@22..33
@@ -389,7 +389,7 @@ fn parse_interpolate_linear() {
                 Attribute@9..29
                   AttributeOperator@9..10 "@"
                   Identifier@10..21 "interpolate"
-                  Arguments@21..29
+                  AttributeArguments@21..29
                     ParenthesisLeft@21..22 "("
                     IdentExpression@22..28
                       Path@22..28
@@ -431,7 +431,7 @@ fn parse_interpolate_flat() {
                 Attribute@9..27
                   AttributeOperator@9..10 "@"
                   Identifier@10..21 "interpolate"
-                  Arguments@21..27
+                  AttributeArguments@21..27
                     ParenthesisLeft@21..22 "("
                     IdentExpression@22..26
                       Path@22..26
@@ -475,7 +475,7 @@ fn parse_interpolate_perspective_center() {
                 Attribute@9..42
                   AttributeOperator@9..10 "@"
                   Identifier@10..21 "interpolate"
-                  Arguments@21..42
+                  AttributeArguments@21..42
                     ParenthesisLeft@21..22 "("
                     IdentExpression@22..33
                       Path@22..33
@@ -522,7 +522,7 @@ fn parse_interpolate_perspective_centroid() {
                 Attribute@9..44
                   AttributeOperator@9..10 "@"
                   Identifier@10..21 "interpolate"
-                  Arguments@21..44
+                  AttributeArguments@21..44
                     ParenthesisLeft@21..22 "("
                     IdentExpression@22..33
                       Path@22..33
@@ -569,7 +569,7 @@ fn parse_interpolate_perspective_sample() {
                 Attribute@9..42
                   AttributeOperator@9..10 "@"
                   Identifier@10..21 "interpolate"
-                  Arguments@21..42
+                  AttributeArguments@21..42
                     ParenthesisLeft@21..22 "("
                     IdentExpression@22..33
                       Path@22..33
@@ -618,7 +618,7 @@ fn parse_interpolate_linear_center() {
                 Attribute@9..37
                   AttributeOperator@9..10 "@"
                   Identifier@10..21 "interpolate"
-                  Arguments@21..37
+                  AttributeArguments@21..37
                     ParenthesisLeft@21..22 "("
                     IdentExpression@22..28
                       Path@22..28
@@ -665,7 +665,7 @@ fn parse_interpolate_linear_centroid() {
                 Attribute@9..39
                   AttributeOperator@9..10 "@"
                   Identifier@10..21 "interpolate"
-                  Arguments@21..39
+                  AttributeArguments@21..39
                     ParenthesisLeft@21..22 "("
                     IdentExpression@22..28
                       Path@22..28
@@ -712,7 +712,7 @@ fn parse_interpolate_linear_sample() {
                 Attribute@9..37
                   AttributeOperator@9..10 "@"
                   Identifier@10..21 "interpolate"
-                  Arguments@21..37
+                  AttributeArguments@21..37
                     ParenthesisLeft@21..22 "("
                     IdentExpression@22..28
                       Path@22..28
@@ -761,7 +761,7 @@ fn parse_interpolate_flat_first() {
                 Attribute@9..34
                   AttributeOperator@9..10 "@"
                   Identifier@10..21 "interpolate"
-                  Arguments@21..34
+                  AttributeArguments@21..34
                     ParenthesisLeft@21..22 "("
                     IdentExpression@22..26
                       Path@22..26
@@ -808,7 +808,7 @@ fn parse_interpolate_flat_either() {
                 Attribute@9..35
                   AttributeOperator@9..10 "@"
                   Identifier@10..21 "interpolate"
-                  Arguments@21..35
+                  AttributeArguments@21..35
                     ParenthesisLeft@21..22 "("
                     IdentExpression@22..26
                       Path@22..26
@@ -856,7 +856,7 @@ fn parse_interpolate_unclosed_error() {
                 Attribute@9..33
                   AttributeOperator@9..10 "@"
                   Identifier@10..21 "interpolate"
-                  Arguments@21..33
+                  AttributeArguments@21..33
                     ParenthesisLeft@21..22 "("
                     IdentExpression@22..33
                       Path@22..33
@@ -904,7 +904,7 @@ fn parse_conditional_transpilation() {
                 Attribute@9..18
                   AttributeOperator@9..10 "@"
                   Identifier@10..12 "if"
-                  Arguments@12..18
+                  AttributeArguments@12..18
                     ParenthesisLeft@12..13 "("
                     Literal@13..17
                       True@13..17 "true"
@@ -927,7 +927,7 @@ fn parse_conditional_transpilation() {
                 Attribute@52..64
                   AttributeOperator@52..53 "@"
                   Identifier@53..57 "elif"
-                  Arguments@57..64
+                  AttributeArguments@57..64
                     ParenthesisLeft@57..58 "("
                     Literal@58..63
                       False@58..63 "false"
@@ -1097,7 +1097,7 @@ fn parse_all_attributes() {
                     Attribute@32..42
                       AttributeOperator@32..33 "@"
                       Identifier@33..38 "align"
-                      Arguments@38..42
+                      AttributeArguments@38..42
                         ParenthesisLeft@38..39 "("
                         Literal@39..41
                           IntLiteral@39..41 "16"
@@ -1106,7 +1106,7 @@ fn parse_all_attributes() {
                     Attribute@43..52
                       AttributeOperator@43..44 "@"
                       Identifier@44..48 "size"
-                      Arguments@48..52
+                      AttributeArguments@48..52
                         ParenthesisLeft@48..49 "("
                         Literal@49..51
                           IntLiteral@49..51 "16"
@@ -1135,7 +1135,7 @@ fn parse_all_attributes() {
                 Attribute@99..108
                   AttributeOperator@99..100 "@"
                   Identifier@100..105 "group"
-                  Arguments@105..108
+                  AttributeArguments@105..108
                     ParenthesisLeft@105..106 "("
                     Literal@106..107
                       IntLiteral@106..107 "0"
@@ -1144,7 +1144,7 @@ fn parse_all_attributes() {
                 Attribute@109..120
                   AttributeOperator@109..110 "@"
                   Identifier@110..117 "binding"
-                  Arguments@117..120
+                  AttributeArguments@117..120
                     ParenthesisLeft@117..118 "("
                     Literal@118..119
                       IntLiteral@118..119 "0"
@@ -1172,7 +1172,7 @@ fn parse_all_attributes() {
                 Attribute@157..163
                   AttributeOperator@157..158 "@"
                   Identifier@158..160 "id"
-                  Arguments@160..163
+                  AttributeArguments@160..163
                     ParenthesisLeft@160..161 "("
                     Literal@161..162
                       IntLiteral@161..162 "0"
@@ -1211,7 +1211,7 @@ fn parse_all_attributes() {
                     Attribute@225..237
                       AttributeOperator@225..226 "@"
                       Identifier@226..234 "location"
-                      Arguments@234..237
+                      AttributeArguments@234..237
                         ParenthesisLeft@234..235 "("
                         Literal@235..236
                           IntLiteral@235..236 "0"
@@ -1220,7 +1220,7 @@ fn parse_all_attributes() {
                     Attribute@238..258
                       AttributeOperator@238..239 "@"
                       Identifier@239..250 "interpolate"
-                      Arguments@250..258
+                      AttributeArguments@250..258
                         ParenthesisLeft@250..251 "("
                         IdentExpression@251..257
                           Path@251..257
@@ -1244,7 +1244,7 @@ fn parse_all_attributes() {
                     Attribute@270..282
                       AttributeOperator@270..271 "@"
                       Identifier@271..279 "location"
-                      Arguments@279..282
+                      AttributeArguments@279..282
                         ParenthesisLeft@279..280 "("
                         Literal@280..281
                           IntLiteral@280..281 "0"
@@ -1283,7 +1283,7 @@ fn parse_all_attributes() {
                     Attribute@352..374
                       AttributeOperator@352..353 "@"
                       Identifier@353..360 "builtin"
-                      Arguments@360..374
+                      AttributeArguments@360..374
                         ParenthesisLeft@360..361 "("
                         IdentExpression@361..373
                           Path@361..373
@@ -1307,7 +1307,7 @@ fn parse_all_attributes() {
                     Attribute@386..404
                       AttributeOperator@386..387 "@"
                       Identifier@387..394 "builtin"
-                      Arguments@394..404
+                      AttributeArguments@394..404
                         ParenthesisLeft@394..395 "("
                         IdentExpression@395..403
                           Path@395..403
@@ -1389,7 +1389,7 @@ fn parse_all_attributes() {
                     Attribute@515..527
                       AttributeOperator@515..516 "@"
                       Identifier@516..524 "location"
-                      Arguments@524..527
+                      AttributeArguments@524..527
                         ParenthesisLeft@524..525 "("
                         Literal@525..526
                           IntLiteral@525..526 "0"
@@ -1398,7 +1398,7 @@ fn parse_all_attributes() {
                     Attribute@528..541
                       AttributeOperator@528..529 "@"
                       Identifier@529..538 "blend_src"
-                      Arguments@538..541
+                      AttributeArguments@538..541
                         ParenthesisLeft@538..539 "("
                         Literal@539..540
                           IntLiteral@539..540 "0"
@@ -1488,7 +1488,7 @@ fn parse_all_attributes() {
                 Attribute@726..744
                   AttributeOperator@726..727 "@"
                   Identifier@727..741 "workgroup_size"
-                  Arguments@741..744
+                  AttributeArguments@741..744
                     ParenthesisLeft@741..742 "("
                     Literal@742..743
                       IntLiteral@742..743 "1"
@@ -1529,7 +1529,7 @@ fn parse_compute_workgroup_size_attrs() {
                 Attribute@26..44
                   AttributeOperator@26..27 "@"
                   Identifier@27..41 "workgroup_size"
-                  Arguments@41..44
+                  AttributeArguments@41..44
                     ParenthesisLeft@41..42 "("
                     Literal@42..43
                       IntLiteral@42..43 "1"

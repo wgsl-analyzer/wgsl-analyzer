@@ -16,7 +16,7 @@ fn parse_diagnostic_attribute() {
                 Attribute@9..30
                   AttributeOperator@9..10 "@"
                   Identifier@10..20 "diagnostic"
-                  Arguments@20..30
+                  AttributeArguments@20..30
                     ParenthesisLeft@20..21 "("
                     IdentExpression@21..24
                       Path@21..24

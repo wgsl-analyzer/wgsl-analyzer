@@ -55,11 +55,13 @@ impl CstBuilder<'_, '_> {
     ) {
         match rule {
             Rule::Arguments => self.start_node(SyntaxKind::Arguments),
-            Rule::ArgumentExpressionList => panic!("should be arguments instead"),
-            Rule::ArgumentExpressionListExpr => {
+            Rule::ArgumentsExpr => {
                 panic!("should be arguments instead")
             },
             Rule::AssertStatement => self.start_node(SyntaxKind::AssertStatement),
+            Rule::Attribute => self.start_node(SyntaxKind::Attribute),
+            Rule::AttributeArguments => self.start_node(SyntaxKind::AttributeArguments),
+            Rule::AttributeList => self.start_node(SyntaxKind::AttributeList),
             Rule::BinaryExpression => self.start_node(SyntaxKind::InfixExpression),
             Rule::Literal => self.start_node(SyntaxKind::Literal),
             Rule::BreakIfStatement => self.start_node(SyntaxKind::BreakIfStatement),
@@ -169,9 +171,6 @@ impl CstBuilder<'_, '_> {
             #[expect(clippy::match_same_arms, reason = "Reasons might be different")]
             Rule::Statement => self.start_node(SyntaxKind::Error),
 
-            // Attributes
-            Rule::Attribute => self.start_node(SyntaxKind::Attribute),
-            Rule::AttributeList => self.start_node(SyntaxKind::AttributeList),
             // experimental WESL
             Rule::GlobalCompoundDeclaration => {
                 self.start_node(SyntaxKind::GlobalCompoundDeclaration);

@@ -54,11 +54,28 @@ fn sweep_function_declaration_with_complex_types_and_annotations() {
             	let a = 1;
             }
 
+            // max_length: 35------------------
+            fn do_the_thing(
+            	@location(1) a: u32,
+            	@builtin(
+            		subgroup_invocation_id,
+            	) b: u32,
+            	c: ptr<
+            		workgroup,
+            		array<array<u32, 27>, 1>,
+            		read_write,
+            	>,
+            ) -> @location(12282)
+            array<vec4<f32>, 17> {
+            	let a = 1;
+            }
+
             // max_length: 32---------------
             fn do_the_thing(
             	@location(1) a: u32,
-            	@builtin(subgroup_invocation_id)
-            	b: u32,
+            	@builtin(
+            		subgroup_invocation_id,
+            	) b: u32,
             	c: ptr<
             		workgroup,
             		array<
@@ -75,8 +92,9 @@ fn sweep_function_declaration_with_complex_types_and_annotations() {
             // max_length: 28-----------
             fn do_the_thing(
             	@location(1) a: u32,
-            	@builtin(subgroup_invocation_id)
-            	b: u32,
+            	@builtin(
+            		subgroup_invocation_id,
+            	) b: u32,
             	c: ptr<
             		workgroup,
             		array<
@@ -97,8 +115,9 @@ fn sweep_function_declaration_with_complex_types_and_annotations() {
             fn do_the_thing(
             	@location(1)
             	a: u32,
-            	@builtin(subgroup_invocation_id)
-            	b: u32,
+            	@builtin(
+            		subgroup_invocation_id,
+            	) b: u32,
             	c: ptr<
             		workgroup,
             		array<
@@ -119,8 +138,9 @@ fn sweep_function_declaration_with_complex_types_and_annotations() {
             fn do_the_thing(
             	@location(1)
             	a: u32,
-            	@builtin(subgroup_invocation_id)
-            	b: u32,
+            	@builtin(
+            		subgroup_invocation_id,
+            	) b: u32,
             	c: ptr<
             		workgroup,
             		array<
@@ -144,8 +164,9 @@ fn sweep_function_declaration_with_complex_types_and_annotations() {
             fn do_the_thing(
             	@location(1)
             	a: u32,
-            	@builtin(subgroup_invocation_id)
-            	b: u32,
+            	@builtin(
+            		subgroup_invocation_id,
+            	) b: u32,
             	c: ptr<
             		workgroup,
             		array<
@@ -172,8 +193,9 @@ fn sweep_function_declaration_with_complex_types_and_annotations() {
             	@location(
             		1,
             	) a: u32,
-            	@builtin(subgroup_invocation_id)
-            	b: u32,
+            	@builtin(
+            		subgroup_invocation_id,
+            	) b: u32,
             	c: ptr<
             		workgroup,
             		array<
@@ -202,8 +224,9 @@ fn sweep_function_declaration_with_complex_types_and_annotations() {
             	@location(
             		1,
             	) a: u32,
-            	@builtin(subgroup_invocation_id)
-            	b: u32,
+            	@builtin(
+            		subgroup_invocation_id,
+            	) b: u32,
             	c: ptr<
             		workgroup,
             		array<
@@ -234,7 +257,9 @@ fn sweep_function_declaration_with_complex_types_and_annotations() {
             		1,
             	)
             	a: u32,
-            	@builtin(subgroup_invocation_id)
+            	@builtin(
+            		subgroup_invocation_id,
+            	)
             	b: u32,
             	c: ptr<
             		workgroup,
@@ -296,11 +321,22 @@ fn sweep_function_declaration_with_simple_types_and_annotations() {
             	let a = 1;
             }
 
+            // max_length: 35------------------
+            fn do_the_thing(
+            	@location(1) a: u32,
+            	@builtin(
+            		subgroup_invocation_id,
+            	) b: u32,
+            ) -> @location(12282) vec4<f32> {
+            	let a = 1;
+            }
+
             // max_length: 32---------------
             fn do_the_thing(
             	@location(1) a: u32,
-            	@builtin(subgroup_invocation_id)
-            	b: u32,
+            	@builtin(
+            		subgroup_invocation_id,
+            	) b: u32,
             ) -> @location(12282)
             vec4<f32> {
             	let a = 1;
@@ -310,8 +346,9 @@ fn sweep_function_declaration_with_simple_types_and_annotations() {
             fn do_the_thing(
             	@location(1)
             	a: u32,
-            	@builtin(subgroup_invocation_id)
-            	b: u32,
+            	@builtin(
+            		subgroup_invocation_id,
+            	) b: u32,
             ) -> @location(12282)
             vec4<f32> {
             	let a = 1;
@@ -321,8 +358,9 @@ fn sweep_function_declaration_with_simple_types_and_annotations() {
             fn do_the_thing(
             	@location(1)
             	a: u32,
-            	@builtin(subgroup_invocation_id)
-            	b: u32,
+            	@builtin(
+            		subgroup_invocation_id,
+            	) b: u32,
             ) -> @location(
             	12282,
             ) vec4<f32> {
@@ -334,8 +372,9 @@ fn sweep_function_declaration_with_simple_types_and_annotations() {
             	@location(
             		1,
             	) a: u32,
-            	@builtin(subgroup_invocation_id)
-            	b: u32,
+            	@builtin(
+            		subgroup_invocation_id,
+            	) b: u32,
             ) -> @location(
             	12282,
             ) vec4<f32> {
@@ -347,8 +386,9 @@ fn sweep_function_declaration_with_simple_types_and_annotations() {
             	@location(
             		1,
             	) a: u32,
-            	@builtin(subgroup_invocation_id)
-            	b: u32,
+            	@builtin(
+            		subgroup_invocation_id,
+            	) b: u32,
             ) -> @location(
             	12282,
             ) vec4<f32> {
@@ -362,7 +402,9 @@ fn sweep_function_declaration_with_simple_types_and_annotations() {
             		1,
             	)
             	a: u32,
-            	@builtin(subgroup_invocation_id)
+            	@builtin(
+            		subgroup_invocation_id,
+            	)
             	b: u32,
             ) -> @location(
             	12282,
@@ -378,7 +420,9 @@ fn sweep_function_declaration_with_simple_types_and_annotations() {
             		1,
             	)
             	a: u32,
-            	@builtin(subgroup_invocation_id)
+            	@builtin(
+            		subgroup_invocation_id,
+            	)
             	b: u32,
             ) -> @location(
             	12282,
