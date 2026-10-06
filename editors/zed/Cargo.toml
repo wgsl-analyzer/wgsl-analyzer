@@ -1,0 +1,18 @@
+[package]
+name = "wgsl-wesl-zed"
+version = "0.1.0"
+edition = "2024"
+rust-version.workspace = true
+license = "MIT OR Apache-2.0"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+zed_extension_api = "0.7"
+
+[profile.release]
+strip = true  # Ensures debug symbols are removed.
+lto = true  # Enables link-time-optimizations.
+panic = "abort"  # Higher performance by disabling panic handlers.
+codegen-units = 1  # Allows LLVM to perform better optimization.
