@@ -12,13 +12,14 @@ fn module_compound_nested() {
             SourceFile@0..35
               Blankspace@0..9 "\n        "
               AttributeList@9..18
-                IfAttribute@9..18
+                Attribute@9..18
                   AttributeOperator@9..10 "@"
-                  If@10..12 "if"
-                  ParenthesisLeft@12..13 "("
-                  Literal@13..17
-                    True@13..17 "true"
-                  ParenthesisRight@17..18 ")"
+                  Identifier@10..12 "if"
+                  AttributeArguments@12..18
+                    ParenthesisLeft@12..13 "("
+                    Literal@13..17
+                      True@13..17 "true"
+                    ParenthesisRight@17..18 ")"
               Blankspace@18..19 " "
               GlobalCompoundDeclaration@19..26
                 BraceLeft@19..20 "{"
@@ -55,13 +56,14 @@ fn function_compound_nested() {
                   BraceLeft@18..19 "{"
                   Blankspace@19..20 " "
                   AttributeList@20..29
-                    IfAttribute@20..29
+                    Attribute@20..29
                       AttributeOperator@20..21 "@"
-                      If@21..23 "if"
-                      ParenthesisLeft@23..24 "("
-                      Literal@24..28
-                        True@24..28 "true"
-                      ParenthesisRight@28..29 ")"
+                      Identifier@21..23 "if"
+                      AttributeArguments@23..29
+                        ParenthesisLeft@23..24 "("
+                        Literal@24..28
+                          True@24..28 "true"
+                        ParenthesisRight@28..29 ")"
                   Blankspace@29..30 " "
                   CompoundStatement@30..48
                     BraceLeft@30..31 "{"

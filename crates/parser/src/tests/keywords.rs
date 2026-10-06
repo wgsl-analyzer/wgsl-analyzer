@@ -818,13 +818,14 @@ fn context_sensitive_keywords() {
             SourceFile@0..118
               Blankspace@0..9 "\n        "
               AttributeList@9..18
-                IfAttribute@9..18
+                Attribute@9..18
                   AttributeOperator@9..10 "@"
-                  If@10..12 "if"
-                  ParenthesisLeft@12..13 "("
-                  Literal@13..17
-                    True@13..17 "true"
-                  ParenthesisRight@17..18 ")"
+                  Identifier@10..12 "if"
+                  AttributeArguments@12..18
+                    ParenthesisLeft@12..13 "("
+                    Literal@13..17
+                      True@13..17 "true"
+                    ParenthesisRight@17..18 ")"
               Blankspace@18..27 "\n        "
               FunctionDeclaration@27..53
                 Fn@27..29 "fn"
@@ -853,13 +854,14 @@ fn context_sensitive_keywords() {
                   BraceRight@52..53 "}"
               Blankspace@53..62 "\n        "
               AttributeList@62..74
-                ElifAttribute@62..74
+                Attribute@62..74
                   AttributeOperator@62..63 "@"
-                  Elif@63..67 "elif"
-                  ParenthesisLeft@67..68 "("
-                  Literal@68..73
-                    False@68..73 "false"
-                  ParenthesisRight@73..74 ")"
+                  Identifier@63..67 "elif"
+                  AttributeArguments@67..74
+                    ParenthesisLeft@67..68 "("
+                    Literal@68..73
+                      False@68..73 "false"
+                    ParenthesisRight@73..74 ")"
               Blankspace@74..83 "\n        "
               FunctionDeclaration@83..109
                 Fn@83..85 "fn"

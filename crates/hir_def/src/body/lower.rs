@@ -223,7 +223,7 @@ impl Collector<'_> {
         &mut self,
         statement: &ast::Statement,
     ) -> Option<StatementId> {
-        let hir_statement = match &statement {
+        let hir_statement = match statement {
             ast::Statement::VariableDeclaration(variable_statement) => {
                 let binding_id = self.collect_name_opt(variable_statement.name());
                 let initializer = variable_statement

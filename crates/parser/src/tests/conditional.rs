@@ -16,13 +16,14 @@ fn foo(){}
             SourceFile@0..54
               Blankspace@0..1 "\n"
               AttributeList@1..10
-                IfAttribute@1..10
+                Attribute@1..10
                   AttributeOperator@1..2 "@"
-                  If@2..4 "if"
-                  ParenthesisLeft@4..5 "("
-                  Literal@5..9
-                    True@5..9 "true"
-                  ParenthesisRight@9..10 ")"
+                  Identifier@2..4 "if"
+                  AttributeArguments@4..10
+                    ParenthesisLeft@4..5 "("
+                    Literal@5..9
+                      True@5..9 "true"
+                    ParenthesisRight@9..10 ")"
               Blankspace@10..11 "\n"
               FunctionDeclaration@11..21
                 Fn@11..13 "fn"
@@ -37,13 +38,14 @@ fn foo(){}
                   BraceRight@20..21 "}"
               Blankspace@21..22 "\n"
               AttributeList@22..34
-                ElifAttribute@22..34
+                Attribute@22..34
                   AttributeOperator@22..23 "@"
-                  Elif@23..27 "elif"
-                  ParenthesisLeft@27..28 "("
-                  Literal@28..33
-                    False@28..33 "false"
-                  ParenthesisRight@33..34 ")"
+                  Identifier@23..27 "elif"
+                  AttributeArguments@27..34
+                    ParenthesisLeft@27..28 "("
+                    Literal@28..33
+                      False@28..33 "false"
+                    ParenthesisRight@33..34 ")"
               Blankspace@34..35 "\n"
               FunctionDeclaration@35..45
                 Fn@35..37 "fn"
@@ -74,9 +76,9 @@ fn foo(){}
             SourceFile@0..41
               Blankspace@0..1 "\n"
               AttributeList@1..4
-                IfAttribute@1..4
+                Attribute@1..4
                   AttributeOperator@1..2 "@"
-                  If@2..4 "if"
+                  Identifier@2..4 "if"
               Blankspace@4..5 "\n"
               FunctionDeclaration@5..15
                 Fn@5..7 "fn"
@@ -91,9 +93,9 @@ fn foo(){}
                   BraceRight@14..15 "}"
               Blankspace@15..16 "\n"
               AttributeList@16..21
-                ElifAttribute@16..21
+                Attribute@16..21
                   AttributeOperator@16..17 "@"
-                  Elif@17..21 "elif"
+                  Identifier@17..21 "elif"
               Blankspace@21..22 "\n"
               FunctionDeclaration@22..32
                 Fn@22..24 "fn"
@@ -106,10 +108,7 @@ fn foo(){}
                 CompoundStatement@30..32
                   BraceLeft@30..31 "{"
                   BraceRight@31..32 "}"
-              Blankspace@32..41 "\n        "
-
-            error at 5..7: invalid syntax, expected: '('
-            error at 22..24: invalid syntax, expected: '('"#]],
+              Blankspace@32..41 "\n        ""#]],
     );
 }
 
@@ -127,11 +126,12 @@ fn foo(){}
             SourceFile@0..43
               Blankspace@0..1 "\n"
               AttributeList@1..6
-                IfAttribute@1..6
+                Attribute@1..6
                   AttributeOperator@1..2 "@"
-                  If@2..4 "if"
-                  ParenthesisLeft@4..5 "("
-                  ParenthesisRight@5..6 ")"
+                  Identifier@2..4 "if"
+                  AttributeArguments@4..6
+                    ParenthesisLeft@4..5 "("
+                    ParenthesisRight@5..6 ")"
               Blankspace@6..7 "\n"
               FunctionDeclaration@7..17
                 Fn@7..9 "fn"
@@ -146,9 +146,9 @@ fn foo(){}
                   BraceRight@16..17 "}"
               Blankspace@17..18 "\n"
               AttributeList@18..23
-                ElseAttribute@18..23
+                Attribute@18..23
                   AttributeOperator@18..19 "@"
-                  Else@19..23 "else"
+                  Identifier@19..23 "else"
               Blankspace@23..24 "\n"
               FunctionDeclaration@24..34
                 Fn@24..26 "fn"
@@ -161,9 +161,7 @@ fn foo(){}
                 CompoundStatement@32..34
                   BraceLeft@32..33 "{"
                   BraceRight@33..34 "}"
-              Blankspace@34..43 "\n        "
-
-            error at 5..6: invalid syntax, expected one of: '&', '!', 'false', <floating point literal>, <identifier>, <integer literal>, '-', 'package', '(', '*', 'super', '~', 'true'"#]],
+              Blankspace@34..43 "\n        ""#]],
     );
 }
 
@@ -181,13 +179,14 @@ fn foo(){}
             SourceFile@0..54
               Blankspace@0..1 "\n"
               AttributeList@1..10
-                IfAttribute@1..10
+                Attribute@1..10
                   AttributeOperator@1..2 "@"
-                  If@2..4 "if"
-                  ParenthesisLeft@4..5 "("
-                  Literal@5..9
-                    True@5..9 "true"
-                  ParenthesisRight@9..10 ")"
+                  Identifier@2..4 "if"
+                  AttributeArguments@4..10
+                    ParenthesisLeft@4..5 "("
+                    Literal@5..9
+                      True@5..9 "true"
+                    ParenthesisRight@9..10 ")"
               Blankspace@10..11 "\n"
               FunctionDeclaration@11..21
                 Fn@11..13 "fn"
@@ -201,14 +200,15 @@ fn foo(){}
                   BraceLeft@19..20 "{"
                   BraceRight@20..21 "}"
               Blankspace@21..22 "\n"
-              AttributeList@22..27
-                ElseAttribute@22..27
+              AttributeList@22..34
+                Attribute@22..34
                   AttributeOperator@22..23 "@"
-                  Else@23..27 "else"
-              Error@27..34
-                ParenthesisLeft@27..28 "("
-                False@28..33 "false"
-                ParenthesisRight@33..34 ")"
+                  Identifier@23..27 "else"
+                  AttributeArguments@27..34
+                    ParenthesisLeft@27..28 "("
+                    Literal@28..33
+                      False@28..33 "false"
+                    ParenthesisRight@33..34 ")"
               Blankspace@34..35 "\n"
               FunctionDeclaration@35..45
                 Fn@35..37 "fn"
@@ -221,9 +221,7 @@ fn foo(){}
                 CompoundStatement@43..45
                   BraceLeft@43..44 "{"
                   BraceRight@44..45 "}"
-              Blankspace@45..54 "\n        "
-
-            error at 27..28: invalid syntax, expected one of: 'alias', '{', 'const', 'const_assert', 'diagnostic', 'enable', 'fn', 'import', 'let', 'override', 'requires', 'struct', 'var'"#]],
+              Blankspace@45..54 "\n        ""#]],
     );
 }
 
@@ -265,13 +263,14 @@ fn foo() {
                       BraceLeft@28..29 "{"
                       Blankspace@29..38 "\n        "
                       AttributeList@38..47
-                        IfAttribute@38..47
+                        Attribute@38..47
                           AttributeOperator@38..39 "@"
-                          If@39..41 "if"
-                          ParenthesisLeft@41..42 "("
-                          Literal@42..46
-                            True@42..46 "true"
-                          ParenthesisRight@46..47 ")"
+                          Identifier@39..41 "if"
+                          AttributeArguments@41..47
+                            ParenthesisLeft@41..42 "("
+                            Literal@42..46
+                              True@42..46 "true"
+                            ParenthesisRight@46..47 ")"
                       Blankspace@47..56 "\n        "
                       SwitchBodyCase@56..85
                         Case@56..60 "case"
@@ -333,9 +332,9 @@ fn main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
             SourceFile@0..176
               Blankspace@0..1 "\n"
               AttributeList@1..10
-                FragmentAttribute@1..10
+                Attribute@1..10
                   AttributeOperator@1..2 "@"
-                  Fragment@2..10 "fragment"
+                  Identifier@2..10 "fragment"
               Blankspace@10..11 "\n"
               FunctionDeclaration@11..167
                 Fn@11..13 "fn"
@@ -345,13 +344,15 @@ fn main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
                 FunctionParameters@18..49
                   ParenthesisLeft@18..19 "("
                   AttributeList@19..37
-                    BuiltinAttribute@19..37
+                    Attribute@19..37
                       AttributeOperator@19..20 "@"
-                      Builtin@20..27 "builtin"
-                      ParenthesisLeft@27..28 "("
-                      BuiltinValueName@28..36
-                        Identifier@28..36 "position"
-                      ParenthesisRight@36..37 ")"
+                      Identifier@20..27 "builtin"
+                      AttributeArguments@27..37
+                        ParenthesisLeft@27..28 "("
+                        IdentExpression@28..36
+                          Path@28..36
+                            Identifier@28..36 "position"
+                        ParenthesisRight@36..37 ")"
                   Blankspace@37..38 " "
                   Parameter@38..48
                     Name@38..41
@@ -367,13 +368,14 @@ fn main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
                   Arrow@50..52 "->"
                   Blankspace@52..53 " "
                   AttributeList@53..65
-                    LocationAttribute@53..65
+                    Attribute@53..65
                       AttributeOperator@53..54 "@"
-                      Location@54..62 "location"
-                      ParenthesisLeft@62..63 "("
-                      Literal@63..64
-                        IntLiteral@63..64 "0"
-                      ParenthesisRight@64..65 ")"
+                      Identifier@54..62 "location"
+                      AttributeArguments@62..65
+                        ParenthesisLeft@62..63 "("
+                        Literal@63..64
+                          IntLiteral@63..64 "0"
+                        ParenthesisRight@64..65 ")"
                   Blankspace@65..66 " "
                   TypeSpecifier@66..71
                     Path@66..71
@@ -395,14 +397,15 @@ fn main(@builtin(position) pos: vec4f) -> @location(0) vec4f {
                     Semicolon@88..89 ";"
                   Blankspace@89..94 "\n    "
                   AttributeList@94..104
-                    IfAttribute@94..104
+                    Attribute@94..104
                       AttributeOperator@94..95 "@"
-                      If@95..97 "if"
+                      Identifier@95..97 "if"
                       Blankspace@97..98 " "
-                      ParenthesisLeft@98..99 "("
-                      Literal@99..103
-                        True@99..103 "true"
-                      ParenthesisRight@103..104 ")"
+                      AttributeArguments@98..104
+                        ParenthesisLeft@98..99 "("
+                        Literal@99..103
+                          True@99..103 "true"
+                        ParenthesisRight@103..104 ")"
                   Blankspace@104..109 "\n    "
                   CompoundStatement@109..136
                     BraceLeft@109..110 "{"

@@ -1663,6 +1663,7 @@ fn for_statement_continue_break() {
                   BraceRight@27..28 "}""#]],
     );
 }
+
 #[test]
 fn loop_statement_continuing() {
     check_statement(
@@ -2097,34 +2098,37 @@ fn attribute_list_modern() {
         "@location(0)",
         expect![[r#"
             SourceFile@0..12
-              LocationAttribute@0..12
+              Attribute@0..12
                 AttributeOperator@0..1 "@"
-                Location@1..9 "location"
-                ParenthesisLeft@9..10 "("
-                Literal@10..11
-                  IntLiteral@10..11 "0"
-                ParenthesisRight@11..12 ")""#]],
+                Identifier@1..9 "location"
+                AttributeArguments@9..12
+                  ParenthesisLeft@9..10 "("
+                  Literal@10..11
+                    IntLiteral@10..11 "0"
+                  ParenthesisRight@11..12 ")""#]],
     );
     check_attribute(
         "@interpolate(flat)",
         expect![[r#"
             SourceFile@0..18
-              InterpolateAttribute@0..18
+              Attribute@0..18
                 AttributeOperator@0..1 "@"
-                Interpolate@1..12 "interpolate"
-                ParenthesisLeft@12..13 "("
-                InterpolateTypeName@13..17
-                  Flat@13..17 "flat"
-                ParenthesisRight@17..18 ")""#]],
+                Identifier@1..12 "interpolate"
+                AttributeArguments@12..18
+                  ParenthesisLeft@12..13 "("
+                  IdentExpression@13..17
+                    Path@13..17
+                      Identifier@13..17 "flat"
+                  ParenthesisRight@17..18 ")""#]],
     );
     check_attribute(
         "@attr(1, 2, 0.0, ident)",
         expect![[r#"
             SourceFile@0..23
-              OtherAttribute@0..23
+              Attribute@0..23
                 AttributeOperator@0..1 "@"
                 Identifier@1..5 "attr"
-                Arguments@5..23
+                AttributeArguments@5..23
                   ParenthesisLeft@5..6 "("
                   Literal@6..7
                     IntLiteral@6..7 "1"
@@ -2483,14 +2487,15 @@ fn annotation_with_invalid_statement_recover() {
                   BraceLeft@9..10 "{"
                   Blankspace@10..15 "\n    "
                   AttributeList@15..33
-                    IfAttribute@15..33
+                    Attribute@15..33
                       AttributeOperator@15..16 "@"
-                      If@16..18 "if"
-                      ParenthesisLeft@18..19 "("
-                      IdentExpression@19..32
-                        Path@19..32
-                          Identifier@19..32 "MIXOKLAB_SRGB"
-                      ParenthesisRight@32..33 ")"
+                      Identifier@16..18 "if"
+                      AttributeArguments@18..33
+                        ParenthesisLeft@18..19 "("
+                        IdentExpression@19..32
+                          Path@19..32
+                            Identifier@19..32 "MIXOKLAB_SRGB"
+                        ParenthesisRight@32..33 ")"
                   Blankspace@33..38 "\n    "
                   LetDeclaration@38..66
                     Let@38..41 "let"
@@ -2513,9 +2518,9 @@ fn annotation_with_invalid_statement_recover() {
                     Semicolon@65..66 ";"
                   Blankspace@66..71 "\n    "
                   AttributeList@71..76
-                    ElseAttribute@71..76
+                    Attribute@71..76
                       AttributeOperator@71..72 "@"
-                      Else@72..76 "else"
+                      Identifier@72..76 "else"
                   Blankspace@76..81 "\n    "
                   LetDeclaration@81..99
                     Let@81..84 "let"
@@ -3676,9 +3681,9 @@ fn attribute_only_recover() {
         expect![[r#"
             SourceFile@0..9
               AttributeList@0..9
-                FragmentAttribute@0..9
+                Attribute@0..9
                   AttributeOperator@0..1 "@"
-                  Fragment@1..9 "fragment"
+                  Identifier@1..9 "fragment"
 
             error at 9..9: invalid syntax, expected one of: 'alias', '&', '@', '{', '}', 'break', 'case', 'const', 'const_assert', 'continue', 'continuing', 'default', 'diagnostic', 'discard', 'enable', 'fn', 'for', <identifier>, 'if', 'import', 'let', 'loop', 'override', 'package', '(', 'requires', 'return', ';', '*', 'struct', 'super', 'switch', '_', 'var', 'while'"#]],
     );
@@ -3866,27 +3871,29 @@ fn attribute_edge_case_else() {
                 CompoundStatement@18..70
                   BraceLeft@18..19 "{"
                   Blankspace@19..32 "\n            "
-                  AttributeList@32..37
-                    ElseAttribute@32..37
+                  AttributeList@32..59
+                    Attribute@32..55
                       AttributeOperator@32..33 "@"
-                      Else@33..37 "else"
-                  Blankspace@37..50 "\n            "
-                  AssignmentStatement@50..60
-                    ParenthesisExpression@50..55
-                      ParenthesisLeft@50..51 "("
-                      IdentExpression@51..54
-                        Path@51..54
-                          Identifier@51..54 "bar"
-                      ParenthesisRight@54..55 ")"
+                      Identifier@33..37 "else"
+                      Blankspace@37..50 "\n            "
+                      AttributeArguments@50..55
+                        ParenthesisLeft@50..51 "("
+                        IdentExpression@51..54
+                          Path@51..54
+                            Identifier@51..54 "bar"
+                        ParenthesisRight@54..55 ")"
                     Blankspace@55..56 " "
-                    Equal@56..57 "="
-                    Blankspace@57..58 " "
-                    Literal@58..59
+                    Error@56..59
+                      Equal@56..57 "="
+                      Blankspace@57..58 " "
                       IntLiteral@58..59 "3"
+                  EmptyStatement@59..60
                     Semicolon@59..60 ";"
                   Blankspace@60..69 "\n        "
                   BraceRight@69..70 "}"
-              Blankspace@70..79 "\n        ""#]],
+              Blankspace@70..79 "\n        "
+
+            error at 56..57: invalid syntax, expected one of: 'alias', '&', '@', '{', '}', 'break', 'case', 'const', 'const_assert', 'continue', 'continuing', 'default', 'diagnostic', 'discard', 'enable', 'fn', 'for', <identifier>, 'if', 'import', 'let', 'loop', 'override', 'package', '(', 'requires', 'return', ';', '*', 'struct', 'super', 'switch', '_', 'var', 'while'"#]],
     );
 }
 
@@ -3915,15 +3922,16 @@ fn attribute_edge_case_if() {
                   BraceLeft@18..19 "{"
                   Blankspace@19..32 "\n            "
                   AttributeList@32..57
-                    IfAttribute@32..53
+                    Attribute@32..53
                       AttributeOperator@32..33 "@"
-                      If@33..35 "if"
+                      Identifier@33..35 "if"
                       Blankspace@35..48 "\n            "
-                      ParenthesisLeft@48..49 "("
-                      IdentExpression@49..52
-                        Path@49..52
-                          Identifier@49..52 "bar"
-                      ParenthesisRight@52..53 ")"
+                      AttributeArguments@48..53
+                        ParenthesisLeft@48..49 "("
+                        IdentExpression@49..52
+                          Path@49..52
+                            Identifier@49..52 "bar"
+                        ParenthesisRight@52..53 ")"
                     Blankspace@53..54 " "
                     Error@54..57
                       Equal@54..55 "="

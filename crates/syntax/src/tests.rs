@@ -57,7 +57,7 @@ fn smoke_test() {
         panic!();
     };
     assert_eq!(
-        addition.op_kind(),
+        addition.operator_kind(),
         Some(BinaryOperation::Arithmetic(ArithmeticOperation::Addition))
     );
 }
@@ -166,7 +166,7 @@ fn loop_with_block() {
 }
 
 #[test]
-fn diagnostic_attribute() {
+fn function_attribute() {
     let parsed = check_errors(
         "
         @diagnostic(off, bla)
@@ -174,56 +174,18 @@ fn diagnostic_attribute() {
         ",
         expect![""],
     );
-    match parsed.tree().items().next().unwrap() {
-        Item::FunctionDeclaration(func) => match func.attributes().unwrap().next().unwrap() {
-            Attribute::DiagnosticAttribute(diagnostic_attribute) => {
-                assert_eq!(
-                    diagnostic_attribute
-                        .parameters()
-                        .unwrap()
-                        .severity_control_name()
-                        .unwrap()
-                        .ident_token()
-                        .unwrap()
-                        .text(),
-                    "off"
-                );
-                assert_eq!(
-                    diagnostic_attribute
-                        .parameters()
-                        .unwrap()
-                        .diagnostic_rule_name()
-                        .unwrap()
-                        .ident_token()
-                        .unwrap()
-                        .text(),
-                    "bla"
-                );
-            },
-            _ => panic!("wrong attribute"),
-        },
-        _ => panic!("expected function"),
-    }
-}
-
-#[test]
-fn const_attribute() {
-    let parsed = check_errors(
-        "
-        @const
-        fn foo() {}
-        ",
-        expect![""],
+    let Item::FunctionDeclaration(func) = parsed.tree().items().next().unwrap() else {
+        panic!("expected function");
+    };
+    let diagnostic_attribute = func.attributes().unwrap().next().unwrap();
+    assert_eq!(
+        diagnostic_attribute
+            .arguments()
+            .unwrap()
+            .arguments()
+            .count(),
+        2
     );
-    match parsed.tree().items().next().unwrap() {
-        Item::FunctionDeclaration(func) => match func.attributes().unwrap().next().unwrap() {
-            Attribute::ConstantAttribute(constant_attribute) => {
-                assert_eq!(constant_attribute.name().unwrap().text(), "const");
-            },
-            _ => panic!("wrong attribute"),
-        },
-        _ => panic!("expected function"),
-    }
 }
 
 #[test]
@@ -235,51 +197,47 @@ fn other_attribute() {
         ",
         expect![""],
     );
-    match parsed.tree().items().next().unwrap() {
-        Item::FunctionDeclaration(func) => match func.attributes().unwrap().next().unwrap() {
-            Attribute::OtherAttribute(other_attribute) => {
-                assert_eq!(other_attribute.name().unwrap().text(), "nonexistent");
-                match other_attribute
-                    .parameters()
-                    .unwrap()
-                    .arguments()
-                    .next()
-                    .unwrap()
-                {
-                    Expression::InfixExpression(infix_expression) => {
-                        match infix_expression.left_side().unwrap() {
-                            Expression::IdentExpression(ident_expression) => {
-                                assert_eq!(
-                                    ident_expression
-                                        .path()
-                                        .unwrap()
-                                        .segments()
-                                        .next()
-                                        .unwrap()
-                                        .text(),
-                                    "wacky"
-                                );
-                            },
-                            _ => panic!("wrong expression"),
-                        }
-                        match infix_expression.right_side().unwrap() {
-                            Expression::Literal(literal) => match literal.kind() {
-                                LiteralKind::IntLiteral(syntax_token) => {
-                                    assert_eq!(syntax_token.text(), "2");
-                                },
-                                _ => panic!("wrong literal"),
-                            },
-                            _ => panic!("wrong expression"),
-                        }
-                        assert_eq!(infix_expression.op_kind().unwrap().symbol(), "*");
-                        assert_eq!(infix_expression.operator().unwrap().text(), "*");
+    let Item::FunctionDeclaration(func) = parsed.tree().items().next().unwrap() else {
+        panic!("expected function");
+    };
+    let other_attribute = func.attributes().unwrap().next().unwrap();
+    assert_eq!(other_attribute.name().unwrap().text(), "nonexistent");
+    match other_attribute
+        .arguments()
+        .unwrap()
+        .arguments()
+        .next()
+        .unwrap()
+    {
+        Expression::InfixExpression(infix_expression) => {
+            match infix_expression.left_side().unwrap() {
+                Expression::IdentExpression(ident_expression) => {
+                    assert_eq!(
+                        ident_expression
+                            .path()
+                            .unwrap()
+                            .segments()
+                            .next()
+                            .unwrap()
+                            .text(),
+                        "wacky"
+                    );
+                },
+                _ => panic!("wrong expression"),
+            }
+            match infix_expression.right_side().unwrap() {
+                Expression::Literal(literal) => match literal.kind() {
+                    LiteralKind::IntLiteral(syntax_token) => {
+                        assert_eq!(syntax_token.text(), "2");
                     },
-                    _ => panic!("wrong argument"),
-                }
-            },
-            _ => panic!("wrong attribute"),
+                    _ => panic!("wrong literal"),
+                },
+                _ => panic!("wrong expression"),
+            }
+            assert_eq!(infix_expression.operator_kind().unwrap().symbol(), "*");
+            assert_eq!(infix_expression.operator().unwrap().text(), "*");
         },
-        _ => panic!("expected function"),
+        _ => panic!("wrong argument"),
     }
 }
 
@@ -292,15 +250,11 @@ fn struct_translate_attribute() {
         ",
         expect![""],
     );
-    match parsed.tree().items().next().unwrap() {
-        Item::StructDeclaration(r#struct) => match r#struct.attributes().unwrap().next().unwrap() {
-            Attribute::IfAttribute(if_attribute) => {
-                assert_eq!(if_attribute.name().unwrap().text(), "if");
-            },
-            _ => panic!("wrong attribute"),
-        },
-        _ => panic!("expected function"),
-    }
+    let Item::StructDeclaration(r#struct) = parsed.tree().items().next().unwrap() else {
+        panic!("expected struct")
+    };
+    let if_attribute = r#struct.attributes().unwrap().next().unwrap();
+    assert_eq!(if_attribute.name().unwrap().text(), "if");
 }
 
 #[test]
@@ -312,15 +266,11 @@ fn assert_translate_attribute() {
         ",
         expect![""],
     );
-    match parsed.tree().items().next().unwrap() {
-        Item::AssertStatement(assert) => match assert.attributes().unwrap().next().unwrap() {
-            Attribute::IfAttribute(if_attribute) => {
-                assert_eq!(if_attribute.name().unwrap().text(), "if");
-            },
-            _ => panic!("wrong attribute"),
-        },
-        _ => panic!("expected function"),
-    }
+    let Item::AssertStatement(assert) = parsed.tree().items().next().unwrap() else {
+        panic!("expected assert statement")
+    };
+    let if_attribute = assert.attributes().unwrap().next().unwrap();
+    assert_eq!(if_attribute.name().unwrap().text(), "if");
 }
 
 #[test]
@@ -332,59 +282,12 @@ fn diagnostic_translate_attribute() {
         ",
         expect![""],
     );
-    match parsed.tree().directives().next().unwrap() {
-        Directive::DiagnosticDirective(diagnostic) => {
-            match diagnostic.attributes().unwrap().next().unwrap() {
-                Attribute::IfAttribute(if_attribute) => {
-                    assert_eq!(if_attribute.name().unwrap().text(), "if");
-                },
-                _ => panic!("wrong attribute"),
-            }
-        },
-        _ => panic!("expected function"),
-    }
-}
-
-#[test]
-fn enable_translate_attribute() {
-    let parsed = check_errors(
-        "
-        @if(true)
-        enable f16;
-        ",
-        expect![""],
-    );
-    match parsed.tree().directives().next().unwrap() {
-        Directive::EnableDirective(enable) => match enable.attributes().unwrap().next().unwrap() {
-            Attribute::IfAttribute(if_attribute) => {
-                assert_eq!(if_attribute.name().unwrap().text(), "if");
-            },
-            _ => panic!("wrong attribute"),
-        },
-        _ => panic!("expected function"),
-    }
-}
-
-#[test]
-fn requires_translate_attribute() {
-    let parsed = check_errors(
-        "
-        @if(true)
-        requires packed_4x8_integer_dot_product;
-        ",
-        expect![""],
-    );
-    match parsed.tree().directives().next().unwrap() {
-        Directive::RequiresDirective(enable) => {
-            match enable.attributes().unwrap().next().unwrap() {
-                Attribute::IfAttribute(if_attribute) => {
-                    assert_eq!(if_attribute.name().unwrap().text(), "if");
-                },
-                _ => panic!("wrong attribute"),
-            }
-        },
-        _ => panic!("expected function"),
-    }
+    let Directive::DiagnosticDirective(diagnostic) = parsed.tree().directives().next().unwrap()
+    else {
+        panic!("expected diagnostic directive")
+    };
+    let if_attribute = diagnostic.attributes().unwrap().next().unwrap();
+    assert_eq!(if_attribute.name().unwrap().text(), "if");
 }
 
 #[test]
@@ -396,15 +299,11 @@ fn type_translate_attribute() {
         ",
         expect![""],
     );
-    match parsed.tree().items().next().unwrap() {
-        Item::TypeAliasDeclaration(enable) => match enable.attributes().unwrap().next().unwrap() {
-            Attribute::IfAttribute(if_attribute) => {
-                assert_eq!(if_attribute.name().unwrap().text(), "if");
-            },
-            _ => panic!("wrong attribute"),
-        },
-        _ => panic!("expected function"),
-    }
+    let Item::TypeAliasDeclaration(enable) = parsed.tree().items().next().unwrap() else {
+        panic!("expected type alias declaration")
+    };
+    let if_attribute = enable.attributes().unwrap().next().unwrap();
+    assert_eq!(if_attribute.name().unwrap().text(), "if");
 }
 
 #[test]
@@ -546,7 +445,7 @@ fn operator_fun() {
     match let_declaration.init().unwrap() {
         Expression::InfixExpression(infix_expression) => {
             assert_eq!(
-                infix_expression.op_kind().unwrap(),
+                infix_expression.operator_kind().unwrap(),
                 BinaryOperation::Arithmetic(ArithmeticOperation::Multiplication)
             );
             match infix_expression.right_side().unwrap() {

@@ -3,10 +3,9 @@ use std::{collections::BTreeMap, string::String};
 use dprint_core::formatting::PrintItems;
 use dprint_core_macros::sc;
 use itertools::{Itertools as _, Position};
-pub(crate) use standard_attributes::*;
 use syntax::{
-    AstNode as _, SyntaxKind, SyntaxNode,
-    ast::{self, Attribute, AttributeList},
+    AstNode as _, SyntaxKind,
+    ast::{self, AttributeKind, AttributeList},
 };
 
 use crate::{
@@ -80,39 +79,50 @@ where
     Ok(formatted)
 }
 
-pub(crate) fn categorize_attribute(attribute: &Attribute) -> AttributeCategorization {
+pub(crate) fn categorize_attribute(attribute: &ast::Attribute) -> AttributeCategorization {
     use AttributeCategorization::{Grouped, Inline, Ungrouped};
-    match &attribute {
-        Attribute::DiagnosticAttribute(_) => Grouped(AttributeGroup::Diagnostics, 0),
-        Attribute::SizeAttribute(_) => Grouped(AttributeGroup::OffsetAlignSize, 2),
-        Attribute::AlignAttribute(_) => Grouped(AttributeGroup::OffsetAlignSize, 1),
-        Attribute::GroupAttribute(_) => Grouped(AttributeGroup::BindingGroup, 0),
-        Attribute::BindingAttribute(_) => Grouped(AttributeGroup::BindingGroup, 1),
-        Attribute::ComputeAttribute(_) => Grouped(AttributeGroup::ComputeWorkgroup, 0),
-        Attribute::WorkgroupSizeAttribute(_) => Grouped(AttributeGroup::ComputeWorkgroup, 1),
-        Attribute::VertexAttribute(_) => Grouped(AttributeGroup::Vertex, 0),
-        Attribute::FragmentAttribute(_) => Grouped(AttributeGroup::Fragment, 0),
-        Attribute::BlendSrcAttribute(_) => Grouped(AttributeGroup::BlendSrc, 0),
-        Attribute::IdAttribute(_) => Grouped(AttributeGroup::Id, 0),
-        Attribute::InterpolateAttribute(_) => Grouped(AttributeGroup::Interpolate, 0),
-        Attribute::InvariantAttribute(_) => Grouped(AttributeGroup::Invariant, 0),
+    use ast::{ConditionalAttributeKind, EntrypointAttributeKind};
 
-        Attribute::OtherAttribute(attrib) => {
-            let name = attrib.name().map(|identifier| identifier.text().to_owned());
-            let name = name.as_deref();
-            match name {
-                Some("offset") => Grouped(AttributeGroup::OffsetAlignSize, 0),
-                Some(name) => Ungrouped(name.to_owned()),
-                None => Ungrouped(String::new()),
-            }
+    match attribute.kind() {
+        AttributeKind::Diagnostic => Grouped(AttributeGroup::Diagnostics, 0),
+        AttributeKind::Size => Grouped(AttributeGroup::OffsetAlignSize, 2),
+        AttributeKind::Align => Grouped(AttributeGroup::OffsetAlignSize, 1),
+        AttributeKind::Group => Grouped(AttributeGroup::BindingGroup, 0),
+        AttributeKind::Binding => Grouped(AttributeGroup::BindingGroup, 1),
+        AttributeKind::Entrypoint(EntrypointAttributeKind::Compute) => {
+            Grouped(AttributeGroup::ComputeWorkgroup, 0)
         },
-        Attribute::LocationAttribute(_) => Inline(3),
-        Attribute::BuiltinAttribute(_) => Inline(2),
-        Attribute::MustUseAttribute(_) => Inline(1),
-        Attribute::ConstantAttribute(_) => Inline(0),
-        Attribute::IfAttribute(_) => Grouped(AttributeGroup::Conditional, 0),
-        Attribute::ElifAttribute(_) => Grouped(AttributeGroup::Conditional, 1),
-        Attribute::ElseAttribute(_) => Grouped(AttributeGroup::Conditional, 2),
+        AttributeKind::SubgroupSize => Grouped(AttributeGroup::ComputeWorkgroup, 2),
+        AttributeKind::WorkgroupSize => Grouped(AttributeGroup::ComputeWorkgroup, 1),
+        AttributeKind::Entrypoint(EntrypointAttributeKind::Vertex) => {
+            Grouped(AttributeGroup::Vertex, 0)
+        },
+        AttributeKind::Entrypoint(EntrypointAttributeKind::Fragment) => {
+            Grouped(AttributeGroup::Fragment, 0)
+        },
+        AttributeKind::BlendSrc => Grouped(AttributeGroup::BlendSrc, 0),
+        AttributeKind::Id => Grouped(AttributeGroup::Id, 0),
+        AttributeKind::Interpolate => Grouped(AttributeGroup::Interpolate, 0),
+        AttributeKind::Invariant => Grouped(AttributeGroup::Invariant, 0),
+        AttributeKind::Location => Inline(3),
+        AttributeKind::Builtin => Inline(2),
+        AttributeKind::MustUse => Inline(1),
+        AttributeKind::Const => Inline(0),
+        AttributeKind::Conditional(ConditionalAttributeKind::If) => {
+            Grouped(AttributeGroup::Conditional, 0)
+        },
+        AttributeKind::Conditional(ConditionalAttributeKind::Elif) => {
+            Grouped(AttributeGroup::Conditional, 1)
+        },
+        AttributeKind::Conditional(ConditionalAttributeKind::Else) => {
+            Grouped(AttributeGroup::Conditional, 2)
+        },
+        AttributeKind::Other => {
+            let Some(name_token) = attribute.name() else {
+                return Ungrouped(String::new());
+            };
+            Ungrouped(name_token.text().to_owned())
+        },
     }
 }
 
@@ -165,14 +175,14 @@ pub(crate) fn gen_attribute_list(
             node
         })
         .filter(|node| !node.is_whitespace())
-        .map(NodeWithTrivia::expect_ast_node_optional::<Attribute>)
+        .map(NodeWithTrivia::expect_ast_node_optional::<ast::Attribute>)
         .map(|item| {
             let item = item?;
             let content = item.content();
             let attribute = content
                 .as_ref()
                 .and_then(|node_or_token| node_or_token.clone().into_node())
-                .and_then(Attribute::cast)
+                .and_then(ast::Attribute::cast)
                 .ok_or(FormatDocumentError::UnexpectedNodeOrToken { received: content })?;
             Ok((item, attribute))
         })
@@ -244,245 +254,114 @@ pub(crate) fn gen_attribute_list(
     Ok(formatted)
 }
 
-pub(crate) fn gen_attribute(attribute: &Attribute) -> FormatDocumentResult<PrintItemBuffer> {
-    use Attribute::{
-        AlignAttribute, BindingAttribute, BlendSrcAttribute, BuiltinAttribute, ComputeAttribute,
-        ConstantAttribute, DiagnosticAttribute, ElifAttribute, ElseAttribute, FragmentAttribute,
-        GroupAttribute, IdAttribute, IfAttribute, InterpolateAttribute, InvariantAttribute,
-        LocationAttribute, MustUseAttribute, OtherAttribute, SizeAttribute, VertexAttribute,
-        WorkgroupSizeAttribute,
-    };
-    match attribute {
-        OtherAttribute(other_attribute) => gen_other_attribute(other_attribute),
-        // === Standard Attributes ===
-        ConstantAttribute(constant_attribute) => gen_const_attribute(constant_attribute),
-        DiagnosticAttribute(diagnostic_attribute) => gen_diagnostic_attribute(diagnostic_attribute),
-        AlignAttribute(align_attribute) => gen_align_attribute(align_attribute),
-        BindingAttribute(binding_attribute) => gen_binding_attribute(binding_attribute),
-        BlendSrcAttribute(blend_src_attribute) => gen_blend_src_attribute(blend_src_attribute),
-        BuiltinAttribute(builtin_attribute) => gen_builtin_attribute(builtin_attribute),
-        GroupAttribute(group_attribute) => gen_group_attribute(group_attribute),
-        IdAttribute(id_attribute) => gen_id_attribute(id_attribute),
-        InterpolateAttribute(interpolate_attribute) => {
-            gen_interpolate_attribute(interpolate_attribute)
-        },
-        InvariantAttribute(invariant_attribute) => gen_invariant_attribute(invariant_attribute),
-        LocationAttribute(location_attribute) => gen_location_attribute(location_attribute),
-        MustUseAttribute(must_use_attribute) => gen_must_use_attribute(must_use_attribute),
-        SizeAttribute(size_attribute) => gen_size_attribute(size_attribute),
-        WorkgroupSizeAttribute(workgroup_size_attribute) => {
-            gen_workgroup_size_attribute(workgroup_size_attribute)
-        },
-        VertexAttribute(vertex_attribute) => gen_vertex_attribute(vertex_attribute),
-        FragmentAttribute(fragment_attribute) => gen_fragment_attribute(fragment_attribute),
-        ComputeAttribute(compute_attribute) => gen_compute_attribute(compute_attribute),
-        IfAttribute(if_attribute) => gen_if_attribute(if_attribute),
-        ElifAttribute(elif_attribute) => gen_elif_attribute(elif_attribute),
-        ElseAttribute(else_attribute) => gen_else_attribute(else_attribute),
+pub(crate) fn gen_attribute(attribute: &ast::Attribute) -> FormatDocumentResult<PrintItemBuffer> {
+    if let AttributeKind::Conditional(_) = attribute.kind() {
+        gen_attr_condcomp(attribute)
+    } else {
+        gen_attr_standard(attribute)
     }
 }
 
-pub(crate) fn gen_diagnostic_attribute(
-    attribute: &ast::DiagnosticAttribute
+pub(crate) fn gen_attribute_arguments(
+    arguments: &ast::AttributeArguments
 ) -> FormatDocumentResult<PrintItemBuffer> {
-    let mut syntax = syntax_iter(attribute.syntax());
+    // ==== Parse ====
+    let mut syntax = syntax_iter(arguments.syntax());
+    parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::ParenthesisLeft)?;
+    let item_arguments: Vec<_> = parse_many_nodes_with(
+        &mut syntax,
+        (
+            Succeeding(StopAtNewline),
+            DiscardBlankspace,
+            DiscardComma,
+            DiscardParenthesis,
+        ),
+    )
+    .filter(|node| !node.is_whitespace())
+    .map(|item| item.expect_ast_node_optional::<ast::Expression>())
+    .try_collect()?;
 
-    parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::AttributeOperator)?;
-    let item_diagnostic = parse_node_with(&mut syntax, DiscardBlankspace)
-        .expect_kind(syntax::SyntaxKind::Diagnostic)?;
-    let item_control = parse_node_with(&mut syntax, DiscardBlankspace)
-        .expect_kind(SyntaxKind::DiagnosticControl)?;
     parse_end(&mut syntax)?;
 
+    // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
-    formatted.push_sc(sc!("@"));
-    formatted.extend(gen_node_with_trivia(&item_diagnostic)?);
-    formatted.extend(gen_node_with_trivia(&item_control)?);
-    Ok(formatted)
-}
-
-pub(crate) fn gen_interpolate_type_name(
-    attribute: &ast::InterpolateTypeName
-) -> FormatDocumentResult<PrintItemBuffer> {
-    let mut syntax = syntax_iter(attribute.syntax());
-    let content = parse_node_with(&mut syntax, DiscardBlankspace);
-    parse_end(&mut syntax)?;
-
-    let mut formatted = PrintItemBuffer::default();
-    formatted.extend(gen_node_with_trivia(&content)?);
-    Ok(formatted)
-}
-
-pub(crate) fn gen_early_depth_test_mode(
-    attribute: &SyntaxNode
-) -> FormatDocumentResult<PrintItemBuffer> {
-    let mut syntax = syntax_iter(attribute.syntax());
-    let content = parse_node_with(&mut syntax, DiscardBlankspace);
-    parse_end(&mut syntax)?;
-
-    let mut formatted = PrintItemBuffer::default();
-    formatted.extend(gen_node_with_trivia(&content)?);
-    Ok(formatted)
-}
-
-pub(crate) fn gen_interpolate_sampling_name(
-    attribute: &ast::InterpolateSamplingName
-) -> FormatDocumentResult<PrintItemBuffer> {
-    let mut syntax = syntax_iter(attribute.syntax());
-    let content = parse_node_with(&mut syntax, DiscardBlankspace);
-    parse_end(&mut syntax)?;
-
-    let mut formatted = PrintItemBuffer::default();
-    formatted.extend(gen_node_with_trivia(&content)?);
-    Ok(formatted)
-}
-pub(crate) fn gen_interpolate_attribute(
-    attribute: &ast::InterpolateAttribute
-) -> FormatDocumentResult<PrintItemBuffer> {
-    let mut syntax = syntax_iter(attribute.syntax());
-
-    let item_attr_operator =
-        parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::AttributeOperator)?;
-    let item_interpolate = parse_node_with(&mut syntax, DiscardBlankspace)
-        .expect_kind(syntax::SyntaxKind::Interpolate)?;
-    let item_paren_left =
-        parse_node_with(&mut syntax, NoTrivia).expect_kind(syntax::SyntaxKind::ParenthesisLeft)?;
-    let interpolate_type_name = parse_node_with(&mut syntax, DiscardBlankspace)
-        .expect_kind(SyntaxKind::InterpolateTypeName)?;
-
-    let item_comma =
-        parse_node_with(&mut syntax, NoTrivia).only_if_kind(SyntaxKind::Comma, &mut syntax);
-    let sampling = if item_comma.is_some() {
-        let interpolate_sampling_name = parse_node_with(&mut syntax, DiscardBlankspace)
-            .expect_kind(SyntaxKind::InterpolateSamplingName)?;
-        Some(interpolate_sampling_name)
-    } else {
-        None
-    };
-    parse_node_with(&mut syntax, NoTrivia).only_if_kind(SyntaxKind::Comma, &mut syntax);
-    parse_node_with(&mut syntax, NoTrivia).expect_kind(syntax::SyntaxKind::ParenthesisRight)?;
-    parse_end(&mut syntax)?;
-
-    let mut formatted = PrintItemBuffer::default();
-    formatted.extend(gen_node_with_trivia(&item_attr_operator)?);
-    formatted.extend(gen_node_with_trivia(&item_interpolate)?);
 
     let mut multiline_group = MultilineGroup::new_before_requests(&mut formatted);
-    multiline_group.extend(gen_node_with_trivia(&item_paren_left)?);
-    multiline_group.start_indent_before_requests();
-    multiline_group.grouped_possible_newline();
-    multiline_group.request(Request::discourage(RequestItem::EmptyLine));
-    multiline_group.request(Request::discourage(RequestItem::Space));
-    multiline_group.extend(gen_node_with_trivia(&interpolate_type_name)?);
-    if let Some(sampling) = sampling {
-        multiline_group.push_sc(sc!(","));
-        multiline_group.grouped_newline_or_space();
-        multiline_group.extend(gen_node_with_trivia(&sampling)?);
+    multiline_group.push_sc(sc!("("));
+
+    // If its blank we do not give the formatter the option to break within the ()
+    if !item_arguments.is_empty() {
+        multiline_group.start_indent_before_requests();
+        multiline_group.grouped_possible_newline();
+        multiline_group.request(Request::discourage(RequestItem::EmptyLine));
+        multiline_group.request(Request::discourage(RequestItem::Space));
+
+        for (position, item) in item_arguments.into_iter().with_position() {
+            multiline_group.grouped_newline_or_space();
+            multiline_group.extend(gen_node_preceding_trivia(&item)?);
+            if item.has_content() {
+                multiline_group.extend(gen_node_content(&item)?);
+                multiline_group.request(Request::discourage(RequestItem::Space));
+                if position == Position::Last || position == Position::Only {
+                    multiline_group.extend_if_multi_line({
+                        let mut pi = PrintItems::default();
+                        pi.push_sc(sc!(","));
+                        pi
+                    });
+                } else {
+                    multiline_group.push_sc(sc!(","));
+                }
+            }
+            multiline_group.extend(gen_node_succeeding_trivia(&item)?);
+        }
+
+        multiline_group.request(Request::discourage(RequestItem::Space));
+        multiline_group.grouped_possible_newline();
+        multiline_group.finish_indent_before_requests();
     }
 
-    multiline_group.finish_indent_before_requests();
-    multiline_group.grouped_possible_newline();
     multiline_group.push_sc(sc!(")"));
     multiline_group.end_before_requests();
     Ok(formatted)
 }
 
-pub(crate) fn gen_builtin_value_name(
-    attribute: &ast::BuiltinValueName
+/// Attributes of the form:
+/// `'@' 'expected_token'`
+/// and
+/// `'@' 'expected_token' '(' expression (',' expression)* [','] ')'`.
+pub(crate) fn gen_attr_standard(
+    attribute: &ast::Attribute
 ) -> FormatDocumentResult<PrintItemBuffer> {
-    let mut syntax = syntax_iter(attribute.syntax());
-    let content = parse_node_with(&mut syntax, DiscardBlankspace);
-    parse_end(&mut syntax)?;
-
-    let mut formatted = PrintItemBuffer::default();
-    formatted.extend(gen_node_with_trivia(&content)?);
-    Ok(formatted)
-}
-pub(crate) fn gen_builtin_attribute(
-    attribute: &ast::BuiltinAttribute
-) -> FormatDocumentResult<PrintItemBuffer> {
-    let mut syntax = syntax_iter(attribute.syntax());
-
-    let item_attr_operator =
-        parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::AttributeOperator)?;
-    let item_builtin =
-        parse_node_with(&mut syntax, DiscardBlankspace).expect_kind(syntax::SyntaxKind::Builtin)?;
-    parse_node_with(&mut syntax, NoTrivia).expect_kind(syntax::SyntaxKind::ParenthesisLeft)?;
-    let item_builtin_value_name = parse_node_with(&mut syntax, DiscardBlankspace)
-        .expect_kind(SyntaxKind::BuiltinValueName)?;
-    parse_node_with(&mut syntax, NoTrivia).only_if_kind(SyntaxKind::Comma, &mut syntax);
-    parse_node_with(&mut syntax, NoTrivia).expect_kind(syntax::SyntaxKind::ParenthesisRight)?;
-    parse_end(&mut syntax)?;
-
-    let mut formatted = PrintItemBuffer::default();
-    formatted.extend(gen_node_with_trivia(&item_attr_operator)?);
-    formatted.extend(gen_node_with_trivia(&item_builtin)?);
-    formatted.push_sc(sc!("("));
-    formatted.extend(gen_node_with_trivia(&item_builtin_value_name)?);
-    formatted.push_sc(sc!(")"));
-    Ok(formatted)
-}
-
-pub(crate) fn gen_other_attribute(
-    attribute: &ast::OtherAttribute
-) -> FormatDocumentResult<PrintItemBuffer> {
+    // ==== Parse ====
     let mut syntax = syntax_iter(attribute.syntax());
 
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::AttributeOperator)?;
-    let item_identifier = parse_node_with(&mut syntax, DiscardBlankspace)
+    let item_attribute_name = parse_node_with(&mut syntax, DiscardBlankspace)
         .expect_kind(syntax::SyntaxKind::Identifier)?;
     let item_arguments = parse_node_with(&mut syntax, DiscardBlankspace)
-        .only_if_kind(SyntaxKind::Arguments, &mut syntax);
+        .only_if_kind(SyntaxKind::AttributeArguments, &mut syntax);
     parse_end(&mut syntax)?;
+
+    // ==== Format ====
 
     let mut formatted = PrintItemBuffer::default();
     formatted.push_sc(sc!("@"));
-    formatted.extend(gen_node_with_trivia(&item_identifier)?);
+    formatted.extend(gen_node_with_trivia(&item_attribute_name)?);
     if let Some(item_arguments) = item_arguments {
         formatted.extend(gen_node_with_trivia(&item_arguments)?);
     }
     Ok(formatted)
 }
-#[rustfmt::skip]
-#[expect(clippy::inline_modules, reason = "Its much neater this way, simply grouping them together.")]
-mod standard_attributes {
-    use super::gen_attr_standard_with_args;
-    use syntax::{SyntaxKind};
-    use syntax::{AstNode as _, ast};
 
-    use crate::{generators::attributes::gen_attr_condcomp_with_args, print_item_buffer::PrintItemBuffer, reporting::FormatDocumentResult};
-
-
-    pub(crate) fn gen_align_attribute(attribute: &ast::AlignAttribute) -> FormatDocumentResult<PrintItemBuffer>                   { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::Align) }
-    pub(crate) fn gen_const_attribute(attribute: &ast::ConstantAttribute ) -> FormatDocumentResult<PrintItemBuffer>               { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::Const) }
-    pub(crate) fn gen_binding_attribute(attribute: &ast::BindingAttribute ) -> FormatDocumentResult<PrintItemBuffer>              { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::Binding) }
-    pub(crate) fn gen_blend_src_attribute(attribute: &ast::BlendSrcAttribute ) -> FormatDocumentResult<PrintItemBuffer>           { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::BlendSrc) }
-    pub(crate) fn gen_group_attribute(attribute: &ast::GroupAttribute ) -> FormatDocumentResult<PrintItemBuffer>                  { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::Group) }
-    pub(crate) fn gen_id_attribute(attribute: &ast::IdAttribute) -> FormatDocumentResult<PrintItemBuffer>                         { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::Id) }
-    pub(crate) fn gen_invariant_attribute(attribute: &ast::InvariantAttribute ) -> FormatDocumentResult<PrintItemBuffer>          { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::Invariant) }
-    pub(crate) fn gen_location_attribute(attribute: &ast::LocationAttribute ) -> FormatDocumentResult<PrintItemBuffer>            { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::Location) }
-    pub(crate) fn gen_must_use_attribute(attribute: &ast::MustUseAttribute ) -> FormatDocumentResult<PrintItemBuffer>             { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::MustUse) }
-    pub(crate) fn gen_size_attribute(attribute: &ast::SizeAttribute ) -> FormatDocumentResult<PrintItemBuffer>                    { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::Size) }
-    pub(crate) fn gen_workgroup_size_attribute(attribute: &ast::WorkgroupSizeAttribute ) -> FormatDocumentResult<PrintItemBuffer> { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::WorkgroupSize, ) }
-    pub(crate) fn gen_vertex_attribute(attribute: &ast::VertexAttribute ) -> FormatDocumentResult<PrintItemBuffer>                { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::Vertex) }
-    pub(crate) fn gen_fragment_attribute(attribute: &ast::FragmentAttribute ) -> FormatDocumentResult<PrintItemBuffer>            { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::Fragment) }
-    pub(crate) fn gen_compute_attribute(attribute: &ast::ComputeAttribute ) -> FormatDocumentResult<PrintItemBuffer>              { gen_attr_standard_with_args(attribute.syntax(), SyntaxKind::Compute) }
-
-    // WESL
-    pub(crate) fn gen_if_attribute(attribute: &ast::IfAttribute ) -> FormatDocumentResult<PrintItemBuffer>                        { gen_attr_condcomp_with_args(attribute.syntax(), SyntaxKind::If) }
-    pub(crate) fn gen_elif_attribute(attribute: &ast::ElifAttribute ) -> FormatDocumentResult<PrintItemBuffer>                    { gen_attr_condcomp_with_args(attribute.syntax(), SyntaxKind::Elif) }
-    pub(crate) fn gen_else_attribute(attribute: &ast::ElseAttribute ) -> FormatDocumentResult<PrintItemBuffer>                    { gen_attr_condcomp_with_args(attribute.syntax(), SyntaxKind::Else) }
-}
-
-pub(crate) fn gen_attr_condcomp_with_args(
-    syntax: &SyntaxNode,
-    expected_token: SyntaxKind,
-) -> FormatDocumentResult<PrintItemBuffer> {
+fn gen_attr_condcomp(attribute: &ast::Attribute) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Context
     let merge_with_preceding_compound = if TEMP_EXPERIMENTAL_CONDCOMP_MODE
         .condcomp_body_braces_on_same_line
-        && !matches!(syntax.kind(), SyntaxKind::IfAttribute)
-        && let Some(parent) = syntax.parent()
+        && !matches!(
+            attribute.kind(),
+            AttributeKind::Conditional(ast::ConditionalAttributeKind::If)
+        )
+        && let Some(parent) = attribute.syntax().parent()
         && let Some(previous) = parent.prev_sibling()
         && matches!(
             previous.kind(),
@@ -493,7 +372,7 @@ pub(crate) fn gen_attr_condcomp_with_args(
         false
     };
 
-    let dedent = if let Some(parent) = syntax.parent()
+    let dedent = if let Some(parent) = attribute.syntax().parent()
         && let Some(previous) = parent.next_sibling()
         && matches!(
             previous.kind(),
@@ -517,87 +396,11 @@ pub(crate) fn gen_attr_condcomp_with_args(
     if dedent {
         formatted.start_ignoring_indent_before_requests();
     }
-    formatted.extend(gen_attr_standard_with_args(syntax, expected_token)?);
+    formatted.extend(gen_attr_standard(attribute)?);
 
     if dedent {
         formatted.finish_ignoring_indent_before_requests();
     }
 
-    Ok(formatted)
-}
-
-/// Attributes of the form:
-/// `'expected_token' '(' expression [','] ')'`.
-pub(crate) fn gen_attr_standard_with_args(
-    syntax: &SyntaxNode,
-    expected_token: SyntaxKind,
-) -> FormatDocumentResult<PrintItemBuffer> {
-    let mut syntax = syntax_iter(syntax);
-
-    parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::AttributeOperator)?;
-    let item_attribute_name =
-        parse_node_with(&mut syntax, DiscardBlankspace).expect_kind(expected_token)?;
-
-    let item_paren_left = parse_node_with(&mut syntax, NoTrivia)
-        .only_if_kind(SyntaxKind::ParenthesisLeft, &mut syntax);
-    let item_arguments = item_paren_left.is_some().then(|| {
-        parse_many_nodes_with(
-            &mut syntax,
-            (
-                Succeeding(StopAtNewline),
-                DiscardBlankspace,
-                DiscardComma,
-                DiscardParenthesis,
-            ),
-        )
-        .filter(|node| !node.is_whitespace())
-        .collect_vec()
-    });
-
-    parse_end(&mut syntax)?;
-
-    // ==== Formatting
-
-    let mut formatted = PrintItemBuffer::default();
-    formatted.push_sc(sc!("@"));
-    formatted.extend(gen_node_with_trivia(&item_attribute_name)?);
-    if let Some(item_arguments) = item_arguments {
-        let mut multiline_group = MultilineGroup::new_before_requests(&mut formatted);
-        multiline_group.push_sc(sc!("("));
-
-        // If its blank we do not give the formatter the option to break within the ()
-        if !item_arguments.is_empty() {
-            multiline_group.start_indent_before_requests();
-            multiline_group.grouped_possible_newline();
-            multiline_group.request(Request::discourage(RequestItem::EmptyLine));
-            multiline_group.request(Request::discourage(RequestItem::Space));
-
-            for (position, item) in item_arguments.into_iter().with_position() {
-                multiline_group.grouped_newline_or_space();
-                multiline_group.extend(gen_node_preceding_trivia(&item)?);
-                if item.has_content() {
-                    multiline_group.extend(gen_node_content(&item)?);
-                    multiline_group.request(Request::discourage(RequestItem::Space));
-                    if position == Position::Last || position == Position::Only {
-                        multiline_group.extend_if_multi_line({
-                            let mut pi = PrintItems::default();
-                            pi.push_sc(sc!(","));
-                            pi
-                        });
-                    } else {
-                        multiline_group.push_sc(sc!(","));
-                    }
-                }
-                multiline_group.extend(gen_node_succeeding_trivia(&item)?);
-            }
-
-            multiline_group.request(Request::discourage(RequestItem::Space));
-            multiline_group.grouped_possible_newline();
-            multiline_group.finish_indent_before_requests();
-        }
-
-        multiline_group.push_sc(sc!(")"));
-        multiline_group.end_before_requests();
-    }
     Ok(formatted)
 }
