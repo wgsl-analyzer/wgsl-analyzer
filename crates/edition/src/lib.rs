@@ -238,11 +238,10 @@ pub struct ExtensionsConfig {
 }
 
 // TODO: implement this in the frontend and add more https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1421
-// these should likely be removed, see https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1431
+// these should be moved, see https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1431
 #[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Capabilities {
     // naga capabilities
     pub shader_int64: bool,
-    // does nothing useful, attributes are simplified
     pub early_depth_test: bool,
 }
