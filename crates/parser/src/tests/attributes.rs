@@ -19,6 +19,96 @@ fn evil_attribute() {
 }
 
 #[test]
+fn attribute_name_after_comment() {
+    check(
+        "@ /* foo */ bar
+        const a = 1;",
+        expect![[r#"
+            SourceFile@0..36
+              AttributeList@0..15
+                Attribute@0..15
+                  AttributeOperator@0..1 "@"
+                  Blankspace@1..2 " "
+                  BlockComment@2..11 "/* foo */"
+                  Blankspace@11..12 " "
+                  Identifier@12..15 "bar"
+              Blankspace@15..24 "\n        "
+              ConstantDeclaration@24..36
+                Const@24..29 "const"
+                Blankspace@29..30 " "
+                Name@30..31
+                  Identifier@30..31 "a"
+                Blankspace@31..32 " "
+                Equal@32..33 "="
+                Blankspace@33..34 " "
+                Literal@34..35
+                  IntLiteral@34..35 "1"
+                Semicolon@35..36 ";""#]],
+    );
+}
+
+#[test]
+fn attribute_recovery_after_symbol() {
+    check(
+        "@ || bar
+        const a = 1;",
+        expect![[r#"
+            SourceFile@0..29
+              AttributeList@0..4
+                Attribute@0..4
+                  AttributeOperator@0..1 "@"
+                  Blankspace@1..2 " "
+                  Error@2..4
+                    OrOr@2..4 "||"
+              Blankspace@4..5 " "
+              Error@5..8
+                Identifier@5..8 "bar"
+              Blankspace@8..17 "\n        "
+              ConstantDeclaration@17..29
+                Const@17..22 "const"
+                Blankspace@22..23 " "
+                Name@23..24
+                  Identifier@23..24 "a"
+                Blankspace@24..25 " "
+                Equal@25..26 "="
+                Blankspace@26..27 " "
+                Literal@27..28
+                  IntLiteral@27..28 "1"
+                Semicolon@28..29 ";"
+
+            error at 2..4: invalid syntax, expected: <identifier>"#]],
+    );
+}
+
+#[test]
+fn attribute_recovery_keyword_after_symbol() {
+    // Suboptimal recovery, see: https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1578
+    check(
+        "@ || const a = 1;",
+        expect![[r#"
+            SourceFile@0..17
+              AttributeList@0..4
+                Attribute@0..4
+                  AttributeOperator@0..1 "@"
+                  Blankspace@1..2 " "
+                  Error@2..4
+                    OrOr@2..4 "||"
+              Blankspace@4..5 " "
+              Error@5..16
+                Identifier@5..10 "const"
+                Blankspace@10..11 " "
+                Identifier@11..12 "a"
+                Blankspace@12..13 " "
+                Equal@13..14 "="
+                Blankspace@14..15 " "
+                IntLiteral@15..16 "1"
+              Semicolon@16..17 ";"
+
+            error at 2..4: invalid syntax, expected: <identifier>"#]],
+    );
+}
+
+#[test]
 fn diagnostic_attribute() {
     check(
         "

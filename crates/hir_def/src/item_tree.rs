@@ -184,7 +184,7 @@ pub struct Struct {
 
 /// The item tree is the level right after the abstract syntax tree.
 /// From here, all the top level items get their ID.
-/// The [crate::body::Body] uses these IDs.
+/// The [`crate::body::Body`] uses these IDs.
 #[derive(Debug, Default, Eq, PartialEq)]
 pub struct ItemTree {
     top_level: Vec<ModuleItemId>,

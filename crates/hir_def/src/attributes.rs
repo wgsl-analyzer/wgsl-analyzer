@@ -52,17 +52,18 @@ impl AttributeList {
         source: &dyn HasAttributes,
     ) -> (Self, ExpressionSourceMap) {
         let mut collector = ExprCollector::new(db, ExpressionStoreSource::Signature);
-        let attributes = source
-            .attributes()
-            .into_iter()
-            .flat_map(std::iter::IntoIterator::into_iter)
-            .map(|attribute| Attribute {
-                name: attribute
-                    .name()
-                    .map_or_else(Name::missing, |attribute| Name::from(attribute.text())),
-                parameters: get_attribute_parameters(&mut collector, attribute),
-            })
-            .collect();
+        let attributes = if let Some(attributes) = source.attributes() {
+            attributes
+                .map(|attribute| Attribute {
+                    name: attribute
+                        .name()
+                        .map_or_else(Name::missing, |attribute| Name::from(attribute.text())),
+                    parameters: get_attribute_parameters(&mut collector, &attribute),
+                })
+                .collect()
+        } else {
+            Vec::new()
+        };
         let (store, source_map) = collector.finish();
         (
             Self {
@@ -88,14 +89,28 @@ impl AttributeList {
 #[expect(clippy::min_ident_chars, reason = "function.tar.gz")]
 fn get_attribute_parameters(
     collector: &mut ExprCollector<'_>,
-    attribute: ast::Attribute,
+    attribute: &ast::Attribute,
 ) -> Vec<la_arena::Idx<crate::expression::Expression>> {
     match attribute.kind() {
         // their arguments are not expressions
         AttributeKind::Diagnostic | AttributeKind::Builtin | AttributeKind::Interpolate => {
             Vec::new()
         },
-        _ => attribute
+        AttributeKind::Align
+        | AttributeKind::Binding
+        | AttributeKind::BlendSrc
+        | AttributeKind::Const
+        | AttributeKind::Group
+        | AttributeKind::Id
+        | AttributeKind::Invariant
+        | AttributeKind::Location
+        | AttributeKind::MustUse
+        | AttributeKind::Size
+        | AttributeKind::SubgroupSize
+        | AttributeKind::WorkgroupSize
+        | AttributeKind::Entrypoint(_)
+        | AttributeKind::Conditional(_)
+        | AttributeKind::Other => attribute
             .arguments()
             .map(|p| p.arguments().map(|e| collector.collect_expression(e)))
             .map_or_else(|| Either::Left(iter::empty()), Either::Right)

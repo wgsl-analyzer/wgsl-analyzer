@@ -253,28 +253,11 @@ pub(crate) fn gen_attribute_list(
 }
 
 pub(crate) fn gen_attribute(attribute: &ast::Attribute) -> FormatDocumentResult<PrintItemBuffer> {
-    match attribute.kind() {
-        AttributeKind::Diagnostic => gen_diagnostic_attribute(attribute),
-        AttributeKind::Conditional(_) => gen_attr_condcomp(attribute),
-        _ => gen_other_attribute(attribute),
+    if let AttributeKind::Conditional(_) = attribute.kind() {
+        gen_attr_condcomp(attribute)
+    } else {
+        gen_other_attribute(attribute)
     }
-}
-
-fn gen_diagnostic_attribute(attribute: &ast::Attribute) -> FormatDocumentResult<PrintItemBuffer> {
-    let mut syntax = syntax_iter(attribute.syntax());
-
-    parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::AttributeOperator)?;
-    let item_diagnostic = parse_node_with(&mut syntax, DiscardBlankspace)
-        .expect_kind(syntax::SyntaxKind::Diagnostic)?;
-    let item_control = parse_node_with(&mut syntax, DiscardBlankspace)
-        .expect_kind(SyntaxKind::DiagnosticControl)?;
-    parse_end(&mut syntax)?;
-
-    let mut formatted = PrintItemBuffer::default();
-    formatted.push_sc(sc!("@"));
-    formatted.extend(gen_node_with_trivia(&item_diagnostic)?);
-    formatted.extend(gen_node_with_trivia(&item_control)?);
-    Ok(formatted)
 }
 
 fn gen_other_attribute(attribute: &ast::Attribute) -> FormatDocumentResult<PrintItemBuffer> {

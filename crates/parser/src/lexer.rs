@@ -255,11 +255,6 @@ struct WgslLexer<'source, 'diagnostics> {
 impl Iterator for WgslLexer<'_, '_> {
     type Item = (Token, Span);
 
-    #[expect(
-        clippy::too_many_lines,
-        clippy::cognitive_complexity,
-        reason = "match arms with control flow, hard to refactor"
-    )]
     fn next(&mut self) -> Option<Self::Item> {
         // Parse WGSL identifiers.
         // Avoiding Logos here for compile time reasons.
@@ -338,6 +333,7 @@ impl Iterator for WgslLexer<'_, '_> {
                 // An ident that must have more characters
                 self.inner.bump('_'.len_utf8());
 
+                self.inner.extras.after_at = false;
                 match characters.next() {
                     Some(next_char) if unicode_ident::is_xid_continue(next_char) => {
                         self.inner.bump(next_char.len_utf8());

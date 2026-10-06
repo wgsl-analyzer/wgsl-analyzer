@@ -410,15 +410,15 @@ ast_enum! {
 impl HasAttributes for Item {
     fn attributes(&self) -> Option<AstChildren<Attribute>> {
         match self {
-            Item::ImportStatement(item) => item.attributes(),
-            Item::FunctionDeclaration(item) => item.attributes(),
-            Item::VariableDeclaration(item) => item.attributes(),
-            Item::ConstantDeclaration(item) => item.attributes(),
-            Item::OverrideDeclaration(item) => item.attributes(),
-            Item::TypeAliasDeclaration(item) => item.attributes(),
-            Item::StructDeclaration(item) => item.attributes(),
-            Item::AssertStatement(item) => item.attributes(),
-            Item::GlobalCompoundDeclaration(item) => item.attributes(),
+            Self::ImportStatement(item) => item.attributes(),
+            Self::FunctionDeclaration(item) => item.attributes(),
+            Self::VariableDeclaration(item) => item.attributes(),
+            Self::ConstantDeclaration(item) => item.attributes(),
+            Self::OverrideDeclaration(item) => item.attributes(),
+            Self::TypeAliasDeclaration(item) => item.attributes(),
+            Self::StructDeclaration(item) => item.attributes(),
+            Self::AssertStatement(item) => item.attributes(),
+            Self::GlobalCompoundDeclaration(item) => item.attributes(),
         }
     }
 }
@@ -803,10 +803,10 @@ pub enum AttributeKind {
     WorkgroupSize,
     Entrypoint(EntrypointAttributeKind),
 
-    /// WESL specific attributes
+    /// WESL specific attributes.
     Conditional(ConditionalAttributeKind),
 
-    /// General attribute
+    /// General attributes.
     Other,
 }
 
