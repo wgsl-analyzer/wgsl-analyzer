@@ -165,7 +165,7 @@ impl Diagnostic {
 ///
 /// Panics if the file is not found in the database.
 #[expect(clippy::too_many_lines, reason = "TODO")]
-pub fn diagnostics(
+pub fn full_diagnostics(
     db: &RootDatabase,
     config: &DiagnosticsConfig,
     file_id: FileId,

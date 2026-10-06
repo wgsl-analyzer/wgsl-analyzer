@@ -278,11 +278,10 @@ impl Analysis {
     /// Computes the set of both syntax and semantic diagnostics for the given file.
     pub fn full_diagnostics(
         &self,
-        _config: &DiagnosticsConfig,
-        // resolve: AssistResolveStrategy,
-        _file_id: FileId,
+        config: &DiagnosticsConfig,
+        file_id: FileId,
     ) -> Cancellable<Vec<Diagnostic>> {
-        self.with_db(|_db| vec![])
+        self.with_db(|db| ide_diagnostics::full_diagnostics(db, config, file_id))
     }
 
     /// Gets the text of the source file.
@@ -359,14 +358,6 @@ impl Analysis {
                 &EditionedFileId::from_file(db, file_id).parse(db).tree(),
             )
         })
-    }
-
-    pub fn diagnostics(
-        &self,
-        config: &DiagnosticsConfig,
-        file_id: FileId,
-    ) -> Cancellable<Vec<Diagnostic>> {
-        self.with_db(|db| ide_diagnostics::diagnostics(db, config, file_id))
     }
 
     pub fn goto_definition(
