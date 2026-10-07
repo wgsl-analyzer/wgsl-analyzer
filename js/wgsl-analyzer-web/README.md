@@ -37,13 +37,18 @@ makes every pthread 404. That is why the xtask renames cargo's
 
 They live in `dist/assets/` rather than beside the module output in `dist/` so
 that the directory holds nothing else: a host can point a static file server
-straight at it. `wgsl-analyzer-web/assets/*` resolves there too, for bundlers
-that would rather ask the package than hardcode a path.
+straight at it. `wgsl-analyzer-web/assets/*` resolves there too.
+
+`dist/index.js` is emitted by `tsc`, not vite, on purpose. It spawns the worker
+with `new Worker(new URL("./assets/worker.js", import.meta.url))`, and a
+consumer's bundler only follows the worker if that expression ships exactly as
+written. Vite would rewrite it into a form bundlers no longer detect, so vite
+bundles only the worker.
 
 Note `dist/worker.js` also exists and is not the one to serve. `tsc` compiles
 every file under `src/` so that `worker.ts` is typechecked along with the rest,
-and its unbundled output lands there; `dist/assets/worker.js` from esbuild is
-the real artifact.
+and its unbundled output lands there; `dist/assets/worker.js` from vite is the
+real artifact.
 
 Finally, the command packs the package into `dist/` at the repository root, which is the
 tarball that the release workflow publishes to npm.
@@ -57,6 +62,21 @@ directions. That is the whole interface, there are 2 examples showcasing how to 
 | --- | --- |
 | [`js/examples/monaco/src/transport.ts`](../examples/monaco/src/transport.ts) | the `IMessageTransport` that `monaco.lsp` takes |
 | [`js/examples/codemirror/src/transport.ts`](../examples/codemirror/src/transport.ts) | the `Transport` that `@marimo-team/codemirror-languageserver` takes |
+
+## Bundling
+
+Bundlers that understand `new Worker(new URL(..., import.meta.url))`, such as
+vite, emit the worker, the emscripten glue, the wasm and the pthread workers on
+their own; there is nothing to copy. With vite, set:
+
+```typescript
+export default defineConfig({
+	// The worker loads the glue with a dynamic import, which needs code splitting.
+	worker: { format: "es" },
+	// Pre-bundling would move this package's index.js away from its assets.
+	optimizeDeps: { exclude: ["wgsl-analyzer-web"] },
+});
+```
 
 ## Requirements
 
@@ -82,8 +102,8 @@ constructors have run.
 
 ## What the host has to get right
 
-- Serve `worker.js`, `wgsl_analyzer.js` and `wgsl_analyzer.wasm` from one
-  directory under those exact names, as above.
+- Serve the package from the page's origin: a worker script must be
+  same-origin, so loading it from a CDN does not work.
 - Be cross-origin isolated, or `SharedArrayBuffer` is missing and nothing starts.
 - Hand `sendMessage` one complete message body.
 - Treat `onMessage`'s argument as one complete message body.

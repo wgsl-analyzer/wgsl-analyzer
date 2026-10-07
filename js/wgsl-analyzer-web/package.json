@@ -38,7 +38,7 @@
 		"build": "pnpm run build:lib && pnpm run build:worker",
 		"clean": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\"",
 		"build:lib": "pnpm run clean && tsc",
-		"build:worker": "esbuild src/worker.ts --bundle --format=esm --target=es2024 --external:./wgsl_analyzer.js --outfile=dist/assets/worker.js",
+		"build:worker": "vite build",
 		"check": "pnpm exec biome check",
 		"ci": "pnpm exec biome ci && pnpm run typecheck",
 		"fix": "pnpm exec biome check --write",
@@ -53,8 +53,8 @@
 		"@biomejs/biome": "^2.5.14",
 		"@tsconfig/strictest": "^2.0.8",
 		"@types/node": "^26.6.3",
-		"esbuild": "^0.28.2",
 		"typescript": "^7.0.2",
+		"vite": "^8.3.1",
 		"vscode-jsonrpc": "^9.0.3"
 	}
 }

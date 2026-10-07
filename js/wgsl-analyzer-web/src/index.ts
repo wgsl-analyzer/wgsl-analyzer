@@ -15,11 +15,6 @@ import type { HostMessage, WorkerMessage, WorkspaceFiles } from "./protocol.js";
 export type { WorkspaceFiles } from "./protocol.js";
 
 export interface StartOptions {
-	/**
-	 * Directory serving `worker.js`, `wgsl_analyzer.js` and `wgsl_analyzer.wasm`.
-	 * They must sit side by side. Defaults to `"/wgsl-analyzer/"`.
-	 */
-	readonly baseUrl?: string | URL;
 	/** Absolute path of the workspace in the in-memory filesystem. Defaults to `"/workspace"`. */
 	readonly root?: string;
 	/** Files to seed, keyed by path relative to {@link StartOptions.root}. */
@@ -60,10 +55,10 @@ export class WgslAnalyzerServer {
 
 	/** Boots the server and resolves once it is ready to accept messages. */
 	static async start(options: StartOptions): Promise<WgslAnalyzerServer> {
-		const base = new URL(String(options.baseUrl ?? "/wgsl-analyzer/"), globalThis.location.href);
 		const root = options.root ?? "/workspace";
 
-		const worker = new Worker(new URL("worker.js", base), { type: "module" });
+		// Bundlers only detect the worker when this expression appears literally.
+		const worker = new Worker(new URL("./assets/worker.js", import.meta.url), { type: "module" });
 		const server = new WgslAnalyzerServer(worker, root);
 
 		await new Promise<void>((resolve, reject) => {

@@ -42,8 +42,6 @@ async function main(): Promise<void> {
 
 	status("Booting wgsl-analyzer…");
 	const server = await WgslAnalyzerServer.start({
-		// vite's publicDir is the package's dist/assets, served at the root.
-		baseUrl: "/",
 		root: ROOT,
 		files: FILES,
 		onStderr: (line) => log(line),

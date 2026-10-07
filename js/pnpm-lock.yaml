@@ -230,12 +230,12 @@ importers:
       '@types/node':
         specifier: ^26.6.3
         version: 26.6.4
-      esbuild:
-        specifier: ^0.28.2
-        version: 0.28.2
       typescript:
         specifier: ^7.0.2
         version: 7.0.2
+      vite:
+        specifier: ^8.3.1
+        version: 8.3.1(@types/node@26.6.4)(esbuild@0.28.2)
       vscode-jsonrpc:
         specifier: ^9.0.3
         version: 9.0.3
@@ -1300,6 +1300,7 @@ snapshots:
       '@esbuild/win32-arm64': 0.28.2
       '@esbuild/win32-ia32': 0.28.2
       '@esbuild/win32-x64': 0.28.2
+    optional: true
 
   fdir@6.5.0(picomatch@4.0.7):
     optionalDependencies:
@@ -1442,6 +1443,18 @@ snapshots:
       tinyglobby: 0.2.17
     optionalDependencies:
       '@types/node': 26.6.2
+      esbuild: 0.28.2
+      fsevents: 2.3.3
+
+  vite@8.3.1(@types/node@26.6.4)(esbuild@0.28.2):
+    dependencies:
+      lightningcss: 1.33.0
+      picomatch: 4.0.7
+      postcss: 8.5.28
+      rolldown: 1.2.12
+      tinyglobby: 0.2.17
+    optionalDependencies:
+      '@types/node': 26.6.4
       esbuild: 0.28.2
       fsevents: 2.3.3
 
