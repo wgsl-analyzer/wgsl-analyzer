@@ -441,7 +441,7 @@ pub(crate) fn publish_diagnostics(
     file_id: FileId,
 ) -> Result<Vec<Diagnostic>> {
     let line_index = snapshot.file_line_index(file_id)?;
-    let diagnostics = snapshot.analysis.diagnostics(config, file_id)?;
+    let diagnostics = snapshot.analysis.full_diagnostics(config, file_id)?;
 
     diagnostics
         .into_iter()

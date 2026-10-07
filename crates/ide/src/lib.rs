@@ -259,30 +259,28 @@ impl Analysis {
     /// Computes the set of parser level diagnostics for the given file.
     pub fn syntax_diagnostics(
         &self,
-        _config: &DiagnosticsConfig,
-        _file_id: FileId,
+        config: &DiagnosticsConfig,
+        file_id: FileId,
     ) -> Cancellable<Vec<Diagnostic>> {
-        self.with_db(|_db| vec![])
+        self.with_db(|db| ide_diagnostics::syntax_diagnostics(db, config, file_id))
     }
 
     /// Computes the set of semantic diagnostics for the given file.
     pub fn semantic_diagnostics(
         &self,
-        _config: &DiagnosticsConfig,
-        // resolve: AssistResolveStrategy,
-        _file_id: FileId,
+        config: &DiagnosticsConfig,
+        file_id: FileId,
     ) -> Cancellable<Vec<Diagnostic>> {
-        self.with_db(|_db| vec![])
+        self.with_db(|db| ide_diagnostics::semantic_diagnostics(db, config, file_id))
     }
 
     /// Computes the set of both syntax and semantic diagnostics for the given file.
     pub fn full_diagnostics(
         &self,
-        _config: &DiagnosticsConfig,
-        // resolve: AssistResolveStrategy,
-        _file_id: FileId,
+        config: &DiagnosticsConfig,
+        file_id: FileId,
     ) -> Cancellable<Vec<Diagnostic>> {
-        self.with_db(|_db| vec![])
+        self.with_db(|db| ide_diagnostics::full_diagnostics(db, config, file_id))
     }
 
     /// Gets the text of the source file.
@@ -361,14 +359,6 @@ impl Analysis {
         })
     }
 
-    pub fn diagnostics(
-        &self,
-        config: &DiagnosticsConfig,
-        file_id: FileId,
-    ) -> Cancellable<Vec<Diagnostic>> {
-        self.with_db(|db| ide_diagnostics::diagnostics(db, config, file_id))
-    }
-
     pub fn goto_definition(
         &self,
         file_position: FilePosition,
@@ -410,5 +400,37 @@ impl Analysis {
         position: FilePosition,
     ) -> Cancellable<Option<SignatureHelp>> {
         self.with_db(|db| signature_help::signature_help(db, position))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use ide_diagnostics::DiagnosticsConfig;
+
+    use crate::Analysis;
+
+    #[test]
+    fn syntax_and_semantic_diagnostics_partition_all_diagnostics() {
+        let (analysis, file_id) =
+            Analysis::from_single_file("fn broken( {\nfn main() { let x = missing; }\n".to_owned());
+        let config = DiagnosticsConfig {
+            naga_parsing_enabled: false,
+            naga_validation_enabled: false,
+            ..DiagnosticsConfig::default()
+        };
+        let messages = |diagnostics: Vec<ide_diagnostics::Diagnostic>| {
+            diagnostics
+                .into_iter()
+                .map(|diagnostic| diagnostic.message)
+                .collect::<Vec<_>>()
+        };
+
+        let syntax = messages(analysis.syntax_diagnostics(&config, file_id).unwrap());
+        let semantic = messages(analysis.semantic_diagnostics(&config, file_id).unwrap());
+        let all = messages(analysis.full_diagnostics(&config, file_id).unwrap());
+
+        assert!(!syntax.is_empty(), "expected a parse error");
+        assert!(!semantic.is_empty(), "expected a semantic error");
+        assert_eq!([syntax, semantic].concat(), all);
     }
 }
