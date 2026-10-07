@@ -62,7 +62,7 @@ libc = "0.2.189"
 dashmap = { version = "6.2.1" }
 nohash-hasher = "0.2.0"
 rayon = "1.12.0"
-rowan = "0.16.1"
+rowan = "0.17.0"
 rustc-hash = "2.1.3"
 # Ideally we'd not enable the macros feature but unfortunately the `tracked` attribute does not work
 # on impls without it
