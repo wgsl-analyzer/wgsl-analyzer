@@ -134,7 +134,7 @@ jobs:
       #       ./crates/proc-macro-srv/proc-macro-test/imp -> target
 
       - name: Install nextest
-        uses: taiki-e/install-action@4cef1412cce204788f482e778a0b9187f9626a29 # v2.87.21
+        uses: taiki-e/install-action@83ac0ad63c0167e6f06796fab0fce28db1bf3db0 # v2.87.22
         with:
           tool: nextest
 
@@ -248,7 +248,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Install Tombi
-        uses: tombi-toml/setup-tombi@5752de665c9258ec1f869c3498d02ce94b70205c # v1.5.8
+        uses: tombi-toml/setup-tombi@b97f2ec7ec25362ecb9f3be1928dd7e007fb3c27 # v1.6.0
 
       - name: Lint TOML files
         run: tombi lint
