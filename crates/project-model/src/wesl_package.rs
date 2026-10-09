@@ -22,7 +22,10 @@ pub struct WeslPackage {
     pub dependencies: Vec<PackageDependency>,
     /// WESL edition for this package.
     pub edition: Edition,
+
     // TODO: Support include and excludes https://github.com/wgsl-analyzer/wgsl-analyzer/issues/993
+    // TODO: Special extension
+    pub features: Vec<TranslateTimeFeature>,
 }
 
 impl WeslPackage {
@@ -74,4 +77,10 @@ impl PackageDependency {
             Self::Path { name, path: _ } | Self::Library { name, package: _ } => name,
         }
     }
+}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
+pub struct TranslateTimeFeature {
+    pub name: String,
+    pub is_enabled: bool,
 }

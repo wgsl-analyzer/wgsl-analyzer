@@ -9,6 +9,7 @@ use base_db::{
     input::{Dependency, PackageData, PackageId, PackageName, PackageOrigin},
 };
 use edition::Edition;
+use rustc_hash::FxHashMap;
 use test_utils::{CURSOR_MARKER, ESCAPED_CURSOR_MARKER, RangeOrOffset, extract_range_or_offset};
 use wgsl_std::StdLibrary;
 
@@ -146,6 +147,7 @@ impl ChangeFixture {
                 edition: std_library.edition,
                 display_name: Some("std".to_owned()),
                 dependencies: Vec::new(),
+                features: FxHashMap::default(),
                 origin: PackageOrigin::Language,
             };
             let previous = packages.insert(
@@ -194,6 +196,7 @@ impl ChangeFixture {
                     origin: PackageOrigin::Local,
                     root: None,
                     dependencies: Vec::new(),
+                    features: Vec::new(),
                 });
             }
 
@@ -216,6 +219,7 @@ impl ChangeFixture {
                     display_name: Some(meta_package.name.clone()),
                     dependencies: Vec::new(),
                     origin: meta_package.origin,
+                    features: meta_package.features.into_iter().collect(),
                 };
                 let mut file_set = FileSet::default();
                 file_set.insert(manifest_file_id, root.join("wesl.toml").unwrap());
@@ -304,6 +308,7 @@ struct PackageMeta {
     origin: PackageOrigin,
     root: Option<String>,
     dependencies: Vec<String>,
+    features: Vec<(String, bool)>,
 }
 
 impl FileMeta {
@@ -320,6 +325,7 @@ impl FileMeta {
                 origin,
                 root: fixture.root,
                 dependencies: fixture.dependencies,
+                features: fixture.features,
             })
         } else {
             assert!(
