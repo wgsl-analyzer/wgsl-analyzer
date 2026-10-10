@@ -679,6 +679,12 @@ ast_node! {
     r#type: Option<TypeSpecifier>;
 }
 
+impl HasAttributes for ReturnType {
+    fn attributes(&self) -> Option<AstChildren<self::Attribute>> {
+        inner_attributes(self)
+    }
+}
+
 ast_node! {
     TemplateList:
     left_angle_token: Option<SyntaxToken TemplateStart>;
@@ -890,6 +896,13 @@ impl Attribute {
     pub fn is_conditional_compilation(&self) -> bool {
         matches!(self.kind(), AttributeKind::Conditional(_))
     }
+}
+
+fn inner_attributes<T: AstNode>(node: &T) -> Option<AstChildren<Attribute>> {
+    if let Some(attr_list) = crate::support::child::<AttributeList>(node.syntax()) {
+        return Some(attr_list.attributes());
+    }
+    None
 }
 
 ast_node! {
