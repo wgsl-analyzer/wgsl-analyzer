@@ -86,6 +86,7 @@ token
 	Super='super'
 	As='as'
 	ColonColon='::'
+	Public='public'
 ;
 
 token
@@ -152,7 +153,11 @@ language_extension_name: Identifier;
 
 global_assert: 'const_assert' expression ';' @assert_statement; // §10
 
+visibility: 'public' | ?1 Identifier;
+
+
 global_declaration:
+	[visibility] @const_declaration (
 	'fn' name function_parameters [return_type] attribute_list !1 compound_statement @function_declaration
 	| variable_declaration_semi @variable_declaration
 	| override_declaration_semi @override_declaration
@@ -160,7 +165,7 @@ global_declaration:
 	| const_declaration_semi @const_declaration
 	| 'alias' name '=' type_specifier ';' @type_alias_declaration
 	| 'struct' name struct_body @struct_declaration
-;
+);
 
 // Manual error recovery for missing commas between parameters
 function_parameters: '(' [attribute_list parameter (?1 (',' | !1) attribute_list parameter)* [',']] ')';

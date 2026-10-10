@@ -180,6 +180,13 @@ pub enum SyntaxKind {
     /// A list of imports `{foo, bar, baz}`
     ImportCollection,
 
+    /// `public` keyword.
+    Public,
+
+    /// The visibility modifier.
+    /// Its children can be the [`SyntaxKind::Public`] or [`SyntaxKind::Identifier`] (private), because `private` is context sensitive.
+    Visibility,
+
     // WESL experiment
     GlobalCompoundDeclaration,
 

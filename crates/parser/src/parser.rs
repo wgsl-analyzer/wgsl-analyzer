@@ -125,6 +125,21 @@ impl Cst<'_> {
 }
 
 impl Parser<'_> {
+    pub fn peek_text(
+        &self,
+        lookahead: usize,
+    ) -> Option<&str> {
+        let (token_index, _) = self
+            .tokens
+            .iter()
+            .enumerate()
+            .skip(self.pos)
+            .filter(|(_, token)| !Self::is_skipped(**token))
+            .nth(lookahead)?;
+
+        Some(&self.cst.source[self.cst.data.spans[token_index].clone()])
+    }
+
     fn is_func_call(&self) -> bool {
         // Skip past paths like `foo::bar::baz()`
         matches!(
@@ -538,5 +553,22 @@ impl<'source> ParserCallbacks<'source> for Parser<'source> {
 
     fn assertion_continuing_statement_1(&self) -> Option<Diagnostic> {
         self.assert_no_translate_time_attrs("a continuing body")
+    }
+
+    fn predicate_visibility_1(&self) -> bool {
+        self.peek_text(0) == Some("private")
+    }
+
+    fn create_node_visibility(
+        &mut self,
+        _node_ref: NodeRef,
+        diagnostics: &mut Vec<Self::Diagnostic>,
+    ) {
+        if !self.context.edition.at_least_wesl_0_0_1() {
+            diagnostics.push(self.create_diagnostic(
+                self.span(),
+                "visibility `private` is not allowed in WGSL".to_owned(),
+            ));
+        }
     }
 }

@@ -10,6 +10,7 @@ mod imports;
 mod keywords;
 mod naga;
 mod statement;
+mod visibility;
 
 use edition::{Capabilities, Edition};
 use expect_test::{Expect, expect};
@@ -1560,7 +1561,7 @@ fn for_statement_incomplete_1() {
                 Semicolon@5..6 ";"
                 ParenthesisRight@6..7 ")"
 
-            error at 7..7: invalid syntax, expected one of: 'alias', '&', '@', '{', '}', 'break', 'case', 'const', 'const_assert', 'continue', 'continuing', 'default', 'diagnostic', 'discard', 'enable', 'fn', 'for', <identifier>, 'if', 'import', 'let', 'loop', 'override', 'package', '(', 'requires', 'return', ';', '*', 'struct', 'super', 'switch', '_', 'var', 'while'"#]],
+            error at 7..7: invalid syntax, expected one of: 'alias', '&', '@', '{', '}', 'break', 'case', 'const', 'const_assert', 'continue', 'continuing', 'default', 'diagnostic', 'discard', 'enable', 'fn', 'for', <identifier>, 'if', 'import', 'let', 'loop', 'override', 'package', '(', 'public', 'requires', 'return', ';', '*', 'struct', 'super', 'switch', '_', 'var', 'while'"#]],
     );
 }
 
@@ -1585,7 +1586,7 @@ fn for_statement_incomplete_2() {
                 Semicolon@8..9 ";"
                 ParenthesisRight@9..10 ")"
 
-            error at 10..10: invalid syntax, expected one of: 'alias', '&', '@', '{', '}', 'break', 'case', 'const', 'const_assert', 'continue', 'continuing', 'default', 'diagnostic', 'discard', 'enable', 'fn', 'for', <identifier>, 'if', 'import', 'let', 'loop', 'override', 'package', '(', 'requires', 'return', ';', '*', 'struct', 'super', 'switch', '_', 'var', 'while'"#]],
+            error at 10..10: invalid syntax, expected one of: 'alias', '&', '@', '{', '}', 'break', 'case', 'const', 'const_assert', 'continue', 'continuing', 'default', 'diagnostic', 'discard', 'enable', 'fn', 'for', <identifier>, 'if', 'import', 'let', 'loop', 'override', 'package', '(', 'public', 'requires', 'return', ';', '*', 'struct', 'super', 'switch', '_', 'var', 'while'"#]],
     );
 }
 
@@ -1605,7 +1606,7 @@ fn for_statement_incomplete_3() {
                 Semicolon@10..11 ";"
                 ParenthesisRight@11..12 ")"
 
-            error at 12..12: invalid syntax, expected one of: 'alias', '&', '@', '{', '}', 'break', 'case', 'const', 'const_assert', 'continue', 'continuing', 'default', 'diagnostic', 'discard', 'enable', 'fn', 'for', <identifier>, 'if', 'import', 'let', 'loop', 'override', 'package', '(', 'requires', 'return', ';', '*', 'struct', 'super', 'switch', '_', 'var', 'while'"#]],
+            error at 12..12: invalid syntax, expected one of: 'alias', '&', '@', '{', '}', 'break', 'case', 'const', 'const_assert', 'continue', 'continuing', 'default', 'diagnostic', 'discard', 'enable', 'fn', 'for', <identifier>, 'if', 'import', 'let', 'loop', 'override', 'package', '(', 'public', 'requires', 'return', ';', '*', 'struct', 'super', 'switch', '_', 'var', 'while'"#]],
     );
 }
 
@@ -1632,7 +1633,7 @@ fn for_statement_incomplete_4() {
                       IntLiteral@10..11 "1"
                 ParenthesisRight@11..12 ")"
 
-            error at 12..12: invalid syntax, expected one of: 'alias', '&', '@', '{', '}', 'break', 'case', 'const', 'const_assert', 'continue', 'continuing', 'default', 'diagnostic', 'discard', 'enable', 'fn', 'for', <identifier>, 'if', 'import', 'let', 'loop', 'override', 'package', '(', 'requires', 'return', ';', '*', 'struct', 'super', 'switch', '_', 'var', 'while'"#]],
+            error at 12..12: invalid syntax, expected one of: 'alias', '&', '@', '{', '}', 'break', 'case', 'const', 'const_assert', 'continue', 'continuing', 'default', 'diagnostic', 'discard', 'enable', 'fn', 'for', <identifier>, 'if', 'import', 'let', 'loop', 'override', 'package', '(', 'public', 'requires', 'return', ';', '*', 'struct', 'super', 'switch', '_', 'var', 'while'"#]],
     );
 }
 
@@ -2540,7 +2541,7 @@ fn annotation_with_invalid_statement_recover() {
               Error@102..103
                 BraceRight@102..103 "}"
 
-            error at 102..103: invalid syntax, expected one of: 'alias', '@', '{', 'const', 'const_assert', 'diagnostic', <end of file>, 'enable', 'fn', 'import', 'let', 'override', 'requires', ';', 'struct', 'var'"#]],
+            error at 102..103: invalid syntax, expected one of: 'alias', '@', '{', 'const', 'const_assert', 'diagnostic', <end of file>, 'enable', 'fn', <identifier>, 'import', 'let', 'override', 'public', 'requires', ';', 'struct', 'var'"#]],
     );
 }
 
@@ -3685,7 +3686,7 @@ fn attribute_only_recover() {
                   AttributeOperator@0..1 "@"
                   Identifier@1..9 "fragment"
 
-            error at 9..9: invalid syntax, expected one of: 'alias', '&', '@', '{', '}', 'break', 'case', 'const', 'const_assert', 'continue', 'continuing', 'default', 'diagnostic', 'discard', 'enable', 'fn', 'for', <identifier>, 'if', 'import', 'let', 'loop', 'override', 'package', '(', 'requires', 'return', ';', '*', 'struct', 'super', 'switch', '_', 'var', 'while'"#]],
+            error at 9..9: invalid syntax, expected one of: 'alias', '&', '@', '{', '}', 'break', 'case', 'const', 'const_assert', 'continue', 'continuing', 'default', 'diagnostic', 'discard', 'enable', 'fn', 'for', <identifier>, 'if', 'import', 'let', 'loop', 'override', 'package', '(', 'public', 'requires', 'return', ';', '*', 'struct', 'super', 'switch', '_', 'var', 'while'"#]],
     );
 }
 
@@ -3893,7 +3894,7 @@ fn attribute_edge_case_else() {
                   BraceRight@69..70 "}"
               Blankspace@70..79 "\n        "
 
-            error at 56..57: invalid syntax, expected one of: 'alias', '&', '@', '{', '}', 'break', 'case', 'const', 'const_assert', 'continue', 'continuing', 'default', 'diagnostic', 'discard', 'enable', 'fn', 'for', <identifier>, 'if', 'import', 'let', 'loop', 'override', 'package', '(', 'requires', 'return', ';', '*', 'struct', 'super', 'switch', '_', 'var', 'while'"#]],
+            error at 56..57: invalid syntax, expected one of: 'alias', '&', '@', '{', '}', 'break', 'case', 'const', 'const_assert', 'continue', 'continuing', 'default', 'diagnostic', 'discard', 'enable', 'fn', 'for', <identifier>, 'if', 'import', 'let', 'loop', 'override', 'package', '(', 'public', 'requires', 'return', ';', '*', 'struct', 'super', 'switch', '_', 'var', 'while'"#]],
     );
 }
 
@@ -3943,7 +3944,7 @@ fn attribute_edge_case_if() {
                   BraceRight@67..68 "}"
               Blankspace@68..77 "\n        "
 
-            error at 54..55: invalid syntax, expected one of: 'alias', '&', '@', '{', '}', 'break', 'case', 'const', 'const_assert', 'continue', 'continuing', 'default', 'diagnostic', 'discard', 'enable', 'fn', 'for', <identifier>, 'if', 'import', 'let', 'loop', 'override', 'package', '(', 'requires', 'return', ';', '*', 'struct', 'super', 'switch', '_', 'var', 'while'"#]],
+            error at 54..55: invalid syntax, expected one of: 'alias', '&', '@', '{', '}', 'break', 'case', 'const', 'const_assert', 'continue', 'continuing', 'default', 'diagnostic', 'discard', 'enable', 'fn', 'for', <identifier>, 'if', 'import', 'let', 'loop', 'override', 'package', '(', 'public', 'requires', 'return', ';', '*', 'struct', 'super', 'switch', '_', 'var', 'while'"#]],
     );
 }
 
