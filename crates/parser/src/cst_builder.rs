@@ -141,6 +141,7 @@ impl CstBuilder<'_, '_> {
             Rule::TypeSpecifier => self.start_node(SyntaxKind::TypeSpecifier),
             Rule::UnaryExpression => self.start_node(SyntaxKind::PrefixExpression),
             Rule::VariableDeclaration => self.start_node(SyntaxKind::VariableDeclaration),
+            Rule::Visibility => self.start_node(SyntaxKind::Visibility),
             Rule::WhileStatement => self.start_node(SyntaxKind::WhileStatement),
             Rule::ConstDeclarationSemi
             | Rule::CompoundAssignmentOperator

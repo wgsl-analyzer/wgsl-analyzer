@@ -10,6 +10,7 @@ mod imports;
 mod keywords;
 mod naga;
 mod statement;
+mod visibility;
 
 use edition::{Capabilities, Edition};
 use expect_test::{Expect, expect};
