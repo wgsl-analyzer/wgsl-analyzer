@@ -5,6 +5,7 @@
   - [VS Code](vs_code.md)
   - [`wgsl-analyzer` Binary](wgsl-analyzer_binary.md)
   - [Other Editors](other_editors.md)
+- [Discovery](discovery.md)
 - [Troubleshooting](troubleshooting.md)
 - [Configuration](configuration.md)
 - [Security](security.md)

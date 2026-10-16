@@ -98,8 +98,9 @@ impl LoadPackageTask {
             },
             ProjectManifest::CargoToml(manifest_path) => {
                 let table = find_cargo_metadata_table(manifest_path)?;
-                let wesl_toml = WeslManifest::from_json(table)
-                    .with_context(|| format!("failed to read manifest file '{manifest_path}'"))?;
+                let wesl_toml = WeslManifest::from_json(table).with_context(|| {
+                    format!("unable to parse contents of manifest in Cargo TOML '{manifest_path}'")
+                })?;
                 self.parse(manifest_path, &wesl_toml)?
             },
             ProjectManifest::ProjectJson(manifest_path) => bail!("project json not supported"),
