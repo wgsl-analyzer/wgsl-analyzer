@@ -215,6 +215,7 @@ ast_node! {
 
 ast_node! {
     ImportStatement:
+    visibility: Option<Visibility>;
     relative: Option<ImportRelative>;
     item: Option<ImportTree>;
 }
@@ -281,7 +282,38 @@ ast_node! {
 }
 
 ast_node! {
+    Visibility
+}
+
+impl Visibility {
+    #[must_use]
+    pub fn kind(&self) -> Option<VisibilityKind> {
+        match support::child_token::<VisibilityToken>(self.syntax()) {
+            Some(VisibilityToken::Public(_)) => Some(VisibilityKind::Public),
+            Some(VisibilityToken::Identifier(token)) if token.text() == "private" => {
+                Some(VisibilityKind::Private)
+            },
+            Some(VisibilityToken::Identifier(token)) => None,
+            None => None,
+        }
+    }
+}
+
+pub enum VisibilityKind {
+    Public,
+    Private,
+}
+
+ast_token_enum! {
+    enum VisibilityToken {
+        Public,
+        Identifier,
+    }
+}
+
+ast_node! {
     FunctionDeclaration:
+    visibility: Option<Visibility>;
     fn_token: Option<SyntaxToken Fn>;
     parameter_list: Option<FunctionParameters>;
     return_type: Option<ReturnType>;
@@ -303,6 +335,7 @@ impl HasAttributes for GlobalCompoundDeclaration {}
 
 ast_node! {
     StructDeclaration:
+    visibility: Option<Visibility>;
     struct_token: Option<SyntaxToken Struct>;
     body: Option<StructBody>;
 }
@@ -330,6 +363,7 @@ impl HasAttributes for StructMember {}
 
 ast_node! {
     VariableDeclaration:
+    visibility: Option<Visibility>;
     var_token: Option<SyntaxToken Var>;
     colon: Option<SyntaxToken Colon>;
     r#type: Option<TypeSpecifier>;
@@ -358,6 +392,7 @@ impl HasAttributes for LetDeclaration {}
 
 ast_node! {
     ConstantDeclaration:
+    visibility: Option<Visibility>;
     constant_token: Option<SyntaxToken Const>;
     colon: Option<SyntaxToken Colon>;
     r#type: Option<TypeSpecifier>;
@@ -371,6 +406,7 @@ impl HasAttributes for ConstantDeclaration {}
 
 ast_node! {
     OverrideDeclaration:
+    visibility: Option<Visibility>;
     override_token: Option<SyntaxToken Override>;
     colon: Option<SyntaxToken Colon>;
     r#type: Option<TypeSpecifier>;
@@ -384,6 +420,7 @@ impl HasAttributes for OverrideDeclaration {}
 
 ast_node! {
     TypeAliasDeclaration:
+    visibility: Option<Visibility>;
     alias_token: Option<SyntaxToken Alias>;
     equal_token: Option<SyntaxToken Equal>;
     type_declaration: Option<TypeSpecifier>;
