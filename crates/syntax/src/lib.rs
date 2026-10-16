@@ -11,7 +11,7 @@ pub use parser::{
     Capabilities, Diagnostic, Edition, ExtensionsConfig, ParseEntryPoint, SyntaxElement,
     SyntaxElementChildren, SyntaxKind, SyntaxNode, SyntaxNodeChildren, SyntaxToken, WeslLanguage,
 };
-pub use rowan::Direction;
+pub use rowan::{Direction, TextRange, TextSize};
 use smol_str::SmolStr;
 use triomphe::Arc;
 
