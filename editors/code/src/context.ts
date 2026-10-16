@@ -7,7 +7,7 @@ import { createClient } from "./client";
 import { Config, prepareVSCodeConfig } from "./config";
 import type { ServerStatusParameters } from "./lsp_ext";
 import * as wa from "./lsp_ext";
-import type { WgslAnalyzerExtensionApi } from "./main";
+import type { WgslAnalyzerExtensionApi } from "./main_common";
 import { PersistentState } from "./persistent_state";
 import { type SyntaxElement, SyntaxTreeProvider } from "./syntax_tree_provider";
 import {
