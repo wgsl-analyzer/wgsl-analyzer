@@ -47,5 +47,13 @@ rustflags = [
 	"-Clink-arg=-sEXPORTED_RUNTIME_METHODS=FS,callMain",
 ]
 
+# The web extension's server. The memory is imported, and
+# editors/code/src/web/main.ts must create it with the same values.
+[target.wasm32-wasip1-threads]
+rustflags = [
+	"-Clink-arg=--initial-memory=536870912",  # 512 MiB, 8192 pages
+	"-Clink-arg=--max-memory=4294967296",  # 4 GiB, 65536 pages
+]
+
 [target.x86_64-pc-windows-msvc]
 linker = "rust-lld"
