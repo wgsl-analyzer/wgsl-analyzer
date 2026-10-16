@@ -9,7 +9,7 @@ use crate::{
     AstNode, HasAttributes as _, HasName as _, Parse,
     ast::{
         self, Attribute, CaseToken, Directive, EnableDirective, EnableExtension,
-        EnableExtensionName, Expression, FunctionCall, Item, LanguageExtension, LiteralKind,
+        EnableExtensionName, Expression, FunctionCall, Item, LanguageExtension, LiteralToken,
         Statement, SwitchCaseSelector, UnknownExtension,
         operators::{ArithmeticOperation, BinaryOperation, UnaryOperator},
     },
@@ -227,7 +227,7 @@ fn other_attribute() {
             }
             match infix_expression.right_side().unwrap() {
                 Expression::Literal(literal) => match literal.kind() {
-                    LiteralKind::IntLiteral(syntax_token) => {
+                    LiteralToken::IntLiteral(syntax_token) => {
                         assert_eq!(syntax_token.text(), "2");
                     },
                     _ => panic!("wrong literal"),

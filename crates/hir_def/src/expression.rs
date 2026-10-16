@@ -160,9 +160,9 @@ pub enum SwitchCaseSelector {
 ///
 /// Panics if the literal is invalid.
 #[must_use]
-pub fn parse_literal(literal: ast::LiteralKind) -> Literal {
+pub fn parse_literal(literal: ast::LiteralToken) -> Literal {
     match literal {
-        ast::LiteralKind::IntLiteral(literal) => {
+        ast::LiteralToken::IntLiteral(literal) => {
             let (text, int_variant) = split_int_suffix(literal.text());
             let value = match text.strip_prefix("0x").or_else(|| text.strip_prefix("0X")) {
                 Some(hex) => u64::from_str_radix(hex, 16),
@@ -172,7 +172,7 @@ pub fn parse_literal(literal: ast::LiteralKind) -> Literal {
 
             Literal::Int(value, int_variant)
         },
-        ast::LiteralKind::FloatLiteral(literal) => {
+        ast::LiteralToken::FloatLiteral(literal) => {
             use std::str::FromStr as _;
             // Float suffixes are not accepted by `f32::from_str`. Ignore them
             let (text, float_variant) = split_float_suffix(literal.text());
@@ -182,8 +182,8 @@ pub fn parse_literal(literal: ast::LiteralKind) -> Literal {
             };
             Literal::Float(value.to_bits(), float_variant)
         },
-        ast::LiteralKind::True(_) => Literal::Bool(true),
-        ast::LiteralKind::False(_) => Literal::Bool(false),
+        ast::LiteralToken::True(_) => Literal::Bool(true),
+        ast::LiteralToken::False(_) => Literal::Bool(false),
     }
 }
 
