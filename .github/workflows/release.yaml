@@ -76,6 +76,12 @@ jobs:
             code-target: darwin-arm64
             allocator: system
 
+          # The web extension, run by ms-vscode.wasm-wasi-core
+          - os: ubuntu-latest
+            target: wasm32-wasip1-threads
+            code-target: web
+            allocator: system
+
     name: dist (${{ matrix.target }})
     runs-on: ${{ matrix.os }}
     container: ${{ matrix.container }}
@@ -138,8 +144,13 @@ jobs:
         run: pnpm run package -o "../../dist/wgsl-analyzer-${{ matrix.code-target }}.vsix" --target ${{ matrix.code-target }} --pre-release
         working-directory: editors/code
 
+      # Without a server, this vsix must not claim to run on the web, or
+      # VS Code for the Web could pick it over the web vsix.
       - if: matrix.target == 'x86_64-unknown-linux-gnu'
-        run: rm -rf editors/code/server
+        run: |
+          rm -rf server
+          pnpm pkg delete browser
+        working-directory: editors/code
 
       - if: matrix.target == 'x86_64-unknown-linux-gnu' && github.ref == 'refs/heads/release'
         run: pnpm run package -o ../../dist/wgsl-analyzer-no-server.vsix
