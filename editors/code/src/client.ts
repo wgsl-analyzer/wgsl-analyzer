@@ -10,6 +10,11 @@ import { WaLanguageClient } from "./lang_client";
 import * as wa from "./lsp_ext";
 import { assert } from "./utilities";
 
+export type UriConverters = {
+	code2Protocol: (value: vscode.Uri) => string;
+	protocol2Code: (value: string) => vscode.Uri;
+};
+
 export function createClient(
 	traceOutputChannel: vscode.LogOutputChannel,
 	outputChannel: vscode.LogOutputChannel,
@@ -17,6 +22,7 @@ export function createClient(
 	serverOptions: lc.ServerOptions,
 	config: Config,
 	unlinkedFiles: vscode.Uri[],
+	uriConverters?: UriConverters,
 ): lc.LanguageClient {
 	const waMiddleware: lc.Middleware = {
 		workspace: {
@@ -266,6 +272,7 @@ export function createClient(
 		markdown: {
 			supportHtml: true,
 		},
+		uriConverters,
 	};
 
 	const client = new WaLanguageClient(

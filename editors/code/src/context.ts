@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import type * as lc from "vscode-languageclient/node";
-import { createClient } from "./client";
+import { createClient, UriConverters } from "./client";
 import { Config, prepareVSCodeConfig } from "./config";
 import type { ServerStatusParameters } from "./lsp_ext";
 import * as wa from "./lsp_ext";
@@ -58,7 +58,7 @@ export type Bootstrap = (
 	extCtx: vscode.ExtensionContext,
 	config: Config,
 	state: PersistentState,
-) => Promise<[lc.ServerOptions, ServerInfo]>;
+) => Promise<[lc.ServerOptions, ServerInfo, UriConverters?]>;
 
 export class Context implements WgslAnalyzerExtensionApi {
 	readonly statusBar: vscode.StatusBarItem;
@@ -176,7 +176,7 @@ export class Context implements WgslAnalyzerExtensionApi {
 		}
 
 		if (!this._client) {
-			const [serverOptions, serverInfo] = await this._bootstrap(
+			const [serverOptions, serverInfo, uriConverters] = await this._bootstrap(
 				this.extCtx,
 				this.config,
 				this.state,
@@ -204,6 +204,7 @@ export class Context implements WgslAnalyzerExtensionApi {
 				serverOptions,
 				this.config,
 				this.unlinkedFiles,
+				uriConverters,
 			);
 			this.pushClientCleanup(
 				this._client.onNotification(wa.serverStatus, (parameters) => {
