@@ -2,7 +2,7 @@ import * as assert from "node:assert";
 import * as vscode from "vscode";
 import * as lc from "vscode-languageclient/node";
 import * as commands from "./commands";
-import { type CommandFactory, Context, fetchWorkspace } from "./context";
+import { type Bootstrap, type CommandFactory, Context, fetchWorkspace } from "./context";
 import * as diagnostics from "./diagnostics";
 import { log, setContextValue } from "./utilities";
 
@@ -19,10 +19,11 @@ export async function deactivate() {
 
 export async function activate(
 	context: vscode.ExtensionContext,
+	bootstrap: Bootstrap,
 ): Promise<WgslAnalyzerExtensionApi> {
 	checkConflictingExtensions();
 
-	const ctx = new Context(context, createCommands(), fetchWorkspace());
+	const ctx = new Context(context, bootstrap, createCommands(), fetchWorkspace());
 
 	// VS Code does not show a notification when an extension fails to activate
 	// so we do it ourselves.
