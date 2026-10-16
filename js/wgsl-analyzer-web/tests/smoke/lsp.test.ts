@@ -42,7 +42,6 @@ import type { Host } from "../../dist/host.js";
 import type { WorkspaceFiles } from "../../dist/protocol.js";
 
 const DIST = join(import.meta.dirname, "..", "..", "dist");
-const ASSETS = join(DIST, "assets");
 
 const BOOT_MS = Number(process.env["WA_SMOKE_BOOT_MS"] ?? 180_000);
 const STEP_MS = Number(process.env["WA_SMOKE_STEP_MS"] ?? 60_000);
@@ -99,20 +98,20 @@ const FILES: WorkspaceFiles = {
 	[ENTRY]: ENTRY_SOURCE,
 };
 
-const ARTIFACTS: readonly (readonly [directory: string, name: string, command: string])[] = [
-	[ASSETS, "wgsl_analyzer.js", "cargo xtask dist-web"],
-	[ASSETS, "wgsl_analyzer.wasm", "cargo xtask dist-web"],
-	[DIST, "host.js", "pnpm --filter wgsl-analyzer-web run build"],
+const ARTIFACTS: readonly (readonly [name: string, command: string])[] = [
+	["wgsl_analyzer.js", "cargo xtask dist-web"],
+	["wgsl_analyzer.wasm", "cargo xtask dist-web"],
+	["host.js", "pnpm --filter wgsl-analyzer-web run build"],
 ];
 
 function preflight() {
-	const missing = ARTIFACTS.filter(([directory, name]) => !existsSync(join(directory, name)));
+	const missing = ARTIFACTS.filter(([name]) => !existsSync(join(DIST, name)));
 	if (missing.length === 0) return;
-	const commands = [...new Set(missing.map(([, , command]) => command))];
+	const commands = [...new Set(missing.map(([, command]) => command))];
 	throw new Error(
 		[
 			`${missing.length} build artifact(s) are missing:`,
-			...missing.map(([directory, name]) => `  - ${join(directory, name)}`),
+			...missing.map(([name]) => `  - ${join(DIST, name)}`),
 			"",
 			"Run `cargo xtask dist-web` from the repository root, `pnpm` from js/:",
 			...commands.map((command) => `  ${command}`),
@@ -179,11 +178,10 @@ class HostWriter extends AbstractMessageWriter implements MessageWriter {
 }
 
 async function startServer() {
-	const load = <T>(directory: string, name: string): Promise<T> =>
-		import(pathToFileURL(join(directory, name)).href) as Promise<T>;
-	const { startHost } = await load<typeof import("../../dist/host.js")>(DIST, "host.js");
+	const load = <T>(name: string): Promise<T> =>
+		import(pathToFileURL(join(DIST, name)).href) as Promise<T>;
+	const { startHost } = await load<typeof import("../../dist/host.js")>("host.js");
 	const { default: createWgslAnalyzer } = await load<{ default: ModuleFactory }>(
-		ASSETS,
 		"wgsl_analyzer.js",
 	);
 
@@ -368,7 +366,7 @@ describe(`wasm32-unknown-emscripten build${VARIANT}`, () => {
 	before(
 		async () => {
 			preflight();
-			const size = statSync(join(ASSETS, "wgsl_analyzer.wasm")).size;
+			const size = statSync(join(DIST, "wgsl_analyzer.wasm")).size;
 			process.stderr.write(
 				`# wgsl_analyzer.wasm is ${(size / 1024 / 1024).toFixed(1)} MB `
 					+ `(${size > 20 * 1024 * 1024 ? "debug" : "release"} build)\n`,

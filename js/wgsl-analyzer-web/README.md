@@ -26,29 +26,17 @@ source /path/to/emsdk/emsdk_env.sh
 cargo xtask dist-web   # add --release for the configuration that ships
 ```
 
-The command stages three files in `dist/assets/`: `wgsl_analyzer.js` and
-`wgsl_analyzer.wasm` from the cargo build, and `worker.js` from
-`pnpm --filter wgsl-analyzer-web run build`, which it runs for you. All three
-must be served from the same directory, under exactly those names. The glue
-spawns its pthread pool with
-`new Worker(new URL("wgsl_analyzer.js", import.meta.url))`, so renaming the glue
-makes every pthread 404. That is why the xtask renames cargo's
-`wgsl-analyzer.js` back to `wgsl_analyzer.js`.
+The command runs `pnpm --filter wgsl-analyzer-web run build`, which compiles
+`src/` to `dist/` with `tsc`, and copies `wgsl_analyzer.js` and
+`wgsl_analyzer.wasm` from the cargo build next to it. They must stay in the
+same directory as `worker.js`, under exactly those names. The glue spawns its
+pthread pool with `new Worker(new URL("wgsl_analyzer.js", import.meta.url))`,
+so renaming the glue makes every pthread 404. That is why the xtask renames
+cargo's `wgsl-analyzer.js` back to `wgsl_analyzer.js`.
 
-They live in `dist/assets/` rather than beside the module output in `dist/` so
-that the directory holds nothing else: a host can point a static file server
-straight at it. `wgsl-analyzer-web/assets/*` resolves there too.
-
-`dist/index.js` is emitted by `tsc`, not vite, on purpose. It spawns the worker
-with `new Worker(new URL("./assets/worker.js", import.meta.url))`, and a
-consumer's bundler only follows the worker if that expression ships exactly as
-written. Vite would rewrite it into a form bundlers no longer detect, so vite
-bundles only the worker.
-
-Note `dist/worker.js` also exists and is not the one to serve. `tsc` compiles
-every file under `src/` so that `worker.ts` is typechecked along with the rest,
-and its unbundled output lands there; `dist/assets/worker.js` from vite is the
-real artifact.
+The package ships unbundled on purpose. `dist/index.js` spawns the worker with
+`new Worker(new URL("./worker.js", import.meta.url))`, and a consumer's bundler
+only follows the worker if that expression ships exactly as written.
 
 Finally, the command packs the package into `dist/` at the repository root, which is the
 tarball that the release workflow publishes to npm.

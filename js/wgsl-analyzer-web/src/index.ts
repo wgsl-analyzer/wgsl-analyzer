@@ -58,7 +58,7 @@ export class WgslAnalyzerServer {
 		const root = options.root ?? "/workspace";
 
 		// Bundlers only detect the worker when this expression appears literally.
-		const worker = new Worker(new URL("./assets/worker.js", import.meta.url), { type: "module" });
+		const worker = new Worker(new URL("./worker.js", import.meta.url), { type: "module" });
 		const server = new WgslAnalyzerServer(worker, root);
 
 		await new Promise<void>((resolve, reject) => {
