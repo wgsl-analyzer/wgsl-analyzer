@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import type * as lc from "vscode-languageclient/node";
-import { createClient, UriConverters } from "./client";
+import { createClient, type UriConverters } from "./client";
 import { Config, prepareVSCodeConfig } from "./config";
 import type { ServerStatusParameters } from "./lsp_ext";
 import * as wa from "./lsp_ext";
@@ -8,6 +8,7 @@ import type { WgslAnalyzerExtensionApi } from "./main_common";
 import { PersistentState } from "./persistent_state";
 import { type SyntaxElement, SyntaxTreeProvider } from "./syntax_tree_provider";
 import {
+	getServedScheme,
 	isWeslDocument,
 	isWeslEditor,
 	isWeslTomlEditor,
@@ -27,7 +28,7 @@ export type Workspace =
 
 export function fetchWorkspace(): Workspace {
 	const folders = (vscode.workspace.workspaceFolders || []).filter(
-		(folder) => folder.uri.scheme === "file",
+		(folder) => folder.uri.scheme === getServedScheme(),
 	);
 	const weslDocuments = vscode.workspace.textDocuments.filter((document) =>
 		isWeslDocument(document),

@@ -68,19 +68,33 @@ export function sleep(ms: number) {
 	return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+let servedScheme = "file";
+
+/**
+ * Sets the URI scheme of the files the server reads, `file` unless the entry
+ * point says otherwise. The web extension serves its workspace folder's scheme.
+ */
+export function setServedScheme(scheme: string): void {
+	servedScheme = scheme;
+}
+
+export function getServedScheme(): string {
+	return servedScheme;
+}
+
 export type WeslDocument = vscode.TextDocument & ({ languageId: "wesl" } | { languageId: "wgsl" });
 
 export type WeslEditor = vscode.TextEditor & { document: WeslDocument };
 
 export function isWeslDocument(document: vscode.TextDocument): document is WeslDocument {
 	// Prevent corrupted text (particularly when using inlay hints) in diff views
-	// by allowing only `file` schemes.
+	// by allowing only the served scheme.
 	// Unfortunately, extensions that use diff views not always set this
 	// to something different than "file".
 	// See: https://github.com/rust-lang/rust-analyzer/issues/4608
 	return (
 		(document.languageId === "wgsl" || document.languageId === "wesl")
-		&& document.uri.scheme === "file"
+		&& document.uri.scheme === servedScheme
 	);
 }
 
@@ -91,7 +105,7 @@ export function isWeslEditor(editor: vscode.TextEditor): editor is WeslEditor {
 export function isWeslTomlDocument(document: vscode.TextDocument): boolean {
 	// ideally `document.languageId` should be 'toml' but user might not have a toml extension installed
 	return (
-		document.uri.scheme === "file"
+		document.uri.scheme === servedScheme
 		&& (document.uri.path.endsWith("/wesl.toml") || document.uri.path.endsWith("/Cargo.toml"))
 	);
 }

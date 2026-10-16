@@ -8,7 +8,7 @@ import * as diagnostics from "./diagnostics";
 import * as Is from "./is";
 import { WaLanguageClient } from "./lang_client";
 import * as wa from "./lsp_ext";
-import { assert } from "./utilities";
+import { assert, getServedScheme } from "./utilities";
 
 export type UriConverters = {
 	code2Protocol: (value: vscode.Uri) => string;
@@ -261,8 +261,8 @@ export function createClient(
 	};
 	const clientOptions: lc.LanguageClientOptions = {
 		documentSelector: [
-			{ scheme: "file", language: "wgsl" },
-			{ scheme: "file", language: "wesl" },
+			{ scheme: getServedScheme(), language: "wgsl" },
+			{ scheme: getServedScheme(), language: "wesl" },
 		],
 		initializationOptions,
 		diagnosticCollectionName: "wgsl-analyzer",
