@@ -286,7 +286,7 @@ jobs:
       - name: Check the tarball is not hollow
         run: |
           contents="$(tar -tzf dist/wgsl-analyzer-web.tgz)"
-          for file in dist/index.js dist/assets/wgsl_analyzer.js dist/assets/wgsl_analyzer.wasm LICENSE-APACHE LICENSE-MIT; do
+          for file in dist/index.js dist/worker.js dist/wgsl_analyzer.js dist/wgsl_analyzer.wasm LICENSE-APACHE LICENSE-MIT; do
             grep -qxF "package/$file" <<< "$contents" || { echo "::error::tarball is missing $file"; exit 1; }
           done
 

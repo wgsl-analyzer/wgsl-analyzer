@@ -78,7 +78,7 @@ jobs:
 
       - name: Report the payload size
         run: |
-          cd js/wgsl-analyzer-web/dist/assets
+          cd js/wgsl-analyzer-web/dist
           for artifact in wgsl_analyzer.wasm wgsl_analyzer.js worker.js; do
             raw=$(stat -c%s "${artifact}")
             gzip=$(gzip -9 -c "${artifact}" | wc -c)

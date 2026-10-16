@@ -1,7 +1,7 @@
 /**
  * Worker entry point: relays between the page and the {@link Host}.
  *
- * This file is bundled to `dist/assets/worker.js` and must be served next to
+ * This file is compiled to `dist/worker.js` and must be served next to
  * `wgsl_analyzer.js`. The dynamic import below resolves relative to it, and the
  * glue spawns its pthread pool with
  * `new Worker(new URL("wgsl_analyzer.js", import.meta.url))`.
@@ -43,8 +43,6 @@ self.onmessage = (event: MessageEvent<HostMessage>): void => {
 };
 
 async function boot(message: Extract<HostMessage, { type: "boot" }>): Promise<void> {
-	// Left external by the bundler so it resolves next to dist/worker.js at
-	// runtime rather than being inlined.
 	const { default: createWgslAnalyzer } = await import("./wgsl_analyzer.js");
 
 	host = await startHost(createWgslAnalyzer, {
