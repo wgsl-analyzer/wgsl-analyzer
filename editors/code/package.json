@@ -48,13 +48,15 @@
 	"scripts": {
 		"build-base": "esbuild ./src/main.ts --bundle --outfile=out/main.js --external:vscode --format=cjs --platform=node --target=node22",
 		"build": "pnpm run build-base --sourcemap",
+		"build-web-base": "node esbuild.web.mjs",
+		"build-web": "pnpm run build-web-base --sourcemap",
 		"check": "pnpm exec biome check",
 		"ci": "pnpm exec biome ci",
 		"format:check": "pnpm exec biome format",
 		"format": "pnpm exec biome format --write",
 		"fix": "pnpm exec biome format --write && pnpm exec biome check --write",
 		"lint": "pnpm exec biome lint",
-		"package": "pnpm run build-base --minify && vsce package --no-dependencies -o wgsl-analyzer.vsix",
+		"package": "pnpm run build-base --minify && pnpm run build-web-base --minify && vsce package --no-dependencies -o wgsl-analyzer.vsix",
 		"pretest": "pnpm run typecheck && pnpm run build",
 		"test": "node ./out/tests/runTests.js",
 		"typecheck": "tsc",
@@ -88,6 +90,7 @@
 		"typescript": "^7.0.2"
 	},
 	"main": "./out/main.js",
+	"browser": "./out/web/main.js",
 	"activationEvents": [
 		"workspaceContains:*/*.wgsl",
 		"workspaceContains:*/*.wesl",
