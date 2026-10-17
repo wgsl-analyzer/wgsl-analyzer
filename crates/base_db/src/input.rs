@@ -9,6 +9,7 @@
 use std::{fmt, ops};
 
 use edition::Edition;
+use rustc_hash::FxHashMap;
 use triomphe::Arc;
 use vfs::{AnchoredPath, FileId, VfsPath, file_set::FileSet};
 
@@ -229,6 +230,8 @@ pub struct PackageData {
     /// to avoid infinite loops.
     pub dependencies: Vec<Dependency>,
     pub origin: PackageOrigin,
+    /// Features used in `@if()`.
+    pub features: FxHashMap<String, bool>,
 }
 
 impl PackageData {

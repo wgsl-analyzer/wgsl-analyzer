@@ -363,6 +363,12 @@ impl GlobalState {
                     })
                     .collect();
 
+                let features = package
+                    .features
+                    .iter()
+                    .map(|feature| (feature.name.clone(), feature.is_enabled))
+                    .collect();
+
                 Some(PackageData {
                     manifest_file_id,
                     root: package.root.clone(),
@@ -370,6 +376,7 @@ impl GlobalState {
                     display_name: package.display_name.clone(),
                     dependencies,
                     origin: package.origin,
+                    features,
                 })
             });
             change.change_package(id, package_data);
