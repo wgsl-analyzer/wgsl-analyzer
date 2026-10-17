@@ -55,10 +55,10 @@ dot = "0.2.0"
 glob = "0.3.4"
 crossbeam-channel = "0.5.17"
 dissimilar = "1.0.11"
-either = "1.18.0"
+either = "1.19.0"
 expect-test = "1.5.1"
 itertools = "0.15.0"
-libc = "0.2.189"
+libc = "0.2.190"
 dashmap = { version = "6.2.1" }
 nohash-hasher = "0.2.0"
 rayon = "1.12.0"
@@ -71,7 +71,7 @@ salsa-macros = "0.28.5"
 semver = "1.0.28"
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.151"
-smallvec = { version = "1.16.2", features = ["const_generics", "const_new", "union"] }
+smallvec = { version = "1.16.3", features = ["const_generics", "const_new", "union"] }
 smol_str = { version = "0.3.6", default-features = false }
 text-size = "1.1.1"
 tracing = { version = "0.1.44", default-features = false, features = ["attributes", "std"] }
