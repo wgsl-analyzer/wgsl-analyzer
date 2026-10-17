@@ -9,7 +9,7 @@
 		"moduleResolution": "nodenext",
 		"target": "ES2024",
 		"outDir": "out", // spellchecker:disable-line
-		"lib": ["ES2024"],
+		"lib": ["ES2024", "WebWorker"],
 		"sourceMap": true,
 		"rootDir": ".", // spellchecker:disable-line
 		"newLine": "lf",

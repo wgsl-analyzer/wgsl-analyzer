@@ -62,6 +62,8 @@
 	},
 	"dependencies": {
 		"@hpcc-js/wasm": "^2.35.3",
+		"@vscode/wasm-wasi": "^1.0.2",
+		"@vscode/wasm-wasi-lsp": "0.1.0-pre.8",
 		"anser": "^2.3.5",
 		"d3": "^7.9.0",
 		"d3-graphviz": "^5.6.0",
