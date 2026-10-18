@@ -85,10 +85,6 @@ impl SyncPluginHandler<FormattingOptions> for WgslPluginHandler {
 }
 
 #[cfg(target_arch = "wasm32")]
-#[expect(
-    clippy::disallowed_types,
-    reason = "dprint_core's generated plugin code uses `HashMap`"
-)]
 mod plugin {
     use super::{FormattingOptions, SyncPluginHandler as _, WgslPluginHandler};
 
