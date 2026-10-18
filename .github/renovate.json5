@@ -53,29 +53,18 @@
 			matchPackageNames: ["/^github\\/codeql-action\\//"],
 		},
 		{
-			description: "Delay VS Code minor updates",
+			description: "Update @types/vscode together with engines.vscode",
 			matchManagers: ["npm"],
-			matchPackageNames: ["@types/vscode"],
-			matchUpdateTypes: ["minor"],
-			minimumReleaseAge: "90 days",
+			matchDepNames: ["@types/vscode", "vscode"],
+			groupName: "vscode",
 			addLabels: ["A-Editor"],
 		},
 		{
-			description: "Keep engines.vscode aligned with @types/vscode",
+			description: "Delay VS Code minor updates",
 			matchManagers: ["npm"],
-			matchPackageNames: ["@types/vscode"],
-			postUpgradeTasks: {
-				commands: [
-					"node -e \"const fs=require('fs'); const f='editors/code/package.json'; const p=JSON.parse(fs.readFileSync(f)); const v=p.devDependencies?.['@types/vscode']; if (!v) process.exit(0); const version=v.replace(/^[^0-9]*/, ''); p.engines ??= {}; p.engines.vscode='^'+version; fs.writeFileSync(f, JSON.stringify(p, null, 2)+'\\n');\"",
-					"pnpm --dir editors/code install --lockfile-only",
-					"pnpm --dir editors/code run format",
-				],
-				fileFilters: [
-					"editors/code/package.json",
-					"editors/code/pnpm-lock.yaml",
-				],
-				executionMode: "branch",
-			},
+			matchDepNames: ["@types/vscode", "vscode"],
+			matchUpdateTypes: ["minor"],
+			minimumReleaseAge: "90 days",
 		},
 		{
 			"description": "Use @tsconfig/node24",
