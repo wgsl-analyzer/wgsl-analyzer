@@ -33,14 +33,14 @@
 		}
 	},
 	"engines": {
-		"vscode": "^1.139.1",
+		"vscode": "^1.141.0",
 		"node": "^24.21.0"
 	},
 	"devEngines": {
 		"pnpm": "^11.15.1"
 	},
 	"engineStrict": true,
-	"packageManager": "pnpm@12.8.1+sha512.f64ba907507f5ceafe06c8d38e6052d0179444580ec1279ddd5bfc11cb48aa8a2644b66598e07e761da84872a9fc57d5f902b87fa49d024198d558612aabbe45",
+	"packageManager": "pnpm@12.12.1+sha512.b7f98934c0b1f29a65f5da52f2d7f994e7faad573ffdddea1497fb4dcb5aec051590ee7c7d95a38172b4bfae103a5b83edf2ee866e11731c2cafa96063610ac5",
 	"enabledApiProposals": [],
 	"extensionKind": [
 		"workspace"
@@ -71,11 +71,11 @@
 		"vscode-languageclient": "^10.1.2"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "^2.5.14",
+		"@biomejs/biome": "^2.5.15",
 		"@tsconfig/node-ts": "^23.6.4",
 		"@tsconfig/node24": "^24.0.5",
 		"@tsconfig/strictest": "^2.0.8",
-		"@types/node": "^25.9.8",
+		"@types/node": "^25.9.9",
 		"@types/vscode": "^1.125.0",
 		"@vscode/test-electron": "^3.1.0",
 		"@vscode/vsce": "^4.0.0",
