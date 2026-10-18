@@ -1,7 +1,4 @@
-use syntax::{
-    AstNode as _,
-    ast::{self},
-};
+use syntax::{AstNode as _, ast};
 
 use crate::{print_item_buffer::PrintItemBuffer, reporting::FormatDocumentResult};
 #[expect(

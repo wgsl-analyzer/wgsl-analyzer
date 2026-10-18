@@ -144,9 +144,8 @@ fn vector_completions(
 ) {
     let field_text = expression
         .field()
-        .map(|name| name.text().to_owned())
         // It should never be `None` because `x.$0` gets parsed as `Some("")`.
-        .unwrap_or_default();
+        .map_or_default(|name| name.text().to_owned());
 
     if is_swizzleable(&field_text) {
         let size: usize = size.as_u8().into();

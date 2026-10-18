@@ -21,7 +21,7 @@ path = "src/bin/main.rs"
 # ide-ssr.workspace = true
 # intern.workspace = true
 # This should only be used in CLI
-profile.workspace = true
+# profile.workspace = true
 base-db.workspace = true
 edition.workspace = true
 hir-ty.workspace = true
@@ -95,7 +95,10 @@ windows-sys = {
 
 [features]
 force-always-assert = ["stdx/force-always-assert"]
-jemalloc = ["jemallocator", "profile/jemalloc"]
+jemalloc = [
+	"jemallocator",
+	# "profile/jemalloc",
+]
 sysroot-abi = []
 
 [lints]

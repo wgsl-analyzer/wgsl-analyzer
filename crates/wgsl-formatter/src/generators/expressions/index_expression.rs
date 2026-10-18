@@ -1,7 +1,4 @@
-use syntax::{
-    AstNode as _, SyntaxKind, SyntaxNode,
-    ast::{self},
-};
+use syntax::{AstNode as _, SyntaxKind, SyntaxNode, ast};
 
 use crate::{
     ast_parse::{DiscardBlankspace, NoTrivia, parse_end, parse_node_with, syntax_iter},
