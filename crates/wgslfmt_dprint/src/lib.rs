@@ -85,8 +85,4 @@ impl SyncPluginHandler<FormattingOptions> for WgslPluginHandler {
 }
 
 #[cfg(target_arch = "wasm32")]
-mod plugin {
-    use super::{FormattingOptions, SyncPluginHandler as _, WgslPluginHandler};
-
-    dprint_core::generate_plugin_code!(WgslPluginHandler, WgslPluginHandler, FormattingOptions);
-}
+dprint_core::generate_plugin_code!(WgslPluginHandler, WgslPluginHandler, FormattingOptions);
