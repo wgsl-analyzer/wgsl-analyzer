@@ -663,11 +663,7 @@ fn is_argument_similar_to_parameter_name(
     }
 
     // mixed camelCase/snake_case
-    if compare_ignore_case_convention(argument, param_name) {
-        return true;
-    }
-
-    false
+    compare_ignore_case_convention(argument, param_name)
 }
 
 fn is_obvious_parameter(param_name: &str) -> bool {

@@ -1,7 +1,7 @@
 use dprint_core_macros::sc;
 use syntax::{
     AstNode as _, SyntaxKind, SyntaxNode,
-    ast::{self},
+    ast,
 };
 
 use crate::{

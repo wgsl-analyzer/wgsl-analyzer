@@ -1,7 +1,7 @@
 use itertools::Itertools as _;
 use syntax::{
     AstNode as _,
-    ast::{self},
+    ast,
 };
 
 use crate::{

@@ -2,7 +2,7 @@ use dprint_core_macros::sc;
 use itertools::{Itertools as _, Position};
 use syntax::{
     AstNode as _, SyntaxKind,
-    ast::{self},
+    ast,
 };
 
 use crate::{
