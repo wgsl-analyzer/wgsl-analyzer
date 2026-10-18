@@ -72,7 +72,9 @@ export class SyntaxTreeProvider implements vscode.TreeDataProvider<SyntaxElement
 
 		if (editor && isWeslEditor(editor)) {
 			const parameters = {
-				textDocument: { uri: editor.document.uri.toString() },
+				textDocument: this.context.client.code2ProtocolConverter.asTextDocumentIdentifier(
+					editor.document,
+				),
 				range: null,
 			};
 			const fileText = await this.context.client.sendRequest(wa.viewSyntaxTree, parameters);

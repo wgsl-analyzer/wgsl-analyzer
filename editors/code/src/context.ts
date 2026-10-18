@@ -352,8 +352,8 @@ export class Context implements WgslAnalyzerExtensionApi {
 		return editor && isWeslTomlEditor(editor) ? editor : undefined;
 	}
 
-	get extensionPath(): string {
-		return this.extCtx.extensionPath;
+	get extensionUri(): vscode.Uri {
+		return this.extCtx.extensionUri;
 	}
 
 	get subscriptions(): Disposable[] {

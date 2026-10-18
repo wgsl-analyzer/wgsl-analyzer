@@ -1,4 +1,3 @@
-import * as path from "node:path";
 import * as vscode from "vscode";
 import * as lc from "vscode-languageclient";
 import type { LanguageClient } from "vscode-languageclient/node";
@@ -473,7 +472,7 @@ export function viewItemTree(context: InitializedContext): Cmd {
 
 function packageGraph(context: InitializedContext, full: boolean): Cmd {
 	return async () => {
-		const nodeModulesPath = vscode.Uri.file(path.join(context.extensionPath, "node_modules"));
+		const nodeModulesPath = vscode.Uri.joinPath(context.extensionUri, "node_modules");
 
 		const panel = vscode.window.createWebviewPanel(
 			"wgsl-analyzer.package-graph",
@@ -506,7 +505,7 @@ function moduleGraph(context: InitializedContext): Cmd {
 			return;
 		}
 
-		const nodeModulesPath = vscode.Uri.file(path.join(context.extensionPath, "node_modules"));
+		const nodeModulesPath = vscode.Uri.joinPath(context.extensionUri, "node_modules");
 
 		const client = context.client;
 		const parameters = {
