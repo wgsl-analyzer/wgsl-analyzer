@@ -63,7 +63,7 @@ expect-test = { version = "1.5.1", default-features = false }
 flate2 = { version = "1.1.10", default-features = false }
 glob = { version = "0.3.4", default-features = false }
 indexmap = { version = "2.14.2", default-features = false }
-itertools = { version = "0.15.0", default-features = false }
+itertools = { version = "0.15.0", default-features = false, features = ["use_alloc"] }
 jemallocator = { package = "tikv-jemallocator", version = "0.7.0" }
 jod-thread = { version = "1.0.0", default-features = false }
 lelwel = { version = "0.10.4", default-features = false }
