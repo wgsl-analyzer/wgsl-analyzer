@@ -464,9 +464,9 @@ checksum = "d0766eaeb39bb5cea1966cdfdf4d322e0d3facdf152f67c647b81e38b08612bb"
 
 [[package]]
 name = "dprint-core"
-version = "0.69.1"
+version = "0.71.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "67359cea061dd052fca921d3589a9ce59bc16fa23bfb9d06d5c669a1dbd23915"
+checksum = "670d3c17cf65d37f5324b4fc198993148beb8c44e56fa4fe3676dd3c033d4e8c"
 dependencies = [
  "bumpalo",
  "hashbrown 0.15.5",
@@ -897,15 +897,6 @@ name = "itertools"
 version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "413ee7dfc52ee1a4949ceeb7dbc8a33f2d6c088194d9f922fb8318faf1f01186"
-dependencies = [
- "either",
-]
-
-[[package]]
-name = "itertools"
-version = "0.14.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2b192c782037fadd9cfa75548310488aabdbf3d2da73885b31bd0abd03351285"
 dependencies = [
  "either",
 ]
@@ -1688,9 +1679,9 @@ dependencies = [
 
 [[package]]
 name = "sha2"
-version = "0.11.0"
+version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "446ba717509524cb3f22f17ecc096f10f4822d76ab5c0b9822c5f9c284e825f4"
+checksum = "47d7069beb7d6ac7b9acd1039986e73443f24234f41074da099d6f994ac9ad19"
 dependencies = [
  "cfg-if",
  "cpufeatures",
@@ -2284,7 +2275,7 @@ dependencies = [
  "dprint-core",
  "dprint-core-macros",
  "expect-test",
- "itertools 0.14.0",
+ "itertools 0.15.0",
  "parser",
  "rowan",
  "serde",

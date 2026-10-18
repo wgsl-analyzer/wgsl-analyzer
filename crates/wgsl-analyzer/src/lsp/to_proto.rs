@@ -508,11 +508,11 @@ pub(crate) fn completion_text_edit(
 ) -> CompletionItemTextEdit {
     let text_edit = text_edit(line_index, indel);
     match insert_replace_support {
-        Some(cursor_pos) => InsertReplaceEdit {
+        Some(cursor_position) => InsertReplaceEdit {
             new_text: text_edit.new_text,
             insert: Range {
                 start: text_edit.range.start,
-                end: cursor_pos,
+                end: cursor_position,
             },
             replace: text_edit.range,
         }

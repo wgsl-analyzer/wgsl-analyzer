@@ -1,4 +1,4 @@
-use itertools::{Itertools as _, Position};
+use itertools::Itertools as _;
 use rowan::NodeOrToken;
 use syntax::{SyntaxNode, SyntaxToken};
 
@@ -25,12 +25,12 @@ pub(crate) fn gen_node_syntax_verbatim(
         let (line, has_break) = line.strip_suffix('\n').map_or((line, false), |line| {
             (line.strip_suffix('\r').unwrap_or(line), true)
         });
-        if !line.is_empty() || position == Position::Middle {
+        if !line.is_empty() || position.is_middle() {
             push_string_with_tabs(&mut formatted, line);
         }
         if has_break {
             formatted.request(Request::force(RequestItem::LineBreak));
-            if position != Position::Last && position != Position::Only {
+            if !position.is_last && !position.is_exactly_one() {
                 formatted.apply_end_request();
             }
         }

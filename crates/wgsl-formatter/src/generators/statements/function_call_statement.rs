@@ -1,6 +1,6 @@
 use dprint_core::formatting::PrintItems;
 use dprint_core_macros::sc;
-use itertools::{Itertools as _, Position};
+use itertools::Itertools as _;
 use syntax::{
     AstNode as _, SyntaxKind, SyntaxNode,
     ast::{self, FunctionCall},
@@ -172,7 +172,7 @@ pub(crate) fn gen_function_call_arguments_standard(
         multiline_group.finish_new_line_group_after_requests();
 
         for (position, item) in item_arguments.into_iter().with_position() {
-            if position != Position::First && position != Position::Only {
+            if !position.is_first && !position.is_exactly_one() {
                 multiline_group.grouped_newline_or_space();
             }
             multiline_group.extend(gen_node_preceding_trivia(&item)?);
@@ -181,7 +181,7 @@ pub(crate) fn gen_function_call_arguments_standard(
                 multiline_group.extend(gen_node_content(&item)?);
                 multiline_group.finish_new_line_group_before_requests();
                 multiline_group.request(Request::discourage(RequestItem::Space));
-                if position == Position::Last || position == Position::Only {
+                if position.is_last || position.is_exactly_one() {
                     multiline_group.extend_if_multi_line({
                         let mut pi = PrintItems::default();
                         pi.push_sc(sc!(","));

@@ -1,5 +1,5 @@
 use dprint_core_macros::sc;
-use itertools::{Itertools as _, Position};
+use itertools::Itertools as _;
 use rowan::{NodeOrToken, SyntaxToken};
 use syntax::{
     AstNode as _, SyntaxKind,
@@ -244,7 +244,7 @@ pub(crate) fn gen_import_collection(
         group.extend(gen_node_with_trivia(item)?);
         if item.has_content() {
             group.request(Request::discourage(RequestItem::Space));
-            if position != Position::Last && position != Position::Only {
+            if !position.is_last && !position.is_exactly_one() {
                 group.push_sc(sc!(","));
                 group.grouped_newline_or_space();
             }

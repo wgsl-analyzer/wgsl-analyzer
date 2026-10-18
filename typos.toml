@@ -39,6 +39,7 @@ extend-ignore-identifiers-re = [
 "typ" = "typ"  # lsp_types
 # "perf" = "performance"
 # "params" = "parameters"
+# "pos" = "position"
 "req" = "request"
 "labeller" = "labeller"
 "labelled" = "labelled"

@@ -226,16 +226,18 @@ fn split_float_suffix(number: &str) -> (&str, BuiltinFloat) {
 fn parse_hex_float(hex: &str) -> f64 {
     // Split on 'p' or 'P' to get mantissa and exponent parts
     let (mantissa_str, exponent) = match hex.find(['p', 'P']) {
-        Some(pos) => {
-            let exp: i32 = hex[pos + 1..].parse().expect("invalid hex float exponent");
-            (&hex[..pos], exp)
+        Some(position) => {
+            let exp: i32 = hex[position + 1..]
+                .parse()
+                .expect("invalid hex float exponent");
+            (&hex[..position], exp)
         },
         None => (hex, 0),
     };
 
     // Split mantissa on '.' to get whole and fractional parts
     let (whole_str, frac_str) = match mantissa_str.find('.') {
-        Some(pos) => (&mantissa_str[..pos], &mantissa_str[pos + 1..]),
+        Some(position) => (&mantissa_str[..position], &mantissa_str[position + 1..]),
         None => (mantissa_str, ""),
     };
 

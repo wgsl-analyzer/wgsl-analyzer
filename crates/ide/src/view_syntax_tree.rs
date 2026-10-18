@@ -43,9 +43,9 @@ fn syntax_node_to_json(
                 let kind = node_or_token.kind();
                 let (text_range, inner_range_str) = match &ctx.in_string {
                     Some(in_string) => {
-                        let start_pos =
+                        let start_position =
                             TextPosition::new(&ctx.line_index, node_or_token.text_range().start());
-                        let end_pos =
+                        let end_position =
                             TextPosition::new(&ctx.line_index, node_or_token.text_range().end());
 
                         let inner_start: u32 = node_or_token.text_range().start().into();
@@ -53,14 +53,14 @@ fn syntax_node_to_json(
 
                         let mut true_start = inner_start + in_string.offset;
                         let mut true_end = inner_end + in_string.offset;
-                        for pos in &in_string.marker_positions {
-                            if *pos >= inner_end {
+                        for position in &in_string.marker_positions {
+                            if *position >= inner_end {
                                 break;
                             }
 
                             // We conditionally add to true_start in case
                             // the marker is between the start and end.
-                            true_start += 2 * u32::from(*pos < inner_start);
+                            true_start += 2 * u32::from(*position < inner_start);
                             true_end += 2;
                         }
 
@@ -68,7 +68,7 @@ fn syntax_node_to_json(
 
                         (
                             true_range,
-                            format!(r#","istart":{start_pos},"iend":{end_pos}"#),
+                            format!(r#","istart":{start_position},"iend":{end_position}"#),
                         )
                     },
                     None => (node_or_token.text_range(), String::new()),

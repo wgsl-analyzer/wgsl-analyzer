@@ -81,6 +81,7 @@ disallowed-names = [
 	"not",  # notification
 	"opts",  # options
 	"params",  # parameters
+	"pos",  # position
 	"prev",  # previous
 	"req",  # request
 	"res",  # result

@@ -527,7 +527,7 @@ mod diff {
 
     fn textedit_from_chunks(chunks: Vec<dissimilar::Chunk<'_>>) -> TextEdit {
         let mut builder = TextEdit::builder();
-        let mut pos = TextSize::default();
+        let mut position = TextSize::default();
 
         let mut chunks = chunks.into_iter().peekable();
         while let Some(chunk) = chunks.next() {
@@ -535,22 +535,22 @@ mod diff {
             {
                 chunks.next().unwrap();
                 let deleted_length = TextSize::of(deleted);
-                builder.replace(TextRange::at(pos, deleted_length), inserted.into());
-                pos += deleted_length;
+                builder.replace(TextRange::at(position, deleted_length), inserted.into());
+                position += deleted_length;
                 continue;
             }
 
             match chunk {
                 Chunk::Equal(text) => {
-                    pos += TextSize::of(text);
+                    position += TextSize::of(text);
                 },
                 Chunk::Delete(deleted) => {
                     let deleted_length = TextSize::of(deleted);
-                    builder.delete(TextRange::at(pos, deleted_length));
-                    pos += deleted_length;
+                    builder.delete(TextRange::at(position, deleted_length));
+                    position += deleted_length;
                 },
                 Chunk::Insert(inserted) => {
-                    builder.insert(pos, inserted.into());
+                    builder.insert(position, inserted.into());
                 },
             }
         }

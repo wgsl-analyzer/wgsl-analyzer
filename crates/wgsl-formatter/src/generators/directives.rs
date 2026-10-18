@@ -1,5 +1,5 @@
 use dprint_core_macros::sc;
-use itertools::{Itertools as _, Position};
+use itertools::Itertools as _;
 use syntax::{AstNode as _, SyntaxKind, ast};
 
 use crate::{
@@ -57,7 +57,7 @@ pub(crate) fn gen_enable_directive(
         multiline_group.grouped_newline_or_space();
 
         multiline_group.extend(gen_node_with_trivia(&item)?);
-        if position != Position::Last && position != Position::Only {
+        if !position.is_last && !position.is_exactly_one() {
             multiline_group.push_sc(sc!(","));
         }
     }
@@ -114,7 +114,7 @@ pub(crate) fn gen_requires_directive(
         multiline_group.grouped_newline_or_space();
 
         multiline_group.extend(gen_node_with_trivia(&item)?);
-        if position != Position::Last && position != Position::Only {
+        if !position.is_last && !position.is_exactly_one() {
             multiline_group.push_sc(sc!(","));
         }
     }

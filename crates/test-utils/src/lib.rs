@@ -72,15 +72,15 @@ pub fn extract_offset(text: &str) -> (TextSize, String) {
 /// Returns the offset of the first occurrence of `$0` marker and the copy of `text`
 /// without the marker.
 fn try_extract_offset(text: &str) -> Option<(TextSize, String)> {
-    let cursor_pos = text.find(CURSOR_MARKER)?;
+    let cursor_position = text.find(CURSOR_MARKER)?;
     let mut new_text = String::with_capacity(text.len() - CURSOR_MARKER.len());
-    new_text.push_str(&text[..cursor_pos]);
-    new_text.push_str(&text[cursor_pos + CURSOR_MARKER.len()..]);
-    let cursor_pos = TextSize::from(
-        <usize as std::convert::TryInto<u32>>::try_into(cursor_pos)
+    new_text.push_str(&text[..cursor_position]);
+    new_text.push_str(&text[cursor_position + CURSOR_MARKER.len()..]);
+    let cursor_position = TextSize::from(
+        <usize as std::convert::TryInto<u32>>::try_into(cursor_position)
             .expect("usize should be larger than u32"),
     );
-    Some((cursor_pos, new_text))
+    Some((cursor_position, new_text))
 }
 
 /// Infallible version of `try_extract_range()`.

@@ -17,6 +17,9 @@ license = "MIT OR Apache-2.0"
 [workspace.dependencies]
 # local crates
 base-db = { path = "./crates/base_db", version = "0.0.0" }
+criterion = "0.8.2"
+dprint-core = { version = "0.71.1", default-features = false, features = ["tracing", "wasm"] }
+dprint-core-macros = "0.1.0"
 hir = { path = "./crates/hir", version = "0.0.0" }
 hir-def = { path = "./crates/hir_def", version = "0.0.0" }
 hir-ty = { path = "./crates/hir_ty", version = "0.0.0" }
@@ -27,6 +30,7 @@ ide-db = { path = "./crates/ide-db", version = "0.0.0" }
 parser = { path = "./crates/parser", version = "0.0.0" }
 profile = { path = "./crates/profile", version = "0.0.0" }
 project-model = { path = "./crates/project-model", version = "0.0.0" }
+sha2 = "0.11.1"
 syntax = { path = "./crates/syntax", version = "0.0.0" }
 toolchain = { path = "./crates/toolchain", version = "0.0.0" }
 test-fixture = { path = "./crates/test-fixture", version = "0.0.0" }
