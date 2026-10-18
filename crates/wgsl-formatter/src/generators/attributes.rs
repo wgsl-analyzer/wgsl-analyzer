@@ -64,7 +64,7 @@ where
     attributes.sort_by(|(order_a, _), (order_b, _)| order_a.cmp(order_b));
 
     let mut formatted = PrintItemBuffer::default();
-    for (pos, attribute) in attributes
+    for (position, attribute) in attributes
         .iter()
         .map(|(_, attribute)| attribute)
         .with_position()
@@ -72,7 +72,7 @@ where
         formatted.extend(gen_node_preceding_trivia(attribute)?);
         formatted.extend(gen_node_content(attribute)?);
         formatted.extend(gen_node_succeeding_trivia(attribute)?);
-        if !pos.is_exactly_one() && !pos.is_last {
+        if !position.is_exactly_one() && !position.is_last {
             formatted.request(separator.clone());
         }
     }

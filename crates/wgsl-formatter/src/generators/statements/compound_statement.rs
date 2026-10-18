@@ -99,8 +99,8 @@ pub(crate) fn gen_compound_statement(
             multiline_group.request(Request::expect(RequestItem::LineBreak));
         }
 
-        for (pos, item) in items.iter().with_position() {
-            if !pos.is_exactly_one() && !pos.is_first {
+        for (position, item) in items.iter().with_position() {
+            if !position.is_exactly_one() && !position.is_first {
                 multiline_group.request(Request::expect(RequestItem::LineBreak));
             }
 

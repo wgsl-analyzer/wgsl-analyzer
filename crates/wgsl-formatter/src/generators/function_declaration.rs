@@ -103,7 +103,7 @@ pub(crate) fn gen_fn_parameters(
     multiline_group.request(Request::discourage(RequestItem::EmptyLine));
     multiline_group.request(Request::discourage(RequestItem::Space));
 
-    for (pos, item) in items.into_iter().with_position() {
+    for (position, item) in items.into_iter().with_position() {
         // If the parameters are multiple lines long, every parameter should be on a new line
         // If the parameters is a single line long, every parameter should be prepended with a space,
         // with a chance for breaking into multiple lines
@@ -113,7 +113,7 @@ pub(crate) fn gen_fn_parameters(
         multiline_group.extend(gen_node_preceding_trivia(&item)?);
         multiline_group.extend(gen_node_content(&item)?);
         if item.has_content() {
-            if pos.is_last || pos.is_exactly_one() {
+            if position.is_last || position.is_exactly_one() {
                 multiline_group.extend_if_multi_line({
                     let mut pi = PrintItems::default();
                     pi.push_sc(sc!(","));

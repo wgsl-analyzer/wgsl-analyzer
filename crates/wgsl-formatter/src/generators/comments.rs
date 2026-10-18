@@ -39,27 +39,27 @@ pub(crate) fn gen_comment(item: &Comment) -> PrintItemBuffer {
             formatted.request(Request::expect(RequestItem::Space));
 
             let mut lines = content.text().lines().with_position();
-            if let Some((line_pos, line)) = lines.next() {
-                for (tab_pos, tab_part) in line.split('\t').with_position() {
+            if let Some((line_position, line)) = lines.next() {
+                for (tab_position, tab_part) in line.split('\t').with_position() {
                     formatted.push_string(tab_part.to_owned());
-                    if !tab_pos.is_last && !tab_pos.is_exactly_one() {
+                    if !tab_position.is_last && !tab_position.is_exactly_one() {
                         formatted.push_tab();
                     }
                 }
-                if !line_pos.is_exactly_one() && !line_pos.is_last {
+                if !line_position.is_exactly_one() && !line_position.is_last {
                     formatted.request(Request::expect(RequestItem::LineBreak));
                 }
             }
 
             formatted.start_ignoring_indent_before_requests();
-            for (line_pos, line) in lines {
-                for (tab_pos, tab_part) in line.split('\t').with_position() {
+            for (line_position, line) in lines {
+                for (tab_position, tab_part) in line.split('\t').with_position() {
                     formatted.push_string(tab_part.to_owned());
-                    if !tab_pos.is_last && !tab_pos.is_exactly_one() {
+                    if !tab_position.is_last && !tab_position.is_exactly_one() {
                         formatted.push_tab();
                     }
                 }
-                if !line_pos.is_exactly_one() && !line_pos.is_last {
+                if !line_position.is_exactly_one() && !line_position.is_last {
                     formatted.request(Request::expect(RequestItem::LineBreak));
                 }
             }
@@ -74,9 +74,9 @@ pub(crate) fn gen_comment(item: &Comment) -> PrintItemBuffer {
                 content.text().lines().count() == 1,
                 "line ending comment may not contain newlines."
             );
-            for (tab_pos, tab_part) in content.text().split('\t').with_position() {
+            for (tab_position, tab_part) in content.text().split('\t').with_position() {
                 formatted.push_string(tab_part.to_owned());
-                if !tab_pos.is_last && !tab_pos.is_exactly_one() {
+                if !tab_position.is_last && !tab_position.is_exactly_one() {
                     formatted.push_tab();
                 }
             }
