@@ -58,7 +58,7 @@ dissimilar = "1.0.11"
 either = "1.19.0"
 expect-test = "1.5.1"
 itertools = "0.15.0"
-libc = "0.2.190"
+libc = "0.2.191"
 dashmap = { version = "6.2.1" }
 nohash-hasher = "0.2.0"
 rayon = "1.12.0"
@@ -70,7 +70,7 @@ salsa = { version = "0.28.5", default-features = false, features = ["inventory",
 salsa-macros = "0.28.5"
 semver = "1.0.28"
 serde = { version = "1.0.229", features = ["derive"] }
-serde_json = "1.0.152"
+serde_json = "1.0.154"
 smallvec = { version = "1.16.3", features = ["const_generics", "const_new", "union"] }
 smol_str = { version = "0.3.6", default-features = false }
 text-size = "1.1.1"
