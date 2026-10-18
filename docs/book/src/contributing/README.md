@@ -23,8 +23,6 @@ Discussion happens in this Discord server:
 
 <https://discord.gg/3QUGyyz984>
 
-<!-- toc -->
-
 ## Issue Labels
 
 <https://github.com/wgsl-analyzer/wgsl-analyzer/labels>

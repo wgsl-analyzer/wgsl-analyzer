@@ -10,7 +10,6 @@ Its purpose is to document various problems and architectural solutions related 
 > [[!CAUTION]]
 > This document needs updating because this guide was forked from rust-analyzer and not everything has been rewritten to account for differences.
 
-<!-- toc -->
 <!-- TODO nothing here is correct -->
 
 ## The big picture

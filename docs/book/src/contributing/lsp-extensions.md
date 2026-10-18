@@ -20,8 +20,6 @@ Requests, which are likely to always remain specific to `wgsl-analyzer`, are und
 
 If you want to be notified about the changes to this document, subscribe to [#171](https://github.com/wgsl-analyzer/wgsl-analyzer/issues/171).
 
-<!-- toc -->
-
 ## Configuration in `initializationOptions`
 
 **Upstream Issue:** <https://github.com/microsoft/language-server-protocol/issues/567>
