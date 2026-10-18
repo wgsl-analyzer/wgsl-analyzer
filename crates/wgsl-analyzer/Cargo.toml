@@ -54,24 +54,24 @@ idna_adapter.workspace = true
 itertools.workspace = true
 line-index.workspace = true
 lsp-server.workspace = true
-lsp-types = { package = "gen-lsp-types", version = "0.11.0", features = ["url"] }
-percent-encoding = "2.3.2"
-memchr = "2.8.3"
+lsp-types.workspace = true
+percent-encoding.workspace = true
+memchr.workspace = true
 nohash-hasher.workspace = true
-num_cpus = "1.17.0"
-parking_lot = "0.12.5"
+num_cpus.workspace = true
+parking_lot.workspace = true
 project-model.workspace = true
 rayon.workspace = true
 rustc-hash.workspace = true
 salsa.workspace = true
 semver.workspace = true
-serde_json = { workspace = true, features = ["preserve_order"] }
+serde_json.workspace = true
 serde.workspace = true
 toolchain.workspace = true
 tracing-subscriber.workspace = true
 tracing.workspace = true
 triomphe.workspace = true
-xflags = "0.3.2"
+xflags.workspace = true
 
 [dev-dependencies]
 expect-test.workspace = true
@@ -82,16 +82,10 @@ test-utils.workspace = true
 # syntax-bridge.workspace = true
 
 [target.'cfg(not(target_env = "msvc"))'.dependencies]
-jemallocator = { package = "tikv-jemallocator", version = "0.7.0", optional = true }
+jemallocator = { package = "tikv-jemallocator", workspace = true, optional = true }
 
 [target."cfg(windows)".dependencies]
-windows-sys = {
-	version = "0.61.2",
-	features = [
-		"Win32_System_Diagnostics_Debug",
-		"Win32_System_Threading",
-	]
-}
+windows-sys.workspace = true
 
 [features]
 force-always-assert = ["stdx/force-always-assert"]

@@ -19,7 +19,7 @@ dprint-core.workspace = true
 parser.workspace = true
 serde.workspace = true
 serde_json.workspace = true
-wgsl-formatter = { workspace = true, features = ["serde"] }
+wgsl-formatter.workspace = true
 
 [lints]
 workspace = true

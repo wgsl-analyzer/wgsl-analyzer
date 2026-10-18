@@ -13,9 +13,9 @@ doctest = false
 
 [dependencies]
 crossbeam-channel.workspace = true
-rayon = "1.12.0"
+rayon.workspace = true
 tracing.workspace = true
-walkdir = "2.5.0"
+walkdir.workspace = true
 
 paths.workspace = true
 rustc-hash.workspace = true

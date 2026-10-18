@@ -12,9 +12,9 @@ doctest = false
 
 [dependencies]
 crossbeam-channel.workspace = true
-crossbeam-utils = "0.8.23"
+crossbeam-utils.workspace = true
 itertools.workspace = true
-jod-thread = "1.0.0"
+jod-thread.workspace = true
 tracing.workspace = true
 # Think twice before adding anything here
 
@@ -22,8 +22,8 @@ tracing.workspace = true
 libc.workspace = true
 
 [target."cfg(windows)".dependencies]
-miow = "0.6.1"
-windows-sys = { version = "0.61.2", features = ["Win32_Foundation"] }
+miow.workspace = true
+windows-sys.workspace = true
 
 [features]
 force-always-assert = []
