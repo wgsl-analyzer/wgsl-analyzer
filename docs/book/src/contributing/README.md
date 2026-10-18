@@ -123,6 +123,68 @@ pnpm install --frozen-lockfile
 pnpm run ci
 ```
 
+### Web extension
+
+The extension also works in the browser (e.g. in [vscode.dev](vscode.dev) or [github.dev](github.dev)).
+
+The CI checks that lints, tests and builds are clean for the web target as well. To locally build and run the web extension the following prequisits are necessary.
+
+```bash
+  # 1. Build the server and package the web vsix
+  WA_TARGET=wasm32-wasip1-threads cargo xtask dist --client-patch-version <current-patch-version>
+  cd editors/code
+  pnpm run package -o ../../dist/wgsl-analyzer-web.vsix --target web --pre-release
+  git checkout package.json   # xtask edits it in place
+  rm -rf server               # the copied wasm, gitignored
+  cd ../..
+
+  # 2. Unpack the vsix:
+  rm -rf /tmp/wa-vsix && mkdir /tmp/wa-vsix
+  unzip -q dist/wgsl-analyzer-web.vsix -d /tmp/wa-vsix
+```
+
+Then there are two ways to run the extension. Either under a local test server:
+
+```bash
+  # 1. Get ms-vscode.wasm-wasi-core locally.
+  mkdir -p /tmp/wa-web/exts /tmp/wa-web/dl
+  curl -sSfL -o /tmp/wa-web/dl/wasi.vsix \
+    https://open-vsx.org/api/ms-vscode/wasm-wasi-core/1.0.2/file/ms-vscode.wasm-wasi-core-1.0.2.vsix
+  unzip -q /tmp/wa-web/dl/wasi.vsix 'extension/*' -d /tmp/wa-web/dl
+  mv /tmp/wa-web/dl/extension /tmp/wa-web/exts/ms-vscode.wasm-wasi-core
+
+  # 2. Start local VS Code web on a WESL project - imports are not resolved correctly
+  pnpm dlx @vscode/test-web@0.0.80 --browser=none --coi --quality stable \
+    --extensionPath=/tmp/wa-web/exts \
+    --extensionDevelopmentPath=/tmp/wa-vsix/extension \
+    crates/wgsl-analyzer/src/tests/flat_wesl
+```
+
+Or directly on vscode.dev with the local extension:
+
+```bash
+  # 1. Create the local certificate authority and trust it (once per machine):
+  sudo apt install mkcert libnss3-tools
+  mkcert -install
+
+  # 2. Create a certificate for localhost:
+  mkdir -p ~/certs && cd ~/certs
+  mkcert localhost
+
+  # 3. Serve the unpacked extension with it:
+  pnpm dlx serve --cors -l 5000 \
+    --ssl-cert ~/certs/localhost.pem \
+    --ssl-key ~/certs/localhost-key.pem \
+    /tmp/wa-vsix/extension
+
+  # 4. Navigate to vscode.dev
+  # 5. Open a repo with a wesl project
+  # 6. Install the extension - "F1": "Developer: Install Extension From Location…" with https://localhost:5000
+  # You might need to disable local networkwork access (lna) checks
+```
+
+### NPM package
+
 The browser packages under `js` are a separate pnpm workspace, so they have their own checks:
 
 ```bash
