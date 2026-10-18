@@ -252,7 +252,7 @@ impl ChangeFixture {
             let (to_id, _) = packages[&to];
             let (_, from_data) = &mut packages[&from];
             from_data.dependencies.push(Dependency {
-                name: to.clone(),
+                name: to,
                 package_id: to_id,
             });
         }

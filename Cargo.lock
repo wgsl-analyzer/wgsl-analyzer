@@ -2253,7 +2253,6 @@ dependencies = [
  "parking_lot",
  "paths",
  "percent-encoding",
- "profile",
  "project-model",
  "rayon",
  "rustc-hash 2.1.3",

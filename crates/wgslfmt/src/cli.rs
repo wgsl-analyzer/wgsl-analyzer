@@ -144,12 +144,10 @@ Pass \"-\" to read from stdin",
             print_diff: matches.remove_one::<bool>("print-diff").unwrap_or_default(),
             config_overrides: matches
                 .remove_many::<ConfigOverride>("config")
-                .map(std::iter::Iterator::collect::<Vec<_>>)
-                .unwrap_or_default(),
+                .map_or_default(std::iter::Iterator::collect::<Vec<_>>),
             patterns: matches
                 .remove_many::<String>("patterns")
-                .map(std::iter::Iterator::collect::<Vec<_>>)
-                .unwrap_or_default(),
+                .map_or_default(std::iter::Iterator::collect::<Vec<_>>),
         }
     }
 
