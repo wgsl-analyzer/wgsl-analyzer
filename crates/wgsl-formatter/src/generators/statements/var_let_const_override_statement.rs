@@ -1,9 +1,6 @@
 use dprint_core::formatting::StringContainer;
 use dprint_core_macros::sc;
-use syntax::{
-    AstNode as _, SyntaxKind, SyntaxNode,
-    ast,
-};
+use syntax::{AstNode as _, SyntaxKind, SyntaxNode, ast};
 
 use crate::{
     ast_parse::{DiscardBlankspace, NoTrivia, parse_end, parse_node_with, syntax_iter},

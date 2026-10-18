@@ -1,9 +1,6 @@
 use dprint_core_macros::sc;
 use itertools::{Itertools as _, Position};
-use syntax::{
-    AstNode as _, SyntaxKind,
-    ast,
-};
+use syntax::{AstNode as _, SyntaxKind, ast};
 
 use crate::{
     ast_parse::{
