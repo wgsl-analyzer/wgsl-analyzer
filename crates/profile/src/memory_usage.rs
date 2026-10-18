@@ -38,10 +38,10 @@ impl MemoryUsage {
     /// Panics if using jemalloc targeting msvc and advance fails.
     #[must_use]
     #[cfg_attr(
-        target_os = "wasi",
+        target_family = "wasm",
         expect(
             clippy::missing_const_for_fn,
-            reason = "WASI has no allocator statistics, so only the constant fallback remains"
+            reason = "wasm has no allocator statistics, so only the constant fallback remains"
         )
     )]
     pub fn now() -> Self {
