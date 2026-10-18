@@ -38,12 +38,10 @@ impl DistWeb {
     ) -> anyhow::Result<()> {
         check_requirements(shell)?;
 
-        // A host needs three files out of `dist/assets`: the cargo build
-        // supplies `wgsl_analyzer.{js,wasm}`, the package build `worker.js`.
         build_wasm(shell, self.release)?;
         build_package(shell)?;
-        // Staging comes last because `build:lib` clears `dist` first.
-        let assets = stage_artifacts(shell, self.release)?;
+        // Staging comes last because the package build clears `dist` first.
+        let dist = stage_artifacts(shell, self.release)?;
 
         if let Some(patch_version) = &self.client_patch_version {
             let version = dist::web_version(shell, patch_version);
@@ -52,7 +50,7 @@ impl DistWeb {
             println!("dist-web: stamped version {version}");
         }
 
-        println!("dist-web: staged the web package in {}", assets.display());
+        println!("dist-web: staged the web package in {}", dist.display());
         pack(shell)
     }
 }
@@ -140,26 +138,26 @@ fn tune_for_size<'shell>(
     command
 }
 
-/// Copies the cargo output into `dist/assets/` and returns that directory.
+/// Copies the cargo output into `dist/`, and returns that directory.
 fn stage_artifacts(
     shell: &Shell,
     release: bool,
 ) -> anyhow::Result<PathBuf> {
     let profile = if release { "release" } else { "debug" };
     let built = project_root().join("target").join(TARGET).join(profile);
-    let assets = shell.create_dir(Path::new(PACKAGE_ROOT).join("dist").join("assets"))?;
+    let dist = shell.create_dir(Path::new(PACKAGE_ROOT).join("dist"))?;
 
     for &(from, to) in ARTIFACTS {
         let source = built.join(from);
         if !shell.path_exists(&source) {
             bail!("expected artifact is missing: {}", source.display());
         }
-        let destination = assets.join(to);
+        let destination = dist.join(to);
         shell.copy_file(&source, &destination)?;
         println!("dist-web: {to} ({:.1} MB)", megabytes(&destination)?);
     }
 
-    Ok(assets)
+    Ok(dist)
 }
 
 fn build_package(shell: &Shell) -> anyhow::Result<()> {

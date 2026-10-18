@@ -15,7 +15,7 @@ write-json = "0.1.4"
 xflags = "0.3.2"
 xshell = "0.2.7"
 zip = {
-	version = "8.6.0",
+	version = "9.0.5",
 	default-features = false,
 	features = [
 		"deflate",

@@ -1,8 +1,5 @@
 use dprint_core_macros::sc;
-use syntax::{
-    AstNode as _, SyntaxKind,
-    ast::{self},
-};
+use syntax::{AstNode as _, SyntaxKind, ast};
 
 use crate::{
     ast_parse::{
