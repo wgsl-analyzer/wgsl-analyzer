@@ -50,6 +50,7 @@ pub(crate) fn resolve_config(
         file_matching: FileMatchingInfo {
             file_extensions: vec!["wgsl".into(), "wesl".into()],
             file_names: vec![],
+            additive: false,
         },
     }
 }
