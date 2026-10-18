@@ -2,7 +2,7 @@ use std::{collections::BTreeMap, string::String};
 
 use dprint_core::formatting::PrintItems;
 use dprint_core_macros::sc;
-use itertools::{Itertools as _, Position};
+use itertools::Itertools as _;
 use syntax::{
     AstNode as _, SyntaxKind,
     ast::{self, AttributeKind, AttributeList},
@@ -72,7 +72,7 @@ where
         formatted.extend(gen_node_preceding_trivia(attribute)?);
         formatted.extend(gen_node_content(attribute)?);
         formatted.extend(gen_node_succeeding_trivia(attribute)?);
-        if pos != Position::Only && pos != Position::Last {
+        if !pos.is_exactly_one() && !pos.is_last {
             formatted.request(separator.clone());
         }
     }
@@ -302,7 +302,7 @@ pub(crate) fn gen_attribute_arguments(
             if item.has_content() {
                 multiline_group.extend(gen_node_content(&item)?);
                 multiline_group.request(Request::discourage(RequestItem::Space));
-                if position == Position::Last || position == Position::Only {
+                if position.is_last || position.is_exactly_one() {
                     multiline_group.extend_if_multi_line({
                         let mut pi = PrintItems::default();
                         pi.push_sc(sc!(","));

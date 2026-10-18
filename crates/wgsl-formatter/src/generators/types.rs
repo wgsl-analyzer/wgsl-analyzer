@@ -1,6 +1,6 @@
 use dprint_core::formatting::PrintItems;
 use dprint_core_macros::sc;
-use itertools::{Itertools as _, Position};
+use itertools::Itertools as _;
 use syntax::{AstNode as _, SyntaxKind, ast};
 
 use crate::{
@@ -90,7 +90,7 @@ pub(crate) fn gen_template_list(
         }
 
         for (position, item) in item_arguments.into_iter().with_position() {
-            if position != Position::First && position != Position::Only {
+            if !position.is_first && !position.is_exactly_one() {
                 if must_be_oneline {
                     multiline_group.request(Request::expect(RequestItem::Space));
                 } else {
@@ -102,7 +102,7 @@ pub(crate) fn gen_template_list(
             if item.has_content() {
                 multiline_group.extend(gen_node_content(&item)?);
                 multiline_group.request(Request::discourage(RequestItem::Space));
-                if position == Position::Last || position == Position::Only {
+                if position.is_last || position.is_exactly_one() {
                     multiline_group.extend_if_multi_line({
                         let mut pi = PrintItems::default();
                         pi.push_sc(sc!(","));

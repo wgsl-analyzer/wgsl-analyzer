@@ -1,5 +1,5 @@
 use dprint_core_macros::sc;
-use itertools::{Itertools as _, Position};
+use itertools::Itertools as _;
 use syntax::{AstNode as _, SyntaxKind, ast};
 
 use crate::{
@@ -100,7 +100,7 @@ pub(crate) fn gen_compound_statement(
         }
 
         for (pos, item) in items.iter().with_position() {
-            if !matches!(pos, Position::Only | Position::First) {
+            if !pos.is_exactly_one() && !pos.is_first {
                 multiline_group.request(Request::expect(RequestItem::LineBreak));
             }
 

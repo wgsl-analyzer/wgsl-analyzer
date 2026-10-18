@@ -1,5 +1,5 @@
 use dprint_core_macros::sc;
-use itertools::{Itertools as _, Position};
+use itertools::Itertools as _;
 use syntax::{
     AstNode as _, SyntaxKind, SyntaxNode,
     ast::{
@@ -212,7 +212,7 @@ pub(crate) fn gen_switch_case_selectors(
     let mut formatted = PrintItemBuffer::default();
     for (position, selector) in item_selectors.into_iter().with_position() {
         formatted.extend(gen_node_with_trivia(&selector)?);
-        if !matches!(position, Position::Last | Position::Only) {
+        if !position.is_last && !position.is_exactly_one() {
             formatted.push_sc(sc!(","));
             formatted.request(Request::expect(RequestItem::Space));
         }

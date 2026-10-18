@@ -1,4 +1,4 @@
-use itertools::{Itertools as _, Position};
+use itertools::Itertools as _;
 use rowan::NodeOrToken;
 use syntax::{SyntaxKind, SyntaxNode, SyntaxToken};
 
@@ -42,11 +42,11 @@ pub(crate) fn gen_comment(item: &Comment) -> PrintItemBuffer {
             if let Some((line_pos, line)) = lines.next() {
                 for (tab_pos, tab_part) in line.split('\t').with_position() {
                     formatted.push_string(tab_part.to_owned());
-                    if tab_pos != Position::Last && tab_pos != Position::Only {
+                    if !tab_pos.is_last && !tab_pos.is_exactly_one() {
                         formatted.push_tab();
                     }
                 }
-                if line_pos != Position::Only && line_pos != Position::Last {
+                if !line_pos.is_exactly_one() && !line_pos.is_last {
                     formatted.request(Request::expect(RequestItem::LineBreak));
                 }
             }
@@ -55,11 +55,11 @@ pub(crate) fn gen_comment(item: &Comment) -> PrintItemBuffer {
             for (line_pos, line) in lines {
                 for (tab_pos, tab_part) in line.split('\t').with_position() {
                     formatted.push_string(tab_part.to_owned());
-                    if tab_pos != Position::Last && tab_pos != Position::Only {
+                    if !tab_pos.is_last && !tab_pos.is_exactly_one() {
                         formatted.push_tab();
                     }
                 }
-                if line_pos != Position::Only && line_pos != Position::Last {
+                if !line_pos.is_exactly_one() && !line_pos.is_last {
                     formatted.request(Request::expect(RequestItem::LineBreak));
                 }
             }
@@ -76,7 +76,7 @@ pub(crate) fn gen_comment(item: &Comment) -> PrintItemBuffer {
             );
             for (tab_pos, tab_part) in content.text().split('\t').with_position() {
                 formatted.push_string(tab_part.to_owned());
-                if tab_pos != Position::Last && tab_pos != Position::Only {
+                if !tab_pos.is_last && !tab_pos.is_exactly_one() {
                     formatted.push_tab();
                 }
             }

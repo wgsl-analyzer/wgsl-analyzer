@@ -1,6 +1,6 @@
 use dprint_core::formatting::PrintItems;
 use dprint_core_macros::sc;
-use itertools::{Itertools as _, Position};
+use itertools::Itertools as _;
 use syntax::{AstNode as _, SyntaxKind, ast};
 
 use crate::{
@@ -113,7 +113,7 @@ pub(crate) fn gen_fn_parameters(
         multiline_group.extend(gen_node_preceding_trivia(&item)?);
         multiline_group.extend(gen_node_content(&item)?);
         if item.has_content() {
-            if pos == Position::Last || pos == Position::Only {
+            if pos.is_last || pos.is_exactly_one() {
                 multiline_group.extend_if_multi_line({
                     let mut pi = PrintItems::default();
                     pi.push_sc(sc!(","));
