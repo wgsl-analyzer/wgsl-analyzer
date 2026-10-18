@@ -38,6 +38,52 @@ See the [installation guide in the manual](https://wgsl-analyzer.github.io/book/
 [architecture]: https://wgsl-analyzer.github.io/book/contributing/architecture.html
 [VS Code]: https://code.visualstudio.com
 
+## [Bevy]
+
+wgsl-analyzer does not yet support automatically inferring dependencies from package managers such as [Cargo].
+
+Relevant issues:
+
+- [Infer path dependencies from `Cargo.toml` #1393](<https://github.com/wgsl-analyzer/wgsl-analyzer/issues/1393>)
+- [WESL Dependencies](<https://github.com/wgsl-analyzer/wgsl-analyzer/issues/976>)
+
+It works if you "vendor" [Bevy] and create a [WESL package manifest][`wesl.toml`] with the explicit configuration.
+
+1. Clone [the `bevyengine/bevy` repository](https://github.com/bevyengine/bevy) locally.
+2. Set up a [`wesl.toml`] in your crate with shaders (next to [`Cargo.toml`]).
+
+### Example [`wesl.toml`] for use with [Bevy]
+
+```toml
+# wesl.toml
+edition = "2026_pre"
+
+# if you do not put your shaders in the default `./shaders` folder, specify the correct value here
+# root = "assets/shaders"
+
+# it does not hurt to have all of these listed even if you do not use them, but you can trim it to your needs
+[dependencies]
+bevy_anti_alias = { path = "../bevy/crates/bevy_render" }
+bevy_core_pipeline = { path = "../bevy/crates/bevy_render" }
+bevy_dev_tools = { path = "../bevy/crates/bevy_render" }
+bevy_feathers = { path = "../bevy/crates/bevy_render" }
+bevy_gizmos_render = { path = "../bevy/crates/bevy_render" }
+bevy_pbr = { path = "../bevy/crates/bevy_render" }
+bevy_post_process = { path = "../bevy/crates/bevy_render" }
+bevy_render = { path = "../bevy/crates/bevy_render" }
+bevy_solari = { path = "../bevy/crates/bevy_render" }
+bevy_sprite_render = { path = "../bevy/crates/bevy_render" }
+bevy_ui_render = { path = "../bevy/crates/bevy_render" }
+constants = { path = "../bevy/constants" } # temporary bevy hack
+```
+
+See [wgsl-analyzer: Project Discovery](https://wgsl-analyzer.github.io/book/discovery.html) for more information.
+
+[`wesl.toml`]: https://wesl-lang.dev/spec/WeslToml
+[`Cargo.toml`]: https://doc.rust-lang.org/cargo/reference/manifest.html
+[Bevy]: https://bevy.org/
+[Cargo]: https://doc.rust-lang.org/cargo/
+
 ## Building from source
 
 The easiest way to build the language server and extension and install it all in one command:
