@@ -204,9 +204,9 @@ jobs:
       # - name: Run Miri
       #   run: cargo miri test
 
-  # Check wgslfmt_dprint builds for wasm32 target
+  # The dprint plugin has no tests, and wasm32-unknown-unknown has no test runner.
   wgslfmt-dprint-wasm:
-    name: Check wgslfmt_dprint WASM build
+    name: Lint wgslfmt_dprint WASM build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -218,14 +218,18 @@ jobs:
         uses: dtolnay/rust-toolchain@2c7215f132e9ebf062739d9130488b56d53c060c
         with:
           toolchain: stable
+          components: clippy
           target: wasm32-unknown-unknown
 
-      - name: Check wgslfmt_dprint for wasm32
-        run: cargo check -p dprint-plugin-wgslfmt --target wasm32-unknown-unknown
+      - name: Clippy wgslfmt_dprint for wasm32
+        run: cargo clippy -p dprint-plugin-wgslfmt --all-targets --target wasm32-unknown-unknown -- -D warnings
 
   wasi:
-    name: Check the web extension's WASI server build
+    name: Lint and test the web extension's WASI server
     runs-on: ubuntu-latest
+    env:
+      # The test binaries read their fixtures through absolute paths.
+      CARGO_TARGET_WASM32_WASIP1_THREADS_RUNNER: wasmtime run -W threads=y,shared-memory=y -S threads=y --dir=${{ github.workspace }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -236,10 +240,22 @@ jobs:
         uses: dtolnay/rust-toolchain@2c7215f132e9ebf062739d9130488b56d53c060c
         with:
           toolchain: stable
+          components: clippy
           target: wasm32-wasip1-threads
 
-      - name: Check wgsl-analyzer for wasm32-wasip1-threads
-        run: cargo check -p wgsl-analyzer --bin wgsl-analyzer --target wasm32-wasip1-threads
+      # Wasmtime 47 drops the WASI threads proposal this target uses.
+      - name: Install wasmtime
+        run: |
+          curl -sSfL https://github.com/bytecodealliance/wasmtime/releases/download/v46.0.3/wasmtime-v46.0.3-x86_64-linux.tar.xz | tar -xJ -C "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/wasmtime-v46.0.3-x86_64-linux" >> "$GITHUB_PATH"
+
+      - name: Clippy wgsl-analyzer for wasm32-wasip1-threads
+        run: cargo clippy -p wgsl-analyzer --all-targets --target wasm32-wasip1-threads -- -D warnings
+
+      # The skipped tests load Cargo.toml projects, which needs `cargo metadata`,
+      # and WASI cannot spawn processes.
+      - name: Test wgsl-analyzer for wasm32-wasip1-threads
+        run: cargo test -p wgsl-analyzer --target wasm32-wasip1-threads -- --skip bevy --skip cargo
 
   markdown:
     runs-on: ubuntu-latest
