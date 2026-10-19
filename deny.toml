@@ -6,7 +6,6 @@ version = 2
 ignore = [
 	# TODO: # - Delete this once tikv-jemalloc-ctl has been bumped.
 	"RUSTSEC-2024-0436",
-	"RUSTSEC-2026-0308",
 ]
 
 # Ignore warnings about unused license exceptions
@@ -42,4 +41,4 @@ deny = []
 unknown-registry = "deny"
 unknown-git = "deny"
 allow-registry = ["https://github.com/rust-lang/crates.io-index"]
-allow-git = ["git+https://github.com/gfx-rs/wgpu"]
+allow-git = []

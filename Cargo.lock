@@ -101,15 +101,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "bit-set"
-version = "0.11.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "56d87354e4229f54a44f7bf2435906a4656dba36026ab6eaca629a2c436a691c"
-dependencies = [
- "bit-vec 0.10.1",
-]
-
-[[package]]
 name = "bit-vec"
 version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -120,12 +111,6 @@ name = "bit-vec"
 version = "0.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b71798fca2c1fe1086445a7258a4bc81e6e49dcd24c8d0dd9a1e57395b603f51"
-
-[[package]]
-name = "bit-vec"
-version = "0.10.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5727b15fa97d4f4fee0a3b7c3d550ed0269f54329207b86388de918604e31269"
 
 [[package]]
 name = "bitflags"
@@ -819,7 +804,6 @@ dependencies = [
  "line-index",
  "naga 28.0.0",
  "naga 29.0.4",
- "naga 30.0.0",
  "naga 30.0.1",
  "paths",
  "rowan",
@@ -1106,30 +1090,6 @@ dependencies = [
 
 [[package]]
 name = "naga"
-version = "30.0.0"
-source = "git+https://github.com/gfx-rs/wgpu?rev=5887663c8ea23f31408e4b9dc89bede6f6ee6c36#5887663c8ea23f31408e4b9dc89bede6f6ee6c36"
-dependencies = [
- "arrayvec",
- "bit-set 0.11.1",
- "bitflags",
- "cfg-if",
- "cfg_aliases",
- "codespan-reporting 0.13.1",
- "half",
- "hashbrown 0.17.1",
- "indexmap",
- "libm",
- "log",
- "naga-types 30.0.0",
- "num-traits",
- "once_cell",
- "rustc-hash 1.1.0",
- "thiserror",
- "unicode-ident",
-]
-
-[[package]]
-name = "naga"
 version = "30.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a616d2fb8c89516ac2723a581f69d6c18576046bed761bd6b305e5618e6ae130"
@@ -1145,23 +1105,12 @@ dependencies = [
  "indexmap",
  "libm",
  "log",
- "naga-types 30.0.1",
+ "naga-types",
  "num-traits",
  "once_cell",
  "rustc-hash 1.1.0",
  "thiserror",
  "unicode-ident",
-]
-
-[[package]]
-name = "naga-types"
-version = "30.0.0"
-source = "git+https://github.com/gfx-rs/wgpu?rev=5887663c8ea23f31408e4b9dc89bede6f6ee6c36#5887663c8ea23f31408e4b9dc89bede6f6ee6c36"
-dependencies = [
- "hashbrown 0.17.1",
- "indexmap",
- "rustc-hash 1.1.0",
- "thiserror",
 ]
 
 [[package]]
