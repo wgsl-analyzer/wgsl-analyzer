@@ -33,7 +33,7 @@
 		}
 	},
 	"engines": {
-		"vscode": "^1.125.0",
+		"vscode": "^1.129.1",
 		"node": "^24.21.0"
 	},
 	"devEngines": {
