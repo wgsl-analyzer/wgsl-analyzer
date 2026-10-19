@@ -60,6 +60,14 @@
 			addLabels: ["A-Editor"],
 		},
 		{
+			description: "Resolve engines.vscode from @types/vscode",
+			matchManagers: ["npm"],
+			matchDepNames: ["vscode"],
+			matchDepTypes: ["engines"],
+			overrideDatasource: "npm",
+			overridePackageName: "@types/vscode",
+		},
+		{
 			description: "Delay VS Code minor updates",
 			matchManagers: ["npm"],
 			matchDepNames: ["@types/vscode", "vscode"],

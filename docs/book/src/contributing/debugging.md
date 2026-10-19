@@ -101,3 +101,16 @@ If it is version 6 and lower, use the `classic` adapter type.
 It is `lldb.adapterType` in settings file.
 
 If you are running `lldb` version 7, change the lldb adapter type to `bundled` or `native`.
+
+## Renovate
+
+Test renovate config changes locally like this:
+
+```bash
+# needed for the github-tags lookup
+export RENOVATE_GITHUB_COM_TOKEN=$(gh auth token)
+
+LOG_LEVEL=debug npx --yes --package renovate -- renovate \
+  --platform=local \
+  --report-type=file --report-path=renovate-report.json
+```
