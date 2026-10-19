@@ -121,8 +121,6 @@ pub enum NagaVersionConfig {
     Naga29,
     #[serde(rename = "0.30")]
     Naga30,
-    #[serde(rename = "main")]
-    NagaMain,
 }
 
 #[derive(
@@ -589,7 +587,6 @@ impl Config {
                 NagaVersionConfig::Naga28 => NagaVersion::Naga28,
                 NagaVersionConfig::Naga29 => NagaVersion::Naga29,
                 NagaVersionConfig::Naga30 => NagaVersion::Naga30,
-                NagaVersionConfig::NagaMain => NagaVersion::NagaMain,
             },
             tint_enabled: *self.diagnostics_external_tintErrors(),
             tint_path: Some(tint_path.to_owned()),
@@ -938,12 +935,11 @@ fn field_props(
         },
         "NagaVersionConfig" => set! {
             "type": "string",
-            "enum": ["0.28", "0.29", "0.30", "main"],
+            "enum": ["0.28", "0.29", "0.30"],
             "enumDescriptions": [
-                "Naga version 27",
                 "Naga version 28",
                 "Naga version 29",
-                "Version of Naga on main (most recent stable version)"
+                "Naga version 30",
             ],
         },
         "InlayHintsTypeVerbosity" => set! {

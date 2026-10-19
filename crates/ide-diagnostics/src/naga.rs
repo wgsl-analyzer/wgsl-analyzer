@@ -1,13 +1,11 @@
 mod naga28;
 mod naga29;
 mod naga30;
-mod naga_main;
 
 use std::{error, ops::Deref, range::Range};
 
 use base_db::{EditionedFileId, FileRange};
 use hir::{HirDatabase, diagnostics::AnyDiagnostic};
-pub(crate) use naga_main::NagaMain;
 pub(crate) use naga28::Naga28;
 pub(crate) use naga29::Naga29;
 pub(crate) use naga30::Naga30;

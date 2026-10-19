@@ -25,7 +25,7 @@ use syntax::{AstNode as _, Edition};
 use vfs::FileId;
 
 use crate::{
-    naga::{Naga28, Naga29, Naga30, NagaMain, naga_diagnostics},
+    naga::{Naga28, Naga29, Naga30, naga_diagnostics},
     tint::tint_diagnostics,
 };
 
@@ -35,7 +35,6 @@ pub enum NagaVersion {
     Naga29,
     #[default]
     Naga30,
-    NagaMain,
 }
 
 #[derive(Clone, Debug)]
@@ -220,9 +219,6 @@ pub fn semantic_diagnostics(
             },
             NagaVersion::Naga30 => {
                 naga_diagnostics::<Naga30>(db, file_id, config, &mut diagnostics);
-            },
-            NagaVersion::NagaMain => {
-                naga_diagnostics::<NagaMain>(db, file_id, config, &mut diagnostics);
             },
         }
     }

@@ -23,15 +23,6 @@ line-index.workspace = true
 naga28 = { package = "naga", version = "28.0.0", features = ["wgsl-in"] }
 naga29 = { package = "naga", version = "29.0.1", features = ["wgsl-in"] }
 naga30 = { package = "naga", version = "30.0.1", features = ["wgsl-in"] }
-nagamain = {
-	package = "naga",
-	git = "https://github.com/gfx-rs/wgpu",
-	rev = "5887663c8ea23f31408e4b9dc89bede6f6ee6c36",
-	version = "30.0.0",
-	features = [
-		"wgsl-in",
-	]
-}
 paths.workspace = true
 rowan.workspace = true
 serde.workspace = true
