@@ -63,17 +63,17 @@ edition = "2026_pre"
 
 # it does not hurt to have all of these listed even if you do not use them, but you can trim it to your needs
 [dependencies]
-bevy_anti_alias = { path = "../bevy/crates/bevy_render" }
-bevy_core_pipeline = { path = "../bevy/crates/bevy_render" }
-bevy_dev_tools = { path = "../bevy/crates/bevy_render" }
-bevy_feathers = { path = "../bevy/crates/bevy_render" }
-bevy_gizmos_render = { path = "../bevy/crates/bevy_render" }
-bevy_pbr = { path = "../bevy/crates/bevy_render" }
-bevy_post_process = { path = "../bevy/crates/bevy_render" }
+bevy_anti_alias = { path = "../bevy/crates/bevy_anti_alias" }
+bevy_core_pipeline = { path = "../bevy/crates/bevy_core_pipeline" }
+bevy_dev_tools = { path = "../bevy/crates/bevy_dev_tools" }
+bevy_feathers = { path = "../bevy/crates/bevy_feathers" }
+bevy_gizmos_render = { path = "../bevy/crates/bevy_gizmos_render" }
+bevy_pbr = { path = "../bevy/crates/bevy_pbr" }
+bevy_post_process = { path = "../bevy/crates/bevy_post_process" }
 bevy_render = { path = "../bevy/crates/bevy_render" }
-bevy_solari = { path = "../bevy/crates/bevy_render" }
-bevy_sprite_render = { path = "../bevy/crates/bevy_render" }
-bevy_ui_render = { path = "../bevy/crates/bevy_render" }
+bevy_solari = { path = "../bevy/crates/bevy_solari" }
+bevy_sprite_render = { path = "../bevy/crates/bevy_sprite_render" }
+bevy_ui_render = { path = "../bevy/crates/bevy_ui_render" }
 constants = { path = "../bevy/constants" } # temporary bevy hack
 ```
 
