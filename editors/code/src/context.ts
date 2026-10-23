@@ -1,16 +1,14 @@
-import { spawn } from "node:child_process";
-import { text } from "node:stream/consumers";
 import * as vscode from "vscode";
 import type * as lc from "vscode-languageclient/node";
-import { bootstrap } from "./bootstrap";
-import { createClient } from "./client";
+import { createClient, type UriConverters } from "./client";
 import { Config, prepareVSCodeConfig } from "./config";
 import type { ServerStatusParameters } from "./lsp_ext";
 import * as wa from "./lsp_ext";
-import type { WgslAnalyzerExtensionApi } from "./main";
+import type { WgslAnalyzerExtensionApi } from "./main_common";
 import { PersistentState } from "./persistent_state";
 import { type SyntaxElement, SyntaxTreeProvider } from "./syntax_tree_provider";
 import {
+	getServedScheme,
 	isWeslDocument,
 	isWeslEditor,
 	isWeslTomlEditor,
@@ -30,7 +28,7 @@ export type Workspace =
 
 export function fetchWorkspace(): Workspace {
 	const folders = (vscode.workspace.workspaceFolders || []).filter(
-		(folder) => folder.uri.scheme === "file",
+		(folder) => folder.uri.scheme === getServedScheme(),
 	);
 	const weslDocuments = vscode.workspace.textDocuments.filter((document) =>
 		isWeslDocument(document),
@@ -52,6 +50,17 @@ export type InitializedContext = Context & {
 	readonly client: lc.LanguageClient;
 };
 
+export type ServerInfo = {
+	readonly path: string;
+	readonly version: string;
+};
+
+export type Bootstrap = (
+	extCtx: vscode.ExtensionContext,
+	config: Config,
+	state: PersistentState,
+) => Promise<[lc.ServerOptions, ServerInfo, UriConverters?]>;
+
 export class Context implements WgslAnalyzerExtensionApi {
 	readonly statusBar: vscode.StatusBarItem;
 	readonly config: Config;
@@ -60,6 +69,7 @@ export class Context implements WgslAnalyzerExtensionApi {
 
 	private _client: lc.LanguageClient | undefined;
 	private _serverPath: string | undefined;
+	private _bootstrap: Bootstrap;
 	private traceOutputChannel: vscode.LogOutputChannel | undefined;
 	private testController: vscode.TestController | undefined;
 	private outputChannel: vscode.LogOutputChannel | undefined;
@@ -98,12 +108,14 @@ export class Context implements WgslAnalyzerExtensionApi {
 
 	constructor(
 		readonly extCtx: vscode.ExtensionContext,
+		bootstrap: Bootstrap,
 		commandFactories: Record<string, CommandFactory>,
 		workspace: Workspace,
 	) {
 		extCtx.subscriptions.push(this);
 		this.version = extCtx.extension.packageJSON.version ?? "<unknown>";
 		this._serverVersion = "<not running>";
+		this._bootstrap = bootstrap;
 		this.config = new Config(extCtx.subscriptions);
 		this.statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left);
 		this.updateStatusBarVisibility(vscode.window.activeTextEditor);
@@ -165,28 +177,15 @@ export class Context implements WgslAnalyzerExtensionApi {
 		}
 
 		if (!this._client) {
-			this._serverPath = await this.bootstrap();
-			text(spawn(this._serverPath, ["--version"]).stdout.setEncoding("utf-8")).then(
-				(data) => {
-					const prefix = `wgsl-analyzer `;
-					this._serverVersion = data.slice(data.startsWith(prefix) ? prefix.length : 0).trim();
-					this.refreshServerStatus();
-				},
-				(exception: unknown) => {
-					log.error("Failed to get language server version", exception);
-					this._serverVersion = "<unknown>";
-					this.refreshServerStatus();
-				},
+			const [serverOptions, serverInfo, uriConverters] = await this._bootstrap(
+				this.extCtx,
+				this.config,
+				this.state,
 			);
-			const newEnv = Object.assign({}, process.env, this.config.serverExtraEnv);
-			const run: lc.Executable = {
-				command: this._serverPath,
-				options: { env: newEnv },
-			};
-			const serverOptions = {
-				run,
-				debug: run,
-			};
+
+			this._serverPath = serverInfo.path;
+			this._serverVersion = serverInfo.version;
+			this.refreshServerStatus();
 
 			let rawInitializationOptions = vscode.workspace.getConfiguration("wgsl-analyzer");
 
@@ -206,6 +205,7 @@ export class Context implements WgslAnalyzerExtensionApi {
 				serverOptions,
 				this.config,
 				this.unlinkedFiles,
+				uriConverters,
 			);
 			this.pushClientCleanup(
 				this._client.onNotification(wa.serverStatus, (parameters) => {
@@ -237,19 +237,6 @@ export class Context implements WgslAnalyzerExtensionApi {
 			this.pushExtCleanup(this.traceOutputChannel);
 		}
 		return this.traceOutputChannel;
-	}
-
-	private bootstrap(): Promise<string> {
-		return bootstrap(this.extCtx, this.config, this.state).catch((exception: unknown) => {
-			let message = "bootstrap error. ";
-
-			message += 'See the logs in "OUTPUT > wgsl-analyzer Client" (should open automatically). ';
-			message +=
-				'To enable verbose logs, click the gear icon in the "OUTPUT" tab and select "Debug".';
-
-			log.error("Bootstrap error", exception);
-			throw new Error(message);
-		});
 	}
 
 	async start() {
@@ -365,8 +352,8 @@ export class Context implements WgslAnalyzerExtensionApi {
 		return editor && isWeslTomlEditor(editor) ? editor : undefined;
 	}
 
-	get extensionPath(): string {
-		return this.extCtx.extensionPath;
+	get extensionUri(): vscode.Uri {
+		return this.extCtx.extensionUri;
 	}
 
 	get subscriptions(): Disposable[] {

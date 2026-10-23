@@ -212,7 +212,7 @@ mod imp {
     windows,
 )))]
 mod imp {
-    use super::*;
+    use super::{NamedTempFile, general_imp, io};
 
     pub(super) fn create(prefix: &str) -> io::Result<NamedTempFile> {
         let (file, path) = general_imp::create(prefix, |options, path| options.open(path))?;

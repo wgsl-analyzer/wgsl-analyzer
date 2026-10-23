@@ -193,7 +193,7 @@ fn get_cargo_home() -> Option<Utf8PathBuf> {
 }
 
 fn lookup_in_path(exec: &str) -> Option<Utf8PathBuf> {
-    let paths = env::var_os("PATH").unwrap_or_default();
+    let paths = env::var_os("PATH")?;
     env::split_paths(&paths)
         .map(|path| path.join(exec))
         .map(Utf8PathBuf::try_from)

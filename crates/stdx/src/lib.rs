@@ -303,12 +303,26 @@ pub struct JodChild(pub std::process::Child);
 impl ops::Deref for JodChild {
     type Target = std::process::Child;
 
+    #[cfg_attr(
+        target_os = "wasi",
+        expect(
+            clippy::uninhabited_references,
+            reason = "WASI cannot spawn processes, so `Child` has no values there"
+        )
+    )]
     fn deref(&self) -> &std::process::Child {
         &self.0
     }
 }
 
 impl ops::DerefMut for JodChild {
+    #[cfg_attr(
+        target_os = "wasi",
+        expect(
+            clippy::uninhabited_references,
+            reason = "WASI cannot spawn processes, so `Child` has no values there"
+        )
+    )]
     fn deref_mut(&mut self) -> &mut std::process::Child {
         &mut self.0
     }

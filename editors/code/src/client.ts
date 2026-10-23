@@ -8,7 +8,12 @@ import * as diagnostics from "./diagnostics";
 import * as Is from "./is";
 import { WaLanguageClient } from "./lang_client";
 import * as wa from "./lsp_ext";
-import { assert } from "./utilities";
+import { assert, getServedScheme } from "./utilities";
+
+export type UriConverters = {
+	code2Protocol: (value: vscode.Uri) => string;
+	protocol2Code: (value: string) => vscode.Uri;
+};
 
 export function createClient(
 	traceOutputChannel: vscode.LogOutputChannel,
@@ -17,6 +22,7 @@ export function createClient(
 	serverOptions: lc.ServerOptions,
 	config: Config,
 	unlinkedFiles: vscode.Uri[],
+	uriConverters?: UriConverters,
 ): lc.LanguageClient {
 	const waMiddleware: lc.Middleware = {
 		workspace: {
@@ -255,8 +261,8 @@ export function createClient(
 	};
 	const clientOptions: lc.LanguageClientOptions = {
 		documentSelector: [
-			{ scheme: "file", language: "wgsl" },
-			{ scheme: "file", language: "wesl" },
+			{ scheme: getServedScheme(), language: "wgsl" },
+			{ scheme: getServedScheme(), language: "wesl" },
 		],
 		initializationOptions,
 		diagnosticCollectionName: "wgsl-analyzer",
@@ -266,6 +272,7 @@ export function createClient(
 		markdown: {
 			supportHtml: true,
 		},
+		uriConverters,
 	};
 
 	const client = new WaLanguageClient(

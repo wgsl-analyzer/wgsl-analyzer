@@ -123,6 +123,13 @@ fn dist_client(
         .replace(r#""title": "$generated-start""#, "")
         .replace(r#""title": "$generated-end""#, "")
         .replace(r#""enabledApiProposals": [],"#, "");
+    if target.is_wasm() {
+        // The web extension runs the server through this extension's WASI host.
+        patch.replace(
+            r#""main": "./out/main.js","#,
+            r#""main": "./out/main.js", "extensionDependencies": ["ms-vscode.wasm-wasi-core"],"#,
+        );
+    }
     patch.commit(shell)?;
 
     Ok(())
@@ -142,6 +149,11 @@ fn dist_server(
     let _e = shell.push_env("CARGO_PROFILE_DEV_REL_DEBUG", "limited");
     let _e = shell.push_env("CARGO_PROFILE_DEV_REL_LTO", "thin");
     let _e = shell.push_env("CARGO_PROFILE_DEV_REL_CODEGEN_UNITS", "1");
+    // A wasm module has no separate symbol file, and its DWARF is several times
+    // the code. The name section stays, so panics still have function names.
+    if target.is_wasm() {
+        let _e = shell.push_env("CARGO_PROFILE_RELEASE_STRIP", "debuginfo");
+    }
 
     let features = allocator.to_features();
 
@@ -168,6 +180,9 @@ fn dist_server(
     }
     if !rustflags.is_empty() {
         cmd = cmd.env("RUSTFLAGS", rustflags.join(" "));
+    } else if target.is_wasm() {
+        // A set `RUSTFLAGS` overrides the memory limits in `.cargo/config.toml`.
+        cmd = cmd.env_remove("RUSTFLAGS");
     }
     cmd.run().context("cannot build wgsl-analyzer")?;
 
@@ -268,6 +283,8 @@ impl Target {
         let out_path = project_root.join("target").join(&name).join("release");
         let (exe_suffix, symbols_path) = if name.contains("-windows-") {
             (".exe".into(), Some(out_path.join("wgsl_analyzer.pdb")))
+        } else if name.starts_with("wasm32-") {
+            (".wasm".into(), None)
         } else {
             (String::new(), None)
         };
@@ -279,6 +296,10 @@ impl Target {
             symbols_path,
             artifact_name,
         }
+    }
+
+    fn is_wasm(&self) -> bool {
+        self.name.starts_with("wasm32-")
     }
 }
 

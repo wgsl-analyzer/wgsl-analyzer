@@ -37,6 +37,13 @@ impl MemoryUsage {
     ///
     /// Panics if using jemalloc targeting msvc and advance fails.
     #[must_use]
+    #[cfg_attr(
+        target_family = "wasm",
+        expect(
+            clippy::missing_const_for_fn,
+            reason = "wasm has no allocator statistics, so only the constant fallback remains"
+        )
+    )]
     pub fn now() -> Self {
         cfg_select! {
             all(feature = "jemalloc", not(target_env = "msvc")) => {

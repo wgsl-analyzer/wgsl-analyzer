@@ -204,9 +204,9 @@ jobs:
       # - name: Run Miri
       #   run: cargo miri test
 
-  # Check wgslfmt_dprint builds for wasm32 target
+  # The dprint plugin has no tests, and wasm32-unknown-unknown has no test runner.
   wgslfmt-dprint-wasm:
-    name: Check wgslfmt_dprint WASM build
+    name: Lint wgslfmt_dprint WASM build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -218,10 +218,44 @@ jobs:
         uses: dtolnay/rust-toolchain@2c7215f132e9ebf062739d9130488b56d53c060c
         with:
           toolchain: stable
+          components: clippy
           target: wasm32-unknown-unknown
 
-      - name: Check wgslfmt_dprint for wasm32
-        run: cargo check -p dprint-plugin-wgslfmt --target wasm32-unknown-unknown
+      - name: Clippy wgslfmt_dprint for wasm32
+        run: cargo clippy -p dprint-plugin-wgslfmt --all-targets --target wasm32-unknown-unknown -- -D warnings
+
+  wasi:
+    name: Lint and test the web extension's WASI server
+    runs-on: ubuntu-latest
+    env:
+      # The test binaries read their fixtures through absolute paths.
+      CARGO_TARGET_WASM32_WASIP1_THREADS_RUNNER: wasmtime run -W threads=y,shared-memory=y -S threads=y --dir=${{ github.workspace }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@2c7215f132e9ebf062739d9130488b56d53c060c
+        with:
+          toolchain: stable
+          components: clippy
+          target: wasm32-wasip1-threads
+
+      # Wasmtime 47 drops the WASI threads proposal this target uses.
+      - name: Install wasmtime
+        run: |
+          curl -sSfL https://github.com/bytecodealliance/wasmtime/releases/download/v46.0.3/wasmtime-v46.0.3-x86_64-linux.tar.xz | tar -xJ -C "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/wasmtime-v46.0.3-x86_64-linux" >> "$GITHUB_PATH"
+
+      - name: Clippy wgsl-analyzer for wasm32-wasip1-threads
+        run: cargo clippy -p wgsl-analyzer --all-targets --target wasm32-wasip1-threads -- -D warnings
+
+      # The skipped tests load Cargo.toml projects, which needs `cargo metadata`,
+      # and WASI cannot spawn processes.
+      - name: Test wgsl-analyzer for wasm32-wasip1-threads
+        run: cargo test -p wgsl-analyzer --target wasm32-wasip1-threads -- --skip bevy --skip cargo
 
   markdown:
     runs-on: ubuntu-latest
@@ -512,6 +546,17 @@ jobs:
           components: rust-src
           target: wasm32-unknown-emscripten
 
+      # Clippy does not link, so the stable std without atomics suffices.
+      - name: Install stable Rust toolchain
+        uses: dtolnay/rust-toolchain@2c7215f132e9ebf062739d9130488b56d53c060c
+        with:
+          toolchain: stable
+          components: clippy
+          target: wasm32-unknown-emscripten
+
+      - name: Clippy wgsl-analyzer for wasm32-unknown-emscripten
+        run: cargo +stable clippy -p wgsl-analyzer --all-targets --target wasm32-unknown-emscripten -- -D warnings
+
       - name: Install the emscripten SDK
         uses: emscripten-core/setup-emsdk@4528d102f7230f0e7b276855c01ea1159be0e984 # v16
         with:
@@ -526,6 +571,7 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/wasm32-unknown-emscripten/
+            target/emscripten-tests/
           key: emscripten-${{ runner.os }}-${{ hashFiles('Cargo.lock', '.cargo/config.toml') }}
           restore-keys: emscripten-${{ runner.os }}-
 
@@ -568,6 +614,27 @@ jobs:
         run: pnpm --filter wgsl-analyzer-codemirror-example run build
         working-directory: ./js
 
+      # The .cargo/config.toml flags link a module that waits for JavaScript to
+      # call main, so the tests keep only its threading and memory flags and
+      # read their fixtures from disk through NODERAWFS. The skipped tests load
+      # Cargo.toml projects, which needs `cargo metadata`.
+      - name: Test wgsl-analyzer for wasm32-unknown-emscripten
+        env:
+          CARGO_TARGET_DIR: target/emscripten-tests
+          CARGO_TARGET_WASM32_UNKNOWN_EMSCRIPTEN_RUNNER: node
+          RUSTFLAGS: >-
+            -Ctarget-feature=+atomics
+            -Clink-arg=-pthread
+            -Clink-arg=-sDEFAULT_TO_CXX
+            -Clink-arg=-sPROXY_TO_PTHREAD=1
+            -Clink-arg=-sSTACK_SIZE=16MB
+            -Clink-arg=-sINITIAL_MEMORY=512MB
+            -Clink-arg=-sMAXIMUM_MEMORY=4GB
+            -Clink-arg=-sALLOW_MEMORY_GROWTH=1
+            -Clink-arg=-sEXIT_RUNTIME=1
+            -Clink-arg=-sNODERAWFS=1
+        run: cargo +nightly test -Zbuild-std=std,panic_unwind -p wgsl-analyzer --target wasm32-unknown-emscripten -- --skip bevy --skip cargo
+
   conclusion:
     needs:
       [
@@ -585,6 +652,7 @@ jobs:
         javascript,
         emscripten,
         wgslfmt-dprint-wasm,
+        wasi,
       ]
     # We need to ensure this job does *not* get skipped if its dependencies fail,
     # because a skipped job is considered a success by GitHub. So we have to

@@ -111,6 +111,11 @@ impl IoThreads {
 
 /// Counterpart of [`Connection::stdio`], reading from [`lsp_next_message`] and writing to
 /// [`lsp_send_message`].
+///
+/// # Panics
+///
+/// Panics if a thread cannot be spawned.
+#[must_use]
 pub fn connection() -> (Connection, IoThreads) {
     let (transport_socket, language_server_socket) = Connection::memory();
 

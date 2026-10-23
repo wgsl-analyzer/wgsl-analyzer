@@ -171,13 +171,13 @@ mod tests {
 
     #[test]
     fn url_to_absolute_path_converts_file_url() {
-        let temp_dir = std::env::temp_dir();
-        let temp_file = temp_dir.join("url_to_absolute_path_converts_file_url.wgsl");
-        let result = Uri::from_file_path(&temp_file);
+        let file = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("url_to_absolute_path_converts_file_url.wgsl");
+        let result = Uri::from_file_path(&file);
         let url = result.expect("valid file path");
         let result = url_to_absolute_path(&url);
         let abs_path_buf = result.expect("should convert to AbsPathBuf");
-        assert_eq!(abs_path_buf, Utf8PathBuf::from_path_buf(temp_file).unwrap());
+        assert_eq!(abs_path_buf, Utf8PathBuf::from_path_buf(file).unwrap());
     }
 
     #[test]
@@ -254,16 +254,16 @@ mod tests {
 
     #[test]
     fn vfs_path_dispatches_to_absolute_path() {
-        let temp_dir = std::env::temp_dir();
-        let temp_file = temp_dir.join("vfs_path_dispatches_to_absolute_path.wgsl");
-        let parse = Uri::from_file_path(&temp_file);
+        let file = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("vfs_path_dispatches_to_absolute_path.wgsl");
+        let parse = Uri::from_file_path(&file);
         let url = parse.expect("valid file path");
         assert_eq!(url.scheme(), to_proto::PATH_SCHEME);
         let result = vfs_path(&url);
         let vfs_path = result.unwrap();
         assert_eq!(
             vfs_path,
-            VfsPath::new_real_path(temp_file.to_string_lossy().to_string())
+            VfsPath::new_real_path(file.to_string_lossy().to_string())
         );
     }
 
