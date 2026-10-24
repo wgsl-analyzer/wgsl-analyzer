@@ -181,8 +181,8 @@ importers:
         specifier: ^6.43.14
         version: 6.43.14
       '@marimo-team/codemirror-languageserver':
-        specifier: ^2.0.0
-        version: 2.0.0(@codemirror/autocomplete@6.20.3)(@codemirror/lint@6.9.7)(@codemirror/state@6.7.6)(@codemirror/view@6.43.14)
+        specifier: ^2.0.1
+        version: 2.0.1(@codemirror/autocomplete@6.20.3)(@codemirror/lint@6.9.7)(@codemirror/state@6.7.6)(@codemirror/view@6.43.14)
       codemirror:
         specifier: ^6.0.2
         version: 6.0.2
@@ -485,8 +485,8 @@ packages:
   '@marijn/find-cluster-break@1.0.4':
     resolution: {integrity: sha512-Wy0V7+SGUjnF9/TkiM1hKVDPj7jKXduPNboMVtHTA8dySMURWqfg/JZ9E2Sq8JgSJmkl7k7Qe9FLeMSrSraWmQ==}
 
-  '@marimo-team/codemirror-languageserver@2.0.0':
-    resolution: {integrity: sha512-ch/jeSnyfufQsycttZk/wmqQ5MSz1Ofe9iP1Lye4eJMSd0zUcDthqHnUWxPqyV4HMK3ns6bIS8pKQYQ7VkiauA==}
+  '@marimo-team/codemirror-languageserver@2.0.1':
+    resolution: {integrity: sha512-MwT+AyUSHs2ChUBTIgtqc8lM2oKvt+S+kgGRFsN+KhnboPEi2fgpoF+3taBnzf7EjjlmizKZ9CjUFs9dV5zA4A==}
     peerDependencies:
       '@codemirror/autocomplete': ^6
       '@codemirror/lint': ^6
@@ -1116,7 +1116,7 @@ snapshots:
 
   '@marijn/find-cluster-break@1.0.4': {}
 
-  '@marimo-team/codemirror-languageserver@2.0.0(@codemirror/autocomplete@6.20.3)(@codemirror/lint@6.9.7)(@codemirror/state@6.7.6)(@codemirror/view@6.43.14)':
+  '@marimo-team/codemirror-languageserver@2.0.1(@codemirror/autocomplete@6.20.3)(@codemirror/lint@6.9.7)(@codemirror/state@6.7.6)(@codemirror/view@6.43.14)':
     dependencies:
       '@codemirror/autocomplete': 6.20.3
       '@codemirror/lint': 6.9.7
