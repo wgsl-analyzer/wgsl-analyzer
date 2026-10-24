@@ -597,6 +597,15 @@ pub fn semantic_diagnostics(
                         frange.range,
                     )
                 },
+                AnyDiagnostic::UnexpectedRuntimeInitializer { expression } => {
+                    let source = expression.value.to_node(&root);
+                    let frange = original_file_range(db, expression.file_id, source.syntax());
+                    Diagnostic::new(
+                        DiagnosticCode("35"),
+                        "var initializer must be a const- or override-expression".to_owned(),
+                        frange.range,
+                    )
+                },
             }
         })
         .collect()

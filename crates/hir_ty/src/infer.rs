@@ -372,6 +372,23 @@ impl<'db> InferenceContext<'db> {
             );
         }
 
+        // Pointers and References are runtime, cannot be used to init a module level var
+        if let Some(Either::Right(initializer)) = body.root
+            && matches!(
+                self.return_type.kind(self.db),
+                TypeKind::Reference(_) | TypeKind::Pointer(_)
+            )
+        {
+            self.push_diagnostic(
+                body.store_source,
+                InferenceDiagnosticKind::UnexpectedRuntimeInitializer {
+                    expression: initializer,
+                },
+            );
+            //Reset the type so `make_ref` below keeps its invariant and analysis can continue
+            self.return_type = self.error_type();
+        }
+
         self.bind_return_type(
             Some(self.make_ref(self.return_type, address_space, access_mode)),
             body,

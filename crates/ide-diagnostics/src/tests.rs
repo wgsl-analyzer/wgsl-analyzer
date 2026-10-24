@@ -781,3 +781,16 @@ fn foo() {
         "#]],
     );
 }
+
+#[test]
+fn var_const_initializer() {
+    check_diagnostics(
+        "
+var<private> bar: f32;
+var<private> bar_ptr = &bar;
+",
+        expect![[r#"
+            46..50 wgsl-analyzer Error 35: var initializer must be a const- or override-expression
+        "#]],
+    );
+}
