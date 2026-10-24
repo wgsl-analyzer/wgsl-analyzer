@@ -89,4 +89,7 @@ pub enum InferenceDiagnosticKind {
     InvalidAddressOf {
         expression: ExpressionId,
     },
+    UnexpectedRuntimeInitializer {
+        expression: ExpressionId,
+    },
 }
