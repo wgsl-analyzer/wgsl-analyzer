@@ -67,6 +67,10 @@ pub struct Fixture {
     ///
     /// Syntax: `dependencies:my-package,my-other-package`.
     pub dependencies: Vec<String>,
+    /// Specifies translate time features of this package. This must be used with `package` meta.
+    ///
+    /// Syntax: `enabled_features:foo,bar` and `disabled_features:baz,qux`.
+    pub features: Vec<(String, bool)>,
     /// Specifies the edition of this package. This must be used with `package` meta. If
     /// this is not specified, the current default edition will be used.
     /// This must be used with `package` meta.
@@ -171,6 +175,7 @@ impl FixtureWithProjectMeta {
         let mut package = None;
         let mut root = None;
         let mut dependencies = Vec::new();
+        let mut features = Vec::new();
         let mut edition = None;
         let mut library = false;
         for component in components {
@@ -192,7 +197,12 @@ impl FixtureWithProjectMeta {
                     root = Some(value.to_owned());
                 },
                 "dependencies" => dependencies = value.split(',').map(ToOwned::to_owned).collect(),
-
+                "enabled_features" => {
+                    features.extend(value.split(',').map(|name| (name.to_owned(), true)));
+                },
+                "disabled_features" => {
+                    features.extend(value.split(',').map(|name| (name.to_owned(), false)));
+                },
                 "edition" => edition = Some(value.to_owned()),
                 _ => panic!("bad component: {component:?}"),
             }
@@ -203,6 +213,7 @@ impl FixtureWithProjectMeta {
             package,
             root,
             dependencies,
+            features,
             edition,
             library,
             text: String::new(),

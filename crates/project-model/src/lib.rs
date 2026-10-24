@@ -26,7 +26,7 @@ use cargo_metadata::MetadataCommand;
 pub use manifest_path::ManifestPath;
 pub use package_graph::{PackageChange, PackageGraph, PackageKey};
 use paths::{AbsPath, AbsPathBuf};
-pub use wesl_package::{PackageDependency, WeslPackage};
+pub use wesl_package::{PackageDependency, TranslateTimeFeature, WeslPackage};
 pub use wesl_toml::{WeslDependency, WeslManifest};
 
 /// Points at a relevant manifest file on disk.

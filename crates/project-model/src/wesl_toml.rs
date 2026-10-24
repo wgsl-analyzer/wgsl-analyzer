@@ -13,6 +13,9 @@ pub struct WeslManifest {
     pub exclude: Option<Vec<String>>,
     #[serde(default)]
     pub dependencies: BTreeMap<String, WeslDependency>,
+    // TODO: Document this
+    #[serde(default)]
+    pub features: BTreeMap<String, bool>,
 }
 
 impl WeslManifest {
