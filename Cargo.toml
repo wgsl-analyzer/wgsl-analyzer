@@ -89,7 +89,7 @@ serde = { version = "1.0.229", features = ["derive"] }
 serde_json = { version = "1.0.154", default-features = false, features = ["std"] }
 sha2 = { version = "0.11.1", default-features = false }
 smallvec = { version = "1.16.3", default-features = false, features = ["const_generics", "const_new", "union"] }
-smol_str = { version = "0.3.6", default-features = false }
+smol_str = { version = "0.3.7", default-features = false }
 text-size = { version = "1.1.1", default-features = false }
 time = { version = "0.3.55", default-features = false }
 tracing = { version = "0.1.44", default-features = false, features = ["attributes", "std"] }

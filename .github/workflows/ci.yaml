@@ -248,7 +248,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Install Tombi
-        uses: tombi-toml/setup-tombi@3618b3d3abf3a620cc1025c142e027e36032218f # v1.8.8
+        uses: tombi-toml/setup-tombi@dbb85e6c7616772f590af0db4a7c455dfe61fec7 # v1.8.9
 
       - name: Lint TOML files
         run: tombi lint
