@@ -1463,7 +1463,6 @@ version = "0.0.0"
 dependencies = [
  "anyhow",
  "base-db",
- "cargo_metadata",
  "edition",
  "indexmap",
  "paths",
