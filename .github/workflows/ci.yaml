@@ -361,7 +361,7 @@ jobs:
       - name: Install Node.js
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version-file: ./editors/code/package.json
+          node-version-file: ./.nvmrc
 
       - name: Enable Corepack
         run: |
@@ -437,7 +437,7 @@ jobs:
       - name: Install Node.js
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version-file: ./js/package.json
+          node-version-file: ./.nvmrc
 
       - name: Enable Corepack
         run: |
@@ -532,7 +532,7 @@ jobs:
       - name: Install Node.js
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version-file: ./js/package.json
+          node-version-file: ./.nvmrc
 
       - name: Enable Corepack
         run: |

@@ -110,7 +110,7 @@ Test renovate config changes locally like this:
 # needed for the github-tags lookup
 export RENOVATE_GITHUB_COM_TOKEN=$(gh auth token)
 
-LOG_LEVEL=debug npx --yes --package renovate -- renovate \
+LOG_LEVEL=debug npx --yes --package renovate@latest -- renovate \
   --platform=local \
   --report-type=file --report-path=renovate-report.json
 ```

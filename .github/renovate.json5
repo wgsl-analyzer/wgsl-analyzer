@@ -1,7 +1,6 @@
 {
 	extends: [
 		"group:monorepos",
-		"helpers:disableTypesNodeMajor",
 		"helpers:githubDigestChangelogs",
 		"mergeConfidence:all-badges",
 		"replacements:all",
@@ -20,17 +19,17 @@
 	postUpdateOptions: ["pnpmDedupe"],
 	packageRules: [
 		{
-			"description": "Group not-breaking updates",
-			"matchUpdateTypes": ["minor", "patch", "digest"],
-			"matchJsonata": ["isBreaking != true"],
-			"groupName": "not-breaking"
+			description: "Group not-breaking updates",
+			matchUpdateTypes: ["minor", "patch", "digest"],
+			matchJsonata: ["isBreaking != true"],
+			groupName: "not-breaking"
 		},
 		{
-			"description": "Cargo not-breaking 0.x patches",
-			"matchManagers": ["cargo"],
-			"matchUpdateTypes": ["patch"],
-			"matchCurrentVersion": ">=0.1.0 <1.0.0",
-			"groupName": "not-breaking"
+			description: "Cargo not-breaking 0.x patches",
+			matchManagers: ["cargo"],
+			matchUpdateTypes: ["patch"],
+			matchCurrentVersion: ">=0.1.0 <1.0.0",
+			groupName: "not-breaking"
 		},
 		{
 			description: "Rust dependencies",
@@ -39,7 +38,7 @@
 		},
 		{
 			description: "Workflow dependencies",
-			matchManagers: ["github-actions", "docker"],
+			matchManagers: ["github-actions", "dockerfile"],
 			addLabels: ["A-Build-System"],
 		},
 		{
@@ -51,6 +50,7 @@
 			description: "Group CodeQL updates",
 			matchManagers: ["github-actions"],
 			matchPackageNames: ["/^github\\/codeql-action\\//"],
+			groupName: "codeql-action",
 		},
 		{
 			description: "Update @types/vscode together with engines.vscode",
@@ -75,28 +75,39 @@
 			minimumReleaseAge: "90 days",
 		},
 		{
-			"description": "Use @tsconfig/node24",
-			"matchPackageNames": ["@tsconfig/node24"],
-			"replacementName": null,
-			"replacementVersion": null,
+			description: "Use @tsconfig/node24",
+			matchPackageNames: ["@tsconfig/node24"],
+			replacementName: null,
+			replacementVersion: null,
 		},
 		{
-			"description": "Use Node.js 24",
-			"matchManagers": ["node"],
-			"matchPackageNames": ["node"],
-			"allowedVersions": "<25"
+			description: "Node runtime, types and tsconfig move together",
+			matchDatasources: ["node-version", "npm"],
+			matchPackageNames: ["node", "@types/node", "/^@tsconfig\\/node\\d+$/"],
+			groupName: "node",
 		},
 		{
-			"description": "Ignore idna_adapter",
-			"matchManagers": ["cargo"],
-			"matchPackageNames": ["idna_adapter"],
-			"enabled": false,
+			description: "Stay on Node 24",
+			matchDatasources: ["node-version"],
+			matchPackageNames: ["node"],
+			allowedVersions: "<25",
 		},
 		{
-			"description": "Ignore naga",
-			"matchManagers": ["cargo"],
-			"matchPackageNames": ["naga"],
-			"enabled": false,
+			description: "Match @types/node to the Node major",
+			matchPackageNames: ["@types/node"],
+			allowedVersions: "<25",
+		},
+		{
+			description: "Ignore idna_adapter",
+			matchManagers: ["cargo"],
+			matchPackageNames: ["idna_adapter"],
+			enabled: false,
+		},
+		{
+			description: "Ignore naga",
+			matchManagers: ["cargo"],
+			matchPackageNames: ["naga"],
+			enabled: false,
 		}
 	],
 	rangeStrategy: "bump",
