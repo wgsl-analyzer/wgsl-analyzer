@@ -363,8 +363,7 @@ jobs:
       matrix:
         include:
           - cmd: vsce
-            # Visual Studio Marketplace currently lacks the UI to create the trusted policy
-            authentication: --pat "$VSCE_PAT"
+            authentication: --oidc
           - cmd: ovsx
             authentication: --trusted-publishing
     steps:
