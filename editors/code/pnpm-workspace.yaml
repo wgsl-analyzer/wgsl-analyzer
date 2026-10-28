@@ -2,3 +2,5 @@ allowBuilds:
   '@vscode/vsce-sign': true
   esbuild: true
   keytar: true
+minimumReleaseAgeExclude:
+  - '@vscode/vsce@4.1.0'
