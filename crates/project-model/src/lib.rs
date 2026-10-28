@@ -13,16 +13,20 @@
 //! * Project discovery (where is the relevant `wesl.toml` for the current directory?)
 //! * Lowering of concrete model to a [`PackageGraph`]
 
+#![warn(unused)]
+
 mod manifest_path;
 mod package_graph;
 mod package_interner;
+#[cfg(test)]
+mod tests;
 mod wesl_package;
 mod wesl_toml;
+
 use std::{fmt, fs};
 
 use anyhow::{Context as _, bail, format_err};
 use base_db::input::PackageOrigin;
-use cargo_metadata::MetadataCommand;
 pub use manifest_path::ManifestPath;
 pub use package_graph::{PackageChange, PackageGraph, PackageKey};
 use paths::{AbsPath, AbsPathBuf};
@@ -54,7 +58,7 @@ impl ProjectManifest {
         cargo_filter: CargoTomlFilter,
     ) -> Option<Self>
     where
-        CargoTomlFilter: FnOnce(&ManifestPath) -> bool,
+        CargoTomlFilter: Fn(&ManifestPath) -> bool,
     {
         let target_file_names = [
             "wesl-project.json",
@@ -70,19 +74,25 @@ impl ProjectManifest {
                 return Some(manifest);
             }
         }
-        let mut curr = Some(path);
-        while let Some(path) = curr {
+        let mut current = Some(path);
+        while let Some(path) = current {
             let candidate = target_file_names
                 .iter()
                 .map(|target_file_name| path.join(target_file_name))
                 .filter(|candidate| fs::metadata(candidate).is_ok())
-                .find_map(|candidate| ManifestPath::try_from(candidate).ok())
+                .find_map(|candidate| {
+                    let manifest = ManifestPath::try_from(candidate.clone()).ok()?;
+                    if candidate.file_name() != Some("Cargo.toml") {
+                        return Some(manifest);
+                    }
+                    cargo_filter(&manifest).then_some(manifest)
+                })
                 .map(Self::from_manifest_path);
             if let Some(Ok(manifest)) = candidate {
                 return Some(manifest);
             }
             if search_parents {
-                curr = path.parent();
+                current = path.parent();
             } else {
                 return None;
             }

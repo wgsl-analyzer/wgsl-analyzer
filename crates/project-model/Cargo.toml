@@ -13,7 +13,7 @@ doctest = false
 [dependencies]
 anyhow.workspace = true
 base-db.workspace = true
-cargo_metadata.workspace = true
+# cargo_metadata.workspace = true
 edition.workspace = true
 indexmap.workspace = true
 paths.workspace = true

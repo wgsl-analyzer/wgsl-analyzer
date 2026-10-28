@@ -3,7 +3,6 @@ use base_db::{
     input::{PackageName, PackageOrigin},
 };
 use edition::Edition;
-use paths::AbsPathBuf;
 
 use crate::{PackageKey, PackageRoot, manifest_path::ManifestPath};
 
@@ -62,7 +61,10 @@ impl PackageDependency {
         )]
         match self {
             Self::Path { path, name: _ } => PackageKey::Manifest(path.clone()),
-            Self::Library { name, package } => {
+            Self::Library {
+                name: _,
+                package: _,
+            } => {
                 todo!("Library dependencies are still unsupported")
             },
         }
