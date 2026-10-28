@@ -267,8 +267,10 @@ mod tests {
     fn named_temp_file_new_creates_file() {
         let file = NamedTempFile::new("test-").unwrap();
         assert!(file.path().exists());
+        #[cfg_attr(not(any(windows, target_os = "macos")), expect(unused, reason = "cfg"))]
         let path = file.path().as_os_str().to_owned();
         drop(file);
+        #[cfg(any(windows, target_os = "macos"))] // In Linux and BSDs the path depends on the fd and can have race conditions
         assert!(!fs::exists(path).unwrap());
     }
 }
