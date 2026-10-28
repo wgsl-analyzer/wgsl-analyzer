@@ -18,8 +18,11 @@
 mod manifest_path;
 mod package_graph;
 mod package_interner;
+#[cfg(test)]
+mod tests;
 mod wesl_package;
 mod wesl_toml;
+
 use std::{fmt, fs};
 
 use anyhow::{Context as _, bail, format_err};
