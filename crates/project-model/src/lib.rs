@@ -101,7 +101,7 @@ impl ProjectManifest {
     }
 
     #[must_use]
-    pub const fn manifest_path(&self) -> &manifest_path::ManifestPath {
+    pub const fn manifest_path(&self) -> &ManifestPath {
         match self {
             Self::ProjectJson(manifest) | Self::WeslToml(manifest) | Self::CargoToml(manifest) => {
                 manifest
