@@ -42,6 +42,7 @@ pub(crate) fn status(
                 edition,
                 dependencies,
                 origin,
+                features,
             } = package_id.data(db);
             // let ExtraPackageData {
             //     version,
@@ -68,6 +69,7 @@ pub(crate) fn status(
                 .map(|dep| format!("{}={:?}", dep.name, dep.package_id))
                 .format(", ");
             format_to!(buffer, "    Dependencies: {}\n", deps);
+            format_to!(buffer, "    Translate time features: {:?}\n", features);
         } else {
             format_to!(buffer, "Does not belong to any package");
         }
