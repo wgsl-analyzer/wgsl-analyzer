@@ -192,7 +192,7 @@ importers:
         version: 11.0.0
     devDependencies:
       '@biomejs/biome':
-        specifier: ^2.6.2
+        specifier: ^2.6.3
         version: 2.6.4
       '@tsconfig/node-ts':
         specifier: ^23.6.4

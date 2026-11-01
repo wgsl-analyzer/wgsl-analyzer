@@ -248,7 +248,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Install Tombi
-        uses: tombi-toml/setup-tombi@21051476b3247828c08c3998efc3b508dc89a66a # v1.9.3
+        uses: tombi-toml/setup-tombi@4039f278ab5f7cf5140af99e46986b412fc672ca # v1.9.5
 
       - name: Lint TOML files
         run: tombi lint
@@ -313,7 +313,7 @@ jobs:
           RUSTFLAGS: -C debuginfo=0 -D warnings
 
       - name: Install cargo-binstall
-        uses: cargo-bins/cargo-binstall@8a2045612414e945291083f820cd50b4d8fc2218 # v1.26.0
+        uses: cargo-bins/cargo-binstall@81df5c23b0dc775b009efdfc9895c5965b7a4e40 # v1.26.1
 
       - name: Install cargo-deadlinks
         run: cargo binstall cargo-deadlinks --no-confirm --locked
@@ -333,7 +333,7 @@ jobs:
           persist-credentials: false
 
       - name: Install cargo-binstall
-        uses: cargo-bins/cargo-binstall@8a2045612414e945291083f820cd50b4d8fc2218 # v1.26.0
+        uses: cargo-bins/cargo-binstall@81df5c23b0dc775b009efdfc9895c5965b7a4e40 # v1.26.1
 
       - name: Install cargo-shear
         run: cargo binstall cargo-shear --no-confirm --locked
