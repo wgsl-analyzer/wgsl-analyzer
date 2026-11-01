@@ -222,7 +222,7 @@ importers:
   wgsl-analyzer-web:
     devDependencies:
       '@biomejs/biome':
-        specifier: ^2.6.2
+        specifier: ^2.6.3
         version: 2.6.4
       '@tsconfig/strictest':
         specifier: ^2.0.8
