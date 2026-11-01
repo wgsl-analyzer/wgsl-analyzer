@@ -110,6 +110,16 @@ zip = { version = "9.1.0", default-features = false, features = ["deflate", "tim
 # 1.0 is a feature band that indicates no IDNA support
 idna_adapter = "~1.0.0"
 
+[workspace.lints.cargo]
+correctness = "deny"
+pedantic = "warn"
+restriction = "warn"
+style = "warn"
+suspicious = "warn"
+
+non_snake_case_features = "allow"
+non_snake_case_packages = "allow"
+
 # tombi: format.rules.table-keys-order.disabled = true
 [workspace.lints.clippy]
 cargo = { level = "warn", priority = -2 }
