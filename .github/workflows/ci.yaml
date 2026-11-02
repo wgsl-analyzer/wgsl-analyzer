@@ -568,6 +568,22 @@ jobs:
         run: pnpm --filter wgsl-analyzer-codemirror-example run build
         working-directory: ./js
 
+  nix-checks:
+    name: Nix
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+
+      - name: Install Cachix
+        uses: cachix/install-nix-action@75c75c31ebece974e48ebc36b4ad125bd97bd97b
+
+      - name: Run nix checks (including building the nix package)
+        run: nix flake check
+
   conclusion:
     needs:
       [
@@ -585,6 +601,7 @@ jobs:
         javascript,
         emscripten,
         wgslfmt-dprint-wasm,
+        nix,
       ]
     # We need to ensure this job does *not* get skipped if its dependencies fail,
     # because a skipped job is considered a success by GitHub. So we have to

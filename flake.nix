@@ -59,7 +59,11 @@
               ];
             };
           };
+          # re-expose wgsl-analyzer as the default package of the repo
           packages.default = self'.packages.wgsl-analyzer;
+
+          # build package as a check (this is done in CI)
+          checks.default = self'.packages.default;
         };
     };
 }
