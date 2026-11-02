@@ -84,7 +84,7 @@
               homepage = "https://github.com/wgsl-analyzer/wgsl-analyzer";
               license = lib.licenses.OR [
                 lib.licenses.mit
-                lib.licenses.apache
+                lib.licenses.asl20
               ];
             };
           };
