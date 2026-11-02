@@ -55,8 +55,7 @@
               "--skip check_code_formatting"
             ];
 
-            # The xtask binary ends up in the package although it's
-            # just a development artifact. Remove it
+            # the xtask binary ends up in the package, but it is just a development tool
             postInstall = ''
               rm -f $out/bin/xtask
             '';
@@ -70,7 +69,7 @@
               ];
             };
           };
-          # re-expose wgsl-analyzer as the default package of the repo
+          # reëxpose wgsl-analyzer as the default package of the repo
           packages.default = self'.packages.wgsl-analyzer;
 
           # build package as a check (this is done in CI)
