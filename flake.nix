@@ -25,17 +25,15 @@
           ...
         }:
         let
-          fnx = inputs.fenix.packages.${system};
-          # nixpkgs rustPlatform is lacking behind a bit and slow with updates
-          # so we create our own here with the help of fenix, which
-          # has daily updates of rust toolchains
+          fenix = inputs.fenix.packages.${system};
+          # nixpkg's `rustPlatform` lags behind a bit, so create one with fenix.
+          # Fenix has daily updates of rust toolchains.
           rustPlatform = pkgs.makeRustPlatform {
-            cargo = fnx.stable.cargo;
-            rustc = fnx.stable.rustc;
+            cargo = fenix.stable.cargo;
+            rustc = fenix.stable.rustc;
           };
 
-          # read package name and version directly from the
-          # `Cargo.toml` to prevent them from not being in sync
+          # read package name and version directly from the `Cargo.toml` to prevent them from not being in sync
           cargoToml = fromTOML (builtins.readFile ./crates/wgsl-analyzer/Cargo.toml);
           version = cargoToml.package.version;
           pname = cargoToml.package.name;
@@ -50,8 +48,7 @@
 
             useNextest = true;
             checkFlags = [
-              # rust toolchain is not installed via rustup in nix and hence
-              # doesnt support `+stable` arg
+              # rust toolchain is not installed from rustup in nix, so `+stable` argument is not supported
               "--skip check_code_formatting"
             ];
 
