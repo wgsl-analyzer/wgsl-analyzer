@@ -104,7 +104,7 @@ windows-sys = { version = "0.61.2", features = ["Win32_Foundation", "Win32_Syste
 write-json = { version = "0.1.4", default-features = false }
 xflags = { version = "0.3.2", default-features = false }
 xshell = { version = "0.2.7", default-features = false }
-zip = { version = "9.1.0", default-features = false, features = ["deflate", "time"] }
+zip = { version = "9.1.1", default-features = false, features = ["deflate", "time"] }
 
 # idna_adapter does not use semantic versioning
 # 1.0 is a feature band that indicates no IDNA support
