@@ -33,11 +33,16 @@
             cargo = fnx.stable.cargo;
             rustc = fnx.stable.rustc;
           };
+
+          # read package name and version directly from the
+          # `Cargo.toml` to prevent them from not being in sync
+          cargoToml = fromTOML (builtins.readFile ./crates/wgsl-analyzer/Cargo.toml);
+          version = cargoToml.package.version;
+          pname = cargoToml.package.name;
         in
         {
           packages.wgsl-analyzer = rustPlatform.buildRustPackage {
-            pname = "wgsl-analyzer";
-            version = "0.0.0";
+            inherit pname version;
 
             src = ./.;
 
