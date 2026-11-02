@@ -46,9 +46,9 @@ tarball that the release workflow publishes to npm.
 `WgslAnalyzerServer.sendMessage` and `.onMessage` carry parsed JSON-RPC objects in both
 directions. That is the whole interface, there are 2 examples showcasing how to use it:
 
-| Example | Adapts to |
-| --- | --- |
-| [`js/examples/monaco/src/transport.ts`](../examples/monaco/src/transport.ts) | the `IMessageTransport` that `monaco.lsp` takes |
+| Example                                                                              | Adapts to                                                           |
+| ------------------------------------------------------------------------------------ | ------------------------------------------------------------------- |
+| [`js/examples/monaco/src/transport.ts`](../examples/monaco/src/transport.ts)         | the `IMessageTransport` that `monaco.lsp` takes                     |
 | [`js/examples/codemirror/src/transport.ts`](../examples/codemirror/src/transport.ts) | the `Transport` that `@marimo-team/codemirror-languageserver` takes |
 
 ## Bundling

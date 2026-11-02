@@ -134,7 +134,7 @@ jobs:
       #       ./crates/proc-macro-srv/proc-macro-test/imp -> target
 
       - name: Install nextest
-        uses: taiki-e/install-action@8cca0918f8471c33515202b73f56ab27f2bed283 # v2.87.29
+        uses: taiki-e/install-action@1e29709c0ec63babbe8f266397a465f29a825f91 # v2.87.31
         with:
           tool: nextest
 
@@ -237,7 +237,7 @@ jobs:
           persist-credentials: false
 
       - name: markdownlint
-        uses: DavidAnson/markdownlint-cli2-action@21c1be1b93ad9ed58fa840aacc3f279cde2a72ff # v24.2.0
+        uses: DavidAnson/markdownlint-cli2-action@696eb3f2509270d7b882d2aa68347bc676e7af34 # v25.0.0
         with:
           config: .markdownlint.jsonc
           globs: "**/*.md"
@@ -252,7 +252,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Install Tombi
-        uses: tombi-toml/setup-tombi@dbb85e6c7616772f590af0db4a7c455dfe61fec7 # v1.8.9
+        uses: tombi-toml/setup-tombi@0dfa49a3889d194db37cdcd78abbe2e1771196cd # v1.9.6
 
       - name: Lint TOML files
         run: tombi lint
@@ -317,7 +317,7 @@ jobs:
           RUSTFLAGS: -C debuginfo=0 -D warnings
 
       - name: Install cargo-binstall
-        uses: cargo-bins/cargo-binstall@8a2045612414e945291083f820cd50b4d8fc2218 # v1.26.0
+        uses: cargo-bins/cargo-binstall@81df5c23b0dc775b009efdfc9895c5965b7a4e40 # v1.26.1
 
       - name: Install cargo-deadlinks
         run: cargo binstall cargo-deadlinks --no-confirm --locked
@@ -337,7 +337,7 @@ jobs:
           persist-credentials: false
 
       - name: Install cargo-binstall
-        uses: cargo-bins/cargo-binstall@8a2045612414e945291083f820cd50b4d8fc2218 # v1.26.0
+        uses: cargo-bins/cargo-binstall@81df5c23b0dc775b009efdfc9895c5965b7a4e40 # v1.26.1
 
       - name: Install cargo-shear
         run: cargo binstall cargo-shear --no-confirm --locked

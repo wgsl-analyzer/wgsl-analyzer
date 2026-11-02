@@ -21,14 +21,7 @@
 		{
 			description: "Group not-breaking updates",
 			matchUpdateTypes: ["minor", "patch", "digest"],
-			matchJsonata: ["isBreaking != true"],
-			groupName: "not-breaking"
-		},
-		{
-			description: "Cargo not-breaking 0.x patches",
-			matchManagers: ["cargo"],
-			matchUpdateTypes: ["patch"],
-			matchCurrentVersion: ">=0.1.0 <1.0.0",
+			matchJsonata: ["isBreaking != true and (newMajor != 0 or updateType != 'minor')"],
 			groupName: "not-breaking"
 		},
 		{
