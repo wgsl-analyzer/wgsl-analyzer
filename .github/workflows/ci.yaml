@@ -169,6 +169,10 @@ jobs:
       - name: Check formatting
         run: cargo fmt --all -- --check
 
+      - name: rustfmt info
+        if: failure()
+        run: echo 'To fix Rust formatting, run `cargo fmt --all`.'
+
   miri:
     runs-on: ubuntu-latest
 
