@@ -55,6 +55,12 @@
               "--skip check_code_formatting"
             ];
 
+            # The xtask binary ends up in the package although it's
+            # just a development artifact. Remove it
+            postInstall = ''
+              rm -f $out/bin/xtask
+            '';
+
             meta = {
               description = "A language server implementation for WGSL and WESL";
               homepage = "https://github.com/wgsl-analyzer/wgsl-analyzer";
