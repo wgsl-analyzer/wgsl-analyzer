@@ -71,10 +71,13 @@
               "--skip check_code_formatting"
             ];
 
-            # the xtask binary ends up in the package, but it is just a development tool
-            postInstall = ''
-              rm -f $out/bin/xtask
-            '';
+            # only build `wgsl-analyzer`
+            #
+            # this prevents the `weslfmt` and `xtask` binaries from ending up in the package
+            cargoBuildFlags = [
+              "-p"
+              "wgsl-analyzer"
+            ];
 
             meta = {
               description = "A language server implementation for WGSL and WESL";
