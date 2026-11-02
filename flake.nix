@@ -45,7 +45,23 @@
           packages.wgsl-analyzer = rustPlatform.buildRustPackage {
             inherit pname version;
 
-            src = ./.;
+            src = lib.sourceFilesBySuffices ./. [
+              # rust related file types
+              ".rs"
+              ".toml"
+              ".lock"
+              # shader related file types
+              ".wesl"
+              ".wgsl"
+              # used in `parser` build.rs
+              ".llw"
+              # licenses
+              "LICENSE-MIT"
+              "LICENSE-APACHE"
+              # configs, used in tests
+              ".json"
+              ".md"
+            ];
 
             cargoLock.lockFile = ./Cargo.lock;
 
