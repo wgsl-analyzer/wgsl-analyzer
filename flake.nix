@@ -4,7 +4,10 @@
   inputs = {
     flake-parts.url = "github:hercules-ci/flake-parts";
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    fenix.url = "github:nix-community/fenix";
+    fenix = {
+        url = "github:nix-community/fenix";
+        inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
@@ -26,7 +29,7 @@
         }:
         let
           fenix = inputs.fenix.packages.${system};
-          # nixpkg's `rustPlatform` lags behind a bit, so create one with fenix.
+          # nixpkgs's `rustPlatform` lags behind a bit, so create one with fenix.
           # Fenix has daily updates of rust toolchains.
           rustPlatform = pkgs.makeRustPlatform {
             cargo = fenix.stable.cargo;
