@@ -71,11 +71,8 @@
               "--skip check_code_formatting"
             ];
 
-            # only build `wgsl-analyzer`
-            #
-            # this prevents the `weslfmt` and `xtask` binaries from ending up in the package
             cargoBuildFlags = [
-              "-p"
+              "--package"
               "wgsl-analyzer"
             ];
 
