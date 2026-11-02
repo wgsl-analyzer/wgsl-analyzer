@@ -720,8 +720,6 @@ mod tests {
     };
 
     #[test]
-    // this test actually only panics in debug mode, probably due to a `debug_assert!` somewhere
-    // which makes this test fail in release mode
     #[cfg(debug_assertions)]
     pub(crate) fn syntax_iter_panics_if_not_parsed_end() {
         let make_node = || {
