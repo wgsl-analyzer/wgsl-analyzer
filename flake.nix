@@ -1,45 +1,65 @@
 {
-    inputs = {
-        nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
-        crane.url = "github:ipetkov/crane";
-        flake-utils.url = "github:numtide/flake-utils";
-    };
+  description = "wgsl-analyzer: A language server implementation for WGSL and WESL";
 
-    outputs = {
-        self,
-        nixpkgs,
-        crane,
-        flake-utils,
-        ...
-    }:
-    flake-utils.lib.eachDefaultSystem (
-    system: let
-        pkgs = nixpkgs.legacyPackages.${system};
-        inherit (pkgs) lib stdenv;
-        craneLib = crane.mkLib pkgs;
-        weslFilter = path: _type: builtins.match ".*\.(wgsl|wesl|llw|wgsl.txt|.json|.md)$" path != null;
-        weslOrCargo = path: type:
-        (weslFilter path type) || (craneLib.filterCargoSources path type);
+  inputs = {
+    flake-parts.url = "github:hercules-ci/flake-parts";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    fenix.url = "github:nix-community/fenix";
+  };
 
-        wgsl-analyzer = craneLib.buildPackage {
-        src = lib.cleanSourceWith {
-            src = craneLib.path ./.;
-            filter = weslOrCargo;
+  outputs =
+    inputs@{ flake-parts, ... }:
+    flake-parts.lib.mkFlake { inherit inputs; } {
+      systems = [
+        "x86_64-linux"
+        "aarch64-linux"
+        "aarch64-darwin"
+        "x86_64-darwin"
+      ];
+      perSystem =
+        {
+          self',
+          pkgs,
+          lib,
+          system,
+          ...
+        }:
+        let
+          fnx = inputs.fenix.packages.${system};
+          # nixpkgs rustPlatform is lacking behind a bit and slow with updates
+          # so we create our own here with the help of fenix, which
+          # has daily updates of rust toolchains
+          rustPlatform = pkgs.makeRustPlatform {
+            cargo = fnx.stable.cargo;
+            rustc = fnx.stable.rustc;
+          };
+        in
+        {
+          packages.wgsl-analyzer = rustPlatform.buildRustPackage {
+            pname = "wgsl-analyzer";
+            version = "0.0.0";
+
+            src = ./.;
+
+            cargoLock.lockFile = ./Cargo.lock;
+
+            useNextest = true;
+            checkFlags = [
+              # rust toolchain is not installed via rustup in nix and hence
+              # doesnt support `+stable` arg
+              "--skip check_code_formatting"
+            ];
+
+            meta = {
+              description = "A language server implementation for WGSL and WESL";
+              homepage = "https://github.com/wgsl-analyzer/wgsl-analyzer";
+              license = lib.licenses.OR [
+                lib.licenses.mit
+                lib.licenses.apache
+              ];
+            };
+          };
+          packages.default = self'.packages.wgsl-analyzer;
         };
-
-        buildInputs = lib.optionals stdenv.isDarwin [
-            pkgs.libiconv
-        ];
-
-        cargoExtraArgs = "-p wgsl-analyzer";
-        pname = "wgsl-analyzer";
-        version = "0.0.0";
-        };
-    in {
-        packages.default = wgsl-analyzer;
-    }
-    )
-    // {
-    overlays.default = final: prev: {wgsl-analyzer = self.packages.${final.system}.default;};
     };
 }
