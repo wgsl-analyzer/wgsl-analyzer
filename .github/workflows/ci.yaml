@@ -576,17 +576,34 @@ jobs:
     name: Nix
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
 
-      - name: Install Cachix
-        uses: cachix/install-nix-action@75c75c31ebece974e48ebc36b4ad125bd97bd97b
+      - name: Install nix
+      - uses: DeterminateSystems/nix-installer-action@9383ce2bf08796b65508822f5982f49151badc4e
+
+      - name: Install nix cache
+      - uses: DeterminateSystems/magic-nix-cache-action@cd88146e8de45fc50afaee98634fea04249c3c13
 
       - name: Run nix checks (including building the nix package)
         run: nix flake check
+
+      - name: Nix info
+        if: failure()
+        run: |
+          echo 'Nix flake checks or builds failed.'
+          echo 'Does the flake need an update?'
+          echo 'To update the `flake.lock`, run `nix flake update`.'
+          echo 'To reproduce locally and see the full build logs, run `nix flake check -L`.'
+          echo 'To get more evaluation details, run `nix flake check --show-trace`.'
+          echo 'Fix the reported evaluation or build error.'
+          echo 'Then confirm `nix flake check` succeeds locally before trying again.'
 
   conclusion:
     needs:
