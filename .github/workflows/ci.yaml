@@ -568,7 +568,7 @@ jobs:
         run: pnpm --filter wgsl-analyzer-codemirror-example run build
         working-directory: ./js
 
-  nix-checks:
+  nix:
     name: Nix
     runs-on: ubuntu-latest
     timeout-minutes: 60
