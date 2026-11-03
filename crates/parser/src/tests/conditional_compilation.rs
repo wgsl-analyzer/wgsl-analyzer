@@ -91,3 +91,60 @@ fn function_compound_nested() {
               Blankspace@50..59 "\n        ""#]],
     );
 }
+
+#[test]
+fn for_header_conditional_attributes() {
+    use crate::{ParseEntryPoint, SyntaxKind, parse_entrypoint_with_capabilities};
+    use edition::{Capabilities, Edition};
+
+    let cases = [
+        "fn main() { for (@if(SLOW) var i = 0; false; i++) {} }",
+        "fn main() { for (var i = 0; false; @if(SLOW) i++) {} }",
+        "fn main() { for (@if(SLOW) var i = 0; false; @if(SLOW) i++) {} }",
+        "fn main() { for (var i = 0; false; i++) {} }",
+        "fn main() { for (; false; ) {} }",
+    ];
+
+    for source in cases {
+        let parsed = parse_entrypoint_with_capabilities(
+            source,
+            ParseEntryPoint::File,
+            Edition::Wgsl,
+            Capabilities::default(),
+        );
+
+        assert!(
+            parsed.errors().is_empty(),
+            "Failed to parse {source}:\n{}",
+            parsed.debug_tree(),
+        );
+
+        let syntax = parsed.syntax();
+
+        let initializer = syntax
+            .descendants()
+            .find(|node| node.kind() == SyntaxKind::ForInitializer);
+
+        let update = syntax
+            .descendants()
+            .find(|node| node.kind() == SyntaxKind::ForContinuingPart);
+
+        if source.contains("(@if(SLOW)") {
+            assert!(
+                initializer
+                    .as_ref()
+                    .is_some_and(|node| node.text().to_string().contains("@if(SLOW)")),
+                "Initializer attribute was not preserved",
+            );
+        }
+
+        if source.contains("; @if(SLOW)") {
+            assert!(
+                update
+                    .as_ref()
+                    .is_some_and(|node| node.text().to_string().contains("@if(SLOW)")),
+                "Update attribute was not preserved",
+            );
+        }
+    }
+}
