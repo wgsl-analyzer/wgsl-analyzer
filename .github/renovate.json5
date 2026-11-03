@@ -15,6 +15,12 @@
 		"D-Trivial",
 		"S-Ready-to-Review",
 	],
+	lockFileMaintenance: {
+		enabled: true,
+		branchTopic: "not-breaking",
+		commitMessageAction: "Lock file maintenance",
+		groupName: "not-breaking",
+	},
 	minimumReleaseAge: "7 days",
 	postUpdateOptions: ["pnpmDedupe"],
 	packageRules: [
