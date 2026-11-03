@@ -17,7 +17,7 @@
 	],
 	lockFileMaintenance: {
 		enabled: true,
-		branchTopic: "not-breaking",
+		branchName: "renovate/not-breaking",
 		commitMessageAction: "Lock file maintenance",
 		groupName: "not-breaking",
 	},
@@ -28,7 +28,8 @@
 			description: "Group not-breaking updates",
 			matchUpdateTypes: ["minor", "patch", "digest"],
 			matchJsonata: ["isBreaking != true and (newMajor != 0 or updateType != 'minor')"],
-			groupName: "not-breaking"
+			groupName: "not-breaking",
+			branchName: "renovate/not-breaking",
 		},
 		{
 			description: "Rust dependencies",
