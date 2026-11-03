@@ -720,6 +720,10 @@ mod tests {
     };
 
     #[test]
+    #[cfg_attr(
+        not(debug_assertions),
+        ignore = "only panics if debug_assertions is enabled"
+    )]
     pub(crate) fn syntax_iter_panics_if_not_parsed_end() {
         let make_node = || {
             let mut builder = GreenNodeBuilder::new();

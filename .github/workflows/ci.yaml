@@ -169,6 +169,10 @@ jobs:
       - name: Check formatting
         run: cargo fmt --all -- --check
 
+      - name: rustfmt info
+        if: failure()
+        run: echo 'To fix Rust formatting, run `cargo fmt --all`.'
+
   miri:
     runs-on: ubuntu-latest
 
@@ -568,6 +572,39 @@ jobs:
         run: pnpm --filter wgsl-analyzer-codemirror-example run build
         working-directory: ./js
 
+  nix:
+    name: Nix
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+
+      - name: Install nix
+        uses: DeterminateSystems/nix-installer-action@9383ce2bf08796b65508822f5982f49151badc4e
+
+      - name: Install nix cache
+        uses: DeterminateSystems/magic-nix-cache-action@84c0677f58dcedf3b91f8223ce36a9ea5b3c84b7 # v15
+
+      - name: Check nix flake
+        run: nix flake check
+
+      - name: Nix info
+        if: failure()
+        run: |
+          echo 'Nix flake checks or builds failed.'
+          echo 'Does the flake need an update?'
+          echo 'To update the `flake.lock`, run `nix flake update`.'
+          echo 'To reproduce locally and see the full build logs, run `nix flake check -L`.'
+          echo 'To get more evaluation details, run `nix flake check --show-trace`.'
+          echo 'Fix the reported evaluation or build error.'
+          echo 'Then confirm `nix flake check` succeeds locally before trying again.'
+
   conclusion:
     needs:
       [
@@ -585,6 +622,7 @@ jobs:
         javascript,
         emscripten,
         wgslfmt-dprint-wasm,
+        nix,
       ]
     # We need to ensure this job does *not* get skipped if its dependencies fail,
     # because a skipped job is considered a success by GitHub. So we have to

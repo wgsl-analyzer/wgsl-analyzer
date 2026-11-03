@@ -164,3 +164,28 @@ jobs:
           BODY: |
             ## Weekly CI run has failed.
             [The offending run.](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
+  nix-flake-update:
+    name: Weekly nix flake update
+    permissions:
+      contents: write
+      id-token: write
+      issues: write
+      pull-requests: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: DeterminateSystems/determinate-nix-action@92957199488000b908fdad19f63711000965d8f3
+
+      - uses: DeterminateSystems/update-flake-lock@f02139a6c0edb4442190a4738c42ccceceb3f6a8 #
+        with:
+          pr-title: "Update Nix flake"
+          pr-labels: |
+            A-Language-Server
+            C-Dependencies
+            S-Ready-To-Review
+            D-Trivial
