@@ -589,7 +589,7 @@ jobs:
         uses: DeterminateSystems/nix-installer-action@9383ce2bf08796b65508822f5982f49151badc4e
 
       - name: Install nix cache
-      - uses: DeterminateSystems/magic-nix-cache-action@cd88146e8de45fc50afaee98634fea04249c3c13
+        uses: DeterminateSystems/magic-nix-cache-action@cd88146e8de45fc50afaee98634fea04249c3c13
 
       - name: Run nix checks (including building the nix package)
         run: nix flake check
