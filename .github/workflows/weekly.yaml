@@ -38,7 +38,7 @@ jobs:
         with:
           toolchain: beta
 
-      - name: Install Linux dependencies
+      - name: Run tests
         run: cargo test --workspace --lib --bins --tests --benches
         env:
           CARGO_INCREMENTAL: 0
@@ -125,7 +125,10 @@ jobs:
           CARGO_INCREMENTAL: 0
           RUSTFLAGS: -C debuginfo=0 -D warnings
 
-      - name: Installs cargo-deadlinks
+      - name: Install cargo-binstall
+        uses: cargo-bins/cargo-binstall@81df5c23b0dc775b009efdfc9895c5965b7a4e40 # v1.26.1
+
+      - name: Install cargo-deadlinks
         run: cargo binstall cargo-deadlinks --no-confirm --locked
 
       - name: Checks dead links

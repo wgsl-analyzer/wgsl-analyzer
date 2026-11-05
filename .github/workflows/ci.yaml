@@ -42,6 +42,7 @@ jobs:
       typescript: ${{ steps.filter.outputs.typescript }}
       javascript: ${{ steps.filter.outputs.javascript }}
       emscripten: ${{ steps.filter.outputs.emscripten }}
+      nix: ${{ steps.filter.outputs.nix }}
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -56,8 +57,10 @@ jobs:
           filters: |
             typescript:
               - 'editors/code/**'
+              - '.github/workflows/ci.yaml'
             javascript:
               - 'js/**'
+              - '.github/workflows/ci.yaml'
             # Subdirectories rather than 'js/wgsl-analyzer-web/**', so a README
             # or biome-config edit does not trigger a full emscripten build.
             emscripten:
@@ -71,6 +74,16 @@ jobs:
               - 'js/wgsl-analyzer-web/tests/**'
               - 'js/examples/**'
               - 'xtask/src/dist_web.rs'
+              - '.github/workflows/ci.yaml'
+            nix:
+              - 'crates/**'
+              - 'xtask/**'
+              - 'Cargo.toml'
+              - 'Cargo.lock'
+              - '.cargo/**'
+              - 'flake.nix'
+              - 'flake.lock'
+              - '.github/workflows/ci.yaml'
 
   no-ai-commits:
     runs-on: ubuntu-latest
@@ -574,14 +587,15 @@ jobs:
 
   nix:
     name: Nix
+    needs: changes
+    if: needs.changes.outputs.nix == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 60
     permissions:
       contents: read
-      id-token: write
     steps:
       - name: Check out repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
@@ -590,9 +604,15 @@ jobs:
 
       - name: Install nix cache
         uses: DeterminateSystems/magic-nix-cache-action@84c0677f58dcedf3b91f8223ce36a9ea5b3c84b7 # v15
+        with:
+          # FlakeHub Cache needs OIDC, which pull requests from forks do not get.
+          use-flakehub: false
 
-      - name: Check nix flake
-        run: nix flake check
+      - name: Evaluate nix flake
+        run: nix flake check --no-build
+
+      - name: Build nix package
+        run: nix build .#checks.x86_64-linux.default --print-build-logs --no-link
 
       - name: Nix info
         if: failure()
@@ -608,6 +628,7 @@ jobs:
   conclusion:
     needs:
       [
+        changes,
         no-ai-commits,
         rust,
         # rust-cross,
