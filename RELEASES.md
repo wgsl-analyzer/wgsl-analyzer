@@ -1,1 +1,0 @@
-# `wgsl-analyzer` Release Notes
