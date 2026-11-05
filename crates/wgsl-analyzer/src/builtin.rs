@@ -34,6 +34,7 @@ impl GlobalState {
                 origin: PackageOrigin::Language,
                 dependencies: Vec::new(),
                 edition: std_library.edition,
+                features: Vec::new(),
             },
         );
         std::mem::drop(packages);
