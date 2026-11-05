@@ -102,3 +102,28 @@ jobs:
             ~/.cargo/git/db/
             target/
           key: ${{ runner.os }}-${{ hashFiles('**/Cargo.toml') }}-${{ hashFiles('Cargo.lock') }}
+
+  build-nix-cache:
+    name: Build Nix Cache
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout the main branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: "wgsl-analyzer/wgsl-analyzer"
+          ref: "main"
+          persist-credentials: false
+
+      - name: Install nix
+        uses: DeterminateSystems/nix-installer-action@9383ce2bf08796b65508822f5982f49151badc4e
+
+      - name: Install nix cache
+        uses: DeterminateSystems/magic-nix-cache-action@84c0677f58dcedf3b91f8223ce36a9ea5b3c84b7 # v15
+        with:
+          use-flakehub: false
+
+      # Builds the toolchain, the vendored crates and the package itself.
+      - name: Build nix package
+        run: nix build .#packages.x86_64-linux.wgsl-analyzer --print-build-logs --no-link
