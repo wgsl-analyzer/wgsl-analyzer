@@ -20,6 +20,7 @@ use wgsl_analyzer::{
     cli::flags,
     config::{Config, ConfigChange, ConfigErrors},
     from_json,
+    tracing::config::TracingWriter,
 };
 
 #[cfg(feature = "mimalloc")]
@@ -42,7 +43,9 @@ fn main() -> Result<ExitCode> {
         wait_for_debugger();
     }
 
-    if let Err(error) = setup_logging(flags.log_file.clone()) {
+    let is_lsp_server = matches!(flags.subcommand, flags::WgslAnalyzerCmd::LspServer(_));
+
+    if let Err(error) = setup_logging(flags.log_file.clone(), is_lsp_server) {
         eprintln!("Failed to setup logging: {error:#}");
     }
 
@@ -114,7 +117,10 @@ fn wait_for_debugger() {
     }
 }
 
-fn setup_logging(log_file_flag: Option<PathBuf>) -> anyhow::Result<()> {
+fn setup_logging(
+    log_file_flag: Option<PathBuf>,
+    is_lsp_server: bool,
+) -> anyhow::Result<()> {
     if cfg!(windows)
         // This is required so that windows finds our pdb that is placed right beside the exe.
         // By default it doesn't look at the folder the exe resides in, only in the current working
@@ -154,10 +160,16 @@ fn setup_logging(log_file_flag: Option<PathBuf>) -> anyhow::Result<()> {
         None => None,
     };
 
-    let writer = log_file.map_or_else(
-        || BoxMakeWriter::new(std::io::stderr),
-        |file| BoxMakeWriter::new(Arc::new(file)),
-    );
+    let writer = match log_file {
+        Some(file) => TracingWriter::File(file),
+        None => {
+            if is_lsp_server {
+                TracingWriter::LspClient
+            } else {
+                TracingWriter::Stderr
+            }
+        },
+    };
 
     wgsl_analyzer::tracing::Config {
         writer,
@@ -196,6 +208,7 @@ fn run_server(startup_notice: Option<String>) -> anyhow::Result<()> {
     let (connection, io_threads) = wgsl_analyzer::emscripten_io::connection();
     #[cfg(not(target_os = "emscripten"))]
     let (connection, io_threads) = Connection::stdio();
+    wgsl_analyzer::tracing::config::set_lsp_client_sender(connection.sender.clone())?;
 
     rayon::ThreadPoolBuilder::new()
         .thread_name(|ix| format!("RayonWorker{ix}"))
