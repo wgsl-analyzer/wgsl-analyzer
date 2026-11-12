@@ -82,7 +82,7 @@ test-utils.workspace = true
 # syntax-bridge.workspace = true
 
 [target.'cfg(not(target_env = "msvc"))'.dependencies]
-jemallocator = { package = "tikv-jemallocator", workspace = true, optional = true }
+jemallocator = { workspace = true, optional = true }
 
 [target."cfg(windows)".dependencies]
 windows-sys.workspace = true
@@ -90,7 +90,7 @@ windows-sys.workspace = true
 [features]
 force-always-assert = ["stdx/force-always-assert"]
 jemalloc = [
-	"jemallocator",
+	"dep:jemallocator",
 	# "profile/jemalloc",
 ]
 sysroot-abi = []

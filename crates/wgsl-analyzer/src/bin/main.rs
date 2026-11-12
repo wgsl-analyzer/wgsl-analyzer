@@ -34,6 +34,10 @@ static ALLOC: mimalloc::MiMalloc = mimalloc::MiMalloc;
 #[global_allocator]
 static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
 
+// With both features on, mimalloc wins; keep jemallocator from being reported as unused.
+#[cfg(all(feature = "jemalloc", feature = "mimalloc", not(target_env = "msvc")))]
+use jemallocator as _;
+
 fn main() -> Result<ExitCode> {
     let flags = flags::WgslAnalyzer::from_env_or_exit();
 
