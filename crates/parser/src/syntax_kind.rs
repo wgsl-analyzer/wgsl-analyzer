@@ -12,6 +12,7 @@ use crate::lexer::LexerExtras;
     clippy::upper_case_acronyms,
     reason = "Lelwel generated code emits Token::EOF"
 )]
+#[expect(clippy::duplicated_attributes, reason = "bug in clippy")]
 #[logos(extras = LexerExtras)]
 pub enum SyntaxKind {
     /// Hope that you never get one of these!
@@ -377,7 +378,7 @@ impl From<rowan::SyntaxKind> for SyntaxKind {
 }
 
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
-pub(crate) enum WeslLanguage {}
+pub(crate) struct WeslLanguage(!);
 
 impl rowan::Language for WeslLanguage {
     type Kind = SyntaxKind;
