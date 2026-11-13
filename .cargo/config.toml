@@ -9,6 +9,10 @@ xtask = "run --package xtask --bin xtask --"
 [env]
 CARGO_WORKSPACE_DIR = { value = "", relative = true }
 
+[registry]
+# configure this to match .github/renovate.json5
+global-min-publish-age = "7 days"
+
 [target.arm-unknown-linux-gnueabihf]
 linker = "arm-linux-gnueabihf-gcc-8"
 

@@ -1,5 +1,5 @@
-use std::fs;
 use std::path::Path;
+use std::{fs, path};
 use zed::settings::LspSettings;
 use zed_extension_api::{self as zed, LanguageServerId, Result, serde_json};
 
@@ -37,27 +37,16 @@ impl WgslExtension {
         )?;
 
         let (platform, arch) = zed::current_platform();
-        let asset_name = match (platform, arch) {
-            (zed::Os::Mac, zed::Architecture::Aarch64) => "wgsl-analyzer-aarch64-apple-darwin.gz",
-            (zed::Os::Mac, _) => "wgsl-analyzer-x86_64-apple-darwin.gz",
-            (zed::Os::Linux, zed::Architecture::Aarch64) => {
-                "wgsl-analyzer-aarch64-unknown-linux-gnu.gz"
-            },
-            (zed::Os::Linux, _) => "wgsl-analyzer-x86_64-unknown-linux-gnu.gz",
-            (zed::Os::Windows, zed::Architecture::Aarch64) => {
-                "wgsl-analyzer-aarch64-pc-windows-msvc.zip"
-            },
-            (zed::Os::Windows, _) => "wgsl-analyzer-x86_64-pc-windows-msvc.zip",
-        };
+        let asset_name = asset_name(platform, arch);
 
         let asset = release
             .assets
             .iter()
             .find(|asset| asset.name == asset_name)
-            .ok_or_else(|| format!("no asset found matching {:?}", asset_name))?;
+            .ok_or_else(|| format!("no asset found matching {asset_name:?}"))?;
 
         let version_dir = format!("wgsl-analyzer-{}", release.version);
-        let bin_dir = format!("{}/bin", version_dir);
+        let bin_dir = format!("{version_dir}/bin");
 
         fs::create_dir_all(&bin_dir)
             .map_err(|error| format!("failed to create directory '{bin_dir}': {error}"))?;
@@ -67,7 +56,7 @@ impl WgslExtension {
         } else {
             "wgsl-analyzer"
         };
-        let binary_path = format!("{}/{}", bin_dir, binary_name);
+        let binary_path = format!("{bin_dir}/{binary_name}");
 
         if !Path::new(&binary_path).exists() {
             zed::set_language_server_installation_status(
@@ -75,7 +64,7 @@ impl WgslExtension {
                 &zed::LanguageServerInstallationStatus::Downloading,
             );
 
-            let download_path = format!("{}/download", version_dir);
+            let download_path = format!("{version_dir}/download");
 
             zed::download_file(
                 &asset.download_url,
@@ -85,7 +74,7 @@ impl WgslExtension {
                     zed::Os::Windows => zed::DownloadedFileType::Zip,
                 },
             )
-            .map_err(|e| format!("failed to download file: {e}"))?;
+            .map_err(|error| format!("failed to download file: {error}"))?;
 
             if platform == zed::Os::Windows {
                 let extracted_exe = match fs::read_dir(&download_path) {
@@ -94,43 +83,64 @@ impl WgslExtension {
                         for entry in entries {
                             if let Ok(entry) = entry
                                 && let Some(name) = entry.file_name().to_str()
-                                && name.ends_with(".exe")
+                                && path::Path::new(name)
+                                    .extension()
+                                    .is_some_and(|extension| extension.eq_ignore_ascii_case("exe"))
                             {
                                 exe_path = Some(entry.path());
                                 break;
                             }
                         }
-                        exe_path.ok_or_else(|| "Could not find extracted executable".to_string())?
+                        exe_path.ok_or_else(|| "Could not find extracted executable".to_owned())?
                     },
-                    Err(e) => return Err(format!("Failed to read directory: {}", e)),
+                    Err(error) => return Err(format!("Failed to read directory: {error}")),
                 };
 
                 fs::rename(extracted_exe, &binary_path)
-                    .map_err(|e| format!("Failed to move executable: {}", e))?;
+                    .map_err(|error| format!("Failed to move executable: {error}"))?;
             } else {
                 fs::rename(download_path, &binary_path)
-                    .map_err(|e| format!("Failed to move executable: {}", e))?;
+                    .map_err(|error| format!("Failed to move executable: {error}"))?;
             }
 
             zed::make_file_executable(&binary_path)?;
 
-            let entries =
-                fs::read_dir(".").map_err(|e| format!("failed to list working directory {e}"))?;
+            let entries = fs::read_dir(".")
+                .map_err(|error| format!("failed to list working directory {error}"))?;
             for entry in entries {
-                let entry = entry.map_err(|e| format!("failed to load directory entry {e}"))?;
+                let entry =
+                    entry.map_err(|error| format!("failed to load directory entry {error}"))?;
                 if entry.file_name().to_str() != Some(&version_dir)
                     && entry
                         .file_name()
                         .to_str()
                         .is_some_and(|name| name.starts_with("wgsl-analyzer-"))
                 {
-                    fs::remove_dir_all(entry.path()).ok();
+                    drop(fs::remove_dir_all(entry.path()));
                 }
             }
         }
 
         self.cached_binary_path = Some(binary_path.clone());
         Ok(binary_path)
+    }
+}
+
+const fn asset_name(
+    platform: zed_extension_api::Os,
+    arch: zed_extension_api::Architecture,
+) -> &'static str {
+    match (platform, arch) {
+        (zed::Os::Mac, zed::Architecture::Aarch64) => "wgsl-analyzer-aarch64-apple-darwin.gz",
+        (zed::Os::Mac, _) => "wgsl-analyzer-x86_64-apple-darwin.gz",
+        (zed::Os::Linux, zed::Architecture::Aarch64) => {
+            "wgsl-analyzer-aarch64-unknown-linux-gnu.gz"
+        },
+        (zed::Os::Linux, _) => "wgsl-analyzer-x86_64-unknown-linux-gnu.gz",
+        (zed::Os::Windows, zed::Architecture::Aarch64) => {
+            "wgsl-analyzer-aarch64-pc-windows-msvc.zip"
+        },
+        (zed::Os::Windows, _) => "wgsl-analyzer-x86_64-pc-windows-msvc.zip",
     }
 }
 
@@ -149,7 +159,7 @@ impl zed::Extension for WgslExtension {
         Ok(zed::Command {
             command: self.language_server_binary_path(language_server_id, worktree)?,
             args: vec![],
-            env: Default::default(),
+            env: Vec::new(),
         })
     }
 
@@ -160,7 +170,7 @@ impl zed::Extension for WgslExtension {
     ) -> Result<Option<serde_json::Value>, String> {
         let settings = LspSettings::for_worktree("wgsl-analyzer", worktree)
             .ok()
-            .and_then(|lsp_settings| lsp_settings.settings.clone())
+            .and_then(|lsp_settings| lsp_settings.settings)
             .unwrap_or_default();
 
         Ok(Some(serde_json::json!({
