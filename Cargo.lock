@@ -461,9 +461,9 @@ checksum = "d0766eaeb39bb5cea1966cdfdf4d322e0d3facdf152f67c647b81e38b08612bb"
 
 [[package]]
 name = "dprint-core"
-version = "0.71.1"
+version = "0.75.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "670d3c17cf65d37f5324b4fc198993148beb8c44e56fa4fe3676dd3c033d4e8c"
+checksum = "41d1b3e059b1b7519ef780acfa054650c095c7a6550e48f5da3a6f3ade945f6b"
 dependencies = [
  "bumpalo",
  "hashbrown 0.15.5",
