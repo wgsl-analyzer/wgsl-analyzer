@@ -2,6 +2,7 @@ use std::iter;
 
 use base_db::{Lookup as _, SourceDatabase};
 use either::Either;
+use rustc_hash::FxHashMap;
 use syntax::{
     HasAttributes,
     ast::{self, AttributeKind},
@@ -16,6 +17,7 @@ use crate::{
         ExpressionSourceMap, ExpressionStore, ExpressionStoreSource, lower::ExprCollector,
     },
     item_tree::Name,
+    mod_path::ModPath,
 };
 
 // TODO: Properly model the attributes (not all of them have expressions)
@@ -170,4 +172,111 @@ impl AttributesWithOwner {
             Arc::new(source_map),
         )
     }
+}
+
+pub(crate) fn is_else_branch(definition: &dyn HasAttributes) -> bool {
+    let Some(mut attributes) = definition.attributes() else {
+        return false;
+    };
+    attributes.any(|attribute| {
+        matches!(
+            attribute.kind(),
+            ast::AttributeKind::Conditional(
+                ast::ConditionalAttributeKind::Elif | ast::ConditionalAttributeKind::Else,
+            ),
+        )
+    })
+}
+
+/// An overly simplistic implementation of conditional compilation.
+pub(crate) fn eval_cond_comp(
+    definition: &dyn HasAttributes,
+    features: &FxHashMap<String, bool>,
+) -> Option<bool> {
+    let attributes = definition
+        .attributes()?
+        .filter(|attribute| attribute.is_conditional_compilation());
+    for attribute in attributes {
+        // @else is always taken (if we try it)
+        if attribute.kind() == ast::AttributeKind::Conditional(ast::ConditionalAttributeKind::Else)
+        {
+            return Some(true);
+        }
+        // @if and @elif need to be evaluated
+        // we do the silly assumption of "all arguments evaluate to true"
+        let value = attribute.arguments()?.arguments().next()?;
+        return evaluate_cond_comp_expression(value, features);
+    }
+
+    fn evaluate_cond_comp_expression(
+        value: ast::Expression,
+        features: &FxHashMap<String, bool>,
+    ) -> Option<bool> {
+        match value {
+            ast::Expression::IndexExpression(_)
+            | ast::Expression::FieldExpression(_)
+            | ast::Expression::FunctionCall(_) => None,
+            ast::Expression::PrefixExpression(prefix_expression) => {
+                match prefix_expression.operator_kind()? {
+                    ast::operators::UnaryOperator::Negation
+                    | ast::operators::UnaryOperator::AddressOf
+                    | ast::operators::UnaryOperator::Indirection
+                    | ast::operators::UnaryOperator::BitwiseComplement => None,
+                    ast::operators::UnaryOperator::LogicalNegation => {
+                        let result = evaluate_cond_comp_expression(
+                            prefix_expression.expression()?,
+                            features,
+                        )?;
+                        Some(!result)
+                    },
+                }
+            },
+            ast::Expression::InfixExpression(infix_expression) => {
+                match infix_expression.operator_kind()? {
+                    ast::operators::BinaryOperation::Logical(
+                        ast::operators::LogicOperation::ShortCircuitAnd,
+                    ) => {
+                        let left =
+                            evaluate_cond_comp_expression(infix_expression.left_side()?, features)?;
+                        let right = evaluate_cond_comp_expression(
+                            infix_expression.right_side()?,
+                            features,
+                        )?;
+                        Some(left && right)
+                    },
+                    ast::operators::BinaryOperation::Logical(
+                        ast::operators::LogicOperation::ShortCircuitOr,
+                    ) => {
+                        let left =
+                            evaluate_cond_comp_expression(infix_expression.left_side()?, features)?;
+                        let right = evaluate_cond_comp_expression(
+                            infix_expression.right_side()?,
+                            features,
+                        )?;
+                        Some(left || right)
+                    },
+                    ast::operators::BinaryOperation::Arithmetic(_)
+                    | ast::operators::BinaryOperation::Comparison(_) => None,
+                }
+            },
+            ast::Expression::IdentExpression(ident_expression) => {
+                let path = ModPath::from_src(&ident_expression.path()?);
+                let name = path.as_ident()?;
+                match features.get(name.as_str()) {
+                    Some(value) => Some(*value),
+                    None => Some(false), // TODO: should I default to false?
+                }
+            },
+            ast::Expression::ParenthesisExpression(parenthesis_expression) => {
+                evaluate_cond_comp_expression(parenthesis_expression.inner()?, features)
+            },
+            ast::Expression::Literal(literal) => match literal.kind() {
+                ast::LiteralKind::IntLiteral(_) | ast::LiteralKind::FloatLiteral(_) => None,
+                ast::LiteralKind::True(_) => Some(true),
+                ast::LiteralKind::False(_) => Some(false),
+            },
+        }
+    }
+
+    None
 }

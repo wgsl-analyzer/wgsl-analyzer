@@ -1,5 +1,6 @@
 use std::{fmt, ops};
 
+use rustc_hash::FxHashMap;
 use salsa::{Durability, Setter as _};
 use syntax::{Edition, ExtensionsConfig};
 

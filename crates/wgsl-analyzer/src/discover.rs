@@ -11,7 +11,8 @@ use crossbeam_channel::Sender;
 use edition::Edition;
 use paths::AbsPathBuf;
 use project_model::{
-    ManifestPath, PackageDependency, PackageKey, ProjectManifest, WeslManifest, WeslPackage,
+    ManifestPath, PackageDependency, PackageKey, ProjectManifest, TranslateTimeFeature,
+    WeslManifest, WeslPackage,
 };
 use stdx::process::spawn_with_streaming_output;
 use vfs::VfsPath;
@@ -182,6 +183,15 @@ impl LoadPackageTask {
                 },
             }
         }
+        let features = wesl_toml
+            .features
+            .iter()
+            .map(|(name, is_enabled)| TranslateTimeFeature {
+                name: name.clone(),
+                is_enabled: *is_enabled,
+            })
+            .collect();
+
         let metadata = std::fs::metadata(&root)
             .with_context(|| format!("failed to get metadata of root file '{root}'"))?;
         let edition = Edition::from_str(&wesl_toml.edition).with_context(|| {
@@ -197,6 +207,7 @@ impl LoadPackageTask {
             origin: self.origin,
             dependencies,
             edition,
+            features,
         })
     }
 
