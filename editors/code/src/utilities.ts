@@ -173,12 +173,22 @@ export class LazyOutputChannel implements vscode.LogOutputChannel {
 		}
 		return this._channel;
 	}
+	// Avoid using the channel, since it may not be created yet
 	get logLevel(): vscode.LogLevel {
-		return this.channel.logLevel;
+		return vscode.workspace.getConfiguration("wgsl-analyzer").get("trace.server", "off") === "off"
+			? vscode.LogLevel.Info
+			: vscode.LogLevel.Trace;
 	}
-	get onDidChangeLogLevel(): vscode.Event<vscode.LogLevel> {
-		return this.channel.onDidChangeLogLevel;
-	}
+	readonly onDidChangeLogLevel: vscode.Event<vscode.LogLevel> = (listener, thisArgs, disposables) =>
+		vscode.workspace.onDidChangeConfiguration(
+			(event) => {
+				if (event.affectsConfiguration(`wgsl-analyzer.trace.server`)) {
+					listener.call(thisArgs, this.logLevel);
+				}
+			},
+			undefined,
+			disposables,
+		);
 
 	// biome-ignore lint/suspicious/noExplicitAny: Signature comes from upstream
 	trace(message: string, ...args: any[]): void {
