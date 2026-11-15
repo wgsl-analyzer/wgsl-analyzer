@@ -31,7 +31,14 @@
 		{
 			description: "Rust dependencies",
 			matchManagers: ["cargo"],
+			matchFileNames: ["!editors/**"],
 			addLabels: ["A-Language-Server"],
+		},
+		{
+			description: "Zed extension dependencies",
+			matchManagers: ["cargo"],
+			matchFileNames: ["editors/zed/**"],
+			addLabels: ["A-Editor-Zed"],
 		},
 		{
 			description: "Workflow dependencies",
@@ -39,9 +46,22 @@
 			addLabels: ["A-Build-System"],
 		},
 		{
-			description: "Editor dependencies",
+			description: "VS Code extension dependencies",
 			matchManagers: ["npm"],
-			addLabels: ["A-Editor"],
+			matchFileNames: ["editors/code/**"],
+			addLabels: ["A-Editor-VSCode"],
+		},
+		{
+			description: "Web dependencies",
+			matchManagers: ["npm"],
+			matchFileNames: ["js/**"],
+			addLabels: ["A-Web"],
+		},
+		{
+			description: "Workflow action dependencies",
+			matchManagers: ["npm"],
+			matchFileNames: [".github/**"],
+			addLabels: ["A-Build-System"],
 		},
 		{
 			description: "Group CodeQL updates",
@@ -54,7 +74,7 @@
 			matchManagers: ["npm"],
 			matchDepNames: ["@types/vscode", "vscode"],
 			groupName: "vscode",
-			addLabels: ["A-Editor"],
+			addLabels: ["A-Editor-VSCode"],
 		},
 		{
 			description: "Resolve engines.vscode from @types/vscode",

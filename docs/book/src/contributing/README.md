@@ -29,11 +29,13 @@ Discussion happens in this Discord server:
 
 - [A-Build-System]: CI stuff
 - [A-Cross-Cutting]: Affects many crates
-- [A-Editor]: Affects the front-end extension/plugin
+- [A-Editor-VSCode]: Affects the VS Code extension
+- [A-Editor-Zed]: Affects the Zed extension
 - [A-Formatter]: Affects the wgsl-formatter crate
 - [A-Language-Server]: Affects the wgsl-analyzer crate
 - [A-Meta]: Is about the repository itself
 - [A-Parsing]: Affects the crates related to parsing
+- [A-Web]: Affects the web (JavaScript) packages
 - [A-wgslfmt]: Affects the wgslfmt crate
 - [C-Bug]: Something is not working like it should
 - [C-Chore]: A basic task that falls outside of other categories
