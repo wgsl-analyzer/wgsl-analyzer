@@ -355,7 +355,7 @@ jobs:
     name: publish-extension (${{ matrix.cmd }})
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
       id-token: write
     needs: publish
     strategy:
@@ -413,7 +413,7 @@ jobs:
     name: publish-web-package
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
       id-token: write
     needs: publish
     steps:
