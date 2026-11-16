@@ -112,7 +112,7 @@ In concrete terms, the following is expected:
 
 Reviewers are encouraged to request changes to contributions that fail expectations according to this policy.
 In more problematic cases where reviewer time and effort would be wasted, reviewers are encouraged to reject the contribution entirely.
-A case-by-case decision may also be made to issue a moderation warning or ban - for example, due to engaging in bad faith, repeated offences, or disrespectful behavior.
+A case-by-case decision may also be made to issue a moderation warning or ban - for example, due to engaging in bad faith, repeated offenses, or disrespectful behavior.
 
 Mentorship for new contributors of any skill level is available.
 Feel free to ask questions on the repository's issues or PR drafts or the project's social platforms for help.
