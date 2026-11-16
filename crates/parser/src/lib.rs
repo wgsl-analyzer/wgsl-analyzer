@@ -73,7 +73,7 @@ pub type SyntaxElementChildren = rowan::SyntaxElementChildren<WeslLanguage>;
 pub type PreorderWithTokens = rowan::api::PreorderWithTokens<WeslLanguage>;
 
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
-pub enum WeslLanguage {}
+pub struct WeslLanguage(!);
 
 impl rowan::Language for WeslLanguage {
     type Kind = SyntaxKind;

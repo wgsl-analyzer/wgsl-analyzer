@@ -150,7 +150,7 @@ impl<'db> InferPrinter<'db> {
                 Ok(sp) => sp.to_node(&self.root).syntax().clone(),
                 Err(SyntheticSyntax) => continue,
             };
-            types.push((node.clone(), *r#type));
+            types.push((node, *r#type));
         }
 
         for (expr, r#type) in inference_result.type_of_expression.iter() {
@@ -158,7 +158,7 @@ impl<'db> InferPrinter<'db> {
                 Ok(sp) => sp.to_node(&self.root).syntax().clone(),
                 Err(SyntheticSyntax) => continue,
             };
-            types.push((node.clone(), *r#type));
+            types.push((node, *r#type));
         }
 
         // sort ranges for consistency

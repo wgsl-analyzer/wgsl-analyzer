@@ -25,7 +25,7 @@ use lsp_types::{
 use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
 
-pub enum FullSourceRequest {}
+pub struct FullSourceRequest(!);
 
 impl Request for FullSourceRequest {
     type Params = FullSourceParameters;
@@ -41,7 +41,7 @@ pub struct FullSourceParameters {
     pub text_document: TextDocumentIdentifier,
 }
 
-pub enum AnalyzerStatusRequest {}
+pub struct AnalyzerStatusRequest(!);
 
 impl Request for AnalyzerStatusRequest {
     type Params = AnalyzerStatusParameters;
@@ -65,7 +65,7 @@ pub struct PackageInfoResult {
     pub path: Uri,
 }
 
-pub enum FetchDependencyListRequest {}
+pub struct FetchDependencyListRequest(!);
 
 impl Request for FetchDependencyListRequest {
     type Params = FetchDependencyListParameters;
@@ -85,7 +85,7 @@ pub struct FetchDependencyListResult {
     pub packages: Vec<PackageInfoResult>,
 }
 
-pub enum MemoryUsageRequest {}
+pub struct MemoryUsageRequest(!);
 
 impl Request for MemoryUsageRequest {
     type Params = ();
@@ -95,7 +95,7 @@ impl Request for MemoryUsageRequest {
     const METHOD: LspRequestMethod<'_> = LspRequestMethod::new("wgsl-analyzer/memoryUsage");
 }
 
-pub enum ReloadWorkspaceRequest {}
+pub struct ReloadWorkspaceRequest(!);
 
 impl Request for ReloadWorkspaceRequest {
     type Params = ();
@@ -105,7 +105,7 @@ impl Request for ReloadWorkspaceRequest {
     const METHOD: LspRequestMethod<'_> = LspRequestMethod::new("wgsl-analyzer/reloadWorkspace");
 }
 
-pub enum ViewSyntaxTreeRequest {}
+pub struct ViewSyntaxTreeRequest(!);
 
 impl Request for ViewSyntaxTreeRequest {
     type Params = ViewSyntaxTreeParameters;
@@ -121,7 +121,7 @@ pub struct ViewSyntaxTreeParameters {
     pub text_document: TextDocumentIdentifier,
 }
 
-pub enum ViewWgslRequest {}
+pub struct ViewWgslRequest(!);
 
 impl Request for ViewWgslRequest {
     type Params = TextDocumentPositionParams;
@@ -131,7 +131,7 @@ impl Request for ViewWgslRequest {
     const METHOD: LspRequestMethod<'_> = LspRequestMethod::new("wgsl-analyzer/viewWgsl");
 }
 
-pub enum ViewSpirvRequest {}
+pub struct ViewSpirvRequest(!);
 
 impl Request for ViewSpirvRequest {
     type Params = TextDocumentPositionParams;
@@ -141,7 +141,7 @@ impl Request for ViewSpirvRequest {
     const METHOD: LspRequestMethod<'_> = LspRequestMethod::new("wgsl-analyzer/viewSpirv");
 }
 
-pub enum InterpretFunctionRequest {}
+pub struct InterpretFunctionRequest(!);
 
 impl Request for InterpretFunctionRequest {
     type Params = TextDocumentPositionParams;
@@ -151,7 +151,7 @@ impl Request for InterpretFunctionRequest {
     const METHOD: LspRequestMethod<'_> = LspRequestMethod::new("wgsl-analyzer/interpretFunction");
 }
 
-pub enum ViewFileTextRequest {}
+pub struct ViewFileTextRequest(!);
 
 impl Request for ViewFileTextRequest {
     type Params = TextDocumentIdentifier;
@@ -174,7 +174,7 @@ pub struct ViewModuleGraphParameters {
     pub text_document: TextDocumentIdentifier,
 }
 
-pub enum ViewModuleGraphRequest {}
+pub struct ViewModuleGraphRequest(!);
 
 impl Request for ViewModuleGraphRequest {
     type Params = ViewModuleGraphParameters;
@@ -184,7 +184,7 @@ impl Request for ViewModuleGraphRequest {
     const METHOD: LspRequestMethod<'_> = LspRequestMethod::new("wgsl-analyzer/viewModuleGraph");
 }
 
-pub enum ViewPackageGraphRequest {}
+pub struct ViewPackageGraphRequest(!);
 
 impl Request for ViewPackageGraphRequest {
     type Params = ViewPackageGraphParameters;
@@ -200,7 +200,7 @@ pub struct ViewItemTreeParameters {
     pub text_document: TextDocumentIdentifier,
 }
 
-pub enum ViewItemTreeRequest {}
+pub struct ViewItemTreeRequest(!);
 
 impl Request for ViewItemTreeRequest {
     type Params = ViewItemTreeParameters;
@@ -245,7 +245,7 @@ pub struct DiscoverTestResults {
     pub scope_file: Option<Vec<TextDocumentIdentifier>>,
 }
 
-pub enum DiscoverTestRequest {}
+pub struct DiscoverTestRequest(!);
 
 impl Request for DiscoverTestRequest {
     type Params = DiscoverTestParameters;
@@ -255,7 +255,7 @@ impl Request for DiscoverTestRequest {
     const METHOD: LspRequestMethod<'_> = LspRequestMethod::new("experimental/discoverTest");
 }
 
-pub enum DiscoveredTestsNotification {}
+pub struct DiscoveredTestsNotification(!);
 
 impl Notification for DiscoveredTestsNotification {
     type Params = DiscoverTestResults;
@@ -272,7 +272,7 @@ pub struct RunTestParameters {
     pub exclude: Option<Vec<String>>,
 }
 
-pub enum RunTestRequest {}
+pub struct RunTestRequest(!);
 
 impl Request for RunTestRequest {
     type Params = RunTestParameters;
@@ -282,7 +282,7 @@ impl Request for RunTestRequest {
     const METHOD: LspRequestMethod<'_> = LspRequestMethod::new("experimental/runTest");
 }
 
-pub enum EndRunTestNotification {}
+pub struct EndRunTestNotification(!);
 
 impl Notification for EndRunTestNotification {
     type Params = ();
@@ -291,7 +291,7 @@ impl Notification for EndRunTestNotification {
     const METHOD: LspNotificationMethod<'_> = LspNotificationMethod::new("experimental/endRunTest");
 }
 
-pub enum AppendOutputToRunTestNotification {}
+pub struct AppendOutputToRunTestNotification(!);
 
 impl Notification for AppendOutputToRunTestNotification {
     type Params = String;
@@ -301,7 +301,7 @@ impl Notification for AppendOutputToRunTestNotification {
         LspNotificationMethod::new("experimental/appendOutputToRunTest");
 }
 
-pub enum AbortRunTestNotification {}
+pub struct AbortRunTestNotification(!);
 
 impl Notification for AbortRunTestNotification {
     type Params = ();
@@ -328,7 +328,7 @@ pub struct ChangeTestStateParameters {
     pub state: TestState,
 }
 
-pub enum ChangeTestStateNotification {}
+pub struct ChangeTestStateNotification(!);
 
 impl Notification for ChangeTestStateNotification {
     type Params = ChangeTestStateParameters;
@@ -338,7 +338,7 @@ impl Notification for ChangeTestStateNotification {
         LspNotificationMethod::new("experimental/changeTestState");
 }
 
-pub enum ViewRecursiveMemoryLayoutRequest {}
+pub struct ViewRecursiveMemoryLayoutRequest(!);
 
 impl Request for ViewRecursiveMemoryLayoutRequest {
     type Params = TextDocumentPositionParams;
@@ -368,7 +368,7 @@ pub struct MemoryLayoutNode {
     pub children_length: u64,
 }
 
-pub enum CancelFlycheckNotification {}
+pub struct CancelFlycheckNotification(!);
 
 impl Notification for CancelFlycheckNotification {
     type Params = ();
@@ -378,7 +378,7 @@ impl Notification for CancelFlycheckNotification {
         LspNotificationMethod::new("wgsl-analyzer/cancelFlycheck");
 }
 
-pub enum RunFlycheckNotification {}
+pub struct RunFlycheckNotification(!);
 
 impl Notification for RunFlycheckNotification {
     type Params = RunFlycheckParameters;
@@ -388,7 +388,7 @@ impl Notification for RunFlycheckNotification {
         LspNotificationMethod::new("wgsl-analyzer/runFlycheck");
 }
 
-pub enum ClearFlycheckNotification {}
+pub struct ClearFlycheckNotification(!);
 
 impl Notification for ClearFlycheckNotification {
     type Params = ();
@@ -398,7 +398,7 @@ impl Notification for ClearFlycheckNotification {
         LspNotificationMethod::new("wgsl-analyzer/clearFlycheck");
 }
 
-pub enum OpenServerLogsNotification {}
+pub struct OpenServerLogsNotification(!);
 
 impl Notification for OpenServerLogsNotification {
     type Params = ();
@@ -414,7 +414,7 @@ pub struct RunFlycheckParameters {
     pub text_document: Option<TextDocumentIdentifier>,
 }
 
-pub enum MatchingBraceRequest {}
+pub struct MatchingBraceRequest(!);
 
 impl Request for MatchingBraceRequest {
     type Params = MatchingBraceParameters;
@@ -431,7 +431,7 @@ pub struct MatchingBraceParameters {
     pub positions: Vec<Position>,
 }
 
-pub enum ParentModuleRequest {}
+pub struct ParentModuleRequest(!);
 
 impl Request for ParentModuleRequest {
     type Params = TextDocumentPositionParams;
@@ -441,7 +441,7 @@ impl Request for ParentModuleRequest {
     const METHOD: LspRequestMethod<'_> = LspRequestMethod::new("experimental/parentModule");
 }
 
-pub enum JoinLinesRequest {}
+pub struct JoinLinesRequest(!);
 
 impl Request for JoinLinesRequest {
     type Params = JoinLinesParameters;
@@ -458,7 +458,7 @@ pub struct JoinLinesParameters {
     pub ranges: Vec<Range>,
 }
 
-pub enum OnEnterRequest {}
+pub struct OnEnterRequest(!);
 
 impl Request for OnEnterRequest {
     type Params = TextDocumentPositionParams;
@@ -468,7 +468,7 @@ impl Request for OnEnterRequest {
     const METHOD: LspRequestMethod<'_> = LspRequestMethod::new("experimental/onEnter");
 }
 
-pub enum RunnablesRequest {}
+pub struct RunnablesRequest(!);
 
 impl Request for RunnablesRequest {
     type Params = RunnablesParameters;
@@ -537,7 +537,7 @@ pub struct ShellRunnableArguments {
     pub arguments: Vec<String>,
 }
 
-pub enum RelatedTestsRequest {}
+pub struct RelatedTestsRequest(!);
 
 impl Request for RelatedTestsRequest {
     type Params = TextDocumentPositionParams;
@@ -552,7 +552,7 @@ pub struct TestInfo {
     pub runnable: Runnable,
 }
 
-pub enum SsrRequest {}
+pub struct SsrRequest(!);
 
 impl Request for SsrRequest {
     type Params = SsrParameters;
@@ -577,7 +577,7 @@ pub struct SsrParameters {
     pub selections: Vec<Range>,
 }
 
-pub enum ServerStatusNotification {}
+pub struct ServerStatusNotification(!);
 
 impl Notification for ServerStatusNotification {
     type Params = ServerStatusParameters;
@@ -616,7 +616,7 @@ impl ops::BitOrAssign for Health {
     }
 }
 
-pub enum CodeActionRequest {}
+pub struct CodeActionRequest(!);
 
 impl Request for CodeActionRequest {
     type Params = CodeActionParams;
@@ -626,7 +626,7 @@ impl Request for CodeActionRequest {
     const METHOD: LspRequestMethod<'_> = LspRequestMethod::new("textDocument/codeAction");
 }
 
-pub enum CodeActionResolveRequest {}
+pub struct CodeActionResolveRequest(!);
 
 impl Request for CodeActionResolveRequest {
     type Params = CodeAction;
@@ -701,7 +701,7 @@ pub struct SnippetTextEdit {
     pub annotation_id: Option<ChangeAnnotationIdentifier>,
 }
 
-pub enum HoverRequest {}
+pub struct HoverRequest(!);
 
 impl Request for HoverRequest {
     type Params = HoverParameters;
@@ -752,7 +752,7 @@ pub struct CommandLink {
     pub tooltip: Option<String>,
 }
 
-pub enum ExternalDocsRequest {}
+pub struct ExternalDocsRequest(!);
 
 impl Request for ExternalDocsRequest {
     type Params = TextDocumentPositionParams;
@@ -782,7 +782,7 @@ pub struct ExternalDocsPair {
     pub local: Option<Uri>,
 }
 
-pub enum OpenCargoTomlRequest {}
+pub struct OpenCargoTomlRequest(!);
 
 impl Request for OpenCargoTomlRequest {
     type Params = OpenCargoTomlParameters;
@@ -813,7 +813,7 @@ pub enum CodeLensResolveDataKind {
     References(TextDocumentPositionParams),
 }
 
-pub enum MoveItemRequest {}
+pub struct MoveItemRequest(!);
 
 impl Request for MoveItemRequest {
     type Params = MoveItemParameters;
@@ -838,7 +838,7 @@ pub enum MoveItemDirection {
 }
 
 #[derive(Debug)]
-pub enum WorkspaceSymbolRequest {}
+pub struct WorkspaceSymbolRequest(!);
 
 impl Request for WorkspaceSymbolRequest {
     type Params = WorkspaceSymbolParameters;
@@ -885,7 +885,7 @@ pub enum WorkspaceSymbolSearchKind {
 /// This is almost same as [`lsp_types::DocumentOnTypeFormattingRequest`], but the
 /// result has [`SnippetTextEdit`] in it instead of [`TextEdit`].
 #[derive(Debug)]
-pub enum OnTypeFormattingRequest {}
+pub struct OnTypeFormattingRequest(!);
 
 impl Request for OnTypeFormattingRequest {
     type Params = DocumentOnTypeFormattingParams;
