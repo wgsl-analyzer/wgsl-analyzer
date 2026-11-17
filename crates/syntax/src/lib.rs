@@ -81,6 +81,26 @@ pub fn parse(
     }
 }
 
+/// Exposed for wesl-rs.
+#[must_use]
+pub fn parse_entrypoint(
+    input: &str,
+    edition: Edition,
+    entrypoint: ParseEntryPoint,
+) -> Parse {
+    let (green_node, errors) = parser::parse_entrypoint_with_capabilities(
+        input,
+        entrypoint,
+        edition,
+        Capabilities::default(),
+    )
+    .into_parts();
+    Parse {
+        green_node,
+        errors: Arc::from(errors),
+    }
+}
+
 /// Conversion from `SyntaxNode` to typed AST.
 pub trait AstNode {
     fn can_cast(kind: SyntaxKind) -> bool
