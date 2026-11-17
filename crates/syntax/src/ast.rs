@@ -920,9 +920,19 @@ ast_node! {
 }
 
 ast_node! {
-    DiagnosticRuleName:
-    ident_token: Option<SyntaxToken Identifier>;
-    text: TokenText<'_>;
+    DiagnosticRuleName
+}
+
+impl DiagnosticRuleName {
+    #[must_use]
+    pub fn ident_tokens(&self) -> (Option<SyntaxToken>, Option<SyntaxToken>) {
+        let mut idents = self
+            .syntax
+            .children_with_tokens()
+            .filter_map(rowan::NodeOrToken::into_token)
+            .filter(|token| token.kind() == SyntaxKind::Identifier);
+        (idents.next(), idents.next())
+    }
 }
 
 ast_node! {
