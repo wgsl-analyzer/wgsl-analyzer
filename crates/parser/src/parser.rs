@@ -559,26 +559,12 @@ impl<'source> ParserCallbacks<'source> for Parser<'source> {
         self.peek_text(0) == Some("private")
     }
 
-    fn action_visibility_1(
+    fn create_node_visibility(
         &mut self,
+        _node_ref: NodeRef,
         diagnostics: &mut Vec<Self::Diagnostic>,
     ) {
-        if self.context.edition.at_least_wesl_0_0_1() {
-            // Very disgusting hack for context sensitive handling of `private`
-            let last_node = self
-                .cst
-                .data
-                .nodes
-                .iter_mut()
-                .rev()
-                .find(|node| matches!(node, Node::Token(SyntaxKind::Identifier, _)))
-                .unwrap();
-
-            match last_node {
-                Node::Rule(rule, cst_index) => panic!("Node should have been an identifier token"),
-                Node::Token(syntax_kind, cst_index) => *syntax_kind = SyntaxKind::Private,
-            }
-        } else {
+        if !self.context.edition.at_least_wesl_0_0_1() {
             diagnostics.push(self.create_diagnostic(
                 self.span(),
                 "visibility `private` is not allowed in WGSL".to_owned(),

@@ -54,7 +54,7 @@ fn reject_public_visibility_in_wgsl() {
 
             error at 0..6: 'public' is a reserved word in WGSL
             error at 0..6: switch to WESL to use `public`
-            error at 0..6: invalid syntax, expected one of: 'alias', '@', '{', 'const', 'const_assert', 'diagnostic', <end of file>, 'enable', 'fn', <identifier>, 'import', 'let', 'override', 'private', 'public', 'requires', ';', 'struct', 'var'"#]],
+            error at 0..6: invalid syntax, expected one of: 'alias', '@', '{', 'const', 'const_assert', 'diagnostic', <end of file>, 'enable', 'fn', <identifier>, 'import', 'let', 'override', 'public', 'requires', ';', 'struct', 'var'"#]],
     );
 }
 
@@ -117,7 +117,7 @@ fn private_visibility() {
             SourceFile@0..16
               FunctionDeclaration@0..16
                 Visibility@0..7
-                  Private@0..7 "private"
+                  Identifier@0..7 "private"
                 Blankspace@7..8 " "
                 Fn@8..10 "fn"
                 Blankspace@10..11 " "
@@ -161,7 +161,7 @@ fn multiple_items_with_visibility() {
               Blankspace@24..33 "\n        "
               StructDeclaration@33..58
                 Visibility@33..40
-                  Private@33..40 "private"
+                  Identifier@33..40 "private"
                 Blankspace@40..41 " "
                 Struct@41..47 "struct"
                 Blankspace@47..48 " "
@@ -180,7 +180,7 @@ fn multiple_items_with_visibility() {
               Blankspace@58..67 "\n        "
               VariableDeclaration@67..94
                 Visibility@67..74
-                  Private@67..74 "private"
+                  Identifier@67..74 "private"
                 Blankspace@74..75 " "
                 Var@75..78 "var"
                 TemplateList@78..87
@@ -214,7 +214,7 @@ fn reject_public_and_private_visibility() {
               Blankspace@6..7 " "
               FunctionDeclaration@7..23
                 Visibility@7..14
-                  Private@7..14 "private"
+                  Identifier@7..14 "private"
                 Blankspace@14..15 " "
                 Fn@15..17 "fn"
                 Blankspace@17..18 " "

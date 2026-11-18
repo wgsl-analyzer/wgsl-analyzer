@@ -87,7 +87,6 @@ token
 	As='as'
 	ColonColon='::'
 	Public='public'
-	Private='private'
 ;
 
 token
@@ -154,7 +153,7 @@ language_extension_name: Identifier;
 
 global_assert: 'const_assert' expression ';' @assert_statement; // §10
 
-visibility: 'public' | 'private' | ?1 Identifier #1;
+visibility: 'public' | ?1 Identifier;
 
 
 global_declaration:

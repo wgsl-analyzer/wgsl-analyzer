@@ -287,15 +287,27 @@ ast_node! {
 
 impl Visibility {
     #[must_use]
-    pub fn kind(&self) -> Option<VisibilityToken> {
-        support::child_token::<VisibilityToken>(self.syntax())
+    pub fn kind(&self) -> Option<VisibilityKind> {
+        match support::child_token::<VisibilityToken>(self.syntax()) {
+            Some(VisibilityToken::Public(_)) => Some(VisibilityKind::Public),
+            Some(VisibilityToken::Identifier(token)) if token.text() == "private" => {
+                Some(VisibilityKind::Private)
+            },
+            Some(VisibilityToken::Identifier(token)) => None,
+            None => None,
+        }
     }
+}
+
+pub enum VisibilityKind {
+    Public,
+    Private,
 }
 
 ast_token_enum! {
     enum VisibilityToken {
         Public,
-        Private,
+        Identifier,
     }
 }
 
