@@ -413,6 +413,7 @@ impl Collector<'_> {
                 expression: self.collect_expression_opt(assert_statement.expression()),
             },
             ast::Statement::DiscardStatement(_) => Statement::Discard,
+            ast::Statement::EmptyStatement(_) => return None,
             ast::Statement::BreakStatement(_) => Statement::Break,
             ast::Statement::ContinueStatement(_) => Statement::Continue,
             ast::Statement::ContinuingStatement(continuing) => Statement::Continuing {
