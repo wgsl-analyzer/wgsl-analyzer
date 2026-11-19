@@ -81,7 +81,7 @@ pub fn parse(
     }
 }
 
-/// Exposed for wesl-rs
+/// Exposed for wesl-rs.
 #[must_use]
 pub fn parse_entrypoint(
     input: &str,
