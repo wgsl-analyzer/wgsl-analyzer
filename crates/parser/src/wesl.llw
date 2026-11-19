@@ -306,10 +306,11 @@ continuing_compound_statement:
 
 break_if_statement: 'break' 'if' expression ';'; // §9.4.7
 
+
 for_init:
 	attribute_list
 	(
-		?1 function_call
+		?1 for_loop_function_call_statement
 		| variable_declaration
 		| let_declaration
 		| const_declaration
@@ -318,7 +319,9 @@ for_init:
 	;
 
 for_condition: expression;
-for_update: attribute_list (?1 function_call | variable_updating);
+for_update: attribute_list (?1 for_loop_function_call_statement | variable_updating);
+for_loop_function_call_statement: function_call @function_call_statement;
+
 if_clause: 'if' expression attribute_list !1 compound_statement;
 else_if_clause: 'else' 'if' expression attribute_list !1 compound_statement;
 else_clause: 'else' attribute_list !1 compound_statement;
