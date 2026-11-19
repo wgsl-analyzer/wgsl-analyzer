@@ -60,3 +60,45 @@ fn template_elaborated_function_call_statement() {
             Semicolon@39..40 ";""#]],
     );
 }
+
+#[test]
+fn for_statement_with_function_call() {
+    check(
+        "for (f1(); false; f1()) {   }",
+        expect![[r#"
+            SourceFile@0..29
+              ForStatement@0..29
+                For@0..3 "for"
+                Blankspace@3..4 " "
+                ParenthesisLeft@4..5 "("
+                FunctionCallStatement@5..9
+                  FunctionCall@5..9
+                    IdentExpression@5..7
+                      Path@5..7
+                        Identifier@5..7 "f1"
+                    Arguments@7..9
+                      ParenthesisLeft@7..8 "("
+                      ParenthesisRight@8..9 ")"
+                Semicolon@9..10 ";"
+                Blankspace@10..11 " "
+                ForCondition@11..16
+                  Literal@11..16
+                    False@11..16 "false"
+                Semicolon@16..17 ";"
+                Blankspace@17..18 " "
+                FunctionCallStatement@18..22
+                  FunctionCall@18..22
+                    IdentExpression@18..20
+                      Path@18..20
+                        Identifier@18..20 "f1"
+                    Arguments@20..22
+                      ParenthesisLeft@20..21 "("
+                      ParenthesisRight@21..22 ")"
+                ParenthesisRight@22..23 ")"
+                Blankspace@23..24 " "
+                CompoundStatement@24..29
+                  BraceLeft@24..25 "{"
+                  Blankspace@25..28 "   "
+                  BraceRight@28..29 "}""#]],
+    );
+}
