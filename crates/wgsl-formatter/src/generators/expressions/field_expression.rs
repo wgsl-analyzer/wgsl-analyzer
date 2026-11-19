@@ -1,3 +1,4 @@
+use dprint_core::formatting::Arena;
 use syntax::{AstNode as _, ast};
 
 use crate::{
@@ -7,9 +8,10 @@ use crate::{
     reporting::FormatDocumentResult,
 };
 
-pub(crate) fn gen_field_expression(
-    field_expression: &ast::FieldExpression
-) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_field_expression<'buffer>(
+    arena: &'buffer Arena,
+    field_expression: &ast::FieldExpression,
+) -> FormatDocumentResult<PrintItemBuffer<'buffer>> {
     // ==== Parse ====
 
     let mut syntax = syntax_iter(field_expression.syntax());
@@ -22,14 +24,14 @@ pub(crate) fn gen_field_expression(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::default();
-    formatted.extend(gen_node_with_trivia(&item_expression)?);
-    formatted.start_indent_before_requests();
-    formatted.start_new_line_group_before_requests();
+    let mut formatted = PrintItemBuffer::new(arena);
+    formatted.extend(arena, gen_node_with_trivia(arena, &item_expression)?);
+    formatted.start_indent_before_requests(arena);
+    formatted.start_new_line_group_before_requests(arena);
     formatted.request(Request::empty().or_newline());
-    formatted.finish_new_line_group_after_requests();
-    formatted.extend(gen_node_with_trivia(&item_period)?);
-    formatted.extend(gen_node_with_trivia(&item_target_ident)?);
-    formatted.finish_indent_before_requests();
+    formatted.finish_new_line_group_after_requests(arena);
+    formatted.extend(arena, gen_node_with_trivia(arena, &item_period)?);
+    formatted.extend(arena, gen_node_with_trivia(arena, &item_target_ident)?);
+    formatted.finish_indent_before_requests(arena);
     Ok(formatted)
 }

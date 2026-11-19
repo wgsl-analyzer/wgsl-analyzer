@@ -1,3 +1,4 @@
+use dprint_core::formatting::Arena;
 use dprint_core_macros::sc;
 use syntax::{AstNode as _, SyntaxKind, ast};
 
@@ -11,9 +12,10 @@ use crate::{
     reporting::FormatDocumentResult,
 };
 
-pub(crate) fn gen_loop_statement(
-    statement: &ast::LoopStatement
-) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_loop_statement<'buffer>(
+    arena: &'buffer Arena,
+    statement: &ast::LoopStatement,
+) -> FormatDocumentResult<PrintItemBuffer<'buffer>> {
     // ==== Parse ====
     let mut syntax = syntax_iter(statement.syntax());
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::Loop)?;
@@ -22,10 +24,10 @@ pub(crate) fn gen_loop_statement(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::default();
-    formatted.push_sc(sc!("loop"));
+    let mut formatted = PrintItemBuffer::new(arena);
+    formatted.push_sc(arena, sc!("loop"));
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.extend(gen_node_with_trivia(&item_body)?);
+    formatted.extend(arena, gen_node_with_trivia(arena, &item_body)?);
     formatted.request(Request::expect(RequestItem::LineBreak));
 
     Ok(formatted)

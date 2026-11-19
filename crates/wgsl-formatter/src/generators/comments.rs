@@ -1,3 +1,4 @@
+use dprint_core::formatting::Arena;
 use itertools::Itertools as _;
 use rowan::NodeOrToken;
 use syntax::{SyntaxKind, SyntaxNode, SyntaxToken};
@@ -32,8 +33,11 @@ pub(crate) fn read_comment(item: &NodeOrToken<SyntaxNode, SyntaxToken>) -> Optio
 }
 
 #[must_use]
-pub(crate) fn gen_comment(item: &Comment) -> PrintItemBuffer {
-    let mut formatted = PrintItemBuffer::default();
+pub(crate) fn gen_comment<'buffer>(
+    arena: &'buffer Arena,
+    item: &Comment,
+) -> PrintItemBuffer<'buffer> {
+    let mut formatted = PrintItemBuffer::new(arena);
     match item {
         Comment::Block(content) => {
             formatted.request(Request::expect(RequestItem::Space));
@@ -41,9 +45,9 @@ pub(crate) fn gen_comment(item: &Comment) -> PrintItemBuffer {
             let mut lines = content.text().lines().with_position();
             if let Some((line_position, line)) = lines.next() {
                 for (tab_position, tab_part) in line.split('\t').with_position() {
-                    formatted.push_string(tab_part.to_owned());
+                    formatted.push_string(arena, tab_part.to_owned());
                     if !tab_position.is_last && !tab_position.is_exactly_one() {
-                        formatted.push_tab();
+                        formatted.push_tab(arena);
                     }
                 }
                 if !line_position.is_exactly_one() && !line_position.is_last {
@@ -51,19 +55,19 @@ pub(crate) fn gen_comment(item: &Comment) -> PrintItemBuffer {
                 }
             }
 
-            formatted.start_ignoring_indent_before_requests();
+            formatted.start_ignoring_indent_before_requests(arena);
             for (line_position, line) in lines {
                 for (tab_position, tab_part) in line.split('\t').with_position() {
-                    formatted.push_string(tab_part.to_owned());
+                    formatted.push_string(arena, tab_part.to_owned());
                     if !tab_position.is_last && !tab_position.is_exactly_one() {
-                        formatted.push_tab();
+                        formatted.push_tab(arena);
                     }
                 }
                 if !line_position.is_exactly_one() && !line_position.is_last {
                     formatted.request(Request::expect(RequestItem::LineBreak));
                 }
             }
-            formatted.finish_ignoring_indent_before_requests();
+            formatted.finish_ignoring_indent_before_requests(arena);
             formatted.request(Request::expect(RequestItem::Space));
         },
         Comment::LineEnding(content) => {
@@ -75,9 +79,9 @@ pub(crate) fn gen_comment(item: &Comment) -> PrintItemBuffer {
                 "line ending comment may not contain newlines."
             );
             for (tab_position, tab_part) in content.text().split('\t').with_position() {
-                formatted.push_string(tab_part.to_owned());
+                formatted.push_string(arena, tab_part.to_owned());
                 if !tab_position.is_last && !tab_position.is_exactly_one() {
-                    formatted.push_tab();
+                    formatted.push_tab(arena);
                 }
             }
             formatted.request(Request::force(RequestItem::LineBreak));

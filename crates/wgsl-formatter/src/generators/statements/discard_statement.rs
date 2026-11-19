@@ -1,3 +1,4 @@
+use dprint_core::formatting::Arena;
 use dprint_core_macros::sc;
 use syntax::{AstNode as _, SyntaxKind, ast};
 
@@ -12,9 +13,10 @@ use crate::{
     reporting::FormatDocumentResult,
 };
 
-pub(crate) fn gen_discard_statement(
-    node: &ast::DiscardStatement
-) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_discard_statement<'buffer>(
+    arena: &'buffer Arena,
+    node: &ast::DiscardStatement,
+) -> FormatDocumentResult<PrintItemBuffer<'buffer>> {
     // ==== Parse ====
     // We still parse through the discard syntax even though there is no information for
     // the formatter to get out of it. This exists to ensure we don't accidentally delete
@@ -26,10 +28,10 @@ pub(crate) fn gen_discard_statement(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::default();
-    formatted.extend(gen_node_with_trivia(&item_discard)?);
+    let mut formatted = PrintItemBuffer::new(arena);
+    formatted.extend(arena, gen_node_with_trivia(arena, &item_discard)?);
     if statement_needs_semicolon_policy(node.syntax()) {
-        formatted.push_sc(sc!(";"));
+        formatted.push_sc(arena, sc!(";"));
     }
     formatted.request(Request::expect(RequestItem::LineBreak));
     Ok(formatted)

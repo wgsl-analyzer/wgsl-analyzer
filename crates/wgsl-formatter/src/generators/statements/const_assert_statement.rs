@@ -1,3 +1,4 @@
+use dprint_core::formatting::Arena;
 use dprint_core_macros::sc;
 use syntax::{
     AstNode as _, SyntaxKind, SyntaxNode,
@@ -15,9 +16,10 @@ use crate::{
     reporting::FormatDocumentResult,
 };
 
-pub(crate) fn gen_const_assert_statement(
-    statement: &ast::AssertStatement
-) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_const_assert_statement<'buffer>(
+    arena: &'buffer Arena,
+    statement: &ast::AssertStatement,
+) -> FormatDocumentResult<PrintItemBuffer<'buffer>> {
     // ==== Parse ====
     let mut syntax = syntax_iter(statement.syntax());
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::ConstantAssert)?;
@@ -27,17 +29,17 @@ pub(crate) fn gen_const_assert_statement(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::default();
+    let mut formatted = PrintItemBuffer::new(arena);
 
-    formatted.push_sc(sc!("const_assert"));
-    formatted.start_indent_before_requests();
+    formatted.push_sc(arena, sc!("const_assert"));
+    formatted.start_indent_before_requests(arena);
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.extend(gen_node_with_trivia(&item_condition)?);
+    formatted.extend(arena, gen_node_with_trivia(arena, &item_condition)?);
     if statement_needs_semicolon_policy(statement.syntax()) {
         formatted.request(Request::discourage(RequestItem::Space));
-        formatted.push_sc(sc!(";"));
+        formatted.push_sc(arena, sc!(";"));
     }
-    formatted.finish_indent_before_requests();
+    formatted.finish_indent_before_requests(arena);
 
     Ok(formatted)
 }

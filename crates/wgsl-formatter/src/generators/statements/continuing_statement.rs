@@ -1,3 +1,4 @@
+use dprint_core::formatting::Arena;
 use dprint_core_macros::sc;
 use syntax::{AstNode as _, SyntaxKind, ast};
 
@@ -11,9 +12,10 @@ use crate::{
     reporting::FormatDocumentResult,
 };
 
-pub(crate) fn gen_continuing_statement(
-    statement: &ast::ContinuingStatement
-) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_continuing_statement<'buffer>(
+    arena: &'buffer Arena,
+    statement: &ast::ContinuingStatement,
+) -> FormatDocumentResult<PrintItemBuffer<'buffer>> {
     // ==== Parse ====
     let mut syntax = syntax_iter(statement.syntax());
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::Continuing)?;
@@ -22,10 +24,10 @@ pub(crate) fn gen_continuing_statement(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::default();
-    formatted.push_sc(sc!("continuing"));
+    let mut formatted = PrintItemBuffer::new(arena);
+    formatted.push_sc(arena, sc!("continuing"));
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.extend(gen_node_with_trivia(&item_body)?);
+    formatted.extend(arena, gen_node_with_trivia(arena, &item_body)?);
     formatted.request(Request::expect(RequestItem::LineBreak));
 
     Ok(formatted)

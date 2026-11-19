@@ -1,3 +1,4 @@
+use dprint_core::formatting::Arena;
 use dprint_core_macros::sc;
 use itertools::Itertools as _;
 use syntax::{
@@ -22,9 +23,10 @@ use crate::{
     trivia::{NodeWithTrivia, NodeWithTriviaContent},
 };
 
-pub(crate) fn gen_switch_statement(
-    statement: &SwitchStatement
-) -> Result<PrintItemBuffer, FormatDocumentError> {
+pub(crate) fn gen_switch_statement<'buffer>(
+    arena: &'buffer Arena,
+    statement: &SwitchStatement,
+) -> Result<PrintItemBuffer<'buffer>, FormatDocumentError> {
     // ==== Parse ====
     let mut syntax = syntax_iter(statement.syntax());
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::Switch)?;
@@ -35,24 +37,25 @@ pub(crate) fn gen_switch_statement(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::default();
+    let mut formatted = PrintItemBuffer::new(arena);
 
-    formatted.push_sc(sc!("switch"));
-    formatted.start_indent_before_requests();
+    formatted.push_sc(arena, sc!("switch"));
+    formatted.start_indent_before_requests(arena, );
     formatted.request(Request::expect(RequestItem::Space)); // We trim out the parens, so we expect a space
     formatted.request(Request::discourage(RequestItem::LineBreak));
-    formatted.extend(gen_node_with_trivia(&item_expression)?);
-    formatted.finish_indent_before_requests();
+    formatted.extend(arena, gen_node_with_trivia(arena, &item_expression)?);
+    formatted.finish_indent_before_requests(arena);
     formatted.request(Request::expect(RequestItem::Space)); // We trim out the parens, so we expect a space
     formatted.request(Request::discourage(RequestItem::LineBreak));
-    formatted.extend(gen_node_with_trivia(&item_body)?);
+    formatted.extend(arena, gen_node_with_trivia(arena, &item_body)?);
 
     Ok(formatted)
 }
 
-pub(crate) fn gen_switch_body(
-    statement: &SwitchBody
-) -> Result<PrintItemBuffer, FormatDocumentError> {
+pub(crate) fn gen_switch_body<'buffer>(
+    arena: &'buffer Arena,
+    statement: &SwitchBody,
+) -> Result<PrintItemBuffer<'buffer>, FormatDocumentError> {
     // ==== Parse ====
     let mut syntax = syntax_iter(statement.syntax());
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::BraceLeft)?;
@@ -68,20 +71,20 @@ pub(crate) fn gen_switch_body(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::default();
-    formatted.push_sc(sc!("{"));
-    formatted.start_indent_before_requests();
+    let mut formatted = PrintItemBuffer::new(arena);
+    formatted.push_sc(arena, sc!("{"));
+    formatted.start_indent_before_requests(arena, );
 
     let is_empty = item_cases.is_empty();
     if !is_empty {
         for item_case in &item_cases {
             formatted.request(Request::expect(RequestItem::LineBreak));
-            formatted.extend(gen_node_with_trivia(item_case)?);
+            formatted.extend(arena, gen_node_with_trivia(arena, item_case)?);
         }
         formatted.request(Request::expect(RequestItem::LineBreak));
     }
-    formatted.finish_indent_before_requests();
-    formatted.push_sc(sc!("}"));
+    formatted.finish_indent_before_requests(arena);
+    formatted.push_sc(arena, sc!("}"));
 
     if !is_empty {
         formatted.request(Request::expect(RequestItem::LineBreak));
@@ -101,9 +104,10 @@ pub(crate) enum SwitchBodyCaseKind {
     },
 }
 
-pub(crate) fn gen_switch_body_case(
-    statement: &SwitchBodyCase
-) -> Result<PrintItemBuffer, FormatDocumentError> {
+pub(crate) fn gen_switch_body_case<'buffer>(
+    arena: &'buffer Arena,
+    statement: &SwitchBodyCase,
+) -> Result<PrintItemBuffer<'buffer>, FormatDocumentError> {
     // ==== Parse ====
     let mut syntax = syntax_iter(statement.syntax());
 
@@ -145,22 +149,22 @@ pub(crate) fn gen_switch_body_case(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::default();
+    let mut formatted = PrintItemBuffer::new(arena);
 
     match kind {
         SwitchBodyCaseKind::Default { item_default } => {
-            formatted.extend(gen_node_with_trivia(&item_default)?);
+            formatted.extend(arena, gen_node_with_trivia(arena, &item_default)?);
         },
         SwitchBodyCaseKind::Case {
             item_case,
             item_selectors,
         } => {
-            formatted.extend(gen_node_with_trivia(&item_case)?);
+            formatted.extend(arena, gen_node_with_trivia(arena, &item_case)?);
             if !item_case.is_whitespace() {
                 formatted.request(Request::discourage(RequestItem::LineBreak));
             }
             formatted.request(Request::expect(RequestItem::Space));
-            formatted.extend(gen_node_with_trivia(&item_selectors)?);
+            formatted.extend(arena, gen_node_with_trivia(arena, &item_selectors)?);
         },
     }
 
@@ -169,7 +173,7 @@ pub(crate) fn gen_switch_body_case(
 
     formatted.request(Request::expect(RequestItem::Space));
     formatted.request(Request::discourage(RequestItem::LineBreak));
-    formatted.extend(gen_node_with_trivia(&item_body)?);
+    formatted.extend(arena, gen_node_with_trivia(arena, &item_body)?);
     Ok(formatted)
 }
 
@@ -187,9 +191,10 @@ fn is_case_default(item_selectors: &SyntaxNode) -> bool {
     ) && exprs.next().is_none())
 }
 
-pub(crate) fn gen_switch_case_selectors(
-    statement: &SwitchCaseSelectors
-) -> Result<PrintItemBuffer, FormatDocumentError> {
+pub(crate) fn gen_switch_case_selectors<'buffer>(
+    arena: &'buffer Arena,
+    statement: &SwitchCaseSelectors,
+) -> Result<PrintItemBuffer<'buffer>, FormatDocumentError> {
     // ==== Parse ====
     let mut syntax = syntax_iter(statement.syntax());
 
@@ -209,28 +214,29 @@ pub(crate) fn gen_switch_case_selectors(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::default();
+    let mut formatted = PrintItemBuffer::new(arena);
     for (position, selector) in item_selectors.into_iter().with_position() {
-        formatted.extend(gen_node_with_trivia(&selector)?);
+        formatted.extend(arena, gen_node_with_trivia(arena, &selector)?);
         if !position.is_last && !position.is_exactly_one() {
-            formatted.push_sc(sc!(","));
+            formatted.push_sc(arena, sc!(","));
             formatted.request(Request::expect(RequestItem::Space));
         }
     }
     Ok(formatted)
 }
 
-pub(crate) fn gen_switch_case_default_selector(
-    statement: &SwitchDefaultSelector
-) -> Result<PrintItemBuffer, FormatDocumentError> {
+pub(crate) fn gen_switch_case_default_selector<'buffer>(
+    arena: &'buffer Arena,
+    statement: &SwitchDefaultSelector,
+) -> Result<PrintItemBuffer<'buffer>, FormatDocumentError> {
     // ==== Parse ====
     let mut syntax = syntax_iter(statement.syntax());
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::Default)?;
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::default();
-    formatted.push_sc(sc!("default"));
+    let mut formatted = PrintItemBuffer::new(arena);
+    formatted.push_sc(arena, sc!("default"));
     Ok(formatted)
 }
 

@@ -1,3 +1,4 @@
+use dprint_core::formatting::Arena;
 use dprint_core_macros::sc;
 use syntax::{AstNode as _, SyntaxKind, SyntaxNode, ast};
 
@@ -12,9 +13,10 @@ use crate::{
     reporting::FormatDocumentResult,
 };
 
-pub(crate) fn gen_return_statement(
-    statement: &ast::ReturnStatement
-) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_return_statement<'buffer>(
+    arena: &'buffer Arena,
+    statement: &ast::ReturnStatement,
+) -> FormatDocumentResult<PrintItemBuffer<'buffer>> {
     // ==== Parse ====
     let mut syntax = syntax_iter(statement.syntax());
     let item_return =
@@ -25,19 +27,19 @@ pub(crate) fn gen_return_statement(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::default();
-    formatted.extend(gen_node_with_trivia(&item_return)?);
-    formatted.start_indent_before_requests();
+    let mut formatted = PrintItemBuffer::new(arena);
+    formatted.extend(arena, gen_node_with_trivia(arena, &item_return)?);
+    formatted.start_indent_before_requests(arena, );
     if let Some(item_expression) = item_expression {
         formatted.request(Request::expect(RequestItem::Space));
-        formatted.extend(gen_node_with_trivia(&item_expression)?);
+        formatted.extend(arena, gen_node_with_trivia(arena, &item_expression)?);
     }
 
     if statement_needs_semicolon_policy(statement.syntax()) {
         formatted.request(Request::discourage(RequestItem::Space));
-        formatted.push_sc(sc!(";"));
+        formatted.push_sc(arena, sc!(";"));
     }
-    formatted.finish_indent_before_requests();
+    formatted.finish_indent_before_requests(arena);
     Ok(formatted)
 }
 

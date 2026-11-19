@@ -1,6 +1,6 @@
 //! The entry points to the formatter.
 
-use dprint_core::formatting::{PrintItems, PrintOptions};
+use dprint_core::formatting::{Arena, PrintItems, PrintOptions};
 use rowan::{NodeOrToken, TextRange};
 use syntax::{AstNode as _, SyntaxNode};
 
@@ -66,8 +66,9 @@ pub fn format_node(
         content,
         succeeding_trivia: Vec::new(),
     };
-
-    format(options, || gen_node_with_trivia_no_newlines(&trivia))
+    format(options, |arena| {
+        gen_node_with_trivia_no_newlines(arena, &trivia)
+    })
 }
 
 fn format<F>(
@@ -75,25 +76,24 @@ fn format<F>(
     format: F,
 ) -> FormatDocumentResult<String>
 where
-    F: FnOnce() -> FormatDocumentResult<PrintItemBuffer>,
+    F: for<'buffer> FnOnce(&'buffer Arena) -> FormatDocumentResult<PrintItemBuffer<'buffer>>,
 {
     let mut error = None;
 
-    let get_print_items = || match format() {
-        Ok(items) => items.finish(),
-        Err(format_error) => {
-            // We have to do it this unintuitive way because:
-            // - `dprint`'s API does not expose the error.
-            // - Calling `gen_source_file` outside of the closure is invalid.
-            //   `dprint` requires that `gen_items` be allocated using a thread-local allocator,
-            //    but the allocator only exists within the closure.
-            error = Some(format_error);
-            PrintItems::new()
-        },
-    };
     // This will contain the formatted string, but only if error is `None`.
     let formatted_or_empty = dprint_core::formatting::format(
-        get_print_items,
+        |arena| match format(arena) {
+            Ok(items) => items.finish(arena),
+            Err(format_error) => {
+                // We have to do it this unintuitive way because:
+                // - `dprint`'s API does not expose the error.
+                // - Calling `gen_source_file` outside of the closure is invalid.
+                //   `dprint` requires that `gen_items` be allocated using a thread-local allocator,
+                //    but the allocator only exists within the closure.
+                error = Some(format_error);
+                PrintItems::new(arena)
+            },
+        },
         PrintOptions {
             max_width: options.max_line_width,
             indent_width: options.indent_width,

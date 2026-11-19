@@ -1,5 +1,6 @@
 //! Code responsible for detecting ignore-pragmas.
 
+use dprint_core::formatting::Arena;
 use dprint_core_macros::sc;
 use rowan::NodeOrToken;
 use syntax::{SyntaxNode, SyntaxToken};
@@ -74,13 +75,16 @@ pub(crate) fn is_ignore_parent_pragma_comment(node: &NodeOrToken<SyntaxNode, Syn
 }
 
 #[must_use]
-pub(crate) fn gen_ignore_pragma(ignore_pragma: &IgnorePragma) -> PrintItemBuffer {
-    let mut formatted = PrintItemBuffer::default();
+pub(crate) fn gen_ignore_pragma<'buffer>(
+    arena: &'buffer Arena,
+    ignore_pragma: &IgnorePragma,
+) -> PrintItemBuffer<'buffer> {
+    let mut formatted = PrintItemBuffer::new(arena);
 
     if ignore_pragma.block {
-        formatted.push_sc(sc!("/* @wgslfmt(ignore) */"));
+        formatted.push_sc(arena, sc!("/* @wgslfmt(ignore) */"));
     } else {
-        formatted.push_sc(sc!("// @wgslfmt(ignore)"));
+        formatted.push_sc(arena, sc!("// @wgslfmt(ignore)"));
     }
     // No newline - that is contained in the ignored code
 

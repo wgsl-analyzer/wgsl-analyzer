@@ -1,3 +1,4 @@
+use dprint_core::formatting::Arena;
 use dprint_core_macros::sc;
 use itertools::Itertools as _;
 use syntax::{
@@ -18,9 +19,10 @@ use crate::{
     reporting::FormatDocumentResult,
 };
 
-pub(crate) fn gen_if_statement(
-    statement: &ast::IfStatement
-) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_if_statement<'buffer>(
+    arena: &'buffer Arena,
+    statement: &ast::IfStatement,
+) -> FormatDocumentResult<PrintItemBuffer<'buffer>> {
     // ==== Parse ====
     let mut syntax = syntax_iter(statement.syntax());
 
@@ -44,8 +46,8 @@ pub(crate) fn gen_if_statement(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::default();
-    formatted.extend(gen_node_with_trivia(&item_if_clause)?);
+    let mut formatted = PrintItemBuffer::new(arena);
+    formatted.extend(arena, gen_node_with_trivia(arena, &item_if_clause)?);
     for else_if_clause in else_if_clauses {
         formatted.request(Request::Unconditional {
             expected: RequestItemSet::from(RequestItem::Space),
@@ -53,7 +55,7 @@ pub(crate) fn gen_if_statement(
             forced: RequestItemSet::empty(),
             suggest_linebreak: false,
         });
-        formatted.extend(gen_node_with_trivia(&else_if_clause)?);
+        formatted.extend(arena, gen_node_with_trivia(arena, &else_if_clause)?);
     }
     if !item_else_clause.is_whitespace() {
         formatted.request(Request::Unconditional {
@@ -62,15 +64,16 @@ pub(crate) fn gen_if_statement(
             forced: RequestItemSet::empty(),
             suggest_linebreak: false,
         });
-        formatted.extend(gen_node_with_trivia(&item_else_clause)?);
+        formatted.extend(arena, gen_node_with_trivia(arena, &item_else_clause)?);
     }
 
     Ok(formatted)
 }
 
-pub(crate) fn gen_if_statement_if_clause(
-    statement: &IfClause
-) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_if_statement_if_clause<'buffer>(
+    arena: &'buffer Arena,
+    statement: &IfClause,
+) -> FormatDocumentResult<PrintItemBuffer<'buffer>> {
     // NOTE: When editing this function, ensure that gen_if_statement_else_clause and gen_if_statement_else_if_clause
     // reflect the changes as well.
     // This is not very DRY, but abstraction here would introduce more complexity and probably be a leaky abstraction.
@@ -85,22 +88,23 @@ pub(crate) fn gen_if_statement_if_clause(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::default();
-    formatted.push_sc(sc!("if"));
-    formatted.start_indent_before_requests();
+    let mut formatted = PrintItemBuffer::new(arena);
+    formatted.push_sc(arena, sc!("if"));
+    formatted.start_indent_before_requests(arena, );
     formatted.request(Request::expect(RequestItem::Space));
     formatted.request(Request::discourage(RequestItem::LineBreak));
-    formatted.extend(gen_node_with_trivia(&item_condition)?);
-    formatted.finish_indent_before_requests();
+    formatted.extend(arena, gen_node_with_trivia(arena, &item_condition)?);
+    formatted.finish_indent_before_requests(arena);
     formatted.request(Request::discourage(RequestItem::LineBreak));
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.extend(gen_node_with_trivia(&item_body)?);
+    formatted.extend(arena, gen_node_with_trivia(arena, &item_body)?);
     Ok(formatted)
 }
 
-pub(crate) fn gen_if_statement_else_clause(
-    statement: &ElseClause
-) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_if_statement_else_clause<'buffer>(
+    arena: &'buffer Arena,
+    statement: &ElseClause,
+) -> FormatDocumentResult<PrintItemBuffer<'buffer>> {
     // NOTE: When editing this function, ensure that gen_if_statement_if_clause and gen_if_statement_else_if_clause
     // reflect the changes as well.
     // This is not very DRY, but abstraction here would introduce more complexity and probably be a leaky abstraction.
@@ -113,17 +117,18 @@ pub(crate) fn gen_if_statement_else_clause(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::default();
-    formatted.push_sc(sc!("else"));
+    let mut formatted = PrintItemBuffer::new(arena);
+    formatted.push_sc(arena, sc!("else"));
     formatted.request(Request::discourage(RequestItem::LineBreak));
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.extend(gen_node_with_trivia(&item_body)?);
+    formatted.extend(arena, gen_node_with_trivia(arena, &item_body)?);
     Ok(formatted)
 }
 
-pub(crate) fn gen_if_statement_else_if_clause(
-    statement: &ElseIfClause
-) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_if_statement_else_if_clause<'buffer>(
+    arena: &'buffer Arena,
+    statement: &ElseIfClause,
+) -> FormatDocumentResult<PrintItemBuffer<'buffer>> {
     // NOTE: When editing this function, ensure that gen_if_statement_if_clause and gen_if_statement_else_clause
     // reflect the changes as well.
     // This is not very DRY, but abstraction here would introduce more complexity and probably be a leaky abstraction.
@@ -140,19 +145,19 @@ pub(crate) fn gen_if_statement_else_if_clause(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::default();
-    formatted.extend(gen_node_with_trivia(&item_else)?);
+    let mut formatted = PrintItemBuffer::new(arena);
+    formatted.extend(arena, gen_node_with_trivia(arena, &item_else)?);
     formatted.request(Request::discourage(RequestItem::LineBreak));
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.extend(gen_node_with_trivia(&item_if)?);
-    formatted.start_indent_before_requests();
+    formatted.extend(arena, gen_node_with_trivia(arena, &item_if)?);
+    formatted.start_indent_before_requests(arena, );
     formatted.request(Request::discourage(RequestItem::LineBreak));
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.extend(gen_node_with_trivia(&item_condition)?);
-    formatted.finish_indent_before_requests();
+    formatted.extend(arena, gen_node_with_trivia(arena, &item_condition)?);
+    formatted.finish_indent_before_requests(arena);
     formatted.request(Request::discourage(RequestItem::LineBreak));
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.extend(gen_node_with_trivia(&item_body)?);
+    formatted.extend(arena, gen_node_with_trivia(arena, &item_body)?);
     Ok(formatted)
 }
 

@@ -1,6 +1,6 @@
 use std::{collections::BTreeMap, string::String};
 
-use dprint_core::formatting::PrintItems;
+use dprint_core::formatting::{Arena, PrintItems};
 use dprint_core_macros::sc;
 use itertools::Itertools as _;
 use syntax::{
@@ -54,24 +54,25 @@ pub(crate) enum AttributeCategorization {
     Inline(usize),
 }
 
-fn gen_attribute_group<T>(
+fn gen_attribute_group<'buffer, T>(
+    arena: &'buffer Arena,
     mut attributes: Vec<(T, &NodeWithTrivia)>,
-    separator: &Request,
-) -> FormatDocumentResult<PrintItemBuffer>
+    separator: &Request<'buffer>,
+) -> FormatDocumentResult<PrintItemBuffer<'buffer>>
 where
     T: Ord,
 {
     attributes.sort_by(|(order_a, _), (order_b, _)| order_a.cmp(order_b));
 
-    let mut formatted = PrintItemBuffer::default();
+    let mut formatted = PrintItemBuffer::new(arena);
     for (position, attribute) in attributes
         .iter()
         .map(|(_, attribute)| attribute)
         .with_position()
     {
-        formatted.extend(gen_node_preceding_trivia(attribute)?);
-        formatted.extend(gen_node_content(attribute)?);
-        formatted.extend(gen_node_succeeding_trivia(attribute)?);
+        formatted.extend(arena, gen_node_preceding_trivia(arena, attribute)?);
+        formatted.extend(arena, gen_node_content(arena, attribute)?);
+        formatted.extend(arena, gen_node_succeeding_trivia(arena, attribute)?);
         if !position.is_exactly_one() && !position.is_last {
             formatted.request(separator.clone());
         }
@@ -156,9 +157,10 @@ fn get_attribute_layout(attribute_list: &AttributeList) -> AttributeLayout {
     }
 }
 
-pub(crate) fn gen_attribute_list(
-    attribute_list: &AttributeList
-) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_attribute_list<'buffer>(
+    arena: &'buffer Arena,
+    attribute_list: &AttributeList,
+) -> FormatDocumentResult<PrintItemBuffer<'buffer>> {
     let mut syntax = syntax_iter(attribute_list.syntax());
 
     let attributes = parse_many_nodes_with(&mut syntax, Succeeding(NoTrivia))
@@ -192,7 +194,7 @@ pub(crate) fn gen_attribute_list(
 
     // If we don't have any attributes, we early exit to avoid all the bureaucracy with newlines
     if attributes.is_empty() {
-        return Ok(PrintItemBuffer::default());
+        return Ok(PrintItemBuffer::new(arena));
     }
 
     // ==== Sort and Group the Attributes ====
@@ -223,48 +225,62 @@ pub(crate) fn gen_attribute_list(
         AttributeLayout::Multiline => Request::expect(RequestItem::LineBreak),
     };
 
-    let mut formatted = PrintItemBuffer::default();
-    formatted.start_new_line_group_before_requests();
+    let mut formatted = PrintItemBuffer::new(arena);
+    formatted.start_new_line_group_before_requests(arena);
 
     // Ungrouped attributes go first
     if !ungrouped_attributes.is_empty() {
-        formatted.extend(gen_attribute_group(ungrouped_attributes, &group_separator)?);
+        formatted.extend(
+            arena,
+            gen_attribute_group(arena, ungrouped_attributes, &group_separator)?,
+        );
         formatted.request(group_separator.clone());
     }
 
     // The grouped attributes in-order.
     // They are ordered by the `AttributeGroup`'s discriminator because of the `BTreeMap`.
     for (_, attribute) in grouped_attributes {
-        formatted.extend(gen_attribute_group(attribute, &expect_space_or_linebreak)?);
+        formatted.extend(
+            arena,
+            gen_attribute_group(arena, attribute, &expect_space_or_linebreak)?,
+        );
         formatted.request(group_separator.clone());
     }
     // Then attributes that should be inline with the target
     if !attribute_group_inlined_with_target.is_empty() {
-        formatted.extend(gen_attribute_group(
-            attribute_group_inlined_with_target,
-            &expect_space_or_linebreak,
-        )?);
+        formatted.extend(
+            arena,
+            gen_attribute_group(
+                arena,
+                attribute_group_inlined_with_target,
+                &expect_space_or_linebreak,
+            )?,
+        );
         formatted.request(expect_space_or_linebreak);
     }
 
     // No final line break, these should be inline with the target
 
-    formatted.finish_new_line_group_before_requests();
+    formatted.finish_new_line_group_before_requests(arena);
 
     Ok(formatted)
 }
 
-pub(crate) fn gen_attribute(attribute: &ast::Attribute) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_attribute<'buffer>(
+    arena: &'buffer Arena,
+    attribute: &ast::Attribute,
+) -> FormatDocumentResult<PrintItemBuffer<'buffer>> {
     if let AttributeKind::Conditional(_) = attribute.kind() {
-        gen_attr_condcomp(attribute)
+        gen_attr_condcomp(arena, attribute)
     } else {
-        gen_attr_standard(attribute)
+        gen_attr_standard(arena, attribute)
     }
 }
 
-pub(crate) fn gen_attribute_arguments(
-    arguments: &ast::AttributeArguments
-) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_attribute_arguments<'buffer>(
+    arena: &'buffer Arena,
+    arguments: &ast::AttributeArguments,
+) -> FormatDocumentResult<PrintItemBuffer<'buffer>> {
     // ==== Parse ====
     let mut syntax = syntax_iter(arguments.syntax());
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::ParenthesisLeft)?;
@@ -284,44 +300,44 @@ pub(crate) fn gen_attribute_arguments(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::default();
+    let mut formatted = PrintItemBuffer::new(arena);
 
-    let mut multiline_group = MultilineGroup::new_before_requests(&mut formatted);
-    multiline_group.push_sc(sc!("("));
+    let mut multiline_group = MultilineGroup::new_before_requests(arena, &mut formatted);
+    multiline_group.push_sc(arena, sc!("("));
 
     // If its blank we do not give the formatter the option to break within the ()
     if !item_arguments.is_empty() {
-        multiline_group.start_indent_before_requests();
+        multiline_group.start_indent_before_requests(arena);
         multiline_group.grouped_possible_newline();
         multiline_group.request(Request::discourage(RequestItem::EmptyLine));
         multiline_group.request(Request::discourage(RequestItem::Space));
 
         for (position, item) in item_arguments.into_iter().with_position() {
             multiline_group.grouped_newline_or_space();
-            multiline_group.extend(gen_node_preceding_trivia(&item)?);
+            multiline_group.extend(arena, gen_node_preceding_trivia(arena, &item)?);
             if item.has_content() {
-                multiline_group.extend(gen_node_content(&item)?);
+                multiline_group.extend(arena, gen_node_content(arena, &item)?);
                 multiline_group.request(Request::discourage(RequestItem::Space));
                 if position.is_last || position.is_exactly_one() {
-                    multiline_group.extend_if_multi_line({
-                        let mut pi = PrintItems::default();
+                    multiline_group.extend_if_multi_line(arena, {
+                        let mut pi = PrintItems::new(arena);
                         pi.push_sc(sc!(","));
                         pi
                     });
                 } else {
-                    multiline_group.push_sc(sc!(","));
+                    multiline_group.push_sc(arena, sc!(","));
                 }
             }
-            multiline_group.extend(gen_node_succeeding_trivia(&item)?);
+            multiline_group.extend(arena, gen_node_succeeding_trivia(arena, &item)?);
         }
 
         multiline_group.request(Request::discourage(RequestItem::Space));
         multiline_group.grouped_possible_newline();
-        multiline_group.finish_indent_before_requests();
+        multiline_group.finish_indent_before_requests(arena);
     }
 
-    multiline_group.push_sc(sc!(")"));
-    multiline_group.end_before_requests();
+    multiline_group.push_sc(arena, sc!(")"));
+    multiline_group.end_before_requests(arena);
     Ok(formatted)
 }
 
@@ -329,9 +345,10 @@ pub(crate) fn gen_attribute_arguments(
 /// `'@' 'expected_token'`
 /// and
 /// `'@' 'expected_token' '(' expression (',' expression)* [','] ')'`.
-pub(crate) fn gen_attr_standard(
-    attribute: &ast::Attribute
-) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_attr_standard<'buffer>(
+    arena: &'buffer Arena,
+    attribute: &ast::Attribute,
+) -> FormatDocumentResult<PrintItemBuffer<'buffer>> {
     // ==== Parse ====
     let mut syntax = syntax_iter(attribute.syntax());
 
@@ -344,16 +361,19 @@ pub(crate) fn gen_attr_standard(
 
     // ==== Format ====
 
-    let mut formatted = PrintItemBuffer::default();
-    formatted.push_sc(sc!("@"));
-    formatted.extend(gen_node_with_trivia(&item_attribute_name)?);
+    let mut formatted = PrintItemBuffer::new(arena);
+    formatted.push_sc(arena, sc!("@"));
+    formatted.extend(arena, gen_node_with_trivia(arena, &item_attribute_name)?);
     if let Some(item_arguments) = item_arguments {
-        formatted.extend(gen_node_with_trivia(&item_arguments)?);
+        formatted.extend(arena, gen_node_with_trivia(arena, &item_arguments)?);
     }
     Ok(formatted)
 }
 
-fn gen_attr_condcomp(attribute: &ast::Attribute) -> FormatDocumentResult<PrintItemBuffer> {
+fn gen_attr_condcomp<'buffer>(
+    arena: &'buffer Arena,
+    attribute: &ast::Attribute,
+) -> FormatDocumentResult<PrintItemBuffer<'buffer>> {
     // ==== Context
     let merge_with_preceding_compound = if TEMP_EXPERIMENTAL_CONDCOMP_MODE
         .condcomp_body_braces_on_same_line
@@ -385,7 +405,7 @@ fn gen_attr_condcomp(attribute: &ast::Attribute) -> FormatDocumentResult<PrintIt
 
     // ==== Format
 
-    let mut formatted = PrintItemBuffer::default();
+    let mut formatted = PrintItemBuffer::new(arena);
 
     if merge_with_preceding_compound {
         formatted.request(Request::expect(RequestItem::Space));
@@ -394,12 +414,12 @@ fn gen_attr_condcomp(attribute: &ast::Attribute) -> FormatDocumentResult<PrintIt
     }
 
     if dedent {
-        formatted.start_ignoring_indent_before_requests();
+        formatted.start_ignoring_indent_before_requests(arena);
     }
-    formatted.extend(gen_attr_standard(attribute)?);
+    formatted.extend(arena, gen_attr_standard(arena, attribute)?);
 
     if dedent {
-        formatted.finish_ignoring_indent_before_requests();
+        formatted.finish_ignoring_indent_before_requests(arena);
     }
 
     Ok(formatted)

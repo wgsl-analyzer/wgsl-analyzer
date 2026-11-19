@@ -1,4 +1,4 @@
-use dprint_core::formatting::PrintItems;
+use dprint_core::formatting::{Arena, PrintItems};
 use dprint_core_macros::sc;
 use itertools::Itertools as _;
 use syntax::{AstNode as _, SyntaxKind, ast};
@@ -20,9 +20,10 @@ use crate::{
     reporting::FormatDocumentResult,
 };
 
-pub(crate) fn gen_function_declaration(
-    node: &ast::FunctionDeclaration
-) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_function_declaration<'buffer>(
+    arena: &'buffer Arena,
+    node: &ast::FunctionDeclaration,
+) -> FormatDocumentResult<PrintItemBuffer<'buffer>> {
     let mut syntax = syntax_iter(node.syntax());
 
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::Fn)?;
@@ -38,38 +39,39 @@ pub(crate) fn gen_function_declaration(
 
     parse_end(&mut syntax)?;
 
-    let mut formatted = PrintItemBuffer::default();
+    let mut formatted = PrintItemBuffer::new(arena);
 
     // Fn
-    formatted.push_sc(sc!("fn"));
+    formatted.push_sc(arena, sc!("fn"));
     formatted.request(Request::expect(RequestItem::Space));
 
     // Name
-    formatted.extend(gen_node_with_trivia(&item_name)?);
+    formatted.extend(arena, gen_node_with_trivia(arena, &item_name)?);
 
     // Params
-    formatted.extend(gen_node_with_trivia(&item_params)?);
+    formatted.extend(arena, gen_node_with_trivia(arena, &item_params)?);
 
     // Return
     if let Some(item_return) = item_return {
         // We would much rather break the params than the return type
-        formatted.start_new_line_group_before_requests();
-        formatted.start_new_line_group_before_requests();
-        formatted.extend(gen_node_with_trivia(&item_return)?);
-        formatted.finish_new_line_group_after_requests();
-        formatted.finish_new_line_group_after_requests();
+        formatted.start_new_line_group_before_requests(arena);
+        formatted.start_new_line_group_before_requests(arena);
+        formatted.extend(arena, gen_node_with_trivia(arena, &item_return)?);
+        formatted.finish_new_line_group_after_requests(arena);
+        formatted.finish_new_line_group_after_requests(arena);
     }
 
     // Body
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.extend(gen_node_with_trivia(&item_body)?);
+    formatted.extend(arena, gen_node_with_trivia(arena, &item_body)?);
 
     Ok(formatted)
 }
 
-pub(crate) fn gen_fn_parameters(
-    node: &ast::FunctionParameters
-) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_fn_parameters<'buffer>(
+    arena: &'buffer Arena,
+    node: &ast::FunctionParameters,
+) -> FormatDocumentResult<PrintItemBuffer<'buffer>> {
     // ==== Parse ====
 
     let mut syntax = syntax_iter(node.syntax());
@@ -92,13 +94,13 @@ pub(crate) fn gen_fn_parameters(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::default();
+    let mut formatted = PrintItemBuffer::new(arena);
 
-    let mut multiline_group = MultilineGroup::new_before_requests(&mut formatted);
+    let mut multiline_group = MultilineGroup::new_before_requests(arena, &mut formatted);
 
-    multiline_group.push_sc(sc!("("));
+    multiline_group.push_sc(arena, sc!("("));
 
-    multiline_group.start_indent_before_requests();
+    multiline_group.start_indent_before_requests(arena);
     multiline_group.grouped_possible_newline();
     multiline_group.request(Request::discourage(RequestItem::EmptyLine));
     multiline_group.request(Request::discourage(RequestItem::Space));
@@ -110,34 +112,37 @@ pub(crate) fn gen_fn_parameters(
         multiline_group.grouped_newline_or_space();
 
         multiline_group.request(Request::discourage(RequestItem::EmptyLine));
-        multiline_group.extend(gen_node_preceding_trivia(&item)?);
-        multiline_group.extend(gen_node_content(&item)?);
+        multiline_group.extend(arena, gen_node_preceding_trivia(arena, &item)?);
+        multiline_group.extend(arena, gen_node_content(arena, &item)?);
         if item.has_content() {
             if position.is_last || position.is_exactly_one() {
-                multiline_group.extend_if_multi_line({
-                    let mut pi = PrintItems::default();
+                multiline_group.extend_if_multi_line(arena, {
+                    let mut pi = PrintItems::new(arena);
                     pi.push_sc(sc!(","));
                     pi
                 });
             } else {
-                multiline_group.push_sc(sc!(","));
+                multiline_group.push_sc(arena, sc!(","));
             }
         }
-        multiline_group.extend(gen_node_succeeding_trivia(&item)?);
+        multiline_group.extend(arena, gen_node_succeeding_trivia(arena, &item)?);
     }
 
     multiline_group.request(Request::discourage(RequestItem::Space));
     multiline_group.grouped_possible_newline();
-    multiline_group.finish_indent_before_requests();
+    multiline_group.finish_indent_before_requests(arena);
 
-    multiline_group.push_sc(sc!(")"));
+    multiline_group.push_sc(arena, sc!(")"));
 
-    multiline_group.end_before_requests();
+    multiline_group.end_before_requests(arena);
 
     Ok(formatted)
 }
 
-pub(crate) fn gen_fn_parameter(syntax: &ast::Parameter) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_fn_parameter<'buffer>(
+    arena: &'buffer Arena,
+    syntax: &ast::Parameter,
+) -> FormatDocumentResult<PrintItemBuffer<'buffer>> {
     // ==== Parse ====
     let mut syntax = syntax_iter(syntax.syntax());
 
@@ -149,18 +154,19 @@ pub(crate) fn gen_fn_parameter(syntax: &ast::Parameter) -> FormatDocumentResult<
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::default();
+    let mut formatted = PrintItemBuffer::new(arena);
 
-    formatted.extend(gen_node_with_trivia(&item_name)?);
-    formatted.push_sc(sc!(":"));
+    formatted.extend(arena, gen_node_with_trivia(arena, &item_name)?);
+    formatted.push_sc(arena, sc!(":"));
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.extend(gen_node_with_trivia(&item_type_specifier)?);
+    formatted.extend(arena, gen_node_with_trivia(arena, &item_type_specifier)?);
     Ok(formatted)
 }
 
-pub(crate) fn gen_fn_return_type(
-    syntax: &ast::ReturnType
-) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_fn_return_type<'buffer>(
+    arena: &'buffer Arena,
+    syntax: &ast::ReturnType,
+) -> FormatDocumentResult<PrintItemBuffer<'buffer>> {
     // ==== Parse ====
     let mut syntax = syntax_iter(syntax.syntax());
 
@@ -170,11 +176,11 @@ pub(crate) fn gen_fn_return_type(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::default();
+    let mut formatted = PrintItemBuffer::new(arena);
 
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.push_sc(sc!("->"));
+    formatted.push_sc(arena, sc!("->"));
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.extend(gen_node_with_trivia(&item_type_specifier)?);
+    formatted.extend(arena, gen_node_with_trivia(arena, &item_type_specifier)?);
     Ok(formatted)
 }

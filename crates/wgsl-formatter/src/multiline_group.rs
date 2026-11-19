@@ -1,12 +1,9 @@
 //! Helper for the generator functions to generate items that should break together.
-use std::{
-    ops::{Deref, DerefMut},
-    rc::Rc,
-};
+use std::ops::{Deref, DerefMut};
 
 use dprint_core::formatting::{
-    ConditionReevaluation, ConditionResolver, ConditionResolverContext, LineNumber,
-    LineNumberAnchor, PrintItems, condition_helpers, conditions,
+    Arena, ConditionReevaluation, ConditionResolver, LineNumber, LineNumberAnchor, PrintItems,
+    condition_helpers, conditions,
 };
 
 use super::print_item_buffer::spacing_request::RequestItem;
@@ -25,9 +22,9 @@ enum MultilineGroupState {
 ///
 /// The [`MultilineGroup::end_before_requests`] method needs to be called before it is dropped.
 ///
-pub(crate) struct MultilineGroup<'buffer> {
-    buffer: &'buffer mut PrintItemBuffer,
-    pub(crate) is_multiple_lines: ConditionResolver,
+pub(crate) struct MultilineGroup<'group, 'buffer> {
+    buffer: &'group mut PrintItemBuffer<'buffer>,
+    pub(crate) is_multiple_lines: ConditionResolver<'buffer>,
     end_ln: LineNumber,
     start_reeval: Option<ConditionReevaluation>,
 
@@ -36,32 +33,34 @@ pub(crate) struct MultilineGroup<'buffer> {
 }
 
 #[must_use]
-pub(crate) fn create_is_multiple_lines_resolver(
+pub(crate) fn create_is_multiple_lines_resolver<'buffer>(
+    arena: &'buffer Arena,
     start_ln: LineNumber,
     end_ln: LineNumber,
-) -> ConditionResolver {
-    Rc::new(
-        move |condition_context: &mut ConditionResolverContext<'_, '_>| {
-            condition_helpers::is_multiple_lines(condition_context, start_ln, end_ln)
-        },
-    )
+) -> ConditionResolver<'buffer> {
+    arena.alloc_resolver(move |condition_context| {
+        condition_helpers::is_multiple_lines(condition_context, start_ln, end_ln)
+    })
 }
 
-impl<'buffer> MultilineGroup<'buffer> {
-    pub(crate) fn new_before_requests(formatted: &'buffer mut PrintItemBuffer) -> Self {
+impl<'group, 'buffer> MultilineGroup<'group, 'buffer> {
+    pub(crate) fn new_before_requests(
+        arena: &'buffer Arena,
+        formatted: &'group mut PrintItemBuffer<'buffer>,
+    ) -> Self {
         let start_ln = LineNumber::new("start");
         let end_ln = LineNumber::new("end");
-        let is_multiple_lines = create_is_multiple_lines_resolver(start_ln, end_ln);
+        let is_multiple_lines = create_is_multiple_lines_resolver(arena, start_ln, end_ln);
 
-        formatted.start_new_line_group_before_requests();
-        formatted.push_info_before_requests(start_ln);
-        formatted.push_anchor_before_requests(LineNumberAnchor::new(end_ln));
+        formatted.start_new_line_group_before_requests(arena);
+        formatted.push_info_before_requests(arena, start_ln);
+        formatted.push_anchor_before_requests(arena, LineNumberAnchor::new(end_ln));
 
         let mut start_nl_condition = conditions::if_true_or(
             "paramMultilineStartIndent",
-            Rc::clone(&is_multiple_lines),
-            PrintItems::default(),
-            PrintItems::default(),
+            is_multiple_lines,
+            PrintItems::new(arena),
+            PrintItems::new(arena),
         );
 
         let start_reeval = Some(start_nl_condition.create_reevaluation());
@@ -80,7 +79,7 @@ impl<'buffer> MultilineGroup<'buffer> {
 
     pub(crate) fn grouped_newline_or_space(&mut self) {
         self.buffer.request(Request::Conditional {
-            condition: Rc::clone(&self.is_multiple_lines),
+            condition: self.is_multiple_lines,
             on_true: Box::new(Request::expect(RequestItem::LineBreak)),
             on_false: Box::new(Request::expect(RequestItem::Space).or_newline()),
         });
@@ -88,11 +87,11 @@ impl<'buffer> MultilineGroup<'buffer> {
 
     pub(crate) fn grouped_request(
         &mut self,
-        request_on_multiline: Request,
-        request_on_single_line: Request,
+        request_on_multiline: Request<'buffer>,
+        request_on_single_line: Request<'buffer>,
     ) {
         self.buffer.request(Request::Conditional {
-            condition: Rc::clone(&self.is_multiple_lines),
+            condition: self.is_multiple_lines,
             on_true: Box::new(request_on_multiline),
             on_false: Box::new(request_on_single_line),
         });
@@ -107,13 +106,14 @@ impl<'buffer> MultilineGroup<'buffer> {
 
     pub(crate) fn extend_if_multi_line(
         &mut self,
-        items: PrintItems,
+        arena: &'buffer Arena,
+        items: PrintItems<'buffer>,
     ) {
-        self.buffer.apply_end_request();
+        self.buffer.apply_end_request(arena);
         self.buffer
             .push_condition_before_requests(conditions::if_true(
                 "paramTrailingComma",
-                Rc::clone(&self.is_multiple_lines),
+                self.is_multiple_lines,
                 items,
             ));
     }
@@ -122,7 +122,10 @@ impl<'buffer> MultilineGroup<'buffer> {
         not(debug_assertions),
         expect(unused_mut, reason = "state not modified")
     )]
-    pub(crate) fn end_before_requests(mut self) {
+    pub(crate) fn end_before_requests(
+        mut self,
+        arena: &'buffer Arena,
+    ) {
         #[cfg(debug_assertions)]
         {
             core::assert_matches!(
@@ -133,32 +136,33 @@ impl<'buffer> MultilineGroup<'buffer> {
             self.state = MultilineGroupState::Ended;
         }
 
-        self.buffer.push_info_before_requests(self.end_ln);
+        self.buffer.push_info_before_requests(arena, self.end_ln);
 
         // It is legal to call end without calling start_ident or finish_indent
         if let Some(start_reeval) = self.start_reeval {
-            self.buffer.push_reevaluation_before_requests(start_reeval);
+            self.buffer
+                .push_reevaluation_before_requests(arena, start_reeval);
         }
-        self.buffer.finish_new_line_group_before_requests();
+        self.buffer.finish_new_line_group_before_requests(arena);
     }
 }
 
-impl Deref for MultilineGroup<'_> {
-    type Target = PrintItemBuffer;
+impl<'group, 'buffer> Deref for MultilineGroup<'group, 'buffer> {
+    type Target = PrintItemBuffer<'buffer>;
 
     fn deref(&self) -> &Self::Target {
         self.buffer
     }
 }
 
-impl DerefMut for MultilineGroup<'_> {
+impl DerefMut for MultilineGroup<'_, '_> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         self.buffer
     }
 }
 
 #[cfg(debug_assertions)]
-impl Drop for MultilineGroup<'_> {
+impl Drop for MultilineGroup<'_, '_> {
     fn drop(&mut self) {
         // Come on we need linear types, please...
         if !::std::thread::panicking() {

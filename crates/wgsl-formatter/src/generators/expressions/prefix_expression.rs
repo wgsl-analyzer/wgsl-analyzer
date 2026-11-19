@@ -1,3 +1,4 @@
+use dprint_core::formatting::Arena;
 use syntax::{AstNode as _, ast};
 
 use crate::{
@@ -6,9 +7,10 @@ use crate::{
     print_item_buffer::PrintItemBuffer,
     reporting::FormatDocumentResult,
 };
-pub(crate) fn gen_prefix_expression(
-    infix_expression: &ast::PrefixExpression
-) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_prefix_expression<'buffer>(
+    arena: &'buffer Arena,
+    infix_expression: &ast::PrefixExpression,
+) -> FormatDocumentResult<PrintItemBuffer<'buffer>> {
     // ==== Parse ====
     let mut syntax = syntax_iter(infix_expression.syntax());
 
@@ -18,10 +20,10 @@ pub(crate) fn gen_prefix_expression(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::default();
+    let mut formatted = PrintItemBuffer::new(arena);
     //I don't like to-stringing the operator here, would be better to special case on it,
     //In a benchmark on my machine however, removing this push_string() did not make any measurable impact - so it's fine.
-    formatted.extend(gen_node_with_trivia(&item_operator)?);
-    formatted.extend(gen_node_with_trivia(&item_expr)?);
+    formatted.extend(arena, gen_node_with_trivia(arena, &item_operator)?);
+    formatted.extend(arena, gen_node_with_trivia(arena, &item_expr)?);
     Ok(formatted)
 }

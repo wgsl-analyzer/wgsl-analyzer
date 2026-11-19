@@ -1,4 +1,5 @@
 //! Various helpers to classify blankspaces into their types.
+use dprint_core::formatting::Arena;
 use rowan::NodeOrToken;
 use syntax::{SyntaxKind, SyntaxNode, SyntaxToken};
 
@@ -61,8 +62,11 @@ pub(crate) fn read_blankspace(
     clippy::unnecessary_wraps,
     reason = "Keep the API homogeneous with all gen_* functions"
 )]
-pub(crate) fn gen_blankspace(blankspace: &Blankspace) -> FormatDocumentResult<PrintItemBuffer> {
-    let mut formatted = PrintItemBuffer::default();
+pub(crate) fn gen_blankspace<'buffer>(
+    arena: &'buffer Arena,
+    blankspace: &Blankspace,
+) -> FormatDocumentResult<PrintItemBuffer<'buffer>> {
+    let mut formatted = PrintItemBuffer::new(arena);
     match blankspace {
         Blankspace::EmptyLine(_) => {
             //There was an empty line in the source
