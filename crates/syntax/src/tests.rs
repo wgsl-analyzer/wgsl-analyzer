@@ -10,7 +10,7 @@ use crate::{
     ast::{
         self, Attribute, CaseToken, Directive, EnableDirective, EnableExtension,
         EnableExtensionName, Expression, FunctionCall, Item, LanguageExtension, LiteralToken,
-        Statement, SwitchCaseSelector, UnknownExtension,
+        Statement, SwitchBodyCase, SwitchCaseSelector, UnknownExtension,
         operators::{ArithmeticOperation, BinaryOperation, UnaryOperator},
     },
     parse,
@@ -460,4 +460,37 @@ fn operator_fun() {
         },
         _ => panic!(),
     }
+}
+
+#[test]
+fn switch_case_selector() {
+    let parsed = check_errors(
+        "
+        fn foo() {
+            switch (bar) {
+                case 1, 2 {}
+                case default {}
+            }
+        }
+        ",
+        expect![""],
+    );
+
+    let Item::FunctionDeclaration(function_declaration) = parsed.tree().items().next().unwrap()
+    else {
+        panic!()
+    };
+    let compound_statement = function_declaration.body().unwrap();
+    let mut statements = compound_statement.statements();
+    let Statement::SwitchStatement(switch_statement) = statements.next().unwrap() else {
+        panic!()
+    };
+    let mut switch_cases = switch_statement.block().unwrap().cases();
+    let simple_case = switch_cases.next().unwrap();
+    assert_eq!(simple_case.selectors().unwrap().exprs().count(), 2);
+    let default_case = switch_cases.next().unwrap();
+    let default_selector = default_case.selectors().unwrap().exprs().next().unwrap();
+    let SwitchCaseSelector::SwitchDefaultSelector(_) = default_selector else {
+        panic!()
+    };
 }
