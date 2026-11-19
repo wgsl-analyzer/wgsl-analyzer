@@ -180,7 +180,7 @@ mod imp {
 
 #[cfg(windows)]
 mod imp {
-    use std::os::windows::fs::OpenOptionsExt;
+    use std::os::windows::fs::OpenOptionsExt as _;
 
     use super::*;
 
