@@ -11,7 +11,7 @@ pub use parser::{
     Capabilities, Diagnostic, Edition, ExtensionsConfig, ParseEntryPoint, SyntaxElement,
     SyntaxElementChildren, SyntaxKind, SyntaxNode, SyntaxNodeChildren, SyntaxToken, WeslLanguage,
 };
-pub use rowan::Direction;
+pub use rowan::{Direction, TextRange, TextSize};
 use smol_str::SmolStr;
 use triomphe::Arc;
 
@@ -71,6 +71,26 @@ pub fn parse(
     let (green_node, errors) = parser::parse_entrypoint_with_capabilities(
         input,
         ParseEntryPoint::File,
+        edition,
+        Capabilities::default(),
+    )
+    .into_parts();
+    Parse {
+        green_node,
+        errors: Arc::from(errors),
+    }
+}
+
+/// Exposed for wesl-rs.
+#[must_use]
+pub fn parse_entrypoint(
+    input: &str,
+    edition: Edition,
+    entrypoint: ParseEntryPoint,
+) -> Parse {
+    let (green_node, errors) = parser::parse_entrypoint_with_capabilities(
+        input,
+        entrypoint,
         edition,
         Capabilities::default(),
     )
