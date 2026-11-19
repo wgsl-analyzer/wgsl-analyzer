@@ -78,6 +78,53 @@ fn is_keyword_in_wesl(word: &str) -> bool {
     matches!(word, "import" | "package" | "super" | "as" | "public")
 }
 
+/// Returns `true` if the given word is a valid identifier in WGSL.
+/// Accepts reserved identifiers that start with two `__`.
+pub fn is_ident(word: &str) -> bool {
+    let mut chars = word.chars();
+    let Some(first_char) = chars.next() else {
+        return false;
+    };
+    if !(unicode_ident::is_xid_start(first_char) || (first_char == '_' && word.len() > 1)) {
+        return false;
+    }
+    chars.all(unicode_ident::is_xid_continue) && !is_keyword(word) && !is_reserved_word(word)
+}
+
+/// Returns `true` if the given word is a WGSL keyword.
+#[expect(clippy::too_many_lines, reason = "just a big matches!")]
+fn is_keyword(word: &str) -> bool {
+    matches!(
+        word,
+        "alias"
+            | "break"
+            | "case"
+            | "const"
+            | "const_assert"
+            | "continue"
+            | "continuing"
+            | "default"
+            | "diagnostic"
+            | "discard"
+            | "else"
+            | "enable"
+            | "false"
+            | "fn"
+            | "for"
+            | "if"
+            | "let"
+            | "loop"
+            | "override"
+            | "requires"
+            | "return"
+            | "struct"
+            | "switch"
+            | "true"
+            | "var"
+            | "while"
+    )
+}
+
 /// Returns `true` if the given word is a WGSL reserved word.
 /// See <https://www.w3.org/TR/WGSL/#reserved-words>.
 #[expect(clippy::too_many_lines, reason = "just a big matches!")]

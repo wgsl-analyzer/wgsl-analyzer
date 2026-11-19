@@ -8,6 +8,7 @@ mod syntax_kind;
 use std::fmt::{self, Debug, Write as _};
 
 pub use edition::{Capabilities, Edition, ExtensionsConfig};
+pub use lexer::is_ident;
 pub use parser::{Diagnostic, parse_entrypoint_with_capabilities};
 use rowan::GreenNode;
 
