@@ -1007,16 +1007,15 @@ impl IncrementDecrementStatement {
     }
 
     #[must_use]
+    #[expect(clippy::wildcard_enum_match_arm, reason = "too long")]
     pub fn increment_decrement(&self) -> Option<IncrementDecrement> {
         self.syntax()
             .children_with_tokens()
             .filter_map(rowan::NodeOrToken::into_token)
-            .find_map(|token| {
-                if let SyntaxKind::MinusMinus | SyntaxKind::PlusPlus = token.kind() {
-                    Some(IncrementDecrement::Increment)
-                } else {
-                    None
-                }
+            .find_map(|token| match token.kind() {
+                SyntaxKind::PlusPlus => Some(IncrementDecrement::Increment),
+                SyntaxKind::MinusMinus => Some(IncrementDecrement::Decrement),
+                _ => None,
             })
     }
 }
