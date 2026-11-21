@@ -298,7 +298,7 @@ var<storage, read> a: array<f32>;
 var<storage
 ",
         expect![[r#"
-            92..93 wgsl-analyzer Error 16: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', ';', <template start>
+            92..93 wgsl-analyzer Error 16: invalid syntax, expected one of: '@', '{', '}', ',', '=', <identifier>, ')', 'private', ';', <template start>
             101..101 wgsl-analyzer Error 16: invalid syntax, expected one of: ':', '=', ';'
             22..25 wgsl-analyzer Error 12: address space is only valid for handle or texture types
             26..33 wgsl-analyzer Error 21: unexpected template argument
@@ -318,7 +318,7 @@ fn test() {
 ",
         expect![[r#"
             20..24 wgsl-analyzer Error 16: 'enum' is a reserved word in WGSL
-            20..24 wgsl-analyzer Error 16: invalid syntax, expected: <identifier>
+            20..24 wgsl-analyzer Error 16: invalid syntax, expected one of: <identifier>, 'private'
         "#]],
     );
 }
@@ -346,8 +346,8 @@ fn _() {}
 fn foo() { let _ = 1; }
 ",
         expect![[r#"
-            3..4 wgsl-analyzer Error 16: invalid syntax, expected: <identifier>
-            25..26 wgsl-analyzer Error 16: invalid syntax, expected: <identifier>
+            3..4 wgsl-analyzer Error 16: invalid syntax, expected one of: <identifier>, 'private'
+            25..26 wgsl-analyzer Error 16: invalid syntax, expected one of: <identifier>, 'private'
         "#]],
     );
 }

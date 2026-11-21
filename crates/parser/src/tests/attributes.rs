@@ -14,7 +14,7 @@ fn evil_attribute() {
                   Error@1..2
                     IntLiteral@1..2 "9"
 
-            error at 1..2: invalid syntax, expected: <identifier>"#]],
+            error at 1..2: invalid syntax, expected one of: <identifier>, 'private'"#]],
     );
 }
 
@@ -76,7 +76,7 @@ fn attribute_recovery_after_symbol() {
                   IntLiteral@27..28 "1"
                 Semicolon@28..29 ";"
 
-            error at 2..4: invalid syntax, expected: <identifier>"#]],
+            error at 2..4: invalid syntax, expected one of: <identifier>, 'private'"#]],
     );
 }
 
@@ -104,7 +104,7 @@ fn attribute_recovery_keyword_after_symbol() {
                 IntLiteral@15..16 "1"
               Semicolon@16..17 ";"
 
-            error at 2..4: invalid syntax, expected: <identifier>"#]],
+            error at 2..4: invalid syntax, expected one of: <identifier>, 'private'"#]],
     );
 }
 
@@ -881,7 +881,7 @@ fn parse_interpolate_unclosed_error() {
                 Semicolon@61..62 ";"
               Blankspace@62..71 "\n        "
 
-            error at 42..45: invalid syntax, expected one of: '&', '&&', '&=', '@', '{', '}', '[', ']', ':', '::', ',', '/=', '=', '==', '/', '>', '>=', <identifier>, '<', '<=', '-', '-=', '--', '%', '%=', '!=', '|', '|=', '||', '(', ')', '.', '+', '+=', '++', ';', '<<', '<<=', '>>', '>>=', '*', <template end>, <template start>, '*=', '^', '^='"#]],
+            error at 42..45: invalid syntax, expected one of: '&', '&&', '&=', '@', '{', '}', '[', ']', ':', '::', ',', '/=', '=', '==', '/', '>', '>=', <identifier>, '<', '<=', '-', '-=', '--', '%', '%=', '!=', '|', '|=', '||', '(', ')', '.', '+', '+=', '++', 'private', ';', '<<', '<<=', '>>', '>>=', '*', <template end>, <template start>, '*=', '^', '^='"#]],
     );
 }
 

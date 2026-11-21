@@ -149,6 +149,7 @@ impl CstBuilder<'_, '_> {
             | Rule::GlobalItem
             | Rule::GlobalCompoundDeclarationItem
             | Rule::IdentOrFunction
+            | Rule::Ident
             | Rule::LetDeclarationSemi
             | Rule::OverrideDeclarationSemi
             | Rule::SwitchClause

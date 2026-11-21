@@ -310,6 +310,7 @@ impl Iterator for WgslLexer<'_, '_> {
                     "super" if self.edition.at_least_wesl_0_0_1() => Token::Super,
                     "as" if self.edition.at_least_wesl_0_0_1() => Token::As,
                     "public" if self.edition.at_least_wesl_0_0_1() => Token::Public,
+                    "private" if self.edition.at_least_wesl_0_0_1() => Token::Private,
 
                     word if is_reserved_word(word) => {
                         self.diagnostics.push(Diagnostic {

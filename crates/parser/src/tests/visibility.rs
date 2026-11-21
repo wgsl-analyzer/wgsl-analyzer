@@ -54,21 +54,23 @@ fn reject_public_visibility_in_wgsl() {
 
             error at 0..6: 'public' is a reserved word in WGSL
             error at 0..6: switch to WESL to use `public`
-            error at 0..6: invalid syntax, expected one of: 'alias', '@', '{', 'const', 'const_assert', 'diagnostic', <end of file>, 'enable', 'fn', <identifier>, 'import', 'let', 'override', 'public', 'requires', ';', 'struct', 'var'"#]],
+            error at 0..6: invalid syntax, expected one of: 'alias', '@', '{', 'const', 'const_assert', 'diagnostic', <end of file>, 'enable', 'fn', 'import', 'let', 'override', 'private', 'public', 'requires', ';', 'struct', 'var'"#]],
     );
 }
 
 #[test]
 fn reject_private_visibility_in_wgsl() {
+    // in WGSL mode, the lexer treats 'private' as a normal identifier
+    // so we won't throw the helpful switch to WESL to use `private` message
     check_with_edition(
         edition::Edition::Wgsl,
         "private const x:u32=0;",
         expect![[r#"
             SourceFile@0..22
-              ConstantDeclaration@0..22
-                Visibility@0..7
-                  Identifier@0..7 "private"
-                Blankspace@7..8 " "
+              Error@0..7
+                Identifier@0..7 "private"
+              Blankspace@7..8 " "
+              ConstantDeclaration@8..22
                 Const@8..13 "const"
                 Blankspace@13..14 " "
                 Name@14..15
@@ -82,7 +84,7 @@ fn reject_private_visibility_in_wgsl() {
                   IntLiteral@20..21 "0"
                 Semicolon@21..22 ";"
 
-            error at 8..13: visibility `private` is not allowed in WGSL"#]],
+            error at 0..7: invalid syntax, expected one of: 'alias', '@', '{', 'const', 'const_assert', 'diagnostic', <end of file>, 'enable', 'fn', 'import', 'let', 'override', 'private', 'public', 'requires', ';', 'struct', 'var'"#]],
     );
 }
 
@@ -117,7 +119,7 @@ fn private_visibility() {
             SourceFile@0..16
               FunctionDeclaration@0..16
                 Visibility@0..7
-                  Identifier@0..7 "private"
+                  Private@0..7 "private"
                 Blankspace@7..8 " "
                 Fn@8..10 "fn"
                 Blankspace@10..11 " "
@@ -142,7 +144,7 @@ fn multiple_items_with_visibility() {
         private var<private> x:u32;
         ",
         expect![[r#"
-            SourceFile@0..103
+            SourceFile@0..106
               Blankspace@0..9 "\n        "
               FunctionDeclaration@9..24
                 Visibility@9..15
@@ -159,45 +161,48 @@ fn multiple_items_with_visibility() {
                   BraceLeft@22..23 "{"
                   BraceRight@23..24 "}"
               Blankspace@24..33 "\n        "
-              StructDeclaration@33..58
+              StructDeclaration@33..61
                 Visibility@33..40
-                  Identifier@33..40 "private"
+                  Private@33..40 "private"
                 Blankspace@40..41 " "
                 Struct@41..47 "struct"
                 Blankspace@47..48 " "
                 Name@48..51
                   Identifier@48..51 "Foo"
-                StructBody@51..58
+                StructBody@51..61
                   BraceLeft@51..52 "{"
-                  StructMember@52..57
-                    Name@52..53
-                      Identifier@52..53 "a"
-                    Colon@53..54 ":"
-                    TypeSpecifier@54..57
-                      Path@54..57
-                        Identifier@54..57 "u32"
-                  BraceRight@57..58 "}"
-              Blankspace@58..67 "\n        "
-              VariableDeclaration@67..94
-                Visibility@67..74
-                  Identifier@67..74 "private"
-                Blankspace@74..75 " "
-                Var@75..78 "var"
-                TemplateList@78..87
-                  TemplateStart@78..79 "<"
-                  IdentExpression@79..86
-                    Path@79..86
-                      Identifier@79..86 "private"
-                  TemplateEnd@86..87 ">"
-                Blankspace@87..88 " "
-                Name@88..89
-                  Identifier@88..89 "x"
-                Colon@89..90 ":"
-                TypeSpecifier@90..93
-                  Path@90..93
-                    Identifier@90..93 "u32"
-                Semicolon@93..94 ";"
-              Blankspace@94..103 "\n        ""#]],
+                  Blankspace@52..53 " "
+                  StructMember@53..59
+                    Name@53..54
+                      Identifier@53..54 "a"
+                    Colon@54..55 ":"
+                    Blankspace@55..56 " "
+                    TypeSpecifier@56..59
+                      Path@56..59
+                        Identifier@56..59 "u32"
+                  Blankspace@59..60 " "
+                  BraceRight@60..61 "}"
+              Blankspace@61..70 "\n        "
+              VariableDeclaration@70..97
+                Visibility@70..77
+                  Private@70..77 "private"
+                Blankspace@77..78 " "
+                Var@78..81 "var"
+                TemplateList@81..90
+                  TemplateStart@81..82 "<"
+                  IdentExpression@82..89
+                    Path@82..89
+                      Identifier@82..89 "private"
+                  TemplateEnd@89..90 ">"
+                Blankspace@90..91 " "
+                Name@91..92
+                  Identifier@91..92 "x"
+                Colon@92..93 ":"
+                TypeSpecifier@93..96
+                  Path@93..96
+                    Identifier@93..96 "u32"
+                Semicolon@96..97 ";"
+              Blankspace@97..106 "\n        ""#]],
     );
 }
 
@@ -214,7 +219,7 @@ fn reject_public_and_private_visibility() {
               Blankspace@6..7 " "
               FunctionDeclaration@7..23
                 Visibility@7..14
-                  Identifier@7..14 "private"
+                  Private@7..14 "private"
                 Blankspace@14..15 " "
                 Fn@15..17 "fn"
                 Blankspace@17..18 " "

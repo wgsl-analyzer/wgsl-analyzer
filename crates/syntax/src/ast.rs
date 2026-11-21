@@ -290,10 +290,7 @@ impl Visibility {
     pub fn kind(&self) -> Option<VisibilityKind> {
         match support::child_token::<VisibilityToken>(self.syntax()) {
             Some(VisibilityToken::Public(_)) => Some(VisibilityKind::Public),
-            Some(VisibilityToken::Identifier(token)) if token.text() == "private" => {
-                Some(VisibilityKind::Private)
-            },
-            Some(VisibilityToken::Identifier(token)) => None,
+            Some(VisibilityToken::Private(_)) => Some(VisibilityKind::Private),
             None => None,
         }
     }
@@ -307,7 +304,7 @@ pub enum VisibilityKind {
 ast_token_enum! {
     enum VisibilityToken {
         Public,
-        Identifier,
+        Private,
     }
 }
 

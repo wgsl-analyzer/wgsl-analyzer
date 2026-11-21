@@ -555,20 +555,14 @@ impl<'source> ParserCallbacks<'source> for Parser<'source> {
         self.assert_no_translate_time_attrs("a continuing body")
     }
 
-    fn predicate_visibility_1(&self) -> bool {
-        self.peek_text(0) == Some("private")
-    }
-
-    fn create_node_visibility(
+    fn action_ident_1(
         &mut self,
-        _node_ref: NodeRef,
-        diagnostics: &mut Vec<Self::Diagnostic>,
+        _diags: &mut Vec<Self::Diagnostic>,
     ) {
-        if !self.context.edition.at_least_wesl_0_0_1() {
-            diagnostics.push(self.create_diagnostic(
-                self.span(),
-                "visibility `private` is not allowed in WGSL".to_owned(),
-            ));
+        let mut last_node = &mut self.cst.data.nodes[self.cst.data.non_skip_len - 1];
+        match last_node {
+            Node::Rule(rule, cst_index) => panic!("Expected a context sensitive token ('private')"),
+            Node::Token(syntax_kind, cst_index) => *syntax_kind = SyntaxKind::Identifier,
         }
     }
 }
