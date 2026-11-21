@@ -1,3 +1,4 @@
+use dprint_core::formatting::Arena;
 use syntax::{
     AstNode as _,
     ast::{self, SyntaxKind},
@@ -10,9 +11,10 @@ use crate::{
     reporting::FormatDocumentResult,
 };
 
-pub(crate) fn gen_ident_expression(
-    ident_expression: &ast::IdentExpression
-) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_ident_expression<'buffer>(
+    arena: &'buffer Arena,
+    ident_expression: &ast::IdentExpression,
+) -> FormatDocumentResult<PrintItemBuffer<'buffer>> {
     // ==== Parse ====
     let mut syntax = syntax_iter(ident_expression.syntax());
     let item_path =
@@ -24,10 +26,10 @@ pub(crate) fn gen_ident_expression(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::default();
-    formatted.extend(gen_node_with_trivia(&item_path)?);
+    let mut formatted = PrintItemBuffer::new(arena);
+    formatted.extend(arena, gen_node_with_trivia(arena, &item_path)?);
     if let Some(item_template) = item_template {
-        formatted.extend(gen_node_with_trivia(&item_template)?);
+        formatted.extend(arena, gen_node_with_trivia(arena, &item_template)?);
     }
     Ok(formatted)
 }

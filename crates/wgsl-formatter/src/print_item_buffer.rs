@@ -1,7 +1,9 @@
 //! The working structure that the generator functions emit formatted text into.
 pub(crate) mod spacing_request;
 
-use dprint_core::formatting::{Anchor, Info, PrintItem, PrintItems, Signal};
+use std::mem;
+
+use dprint_core::formatting::{Anchor, Arena, Info, PrintItem, PrintItems, Signal};
 
 use crate::print_item_buffer::spacing_request::Request;
 
@@ -31,7 +33,7 @@ use crate::print_item_buffer::spacing_request::Request;
 //   "add a comma, unless its followed by ')'" or "there should be a single space after 'fn' and before the name"
 // * In the formatting code we don't actually care about "what exactly the next or previous token is", instead
 //   we wan't to communicate that we may want separation to adjacent text.
-/// A wrapper for `PrintItem`s which adds the ability to do "item-requests".
+/// A wrapper for `PrintItem<'_>`s which adds the ability to do "item-requests".
 ///
 /// # Motivation
 ///
@@ -69,34 +71,43 @@ use crate::print_item_buffer::spacing_request::Request;
 /// * Exponential blowup when using with dprint's conditionals (not a big problem most of the time as not many dprint conditionals are used consecutively)
 /// * Another layer on top of dprint's IR, which doesn't feel like it should be necessary
 ///
-#[derive(Default)]
-pub(crate) struct PrintItemBuffer {
+pub(crate) struct PrintItemBuffer<'buffer> {
     /// Items that are emitted before [`Self::start_request`] gets applied.
     ///
     /// If this [`PrintItemBuffer`] is passed to [`PrintItemBuffer::extend`], these
     /// items get moved before the other buffer's [`Self::end_request`].
-    pub(crate) items_before_start_request: PrintItems,
+    pub(crate) items_before_start_request: PrintItems<'buffer>,
 
     /// The request that will be emitted before [`Self::items`].
-    pub(crate) start_request: Request,
+    pub(crate) start_request: Request<'buffer>,
 
     /// The items contained in this buffer.
     ///
     /// If this is `Some` (even if the `PrintItems` themselves are empty) this
     /// signals to us that no incoming requests can be merged with [`Self::start_request`].
-    pub(crate) items: Option<PrintItems>,
+    pub(crate) items: Option<PrintItems<'buffer>>,
 
     /// The request that will be emitted after [`Self::items`].
-    pub(crate) end_request: Request,
+    pub(crate) end_request: Request<'buffer>,
 
     /// Items that are emitted before [`Self::start_request`] gets applied.
     ///
     /// If this [`PrintItemBuffer`] is passed to [`PrintItemBuffer::extend`], these
     /// items get moved after the other buffer's [`Self::start_request`].
-    pub(crate) items_after_end_request: PrintItems,
+    pub(crate) items_after_end_request: PrintItems<'buffer>,
 }
 
-impl PrintItemBuffer {
+impl<'buffer> PrintItemBuffer<'buffer> {
+    pub(crate) fn new(arena: &'buffer Arena) -> PrintItemBuffer<'buffer> {
+        Self {
+            items_before_start_request: PrintItems::new(arena),
+            start_request: Request::default(),
+            items: None,
+            end_request: Request::default(),
+            items_after_end_request: PrintItems::new(arena),
+        }
+    }
+
     /// Pushes a [`Request`] onto the buffer.
     ///
     /// Requests that are added consecutively are combined together.
@@ -106,7 +117,7 @@ impl PrintItemBuffer {
     /// all the Buffers get combined together (with [`Self::extend`]).
     pub(crate) fn request(
         &mut self,
-        incoming_request: Request,
+        incoming_request: Request<'buffer>,
     ) {
         let request_tracker = if self.items.is_none() {
             // PERFORMANCE: With the current implementation of the gen_ functions this path is a lot less likely - usually spacing requests
@@ -123,14 +134,17 @@ impl PrintItemBuffer {
     }
 
     #[must_use]
-    pub(crate) fn finish(self) -> PrintItems {
-        let mut pi = PrintItems::default();
+    pub(crate) fn finish(
+        self,
+        arena: &'buffer Arena,
+    ) -> PrintItems<'buffer> {
+        let mut pi = PrintItems::new(arena);
         pi.extend(self.items_before_start_request);
-        self.start_request.resolve(&mut pi);
+        self.start_request.resolve(arena, &mut pi);
         if let Some(items) = self.items {
             pi.extend(items);
         }
-        self.end_request.resolve(&mut pi);
+        self.end_request.resolve(arena, &mut pi);
         pi.extend(self.items_after_end_request);
         pi
     }
@@ -145,13 +159,13 @@ impl PrintItemBuffer {
     /// # use crate::wgsl_formatter::print_item_buffer::PrintItemBuffer;
     /// let formatted = dprint_core::formatting::format(
     ///     || {
-    ///         let mut formatted = PrintItemBuffer::default();
+    ///         let mut formatted = PrintItemBuffer::new(arena);
     ///         formatted.push_sc(dprint_core_macros::sc!("|"));
     ///         formatted.request(Request::expect(RequestItem::Space));
     ///         formatted.request(Request::expect(RequestItem::Space));
     ///         formatted.push_sc(dprint_core_macros::sc!("|"));
     ///         formatted.request(Request::expect(RequestItem::Space));
-    ///         formatted.apply_end_request();
+    ///         formatted.apply_end_request(arena);
     ///         formatted.request(Request::expect(RequestItem::Space));
     ///         formatted.push_sc(dprint_core_macros::sc!("|"));
     ///         formatted.finish()
@@ -165,43 +179,54 @@ impl PrintItemBuffer {
     /// );
     /// assert_eq!(formatted, "| |  |")
     /// ```
-    pub(crate) fn apply_end_request(&mut self) {
-        let items_after_end_requests = std::mem::take(&mut self.items_after_end_request);
+    pub(crate) fn apply_end_request(
+        &mut self,
+        arena: &'buffer Arena,
+    ) {
+        let mut items_after_end_requests = PrintItems::new(arena);
+        mem::swap(
+            &mut self.items_after_end_request,
+            &mut items_after_end_requests,
+        );
 
-        let items = self.items.get_or_insert_default();
+        let items = self.items.get_or_insert_with(|| PrintItems::new(arena));
 
-        std::mem::take(&mut self.end_request).resolve(items);
+        std::mem::take(&mut self.end_request).resolve(arena, items);
         items.extend(items_after_end_requests);
     }
 
     /// Appends another [`PrintItemBuffer`] onto this one.
     pub(crate) fn extend(
         &mut self,
+        arena: &'buffer Arena,
         other: Self,
     ) {
         // PrintItemBuffer's should behave associatively,
         // extending a PrintItemBuffer A with another one B, should be equivalent
         // to doing all the actions that have been performed on B, on A.
 
-        self.push_items_before_requests(other.items_before_start_request);
+        self.push_items_before_requests(arena, other.items_before_start_request);
         // Merge the incoming start_request
         self.request(other.start_request);
 
         // If there are incoming items, apply the current end request and add the items
         if let Some(items) = other.items {
-            self.apply_end_request();
-            self.items.get_or_insert_default().extend(items);
+            self.apply_end_request(arena);
+            self.items
+                .get_or_insert_with(|| PrintItems::new(arena))
+                .extend(items);
         }
 
         // Merge the incoming end_request
         self.request(other.end_request);
 
-        self.push_items_after_requests(other.items_after_end_request);
+        self.push_items_after_requests(arena, other.items_after_end_request);
     }
 
     fn push_items_before_requests(
-        &mut self,
-        items: PrintItems,
+        &'buffer mut self,
+        arena: &'buffer Arena,
+        items: PrintItems<'buffer>,
     ) {
         if let Some(self_items) = &mut self.items {
             self_items.extend(items);
@@ -212,27 +237,30 @@ impl PrintItemBuffer {
 
     fn push_item_before_requests(
         &mut self,
-        item: PrintItem,
+        arena: &'buffer Arena,
+        item: PrintItem<'buffer>,
     ) {
-        let mut pi = PrintItems::default();
+        let mut pi = PrintItems::new(arena);
         pi.push_item(item);
-        self.push_items_before_requests(pi);
+        self.push_items_before_requests(arena, pi);
     }
 
     fn push_items_after_requests(
         &mut self,
-        items: PrintItems,
+        arena: &'buffer Arena,
+        items: PrintItems<'buffer>,
     ) {
         self.items_after_end_request.extend(items);
     }
 
     fn push_item_after_requests(
         &mut self,
-        item: PrintItem,
+        arena: &'buffer Arena,
+        item: PrintItem<'buffer>,
     ) {
-        let mut pi = PrintItems::default();
+        let mut pi = PrintItems::new(arena);
         pi.push_item(item);
-        self.push_items_after_requests(pi);
+        self.push_items_after_requests(arena, pi);
     }
 
     /// Applies trailing requests and pushes a string to the buffer whose content is not yet known at compile time.
@@ -244,6 +272,7 @@ impl PrintItemBuffer {
     /// If compiled with prefer-immediate-crash this function will panic if the string contains newlines or tabs.
     pub(crate) fn push_string(
         &mut self,
+        arena: &'buffer Arena,
         string: String,
     ) {
         #[cfg(feature = "prefer-immediate-crash")]
@@ -257,16 +286,23 @@ impl PrintItemBuffer {
                 "Cannot push string with tabs to PrintItemBuffer {string:?}"
             );
         }
-        self.apply_end_request();
-        self.items.get_or_insert_default().push_string(string);
+        self.apply_end_request(arena);
+        self.items
+            .get_or_insert_with(|| PrintItems::new(arena))
+            .push_string(string);
     }
 
     /// Applies trailing requests and pushes a literal tab character to the buffer.
     ///
     /// Do not use this for indentation, use [`Self::start_indent_before_requests`] instead.
-    pub(crate) fn push_tab(&mut self) {
-        self.apply_end_request();
-        self.items.get_or_insert_default().push_signal(Signal::Tab);
+    pub(crate) fn push_tab(
+        &mut self,
+        arena: &'buffer Arena,
+    ) {
+        self.apply_end_request(arena);
+        self.items
+            .get_or_insert_with(|| PrintItems::new(arena))
+            .push_signal(Signal::Tab);
     }
 
     /// Applies trailing requests and pushes a string to the buffer whose content is known at compile time.
@@ -275,10 +311,13 @@ impl PrintItemBuffer {
     /// If you need to push a string whose content is not known at compile time, use [`Self::push_string`].
     pub(crate) fn push_sc(
         &mut self,
-        sc: &'static dprint_core::formatting::StringContainer,
+        arena: &'buffer Arena,
+        sc: &'static dprint_core::formatting::StringContainer<'buffer>,
     ) {
-        self.apply_end_request();
-        self.items.get_or_insert_default().push_sc(sc);
+        self.apply_end_request(arena);
+        self.items
+            .get_or_insert_with(|| PrintItems::new(arena))
+            .push_sc(sc);
     }
 
     /// Inserts a dprint-info into the buffer, before all trailing requests.
@@ -287,11 +326,12 @@ impl PrintItemBuffer {
     /// If you need to add the info *after* trailing requests, manually call [`Self::apply_end_request`].
     pub(crate) fn push_info_before_requests<T>(
         &mut self,
+        arena: &'buffer Arena,
         info: T,
     ) where
         T: Into<Info>,
     {
-        self.push_item_before_requests(PrintItem::Info(info.into()));
+        self.push_item_before_requests(arena, PrintItem::Info(info.into()));
     }
 
     /// Inserts a dprint-anchor into the buffer, before all trailing requests.
@@ -300,11 +340,12 @@ impl PrintItemBuffer {
     /// If you need to add the anchor *after* trailing requests, manually call [`Self::apply_end_request`].
     pub(crate) fn push_anchor_before_requests<T>(
         &mut self,
+        arena: &'buffer Arena,
         anchor: T,
     ) where
         T: Into<Anchor>,
     {
-        self.push_item_before_requests(PrintItem::Anchor(anchor.into()));
+        self.push_item_before_requests(arena, PrintItem::Anchor(anchor.into()));
     }
 
     /// Inserts a dprint-condition into the buffer, before all trailing requests.
@@ -313,7 +354,7 @@ impl PrintItemBuffer {
     /// If you need to add the condition *after* trailing requests, manually call [`Self::apply_end_request`].
     pub(crate) fn push_condition_before_requests(
         &mut self,
-        condition: dprint_core::formatting::Condition,
+        condition: dprint_core::formatting::Condition<'buffer>,
     ) {
         if let Some(self_items) = &mut self.items {
             self_items.push_condition(condition);
@@ -328,25 +369,32 @@ impl PrintItemBuffer {
     /// If you need to add the reevaluation *after* trailing requests, manually call [`Self::apply_end_request`].
     pub(crate) fn push_reevaluation_before_requests(
         &mut self,
+        arena: &'buffer Arena,
         reeval: dprint_core::formatting::ConditionReevaluation,
     ) {
-        self.push_item_before_requests(PrintItem::ConditionReevaluation(reeval));
+        self.push_item_before_requests(arena, PrintItem::ConditionReevaluation(reeval));
     }
 
     /// Starts a new indent level at the point before all trailing requests.
     ///
     /// This does not apply any trailing request, but instead starts the indentation before them.
     /// If you need to start the indentation *after* trailing requests, manually call [`Self::apply_end_request`].
-    pub(crate) fn start_indent_before_requests(&mut self) {
-        self.push_item_before_requests(PrintItem::Signal(Signal::StartIndent));
+    pub(crate) fn start_indent_before_requests(
+        &mut self,
+        arena: &'buffer Arena,
+    ) {
+        self.push_item_before_requests(arena, PrintItem::Signal(Signal::StartIndent));
     }
 
     /// Finishes a new indent level at the point before all trailing requests.
     ///
     /// This does not apply any trailing request, but instead finishes the indentation before them.
     /// If you need to finish the indentation *after* trailing requests, manually call [`Self::apply_end_request`].
-    pub(crate) fn finish_indent_before_requests(&mut self) {
-        self.push_item_before_requests(PrintItem::Signal(Signal::FinishIndent));
+    pub(crate) fn finish_indent_before_requests(
+        &mut self,
+        arena: &'buffer Arena,
+    ) {
+        self.push_item_before_requests(arena, PrintItem::Signal(Signal::FinishIndent));
     }
 
     /// Starts ignoring indentation at the point before all trailing requests.
@@ -355,8 +403,11 @@ impl PrintItemBuffer {
     ///
     /// This does not apply any trailing request, but instead starts ignoring indentation before them.
     /// If you need to do so *after* trailing requests, manually call [`Self::apply_end_request`].
-    pub(crate) fn start_ignoring_indent_before_requests(&mut self) {
-        self.push_item_before_requests(PrintItem::Signal(Signal::StartIgnoringIndent));
+    pub(crate) fn start_ignoring_indent_before_requests(
+        &mut self,
+        arena: &'buffer Arena,
+    ) {
+        self.push_item_before_requests(arena, PrintItem::Signal(Signal::StartIgnoringIndent));
     }
 
     /// Stops ignoring indentation at the point before all trailing requests.
@@ -365,8 +416,11 @@ impl PrintItemBuffer {
     ///
     /// This does not apply any trailing request, but instead stops ignoring indentation before them.
     /// If you need to do so *after* trailing requests, manually call [`Self::apply_end_request`].
-    pub(crate) fn finish_ignoring_indent_before_requests(&mut self) {
-        self.push_item_before_requests(PrintItem::Signal(Signal::FinishIgnoringIndent));
+    pub(crate) fn finish_ignoring_indent_before_requests(
+        &mut self,
+        arena: &'buffer Arena,
+    ) {
+        self.push_item_before_requests(arena, PrintItem::Signal(Signal::FinishIgnoringIndent));
     }
 
     /// Decreases the precedence of following items getting broken into multiple lines.
@@ -375,8 +429,11 @@ impl PrintItemBuffer {
     ///
     /// This does not apply any trailing request, but instead starts the newline group before them.
     /// If you need to do so *after* trailing requests, manually call [`Self::apply_end_request`].
-    pub(crate) fn start_new_line_group_before_requests(&mut self) {
-        self.push_item_before_requests(PrintItem::Signal(Signal::StartNewLineGroup));
+    pub(crate) fn start_new_line_group_before_requests(
+        &mut self,
+        arena: &'buffer Arena,
+    ) {
+        self.push_item_before_requests(arena, PrintItem::Signal(Signal::StartNewLineGroup));
     }
 
     /// Decreases the precedence of following items getting broken into multiple lines.
@@ -386,8 +443,11 @@ impl PrintItemBuffer {
     /// This does not apply any trailing request, but instead queues the newline group to
     /// be started as soon as trailing requests are applied (either by pushing a concrete item
     /// or by calling [`Self::apply_end_request`]).
-    pub(crate) fn start_new_line_group_after_requests(&mut self) {
-        self.push_item_after_requests(PrintItem::Signal(Signal::StartNewLineGroup));
+    pub(crate) fn start_new_line_group_after_requests(
+        &mut self,
+        arena: &'buffer Arena,
+    ) {
+        self.push_item_after_requests(arena, PrintItem::Signal(Signal::StartNewLineGroup));
     }
 
     /// Increases the precedence of following items getting broken into multiple lines.
@@ -396,8 +456,11 @@ impl PrintItemBuffer {
     ///
     /// This does not apply any trailing request, but instead starts the newline group before them.
     /// If you need to do so *after* trailing requests, manually call [`Self::apply_end_request`].
-    pub(crate) fn finish_new_line_group_before_requests(&mut self) {
-        self.push_item_before_requests(PrintItem::Signal(Signal::FinishNewLineGroup));
+    pub(crate) fn finish_new_line_group_before_requests(
+        &mut self,
+        arena: &'buffer Arena,
+    ) {
+        self.push_item_before_requests(arena, PrintItem::Signal(Signal::FinishNewLineGroup));
     }
 
     /// Increases the precedence of following items getting broken into multiple lines.
@@ -407,23 +470,26 @@ impl PrintItemBuffer {
     /// This does not apply any trailing request, but instead queues the newline group to
     /// be started as soon as trailing requests are applied (either by pushing a concrete item
     /// or by calling [`Self::apply_end_request`]).
-    pub(crate) fn finish_new_line_group_after_requests(&mut self) {
-        self.push_item_after_requests(PrintItem::Signal(Signal::FinishNewLineGroup));
+    pub(crate) fn finish_new_line_group_after_requests(
+        &mut self,
+        arena: &'buffer Arena,
+    ) {
+        self.push_item_after_requests(arena, PrintItem::Signal(Signal::FinishNewLineGroup));
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use dprint_core::formatting::PrintItems;
+    use dprint_core::formatting::{Arena, PrintItems};
 
     use crate::print_item_buffer::{
         PrintItemBuffer,
         spacing_request::{Request, RequestItem},
     };
 
-    fn format(items: PrintItems) -> String {
+    fn format<'buffer>(items: PrintItems<'buffer>) -> String {
         dprint_core::formatting::format(
-            || items,
+            |arena| items,
             dprint_core::formatting::PrintOptions {
                 max_width: 100,
                 indent_width: 4,
@@ -435,69 +501,73 @@ mod tests {
 
     #[test]
     pub(crate) fn finish_empty_pib() {
-        let pib = PrintItemBuffer::default();
+        let arena = Arena::new();
+        let pib = PrintItemBuffer::new(&arena);
 
-        let items = pib.finish();
+        let items = pib.finish(&arena);
 
         assert_eq!(format(items), "");
     }
 
     #[test]
     pub(crate) fn request_apply_and_nothing_else() {
-        let mut pib = PrintItemBuffer::default();
+        let arena = Arena::new();
+        let mut pib = PrintItemBuffer::new(&arena);
         pib.request(Request::expect(RequestItem::LineBreak));
-        pib.apply_end_request();
+        pib.apply_end_request(&arena);
         pib.request(Request::expect(RequestItem::LineBreak));
-        pib.apply_end_request();
+        pib.apply_end_request(&arena);
         pib.request(Request::expect(RequestItem::LineBreak));
-        pib.apply_end_request();
+        pib.apply_end_request(&arena);
 
-        let items = pib.finish();
+        let items = pib.finish(&arena);
 
         assert_eq!(format(items), "\n\n\n");
     }
 
     #[test]
     pub(crate) fn segmented_request_apply_and_nothing_else() {
-        let mut pib = PrintItemBuffer::default();
-        pib.extend({
-            let mut inner = PrintItemBuffer::default();
+        let arena = Arena::new();
+        let mut pib = PrintItemBuffer::new(&arena);
+        pib.extend(&arena, {
+            let mut inner = PrintItemBuffer::new(&arena);
             inner.request(Request::expect(RequestItem::LineBreak));
-            inner.apply_end_request();
+            inner.apply_end_request(&arena);
             inner
         });
-        pib.extend({
-            let mut inner = PrintItemBuffer::default();
+        pib.extend(&arena, {
+            let mut inner = PrintItemBuffer::new(&arena);
             inner.request(Request::expect(RequestItem::LineBreak));
-            inner.apply_end_request();
+            inner.apply_end_request(&arena);
             inner
         });
-        pib.extend({
-            let mut inner = PrintItemBuffer::default();
+        pib.extend(&arena, {
+            let mut inner = PrintItemBuffer::new(&arena);
             inner.request(Request::expect(RequestItem::LineBreak));
-            inner.apply_end_request();
+            inner.apply_end_request(&arena);
             inner
         });
 
-        let items = pib.finish();
+        let items = pib.finish(&arena);
 
         assert_eq!(format(items), "\n\n\n");
     }
 
     #[test]
     pub(crate) fn segmented_request_apply_merge_with_outer() {
-        let mut pib = PrintItemBuffer::default();
+        let arena = Arena::new();
+        let mut pib = PrintItemBuffer::new(&arena);
         pib.request(Request::expect(RequestItem::LineBreak));
-        pib.extend({
-            let mut inner = PrintItemBuffer::default();
+        pib.extend(&arena, {
+            let mut inner = PrintItemBuffer::new(&arena);
             // This one should get merged with the outer one
             inner.request(Request::expect(RequestItem::LineBreak));
-            inner.apply_end_request();
+            inner.apply_end_request(&arena);
             inner
         });
         pib.request(Request::expect(RequestItem::LineBreak));
 
-        let items = pib.finish();
+        let items = pib.finish(&arena);
 
         assert_eq!(format(items), "\n\n");
     }

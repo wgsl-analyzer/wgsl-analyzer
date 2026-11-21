@@ -111,7 +111,7 @@ RUST_BACKTRACE=1 cargo test --features=prefer-immediate-crash
 - When the formatter errors, you can see the source position of the problematic AST nodes and can then locate that within the printed ast (see above).
   From there on you might want to look for the responsible `gen_*` function (see `generators/node.rs`).
 - `NodeWithTrivia` implements `Debug`, so it's very useful to just `dbg!(&items)` the items that were returned by `parse_node_with` to see what trivia (comments etc) gets attached to which nodes.
-- Strategically inserting `formatted.push_sc(sc!("|"))` calls into `gen_*` functions' `==== Format` sections shows which part of the code is responsible for which part of the formatted output.
+- Strategically inserting `formatted.push_sc(arena, sc!("|"))` calls into `gen_*` functions' `==== Format` sections shows which part of the code is responsible for which part of the formatted output.
 
 ## Guidelines on implementing formatting for new syntax constructs
 

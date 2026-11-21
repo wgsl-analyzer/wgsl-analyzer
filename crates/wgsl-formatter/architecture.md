@@ -32,7 +32,7 @@ use wgsl_formatter::{
 pub fn belongs_to_clown(node: &syntax::SyntaxNode) -> bool { false }
 pub fn gen_example(
     node: &ast::DiscardStatement
-) -> FormatDocumentResult<PrintItemBuffer> {
+) -> FormatDocumentResult<PrintItemBuffer<'buffer>> {
     // ==== Context ====
     let needs_a_smiley = node.syntax().parent().is_some_and(|node| belongs_to_clown(&node));
 
@@ -44,13 +44,13 @@ pub fn gen_example(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::default();
+    let mut formatted = PrintItemBuffer::new(arena);
     if needs_a_smiley {
-        formatted.push_sc(sc!(":)"));
+        formatted.push_sc(arena, sc!(":)"));
     }
-    formatted.extend(gen_node_with_trivia(&item_discard)?);
+    formatted.extend(arena, gen_node_with_trivia(arena, &item_discard)?);
     if statement_needs_semicolon_policy(node.syntax()) {
-        formatted.push_sc(sc!(";"));
+        formatted.push_sc(arena, sc!(";"));
     }
     formatted.request(Request::expect(RequestItem::LineBreak));
     Ok(formatted)

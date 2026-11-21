@@ -1,3 +1,4 @@
+use dprint_core::formatting::Arena;
 use dprint_core_macros::sc;
 use syntax::{
     AstNode as _, SyntaxKind,
@@ -15,9 +16,10 @@ use crate::{
     reporting::FormatDocumentError,
 };
 
-pub(crate) fn gen_increment_decrement_statement(
-    increment_decrement_statement: &ast::IncrementDecrementStatement
-) -> Result<PrintItemBuffer, FormatDocumentError> {
+pub(crate) fn gen_increment_decrement_statement<'buffer>(
+    arena: &'buffer Arena,
+    increment_decrement_statement: &ast::IncrementDecrementStatement,
+) -> Result<PrintItemBuffer<'buffer>, FormatDocumentError> {
     // ==== Parse ====
     let mut syntax = syntax_iter(increment_decrement_statement.syntax());
 
@@ -28,13 +30,13 @@ pub(crate) fn gen_increment_decrement_statement(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::default();
-    formatted.extend(gen_node_with_trivia(&item_ident)?);
-    formatted.extend(gen_node_with_trivia(&item_operator)?);
+    let mut formatted = PrintItemBuffer::new(arena);
+    formatted.extend(arena, gen_node_with_trivia(arena, &item_ident)?);
+    formatted.extend(arena, gen_node_with_trivia(arena, &item_operator)?);
 
     if statement_needs_semicolon_policy(increment_decrement_statement.syntax()) {
         formatted.request(Request::discourage(RequestItem::Space));
-        formatted.push_sc(sc!(";"));
+        formatted.push_sc(arena, sc!(";"));
     }
     Ok(formatted)
 }

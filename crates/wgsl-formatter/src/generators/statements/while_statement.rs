@@ -1,3 +1,4 @@
+use dprint_core::formatting::Arena;
 use dprint_core_macros::sc;
 use syntax::{
     AstNode as _, SyntaxKind, SyntaxNode,
@@ -14,9 +15,10 @@ use crate::{
     reporting::FormatDocumentResult,
 };
 
-pub(crate) fn gen_while_statement(
-    statement: &ast::WhileStatement
-) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_while_statement<'buffer>(
+    arena: &'buffer Arena,
+    statement: &ast::WhileStatement,
+) -> FormatDocumentResult<PrintItemBuffer<'buffer>> {
     // ==== Parse ====
     let mut syntax = syntax_iter(statement.syntax());
     parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::While)?;
@@ -27,14 +29,14 @@ pub(crate) fn gen_while_statement(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::default();
-    formatted.push_sc(sc!("while"));
-    formatted.start_indent_before_requests();
+    let mut formatted = PrintItemBuffer::new(arena);
+    formatted.push_sc(arena, sc!("while"));
+    formatted.start_indent_before_requests(arena, );
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.extend(gen_node_with_trivia(&item_condition)?);
-    formatted.finish_indent_before_requests();
+    formatted.extend(arena, gen_node_with_trivia(arena, &item_condition)?);
+    formatted.finish_indent_before_requests(arena);
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.extend(gen_node_with_trivia(&item_body)?);
+    formatted.extend(arena, gen_node_with_trivia(arena, &item_body)?);
     formatted.request(Request::expect(RequestItem::LineBreak));
 
     Ok(formatted)

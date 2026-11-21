@@ -1,4 +1,4 @@
-use dprint_core::formatting::PrintItems;
+use dprint_core::formatting::{Arena, PrintItems};
 use dprint_core_macros::sc;
 use itertools::Itertools as _;
 use syntax::{
@@ -25,9 +25,10 @@ use crate::{
     trivia::NodeWithTrivia,
 };
 
-pub(crate) fn gen_function_call(
-    function_call: &ast::FunctionCall
-) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_function_call<'buffer>(
+    arena: &'buffer Arena,
+    function_call: &ast::FunctionCall,
+) -> FormatDocumentResult<PrintItemBuffer<'buffer>> {
     // ==== Parse ====
     let mut syntax = syntax_iter(function_call.syntax());
     let item_identifier =
@@ -37,16 +38,17 @@ pub(crate) fn gen_function_call(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::default();
-    formatted.start_new_line_group_after_requests();
-    formatted.extend(gen_node_with_trivia(&item_identifier)?);
-    formatted.finish_new_line_group_before_requests();
-    formatted.extend(gen_node_with_trivia(&item_arguments)?);
+    let mut formatted = PrintItemBuffer::new(arena);
+    formatted.start_new_line_group_after_requests(arena);
+    formatted.extend(arena, gen_node_with_trivia(arena, &item_identifier)?);
+    formatted.finish_new_line_group_before_requests(arena);
+    formatted.extend(arena, gen_node_with_trivia(arena, &item_arguments)?);
     Ok(formatted)
 }
 
-pub(crate) fn determine_function_call_argument_style(
-    function_call: Option<SyntaxNode>
+pub(crate) fn determine_function_call_argument_style<'buffer>(
+    arena: &'buffer Arena,
+    function_call: Option<SyntaxNode>,
 ) -> FunctionCallArgumentStyle {
     let Some(path) = function_call
         .and_then(FunctionCall::cast)
@@ -131,89 +133,94 @@ pub(crate) fn parse_function_call_arguments(
     Ok(item_arguments)
 }
 
-pub(crate) fn gen_function_call_arguments(
-    arguments: &ast::Arguments
-) -> FormatDocumentResult<PrintItemBuffer> {
-    let style = determine_function_call_argument_style(arguments.syntax().parent());
+pub(crate) fn gen_function_call_arguments<'buffer>(
+    arena: &'buffer Arena,
+    arguments: &ast::Arguments,
+) -> FormatDocumentResult<PrintItemBuffer<'buffer>> {
+    let style = determine_function_call_argument_style(arena, arguments.syntax().parent());
     match style {
-        FunctionCallArgumentStyle::Standard => gen_function_call_arguments_standard(arguments),
+        FunctionCallArgumentStyle::Standard => {
+            gen_function_call_arguments_standard(arena, arguments)
+        },
         FunctionCallArgumentStyle::Tabular { columns, rows } => {
-            gen_function_call_arguments_tabular(arguments, columns, rows)
+            gen_function_call_arguments_tabular(arena, arguments, columns, rows)
         },
     }
 }
 
-pub(crate) fn gen_function_call_arguments_standard(
-    arguments: &ast::Arguments
-) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_function_call_arguments_standard<'buffer>(
+    arena: &'buffer Arena,
+    arguments: &ast::Arguments,
+) -> FormatDocumentResult<PrintItemBuffer<'buffer>> {
     // ==== Parse ====
     let mut syntax = syntax_iter(arguments.syntax());
     let item_arguments = parse_function_call_arguments(&mut syntax)?;
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::default();
+    let mut formatted = PrintItemBuffer::new(arena);
 
-    let mut multiline_group = MultilineGroup::new_before_requests(&mut formatted);
+    let mut multiline_group = MultilineGroup::new_before_requests(arena, &mut formatted);
 
-    multiline_group.push_sc(sc!("("));
+    multiline_group.push_sc(arena, sc!("("));
     multiline_group.request(Request::discourage(RequestItem::Space));
 
     // If its blank we do not give the formatter the option to break within the ()
     if !item_arguments.is_empty() {
-        multiline_group.start_indent_before_requests();
+        multiline_group.start_indent_before_requests(arena);
 
         // Really discourage a newline here - but break into newlines if we are multiline anyways.
         // This keeps single-argument functions as one line. We could simply not offer a newline,
         // but then a long chain of one-arg functions would overflow
 
-        multiline_group.start_new_line_group_before_requests();
+        multiline_group.start_new_line_group_before_requests(arena);
         multiline_group.grouped_newline_or_space();
-        multiline_group.finish_new_line_group_after_requests();
+        multiline_group.finish_new_line_group_after_requests(arena);
 
         for (position, item) in item_arguments.into_iter().with_position() {
             if !position.is_first && !position.is_exactly_one() {
                 multiline_group.grouped_newline_or_space();
             }
-            multiline_group.extend(gen_node_preceding_trivia(&item)?);
+            multiline_group.extend(arena, gen_node_preceding_trivia(arena, &item)?);
             if item.has_content() {
-                multiline_group.start_new_line_group_after_requests();
-                multiline_group.extend(gen_node_content(&item)?);
-                multiline_group.finish_new_line_group_before_requests();
+                multiline_group.start_new_line_group_after_requests(arena);
+                multiline_group.extend(arena, gen_node_content(arena, &item)?);
+                multiline_group.finish_new_line_group_before_requests(arena);
                 multiline_group.request(Request::discourage(RequestItem::Space));
                 if position.is_last || position.is_exactly_one() {
-                    multiline_group.extend_if_multi_line({
-                        let mut pi = PrintItems::default();
+                    multiline_group.extend_if_multi_line(arena, {
+                        let mut pi = PrintItems::new(arena);
                         pi.push_sc(sc!(","));
                         pi
                     });
                 } else {
-                    multiline_group.push_sc(sc!(","));
+                    multiline_group.push_sc(arena, sc!(","));
                 }
             }
-            multiline_group.extend(gen_node_succeeding_trivia(&item)?);
+            multiline_group.extend(arena, gen_node_succeeding_trivia(arena, &item)?);
         }
 
         // Do not offer a newline here - but break into newlines if we are multiline anyways.
         // This keeps single-argument functions as one line.
         multiline_group.grouped_request(Request::expect(RequestItem::LineBreak), Request::empty());
 
-        multiline_group.finish_indent_before_requests();
+        multiline_group.finish_indent_before_requests(arena);
     }
 
     multiline_group.request(Request::discourage(RequestItem::Space));
-    multiline_group.push_sc(sc!(")"));
+    multiline_group.push_sc(arena, sc!(")"));
 
-    multiline_group.end_before_requests();
+    multiline_group.end_before_requests(arena);
 
     Ok(formatted)
 }
 
-pub(crate) fn gen_function_call_arguments_tabular(
+pub(crate) fn gen_function_call_arguments_tabular<'buffer>(
+    arena: &'buffer Arena,
     arguments: &ast::Arguments,
     table_columns: usize,
     table_rows: usize,
-) -> FormatDocumentResult<PrintItemBuffer> {
+) -> FormatDocumentResult<PrintItemBuffer<'buffer>> {
     // ==== Parse ====
     let mut syntax = syntax_iter(arguments.syntax());
     let item_arguments = parse_function_call_arguments(&mut syntax)?;
@@ -226,33 +233,33 @@ pub(crate) fn gen_function_call_arguments_tabular(
     } else if item_count == table_rows {
         (1, table_rows)
     } else {
-        return gen_function_call_arguments_standard(arguments);
+        return gen_function_call_arguments_standard(arena, arguments);
     };
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::default();
+    let mut formatted = PrintItemBuffer::new(arena);
 
-    formatted.push_sc(sc!("("));
-    formatted.start_indent_before_requests();
+    formatted.push_sc(arena, sc!("("));
+    formatted.start_indent_before_requests(arena);
 
     // If its blank we do not give the formatter the option to break within the ()
     if !item_arguments.is_empty() {
         formatted.request(Request::expect(RequestItem::LineBreak));
         for row in &item_arguments.into_iter().chunks(table_columns) {
-            formatted.apply_end_request();
+            formatted.apply_end_request(arena);
             formatted.request(Request::discourage(RequestItem::Space));
-            let mut multiline_group = MultilineGroup::new_before_requests(&mut formatted);
+            let mut multiline_group = MultilineGroup::new_before_requests(arena, &mut formatted);
             for column in row {
-                multiline_group.extend(gen_node_preceding_trivia(&column)?);
-                multiline_group.extend(gen_node_content(&column)?);
+                multiline_group.extend(arena, gen_node_preceding_trivia(arena, &column)?);
+                multiline_group.extend(arena, gen_node_content(arena, &column)?);
                 multiline_group.request(Request::discourage(RequestItem::Space));
                 // We know that there is always a separator - even on the final item
-                multiline_group.push_sc(sc!(","));
-                multiline_group.extend(gen_node_succeeding_trivia(&column)?);
+                multiline_group.push_sc(arena, sc!(","));
+                multiline_group.extend(arena, gen_node_succeeding_trivia(arena, &column)?);
 
                 multiline_group.grouped_newline_or_space();
             }
-            multiline_group.end_before_requests();
+            multiline_group.end_before_requests(arena);
 
             // A row always ends on a new line
             formatted.request(Request::expect(RequestItem::LineBreak));
@@ -260,15 +267,16 @@ pub(crate) fn gen_function_call_arguments_tabular(
         formatted.request(Request::expect(RequestItem::LineBreak));
     }
 
-    formatted.finish_indent_before_requests();
-    formatted.push_sc(sc!(")"));
+    formatted.finish_indent_before_requests(arena);
+    formatted.push_sc(arena, sc!(")"));
 
     Ok(formatted)
 }
 
-pub(crate) fn gen_function_call_statement(
-    function_call_statement: &ast::FunctionCallStatement
-) -> Result<PrintItemBuffer, FormatDocumentError> {
+pub(crate) fn gen_function_call_statement<'buffer>(
+    arena: &'buffer Arena,
+    function_call_statement: &ast::FunctionCallStatement,
+) -> Result<PrintItemBuffer<'buffer>, FormatDocumentError> {
     // ==== Parse ====
     let mut syntax = syntax_iter(function_call_statement.syntax());
     let function_call =
@@ -277,10 +285,10 @@ pub(crate) fn gen_function_call_statement(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::default();
-    formatted.extend(gen_node_with_trivia(&function_call)?);
+    let mut formatted = PrintItemBuffer::new(arena);
+    formatted.extend(arena, gen_node_with_trivia(arena, &function_call)?);
     if statement_needs_semicolon_policy(function_call_statement.syntax()) {
-        formatted.push_sc(sc!(";"));
+        formatted.push_sc(arena, sc!(";"));
     }
     Ok(formatted)
 }

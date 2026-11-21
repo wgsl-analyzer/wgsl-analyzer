@@ -1,3 +1,4 @@
+use dprint_core::formatting::Arena;
 use dprint_core_macros::sc;
 use syntax::{
     AstNode as _, SyntaxKind, SyntaxNode,
@@ -15,9 +16,10 @@ use crate::{
     reporting::FormatDocumentResult,
 };
 
-pub(crate) fn gen_break_if_statement(
-    statement: &ast::BreakIfStatement
-) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_break_if_statement<'buffer>(
+    arena: &'buffer Arena,
+    statement: &ast::BreakIfStatement,
+) -> FormatDocumentResult<PrintItemBuffer<'buffer>> {
     // ==== Parse ====
     let mut syntax = syntax_iter(statement.syntax());
     let item_break =
@@ -29,18 +31,18 @@ pub(crate) fn gen_break_if_statement(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::default();
-    formatted.extend(gen_node_with_trivia(&item_break)?);
+    let mut formatted = PrintItemBuffer::new(arena);
+    formatted.extend(arena, gen_node_with_trivia(arena, &item_break)?);
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.extend(gen_node_with_trivia(&item_if)?);
-    formatted.start_indent_before_requests();
+    formatted.extend(arena, gen_node_with_trivia(arena, &item_if)?);
+    formatted.start_indent_before_requests(arena, );
     formatted.request(Request::expect(RequestItem::Space).or_newline());
-    formatted.extend(gen_node_with_trivia(&item_condition)?);
+    formatted.extend(arena, gen_node_with_trivia(arena, &item_condition)?);
     formatted.request(Request::discourage(RequestItem::Space));
     if statement_needs_semicolon_policy(statement.syntax()) {
-        formatted.push_sc(sc!(";"));
+        formatted.push_sc(arena, sc!(";"));
     }
-    formatted.finish_indent_before_requests();
+    formatted.finish_indent_before_requests(arena);
 
     Ok(formatted)
 }
