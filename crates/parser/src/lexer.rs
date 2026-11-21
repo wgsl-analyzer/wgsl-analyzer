@@ -399,7 +399,7 @@ where
         tokens.push(token);
         spans.push(span);
         match token {
-            Token::Identifier | Token::Var => {
+            Token::Identifier | Token::Private | Token::Var => {
                 // Skip to next non-whitespace token
                 while let Some((
                     Token::Blankspace | Token::LineEndingComment | Token::BlockComment,

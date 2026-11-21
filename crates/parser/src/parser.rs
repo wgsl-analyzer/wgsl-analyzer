@@ -149,7 +149,11 @@ impl Parser<'_> {
                     (Self::is_skipped(*token)
                         || matches!(
                             token,
-                            Token::Identifier | Token::ColonColon | Token::Super | Token::Package
+                            Token::Identifier
+                                | Token::Private
+                                | Token::ColonColon
+                                | Token::Super
+                                | Token::Package
                         ))
                 })
                 .next(),
