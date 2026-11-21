@@ -27,7 +27,9 @@ pub(crate) fn gen_function_declaration(
 ) -> FormatDocumentResult<PrintItemBuffer> {
     let mut syntax = syntax_iter(node.syntax());
 
-    parse_node_with(&mut syntax, NoTrivia).expect_kind(SyntaxKind::Fn)?;
+    let item_visibility =
+        parse_node_with(&mut syntax, NoTrivia).only_if_kind(SyntaxKind::Visibility, &mut syntax);
+    let item_fn = parse_node_with(&mut syntax, DiscardBlankspace).expect_kind(SyntaxKind::Fn)?;
     let item_name =
         parse_node_with(&mut syntax, DiscardBlankspace).expect_kind(SyntaxKind::Name)?;
     let item_params = parse_node_with(&mut syntax, DiscardBlankspace)
@@ -42,8 +44,14 @@ pub(crate) fn gen_function_declaration(
 
     let mut formatted = PrintItemBuffer::default();
 
+    // Visibility
+    if let Some(item_visibility) = item_visibility {
+        formatted.extend(gen_node_with_trivia(options, &item_visibility)?);
+        formatted.request(Request::expect(RequestItem::Space));
+    }
+
     // Fn
-    formatted.push_sc(sc!("fn"));
+    formatted.extend(gen_node_with_trivia(options, &item_fn)?);
     formatted.request(Request::expect(RequestItem::Space));
 
     // Name

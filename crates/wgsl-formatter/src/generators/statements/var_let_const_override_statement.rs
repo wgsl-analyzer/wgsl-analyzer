@@ -1,4 +1,3 @@
-use dprint_core::formatting::StringContainer;
 use dprint_core_macros::sc;
 use syntax::{AstNode as _, SyntaxKind, SyntaxNode, ast};
 
@@ -62,15 +61,6 @@ impl BindingKind {
             Self::Override => SyntaxKind::Override,
         }
     }
-
-    const fn sc(self) -> &'static StringContainer {
-        match self {
-            Self::Var => sc!("var"),
-            Self::Let => sc!("let"),
-            Self::Const => sc!("const"),
-            Self::Override => sc!("override"),
-        }
-    }
 }
 
 fn gen_var_let_const_override_statement(
@@ -84,7 +74,10 @@ fn gen_var_let_const_override_statement(
     // ==== Parse ====
     let mut syntax = syntax_iter(syntax_node);
 
-    parse_node_with(&mut syntax, NoTrivia).expect_kind(kind.syntax_kind())?;
+    let item_visibility =
+        parse_node_with(&mut syntax, NoTrivia).only_if_kind(SyntaxKind::Visibility, &mut syntax);
+    let item_binding_token =
+        parse_node_with(&mut syntax, DiscardBlankspace).expect_kind(kind.syntax_kind())?;
     let item_template_list = parse_node_with(&mut syntax, DiscardBlankspace)
         .only_if_kind(SyntaxKind::TemplateList, &mut syntax);
     let item_name =
@@ -117,7 +110,11 @@ fn gen_var_let_const_override_statement(
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
-    formatted.push_sc(kind.sc());
+    if let Some(item_visibility) = item_visibility {
+        formatted.extend(gen_node_with_trivia(options, &item_visibility)?);
+        formatted.request(Request::expect(RequestItem::Space));
+    }
+    formatted.extend(gen_node_with_trivia(options, &item_binding_token)?);
     formatted.start_indent_before_requests();
 
     if let Some(item_template_list) = item_template_list {

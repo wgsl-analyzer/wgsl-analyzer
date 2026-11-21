@@ -1,5 +1,3 @@
-#![cfg(test)]
-
 use expect_test::expect;
 
 use crate::{
