@@ -28,6 +28,11 @@
 					"match": "\\b(package|super|as)\\b"
 				},
 				{
+					"comment": "visibility keywords",
+					"name": "storage.modifier.wesl",
+					"match": "\\b(public|private)\\b"
+				},
+				{
 					"comment": "double colon",
 					"name": "keyword.operator.module.wesl",
 					"match": "::"
