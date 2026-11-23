@@ -198,7 +198,7 @@ importers:
         specifier: ^23.6.4
         version: 23.6.5
       '@tsconfig/node24':
-        specifier: ^24.0.5
+        specifier: ^24.0.6
         version: 24.0.6
       '@tsconfig/strictest':
         specifier: ^2.0.8
@@ -970,6 +970,7 @@ packages:
   '@typespec/ts-http-runtime@0.3.10':
     resolution: {integrity: sha512-vddvvtZ7sejSlCv+OIkn2ztjB1O31Fc2JsxI/YK725r3elXXlF/J3o3lbXJFRhoeWRWK1tjdZ+GTi6Fdtrp+EA==}
     engines: {node: '>=22.0.0'}
+    deprecated: A newer version 0.3.11 has been published.
 
   '@vscode/test-electron@3.1.0':
     resolution: {integrity: sha512-CRqv5u+YYoseuNVJ6Tyo4k0sF0mx4qnKMihRB0PjsUF8Dc0WKtCXo6CNL6nWWm5esfFQsQA/pejMj4ZbpJVLTw==}
