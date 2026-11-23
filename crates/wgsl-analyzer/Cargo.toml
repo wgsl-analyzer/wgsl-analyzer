@@ -10,6 +10,14 @@ license.workspace = true
 # documentation = "https://wgsl-analyzer.github.io/manual.html"
 autobins = false
 
+[features]
+force-always-assert = ["stdx/force-always-assert"]
+jemalloc = [
+	"dep:jemallocator",
+	# "profile/jemalloc",
+]
+sysroot-abi = []
+
 [lib]
 
 [[bin]]
@@ -86,14 +94,6 @@ jemallocator = { workspace = true, optional = true }
 
 [target."cfg(windows)".dependencies]
 windows-sys.workspace = true
-
-[features]
-force-always-assert = ["stdx/force-always-assert"]
-jemalloc = [
-	"dep:jemallocator",
-	# "profile/jemalloc",
-]
-sysroot-abi = []
 
 [lints]
 workspace = true

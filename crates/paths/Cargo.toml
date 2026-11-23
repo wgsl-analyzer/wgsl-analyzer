@@ -8,14 +8,14 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 
+[features]
+serde1 = ["camino/serde1"]
+
 [lib]
 doctest = false
 
 [dependencies]
 camino.workspace = true
-
-[features]
-serde1 = ["camino/serde1"]
 
 [lints]
 workspace = true

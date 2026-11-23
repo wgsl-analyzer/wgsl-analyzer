@@ -7,6 +7,13 @@ description = "A collection of tools for profiling wgsl-analyzer."
 repository.workspace = true
 license.workspace = true
 
+[features]
+cpu-profiler = []
+jemalloc = ["jemalloc-ctl"]
+
+# Uncomment to enable for the whole crate graph
+# default = [ "cpu-profiler" ]
+
 [lib]
 
 [target.'cfg(all(target_os = "linux", not(target_env = "ohos"), any(target_arch = "x86", target_arch = "x86_64", target_arch = "aarch64")))'.dependencies]
@@ -33,13 +40,6 @@ windows-sys = {
 		"Win32_System_Threading",
 	]
 }
-
-[features]
-cpu-profiler = []
-jemalloc = ["jemalloc-ctl"]
-
-# Uncomment to enable for the whole crate graph
-# default = [ "cpu-profiler" ]
 
 [lints]
 workspace = true
