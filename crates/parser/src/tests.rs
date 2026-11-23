@@ -8,6 +8,7 @@ mod diagnostic;
 mod expression;
 mod imports;
 mod keywords;
+mod lexer;
 mod naga;
 mod statement;
 mod visibility;
