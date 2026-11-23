@@ -1,3 +1,4 @@
+use dprint_core::formatting::Arena;
 use dprint_core_macros::sc;
 use syntax::{
     AstNode as _, SyntaxKind, SyntaxNode,
@@ -18,9 +19,10 @@ use crate::{
     reporting::FormatDocumentResult,
 };
 
-pub(crate) fn gen_for_statement(
-    statement: &ast::ForStatement
-) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_for_statement<'buffer>(
+    arena: &'buffer Arena,
+    statement: &ast::ForStatement,
+) -> FormatDocumentResult<PrintItemBuffer<'buffer>> {
     // ==== Parse ====
     let mut syntax = syntax_iter(statement.syntax());
     let item_for = parse_node_with(&mut syntax, DiscardBlankspace).expect_kind(SyntaxKind::For)?;
@@ -42,37 +44,37 @@ pub(crate) fn gen_for_statement(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::default();
-    formatted.extend(gen_node_with_trivia(&item_for)?);
-    formatted.push_sc(sc!("("));
+    let mut formatted = PrintItemBuffer::new(arena);
+    formatted.extend(arena, gen_node_with_trivia(arena, &item_for)?);
+    formatted.push_sc(arena, sc!("("));
     formatted.request(Request::discourage(RequestItem::EmptyLine));
     formatted.request(Request::discourage(RequestItem::Space));
 
-    let mut multiline_group = MultilineGroup::new_before_requests(&mut formatted);
-    multiline_group.start_indent_before_requests();
+    let mut multiline_group = MultilineGroup::new_before_requests(arena, &mut formatted);
+    multiline_group.start_indent_before_requests(arena);
 
     multiline_group.grouped_newline_or_space();
 
     if let Some(item_initializer) = item_initializer {
-        multiline_group.extend(gen_node_with_trivia(&item_initializer)?);
+        multiline_group.extend(arena, gen_node_with_trivia(arena, &item_initializer)?);
     } else {
         multiline_group.request(Request::discourage(RequestItem::Space));
     }
     multiline_group.request(Request::discourage(RequestItem::Space));
-    multiline_group.extend(gen_node_with_trivia(&item_semicolon_1)?);
+    multiline_group.extend(arena, gen_node_with_trivia(arena, &item_semicolon_1)?);
 
     multiline_group.grouped_newline_or_space();
     if let Some(item_condition) = item_condition {
-        multiline_group.extend(gen_node_with_trivia(&item_condition)?);
+        multiline_group.extend(arena, gen_node_with_trivia(arena, &item_condition)?);
     } else {
         multiline_group.request(Request::discourage(RequestItem::Space));
     }
     multiline_group.request(Request::discourage(RequestItem::Space));
-    multiline_group.extend(gen_node_with_trivia(&item_semicolon_2)?);
+    multiline_group.extend(arena, gen_node_with_trivia(arena, &item_semicolon_2)?);
 
     multiline_group.grouped_newline_or_space();
     if let Some(item_continuing) = item_continuing {
-        multiline_group.extend(gen_node_with_trivia(&item_continuing)?);
+        multiline_group.extend(arena, gen_node_with_trivia(arena, &item_continuing)?);
     } else {
         multiline_group.request(Request::discourage(RequestItem::Space));
     }
@@ -80,21 +82,22 @@ pub(crate) fn gen_for_statement(
 
     multiline_group.grouped_newline_or_space();
 
-    multiline_group.finish_indent_before_requests();
+    multiline_group.finish_indent_before_requests(arena);
     multiline_group.request(Request::discourage(RequestItem::Space));
 
-    multiline_group.push_sc(sc!(")"));
+    multiline_group.push_sc(arena, sc!(")"));
 
-    multiline_group.end_before_requests();
+    multiline_group.end_before_requests(arena);
 
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.extend(gen_node_with_trivia(&item_body)?);
+    formatted.extend(arena, gen_node_with_trivia(arena, &item_body)?);
     Ok(formatted)
 }
 
-pub(crate) fn gen_for_statement_initializer(
-    node: &ast::SyntaxNode
-) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_for_statement_initializer<'buffer>(
+    arena: &'buffer Arena,
+    node: &ast::SyntaxNode,
+) -> FormatDocumentResult<PrintItemBuffer<'buffer>> {
     // === Parse ===
     let mut syntax = syntax_iter(node.syntax());
     let item_statement =
@@ -102,12 +105,13 @@ pub(crate) fn gen_for_statement_initializer(
     parse_end(&mut syntax)?;
 
     // === Format ===
-    gen_node_with_trivia(&item_statement)
+    gen_node_with_trivia(arena, &item_statement)
 }
 
-pub(crate) fn gen_for_statement_condition(
-    node: &ast::SyntaxNode
-) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_for_statement_condition<'buffer>(
+    arena: &'buffer Arena,
+    node: &ast::SyntaxNode,
+) -> FormatDocumentResult<PrintItemBuffer<'buffer>> {
     // === Parse ===
     let mut sub_syntax = syntax_iter(node.syntax());
     let item_condition =
@@ -115,19 +119,20 @@ pub(crate) fn gen_for_statement_condition(
     parse_end(&mut sub_syntax)?;
 
     // === Format ===
-    gen_node_with_trivia(&item_condition)
+    gen_node_with_trivia(arena, &item_condition)
 }
 
-pub(crate) fn gen_for_statement_continuing_part(
-    node: &ast::SyntaxNode
-) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_for_statement_continuing_part<'buffer>(
+    arena: &'buffer Arena,
+    node: &ast::SyntaxNode,
+) -> FormatDocumentResult<PrintItemBuffer<'buffer>> {
     let mut syntax = syntax_iter(node.syntax());
 
     // item_continuing is either a ast::Statement or a ast::FunctionCall
     let item_continuing = parse_node_with(&mut syntax, DiscardBlankspace);
     parse_end(&mut syntax)?;
 
-    gen_node_with_trivia(&item_continuing)
+    gen_node_with_trivia(arena, &item_continuing)
 }
 
 #[must_use]

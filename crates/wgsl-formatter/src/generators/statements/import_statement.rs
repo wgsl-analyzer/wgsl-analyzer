@@ -1,3 +1,4 @@
+use dprint_core::formatting::Arena;
 use dprint_core_macros::sc;
 use itertools::Itertools as _;
 use rowan::{NodeOrToken, SyntaxToken};
@@ -30,9 +31,10 @@ use crate::{
 // then a ParsedImports::simplify that collapses them.
 // Vec<Comment> are either attached to after import items (or a the end of an import collection {a, b, /*hi*/})
 
-pub(crate) fn gen_import_package_relative(
-    node: &ast::ImportPackageRelative
-) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_import_package_relative<'buffer>(
+    arena: &'buffer Arena,
+    node: &ast::ImportPackageRelative,
+) -> FormatDocumentResult<PrintItemBuffer<'buffer>> {
     // ==== Parse ====
     let mut syntax = syntax_iter(node.syntax());
     parse_node_with(&mut syntax, NoTrivia).expect_kind(ast::SyntaxKind::Package)?;
@@ -40,14 +42,15 @@ pub(crate) fn gen_import_package_relative(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::default();
-    formatted.push_sc(sc!("package"));
-    formatted.push_sc(sc!("::"));
+    let mut formatted = PrintItemBuffer::new(arena);
+    formatted.push_sc(arena, sc!("package"));
+    formatted.push_sc(arena, sc!("::"));
     Ok(formatted)
 }
-pub(crate) fn gen_import_super_relative(
-    node: &ast::ImportSuperRelative
-) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_import_super_relative<'buffer>(
+    arena: &'buffer Arena,
+    node: &ast::ImportSuperRelative,
+) -> FormatDocumentResult<PrintItemBuffer<'buffer>> {
     // ==== Parse ====
     let mut syntax = syntax_iter(node.syntax());
 
@@ -61,14 +64,17 @@ pub(crate) fn gen_import_super_relative(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::default();
+    let mut formatted = PrintItemBuffer::new(arena);
 
     for item in items {
-        formatted.extend(gen_node_with_trivia(&item)?);
+        formatted.extend(arena, gen_node_with_trivia(arena, &item)?);
     }
     Ok(formatted)
 }
-pub(crate) fn gen_import_item(node: &ast::ImportItem) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_import_item<'buffer>(
+    arena: &'buffer Arena,
+    node: &ast::ImportItem,
+) -> FormatDocumentResult<PrintItemBuffer<'buffer>> {
     // ==== Parse ====
     let mut syntax = syntax_iter(node.syntax());
     let item_name =
@@ -82,17 +88,20 @@ pub(crate) fn gen_import_item(node: &ast::ImportItem) -> FormatDocumentResult<Pr
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::default();
-    formatted.extend(gen_node_with_trivia(&item_name)?);
+    let mut formatted = PrintItemBuffer::new(arena);
+    formatted.extend(arena, gen_node_with_trivia(arena, &item_name)?);
     if let Some(item_alias) = item_alias {
         formatted.request(Request::expect(RequestItem::Space));
-        formatted.push_sc(sc!("as"));
+        formatted.push_sc(arena, sc!("as"));
         formatted.request(Request::expect(RequestItem::Space));
-        formatted.extend(gen_node_with_trivia(&item_alias)?);
+        formatted.extend(arena, gen_node_with_trivia(arena, &item_alias)?);
     }
     Ok(formatted)
 }
-pub(crate) fn gen_import_path(node: &ast::ImportPath) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_import_path<'buffer>(
+    arena: &'buffer Arena,
+    node: &ast::ImportPath,
+) -> FormatDocumentResult<PrintItemBuffer<'buffer>> {
     // ==== Parse ====
     let mut syntax = syntax_iter(node.syntax());
     let item_name =
@@ -107,19 +116,19 @@ pub(crate) fn gen_import_path(node: &ast::ImportPath) -> FormatDocumentResult<Pr
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::default();
+    let mut formatted = PrintItemBuffer::new(arena);
 
-    formatted.extend(gen_node_with_trivia(&item_name)?);
-    formatted.push_sc(sc!("::"));
+    formatted.extend(arena, gen_node_with_trivia(arena, &item_name)?);
+    formatted.push_sc(arena, sc!("::"));
 
     if let Some(path) = item_path_rest {
-        formatted.extend(gen_node_with_trivia(&path)?);
+        formatted.extend(arena, gen_node_with_trivia(arena, &path)?);
     }
     if let Some(collection) = item_collection_rest {
-        formatted.extend(gen_node_with_trivia(&collection)?);
+        formatted.extend(arena, gen_node_with_trivia(arena, &collection)?);
     }
     if let Some(item) = item_item {
-        formatted.extend(gen_node_with_trivia(&item)?);
+        formatted.extend(arena, gen_node_with_trivia(arena, &item)?);
     }
 
     Ok(formatted)
@@ -192,9 +201,10 @@ impl PartialOrd for CmpImportTree<'_> {
 /// ```
 ///
 /// This should be enforced by the unit test below.
-pub(crate) fn gen_import_collection(
-    node: &ast::ImportCollection
-) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_import_collection<'buffer>(
+    arena: &'buffer Arena,
+    node: &ast::ImportCollection,
+) -> FormatDocumentResult<PrintItemBuffer<'buffer>> {
     // ==== Parse ====
     let mut syntax = syntax_iter(node.syntax());
 
@@ -230,41 +240,42 @@ pub(crate) fn gen_import_collection(
     });
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::default();
+    let mut formatted = PrintItemBuffer::new(arena);
 
-    let mut group = MultilineGroup::new_before_requests(&mut formatted);
-    group.push_sc(sc!("{"));
+    let mut group = MultilineGroup::new_before_requests(arena, &mut formatted);
+    group.push_sc(arena, sc!("{"));
 
-    group.start_indent_before_requests();
+    group.start_indent_before_requests(arena, );
     group.grouped_possible_newline();
     group.request(Request::discourage(RequestItem::EmptyLine));
     group.request(Request::discourage(RequestItem::Space));
 
     for (position, (item, _)) in items.iter().with_position() {
-        group.extend(gen_node_with_trivia(item)?);
+        group.extend(arena, gen_node_with_trivia(arena, item)?);
         if item.has_content() {
             group.request(Request::discourage(RequestItem::Space));
             if !position.is_last && !position.is_exactly_one() {
-                group.push_sc(sc!(","));
+                group.push_sc(arena, sc!(","));
                 group.grouped_newline_or_space();
             }
         }
     }
 
-    group.finish_indent_before_requests();
+    group.finish_indent_before_requests(arena);
     group.request(Request::discourage(RequestItem::Space));
     group.grouped_possible_newline();
 
-    group.push_sc(sc!("}"));
+    group.push_sc(arena, sc!("}"));
 
-    group.end_before_requests();
+    group.end_before_requests(arena);
 
     Ok(formatted)
 }
 
-pub(crate) fn gen_import_statement(
-    node: &ast::ImportStatement
-) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_import_statement<'buffer>(
+    arena: &'buffer Arena,
+    node: &ast::ImportStatement,
+) -> FormatDocumentResult<PrintItemBuffer<'buffer>> {
     // ==== Parse ====
     let mut syntax = syntax_iter(node.syntax());
     parse_node_with(&mut syntax, NoTrivia).expect_kind(ast::SyntaxKind::Import)?;
@@ -280,21 +291,21 @@ pub(crate) fn gen_import_statement(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::default();
-    formatted.push_sc(sc!("import"));
+    let mut formatted = PrintItemBuffer::new(arena);
+    formatted.push_sc(arena, sc!("import"));
     formatted.request(Request::expect(RequestItem::Space));
 
     if let Some(package_relative) = item_package_relative {
-        formatted.extend(gen_node_with_trivia(&package_relative)?);
+        formatted.extend(arena, gen_node_with_trivia(arena, &package_relative)?);
     }
     if let Some(super_relative) = item_super_relative {
-        formatted.extend(gen_node_with_trivia(&super_relative)?);
+        formatted.extend(arena, gen_node_with_trivia(arena, &super_relative)?);
     }
-    formatted.extend(gen_node_with_trivia(&item_entity)?);
+    formatted.extend(arena, gen_node_with_trivia(arena, &item_entity)?);
 
     if statement_needs_semicolon_policy(node.syntax()) {
         formatted.request(Request::discourage(RequestItem::Space));
-        formatted.push_sc(sc!(";"));
+        formatted.push_sc(arena, sc!(";"));
     }
 
     Ok(formatted)

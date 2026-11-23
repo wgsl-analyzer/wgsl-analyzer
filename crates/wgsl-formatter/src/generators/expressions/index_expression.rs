@@ -1,3 +1,4 @@
+use dprint_core::formatting::Arena;
 use syntax::{AstNode as _, SyntaxKind, SyntaxNode, ast};
 
 use crate::{
@@ -11,9 +12,10 @@ use crate::{
     reporting::FormatDocumentResult,
 };
 
-pub(crate) fn gen_index_expression(
-    index_expression: &ast::IndexExpression
-) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_index_expression<'buffer>(
+    arena: &'buffer Arena,
+    index_expression: &ast::IndexExpression,
+) -> FormatDocumentResult<PrintItemBuffer<'buffer>> {
     // ==== Parse ====
     let mut syntax = syntax_iter(index_expression.syntax());
     let item_array_expr =
@@ -27,27 +29,27 @@ pub(crate) fn gen_index_expression(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::default();
+    let mut formatted = PrintItemBuffer::new(arena);
 
-    formatted.extend(gen_node_with_trivia(&item_array_expr)?);
+    formatted.extend(arena, gen_node_with_trivia(arena, &item_array_expr)?);
 
-    let mut multiline_group = MultilineGroup::new_before_requests(&mut formatted);
+    let mut multiline_group = MultilineGroup::new_before_requests(arena, &mut formatted);
 
-    multiline_group.extend(gen_node_with_trivia(&item_bracket_left)?);
-    multiline_group.start_indent_before_requests();
+    multiline_group.extend(arena, gen_node_with_trivia(arena, &item_bracket_left)?);
+    multiline_group.start_indent_before_requests(arena);
     multiline_group.grouped_possible_newline();
     multiline_group.request(Request::discourage(RequestItem::EmptyLine));
     multiline_group.request(Request::discourage(RequestItem::Space));
 
-    multiline_group.extend(gen_node_with_trivia(&item_actual_index)?);
+    multiline_group.extend(arena, gen_node_with_trivia(arena, &item_actual_index)?);
     multiline_group.grouped_newline_or_space();
 
-    multiline_group.finish_indent_before_requests();
+    multiline_group.finish_indent_before_requests(arena);
     multiline_group.request(Request::discourage(RequestItem::Space));
 
-    multiline_group.extend(gen_node_with_trivia(&item_bracket_right)?);
+    multiline_group.extend(arena, gen_node_with_trivia(arena, &item_bracket_right)?);
 
-    multiline_group.end_before_requests();
+    multiline_group.end_before_requests(arena);
 
     Ok(formatted)
 }

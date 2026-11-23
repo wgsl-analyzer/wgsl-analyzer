@@ -1,3 +1,4 @@
+use dprint_core::formatting::Arena;
 use dprint_core_macros::sc;
 use syntax::{AstNode as _, ast::TypeAliasDeclaration};
 
@@ -12,9 +13,10 @@ use crate::{
     reporting::FormatDocumentError,
 };
 
-pub(crate) fn gen_type_alias_declaration(
-    statement: &TypeAliasDeclaration
-) -> Result<PrintItemBuffer, FormatDocumentError> {
+pub(crate) fn gen_type_alias_declaration<'buffer>(
+    arena: &'buffer Arena,
+    statement: &TypeAliasDeclaration,
+) -> Result<PrintItemBuffer<'buffer>, FormatDocumentError> {
     // ==== Parse ====
     let mut syntax = syntax_iter(statement.syntax());
     parse_node_with(&mut syntax, NoTrivia).expect_kind(syntax::SyntaxKind::Alias)?;
@@ -27,17 +29,17 @@ pub(crate) fn gen_type_alias_declaration(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::default();
-    formatted.push_sc(sc!("alias"));
+    let mut formatted = PrintItemBuffer::new(arena);
+    formatted.push_sc(arena, sc!("alias"));
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.extend(gen_node_with_trivia(&item_name)?);
+    formatted.extend(arena, gen_node_with_trivia(arena, &item_name)?);
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.push_sc(sc!("="));
+    formatted.push_sc(arena, sc!("="));
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.extend(gen_node_with_trivia(&item_type)?);
+    formatted.extend(arena, gen_node_with_trivia(arena, &item_type)?);
     if statement_needs_semicolon_policy(statement.syntax()) {
         formatted.request(Request::discourage(RequestItem::Space));
-        formatted.push_sc(sc!(";"));
+        formatted.push_sc(arena, sc!(";"));
     }
     Ok(formatted)
 }

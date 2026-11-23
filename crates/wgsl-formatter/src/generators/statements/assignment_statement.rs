@@ -1,3 +1,4 @@
+use dprint_core::formatting::Arena;
 use dprint_core_macros::sc;
 use syntax::{
     AstNode as _, SyntaxKind, SyntaxNode,
@@ -15,9 +16,10 @@ use crate::{
     reporting::FormatDocumentError,
 };
 
-pub(crate) fn gen_assignment_statement(
-    assignment_statement: &ast::AssignmentStatement
-) -> Result<PrintItemBuffer, FormatDocumentError> {
+pub(crate) fn gen_assignment_statement<'buffer>(
+    arena: &'buffer Arena,
+    assignment_statement: &ast::AssignmentStatement,
+) -> Result<PrintItemBuffer<'buffer>, FormatDocumentError> {
     // NOTE!! - When updating this function, keep in mind to
     // update gen_assignment_statement, gen_compound_assignment_statement, gen_phony_assignment_statement together
     // This is non-dry code, but when inevitably at some point there will be some differences between
@@ -35,26 +37,27 @@ pub(crate) fn gen_assignment_statement(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::default();
-    formatted.extend(gen_node_with_trivia(&item_target)?);
+    let mut formatted = PrintItemBuffer::new(arena);
+    formatted.extend(arena, gen_node_with_trivia(arena, &item_target)?);
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.start_new_line_group_before_requests();
-    formatted.push_sc(sc!("="));
+    formatted.start_new_line_group_before_requests(arena);
+    formatted.push_sc(arena, sc!("="));
     formatted.request(Request::expect(RequestItem::Space).or_newline());
-    formatted.finish_new_line_group_after_requests();
-    formatted.start_indent_before_requests();
-    formatted.extend(gen_node_with_trivia(&item_value)?);
+    formatted.finish_new_line_group_after_requests(arena);
+    formatted.start_indent_before_requests(arena);
+    formatted.extend(arena, gen_node_with_trivia(arena, &item_value)?);
     if statement_needs_semicolon_policy(assignment_statement.syntax()) {
         formatted.request(Request::discourage(RequestItem::Space));
-        formatted.push_sc(sc!(";"));
+        formatted.push_sc(arena, sc!(";"));
     }
-    formatted.finish_indent_before_requests();
+    formatted.finish_indent_before_requests(arena);
     Ok(formatted)
 }
 
-pub(crate) fn gen_phony_assignment_statement(
-    phony_assignment_statement: &ast::PhonyAssignmentStatement
-) -> Result<PrintItemBuffer, FormatDocumentError> {
+pub(crate) fn gen_phony_assignment_statement<'buffer>(
+    arena: &'buffer Arena,
+    phony_assignment_statement: &ast::PhonyAssignmentStatement,
+) -> Result<PrintItemBuffer<'buffer>, FormatDocumentError> {
     // NOTE!! - When updating this function, keep in mind to
     // update gen_assignment_statement, gen_compound_assignment_statement, gen_phony_assignment_statement together
     // This is non-dry code, but when inevitably at some point there will be some differences between
@@ -72,24 +75,25 @@ pub(crate) fn gen_phony_assignment_statement(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::default();
-    formatted.extend(gen_node_with_trivia(&item_phony)?);
+    let mut formatted = PrintItemBuffer::new(arena);
+    formatted.extend(arena, gen_node_with_trivia(arena, &item_phony)?);
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.push_sc(sc!("="));
+    formatted.push_sc(arena, sc!("="));
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.start_indent_before_requests();
-    formatted.extend(gen_node_with_trivia(&item_value)?);
+    formatted.start_indent_before_requests(arena);
+    formatted.extend(arena, gen_node_with_trivia(arena, &item_value)?);
     if statement_needs_semicolon_policy(phony_assignment_statement.syntax()) {
         formatted.request(Request::discourage(RequestItem::Space));
-        formatted.push_sc(sc!(";"));
+        formatted.push_sc(arena, sc!(";"));
     }
-    formatted.finish_indent_before_requests();
+    formatted.finish_indent_before_requests(arena);
     Ok(formatted)
 }
 
-pub(crate) fn gen_compound_assignment_statement(
-    compound_assignment_statement: &ast::CompoundAssignmentStatement
-) -> Result<PrintItemBuffer, FormatDocumentError> {
+pub(crate) fn gen_compound_assignment_statement<'buffer>(
+    arena: &'buffer Arena,
+    compound_assignment_statement: &ast::CompoundAssignmentStatement,
+) -> Result<PrintItemBuffer<'buffer>, FormatDocumentError> {
     // NOTE!! - When updating this function, keep in mind to
     // update gen_assignment_statement, gen_compound_assignment_statement, gen_phony_assignment_statement together
     // This is non-dry code, but when inevitably at some point there will be some differences between
@@ -108,18 +112,18 @@ pub(crate) fn gen_compound_assignment_statement(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::default();
-    formatted.extend(gen_node_with_trivia(&item_target)?);
+    let mut formatted = PrintItemBuffer::new(arena);
+    formatted.extend(arena, gen_node_with_trivia(arena, &item_target)?);
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.extend(gen_node_with_trivia(&item_operator)?);
+    formatted.extend(arena, gen_node_with_trivia(arena, &item_operator)?);
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.start_indent_before_requests();
-    formatted.extend(gen_node_with_trivia(&item_value)?);
+    formatted.start_indent_before_requests(arena);
+    formatted.extend(arena, gen_node_with_trivia(arena, &item_value)?);
     if statement_needs_semicolon_policy(compound_assignment_statement.syntax()) {
         formatted.request(Request::discourage(RequestItem::Space));
-        formatted.push_sc(sc!(";"));
+        formatted.push_sc(arena, sc!(";"));
     }
-    formatted.finish_indent_before_requests();
+    formatted.finish_indent_before_requests(arena);
     Ok(formatted)
 }
 

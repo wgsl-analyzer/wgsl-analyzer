@@ -1,4 +1,4 @@
-use dprint_core::formatting::StringContainer;
+use dprint_core::formatting::{Arena, StringContainer};
 use dprint_core_macros::sc;
 use syntax::{AstNode as _, SyntaxKind, SyntaxNode, ast};
 
@@ -13,28 +13,32 @@ use crate::{
     reporting::FormatDocumentResult,
 };
 
-pub(crate) fn gen_const_declaration_statement(
-    statement: &ast::ConstantDeclaration
-) -> FormatDocumentResult<PrintItemBuffer> {
-    gen_var_let_const_override_statement(BindingKind::Const, statement.syntax())
+pub(crate) fn gen_const_declaration_statement<'buffer>(
+    arena: &'buffer Arena,
+    statement: &ast::ConstantDeclaration,
+) -> FormatDocumentResult<PrintItemBuffer<'buffer>> {
+    gen_var_let_const_override_statement(arena, BindingKind::Const, statement.syntax())
 }
 
-pub(crate) fn gen_let_declaration_statement(
-    statement: &ast::LetDeclaration
-) -> FormatDocumentResult<PrintItemBuffer> {
-    gen_var_let_const_override_statement(BindingKind::Let, statement.syntax())
+pub(crate) fn gen_let_declaration_statement<'buffer>(
+    arena: &'buffer Arena,
+    statement: &ast::LetDeclaration,
+) -> FormatDocumentResult<PrintItemBuffer<'buffer>> {
+    gen_var_let_const_override_statement(arena, BindingKind::Let, statement.syntax())
 }
 
-pub(crate) fn gen_var_declaration_statement(
-    statement: &ast::VariableDeclaration
-) -> FormatDocumentResult<PrintItemBuffer> {
-    gen_var_let_const_override_statement(BindingKind::Var, statement.syntax())
+pub(crate) fn gen_var_declaration_statement<'buffer>(
+    arena: &'buffer Arena,
+    statement: &ast::VariableDeclaration,
+) -> FormatDocumentResult<PrintItemBuffer<'buffer>> {
+    gen_var_let_const_override_statement(arena, BindingKind::Var, statement.syntax())
 }
 
-pub(crate) fn gen_override_declaration_statement(
-    statement: &ast::OverrideDeclaration
-) -> FormatDocumentResult<PrintItemBuffer> {
-    gen_var_let_const_override_statement(BindingKind::Override, statement.syntax())
+pub(crate) fn gen_override_declaration_statement<'buffer>(
+    arena: &'buffer Arena,
+    statement: &ast::OverrideDeclaration,
+) -> FormatDocumentResult<PrintItemBuffer<'buffer>> {
+    gen_var_let_const_override_statement(arena, BindingKind::Override, statement.syntax())
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -58,7 +62,7 @@ impl BindingKind {
         }
     }
 
-    const fn sc(self) -> &'static StringContainer {
+    const fn sc(self) -> &'static StringContainer<'static> {
         match self {
             Self::Var => sc!("var"),
             Self::Let => sc!("let"),
@@ -68,10 +72,11 @@ impl BindingKind {
     }
 }
 
-fn gen_var_let_const_override_statement(
+fn gen_var_let_const_override_statement<'buffer>(
+    arena: &'buffer Arena,
     kind: BindingKind,
     syntax_node: &SyntaxNode,
-) -> FormatDocumentResult<PrintItemBuffer> {
+) -> FormatDocumentResult<PrintItemBuffer<'buffer>> {
     // Note: When changing this function, should one of the three cases divert from the others more than
     // it already is, consider pulling it into a wholly separate function, instead of expanding this one with ifs
 
@@ -110,38 +115,38 @@ fn gen_var_let_const_override_statement(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::default();
-    formatted.push_sc(kind.sc());
-    formatted.start_indent_before_requests();
+    let mut formatted = PrintItemBuffer::new(arena);
+    formatted.push_sc(arena, kind.sc());
+    formatted.start_indent_before_requests(arena);
 
     if let Some(item_template_list) = item_template_list {
-        formatted.extend(gen_node_with_trivia(&item_template_list)?);
+        formatted.extend(arena, gen_node_with_trivia(arena, &item_template_list)?);
     }
 
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.extend(gen_node_with_trivia(&item_name)?);
+    formatted.extend(arena, gen_node_with_trivia(arena, &item_name)?);
 
     if let Some(type_specifier) = items_type {
         formatted.request(Request::discourage(RequestItem::Space));
-        formatted.push_sc(sc!(":"));
+        formatted.push_sc(arena, sc!(":"));
         formatted.request(Request::expect(RequestItem::Space));
-        formatted.extend(gen_node_with_trivia(&type_specifier)?);
+        formatted.extend(arena, gen_node_with_trivia(arena, &type_specifier)?);
     }
 
     if let Some(value) = assignment {
-        formatted.start_new_line_group_before_requests();
+        formatted.start_new_line_group_before_requests(arena);
         formatted.request(Request::expect(RequestItem::Space));
-        formatted.push_sc(sc!("="));
+        formatted.push_sc(arena, sc!("="));
         formatted.request(Request::expect(RequestItem::Space).or_newline());
-        formatted.finish_new_line_group_after_requests();
-        formatted.extend(gen_node_with_trivia(&value)?);
+        formatted.finish_new_line_group_after_requests(arena);
+        formatted.extend(arena, gen_node_with_trivia(arena, &value)?);
     }
 
     if statement_needs_semicolon_policy(syntax_node) {
         formatted.request(Request::discourage(RequestItem::Space));
-        formatted.push_sc(sc!(";"));
+        formatted.push_sc(arena, sc!(";"));
     }
-    formatted.finish_indent_before_requests();
+    formatted.finish_indent_before_requests(arena);
 
     Ok(formatted)
 }

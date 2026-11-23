@@ -1,3 +1,4 @@
+use dprint_core::formatting::Arena;
 use dprint_core_macros::sc;
 use itertools::Itertools as _;
 use syntax::{AstNode as _, SyntaxKind, ast};
@@ -20,10 +21,11 @@ use crate::{
     trivia::{NodeTriviaItem, NodeWithTrivia},
 };
 
-pub(crate) fn gen_compound_statement(
+pub(crate) fn gen_compound_statement<'buffer>(
+    arena: &'buffer Arena,
     with_trivia: &NodeWithTrivia,
     node: &ast::CompoundStatement,
-) -> FormatDocumentResult<PrintItemBuffer> {
+) -> FormatDocumentResult<PrintItemBuffer<'buffer>> {
     // ==== Context ====
 
     let is_conditional = with_trivia
@@ -75,21 +77,21 @@ pub(crate) fn gen_compound_statement(
 
     // ==== Format ====
 
-    let mut formatted = PrintItemBuffer::default();
+    let mut formatted = PrintItemBuffer::new(arena);
 
-    let mut multiline_group = MultilineGroup::new_before_requests(&mut formatted);
+    let mut multiline_group = MultilineGroup::new_before_requests(arena, &mut formatted);
 
     if dedent_braces {
-        multiline_group.start_ignoring_indent_before_requests();
+        multiline_group.start_ignoring_indent_before_requests(arena);
     }
-    multiline_group.push_sc(sc!("{"));
+    multiline_group.push_sc(arena, sc!("{"));
     if dedent_braces {
-        multiline_group.finish_ignoring_indent_before_requests();
+        multiline_group.finish_ignoring_indent_before_requests(arena);
     }
 
     if !body_empty {
         if creates_indentation {
-            multiline_group.start_indent_before_requests();
+            multiline_group.start_indent_before_requests(arena);
         }
 
         if collapse_one_liner_compound_statement_policy(node.syntax()) {
@@ -104,11 +106,11 @@ pub(crate) fn gen_compound_statement(
                 multiline_group.request(Request::expect(RequestItem::LineBreak));
             }
 
-            multiline_group.extend(gen_node_with_trivia(item)?);
+            multiline_group.extend(arena, gen_node_with_trivia(arena, item)?);
         }
 
         if creates_indentation {
-            multiline_group.finish_indent_before_requests();
+            multiline_group.finish_indent_before_requests(arena);
         }
 
         if collapse_one_liner_compound_statement_policy(node.syntax()) {
@@ -120,14 +122,14 @@ pub(crate) fn gen_compound_statement(
     }
 
     if dedent_braces {
-        multiline_group.start_ignoring_indent_before_requests();
+        multiline_group.start_ignoring_indent_before_requests(arena);
     }
-    multiline_group.push_sc(sc!("}"));
+    multiline_group.push_sc(arena, sc!("}"));
     if dedent_braces {
-        multiline_group.finish_ignoring_indent_before_requests();
+        multiline_group.finish_ignoring_indent_before_requests(arena);
     }
 
-    multiline_group.end_before_requests();
+    multiline_group.end_before_requests(arena);
 
     Ok(formatted)
 }

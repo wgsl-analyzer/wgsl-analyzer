@@ -1,3 +1,4 @@
+use dprint_core::formatting::Arena;
 use dprint_core_macros::sc;
 use syntax::{AstNode as _, SyntaxKind, ast};
 
@@ -17,9 +18,10 @@ use crate::{
     reporting::FormatDocumentResult,
 };
 
-pub(crate) fn gen_struct_declaration(
-    node: &ast::StructDeclaration
-) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_struct_declaration<'buffer>(
+    arena: &'buffer Arena,
+    node: &ast::StructDeclaration,
+) -> FormatDocumentResult<PrintItemBuffer<'buffer>> {
     // === Parse ===
     let mut syntax = syntax_iter(node.syntax());
 
@@ -31,21 +33,24 @@ pub(crate) fn gen_struct_declaration(
     parse_end(&mut syntax)?;
 
     // === Format ===
-    let mut formatted = PrintItemBuffer::default();
+    let mut formatted = PrintItemBuffer::new(arena);
 
     // Struct
-    formatted.push_sc(sc!("struct"));
+    formatted.push_sc(arena, sc!("struct"));
     formatted.request(Request::expect(RequestItem::Space));
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.extend(gen_node_with_trivia(&item_name)?);
+    formatted.extend(arena, gen_node_with_trivia(arena, &item_name)?);
     // Body
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.extend(gen_node_with_trivia(&item_body)?);
+    formatted.extend(arena, gen_node_with_trivia(arena, &item_body)?);
 
     Ok(formatted)
 }
 
-pub(crate) fn gen_struct_body(body: &ast::StructBody) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_struct_body<'buffer>(
+    arena: &'buffer Arena,
+    body: &ast::StructBody,
+) -> FormatDocumentResult<PrintItemBuffer<'buffer>> {
     // === Parse ===
     let mut syntax = syntax_iter(body.syntax());
 
@@ -63,10 +68,10 @@ pub(crate) fn gen_struct_body(body: &ast::StructBody) -> FormatDocumentResult<Pr
 
     // === Format ===
     let is_empty = item_members.is_empty();
-    let mut formatted = PrintItemBuffer::default();
+    let mut formatted = PrintItemBuffer::new(arena);
 
-    formatted.push_sc(sc!("{"));
-    formatted.start_indent_before_requests();
+    formatted.push_sc(arena, sc!("{"));
+    formatted.start_indent_before_requests(arena);
     formatted.request(Request::discourage(RequestItem::EmptyLine));
 
     if !is_empty {
@@ -75,12 +80,12 @@ pub(crate) fn gen_struct_body(body: &ast::StructBody) -> FormatDocumentResult<Pr
                 formatted.request(Request::expect(RequestItem::LineBreak));
             }
 
-            formatted.extend(gen_node_preceding_trivia(&member)?);
-            formatted.extend(gen_node_content(&member)?);
+            formatted.extend(arena, gen_node_preceding_trivia(arena, &member)?);
+            formatted.extend(arena, gen_node_content(arena, &member)?);
             if member.has_content() {
-                formatted.push_sc(sc!(","));
+                formatted.push_sc(arena, sc!(","));
             }
-            formatted.extend(gen_node_succeeding_trivia(&member)?);
+            formatted.extend(arena, gen_node_succeeding_trivia(arena, &member)?);
         }
     }
 
@@ -91,8 +96,8 @@ pub(crate) fn gen_struct_body(body: &ast::StructBody) -> FormatDocumentResult<Pr
         suggest_linebreak: false,
     });
 
-    formatted.finish_indent_before_requests();
-    formatted.push_sc(sc!("}"));
+    formatted.finish_indent_before_requests(arena);
+    formatted.push_sc(arena, sc!("}"));
 
     if !is_empty {
         formatted.request(Request::expect(RequestItem::LineBreak));
@@ -101,9 +106,10 @@ pub(crate) fn gen_struct_body(body: &ast::StructBody) -> FormatDocumentResult<Pr
     Ok(formatted)
 }
 
-pub(crate) fn gen_struct_member(
-    member: &ast::StructMember
-) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_struct_member<'buffer>(
+    arena: &'buffer Arena,
+    member: &ast::StructMember,
+) -> FormatDocumentResult<PrintItemBuffer<'buffer>> {
     // === Parse ===
     let mut syntax = syntax_iter(member.syntax());
 
@@ -115,13 +121,13 @@ pub(crate) fn gen_struct_member(
     parse_end(&mut syntax)?;
 
     // === Format ===
-    let mut formatted = PrintItemBuffer::default();
+    let mut formatted = PrintItemBuffer::new(arena);
 
-    formatted.extend(gen_node_with_trivia(&item_name)?);
-    formatted.push_sc(sc!(":"));
+    formatted.extend(arena, gen_node_with_trivia(arena, &item_name)?);
+    formatted.push_sc(arena, sc!(":"));
     formatted.request(Request::expect(RequestItem::Space));
     //The colon should immediately follow the name, we intentionally move the comment
-    formatted.extend(gen_node_with_trivia(&item_type_specifier)?);
+    formatted.extend(arena, gen_node_with_trivia(arena, &item_type_specifier)?);
 
     Ok(formatted)
 }

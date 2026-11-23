@@ -1,3 +1,4 @@
+use dprint_core::formatting::Arena;
 use dprint_core_macros::sc;
 use syntax::{AstNode as _, SyntaxKind, SyntaxNode, ast};
 
@@ -12,9 +13,10 @@ use crate::{
     reporting::FormatDocumentResult,
 };
 
-pub(crate) fn gen_parenthesis_expression(
-    parenthesis_expression: &ast::ParenthesisExpression
-) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_parenthesis_expression<'buffer>(
+    arena: &'buffer Arena,
+    parenthesis_expression: &ast::ParenthesisExpression,
+) -> FormatDocumentResult<PrintItemBuffer<'buffer>> {
     // ==== Parse ====
     let mut syntax = syntax_iter(parenthesis_expression.syntax());
 
@@ -25,25 +27,25 @@ pub(crate) fn gen_parenthesis_expression(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::default();
+    let mut formatted = PrintItemBuffer::new(arena);
     if expression_parens_are_irrelevant_policy(parenthesis_expression.syntax()) {
         formatted.request(Request::expect(RequestItem::Space));
     } else {
-        formatted.push_sc(sc!("("));
-        formatted.start_new_line_group_before_requests();
-        formatted.start_indent_before_requests();
+        formatted.push_sc(arena, sc!("("));
+        formatted.start_new_line_group_before_requests(arena);
+        formatted.start_indent_before_requests(arena, );
 
         formatted.request(Request::discourage(RequestItem::Space));
     }
-    formatted.extend(gen_node_with_trivia(&item_content)?);
+    formatted.extend(arena, gen_node_with_trivia(arena, &item_content)?);
 
     if expression_parens_are_irrelevant_policy(parenthesis_expression.syntax()) {
         formatted.request(Request::expect(RequestItem::Space));
     } else {
-        formatted.finish_indent_before_requests();
-        formatted.finish_new_line_group_before_requests();
+        formatted.finish_indent_before_requests(arena);
+        formatted.finish_new_line_group_before_requests(arena);
         formatted.request(Request::discourage(RequestItem::Space));
-        formatted.push_sc(sc!(")"));
+        formatted.push_sc(arena, sc!(")"));
     }
     Ok(formatted)
 }

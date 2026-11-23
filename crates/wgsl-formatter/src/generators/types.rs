@@ -1,4 +1,4 @@
-use dprint_core::formatting::PrintItems;
+use dprint_core::formatting::{Arena, PrintItems};
 use dprint_core_macros::sc;
 use itertools::Itertools as _;
 use syntax::{AstNode as _, SyntaxKind, ast};
@@ -21,9 +21,10 @@ use crate::{
     reporting::FormatDocumentResult,
 };
 
-pub(crate) fn gen_type_specifier(
-    type_specifier: &ast::TypeSpecifier
-) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_type_specifier<'buffer>(
+    arena: &'buffer Arena,
+    type_specifier: &ast::TypeSpecifier,
+) -> FormatDocumentResult<PrintItemBuffer<'buffer>> {
     // ==== Parse ====
     let mut syntax = syntax_iter(type_specifier.syntax());
 
@@ -36,17 +37,18 @@ pub(crate) fn gen_type_specifier(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::default();
-    formatted.extend(gen_node_with_trivia(&item_path)?);
+    let mut formatted = PrintItemBuffer::new(arena);
+    formatted.extend(arena, gen_node_with_trivia(arena, &item_path)?);
     if let Some(template) = item_template {
-        formatted.extend(gen_node_with_trivia(&template)?);
+        formatted.extend(arena, gen_node_with_trivia(arena, &template)?);
     }
     Ok(formatted)
 }
 
-pub(crate) fn gen_template_list(
-    template_list: &ast::TemplateList
-) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_template_list<'buffer>(
+    arena: &'buffer Arena,
+    template_list: &ast::TemplateList,
+) -> FormatDocumentResult<PrintItemBuffer<'buffer>> {
     let must_be_oneline =
         context_policies::template_must_be_one_line_policy(template_list.syntax());
 
@@ -70,23 +72,23 @@ pub(crate) fn gen_template_list(
     parse_end(&mut syntax)?;
 
     // ==== Format ====
-    let mut formatted = PrintItemBuffer::default();
+    let mut formatted = PrintItemBuffer::new(arena);
 
-    let mut multiline_group = MultilineGroup::new_before_requests(&mut formatted);
-    multiline_group.push_sc(sc!("<"));
+    let mut multiline_group = MultilineGroup::new_before_requests(arena, &mut formatted);
+    multiline_group.push_sc(arena, sc!("<"));
     multiline_group.request(Request::discourage(RequestItem::Space));
 
     // If its blank we do not give the formatter the option to break within the <>
     if !item_arguments.is_empty() {
-        multiline_group.start_indent_before_requests();
+        multiline_group.start_indent_before_requests(arena);
 
         if !must_be_oneline {
             // Really discourage a newline here - but break into newlines if we are multiline anyways.
             // This keeps single-argument templates as one line. We could simply not offer a newline,
             // but then a long chain of one-arg templates would overflow
-            multiline_group.start_new_line_group_before_requests();
+            multiline_group.start_new_line_group_before_requests(arena);
             multiline_group.grouped_newline_or_space();
-            multiline_group.finish_new_line_group_after_requests();
+            multiline_group.finish_new_line_group_after_requests(arena);
         }
 
         for (position, item) in item_arguments.into_iter().with_position() {
@@ -98,31 +100,31 @@ pub(crate) fn gen_template_list(
                 }
             }
 
-            multiline_group.extend(gen_node_preceding_trivia(&item)?);
+            multiline_group.extend(arena, gen_node_preceding_trivia(arena, &item)?);
             if item.has_content() {
-                multiline_group.extend(gen_node_content(&item)?);
+                multiline_group.extend(arena, gen_node_content(arena, &item)?);
                 multiline_group.request(Request::discourage(RequestItem::Space));
                 if position.is_last || position.is_exactly_one() {
-                    multiline_group.extend_if_multi_line({
-                        let mut pi = PrintItems::default();
+                    multiline_group.extend_if_multi_line(arena, {
+                        let mut pi = PrintItems::new(arena);
                         pi.push_sc(sc!(","));
                         pi
                     });
                 } else {
-                    multiline_group.push_sc(sc!(","));
+                    multiline_group.push_sc(arena, sc!(","));
                 }
             }
-            multiline_group.extend(gen_node_succeeding_trivia(&item)?);
+            multiline_group.extend(arena, gen_node_succeeding_trivia(arena, &item)?);
         }
 
         multiline_group.request(Request::discourage(RequestItem::Space));
-        multiline_group.finish_indent_before_requests();
+        multiline_group.finish_indent_before_requests(arena);
         if !must_be_oneline {
             multiline_group.grouped_possible_newline();
         }
     }
-    multiline_group.push_sc(sc!(">"));
-    multiline_group.end_before_requests();
+    multiline_group.push_sc(arena, sc!(">"));
+    multiline_group.end_before_requests(arena);
 
     Ok(formatted)
 }

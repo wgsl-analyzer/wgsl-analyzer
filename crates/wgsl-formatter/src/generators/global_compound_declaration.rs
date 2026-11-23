@@ -1,3 +1,4 @@
+use dprint_core::formatting::Arena;
 use itertools::Itertools as _;
 use syntax::{AstNode as _, ast::GlobalCompoundDeclaration};
 
@@ -16,10 +17,11 @@ use crate::{
     trivia::{NodeTriviaItem, NodeWithTrivia},
 };
 
-pub(crate) fn gen_global_compound_declaration(
+pub(crate) fn gen_global_compound_declaration<'buffer>(
+    arena: &'buffer Arena,
     with_trivia: &NodeWithTrivia,
     node: &GlobalCompoundDeclaration,
-) -> FormatDocumentResult<PrintItemBuffer> {
+) -> FormatDocumentResult<PrintItemBuffer<'buffer>> {
     // ==== Context ====
 
     let is_condcomp = with_trivia
@@ -54,30 +56,30 @@ pub(crate) fn gen_global_compound_declaration(
 
     // ==== Format ====
 
-    let mut formatted = PrintItemBuffer::default();
+    let mut formatted = PrintItemBuffer::new(arena);
 
     if dedent_braces {
-        formatted.start_ignoring_indent_before_requests();
+        formatted.start_ignoring_indent_before_requests(arena);
     }
-    formatted.extend(gen_node_with_trivia(&item_open_brace)?);
+    formatted.extend(arena, gen_node_with_trivia(arena, &item_open_brace)?);
     if dedent_braces {
-        formatted.finish_ignoring_indent_before_requests();
+        formatted.finish_ignoring_indent_before_requests(arena);
     }
 
     formatted.request(Request::discourage(RequestItem::EmptyLine));
     formatted.request(Request::discourage(RequestItem::Space));
 
     if creates_indentation {
-        formatted.start_indent_before_requests();
+        formatted.start_indent_before_requests(arena);
     }
 
     for item in items {
         formatted.request(Request::expect(RequestItem::LineBreak));
-        formatted.extend(gen_node_with_trivia(&item)?);
+        formatted.extend(arena, gen_node_with_trivia(arena, &item)?);
     }
 
     if creates_indentation {
-        formatted.finish_indent_before_requests();
+        formatted.finish_indent_before_requests(arena);
     }
 
     formatted.request(Request::expect(RequestItem::LineBreak));
@@ -85,11 +87,11 @@ pub(crate) fn gen_global_compound_declaration(
     formatted.request(Request::discourage(RequestItem::Space));
 
     if dedent_braces {
-        formatted.start_ignoring_indent_before_requests();
+        formatted.start_ignoring_indent_before_requests(arena);
     }
-    formatted.push_sc(dprint_core_macros::sc!("}"));
+    formatted.push_sc(arena, dprint_core_macros::sc!("}"));
     if dedent_braces {
-        formatted.finish_ignoring_indent_before_requests();
+        formatted.finish_ignoring_indent_before_requests(arena);
     }
 
     Ok(formatted)

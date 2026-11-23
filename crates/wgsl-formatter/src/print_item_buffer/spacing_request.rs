@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 
 use dprint_core::formatting::{
-    Condition, ConditionProperties, ConditionResolver, PrintItems, Signal,
+    Arena, Condition, ConditionProperties, ConditionResolver, PrintItems, Signal,
 };
 
 /// A possible kind of whitespace that can be requested and, through [`Request`], be merged together if multiple requests are issued.
@@ -108,7 +108,7 @@ impl RequestItemSet {
 /// Optionally a request can also "suggest" a newline, which means that if a space or nothing at all would be put into the output,
 /// and a newline is not "discouraged" at this point, then either a `SpaceOrNewline` or a `PossibleNewline` dprint `Signal` is output.
 #[derive(Clone)]
-pub(crate) enum Request {
+pub(crate) enum Request<'buffer> {
     Unconditional {
         expected: RequestItemSet,
         discouraged: RequestItemSet,
@@ -137,19 +137,19 @@ pub(crate) enum Request {
         suggest_linebreak: bool,
     },
     Conditional {
-        condition: ConditionResolver,
+        condition: ConditionResolver<'buffer>,
         on_true: Box<Self>,
         on_false: Box<Self>,
     },
 }
 
-impl Default for Request {
+impl Default for Request<'_> {
     fn default() -> Self {
         Self::empty()
     }
 }
 
-impl Request {
+impl<'buffer> Request<'buffer> {
     #[must_use]
     pub(crate) const fn empty() -> Self {
         Self::Unconditional {
@@ -322,11 +322,12 @@ impl Request {
     /// Evaluate this [`Request`] and append its output to the given [`PrintItems`].
     pub(crate) fn resolve(
         self,
-        target: &mut PrintItems,
+        arena: &'buffer Arena,
+        target: &mut PrintItems<'buffer>,
     ) {
-        fn apply_item(
+        fn apply_item<'buffer>(
             item: RequestItem,
-            target: &mut PrintItems,
+            target: &mut PrintItems<'buffer>,
             suggest_newline: bool,
         ) {
             match item {
@@ -377,13 +378,13 @@ impl Request {
                     ConditionProperties {
                         condition,
                         true_path: {
-                            let mut pi = PrintItems::new();
-                            on_true.resolve(&mut pi);
+                            let mut pi = PrintItems::new(arena);
+                            on_true.resolve(arena, &mut pi);
                             Some(pi)
                         },
                         false_path: {
-                            let mut pi = PrintItems::new();
-                            on_false.resolve(&mut pi);
+                            let mut pi = PrintItems::new(arena);
+                            on_false.resolve(arena, &mut pi);
                             Some(pi)
                         },
                     },
@@ -396,18 +397,18 @@ impl Request {
 #[cfg(test)]
 pub(crate) mod tests {
 
-    use dprint_core::formatting::condition_resolvers;
+    use dprint_core::formatting::{Arena, condition_resolvers};
     use expect_test::expect;
 
     use super::RequestItem;
     use crate::print_item_buffer::{PrintItemBuffer, spacing_request::Request};
 
-    fn format_width(
-        pib: PrintItemBuffer,
+    fn format_width<'buffer>(
+        pib: PrintItemBuffer<'buffer>,
         width: u32,
     ) -> String {
         dprint_core::formatting::format(
-            || pib.finish(),
+            |arena: &'buffer Arena| pib.finish(arena),
             dprint_core::formatting::PrintOptions {
                 max_width: width,
                 indent_width: 4,
@@ -419,15 +420,16 @@ pub(crate) mod tests {
 
     #[test]
     pub(crate) fn or_newline_simple() {
-        let mut pib = PrintItemBuffer::default();
-        pib.push_sc(dprint_core_macros::sc!("1234567"));
+        let arena = Arena::new();
+        let mut pib = PrintItemBuffer::new(&arena);
+        pib.push_sc(&arena, dprint_core_macros::sc!("1234567"));
         pib.request(Request::empty().or_newline());
-        pib.push_sc(dprint_core_macros::sc!("1234567"));
+        pib.push_sc(&arena, dprint_core_macros::sc!("1234567"));
 
         pib.request(Request::expect(RequestItem::EmptyLine));
-        pib.push_sc(dprint_core_macros::sc!("abc"));
+        pib.push_sc(&arena, dprint_core_macros::sc!("abc"));
         pib.request(Request::empty().or_newline());
-        pib.push_sc(dprint_core_macros::sc!("abc"));
+        pib.push_sc(&arena, dprint_core_macros::sc!("abc"));
         expect![[r#"
             1234567
             1234567
@@ -438,9 +440,10 @@ pub(crate) mod tests {
 
     #[test]
     pub(crate) fn or_newline_conditional_false() {
-        let mut pib = PrintItemBuffer::default();
+        let arena = Arena::new();
+        let mut pib = PrintItemBuffer::new(&arena);
 
-        pib.push_sc(dprint_core_macros::sc!("1234567"));
+        pib.push_sc(&arena, dprint_core_macros::sc!("1234567"));
         pib.request(
             Request::Conditional {
                 condition: condition_resolvers::false_resolver(),
@@ -449,10 +452,10 @@ pub(crate) mod tests {
             }
             .or_newline(),
         );
-        pib.push_sc(dprint_core_macros::sc!("1234567"));
+        pib.push_sc(&arena, dprint_core_macros::sc!("1234567"));
         pib.request(Request::expect(RequestItem::EmptyLine));
 
-        pib.push_sc(dprint_core_macros::sc!("abc"));
+        pib.push_sc(&arena, dprint_core_macros::sc!("abc"));
         pib.request(
             Request::Conditional {
                 condition: condition_resolvers::false_resolver(),
@@ -461,7 +464,7 @@ pub(crate) mod tests {
             }
             .or_newline(),
         );
-        pib.push_sc(dprint_core_macros::sc!("def"));
+        pib.push_sc(&arena, dprint_core_macros::sc!("def"));
 
         expect![[r#"
             1234567
@@ -473,9 +476,10 @@ pub(crate) mod tests {
 
     #[test]
     pub(crate) fn or_newline_conditional_true() {
-        let mut pib = PrintItemBuffer::default();
+        let arena = Arena::new();
+        let mut pib = PrintItemBuffer::new(&arena);
 
-        pib.push_sc(dprint_core_macros::sc!("1234567"));
+        pib.push_sc(&arena, dprint_core_macros::sc!("1234567"));
         pib.request(
             Request::Conditional {
                 condition: condition_resolvers::true_resolver(),
@@ -484,10 +488,10 @@ pub(crate) mod tests {
             }
             .or_newline(),
         );
-        pib.push_sc(dprint_core_macros::sc!("1234567"));
+        pib.push_sc(&arena, dprint_core_macros::sc!("1234567"));
         pib.request(Request::expect(RequestItem::EmptyLine));
 
-        pib.push_sc(dprint_core_macros::sc!("abc"));
+        pib.push_sc(&arena, dprint_core_macros::sc!("abc"));
         pib.request(
             Request::Conditional {
                 condition: condition_resolvers::true_resolver(),
@@ -496,7 +500,7 @@ pub(crate) mod tests {
             }
             .or_newline(),
         );
-        pib.push_sc(dprint_core_macros::sc!("def"));
+        pib.push_sc(&arena, dprint_core_macros::sc!("def"));
 
         expect![[r#"
             1234567

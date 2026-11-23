@@ -1,3 +1,4 @@
+use dprint_core::formatting::Arena;
 use itertools::Itertools as _;
 use syntax::{AstNode as _, ast};
 
@@ -19,7 +20,10 @@ pub(crate) const fn source_file_item_policy() -> impl ParseNodePolicy {
     Succeeding((StopAtNewline, DiscardBlankspace, DiscardSemicolon))
 }
 
-pub(crate) fn gen_source_file(node: &ast::SourceFile) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_source_file<'buffer>(
+    arena: &'buffer Arena,
+    node: &ast::SourceFile,
+) -> FormatDocumentResult<PrintItemBuffer<'buffer>> {
     // ==== Parse ====
 
     let mut syntax = syntax_iter(node.syntax());
@@ -32,14 +36,14 @@ pub(crate) fn gen_source_file(node: &ast::SourceFile) -> FormatDocumentResult<Pr
 
     // ==== Format ====
 
-    let mut formatted = PrintItemBuffer::default();
+    let mut formatted = PrintItemBuffer::new(arena);
     formatted.request(Request::discourage(RequestItem::EmptyLine));
     formatted.request(Request::discourage(RequestItem::LineBreak));
     formatted.request(Request::discourage(RequestItem::Space));
 
     for item in &items {
         formatted.request(Request::expect(RequestItem::LineBreak));
-        formatted.extend(gen_node_with_trivia(item)?);
+        formatted.extend(arena, gen_node_with_trivia(arena, item)?);
     }
 
     if !items.is_empty() {
