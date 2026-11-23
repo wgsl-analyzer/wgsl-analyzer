@@ -74,10 +74,10 @@ impl TryFrom<Utf8PathBuf> for RelPathBuf {
     }
 }
 
-impl TryFrom<&str> for RelPathBuf {
-    type Error = Utf8PathBuf;
+impl core::str::FromStr for RelPathBuf {
+    type Err = Utf8PathBuf;
 
-    fn try_from(path: &str) -> Result<Self, Utf8PathBuf> {
+    fn from_str(path: &str) -> Result<Self, Self::Err> {
         Self::try_from(Utf8PathBuf::from(path))
     }
 }
@@ -286,7 +286,7 @@ impl RelPath {
     /// # Panics
     ///
     /// Do not use.
-    #[deprecated]
+    #[deprecated(note = "do not use", since = "0.0.0")]
     #[expect(clippy::unused_self, reason = "intentional API")]
     pub fn canonicalize(&self) -> ! {
         panic!(
@@ -368,13 +368,13 @@ impl RelPath {
     }
 
     #[expect(clippy::unimplemented, reason = "on purpose")]
-    #[deprecated(note = "use Display instead")]
+    #[deprecated(note = "use Display instead", since = "0.0.0")]
     pub fn display(&self) -> ! {
         unimplemented!("use Display instead")
     }
 
     #[expect(clippy::unimplemented, reason = "on purpose")]
-    #[deprecated(note = "use std::fs::metadata().is_ok() instead")]
+    #[deprecated(note = "use std::fs::metadata().is_ok() instead", since = "0.0.0")]
     pub fn exists(&self) -> ! {
         unimplemented!("use std::fs::metadata().is_ok() instead")
     }
