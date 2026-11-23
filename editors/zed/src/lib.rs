@@ -1,5 +1,5 @@
-use std::path::Path;
-use std::{fs, path};
+use std::{fs, path, path::Path};
+
 use zed::settings::LspSettings;
 use zed_extension_api::{self as zed, LanguageServerId, Result, serde_json};
 

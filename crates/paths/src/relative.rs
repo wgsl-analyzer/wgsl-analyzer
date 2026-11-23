@@ -65,6 +65,7 @@ impl Borrow<RelPath> for RelPathBuf {
 
 impl TryFrom<Utf8PathBuf> for RelPathBuf {
     type Error = Utf8PathBuf;
+
     fn try_from(path_buf: Utf8PathBuf) -> Result<Self, Utf8PathBuf> {
         if !path_buf.is_relative() {
             return Err(path_buf);
@@ -75,6 +76,7 @@ impl TryFrom<Utf8PathBuf> for RelPathBuf {
 
 impl TryFrom<&str> for RelPathBuf {
     type Error = Utf8PathBuf;
+
     fn try_from(path: &str) -> Result<Self, Utf8PathBuf> {
         Self::try_from(Utf8PathBuf::from(path))
     }
@@ -394,8 +396,9 @@ impl fmt::Display for RelPath {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use std::{ffi::OsStr, path::PathBuf};
+
+    use super::*;
 
     fn root_utf8() -> &'static Utf8Path {
         crate::AbsPath::root().as_utf8_path()

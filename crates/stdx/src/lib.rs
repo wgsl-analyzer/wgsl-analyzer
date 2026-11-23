@@ -2,9 +2,7 @@
 
 #![warn(unused)]
 
-use std::process::Command;
-use std::{cmp::Ordering, ops};
-use std::{hash, io as sio};
+use std::{cmp::Ordering, hash, io as sio, ops, process::Command};
 
 mod macros;
 
@@ -82,9 +80,11 @@ where
 {
     type Head = T::Head;
     type Tail = T::Tail;
+
     fn head(self) -> Self::Head {
         (*self).head()
     }
+
     fn tail(self) -> Self::Tail {
         (*self).tail()
     }

@@ -59,7 +59,6 @@ impl Args {
         Command::new("wgslfmt")
             .about("Tool to find and fix WGSL/WESL formatting issues")
             .version(env!("CARGO_PKG_VERSION"))
-
             // Mode setters
             .arg(
                 Arg::new("check")
@@ -72,7 +71,6 @@ Exits with 1 if formatting is required.",
                     )
                     .action(ArgAction::SetTrue),
             )
-
             // Output Format Setters
             .arg(
                 Arg::new("json")
@@ -86,7 +84,6 @@ Exits with 1 if formatting is required.",
                     .help("Do not output any status outputs")
                     .action(ArgAction::SetTrue),
             )
-
             .arg(
                 Arg::new("print-diff")
                     .long("print-diff")

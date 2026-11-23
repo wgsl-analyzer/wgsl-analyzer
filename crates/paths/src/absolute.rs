@@ -65,6 +65,7 @@ impl Borrow<AbsPath> for AbsPathBuf {
 
 impl TryFrom<Utf8PathBuf> for AbsPathBuf {
     type Error = Utf8PathBuf;
+
     fn try_from(path_buf: Utf8PathBuf) -> Result<Self, Utf8PathBuf> {
         if !path_buf.is_absolute() {
             return Err(path_buf);
@@ -75,6 +76,7 @@ impl TryFrom<Utf8PathBuf> for AbsPathBuf {
 
 impl TryFrom<&str> for AbsPathBuf {
     type Error = Utf8PathBuf;
+
     fn try_from(path: &str) -> Result<Self, Utf8PathBuf> {
         Self::try_from(Utf8PathBuf::from(path))
     }
@@ -439,10 +441,11 @@ impl fmt::Display for AbsPath {
 
 #[cfg(test)]
 mod tests {
+    use std::{ffi::OsStr, path::PathBuf};
+
     use camino::Utf8Component;
 
     use super::*;
-    use std::{ffi::OsStr, path::PathBuf};
 
     fn root_utf8() -> &'static Utf8Path {
         super::AbsPath::root().as_utf8_path()
