@@ -7,6 +7,9 @@ description = "Missing batteries for standard libraries for wgsl-analyzer."
 repository.workspace = true
 license.workspace = true
 
+[features]
+force-always-assert = []
+
 [lib]
 doctest = false
 
@@ -24,9 +27,6 @@ libc.workspace = true
 [target."cfg(windows)".dependencies]
 miow.workspace = true
 windows-sys.workspace = true
-
-[features]
-force-always-assert = []
 
 [lints]
 workspace = true
