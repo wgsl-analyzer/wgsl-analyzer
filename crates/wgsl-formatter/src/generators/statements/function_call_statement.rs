@@ -7,6 +7,7 @@ use syntax::{
 };
 
 use crate::{
+    FormattingOptions,
     ast_parse::{
         DiscardBlankspace, DiscardComma, DiscardParenthesis, NoTrivia, StopAtNewline, Succeeding,
         SyntaxIter, parse_end, parse_many_nodes_with, parse_node_with, syntax_iter,
@@ -26,7 +27,8 @@ use crate::{
 };
 
 pub(crate) fn gen_function_call(
-    function_call: &ast::FunctionCall
+    options: &FormattingOptions,
+    function_call: &ast::FunctionCall,
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = syntax_iter(function_call.syntax());
@@ -39,9 +41,9 @@ pub(crate) fn gen_function_call(
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
     formatted.start_new_line_group_after_requests();
-    formatted.extend(gen_node_with_trivia(&item_identifier)?);
+    formatted.extend(gen_node_with_trivia(options, &item_identifier)?);
     formatted.finish_new_line_group_before_requests();
-    formatted.extend(gen_node_with_trivia(&item_arguments)?);
+    formatted.extend(gen_node_with_trivia(options, &item_arguments)?);
     Ok(formatted)
 }
 
@@ -132,19 +134,23 @@ pub(crate) fn parse_function_call_arguments(
 }
 
 pub(crate) fn gen_function_call_arguments(
-    arguments: &ast::Arguments
+    options: &FormattingOptions,
+    arguments: &ast::Arguments,
 ) -> FormatDocumentResult<PrintItemBuffer> {
     let style = determine_function_call_argument_style(arguments.syntax().parent());
     match style {
-        FunctionCallArgumentStyle::Standard => gen_function_call_arguments_standard(arguments),
+        FunctionCallArgumentStyle::Standard => {
+            gen_function_call_arguments_standard(options, arguments)
+        },
         FunctionCallArgumentStyle::Tabular { columns, rows } => {
-            gen_function_call_arguments_tabular(arguments, columns, rows)
+            gen_function_call_arguments_tabular(options, arguments, columns, rows)
         },
     }
 }
 
 pub(crate) fn gen_function_call_arguments_standard(
-    arguments: &ast::Arguments
+    options: &FormattingOptions,
+    arguments: &ast::Arguments,
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = syntax_iter(arguments.syntax());
@@ -175,10 +181,10 @@ pub(crate) fn gen_function_call_arguments_standard(
             if !position.is_first && !position.is_exactly_one() {
                 multiline_group.grouped_newline_or_space();
             }
-            multiline_group.extend(gen_node_preceding_trivia(&item)?);
+            multiline_group.extend(gen_node_preceding_trivia(options, &item)?);
             if item.has_content() {
                 multiline_group.start_new_line_group_after_requests();
-                multiline_group.extend(gen_node_content(&item)?);
+                multiline_group.extend(gen_node_content(options, &item)?);
                 multiline_group.finish_new_line_group_before_requests();
                 multiline_group.request(Request::discourage(RequestItem::Space));
                 if position.is_last || position.is_exactly_one() {
@@ -191,7 +197,7 @@ pub(crate) fn gen_function_call_arguments_standard(
                     multiline_group.push_sc(sc!(","));
                 }
             }
-            multiline_group.extend(gen_node_succeeding_trivia(&item)?);
+            multiline_group.extend(gen_node_succeeding_trivia(options, &item)?);
         }
 
         // Do not offer a newline here - but break into newlines if we are multiline anyways.
@@ -210,6 +216,7 @@ pub(crate) fn gen_function_call_arguments_standard(
 }
 
 pub(crate) fn gen_function_call_arguments_tabular(
+    options: &FormattingOptions,
     arguments: &ast::Arguments,
     table_columns: usize,
     table_rows: usize,
@@ -226,7 +233,7 @@ pub(crate) fn gen_function_call_arguments_tabular(
     } else if item_count == table_rows {
         (1, table_rows)
     } else {
-        return gen_function_call_arguments_standard(arguments);
+        return gen_function_call_arguments_standard(options, arguments);
     };
 
     // ==== Format ====
@@ -243,12 +250,12 @@ pub(crate) fn gen_function_call_arguments_tabular(
             formatted.request(Request::discourage(RequestItem::Space));
             let mut multiline_group = MultilineGroup::new_before_requests(&mut formatted);
             for column in row {
-                multiline_group.extend(gen_node_preceding_trivia(&column)?);
-                multiline_group.extend(gen_node_content(&column)?);
+                multiline_group.extend(gen_node_preceding_trivia(options, &column)?);
+                multiline_group.extend(gen_node_content(options, &column)?);
                 multiline_group.request(Request::discourage(RequestItem::Space));
                 // We know that there is always a separator - even on the final item
                 multiline_group.push_sc(sc!(","));
-                multiline_group.extend(gen_node_succeeding_trivia(&column)?);
+                multiline_group.extend(gen_node_succeeding_trivia(options, &column)?);
 
                 multiline_group.grouped_newline_or_space();
             }
@@ -267,7 +274,8 @@ pub(crate) fn gen_function_call_arguments_tabular(
 }
 
 pub(crate) fn gen_function_call_statement(
-    function_call_statement: &ast::FunctionCallStatement
+    options: &FormattingOptions,
+    function_call_statement: &ast::FunctionCallStatement,
 ) -> Result<PrintItemBuffer, FormatDocumentError> {
     // ==== Parse ====
     let mut syntax = syntax_iter(function_call_statement.syntax());
@@ -278,7 +286,7 @@ pub(crate) fn gen_function_call_statement(
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
-    formatted.extend(gen_node_with_trivia(&function_call)?);
+    formatted.extend(gen_node_with_trivia(options, &function_call)?);
     if statement_needs_semicolon_policy(function_call_statement.syntax()) {
         formatted.push_sc(sc!(";"));
     }

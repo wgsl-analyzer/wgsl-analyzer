@@ -5,6 +5,7 @@ use syntax::{
 };
 
 use crate::{
+    FormattingOptions,
     ast_parse::{DiscardBlankspace, NoTrivia, parse_end, parse_node_with, syntax_iter},
     context_policies::statement_needs_semicolon_policy,
     generators::node::gen_node_with_trivia,
@@ -16,7 +17,8 @@ use crate::{
 };
 
 pub(crate) fn gen_const_assert_statement(
-    statement: &ast::AssertStatement
+    options: &FormattingOptions,
+    statement: &ast::AssertStatement,
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = syntax_iter(statement.syntax());
@@ -32,7 +34,7 @@ pub(crate) fn gen_const_assert_statement(
     formatted.push_sc(sc!("const_assert"));
     formatted.start_indent_before_requests();
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.extend(gen_node_with_trivia(&item_condition)?);
+    formatted.extend(gen_node_with_trivia(options, &item_condition)?);
     if statement_needs_semicolon_policy(statement.syntax()) {
         formatted.request(Request::discourage(RequestItem::Space));
         formatted.push_sc(sc!(";"));

@@ -5,6 +5,7 @@ use syntax::{
 };
 
 use crate::{
+    FormattingOptions,
     ast_parse::{DiscardBlankspace, NoTrivia, parse_end, parse_node_with, syntax_iter},
     context_policies::statement_needs_semicolon_policy,
     generators::node::gen_node_with_trivia,
@@ -16,7 +17,8 @@ use crate::{
 };
 
 pub(crate) fn gen_assignment_statement(
-    assignment_statement: &ast::AssignmentStatement
+    options: &FormattingOptions,
+    assignment_statement: &ast::AssignmentStatement,
 ) -> Result<PrintItemBuffer, FormatDocumentError> {
     // NOTE!! - When updating this function, keep in mind to
     // update gen_assignment_statement, gen_compound_assignment_statement, gen_phony_assignment_statement together
@@ -36,14 +38,14 @@ pub(crate) fn gen_assignment_statement(
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
-    formatted.extend(gen_node_with_trivia(&item_target)?);
+    formatted.extend(gen_node_with_trivia(options, &item_target)?);
     formatted.request(Request::expect(RequestItem::Space));
     formatted.start_new_line_group_before_requests();
     formatted.push_sc(sc!("="));
     formatted.request(Request::expect(RequestItem::Space).or_newline());
     formatted.finish_new_line_group_after_requests();
     formatted.start_indent_before_requests();
-    formatted.extend(gen_node_with_trivia(&item_value)?);
+    formatted.extend(gen_node_with_trivia(options, &item_value)?);
     if statement_needs_semicolon_policy(assignment_statement.syntax()) {
         formatted.request(Request::discourage(RequestItem::Space));
         formatted.push_sc(sc!(";"));
@@ -53,7 +55,8 @@ pub(crate) fn gen_assignment_statement(
 }
 
 pub(crate) fn gen_phony_assignment_statement(
-    phony_assignment_statement: &ast::PhonyAssignmentStatement
+    options: &FormattingOptions,
+    phony_assignment_statement: &ast::PhonyAssignmentStatement,
 ) -> Result<PrintItemBuffer, FormatDocumentError> {
     // NOTE!! - When updating this function, keep in mind to
     // update gen_assignment_statement, gen_compound_assignment_statement, gen_phony_assignment_statement together
@@ -73,12 +76,12 @@ pub(crate) fn gen_phony_assignment_statement(
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
-    formatted.extend(gen_node_with_trivia(&item_phony)?);
+    formatted.extend(gen_node_with_trivia(options, &item_phony)?);
     formatted.request(Request::expect(RequestItem::Space));
     formatted.push_sc(sc!("="));
     formatted.request(Request::expect(RequestItem::Space));
     formatted.start_indent_before_requests();
-    formatted.extend(gen_node_with_trivia(&item_value)?);
+    formatted.extend(gen_node_with_trivia(options, &item_value)?);
     if statement_needs_semicolon_policy(phony_assignment_statement.syntax()) {
         formatted.request(Request::discourage(RequestItem::Space));
         formatted.push_sc(sc!(";"));
@@ -88,7 +91,8 @@ pub(crate) fn gen_phony_assignment_statement(
 }
 
 pub(crate) fn gen_compound_assignment_statement(
-    compound_assignment_statement: &ast::CompoundAssignmentStatement
+    options: &FormattingOptions,
+    compound_assignment_statement: &ast::CompoundAssignmentStatement,
 ) -> Result<PrintItemBuffer, FormatDocumentError> {
     // NOTE!! - When updating this function, keep in mind to
     // update gen_assignment_statement, gen_compound_assignment_statement, gen_phony_assignment_statement together
@@ -109,12 +113,12 @@ pub(crate) fn gen_compound_assignment_statement(
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
-    formatted.extend(gen_node_with_trivia(&item_target)?);
+    formatted.extend(gen_node_with_trivia(options, &item_target)?);
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.extend(gen_node_with_trivia(&item_operator)?);
+    formatted.extend(gen_node_with_trivia(options, &item_operator)?);
     formatted.request(Request::expect(RequestItem::Space));
     formatted.start_indent_before_requests();
-    formatted.extend(gen_node_with_trivia(&item_value)?);
+    formatted.extend(gen_node_with_trivia(options, &item_value)?);
     if statement_needs_semicolon_policy(compound_assignment_statement.syntax()) {
         formatted.request(Request::discourage(RequestItem::Space));
         formatted.push_sc(sc!(";"));

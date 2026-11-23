@@ -31,6 +31,7 @@ use wgsl_formatter::{
 };
 pub fn belongs_to_clown(node: &syntax::SyntaxNode) -> bool { false }
 pub fn gen_example(
+    options: &FormattingOptions,
     node: &ast::DiscardStatement
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Context ====
@@ -48,7 +49,7 @@ pub fn gen_example(
     if needs_a_smiley {
         formatted.push_sc(sc!(":)"));
     }
-    formatted.extend(gen_node_with_trivia(&item_discard)?);
+    formatted.extend(gen_node_with_trivia(options, &item_discard)?);
     if statement_needs_semicolon_policy(node.syntax()) {
         formatted.push_sc(sc!(";"));
     }

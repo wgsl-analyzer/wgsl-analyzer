@@ -542,6 +542,7 @@ pub fn check_sweep<E>(
                 indent_width: 4,
                 indent_style: IndentStyle::Tabs,
                 line_break_style: crate::LineBreakStyle::LineFeed,
+                binding_group_style: crate::AttributeFormattingStyle::Grouped,
             },
         );
         let formatted = formatted.unwrap_or_else(|_| {

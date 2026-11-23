@@ -2,6 +2,7 @@ use dprint_core_macros::sc;
 use syntax::{AstNode as _, SyntaxKind, ast};
 
 use crate::{
+    FormattingOptions,
     ast_parse::{
         DiscardBlankspace, DiscardBraces, DiscardComma, NoTrivia, StopAtNewline, Succeeding,
         parse_end, parse_many_nodes_with, parse_node_with, syntax_iter,
@@ -18,7 +19,8 @@ use crate::{
 };
 
 pub(crate) fn gen_struct_declaration(
-    node: &ast::StructDeclaration
+    options: &FormattingOptions,
+    node: &ast::StructDeclaration,
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // === Parse ===
     let mut syntax = syntax_iter(node.syntax());
@@ -37,15 +39,18 @@ pub(crate) fn gen_struct_declaration(
     formatted.push_sc(sc!("struct"));
     formatted.request(Request::expect(RequestItem::Space));
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.extend(gen_node_with_trivia(&item_name)?);
+    formatted.extend(gen_node_with_trivia(options, &item_name)?);
     // Body
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.extend(gen_node_with_trivia(&item_body)?);
+    formatted.extend(gen_node_with_trivia(options, &item_body)?);
 
     Ok(formatted)
 }
 
-pub(crate) fn gen_struct_body(body: &ast::StructBody) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_struct_body(
+    options: &FormattingOptions,
+    body: &ast::StructBody,
+) -> FormatDocumentResult<PrintItemBuffer> {
     // === Parse ===
     let mut syntax = syntax_iter(body.syntax());
 
@@ -75,12 +80,12 @@ pub(crate) fn gen_struct_body(body: &ast::StructBody) -> FormatDocumentResult<Pr
                 formatted.request(Request::expect(RequestItem::LineBreak));
             }
 
-            formatted.extend(gen_node_preceding_trivia(&member)?);
-            formatted.extend(gen_node_content(&member)?);
+            formatted.extend(gen_node_preceding_trivia(options, &member)?);
+            formatted.extend(gen_node_content(options, &member)?);
             if member.has_content() {
                 formatted.push_sc(sc!(","));
             }
-            formatted.extend(gen_node_succeeding_trivia(&member)?);
+            formatted.extend(gen_node_succeeding_trivia(options, &member)?);
         }
     }
 
@@ -102,7 +107,8 @@ pub(crate) fn gen_struct_body(body: &ast::StructBody) -> FormatDocumentResult<Pr
 }
 
 pub(crate) fn gen_struct_member(
-    member: &ast::StructMember
+    options: &FormattingOptions,
+    member: &ast::StructMember,
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // === Parse ===
     let mut syntax = syntax_iter(member.syntax());
@@ -117,11 +123,11 @@ pub(crate) fn gen_struct_member(
     // === Format ===
     let mut formatted = PrintItemBuffer::default();
 
-    formatted.extend(gen_node_with_trivia(&item_name)?);
+    formatted.extend(gen_node_with_trivia(options, &item_name)?);
     formatted.push_sc(sc!(":"));
     formatted.request(Request::expect(RequestItem::Space));
     //The colon should immediately follow the name, we intentionally move the comment
-    formatted.extend(gen_node_with_trivia(&item_type_specifier)?);
+    formatted.extend(gen_node_with_trivia(options, &item_type_specifier)?);
 
     Ok(formatted)
 }

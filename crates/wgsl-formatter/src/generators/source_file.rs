@@ -2,6 +2,7 @@ use itertools::Itertools as _;
 use syntax::{AstNode as _, ast};
 
 use crate::{
+    FormattingOptions,
     ast_parse::{
         DiscardBlankspace, DiscardSemicolon, ParseNodePolicy, StopAtNewline, Succeeding, parse_end,
         parse_many_nodes_with, syntax_iter,
@@ -19,7 +20,10 @@ pub(crate) const fn source_file_item_policy() -> impl ParseNodePolicy {
     Succeeding((StopAtNewline, DiscardBlankspace, DiscardSemicolon))
 }
 
-pub(crate) fn gen_source_file(node: &ast::SourceFile) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_source_file(
+    options: &FormattingOptions,
+    node: &ast::SourceFile,
+) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
 
     let mut syntax = syntax_iter(node.syntax());
@@ -39,7 +43,7 @@ pub(crate) fn gen_source_file(node: &ast::SourceFile) -> FormatDocumentResult<Pr
 
     for item in &items {
         formatted.request(Request::expect(RequestItem::LineBreak));
-        formatted.extend(gen_node_with_trivia(item)?);
+        formatted.extend(gen_node_with_trivia(options, item)?);
     }
 
     if !items.is_empty() {

@@ -3,6 +3,7 @@ use itertools::Itertools as _;
 use syntax::{AstNode as _, SyntaxKind, ast};
 
 use crate::{
+    FormattingOptions,
     ast_parse::{
         DiscardBraces, Filter, MatchKind, NoTrivia, PolicyAction, Succeeding, parse_end,
         parse_many_nodes_with, parse_node_with, syntax_iter,
@@ -21,6 +22,7 @@ use crate::{
 };
 
 pub(crate) fn gen_compound_statement(
+    options: &FormattingOptions,
     with_trivia: &NodeWithTrivia,
     node: &ast::CompoundStatement,
 ) -> FormatDocumentResult<PrintItemBuffer> {
@@ -104,7 +106,7 @@ pub(crate) fn gen_compound_statement(
                 multiline_group.request(Request::expect(RequestItem::LineBreak));
             }
 
-            multiline_group.extend(gen_node_with_trivia(item)?);
+            multiline_group.extend(gen_node_with_trivia(options, item)?);
         }
 
         if creates_indentation {

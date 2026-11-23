@@ -6,6 +6,7 @@ use syntax::{
 };
 
 use crate::{
+    FormattingOptions,
     ast_parse::{
         DiscardBlankspace, Filter, NoTrivia, PolicyAction, parse_end, parse_many_nodes_with,
         parse_node_with, syntax_iter,
@@ -19,7 +20,8 @@ use crate::{
 };
 
 pub(crate) fn gen_if_statement(
-    statement: &ast::IfStatement
+    options: &FormattingOptions,
+    statement: &ast::IfStatement,
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = syntax_iter(statement.syntax());
@@ -45,7 +47,7 @@ pub(crate) fn gen_if_statement(
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
-    formatted.extend(gen_node_with_trivia(&item_if_clause)?);
+    formatted.extend(gen_node_with_trivia(options, &item_if_clause)?);
     for else_if_clause in else_if_clauses {
         formatted.request(Request::Unconditional {
             expected: RequestItemSet::from(RequestItem::Space),
@@ -53,7 +55,7 @@ pub(crate) fn gen_if_statement(
             forced: RequestItemSet::empty(),
             suggest_linebreak: false,
         });
-        formatted.extend(gen_node_with_trivia(&else_if_clause)?);
+        formatted.extend(gen_node_with_trivia(options, &else_if_clause)?);
     }
     if !item_else_clause.is_whitespace() {
         formatted.request(Request::Unconditional {
@@ -62,14 +64,15 @@ pub(crate) fn gen_if_statement(
             forced: RequestItemSet::empty(),
             suggest_linebreak: false,
         });
-        formatted.extend(gen_node_with_trivia(&item_else_clause)?);
+        formatted.extend(gen_node_with_trivia(options, &item_else_clause)?);
     }
 
     Ok(formatted)
 }
 
 pub(crate) fn gen_if_statement_if_clause(
-    statement: &IfClause
+    options: &FormattingOptions,
+    statement: &IfClause,
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // NOTE: When editing this function, ensure that gen_if_statement_else_clause and gen_if_statement_else_if_clause
     // reflect the changes as well.
@@ -90,16 +93,17 @@ pub(crate) fn gen_if_statement_if_clause(
     formatted.start_indent_before_requests();
     formatted.request(Request::expect(RequestItem::Space));
     formatted.request(Request::discourage(RequestItem::LineBreak));
-    formatted.extend(gen_node_with_trivia(&item_condition)?);
+    formatted.extend(gen_node_with_trivia(options, &item_condition)?);
     formatted.finish_indent_before_requests();
     formatted.request(Request::discourage(RequestItem::LineBreak));
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.extend(gen_node_with_trivia(&item_body)?);
+    formatted.extend(gen_node_with_trivia(options, &item_body)?);
     Ok(formatted)
 }
 
 pub(crate) fn gen_if_statement_else_clause(
-    statement: &ElseClause
+    options: &FormattingOptions,
+    statement: &ElseClause,
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // NOTE: When editing this function, ensure that gen_if_statement_if_clause and gen_if_statement_else_if_clause
     // reflect the changes as well.
@@ -117,12 +121,13 @@ pub(crate) fn gen_if_statement_else_clause(
     formatted.push_sc(sc!("else"));
     formatted.request(Request::discourage(RequestItem::LineBreak));
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.extend(gen_node_with_trivia(&item_body)?);
+    formatted.extend(gen_node_with_trivia(options, &item_body)?);
     Ok(formatted)
 }
 
 pub(crate) fn gen_if_statement_else_if_clause(
-    statement: &ElseIfClause
+    options: &FormattingOptions,
+    statement: &ElseIfClause,
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // NOTE: When editing this function, ensure that gen_if_statement_if_clause and gen_if_statement_else_clause
     // reflect the changes as well.
@@ -141,18 +146,18 @@ pub(crate) fn gen_if_statement_else_if_clause(
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
-    formatted.extend(gen_node_with_trivia(&item_else)?);
+    formatted.extend(gen_node_with_trivia(options, &item_else)?);
     formatted.request(Request::discourage(RequestItem::LineBreak));
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.extend(gen_node_with_trivia(&item_if)?);
+    formatted.extend(gen_node_with_trivia(options, &item_if)?);
     formatted.start_indent_before_requests();
     formatted.request(Request::discourage(RequestItem::LineBreak));
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.extend(gen_node_with_trivia(&item_condition)?);
+    formatted.extend(gen_node_with_trivia(options, &item_condition)?);
     formatted.finish_indent_before_requests();
     formatted.request(Request::discourage(RequestItem::LineBreak));
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.extend(gen_node_with_trivia(&item_body)?);
+    formatted.extend(gen_node_with_trivia(options, &item_body)?);
     Ok(formatted)
 }
 

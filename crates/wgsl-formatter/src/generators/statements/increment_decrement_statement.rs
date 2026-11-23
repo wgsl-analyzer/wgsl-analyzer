@@ -5,6 +5,7 @@ use syntax::{
 };
 
 use crate::{
+    FormattingOptions,
     ast_parse::{DiscardBlankspace, NoTrivia, parse_end, parse_node_with, syntax_iter},
     context_policies::statement_needs_semicolon_policy,
     generators::node::gen_node_with_trivia,
@@ -16,7 +17,8 @@ use crate::{
 };
 
 pub(crate) fn gen_increment_decrement_statement(
-    increment_decrement_statement: &ast::IncrementDecrementStatement
+    options: &FormattingOptions,
+    increment_decrement_statement: &ast::IncrementDecrementStatement,
 ) -> Result<PrintItemBuffer, FormatDocumentError> {
     // ==== Parse ====
     let mut syntax = syntax_iter(increment_decrement_statement.syntax());
@@ -29,8 +31,8 @@ pub(crate) fn gen_increment_decrement_statement(
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
-    formatted.extend(gen_node_with_trivia(&item_ident)?);
-    formatted.extend(gen_node_with_trivia(&item_operator)?);
+    formatted.extend(gen_node_with_trivia(options, &item_ident)?);
+    formatted.extend(gen_node_with_trivia(options, &item_operator)?);
 
     if statement_needs_semicolon_policy(increment_decrement_statement.syntax()) {
         formatted.request(Request::discourage(RequestItem::Space));

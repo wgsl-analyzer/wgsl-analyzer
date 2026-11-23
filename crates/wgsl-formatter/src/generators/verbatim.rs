@@ -3,6 +3,7 @@ use rowan::NodeOrToken;
 use syntax::{SyntaxNode, SyntaxToken};
 
 use crate::{
+    FormattingOptions,
     print_item_buffer::{
         PrintItemBuffer,
         spacing_request::{Request, RequestItem},
@@ -12,7 +13,8 @@ use crate::{
 
 #[expect(clippy::unnecessary_wraps, reason = "Intentional api for generators")]
 pub(crate) fn gen_node_syntax_verbatim(
-    node: &NodeOrToken<SyntaxNode, SyntaxToken>
+    #[expect(unused, reason = "no config is necessary here (yet)")] options: &FormattingOptions,
+    node: &NodeOrToken<SyntaxNode, SyntaxToken>,
 ) -> FormatDocumentResult<PrintItemBuffer> {
     let verbatim_text = node.to_string();
 

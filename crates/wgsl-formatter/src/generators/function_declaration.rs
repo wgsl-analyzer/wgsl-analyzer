@@ -4,6 +4,7 @@ use itertools::Itertools as _;
 use syntax::{AstNode as _, SyntaxKind, ast};
 
 use crate::{
+    FormattingOptions,
     ast_parse::{
         DiscardBlankspace, DiscardComma, DiscardParenthesis, NoTrivia, StopAtNewline, Succeeding,
         parse_end, parse_many_nodes_with, parse_node_with, syntax_iter,
@@ -21,7 +22,8 @@ use crate::{
 };
 
 pub(crate) fn gen_function_declaration(
-    node: &ast::FunctionDeclaration
+    options: &FormattingOptions,
+    node: &ast::FunctionDeclaration,
 ) -> FormatDocumentResult<PrintItemBuffer> {
     let mut syntax = syntax_iter(node.syntax());
 
@@ -45,30 +47,31 @@ pub(crate) fn gen_function_declaration(
     formatted.request(Request::expect(RequestItem::Space));
 
     // Name
-    formatted.extend(gen_node_with_trivia(&item_name)?);
+    formatted.extend(gen_node_with_trivia(options, &item_name)?);
 
     // Params
-    formatted.extend(gen_node_with_trivia(&item_params)?);
+    formatted.extend(gen_node_with_trivia(options, &item_params)?);
 
     // Return
     if let Some(item_return) = item_return {
         // We would much rather break the params than the return type
         formatted.start_new_line_group_before_requests();
         formatted.start_new_line_group_before_requests();
-        formatted.extend(gen_node_with_trivia(&item_return)?);
+        formatted.extend(gen_node_with_trivia(options, &item_return)?);
         formatted.finish_new_line_group_after_requests();
         formatted.finish_new_line_group_after_requests();
     }
 
     // Body
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.extend(gen_node_with_trivia(&item_body)?);
+    formatted.extend(gen_node_with_trivia(options, &item_body)?);
 
     Ok(formatted)
 }
 
 pub(crate) fn gen_fn_parameters(
-    node: &ast::FunctionParameters
+    options: &FormattingOptions,
+    node: &ast::FunctionParameters,
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
 
@@ -110,8 +113,8 @@ pub(crate) fn gen_fn_parameters(
         multiline_group.grouped_newline_or_space();
 
         multiline_group.request(Request::discourage(RequestItem::EmptyLine));
-        multiline_group.extend(gen_node_preceding_trivia(&item)?);
-        multiline_group.extend(gen_node_content(&item)?);
+        multiline_group.extend(gen_node_preceding_trivia(options, &item)?);
+        multiline_group.extend(gen_node_content(options, &item)?);
         if item.has_content() {
             if position.is_last || position.is_exactly_one() {
                 multiline_group.extend_if_multi_line({
@@ -123,7 +126,7 @@ pub(crate) fn gen_fn_parameters(
                 multiline_group.push_sc(sc!(","));
             }
         }
-        multiline_group.extend(gen_node_succeeding_trivia(&item)?);
+        multiline_group.extend(gen_node_succeeding_trivia(options, &item)?);
     }
 
     multiline_group.request(Request::discourage(RequestItem::Space));
@@ -137,7 +140,10 @@ pub(crate) fn gen_fn_parameters(
     Ok(formatted)
 }
 
-pub(crate) fn gen_fn_parameter(syntax: &ast::Parameter) -> FormatDocumentResult<PrintItemBuffer> {
+pub(crate) fn gen_fn_parameter(
+    options: &FormattingOptions,
+    syntax: &ast::Parameter,
+) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = syntax_iter(syntax.syntax());
 
@@ -151,15 +157,16 @@ pub(crate) fn gen_fn_parameter(syntax: &ast::Parameter) -> FormatDocumentResult<
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
 
-    formatted.extend(gen_node_with_trivia(&item_name)?);
+    formatted.extend(gen_node_with_trivia(options, &item_name)?);
     formatted.push_sc(sc!(":"));
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.extend(gen_node_with_trivia(&item_type_specifier)?);
+    formatted.extend(gen_node_with_trivia(options, &item_type_specifier)?);
     Ok(formatted)
 }
 
 pub(crate) fn gen_fn_return_type(
-    syntax: &ast::ReturnType
+    options: &FormattingOptions,
+    syntax: &ast::ReturnType,
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = syntax_iter(syntax.syntax());
@@ -175,6 +182,6 @@ pub(crate) fn gen_fn_return_type(
     formatted.request(Request::expect(RequestItem::Space));
     formatted.push_sc(sc!("->"));
     formatted.request(Request::expect(RequestItem::Space));
-    formatted.extend(gen_node_with_trivia(&item_type_specifier)?);
+    formatted.extend(gen_node_with_trivia(options, &item_type_specifier)?);
     Ok(formatted)
 }

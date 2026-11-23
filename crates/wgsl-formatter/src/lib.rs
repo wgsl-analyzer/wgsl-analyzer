@@ -49,6 +49,30 @@ pub struct FormattingOptions {
     //    the unformatted source code, and scan it for line breaks which feels very unnecessarily inefficient.
     #[cfg_attr(feature = "serde", serde(alias = "lineBreakStyle"))]
     pub line_break_style: LineBreakStyle,
+
+    /// Style for `binding` and `group` attribute placement.
+    ///
+    /// Either [`AttributeFormattingStyle::Grouped`]
+    ///
+    /// ```wgsl
+    /// @binding(0) @group(0)
+    /// var foo;
+    /// ```
+    ///
+    /// or [`AttributeFormattingStyle::Inline`]
+    ///
+    /// ```wgsl
+    /// @binding(0) @group(0) var foo;
+    /// ```
+    #[cfg_attr(feature = "serde", serde(alias = "bindingGroupStyle"))]
+    pub binding_group_style: AttributeFormattingStyle,
+}
+
+#[derive(Debug, Clone, Copy)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+pub enum AttributeFormattingStyle {
+    Grouped,
+    Inline,
 }
 
 /// Style to be used when indenting code.
@@ -102,6 +126,7 @@ impl FormattingOptions {
             indent_width: 4,
             indent_style: IndentStyle::Spaces,
             line_break_style: LineBreakStyle::LineFeed,
+            binding_group_style: AttributeFormattingStyle::Grouped,
         }
     }
 }

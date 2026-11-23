@@ -3,6 +3,7 @@ use itertools::Itertools as _;
 use syntax::{AstNode as _, SyntaxKind, ast};
 
 use crate::{
+    FormattingOptions,
     ast_parse::{
         DiscardBlankspace, DiscardComma, DiscardSemicolon, NoTrivia, parse_end,
         parse_many_nodes_with, parse_node_with, syntax_iter,
@@ -16,7 +17,8 @@ use crate::{
     reporting::FormatDocumentResult,
 };
 pub(crate) fn gen_enable_extension_name(
-    node: &ast::EnableExtensionName
+    options: &FormattingOptions,
+    node: &ast::EnableExtensionName,
 ) -> FormatDocumentResult<PrintItemBuffer> {
     let mut syntax = syntax_iter(node.syntax());
     let identifier =
@@ -25,12 +27,13 @@ pub(crate) fn gen_enable_extension_name(
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
-    formatted.extend(gen_node_with_trivia(&identifier)?);
+    formatted.extend(gen_node_with_trivia(options, &identifier)?);
     Ok(formatted)
 }
 
 pub(crate) fn gen_enable_directive(
-    node: &ast::EnableDirective
+    options: &FormattingOptions,
+    node: &ast::EnableDirective,
 ) -> FormatDocumentResult<PrintItemBuffer> {
     let mut syntax = syntax_iter(node.syntax());
 
@@ -56,7 +59,7 @@ pub(crate) fn gen_enable_directive(
     for (position, item) in items.into_iter().with_position() {
         multiline_group.grouped_newline_or_space();
 
-        multiline_group.extend(gen_node_with_trivia(&item)?);
+        multiline_group.extend(gen_node_with_trivia(options, &item)?);
         if !position.is_last && !position.is_exactly_one() {
             multiline_group.push_sc(sc!(","));
         }
@@ -72,7 +75,8 @@ pub(crate) fn gen_enable_directive(
 }
 
 pub(crate) fn gen_language_extension_name(
-    node: &ast::LanguageExtensionName
+    options: &FormattingOptions,
+    node: &ast::LanguageExtensionName,
 ) -> FormatDocumentResult<PrintItemBuffer> {
     let mut syntax = syntax_iter(node.syntax());
     let identifier =
@@ -81,12 +85,13 @@ pub(crate) fn gen_language_extension_name(
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
-    formatted.extend(gen_node_with_trivia(&identifier)?);
+    formatted.extend(gen_node_with_trivia(options, &identifier)?);
     Ok(formatted)
 }
 
 pub(crate) fn gen_requires_directive(
-    node: &ast::RequiresDirective
+    options: &FormattingOptions,
+    node: &ast::RequiresDirective,
 ) -> FormatDocumentResult<PrintItemBuffer> {
     let mut syntax = syntax_iter(node.syntax());
 
@@ -113,7 +118,7 @@ pub(crate) fn gen_requires_directive(
     for (position, item) in items.into_iter().with_position() {
         multiline_group.grouped_newline_or_space();
 
-        multiline_group.extend(gen_node_with_trivia(&item)?);
+        multiline_group.extend(gen_node_with_trivia(options, &item)?);
         if !position.is_last && !position.is_exactly_one() {
             multiline_group.push_sc(sc!(","));
         }
@@ -129,7 +134,8 @@ pub(crate) fn gen_requires_directive(
 }
 
 pub(crate) fn gen_diagnostic_directive(
-    node: &ast::DiagnosticDirective
+    options: &FormattingOptions,
+    node: &ast::DiagnosticDirective,
 ) -> FormatDocumentResult<PrintItemBuffer> {
     let mut syntax = syntax_iter(node.syntax());
 
@@ -141,7 +147,7 @@ pub(crate) fn gen_diagnostic_directive(
 
     let mut formatted = PrintItemBuffer::default();
     formatted.push_sc(sc!("diagnostic"));
-    formatted.extend(gen_node_with_trivia(&item_control)?);
+    formatted.extend(gen_node_with_trivia(options, &item_control)?);
     formatted.push_sc(sc!(";"));
     Ok(formatted)
 }

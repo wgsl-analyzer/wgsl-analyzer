@@ -2,6 +2,7 @@ use dprint_core_macros::sc;
 use syntax::{AstNode as _, SyntaxKind, SyntaxNode, ast};
 
 use crate::{
+    FormattingOptions,
     ast_parse::{DiscardBlankspace, NoTrivia, parse_end, parse_node_with, syntax_iter},
     context_policies::statement_needs_semicolon_policy,
     generators::node::gen_node_with_trivia,
@@ -13,7 +14,8 @@ use crate::{
 };
 
 pub(crate) fn gen_return_statement(
-    statement: &ast::ReturnStatement
+    options: &FormattingOptions,
+    statement: &ast::ReturnStatement,
 ) -> FormatDocumentResult<PrintItemBuffer> {
     // ==== Parse ====
     let mut syntax = syntax_iter(statement.syntax());
@@ -26,11 +28,11 @@ pub(crate) fn gen_return_statement(
 
     // ==== Format ====
     let mut formatted = PrintItemBuffer::default();
-    formatted.extend(gen_node_with_trivia(&item_return)?);
+    formatted.extend(gen_node_with_trivia(options, &item_return)?);
     formatted.start_indent_before_requests();
     if let Some(item_expression) = item_expression {
         formatted.request(Request::expect(RequestItem::Space));
-        formatted.extend(gen_node_with_trivia(&item_expression)?);
+        formatted.extend(gen_node_with_trivia(options, &item_expression)?);
     }
 
     if statement_needs_semicolon_policy(statement.syntax()) {
